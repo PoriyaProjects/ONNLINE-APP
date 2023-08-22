@@ -1,3 +1,4 @@
+import { DatePipe } from '@angular/common';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { FormArray, FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
@@ -28,13 +29,14 @@ export class WhatsappMessagesDashboardComponent implements OnInit {
   DepartmentsList = [];
   FunctionsList = [];
   SektorsList = [];
-  screenTitle = 'יחידים';
+  screenTitle = 'אישי';
   searchProgress: boolean = false;
 
   constructor(
     private http: HttpClient,
     private fb: FormBuilder,
     private _snackBar: MatSnackBar,
+    private _datePipe: DatePipe,
     private cd: ChangeDetectorRef
   ) { }
 
@@ -86,6 +88,7 @@ export class WhatsappMessagesDashboardComponent implements OnInit {
       Message_Content: new FormControl('', Validators.required),
       SenderIDFK: new FormControl('1', Validators.required),
       Message_Timing: new FormControl(null, null),
+      Message_Timing_Time: new FormControl(null, null),
     });
     (<FormArray>this.customForm.get('customInputs')).push(contact);
   }
@@ -105,6 +108,15 @@ export class WhatsappMessagesDashboardComponent implements OnInit {
     if (this.customForm.controls['customInputs']['controls'][index].controls.Message_Timing.value == null)
       this.customForm.controls['customInputs']['controls'][index].controls.Message_Timing.setValue('');
     else this.customForm.controls['customInputs']['controls'][index].controls.Message_Timing.setValue(null);
+    if (this.customForm.controls['customInputs']['controls'][index].controls.Message_Timing_Time.value == null)
+      this.customForm.controls['customInputs']['controls'][index].controls.Message_Timing_Time.setValue('00:00:00');
+    else this.customForm.controls['customInputs']['controls'][index].controls.Message_Timing_Time.setValue(null);
+  }
+
+  SetNewDate(index) {
+    let formatedDate = this._datePipe.transform(this.customForm.controls['customInputs']['controls'][index].controls.Message_Timing.value, 'yyyy-MM-dd');
+    let formatedTime = this.customForm.controls['customInputs']['controls'][index].controls.Message_Timing_Time.value;
+    this.customForm.controls['customInputs']['controls'][index].controls.Message_Timing.setValue(formatedDate + ' ' + formatedTime + ':00');
   }
 
   sendMessages() {
