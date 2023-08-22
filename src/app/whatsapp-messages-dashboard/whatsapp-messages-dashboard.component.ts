@@ -85,6 +85,7 @@ export class WhatsappMessagesDashboardComponent implements OnInit {
       Recipient: new FormControl(fullName, null),
       Message_Content: new FormControl('', Validators.required),
       SenderIDFK: new FormControl('1', Validators.required),
+      Message_Timing: new FormControl(null, null),
     });
     (<FormArray>this.customForm.get('customInputs')).push(contact);
   }
@@ -98,6 +99,12 @@ export class WhatsappMessagesDashboardComponent implements OnInit {
 
   deleteAllRow() {
     (this.customForm.get('customInputs') as FormArray).clear();
+  }
+
+  setMessageTiming(index) {
+    if (this.customForm.controls['customInputs']['controls'][index].controls.Message_Timing.value == null)
+      this.customForm.controls['customInputs']['controls'][index].controls.Message_Timing.setValue('');
+    else this.customForm.controls['customInputs']['controls'][index].controls.Message_Timing.setValue(null);
   }
 
   sendMessages() {
@@ -140,7 +147,7 @@ export class WhatsappMessagesDashboardComponent implements OnInit {
   changeScreens() {
     this.typeOfScreen = !this.typeOfScreen;
     if (this.typeOfScreen) this.screenTitle = 'כללי';
-    else this.screenTitle = 'יחידים';
+    else this.screenTitle = 'אישי';
   }
 
   getWhatsAppMessagesFromServer() {

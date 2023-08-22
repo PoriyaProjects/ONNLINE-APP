@@ -222,9 +222,19 @@
                         <textarea matInput placeholder="תוכן ההודעה*" formControlName="Message_Content"
                             (keyup)="fillAllMessageContentFields(i)"></textarea>
                     </mat-form-field>
+                    <mat-form-field *ngIf="contact.controls['Message_Timing'].value != null">
+                        <mat-label>תזמון הודעה</mat-label>
+                        <input matInput [matDatepicker]="picker" formControlName="Message_Timing">
+                        <mat-hint>DD/MM/YYYY</mat-hint>
+                        <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
+                        <mat-datepicker #picker></mat-datepicker>
+                      </mat-form-field>
                     <div>
                         <button mat-icon-button color="warn" matTooltip="מחיקה" (click)="deleteRow(contact, i)">
                             <mat-icon>delete</mat-icon>
+                        </button>
+                        <button mat-icon-button color="primary" matTooltip="תזמון" (click)="setMessageTiming(i)">
+                            <mat-icon>alarm</mat-icon>
                         </button>
                     </div>
                 </div>
