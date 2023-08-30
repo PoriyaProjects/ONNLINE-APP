@@ -28,7 +28,10 @@ export class BoneMarrowModalComponent implements OnInit {
   docfilter = new FormControl();
   UserName = localStorage.getItem("loginUserName");
   imagesList: any[] = [];
-  RecievingTypeList = ['היפרצלולרי', 'נורמוצלולרי', 'היפוצלולרי']
+  RecievingTypeList = ['היפרצלולרי', 'נורמוצלולרי', 'היפוצלולרי'];
+  imageFile: File;
+  base64Image: string;
+
 
   constructor(
     public dialog: MatDialogRef<BoneMarrowModalComponent>,
@@ -55,6 +58,8 @@ export class BoneMarrowModalComponent implements OnInit {
   ngOnInit(): void {
     let patient: PatientDetails;
     let form: BoneMarrowForm;
+    this.imageFile = null;
+    this.base64Image = '';
     this.getEmployeesList();
     if (this.DataDialog.PatientDetails == undefined) {
       // edit
@@ -119,6 +124,7 @@ export class BoneMarrowModalComponent implements OnInit {
       Eosinophils: data.Eosinophils,
       Lymphocytes: data.Lymphocytes,
       PlasmaCells: data.PlasmaCells,
+      ImagesList: this.fb.array([data.ImagesList]),
       Megakaryocytes: data.Megakaryocytes,
       IronPainting: data.IronPainting,
       Summary: data.Summary,
@@ -126,6 +132,7 @@ export class BoneMarrowModalComponent implements OnInit {
       UpdateUser: this.UserName,
       Status: true
     });
+    this.imagesList = data.ImagesList;
     this.docfilter.setValue(data.DoctorSign);
   }
 
@@ -155,61 +162,63 @@ export class BoneMarrowModalComponent implements OnInit {
   }
 
   // convert new image selection to base64 to display for the user
-  selectFile(event: any) { //Angular 11, for stricter type
-    // if (event.type == undefined) event['type'] = "image/jpeg";
-    var mimeType = event.type;
-    // if (mimeType.match(/image\/*/) == null) {
-    //   this.msg = "Only images are supported";
-    //   return;
-    // }
-    var reader = new FileReader();
-    reader.readAsDataURL(event);
-    reader.onload = (_event) => {
-      // this.msg = "";
-      let imageObj = {
-        Path: reader.result,
-        Row_ID: null,
-        Status: true
-      }
-      this.imagesList.push(imageObj);
-    }
-  }
-
-  onFileSelect(imageFile) {
-    if (imageFile.length > 0) {
-      const file = imageFile[0];
-      if (imageFile[0].lastModified != undefined) this.selectFile(file);
-      const files = this.fullForm.get('ImagesList') as FormArray;
-      files.push(new FormControl(file));
-    }
-  }
-
-  // submitForm() {
-  //   this.fullForm.controls['ReceiveDate'].setValue(this.pipe.transform(this.fullForm.controls['ReceiveDate'].value, 'yyyy-MM-dd'));
-  //   //this.prepareFormData(this.fullForm);
-  //   const headers = new HttpHeaders({
-  //     'Content-Type': 'multipart/form-data',
-  //     'Accept': 'application/json'
-  //   });
-  //   let options = { headers: headers };
-  //   let formData: FormData = new FormData();
-  //   // formData.append('dataForm', this.fullForm.value);
-  //   // formData.append('dataPatient', this.patientGroup.value);
-  //   let body = {
-  //     'imageStream': formData
+  // selectFile(event: any) { //Angular 11, for stricter type
+  //   // if (event.type == undefined) event['type'] = "image/jpeg";
+  //   var mimeType = event.type;
+  //   // if (mimeType.match(/image\/*/) == null) {
+  //   //   this.msg = "Only images are supported";
+  //   //   return;
+  //   // }
+  //   var reader = new FileReader();
+  //   reader.readAsDataURL(event);
+  //   reader.onload = (_event) => {
+  //     // this.msg = "";
+  //     let imageObj = {
+  //       Path: reader.result,
+  //       Row_ID: null,
+  //       Status: true
+  //     }
+  //     this.imagesList.push(imageObj);
   //   }
-  //   this.http
-  //     .post(environment.url + "SaveBoneMarrowForm", body.imageStream, options)
-  //     .subscribe((Response) => {
-  //       if (Response["d"]) {
-  //         this.openSnackBar("נשמר בהצלחה");
-  //         // this.closeModal();
-  //       } else {
-  //         this.openSnackBar("משהו השתבש, לא נשמר");
-  //       }
-  //     });
   // }
-  
+
+  onImageFileChange(event: any) {
+    if (event.length > 0) {
+      const file = event[0];
+
+      this.imageFile = file;
+
+      const reader = new FileReader();
+      reader.onload = () => {
+        this.base64Image = reader.result.toString();
+        let imgObj = {
+          Row_ID: 0,
+          Content: this.base64Image,
+          FormIDFK: "",
+          Status: true
+        }
+        const files = this.fullForm.get('ImagesList') as FormArray;
+        files.push(new FormControl(imgObj));
+        this.imagesList.push(imgObj);
+      };
+      reader.readAsDataURL(file);
+    }
+  }
+
+  // onFileSelect(imageFile) {
+  //   if (imageFile.length > 0) {
+  //     var fileReader = new FileReader();
+  //     const base64String = fileReader.readAsDataURL(imageFile[0]);
+
+  //     // Set the base64 string to the image property.
+  //     // const file = imageFile[0];
+  //     // if (imageFile[0].lastModified != undefined) this.selectFile(file);
+  //     const files = this.fullForm.get('ImagesList') as FormArray;
+  //     files.push(new FormControl(imageFile));
+  //   }
+  // }
+
+
   submitForm() {
     this.fullForm.controls['ReceiveDate'].setValue(this.pipe.transform(this.fullForm.controls['ReceiveDate'].value, 'yyyy-MM-dd'));
     this.http
@@ -227,36 +236,6 @@ export class BoneMarrowModalComponent implements OnInit {
       });
   }
 
-  prepareFormData(formGroupData) {
-    var formData = new FormData();
-    let editimagecount = 0;
-    let images = formGroupData.controls['ImagesList'].value;
-    for (const key in formGroupData.controls) {
-      formData.append(key, formGroupData.controls[key].value);
-    }
-    let newImageCounter = 0;
-    for (let i = 0; i < images.length; i++) {
-      // if new image
-      if (images[i].Row_ID == undefined) {
-        formData = this.newImageInsert(formData, newImageCounter, images[i]);
-        newImageCounter++;
-      }
-      // if update image
-      else if (images[i].Row_ID != undefined && images[i].Status != undefined) {
-        formData.append(`image${i}`, images[i].Row_ID + ',' + images[i].Status);
-        editimagecount++;
-      }
-    }
-
-    // Add the image to update count to the FormData object
-    formData.append('editimagecount', editimagecount.toString());
-    return formData;
-  }
-
-  newImageInsert(formData, counter, image) {
-    formData.append(`newimage${counter}`, image);
-    return formData;
-  }
 
   openSnackBar(message) {
     this._snackBar.open(message, "X", {

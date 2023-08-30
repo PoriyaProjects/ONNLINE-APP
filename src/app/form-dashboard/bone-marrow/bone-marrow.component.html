@@ -215,6 +215,14 @@
                     <p>{{elementToPrint.DoctorSign}}</p>
                 </div>
             </div>
+            <div class="col-12" *ngIf="elementToPrint.DoctorSign != ''">
+                <div class="row">
+                    <h1><u>תמונות:</u></h1>
+                </div>
+                <div class="row">
+                    <img *ngFor="let img of elementToPrint.ImagesList" src={{img.Content}} height="1000" width="700">
+                </div>
+            </div>
         </div>
     </div>
 </div>
