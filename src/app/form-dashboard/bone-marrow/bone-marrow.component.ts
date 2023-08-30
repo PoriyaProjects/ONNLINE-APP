@@ -114,7 +114,7 @@ export class BoneMarrowComponent implements OnInit {
       w.document.write(style);
       setTimeout(() => {
         w.print();
-        w.close();
+        // w.close();
       }, 500);
     }, 600);
   }
@@ -263,13 +263,23 @@ export class BoneMarrowComponent implements OnInit {
                       <h1><u>חתימת רופא:</u><br>
                       <p>`+ data.DoctorSign + `</p></h1>
                   </div>
-              </div>
+              </div>`;
+    this.pdfString += `<div class="col-12">
+                            <div class="row text-center">
+                                <h1><u>תמונות מצורפים:</u></h1><br>
+                                `;
+    for (let i = 0; i < data.ImagesList.length; i++) {
+      this.pdfString += `<img height="1000" width="800" src=` + data.ImagesList[i].Content + `>`;
+    }
+    this.pdfString += `
+                            </div>
+                        </div>
           </div>
       </div>
     </body></html>`;
     $("#loader_2").removeClass("d-none");
     this.http.post("http://srv-ipracticom:8080/WebService.asmx/createBoneMarrowPdf", {
-    // this.http.post(environment.url + "createBoneMarrowPdf", {
+      // this.http.post(environment.url + "createBoneMarrowPdf", {
       _patient: data.PatientDetails,
       html: this.pdfString,
       Catigory: "ZPO_BONMRW"
@@ -279,7 +289,7 @@ export class BoneMarrowComponent implements OnInit {
         let that = this;
         setTimeout(() => {
           that.http.post("http://srv-ipracticom:756/WebService.asmx/LinkPdfToPatientNamer", {
-          // that.http.post(environment.url + "LinkPdfToPatientNamer", {
+            // that.http.post(environment.url + "LinkPdfToPatientNamer", {
             CaseNumber:
               data.PatientDetails.CaseNumber,
             FormID: data.Row_ID,
