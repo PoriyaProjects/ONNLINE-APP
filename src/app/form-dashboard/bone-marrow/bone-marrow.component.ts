@@ -114,7 +114,7 @@ export class BoneMarrowComponent implements OnInit {
       w.document.write(style);
       setTimeout(() => {
         w.print();
-        // w.close();
+        w.close();
       }, 500);
     }, 600);
   }

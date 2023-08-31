@@ -51,6 +51,7 @@ export class BoneMarrowModalComponent implements OnInit {
   removable = true;
   patientGroup: FormGroup;
   fullForm: FormGroup;
+  imageForm: FormGroup;
   all_doctors_filter = [];
   pipe = new DatePipe('en-US');
   myDate = new Date();
@@ -90,13 +91,15 @@ export class BoneMarrowModalComponent implements OnInit {
         Eosinophils: new FormControl('', null),
         Lymphocytes: new FormControl('', null),
         PlasmaCells: new FormControl('', null),
-        ImagesList: this.fb.array([]),
         Megakaryocytes: new FormControl('', null),
         IronPainting: new FormControl('', null),
         Summary: new FormControl('', null),
         DoctorSign: new FormControl('', null),
         UpdateUser: new FormControl(this.UserName, null),
         Status: true
+      });
+      this.imageForm = this.fb.group({
+        ImagesList: this.fb.array([])
       });
     }
   }
@@ -124,13 +127,15 @@ export class BoneMarrowModalComponent implements OnInit {
       Eosinophils: data.Eosinophils,
       Lymphocytes: data.Lymphocytes,
       PlasmaCells: data.PlasmaCells,
-      ImagesList: this.fb.array([data.ImagesList]),
       Megakaryocytes: data.Megakaryocytes,
       IronPainting: data.IronPainting,
       Summary: data.Summary,
       DoctorSign: data.DoctorSign,
       UpdateUser: this.UserName,
       Status: true
+    });
+    this.imageForm = this.fb.group({
+      ImagesList: this.fb.array([])
     });
     this.imagesList = data.ImagesList;
     this.docfilter.setValue(data.DoctorSign);
@@ -197,7 +202,7 @@ export class BoneMarrowModalComponent implements OnInit {
           FormIDFK: "",
           Status: true
         }
-        const files = this.fullForm.get('ImagesList') as FormArray;
+        const files = this.imageForm.get('ImagesList') as FormArray;
         files.push(new FormControl(imgObj));
         this.imagesList.push(imgObj);
       };
@@ -228,8 +233,21 @@ export class BoneMarrowModalComponent implements OnInit {
       })
       .subscribe((Response) => {
         if (Response["d"]) {
-          this.openSnackBar("נשמר בהצלחה");
-          this.closeModal();
+          this.imageForm.controls['ImagesList'].value.forEach(element => {
+            this.http
+              .post(environment.url + "SaveBoneMarrowImages", {
+                _imageForm: element,
+                _formIDFK: Response["d"],
+              })
+              .subscribe((Response) => {
+                if (Response["d"]) {
+                  this.openSnackBar("נשמר בהצלחה");
+                  this.closeModal();
+                } else {
+                  this.openSnackBar("משהו השתבש, לא נשמר");
+                }
+              });
+          });
         } else {
           this.openSnackBar("משהו השתבש, לא נשמר");
         }
