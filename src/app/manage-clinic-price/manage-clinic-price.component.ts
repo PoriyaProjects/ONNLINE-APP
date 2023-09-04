@@ -205,7 +205,7 @@ export class ManageClinicPriceComponent implements OnInit {
               number: mPersonalDetails.PatientVersionsList[i].ServiceNumber,
               name: mPersonalDetails.PatientVersionsList[i].ServiceName,
               price: mPersonalDetails.PatientVersionsList[i].ServicePrice,
-              ServiceQuantity: mPersonalDetails.PatientVersionsList[i].ServiceQuantity,
+              ServiceQuantity: parseInt(mPersonalDetails.PatientVersionsList[i].ServiceQuantity),
               ServiceTeeth: mPersonalDetails.PatientVersionsList[i].ServiceTeeth,
             }
             this.addSelectedServiceToEdit(element);
@@ -375,6 +375,11 @@ export class ManageClinicPriceComponent implements OnInit {
     } catch (err) {
       console.log(err);
     }
+  }
+
+  deleteServiceFromList(index) {
+    this.displayArr.controls.splice(index, 1);
+    this.displayArr.value.splice(index, 1);
   }
 
   onSubmit() {

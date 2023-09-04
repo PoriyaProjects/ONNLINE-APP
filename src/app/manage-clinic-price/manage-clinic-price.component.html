@@ -169,9 +169,13 @@
                         <button mat-raised-button matStepperNext>הבא</button>
                     </div>
                     <mat-chip-list aria-label="Dog selection">
-                        <mat-chip *ngFor="let service of displayArr.value">
+                        <mat-chip *ngFor="let service of displayArr.value; let i = index;">
+                            <button mat-icon-button color="primary" aria-label="Example icon button with a home icon"
+                                (click)="deleteServiceFromList(i)">
+                                <mat-icon>delete</mat-icon>
+                            </button>
                             <b (click)="applyFilter($event,service.ServiceName)">{{service.ServiceName}}</b> -
-                            "כמות":<b>{{service.ServiceQuantity}}</b>
+                            כמות:<b>{{service.ServiceQuantity}}</b>
                         </mat-chip>
                     </mat-chip-list>
                 </form>
