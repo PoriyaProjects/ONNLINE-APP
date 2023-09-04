@@ -8,6 +8,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { ManageClinicPriceComponent } from '../manage-clinic-price/manage-clinic-price.component';
 import { MenuPerm } from '../menu-perm';
 import { Router } from '@angular/router';
+import { environment } from 'src/environments/environment';
 export interface Department {
   Row_ID: string;
   DepartName: string;
@@ -109,24 +110,7 @@ export class ClinicsDashboardComponent implements OnInit {
     });
     this.date2 = this.datePipe.transform(this.now, 'dd-MM-yyyy');
     this.time2 = this.datePipe.transform(this.now, 'HH:mm:ss');
-
-    // this.filteredOptions = this.myControl.valueChanges
-    //   .pipe(
-    //     startWith(''),
-    //     map(value => typeof value === 'string' ? value : value.name),
-    //     map(name => name ? this._filter(name) : this.departments.slice())
-    //   );
   }
-
-  // displayFn(user: Department): string {
-  //   return user && user.DepartName ? user.DepartName : '';
-  // }
-
-  // private _filter(name: string): Department[] {
-  //   const filterValue = name.toLowerCase();
-  //   return this.departments.filter(option => option.DepartName.toLowerCase().indexOf(filterValue) === 0);
-  // }
-
 
   openSnackBar(message) {
     this._snackBar.open(message, 'X', {
@@ -145,7 +129,7 @@ export class ClinicsDashboardComponent implements OnInit {
     }
     let passport = this.searchPatient.controls['Passport'].value;
     this.http
-      .post(this.url + "PrintReciept", {
+      .post(environment.url + "PrintReciept", {
         _patientPassport: passport,
         _patientRecordID: element.Row_ID,
         _versionNum: this.selectV,
@@ -204,7 +188,6 @@ export class ClinicsDashboardComponent implements OnInit {
           setTimeout(() => {
             window.print();
           }, 1000);
-
         }
       });
   }
@@ -218,7 +201,7 @@ export class ClinicsDashboardComponent implements OnInit {
     if (this.selectV == "" && element.Row_ID != null && ifEdit == 1) {
       this.openSnackBar("עליך לבחור גרסה");
     } else {
-      let dialogRef = this.dialog.open(ManageClinicPriceComponent, { width: '90%', maxWidth: '100%',disableClose: true });
+      let dialogRef = this.dialog.open(ManageClinicPriceComponent, { width: '90%', maxWidth: '100%', disableClose: true });
       dialogRef.componentInstance.PatientElement = element;
       dialogRef.componentInstance.ifEdit = ifEdit;
       dialogRef.componentInstance.versionSelection = this.selectV;
@@ -245,7 +228,7 @@ export class ClinicsDashboardComponent implements OnInit {
     if (printAfter) {
       this.searchPatientProgressBar = false;
       this.http
-        .post(this.url + "GetRecordAndPatients", {
+        .post(environment.url + "GetRecordAndPatients", {
           _patientPassport: passport
         })
         .subscribe((Response) => {

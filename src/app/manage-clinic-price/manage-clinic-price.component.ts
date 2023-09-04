@@ -8,6 +8,7 @@ import { MatTableDataSource } from '@angular/material/table';
 import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { MatPaginator } from '@angular/material/paginator';
 import { ConfirmationDialogService } from '../confirmation-dialog/confirmation-dialog.service';
+import { environment } from 'src/environments/environment';
 
 export interface Teeth {
   value: string;
@@ -103,11 +104,10 @@ export class ManageClinicPriceComponent implements OnInit {
       PatientsServicesList: this.PatientsServicesList,
     });
     this.searchPatientDetails();
-    this.ServiceQuantityList.push("");
+    // this.ServiceQuantityList.push("");
     for (let i = 0; i < 28; i++) {
       this.ServiceQuantityList.push(i + 1);
     }
-
   }
 
   openSnackBar(message) {
@@ -167,7 +167,7 @@ export class ManageClinicPriceComponent implements OnInit {
     if (this.ifEdit == 1) {
       passport = this.PatientElement.Row_ID;
       this.http
-        .post(this.url + "GetPatientDetailsFromClinicsDB", {
+        .post(environment.url + "GetPatientDetailsFromClinicsDB", {
           _patientPassport: passport,
           _versionSelected: this.versionSelection
         })
@@ -195,6 +195,7 @@ export class ManageClinicPriceComponent implements OnInit {
 
           this.servicesFormGroup.controls['DepartNumber'].setValue(mPersonalDetails.PatientVersionsList[0].DepartNumber);
           this.searchServices();
+          this.TeethNumbers();
           // adding services from existing patient to display array for updating
           for (let i = 0; i < mPersonalDetails.PatientVersionsList.length; i++) {
             let element = {
@@ -246,14 +247,14 @@ export class ManageClinicPriceComponent implements OnInit {
     let patientRowID = this.PatientElement.Row_ID;
     let recordVersion = this.versionSelection;
     this.http
-      .post(this.url + "GetClinicsServices", {
+      .post(environment.url + "GetClinicsServices", {
         _departmentNumber: departNumber,
         _patientRowID: patientRowID,
         _recordVersion: recordVersion,
         _ifEdit: this.ifEdit,
       })
       .subscribe((Response) => {
-        this.TeethNumbers();
+        if (this.teethList.length == 0) this.TeethNumbers();
         let relevantServices = [];
         relevantServices = Response["d"];
         var PatientsServicesList: any = this.fb.array([]);
@@ -366,7 +367,7 @@ export class ManageClinicPriceComponent implements OnInit {
         ServiceName: [element.name, null],
         ServicePrice: [element.price, null],
         ServiceQuantity: [parseInt(quantity), null],
-        ServiceTeeth: [this.teethList, null],
+        ServiceTeeth: [element.ServiceTeeth, null],
       });
       if (serviceCtrl.controls['ServiceQuantity'].value > 0) {
         this.selectedServices.push(serviceCtrl);
@@ -382,7 +383,7 @@ export class ManageClinicPriceComponent implements OnInit {
     this.servicesFormGroup.controls.PatientsServicesList = this.displayArr;
     if (departNumber == '' || departNumber == undefined || departNumber == null) {
       this.openSnackBar("חייב לבחור מחלקה ושירותים");
-    } else if(this.detailsFormGroup.controls['DoctorName'].value == ""){
+    } else if (this.detailsFormGroup.controls['DoctorName'].value == "") {
       this.openSnackBar("שכחת למלא את שם הרופא המטפל");
     } else {
       if (!this.servicesFormGroup.invalid) {
@@ -392,7 +393,7 @@ export class ManageClinicPriceComponent implements OnInit {
             console.log("User confirmed:", confirmed);
             if (confirmed) {
               this.http
-                .post(this.url + "SendTreatmentToReception", {
+                .post(environment.url + "SendTreatmentToReception", {
                   _patientDetails: this.detailsFormGroup.getRawValue(),
                   _serviceDetails: this.servicesFormGroup.getRawValue(),
                   _ifEdit: this.ifEdit,
@@ -427,7 +428,7 @@ export class ManageClinicPriceComponent implements OnInit {
 
   getDepartments() {
     this.http
-      .post(this.url + "GetClinicsPricingDeparts", {
+      .post(environment.url + "GetClinicsPricingDeparts", {
       })
       .subscribe((Response) => {
         let clinicsDeparts = [];
