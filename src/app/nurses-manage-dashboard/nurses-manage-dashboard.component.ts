@@ -342,6 +342,10 @@ export class NursesManageDashboardComponent implements OnInit {
     this.dialog.open(this.modalOtherApps, { width: '60%', disableClose: false });
   }
 
+  openGoogleSheets() {
+    window.open("https://docs.google.com/spreadsheets/d/19VzuF7CvGn71kdOFJjIOTappyCeGX-qgI3DBd9_oOjE/edit#gid=0", "_blank");
+  }
+
   MonitorReports() {
     this.http
       .post("http://srv-apps-prod/RCF_WS/WebService.asmx/GetDepartmentsDontReport", {
