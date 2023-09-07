@@ -31,6 +31,7 @@ export class WhatsappMessagesDashboardComponent implements OnInit {
   SektorsList = [];
   screenTitle = 'אישי';
   searchProgress: boolean = false;
+  username = localStorage.getItem('loginUserName');
 
   constructor(
     private http: HttpClient,
@@ -180,19 +181,13 @@ export class WhatsappMessagesDashboardComponent implements OnInit {
   }
 
   getWhatsAppSendersFromServer() {
-    let that = this;
-    this.getWhatsAppMessagesFromServerService('GetWhatsAppSendersFromServer').subscribe({
-      next(res) {
-        that.sendersList = res["d"];
-      },
-      error(err) {
-        alert('אירעה תקלה');
-        console.log(err);
-      },
-      complete() {
-        console.log('נטען בהצלחה');
-      }
-    });
+    this.http
+      .post(environment.url + "GetWhatsAppSendersFromServer", {
+        _user: this.username
+      })
+      .subscribe((Response) => {
+        this.sendersList = Response["d"];
+      });
   }
 
   public getWhatsAppMessagesFromServerService(func): Observable<any> {
