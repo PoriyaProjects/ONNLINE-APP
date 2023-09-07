@@ -343,7 +343,7 @@ export class NursesManageDashboardComponent implements OnInit {
   }
 
   openGoogleSheets() {
-    window.open("https://docs.google.com/spreadsheets/d/19VzuF7CvGn71kdOFJjIOTappyCeGX-qgI3DBd9_oOjE/edit#gid=0", "_blank");
+    window.open("https://docs.google.com/spreadsheets/d/1045oyB5WpXvgKHnIoxBgRHVxWqnXeTWnOVoo1YRpE84/edit?usp=sharing", "_blank");
   }
 
   MonitorReports() {
