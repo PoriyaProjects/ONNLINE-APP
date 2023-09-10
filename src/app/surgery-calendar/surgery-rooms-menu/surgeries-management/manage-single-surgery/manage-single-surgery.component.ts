@@ -173,7 +173,21 @@ export class ManageSingleSurgeryComponent implements OnInit {
           S_SERVICE_DURATION: new FormControl(this.data.event.SurgeryServicesName.S_SERVICE_DURATION, null),
           S_SERVICE_DOC: new FormControl(this.data.event.SurgeryServicesName.S_SERVICE_DOC, null)
         }),
-        DoctorSurgeon: new FormControl('', Validators.required),
+        // SurgeryLateNote: this.fb.group({
+        //   Row_ID: new FormControl(this.data.event.SurgeryLateNote.Row_ID, null),
+        //   Description: new FormControl(this.data.event.SurgeryLateNote.Description, null),
+        //   Type: new FormControl(this.data.event.SurgeryLateNote.Type, null),
+        //   Priority: new FormControl(this.data.event.SurgeryLateNote.Priority, null),
+        //   Status: new FormControl(this.data.event.SurgeryLateNote.Status, null)
+        // }),
+        // SurgeryCancelNote: this.fb.group({
+        //   Row_ID: new FormControl(this.data.event.SurgeryCancelNote.Row_ID, null),
+        //   Description: new FormControl(this.data.event.SurgeryCancelNote.Description, null),
+        //   Type: new FormControl(this.data.event.SurgeryCancelNote.Type, null),
+        //   Priority: new FormControl(this.data.event.SurgeryCancelNote.Priority, null),
+        //   Status: new FormControl(this.data.event.SurgeryCancelNote.Status, null)
+        // }),
+        DoctorSurgeon: new FormControl('', null),
         AdditionalDetails: this.buildAdditionalFormGroupByDepartment(this.data.event.AdditionalDetails),
         Row_ID: new FormControl(this.data.event.Row_ID, Validators.required),
         SurgeryLateNote: new FormControl(this.data.event.SurgeryLateNote.Row_ID, null),
@@ -191,23 +205,25 @@ export class ManageSingleSurgeryComponent implements OnInit {
     this.enableDisableSurgeryNameSelect();
   }
 
-  getNoteObject(type){
+  getNoteObject(event, type) {
+    if (type == 'late') {
+      this.SurgeryFormGroup.controls['SurgeryLateNote'].setValue(event.value);
+    } else {
+      this.SurgeryFormGroup.controls['SurgeryCancelNote'].setValue(event.value);
+    }
+  }
+
+  setNoteObject(value, type) {
     let obj = {
-      Row_ID: '',
-      Description: '',
-      Priority: '',
-      Status: 1,
-      Type: ''
+      Row_ID: value,
+      Description: "",
+      Type: "",
+      Priority: "",
+      Status: true
     }
-    if(type == 'late'){
-      this.SurgeryFormGroup.controls['SurgeryLateNote'].setValue(this.surgeryLateNotes.filter(x => x.Row_ID == this.SurgeryFormGroup.controls['SurgeryLateNote'].value)[0]);
-    }else{
-      this.SurgeryFormGroup.controls['SurgeryCancelNote'].setValue(this.surgeryCancelNotes.filter(x => x.Row_ID == this.SurgeryFormGroup.controls['SurgeryCancelNote'].value)[0]);
-    }
-    if(this.SurgeryFormGroup.controls['SurgeryLateNote'].value == null){
+    if (type == 'late') {
       this.SurgeryFormGroup.controls['SurgeryLateNote'].setValue(obj);
-    }
-    if(this.SurgeryFormGroup.controls['SurgeryCancelNote'].value == null){
+    } else {
       this.SurgeryFormGroup.controls['SurgeryCancelNote'].setValue(obj);
     }
   }
@@ -360,12 +376,14 @@ export class ManageSingleSurgeryComponent implements OnInit {
   saveSurgeryDetails() {
     try {
       this.SurgeryFormGroup.controls['DoctorSurgeon'].setValue(this.surgeonCtrl.value);
+      this.setNoteObject(this.SurgeryFormGroup.controls['SurgeryLateNote'].value, 'late');
+      this.setNoteObject(this.SurgeryFormGroup.controls['SurgeryCancelNote'].value, 'cancel');
       // this.SurgeryFormGroup.controls['SurgeryServicesName'].setValue(this.surgeriesCtrl.value);
       this.SurgeryFormGroup.controls['ArrivalDate'].setValue(this.datePipe.transform(this.SurgeryFormGroup.value.ArrivalDate, 'yyyy-MM-dd'));
     } catch (err) {
       this.openSnackBar("שדות לא מולאו");
     }
-    if (this.checkAutoCompleteSelection() && !this.SurgeryFormGroup.invalid) {
+    if (this.checkAutoCompleteSelection() && (!this.SurgeryFormGroup.invalid)) {
       this.confirmationDialogService
         .confirm("נא לאשר..", "האם אתה בטוח ...? ")
         .then((confirmed) => {

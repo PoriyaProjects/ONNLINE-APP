@@ -221,7 +221,7 @@
             <div class="col-6">
                 <mat-form-field class="example-full-width" appearance="fill">
                     <mat-label>סיבת עיכוב</mat-label>
-                    <mat-select formControlName="SurgeryLateNote" (selectionChange)="getNoteObject('late')">
+                    <mat-select formControlName="SurgeryLateNote" (selectionChange)="getNoteObject($event, 'late')">
                         <mat-option *ngFor="let lnt of surgeryLateNotes" [value]="lnt.Row_ID">
                             {{lnt.Description}}
                         </mat-option>
@@ -231,7 +231,7 @@
             <div class="col-6">
                 <mat-form-field class="example-full-width" appearance="fill">
                     <mat-label>סיבת ביטול</mat-label>
-                    <mat-select formControlName="SurgeryCancelNote" (selectionChange)="getNoteObject('cancel')">
+                    <mat-select formControlName="SurgeryCancelNote" (selectionChange)="getNoteObject($event, 'cancel')">
                         <mat-option *ngFor="let cnt of surgeryCancelNotes" [value]="cnt.Row_ID">
                             {{cnt.Description}}
                         </mat-option>
