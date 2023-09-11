@@ -177,7 +177,7 @@
                     </mat-select>
                 </mat-form-field>
                 <mat-form-field>
-                    <textarea matInput placeholder="מספרי טלפון מופרדים עם פסיק*" rows="3"
+                    <textarea matInput placeholder="מספרי טלפון (הפרדה עם פסיק או שורה חדשה)*" rows="3"
                         formControlName="Phone_Number"></textarea>
                 </mat-form-field>
                 <mat-form-field>
@@ -195,7 +195,7 @@
                     <mat-label class="contacts-numbers">{{i+1}}-</mat-label>
                     <mat-form-field>
                         <mat-label>מספר שולח*</mat-label>
-                        <mat-select formControlName="SenderIDFK">
+                        <mat-select formControlName="SenderIDFK" (selectionChange)="test()">
                             <mat-option *ngFor="let phone of sendersList" [value]="phone.Row_ID">
                                 {{phone.Description}}
                             </mat-option>

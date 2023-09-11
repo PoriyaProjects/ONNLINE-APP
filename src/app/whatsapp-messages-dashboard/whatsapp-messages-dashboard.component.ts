@@ -105,6 +105,12 @@ export class WhatsappMessagesDashboardComponent implements OnInit {
     (this.customForm.get('customInputs') as FormArray).clear();
   }
 
+  test() {
+    this.customForm.controls['customInputs'].value.forEach((element, index) => {
+      this.customForm.controls['customInputs']['controls'][index].controls.SenderIDFK.setValue(this.customForm.controls['customInputs'].value[0].SenderIDFK);
+    });
+  }
+
   setMessageTiming(index) {
     if (this.customForm.controls['customInputs']['controls'][index].controls.Message_Timing.value == null)
       this.customForm.controls['customInputs']['controls'][index].controls.Message_Timing.setValue('');
