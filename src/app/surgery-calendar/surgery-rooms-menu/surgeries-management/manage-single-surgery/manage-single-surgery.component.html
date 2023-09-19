@@ -218,49 +218,57 @@
             </div>
         </div>
         <hr>
-        <div class="row surgery-details">
-            <div class="col-4">
-                <mat-form-field class="example-full-width" appearance="fill">
-                    <mat-label>סיבת עיכוב בבוקר</mat-label>
-                    <mat-select formControlName="SurgeryLateMorningNote"
-                        (selectionChange)="getNoteObject($event, 'late1')">
-                        <mat-option *ngFor="let lnt of surgeryLateMorningNotes" [value]="lnt.Row_ID">
-                            {{lnt.Description}}
-                        </mat-option>
-                    </mat-select>
-                </mat-form-field>
+        <div style="border-style: outset;align-items: center;">
+            <div class="row surgery-details">
+                <div class="col-4">
+                    <mat-form-field class="example-full-width" appearance="fill">
+                        <mat-label>סיבת עיכוב בבוקר</mat-label>
+                        <mat-select formControlName="SurgeryLateMorningNote"
+                            (selectionChange)="getNoteObject($event, 'late1')">
+                            <mat-option *ngFor="let lnt of surgeryLateMorningNotes" [value]="lnt.Row_ID">
+                                {{lnt.Description}}
+                            </mat-option>
+                        </mat-select>
+                    </mat-form-field>
+                </div>
+                <div class="col-4">
+                    <mat-form-field class="example-full-width" appearance="fill">
+                        <mat-label>סיבת עיכוב בין ניתוחים</mat-label>
+                        <mat-select formControlName="SurgeryLateNote" (selectionChange)="getNoteObject($event, 'late')">
+                            <mat-option *ngFor="let lnt of surgeryLateNotes" [value]="lnt.Row_ID">
+                                {{lnt.Description}}
+                            </mat-option>
+                        </mat-select>
+                    </mat-form-field>
+                </div>
+                <div class="col-4">
+                    <mat-form-field class="example-full-width" appearance="fill">
+                        <mat-label>סיבת ביטול</mat-label>
+                        <mat-select formControlName="SurgeryCancelNote"
+                            (selectionChange)="getNoteObject($event, 'cancel')">
+                            <mat-option *ngFor="let cnt of surgeryCancelNotes" [value]="cnt.Row_ID">
+                                {{cnt.Description}}
+                            </mat-option>
+                        </mat-select>
+                    </mat-form-field>
+                </div>
             </div>
-            <div class="col-4">
-                <mat-form-field class="example-full-width" appearance="fill">
-                    <mat-label>סיבת עיכוב בין ניתוחים</mat-label>
-                    <mat-select formControlName="SurgeryLateNote" (selectionChange)="getNoteObject($event, 'late')">
-                        <mat-option *ngFor="let lnt of surgeryLateNotes" [value]="lnt.Row_ID">
-                            {{lnt.Description}}
-                        </mat-option>
-                    </mat-select>
-                </mat-form-field>
+            <div class="row">
+                <div class="col-10">
+                    <mat-form-field class="example-full-width" appearance="fill">
+                        <mat-label>סיבה - בהערה</mat-label>
+                        <textarea matInput formControlName="CancelNote"></textarea>
+                    </mat-form-field>
+                </div>
+                <div class="col-2">
+                    <button mat-fab color="warn" aria-label="Example icon button with a delete icon"
+                        (click)="deleteCancelNote()">
+                        <mat-icon>delete</mat-icon>
+                    </button>
+                </div>
             </div>
-            <div class="col-4">
-                <mat-form-field class="example-full-width" appearance="fill">
-                    <mat-label>סיבת ביטול</mat-label>
-                    <mat-select formControlName="SurgeryCancelNote" (selectionChange)="getNoteObject($event, 'cancel')">
-                        <mat-option *ngFor="let cnt of surgeryCancelNotes" [value]="cnt.Row_ID">
-                            {{cnt.Description}}
-                        </mat-option>
-                    </mat-select>
-                </mat-form-field>
-            </div>
-
         </div>
-        <div class="row">
-            <div class="col-12">
-                <mat-form-field class="example-full-width" appearance="fill">
-                    <mat-label>סיבה - בהערה</mat-label>
-                    <textarea matInput formControlName="CancelNote"></textarea>
-                </mat-form-field>
-            </div>
-        </div>
-        <div class="row-btn">
+        <div class="row-btn mt-5">
             <div class="exists-info" *ngIf="patientsList.length != 0 && patientsList[0].ArrivalDate != ''">
                 <h2>למטופל קיים רשומות!</h2><br>
                 <ul>

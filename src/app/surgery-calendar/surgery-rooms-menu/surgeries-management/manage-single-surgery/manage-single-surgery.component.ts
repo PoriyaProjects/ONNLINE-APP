@@ -220,6 +220,13 @@ export class ManageSingleSurgeryComponent implements OnInit {
     }
   }
 
+  deleteCancelNote(){
+    this.SurgeryFormGroup.controls['CancelNote'].setValue('');
+    this.SurgeryFormGroup.controls['SurgeryLateNote'].setValue(null);
+    this.SurgeryFormGroup.controls['SurgeryLateMorningNote'].setValue(null);
+    this.SurgeryFormGroup.controls['SurgeryCancelNote'].setValue(null);
+  }
+
   setNoteObject(value, type) {
     let obj = {
       Row_ID: value,
