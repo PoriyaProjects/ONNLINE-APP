@@ -53,7 +53,6 @@ export class EmployeesAddUpdateComponent implements OnInit {
   ) { }
 
   ngOnInit(): void {
-
     let RankID = this.employee.RankID;
     let DepartnentCode = this.employee.DepartnentCode;
     let WorkPlaceID = this.employee.WorkPlaceID;

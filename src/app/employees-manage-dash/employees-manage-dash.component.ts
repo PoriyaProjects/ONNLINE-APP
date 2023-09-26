@@ -34,6 +34,7 @@ export class EmployeesManageDashComponent implements OnInit {
   WorkPlacesList = [];
   loaded: boolean = false;
   url = environment.url;
+  employee: any;
 
   constructor(
     public dialog: MatDialog,
@@ -43,6 +44,7 @@ export class EmployeesManageDashComponent implements OnInit {
   searchEmployeesGroup: FormGroup;
 
   ngOnInit(): void {
+    this.employee = this.getEmployee();
     if (localStorage.getItem("loginState") == "true") {
       this.getUserDepartmentForEmployees();
       this.searchEmployeesGroup = this.formBuilder.group({
@@ -63,6 +65,71 @@ export class EmployeesManageDashComponent implements OnInit {
       });
 
     }
+  }
+
+  getEmployee(): any {
+    return this.employee = {
+      RowID: "",
+      EmployeeIndex: "",
+      StartWorkDate: "",
+      EmployeeSektorID: "",
+      EmployeeBlossomSektorID: "",
+      Title: "",
+      FunctionID: "",
+      FunctionDescription: "",
+      DepartnentCode: "",
+      DepartnentDescripton: "",
+      JobTitleID: "",
+      EmployeeID: "",
+      FirstName: "",
+      FirstNameEng: "",
+      LastName: "",
+      LastNameEng: "",
+      Gender: "",
+      RankID: "",
+      ADUserName: "",
+      Email: "",
+      PersonalEmail: "",
+      CellNumber: "",
+      WorkPlaceID: "",
+      EndWorkDate: "",
+      DateToEndWork: "",
+      CarType: "",
+      CarType2: "",
+      CarNumber: "",
+      CarNumber2: "",
+      Remarks: "",
+      UpdateDate: "",
+      L_LAT: "",
+      L_LON: "",
+      KupaID: "",
+      KupaName: "",
+      DateOfBirth: "",
+      SentToMOHDate: "",
+      DocLicence: "",
+      DocStartExperience: "",
+      InternLearnCountry: "",
+      InternLearnCountryDesc: "",
+      InternUniversity: "",
+      StatusRow: "",
+      AcceptTerms: "",
+      ApprovedToBlossom: "",
+      Toranot: "",
+      WorkPlace: "",
+      GymParticipation: {
+        Row_ID: "",
+        StartGymDate: "",
+        EndGymDate: "",
+        MedicalProblems: "",
+        MedicalApproval: "",
+        PausePeriod: "",
+        PausePeriodExplain: "",
+        Status: "",
+        EmployeesID: "",
+        GymParticipant: "",
+      },
+      EmployeeBlossomSektor: "",
+    };
   }
 
   getUserDepartmentForEmployees() {
