@@ -255,7 +255,7 @@ export class WhatsappMessagesDashboardComponent implements OnInit {
 
   getEmployeeDepartmentList() {
     this.http
-      .post(environment.url + "GetWhatsappDepartmentList", {
+      .post(environment.url + "GetEmployeeDepartmentList", {
       })
       .subscribe((Response) => {
         this.DepartmentsList = Response["d"];
@@ -264,7 +264,8 @@ export class WhatsappMessagesDashboardComponent implements OnInit {
 
   getEmployeesFunctionsList() {
     this.http
-      .post(environment.url + "GetWhatsappRoleList", {
+      .post(environment.url + "GetEmployeesFunctionsList", {
+        _userName: ""
       })
       .subscribe((Response) => {
         this.FunctionsList = Response["d"];
@@ -273,7 +274,7 @@ export class WhatsappMessagesDashboardComponent implements OnInit {
 
   getSektorsList() {
     this.http
-      .post(environment.url + "GetWhatsappSektorsList", {
+      .post(environment.url + "getEmployeesBlossomSektorList", {
       })
       .subscribe((Response) => {
         this.SektorsList = Response["d"];
@@ -282,7 +283,7 @@ export class WhatsappMessagesDashboardComponent implements OnInit {
 
   getWorkPlacesList() {
     this.http
-      .post(environment.url + "GetWhatsappWorkPlacesList", {
+      .post(environment.url + "GetWorkPlacesList", {
       })
       .subscribe((Response) => {
         this.WorkPlacesList = Response["d"];

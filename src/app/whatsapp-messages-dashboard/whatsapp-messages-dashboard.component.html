@@ -107,8 +107,8 @@
                                                 <mat-option [value]="''">
                                                     הכל </mat-option>
                                                 <mat-option *ngFor="let dept of DepartmentsList"
-                                                    [value]="dept.EmployeeDepartment">
-                                                    {{dept.EmployeeDepartment}} </mat-option>
+                                                    [value]="dept.DepartnentDescripton">
+                                                    {{dept.DepartnentDescripton}} </mat-option>
                                             </mat-select>
                                         </mat-form-field>
                                     </div>
@@ -121,8 +121,8 @@
                                                 <mat-option [value]="''">
                                                     הכל </mat-option>
                                                 <mat-option *ngFor="let func of FunctionsList"
-                                                    [value]="func.EmployeeRole">
-                                                    {{func.EmployeeRole}} </mat-option>
+                                                    [value]="func.FunctionID">
+                                                    {{func.FunctionDescription}} </mat-option>
                                             </mat-select>
                                         </mat-form-field>
                                     </div>
@@ -135,7 +135,7 @@
                                                 <mat-option value="">
                                                     הכל </mat-option>
                                                 <mat-option *ngFor="let sek of SektorsList"
-                                                    [value]="sek.EmployeeSektorBlossomDescription">
+                                                    [value]="sek.EmployeeBlossomSektorID">
                                                     {{sek.EmployeeSektorBlossomDescription}} </mat-option>
                                             </mat-select>
                                         </mat-form-field>
@@ -149,7 +149,7 @@
                                                 <mat-option value="">
                                                     הכל </mat-option>
                                                 <mat-option *ngFor="let work of WorkPlacesList"
-                                                    [value]="work.WorkPlaceDescription ">
+                                                    [value]="work.WorkPlaceID">
                                                     {{work.WorkPlaceDescription}} </mat-option>
                                             </mat-select>
                                         </mat-form-field>
