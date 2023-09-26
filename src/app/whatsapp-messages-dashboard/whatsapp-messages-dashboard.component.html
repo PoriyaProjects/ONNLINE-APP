@@ -51,7 +51,7 @@
                     <div dir="rtl" class="card-body">
                         <form class="form" [formGroup]="searchEmployeesGroup">
                             <div class="row">
-                                <div class="col-3">
+                                <div class="col-2">
                                     <div class="form-group">
                                         <mat-form-field>
                                             <input matInput type="text" autocomplete="off" placeholder="תעודת זהות"
@@ -75,12 +75,25 @@
                                         </mat-form-field>
                                     </div>
                                 </div>
-                                <div class="col-3">
+                                <div class="col-2">
                                     <div class="form-group lh-37">
                                         <mat-form-field>
                                             <mat-label>מספר טלפון</mat-label>
                                             <input type="tel" matInput autocomplete="off" placeholder="מספר טלפון"
                                                 formControlName="PhoneNumber" />
+                                        </mat-form-field>
+                                    </div>
+                                </div>
+                                <div class="col-2">
+                                    <div class="form-group lh-37">
+                                        <mat-form-field>
+                                            <mat-label>מגדר</mat-label>
+                                            <mat-select formControlName="Gender" aria-placeholder="מחלקה">
+                                                <mat-option [value]="''">
+                                                    הכל </mat-option>
+                                                <mat-option value="Male"> זכר </mat-option>
+                                                <mat-option value="Female"> נקבה </mat-option>
+                                            </mat-select>
                                         </mat-form-field>
                                     </div>
                                 </div>
@@ -94,8 +107,8 @@
                                                 <mat-option [value]="''">
                                                     הכל </mat-option>
                                                 <mat-option *ngFor="let dept of DepartmentsList"
-                                                    [value]="dept.DepartnentDescripton">
-                                                    {{dept.DepartnentDescripton}} </mat-option>
+                                                    [value]="dept.EmployeeDepartment">
+                                                    {{dept.EmployeeDepartment}} </mat-option>
                                             </mat-select>
                                         </mat-form-field>
                                     </div>
@@ -108,8 +121,8 @@
                                                 <mat-option [value]="''">
                                                     הכל </mat-option>
                                                 <mat-option *ngFor="let func of FunctionsList"
-                                                    [value]="func.FunctionID">
-                                                    {{func.FunctionDescription}} </mat-option>
+                                                    [value]="func.EmployeeRole">
+                                                    {{func.EmployeeRole}} </mat-option>
                                             </mat-select>
                                         </mat-form-field>
                                     </div>
@@ -122,7 +135,7 @@
                                                 <mat-option value="">
                                                     הכל </mat-option>
                                                 <mat-option *ngFor="let sek of SektorsList"
-                                                    [value]="sek.EmployeeBlossomSektorID">
+                                                    [value]="sek.EmployeeSektorBlossomDescription">
                                                     {{sek.EmployeeSektorBlossomDescription}} </mat-option>
                                             </mat-select>
                                         </mat-form-field>
@@ -136,7 +149,7 @@
                                                 <mat-option value="">
                                                     הכל </mat-option>
                                                 <mat-option *ngFor="let work of WorkPlacesList"
-                                                    [value]="work.WorkPlaceID">
+                                                    [value]="work.WorkPlaceDescription ">
                                                     {{work.WorkPlaceDescription}} </mat-option>
                                             </mat-select>
                                         </mat-form-field>
@@ -161,6 +174,7 @@
     <div class="block">
         <div class="row mb-3" style="display: block;">
             <mat-slide-toggle (click)="changeScreens()" style="float: right;">{{screenTitle}}</mat-slide-toggle>
+            <h3 class="text-center">כמות אנשים: {{total_number_of_reciepents}}</h3>
             <button mat-icon-button *ngIf="!typeOfScreen" color="warn" matTooltip="ניקוי הכל" (click)="deleteAllRow()">
                 <mat-icon>clear</mat-icon>
             </button>
@@ -187,7 +201,8 @@
         </div>
 
         <!-- SEND EACH MESSAGE TO EACH CONTACT -->
-        <div class="dynamic-inputs" [formGroup]="customForm" *ngIf="!typeOfScreen">
+        <div class="dynamic-inputs" [formGroup]="customForm" style="height: 300px;overflow: auto;"
+            *ngIf="!typeOfScreen">
             <div formArrayName="customInputs">
                 <div class="dynamic-fields"
                     *ngFor="let contact of customForm.get('customInputs')['controls']; let i = index"
@@ -226,11 +241,12 @@
                         <mat-label>תזמון הודעה</mat-label>
                         <input matInput [matDatepicker]="picker" formControlName="Message_Timing">
                         <mat-hint>DD/MM/YYYY</mat-hint>
-                        <mat-datepicker-toggle matIconSuffix [for]="picker" (focusout)="SetNewDate(i)"></mat-datepicker-toggle>
+                        <mat-datepicker-toggle matIconSuffix [for]="picker"
+                            (focusout)="SetNewDate(i)"></mat-datepicker-toggle>
                         <mat-datepicker #picker></mat-datepicker>
                     </mat-form-field>
                     <input type="time" class="form-control" formControlName="Message_Timing_Time" placeholder="זמן"
-                        *ngIf="contact.controls['Message_Timing'].value != null" (focusout)="SetNewDate(i)"/>
+                        *ngIf="contact.controls['Message_Timing'].value != null" (focusout)="SetNewDate(i)" />
                     <div>
                         <button mat-icon-button color="warn" matTooltip="מחיקה" (click)="deleteRow(contact, i)">
                             <mat-icon>delete</mat-icon>

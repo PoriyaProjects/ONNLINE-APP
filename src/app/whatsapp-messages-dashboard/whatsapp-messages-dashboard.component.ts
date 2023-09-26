@@ -20,6 +20,7 @@ export class WhatsappMessagesDashboardComponent implements OnInit {
   displayedColumns: string[] = ['sender', 'name', 'number', 'content', 'date'];
   dataSource = new MatTableDataSource([]);
   sendersList = [];
+  total_number_of_reciepents: number = 0;
   customInputs: any[] = [];
   customForm: FormGroup;
   manyContacts: FormGroup;
@@ -46,16 +47,12 @@ export class WhatsappMessagesDashboardComponent implements OnInit {
       EmpID: new FormControl('', null),
       EmpFirstName: new FormControl('', null),
       EmpLastName: new FormControl('', null),
-      On: new FormControl('1', null),
-      MedGrad: new FormControl('0', null),
       PhoneNumber: new FormControl('', null),
+      Gender: new FormControl('', null),
       Department: new FormControl('', null),
       Role: new FormControl('', null),
       Sektor: new FormControl('', null),
-      WorkPlace: new FormControl('', null),
-      StatusRow: new FormControl('2', null),
-      AcceptTerms: new FormControl(false, null),
-      ApprovedToBlossom: new FormControl('2', null),
+      WorkPlace: new FormControl('', null)
     });
     this.customForm = this.fb.group({
       customInputs: this.fb.array([])
@@ -213,49 +210,38 @@ export class WhatsappMessagesDashboardComponent implements OnInit {
   }
 
   GetEmployeesToUpdate() {
+    this.total_number_of_reciepents = 0;
     this.deleteAllRow();
     this.searchProgress = true;
     let empId = this.searchEmployeesGroup.controls['EmpID'].value;
     let empFirstName = this.searchEmployeesGroup.controls['EmpFirstName'].value;
     let empLastName = this.searchEmployeesGroup.controls['EmpLastName'].value;
-    let on = this.searchEmployeesGroup.controls['On'].value;
-    let medGrad = this.searchEmployeesGroup.controls['MedGrad'].value;
     let phoneNumber = this.searchEmployeesGroup.controls['PhoneNumber'].value;
+    let gender = this.searchEmployeesGroup.controls['Gender'].value;
     let department = this.searchEmployeesGroup.controls['Department'].value;
     let role = this.searchEmployeesGroup.controls['Role'].value;
     let sektor = this.searchEmployeesGroup.controls['Sektor'].value;
     let workPlace = this.searchEmployeesGroup.controls['WorkPlace'].value;
-    let StatusRow = this.searchEmployeesGroup.controls['StatusRow'].value;
-    let ApprovedToBlossom = this.searchEmployeesGroup.controls['ApprovedToBlossom'].value;
-    if (empId == "" && empFirstName == "" && empLastName == "" && phoneNumber == "" && department == "" && role == "" && sektor == "" && workPlace == "") {
-      console.log("Too Large Employees List!");
-      this.searchProgress = false;
-    } else {
-      this.http
-        .post(environment.url + "GetEmployeesToUpdate", {
-          _empId: empId,
-          _empFirstName: empFirstName,
-          _empLastName: empLastName,
-          _on: on,
-          _medGrad: medGrad,
-          _phoneNumber: phoneNumber,
-          _department: department,
-          _role: role,
-          _managerType: "admin",
-          _sektor: sektor,
-          _workPlace: workPlace,
-          _statusRow: StatusRow,
-          _approvedToBlossom: ApprovedToBlossom,
-          _userName: ""
-        })
-        .subscribe((Response) => {
-          this.searchProgress = false;
-          let t = Response["d"];
-          for (let i = 0; i < t.length; i++) {
-            this.addInput(t[i].CellNumber, t[i].FirstName + ' ' + t[i].LastName);
-          }
-        });
-    }
+    this.http
+      .post(environment.url + "GetEmployeesForWhatsapp", {
+        _empId: empId,
+        _empFirstName: empFirstName,
+        _empLastName: empLastName,
+        _phoneNumber: phoneNumber,
+        _gender: gender,
+        _department: department,
+        _role: role,
+        _sektor: sektor,
+        _workPlace: workPlace
+      })
+      .subscribe((Response) => {
+        this.searchProgress = false;
+        let t = Response["d"];
+        this.total_number_of_reciepents = t.length;
+        for (let i = 0; i < t.length; i++) {
+          this.addInput(t[i].CellNumber, t[i].FirstName + ' ' + t[i].LastName);
+        }
+      });
   }
 
   fillAllMessageContentFields(id) {
@@ -269,7 +255,7 @@ export class WhatsappMessagesDashboardComponent implements OnInit {
 
   getEmployeeDepartmentList() {
     this.http
-      .post(environment.url + "GetEmployeeDepartmentList", {
+      .post(environment.url + "GetWhatsappDepartmentList", {
       })
       .subscribe((Response) => {
         this.DepartmentsList = Response["d"];
@@ -278,8 +264,7 @@ export class WhatsappMessagesDashboardComponent implements OnInit {
 
   getEmployeesFunctionsList() {
     this.http
-      .post(environment.url + "GetEmployeesFunctionsList", {
-        _userName: ""
+      .post(environment.url + "GetWhatsappRoleList", {
       })
       .subscribe((Response) => {
         this.FunctionsList = Response["d"];
@@ -288,7 +273,7 @@ export class WhatsappMessagesDashboardComponent implements OnInit {
 
   getSektorsList() {
     this.http
-      .post(environment.url + "getEmployeesBlossomSektorList", {
+      .post(environment.url + "GetWhatsappSektorsList", {
       })
       .subscribe((Response) => {
         this.SektorsList = Response["d"];
@@ -297,7 +282,7 @@ export class WhatsappMessagesDashboardComponent implements OnInit {
 
   getWorkPlacesList() {
     this.http
-      .post(environment.url + "GetWorkPlacesList", {
+      .post(environment.url + "GetWhatsappWorkPlacesList", {
       })
       .subscribe((Response) => {
         this.WorkPlacesList = Response["d"];
