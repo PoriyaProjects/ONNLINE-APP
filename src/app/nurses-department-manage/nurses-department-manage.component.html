@@ -48,7 +48,7 @@
 
         </div>
         <div class="col">
-          <h4 style="font-size: 25px;"><b>{{Dept_Name}}</b>  -  {{myDate | date: "dd.MM.yyyy"}}</h4>
+          <h4 style="font-size: 25px;"><b>{{Dept_Name}}</b> - {{myDate | date: "dd.MM.yyyy"}}</h4>
         </div>
         <div class="col">
           <button style="float: right;" matTooltip="דף הבית" *ngIf="ifAdmin == '0'" mat-raised-button type="submit"
@@ -152,6 +152,12 @@
           <button matTooltip="רענון" id="generalClinicalBtn" mat-raised-button type="submit" class="btn btn-raised"
             style="background: lawngreen;" (click)="ngOnInit()">
             <i class="material-icons">refresh</i>
+          </button>
+          <button matTooltipPosition="left" matTooltip="יישומים" id="EventBtndisplay" mat-raised-button type="button"
+            class="btn btn-raised mr-1" style="background-color: goldenrod;" (click)="otherApps()">
+            <span class="material-icons">
+              apps
+            </span>
           </button>
           <!-- <button matTooltip="חזרה לאחות כללית" id="EventBtndisplay" *ngIf="UserName == 'nibrahim'" mat-raised-button
             type="submit" class="btn btn-primary btn-raised" (click)="test()">
@@ -305,3 +311,23 @@
   <app-other-departments [deliveryRoomDialog]="deliveryRoomDialog" *ngIf="deliveryRoomDialog != undefined">
   </app-other-departments>
 </div>
+<!-- Various apps screen -->
+<ng-template #modalOtherApps let-close="close">
+  <!-- <button type="button" class="close" matTooltip="סגירה" aria-label="Close" (click)="closeApps()">
+    <span aria-hidden="true">&times;</span>
+  </button> -->
+  <h1 mat-dialog-title style="text-align: center;">יישומים</h1>
+  <hr>
+  <div class="row">
+    <mat-card class="card-img" style="background-image:url('../../assets/images/handcuffs.jpg');width: 50%;"
+      (click)="openGoogleSheets()">
+      <div class="card-img"><span class="tooltiptext">איזוק
+          אסירים</span></div>
+    </mat-card>
+    <mat-card class="card-img" style="background-image:url('../../assets/images/transferTo.jpg');width: 50%;"
+      (click)="openGoogleSheets2()">
+      <div class="card-img"><span class="tooltiptext">העברה למוסד
+          אחר</span></div>
+    </mat-card>
+  </div>
+</ng-template>

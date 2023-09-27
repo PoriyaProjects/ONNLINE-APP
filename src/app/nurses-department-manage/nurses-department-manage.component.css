@@ -6,6 +6,30 @@
   padding-top: 20px;
 }
 
+.card-img {
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center center;
+  height: 150px;
+}
+
+.card-img:hover .tooltiptext {
+  visibility: visible;
+}
+.card-img .tooltiptext {
+  visibility: hidden;
+  width: 120px;
+  background-color: black;
+  color: #fff;
+  text-align: center;
+  border-radius: 6px;
+  padding: 5px 0;
+
+  /* Position the tooltip */
+  position: absolute;
+  z-index: 1;
+}
+
   @media only screen and (min-width: 1050px) {
 
   .my-container{
