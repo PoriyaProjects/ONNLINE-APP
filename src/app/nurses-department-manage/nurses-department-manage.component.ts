@@ -91,6 +91,7 @@ export class NursesDepartmentManageComponent implements OnInit {
   dataSource2 = new MatTableDataSource<any>();
   dataSourceFullSpare = new MatTableDataSource<any>();
   @ViewChild('modalBug', { static: true }) modalBug: TemplateRef<any>;
+  @ViewChild('modalOtherApps', { static: true }) modalOtherApps: TemplateRef<any>;
 
   applyFilter(event: Event, filval: string) {
     if (filval == '') {
@@ -174,7 +175,7 @@ export class NursesDepartmentManageComponent implements OnInit {
     // });
   }
 
-   getSubmitPlannedToRealse(ifsaved) {
+  getSubmitPlannedToRealse(ifsaved) {
     this.http
       .post("http://srv-apps-prod/RCF_WS/WebService.asmx/GetSubmitPlannedToRealse", {
         _plannedToRelease: this.departmentRelease.controls['plannedToRelease'].value,
@@ -193,6 +194,10 @@ export class NursesDepartmentManageComponent implements OnInit {
   closeModal() {
     // this.checkIfToRefresh(false);
     this.dialogRef.close();
+  }
+
+  closeApps() {
+    this.dialog.closeAll();
   }
 
   openSnackBar(message) {
@@ -277,6 +282,18 @@ export class NursesDepartmentManageComponent implements OnInit {
   //   this.getPatientsPerDepart(this.event, '');
   // }
 
+
+  openGoogleSheets() {
+    window.open("https://docs.google.com/spreadsheets/d/1045oyB5WpXvgKHnIoxBgRHVxWqnXeTWnOVoo1YRpE84/edit?usp=sharing", "_blank");
+  }
+
+  openGoogleSheets2() {
+    window.open("https://docs.google.com/spreadsheets/d/1as8TwO3WurD4Mn8aIuaDVbtMHyr6Bgu_bGS1w91TPA4/edit?usp=sharing", "_blank");
+  }
+
+  otherApps() {
+    this.dialog.open(this.modalOtherApps, { width: '60%', disableClose: false });
+  }
 
   getDepartDetails() {
     this.http
