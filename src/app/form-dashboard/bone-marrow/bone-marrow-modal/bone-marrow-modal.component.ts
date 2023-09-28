@@ -233,21 +233,27 @@ export class BoneMarrowModalComponent implements OnInit {
       })
       .subscribe((Response) => {
         if (Response["d"]) {
-          this.imageForm.controls['ImagesList'].value.forEach(element => {
-            this.http
-              .post(environment.url + "SaveBoneMarrowImages", {
-                _imageForm: element,
-                _formIDFK: Response["d"],
-              })
-              .subscribe((Response) => {
-                if (Response["d"]) {
-                  this.openSnackBar("נשמר בהצלחה");
-                  this.closeModal();
-                } else {
-                  this.openSnackBar("משהו השתבש, לא נשמר");
-                }
-              });
-          });
+          if (this.imageForm.controls['ImagesList'].value.length > 0) {
+            this.imageForm.controls['ImagesList'].value.forEach(element => {
+              this.http
+                .post(environment.url + "SaveBoneMarrowImages", {
+                  _imageForm: element,
+                  _formIDFK: Response["d"],
+                })
+                .subscribe((Response) => {
+                  if (Response["d"]) {
+                    this.openSnackBar("נשמר בהצלחה");
+                    this.closeModal();
+                  } else {
+                    this.openSnackBar("משהו השתבש, לא נשמר");
+                  }
+                });
+            });
+          }
+          else {
+            this.openSnackBar("נשמר בהצלחה");
+            this.closeModal();
+          }
         } else {
           this.openSnackBar("משהו השתבש, לא נשמר");
         }

@@ -184,7 +184,7 @@ export class BoneMarrowComponent implements OnInit {
           </div>
           <div class="row" dir="rtl" style="display: flex;">
               <div class="col-12" style="width: 100%;text-align: center;float: right;">
-                  <p>תאריך: `+ data.RecievingDate + `</p>
+                  <p>תאריך: `+ data.ReceiveDate + `</p>
               </div>
           </div>
           <div class="col-2" style="float: right;">
