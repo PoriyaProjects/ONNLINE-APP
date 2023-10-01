@@ -174,7 +174,7 @@
     <div class="block">
         <div class="row mb-3" style="display: block;">
             <mat-slide-toggle (click)="changeScreens()" style="float: right;">{{screenTitle}}</mat-slide-toggle>
-            <h3 class="text-center">כמות אנשים: {{total_number_of_reciepents}}</h3>
+            <h3 class="text-center" *ngIf="!typeOfScreen">כמות אנשים: {{total_number_of_reciepents}}</h3>
             <button mat-icon-button *ngIf="!typeOfScreen" color="warn" matTooltip="ניקוי הכל" (click)="deleteAllRow()">
                 <mat-icon>clear</mat-icon>
             </button>
