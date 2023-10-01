@@ -96,10 +96,12 @@ export class WhatsappMessagesDashboardComponent implements OnInit {
       (this.customForm.get('customInputs') as FormArray).removeAt(index);
       this.cd.detectChanges();
     }
+    this.total_number_of_reciepents = this.total_number_of_reciepents - 1;
   }
 
   deleteAllRow() {
     (this.customForm.get('customInputs') as FormArray).clear();
+    this.total_number_of_reciepents = 0;
   }
 
   test() {
