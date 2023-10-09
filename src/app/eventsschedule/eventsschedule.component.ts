@@ -133,7 +133,9 @@ export class EventsscheduleComponent implements OnInit {
         this.pageSize = 50;
         this.EventCatID = "-1";
         this.EventDeskID = "-1";
-        this.Sdate = new FormControl(new Date());
+        let temp = new Date();
+        temp.setDate(temp.getDate()-1);
+        this.Sdate = new FormControl(temp);
         this.Edate = new FormControl(new Date());
         this.startdateVal = this.Sdate.value;
         this.enddateVal = this.Edate.value;
