@@ -148,10 +148,16 @@
                                         </div>
                                     </div>
                                     <div class="row">
-                                        <div class="col-12">
+                                        <div class="col-6">
                                             <mat-card class="other-cards pb-4"
                                                 (click)="!onlyDisplay && getOtherDepartmentDetails('ICUDepart')">
                                                 <h5 style="margin: -12px;">מחלקה לרפואה דחופה</h5>
+                                            </mat-card>
+                                        </div>
+                                        <div class="col-6">
+                                            <mat-card class="other-cards pb-4"
+                                                (click)="!onlyDisplay && getOtherDepartmentDetails('Aran')">
+                                                <h5 style="margin: -12px;">אר"ן</h5>
                                             </mat-card>
                                         </div>
                                     </div>
@@ -557,7 +563,8 @@
     </button>
     <button mat-raised-button class="m-2" color="primary" (click)="openGoogleSheets()" matTooltip="איזוק אסירים">איזוק
         אסירים</button>
-    <button mat-raised-button class="m-2" color="primary" (click)="openGoogleSheets2()" matTooltip="העברה למוסד אחר">העברה למוסד
+    <button mat-raised-button class="m-2" color="primary" (click)="openGoogleSheets2()"
+        matTooltip="העברה למוסד אחר">העברה למוסד
         אחר</button>
     <button mat-raised-button color="primary" (click)="openGoogleSheets3()" matTooltip="ניהול שצ'י">ניהול שצ'י</button>
     <h1 mat-dialog-title style="text-align: center;">יישומים</h1>

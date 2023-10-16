@@ -56,39 +56,12 @@
         (click)="getSubmitChanges('1')">
         <i class="material-icons">save</i>
     </button>
-    <!-- <div class="row p-3">
-        <div class="col">
-            <button matTooltip="מטופלים במחלקת" type="button" id="EventBtn2" mat-fab color="primary">
-                <i class="material-icons">arrow_circle_down</i>
-            </button>
-        </div>
-    </div> -->
-    <!-- <hr> -->
-    <!-- <h4>רשימת מטופלות במחלקה <b>
-        </b></h4> -->
-
     <div dir="rtl">
         <mat-form-field class="float-right text-right" appearance="standard">
             <mat-label>מסנן</mat-label>
             <input matInput (keyup)="applyFilter($event,'')" #input>
         </mat-form-field>
     </div>
-    <!-- <div dir="rtl" class="mb-3 text-center">
-        <mat-list role="list" id="list_of_types">
-            <mat-list-item role="listitem"><button type="button" id="details-btn" (click)="applyFilter($event,'')"
-                    mat-raised-button style="background-image: linear-gradient(grey, aquamarine);">
-                    הכל
-                </button></mat-list-item>
-            <mat-list-item role="listitem"><button type="button" id="details-btn" (click)="applyFilter($event,'ACTIVE')"
-                    mat-raised-button style="background-color: aquamarine;">
-                    מטופלות כעת
-                </button></mat-list-item>
-            <mat-list-item role="listitem"><button type="button" id="details-btn" (click)="applyFilter($event,'NOT')"
-                    mat-raised-button style="background-color: grey;">
-                    השתחררו
-                </button></mat-list-item>
-        </mat-list>
-    </div> -->
     <table dir="rtl" mat-table [dataSource]="dataSource3_2" class="mat-elevation-z8" id="patientsTable"
         style="width: 100%;">
 
@@ -129,6 +102,57 @@
 
         <tr mat-header-row *matHeaderRowDef="columnsToDisplay1_2"></tr>
         <tr mat-row *matRowDef="let row;let even=even; columns: columnsToDisplay1_2;"></tr>
+
+    </table>
+</form>
+
+<form class="form" *ngIf="aran">
+    <h4><b style="margin-left: 120px;">דו"ח אר"ן </b> <span>{{newDate | date: "dd.MM.yyyy"}}</span>
+    </h4>
+    <div dir="rtl">
+        <mat-form-field class="float-right text-right" appearance="standard">
+            <mat-label>מסנן</mat-label>
+            <input matInput (keyup)="applyFilter4($event)" #input>
+        </mat-form-field>
+    </div>
+    <table dir="rtl" mat-table [dataSource]="dataSource6_1" class="mat-elevation-z8" id="patientsTable"
+        style="width: 100%;">
+
+        <ng-container matColumnDef="casenumber">
+            <th mat-header-cell *matHeaderCellDef> מספר מקרה </th>
+            <td mat-cell *matCellDef="let element"> {{element.CaseNumber}} </td>
+        </ng-container>
+        <ng-container matColumnDef="idnumber">
+            <th mat-header-cell *matHeaderCellDef> תעודת זהות </th>
+            <td mat-cell *matCellDef="let element"> {{element.PatientId}} </td>
+        </ng-container>
+        <ng-container matColumnDef="firstname">
+            <th mat-header-cell *matHeaderCellDef> שם פרטי </th>
+            <td mat-cell *matCellDef="let element"> {{element.PatientFirstName}} </td>
+        </ng-container>
+        <ng-container matColumnDef="lastname">
+            <th mat-header-cell *matHeaderCellDef> שם משפחה </th>
+            <td mat-cell *matCellDef="let element"> {{element.PatientLastName}} </td>
+        </ng-container>
+        <ng-container matColumnDef="date2">
+            <th mat-header-cell *matHeaderCellDef> תאריך קבלה </th>
+            <td mat-cell *matCellDef="let element"> {{element.DateIn}} </td>
+        </ng-container>
+        <ng-container matColumnDef="time">
+            <th mat-header-cell *matHeaderCellDef> שעת קבלה </th>
+            <td mat-cell *matCellDef="let element"> {{element.TimeIn}} </td>
+        </ng-container>
+        <ng-container matColumnDef="department">
+            <th mat-header-cell *matHeaderCellDef> מחלקה </th>
+            <td mat-cell *matCellDef="let element"> {{element.departNur}} </td>
+        </ng-container>
+        <ng-container matColumnDef="aranplace">
+            <th mat-header-cell *matHeaderCellDef> מיקום אר"ן </th>
+            <td mat-cell *matCellDef="let element"> {{element.AranPalce}} </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="columnsToDisplay4_2"></tr>
+        <tr mat-row *matRowDef="let row;let even=even; columns: columnsToDisplay4_2;"></tr>
 
     </table>
 </form>

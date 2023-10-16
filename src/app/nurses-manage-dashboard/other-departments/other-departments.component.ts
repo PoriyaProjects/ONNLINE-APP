@@ -5,6 +5,7 @@ import { FormControl, FormGroup } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar, MatSnackBarHorizontalPosition, MatSnackBarVerticalPosition } from '@angular/material/snack-bar';
 import { MatTableDataSource } from '@angular/material/table';
+import { environment } from 'src/environments/environment';
 
 @Component({
   selector: 'app-other-departments',
@@ -19,18 +20,20 @@ export class OtherDepartmentsComponent implements OnInit {
   horizontalPosition: MatSnackBarHorizontalPosition = 'start';
   verticalPosition: MatSnackBarVerticalPosition = 'bottom';
 
-  columnsToDisplay1: string[] = ['all','regular', 'imperial', 'other', 'beforebirth', 'beforesurgery'];
+  columnsToDisplay1: string[] = ['all', 'regular', 'imperial', 'other', 'beforebirth', 'beforesurgery'];
   columnsToDisplay1_2: string[] = ['casenumber', 'firstname', 'lastname', 'birthtype', 'date', 'time', 'birthweek'];
   columnsToDisplay2: string[] = ['inprogress', 'waiting', 'completed', 'canceled'];
-  columnsToDisplay2_2: string[] = ['casenumber', 'area', 'room', 'departname','fullname', 'surgeryname', 'date', 'starttime', 'endtime', 'status'];
+  columnsToDisplay2_2: string[] = ['casenumber', 'area', 'room', 'departname', 'fullname', 'surgeryname', 'date', 'starttime', 'endtime', 'status'];
   columnsToDisplay3: string[] = ['all', 'shockroom', 'lyingdown', 'standing', 'women', 'child'];
   columnsToDisplay3_2: string[] = ['casenumber', 'departmed', 'patientlastname', 'patientfirstname', 'dadname', 'age', 'gender', 'datein', 'timein'];
+  columnsToDisplay4_2: string[] = ['casenumber', 'idnumber', 'firstname', 'lastname', 'date2', 'time', 'department', 'aranplace'];
   dataSource3 = new MatTableDataSource<any>();
   dataSource4 = new MatTableDataSource<any>();
   dataSource5 = new MatTableDataSource<any>();
   dataSource3_2 = new MatTableDataSource<any>();
   dataSource4_2 = new MatTableDataSource<any>();
   dataSource5_2 = new MatTableDataSource<any>();
+  dataSource6_1 = new MatTableDataSource<any>();
 
   applyFilter(event: Event, filval) {
     if (filval == '') {
@@ -55,6 +58,10 @@ export class OtherDepartmentsComponent implements OnInit {
       this.dataSource5_2.filter = filterValue;
     }
   }
+  applyFilter4(event: Event) {
+    const filterValue = (event.target as HTMLInputElement).value;
+    this.dataSource4_2.filter = filterValue;
+  }
 
   constructor(public dialog: MatDialog,
     private http: HttpClient,
@@ -66,6 +73,7 @@ export class OtherDepartmentsComponent implements OnInit {
   IcuPatientsBar: boolean;
   delivery: boolean;
   surgery: boolean;
+  aran: boolean;
   ICU: boolean;
   ICUDetails: boolean;
   deliveryRoomForm: FormGroup;
@@ -76,6 +84,7 @@ export class OtherDepartmentsComponent implements OnInit {
   myDate = this.datePipe.transform(this.date, 'yyyy-MM-dd');
 
   ngOnInit(): void {
+    this.aran = false;
     this.delivery = false;
     this.surgery = false;
     this.ICU = false;
@@ -139,7 +148,7 @@ export class OtherDepartmentsComponent implements OnInit {
     this.newDate = pipe.transform(dte.toString(), 'yyyy-MM-dd');
     this.dateToDisplayString = pipe.transform(dateToDisplay.toString(), 'yyyy-MM-dd');
     this.http
-      .post("http://srv-apps-prod/RCF_WS/WebService.asmx/GetOtherDepartmentDetails", {
+      .post(environment.url + "GetOtherDepartmentDetails", {
         _otherDepartName: this.otherDepartName,
         _dateToLook: this.newDate
       })
@@ -148,6 +157,7 @@ export class OtherDepartmentsComponent implements OnInit {
         // let data2 = [];
         if (Response["d"][0].ImperialBirth != null) {
           this.delivery = true;
+          this.aran = false;
           this.surgery = false;
           this.ICU = false;
           data.push(Response["d"][0]);
@@ -156,13 +166,21 @@ export class OtherDepartmentsComponent implements OnInit {
           this.dataSource3_2 = new MatTableDataSource<any>(Response["d"][1]);
         } else if (Response["d"][0].SurgeryCountInProgress != null) {
           this.surgery = true;
+          this.aran = false;
           this.delivery = false;
           this.ICU = false;
           data.push(Response["d"][0]);
           this.dataSource4 = new MatTableDataSource<any>(data);
           this.dataSource4_2 = new MatTableDataSource<any>(Response["d"][1]);
+        } else if (Response["d"][0].Aran != null) {
+          this.aran = true;
+          this.surgery = false;
+          this.delivery = false;
+          this.ICU = false;
+          this.dataSource6_1 = new MatTableDataSource<any>(Response["d"][1]);
         } else {
           this.ICU = true;
+          this.aran = false;
           this.delivery = false;
           this.surgery = false;
           this.dataSource5 = new MatTableDataSource<any>(Response["d"]);

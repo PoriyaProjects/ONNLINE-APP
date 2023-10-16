@@ -314,7 +314,7 @@ export class NursesManageDashboardComponent implements OnInit {
     window.open("https://biot.co.il/session/lockscreen", "_blank");
   }
   onCall() {
-    window.open("https://oncall.omnitelecom.com/", "_blank");
+    window.open("https://oncallv2.omnitelecom.com/", "_blank");
   }
 
   // NursesSystemPermission() {

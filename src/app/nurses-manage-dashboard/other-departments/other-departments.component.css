@@ -49,6 +49,9 @@
   .mat-column-status{
     width: 75px !important;
   }
+  .mat-column-date2{
+    width: 120px !important;
+  }
  
   th.mat-header-cell, td.mat-cell, td.mat-footer-cell {
     padding: 0;
