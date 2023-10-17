@@ -13,6 +13,7 @@ import {
 } from '@angular/material/snack-bar';
 import { DatePipe } from '@angular/common';
 import { interval, Subscription } from 'rxjs';
+import { environment } from 'src/environments/environment';
 
 @Component({
   selector: 'bug-report-component',
@@ -325,7 +326,7 @@ export class NursesDepartmentManageComponent implements OnInit {
   getPatientsPerDepart(event: Event, subDepart: string) {
     this.Patientsloading = true;
     this.http
-      .post("http://srv-apps-prod/RCF_WS/WebService.asmx/GetPatientsPerDepart", {
+      .post(environment.url + "GetPatientsPerDepart", {
         _departCode: this.departCode,
         _datePointer: ""
       })

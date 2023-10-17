@@ -157,7 +157,8 @@
                                         <div class="col-6">
                                             <mat-card class="other-cards pb-4"
                                                 (click)="!onlyDisplay && getOtherDepartmentDetails('Aran')">
-                                                <h5 style="margin: -12px;">אר"ן</h5>
+                                                <h5 style="margin: -12px;" *ngIf="!Aran_Color">אר"ן</h5>
+                                                <h5 style="margin: -12px;background-color: red;" *ngIf="Aran_Color">אר"ן</h5>
                                             </mat-card>
                                         </div>
                                     </div>
