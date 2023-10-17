@@ -35,6 +35,7 @@ export class NursesManageDashboardComponent implements OnInit {
   nursesUserPermission: boolean = false;
   privateIP;
   publicIP;
+  Aran_Color: boolean;
   updateDate = new Date();
   // localIp = localStorage.getItem('LOCAL_IP');
 
@@ -345,11 +346,11 @@ export class NursesManageDashboardComponent implements OnInit {
   openGoogleSheets() {
     window.open("https://docs.google.com/spreadsheets/d/1045oyB5WpXvgKHnIoxBgRHVxWqnXeTWnOVoo1YRpE84/edit?usp=sharing", "_blank");
   }
-  
+
   openGoogleSheets2() {
     window.open("https://docs.google.com/spreadsheets/d/1as8TwO3WurD4Mn8aIuaDVbtMHyr6Bgu_bGS1w91TPA4/edit?usp=sharing", "_blank");
   }
-  
+
   openGoogleSheets3() {
     window.open("https://docs.google.com/spreadsheets/d/1ztL0tg1J3pn0OfpOHjkkn9O2ylffh84YweUoFWUdHK8/edit?usp=sharing", "_blank");
   }
@@ -406,6 +407,8 @@ export class NursesManageDashboardComponent implements OnInit {
           _ipAddress7 = this.all_nursing_departments_array[0].IpAddress7;
           _tabletAddress = this.all_nursing_departments_array[0].TabletAddress;
           _adminNurse = this.all_nursing_departments_array[0].AdminNurse;
+          let check_Aran = this.all_nursing_departments_array.filter(x => x.AranNumber != "0");
+          if (check_Aran.length > 0) this.Aran_Color = true;
         }
         if (this.UserName == "clalit") {
           this.rightPC = false;

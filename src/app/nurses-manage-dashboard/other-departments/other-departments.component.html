@@ -150,6 +150,10 @@
             <th mat-header-cell *matHeaderCellDef> מיקום אר"ן </th>
             <td mat-cell *matCellDef="let element"> {{element.AranPalce}} </td>
         </ng-container>
+        <ng-container matColumnDef="aranstatus">
+            <th mat-header-cell *matHeaderCellDef> סטטוס אר"ן </th>
+            <td mat-cell *matCellDef="let element"> {{element.AranStatus}} </td>
+        </ng-container>
 
         <tr mat-header-row *matHeaderRowDef="columnsToDisplay4_2"></tr>
         <tr mat-row *matRowDef="let row;let even=even; columns: columnsToDisplay4_2;"></tr>
