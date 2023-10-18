@@ -122,10 +122,6 @@
             <th mat-header-cell *matHeaderCellDef> מספר מקרה </th>
             <td mat-cell *matCellDef="let element"> {{element.CaseNumber}} </td>
         </ng-container>
-        <ng-container matColumnDef="idnumber">
-            <th mat-header-cell *matHeaderCellDef> תעודת זהות </th>
-            <td mat-cell *matCellDef="let element"> {{element.PatientId}} </td>
-        </ng-container>
         <ng-container matColumnDef="firstname">
             <th mat-header-cell *matHeaderCellDef> שם פרטי </th>
             <td mat-cell *matCellDef="let element"> {{element.PatientFirstName}} </td>
@@ -133,6 +129,18 @@
         <ng-container matColumnDef="lastname">
             <th mat-header-cell *matHeaderCellDef> שם משפחה </th>
             <td mat-cell *matCellDef="let element"> {{element.PatientLastName}} </td>
+        </ng-container>
+        <ng-container matColumnDef="fathername">
+            <th mat-header-cell *matHeaderCellDef> שם אבא </th>
+            <td mat-cell *matCellDef="let element"> {{element.PatientFatherName}} </td>
+        </ng-container>
+        <ng-container matColumnDef="age">
+            <th mat-header-cell *matHeaderCellDef> גיל </th>
+            <td mat-cell *matCellDef="let element"> {{element.H_DOB}} </td>
+        </ng-container>
+        <ng-container matColumnDef="gender">
+            <th mat-header-cell *matHeaderCellDef> מין </th>
+            <td mat-cell *matCellDef="let element"> {{element.PatientGender}} </td>
         </ng-container>
         <ng-container matColumnDef="date2">
             <th mat-header-cell *matHeaderCellDef> תאריך קבלה </th>
@@ -147,11 +155,11 @@
             <td mat-cell *matCellDef="let element"> {{element.departNur}} </td>
         </ng-container>
         <ng-container matColumnDef="aranplace">
-            <th mat-header-cell *matHeaderCellDef> מיקום אר"ן </th>
+            <th mat-header-cell *matHeaderCellDef> גורם מפנה </th>
             <td mat-cell *matCellDef="let element"> {{element.AranPalce}} </td>
         </ng-container>
         <ng-container matColumnDef="aranstatus">
-            <th mat-header-cell *matHeaderCellDef> סטטוס אר"ן </th>
+            <th mat-header-cell *matHeaderCellDef> דרגת פציעה </th>
             <td mat-cell *matCellDef="let element"> {{element.AranStatus}} </td>
         </ng-container>
 

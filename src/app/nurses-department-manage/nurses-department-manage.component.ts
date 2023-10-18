@@ -103,6 +103,9 @@ export class NursesDepartmentManageComponent implements OnInit {
       if (filval == "מונשם") {
         let newArr = this.dataSource2.filteredData.filter((obj) => obj.SSP_DESCRIPTION.includes(filval));
         this.dataSource2 = new MatTableDataSource<any>(newArr);
+      }else if (filval == "ארן") {
+        let newArr = this.dataSource2.filteredData.filter((obj) => obj.AranStatus !== '');
+        this.dataSource2 = new MatTableDataSource<any>(newArr);
       } else {
         this.dataSource2 = this.dataSourceFullSpare;
         this.dataSource2.filter = filval;
@@ -138,6 +141,7 @@ export class NursesDepartmentManageComponent implements OnInit {
   IsolationCount: string = "0";
   PhLimitationCount: string = "0";
   CoronaStatus: string = '';
+  AranStatus: string = '';
   departmentRelease: FormGroup;
   UserName = localStorage.getItem("loginUserName").toLowerCase();
   date = new Date();
@@ -350,6 +354,7 @@ export class NursesDepartmentManageComponent implements OnInit {
 
         if (this.dataSource2.filteredData.length > 0) {
           let coronaExists = this.dataSource2.filteredData.filter((obj) => obj.CoronaStatus === 'מאומת קורונה').length;
+          let aranExists = this.dataSource2.filteredData.filter((obj) => obj.AranStatus !== '').length;
           this.RespiratorsCount = this.dataSource2.filteredData.filter((obj) => obj.SSP_DESCRIPTION.includes('מונשם')).length.toString();
           this.CatheterCount = this.dataSource2.filteredData.filter((obj) => obj.SSP_DESCRIPTION.includes('שתן')).length.toString();
           this.CentralCatheterCount = this.dataSource2.filteredData.filter((obj) => obj.SSP_DESCRIPTION.includes('מרכזי')).length.toString();
@@ -357,6 +362,9 @@ export class NursesDepartmentManageComponent implements OnInit {
           this.PhLimitationCount = this.dataSource2.filteredData.filter((obj) => obj.SSP_DESCRIPTION.includes('פיזית')).length.toString();
           if (coronaExists > 0) {
             this.CoronaStatus = '1'
+          }
+          if (aranExists > 0) {
+            this.AranStatus = '1'
           }
         }
         if (subDepart != '') {
