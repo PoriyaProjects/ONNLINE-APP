@@ -26,7 +26,7 @@ export class OtherDepartmentsComponent implements OnInit {
   columnsToDisplay2_2: string[] = ['casenumber', 'area', 'room', 'departname', 'fullname', 'surgeryname', 'date', 'starttime', 'endtime', 'status'];
   columnsToDisplay3: string[] = ['all', 'shockroom', 'lyingdown', 'standing', 'women', 'child'];
   columnsToDisplay3_2: string[] = ['casenumber', 'departmed', 'patientlastname', 'patientfirstname', 'dadname', 'age', 'gender', 'datein', 'timein'];
-  columnsToDisplay4_2: string[] = ['casenumber', 'idnumber', 'firstname', 'lastname', 'date2', 'time', 'department', 'aranplace', 'aranstatus'];
+  columnsToDisplay4_2: string[] = ['casenumber', 'firstname', 'lastname', 'fathername', 'age', 'gender', 'date2', 'time', 'department', 'aranplace', 'aranstatus'];
   dataSource3 = new MatTableDataSource<any>();
   dataSource4 = new MatTableDataSource<any>();
   dataSource5 = new MatTableDataSource<any>();
