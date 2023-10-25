@@ -391,6 +391,26 @@
                                     <span *ngIf="AcceptTerms == '0'">לא חתם על טופס סודיות</span>
                                 </div>
                             </div>
+                            <div class="col-3">
+                                <mat-form-field appearance="fill" class="example-full-width">
+                                    <span matPrefix>JCP מתאריך &nbsp;</span>
+                                    <input matInput formControlName="JcpFromDate" placeholder="מתאריך"
+                                        [matDatepicker]="picker7" (focus)="picker7.open()">
+                                    <mat-datepicker-toggle matSuffix [for]="picker7">
+                                    </mat-datepicker-toggle>
+                                    <mat-datepicker #picker7></mat-datepicker>
+                                </mat-form-field>
+                            </div>
+                            <div class="col-3">
+                                <mat-form-field appearance="fill" class="example-full-width">
+                                    <span matPrefix>JCP עד תאריך &nbsp;</span>
+                                    <input matInput formControlName="JcpToDate" placeholder="עד תאריך"
+                                        [matDatepicker]="picker8" (focus)="picker8.open()">
+                                    <mat-datepicker-toggle matSuffix [for]="picker8">
+                                    </mat-datepicker-toggle>
+                                    <mat-datepicker #picker8></mat-datepicker>
+                                </mat-form-field>
+                            </div>
                         </div>
                     </ol>
                 </form>

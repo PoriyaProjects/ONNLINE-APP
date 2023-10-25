@@ -132,6 +132,8 @@ export class EmployeesAddUpdateComponent implements OnInit {
       ApprovedToBlossom: new FormControl(this.employee.ApprovedToBlossom, null),
       AcceptTerms: new FormControl(this.employee.AcceptTerms, null),
       Toranot: new FormControl(this.employee.Toranot, null),
+      JcpFromDate: new FormControl(this.employee.JcpFromDate, null),
+      JcpToDate: new FormControl(this.employee.JcpToDate, null),
     });
     if (this.employee.RowID == null || this.employee.StatusRow == "1") {
       this.employeePersonalDetails.controls['FirstNameEng'].setValidators(Validators.required);
@@ -414,6 +416,8 @@ export class EmployeesAddUpdateComponent implements OnInit {
     this.employeeWorkDetails.controls['DateToEndWork'].setValue(pipe.transform(this.employeeWorkDetails.controls['DateToEndWork'].value, 'yyyy-MM-dd'));
     this.employeePersonalDetails.controls['DateOfBirth'].setValue(pipe.transform(this.employeePersonalDetails.controls['DateOfBirth'].value, 'yyyy-MM-dd'));
     this.gymDetails.controls['StartGymDate'].setValue(pipe.transform(this.gymDetails.controls['StartGymDate'].value, 'yyyy-MM-dd'));
+    this.employeeWorkDetails.controls['JcpFromDate'].setValue(pipe.transform(this.employeeWorkDetails.controls['JcpFromDate'].value, 'yyyy-MM-dd'));
+    this.employeeWorkDetails.controls['JcpToDate'].setValue(pipe.transform(this.employeeWorkDetails.controls['JcpToDate'].value, 'yyyy-MM-dd'));
     if (this.employeeWorkDetails.controls['StatusRow'].value == null || this.employeeWorkDetails.controls['StatusRow'].value == "0") {
       this.employeeWorkDetails.controls['StatusRow'].setValue('0');
       this.employeePersonalDetails.controls['FirstNameEng'].setValidators(null);

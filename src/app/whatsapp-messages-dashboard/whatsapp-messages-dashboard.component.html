@@ -178,7 +178,11 @@
             <button mat-icon-button *ngIf="!typeOfScreen" color="warn" matTooltip="ניקוי הכל" (click)="deleteAllRow()">
                 <mat-icon>clear</mat-icon>
             </button>
-        </div><br><br>
+        </div>
+        <div class="file-upload-button" *ngIf="customForm.get('customInputs')['controls'].length > 0 && !typeOfScreen">
+            <input type="file" (change)="onFileSelected($event)" accept=".pdf, image/*">
+        </div>
+        <br><br>
         <!-- SEND THE SAME MESSAGE TO MANY CONTACTS -->
         <div class="dynamic-inputs" [formGroup]="manyContacts" *ngIf="typeOfScreen">
             <div class="dynamic-fields">
@@ -197,6 +201,9 @@
                 <mat-form-field>
                     <textarea matInput placeholder="תוכן ההודעה*" rows="3" formControlName="Message_Content"></textarea>
                 </mat-form-field>
+                <div>
+                    <input type="file" (change)="onFileSelected($event)" accept=".pdf, image/*">
+                </div>
             </div>
         </div>
 
@@ -204,6 +211,7 @@
         <div class="dynamic-inputs" [formGroup]="customForm" style="height: 300px;overflow: auto;"
             *ngIf="!typeOfScreen">
             <div formArrayName="customInputs">
+
                 <div class="dynamic-fields"
                     *ngFor="let contact of customForm.get('customInputs')['controls']; let i = index"
                     [formGroupName]="i">
@@ -309,7 +317,7 @@
             <hr>
             <button mat-raised-button
                 style="background-color: #00a884;color: whitesmoke;margin-top: 20px;transform: rotate(180deg);"
-                matTooltip="שליחה" (click)="sendMessages()"><mat-icon>send</mat-icon></button>
+                matTooltip="שליחה" (click)="uploadFiles()"><mat-icon>send</mat-icon></button>
         </div>
     </div>
 </div>
