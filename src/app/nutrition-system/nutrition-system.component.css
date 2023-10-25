@@ -1,0 +1,19 @@
+.search-bar{
+    border-style: outset;
+    padding: 22px;
+}
+
+.button{
+    margin: 10px;
+}
+
+table {
+    height: 450px;
+    overflow-y: scroll;
+    width: 100%;
+    display: grid;
+}
+
+a{
+    cursor: pointer;
+}

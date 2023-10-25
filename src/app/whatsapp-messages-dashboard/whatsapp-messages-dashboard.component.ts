@@ -33,6 +33,7 @@ export class WhatsappMessagesDashboardComponent implements OnInit {
   screenTitle = 'אישי';
   searchProgress: boolean = false;
   username = localStorage.getItem('loginUserName');
+  selectedFiles: FileList | null;
 
   constructor(
     private http: HttpClient,
@@ -60,7 +61,8 @@ export class WhatsappMessagesDashboardComponent implements OnInit {
     this.manyContacts = this.fb.group({
       Phone_Number: new FormControl('', Validators.required),
       Message_Content: new FormControl('', Validators.required),
-      SenderIDFK: new FormControl('1', Validators.required)
+      SenderIDFK: new FormControl('1', Validators.required),
+      File_Path: new FormControl(null, null)
     });
     // this.getWhatsAppMessagesFromServer();
     this.getWhatsAppSendersFromServer();
@@ -87,6 +89,7 @@ export class WhatsappMessagesDashboardComponent implements OnInit {
       SenderIDFK: new FormControl('1', Validators.required),
       Message_Timing: new FormControl(null, null),
       Message_Timing_Time: new FormControl(null, null),
+      File_Path: new FormControl(null, null)
     });
     (<FormArray>this.customForm.get('customInputs')).push(contact);
   }
@@ -125,9 +128,19 @@ export class WhatsappMessagesDashboardComponent implements OnInit {
     this.customForm.controls['customInputs']['controls'][index].controls.Message_Timing.setValue(formatedDate + ' ' + formatedTime + ':00');
   }
 
-  sendMessages() {
+  // messagesSendingControl(){
+  //   if(this.selectedFiles)
+  // }
+
+  sendMessages(fileObj) {
     if (!this.typeOfScreen) {
       if (!this.customForm.invalid && this.customForm.value.customInputs.length > 0) {
+        // todo set the path for each number
+        if (fileObj !== null) {
+          this.customForm.value.customInputs.forEach((element, index) => {
+            this.customForm.controls['customInputs']['controls'][index].controls.File_Path.setValue(fileObj);
+          });
+        }
         this.http
           .post(environment.url + "Send_Custom_WhatsApp_Messages", {
             customForm: this.customForm.value
@@ -144,6 +157,10 @@ export class WhatsappMessagesDashboardComponent implements OnInit {
       }
     } else {
       if (!this.manyContacts.invalid) {
+        // todo set the file path if exists
+        if (fileObj !== null) {
+          this.manyContacts.controls['File_Path'].setValue(fileObj);
+        }
         this.http
           .post(environment.url + "Send_ToMany_WhatsApp_Messages", {
             manyForm: this.manyContacts.value
@@ -159,6 +176,30 @@ export class WhatsappMessagesDashboardComponent implements OnInit {
         this.openSnackBar("למלא שדות חובה");
       }
 
+    }
+  }
+
+  onFileSelected(event: any) {
+    this.selectedFiles = event.target.files;
+  }
+
+  uploadFiles() {
+    if (this.selectedFiles) {
+      const formData = new FormData();
+      formData.append('files', this.selectedFiles[0]);
+      // for (let i = 0; i < this.selectedFiles.length; i++) {
+      //   formData.append('files', this.selectedFiles[i]);
+      // }
+      this.http.post(environment.url + 'WhatsappRecieveFile', formData, { responseType: 'text' }).subscribe((response: string) => {
+        // Parse the XML response to extract the text content
+        const parser = new DOMParser();
+        const xmlDoc = parser.parseFromString(response, 'text/xml');
+        let file_path = xmlDoc.getElementsByTagName('string')[0].textContent;
+        this.sendMessages(file_path);
+      });
+    }
+    else {
+      this.sendMessages(null);
     }
   }
 

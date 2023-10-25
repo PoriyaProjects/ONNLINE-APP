@@ -1,1 +1,121 @@
-<p>nutrition-system works!</p>
+<div class="search-bar mt-4" dir="rtl">
+    <div class="row">
+        <div class="col-6">
+            <!-- Right Side: Dropdowns with Multiple Select -->
+            <mat-form-field class="dropdown">
+                <mat-label>מחלקות</mat-label>
+                <mat-select multiple>
+                    <mat-option value="dept" *ngFor="let dept of departmentsData">{{dept}}</mat-option>
+                </mat-select>
+            </mat-form-field>
+            <mat-form-field class="dropdown">
+                <mat-label>מכונים</mat-label>
+                <mat-select multiple>
+                    <mat-option value="optionA">Option A</mat-option>
+                </mat-select>
+            </mat-form-field>
+        </div>
+        <div class="col-6">
+            <!-- Left Side: Excel Import Button -->
+            <!-- <button mat-icon-button>
+                <mat-icon>file_upload</mat-icon>
+            </button> -->
+            <a (click)="exportToExcel()">
+                <img src="../../assets/images/excel.png" width="50px" alt="Image description">
+            </a>
+        </div>
+    </div>
+
+    <div class="row" style="justify-content: center;">
+        <!-- Buttons in the Second Row -->
+        <button mat-raised-button class="button" (click)="resetData()">הכל</button>
+        <button mat-raised-button class="button" (click)="filterTypes(1)">סוג כלכלה</button>
+        <button mat-raised-button class="button" (click)="filterTypes(2)">סוג מרקם</button>
+        <button mat-raised-button class="button" (click)="filterTypes(3)">רגישויות אשפוז
+            נוכחי</button>
+        <button mat-raised-button class="button" (click)="filterTypes(4)">רגישויות בעבר</button>
+    </div>
+</div>
+<hr>
+<div class="table" dir="rtl">
+    <!-- Filter Input for Each Column -->
+    <mat-form-field style="text-align: center;">
+        <input matInput (keyup)="applyFilter($event.target.value)" placeholder="סינון">
+    </mat-form-field>
+    <div style="padding-bottom: 60px;">
+        <!-- Table with Sorting and Filtering -->
+        <table mat-table [dataSource]="dataSourceHos.filteredData" matSort>
+            <!-- Column Definitions -->
+            <ng-container matColumnDef="CaseNumber">
+                <mat-header-cell mat-header-cell *matHeaderCellDef mat-sort-header>מספר מקרה</mat-header-cell>
+                <mat-cell *matCellDef="let row">{{ row.CaseNumber }}</mat-cell>
+            </ng-container>
+            <ng-container matColumnDef="IDNumber">
+                <mat-header-cell *matHeaderCellDef mat-sort-header>ת.ז</mat-header-cell>
+                <mat-cell *matCellDef="let row">{{ row.IDNumber }}</mat-cell>
+            </ng-container>
+            <ng-container matColumnDef="FirstName">
+                <mat-header-cell *matHeaderCellDef mat-sort-header>שם פרטי</mat-header-cell>
+                <mat-cell *matCellDef="let row">{{ row.FirstName }}</mat-cell>
+            </ng-container>
+            <ng-container matColumnDef="LastName">
+                <mat-header-cell *matHeaderCellDef mat-sort-header>שם משפחה</mat-header-cell>
+                <mat-cell *matCellDef="let row">{{ row.LastName }}</mat-cell>
+            </ng-container>
+            <ng-container matColumnDef="FatherName">
+                <mat-header-cell *matHeaderCellDef mat-sort-header>שם האב</mat-header-cell>
+                <mat-cell *matCellDef="let row">{{ row.FatherName }}</mat-cell>
+            </ng-container>
+            <ng-container matColumnDef="Age">
+                <mat-header-cell *matHeaderCellDef mat-sort-header>גיל</mat-header-cell>
+                <mat-cell *matCellDef="let row">{{ row.Age }}</mat-cell>
+            </ng-container>
+            <ng-container matColumnDef="DepartName">
+                <mat-header-cell *matHeaderCellDef mat-sort-header>מחלקה</mat-header-cell>
+                <mat-cell *matCellDef="let row">{{ row.DepartName }}</mat-cell>
+            </ng-container>
+            <ng-container matColumnDef="RoomNumber">
+                <mat-header-cell *matHeaderCellDef mat-sort-header>מספר חדר</mat-header-cell>
+                <mat-cell *matCellDef="let row">{{ row.RoomNumber }}</mat-cell>
+            </ng-container>
+            <ng-container matColumnDef="HospitalizationDate">
+                <mat-header-cell *matHeaderCellDef mat-sort-header>תאריך אשפוז</mat-header-cell>
+                <mat-cell *matCellDef="let row">{{ row.HospitalizationDate }}</mat-cell>
+            </ng-container>
+            <ng-container matColumnDef="HospitalizationDuration">
+                <mat-header-cell *matHeaderCellDef mat-sort-header>מספר ימי אשפוז</mat-header-cell>
+                <mat-cell *matCellDef="let row">{{ row.HospitalizationDuration }}</mat-cell>
+            </ng-container>
+            <ng-container matColumnDef="FoodType">
+                <mat-header-cell *matHeaderCellDef mat-sort-header>סוג כלכלה</mat-header-cell>
+                <mat-cell *matCellDef="let row">{{ row.FoodType }}</mat-cell>
+            </ng-container>
+            <ng-container matColumnDef="FoodTexture">
+                <mat-header-cell *matHeaderCellDef mat-sort-header>סוג מרקם</mat-header-cell>
+                <mat-cell *matCellDef="let row">{{ row.FoodTexture }}</mat-cell>
+            </ng-container>
+            <ng-container matColumnDef="CurrentAllergy">
+                <mat-header-cell *matHeaderCellDef mat-sort-header>רגישויות אשפוז נוכחי</mat-header-cell>
+                <mat-cell *matCellDef="let row">{{ row.CurrentAllergy }}</mat-cell>
+            </ng-container>
+            <ng-container matColumnDef="OldAllergy">
+                <mat-header-cell *matHeaderCellDef mat-sort-header>רגישויות בעבר</mat-header-cell>
+                <mat-cell *matCellDef="let row">{{ row.OldAllergy }}</mat-cell>
+            </ng-container>
+
+            <!-- Add more columns as needed -->
+
+            <!-- Table Rows -->
+            <mat-header-row *matHeaderRowDef="displayedColumns"></mat-header-row>
+            <mat-row *matRowDef="let row; columns: displayedColumns"></mat-row>
+        </table>
+        <mat-paginator [pageSizeOptions]="[10, 25, 100, 200]" aria-label="בחר מספר דף">
+        </mat-paginator>
+    </div>
+
+    <!-- <mat-form-field>
+        <input matInput (keyup)="applyFilter($event.target.value)" placeholder="Filter Calories">
+    </mat-form-field> -->
+
+    <!-- Add more filter inputs for additional columns as needed -->
+</div>

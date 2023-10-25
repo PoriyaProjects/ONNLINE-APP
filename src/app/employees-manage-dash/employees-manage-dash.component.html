@@ -221,10 +221,13 @@
             </div>
             <div class="col-1">
                 <div class="example-button-container">
-                    <button mat-fab color="accent" aria-label="Excel" (click)="GetEmployeesToUpdate(managerType, true)"
+                    <!-- <button mat-fab color="accent" aria-label="Excel" (click)="GetEmployeesToUpdate(managerType, true)"
                         matTooltip="יצוא לאקסל">
                         <mat-icon>get_app</mat-icon>
-                    </button>
+                    </button> -->
+                    <a (click)="GetEmployeesToUpdate(managerType, true)">
+                        <img src="../../assets/images/excel.png" width="50px" alt="Image description">
+                    </a>
                 </div>
             </div>
         </div>

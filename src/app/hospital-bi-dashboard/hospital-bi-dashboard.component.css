@@ -25,6 +25,10 @@ select {
     height: 170px;
 }
 
+a{
+    cursor: pointer;
+}
+
 h3 {
     align-self: center;
     font-weight: bold;
