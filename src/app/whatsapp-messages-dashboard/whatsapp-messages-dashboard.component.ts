@@ -34,6 +34,8 @@ export class WhatsappMessagesDashboardComponent implements OnInit {
   searchProgress: boolean = false;
   username = localStorage.getItem('loginUserName');
   selectedFiles: FileList | null;
+  fixed_text: string = "";
+  media_file: string = "";
 
   constructor(
     private http: HttpClient,
@@ -44,6 +46,10 @@ export class WhatsappMessagesDashboardComponent implements OnInit {
   ) { }
 
   ngOnInit() {
+    if (this.username == 'kmassalha' || this.username == 'emansour') {
+      this.fixed_text = "הקובץ המצורף מכיל מידע חשוב על החייאה, כולל החייאת ילדים. חשוב לשמור את הקובץ במסך הבית של הטלפון הנייד שלכם כדי שתמיד יהיה לכם בהישג יד במקרה הצורך";
+      this.media_file = "./files/ACLS.pdf";
+    }
     this.searchEmployeesGroup = this.fb.group({
       EmpID: new FormControl('', null),
       EmpFirstName: new FormControl('', null),
@@ -60,9 +66,9 @@ export class WhatsappMessagesDashboardComponent implements OnInit {
     });
     this.manyContacts = this.fb.group({
       Phone_Number: new FormControl('', Validators.required),
-      Message_Content: new FormControl('', Validators.required),
+      Message_Content: new FormControl(this.fixed_text, Validators.required),
       SenderIDFK: new FormControl('1', Validators.required),
-      File_Path: new FormControl(null, null)
+      File_Path: new FormControl(this.media_file, null)
     });
     // this.getWhatsAppMessagesFromServer();
     this.getWhatsAppSendersFromServer();
@@ -85,11 +91,11 @@ export class WhatsappMessagesDashboardComponent implements OnInit {
       Recipient_Type: new FormControl('0', Validators.required),
       Phone_Number: new FormControl(phone, Validators.required),
       Recipient: new FormControl(fullName, null),
-      Message_Content: new FormControl('', Validators.required),
+      Message_Content: new FormControl(this.fixed_text, Validators.required),
       SenderIDFK: new FormControl('1', Validators.required),
       Message_Timing: new FormControl(null, null),
       Message_Timing_Time: new FormControl(null, null),
-      File_Path: new FormControl(null, null)
+      File_Path: new FormControl(this.media_file, null)
     });
     (<FormArray>this.customForm.get('customInputs')).push(contact);
   }
@@ -185,12 +191,13 @@ export class WhatsappMessagesDashboardComponent implements OnInit {
 
   uploadFiles() {
     if (this.selectedFiles) {
+      const headers = new HttpHeaders({
+        'Content-Type': 'multipart/form-data'
+      });
       const formData = new FormData();
       formData.append('files', this.selectedFiles[0]);
-      // for (let i = 0; i < this.selectedFiles.length; i++) {
-      //   formData.append('files', this.selectedFiles[i]);
-      // }
-      this.http.post(environment.url + 'WhatsappRecieveFile', formData, { responseType: 'text' }).subscribe((response: string) => {
+      this.http.post(environment.url + 'whatsappRecieveFile', formData, { responseType: 'text' }).subscribe((response: string) => {
+        // this.http.post('http://srv-ipracticom:8080/WebService.asmx/WhatsappRecieveFile', formData, { responseType: 'text' }).subscribe((response: string) => {
         // Parse the XML response to extract the text content
         const parser = new DOMParser();
         const xmlDoc = parser.parseFromString(response, 'text/xml');
