@@ -97,6 +97,7 @@ export class CprFormComponent implements OnInit {
   filteredOptions5: Observable<string[]>;
   clalitfilter = new FormControl();
   employees = [];
+  saving_form: boolean = false;
   url = environment.url;
   pdfToServer: string = `<!doctype html><html lang="he"><head><meta charset="utf-8"/><title>ניטור החייאה</title>
   <style>p,mat-label,li{font-weight: bold;font-size: 12px;}.col-2{width: 20%;justify-content: center;}td{border: 1px solid black}
@@ -333,6 +334,9 @@ export class CprFormComponent implements OnInit {
                                   <th class="text-center">
                                       סטטוס
                                   </th>
+                                  <th class="text-center">
+                                      זמן
+                                  </th>
                               </tr>
                           </thead>
                           <tbody>
@@ -342,6 +346,9 @@ export class CprFormComponent implements OnInit {
                                   </td>
                                   <td>
                                       <p>{{CprFormsList[0].actionsTableArray[i].actionctrl}}</p>
+                                  </td>
+                                  <td>
+                                      <p>{{CprFormsList[0].actionsTableArray[i].actiontime}}</p>
                                   </td>
                               </tr>
                           </tbody>
@@ -541,7 +548,8 @@ export class CprFormComponent implements OnInit {
     for (let i = 0; i < 9; i++) {
       this.actionsTableArray.push(this.formBuilder.group({
         id: new FormControl(i, null),
-        actionctrl: new FormControl('', Validators.required)
+        actionctrl: new FormControl('', Validators.required),
+        actiontime: new FormControl('', Validators.required)
       }));
     }
 
@@ -662,7 +670,7 @@ export class CprFormComponent implements OnInit {
       this.ThirdSection.controls['managingDocLicence'].setValue(depart[0].doc);
       this.ThirdSection.controls['DocUserName'].setValue(depart[0].ADUserName);
     }
-    return this.employees.filter(option => option.firstname.includes(filterValue1));
+    return this.employees.filter(option => option.firstname.includes(filterValue1) && (option.derug.includes("רופאים") || option.derug.includes("סטודנט לרפואה")));
   }
 
   private _filter2(value: string): string[] {
@@ -673,7 +681,7 @@ export class CprFormComponent implements OnInit {
       this.ThirdSection.controls['responsNurse'].setValue(depart[0].firstname);
       this.ThirdSection.controls['responsNurseLicence'].setValue(depart[0].doc);
     }
-    return this.employees.filter(option => option.firstname.includes(filterValue2));
+    return this.employees.filter(option => option.firstname.includes(filterValue2) && (option.derug.includes("סטודנט לסיעוד ") || option.derug.includes("אחיות")));
   }
   private _filter3(value: string): string[] {
     const filterValue3 = value;
@@ -715,6 +723,7 @@ export class CprFormComponent implements OnInit {
             id: element.id,
             email: element.email,
             doc: element.DocLicence,
+            derug: element.derug,
             ADUserName: element.ADUserName.toLowerCase()
           });
         })
@@ -988,6 +997,7 @@ export class CprFormComponent implements OnInit {
         .then((confirmed) => {
           console.log("User confirmed:", confirmed);
           if (confirmed) {
+            this.saving_form = true;
             this.http.post(this.url + "SaveCprForm", {
               _first: this.FirstSection.value,
               _second: this.SecondSection.value,
@@ -1093,6 +1103,7 @@ export class CprFormComponent implements OnInit {
           }
           )
             .subscribe((Response) => {
+              this.saving_form = false;
               if (
                 Response["d"] ==
                 "success"
@@ -1123,7 +1134,7 @@ export class CprFormComponent implements OnInit {
     // pdfMake.createPdf(documentDefinition).open();
     let that = this;
     setTimeout(function () {
-      var style = "<style>p,mat-label,li{font-weight: bold;font-size: 12px;}.col-2{width: 20%;justify-content: center;}td{border: 1px solid black}.container1{margin:2px; padding: 0px 5px 0px 0px; border-style: double;}th{font-size: 14px;}</style>";
+      var style = "<style>p,mat-label,li{font-weight: bold;font-size: 12px;}.col-2{width: 20%;justify-content: center;}td{border: 1px solid black;width: 5%}.container1{margin:2px; padding: 0px 5px 0px 0px; border-style: double;}th{font-size: 14px;}</style>";
       var printContents = that.printmycontent.nativeElement.innerHTML;
       style = style + printContents;
       var w = window.open();
