@@ -257,7 +257,7 @@
                     <input formControlName="patientDiagnosis" matInput placeholder="אבחנות המטופל">
                 </mat-form-field>
                 <mat-form-field class="full-width-50">
-                    <input formControlName="Notes" matInput placeholder="הערות">
+                    <input formControlName="Notes" matInput placeholder="הערות (כולל פעולות שבוצעו קדם ביה'ח)">
                 </mat-form-field>
             </div>
         </div>
@@ -345,6 +345,9 @@
                                 <th class="text-center">
                                     סטטוס
                                 </th>
+                                <th class="text-center">
+                                    זמן
+                                </th>
                             </tr>
                         </thead>
                         <tbody>
@@ -375,6 +378,11 @@
                                             </div>
                                         </mat-radio-group>
                                     </div>
+                                </td>
+                                <td [style.color]="SecondSection.invalid ? 'red' : 'black'">
+                                    <input formControlName="actiontime" jpTimeMask [useUtc]="true" dir="ltr"
+                                        style="align-self: center;text-align: center;width: 50%;"
+                                        class="form-control" />
                                 </td>
                             </tr>
                         </tbody>
@@ -619,8 +627,8 @@
                     &nbsp; העתק: למרכז ועדת החייאה.
                     &nbsp; העתק: היחידה לבטיחות הטיפול.</b></p>
 
-            <button class="full-width mb-5" style="font-weight: bold;font-size: 20px;color: white;" color="primary"
-                (click)="submit()" type="submit" mat-raised-button>
+            <button class="full-width mb-5" style="font-weight: bold;font-size: 20px;color: white;"
+                [disabled]="saving_form" color="primary" (click)="submit()" type="submit" mat-raised-button>
                 <span>שמירת טופס</span>
             </button>
         </div>
@@ -680,7 +688,7 @@
                 </ng-container>
 
                 <ng-container matColumnDef="print">
-                    <th mat-header-cell *matHeaderCellDef> הדפסה </th>
+                    <th mat-header-cell *matHeaderCellDef> פעולות </th>
                     <td mat-cell *matCellDef="let element"> <button mat-raised-button ml-2 type="submit"
                             (click)="printCprForm(element.Row_ID)" class="btn btn-primary btn-raised mb-2"
                             matTooltip="הדפסה">
@@ -959,6 +967,9 @@
                                         <th class="text-center">
                                             סטטוס
                                         </th>
+                                        <th class="text-center">
+                                            זמן
+                                        </th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -968,6 +979,9 @@
                                         </td>
                                         <td>
                                             <p>{{CprFormsList[0].actionsTableArray[i].actionctrl}}</p>
+                                        </td>
+                                        <td>
+                                            <p>{{CprFormsList[0].actionsTableArray[i].actiontime}}</p>
                                         </td>
                                     </tr>
                                 </tbody>
@@ -993,7 +1007,7 @@
                                     <tr *ngFor="let action of CprFormsList[0].thirdTableArray; let i = index"
                                         class="text-center">
                                         <td>
-                                            <p style="font-size: 7px;">{{action.subArray[0].title}}</p>
+                                            <span style="font-size: 7px;">{{action.subArray[0].title}}</span>
                                         </td>
                                         <td
                                             *ngFor="let time of CprFormsList[0].thirdTableArray[i].subArray; let j = index">
