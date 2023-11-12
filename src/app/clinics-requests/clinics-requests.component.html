@@ -1,0 +1,108 @@
+<div id="page-toshow" class="clinic-request">
+    <h1 class="page-title text-center">זימונים למרפאות</h1>
+    <div class="container-fluid">
+        <div dir="rtl" class="row  mb-20">
+            <mat-chip-list>
+                <mat-chip [ngClass]="{'chip-depart-selected': depart.selected}"
+                    *ngFor="let depart of unDepartsToSelect;"
+                    (click)="onSelectionChange(depart)">{{depart.name}}</mat-chip>
+            </mat-chip-list>
+        </div>
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="btn-group">
+                        <div class="btn btn-primary" (click)="setView(CalendarView.Month)"
+                            [class.active]="view === CalendarView.Month">
+                            חודש
+                        </div>
+                        <div class="btn btn-primary" (click)="setView(CalendarView.Week)"
+                            [class.active]="view === CalendarView.Week">
+                            שבוע
+                        </div>
+                        <div class="btn btn-primary" (click)="setView(CalendarView.Day)"
+                            [class.active]="view === CalendarView.Day">
+                            יום
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col">
+                    <ng-template #headerTemplate let-days="days" let-locale="locale">   
+                        <div class="row cal-day-headers">
+                            <div class="col cal-header cal-future" *ngFor="let day of days">
+                                <b>{{day.date | calendarDate:'weekViewColumnHeader':locale}}</b>
+                                <br>
+                                <span>{{day.date | calendarDate:'weekViewColumnSubHeader':locale}}</span>
+                                <span class="week-cal-day-badge">{{ getDateTotalRequestsWeek(events, day.date) }}</span>
+                            </div>
+                        </div>
+                    </ng-template>
+                    <ng-template #customCellTemplate let-day="day" let-locale="locale">
+                        <div class="cal-cell-top">
+                            <span class="cal-day-badge" *ngIf="day.badgeTotal > 0">
+                                {{ getDateTotalRequests(day.events) }}
+                            </span>
+                            <span class="cal-day-number">{{
+                                day.date | calendarDate: "monthViewDayNumber":locale
+                                }}</span>
+                        </div>
+                        <small style="margin: 5px">
+                            <span style="
+                                display: block;
+                                border: 1px solid #000;
+                                margin: 5px;
+                                padding: 3px;
+                                border-radius: 4px;
+                            " *ngFor="let ev of day.events | slice:0:5;">
+                                {{ ev.title }}
+                            </span>
+                        </small>
+                    </ng-template>
+                    <div class="row text-center" dir="rtl">
+                        <div class="col-md-4">
+                            <div class="btn-group">
+                                <div class="btn btn-primary" mwlCalendarPreviousView [view]="view"
+                                    [(viewDate)]="viewDate" (viewDateChange)="activeDayIsOpen = false">
+                                    הקודם
+                                </div>
+                                <div #toDayCall class="btn btn-outline-secondary" mwlCalendarToday
+                                    [(viewDate)]="viewDate">
+                                    היום
+                                </div>
+                                <div class="btn btn-primary" mwlCalendarNextView [view]="view" [(viewDate)]="viewDate"
+                                    (viewDateChange)="activeDayIsOpen = false">
+                                    הבא
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <h3>
+                                {{
+                                viewDate | calendarDate: view + "ViewTitle":"he"
+                                }}
+                            </h3>
+                        </div>
+                        <div class="col-md-4"></div>
+                    </div>
+                    <br />
+                    <div [ngSwitch]="view">
+                        <mwl-calendar-month-view dir="rtl" *ngSwitchCase="CalendarView.Month" [viewDate]="viewDate"
+                            [events]="events" [cellTemplate]="customCellTemplate" [locale]="locale"
+                            (dayClicked)="dayClicked($event.day)" [activeDayIsOpen]="activeDayIsOpen"
+                            (eventClicked)="handleEvent('Clicked', $event.event)">
+                        </mwl-calendar-month-view>
+                        <mwl-calendar-week-view *ngSwitchCase="CalendarView.Week" [headerTemplate]="headerTemplate"
+                            [viewDate]="viewDate" [locale]="locale" [events]="events" [refresh]="refresh"
+                            (eventClicked)="handleEvent('Clicked', $event.event)">
+                        </mwl-calendar-week-view>
+                        <mwl-calendar-day-view *ngSwitchCase="CalendarView.Day" [locale]="locale" [viewDate]="viewDate"
+                            [events]="events" [refresh]="refresh" (eventClicked)="handleEvent('Clicked', $event.event)">
+                        </mwl-calendar-day-view>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

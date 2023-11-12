@@ -99,9 +99,11 @@ import { WhatsappMessagesDashboardComponent } from "./whatsapp-messages-dashboar
 import { BoneMarrowModalComponent } from "./form-dashboard/bone-marrow/bone-marrow-modal/bone-marrow-modal.component";
 import { QualityMeasuresDashboardComponent } from "./quality-measures-dashboard/quality-measures-dashboard.component";
 import { NutritionSystemComponent } from "./nutrition-system/nutrition-system.component";
+import { ClinicsRequestsComponent } from "./clinics-requests/clinics-requests.component";
 import { WagonComponent } from "./wagon/wagon.component";
 
 const routes: Routes = [
+    { path: "clinicsrequests", component: ClinicsRequestsComponent },
     { path: "dashboard", component: DashboardComponent },
     { path: "login", component: LoginComponent },
     { path: "chads", component: ChadsComponent },
