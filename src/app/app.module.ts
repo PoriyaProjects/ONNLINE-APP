@@ -198,6 +198,8 @@ import { BoneMarrowComponent } from './form-dashboard/bone-marrow/bone-marrow.co
 import { BoneMarrowModalComponent } from './form-dashboard/bone-marrow/bone-marrow-modal/bone-marrow-modal.component';
 import { WhatsappMessagesDashboardComponent } from './whatsapp-messages-dashboard/whatsapp-messages-dashboard.component';
 import { NutritionSystemComponent } from './nutrition-system/nutrition-system.component';
+import { ClinicsRequestsComponent } from './clinics-requests/clinics-requests.component';
+import { ClinicsRequestsDialogComponent } from './clinics-requests/clinics-requests-dialog/clinics-requests-dialog.component';
 
 
 const maskConfig: Partial<IConfig> = {
@@ -351,7 +353,9 @@ const maskConfig: Partial<IConfig> = {
     BoneMarrowComponent,
     BoneMarrowModalComponent,
     WhatsappMessagesDashboardComponent,
-    NutritionSystemComponent
+    NutritionSystemComponent,
+    ClinicsRequestsComponent,
+    ClinicsRequestsDialogComponent
   ],
   imports: [
     JpTimeMaskModule,

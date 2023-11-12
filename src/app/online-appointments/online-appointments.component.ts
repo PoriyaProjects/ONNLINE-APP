@@ -56,19 +56,19 @@ export interface EventDay {
     Total: number;
 }
 export interface EventDepartDay {
-  RowId: string;
-  ServiceNumber: string;
-  ServiceDescription: string;
-  Depart: string;
-  AppointmentDate: string;
-  AppointmentTime: string;
-  Duration: string;
-  PatientNumber: string;
-  PatientId: string;
-  PatientFirstName: string;
-  PatientLastName: string;
-  UniqueServiceNumber: string;
-  Total: string;
+    RowId: string;
+    ServiceNumber: string;
+    ServiceDescription: string;
+    Depart: string;
+    AppointmentDate: string;
+    AppointmentTime: string;
+    Duration: string;
+    PatientNumber: string;
+    PatientId: string;
+    PatientFirstName: string;
+    PatientLastName: string;
+    UniqueServiceNumber: string;
+    Total: string;
 }
 @Component({
     selector: "app-online-appointments",
@@ -82,17 +82,17 @@ export class OnlineAppointmentsComponent implements OnInit {
     view: CalendarView = CalendarView.Month;
     TABLE_DATA: EventDepartDay[] = [];
     refresh: Subject<any> = new Subject();
-    dataSource = new MatTableDataSource<EventDepartDay>(this.TABLE_DATA);    
+    dataSource = new MatTableDataSource<EventDepartDay>(this.TABLE_DATA);
     resultsLength = 0;
     displayedColumns: string[] = [
-      "ServiceDescription",
-      "AppointmentTime",
-      "PatientNumber",
-      "PatientId",
-      "PatientFirstName",
-      "PatientLastName",
-     // "CLICK_sendtosafe",
-  ];
+        "ServiceDescription",
+        "AppointmentTime",
+        "PatientNumber",
+        "PatientId",
+        "PatientFirstName",
+        "PatientLastName",
+        // "CLICK_sendtosafe",
+    ];
     EventsDay = [] as EventDay[];
     viewDate: Date = new Date();
     EventDerpatDay = {} as EventDepartDay;
@@ -115,16 +115,16 @@ export class OnlineAppointmentsComponent implements OnInit {
         private cdr: ChangeDetectorRef
     ) {
 
-       
+
     }
 
     ngOnInit(): void {
         setTimeout(() => {
             this.getEvents();
-            this.refresh.next();    
+            this.refresh.next();
             this.cdr.detectChanges();
         }, 1500);
-        
+
     }
     getEvents() {
         $("#loader").removeClass("d-none");
@@ -137,7 +137,7 @@ export class OnlineAppointmentsComponent implements OnInit {
                 this.events = [];
                 var obj: Array<any> = [];
                 this.EventsDay = Response["d"] as EventDay[];
-               // //debugger
+                // //debugger
                 for (var i = 0; i < this.EventsDay.length; i++) {
                     let event = {
                         title:
@@ -153,7 +153,7 @@ export class OnlineAppointmentsComponent implements OnInit {
                     };
                     ////debugger
                     obj.push(event);
-                
+
                 }
                 this.events = obj;
                 this.viewDate = new Date();
@@ -188,30 +188,30 @@ export class OnlineAppointmentsComponent implements OnInit {
         }
     }
     handleEvent(action: string, event: CalendarEvent): void {
-      $("#loader").removeClass("d-none");
-     // //debugger
-      this.http
-          .post(
-              "http://srv-apps-prod/RCF_WS/WebService.asmx/GetAllDepartAppointmentsByDay",
-              {
-                depart: event['depart'],
-                date: this.datePipe.transform(event['start'],"yyyy-MM-dd"),
-              }
-          )
-          .subscribe((Response) => {
-              this.EventsDerpatDay = Response["d"] as EventDepartDay[];
-              this.TABLE_DATA = [];
-              this.TABLE_DATA = this.EventsDerpatDay
-              this.dataSource = new MatTableDataSource<EventDepartDay>(this.TABLE_DATA); ;
-              this.modalData = { 
-                  action: "זימונים ל- "+ event['depart'] + ", לתאריך "+ this.datePipe.transform(event['start'],"yyyy-MM-dd"),
-                  events: this.EventsDerpatDay,
-                  dataSource: this.EventsDerpatDay,
-              };
-              this.modal.open(this.modalContent, { size: "lg" });
-              $("#loader").addClass("d-none");
-          });
-        
+        $("#loader").removeClass("d-none");
+        // //debugger
+        this.http
+            .post(
+                "http://srv-apps-prod/RCF_WS/WebService.asmx/GetAllDepartAppointmentsByDay",
+                {
+                    depart: event['depart'],
+                    date: this.datePipe.transform(event['start'], "yyyy-MM-dd"),
+                }
+            )
+            .subscribe((Response) => {
+                this.EventsDerpatDay = Response["d"] as EventDepartDay[];
+                this.TABLE_DATA = [];
+                this.TABLE_DATA = this.EventsDerpatDay
+                this.dataSource = new MatTableDataSource<EventDepartDay>(this.TABLE_DATA);;
+                this.modalData = {
+                    action: "זימונים ל- " + event['depart'] + ", לתאריך " + this.datePipe.transform(event['start'], "yyyy-MM-dd"),
+                    events: this.EventsDerpatDay,
+                    dataSource: this.EventsDerpatDay,
+                };
+                this.modal.open(this.modalContent, { size: "lg" });
+                $("#loader").addClass("d-none");
+            });
+
     }
 }
 

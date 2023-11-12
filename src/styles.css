@@ -8,10 +8,35 @@
 /* .drugprotocols .mat-form-field-appearance-legacy .mat-form-field-infix{
     padding: 0 !important;
 } */
+.pos-rel{
+    position: relative !important;
+}
+.close-dialog{
+    position: absolute !important;
+    left: 0;
+    top: 0;
+}
+.mb-20{
+    margin-bottom: 20px;
+}
 .mt-3 {
     margin-top: 1rem !important;
 }
-
+.clinic-request .cal-week-view .cal-day-headers {
+    
+     padding-left: 0px !important; 
+}
+.clinic-request .cal-week-view .cal-time-label-column {
+    width: 0px !important;
+}
+.clinic-request .cal-week-view .cal-current-time-marker {
+    display: none !important;
+}
+.clinic-request .cal-week-view .cal-time {
+    display: none !important;
+    color:#fff !important;
+    font-size: 0 !important;
+}
 mat-form-field .mat-form-field-infix {
     display: flex;
 }

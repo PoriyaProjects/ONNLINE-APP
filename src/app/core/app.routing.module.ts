@@ -104,11 +104,13 @@ import { WhatsappMessagesDashboardComponent } from '../whatsapp-messages-dashboa
 import { BoneMarrowModalComponent } from '../form-dashboard/bone-marrow/bone-marrow-modal/bone-marrow-modal.component';
 import { QualityMeasuresDashboardComponent } from '../quality-measures-dashboard/quality-measures-dashboard.component';
 import { NutritionSystemComponent } from '../nutrition-system/nutrition-system.component';
+import { ClinicsRequestsComponent } from "../clinics-requests/clinics-requests.component";
 import { WagonComponent } from '../wagon/wagon.component';
 
 const routes: Routes = [
   
   { path: 'dashboard', component: DashboardComponent },
+  { path: 'clinicsrequests', component: ClinicsRequestsComponent },
   { path: 'covid19report', component: Covid19reportComponent },
   { path: 'login', component: LoginComponent },
   { path: 'chads', component: ChadsComponent },
