@@ -16,6 +16,20 @@
     left: 0;
     top: 0;
 }
+.week-cal-day-badge{
+    position: absolute;
+    left: 6px;
+    bottom: 2px;
+    background-color: #b94a48;
+    color: #fff;
+    border-radius: 50%;
+    min-width: 23px;
+    padding: 2px;
+}
+.chip-depart-selected{
+    background: #1976d2 !important;
+    color: #fff !important;
+}
 .mb-20{
     margin-bottom: 20px;
 }
