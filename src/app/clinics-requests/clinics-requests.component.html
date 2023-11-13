@@ -12,16 +12,16 @@
             <div class="row">
                 <div class="col-md-4">
                     <div class="btn-group">
-                        <div class="btn btn-primary" (click)="setView(CalendarView.Month)"
-                            [class.active]="view === CalendarView.Month">
+                        <div class="btn btn-secondary" (click)="setView(CalendarView.Month)"
+                            [ngClass]="{'btn-primary':view === CalendarView.Month}">
                             חודש
                         </div>
-                        <div class="btn btn-primary" (click)="setView(CalendarView.Week)"
-                            [class.active]="view === CalendarView.Week">
+                        <div class="btn btn-secondary" (click)="setView(CalendarView.Week)"
+                            [ngClass]="{'btn-primary':view === CalendarView.Week}">
                             שבוע
                         </div>
-                        <div class="btn btn-primary" (click)="setView(CalendarView.Day)"
-                            [class.active]="view === CalendarView.Day">
+                        <div class="btn btn-secondary" (click)="setView(CalendarView.Day)"
+                        [ngClass]="{'btn-primary':view === CalendarView.Day}">
                             יום
                         </div>
                     </div>
@@ -29,7 +29,7 @@
             </div>
             <div class="row">
                 <div class="col">
-                    <ng-template #headerTemplate let-days="days" let-locale="locale">   
+                    <ng-template #headerTemplate let-days="days" let-locale="locale">
                         <div class="row cal-day-headers">
                             <div class="col cal-header cal-future" *ngFor="let day of days">
                                 <b>{{day.date | calendarDate:'weekViewColumnHeader':locale}}</b>
