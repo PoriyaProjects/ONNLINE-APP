@@ -1,4 +1,4 @@
-<div dir="rtl" class="text-right pos-rel">
+<div dir="rtl" class="text-right pos-rel x-modal">
     <div mat-dialog-title class="text-right pos-rel">
         <h2>{{title}} - ({{date}})</h2>
 
@@ -7,7 +7,7 @@
     <mat-dialog-content class="mat-typography">
         <div class="row">
             <div class="col-4 mb-20" *ngFor="let card of cards;">
-                <mat-card>
+                <mat-card class="pointer" (click)="onCardClick(card)">
                     <mat-card-header>
                         <mat-card-title>{{card.Depart}}</mat-card-title>
                         <mat-card-subtitle>יומן: {{card.RoomNumber}}</mat-card-subtitle>

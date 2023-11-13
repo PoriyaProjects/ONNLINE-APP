@@ -1,0 +1,79 @@
+<div dir="rtl" class="text-right pos-rel x-modal">
+    <div mat-dialog-title class="text-right pos-rel">
+        <h4>רשימת מוזמנים ל: {{title}} | {{roomNumber}} | {{date}}</h4>
+        <h5><b>סה"כ מוזמנים</b>: {{total}}</h5>
+        <h5><b>סה"כ שירותים</b>: {{totalService}}</h5>
+        <button mat-button mat-dialog-close class="close-dialog" align="end">X</button>
+    </div>
+    <div class="row">
+        <div dir="rtl" class="col">
+            <div class="table-responsive">
+                <div class="table-spinner-container">
+                    <!-- <mat-form-field>
+                            <input matInput (keyup)="applyFilter($event.target.value)" placeholder="חפש">
+                        </mat-form-field> -->
+                    <table class="table" mat-table [dataSource]="dataSource">
+                        <ng-container matColumnDef="ServiceDescription">
+                            <th mat-header-cell *matHeaderCellDef>
+                                שירות
+                            </th>
+                            <td mat-cell *matCellDef="let element">
+                                {{ element.ServiceDescription }}
+                            </td>
+                        </ng-container>
+                        <ng-container matColumnDef="AppointmentDate">
+                            <th mat-header-cell *matHeaderCellDef>
+                                תאריך
+                            </th>
+                            <td mat-cell *matCellDef="let element">
+                                {{ element.AppointmentDate }}
+                            </td>
+                        </ng-container>
+                        <ng-container matColumnDef="AppointmentTime">
+                            <th mat-header-cell *matHeaderCellDef>
+                                שעה
+                            </th>
+                            <td mat-cell *matCellDef="let element">
+                                {{ element.AppointmentTime }}
+                            </td>
+                        </ng-container>
+                        <ng-container matColumnDef="PatientNumber">
+                            <th mat-header-cell *matHeaderCellDef>
+                                מס' מטופל
+                            </th>
+                            <td mat-cell *matCellDef="let element">
+                                {{ element.PatientNumber }}
+                            </td>
+                        </ng-container>
+                        <ng-container matColumnDef="PatientId">
+                            <th mat-header-cell *matHeaderCellDef>
+                                ת.ז
+                            </th>
+                            <td mat-cell *matCellDef="let element">
+                                {{ element.PatientId }}
+                            </td>
+                        </ng-container>
+                        <ng-container matColumnDef="PatientFirstName">
+                            <th mat-header-cell *matHeaderCellDef>
+                                שם פרטי
+                            </th>
+                            <td mat-cell *matCellDef="let element">
+                                {{ element.PatientFirstName }}
+                            </td>
+                        </ng-container>
+                        <ng-container matColumnDef="PatientLastName">
+                            <th mat-header-cell *matHeaderCellDef>
+                                שם משפה
+                            </th>
+                            <td mat-cell *matCellDef="let element">
+                                {{ element.PatientLastName }}
+                            </td>
+                        </ng-container>
+                        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+                        <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

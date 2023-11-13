@@ -200,6 +200,7 @@ import { WhatsappMessagesDashboardComponent } from './whatsapp-messages-dashboar
 import { NutritionSystemComponent } from './nutrition-system/nutrition-system.component';
 import { ClinicsRequestsComponent } from './clinics-requests/clinics-requests.component';
 import { ClinicsRequestsDialogComponent } from './clinics-requests/clinics-requests-dialog/clinics-requests-dialog.component';
+import { ClinicsPatientRequestsDialogComponent } from './clinics-requests/clinics-patient-requests-dialog/clinics-patient-requests-dialog.component';
 
 
 const maskConfig: Partial<IConfig> = {
@@ -355,7 +356,8 @@ const maskConfig: Partial<IConfig> = {
     WhatsappMessagesDashboardComponent,
     NutritionSystemComponent,
     ClinicsRequestsComponent,
-    ClinicsRequestsDialogComponent
+    ClinicsRequestsDialogComponent,
+    ClinicsPatientRequestsDialogComponent
   ],
   imports: [
     JpTimeMaskModule,
