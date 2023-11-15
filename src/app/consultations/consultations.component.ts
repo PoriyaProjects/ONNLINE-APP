@@ -4,6 +4,7 @@ import {
     ViewChild,
     AfterViewInit,
     ElementRef,
+    TemplateRef,
 } from "@angular/core";
 import { ThemePalette } from "@angular/material/core";
 import * as Fun from "../public.functions";
@@ -63,6 +64,8 @@ export interface Consultations {
     Hospital_Date: string;
     Discharge_Date: string;
     Order_Number: string;
+    Consult_Answer: string;
+    Age: string;
 }
 @Component({
     selector: "app-consultations",
@@ -75,6 +78,7 @@ export class ConsultationsComponent implements OnInit {
     @ViewChild(MatSort, { static: true }) sort: MatSort;
     @ViewChild("ConsultationsStart_Date") ConsultationsStart_Date: any;
     @ViewChild("ConsultationsStart_Date") ConsultationsEnd_Date: any;
+    @ViewChild('modalContent', { static: true }) modalContent: TemplateRef<any>;
 
     colors: string[] = [
         "#00838F",
@@ -253,6 +257,7 @@ export class ConsultationsComponent implements OnInit {
     totalWithoutCecomTime: any;
     totalWithStartTime: any;
     totalWithoutStartTime: any;
+    patient_dialog_data: any;
 
     DepartsColumns: any = [
         "מחלקה",
@@ -349,7 +354,7 @@ export class ConsultationsComponent implements OnInit {
     */
     titleDepartRequestTotalNotPara: any = 'סה"כ יעוצים לפי מחלקה מבצעת';
     DepartsDataRequestTotalNotPara: any = [["", 0, "", 0]];
-    DepartsRequestTotalColumnsNotPara : any = [
+    DepartsRequestTotalColumnsNotPara: any = [
         "מחלקה מזמינה",
         'סה"כ יעוצים',
         { role: "style" },
@@ -358,7 +363,7 @@ export class ConsultationsComponent implements OnInit {
 
     titleDepartRequestAvgNotPara: any = 'ממוצע זמן לפי מחלקה מבצעת';
     DepartsDataRequestAvgNotPara: any = [["", 0, "", 0]];
-    DepartsRequestAvgColumnsNotPara : any = [
+    DepartsRequestAvgColumnsNotPara: any = [
         "מחלקה מזמינה",
         'סה"כ יעוצים',
         { role: "style" },
@@ -367,7 +372,7 @@ export class ConsultationsComponent implements OnInit {
 
     titleDepartRequestTotalAllNotPara: any = 'סה"כ יעוצים לפי מחלקה מבצעת';
     DepartsDataRequestTotalAllNotPara: any = [["", 0, "", 0]];
-    DepartsRequestTotalColumnsAllNotPara : any = [
+    DepartsRequestTotalColumnsAllNotPara: any = [
         "מחלקה מזמינה",
         'סה"כ יעוצים',
         { role: "style" },
@@ -376,7 +381,7 @@ export class ConsultationsComponent implements OnInit {
 
     titleDepartRequestAvgAllNotPara: any = 'ממוצע זמן לפי מחלקה מבצעת';
     DepartsDataRequestAvgAllNotPara: any = [["", 0, "", 0]];
-    DepartsRequestAvgColumnsAllNotPara : any = [
+    DepartsRequestAvgColumnsAllNotPara: any = [
         "מחלקה מזמינה",
         'סה"כ יעוצים',
         { role: "style" },
@@ -405,19 +410,19 @@ export class ConsultationsComponent implements OnInit {
     MulBarsRequestDepartTotalRows: any;
     MulBarsRequestDepartAvgTime: any;
 
-    
+
     /*
     DepartsDataRequestTotalNotPara
 DepartsDataRequestAvgNotPara
 DepartsDataRequestTotalAllNotPara
 DepartsDataRequestAvgAllNotPara
     */
-   MulBarsRequestDepartNotPara: any;
-   MulBarsRequestDepartTotalRowsNotPara: any;
-   MulBarsRequestDepartAvgTimeNotPara: any;
-   MulBarsRequestDepartAvgTimeAllNotPara: any;
-   MulBarsRequestDepartTotalRowsAllNotPara: any;
-   MulBarsRequestDepartAllNotPara: any;
+    MulBarsRequestDepartNotPara: any;
+    MulBarsRequestDepartTotalRowsNotPara: any;
+    MulBarsRequestDepartAvgTimeNotPara: any;
+    MulBarsRequestDepartAvgTimeAllNotPara: any;
+    MulBarsRequestDepartTotalRowsAllNotPara: any;
+    MulBarsRequestDepartAllNotPara: any;
 
     MulBarsDoingDepart: any;
     MulBarsDoingDepartAvgTime: any;
@@ -469,15 +474,17 @@ DepartsDataRequestAvgAllNotPara
         private http: HttpClient,
         private modalService: NgbModal,
         private formBuilder: FormBuilder,
+        public dialog: MatDialog,
         private mMenuPerm: MenuPerm
     ) {
         mMenuPerm.setRoutName("consultations");
         setTimeout(() => {
-            if(!mMenuPerm.getHasPerm()){
+            if (!mMenuPerm.getHasPerm()) {
                 localStorage.clear();
                 this.router.navigate(["login"]);
             }
-        }, 2000);}
+        }, 2000);
+    }
 
     ngOnInit(): void {
         this.departsName = "הכל";
@@ -556,7 +563,7 @@ DepartsDataRequestAvgAllNotPara
         let clickedIndex = $event.index;
         this.selectedIndexTab = clickedIndex;
         this.optionsBars = {
-            
+
             height: 1200,
             hAxis: {
                 showTextEvery: 1,
@@ -570,13 +577,13 @@ DepartsDataRequestAvgAllNotPara
         };
         this.optionsBarsV = {
             height: 1200,
-           // bars: "vertical",
+            // bars: "vertical",
             hAxis: {
-               // direction: -1,
+                // direction: -1,
                 // slantedText: true,
                 // slantedTextAngle: 90,
                 showTextEvery: 1,
-                
+
             },
             vAxis: {
                 showTextEvery: 1,
@@ -614,7 +621,7 @@ DepartsDataRequestAvgAllNotPara
                 this.DepartsDataRequestTotal.push(_d);
                 this.DepartsDataRequestAvg.push(_s);
             }
-            if(this.MulBarsRequestDepart.length == 0){
+            if (this.MulBarsRequestDepart.length == 0) {
                 this.DepartsDataRequestTotal = [["", 0, "", 0]];
                 this.DepartsDataRequestAvg = [["", 0, "", 0]];
             }
@@ -639,7 +646,7 @@ DepartsDataRequestAvgAllNotPara
                 this.DepartsDataRequestTotalAll.push(_d);
                 this.DepartsDataRequestAvgAll.push(_s);
             }
-            if(this.MulBarsRequestDepartAll.length == 0){
+            if (this.MulBarsRequestDepartAll.length == 0) {
                 this.DepartsDataRequestTotalAll = [["", 0, "", 0]];
                 this.DepartsDataRequestAvgAll = [["", 0, "", 0]];
             }
@@ -665,7 +672,7 @@ DepartsDataRequestAvgAllNotPara
                 this.DepartsDataDoingTotal.push(_d);
                 this.DepartsDataDoingAvg.push(_s);
             }
-            if(this.MulBarsDoingDepart.length == 0){
+            if (this.MulBarsDoingDepart.length == 0) {
                 this.DepartsDataDoingTotal = [["", 0, "", 0]];
                 this.DepartsDataDoingAvg = [["", 0, "", 0]];
             }
@@ -691,8 +698,8 @@ DepartsDataRequestAvgAllNotPara
                 this.DepartsDataDoingTotalAll.push(_d);
                 this.DepartsDataDoingAvgAll.push(_s);
             }
-            
-            if(this.MulBarsDoingDepartAll.length == 0){
+
+            if (this.MulBarsDoingDepartAll.length == 0) {
                 this.DepartsDataDoingTotalAll = [["", 0, "", 0]];
                 this.DepartsDataDoingAvgAll = [["", 0, "", 0]];
             }
@@ -717,8 +724,8 @@ DepartsDataRequestAvgAllNotPara
                 this.DepartsDataRequestTotalAllNotPara.push(_d);
                 this.DepartsDataRequestAvgAllNotPara.push(_s);
             }
-            
-            if(this.MulBarsRequestDepartAllNotPara.length == 0){
+
+            if (this.MulBarsRequestDepartAllNotPara.length == 0) {
                 this.DepartsDataRequestTotalAllNotPara = [["", 0, "", 0]];
                 this.DepartsDataRequestAvgAllNotPara = [["", 0, "", 0]];
             }
@@ -743,8 +750,8 @@ DepartsDataRequestAvgAllNotPara
                 this.DepartsDataRequestTotalNotPara.push(_d);
                 this.DepartsDataRequestAvgNotPara.push(_s);
             }
-            
-            if(this.MulBarsRequestDepartNotPara.length == 0){
+
+            if (this.MulBarsRequestDepartNotPara.length == 0) {
                 this.DepartsDataRequestTotalNotPara = [["", 0, "", 0]];
                 this.DepartsDataRequestAvgNotPara = [["", 0, "", 0]];
             }
@@ -765,7 +772,7 @@ DepartsDataRequestAvgAllNotPara
                     s++;
                 }
             }
-            if(this.Departs.length == 0){
+            if (this.Departs.length == 0) {
                 this.DepartsDataChart = [["", 0, "", 0]];
             }
         }
@@ -784,7 +791,7 @@ DepartsDataRequestAvgAllNotPara
                     s++;
                 }
             }
-            if(this.Workers.length == 0){
+            if (this.Workers.length == 0) {
                 this.WorkersDataChart = [["", 0, "", 0]];
             }
         }
@@ -1029,6 +1036,17 @@ DepartsDataRequestAvgAllNotPara
             options: optionCall,
         });
     }
+
+    handleDialog(row) {
+        this.patient_dialog_data = row;
+        if (this.patient_dialog_data.Patient_Gender == 1) this.patient_dialog_data.Patient_Gender = "זכר";
+        else this.patient_dialog_data.Patient_Gender = "נקבה";
+        this.dialog.open(this.modalContent, {
+            width: '60%',
+            disableClose: false
+        });
+    }
+
     getDeparts() {
         $("#loader").removeClass("d-none");
         this.http
@@ -1124,15 +1142,15 @@ DepartsDataRequestAvgAllNotPara
     exportexcel(): void {
         setTimeout(() => {
             /* table id is passed over here */
-        let element = document.getElementById('excel-table');
-        const ws: XLSX.WorkSheet = XLSX.utils.table_to_sheet(element);
+            let element = document.getElementById('excel-table');
+            const ws: XLSX.WorkSheet = XLSX.utils.table_to_sheet(element);
 
-        /* generate workbook and add the worksheet */
-        const wb: XLSX.WorkBook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
+            /* generate workbook and add the worksheet */
+            const wb: XLSX.WorkBook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
 
-        /* save to file */
-        XLSX.writeFile(wb, this.fileName);
+            /* save to file */
+            XLSX.writeFile(wb, this.fileName);
         }, 1000);
     }
     public getDataFormServer(
@@ -1269,6 +1287,8 @@ DepartsDataRequestAvgAllNotPara
                             Hospital_Date: Consultations[i].Hospital_Date,
                             Discharge_Date: Consultations[i].Discharge_Date,
                             Order_Number: Consultations[i].Order_Number,
+                            Consult_Answer: Consultations[i].Consult_Answer,
+                            Age: Consultations[i].Age,
                         });
                     }
                     if (this.selectedIndexTab == 1) {

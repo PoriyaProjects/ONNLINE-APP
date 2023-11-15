@@ -368,10 +368,8 @@
                                     </td>
                                 </ng-container>
                                 <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-                                <tr mat-row *matRowDef="
-                                        let row;
-                                        columns: displayedColumns
-                                    "></tr>
+                                <tr mat-row *matRowDef="let row;columns: displayedColumns" (click)="handleDialog(row)">
+                                </tr>
                             </table>
                         </div>
                         <!-- PAGINATION -->
@@ -380,6 +378,32 @@
                     </div>
                 </div>
             </div>
+            <ng-template #modalContent let-close="close">
+                <h1 class="text-center">
+                    <span class="mr-3">נתוני ייעוץ</span>
+                </h1>
+                <div class="row">
+                    <div class="col-3">
+                        <span>מספר מקרה:</span>
+                        {{patient_dialog_data.Case_Number}}
+                    </div>
+                    <div class="col-3">
+                        <span>שם:</span>
+                        {{patient_dialog_data.Patient_First_Name}} {{patient_dialog_data.Patient_Last_Name}}
+                    </div>
+                    <div class="col-3">
+                        <span>מין:</span>
+                        {{patient_dialog_data.Patient_Gender}}
+                    </div>
+                    <div class="col-3">
+                        <span>גיל:</span>
+                        {{patient_dialog_data.Age}}
+                    </div>
+                </div>
+                <div class="row mt-5" style="float: right;">
+                    <p>{{patient_dialog_data.Consult_Answer}}</p>
+                </div>
+            </ng-template>
             <table id="excel-table" dir="rtl" style="display: none;">
                 <tr>
                     <th>מס' מקרה</th>
