@@ -379,10 +379,10 @@
                 </div>
             </div>
             <ng-template #modalContent let-close="close">
-                <h1 class="text-center">
-                    <span class="mr-3">נתוני ייעוץ</span>
+                <h1 class="text-center mb-4">
+                    <span class="mr-3"><u>נתוני ייעוץ</u></span>
                 </h1>
-                <div class="row">
+                <div class="row text-right">
                     <div class="col-3">
                         <span>מספר מקרה:</span>
                         {{patient_dialog_data.Case_Number}}
@@ -399,8 +399,12 @@
                         <span>גיל:</span>
                         {{patient_dialog_data.Age}}
                     </div>
+                    <div class="col-3">
+                        <span>קופה:</span>
+                        {{patient_dialog_data.Pay_Institute}}
+                    </div>
                 </div>
-                <div class="row mt-5" style="float: right;">
+                <div class="row mt-5" style="float: right;text-align: right;">
                     <p>{{patient_dialog_data.Consult_Answer}}</p>
                 </div>
             </ng-template>
