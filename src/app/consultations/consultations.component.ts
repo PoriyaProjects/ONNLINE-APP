@@ -66,6 +66,7 @@ export interface Consultations {
     Order_Number: string;
     Consult_Answer: string;
     Age: string;
+    Pay_Institute: string;
 }
 @Component({
     selector: "app-consultations",
@@ -1050,7 +1051,7 @@ DepartsDataRequestAvgAllNotPara
     getDeparts() {
         $("#loader").removeClass("d-none");
         this.http
-            .post("http://srv-apps-prod/RCF_WS/WebService.asmx/GetNamerDeparts", {})
+            .post(environment.url + "GetNamerDeparts", {})
             .subscribe((Response) => {
                 //// ////////debugger
                 this.departsList = [];
@@ -1289,6 +1290,7 @@ DepartsDataRequestAvgAllNotPara
                             Order_Number: Consultations[i].Order_Number,
                             Consult_Answer: Consultations[i].Consult_Answer,
                             Age: Consultations[i].Age,
+                            Pay_Institute: Consultations[i].Pay_Institute,
                         });
                     }
                     if (this.selectedIndexTab == 1) {
