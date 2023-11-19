@@ -101,9 +101,11 @@ import { QualityMeasuresDashboardComponent } from "./quality-measures-dashboard/
 import { NutritionSystemComponent } from "./nutrition-system/nutrition-system.component";
 import { ClinicsRequestsComponent } from "./clinics-requests/clinics-requests.component";
 import { WagonComponent } from "./wagon/wagon.component";
+import { SwitchesComponent } from "./switches/switches.component";
 
-const routes: Routes = [
+const routes: Routes = [ 
     { path: "clinicsrequests", component: ClinicsRequestsComponent },
+    { path: 'switches', component : SwitchesComponent},
     { path: "dashboard", component: DashboardComponent },
     { path: "login", component: LoginComponent },
     { path: "chads", component: ChadsComponent },
@@ -113,7 +115,7 @@ const routes: Routes = [
     { path: "eshboz", component: EshbozComponent },
     { path: "dimot", component: DimotComponent },
     { path: "coronaform", component: CoronaformComponent },
-    { path: "poriadeparts", component: PoriadepartsComponent },
+    { path: "poriadeparts", component: PoriadepartsComponent }, 
     { path: "roles", component: RolesComponent },
     { path: "sendsms", component: SendsmsComponent },
     { path: "sendsmsadmin", component: SendsmsadminComponent },
