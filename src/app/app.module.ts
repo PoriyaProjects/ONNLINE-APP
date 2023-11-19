@@ -201,6 +201,8 @@ import { NutritionSystemComponent } from './nutrition-system/nutrition-system.co
 import { ClinicsRequestsComponent } from './clinics-requests/clinics-requests.component';
 import { ClinicsRequestsDialogComponent } from './clinics-requests/clinics-requests-dialog/clinics-requests-dialog.component';
 import { ClinicsPatientRequestsDialogComponent } from './clinics-requests/clinics-patient-requests-dialog/clinics-patient-requests-dialog.component';
+import { SwitchesComponent } from './switches/switches.component';
+import { AddOrEditSwitchesComponent } from './switches/add-or-edit-switches/add-or-edit-switches.component';
 
 
 const maskConfig: Partial<IConfig> = {
@@ -357,7 +359,9 @@ const maskConfig: Partial<IConfig> = {
     NutritionSystemComponent,
     ClinicsRequestsComponent,
     ClinicsRequestsDialogComponent,
-    ClinicsPatientRequestsDialogComponent
+    ClinicsPatientRequestsDialogComponent,
+    SwitchesComponent,
+    AddOrEditSwitchesComponent
   ],
   imports: [
     JpTimeMaskModule,

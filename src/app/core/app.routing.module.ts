@@ -106,7 +106,8 @@ import { QualityMeasuresDashboardComponent } from '../quality-measures-dashboard
 import { NutritionSystemComponent } from '../nutrition-system/nutrition-system.component';
 import { ClinicsRequestsComponent } from "../clinics-requests/clinics-requests.component";
 import { WagonComponent } from '../wagon/wagon.component';
-
+import { SwitchesComponent } from '../switches/switches.component';
+ 
 const routes: Routes = [
   
   { path: 'dashboard', component: DashboardComponent },
@@ -217,7 +218,8 @@ const routes: Routes = [
   { path: "wagons", component: WagonComponent },
   { path: "whatsapp-dashboard", component: WhatsappMessagesDashboardComponent },
   { path: "nutrition-dashboard", component: NutritionSystemComponent },
-  { path: '', component : LoginComponent}
+  { path: '', component : LoginComponent},
+  { path: 'switches', component : SwitchesComponent}
 ];
  
 @NgModule({
