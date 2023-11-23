@@ -12,7 +12,7 @@
     <form [formGroup]="SurgeryFormGroup" dir="rtl">
         <div class="row personal-details" formGroupName="SurgeryPatientDetails">
             <div class="col-2">
-                <mat-form-field>
+                <mat-form-field class="personal-details">
                     <mat-label>תעודת זהות</mat-label>
                     <!--  (focusout)="checkIfPatientExists()" -->
                     <input matInput formControlName="PM_PATIENT_ID">
@@ -59,9 +59,9 @@
                 </mat-form-field>
             </div> -->
         </div>
-        <hr>
+        <hr style="border: 1px solid #bca875;">
         <div class="row surgery-details">
-            <div class="col-3" formGroupName="SurgeryRequestDepartments">
+            <div class="col-2" formGroupName="SurgeryRequestDepartments">
                 <mat-form-field style="line-height: 30px;">
                     <mat-label>מחלקה מזמינה</mat-label>
                     <mat-select formControlName="S_DEPARTMENT"
@@ -72,7 +72,7 @@
                     </mat-select>
                 </mat-form-field>
             </div>
-            <div class="col-3">
+            <div class="col-2">
                 <mat-form-field>
                     <mat-label>תאריך ניתוח</mat-label>
                     <div style="display: flex;">
@@ -84,7 +84,7 @@
                     </div>
                 </mat-form-field>
             </div>
-            <div class="col-3">
+            <div class="col-2">
                 <mat-form-field style="line-height: 30px;">
                     <mat-label>חדר ניתוח</mat-label>
                     <mat-select formControlName="SurgeryRoom" (selectionChange)="selectedSurgeryRoom($event.value)">
@@ -94,36 +94,17 @@
                     </mat-select>
                 </mat-form-field>
             </div>
-            <div class="col-3">
+            <div class="col-2">
+                <mat-form-field class="example-full-width" appearance="fill">
+                    <mat-label>מחלקת אשפוז</mat-label>
+                    <input matInput formControlName="HOSPITALIZATION">
+                </mat-form-field>
+            </div>
+            <div class="col-2">
                 <mat-form-field>
                     <mat-label>שעת התחלה</mat-label>
                     <input matInput type="time" formControlName="ArrivalTime"
                         (focusout)="enableDisableSurgeryNameSelect()">
-                </mat-form-field>
-            </div>
-        </div>
-        <div class="row surgery-details">
-            <div class="col-4" formGroupName="SurgeryServicesName">
-                <mat-form-field class="example-full-width" appearance="fill">
-                    <mat-label>שם ניתוח</mat-label>
-                    <input type="text" matInput [formControl]="surgeriesCtrl" [matAutocomplete]="auto2"
-                        (focusout)="selectedSurgeryServiceName()">
-                    <mat-autocomplete #auto2="matAutocomplete" [displayWith]="displayFnSurgery">
-                        <mat-option *ngFor="let option of filteredOptionssurgeries | async" [value]="option">
-                            {{option.S_SERVICE_VAL}}
-                        </mat-option>
-                    </mat-autocomplete>
-                </mat-form-field>
-            </div>
-            <div class="col-4">
-                <mat-form-field class="example-full-width" appearance="fill">
-                    <mat-label>רופא מנתח</mat-label>
-                    <input type="text" matInput [formControl]="surgeonCtrl" [matAutocomplete]="auto">
-                    <mat-autocomplete #auto="matAutocomplete" [displayWith]="displayFnSurgeon">
-                        <mat-option *ngFor="let option of filteredOptions | async" [value]="option">
-                            {{option}}
-                        </mat-option>
-                    </mat-autocomplete>
                 </mat-form-field>
             </div>
             <div class="col-2">
@@ -133,24 +114,29 @@
                         (focusout)="calculateSurgeryDuration('endTime')">
                 </mat-form-field>
             </div>
+        </div>
+        <div class="row surgery-details">
             <div class="col-2" formGroupName="SurgeryServicesName">
-                <mat-form-field>
-                    <mat-label>זמן משך ניתוח (שעות)</mat-label>
-                    <input matInput formControlName="S_SERVICE_DURATION" type="number" step="1"
-                        (focusout)="calculateSurgeryDuration('duration')">
+                <mat-form-field class="example-full-width" appearance="fill">
+                    <mat-label>שירות</mat-label>
+                    <input type="text" matInput [matAutocomplete]="auto1" (focusout)="selectedSurgeryServiceName()">
+                    <mat-autocomplete #auto1="matAutocomplete" [displayWith]="displayFnSurgery">
+                        <mat-option *ngFor="let option of filteredOptionssurgeries | async" [value]="option">
+                            {{option.S_SERVICE_VAL}}
+                        </mat-option>
+                    </mat-autocomplete>
                 </mat-form-field>
             </div>
-        </div>
-        <div class="row surgery-details" formGroupName="AdditionalDetails"
-            *ngIf="SurgeryFormGroup.get('SurgeryRequestDepartments').value.SD_ROW_ID != ''">
-            <div class="col-2">
+            <div class="col-2" formGroupName="SurgeryServicesName">
                 <mat-form-field class="example-full-width" appearance="fill">
-                    <mat-label>Lap or Open</mat-label>
-                    <mat-select formControlName="LAP_OR_OPEN">
-                        <mat-option value="Lap"> Lap </mat-option>
-                        <mat-option value="Open"> Open </mat-option>
-                        <mat-option value="Robot"> Robot </mat-option>
-                    </mat-select>
+                    <mat-label>פרוצדורה/שם ניתוח</mat-label>
+                    <input type="text" matInput [formControl]="surgeriesCtrl" [matAutocomplete]="auto2"
+                        (focusout)="selectedSurgeryServiceName()">
+                    <mat-autocomplete #auto2="matAutocomplete" [displayWith]="displayFnSurgery">
+                        <mat-option *ngFor="let option of filteredOptionssurgeries | async" [value]="option">
+                            {{option.S_SERVICE_VAL}}
+                        </mat-option>
+                    </mat-autocomplete>
                 </mat-form-field>
             </div>
             <div class="col-2">
@@ -167,26 +153,28 @@
             </div>
             <div class="col-2">
                 <mat-form-field class="example-full-width" appearance="fill">
-                    <mat-label>מכשירים נוספים</mat-label>
-                    <input matInput formControlName="TOOLS">
-                </mat-form-field>
-            </div>
-            <div class="col-2">
-                <mat-form-field class="example-full-width" appearance="fill">
-                    <mat-label>סוג הרדמה</mat-label>
+                    <mat-label>הרדמה</mat-label>
                     <input matInput formControlName="ANESTHESIA">
                 </mat-form-field>
             </div>
-            <div class="col-2">
-                <mat-form-field class="example-full-width" appearance="fill">
-                    <mat-label>מחלקת אשפוז</mat-label>
-                    <input matInput formControlName="HOSPITALIZATION">
+            <div class="col-2" formGroupName="SurgeryServicesName">
+                <mat-form-field>
+                    <mat-label>זמן משך ניתוח (דקות)</mat-label>
+                    <input matInput formControlName="S_SERVICE_DURATION" type="number" step="1"
+                        (focusout)="calculateSurgeryDuration('duration')">
                 </mat-form-field>
             </div>
-            <div class="col-3">
+        </div>
+        <div class="row surgery-details" formGroupName="AdditionalDetails"
+            *ngIf="SurgeryFormGroup.get('SurgeryRequestDepartments').value.SD_ROW_ID != ''">
+            <div class="col-2">
                 <mat-form-field class="example-full-width" appearance="fill">
-                    <mat-label>הערות</mat-label>
-                    <input matInput formControlName="NOTE">
+                    <mat-label>דחיפות</mat-label>
+                    <mat-select>
+                        <mat-option value="EMG"> חירום </mat-option>
+                        <mat-option value="URG"> דחוף </mat-option>
+                        <mat-option value="ROU"> אלקטיב </mat-option>
+                    </mat-select>
                 </mat-form-field>
             </div>
             <div class="col-2">
@@ -216,8 +204,93 @@
                     </mat-select>
                 </mat-form-field>
             </div>
+            <div class="col-2">
+                <mat-form-field class="example-full-width" appearance="fill">
+                    <mat-label>Lap or Open</mat-label>
+                    <mat-select formControlName="LAP_OR_OPEN">
+                        <mat-option value="Lap"> Lap </mat-option>
+                        <mat-option value="Open"> Open </mat-option>
+                        <mat-option value="Robot"> Robot </mat-option>
+                    </mat-select>
+                </mat-form-field>
+            </div>
+            <div class="col-2">
+                <mat-form-field class="example-full-width" appearance="fill">
+                    <mat-label>מכשירים נוספים</mat-label>
+                    <textarea matInput formControlName="TOOLS"></textarea>
+                </mat-form-field>
+            </div>
+            <div class="col-2">
+                <mat-form-field class="example-full-width" appearance="fill">
+                    <mat-label>רופא מנתח</mat-label>
+                    <input type="text" matInput [formControl]="surgeonCtrl" [matAutocomplete]="auto">
+                    <mat-autocomplete #auto="matAutocomplete" [displayWith]="displayFnSurgeon">
+                        <mat-option *ngFor="let option of filteredOptions | async" [value]="option">
+                            {{option}}
+                        </mat-option>
+                    </mat-autocomplete>
+                </mat-form-field>
+            </div>
+            <div class="col-10">
+                <mat-form-field class="example-full-width" appearance="fill">
+                    <mat-label>הערות</mat-label>
+                    <textarea matInput formControlName="NOTE"></textarea>
+                </mat-form-field>
+            </div>
         </div>
-        <hr>
+        <hr style="border: 1px solid #bca875;">
+        <p style="text-align: right;font-weight: bold;">רופא</p>
+        <div style="border-style: outset;align-items: center;">
+            <div class="row surgery-details">
+                <div class="col-4">
+                    <mat-form-field class="example-full-width" appearance="fill">
+                        <mat-label>סיבת עיכוב בבוקר</mat-label>
+                        <mat-select formControlName="SurgeryLateMorningNote"
+                            (selectionChange)="getNoteObject($event, 'late1')">
+                            <mat-option *ngFor="let lnt of surgeryLateMorningNotes" [value]="lnt.Row_ID">
+                                {{lnt.Description}}
+                            </mat-option>
+                        </mat-select>
+                    </mat-form-field>
+                </div>
+                <div class="col-4">
+                    <mat-form-field class="example-full-width" appearance="fill">
+                        <mat-label>סיבת עיכוב בין ניתוחים</mat-label>
+                        <mat-select formControlName="SurgeryLateNote" (selectionChange)="getNoteObject($event, 'late')">
+                            <mat-option *ngFor="let lnt of surgeryLateNotes" [value]="lnt.Row_ID">
+                                {{lnt.Description}}
+                            </mat-option>
+                        </mat-select>
+                    </mat-form-field>
+                </div>
+                <div class="col-4">
+                    <mat-form-field class="example-full-width" appearance="fill">
+                        <mat-label>סיבת ביטול</mat-label>
+                        <mat-select formControlName="SurgeryCancelNote"
+                            (selectionChange)="getNoteObject($event, 'cancel')">
+                            <mat-option *ngFor="let cnt of surgeryCancelNotes" [value]="cnt.Row_ID">
+                                {{cnt.Description}}
+                            </mat-option>
+                        </mat-select>
+                    </mat-form-field>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-10">
+                    <mat-form-field class="example-full-width" appearance="fill">
+                        <mat-label>סיבה - בהערה</mat-label>
+                        <textarea matInput formControlName="CancelNote"></textarea>
+                    </mat-form-field>
+                </div>
+                <div class="col-2">
+                    <button mat-fab color="warn" aria-label="Example icon button with a delete icon"
+                        (click)="deleteCancelNote()">
+                        <mat-icon>delete</mat-icon>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <p style="text-align: right;font-weight: bold;">סיעוד</p>
         <div style="border-style: outset;align-items: center;">
             <div class="row surgery-details">
                 <div class="col-4">

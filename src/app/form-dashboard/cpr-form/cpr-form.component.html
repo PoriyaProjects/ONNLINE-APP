@@ -357,22 +357,27 @@
                                     <div style="display: inline-flex;justify-content: center;place-items: center;">
                                         <mat-radio-group class="example-radio-group" formControlName="actionctrl">
                                             <div class="d-block">
-                                                <mat-radio-button class="radio-style" value="בוצע">
+                                                <mat-radio-button class="radio-style" value="בוצע"
+                                                    (change)="validationOfActionTable($event.value, i);">
                                                     <span>בוצע</span>
                                                 </mat-radio-button>
-                                                <mat-radio-button class="radio-style" value="לא בוצע">
+                                                <mat-radio-button class="radio-style" value="לא בוצע"
+                                                    (change)="validationOfActionTable($event.value, i);">
                                                     <span>לא בוצע</span>
                                                 </mat-radio-button>
                                                 <mat-radio-button *ngIf="action.ActionList == 'הנשמה ב LMA'"
-                                                    class="radio-style" value="בוצע קדם ביה'ח">
+                                                    class="radio-style" value="בוצע קדם ביה'ח"
+                                                    (change)="validationOfActionTable($event.value, i);">
                                                     <span>בוצע קדם ביה'ח</span>
                                                 </mat-radio-button>
                                                 <mat-radio-button *ngIf="action.ActionList == 'אינטובציה'"
-                                                    class="radio-style" value="בוצע קדם ביה'ח">
+                                                    class="radio-style" value="בוצע קדם ביה'ח"
+                                                    (change)="validationOfActionTable($event.value, i);">
                                                     <span>בוצע קדם ביה'ח</span>
                                                 </mat-radio-button>
                                                 <mat-radio-button *ngIf="action.ActionList == 'החדרת עירוי / I.O'"
-                                                    class="radio-style" value="בוצע קדם ביה'ח">
+                                                    class="radio-style" value="בוצע קדם ביה'ח"
+                                                    (change)="validationOfActionTable($event.value, i);">
                                                     <span>בוצע קדם ביה'ח</span>
                                                 </mat-radio-button>
                                             </div>

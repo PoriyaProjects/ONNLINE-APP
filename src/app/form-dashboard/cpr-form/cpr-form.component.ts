@@ -549,7 +549,7 @@ export class CprFormComponent implements OnInit {
       this.actionsTableArray.push(this.formBuilder.group({
         id: new FormControl(i, null),
         actionctrl: new FormControl('', Validators.required),
-        actiontime: new FormControl('', Validators.required)
+        actiontime: new FormControl('', null)
       }));
     }
 
@@ -979,6 +979,18 @@ export class CprFormComponent implements OnInit {
       );
   }
 
+  validationOfActionTable(event, index) {
+    if (event == 'בוצע') {
+      // this.SecondSection.controls['actionsTableArray']['controls'][index].controls.actiontime.setValue(null);
+      this.SecondSection.controls['actionsTableArray']['controls'][index].controls.actiontime.setValidators([Validators.required]);
+      this.SecondSection.controls['actionsTableArray']['controls'][index].controls.actiontime.updateValueAndValidity();
+    } else {
+      // this.SecondSection.controls['actionsTableArray']['controls'][index].controls.actiontime.setValue("");
+      this.SecondSection.controls['actionsTableArray']['controls'][index].controls.actiontime.setValidators(null);
+      this.SecondSection.controls['actionsTableArray']['controls'][index].controls.actiontime.updateValueAndValidity();
+    }
+  }
+
   submit() {
     let defaultCprDate = this.datePipe.transform(this.myDate, 'yyyy-MM-dd');
     this.FirstSection.controls['cprDate'].setValue(defaultCprDate);
@@ -1055,26 +1067,26 @@ export class CprFormComponent implements OnInit {
   sendCprFormEmail(id) {
     this.http
       .post(environment.url + "SendCprFormEmail", {
-      //  .post("http://srv-apps-prod/RCF_WS/WebService.asmx/SendCprFormEmail", {
-      // .post("http://srv-ipracticom:8080/WebService.asmx/SendCprFormEmail", {
+        //  .post("http://srv-apps-prod/RCF_WS/WebService.asmx/SendCprFormEmail", {
+        // .post("http://srv-ipracticom:8080/WebService.asmx/SendCprFormEmail", {
         _userSender: this.UserName,
         users: this.usersToSend,
         _reportArrayID: id,
         _html_content: ""
       })
-          .subscribe((Response) => {
-            if (Response["d"]) {
-              this.openSnackBar("נשלח ל: אמין, מערך החייאה,היחידה לבטיחות בטיפול");
-            } else {
-              this.openSnackBar("אירעה תקלה, לא נשלח!");
-            }
-          });
-      }
+      .subscribe((Response) => {
+        if (Response["d"]) {
+          this.openSnackBar("נשלח ל: אמין, מערך החייאה,היחידה לבטיחות בטיפול");
+        } else {
+          this.openSnackBar("אירעה תקלה, לא נשלח!");
+        }
+      });
+  }
 
   linkToNamer(id) {
-        let CaseNumber = "";
-        let form =[];
-        if(this.CprFormsList_all.length > 0) {
+    let CaseNumber = "";
+    let form = [];
+    if (this.CprFormsList_all.length > 0) {
       form = this.CprFormsList_all.filter(x => x.Row_ID == id);
       CaseNumber = form[0].PM_CASE_NUMBER;
     } else {
@@ -1083,7 +1095,7 @@ export class CprFormComponent implements OnInit {
     $("#loader_2").removeClass("d-none");
     // this.http.post(this.url + "createCprPdfOnServer", {
     this.http.post("http://srv-ipracticom:8080/WebService.asmx/createCprPdfOnServer", {
-    // this.http.post(environment.url + "createCprPdfOnServer", {
+      // this.http.post(environment.url + "createCprPdfOnServer", {
       CaseNumber: CaseNumber,
       FormID: "1",
       Catigory: "ZPO_CPRFRM",
@@ -1094,7 +1106,7 @@ export class CprFormComponent implements OnInit {
         let that = this;
         setTimeout(() => {
           that.http.post("http://srv-ipracticom:8080/WebService.asmx/LinkPdfToPatientNamer", {
-          // that.http.post(environment.url + "LinkPdfToPatientNamer", {
+            // that.http.post(environment.url + "LinkPdfToPatientNamer", {
             CaseNumber:
               CaseNumber,
             FormID: "1",
