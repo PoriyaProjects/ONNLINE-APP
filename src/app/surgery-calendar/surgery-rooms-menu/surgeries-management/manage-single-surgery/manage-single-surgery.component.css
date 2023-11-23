@@ -21,6 +21,11 @@
   /* width: 10%; */
   line-height: 40px;
   margin-left: auto;
+  font-weight: bold;
+}
+
+.example-full-width mat-form-field-underline {
+  display: none;
 }
 
 .row.surgery-details mat-form-field {

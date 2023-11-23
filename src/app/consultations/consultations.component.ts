@@ -193,17 +193,16 @@ export class ConsultationsComponent implements OnInit {
     dataSource = new MatTableDataSource(this.TABLE_DATA);
     displayedColumns: string[] = [
         "Case_Number",
-        "Patient_Numbae",
+        "Patient_ID",
+        "Full_Name",
+        "Age",
+        "Pay_Institute",
         "Request_Depart_Seode",
         "Doing_Depart",
         "Request_Persone_Name",
         "Doing_Persone_Name",
-        "Service_Name",
         "Request_Date",
-        "Request_Time",
         "Doing_Date",
-        "Doing_Time",
-        "Waiting_Time",
     ];
     public disabled = false;
     public showSpinners = true;
