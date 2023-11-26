@@ -198,11 +198,12 @@ export class ConsultationsComponent implements OnInit {
         "Age",
         "Pay_Institute",
         "Request_Depart_Seode",
-        "Doing_Depart",
-        "Request_Persone_Name",
-        "Doing_Persone_Name",
+        // "Doing_Depart",
+        // "Request_Persone_Name",
+        // "Doing_Persone_Name",
         "Request_Date",
         "Doing_Date",
+        "Discharge_Date"
     ];
     public disabled = false;
     public showSpinners = true;
