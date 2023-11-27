@@ -1,19 +1,20 @@
 <div class="search-bar mt-4" dir="rtl">
     <div class="row">
-        <div class="col-6">
+        <div class="col-6" [formGroup]="searchGroup" style="display: grid;">
             <!-- Right Side: Dropdowns with Multiple Select -->
             <mat-form-field class="dropdown">
                 <mat-label>מחלקות</mat-label>
-                <mat-select multiple>
-                    <mat-option value="dept" *ngFor="let dept of departmentsData">{{dept}}</mat-option>
+                <mat-select multiple formControlName="Departments">
+                    <mat-option [value]="dept" *ngFor="let dept of departmentsData">{{dept}}</mat-option>
                 </mat-select>
             </mat-form-field>
             <mat-form-field class="dropdown">
                 <mat-label>מכונים</mat-label>
-                <mat-select multiple>
-                    <mat-option value="optionA">Option A</mat-option>
+                <mat-select multiple formControlName="Clinics">
+                    <mat-option [value]="clin" *ngFor="let clin of clinicsData">{{clin}}</mat-option>
                 </mat-select>
             </mat-form-field>
+            <button mat-raised-button class="button" color="primary" (click)="searchPatients()">חיפוש</button>
         </div>
         <div class="col-6">
             <!-- Left Side: Excel Import Button -->
@@ -44,7 +45,7 @@
     </mat-form-field>
     <div style="padding-bottom: 60px;">
         <!-- Table with Sorting and Filtering -->
-        <table mat-table [dataSource]="dataSourceHos.filteredData" matSort>
+        <table mat-table [dataSource]="dataSourceHos" matSort>
             <!-- Column Definitions -->
             <ng-container matColumnDef="CaseNumber">
                 <mat-header-cell mat-header-cell *matHeaderCellDef mat-sort-header>מספר מקרה</mat-header-cell>
@@ -112,7 +113,41 @@
         <mat-paginator [pageSizeOptions]="[10, 25, 100, 200]" aria-label="בחר מספר דף">
         </mat-paginator>
     </div>
+    <table id="excel-table" dir="rtl" style="display: none;">
+        <tr>
+            <th>מספר מקרה</th>
+            <th>תעודת זהות</th>
+            <th>שם פרטי</th>
+            <th>שם משפחה</th>
+            <th>שם האב</th>
+            <th>גיל</th>
+            <th>מחלקה</th>
+            <th>מספר חדר</th>
+            <th>תאריך אשפוז</th>
+            <th>מספר ימי אשפוז</th>
+            <th>סוג כלכלה</th>
+            <th>סוג מרקם</th>
+            <th>רגישויות אשפוז נוכחי</th>
+            <th>רגישויות בעבר</th>
 
+        </tr>
+        <tr *ngFor="let nut of dataSourceHos.filteredData">
+            <td> {{nut.CaseNumber}} </td>
+            <td> {{nut.IDNumber}} </td>
+            <td> {{nut.FirstName}} </td>
+            <td> {{nut.LastName}} </td>
+            <td> {{nut.FatherName}} </td>
+            <td> {{nut.Age}} </td>
+            <td> {{nut.DepartName}} </td>
+            <td> {{nut.RoomNumber}} </td>
+            <td> {{nut.HospitalizationDate}} </td>
+            <td> {{nut.HospitalizationDuration}} </td>
+            <td> {{nut.FoodType}} </td>
+            <td> {{nut.FoodTexture}} </td>
+            <td> {{nut.CurrentAllergy}} </td>
+            <td> {{nut.OldAllergy}} </td>
+        </tr>
+    </table>
     <!-- <mat-form-field>
         <input matInput (keyup)="applyFilter($event.target.value)" placeholder="Filter Calories">
     </mat-form-field> -->

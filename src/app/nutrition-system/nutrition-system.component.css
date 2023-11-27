@@ -17,3 +17,7 @@ table {
 a{
     cursor: pointer;
 }
+
+mat-cell{
+    text-align: right;
+}
