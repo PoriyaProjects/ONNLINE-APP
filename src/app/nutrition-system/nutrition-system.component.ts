@@ -1,12 +1,13 @@
 import { DatePipe } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { ChangeDetectorRef, Component, OnInit, ViewChild } from '@angular/core';
-import { FormBuilder } from '@angular/forms';
+import { Form, FormBuilder, FormControl, FormGroup } from '@angular/forms';
 import { MatPaginator } from '@angular/material/paginator';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatSort } from '@angular/material/sort';
 import { MatTableDataSource } from '@angular/material/table';
 import { environment } from 'src/environments/environment';
+import * as XLSX from 'xlsx';
 
 @Component({
   selector: 'app-nutrition-system',
@@ -24,6 +25,7 @@ export class NutritionSystemComponent implements OnInit {
   clinicsData = [];
   dataSourceHos = new MatTableDataSource(this.nutritionHosData);
   dataSourceCli = new MatTableDataSource(this.nutritionCliData);
+  searchGroup: FormGroup;
 
   displayedColumns: string[] = ['CaseNumber', 'IDNumber', 'FirstName', 'LastName', 'FatherName', 'Age', 'DepartName', 'RoomNumber', 'HospitalizationDate', 'HospitalizationDuration', 'FoodType', 'FoodTexture', 'CurrentAllergy', 'OldAllergy'];
 
@@ -47,35 +49,55 @@ export class NutritionSystemComponent implements OnInit {
     private cd: ChangeDetectorRef) { }
 
   ngOnInit(): void {
-    this.getNutritionsPatietnsList();
+    this.searchGroup = this.fb.group({
+      Departments: new FormControl([], null),
+      Clinics: new FormControl([], null)
+    });
+    this.getNutritionsPatietnsList([]);
   }
 
-  async getNutritionsPatietnsList() {
+  searchPatients() {
+    let searchString = [...this.searchGroup.controls['Departments'].value, ...this.searchGroup.controls['Clinics'].value];;
+    this.getNutritionsPatietnsList(searchString);
+  }
+
+  async getNutritionsPatietnsList(searchDepts) {
     this.http
       .post(environment.url + "GetNutritionsPatietnsList", {
+        _searchArr: searchDepts
       })
       .subscribe((Response) => {
         this.nutritionHosData = Response["d"].filter(x => x.UnitType == 'h');
         this.nutritionCliData = Response["d"].filter(x => x.UnitType == 'v');
-        this.dataSourceHos = new MatTableDataSource(Response["d"].filter(x => x.UnitType == 'h'));
-        this.dataSourceCli = new MatTableDataSource(Response["d"].filter(x => x.UnitType == 'v'));
+        this.dataSourceHos = new MatTableDataSource([...this.nutritionHosData, ...this.nutritionCliData]);
         // enter the departments to seperate array
-        this.dataSourceHos.filteredData.forEach(element => {
+        this.nutritionHosData.forEach(element => {
           this.departmentsData.push(element.DepartName);
         });
-        this.dataSourceCli.filteredData.forEach(element => {
+        this.nutritionCliData.forEach(element => {
           this.clinicsData.push(element.DepartName);
         });
         this.dataSourceHos.paginator = this.paginator;
         this.dataSourceHos.sort = this.sort;
         // distinct the duplicates from departments array
         this.departmentsData = Array.from(this.departmentsData.reduce((m, t) => m.set(t, t), new Map()).values());
+        this.clinicsData = Array.from(this.clinicsData.reduce((m, t) => m.set(t, t), new Map()).values());
       });
   }
 
+  fileName = 'Nutrition_Patients.xlsx';
   // export the table to excel file
   exportToExcel() {
+    /* table id is passed over here */
+    let element = document.getElementById('excel-table');
+    const ws: XLSX.WorkSheet = XLSX.utils.table_to_sheet(element);
 
+    /* generate workbook and add the worksheet */
+    const wb: XLSX.WorkBook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
+
+    /* save to file */
+    XLSX.writeFile(wb, this.fileName);
   }
 
   // filter the table where is not null or empty by the type recieved

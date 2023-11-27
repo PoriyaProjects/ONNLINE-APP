@@ -175,14 +175,46 @@
                                         {{ element.Case_Number }}
                                     </td>
                                 </ng-container>
-                                <ng-container matColumnDef="Patient_Numbae">
+                                <ng-container matColumnDef="Patient_ID">
+                                    <th mat-header-cell *matHeaderCellDef mat-sort-header>
+                                        תעודת זהות
+                                    </th>
+                                    <td mat-cell *matCellDef="let element">
+                                        {{ element.Patient_ID }}
+                                    </td>
+                                </ng-container>
+                                <ng-container matColumnDef="Full_Name">
+                                    <th mat-header-cell *matHeaderCellDef mat-sort-header>
+                                        שם מלא
+                                    </th>
+                                    <td mat-cell *matCellDef="let element">
+                                        {{ element.Patient_First_Name }} {{ element.Patient_Last_Name }}
+                                    </td>
+                                </ng-container>
+                                <ng-container matColumnDef="Age">
+                                    <th mat-header-cell *matHeaderCellDef mat-sort-header>
+                                        גיל
+                                    </th>
+                                    <td mat-cell *matCellDef="let element">
+                                        {{ element.Age }}
+                                    </td>
+                                </ng-container>
+                                <ng-container matColumnDef="Pay_Institute">
+                                    <th mat-header-cell *matHeaderCellDef mat-sort-header>
+                                        קופה
+                                    </th>
+                                    <td mat-cell *matCellDef="let element">
+                                        {{ element.Pay_Institute }}
+                                    </td>
+                                </ng-container>
+                                <!-- <ng-container matColumnDef="Patient_Numbae">
                                     <th mat-header-cell *matHeaderCellDef mat-sort-header>
                                         מס' מטופל
                                     </th>
                                     <td mat-cell *matCellDef="let element">
                                         {{ element.Patient_Numbae }}
                                     </td>
-                                </ng-container>
+                                </ng-container> -->
                                 <ng-container matColumnDef="Request_Depart">
                                     <th mat-header-cell *matHeaderCellDef mat-sort-header>
                                         מחלקה מזמינה
@@ -199,7 +231,7 @@
                                         {{ element.Request_Depart_Seode }}
                                     </td>
                                 </ng-container>
-                                <ng-container matColumnDef="Doing_Depart">
+                                <!-- <ng-container matColumnDef="Doing_Depart">
                                     <th mat-header-cell *matHeaderCellDef mat-sort-header>
                                         מחלקה מבצעת
                                     </th>
@@ -222,7 +254,7 @@
                                     <td mat-cell *matCellDef="let element">
                                         {{ element.Doing_Persone_Name }}
                                     </td>
-                                </ng-container>
+                                </ng-container> -->
                                 <ng-container matColumnDef="Request_Date">
                                     <th mat-header-cell *matHeaderCellDef mat-sort-header>
                                         תאריך הזמנה
@@ -231,14 +263,14 @@
                                         {{ element.Request_Date }}
                                     </td>
                                 </ng-container>
-                                <ng-container matColumnDef="Request_Time">
+                                <!-- <ng-container matColumnDef="Request_Time">
                                     <th mat-header-cell *matHeaderCellDef mat-sort-header>
                                         שעת זימון
                                     </th>
                                     <td mat-cell *matCellDef="let element">
                                         {{ element.Request_Time }}
                                     </td>
-                                </ng-container>
+                                </ng-container> -->
                                 <ng-container matColumnDef="Doing_Date">
                                     <th mat-header-cell *matHeaderCellDef mat-sort-header>
                                         תאריך ביצוע
@@ -247,14 +279,14 @@
                                         {{ element.Doing_Date }}
                                     </td>
                                 </ng-container>
-                                <ng-container matColumnDef="Doing_Time">
+                                <!-- <ng-container matColumnDef="Doing_Time">
                                     <th mat-header-cell *matHeaderCellDef mat-sort-header>
                                         שעת ביצוע
                                     </th>
                                     <td mat-cell *matCellDef="let element">
                                         {{ element.Doing_Time }}
                                     </td>
-                                </ng-container>
+                                </ng-container> -->
                                 <ng-container matColumnDef="Cancel_Date">
                                     <th mat-header-cell *matHeaderCellDef mat-sort-header>
                                         Cancel_Date
@@ -271,14 +303,14 @@
                                         {{ element.Cancel_Time }}
                                     </td>
                                 </ng-container>
-                                <ng-container matColumnDef="Waiting_Time">
+                                <!-- <ng-container matColumnDef="Waiting_Time">
                                     <th mat-header-cell *matHeaderCellDef mat-sort-header>
                                         זמן המתנה (MIN)
                                     </th>
                                     <td mat-cell *matCellDef="let element">
                                         {{ element.Waiting_Time }}
                                     </td>
-                                </ng-container>
+                                </ng-container> -->
                                 <ng-container matColumnDef="Case_Type">
                                     <th mat-header-cell *matHeaderCellDef mat-sort-header>
                                         Case_Type
@@ -303,14 +335,14 @@
                                         {{ element.Patient_Last_Name }}
                                     </td>
                                 </ng-container>
-                                <ng-container matColumnDef="Patient_ID">
+                                <!-- <ng-container matColumnDef="Patient_ID">
                                     <th mat-header-cell *matHeaderCellDef mat-sort-header>
                                         ת.ז
                                     </th>
                                     <td mat-cell *matCellDef="let element">
                                         {{ element.Patient_ID }}
                                     </td>
-                                </ng-container>
+                                </ng-container> -->
                                 <ng-container matColumnDef="Patient_DOB">
                                     <th mat-header-cell *matHeaderCellDef mat-sort-header>
                                         תאריך לידה
@@ -382,24 +414,24 @@
                 <h1 class="text-center mb-4">
                     <span class="mr-3"><u>נתוני ייעוץ</u></span>
                 </h1>
-                <div class="row text-right">
+                <div class="row text-right" dir="rtl">
                     <div class="col-3">
                         <span>מספר מקרה:</span>
                         {{patient_dialog_data.Case_Number}}
                     </div>
-                    <div class="col-3">
+                    <div class="col-2">
                         <span>שם:</span>
                         {{patient_dialog_data.Patient_First_Name}} {{patient_dialog_data.Patient_Last_Name}}
                     </div>
-                    <div class="col-3">
+                    <div class="col-2">
                         <span>מין:</span>
                         {{patient_dialog_data.Patient_Gender}}
                     </div>
-                    <div class="col-3">
+                    <div class="col-2">
                         <span>גיל:</span>
                         {{patient_dialog_data.Age}}
                     </div>
-                    <div class="col-3">
+                    <div class="col-2">
                         <span>קופה:</span>
                         {{patient_dialog_data.Pay_Institute}}
                     </div>
