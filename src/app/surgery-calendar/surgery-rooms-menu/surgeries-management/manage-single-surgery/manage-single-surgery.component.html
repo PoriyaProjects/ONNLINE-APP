@@ -12,45 +12,50 @@
     <form [formGroup]="SurgeryFormGroup" dir="rtl">
         <div class="row personal-details" formGroupName="SurgeryPatientDetails">
             <div class="col-2">
-                <mat-form-field class="personal-details">
-                    <mat-label>תעודת זהות</mat-label>
-                    <!--  (focusout)="checkIfPatientExists()" -->
-                    <input matInput formControlName="PM_PATIENT_ID">
-                </mat-form-field>
+                <!-- <mat-form-field class="personal-details"> -->
+                <mat-label>תעודת זהות</mat-label>
+                <!--  (focusout)="checkIfPatientExists()" -->
+                <!-- <input matInput formControlName="PM_PATIENT_ID"> -->
+                <p>{{SurgeryFormGroup.value.SurgeryPatientDetails.PM_PATIENT_ID}}</p>
+                <!-- </mat-form-field> -->
             </div>
             <div class="col-2">
-                <mat-form-field>
-                    <mat-label>מספר מקרה</mat-label>
-                    <input matInput formControlName="PM_CASE_NUMBER">
-                </mat-form-field>
+                <!-- <mat-form-field> -->
+                <mat-label>מספר מקרה</mat-label>
+                <!-- <input matInput formControlName="PM_CASE_NUMBER"> -->
+                <p>{{SurgeryFormGroup.value.SurgeryPatientDetails.PM_CASE_NUMBER}}</p>
+                <!-- </mat-form-field> -->
             </div>
             <div class="col-2">
-                <mat-form-field>
-                    <mat-label>שם פרטי</mat-label>
-                    <input matInput formControlName="PM_FIRST_NAME">
-                </mat-form-field>
+                <!-- <mat-form-field> -->
+                <mat-label>שם פרטי</mat-label>
+                <!-- <input matInput formControlName="PM_FIRST_NAME"> -->
+                <p>{{SurgeryFormGroup.value.SurgeryPatientDetails.PM_FIRST_NAME}}</p>
+                <!-- </mat-form-field> -->
             </div>
             <div class="col-2">
-                <mat-form-field>
-                    <mat-label>שם משפחה</mat-label>
-                    <input matInput formControlName="PM_LAST_NAME">
-                </mat-form-field>
+                <!-- <mat-form-field> -->
+                <mat-label>שם משפחה</mat-label>
+                <!-- <input matInput formControlName="PM_LAST_NAME"> -->
+                <p>{{SurgeryFormGroup.value.SurgeryPatientDetails.PM_LAST_NAME}}</p>
+                <!-- </mat-form-field> -->
             </div>
             <div class="col-2">
-                <mat-form-field style="line-height: 30px;">
-                    <mat-label>מגדר</mat-label>
-                    <mat-select formControlName="PM_PATIENT_GENDER">
+                <!-- <mat-form-field style="line-height: 30px;"> -->
+                <mat-label>מגדר</mat-label>
+                <!-- <mat-select formControlName="PM_PATIENT_GENDER">
                         <mat-option value="1"> זכר </mat-option>
                         <mat-option value="2"> נקבה </mat-option>
-                    </mat-select>
-                    <!-- <input matInput formControlName="PM_PATIENT_GENDER"> -->
-                </mat-form-field>
+                    </mat-select> -->
+                <p>{{SurgeryFormGroup.value.SurgeryPatientDetails.PM_PATIENT_GENDER}}</p>
+                <!-- </mat-form-field> -->
             </div>
             <div class="col-2">
-                <mat-form-field>
-                    <mat-label>גיל</mat-label>
-                    <input matInput type="number" step="0.1" formControlName="PM_DOB">
-                </mat-form-field>
+                <!-- <mat-form-field> -->
+                <mat-label>גיל</mat-label>
+                <!-- <input matInput type="number" step="0.1" formControlName="PM_DOB"> -->
+                <p>{{SurgeryFormGroup.value.SurgeryPatientDetails.PM_DOB}}</p>
+                <!-- </mat-form-field> -->
             </div>
             <!-- <div class="col-2">
                 <mat-form-field>
@@ -62,72 +67,80 @@
         <hr style="border: 1px solid #bca875;">
         <div class="row surgery-details">
             <div class="col-2" formGroupName="SurgeryRequestDepartments">
-                <mat-form-field style="line-height: 30px;">
-                    <mat-label>מחלקה מזמינה</mat-label>
-                    <mat-select formControlName="S_DEPARTMENT"
+                <!-- <mat-form-field style="line-height: 30px;"> -->
+                <mat-label>מחלקה מזמינה</mat-label>
+                <!-- <mat-select formControlName="S_DEPARTMENT"
                         (selectionChange)="selectedRequestedDepartment($event.value)">
                         <mat-option *ngFor="let department of SurgeryDepartments" [value]="department.S_DEPARTMENT">
                             {{department.S_DEPARTMENT}}
                         </mat-option>
-                    </mat-select>
-                </mat-form-field>
+                    </mat-select> -->
+                <p>{{SurgeryFormGroup.value.SurgeryRequestDepartments.S_DEPARTMENT}}</p>
+                <!-- </mat-form-field> -->
             </div>
             <div class="col-2">
-                <mat-form-field>
-                    <mat-label>תאריך ניתוח</mat-label>
-                    <div style="display: flex;">
+                <!-- <mat-form-field> -->
+                <mat-label>תאריך ניתוח</mat-label>
+                <!-- <div style="display: flex;">
                         <input matInput [matDatepicker]="pickerSurgery" formControlName="ArrivalDate"
                             (focusout)="enableDisableSurgeryNameSelect()">
                         <mat-datepicker-toggle matIconSuffix [for]="pickerSurgery"
                             (focusout)="enableDisableSurgeryNameSelect()"></mat-datepicker-toggle>
                         <mat-datepicker #pickerSurgery></mat-datepicker>
-                    </div>
-                </mat-form-field>
+                    </div> -->
+                <p>{{SurgeryFormGroup.value.ArrivalDate | date}}</p>
+                <!-- </mat-form-field> -->
             </div>
             <div class="col-2">
-                <mat-form-field style="line-height: 30px;">
-                    <mat-label>חדר ניתוח</mat-label>
-                    <mat-select formControlName="SurgeryRoom" (selectionChange)="selectedSurgeryRoom($event.value)">
+                <!-- <mat-form-field style="line-height: 30px;"> -->
+                <mat-label>חדר ניתוח</mat-label>
+                <!-- <mat-select formControlName="SurgeryRoom" (selectionChange)="selectedSurgeryRoom($event.value)">
                         <mat-option *ngFor="let room of SurgeryRoomsList" [value]="room.SurgeryRoom">
                             {{room.SurgeryRoom}}
                         </mat-option>
-                    </mat-select>
-                </mat-form-field>
+                    </mat-select> -->
+                <p>{{SurgeryFormGroup.value.SurgeryRoom}}</p>
+                <!-- </mat-form-field> -->
+            </div>
+            <div class="col-2" formGroupName="AdditionalDetails">
+                <!-- <mat-form-field class="example-full-width" appearance="fill"> -->
+                <mat-label>מחלקת אשפוז</mat-label>
+                <!-- <input matInput formControlName="HOSPITALIZATION"> -->
+                <p>{{SurgeryFormGroup.value.AdditionalDetails.HOSPITALIZATION}}</p>
+                <!-- </mat-form-field> -->
             </div>
             <div class="col-2">
-                <mat-form-field class="example-full-width" appearance="fill">
-                    <mat-label>מחלקת אשפוז</mat-label>
-                    <input matInput formControlName="HOSPITALIZATION">
-                </mat-form-field>
+                <!-- <mat-form-field> -->
+                <mat-label>שעת התחלה</mat-label>
+                <!-- <input matInput type="time" formControlName="ArrivalTime"
+                        (focusout)="enableDisableSurgeryNameSelect()"> -->
+                <p>{{SurgeryFormGroup.value.ArrivalTime}}</p>
+                <!-- </mat-form-field> -->
             </div>
             <div class="col-2">
-                <mat-form-field>
-                    <mat-label>שעת התחלה</mat-label>
-                    <input matInput type="time" formControlName="ArrivalTime"
-                        (focusout)="enableDisableSurgeryNameSelect()">
-                </mat-form-field>
-            </div>
-            <div class="col-2">
-                <mat-form-field>
-                    <mat-label>שעת סיום</mat-label>
-                    <input matInput type="time" formControlName="EndTime"
-                        (focusout)="calculateSurgeryDuration('endTime')">
-                </mat-form-field>
+                <!-- <mat-form-field> -->
+                <mat-label>שעת סיום</mat-label>
+                <input matInput type="time" formControlName="EndTime" (focusout)="calculateSurgeryDuration('endTime')">
+                <!-- <p>{{SurgeryFormGroup.value.EndTime}}</p> -->
+                <!-- </mat-form-field> -->
             </div>
         </div>
         <div class="row surgery-details">
-            <div class="col-2" formGroupName="SurgeryServicesName">
-                <mat-form-field class="example-full-width" appearance="fill">
-                    <mat-label>שירות</mat-label>
-                    <input type="text" matInput [matAutocomplete]="auto1" (focusout)="selectedSurgeryServiceName()">
-                    <mat-autocomplete #auto1="matAutocomplete" [displayWith]="displayFnSurgery">
-                        <mat-option *ngFor="let option of filteredOptionssurgeries | async" [value]="option">
+            <div class="col-2">
+                <!-- <mat-form-field class="example-full-width" appearance="fill"> -->
+                <mat-label>שירות</mat-label>
+                <!-- <input type="text" matInput [formControl]="serviceCtrl" [matAutocomplete]="auto1"
+                        (focusout)="selectedServiceServiceName()">
+                    <mat-autocomplete #auto1="matAutocomplete" [displayWith]="displayFnService">
+                        <mat-option *ngFor="let option of filteredOptionssurgeries | async"
+                            [value]="option.S_SERVICE_VAL">
                             {{option.S_SERVICE_VAL}}
                         </mat-option>
-                    </mat-autocomplete>
-                </mat-form-field>
+                    </mat-autocomplete> -->
+                <p>{{serviceCtrl.value.S_SERVICE_VAL}}</p>
+                <!-- </mat-form-field> -->
             </div>
-            <div class="col-2" formGroupName="SurgeryServicesName">
+            <!-- <div class="col-2" formGroupName="SurgeryServicesName">
                 <mat-form-field class="example-full-width" appearance="fill">
                     <mat-label>פרוצדורה/שם ניתוח</mat-label>
                     <input type="text" matInput [formControl]="surgeriesCtrl" [matAutocomplete]="auto2"
@@ -139,19 +152,36 @@
                     </mat-autocomplete>
                 </mat-form-field>
             </div>
-            <div class="col-2">
+            <div class="col-2" formGroupName="AdditionalDetails">
                 <mat-form-field class="example-full-width" appearance="fill">
                     <mat-label>צד ניתוח</mat-label>
                     <input matInput formControlName="SIDE">
                 </mat-form-field>
+            </div> -->
+            <div class="col-4">
+                <table>
+                    <thead>
+                        <tr>
+                            <td>פרוצדורה/שם ניתוח</td>
+                            <td>צד ניתוח</td>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><b>{{surgeriesCtrl.value.S_SERVICE_VAL}}</b></td>
+                            <!-- <td>{{SurgeryFormGroup.controls('AdditionalDetails')['ISOLATION'].value}}</td> -->
+                            <td><b>{{SurgeryFormGroup.value.AdditionalDetails.SIDE}}</b></td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
-            <div class="col-2">
+            <div class="col-2" formGroupName="AdditionalDetails">
                 <mat-form-field class="example-full-width" appearance="fill">
                     <mat-label>תנוחת שכיבה</mat-label>
                     <input matInput formControlName="LEYING_POSITION">
                 </mat-form-field>
             </div>
-            <div class="col-2">
+            <div class="col-2" formGroupName="AdditionalDetails">
                 <mat-form-field class="example-full-width" appearance="fill">
                     <mat-label>הרדמה</mat-label>
                     <input matInput formControlName="ANESTHESIA">
@@ -168,8 +198,8 @@
         <div class="row surgery-details" formGroupName="AdditionalDetails"
             *ngIf="SurgeryFormGroup.get('SurgeryRequestDepartments').value.SD_ROW_ID != ''">
             <div class="col-2">
-                <mat-form-field class="example-full-width" appearance="fill">
-                    <mat-label>דחיפות</mat-label>
+                <mat-form-field class="example-full-width" appearance="fill" style="font-weight: bold;color: red;">
+                    <mat-label style="color: red;">דחיפות</mat-label>
                     <mat-select>
                         <mat-option value="EMG"> חירום </mat-option>
                         <mat-option value="URG"> דחוף </mat-option>
@@ -217,7 +247,7 @@
             <div class="col-2">
                 <mat-form-field class="example-full-width" appearance="fill">
                     <mat-label>מכשירים נוספים</mat-label>
-                    <textarea matInput formControlName="TOOLS"></textarea>
+                    <textarea matInput formControlName="TOOLS" rows="1"></textarea>
                 </mat-form-field>
             </div>
             <div class="col-2">
@@ -234,7 +264,7 @@
             <div class="col-10">
                 <mat-form-field class="example-full-width" appearance="fill">
                     <mat-label>הערות</mat-label>
-                    <textarea matInput formControlName="NOTE"></textarea>
+                    <textarea matInput formControlName="NOTE" rows="1"></textarea>
                 </mat-form-field>
             </div>
         </div>
@@ -246,7 +276,7 @@
                     <mat-form-field class="example-full-width" appearance="fill">
                         <mat-label>סיבת עיכוב בבוקר</mat-label>
                         <mat-select formControlName="SurgeryLateMorningNote"
-                            (selectionChange)="getNoteObject($event, 'late1')">
+                            (selectionChange)="getNoteObject($event, 'late1', 'doctor')">
                             <mat-option *ngFor="let lnt of surgeryLateMorningNotes" [value]="lnt.Row_ID">
                                 {{lnt.Description}}
                             </mat-option>
@@ -256,7 +286,8 @@
                 <div class="col-4">
                     <mat-form-field class="example-full-width" appearance="fill">
                         <mat-label>סיבת עיכוב בין ניתוחים</mat-label>
-                        <mat-select formControlName="SurgeryLateNote" (selectionChange)="getNoteObject($event, 'late')">
+                        <mat-select formControlName="SurgeryLateNote"
+                            (selectionChange)="getNoteObject($event, 'late', 'doctor')">
                             <mat-option *ngFor="let lnt of surgeryLateNotes" [value]="lnt.Row_ID">
                                 {{lnt.Description}}
                             </mat-option>
@@ -267,7 +298,7 @@
                     <mat-form-field class="example-full-width" appearance="fill">
                         <mat-label>סיבת ביטול</mat-label>
                         <mat-select formControlName="SurgeryCancelNote"
-                            (selectionChange)="getNoteObject($event, 'cancel')">
+                            (selectionChange)="getNoteObject($event, 'cancel', 'doctor')">
                             <mat-option *ngFor="let cnt of surgeryCancelNotes" [value]="cnt.Row_ID">
                                 {{cnt.Description}}
                             </mat-option>
@@ -284,7 +315,7 @@
                 </div>
                 <div class="col-2">
                     <button mat-fab color="warn" aria-label="Example icon button with a delete icon"
-                        (click)="deleteCancelNote()">
+                        (click)="deleteCancelNote('doctor')">
                         <mat-icon>delete</mat-icon>
                     </button>
                 </div>
@@ -296,8 +327,8 @@
                 <div class="col-4">
                     <mat-form-field class="example-full-width" appearance="fill">
                         <mat-label>סיבת עיכוב בבוקר</mat-label>
-                        <mat-select formControlName="SurgeryLateMorningNote"
-                            (selectionChange)="getNoteObject($event, 'late1')">
+                        <mat-select formControlName="SurgeryLateMorningNoteNurse"
+                            (selectionChange)="getNoteObject($event, 'late1', 'nurse')">
                             <mat-option *ngFor="let lnt of surgeryLateMorningNotes" [value]="lnt.Row_ID">
                                 {{lnt.Description}}
                             </mat-option>
@@ -307,7 +338,8 @@
                 <div class="col-4">
                     <mat-form-field class="example-full-width" appearance="fill">
                         <mat-label>סיבת עיכוב בין ניתוחים</mat-label>
-                        <mat-select formControlName="SurgeryLateNote" (selectionChange)="getNoteObject($event, 'late')">
+                        <mat-select formControlName="SurgeryLateNoteNurse"
+                            (selectionChange)="getNoteObject($event, 'late', 'nurse')">
                             <mat-option *ngFor="let lnt of surgeryLateNotes" [value]="lnt.Row_ID">
                                 {{lnt.Description}}
                             </mat-option>
@@ -317,8 +349,8 @@
                 <div class="col-4">
                     <mat-form-field class="example-full-width" appearance="fill">
                         <mat-label>סיבת ביטול</mat-label>
-                        <mat-select formControlName="SurgeryCancelNote"
-                            (selectionChange)="getNoteObject($event, 'cancel')">
+                        <mat-select formControlName="SurgeryCancelNoteNurse"
+                            (selectionChange)="getNoteObject($event, 'cancel', 'nurse')">
                             <mat-option *ngFor="let cnt of surgeryCancelNotes" [value]="cnt.Row_ID">
                                 {{cnt.Description}}
                             </mat-option>
@@ -330,12 +362,12 @@
                 <div class="col-10">
                     <mat-form-field class="example-full-width" appearance="fill">
                         <mat-label>סיבה - בהערה</mat-label>
-                        <textarea matInput formControlName="CancelNote"></textarea>
+                        <textarea matInput formControlName="CancelNoteNurse"></textarea>
                     </mat-form-field>
                 </div>
                 <div class="col-2">
                     <button mat-fab color="warn" aria-label="Example icon button with a delete icon"
-                        (click)="deleteCancelNote()">
+                        (click)="deleteCancelNote('nurse')">
                         <mat-icon>delete</mat-icon>
                     </button>
                 </div>
@@ -359,3 +391,12 @@
         </div>
     </form>
 </div>
+<!-- Unotherized Device Login -->
+<ng-template #modalContent let-close="close">
+    <span class="material-icons" matTooltip="בידוד" style="color: red;font-size: 60px;float: right;">
+        warning
+    </span>
+    <h1 class="text-center">
+        <span class="mr-3">מטופל בסטטוס בידוד</span>
+    </h1>
+</ng-template>

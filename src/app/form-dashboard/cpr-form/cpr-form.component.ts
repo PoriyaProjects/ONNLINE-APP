@@ -84,7 +84,7 @@ export class CprFormComponent implements OnInit {
   CprFormsList = [];
   CprFormsList_all = [];
   UserName = localStorage.getItem("loginUserName").toLowerCase();
-  usersToSend = ['batzadok@poria.health.gov.il', 'saziv@poria.health.gov.il', 'KMassalha@poria.health.gov.il', 'EMansour@poria.health.gov.il', 'SBenDavid@poria.health.gov.il'];
+  usersToSend = ['batzadok@tzmc.gov.il', 'saziv@tzmc.gov.il', 'KMassalha@tzmc.gov.il', 'EMansour@tzmc.gov.il', 'SBenDavid@tzmc.gov.il'];
   // usersToSend = ['adahabre@poria.health.gov.il'];
   filteredOptions1: Observable<string[]>;
   docfilter = new FormControl();

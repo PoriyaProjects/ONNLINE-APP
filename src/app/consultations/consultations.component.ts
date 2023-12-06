@@ -1139,7 +1139,7 @@ DepartsDataRequestAvgAllNotPara
                 //// ////////debugger
             });
     }
-    fileName = 'follow-up.xlsx';
+    fileName = 'consultations.xlsx';
     exportexcel(): void {
         setTimeout(() => {
             /* table id is passed over here */
