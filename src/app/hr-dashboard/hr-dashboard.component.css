@@ -1,0 +1,56 @@
+/* app.component.css */
+
+.sidenav-container {
+  direction: rtl;
+  height: 100%;
+}
+
+.list-item :hover{
+  cursor: pointer;
+  background-color: darkgray;
+}
+
+.sidenav {
+  width: 200px;
+  margin-top: auto;
+  visibility: visible;
+}
+
+.mat-toolbar {
+  background: #075e54;
+  color: white;
+}
+
+.secondary {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.chat-container {
+  padding: 16px;
+  height: calc(100% - 64px);
+  overflow-y: auto;
+}
+
+.message-sent {
+  background-color: #dcf8c6;
+  align-self: flex-end;
+}
+
+.message-received {
+  background-color: #fff;
+  align-self: flex-start;
+}
+
+.input-container {
+  display: flex;
+  padding: 8px;
+  position: sticky;
+  bottom: 0;
+  background-color: #f4f4f4;
+}
+
+.message-input {
+  flex-grow: 1;
+}
+
+/* Add more styles as needed */

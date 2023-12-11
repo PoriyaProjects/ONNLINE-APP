@@ -15,6 +15,7 @@ import { ConfirmationDialogService } from '../confirmation-dialog/confirmation-d
 import { MatChipInputEvent } from "@angular/material/chips";
 import { COMMA, ENTER } from '@angular/cdk/keycodes';
 import { MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
+import { environment } from 'src/environments/environment';
 
 export interface User {
   FirstName: string;
@@ -74,7 +75,7 @@ export class ShareReportsFillDialog {
       map((fruit: string | null) => fruit ? this._filter(fruit) : this.users.slice()));
     this.getUsers();
   }
-  
+
   add(event: MatChipInputEvent): void {
     const value = (event.value || '').trim();
     if (value) {
@@ -566,7 +567,7 @@ export class FillReportComponent implements OnInit {
 
   getReportToUpdate() {
     this.http
-      .post("http://srv-apps-prod/RCF_WS/WebService.asmx/GetReportToUpdate", {
+      .post(environment.url + "GetReportToUpdate", {
         _reportID: this.reportID
       })
       .subscribe((Response) => {
