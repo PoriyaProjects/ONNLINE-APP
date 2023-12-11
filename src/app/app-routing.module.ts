@@ -102,6 +102,7 @@ import { NutritionSystemComponent } from "./nutrition-system/nutrition-system.co
 import { ClinicsRequestsComponent } from "./clinics-requests/clinics-requests.component";
 import { WagonComponent } from "./wagon/wagon.component";
 import { SwitchesComponent } from "./switches/switches.component";
+import { HrDashboardComponent } from "./hr-dashboard/hr-dashboard.component";
 
 const routes: Routes = [ 
     { path: "clinicsrequests", component: ClinicsRequestsComponent },
@@ -226,6 +227,7 @@ const routes: Routes = [
     { path: "bone-marrow-modal", component: BoneMarrowModalComponent },
     { path: "whatsapp-dashboard", component: WhatsappMessagesDashboardComponent },
     { path: "nutrition-dashboard", component: NutritionSystemComponent },
+    { path: "hr-dashboard", component: HrDashboardComponent },
     { path: "", component: LoginComponent },
 ];
 @NgModule({

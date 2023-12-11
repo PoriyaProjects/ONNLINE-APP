@@ -1,7 +1,8 @@
 import { DatePipe } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { ChangeDetectorRef, Component, OnInit, ViewChild } from '@angular/core';
-import { Form, FormBuilder, FormControl, FormGroup } from '@angular/forms';
+import { Form, FormArray, FormBuilder, FormControl, FormGroup } from '@angular/forms';
+import { MatSelectionListChange } from '@angular/material/list';
 import { MatPaginator } from '@angular/material/paginator';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatSort } from '@angular/material/sort';
@@ -26,6 +27,8 @@ export class NutritionSystemComponent implements OnInit {
   dataSourceHos = new MatTableDataSource(this.nutritionHosData);
   dataSourceCli = new MatTableDataSource(this.nutritionCliData);
   searchGroup: FormGroup;
+  departmentsFormControl = new FormControl([]);
+  clinicsFormControl = new FormControl([]);
 
   displayedColumns: string[] = ['CaseNumber', 'IDNumber', 'FirstName', 'LastName', 'FatherName', 'Age', 'DepartName', 'RoomNumber', 'HospitalizationDate', 'HospitalizationDuration', 'FoodType', 'FoodTexture', 'CurrentAllergy', 'OldAllergy'];
 
@@ -57,9 +60,45 @@ export class NutritionSystemComponent implements OnInit {
   }
 
   searchPatients() {
-    let searchString = [...this.searchGroup.controls['Departments'].value, ...this.searchGroup.controls['Clinics'].value];;
+    let searchString = [...this.searchGroup.controls['Departments'].value, ...this.searchGroup.controls['Clinics'].value];
     this.getNutritionsPatietnsList(searchString);
   }
+
+  selectAllDepartments() {
+    if (this.departmentsFormControl.value.length === 21) {
+      this.searchGroup.controls['Departments'].setValue([]);
+      this.departmentsFormControl.setValue([]);
+    } else {
+      this.searchGroup.controls['Departments'].setValue(this.departmentsData);
+      this.departmentsFormControl.setValue(this.departmentsData);
+    }
+  }
+
+  selectAllClinics() {
+    if (this.clinicsFormControl.value.length === 31) {
+      this.searchGroup.controls['Clinics'].setValue([]);
+      this.clinicsFormControl.setValue([]);
+    } else {
+      this.searchGroup.controls['Clinics'].setValue(this.clinicsData);
+      this.clinicsFormControl.setValue(this.clinicsData);
+    }
+  }
+
+  deselectAllDepartments() {
+    this.departmentsFormControl.setValue([]);
+  }
+  
+  deselectAllClinics() {
+    this.clinicsFormControl.setValue([]);
+  }
+
+  // onDepartmentChange(event: MatSelectionListChange) {
+  //   if (event.option[0].selected) {
+  //     this.departmentsFormControl.setValue(this.departmentsData);
+  //   } else {
+  //     this.departmentsFormControl.setValue(event.source.selectedOptions.filter(option => option.value));
+  //   }
+  // }
 
   async getNutritionsPatietnsList(searchDepts) {
     this.http
@@ -117,6 +156,5 @@ export class NutritionSystemComponent implements OnInit {
   resetData() {
     this.dataSourceHos.data = this.nutritionHosData;
   }
-
 
 }

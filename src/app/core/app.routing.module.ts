@@ -1,28 +1,28 @@
 import { HashLocationStrategy, LocationStrategy } from '@angular/common';
-import {NgModule}  from '@angular/core';
+import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
-import {DashboardComponent} from '../dashboard/dashboard.component';
-import {LoginComponent} from '../login/login.component';
-import {ChadsComponent} from '../chads/chads.component';
-import {HearingComponent} from '../hearing/hearing.component';
-import {SurgeryComponent} from '../surgery/surgery.component';
-import {MrbaotComponent} from '../mrbaot/mrbaot.component';
-import {EshbozComponent} from '../eshboz/eshboz.component';
-import {DimotComponent} from '../dimot/dimot.component';
+import { DashboardComponent } from '../dashboard/dashboard.component';
+import { LoginComponent } from '../login/login.component';
+import { ChadsComponent } from '../chads/chads.component';
+import { HearingComponent } from '../hearing/hearing.component';
+import { SurgeryComponent } from '../surgery/surgery.component';
+import { MrbaotComponent } from '../mrbaot/mrbaot.component';
+import { EshbozComponent } from '../eshboz/eshboz.component';
+import { DimotComponent } from '../dimot/dimot.component';
 import { LaborComponent } from '../labor/labor.component';
-import {CoronaformComponent} from '../coronaform/coronaform.component';
-import {PoriadepartsComponent} from '../poriadeparts/poriadeparts.component';
-import {RolesComponent} from '../roles/roles.component';
-import {StaffComponent} from '../staff/staff.component';
-import {SendsmsComponent} from '../sendsms/sendsms.component';
-import {SendsmsadminComponent} from '../sendsmsadmin/sendsmsadmin.component';
-import {CoronaresultformComponent} from '../coronaresultform/coronaresultform.component';
-import {GlucoseComponent} from '../glucose/glucose.component';
-import {MershamComponent} from '../mersham/mersham.component';
-import {DrugsComponent} from '../drugs/drugs.component';
-import {CortinasComponent} from '../cortinas/cortinas.component';
-import {CortinasdepartsComponent} from '../cortinasdeparts/cortinasdeparts.component';
-import {CortinasnotificationComponent} from '../cortinasnotification/cortinasnotification.component';
+import { CoronaformComponent } from '../coronaform/coronaform.component';
+import { PoriadepartsComponent } from '../poriadeparts/poriadeparts.component';
+import { RolesComponent } from '../roles/roles.component';
+import { StaffComponent } from '../staff/staff.component';
+import { SendsmsComponent } from '../sendsms/sendsms.component';
+import { SendsmsadminComponent } from '../sendsmsadmin/sendsmsadmin.component';
+import { CoronaresultformComponent } from '../coronaresultform/coronaresultform.component';
+import { GlucoseComponent } from '../glucose/glucose.component';
+import { MershamComponent } from '../mersham/mersham.component';
+import { DrugsComponent } from '../drugs/drugs.component';
+import { CortinasComponent } from '../cortinas/cortinas.component';
+import { CortinasdepartsComponent } from '../cortinasdeparts/cortinasdeparts.component';
+import { CortinasnotificationComponent } from '../cortinasnotification/cortinasnotification.component';
 import { ColonoscopyComponent } from '../colonoscopy/colonoscopy.component';
 import { CoronavaccineComponent } from '../coronavaccine/coronavaccine.component';
 import { Covid19reportComponent } from '../covid19report/covid19report.component';
@@ -107,9 +107,10 @@ import { NutritionSystemComponent } from '../nutrition-system/nutrition-system.c
 import { ClinicsRequestsComponent } from "../clinics-requests/clinics-requests.component";
 import { WagonComponent } from '../wagon/wagon.component';
 import { SwitchesComponent } from '../switches/switches.component';
- 
+import { HrDashboardComponent } from '../hr-dashboard/hr-dashboard.component';
+
 const routes: Routes = [
-  
+
   { path: 'dashboard', component: DashboardComponent },
   { path: 'clinicsrequests', component: ClinicsRequestsComponent },
   { path: 'covid19report', component: Covid19reportComponent },
@@ -183,9 +184,9 @@ const routes: Routes = [
   { path: "devmanage", component: DevManageComponent },
   { path: "systemmanage", component: SystemManageComponent },
   { path: "galitpointsreport", component: GalitPointsReportComponent },
-  { path: "nmriframe", component: NmrIframeComponent },  
-  { path: "employeesmanagedashboard", component: EmployeesManageDashComponent },  
-  { path: "employeesaddupdate", component: EmployeesAddUpdateComponent },  
+  { path: "nmriframe", component: NmrIframeComponent },
+  { path: "employeesmanagedashboard", component: EmployeesManageDashComponent },
+  { path: "employeesaddupdate", component: EmployeesAddUpdateComponent },
   { path: "orderstoappointments", component: OrdersToAppointmentsComponent },
   { path: "reinforcement", component: NursesReinforcementComponent },
   { path: "BIDashboard", component: HospitalBIDashboardComponent },
@@ -201,7 +202,7 @@ const routes: Routes = [
   { path: "drugprotocols", component: DrugProtocolsComponent },
   { path: "mershamn", component: MershamNComponent },
   { path: "servers", component: ServersComponent },
-  { path: "stikers", component: StikersComponent },  
+  { path: "stikers", component: StikersComponent },
   { path: "medigate", component: MedigateServersComponent },
   { path: "surgerycontrolmain", component: SurgeryControlMainComponent },
   { path: "cpr-additional-tables", component: AdditionalCprTablesComponent },
@@ -211,17 +212,18 @@ const routes: Routes = [
   { path: "cables", component: CablesComponent },
   { path: "surgery-calendar", component: SurgeryCalendarComponent },
   { path: "follow-up", component: FollowUpComponent },
-  { path: "surgeryreport", component:  SurgeryReportsComponent},  
-  { path: "quality-measures", component:  QualityMeasuresDashboardComponent},  
-  { path: "bone-marrow", component:  BoneMarrowComponent},  
-  { path: "bone-marrow-modal", component:  BoneMarrowModalComponent},  
+  { path: "surgeryreport", component: SurgeryReportsComponent },
+  { path: "quality-measures", component: QualityMeasuresDashboardComponent },
+  { path: "bone-marrow", component: BoneMarrowComponent },
+  { path: "bone-marrow-modal", component: BoneMarrowModalComponent },
   { path: "wagons", component: WagonComponent },
   { path: "whatsapp-dashboard", component: WhatsappMessagesDashboardComponent },
   { path: "nutrition-dashboard", component: NutritionSystemComponent },
-  { path: '', component : LoginComponent},
-  { path: 'switches', component : SwitchesComponent}
+  { path: '', component: LoginComponent },
+  { path: 'switches', component: SwitchesComponent },
+  { path: 'hr-dashboard', component: HrDashboardComponent },
 ];
- 
+
 @NgModule({
   imports: [
     RouterModule.forRoot(routes, { relativeLinkResolution: 'legacy' })
@@ -230,7 +232,7 @@ const routes: Routes = [
     //ConfirmationDialogComponent,
     RouterModule
   ],
-  providers: [{provide: LocationStrategy, useClass: HashLocationStrategy}],
+  providers: [{ provide: LocationStrategy, useClass: HashLocationStrategy }],
   declarations: [
     //ConfirmationDialogComponent
   ]

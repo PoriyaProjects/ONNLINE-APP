@@ -5,14 +5,26 @@
             <mat-form-field class="dropdown">
                 <mat-label>מחלקות</mat-label>
                 <mat-select multiple formControlName="Departments">
-                    <mat-option [value]="dept" *ngFor="let dept of departmentsData">{{dept}}</mat-option>
+                    <mat-option (click)="selectAllDepartments()" value="">הכל</mat-option>
+                    <mat-option [value]="dept" *ngFor="let dept of departmentsData"
+                        (click)="deselectAllDepartments()">{{dept}}</mat-option>
                 </mat-select>
+                <!-- <mat-select multiple formControlName="Departments">
+                    <mat-option [value]="''">הכל</mat-option>
+                    <mat-option [value]="dept" *ngFor="let dept of departmentsData">{{dept}}</mat-option>
+                </mat-select> -->
             </mat-form-field>
             <mat-form-field class="dropdown">
                 <mat-label>מכונים</mat-label>
                 <mat-select multiple formControlName="Clinics">
-                    <mat-option [value]="clin" *ngFor="let clin of clinicsData">{{clin}}</mat-option>
+                    <mat-option (click)="selectAllClinics()" value="">הכל</mat-option>
+                    <mat-option [value]="clin" *ngFor="let clin of clinicsData"
+                        (click)="deselectAllClinics()">{{clin}}</mat-option>
                 </mat-select>
+                <!-- <mat-select multiple formControlName="Clinics">
+                    <mat-option [value]="''">הכל</mat-option>
+                    <mat-option [value]="clin" *ngFor="let clin of clinicsData">{{clin}}</mat-option>
+                </mat-select> -->
             </mat-form-field>
             <button mat-raised-button class="button" color="primary" (click)="searchPatients()">חיפוש</button>
         </div>
