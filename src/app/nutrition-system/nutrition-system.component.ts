@@ -29,6 +29,8 @@ export class NutritionSystemComponent implements OnInit {
   searchGroup: FormGroup;
   departmentsFormControl = new FormControl([]);
   clinicsFormControl = new FormControl([]);
+  numberOfDepartments: number;
+  numberOfClinics: number;
 
   displayedColumns: string[] = ['CaseNumber', 'IDNumber', 'FirstName', 'LastName', 'FatherName', 'Age', 'DepartName', 'RoomNumber', 'HospitalizationDate', 'HospitalizationDuration', 'FoodType', 'FoodTexture', 'CurrentAllergy', 'OldAllergy'];
 
@@ -65,7 +67,7 @@ export class NutritionSystemComponent implements OnInit {
   }
 
   selectAllDepartments() {
-    if (this.departmentsFormControl.value.length === 21) {
+    if (this.departmentsFormControl.value.length === this.numberOfDepartments) {
       this.searchGroup.controls['Departments'].setValue([]);
       this.departmentsFormControl.setValue([]);
     } else {
@@ -75,7 +77,7 @@ export class NutritionSystemComponent implements OnInit {
   }
 
   selectAllClinics() {
-    if (this.clinicsFormControl.value.length === 31) {
+    if (this.clinicsFormControl.value.length === this.numberOfClinics) {
       this.searchGroup.controls['Clinics'].setValue([]);
       this.clinicsFormControl.setValue([]);
     } else {
@@ -87,7 +89,7 @@ export class NutritionSystemComponent implements OnInit {
   deselectAllDepartments() {
     this.departmentsFormControl.setValue([]);
   }
-  
+
   deselectAllClinics() {
     this.clinicsFormControl.setValue([]);
   }
@@ -121,6 +123,8 @@ export class NutritionSystemComponent implements OnInit {
         // distinct the duplicates from departments array
         this.departmentsData = Array.from(this.departmentsData.reduce((m, t) => m.set(t, t), new Map()).values());
         this.clinicsData = Array.from(this.clinicsData.reduce((m, t) => m.set(t, t), new Map()).values());
+        this.numberOfDepartments = this.departmentsData.length;
+        this.numberOfClinics = this.clinicsData.length;
       });
   }
 
