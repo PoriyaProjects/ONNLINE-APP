@@ -151,13 +151,13 @@ export class CasenumbersComponent implements OnInit, AfterViewInit {
             this.printOn = true;
             this.displayedColumns = [
                 "Dose",
-                "HospitalDate",
+               // "HospitalDate",
                 "CaseNumber",
-                "PatientNumber",
+                //"PatientNumber",
                 "PatientID",
                 "FirstName",
                 "LastName",
-                "DOB",
+                //"DOB",
             ];
             this.hide = true;
         }

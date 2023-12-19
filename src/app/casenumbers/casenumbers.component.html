@@ -64,7 +64,7 @@
                                     {{ element.Dose }}
                                 </td>
                             </ng-container>
-                            <ng-container matColumnDef="HospitalDate">
+                            <ng-container class="hide-on-print" matColumnDef="HospitalDate">
                                 <th  mat-header-cell *matHeaderCellDef>
                                     תאריך מקרה
                                 </th>
@@ -80,7 +80,7 @@
                                     {{ element.CaseNumber }}
                                 </td>
                             </ng-container>
-                            <ng-container matColumnDef="PatientNumber">
+                            <ng-container  class="hide-on-print" matColumnDef="PatientNumber">
                                 <th  mat-header-cell *matHeaderCellDef>
                                     מס' מטופל
                                 </th>
@@ -110,7 +110,7 @@
                                     {{ element.LastName }}
                                 </td>
                             </ng-container>
-                            <ng-container matColumnDef="DOB">
+                            <ng-container  class="hide-on-print" matColumnDef="DOB">
                                 <th  mat-header-cell *matHeaderCellDef>
                                     תאריך לידה
                                 </th>
