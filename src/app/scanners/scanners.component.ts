@@ -295,7 +295,7 @@ export class ScannersComponent implements OnInit {
     }
 
     printcasenumbers(content, _type, _element) {
-        // ////debugger;
+        debugger;
         localStorage.setItem("Print", "true");
         localStorage.setItem("CartoonID", _element.RowID);
         localStorage.setItem("CartoonUNID", _element.BoxID);

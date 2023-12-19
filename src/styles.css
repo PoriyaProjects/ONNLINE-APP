@@ -1144,6 +1144,9 @@ mark {
 }
 
 @media print {
+    .hide-on-print{
+        display: none !important;
+    }
     .fix-lable-pos .mat-form-field-label-wrapper {
         top: -30px !important;
         font-size: 25px !important;

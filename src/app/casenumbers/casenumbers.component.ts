@@ -34,7 +34,7 @@ import {
     FormBuilder,
     FormGroup,
     Validators,
-    
+
 } from "@angular/forms";
 import { IDetect } from "ngx-barcodeput";
 import { tr } from "date-fns/locale";
@@ -57,7 +57,7 @@ export interface CaseNumbers {
     templateUrl: "./casenumbers.component.html",
     styleUrls: ["./casenumbers.component.css"],
 })
-export class CasenumbersComponent implements OnInit, AfterViewInit  {
+export class CasenumbersComponent implements OnInit, AfterViewInit {
     @ViewChild("scannerInput")
     Element;
     set scannerInput(element: ElementRef<HTMLInputElement>) {
@@ -107,7 +107,7 @@ export class CasenumbersComponent implements OnInit, AfterViewInit  {
     CartoonUNID = localStorage.getItem("CartoonUNID");
     TotalCases = localStorage.getItem("TotalCases");
     submitted = false;
-    
+
     constructor(
         private _snackBar: MatSnackBar,
         private router: Router,
@@ -116,7 +116,7 @@ export class CasenumbersComponent implements OnInit, AfterViewInit  {
         private formBuilder: FormBuilder,
         activeModal: NgbActiveModal
     ) {
-       
+
         //debugger
         this.activeModal = activeModal;
     }
@@ -139,32 +139,32 @@ export class CasenumbersComponent implements OnInit, AfterViewInit  {
         //debugger
         this.hide = true;
         let that = this;
-        window.onafterprint = function(){
+        window.onafterprint = function () {
             that.myModal.dismiss();
             console.log("Printing completed...");
-         }
+        }
         this.loader = false;
         this.dataSource = new MatTableDataSource(this.TABLE_DATA);
 
-     
-        if(localStorage.getItem("Print") == "true"){
+
+        if (localStorage.getItem("Print") == "true") {
             this.printOn = true;
             this.displayedColumns = [
                 "Dose",
-                "HospitalDate",
+               // "HospitalDate",
                 "CaseNumber",
-                "PatientNumber",
+                //"PatientNumber",
                 "PatientID",
                 "FirstName",
                 "LastName",
-                "DOB",
+                //"DOB",
             ];
             this.hide = true;
         }
         this.getTableFromServer("");
-        
+
     }
-    
+
     editRow(content, _type, _element) {
         // //debugger
         this.removeCaseForm = this.formBuilder.group({
@@ -179,27 +179,42 @@ export class CasenumbersComponent implements OnInit, AfterViewInit  {
 
     onDetected(event: IDetect) {
         ////debugger
-        console.log(event);
-        ////debugger
-        this.http
-            .post(
-                //"http://srv-apps-prod/RCF_WS/WebService.asmx/InsertCaseNumberToBox",
-                "http://srv-apps-prod/RCF_WS/WebService.asmx/InsertCaseNumberToBox",
-                {
-                    CaseNumber: event.value,
-                    CartoonID: this.CartoonID,
-                }
-            )
-            .subscribe((Response) => {
-                if(!Response["d"]){
-                    this.getTableFromServer("");
-                    this.openSnackBar("נשמר בהצלחה", "success");
-                }else{
-                    this.openSnackBar("מס' מקרה נמצא בקרטון", "error");    
-                }
-                
-            });
         this.Element.nativeElement.value = "";
+        console.log(event.value);
+        console.log(event.value.toString().length);
+        if (event.value.toString().length < 10 && event.value.toString().indexOf("00") < 0) {
+            event.value = "00" + event.value
+        } else if (event.value.toString().length > 8) {
+            console.log(event.value.toString().substring(0, 8))
+            event.value = event.value.toString().substring(0, 8)
+            event.value = "00" + event.value
+        }
+
+        console.log(event.value);
+        console.log(event.value.toString().length);
+        ////debugger
+        if (event.value.toString().indexOf("001") == 0) {
+            this.http
+                .post(
+                    //"http://srv-apps-prod/RCF_WS/WebService.asmx/InsertCaseNumberToBox",
+                    "http://srv-apps-prod/RCF_WS/WebService.asmx/InsertCaseNumberToBox",
+                    {
+                        CaseNumber: event.value,
+                        CartoonID: this.CartoonID,
+                    }
+                )
+                .subscribe((Response) => {
+                    if (!Response["d"]) {
+                        this.getTableFromServer("");
+                        this.openSnackBar("נשמר בהצלחה", "success");
+                    } else {
+                        this.openSnackBar("מס' מקרה נמצא בקרטון", "error");
+                    }
+
+                });
+        }
+
+        //this.Element.nativeElement.value = "";
     }
     openSnackBar(message, type) {
         this._snackBar.open(message, "", {
@@ -267,25 +282,25 @@ export class CasenumbersComponent implements OnInit, AfterViewInit  {
                     );
                     this.resultsLength = this.TABLE_DATA.length;
                 }
-                this.TotalCases  = this.resultsLength.toString();
+                this.TotalCases = this.resultsLength.toString();
                 setTimeout(function () {
                     ////////debugger
                     if (tableLoader) {
                         $("#loader").addClass("d-none");
                     }
                 });
-                if(localStorage.getItem("Print") == "true"){
+                if (localStorage.getItem("Print") == "true") {
                     let that = this;
-                    setTimeout(function(){
-                        var printContents = that.formTable1Div.nativeElement.innerHTML;   
+                    setTimeout(function () {
+                        var printContents = that.formTable1Div.nativeElement.innerHTML;
                         ////debugger                 
-                        var w=window.open();
+                        var w = window.open();
                         w.document.write(printContents);
                         w.print();
                         w.close();
                     }, 1000)
-                    
-                    
+
+
                 }
             });
     }
