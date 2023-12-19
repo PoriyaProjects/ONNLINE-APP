@@ -67,6 +67,7 @@ export interface Consultations {
     Consult_Answer: string;
     Age: string;
     Pay_Institute: string;
+    Release_Date: string;
 }
 @Component({
     selector: "app-consultations",
@@ -203,7 +204,7 @@ export class ConsultationsComponent implements OnInit {
         // "Doing_Persone_Name",
         "Request_Date",
         "Doing_Date",
-        "Discharge_Date"
+        "Release_Date"
     ];
     public disabled = false;
     public showSpinners = true;
@@ -1139,7 +1140,7 @@ DepartsDataRequestAvgAllNotPara
                 //// ////////debugger
             });
     }
-    fileName = 'follow-up.xlsx';
+    fileName = 'consultations.xlsx';
     exportexcel(): void {
         setTimeout(() => {
             /* table id is passed over here */
@@ -1291,6 +1292,7 @@ DepartsDataRequestAvgAllNotPara
                             Consult_Answer: Consultations[i].Consult_Answer,
                             Age: Consultations[i].Age,
                             Pay_Institute: Consultations[i].Pay_Institute,
+                            Release_Date: Consultations[i].Release_Date,
                         });
                     }
                     if (this.selectedIndexTab == 1) {

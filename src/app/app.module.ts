@@ -76,6 +76,7 @@ import { MaternityComponent } from './maternity/maternity.component';
 import { MaternitypatientsComponent } from './maternitypatients/maternitypatients.component';
 import { EmergencycallgroupsComponent } from './emergencycallgroups/emergencycallgroups.component';
 import { EmergencymembersComponent } from './emergencymembers/emergencymembers.component';
+import { MatSidenavModule } from '@angular/material/sidenav';
 import { EmployeesComponent } from './employees/employees.component';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { FillSurveyComponent, DialogContentExampleDialog } from './fill-survey/fill-survey.component';
@@ -203,6 +204,7 @@ import { ClinicsRequestsDialogComponent } from './clinics-requests/clinics-reque
 import { ClinicsPatientRequestsDialogComponent } from './clinics-requests/clinics-patient-requests-dialog/clinics-patient-requests-dialog.component';
 import { SwitchesComponent } from './switches/switches.component';
 import { AddOrEditSwitchesComponent } from './switches/add-or-edit-switches/add-or-edit-switches.component';
+import { HrDashboardComponent } from './hr-dashboard/hr-dashboard.component';
 
 
 const maskConfig: Partial<IConfig> = {
@@ -361,7 +363,8 @@ const maskConfig: Partial<IConfig> = {
     ClinicsRequestsDialogComponent,
     ClinicsPatientRequestsDialogComponent,
     SwitchesComponent,
-    AddOrEditSwitchesComponent
+    AddOrEditSwitchesComponent,
+    HrDashboardComponent
   ],
   imports: [
     JpTimeMaskModule,
@@ -374,6 +377,7 @@ const maskConfig: Partial<IConfig> = {
     BrowserAnimationsModule,
     RouterModule,
     AppRoutingModule,
+    MatSidenavModule,
     MatButtonModule,
     BrowserModule,
     BrowserAnimationsModule,

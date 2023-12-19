@@ -101,7 +101,7 @@ export class NursesDepartmentManageComponent implements OnInit {
       this.dataSource2.filter = filterValue;
     } else {
       if (filval == "מונשם") {
-        let newArr = this.dataSource2.filteredData.filter((obj) => obj.SSP_DESCRIPTION.includes(filval));
+        let newArr = this.dataSource2.filteredData.filter((obj) => obj.SSP_DESCRIPTION.includes(filval) && !obj.SSP_DESCRIPTION.includes("ECMO"));
         this.dataSource2 = new MatTableDataSource<any>(newArr);
       }else if (filval == "ארן") {
         let newArr = this.dataSource2.filteredData.filter((obj) => obj.AranStatus !== '');
@@ -355,7 +355,7 @@ export class NursesDepartmentManageComponent implements OnInit {
         if (this.dataSource2.filteredData.length > 0) {
           let coronaExists = this.dataSource2.filteredData.filter((obj) => obj.CoronaStatus === 'מאומת קורונה').length;
           let aranExists = this.dataSource2.filteredData.filter((obj) => obj.AranStatus !== '').length;
-          this.RespiratorsCount = this.dataSource2.filteredData.filter((obj) => obj.SSP_DESCRIPTION.includes('מונשם')).length.toString();
+          this.RespiratorsCount = this.dataSource2.filteredData.filter((obj) => obj.SSP_DESCRIPTION.includes('מונשם') && !obj.SSP_DESCRIPTION.includes('ECMO')).length.toString();
           this.CatheterCount = this.dataSource2.filteredData.filter((obj) => obj.SSP_DESCRIPTION.includes('שתן')).length.toString();
           this.CentralCatheterCount = this.dataSource2.filteredData.filter((obj) => obj.SSP_DESCRIPTION.includes('מרכזי')).length.toString();
           this.IsolationCount = this.dataSource2.filteredData.filter((obj) => obj.SSP_DESCRIPTION.includes('בידוד') || obj.kpcType.includes('בידוד')).length.toString();

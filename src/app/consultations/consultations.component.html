@@ -383,12 +383,12 @@
                                         {{ element.Hospital_Date }}
                                     </td>
                                 </ng-container>
-                                <ng-container matColumnDef="Discharge_Date">
+                                <ng-container matColumnDef="Release_Date">
                                     <th mat-header-cell *matHeaderCellDef mat-sort-header>
                                         תאריך שחרור
                                     </th>
                                     <td mat-cell *matCellDef="let element">
-                                        {{ element.Discharge_Date }}
+                                        {{ element.Release_Date }}
                                     </td>
                                 </ng-container>
                                 <ng-container matColumnDef="Order_Number">
@@ -443,31 +443,27 @@
             <table id="excel-table" dir="rtl" style="display: none;">
                 <tr>
                     <th>מס' מקרה</th>
-                    <th>מס' מטופל</th>
+                    <th>תעודת זהות</th>
+                    <th>שם מלא</th>
+                    <th>גיל</th>
+                    <th>קופה</th>
                     <th>מחלקה מזמינה</th>
-                    <th>מחלקה מבצעת</th>
-                    <th>עובד מזמין</th>
-                    <th>עובד מבצע</th>
-                    <th>שם שירות</th>
                     <th>תאריך הזמנה</th>
-                    <th>שעת זימון</th>
                     <th>תאריך ביצוע</th>
-                    <th>שעת ביצוע</th>
-                    <th>זמן המתנה (MIN)</th>
+                    <th>תאריך שחרור</th>
+                    <th>תוכן</th>
                 </tr>
                 <tr *ngFor="let cons of dataSource.filteredData">
                     <td> {{cons.Case_Number}} </td>
-                    <td> {{cons.Patient_Numbae}} </td>
-                    <td> {{cons.Request_Depart}} </td>
-                    <td> {{cons.Doing_Depart}} </td>
-                    <td> {{cons.Request_Persone_Name}} </td>
-                    <td> {{cons.Doing_Persone_Name}} </td>
-                    <td> {{cons.Service_Name}} </td>
+                    <td> {{cons.Patient_ID}} </td>
+                    <td> {{ cons.Patient_First_Name }} {{ cons.Patient_Last_Name }} </td>
+                    <td> {{cons.Age}} </td>
+                    <td> {{cons.Pay_Institute}} </td>
+                    <td> {{cons.Request_Depart_Seode}} </td>
                     <td> {{cons.Request_Date}} </td>
-                    <td> {{cons.Request_Time}} </td>
                     <td> {{cons.Doing_Date}} </td>
-                    <td> {{cons.Doing_Time}} </td>
-                    <td> {{cons.Waiting_Time}} </td>
+                    <td> {{cons.Discharge_Date}} </td>
+                    <td> {{cons.Consult_Answer}} </td>
                 </tr>
             </table>
         </div>
