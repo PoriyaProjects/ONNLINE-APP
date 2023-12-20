@@ -127,18 +127,31 @@
         </div>
         <div class="row surgery-details">
             <div class="col-2">
-                <!-- <mat-form-field class="example-full-width" appearance="fill"> -->
+                <table>
+                    <thead>
+                        <tr>
+                            <td>שירות</td>
+                            <!-- <td>צד</td> -->
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr *ngFor="let service of SurgeryFormGroup.value.SurgeryCalendarServices">
+                            <td><b>{{service.Service_Name}}</b></td>
+                            <!-- <td><b>{{service.Service_Side}}</b></td> -->
+                        </tr>
+                    </tbody>
+                </table>
+                <!-- <mat-form-field class="example-full-width" appearance="fill">
                 <mat-label>שירות</mat-label>
-                <!-- <input type="text" matInput [formControl]="serviceCtrl" [matAutocomplete]="auto1"
+                <input type="text" matInput [formControl]="serviceCtrl" [matAutocomplete]="auto1"
                         (focusout)="selectedServiceServiceName()">
                     <mat-autocomplete #auto1="matAutocomplete" [displayWith]="displayFnService">
                         <mat-option *ngFor="let option of filteredOptionssurgeries | async"
                             [value]="option.S_SERVICE_VAL">
                             {{option.S_SERVICE_VAL}}
                         </mat-option>
-                    </mat-autocomplete> -->
-                <p>{{serviceCtrl.value.S_SERVICE_VAL}}</p>
-                <!-- </mat-form-field> -->
+                    </mat-autocomplete>
+                </mat-form-field> -->
             </div>
             <!-- <div class="col-2" formGroupName="SurgeryServicesName">
                 <mat-form-field class="example-full-width" appearance="fill">
@@ -188,11 +201,12 @@
                 </mat-form-field>
             </div>
             <div class="col-2" formGroupName="SurgeryServicesName">
-                <mat-form-field>
+                <!-- <mat-form-field class="example-full-width" appearance="fill"> -->
                     <mat-label>זמן משך ניתוח (דקות)</mat-label>
-                    <input matInput formControlName="S_SERVICE_DURATION" type="number" step="1"
+                    <!-- <input matInput formControlName="S_SERVICE_DURATION" type="number" step="1"
                         (focusout)="calculateSurgeryDuration('duration')">
-                </mat-form-field>
+                    </mat-form-field> -->
+                    <p>{{SurgeryFormGroup.get('SurgeryServicesName').get('S_SERVICE_DURATION').value}}</p>
             </div>
         </div>
         <div class="row surgery-details" formGroupName="AdditionalDetails"
