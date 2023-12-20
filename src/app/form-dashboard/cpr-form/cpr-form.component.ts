@@ -1066,9 +1066,9 @@ export class CprFormComponent implements OnInit {
 
   sendCprFormEmail(id) {
     this.http
-      .post(environment.url + "SendCprFormEmail", {
-        //  .post("http://srv-apps-prod/RCF_WS/WebService.asmx/SendCprFormEmail", {
-        // .post("http://srv-ipracticom:8080/WebService.asmx/SendCprFormEmail", {
+      // .post(environment.url + "SendCprFormEmail", {
+      // .post("http://srv-apps-prod/RCF_WS/WebService.asmx/SendCprFormEmail", {
+      .post("http://srv-ipracticom:8080/WebService.asmx/SendCprFormEmail", {
         _userSender: this.UserName,
         users: this.usersToSend,
         _reportArrayID: id,

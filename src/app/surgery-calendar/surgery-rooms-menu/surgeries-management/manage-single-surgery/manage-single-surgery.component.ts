@@ -155,6 +155,17 @@ export class ManageSingleSurgeryComponent implements OnInit {
           S_SERVICE_DURATION: new FormControl('', null),
           S_SERVICE_DOC: new FormControl('', null)
         }),
+        SurgeryCalendarServices: this.fb.group({
+          Services: this.fb.array([{
+            Row_ID: new FormControl('', null),
+            ServiceNameIDFK: new FormControl('', null),
+            ServiceCode: new FormControl('', null),
+            Service_Name: new FormControl('', null),
+            Service_Side: new FormControl('', null),
+            SurgeriesCalendarIDFK: new FormControl('', null),
+            Duration: new FormControl('', null)
+          }])
+        }),
         DoctorSurgeon: new FormControl('', Validators.required),
         CancelNote: new FormControl('', Validators.required),
         CancelNoteNurse: new FormControl('', Validators.required),
@@ -200,23 +211,10 @@ export class ManageSingleSurgeryComponent implements OnInit {
           S_ROW_ID: new FormControl(this.data.event.SurgeryServicesName.S_ROW_ID, Validators.required),
           S_SERVICE_VAL: new FormControl(this.data.event.SurgeryServicesName.S_SERVICE_VAL, Validators.required),
           S_START_DATE: new FormControl(this.data.event.SurgeryServicesName.S_START_DATE, null),
-          S_SERVICE_DURATION: new FormControl(this.data.event.SurgeryServicesName.S_SERVICE_DURATION, null),
+          S_SERVICE_DURATION: new FormControl({value: (this.data.event.SurgeriesCalendar_Service[0] === undefined) ? this.data.event.SurgeryServicesName.S_SERVICE_DURATION : parseInt(this.data.event.SurgeriesCalendar_Service[0].Duration), disabled: true}, null),
           S_SERVICE_DOC: new FormControl(this.data.event.SurgeryServicesName.S_SERVICE_DOC, null)
         }),
-        // SurgeryLateNote: this.fb.group({
-        //   Row_ID: new FormControl(this.data.event.SurgeryLateNote.Row_ID, null),
-        //   Description: new FormControl(this.data.event.SurgeryLateNote.Description, null),
-        //   Type: new FormControl(this.data.event.SurgeryLateNote.Type, null),
-        //   Priority: new FormControl(this.data.event.SurgeryLateNote.Priority, null),
-        //   Status: new FormControl(this.data.event.SurgeryLateNote.Status, null)
-        // }),
-        // SurgeryCancelNote: this.fb.group({
-        //   Row_ID: new FormControl(this.data.event.SurgeryCancelNote.Row_ID, null),
-        //   Description: new FormControl(this.data.event.SurgeryCancelNote.Description, null),
-        //   Type: new FormControl(this.data.event.SurgeryCancelNote.Type, null),
-        //   Priority: new FormControl(this.data.event.SurgeryCancelNote.Priority, null),
-        //   Status: new FormControl(this.data.event.SurgeryCancelNote.Status, null)
-        // }),
+        SurgeryCalendarServices: [this.calendarPatientServicesForm()],
         ServiceNamer: new FormControl(this.data.event.ServiceNamer, null),
         DoctorSurgeon: new FormControl('', null),
         CancelNote: new FormControl(this.data.event.CancelNote, null),
@@ -241,6 +239,22 @@ export class ManageSingleSurgeryComponent implements OnInit {
       this.calculateSurgeryDuration('endTime');
     }
     this.enableDisableSurgeryNameSelect();
+  }
+
+  calendarPatientServicesForm() {
+    let Services = [];
+    this.data.event.SurgeriesCalendar_Service.forEach(element => {
+      Services.push({
+        Row_ID: element.Row_ID,
+        ServiceNameIDFK: element.ServiceNameIDFK,
+        ServiceCode: element.ServiceCode,
+        Service_Name: element.Service_Name,
+        Service_Side: element.Service_Side,
+        SurgeriesCalendarIDFK: element.SurgeriesCalendarIDFK,
+        Duration: element.Duration
+      })
+    });
+    return Services;
   }
 
   getNoteObject(event, type, staff) {
@@ -320,7 +334,7 @@ export class ManageSingleSurgeryComponent implements OnInit {
       TOOLS: new FormControl(details.TOOLS, null),
       ANESTHESIA: new FormControl(details.ANESTHESIA, null),
       DIMOT: new FormControl(details.DIMOT, null),
-      HOSPITALIZATION: new FormControl(details.HOSPITALIZATION, null),
+      HOSPITALIZATION: new FormControl(this.data.event.SurgeryPatientDetails.PM_MOVE_DEPART_SEODE, null),
     });
     if (details.ISOLATION == "1") {
       this.dialog.open(this.modalContent, { width: '60%' });
@@ -410,9 +424,10 @@ export class ManageSingleSurgeryComponent implements OnInit {
     if (type == 'endTime') {
       // let hours = Math.floor((diff % 86400000) / 3600000);//hours
       // let minutes = Math.round(((diff % 86400000) % 3600000) / 60000);//minutes
-      let minutes = Math.round((diff % 86400000) / 60000);//minutes
-      // this.SurgeryFormGroup.controls['SurgeryServicesName']['controls'].S_SERVICE_DURATION.setValue(hours + '.' + minutes);
-      this.SurgeryFormGroup.controls['SurgeryServicesName']['controls'].S_SERVICE_DURATION.setValue(minutes);
+      // let minutes = Math.round((diff % 86400000) / 60000);//minutes
+      // this.SurgeryFormGroup.controls['SurgeryServicesName']['controls'].S_SERVICE_DURATION.setValue(minutes);
+      after.setTime(before.getTime() + (this.SurgeryFormGroup.controls['SurgeryServicesName']['controls'].S_SERVICE_DURATION.value * 60 * 1000));
+      this.SurgeryFormGroup.controls['EndTime'].setValue(this.datePipe.transform(after, 'HH:mm'));
     } else {
       after.setTime(before.getTime() + diff);
       this.SurgeryFormGroup.controls['EndTime'].setValue(this.datePipe.transform(after, 'HH:mm'));

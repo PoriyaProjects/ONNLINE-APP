@@ -139,7 +139,8 @@ export class SurgeryCalendarComponent implements OnInit {
   ngOnInit(): void {
     if (this.UserName != null) {
       let month = this.datePipe.transform(this.viewDate, 'MM');
-      this.getSurgeryRooms(month);
+      let year = this.datePipe.transform(this.viewDate, 'yyyy');
+      this.getSurgeryRooms(month, year);
     }
   }
 
@@ -191,18 +192,19 @@ export class SurgeryCalendarComponent implements OnInit {
 
   closeOpenMonthViewDay() {
     let month = this.datePipe.transform(this.viewDate, 'MM');
-    this.getSurgeryRooms(month);
+    let year = this.datePipe.transform(this.viewDate, 'yyyy');
+    this.getSurgeryRooms(month, year);
     this.activeDayIsOpen = false;
   }
 
   // get the elements to the main calendar page
-  getSurgeryRooms(month) {
+  getSurgeryRooms(month, year) {
     this.loader = true;
     this.events = [];
     this.http
       .post(environment.url + "GetSurgeryRooms", {
         _month: month,
-        _year: this.date.getFullYear()
+        _year: year
       })
       .subscribe((Response) => {
         this.loader = false;
