@@ -135,8 +135,11 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <tr *ngFor="let service of SurgeryFormGroup.value.SurgeryCalendarServices">
-                            <td><b>{{service.Service_Name}}</b></td>
+                        <tr *ngFor="let service of SurgeryFormGroup.get('SurgeriesCalendar_Service').value">
+                            <!-- {{service | json}} -->
+                            <td>
+                                <b>{{service.value.Service_Name}}</b>
+                            </td>
                         </tr>
                     </tbody>
                 </table>
@@ -152,7 +155,7 @@
                     </mat-autocomplete>
                 </mat-form-field> -->
             </div>
-            <!-- <div class="col-2" formGroupName="SurgeryServicesName">
+            <!-- <div class="col-2" formGroupName="SurgeriesCalendar_Susgeries">
                 <mat-form-field class="example-full-width" appearance="fill">
                     <mat-label>פרוצדורה/שם ניתוח</mat-label>
                     <input type="text" matInput [formControl]="surgeriesCtrl" [matAutocomplete]="auto2"
@@ -199,13 +202,17 @@
                     <input matInput formControlName="ANESTHESIA">
                 </mat-form-field>
             </div>
-            <div class="col-2" formGroupName="SurgeryServicesName">
+            <div class="col-2" formGroupName="SurgeriesCalendar_Service">
                 <!-- <mat-form-field class="example-full-width" appearance="fill"> -->
-                    <mat-label>זמן משך ניתוח (דקות)</mat-label>
-                    <!-- <input matInput formControlName="S_SERVICE_DURATION" type="number" step="1"
+                <mat-label>זמן משך ניתוח (דקות)</mat-label>
+                <!-- <input matInput formControlName="Duration" type="number" step="1"
                         (focusout)="calculateSurgeryDuration('duration')">
                     </mat-form-field> -->
-                    <p>{{SurgeryFormGroup.get('SurgeryServicesName').get('S_SERVICE_DURATION').value}}</p>
+                <!-- <p>30</p> -->
+                <!-- {{SurgeryFormGroup.get('SurgeriesCalendar_Service').value.length | json}} -->
+                <p *ngIf="SurgeryFormGroup.get('SurgeriesCalendar_Service').value.length > 0">
+                    {{ SurgeryFormGroup.get('SurgeriesCalendar_Service').value[0].get('Duration').value }}
+                </p>
             </div>
         </div>
         <div class="row surgery-details" formGroupName="AdditionalDetails"
