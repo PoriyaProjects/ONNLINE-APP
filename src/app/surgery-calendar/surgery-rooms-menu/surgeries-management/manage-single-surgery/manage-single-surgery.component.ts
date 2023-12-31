@@ -161,7 +161,6 @@ export class ManageSingleSurgeryComponent implements OnInit {
             ServiceNameIDFK: new FormControl('', null),
             ServiceCode: new FormControl('', null),
             Service_Name: new FormControl('', null),
-            Service_Side: new FormControl('', null),
             SurgeriesCalendarIDFK: new FormControl('', null),
             Duration: new FormControl('', null)
           }])
@@ -249,7 +248,6 @@ export class ManageSingleSurgeryComponent implements OnInit {
         ServiceNameIDFK: element.ServiceNameIDFK,
         ServiceCode: element.ServiceCode,
         Service_Name: element.Service_Name,
-        Service_Side: element.Service_Side,
         SurgeriesCalendarIDFK: element.SurgeriesCalendarIDFK,
         Duration: element.Duration
       })
