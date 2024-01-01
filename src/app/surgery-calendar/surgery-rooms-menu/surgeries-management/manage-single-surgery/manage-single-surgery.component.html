@@ -131,14 +131,12 @@
                     <thead>
                         <tr>
                             <td>שירות</td>
-                            <!-- <td>צד</td> -->
                         </tr>
                     </thead>
                     <tbody>
                         <tr *ngFor="let service of SurgeryFormGroup.get('SurgeriesCalendar_Service').value">
-                            <!-- {{service | json}} -->
                             <td>
-                                <b>{{service.value.Service_Name}}</b>
+                                <b>{{service.Service_Name}}</b>
                             </td>
                         </tr>
                     </tbody>
@@ -182,10 +180,9 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <tr>
-                            <td><b>{{surgeriesCtrl.value.S_SERVICE_VAL}}</b></td>
-                            <!-- <td>{{SurgeryFormGroup.controls('AdditionalDetails')['ISOLATION'].value}}</td> -->
-                            <td><b>{{SurgeryFormGroup.value.AdditionalDetails.SIDE}}</b></td>
+                        <tr *ngFor="let surgery of SurgeryFormGroup.get('SurgeriesCalendar_Susgeries').value">
+                            <td><b>{{surgery.S_SERVICE_VAL}}</b></td>
+                            <td><b>{{surgery.Side}}</b></td>
                         </tr>
                     </tbody>
                 </table>
@@ -211,23 +208,24 @@
                 <!-- <p>30</p> -->
                 <!-- {{SurgeryFormGroup.get('SurgeriesCalendar_Service').value.length | json}} -->
                 <p *ngIf="SurgeryFormGroup.get('SurgeriesCalendar_Service').value.length > 0">
-                    {{ SurgeryFormGroup.get('SurgeriesCalendar_Service').value[0].get('Duration').value }}
+                    <!-- {{ SurgeryFormGroup.get('SurgeriesCalendar_Service').value | json }} -->
+                    {{ SurgeryFormGroup.get('SurgeriesCalendar_Service').value[0].Duration }}
                 </p>
             </div>
         </div>
-        <div class="row surgery-details" formGroupName="AdditionalDetails"
+        <div class="row surgery-details"
             *ngIf="SurgeryFormGroup.get('SurgeryRequestDepartments').value.SD_ROW_ID != ''">
             <div class="col-2">
                 <mat-form-field class="example-full-width" appearance="fill" style="font-weight: bold;color: red;">
                     <mat-label style="color: red;">דחיפות</mat-label>
-                    <mat-select>
+                    <mat-select formControlName="Urgency">
                         <mat-option value="EMG"> חירום </mat-option>
                         <mat-option value="URG"> דחוף </mat-option>
                         <mat-option value="ROU"> אלקטיב </mat-option>
                     </mat-select>
                 </mat-form-field>
             </div>
-            <div class="col-2">
+            <div class="col-2" formGroupName="AdditionalDetails">
                 <mat-form-field class="example-full-width" appearance="fill">
                     <mat-label>בידוד</mat-label>
                     <mat-select formControlName="ISOLATION">
@@ -236,7 +234,7 @@
                     </mat-select>
                 </mat-form-field>
             </div>
-            <div class="col-2">
+            <div class="col-2" formGroupName="AdditionalDetails">
                 <mat-form-field class="example-full-width" appearance="fill">
                     <mat-label>בנק דם</mat-label>
                     <mat-select formControlName="BLOOD_BANK">
@@ -245,7 +243,7 @@
                     </mat-select>
                 </mat-form-field>
             </div>
-            <div class="col-2">
+            <div class="col-2" formGroupName="AdditionalDetails">
                 <mat-form-field class="example-full-width" appearance="fill">
                     <mat-label>השקפה</mat-label>
                     <mat-select formControlName="DIMOT">
@@ -254,7 +252,7 @@
                     </mat-select>
                 </mat-form-field>
             </div>
-            <div class="col-2">
+            <div class="col-2" formGroupName="AdditionalDetails">
                 <mat-form-field class="example-full-width" appearance="fill">
                     <mat-label>Lap or Open</mat-label>
                     <mat-select formControlName="LAP_OR_OPEN">
@@ -264,13 +262,13 @@
                     </mat-select>
                 </mat-form-field>
             </div>
-            <div class="col-2">
+            <div class="col-2" formGroupName="AdditionalDetails">
                 <mat-form-field class="example-full-width" appearance="fill">
                     <mat-label>מכשירים נוספים</mat-label>
                     <textarea matInput formControlName="TOOLS" rows="1"></textarea>
                 </mat-form-field>
             </div>
-            <div class="col-2">
+            <div class="col-2" formGroupName="AdditionalDetails">
                 <mat-form-field class="example-full-width" appearance="fill">
                     <mat-label>רופא מנתח</mat-label>
                     <input type="text" matInput [formControl]="surgeonCtrl" [matAutocomplete]="auto">
@@ -281,7 +279,7 @@
                     </mat-autocomplete>
                 </mat-form-field>
             </div>
-            <div class="col-10">
+            <div class="col-10" formGroupName="AdditionalDetails">
                 <mat-form-field class="example-full-width" appearance="fill">
                     <mat-label>הערות</mat-label>
                     <textarea matInput formControlName="NOTE" rows="1"></textarea>
