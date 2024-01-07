@@ -129,8 +129,8 @@
             <div class="col-2">
                 <table>
                     <thead>
-                        <tr>
-                            <td>שירות</td>
+                        <tr style="background: lightgrey;">
+                            <td><b>שירות</b></td>
                         </tr>
                     </thead>
                     <tbody>
@@ -174,14 +174,14 @@
             <div class="col-4">
                 <table>
                     <thead>
-                        <tr>
-                            <td>פרוצדורה/שם ניתוח</td>
-                            <td>צד ניתוח</td>
+                        <tr style="background: lightgrey;">
+                            <td><b>פרוצדורה/שם ניתוח</b></td>
+                            <td><b>צד ניתוח</b></td>
                         </tr>
                     </thead>
                     <tbody>
                         <tr *ngFor="let surgery of SurgeryFormGroup.get('SurgeriesCalendar_Susgeries').value">
-                            <td><b>{{surgery.S_SERVICE_VAL}}</b></td>
+                            <td><b>{{surgery.Surgery_Name}}</b></td>
                             <td><b>{{surgery.Side}}</b></td>
                         </tr>
                     </tbody>
