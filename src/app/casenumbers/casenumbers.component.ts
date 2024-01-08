@@ -182,9 +182,9 @@ export class CasenumbersComponent implements OnInit, AfterViewInit {
         this.Element.nativeElement.value = "";
         console.log(event.value);
         console.log(event.value.toString().length);
-        if (event.value.toString().length < 10 && event.value.toString().indexOf("001") < 0 && event.value.toString().indexOf("002") < 0 && event.value.toString().indexOf("003") < 0 && event.value.toString().indexOf("004") < 0) {
+        if (event.value.toString().length < 10 && event.value.toString().indexOf("001") == -1 && event.value.toString().indexOf("002") == -1 && event.value.toString().indexOf("003") == -1 && event.value.toString().indexOf("004") == -1) {
             event.value = "00" + event.value
-        } else if (event.value.toString().length > 8 && event.value.toString().indexOf("001") < 0 && event.value.toString().indexOf("002") < 0 && event.value.toString().indexOf("003") < 0 && event.value.toString().indexOf("004") < 0) {
+        } else if (event.value.toString().length > 8 && event.value.toString().indexOf("001") == -1 && event.value.toString().indexOf("002") == -1 && event.value.toString().indexOf("003") == -1 && event.value.toString().indexOf("004") == -1) {
             console.log(event.value.toString().substring(0, 8))
             event.value = event.value.toString().substring(0, 8)
             event.value = "00" + event.value
