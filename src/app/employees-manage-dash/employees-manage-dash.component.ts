@@ -179,7 +179,7 @@ export class EmployeesManageDashComponent implements OnInit {
 
   getEmployeesFunctionsList() {
     this.http
-      .post(this.url + "GetEmployeesFunctionsList", {
+      .post(this.url + "GetEmployeesFunctionsListDistincted", {
         _userName: this.UserName
       })
       .subscribe((Response) => {

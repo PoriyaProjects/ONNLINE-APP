@@ -127,20 +127,33 @@
         </div>
         <div class="row surgery-details">
             <div class="col-2">
-                <!-- <mat-form-field class="example-full-width" appearance="fill"> -->
+                <table>
+                    <thead>
+                        <tr style="background: lightgrey;">
+                            <td><b>שירות</b></td>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr *ngFor="let service of SurgeryFormGroup.get('SurgeriesCalendar_Service').value">
+                            <td>
+                                <b>{{service.Service_Name}}</b>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+                <!-- <mat-form-field class="example-full-width" appearance="fill">
                 <mat-label>שירות</mat-label>
-                <!-- <input type="text" matInput [formControl]="serviceCtrl" [matAutocomplete]="auto1"
+                <input type="text" matInput [formControl]="serviceCtrl" [matAutocomplete]="auto1"
                         (focusout)="selectedServiceServiceName()">
                     <mat-autocomplete #auto1="matAutocomplete" [displayWith]="displayFnService">
                         <mat-option *ngFor="let option of filteredOptionssurgeries | async"
                             [value]="option.S_SERVICE_VAL">
                             {{option.S_SERVICE_VAL}}
                         </mat-option>
-                    </mat-autocomplete> -->
-                <p>{{serviceCtrl.value.S_SERVICE_VAL}}</p>
-                <!-- </mat-form-field> -->
+                    </mat-autocomplete>
+                </mat-form-field> -->
             </div>
-            <!-- <div class="col-2" formGroupName="SurgeryServicesName">
+            <!-- <div class="col-2" formGroupName="SurgeriesCalendar_Susgeries">
                 <mat-form-field class="example-full-width" appearance="fill">
                     <mat-label>פרוצדורה/שם ניתוח</mat-label>
                     <input type="text" matInput [formControl]="surgeriesCtrl" [matAutocomplete]="auto2"
@@ -161,16 +174,15 @@
             <div class="col-4">
                 <table>
                     <thead>
-                        <tr>
-                            <td>פרוצדורה/שם ניתוח</td>
-                            <td>צד ניתוח</td>
+                        <tr style="background: lightgrey;">
+                            <td><b>פרוצדורה/שם ניתוח</b></td>
+                            <td><b>צד ניתוח</b></td>
                         </tr>
                     </thead>
                     <tbody>
-                        <tr>
-                            <td><b>{{surgeriesCtrl.value.S_SERVICE_VAL}}</b></td>
-                            <!-- <td>{{SurgeryFormGroup.controls('AdditionalDetails')['ISOLATION'].value}}</td> -->
-                            <td><b>{{SurgeryFormGroup.value.AdditionalDetails.SIDE}}</b></td>
+                        <tr *ngFor="let surgery of SurgeryFormGroup.get('SurgeriesCalendar_Susgeries').value">
+                            <td><b>{{surgery.Surgery_Name}}</b></td>
+                            <td><b>{{surgery.Side}}</b></td>
                         </tr>
                     </tbody>
                 </table>
@@ -187,27 +199,35 @@
                     <input matInput formControlName="ANESTHESIA">
                 </mat-form-field>
             </div>
-            <div class="col-2" formGroupName="SurgeryServicesName">
-                <mat-form-field>
-                    <mat-label>זמן משך ניתוח (דקות)</mat-label>
-                    <input matInput formControlName="S_SERVICE_DURATION" type="number" step="1"
+            <div class="col-2" formGroupName="SurgeriesCalendar_Service">
+                <!-- <mat-form-field class="example-full-width" appearance="fill"> -->
+                <mat-label>זמן משך ניתוח (דקות)</mat-label>
+                <!-- <input matInput formControlName="Duration" type="number" step="1"
                         (focusout)="calculateSurgeryDuration('duration')">
-                </mat-form-field>
+                    </mat-form-field> -->
+                <!-- <p>30</p> -->
+                <!-- {{SurgeryFormGroup.get('SurgeriesCalendar_Service').value.length | json}} -->
+                <p *ngIf="SurgeryFormGroup.get('SurgeriesCalendar_Service').value.length > 0">
+                    <!-- {{ SurgeryFormGroup.get('SurgeriesCalendar_Service').value | json }} -->
+                    {{ SurgeryFormGroup.get('SurgeriesCalendar_Service').value[0].Duration }}
+                </p>
             </div>
         </div>
-        <div class="row surgery-details" formGroupName="AdditionalDetails"
+        <div class="row surgery-details"
             *ngIf="SurgeryFormGroup.get('SurgeryRequestDepartments').value.SD_ROW_ID != ''">
             <div class="col-2">
-                <mat-form-field class="example-full-width" appearance="fill" style="font-weight: bold;color: red;">
+                <mat-label>דחיפות</mat-label>
+                <p style="color: red;">{{SurgeryFormGroup.get('Urgency').value}}</p>
+                <!-- <mat-form-field class="example-full-width" appearance="fill" style="font-weight: bold;color: red;">
                     <mat-label style="color: red;">דחיפות</mat-label>
-                    <mat-select>
+                    <mat-select formControlName="Urgency">
                         <mat-option value="EMG"> חירום </mat-option>
                         <mat-option value="URG"> דחוף </mat-option>
                         <mat-option value="ROU"> אלקטיב </mat-option>
                     </mat-select>
-                </mat-form-field>
+                </mat-form-field> -->
             </div>
-            <div class="col-2">
+            <div class="col-2" formGroupName="AdditionalDetails">
                 <mat-form-field class="example-full-width" appearance="fill">
                     <mat-label>בידוד</mat-label>
                     <mat-select formControlName="ISOLATION">
@@ -216,7 +236,7 @@
                     </mat-select>
                 </mat-form-field>
             </div>
-            <div class="col-2">
+            <div class="col-2" formGroupName="AdditionalDetails">
                 <mat-form-field class="example-full-width" appearance="fill">
                     <mat-label>בנק דם</mat-label>
                     <mat-select formControlName="BLOOD_BANK">
@@ -225,7 +245,7 @@
                     </mat-select>
                 </mat-form-field>
             </div>
-            <div class="col-2">
+            <div class="col-2" formGroupName="AdditionalDetails">
                 <mat-form-field class="example-full-width" appearance="fill">
                     <mat-label>השקפה</mat-label>
                     <mat-select formControlName="DIMOT">
@@ -234,7 +254,7 @@
                     </mat-select>
                 </mat-form-field>
             </div>
-            <div class="col-2">
+            <div class="col-2" formGroupName="AdditionalDetails">
                 <mat-form-field class="example-full-width" appearance="fill">
                     <mat-label>Lap or Open</mat-label>
                     <mat-select formControlName="LAP_OR_OPEN">
@@ -244,13 +264,13 @@
                     </mat-select>
                 </mat-form-field>
             </div>
-            <div class="col-2">
+            <div class="col-2" formGroupName="AdditionalDetails">
                 <mat-form-field class="example-full-width" appearance="fill">
                     <mat-label>מכשירים נוספים</mat-label>
                     <textarea matInput formControlName="TOOLS" rows="1"></textarea>
                 </mat-form-field>
             </div>
-            <div class="col-2">
+            <div class="col-2" formGroupName="AdditionalDetails">
                 <mat-form-field class="example-full-width" appearance="fill">
                     <mat-label>רופא מנתח</mat-label>
                     <input type="text" matInput [formControl]="surgeonCtrl" [matAutocomplete]="auto">
@@ -261,7 +281,7 @@
                     </mat-autocomplete>
                 </mat-form-field>
             </div>
-            <div class="col-10">
+            <div class="col-10" formGroupName="AdditionalDetails">
                 <mat-form-field class="example-full-width" appearance="fill">
                     <mat-label>הערות</mat-label>
                     <textarea matInput formControlName="NOTE" rows="1"></textarea>
