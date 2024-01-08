@@ -178,13 +178,13 @@ export class CasenumbersComponent implements OnInit, AfterViewInit {
     }
 
     onDetected(event: IDetect) {
-        ////debugger
+        debugger
         this.Element.nativeElement.value = "";
         console.log(event.value);
         console.log(event.value.toString().length);
         if (event.value.toString().length < 10 && event.value.toString().indexOf("00") < 0) {
             event.value = "00" + event.value
-        } else if (event.value.toString().length > 8) {
+        } else if (event.value.toString().length > 8 && event.value.toString().indexOf("00") < 0) {
             console.log(event.value.toString().substring(0, 8))
             event.value = event.value.toString().substring(0, 8)
             event.value = "00" + event.value
