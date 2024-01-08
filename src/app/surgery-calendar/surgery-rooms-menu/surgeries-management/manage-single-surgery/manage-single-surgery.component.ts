@@ -1,4 +1,3 @@
-import { E } from '@angular/cdk/keycodes';
 import { DatePipe } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { Component, Inject, OnInit, TemplateRef, ViewChild } from '@angular/core';
@@ -330,7 +329,7 @@ export class ManageSingleSurgeryComponent implements OnInit {
       TOOLS: new FormControl(details.TOOLS, null),
       ANESTHESIA: new FormControl(details.ANESTHESIA, null),
       DIMOT: new FormControl(details.DIMOT, null),
-      HOSPITALIZATION: new FormControl(this.data.event.SurgeryPatientDetails.PM_MOVE_DEPART_SEODE, null),
+      HOSPITALIZATION: new FormControl(details.HOSPITALIZATION, null),
     });
     if (details.ISOLATION == "1") {
       this.dialog.open(this.modalContent, { width: '60%' });
@@ -343,7 +342,7 @@ export class ManageSingleSurgeryComponent implements OnInit {
     delete department[0].__type;
     this.SurgeryFormGroup.controls['SurgeryRequestDepartments'].setValue(department[0]);
     // build the additional fields of the form by the requesting department
-    this.buildAdditionalFormGroupByDepartment(department[0]);
+    // this.buildAdditionalFormGroupByDepartment(department[0]);
     // get surgery names by requested department
     // this.getSurgeriesByRequestedDepartment(department);
   }
