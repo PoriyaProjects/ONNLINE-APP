@@ -271,7 +271,8 @@
                 </mat-form-field>
             </div>
             <div class="col-2" formGroupName="AdditionalDetails">
-                <mat-form-field class="example-full-width" appearance="fill">
+                <p>{{SurgeryFormGroup.get('DoctorSurgeon').value}}</p>
+                <!-- <mat-form-field class="example-full-width" appearance="fill">
                     <mat-label>רופא מנתח</mat-label>
                     <input type="text" matInput [formControl]="surgeonCtrl" [matAutocomplete]="auto">
                     <mat-autocomplete #auto="matAutocomplete" [displayWith]="displayFnSurgeon">
@@ -279,7 +280,7 @@
                             {{option}}
                         </mat-option>
                     </mat-autocomplete>
-                </mat-form-field>
+                </mat-form-field> -->
             </div>
             <div class="col-10" formGroupName="AdditionalDetails">
                 <mat-form-field class="example-full-width" appearance="fill">
