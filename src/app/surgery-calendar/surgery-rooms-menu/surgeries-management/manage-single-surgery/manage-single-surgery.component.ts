@@ -18,7 +18,7 @@ export class ManageSingleSurgeryComponent implements OnInit {
 
   horizontalPosition: MatSnackBarHorizontalPosition = 'start';
   verticalPosition: MatSnackBarVerticalPosition = 'bottom';
-  surgeonCtrl = new FormControl('');
+  // surgeonCtrl = new FormControl('');
   surgeonsList: any[] = [];
   filteredOptions: Observable<any[]>;
   surgeriesCtrl = new FormControl('');
@@ -62,13 +62,13 @@ export class ManageSingleSurgeryComponent implements OnInit {
     this.getSurgeryDepartmentsList();
     this.buildFormGroup(this.data.action);
     this.SurgeryRoomsList = this.data.event.RoomsList;
-    this.filteredOptions = this.surgeonCtrl.valueChanges.pipe(
-      startWith(''),
-      map(value => {
-        const name = typeof value === 'string' ? value : value;
-        return name ? this._filter(name as string) : this.surgeonsList.slice();
-      }),
-    );
+    // this.filteredOptions = this.surgeonCtrl.valueChanges.pipe(
+    //   startWith(''),
+    //   map(value => {
+    //     const name = typeof value === 'string' ? value : value;
+    //     return name ? this._filter(name as string) : this.surgeonsList.slice();
+    //   }),
+    // );
     this.filteredOptionssurgeries = this.surgeriesCtrl.valueChanges.pipe(
       startWith(''),
       map(value => {
@@ -197,7 +197,7 @@ export class ManageSingleSurgeryComponent implements OnInit {
         }),
         SurgeriesCalendar_Susgeries: this.calendarPatientSurgeriesForm(),
         SurgeriesCalendar_Service: this.calendarPatientServicesForm(),
-        DoctorSurgeon: new FormControl('', null),
+        DoctorSurgeon: new FormControl(this.data.event.DoctorSurgeon, null),
         Urgency: new FormControl(this.data.event.Urgency, null),
         Duration: new FormControl(this.data.event.Duration, null),
         CancelNote: new FormControl(this.data.event.CancelNote, null),
@@ -216,7 +216,7 @@ export class ManageSingleSurgeryComponent implements OnInit {
         EndTime: new FormControl({ value: this.data.event.EndTime, disabled: true }, null),
         LastUpdateUserName: new FormControl({ value: localStorage.getItem('loginUserName'), disabled: true }, null),
       });
-      this.surgeonCtrl.setValue(this.SurgeryFormGroup.controls['DoctorSurgeon'].value);
+      // this.surgeonCtrl.setValue(this.SurgeryFormGroup.controls['DoctorSurgeon'].value);
       this.surgeriesCtrl.setValue(this.SurgeryFormGroup.controls['SurgeriesCalendar_Susgeries'].value);
       this.calculateSurgeryDuration('endTime');
     }
@@ -357,13 +357,13 @@ export class ManageSingleSurgeryComponent implements OnInit {
       .subscribe((Response) => {
         this.surgeriesList = Response["d"];
         // update the surgery names list after getting a response
-        this.filteredOptionssurgeries = this.surgeriesCtrl.valueChanges.pipe(
-          startWith(''),
-          map(value => {
-            const name = typeof value === 'string' ? value : value?.S_SERVICE_VAL;
-            return name ? this._filter2(name as string) : this.surgeriesList.slice();
-          }),
-        );
+        // this.filteredOptionssurgeries = this.surgeriesCtrl.valueChanges.pipe(
+        //   startWith(''),
+        //   map(value => {
+        //     const name = typeof value === 'string' ? value : value?.S_SERVICE_VAL;
+        //     return name ? this._filter2(name as string) : this.surgeriesList.slice();
+        //   }),
+        // );
       });
   }
 
@@ -450,10 +450,10 @@ export class ManageSingleSurgeryComponent implements OnInit {
       this.openSnackBar("לבחור ניתוח מתוך הרשימה ולא הקלדה ידנית");
       return false;
     }
-    if (this.surgeonCtrl.value == undefined) {
-      this.openSnackBar("לבחור מנתח מתוך הרשימה ולא הקלדה ידנית");
-      return false;
-    }
+    // if (this.surgeonCtrl.value == undefined) {
+    //   this.openSnackBar("לבחור מנתח מתוך הרשימה ולא הקלדה ידנית");
+    //   return false;
+    // }
     return true;
   }
 
@@ -482,7 +482,7 @@ export class ManageSingleSurgeryComponent implements OnInit {
 
   saveSurgeryDetails() {
     try {
-      this.SurgeryFormGroup.controls['DoctorSurgeon'].setValue(this.surgeonCtrl.value);
+      // this.SurgeryFormGroup.controls['DoctorSurgeon'].setValue(this.surgeonCtrl.value);
       this.setNoteObject(this.SurgeryFormGroup.controls['SurgeryLateNote'].value, 'late', 'doctor');
       this.setNoteObject(this.SurgeryFormGroup.controls['SurgeryLateNoteNurse'].value, 'late', 'nurse');
       this.setNoteObject(this.SurgeryFormGroup.controls['SurgeryCancelNote'].value, 'cancel', 'doctor');
