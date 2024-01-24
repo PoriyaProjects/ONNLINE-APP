@@ -151,7 +151,7 @@ export class CasenumbersComponent implements OnInit, AfterViewInit {
             this.printOn = true;
             this.displayedColumns = [
                 "Dose",
-               // "HospitalDate",
+                // "HospitalDate",
                 "CaseNumber",
                 //"PatientNumber",
                 "PatientID",
@@ -178,13 +178,13 @@ export class CasenumbersComponent implements OnInit, AfterViewInit {
     }
 
     onDetected(event: IDetect) {
-        ////debugger
+        debugger
         this.Element.nativeElement.value = "";
         console.log(event.value);
         console.log(event.value.toString().length);
-        if (event.value.toString().length < 10 && event.value.toString().indexOf("00") < 0) {
+        if (event.value.toString().length < 10 && (event.value.toString().indexOf("1") == 0 || event.value.toString().indexOf("2") == 0 || event.value.toString().indexOf("3") == 0 || event.value.toString().indexOf("4") == 0)) {
             event.value = "00" + event.value
-        } else if (event.value.toString().length > 8) {
+        } else if (event.value.toString().length > 8 && (event.value.toString().indexOf("1") == 0 || event.value.toString().indexOf("2") == 0 || event.value.toString().indexOf("3") == 0 || event.value.toString().indexOf("4") == 0)) {
             console.log(event.value.toString().substring(0, 8))
             event.value = event.value.toString().substring(0, 8)
             event.value = "00" + event.value
@@ -193,7 +193,7 @@ export class CasenumbersComponent implements OnInit, AfterViewInit {
         console.log(event.value);
         console.log(event.value.toString().length);
         ////debugger
-        if (event.value.toString().indexOf("001") == 0) {
+        if (event.value.toString().indexOf("00") == 0) {
             this.http
                 .post(
                     //"http://srv-apps-prod/RCF_WS/WebService.asmx/InsertCaseNumberToBox",

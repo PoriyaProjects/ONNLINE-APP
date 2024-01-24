@@ -295,18 +295,18 @@ export class DimotComponent implements OnInit, AfterViewInit {
     }
     applyFilter(filterValue: string) {
         this.fliterVal = filterValue;
-        if (this.startdateVal && this.enddateVal) {
-            this.getTableFromServer(
-                this.startdateVal,
-                this.enddateVal,
-                this.paginator.pageIndex,
-                this.paginator.pageSize,
-                this.Depart,
-                this.fliterVal,
-                this.Shift,
-                this.RequestType
-            );
-        }
+        // if (this.startdateVal && this.enddateVal) {
+        //     this.getTableFromServer(
+        //         this.startdateVal,
+        //         this.enddateVal,
+        //         this.paginator.pageIndex,
+        //         this.paginator.pageSize,
+        //         this.Depart,
+        //         this.fliterVal,
+        //         this.Shift,
+        //         this.RequestType
+        //     );
+        // }
         //this.dataSource.filter = filterValue.trim().toLowerCase();
     }
     quart_change(event: MatRadioChange) {
@@ -473,7 +473,7 @@ export class DimotComponent implements OnInit, AfterViewInit {
             })
             .subscribe(
                 (Response) => {
-                    //////debugger
+                    debugger
                     var json = JSON.parse(Response["d"]);
                     var _monthsDoingLabels = JSON.parse(
                         json["_monthsDoingLabels"]
