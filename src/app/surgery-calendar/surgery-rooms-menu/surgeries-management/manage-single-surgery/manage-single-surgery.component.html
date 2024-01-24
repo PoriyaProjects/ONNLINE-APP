@@ -207,9 +207,9 @@
                     </mat-form-field> -->
                 <!-- <p>30</p> -->
                 <!-- {{SurgeryFormGroup.get('SurgeriesCalendar_Service').value.length | json}} -->
-                <p *ngIf="SurgeryFormGroup.get('SurgeriesCalendar_Service').value.length > 0">
+                <p>
                     <!-- {{ SurgeryFormGroup.get('SurgeriesCalendar_Service').value | json }} -->
-                    {{ SurgeryFormGroup.get('SurgeriesCalendar_Service').value[0].Duration }}
+                    {{ SurgeryFormGroup.get('Duration').value }}
                 </p>
             </div>
         </div>
