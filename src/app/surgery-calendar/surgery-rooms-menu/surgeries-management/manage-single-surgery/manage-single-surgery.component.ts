@@ -162,6 +162,7 @@ export class ManageSingleSurgeryComponent implements OnInit {
         AdditionalDetails: this.buildAdditionalFormGroupByDepartment(""),
         Row_ID: new FormControl(null, null),
         Urgency: new FormControl('', null),
+        Duration: new FormControl('', null),
         SurgeryLateNote: new FormControl('', null),
         SurgeryLateNoteNurse: new FormControl('', null),
         SurgeryCancelNote: new FormControl('', null),
@@ -198,6 +199,7 @@ export class ManageSingleSurgeryComponent implements OnInit {
         SurgeriesCalendar_Service: this.calendarPatientServicesForm(),
         DoctorSurgeon: new FormControl('', null),
         Urgency: new FormControl(this.data.event.Urgency, null),
+        Duration: new FormControl(this.data.event.Duration, null),
         CancelNote: new FormControl(this.data.event.CancelNote, null),
         CancelNoteNurse: new FormControl(this.data.event.CancelNoteNurse, null),
         AdditionalDetails: this.buildAdditionalFormGroupByDepartment(this.data.event.AdditionalDetails),
@@ -405,7 +407,7 @@ export class ManageSingleSurgeryComponent implements OnInit {
       // let minutes = Math.round(((diff % 86400000) % 3600000) / 60000);//minutes
       // let minutes = Math.round((diff % 86400000) / 60000);//minutes
       // this.SurgeryFormGroup.controls['SurgeriesCalendar_Susgeries']['controls'].Duration.setValue(minutes);
-      after.setTime(before.getTime() + (this.SurgeryFormGroup.controls['SurgeriesCalendar_Service'].value[0].Duration * 60 * 1000));
+      after.setTime(before.getTime() + (parseInt(this.SurgeryFormGroup.controls['Duration'].value) * 60 * 1000));
       this.SurgeryFormGroup.controls['EndTime'].setValue(this.datePipe.transform(after, 'HH:mm'));
     } else {
       after.setTime(before.getTime() + diff);
