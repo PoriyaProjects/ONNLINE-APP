@@ -77,7 +77,7 @@ export class CprFormComponent implements OnInit {
   deathFormShow: boolean;
   cprTeamShow: boolean;
   secondTableMeds = ['ADRENALINE', 'AMIODARONE', '', '', '', ''];
-  statusDropDown = ['VF', 'PEA', 'ASYSTOLE', 'VT', 'BRADY ARITMIA'];
+  statusDropDown = ['VF', 'PEA', 'ASYSTOLE', 'VT'];
   rateHeadDropdown = ['יש', 'אין'];
   myDate = new Date();
   CprFormsColumns: string[] = ['delete', 'rowid', 'date', 'patientID', 'patientName', 'print', 'sign'];
@@ -979,17 +979,17 @@ export class CprFormComponent implements OnInit {
       );
   }
 
-  validationOfActionTable(event, index) {
-    if (event == 'בוצע') {
-      // this.SecondSection.controls['actionsTableArray']['controls'][index].controls.actiontime.setValue(null);
-      this.SecondSection.controls['actionsTableArray']['controls'][index].controls.actiontime.setValidators([Validators.required]);
-      this.SecondSection.controls['actionsTableArray']['controls'][index].controls.actiontime.updateValueAndValidity();
-    } else {
-      // this.SecondSection.controls['actionsTableArray']['controls'][index].controls.actiontime.setValue("");
-      this.SecondSection.controls['actionsTableArray']['controls'][index].controls.actiontime.setValidators(null);
-      this.SecondSection.controls['actionsTableArray']['controls'][index].controls.actiontime.updateValueAndValidity();
-    }
-  }
+  // validationOfActionTable(event, index) {
+  //   if (event == 'בוצע') {
+  //     // this.SecondSection.controls['actionsTableArray']['controls'][index].controls.actiontime.setValue(null);
+  //     this.SecondSection.controls['actionsTableArray']['controls'][index].controls.actiontime.setValidators([Validators.required]);
+  //     this.SecondSection.controls['actionsTableArray']['controls'][index].controls.actiontime.updateValueAndValidity();
+  //   } else {
+  //     // this.SecondSection.controls['actionsTableArray']['controls'][index].controls.actiontime.setValue("");
+  //     this.SecondSection.controls['actionsTableArray']['controls'][index].controls.actiontime.setValidators(null);
+  //     this.SecondSection.controls['actionsTableArray']['controls'][index].controls.actiontime.updateValueAndValidity();
+  //   }
+  // }
 
   submit() {
     let defaultCprDate = this.datePipe.transform(this.myDate, 'yyyy-MM-dd');
