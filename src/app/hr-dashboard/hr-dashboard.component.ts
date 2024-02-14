@@ -139,6 +139,18 @@ export class HrDashboardComponent implements OnInit {
       });
   }
 
+  endConversation(contact) {
+    console.log(contact);
+    this.http
+      .post(environment.url + "EndHRWhatsAppConversation", {
+        uncontact: contact
+      })
+      .subscribe((Response) => {
+        if (Response["d"]) this.getHrWhatsAppUsers();
+        else alert("אירעה שגיאה בסיום שיחה");
+      });
+  }
+
   async getHRWhatsAppConversationsByIDFK(row_id) {
     this.http
       .post(environment.url + "GetHRWhatsAppConversationsByIDFK", {
@@ -147,15 +159,17 @@ export class HrDashboardComponent implements OnInit {
       .subscribe((Response) => {
         this.currentContact.WhatsApp_Bot_Convesations = Response["d"];
         let indexOfLastMessage = this.currentContact.WhatsApp_Bot_Convesations.length;
-        this.newMessage.controls['Row_ID'].setValue(this.currentContact.WhatsApp_Bot_Convesations[indexOfLastMessage - 1].Row_ID);
-        this.newMessage.controls['From_ServiceEmployee'].setValue(this.currentContact.WhatsApp_Bot_Convesations[indexOfLastMessage - 1].From_ServiceEmployee);
-        this.newMessage.controls['ServiceIDFK'].setValue(this.currentContact.WhatsApp_Bot_Convesations[indexOfLastMessage - 1].ServiceIDFK);
-        this.newMessage.controls['ServiceEmployeeIDFK'].setValue(this.currentContact.WhatsApp_Bot_Convesations[indexOfLastMessage - 1].ServiceEmployeeIDFK);
-        this.newMessage.controls['EndUserIDFK'].setValue(this.currentContact.WhatsApp_Bot_Convesations[indexOfLastMessage - 1].EndUserIDFK);
-        this.newMessage.controls['ActionIDFK'].setValue(this.currentContact.WhatsApp_Bot_Convesations[indexOfLastMessage - 1].ActionIDFK);
-        this.newMessage.controls['Status'].setValue(this.currentContact.WhatsApp_Bot_Convesations[indexOfLastMessage - 1].Status);
-        this.newMessage.controls['Step'].setValue(this.currentContact.WhatsApp_Bot_Convesations[indexOfLastMessage - 1].Step);
-        this.newMessage.controls['Conversation_Status'].setValue(this.currentContact.WhatsApp_Bot_Convesations[indexOfLastMessage - 1].Conversation_Status);
+        if (indexOfLastMessage > 0) {
+          this.newMessage.controls['Row_ID'].setValue(this.currentContact.WhatsApp_Bot_Convesations[indexOfLastMessage - 1].Row_ID);
+          this.newMessage.controls['From_ServiceEmployee'].setValue(this.currentContact.WhatsApp_Bot_Convesations[indexOfLastMessage - 1].From_ServiceEmployee);
+          this.newMessage.controls['ServiceIDFK'].setValue(this.currentContact.WhatsApp_Bot_Convesations[indexOfLastMessage - 1].ServiceIDFK);
+          this.newMessage.controls['ServiceEmployeeIDFK'].setValue(this.currentContact.WhatsApp_Bot_Convesations[indexOfLastMessage - 1].ServiceEmployeeIDFK);
+          this.newMessage.controls['EndUserIDFK'].setValue(this.currentContact.WhatsApp_Bot_Convesations[indexOfLastMessage - 1].EndUserIDFK);
+          this.newMessage.controls['ActionIDFK'].setValue(this.currentContact.WhatsApp_Bot_Convesations[indexOfLastMessage - 1].ActionIDFK);
+          this.newMessage.controls['Status'].setValue(this.currentContact.WhatsApp_Bot_Convesations[indexOfLastMessage - 1].Status);
+          this.newMessage.controls['Step'].setValue(this.currentContact.WhatsApp_Bot_Convesations[indexOfLastMessage - 1].Step);
+          this.newMessage.controls['Conversation_Status'].setValue(this.currentContact.WhatsApp_Bot_Convesations[indexOfLastMessage - 1].Conversation_Status);
+        }
         // setTimeout(() => {
         //   this.scrollTarget.nativeElement.scrollTo(0, this.scrollTarget.nativeElement.scrollHeight);
         // }, 100);

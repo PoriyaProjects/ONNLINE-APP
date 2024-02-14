@@ -85,7 +85,9 @@
                                 <span *ngIf="message.From_ServiceEmployee === 'False'">- {{ currentContact.FirstName }}
                                     {{ currentContact.LastName }}</span>
                             </span>
-                            <p *ngIf="message.Message_Time === '' || currentContact.Message_Time === ''">לא
+                            <p
+                                *ngIf="(message.Message_Time === '' || currentContact.Message_Time === '') && message.From_ServiceEmployee == 'True'">
+                                לא
                                 נשלח</p>
                         </div>
                     </div>
@@ -109,6 +111,8 @@
                             [ngStyle]="{'background-color': uncontact.maxRow == '' ? '' : 'limegreen'}">account_circle</mat-icon>
                         <span mat-line>{{ uncontact.FirstName }} {{ uncontact.LastName }} -
                             {{uncontact.CellNumber}}</span>
+                        <mat-icon mat-list-icon *ngIf="uncontact.maxRow != ''" style="color: orangered;"
+                            matTooltip="סיום שיחה" (click)="endConversation(uncontact)">cancel_presentation</mat-icon>
                         <!-- <span mat-line class="secondary">{{ contact.status }}</span> -->
                     </mat-list-item>
                 </mat-list>
