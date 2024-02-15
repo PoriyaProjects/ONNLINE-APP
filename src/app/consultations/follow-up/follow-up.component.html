@@ -198,6 +198,14 @@
                                         {{ element.CaseNumber }}
                                     </td>
                                 </ng-container>
+                                <ng-container matColumnDef="Depart_Name">
+                                    <th mat-header-cell *matHeaderCellDef mat-sort-header>
+                                        מחלקה מזמינה
+                                    </th>
+                                    <td mat-cell *matCellDef="let element">
+                                        {{ element.Depart_Name }}
+                                    </td>
+                                </ng-container>
                                 <ng-container matColumnDef="UserFullName">
                                     <th mat-header-cell *matHeaderCellDef mat-sort-header>
                                         שם עובד
@@ -236,6 +244,7 @@
                     <th>תאריך</th>
                     <th>קטיגוריה</th>
                     <th>מספר מקרה</th>
+                    <th>מחלקה מזמינה</th>
                     <th>שם עובד</th>
                     <th>תוכן דו"ח</th>
                 </tr>
@@ -244,6 +253,8 @@
                     <td> {{fol.FollowUpDate}} </td>
                     <td> {{fol.FollowUpCategory}} </td>
                     <td> {{fol.CaseNumber}} </td>
+                    <td> {{fol.Depart_Name}} </td>
+                    <td> {{ fol.User.UserFirstName }} {{ fol.User.UserLastName }} </td>
                     <td> {{fol.Content}} </td>
                 </tr>
             </table>

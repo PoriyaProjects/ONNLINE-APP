@@ -282,6 +282,7 @@ export class WhatsappMessagesDashboardComponent implements OnInit {
         _department: department,
         _role: role,
         _sektor: sektor,
+        _on: "1",
         _workPlace: workPlace
       })
       .subscribe((Response) => {
