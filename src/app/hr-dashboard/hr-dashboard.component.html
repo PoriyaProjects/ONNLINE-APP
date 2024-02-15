@@ -71,10 +71,16 @@
                     </button>
                 </div>
                 <div class="chat-container" #scrollTarget *ngIf="currentContact !== undefined">
+                    <mat-spinner *ngIf="loadChat"></mat-spinner>
                     <div class="row chat" *ngFor="let message of currentContact.WhatsApp_Bot_Convesations">
                         <div
                             [ngClass]="{'message-sent': message.From_ServiceEmployee == 'True', 'message-received': message.From_ServiceEmployee == 'False'}">
-                            <img src="{{message.Message_Text}}" *ngIf="message.IfFileMessage == 'True'" width="200" />
+                            <div *ngIf="message.IfFileMessage == 'True'">
+                                <img src="{{message.Message_Text}}" width="200" />
+                                <mat-icon mat-list-icon style="color: yellowgreen;float: left;cursor: pointer;"
+                                    matTooltip="הורדת קובץ"
+                                    (click)="downloadPDF(message.Message_Text)">cloud_download</mat-icon>
+                            </div>
                             <span *ngIf="message.IfFileMessage == 'False'"
                                 style="color: #333;font-size: 18px;line-height: 2;">{{ message.Message_Text
                                 }}</span><br>
