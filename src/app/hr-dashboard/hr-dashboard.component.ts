@@ -130,14 +130,14 @@ export class HrDashboardComponent implements OnInit {
           startWith(''),
           map(value => this._filter(value || '')),
         );
-        // let interval = setTimeout(() => {
-        //   if (this.router.url !== '/hr-dashboard') {
-        //     clearTimeout(interval);
-        //   } else {
-        //     console.log("Refreshing..");
-        //     this.getHrWhatsAppUsers();
-        //   }
-        // }, 10000);
+        let interval = setTimeout(() => {
+          if (this.router.url !== '/hr-dashboard') {
+            clearTimeout(interval);
+          } else {
+            console.log("Refreshing..");
+            this.getHrWhatsAppUsers();
+          }
+        }, 10000);
       });
   }
 
