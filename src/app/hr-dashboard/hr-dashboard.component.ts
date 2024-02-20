@@ -8,6 +8,7 @@ import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { map, startWith } from 'rxjs/operators';
 import { Observable } from 'rxjs';
+import { ConfirmationDialogService } from '../confirmation-dialog/confirmation-dialog.service';
 
 @Component({
   selector: 'app-hr-dashboard',
@@ -33,10 +34,10 @@ export class HrDashboardComponent implements OnInit {
   loadChat: boolean;
 
   constructor(
-    private breakpointObserver: BreakpointObserver,
     private fb: FormBuilder,
     private router: Router,
-    private http: HttpClient
+    private http: HttpClient,
+    private confirmationDialogService: ConfirmationDialogService,
   ) { }
 
   ngOnInit(): void {
@@ -142,15 +143,28 @@ export class HrDashboardComponent implements OnInit {
   }
 
   endConversation(contact) {
-    console.log(contact);
-    this.http
-      .post(environment.url + "EndHRWhatsAppConversation", {
-        uncontact: contact
+    this.confirmationDialogService
+      .confirm("נא לאשר..", "אתה מנסה לסיים את השיחה ? ")
+      .then((confirmed) => {
+        console.log("User confirmed:", confirmed);
+        if (confirmed) {
+          this.http
+            .post(environment.url + "EndHRWhatsAppConversation", {
+              uncontact: contact
+            })
+            .subscribe((Response) => {
+              if (Response["d"]) this.getHrWhatsAppUsers();
+              else alert("אירעה שגיאה בסיום שיחה");
+            });
+        } else {
+        }
       })
-      .subscribe((Response) => {
-        if (Response["d"]) this.getHrWhatsAppUsers();
-        else alert("אירעה שגיאה בסיום שיחה");
-      });
+      .catch(() =>
+        console.log(
+          "User dismissed the dialog (e.g., by using ESC, clicking the cross icon, or clicking outside the dialog)"
+        )
+      );
+
   }
 
   async getHRWhatsAppConversationsByIDFK(row_id) {

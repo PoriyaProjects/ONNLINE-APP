@@ -25,6 +25,10 @@ mat-list{
   height: 70vh;
 }
 
+mat-icon{
+  cursor: pointer;
+}
+
 .mat-card-header-text{
   text-align: center;
 }
@@ -67,6 +71,16 @@ mat-list{
   text-align: right;
 }
 
+/* Global option */
+.mat-tooltip {
+  text-align: right;
+}
+
+/* Specific class option */
+.right-align-tooltip {
+  text-align: right;
+}
+
 /* img:hover{
   display: block;
   z-index: 10;
@@ -95,6 +109,7 @@ mat-list{
   position: sticky;
   bottom: 0;
   background-color: #efeae2;
+  align-items: center;
 }
 
 .message-input {

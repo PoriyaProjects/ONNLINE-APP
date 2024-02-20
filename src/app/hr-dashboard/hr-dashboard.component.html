@@ -54,6 +54,8 @@
                 <!-- Your input area goes here -->
                 <div class="input-container"
                     *ngIf="currentContact !== undefined && currentContact.maxRow !== '' && currentContact.maxRow !== undefined">
+                    <mat-icon style="margin-left: 20px;" matTooltipClass="right-align-tooltip"
+                        matTooltip="רשימת טפסים מוצעים דרך המערכת:&#13;&#13;טופס בקשה להשתלמות&#13;טופס בקשה ליום עבודה מקוצר&#13;טופס דיווח תאונת עבודה&#13;טופס גמול השתלמות מונגש&#13;טופס שינוי חשבון בנק&#13;טופס בקשה להיתר לעבודה פרטית&#13;טופס קצובת נסיעה&#13;טופס שינוי סטטוס אישי(נישואין, ילדים, כתובת וכו)&#13;טופס שינוי מוטבים ביטוח הדדי&#13;טופס בקשה לתוספת מעונות">view_list</mat-icon>
                     <mat-form-field class="message-input">
                         <mat-label>שליחת הודעה בתוך שיחה</mat-label>
                         <input matInput placeholder="הודעה חדשה" formControlName="Message_Text"
@@ -94,7 +96,8 @@
                                     מערכת</span>
                                 <span *ngIf="message.Employee_Name !== ''">- {{ message.Employee_Name }}</span>
                                 <span *ngIf="message.From_ServiceEmployee === 'False'">- {{ currentContact.FirstName }}
-                                    {{ currentContact.LastName }}</span>
+                                    {{ currentContact.LastName }}</span><span> -
+                                    {{ message.Service_Name }}</span>
                             </span>
                             <p
                                 *ngIf="(message.Message_Time === '' || currentContact.Message_Time === '') && message.From_ServiceEmployee == 'True'">
