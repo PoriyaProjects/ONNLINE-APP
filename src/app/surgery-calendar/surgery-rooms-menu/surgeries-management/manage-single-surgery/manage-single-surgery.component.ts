@@ -199,7 +199,7 @@ export class ManageSingleSurgeryComponent implements OnInit {
         Urgency: new FormControl(this.data.event.Urgency, null),
         Duration: new FormControl(this.data.event.Duration, null),
         NoteType: new FormControl(this.data.event.NoteType, null),
-        NoteTypeRequest: new FormControl(this.data.event.NoteType, null),
+        NoteTypeRequest: new FormControl(this.data.event.NoteTypeRequest, null),
         SurgeryTypeReasonRequest: new FormControl(this.data.event.SurgeryTypeReasonRequest.Row_ID, null),
         SurgeryTypeReason: new FormControl(this.data.event.SurgeryTypeReason.Row_ID, null),
         SurgeryReasonNoteRequest: new FormControl(this.data.event.SurgeryReasonNoteRequest, null),
@@ -213,7 +213,7 @@ export class ManageSingleSurgeryComponent implements OnInit {
         LastUpdateUserName: new FormControl({ value: localStorage.getItem('loginUserName'), disabled: true }, null),
       });
       setTimeout(() => {
-        this.choosenReasonNotCommitSurgery(this.data.event.SurgeryTypeReasonRequest.Type);
+        this.choosenReasonNotCommitSurgery(this.data.event.SurgeryTypeReason.Type);
         this.choosenReasonNotCommitSurgeryRequest(this.data.event.SurgeryTypeReasonRequest.Type);
       }, 1000);
       // this.surgeonCtrl.setValue(this.SurgeryFormGroup.controls['DoctorSurgeon'].value);
@@ -303,9 +303,6 @@ export class ManageSingleSurgeryComponent implements OnInit {
       });
   }
 
-  deleteCancelNote(test) {
-
-  }
 
   getServicesByRequestedDepartment() {
     this.http
@@ -403,7 +400,7 @@ export class ManageSingleSurgeryComponent implements OnInit {
 
   setSurgeryTypeReasonRequestObject() {
     let index = this.SurgeryFormGroup.value.SurgeryTypeReasonRequest;
-    let object  = this.surgeryFilteredNotesRequest.filter(x => x.Row_ID == index)[0];
+    let object = this.surgeryFilteredNotesRequest.filter(x => x.Row_ID == index)[0];
     if (object !== undefined) this.SurgeryFormGroup.controls['SurgeryTypeReasonRequest'].setValue(object);
   }
 
@@ -413,8 +410,21 @@ export class ManageSingleSurgeryComponent implements OnInit {
 
   setSurgeryTypeReasonObject() {
     let index = this.SurgeryFormGroup.value.SurgeryTypeReason;
-    let object  = this.surgeryFilteredNotes.filter(x => x.Row_ID == index)[0];
+    let object = this.surgeryFilteredNotes.filter(x => x.Row_ID == index)[0];
     if (object !== undefined) this.SurgeryFormGroup.controls['SurgeryTypeReason'].setValue(object);
+  }
+
+
+  deleteCancelNote(value) {
+    if (value === 'surgeryrequest') {
+      this.SurgeryFormGroup.controls['SurgeryTypeReasonRequest'].setValue(null);
+      this.SurgeryFormGroup.controls['NoteTypeRequest'].setValue(null);
+      this.SurgeryFormGroup.controls['SurgeryReasonNoteRequest'].setValue(null);
+    } else {
+      this.SurgeryFormGroup.controls['SurgeryTypeReason'].setValue(null);
+      this.SurgeryFormGroup.controls['NoteType'].setValue(null);
+      this.SurgeryFormGroup.controls['SurgeryReasonNote'].setValue(null);
+    }
   }
 
   getSurgeryDepartmentsList() {
