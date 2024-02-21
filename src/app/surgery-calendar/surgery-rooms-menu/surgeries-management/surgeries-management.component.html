@@ -23,11 +23,11 @@
   <div class="col-md-4">
     <h3>{{ viewDate | calendarDate:(view + 'ViewTitle'):'he' }}</h3>
     <button mat-raised-button (click)="getPatientsQueues()"
-      [ngStyle]="{'background-color': IfPlannedSurgeries ? '' : 'cornflowerblue' }">מקור</button>
-    <!-- <button mat-raised-button style="background-color: cornflowerblue;" (click)="filterDepartment('undo')">כל
-      המחלקות</button> -->
-    <button mat-raised-button (click)="sortSurgeriesOfEachRoomInDay()"
-      [ngStyle]="{'background-color': IfPlannedSurgeries ? 'cornflowerblue' : '' }">תכנון</button>
+      [ngStyle]="{'background-color': IfPlannedSurgeries == 'original' ? 'cornflowerblue' : '' }">מקור</button>
+    <button *ngIf="IfPlannedSurgeries != 'dror'" mat-raised-button (click)="sortSurgeriesOfEachRoomInDay()"
+      [ngStyle]="{'background-color': IfPlannedSurgeries == 'planned' ? 'cornflowerblue' : '' }">תכנון</button>
+    <button *ngIf="IfPlannedSurgeries != 'planned'" mat-raised-button (click)="plannedFromDrorSystem()"
+      [ngStyle]="{'background-color': IfPlannedSurgeries == 'dror' ? 'cornflowerblue' : '' }">דרור</button>
   </div>
   <div class="col-md-3">
     <ul class="list">

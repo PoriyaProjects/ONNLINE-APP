@@ -1,21 +1,38 @@
 <!-- app.component.html -->
 
-<mat-sidenav-container class="sidenav-container">
+<mat-sidenav-container dir="rtl">
     <mat-sidenav-content class="sidenav-content">
         <mat-toolbar color="primary">
             <!-- <button type="button" aria-label="Toggle sidenav" mat-icon-button>
                 <mat-icon aria-label="Side nav toggle icon">menu</mat-icon>
             </button> -->
-            <span>{{ currentContact?.name }}</span>
+            <span>{{ currentContact?.FirstName }} {{ currentContact?.LastName }} - {{ currentContact?.Department }} - {{
+                currentContact?.Sektor }}</span>
         </mat-toolbar>
         <!-- Your chat area goes here -->
         <div class="row">
             <div class="col-3">
-                <mat-list role="list">
-                    <mat-list-item role="listitem" class="list-item" *ngFor="let contact of contacts"
+                <mat-card-header>
+                    <div class="mat-card-header-text">
+                        <mat-card-title>אנשי קשר</mat-card-title>
+                    </div>
+                </mat-card-header>
+                <mat-form-field>
+                    <mat-label>סינון</mat-label>
+                    <input matInput (keyup)="applyFilter2($event.target.value)" placeholder="הקלד.." #input>
+                </mat-form-field>
+                <mat-list role="list" class="list-of-contact">
+                    <mat-spinner *ngIf="contacts.length == 0"></mat-spinner>
+                    <mat-list-item role="listitem" class="list-item" *ngFor="let contact of contacts_filter"
                         (click)="openChat(contact)">
-                        <mat-icon mat-list-icon>account_circle</mat-icon>
-                        <span mat-line>{{ contact.name }} - {{contact.phone}}</span>
+                        <mat-icon mat-list-icon
+                            [ngStyle]="{'background-color': contact.Active == '1' ? 'cornflowerblue' : 'orangered'}">account_circle</mat-icon>
+                        <a href="mailto:{{contact.Email}}">
+                            <mat-icon mat-list-icon
+                                [ngStyle]="{'color': contact.Active == '1' ? 'cornflowerblue' : 'orangered'}">email</mat-icon>
+                        </a>
+
+                        <span mat-line>{{ contact.FirstName }} {{contact.LastName}} - {{contact.CellNumber}}</span>
                         <!-- <span mat-line class="secondary">{{ contact.status }}</span> -->
                     </mat-list-item>
                 </mat-list>
@@ -33,22 +50,86 @@
                     </mat-nav-list>
                 </mat-sidenav> -->
             </div>
-            <div class="col-9">
-                <div class="chat-container">
-                    <div *ngFor="let message of currentContact.messages"
-                        [ngClass]="{'message-sent': message.sentByMe, 'message-received': !message.sentByMe}">
-                        {{ message.content }}
-                    </div>
-                </div>
+            <div class="col-6" [formGroup]="newMessage">
                 <!-- Your input area goes here -->
-                <div class="input-container">
+                <div class="input-container"
+                    *ngIf="currentContact !== undefined && currentContact.maxRow !== '' && currentContact.maxRow !== undefined">
+                    <mat-icon style="margin-left: 20px;" matTooltipClass="right-align-tooltip"
+                        matTooltip="רשימת טפסים מוצעים דרך המערכת:&#13;&#13;טופס בקשה להשתלמות&#13;טופס בקשה ליום עבודה מקוצר&#13;טופס דיווח תאונת עבודה&#13;טופס גמול השתלמות מונגש&#13;טופס שינוי חשבון בנק&#13;טופס בקשה להיתר לעבודה פרטית&#13;טופס קצובת נסיעה&#13;טופס שינוי סטטוס אישי(נישואין, ילדים, כתובת וכו)&#13;טופס שינוי מוטבים ביטוח הדדי&#13;טופס בקשה לתוספת מעונות">view_list</mat-icon>
                     <mat-form-field class="message-input">
-                        <input matInput placeholder="Type your message" [(ngModel)]="newMessage">
+                        <mat-label>שליחת הודעה בתוך שיחה</mat-label>
+                        <input matInput placeholder="הודעה חדשה" formControlName="Message_Text"
+                            (keydown.enter)="sendMessage()">
                     </mat-form-field>
-                    <button mat-icon-button (click)="sendMessage()">
+                    <button mat-icon-button type="submit" class="send-btn" (click)="sendMessage()">
                         <mat-icon>send</mat-icon>
                     </button>
                 </div>
+                <!-- send one way message -->
+                <div class="input-container"
+                    *ngIf="currentContact !== undefined && (currentContact.maxRow === '' || currentContact.maxRow === undefined)">
+                    <mat-form-field class="message-input">
+                        <mat-label>שליחת הודעה רגילה</mat-label>
+                        <input matInput placeholder="הודעה חדשה" formControlName="Message_Text"
+                            (keydown.enter)="sendOneWayMessage()">
+                    </mat-form-field>
+                    <button mat-icon-button type="submit" class="send-btn" (click)="sendOneWayMessage()">
+                        <mat-icon>send</mat-icon>
+                    </button>
+                </div>
+                <div class="chat-container" #scrollTarget *ngIf="currentContact !== undefined">
+                    <mat-spinner *ngIf="loadChat"></mat-spinner>
+                    <div class="row chat" *ngFor="let message of currentContact.WhatsApp_Bot_Convesations">
+                        <div
+                            [ngClass]="{'message-sent': message.From_ServiceEmployee == 'True', 'message-received': message.From_ServiceEmployee == 'False'}">
+                            <div *ngIf="message.IfFileMessage == 'True'">
+                                <img src="{{message.Message_Text}}" width="200" />
+                                <mat-icon mat-list-icon style="color: yellowgreen;float: left;cursor: pointer;"
+                                    matTooltip="הורדת קובץ"
+                                    (click)="downloadPDF(message.Message_Text)">cloud_download</mat-icon>
+                            </div>
+                            <span *ngIf="message.IfFileMessage == 'False'"
+                                style="color: #333;font-size: 18px;line-height: 2;">{{ message.Message_Text
+                                }}</span><br>
+                            <span style="font-size: 10px;">{{message.Message_Time}}
+                                <span *ngIf="message.Employee_Name === '' && message.From_ServiceEmployee == 'True'">-
+                                    מערכת</span>
+                                <span *ngIf="message.Employee_Name !== ''">- {{ message.Employee_Name }}</span>
+                                <span *ngIf="message.From_ServiceEmployee === 'False'">- {{ currentContact.FirstName }}
+                                    {{ currentContact.LastName }}</span><span> -
+                                    {{ message.Service_Name }}</span>
+                            </span>
+                            <p
+                                *ngIf="(message.Message_Time === '' || currentContact.Message_Time === '') && message.From_ServiceEmployee == 'True'">
+                                לא
+                                נשלח</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-3">
+                <mat-card-header>
+                    <div class="mat-card-header-text">
+                        <mat-card-title>שיחות וואטסאפ</mat-card-title>
+                    </div>
+                </mat-card-header>
+                <mat-form-field>
+                    <mat-label>סינון</mat-label>
+                    <input matInput (keyup)="applyFilter($event.target.value)" placeholder="הקלד.." #input>
+                </mat-form-field>
+                <mat-list role="list" class="list-of-contact">
+                    <!-- <mat-spinner *ngIf="unAnsweredConversations.length == 0"></mat-spinner> -->
+                    <mat-list-item role="listitem" class="list-item"
+                        *ngFor="let uncontact of unAnsweredConversations_filter" (click)="openChat(uncontact)">
+                        <mat-icon mat-list-icon
+                            [ngStyle]="{'background-color': uncontact.maxRow == '' ? '' : 'limegreen'}">account_circle</mat-icon>
+                        <span mat-line>{{ uncontact.FirstName }} {{ uncontact.LastName }} -
+                            {{uncontact.CellNumber}}</span>
+                        <mat-icon mat-list-icon *ngIf="uncontact.maxRow != ''" style="color: orangered;"
+                            matTooltip="סיום שיחה" (click)="endConversation(uncontact)">cancel_presentation</mat-icon>
+                        <!-- <span mat-line class="secondary">{{ contact.status }}</span> -->
+                    </mat-list-item>
+                </mat-list>
             </div>
         </div>
     </mat-sidenav-content>

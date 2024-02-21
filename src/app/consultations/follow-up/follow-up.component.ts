@@ -162,6 +162,7 @@ export class FollowUpComponent implements OnInit {
         "FollowUpDate",
         "FollowUpCategory",
         "CaseNumber",
+        "Depart_Name",
         "UserFullName",
         "Content",
     ];
