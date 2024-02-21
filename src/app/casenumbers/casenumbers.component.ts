@@ -205,12 +205,13 @@ export class CasenumbersComponent implements OnInit, AfterViewInit {
                 )
                 .subscribe((Response) => {
                     if (!Response["d"]) {
-                        this.getTableFromServer("");
+                        //this.getTableFromServer("");
                         this.openSnackBar("נשמר בהצלחה", "success");
                     } else {
+                       //this.getTableFromServer("");
                         this.openSnackBar("מס' מקרה נמצא בקרטון", "error");
                     }
-
+                    this.getTableFromServer("");
                 });
         }
 
