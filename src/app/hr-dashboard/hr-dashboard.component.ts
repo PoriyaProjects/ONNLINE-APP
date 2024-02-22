@@ -177,15 +177,15 @@ export class HrDashboardComponent implements OnInit {
         this.currentContact.WhatsApp_Bot_Convesations = Response["d"];
         let indexOfLastMessage = this.currentContact.WhatsApp_Bot_Convesations.length;
         if (indexOfLastMessage > 0) {
-          this.newMessage.controls['Row_ID'].setValue(this.currentContact.WhatsApp_Bot_Convesations[indexOfLastMessage - 1].Row_ID);
-          this.newMessage.controls['From_ServiceEmployee'].setValue(this.currentContact.WhatsApp_Bot_Convesations[indexOfLastMessage - 1].From_ServiceEmployee);
-          this.newMessage.controls['ServiceIDFK'].setValue(this.currentContact.WhatsApp_Bot_Convesations[indexOfLastMessage - 1].ServiceIDFK);
-          this.newMessage.controls['ServiceEmployeeIDFK'].setValue(this.currentContact.WhatsApp_Bot_Convesations[indexOfLastMessage - 1].ServiceEmployeeIDFK);
-          this.newMessage.controls['EndUserIDFK'].setValue(this.currentContact.WhatsApp_Bot_Convesations[indexOfLastMessage - 1].EndUserIDFK);
-          this.newMessage.controls['ActionIDFK'].setValue(this.currentContact.WhatsApp_Bot_Convesations[indexOfLastMessage - 1].ActionIDFK);
-          this.newMessage.controls['Status'].setValue(this.currentContact.WhatsApp_Bot_Convesations[indexOfLastMessage - 1].Status);
-          this.newMessage.controls['Step'].setValue(this.currentContact.WhatsApp_Bot_Convesations[indexOfLastMessage - 1].Step);
-          this.newMessage.controls['Conversation_Status'].setValue(this.currentContact.WhatsApp_Bot_Convesations[indexOfLastMessage - 1].Conversation_Status);
+          this.newMessage.controls['Row_ID'].setValue(this.currentContact.WhatsApp_Bot_Convesations[0].Row_ID);
+          this.newMessage.controls['From_ServiceEmployee'].setValue(this.currentContact.WhatsApp_Bot_Convesations[0].From_ServiceEmployee);
+          this.newMessage.controls['ServiceIDFK'].setValue(this.currentContact.WhatsApp_Bot_Convesations[0].ServiceIDFK);
+          this.newMessage.controls['ServiceEmployeeIDFK'].setValue(this.currentContact.WhatsApp_Bot_Convesations[0].ServiceEmployeeIDFK);
+          this.newMessage.controls['EndUserIDFK'].setValue(this.currentContact.WhatsApp_Bot_Convesations[0].EndUserIDFK);
+          this.newMessage.controls['ActionIDFK'].setValue(this.currentContact.WhatsApp_Bot_Convesations[0].ActionIDFK);
+          this.newMessage.controls['Status'].setValue(this.currentContact.WhatsApp_Bot_Convesations[0].Status);
+          this.newMessage.controls['Step'].setValue(this.currentContact.WhatsApp_Bot_Convesations[0].Step);
+          this.newMessage.controls['Conversation_Status'].setValue(this.currentContact.WhatsApp_Bot_Convesations[0].Conversation_Status);
         }
         this.loadChat = false;
         // setTimeout(() => {
