@@ -203,14 +203,22 @@ export class CasenumbersComponent implements OnInit, AfterViewInit {
                         CartoonID: this.CartoonID,
                     }
                 )
-                .subscribe((Response) => {
-                    if (!Response["d"]) {
-                        this.getTableFromServer("");
+                .subscribe((Response:any) => {
+                    debugger
+                    if (Response["d"].length > 0) {
+                        this.TABLE_DATA.push(Response["d"][Response["d"].length - 1]);
+                        //this.getTableFromServer("");
+                        this.TotalCases = (parseInt(this.TotalCases) + 1) + "";
+                        this.dataSource = new MatTableDataSource<any>(
+                            this.TABLE_DATA
+                        );
+                        this.resultsLength = this.TABLE_DATA.length;
                         this.openSnackBar("נשמר בהצלחה", "success");
                     } else {
+                       //this.getTableFromServer("");
                         this.openSnackBar("מס' מקרה נמצא בקרטון", "error");
                     }
-
+                   // this.getTableFromServer("");
                 });
         }
 
