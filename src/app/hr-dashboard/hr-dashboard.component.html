@@ -79,7 +79,8 @@
                 </div>
                 <div class="chat-container" #scrollTarget *ngIf="currentContact !== undefined">
                     <mat-spinner *ngIf="loadChat"></mat-spinner>
-                    <div class="row chat" *ngFor="let message of currentContact.WhatsApp_Bot_Convesations">
+                    <div class="row chat" *ngFor="let message of currentContact.WhatsApp_Bot_Convesations"
+                        [ngStyle]="{'border-top': message.Step === '5' ? '2px dotted black' : '', 'margin-top': message.Step === '5' ? '25px' : '0px'}">
                         <div
                             [ngClass]="{'message-sent': message.From_ServiceEmployee == 'True', 'message-received': message.From_ServiceEmployee == 'False'}">
                             <div *ngIf="message.IfFileMessage == 'True'">
@@ -119,7 +120,7 @@
                 </mat-form-field>
                 <mat-list role="list" class="list-of-contact">
                     <!-- <mat-spinner *ngIf="unAnsweredConversations.length == 0"></mat-spinner> -->
-                    <mat-list-item role="listitem" class="list-item"
+                    <mat-list-item role="listitem" class="list-item" matTooltip="{{uncontact.Message_Time}}"
                         *ngFor="let uncontact of unAnsweredConversations_filter" (click)="openChat(uncontact)">
                         <mat-icon mat-list-icon
                             [ngStyle]="{'background-color': uncontact.maxRow == '' ? '' : 'limegreen'}">account_circle</mat-icon>
