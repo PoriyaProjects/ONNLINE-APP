@@ -1,6 +1,6 @@
 // app.component.ts
 
-import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
+import { Component, ElementRef, OnInit, TemplateRef, ViewChild } from '@angular/core';
 import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
 import { FormArray, FormBuilder, FormControl, FormGroup } from '@angular/forms';
 import { environment } from 'src/environments/environment';
@@ -9,6 +9,7 @@ import { Router } from '@angular/router';
 import { map, startWith } from 'rxjs/operators';
 import { Observable } from 'rxjs';
 import { ConfirmationDialogService } from '../confirmation-dialog/confirmation-dialog.service';
+import { MatDialog } from '@angular/material/dialog';
 
 @Component({
   selector: 'app-hr-dashboard',
@@ -27,22 +28,26 @@ export class HrDashboardComponent implements OnInit {
   @ViewChild('scrollTarget') scrollTarget: ElementRef;
   contacts = [];
   contacts_filter = [];
+  fixed_files_list = [];
   unAnsweredConversations = [];
   unAnsweredConversations_filter = [];
   whatsAppGroup: FormGroup;
   newMessage: FormGroup;
   loadChat: boolean;
+  @ViewChild('tooltipTemplate') tooltipTemplate: TemplateRef<any>;
 
   constructor(
     private fb: FormBuilder,
     private router: Router,
     private http: HttpClient,
     private confirmationDialogService: ConfirmationDialogService,
+    public dialog: MatDialog
   ) { }
 
   ngOnInit(): void {
     this.getEmployeesForWhatsapp();
     this.getHrWhatsAppUsers();
+    this.getHRWhatsAppServiceFixedFiles();
     // this.getContactsAndConversations();
     this.currentContact = this.contacts[0];
     this.newMessage = this.fb.group({
@@ -59,6 +64,12 @@ export class HrDashboardComponent implements OnInit {
       Conversation_Status: new FormControl('', null),
     });
 
+  }
+
+  displayFiles() {
+    this.dialog.open(this.tooltipTemplate, {
+      width: '400px', // Adjust width as needed
+    });
   }
 
   applyFilter(filterValue: string): void {
@@ -230,8 +241,6 @@ export class HrDashboardComponent implements OnInit {
         })
         .subscribe((Response) => {
           if (Response["d"]) {
-            this.currentContact['WhatsApp_Bot_Convesations'] = [];
-            this.currentContact['WhatsApp_Bot_Convesations'].push({ Message_Text: this.newMessage.controls['Message_Text'].value, From_ServiceEmployee: 'True', IfFileMessage: 'False' });
             alert("הודעה נשלחה בהצלחה");
             this.newMessage.controls['Message_Text'].setValue('');
           } else {
@@ -239,6 +248,16 @@ export class HrDashboardComponent implements OnInit {
           }
         });
     }
+  }
+
+  getHRWhatsAppServiceFixedFiles() {
+    this.http
+      .post(environment.url + "GetHRWhatsAppServiceFixedFiles", {
+        _user_name: this.user_name
+      })
+      .subscribe((Response) => {
+        this.fixed_files_list = Response['d'];
+      });
   }
 
   checkIfContactHasConversation(contact) {

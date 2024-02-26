@@ -55,7 +55,12 @@
                 <div class="input-container"
                     *ngIf="currentContact !== undefined && currentContact.maxRow !== '' && currentContact.maxRow !== undefined">
                     <mat-icon style="margin-left: 20px;" matTooltipClass="right-align-tooltip"
-                        matTooltip="רשימת טפסים מוצעים דרך המערכת:&#13;&#13;טופס בקשה להשתלמות&#13;טופס בקשה ליום עבודה מקוצר&#13;טופס דיווח תאונת עבודה&#13;טופס גמול השתלמות מונגש&#13;טופס שינוי חשבון בנק&#13;טופס בקשה להיתר לעבודה פרטית&#13;טופס קצובת נסיעה&#13;טופס שינוי סטטוס אישי(נישואין, ילדים, כתובת וכו)&#13;טופס שינוי מוטבים ביטוח הדדי&#13;טופס בקשה לתוספת מעונות">view_list</mat-icon>
+                        matTooltip="הצגת שמות מסמכים" (click)="displayFiles()">view_list</mat-icon>
+                    <ng-template #tooltipTemplate>
+                        <div *ngFor="let item of fixed_files_list" style="text-align: right;direction: rtl;">
+                            <p>{{ item.File_Numeric }}. {{ item.File_Name }}</p>
+                        </div>
+                    </ng-template>
                     <mat-form-field class="message-input">
                         <mat-label>שליחת הודעה בתוך שיחה</mat-label>
                         <input matInput placeholder="הודעה חדשה" formControlName="Message_Text"
@@ -98,12 +103,11 @@
                                 <span *ngIf="message.Employee_Name !== ''">- {{ message.Employee_Name }}</span>
                                 <span *ngIf="message.From_ServiceEmployee === 'False'">- {{ currentContact.FirstName }}
                                     {{ currentContact.LastName }}</span><span> -
-                                    {{ message.Service_Name }}</span>
+                                    פניה ל{{ message.Service_Name }}</span>
                             </span>
                             <p
                                 *ngIf="(message.Message_Time === '' || currentContact.Message_Time === '') && message.From_ServiceEmployee == 'True'">
-                                לא
-                                נשלח</p>
+                                שולח</p>
                         </div>
                     </div>
                 </div>
@@ -123,7 +127,7 @@
                     <mat-list-item role="listitem" class="list-item" matTooltip="{{uncontact.Message_Time}}"
                         *ngFor="let uncontact of unAnsweredConversations_filter" (click)="openChat(uncontact)">
                         <mat-icon mat-list-icon
-                            [ngStyle]="{'background-color': uncontact.maxRow == '' ? '' : 'limegreen'}">account_circle</mat-icon>
+                            [ngStyle]="{'background-color': uncontact.maxRow == '' ? '' : uncontact.LateSessions == 'Late' ? 'orangered' : 'limegreen'}">account_circle</mat-icon>
                         <span mat-line>{{ uncontact.FirstName }} {{ uncontact.LastName }} -
                             {{uncontact.CellNumber}}</span>
                         <mat-icon mat-list-icon *ngIf="uncontact.maxRow != ''" style="color: orangered;"
