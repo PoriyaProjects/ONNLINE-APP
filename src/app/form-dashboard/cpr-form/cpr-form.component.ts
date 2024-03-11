@@ -84,7 +84,7 @@ export class CprFormComponent implements OnInit {
   CprFormsList = [];
   CprFormsList_all = [];
   UserName = localStorage.getItem("loginUserName").toLowerCase();
-  usersToSend = ['batzadok@tzmc.gov.il', 'saziv@tzmc.gov.il', 'KMassalha@tzmc.gov.il', 'EMansour@tzmc.gov.il', 'SBenDavid@tzmc.gov.il'];
+  usersToSend = ['saziv@tzmc.gov.il', 'KMassalha@tzmc.gov.il', 'EMansour@tzmc.gov.il', 'SBenDavid@tzmc.gov.il', 'EBENMOSHE@tzmc.gov.il'];
   // usersToSend = ['adahabre@poria.health.gov.il'];
   filteredOptions1: Observable<string[]>;
   docfilter = new FormControl();
@@ -632,6 +632,7 @@ export class CprFormComponent implements OnInit {
       responsNurse: new FormControl('', Validators.required),
       responsNurseSign: new FormControl('', Validators.required),
       responsNurseLicence: new FormControl('', null),
+      MovedTo: new FormControl('', null),
     });
 
     this.filteredOptions1 = this.docfilter.valueChanges
