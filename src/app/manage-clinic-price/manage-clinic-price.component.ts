@@ -96,6 +96,7 @@ export class ManageClinicPriceComponent implements OnInit {
       PhoneNumber: ['', null],
       Email: ['', null],
       Address: ['', null],
+      PayInstitute: ['', null],
       DoctorName: ['', Validators.required],
     });
     this.servicesFormGroup = this.fb.group({
@@ -184,6 +185,7 @@ export class ManageClinicPriceComponent implements OnInit {
             Email: new FormControl(mPersonalDetails.PatientEmail, null),
             Address: new FormControl(mPersonalDetails.PatientAddress, null),
             DoctorName: new FormControl(mPersonalDetails.DoctorName, null),
+            PayInstitute: new FormControl(mPersonalDetails.PayInstitute, null),
           });
           this.detailsFormGroup.controls['FirstName'].disable();
           this.detailsFormGroup.controls['LastName'].disable();
@@ -192,6 +194,7 @@ export class ManageClinicPriceComponent implements OnInit {
           this.detailsFormGroup.controls['Gender'].disable();
           this.detailsFormGroup.controls['PhoneNumber'].disable();
           this.detailsFormGroup.controls['Address'].disable();
+          this.detailsFormGroup.controls['PayInstitute'].disable();
 
           this.servicesFormGroup.controls['DepartNumber'].setValue(mPersonalDetails.PatientVersionsList[0].DepartNumber);
           this.searchServices();
@@ -225,6 +228,7 @@ export class ManageClinicPriceComponent implements OnInit {
         Email: new FormControl(mPersonalDetails.PatientEmail, null),
         Address: new FormControl(mPersonalDetails.PatientAddress, null),
         DoctorName: new FormControl(mPersonalDetails.DoctorName, null),
+        PayInstitute: new FormControl(mPersonalDetails.PayInstitute, null),
       });
       this.detailsFormGroup.controls['FirstName'].disable();
       this.detailsFormGroup.controls['LastName'].disable();
@@ -233,6 +237,7 @@ export class ManageClinicPriceComponent implements OnInit {
       this.detailsFormGroup.controls['Gender'].disable();
       this.detailsFormGroup.controls['PhoneNumber'].disable();
       this.detailsFormGroup.controls['Address'].disable();
+      this.detailsFormGroup.controls['PayInstitute'].disable();
     }
     this.getDepartments();
   }
