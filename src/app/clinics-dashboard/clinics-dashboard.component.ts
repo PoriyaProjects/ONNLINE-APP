@@ -35,6 +35,8 @@ export interface Patient {
   PrintingName: string;
   DoctorName: string;
   InchargeDoctor: string;
+  Paid: string;
+  PayInstitute: string;
 }
 
 @Component({
@@ -46,7 +48,7 @@ export class ClinicsDashboardComponent implements OnInit {
 
   displayedColumns: string[] = ['code', 'name', 'quantity'];
   displayedColumns2: string[] = ['code', 'name', 'quantity', 'teeth', 'price', 'total'];
-  displayedColumns3: string[] = ['date', 'passport', 'name', 'totalP', 'versions', 'print', 'edit'];
+  displayedColumns3: string[] = ['date', 'passport', 'name', 'totalP', 'versions', 'print', 'edit', 'paid'];
   dataSource = new MatTableDataSource<Services>();
   dataSource2 = new MatTableDataSource<Services>();
   dataSource3 = new MatTableDataSource<Patient>();
@@ -159,6 +161,8 @@ export class ClinicsDashboardComponent implements OnInit {
             PrintingName: relevantServices[1].PrintingName,
             DoctorName: relevantServices[0].DoctorName,
             InchargeDoctor: relevantServices[1].InchargeDoctor,
+            Paid: relevantServices[1].Paid,
+            PayInstitute: relevantServices[0].PayInstitute,
           });
           if (this.detailsFormGroup2.Gender == '1') {
             this.genderText = "זכר";
@@ -183,7 +187,6 @@ export class ClinicsDashboardComponent implements OnInit {
           this.servicesFormGroup = this.fb.group({
             ServiceArray: ServiceArray
           });
-          this.dataSource = new MatTableDataSource<Services>(this.ELEMENT_DATA);
           this.patientFound = true;
           setTimeout(() => {
             window.print();
@@ -258,6 +261,7 @@ export class ClinicsDashboardComponent implements OnInit {
                   LastName: this.patientRecords[i].PatientLastName,
                   PersonID: this.patientRecords[i].PatientPersonID,
                   RecordVersion: versionsArr,
+                  Paid: this.patientRecords[i].Paid,
                   TotalPrice: this.patientRecords[i].TotalPrice.replace(/\B(?=(\d{3})+(?!\d))/g, ","),
                 }
                 ELEMENT_DATA.push(patientItem);
@@ -269,9 +273,22 @@ export class ClinicsDashboardComponent implements OnInit {
               this.newPatient = true;
             }
           }
-
         });
     }
+  }
 
+  onToggleChange(event, Row_ID) {
+    this.http
+        .post(environment.url + "UpdateIfPatientPaidToClinic", {
+          _paid: event,
+          _row_id: Row_ID
+        })
+        .subscribe((Response) => {
+          if(Response["d"]){
+            this.openSnackBar("עודכן בהצלחה");
+          }else{
+            this.openSnackBar("תקלה!");
+          }
+        });
   }
 }
