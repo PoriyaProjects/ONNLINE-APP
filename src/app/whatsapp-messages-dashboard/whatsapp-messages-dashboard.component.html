@@ -173,8 +173,9 @@
     <hr>
     <div class="block">
         <div class="row mb-3" style="display: block;">
-            <mat-slide-toggle (click)="changeScreens()" style="float: right;">{{screenTitle}}</mat-slide-toggle>
             <h3 class="text-center" *ngIf="!typeOfScreen">כמות אנשים: {{total_number_of_reciepents}}</h3>
+            <h5 class="text-center" *ngIf="total_number_of_reciepents > 50">מוצגים רק ה 10 הראשונים</h5>
+            <mat-slide-toggle (click)="changeScreens()" style="float: right;">{{screenTitle}}</mat-slide-toggle>
             <button mat-icon-button *ngIf="!typeOfScreen" color="warn" matTooltip="ניקוי הכל" (click)="deleteAllRow()">
                 <mat-icon>clear</mat-icon>
             </button>
@@ -211,57 +212,59 @@
         <div class="dynamic-inputs" [formGroup]="customForm" style="height: 300px;overflow: auto;"
             *ngIf="!typeOfScreen">
             <div formArrayName="customInputs">
-
-                <div class="dynamic-fields"
-                    *ngFor="let contact of customForm.get('customInputs')['controls']; let i = index"
+                <div *ngFor="let contact of customForm.get('customInputs')['controls']; let i = index"
                     [formGroupName]="i">
-                    <mat-label class="contacts-numbers">{{i+1}}-</mat-label>
-                    <mat-form-field>
-                        <mat-label>מספר שולח*</mat-label>
-                        <mat-select formControlName="SenderIDFK" (selectionChange)="test()">
-                            <mat-option *ngFor="let phone of sendersList" [value]="phone.Row_ID">
-                                {{phone.Description}}
+
+                    <div class="dynamic-fields"
+                        [ngStyle]="{'display': i > 10 ? 'none' : 'flex'}">
+                        <mat-label class="contacts-numbers">{{i+1}}-</mat-label>
+                        <mat-form-field>
+                            <mat-label>מספר שולח*</mat-label>
+                            <mat-select formControlName="SenderIDFK" (selectionChange)="test()">
+                                <mat-option *ngFor="let phone of sendersList" [value]="phone.Row_ID">
+                                    {{phone.Description}}
+                                </mat-option>
+                            </mat-select>
+                        </mat-form-field>
+                        <!-- <mat-form-field>
+                        <mat-label>סוג מקבל ההודעה*</mat-label>
+                        <mat-select formControlName="Recipient_Type">
+                            <mat-option value="0">
+                                יחיד
+                            </mat-option>
+                            <mat-option value="1">
+                                קבוצה
                             </mat-option>
                         </mat-select>
-                    </mat-form-field>
-                    <!-- <mat-form-field>
-                    <mat-label>סוג מקבל ההודעה*</mat-label>
-                    <mat-select formControlName="Recipient_Type">
-                        <mat-option value="0">
-                            יחיד
-                        </mat-option>
-                        <mat-option value="1">
-                            קבוצה
-                        </mat-option>
-                    </mat-select>
-                </mat-form-field> -->
-                    <mat-form-field>
-                        <input matInput placeholder="מספר טלפון*" formControlName="Phone_Number">
-                    </mat-form-field>
-                    <mat-form-field>
-                        <input matInput placeholder="שם מקבל ההודעה" formControlName="Recipient">
-                    </mat-form-field>
-                    <mat-form-field>
-                        <textarea matInput placeholder="תוכן ההודעה*" formControlName="Message_Content"
-                            (keyup)="fillAllMessageContentFields(i)"></textarea>
-                    </mat-form-field>
-                    <mat-form-field *ngIf="contact.controls['Message_Timing'].value != null">
-                        <mat-label>תזמון הודעה</mat-label>
-                        <input matInput [matDatepicker]="picker" formControlName="Message_Timing">
-                        <mat-hint>DD/MM/YYYY</mat-hint>
-                        <mat-datepicker-toggle matIconSuffix [for]="picker"
-                            (focusout)="SetNewDate(i)"></mat-datepicker-toggle>
-                        <mat-datepicker #picker></mat-datepicker>
-                    </mat-form-field>
-                    <input type="time" class="form-control" formControlName="Message_Timing_Time" placeholder="זמן"
-                        *ngIf="contact.controls['Message_Timing'].value != null" (focusout)="SetNewDate(i)" />
-                    <div>
-                        <button mat-icon-button color="warn" matTooltip="מחיקה" (click)="deleteRow(contact, i)">
-                            <mat-icon>delete</mat-icon>
-                        </button>
-                        <!-- <button mat-icon-button color="primary" matTooltip="תזמון" (click)="setMessageTiming(i)">
-                            <mat-icon>alarm</mat-icon>
-                        </button> -->
+                        </mat-form-field> -->
+                        <mat-form-field>
+                            <input matInput placeholder="מספר טלפון*" formControlName="Phone_Number">
+                        </mat-form-field>
+                        <mat-form-field>
+                            <input matInput placeholder="שם מקבל ההודעה" formControlName="Recipient">
+                        </mat-form-field>
+                        <mat-form-field>
+                            <textarea matInput placeholder="תוכן ההודעה*" formControlName="Message_Content"
+                                (keyup)="fillAllMessageContentFields(i)"></textarea>
+                        </mat-form-field>
+                        <mat-form-field *ngIf="contact.controls['Message_Timing'].value != null">
+                            <mat-label>תזמון הודעה</mat-label>
+                            <input matInput [matDatepicker]="picker" formControlName="Message_Timing">
+                            <mat-hint>DD/MM/YYYY</mat-hint>
+                            <mat-datepicker-toggle matIconSuffix [for]="picker"
+                                (focusout)="SetNewDate(i)"></mat-datepicker-toggle>
+                            <mat-datepicker #picker></mat-datepicker>
+                        </mat-form-field>
+                        <input type="time" class="form-control" formControlName="Message_Timing_Time" placeholder="זמן"
+                            *ngIf="contact.controls['Message_Timing'].value != null" (focusout)="SetNewDate(i)" />
+                        <div>
+                            <button mat-icon-button color="warn" matTooltip="מחיקה" (click)="deleteRow(contact, i)">
+                                <mat-icon>delete</mat-icon>
+                            </button>
+                            <!-- <button mat-icon-button color="primary" matTooltip="תזמון" (click)="setMessageTiming(i)">
+                                <mat-icon>alarm</mat-icon>
+                            </button> -->
+                        </div>
                     </div>
                 </div>
             </div>
