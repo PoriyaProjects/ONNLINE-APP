@@ -90,13 +90,15 @@ export class EmployeesAddUpdateComponent implements OnInit {
     this.gymDetails = this.formBuilder.group({
       GymParticipant: new FormControl(this.employee.GymParticipation.Row_ID != null, null),
       Row_ID: new FormControl(this.employee.GymParticipation.Row_ID, null),
+      PaymentDate: new FormControl(this.employee.GymParticipation.PaymentDate, null),
+      Payment: new FormControl(this.employee.GymParticipation.Payment, null),
       StartGymDate: new FormControl(this.employee.GymParticipation.StartGymDate, null),
       EndGymDate: new FormControl(this.employee.GymParticipation.EndGymDate, null),
       MedicalProblems: new FormControl(this.employee.GymParticipation.MedicalProblems, null),
       MedicalApproval: new FormControl(this.employee.GymParticipation.MedicalApproval.toLowerCase() == 'true', null),
       PausePeriod: new FormControl(this.employee.GymParticipation.PausePeriod.toLowerCase() == 'true', null),
       PausePeriodExplain: new FormControl(this.employee.GymParticipation.PausePeriodExplain, null),
-      EmployeesID: new FormControl(this.employee.GymParticipation.EmployeesID, null),
+      EmployeesID: new FormControl(this.employee.GymParticipation.EmployeesID === null ? this.employee.RowID : null, null),
       Status: new FormControl(this.employee.GymParticipation.Status, null),
     });
     this.employeeWorkDetails = this.formBuilder.group({
@@ -416,6 +418,7 @@ export class EmployeesAddUpdateComponent implements OnInit {
     this.employeeWorkDetails.controls['DateToEndWork'].setValue(pipe.transform(this.employeeWorkDetails.controls['DateToEndWork'].value, 'yyyy-MM-dd'));
     this.employeePersonalDetails.controls['DateOfBirth'].setValue(pipe.transform(this.employeePersonalDetails.controls['DateOfBirth'].value, 'yyyy-MM-dd'));
     this.gymDetails.controls['StartGymDate'].setValue(pipe.transform(this.gymDetails.controls['StartGymDate'].value, 'yyyy-MM-dd'));
+    this.gymDetails.controls['PaymentDate'].setValue(pipe.transform(this.gymDetails.controls['PaymentDate'].value, 'yyyy-MM-dd'));
     this.employeeWorkDetails.controls['JcpFromDate'].setValue(pipe.transform(this.employeeWorkDetails.controls['JcpFromDate'].value, 'yyyy-MM-dd'));
     this.employeeWorkDetails.controls['JcpToDate'].setValue(pipe.transform(this.employeeWorkDetails.controls['JcpToDate'].value, 'yyyy-MM-dd'));
     if (this.employeeWorkDetails.controls['StatusRow'].value == null || this.employeeWorkDetails.controls['StatusRow'].value == "0") {
