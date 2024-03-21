@@ -284,9 +284,25 @@
                             </div>
                         </div>
                         <div class="row" *ngIf="gymDetails.controls['GymParticipant'].value">
-                            <div class="col-4">
+                            <div class="col">
                                 <mat-form-field appearance="fill" class="example-full-width">
-                                    <span matPrefix>תאריך תחילת מנוי &nbsp;</span>
+                                    <mat-label>תאריך תשלום</mat-label>
+                                    <input matInput formControlName="PaymentDate" placeholder="תאריך תשלום"
+                                        [matDatepicker]="picker0" (focus)="picker0.open()">
+                                    <mat-datepicker-toggle matSuffix [for]="picker0">
+                                    </mat-datepicker-toggle>
+                                    <mat-datepicker #picker0></mat-datepicker>
+                                </mat-form-field>
+                            </div>
+                            <div class="col">
+                                <mat-form-field appearance="fill" class="example-full-width">
+                                    <mat-label>סכום תשלום</mat-label>
+                                    <input matInput formControlName="Payment" placeholder="סכום תשלום">
+                                </mat-form-field>
+                            </div>
+                            <div class="col">
+                                <mat-form-field appearance="fill" class="example-full-width">
+                                    <mat-label>תאריך תחילת מנוי</mat-label>
                                     <input matInput formControlName="StartGymDate" placeholder="תאריך תחילת מנוי"
                                         [matDatepicker]="picker5" (focus)="picker5.open()">
                                     <mat-datepicker-toggle matSuffix [for]="picker5">
@@ -294,9 +310,9 @@
                                     <mat-datepicker #picker5 (closed)="setEndTime()"></mat-datepicker>
                                 </mat-form-field>
                             </div>
-                            <div class="col-4">
+                            <div class="col">
                                 <mat-form-field appearance="fill" class="example-full-width">
-                                    <span matPrefix>תאריך משוער לסיום מנוי &nbsp;</span>
+                                    <mat-label>תאריך משוער לסיום מנוי</mat-label>
                                     <input matInput formControlName="EndGymDate" placeholder="תאריך משוער לסיום מנוי"
                                         [matDatepicker]="picker6" (focus)="picker6.open()">
                                     <mat-datepicker-toggle matSuffix [for]="picker6">
@@ -304,34 +320,34 @@
                                     <mat-datepicker #picker6></mat-datepicker>
                                 </mat-form-field>
                             </div>
-                            <div class="col-4">
+                            <div class="col">
                                 <mat-form-field appearance="fill" class="example-full-width">
                                     <mat-label>בעיות רפואיות</mat-label>
                                     <textarea rows="1" matInput formControlName="MedicalProblems"></textarea>
                                 </mat-form-field>
                             </div>
-                            <div class="col-3" style="align-self: center;">
+                            <div class="col" style="align-self: center;">
                                 <section class="example-section">
                                     <mat-checkbox class="example-margin" formControlName="MedicalApproval">נמסר אישור
                                         רפואי</mat-checkbox>
                                 </section>
                             </div>
-                            <div class="col-3" style="align-self: center;">
+                            <div class="col" style="align-self: center;">
                                 <section class="example-section">
                                     <mat-checkbox class="example-margin" formControlName="PausePeriod">הקפאת
                                         מנוי</mat-checkbox>
                                 </section>
                             </div>
-                            <div class="col-3" *ngIf="gymDetails.controls['PausePeriod'].value">
+                            <div class="col" *ngIf="gymDetails.controls['PausePeriod'].value">
                                 <mat-form-field appearance="fill" class="example-full-width">
                                     <mat-label>סיבה</mat-label>
                                     <textarea rows="1" matInput formControlName="PausePeriodExplain"></textarea>
                                 </mat-form-field>
                             </div>
-                            <div class="col-3" style="align-self: center;">
+                            <!-- <div class="col" style="align-self: center;">
                                 <button mat-raised-button class="btn btn-warn btn-raised"
                                     (click)="goToSignForm()">חתימה</button>
-                            </div>
+                            </div> -->
                         </div>
                         <button mat-raised-button class="btn btn-primary btn-raised" matStepperNext>הבא</button>
                     </div>
