@@ -38,6 +38,7 @@ import { MatAccordion, MatExpansionModule } from '@angular/material/expansion';
 import { VoiceRecognitionService } from '../header/service/voice-recognition.service'
 import { MatChipInputEvent } from "@angular/material/chips";
 import { COMMA, ENTER } from '@angular/cdk/keycodes';
+import { environment } from "src/environments/environment";
 export interface User {
   FirstName: string;
   LastName: string;
@@ -171,8 +172,8 @@ export class ShareReportsDialog {
       this.disableBtn = false;
     } else {
       this.http
-        // .post("http://srv-apps-prod/RCF_WS/WebService.asmx/AttachReportToUser", {
-        // .post("http://srv-apps-prod/RCF_WS/WebService.asmx/AttachReportToUser", {
+        // .post(environment.url + "AttachReportToUser", {
+        // .post(environment.url + "AttachReportToUser", {
         .post("http://srv-ipracticom:8080/WebService.asmx/AttachReportToUser", {
           _userSender: localStorage.getItem('loginUserName').toLowerCase(),
           users: this.fruits,
@@ -200,7 +201,7 @@ export class ShareReportsDialog {
   }
   getUsers() {
     this.http
-      .post("http://srv-apps-prod/RCF_WS/WebService.asmx/GetUsersForInquiries", {
+      .post(environment.url + "GetUsersForInquiries", {
 
       })
       .subscribe((Response) => {
@@ -501,7 +502,7 @@ export class NursesDashboardComponent implements OnInit {
 
   getCategories() {
     this.http
-      .post("http://srv-apps-prod/RCF_WS/WebService.asmx/GetCategories", {
+      .post(environment.url + "GetCategories", {
       })
       .subscribe((Response) => {
         this.all_categories_filter = Response["d"];
@@ -560,7 +561,7 @@ export class NursesDashboardComponent implements OnInit {
 
   NursesSystemPermission() {
     let userName = localStorage.getItem("loginUserName").toLowerCase();
-    return this.http.post("http://srv-apps-prod/RCF_WS/WebService.asmx/NursesUserPersmission", { _userName: userName, withCredentials: true }).subscribe(response => {
+    return this.http.post(environment.url + "NursesUserPersmission", { _userName: userName, withCredentials: true }).subscribe(response => {
       if (response["d"].IfFound) {
         this.AdminNurse = '1';
       };
@@ -569,7 +570,7 @@ export class NursesDashboardComponent implements OnInit {
 
   getDeparts() {
     this.http
-      .post("http://srv-apps-prod/RCF_WS/WebService.asmx/GetNursesDeparts", {
+      .post(environment.url + "GetNursesDeparts", {
       })
       .subscribe((Response) => {
         this.all_departs_filter = Response["d"];
@@ -644,7 +645,7 @@ export class NursesDashboardComponent implements OnInit {
     let _important = this.searchReportsGroup.controls['ImportantCategory'].value;
     if (!this.searchReportsGroup.invalid) {
       this.http
-        .post("http://srv-apps-prod/RCF_WS/WebService.asmx/GetReports", {
+        .post(environment.url + "GetReports", {
           _reportShift: _reportShift,
           _reportDepartment: _reportDepartment,
           _reportStatus: _reportStatus,
@@ -723,7 +724,7 @@ export class NursesDashboardComponent implements OnInit {
 
   getPatientDiagnosis() {
     this.http
-      .post("http://srv-apps-prod/RCF_WS/WebService.asmx/GetPatientDiagnosis", {
+      .post(environment.url + "GetPatientDiagnosis", {
         _caseNumber: this.caseNumber
       })
       .subscribe((Response) => {
@@ -773,7 +774,7 @@ export class NursesDashboardComponent implements OnInit {
 
   changeReportToHandled(reportID) {
     this.http
-      .post("http://srv-apps-prod/RCF_WS/WebService.asmx/ReportHandled", {
+      .post(environment.url + "ReportHandled", {
         _reportID: reportID
       })
       .subscribe((Response) => {
@@ -811,7 +812,7 @@ export class NursesDashboardComponent implements OnInit {
     if (!this.ReportGroup.invalid) {
       this.waitToSaveBtn = true;
       this.http
-        .post("http://srv-apps-prod/RCF_WS/WebService.asmx/AddUpdateReport", {
+        .post(environment.url + "AddUpdateReport", {
           _report: this.ReportGroup.getRawValue(),
           _userName: this.UserName,
           _caseNumber: this.caseNumber,
@@ -844,7 +845,7 @@ export class NursesDashboardComponent implements OnInit {
 
   deleteReport(reportID) {
     this.http
-      .post("http://srv-apps-prod/RCF_WS/WebService.asmx/DeleteReport", {
+      .post(environment.url + "DeleteReport", {
         _reportID: reportID
       })
       .subscribe((Response) => {

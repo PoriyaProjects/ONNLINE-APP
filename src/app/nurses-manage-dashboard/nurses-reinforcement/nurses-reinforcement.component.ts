@@ -133,7 +133,8 @@ export class NursesReinforcementComponent implements OnInit {
         _sektor: sektor,
         _workPlace: workPlace,
         _statusRow: statusRow,
-        _approvedToBlossom: "2"
+        _approvedToBlossom: "2",
+        _InGym: "",
       })
       .subscribe((Response) => {
         this.dataSource = new MatTableDataSource<any>(Response["d"]);
@@ -171,7 +172,8 @@ export class NursesReinforcementComponent implements OnInit {
         _sektor: sektor,
         _workPlace: workPlace,
         _statusRow: statusRow,
-        _approvedToBlossom: "2"
+        _approvedToBlossom: "2",
+        _InGym: "",
       })
       .subscribe((Response) => {
         this.dataSource2 = new MatTableDataSource<any>(Response["d"]);

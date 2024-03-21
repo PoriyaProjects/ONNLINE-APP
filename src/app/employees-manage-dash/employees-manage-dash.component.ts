@@ -62,6 +62,7 @@ export class EmployeesManageDashComponent implements OnInit {
         StatusRow: new FormControl('2', null),
         AcceptTerms: new FormControl(false, null),
         ApprovedToBlossom: new FormControl('2', null),
+        InGym: new FormControl('', null),
       });
 
     }
@@ -222,6 +223,7 @@ export class EmployeesManageDashComponent implements OnInit {
     let workPlace = this.searchEmployeesGroup.controls['WorkPlace'].value;
     let StatusRow = this.searchEmployeesGroup.controls['StatusRow'].value;
     let ApprovedToBlossom = this.searchEmployeesGroup.controls['ApprovedToBlossom'].value;
+    let InGym = this.searchEmployeesGroup.controls['InGym'].value;
     this.http
       .post(this.url + "GetEmployeesToUpdate", {
         _empId: empId,
@@ -238,7 +240,8 @@ export class EmployeesManageDashComponent implements OnInit {
         _workPlace: workPlace,
         _statusRow: StatusRow,
         _approvedToBlossom: ApprovedToBlossom,
-        _userName: this.UserName
+        _userName: this.UserName,
+        _InGym: InGym
       })
       .subscribe((Response) => {
         this.loaded = true;
