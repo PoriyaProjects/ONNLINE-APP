@@ -190,6 +190,8 @@ export class MershamNComponent implements OnInit {
     mPatientDetails: PatientDetails;
     drugs: Drug[] = [];
     DeleteRowId: string;
+    DeleteElement: any;
+    DeleteElementRowIndex: number;
     DeletePreRowId: string;
     tableDataPres: PrescriptionRow[] = [];
     tableDataPresPrint: PrescriptionRow[] = [];
@@ -965,34 +967,43 @@ export class MershamNComponent implements OnInit {
         });
     }
     delete(c, type) {
-        debugger
+        //debugger
+        console.log(this.rows)
         if (type == "true") {
-            var d = this.rows.value.findIndex((obj) => {
-                return obj.rowIdPreVal === this.DeleteRowId;
-            });
-            //////////////////debugger
-            if (d != -1) {
-                if (this.rows.value[d].newRow == "false") {
-                    this.http
-                        .post(
-                            "http://srv-apps-prod/RCF_WS/WebService.asmx/DeletePresRowInside",
-                            {
-                                _rowID: this.DeleteRowId,
-                            }
-                        )
-                        .subscribe((Response) => {
-                            //this.getReport("");
-                            setTimeout(function () {
-                                // $("#loader").addClass("d-none");
-                                //this.DeleteRowId = "";
-                                //this.openSnackBar("נמחק בהצלחה", "success");
-                            }, 500);
-                        });
+            if(this.DeleteElement && parseInt(this.DeleteElement.value.rowIdPreVal) != 0){
+                var d = this.rows.value.findIndex((obj) => {
+                    return obj.rowIdPreVal === this.DeleteRowId;
+                });    
+                if (d != -1) {
+                    if (this.rows.value[d].newRow == "false") {
+                        this.http
+                            .post(
+                                "http://srv-apps-prod/RCF_WS/WebService.asmx/DeletePresRowInside",
+                                {
+                                    _rowID: this.DeleteRowId,
+                                }
+                            )
+                            .subscribe((Response) => {
+                                //this.getReport("");
+                                //let that = this;
+                                setTimeout(function () {
+                                    
+                                    // $("#loader").addClass("d-none");
+                                    //this.DeleteRowId = "";
+                                    //this.openSnackBar("נמחק בהצלחה", "success");
+                                }, 500);
+                            });
+                    }
+                    //this.rows.removeAt(d);
+                    
                 }
-
-                this.rows.removeAt(d);
+            }else{
+                
             }
-
+            
+            //////////////////debugger
+            
+            this.rows.removeAt(this.DeleteElementRowIndex);
             this.updateView();
             this.tableDataPresPrint = this.rows.value;
             this.tableDataSrcPresPrint = new MatTableDataSource(
@@ -1002,6 +1013,8 @@ export class MershamNComponent implements OnInit {
         } else {
             this.DeleteRowId = "";
         }
+        this.DeleteElement = null;        
+        this.DeleteRowId = "";
         c("close modal");
         // //////////////////////debugger
         // this.modalService._modalStack._windowCmpts[1].dismiss()
@@ -1067,10 +1080,12 @@ export class MershamNComponent implements OnInit {
         c("close modal");
     }
     deleteRow(content, _type, _element, rowIdx) {
-       // debugger;
+        //debugger;
         //this.PrespictionFormRow.value.SrcPresRows.splice(rowIdx, 1);
         //this.rows.value.splice(rowIdx, 1)
         this.DeleteRowId = _element.value.rowIdPreVal;
+        this.DeleteElement = _element;
+        this.DeleteElementRowIndex = rowIdx;
         this.modalOptions = {
             windowClass: "custom-class",
         };
@@ -1465,6 +1480,7 @@ export class MershamNComponent implements OnInit {
     }
 
     LoopWithDelay(ParentFrom, tableFrom, lDay, realDate) {
+        return;
         let that = this;
         setTimeout(function () {
             var tableFromToSubmit = [];
@@ -1515,7 +1531,7 @@ export class MershamNComponent implements OnInit {
 
                 that.http
                     .post(
-                        //"http://srv-apps-prod/RCF_WS/WebService.asmx/SubmitPrecpiction",
+                        //"http://localhost:64964/WebService.asmx/SubmitPrecpiction",
                         "http://srv-apps-prod/RCF_WS/WebService.asmx/SubmitPrecpiction",
                         {
                             prentFromId: prentFromId,
@@ -1726,10 +1742,8 @@ export class MershamNComponent implements OnInit {
             Seode_Depart: this.Seode_Depart,
         };
         this.http
-            //.post(  "http://srv-apps-prod/RCF_WS/WebService.asmx/SubmitPrecpictionNew",{
-            .post(
-                "http://srv-apps-prod/RCF_WS/WebService.asmx/SubmitPrecpictionNew",
-                {
+            //.post(  "http://localhost:64964/WebService.asmx/SubmitPrecpictionNew",{
+            .post("http://srv-apps-prod/RCF_WS/WebService.asmx/SubmitPrecpictionNew",{
                     prentFromId: "",
                     ParentFrom: ParentFrom,
                     tableFrom: tableFrom,
@@ -2204,7 +2218,7 @@ export class MershamNComponent implements OnInit {
         }
         this.http
             .post(
-                //"http://srv-apps-prod/RCF_WS/WebService.asmx/GetDemographDataNew",
+              //  "http://localhost:64964/WebService.asmx/GetDemographDataNew",
                 "http://srv-apps-prod/RCF_WS/WebService.asmx/GetDemographDataNew",
                 {
                     _id: _FreeText,
