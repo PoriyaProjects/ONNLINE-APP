@@ -265,7 +265,8 @@ export class EmployeesManageDashComponent implements OnInit {
           _workPlace: workPlace,
           _statusRow: StatusRow,
           _approvedToBlossom: ApprovedToBlossom,
-          _userName: this.UserName
+          _userName: this.UserName,
+          _InGym: InGym
         })
         .subscribe((Response) => {
           this.dataSourceExcel = new MatTableDataSource<any>(Response["d"]);
