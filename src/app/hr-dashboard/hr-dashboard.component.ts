@@ -1,6 +1,6 @@
 // app.component.ts
 
-import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
+import { Component, ElementRef, OnInit, TemplateRef, ViewChild } from '@angular/core';
 import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
 import { FormArray, FormBuilder, FormControl, FormGroup } from '@angular/forms';
 import { environment } from 'src/environments/environment';
@@ -8,6 +8,8 @@ import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { map, startWith } from 'rxjs/operators';
 import { Observable } from 'rxjs';
+import { ConfirmationDialogService } from '../confirmation-dialog/confirmation-dialog.service';
+import { MatDialog } from '@angular/material/dialog';
 
 @Component({
   selector: 'app-hr-dashboard',
@@ -26,21 +28,26 @@ export class HrDashboardComponent implements OnInit {
   @ViewChild('scrollTarget') scrollTarget: ElementRef;
   contacts = [];
   contacts_filter = [];
+  fixed_files_list = [];
   unAnsweredConversations = [];
   unAnsweredConversations_filter = [];
   whatsAppGroup: FormGroup;
   newMessage: FormGroup;
+  loadChat: boolean;
+  @ViewChild('tooltipTemplate') tooltipTemplate: TemplateRef<any>;
 
   constructor(
-    private breakpointObserver: BreakpointObserver,
     private fb: FormBuilder,
     private router: Router,
-    private http: HttpClient
+    private http: HttpClient,
+    private confirmationDialogService: ConfirmationDialogService,
+    public dialog: MatDialog
   ) { }
 
   ngOnInit(): void {
     this.getEmployeesForWhatsapp();
     this.getHrWhatsAppUsers();
+    this.getHRWhatsAppServiceFixedFiles();
     // this.getContactsAndConversations();
     this.currentContact = this.contacts[0];
     this.newMessage = this.fb.group({
@@ -57,6 +64,12 @@ export class HrDashboardComponent implements OnInit {
       Conversation_Status: new FormControl('', null),
     });
 
+  }
+
+  displayFiles() {
+    this.dialog.open(this.tooltipTemplate, {
+      width: '400px', // Adjust width as needed
+    });
   }
 
   applyFilter(filterValue: string): void {
@@ -104,7 +117,8 @@ export class HrDashboardComponent implements OnInit {
         _department: "",
         _role: "",
         _sektor: "",
-        _workPlace: ""
+        _on: "",
+        _workPlace: "1" // the 1 doesnt do anything
       })
       .subscribe((Response) => {
         this.contacts = Response["d"];
@@ -139,7 +153,33 @@ export class HrDashboardComponent implements OnInit {
       });
   }
 
+  endConversation(contact) {
+    this.confirmationDialogService
+      .confirm("נא לאשר..", "אתה מנסה לסיים את השיחה ? ")
+      .then((confirmed) => {
+        console.log("User confirmed:", confirmed);
+        if (confirmed) {
+          this.http
+            .post(environment.url + "EndHRWhatsAppConversation", {
+              uncontact: contact
+            })
+            .subscribe((Response) => {
+              if (Response["d"]) this.getHrWhatsAppUsers();
+              else alert("אירעה שגיאה בסיום שיחה");
+            });
+        } else {
+        }
+      })
+      .catch(() =>
+        console.log(
+          "User dismissed the dialog (e.g., by using ESC, clicking the cross icon, or clicking outside the dialog)"
+        )
+      );
+
+  }
+
   async getHRWhatsAppConversationsByIDFK(row_id) {
+    this.loadChat = true;
     this.http
       .post(environment.url + "GetHRWhatsAppConversationsByIDFK", {
         _row_ID: row_id
@@ -147,15 +187,18 @@ export class HrDashboardComponent implements OnInit {
       .subscribe((Response) => {
         this.currentContact.WhatsApp_Bot_Convesations = Response["d"];
         let indexOfLastMessage = this.currentContact.WhatsApp_Bot_Convesations.length;
-        this.newMessage.controls['Row_ID'].setValue(this.currentContact.WhatsApp_Bot_Convesations[indexOfLastMessage - 1].Row_ID);
-        this.newMessage.controls['From_ServiceEmployee'].setValue(this.currentContact.WhatsApp_Bot_Convesations[indexOfLastMessage - 1].From_ServiceEmployee);
-        this.newMessage.controls['ServiceIDFK'].setValue(this.currentContact.WhatsApp_Bot_Convesations[indexOfLastMessage - 1].ServiceIDFK);
-        this.newMessage.controls['ServiceEmployeeIDFK'].setValue(this.currentContact.WhatsApp_Bot_Convesations[indexOfLastMessage - 1].ServiceEmployeeIDFK);
-        this.newMessage.controls['EndUserIDFK'].setValue(this.currentContact.WhatsApp_Bot_Convesations[indexOfLastMessage - 1].EndUserIDFK);
-        this.newMessage.controls['ActionIDFK'].setValue(this.currentContact.WhatsApp_Bot_Convesations[indexOfLastMessage - 1].ActionIDFK);
-        this.newMessage.controls['Status'].setValue(this.currentContact.WhatsApp_Bot_Convesations[indexOfLastMessage - 1].Status);
-        this.newMessage.controls['Step'].setValue(this.currentContact.WhatsApp_Bot_Convesations[indexOfLastMessage - 1].Step);
-        this.newMessage.controls['Conversation_Status'].setValue(this.currentContact.WhatsApp_Bot_Convesations[indexOfLastMessage - 1].Conversation_Status);
+        if (indexOfLastMessage > 0) {
+          this.newMessage.controls['Row_ID'].setValue(this.currentContact.WhatsApp_Bot_Convesations[0].Row_ID);
+          this.newMessage.controls['From_ServiceEmployee'].setValue(this.currentContact.WhatsApp_Bot_Convesations[0].From_ServiceEmployee);
+          this.newMessage.controls['ServiceIDFK'].setValue(this.currentContact.WhatsApp_Bot_Convesations[0].ServiceIDFK);
+          this.newMessage.controls['ServiceEmployeeIDFK'].setValue(this.currentContact.WhatsApp_Bot_Convesations[0].ServiceEmployeeIDFK);
+          this.newMessage.controls['EndUserIDFK'].setValue(this.currentContact.WhatsApp_Bot_Convesations[0].EndUserIDFK);
+          this.newMessage.controls['ActionIDFK'].setValue(this.currentContact.WhatsApp_Bot_Convesations[0].ActionIDFK);
+          this.newMessage.controls['Status'].setValue(this.currentContact.WhatsApp_Bot_Convesations[0].Status);
+          this.newMessage.controls['Step'].setValue(this.currentContact.WhatsApp_Bot_Convesations[0].Step);
+          this.newMessage.controls['Conversation_Status'].setValue(this.currentContact.WhatsApp_Bot_Convesations[0].Conversation_Status);
+        }
+        this.loadChat = false;
         // setTimeout(() => {
         //   this.scrollTarget.nativeElement.scrollTo(0, this.scrollTarget.nativeElement.scrollHeight);
         // }, 100);
@@ -198,8 +241,6 @@ export class HrDashboardComponent implements OnInit {
         })
         .subscribe((Response) => {
           if (Response["d"]) {
-            this.currentContact['WhatsApp_Bot_Convesations'] = [];
-            this.currentContact['WhatsApp_Bot_Convesations'].push({ Message_Text: this.newMessage.controls['Message_Text'].value, From_ServiceEmployee: 'True', IfFileMessage: 'False' });
             alert("הודעה נשלחה בהצלחה");
             this.newMessage.controls['Message_Text'].setValue('');
           } else {
@@ -209,8 +250,86 @@ export class HrDashboardComponent implements OnInit {
     }
   }
 
+  getHRWhatsAppServiceFixedFiles() {
+    this.http
+      .post(environment.url + "GetHRWhatsAppServiceFixedFiles", {
+        _user_name: this.user_name
+      })
+      .subscribe((Response) => {
+        this.fixed_files_list = Response['d'];
+      });
+  }
+
   checkIfContactHasConversation(contact) {
     let t = this.unAnsweredConversations.filter(x => x.CellNumber === contact.CellNumber)[0];
     return true ? t !== undefined : false;
   }
+
+  async convertBase64ToPDF(base64Data: string, fileName: string, file_type: string) {
+    const byteCharacters = atob(base64Data);
+    const byteNumbers = new Array(byteCharacters.length);
+    for (let i = 0; i < byteCharacters.length; i++) {
+      byteNumbers[i] = byteCharacters.charCodeAt(i);
+    }
+    const byteArray = new Uint8Array(byteNumbers);
+    const blob = new Blob([byteArray], { type: file_type });
+
+    // Create a URL for the Blob
+    const url = URL.createObjectURL(blob);
+
+    // Create a link element to trigger the download
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
+
+    // Append the link element to the DOM
+    document.body.appendChild(a);
+
+    // Trigger the download
+    a.click();
+
+    // Cleanup
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+  }
+
+  async downloadPDF(base64Data) {
+    try {
+      // Replace 'your-base64-data' with the actual Base64 data
+      base64Data = base64Data.replace('data:image/png;base64,', '');
+      const file_type = await this.detectFileType(base64Data);
+      // Replace 'filename.pdf' with the desired file name
+      let fileName = "";
+      if (file_type == 'application/pdf') fileName = 'HR_WhatsApp_Service_Media_File.pdf';
+      else fileName = 'HR_WhatsApp_Service_Media_File.png';
+
+      await this.convertBase64ToPDF(base64Data, fileName, file_type);
+    } catch (error) {
+      console.error('Error downloading File:', error);
+    }
+  }
+
+  async detectFileType(base64Data) {
+    const decodedData = atob(base64Data);
+    const byte1 = decodedData.charCodeAt(0);
+    const byte2 = decodedData.charCodeAt(1);
+
+    // Check for common image file signatures
+    if (byte1 === 0xff && byte2 === 0xd8) {
+      return 'image/jpeg';
+    } else if (byte1 === 0x89 && byte2 === 0x50) {
+      return 'image/png';
+    } else if (byte1 === 0x47 && byte2 === 0x49) {
+      return 'image/gif';
+    }
+
+    // Check for PDF file signature
+    if (byte1 === 0x25 && byte2 === 0x50) {
+      return 'application/pdf';
+    }
+
+    // Unknown file type
+    return 'unknown';
+  }
+
 }

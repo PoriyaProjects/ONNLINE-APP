@@ -84,7 +84,7 @@
                                         </mat-form-field>
                                     </div>
                                 </div>
-                                <div class="col-3">
+                                <div class="col-1">
                                     <div class="form-group lh-37">
                                         <mat-form-field>
                                             <mat-label>פעיל</mat-label>
@@ -96,6 +96,19 @@
                                                 <mat-option value="2">
                                                     לא
                                                 </mat-option>
+                                            </mat-select>
+                                        </mat-form-field>
+                                    </div>
+                                </div>
+                                <div class="col-2">
+                                    <div class="form-group lh-37">
+                                        <mat-form-field>
+                                            <mat-label>משתתפים חדר כושר</mat-label>
+                                            <mat-select formControlName="InGym" aria-placeholder="משתתפים חדר כושר">
+                                                <mat-option value="">
+                                                    הכל </mat-option>
+                                                <mat-option [value]="1"> כן </mat-option>
+                                                <!-- <mat-option [value]="0"> לא </mat-option> -->
                                             </mat-select>
                                         </mat-form-field>
                                     </div>
@@ -298,8 +311,8 @@
                 (click)="addUpdateEmployee(row)">
             </tr>
         </table>
-        <button type="button" id="rolesDetailsBtn" mat-fab color="primary" matTooltip="הוספת עובד חדש"
-            (click)="addUpdateEmployee(employee)"><i class="material-icons">add</i></button>
+        <!-- <button type="button" id="rolesDetailsBtn" mat-fab color="primary" matTooltip="הוספת עובד חדש"
+            (click)="addUpdateEmployee(employee)"><i class="material-icons">add</i></button> -->
         <div class="text-right" style="padding-bottom: 8%;">
             <mat-paginator style="float: right;" [pageSizeOptions]="[15,25,50,100]" showFirstLastButtons>
             </mat-paginator>

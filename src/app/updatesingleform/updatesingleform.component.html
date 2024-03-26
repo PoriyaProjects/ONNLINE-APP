@@ -71,7 +71,7 @@
                 <div class="row">
                   <div class="col-9">
                     <mat-form-field class="full-width">
-                      <input formControlName="questionTitle" matInput placeholder="הכנס שאלה" [required]="true">
+                      <textarea formControlName="questionTitle" matInput placeholder="הכנס שאלה" [required]="true"></textarea>
                     </mat-form-field>
                   </div>
                   <div class="col-3">
@@ -156,7 +156,7 @@
                     </div>
                     <div *ngIf="questionCtrl.controls['questionType'].value == 'TextArea'">
                       <mat-form-field class="full-width">
-                        <textarea style="resize: none;" cols="3" rows="2" matInput placeholder="פסקה בקבועה"></textarea>
+                        <textarea style="resize: none;" disabled matInput placeholder="פסקה בקבועה"></textarea>
                       </mat-form-field>
                     </div>
                     <div *ngIf="questionCtrl.controls['questionType'].value == 'Date'">
