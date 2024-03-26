@@ -103,6 +103,9 @@ import { ClinicsRequestsComponent } from "./clinics-requests/clinics-requests.co
 import { WagonComponent } from "./wagon/wagon.component";
 import { SwitchesComponent } from "./switches/switches.component";
 import { HrDashboardComponent } from "./hr-dashboard/hr-dashboard.component";
+import { NortonEstimateComponent } from './norton-estimate/norton-estimate.component';
+import {CAMEstimateComponent} from './cam-estimate/cam-estimate.component';
+import {DialysisReportComponent} from './dialysis-report/dialysis-report.component';
 
 const routes: Routes = [ 
     { path: "clinicsrequests", component: ClinicsRequestsComponent },
@@ -229,6 +232,9 @@ const routes: Routes = [
     { path: "nutrition-dashboard", component: NutritionSystemComponent },
     { path: "hr-dashboard", component: HrDashboardComponent },
     { path: "", component: LoginComponent },
+    { path: "Norton", component: NortonEstimateComponent },
+    { path: "CAM", component: CAMEstimateComponent },   
+    { path: "Diaysis", component: DialysisReportComponent }
 ];
 @NgModule({
     imports: [RouterModule.forRoot(routes)],
