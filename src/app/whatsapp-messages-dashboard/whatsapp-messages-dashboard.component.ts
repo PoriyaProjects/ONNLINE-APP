@@ -1,6 +1,6 @@
 import { DatePipe } from '@angular/common';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef, OnDestroy } from '@angular/core';
 import { FormArray, FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
 import { MatSnackBar, MatSnackBarHorizontalPosition, MatSnackBarVerticalPosition } from '@angular/material/snack-bar';
 import { MatTableDataSource } from '@angular/material/table';
@@ -12,7 +12,7 @@ import { environment } from 'src/environments/environment';
   templateUrl: './whatsapp-messages-dashboard.component.html',
   styleUrls: ['./whatsapp-messages-dashboard.component.css']
 })
-export class WhatsappMessagesDashboardComponent implements OnInit {
+export class WhatsappMessagesDashboardComponent implements OnInit, OnDestroy {
 
 
   horizontalPosition: MatSnackBarHorizontalPosition = "start";
@@ -46,10 +46,10 @@ export class WhatsappMessagesDashboardComponent implements OnInit {
   ) { }
 
   ngOnInit() {
-    if (this.username == 'kmassalha' || this.username == 'emansour') {
-      this.fixed_text = "הקובץ המצורף מכיל מידע חשוב על החייאה, כולל החייאת ילדים. חשוב לשמור את הקובץ במסך הבית של הטלפון הנייד שלכם כדי שתמיד יהיה לכם בהישג יד במקרה הצורך";
-      this.media_file = "./files/ACLS.pdf";
-    }
+    // if (this.username == 'kmassalha' || this.username == 'emansour') {
+    //   this.fixed_text = "הקובץ המצורף מכיל מידע חשוב על החייאה, כולל החייאת ילדים. חשוב לשמור את הקובץ במסך הבית של הטלפון הנייד שלכם כדי שתמיד יהיה לכם בהישג יד במקרה הצורך";
+    //   this.media_file = "./files/ACLS.pdf";
+    // }
     this.searchEmployeesGroup = this.fb.group({
       EmpID: new FormControl('', null),
       EmpFirstName: new FormControl('', null),
@@ -66,7 +66,7 @@ export class WhatsappMessagesDashboardComponent implements OnInit {
     });
     this.manyContacts = this.fb.group({
       Phone_Number: new FormControl('', Validators.required),
-      Message_Content: new FormControl(this.fixed_text, Validators.required),
+      Message_Content: new FormControl('', Validators.required),
       SenderIDFK: new FormControl('1', Validators.required),
       File_Path: new FormControl(this.media_file, null)
     });
@@ -76,6 +76,11 @@ export class WhatsappMessagesDashboardComponent implements OnInit {
     this.getEmployeesFunctionsList();
     this.getSektorsList();
     this.getWorkPlacesList();
+  }
+
+  ngOnDestroy(): void {
+    this.customForm.reset();
+    this.manyContacts.reset();
   }
 
   get customFormArray(): FormArray {
@@ -91,7 +96,7 @@ export class WhatsappMessagesDashboardComponent implements OnInit {
       Recipient_Type: new FormControl('0', Validators.required),
       Phone_Number: new FormControl(phone, Validators.required),
       Recipient: new FormControl(fullName, null),
-      Message_Content: new FormControl(this.fixed_text, Validators.required),
+      Message_Content: new FormControl(fullName + ' שלום רב,\n', Validators.required),
       SenderIDFK: new FormControl('1', Validators.required),
       Message_Timing: new FormControl(null, null),
       Message_Timing_Time: new FormControl(null, null),
