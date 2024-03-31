@@ -97,7 +97,7 @@
     </div>
 
     <div class="Madad">
-        <h6>&nbsp;{{ onesCount.denominator }}% &nbsp;&nbsp; &nbsp;{{ onesCount.numerator }} / {{ onesCount.denominator }} : שיעור עמידה במדד</h6>
+        <h6>&nbsp;{{ percentage }}% &nbsp;&nbsp; &nbsp;{{ onesCount.numerator }} / {{ onesCount.denominator }} : שיעור עמידה במדד</h6>
     </div>
 
 
@@ -297,8 +297,9 @@
 </ng-template>
 
 
-<table id="excel-table" dir="rtl" style="display: none;" *ngIf="dataSource && dataSource.data.length > 0; else otherTableExcel">
+<!-- <table id="excel-table" dir="rtl" style="display: none;" *ngIf="dataSource && dataSource.data.length > 0; else otherTableExcel">
     <tr>
+        <th mat-header-cell *matHeaderCellDef> {{column}} </th>
         <th>Measurment_ID</th>
         <th>Hospital_ID</th>
         <th>Patient_ID</th>
@@ -332,6 +333,7 @@
         <th>denominator</th>
 
     </tr>
+    
     <tr *ngFor="let element of dataSource.filteredData">
         <td>{{element.Measurment_ID}}</td>
         <td>{{element.Hospital_ID}}</td>
@@ -365,7 +367,19 @@
         <td>{{element.Numerator}}</td>        
         <td>{{element.denominator}}</td>        
     </tr>
-</table>
+</table> -->
+
+
+<table id="excel-table" dir="rtl" mat-table [dataSource]="dataSource" class="mat-elevation-z8"  style="display: none; " *ngIf="dataSource && dataSource.data.length > 0; else otherTableExcel">
+   
+    <ng-container *ngFor="let column of displayedColumnsPci" [matColumnDef]="column">
+      <th mat-header-cell *matHeaderCellDef> {{column}} </th>
+      <td mat-cell *matCellDef="let element"> {{element[column]}} </td>
+    </ng-container>
+  
+    <tr mat-header-row *matHeaderRowDef="displayedColumnsPci"></tr>
+    <tr mat-row *matRowDef="let row; columns: displayedColumnsPci;"></tr>
+  </table>
   
 
 <ng-template #otherTableExcel>

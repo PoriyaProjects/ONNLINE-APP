@@ -33,6 +33,7 @@ mat-form-field {
   width: 100%; 
   margin-top: 20px; 
   overflow-y: auto; 
+  max-height: 600px;
 }
 
 
@@ -123,3 +124,4 @@ td.mat-cell {
 .Revaon{
   margin-top: 5px;
 }
+
