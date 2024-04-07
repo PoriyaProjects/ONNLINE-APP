@@ -1,0 +1,123 @@
+<div class="container mt-4" dir="rtl" [formGroup]="form">
+    <div class="row">
+        <div class="col-2">
+
+            <mat-form-field>
+                <mat-label>מתאריך</mat-label>
+                <input matInput [matDatepicker]="picker1" formControlName="fromDate" (focus)="picker1.open()">
+                <mat-datepicker-toggle matIconSuffix [for]="picker1"></mat-datepicker-toggle>
+                <mat-datepicker #picker1></mat-datepicker>
+            </mat-form-field>
+
+        </div>
+        <div class="col-2">
+
+
+            <mat-form-field>
+                <mat-label>עד תאריך</mat-label>
+                <input matInput [matDatepicker]="picker2" formControlName="toDate" (focus)="picker2.open()">
+                <mat-datepicker-toggle matIconSuffix [for]="picker2"></mat-datepicker-toggle>
+                <mat-datepicker #picker2></mat-datepicker>
+            </mat-form-field>
+        </div>
+
+        <div class="col-5">
+
+        </div>
+        <div class="col-3">
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-6" style="display: grid;">
+
+        </div>
+        <div class="col-6">
+            <button mat-raised-button class="srch-btn" color="primary" (click)="onSearch()">Search</button>
+            <button mat-raised-button class="srch-btn" color="warn" (click)="onClear()">Clean</button>
+            <div class="example-button-container">
+                <a (click)="exportexcel()">
+                    <img src="../../assets/images/excel.png" width="50px" alt="Image description">
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="mat-elevation-z8">
+    <table mat-table [dataSource]="dataSource" class="mat-elevation-z8">
+
+        <ng-container matColumnDef="Id_Num">
+            <th mat-header-cell *matHeaderCellDef> Id_Num </th>
+            <td mat-cell *matCellDef="let element"> {{element.Id_Num}} </td>
+        </ng-container>
+
+        <ng-container matColumnDef="First_Name">
+            <th mat-header-cell *matHeaderCellDef> First_Name </th>
+            <td mat-cell *matCellDef="let element"> {{element.First_Name}} </td>
+        </ng-container>
+
+        <ng-container matColumnDef="Last_Name">
+            <th mat-header-cell *matHeaderCellDef> Last_Name </th>
+            <td mat-cell *matCellDef="let element"> {{element.Last_Name}} </td>
+        </ng-container>
+
+        <ng-container matColumnDef="Age">
+            <th mat-header-cell *matHeaderCellDef> Age </th>
+            <td mat-cell *matCellDef="let element"> {{element.Age}} </td>
+        </ng-container>
+
+        <ng-container matColumnDef="Admission_No">
+            <th mat-header-cell *matHeaderCellDef> Admission_No </th>
+            <td mat-cell *matCellDef="let element"> {{element.Admission_No}} </td>
+        </ng-container>
+
+        <ng-container matColumnDef="Grade">
+            <th mat-header-cell *matHeaderCellDef> Grade </th>
+            <td mat-cell *matCellDef="let element"> {{element.Grade}} </td>
+        </ng-container>
+
+        <ng-container matColumnDef="Name">
+            <th mat-header-cell *matHeaderCellDef> Name </th>
+            <td mat-cell *matCellDef="let element"> {{element.Name}} </td>
+        </ng-container>
+
+        <ng-container matColumnDef="Entry_Date">
+            <th mat-header-cell *matHeaderCellDef> Entry_Date </th>
+            <td mat-cell *matCellDef="let element"> {{element.Entry_Date}} </td>
+        </ng-container>
+
+
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+    </table>
+
+
+
+    <table id="excel-table" dir="rtl" style="display: none;">
+        <tr>
+            <th>Grade</th>
+            <th>Admission_No</th>
+            <th>Name</th>
+            <th>Entry_Date</th>
+            <th>First_Name</th>
+            <th>Last_Name</th>
+            <th>Id_Num</th>
+            <th>Age</th>
+        </tr>
+        <tr *ngFor="let element of dataSource.filteredData">
+            <td> {{element.Grade}} </td>
+            <td> {{element.Admission_No}} </td>
+            <td> {{element.Name}} </td>
+            <td> {{element.Entry_Date}} </td>
+            <td> {{element.First_Name}} </td>
+            <td> {{element.Last_Name}} </td>
+            <td> {{element.Id_Num}} </td>
+            <td> {{element.Age}} </td>
+        </tr>
+    </table>
+
+</div>
+
+

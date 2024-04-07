@@ -18,7 +18,7 @@
             <div class="col-6">
                 <label style="font-size: 20px;">{{ComplaintSubject}}</label>
             </div>
-            <div class="col-5" *ngIf="UserName == 'matias'">
+            <div class="col-5" *ngIf="UserName == 'matias' || UserName == 'brzecharia'">
                 <form class="example-form">
                     <mat-form-field class="example-chip-list" appearance="fill">
                         <mat-label>בחר אחראי מהרשימה</mat-label>
@@ -56,7 +56,7 @@
                     </mat-form-field> -->
                 </form>
             </div>
-            <div class="col-1" *ngIf="UserName == 'matias'">
+            <div class="col-1" *ngIf="UserName == 'matias' || UserName == 'brzecharia'">
                 <button mat-raised-button class="btn btn-primary btn-raised float-left"
                     (click)="shareComplaintWithOthers()" matTooltip="קישור מנהל לפנייה">
                     <span class="material-icons">

@@ -206,6 +206,9 @@ import { SwitchesComponent } from './switches/switches.component';
 import { AddOrEditSwitchesComponent } from './switches/add-or-edit-switches/add-or-edit-switches.component';
 import { HrDashboardComponent } from './hr-dashboard/hr-dashboard.component';
 import { PatientStikersComponent } from './patient-stikers/patient-stikers.component';
+import { NortonEstimateComponent } from './norton-estimate/norton-estimate.component';
+import {  CAMEstimateComponent } from './cam-estimate/cam-estimate.component';
+import {DialysisReportComponent} from './dialysis-report/dialysis-report.component'
 
 
 const maskConfig: Partial<IConfig> = {
@@ -366,7 +369,10 @@ const maskConfig: Partial<IConfig> = {
     SwitchesComponent,
     AddOrEditSwitchesComponent,
     HrDashboardComponent,
-    PatientStikersComponent
+    PatientStikersComponent,
+    NortonEstimateComponent,
+    CAMEstimateComponent,
+    DialysisReportComponent
   ],
   imports: [
     JpTimeMaskModule,

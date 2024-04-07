@@ -175,7 +175,8 @@
         <div class="row mb-3" style="display: block;">
             <h3 class="text-center" *ngIf="!typeOfScreen">כמות אנשים: {{total_number_of_reciepents}}</h3>
             <h5 class="text-center" *ngIf="total_number_of_reciepents > 50">מוצגים רק ה 10 הראשונים</h5>
-            <mat-slide-toggle (click)="changeScreens()" style="float: right;">{{screenTitle}}</mat-slide-toggle>
+            <mat-slide-toggle (click)="changeScreens()" *ngIf="username == 'adahabre'"
+                style="float: right;">{{screenTitle}}</mat-slide-toggle>
             <button mat-icon-button *ngIf="!typeOfScreen" color="warn" matTooltip="ניקוי הכל" (click)="deleteAllRow()">
                 <mat-icon>clear</mat-icon>
             </button>
@@ -215,8 +216,7 @@
                 <div *ngFor="let contact of customForm.get('customInputs')['controls']; let i = index"
                     [formGroupName]="i">
 
-                    <div class="dynamic-fields"
-                        [ngStyle]="{'display': i > 10 ? 'none' : 'flex'}">
+                    <div class="dynamic-fields" [ngStyle]="{'display': i > 10 ? 'none' : 'flex'}">
                         <mat-label class="contacts-numbers">{{i+1}}-</mat-label>
                         <mat-form-field>
                             <mat-label>מספר שולח*</mat-label>
