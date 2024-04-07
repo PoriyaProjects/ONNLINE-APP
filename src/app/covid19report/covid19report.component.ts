@@ -26,6 +26,7 @@ import {
     Validators,
 } from "@angular/forms";
 import { MenuPerm } from "../menu-perm";
+import { environment } from "src/environments/environment";
 
 export interface Select {
     code: string;
@@ -441,7 +442,7 @@ export class Covid19reportComponent implements OnInit {
         taht.addOrEditReportForm.value.Reporting_Date_Time = year + "-" + month + "-" + date + " " + hours + ":" + minutes + ":" + seconds;
         //debugger
         this.http
-            .post("http://srv-apps-prod/RCF_WS/WebService.asmx/SubmitCovid19Report", {
+            .post(environment.url + "SubmitCovid19Report", {
                 mCovid19Report: taht.addOrEditReportForm.value,
             })
             .subscribe((Response) => {
@@ -468,7 +469,7 @@ export class Covid19reportComponent implements OnInit {
             $("#loader").removeClass("d-none");
         }
         this.http
-            .post("http://srv-apps-prod/RCF_WS/WebService.asmx/GetAllReporting", {
+            .post(environment.url + "GetAllReporting", {
                 _fromDate: _startDate,
                 _toDate: _endDate,
                 _pageIndex: _pageIndex,

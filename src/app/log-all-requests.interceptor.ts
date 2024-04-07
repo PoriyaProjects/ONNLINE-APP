@@ -8,6 +8,7 @@ import {
 } from "@angular/common/http";
 import { Observable } from "rxjs";
 import { Router } from "@angular/router";
+import { environment } from "src/environments/environment";
 
 @Injectable()
 export class LogAllRequestsInterceptor implements HttpInterceptor {
@@ -25,9 +26,8 @@ export class LogAllRequestsInterceptor implements HttpInterceptor {
                     this.router.url.replace("/", "")
                 );
                 this.logHttp
-                    .post(
-                        //"http://srv-apps-prod/RCF_WS/WebService.asmx/LinksLog",
-                        "http://srv-apps-prod/RCF_WS/WebService.asmx/LinksLog",
+                    .post(                        
+                        environment.url + "LinksLog",
                         {
                             usaerName: localStorage.getItem("loginUserName"),
                             linkId: this.router.url.replace("/", ""),
@@ -46,8 +46,8 @@ export class LogAllRequestsInterceptor implements HttpInterceptor {
                     );
                     this.logHttp
                         .post(
-                           // "http://srv-apps-prod/RCF_WS/WebService.asmx/LinksLog",
-                            "http://srv-apps-prod/RCF_WS/WebService.asmx/LinksLog",
+                           
+                            environment.url + "LinksLog",
                             {
                                 usaerName: localStorage.getItem("loginUserName"),
                                 linkId: this.router.url.replace("/", ""),

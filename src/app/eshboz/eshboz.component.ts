@@ -265,8 +265,8 @@ export class EshbozComponent implements OnInit {
     }
     public newData() {
         this.http
-            .post("http://srv-apps-prod/RCF_WS/WebService.asmx/EshbozimAppNew", {
-            //.post("http://srv-apps-prod/RCF_WS/WebService.asmx/EshbozimAppNew", {
+            .post(environment.url + "EshbozimAppNew", {
+            //.post(environment.url + "EshbozimAppNew", {
                 _fromDate: this.startdateVal,
                 _toDate: this.enddateVal,
                 _freeText: this.fliterVal,
@@ -333,7 +333,7 @@ export class EshbozComponent implements OnInit {
         this.http
             .post(environment.url + "EshbozimAppNew", {
                 
-            //.post("http://srv-apps-prod/RCF_WS/WebService.asmx/EshbozimAppNew", {
+            //.post(environment.url + "EshbozimAppNew", {
                 _fromDate: this.startdateVal,
                 _toDate: this.enddateVal,
                 _freeText: this.fliterVal,
@@ -403,7 +403,7 @@ export class EshbozComponent implements OnInit {
         this.http
             .post(environment.url + "GetEshbozemApp", {
             
-            //.post("http://srv-apps-prod/RCF_WS/WebService.asmx/GetEshbozemApp", {
+            //.post(environment.url + "GetEshbozemApp", {
                 _fromDate: _startDate,
                 _toDate: _endDate,
                 _pageIndex: _pageIndex,

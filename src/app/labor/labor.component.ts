@@ -477,11 +477,8 @@ export class LaborComponent implements OnInit, AfterViewInit {
 
         ////debugger
         this.http
-            .post(
-                // "http://srv-apps-prod/RCF_WS/WebService.asmx/UpdateMobileOrEmailOrPassportOrDOB",
-                // environment.url + "UpdateMobileOrEmailOrPassportOrDOB",
-                "http://srv-ipracticom:8080/WebService.asmx/UpdateMobileOrEmailOrPassportOrDOB",
-                //  "http://srv-apps-prod/RCF_WS/WebService.asmx/UpdateMobileOrEmailOrPassportOrDOB",
+            .post(                
+                 environment.urlipracticom + "UpdateMobileOrEmailOrPassportOrDOB",                
                 {
                     _mobile: this.mobile,
                     _email: this.email,
@@ -601,7 +598,7 @@ export class LaborComponent implements OnInit, AfterViewInit {
         this.loader = true;
         // //////debugger
         this.http
-            .post("http://srv-apps-prod/RCF_WS/WebService.asmx/RunLaborAppNew", {
+            .post(environment.url + "RunLaborAppNew", {
                 _fromDate: _startDate,
                 _toDate: _endDate,
                 _CheckResult: _CheckResult,

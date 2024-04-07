@@ -10,6 +10,7 @@ import { Router } from "@angular/router";
 import { NgbActiveModal, NgbModal } from "@ng-bootstrap/ng-bootstrap";
 import { MenuPerm } from "../menu-perm";
 import { AddOrEditSwitchesComponent } from "./add-or-edit-switches/add-or-edit-switches.component";
+import { environment } from "src/environments/environment";
 export interface Switches {
     RowID: string;
     Name: string;
@@ -109,12 +110,8 @@ export class SwitchesComponent implements OnInit {
           tableLoader = true;
           $("#loader").removeClass("d-none");
       }
-      ////debugger
-      //http://srv-apps-prod/RCF_WS/WebService.asmx/
-      //http://srv-apps-prod/RCF_WS/WebService.asmx/
       this.http
-          .post("http://srv-apps-prod/RCF_WS/WebService.asmx/getAllSwitches4Onnline", {
-          //.post("http://srv-apps-prod/RCF_WS/WebService.asmx/getAllSwitches4Onnline",{
+          .post(environment.url + "getAllSwitches4Onnline", {
 
           }
           )

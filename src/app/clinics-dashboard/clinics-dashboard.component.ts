@@ -63,7 +63,7 @@ export class ClinicsDashboardComponent implements OnInit {
   date2: string;
   time2: string;
   patientRecords = [];
-  url = "http://srv-apps-prod/RCF_WS/WebService.asmx/";
+  url = environment.url ;
   @ViewChild('formhtmltemplet') formhtmltemplet: ElementRef;
 
 

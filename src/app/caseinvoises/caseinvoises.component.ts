@@ -32,6 +32,7 @@ import {
     Validators,
 } from "@angular/forms";
 import { MenuPerm } from "../menu-perm";
+import { environment } from "src/environments/environment";
 
 export interface InvoiceDetails
 {
@@ -109,7 +110,7 @@ export class CaseinvoisesComponent implements OnInit {
           $("#loader").removeClass("d-none");
       }
         this.http
-            .post("http://srv-apps-prod/RCF_WS/WebService.asmx/GetInvoicesByCases", {
+            .post(environment.url + "GetInvoicesByCases", {
               CaseNumbers: this.invoicesForm.value.caseNumbers,
               hfnia:  this.invoicesForm.value.hfnia
             })

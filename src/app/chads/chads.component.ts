@@ -28,6 +28,7 @@ import * as Chart from "chart.js";import {
   } from "@angular/forms";
 import { MatRadioChange } from '@angular/material/radio';
 import { MenuPerm } from "../menu-perm";
+import { environment } from "src/environments/environment";
 export interface Depart{
     id: string;
     name: string;
@@ -229,7 +230,7 @@ export class ChadsComponent implements OnInit, AfterViewInit {
         //////debugger;
         //return;
         this.http
-            .post("http://srv-apps-prod/RCF_WS/WebService.asmx/SaveRelevantOrNotChad", {
+            .post(environment.url + "SaveRelevantOrNotChad", {
                 mRelevantOrNot: this.RelevantForm.value
             })
             .subscribe(
@@ -242,7 +243,7 @@ export class ChadsComponent implements OnInit, AfterViewInit {
     }
     getDeparts(){
         this.http
-            .post("http://srv-apps-prod/RCF_WS/WebService.asmx/GetChadsDeparts", {
+            .post(environment.url + "GetChadsDeparts", {
                 
             })
             .subscribe(
@@ -303,7 +304,7 @@ export class ChadsComponent implements OnInit, AfterViewInit {
     private saveChad(_rowID) {
         $("#loader").removeClass("d-none");
         this.http
-            .post("http://srv-apps-prod/RCF_WS/WebService.asmx/saveChad", {
+            .post(environment.url + "saveChad", {
                 _chadVal: this.chadVal,
                 _chadDate: this.chadDate,
                 _chadTool: this.chadTool,
@@ -605,7 +606,7 @@ export class ChadsComponent implements OnInit, AfterViewInit {
         //// //////debugger
         $("#loader").removeClass("d-none");
         this.http
-            .post("http://srv-apps-prod/RCF_WS/WebService.asmx/GetReportTable", {
+            .post(environment.url + "GetReportTable", {
                 _reportTableName: _tableName,
                 _fromDate: _startDate,
                 _toDate: _endDate,

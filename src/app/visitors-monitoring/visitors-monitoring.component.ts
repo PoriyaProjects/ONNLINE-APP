@@ -7,6 +7,7 @@ import { VisitorsRegistrationComponent } from '../visitors-monitoring/visitors-r
 import { DatePipe } from '@angular/common';
 import { MatSnackBar, MatSnackBarHorizontalPosition, MatSnackBarVerticalPosition } from '@angular/material/snack-bar';
 import { ConfirmationDialogService } from '../confirmation-dialog/confirmation-dialog.service';
+import { environment } from 'src/environments/environment';
 
 @Component({
   selector: 'app-visitors-monitoring',
@@ -59,7 +60,7 @@ export class VisitorsMonitoringComponent implements OnInit {
   getAllDeparts() {
     this.loaded = false;
     this.http
-      .post("http://srv-apps-prod/RCF_WS/WebService.asmx/GetVisitorsSystemDepartments", {
+      .post(environment.url + "GetVisitorsSystemDepartments", {
       })
       .subscribe((Response) => {
         this.all_departments_array = Response["d"];
@@ -69,7 +70,7 @@ export class VisitorsMonitoringComponent implements OnInit {
 
   getAllCurrentVisitors() {
     this.http
-      .post("http://srv-apps-prod/RCF_WS/WebService.asmx/GetAllCurrentVisitors", {
+      .post(environment.url + "GetAllCurrentVisitors", {
       })
       .subscribe((Response) => {
         this.all_visitors_array = Response["d"];
@@ -83,7 +84,7 @@ export class VisitorsMonitoringComponent implements OnInit {
         console.log("User confirmed:", confirmed);
         if (confirmed) {
           this.http
-            .post("http://srv-apps-prod/RCF_WS/WebService.asmx/MarkAsHasVisitor", {
+            .post(environment.url + "MarkAsHasVisitor", {
               _patientCaseNumber: patientCaseNumber,
               _visitorName: visitorName
             })

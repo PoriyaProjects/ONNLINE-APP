@@ -14,6 +14,7 @@ import { map, startWith } from 'rxjs/operators';
 import { ConfirmationDialogService } from '../confirmation-dialog/confirmation-dialog.service';
 import { animate, state, style, transition, trigger } from '@angular/animations';
 import * as XLSX from 'xlsx';
+import { environment } from 'src/environments/environment';
 
 export interface Email {
   EmailID: string;
@@ -183,7 +184,7 @@ export class EmailsdashboardComponent implements OnInit {
 
   loadInquiries() {
     this.http
-      .post("http://srv-apps-prod/RCF_WS/WebService.asmx/SavingEmailsToDB", {
+      .post(environment.url + "SavingEmailsToDB", {
       })
       .subscribe((Response) => {
         this.openSnackBar("פניות נטענו בהצלחה");
@@ -195,7 +196,7 @@ export class EmailsdashboardComponent implements OnInit {
 
   changeStatus(e: any, emailID: string) {
     this.http
-      .post("http://srv-apps-prod/RCF_WS/WebService.asmx/ChangeStatus", {
+      .post(environment.url + "ChangeStatus", {
         _status: e.checked,
         _emailID: emailID,
       })
@@ -229,7 +230,7 @@ export class EmailsdashboardComponent implements OnInit {
         if (confirmed) {
           this.http
             .post(
-              "http://srv-apps-prod/RCF_WS/WebService.asmx/DeleteInquiry",
+              environment.url + "DeleteInquiry",
               {
                 _inquiryID: inquiryID
               }
@@ -306,7 +307,7 @@ export class EmailsdashboardComponent implements OnInit {
     }
     this.loaded = false;
     this.http
-      .post("http://srv-apps-prod/RCF_WS/WebService.asmx/Comp_Emails", {
+      .post(environment.url + "Comp_Emails", {
         _compName: compName,
         _compDate: compDateControl,
         _compDate2: compDateControl2,
@@ -359,7 +360,7 @@ export class EmailsdashboardComponent implements OnInit {
         this.dataSource.paginator = this.paginator;
       });
     this.http
-      .post("http://srv-apps-prod/RCF_WS/WebService.asmx/GetCompDepartments", {
+      .post(environment.url + "GetCompDepartments", {
       })
       .subscribe((Response) => {
         this.compDepts = [];
@@ -370,7 +371,7 @@ export class EmailsdashboardComponent implements OnInit {
       });
     if (toExcel) {
       this.http
-        .post("http://srv-apps-prod/RCF_WS/WebService.asmx/ExportToExcel", {
+        .post(environment.url + "ExportToExcel", {
           _compName: compName,
           _compDate: compDateControl,
           _compDate2: compDateControl2,

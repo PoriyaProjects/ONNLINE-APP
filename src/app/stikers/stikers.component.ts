@@ -35,6 +35,7 @@ import {
 } from "@angular/forms";
 import { Observable } from "rxjs";
 import { map, startWith } from "rxjs/operators";
+import { environment } from "src/environments/environment";
 export interface PersonalDetails {
     PatientNumber: string;
     DateIn: string;
@@ -149,7 +150,7 @@ export class StikersComponent implements OnInit {
         //event.target.value
         this.http
             .post(
-                "http://srv-apps-prod/RCF_WS/WebService.asmx/GetPersonalDetailsFromDB",
+                environment.url + "GetPersonalDetailsFromDB",
                 //"http://srv-ipracticom:8080/WebService.asmx/GetPersonalDetails",
                 {
                     CaseNumber: casenumber,

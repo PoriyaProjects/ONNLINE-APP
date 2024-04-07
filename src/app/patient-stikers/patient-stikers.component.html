@@ -1,0 +1,27 @@
+<div class="container-fluid rel" dir="rtl">
+    <div class="row">
+        <div class="col"></div>
+        <div class="col-8">
+            <form (ngSubmit)="submitForm()" [formGroup]="form">
+                <div class="row">
+                    <div class="col-12 text-right  d-none">
+                        <mat-radio-group formControlName="option">
+                            <mat-radio-button selected="true" value="1">מאושפז לפי ת.ז &nbsp; &nbsp; &nbsp;</mat-radio-button>
+                            <mat-radio-button value="2">מאושפז לפי מקרה &nbsp; &nbsp; &nbsp;</mat-radio-button>
+                            <mat-radio-button value="3">קבלה חדשה לפי ת.ז &nbsp; &nbsp; &nbsp;</mat-radio-button>
+                        </mat-radio-group>
+                    </div>
+                    <div class="col-12  text-right">
+                        <mat-form-field>
+                            <input matInput type="text" placeholder="ת.ז" formControlName="textInput">
+                        </mat-form-field>
+                    </div>
+                    <div class="col-12">
+                        <button mat-raised-button color="primary" type="submit">שלח</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+        <div class="col"></div>
+    </div>
+</div>

@@ -39,6 +39,7 @@ import {
 import { IDetect } from "ngx-barcodeput";
 import { tr } from "date-fns/locale";
 import { MenuPerm } from "../menu-perm";
+import { environment } from "src/environments/environment";
 
 export interface CaseNumbers {
     RowID: string;
@@ -196,8 +197,7 @@ export class CasenumbersComponent implements OnInit, AfterViewInit {
         if (event.value.toString().indexOf("00") == 0) {
             this.http
                 .post(
-                    //"http://srv-apps-prod/RCF_WS/WebService.asmx/InsertCaseNumberToBox",
-                    "http://srv-apps-prod/RCF_WS/WebService.asmx/InsertCaseNumberToBox",
+                    environment.url + "InsertCaseNumberToBox",
                     {
                         CaseNumber: event.value,
                         CartoonID: this.CartoonID,
@@ -244,7 +244,7 @@ export class CasenumbersComponent implements OnInit, AfterViewInit {
         }
         ////debugger;
         this.http
-            .post("http://srv-apps-prod/RCF_WS/WebService.asmx/RemoveCaseFromBox", {
+            .post(environment.url + "RemoveCaseFromBox", {
                 CaseNumber: this.removeCaseForm.value.CaseNumber,
                 CartoonID: this.removeCaseForm.value.CartoonID,
             })
@@ -266,9 +266,8 @@ export class CasenumbersComponent implements OnInit, AfterViewInit {
             $("#loader").removeClass("d-none");
         }
         //////debugger
-        //http://srv-apps-prod/RCF_WS/WebService.asmx/
         this.http
-            .post("http://srv-apps-prod/RCF_WS/WebService.asmx/GetBoxCases", {
+            .post(environment.url + "GetBoxCases", {
                 _freeText: _FreeText,
                 BoxID: this.CartoonID,
             })

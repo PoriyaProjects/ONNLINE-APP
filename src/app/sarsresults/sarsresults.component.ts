@@ -26,6 +26,7 @@ import {
     Validators,
 } from "@angular/forms";
 import { MenuPerm } from "../menu-perm";
+import { environment } from "src/environments/environment";
 export interface TableRow {
     L_ROW_ID: string;
     L_CASE_NUMBER: string;
@@ -227,7 +228,7 @@ export class SarsresultsComponent implements OnInit {
         //http://srv-apps-prod/RCF_WS/WebService.asmx/
         this.http
             .post(
-                "http://srv-apps-prod/RCF_WS/WebService.asmx/GetAllSarscov2Results",
+                environment.url + "GetAllSarscov2Results",
                 {
                     _fromDate: _startDate,
                     _toDate: _endDate,

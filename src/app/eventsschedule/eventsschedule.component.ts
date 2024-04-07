@@ -34,6 +34,7 @@ import {
 } from "@angular/forms";
 import { ConfirmationDialogService } from "../confirmation-dialog/confirmation-dialog.service";
 import { MenuPerm } from "../menu-perm";
+import { environment } from "src/environments/environment";
 export interface EventsDropDownData {
     RowID: string;
     DropDownValue: string;
@@ -173,8 +174,8 @@ export class EventsscheduleComponent implements OnInit {
         let mEventsDropDownData: EventsDropDownData[] = [];
         $("#loader").removeClass("d-none");
         this.http
-            .post("http://srv-apps-prod/RCF_WS/WebService.asmx/GetDropDownsSelects", {
-            //.post("http://srv-apps-prod/RCF_WS/WebService.asmx/GetDropDownsSelects", {
+            .post(environment.url + "GetDropDownsSelects", {
+            //.post(environment.url + "GetDropDownsSelects", {
                 mDropDownType: mType,
                 mUser: localStorage.getItem("loginUserName").toLowerCase()
             })
@@ -259,8 +260,8 @@ export class EventsscheduleComponent implements OnInit {
         //////debugger;
         this.http
             .post(
-                "http://srv-apps-prod/RCF_WS/WebService.asmx/InsertOrUpdateEvent",
-                //"http://srv-apps-prod/RCF_WS/WebService.asmx/InsertOrUpdateEvent",
+                environment.url + "InsertOrUpdateEvent",
+                //environment.url + "InsertOrUpdateEvent",
                 {
                     mEventsScheduleRow: this.EventsForm.value,
                 }
@@ -457,8 +458,8 @@ export class EventsscheduleComponent implements OnInit {
         //http://srv-apps-prod/RCF_WS/WebService.asmx/
         ////debugger
         this.http
-            .post("http://srv-apps-prod/RCF_WS/WebService.asmx/GetEventsSchedule", {
-            //.post("http://srv-apps-prod/RCF_WS/WebService.asmx/GetEventsSchedule", {
+            .post(environment.url + "GetEventsSchedule", {
+            //.post(environment.url + "GetEventsSchedule", {
                 pageIndex: pageIndex,
                 pageSize: pageSize,
                 serachTxt: serachTxt,

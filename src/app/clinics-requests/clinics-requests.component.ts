@@ -57,6 +57,7 @@ import {
 import { Subject } from "rxjs";
 import { MatDialog } from "@angular/material/dialog";
 import { ClinicsRequestsDialogComponent } from "./clinics-requests-dialog/clinics-requests-dialog.component";
+import { environment } from "src/environments/environment";
 export interface EventDay {
   Depart: string;
   Depart_ID: string;
@@ -288,7 +289,7 @@ export class ClinicsRequestsComponent implements OnInit {
     console.log(this.datePipe.transform(event['start'], "yyyy-MM-dd"));
     this.http
       .post(
-        "http://srv-apps-prod/RCF_WS/WebService.asmx/GetAllClinicDepartAppointmentsByDay",
+        environment.url + "GetAllClinicDepartAppointmentsByDay",
         {
           depart: event['depart_ID'],
           date: this.datePipe.transform(event['start'], "yyyy-MM-dd"),
@@ -317,7 +318,7 @@ export class ClinicsRequestsComponent implements OnInit {
     $("#loader").removeClass("d-none");
     this.http
       .post(
-        "http://srv-apps-prod/RCF_WS/WebService.asmx/GetAllClinicsAppointments",
+        environment.url + "GetAllClinicsAppointments",
         {}
       )
       .subscribe((Response) => {

@@ -10,6 +10,7 @@ import { Router } from "@angular/router";
 import { NgbActiveModal, NgbModal } from "@ng-bootstrap/ng-bootstrap";
 import { MenuPerm } from "../menu-perm";
 import { AddOrEditCablesComponent } from "./add-or-edit-cables/add-or-edit-cables.component";
+import { environment } from "src/environments/environment";
 export interface Cables {
     RowId: string;
     SourceRoom: string;
@@ -169,11 +170,8 @@ export class CablesComponent implements OnInit {
             $("#loader").removeClass("d-none");
         }
         ////debugger
-        //http://srv-apps-prod/RCF_WS/WebService.asmx/
-        //http://srv-apps-prod/RCF_WS/WebService.asmx/
         this.http
-            //.post("http://srv-apps-prod/RCF_WS/WebService.asmx/getAllCables", {
-               .post("http://srv-apps-prod/RCF_WS/WebService.asmx/getAllCables",{
+               .post(environment.url + "getAllCables",{
             })
             .subscribe((Response) => {
                 //////////debugger

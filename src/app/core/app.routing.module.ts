@@ -108,9 +108,10 @@ import { ClinicsRequestsComponent } from "../clinics-requests/clinics-requests.c
 import { WagonComponent } from '../wagon/wagon.component';
 import { SwitchesComponent } from '../switches/switches.component';
 import { HrDashboardComponent } from '../hr-dashboard/hr-dashboard.component';
+import { PatientStikersComponent } from '../patient-stikers/patient-stikers.component';
 
 const routes: Routes = [
-
+  { path: "patientstikers", component: PatientStikersComponent },
   { path: 'dashboard', component: DashboardComponent },
   { path: 'clinicsrequests', component: ClinicsRequestsComponent },
   { path: 'covid19report', component: Covid19reportComponent },

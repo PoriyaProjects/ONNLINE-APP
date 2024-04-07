@@ -8,6 +8,7 @@ import { MatSort } from "@angular/material/sort";
 import { MatTableDataSource } from "@angular/material/table";
 import { Router } from "@angular/router";
 import { NgbActiveModal, NgbModal } from "@ng-bootstrap/ng-bootstrap";
+import { environment } from "src/environments/environment";
 export interface Server {
     RowID: string;
     Name: string;
@@ -59,8 +60,7 @@ export class AddOrEditSwitchesComponent implements OnInit {
         console.log(this.serverForm.value);
         this.http
             .post(
-                "http://srv-apps-prod/RCF_WS/WebService.asmx/insertOrUpdateSwitches4Onnline",
-                // "http://srv-apps-prod/RCF_WS/WebService.asmx/insertOrUpdateSwitches4Onnline",
+                environment.url + "insertOrUpdateSwitches4Onnline",
                 {
                     mRowSwitches4Onnline: this.serverForm.value,
                 }

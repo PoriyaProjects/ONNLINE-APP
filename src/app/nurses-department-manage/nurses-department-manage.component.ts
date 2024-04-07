@@ -49,7 +49,7 @@ export class BugReportComponent implements OnInit {
       this.openSnackBar("להשלים שדות חובה");
     } else {
       this.http
-        .post("http://srv-apps-prod/RCF_WS/WebService.asmx/ReportBugNursesSystem", {
+        .post(environment.url + "ReportBugNursesSystem", {
           _phoneNumber: this.phoneNumber,
           _reportSubject: this.reportSubject,
           _userName: this.UserName,
@@ -182,7 +182,7 @@ export class NursesDepartmentManageComponent implements OnInit {
 
   getSubmitPlannedToRealse(ifsaved) {
     this.http
-      .post("http://srv-apps-prod/RCF_WS/WebService.asmx/GetSubmitPlannedToRealse", {
+      .post(environment.url + "GetSubmitPlannedToRealse", {
         _plannedToRelease: this.departmentRelease.controls['plannedToRelease'].value,
         _departCode: this.departCode,
         userName: localStorage.getItem('loginUserName').toLowerCase()
@@ -302,7 +302,7 @@ export class NursesDepartmentManageComponent implements OnInit {
 
   getDepartDetails() {
     this.http
-      .post("http://srv-apps-prod/RCF_WS/WebService.asmx/GetDepartDetails", {
+      .post(environment.url + "GetDepartDetails", {
         _departCode: this.departCode,
         _datePointer: ""
       })

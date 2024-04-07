@@ -8,6 +8,7 @@ import {
     FormArray,
 } from "@angular/forms";
 import { MatDialog, MAT_DIALOG_DATA } from "@angular/material/dialog";
+import { environment } from "src/environments/environment";
 export interface Staff {
     Department: string;
     FullName: string;
@@ -94,8 +95,7 @@ export class AddNewNoteComponent implements OnInit {
         console.log(this.smsForm.value);
         this.http
             .post(
-                "http://srv-apps-prod/RCF_WS/WebService.asmx/SmsToSurgeryControlMain",
-               // "http://srv-apps-prod/RCF_WS/WebService.asmx/SmsToSurgeryControlMain",
+                environment.url + "SmsToSurgeryControlMain",
                 {
                     smsForm: this.smsForm.value,
                 }

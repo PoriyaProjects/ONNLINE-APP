@@ -10,6 +10,7 @@ import { Router } from "@angular/router";
 import { NgbActiveModal, NgbModal } from "@ng-bootstrap/ng-bootstrap";
 import { MenuPerm } from "../menu-perm";
 import { AddOrEditIpPointComponent } from "./add-or-edit-ip-point/add-or-edit-ip-point.component";
+import { environment } from "src/environments/environment";
 export interface Server {
     RowId: string;
     CenterName: string;
@@ -128,12 +129,9 @@ export class IpPointsComponent implements OnInit {
           tableLoader = true;
           $("#loader").removeClass("d-none");
       }
-      ////debugger
-      //http://srv-apps-prod/RCF_WS/WebService.asmx/
-      //http://srv-apps-prod/RCF_WS/WebService.asmx/
       this.http
-          .post("http://srv-apps-prod/RCF_WS/WebService.asmx/getAllIppoints", {
-          //.post("http://srv-apps-prod/RCF_WS/WebService.asmx/getAllIppoints",{
+          .post(environment.url + "getAllIppoints", {
+          //.post(environment.url + "getAllIppoints",{
 
           }
           )

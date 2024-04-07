@@ -11,6 +11,7 @@ import { map, startWith } from 'rxjs/operators';
 import { ConfirmationDialogService } from 'src/app/confirmation-dialog/confirmation-dialog.service';
 import { DialogBoxComponent } from './dialog-box/dialog-box.component';
 import * as XLSX from 'xlsx';
+import { environment } from 'src/environments/environment';
 export interface UsersData {
   name: string;
   id: number;
@@ -187,7 +188,7 @@ export class SystemManageComponent implements OnInit {
 
   getDepartmentsToUpdateBeds() {
     this.http
-      .post("http://srv-apps-prod/RCF_WS/WebService.asmx/GetDepartmentsToUpdateBeds", {
+      .post(environment.url + "GetDepartmentsToUpdateBeds", {
         _departType: this.departTypeVar
       })
       .subscribe((Response) => {
@@ -198,7 +199,7 @@ export class SystemManageComponent implements OnInit {
 
   getEmployeesToUpdateDept() {
     this.http
-      .post("http://srv-apps-prod/RCF_WS/WebService.asmx/GetEmployeesToUpdateDept", {
+      .post(environment.url + "GetEmployeesToUpdateDept", {
       })
       .subscribe((Response) => {
         let all_employees_filter = Response["d"];
@@ -210,7 +211,7 @@ export class SystemManageComponent implements OnInit {
 
   getDepartsForEmployees() {
     this.http
-      .post("http://srv-apps-prod/RCF_WS/WebService.asmx/GetDepartsForEmployees", {
+      .post(environment.url + "GetDepartsForEmployees", {
       })
       .subscribe((Response) => {
         let all_departs_filter = Response["d"];
@@ -226,7 +227,7 @@ export class SystemManageComponent implements OnInit {
     let employeeRowID = this.updateBedsGroup.controls['RowID'].value;
     if (deptCode != "") {
       this.http
-        .post("http://srv-apps-prod/RCF_WS/WebService.asmx/SubmitUpdateEmployee", {
+        .post(environment.url + "SubmitUpdateEmployee", {
           _deptCode: deptCode,
           _employeeRowID: employeeRowID,
         })
@@ -251,7 +252,7 @@ export class SystemManageComponent implements OnInit {
   submitUpdateBeds(row, ifDelete) {
     if (row.number_of_beds != "") {
       this.http
-        .post("http://srv-apps-prod/RCF_WS/WebService.asmx/SubmitUpdateBeds", {
+        .post(environment.url + "SubmitUpdateBeds", {
           _row_ID: row.Row_ID,
           _numberOfBeds: row.number_of_beds,
           _ifDelete: ifDelete,

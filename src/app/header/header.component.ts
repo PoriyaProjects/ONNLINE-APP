@@ -3,6 +3,7 @@ import { Component, ElementRef, HostListener, OnInit } from "@angular/core";
 import { Router } from "@angular/router";
 import * as $ from "jquery";
 import { VoiceRecognitionService } from '../header/service/voice-recognition.service'
+import { environment } from "src/environments/environment";
 
 
 @Component({
@@ -69,7 +70,7 @@ export class HeaderComponent implements OnInit {
     getPermission() {
         this.http
             .post(
-                "http://srv-apps-prod/RCF_WS/WebService.asmx/getResearchPermission",
+                environment.url + "getResearchPermission",
                 {
                     _UserName: localStorage.getItem("loginUserName"),
                 }
@@ -842,7 +843,7 @@ export class HeaderComponent implements OnInit {
     ClinicsPricingPermission() {
         let userName = localStorage.getItem("loginUserName").toLowerCase();
         this.http
-            .post("http://srv-apps-prod/RCF_WS/WebService.asmx/ClinicsUserPersmission", {
+            .post(environment.url + "ClinicsUserPersmission", {
                 _userName: userName
             })
             .subscribe((Response) => {
@@ -852,7 +853,7 @@ export class HeaderComponent implements OnInit {
 
     EmployeesManagePermission() {
         this.http
-            .post("http://srv-apps-prod/RCF_WS/WebService.asmx/EmployeesManagePermission", {
+            .post(environment.url + "EmployeesManagePermission", {
                 _userName: this.loginUserName
             })
             .subscribe((Response) => {
@@ -863,7 +864,7 @@ export class HeaderComponent implements OnInit {
     CardiologyPermission() {
         let userName = localStorage.getItem("loginUserName").toLowerCase();
         this.http
-            .post("http://srv-apps-prod/RCF_WS/WebService.asmx/CardiologyPermissions", {
+            .post(environment.url + "CardiologyPermissions", {
                 _userName: userName
             })
             .subscribe((Response) => {
@@ -874,7 +875,7 @@ export class HeaderComponent implements OnInit {
     VisitorsSystemPermission() {
         let userName = localStorage.getItem("loginUserName").toLowerCase();
         this.http
-            .post("http://srv-apps-prod/RCF_WS/WebService.asmx/VisitorsUserPersmission", {
+            .post(environment.url + "VisitorsUserPersmission", {
                 _userName: userName
             })
             .subscribe((Response) => {
@@ -885,7 +886,7 @@ export class HeaderComponent implements OnInit {
     fastCovidTestSystemPermission() {
         let userName = localStorage.getItem("loginUserName").toLowerCase();
         this.http
-            .post("http://srv-apps-prod/RCF_WS/WebService.asmx/FastCovidTestSystemPermission", {
+            .post(environment.url + "FastCovidTestSystemPermission", {
                 _userName: userName
             })
             .subscribe((Response) => {
@@ -896,7 +897,7 @@ export class HeaderComponent implements OnInit {
     ifPersonRead() {
         let userName = localStorage.getItem("loginUserName").toLowerCase();
         this.http
-            .post("http://srv-apps-prod/RCF_WS/WebService.asmx/IfUserRead", {
+            .post(environment.url + "IfUserRead", {
                 _userName: userName
             })
             .subscribe((Response) => {

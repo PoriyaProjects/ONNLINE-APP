@@ -2,6 +2,7 @@ import { HttpClient } from "@angular/common/http";
 import { Component, Inject, OnInit } from "@angular/core";
 import { FormBuilder, FormGroup, Validators } from "@angular/forms";
 import { MatDialog, MAT_DIALOG_DATA } from "@angular/material/dialog";
+import { environment } from "src/environments/environment";
 export interface Wagons {
   RowId: string;
   WagonName: string;
@@ -78,7 +79,7 @@ export class AddOrEditWagonsComponent implements OnInit {
     console.log(this.serverForm.value);
     this.http
       .post(
-         "http://srv-apps-prod/RCF_WS/WebService.asmx/insertOrUpdateWagons",
+        environment.url + "insertOrUpdateWagons",
         //"http://localhost:64964/WebService.asmx/insertOrUpdateWagons",
         {
           mRowWagons: this.serverForm.value,

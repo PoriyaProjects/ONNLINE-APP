@@ -5,6 +5,7 @@ import { FormBuilder, FormGroup } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar, MatSnackBarHorizontalPosition, MatSnackBarVerticalPosition } from '@angular/material/snack-bar';
 import { Router } from '@angular/router';
+import { environment } from 'src/environments/environment';
 
 @Component({
   selector: 'app-report-replies',
@@ -60,7 +61,7 @@ export class ReportRepliesComponent implements OnInit {
 
   deleteMessage(messageID, ReportID) {
     this.http
-      .post("http://srv-apps-prod/RCF_WS/WebService.asmx/DeleteReportMessage", {
+      .post(environment.url + "DeleteReportMessage", {
         _messageID: messageID
       })
       .subscribe((Response) => {
@@ -83,7 +84,7 @@ export class ReportRepliesComponent implements OnInit {
     this.messanger.controls['MessageTime'].setValue(messageTime);
     this.messanger.controls['UserName'].setValue(UserName);
     this.http
-      .post("http://srv-apps-prod/RCF_WS/WebService.asmx/GetSendReportResponse", {
+      .post(environment.url + "GetSendReportResponse", {
         _messageClass: this.messanger.value,
       })
       .subscribe((Response) => {

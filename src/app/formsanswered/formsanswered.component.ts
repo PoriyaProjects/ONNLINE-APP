@@ -192,11 +192,11 @@ export class FormsansweredComponent implements OnInit {
                         .subscribe((Response) => {
                             this.http
                                 .post(
-                                    "http://srv-ipracticom:756/WebService.asmx/LinkPdfToPatientNamer",
+                                    environment.urlipracticom + "LinkPdfToPatientNamer",
                                     // environment.url + "LinkPdfToPatientNamer",
                                     {
                                         //.post("http://srv-ipracticom:8080/WebService.asmx/LinkPdfToPatientNamer", {
-                                        // .post("http://srv-apps-prod/RCF_WS/WebService.asmx/LinkPdfToPatientNamer", {
+                                        // .post(environment.url + "LinkPdfToPatientNamer", {
                                         CaseNumber: patientIDPr,
                                         FormID: element.FormID,
                                         Catigory: "ZPO_ONLINE",

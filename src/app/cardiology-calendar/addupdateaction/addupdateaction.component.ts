@@ -29,6 +29,7 @@ import { animate, state, style, transition, trigger } from '@angular/animations'
 import { MatTableDataSource } from "@angular/material/table";
 import { Observable } from "rxjs";
 import { map, startWith } from "rxjs/operators";
+import { environment } from "src/environments/environment";
 
 export interface Actions {
   ActionValue: string;
@@ -183,7 +184,7 @@ export class AddupdateactionComponent implements OnInit {
     let passport = this.searchPatient.controls['Passport'].value;
     this.searchPatientProgressBar = false;
     this.http
-      .post("http://srv-apps-prod/RCF_WS/WebService.asmx/GetCardiologyPatientDetails", {
+      .post(environment.url + "GetCardiologyPatientDetails", {
         _passport: passport
       })
       .subscribe((Response) => {
@@ -225,9 +226,9 @@ export class AddupdateactionComponent implements OnInit {
   //   this.actionForm.controls['ArrivalDate'].setValue(this.datePipe.transform(this.actionForm.controls['ArrivalDate'].value, 'yyyy-MM-dd'));
   //   let url = "";
   //   if(this.actionID == '1'){
-  //     url = "http://srv-apps-prod/RCF_WS/WebService.asmx/UpdateCardiologyPatientQueue";
+  //     url = environment.url + "UpdateCardiologyPatientQueue";
   //   }else{
-  //     url = "http://srv-apps-prod/RCF_WS/WebService.asmx/SubmitCardiologyPatientQueue";
+  //     url = environment.url + "SubmitCardiologyPatientQueue";
   //   }
   //   this.http
   //     .post(url, {
