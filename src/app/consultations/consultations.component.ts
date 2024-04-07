@@ -1112,7 +1112,7 @@ DepartsDataRequestAvgAllNotPara
     getRequest() {
         $("#loader").removeClass("d-none");
         this.http
-            .post("http://srv-apps-prod/RCF_WS/WebService.asmx/GetRequestDeparts", {})
+            .post(environment.url + "GetRequestDeparts", {})
             .subscribe((Response) => {
                 //// ////////debugger
                 this.requestdepartsList = [];
