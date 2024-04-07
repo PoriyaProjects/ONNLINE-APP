@@ -15,6 +15,7 @@ import { TableUtil } from "./tableUtil";
 import { MenuPerm } from "../menu-perm";
 import * as fileSaver from "file-saver";
 import * as XLSX from "xlsx";
+import { environment } from "src/environments/environment";
 const EXCEL_TYPE =
     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8";
 const EXCEL_EXTENSION = ".xlsx";
@@ -172,7 +173,7 @@ export class DimotComponent implements OnInit, AfterViewInit {
         this.http
             .post(
                // "http://localhost:64964/WebService.asmx/GetDimotExportTable",
-                "http://srv-apps-prod/RCF_WS/WebService.asmx/GetDimotExportTable",
+                environment.url + "GetDimotExportTable",
                 {
                     _fromDate: _fromDate,
                     _toDate: _toDate,
@@ -379,7 +380,7 @@ export class DimotComponent implements OnInit, AfterViewInit {
         this.http
             .post(
                 //"http://localhost:64964/WebService.asmx/GetDimotTableApp",
-                "http://srv-apps-prod/RCF_WS/WebService.asmx/GetDimotTableApp",
+                environment.url + "GetDimotTableApp",
                 {
                     _fromDate: _startDate,
                     _toDate: _endDate,
@@ -461,7 +462,7 @@ export class DimotComponent implements OnInit, AfterViewInit {
         debugger
         this.http
         //    .post("http://localhost:64964/WebService.asmx/GetDimotApp", {
-            .post("http://srv-apps-prod/RCF_WS/WebService.asmx/GetDimotApp", {
+            .post(environment.url + "GetDimotApp", {
                 _fromDate: _startDate,
                 _toDate: _endDate,
                 _pageIndex: _pageIndex,

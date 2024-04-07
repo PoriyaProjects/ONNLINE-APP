@@ -10,6 +10,7 @@ import { NgbActiveModal, NgbModal } from "@ng-bootstrap/ng-bootstrap";
 import { MenuPerm } from "../menu-perm";
 import { AddNewNoteComponent } from "./add-new-note/add-new-note.component";
 import { NotesHistoryComponent } from "./notes-history/notes-history.component";
+import { environment } from "src/environments/environment";
 
 export interface Staff {
     Department: string;
@@ -334,8 +335,8 @@ export class SurgeryControlMainComponent implements OnInit {
         }
         this.http
             .post(
-                "http://srv-apps-prod/RCF_WS/WebService.asmx/GetSurgeryControlMain",
-                //"http://srv-apps-prod/RCF_WS/WebService.asmx/GetSurgeryControlMain",
+                environment.url + "GetSurgeryControlMain",
+                
                 {
                     type: type,
                     room: this.selectedBtn,

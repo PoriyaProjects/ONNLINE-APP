@@ -30,6 +30,7 @@ import {
 import { MatRadioChange } from "@angular/material/radio";
 import { data } from "jquery";
 import { MenuPerm } from "../menu-perm";
+import { environment } from "src/environments/environment";
 export interface Doctor {
     id: string;
     name: string;
@@ -286,7 +287,7 @@ Cecum_Time
         this.EditForm.value.Cecum_Time;
         //return;
         this.http
-            .post("http://srv-apps-prod/RCF_WS/WebService.asmx/SaveColonoscopy", {
+            .post(environment.url + "SaveColonoscopy", {
                 mSaveColonoscopy: this.EditForm.value,
             })
             .subscribe((Response) => {
@@ -306,7 +307,7 @@ Cecum_Time
         //return;
         this.http
             .post(
-                "http://srv-apps-prod/RCF_WS/WebService.asmx/SaveRelevantOrNotColonoscopy",
+                environment.url + "SaveRelevantOrNotColonoscopy",
                 {
                     mRelevantOrNot: this.RelevantForm.value,
                 }
@@ -805,7 +806,7 @@ options6min
     getDoctors() {
         this.http
             .post(
-                "http://srv-apps-prod/RCF_WS/WebService.asmx/GetColonoscopyDoctorsList",
+                environment.url + "GetColonoscopyDoctorsList",
                 {}
             )
             .subscribe((Response) => {
@@ -847,7 +848,7 @@ options6min
         //debugger
         $("#loader").removeClass("d-none");
         this.http
-            .post("http://srv-apps-prod/RCF_WS/WebService.asmx/getCOLONOSCOPY", {
+            .post(environment.url + "getCOLONOSCOPY", {
                 _fromDate: _startDate,
                 _toDate: _endDate,
                 _pageIndex: _pageIndex,

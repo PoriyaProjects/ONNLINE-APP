@@ -30,6 +30,7 @@ import {
     Validators,
 } from "@angular/forms";
 import { MenuPerm } from "../menu-perm";
+import { environment } from "src/environments/environment";
 
 export interface Depart {
     D_ID: number;
@@ -155,7 +156,7 @@ export class CortinasdepartsComponent implements OnInit {
         });
         this.http
             .post(
-                "http://srv-apps-prod/RCF_WS/WebService.asmx/SubmitCortinasDepart",
+                environment.url + "SubmitCortinasDepart",
                 {
                     DepartRow: this.departsForm.value,
                 }
@@ -184,7 +185,7 @@ export class CortinasdepartsComponent implements OnInit {
         });
         this.http
             .post(
-                "http://srv-apps-prod/RCF_WS/WebService.asmx/SubmitCortinasDepartRooms",
+                environment.url + "SubmitCortinasDepartRooms",
                 {
                     DepartRoomRows: this.roomsForm.value.roomsDetails,
                 }
@@ -215,8 +216,8 @@ export class CortinasdepartsComponent implements OnInit {
         });
         this.http
             .post(
-                "http://srv-apps-prod/RCF_WS/WebService.asmx/SubmitCortinasDepartRoomsBeds",
-               // "http://srv-apps-prod/RCF_WS/WebService.asmx/SubmitCortinasDepartRoomsBeds",
+                environment.url + "SubmitCortinasDepartRoomsBeds",
+               // environment.url + "SubmitCortinasDepartRoomsBeds",
                 {
                     DepartRoomBedsRows: this.roomsBedsForm.value
                         .roomsBedsDetails,
@@ -247,7 +248,7 @@ export class CortinasdepartsComponent implements OnInit {
         this.D_ID = _element.D_ID;
         this.http
             .post(
-                "http://srv-apps-prod/RCF_WS/WebService.asmx/GetCortinasDepartRoomsBeds",
+                environment.url + "GetCortinasDepartRoomsBeds",
                 {
                     _DepartID: _element.D_ID,
                 }
@@ -334,7 +335,7 @@ export class CortinasdepartsComponent implements OnInit {
         this.D_ID = _element.D_ID;
         this.http
             .post(
-                "http://srv-apps-prod/RCF_WS/WebService.asmx/GetCortinasDepartRooms",
+                environment.url + "GetCortinasDepartRooms",
                 {
                     _DepartID: _element.D_ID,
                 }
@@ -486,7 +487,7 @@ export class CortinasdepartsComponent implements OnInit {
             $("#loader").removeClass("d-none");
         }
         this.http
-            .post("http://srv-apps-prod/RCF_WS/WebService.asmx/GetCortinasDepart", {
+            .post(environment.url + "GetCortinasDepart", {
                 _pageIndex: _pageIndex,
                 _pageSize: _pageSize,
                 _FreeText: _FreeText,

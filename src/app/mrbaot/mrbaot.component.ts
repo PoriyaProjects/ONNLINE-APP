@@ -376,7 +376,7 @@ export class MrbaotComponent implements OnInit {
         $("#loader").removeClass("d-none");
         ////debugger;
         this.http
-            .post("http://srv-apps-prod/RCF_WS/WebService.asmx/GetClinicsNames", {})
+            .post(environment.url + "GetClinicsNames", {})
             .subscribe(
                 (Response) => {
                     $("#_departments").empty();

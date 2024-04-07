@@ -5,6 +5,7 @@ import { MatPaginator, PageEvent } from "@angular/material/paginator";
 import { MatTableDataSource } from "@angular/material/table";
 import { int } from "@zxing/library/esm/customTypings";
 import { DataRowTableComponent } from "../data-row-table/data-row-table.component";
+import { environment } from "src/environments/environment";
 
 export interface DialogData {
     selectedData: string;
@@ -163,8 +164,8 @@ export class DataTableComponent implements OnInit {
         // debugger
         this.http
             .post(
-                "http://srv-apps-prod/RCF_WS/WebService.asmx/GetDeviceTypeFamilyDistributionByName",
-                //"http://srv-apps-prod/RCF_WS/WebService.asmx/GetDeviceTypeFamilyDistributionByName",
+                environment.url + "GetDeviceTypeFamilyDistributionByName",
+                //environment.url + "GetDeviceTypeFamilyDistributionByName",
                 {
                     ManufacturerDistribution: this.data.selectedData,
                     isOnline: this.data.isOnline,
@@ -183,8 +184,8 @@ export class DataTableComponent implements OnInit {
         // debugger
         this.http
             .post(
-                "http://srv-apps-prod/RCF_WS/WebService.asmx/GetInventoryHighLevelStatsByName",
-                //"http://srv-apps-prod/RCF_WS/WebService.asmx/GetInventoryHighLevelStatsByName",
+                environment.url + "GetInventoryHighLevelStatsByName",
+                //environment.url + "GetInventoryHighLevelStatsByName",
                 {
                     ManufacturerDistribution: this.data.selectedData,
                     isOnline: this.data.isOnline
@@ -203,8 +204,8 @@ export class DataTableComponent implements OnInit {
         // debugger
         this.http
             .post(
-                "http://srv-apps-prod/RCF_WS/WebService.asmx/GetManufacturerDistributionByName",
-                //"http://srv-apps-prod/RCF_WS/WebService.asmx/GetManufacturerDistributionByName",
+                environment.url + "GetManufacturerDistributionByName",
+                //environment.url + "GetManufacturerDistributionByName",
                 {
                     ManufacturerDistribution: this.data.selectedData[0],
                     isOnline: this.data.isOnline,

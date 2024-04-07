@@ -8,6 +8,7 @@ import { MatSnackBar, MatSnackBarHorizontalPosition, MatSnackBarVerticalPosition
 import { MatSort } from '@angular/material/sort';
 import { MatTableDataSource } from '@angular/material/table';
 import { ConfirmationDialogService } from 'src/app/confirmation-dialog/confirmation-dialog.service';
+import { environment } from 'src/environments/environment';
 
 @Component({
   selector: 'app-nurses-reinforcement',
@@ -119,7 +120,7 @@ export class NursesReinforcementComponent implements OnInit {
     let workPlace = '';
     let statusRow = '1';
     this.http
-      .post("http://srv-apps-prod/RCF_WS/WebService.asmx/GetEmployeesToUpdate", {
+      .post(environment.url + "GetEmployeesToUpdate", {
         _empId: empId,
         _empFirstName: empFirstName,
         _empLastName: empLastName,
@@ -158,7 +159,7 @@ export class NursesReinforcementComponent implements OnInit {
     let workPlace = '';
     let statusRow = '1';
     this.http
-      .post("http://srv-apps-prod/RCF_WS/WebService.asmx/GetEmployeesToUpdate", {
+      .post(environment.url + "GetEmployeesToUpdate", {
         _empId: empId,
         _empFirstName: empFirstName,
         _empLastName: empLastName,
@@ -198,7 +199,7 @@ export class NursesReinforcementComponent implements OnInit {
           console.log("User confirmed:", confirmed);
           if (confirmed) {
             this.http
-              .post("http://srv-apps-prod/RCF_WS/WebService.asmx/SendSmsNursesRienforcement", {
+              .post(environment.url + "SendSmsNursesRienforcement", {
                 _nurse_reinf: this.Reinf_nurse,
                 _emp_reinf: this.Reinf_emp
               })

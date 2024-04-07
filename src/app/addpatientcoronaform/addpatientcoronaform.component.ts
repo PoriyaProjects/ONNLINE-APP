@@ -26,6 +26,7 @@ import {
     Validators,
 } from "@angular/forms";
 import { MenuPerm } from "../menu-perm";
+import { environment } from "src/environments/environment";
 @Component({
     selector: "app-addpatientcoronaform",
     templateUrl: "./addpatientcoronaform.component.html",
@@ -120,7 +121,7 @@ export class AddpatientcoronaformComponent implements OnInit {
         //debugger;
         this.http
             .post(
-                "http://srv-apps-prod/RCF_WS/WebService.asmx/addPatientCoronaForm",
+                environment.url + "addPatientCoronaForm",
                 {
                     PatientCoronaForm: this.addPatientCoronaForm.value,
                 }

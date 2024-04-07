@@ -10,6 +10,7 @@ import { Router } from "@angular/router";
 import { NgbActiveModal, NgbModal } from "@ng-bootstrap/ng-bootstrap";
 import { MenuPerm } from "../menu-perm";
 import { AddOrEditServerComponent } from "./add-or-edit-server/add-or-edit-server.component";
+import { environment } from "src/environments/environment";
 export interface Server {
     RowId: string;
     ServerName: string;
@@ -132,12 +133,8 @@ export class ServersForOnnlineComponent implements OnInit {
             tableLoader = true;
             $("#loader").removeClass("d-none");
         }
-        ////debugger
-        //http://srv-apps-prod/RCF_WS/WebService.asmx/
-        //http://srv-apps-prod/RCF_WS/WebService.asmx/
         this.http
-            .post("http://srv-apps-prod/RCF_WS/WebService.asmx/getAllServers4Onnline", {
-            //.post("http://srv-apps-prod/RCF_WS/WebService.asmx/getAllServers4Onnline",{
+            .post(environment.url + "getAllServers4Onnline", {
 
             }
             )

@@ -32,6 +32,7 @@ import {
   FormGroup,
   Validators,
 } from "@angular/forms";
+import { environment } from "src/environments/environment";
 
 export interface GroupMember {
     GroupID: string;
@@ -134,7 +135,7 @@ export class EmergencymembersComponent implements OnInit {
       ////debugger;
       this.http
           .post(
-              "http://srv-apps-prod/RCF_WS/WebService.asmx/RemoveMemberFromGroup",
+              environment.url + "RemoveMemberFromGroup",
               {
                 MemberId: this.removeMemberForm.value.EmployeeID,
                 GroupId: this.removeMemberForm.value.GroupId,
@@ -210,7 +211,7 @@ export class EmergencymembersComponent implements OnInit {
         //http://srv-apps-prod/RCF_WS/WebService.asmx/
         this.http
             .post(
-                "http://srv-apps-prod/RCF_WS/WebService.asmx/GetGroupEmployeesMember",
+                environment.url + "GetGroupEmployeesMember",
                 {
                     _FreeText: _FreeText,
                     _GroupID: this.GroupID,

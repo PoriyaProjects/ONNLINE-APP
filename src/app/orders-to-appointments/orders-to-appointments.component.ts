@@ -427,7 +427,7 @@ export class OrdersToAppointmentsComponent implements OnInit {
         this.http
             .post(
                 environment.url + "GetOrdersToAppointments",
-                //"http://srv-apps-prod/RCF_WS/WebService.asmx/GetOrdersToAppointments",
+                //environment.url + "GetOrdersToAppointments",
                 {
                     user: localStorage.getItem("loginUserName"),
                     pageSize: this.paginator.pageSize,
@@ -485,7 +485,7 @@ export class OrdersToAppointmentsComponent implements OnInit {
         // ////debugger
         this.http
             .post(
-                "http://srv-apps-prod/RCF_WS/WebService.asmx/selectOutpatientClinic",
+                environment.url + "selectOutpatientClinic",
                 {
                     user: localStorage.getItem("loginUserName"),
                 }
@@ -514,7 +514,7 @@ export class OrdersToAppointmentsComponent implements OnInit {
         }
         // ////debugger
         this.http
-            .post("http://srv-apps-prod/RCF_WS/WebService.asmx/findPatientByID", {
+            .post(environment.url + "findPatientByID", {
                 PatientId: event.srcElement.value,
             })
             .subscribe((Response) => {
@@ -622,7 +622,7 @@ export class OrdersToAppointmentsComponent implements OnInit {
         }
         // ////debugger
         this.http
-            .post("http://srv-apps-prod/RCF_WS/WebService.asmx/selectUserDetails", {
+            .post(environment.url + "selectUserDetails", {
                 user: localStorage.getItem("loginUserName"),
             })
             .subscribe((Response) => {
@@ -724,8 +724,8 @@ export class OrdersToAppointmentsComponent implements OnInit {
         ////debugger
         this.http
             .post(
-                //"http://srv-apps-prod/RCF_WS/WebService.asmx/insertOrUpdateRowDataOrdersToAppointments",
-                "http://srv-apps-prod/RCF_WS/WebService.asmx/insertOrUpdateRowDataOrdersToAppointments",
+                //environment.url + "insertOrUpdateRowDataOrdersToAppointments",
+                environment.url + "insertOrUpdateRowDataOrdersToAppointments",
                 {
                     dataToSubmit: this.OrdersToAppointmentsForm.value,
                 }

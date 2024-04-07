@@ -11,6 +11,7 @@ import {
 } from '@angular/material/snack-bar';
 import { DatePipe } from '@angular/common';
 import { ConfirmationDialogService } from '../../confirmation-dialog/confirmation-dialog.service';
+import { environment } from 'src/environments/environment';
 
 @Component({
   selector: 'visitor-name-dialog',
@@ -110,7 +111,7 @@ export class VisitorsRegistrationComponent implements OnInit {
           console.log("User confirmed:", confirmed);
           if (confirmed) {
             this.http
-              .post("http://srv-apps-prod/RCF_WS/WebService.asmx/MarkAsHasVisitor", {
+              .post(environment.url + "MarkAsHasVisitor", {
                 _patientCaseNumber: patientCaseNumber,
                 _visitorName: this.visitorName
               })
@@ -158,7 +159,7 @@ export class VisitorsRegistrationComponent implements OnInit {
   getPatientsPerDepart() {
     this.Patientsloading = true;
     this.http
-      .post("http://srv-apps-prod/RCF_WS/WebService.asmx/GetPatientsPerDepart", {
+      .post(environment.url + "GetPatientsPerDepart", {
         _departCode: this.departCode
       })
       .subscribe((Response) => {

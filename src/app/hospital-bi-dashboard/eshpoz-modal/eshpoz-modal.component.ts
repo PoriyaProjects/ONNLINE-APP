@@ -3,6 +3,7 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { DialogData } from 'src/app/medigate-servers/data-row-table/data-row-table.component';
 import { FormControl } from '@angular/forms';
+import { environment } from 'src/environments/environment';
 
 @Component({
   selector: 'app-eshpoz-modal',
@@ -232,7 +233,7 @@ export class EshpozModalComponent implements OnInit {
       this.periodList = "";
     }
     this.http
-      .post("http://srv-apps-prod/RCF_WS/WebService.asmx/" + url, {
+      .post(environment.url + "" + url, {
         param: this.TimeLineParam,
         deptCode: this.departParam,
         surgerydeptType: this.hospitalDepartType.value,

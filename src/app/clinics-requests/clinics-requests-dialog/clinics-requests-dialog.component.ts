@@ -2,6 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Component, Inject, OnInit } from '@angular/core';
 import { MAT_DIALOG_DATA, MatDialog } from '@angular/material/dialog';
 import { ClinicsPatientRequestsDialogComponent } from '../clinics-patient-requests-dialog/clinics-patient-requests-dialog.component';
+import { environment } from 'src/environments/environment';
 
 @Component({
   selector: 'app-clinics-requests-dialog',
@@ -30,7 +31,7 @@ export class ClinicsRequestsDialogComponent implements OnInit {
     $("#loader").removeClass("d-none");
     this.http
       .post(
-        "http://srv-apps-prod/RCF_WS/WebService.asmx/GetPatientClinicDepartAppointmentsByDay",
+        environment.url + "GetPatientClinicDepartAppointmentsByDay",
         {
           Depart: card['Depart_ID'],
           AppointmentDate: card['AppointmentDate'],

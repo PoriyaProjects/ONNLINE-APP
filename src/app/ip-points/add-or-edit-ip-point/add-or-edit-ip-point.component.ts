@@ -8,6 +8,7 @@ import { MatSort } from "@angular/material/sort";
 import { MatTableDataSource } from "@angular/material/table";
 import { Router } from "@angular/router";
 import { NgbActiveModal, NgbModal } from "@ng-bootstrap/ng-bootstrap";
+import { environment } from "src/environments/environment";
 export interface Server {
     RowId: string;
     CenterName: string;
@@ -71,8 +72,8 @@ export class AddOrEditIpPointComponent implements OnInit {
         console.log(this.serverForm.value);
         this.http
             .post(
-              "http://srv-apps-prod/RCF_WS/WebService.asmx/insertOrUpdateIPPoints",
-              // "http://srv-apps-prod/RCF_WS/WebService.asmx/insertOrUpdateIPPoints",
+              environment.url + "insertOrUpdateIPPoints",
+              // environment.url + "insertOrUpdateIPPoints",
                 {
                     mRowServers4Onnline: this.serverForm.value,
                 }

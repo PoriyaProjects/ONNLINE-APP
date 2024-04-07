@@ -23,6 +23,7 @@ import { Observable } from "rxjs";
 import { DatePipe } from "@angular/common";
 import * as uuid from "uuid";
 import { DomSanitizer } from "@angular/platform-browser";
+import { environment } from "src/environments/environment";
 
 export interface TestType {
     TestNumber: number;
@@ -398,7 +399,7 @@ export class FastCovid19TestComponent implements OnInit {
     getUserFullName() {
         this.http
             .post(
-                "http://srv-apps-prod/RCF_WS/WebService.asmx/GetUserFullName",
+                environment.url + "GetUserFullName",
                 {
                     _userName: this.UserName,
                 }
@@ -437,8 +438,8 @@ export class FastCovid19TestComponent implements OnInit {
         $("#loader").removeClass("d-none");
         this.http
             .post(
-                "http://srv-apps-prod/RCF_WS/WebService.asmx/selectDetailsFromNamerPatiantNumber",
-               // "http://srv-apps-prod/RCF_WS/WebService.asmx/selectDetailsFromNamerPatiantNumber",
+                environment.url + "selectDetailsFromNamerPatiantNumber",
+               // environment.url + "selectDetailsFromNamerPatiantNumber",
                 {
                     patientNumber: val,
                 }
@@ -505,7 +506,7 @@ Tel1*/
         $("#loader").removeClass("d-none");
         this.http
             .post(
-                "http://srv-apps-prod/RCF_WS/WebService.asmx/selectDetailsFromNamer",
+                environment.url + "selectDetailsFromNamer",
                 {
                     patientId: val,
                 }
@@ -591,8 +592,8 @@ LastName
                         $("#loader_2").removeClass("d-none");
                         this.http
                             .post(
-                                "http://srv-apps-prod/RCF_WS/WebService.asmx/SavePatientFastTestResult",
-                                // "http://srv-apps-prod/RCF_WS/WebService.asmx/SavePatientFastTestResult",
+                                environment.url + "SavePatientFastTestResult",
+                                // environment.url + "SavePatientFastTestResult",
                                 {
                                     resultClass: this.TestsForm.getRawValue(),
                                 }
@@ -606,7 +607,7 @@ LastName
                                         this.http
                                             .post(
                                                 "http://srv-ipracticom:8080/WebService.asmx/checkIsHaveQRCode",
-                                                // "http://srv-apps-prod/RCF_WS/WebService.asmx/checkIsHaveQRCode",
+                                                // environment.url + "checkIsHaveQRCode",
                                                 {
                                                     newId: json,
                                                 }
@@ -678,7 +679,7 @@ LastName
     getCityCodes() {
         this.http
             .post(
-                "http://srv-apps-prod/RCF_WS/WebService.asmx/GetCityCodes",
+                environment.url + "GetCityCodes",
                 {}
             )
             .subscribe((Response) => {
@@ -695,7 +696,7 @@ LastName
     getCategories() {
         this.http
             .post(
-                "http://srv-apps-prod/RCF_WS/WebService.asmx/GetCategories",
+                environment.url + "GetCategories",
                 {}
             )
             .subscribe((Response) => {

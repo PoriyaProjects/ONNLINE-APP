@@ -33,6 +33,7 @@ import {
     Validators,
 } from "@angular/forms";
 import { MenuPerm } from "../menu-perm";
+import { environment } from "src/environments/environment";
 
 export interface ResearchesUsers {
     RowID: number;
@@ -161,7 +162,7 @@ export class ResearchesusersComponent implements OnInit {
         // ////debugger
         this.http
             .post(
-                "http://srv-apps-prod/RCF_WS/WebService.asmx/InsertOrUpdateResearchesUsers",
+                environment.url + "InsertOrUpdateResearchesUsers",
                 {
                     _usersForm: this.usersForm.value,
                 }
@@ -355,7 +356,7 @@ export class ResearchesusersComponent implements OnInit {
         }
         this.http
             .post(
-                "http://srv-apps-prod/RCF_WS/WebService.asmx/getResearchesUsersTable",
+                environment.url + "getResearchesUsersTable",
                 {
                     _pageIndex: _pageIndex,
                     _pageSize: _pageSize,

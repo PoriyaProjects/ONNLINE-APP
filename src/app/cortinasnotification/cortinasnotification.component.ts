@@ -30,6 +30,7 @@ import {
     Validators,
 } from "@angular/forms";
 import { MenuPerm } from "../menu-perm";
+import { environment } from "src/environments/environment";
 
 export interface Alert {
     B_ID: number;
@@ -87,7 +88,7 @@ export class CortinasnotificationComponent implements OnInit {
             alert.type = "cancel";
         this.http
             .post(
-                "http://srv-apps-prod/RCF_WS/WebService.asmx/ChangeCortinasDate",
+                environment.url + "ChangeCortinasDate",
                 {
                     alert: alert
                 }
@@ -115,7 +116,7 @@ export class CortinasnotificationComponent implements OnInit {
         }
         this.http
             .post(
-                "http://srv-apps-prod/RCF_WS/WebService.asmx/GetCortinasAlerts",
+                environment.url + "GetCortinasAlerts",
                 {}
             )
             .subscribe((Response) => {

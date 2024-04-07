@@ -8,6 +8,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { FastCovid19TestComponent } from '../fast-covid19-test/fast-covid19-test.component';
 import { DatePipe } from '@angular/common';
 import { FastCovidSendEamilComponent } from '../fast-covid-send-eamil/fast-covid-send-eamil.component';
+import { environment } from 'src/environments/environment';
 
 @Component({
   selector: 'app-fast-covid-test-dashboard',
@@ -67,7 +68,7 @@ export class FastCovidTestDashboardComponent implements OnInit {
 
   getAllAntigTestedPatients(){
     this.http
-    .post("http://srv-apps-prod/RCF_WS/WebService.asmx/GetAllAntigTestedPatients", {
+    .post(environment.url + "GetAllAntigTestedPatients", {
       _searchWord: this.searchCovidTestPatients.controls['searchWord'].value,
       _startdateVal:  this.datePipe.transform(this.searchCovidTestPatients.controls['startdateVal'].value, 'yyyy-MM-dd'),
       _enddateVal: this.datePipe.transform(this.searchCovidTestPatients.controls['enddateVal'].value, 'yyyy-MM-dd'),

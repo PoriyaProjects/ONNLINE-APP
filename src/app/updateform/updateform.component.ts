@@ -10,6 +10,7 @@ import { UpdatesingleformComponent } from '../updatesingleform/updatesingleform.
 import { DatePipe } from '@angular/common';
 import { map, startWith } from 'rxjs/operators';
 import { Observable } from 'rxjs';
+import { environment } from 'src/environments/environment';
 
 export interface Form {
   FormID: string;
@@ -139,7 +140,7 @@ export class UpdateformComponent implements OnInit {
     let UserName = localStorage.getItem("loginUserName").toLowerCase();
 
     this.http
-      .post("http://srv-apps-prod/RCF_WS/WebService.asmx/GetAllUsersForms", {
+      .post(environment.url + "GetAllUsersForms", {
         _userName: UserName,
         _searchWord: searchWord,
         _departmentControl: departmentControl
@@ -160,7 +161,7 @@ export class UpdateformComponent implements OnInit {
         this.dataSource.paginator = this.paginator;
       });
     this.http
-      .post("http://srv-apps-prod/RCF_WS/WebService.asmx/GetFormsDeparts", {
+      .post(environment.url + "GetFormsDeparts", {
       })
       .subscribe((Response) => {
         this.all_departs_filter = Response["d"];

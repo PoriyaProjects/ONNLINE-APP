@@ -25,6 +25,7 @@ import {
     FormGroup,
     Validators,
 } from "@angular/forms";
+import { environment } from "src/environments/environment";
 export interface PatientData {
     Childe_Case_Number: string;
     Childe_ID: string;
@@ -66,7 +67,7 @@ export class MotherChildeLinkComponent implements OnInit {
         }
         this.http
             .post(
-                "http://srv-apps-prod/RCF_WS/WebService.asmx/GetMotherChildeLink",
+                environment.url + "GetMotherChildeLink",
                 {
                     freeSearch: _freeSearch,
                 }

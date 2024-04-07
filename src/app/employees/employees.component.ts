@@ -34,6 +34,7 @@ import {
     FormGroup,
     Validators,
 } from "@angular/forms";
+import { environment } from "src/environments/environment";
 
 export interface Employees {
     RowID: string;
@@ -136,7 +137,7 @@ export class EmployeesComponent implements OnInit {
       ////debugger;
       this.http
           .post(
-              "http://srv-apps-prod/RCF_WS/WebService.asmx/AddMemberToGroup",
+              environment.url + "AddMemberToGroup",
               {
                 MemberId: _element.RowID,
                 GroupId: this.GroupID,
@@ -192,7 +193,7 @@ export class EmployeesComponent implements OnInit {
       //  //debugger
         this.http
             .post(
-                "http://srv-apps-prod/RCF_WS/WebService.asmx/GetEmployees",
+                environment.url + "GetEmployees",
                 {
                   pageIndex: _pageIndex,
                   pageSize: _pageSize,

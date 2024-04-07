@@ -17,6 +17,7 @@ import { Time } from "@angular/common";
 import { FormControl } from "@angular/forms";
 import * as Fun from "../public.functions";
 import { MenuPerm } from "../menu-perm";
+import { environment } from "src/environments/environment";
 export interface InfectionsRow {
     CaseNumber: string;
     PatientNumber: string;
@@ -171,8 +172,8 @@ export class InfectionReportComponent implements OnInit {
         );
         this.http
             .post(
-                //"http://srv-apps-prod/RCF_WS/WebService.asmx/GetInfectionCons",
-                "http://srv-apps-prod/RCF_WS/WebService.asmx/GetInfectionCons",
+                //environment.url + "GetInfectionCons",
+                environment.url + "GetInfectionCons",
                 {
                     DocNumber: _element.DocNumber,
                 }
@@ -214,8 +215,8 @@ export class InfectionReportComponent implements OnInit {
         //debugger
         $("#loader").removeClass("d-none");
         this.http
-           //  .post("http://srv-apps-prod/RCF_WS/WebService.asmx/GetInfectionPatiantApp", {
-            .post("http://srv-apps-prod/RCF_WS/WebService.asmx/GetInfectionPatiantApp",                {
+           //  .post(environment.url + "GetInfectionPatiantApp", {
+            .post(environment.url + "GetInfectionPatiantApp",                {
 
             }
             )

@@ -21,6 +21,7 @@ import { ConfirmationDialogService } from "../confirmation-dialog/confirmation-d
 import { map, startWith } from "rxjs/operators";
 import { Observable } from "rxjs";
 import { DatePipe } from "@angular/common";
+import { environment } from "src/environments/environment";
 
 @Component({
     selector: "app-fast-covid-send-eamil",
@@ -57,8 +58,8 @@ export class FastCovidSendEamilComponent implements OnInit {
         this.send = true;
         this.http
             .post(
-               // "http://srv-apps-prod/RCF_WS/WebService.asmx/ResendPdfFastCovid",
-                "http://srv-ipracticom:8080/WebService.asmx/ResendPdfFastCovid",
+               // environment.url + "ResendPdfFastCovid",
+               environment.urlipracticom + "ResendPdfFastCovid",
                 {
                     data: this.resendEmailForm.value,
                 }

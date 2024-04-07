@@ -4,6 +4,7 @@ import { Router } from "@angular/router";
 import { HttpClient } from "@angular/common/http";
 import { FillSurveyComponent } from '../fill-survey/fill-survey.component';
 import { MatDialog } from '@angular/material/dialog';
+import { environment } from 'src/environments/environment';
 
 
 
@@ -57,7 +58,7 @@ export class FormDashboardComponent implements OnInit {
     let formNameControl = this.formSearch.controls['formNameControl'].value;
     let nurseUser = localStorage.getItem('loginUserName');
     this.http
-      .post("http://srv-apps-prod/RCF_WS/WebService.asmx/GetAllForms", {
+      .post(environment.url + "GetAllForms", {
         _formNameControl: formNameControl,
         _nurseUser: nurseUser,
       })
@@ -82,7 +83,7 @@ export class FormDashboardComponent implements OnInit {
 
   AlertToFill() {
     this.http
-      .post("http://srv-apps-prod/RCF_WS/WebService.asmx/AlertToFill", {
+      .post(environment.url + "AlertToFill", {
         _formID: "122"
       })
       .subscribe((Response) => {

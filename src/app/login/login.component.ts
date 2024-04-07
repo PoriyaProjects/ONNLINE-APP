@@ -4,6 +4,7 @@ import { MatSnackBar } from "@angular/material/snack-bar";
 import { HttpClient } from "@angular/common/http";
 import * as $ from "jquery";
 import { MenuPerm } from "../menu-perm";
+import { environment } from "src/environments/environment";
 @Component({
     selector: "app-login",
     templateUrl: "./login.component.html",
@@ -35,7 +36,7 @@ export class LoginComponent implements OnInit {
         $("#loader").removeClass("d-none");
         if (this.username && this.password) {
             this.http
-                .post("http://srv-apps-prod/RCF_WS/WebService.asmx/Login", {
+                .post(environment.url + "Login", {
                     _userName: this.username,
                     _mPassword: this.password
                 })

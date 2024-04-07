@@ -1082,7 +1082,7 @@ DepartsDataRequestAvgAllNotPara
     getWorkers(valDepart) {
         $("#loader").removeClass("d-none");
         this.http
-            .post("http://srv-apps-prod/RCF_WS/WebService.asmx/GetWorkers", {
+            .post(environment.url + "GetWorkers", {
                 _Depart: valDepart,
             })
             .subscribe((Response) => {

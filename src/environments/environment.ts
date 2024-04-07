@@ -4,6 +4,7 @@
 
 export const environment = {
   url: 'http://localhost:64964/WebService.asmx/',
+  urlipracticom: 'http://localhost:64964/WebService.asmx/',
   production: false
 };
 

@@ -35,6 +35,7 @@ import {
 import { ConfirmationDialogService } from "../confirmation-dialog/confirmation-dialog.service";
 import { SelectionModel } from "@angular/cdk/collections";
 import { MenuPerm } from "../menu-perm";
+import { environment } from "src/environments/environment";
 export interface Boxes {
     RowID: number;
     BoxID: number;
@@ -193,8 +194,8 @@ export class ScannersComponent implements OnInit {
         });
         //////debugger;
         this.http
-            //.post("http://srv-apps-prod/RCF_WS/WebService.asmx/InsertOrUpdateBox", {
-            .post("http://srv-apps-prod/RCF_WS/WebService.asmx/InsertOrUpdateBox", {
+            //.post(environment.url + "InsertOrUpdateBox", {
+            .post(environment.url + "InsertOrUpdateBox", {
                 boxes: this.BoxForm.value,
             })
             .subscribe((Response) => {
@@ -397,7 +398,7 @@ export class ScannersComponent implements OnInit {
         //http://srv-apps-prod/RCF_WS/WebService.asmx/
         //http://srv-apps-prod/RCF_WS/WebService.asmx/
         this.http
-            .post("http://srv-apps-prod/RCF_WS/WebService.asmx/GetBoxes", {
+            .post(environment.url + "GetBoxes", {
                 serachTxt: _FreeText,
                 pageIndex: _pageIndex,
                 pageSize: _pageSize,

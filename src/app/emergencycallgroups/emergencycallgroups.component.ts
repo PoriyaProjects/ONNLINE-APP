@@ -33,6 +33,7 @@ import {
 } from "@angular/forms";
 import { ConfirmationDialogService } from "../confirmation-dialog/confirmation-dialog.service";
 import { MenuPerm } from "../menu-perm";
+import { environment } from "src/environments/environment";
 export interface Poria_Group {
     RowID: number;
     GroupNumber: string;
@@ -158,7 +159,7 @@ export class EmergencycallgroupsComponent implements OnInit {
     }
     public GetMessagesGroupType(Type){
         this.http
-            .post("http://srv-apps-prod/RCF_WS/WebService.asmx/GetMessagesGroupType", {
+            .post(environment.url + "GetMessagesGroupType", {
                 Type: Type
             })
             .subscribe((Response) => {
@@ -219,7 +220,7 @@ export class EmergencycallgroupsComponent implements OnInit {
         });
         this.http
             .post(
-                "http://srv-apps-prod/RCF_WS/WebService.asmx/GetGroupMembersMobilesByType",
+                environment.url + "GetGroupMembersMobilesByType",
                 {
                     mGroupSmsToForm: this.GroupSmsToForm.value,
                 }
@@ -264,7 +265,7 @@ export class EmergencycallgroupsComponent implements OnInit {
         ////debugger;
         this.http
             .post(
-                "http://srv-apps-prod/RCF_WS/WebService.asmx/InsertOrUpdateGroup",
+                environment.url + "InsertOrUpdateGroup",
                 {
                     _GroupForm: this.GroupForm.value,
                 }
@@ -292,7 +293,7 @@ export class EmergencycallgroupsComponent implements OnInit {
         this.GroupName = _element.GroupName;
         this.http
             .post(
-                "http://srv-apps-prod/RCF_WS/WebService.asmx/GetGroupMembersMobiles",
+                environment.url + "GetGroupMembersMobiles",
                 {
                     RowID: _element.RowID,
                 }
@@ -447,7 +448,7 @@ export class EmergencycallgroupsComponent implements OnInit {
         //http://srv-apps-prod/RCF_WS/WebService.asmx/
         //http://srv-apps-prod/RCF_WS/WebService.asmx/
         this.http
-            .post("http://srv-apps-prod/RCF_WS/WebService.asmx/GetGroups", {
+            .post(environment.url + "GetGroups", {
                 serachTxt: _FreeText,
             })
             .subscribe((Response) => {

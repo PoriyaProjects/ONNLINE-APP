@@ -40,6 +40,7 @@ import { registerLocaleData } from '@angular/common';
 import localeHe from '@angular/common/locales/he';
 import { MenuPerm } from '../menu-perm';
 import { Router } from '@angular/router';
+import { environment } from 'src/environments/environment';
 
 const colors: any = {
   red: '#ad2121',
@@ -291,7 +292,7 @@ export class CardiologyCalendarComponent implements OnInit {
 
   deleteEvent(eventToDelete: CalendarEvent, day) {
     this.http
-      .post("http://srv-apps-prod/RCF_WS/WebService.asmx/DeleteEventInCalendarCardiology", {
+      .post(environment.url + "DeleteEventInCalendarCardiology", {
         _rowID: eventToDelete.patientAction.Row_ID
       })
       .subscribe((Response) => {
@@ -327,7 +328,7 @@ export class CardiologyCalendarComponent implements OnInit {
       let thisDate = that.datePipe.transform(day, 'yyyy-MM-dd');
       let thisDateEvents = that.events.filter(t => that.datePipe.transform(t.patientAction.ArrivalDate, 'yyyy-MM-dd') === thisDate);
       that.http
-        .post("http://srv-apps-prod/RCF_WS/WebService.asmx/SubmitUpdateCardiologyPatientQueue", {
+        .post(environment.url + "SubmitUpdateCardiologyPatientQueue", {
           _queueDetails: thisDateEvents
         })
         .subscribe((Response) => {
@@ -349,7 +350,7 @@ export class CardiologyCalendarComponent implements OnInit {
     let fromDate = this.datePipe.transform(this.patientSearch.controls['fromDate'].value, 'yyyy-MM-dd');
     let untilDate = this.datePipe.transform(this.patientSearch.controls['untilDate'].value, 'yyyy-MM-dd');
     this.http
-      .post("http://srv-apps-prod/RCF_WS/WebService.asmx/GetPatientsQueues", {
+      .post(environment.url + "GetPatientsQueues", {
         _searchWord: this.patientSearch.controls['searchWord'].value,
         _passportSearch: this.patientSearch.controls['passportSearch'].value,
         _fromDate: fromDate,
@@ -377,7 +378,7 @@ export class CardiologyCalendarComponent implements OnInit {
 
   getactionsList() {
     this.http
-      .post("http://srv-apps-prod/RCF_WS/WebService.asmx/GetActionsList", {
+      .post(environment.url + "GetActionsList", {
       })
       .subscribe((Response) => {
         this._actionsList = Response["d"];

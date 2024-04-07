@@ -32,6 +32,7 @@ import {
     Validators,
 } from "@angular/forms";
 import { MenuPerm } from "../menu-perm";
+import { environment } from "src/environments/environment";
 
 export interface Staff {
     DS_ROW_ID: number;
@@ -267,8 +268,7 @@ export class StaffComponent implements OnInit {
         this.rowElement.DS_ROLE_NAME = resultRoles['name'];
         //debugger
         this.http
-            .post("http://srv-ipracticom:8080/WebService.asmx/PoriaStaff", {
-           // .post("http://srv-apps-prod/RCF_WS/WebService.asmx/PoriaStaff", {
+            .post(environment.urlipracticom + "PoriaStaff", {
                 _staffName: this.staffForm.value.fullnameVal,
                 _DEPART_ID: this.staffForm.value.DS_DEPART_ID,
                 _STAFF_ROLE: this.staffForm.value.DS_STAFF_ROLE, 

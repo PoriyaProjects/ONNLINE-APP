@@ -3,6 +3,7 @@ import { Component, OnInit } from "@angular/core";
 import { Router } from "@angular/router";
 import { DualListComponent } from "angular-dual-listbox";
 import { MenuPerm } from "../menu-perm";
+import { environment } from "src/environments/environment";
 
 export interface Drug {
   DrugId: number;
@@ -46,8 +47,8 @@ export class InfectionDrugsComponent implements OnInit {
     getDataDrugFromServer(DrugStatus: string) {
         this.http
             .post(
-                "http://srv-apps-prod/RCF_WS/WebService.asmx/GetInfectionsDrugs",
-                //.post("http://srv-apps-prod/RCF_WS/WebService.asmx/getDrugsTbl",
+                environment.url + "GetInfectionsDrugs",
+                //.post(environment.url + "getDrugsTbl",
                 { DrugStatus: DrugStatus }
             )
             .subscribe((Response: Drug[]) => {
@@ -68,7 +69,7 @@ export class InfectionDrugsComponent implements OnInit {
       //return
       this.http
         .post(
-          //"http://srv-apps-prod/RCF_WS/WebService.asmx/SubmitInfectionsDrugs",
+          //environment.url + "SubmitInfectionsDrugs",
           'http://srv-apps-prod/RCF_WS/WebService.asmx/SubmitInfectionsDrugs',
           {
             DrugList: this.confirmed,

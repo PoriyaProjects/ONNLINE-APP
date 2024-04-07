@@ -614,7 +614,7 @@ export class FillSurveyComponent implements OnInit {
                                 if (Response["d"] != -1) {
                                     this.openSnackBar("!נשמר בהצלחה");
                                     this.http
-                                        // .post("http://srv-apps-prod/RCF_WS/WebService.asmx/createPdfOnServer", {
+                                        // .post(environment.url + "createPdfOnServer", {
                                         .post("http://srv-ipracticom:8080/WebService.asmx/createPdfOnServer", {
                                             CaseNumber: this.CaseNumber,
                                             FormID: survey.FormID,
@@ -625,7 +625,7 @@ export class FillSurveyComponent implements OnInit {
                                         .subscribe((Response) => {
                                             //debugger;
                                             this.http
-                                                // .post("http://srv-apps-prod/RCF_WS/WebService.asmx/LinkPdfToPatientNamer", {
+                                                // .post(environment.url + "LinkPdfToPatientNamer", {
                                                 .post("http://srv-ipracticom:756/WebService.asmx/LinkPdfToPatientNamer", {
                                                     CaseNumber:
                                                         this.CaseNumber,
@@ -763,7 +763,7 @@ export class FillSurveyComponent implements OnInit {
             NurseID = 0;
         }
         this.http
-            .post("http://srv-apps-prod/RCF_WS/WebService.asmx/GetForm", {
+            .post(environment.url + "GetForm", {
                 formFormID: urlID,
                 _nurseid: NurseID,
             })
@@ -983,7 +983,7 @@ export class FillSurveyComponent implements OnInit {
     getQuestion(urlID, personalDetails, ifContinue, NurseID) {
         let userName = localStorage.getItem("loginUserName").toLowerCase();
         this.http
-            .post("http://srv-apps-prod/RCF_WS/WebService.asmx/GetQuestion", {
+            .post(environment.url + "GetQuestion", {
                 questionsFormID: urlID,
                 isCaseNumber: this.isCaseNumber,
                 nurseid: NurseID,

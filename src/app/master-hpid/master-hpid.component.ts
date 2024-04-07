@@ -10,6 +10,7 @@ import { Router } from "@angular/router";
 import { NgbActiveModal, NgbModal } from "@ng-bootstrap/ng-bootstrap";
 import { MenuPerm } from "../menu-perm";
 import { AddOrEditMasterHpidComponent } from "./add-or-edit-master-hpid/add-or-edit-master-hpid.component";
+import { environment } from "src/environments/environment";
 export interface MasterHPID {
     RowId: string;
     HPID: string;
@@ -163,8 +164,8 @@ export class MasterHpidComponent implements OnInit {
         //http://srv-apps-prod/RCF_WS/WebService.asmx/
         //http://srv-apps-prod/RCF_WS/WebService.asmx/
         this.http
-            //.post("http://srv-apps-prod/RCF_WS/WebService.asmx/getAllMasterHPID", {
-                .post("http://srv-apps-prod/RCF_WS/WebService.asmx/getAllMasterHPID",{
+            //.post(environment.url + "getAllMasterHPID", {
+                .post(environment.url + "getAllMasterHPID",{
             })
             .subscribe((Response) => {
                 //////////debugger

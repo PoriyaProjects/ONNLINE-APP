@@ -35,6 +35,7 @@ import {
 import { MenuPerm } from "../menu-perm";
 import { Observable } from "rxjs";
 import { map, startWith } from "rxjs/operators";
+import { environment } from "src/environments/environment";
 
 export interface Protocol {
     ProtocolId: number;
@@ -213,8 +214,8 @@ export class DrugProtocolsComponent implements OnInit {
        // debugger;
         this.http
             .post(
-                "http://srv-apps-prod/RCF_WS/WebService.asmx/insertOrUpdateProtocol",
-                //"http://srv-apps-prod/RCF_WS/WebService.asmx/insertOrUpdateProtocol",
+                environment.url + "insertOrUpdateProtocol",
+                //environment.url + "insertOrUpdateProtocol",
                 {
                     drugRow: this.ProtocolForm.value,
                 }
@@ -301,7 +302,7 @@ export class DrugProtocolsComponent implements OnInit {
 
         this.http
             .post(
-                "http://srv-apps-prod/RCF_WS/WebService.asmx/GetDropDownsOptions",
+                environment.url + "GetDropDownsOptions",
                 {}
             )
             .subscribe((Response) => {
@@ -322,8 +323,8 @@ export class DrugProtocolsComponent implements OnInit {
     GetAllDrugs() {
         this.http
             .post(
-                //"http://srv-apps-prod/RCF_WS/WebService.asmx/selectNewBornUsers",
-                "http://srv-apps-prod/RCF_WS/WebService.asmx/SelectAllDrugsForProtocols",
+                //environment.url + "selectNewBornUsers",
+                environment.url + "SelectAllDrugsForProtocols",
                 {}
             )
             .subscribe((Response) => {
@@ -411,8 +412,8 @@ export class DrugProtocolsComponent implements OnInit {
             $("#loader").removeClass("d-none");
         }
         this.http
-            //.post("http://srv-apps-prod/RCF_WS/WebService.asmx/GetAllProtocols", {
-            .post("http://srv-apps-prod/RCF_WS/WebService.asmx/GetAllProtocols", {
+            //.post(environment.url + "GetAllProtocols", {
+            .post(environment.url + "GetAllProtocols", {
                 _pageIndex: _pageIndex,
                 _pageSize: _pageSize,
                 _FreeText: _FreeText

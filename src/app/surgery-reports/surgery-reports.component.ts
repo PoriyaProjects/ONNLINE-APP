@@ -38,6 +38,7 @@ import {
 } from "@angular/forms";
 import { Observable } from "rxjs";
 import { map, startWith } from "rxjs/operators";
+import { environment } from "src/environments/environment";
 
 const EXCEL_TYPE =
   "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8";
@@ -174,8 +175,7 @@ export class SurgeryReportsComponent implements OnInit {
   GetSurgeryStaff() {
     this.http
       .post(
-        "http://srv-apps-prod/RCF_WS/WebService.asmx/GetSurgeryStaff",
-        //"http://localhost:64964/WebService.asmx/GetSurgeryStaff",
+        environment.url + "GetSurgeryStaff",
         {}
       )
       .subscribe((Response) => {
@@ -265,8 +265,7 @@ export class SurgeryReportsComponent implements OnInit {
     }
     this.http
       .post(
-         "http://srv-apps-prod/RCF_WS/WebService.asmx/GetStaffSurgeries",
-        //"http://localhost:64964/WebService.asmx/GetStaffSurgeries",
+        environment.url + "GetStaffSurgeries",
         {
           _staff: this.Staff,
           _fromDate: this.startdateVal,
