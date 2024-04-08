@@ -208,7 +208,8 @@ import { HrDashboardComponent } from './hr-dashboard/hr-dashboard.component';
 import { PatientStikersComponent } from './patient-stikers/patient-stikers.component';
 import { NortonEstimateComponent } from './norton-estimate/norton-estimate.component';
 import {  CAMEstimateComponent } from './cam-estimate/cam-estimate.component';
-import {DialysisReportComponent} from './dialysis-report/dialysis-report.component'
+import {DialysisReportComponent} from './dialysis-report/dialysis-report.component';
+import { CreatePatientComponent } from './patient-stikers/create-patient/create-patient.component'
 
 
 const maskConfig: Partial<IConfig> = {
@@ -372,7 +373,8 @@ const maskConfig: Partial<IConfig> = {
     PatientStikersComponent,
     NortonEstimateComponent,
     CAMEstimateComponent,
-    DialysisReportComponent
+    DialysisReportComponent,
+    CreatePatientComponent
   ],
   imports: [
     JpTimeMaskModule,

@@ -1,0 +1,62 @@
+<div dir="rtl" class="text-right">
+    <h1 mat-dialog-title class="text-center">הוספת מטופל</h1>
+    <form (ngSubmit)="onNoClick()" [formGroup]="form">
+        <div mat-dialog-content>
+            <div class="row">
+                <div class="col-4">
+                    <mat-form-field>
+                        <mat-label>שם פרטי</mat-label>
+                        <input matInput type="text" required formControlName="FirstName">
+                    </mat-form-field>
+                </div>
+                <div class="col-4">
+                    <mat-form-field>
+                        <mat-label>שם אב</mat-label>
+                        <input matInput type="text" required formControlName="FatherName">
+                    </mat-form-field>
+                </div>
+                <div class="col-4">
+                    <mat-form-field>
+                        <mat-label>שם משפחה</mat-label>
+                        <input matInput type="text" required formControlName="LastName">
+                    </mat-form-field>
+                </div>
+                <div class="col-4">
+                    <mat-form-field>
+                        <mat-label>ת.ז</mat-label>
+                        <input type="tel" matInput required formControlName="PersonID">
+                    </mat-form-field>
+                </div>
+                <div class="col-4">
+                    <mat-form-field>
+                        <mat-label>מס' טל</mat-label>
+                        <input type="tel" matInput required formControlName="PhoneNumber">
+                    </mat-form-field>
+                </div>
+                <div class="col-4">
+                    <mat-form-field>
+                        <mat-label>כתובת</mat-label>
+                        <input type="text" matInput formControlName="Address">
+                    </mat-form-field>
+                </div>
+                <div class="col-4">
+                    <mat-form-field>
+                        <mat-label>תאריך לידה</mat-label>
+                        <input type="date" matInput required formControlName="DOB">
+                    </mat-form-field>
+                </div>
+                <div class="col-4">
+                    <label>מין</label>
+                    <br>
+                    <mat-radio-group aria-label="" required formControlName="Gender">
+                        <mat-radio-button value="1">זכר &nbsp;&nbsp;&nbsp;</mat-radio-button>
+                        <mat-radio-button value="2">נקבה &nbsp;&nbsp;&nbsp;</mat-radio-button>
+                    </mat-radio-group>
+                </div>
+            </div>
+        </div>
+        <div mat-dialog-actions class="text-left">
+            <button  mat-raised-button color="primary" type="submit" type="submit">שמור</button>
+        </div>
+    </form>
+</div>
