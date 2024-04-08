@@ -24,16 +24,15 @@
                 <mat-list role="list" class="list-of-contact">
                     <mat-spinner *ngIf="contacts.length == 0"></mat-spinner>
                     <mat-list-item role="listitem" class="list-item" *ngFor="let contact of contacts_filter"
-                        (click)="openChat(contact)">
+                        >
+                        <!-- (click)="openChat(contact)"> -->
                         <mat-icon mat-list-icon
                             [ngStyle]="{'background-color': contact.Active == '1' ? 'cornflowerblue' : 'orangered'}">account_circle</mat-icon>
                         <a href="mailto:{{contact.Email}}">
                             <mat-icon mat-list-icon
                                 [ngStyle]="{'color': contact.Active == '1' ? 'cornflowerblue' : 'orangered'}">email</mat-icon>
                         </a>
-
                         <span mat-line>{{ contact.FirstName }} {{contact.LastName}} - {{contact.CellNumber}}</span>
-                        <!-- <span mat-line class="secondary">{{ contact.status }}</span> -->
                     </mat-list-item>
                 </mat-list>
                 <!-- <mat-sidenav #drawer class="sidenav">
