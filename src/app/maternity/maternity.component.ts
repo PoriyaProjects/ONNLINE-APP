@@ -242,7 +242,7 @@ export class MaternityComponent implements OnInit {
             $("#loader").removeClass("d-none");
         });
         let pipe = new DatePipe('en-US');
-        this.maternityForm.controls['ProjectDate'].setValue(pipe.transform(this.maternityForm.controls['ProjectDate'].value, 'yyyy-MM-dd'));
+        // this.maternityForm.controls['ProjectDate'].setValue(pipe.transform(this.maternityForm.controls['ProjectDate'].value, 'yyyy-MM-dd'));
         this.maternityForm.controls['additionalProjectDate'].setValue(pipe.transform(this.maternityForm.controls['additionalProjectDate'].value, 'yyyy-MM-dd'));
         this.maternityForm.controls['ActivityRelated'].setValue(this.activityID);
         let relatedProj = this.maternityForm.controls['ActivityRelated'].value;
