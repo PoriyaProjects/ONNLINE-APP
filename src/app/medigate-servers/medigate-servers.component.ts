@@ -38,6 +38,7 @@ import { formatDate } from "@angular/common";
 import { MenuPerm } from "../menu-perm";
 import { MatDialog } from "@angular/material/dialog";
 import { DataTableComponent } from "./data-table/data-table.component";
+import { environment } from "src/environments/environment";
 
 export interface InventoryHighLevelStats {
     TotalDevices: number;
@@ -225,8 +226,8 @@ export class MedigateServersComponent implements OnInit {
         // debugger
         this.http
             .post(
-                "http://srv-apps-prod/RCF_WS/WebService.asmx/GetManufacturerDistribution",
-                //"http://srv-apps-prod/RCF_WS/WebService.asmx/GetManufacturerDistribution",
+                environment.url + "GetManufacturerDistribution",
+                //environment.url + "GetManufacturerDistribution",
                 {
                     online: this.isOnline
                 }
@@ -245,8 +246,8 @@ export class MedigateServersComponent implements OnInit {
         // debugger
         this.http
             .post(
-                "http://srv-apps-prod/RCF_WS/WebService.asmx/GetDeviceTypeFamilyDistribution",
-                //"http://srv-apps-prod/RCF_WS/WebService.asmx/GetDeviceTypeFamilyDistribution",
+                environment.url + "GetDeviceTypeFamilyDistribution",
+                //environment.url + "GetDeviceTypeFamilyDistribution",
                 {
                     online: this.isOnline
                 }
@@ -262,8 +263,8 @@ export class MedigateServersComponent implements OnInit {
         // debugger
         this.http
             .post(
-                "http://srv-apps-prod/RCF_WS/WebService.asmx/GetInventoryHighLevelStats",
-                //"http://srv-apps-prod/RCF_WS/WebService.asmx/GetInventoryHighLevelStats",
+                environment.url + "GetInventoryHighLevelStats",
+                //environment.url + "GetInventoryHighLevelStats",
                 {
                     online: this.isOnline
                 }

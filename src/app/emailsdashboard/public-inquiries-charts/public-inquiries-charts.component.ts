@@ -5,6 +5,7 @@ import { FormBuilder, FormControl, FormGroup } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar, MatSnackBarHorizontalPosition, MatSnackBarVerticalPosition } from '@angular/material/snack-bar';
 import { Router } from '@angular/router';
+import { environment } from 'src/environments/environment';
 interface Departments {
    value: string;
    viewValue: string;
@@ -186,7 +187,7 @@ export class PublicInquiriesChartsComponent implements OnInit {
       let type = this.lineSearchForm.controls['lineType'].value;
       let dept = this.lineSearchForm.controls['lineDepartments'].value;
       this.http
-         .post("http://srv-apps-prod/RCF_WS/WebService.asmx/GetLineChart", {
+         .post(environment.url + "GetLineChart", {
             _lineType: type,
             _lineDept: dept
          })
@@ -207,7 +208,7 @@ export class PublicInquiriesChartsComponent implements OnInit {
          this.openSnackBar("נא לבחור מחלקה");
       } else {
          this.http
-            .post("http://srv-apps-prod/RCF_WS/WebService.asmx/GetPieChart", {
+            .post(environment.url + "GetPieChart", {
                _pieyear: year,
                _pieDept: dept,
                _percent: percent
@@ -235,7 +236,7 @@ export class PublicInquiriesChartsComponent implements OnInit {
          this.openSnackBar("נא לבחור מחלקה");
       } else {
          this.http
-            .post("http://srv-apps-prod/RCF_WS/WebService.asmx/GetPieChart2", {
+            .post(environment.url + "GetPieChart2", {
                _pieyear2: year,
                _pieDept2: dept,
                _percent2: percent
@@ -259,7 +260,7 @@ export class PublicInquiriesChartsComponent implements OnInit {
       let year = this.barSearchForm.controls['barYears'].value;
       let dept = this.barSearchForm.controls['barDepartments'].value;
       this.http
-         .post("http://srv-apps-prod/RCF_WS/WebService.asmx/GetBarChart", {
+         .post(environment.url + "GetBarChart", {
             _baryear: year,
             _barDept: dept
          })

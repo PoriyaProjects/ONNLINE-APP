@@ -33,6 +33,7 @@ import {
     Validators,
 } from "@angular/forms";
 import { MenuPerm } from "../menu-perm";
+import { environment } from "src/environments/environment";
 
 export interface LinkToCatalogTableRowData {
     Row_ID: string;
@@ -172,7 +173,7 @@ export class DrugsnicComponent implements OnInit {
     getNamerDrugs(freeSearch, pageIndex, pageSize) {
         //////debugger
         this.http
-            .post("http://srv-apps-prod/RCF_WS/WebService.asmx/GetNamerDrugs", {
+            .post(environment.url + "GetNamerDrugs", {
                 freeSearch: freeSearch,
                 pageIndex: pageIndex,
                 pageSize: pageSize,
@@ -216,7 +217,7 @@ export class DrugsnicComponent implements OnInit {
         }
         // //////////debugger
         this.http
-            .post("http://srv-apps-prod/RCF_WS/WebService.asmx/submitConnectDrug", {
+            .post(environment.url + "submitConnectDrug", {
                 drugRow: this.drugForm.value,
             })
             .subscribe((Response) => {
@@ -353,7 +354,7 @@ export class DrugsnicComponent implements OnInit {
         }
        // //debugger
         this.http
-            .post("http://srv-apps-prod/RCF_WS/WebService.asmx/GetNICDrugs", {
+            .post(environment.url + "GetNICDrugs", {
                 freeSearch: freeSearch,
                 pageSize: pageSize,
                 pageIndex: pageIndex,

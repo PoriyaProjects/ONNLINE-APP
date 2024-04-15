@@ -3,7 +3,8 @@
 // The list of file replacements can be found in `angular.json`.
 
 export const environment = {
-  url:  'http://localhost:64964/WebService.asmx/',
+  url: 'http://localhost:64964/WebService.asmx/',
+  urlipracticom: 'http://localhost:64964/WebService.asmx/',
   production: false
 };
 

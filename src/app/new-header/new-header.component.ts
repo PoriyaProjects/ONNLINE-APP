@@ -2,6 +2,7 @@ import { HttpClient } from "@angular/common/http";
 import { Component, OnInit } from "@angular/core";
 import { Router } from "@angular/router";
 import * as $ from "jquery";
+import { environment } from "src/environments/environment";
 
 export interface Link {
   RowId: string;
@@ -53,8 +54,8 @@ export class NewHeaderComponent implements OnInit {
       $("#loader").removeClass("d-none");
         this.http
             .post(
-                //"http://srv-apps-prod/RCF_WS/WebService.asmx/GetOnnLineLinks",
-                "http://srv-apps-prod/RCF_WS/WebService.asmx/GetOnnLineLinks",
+                //environment.url + "GetOnnLineLinks",
+                environment.url + "GetOnnLineLinks",
                 {
                     user: localStorage.getItem("loginUserName") ,
                 }

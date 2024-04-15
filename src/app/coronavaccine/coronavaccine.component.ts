@@ -26,6 +26,7 @@ import {
     Validators,
 } from "@angular/forms";
 import { MenuPerm } from "../menu-perm";
+import { environment } from "src/environments/environment";
 export interface TableRow {
     EmployeeID: string;
     EmployeePhone: string;
@@ -274,7 +275,7 @@ export class CoronavaccineComponent implements OnInit {
         }
         this.http
             .post(
-                "http://srv-apps-prod/RCF_WS/WebService.asmx/SendSmsToCoronaSurvey",
+                environment.url + "SendSmsToCoronaSurvey",
                 {
                     _FullName: this.fullnameVal,
                     _id: this.idPatient,
@@ -540,7 +541,7 @@ export class CoronavaccineComponent implements OnInit {
             $("#loader").removeClass("d-none");
         }
         this.http
-            .post("http://srv-apps-prod/RCF_WS/WebService.asmx/GetAllVaccine", {
+            .post(environment.url + "GetAllVaccine", {
                 _fromDate: _startDate,
                 _toDate: _endDate,
                 _pageIndex: _pageIndex,

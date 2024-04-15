@@ -11,6 +11,7 @@ import { NgbActiveModal, NgbModal } from "@ng-bootstrap/ng-bootstrap";
 import { MenuPerm } from "../menu-perm";
 import { AddOrEditWagonsComponent } from "./add-or-edit-wagons/add-or-edit-wagons.component";
 import { ConfirmationDialogService } from "../confirmation-dialog/confirmation-dialog.service";
+import { environment } from "src/environments/environment";
 export interface Wagon {
   RowId: string;
   WagonName: string;
@@ -139,7 +140,7 @@ export class WagonComponent implements OnInit {
         if (confirmed) {
           this.http
             .post(
-              "http://srv-apps-prod/RCF_WS/WebService.asmx/DeleteWagon",
+              environment.url + "DeleteWagon",
               {
                 WagonID: element.RowId
               }
@@ -194,8 +195,7 @@ export class WagonComponent implements OnInit {
     //http://srv-apps-prod/RCF_WS/WebService.asmx/
     //http://srv-apps-prod/RCF_WS/WebService.asmx/
     this.http
-      .post("http://srv-apps-prod/RCF_WS/WebService.asmx/getAllWagons", {
-        // .post("http://localhost:64964/WebService.asmx/getAllWagons", {
+      .post(environment.url + "getAllWagons", {
       })
       .subscribe((Response) => {
         //////////debugger

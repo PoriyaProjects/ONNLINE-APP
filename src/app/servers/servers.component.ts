@@ -6,6 +6,7 @@ import { MatTableDataSource } from "@angular/material/table";
 import { Router } from "@angular/router";
 import { NgbActiveModal, NgbModal } from "@ng-bootstrap/ng-bootstrap";
 import { MenuPerm } from "../menu-perm";
+import { environment } from "src/environments/environment";
 export interface Servers {
   VMName: string;
   Hostname: string;
@@ -79,8 +80,8 @@ export class ServersComponent implements OnInit {
       }
       this.http
           .post(
-              "http://srv-apps-prod/RCF_WS/WebService.asmx/ServersTable",
-              //"http://srv-apps-prod/RCF_WS/WebService.asmx/ServersTable",
+              environment.url + "ServersTable",
+              //environment.url + "ServersTable",
               {
                  
               }

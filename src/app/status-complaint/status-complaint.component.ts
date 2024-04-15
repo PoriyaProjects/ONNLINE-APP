@@ -15,6 +15,7 @@ import { Observable } from 'rxjs';
 import { MatChipInputEvent } from '@angular/material/chips';
 import { MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
 import { COMMA, ENTER } from '@angular/cdk/keycodes';
+import { environment } from 'src/environments/environment';
 
 export interface User {
   firstname: string;
@@ -166,7 +167,7 @@ export class StatusComplaintComponent implements OnInit {
 
   getUsers() {
     this.http
-      .post("http://srv-apps-prod/RCF_WS/WebService.asmx/GetUsersForInquiries", {
+      .post(environment.url + "GetUsersForInquiries", {
 
       })
       .subscribe((Response) => {
@@ -184,7 +185,7 @@ export class StatusComplaintComponent implements OnInit {
 
   deleteMessage(messageID, ComplaintID) {
     this.http
-      .post("http://srv-apps-prod/RCF_WS/WebService.asmx/DeleteMessage", {
+      .post(environment.url + "DeleteMessage", {
         _messageID: messageID
       })
       .subscribe((Response) => {
@@ -195,7 +196,7 @@ export class StatusComplaintComponent implements OnInit {
 
   getRelevantComplaints(urlID) {
     this.http
-      .post("http://srv-apps-prod/RCF_WS/WebService.asmx/GetRelevantComplaints", {
+      .post(environment.url + "GetRelevantComplaints", {
         _urlID: urlID,
         _userName: this.UserName
       })
@@ -215,7 +216,7 @@ export class StatusComplaintComponent implements OnInit {
       this.openSnackBar("נא לבחור אחראי לשליחה");
     } else {
       this.http
-        .post("http://srv-apps-prod/RCF_WS/WebService.asmx/attachCompToUser", {
+        .post(environment.url + "attachCompToUser", {
           users: this.myControl.value,
           compId: this.complaintID,
         })
@@ -243,7 +244,7 @@ export class StatusComplaintComponent implements OnInit {
     this.messanger.controls['MessageTime'].setValue(messageTime);
     this.messanger.controls['UserName'].setValue(UserName);
     this.http
-      .post("http://srv-apps-prod/RCF_WS/WebService.asmx/ComplaintMessanger", {
+      .post(environment.url + "ComplaintMessanger", {
         _messageClass: this.messanger.value,
       })
       .subscribe((Response) => {

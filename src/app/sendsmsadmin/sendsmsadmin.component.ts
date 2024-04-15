@@ -12,6 +12,7 @@ import * as $ from "jquery";
 import { FormBuilder, FormGroup, Validators } from "@angular/forms";
 import { ConfirmationDialogService } from  "../confirmation-dialog/confirmation-dialog.service";
 import { MenuPerm } from "../menu-perm";
+import { environment } from "src/environments/environment";
 export interface Message {
     ID: number;
     Title: string;
@@ -106,7 +107,7 @@ export class SendsmsadminComponent implements OnInit {
     ngAfterViewInit(): void {}
     public GetMessagesTemp(){
         this.http
-            .post("http://srv-apps-prod/RCF_WS/WebService.asmx/GetMessagesTemp", {
+            .post(environment.url + "GetMessagesTemp", {
                 
             })
             .subscribe((Response) => {
@@ -143,7 +144,7 @@ export class SendsmsadminComponent implements OnInit {
                     $("#loader").removeClass("d-none");
                 }
                 this.http
-                .post("http://srv-apps-prod/RCF_WS/WebService.asmx/SendSMSOnLineAdmin", {
+                .post(environment.url + "SendSMSOnLineAdmin", {
                     smsText: this.sendSmsForm.value.smsText,
                     smsNumbers: this.sendSmsForm.value.smsNumbers,
                     surveyNumber: 0,

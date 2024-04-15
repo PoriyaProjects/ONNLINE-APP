@@ -8,6 +8,7 @@ import { MatSort } from '@angular/material/sort';
 import { MatPaginator } from '@angular/material/paginator';
 import { FormBuilder, FormControl, FormGroup } from '@angular/forms';
 import { DatePipe } from '@angular/common';
+import { environment } from 'src/environments/environment';
 
 @Component({
   selector: 'app-galit-points-report',
@@ -39,7 +40,7 @@ export class GalitPointsReportComponent implements OnInit {
   departmentsArray = [];
   checked = false;
   fillteredDepartmentsArray = [];
-  url = "http://srv-apps-prod/RCF_WS/WebService.asmx/";
+  url = environment.url + "";
   searchForm: FormGroup;
 
   @ViewChild(MatPaginator) paginator: MatPaginator;

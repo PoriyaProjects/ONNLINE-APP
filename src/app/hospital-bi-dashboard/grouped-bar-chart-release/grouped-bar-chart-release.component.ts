@@ -1,6 +1,7 @@
 import { Component, ElementRef, HostListener, Input, OnInit } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { FormBuilder } from '@angular/forms';
+import { environment } from 'src/environments/environment';
 
 @Component({
   selector: 'app-grouped-bar-chart-release',
@@ -138,7 +139,7 @@ export class GroupedBarChartReleaseComponent implements OnInit {
       this._releasePatient = "ספנ-א";
     }
     this.http
-      .post("http://srv-apps-prod/RCF_WS/WebService.asmx/" + url, {
+      .post(environment.url + "" + url, {
         param: this.TimeLineParam,
         deptCode: this.departParam,
         surgerydeptType: this._releasePatient,

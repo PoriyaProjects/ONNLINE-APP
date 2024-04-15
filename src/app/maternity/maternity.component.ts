@@ -35,6 +35,7 @@ import {
 import { MenuPerm } from "../menu-perm";
 import { MaternityPatients, MaternitypatientsComponent } from '../maternitypatients/maternitypatients.component';
 import * as moment from 'moment';
+import { environment } from "src/environments/environment";
 
 export interface Poria_Maternity {
     RowID: number;
@@ -128,7 +129,7 @@ export class MaternityComponent implements OnInit {
     submitted = false;
     perm: Boolean = false;
     activityID = "";
-    url = "http://srv-apps-prod/RCF_WS/WebService.asmx/";
+    url = environment.url + "";
     constructor(
         public datePipe: DatePipe,
         private _snackBar: MatSnackBar,
@@ -241,7 +242,7 @@ export class MaternityComponent implements OnInit {
             $("#loader").removeClass("d-none");
         });
         let pipe = new DatePipe('en-US');
-        this.maternityForm.controls['ProjectDate'].setValue(pipe.transform(this.maternityForm.controls['ProjectDate'].value, 'yyyy-MM-dd'));
+        // this.maternityForm.controls['ProjectDate'].setValue(pipe.transform(this.maternityForm.controls['ProjectDate'].value, 'yyyy-MM-dd'));
         this.maternityForm.controls['additionalProjectDate'].setValue(pipe.transform(this.maternityForm.controls['additionalProjectDate'].value, 'yyyy-MM-dd'));
         this.maternityForm.controls['ActivityRelated'].setValue(this.activityID);
         let relatedProj = this.maternityForm.controls['ActivityRelated'].value;
@@ -285,7 +286,7 @@ export class MaternityComponent implements OnInit {
         this.MaternityName = _element.MaternityNumber;
         this.MaternityNumber = _element.MaternityName;
         this.http
-            .post("http://srv-apps-prod/RCF_WS/WebService.asmx/GetMaternityPatientMobiles", {
+            .post(environment.url + "GetMaternityPatientMobiles", {
                 RowID: _element.RowID,
             })
             .subscribe((Response) => {

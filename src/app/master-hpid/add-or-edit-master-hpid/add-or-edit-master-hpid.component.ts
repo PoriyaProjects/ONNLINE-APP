@@ -8,6 +8,7 @@ import { MatSort } from "@angular/material/sort";
 import { MatTableDataSource } from "@angular/material/table";
 import { Router } from "@angular/router";
 import { NgbActiveModal, NgbModal } from "@ng-bootstrap/ng-bootstrap";
+import { environment } from "src/environments/environment";
 export interface MasterHPID {
   RowId: string;
   HPID: string;
@@ -94,8 +95,8 @@ export class AddOrEditMasterHpidComponent implements OnInit {
         console.log(this.serverForm.value);
         this.http
             .post(
-                //"http://srv-apps-prod/RCF_WS/WebService.asmx/insertOrUpdateMasterHPID",
-                "http://srv-apps-prod/RCF_WS/WebService.asmx/insertOrUpdateMasterHPID",
+                //environment.url + "insertOrUpdateMasterHPID",
+                environment.url + "insertOrUpdateMasterHPID",
                 {
                   mRowMasterHPID: this.serverForm.value,
                 }

@@ -26,6 +26,7 @@ import {
     Validators,
 } from "@angular/forms";
 import { MenuPerm } from "../menu-perm";
+import { environment } from "src/environments/environment";
 export interface PatientData {
     RowId: string;
     CaseNumber: string;
@@ -76,7 +77,7 @@ export class CheckpatientinsmartclosetComponent implements OnInit {
         }
         this.http
             .post(
-                "http://srv-apps-prod/RCF_WS/WebService.asmx/CheckIfPatientExist",
+                environment.url + "CheckIfPatientExist",
                 {
                     freeSearch: _freeSearch,
                 }

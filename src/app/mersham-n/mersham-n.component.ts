@@ -36,6 +36,7 @@ import {
 import { BehaviorSubject } from "rxjs";
 import { DatePipe, formatDate } from "@angular/common";
 import { MenuPerm } from "../menu-perm";
+import { environment } from "src/environments/environment";
 
 export interface Demograph {
     FIRST_NAME: string;
@@ -978,7 +979,7 @@ export class MershamNComponent implements OnInit {
                     if (this.rows.value[d].newRow == "false") {
                         this.http
                             .post(
-                                "http://srv-apps-prod/RCF_WS/WebService.asmx/DeletePresRowInside",
+                                environment.url + "DeletePresRowInside",
                                 {
                                     _rowID: this.DeleteRowId,
                                 }
@@ -1022,7 +1023,7 @@ export class MershamNComponent implements OnInit {
     getPermission() {
         this.http
             .post(
-                "http://srv-apps-prod/RCF_WS/WebService.asmx/selectPermission",
+                environment.url + "selectPermission",
                 {
                     _UserName: localStorage.getItem("loginUserName"),
                 }
@@ -1133,7 +1134,7 @@ export class MershamNComponent implements OnInit {
             $("#loader").removeClass("d-none");
         }
         this.http
-            .post("http://srv-apps-prod/RCF_WS/WebService.asmx/DeletePresRow", {
+            .post(environment.url + "DeletePresRow", {
                 _rowID: this.DeletePreRowId,
             })
             .subscribe((Response) => {
@@ -1458,9 +1459,9 @@ export class MershamNComponent implements OnInit {
             $("#loader").removeClass("d-none");
         }
         this.http
-            //.post("http://srv-apps-prod/RCF_WS/WebService.asmx/SubmitCopyPrecpiction",                {
+            //.post(environment.url + "SubmitCopyPrecpiction",                {
             .post(
-                "http://srv-apps-prod/RCF_WS/WebService.asmx/SubmitCopyPrecpiction",
+                environment.url + "SubmitCopyPrecpiction",
                 {
                     prentFromId: element.currentTarget.attributes["id"].value,
                     loginUserName: localStorage
@@ -1532,7 +1533,7 @@ export class MershamNComponent implements OnInit {
                 that.http
                     .post(
                         //"http://localhost:64964/WebService.asmx/SubmitPrecpiction",
-                        "http://srv-apps-prod/RCF_WS/WebService.asmx/SubmitPrecpiction",
+                        environment.url + "SubmitPrecpiction",
                         {
                             prentFromId: prentFromId,
                             ParentFrom: ParentFrom,
@@ -1654,7 +1655,7 @@ export class MershamNComponent implements OnInit {
         } ////////debugger
         this.http
             .post(
-                "http://srv-apps-prod/RCF_WS/WebService.asmx/SubmitPrecpictionNotToServe",
+                environment.url + "SubmitPrecpictionNotToServe",
                 {
                     status: $event,
                     patientId: _element.ROW_ID_PRE,
@@ -1743,7 +1744,7 @@ export class MershamNComponent implements OnInit {
         };
         this.http
             //.post(  "http://localhost:64964/WebService.asmx/SubmitPrecpictionNew",{
-            .post("http://srv-apps-prod/RCF_WS/WebService.asmx/SubmitPrecpictionNew",{
+            .post(environment.url + "SubmitPrecpictionNew",{
                     prentFromId: "",
                     ParentFrom: ParentFrom,
                     tableFrom: tableFrom,
@@ -1972,7 +1973,7 @@ export class MershamNComponent implements OnInit {
 
         this.http
             .post(
-                "http://srv-apps-prod/RCF_WS/WebService.asmx/GetDropDownsOptions",
+                environment.url + "GetDropDownsOptions",
                 {}
             )
             .subscribe((Response) => {
@@ -2002,7 +2003,7 @@ export class MershamNComponent implements OnInit {
             $("#loader").removeClass("d-none");
         }
         this.http
-            .post("http://srv-apps-prod/RCF_WS/WebService.asmx/GetPresRows", {
+            .post(environment.url + "GetPresRows", {
                 ID: _presID,
             })
             .subscribe((Response) => {
@@ -2219,7 +2220,7 @@ export class MershamNComponent implements OnInit {
         this.http
             .post(
               //  "http://localhost:64964/WebService.asmx/GetDemographDataNew",
-                "http://srv-apps-prod/RCF_WS/WebService.asmx/GetDemographDataNew",
+                environment.url + "GetDemographDataNew",
                 {
                     _id: _FreeText,
                     _pageIndex: _pageIndex,
@@ -2360,9 +2361,9 @@ export class MershamNComponent implements OnInit {
         // //////debugger
 
         this.http
-            //.post("http://srv-apps-prod/RCF_WS/WebService.asmx/GetAllProtocols", {
+            //.post(environment.url + "GetAllProtocols", {
             .post(
-                "http://srv-apps-prod/RCF_WS/WebService.asmx/GetAllProtocols",
+                environment.url + "GetAllProtocols",
                 {
                     _pageIndex: 0,
                     _pageSize: 1000,

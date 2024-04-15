@@ -26,6 +26,7 @@ import {
     Validators,
 } from "@angular/forms";
 import { MenuPerm } from "../menu-perm";
+import { environment } from "src/environments/environment";
 export interface TableRow {
     SurgeryID?: string;
     PatientId?: string;
@@ -233,8 +234,7 @@ export class UrgentSurgeriesComponent implements OnInit {
         });
         this.http
             .post(
-                "http://srv-apps-prod/RCF_WS/WebService.asmx/GetUrgentSurgeriesToHold",
-                //"http://srv-apps-prod/RCF_WS/WebService.asmx/GetUrgentSurgeriesToHold",
+                environment.url + "GetUrgentSurgeriesToHold",
                 {
                     SurgeryID: this.SurgeryID,
                 }
@@ -288,8 +288,8 @@ export class UrgentSurgeriesComponent implements OnInit {
         });
         this.http
             .post(
-                "http://srv-apps-prod/RCF_WS/WebService.asmx/UrgentSurgeriesSubmitNote",
-                //"http://srv-apps-prod/RCF_WS/WebService.asmx/UrgentSurgeriesSubmitNote",
+                environment.url + "UrgentSurgeriesSubmitNote",
+                
                 {
                     _noteForm: this.noteForm.value,
                     ListToHolde: this.ListToHolde,
@@ -350,8 +350,7 @@ export class UrgentSurgeriesComponent implements OnInit {
             $("#loader").removeClass("d-none");
         }
         this.http
-            .post("http://srv-apps-prod/RCF_WS/WebService.asmx/GetAllEmergencySurgeriesApp", {
-            //.post("http://srv-apps-prod/RCF_WS/WebService.asmx/GetAllEmergencySurgeriesApp",{
+            .post(environment.url + "GetAllEmergencySurgeriesApp", {            
                     _fromDate: _startDate,
                     _toDate: _endDate,
                     _pageIndex: _pageIndex,
@@ -414,8 +413,7 @@ export class UrgentSurgeriesComponent implements OnInit {
         var d = date.split("-");
         date = d[2]+"-"+d[1]+"-"+d[0];
         this.http
-            .post("http://srv-apps-prod/RCF_WS/WebService.asmx/GetSurgeriesListForToday", {
-            //.post("http://srv-apps-prod/RCF_WS/WebService.asmx/GetSurgeriesListForToday",{
+            .post(environment.url + "GetSurgeriesListForToday", {
                     date: date
                 }
             )

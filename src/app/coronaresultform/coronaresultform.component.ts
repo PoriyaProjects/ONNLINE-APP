@@ -26,6 +26,7 @@ import {
     Validators,
 } from "@angular/forms";
 import { MenuPerm } from "../menu-perm";
+import { environment } from "src/environments/environment";
 export interface CovidResult {
     L_DOB: Date;
     L_FIRST_NAME: string;
@@ -174,7 +175,7 @@ export class CoronaresultformComponent implements OnInit {
         }
         this.http
             .post(
-                "http://srv-apps-prod/RCF_WS/WebService.asmx/RunGetLastRequestResult",
+                environment.url + "RunGetLastRequestResult",
                 {
                     _ID: _ID,
                 }

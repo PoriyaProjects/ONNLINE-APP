@@ -103,12 +103,14 @@ import { ClinicsRequestsComponent } from "./clinics-requests/clinics-requests.co
 import { WagonComponent } from "./wagon/wagon.component";
 import { SwitchesComponent } from "./switches/switches.component";
 import { HrDashboardComponent } from "./hr-dashboard/hr-dashboard.component";
+import { PatientStikersComponent } from "./patient-stikers/patient-stikers.component";
 import { NortonEstimateComponent } from './norton-estimate/norton-estimate.component';
 import {CAMEstimateComponent} from './cam-estimate/cam-estimate.component';
 import {DialysisReportComponent} from './dialysis-report/dialysis-report.component';
 import {InjuryReportComponent} from './injury-report/injury-report.component';
 
 const routes: Routes = [ 
+    { path: "patientstikers", component: PatientStikersComponent },
     { path: "clinicsrequests", component: ClinicsRequestsComponent },
     { path: 'switches', component : SwitchesComponent},
     { path: "dashboard", component: DashboardComponent },

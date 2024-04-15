@@ -32,6 +32,7 @@ import {
     Validators,
 } from "@angular/forms";
 import { MenuPerm } from "../menu-perm";
+import { environment } from "src/environments/environment";
 export interface DropOption {
     value: string;
     name: string;
@@ -155,7 +156,7 @@ export class DrugsComponent implements OnInit {
     getMedGroups() {
         this.http
             .post(
-                "http://srv-apps-prod/RCF_WS/WebService.asmx/GetTbl_MedGroups",
+                environment.url + "GetTbl_MedGroups",
                 {}
             )
             .subscribe((Response) => {
@@ -226,8 +227,8 @@ export class DrugsComponent implements OnInit {
         debugger
         this.http
             .post(
-               // "http://srv-apps-prod/RCF_WS/WebService.asmx/insertOrUpdateDrug",
-                "http://srv-apps-prod/RCF_WS/WebService.asmx/insertOrUpdateDrug",
+               // environment.url + "insertOrUpdateDrug",
+                environment.url + "insertOrUpdateDrug",
                 {
                     drugRow: this.drugForm.value,
                 }
@@ -353,7 +354,7 @@ export class DrugsComponent implements OnInit {
 
         this.http
             .post(
-                "http://srv-apps-prod/RCF_WS/WebService.asmx/GetDropDownsOptions",
+                environment.url + "GetDropDownsOptions",
                 {}
             )
             .subscribe((Response) => {
@@ -376,8 +377,8 @@ export class DrugsComponent implements OnInit {
             $("#loader").removeClass("d-none");
         }
         this.http
-           // .post("http://srv-apps-prod/RCF_WS/WebService.asmx/getDrugsTbl", {
-            .post("http://srv-apps-prod/RCF_WS/WebService.asmx/getDrugsTbl", {
+           // .post(environment.url + "getDrugsTbl", {
+            .post(environment.url + "getDrugsTbl", {
                 _pageIndex: _pageIndex,
                 _pageSize: _pageSize,
                 _FreeText: _FreeText,

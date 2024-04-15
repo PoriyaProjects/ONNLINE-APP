@@ -22,6 +22,7 @@ import {
     Validators,
 } from "@angular/forms";
 import { MenuPerm } from "../menu-perm";
+import { environment } from "src/environments/environment";
 
 export interface Covid {
     CS_ROW_ID: number;
@@ -172,7 +173,7 @@ export class CoronaformComponent implements OnInit, AfterViewInit {
         }
         this.http
             .post(
-                "http://srv-apps-prod/RCF_WS/WebService.asmx/SendSmsToCoronaSurvey",
+                environment.url + "SendSmsToCoronaSurvey",
                 {
                     _FullName: this.fullnameVal,
                     _id: this.idPatient,
@@ -415,7 +416,7 @@ export class CoronaformComponent implements OnInit, AfterViewInit {
         }
         this.http
             .post(
-                "http://srv-apps-prod/RCF_WS/WebService.asmx/Covid_19_SheetApp",
+                environment.url + "Covid_19_SheetApp",
                 {
                     _fromDate: _startDate,
                     _toDate: _endDate,

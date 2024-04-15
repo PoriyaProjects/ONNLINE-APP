@@ -10,6 +10,7 @@ import * as $ from "jquery";
 import * as Fun from "../public.functions";
 import { Time } from "@angular/common";
 import { FormControl } from "@angular/forms";
+import { environment } from "src/environments/environment";
 
 export interface DataTableInterface {
     ONE_1: String;
@@ -179,7 +180,7 @@ export class HearingComponent implements OnInit {
         ////////debugger
         this.http
             .post(
-                "http://srv-apps-prod/RCF_WS/WebService.asmx/RunHearingReportApp",
+                environment.url + "RunHearingReportApp",
                 {
                     _fromDate: _startDate,
                     _toDate: _endDate

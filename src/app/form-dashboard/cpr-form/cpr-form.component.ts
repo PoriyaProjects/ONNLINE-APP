@@ -858,7 +858,7 @@ export class CprFormComponent implements OnInit {
   //   this.buffering = true;
   //   this.http
   //     .post(
-  //       "http://srv-apps-prod/RCF_WS/WebService.asmx/GetPatientDetailsByIDNumber", {
+  //       environment.url + "GetPatientDetailsByIDNumber", {
   //       _patientPassport: this.PatientPassport
   //     }
   //     )
@@ -1068,7 +1068,7 @@ export class CprFormComponent implements OnInit {
   sendCprFormEmail(id) {
     this.http
       // .post(environment.url + "SendCprFormEmail", {
-      // .post("http://srv-apps-prod/RCF_WS/WebService.asmx/SendCprFormEmail", {
+      // .post(environment.url + "SendCprFormEmail", {
       .post("http://srv-ipracticom:8080/WebService.asmx/SendCprFormEmail", {
         _userSender: this.UserName,
         users: this.usersToSend,
@@ -1157,7 +1157,7 @@ export class CprFormComponent implements OnInit {
       // .container1{margin:2px; padding: 0px 5px 0px 0px; border-style: double;}th{font-size: 14px;}</style>
       // </head><body dir="rtl">` + printContents;
       // pdfServer = pdfServer + "</body></html>";
-      // that.http.post("http://srv-apps-prod/RCF_WS/WebService.asmx/SendCprFormEmail", {
+      // that.http.post(environment.url + "SendCprFormEmail", {
       //   _userSender: that.UserName,
       //   users: that.usersToSend,
       //   _reportArrayID: id,

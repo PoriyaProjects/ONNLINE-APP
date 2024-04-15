@@ -32,6 +32,7 @@ import {
     Validators,
 } from "@angular/forms";
 import { MenuPerm } from "../menu-perm";
+import { environment } from "src/environments/environment";
 
 export interface Poria_Researches {
     RowID: number;
@@ -214,7 +215,7 @@ export class ResearchesComponent implements OnInit {
         });
         this.http
             .post(
-                "http://srv-apps-prod/RCF_WS/WebService.asmx/InsertOrUpdateResearches",
+                environment.url + "InsertOrUpdateResearches",
                 {
                     _ResearchesForm: this.ResearchesForm.value,
                 }
@@ -234,7 +235,7 @@ export class ResearchesComponent implements OnInit {
     getPermission() {
         this.http
             .post(
-                "http://srv-apps-prod/RCF_WS/WebService.asmx/getResearchPermission",
+                environment.url + "getResearchPermission",
                 {
                     _UserName: localStorage.getItem("loginUserName"),
                 }
@@ -261,7 +262,7 @@ export class ResearchesComponent implements OnInit {
 
         this.http
             .post(
-                "http://srv-apps-prod/RCF_WS/WebService.asmx/GetResearchesDepart",
+                environment.url + "GetResearchesDepart",
                 {}
             )
             .subscribe((Response) => {
@@ -400,7 +401,7 @@ export class ResearchesComponent implements OnInit {
             $("#loader").removeClass("d-none");
         }
         this.http
-            .post("http://srv-apps-prod/RCF_WS/WebService.asmx/GetResearchesTable", {
+            .post(environment.url + "GetResearchesTable", {
                 _pageIndex: _pageIndex,
                 _pageSize: _pageSize,
                 _freeText: _FreeText,

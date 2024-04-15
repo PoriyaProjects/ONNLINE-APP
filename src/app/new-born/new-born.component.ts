@@ -35,6 +35,7 @@ import {
 } from "@angular/forms";
 import { Observable } from "rxjs";
 import { map, startWith } from "rxjs/operators";
+import { environment } from "src/environments/environment";
 
 export interface NewBorn {
     RowID: number;
@@ -268,7 +269,7 @@ export class NewBornComponent implements OnInit {
         }
         this.http
             .post(
-                // "http://srv-apps-prod/RCF_WS/WebService.asmx/SaveNewBornForm",
+                // environment.url + "SaveNewBornForm",
                 "http://srv-ipracticom:8080/WebService.asmx/SaveNewBornForm",
                 {
                     _patientForm: this.patientForm.value,
@@ -299,8 +300,7 @@ export class NewBornComponent implements OnInit {
         //event.target.value
         this.http
             .post(
-                //"http://srv-apps-prod/RCF_WS/WebService.asmx/GetPersonalDetails",
-                "http://srv-ipracticom:8080/WebService.asmx/GetPersonalDetails",
+                environment.urlipracticom + "GetPersonalDetails",
                 {
                     CaseNumber: dataCasenumber,
                 }
@@ -319,7 +319,7 @@ export class NewBornComponent implements OnInit {
     selectNewBornUsers() {
         this.http
             .post(
-                //"http://srv-apps-prod/RCF_WS/WebService.asmx/selectNewBornUsers",
+                //environment.url + "selectNewBornUsers",
                 "http://srv-ipracticom:8080/WebService.asmx/selectNewBornUsers",
                 {}
             )
@@ -488,7 +488,7 @@ export class NewBornComponent implements OnInit {
         }
         this.http
             .post(
-                // "http://srv-apps-prod/RCF_WS/WebService.asmx/GetNewBornTable",
+                // environment.url + "GetNewBornTable",
                 "http://srv-ipracticom:8080/WebService.asmx/GetNewBornTable",
                 {
                     _pageIndex: _pageIndex,

@@ -36,6 +36,7 @@ import {
 import { BehaviorSubject } from "rxjs";
 import { formatDate } from "@angular/common";
 import { MenuPerm } from "../menu-perm";
+import { environment } from "src/environments/environment";
 
 export interface Demograph {
     FIRST_NAME: string;
@@ -644,7 +645,7 @@ export class MershamComponent implements OnInit {
             if (this.rows.value[d].newRow == "false") {
                 this.http
                     .post(
-                        "http://srv-apps-prod/RCF_WS/WebService.asmx/DeletePresRowInside",
+                        environment.url + "DeletePresRowInside",
                         {
                             _rowID: this.DeleteRowId,
                         }
@@ -676,7 +677,7 @@ export class MershamComponent implements OnInit {
     getPermission() {
         this.http
             .post(
-                "http://srv-apps-prod/RCF_WS/WebService.asmx/selectPermission",
+                environment.url + "selectPermission",
                 {
                     _UserName: localStorage.getItem("loginUserName"),
                 }
@@ -783,7 +784,7 @@ export class MershamComponent implements OnInit {
             $("#loader").removeClass("d-none");
         }
         this.http
-            .post("http://srv-apps-prod/RCF_WS/WebService.asmx/DeletePresRow", {
+            .post(environment.url + "DeletePresRow", {
                 _rowID: this.DeletePreRowId,
             })
             .subscribe((Response) => {
@@ -1157,9 +1158,9 @@ export class MershamComponent implements OnInit {
         debugger;
         this.http
             .post(
-                "http://srv-apps-prod/RCF_WS/WebService.asmx/SubmitPrecpiction",
+                environment.url + "SubmitPrecpiction",
                 {
-                    //.post("http://srv-apps-prod/RCF_WS/WebService.asmx/SubmitPrecpiction", {
+                    //.post(environment.url + "SubmitPrecpiction", {
                     ParentFrom: ParentFrom,
                     tableFrom: tableFrom,
                     patientId: this.ID,
@@ -1269,7 +1270,7 @@ export class MershamComponent implements OnInit {
         } ////debugger
         this.http
             .post(
-                "http://srv-apps-prod/RCF_WS/WebService.asmx/SubmitPrecpictionNotToServe",
+                environment.url + "SubmitPrecpictionNotToServe",
                 {
                     status: $event,
                     patientId: _element.ROW_ID_PRE,
@@ -1345,10 +1346,10 @@ export class MershamComponent implements OnInit {
         debugger
         this.http
             .post(
-                "http://srv-apps-prod/RCF_WS/WebService.asmx/SubmitPrecpiction",
-                //"http://srv-apps-prod/RCF_WS/WebService.asmx/SubmitPrecpiction",
+                environment.url + "SubmitPrecpiction",
+                //environment.url + "SubmitPrecpiction",
                 {
-                    //  .post("http://srv-apps-prod/RCF_WS/WebService.asmx/SubmitPrecpiction", {
+                    //  .post(environment.url + "SubmitPrecpiction", {
                     //    prentFromId: '',
                     ParentFrom: ParentFrom,
                     tableFrom: tableFrom,
@@ -1576,7 +1577,7 @@ export class MershamComponent implements OnInit {
 
         this.http
             .post(
-                "http://srv-apps-prod/RCF_WS/WebService.asmx/GetDropDownsOptions",
+                environment.url + "GetDropDownsOptions",
                 {}
             )
             .subscribe((Response) => {
@@ -1606,7 +1607,7 @@ export class MershamComponent implements OnInit {
             $("#loader").removeClass("d-none");
         }
         this.http
-            .post("http://srv-apps-prod/RCF_WS/WebService.asmx/GetPresRows", {
+            .post(environment.url + "GetPresRows", {
                 ID: _presID,
             })
             .subscribe((Response) => {
@@ -1821,7 +1822,7 @@ export class MershamComponent implements OnInit {
         }
         this.http
             .post(
-                "http://srv-apps-prod/RCF_WS/WebService.asmx/GetDemographData",
+                environment.url + "GetDemographData",
                 {
                     _id: _FreeText,
                     _pageIndex: _pageIndex,

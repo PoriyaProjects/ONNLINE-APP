@@ -7,6 +7,7 @@ import {
     ModalDismissReasons,
     NgbModalOptions,
 } from "@ng-bootstrap/ng-bootstrap";
+import { environment } from "src/environments/environment";
 export interface DepartRefoee {
     DepartName: string;
     DepartBedsNumber: number;
@@ -73,7 +74,7 @@ export class DashboardComponent implements OnInit {
     getEmployeesBirthDates() {
         let userName = localStorage.getItem("loginUserName").toLowerCase();
         this.http
-            .post("http://srv-apps-prod/RCF_WS/WebService.asmx/GetEmployeesBirthDates", {
+            .post(environment.url + "GetEmployeesBirthDates", {
                 _userName: userName
             })
             .subscribe((Response) => {
@@ -96,8 +97,8 @@ export class DashboardComponent implements OnInit {
         $("#loader").removeClass("d-none");
         this.http
             .post(
-                "http://srv-apps-prod/RCF_WS/WebService.asmx/TfosaDashBoardAppRefoee",
-                //"http://srv-apps-prod/RCF_WS/WebService.asmx/TfosaDashBoardAppRefoee",
+                environment.url + "TfosaDashBoardAppRefoee",
+                //environment.url + "TfosaDashBoardAppRefoee",
                 {
                     _depart: _Depart,
                 }

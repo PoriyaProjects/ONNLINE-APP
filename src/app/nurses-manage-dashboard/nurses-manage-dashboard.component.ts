@@ -134,7 +134,7 @@ export class NursesManageDashboardComponent implements OnInit {
       this.dialog.closeAll();
     }
     this.http
-      .post("http://srv-apps-prod/RCF_WS/WebService.asmx/ipAddressUpdate", {
+      .post(environment.url + "ipAddressUpdate", {
         _userName: this.UserName,
         IpAdress_Login: this.ipUpdate
       })
@@ -149,7 +149,7 @@ export class NursesManageDashboardComponent implements OnInit {
 
   IpAddressMonitoring() {
     this.http
-      .post("http://srv-apps-prod/RCF_WS/WebService.asmx/IpAddressMonitoring", {
+      .post(environment.url + "IpAddressMonitoring", {
         _userName: this.UserName,
         IpAdress_Login: this.ClientIP
       }).subscribe(() => {
@@ -159,7 +159,7 @@ export class NursesManageDashboardComponent implements OnInit {
 
   getBugsTable() {
     this.http
-      .post("http://srv-apps-prod/RCF_WS/WebService.asmx/GetBugsReport", {
+      .post(environment.url + "GetBugsReport", {
       })
       .subscribe((Response) => {
         this.bugData = Response["d"];
@@ -168,7 +168,7 @@ export class NursesManageDashboardComponent implements OnInit {
 
   getNewActionsTable() {
     this.http
-      .post("http://srv-apps-prod/RCF_WS/WebService.asmx/GetNewActionsTable", {
+      .post(environment.url + "GetNewActionsTable", {
       })
       .subscribe((Response) => {
         this.newActionsData = Response["d"];
@@ -177,7 +177,7 @@ export class NursesManageDashboardComponent implements OnInit {
 
   getLocalIP() {
     this.http
-      .post("http://srv-apps-prod/RCF_WS/WebService.asmx/GetLocalIPAddress", {
+      .post(environment.url + "GetLocalIPAddress", {
       })
       .subscribe((Response) => {
         var json = Response["d"];
@@ -206,7 +206,7 @@ export class NursesManageDashboardComponent implements OnInit {
       this.openSnackBar("נא למלא שדות חובה");
     } else {
       this.http
-        .post("http://srv-apps-prod/RCF_WS/WebService.asmx/ReportBugNursesSystem", {
+        .post(environment.url + "ReportBugNursesSystem", {
           _phoneNumber: this.phoneNumber,
           _reportSubject: this.reportSubject,
           _userName: this.UserName,
@@ -231,7 +231,7 @@ export class NursesManageDashboardComponent implements OnInit {
       this.actionsContent == undefined ? this.actionsContent = '' : console.log('');
       this.actionPriority == undefined ? this.actionPriority = '' : console.log('');
       this.http
-        .post("http://srv-apps-prod/RCF_WS/WebService.asmx/NewActionNursesSystem", {
+        .post(environment.url + "NewActionNursesSystem", {
           _actionPriority: this.actionPriority,
           _actionsContent: this.actionsContent,
           _userName: this.UserName,
@@ -322,7 +322,7 @@ export class NursesManageDashboardComponent implements OnInit {
 
   // NursesSystemPermission() {
   //   let userName = localStorage.getItem("loginUserName").toLowerCase();
-  //   return this.http.post("http://srv-apps-prod/RCF_WS/WebService.asmx/NursesUserPersmission", { _userName: userName, withCredentials: true }).subscribe(response => { response["d"]; this.nursesUserPermission = response["d"] });
+  //   return this.http.post(environment.url + "NursesUserPersmission", { _userName: userName, withCredentials: true }).subscribe(response => { response["d"]; this.nursesUserPermission = response["d"] });
   // }
 
   handleEvent() {
@@ -357,9 +357,13 @@ export class NursesManageDashboardComponent implements OnInit {
     window.open("https://docs.google.com/spreadsheets/d/1ztL0tg1J3pn0OfpOHjkkn9O2ylffh84YweUoFWUdHK8/edit?usp=sharing", "_blank");
   }
 
+  openGoogleSheets4() {
+    window.open("https://docs.google.com/spreadsheets/d/1XxOfVkSoooGTgCc6TBRQlgfmGU5k-8Ar_gsWyIMA4r8/edit?usp=sharing", "_blank");
+  }
+
   MonitorReports() {
     this.http
-      .post("http://srv-apps-prod/RCF_WS/WebService.asmx/GetDepartmentsDontReport", {
+      .post(environment.url + "GetDepartmentsDontReport", {
 
       })
       .subscribe((Response) => {
@@ -508,7 +512,7 @@ export class NursesManageDashboardComponent implements OnInit {
     this.newDate2 = pipe.transform(dte.toString(), 'yyyy-MM-dd');
     this.dateToDisplayString = pipe.transform(dateToDisplay.toString(), 'yyyy-MM-dd');
     this.http
-      .post("http://srv-apps-prod/RCF_WS/WebService.asmx/GetDeliveryEROccupancy", {
+      .post(environment.url + "GetDeliveryEROccupancy", {
         _datePointer: this.newDate2
       })
       .subscribe((Response) => {
@@ -534,7 +538,7 @@ export class NursesManageDashboardComponent implements OnInit {
     this.newDate = pipe.transform(dte.toString(), 'yyyy-MM-dd');
     this.dateToDisplayString = pipe.transform(dateToDisplay.toString(), 'yyyy-MM-dd');
     this.http
-      .post("http://srv-apps-prod/RCF_WS/WebService.asmx/GetEROccupancy", {
+      .post(environment.url + "GetEROccupancy", {
         _datePointer: this.newDate,
         _department: dept
       })
@@ -549,7 +553,7 @@ export class NursesManageDashboardComponent implements OnInit {
   public getDataFormServer(_Depart: string, numberOfPatients, numberOfBeds) {
     this.http
       .post(
-        "http://srv-apps-prod/RCF_WS/WebService.asmx/TfosaDashBoardApp",
+        environment.url + "TfosaDashBoardApp",
         {
           _depart: _Depart,
         }

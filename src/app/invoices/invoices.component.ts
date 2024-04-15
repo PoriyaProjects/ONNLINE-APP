@@ -18,6 +18,7 @@ import * as $ from "jquery";
 import { Time } from "@angular/common";
 import { FormControl } from '@angular/forms';
 import * as Fun from "../public.functions";
+import { environment } from "src/environments/environment";
 
 export interface Invoices {
   I_ROW_ID: number;
@@ -184,7 +185,7 @@ export class InvoicesComponent implements OnInit {
       $("#loader").removeClass("d-none");
       this.http
           .post(
-              "http://srv-apps-prod/RCF_WS/WebService.asmx/GetInvoicesApp",
+              environment.url + "GetInvoicesApp",
               {
                   _fromDate: _startDate,
                   _toDate: _endDate,

@@ -1,5 +1,6 @@
 import { Injectable } from "@angular/core";
 import { HttpClient } from "@angular/common/http";
+import { environment } from "src/environments/environment";
 
 @Injectable({
     providedIn: "root",
@@ -23,8 +24,8 @@ export class MenuPerm {
         let taht = this;
        // //debugger;
         this.http
-            //.post("http://srv-apps-prod/RCF_WS/WebService.asmx/GetPermLinkForUser", {
-            .post("http://srv-apps-prod/RCF_WS/WebService.asmx/GetPermLinkForUser", {
+            
+            .post(environment.url + "GetPermLinkForUser", {
                 UserName: this.UserName,
                 RoutName: this.RoutName,
             })

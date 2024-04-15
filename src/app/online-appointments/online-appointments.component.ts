@@ -49,6 +49,7 @@ import {
     Validators,
 } from "@angular/forms";
 import { Subject } from "rxjs";
+import { environment } from "src/environments/environment";
 
 export interface EventDay {
     Depart: string;
@@ -130,7 +131,7 @@ export class OnlineAppointmentsComponent implements OnInit {
         $("#loader").removeClass("d-none");
         this.http
             .post(
-                "http://srv-apps-prod/RCF_WS/WebService.asmx/GetAllAppointments",
+                environment.url + "GetAllAppointments",
                 {}
             )
             .subscribe((Response) => {
@@ -192,7 +193,7 @@ export class OnlineAppointmentsComponent implements OnInit {
         // //debugger
         this.http
             .post(
-                "http://srv-apps-prod/RCF_WS/WebService.asmx/GetAllDepartAppointmentsByDay",
+                environment.url + "GetAllDepartAppointmentsByDay",
                 {
                     depart: event['depart'],
                     date: this.datePipe.transform(event['start'], "yyyy-MM-dd"),

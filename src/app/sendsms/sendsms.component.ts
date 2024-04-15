@@ -32,6 +32,7 @@ import {
   Validators,
 } from "@angular/forms";
 import { MenuPerm } from "../menu-perm";
+import { environment } from "src/environments/environment";
 
 
 @Component({
@@ -109,7 +110,7 @@ export class SendsmsComponent implements OnInit {
        // ////debugger
         this.http
             .post(
-                "http://srv-apps-prod/RCF_WS/WebService.asmx/SendSMSOnLine",
+                environment.url + "SendSMSOnLine",
                 {
                     smsText: this.sendSmsForm.value.smsText,
                     smsNumbers: this.sendSmsForm.value.smsNumbers,

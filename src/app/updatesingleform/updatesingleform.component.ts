@@ -12,6 +12,7 @@ import { MatDialog, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dial
 import { ConfirmationDialogService } from '../confirmation-dialog/confirmation-dialog.service';
 import { Observable } from 'rxjs';
 import { map, startWith } from 'rxjs/operators';
+import { environment } from 'src/environments/environment';
 export interface QuestionType {
   value: string;
   viewValue: string;
@@ -537,14 +538,14 @@ export class UpdatesingleformComponent implements OnInit {
     if (!this.surveyForm.invalid) {
       if (this.urlID === 0) {
         this.http
-          .post("http://srv-apps-prod/RCF_WS/WebService.asmx/Forms", {
+          .post(environment.url + "Forms", {
             _FormValues: survey,
           })
           .subscribe((Response) => {
           });
       } else {
         this.http
-          .post("http://srv-apps-prod/RCF_WS/WebService.asmx/UpdateForm", {
+          .post(environment.url + "UpdateForm", {
             updateFormValues: survey,
           })
           .subscribe((Response) => {
@@ -560,7 +561,7 @@ export class UpdatesingleformComponent implements OnInit {
 
   getFormData(urlID) {
     this.http
-      .post("http://srv-apps-prod/RCF_WS/WebService.asmx/GetFormData", {
+      .post(environment.url + "GetFormData", {
         formFormID: urlID,
       })
       .subscribe((Response) => {
@@ -627,7 +628,7 @@ export class UpdatesingleformComponent implements OnInit {
       });
 
     this.http
-      .post("http://srv-apps-prod/RCF_WS/WebService.asmx/GetFormsDeparts", {
+      .post(environment.url + "GetFormsDeparts", {
 
       })
       .subscribe((Response) => {

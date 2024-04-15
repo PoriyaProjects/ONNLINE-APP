@@ -17,6 +17,7 @@ import { Time } from "@angular/common";
 import { FormControl } from "@angular/forms";
 import * as Fun from "../public.functions";
 import { MenuPerm } from "../menu-perm";
+import { environment } from "src/environments/environment";
 export interface Glucose {
     PGR_Sample_Number: string;
     PGR_Case_Number: string;
@@ -174,8 +175,8 @@ export class GlucoseComponent implements OnInit {
         );
         this.http
             .post(
-                "http://srv-apps-prod/RCF_WS/WebService.asmx/GetGlucoseByCaseNumber",
-                // "http://srv-apps-prod/RCF_WS/WebService.asmx/GetGlucoseByCaseNumber",
+                environment.url + "GetGlucoseByCaseNumber",
+                // environment.url + "GetGlucoseByCaseNumber",
                 {
                     CaseNumber: _element.PGR_Case_Number,
                 }
@@ -210,8 +211,8 @@ export class GlucoseComponent implements OnInit {
         );
         this.http
             .post(
-                "http://srv-apps-prod/RCF_WS/WebService.asmx/GetDocPerCaseNumber",
-                // "http://srv-apps-prod/RCF_WS/WebService.asmx/GetDocPerCaseNumber",
+                environment.url + "GetDocPerCaseNumber",
+                // environment.url + "GetDocPerCaseNumber",
                 {
                     CaseNumber: _element.PGR_Case_Number,
                 }
@@ -269,8 +270,8 @@ export class GlucoseComponent implements OnInit {
         );
         this.http
             .post(
-                "http://srv-apps-prod/RCF_WS/WebService.asmx/GetConsGlucoseByCaseNumber",
-                // "http://srv-apps-prod/RCF_WS/WebService.asmx/GetConsGlucoseByCaseNumber",
+                environment.url + "GetConsGlucoseByCaseNumber",
+                // environment.url + "GetConsGlucoseByCaseNumber",
                 {
                     CaseNumber: _element.PGR_Case_Number,
                 }
@@ -289,8 +290,8 @@ export class GlucoseComponent implements OnInit {
     public getDataFormServer(_startDate: string, _endDate: string) {
         $("#loader").removeClass("d-none");
         this.http
-            .post("http://srv-apps-prod/RCF_WS/WebService.asmx/GetGlucoseApp", {
-                // .post("http://srv-apps-prod/RCF_WS/WebService.asmx/GetGlucoseApp", {
+            .post(environment.url + "GetGlucoseApp", {
+                // .post(environment.url + "GetGlucoseApp", {
                 _fromDate: _startDate,
                 _toDate: _endDate,
             })

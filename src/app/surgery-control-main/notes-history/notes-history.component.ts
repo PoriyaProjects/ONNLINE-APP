@@ -8,6 +8,7 @@ import {
     FormArray,
 } from "@angular/forms";
 import { MatDialog, MAT_DIALOG_DATA } from "@angular/material/dialog";
+import { environment } from "src/environments/environment";
 export interface Staff {
     Department: string;
     FullName: string;
@@ -73,8 +74,7 @@ export class NotesHistoryComponent implements OnInit {
     ngOnInit(): void {
       this.http
             .post(
-                "http://srv-apps-prod/RCF_WS/WebService.asmx/GetSurgeryControlMainNotes",
-                //"http://srv-apps-prod/RCF_WS/WebService.asmx/GetSurgeryControlMainNotes",
+                environment.url + "GetSurgeryControlMainNotes",
                 {
                   RoomGroup: this.data.element.RoomGroup,
                   Department: this.data.element.Department,

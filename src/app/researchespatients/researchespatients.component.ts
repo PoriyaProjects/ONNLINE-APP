@@ -32,6 +32,7 @@ import {
     FormGroup,
     Validators,
 } from "@angular/forms";
+import { environment } from "src/environments/environment";
 
 export interface ResearchesPatients {
     RowID: number;
@@ -148,7 +149,7 @@ export class ResearchespatientsComponent implements OnInit {
         //debugger;
         this.http
             .post(
-                "http://srv-apps-prod/RCF_WS/WebService.asmx/InsertOrUpdateResearchesPatients",
+                environment.url + "InsertOrUpdateResearchesPatients",
                 {
                     _patientForm: this.patientForm.value,
                 }
@@ -289,7 +290,7 @@ export class ResearchespatientsComponent implements OnInit {
         }
         this.http
             .post(
-                "http://srv-apps-prod/RCF_WS/WebService.asmx/getResearchesPatientsTable",
+                environment.url + "getResearchesPatientsTable",
                 {
                     _pageIndex: _pageIndex,
                     _pageSize: _pageSize,

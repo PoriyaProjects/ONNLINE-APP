@@ -19,6 +19,7 @@ import { Chart } from "chart.js";
 import { Time } from "@angular/common";
 import { FormControl } from "@angular/forms";
 import * as Fun from "../public.functions";
+import { environment } from "src/environments/environment";
 export interface Surgens {
     id: string;
     name: string;
@@ -157,7 +158,7 @@ export class SurgeryComponent implements OnInit {
     getSurgens() {
         $("#loader").removeClass("d-none");
         this.http
-            .post("http://srv-apps-prod/RCF_WS/WebService.asmx/GetSurgens", {})
+            .post(environment.url + "GetSurgens", {})
             .subscribe((Response) => {
                 //// //////debugger
                 this.SurgensList = [];
@@ -309,7 +310,7 @@ export class SurgeryComponent implements OnInit {
         $("#loader").removeClass("d-none");
         this.http
             .post(
-                "http://srv-apps-prod/RCF_WS/WebService.asmx/GetSurgeryExcelFile",
+                environment.url + "GetSurgeryExcelFile",
                 {
                     _fromDate: _startDate,
                     _toDate: _endDate,
@@ -349,7 +350,7 @@ export class SurgeryComponent implements OnInit {
 
         this.http
             .post(
-                "http://srv-apps-prod/RCF_WS/WebService.asmx/getSurgeryDeparts",
+                environment.url + "getSurgeryDeparts",
                 {}
             )
             .subscribe((Response) => {
@@ -395,7 +396,7 @@ export class SurgeryComponent implements OnInit {
         //debugger
         $("#loader").removeClass("d-none");
         this.http
-            .post("http://srv-apps-prod/RCF_WS/WebService.asmx/GetSurgeries", {
+            .post(environment.url + "etSurgeries", {
                 _fromDate: _startDate,
                 _toDate: _endDate,
                 _pageIndex: _pageIndex,

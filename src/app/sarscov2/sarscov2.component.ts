@@ -26,6 +26,7 @@ import {
     Validators,
 } from "@angular/forms";
 import { MenuPerm } from "../menu-perm";
+import { environment } from "src/environments/environment";
 export interface TableRow {
     PatientID: string;
     EmployeePhone: string;
@@ -421,7 +422,7 @@ export class Sarscov2Component implements OnInit {
             $("#loader").removeClass("d-none");
         }
         this.http
-            .post("http://srv-apps-prod/RCF_WS/WebService.asmx/GetAllSarscov2", {
+            .post(environment.url + "GetAllSarscov2", {
                 _fromDate: _startDate,
                 _toDate: _endDate,
                 _pageIndex: _pageIndex,
