@@ -357,6 +357,10 @@ export class NursesManageDashboardComponent implements OnInit {
     window.open("https://docs.google.com/spreadsheets/d/1ztL0tg1J3pn0OfpOHjkkn9O2ylffh84YweUoFWUdHK8/edit?usp=sharing", "_blank");
   }
 
+  openGoogleSheets4() {
+    window.open("https://docs.google.com/spreadsheets/d/1XxOfVkSoooGTgCc6TBRQlgfmGU5k-8Ar_gsWyIMA4r8/edit?usp=sharing", "_blank");
+  }
+
   MonitorReports() {
     this.http
       .post(environment.url + "GetDepartmentsDontReport", {
