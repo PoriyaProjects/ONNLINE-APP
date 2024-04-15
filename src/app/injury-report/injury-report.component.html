@@ -1,0 +1,269 @@
+
+<div dir="rtl" [formGroup]="form">
+
+
+    <div dir="ltr" class="wrapper">
+
+        <div class="element">
+            <select disableRipple class="select-style">
+                <option value="1">פוריה</option>
+            </select>
+            <label>בית חולים </label>
+        </div>
+
+
+        <div class="element">
+            <select formControlName="measureType" class="select-style">
+                <option value="Injury">Injury</option>
+            </select>
+            <label>מדד</label>
+        </div>
+
+        <div class="element">
+            <select formControlName="selectedyear" class="select-style">
+                <option value="2023">2023</option>
+                <option value="2024">2024</option>
+            </select>
+            <label>גרסה</label>
+        </div>
+
+
+        <div class="radio">
+            <mat-radio-group name="color" formControlName="selectedPeriod">
+                <mat-radio-button value="red">רבעוני</mat-radio-button>
+                <mat-radio-button value="blue">תקופתי</mat-radio-button>
+            </mat-radio-group>
+        </div>
+
+        
+        <div class="Revaon" *ngIf="form.get('selectedPeriod')?.value === 'red'">
+            <select class="select-style" formControlName="EraChoosen">
+                <option value="1">רבעון 1 </option>
+                <option value="2">רבעון 2 </option>
+                <option value="3">רבעון 3 </option>
+                <option value="4">רבעון 4 </option>
+            </select>
+        </div>
+
+        
+
+        <mat-form-field class="datePicker" *ngIf="form.get('selectedPeriod')?.value === 'blue'">
+            <mat-label>מתאריך</mat-label>
+            <input matInput [matDatepicker]="picker1" formControlName="fromDate" (focus)="picker1.open()">
+            <mat-datepicker-toggle matIconSuffix [for]="picker1"></mat-datepicker-toggle>
+            <mat-datepicker #picker1></mat-datepicker>
+        </mat-form-field>
+
+
+        <mat-form-field class="datePicker" *ngIf="form.get('selectedPeriod')?.value === 'blue'">
+            <mat-label>עד תאריך</mat-label>
+            <input matInput [matDatepicker]="picker2" formControlName="toDate" (focus)="picker2.open()">
+            <mat-datepicker-toggle matIconSuffix [for]="picker2"></mat-datepicker-toggle>
+            <mat-datepicker #picker2></mat-datepicker>
+        </mat-form-field>
+
+
+        <div class="element">
+            <button mat-raised-button class="srch-btn" color="primary" (click)="onSearch()">הרצת דוח </button>
+        </div>
+
+        <div class="element">
+            <button mat-raised-button class="srch-btn" color="warn" (click)="onClear()">Clean</button>
+        </div>
+
+
+        <div class="example-button-container">
+            <a (click)="exportexcel()">
+                <img src="../../assets/images/excel.png" width="50px" alt="Image description">
+            </a>
+        </div>
+
+    </div> 
+
+
+
+
+    <div dir="ltr" class="wrapper">
+
+        <div class="Madad">
+            <h6>{{ dataSource.data.length > 0 ? dataSource.data.length : '' }} : מספר
+                מקרים</h6>
+        </div>
+
+        <mat-spinner *ngIf="isLoading"></mat-spinner>
+        <div *ngIf="isLoading">Loading...</div>
+
+    </div>
+
+
+
+
+
+<div class="mat-elevation-z8">
+
+    <table mat-table [dataSource]="dataSource" class="mat-elevation-z8">
+
+        <ng-container matColumnDef="PM_CASE_NUMBER">
+            <th mat-header-cell *matHeaderCellDef> PM_CASE_NUMBER </th>
+            <td mat-cell *matCellDef="let element"> {{element.PM_CASE_NUMBER}} </td>
+        </ng-container>
+
+        <ng-container matColumnDef="PM_FIRST_NAME">
+            <th mat-header-cell *matHeaderCellDef> PM_FIRST_NAME </th>
+            <td mat-cell *matCellDef="let element"> {{element.PM_FIRST_NAME}} </td>
+        </ng-container>
+
+        <ng-container matColumnDef="PM_LAST_NAME">
+            <th mat-header-cell *matHeaderCellDef> PM_LAST_NAME </th>
+            <td mat-cell *matCellDef="let element"> {{element.PM_LAST_NAME}} </td>
+        </ng-container>
+
+        <ng-container matColumnDef="PM_PATIENT_ID">
+            <th mat-header-cell *matHeaderCellDef> PM_PATIENT_ID </th>
+            <td mat-cell *matCellDef="let element"> {{element.PM_PATIENT_ID}} </td>
+        </ng-container>
+
+        <ng-container matColumnDef="PM_FATHER_NAME">
+            <th mat-header-cell *matHeaderCellDef> PM_FATHER_NAME </th>
+            <td mat-cell *matCellDef="let element"> {{element.PM_FATHER_NAME}} </td>
+        </ng-container>
+
+        <ng-container matColumnDef="Age">
+            <th mat-header-cell *matHeaderCellDef> Age </th>
+            <td mat-cell *matCellDef="let element"> {{element.Age}} </td>
+        </ng-container>
+
+        <ng-container matColumnDef="ER_Start_Date">
+            <th mat-header-cell *matHeaderCellDef> ER_Start_Date </th>
+            <td mat-cell *matCellDef="let element"> {{element.ER_Start_Date}} </td>
+        </ng-container>
+
+        <ng-container matColumnDef="ER_Start_Time">
+            <th mat-header-cell *matHeaderCellDef> ER_Start_Time </th>
+            <td mat-cell *matCellDef="let element"> {{element.ER_Start_Time}} </td>
+        </ng-container>
+
+        <ng-container matColumnDef="ER_End_Date">
+            <th mat-header-cell *matHeaderCellDef> ER_End_Date </th>
+            <td mat-cell *matCellDef="let element"> {{element.ER_End_Date}} </td>
+        </ng-container>
+
+
+        <ng-container matColumnDef="ER_End_Time">
+            <th mat-header-cell *matHeaderCellDef> ER_End_Time </th>
+            <td mat-cell *matCellDef="let element"> {{element.ER_End_Time}} </td>
+        </ng-container>
+        <ng-container matColumnDef="First_Departmint_Start_Date">
+            <th mat-header-cell *matHeaderCellDef> First_Departmint_Start_Date </th>
+            <td mat-cell *matCellDef="let element"> {{element.First_Departmint_Start_Date}} </td>
+        </ng-container>
+
+        <ng-container matColumnDef="First_Departmint_Strat_Time">
+            <th mat-header-cell *matHeaderCellDef> First_Departmint_Strat_Time </th>
+            <td mat-cell *matCellDef="let element"> {{element.First_Departmint_Strat_Time}} </td>
+        </ng-container>
+
+
+        <ng-container matColumnDef="First_Departmint_End_Date">
+            <th mat-header-cell *matHeaderCellDef> First_Departmint_End_Date </th>
+            <td mat-cell *matCellDef="let element"> {{element.First_Departmint_End_Date}} </td>
+        </ng-container>
+
+
+
+        <ng-container matColumnDef="First_Departmint_End_Time">
+            <th mat-header-cell *matHeaderCellDef> First_Departmint_End_Time </th>
+            <td mat-cell *matCellDef="let element"> {{element.First_Departmint_End_Time}} </td>
+        </ng-container>
+
+
+        <ng-container matColumnDef="DATES_IN_DEPART">
+            <th mat-header-cell *matHeaderCellDef> DATES_IN_DEPART </th>
+            <td mat-cell *matCellDef="let element"> {{element.DATES_IN_DEPART}} </td>
+        </ng-container>
+
+        <ng-container matColumnDef="DEPART">
+            <th mat-header-cell *matHeaderCellDef> DEPART </th>
+            <td mat-cell *matCellDef="let element"> {{element.DEPART}} </td>
+        </ng-container>
+
+        <ng-container matColumnDef="Diagnosis">
+            <th mat-header-cell *matHeaderCellDef> Diagnosis </th>
+            <td mat-cell *matCellDef="let element"> {{element.Diagnosis}} </td>
+        </ng-container>
+
+        <ng-container matColumnDef="ReceiveCauseDes">
+            <th mat-header-cell *matHeaderCellDef> ReceiveCauseDes </th>
+            <td mat-cell *matCellDef="let element"> {{element.ReceiveCauseDes}} </td>
+        </ng-container>
+
+        <ng-container matColumnDef="PatienComplaint">
+            <th mat-header-cell *matHeaderCellDef> PatienComplaint </th>
+            <td mat-cell *matCellDef="let element"> {{element.PatienComplaint}} </td>
+        </ng-container>
+
+        <ng-container matColumnDef="ArrivingWith">
+            <th mat-header-cell *matHeaderCellDef> ArrivingWith </th>
+            <td mat-cell *matCellDef="let element"> {{element.ArrivingWith}} </td>
+        </ng-container>
+
+        <ng-container matColumnDef="OrgHandle">
+            <th mat-header-cell *matHeaderCellDef> OrgHandle </th>
+            <td mat-cell *matCellDef="let element"> {{element.OrgHandle}} </td>
+        </ng-container>
+
+        <ng-container matColumnDef="Doctors">
+            <th mat-header-cell *matHeaderCellDef> Doctors </th>
+            <td mat-cell *matCellDef="let element"> {{element.Doctors}} </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumnsInjury"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumnsInjury;"></tr>
+    </table>
+
+    <!-- <ng-template #otherTable>
+        <table mat-table [dataSource]="dataSource" class="mat-elevation-z8">
+
+            <ng-container *ngFor="let column of displayedColumnsInjury" [matColumnDef]="column">
+                <th mat-header-cell *matHeaderCellDef> {{column}} </th>
+                <td mat-cell *matCellDef="let element"> {{element[column]}} </td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="displayedColumnsInjury"></tr>
+            <tr mat-row *matRowDef="let row; columns: displayedColumnsInjury;"></tr>
+        </table>
+    </ng-template> -->
+
+
+
+
+    <!-- <table id="excel-table" dir="rtl" mat-table [dataSource]="dataSource" class="mat-elevation-z8"
+        style="display: none; " *ngIf="dataSource && dataSource.data.length > 0; else otherTableExcel">
+
+        <ng-container *ngFor="let column of displayedColumnsInjury" [matColumnDef]="column">
+            <th mat-header-cell *matHeaderCellDef> {{column}} </th>
+            <td mat-cell *matCellDef="let element"> {{element[column]}} </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumnsInjury"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumnsInjury;"></tr>
+    </table> -->
+
+
+    <!-- <ng-template #otherTableExcel>
+        <table id="excelDialysis-table" mat-table [dataSource]="dataSource" class="mat-elevation-z8"
+            style="display: none; ">
+
+            <ng-container *ngFor="let column of displayedColumnsInjury" [matColumnDef]="column">
+                <th mat-header-cell *matHeaderCellDef> {{column}} </th>
+                <td mat-cell *matCellDef="let element"> {{element[column]}} </td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="displayedColumnsInjury"></tr>
+            <tr mat-row *matRowDef="let row; columns: displayedColumnsInjury;"></tr>
+        </table>
+    </ng-template>  -->
+
+</div>
+
+</div> 
