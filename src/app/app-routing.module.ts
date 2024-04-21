@@ -107,6 +107,7 @@ import { PatientStikersComponent } from "./patient-stikers/patient-stikers.compo
 import { NortonEstimateComponent } from './norton-estimate/norton-estimate.component';
 import {CAMEstimateComponent} from './cam-estimate/cam-estimate.component';
 import {DialysisReportComponent} from './dialysis-report/dialysis-report.component';
+import {InjuryReportComponent} from './injury-report/injury-report.component';
 
 const routes: Routes = [ 
     { path: "patientstikers", component: PatientStikersComponent },
@@ -236,7 +237,8 @@ const routes: Routes = [
     { path: "", component: LoginComponent },
     { path: "Norton", component: NortonEstimateComponent },
     { path: "CAM", component: CAMEstimateComponent },   
-    { path: "Diaysis", component: DialysisReportComponent }
+    { path: "Diaysis", component: DialysisReportComponent },
+    { path: "Injury", component: InjuryReportComponent }
 ];
 @NgModule({
     imports: [RouterModule.forRoot(routes)],
