@@ -185,7 +185,7 @@ export class PatientStikersComponent implements OnInit {
     mywindow.focus(); // necessary for IE >= 10*/
 
     mywindow.print();
-   // mywindow.close();
+    mywindow.close();
     this.loading = false;
     this.CreateNewMovment = this.fb.group({
       PersonID: ["", null],
