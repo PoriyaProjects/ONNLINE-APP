@@ -211,6 +211,9 @@ import {  CAMEstimateComponent } from './cam-estimate/cam-estimate.component';
 import {DialysisReportComponent} from './dialysis-report/dialysis-report.component';
 import { CreatePatientComponent } from './patient-stikers/create-patient/create-patient.component';
 import { SurgeriesUnclosedReportsComponent } from './surgery-reports/surgeries-unclosed-reports/surgeries-unclosed-reports.component'
+import { InjuryReportComponent } from './injury-report/injury-report.component';
+import { CreatePatientComponent } from './patient-stikers/create-patient/create-patient.component'
+
 
 
 const maskConfig: Partial<IConfig> = {
@@ -377,6 +380,8 @@ const maskConfig: Partial<IConfig> = {
     DialysisReportComponent,
     CreatePatientComponent,
     SurgeriesUnclosedReportsComponent
+    InjuryReportComponent,
+    CreatePatientComponent
   ],
   imports: [
     JpTimeMaskModule,

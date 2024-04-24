@@ -171,7 +171,7 @@ export class PatientStikersComponent implements OnInit {
     var mywindow = window.open("", "PRINT");
 
     mywindow.document.write(
-      "<html><head><style>.col-8{width:66%;float:right;}pl-20{padding-left: 20px;}p-20{padding: 0 20px;}.pos-1{position: relative;height: 124px;}.pos-1-1{padding-right: 10px;position: absolute;top: 25px;}.pos-1-2{position: absolute;top: 42px;z-index: 111;padding-right: 10px;}.pos-1-3{position: absolute;    right: -6px;top: 52px;height: 35px;overflow: hidden; }.pos-1-4{position: absolute;top: 87px;}.pos-1-5{padding-right: 16px;padding-left: 25px;position: absolute;top: 102px;}.ngx-barcode{width:100%;float:right;text-align: center}.fz-b{font-size:20px;    padding-top: 30px;}*, ::after, ::before {box-sizing: border-box;}.d-block{width:100%;float:right;}.col{width:100%;float:right;}.col-4{width:33%;float:right;}.col-6{width:50%;float:right;} .col-3{width:25%;float:right;}.text-center {text-align: center!important;}.text-right{text-align: right!important;}.text-left{text-align: left!important;}table {page-break-after: always;}.row{width:100%;float:right;}.col-6{width:50%; float:right;}</style><title>מדביקות</title>"
+      "<html><head><style>.col-8{width:66%;float:right;}pl-20{padding-left: 20px;}p-20{padding: 0 20px;}.ngx-barcode{width:100%;float:right;text-align: center}.fz-b{font-size:20px;    padding-top: 30px;}.pos-1-4{margin-top: -8px;position: relative;margin-bottom: 10px;}*, ::after, ::before {box-sizing: border-box;margin: 0;padding: 0;}.d-block{width:100%;float:right;}.col{width:100%;float:right;}.col-4{width:33%;float:right;}.col-6{width:50%;float:right;} .col-3{width:25%;float:right;}.text-center {text-align: center!important;}.text-right{text-align: right!important;}.text-left{text-align: left!important;}table {page-break-after: always;}.row{width:100%;float:right;font-weight: bold !important;}.col-6{width:50%; float:right;}td{padding-left:10px;}tr>td:last-child{padding-right:15px;}body{font-family: Arial;font-weight: bolder !important;}</style><title>מדביקות</title>"
     );
     mywindow.document.write(
       '</head><body>'
@@ -250,6 +250,9 @@ export class PatientStikersComponent implements OnInit {
             .subscribe((Response) => {
               var json = Response["d"];
               this.mPersonalDetails = json;
+              if(!this.mPersonalDetails.PersonID){
+                this.mPersonalDetails.PersonID = this.form.value.textInput
+              }
               let that = this;
               setTimeout(() => {
                 that.openPrintWindow();
@@ -264,6 +267,9 @@ export class PatientStikersComponent implements OnInit {
           }).subscribe((Response) => {
             var json = Response["d"];
             this.mPersonalDetails = json;
+            if(!this.mPersonalDetails.PersonID){
+              this.mPersonalDetails.PersonID = this.form.value.textInput
+            }
             let that = this;
             setTimeout(() => {
               that.openPrintWindow();
