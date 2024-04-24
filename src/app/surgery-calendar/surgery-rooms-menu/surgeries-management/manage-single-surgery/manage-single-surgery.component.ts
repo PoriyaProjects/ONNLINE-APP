@@ -189,7 +189,7 @@ export class ManageSingleSurgeryComponent implements OnInit {
         SurgeryRequestDepartments: this.fb.group({
           SD_Priority: new FormControl(this.data.event.SurgeryRequestDepartments.SD_Priority, null),
           SD_ROW_ID: new FormControl(this.data.event.SurgeryRequestDepartments.SD_ROW_ID, null),
-          S_DEPARTMENT: new FormControl(this.data.event.SurgeryRequestDepartments.S_DEPARTMENT, Validators.required),
+          S_DEPARTMENT: new FormControl(this.data.event.SurgeryRequestDepartments.S_DEPARTMENT, null),
           S_DEPARTMENT_NAME: new FormControl(this.data.event.SurgeryRequestDepartments.S_DEPARTMENT_NAME, null),
           S_DEPARTMENT_SHORT_DESC: new FormControl(this.data.event.SurgeryRequestDepartments.S_DEPARTMENT_SHORT_DESC, null)
         }),
