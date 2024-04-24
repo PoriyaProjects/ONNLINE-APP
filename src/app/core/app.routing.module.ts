@@ -112,6 +112,7 @@ import { PatientStikersComponent } from '../patient-stikers/patient-stikers.comp
 import { NortonEstimateComponent } from '../norton-estimate/norton-estimate.component';
 import { CAMEstimateComponent } from '../cam-estimate/cam-estimate.component';
 import {DialysisReportComponent} from '../dialysis-report/dialysis-report.component';
+import {SurgeriesUnclosedReportsComponent} from '../surgery-reports/surgeries-unclosed-reports/surgeries-unclosed-reports.component';
 
 const routes: Routes = [
   { path: "patientstikers", component: PatientStikersComponent },
@@ -228,7 +229,8 @@ const routes: Routes = [
   { path: 'hr-dashboard', component: HrDashboardComponent },
   { path: 'Norton', component: NortonEstimateComponent },
   { path: "CAM", component: CAMEstimateComponent },
-  { path: "Dialysis", component: DialysisReportComponent }
+  { path: "Dialysis", component: DialysisReportComponent },
+  { path: "Surgeries-unclosed-reports", component: SurgeriesUnclosedReportsComponent },
 ];
 
 @NgModule({
