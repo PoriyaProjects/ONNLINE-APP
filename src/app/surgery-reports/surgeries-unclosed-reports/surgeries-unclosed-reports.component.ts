@@ -70,7 +70,7 @@ export class SurgeriesUnclosedReportsComponent implements OnInit {
   @ViewChild(MatSort, { static: true }) sort: MatSort;
   horizontalPosition: MatSnackBarHorizontalPosition = "center";
   verticalPosition: MatSnackBarVerticalPosition = "top";
-  
+
   displayedColumns: string[] = [
     "CaseNumber",
     "id",
@@ -144,6 +144,21 @@ export class SurgeriesUnclosedReportsComponent implements OnInit {
         this.dataSource.paginator = this.paginator;
         this.tableLoader = false;
       });
+  }
+  fileName = 'SurgeriesWithoutPDF.xlsx';
+  exportexcel(): void {
+    setTimeout(() => {
+      /* table id is passed over here */
+      let element = document.getElementById('excel-table');
+      const ws: XLSX.WorkSheet = XLSX.utils.table_to_sheet(element);
+
+      /* generate workbook and add the worksheet */
+      const wb: XLSX.WorkBook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
+
+      /* save to file */
+      XLSX.writeFile(wb, this.fileName);
+    }, 1000);
   }
 
 }
