@@ -37,7 +37,7 @@
                                     <div class="form-group">
                                         <mat-form-field>
                                             <input matInput autocomplete="off" placeholder="עד תאריך "
-                                                (focus)="enddate.open()" required formControlName="from_date"
+                                                (focus)="enddate.open()" required formControlName="to_date"
                                                 name="enddate" [matDatepicker]="enddate" />
                                             <mat-datepicker-toggle matSuffix [for]="enddate"></mat-datepicker-toggle>
                                             <mat-datepicker #enddate></mat-datepicker>
@@ -45,8 +45,7 @@
                                     </div>
                                 </div>
                             </div>
-                            <button type="submit" class="btn   btn-link none-all btn-raised"
-                                (click)="GetUnClosedSurgeries()">
+                            <button type="submit" class="btn btn-link none-all btn-raised" (click)="exportexcel()">
                                 <img src="assets/images/excel.png" />
                             </button>
                             <button mat-raised-button type="submit" class="btn btn-primary btn-raised"
@@ -150,5 +149,29 @@
                 </div>
             </div>
         </div>
+        <table id="excel-table" dir="rtl" style="display: none;">
+            <tr>
+                <th>מס' מקרה</th>
+                <th>תעודת זהות</th>
+                <th>שם פרטי</th>
+                <th>שם משפחה</th>
+                <th>תאריך</th>
+                <th>שעה</th>
+                <th>חדר ניתוח</th>
+                <th>מחלקה</th>
+                <th>שם מנתח</th>
+            </tr>
+            <tr *ngFor="let surg of dataSource.filteredData">
+                <td> {{surg.CaseNumber}} </td>
+                <td> {{surg.Personal_ID}} </td>
+                <td> {{surg.First_Name}} </td>
+                <td> {{surg.Last_Name}} </td>
+                <td> {{surg.Action_Date}} </td>
+                <td> {{surg.Action_Time}} </td>
+                <td> {{surg.Surgery_Room}} </td>
+                <td> {{surg.Department}} </td>
+                <td> {{surg.Surgeon}} </td>
+            </tr>
+        </table>
     </div>
 </div>
