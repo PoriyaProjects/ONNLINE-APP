@@ -64,7 +64,7 @@
               <div class="d-block" *ngIf="questionCtrl.QuestionType == 'TextArea'">
                 <div class="full-width mt-3 mb-3"
                   style="white-space: pre-wrap;text-align-last: right;text-align: right;">
-                  {{questionCtrl.QuestionValue}}
+                  <b>- {{questionCtrl.QuestionValue}}</b>
                 </div>
               </div>
               <mat-card [formGroupName]="i" class="d-block" *ngIf="questionCtrl.QuestionType != 'TextArea'">
