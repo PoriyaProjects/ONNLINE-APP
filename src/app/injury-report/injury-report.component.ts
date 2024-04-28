@@ -13,6 +13,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { NgbDropdownModule } from '@ng-bootstrap/ng-bootstrap';
 import { MatDatepicker } from '@angular/material/datepicker';
 import * as XLSX from 'xlsx';
+import { cssNumber } from 'jquery';
 
 
 
@@ -91,7 +92,7 @@ export class InjuryReportComponent implements OnInit {
 
   dataSource = new MatTableDataSource<InjuryMonitor[]>();
 
- // dataSourceDialysisss = new MatTableDataSource<>();
+  // dataSourceDialysisss = new MatTableDataSource<>();
 
   displayedColumnsInjury: string[] = [
     'PM_CASE_NUMBER',
@@ -150,7 +151,7 @@ export class InjuryReportComponent implements OnInit {
   }
 
   ngOnInit(): void {
-      this.form = this.fb.group({
+    this.form = this.fb.group({
       measureType: [''],
       EraChoosen: [''],
       selectedyear: [''],
@@ -160,10 +161,11 @@ export class InjuryReportComponent implements OnInit {
       toDate: Date,
       quarterDate: Date
     });
-    console.log("init");
+    console.log("init injury");
   }
 
   fetchInjuryReport(date1: string, date2: string) {
+    this.dataSource.data = []
     this.IsInjury = true;
     this.isLoading = true; // Start loading
     console.log("fetchInjuryReport");
@@ -206,24 +208,42 @@ export class InjuryReportComponent implements OnInit {
 
 
   Injury() {
-    const quarterDate = this.form.get('quarterDate').value;
-    const fromDate = this.form.get('fromDate').value;
-    const toDate = this.form.get('toDate').value;
-    const selectedPeriod = this.form.get('selectedPeriod').value;
-    const EraChoosen = this.form.get('EraChoosen').value;
-    const selectedYear = this.form.get('selectedyear').value; // Ensure this matches your form control name exactly
+    this.dataSource.data = [];
+    let quarterDate = this.form.get('quarterDate').value;
+    let fromDate = this.form.get('fromDate').value;
+    let toDate = this.form.get('toDate').value;
+    let selectedPeriod = this.form.get('selectedPeriod').value;
+    let EraChoosen = this.form.get('EraChoosen').value;
+    let selectedYear = this.form.get('selectedyear').value; // Ensure this matches your form control name exactly
+
+   
+
+    let dateNow = new Date();
+
+    if((!(toDate instanceof Date) &&  !(fromDate instanceof Date)) || (  (toDate instanceof Date) > (fromDate instanceof Date) ) ) {
+      alert("Please enter valid dates");
+      console.log("1ssad")
+      return;
+    }
+    if(!(toDate instanceof Date)){
+      toDate = this.datePipe.transform(dateNow, 'yyyy-MM-dd');
+    }
 
     if (selectedPeriod == 'blue') {
 
-      if (fromDate && toDate) { // Check if fromDate and toDate are not 'Empty'
+      if(fromDate){
         const formattedFromDate = this.datePipe.transform(fromDate, 'yyyy-MM-dd');
         const formattedToDate = this.datePipe.transform(toDate, 'yyyy-MM-dd');
         console.log(formattedFromDate, formattedToDate); // For debugging
         this.fetchInjuryReport(formattedFromDate, formattedToDate);
-      } else {
-        console.log('Please ensure all form fields are filled out correctly.');
-      }
 
+      }else{
+        console.log("1ssad")
+        alert("Please enter valid dates");
+      }
+    
+     
+     
     }
 
     if (selectedPeriod == 'red' && EraChoosen) {
@@ -277,19 +297,19 @@ export class InjuryReportComponent implements OnInit {
         delete itemCopy['__type'];
         return itemCopy;
       });
-  
+
       const ws: XLSX.WorkSheet = XLSX.utils.json_to_sheet(dataToExport);
       const wb: XLSX.WorkBook = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
       XLSX.writeFile(wb, "Injury.xlsx");
     }
 
-  
 
-  if (this.IsInjury === false) {
-   
+
+    if (this.IsInjury === false) {
+
+    }
+
   }
-
-}
 
 }
