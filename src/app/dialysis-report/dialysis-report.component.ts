@@ -304,7 +304,7 @@ export class DialysisReportComponent implements OnInit {
       }
 
       if (this.onesCount.denominator > 0) {
-        this.percentage = Math.floor((this.onesCount.numerator / this.onesCount.denominator) * 100);;
+        this.percentage = Math.floor((this.onesCount.denominator / this.onesCount.numerator) * 100);
 
       } else {
         this.percentage = 0
@@ -327,6 +327,8 @@ export class DialysisReportComponent implements OnInit {
   }
 
   fetchPciReport(date1: string, date2: string) {
+    this.dataSource.data = [];
+    this.dataSourceDialysis.data = [];
     this.IsPci = true;
     this.isLoading = true; // Start loading
     console.log("fetchPciReport");
@@ -353,6 +355,8 @@ export class DialysisReportComponent implements OnInit {
 
 
   fetchDialysisReport(date1: string, date2: string) {
+    this.dataSource.data = [];
+    this.dataSourceDialysis.data = [];
     this.isLoading = true;
     console.log("fetchDialysisReport");
     const url = `${environment.url}FetchDialysisReport`;
@@ -548,11 +552,5 @@ export class DialysisReportComponent implements OnInit {
   }
 
 }
-
-
-
-
-
-
 
 }

@@ -37,6 +37,7 @@ mat-form-field {
 }
 
 
+
 mat-header-cell, mat-cell {
   padding-left: 0px; 
 }
@@ -52,7 +53,7 @@ mat-header-cell, mat-cell {
 
 
 table.mat-table {
-  width: 70%;
+  width: 100%;
   overflow-x: auto;
 }
 
