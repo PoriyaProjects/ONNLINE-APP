@@ -101,123 +101,123 @@
 
 <div class="mat-elevation-z8">
 
-    <table mat-table [dataSource]="dataSource" class="mat-elevation-z8">
+    <table mat-table [dataSource]="dataSource">
 
         <ng-container matColumnDef="PM_CASE_NUMBER">
-            <th mat-header-cell *matHeaderCellDef> PM_CASE_NUMBER </th>
+            <th mat-header-cell *matHeaderCellDef> מספר מקרה </th>
             <td mat-cell *matCellDef="let element"> {{element.PM_CASE_NUMBER}} </td>
         </ng-container>
 
         <ng-container matColumnDef="PM_FIRST_NAME">
-            <th mat-header-cell *matHeaderCellDef> PM_FIRST_NAME </th>
+            <th mat-header-cell *matHeaderCellDef> שם פרטי </th>
             <td mat-cell *matCellDef="let element"> {{element.PM_FIRST_NAME}} </td>
         </ng-container>
 
         <ng-container matColumnDef="PM_LAST_NAME">
-            <th mat-header-cell *matHeaderCellDef> PM_LAST_NAME </th>
+            <th mat-header-cell *matHeaderCellDef> שם משפחה </th>
             <td mat-cell *matCellDef="let element"> {{element.PM_LAST_NAME}} </td>
         </ng-container>
 
         <ng-container matColumnDef="PM_PATIENT_ID">
-            <th mat-header-cell *matHeaderCellDef> PM_PATIENT_ID </th>
+            <th mat-header-cell *matHeaderCellDef> תעודת זהות </th>
             <td mat-cell *matCellDef="let element"> {{element.PM_PATIENT_ID}} </td>
         </ng-container>
 
         <ng-container matColumnDef="PM_FATHER_NAME">
-            <th mat-header-cell *matHeaderCellDef> PM_FATHER_NAME </th>
+            <th mat-header-cell *matHeaderCellDef> שם האב </th>
             <td mat-cell *matCellDef="let element"> {{element.PM_FATHER_NAME}} </td>
         </ng-container>
 
         <ng-container matColumnDef="Age">
-            <th mat-header-cell *matHeaderCellDef> Age </th>
+            <th mat-header-cell *matHeaderCellDef> גיל </th>
             <td mat-cell *matCellDef="let element"> {{element.Age}} </td>
         </ng-container>
 
         <ng-container matColumnDef="ER_Start_Date">
-            <th mat-header-cell *matHeaderCellDef> ER_Start_Date </th>
+            <th mat-header-cell *matHeaderCellDef> תאריך כניסה למיון </th>
             <td mat-cell *matCellDef="let element"> {{element.ER_Start_Date}} </td>
         </ng-container>
 
         <ng-container matColumnDef="ER_Start_Time">
-            <th mat-header-cell *matHeaderCellDef> ER_Start_Time </th>
+            <th mat-header-cell *matHeaderCellDef> שעת כניסה למיון </th>
             <td mat-cell *matCellDef="let element"> {{element.ER_Start_Time}} </td>
         </ng-container>
 
         <ng-container matColumnDef="ER_End_Date">
-            <th mat-header-cell *matHeaderCellDef> ER_End_Date </th>
+            <th mat-header-cell *matHeaderCellDef> תאריך יציאה ממיון </th>
             <td mat-cell *matCellDef="let element"> {{element.ER_End_Date}} </td>
         </ng-container>
 
 
         <ng-container matColumnDef="ER_End_Time">
-            <th mat-header-cell *matHeaderCellDef> ER_End_Time </th>
+            <th mat-header-cell *matHeaderCellDef> שעת יציאה ממיון </th>
             <td mat-cell *matCellDef="let element"> {{element.ER_End_Time}} </td>
         </ng-container>
         <ng-container matColumnDef="First_Departmint_Start_Date">
-            <th mat-header-cell *matHeaderCellDef> First_Departmint_Start_Date </th>
+            <th mat-header-cell *matHeaderCellDef> תאריך כניסה למחלקה </th>
             <td mat-cell *matCellDef="let element"> {{element.First_Departmint_Start_Date}} </td>
         </ng-container>
 
         <ng-container matColumnDef="First_Departmint_Strat_Time">
-            <th mat-header-cell *matHeaderCellDef> First_Departmint_Strat_Time </th>
+            <th mat-header-cell *matHeaderCellDef> שעת כניסה למחלקה </th>
             <td mat-cell *matCellDef="let element"> {{element.First_Departmint_Strat_Time}} </td>
         </ng-container>
 
 
         <ng-container matColumnDef="First_Departmint_End_Date">
-            <th mat-header-cell *matHeaderCellDef> First_Departmint_End_Date </th>
+            <th mat-header-cell *matHeaderCellDef> תאריך יציאה מהמחלקה </th>
             <td mat-cell *matCellDef="let element"> {{element.First_Departmint_End_Date}} </td>
         </ng-container>
 
 
 
         <ng-container matColumnDef="First_Departmint_End_Time">
-            <th mat-header-cell *matHeaderCellDef> First_Departmint_End_Time </th>
+            <th mat-header-cell *matHeaderCellDef> שעת יציאה מהמחלקה </th>
             <td mat-cell *matCellDef="let element"> {{element.First_Departmint_End_Time}} </td>
         </ng-container>
 
 
         <ng-container matColumnDef="DATES_IN_DEPART">
-            <th mat-header-cell *matHeaderCellDef> DATES_IN_DEPART </th>
+            <th mat-header-cell *matHeaderCellDef> זמן שהייה במחלקה </th>
             <td mat-cell *matCellDef="let element"> {{element.DATES_IN_DEPART}} </td>
         </ng-container>
 
         <ng-container matColumnDef="DEPART">
-            <th mat-header-cell *matHeaderCellDef> DEPART </th>
+            <th mat-header-cell *matHeaderCellDef> מחלקה מאשפזת </th>
             <td mat-cell *matCellDef="let element"> {{element.DEPART}} </td>
         </ng-container>
 
         <ng-container matColumnDef="Diagnosis">
-            <th mat-header-cell *matHeaderCellDef> Diagnosis </th>
+            <th mat-header-cell *matHeaderCellDef> אבחנות </th>
             <td mat-cell *matCellDef="let element"> {{element.Diagnosis}} </td>
         </ng-container>
 
         <ng-container matColumnDef="ReceiveCauseDes">
-            <th mat-header-cell *matHeaderCellDef> ReceiveCauseDes </th>
+            <th mat-header-cell *matHeaderCellDef> סיבת הגעה </th>
             <td mat-cell *matCellDef="let element"> {{element.ReceiveCauseDes}} </td>
         </ng-container>
 
         <ng-container matColumnDef="PatienComplaint">
-            <th mat-header-cell *matHeaderCellDef> PatienComplaint </th>
+            <th mat-header-cell *matHeaderCellDef> תלונת המטופל </th>
             <td mat-cell *matCellDef="let element"> {{element.PatienComplaint}} </td>
         </ng-container>
 
         <ng-container matColumnDef="ArrivingWith">
-            <th mat-header-cell *matHeaderCellDef> ArrivingWith </th>
+            <th mat-header-cell *matHeaderCellDef> אופן הגעה </th>
             <td mat-cell *matCellDef="let element"> {{element.ArrivingWith}} </td>
         </ng-container>
 
         <ng-container matColumnDef="OrgHandle">
-            <th mat-header-cell *matHeaderCellDef> OrgHandle </th>
+            <th mat-header-cell *matHeaderCellDef> מוסד מטפל </th>
             <td mat-cell *matCellDef="let element"> {{element.OrgHandle}} </td>
         </ng-container>
 
         <ng-container matColumnDef="Doctors">
-            <th mat-header-cell *matHeaderCellDef> Doctors </th>
+            <th mat-header-cell *matHeaderCellDef> רופא מנתח </th>
             <td mat-cell *matCellDef="let element"> {{element.Doctors}} </td>
         </ng-container>
 
-        <tr mat-header-row *matHeaderRowDef="displayedColumnsInjury"></tr>
+        <tr mat-header-row *matHeaderRowDef="displayedColumnsInjury sticky: true"></tr>
         <tr mat-row *matRowDef="let row; columns: displayedColumnsInjury;"></tr>
     </table>
 

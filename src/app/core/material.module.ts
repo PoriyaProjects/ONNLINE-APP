@@ -12,19 +12,20 @@ import { MatMenuModule } from '@angular/material/menu';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTableModule } from '@angular/material/table';
 import { MatToolbarModule } from '@angular/material/toolbar';
-import {MatProgressBarModule} from '@angular/material/progress-bar';
+import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { FormsModule } from '@angular/forms';
-import {MatAutocompleteModule} from '@angular/material/autocomplete';
-import {MatTooltipModule} from '@angular/material/tooltip';
-import {MatFormFieldModule} from '@angular/material/form-field';
+import { MatAutocompleteModule } from '@angular/material/autocomplete';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatFormFieldModule } from '@angular/material/form-field';
+
 @NgModule({
   imports: [
     MatExpansionModule,
-    FormsModule ,
-    CommonModule, 
+    FormsModule,
+    CommonModule,
     DataTablesModule,
     MatToolbarModule,
-    MatButtonModule, 
+    MatButtonModule,
     MatCardModule,
     MatInputModule,
     MatDialogModule,
@@ -37,22 +38,22 @@ import {MatFormFieldModule} from '@angular/material/form-field';
     MatProgressSpinnerModule
   ],
   exports: [
-    FormsModule ,
+    FormsModule,
     CommonModule,
     DataTablesModule,
-    MatToolbarModule, 
+    MatToolbarModule,
     MatFormFieldModule,
-    MatButtonModule, 
-    MatCardModule, 
+    MatButtonModule,
+    MatCardModule,
     MatInputModule,
     MatAutocompleteModule,
     MatProgressBarModule,
-    MatDialogModule, 
-    MatTableModule, 
+    MatDialogModule,
+    MatTableModule,
     MatMenuModule,
     MatIconModule,
     MatProgressSpinnerModule,
     MatExpansionModule
-   ],
+  ],
 })
 export class CustomMaterialModule { }
