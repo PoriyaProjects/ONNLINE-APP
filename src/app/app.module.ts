@@ -210,7 +210,9 @@ import { NortonEstimateComponent } from './norton-estimate/norton-estimate.compo
 import {  CAMEstimateComponent } from './cam-estimate/cam-estimate.component';
 import {DialysisReportComponent} from './dialysis-report/dialysis-report.component';
 import { InjuryReportComponent } from './injury-report/injury-report.component';
-import { CreatePatientComponent } from './patient-stikers/create-patient/create-patient.component'
+import { CreatePatientComponent } from './patient-stikers/create-patient/create-patient.component';
+import { PollsComponent } from './polls/polls.component';
+import { AddPollComponent } from './polls/add-poll/add-poll.component'
 
 
 const maskConfig: Partial<IConfig> = {
@@ -376,7 +378,9 @@ const maskConfig: Partial<IConfig> = {
     CAMEstimateComponent,
     DialysisReportComponent,
     InjuryReportComponent,
-    CreatePatientComponent
+    CreatePatientComponent,
+    PollsComponent,
+    AddPollComponent
   ],
   imports: [
     JpTimeMaskModule,
