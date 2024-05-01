@@ -1,0 +1,66 @@
+<div id="page-toshow">
+    <h1 class="page-title text-center">סקרים ב- WHATSAPP</h1>
+    <div class="container-fluid">
+    </div>
+    <br />
+    <hr />
+    <div class="container-fluid pb-60">
+        <div class="row">
+            <div dir="rtl" class="col">
+                <div class="table-responsive">
+                    <div class="table-spinner-container">
+                        <!-- <mat-form-field>
+                                <input matInput (keyup)="applyFilter($event.target.value)" placeholder="חפש">
+                            </mat-form-field> -->
+                        <table
+                            class="table"
+                            mat-table
+                            [dataSource]="dataSource"
+                            id="formTable1"
+                        >                            
+                            <ng-container matColumnDef="ID">
+                                <th mat-header-cell *matHeaderCellDef>מזהה סקר</th>
+                                <td mat-cell *matCellDef="let element">
+                                    {{ element.ID }}
+                                </td>
+                            </ng-container>
+                            <ng-container matColumnDef="PollName">
+                                <th mat-header-cell *matHeaderCellDef>
+                                    שם סקר
+                                </th>
+                                <td mat-cell *matCellDef="let element" class="text-right">
+                                    {{ element.PollName }}
+                                </td>
+                            </ng-container>
+                            <ng-container matColumnDef="PollDescription">
+                                <th mat-header-cell *matHeaderCellDef>
+                                    תיאור
+                                </th>
+                                <td mat-cell *matCellDef="let element" class="text-center">
+                                    {{ element.PollDescription }}
+                                </td>
+                            </ng-container>                           
+                            
+                            <tr
+                                mat-header-row
+                                *matHeaderRowDef="displayedColumns"
+                            ></tr>
+                            <tr
+                                mat-row
+                                *matRowDef="let row; columns: displayedColumns"                                
+                            ></tr>
+                        </table>
+                    </div>
+                    <!-- PAGINATION -->
+                    <mat-paginator
+                        [length]="resultsLength"
+                        [pageSizeOptions]="[5, 10, 20, 50, 100]"
+                        [pageSize]="10"
+                        showFirstLastButtons
+                        (page)="getPaginatorData($event)"
+                    ></mat-paginator>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

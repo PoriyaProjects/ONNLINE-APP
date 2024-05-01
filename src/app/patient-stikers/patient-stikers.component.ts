@@ -4,10 +4,12 @@ import { MatSnackBar, MatSnackBarHorizontalPosition, MatSnackBarVerticalPosition
 import { Router } from '@angular/router';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { MenuPerm } from '../menu-perm';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
 import { environment } from "src/environments/environment";
 import { MatDialog } from '@angular/material/dialog';
 import { CreatePatientComponent } from './create-patient/create-patient.component';
+import { Observable } from 'rxjs';
+import { map, startWith } from 'rxjs/operators';
 export interface DialogData {
   Gender: string;
   PhoneNumber: string;
@@ -52,10 +54,15 @@ export interface PersonalDetails {
   styleUrls: ['./patient-stikers.component.css']
 })
 export class PatientStikersComponent implements OnInit {
+  departs: any[] = [];
+  seodedeparts: any[] = [];
   form: FormGroup;
-
+  checked = false;
+  indeterminate = false;
+  departsfiltered: Observable<any[]>;
+  seodedepartsfiltered: Observable<any[]>;
   @ViewChild("stickers") stickers: ElementRef;
-
+  labelPosition: 'before' | 'after' = 'after';
   CreateNewMovment: FormGroup;
   mPersonalDetails: PersonalDetails = {
     PatientNumber: "",
@@ -107,6 +114,14 @@ export class PatientStikersComponent implements OnInit {
     }, 2000);
     // //////debugger;
   }
+  private _filterseode(value: string): any[] {
+    const filterValue = value.toLowerCase();
+    return this.seodedeparts.filter(option => option.DepartID.toLowerCase().indexOf(filterValue) === 0);
+  }
+  private _filterdepart(value: string): any[] {
+    const filterValue = value.toLowerCase();
+    return this.departs.filter(option => option.DepartID.toLowerCase().indexOf(filterValue) === 0);
+  }
   openDialog(): void {
     this.mPersonalDetails = this.form.value.textInput
     const dialogRef = this.dialog.open(CreatePatientComponent, {
@@ -116,6 +131,8 @@ export class PatientStikersComponent implements OnInit {
 
     dialogRef.afterClosed().subscribe((result: PersonalDetails) => {
       this.loading = true;
+      result.Depart = this.form.value.depart;
+      result.SeodeDepart = this.form.value.seodeDepart;
       if (result?.FirstName)
         this.http.post(environment.url + "createMovmentAtPatientMovment", {
           personalDetails: result
@@ -133,6 +150,8 @@ export class PatientStikersComponent implements OnInit {
     });
   }
   ngOnInit(): void {
+    this.getNamerDepatrs();
+
     this.CreateNewMovment = this.fb.group({
       PersonID: ["", null],
       PatientNumber: ["", null],
@@ -141,8 +160,8 @@ export class PatientStikersComponent implements OnInit {
       FirstName: ["", null],
       LastName: ["", null],
       FatherName: ["", null],
-      Depart: ["\u05de-\u05e4\u05e0\u05d9", null],
-      SeodeDepart: ["\u05e1\u05de-\u05db\u05dc", null],
+      Depart: ["", null],
+      SeodeDepart: ["", null],
       DOB: ["", null],
       Address: ["", null],
       PhoneNumber: ["", null],
@@ -164,8 +183,23 @@ export class PatientStikersComponent implements OnInit {
     })
     this.form = this.fb.group({
       option: ['1', Validators.required],
-      textInput: ['', Validators.required]
+      textInput: ['', Validators.required],
+      depart: ['', null],
+      seodeDepart: ['', null],
     });
+    let departCont = this.form.get('depart') as FormControl;
+    let seodeDepartCont = this.form.get('seodeDepart') as FormControl;
+    this.departsfiltered = departCont.valueChanges.pipe(
+      startWith(''),
+      map(value => this._filterdepart(value))
+    );
+    this.seodedepartsfiltered = seodeDepartCont.valueChanges.pipe(
+      startWith(''),
+      map(value => this._filterseode(value))
+    );
+  }
+  changePos() {
+    this.checked = !this.checked
   }
   openPrintWindow() {
     var mywindow = window.open("", "PRINT");
@@ -195,8 +229,8 @@ export class PatientStikersComponent implements OnInit {
       FirstName: ["", null],
       LastName: ["", null],
       FatherName: ["", null],
-      Depart: ["\u05de-\u05e4\u05e0\u05d9", null],
-      SeodeDepart: ["\u05e1\u05de-\u05db\u05dc", null],
+      Depart: ["", null],
+      SeodeDepart: ["", null],
       DOB: ["", null],
       Address: ["", null],
       PhoneNumber: ["", null],
@@ -220,15 +254,22 @@ export class PatientStikersComponent implements OnInit {
   submitForm() {
     if (this.form.valid) {
       console.log('Form submitted:', this.form.value);
+      //return
       this.loading = true;
       // You can perform any further actions like sending the form data to a backend service.
 
       //this.http.post("http://localhost/RCF_WS/WebService.asmx/findPatientByIDToCreateNewMove", {
       this.http.post(environment.url + "findPatientByIDToCreateNewMove", {
-        PatientId: this.form.value.textInput
+        PatientId: this.form.value.textInput,
+        depart: this.form.value.depart,
+        seodeDepart: this.form.value.seodeDepart
       }).subscribe((t: any) => {
         var i = t.d;
+        if (this.form.value.depart != '') {
+          i.depart = this.form.value.depart
+          i.seodeDepart = this.form.value.seodeDepart
 
+        }
         if (!i.FirstName) {
           this._snackBar.open("מטופל לא קיים", "", {
             duration: 2500,
@@ -245,12 +286,14 @@ export class PatientStikersComponent implements OnInit {
               //"http://srv-ipracticom:8080/WebService.asmx/GetPersonalDetails",
               {
                 CaseNumber: i.CaseNumber,
+                depart: this.form.value.depart,
+                seodeDepart: this.form.value.seodeDepart
               }
             )
             .subscribe((Response) => {
               var json = Response["d"];
               this.mPersonalDetails = json;
-              if(!this.mPersonalDetails.PersonID){
+              if (!this.mPersonalDetails.PersonID) {
                 this.mPersonalDetails.PersonID = this.form.value.textInput
               }
               let that = this;
@@ -267,7 +310,7 @@ export class PatientStikersComponent implements OnInit {
           }).subscribe((Response) => {
             var json = Response["d"];
             this.mPersonalDetails = json;
-            if(!this.mPersonalDetails.PersonID){
+            if (!this.mPersonalDetails.PersonID) {
               this.mPersonalDetails.PersonID = this.form.value.textInput
             }
             let that = this;
@@ -280,5 +323,37 @@ export class PatientStikersComponent implements OnInit {
       })
 
     }
+  }
+  getNamerDepatrs() {
+    this.http
+      .post(
+        environment.url + "GetNamerDepatrs",
+        //"http://srv-ipracticom:8080/WebService.asmx/GetPersonalDetails",
+        {
+          type: 'R',
+        }
+      )
+      .subscribe((Response) => {
+        //debugger
+        var json = Response["d"];
+        this.departs = json;
+
+        //debugger;
+      });
+    this.http
+      .post(
+        environment.url + "GetNamerDepatrs",
+        //"http://srv-ipracticom:8080/WebService.asmx/GetPersonalDetails",
+        {
+          type: 'S',
+        }
+      )
+      .subscribe((Response) => {
+        //debugger
+        var json = Response["d"];
+        this.seodedeparts = json;
+
+        //debugger;
+      });
   }
 }
