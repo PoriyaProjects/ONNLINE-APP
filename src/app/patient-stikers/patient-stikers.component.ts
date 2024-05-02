@@ -200,6 +200,9 @@ export class PatientStikersComponent implements OnInit {
   }
   changePos() {
     this.checked = !this.checked
+    if(!this.checked){
+      this.form.reset();
+    }
   }
   openPrintWindow() {
     var mywindow = window.open("", "PRINT");
