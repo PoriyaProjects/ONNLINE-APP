@@ -131,8 +131,14 @@ export class PatientStikersComponent implements OnInit {
 
     dialogRef.afterClosed().subscribe((result: PersonalDetails) => {
       this.loading = true;
-      result.Depart = this.form.value.depart;
-      result.SeodeDepart = this.form.value.seodeDepart;
+      if (this.form.value.depart) {
+        result.Depart = this.form.value?.depart;
+      }
+      if (this.form.value.seodeDepart) {
+        result.SeodeDepart = this.form.value?.seodeDepart;
+      }
+
+
       if (result?.FirstName)
         this.http.post(environment.url + "createMovmentAtPatientMovment", {
           personalDetails: result
@@ -200,8 +206,9 @@ export class PatientStikersComponent implements OnInit {
   }
   changePos() {
     this.checked = !this.checked
-    if(!this.checked){
-      this.form.reset();
+    if (!this.checked) {
+      this.form.get("depart").patchValue("");
+      this.form.get("seodeDepart").patchValue("");
     }
   }
   openPrintWindow() {
