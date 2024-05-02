@@ -30,6 +30,7 @@ import {
     Validators,
 } from "@angular/forms";
 import { MenuPerm } from "../menu-perm";
+import { environment } from "src/environments/environment";
 
 export interface Depart {
     D_ROW_ID: number;
@@ -83,11 +84,12 @@ export class PoriadepartsComponent implements OnInit {
     ) {
         mMenuPerm.setRoutName("poriadeparts");
         setTimeout(() => {
-            if(!mMenuPerm.getHasPerm()){
+            if (!mMenuPerm.getHasPerm()) {
                 localStorage.clear();
                 this.router.navigate(["login"]);
             }
-        }, 2000);}
+        }, 2000);
+    }
     @Input()
     foo: string = "bar";
     startdateVal: string;
@@ -112,9 +114,9 @@ export class PoriadepartsComponent implements OnInit {
     ngOnInit(): void {
         this.fullnameVal = "";
         this.active_sheet = "0";
-        if(this.active_sheet == "0"){
+        if (this.active_sheet == "0") {
             this.active_sheet_bool = false;
-        }else{
+        } else {
             this.active_sheet_bool = true;
         }
         this.sms_text = "";
@@ -131,12 +133,12 @@ export class PoriadepartsComponent implements OnInit {
             rowIdVal: ["", false],
         });
 
-       
+
         this.getReport(this);
     }
-    openLink(element: any){
-      //  //debugger
-        window.open("https://poria.is-great.org/clicktothank/?id="+element.D_SHEET_ID, "_blank");
+    openLink(element: any) {
+        //  //debugger
+        window.open("https://poria.is-great.org/clicktothank/?id=" + element.D_SHEET_ID, "_blank");
     }
     openSnackBar() {
         this._snackBar.open("נשמר בהצלחה", "", {
@@ -154,43 +156,43 @@ export class PoriadepartsComponent implements OnInit {
         if (this.departsForm.invalid) {
             return;
         }
-       
+
         this.rowElement.D_NAME = this.departsForm.value.fullnameVal;
         this.rowElement.D_ROW_ID = this.departsForm.value.rowIdVal;
         this.rowElement.D_SHEET_ID = this.departsForm.value.idSheet;
-        if( this.active_sheet == "0"){
+        if (this.active_sheet == "0") {
             this.active_sheet = "לא";
-        }else{
+        } else {
             this.active_sheet = "כן";
         }
         this.rowElement.D_SEND_SMS = this.active_sheet;
-        if( this.active_sheet == "לא"){
+        if (this.active_sheet == "לא") {
             this.active_sheet = "0";
-        }else{
+        } else {
             this.active_sheet = "1";
         }
         this.rowElement.D_SMS_TEXT = this.departsForm.value.sms_text;
         ////debugger
         this.http
-            .post("http://srv-ipracticom:8080/WebService.asmx/PoriaDeparts", {
+            .post(environment.urlipracticom + "PoriaDeparts", {
                 _departName: this.departsForm.value.fullnameVal,
                 _departStatus: 1,
                 _sheetId: this.departsForm.value.idSheet,
                 _rowId: this.departsForm.value.rowIdVal,
-                _sendSms:  this.active_sheet,
+                _sendSms: this.active_sheet,
                 _smsText: this.departsForm.value.sms_text,
                 SEODE_NAME: this.departsForm.value.SEODE_NAME,
             })
             .subscribe((Response) => {
                 var json = Response["d"].split(", ");;
                 ////debugger       
-                if(" UPDATE" != json[3]){
+                if (" UPDATE" != json[3]) {
                     this.rowElement.D_NAME = json[0];
                     this.rowElement.D_SHEET_ID = json[1];
                     this.rowElement.D_ROW_ID = json[2];
-                    if( json[4] == "0"){
+                    if (json[4] == "0") {
                         json[4] = "לא";
-                    }else{
+                    } else {
                         json[4] = "כן";
                     }
                     this.rowElement.D_SEND_SMS = json[3];
@@ -199,10 +201,10 @@ export class PoriadepartsComponent implements OnInit {
                     this.dataSource = new MatTableDataSource<any>(this.TABLE_DATA);
                     this.resultsLength = this.resultsLength + 1;
                 }
-              
-                 
+
+
                 //var vars = json.split
-               // ////debugger;
+                // ////debugger;
                 // ////debugger 888888
                 this.openSnackBar();
             });
@@ -210,10 +212,10 @@ export class PoriadepartsComponent implements OnInit {
         //alert('SUCCESS!! :-)\n\n' + JSON.stringify(this.departsForm.value, null, 4));
         this.modalService.dismissAll();
     }
-    changeActive($event){
-        if($event.checked){
+    changeActive($event) {
+        if ($event.checked) {
             this.active_sheet = "1";
-        }else{
+        } else {
             this.active_sheet = "0";
         }
     }
@@ -225,23 +227,23 @@ export class PoriadepartsComponent implements OnInit {
         this.idSheet = _element.D_SHEET_ID;
         this.active_sheet = _element.D_SEND_SMS;
         ////debugger
-        if(this.active_sheet == "0" || this.active_sheet == null || this.active_sheet == "לא" || this.active_sheet == "" ){
+        if (this.active_sheet == "0" || this.active_sheet == null || this.active_sheet == "לא" || this.active_sheet == "") {
             this.active_sheet_bool = false;
-        }else{
+        } else {
             this.active_sheet_bool = true;
         }
         this.sms_text = _element.D_SMS_TEXT;
         this.departsForm = this.formBuilder.group({
             fullnameVal: [this.fullnameVal, Validators.required],
             SEODE_NAME: [_element.SEODE_NAME, Validators.required],
-            active_sheet: [ this.active_sheet_bool, false],
+            active_sheet: [this.active_sheet_bool, false],
             sms_text: [this.sms_text, Validators.required],
             idSheet: [this.idSheet, false],
             rowIdVal: [this.rowIdVal, false],
         });
-        if( this.active_sheet == "0"){
+        if (this.active_sheet == "0") {
             this.active_sheet = "לא";
-        }else{
+        } else {
             this.active_sheet = "כן";
         }
         this.modalService.open(content, this.modalOptions).result.then(
@@ -277,7 +279,7 @@ export class PoriadepartsComponent implements OnInit {
     open(content, _type, _element) {
         //$('#free_text').text(_element.FreeText);
         //////debugger
-        
+
         this.rowElement = {
             D_ROW_ID: 0,
             D_SHEET_ID: '-1',
@@ -287,7 +289,7 @@ export class PoriadepartsComponent implements OnInit {
             D_SEND_SMS: '',
             D_SMS_TEXT: ''
         };
-         
+
         this.fullnameVal = "";
         this.idSheet = "-1";
         this.rowIdVal = "0";
@@ -324,7 +326,7 @@ export class PoriadepartsComponent implements OnInit {
         }
     }
 
-    ngAfterViewInit(): void {}
+    ngAfterViewInit(): void { }
     getPaginatorData(event: PageEvent) {
         //console.log(this.paginator.pageIndex);
 
@@ -348,7 +350,7 @@ export class PoriadepartsComponent implements OnInit {
         }
         this.http
             .post(
-                "http://srv-ipracticom:8080/WebService.asmx/GetPoriaDeparts",
+                environment.urlipracticom + "/GetPoriaDeparts",
                 {
                     _pageIndex: _pageIndex,
                     _pageSize: _pageSize,
@@ -362,9 +364,9 @@ export class PoriadepartsComponent implements OnInit {
                 //////debugger
                 for (var i = 0; i < DepartsData.length; i++) {
                     //////debugger
-                    if( DepartsData[i].D_SEND_SMS == "0"){
+                    if (DepartsData[i].D_SEND_SMS == "0") {
                         DepartsData[i].D_SEND_SMS = "לא";
-                    }else{
+                    } else {
                         DepartsData[i].D_SEND_SMS = "כן";
                     }
                     this.TABLE_DATA.push({

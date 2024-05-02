@@ -213,6 +213,8 @@ import { CreatePatientComponent } from './patient-stikers/create-patient/create-
 import { SurgeriesUnclosedReportsComponent } from './surgery-reports/surgeries-unclosed-reports/surgeries-unclosed-reports.component'
 import { InjuryReportComponent } from './injury-report/injury-report.component';
 import { WhatsappDepartmentsDashboardComponent } from './whatsapp-departments-dashboard/whatsapp-departments-dashboard.component';
+import { PollsComponent } from './polls/polls.component';
+import { AddPollComponent } from './polls/add-poll/add-poll.component'
 
 
 
@@ -383,6 +385,8 @@ const maskConfig: Partial<IConfig> = {
     InjuryReportComponent,
     CreatePatientComponent,
     WhatsappDepartmentsDashboardComponent
+    PollsComponent,
+    AddPollComponent
   ],
   imports: [
     JpTimeMaskModule,
