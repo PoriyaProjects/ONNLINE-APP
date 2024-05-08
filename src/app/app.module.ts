@@ -384,7 +384,7 @@ const maskConfig: Partial<IConfig> = {
     SurgeriesUnclosedReportsComponent,
     InjuryReportComponent,
     CreatePatientComponent,
-    WhatsappDepartmentsDashboardComponent
+    WhatsappDepartmentsDashboardComponent,
     PollsComponent,
     AddPollComponent
   ],
