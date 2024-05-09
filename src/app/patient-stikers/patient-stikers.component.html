@@ -70,7 +70,7 @@
                                     }}&nbsp;&nbsp;&nbsp;</span>
                             </div>
                             <div class="ngx-barcode  pos-1-3">
-                                <ngx-barcode [bc-font-size]="13" [bc-height]="32"
+                                <ngx-barcode [bc-font-size]="8" [bc-height]="15"
                                     [bc-value]="mPersonalDetails.CaseNumber" [bc-display-value]="false"></ngx-barcode>
                             </div>
                             <div class="row  pos-1-4">
@@ -95,7 +95,7 @@
                 </tr>
                 <tr dir="rtl">
                     <td *ngFor="let number of [0,1,2];">
-                        <div class="d-block">
+                        <div class="d-block " style="margin-top:-10px">
                             <div class="row p-20">
                                 <span class="col">{{ mPersonalDetails.LastName }}
                                     {{ mPersonalDetails.FirstName }}</span>
