@@ -57,10 +57,23 @@ mat-icon{
 
 .row.chat{
   margin: 4px 0px 4px 0px;
+  padding-top: 10px;
 }
 
 .message-sent {
   background-color: #dcf8c6;
+  /* align-self: flex-end; */ /* Remove or modify this line */
+  border-style: outset;
+  /* margin: 4px 0px 4px 0px; */
+  padding: 10px;
+  border-radius: 10px;
+  /* width: 50%; */
+  /* float: left; */ /* Remove this line */
+  text-align: right;
+}
+
+.message-sent-system {
+  background-color: #d1d3ce;
   /* align-self: flex-end; */ /* Remove or modify this line */
   border-style: outset;
   /* margin: 4px 0px 4px 0px; */

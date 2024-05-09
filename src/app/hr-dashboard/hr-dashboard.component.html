@@ -1,5 +1,5 @@
 <!-- app.component.html -->
-
+<h3 class="page-title text-center" dir="rtl">מערכת ציפי - שם משתמש: {{user_name}}</h3>
 <mat-sidenav-container dir="rtl">
     <mat-sidenav-content class="sidenav-content">
         <mat-toolbar color="primary">
@@ -24,7 +24,7 @@
                 <mat-list role="list" class="list-of-contact">
                     <mat-spinner *ngIf="contacts.length == 0"></mat-spinner>
                     <mat-list-item role="listitem" class="list-item" *ngFor="let contact of contacts_filter"
-                        >
+                        (click)="openChat(contact)">
                         <!-- (click)="openChat(contact)"> -->
                         <mat-icon mat-list-icon
                             [ngStyle]="{'background-color': contact.Active == '1' ? 'cornflowerblue' : 'orangered'}">account_circle</mat-icon>
@@ -86,7 +86,7 @@
                     <div class="row chat" *ngFor="let message of currentContact.WhatsApp_Bot_Convesations"
                         [ngStyle]="{'border-top': message.Step === '5' ? '2px dotted black' : '', 'margin-top': message.Step === '5' ? '25px' : '0px'}">
                         <div
-                            [ngClass]="{'message-sent': message.From_ServiceEmployee == 'True', 'message-received': message.From_ServiceEmployee == 'False'}">
+                            [ngClass]="{'message-sent-system': message.From_ServiceEmployee == 'True' && message.Employee_Name === '', 'message-sent': message.From_ServiceEmployee == 'True', 'message-received': message.From_ServiceEmployee == 'False'}">
                             <div *ngIf="message.IfFileMessage == 'True'">
                                 <img src="{{message.Message_Text}}" width="200" />
                                 <mat-icon mat-list-icon style="color: yellowgreen;float: left;cursor: pointer;"
