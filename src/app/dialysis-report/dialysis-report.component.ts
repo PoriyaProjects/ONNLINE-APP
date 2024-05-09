@@ -115,6 +115,40 @@ export interface DialysisReport {
 
 }
 
+export interface cabgMonitor {
+
+  Measurment_ID: string;
+  Hospital_ID: string;
+  Department_ID: string;
+  Patient_ID: string;
+  Patientbikoret_ID: string;
+  ID_Types: string;
+  Case_Number: string;
+  Birth_Year: string;
+  Gender: string;
+  Adress_Street: string;
+  Adress_House: string;
+  Adress_CityName: string;
+  CityCode: string;
+  SES: string;
+  Insurance_Provider: string;
+  DischargeHosp: string;
+  Hosp_Date: string;
+  Discharge_Date: string;
+  Dept_Discharge: string;
+  Death_Date: string;
+  Procedure_ICD: string;
+  SurgeryStart_Date: string;
+  Statin_Recomand: string;
+  Statin_Name: string;
+  Statin_Dose: string;
+  Statin_Contra: string;
+  Remarks: string;
+  Numerator: string;
+  Denominator: string;
+
+}
+
 
 @Component({
   selector: 'app-dialysis-report',
@@ -126,6 +160,7 @@ export class DialysisReportComponent implements OnInit {
 
   isLoading = false;
   IsPci = false;
+  IsCABG = false;
   selectedPeriodType: string = ''; // Stores the selected period type
   selectedQuarter: string = ''; // Stores the selected quarter
   quarters: any[] = []; // Stores the quarter options
@@ -150,13 +185,12 @@ export class DialysisReportComponent implements OnInit {
     }
   }
 
-
   selectedColor: string = '';
-
 
   options = [
     { value: 'Dialysis', label: 'Dialysis' },
-    { value: 'PCI', label: 'PCI' }
+    { value: 'PCI', label: 'PCI' },
+    { value: 'CABG', label: 'CABG' }
   ];
 
   selectedValue: string = ''; // Initially empty or you can set a default value
@@ -165,11 +199,9 @@ export class DialysisReportComponent implements OnInit {
     this.selectedValue = value;
   }
 
-
-
   dataSource = new MatTableDataSource<PciMonitor[]>();
-
   dataSourceDialysis = new MatTableDataSource<DialysisReport[]>();
+  dataSourceCABG = new MatTableDataSource<cabgMonitor[]>();
 
   displayedColumnsPci: string[] = [
     'Measurment_ID',
@@ -202,7 +234,7 @@ export class DialysisReportComponent implements OnInit {
     'Trombolitic_Therapy',
     'Remarks',
     'Numerator',
-    'denominator'
+    'Denominator'
   ]
 
   displayedColumnsDialysis: string[] = [
@@ -267,6 +299,40 @@ export class DialysisReportComponent implements OnInit {
     'denominator'
   ]
 
+
+  displayedColumnsCABG: string[] = [
+    'Measurment_ID',
+    'Hospital_ID',
+    'Department_ID',
+    'Patient_ID',
+    'Patientbikoret_ID',
+    'ID_Types',
+    'Case_Number',
+    'Birth_Year',
+    'Gender',
+    'Adress_Street',
+    'Adress_House',
+    'Adress_CityName',
+    'CityCode',
+    'SES',
+    'Insurance_Provider',
+    'DischargeHosp',
+    'Hosp_Date',
+    'Discharge_Date',
+    'Dept_Discharge',
+    'Death_Date',
+    'Procedure_ICD',
+    'SurgeryStart_Date',
+    'Statin_Recomand',
+    'Statin_Name',
+    'Statin_Dose',
+    'Statin_Contra',
+    'Remarks',
+    'Numerator',
+    'Denominator'
+  ]
+
+
   form: any;
 
   constructor(
@@ -279,39 +345,58 @@ export class DialysisReportComponent implements OnInit {
 
 
   prepareDataForExcelExport(dataSource: any[]) {
-   
+
     let modifiedData = JSON.parse(JSON.stringify(dataSource));
     modifiedData.forEach(row => {
       if (row['Hospital_ID']) {
-       
+
         row['Hospital_ID'] = `${row['Hospital_ID']}`;
       }
     });
-  
+
     return modifiedData;
   }
-  
+
 
   countOnes(data) {
+    const measureType = this.form.get('measureType').value; // Accessing the measureType value
+    console.log("in_count");
     data.forEach(item => {
 
-      if (item.Numerator == '1') {
+      if (item.Numerator === '1') {
+        console.log("Numerator");
         this.onesCount.numerator += 1;
       }
-      if (item.denominator == '1') {
-        // Assuming you also want to count '1's in the denominator
+      if (item.Denominator === '1') {
+        console.log("denominator");
         this.onesCount.denominator += 1;
       }
-
-      if (this.onesCount.denominator > 0) {
-        this.percentage = Math.floor((this.onesCount.denominator / this.onesCount.numerator) * 100);
-
-      } else {
-        this.percentage = 0
-      }
     });
+    
+    console.log("this.onesCount.numerator",this.onesCount.numerator);
+    console.log("this.onesCount.denominator",this.onesCount.denominator);
+    if (this.onesCount.denominator > 0) {
+      console.log(">0");
+  
+      if (measureType == 'Dialysis') {
+        this.percentage = Math.floor((this.onesCount.denominator / this.onesCount.numerator) * 100);
+      }
+      if (measureType == 'Pci' ) {
+        this.percentage = Math.floor((this.onesCount.numerator / this.onesCount.denominator) * 100);
+      }
+      if ( measureType == 'CABG') {
+        console.log("helolo")
+        console.log(this.onesCount.denominator);
+        console.log(this.onesCount.numerator);
+        this.percentage = Math.floor((this.onesCount.numerator / this.onesCount.denominator) * 100);
+      }
+  
+    } else {
+      console.log("<0");
+      this.percentage = 0
+    }
   }
-
+  
   ngOnInit(): void {
     this.form = this.fb.group({
       measureType: [''],
@@ -329,6 +414,7 @@ export class DialysisReportComponent implements OnInit {
   fetchPciReport(date1: string, date2: string) {
     this.dataSource.data = [];
     this.dataSourceDialysis.data = [];
+    this.dataSourceCABG.data = [];
     this.IsPci = true;
     this.isLoading = true; // Start loading
     console.log("fetchPciReport");
@@ -357,6 +443,7 @@ export class DialysisReportComponent implements OnInit {
   fetchDialysisReport(date1: string, date2: string) {
     this.dataSource.data = [];
     this.dataSourceDialysis.data = [];
+    this.dataSourceCABG.data = [];
     this.isLoading = true;
     console.log("fetchDialysisReport");
     const url = `${environment.url}FetchDialysisReport`;
@@ -379,6 +466,36 @@ export class DialysisReportComponent implements OnInit {
     });
   }
 
+  fetchCABGReport(date1: string, date2: string) {
+    this.dataSource.data = [];
+    this.dataSourceDialysis.data = [];
+    this.dataSourceCABG.data = [];
+    this.IsCABG = true;
+    this.isLoading = true; // Start loading
+    console.log("fetchCABGReport");
+    const url = `${environment.url}FetchCabgReport`;
+    let data = {
+      DateIn: date1,
+      DateOut: date2
+    }
+    console.log(data.DateIn, data.DateOut);
+    this.http.post<cabgMonitor[]>(url, data).subscribe({
+      next: (records: any) => {
+        console.log("data", records.d);
+        this.dataSourceCABG.data = records.d;
+        console.log(this.dataSourceCABG.data);
+        this.isLoading = false; // Stop loading upon success
+        console.log("sendtocount");
+        this.countOnes(this.dataSourceCABG.data);
+        console.log("finish_sendtocount");
+      },
+      error: (error) => {
+        console.error('Error fetching patient records:', error);
+        this.isLoading = false; // Stop loading upon error
+      }
+    });
+  }
+
 
 
 
@@ -391,6 +508,9 @@ export class DialysisReportComponent implements OnInit {
     }
     if (measureType == 'Pci') {
       this.Pci();
+    }
+    if (measureType == 'CABG') {
+      this.CABG();
     }
     if (measureType == '') {
       alert("תבחר מדד בבקשה")
@@ -501,11 +621,61 @@ export class DialysisReportComponent implements OnInit {
   }
 
 
+  CABG(){
+    const quarterDate = this.form.get('quarterDate').value;
+    const fromDate = this.form.get('fromDate').value;
+    const toDate = this.form.get('toDate').value;
+    const selectedPeriod = this.form.get('selectedPeriod').value;
+    const EraChoosen = this.form.get('EraChoosen').value;
+    const selectedYear = this.form.get('selectedyear').value; // Ensure this matches your form control name exactly
+
+    if (selectedPeriod == 'blue') {
+
+      if (fromDate && toDate) { // Check if fromDate and toDate are not 'Empty'
+        const formattedFromDate = this.datePipe.transform(fromDate, 'yyyy-MM-dd');
+        const formattedToDate = this.datePipe.transform(toDate, 'yyyy-MM-dd');
+        console.log(formattedFromDate, formattedToDate); // For debugging
+        this.fetchCABGReport(formattedFromDate, formattedToDate);
+      } else {
+        console.log('Please ensure all form fields are filled out correctly.');
+      }
+
+    }
+
+    if (selectedPeriod == 'red' && EraChoosen) {
+      let formattedFromDate, formattedToDate;
+
+      switch (EraChoosen) {
+        case '1':
+          formattedFromDate = `${selectedYear}-01-01`;
+          formattedToDate = `${selectedYear}-03-31`;
+          break;
+        case '2':
+          formattedFromDate = `${selectedYear}-04-01`;
+          formattedToDate = `${selectedYear}-06-30`;
+          break;
+        case '3':
+          formattedFromDate = `${selectedYear}-07-01`;
+          formattedToDate = `${selectedYear}-09-30`;
+          break;
+        case '4':
+          formattedFromDate = `${selectedYear}-10-01`;
+          formattedToDate = `${selectedYear}-12-31`;
+          break;
+      }
+
+      console.log("From Date: ", formattedFromDate, "To Date: ", formattedToDate); // For debugging
+      this.fetchCABGReport(formattedFromDate, formattedToDate); // Assuming you want to use these dates in your report fetching
+    }
+
+  }
+
 
 
   onClear() {
     this.dataSource.data = [];
     this.dataSourceDialysis.data = [];
+    this.displayedColumnsCABG = [];
   }
 
 
@@ -524,33 +694,58 @@ export class DialysisReportComponent implements OnInit {
         delete itemCopy['__type'];
         return itemCopy;
       });
-  
+
       const ws: XLSX.WorkSheet = XLSX.utils.json_to_sheet(dataToExport);
       const wb: XLSX.WorkBook = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
       XLSX.writeFile(wb, "Pci.xlsx");
     }
 
-  
 
-  if (this.IsPci === false) {
-    if (!this.dataSourceDialysis || !this.dataSourceDialysis.filteredData || this.dataSourceDialysis.filteredData.length === 0) {
-      alert('The data is empty!');
-      return;
+
+    if (this.IsPci === false) {
+      if (!this.dataSourceDialysis || !this.dataSourceDialysis.filteredData || this.dataSourceDialysis.filteredData.length === 0) {
+        alert('The data is empty!');
+        return;
+      }
+
+      const dataToExport = this.dataSourceDialysis.filteredData.map(item => {
+        const itemCopy = { ...item };
+        delete itemCopy['__type'];
+        return itemCopy;
+      });
+
+      const ws: XLSX.WorkSheet = XLSX.utils.json_to_sheet(dataToExport);
+      const wb: XLSX.WorkBook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
+      XLSX.writeFile(wb, "Dialysis.xlsx");
     }
 
-    const dataToExport = this.dataSourceDialysis.filteredData.map(item => {
-      const itemCopy = { ...item };
-      delete itemCopy['__type'];
-      return itemCopy;
-    });
 
-    const ws: XLSX.WorkSheet = XLSX.utils.json_to_sheet(dataToExport);
-    const wb: XLSX.WorkBook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
-    XLSX.writeFile(wb, "Dialysis.xlsx");
+
+    if (this.IsCABG === true) {
+      if (!this.dataSourceCABG || !this.dataSourceCABG.filteredData || this.dataSourceCABG.filteredData.length === 0) {
+        alert('The data is empty!');
+        return;
+      }
+
+      const dataToExport = this.dataSourceCABG.filteredData.map(item => {
+        const itemCopy = { ...item };
+        delete itemCopy['__type'];
+        return itemCopy;
+      });
+
+      const ws: XLSX.WorkSheet = XLSX.utils.json_to_sheet(dataToExport);
+      const wb: XLSX.WorkBook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
+      XLSX.writeFile(wb, "cabg.xlsx");
+    }
+
+
   }
 
-}
+
+
+  
 
 }
