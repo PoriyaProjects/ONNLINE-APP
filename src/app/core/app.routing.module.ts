@@ -114,6 +114,7 @@ import { CAMEstimateComponent } from '../cam-estimate/cam-estimate.component';
 import {DialysisReportComponent} from '../dialysis-report/dialysis-report.component';
 import {SurgeriesUnclosedReportsComponent} from '../surgery-reports/surgeries-unclosed-reports/surgeries-unclosed-reports.component';
 import {InjuryReportComponent} from '../injury-report/injury-report.component';
+import {WhatsappDepartmentsDashboardComponent} from '../whatsapp-departments-dashboard/whatsapp-departments-dashboard.component';
 
 
 const routes: Routes = [
@@ -233,6 +234,7 @@ const routes: Routes = [
   { path: "CAM", component: CAMEstimateComponent },
   { path: "Dialysis", component: DialysisReportComponent },
   { path: "Surgeries-unclosed-reports", component: SurgeriesUnclosedReportsComponent },
+  { path: "departments-whatsapp", component: WhatsappDepartmentsDashboardComponent },
   { path: "Injury", component: InjuryReportComponent }
 ];
 
