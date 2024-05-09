@@ -226,6 +226,7 @@ export class InjuryReportComponent implements OnInit {
       return;
     }
     if(!(toDate instanceof Date)){
+      console.log("yeo")
       toDate = this.datePipe.transform(dateNow, 'yyyy-MM-dd');
     }
 

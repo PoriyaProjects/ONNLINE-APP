@@ -130,3 +130,10 @@ td.mat-cell {
   margin-top: 5px;
 }
 
+
+.empty-message {
+    font-size: large;
+    text-align: center;
+}
+
+
