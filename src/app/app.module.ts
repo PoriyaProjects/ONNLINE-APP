@@ -283,7 +283,6 @@ const maskConfig: Partial<IConfig> = {
     FormsansweredComponent,
     EventsscheduleComponent,
     BugReportComponent,
-    FormsansweredComponent,
     EmailsdashboardComponent,
     EmailmanagementComponent,
     StatusComplaintComponent,
