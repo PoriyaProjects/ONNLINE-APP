@@ -1,119 +1,133 @@
+<div dir="rtl" [formGroup]="form">
 
-<div  dir="rtl" [formGroup]="form">
+    <div dir="ltr" class="wrapper">
 
-<div dir="ltr" class="wrapper">
-
-    <div class="element">
-        <select disableRipple class="select-style">
-            <option value="1">פוריה</option>
-        </select>
-        <label>בית חולים </label>
-    </div>
-
- 
-    <div class="element">
-        <select  formControlName="measureType" class="select-style">
-            <option value="Dialysis">Dialysis</option>
-            <option value="Pci">Pci</option>
-        </select>
-        <label>מדד</label>
-    </div>
-
-    <div class="element">
-        <select formControlName="selectedyear" class="select-style">
-            <option value="2023">2023</option>
-            <option value="2024">2024</option>
-        </select>
-        <label>גרסה</label>
-    </div>
-
-
-    <div class="radio"> 
-        <mat-radio-group  name="color" formControlName="selectedPeriod">
-            <mat-radio-button value="red">רבעוני</mat-radio-button>
-            <mat-radio-button value="blue">תקופתי</mat-radio-button>
-        </mat-radio-group>
-    </div>
-    
-    <!-- Show this date picker when 'red' is selected -->
-    <div class="Revaon" *ngIf="form.get('selectedPeriod')?.value === 'red'">
-        <select  class="select-style" formControlName="EraChoosen">
-            <option value="1">רבעון 1 </option>
-            <option value="2">רבעון 2 </option>
-            <option value="3">רבעון 3 </option>
-            <option value="4">רבעון 4 </option>
-        </select>
-    </div>
-    
-    <!-- Show this date picker when 'blue' is selected -->
-
-    <mat-form-field class="datePicker" *ngIf="form.get('selectedPeriod')?.value === 'blue'">
-        <mat-label>מתאריך</mat-label>
-        <input matInput [matDatepicker]="picker1" formControlName="fromDate" (focus)="picker1.open()">
-        <mat-datepicker-toggle matIconSuffix [for]="picker1"></mat-datepicker-toggle>
-        <mat-datepicker #picker1></mat-datepicker>
-    </mat-form-field>
-
-
-    <mat-form-field class="datePicker" *ngIf="form.get('selectedPeriod')?.value === 'blue'">
-        <mat-label>עד תאריך</mat-label>
-        <input matInput [matDatepicker]="picker2" formControlName="toDate" (focus)="picker2.open()">
-        <mat-datepicker-toggle matIconSuffix [for]="picker2"></mat-datepicker-toggle>
-        <mat-datepicker #picker2></mat-datepicker>
-    </mat-form-field>
-    
-
-    <div class="element">
-    <button mat-raised-button class="srch-btn" color="primary" (click)="onSearch()">הרצת דוח </button>
-    </div>
-
-    <div class="element">
-        <button mat-raised-button class="srch-btn" color="warn" (click)="onClear()">Clean</button>
+        <div class="element">
+            <select disableRipple class="select-style">
+                <option value="1">פוריה</option>
+            </select>
+            <label>בית חולים </label>
         </div>
-    
 
-    <div class="example-button-container">
-        <a (click)="exportexcel()">
-            <img src="../../assets/images/excel.png" width="50px" alt="Image description">
-        </a>
+
+        <div class="element">
+            <select formControlName="measureType" class="select-style">
+                <option value="Dialysis">Dialysis</option>
+                <option value="Pci">Pci</option>
+                <option value="CABG">CABG</option>
+            </select>
+            <label>מדד</label>
+        </div>
+
+        <div class="element">
+            <select formControlName="selectedyear" class="select-style">
+                <option value="2023">2023</option>
+                <option value="2024">2024</option>
+            </select>
+            <label>גרסה</label>
+        </div>
+
+
+        <div class="radio">
+            <mat-radio-group name="color" formControlName="selectedPeriod">
+                <mat-radio-button value="red">רבעוני</mat-radio-button>
+                <mat-radio-button value="blue">תקופתי</mat-radio-button>
+            </mat-radio-group>
+        </div>
+
+        <!-- Show this date picker when 'red' is selected -->
+        <div class="Revaon" *ngIf="form.get('selectedPeriod')?.value === 'red'">
+            <select class="select-style" formControlName="EraChoosen">
+                <option value="1">רבעון 1 </option>
+                <option value="2">רבעון 2 </option>
+                <option value="3">רבעון 3 </option>
+                <option value="4">רבעון 4 </option>
+            </select>
+        </div>
+
+        <!-- Show this date picker when 'blue' is selected -->
+
+        <mat-form-field class="datePicker" *ngIf="form.get('selectedPeriod')?.value === 'blue'">
+            <mat-label>מתאריך</mat-label>
+            <input matInput [matDatepicker]="picker1" formControlName="fromDate" (focus)="picker1.open()">
+            <mat-datepicker-toggle matIconSuffix [for]="picker1"></mat-datepicker-toggle>
+            <mat-datepicker #picker1></mat-datepicker>
+        </mat-form-field>
+
+
+        <mat-form-field class="datePicker" *ngIf="form.get('selectedPeriod')?.value === 'blue'">
+            <mat-label>עד תאריך</mat-label>
+            <input matInput [matDatepicker]="picker2" formControlName="toDate" (focus)="picker2.open()">
+            <mat-datepicker-toggle matIconSuffix [for]="picker2"></mat-datepicker-toggle>
+            <mat-datepicker #picker2></mat-datepicker>
+        </mat-form-field>
+
+
+        <div class="element">
+            <button mat-raised-button class="srch-btn" color="primary" (click)="onSearch()">הרצת דוח </button>
+        </div>
+
+        <div class="element">
+            <button mat-raised-button class="srch-btn" color="warn" (click)="onClear()">Clean</button>
+        </div>
+
+
+        <div class="example-button-container">
+            <a (click)="exportexcel()">
+                <img src="../../assets/images/excel.png" width="50px" alt="Image description">
+            </a>
+        </div>
+
     </div>
 
-</div>
+
+
+    <div dir="ltr" class="wrapper">
+
+        <div class="Madad">
+            <h6> {{form.get('measureType').value}} : מדד</h6>
+        </div>
+
+        <div class="Madad">
+            <h6>
+                {{ form.get('measureType').value === 'Pci' ? '01-13-1-03-001' :
+                (form.get('measureType').value === 'Dialysis' ? '01-17-1-10-001' :
+                (form.get('measureType').value === 'CABG' ? '01-22-1-11-001' : '')) }} : קוד מדד
+            </h6>
+        </div>
+
+
+        <div class="Madad">
+            <h6>
+                {{ form.get('measureType').value === 'Pci' ? '90%' :
+                (form.get('measureType').value === 'Dialysis' ? '75%' :
+                (form.get('measureType').value === 'CABG' ? '' : '')) }} : יעד מדד
+            </h6>
+        </div>
+
+        <div class="Madad">
+            <h6>&nbsp;{{ percentage }}% &nbsp;&nbsp; &nbsp;{{ onesCount.denominator }} / {{ onesCount.numerator }} :
+                שיעור עמידה במדד</h6>
+        </div>
 
 
 
-<div dir="ltr" class="wrapper">
 
-    <div class="Madad">
-              <h6> {{form.get('measureType').value}}    : מדד</h6>
+        <div class="Madad">
+            <h6>
+                {{ dataSource.data.length > 0 ? dataSource.data.length :
+                dataSourceDialysis.data.length > 0 ? dataSourceDialysis.data.length :
+                dataSourceCABG.data.length > 0 ? dataSourceCABG.data.length : '' }} : מספר מקרים
+            </h6>
+        </div>
+
+
+        <mat-spinner *ngIf="isLoading"></mat-spinner>
+        <div *ngIf="isLoading">Loading...</div>
+
+
+
     </div>
-
-    <div class="Madad">
-        <h6>{{ form.get('measureType').value === 'Pci' ? '01-13-1-03-001' : (form.get('measureType').value === 'Dialysis' ? '01-17-1-10-001' : '') }} : קוד מדד</h6>
-    </div>
-
-    <div class="Madad">
-        <h6>{{ form.get('measureType').value === 'Pci' ? '90%' : (form.get('measureType').value === 'Dialysis' ? '75%' : '') }} : יעד מדד</h6>
-    </div>
-
-    <div class="Madad">
-        <h6>&nbsp;{{ percentage }}% &nbsp;&nbsp; &nbsp;{{ onesCount.denominator }} / {{ onesCount.numerator }} : שיעור עמידה במדד</h6>
-    </div>
-
-
-
-
-    <div class="Madad">
-        <h6>{{ dataSource.data.length > 0 ?  dataSource.data.length : dataSourceDialysis.data.length }} : מספר מקרים</h6>
-    </div>
-
-
-<mat-spinner *ngIf="isLoading"></mat-spinner>
-<div *ngIf="isLoading">Loading...</div>
-
-    
-
-</div>
 
 
 </div>
@@ -122,153 +136,154 @@
 
 <div class="mat-elevation-z8">
 
-    <table mat-table [dataSource]="dataSource"  class="mat-elevation-z8" *ngIf="dataSource && dataSource.data.length > 0; else otherTable">
+    <table mat-table [dataSource]="dataSource" class="mat-elevation-z8"
+        *ngIf="dataSource && dataSource.data.length > 0; else AnotherTable">
 
         <ng-container matColumnDef="Measurment_ID">
             <th mat-header-cell *matHeaderCellDef> Measurment_ID </th>
             <td mat-cell *matCellDef="let element"> {{element.Measurment_ID}} </td>
         </ng-container>
-        
+
         <ng-container matColumnDef="Hospital_ID">
             <th mat-header-cell *matHeaderCellDef> Hospital_ID </th>
             <td mat-cell *matCellDef="let element"> {{element.Hospital_ID}} </td>
         </ng-container>
-        
+
         <ng-container matColumnDef="Patient_ID">
             <th mat-header-cell *matHeaderCellDef> Patient_ID </th>
             <td mat-cell *matCellDef="let element"> {{element.Patient_ID}} </td>
         </ng-container>
-        
+
         <ng-container matColumnDef="Patientbikoret_ID">
             <th mat-header-cell *matHeaderCellDef> Patientbikoret_ID </th>
             <td mat-cell *matCellDef="let element"> {{element.Patientbikoret_ID}} </td>
         </ng-container>
-        
+
         <ng-container matColumnDef="ID_Types">
             <th mat-header-cell *matHeaderCellDef> ID_Types </th>
             <td mat-cell *matCellDef="let element"> {{element.ID_Types}} </td>
         </ng-container>
-        
+
         <ng-container matColumnDef="Case_Number">
             <th mat-header-cell *matHeaderCellDef> Case_Number </th>
             <td mat-cell *matCellDef="let element"> {{element.Case_Number}} </td>
         </ng-container>
-        
+
         <ng-container matColumnDef="OtherHosp">
             <th mat-header-cell *matHeaderCellDef> OtherHosp </th>
             <td mat-cell *matCellDef="let element"> {{element.OtherHosp}} </td>
         </ng-container>
-        
+
         <ng-container matColumnDef="Hosp_Date">
             <th mat-header-cell *matHeaderCellDef> Hosp_Date </th>
             <td mat-cell *matCellDef="let element"> {{element.Hosp_Date}} </td>
         </ng-container>
-        
+
         <ng-container matColumnDef="Hosp_Time">
             <th mat-header-cell *matHeaderCellDef> Hosp_Time </th>
             <td mat-cell *matCellDef="let element"> {{element.Hosp_Time}} </td>
         </ng-container>
-        
+
         <ng-container matColumnDef="Discharge_Date">
             <th mat-header-cell *matHeaderCellDef> Discharge_Date </th>
             <td mat-cell *matCellDef="let element"> {{element.Discharge_Date}} </td>
         </ng-container>
-        
+
         <ng-container matColumnDef="Death_Date">
             <th mat-header-cell *matHeaderCellDef> Death_Date </th>
             <td mat-cell *matCellDef="let element"> {{element.Death_Date}} </td>
         </ng-container>
-        
+
         <ng-container matColumnDef="Death_Time">
             <th mat-header-cell *matHeaderCellDef> Death_Time </th>
             <td mat-cell *matCellDef="let element"> {{element.Death_Time}} </td>
         </ng-container>
-        
+
         <ng-container matColumnDef="Date_Of_Birth">
             <th mat-header-cell *matHeaderCellDef> Date_Of_Birth </th>
             <td mat-cell *matCellDef="let element"> {{element.Date_Of_Birth}} </td>
         </ng-container>
-        
+
         <ng-container matColumnDef="Gender">
             <th mat-header-cell *matHeaderCellDef> Gender </th>
             <td mat-cell *matCellDef="let element"> {{element.Gender}} </td>
         </ng-container>
-        
+
         <ng-container matColumnDef="Adress_Street">
             <th mat-header-cell *matHeaderCellDef> Adress_Street </th>
             <td mat-cell *matCellDef="let element"> {{element.Adress_Street}} </td>
         </ng-container>
-        
+
         <ng-container matColumnDef="Adress_House">
             <th mat-header-cell *matHeaderCellDef> Adress_House </th>
             <td mat-cell *matCellDef="let element"> {{element.Adress_House}} </td>
         </ng-container>
-        
+
         <ng-container matColumnDef="Adress_CityName">
             <th mat-header-cell *matHeaderCellDef> Adress_CityName </th>
             <td mat-cell *matCellDef="let element"> {{element.Adress_CityName}} </td>
         </ng-container>
-        
+
         <ng-container matColumnDef="CityCode">
             <th mat-header-cell *matHeaderCellDef> CityCode </th>
             <td mat-cell *matCellDef="let element"> {{element.CityCode}} </td>
         </ng-container>
-        
+
         <ng-container matColumnDef="SES">
             <th mat-header-cell *matHeaderCellDef> SES </th>
             <td mat-cell *matCellDef="let element"> {{element.SES}} </td>
         </ng-container>
-        
+
         <ng-container matColumnDef="Insurance_Provider">
             <th mat-header-cell *matHeaderCellDef> Insurance_Provider </th>
             <td mat-cell *matCellDef="let element"> {{element.Insurance_Provider}} </td>
         </ng-container>
-        
+
         <ng-container matColumnDef="CatheterStart_Date">
             <th mat-header-cell *matHeaderCellDef> CatheterStart_Date </th>
             <td mat-cell *matCellDef="let element"> {{element.CatheterStart_Date}} </td>
         </ng-container>
-        
+
         <ng-container matColumnDef="CatheterStart_Time">
             <th mat-header-cell *matHeaderCellDef> CatheterStart_Time </th>
             <td mat-cell *matCellDef="let element"> {{element.CatheterStart_Time}} </td>
         </ng-container>
-        
+
         <ng-container matColumnDef="CatheterEnd_Date">
             <th mat-header-cell *matHeaderCellDef> CatheterEnd_Date </th>
             <td mat-cell *matCellDef="let element"> {{element.CatheterEnd_Date}} </td>
         </ng-container>
-        
+
         <ng-container matColumnDef="CatheterEnd_Time">
             <th mat-header-cell *matHeaderCellDef> CatheterEnd_Time </th>
             <td mat-cell *matCellDef="let element"> {{element.CatheterEnd_Time}} </td>
         </ng-container>
-        
+
         <ng-container matColumnDef="Diagnosis_ICD">
             <th mat-header-cell *matHeaderCellDef> Diagnosis_ICD </th>
             <td mat-cell *matCellDef="let element"> {{element.Diagnosis_ICD}} </td>
         </ng-container>
-        
+
         <ng-container matColumnDef="Procedure_ICD">
             <th mat-header-cell *matHeaderCellDef> Procedure_ICD </th>
             <td mat-cell *matCellDef="let element"> {{element.Procedure_ICD}} </td>
         </ng-container>
-        
+
         <ng-container matColumnDef="Procedure_ICD_Local">
             <th mat-header-cell *matHeaderCellDef> Procedure_ICD_Local </th>
             <td mat-cell *matCellDef="let element"> {{element.Procedure_ICD_Local}} </td>
         </ng-container>
-        
+
         <ng-container matColumnDef="Trombolitic_Therapy">
             <th mat-header-cell *matHeaderCellDef> Trombolitic_Therapy </th>
             <td mat-cell *matCellDef="let element"> {{element.Trombolitic_Therapy}} </td>
         </ng-container>
-        
+
         <ng-container matColumnDef="Remarks">
             <th mat-header-cell *matHeaderCellDef> Remarks </th>
             <td mat-cell *matCellDef="let element"> {{element.Remarks}} </td>
         </ng-container>
-        
+
         <ng-container matColumnDef="Numerator">
             <th mat-header-cell *matHeaderCellDef> Numerator </th>
             <td mat-cell *matCellDef="let element"> {{element.Numerator}} </td>
@@ -283,125 +298,69 @@
         <tr mat-row *matRowDef="let row; columns: displayedColumnsPci;"></tr>
     </table>
 
-<ng-template #otherTable>
- <table mat-table class="mat-elevation-z8" [dataSource]="dataSourceDialysis" >
+    <ng-template #AnotherTable>
+    <table mat-table #otherTable class="mat-elevation-z8" [dataSource]="dataSourceDialysis "
+        *ngIf="dataSourceDialysis && dataSourceDialysis.data.length > 0; else ThirdTable">
 
-  <ng-container *ngFor="let column of displayedColumnsDialysis" [matColumnDef]="column">
-    <th mat-header-cell *matHeaderCellDef> {{column}} </th>
-    <td mat-cell *matCellDef="let element"> {{element[column]}} </td>
-  </ng-container>
+        <ng-container *ngFor="let column of displayedColumnsDialysis" [matColumnDef]="column">
+            <th mat-header-cell *matHeaderCellDef> {{column}} </th>
+            <td mat-cell *matCellDef="let element"> {{element[column]}} </td>
+        </ng-container>
 
-  <tr mat-header-row *matHeaderRowDef="displayedColumnsDialysis sticky: true"></tr>
-  <tr mat-row *matRowDef="let row; columns: displayedColumnsDialysis;"></tr>
-</table>
-</ng-template>
+        <tr mat-header-row *matHeaderRowDef="displayedColumnsDialysis sticky: true"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumnsDialysis;"></tr>
+    </table>
+   </ng-template>
 
+    <ng-template #ThirdTable>
+    <table mat-table class="mat-elevation-z8" [dataSource]="dataSourceCABG"
+        *ngIf="dataSourceCABG && dataSourceCABG.data.length > 0;">
+        <ng-container *ngFor="let column of displayedColumnsCABG" [matColumnDef]="column">
+            <th mat-header-cell *matHeaderCellDef> {{column}} </th>
+            <td mat-cell *matCellDef="let element"> {{element[column]}} </td>
+        </ng-container>
 
-<!-- <table id="excel-table" dir="rtl" style="display: none;" *ngIf="dataSource && dataSource.data.length > 0; else otherTableExcel">
-    <tr>
-        <th mat-header-cell *matHeaderCellDef> {{column}} </th>
-        <th>Measurment_ID</th>
-        <th>Hospital_ID</th>
-        <th>Patient_ID</th>
-        <th>Patientbikoret_ID</th>
-        <th>ID_Types</th>
-        <th>Case_Number</th>
-        <th>OtherHosp</th>
-        <th>Hosp_Date</th>
-        <th>Hosp_Time</th>
-        <th>Discharge_Date</th>
-        <th>Death_Date</th>
-        <th>Death_Time</th>
-        <th>Date_Of_Birth</th>
-        <th>Gender</th>
-        <th>Adress_Street</th>
-        <th>Adress_House</th>
-        <th>Adress_CityName</th>
-        <th>CityCode</th>
-        <th>SES</th>
-        <th>Insurance_Provider</th>
-        <th>CatheterStart_Date</th>
-        <th>CatheterStart_Time</th>
-        <th>CatheterEnd_Date</th>
-        <th>CatheterEnd_Time</th>
-        <th>Diagnosis_ICD</th>
-        <th>Procedure_ICD</th>
-        <th>Procedure_ICD_Local</th>
-        <th>Trombolitic_Therapy</th>
-        <th>Remarks</th>
-        <th>Numerator</th>
-        <th>denominator</th>
+        <tr mat-header-row *matHeaderRowDef="displayedColumnsCABG sticky: true"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumnsCABG;"></tr>
+    </table>
+   </ng-template> 
 
-    </tr>
-    
-    <tr *ngFor="let element of dataSource.filteredData">
-        <td>{{element.Measurment_ID}}</td>
-        <td>{{element.Hospital_ID}}</td>
-        <td>{{element.Patient_ID}}</td>
-        <td>{{element.Patientbikoret_ID}}</td>
-        <td>{{element.ID_Types}}</td>
-        <td>{{element.Case_Number}}</td>
-        <td>{{element.OtherHosp}}</td>
-        <td>{{element.Hosp_Date}}</td>
-        <td>{{element.Hosp_Time}}</td>
-        <td>{{element.Discharge_Date}}</td>
-        <td>{{element.Death_Date}}</td>
-        <td>{{element.Death_Time}}</td>
-        <td>{{element.Date_Of_Birth}}</td>
-        <td>{{element.Gender}}</td>
-        <td>{{element.Adress_Street}}</td>
-        <td>{{element.Adress_House}}</td>
-        <td>{{element.Adress_CityName}}</td>
-        <td>{{element.CityCode}}</td>
-        <td>{{element.SES}}</td>
-        <td>{{element.Insurance_Provider}}</td>
-        <td>{{element.CatheterStart_Date}}</td>
-        <td>{{element.CatheterStart_Time}}</td>
-        <td>{{element.CatheterEnd_Date}}</td>
-        <td>{{element.CatheterEnd_Time}}</td>
-        <td>{{element.Diagnosis_ICD}}</td>
-        <td>{{element.Procedure_ICD}}</td>
-        <td>{{element.Procedure_ICD_Local}}</td>
-        <td>{{element.Trombolitic_Therapy}}</td>
-        <td>{{element.Remarks}}</td>        
-        <td>{{element.Numerator}}</td>        
-        <td>{{element.denominator}}</td>        
-    </tr>
-</table> -->
+   <div class="empty-message" 
+   *ngIf="
+   (!dataSource || dataSource.data.length === 0)
+   &&
+   (!dataSourceDialysis || dataSourceDialysis.data.length === 0)
+   &&
+   (!dataSourceCABG || dataSourceCABG.data.length === 0 )
+   ">
+    There is no data to display.
+   </div>
+
+    <table id="excel-table" dir="rtl" mat-table [dataSource]="dataSource" style="display: none; "
+        *ngIf="dataSource && dataSource.data.length > 0; else otherTableExcel">
+
+        <ng-container *ngFor="let column of displayedColumnsPci" [matColumnDef]="column">
+            <th mat-header-cell *matHeaderCellDef> {{column}} </th>
+            <td mat-cell *matCellDef="let element"> {{element[column]}} </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumnsPci "></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumnsPci;"></tr>
+    </table>
 
 
-<table id="excel-table" dir="rtl" mat-table [dataSource]="dataSource"   style="display: none; " *ngIf="dataSource && dataSource.data.length > 0; else otherTableExcel">
-   
-    <ng-container *ngFor="let column of displayedColumnsPci" [matColumnDef]="column">
-      <th mat-header-cell *matHeaderCellDef> {{column}} </th>
-      <td mat-cell *matCellDef="let element"> {{element[column]}} </td>
-    </ng-container>
-  
-    <tr mat-header-row *matHeaderRowDef="displayedColumnsPci "></tr>
-    <tr mat-row *matRowDef="let row; columns: displayedColumnsPci;"></tr>
-  </table>
-  
+    <ng-template #otherTableExcel>
+        <table id="excelDialysis-table" mat-table [dataSource]="dataSourceDialysis" style="display: none; "
+            *ngIf="dataSourceDialysis && dataSourceDialysis.data.length > 0;">
 
-<ng-template #otherTableExcel>
-    <table id="excelDialysis-table" mat-table [dataSource]="dataSourceDialysis"   style="display: none; ">
-   
-     <ng-container *ngFor="let column of displayedColumnsDialysis" [matColumnDef]="column">
-       <th mat-header-cell *matHeaderCellDef> {{column}} </th>
-       <td mat-cell *matCellDef="let element"> {{element[column]}} </td>
-     </ng-container>
-   
-     <tr mat-header-row *matHeaderRowDef="displayedColumnsDialysis"></tr>
-     <tr mat-row *matRowDef="let row; columns: displayedColumnsDialysis;"></tr>
-   </table>
-</ng-template>
+            <ng-container *ngFor="let column of displayedColumnsDialysis" [matColumnDef]="column">
+                <th mat-header-cell *matHeaderCellDef> {{column}} </th>
+                <td mat-cell *matCellDef="let element"> {{element[column]}} </td>
+            </ng-container>
 
+            <tr mat-header-row *matHeaderRowDef="displayedColumnsDialysis"></tr>
+            <tr mat-row *matRowDef="let row; columns: displayedColumnsDialysis;"></tr>
+        </table>
+    </ng-template> 
 
 </div>
-
-
-
-
-
-
-
-      
