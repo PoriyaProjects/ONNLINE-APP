@@ -1,5 +1,5 @@
 import { HttpClient } from "@angular/common/http";
-import { Component, ElementRef, OnInit, ViewChild } from "@angular/core";
+import { Component, ElementRef, Inject, OnInit, ViewChild } from "@angular/core";
 import {
     AbstractControl,
     FormArray,
@@ -9,16 +9,8 @@ import {
 } from "@angular/forms";
 import { MatPaginator } from "@angular/material/paginator";
 import { MatTableDataSource } from "@angular/material/table";
-import { Router } from "@angular/router";
-import { MatDialog, MatDialogRef } from "@angular/material/dialog";
-import { UpdatesingleformComponent } from "../updatesingleform/updatesingleform.component";
-import {
-    animate,
-    state,
-    style,
-    transition,
-    trigger,
-} from "@angular/animations";
+import { Router, ActivatedRoute } from "@angular/router";
+import { MatDialog, MatDialogRef, MAT_DIALOG_DATA } from "@angular/material/dialog";
 import { DomSanitizer } from "@angular/platform-browser";
 import { DatePipe } from "@angular/common";
 import { BehaviorSubject } from "rxjs";
@@ -60,7 +52,7 @@ export interface Questions {
 @Component({
     selector: "app-formsanswered",
     templateUrl: "./formsanswered.component.html",
-    styleUrls: ["./formsanswered.component.css"],
+    styleUrls: ["./formsanswered.component.css"]
 })
 export class FormsansweredComponent implements OnInit {
     horizontalPosition: MatSnackBarHorizontalPosition = "start";
@@ -91,6 +83,7 @@ export class FormsansweredComponent implements OnInit {
     formSearchPatient: FormGroup;
     formSearchEmployee: FormGroup;
     urlID: number;
+    isDialog: boolean;
     isCaseNumber: string;
     isCaseNumber2: string;
 
@@ -109,12 +102,13 @@ export class FormsansweredComponent implements OnInit {
     answersData = new BehaviorSubject<AbstractControl[]>([]);
 
     constructor(
-        public dialog: MatDialogRef<FormsansweredComponent>,
+        public dialog: MatDialog,
         private router: Router,
         private http: HttpClient,
         private confirmationDialogService: ConfirmationDialogService,
         private _sanitizer: DomSanitizer,
         private _snackBar: MatSnackBar,
+        private activatedRoute: ActivatedRoute,
         private formBuilder: FormBuilder
     ) { }
 
@@ -138,6 +132,9 @@ export class FormsansweredComponent implements OnInit {
     });
 
     ngOnInit(): void {
+        if (this.activatedRoute.snapshot.params.id != undefined) {
+            this.urlID = this.activatedRoute.snapshot.params.id;
+        }
         this.formSearchPatient = new FormGroup({
             caseNumber: new FormControl("", null),
             personalPassport: new FormControl("", null),
@@ -152,7 +149,27 @@ export class FormsansweredComponent implements OnInit {
     }
 
     public printRowForm(row): void {
-        this.dialog.close(row);
+        sessionStorage.setItem('printForm', JSON.stringify(row));
+        if (this.isDialog) {
+            this.dialog.closeAll();
+        } else {
+            let temp = sessionStorage.getItem('printForm');
+            let data = JSON.parse(temp);
+            if (!data) {
+                return;
+            }
+            this.rowFormData = data;
+            this._tableArr = [];
+            this.rowFormData.NursesTable.forEach(element => {
+                this._tableArr.push(element);
+            });
+
+            $("#loader").removeClass("d-none");
+            setTimeout(function () {
+                $("#loader").addClass("d-none");
+                window.print();
+            }, 1500);
+        }
     }
 
     applyFilter(event: Event) {
@@ -231,7 +248,7 @@ export class FormsansweredComponent implements OnInit {
     }
 
     onClose() {
-        this.dialog.close();
+        this.dialog.closeAll();
     }
 
     searchForm() {

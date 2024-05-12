@@ -111,8 +111,11 @@ export class UpdateformComponent implements OnInit {
     let dialogRef = this.dialog.open(FormsansweredComponent, { disableClose: true });
     dialogRef.updateSize('1000px', '100%');
     dialogRef.componentInstance.urlID = id;
+    dialogRef.componentInstance.isDialog = true;
     dialogRef.afterClosed()
       .subscribe((data) => {
+        let temp = sessionStorage.getItem('printForm');
+        data = JSON.parse(temp);
         if (!data) {
           return;
         }
@@ -127,7 +130,7 @@ export class UpdateformComponent implements OnInit {
           $("#loader").addClass("d-none");
           window.print();
         }, 1500);
-      })
+      });
   }
 
 
