@@ -690,6 +690,8 @@ export class CprFormComponent implements OnInit {
     let userToChange;
     if (depart.length > 0) {
       this.FirstSection.controls['cadriologName'].setValue(depart[0].firstname);
+    }else{
+      this.FirstSection.controls['cadriologName'].setValue(filterValue3);
     }
     return this.employees.filter(option => option.firstname.includes(filterValue3));
   }
@@ -699,6 +701,8 @@ export class CprFormComponent implements OnInit {
     let userToChange;
     if (depart.length > 0) {
       this.FirstSection.controls['mardimName'].setValue(depart[0].firstname);
+    }else{
+      this.FirstSection.controls['mardimName'].setValue(filterValue4);
     }
     return this.employees.filter(option => option.firstname.includes(filterValue4));
   }
@@ -708,6 +712,8 @@ export class CprFormComponent implements OnInit {
     let userToChange;
     if (depart.length > 0) {
       this.FirstSection.controls['clalitName'].setValue(depart[0].firstname);
+    }else{
+      this.FirstSection.controls['clalitName'].setValue(filterValue5);
     }
     return this.employees.filter(option => option.firstname.includes(filterValue5));
   }

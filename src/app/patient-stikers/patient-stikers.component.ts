@@ -215,7 +215,7 @@ export class PatientStikersComponent implements OnInit {
     var mywindow = window.open("", "PRINT");
 
     mywindow.document.write(
-      "<html><head><style>.col-8{width:66%;float:right;}pl-20{padding-left: 20px;}p-20{padding: 0 20px;}.ngx-barcode{width:100%;float:right;text-align: center}.fz-b{font-size:20px;    padding-top: 30px;}.pos-1-4{margin-top: -8px;position: relative;margin-bottom: 10px;}*, ::after, ::before {box-sizing: border-box;margin: 0;padding: 0;}.d-block{width:100%;float:right;}.col{width:100%;float:right;}.col-4{width:33%;float:right;}.col-6{width:50%;float:right;} .col-3{width:25%;float:right;}.text-center {text-align: center!important;}.text-right{text-align: right!important;}.text-left{text-align: left!important;}table {page-break-after: always;}.row{width:100%;float:right;font-weight: bold !important;}.col-6{width:50%; float:right;}td{padding-left:10px;}tr>td:last-child{padding-right:15px;}body{font-family: Arial;font-weight: bolder !important;}</style><title>מדביקות</title>"
+      "<html><head><style>.col-8{width:66%;float:right;}.pos-1-2{    position: relative;margin-top: -6px;font-size: 14px;}.pos-1-4{    margin-top: -12px;position: relative;margin-bottom: 6px;    font-size: 15px;}.pos-1-3{    margin-top: -12px;position: relative;z-index: -1;}.pos-1-5{margin-top:-10px;margin-bottom: 16px;font-size: 14px;}.pl-20{padding-left: 20px;}.p-20{padding: 0 20px;}.ngx-barcode{width:100%;float:right;text-align: center}.fz-b{font-size:20px;    padding-top: 30px;}.pos-1-4{margin-top: -12px;position: relative;margin-bottom: 10px;}*, ::after, ::before {box-sizing: border-box;margin: 0;padding: 0;}.d-block{width:100%;float:right;}.col{width:100%;float:right;}.col-4{width:33%;float:right;}.col-6{width:50%;float:right;} .col-3{width:25%;float:right;}.text-center {text-align: center!important;}.text-right{text-align: right!important;}.text-left{text-align: left!important;}table {page-break-after: always;}.row{width:100%;float:right;font-weight: bold !important;}.col-6{width:50%; float:right;}td{padding-left:10px;}tr>td:last-child{padding-right:15px;}body{font-family: Arial;font-weight: bolder !important;}</style><title>מדביקות</title>"
     );
     mywindow.document.write(
       '</head><body>'
@@ -229,7 +229,7 @@ export class PatientStikersComponent implements OnInit {
     mywindow.focus(); // necessary for IE >= 10*/
 
     mywindow.print();
-    mywindow.close();
+    //mywindow.close();
     this.loading = false;
     this.CreateNewMovment = this.fb.group({
       PersonID: ["", null],
