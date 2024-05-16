@@ -359,6 +359,8 @@ export class DialysisReportComponent implements OnInit {
 
 
   countOnes(data) {
+    this.onesCount.denominator = 0;
+    this.onesCount.numerator = 0;
     const measureType = this.form.get('measureType').value; // Accessing the measureType value
     console.log("in_count");
     data.forEach(item => {
