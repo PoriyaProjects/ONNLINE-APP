@@ -61,6 +61,9 @@ export class CablesComponent implements OnInit {
     displayedColumns: string[] = [
         "SourceRoom",
         "Name",
+        "CurrentConnectionCable",
+        "TargetName",
+        "TargetSlotPort",
         "DeviceType",
         "CableType",
         "editCable",
