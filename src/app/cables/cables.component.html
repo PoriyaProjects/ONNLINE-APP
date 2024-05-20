@@ -38,6 +38,24 @@
                                     {{ element.Name }}
                                 </td>
                             </ng-container>
+                            <ng-container matColumnDef="CurrentConnectionCable">
+                                <th mat-header-cell *matHeaderCellDef>Cable</th>
+                                <td mat-cell *matCellDef="let element">
+                                    {{ element.CurrentConnectionCable }}
+                                </td>
+                            </ng-container>
+                            <ng-container matColumnDef="TargetName">
+                                <th mat-header-cell *matHeaderCellDef>Target Name</th>
+                                <td mat-cell *matCellDef="let element">
+                                    {{ element.TargetName }}
+                                </td>
+                            </ng-container>
+                            <ng-container matColumnDef="TargetSlotPort">
+                                <th mat-header-cell *matHeaderCellDef>Target Slot / Port</th>
+                                <td mat-cell *matCellDef="let element">
+                                    {{ element.TargetSlotPort }}
+                                </td>
+                            </ng-container>
                             <ng-container matColumnDef="DeviceType">
                                 <th mat-header-cell *matHeaderCellDef>Device Type</th>
                                 <td mat-cell *matCellDef="let element">
