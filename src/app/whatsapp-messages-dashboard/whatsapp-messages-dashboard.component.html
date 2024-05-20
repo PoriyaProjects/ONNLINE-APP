@@ -182,7 +182,8 @@
             </button>
         </div>
         <div class="file-upload-button" *ngIf="customForm.get('customInputs')['controls'].length > 0 && !typeOfScreen">
-            <input type="file" (change)="onFileSelected($event)" accept=".pdf, image/*">
+            <input matInput placeholder="קישור לקובץ" [(ngModel)]="file_path">
+            <!-- <input type="file" (change)="onFileSelected($event)" accept=".pdf, image/*"> -->
         </div>
         <br><br>
         <!-- SEND THE SAME MESSAGE TO MANY CONTACTS -->
@@ -192,7 +193,7 @@
                     <mat-label>מספר שולח*</mat-label>
                     <mat-select formControlName="SenderIDFK">
                         <mat-option *ngFor="let phone of sendersList" [value]="phone.Row_ID">
-                            {{phone.Description}}
+                            <b>{{phone.Row_ID}}.</b> {{phone.Description}}
                         </mat-option>
                     </mat-select>
                 </mat-form-field>
@@ -203,9 +204,6 @@
                 <mat-form-field>
                     <textarea matInput placeholder="תוכן ההודעה*" rows="3" formControlName="Message_Content"></textarea>
                 </mat-form-field>
-                <div>
-                    <input type="file" (change)="onFileSelected($event)" accept=".pdf, image/*">
-                </div>
             </div>
         </div>
 
@@ -222,7 +220,7 @@
                             <mat-label>מספר שולח*</mat-label>
                             <mat-select formControlName="SenderIDFK" (selectionChange)="test()">
                                 <mat-option *ngFor="let phone of sendersList" [value]="phone.Row_ID">
-                                    {{phone.Description}}
+                                    <b>{{phone.Row_ID}}.</b> {{phone.Description}}
                                 </mat-option>
                             </mat-select>
                         </mat-form-field>
