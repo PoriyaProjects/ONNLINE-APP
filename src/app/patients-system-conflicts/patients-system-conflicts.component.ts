@@ -133,7 +133,11 @@ export class PatientsSystemConflictsComponent implements OnInit {
     this.tableLoader = true;
     this.http
       .post(
-        environment.url + "GetSystemPatientsConflict", {}
+        environment.url + "GetSystemPatientsConflict",
+        {
+          _fromDate: this.searchForm.value.from_date,
+          _toDate: this.searchForm.value.to_date,
+        }
       )
       .subscribe((Response) => {
         this.dataSource = new MatTableDataSource<any>(Response["d"]);

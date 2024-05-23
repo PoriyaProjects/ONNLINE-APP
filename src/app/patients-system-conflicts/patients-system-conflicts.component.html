@@ -1,12 +1,12 @@
 <div id="page-toshow">
-    <h1 class="text-center">קונפלקט מטופלים במערכות</h1>
+    <h1 class="text-center">דו"ח פערים בזמני שחרור</h1>
     <div class="container-fluid">
         <div class="row">
             <div class="col">
                 <div dir="rtl" class="card w-85-p">
                     <div dir="rtl" class="card-body">
                         <form class="form" ngbAutofocus [formGroup]="searchForm">
-                            <!-- <div class="row">
+                            <div class="row">
                                 <div class="col">
                                     <div class="form-group">
                                         <mat-form-field>
@@ -29,14 +29,14 @@
                                         </mat-form-field>
                                     </div>
                                 </div>
-                            </div> -->
+                            </div>
                             <button type="submit" class="btn btn-link none-all btn-raised" (click)="exportexcel()">
                                 <img src="assets/images/excel.png" />
                             </button>
-                            <!-- <button mat-raised-button type="submit" class="btn btn-primary btn-raised"
+                            <button mat-raised-button type="submit" class="btn btn-primary btn-raised"
                                 (click)="GetSystemPatientsConflict()">
                                 חפש
-                            </button> -->
+                            </button>
                         </form>
                     </div>
                 </div>
@@ -130,7 +130,7 @@
                         </table>
                     </div>
                     <!-- PAGINATION -->
-                    <mat-paginator [length]="resultsLength" [pageSize]="20" showFirstLastButtons></mat-paginator>
+                    <!-- <mat-paginator [length]="resultsLength" [pageSize]="20" showFirstLastButtons></mat-paginator> -->
                 </div>
             </div>
         </div>
