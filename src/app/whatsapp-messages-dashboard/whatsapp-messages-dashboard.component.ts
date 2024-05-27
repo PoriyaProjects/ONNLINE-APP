@@ -32,6 +32,7 @@ export class WhatsappMessagesDashboardComponent implements OnInit, OnDestroy {
   SektorsList = [];
   screenTitle = 'אישי';
   searchProgress: boolean = false;
+  sending: boolean = false;
   username = localStorage.getItem('loginUserName');
   selectedFiles: FileList | null;
   fixed_text: string = "";
@@ -98,7 +99,7 @@ export class WhatsappMessagesDashboardComponent implements OnInit, OnDestroy {
       Phone_Number: new FormControl(phone, Validators.required),
       Recipient: new FormControl(fullName, null),
       Message_Content: new FormControl(fullName + ' שלום רב,\n', Validators.required),
-      SenderIDFK: new FormControl('1', Validators.required),
+      SenderIDFK: new FormControl('', Validators.required),
       Message_Timing: new FormControl(null, null),
       Message_Timing_Time: new FormControl(null, null),
       File_Path: new FormControl(null, null)
@@ -153,6 +154,7 @@ export class WhatsappMessagesDashboardComponent implements OnInit, OnDestroy {
             this.customForm.controls['customInputs']['controls'][index].controls.File_Path.setValue(this.file_path);
           });
         }
+        this.sending = true;
         this.http
           .post(environment.url + "Send_Custom_WhatsApp_Messages", {
             customForm: this.customForm.value
@@ -163,6 +165,7 @@ export class WhatsappMessagesDashboardComponent implements OnInit, OnDestroy {
               this.deleteAllRow();
             }
             else this.openSnackBar('תקלה!');
+            this.sending = false;
           });
       } else {
         this.openSnackBar("למלא שדות חובה");
@@ -173,6 +176,7 @@ export class WhatsappMessagesDashboardComponent implements OnInit, OnDestroy {
         if (this.file_path !== null) {
           this.manyContacts.controls['File_Path'].setValue(this.file_path);
         }
+        this.sending = true;
         this.http
           .post(environment.url + "Send_ToMany_WhatsApp_Messages", {
             manyForm: this.manyContacts.value
@@ -183,6 +187,7 @@ export class WhatsappMessagesDashboardComponent implements OnInit, OnDestroy {
               this.deleteAllRow();
             }
             else this.openSnackBar('תקלה!');
+            this.sending = false;
           });
       } else {
         this.openSnackBar("למלא שדות חובה");
@@ -223,10 +228,12 @@ export class WhatsappMessagesDashboardComponent implements OnInit, OnDestroy {
   }
 
   getWhatsAppMessagesFromServer() {
-    if (this.dataSource.filteredData.length > 0) this.dataSource = new MatTableDataSource<any>();
+    const sender = this.customForm.controls['customInputs']['controls'][0].controls.SenderIDFK.value;
+    if (this.dataSource.filteredData.length > 0 && sender !== "") this.dataSource = new MatTableDataSource<any>();
     else {
       this.http
         .post(environment.url + "GetWhatsAppMessagesFromServer", {
+          sender_IDFK: this.customForm.controls['customInputs']['controls'][0].controls.SenderIDFK.value
         })
         .subscribe((Response) => {
           this.dataSource = new MatTableDataSource<any>(Response["d"]);
