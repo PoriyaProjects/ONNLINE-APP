@@ -318,7 +318,7 @@
             <hr>
             <button mat-raised-button
                 style="background-color: #00a884;color: whitesmoke;margin-top: 20px;transform: rotate(180deg);"
-                matTooltip="שליחה" (click)="uploadFiles()"><mat-icon>send</mat-icon></button>
+                matTooltip="שליחה" [disabled]="sending" (click)="uploadFiles()"><mat-icon>send</mat-icon></button>
         </div>
     </div>
 </div>

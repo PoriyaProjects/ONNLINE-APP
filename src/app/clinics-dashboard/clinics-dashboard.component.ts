@@ -37,6 +37,8 @@ export interface Patient {
   InchargeDoctor: string;
   Paid: string;
   PayInstitute: string;
+  DateOfRecord: string;
+  TimeOfRecord: string;
 }
 
 @Component({
@@ -163,6 +165,8 @@ export class ClinicsDashboardComponent implements OnInit {
             InchargeDoctor: relevantServices[1].InchargeDoctor,
             Paid: relevantServices[1].Paid,
             PayInstitute: relevantServices[0].PayInstitute,
+            DateOfRecord: relevantServices[1].DateOfRecord,
+            TimeOfRecord: relevantServices[1].TimeOfRecord,
           });
           if (this.detailsFormGroup2.Gender == '1') {
             this.genderText = "זכר";
