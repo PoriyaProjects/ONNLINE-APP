@@ -67,47 +67,20 @@
         <hr style="border: 1px solid #bca875;">
         <div class="row surgery-details">
             <div class="col-2" formGroupName="SurgeryRequestDepartments">
-                <!-- <mat-form-field style="line-height: 30px;"> -->
                 <mat-label>מחלקה מזמינה</mat-label>
-                <!-- <mat-select formControlName="S_DEPARTMENT"
-                        (selectionChange)="selectedRequestedDepartment($event.value)">
-                        <mat-option *ngFor="let department of SurgeryDepartments" [value]="department.S_DEPARTMENT">
-                            {{department.S_DEPARTMENT}}
-                        </mat-option>
-                    </mat-select> -->
                 <p>{{SurgeryFormGroup.value.SurgeryRequestDepartments.S_DEPARTMENT}}</p>
-                <!-- </mat-form-field> -->
             </div>
             <div class="col-2">
-                <!-- <mat-form-field> -->
                 <mat-label>תאריך ניתוח</mat-label>
-                <!-- <div style="display: flex;">
-                        <input matInput [matDatepicker]="pickerSurgery" formControlName="ArrivalDate"
-                            (focusout)="enableDisableSurgeryNameSelect()">
-                        <mat-datepicker-toggle matIconSuffix [for]="pickerSurgery"
-                            (focusout)="enableDisableSurgeryNameSelect()"></mat-datepicker-toggle>
-                        <mat-datepicker #pickerSurgery></mat-datepicker>
-                    </div> -->
                 <p>{{SurgeryFormGroup.value.ArrivalDate | date}}</p>
-                <!-- </mat-form-field> -->
             </div>
             <div class="col-2">
-                <!-- <mat-form-field style="line-height: 30px;"> -->
                 <mat-label>חדר ניתוח</mat-label>
-                <!-- <mat-select formControlName="SurgeryRoom" (selectionChange)="selectedSurgeryRoom($event.value)">
-                        <mat-option *ngFor="let room of SurgeryRoomsList" [value]="room.SurgeryRoom">
-                            {{room.SurgeryRoom}}
-                        </mat-option>
-                    </mat-select> -->
                 <p>{{SurgeryFormGroup.value.SurgeryRoom}}</p>
-                <!-- </mat-form-field> -->
             </div>
             <div class="col-2" formGroupName="AdditionalDetails">
-                <!-- <mat-form-field class="example-full-width" appearance="fill"> -->
                 <mat-label>מחלקת אשפוז</mat-label>
-                <!-- <input matInput formControlName="HOSPITALIZATION"> -->
                 <p>{{SurgeryFormGroup.value.AdditionalDetails.HOSPITALIZATION}}</p>
-                <!-- </mat-form-field> -->
             </div>
             <div class="col-2">
                 <!-- <mat-form-field> -->
@@ -118,40 +91,23 @@
                 <!-- </mat-form-field> -->
             </div>
             <div class="col-2">
-                <!-- <mat-form-field> -->
                 <mat-label>שעת סיום</mat-label>
                 <input matInput type="time" formControlName="EndTime" (focusout)="calculateSurgeryDuration('endTime')">
-                <!-- <p>{{SurgeryFormGroup.value.EndTime}}</p> -->
-                <!-- </mat-form-field> -->
             </div>
         </div>
         <div class="row surgery-details">
             <div class="col-2">
-                <table>
-                    <thead>
-                        <tr style="background: lightgrey;">
-                            <td><b>שירות</b></td>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr *ngFor="let service of SurgeryFormGroup.get('SurgeriesCalendar_Service').value">
-                            <td>
-                                <b>{{service.Service_Name}}</b>
-                            </td>
-                        </tr>
-                    </tbody>
+                <table mat-table [dataSource]="SurgeryFormGroup.get('SurgeriesCalendar_Service').value"
+                    class="mat-elevation-z8">
+
+                    <ng-container matColumnDef="name">
+                        <th mat-header-cell *matHeaderCellDef> שירות </th>
+                        <td mat-cell *matCellDef="let element"> {{element.Service_Name}} </td>
+                    </ng-container>
+
+                    <tr mat-header-row *matHeaderRowDef="displayedColumns1"></tr>
+                    <tr mat-row *matRowDef="let row; columns: displayedColumns1;"></tr>
                 </table>
-                <!-- <mat-form-field class="example-full-width" appearance="fill">
-                <mat-label>שירות</mat-label>
-                <input type="text" matInput [formControl]="serviceCtrl" [matAutocomplete]="auto1"
-                        (focusout)="selectedServiceServiceName()">
-                    <mat-autocomplete #auto1="matAutocomplete" [displayWith]="displayFnService">
-                        <mat-option *ngFor="let option of filteredOptionssurgeries | async"
-                            [value]="option.S_SERVICE_VAL">
-                            {{option.S_SERVICE_VAL}}
-                        </mat-option>
-                    </mat-autocomplete>
-                </mat-form-field> -->
             </div>
             <!-- <div class="col-2" formGroupName="SurgeriesCalendar_Susgeries">
                 <mat-form-field class="example-full-width" appearance="fill">
@@ -171,7 +127,7 @@
                     <input matInput formControlName="SIDE">
                 </mat-form-field>
             </div> -->
-            <div class="col-4">
+            <!-- <div class="col-4">
                 <table>
                     <thead>
                         <tr style="background: lightgrey;">
@@ -185,6 +141,25 @@
                             <td><b>{{surgery.Side}}</b></td>
                         </tr>
                     </tbody>
+                </table>
+            </div> -->
+            <div class="col-4">
+                <table mat-table [dataSource]="SurgeryFormGroup.get('SurgeriesCalendar_Susgeries').value"
+                    class="mat-elevation-z8">
+
+                    <ng-container matColumnDef="name">
+                        <th mat-header-cell *matHeaderCellDef> פרוצדורה/שם ניתוח </th>
+                        <td mat-cell *matCellDef="let element"> {{element.Surgery_Name}} </td>
+                    </ng-container>
+
+                    <!-- Name Column -->
+                    <ng-container matColumnDef="side">
+                        <th mat-header-cell *matHeaderCellDef> צד ניתוח </th>
+                        <td mat-cell *matCellDef="let element"> {{element.Side}} </td>
+                    </ng-container>
+
+                    <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+                    <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
                 </table>
             </div>
             <div class="col-2" formGroupName="AdditionalDetails">
@@ -200,15 +175,8 @@
                 </mat-form-field>
             </div>
             <div class="col-2" formGroupName="SurgeriesCalendar_Service">
-                <!-- <mat-form-field class="example-full-width" appearance="fill"> -->
                 <mat-label>זמן משך ניתוח (דקות)</mat-label>
-                <!-- <input matInput formControlName="Duration" type="number" step="1"
-                        (focusout)="calculateSurgeryDuration('duration')">
-                    </mat-form-field> -->
-                <!-- <p>30</p> -->
-                <!-- {{SurgeryFormGroup.get('SurgeriesCalendar_Service').value.length | json}} -->
                 <p>
-                    <!-- {{ SurgeryFormGroup.get('SurgeriesCalendar_Service').value | json }} -->
                     {{ SurgeryFormGroup.get('Duration').value }}
                 </p>
             </div>
@@ -218,14 +186,6 @@
             <div class="col-2">
                 <mat-label>דחיפות</mat-label>
                 <p style="color: red;">{{SurgeryFormGroup.get('Urgency').value}}</p>
-                <!-- <mat-form-field class="example-full-width" appearance="fill" style="font-weight: bold;color: red;">
-                    <mat-label style="color: red;">דחיפות</mat-label>
-                    <mat-select formControlName="Urgency">
-                        <mat-option value="EMG"> חירום </mat-option>
-                        <mat-option value="URG"> דחוף </mat-option>
-                        <mat-option value="ROU"> אלקטיב </mat-option>
-                    </mat-select>
-                </mat-form-field> -->
             </div>
             <div class="col-2" formGroupName="AdditionalDetails">
                 <mat-form-field class="example-full-width" appearance="fill">
@@ -265,10 +225,15 @@
                 </mat-form-field>
             </div>
             <div class="col-2" formGroupName="AdditionalDetails">
-                <mat-form-field class="example-full-width" appearance="fill">
-                    <mat-label>מכשירים נוספים</mat-label>
+                <mat-label>מכשירים נוספים</mat-label>
+                <button mat-raised-button color="primary"
+                    *ngIf="SurgeryFormGroup.get('AdditionalDetails').get('TOOLS').value != ''"
+                    (click)="openToolsDialog()">
+                    <mat-icon>zoom_out_map</mat-icon>
+                </button>
+                <!-- <mat-form-field class="example-full-width" appearance="fill">
                     <textarea matInput formControlName="TOOLS" rows="1"></textarea>
-                </mat-form-field>
+                </mat-form-field> -->
             </div>
             <div class="col-2" formGroupName="AdditionalDetails">
                 <mat-label>רופא מנתח</mat-label>
@@ -397,4 +362,18 @@
     <h1 class="text-center">
         <span class="mr-3">מטופל בסטטוס בידוד</span>
     </h1>
+</ng-template>
+
+<ng-template #toolsModal let-close="close">
+    <h1 mat-dialog-title style="text-align: center;">מכשירים נוספים</h1>
+    <hr>
+    <mat-chip-list style="float: right;">
+        <div class="row" style="justify-content: right;"
+            *ngFor="let item of stringToArray(data.event.AdditionalDetails.TOOLS)">
+            <mat-chip *ngIf="item != ''">
+                <b>{{item}}</b>
+            </mat-chip>
+        </div>
+
+    </mat-chip-list>
 </ng-template>
