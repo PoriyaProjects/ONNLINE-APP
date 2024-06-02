@@ -1,8 +1,7 @@
 // app.component.ts
 
 import { Component, ElementRef, OnInit, TemplateRef, ViewChild } from '@angular/core';
-import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
-import { FormArray, FormBuilder, FormControl, FormGroup } from '@angular/forms';
+import { FormBuilder, FormControl, FormGroup } from '@angular/forms';
 import { environment } from 'src/environments/environment';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
@@ -10,6 +9,7 @@ import { map, startWith } from 'rxjs/operators';
 import { Observable } from 'rxjs';
 import { ConfirmationDialogService } from '../confirmation-dialog/confirmation-dialog.service';
 import { MatDialog } from '@angular/material/dialog';
+import { DatePipe } from '@angular/common';
 
 @Component({
   selector: 'app-whatsapp-departments-dashboard',
@@ -41,11 +41,12 @@ export class WhatsappDepartmentsDashboardComponent implements OnInit {
     private router: Router,
     private http: HttpClient,
     private confirmationDialogService: ConfirmationDialogService,
-    public dialog: MatDialog
+    public dialog: MatDialog,
+    public datePipe: DatePipe
   ) { }
 
   ngOnInit(): void {
-    this.getEmployeesForWhatsapp();
+    this.getPatientsForWhatsapp(1);
     this.getHrWhatsAppUsers();
     this.getHRWhatsAppServiceFixedFiles();
     // this.getContactsAndConversations();
@@ -106,19 +107,11 @@ export class WhatsappDepartmentsDashboardComponent implements OnInit {
     return this.contacts.filter(option => option.FirstName.toLowerCase().includes(filterValue));
   }
 
-  async getEmployeesForWhatsapp() {
+  async getPatientsForWhatsapp(period) {
     this.http
-      .post(environment.url + "GetEmployeesForWhatsapp", {
-        _empId: "",
-        _empFirstName: "",
-        _empLastName: "",
-        _phoneNumber: "",
-        _gender: "",
-        _department: "",
-        _role: "",
-        _sektor: "",
-        _on: "",
-        _workPlace: "1" // the 1 doesnt do anything
+      .post(environment.url + "GetPatientsForDepartmentsWhatsapp", {
+        _period: period,
+        _user: this.user_name,
       })
       .subscribe((Response) => {
         this.contacts = Response["d"];
@@ -128,7 +121,7 @@ export class WhatsappDepartmentsDashboardComponent implements OnInit {
 
   async getHrWhatsAppUsers() {
     this.http
-      .post(environment.url + "GetHrWhatsAppUsers", {
+      .post(environment.url + "getDepartmentsWhatsAppUsers", {
         _user_name: this.user_name
       })
       .subscribe((Response) => {
@@ -173,7 +166,7 @@ export class WhatsappDepartmentsDashboardComponent implements OnInit {
   async getHRWhatsAppConversationsByIDFK(row_id) {
     this.loadChat = true;
     this.http
-      .post(environment.url + "GetHRWhatsAppConversationsByIDFK", {
+      .post(environment.url + "GetDepartmentsWhatsAppConversationsByIDFK", {
         _row_ID: row_id
       })
       .subscribe((Response) => {
@@ -209,7 +202,7 @@ export class WhatsappDepartmentsDashboardComponent implements OnInit {
     if (this.newMessage.controls['Message_Text'].value.trim() !== '') {
       this.newMessage.controls['ServiceEmployeeIDFK'].setValue(this.user_name);
       this.http
-        .post(environment.url + "SendHrWhatsAppMessageToUser", {
+        .post(environment.url + "SendDepartmentsWhatsAppMessageToUser", {
           messageForm: this.newMessage.value
         })
         .subscribe((Response) => {
@@ -228,7 +221,7 @@ export class WhatsappDepartmentsDashboardComponent implements OnInit {
       this.newMessage.controls['ServiceEmployeeIDFK'].setValue(this.currentContact.CellNumber);
       this.newMessage.controls['EndUserIDFK'].setValue(this.currentContact.FirstName + ' ' + this.currentContact.LastName);
       this.http
-        .post(environment.url + "SendHrWhatsAppMessageToUserOneWay", {
+        .post(environment.url + "SendDepartmentsWhatsAppMessageToUserOneWay", {
           messageForm: this.newMessage.value
         })
         .subscribe((Response) => {

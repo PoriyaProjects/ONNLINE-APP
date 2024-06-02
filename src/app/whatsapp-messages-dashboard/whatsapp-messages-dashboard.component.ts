@@ -32,10 +32,12 @@ export class WhatsappMessagesDashboardComponent implements OnInit, OnDestroy {
   SektorsList = [];
   screenTitle = 'אישי';
   searchProgress: boolean = false;
+  sending: boolean = false;
   username = localStorage.getItem('loginUserName');
   selectedFiles: FileList | null;
   fixed_text: string = "";
   media_file: string = "";
+  file_path: string = "";
 
   constructor(
     private http: HttpClient,
@@ -97,10 +99,10 @@ export class WhatsappMessagesDashboardComponent implements OnInit, OnDestroy {
       Phone_Number: new FormControl(phone, Validators.required),
       Recipient: new FormControl(fullName, null),
       Message_Content: new FormControl(fullName + ' שלום רב,\n', Validators.required),
-      SenderIDFK: new FormControl('1', Validators.required),
+      SenderIDFK: new FormControl('', Validators.required),
       Message_Timing: new FormControl(null, null),
       Message_Timing_Time: new FormControl(null, null),
-      File_Path: new FormControl(this.media_file, null)
+      File_Path: new FormControl(null, null)
     });
     (<FormArray>this.customForm.get('customInputs')).push(contact);
   }
@@ -143,15 +145,16 @@ export class WhatsappMessagesDashboardComponent implements OnInit, OnDestroy {
   //   if(this.selectedFiles)
   // }
 
-  sendMessages(fileObj) {
+  sendMessages() {
     if (!this.typeOfScreen) {
       if (!this.customForm.invalid && this.customForm.value.customInputs.length > 0) {
         // todo set the path for each number
-        if (fileObj !== null) {
+        if (this.file_path !== null) {
           this.customForm.value.customInputs.forEach((element, index) => {
-            this.customForm.controls['customInputs']['controls'][index].controls.File_Path.setValue(fileObj);
+            this.customForm.controls['customInputs']['controls'][index].controls.File_Path.setValue(this.file_path);
           });
         }
+        this.sending = true;
         this.http
           .post(environment.url + "Send_Custom_WhatsApp_Messages", {
             customForm: this.customForm.value
@@ -162,6 +165,7 @@ export class WhatsappMessagesDashboardComponent implements OnInit, OnDestroy {
               this.deleteAllRow();
             }
             else this.openSnackBar('תקלה!');
+            this.sending = false;
           });
       } else {
         this.openSnackBar("למלא שדות חובה");
@@ -169,9 +173,10 @@ export class WhatsappMessagesDashboardComponent implements OnInit, OnDestroy {
     } else {
       if (!this.manyContacts.invalid) {
         // todo set the file path if exists
-        if (fileObj !== null) {
-          this.manyContacts.controls['File_Path'].setValue(fileObj);
+        if (this.file_path !== null) {
+          this.manyContacts.controls['File_Path'].setValue(this.file_path);
         }
+        this.sending = true;
         this.http
           .post(environment.url + "Send_ToMany_WhatsApp_Messages", {
             manyForm: this.manyContacts.value
@@ -182,6 +187,7 @@ export class WhatsappMessagesDashboardComponent implements OnInit, OnDestroy {
               this.deleteAllRow();
             }
             else this.openSnackBar('תקלה!');
+            this.sending = false;
           });
       } else {
         this.openSnackBar("למלא שדות חובה");
@@ -207,11 +213,11 @@ export class WhatsappMessagesDashboardComponent implements OnInit, OnDestroy {
         const parser = new DOMParser();
         const xmlDoc = parser.parseFromString(response, 'text/xml');
         let file_path = xmlDoc.getElementsByTagName('string')[0].textContent;
-        this.sendMessages(file_path);
+        this.sendMessages();
       });
     }
     else {
-      this.sendMessages(null);
+      this.sendMessages();
     }
   }
 
@@ -222,10 +228,12 @@ export class WhatsappMessagesDashboardComponent implements OnInit, OnDestroy {
   }
 
   getWhatsAppMessagesFromServer() {
-    if (this.dataSource.filteredData.length > 0) this.dataSource = new MatTableDataSource<any>();
+    const sender = this.customForm.controls['customInputs']['controls'][0].controls.SenderIDFK.value;
+    if (this.dataSource.filteredData.length > 0 && sender !== "") this.dataSource = new MatTableDataSource<any>();
     else {
       this.http
         .post(environment.url + "GetWhatsAppMessagesFromServer", {
+          sender_IDFK: this.customForm.controls['customInputs']['controls'][0].controls.SenderIDFK.value
         })
         .subscribe((Response) => {
           this.dataSource = new MatTableDataSource<any>(Response["d"]);

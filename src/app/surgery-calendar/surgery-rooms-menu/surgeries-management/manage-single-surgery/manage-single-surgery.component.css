@@ -22,6 +22,16 @@ mat-form-field{
   font-weight: bold;
 }
 
+tr.mat-row, tr.mat-header-row {
+  height: 36px;
+}
+
+th.mat-header-cell {
+  padding-bottom: 0px;
+  padding-top: 0px;
+  font-weight: bold;
+}
+
 .row.surgery-details mat-form-field {
   /* width: 30%; */
   line-height: 16px;
@@ -47,7 +57,7 @@ ul {
   text-align: right;
 }
 
-p{
+mat-label{
   font-weight: bold;
 }
 

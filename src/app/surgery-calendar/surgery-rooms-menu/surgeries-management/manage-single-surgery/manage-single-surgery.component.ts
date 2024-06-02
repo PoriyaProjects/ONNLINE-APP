@@ -30,6 +30,9 @@ export class ManageSingleSurgeryComponent implements OnInit {
   filteredOptionssurgeries: Observable<any[]>;
   filteredOptionsservices: Observable<any[]>;
   @ViewChild('modalContent', { static: true }) modalContent: TemplateRef<any>;
+  @ViewChild('toolsModal', { static: true }) toolsModal: TemplateRef<any>;
+  displayedColumns = ['name', 'side'];
+  displayedColumns1 = ['name'];
 
   constructor(
     public datePipe: DatePipe,
@@ -273,6 +276,14 @@ export class ManageSingleSurgeryComponent implements OnInit {
       this.dialog.open(this.modalContent, { width: '60%' });
     }
     return x;
+  }
+
+  openToolsDialog() {
+    this.dialog.open(this.toolsModal, { width: '60%' });
+  }
+
+  stringToArray(commaSeparatedString: string): string[] {
+    return commaSeparatedString.split(',');
   }
 
   selectedRequestedDepartment(departmentRowID) {
