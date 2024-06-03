@@ -155,6 +155,8 @@ export class SurgeriesManagementComponent {
             event: event,
             action: action
           },
+          width: '80%',
+          height: '80%',
           disableClose: true
         });
         dialogRef.afterClosed().subscribe(res => {
