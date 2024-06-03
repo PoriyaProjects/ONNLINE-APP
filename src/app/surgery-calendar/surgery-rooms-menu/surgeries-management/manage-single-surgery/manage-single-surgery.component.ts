@@ -30,7 +30,7 @@ export class ManageSingleSurgeryComponent implements OnInit {
   filteredOptionssurgeries: Observable<any[]>;
   filteredOptionsservices: Observable<any[]>;
   @ViewChild('modalContent', { static: true }) modalContent: TemplateRef<any>;
-  @ViewChild('toolsModal', { static: true }) toolsModal: TemplateRef<any>;
+  // @ViewChild('toolsModal', { static: true }) toolsModal: TemplateRef<any>;
   displayedColumns = ['name', 'side'];
   displayedColumns1 = ['name'];
 
@@ -278,9 +278,9 @@ export class ManageSingleSurgeryComponent implements OnInit {
     return x;
   }
 
-  openToolsDialog() {
-    this.dialog.open(this.toolsModal, { width: '60%' });
-  }
+  // openToolsDialog() {
+  //   this.dialog.open(this.toolsModal, { width: '60%' });
+  // }
 
   stringToArray(commaSeparatedString: string): string[] {
     return commaSeparatedString.split(',');
@@ -346,20 +346,24 @@ export class ManageSingleSurgeryComponent implements OnInit {
   }
 
   calculateSurgeryDuration(type) {
-    let datefordiff = this.datePipe.transform(this.SurgeryFormGroup.value.ArrivalDate, 'yyyy-MM-dd');
-    let before = new Date(datefordiff + ' ' + this.SurgeryFormGroup.value.ArrivalTime);
-    let after = new Date(datefordiff + ' ' + this.SurgeryFormGroup.getRawValue().EndTime);
-    let diff = Math.abs(after.getTime() - before.getTime());//difference in time
-    if (type == 'endTime') {
-      // let hours = Math.floor((diff % 86400000) / 3600000);//hours
-      // let minutes = Math.round(((diff % 86400000) % 3600000) / 60000);//minutes
-      // let minutes = Math.round((diff % 86400000) / 60000);//minutes
-      // this.SurgeryFormGroup.controls['SurgeriesCalendar_Susgeries']['controls'].Duration.setValue(minutes);
-      after.setTime(before.getTime() + (parseInt(this.SurgeryFormGroup.controls['Duration'].value) * 60 * 1000));
-      this.SurgeryFormGroup.controls['EndTime'].setValue(this.datePipe.transform(after, 'HH:mm'));
-    } else {
-      after.setTime(before.getTime() + diff);
-      this.SurgeryFormGroup.controls['EndTime'].setValue(this.datePipe.transform(after, 'HH:mm'));
+    try {
+      let datefordiff = this.datePipe.transform(this.SurgeryFormGroup.value.ArrivalDate, 'yyyy-MM-dd');
+      let before = new Date(datefordiff + ' ' + this.SurgeryFormGroup.value.ArrivalTime);
+      let after = new Date(datefordiff + ' ' + this.SurgeryFormGroup.getRawValue().EndTime);
+      let diff = Math.abs(after.getTime() - before.getTime());//difference in time
+      if (type == 'endTime') {
+        // let hours = Math.floor((diff % 86400000) / 3600000);//hours
+        // let minutes = Math.round(((diff % 86400000) % 3600000) / 60000);//minutes
+        // let minutes = Math.round((diff % 86400000) / 60000);//minutes
+        // this.SurgeryFormGroup.controls['SurgeriesCalendar_Susgeries']['controls'].Duration.setValue(minutes);
+        after.setTime(before.getTime() + (parseInt(this.SurgeryFormGroup.controls['Duration'].value) * 60 * 1000));
+        this.SurgeryFormGroup.controls['EndTime'].setValue(this.datePipe.transform(after, 'HH:mm'));
+      } else {
+        after.setTime(before.getTime() + diff);
+        this.SurgeryFormGroup.controls['EndTime'].setValue(this.datePipe.transform(after, 'HH:mm'));
+      }
+    } catch (err) {
+      console.log("Error in converting date: calculateSurgeryDuration");
     }
   }
 

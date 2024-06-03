@@ -5,6 +5,7 @@
 
 .row-btn {
   width: 100%;
+  margin-top: 30px;
 }
 
 .row.personal-details mat-form-field {
@@ -12,6 +13,10 @@
   line-height: 40px;
   margin-left: auto;
   font-weight: bold;
+}
+
+mat-tab-header mat-tab-header-rtl{
+  margin-bottom: 20px;
 }
 
 .example-full-width mat-form-field-underline {
@@ -53,7 +58,7 @@ ul {
   color: red;
 }
 
-.col-2{
+.col-2, .col-6{
   text-align: right;
 }
 
@@ -61,8 +66,16 @@ mat-label{
   font-weight: bold;
 }
 
+.tab-container {
+  margin-top: 30px;
+}
+
 .exists-info {
   float: right;
+}
+
+mat-tab-group {
+  align-items: center;
 }
 
 table{
