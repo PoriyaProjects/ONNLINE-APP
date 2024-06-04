@@ -9,39 +9,37 @@
         </h3>
     </div>
     <hr>
-    <!-- <form> -->
     <mat-tab-group [formGroup]="SurgeryFormGroup" dir="rtl">
         <mat-tab label="פרטי מטופל">
             <div class="tab-container">
                 <div class="row personal-details" formGroupName="SurgeryPatientDetails">
-                    <div class="col-6">
+                    <div class="col-2">
                         <mat-label>תעודת זהות</mat-label>
                         <p>{{SurgeryFormGroup.value.SurgeryPatientDetails.PM_PATIENT_ID}}</p>
                     </div>
-                    <div class="col-6">
+                    <div class="col-2">
                         <mat-label>מספר מקרה</mat-label>
                         <p>{{SurgeryFormGroup.value.SurgeryPatientDetails.PM_CASE_NUMBER}}</p>
                     </div>
-                    <div class="col-6">
+                    <div class="col-2">
                         <mat-label>שם פרטי</mat-label>
                         <p>{{SurgeryFormGroup.value.SurgeryPatientDetails.PM_FIRST_NAME}}</p>
                     </div>
-                    <div class="col-6">
+                    <div class="col-2">
                         <mat-label>שם משפחה</mat-label>
                         <p>{{SurgeryFormGroup.value.SurgeryPatientDetails.PM_LAST_NAME}}</p>
                     </div>
-                    <div class="col-6">
+                    <div class="col-2">
                         <mat-label>מגדר</mat-label>
                         <p>{{SurgeryFormGroup.value.SurgeryPatientDetails.PM_PATIENT_GENDER}}</p>
                     </div>
-                    <div class="col-6">
+                    <div class="col-2">
                         <mat-label>גיל</mat-label>
                         <p>{{SurgeryFormGroup.value.SurgeryPatientDetails.PM_DOB}}</p>
                     </div>
                 </div>
             </div>
-        </mat-tab>
-        <mat-tab label="פרטי ניתוח">
+            <hr style="border: 1px solid #bca875;">
             <div class="tab-container">
                 <div class="row surgery-details">
                     <div class="col-2" formGroupName="SurgeryRequestDepartments">
@@ -70,71 +68,11 @@
                             (focusout)="calculateSurgeryDuration('endTime')">
                     </div>
                 </div>
+
                 <div class="row surgery-details">
                     <div class="col-2">
-                        <table mat-table [dataSource]="SurgeryFormGroup.get('SurgeriesCalendar_Service').value"
-                            class="mat-elevation-z8">
-
-                            <ng-container matColumnDef="name">
-                                <th mat-header-cell *matHeaderCellDef> שירות </th>
-                                <td mat-cell *matCellDef="let element"> {{element.Service_Name}} </td>
-                            </ng-container>
-
-                            <tr mat-header-row *matHeaderRowDef="displayedColumns1"></tr>
-                            <tr mat-row *matRowDef="let row; columns: displayedColumns1;"></tr>
-                        </table>
-                    </div>
-                    <!-- <div class="col-2" formGroupName="SurgeriesCalendar_Susgeries">
-                            <mat-form-field class="example-full-width" appearance="fill">
-                                <mat-label>פרוצדורה/שם ניתוח</mat-label>
-                                <input type="text" matInput [formControl]="surgeriesCtrl" [matAutocomplete]="auto2"
-                                    (focusout)="selectedSurgeryServiceName()">
-                                <mat-autocomplete #auto2="matAutocomplete" [displayWith]="displayFnSurgery">
-                                    <mat-option *ngFor="let option of filteredOptionssurgeries | async" [value]="option">
-                                        {{option.S_SERVICE_VAL}}
-                                    </mat-option>
-                                </mat-autocomplete>
-                            </mat-form-field>
-                        </div>
-                        <div class="col-2" formGroupName="AdditionalDetails">
-                            <mat-form-field class="example-full-width" appearance="fill">
-                                <mat-label>צד ניתוח</mat-label>
-                                <input matInput formControlName="SIDE">
-                            </mat-form-field>
-                        </div> -->
-                    <!-- <div class="col-4">
-                            <table>
-                                <thead>
-                                    <tr style="background: lightgrey;">
-                                        <td><b>פרוצדורה/שם ניתוח</b></td>
-                                        <td><b>צד ניתוח</b></td>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr *ngFor="let surgery of SurgeryFormGroup.get('SurgeriesCalendar_Susgeries').value">
-                                        <td><b>{{surgery.Surgery_Name}}</b></td>
-                                        <td><b>{{surgery.Side}}</b></td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div> -->
-                    <div class="col-4">
-                        <table mat-table [dataSource]="SurgeryFormGroup.get('SurgeriesCalendar_Susgeries').value"
-                            class="mat-elevation-z8">
-
-                            <ng-container matColumnDef="name">
-                                <th mat-header-cell *matHeaderCellDef> פרוצדורה/שם ניתוח </th>
-                                <td mat-cell *matCellDef="let element"> {{element.Surgery_Name}} </td>
-                            </ng-container>
-
-                            <ng-container matColumnDef="side">
-                                <th mat-header-cell *matHeaderCellDef> צד ניתוח </th>
-                                <td mat-cell *matCellDef="let element"> {{element.Side}} </td>
-                            </ng-container>
-
-                            <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-                            <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
-                        </table>
+                        <mat-label>דחיפות</mat-label>
+                        <p style="color: red;">{{SurgeryFormGroup.get('Urgency').value}}</p>
                     </div>
                     <div class="col-2" formGroupName="AdditionalDetails">
                         <mat-form-field class="example-full-width" appearance="fill">
@@ -147,19 +85,6 @@
                             <mat-label>הרדמה</mat-label>
                             <input matInput formControlName="ANESTHESIA">
                         </mat-form-field>
-                    </div>
-                    <div class="col-2" formGroupName="SurgeriesCalendar_Service">
-                        <mat-label>זמן משך ניתוח (דקות)</mat-label>
-                        <p>
-                            {{ SurgeryFormGroup.get('Duration').value }}
-                        </p>
-                    </div>
-                </div>
-                <div class="row surgery-details"
-                    *ngIf="SurgeryFormGroup.get('SurgeryRequestDepartments').value.SD_ROW_ID != ''">
-                    <div class="col-2">
-                        <mat-label>דחיפות</mat-label>
-                        <p style="color: red;">{{SurgeryFormGroup.get('Urgency').value}}</p>
                     </div>
                     <div class="col-2" formGroupName="AdditionalDetails">
                         <mat-form-field class="example-full-width" appearance="fill">
@@ -178,6 +103,20 @@
                                 <mat-option value="1"> כן </mat-option>
                             </mat-select>
                         </mat-form-field>
+                    </div>
+                    <div class="col-2" formGroupName="SurgeriesCalendar_Service">
+                        <mat-label>זמן משך ניתוח (דקות)</mat-label>
+                        <p>
+                            {{ SurgeryFormGroup.get('Duration').value }}
+                        </p>
+                    </div>
+                </div>
+                <div class="row surgery-details"
+                    *ngIf="SurgeryFormGroup.get('SurgeryRequestDepartments').value.SD_ROW_ID != ''">
+                    
+                    <div class="col-2" formGroupName="AdditionalDetails">
+                        <mat-label>רופא מנתח</mat-label>
+                        <p>{{SurgeryFormGroup.get('DoctorSurgeon').value}}</p>
                     </div>
                     <div class="col-2" formGroupName="AdditionalDetails">
                         <mat-form-field class="example-full-width" appearance="fill">
@@ -206,11 +145,7 @@
                             <mat-icon>zoom_out_map</mat-icon>
                         </button>
                     </div> -->
-                    <div class="col-2" formGroupName="AdditionalDetails">
-                        <mat-label>רופא מנתח</mat-label>
-                        <p>{{SurgeryFormGroup.get('DoctorSurgeon').value}}</p>
-                    </div>
-                    <div class="col-12" formGroupName="AdditionalDetails">
+                    <div class="col-6" formGroupName="AdditionalDetails">
                         <mat-form-field class="example-full-width" appearance="fill">
                             <mat-label>הערות</mat-label>
                             <textarea matInput formControlName="NOTE" rows="1"></textarea>
@@ -326,23 +261,73 @@
                     </div>
                 </div>
             </div>
+        </mat-tab>
+        <mat-tab label="פרטי ניתוח">
+
+            <div class="tab-container">
+                <div class="col-12 mb-4">
+                    <table mat-table [dataSource]="SurgeryFormGroup.get('SurgeriesCalendar_Service').value"
+                        class="mat-elevation-z8">
+
+                        <ng-container matColumnDef="name">
+                            <th mat-header-cell *matHeaderCellDef> שירות </th>
+                            <td mat-cell *matCellDef="let element"> {{element.Service_Name}} </td>
+                        </ng-container>
+
+                        <tr mat-header-row *matHeaderRowDef="displayedColumns1"></tr>
+                        <tr mat-row *matRowDef="let row; columns: displayedColumns1;"></tr>
+                    </table>
+                </div>
+                <div class="col-12">
+                    <table mat-table [dataSource]="SurgeryFormGroup.get('SurgeriesCalendar_Susgeries').value"
+                        class="mat-elevation-z8">
+
+                        <ng-container matColumnDef="name">
+                            <th mat-header-cell *matHeaderCellDef> פרוצדורה/שם ניתוח </th>
+                            <td mat-cell *matCellDef="let element"> {{element.Surgery_Name}} </td>
+                        </ng-container>
+
+                        <ng-container matColumnDef="side">
+                            <th mat-header-cell *matHeaderCellDef> צד ניתוח </th>
+                            <td mat-cell *matCellDef="let element"> {{element.Side}} </td>
+                        </ng-container>
+
+                        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+                        <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+                    </table>
+                </div>
+            </div>
+
 
         </mat-tab>
         <mat-tab label="מכשירים נוספים">
             <div class="tab-container">
-                <mat-chip-list style="float: right;">
-                    <div class="row" style="justify-content: right;"
-                        *ngFor="let item of stringToArray(data.event.AdditionalDetails.TOOLS)">
-                        <mat-chip *ngIf="item != ''">
-                            <b>{{item}}</b>
-                        </mat-chip>
-                    </div>
-                </mat-chip-list>
+                <div class="col-12 mb-5">
+                    <table mat-table [dataSource]="SurgeryFormGroup.get('SurgeriesCalendar_Tools').value"
+                        class="mat-elevation-z8">
+
+                        <ng-container matColumnDef="name">
+                            <th mat-header-cell *matHeaderCellDef> שירות </th>
+                            <td mat-cell *matCellDef="let element"> {{element.Tool_Name}} </td>
+                        </ng-container>
+
+                        <ng-container matColumnDef="code">
+                            <th mat-header-cell *matHeaderCellDef> קוד </th>
+                            <td mat-cell *matCellDef="let element"> {{element.Tool_Code}} </td>
+                        </ng-container>
+
+                        <ng-container matColumnDef="tool">
+                            <th mat-header-cell *matHeaderCellDef> ציוד נדרש </th>
+                            <td mat-cell *matCellDef="let element"> {{element.Tool_Need}} </td>
+                        </ng-container>
+
+                        <tr mat-header-row *matHeaderRowDef="displayedColumns2"></tr>
+                        <tr mat-row *matRowDef="let row; columns: displayedColumns2;"></tr>
+                    </table>
+                </div>
             </div>
         </mat-tab>
     </mat-tab-group>
-
-    <!-- </form> -->
 </div>
 <ng-template #modalContent let-close="close">
     <span class="material-icons" matTooltip="בידוד" style="color: red;font-size: 60px;float: right;">
