@@ -19,6 +19,10 @@ mat-tab-header mat-tab-header-rtl{
   margin-bottom: 20px;
 }
 
+/* .col-6 {
+  border-style: ridge;
+} */
+
 .example-full-width mat-form-field-underline {
   display: none;
 }

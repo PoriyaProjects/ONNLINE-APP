@@ -33,6 +33,7 @@ export class ManageSingleSurgeryComponent implements OnInit {
   // @ViewChild('toolsModal', { static: true }) toolsModal: TemplateRef<any>;
   displayedColumns = ['name', 'side'];
   displayedColumns1 = ['name'];
+  displayedColumns2 = ['name', 'code', 'tool'];
 
   constructor(
     public datePipe: DatePipe,
@@ -159,6 +160,15 @@ export class ManageSingleSurgeryComponent implements OnInit {
             Duration: new FormControl('', null)
           }]
         }),
+        SurgeriesCalendar_Tools: this.fb.group({
+          Tools: [{
+            Row_ID: new FormControl('', null),
+            Tool_Name: new FormControl('', null),
+            Tool_Code: new FormControl('', null),
+            Tool_Need: new FormControl('', null),
+            SurgeriesCalendarIDFK: new FormControl('', null)
+          }]
+        }),
         DoctorSurgeon: new FormControl('', Validators.required),
         NoteType: new FormControl('', Validators.required),
         NoteTypeRequest: new FormControl('', Validators.required),
@@ -198,6 +208,7 @@ export class ManageSingleSurgeryComponent implements OnInit {
         }),
         SurgeriesCalendar_Susgeries: this.calendarPatientSurgeriesForm(),
         SurgeriesCalendar_Service: this.calendarPatientServicesForm(),
+        SurgeriesCalendar_Tools: this.calendarPatientToolsForm(),
         DoctorSurgeon: new FormControl(this.data.event.DoctorSurgeon, null),
         Urgency: new FormControl(this.data.event.Urgency, null),
         Duration: new FormControl(this.data.event.Duration, null),
@@ -255,6 +266,20 @@ export class ManageSingleSurgeryComponent implements OnInit {
       }))
     });
     return Services;
+  }
+
+  calendarPatientToolsForm() {
+    let Tools = new FormArray([]);
+    this.data.event.SurgeriesCalendar_Tools.forEach(element => {
+      Tools.push(this.fb.group({
+        Row_ID: element.Row_ID,
+        Tool_Name: element.Tool_Name,
+        Tool_Code: element.Tool_Code,
+        Tool_Need: element.Tool_Need,
+        SurgeriesCalendarIDFK: element.SurgeriesCalendarIDFK
+      }))
+    });
+    return Tools;
   }
 
 
