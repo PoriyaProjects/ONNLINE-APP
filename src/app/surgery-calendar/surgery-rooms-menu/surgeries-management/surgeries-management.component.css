@@ -17,6 +17,14 @@
     list-style-type: none;
 }
 
+.example-button-container{
+    display: contents;
+}
+
+img{
+    width: 30px;
+    margin: 10px;
+}
 
 mat-spinner {
     top: 50%;

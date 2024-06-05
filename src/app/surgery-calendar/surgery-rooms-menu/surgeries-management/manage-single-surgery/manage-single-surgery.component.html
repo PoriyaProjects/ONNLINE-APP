@@ -113,7 +113,7 @@
                 </div>
                 <div class="row surgery-details"
                     *ngIf="SurgeryFormGroup.get('SurgeryRequestDepartments').value.SD_ROW_ID != ''">
-                    
+
                     <div class="col-2" formGroupName="AdditionalDetails">
                         <mat-label>רופא מנתח</mat-label>
                         <p>{{SurgeryFormGroup.get('DoctorSurgeon').value}}</p>
@@ -300,7 +300,7 @@
 
 
         </mat-tab>
-        <mat-tab label="מכשירים נוספים">
+        <mat-tab label="מכשירים נוספים" *ngIf="SurgeryFormGroup.get('SurgeriesCalendar_Tools').value.length > 0">
             <div class="tab-container">
                 <div class="col-12 mb-5">
                     <table mat-table [dataSource]="SurgeryFormGroup.get('SurgeriesCalendar_Tools').value"
