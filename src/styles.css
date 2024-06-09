@@ -2207,7 +2207,10 @@ body {
     z-index: 999999999999999 !important;
 }
 
-
+.no-pad .mat-card.mat-focus-indicator{
+    padding-bottom:  0 !important;
+    margin-bottom: 15px;
+}
 
 @keyframes spinner {
     to {

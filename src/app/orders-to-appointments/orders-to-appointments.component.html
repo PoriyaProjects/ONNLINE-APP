@@ -10,7 +10,7 @@
                                 <div class="col-12">
                                     <mat-form-field>
                                         <mat-label>מלל חופשי</mat-label>
-                                        <input matInput [(ngModel)]="freeTxt"  [ngModelOptions]="{standalone: true}">
+                                        <input matInput [(ngModel)]="freeTxt" [ngModelOptions]="{standalone: true}">
                                     </mat-form-field>
                                 </div>
                                 <div class="col">
@@ -60,13 +60,15 @@
                                 <div class="col">
                                     <mat-form-field>
                                         <mat-label>מספר יומן</mat-label>
-                                        <input matInput [(ngModel)]="calendarNumber"  [ngModelOptions]="{standalone: true}">
+                                        <input matInput [(ngModel)]="calendarNumber"
+                                            [ngModelOptions]="{standalone: true}">
                                     </mat-form-field>
                                 </div>
                                 <div class="col">
                                     <mat-form-field>
                                         <mat-label>מבקש</mat-label>
-                                        <input matInput [(ngModel)]="requestingName" [ngModelOptions]="{standalone: true}">
+                                        <input matInput [(ngModel)]="requestingName"
+                                            [ngModelOptions]="{standalone: true}">
                                     </mat-form-field>
                                 </div>
                             </div>
@@ -466,6 +468,29 @@
                                 formControlName="OrderRangeQuantity" />
                         </mat-form-field>
                     </div>
+                </div>
+            </div>
+            <div class="row" *ngIf="Permission == '3'">
+                <div class="col no-pad">
+                    <h3>המלצות</h3>
+                    <div class="form-group" *ngFor="let row of recomindatins">
+                        <mat-card class="recomindatin-card">
+                            <mat-card-header>
+                              <mat-card-title><b>נותן ההמלצה</b>: {{row.RecommendationUser}}</mat-card-title>
+                              <mat-card-subtitle>
+                                <p><b>תאריך ושעה</b>: {{row.DateOfRecommendation}}</p>                                
+                                <p><b>מחלקה</b>: {{row.Department}}</p>                                
+                              </mat-card-subtitle>
+                            </mat-card-header>
+                            <mat-card-content>
+                              <p>
+                                {{row.RecommendationContent}}
+                              </p>
+                            </mat-card-content>
+                          </mat-card>
+                          <div class="width-100-100"><hr></div>
+                    </div>
+
                 </div>
             </div>
             <div *ngIf="Permission == '3'" class="row" style="

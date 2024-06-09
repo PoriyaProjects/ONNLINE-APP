@@ -72,6 +72,7 @@ export class OrdersToAppointmentsComponent implements OnInit {
     @ViewChild('OrdersToAppointmentsFormID', { static: true }) OrdersToAppointmentsFormID: ElementRef;
     Permission: string = "";
     OutpatientClinics: OutpatientClinic[] = [];
+    recomindatins: any[] = [];
     selectedClinics = this.OutpatientClinics;
     UserDetails: UserDetails = {
         FirstName: "",
@@ -138,7 +139,7 @@ export class OrdersToAppointmentsComponent implements OnInit {
         private modalService: NgbModal,
         private modalService_2: NgbModal,
         private formBuilder: FormBuilder
-    ) {}
+    ) { }
 
     ifMobile: Boolean;
     ngOnInit(): void {
@@ -183,10 +184,10 @@ export class OrdersToAppointmentsComponent implements OnInit {
             ],
             RowId: ["0", false],
         });
-        
+
         this.getOrdersToAppointments();
         let that = this;
-        setInterval(function(){
+        setInterval(function () {
             that.getOrdersToAppointments();
         }, 60 * 1000 * 5)
     }
@@ -220,14 +221,14 @@ export class OrdersToAppointmentsComponent implements OnInit {
     editRow(content, _type, _element) {
         this.DateNowR = new Date();
         this.DateNow = formatDate(
-            this.DateNowR ,
+            this.DateNowR,
             "yyyy-MM-dd HH:mm",
             "en-US"
         );
         this.saveBtn = true;
-        if(_element.OrderStatus != "0"){
+        if (_element.OrderStatus != "0") {
             this.saveBtn = false;
-        }else{
+        } else {
             this.saveBtn = true;
         }
         if (_element.OrderRangeQuantity == "0") {
@@ -277,10 +278,10 @@ export class OrdersToAppointmentsComponent implements OnInit {
             );
         }
         let bol = false
-        if(_element.AlertPatient == 'true'){
+        if (_element.AlertPatient == 'true') {
             bol = true;
         }       // //debugger
-        if(_element.OrderRangeType != '' && _element.OrderRangeType != '0'){
+        if (_element.OrderRangeType != '' && _element.OrderRangeType != '0') {
             this.OrdersToAppointmentsForm = this.formBuilder.group({
                 Notes: [_element.Notes, false],
                 OrderRealDateTime: [dateObject, null],
@@ -304,7 +305,7 @@ export class OrdersToAppointmentsComponent implements OnInit {
                 OrderdUser: [_element.OrderdUser, Validators.required],
                 RowId: [_element.RowId, false],
             });
-        }else{
+        } else {
             this.OrdersToAppointmentsForm = this.formBuilder.group({
                 Notes: [_element.Notes, false],
                 OrderRealDateTime: [dateObject, null],
@@ -328,8 +329,8 @@ export class OrdersToAppointmentsComponent implements OnInit {
                 OrderdUser: [_element.OrderdUser, Validators.required],
                 RowId: [_element.RowId, false],
             });
-        } 
-        
+        }
+        this.getRecomendations(_element.PatientId)
         this.modalService.open(content, this.modalOptions).result.then(
             (result) => {
                 //////////////debugger
@@ -369,7 +370,7 @@ export class OrdersToAppointmentsComponent implements OnInit {
         this.OrderStatus = "0";
         this.RowId = "0";
         this.OrderedFromDepart = this.UserDetails.Depart
-        this.OrderdUserName = this.UserDetails.FirstName + " "+this.UserDetails.LastName 
+        this.OrderdUserName = this.UserDetails.FirstName + " " + this.UserDetails.LastName
         this.OrderdUserPhone = this.UserDetails.CellNumber
         this.OrdersToAppointmentsForm = this.formBuilder.group({
             Notes: ["", null],
@@ -401,7 +402,7 @@ export class OrdersToAppointmentsComponent implements OnInit {
                     //this.saveChad(_element.ROW_ID);
                 }
             },
-            (reason) => {}
+            (reason) => { }
         );
     }
 
@@ -466,7 +467,7 @@ export class OrdersToAppointmentsComponent implements OnInit {
                 if (this.Permission == "" || this.Permission == null) {
                     this.router.navigate(["login"]);
                 }
-                
+
                 setTimeout(function () {
                     //////////////debugger
                     if (tableLoader) {
@@ -538,9 +539,9 @@ export class OrdersToAppointmentsComponent implements OnInit {
                 });
             });
     }
-    changeReq(event){
+    changeReq(event) {
         if (
-            event.srcElement.value != "" 
+            event.srcElement.value != ""
         ) {
             this.OrdersToAppointmentsForm.get("OrderToDate").setValidators(
                 Validators.required
@@ -572,7 +573,7 @@ export class OrdersToAppointmentsComponent implements OnInit {
             ).updateValueAndValidity();
         }
     }
-    printModal(){
+    printModal() {
         this.modalService.dismissAll();
         window.print();
     }
@@ -628,7 +629,7 @@ export class OrdersToAppointmentsComponent implements OnInit {
             .subscribe((Response) => {
                 var json = Response["d"];
                 this.UserDetails = json;
-              //  //debugger
+                //  //debugger
                 setTimeout(function () {
                     //////////////debugger
                     if (tableLoader) {
@@ -650,7 +651,7 @@ export class OrdersToAppointmentsComponent implements OnInit {
     }
     onSubmit() {
         //debugger
-        if(this.OrdersToAppointmentsForm.value.OrderStatus == '1' && (this.OrdersToAppointmentsForm.value.OrderRealDateTime == "" || this.OrdersToAppointmentsForm.value.OrderRealDateTime == null)){
+        if (this.OrdersToAppointmentsForm.value.OrderStatus == '1' && (this.OrdersToAppointmentsForm.value.OrderRealDateTime == "" || this.OrdersToAppointmentsForm.value.OrderRealDateTime == null)) {
             this._snackBar.open("תאריך ושעת תור בפועל שדה חובה!!", "", {
                 duration: 2500,
                 direction: "rtl",
@@ -696,7 +697,7 @@ export class OrdersToAppointmentsComponent implements OnInit {
                 "yyyy-MM-dd HH:mm:ss",
                 "en-US"
             );
-        }else if (typeof this.OrdersToAppointmentsForm.value.OrderDateTime == "string"){
+        } else if (typeof this.OrdersToAppointmentsForm.value.OrderDateTime == "string") {
             var dateString = this.OrdersToAppointmentsForm.value.OrderDateTime;
             var reggie = /(\d{2})\/(\d{2})\/(\d{4}) (\d{2}):(\d{2})/;
             var dateArray = reggie.exec(dateString);
@@ -742,4 +743,17 @@ export class OrdersToAppointmentsComponent implements OnInit {
                 });
             });
     }
+    getRecomendations(PatientId: any) {
+        this.http
+            .post(
+                environment.url + "GetRecommendations",
+                {
+                    PatientId: PatientId,
+                }
+            )
+            .subscribe((Response: any) => {
+                this.recomindatins = Response["d"];
+            })
+    }
 }
+
