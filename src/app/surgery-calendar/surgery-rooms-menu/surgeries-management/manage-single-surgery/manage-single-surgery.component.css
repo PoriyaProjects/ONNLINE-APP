@@ -5,6 +5,7 @@
 
 .row-btn {
   width: 100%;
+  margin-top: 30px;
 }
 
 .row.personal-details mat-form-field {
@@ -14,11 +15,29 @@
   font-weight: bold;
 }
 
+mat-tab-header mat-tab-header-rtl{
+  margin-bottom: 20px;
+}
+
+/* .col-6 {
+  border-style: ridge;
+} */
+
 .example-full-width mat-form-field-underline {
   display: none;
 }
 
 mat-form-field{
+  font-weight: bold;
+}
+
+tr.mat-row, tr.mat-header-row {
+  height: 36px;
+}
+
+th.mat-header-cell {
+  padding-bottom: 0px;
+  padding-top: 0px;
   font-weight: bold;
 }
 
@@ -43,16 +62,24 @@ ul {
   color: red;
 }
 
-.col-2{
+.col-2, .col-6{
   text-align: right;
 }
 
-p{
+mat-label{
   font-weight: bold;
+}
+
+.tab-container {
+  margin-top: 30px;
 }
 
 .exists-info {
   float: right;
+}
+
+mat-tab-group {
+  align-items: center;
 }
 
 table{

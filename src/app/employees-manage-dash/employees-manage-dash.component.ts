@@ -298,7 +298,7 @@ export class EmployeesManageDashComponent implements OnInit {
     dialogRef.componentInstance.employee = employee;
     dialogRef.componentInstance.managerType = this.managerType;
     dialogRef.afterClosed().subscribe(result => {
-      this.GetEmployeesToUpdate(this.managerType, false);
+      if (result == 1) this.GetEmployeesToUpdate(this.managerType, false);
     });
   }
 

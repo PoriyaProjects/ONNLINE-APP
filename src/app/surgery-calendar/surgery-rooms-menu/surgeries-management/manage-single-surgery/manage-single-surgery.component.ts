@@ -30,6 +30,10 @@ export class ManageSingleSurgeryComponent implements OnInit {
   filteredOptionssurgeries: Observable<any[]>;
   filteredOptionsservices: Observable<any[]>;
   @ViewChild('modalContent', { static: true }) modalContent: TemplateRef<any>;
+  // @ViewChild('toolsModal', { static: true }) toolsModal: TemplateRef<any>;
+  displayedColumns = ['name', 'side'];
+  displayedColumns1 = ['name'];
+  displayedColumns2 = ['name', 'code', 'tool'];
 
   constructor(
     public datePipe: DatePipe,
@@ -156,6 +160,15 @@ export class ManageSingleSurgeryComponent implements OnInit {
             Duration: new FormControl('', null)
           }]
         }),
+        SurgeriesCalendar_Tools: this.fb.group({
+          Tools: [{
+            Row_ID: new FormControl('', null),
+            Tool_Name: new FormControl('', null),
+            Tool_Code: new FormControl('', null),
+            Tool_Need: new FormControl('', null),
+            SurgeriesCalendarIDFK: new FormControl('', null)
+          }]
+        }),
         DoctorSurgeon: new FormControl('', Validators.required),
         NoteType: new FormControl('', Validators.required),
         NoteTypeRequest: new FormControl('', Validators.required),
@@ -195,6 +208,7 @@ export class ManageSingleSurgeryComponent implements OnInit {
         }),
         SurgeriesCalendar_Susgeries: this.calendarPatientSurgeriesForm(),
         SurgeriesCalendar_Service: this.calendarPatientServicesForm(),
+        SurgeriesCalendar_Tools: this.calendarPatientToolsForm(),
         DoctorSurgeon: new FormControl(this.data.event.DoctorSurgeon, null),
         Urgency: new FormControl(this.data.event.Urgency, null),
         Duration: new FormControl(this.data.event.Duration, null),
@@ -254,6 +268,20 @@ export class ManageSingleSurgeryComponent implements OnInit {
     return Services;
   }
 
+  calendarPatientToolsForm() {
+    let Tools = new FormArray([]);
+    this.data.event.SurgeriesCalendar_Tools.forEach(element => {
+      Tools.push(this.fb.group({
+        Row_ID: element.Row_ID,
+        Tool_Name: element.Tool_Name,
+        Tool_Code: element.Tool_Code,
+        Tool_Need: element.Tool_Need,
+        SurgeriesCalendarIDFK: element.SurgeriesCalendarIDFK
+      }))
+    });
+    return Tools;
+  }
+
 
   buildAdditionalFormGroupByDepartment(details) {
     let x: FormGroup;
@@ -273,6 +301,14 @@ export class ManageSingleSurgeryComponent implements OnInit {
       this.dialog.open(this.modalContent, { width: '60%' });
     }
     return x;
+  }
+
+  // openToolsDialog() {
+  //   this.dialog.open(this.toolsModal, { width: '60%' });
+  // }
+
+  stringToArray(commaSeparatedString: string): string[] {
+    return commaSeparatedString.split(',');
   }
 
   selectedRequestedDepartment(departmentRowID) {
@@ -335,20 +371,24 @@ export class ManageSingleSurgeryComponent implements OnInit {
   }
 
   calculateSurgeryDuration(type) {
-    let datefordiff = this.datePipe.transform(this.SurgeryFormGroup.value.ArrivalDate, 'yyyy-MM-dd');
-    let before = new Date(datefordiff + ' ' + this.SurgeryFormGroup.value.ArrivalTime);
-    let after = new Date(datefordiff + ' ' + this.SurgeryFormGroup.getRawValue().EndTime);
-    let diff = Math.abs(after.getTime() - before.getTime());//difference in time
-    if (type == 'endTime') {
-      // let hours = Math.floor((diff % 86400000) / 3600000);//hours
-      // let minutes = Math.round(((diff % 86400000) % 3600000) / 60000);//minutes
-      // let minutes = Math.round((diff % 86400000) / 60000);//minutes
-      // this.SurgeryFormGroup.controls['SurgeriesCalendar_Susgeries']['controls'].Duration.setValue(minutes);
-      after.setTime(before.getTime() + (parseInt(this.SurgeryFormGroup.controls['Duration'].value) * 60 * 1000));
-      this.SurgeryFormGroup.controls['EndTime'].setValue(this.datePipe.transform(after, 'HH:mm'));
-    } else {
-      after.setTime(before.getTime() + diff);
-      this.SurgeryFormGroup.controls['EndTime'].setValue(this.datePipe.transform(after, 'HH:mm'));
+    try {
+      let datefordiff = this.datePipe.transform(this.SurgeryFormGroup.value.ArrivalDate, 'yyyy-MM-dd');
+      let before = new Date(datefordiff + ' ' + this.SurgeryFormGroup.value.ArrivalTime);
+      let after = new Date(datefordiff + ' ' + this.SurgeryFormGroup.getRawValue().EndTime);
+      let diff = Math.abs(after.getTime() - before.getTime());//difference in time
+      if (type == 'endTime') {
+        // let hours = Math.floor((diff % 86400000) / 3600000);//hours
+        // let minutes = Math.round(((diff % 86400000) % 3600000) / 60000);//minutes
+        // let minutes = Math.round((diff % 86400000) / 60000);//minutes
+        // this.SurgeryFormGroup.controls['SurgeriesCalendar_Susgeries']['controls'].Duration.setValue(minutes);
+        after.setTime(before.getTime() + (parseInt(this.SurgeryFormGroup.controls['Duration'].value) * 60 * 1000));
+        this.SurgeryFormGroup.controls['EndTime'].setValue(this.datePipe.transform(after, 'HH:mm'));
+      } else {
+        after.setTime(before.getTime() + diff);
+        this.SurgeryFormGroup.controls['EndTime'].setValue(this.datePipe.transform(after, 'HH:mm'));
+      }
+    } catch (err) {
+      console.log("Error in converting date: calculateSurgeryDuration");
     }
   }
 

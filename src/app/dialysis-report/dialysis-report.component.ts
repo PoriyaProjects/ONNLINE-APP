@@ -48,7 +48,7 @@ export interface PciMonitor {
   Trombolitic_Therapy: string;
   Remarks: string;
   Numerator: string;
-  denominator: string;
+  Denominator: string;
 
 }
 
@@ -111,7 +111,7 @@ export interface DialysisReport {
   DialysisEnd_Date: string;
   Remarks: string;
   Numerator: string;
-  denominator: string;
+  Denominator: string;
 
 }
 
@@ -236,7 +236,6 @@ export class DialysisReportComponent implements OnInit {
     'Numerator',
     'Denominator'
   ]
-
   displayedColumnsDialysis: string[] = [
     'Measurment_ID',
     'Hospital_ID',
@@ -296,10 +295,8 @@ export class DialysisReportComponent implements OnInit {
     'DialysisEnd_Date',
     'Remarks',
     'Numerator',
-    'denominator'
+    'Denominator'
   ]
-
-
   displayedColumnsCABG: string[] = [
     'Measurment_ID',
     'Hospital_ID',

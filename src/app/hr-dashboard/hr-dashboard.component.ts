@@ -159,6 +159,7 @@ export class HrDashboardComponent implements OnInit {
       .then((confirmed) => {
         console.log("User confirmed:", confirmed);
         if (confirmed) {
+          contact.WhatsApp_Bot_Convesations = [];
           this.http
             .post(environment.url + "EndHRWhatsAppConversation", {
               uncontact: contact
