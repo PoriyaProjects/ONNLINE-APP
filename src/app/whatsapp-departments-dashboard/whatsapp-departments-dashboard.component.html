@@ -127,7 +127,6 @@
                     <input matInput (keyup)="applyFilter($event.target.value)" placeholder="הקלד.." #input>
                 </mat-form-field>
                 <mat-list role="list" class="list-of-contact">
-                    <!-- <mat-spinner *ngIf="unAnsweredConversations.length == 0"></mat-spinner> -->
                     <mat-list-item role="listitem" class="list-item" matTooltip="{{uncontact.Message_Time}}"
                         *ngFor="let uncontact of unAnsweredConversations_filter" (click)="openChat(uncontact)">
                         <mat-icon mat-list-icon
@@ -136,7 +135,6 @@
                             {{uncontact.CellNumber}}</span>
                         <mat-icon mat-list-icon *ngIf="uncontact.maxRow != ''" style="color: orangered;"
                             matTooltip="סיום שיחה" (click)="endConversation(uncontact)">cancel_presentation</mat-icon>
-                        <!-- <span mat-line class="secondary">{{ contact.status }}</span> -->
                     </mat-list-item>
                 </mat-list>
             </div>
