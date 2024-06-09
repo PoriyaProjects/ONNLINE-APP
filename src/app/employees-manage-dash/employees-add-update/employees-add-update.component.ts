@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Component, OnInit, TemplateRef, ViewChild } from '@angular/core';
 import { FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
-import { MatDialog, MatDialogConfig } from '@angular/material/dialog';
+import { MatDialog, MatDialogConfig, MatDialogRef } from '@angular/material/dialog';
 import { Router } from '@angular/router';
 import { DatePipe } from '@angular/common';
 import {
@@ -45,7 +45,7 @@ export class EmployeesAddUpdateComponent implements OnInit {
   @ViewChild('modalContent', { static: true }) modalContent: TemplateRef<any>;
 
   constructor(private _snackBar: MatSnackBar,
-    public dialog: MatDialog,
+    public dialog: MatDialogRef<EmployeesAddUpdateComponent>,
     public dialog2: MatDialog,
     private router: Router,
     private http: HttpClient,
@@ -180,7 +180,7 @@ export class EmployeesAddUpdateComponent implements OnInit {
   }
 
   goToSignForm() {
-    let dialogRef = this.dialog.open(FillSurveyComponent, { disableClose: true });
+    let dialogRef = this.dialog2.open(FillSurveyComponent, { disableClose: true });
     dialogRef.componentInstance.urlID = 121;
     dialogRef.componentInstance.ifContinueForm = 0;
     dialogRef.componentInstance.NurseID = 0;
@@ -321,17 +321,31 @@ export class EmployeesAddUpdateComponent implements OnInit {
               RowID: new FormControl(this.employee.RowID, null),
               EmployeeID: new FormControl(this.employee.EmployeeID, [Validators.required, Validators.pattern("[0-9 ]{1,9}")]),
               FirstName: new FormControl(this.employee.FirstName, [Validators.required]),
-              FirstNameEng: new FormControl(this.employee.FirstNameEng, [Validators.required]),
+              FirstNameEng: new FormControl(this.employee.FirstNameEng, null),
               LastName: new FormControl(this.employee.LastName, [Validators.required]),
-              LastNameEng: new FormControl(this.employee.LastNameEng, [Validators.required]),
+              LastNameEng: new FormControl(this.employee.LastNameEng, null),
               Gender: new FormControl(this.employee.Gender, [Validators.required]),
               KupaID: new FormControl(this.employee.KupaID, null),
-              Email: new FormControl(this.employee.Email, [Validators.required]),
-              PersonalEmail: new FormControl(this.employee.PersonalEmail, [Validators.required]),
+              Email: new FormControl(this.employee.Email, null),
+              PersonalEmail: new FormControl(this.employee.PersonalEmail, null),
               CellNumber: new FormControl(this.employee.CellNumber, [Validators.required, Validators.pattern("[0-9 ]{10}")]),
               // KupaID: new FormControl(this.employee.KupaID, null),
               // KupaName: new FormControl(this.employee.KupaName, null),
               DateOfBirth: new FormControl(this.employee.DateOfBirth, [Validators.required]),
+            });
+            this.gymDetails = this.formBuilder.group({
+              GymParticipant: new FormControl(this.employee.GymParticipation.Row_ID != null, null),
+              Row_ID: new FormControl(this.employee.GymParticipation.Row_ID, null),
+              PaymentDate: new FormControl(this.employee.GymParticipation.PaymentDate, null),
+              Payment: new FormControl(this.employee.GymParticipation.Payment, null),
+              StartGymDate: new FormControl(this.employee.GymParticipation.StartGymDate, null),
+              EndGymDate: new FormControl(this.employee.GymParticipation.EndGymDate, null),
+              MedicalProblems: new FormControl(this.employee.GymParticipation.MedicalProblems, null),
+              MedicalApproval: new FormControl(this.employee.GymParticipation.MedicalApproval.toLowerCase() == 'true', null),
+              PausePeriod: new FormControl(this.employee.GymParticipation.PausePeriod.toLowerCase() == 'true', null),
+              PausePeriodExplain: new FormControl(this.employee.GymParticipation.PausePeriodExplain, null),
+              EmployeesID: new FormControl(this.employee.GymParticipation.EmployeesID === null ? this.employee.RowID : null, null),
+              Status: new FormControl(this.employee.GymParticipation.Status, null),
             });
             this.employeeWorkDetails = this.formBuilder.group({
               RowID: new FormControl(this.employee.RowID, null),
@@ -366,6 +380,8 @@ export class EmployeesAddUpdateComponent implements OnInit {
               ApprovedToBlossom: new FormControl(this.employee.ApprovedToBlossom, null),
               AcceptTerms: new FormControl(this.employee.AcceptTerms, null),
               Toranot: new FormControl(this.employee.Toranot, null),
+              JcpFromDate: new FormControl(this.employee.JcpFromDate, null),
+              JcpToDate: new FormControl(this.employee.JcpToDate, null),
             });
             this._switchHTOK = this.employee.StatusRow;
             this._switchBlossom = this.employee.ApprovedToBlossom;
@@ -441,7 +457,7 @@ export class EmployeesAddUpdateComponent implements OnInit {
         .subscribe((Response) => {
           if (Response["d"]) {
             this.openSnackBar("נשמר בהצלחה");
-            this.dialog.closeAll();
+            this.dialog.close(1);
           } else {
             this.openSnackBar("משהו השתבש, לא נשמר");
           }
