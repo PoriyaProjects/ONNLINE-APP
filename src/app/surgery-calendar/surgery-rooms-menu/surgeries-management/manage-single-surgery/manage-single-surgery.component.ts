@@ -223,6 +223,7 @@ export class ManageSingleSurgeryComponent implements OnInit {
         ArrivalDate: new FormControl(this.data.event.start, Validators.required),
         ArrivalTime: new FormControl(this.data.event.ArrivalTime, Validators.required),
         SurgeryRoom: new FormControl(this.data.event.SurgeryRoom, Validators.required),
+        SurgeryRoomName: new FormControl(this.data.event.SurgeryRoomName, Validators.required),
         EndTime: new FormControl({ value: this.data.event.EndTime, disabled: true }, null),
         LastUpdateUserName: new FormControl({ value: localStorage.getItem('loginUserName'), disabled: true }, null),
       });

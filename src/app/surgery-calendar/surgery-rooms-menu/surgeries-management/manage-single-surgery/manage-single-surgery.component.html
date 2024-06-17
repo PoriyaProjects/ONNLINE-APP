@@ -48,11 +48,11 @@
                     </div>
                     <div class="col-2">
                         <mat-label>תאריך ניתוח</mat-label>
-                        <p>{{SurgeryFormGroup.value.ArrivalDate | date}}</p>
+                        <p>{{SurgeryFormGroup.value.ArrivalDate | date: 'yyyy-MM-dd'}}</p>
                     </div>
                     <div class="col-2">
                         <mat-label>חדר ניתוח</mat-label>
-                        <p>{{SurgeryFormGroup.value.SurgeryRoom}}</p>
+                        <p>{{SurgeryFormGroup.value.SurgeryRoomName}}</p>
                     </div>
                     <div class="col-2" formGroupName="AdditionalDetails">
                         <mat-label>מחלקת אשפוז</mat-label>
@@ -64,8 +64,9 @@
                     </div>
                     <div class="col-2">
                         <mat-label>שעת סיום</mat-label>
-                        <input matInput type="time" formControlName="EndTime"
-                            (focusout)="calculateSurgeryDuration('endTime')">
+                        <!-- <input matInput type="time" formControlName="EndTime"
+                            (focusout)="calculateSurgeryDuration('endTime')"> -->
+                        <p>{{SurgeryFormGroup.get('EndTime').value}}</p>
                     </div>
                 </div>
 

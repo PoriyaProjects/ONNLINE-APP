@@ -419,12 +419,12 @@ export class SurgeriesManagementComponent {
       _surRoomCode: this.data.room.CalendarRoomsArea,
       date: fullDate
     }).subscribe(res => {
-      if (res['d'].length > 0) this.planningExcelFile(res['d']);
+      if (res['d'].length > 0) this.planningExcelFile(res['d'], department);
     })
   }
 
   fileName = 'תבנית ניתוחים';
-  planningExcelFile(json) {
+  planningExcelFile(json, department) {
     let json_to_excel = [];
     json.forEach(element => {
       json = {
@@ -453,7 +453,7 @@ export class SurgeriesManagementComponent {
     XLSX.utils.book_append_sheet(wb, worksheet, 'תכנית ניתוחים');
 
     /* save to file */
-    XLSX.writeFile(wb, this.fileName + '.xlsx');
+    XLSX.writeFile(wb, this.fileName + ' מחלקה ' + department + '.xlsx');
   }
 
 }
