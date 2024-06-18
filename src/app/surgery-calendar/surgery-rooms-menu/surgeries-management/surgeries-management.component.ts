@@ -1,23 +1,18 @@
 import {
   Component,
-  ChangeDetectionStrategy,
   ViewChild,
   TemplateRef,
   OnInit,
   ElementRef,
-  ChangeDetectorRef,
   Inject
 } from '@angular/core';
 import {
-  endOfDay,
-  startOfDay,
   isSameDay,
   isSameMonth,
 } from 'date-fns';
 import { Subject } from 'rxjs';
 import {
   CalendarEvent,
-  CalendarEventAction,
   CalendarEventTimesChangedEvent,
   CalendarView,
 } from 'angular-calendar';
@@ -36,7 +31,6 @@ import localeHe from '@angular/common/locales/he';
 import { environment } from 'src/environments/environment';
 import { ManageSingleSurgeryComponent } from './manage-single-surgery/manage-single-surgery.component';
 import * as XLSX from 'xlsx';
-import { saveAs } from 'file-saver';
 
 const colors: any = {
   red: '#ad2121',
