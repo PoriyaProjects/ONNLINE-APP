@@ -157,6 +157,8 @@ export class WhatsappDepartmentsDashboardComponent implements OnInit {
       .then((confirmed) => {
         console.log("User confirmed:", confirmed);
         if (confirmed) {
+          // remove the conversation chat from the request to avoid error maximum size request
+          contact.WhatsApp_Bot_Convesations = contact.WhatsApp_Bot_Convesations.filter(x => x.IfFileMessage === "False");
           this.http
             .post(environment.url + "EndDepartmentsWhatsAppConversation", {
               uncontact: contact
