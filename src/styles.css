@@ -16,6 +16,9 @@
     left: 0;
     top: 0;
 }
+.recomindatin-card p {
+    white-space:pre;
+}
 .week-cal-day-badge{
     position: absolute;
     left: 6px;
