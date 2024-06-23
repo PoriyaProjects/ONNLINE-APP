@@ -44,6 +44,7 @@ export interface CathMonitor {
   templateUrl: './cath-report.component.html',
   styleUrls: ['./cath-report.component.css']
 })
+
 export class CathReportComponent implements OnInit {
 
   isLoading = false;
@@ -131,10 +132,11 @@ export class CathReportComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    const currentYear = new Date().getFullYear();
     this.form = this.fb.group({
-      measureType: [''],
+      measureType: ['Cath'],
       EraChoosen: [''],
-      selectedyear: [''],
+      selectedyear: [currentYear.toString()],
       formControlName: [''],
       selectedPeriod: [null], // Initialize with null or a default value
       fromDate: Date,
@@ -177,12 +179,7 @@ export class CathReportComponent implements OnInit {
     const selectedyear = this.form.get('selectedyear').value; // Accessing the measureType value
 
     if (measureType == 'Cath') {
-      if (selectedyear == '') {
-        alert("תבחר שנה בבקשה")
-      }else{
-
         this.Cath();
-      }
     }
     if (measureType == '') {
       alert("תבחר מדד בבקשה")
@@ -205,68 +202,30 @@ export class CathReportComponent implements OnInit {
     let selectedYear = this.form.get('selectedyear').value; // Ensure this matches your form control name exactly
 
 
-
     let dateNow = new Date();
 
-    if (selectedPeriod == 'red' && EraChoosen) {
-
-      let formattedFromDate, formattedToDate;
-
-      switch (EraChoosen) {
-        case '1':
-          formattedFromDate = `${selectedYear}-01-01`;
-          formattedToDate = `${selectedYear}-01-31`;
-          break;
-        case '2':
-          formattedFromDate = `${selectedYear}-02-01`;
-          formattedToDate = `${selectedYear}-02-28`; // Assuming February has 28 days
-          break;
-        case '3':
-          formattedFromDate = `${selectedYear}-03-01`;
-          formattedToDate = `${selectedYear}-03-31`;
-          break;
-        case '4':
-          formattedFromDate = `${selectedYear}-04-01`;
-          formattedToDate = `${selectedYear}-04-30`;
-          break;
-        case '5':
-          formattedFromDate = `${selectedYear}-05-01`;
-          formattedToDate = `${selectedYear}-05-31`;
-          break;
-        case '6':
-          formattedFromDate = `${selectedYear}-06-01`;
-          formattedToDate = `${selectedYear}-06-30`;
-          break;
-        case '7':
-          formattedFromDate = `${selectedYear}-07-01`;
-          formattedToDate = `${selectedYear}-07-31`;
-          break;
-        case '8':
-          formattedFromDate = `${selectedYear}-08-01`;
-          formattedToDate = `${selectedYear}-08-31`;
-          break;
-        case '9':
-          formattedFromDate = `${selectedYear}-09-01`;
-          formattedToDate = `${selectedYear}-09-30`;
-          break;
-        case '10':
-          formattedFromDate = `${selectedYear}-10-01`;
-          formattedToDate = `${selectedYear}-10-31`;
-          break;
-        case '11':
-          formattedFromDate = `${selectedYear}-11-01`;
-          formattedToDate = `${selectedYear}-11-30`;
-          break;
-        case '12':
-          formattedFromDate = `${selectedYear}-12-01`;
-          formattedToDate = `${selectedYear}-12-31`;
-          break;
-      }
-
-      console.log("From Date: ", formattedFromDate, "To Date: ", formattedToDate); // For debugging
-      this.fetchCathReport(formattedFromDate, formattedToDate); // Assuming you want to use these dates in your report fetching
+    if((!(toDate instanceof Date) &&  !(fromDate instanceof Date)) || (  (toDate instanceof Date) > (fromDate instanceof Date) ) ) {
+      alert("Please enter valid dates");
+      console.log("1ssad")
+      return;
+    }
+    if(!(toDate instanceof Date)){
+      console.log("yeo")
+      toDate = this.datePipe.transform(dateNow, 'yyyy-MM-dd');
     }
 
+
+
+      if(fromDate){
+        const formattedFromDate = this.datePipe.transform(fromDate, 'yyyy-MM-dd');
+        const formattedToDate = this.datePipe.transform(toDate, 'yyyy-MM-dd');
+        console.log(formattedFromDate, formattedToDate); // For debugging
+        this.fetchCathReport(formattedFromDate, formattedToDate);
+
+      }else{
+        console.log("1ssad")
+        alert("Please enter valid dates");
+      }
   }
 
 

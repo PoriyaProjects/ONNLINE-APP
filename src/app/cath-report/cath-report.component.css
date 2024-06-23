@@ -1,131 +1,129 @@
 .container {
-    direction: rtl; 
-  }
-  
-  mat-form-field {
-    width: 100%;
-  }
-  
-  .col-2 {
-    display: flex;
-    justify-content: center; 
-    align-items: center; 
-    gap: 10px; 
-  }
-  
-  @media (max-width: 768px) {
-    .col-2, .col-3, .col-5, .col-6 {
-      flex: 0 0 100%;
-      max-width: 100%;
-    }
-  
-    .container {
-      padding: 0 15px; 
-    }
-  
-    button.srch-btn {
-      width: auto; 
-      margin: 0 5px; 
-    }
-  }
-  
-  .mat-elevation-z8 {
-    width: 100%; 
-    margin-top: 20px; 
-    overflow-y: auto; 
-    max-height: 600px;
-  }
-  
-  
-  
-  mat-header-cell, mat-cell {
-    padding-left: 0px; 
-  }
-  
-  
-  .mat-header-row {
-    background-color: #3f51b5;
-    color: white;
-  }
-  .mat-row:nth-child(even) {
-    background-color: #f5f5f5; 
-  }
-  
-  
-  table.mat-table {
-    width: 100%;
-    overflow-x: auto;
-  }
-  
-  
-  th.mat-header-cell {
-    padding: 8px; 
-    text-align: center;
-    border: none !important; 
-  }
-  
-  
-  td.mat-cell {
-    padding: 8px; 
-    text-align: center;
-  }
-  
-  .wrapper{
-    display: flex;
-    width: 100%;
-    padding: 20px 30px;
-    text-align: right;
-    flex-wrap: wrap;
-    flex-direction: row-reverse;
-    justify-content: space-evenly;
-  }
-  
-  .select-style{
-    padding: 4px 10px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    background-color: white;
-    font-size: 16px;
-    cursor: pointer;
-  }
-  
-  .element label{
-    padding : 10px;
-  }
-  
-  .radio{
-    padding: 10px;
-  
-  }
-  .radio label{
-    margin: 0px 0px 0px 30px;
-  
-  }
-  
-  .datePicker{
-    width: 140px;
-    margin-top: -20px
-  }
-  .datePicker mat-label{
-    margin-right: 40px;
-  }
-  
-  .mat-radio-group .mat-radio-button {
-    margin-right: 20px; 
-  }
-  
-  
-  .Madad{
-    padding: 4px 10px;
-    font-size: 16px;
-    cursor: pointer;
-  }
-  .Madad h4{
-    width: 150px;
-  }
-  .Revaon{
-    margin-top: 5px;
-  }
-  
+  direction: rtl; 
+}
 
-  
+mat-form-field {
+  width: 100%;
+}
+
+.col-2 {
+  display: flex;
+  justify-content: center; 
+  align-items: center; 
+  gap: 10px; 
+}
+
+@media (max-width: 768px) {
+  .col-2, .col-3, .col-5, .col-6 {
+    flex: 0 0 100%;
+    max-width: 100%;
+  }
+
+  .container {
+    padding: 0 15px; 
+  }
+
+  button.srch-btn {
+    width: auto; 
+    margin: 0 5px; 
+  }
+}
+
+.mat-elevation-z8 {
+  width: 100%; 
+  margin-top: 20px; 
+  overflow-y: auto; 
+  max-height: 600px;
+}
+
+
+
+mat-header-cell, mat-cell {
+  padding-left: 0px; 
+}
+
+
+.mat-header-row {
+  background-color: #3f51b5;
+  color: white;
+}
+.mat-row:nth-child(even) {
+  background-color: #f5f5f5; 
+}
+
+
+table.mat-table {
+  width: 100%;
+  overflow-x: auto;
+}
+
+
+th.mat-header-cell {
+  padding: 8px; 
+  text-align: center;
+  border: none !important; 
+}
+
+
+td.mat-cell {
+  padding: 8px; 
+  text-align: center;
+}
+
+.wrapper{
+  display: flex;
+  width: 100%;
+  padding: 20px 30px;
+  text-align: right;
+  flex-wrap: wrap;
+  flex-direction: row-reverse;
+  justify-content: space-evenly;
+}
+
+.select-style{
+  padding: 4px 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background-color: white;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.element label{
+  padding : 10px;
+}
+
+.radio{
+  padding: 10px;
+
+}
+.radio label{
+  margin: 0px 0px 0px 30px;
+
+}
+
+.datePicker{
+  width: 140px;
+  margin-top: -20px
+}
+.datePicker mat-label{
+  margin-right: 40px;
+}
+
+.mat-radio-group .mat-radio-button {
+  margin-right: 20px; 
+}
+
+
+.Madad{
+  padding: 4px 10px;
+  font-size: 16px;
+  cursor: pointer;
+}
+.Madad h4{
+  width: 150px;
+}
+.Revaon{
+  margin-top: 5px;
+}
+
