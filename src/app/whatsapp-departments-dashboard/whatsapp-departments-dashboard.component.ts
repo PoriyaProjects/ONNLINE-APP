@@ -30,6 +30,7 @@ export class WhatsappDepartmentsDashboardComponent implements OnInit {
   contacts_filter = [];
   fixed_files_list = [];
   unAnsweredConversations = [];
+  selectedFile: File | null = null;
   unAnsweredConversations_filter = [];
   whatsAppGroup: FormGroup;
   newMessage: FormGroup;
@@ -67,10 +68,14 @@ export class WhatsappDepartmentsDashboardComponent implements OnInit {
 
   }
 
-  displayFiles() {
-    this.dialog.open(this.tooltipTemplate, {
-      width: '400px', // Adjust width as needed
-    });
+  attachFile() {
+
+  }
+  onFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files.length > 0) {
+      this.selectedFile = input.files[0];
+    }
   }
 
   applyFilter(filterValue: string): void {
@@ -135,6 +140,14 @@ export class WhatsappDepartmentsDashboardComponent implements OnInit {
           startWith(''),
           map(value => this._filter(value || '')),
         );
+        let interval = setTimeout(() => {
+          if (this.router.url !== '/hr-dashboard') {
+            clearTimeout(interval);
+          } else {
+            console.log("Refreshing..");
+            this.getHrWhatsAppUsers();
+          }
+        }, 10000);
       });
   }
 
@@ -144,8 +157,10 @@ export class WhatsappDepartmentsDashboardComponent implements OnInit {
       .then((confirmed) => {
         console.log("User confirmed:", confirmed);
         if (confirmed) {
+          // remove the conversation chat from the request to avoid error maximum size request
+          contact.WhatsApp_Bot_Convesations = contact.WhatsApp_Bot_Convesations.filter(x => x.IfFileMessage === "False");
           this.http
-            .post(environment.url + "EndHRWhatsAppConversation", {
+            .post(environment.url + "EndDepartmentsWhatsAppConversation", {
               uncontact: contact
             })
             .subscribe((Response) => {
@@ -201,10 +216,16 @@ export class WhatsappDepartmentsDashboardComponent implements OnInit {
   sendMessage() {
     if (this.newMessage.controls['Message_Text'].value.trim() !== '') {
       this.newMessage.controls['ServiceEmployeeIDFK'].setValue(this.user_name);
+      // check if there is file
+      const formData = new FormData();
+      if (this.selectedFile) {
+        formData.append('file', this.selectedFile, this.selectedFile.name);
+        formData.append('data', this.newMessage.value);
+      } else {
+        formData.append('data', this.newMessage.value);
+      }
       this.http
-        .post(environment.url + "SendDepartmentsWhatsAppMessageToUser", {
-          messageForm: this.newMessage.value
-        })
+        .post(environment.url + "SendDepartmentsWhatsAppMessageToUser", formData)//{ messageForm: this.newMessage.value }
         .subscribe((Response) => {
           if (Response["d"]) {
             this.currentContact.WhatsApp_Bot_Convesations.push({ Message_Text: this.newMessage.controls['Message_Text'].value, From_ServiceEmployee: 'True', IfFileMessage: 'False' });

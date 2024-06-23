@@ -59,22 +59,6 @@
                                 </div>
                             </div>
                             <div class="row">
-                                <!-- <div class="col-4">
-                                    <div class="form-group lh-37">
-                                        <mat-form-field>
-                                            <mat-label>אלקטיב</mat-label>
-                                            <mat-select formControlName="Elective">
-                                                <mat-option value="0">הכל</mat-option>
-                                                <mat-option value="1">
-                                                    כן
-                                                </mat-option>
-                                                <mat-option value="2">
-                                                    לא
-                                                </mat-option>
-                                            </mat-select>
-                                        </mat-form-field>
-                                    </div>
-                                </div> -->
                                 <div class="col-3">
                                     <div class="form-group lh-37">
                                         <mat-form-field>
@@ -211,18 +195,12 @@
                                 </span>
                             </button>
                             &nbsp;&nbsp;
-                            <!-- <button matTooltip="הדפסה" mat-raised-button type="button"
-                                class="btn btn-primary btn-raised">
-                                <span class="material-icons">
-                                    local_printshop
-                                </span>
-                            </button> -->
                         </form>
                     </div>
                 </div>
             </div>
         </div>
-        <!-- <mat-progress-bar mode="buffer" id="buffer" *ngIf="Patientsloading"></mat-progress-bar> -->
+        <mat-progress-bar mode="buffer" id="buffer" *ngIf="!loaded"></mat-progress-bar>
     </div>
     <div dir="rtl" style="padding-bottom: 10%;">
         <div class="row" style="margin-right: 10px;width: 95%;margin-bottom: -8px;">
@@ -234,17 +212,13 @@
             </div>
             <div class="col-1">
                 <div class="example-button-container">
-                    <!-- <button mat-fab color="accent" aria-label="Excel" (click)="GetEmployeesToUpdate(managerType, true)"
-                        matTooltip="יצוא לאקסל">
-                        <mat-icon>get_app</mat-icon>
-                    </button> -->
                     <a (click)="GetEmployeesToUpdate(managerType, true)">
                         <img src="../../assets/images/excel.png" width="50px" alt="Image description">
                     </a>
                 </div>
             </div>
         </div>
-        <mat-spinner class="spinner" *ngIf="!loaded"></mat-spinner>
+        <!-- <mat-spinner class="spinner" *ngIf="!loaded"></mat-spinner> -->
         <table mat-table *ngIf="loaded" [dataSource]="dataSource" matSort class="mat-elevation-z8">
 
             <ng-container matColumnDef="EmployeeID">

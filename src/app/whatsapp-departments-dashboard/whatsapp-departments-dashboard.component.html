@@ -3,9 +3,6 @@
 <mat-sidenav-container dir="rtl">
     <mat-sidenav-content class="sidenav-content">
         <mat-toolbar color="primary">
-            <!-- <button type="button" aria-label="Toggle sidenav" mat-icon-button>
-                <mat-icon aria-label="Side nav toggle icon">menu</mat-icon>
-            </button> -->
             <span>{{ currentContact?.FirstName }} {{ currentContact?.FatherName }} {{ currentContact?.LastName }} - {{
                 currentContact?.CellNumber }} - {{
                 currentContact?.Message_Time }}{{
@@ -40,31 +37,16 @@
                             {{contact.CellNumber}}</span>
                     </mat-list-item>
                 </mat-list>
-                <!-- <mat-sidenav #drawer class="sidenav">
-                    <mat-toolbar>
-                        WhatsApp Web
-                    </mat-toolbar>
-                     Your contact list or chat list goes here
-                    <mat-nav-list>
-                        <a mat-list-item *ngFor="let contact of contacts" (click)="openChat(contact)">
-                            <mat-icon mat-list-icon>account_circle</mat-icon>
-                            <span mat-line>{{ contact.name }}</span>
-                            <span mat-line class="secondary">{{ contact.status }}</span>
-                        </a>
-                    </mat-nav-list>
-                </mat-sidenav> -->
             </div>
             <div class="col-6" [formGroup]="newMessage">
                 <!-- Your input area goes here -->
                 <div class="input-container"
                     *ngIf="currentContact !== undefined && currentContact.maxRow !== '' && currentContact.maxRow !== undefined">
-                    <mat-icon style="margin-left: 20px;" matTooltipClass="right-align-tooltip"
-                        matTooltip="הצגת שמות מסמכים" (click)="displayFiles()">view_list</mat-icon>
-                    <ng-template #tooltipTemplate>
-                        <div *ngFor="let item of fixed_files_list" style="text-align: right;direction: rtl;">
-                            <p>{{ item.File_Numeric }}. {{ item.File_Name }}</p>
-                        </div>
-                    </ng-template>
+                    <form #fileForm="ngForm">
+                        <input type="file" (change)="onFileSelected($event)" />
+                    </form>
+                    <!-- <mat-icon style="margin-left: 20px;" matTooltipClass="right-align-tooltip"
+                        matTooltip="צירוף מסמך" (click)="attachFile()">attach</mat-icon> -->
                     <mat-form-field class="message-input">
                         <mat-label>שליחת הודעה בתוך שיחה</mat-label>
                         <input matInput placeholder="הודעה חדשה" formControlName="Message_Text"
@@ -127,7 +109,6 @@
                     <input matInput (keyup)="applyFilter($event.target.value)" placeholder="הקלד.." #input>
                 </mat-form-field>
                 <mat-list role="list" class="list-of-contact">
-                    <!-- <mat-spinner *ngIf="unAnsweredConversations.length == 0"></mat-spinner> -->
                     <mat-list-item role="listitem" class="list-item" matTooltip="{{uncontact.Message_Time}}"
                         *ngFor="let uncontact of unAnsweredConversations_filter" (click)="openChat(uncontact)">
                         <mat-icon mat-list-icon
@@ -136,7 +117,6 @@
                             {{uncontact.CellNumber}}</span>
                         <mat-icon mat-list-icon *ngIf="uncontact.maxRow != ''" style="color: orangered;"
                             matTooltip="סיום שיחה" (click)="endConversation(uncontact)">cancel_presentation</mat-icon>
-                        <!-- <span mat-line class="secondary">{{ contact.status }}</span> -->
                     </mat-list-item>
                 </mat-list>
             </div>

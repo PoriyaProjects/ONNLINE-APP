@@ -1,23 +1,18 @@
 import {
   Component,
-  ChangeDetectionStrategy,
   ViewChild,
   TemplateRef,
   OnInit,
   ElementRef,
-  ChangeDetectorRef,
   Inject
 } from '@angular/core';
 import {
-  endOfDay,
-  startOfDay,
   isSameDay,
   isSameMonth,
 } from 'date-fns';
 import { Subject } from 'rxjs';
 import {
   CalendarEvent,
-  CalendarEventAction,
   CalendarEventTimesChangedEvent,
   CalendarView,
 } from 'angular-calendar';
@@ -35,7 +30,7 @@ import { registerLocaleData } from '@angular/common';
 import localeHe from '@angular/common/locales/he';
 import { environment } from 'src/environments/environment';
 import { ManageSingleSurgeryComponent } from './manage-single-surgery/manage-single-surgery.component';
-
+import * as XLSX from 'xlsx';
 
 const colors: any = {
   red: '#ad2121',
@@ -155,6 +150,8 @@ export class SurgeriesManagementComponent {
             event: event,
             action: action
           },
+          width: '80%',
+          height: '80%',
           disableClose: true
         });
         dialogRef.afterClosed().subscribe(res => {
@@ -409,6 +406,49 @@ export class SurgeriesManagementComponent {
     return cloneObj;
   }
 
+  getPlannedSurgeriesData(department) {
+    let fullDate = this.datePipe.transform(this.viewDate, 'yyyy-MM-dd');
+    this.http.post(environment.url + 'GetSurgeriesPlannedExcel', {
+      Department: department,
+      _surRoomCode: this.data.room.CalendarRoomsArea,
+      date: fullDate
+    }).subscribe(res => {
+      if (res['d'].length > 0) this.planningExcelFile(res['d'], department);
+    })
+  }
+
+  fileName = 'תבנית ניתוחים';
+  planningExcelFile(json, department) {
+    let json_to_excel = [];
+    json.forEach(element => {
+      json = {
+        'מספר מקרה': element.casenumber,
+        'שם מלא, ת.ז': element.id,
+        'גיל': element.age,
+        'קוד פרוצדורה': element.code,
+        'תיאור פרוצדורה': element.s_name,
+        'צד ניתוח': element.side,
+        'תנוחת השכבה': element.position,
+        'בידוד': element.isolation,
+        'בנק הדם': element.blood,
+        'שם מנתח': element.doctor,
+        'הערות': element.note,
+        'מכשירים נוספים': element.tools,
+        'סוג הרדמה': element.anesthesia,
+        'נדרש שיקוף': element.dimot,
+        'מחלקת אשפוז': element.hospitalization,
+        'משך משוער': element.duration,
+      }
+      json_to_excel.push(json);
+    });
+    const worksheet: XLSX.WorkSheet = XLSX.utils.json_to_sheet(json_to_excel);
+    /* generate workbook and add the worksheet */
+    const wb: XLSX.WorkBook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, worksheet, 'תכנית ניתוחים');
+
+    /* save to file */
+    XLSX.writeFile(wb, this.fileName + ' מחלקה ' + department + '.xlsx');
+  }
 
 }
 @Component({
@@ -446,6 +486,7 @@ export class SummaryDialogComponent implements OnInit {
     });
     // this.totalSurgeriesDuration += ((this.surdata.room.Surgeries.length * 0.2)/0.6);
   }
+
   // differenceInTimes() {
   //   var totalMin = 0;
   //   var totalHouers = 0;
