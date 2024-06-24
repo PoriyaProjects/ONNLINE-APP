@@ -425,7 +425,7 @@ export class SurgeriesManagementComponent {
         'מספר מקרה': element.casenumber,
         'שם מלא, ת.ז': element.id,
         'גיל': element.age,
-        'קוד פרוצדורה': element.code,
+        // 'קוד פרוצדורה': element.code,
         'תיאור פרוצדורה': element.s_name,
         'צד ניתוח': element.side,
         'תנוחת השכבה': element.position,
@@ -444,7 +444,7 @@ export class SurgeriesManagementComponent {
     const worksheet: XLSX.WorkSheet = XLSX.utils.json_to_sheet(json_to_excel);
     /* generate workbook and add the worksheet */
     const wb: XLSX.WorkBook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, worksheet, 'תכנית ניתוחים');
+    XLSX.utils.book_append_sheet(wb, worksheet, 'תוכנית ניתוחים');
 
     /* save to file */
     XLSX.writeFile(wb, this.fileName + ' מחלקה ' + department + '.xlsx');

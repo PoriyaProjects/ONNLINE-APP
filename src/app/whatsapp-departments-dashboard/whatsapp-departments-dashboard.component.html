@@ -22,8 +22,8 @@
                 </mat-form-field>
                 <mat-form-field class="col-5">
                     <mat-label>תקופה בימים</mat-label>
-                    <input matInput value="1" (keyup)="getPatientsForWhatsapp($event.target.value)" placeholder="הקלד.."
-                        #input2>
+                    <input matInput value="1" type="number"
+                        (keyup)="getPatientsForWhatsapp($event.target.value)" placeholder="הקלד.." #input2>
                 </mat-form-field>
                 <mat-list role="list" class="list-of-contact">
                     <mat-spinner *ngIf="contacts.length == 0"></mat-spinner>
