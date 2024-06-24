@@ -10,6 +10,7 @@ import { Observable } from 'rxjs';
 import { ConfirmationDialogService } from '../confirmation-dialog/confirmation-dialog.service';
 import { MatDialog } from '@angular/material/dialog';
 import { DatePipe } from '@angular/common';
+import { MatSnackBar, MatSnackBarHorizontalPosition, MatSnackBarVerticalPosition } from '@angular/material/snack-bar';
 
 @Component({
   selector: 'app-whatsapp-departments-dashboard',
@@ -18,7 +19,8 @@ import { DatePipe } from '@angular/common';
 })
 export class WhatsappDepartmentsDashboardComponent implements OnInit {
   // isHandset$ = this.breakpointObserver.observe(Breakpoints.Handset);
-
+  horizontalPosition: MatSnackBarHorizontalPosition = "start";
+  verticalPosition: MatSnackBarVerticalPosition = "bottom";
   currentContact: any;
   messages = [];
   users_filter = new FormControl('');
@@ -41,6 +43,7 @@ export class WhatsappDepartmentsDashboardComponent implements OnInit {
     private fb: FormBuilder,
     private router: Router,
     private http: HttpClient,
+    private _snackBar: MatSnackBar,
     private confirmationDialogService: ConfirmationDialogService,
     public dialog: MatDialog,
     public datePipe: DatePipe
@@ -106,6 +109,14 @@ export class WhatsappDepartmentsDashboardComponent implements OnInit {
     });
   }
 
+  openSnackBar(message) {
+    this._snackBar.open(message, "X", {
+      duration: 2000,
+      horizontalPosition: this.horizontalPosition,
+      verticalPosition: this.verticalPosition,
+    });
+  }
+
   private _filter(value: string): string[] {
     const filterValue = value.toLowerCase();
 
@@ -113,6 +124,10 @@ export class WhatsappDepartmentsDashboardComponent implements OnInit {
   }
 
   async getPatientsForWhatsapp(period) {
+    if (parseInt(period) < 1 || parseInt(period) > 20) {
+      this.openSnackBar('הטווח בין 1 ל 20');
+      return;
+    }
     this.http
       .post(environment.url + "GetPatientsForDepartmentsWhatsapp", {
         _period: period,
