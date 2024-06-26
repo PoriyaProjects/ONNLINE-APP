@@ -626,7 +626,7 @@ export class FillSurveyComponent implements OnInit {
                                             //debugger;
                                             this.http
                                                 // .post(environment.url + "LinkPdfToPatientNamer", {
-                                                .post("http://srv-ipracticom:756/WebService.asmx/LinkPdfToPatientNamer", {
+                                                .post(environment.urlipracticom + "LinkPdfToPatientNamer", {
                                                     CaseNumber:
                                                         this.CaseNumber,
                                                     FormID: survey.FormID,
