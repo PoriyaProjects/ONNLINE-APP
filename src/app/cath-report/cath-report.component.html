@@ -19,6 +19,43 @@
         </div>
 
 
+        <div class="element">
+            <select formControlName="MedicalDepartment" class="select-style">
+                <option value="יום כירורגי">אשפוז יום כירורגי</option>
+                <option value="גריאטריה שיקומית">המחלקה לגריאטריה שיקומית</option>
+                <option value="אף אוזן גרון ילדים">המחלקה לרפואת אף אוזן וגרון</option>
+                <option value="נמרץ ילדים">טיפול נמרץ ילדים</option>
+                <option value="נמרץ כירורגית חזה">טיפול נמרץ כירורגית חזה</option>
+                <option value="נמרץ כירורגית כלי דם">טיפול נמרץ כירורגית כלי דם</option>
+                <option value="נמרץ כירורגית כלי דם">טיפול נמרץ כירורגית כלי דם</option>
+                <option value="נמרץ לב">טיפול נמרץ לב</option>
+                <option value="נמרץ נשימתי">טיפול נמרץ נשימתי</option>
+                <option value="נמרץ כללי">טיפול נמרץ כללי</option>
+                <option value="כירורגית א">כירורגית א</option>
+                <option value="כירורגית ב">כירורגית ב</option>
+                <option value="פנימית א">מחלקת פנימית א</option>
+                <option value="פנימית ב">מחלקת פנימית ב</option>
+                <option value="פנימית ג">מחלקת פנימית ג</option>
+                <option value="פנימית ד">מחלקת פנימית ד</option>
+                <option value="אורתופדיה">מחלקת אורתופדיה</option>
+                <option value="ריאות">מחלקת ריאות</option>
+                <option value="עור ומין">מחלקת עור ומין</option>
+                <option value="ילדים">מחלקת ילדים</option>
+                <option value="עיניים">מחלקת עיניים</option>
+                <option value="נוירולוגיה">מחלקת נוירולוגיה</option>
+                <option value="יולדות">מחלקת יולדות</option>
+                <option value="נשים">מחלקת נשים</option>
+                <option value="כירורגית ילדים">מחלקת כירורגית ילדים</option>
+                <option value="נפרולוגיה">מחלקת נפרולוגיה</option>
+                <option value="אונקולוגיה">מחלקת אונקולוגיה</option>
+                <option value="פסיכיאטריה">מחלקת פסיכיאטריה</option>
+                <option value="קרדיולוגיה">מחלקת קרדיולוגיה</option>
+            </select>
+            <label>מחלקה</label>
+        </div>
+        
+
+
         <mat-form-field class="datePicker">
             <mat-label>מתאריך</mat-label>
             <input matInput [matDatepicker]="picker1" formControlName="fromDate" (focus)="picker1.open()">

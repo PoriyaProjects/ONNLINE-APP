@@ -138,6 +138,7 @@ export class CathReportComponent implements OnInit {
       EraChoosen: [''],
       selectedyear: [currentYear.toString()],
       formControlName: [''],
+      MedicalDepartment: [''],
       selectedPeriod: [null], // Initialize with null or a default value
       fromDate: Date,
       toDate: Date,
@@ -147,6 +148,9 @@ export class CathReportComponent implements OnInit {
   }
 
   fetchCathReport(date1: string, date2: string) {
+    let selectedDepart = this.form.get('MedicalDepartment').value;
+    console.log("selectedDepart" , selectedDepart);
+
     this.dataSource.data = []
     this.IsCath = true;
     this.isLoading = true; // Start loading
@@ -160,9 +164,25 @@ export class CathReportComponent implements OnInit {
     this.http.post<CathMonitor[]>(url, data).subscribe({
       next: (records: any) => {
         console.log("data", records.d);
-        this.dataSource.data = records.d;
+        let fetchedData = records.d;
+
+        if (selectedDepart) {
+          console.log("inside");
+          console.log("Selected Department:", selectedDepart);
+          fetchedData = fetchedData.filter(record => {
+            console.log("Record MedicalDepartment:", record.MedicalDepartment);
+            return record.MedicalDepartment.includes(selectedDepart);
+          });
+        }
+  
+        this.dataSource.data = fetchedData;
         console.log(this.dataSource.data);
+
+
+       // this.dataSource.data = records.d;
+       // console.log(this.dataSource.data);
         this.isLoading = false; // Stop loading upon success
+        
       },
       error: (error) => {
         console.error('Error fetching patient records:', error);
@@ -177,6 +197,7 @@ export class CathReportComponent implements OnInit {
     const measureType = this.form.get('measureType').value; // Accessing the measureType value
     console.log('Selected measure type:', measureType); // Log the selected measure type
     const selectedyear = this.form.get('selectedyear').value; // Accessing the measureType value
+
 
     if (measureType == 'Cath') {
         this.Cath();
@@ -200,8 +221,6 @@ export class CathReportComponent implements OnInit {
     let selectedPeriod = this.form.get('selectedPeriod').value;
     let EraChoosen = this.form.get('EraChoosen').value;
     let selectedYear = this.form.get('selectedyear').value; // Ensure this matches your form control name exactly
-
-
     let dateNow = new Date();
 
     if((!(toDate instanceof Date) &&  !(fromDate instanceof Date)) || (  (toDate instanceof Date) > (fromDate instanceof Date) ) ) {
