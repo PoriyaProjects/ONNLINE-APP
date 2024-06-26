@@ -117,7 +117,8 @@ import {InjuryReportComponent} from '../injury-report/injury-report.component';
 import {WhatsappDepartmentsDashboardComponent} from '../whatsapp-departments-dashboard/whatsapp-departments-dashboard.component';
 import {CathReportComponent} from '../cath-report/cath-report.component';
 import { PatientsSystemConflictsComponent } from '../patients-system-conflicts/patients-system-conflicts.component';
-import {BTirmComponent} from '../b-tirm/b-tirm.component'
+import {BTirmComponent} from '../b-tirm/b-tirm.component';
+import {ReportReportingComponent} from '../report-reporting/report-reporting.component'
 
 
 const routes: Routes = [
@@ -241,7 +242,10 @@ const routes: Routes = [
   { path: "Injury", component: InjuryReportComponent },
   { path: "Cath", component: CathReportComponent },
   { path: "patients-system-conflicts", component: PatientsSystemConflictsComponent },
-  { path: "Metav", component: BTirmComponent }
+  { path: "Metav", component: BTirmComponent },
+  {path : "Reporting" , component : ReportReportingComponent } 
+  
+
 ];
 
 @NgModule({
