@@ -262,6 +262,15 @@
                             </div>
                             <div class="col-3">
                                 <mat-form-field>
+                                    <mat-label>תת מחלקה</mat-label>
+                                    <mat-select formControlName="SubDepartmentCode" aria-placeholder="מחלקה">
+                                        <mat-option *ngFor="let dept of DepartmentsList" [value]="dept.DepartnentCode">
+                                            {{dept.DepartnentDescripton}} </mat-option>
+                                    </mat-select>
+                                </mat-form-field>
+                            </div>
+                            <div class="col-3">
+                                <mat-form-field>
                                     <input matInput placeholder="הערות" formControlName="Remarks">
                                 </mat-form-field>
                             </div>

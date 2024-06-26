@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Component, OnInit, TemplateRef, ViewChild } from '@angular/core';
 import { FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
-import { MatDialog, MatDialogConfig, MatDialogRef } from '@angular/material/dialog';
+import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { Router } from '@angular/router';
 import { DatePipe } from '@angular/common';
 import {
@@ -111,6 +111,7 @@ export class EmployeesAddUpdateComponent implements OnInit {
       FunctionID: new FormControl(functionDefault, null),
       // FunctionDescription: new FormControl(this.employee.FunctionDescription, null),
       DepartnentCode: new FormControl(DepartnentCode, Validators.required),
+      SubDepartmentCode: new FormControl(this.employee.SubDepartmentCode, null),
       // DepartnentDescripton: new FormControl(this.employee.DepartnentDescripton, null),
       // JobTitleID: new FormControl('NULL', null),
       RankID: new FormControl(RankID, null),
@@ -357,6 +358,7 @@ export class EmployeesAddUpdateComponent implements OnInit {
               FunctionID: new FormControl(functionDefault, null),
               // FunctionDescription: new FormControl(this.employee.FunctionDescription, null),
               DepartnentCode: new FormControl(DepartnentCode, Validators.required),
+              SubDepartmentCode: new FormControl(this.employee.SubDepartmentCode, null),
               // DepartnentDescripton: new FormControl(this.employee.DepartnentDescripton, null),
               // JobTitleID: new FormControl('NULL', null),
               RankID: new FormControl(RankID, null),
