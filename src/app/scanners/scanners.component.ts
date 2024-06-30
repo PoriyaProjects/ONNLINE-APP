@@ -40,6 +40,7 @@ export interface Boxes {
     RowID: number;
     BoxID: number;
     TotalCases: number;
+    SentToSafe: number;
 }
 @Component({
     selector: "app-scanners",
