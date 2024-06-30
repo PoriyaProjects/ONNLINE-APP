@@ -218,6 +218,7 @@ import { AddPollComponent } from './polls/add-poll/add-poll.component';
 import { CathReportComponent } from './cath-report/cath-report.component';
 import { PatientsSystemConflictsComponent } from './patients-system-conflicts/patients-system-conflicts.component';
 import { BTirmComponent } from './b-tirm/b-tirm.component';
+import { ReportReportingComponent } from './report-reporting/report-reporting.component';
 
 
 
@@ -391,7 +392,8 @@ const maskConfig: Partial<IConfig> = {
     AddPollComponent,
     CathReportComponent,
     PatientsSystemConflictsComponent,
-    BTirmComponent
+    BTirmComponent,
+    ReportReportingComponent
   ],
   imports: [
     JpTimeMaskModule,

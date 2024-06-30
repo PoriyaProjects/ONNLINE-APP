@@ -311,7 +311,7 @@ export class NursesManageDashboardComponent implements OnInit {
     window.open("http://srv-apps-prod/PB/DEfault.aspx", "_blank");
   }
   openCoview() {
-    window.open("https://coview.poria.health.gov.il/dashboard", "_blank");
+    window.open("https://coview.poria.health.gov.il", "_blank");
   }
   openBluZone() {
     window.open("https://biot.co.il/session/lockscreen", "_blank");
