@@ -1,7 +1,6 @@
 // app.component.ts
 
 import { Component, ElementRef, OnDestroy, OnInit, TemplateRef, ViewChild } from '@angular/core';
-import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
 import { FormArray, FormBuilder, FormControl, FormGroup } from '@angular/forms';
 import { environment } from 'src/environments/environment';
 import { HttpClient } from '@angular/common/http';
@@ -17,7 +16,6 @@ import { MatDialog } from '@angular/material/dialog';
   styleUrls: ['./hr-dashboard.component.css']
 })
 export class HrDashboardComponent implements OnInit {
-  // isHandset$ = this.breakpointObserver.observe(Breakpoints.Handset);
 
   currentContact: any;
   messages = [];
