@@ -295,6 +295,9 @@ export class NursesDepartmentManageComponent implements OnInit {
   openGoogleSheets2() {
     window.open("https://docs.google.com/spreadsheets/d/1as8TwO3WurD4Mn8aIuaDVbtMHyr6Bgu_bGS1w91TPA4/edit?usp=sharing", "_blank");
   }
+  openGoogleSheets3() {
+    window.open("https://docs.google.com/spreadsheets/d/1wJj9XGJBTUzoK-PEJUFy1CVt368N904Fn6cgKYvgBIs/edit?usp=sharing", "_blank");
+  }
 
   otherApps() {
     this.dialog.open(this.modalOtherApps, { width: '60%', disableClose: false });
