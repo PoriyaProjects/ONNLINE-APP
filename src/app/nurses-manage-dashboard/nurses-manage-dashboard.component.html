@@ -563,18 +563,23 @@
     <button type="button" class="close" matTooltip="סגירה" aria-label="Close" (click)="closeModal()">
         <span aria-hidden="true">&times;</span>
     </button>
-    <button mat-raised-button class="m-2" color="primary" (click)="openGoogleSheets()" matTooltip="איזוק אסירים">איזוק
-        אסירים</button>
-    <button mat-raised-button class="m-2" color="primary" (click)="openGoogleSheets2()"
-        matTooltip="העברה למוסד אחר">העברה למוסד
-        אחר</button>
-    <button mat-raised-button class="m-2" color="primary" (click)="openGoogleSheets3()" matTooltip="ניהול שצ'י">ניהול
-        שצ'י</button>
-    <button mat-raised-button class="m-2" color="primary" (click)="openGoogleSheets4()"
-        matTooltip="תיקון בקע מפשעתי כלוא">תיקון בקע
-        מפשעתי כלוא</button>
-    <button mat-raised-button color="primary" (click)="openGoogleSheets5()"
-        matTooltip="עזר ויסות שניוני - דרישות לפינוי מטופלים">עזר ויסות שניוני</button>
+    <button mat-icon-button [matMenuTriggerFor]="menu" aria-label="Example icon-button with a menu">
+        <mat-icon>more_vert</mat-icon>
+    </button>
+    <mat-menu #menu="matMenu">
+        <button mat-menu-item (click)="openGoogleSheets()" matTooltip="איזוק אסירים">איזוק
+            אסירים</button>
+        <button mat-menu-item (click)="openGoogleSheets2()" matTooltip="העברה למוסד אחר">העברה למוסד
+            אחר</button>
+        <button mat-menu-item (click)="openGoogleSheets3()" matTooltip="ניהול שצ'י">ניהול
+            שצ'י</button>
+        <button mat-menu-item (click)="openGoogleSheets4()" matTooltip="תיקון בקע מפשעתי כלוא">תיקון בקע
+            מפשעתי כלוא</button>
+        <button mat-menu-item (click)="openGoogleSheets5()" matTooltip="עזר ויסות שניוני - דרישות לפינוי מטופלים">עזר
+            ויסות שניוני</button>
+        <button mat-menu-item (click)="openGoogleSheets6()"
+            matTooltip="עדכון סטטוס 'טיפול מוגבר' במחלקות הפנימיות 2024">סטטוס טיפול מוגבר</button>
+    </mat-menu>
     <h1 mat-dialog-title style="text-align: center;">יישומים</h1>
     <hr>
     <div class="row">

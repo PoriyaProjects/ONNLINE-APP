@@ -531,23 +531,14 @@ export class FillSurveyComponent implements OnInit {
         var c = 0;
         var d = 0;
         surveyAnswers.forEach((answer, index, array) => {
-            // if (this._questionArr[index].QuestionType == "CheckBox") {
-            //   if (this.ChekBoxQ[checkboxplace].QId == this._questionArr[index].QuestionID) {
-            //     answer.answerContent = this.ChekBoxQ[checkboxplace].QAns.toString();
-            //     checkboxplace++;
-            //   }
-            // }
-            // else if (this._questionArr[index].QuestionType != "CheckBox") {
-            //   if (this.ChekBoxQ[checkboxplace].QId == this._questionArr[index].QuestionID) {
-            //     answer.answerContent = this.ChekBoxQ[checkboxplace].QAns.toString();
-            //   }
-            // }
-
-            // this.ChekBoxQ.forEach(i => {
-
+            
             if (this._questionArr[index].QuestionType == "CheckBox") {
                 answer.answerContent = this.ChekBoxQ[c].QAns.toString();
                 c++;
+            }
+            
+            if (this._questionArr[index].QuestionType == "Date") {
+                answer.answerContent = this.datePipe.transform(answer.answerContent, 'yyyy-MM-dd');
             }
 
             if (this._questionArr[index].QuestionType == "Signature") {
@@ -562,20 +553,6 @@ export class FillSurveyComponent implements OnInit {
                 }
             }
 
-            // if (this._questionArr.length > index) {
-            //   if (this._questionArr[index].QuestionType == "CheckBox" && c == 0) {
-            //     if (i.QId == this._questionArr[index].QuestionID) {
-            //       answer.answerContent = i.QAns.toString();
-            //     }
-            //   } else if (this._questionArr[index].QuestionType != "CheckBox") {
-            //     if (i.QId == this._questionArr[index].QuestionID) {
-            //       answer.answerContent = i.QAns.toString();
-            //     }
-            //   }
-            //   c++;
-            // }
-
-            // });
             if (this._questionArr.length > index) {
                 if (this._questionArr[index].QuestionType != "TextArea") {
                     let AnswerItem = {
@@ -591,10 +568,6 @@ export class FillSurveyComponent implements OnInit {
                 }
             }
         });
-
-        // if (Signature == "data:image//") {
-        //   this.openSnackBar("נא לחתום על הטופס");
-        // } else {
 
         if (!this.surveyForm.invalid) {
             this.confirmationDialogService

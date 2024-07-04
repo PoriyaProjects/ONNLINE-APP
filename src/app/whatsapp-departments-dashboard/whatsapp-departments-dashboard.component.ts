@@ -38,6 +38,7 @@ export class WhatsappDepartmentsDashboardComponent implements OnInit {
   newMessage: FormGroup;
   loadChat: boolean;
   @ViewChild('tooltipTemplate') tooltipTemplate: TemplateRef<any>;
+  base64String: string | ArrayBuffer | null = '';
 
   constructor(
     private fb: FormBuilder,
@@ -78,7 +79,19 @@ export class WhatsappDepartmentsDashboardComponent implements OnInit {
     const input = event.target as HTMLInputElement;
     if (input.files && input.files.length > 0) {
       this.selectedFile = input.files[0];
+      this.convertFileToBase64(this.selectedFile);
     }
+  }
+
+  convertFileToBase64(file: File): void {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => {
+      this.base64String = reader.result;
+    };
+    reader.onerror = (error) => {
+      console.error('Error: ', error);
+    };
   }
 
   applyFilter(filterValue: string): void {
@@ -128,6 +141,8 @@ export class WhatsappDepartmentsDashboardComponent implements OnInit {
       this.openSnackBar('הטווח בין 1 ל 20');
       return;
     }
+    this.contacts = [];
+    this.contacts_filter = [];
     this.http
       .post(environment.url + "GetPatientsForDepartmentsWhatsapp", {
         _period: period,
@@ -229,21 +244,16 @@ export class WhatsappDepartmentsDashboardComponent implements OnInit {
   }
 
   sendMessage() {
-    if (this.newMessage.controls['Message_Text'].value.trim() !== '') {
+    if (this.newMessage.controls['Message_Text'].value.trim() !== '' || this.base64String.toString() !== '') {
       this.newMessage.controls['ServiceEmployeeIDFK'].setValue(this.user_name);
-      // check if there is file
-      const formData = new FormData();
-      if (this.selectedFile) {
-        formData.append('file', this.selectedFile, this.selectedFile.name);
-        formData.append('data', this.newMessage.value);
-      } else {
-        formData.append('data', this.newMessage.value);
-      }
       this.http
-        .post(environment.url + "SendDepartmentsWhatsAppMessageToUser", formData)//{ messageForm: this.newMessage.value }
+        .post(environment.url + "SendDepartmentsWhatsAppMessageToUser", {
+          messageForm: this.newMessage.value,
+          file: this.base64String.toString().split(',')[1]
+        })
         .subscribe((Response) => {
           if (Response["d"]) {
-            this.currentContact.WhatsApp_Bot_Convesations.push({ Message_Text: this.newMessage.controls['Message_Text'].value, From_ServiceEmployee: 'True', IfFileMessage: 'False' });
+            this.currentContact.WhatsApp_Bot_Convesations.push({ Message_Text: this.selectedFile ? this.base64String : this.newMessage.controls['Message_Text'].value, From_ServiceEmployee: 'True', IfFileMessage: this.selectedFile ? 'True' : 'False' });
             this.newMessage.controls['Message_Text'].setValue('');
           } else {
             alert("Error")
