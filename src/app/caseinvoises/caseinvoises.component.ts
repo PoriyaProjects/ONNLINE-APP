@@ -94,12 +94,15 @@ export class CaseinvoisesComponent implements OnInit {
         mMenuPerm.setRoutName("caseinvoises");
         setTimeout(() => {
             if(!mMenuPerm.getHasPerm()){
-                localStorage.clear();
-                this.router.navigate(["login"]);
+                //localStorage.clear();
+                //this.router.navigate(["login"]);
             }
         }, 2000);}    
     ngOnInit(): void {
-        
+        this.invoicesForm = this.formBuilder.group({            
+            caseNumbers: ["", false],           
+            hfnia: ["3", false]
+        });
         
     }
 
