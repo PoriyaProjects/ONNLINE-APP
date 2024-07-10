@@ -172,9 +172,7 @@ export class ShareReportsDialog {
       this.disableBtn = false;
     } else {
       this.http
-        // .post(environment.url + "AttachReportToUser", {
-        // .post(environment.url + "AttachReportToUser", {
-        .post("http://srv-ipracticom:8080/WebService.asmx/AttachReportToUser", {
+        .post(environment.urlipracticom + "AttachReportToUser", {
           _userSender: localStorage.getItem('loginUserName').toLowerCase(),
           users: this.fruits,
           _reportArray: this.reportArray,
