@@ -663,36 +663,12 @@ export class NursesDashboardComponent implements OnInit {
           this.reportsArr = Response["d"];
           if (this.reportsArr.length > 0) {
             for (var i = 0; i < this.reportsArr.length; i++) {
-              if (this.AdminNurse == "0" && this.reportsArr[i].AdminNurse == "1") {
+              if (this.AdminNurse == "0" && this.reportsArr[i].ReportType == "administrative") {
                 continue;
               } else {
-                // this.ELEMENT_DATA.push({
-                //   reportID: this.reportsArr[i].Row_ID,
-                //   ReportDate: this.reportsArr[i].ReportDate,
-                //   ReportStatus: this.reportsArr[i].ReportStatus,
-                //   ReportText: this.reportsArr[i].ReportText,
-                //   userFullName: this.reportsArr[i].UsersReportsList[0].UsersList[0].FirstName + " " + this.reportsArr[i].UsersReportsList[0].UsersList[0].LastName,
-                //   UserName: this.reportsArr[i].UsersReportsList[0].UsersList[0].UserName,
-                //   LastUpdatedDate: this.reportsArr[i].LastUpdatedDate,
-                //   ReportShift: this.reportsArr[i].ReportShift,
-                //   ReportMachlol: this.reportsArr[i].ReportMachlol,
-                //   ReportCategory: this.reportsArr[i].ReportCategory,
-                //   ReportSubCategory: this.reportsArr[i].ReportSubCategory,
-                //   ReportsReplyList: this.reportsArr[i].ReportsReplyList,
-                //   Important: this.reportsArr[i].Important,
-                //   PatientName: this.reportsArr[i].PatientName,
-                //   AdminNurse: this.reportsArr[i].AdminNurse,
-                // });
                 this.ELEMENT_DATA.push(this.reportsArr[i]);
               }
             }
-            // if(this.AdminNurse != '1'){
-            //  this.ELEMENT_DATA.filter(s => s.includes('val')); 
-            // }
-            // if (_caseNumber != "") {
-            //   // this.ReportGroup.controls['Diagnosis'].setValue(this.reportsArr[0].Diagnosis);
-            //   this.getPatientDiagnosis();
-            // }
             this.departmentfilter.setValue(this.Dept_Name);
             this.permission = true;
           }
