@@ -139,6 +139,9 @@ export class BTirmComponent implements OnInit {
       EraChoosen: [''],
       selectedyear: [currentYear.toString()],
       formControlName: [''],
+      MedicalDepartment: [''],
+      DEVO: [''],
+      Reporting: [''],
       selectedPeriod: [null], // Initialize with null or a default value
       fromDate: Date,
       toDate: Date,
@@ -146,8 +149,12 @@ export class BTirmComponent implements OnInit {
     });
     console.log("init bTirm");
   }
-
+  
   fetchbTirmReport(date1: string, date2: string) {
+    const reporting = this.form.get('Reporting').value; 
+    const devo = this.form.get('DEVO').value;
+    const medicalDepartment = this.form.get('MedicalDepartment').value; 
+
     this.dataSource.data = []
     this.IsbTirm = true;
     this.isLoading = true; // Start loading
@@ -155,9 +162,12 @@ export class BTirmComponent implements OnInit {
     const url = `${environment.url}FetchbTirmReport`;
     let data = {
       DateIn: date1,
-      DateOut: date2
+      DateOut: date2,
+      Department: medicalDepartment,
+      Reporting: reporting,
+      DEVO:devo
     }
-    console.log(data.DateIn, data.DateOut);
+    console.log(data.DateIn, data.DateOut,data.DEVO);
     this.http.post<BTirmMonitor[]>(url, data).subscribe({
       next: (records: any) => {
         console.log("data", records.d);
@@ -171,6 +181,8 @@ export class BTirmComponent implements OnInit {
       }
     });
   }
+
+
 
 
 
