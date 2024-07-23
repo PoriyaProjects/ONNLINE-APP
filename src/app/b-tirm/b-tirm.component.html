@@ -17,6 +17,7 @@
             </select>
             <label>מדד</label>
         </div>
+      
 
 
 
@@ -61,6 +62,53 @@
             <h6>{{ dataSource.data.length > 0 ? dataSource.data.length : '' }} : מספר
                 מקרים</h6>
         </div>
+
+
+
+        <div class="element">
+          <select formControlName="MedicalDepartment" class="select-style">
+              <option value="נמרץ ילדים">טיפול נמרץ ילדים</option>
+              <option value="נמרץ כירורגית חזה">טיפול נמרץ כירורגית חזה</option>
+              <option value="נמרץ כירורגית כלי דם">טיפול נמרץ כירורגית כלי דם</option>
+              <option value="נמרץ לב">טיפול נמרץ לב</option>
+              <option value="נמרץ נשימתי">טיפול נמרץ נשימתי</option>
+              <option value="נמרץ כללי">טיפול נמרץ כללי</option>
+              <option value="כירורגית א">כירורגית א</option>
+              <option value="כירורגית ב">כירורגית ב</option>
+              <option value="פנימית א">מחלקת פנימית א</option>
+              <option value="פנימית ב">מחלקת פנימית ב</option>
+              <option value="נוירולוגיה">מחלקת נוירולוגיה</option>
+              <option value="יולדות">מחלקת יולדות</option>
+              <option value="נשים">מחלקת נשים</option>
+              <option value="כירורגית ילדים">מחלקת כירורגית ילדים</option>
+              <option value="פסיכיאטריה">מחלקת פסיכיאטריה</option>
+              <option value="קרדיולוגיה">מחלקת קרדיולוגיה</option>
+          </select>
+          <label>מחלקה</label>
+      </div>
+
+      
+      
+      <div class="element">
+        <select formControlName="Reporting" class="select-style">
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+            <option value="4">4</option>
+        </select>
+        <label>אומדן נורטון בקבלה</label>
+    </div>
+
+
+          
+    <div class="element">
+      <select formControlName="DEVO" class="select-style">
+          <option value="NODEVO"> לא לדיווח </option>
+          <option value="DEVO">  לדיווח </option>
+      </select>
+      <label> לדיווח/לא לדיווח </label>
+  </div>
+
 
         <mat-spinner *ngIf="isLoading"></mat-spinner>
         <div *ngIf="isLoading">Loading...</div>
