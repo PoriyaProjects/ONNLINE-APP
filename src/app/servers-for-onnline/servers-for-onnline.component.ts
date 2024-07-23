@@ -3,7 +3,7 @@ import { Component, OnInit, ViewChild } from "@angular/core";
 import { FormBuilder } from "@angular/forms";
 import { MatDialog } from "@angular/material/dialog";
 import { MatPaginator } from "@angular/material/paginator";
-import { MatSnackBar } from "@angular/material/snack-bar";
+import { MatSnackBar, MatSnackBarHorizontalPosition, MatSnackBarVerticalPosition } from "@angular/material/snack-bar";
 import { MatSort } from "@angular/material/sort";
 import { MatTableDataSource } from "@angular/material/table";
 import { Router } from "@angular/router";
@@ -11,6 +11,8 @@ import { NgbActiveModal, NgbModal } from "@ng-bootstrap/ng-bootstrap";
 import { MenuPerm } from "../menu-perm";
 import { AddOrEditServerComponent } from "./add-or-edit-server/add-or-edit-server.component";
 import { environment } from "src/environments/environment";
+import { ConfirmationDialogComponent } from "../confirmation-dialog/confirmation-dialog.component";
+import { ConfirmationDialogService } from "../confirmation-dialog/confirmation-dialog.service";
 export interface Server {
     RowId: string;
     ServerName: string;
@@ -49,17 +51,21 @@ export class ServersForOnnlineComponent implements OnInit {
         "ServerFunctions",
         "ServerIPAddress",
         "editServer",
+        "deleteServer",
     ];
     resultsLength = 0;
+    horizontalPosition: MatSnackBarHorizontalPosition = "center";
+    verticalPosition: MatSnackBarVerticalPosition = "top";
     constructor(
-        private _snackBarUsers: MatSnackBar,
+        private _snackBar: MatSnackBar,
         private router: Router,
         private http: HttpClient,
         private modalServiceresearchesusers: NgbModal,
         private formBuilderUsers: FormBuilder,
         activeModal: NgbActiveModal,
         private mMenuPerm: MenuPerm,
-        public dialog: MatDialog
+        public dialog: MatDialog,        
+        private confirmationDialogService: ConfirmationDialogService,
     ) {
         mMenuPerm.setRoutName("servers4onnline");
         setTimeout(() => {
@@ -117,6 +123,47 @@ export class ServersForOnnlineComponent implements OnInit {
             console.log(`Dialog result: ${result}`);
             this.getTableFromServer();
         });
+    
+    }
+    openSnackBar(text) {
+        this._snackBar.open(text, "", {
+            duration: 2500,
+            direction: "rtl",
+            panelClass: "info",
+            horizontalPosition: this.horizontalPosition,
+            verticalPosition: this.verticalPosition,
+        });
+    }
+    deleteRow(element: Server): void {
+        this.confirmationDialogService
+        .confirm("נא לאשר..", "האם אתה בטוח ...? ")
+        .then((confirmed) => {
+          console.log("User confirmed:", confirmed);
+          if (confirmed) {
+            this.http
+              .post(
+                environment.url + "DeleteServerForOnnline",
+                {
+                  RowId: element.RowId
+                }
+              )
+              .subscribe((Response) => {
+                if (Response["d"]) {
+                  this.openSnackBar("נמחק בהצלחה");
+                  this.getTableFromServer();
+                } else {
+                  this.openSnackBar("משהו השתבש, לא נמחק !");
+                  this.getTableFromServer();
+                }
+              });
+          } else {
+          }
+        })
+        .catch(() =>
+          console.log(
+            "User dismissed the dialog (e.g., by using ESC, clicking the cross icon, or clicking outside the dialog)"
+          )
+        );
     }
     applyFilter(event: Event) {
         const filterValue = (event.target as HTMLInputElement).value;
