@@ -38,6 +38,7 @@ export class WhatsappMessagesDashboardComponent implements OnInit, OnDestroy {
   fixed_text: string = "";
   media_file: string = "";
   file_path: string = "";
+  message_content: string = "";
 
   constructor(
     private http: HttpClient,
@@ -98,7 +99,7 @@ export class WhatsappMessagesDashboardComponent implements OnInit, OnDestroy {
       Recipient_Type: new FormControl('0', Validators.required),
       Phone_Number: new FormControl(phone, Validators.required),
       Recipient: new FormControl(fullName, null),
-      Message_Content: new FormControl(fullName + ' שלום רב,\n', Validators.required),
+      Message_Content: new FormControl('', Validators.required),
       SenderIDFK: new FormControl('', Validators.required),
       Message_Timing: new FormControl(null, null),
       Message_Timing_Time: new FormControl(null, null),
@@ -309,10 +310,23 @@ export class WhatsappMessagesDashboardComponent implements OnInit, OnDestroy {
   }
 
   fillAllMessageContentFields(id) {
+    let messageContent = this.customForm.controls['customInputs'].value[0].Message_Content;
+    let firstNewlineIndex = messageContent.indexOf('\n');
+
+    let message_content = firstNewlineIndex !== -1 ? messageContent.substring(firstNewlineIndex + 1) : messageContent;
     if (id == 0) {
       this.customForm.controls['customInputs'].value.forEach((element, index) => {
-        this.customForm.controls['customInputs']['controls'][index].controls.Message_Content.setValue(this.customForm.controls['customInputs'].value[0].Message_Content);
+        let message = this.setMessageWithFixedHead(element.Recipient, message_content);
+        this.customForm.controls['customInputs']['controls'][index].controls.Message_Content.setValue(message);
       });
+    }
+  }
+
+  setMessageWithFixedHead(fullName, content) {
+    if (content === undefined || !content.includes(" שלום רב")) {
+      return fullName + " שלום רב,\n" + content;
+    } else {
+      return content;
     }
   }
 
