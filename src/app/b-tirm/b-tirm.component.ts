@@ -31,10 +31,10 @@ export interface BTirmMonitor {
   StepsNum: string;
   Helper: string;
   NortunEstimate: string;
-  Adl: string;
+  BeforeAdmission: string;
   WayCocgn: string;
   Basic: string;
-  Remarks: string;
+  Department: string;
 }
 
 
@@ -116,10 +116,10 @@ export class BTirmComponent implements OnInit {
   'StepsNum',
   'Helper',
   'NortunEstimate',
-  'Adl',
+  'BeforeAdmission',
   'WayCocgn',
   'Basic',
-  'Remarks'
+  'Department'
   ]
 
   form: any;
