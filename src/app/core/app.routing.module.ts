@@ -119,6 +119,7 @@ import {CathReportComponent} from '../cath-report/cath-report.component';
 import { PatientsSystemConflictsComponent } from '../patients-system-conflicts/patients-system-conflicts.component';
 import {BTirmComponent} from '../b-tirm/b-tirm.component';
 import {ReportReportingComponent} from '../report-reporting/report-reporting.component'
+import {EmployeesUpdateManagersComponent} from '../employees-manage-dash/employees-update-managers/employees-update-managers.component'
 
 
 const routes: Routes = [
@@ -243,6 +244,7 @@ const routes: Routes = [
   { path: "Cath", component: CathReportComponent },
   { path: "patients-system-conflicts", component: PatientsSystemConflictsComponent },
   { path: "Metav", component: BTirmComponent },
+  { path: "employees-update-managers", component: EmployeesUpdateManagersComponent },
   {path : "Reporting" , component : ReportReportingComponent } 
   
 
