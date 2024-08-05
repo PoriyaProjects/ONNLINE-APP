@@ -188,7 +188,8 @@
                                     </div>
                                 </div>
                             </div>
-                            <button matTooltip="מנהלים" mat-raised-button type="submit" *ngIf="UserName === 'adahabre'"
+                            <button matTooltip="מנהלים" mat-raised-button
+                                *ngIf="UserName === 'adahabre' || UserName === 'smenahem' || UserName === 'tkoren' || UserName === 'owertheim'"
                                 class="btn btn-primary btn-raised" style="float: right;" (click)="openManagersDialog()">
                                 <span class="material-icons">
                                     person
