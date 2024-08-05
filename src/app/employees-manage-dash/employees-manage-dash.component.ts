@@ -8,6 +8,7 @@ import { EmployeesAddUpdateComponent } from '../employees-manage-dash/employees-
 import { MatSort } from '@angular/material/sort';
 import * as XLSX from 'xlsx';
 import { environment } from 'src/environments/environment';
+import { EmployeesUpdateManagersComponent } from './employees-update-managers/employees-update-managers.component';
 
 @Component({
   selector: 'app-employees-manage-dash',
@@ -297,6 +298,13 @@ export class EmployeesManageDashComponent implements OnInit {
     let dialogRef = this.dialog.open(EmployeesAddUpdateComponent, { disableClose: true });
     dialogRef.componentInstance.employee = employee;
     dialogRef.componentInstance.managerType = this.managerType;
+    dialogRef.afterClosed().subscribe(result => {
+      if (result == 1) this.GetEmployeesToUpdate(this.managerType, false);
+    });
+  }
+
+  openManagersDialog() {
+    let dialogRef = this.dialog.open(EmployeesUpdateManagersComponent, { disableClose: true });
     dialogRef.afterClosed().subscribe(result => {
       if (result == 1) this.GetEmployeesToUpdate(this.managerType, false);
     });
