@@ -188,6 +188,12 @@
                                     </div>
                                 </div>
                             </div>
+                            <button matTooltip="מנהלים" mat-raised-button type="submit" *ngIf="UserName === 'adahabre'"
+                                class="btn btn-primary btn-raised" style="float: right;" (click)="openManagersDialog()">
+                                <span class="material-icons">
+                                    person
+                                </span>
+                            </button>
                             <button matTooltip="חיפוש" mat-raised-button type="submit"
                                 class="btn btn-primary btn-raised" (click)="GetEmployeesToUpdate(managerType,false)">
                                 <span class="material-icons">
