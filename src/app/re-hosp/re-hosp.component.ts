@@ -153,7 +153,11 @@ export class ReHospComponent implements OnInit {
         this.dataSource.data = records.d;
   
         // Calculate the numerator value
-        this.numeratorValue = this.dataSource.data.reduce((acc, item) => acc + parseInt(item.Numerator, 10), 0);
+        if (this.dataSource.data.length > 0) {
+          this.numeratorValue = parseInt(this.dataSource.data[0].Numerator, 10);
+        } else {
+          this.numeratorValue = 0; // Or handle it as needed
+        }
   
         console.log(this.dataSource.data);
         this.isLoading = false; // Stop loading upon success
