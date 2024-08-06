@@ -362,7 +362,7 @@ export class GlucoseComponent implements OnInit {
                     this.dataSource = new MatTableDataSource<any>(
                         this.TABLE_DATA_ALL
                     );
-                    this.resultsLength = parseInt(json["iTotalDisplayRecords"]);
+                    this.resultsLength = JSON.parse(json['tableData']).items.length;
                     setTimeout(() => {
                         //this.dataSource.paginator = this.paginator
                         $("#loader").addClass("d-none");
