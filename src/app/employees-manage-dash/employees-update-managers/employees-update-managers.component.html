@@ -4,8 +4,34 @@
   </button>
   <mat-card-title class="text-center">רשימת מנהלים</mat-card-title>
   <mat-divider></mat-divider>
-  <div class="table-responsive mb-5">
-    <table mat-table [dataSource]="managers" class="mat-elevation-z8">
+  <mat-card class="mt-3 p-3" dir="rtl" *ngIf="updating">
+    <button mat-mini-fab color="primary" (click)="updateView(null)" style="margin: 20px;" matTooltip="חזרה לרשימה">
+      <mat-icon>backspace</mat-icon>
+    </button>
+    <mat-card-title class="text-center">{{update_manager.EmployeeIndexDesc}} -
+      {{update_manager.FullName}}</mat-card-title>
+    <mat-card-content class="text-center">
+      <div class="form-group">
+        <mat-form-field>
+          <mat-label>בחר מנהל</mat-label>
+          <input type="text" aria-label="user" style="font-family: 'math';font-weight: bolder;font-size: 18px;" matInput
+            [formControl]="userfilter" [matAutocomplete]="auto2">
+          <mat-autocomplete #auto2="matAutocomplete">
+            <mat-option *ngFor="let user of filteredOptions2 | async" [value]="user"
+              style="font-family: 'math';font-weight: bolder;font-size: 18px;">
+              {{user.firstname}} {{user.lastname}}
+            </mat-option>
+          </mat-autocomplete>
+        </mat-form-field>
+      </div>
+    </mat-card-content>
+  </mat-card>
+  <div class="table-responsive mb-5" *ngIf="!updating">
+    <mat-form-field style="width: 100%;">
+      <mat-label>סינון</mat-label>
+      <input matInput (keyup)="applyFilter($event)">
+    </mat-form-field>
+    <table mat-table [dataSource]="dataSource" class="mat-elevation-z8">
 
       <ng-container matColumnDef="deptSektor">
         <th mat-header-cell *matHeaderCellDef>מזהה מחלקה וסקטור</th>
@@ -19,18 +45,13 @@
 
       <ng-container matColumnDef="managerId">
         <th mat-header-cell *matHeaderCellDef>מנהל</th>
-        <td mat-cell *matCellDef="let manager">
-          <mat-form-field>
-            <mat-label>מספר טלפון</mat-label>
-            <input type="text" matInput autocomplete="off" [(ngModel)]="manager.ManagerEmployeeID" />
-          </mat-form-field>
-        </td>
+        <td mat-cell *matCellDef="let manager">{{manager.FullName}}</td>
       </ng-container>
 
       <ng-container matColumnDef="update">
         <th mat-header-cell *matHeaderCellDef>עדכן</th>
         <td mat-cell *matCellDef="let manager">
-          <button mat-raised-button (click)="submitSelected(manager)">בצע</button>
+          <button mat-raised-button (click)="updateView(manager)">עדכון</button>
         </td>
       </ng-container>
 
