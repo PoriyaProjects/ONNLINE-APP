@@ -64,8 +64,9 @@ export class GlucoseComponent implements OnInit {
         "PGR_Rate_Value_MAX",
         "PGR_Taking_Date",
         "PGR_Rate_Value",
-        "ReciveDoc",
-        "WorkerName",
+        "HbA1c",
+        //"ReciveDoc",
+        //"WorkerName",
         "RowClick",
     ];
     displayedConsoleColumnsByCase: string[] = [
