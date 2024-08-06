@@ -219,6 +219,7 @@ import { CathReportComponent } from './cath-report/cath-report.component';
 import { PatientsSystemConflictsComponent } from './patients-system-conflicts/patients-system-conflicts.component';
 import { BTirmComponent } from './b-tirm/b-tirm.component';
 import { ReportReportingComponent } from './report-reporting/report-reporting.component';
+import { ReHospComponent } from './re-hosp/re-hosp.component';
 import { EmployeesUpdateManagersComponent } from './employees-manage-dash/employees-update-managers/employees-update-managers.component';
 
 
@@ -395,6 +396,7 @@ const maskConfig: Partial<IConfig> = {
     PatientsSystemConflictsComponent,
     BTirmComponent,
     ReportReportingComponent,
+    ReHospComponent,
     EmployeesUpdateManagersComponent
   ],
   imports: [

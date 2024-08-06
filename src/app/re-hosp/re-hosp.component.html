@@ -1,0 +1,109 @@
+<div dir="rtl" [formGroup]="form">
+
+
+    <div dir="ltr" class="wrapper">
+
+        <div class="element">
+            <select disableRipple class="select-style">
+                <option value="1">פוריה</option>
+            </select>
+            <label>בית חולים </label>
+        </div>
+      
+
+
+        <mat-form-field class="datePicker">
+            <mat-label>מתאריך</mat-label>
+            <input matInput [matDatepicker]="picker1" formControlName="fromDate" (focus)="picker1.open()">
+            <mat-datepicker-toggle matIconSuffix [for]="picker1"></mat-datepicker-toggle>
+            <mat-datepicker #picker1></mat-datepicker>
+        </mat-form-field>
+
+
+        <mat-form-field class="datePicker">
+            <mat-label>עד תאריך</mat-label>
+            <input matInput [matDatepicker]="picker2" formControlName="toDate" (focus)="picker2.open()">
+            <mat-datepicker-toggle matIconSuffix [for]="picker2"></mat-datepicker-toggle>
+            <mat-datepicker #picker2></mat-datepicker>
+        </mat-form-field>
+
+
+
+        <div class="element">
+            <button mat-raised-button class="srch-btn" color="primary" (click)="onSearch()">הרצת דוח </button>
+        </div>
+
+        <div class="element">
+            <button mat-raised-button class="srch-btn" color="warn" (click)="onClear()">Clean</button>
+        </div>
+
+
+        <div class="example-button-container">
+            <a (click)="exportexcel()">
+                <img src="../../assets/images/excel.png" width="50px" alt="Image description">
+            </a>
+        </div>
+
+    </div>
+
+
+    <div dir="ltr" class="wrapper">
+    <div class="Madad">
+        <h6>{{ dataSource.data.length > 0 ? dataSource.data.length : '' }} : מכנה
+        </h6>
+    </div>
+
+    <div class="Madad">
+        <h6>{{ numeratorValue }} : מונה
+        </h6>
+    </div>
+
+    <mat-spinner *ngIf="isLoading"></mat-spinner>
+    <div *ngIf="isLoading">Loading...</div>
+</div>
+
+  
+
+
+    <div class="mat-elevation-z8 custom-table">
+
+    <table  mat-table [dataSource]="dataSource">
+
+        <ng-container matColumnDef="CaseNumber">
+            <th mat-header-cell *matHeaderCellDef> מספר מקרה </th>
+            <td mat-cell *matCellDef="let element"> {{element.CaseNumber}} </td>
+        </ng-container>
+
+        <ng-container matColumnDef="FirstName">
+            <th mat-header-cell *matHeaderCellDef> שם פרטי </th>
+            <td mat-cell *matCellDef="let element"> {{element.FirstName}} </td>
+        </ng-container>
+
+        <ng-container matColumnDef="LastName">
+            <th mat-header-cell *matHeaderCellDef> שם משפחה </th>
+            <td mat-cell *matCellDef="let element"> {{element.LastName}} </td>
+        </ng-container>
+
+        <ng-container matColumnDef="ID">
+            <th mat-header-cell *matHeaderCellDef>ת,ז </th>
+            <td mat-cell *matCellDef="let element"> {{element.ID}} </td>
+        </ng-container>
+
+        <ng-container matColumnDef="ReleaseDepartment">
+            <th mat-header-cell *matHeaderCellDef> מחלקה משחררת לפני האשפוז החוזר </th>
+            <td mat-cell *matCellDef="let element"> {{element.ReleaseDepartment}} </td>
+        </ng-container>
+
+        <ng-container matColumnDef="HospDepartment">
+            <th mat-header-cell *matHeaderCellDef> מחלקה מקבלת לאחר אשפוז חוזר </th>
+            <td mat-cell *matCellDef="let element"> {{element.HospDepartment}} </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumnReHosp sticky: true"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumnReHosp;"></tr>
+    </table>
+
+
+    </div>
+
+</div>
