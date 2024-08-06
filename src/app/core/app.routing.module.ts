@@ -118,7 +118,8 @@ import {WhatsappDepartmentsDashboardComponent} from '../whatsapp-departments-das
 import {CathReportComponent} from '../cath-report/cath-report.component';
 import { PatientsSystemConflictsComponent } from '../patients-system-conflicts/patients-system-conflicts.component';
 import {BTirmComponent} from '../b-tirm/b-tirm.component';
-import {ReportReportingComponent} from '../report-reporting/report-reporting.component'
+import {ReportReportingComponent} from '../report-reporting/report-reporting.component';
+import {ReHospComponent} from '../re-hosp/re-hosp.component'
 
 
 const routes: Routes = [
@@ -243,9 +244,8 @@ const routes: Routes = [
   { path: "Cath", component: CathReportComponent },
   { path: "patients-system-conflicts", component: PatientsSystemConflictsComponent },
   { path: "Metav", component: BTirmComponent },
-  {path : "Reporting" , component : ReportReportingComponent } 
-  
-
+  {path : "Reporting" , component : ReportReportingComponent } ,
+  {path : "ReHosp" , component : ReHospComponent } 
 ];
 
 @NgModule({
