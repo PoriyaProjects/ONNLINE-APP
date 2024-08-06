@@ -1,4 +1,4 @@
-<h1 class="page-title text-center">נתוני לסוכרת</h1>
+<h1 class="page-title text-center">נתונים לסוכרת</h1>
 
 <div class="example-button-container" style="padding: 60px">
     <button
@@ -184,6 +184,15 @@
                                 {{ element.PGR_Rate_Value }}
                             </td>
                         </ng-container>
+
+                        <ng-container matColumnDef="HbA1c">
+                            <th mat-header-cell *matHeaderCellDef>
+                                HbA1c ערך תוצאה אחרונה
+                            </th>
+                            <td mat-cell *matCellDef="let element">
+                                {{ element.PGR_HbA1c }}
+                            </td>
+                        </ng-container>
                         <ng-container matColumnDef="ReciveDoc">
                             <th mat-header-cell *matHeaderCellDef>מכתב קבלה</th>
                             <td mat-cell *matCellDef="let element">
@@ -256,8 +265,8 @@
                 <!-- PAGINATION -->
                 <mat-paginator
                     [length]="resultsLength"
-                    [pageSizeOptions]="[5, 10, 20]"
-                    [pageSize]="10"
+                    [pageSizeOptions]="[60, 100, 150]"
+                    [pageSize]="50"
                     showFirstLastButtons
                     (page)="getPaginatorData($event)"
                 ></mat-paginator>

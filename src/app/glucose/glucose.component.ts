@@ -33,6 +33,7 @@ export interface Glucose {
     PGR_Taking_Time_MAX: Time;
     PGR_Rate_Value_MAX: string;
     WorkerName: string;
+    PGR_HbA1c: string;
 }
 export interface GlucoseConsole {
     ConsoleDate: string;
@@ -64,8 +65,9 @@ export class GlucoseComponent implements OnInit {
         "PGR_Rate_Value_MAX",
         "PGR_Taking_Date",
         "PGR_Rate_Value",
-        "ReciveDoc",
-        "WorkerName",
+        "HbA1c",
+        //"ReciveDoc",
+        //"WorkerName",
         "RowClick",
     ];
     displayedConsoleColumnsByCase: string[] = [
@@ -354,6 +356,7 @@ export class GlucoseComponent implements OnInit {
                             PGR_Patient_Number:
                                 tableData.items[i].PGR_Patient_Number,
                             WorkerName: tableData.items[i].WorkerName,
+                            PGR_HbA1c: tableData.items[i].PGR_HbA1c,
                         });
                     }
 
@@ -361,7 +364,8 @@ export class GlucoseComponent implements OnInit {
                     this.dataSource = new MatTableDataSource<any>(
                         this.TABLE_DATA_ALL
                     );
-                    this.resultsLength = parseInt(json["iTotalDisplayRecords"]);
+                    this.resultsLength = parseInt(JSON.parse(json['tableData']).items.length);
+                    debugger
                     setTimeout(() => {
                         //this.dataSource.paginator = this.paginator
                         $("#loader").addClass("d-none");
