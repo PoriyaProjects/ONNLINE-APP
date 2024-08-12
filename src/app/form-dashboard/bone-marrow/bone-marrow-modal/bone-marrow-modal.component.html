@@ -130,7 +130,7 @@
         <!-- SAVE BUTTON -->
         <div class="row">
             <button class="full-width m-4" color="primary" style="font-size: 20px;font-weight: bold;" type="submit"
-                mat-raised-button (click)="submitForm()">
+                [disabled]="submit" mat-raised-button (click)="submitForm()">
                 <span>שמירת טופס</span>
             </button>
         </div>

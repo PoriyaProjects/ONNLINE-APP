@@ -221,6 +221,8 @@ import { BTirmComponent } from './b-tirm/b-tirm.component';
 import { ReportReportingComponent } from './report-reporting/report-reporting.component';
 import { ReHospComponent } from './re-hosp/re-hosp.component';
 import { EmployeesUpdateManagersComponent } from './employees-manage-dash/employees-update-managers/employees-update-managers.component';
+import { BedsoreDashboardComponent } from './form-dashboard/bedsore-dashboard/bedsore-dashboard.component';
+import { BedsoreModalComponent } from './form-dashboard/bedsore-dashboard/bedsore-modal/bedsore-modal.component';
 
 
 
@@ -397,7 +399,9 @@ const maskConfig: Partial<IConfig> = {
     BTirmComponent,
     ReportReportingComponent,
     ReHospComponent,
-    EmployeesUpdateManagersComponent
+    EmployeesUpdateManagersComponent,
+    BedsoreDashboardComponent,
+    BedsoreModalComponent
   ],
   imports: [
     JpTimeMaskModule,

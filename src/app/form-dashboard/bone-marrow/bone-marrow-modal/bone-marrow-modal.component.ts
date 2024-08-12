@@ -31,6 +31,7 @@ export class BoneMarrowModalComponent implements OnInit {
   RecievingTypeList = ['היפרצלולרי', 'נורמוצלולרי', 'היפוצלולרי'];
   imageFile: File;
   base64Image: string;
+  submit: boolean = false;
 
 
   constructor(
@@ -225,6 +226,7 @@ export class BoneMarrowModalComponent implements OnInit {
 
 
   submitForm() {
+    this.submit = true;
     this.fullForm.controls['ReceiveDate'].setValue(this.pipe.transform(this.fullForm.controls['ReceiveDate'].value, 'yyyy-MM-dd'));
     this.http
       .post(environment.url + "SaveBoneMarrowForm", {
@@ -246,6 +248,7 @@ export class BoneMarrowModalComponent implements OnInit {
                     this.closeModal();
                   } else {
                     this.openSnackBar("משהו השתבש, לא נשמר");
+                    this.submit = false;
                   }
                 });
             });
@@ -255,6 +258,7 @@ export class BoneMarrowModalComponent implements OnInit {
             this.closeModal();
           }
         } else {
+          this.submit = false;
           this.openSnackBar("משהו השתבש, לא נשמר");
         }
       });
