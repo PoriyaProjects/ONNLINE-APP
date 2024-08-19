@@ -87,7 +87,7 @@
                                     מס' שורה
                                 </th>
                                 <td mat-cell *matCellDef="let element">
-                                    {{ element.RowID }}
+                                    {{ element.RowID }} ({{element?.SentToSafe}})
                                 </td>
                             </ng-container>
                             <ng-container matColumnDef="BoxID">
@@ -95,7 +95,7 @@
                                     מס' קרטון
                                 </th>
                                 <td mat-cell *matCellDef="let element">
-                                    {{ element.BoxID }}
+                                    {{ element.BoxID }} ({{element?.SentToSafe}})
                                 </td>
                             </ng-container>
                             <ng-container matColumnDef="TotalCases">

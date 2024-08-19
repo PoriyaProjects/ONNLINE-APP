@@ -120,6 +120,8 @@ import { PatientsSystemConflictsComponent } from '../patients-system-conflicts/p
 import {BTirmComponent} from '../b-tirm/b-tirm.component';
 import {ReportReportingComponent} from '../report-reporting/report-reporting.component'
 import {EmployeesUpdateManagersComponent} from '../employees-manage-dash/employees-update-managers/employees-update-managers.component'
+import {WorkerCasesComponent} from '../worker-cases/worker-cases.component'
+import {EditOrAddWorkerCaseComponent} from '../worker-cases/edit-or-add-worker-case/edit-or-add-worker-case.component'
 
 
 const routes: Routes = [
@@ -245,7 +247,8 @@ const routes: Routes = [
   { path: "patients-system-conflicts", component: PatientsSystemConflictsComponent },
   { path: "Metav", component: BTirmComponent },
   { path: "employees-update-managers", component: EmployeesUpdateManagersComponent },
-  {path : "Reporting" , component : ReportReportingComponent } 
+  {path : "Reporting" , component : ReportReportingComponent },
+  {path : "WorkerCases" , component : WorkerCasesComponent }
   
 
 ];
