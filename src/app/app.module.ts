@@ -219,9 +219,12 @@ import { CathReportComponent } from './cath-report/cath-report.component';
 import { PatientsSystemConflictsComponent } from './patients-system-conflicts/patients-system-conflicts.component';
 import { BTirmComponent } from './b-tirm/b-tirm.component';
 import { ReportReportingComponent } from './report-reporting/report-reporting.component';
+import { ReHospComponent } from './re-hosp/re-hosp.component';
 import { EmployeesUpdateManagersComponent } from './employees-manage-dash/employees-update-managers/employees-update-managers.component';
 import { WorkerCasesComponent } from './worker-cases/worker-cases.component';
 import { EditOrAddWorkerCaseComponent } from './worker-cases/edit-or-add-worker-case/edit-or-add-worker-case.component';
+import { BedsoreDashboardComponent } from './form-dashboard/bedsore-dashboard/bedsore-dashboard.component';
+import { BedsoreModalComponent } from './form-dashboard/bedsore-dashboard/bedsore-modal/bedsore-modal.component';
 
 
 
@@ -399,7 +402,11 @@ const maskConfig: Partial<IConfig> = {
     ReportReportingComponent,
     EmployeesUpdateManagersComponent,
     WorkerCasesComponent,
-    EditOrAddWorkerCaseComponent
+    EditOrAddWorkerCaseComponent,
+    ReHospComponent,
+    EmployeesUpdateManagersComponent,
+    BedsoreDashboardComponent,
+    BedsoreModalComponent
   ],
   imports: [
     JpTimeMaskModule,
