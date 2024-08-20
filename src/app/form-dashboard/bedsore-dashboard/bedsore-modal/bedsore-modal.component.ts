@@ -53,7 +53,7 @@ export class BedsoreModalComponent implements OnInit {
     this.imageFile = null;
     this.base64Image = '';
     this.getEmployeesList();
-    if (this.DataDialog.PatientDetails == undefined) {
+    if (this.DataDialog.PatientDetails === undefined) {
       // edit
       this.editFormFunc(this.DataDialog.data);
     } else {
@@ -64,6 +64,7 @@ export class BedsoreModalComponent implements OnInit {
         RowID: patient.RowID,
         Passport: patient.Passport,
         FirstName: patient.FirstName,
+        FatherName: patient.FatherName,
         LastName: patient.LastName,
         PhoneNumber: patient.PhoneNumber,
         CaseNumber: patient.CaseNumber,
@@ -75,21 +76,27 @@ export class BedsoreModalComponent implements OnInit {
         Row_ID: form.Row_ID,
         DateOfForm: this.pipe.transform(this.myDate, 'yyyy-MM-dd'),
         TimeOfForm: this.pipe.transform(this.myDate, 'HH:mm'),
-        ReceiveDate: new FormControl('', null),
+        ToNamer: new FormControl("", null),
+        ToNamerDateTime: new FormControl("", null),
+        UpdateDateTime: new FormControl("", null),
         UpdateUser: new FormControl(this.UserName, null),
         Status: true
       });
       this.imageForm = this.fb.group({
         ImagesList: this.fb.array([])
       });
+      for (let i = 0; i < 4; i++) {
+        this.onAddImage(null);
+      }
     }
   }
 
-  editFormFunc(data) {
+  editFormFunc(data: any) {
     this.patientGroup = this.fb.group({
       RowID: data.PatientDetails.RowID,
       Passport: data.PatientDetails.Passport,
       FirstName: data.PatientDetails.FirstName,
+      FatherName: data.PatientDetails.FatherName,
       LastName: data.PatientDetails.LastName,
       PhoneNumber: data.PatientDetails.PhoneNumber,
       CaseNumber: data.PatientDetails.CaseNumber,
@@ -107,12 +114,20 @@ export class BedsoreModalComponent implements OnInit {
     this.imageForm = this.fb.group({
       ImagesList: this.fb.array([])
     });
+    for (let i = 0; i < 4; i++) {
+      this.onAddImage(data.ImagesList[i]);
+    }
   }
 
-  onAddImage() {
+  onAddImage(image_data) {
     const imageItem = new FormGroup({
-      Content: new FormControl("", null),
-      Note: new FormControl("", null)
+      Row_ID: new FormControl(image_data?.Row_ID, null),
+      DateOfImage: new FormControl("", null),
+      TimeOfImage: new FormControl("", null),
+      Content: new FormControl(image_data?.Content, null),
+      Note: new FormControl(image_data?.Note, null),
+      BedsoreIDFK: new FormControl(image_data?.BedsoreIDFK, null),
+      Status: new FormControl(true, null)
     });
     (<FormArray>this.imageForm.get('ImagesList')).push(imageItem);
   }
@@ -168,59 +183,70 @@ export class BedsoreModalComponent implements OnInit {
 
       const reader = new FileReader();
       reader.onload = () => {
+        let id = null;
+        if (this.fullForm.value.Row_ID !== null) {
+          id = this.fullForm.value.Row_ID;
+        }
         this.base64Image = reader.result.toString();
+        const files = this.imageForm.get('ImagesList') as FormArray;
         let imgObj = {
-          Row_ID: 0,
+          Row_ID: files.value[index].Row_ID,
+          DateOfImage: "",
+          TimeOfImage: "",
           Content: this.base64Image,
           Note: "",
-          FormIDFK: "",
+          BedsoreIDFK: id,
           Status: true
         }
-        const files = this.imageForm.get('ImagesList') as FormArray;
-        files.push(new FormControl(imgObj));
+        files.controls[index].setValue(imgObj);
       };
       reader.readAsDataURL(file);
     }
   }
 
-  // onFileSelect(imageFile) {
-  //   if (imageFile.length > 0) {
-  //     var fileReader = new FileReader();
-  //     const base64String = fileReader.readAsDataURL(imageFile[0]);
-
-  //     // Set the base64 string to the image property.
-  //     // const file = imageFile[0];
-  //     // if (imageFile[0].lastModified != undefined) this.selectFile(file);
-  //     const files = this.fullForm.get('ImagesList') as FormArray;
-  //     files.push(new FormControl(imageFile));
-  //   }
-  // }
-
+  triggerFileInput(fileInput: HTMLInputElement) {
+    fileInput.click();
+  }
 
   submitForm() {
-    this.fullForm.controls['ReceiveDate'].setValue(this.pipe.transform(this.fullForm.controls['ReceiveDate'].value, 'yyyy-MM-dd'));
+    // this.fullForm.controls['ReceiveDate'].setValue(this.pipe.transform(this.fullForm.controls['ReceiveDate'].value, 'yyyy-MM-dd'));
     this.http
       .post(environment.url + "SaveBedsoreForm", {
         _fullForm: this.fullForm.value,
         _patientDetails: this.patientGroup.value
       })
       .subscribe((Response) => {
-        if (Response["d"]) {
-          if (this.imageForm.controls['ImagesList'].value.length > 0) {
+        if (Response["d"] !== 0) {
+          if (this.imageForm.controls['ImagesList'].value.filter(x => x.Content !== "").length > 0) {
             this.imageForm.controls['ImagesList'].value.forEach(element => {
-              this.http
-                .post(environment.url + "SaveBedsoreImages", {
-                  _imageForm: element,
-                  _formIDFK: Response["d"],
-                })
-                .subscribe((Response) => {
-                  if (Response["d"]) {
-                    this.openSnackBar("נשמר בהצלחה");
-                    this.closeModal();
-                  } else {
-                    this.openSnackBar("משהו השתבש, לא נשמר");
-                  }
-                });
+              if (element.Row_ID === null) {
+                this.http
+                  .post(environment.url + "SaveBedsoreImages", {
+                    _imageForm: element,
+                    _formIDFK: Response["d"],
+                  })
+                  .subscribe((Response) => {
+                    if (Response["d"]) {
+                      this.openSnackBar("נשמר בהצלחה");
+                    } else {
+                      this.openSnackBar("משהו השתבש, לא נשמר");
+                    }
+                  });
+              } else {
+                this.http
+                  .post(environment.url + "UpdateBedsoreImages", {
+                    _imageForm: element,
+                    _formIDFK: Response["d"],
+                  })
+                  .subscribe((Response) => {
+                    if (Response["d"]) {
+                      this.openSnackBar("נשמר בהצלחה");
+                    } else {
+                      this.openSnackBar("משהו השתבש, לא נשמר");
+                    }
+                  });
+              }
+              this.closeModal();
             });
           }
           else {

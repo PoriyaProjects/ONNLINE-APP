@@ -29,6 +29,7 @@ export interface PatientDetails {
   RowID: string;
   FirstName: string;
   LastName: string;
+  FatherName: string;
   Passport: string;
   PhoneNumber: string;
   CaseNumber: string;
