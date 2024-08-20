@@ -19,7 +19,7 @@ import { BedsoreModalComponent } from './bedsore-modal/bedsore-modal.component';
 })
 export class BedsoreDashboardComponent implements OnInit {
 
-  
+
 
   horizontalPosition: MatSnackBarHorizontalPosition = "start";
   verticalPosition: MatSnackBarVerticalPosition = "bottom";
@@ -52,10 +52,10 @@ export class BedsoreDashboardComponent implements OnInit {
       Passport: ['', null],
       CaseNumber: ['', null]
     });
-    this.getBoneMarrowList();
+    this.getAllBedsoreList();
   }
 
-  getBoneMarrowList() {
+  getAllBedsoreList() {
     this.http
       .post(environment.url + "GetAllBedsoreList", {
       })
@@ -81,6 +81,7 @@ export class BedsoreDashboardComponent implements OnInit {
           RowID: null,
           Passport: details.PM_PATIENT_ID,
           FirstName: details.PM_FIRST_NAME,
+          FatherName: details.PM_FATHER_NAME,
           LastName: details.PM_LAST_NAME,
           PhoneNumber: null,
           CaseNumber: details.PM_CASE_NUMBER,
@@ -99,7 +100,7 @@ export class BedsoreDashboardComponent implements OnInit {
       width: '80%'
     });
     dialogRef.afterClosed().subscribe(result => {
-      this.getBoneMarrowList();
+      this.getAllBedsoreList();
     });
   }
 
@@ -127,7 +128,7 @@ export class BedsoreDashboardComponent implements OnInit {
       width: '80%'
     });
     dialogRef.afterClosed().subscribe(result => {
-      this.getBoneMarrowList();
+      this.getAllBedsoreList();
     });
   }
 
@@ -157,8 +158,9 @@ export class BedsoreDashboardComponent implements OnInit {
           this.http.post(environment.url + "DeleteBedsoreForm", {
             _formId: formData.Row_ID,
           }).subscribe((Response) => {
-            this.openSnackBar("נמחק בהצלחה!");
-            this.getBoneMarrowList();
+            if (Response['d']) this.openSnackBar("נמחק בהצלחה!");
+            else this.openSnackBar("תקלה במחיקה!");
+            this.getAllBedsoreList();
           });
         } else {
         }
@@ -205,71 +207,11 @@ export class BedsoreDashboardComponent implements OnInit {
               <div class="col-2" style="float: right;">
                   <h5>מס' טלפון: <br>`+ data.PatientDetails.PhoneNumber + `</h5>
               </div>`;
-    if (data.RecievingType != '') this.pdfString += `
-              <div class="col-12">
-                  <div class="row">
-                      <h1><u>התקבלה מח עצם:</u><br><p>`+ data.RecievingType + `</p></h1>
-                  </div>
-              </div>`;
-    if (data.RedRow != '') this.pdfString += `<div class="col-12">
-                  <div class="row">
-                      <h1><u>שורה אדומה:</u><br><p>`+ data.RedRow + `</p></h1>
-                  </div>
-              </div>`;
-    if (data.WhiteRow != '') this.pdfString += `<div class="col-12">
-                  <div class="row">
-                      <h1><u>שורה לבנה:</u><br>
-                      <p>`+ data.WhiteRow + `</p></h1>
-                  </div>
-              </div>`;
-    if (data.Eosinophils != '') this.pdfString += `<div class="col-12">
-                  <div class="row">
-                      <h1><u>אאוזינופילים:</u><br>
-                      <p>`+ data.Eosinophils + `</p></h1>
-                  </div>
-              </div>`;
-    if (data.Lymphocytes != '') this.pdfString += `<div class="col-12">
-                  <div class="row">
-                      <h1><u>לימפוציטים:</u><br>
-                      <p>`+ data.Lymphocytes + `</p></h1>
-                  </div>
-              </div>`;
-    if (data.PlasmaCells != '') this.pdfString += `<div class="col-12">
-                  <div class="row">
-                      <h1><u>תאי פלסמה:</u><br>
-                      <p>`+ data.PlasmaCells + `</p></h1>
-                  </div>
-              </div>`;
-    if (data.Megakaryocytes != '') this.pdfString += `<div class="col-12">
-                  <div class="row">
-                      <h1><u>מגקריוציטים:</u><br>
-                      <p>`+ data.Megakaryocytes + `</p></h1>
-                  </div>
-              </div>`;
-    if (data.IronPainting != '') this.pdfString += `<div class="col-12">
-                  <div class="row">
-                      <h1><u>צביעת ברזל:</u><br>
-                      <p>`+ data.IronPainting + `</p></h1>
-                  </div>
-              </div>`;
-    if (data.Summary != '') this.pdfString += `<div class="col-12">
-                  <div class="row">
-                      <h1><u>סיכום:</u><br>
-                      <p>`+ data.Summary + `</p></h1>
-                  </div>
-              </div>`;
-    this.pdfString += `<div class="col-12">
-                  <div class="row text-center">
-                      <h1><u>חתימת רופא:</u><br>
-                      <p>`+ data.DoctorSign + `</p></h1>
-                  </div>
-              </div>`;
-    this.pdfString += `<div class="col-12">
-                            <div class="row text-center">
-                                <h1><u>תמונות מצורפים:</u></h1><br>
-                                `;
     for (let i = 0; i < data.ImagesList.length; i++) {
-      this.pdfString += `<img height="1000" width="800" src=` + data.ImagesList[i].Content + `>`;
+      if (data.ImagesList[i].Content !== '') {
+        this.pdfString += `<img height="60%" width="60%" src=` + data.ImagesList[i].Content + `>
+        <p class="text-center">` + data.ImagesList[i].Note + `</p>`;
+      }
     }
     this.pdfString += `
                             </div>
@@ -278,22 +220,20 @@ export class BedsoreDashboardComponent implements OnInit {
       </div>
     </body></html>`;
     $("#loader_2").removeClass("d-none");
-    this.http.post("http://srv-ipracticom:8080/WebService.asmx/createBedsorePdf", {
-      // this.http.post(environment.url + "createBoneMarrowPdf", {
+    this.http.post(environment.urlipracticom + "createBedsorePdf", {
       _patient: data.PatientDetails,
       html: this.pdfString,
-      Catigory: "ZPO_BDSR"
+      Catigory: "ZPO_BEDSOR"
     }
     )
       .subscribe((Response) => {
         let that = this;
         setTimeout(() => {
           that.http.post("http://srv-ipracticom:756/WebService.asmx/LinkPdfToPatientNamer", {
-            // that.http.post(environment.url + "LinkPdfToPatientNamer", {
             CaseNumber:
               data.PatientDetails.CaseNumber,
             FormID: data.Row_ID,
-            Catigory: "ZPO_BDSR",
+            Catigory: "ZPO_BEDSOR",
             fileSource:
               Response["d"],
           }
@@ -304,7 +244,7 @@ export class BedsoreDashboardComponent implements OnInit {
                 $("#loader_2").addClass("d-none");
                 that.openSnackBar("! נשמר בהצלחה לתיק מטופל בנמר");
                 this.loaderPdfNamer = false;
-                this.getBoneMarrowList();
+                this.getAllBedsoreList();
               } else {
                 that.openSnackBar("! משהו לא תקין");
               }

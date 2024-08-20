@@ -81,6 +81,7 @@ export class BoneMarrowComponent implements OnInit {
           RowID: details.Row_ID,
           Passport: details.PatientPersonID,
           FirstName: details.PatientFirstName,
+          FatherName: null,
           LastName: details.PatientLastName,
           PhoneNumber: details.PatientPhoneNumber,
           CaseNumber: details.caseNumber,
