@@ -40,6 +40,8 @@ import { SelectionModel } from "@angular/cdk/collections";
 import { environment } from "src/environments/environment";
 import { ConfirmationDialogService } from "src/app/confirmation-dialog/confirmation-dialog.service";
 import { MenuPerm } from "src/app/menu-perm";
+import { MatDialog } from "@angular/material/dialog";
+import { EditOrAddWorkerCaseDialogComponent } from "src/app/edit-or-add-worker-case-dialog/edit-or-add-worker-case-dialog.component";
 export interface WorkerCaseCat {
   RowID: string;
   CatName: string;
@@ -114,12 +116,13 @@ export class EditOrAddWorkerCaseComponent implements OnInit {
     private confirmationDialogService: ConfirmationDialogService,
     private activeModal: NgbActiveModal,
     private cdr: ChangeDetectorRef,
-    private mMenuPerm: MenuPerm
+    private mMenuPerm: MenuPerm,
+    public dialog: MatDialog
   ) {
     console.log(activeModal)
     console.log(modalService)
-    
-    
+
+
   }
   @Input()
   GroupName: string;
@@ -193,7 +196,7 @@ export class EditOrAddWorkerCaseComponent implements OnInit {
       WorkerCaseRelatedCat: ["", Validators.required],
       RowID: ["0", false],
     });
-    
+
     console.log(this.BoxEmployee.value);
 
     this.getReport(this);
@@ -253,7 +256,7 @@ export class EditOrAddWorkerCaseComponent implements OnInit {
             $("#loader").addClass("d-none");
           });
           this.modalService.dismissAll();
-          
+
           //this.modal?.elementRef.nativeElement.modal('hide');
         } else {
           $("#loader").addClass("d-none");
@@ -267,7 +270,15 @@ export class EditOrAddWorkerCaseComponent implements OnInit {
   }
 
 
+  openDialog() {
+    const dialogRef = this.dialog.open(EditOrAddWorkerCaseDialogComponent);
 
+    dialogRef.afterClosed().subscribe(result => {
+      console.log(`Dialog result: ${result}`);
+      
+      this.getReport(null);
+    });
+  }
 
 
   showcasenumbers(content, _type, _element) {
@@ -308,7 +319,7 @@ export class EditOrAddWorkerCaseComponent implements OnInit {
   CloseModalSendSms() {
     this.modalService.dismissAll();
   }
-  onInputEmployeeIDBlur(event){
+  onInputEmployeeIDBlur(event) {
     //debugger
     this.GetWorkerDetails()
   }
@@ -438,7 +449,7 @@ export class EditOrAddWorkerCaseComponent implements OnInit {
 
 
     this.http
-      .post(environment.url + "GetEmployeeData", {EmployeeID: this.BoxEmployee.value.EmployeeID})
+      .post(environment.url + "GetEmployeeData", { EmployeeID: this.BoxEmployee.value.EmployeeID })
       .subscribe((Response) => {
         //debugger
         this.WorkerData = Response["d"];
