@@ -232,8 +232,8 @@ export class BedsoreDashboardComponent implements OnInit {
       .subscribe((Response) => {
         let that = this;
         setTimeout(() => {
-          // that.http.post("http://srv-ipracticom:756/WebService.asmx/LinkPdfToPatientNamer", {
-          that.http.post("http://localhost:64964/WebService.asmx/LinkPdfToPatientNamer", {
+          that.http.post("http://srv-ipracticom:756/WebService.asmx/LinkPdfToPatientNamer", {
+          // that.http.post("http://localhost:64964/WebService.asmx/LinkPdfToPatientNamer", {
             CaseNumber:
               data.PatientDetails.CaseNumber,
             FormID: data.Row_ID,
