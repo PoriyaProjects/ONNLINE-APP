@@ -241,17 +241,6 @@ export class NursesDepartmentManageComponent implements OnInit {
     dialogRef.componentInstance.phoneNumber = this.phoneNumber;
   }
 
-
-  test() {
-    if (this.UserName.toLowerCase() == 'jubartal') {
-      localStorage.setItem("loginUserName", "nibrahim");
-      window.location.reload();
-    } else {
-      localStorage.setItem("loginUserName", "jubartal");
-      window.location.reload();
-    }
-  }
-
   changeDepartByUser(departCode, departName) {
     this.departCode = departCode;
     this.Dept_Name = departName;
@@ -314,7 +303,6 @@ export class NursesDepartmentManageComponent implements OnInit {
         if (this.ELEMENT_DATA.length == 0) {
           this.openSnackBar("לא נטען, מרענן מחדש...");
           setTimeout(() => {
-            console.log('again');
             this.getDepartDetails();
           }, 7000);
         } else {

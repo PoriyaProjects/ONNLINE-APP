@@ -141,6 +141,7 @@ export class TumorBoardComponent implements OnInit {
           Passport: details.PatientPersonID,
           FirstName: details.PatientFirstName,
           LastName: details.PatientLastName,
+          FatherName: null,
           PhoneNumber: details.PatientPhoneNumber,
           CaseNumber: details.caseNumber,
           Address: details.PatientAddress,
