@@ -175,41 +175,44 @@ export class BedsoreDashboardComponent implements OnInit {
   linkToNamer(data) {
     this.loaderPdfNamer = true;
     let CaseNumber = "";
-    this.pdfString = `<!doctype html><html lang="he"><head><meta charset="utf-8"/><title>אספרציה מח עצם</title>
+    this.pdfString = `<!doctype html><html lang="he"><head><meta charset="utf-8"/><title>צילום פצע</title>
     <style>p,mat-label,span{font-weight: bold;font-size: 18px;}h1{font-size: 14px}.col-2{width: 16.66667%;justify-content: center;}.row{display: flex;border-style: outset;}</style>
     </head><body dir="rtl">
     <div class="d-none-desktop">
       <div class="d-none-desktop" dir="rtl">
           <div class="card-header border-bottomIn rel" style="text-align: center;">
               <img class="full-width" style="width: 100%;" src="c:\\pdf\\BoneMarrowForms\\covid_header.png" />
-              <h1 class="text-center pos-abs-center"><u>אספרציה מח עצם</u></h1>
+              <h1 class="text-center pos-abs-center"><u>צילום פצע</u></h1>
           </div>
           <div class="row" dir="rtl" style="display: flex;">
               <div class="col-12" style="width: 100%;text-align: center;float: right;">
-                  <p>תאריך: `+ data.ReceiveDate + `</p>
+                  <p>תאריך: `+ data.DateOfForm + `</p>
               </div>
           </div>
           <div class="col-2" style="float: right;">
-                  <h5>מספר מקרה: <br>`+ data.PatientDetails.CaseNumber + `</h5>
-              </div>
-              <div class="col-2" style="float: right;">
-                  <h5>ת.ז: <br>`+ data.PatientDetails.Passport + `</h5>
-              </div>
-              <div class="col-2" style="float: right;">
-                  <h5>שם מלא: <br>`+ data.PatientDetails.FirstName + ` ` + data.PatientDetails.LastName + `</h5>
-              </div>
-              <div class="col-2" style="float: right;">
-                  <h5>כתובת: <br>`+ data.PatientDetails.Address + `</h5>
-              </div>
-              <div class="col-2" style="float: right;">
-                  <h5>תאריך לידה: <br>`+ data.PatientDetails.DOB + `</h5>
-              </div>
-              <div class="col-2" style="float: right;">
-                  <h5>מס' טלפון: <br>`+ data.PatientDetails.PhoneNumber + `</h5>
-              </div>`;
+                <h5>ת.ז: <br>`+ data.PatientDetails.Passport + `</h5>
+            </div>
+            <div class="col-2" style="float: right;">
+                <h5>מספר מקרה: <br>`+ data.PatientDetails.CaseNumber + `</h5>
+            </div>
+            <div class="col-2" style="float: right;">
+                <h5>שם פרטי: <br>`+ data.PatientDetails.FirstName + `
+                </h5>
+            </div>
+            <div class="col-2" style="float: right;">
+                <h5>שם אב: <br>`+ data.PatientDetails.FatherName + `
+                </h5>
+            </div>
+            <div class="col-2" style="float: right;">
+                <h5>שם משפחה: <br>`+ data.PatientDetails.LastName + `
+                </h5>
+            </div>
+            <div class="col-2" style="float: right;">
+                <h5>גיל: <br>`+ data.PatientDetails.DOB + `</h5>
+            </div>`;
     for (let i = 0; i < data.ImagesList.length; i++) {
       if (data.ImagesList[i].Content !== '') {
-        this.pdfString += `<img height="60%" width="60%" src=` + data.ImagesList[i].Content + `>
+        this.pdfString += `<img height="500" width="600" src='` + data.ImagesList[i].Content + `'>
         <p class="text-center">` + data.ImagesList[i].Note + `</p>`;
       }
     }
@@ -220,7 +223,7 @@ export class BedsoreDashboardComponent implements OnInit {
       </div>
     </body></html>`;
     $("#loader_2").removeClass("d-none");
-    this.http.post(environment.urlipracticom + "createBedsorePdf", {
+    this.http.post(environment.urlipracticom + "CreateBedsorePdf", {
       _patient: data.PatientDetails,
       html: this.pdfString,
       Catigory: "ZPO_BEDSOR"
@@ -229,7 +232,8 @@ export class BedsoreDashboardComponent implements OnInit {
       .subscribe((Response) => {
         let that = this;
         setTimeout(() => {
-          that.http.post("http://srv-ipracticom:756/WebService.asmx/LinkPdfToPatientNamer", {
+          // that.http.post("http://srv-ipracticom:756/WebService.asmx/LinkPdfToPatientNamer", {
+          that.http.post("http://localhost:64964/WebService.asmx/LinkPdfToPatientNamer", {
             CaseNumber:
               data.PatientDetails.CaseNumber,
             FormID: data.Row_ID,
