@@ -1,5 +1,5 @@
 <div class="row" id="page-toshow">
-    <h1 class="page-title text-center">דיווח פצע לחץ</h1>
+    <h1 class="page-title text-center">צילום פצע</h1>
     <div class="col"></div>
     <div class="col-4">
         <div dir="rtl" class="card w-85-p">
@@ -105,7 +105,7 @@
     <div class="d-none-desktop" dir="rtl">
         <div class="card-header border-bottomIn rel" style="text-align: center;">
             <img class="full-width" style="width: 100%;" src="assets/images/covid_2_header.png" />
-            <h1 class="text-center pos-abs-center"><u>דו"ח פצע לחץ</u></h1>
+            <h1 class="text-center pos-abs-center"><u>צילום פצע</u></h1>
         </div>
         <div class="row" dir="rtl" style="display: flex;">
             <div class="col-12" style="width: 100%;text-align: center;">
@@ -114,24 +114,25 @@
         </div>
         <div class="row" dir="rtl" style="display: flex;border-style: outset;">
             <div class="col-2">
+                <h5>ת.ז: <br>{{elementToPrint.PatientDetails.Passport}}</h5>
+            </div>
+            <div class="col-2">
                 <h5>מספר מקרה: <br>{{elementToPrint.PatientDetails.CaseNumber}}</h5>
             </div>
             <div class="col-2">
-                <h5>ת.ז: <br>{{elementToPrint.PatientDetails.CaseNumber}}</h5>
-            </div>
-            <div class="col-2">
-                <h5>שם מלא: <br>{{elementToPrint.PatientDetails.FirstName}} {{elementToPrint.PatientDetails.FatherName}}
-                    {{elementToPrint.PatientDetails.LastName}}
+                <h5>שם פרטי: <br>{{elementToPrint.PatientDetails.FirstName}}
                 </h5>
             </div>
             <div class="col-2">
-                <h5>כתובת: <br>{{elementToPrint.PatientDetails.Address}}</h5>
+                <h5>שם אב: <br>{{elementToPrint.PatientDetails.FatherName}}
+                </h5>
             </div>
             <div class="col-2">
-                <h5>מס' טלפון: <br>{{elementToPrint.PatientDetails.PhoneNumber}}</h5>
+                <h5>שם משפחה: <br>{{elementToPrint.PatientDetails.LastName}}
+                </h5>
             </div>
             <div class="col-2">
-                <h5>תאריך לידה: <br>{{elementToPrint.PatientDetails.DOB}}</h5>
+                <h5>גיל: <br>{{elementToPrint.PatientDetails.DOB}}</h5>
             </div>
         </div>
         <div class="row" dir="rtl" style="display: block;">
