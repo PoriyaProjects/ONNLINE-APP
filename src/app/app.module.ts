@@ -225,6 +225,7 @@ import { WorkerCasesComponent } from './worker-cases/worker-cases.component';
 import { EditOrAddWorkerCaseComponent } from './worker-cases/edit-or-add-worker-case/edit-or-add-worker-case.component';
 import { BedsoreDashboardComponent } from './form-dashboard/bedsore-dashboard/bedsore-dashboard.component';
 import { BedsoreModalComponent } from './form-dashboard/bedsore-dashboard/bedsore-modal/bedsore-modal.component';
+import { EditOrAddWorkerCaseDialogComponent } from './edit-or-add-worker-case-dialog/edit-or-add-worker-case-dialog.component';
 
 
 
@@ -406,7 +407,8 @@ const maskConfig: Partial<IConfig> = {
     ReHospComponent,
     EmployeesUpdateManagersComponent,
     BedsoreDashboardComponent,
-    BedsoreModalComponent
+    BedsoreModalComponent,
+    EditOrAddWorkerCaseDialogComponent
   ],
   imports: [
     JpTimeMaskModule,
