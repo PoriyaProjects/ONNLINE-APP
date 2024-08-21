@@ -6,6 +6,8 @@ import {
   ChangeDetectorRef,
   AfterViewChecked,
   Input,
+  inject,
+  ElementRef,
 } from "@angular/core";
 import { Router } from "@angular/router";
 import { HttpClient } from "@angular/common/http";
@@ -62,6 +64,8 @@ export interface WorkerCaseRowTable {
 })
 export class EditOrAddWorkerCaseComponent implements OnInit {
 
+  //activeModal = inject(NgbActiveModal);
+  @ViewChild('editoraddemployee', { static: true }) modal: ElementRef<any>;
   @ViewChild("SendSmsToemergencymembersModal", { static: true })
   SendSmsToemergencymembersModal: NgbModal;
   @ViewChild(MatTable, { static: true }) table: MatTable<any>;
@@ -76,12 +80,13 @@ export class EditOrAddWorkerCaseComponent implements OnInit {
     "FullName",
     "ConcatenatedCatsName",
   ];
-  private activeModal: NgbActiveModal;
+  //private activeModal: NgbActiveModal;
   modalOptions: NgbModalOptions;
   modalOptionsPrint: NgbModalOptions = {
     windowClass: "modalOptionsPrint",
   };
   closeResult: string;
+  opendModal: any;
   TABLE_DATA: WorkerCaseRowTable[] = [];
   WorkerCaseCats: WorkerCaseCat[] = [];
   WorkerData: WorkerCaseRowTable;
@@ -107,11 +112,14 @@ export class EditOrAddWorkerCaseComponent implements OnInit {
     private modalService: NgbModal,
     private formBuilder: FormBuilder,
     private confirmationDialogService: ConfirmationDialogService,
-    activeModal: NgbActiveModal,
+    private activeModal: NgbActiveModal,
     private cdr: ChangeDetectorRef,
     private mMenuPerm: MenuPerm
   ) {
-    this.activeModal = activeModal;
+    console.log(activeModal)
+    console.log(modalService)
+    
+    
   }
   @Input()
   GroupName: string;
@@ -245,6 +253,8 @@ export class EditOrAddWorkerCaseComponent implements OnInit {
             $("#loader").addClass("d-none");
           });
           this.modalService.dismissAll();
+          
+          //this.modal?.elementRef.nativeElement.modal('hide');
         } else {
           $("#loader").addClass("d-none");
           this.openSnackBarBoxIsFound();
@@ -333,7 +343,7 @@ export class EditOrAddWorkerCaseComponent implements OnInit {
     //   debugger
     //   console.log('Text input changed:', value);
     // });
-    this.modalService.open(content, this.modalOptions).result.then(
+    this.opendModal = this.modalService.open(content, this.modalOptions).result.then(
       (result) => {
         this.closeResult = `Closed with: ${result}`;
         //////////debugger
