@@ -116,11 +116,12 @@ export class StikersComponent implements OnInit {
         this._Activatedroute.queryParams.subscribe((params) => {
             console.log(params);
             if (params["casenumber"] == "") {
-                this.casenumber = "0010866281";
+                this.casenumber = "0031487752";
             } else {
                 this.casenumber = params["casenumber"];
             }
-            this.GetPersonalDetails(this.casenumber);
+            this.mPersonalDetails.CaseNumber = this.casenumber
+            //this.GetPersonalDetails(this.casenumber);
         });
     }
     ngAfterViewInit() {

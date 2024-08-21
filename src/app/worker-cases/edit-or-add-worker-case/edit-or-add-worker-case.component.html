@@ -1,0 +1,249 @@
+<div id="page">
+    <h1 class="text-center">עובדים</h1>
+    <div class="container-fluid" cdkTrapFocus  >
+        <div class="row">
+            <div class="col">
+                <div dir="rtl" class="card w-85-p">
+                    <div dir="rtl" class="card-body">
+                        <form ngbAutofocus class="form">
+                            <div class="row">
+                                <div class="col">
+                                    <div class="form-group">
+                                        <mat-form-field>
+                                            <input
+                                                matInput
+                                                autocomplete="off"
+                                                placeholder="חפש"
+                                                [(ngModel)]="fliterVal"
+                                                name="fliterVal"
+                                            />
+                                        </mat-form-field>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <button
+                                mat-raised-button
+                                
+                                type="submit"
+                                class="btn btn-primary btn-raised"
+                                (click)="getReport($event)"
+                            >
+                                חפש
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <br />
+    <hr />
+    <div class="container-fluid pb-60">
+        <div class="row">
+            <div dir="rtl" class="col">
+                <div class="table-responsive">
+                    <div class="table-spinner-container">
+                        <!-- <mat-form-field>
+                                <input matInput (keyup)="applyFilter($event.target.value)" placeholder="חפש">
+                            </mat-form-field> -->
+                        <table
+                            class="table"
+                            mat-table
+                            [dataSource]="dataSource"
+                        >
+                            
+                            <ng-container matColumnDef="Dose">
+                                <th mat-header-cell *matHeaderCellDef>
+                                    מס' מנה
+                                </th>
+                                <td mat-cell *matCellDef="let element">
+                                    {{ element.Dose }}
+                                </td>
+                            </ng-container>
+                            
+                            <ng-container matColumnDef="RowID">
+                                <th mat-header-cell *matHeaderCellDef>
+                                    מס' שורה
+                                </th>
+                                <td mat-cell *matCellDef="let element">
+                                    {{ element.RowID }}
+                                </td>
+                            </ng-container>
+                            <ng-container matColumnDef="EmployeeID">
+                                <th mat-header-cell *matHeaderCellDef>
+                                    ת.ז
+                                </th>
+                                <td mat-cell *matCellDef="let element">
+                                    {{ element.EmployeeID }}
+                                </td>
+                            </ng-container>
+                            <ng-container matColumnDef="FullName">
+                                <th mat-header-cell *matHeaderCellDef>
+                                   שם מלא
+                                </th>
+                                <td mat-cell *matCellDef="let element">
+                                    {{ element.EmployeeFirstName }} {{element.EmployeeLastName}}
+                                </td>
+                            </ng-container>
+                            <ng-container matColumnDef="ConcatenatedCatsName">
+                                <th mat-header-cell *matHeaderCellDef>
+                                    קטגוריות מסמכים
+                                </th>
+                                <td mat-cell *matCellDef="let element">
+                                   {{element.ConcatenatedCatsName}}
+                                </td>
+                            </ng-container>
+                            
+                           
+                            
+                             <tr
+                                mat-header-row
+                                *matHeaderRowDef="displayedColumns"
+                            ></tr>
+                            <tr
+                                
+                                mat-row
+                                *matRowDef="let row; columns: displayedColumns"
+                                
+                            ></tr>
+                        </table>
+                    </div>
+                    <!-- PAGINATION -->
+                    <mat-paginator
+                        [length]="resultsLength"
+                        [pageSizeOptions]="[5, 10, 20, 50, 100]"
+                        [pageSize]="100"
+                        showFirstLastButtons
+                        (page)="getPaginatorData($event)"
+                    ></mat-paginator>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<button
+    #test
+    type="button"
+    id="GroupBtn"
+    (click)="open(editoraddemployee, 'editoraddemployee', '')"
+    mat-fab
+    color="primary"
+>
+    <i class="material-icons">add</i>
+</button>
+
+<ng-template #editoraddemployee let-modal>
+    <form
+        dir="rtl"
+        id="BoxEmployeeFormID"
+        class="form col"
+        [formGroup]="BoxEmployee"
+        (ngSubmit)="onSubmit()"
+    >
+        <div class="modal-header text-right">
+            <h4 class="modal-title text-center">קרטון</h4>
+            <button
+                type="button"
+                class="close"
+                aria-label="Close"
+                (click)="modal.dismiss('Cross click')"
+            >
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div class="row">
+                <div class="col-4">
+                    <div class="form-group">
+                        <mat-form-field>
+                            <input
+                                matInput
+                                autocomplete="off"
+                                class="form-control"
+                                placeholder="ת.ז"
+                                formControlName="EmployeeID"
+                                required
+                                (blur)="onInputEmployeeIDBlur($event)"
+                                type="tel"
+                            />
+                        </mat-form-field>
+                    </div>
+                </div>
+                <div class="col-4">
+                    <div class="form-group">
+                        <mat-form-field>
+                            <input
+                                matInput
+                                autocomplete="off"
+                                class="form-control"
+                                placeholder="שם פרטי"
+                                formControlName="EmployeeFirstName"
+                                required
+                                type="text"
+                            />
+                        </mat-form-field>
+                    </div>
+                </div>
+                <div class="col-4">
+                    <div class="form-group">
+                        <mat-form-field>
+                            <input
+                                matInput
+                                autocomplete="off"
+                                class="form-control"
+                                placeholder="שם משפחה"
+                                formControlName="EmployeeLastName"
+                                required
+                                type="text"
+                            />
+                        </mat-form-field>
+                    </div>
+                </div>
+                <div class="col-4">
+                    <div class="form-group">
+                        <mat-form-field>
+                            <input
+                                matInput
+                                autocomplete="off"
+                                class="form-control"
+                                placeholder="מין"
+                                formControlName="EmployeeGender"
+                                required
+                                type="text"
+                            />
+                        </mat-form-field>
+                    </div>
+                </div>
+                <div class="col-4">
+                    <div class="form-group">
+                        <mat-form-field>
+                            <input
+                                matInput
+                                autocomplete="off"
+                                class="form-control"
+                                placeholder="תאריך לידה"
+                                formControlName="EmployeeDOB"
+                                required
+                                type="date"
+                            />
+                        </mat-form-field>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <section class="example-section">
+                    <span *ngFor="let cat of WorkerCaseCats">
+                        &nbsp;&nbsp;&nbsp;<mat-checkbox class="example-margin"  (change)="checkValue($event, cat)">{{cat.CatName}}</mat-checkbox>&nbsp;&nbsp;&nbsp;
+                    </span>
+                    
+                  </section>
+              
+            </div>
+        </div>
+        <div class="modal-footer text-left">
+            <button type="submit" class="btn btn-outline-dark">שמור</button>
+        </div>
+    </form>
+</ng-template>

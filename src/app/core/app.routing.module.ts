@@ -121,6 +121,8 @@ import {BTirmComponent} from '../b-tirm/b-tirm.component';
 import {ReportReportingComponent} from '../report-reporting/report-reporting.component';
 import {ReHospComponent} from '../re-hosp/re-hosp.component';
 import {EmployeesUpdateManagersComponent} from '../employees-manage-dash/employees-update-managers/employees-update-managers.component'
+import {WorkerCasesComponent} from '../worker-cases/worker-cases.component'
+import {EditOrAddWorkerCaseComponent} from '../worker-cases/edit-or-add-worker-case/edit-or-add-worker-case.component'
 import {BedsoreDashboardComponent} from '../form-dashboard/bedsore-dashboard/bedsore-dashboard.component'
 
 
@@ -249,6 +251,8 @@ const routes: Routes = [
   {path : "Reporting" , component : ReportReportingComponent } ,
   {path : "ReHosp" , component : ReHospComponent } ,
   { path: "employees-update-managers", component: EmployeesUpdateManagersComponent },
+  {path : "Reporting" , component : ReportReportingComponent },
+  {path : "WorkerCases" , component : WorkerCasesComponent },
   { path: "bedsore-dashboard", component: BedsoreDashboardComponent },
   {path : "Reporting" , component : ReportReportingComponent } 
   
