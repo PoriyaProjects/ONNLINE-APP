@@ -690,7 +690,7 @@ export class CprFormComponent implements OnInit {
     let userToChange;
     if (depart.length > 0) {
       this.FirstSection.controls['cadriologName'].setValue(depart[0].firstname);
-    }else{
+    } else {
       this.FirstSection.controls['cadriologName'].setValue(filterValue3);
     }
     return this.employees.filter(option => option.firstname.includes(filterValue3));
@@ -701,7 +701,7 @@ export class CprFormComponent implements OnInit {
     let userToChange;
     if (depart.length > 0) {
       this.FirstSection.controls['mardimName'].setValue(depart[0].firstname);
-    }else{
+    } else {
       this.FirstSection.controls['mardimName'].setValue(filterValue4);
     }
     return this.employees.filter(option => option.firstname.includes(filterValue4));
@@ -712,7 +712,7 @@ export class CprFormComponent implements OnInit {
     let userToChange;
     if (depart.length > 0) {
       this.FirstSection.controls['clalitName'].setValue(depart[0].firstname);
-    }else{
+    } else {
       this.FirstSection.controls['clalitName'].setValue(filterValue5);
     }
     return this.employees.filter(option => option.firstname.includes(filterValue5));
@@ -1101,7 +1101,7 @@ export class CprFormComponent implements OnInit {
     }
     $("#loader_2").removeClass("d-none");
     // this.http.post(this.url + "createCprPdfOnServer", {
-    this.http.post("http://srv-ipracticom:8080/WebService.asmx/createCprPdfOnServer", {
+    this.http.post(environment.urlipracticom + "createCprPdfOnServer", {
       // this.http.post(environment.url + "createCprPdfOnServer", {
       CaseNumber: CaseNumber,
       FormID: "1",
@@ -1112,7 +1112,7 @@ export class CprFormComponent implements OnInit {
       .subscribe((Response) => {
         let that = this;
         setTimeout(() => {
-          that.http.post("http://srv-ipracticom:8080/WebService.asmx/LinkPdfToPatientNamer", {
+          that.http.post(environment.urlipracticom + "LinkPdfToPatientNamer", {
             // that.http.post(environment.url + "LinkPdfToPatientNamer", {
             CaseNumber:
               CaseNumber,

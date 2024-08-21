@@ -184,6 +184,7 @@ export class BedsoreDashboardComponent implements OnInit {
               <img class="full-width" style="width: 100%;" src="c:\\pdf\\BoneMarrowForms\\covid_header.png" />
               <h1 class="text-center pos-abs-center"><u>צילום פצע</u></h1>
           </div>
+          <hr>
           <div class="row" dir="rtl" style="display: flex;">
               <div class="col-12" style="width: 100%;text-align: center;float: right;">
                   <p>תאריך: `+ data.DateOfForm + `</p>
@@ -232,8 +233,8 @@ export class BedsoreDashboardComponent implements OnInit {
       .subscribe((Response) => {
         let that = this;
         setTimeout(() => {
-          that.http.post("http://srv-ipracticom:756/WebService.asmx/LinkPdfToPatientNamer", {
-          // that.http.post("http://localhost:64964/WebService.asmx/LinkPdfToPatientNamer", {
+          that.http.post(environment.urlipracticom + "LinkPdfToPatientNamer", {
+            // that.http.post("http://localhost:64964/WebService.asmx/LinkPdfToPatientNamer", {
             CaseNumber:
               data.PatientDetails.CaseNumber,
             FormID: data.Row_ID,
