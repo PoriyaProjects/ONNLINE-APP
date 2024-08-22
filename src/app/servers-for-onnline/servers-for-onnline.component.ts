@@ -28,6 +28,8 @@ export interface Server {
     UpdateDateTime: string;
     UserInsert: string;
     UserUpdate: string;
+    SystemName: string;
+    CareProvider: string;
 }
 @Component({
     selector: "app-servers-for-onnline",
@@ -98,6 +100,8 @@ export class ServersForOnnlineComponent implements OnInit {
             UpdateDateTime: "",
             UserInsert: "",
             UserUpdate: "",
+            CareProvider: "",
+            SystemName: "",
         };
         const dialogRef = this.dialog.open(AddOrEditServerComponent, {
             data: {
