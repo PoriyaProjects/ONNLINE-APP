@@ -1,10 +1,25 @@
 <div class="row" id="page-toshow">
-    <h1 class="page-title text-center">צילום פצע</h1>
-    <div class="col"></div>
-    <div class="col-4">
-        <div dir="rtl" class="card w-85-p">
-            <div dir="rtl" class="card-body">
-                <form class="form" [formGroup]="searchPatient">
+    <h1 class="page-title text-center">תיעוד פצע</h1>
+    <div class="row stylish-row" dir="rtl">
+        <div class="row stylish-scroll" *ngIf="department == ''">
+            <div class="col-2 dept-card" *ngFor="let depart of departsList">
+                <mat-card class="stylish-card" appearance="outlined" (click)="chooseDepartment(depart)">
+                    <mat-card-title class="stylish-card-title">{{ depart }}</mat-card-title>
+                </mat-card>
+            </div>
+        </div>
+        <div class="row stylish-scroll" *ngIf="department != ''">
+            <div class="col-2 dept-card" *ngFor="let patient of dataSourcePatients.filteredData">
+                <mat-card class="stylish-card" appearance="outlined" (click)="openFormDialog(patient)">
+                    <mat-card-title class="stylish-card-title">{{ patient.FirstName }} {{ patient.FatherName }} {{
+                        patient.LastName }}<br>מקרה: {{ patient.CaseNumber }} <br> גיל: {{ patient.Age
+                        }}</mat-card-title>
+                </mat-card>
+            </div>
+        </div>
+        <!-- <div dir="rtl" class="card w-85-p"> -->
+        <!-- <div dir="rtl" class="card-body"> -->
+        <!-- <form class="form" [formGroup]="searchPatient">
                     <div class="row">
                         <div class="row">
                             <div class="col">
@@ -27,12 +42,11 @@
                         <mat-icon>clear</mat-icon>
                     </button>
                     &nbsp;&nbsp;&nbsp;
-                </form>
-            </div>
-            <mat-progress-bar mode="buffer" *ngIf="!searchPatientProgressBar"></mat-progress-bar>
-        </div>
+                </form> -->
+        <!-- </div> -->
+        <!-- <mat-progress-bar mode="buffer" *ngIf="!searchPatientProgressBar"></mat-progress-bar> -->
+        <!-- </div> -->
     </div>
-    <div class="col"></div>
 
     <div dir="rtl" class="container-fluid pb-60">
         <mat-form-field appearance="standard" style="padding-right: 10px;">
@@ -105,7 +119,7 @@
     <div class="d-none-desktop" dir="rtl">
         <div class="card-header border-bottomIn rel" style="text-align: center;">
             <img class="full-width" style="width: 100%;" src="assets/images/covid_2_header.png" />
-            <h1 class="text-center pos-abs-center"><u>צילום פצע</u></h1>
+            <h1 class="text-center pos-abs-center"><u>תיעוד פצע</u></h1>
         </div>
         <div class="row" dir="rtl" style="display: flex;">
             <div class="col-12" style="width: 100%;text-align: center;">
@@ -143,7 +157,7 @@
                 <div class="row" *ngFor="let img of elementToPrint.ImagesList">
                     <div *ngIf="img.Content !== ''">
                         <img src={{img.Content}} width="60%" height="60%" />
-                        <p class="text-center">{{img.Note}}</p>
+                        <p class="note">{{img.Note}}</p>
                     </div>
                 </div>
             </div>

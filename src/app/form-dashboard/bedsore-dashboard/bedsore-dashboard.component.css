@@ -1,0 +1,66 @@
+.stylish-row {
+    width: 100%;
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+.stylish-scroll {
+    width: 100%;
+    height: 250px;
+    overflow-y: auto;
+    padding-right: 15px;
+    /* To avoid scrolling issues */
+    padding-left: 15px;
+}
+
+.stylish-card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    border-radius: 12px;
+    cursor: pointer;
+    min-height: 150px;
+}
+
+.stylish-card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 12px 20px rgba(0, 0, 0, 0.1);
+}
+
+.stylish-card-header {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px 15px;
+}
+
+.stylish-card-title {
+    font-weight: 600;
+    font-size: 18px;
+    color: #333;
+    text-align: center;
+}
+
+.dept-card {
+    margin-bottom: 20px;
+}
+
+/* Add scrollbar customization if needed */
+.stylish-scroll::-webkit-scrollbar {
+    width: 8px;
+}
+
+.stylish-scroll::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+.stylish-scroll::-webkit-scrollbar-thumb {
+    background-color: #888;
+    border-radius: 10px;
+    border: 2px solid #f1f1f1;
+}
+
+.stylish-scroll::-webkit-scrollbar-thumb:hover {
+    background-color: #555;
+}

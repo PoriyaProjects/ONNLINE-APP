@@ -1933,7 +1933,7 @@ ngx-material-timepicker-container,
 }
 
 .mat-card.mat-focus-indicator {
-    padding-bottom: 90px;
+    /* padding-bottom: 90px; */
 }
 
 .bg-n-mtb-10 {

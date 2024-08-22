@@ -34,13 +34,18 @@ export class BedsoreDashboardComponent implements OnInit {
     private confirmationDialogService: ConfirmationDialogService) { }
 
   searchPatient: FormGroup;
+  departsList = [];
+  department = "";
   searchPatientProgressBar: boolean = true;
   @ViewChild(MatPaginator) paginator: MatPaginator;
-  TABLE_DATA = [];
-  dataSource = new MatTableDataSource(this.TABLE_DATA);
+  dataSource = new MatTableDataSource();
+  dataSourcePatients = new MatTableDataSource();
   patientDetails: PatientDetails;
   @ViewChild('printmycontent') printmycontent: ElementRef;
   displayedColumns: string[] = [
+    'delete', 'FormDate', 'CaseNumber', 'PatientName', 'edit', 'print', 'namer'
+  ];
+  displayedColumnsPatinets: string[] = [
     'delete', 'FormDate', 'CaseNumber', 'PatientName', 'edit', 'print', 'namer'
   ];
   elementToPrint: any;
@@ -52,7 +57,35 @@ export class BedsoreDashboardComponent implements OnInit {
       Passport: ['', null],
       CaseNumber: ['', null]
     });
+    this.getChamelleonCurrentPatients();
     this.getAllBedsoreList();
+  }
+
+  chooseDepartment(depart) {
+    this.department = depart;
+    this.dataSourcePatients.filter = this.department.trim().toLowerCase();
+  }
+
+  getChamelleonCurrentPatients() {
+    this.http
+      .post(environment.url + "GetChamelleonCurrentPatients", {
+      })
+      .subscribe((Response) => {
+        this.dataSourcePatients = new MatTableDataSource<any>(Response["d"]);
+        this.dataSourcePatients.paginator = this.paginator;
+        this.departsList = this.groupByDepartments(this.dataSourcePatients.filteredData);
+      });
+  }
+
+  groupByDepartments(items): any {
+    let acc = [];
+    items.forEach((element, index) => {
+      const key = element.DepartName; // Replace 'category' with your desired property
+      if (!acc.includes(key)) {
+        acc.push(key);
+      }
+    });
+    return acc;
   }
 
   getAllBedsoreList() {
@@ -60,8 +93,7 @@ export class BedsoreDashboardComponent implements OnInit {
       .post(environment.url + "GetAllBedsoreList", {
       })
       .subscribe((Response) => {
-        this.TABLE_DATA = Response["d"];
-        this.dataSource = new MatTableDataSource<any>(this.TABLE_DATA);
+        this.dataSource = new MatTableDataSource<any>(Response["d"]);
         this.dataSource.paginator = this.paginator;
       });
   }
@@ -93,6 +125,15 @@ export class BedsoreDashboardComponent implements OnInit {
   }
 
   openFormDialog(PatientDetails) {
+    PatientDetails = {
+      RowID: PatientDetails.Row_ID,
+      Passport: PatientDetails.IDNumber,
+      FirstName: PatientDetails.FirstName,
+      FatherName: PatientDetails.FatherName,
+      LastName: PatientDetails.LastName,
+      CaseNumber: PatientDetails.CaseNumber,
+      DOB: PatientDetails.Age,
+    }
     let dialogRef = this.dialog.open(BedsoreModalComponent, {
       data: {
         PatientDetails
@@ -108,7 +149,7 @@ export class BedsoreDashboardComponent implements OnInit {
     this.elementToPrint = element;
     let that = this;
     setTimeout(function () {
-      var style = "<style>p,mat-label,span{font-weight: bold;font-size: 18px;}h1{font-size: 12px;}.col-2{width: 20%;justify-content: center;}</style>";
+      var style = "<style>p,mat-label,span{font-weight: bold;font-size: 18px;}h1{font-size: 12px;}.col-2{width: 20%;justify-content: center;}.note {text-align: center;font-family: monospace;font-weight: normal;}</style>";
       var printContents = that.printmycontent.nativeElement.innerHTML;
       style = style + printContents;
       var w = window.open();
@@ -175,14 +216,14 @@ export class BedsoreDashboardComponent implements OnInit {
   linkToNamer(data) {
     this.loaderPdfNamer = true;
     let CaseNumber = "";
-    this.pdfString = `<!doctype html><html lang="he"><head><meta charset="utf-8"/><title>צילום פצע</title>
+    this.pdfString = `<!doctype html><html lang="he"><head><meta charset="utf-8"/><title>תיעוד פצע</title>
     <style>p,mat-label,span{font-weight: bold;font-size: 18px;}h1{font-size: 14px}.col-2{width: 16.66667%;justify-content: center;}.row{display: flex;border-style: outset;}</style>
     </head><body dir="rtl">
     <div class="d-none-desktop">
       <div class="d-none-desktop" dir="rtl">
           <div class="card-header border-bottomIn rel" style="text-align: center;">
               <img class="full-width" style="width: 100%;" src="c:\\pdf\\BoneMarrowForms\\covid_header.png" />
-              <h1 class="text-center pos-abs-center"><u>צילום פצע</u></h1>
+              <h1 class="text-center pos-abs-center"><u>תיעוד פצע</u></h1>
           </div>
           <div class="row" dir="rtl" style="display: flex;">
               <div class="col-12" style="width: 100%;text-align: center;float: right;">
@@ -209,11 +250,11 @@ export class BedsoreDashboardComponent implements OnInit {
             </div>
             <div class="col-2" style="float: right;">
                 <h5>גיל: <br>`+ data.PatientDetails.DOB + `</h5>
-            </div>`;
+            </div><hr>`;
     for (let i = 0; i < data.ImagesList.length; i++) {
       if (data.ImagesList[i].Content !== '') {
         this.pdfString += `<img height="500" width="600" src='` + data.ImagesList[i].Content + `'>
-        <p class="text-center">` + data.ImagesList[i].Note + `</p>`;
+        <p class="note" style="text-align: center;font-family: monospace;font-weight: normal;">` + data.ImagesList[i].Note + `</p>`;
       }
     }
     this.pdfString += `
@@ -232,8 +273,8 @@ export class BedsoreDashboardComponent implements OnInit {
       .subscribe((Response) => {
         let that = this;
         setTimeout(() => {
-          // that.http.post("http://srv-ipracticom:756/WebService.asmx/LinkPdfToPatientNamer", {
-          that.http.post("http://localhost:64964/WebService.asmx/LinkPdfToPatientNamer", {
+          that.http.post(environment.urlipracticom + "LinkPdfToPatientNamer", {
+            // that.http.post("http://localhost:64964/WebService.asmx/LinkPdfToPatientNamer", {
             CaseNumber:
               data.PatientDetails.CaseNumber,
             FormID: data.Row_ID,

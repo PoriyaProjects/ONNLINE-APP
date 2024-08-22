@@ -246,7 +246,7 @@ export class TumorBoardComponent implements OnInit {
       .subscribe((Response) => {
         let that = this;
         setTimeout(() => {
-          that.http.post("http://srv-ipracticom:756/WebService.asmx/LinkPdfToPatientNamer", {
+          that.http.post(environment.urlipracticom + "LinkPdfToPatientNamer", {
             // that.http.post(environment.url + "LinkPdfToPatientNamer", {
             CaseNumber:
               data.PatientDetails.CaseNumber,
