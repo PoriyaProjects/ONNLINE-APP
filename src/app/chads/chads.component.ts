@@ -177,7 +177,7 @@ export class ChadsComponent implements OnInit, AfterViewInit {
         this.caseNumber = "";
         this.selectedIndexTab = 0;
         this.goodOrNot = "-1";
-        this.AntiCoagTreat = "0";
+        this.AntiCoagTreat = "-1";
         this.DepartmentID = "הכל";
         this.Relevant = "-1";
         this.dataSource = new MatTableDataSource(this.TABLE_DATA);

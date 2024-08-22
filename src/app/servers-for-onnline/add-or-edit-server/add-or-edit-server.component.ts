@@ -24,6 +24,8 @@ export interface Server {
     UpdateDateTime: string;
     UserInsert: string;
     UserUpdate: string;
+    CareProvider: string;
+    SystemName: string;
 }
 
 export function customIPValidator(): ValidatorFn {
@@ -65,6 +67,8 @@ export class AddOrEditServerComponent implements OnInit {
             ServerLocation: [this.data.element.ServerLocation, null],
             ServerOS: [this.data.element.ServerOS, null],
             ServerFunctions: [this.data.element.ServerFunctions, null],
+            SystemName: [this.data.element.SystemName, null],
+            CareProvider: [this.data.element.CareProvider, null],
             ServerIPAddress: [this.data.element.ServerIPAddress,  [Validators.required, customIPValidator()]],
             UserInsert: [localStorage.getItem("loginUserName"), null],
             UserUpdate: [localStorage.getItem("loginUserName"), null],
