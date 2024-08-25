@@ -95,6 +95,8 @@ export class EditOrAddWorkerCaseComponent implements OnInit {
   rowFormData = {} as WorkerCaseRowTable;
   dataSource = new MatTableDataSource<WorkerCaseRowTable>(this.TABLE_DATA);
   selection = new SelectionModel<WorkerCaseRowTable>(true, []);
+  
+  @ViewChild('formTable1Div') formTable1Div: ElementRef;
   loader: Boolean;
   tableLoader: Boolean;
   selectedOn: Boolean = false;
@@ -275,7 +277,7 @@ export class EditOrAddWorkerCaseComponent implements OnInit {
 
     dialogRef.afterClosed().subscribe(result => {
       console.log(`Dialog result: ${result}`);
-      
+
       this.getReport(null);
     });
   }
@@ -442,6 +444,21 @@ export class EditOrAddWorkerCaseComponent implements OnInit {
           $("#loader").addClass("d-none");
           // }
         });
+        if (localStorage.getItem("Print") == "true") {
+         // debugger
+          let that = this;
+          setTimeout(function () {
+            localStorage.setItem("Print", "false")
+            var printContents = that.formTable1Div.nativeElement.innerHTML;
+            ////debugger                 
+            var w = window.open();
+            w.document.write(printContents);
+            w.print();
+            //w.close();
+          }, 1000)
+
+
+        }
       });
   }
 

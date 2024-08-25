@@ -5,6 +5,7 @@ import {
     AfterViewInit,
     ChangeDetectorRef,
     Input,
+    ElementRef,
 } from "@angular/core";
 import { Router } from "@angular/router";
 import { HttpClient } from "@angular/common/http";
@@ -119,6 +120,7 @@ export class WorkerCasesComponent implements OnInit {
     GroupName: string;
     GroupNumber: string;
     numSelected: number;
+    
     numRows: number;
     isAllSelected() {
         const numSelected = this.selection.selected.length;
@@ -268,8 +270,7 @@ export class WorkerCasesComponent implements OnInit {
 
     sendToSafe(RowId) {
         this.http
-            //.post("http://srv-ipracticom:8080/WebService.asmx/SendBoxCasesToSafe",
-            .post("http://srv-ipracticom:8080/WebService.asmx/SendBoxCasesToSafe",
+            .post(environment.urlipracticom + "/SendWorkerCaseBoxToSafe",
                 {
                     RowId: RowId,
                 }
@@ -415,19 +416,19 @@ export class WorkerCasesComponent implements OnInit {
             .subscribe((Response) => {
                 this.TABLE_DATA.splice(0, this.TABLE_DATA.length);
                 this.TABLE_DATA = Response["d"];
-                  if (!this.TABLE_DATA[0]) {
-                      this.TABLE_DATA = [];
+                if (!this.TABLE_DATA[0]) {
+                    this.TABLE_DATA = [];
 
-                      this.dataSource = new MatTableDataSource<any>(
-                          this.TABLE_DATA
-                      );
-                      this.resultsLength = 0;
-                  } else {
-                      this.dataSource = new MatTableDataSource<any>(
-                          this.TABLE_DATA
-                      );
-                      this.resultsLength = this.TABLE_DATA.length;
-                  }
+                    this.dataSource = new MatTableDataSource<any>(
+                        this.TABLE_DATA
+                    );
+                    this.resultsLength = 0;
+                } else {
+                    this.dataSource = new MatTableDataSource<any>(
+                        this.TABLE_DATA
+                    );
+                    this.resultsLength = this.TABLE_DATA.length;
+                }
 
                 setTimeout(function () {
                     //////////debugger
@@ -435,6 +436,7 @@ export class WorkerCasesComponent implements OnInit {
                     $("#loader").addClass("d-none");
                     // }
                 });
+                
             });
     }
 
