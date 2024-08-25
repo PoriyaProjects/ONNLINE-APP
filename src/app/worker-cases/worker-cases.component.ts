@@ -205,7 +205,7 @@ export class WorkerCasesComponent implements OnInit {
         //////debugger;
         this.http
             //.post(environment.url + "InsertOrUpdateBox", {
-            .post(environment.url + "InsertOrUpdateBox", {
+            .post(environment.url + "WorkerInsertOrUpdateBox", {
                 WokerCaseBox: this.BoxForm.value,
             })
             .subscribe((Response) => {
