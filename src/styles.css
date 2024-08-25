@@ -2209,7 +2209,9 @@ body {
     background: rgba(255, 255, 255, 0.5);
     z-index: 999999999999999 !important;
 }
-
+.SentToSafe{
+    background: rgb(152, 252, 152);
+}
 .no-pad .mat-card.mat-focus-indicator{
     padding-bottom:  0 !important;
     margin-bottom: 15px;
