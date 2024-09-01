@@ -108,8 +108,6 @@ export class NursesManageDashboardComponent implements OnInit {
         that.getEROccupancy('', 'er');
         that.getDeliveryEROccupancy('');
         that.privateIP = this.ClientIP;
-        this.onlyDisplayUsers();
-
       }, 1500);
       // this.ipAddressUpdate();
 
@@ -118,12 +116,6 @@ export class NursesManageDashboardComponent implements OnInit {
       // });
     } else {
       this.handleEvent3();
-    }
-  }
-
-  onlyDisplayUsers() {
-    if (this.UserName == 'etalor') {
-      this.onlyDisplay = true;
     }
   }
 
@@ -360,11 +352,11 @@ export class NursesManageDashboardComponent implements OnInit {
   openGoogleSheets4() {
     window.open("https://docs.google.com/spreadsheets/d/1XxOfVkSoooGTgCc6TBRQlgfmGU5k-8Ar_gsWyIMA4r8/edit?usp=sharing", "_blank");
   }
-  
+
   openGoogleSheets5() {
     window.open("https://docs.google.com/spreadsheets/d/13GxqUzfkjFGpe8XCxBVoeCm5OBTpSw5C7Gq_NU2iOSE/edit?usp=sharing", "_blank");
   }
-  
+
   openGoogleSheets6() {
     window.open("https://docs.google.com/spreadsheets/d/1wJj9XGJBTUzoK-PEJUFy1CVt368N904Fn6cgKYvgBIs/edit?usp=sharing", "_blank");
   }
@@ -424,6 +416,9 @@ export class NursesManageDashboardComponent implements OnInit {
           _ipAddress7 = this.all_nursing_departments_array[0].IpAddress7;
           _tabletAddress = this.all_nursing_departments_array[0].TabletAddress;
           _adminNurse = this.all_nursing_departments_array[0].AdminNurse;
+          if (this.all_nursing_departments_array[0].Is_Display == 'True') {
+            this.onlyDisplay = true;
+          }
           let check_Aran = this.all_nursing_departments_array.filter(x => x.AranNumber != "0");
           if (check_Aran.length > 0) this.Aran_Color = true;
         }

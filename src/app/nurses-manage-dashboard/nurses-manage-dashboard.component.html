@@ -187,7 +187,7 @@
                         </button></li>
                     <li><button matTooltipPosition="left" matTooltip="יישומים" id="EventBtndisplay" mat-raised-button
                             type="button" class="btn btn-raised mr-1" style="background-color: goldenrod;"
-                            (click)="!onlyDisplay && otherApps()">
+                            (click)="otherApps()">
                             <span class="material-icons">
                                 apps
                             </span>
@@ -579,8 +579,7 @@
             ויסות שניוני</button>
         <button mat-menu-item (click)="openGoogleSheets6()"
             matTooltip="עדכון סטטוס 'טיפול מוגבר' במחלקות הפנימיות 2024">סטטוס טיפול מוגבר</button>
-        <button mat-menu-item (click)="openGoogleSheets7()"
-            matTooltip="חולים נוטים למות">חולים נוטים למות</button>
+        <button mat-menu-item (click)="openGoogleSheets7()" matTooltip="חולים נוטים למות">חולים נוטים למות</button>
     </mat-menu>
     <h1 mat-dialog-title style="text-align: center;">יישומים</h1>
     <hr>
@@ -595,17 +594,18 @@
             <div class="card-img" style="background-image:url('../../assets/images/oncall.png')"><span
                     class="tooltiptext">אזעקת עובדים</span></div>
         </mat-card>
-        <mat-card class="card-img" style="background-color: white;width: 33.333%;" (click)="openShiftsWebsite()">
+        <mat-card class="card-img" style="background-color: white;width: 33.333%;"
+            (click)="!onlyDisplay && openShiftsWebsite()">
             <div class="card-img" style="background-image:url('../../assets/images/meshmarot.png')"><span
                     class="tooltiptext">אתר משמרות</span></div>
         </mat-card>
         <mat-card class="card-img" style="background-color: white;width: 33.333%;">
-            <div class="card-img" (click)="openAranWebsite(false)"
+            <div class="card-img" (click)="!onlyDisplay && openAranWebsite(false)"
                 style="height:75px;background-image:url('../../assets/images/emergency_emergency_room_hospital.png')">
                 <b>אמת</b>
                 <span class="tooltiptext">אתר מטה חירום אמת</span>
             </div>
-            <div class="card-img" (click)="openAranWebsite(true)"
+            <div class="card-img" (click)="!onlyDisplay && openAranWebsite(true)"
                 style="height:75px;background-image:url('../../assets/images/emergency_emergency_room_hospital.png')">
                 <b>תרגול</b>
                 <span class="tooltiptext">אתר מטה חירום תרגול</span>
@@ -614,22 +614,23 @@
     </div>
     <hr class="apps-line">
     <div class="row">
-        <mat-card class="card-img" style="background-color: white;width: 25%;" (click)="openTelBook()">
+        <mat-card class="card-img" style="background-color: white;width: 25%;" (click)="!onlyDisplay && openTelBook()">
             <div class="card-img" style="background-image:url('../../assets/images/phonebook.png')">
                 <span class="tooltiptext">ספר טלפונים</span>
             </div>
         </mat-card>
-        <mat-card class="card-img" style="background-color: white;width: 25%;" (click)="openCoview()">
+        <mat-card class="card-img" style="background-color: white;width: 25%;" (click)="!onlyDisplay && openCoview()">
             <div class="card-img" style="background-image:url('../../assets/images/coview.png')">
                 <span class="tooltiptext">Coview</span>
             </div>
         </mat-card>
-        <mat-card class="card-img" style="background-color: white;width: 25%;" (click)="MonitorReports()">
+        <mat-card class="card-img" style="background-color: white;width: 25%;"
+            (click)="!onlyDisplay && MonitorReports()">
             <div class="card-img" style="background-image:url('../../assets/images/Spy-c-Kar-Shutterstock-2014.jpg')">
                 <span class="tooltiptext">ניטור דיווחים</span>
             </div>
         </mat-card>
-        <mat-card class="card-img" style="background-color: white;width: 25%;" (click)="openBluZone()">
+        <mat-card class="card-img" style="background-color: white;width: 25%;" (click)="!onlyDisplay && openBluZone()">
             <div class="card-img" style="background-image:url('../../assets/images/bluzone-logo.png')">
                 <span class="tooltiptext">איתור נכסים</span>
             </div>
@@ -701,7 +702,8 @@
 
 <!-- Unotherized UserName -->
 <ng-template #modalContent3 let-close="close">
-    <span class="material-icons" matTooltip="{{privateIP}}" style="color: red;font-size: 60px;float: right;">
+    <span class="material-icons" matTooltip="{{privateIP}}"
+        style="color: red;font-size: 60px;float: right;direction: rtl;">
         warning
     </span>
     <h1 class="text-center">
@@ -709,8 +711,9 @@
             [routerLink]="['']" (click)="closeModal()">
             <i class="material-icons">home</i>
         </button>
-        <span class="mr-3" *ngIf="UserName == 'amabushkar'">&#8734; 😋 אמירה הכניסה רק באישור מיוחד &#8734;</span>
-        <span class="mr-3">&#8734; ייתכן ואין לך הרשאת צפייה במידע זה &#8734;</span>
+        <span class="mr-3">&#8734; ייתכן ואין לך הרשאת צפייה במידע זה &#8734;<br><br>
+            <p style="direction: rtl;font-size: 20px;">ליצור קשר: adahabre@tzmc.gov.il</p>
+        </span>
     </h1>
 </ng-template>
 
