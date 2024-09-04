@@ -288,28 +288,36 @@ export class NursesManageDashboardComponent implements OnInit {
   }
 
   openShiftsWebsite() {
-    window.open("https://p18.mishmarot.com/?csubDomain=poria", "_blank");
+    if (this.onlyDisplay) this.openSnackBar("אין אישור צפייה!");
+    else window.open("https://p18.mishmarot.com/?csubDomain=poria", "_blank");
   }
 
   openAranWebsite(id) {
-    if (!id) {
-      window.open("http://posapci.poria.health.gov.il:8681/sap(bD1oZSZjPTkzMw==)/bc/bsp/sap/zbsp_miun/poria_aran.htm", "_blank");
-    } else {
-      window.open("http://posaptst.poria.health.gov.il:8681/sap(bD1oZSZjPTkzMw==)/bc/bsp/sap/zbsp_miun/poria_aran.htm", "_blank");
+    if (this.onlyDisplay) this.openSnackBar("אין אישור צפייה!");
+    else {
+      if (!id) {
+        window.open("http://posapci.poria.health.gov.il:8681/sap(bD1oZSZjPTkzMw==)/bc/bsp/sap/zbsp_miun/poria_aran.htm", "_blank");
+      } else {
+        window.open("http://posaptst.poria.health.gov.il:8681/sap(bD1oZSZjPTkzMw==)/bc/bsp/sap/zbsp_miun/poria_aran.htm", "_blank");
+      }
     }
   }
 
   openTelBook() {
-    window.open("http://srv-apps-prod/PB/DEfault.aspx", "_blank");
+    if (this.onlyDisplay) this.openSnackBar("אין אישור צפייה!");
+    else window.open("http://srv-apps-prod/PB/DEfault.aspx", "_blank");
   }
   openCoview() {
-    window.open("https://coview.poria.health.gov.il", "_blank");
+    if (this.onlyDisplay) this.openSnackBar("אין אישור צפייה!");
+    else window.open("https://coview.poria.health.gov.il", "_blank");
   }
   openBluZone() {
-    window.open("https://biot.co.il/session/lockscreen", "_blank");
+    if (this.onlyDisplay) this.openSnackBar("אין אישור צפייה!");
+    else window.open("https://biot.co.il/session/lockscreen", "_blank");
   }
   onCall() {
-    window.open("https://oncallv2.omnitelecom.com/", "_blank");
+    if (this.onlyDisplay) this.openSnackBar("אין אישור צפייה!");
+    else window.open("https://oncallv2.omnitelecom.com/", "_blank");
   }
 
   // NursesSystemPermission() {
@@ -365,14 +373,17 @@ export class NursesManageDashboardComponent implements OnInit {
   }
 
   MonitorReports() {
-    this.http
-      .post(environment.url + "GetDepartmentsDontReport", {
+    if (this.onlyDisplay) this.openSnackBar("אין אישור צפייה!");
+    else {
+      this.http
+        .post(environment.url + "GetDepartmentsDontReport", {
 
-      })
-      .subscribe((Response) => {
-        this.DepartmentsDontReportArray = Response["d"];
-      });
-    this.dialog.open(this.monitorReports, { width: '60%', disableClose: false });
+        })
+        .subscribe((Response) => {
+          this.DepartmentsDontReportArray = Response["d"];
+        });
+      this.dialog.open(this.monitorReports, { width: '60%', disableClose: false });
+    }
   }
 
   closeModal() {
