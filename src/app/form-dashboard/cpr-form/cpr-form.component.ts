@@ -105,7 +105,7 @@ export class CprFormComponent implements OnInit {
   </head><body dir="rtl">
   <div class="d-none-desktop" dir="rtl">
   <div class="card-header border-bottomIn rel" style="text-align: center;">
-      <img class="full-width" style="width: 640px;" src="assets/images/covid_2_header.png" />
+      <img class="full-width" style="width: 640px;" src="https://poria.is-great.org/images/covid_2_header.png" />
       <div class="centered" style="position: absolute;top: 6%;left: 50%;transform: translate(-50%, -50%);"> נספח
           לנוהל ניהול מערך החייאה במרכז הרפואי, מס' נוהל 1.2.21</div>
       <div class="centered" style="position: absolute;top: 8%;left: 50%;transform: translate(-50%, -50%);"> מזהה

@@ -221,7 +221,7 @@ export class BedsoreDashboardComponent implements OnInit {
     <div class="d-none-desktop">
       <div class="d-none-desktop" dir="rtl">
           <div class="card-header border-bottomIn rel" style="text-align: center;">
-              <img class="full-width" style="width: 100%;" src="c:\\pdf\\covid_header.png" />
+              <img class="full-width" style="width: 100%;" src="https://poria.is-great.org/images/covid_2_header.png" />
               <h1 class="text-center pos-abs-center"><u>תיעוד פצע</u></h1>
           </div>
           <div class="row">

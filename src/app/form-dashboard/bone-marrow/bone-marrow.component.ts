@@ -180,7 +180,7 @@ export class BoneMarrowComponent implements OnInit {
     <div class="d-none-desktop">
       <div class="d-none-desktop" dir="rtl">
           <div class="card-header border-bottomIn rel" style="text-align: center;">
-              <img class="full-width" style="width: 100%;" src="c:\\pdf\\BoneMarrowForms\\covid_header.png" />
+              <img class="full-width" style="width: 100%;" src="https://poria.is-great.org/images/covid_2_header.png" />
               <h1 class="text-center pos-abs-center"><u>אספרציה מח עצם</u></h1>
           </div>
           <div class="row" dir="rtl" style="display: flex;">
