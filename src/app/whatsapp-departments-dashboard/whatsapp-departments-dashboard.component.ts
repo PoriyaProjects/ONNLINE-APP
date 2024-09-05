@@ -249,10 +249,11 @@ export class WhatsappDepartmentsDashboardComponent implements OnInit {
       this.http
         .post(environment.url + "SendDepartmentsWhatsAppMessageToUser", {
           messageForm: this.newMessage.value,
-          file: this.base64String.toString().split(',')[1]
+          file: this.base64String == "" ? "" : this.base64String.toString().split(',')[1]
         })
         .subscribe((Response) => {
           if (Response["d"]) {
+            window.location.reload();
             this.currentContact.WhatsApp_Bot_Convesations.push({ Message_Text: this.selectedFile ? this.base64String : this.newMessage.controls['Message_Text'].value, From_ServiceEmployee: 'True', IfFileMessage: this.selectedFile ? 'True' : 'False' });
             this.newMessage.controls['Message_Text'].setValue('');
           } else {
