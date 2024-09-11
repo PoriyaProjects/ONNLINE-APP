@@ -106,7 +106,7 @@ export class WorkerCasesComponent implements OnInit {
         private cdr: ChangeDetectorRef,
         private mMenuPerm: MenuPerm
     ) {
-        mMenuPerm.setRoutName("scanners");
+        mMenuPerm.setRoutName("WorkerCases");
         setTimeout(() => {
             if (!mMenuPerm.getHasPerm()) {
                 localStorage.clear();

@@ -226,6 +226,8 @@ import { EditOrAddWorkerCaseComponent } from './worker-cases/edit-or-add-worker-
 import { BedsoreDashboardComponent } from './form-dashboard/bedsore-dashboard/bedsore-dashboard.component';
 import { BedsoreModalComponent } from './form-dashboard/bedsore-dashboard/bedsore-modal/bedsore-modal.component';
 import { EditOrAddWorkerCaseDialogComponent } from './edit-or-add-worker-case-dialog/edit-or-add-worker-case-dialog.component';
+import { AuthorizedComponent } from './authorized/authorized.component';
+import { AddEditAuthorizedComponent } from './authorized/add-edit-authorized/add-edit-authorized.component';
 
 
 
@@ -408,7 +410,9 @@ const maskConfig: Partial<IConfig> = {
     EmployeesUpdateManagersComponent,
     BedsoreDashboardComponent,
     BedsoreModalComponent,
-    EditOrAddWorkerCaseDialogComponent
+    EditOrAddWorkerCaseDialogComponent,
+    AuthorizedComponent,
+    AddEditAuthorizedComponent
   ],
   imports: [
     JpTimeMaskModule,
