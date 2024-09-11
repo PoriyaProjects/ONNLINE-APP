@@ -1,0 +1,118 @@
+<form
+    class="form text-left"
+    [formGroup]="serverForm"
+    (ngSubmit)="onSubmit()"
+>
+    <h2 mat-dialog-title *ngIf="data.element.RowID != '0'">
+        Edit Authorized: {{ data.element.AuthorizedConnectionName }}
+    </h2>
+    
+    <h2 mat-dialog-title *ngIf="data.element.RowID == '0'">
+        Add Authorized
+    </h2>
+    <mat-dialog-content class="mat-typography">        
+        
+        <div class="row">
+            <div class="col">
+                <div class="form-group">
+                    <mat-form-field>
+                        <input
+                            matInput
+                            autocomplete="off"
+                            class="form-control"
+                            placeholder="Supplier"
+                            formControlName="SupplierID"
+                            
+                            type="text"
+                        />
+                    </mat-form-field>
+                </div>
+            </div>
+            <div class="col">
+                <div class="form-group">
+                    <mat-form-field>
+                        <input
+                            matInput
+                            autocomplete="off"
+                            class="form-control"
+                            placeholder="Connection Name"
+                            formControlName="AuthorizedConnectionName"
+                            
+                            type="text"
+                        />
+                    </mat-form-field>
+                </div>
+            </div>
+            <div class="col">
+                <div class="form-group">
+                    <mat-form-field>
+                        <input
+                            matInput
+                            autocomplete="off"
+                            class="form-control"
+                            placeholder="Connection ID"
+                            formControlName="AuthorizedConnectionID"
+                            
+                            type="text"
+                        />
+                    </mat-form-field>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col">
+                <div class="form-group">
+                    <mat-form-field>
+                        <input
+                            matInput
+                            autocomplete="off"
+                            class="form-control"
+                            placeholder="NDA"
+                            formControlName="AuthorizedNDA"
+                            
+                            type="text"
+                        />
+                    </mat-form-field>
+                </div>
+            </div>
+            <div class="col">
+                <div class="form-group">
+                    <mat-form-field>
+                        <input
+                            matInput
+                            autocomplete="off"
+                            class="form-control"
+                            placeholder="AM"
+                            formControlName="AuthorizedAM"
+                            
+                            type="text"
+                        />
+                    </mat-form-field>
+                </div>
+            </div>
+            <div class="col">
+                <div class="form-group">
+                    <mat-form-field>
+                        <input
+                            matInput
+                            autocomplete="off"
+                            class="form-control"
+                            placeholder="ID Pic"
+                            formControlName="AuthorizedIDPic"
+                            
+                            type="text"
+                        />
+                    </mat-form-field>
+                </div>
+            </div>
+        </div>
+    </mat-dialog-content>
+    <mat-dialog-actions align="end">
+        <input type="hidden" formControlName="RowID">
+        <input type="hidden" formControlName="InsertUser">
+        <input type="hidden" formControlName="UpdateUser">
+        <button mat-button mat-dialog-close>Close</button>
+        <button mat-button color="primary" type="submit" cdkFocusInitial [class.spinner]="loading"
+        [disabled]="loading">Save</button>
+    </mat-dialog-actions>
+</form>

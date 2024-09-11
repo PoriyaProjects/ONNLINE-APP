@@ -115,6 +115,7 @@ import { PatientsSystemConflictsComponent } from "./patients-system-conflicts/pa
 import { EmployeesUpdateManagersComponent } from "./employees-manage-dash/employees-update-managers/employees-update-managers.component";
 import { WorkerCasesComponent } from "./worker-cases/worker-cases.component";
 import { BedsoreDashboardComponent } from "./form-dashboard/bedsore-dashboard/bedsore-dashboard.component";
+import { AuthorizedComponent } from './authorized/authorized.component';
 
 
 const routes: Routes = [ 
@@ -254,7 +255,8 @@ const routes: Routes = [
     { path: "patients-system-conflicts", component: PatientsSystemConflictsComponent },
     {path : "WorkerCases" , component : WorkerCasesComponent },
     { path: "bedsore-dashboard", component: BedsoreDashboardComponent },
-    { path: "patients-system-conflicts", component: PatientsSystemConflictsComponent }
+    { path: "patients-system-conflicts", component: PatientsSystemConflictsComponent },
+    { path: "authorized", component: AuthorizedComponent }
 
 ];
 @NgModule({
