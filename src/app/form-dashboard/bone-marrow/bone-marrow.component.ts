@@ -68,25 +68,29 @@ export class BoneMarrowComponent implements OnInit {
 
   getPatients() {
     let passport = this.searchPatient.controls['Passport'].value;
-
+    if (passport == "" || passport === null || passport === undefined) {
+      this.openSnackBar("לא הכנסת תעודת זהות");
+      return;
+    }
     this.searchPatientProgressBar = false;
     this.http
-      .post(environment.url + "GetRecordAndPatients", {
-        _patientPassport: passport
+      .post(environment.url + "selectDetailsFromNamer", {
+        patientId: passport
       })
       .subscribe((Response) => {
         this.searchPatientProgressBar = true;
-        let details = Response["d"][0];
+        let details = Response["d"];
+        if (details.PASSNR === null) return;
         this.patientDetails = {
-          RowID: details.Row_ID,
-          Passport: details.PatientPersonID,
-          FirstName: details.PatientFirstName,
-          FatherName: null,
-          LastName: details.PatientLastName,
-          PhoneNumber: details.PatientPhoneNumber,
-          CaseNumber: details.caseNumber,
-          Address: details.PatientAddress,
-          DOB: details.PatientDOB,
+          RowID: null,
+          Passport: details.PASSNR,
+          FirstName: details.FirstName,
+          FatherName: details.FatherName,
+          LastName: details.LastName,
+          PhoneNumber: details.PhoneNumber,
+          CaseNumber: details.CaseNumber,
+          Address: details.Address,
+          DOB: details.DOB,
         }
         this.openFormDialog(this.patientDetails);
       });
@@ -173,14 +177,13 @@ export class BoneMarrowComponent implements OnInit {
 
   linkToNamer(data) {
     this.loaderPdfNamer = true;
-    let CaseNumber = "";
     this.pdfString = `<!doctype html><html lang="he"><head><meta charset="utf-8"/><title>אספרציה מח עצם</title>
-    <style>p,mat-label,span{font-weight: bold;font-size: 18px;}h1{font-size: 14px}.col-2{width: 16.66667%;justify-content: center;}.row{display: flex;border-style: outset;}</style>
+    <style>p,mat-label,span{font-weight: bold;font-size: 18px;}h1{font-size: 14px}.col-2{width: 16.66667%;justify-content: center;}.row{display: flex;border-bottom: 1px solid black;}</style>
     </head><body dir="rtl">
     <div class="d-none-desktop">
       <div class="d-none-desktop" dir="rtl">
           <div class="card-header border-bottomIn rel" style="text-align: center;">
-              <img class="full-width" style="width: 100%;" src="c:\\pdf\\BoneMarrowForms\\covid_header.png" />
+              <img class="full-width" style="width: 100%;" src="https://poria.is-great.org/images/covid_2_header.png" />
               <h1 class="text-center pos-abs-center"><u>אספרציה מח עצם</u></h1>
           </div>
           <div class="row" dir="rtl" style="display: flex;">
@@ -270,7 +273,7 @@ export class BoneMarrowComponent implements OnInit {
                                 <h1><u>תמונות מצורפים:</u></h1><br>
                                 `;
     for (let i = 0; i < data.ImagesList.length; i++) {
-      this.pdfString += `<img height="1000" width="800" src=` + data.ImagesList[i].Content + `>`;
+      this.pdfString += `<img height="1000" width="800" src='` + data.ImagesList[i].Content + `'>`;
     }
     this.pdfString += `
                             </div>

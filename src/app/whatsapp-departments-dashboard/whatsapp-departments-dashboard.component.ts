@@ -39,6 +39,7 @@ export class WhatsappDepartmentsDashboardComponent implements OnInit {
   loadChat: boolean;
   @ViewChild('tooltipTemplate') tooltipTemplate: TemplateRef<any>;
   base64String: string | ArrayBuffer | null = '';
+  _searchNewPatient: any;
 
   constructor(
     private fb: FormBuilder,
@@ -154,6 +155,22 @@ export class WhatsappDepartmentsDashboardComponent implements OnInit {
       });
   }
 
+  searchNewPatient() {
+    this.http
+      .post(environment.url + "selectDetailsFromNamer", {
+        patientId: this._searchNewPatient
+      })
+      .subscribe((Response) => {
+        let patient = Response['d'];
+        this.currentContact = {
+          FirstName: patient.FirstName,
+          FatherName: patient.FatherName,
+          LastName: patient.LastName,
+          CellNumber: patient.PhoneNumber.replace('-', '')
+        }
+      });
+  }
+
   async getHrWhatsAppUsers() {
     this.http
       .post(environment.url + "getDepartmentsWhatsAppUsers", {
@@ -249,10 +266,11 @@ export class WhatsappDepartmentsDashboardComponent implements OnInit {
       this.http
         .post(environment.url + "SendDepartmentsWhatsAppMessageToUser", {
           messageForm: this.newMessage.value,
-          file: this.base64String.toString().split(',')[1]
+          file: this.base64String == "" ? "" : this.base64String.toString().split(',')[1]
         })
         .subscribe((Response) => {
           if (Response["d"]) {
+            window.location.reload();
             this.currentContact.WhatsApp_Bot_Convesations.push({ Message_Text: this.selectedFile ? this.base64String : this.newMessage.controls['Message_Text'].value, From_ServiceEmployee: 'True', IfFileMessage: this.selectedFile ? 'True' : 'False' });
             this.newMessage.controls['Message_Text'].setValue('');
           } else {

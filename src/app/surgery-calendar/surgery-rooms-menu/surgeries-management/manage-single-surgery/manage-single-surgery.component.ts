@@ -248,7 +248,8 @@ export class ManageSingleSurgeryComponent implements OnInit {
         Side: element.Side,
         SurgeriesCalendarIDFK: element.SurgeriesCalendarIDFK,
         ServiceNameIDFK: element.ServiceNameIDFK,
-        Duration: element.Duration
+        Duration: element.Duration,
+        Depart: element.Depart
       }))
     });
     return Services;

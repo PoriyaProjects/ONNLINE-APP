@@ -215,46 +215,48 @@ export class BedsoreDashboardComponent implements OnInit {
 
   linkToNamer(data) {
     this.loaderPdfNamer = true;
-    let CaseNumber = "";
     this.pdfString = `<!doctype html><html lang="he"><head><meta charset="utf-8"/><title>תיעוד פצע</title>
-    <style>p,mat-label,span{font-weight: bold;font-size: 18px;}h1{font-size: 14px}.col-2{width: 16.66667%;justify-content: center;}.row{display: flex;border-style: outset;}</style>
+    <style>p,mat-label,span{font-weight: bold;font-size: 18px;}h1{font-size: 14px}.col-2{width: 16.66667%;justify-content: center;}.row{display: flex;margin-top: 10px;}</style>
     </head><body dir="rtl">
     <div class="d-none-desktop">
       <div class="d-none-desktop" dir="rtl">
           <div class="card-header border-bottomIn rel" style="text-align: center;">
-              <img class="full-width" style="width: 100%;" src="c:\\pdf\\BoneMarrowForms\\covid_header.png" />
+              <img class="full-width" style="width: 100%;" src="https://poria.is-great.org/images/covid_2_header.png" />
               <h1 class="text-center pos-abs-center"><u>תיעוד פצע</u></h1>
           </div>
-          <div class="row" dir="rtl" style="display: flex;">
+          <div class="row">
               <div class="col-12" style="width: 100%;text-align: center;float: right;">
                   <p>תאריך: `+ data.DateOfForm + `</p>
               </div>
           </div>
-          <div class="col-2" style="float: right;">
-                <h5>ת.ז: <br>`+ data.PatientDetails.Passport + `</h5>
-            </div>
+          <div class="row">
             <div class="col-2" style="float: right;">
-                <h5>מספר מקרה: <br>`+ data.PatientDetails.CaseNumber + `</h5>
+                  <h5>ת.ז: <br>`+ data.PatientDetails.Passport + `</h5>
+              </div>
+              <div class="col-2" style="float: right;">
+                  <h5>מספר מקרה: <br>`+ data.PatientDetails.CaseNumber + `</h5>
+              </div>
+              <div class="col-2" style="float: right;">
+                  <h5>שם פרטי: <br>`+ data.PatientDetails.FirstName + `
+                  </h5>
+              </div>
+              <div class="col-2" style="float: right;">
+                  <h5>שם אב: <br>`+ data.PatientDetails.FatherName + `
+                  </h5>
+              </div>
+              <div class="col-2" style="float: right;">
+                  <h5>שם משפחה: <br>`+ data.PatientDetails.LastName + `
+                  </h5>
+              </div>
+              <div class="col-2" style="float: right;">
+                  <h5>גיל: <br>`+ data.PatientDetails.DOB + `</h5>
+              </div>
             </div>
-            <div class="col-2" style="float: right;">
-                <h5>שם פרטי: <br>`+ data.PatientDetails.FirstName + `
-                </h5>
-            </div>
-            <div class="col-2" style="float: right;">
-                <h5>שם אב: <br>`+ data.PatientDetails.FatherName + `
-                </h5>
-            </div>
-            <div class="col-2" style="float: right;">
-                <h5>שם משפחה: <br>`+ data.PatientDetails.LastName + `
-                </h5>
-            </div>
-            <div class="col-2" style="float: right;">
-                <h5>גיל: <br>`+ data.PatientDetails.DOB + `</h5>
-            </div><hr>`;
+            <hr>`;
     for (let i = 0; i < data.ImagesList.length; i++) {
       if (data.ImagesList[i].Content !== '') {
         this.pdfString += `<img height="500" width="600" src='` + data.ImagesList[i].Content + `'>
-        <p class="note" style="text-align: center;font-family: monospace;font-weight: normal;">` + data.ImagesList[i].Note + `</p>`;
+        <p class="note" style="text-align: right;font-family: monospace;font-weight: normal;">` + data.ImagesList[i].Note + `</p>`;
       }
     }
     this.pdfString += `

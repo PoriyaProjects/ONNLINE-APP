@@ -1,4 +1,5 @@
-<mat-spinner style="left: 50%;top: 50%;" *ngIf="!nursesUserPermission && !rightPC"></mat-spinner>
+<!-- <mat-spinner style="left: 50%;top: 50%;" *ngIf="!nursesUserPermission && !rightPC"></mat-spinner> -->
+<img class="spinning-image" *ngIf="!nursesUserPermission && !rightPC" src="assets/images/infinity.png" />
 <mat-card dir="rtl" *ngIf="nursesUserPermission && rightPC" id="page-toshow"
     style="background-color: aliceblue;padding-top: 0px;">
     <h1 class="page-title text-center">מערכת דיווח סיעודית - שם משתמש: {{UserName}}</h1>
@@ -176,8 +177,7 @@
             <div class="col-4">
                 <ul style="display: flex;margin-bottom: 0px;">
                     <li><button matTooltip="דווח ניהולי" id="EventBtndisplay" mat-raised-button type="button"
-                            class="btn btn-primary btn-raised"
-                            (click)="!onlyDisplay && openReportDialog('administrative')">
+                            class="btn btn-primary btn-raised" (click)="openReportDialog('administrative')">
                             <i class="material-icons">assignment_ind</i>
                         </button></li>
                     <li><button matTooltipPosition="left" matTooltip="תקלות ותוכנית שוש'ים" id="EventBtndisplay"
@@ -187,7 +187,7 @@
                         </button></li>
                     <li><button matTooltipPosition="left" matTooltip="יישומים" id="EventBtndisplay" mat-raised-button
                             type="button" class="btn btn-raised mr-1" style="background-color: goldenrod;"
-                            (click)="!onlyDisplay && otherApps()">
+                            (click)="otherApps()">
                             <span class="material-icons">
                                 apps
                             </span>
@@ -579,8 +579,9 @@
             ויסות שניוני</button>
         <button mat-menu-item (click)="openGoogleSheets6()"
             matTooltip="עדכון סטטוס 'טיפול מוגבר' במחלקות הפנימיות 2024">סטטוס טיפול מוגבר</button>
-        <button mat-menu-item (click)="openGoogleSheets7()"
-            matTooltip="חולים נוטים למות">חולים נוטים למות</button>
+        <button mat-menu-item (click)="openGoogleSheets7()" matTooltip="חולים נוטים למות">חולים נוטים למות</button>
+        <button mat-menu-item (click)="openGoogleSheets8()" matTooltip="בקרת מזרונים">בקרת מזרונים</button>
+        <button mat-menu-item (click)="openGoogleSheets9()" matTooltip="מטופלים חוסים">מטופלים חוסים</button>
     </mat-menu>
     <h1 mat-dialog-title style="text-align: center;">יישומים</h1>
     <hr>
@@ -591,7 +592,7 @@
                     class="tooltiptext">מסך
                     תגבור</span></div>
         </mat-card> -->
-        <mat-card class="card-img" style="background-color: white;width: 33.333%;" (click)="!onlyDisplay && onCall()">
+        <mat-card class="card-img" style="background-color: white;width: 33.333%;" (click)="onCall()">
             <div class="card-img" style="background-image:url('../../assets/images/oncall.png')"><span
                     class="tooltiptext">אזעקת עובדים</span></div>
         </mat-card>
@@ -701,7 +702,8 @@
 
 <!-- Unotherized UserName -->
 <ng-template #modalContent3 let-close="close">
-    <span class="material-icons" matTooltip="{{privateIP}}" style="color: red;font-size: 60px;float: right;">
+    <span class="material-icons" matTooltip="{{privateIP}}"
+        style="color: red;font-size: 60px;float: right;direction: rtl;">
         warning
     </span>
     <h1 class="text-center">
@@ -709,8 +711,9 @@
             [routerLink]="['']" (click)="closeModal()">
             <i class="material-icons">home</i>
         </button>
-        <span class="mr-3" *ngIf="UserName == 'amabushkar'">&#8734; 😋 אמירה הכניסה רק באישור מיוחד &#8734;</span>
-        <span class="mr-3">&#8734; ייתכן ואין לך הרשאת צפייה במידע זה &#8734;</span>
+        <span class="mr-3">&#8734; ייתכן ואין לך הרשאת צפייה במידע זה &#8734;<br><br>
+            <p style="direction: rtl;font-size: 20px;">ליצור קשר: adahabre@tzmc.gov.il</p>
+        </span>
     </h1>
 </ng-template>
 

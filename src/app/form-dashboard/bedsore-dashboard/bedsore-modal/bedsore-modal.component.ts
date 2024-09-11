@@ -76,8 +76,6 @@ export class BedsoreModalComponent implements OnInit {
         Row_ID: form.Row_ID,
         DateOfForm: this.pipe.transform(this.myDate, 'yyyy-MM-dd'),
         TimeOfForm: this.pipe.transform(this.myDate, 'HH:mm'),
-        ToNamer: new FormControl("", null),
-        ToNamerDateTime: new FormControl("", null),
         UpdateDateTime: new FormControl("", null),
         UpdateUser: new FormControl(this.UserName, null),
         Status: true

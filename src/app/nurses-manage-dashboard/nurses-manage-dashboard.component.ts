@@ -108,8 +108,6 @@ export class NursesManageDashboardComponent implements OnInit {
         that.getEROccupancy('', 'er');
         that.getDeliveryEROccupancy('');
         that.privateIP = this.ClientIP;
-        this.onlyDisplayUsers();
-
       }, 1500);
       // this.ipAddressUpdate();
 
@@ -118,12 +116,6 @@ export class NursesManageDashboardComponent implements OnInit {
       // });
     } else {
       this.handleEvent3();
-    }
-  }
-
-  onlyDisplayUsers() {
-    if (this.UserName == 'etalor') {
-      this.onlyDisplay = true;
     }
   }
 
@@ -296,28 +288,36 @@ export class NursesManageDashboardComponent implements OnInit {
   }
 
   openShiftsWebsite() {
-    window.open("https://p18.mishmarot.com/?csubDomain=poria", "_blank");
+    if (this.onlyDisplay) this.openSnackBar("אין אישור צפייה!");
+    else window.open("https://p18.mishmarot.com/?csubDomain=poria", "_blank");
   }
 
   openAranWebsite(id) {
-    if (!id) {
-      window.open("http://posapci.poria.health.gov.il:8681/sap(bD1oZSZjPTkzMw==)/bc/bsp/sap/zbsp_miun/poria_aran.htm", "_blank");
-    } else {
-      window.open("http://posaptst.poria.health.gov.il:8681/sap(bD1oZSZjPTkzMw==)/bc/bsp/sap/zbsp_miun/poria_aran.htm", "_blank");
+    if (this.onlyDisplay) this.openSnackBar("אין אישור צפייה!");
+    else {
+      if (!id) {
+        window.open("http://posapci.poria.health.gov.il:8681/sap(bD1oZSZjPTkzMw==)/bc/bsp/sap/zbsp_miun/poria_aran.htm", "_blank");
+      } else {
+        window.open("http://posaptst.poria.health.gov.il:8681/sap(bD1oZSZjPTkzMw==)/bc/bsp/sap/zbsp_miun/poria_aran.htm", "_blank");
+      }
     }
   }
 
   openTelBook() {
-    window.open("http://srv-apps-prod/PB/DEfault.aspx", "_blank");
+    if (this.onlyDisplay) this.openSnackBar("אין אישור צפייה!");
+    else window.open("http://srv-apps-prod/PB/DEfault.aspx", "_blank");
   }
   openCoview() {
-    window.open("https://coview.poria.health.gov.il", "_blank");
+    if (this.onlyDisplay) this.openSnackBar("אין אישור צפייה!");
+    else window.open("https://coview.poria.health.gov.il", "_blank");
   }
   openBluZone() {
-    window.open("https://biot.co.il/session/lockscreen", "_blank");
+    if (this.onlyDisplay) this.openSnackBar("אין אישור צפייה!");
+    else window.open("https://biot.co.il/session/lockscreen", "_blank");
   }
   onCall() {
-    window.open("https://oncallv2.omnitelecom.com/", "_blank");
+    if (this.onlyDisplay) this.openSnackBar("אין אישור צפייה!");
+    else window.open("https://oncallv2.omnitelecom.com/", "_blank");
   }
 
   // NursesSystemPermission() {
@@ -360,27 +360,36 @@ export class NursesManageDashboardComponent implements OnInit {
   openGoogleSheets4() {
     window.open("https://docs.google.com/spreadsheets/d/1XxOfVkSoooGTgCc6TBRQlgfmGU5k-8Ar_gsWyIMA4r8/edit?usp=sharing", "_blank");
   }
-  
+
   openGoogleSheets5() {
     window.open("https://docs.google.com/spreadsheets/d/13GxqUzfkjFGpe8XCxBVoeCm5OBTpSw5C7Gq_NU2iOSE/edit?usp=sharing", "_blank");
   }
-  
+
   openGoogleSheets6() {
     window.open("https://docs.google.com/spreadsheets/d/1wJj9XGJBTUzoK-PEJUFy1CVt368N904Fn6cgKYvgBIs/edit?usp=sharing", "_blank");
   }
   openGoogleSheets7() {
     window.open("https://docs.google.com/spreadsheets/d/1UUsuMGVbb_YKkRwLmoSwBpCrl_K_yJWD0iYw5BndTGw/edit?usp=sharing", "_blank");
   }
+  openGoogleSheets8() {
+    window.open("https://docs.google.com/spreadsheets/d/1nkc2O3q8itTIjl7-lVJtqN5waFyVSPQw4aHN0aX2V2s/edit?usp=sharing", "_blank");
+  }
+  openGoogleSheets9() {
+    window.open("https://docs.google.com/spreadsheets/d/1FNFp3SB_NUFYrEI1juvbWuo4Ell6J8yf_8JyV4rliUc/edit?usp=sharing", "_blank");
+  }
 
   MonitorReports() {
-    this.http
-      .post(environment.url + "GetDepartmentsDontReport", {
+    if (this.onlyDisplay) this.openSnackBar("אין אישור צפייה!");
+    else {
+      this.http
+        .post(environment.url + "GetDepartmentsDontReport", {
 
-      })
-      .subscribe((Response) => {
-        this.DepartmentsDontReportArray = Response["d"];
-      });
-    this.dialog.open(this.monitorReports, { width: '60%', disableClose: false });
+        })
+        .subscribe((Response) => {
+          this.DepartmentsDontReportArray = Response["d"];
+        });
+      this.dialog.open(this.monitorReports, { width: '60%', disableClose: false });
+    }
   }
 
   closeModal() {
@@ -424,6 +433,9 @@ export class NursesManageDashboardComponent implements OnInit {
           _ipAddress7 = this.all_nursing_departments_array[0].IpAddress7;
           _tabletAddress = this.all_nursing_departments_array[0].TabletAddress;
           _adminNurse = this.all_nursing_departments_array[0].AdminNurse;
+          if (this.all_nursing_departments_array[0].Is_Display == 'True') {
+            this.onlyDisplay = true;
+          }
           let check_Aran = this.all_nursing_departments_array.filter(x => x.AranNumber != "0");
           if (check_Aran.length > 0) this.Aran_Color = true;
         }
