@@ -2,8 +2,7 @@
     <a *ngIf="link.Children.length == 0 && link.LinkId.indexOf('http') == -1 " class="nav-link"
         [routerLink]="link.LinkId">{{ link.LinkDescription }}</a>
     <a *ngIf="link.LinkId.indexOf('http') != -1 " class="nav-link" target="_blank" [href]="link.LinkId">{{
-        link.LinkDescription }}</a> <button mat-raised-button color="primary"
-        (click)="linkSubject()"><mat-icon>info</mat-icon></button>
+        link.LinkDescription }}</a>
     <span *ngIf="link.Children && link.Children.length > 0">
         <mat-accordion>
             <mat-expansion-panel>
@@ -22,28 +21,23 @@
 </li> -->
 
 
-<li *ngFor="let link of data" class="nav-item modern-list-item">
-    <!-- Internal links -->
+<li *ngFor="let link of data" class="nav-item">
     <a *ngIf="link.Children.length == 0 && link.LinkId.indexOf('http') == -1" class="child-link"
         [routerLink]="link.LinkId">{{ link.LinkDescription }}
-        <!-- Clickable info button -->
         <button mat-icon-button class="info-button" color="primary" (click)="canEdit && linkSubject(link)"
             matTooltip="{{link.LinkSubject}}">
             <mat-icon>info</mat-icon>
         </button>
     </a>
 
-    <!-- External links -->
     <a *ngIf="link.LinkId.indexOf('http') != -1" class="child-link" target="_blank" [href]="link.LinkId">
         {{ link.LinkDescription }}
-        <!-- Clickable info button -->
         <button mat-icon-button class="info-button" color="primary" (click)="linkSubject(link)"
             matTooltip="{{link.LinkSubject}}">
             <mat-icon>info</mat-icon>
         </button>
     </a>
 
-    <!-- Nested Children links with Accordion -->
     <span *ngIf="link.Children && link.Children.length > 0" class="accordion-container">
         <mat-accordion class="child-accordion">
             <mat-expansion-panel>
@@ -56,9 +50,8 @@
                     <li *ngFor="let child of link.Children">
                         <a class="child-link" [routerLink]="child.LinkId">
                             {{ child.LinkDescription }}
-                            <!-- Clickable info button -->
-                            <button mat-icon-button class="info-button" color="primary" (click)="linkSubject(link)"
-                                matTooltip="{{link.LinkSubject}}">
+                            <button mat-icon-button class="info-button" color="primary" (click)="linkSubject(child)"
+                                matTooltip="{{child.LinkSubject}}">
                                 <mat-icon>info</mat-icon>
                             </button></a>
                     </li>
@@ -68,6 +61,7 @@
     </span>
 </li>
 
+<!-- error in the tempalte html -->
 <ng-template #modalLinkSubject let-close="close" dir="rtl">
     <button type="button" class="close" matTooltip="סגירה" aria-label="Close" (click)="closeModal()">
         <span aria-hidden="true">&times;</span>
@@ -75,7 +69,7 @@
 
     <h1 mat-dialog-title style="text-align: center;">תיאור פרויקט</h1>
     <hr>
-    <form mat-dialog-content dir="rtl" style="text-align: right;">
+    <form dir="rtl" style="text-align: right;">
         <div class="example-full-width">
             <mat-form-field>
                 <textarea rows="5" matInput [(ngModel)]="subject" [ngModelOptions]="{standalone: true}"></textarea>

@@ -41,9 +41,6 @@ export class TreeItemComponent implements OnInit {
     }
 
     saveLinkSubject() {
-        // this.openSnackBar("Still In Developement!");
-        // return;
-        console.log(this.subject);
         this.http
             .post(
                 environment.url + "SaveLinkSubject",
