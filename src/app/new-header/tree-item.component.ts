@@ -9,15 +9,17 @@ import { environment } from "src/environments/environment";
     styleUrls: ["./tree-item.component.css"]
 })
 export class TreeItemComponent implements OnInit {
+
     @Input()
     public data: any = {};
     subject: any;
     row_id: any;
-    username = localStorage.getItem('loginUserName');
+    canEdit: boolean = false;
+    username = localStorage.getItem('loginUserName').toLowerCase();
     horizontalPosition: MatSnackBarHorizontalPosition = "start";
     verticalPosition: MatSnackBarVerticalPosition = "bottom";
-
     @ViewChild('modalLinkSubject', { static: true }) modalLinkSubject: TemplateRef<any>;
+
     constructor(
         private dialog: MatDialog,
         private http: HttpClient,
@@ -27,6 +29,7 @@ export class TreeItemComponent implements OnInit {
     }
 
     ngOnInit(): void {
+        if (this.username == 'adahabre' || this.username == 'malkobi') this.canEdit = true;
     }
 
     openSnackBar(message) {
@@ -38,8 +41,8 @@ export class TreeItemComponent implements OnInit {
     }
 
     saveLinkSubject() {
-        this.openSnackBar("Still In Developement!");
-        return;
+        // this.openSnackBar("Still In Developement!");
+        // return;
         console.log(this.subject);
         this.http
             .post(
