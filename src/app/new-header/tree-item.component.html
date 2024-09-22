@@ -27,8 +27,8 @@
     <a *ngIf="link.Children.length == 0 && link.LinkId.indexOf('http') == -1" class="nav-link modern-link"
         [routerLink]="link.LinkId">{{ link.LinkDescription }}
         <!-- Clickable info button -->
+        <!--  (click)="linkSubject(link)" -->
         <button mat-icon-button class="info-button" color="primary"
-            (click)="linkSubject(link) && (username == 'adahabre' || username == 'malkobi')"
             matTooltip="{{link.LinkSubject}}">
             <mat-icon>info</mat-icon>
         </button>
@@ -38,7 +38,8 @@
     <a *ngIf="link.LinkId.indexOf('http') != -1" class="nav-link modern-link" target="_blank" [href]="link.LinkId">
         {{ link.LinkDescription }}
         <!-- Clickable info button -->
-        <button mat-icon-button class="info-button" color="primary" (click)="linkSubject(link)"
+        <!--  (click)="linkSubject(link)" -->
+        <button mat-icon-button class="info-button" color="primary"
             matTooltip="{{link.LinkSubject}}">
             <mat-icon>info</mat-icon>
         </button>
