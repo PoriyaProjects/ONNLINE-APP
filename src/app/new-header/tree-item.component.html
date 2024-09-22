@@ -24,22 +24,20 @@
 
 <li *ngFor="let link of data" class="nav-item modern-list-item">
     <!-- Internal links -->
-    <a *ngIf="link.Children.length == 0 && link.LinkId.indexOf('http') == -1" class="nav-link modern-link"
+    <a *ngIf="link.Children.length == 0 && link.LinkId.indexOf('http') == -1" class="child-link"
         [routerLink]="link.LinkId">{{ link.LinkDescription }}
         <!-- Clickable info button -->
-        <!--  (click)="linkSubject(link)" -->
-        <button mat-icon-button class="info-button" color="primary"
+        <button mat-icon-button class="info-button" color="primary" (click)="canEdit && linkSubject(link)"
             matTooltip="{{link.LinkSubject}}">
             <mat-icon>info</mat-icon>
         </button>
     </a>
 
     <!-- External links -->
-    <a *ngIf="link.LinkId.indexOf('http') != -1" class="nav-link modern-link" target="_blank" [href]="link.LinkId">
+    <a *ngIf="link.LinkId.indexOf('http') != -1" class="child-link" target="_blank" [href]="link.LinkId">
         {{ link.LinkDescription }}
         <!-- Clickable info button -->
-        <!--  (click)="linkSubject(link)" -->
-        <button mat-icon-button class="info-button" color="primary"
+        <button mat-icon-button class="info-button" color="primary" (click)="linkSubject(link)"
             matTooltip="{{link.LinkSubject}}">
             <mat-icon>info</mat-icon>
         </button>
@@ -56,7 +54,13 @@
                 </mat-expansion-panel-header>
                 <ul>
                     <li *ngFor="let child of link.Children">
-                        <a class="child-link" [routerLink]="child.LinkId">{{ child.LinkDescription }}</a>
+                        <a class="child-link" [routerLink]="child.LinkId">
+                            {{ child.LinkDescription }}
+                            <!-- Clickable info button -->
+                            <button mat-icon-button class="info-button" color="primary" (click)="linkSubject(link)"
+                                matTooltip="{{link.LinkSubject}}">
+                                <mat-icon>info</mat-icon>
+                            </button></a>
                     </li>
                 </ul>
             </mat-expansion-panel>
