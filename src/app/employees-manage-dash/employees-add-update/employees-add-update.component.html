@@ -22,6 +22,13 @@
                             file_copy
                         </span>
                     </button>
+                    <button class="submitBtn"
+                        (click)="EmployeeChangeHistory(employeePersonalDetails.controls['EmployeeID'].value)"
+                        matTooltip="היסטוריית שינויים" color="primary" type="submit" mat-fab>
+                        <span class="material-icons">
+                            history
+                        </span>
+                    </button>
                 </div>
             </div>
         </mat-card>
@@ -453,3 +460,25 @@
         </mat-vertical-stepper>
     </div>
 </form>
+
+<ng-template #modalEmployeeHistory let-close="close" dir="rtl">
+    <button type="button" class="close" matTooltip="סגירה" aria-label="Close" (click)="closeModal()">
+        <span aria-hidden="true">&times;</span>
+    </button>
+
+    <div class="mat-card mt-5">
+        <!-- Dynamic Table -->
+        <table mat-table [dataSource]="employee_change_history_list" dir="rtl" class="mat-elevation-z8 modern-table">
+
+            <!-- Dynamically created columns -->
+            <ng-container *ngFor="let column of actionColumns" [matColumnDef]="column">
+                <th mat-header-cell *matHeaderCellDef>{{ column }}</th>
+                <td mat-cell *matCellDef="let element">{{ element[column] }}</td>
+            </ng-container>
+
+            <!-- Header row and row rendering -->
+            <tr mat-header-row *matHeaderRowDef="actionColumns"></tr>
+            <tr mat-row *matRowDef="let row; columns: actionColumns;"></tr>
+        </table>
+    </div>
+</ng-template>

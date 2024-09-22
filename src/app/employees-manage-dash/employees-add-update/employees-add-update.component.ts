@@ -11,6 +11,7 @@ import {
 } from '@angular/material/snack-bar';
 import { environment } from 'src/environments/environment';
 import { FillSurveyComponent } from 'src/app/fill-survey/fill-survey.component';
+import { MatTableDataSource } from '@angular/material/table';
 
 @Component({
   selector: 'app-employees-add-update',
@@ -32,6 +33,8 @@ export class EmployeesAddUpdateComponent implements OnInit {
   EmployeeBlossomSektors = [];
   DepartmentsList = [];
   WorkPlacesList = [];
+  actionColumns = [''];
+  employee_change_history_list = new MatTableDataSource();
   managerType;
   empType: string = "none";
   UserName = localStorage.getItem("loginUserName").toLowerCase();
@@ -42,7 +45,7 @@ export class EmployeesAddUpdateComponent implements OnInit {
   AcceptTerms: any;
   saveBtnWait: boolean = false;
   Api = environment.url;
-  @ViewChild('modalContent', { static: true }) modalContent: TemplateRef<any>;
+  @ViewChild('modalEmployeeHistory', { static: true }) modalEmployeeHistory: TemplateRef<any>;
 
   constructor(private _snackBar: MatSnackBar,
     public dialog: MatDialogRef<EmployeesAddUpdateComponent>,
@@ -237,6 +240,24 @@ export class EmployeesAddUpdateComponent implements OnInit {
     this.employeeWorkDetails.controls['DocStartExperience'].reset();
     this.employeeWorkDetails.controls['DocLicence'].reset();
     this.employeeWorkDetails.controls['StartWorkDate'].setValue(this.myDate); //set to today
+  }
+
+  EmployeeChangeHistory(_employee_id) {
+    this.http
+      .post(this.Api + "EmployeeChangeHistory", {
+        _employee_id: _employee_id
+      })
+      .subscribe((Response) => {
+        this.employee_change_history_list = new MatTableDataSource(Response["d"]);
+        if (this.employee_change_history_list.filteredData.length > 0) {
+          this.actionColumns = Object.keys(this.employee_change_history_list.filteredData[0]);
+        }
+        this.dialog2.open(this.modalEmployeeHistory, { width: '60%', disableClose: false });
+      });
+  }
+
+  closeModal() {
+    this.dialog.close();
   }
 
   getRanksList() {
