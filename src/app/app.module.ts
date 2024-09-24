@@ -228,14 +228,13 @@ import { BedsoreModalComponent } from './form-dashboard/bedsore-dashboard/bedsor
 import { EditOrAddWorkerCaseDialogComponent } from './edit-or-add-worker-case-dialog/edit-or-add-worker-case-dialog.component';
 import { AuthorizedComponent } from './authorized/authorized.component';
 import { AddEditAuthorizedComponent } from './authorized/add-edit-authorized/add-edit-authorized.component';
-
+import { TreeItemDialogComponent } from './new-header/tree-item-dialog/tree-item-dialog.component';
+import { AngularEditorModule } from '@kolkov/angular-editor';
 
 
 const maskConfig: Partial<IConfig> = {
   validation: false,
 };
-
-
 
 @NgModule({
   declarations: [
@@ -412,9 +411,11 @@ const maskConfig: Partial<IConfig> = {
     BedsoreModalComponent,
     EditOrAddWorkerCaseDialogComponent,
     AuthorizedComponent,
-    AddEditAuthorizedComponent
+    AddEditAuthorizedComponent,
+    TreeItemDialogComponent
   ],
   imports: [
+    AngularEditorModule,
     JpTimeMaskModule,
     NgxBarcodeModule,
     AngularDualListBoxModule,

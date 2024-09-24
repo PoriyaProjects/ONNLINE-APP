@@ -1,0 +1,49 @@
+<div class="container" *ngIf="!canEdit" [innerHTML]="sanitizedHtml">
+    <!-- <p>{{ display_text }}</p> -->
+</div>
+<div class="container" dir="rtl" *ngIf="canEdit">
+    <button type="button" class="close" matTooltip="סגירה" aria-label="Close" (click)="closeModal()">
+        <span aria-hidden="true">&times;</span>
+    </button>
+
+    <h1 mat-dialog-title style="text-align: center;">תיאור פרויקט</h1>
+    <hr>
+    <form dir="rtl" style="text-align: right;" [formGroup]="_userLinks">
+        <div class="example-half-width">
+            <mat-form-field>
+                <mat-label>שם מבקש</mat-label>
+                <input type="text" aria-label="req" matInput [formControl]="reqfilter" [matAutocomplete]="auto">
+                <mat-autocomplete #auto="matAutocomplete" [displayWith]="displayFn">
+                    <mat-option *ngFor="let req of filteredOptions | async" [value]="req">
+                        {{req.FirstName}}
+                    </mat-option>
+                </mat-autocomplete>
+            </mat-form-field>
+        </div>
+        <div class="example-half-width">
+            <mat-form-field>
+                <mat-label>שם מבצע</mat-label>
+                <input type="text" aria-label="do" matInput [formControl]="dofilter" [matAutocomplete]="auto2">
+                <mat-autocomplete #auto2="matAutocomplete" [displayWith]="displayFn2">
+                    <mat-option *ngFor="let do of filteredOptions2 | async" [value]="do">
+                        {{do.FirstName}}
+                    </mat-option>
+                </mat-autocomplete>
+            </mat-form-field>
+        </div>
+        <br>
+        <hr>
+        <div class="example-full-width">
+            <mat-label>תיאור</mat-label>
+            <angular-editor formControlName="LinkSubject" [config]="config"></angular-editor>
+            <!-- <mat-form-field>
+                <textarea rows="5" matInput formControlName="LinkSubject"></textarea>
+            </mat-form-field> -->
+        </div>
+    </form>
+    <hr>
+    <button mat-raised-button class="btn btn-primary btn-raised" color="primary" (click)="saveLinkSubject()"
+        matTooltip="שמירה">
+        <mat-icon>save</mat-icon>
+    </button>
+</div>
