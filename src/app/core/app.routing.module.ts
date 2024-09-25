@@ -125,6 +125,7 @@ import {WorkerCasesComponent} from '../worker-cases/worker-cases.component'
 import {EditOrAddWorkerCaseComponent} from '../worker-cases/edit-or-add-worker-case/edit-or-add-worker-case.component'
 import {BedsoreDashboardComponent} from '../form-dashboard/bedsore-dashboard/bedsore-dashboard.component'
 import {AuthorizedComponent} from '../authorized/authorized.component'
+import { SupplierComponent } from '../supplier/supplier.component';
 
 
 const routes: Routes = [
@@ -256,7 +257,8 @@ const routes: Routes = [
   {path : "WorkerCases" , component : WorkerCasesComponent },
   { path: "bedsore-dashboard", component: BedsoreDashboardComponent },
   {path : "Reporting" , component : ReportReportingComponent }, 
-  {path : "authorized" , component : AuthorizedComponent } 
+  {path : "authorized" , component : AuthorizedComponent },
+  { path: "suppliers", component: SupplierComponent } 
   
 
 ];

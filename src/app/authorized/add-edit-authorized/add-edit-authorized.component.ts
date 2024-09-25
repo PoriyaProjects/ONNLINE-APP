@@ -1,6 +1,6 @@
 import { HttpClient } from "@angular/common/http";
 import { Component, Inject, OnInit, ViewChild } from "@angular/core";
-import { AbstractControl, FormBuilder, FormGroup, ValidatorFn, Validators } from "@angular/forms";
+import { AbstractControl, FormBuilder, FormControl, FormGroup, ValidatorFn, Validators } from "@angular/forms";
 import { MatDialog, MAT_DIALOG_DATA } from "@angular/material/dialog";
 import { MatPaginator } from "@angular/material/paginator";
 import { MatSnackBar } from "@angular/material/snack-bar";
@@ -8,6 +8,8 @@ import { MatSort } from "@angular/material/sort";
 import { MatTableDataSource } from "@angular/material/table";
 import { Router } from "@angular/router";
 import { NgbActiveModal, NgbModal } from "@ng-bootstrap/ng-bootstrap";
+import { Observable } from "rxjs";
+import { map, startWith } from "rxjs/operators";
 import { environment } from "src/environments/environment";
 export interface Authorized {
   RowID: string;
@@ -21,19 +23,10 @@ export interface Authorized {
   InsertDateTime: string;
   UpdateUser: string;
   UpdateDateTime: string;
+  Supliers: [];
 }
 
-export function customIPValidator(): ValidatorFn {
-  return (control: AbstractControl) => {
-    const regex = /^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$/;
 
-    if (regex.test(control.value)) {
-      return null;
-    }
-
-    return { ipError: true };
-  };
-}
 export interface DialogData {
   element: Authorized;
   dialog: MatDialog;
@@ -44,9 +37,13 @@ export interface DialogData {
   styleUrls: ['./add-edit-authorized.component.css']
 })
 export class AddEditAuthorizedComponent implements OnInit {
+  suppliers = [
 
+  ];
+  supplierFilterControl = new FormControl();
   serverForm: FormGroup;
   loading: boolean = false;
+  filteredSuppliers: Observable<any[]>;
   constructor(
     @Inject(MAT_DIALOG_DATA) public data: DialogData,
     private formBuilder: FormBuilder,
@@ -65,9 +62,12 @@ export class AddEditAuthorizedComponent implements OnInit {
         public string UpdateUser { get; set; }
         public string UpdateDateTime { get; set; }
     */
+    let supSelected = this.data.element.Supliers.filter((e: any) => {
+      return e.RowID.toString() == this.data.element.SupplierID;
+    })
     this.serverForm = this.formBuilder.group({
       RowID: [this.data.element.RowID, null],
-      SupplierID: [this.data.element.SupplierID, Validators.required],
+      SupplierID: [supSelected, Validators.required],
       AuthorizedConnectionName: [this.data.element.AuthorizedConnectionName, null],
       AuthorizedConnectionID: [this.data.element.AuthorizedConnectionID, null],
       AuthorizedNDA: [this.data.element.AuthorizedNDA, null],
@@ -78,12 +78,45 @@ export class AddEditAuthorizedComponent implements OnInit {
       InsertUser: [localStorage.getItem("loginUserName"), null],
       UpdateUser: [localStorage.getItem("loginUserName"), null],
     });
-  }
-
-  ngOnInit(): void { }
-  onSubmit(): void {
+    this.suppliers = this.data.element.Supliers
     debugger
+  }
+  displayFn(supplier?: any): string | undefined {
+    // let supSelected = sup.filter((e)=>{
+    //   return e.RowID.toString == supplier;
+    // }) 
+    //debugger
+    //console.log(this.data.element.SupplierID)
+    if(supplier.length)
+      return supplier ? supplier[0].ContactName : undefined;
+    else if (supplier.ContactName)
+      return supplier ? supplier.ContactName : undefined;
+    else 
+      return undefined
+  }
+  private filterSuppliers(value: string): any[] {
+    const filterValue = value.toLowerCase();
+    return this.suppliers.filter(supplier =>
+      supplier.ContactName.toLowerCase().includes(filterValue)
+    );
+  }
+  ngOnInit(): void {
+    this.filteredSuppliers = this.supplierFilterControl.valueChanges
+      .pipe(
+        startWith(''),
+        map(value => this.filterSuppliers(value))
+      );
+  }
+  onSubmit(): void {
     this.loading = true;
+    if(this.serverForm.value.SupplierID.length){
+      this.serverForm.value.SupplierID = this.serverForm.value.SupplierID[0].RowID
+    }else{
+      this.serverForm.value.SupplierID = this.serverForm.value.SupplierID.RowID
+    }
+    
+    
+    debugger
     console.log(this.serverForm.value);
     this.http
       .post(

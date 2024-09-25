@@ -2242,3 +2242,6 @@ body {
 .fix-google-chart-height .google-chart {
     height: auto !important;
 }
+button:hover{
+    cursor: pointer !important;
+}

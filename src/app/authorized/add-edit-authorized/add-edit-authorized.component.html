@@ -15,7 +15,7 @@
         <div class="row">
             <div class="col">
                 <div class="form-group">
-                    <mat-form-field>
+                    <!-- <mat-form-field>
                         <input
                             matInput
                             autocomplete="off"
@@ -25,6 +25,17 @@
                             
                             type="text"
                         />
+                    </mat-form-field> -->
+                    <mat-form-field appearance="fill">
+                        <input matInput
+                               placeholder="Search Supplier"
+                               formControlName="SupplierID"
+                               [matAutocomplete]="auto" >
+                        <mat-autocomplete #auto="matAutocomplete" [displayWith]="displayFn">
+                            <mat-option *ngFor="let supplier of filteredSuppliers | async" [value]="supplier">
+                                {{ supplier.SupplierName }}
+                            </mat-option>
+                        </mat-autocomplete>
                     </mat-form-field>
                 </div>
             </div>
