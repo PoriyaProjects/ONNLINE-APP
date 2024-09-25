@@ -55,7 +55,7 @@ export class NewHeaderComponent implements OnInit {
         this.http
             .post(
                 //environment.url + "GetOnnLineLinks",
-                environment.url + "GetOnnLineLinks",
+                environment.url + "GetOnnLineLinks2",
                 {
                     user: localStorage.getItem("loginUserName") ,
                 }
