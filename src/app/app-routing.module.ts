@@ -262,6 +262,11 @@ const routes: Routes = [
     { path: "suppliers", component: SupplierComponent }
     { path: "tree-item-dialog", component: TreeItemDialogComponent },
 
+    { path: "suppliers", component: SupplierComponent },
+
+    { path: "tree-item-dialog", component: TreeItemDialogComponent }
+
+
 ];
 @NgModule({
     imports: [RouterModule.forRoot(routes)],

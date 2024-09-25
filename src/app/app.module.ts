@@ -230,7 +230,6 @@ import { AuthorizedComponent } from './authorized/authorized.component';
 import { AddEditAuthorizedComponent } from './authorized/add-edit-authorized/add-edit-authorized.component';
 import { SupplierComponent } from './supplier/supplier.component';
 import { EditOrAddSupplierComponent } from './supplier/edit-or-add-supplier/edit-or-add-supplier.component';
-
 import { TreeItemDialogComponent } from './new-header/tree-item-dialog/tree-item-dialog.component';
 import { AngularEditorModule } from '@kolkov/angular-editor';
 
