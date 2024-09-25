@@ -419,7 +419,7 @@ const maskConfig: Partial<IConfig> = {
     TreeItemDialogComponent
   ],
   imports: [    
-    
+    AngularEditorModule,
     JpTimeMaskModule,
     NgxBarcodeModule,
     AngularDualListBoxModule,
