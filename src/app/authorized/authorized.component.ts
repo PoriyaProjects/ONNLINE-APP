@@ -25,6 +25,35 @@ export interface Authorized {
   InsertDateTime: string;
   UpdateUser: string;
   UpdateDateTime: string;
+  Supliers: any[];
+}
+export interface Supplier {
+  RowID: string;
+  SupplierName: string;
+  SupplierNameToShow: string;
+  ServerDescription: string;
+  ContactName: string;
+  ContactEmail: string;
+  ContactTell: string;
+  ConnectionEssence: string;
+  ConnectionType: string;
+  ConnectionMethod: string;
+  IdentificationForm: string;
+  SecurityMeasures: string;
+  SignedConfidentialityAgreement: string;
+  ContinuityRisk: string;
+  RiskSensitivity: string;
+  RiskEconomic: string;
+  ProbabilityEvent: string;
+  SupplierCategorize: string;
+  TestAM: string;
+  ISOCer: string;
+  RowStatus: string;
+  CorporateNDA: string;
+  InsertDateTime: string;
+  InsertUser: string;
+  UpdateUser: string;
+  UpdateDateTime: string;
 }
 @Component({
   selector: 'app-authorized',
@@ -36,6 +65,7 @@ export class AuthorizedComponent implements OnInit {
   TABLE_DATA: Authorized[] = [];
   FreeText: string = '';
   dataSource = new MatTableDataSource<Authorized>(this.TABLE_DATA);
+  Suppliers: Supplier[] = [];
   @ViewChild(MatPaginator) paginator: MatPaginator;
   @ViewChild(MatSort) sort: MatSort;
   displayedColumns: string[] = [
@@ -75,7 +105,9 @@ export class AuthorizedComponent implements OnInit {
     this.dataSource.sort = this.sort;
   }
   ngOnInit(): void {
-    this.getTableFromServer();
+    
+    this.getSuppliersFromServer();
+    
   }
   open(): void {
     const element: Authorized = {
@@ -90,6 +122,7 @@ export class AuthorizedComponent implements OnInit {
       InsertDateTime: (new Date()).toString(),
       UpdateUser: localStorage.getItem("loginUserName"),
       UpdateDateTime: (new Date()).toString(),
+      Supliers: this.Suppliers
     };
     const dialogRef = this.dialog.open(AddEditAuthorizedComponent, {
       data: {
@@ -157,6 +190,25 @@ export class AuthorizedComponent implements OnInit {
         )
       );
   }
+  public getSuppliersFromServer() {
+    let tableLoader = false;
+    if ($("#loader").hasClass("d-none")) {
+      // ////////debugger
+      tableLoader = true;
+      $("#loader").removeClass("d-none");
+    }
+    this.http
+      .post(environment.url + "GetAllSuppliers", {
+        FreeText: this.FreeText
+      }
+      )
+      .subscribe((Response) => {
+
+        this.Suppliers =  Response["d"];
+        this.getTableFromServer();
+        
+      });
+  }
   applyFilter(event: Event) {
     const filterValue = (event.target as HTMLInputElement).value;
     this.dataSource.filter = filterValue.trim().toLowerCase();
@@ -180,6 +232,15 @@ export class AuthorizedComponent implements OnInit {
       .subscribe((Response) => {
         //////////debugger
         this.TABLE_DATA.splice(0, this.TABLE_DATA.length);
+        for(var i = 0; i < Response["d"].length; i++){
+          Response["d"][i].Supliers = this.Suppliers;
+          let supSelected = this.Suppliers.filter((e)=>{
+            return e.RowID == Response["d"][i].SupplierID;
+          })
+          if(supSelected.length)
+            Response["d"][i].SupplierNameToShow = supSelected[0].SupplierName;
+        }
+        debugger
         this.TABLE_DATA = Response["d"];
         ////debugger
 
