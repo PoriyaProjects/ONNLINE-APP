@@ -8,18 +8,22 @@
 /* .drugprotocols .mat-form-field-appearance-legacy .mat-form-field-infix{
     padding: 0 !important;
 } */
-.pos-rel{
+
+.pos-rel {
     position: relative !important;
 }
-.close-dialog{
+
+.close-dialog {
     position: absolute !important;
     left: 0;
     top: 0;
 }
+
 .recomindatin-card p {
-    white-space:pre;
+    white-space: pre;
 }
-.week-cal-day-badge{
+
+.week-cal-day-badge {
     position: absolute;
     left: 6px;
     bottom: 2px;
@@ -29,31 +33,39 @@
     min-width: 23px;
     padding: 2px;
 }
-.chip-depart-selected{
+
+.chip-depart-selected {
     background: #1976d2 !important;
     color: #fff !important;
 }
-.mb-20{
+
+.mb-20 {
     margin-bottom: 20px;
 }
+
 .mt-3 {
     margin-top: 1rem !important;
 }
+
 .clinic-request .cal-week-view .cal-day-headers {
-    
-     padding-left: 0px !important; 
+
+    padding-left: 0px !important;
 }
+
 .clinic-request .cal-week-view .cal-time-label-column {
     width: 0px !important;
 }
+
 .clinic-request .cal-week-view .cal-current-time-marker {
     display: none !important;
 }
+
 .clinic-request .cal-week-view .cal-time {
     display: none !important;
-    color:#fff !important;
+    color: #fff !important;
     font-size: 0 !important;
 }
+
 mat-form-field .mat-form-field-infix {
     display: flex;
 }
@@ -1147,9 +1159,10 @@ mark {
 }
 
 @media print {
-    .hide-on-print{
+    .hide-on-print {
         display: none !important;
     }
+
     .fix-lable-pos .mat-form-field-label-wrapper {
         top: -30px !important;
         font-size: 25px !important;
@@ -2209,11 +2222,13 @@ body {
     background: rgba(255, 255, 255, 0.5);
     z-index: 999999999999999 !important;
 }
-.SentToSafe{
+
+.SentToSafe {
     background: rgb(152, 252, 152);
 }
-.no-pad .mat-card.mat-focus-indicator{
-    padding-bottom:  0 !important;
+
+.no-pad .mat-card.mat-focus-indicator {
+    padding-bottom: 0 !important;
     margin-bottom: 15px;
 }
 
@@ -2244,4 +2259,8 @@ body {
 }
 button:hover{
     cursor: pointer !important;
+}
+
+.accordion-container {
+    width: 100%;
 }

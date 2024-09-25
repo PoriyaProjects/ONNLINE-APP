@@ -58,7 +58,16 @@
                         <button mat-icon-button color="primary" (click)="triggerFileInput(fileInput)">
                             <mat-icon>camera_enhance</mat-icon>
                         </button>
-                        <img [src]="image.get('Content').value" *ngIf="image.get('Content').value" height="100" width="100">
+                        <img [src]="image.get('Content').value" *ngIf="image.get('Content').value" height="100"
+                            width="100">
+                        <!-- <div class="body-container">
+                            <div class="head" #head></div>
+                            <div class="torso" #torso></div>
+                            <div class="left-arm" #leftarm></div>
+                            <div class="right-arm" #rightarm></div>
+                            <div class="left-leg" #leftleg></div>
+                            <div class="right-leg" #rightleg></div>
+                        </div> -->
                     </div>
                     <br>
                     <div class="col-12">
