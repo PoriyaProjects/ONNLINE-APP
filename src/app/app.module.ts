@@ -234,7 +234,6 @@ import { TreeItemDialogComponent } from './new-header/tree-item-dialog/tree-item
 import { AngularEditorModule } from '@kolkov/angular-editor';
 
 
-
 const maskConfig: Partial<IConfig> = {
   validation: false,
 };
@@ -419,8 +418,8 @@ const maskConfig: Partial<IConfig> = {
     EditOrAddSupplierComponent,
     TreeItemDialogComponent
   ],
-  imports: [
-    AngularEditorModule,
+  imports: [    
+    
     JpTimeMaskModule,
     NgxBarcodeModule,
     AngularDualListBoxModule,
