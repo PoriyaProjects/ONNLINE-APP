@@ -22,6 +22,12 @@ export class BedsoreModalComponent implements OnInit {
   doctors = [];
   filteredDoctors: Observable<string[]>;
   @ViewChild('doctorsInput') doctorsInput: ElementRef<HTMLInputElement>;
+  @ViewChild('head') head: ElementRef<HTMLInputElement>;
+  @ViewChild('torso') torso: ElementRef<HTMLInputElement>;
+  @ViewChild('left-arm') leftarm: ElementRef<HTMLInputElement>;
+  @ViewChild('right-arm') rightarm: ElementRef<HTMLInputElement>;
+  @ViewChild('leftleg') leftleg: ElementRef<HTMLInputElement>;
+  @ViewChild('rightleg') rightleg: ElementRef<HTMLInputElement>;
   employees = [];
   filteredOptions1: Observable<string[]>;
   docfilter = new FormControl();
