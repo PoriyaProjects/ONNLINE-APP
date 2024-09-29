@@ -55,7 +55,11 @@
             *ngFor="let depart of room.uniqueDepartments">{{depart}}
             <div class="example-button-container" *ngIf="depart != null">
               <a (click)="getPlannedSurgeriesData(depart)">
-                <img src="../../assets/images/excel.png" alt="Image description">
+                <img src="../../assets/images/excel.png" alt="Excel File" matTooltip="יצירת קובץ אקסל {{depart}}">
+              </a>
+              <a (click)="sentDepartmentFinalSurgeryPlan(depart)">
+                <img src="../../assets/images/transferTo.png" alt="Send Final Plan"
+                  matTooltip="שליחת תוכנית סופית {{depart}}">
               </a>
             </div>
           </button>
@@ -69,7 +73,11 @@
             *ngFor="let depart of room.uniqueDepartments">{{depart}}
             <div class="example-button-container" *ngIf="depart != null">
               <a (click)="getPlannedSurgeriesData(depart)">
-                <img src="../../assets/images/excel.png" alt="Image description">
+                <img src="../../assets/images/excel.png" alt="Excel File">
+              </a>
+              <a (click)="sentDepartmentFinalSurgeryPlan(depart)">
+                <img src="../../assets/images/transferTo.png" alt="Send Final Plan"
+                  matTooltip="שליחת תוכנית סופית {{depart}}">
               </a>
             </div>
           </button>
