@@ -396,7 +396,7 @@ export class SurgeryComponent implements OnInit {
         //debugger
         $("#loader").removeClass("d-none");
         this.http
-            .post(environment.url + "etSurgeries", {
+            .post(environment.url + "getSurgeries", {
                 _fromDate: _startDate,
                 _toDate: _endDate,
                 _pageIndex: _pageIndex,

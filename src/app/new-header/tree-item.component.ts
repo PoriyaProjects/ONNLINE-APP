@@ -24,10 +24,10 @@ export class TreeItemComponent implements OnInit {
     linkSubject(link: any) {
         this.dialog.open(TreeItemDialogComponent, {
             data: link,
-            width: '600px',  // Adjust the width as needed
-            height: '400px', // Adjust the height as needed
-            maxWidth: '90vw', // Ensure it's responsive on smaller screens
-            maxHeight: '90vh' // Prevent modal from exceeding screen height
+            width: '1000px',  // Adjust the width as needed
+            height: '720px', // Adjust the height as needed
+            maxWidth: '100vw', // Ensure it's responsive on smaller screens
+            maxHeight: '100vh' // Prevent modal from exceeding screen height
         });
     }
 
