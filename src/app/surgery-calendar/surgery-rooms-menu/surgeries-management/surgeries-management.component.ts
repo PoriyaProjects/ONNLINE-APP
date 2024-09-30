@@ -238,8 +238,8 @@ export class SurgeriesManagementComponent {
             primary: '#000000', secondary: colors[element.SurgeryStatus]
           }
           // set uniqe color to sesia and dhof surgeries
-          if (element.SurgeryType == 'ססיה') element.color = { primary: '#000000', secondary: '#FFA100' }
-          if (element.SurgeryType == 'דחוף') element.color = { primary: '#000000', secondary: '#F1F305' }
+          if (element.SurgeryType.includes('ססיה')) element.color = { primary: '#000000', secondary: '#FFA100' }
+          if (element.SurgeryType.includes('דחוף')) element.color = { primary: '#000000', secondary: '#F1F305' }
           // element.resizable = {
           //   beforeStart: true,
           //   afterEnd: true,
@@ -434,9 +434,7 @@ export class SurgeriesManagementComponent {
           <head>
             <meta charset="utf-8"/>
               <title>תוכנית ניתוחים סופית ${department}</title>
-            <style>p,mat-label,span{font-weight: bold;font-size: 18px;}h1{font-size: 14px}.col-2{width: 16.66667%;justify-content: center;}.row{display: flex;margin-top: 10px;}td{border: 1px solid black}@media print {
-              @page { size: landscape; }
-            }</style>
+            <style>p,mat-label,span{font-weight: bold;font-size: 18px;}h1{font-size: 14px}.col-2{width: 16.66667%;justify-content: center;}.row{display: flex;margin-top: 10px;}td{border: 1px solid black}</style>
           </head>
           <body dir="rtl">
             <div class="d-none-desktop" dir="rtl">
