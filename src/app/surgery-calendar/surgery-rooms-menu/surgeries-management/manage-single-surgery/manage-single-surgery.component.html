@@ -280,6 +280,11 @@
                     <table mat-table [dataSource]="SurgeryFormGroup.get('SurgeriesCalendar_Susgeries').value"
                         class="mat-elevation-z8">
 
+                        <ng-container matColumnDef="code">
+                            <th mat-header-cell *matHeaderCellDef> קוד ניתוח </th>
+                            <td mat-cell *matCellDef="let element"> {{element.Surgery_Code}} </td>
+                        </ng-container>
+
                         <ng-container matColumnDef="name">
                             <th mat-header-cell *matHeaderCellDef> פרוצדורה/שם ניתוח </th>
                             <td mat-cell *matCellDef="let element"> {{element.Surgery_Name}} </td>

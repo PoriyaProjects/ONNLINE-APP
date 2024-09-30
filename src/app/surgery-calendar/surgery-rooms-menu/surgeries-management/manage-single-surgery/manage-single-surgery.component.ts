@@ -31,7 +31,7 @@ export class ManageSingleSurgeryComponent implements OnInit {
   filteredOptionsservices: Observable<any[]>;
   @ViewChild('modalContent', { static: true }) modalContent: TemplateRef<any>;
   // @ViewChild('toolsModal', { static: true }) toolsModal: TemplateRef<any>;
-  displayedColumns = ['name', 'side'];
+  displayedColumns = ['code', 'name', 'side'];
   displayedColumns1 = ['name'];
   displayedColumns2 = ['name', 'code', 'tool'];
 
