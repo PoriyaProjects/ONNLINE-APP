@@ -28,13 +28,23 @@
             <div class="col">
                 <div class="form-group">
                     <mat-form-field>
-                        <input matInput autocomplete="off" class="form-control" placeholder="שם איש קשר"
-                            formControlName="ContactName" type="text" />
+                        <mat-label>מהות הספק</mat-label>
+                        <mat-select formControlName="ConnectionEssence">
+                            <mat-option *ngFor="let ab of ConnectionEssenceList" [value]="ab.id"> {{ab.value}} </mat-option>
+                        </mat-select>
                     </mat-form-field>
                 </div>
             </div>
         </div>
         <div class="row text-right" dir="rtl">
+            <div class="col">
+                <div class="form-group">
+                    <mat-form-field>
+                        <input matInput autocomplete="off" class="form-control" placeholder="שם איש קשר"
+                            formControlName="ContactName" type="text" />
+                    </mat-form-field>
+                </div>
+            </div>
             <div class="col">
                 <div class="form-group">
                     <mat-form-field>
@@ -51,14 +61,7 @@
                     </mat-form-field>
                 </div>
             </div>
-            <div class="col">
-                <div class="form-group">
-                    <mat-form-field>
-                        <input matInput autocomplete="off" class="form-control" placeholder="מהות החיבור"
-                            formControlName="ConnectionEssence" type="text" />
-                    </mat-form-field>
-                </div>
-            </div>
+            
         </div>
         <div class="row text-right" dir="rtl">
             <div class="col">
@@ -101,7 +104,7 @@
             </div>
         </div>
         <div class="row text-right" dir="rtl">
-            <div class="col">
+            <div class="col d-none">
                 <div class="form-group">
                     <mat-form-field>
                         <input matInput autocomplete="off" class="form-control" placeholder="רשימת מורשים להתחבר"
@@ -119,10 +122,11 @@
                     </mat-form-field>
                 </div>
             </div>
+            
             <div class="col">
                 <div class="form-group">
                     <mat-form-field>
-                        <mat-label>מבדק א.מ.</mat-label>
+                        <mat-label>שאלון א.מ.</mat-label>
                         <mat-select formControlName="TestAM">
                             <mat-option *ngFor="let yn of YesNoList" [value]="yn.id"> {{yn.value}} </mat-option>
                         </mat-select>
@@ -133,7 +137,7 @@
             <div class="col">
                 <div class="form-group">
                     <mat-form-field>
-                        <mat-label>ISO מוסמך</mat-label>
+                        <mat-label>מוסמך ISO </mat-label>
                         <mat-select formControlName="ISOCer">
                             <mat-option *ngFor="let yn of YesNoList" [value]="yn.id"> {{yn.value}} </mat-option>
                         </mat-select>
