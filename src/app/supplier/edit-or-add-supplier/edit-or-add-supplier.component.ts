@@ -48,6 +48,15 @@ export interface DialogData {
   styleUrls: ['./edit-or-add-supplier.component.css']
 })
 export class EditOrAddSupplierComponent implements OnInit {
+  ConnectionEssenceList: any = [
+    {id: "1", value: 'תמיכה'},
+    {id: "2", value: 'פיתוח'},
+    {id: "3", value: 'שירותי ענן'},
+    {id: "4", value: 'תחזוקה'},
+    {id: "5", value: 'הטמעה'},
+    {id: "6", value: 'פרוייקט'},
+    {id: "7", value: 'ניטור'}
+  ]
   ConnectionTypeList: any = [
     {id: "1", value: 'קבוע'},
     {id: "2", value: 'זמני'}
