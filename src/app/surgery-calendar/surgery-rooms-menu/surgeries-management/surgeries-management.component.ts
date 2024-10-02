@@ -51,6 +51,7 @@ registerLocaleData(localeHe);
 })
 export class SurgeriesManagementComponent {
 
+  pdfString: string;
   selectable = true;
   removable = true;
   separatorKeysCodes: number[] = [ENTER, COMMA];
@@ -237,8 +238,8 @@ export class SurgeriesManagementComponent {
             primary: '#000000', secondary: colors[element.SurgeryStatus]
           }
           // set uniqe color to sesia and dhof surgeries
-          if (element.SurgeryType == 'ססיה') element.color = { primary: '#000000', secondary: '#FFA100' }
-          if (element.SurgeryType == 'דחוף') element.color = { primary: '#000000', secondary: '#F1F305' }
+          if (element.SurgeryType.includes('ססיה')) element.color = { primary: '#000000', secondary: '#FFA100' }
+          if (element.SurgeryType.includes('דחוף')) element.color = { primary: '#000000', secondary: '#F1F305' }
           // element.resizable = {
           //   beforeStart: true,
           //   afterEnd: true,
@@ -415,6 +416,95 @@ export class SurgeriesManagementComponent {
     }).subscribe(res => {
       if (res['d'].length > 0) this.planningExcelFile(res['d'], department);
     })
+  }
+
+  sentDepartmentFinalSurgeryPlan(department) {
+    let fullDate = this.datePipe.transform(this.viewDate, 'yyyy-MM-dd');
+    this.http.post(environment.url + 'GetSurgeriesPlannedExcel', {
+      Department: department,
+      _surRoomCode: this.data.room.CalendarRoomsArea,
+      date: fullDate
+    }).subscribe(res => {
+      if (res['d'].length > 0) {
+        console.log(res['d']);
+        let data = res['d'];
+        this.pdfString = `
+        <!doctype html>
+        <html lang="he">
+          <head>
+            <meta charset="utf-8"/>
+              <title>תוכנית ניתוחים סופית ${department}</title>
+            <style>p,mat-label,span{font-weight: bold;font-size: 18px;}h1{font-size: 14px}.col-2{width: 16.66667%;justify-content: center;}.row{display: flex;margin-top: 10px;}td{border: 1px solid black}</style>
+          </head>
+          <body dir="rtl">
+            <div class="d-none-desktop" dir="rtl">
+              <div class="card-header border-bottomIn rel" style="text-align: center;">
+                  <img class="full-width" style="width: 100%;" src="https://poria.is-great.org/images/covid_2_header.png" />
+                  <h1 class="text-center pos-abs-center"><u>תוכנית ניתוחים סופית ${department}</u></h1>
+              </div>
+              <div class="col-12" style="width: 100%;text-align: center;float: right;">
+                <p>תאריך: ${fullDate}</p>
+                <hr>
+                <div class="row">
+                  <table class="table">  <thead>  <tr>
+                  <th>#</th>  
+                  <th>מספר מקרה</th>
+                  <th>שם מלא, ת.ז</th>
+                  <th>גיל</th>
+                  <th>תיאור פרוצדורה</th>
+                  <th>צד ניתוח</th>
+                  <th>תנוחת השכבה</th>
+                  <th>בידוד</th>
+                  <th>בנק הדם</th>
+                  <th>שם מנתח</th>
+                  <th>הערות</th>
+                  <th>מכשירים נוספים</th>
+                  <th>סוג הרדמה</th>
+                  <th>נדרש שיקוף</th>
+                  <th>מחלקת אשפוז</th>
+                  <th>משך משוער</th>
+                  </tr>
+              </thead>
+              <tbody> `;
+        for (let i = 0; i < data.length; i++) {
+          this.pdfString += `<tr>
+                                <td> ${i + 1} </td>
+                                <td> ${data[i].casenumber} </td>
+                                <td> ${data[i].id} </td>
+                                <td> ${data[i].age} </td>
+                                <td> ${data[i].s_name} </td>
+                                <td> ${data[i].side} </td>
+                                <td> ${data[i].position} </td>
+                                <td> ${data[i].isolation} </td>
+                                <td> ${data[i].blood} </td>
+                                <td> ${data[i].doctor} </td>
+                                <td> ${data[i].note} </td>
+                                <td> ${data[i].tools} </td>
+                                <td> ${data[i].anesthesia} </td>
+                                <td> ${data[i].dimot} </td>
+                                <td> ${data[i].hospitalization} </td>
+                                <td> ${data[i].duration} </td>
+                             </tr>`;
+        }
+
+        this.pdfString += `
+              </tbody>
+            </table>
+                </div>
+              </div>
+            </div>
+          </body>
+        </html>`;
+
+        this.http.post(environment.url + 'SentDepartmentFinalSurgeryPlan', {
+          department: department,
+          fileString: this.pdfString
+        }).subscribe(res => {
+          if (res['d']) this.openSnackBar("התוכנית נשלחה בהצלחה");
+          else this.openSnackBar("אירעה תקלה, לא נשלח");
+        })
+      }
+    });
   }
 
   fileName = 'תבנית ניתוחים';

@@ -31,7 +31,7 @@ export class ManageSingleSurgeryComponent implements OnInit {
   filteredOptionsservices: Observable<any[]>;
   @ViewChild('modalContent', { static: true }) modalContent: TemplateRef<any>;
   // @ViewChild('toolsModal', { static: true }) toolsModal: TemplateRef<any>;
-  displayedColumns = ['name', 'side'];
+  displayedColumns = ['code', 'name', 'side'];
   displayedColumns1 = ['name'];
   displayedColumns2 = ['name', 'code', 'tool'];
 
@@ -383,7 +383,7 @@ export class ManageSingleSurgeryComponent implements OnInit {
         // let minutes = Math.round(((diff % 86400000) % 3600000) / 60000);//minutes
         // let minutes = Math.round((diff % 86400000) / 60000);//minutes
         // this.SurgeryFormGroup.controls['SurgeriesCalendar_Susgeries']['controls'].Duration.setValue(minutes);
-        after.setTime(before.getTime() + (parseInt(this.SurgeryFormGroup.controls['Duration'].value) * 60 * 1000));
+        if (this.SurgeryFormGroup.controls['Duration'].value != "") after.setTime(before.getTime() + (parseInt(this.SurgeryFormGroup.controls['Duration'].value) * 60 * 1000));
         this.SurgeryFormGroup.controls['EndTime'].setValue(this.datePipe.transform(after, 'HH:mm'));
       } else {
         after.setTime(before.getTime() + diff);
