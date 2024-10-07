@@ -30,7 +30,8 @@
                     <mat-form-field>
                         <mat-label>מהות הספק</mat-label>
                         <mat-select formControlName="ConnectionEssence">
-                            <mat-option *ngFor="let ab of ConnectionEssenceList" [value]="ab.id"> {{ab.value}} </mat-option>
+                            <mat-option *ngFor="let ab of ConnectionEssenceList" [value]="ab.id"> {{ab.value}}
+                            </mat-option>
                         </mat-select>
                     </mat-form-field>
                 </div>
@@ -61,7 +62,7 @@
                     </mat-form-field>
                 </div>
             </div>
-            
+
         </div>
         <div class="row text-right" dir="rtl">
             <div class="col">
@@ -89,16 +90,22 @@
             <div class="col">
                 <div class="form-group">
                     <mat-form-field>
-                        <input matInput autocomplete="off" class="form-control" placeholder="צורת ההזדהות"
-                            formControlName="IdentificationForm" type="text" />
+                        <mat-label>צורת ההזדהות</mat-label>
+                        <mat-select formControlName="IdentificationForm">
+                            <mat-option *ngFor="let cm of IdentificationFormList" [value]="cm.id"> {{cm.value}}
+                            </mat-option>
+                        </mat-select>
                     </mat-form-field>
                 </div>
             </div>
             <div class="col">
                 <div class="form-group">
                     <mat-form-field>
-                        <input matInput autocomplete="off" class="form-control" placeholder="אמצעי אבטחה"
-                            formControlName="SecurityMeasures" type="text" />
+                        <mat-label>אמצעי אבטחה</mat-label>
+                        <mat-select formControlName="SecurityMeasures">
+                            <mat-option *ngFor="let cm of SecurityMeasuresList" [value]="cm.id"> {{cm.value}}
+                            </mat-option>
+                        </mat-select>
                     </mat-form-field>
                 </div>
             </div>
@@ -122,7 +129,7 @@
                     </mat-form-field>
                 </div>
             </div>
-            
+
             <div class="col">
                 <div class="form-group">
                     <mat-form-field>
@@ -193,6 +200,16 @@
                         <mat-label>סווג ספק</mat-label>
                         <mat-select formControlName="SupplierCategorize">
                             <mat-option *ngFor="let ab of ABCList" [value]="ab.id"> {{ab.value}} </mat-option>
+                        </mat-select>
+                    </mat-form-field>
+                </div>
+            </div>
+            <div class="col">
+                <div class="form-group">
+                    <mat-form-field>
+                        <mat-label>מצב</mat-label>
+                        <mat-select formControlName="RowStatus">
+                            <mat-option *ngFor="let ab of StatusList" [value]="ab.id"> {{ab.value}} </mat-option>
                         </mat-select>
                     </mat-form-field>
                 </div>
