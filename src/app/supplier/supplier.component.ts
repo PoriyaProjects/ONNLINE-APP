@@ -48,9 +48,14 @@ export interface Supplier {
 export class SupplierComponent implements OnInit {
 
   
-
+  StatusList: any = [
+    {id: "-1", value: 'הכול'},
+    {id: "0", value: 'לא פעיל'},
+    {id: "1", value: 'פעיל'}
+  ]
   TABLE_DATA: Supplier[] = [];
   FreeText: string = '';
+  Status: string = '-1';
   dataSource = new MatTableDataSource<Supplier>(this.TABLE_DATA);
   @ViewChild(MatPaginator) paginator: MatPaginator;
   @ViewChild(MatSort) sort: MatSort;
@@ -61,6 +66,7 @@ export class SupplierComponent implements OnInit {
     // "DepartWorkRooms",
     "ContactEmail",
     "ContactTell",
+    "RowStatus",
     "editAuthorized"
   ];
   resultsLength = 0;
@@ -186,13 +192,8 @@ export class SupplierComponent implements OnInit {
         )
       );
   }
-  applyFilter(event: Event) {
-    const filterValue = (event.target as HTMLInputElement).value;
-    this.dataSource.filter = filterValue.trim().toLowerCase();
-
-    if (this.dataSource.paginator) {
-      this.dataSource.paginator.firstPage();
-    }
+  applyFilter() {
+    this.getTableFromServer();
   }
   public getTableFromServer() {
     let tableLoader = false;
@@ -203,7 +204,8 @@ export class SupplierComponent implements OnInit {
     }
     this.http
       .post(environment.url + "GetAllSuppliers", {
-        FreeText: this.FreeText
+        FreeText: this.FreeText,
+        status: this.Status,
       }
       )
       .subscribe((Response) => {
