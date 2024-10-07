@@ -49,6 +49,7 @@ export interface DialogData {
 })
 export class EditOrAddSupplierComponent implements OnInit {
   ConnectionEssenceList: any = [
+    {id: "-1", value: 'ללא'},
     {id: "1", value: 'תמיכה'},
     {id: "2", value: 'פיתוח'},
     {id: "3", value: 'שירותי ענן'},
@@ -56,6 +57,26 @@ export class EditOrAddSupplierComponent implements OnInit {
     {id: "5", value: 'הטמעה'},
     {id: "6", value: 'פרוייקט'},
     {id: "7", value: 'ניטור'}
+  ]
+  IdentificationFormList: any = [
+    {id: "-1", value: 'ללא'},
+    {id: "1", value: 'שם משתמש וסיסמא'},
+    {id: "2", value: 'שם משתמש וסיסמא + OTP'},
+    {id: "3", value: 'שם משתמש וסיסמא + MFA'},
+    {id: "4", value: 'כרטיס חכם'},
+    {id: "5", value: 'TOKEN'},
+    {id: "6", value: 'ללא גישה מרחוק (פנימית בלבד)'},
+    {id: "7", value: 'ללא גישה כלל'}
+  ]
+  SecurityMeasuresList: any = [
+    {id: "-1", value: 'ללא'},
+    {id: "1", value: 'SSL'},
+    {id: "2", value: 'SSL VPN'},
+    {id: "3", value: 'ניטור'},
+    {id: "4", value: 'SSL + ניטור'},
+    {id: "5", value: 'SSL VPN + ניטור'},
+    {id: "6", value: 'HTTPS'},
+    {id: "7", value: 'HTTPS + ניטור'}
   ]
   ConnectionTypeList: any = [
     {id: "1", value: 'קבוע'},
@@ -69,6 +90,11 @@ export class EditOrAddSupplierComponent implements OnInit {
   [
     {id: "0", value: 'לא'},
     {id: "1", value: 'כן'}
+  ]
+  StatusList  : any =  
+  [
+    {id: "0", value: 'לא פעיל'},
+    {id: "1", value: 'פעיל'}
   ]
   ABCList : any = 
   [
