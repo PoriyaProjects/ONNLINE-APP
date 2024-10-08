@@ -154,6 +154,10 @@ export class BedsoreModalComponent implements OnInit {
     this.dialog.close();
   }
 
+  bodyPartClick(part) {
+    alert(part);
+  }
+
 
   // convert new image selection to base64 to display for the user
   // selectFile(event: any) { //Angular 11, for stricter type

@@ -145,11 +145,9 @@ export class ReHospComponent implements OnInit {
       DateOut: date2,
     };
   
-    console.log(data.DateIn, data.DateOut);
   
     this.http.post<ReHospMonitor[]>(url, data).subscribe({
       next: (records: any) => {
-        console.log("data", records.d);
         this.dataSource.data = records.d;
   
         // Calculate the numerator value

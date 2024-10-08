@@ -53,6 +53,7 @@
             <mat-label class="filterClass">מסנן</mat-label>
             <input matInput (keyup)="applyFilter($event)" placeholder="הקלד מסנן" #input>
         </mat-form-field>
+        <mat-progress-bar mode="indeterminate" *ngIf="loading"></mat-progress-bar>
         <table mat-table [dataSource]="dataSource" class="mat-elevation-z8" style="width: 100%;margin-top: 30px;">
 
             <ng-container matColumnDef="delete">

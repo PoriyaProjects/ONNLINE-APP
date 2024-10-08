@@ -36,6 +36,7 @@ export class BedsoreDashboardComponent implements OnInit {
   searchPatient: FormGroup;
   departsList = [];
   department = "";
+  loading: boolean = false;
   searchPatientProgressBar: boolean = true;
   @ViewChild(MatPaginator) paginator: MatPaginator;
   dataSource = new MatTableDataSource();
@@ -89,12 +90,14 @@ export class BedsoreDashboardComponent implements OnInit {
   }
 
   getAllBedsoreList() {
+    this.loading = true;
     this.http
       .post(environment.url + "GetAllBedsoreList", {
       })
       .subscribe((Response) => {
         this.dataSource = new MatTableDataSource<any>(Response["d"]);
         this.dataSource.paginator = this.paginator;
+        this.loading = false;
       });
   }
 
