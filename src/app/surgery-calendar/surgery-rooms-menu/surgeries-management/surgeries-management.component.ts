@@ -238,8 +238,8 @@ export class SurgeriesManagementComponent {
             primary: '#000000', secondary: colors[element.SurgeryStatus]
           }
           // set uniqe color to sesia and dhof surgeries
-          if (element.SurgeryType.includes('ססיה')) element.color = { primary: '#000000', secondary: '#FFA100' }
-          if (element.SurgeryType.includes('דחוף')) element.color = { primary: '#000000', secondary: '#F1F305' }
+          if (element.Urgency.includes('ססיה')) element.color = { primary: '#000000', secondary: '#FFA100' }
+          if (element.Urgency.includes('דחוף')) element.color = { primary: '#000000', secondary: '#F1F305' }
           // element.resizable = {
           //   beforeStart: true,
           //   afterEnd: true,
@@ -496,9 +496,10 @@ export class SurgeriesManagementComponent {
           </body>
         </html>`;
 
-        this.http.post(environment.url + 'SentDepartmentFinalSurgeryPlan', {
+        this.http.post(environment.urlipracticom + 'SentDepartmentFinalSurgeryPlan', {
           department: department,
-          fileString: this.pdfString
+          fileString: this.pdfString,
+          username: this.UserName
         }).subscribe(res => {
           if (res['d']) this.openSnackBar("התוכנית נשלחה בהצלחה");
           else this.openSnackBar("אירעה תקלה, לא נשלח");
