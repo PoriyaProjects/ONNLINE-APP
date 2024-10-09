@@ -36,7 +36,6 @@ export interface ReHospMonitor {
 
 export class ReHospComponent implements OnInit {
 
-
   isLoading = false;
   IsbTirm = false;
   selectedPeriodType: string = ''; // Stores the selected period type
@@ -46,8 +45,6 @@ export class ReHospComponent implements OnInit {
   //onesCount = { numerator: 0, denominator: 0 };
   percentage = 0;
   selectedColor: string = '';
-
-
 
   months: string[] = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
   selectedMonth: string = '';
@@ -61,7 +58,6 @@ export class ReHospComponent implements OnInit {
   toggleDropdown() {
     this.showDropdown = !this.showDropdown;
   }
-
 
   onPeriodTypeChange(): void {
     if (this.selectedPeriodType === 'quarterly') {
@@ -80,7 +76,6 @@ export class ReHospComponent implements OnInit {
     }
   }
 
-
   options = [
     { value: '', label: '' }
   ];
@@ -90,19 +85,20 @@ export class ReHospComponent implements OnInit {
     this.selectedValue = value;
   }
 
-
   dataSource = new MatTableDataSource<ReHospMonitor>();
 
-
-
   displayedColumnReHosp: string[] = [
-  'CaseNumber',
-  'FirstName',
-  'LastName',
-  'ID',
-  'ReleaseDepartment',
-  'HospDepartment',
-  //'Numerator'
+    'CaseNumber',
+    'FirstName',
+    'LastName',
+    'ID',
+    'ReleaseDepartment',
+    'release_text',
+    'PM_LAST_ESHPOZE_DATE',
+    'HospDepartment',
+    'PM_MOVE_DATE',
+    'admission_text',
+    //'Numerator'
   ]
 
   form: any;
@@ -130,34 +126,29 @@ export class ReHospComponent implements OnInit {
       toDate: Date,
       quarterDate: Date
     });
-    console.log("init ReHosp");
   }
-  
+
   fetchReHospReport(date1: string, date2: string): void {
     this.dataSource.data = [];
     this.IsbTirm = true;
     this.isLoading = true; // Start loading
-    console.log("fetchReHospReport");
-  
+
     const url = `${environment.url}FetchReHospReport`;
     let data = {
       DateIn: date1,
       DateOut: date2,
     };
-  
-  
+
     this.http.post<ReHospMonitor[]>(url, data).subscribe({
       next: (records: any) => {
         this.dataSource.data = records.d;
-  
+
         // Calculate the numerator value
         if (this.dataSource.data.length > 0) {
           this.numeratorValue = parseInt(this.dataSource.data[0].Numerator, 10);
         } else {
           this.numeratorValue = 0; // Or handle it as needed
         }
-  
-        console.log(this.dataSource.data);
         this.isLoading = false; // Stop loading upon success
       },
       error: (error) => {
@@ -166,22 +157,14 @@ export class ReHospComponent implements OnInit {
       }
     });
   }
-  
-
-
-
-
 
   onSearch() {
     const measureType = this.form.get('measureType').value; // Accessing the measureType value
-    console.log('Selected measure type:', measureType); // Log the selected measure type
     const selectedyear = this.form.get('selectedyear').value; // Accessing the measureType value
     this.ReHosp();
-
   }
 
   ReHosp() {
-    console.log("hi ... :)")
     this.dataSource.data = [];
     let quarterDate = this.form.get('quarterDate').value;
     let fromDate = this.form.get('fromDate').value;
@@ -190,73 +173,46 @@ export class ReHospComponent implements OnInit {
     let EraChoosen = this.form.get('EraChoosen').value;
     let selectedYear = this.form.get('selectedyear').value; // Ensure this matches your form control name exactly
 
-   
-
     let dateNow = new Date();
 
-    if((!(toDate instanceof Date) &&  !(fromDate instanceof Date)) || (  (toDate instanceof Date) > (fromDate instanceof Date) ) ) {
+    if ((!(toDate instanceof Date) && !(fromDate instanceof Date)) || ((toDate instanceof Date) > (fromDate instanceof Date))) {
       alert("Please enter valid dates");
-      console.log("1ssad")
       return;
     }
-    if(!(toDate instanceof Date)){
-      console.log("yeo")
+    if (!(toDate instanceof Date)) {
       toDate = this.datePipe.transform(dateNow, 'yyyy-MM-dd');
     }
+    if (fromDate) {
+      const formattedFromDate = this.datePipe.transform(fromDate, 'yyyy-MM-dd');
+      const formattedToDate = this.datePipe.transform(toDate, 'yyyy-MM-dd');
+      this.fetchReHospReport(formattedFromDate, formattedToDate);
 
-
-
-      if(fromDate){
-        const formattedFromDate = this.datePipe.transform(fromDate, 'yyyy-MM-dd');
-        const formattedToDate = this.datePipe.transform(toDate, 'yyyy-MM-dd');
-        console.log(formattedFromDate, formattedToDate); // For debugging
-        this.fetchReHospReport(formattedFromDate, formattedToDate);
-
-      }else{
-        console.log("1ssad")
-        alert("Please enter valid dates");
-      }
-
-    
+    } else {
+      alert("Please enter valid dates");
+    }
   }
-
-
 
   onClear() {
     this.dataSource.data = [];
   }
 
-
-
-
   exportexcel(): void {
-
-
-
     if (this.IsbTirm === true) {
       if (!this.dataSource || !this.dataSource.filteredData || this.dataSource.filteredData.length === 0) {
         alert('The data is empty!');
         return;
       }
-
       const dataToExport = this.dataSource.filteredData.map(item => {
         const itemCopy = { ...item };
         delete itemCopy['__type'];
         return itemCopy;
       });
-
       const ws: XLSX.WorkSheet = XLSX.utils.json_to_sheet(dataToExport);
       const wb: XLSX.WorkBook = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
       XLSX.writeFile(wb, "ReHosp.xlsx");
     }
-
-
-
     if (this.IsbTirm === false) {
-
     }
-
   }
-
 }
