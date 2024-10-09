@@ -256,18 +256,6 @@ export class BedsoreDashboardComponent implements OnInit {
               </div>
             </div>
             <hr>`;
-    for (let i = 0; i < data.ImagesList.length; i++) {
-      if (data.ImagesList[i].Content !== '') {
-        this.pdfString += `<img height="500" width="600" src='` + data.ImagesList[i].Content + `'>
-        <p class="note" style="text-align: right;font-family: monospace;font-weight: normal;">` + data.ImagesList[i].Note + `</p>`;
-      }
-    }
-    this.pdfString += `
-                            </div>
-                        </div>
-          </div>
-      </div>
-    </body></html>`;
     $("#loader_2").removeClass("d-none");
     this.http.post(environment.urlipracticom + "CreateBedsorePdf", {
       _patient: data.PatientDetails,
