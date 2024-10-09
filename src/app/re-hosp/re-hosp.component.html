@@ -9,7 +9,7 @@
             </select>
             <label>בית חולים </label>
         </div>
-      
+
 
 
         <mat-form-field class="datePicker">
@@ -48,60 +48,80 @@
 
 
     <div dir="ltr" class="wrapper">
-    <div class="Madad">
-        <h6>{{ dataSource.data.length > 0 ? dataSource.data.length : '' }} : מכנה
-        </h6>
+        <div class="Madad">
+            <h6>{{ dataSource.data.length > 0 ? dataSource.data.length : '' }} : מונה
+            </h6>
+        </div>
+
+        <div class="Madad">
+            <h6>{{ numeratorValue }} : מכנה
+            </h6>
+        </div>
+
+        <mat-spinner *ngIf="isLoading"></mat-spinner>
+        <div *ngIf="isLoading">Loading...</div>
     </div>
 
-    <div class="Madad">
-        <h6>{{ numeratorValue }} : מונה
-        </h6>
-    </div>
 
-    <mat-spinner *ngIf="isLoading"></mat-spinner>
-    <div *ngIf="isLoading">Loading...</div>
-</div>
-
-  
 
 
     <div class="mat-elevation-z8 custom-table">
 
-    <table  mat-table [dataSource]="dataSource">
+        <table mat-table [dataSource]="dataSource">
 
-        <ng-container matColumnDef="CaseNumber">
-            <th mat-header-cell *matHeaderCellDef> מספר מקרה </th>
-            <td mat-cell *matCellDef="let element"> {{element.CaseNumber}} </td>
-        </ng-container>
+            <ng-container matColumnDef="CaseNumber">
+                <th mat-header-cell *matHeaderCellDef> מספר מקרה </th>
+                <td mat-cell *matCellDef="let element"> {{element.CaseNumber}} </td>
+            </ng-container>
 
-        <ng-container matColumnDef="FirstName">
-            <th mat-header-cell *matHeaderCellDef> שם פרטי </th>
-            <td mat-cell *matCellDef="let element"> {{element.FirstName}} </td>
-        </ng-container>
+            <ng-container matColumnDef="FirstName">
+                <th mat-header-cell *matHeaderCellDef> שם פרטי </th>
+                <td mat-cell *matCellDef="let element"> {{element.FirstName}} </td>
+            </ng-container>
 
-        <ng-container matColumnDef="LastName">
-            <th mat-header-cell *matHeaderCellDef> שם משפחה </th>
-            <td mat-cell *matCellDef="let element"> {{element.LastName}} </td>
-        </ng-container>
+            <ng-container matColumnDef="LastName">
+                <th mat-header-cell *matHeaderCellDef> שם משפחה </th>
+                <td mat-cell *matCellDef="let element"> {{element.LastName}} </td>
+            </ng-container>
 
-        <ng-container matColumnDef="ID">
-            <th mat-header-cell *matHeaderCellDef>ת,ז </th>
-            <td mat-cell *matCellDef="let element"> {{element.ID}} </td>
-        </ng-container>
+            <ng-container matColumnDef="ID">
+                <th mat-header-cell *matHeaderCellDef>ת,ז </th>
+                <td mat-cell *matCellDef="let element"> {{element.ID}} </td>
+            </ng-container>
 
-        <ng-container matColumnDef="ReleaseDepartment">
-            <th mat-header-cell *matHeaderCellDef> מחלקה משחררת לפני האשפוז החוזר </th>
-            <td mat-cell *matCellDef="let element"> {{element.ReleaseDepartment}} </td>
-        </ng-container>
+            <ng-container matColumnDef="ReleaseDepartment">
+                <th mat-header-cell *matHeaderCellDef> מחלקה משחררת לפני האשפוז החוזר </th>
+                <td mat-cell *matCellDef="let element"> {{element.ReleaseDepartment}} </td>
+            </ng-container>
 
-        <ng-container matColumnDef="HospDepartment">
-            <th mat-header-cell *matHeaderCellDef> מחלקה מקבלת לאחר אשפוז חוזר </th>
-            <td mat-cell *matCellDef="let element"> {{element.HospDepartment}} </td>
-        </ng-container>
+            <ng-container matColumnDef="release_text">
+                <th mat-header-cell *matHeaderCellDef> סיכום שחרור </th>
+                <td mat-cell *matCellDef="let element"> {{element.release_text}} </td>
+            </ng-container>
 
-        <tr mat-header-row *matHeaderRowDef="displayedColumnReHosp sticky: true"></tr>
-        <tr mat-row *matRowDef="let row; columns: displayedColumnReHosp;"></tr>
-    </table>
+            <ng-container matColumnDef="PM_LAST_ESHPOZE_DATE">
+                <th mat-header-cell *matHeaderCellDef> תאריך שחרור </th>
+                <td mat-cell *matCellDef="let element"> {{element.PM_LAST_ESHPOZE_DATE}} </td>
+            </ng-container>
+
+            <ng-container matColumnDef="HospDepartment">
+                <th mat-header-cell *matHeaderCellDef> מחלקה מקבלת לאחר אשפוז חוזר </th>
+                <td mat-cell *matCellDef="let element"> {{element.HospDepartment}} </td>
+            </ng-container>
+
+            <ng-container matColumnDef="PM_MOVE_DATE">
+                <th mat-header-cell *matHeaderCellDef> תאריך קבלה </th>
+                <td mat-cell *matCellDef="let element"> {{element.PM_MOVE_DATE}} </td>
+            </ng-container>
+
+            <ng-container matColumnDef="admission_text">
+                <th mat-header-cell *matHeaderCellDef> סיכום קבלה </th>
+                <td mat-cell *matCellDef="let element"> {{element.admission_text}} </td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="displayedColumnReHosp sticky: true"></tr>
+            <tr mat-row *matRowDef="let row; columns: displayedColumnReHosp;"></tr>
+        </table>
 
 
     </div>
