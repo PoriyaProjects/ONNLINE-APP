@@ -1,22 +1,11 @@
 import { DatePipe } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, TemplateRef, ViewChild } from '@angular/core';
 import { FormBuilder } from '@angular/forms';
 import { environment } from 'src/environments/environment';
 import { MatTableDataSource } from '@angular/material/table';
 import * as XLSX from 'xlsx';
-
-
-
-export interface ReHospMonitor {
-  CaseNumber: string;
-  FirstName: string;
-  LastName: string;
-  ID: string;
-  ReleaseDepartment: string;
-  HospDepartment: string;
-  Numerator: string;
-}
+import { MatDialog } from '@angular/material/dialog';
 
 @Component({
   selector: 'app-re-hosp',
@@ -32,13 +21,13 @@ export class ReHospComponent implements OnInit {
   selectedQuarter: string = ''; // Stores the selected quarter
   quarters: any[] = []; // Stores the quarter options
   numeratorValue: number = 0;
-  //onesCount = { numerator: 0, denominator: 0 };
   percentage = 0;
   selectedColor: string = '';
-
+  dialog_data: any;
   months: string[] = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
   selectedMonth: string = '';
   showDropdown: boolean = false;
+  @ViewChild('modalContent', { static: true }) modalContent: TemplateRef<any>;
 
   selectMonth(month: string) {
     this.selectedMonth = month;
@@ -75,8 +64,7 @@ export class ReHospComponent implements OnInit {
     this.selectedValue = value;
   }
 
-  dataSource = new MatTableDataSource<ReHospMonitor>();
-
+  dataSource = new MatTableDataSource<any>();
   displayedColumnReHosp: string[] = [
     'CaseNumber',
     'FirstName',
@@ -87,15 +75,14 @@ export class ReHospComponent implements OnInit {
     'PM_LAST_ESHPOZE_DATE',
     'HospDepartment',
     'PM_MOVE_DATE',
-    'admission_text',
-    //'Numerator'
+    'admission_text'
   ]
-
   form: any;
 
   constructor(
     private http: HttpClient,
     private fb: FormBuilder,
+    public dialog: MatDialog,
     private datePipe: DatePipe,
   ) {
     this.onPeriodTypeChange();
@@ -118,6 +105,17 @@ export class ReHospComponent implements OnInit {
     });
   }
 
+  handleDialog(row) {
+    this.dialog_data = row;
+    this.dialog.open(this.modalContent, {
+      width: '60%',
+      disableClose: false
+    });
+  }
+  applyFilter(event: Event) {
+    const filterValue = (event.target as HTMLInputElement).value;
+    this.dataSource.filter = filterValue.trim().toLowerCase();
+  }
   fetchReHospReport(date1: string, date2: string): void {
     this.dataSource.data = [];
     this.IsbTirm = true;
@@ -126,16 +124,15 @@ export class ReHospComponent implements OnInit {
     const url = `${environment.url}FetchReHospReport`;
     let data = {
       DateIn: date1,
-      DateOut: date2,
+      DateOut: date2
     };
 
-    this.http.post<ReHospMonitor[]>(url, data).subscribe({
+    this.http.post(url, data).subscribe({
       next: (records: any) => {
-        this.dataSource.data = records.d;
-
+        this.dataSource = new MatTableDataSource<any>(records['d']);
         // Calculate the numerator value
-        if (this.dataSource.data.length > 0) {
-          this.numeratorValue = parseInt(this.dataSource.data[0].Numerator, 10);
+        if (this.dataSource.filteredData.length > 0) {
+          this.numeratorValue = parseInt(this.dataSource.filteredData[0].Numerator, 10);
         } else {
           this.numeratorValue = 0; // Or handle it as needed
         }
@@ -162,7 +159,6 @@ export class ReHospComponent implements OnInit {
     let selectedPeriod = this.form.get('selectedPeriod').value;
     let EraChoosen = this.form.get('EraChoosen').value;
     let selectedYear = this.form.get('selectedyear').value; // Ensure this matches your form control name exactly
-
     let dateNow = new Date();
 
     if ((!(toDate instanceof Date) && !(fromDate instanceof Date)) || ((toDate instanceof Date) > (fromDate instanceof Date))) {
@@ -176,12 +172,20 @@ export class ReHospComponent implements OnInit {
       const formattedFromDate = this.datePipe.transform(fromDate, 'yyyy-MM-dd');
       const formattedToDate = this.datePipe.transform(toDate, 'yyyy-MM-dd');
       this.fetchReHospReport(formattedFromDate, formattedToDate);
-
     } else {
       alert("Please enter valid dates");
     }
   }
-
+  saveNote(note_text, row_id) {
+    this.http.post(environment.url + "SaveReHospNote", {
+      _id: row_id,
+      _note: note_text
+    }).subscribe(res => {
+      if (!res['d']) {
+        alert("תקלה בשמירה.");
+      }
+    });
+  }
   onClear() {
     this.dataSource.data = [];
   }

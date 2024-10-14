@@ -1,74 +1,53 @@
 <div dir="rtl" [formGroup]="form">
-
-
     <div dir="ltr" class="wrapper">
-
         <div class="element">
             <select disableRipple class="select-style">
                 <option value="1">פוריה</option>
             </select>
             <label>בית חולים </label>
         </div>
-
-
-
         <mat-form-field class="datePicker">
             <mat-label>מתאריך</mat-label>
             <input matInput [matDatepicker]="picker1" formControlName="fromDate" (focus)="picker1.open()">
             <mat-datepicker-toggle matIconSuffix [for]="picker1"></mat-datepicker-toggle>
             <mat-datepicker #picker1></mat-datepicker>
         </mat-form-field>
-
-
         <mat-form-field class="datePicker">
             <mat-label>עד תאריך</mat-label>
             <input matInput [matDatepicker]="picker2" formControlName="toDate" (focus)="picker2.open()">
             <mat-datepicker-toggle matIconSuffix [for]="picker2"></mat-datepicker-toggle>
             <mat-datepicker #picker2></mat-datepicker>
         </mat-form-field>
-
-
-
         <div class="element">
             <button mat-raised-button class="srch-btn" color="primary" (click)="onSearch()">הרצת דוח </button>
         </div>
-
         <div class="element">
-            <button mat-raised-button class="srch-btn" color="warn" (click)="onClear()">Clean</button>
+            <button mat-raised-button class="srch-btn" color="warn" (click)="onClear()">נקה</button>
         </div>
-
-
         <div class="example-button-container">
             <a (click)="exportexcel()">
                 <img src="../../assets/images/excel.png" width="50px" alt="Image description">
             </a>
         </div>
-
     </div>
-
-
     <div dir="ltr" class="wrapper">
         <div class="Madad">
-            <h6>{{ dataSource.data.length > 0 ? dataSource.data.length : '' }} : מונה
+            <h6>{{ dataSource.filteredData.length > 0 ? dataSource.filteredData.length : '' }} : מונה
             </h6>
         </div>
-
         <div class="Madad">
             <h6>{{ numeratorValue }} : מכנה
             </h6>
         </div>
-
         <mat-spinner *ngIf="isLoading"></mat-spinner>
-        <div *ngIf="isLoading">Loading...</div>
+        <div *ngIf="isLoading">טוען...</div>
     </div>
-
-
-
-
     <div class="mat-elevation-z8 custom-table">
-
+        <mat-form-field style="width: 100%;text-align: center;">
+            <mat-label>סינון</mat-label>
+            <input matInput (keyup)="applyFilter($event)" placeholder="סינון" #input>
+        </mat-form-field>
         <table mat-table [dataSource]="dataSource">
-
             <ng-container matColumnDef="CaseNumber">
                 <th mat-header-cell *matHeaderCellDef> מספר מקרה </th>
                 <td mat-cell *matCellDef="let element"> {{element.CaseNumber}} </td>
@@ -85,7 +64,7 @@
             </ng-container>
 
             <ng-container matColumnDef="ID">
-                <th mat-header-cell *matHeaderCellDef>ת,ז </th>
+                <th mat-header-cell *matHeaderCellDef>ת.ז </th>
                 <td mat-cell *matCellDef="let element"> {{element.ID}} </td>
             </ng-container>
 
@@ -96,7 +75,8 @@
 
             <ng-container matColumnDef="release_text">
                 <th mat-header-cell *matHeaderCellDef> סיכום שחרור </th>
-                <td mat-cell *matCellDef="let element"> {{element.release_text}} </td>
+                <td mat-cell *matCellDef="let element"> {{element.release_text |
+                    slice:0:26 }}... </td>
             </ng-container>
 
             <ng-container matColumnDef="PM_LAST_ESHPOZE_DATE">
@@ -116,14 +96,62 @@
 
             <ng-container matColumnDef="admission_text">
                 <th mat-header-cell *matHeaderCellDef> סיכום קבלה </th>
-                <td mat-cell *matCellDef="let element"> {{element.admission_text}} </td>
+                <td mat-cell *matCellDef="let element"> {{element.admission_text
+                    | slice:0:26 }}... </td>
             </ng-container>
 
             <tr mat-header-row *matHeaderRowDef="displayedColumnReHosp sticky: true"></tr>
-            <tr mat-row *matRowDef="let row; columns: displayedColumnReHosp;"></tr>
+            <tr mat-row *matRowDef="let row; columns: displayedColumnReHosp;" (click)="handleDialog(row)"></tr>
         </table>
-
-
     </div>
-
 </div>
+<ng-template #modalContent let-close="close">
+    <div class="container">
+        <h1 class="row">
+            <span class="mr-3"><u>נתוני ייעוץ</u></span>
+        </h1>
+        <div class="row">
+            <div class="col-4">
+                <span>
+                    <b>מספר מקרה:</b>
+                </span>
+                {{dialog_data.CaseNumber}}
+            </div>
+            <div class="col-4">
+                <span>
+                    <b>שם:</b>
+                </span>
+                {{dialog_data.FirstName}} {{dialog_data.LastName}}
+            </div>
+            <div class="col-4">
+                <span>
+                    <b>תעודת זהות:</b>
+                </span>
+                {{dialog_data.ID}}
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-12">
+                <!-- <mat-form-field class="form-group"> -->
+                    <mat-label>הערה</mat-label>
+                    <textarea matInput class="form-control" [(ngModel)]="dialog_data.Note" rows="3" placeholder="הערה"
+                        (keyup)="saveNote(dialog_data.Note, dialog_data.Row_ID)"></textarea>
+                <!-- </mat-form-field> -->
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-6">
+                <span>
+                    <b>סיכום שחרור :</b>
+                </span>
+                {{dialog_data.release_text}}
+            </div>
+            <div class="col-6">
+                <span>
+                    <b>סיכום קבלה :</b>
+                </span>
+                {{dialog_data.admission_text}}
+            </div>
+        </div>
+    </div>
+</ng-template>
