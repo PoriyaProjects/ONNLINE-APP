@@ -130,6 +130,10 @@ export class ReHospComponent implements OnInit {
     this.http.post(url, data).subscribe({
       next: (records: any) => {
         this.dataSource = new MatTableDataSource<any>(records['d']);
+        // Custom filter for the "name" field
+        this.dataSource.filterPredicate = (data, filter: string): boolean => {
+          return data.HospDepartment.toLowerCase().includes(filter);
+        };
         // Calculate the numerator value
         if (this.dataSource.filteredData.length > 0) {
           this.numeratorValue = parseInt(this.dataSource.filteredData[0].Numerator, 10);
