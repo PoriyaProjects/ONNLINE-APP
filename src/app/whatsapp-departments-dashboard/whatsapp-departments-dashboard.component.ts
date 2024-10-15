@@ -25,7 +25,8 @@ export class WhatsappDepartmentsDashboardComponent implements OnInit {
   messages = [];
   users_filter = new FormControl('');
   filteredOptions: Observable<string[]>;
-
+  notification = "";
+  secondsLeft = 5;
   user_name = localStorage.getItem('loginUserName');
   @ViewChild('scrollTarget') scrollTarget: ElementRef;
   contacts = [];
@@ -197,7 +198,19 @@ export class WhatsappDepartmentsDashboardComponent implements OnInit {
         }, 10000);
       });
   }
+  startCountdown() {
+    const interval = setInterval(() => {
+      this.secondsLeft--;
+      this.notification = `השיחה תיסגר בעוד ${this.secondsLeft} שניות`;
 
+      if (this.secondsLeft === 0) {
+        clearInterval(interval);
+        // בצע את הפעולה הרצויה לאחר סיום הספירה, לדוגמה:
+        console.log('השיחה נסגרה');
+        // this.closeCall(); // פונקציה לסגירת השיחה
+      }
+    }, 1000);
+  }
   endConversation(contact) {
     this.confirmationDialogService
       .confirm("נא לאשר..", "אתה מנסה לסיים את השיחה ? ")
@@ -206,12 +219,16 @@ export class WhatsappDepartmentsDashboardComponent implements OnInit {
         if (confirmed) {
           // remove the conversation chat from the request to avoid error maximum size request
           contact.WhatsApp_Bot_Convesations = contact.WhatsApp_Bot_Convesations.filter(x => x.IfFileMessage === "False");
+          this.startCountdown();
           this.http
             .post(environment.url + "EndDepartmentsWhatsAppConversation", {
               uncontact: contact
             })
             .subscribe((Response) => {
-              if (Response["d"]) this.getHrWhatsAppUsers();
+              if (Response["d"]) {
+                this.notification = "";
+                this.getHrWhatsAppUsers();
+              }
               else alert("אירעה שגיאה בסיום שיחה");
             });
         } else {
@@ -270,9 +287,10 @@ export class WhatsappDepartmentsDashboardComponent implements OnInit {
         })
         .subscribe((Response) => {
           if (Response["d"]) {
-            window.location.reload();
+            if(this.selectedFile) window.location.reload();
             this.currentContact.WhatsApp_Bot_Convesations.push({ Message_Text: this.selectedFile ? this.base64String : this.newMessage.controls['Message_Text'].value, From_ServiceEmployee: 'True', IfFileMessage: this.selectedFile ? 'True' : 'False' });
             this.newMessage.controls['Message_Text'].setValue('');
+            this.getHRWhatsAppConversationsByIDFK(this.newMessage.value.EndUserIDFK);
           } else {
             alert("Error")
           }
