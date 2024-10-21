@@ -1,11 +1,5 @@
 <div dir="rtl" [formGroup]="form">
     <div dir="ltr" class="wrapper">
-        <!-- <div class="element">
-            <select disableRipple class="select-style">
-                <option value="1">פוריה</option>
-            </select>
-            <label>בית חולים </label>
-        </div> -->
         <mat-form-field class="datePicker">
             <mat-label>מתאריך</mat-label>
             <input matInput [matDatepicker]="picker1" formControlName="fromDate" (focus)="picker1.open()">
@@ -18,6 +12,15 @@
             <mat-datepicker-toggle matIconSuffix [for]="picker2"></mat-datepicker-toggle>
             <mat-datepicker #picker2></mat-datepicker>
         </mat-form-field>
+        <div class="element" *ngIf="admission_depts.length > 0">
+            <mat-form-field>
+                <mat-label>מחלקה מקבלת</mat-label>
+                <mat-select>
+                    <mat-option (click)="applyFilter('')">הכל</mat-option>
+                    <mat-option *ngFor="let dept of admission_depts" (click)="applyFilter(dept)">{{dept}}</mat-option>
+                </mat-select>
+            </mat-form-field>
+        </div>
         <div class="element">
             <button mat-raised-button class="srch-btn" color="primary" (click)="onSearch()">הרצת דוח </button>
         </div>
@@ -43,10 +46,10 @@
         <div *ngIf="isLoading">טוען...</div>
     </div>
     <div class="mat-elevation-z8 custom-table">
-        <mat-form-field style="width: 100%;text-align: center;">
+        <!-- <mat-form-field style="width: 100%;text-align: center;">
             <mat-label>סינון מחלקה מקבלת לאחר אשפוז חוזר </mat-label>
             <input matInput (keyup)="applyFilter($event)" placeholder="סינון מחלקה" #input>
-        </mat-form-field>
+        </mat-form-field> -->
         <table mat-table [dataSource]="dataSource">
             <ng-container matColumnDef="CaseNumber">
                 <th mat-header-cell *matHeaderCellDef> מספר מקרה </th>

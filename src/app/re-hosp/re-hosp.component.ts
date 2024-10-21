@@ -23,6 +23,7 @@ export class ReHospComponent implements OnInit {
   numeratorValue: number = 0;
   percentage = 0;
   selectedColor: string = '';
+  admission_depts = [];
   dialog_data: any;
   months: string[] = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
   selectedMonth: string = '';
@@ -112,8 +113,8 @@ export class ReHospComponent implements OnInit {
       disableClose: false
     });
   }
-  applyFilter(event: Event) {
-    const filterValue = (event.target as HTMLInputElement).value;
+  applyFilter(event: any) {
+    const filterValue = event;//(event.target as HTMLInputElement).value;
     this.dataSource.filter = filterValue.trim().toLowerCase();
   }
   fetchReHospReport(date1: string, date2: string): void {
@@ -129,13 +130,18 @@ export class ReHospComponent implements OnInit {
 
     this.http.post(url, data).subscribe({
       next: (records: any) => {
+        this.admission_depts = [];
         this.dataSource = new MatTableDataSource<any>(records['d']);
         // Custom filter for the "name" field
         this.dataSource.filterPredicate = (data, filter: string): boolean => {
-          return data.HospDepartment.toLowerCase().includes(filter);
+          return data.HospDepartment.toLowerCase() == filter;
         };
         // Calculate the numerator value
         if (this.dataSource.filteredData.length > 0) {
+          this.dataSource.filteredData.forEach(element => {
+            this.admission_depts.push(element.HospDepartment);
+          });
+          this.admission_depts = this.removeDuplicates(this.admission_depts);
           this.numeratorValue = parseInt(this.dataSource.filteredData[0].Numerator, 10);
         } else {
           this.numeratorValue = 0; // Or handle it as needed
@@ -148,7 +154,9 @@ export class ReHospComponent implements OnInit {
       }
     });
   }
-
+  removeDuplicates<T>(array: T[]): T[] {
+    return Array.from(new Set(array));
+  }
   onSearch() {
     const measureType = this.form.get('measureType').value; // Accessing the measureType value
     const selectedyear = this.form.get('selectedyear').value; // Accessing the measureType value

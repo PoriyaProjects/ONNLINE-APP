@@ -83,6 +83,7 @@
                     <button mat-icon-button type="submit" class="send-btn" (click)="sendOneWayMessage()">
                         <mat-icon>send</mat-icon>
                     </button>
+                    <mat-progress-bar mode="query" *ngIf="loadingUnRegistered"></mat-progress-bar>
                 </div>
                 <div class="chat-container" #scrollTarget *ngIf="currentContact !== undefined">
                     <mat-spinner *ngIf="loadChat"></mat-spinner>
