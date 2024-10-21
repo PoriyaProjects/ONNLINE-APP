@@ -41,6 +41,7 @@ export class WhatsappDepartmentsDashboardComponent implements OnInit {
   @ViewChild('tooltipTemplate') tooltipTemplate: TemplateRef<any>;
   base64String: string | ArrayBuffer | null = '';
   _searchNewPatient: any;
+  loadingUnRegistered: boolean;
 
   constructor(
     private fb: FormBuilder,
@@ -54,8 +55,8 @@ export class WhatsappDepartmentsDashboardComponent implements OnInit {
 
   ngOnInit(): void {
     this.getPatientsForWhatsapp(1);
-    this.getHrWhatsAppUsers();
-    this.getHRWhatsAppServiceFixedFiles();
+    this.getDepartmentsWhatsAppUsers();
+    // this.getDepartmentsWhatsAppServiceFixedFiles();
     // this.getContactsAndConversations();
     this.currentContact = this.contacts[0];
     this.newMessage = this.fb.group({
@@ -157,6 +158,7 @@ export class WhatsappDepartmentsDashboardComponent implements OnInit {
   }
 
   searchNewPatient() {
+    this.loadingUnRegistered = true;
     this.http
       .post(environment.url + "selectDetailsFromNamer", {
         patientId: this._searchNewPatient
@@ -169,10 +171,11 @@ export class WhatsappDepartmentsDashboardComponent implements OnInit {
           LastName: patient.LastName,
           CellNumber: patient.PhoneNumber.replace('-', '')
         }
+        this.loadingUnRegistered = false;
       });
   }
 
-  async getHrWhatsAppUsers() {
+  async getDepartmentsWhatsAppUsers() {
     this.http
       .post(environment.url + "getDepartmentsWhatsAppUsers", {
         _user_name: this.user_name
@@ -193,7 +196,7 @@ export class WhatsappDepartmentsDashboardComponent implements OnInit {
             clearTimeout(interval);
           } else {
             console.log("Refreshing..");
-            this.getHrWhatsAppUsers();
+            this.getDepartmentsWhatsAppUsers();
           }
         }, 10000);
       });
@@ -227,7 +230,7 @@ export class WhatsappDepartmentsDashboardComponent implements OnInit {
             .subscribe((Response) => {
               if (Response["d"]) {
                 this.notification = "";
-                this.getHrWhatsAppUsers();
+                this.getDepartmentsWhatsAppUsers();
               }
               else alert("אירעה שגיאה בסיום שיחה");
             });
@@ -287,7 +290,7 @@ export class WhatsappDepartmentsDashboardComponent implements OnInit {
         })
         .subscribe((Response) => {
           if (Response["d"]) {
-            if(this.selectedFile) window.location.reload();
+            if (this.selectedFile) window.location.reload();
             this.currentContact.WhatsApp_Bot_Convesations.push({ Message_Text: this.selectedFile ? this.base64String : this.newMessage.controls['Message_Text'].value, From_ServiceEmployee: 'True', IfFileMessage: this.selectedFile ? 'True' : 'False' });
             this.newMessage.controls['Message_Text'].setValue('');
             this.getHRWhatsAppConversationsByIDFK(this.newMessage.value.EndUserIDFK);
@@ -317,9 +320,9 @@ export class WhatsappDepartmentsDashboardComponent implements OnInit {
     }
   }
 
-  getHRWhatsAppServiceFixedFiles() {
+  getDepartmentsWhatsAppServiceFixedFiles() {
     this.http
-      .post(environment.url + "GetHRWhatsAppServiceFixedFiles", {
+      .post(environment.url + "GetDepartmentsWhatsAppServiceFixedFiles", {
         _user_name: this.user_name
       })
       .subscribe((Response) => {
