@@ -185,14 +185,14 @@ export class WhatsappDepartmentsDashboardComponent implements OnInit {
         this.unAnsweredConversations_filter = this.unAnsweredConversations;
         if (this.currentContact !== undefined && this.currentContact.maxRow !== '') {
           this.currentContact = this.unAnsweredConversations.filter(x => x.Row_ID == this.currentContact.Row_ID)[0];
-          if (this.currentContact.Row_ID !== undefined) this.getHRWhatsAppConversationsByIDFK(this.currentContact.Row_ID);
+          if (this.currentContact.Row_ID !== undefined) this.getDepartmentsWhatsAppConversationsByIDFK(this.currentContact.Row_ID);
         }
         this.filteredOptions = this.users_filter.valueChanges.pipe(
           startWith(''),
           map(value => this._filter(value || '')),
         );
         let interval = setTimeout(() => {
-          if (this.router.url !== '/hr-dashboard') {
+          if (this.router.url !== '/departments-whatsapp') {
             clearTimeout(interval);
           } else {
             console.log("Refreshing..");
@@ -245,7 +245,7 @@ export class WhatsappDepartmentsDashboardComponent implements OnInit {
 
   }
 
-  async getHRWhatsAppConversationsByIDFK(row_id) {
+  async getDepartmentsWhatsAppConversationsByIDFK(row_id) {
     this.loadChat = true;
     this.http
       .post(environment.url + "GetDepartmentsWhatsAppConversationsByIDFK", {
@@ -276,7 +276,7 @@ export class WhatsappDepartmentsDashboardComponent implements OnInit {
     this.currentContact = contact;
     let check = this.checkIfContactHasConversation(contact);
     if (contact.Row_ID !== undefined) {
-      this.getHRWhatsAppConversationsByIDFK(contact.Row_ID);
+      this.getDepartmentsWhatsAppConversationsByIDFK(contact.Row_ID);
     }
   }
 
@@ -293,7 +293,9 @@ export class WhatsappDepartmentsDashboardComponent implements OnInit {
             if (this.selectedFile) window.location.reload();
             this.currentContact.WhatsApp_Bot_Convesations.push({ Message_Text: this.selectedFile ? this.base64String : this.newMessage.controls['Message_Text'].value, From_ServiceEmployee: 'True', IfFileMessage: this.selectedFile ? 'True' : 'False' });
             this.newMessage.controls['Message_Text'].setValue('');
-            this.getHRWhatsAppConversationsByIDFK(this.newMessage.value.EndUserIDFK);
+            setTimeout(() => {
+              this.getDepartmentsWhatsAppConversationsByIDFK(this.newMessage.value.EndUserIDFK);
+            }, 3000);
           } else {
             alert("Error")
           }
@@ -370,8 +372,8 @@ export class WhatsappDepartmentsDashboardComponent implements OnInit {
       const file_type = await this.detectFileType(base64Data);
       // Replace 'filename.pdf' with the desired file name
       let fileName = "";
-      if (file_type == 'application/pdf') fileName = 'HR_WhatsApp_Service_Media_File.pdf';
-      else fileName = 'HR_WhatsApp_Service_Media_File.png';
+      if (file_type == 'application/pdf') fileName = 'Inquiries_WhatsApp_Service_Media_File.pdf';
+      else fileName = 'Inquiries_WhatsApp_Service_Media_File.png';
 
       await this.convertBase64ToPDF(base64Data, fileName, file_type);
     } catch (error) {
