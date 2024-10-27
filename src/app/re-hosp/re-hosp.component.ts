@@ -134,12 +134,12 @@ export class ReHospComponent implements OnInit {
         this.dataSource = new MatTableDataSource<any>(records['d']);
         // Custom filter for the "name" field
         this.dataSource.filterPredicate = (data, filter: string): boolean => {
-          return data.HospDepartment.toLowerCase() == filter;
+          return data.ReleaseDepartment.toLowerCase() == filter;
         };
         // Calculate the numerator value
         if (this.dataSource.filteredData.length > 0) {
           this.dataSource.filteredData.forEach(element => {
-            this.admission_depts.push(element.HospDepartment);
+            this.admission_depts.push(element.ReleaseDepartment);
           });
           this.admission_depts = this.removeDuplicates(this.admission_depts);
           this.numeratorValue = parseInt(this.dataSource.filteredData[0].Numerator, 10);
