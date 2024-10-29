@@ -3,7 +3,7 @@ import { Component, OnInit, TemplateRef, ViewChild } from '@angular/core';
 import { FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
 import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { Router } from '@angular/router';
-import { DatePipe } from '@angular/common';
+import { AsyncPipe, DatePipe } from '@angular/common';
 import {
   MatSnackBar,
   MatSnackBarHorizontalPosition,
@@ -12,6 +12,8 @@ import {
 import { environment } from 'src/environments/environment';
 import { FillSurveyComponent } from 'src/app/fill-survey/fill-survey.component';
 import { MatTableDataSource } from '@angular/material/table';
+import { Observable } from 'rxjs';
+import { map, startWith } from 'rxjs/operators';
 
 @Component({
   selector: 'app-employees-add-update',
@@ -34,8 +36,10 @@ export class EmployeesAddUpdateComponent implements OnInit {
   DepartmentsList = [];
   WorkPlacesList = [];
   actionColumns = [''];
+  previewImage: string | null = null;
   employee_change_history_list = new MatTableDataSource();
   managerType;
+  ImageToBase64: string;
   empType: string = "none";
   UserName = localStorage.getItem("loginUserName").toLowerCase();
   EmployeeExists: boolean;
@@ -45,17 +49,23 @@ export class EmployeesAddUpdateComponent implements OnInit {
   AcceptTerms: any;
   saveBtnWait: boolean = false;
   Api = environment.url;
+  filteredOptions: Observable<string[]>;
+  manfilter = new FormControl();
+  filteredOptions2: Observable<string[]>;
+  man2filter = new FormControl();
+  employees = [];
   @ViewChild('modalEmployeeHistory', { static: true }) modalEmployeeHistory: TemplateRef<any>;
 
   constructor(private _snackBar: MatSnackBar,
     public dialog: MatDialogRef<EmployeesAddUpdateComponent>,
     public dialog2: MatDialog,
-    private router: Router,
     private http: HttpClient,
     private formBuilder: FormBuilder
   ) { }
 
   ngOnInit(): void {
+    this.getImageUrl(this.employee.EmployeeID);
+    this.getEmployeesList();
     let RankID = this.employee.RankID;
     let DepartnentCode = this.employee.DepartnentCode;
     let WorkPlaceID = this.employee.WorkPlaceID;
@@ -84,6 +94,7 @@ export class EmployeesAddUpdateComponent implements OnInit {
       Email: new FormControl(this.employee.Email, null),
       PersonalEmail: new FormControl(this.employee.PersonalEmail, null),
       CellNumber: new FormControl(this.employee.CellNumber, [Validators.required, Validators.pattern("[0-9 ]{10}")]),
+      Address: new FormControl(this.employee.Address, null),
       // KupaID: new FormControl(this.employee.KupaID, null),
       // KupaName: new FormControl(this.employee.KupaName, null),
       DateOfBirth: new FormControl(this.employee.DateOfBirth, [Validators.required]),
@@ -138,6 +149,8 @@ export class EmployeesAddUpdateComponent implements OnInit {
       ApprovedToBlossom: new FormControl(this.employee.ApprovedToBlossom, null),
       AcceptTerms: new FormControl(this.employee.AcceptTerms, null),
       Toranot: new FormControl(this.employee.Toranot, null),
+      ManagerID1: new FormControl(this.employee.ManagerID1.id, null),
+      ManagerID2: new FormControl(this.employee.ManagerID2.id, null),
       JcpFromDate: new FormControl(this.employee.JcpFromDate, null),
       JcpToDate: new FormControl(this.employee.JcpToDate, null),
     });
@@ -157,6 +170,64 @@ export class EmployeesAddUpdateComponent implements OnInit {
     this.getEmployeesBlossomSektorList();
     this.getEmployeeDepartmentList();
     this.getUserName(this.employee.Email);
+
+    this.filteredOptions = this.manfilter.valueChanges
+      .pipe(
+        startWith(''),
+        map(value => this._filter1(value))
+      );
+    this.filteredOptions2 = this.man2filter.valueChanges
+      .pipe(
+        startWith(''),
+        map(value => this._filter2(value))
+      );
+  }
+
+  private _filter1(value: any): string[] {
+    const filterValue1 = value;
+    // let manager: any = this.employees.filter(t => t.firstname === filterValue1);
+    if (value != "" && value != undefined) {
+      if (value.id != undefined) this.employeeWorkDetails.controls['ManagerID1'].setValue(value);
+    }
+    return this.employees.filter(option => option.firstname.includes(filterValue1));
+  }
+
+  private _filter2(value: any): string[] {
+    const filterValue2 = value;
+    // let manager: any = this.employees.filter(t => t.firstname === filterValue2);
+    if (value != "" && value != undefined) {
+      if (value.id != undefined) this.employeeWorkDetails.controls['ManagerID2'].setValue(value);
+    }
+    return this.employees.filter(option => option.firstname.includes(filterValue2));
+  }
+
+  displayFn(user: any): string {
+    return user && user.firstname ? user.firstname : "";
+  }
+
+  displayFn2(user: any): string {
+    return user && user.firstname ? user.firstname : "";
+  }
+
+  getEmployeesList() {
+    this.http
+      .post(this.Api + "GetUsersForInquiries", {
+      })
+      .subscribe((Response) => {
+        let all_users_filter = Response["d"];
+        all_users_filter.forEach(element => {
+          this.employees.push({
+            firstname: element.firstname + " " + element.lastname,
+            id: element.id,
+            email: element.email,
+            doc: element.DocLicence,
+            derug: element.derug,
+            ADUserName: element.ADUserName.toLowerCase()
+          });
+        });
+        this.manfilter.setValue(this.employees.filter(t => t.id === this.employee.ManagerID1.id)[0]);
+        this.man2filter.setValue(this.employees.filter(t => t.id === this.employee.ManagerID2.id)[0]);
+      });
   }
 
   switchHTOK() {
@@ -181,6 +252,24 @@ export class EmployeesAddUpdateComponent implements OnInit {
       this._switchBlossom = "0";
       this.employeeWorkDetails.controls['ApprovedToBlossom'].setValue(this._switchBlossom);
     }
+  }
+
+  getImageUrl(emp_id: string) {
+    this.http
+      .post(this.Api + "ImageToBase64", {
+        emp_id: emp_id
+      })
+      .subscribe((Response) => {
+        this.ImageToBase64 = Response['d'];
+      });
+  }
+
+  togglePreview() {
+    this.previewImage = `data:image/jpeg;base64,${this.ImageToBase64}`;
+  }
+
+  closePreview() {
+    this.previewImage = null;
   }
 
   goToSignForm() {
@@ -351,6 +440,7 @@ export class EmployeesAddUpdateComponent implements OnInit {
               Email: new FormControl(this.employee.Email, null),
               PersonalEmail: new FormControl(this.employee.PersonalEmail, null),
               CellNumber: new FormControl(this.employee.CellNumber, [Validators.required, Validators.pattern("[0-9 ]{10}")]),
+              Address: new FormControl(this.employee.Address, null),
               // KupaID: new FormControl(this.employee.KupaID, null),
               // KupaName: new FormControl(this.employee.KupaName, null),
               DateOfBirth: new FormControl(this.employee.DateOfBirth, [Validators.required]),
@@ -403,6 +493,8 @@ export class EmployeesAddUpdateComponent implements OnInit {
               ApprovedToBlossom: new FormControl(this.employee.ApprovedToBlossom, null),
               AcceptTerms: new FormControl(this.employee.AcceptTerms, null),
               Toranot: new FormControl(this.employee.Toranot, null),
+              ManagerID1: new FormControl(this.employee.ManagerID1, null),
+              ManagerID2: new FormControl(this.employee.ManagerID2, null),
               JcpFromDate: new FormControl(this.employee.JcpFromDate, null),
               JcpToDate: new FormControl(this.employee.JcpToDate, null),
             });

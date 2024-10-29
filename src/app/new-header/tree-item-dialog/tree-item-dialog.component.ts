@@ -114,21 +114,23 @@ export class TreeItemDialogComponent implements OnInit {
   }
 
   private _filter(value: any): string[] {
-    const filterValue2 = value;
-    if (filterValue2.EmployeeID !== undefined) {
-      this._userLinks.controls['LinkRequestedIDFK'].setValue(this.reqfilter.value);
+    const filterValue1 = value;
+    // let manager: any = this.employees.filter(t => t.firstname === filterValue1);
+    if (value != "" && value != undefined) {
+      if (value.EmployeeID != undefined) this._userLinks.controls['LinkRequestedIDFK'].setValue(value);
     }
-    return this.employees.filter(option => option.FirstName.includes(filterValue2));
+    return this.employees.filter(option => option.FirstName.includes(filterValue1));
   }
 
   private _filter2(value: any): string[] {
     const filterValue2 = value;
-    if (filterValue2.EmployeeID !== undefined) {
-      this._userLinks.controls['LinkDoingIDFK'].setValue(this.dofilter.value);
+    // let manager: any = this.employees.filter(t => t.firstname === filterValue2);
+    if (value != "" && value != undefined) {
+      if (value.EmployeeID != undefined) this._userLinks.controls['LinkDoingIDFK'].setValue(value);
     }
     return this.employees.filter(option => option.FirstName.includes(filterValue2));
   }
-
+  
   displayFn(usr: any): string {
     return usr && usr.FirstName ? usr.FirstName : "";
   }
