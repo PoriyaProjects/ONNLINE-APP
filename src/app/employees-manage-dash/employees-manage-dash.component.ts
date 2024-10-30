@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild } from '@angular/core';
+import { Component, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { FormBuilder, FormControl, FormGroup } from '@angular/forms';
 import { HttpClient } from "@angular/common/http";
 import { MatDialog } from '@angular/material/dialog';
@@ -15,12 +15,12 @@ import { EmployeesUpdateManagersComponent } from './employees-update-managers/em
   templateUrl: './employees-manage-dash.component.html',
   styleUrls: ['./employees-manage-dash.component.css']
 })
-export class EmployeesManageDashComponent implements OnInit {
+export class EmployeesManageDashComponent implements OnInit, OnDestroy {
 
   TABLE_DATA: any[] = [];
   TABLE_DATAExcel: any[] = [];
   displayedColumns: string[] = [
-    'EmployeeID', 'FirstName', 'LastName', 'DepartnentDescripton', 'FunctionDescription', 'CellNumber', 'Gender', 'DateOfBirth', 'Email'
+    'Image', 'EmployeeID', 'FirstName', 'LastName', 'DepartnentDescripton', 'FunctionDescription', 'CellNumber', 'Gender', 'DateOfBirth', 'Email'
   ];
   dataSource = new MatTableDataSource(this.TABLE_DATA);
   dataSourceExcel = new MatTableDataSource(this.TABLE_DATAExcel);
@@ -69,6 +69,23 @@ export class EmployeesManageDashComponent implements OnInit {
     }
   }
 
+  ngOnDestroy(): void {
+    try {
+      this.all_employees?.forEach(subscription => subscription.unsubscribe());
+      this.DepartmentsList?.forEach(subscription => subscription.unsubscribe());
+      this.FunctionsList?.forEach(subscription => subscription.unsubscribe());
+      this.SektorsList?.forEach(subscription => subscription.unsubscribe());
+      this.WorkPlacesList?.forEach(subscription => subscription.unsubscribe());
+    } catch (err) {
+      console.error('Error unsubscribing:', err);
+    }
+  }
+
+  getEmployeeImage(employee_id) {
+    // let extention = 'jpg';
+    return `http://srv-apps-prod/Images/${employee_id}.jpg`
+  }
+
   getEmployee(): any {
     return this.employee = {
       RowID: "",
@@ -82,6 +99,7 @@ export class EmployeesManageDashComponent implements OnInit {
       DepartnentCode: "",
       DepartnentDescripton: "",
       JobTitleID: "",
+      Image: "",
       EmployeeID: "",
       FirstName: "",
       FirstNameEng: "",
