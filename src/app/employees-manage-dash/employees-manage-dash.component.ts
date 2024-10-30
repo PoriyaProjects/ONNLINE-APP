@@ -82,9 +82,16 @@ export class EmployeesManageDashComponent implements OnInit, OnDestroy {
   }
 
   getEmployeeImage(employee_id) {
-    // let extention = 'jpg';
-    return `http://srv-apps-prod/Images/${employee_id}.jpg`
+    const img = `http://srv-apps-prod/Images/${employee_id}.jpg`;
+    return img;
   }
+
+  // Handles the error event for a corrupt or missing image
+  // onImageError(event: Event, id): void {
+  //   console.log(id);
+  //   const element = event.target as HTMLImageElement;
+  //   element.src = 'http://srv-apps-prod/Images/default.jpg'; // Fallback image URL
+  // }
 
   getEmployee(): any {
     return this.employee = {
