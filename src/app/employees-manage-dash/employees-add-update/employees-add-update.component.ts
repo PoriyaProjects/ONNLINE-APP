@@ -15,6 +15,18 @@ import { MatTableDataSource } from '@angular/material/table';
 import { Observable } from 'rxjs';
 import { map, startWith } from 'rxjs/operators';
 
+export interface UsersEmployee {
+  id: string;
+  firstname: string;
+  lastname: string;
+  email: string;
+  derug: string;
+  InchargeComplaint: string;
+  isRead: string;
+  DocLicence: string;
+  ADUserName: string;
+}
+
 @Component({
   selector: 'app-employees-add-update',
   templateUrl: './employees-add-update.component.html',
@@ -150,8 +162,8 @@ export class EmployeesAddUpdateComponent implements OnInit {
       ApprovedToBlossom: new FormControl(this.employee.ApprovedToBlossom, null),
       AcceptTerms: new FormControl(this.employee.AcceptTerms, null),
       Toranot: new FormControl(this.employee.Toranot, null),
-      ManagerID1: new FormControl(this.employee.ManagerID1.id, null),
-      ManagerID2: new FormControl(this.employee.ManagerID2.id, null),
+      ManagerID1: new FormControl({id: this.employee.ManagerID1.id, firstname: "", lastname: "", ADUserName: ""}, null),
+      ManagerID2: new FormControl({id: this.employee.ManagerID2.id, firstname: "", lastname: "", ADUserName: ""}, null),
       JcpFromDate: new FormControl(this.employee.JcpFromDate, null),
       JcpToDate: new FormControl(this.employee.JcpToDate, null),
     });
@@ -220,9 +232,6 @@ export class EmployeesAddUpdateComponent implements OnInit {
           this.employees.push({
             firstname: element.firstname + " " + element.lastname,
             id: element.id,
-            email: element.email,
-            doc: element.DocLicence,
-            derug: element.derug,
             ADUserName: element.ADUserName.toLowerCase()
           });
         });
