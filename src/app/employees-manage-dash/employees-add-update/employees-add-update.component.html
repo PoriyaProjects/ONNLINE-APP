@@ -16,8 +16,8 @@
                         עם מערכות מידע</label>
                 </div>
                 <div class="col-2">
-                    <img src="data:image/jpeg;base64,{{ImageToBase64}}" *ngIf="ImageToBase64 != undefined" width="100"
-                        (click)="togglePreview()" style="cursor: pointer;" height="100" />
+                    <img src="http://srv-apps-prod/Images/{{employee.EmployeeID}}.jpg" width="100" alt="תמונת עובד"
+                        (click)="togglePreview()" style="cursor: pointer;border-radius: 40%" height="100" />
                     <div *ngIf="previewImage" class="image-preview-overlay" (click)="closePreview()">
                         <img [src]="previewImage" alt="Full Image" class="full-image" />
                     </div>

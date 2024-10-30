@@ -64,7 +64,7 @@ export class EmployeesAddUpdateComponent implements OnInit {
   ) { }
 
   ngOnInit(): void {
-    this.getImageUrl(this.employee.EmployeeID);
+    // this.getImageUrl(this.employee.EmployeeID);
     this.getEmployeesList();
     let RankID = this.employee.RankID;
     let DepartnentCode = this.employee.DepartnentCode;
@@ -95,6 +95,7 @@ export class EmployeesAddUpdateComponent implements OnInit {
       PersonalEmail: new FormControl(this.employee.PersonalEmail, null),
       CellNumber: new FormControl(this.employee.CellNumber, [Validators.required, Validators.pattern("[0-9 ]{10}")]),
       Address: new FormControl(this.employee.Address, null),
+      // Image: new FormControl(`http://srv-apps-prod/Images/${this.employee.EmployeeID}.jpg`, null),
       // KupaID: new FormControl(this.employee.KupaID, null),
       // KupaName: new FormControl(this.employee.KupaName, null),
       DateOfBirth: new FormControl(this.employee.DateOfBirth, [Validators.required]),
@@ -254,18 +255,18 @@ export class EmployeesAddUpdateComponent implements OnInit {
     }
   }
 
-  getImageUrl(emp_id: string) {
-    this.http
-      .post(this.Api + "ImageToBase64", {
-        emp_id: emp_id
-      })
-      .subscribe((Response) => {
-        this.ImageToBase64 = Response['d'];
-      });
-  }
+  // getImageUrl(emp_id: string) {
+  //   this.http
+  //     .post(this.Api + "ImageToBase64", {
+  //       emp_id: emp_id
+  //     })
+  //     .subscribe((Response) => {
+  //       this.ImageToBase64 = Response['d'];
+  //     });
+  // }
 
   togglePreview() {
-    this.previewImage = `data:image/jpeg;base64,${this.ImageToBase64}`;
+    this.previewImage = `http://srv-apps-prod/Images/${this.employee.EmployeeID}.jpg`;//this.employeePersonalDetails.controls['Image'].value;
   }
 
   closePreview() {
