@@ -165,6 +165,10 @@ export class WhatsappDepartmentsDashboardComponent implements OnInit {
       })
       .subscribe((Response) => {
         let patient = Response['d'];
+        if (patient.PhoneNumber == null) {
+          this.openSnackBar("תעודת זהות לא נמצאה");
+          return;
+        }
         this.currentContact = {
           FirstName: patient.FirstName,
           FatherName: patient.FatherName,
