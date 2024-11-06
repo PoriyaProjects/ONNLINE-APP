@@ -74,7 +74,7 @@ export class BoneMarrowComponent implements OnInit {
     }
     this.searchPatientProgressBar = false;
     this.http
-      .post(environment.url + "selectDetailsFromNamer", {
+      .post(environment.urlipracticom + "selectDetailsFromNamer", {
         patientId: passport
       })
       .subscribe((Response) => {

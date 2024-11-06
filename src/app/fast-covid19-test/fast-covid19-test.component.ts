@@ -438,7 +438,7 @@ export class FastCovid19TestComponent implements OnInit {
         $("#loader").removeClass("d-none");
         this.http
             .post(
-                environment.url + "selectDetailsFromNamerPatiantNumber",
+                environment.urlipracticom + "selectDetailsFromNamerPatiantNumber",
                // environment.url + "selectDetailsFromNamerPatiantNumber",
                 {
                     patientNumber: val,
@@ -506,7 +506,7 @@ Tel1*/
         $("#loader").removeClass("d-none");
         this.http
             .post(
-                environment.url + "selectDetailsFromNamer",
+                environment.urlipracticom + "selectDetailsFromNamer",
                 {
                     patientId: val,
                 }

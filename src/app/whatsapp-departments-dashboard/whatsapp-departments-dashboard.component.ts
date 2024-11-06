@@ -160,7 +160,7 @@ export class WhatsappDepartmentsDashboardComponent implements OnInit {
   searchNewPatient() {
     this.loadingUnRegistered = true;
     this.http
-      .post(environment.url + "selectDetailsFromNamer", {
+      .post(environment.urlipracticom + "selectDetailsFromNamer", {
         patientId: this._searchNewPatient
       })
       .subscribe((Response) => {
@@ -170,9 +170,9 @@ export class WhatsappDepartmentsDashboardComponent implements OnInit {
           return;
         }
         this.currentContact = {
-          FirstName: patient.FirstName,
-          FatherName: patient.FatherName,
-          LastName: patient.LastName,
+          FirstName: patient.FirstName.replace(/'/g, ''),
+          FatherName: patient.FatherName.replace(/'/g, ''),
+          LastName: patient.LastName.replace(/'/g, ''),
           CellNumber: patient.PhoneNumber.replace('-', '')
         }
         this.loadingUnRegistered = false;
