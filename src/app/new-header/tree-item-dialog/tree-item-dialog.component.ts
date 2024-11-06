@@ -42,7 +42,7 @@ export class TreeItemDialogComponent implements OnInit {
     private fb: FormBuilder) { }
 
   ngOnInit(): void {
-    if (this.user_depart != "u_it") this.sanitizedHtml = this.sanitizeHtml(this.data.LinkSubject, this.data.LinkRequestedIDFK.FirstName + ' ' + this.data.LinkRequestedIDFK.LastName);
+    if (this.user_depart != "u_it") this.sanitizedHtml = this.sanitizeHtml(this.data.LinkSubject, this.data.LinkDoingIDFK.FirstName + ' ' + this.data.LinkDoingIDFK.LastName);
     else {
       this.canEdit = true;
       this.getEmployeesList();
