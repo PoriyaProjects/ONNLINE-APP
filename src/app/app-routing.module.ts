@@ -259,7 +259,7 @@ const routes: Routes = [
     { path: "bedsore-dashboard", component: BedsoreDashboardComponent },
     { path: "patients-system-conflicts", component: PatientsSystemConflictsComponent },
     { path: "authorized", component: AuthorizedComponent },
-    { path: "suppliers", component: SupplierComponent }
+    { path: "suppliers", component: SupplierComponent },
     { path: "tree-item-dialog", component: TreeItemDialogComponent },
 
     { path: "suppliers", component: SupplierComponent },
