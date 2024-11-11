@@ -117,6 +117,7 @@ import { WorkerCasesComponent } from "./worker-cases/worker-cases.component";
 import { BedsoreDashboardComponent } from "./form-dashboard/bedsore-dashboard/bedsore-dashboard.component";
 import { AuthorizedComponent } from './authorized/authorized.component';
 import { SupplierComponent } from "./supplier/supplier.component";
+import { LabTestsComponent } from "./lab-tests/lab-tests.component";
 import { TreeItemDialogComponent } from "./new-header/tree-item-dialog/tree-item-dialog.component";
 
 
@@ -258,13 +259,10 @@ const routes: Routes = [
     {path : "WorkerCases" , component : WorkerCasesComponent },
     { path: "bedsore-dashboard", component: BedsoreDashboardComponent },
     { path: "patients-system-conflicts", component: PatientsSystemConflictsComponent },
-    { path: "authorized", component: AuthorizedComponent },
-    { path: "suppliers", component: SupplierComponent }
-    { path: "tree-item-dialog", component: TreeItemDialogComponent },
-
+    { path: "authorized", component: AuthorizedComponent },    
     { path: "suppliers", component: SupplierComponent },
-
-    { path: "tree-item-dialog", component: TreeItemDialogComponent }
+    { path: "tree-item-dialog", component: TreeItemDialogComponent },
+    { path: "LabTests", component: LabTestsComponent }
 
 
 ];

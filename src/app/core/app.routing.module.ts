@@ -126,6 +126,7 @@ import {EditOrAddWorkerCaseComponent} from '../worker-cases/edit-or-add-worker-c
 import {BedsoreDashboardComponent} from '../form-dashboard/bedsore-dashboard/bedsore-dashboard.component'
 import {AuthorizedComponent} from '../authorized/authorized.component'
 import { SupplierComponent } from '../supplier/supplier.component';
+import { LabTestsComponent } from '../lab-tests/lab-tests.component';
 
 
 const routes: Routes = [
@@ -258,7 +259,8 @@ const routes: Routes = [
   { path: "bedsore-dashboard", component: BedsoreDashboardComponent },
   {path : "Reporting" , component : ReportReportingComponent }, 
   {path : "authorized" , component : AuthorizedComponent },
-  { path: "suppliers", component: SupplierComponent } 
+  { path: "suppliers", component: SupplierComponent } ,
+  { path: "LabTests", component: LabTestsComponent }
   
 
 ];

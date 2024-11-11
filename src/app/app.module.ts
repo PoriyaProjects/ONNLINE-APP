@@ -232,6 +232,8 @@ import { SupplierComponent } from './supplier/supplier.component';
 import { EditOrAddSupplierComponent } from './supplier/edit-or-add-supplier/edit-or-add-supplier.component';
 import { TreeItemDialogComponent } from './new-header/tree-item-dialog/tree-item-dialog.component';
 import { AngularEditorModule } from '@kolkov/angular-editor';
+import { LabTestsComponent } from './lab-tests/lab-tests.component';
+import { EditOrAddLabTestsComponent } from './lab-tests/edit-or-add-lab-tests/edit-or-add-lab-tests.component';
 
 
 const maskConfig: Partial<IConfig> = {
@@ -416,7 +418,9 @@ const maskConfig: Partial<IConfig> = {
     AddEditAuthorizedComponent,
     SupplierComponent,
     EditOrAddSupplierComponent,
-    TreeItemDialogComponent
+    TreeItemDialogComponent,
+    LabTestsComponent,
+    EditOrAddLabTestsComponent
   ],
   imports: [    
     AngularEditorModule,
