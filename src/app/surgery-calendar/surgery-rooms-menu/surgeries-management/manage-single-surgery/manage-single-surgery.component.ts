@@ -50,14 +50,13 @@ export class ManageSingleSurgeryComponent implements OnInit {
   patientsList = [{
     PM_ROW_ID: "",
     PM_CASE_NUMBER: "",
-    PM_MOVE_DEPART_SEODE: "",
+    SurgeriesCalendarIDFK: "",
     PM_PATIENT_GENDER: "",
     PM_LAST_NAME: "",
     PM_FIRST_NAME: "",
     PM_DOB: "",
     PM_PATIENT_ID: "",
     RECORD_EXISTS: "",
-    ArrivalDate: "",
   }];
 
   ngOnInit(): void {
@@ -119,7 +118,7 @@ export class ManageSingleSurgeryComponent implements OnInit {
         PM_LAST_NAME: new FormControl(this.data.event.SurgeryPatientDetails.PM_LAST_NAME, Validators.required),
         PM_PATIENT_GENDER: new FormControl(this.data.event.SurgeryPatientDetails.PM_PATIENT_GENDER, null),
         PM_DOB: new FormControl(this.data.event.SurgeryPatientDetails.PM_DOB, null),
-        PM_MOVE_DEPART_SEODE: new FormControl(this.data.event.SurgeryPatientDetails.PM_MOVE_DEPART_SEODE, null),
+        SurgeriesCalendarIDFK: new FormControl(this.data.event.SurgeryPatientDetails.SurgeriesCalendarIDFK, null),
         RECORD_EXISTS: new FormControl(this.data.event.SurgeryPatientDetails.RECORD_EXISTS, null)
       }),
       SurgeryRequestDepartments: this.fb.group({
@@ -298,35 +297,35 @@ export class ManageSingleSurgeryComponent implements OnInit {
     }
   }
 
-  checkIfPatientExists() {
-    if (this.SurgeryFormGroup.value.SurgeryPatientDetails.PM_PATIENT_ID == "") {
-      this.openSnackBar("לא הקלדת ת.ז של מטופל");
-    } else {
-      this.http
-        .post(environment.url + "GetSurgeryCalendarPatientDetailsByIdNumber", {
-          IDNumber: this.SurgeryFormGroup.value.SurgeryPatientDetails.PM_PATIENT_ID
-        })
-        .subscribe((Response) => {
-          this.patientsList = Response["d"];
-          if (this.patientsList.length == 0) {
-            this.openSnackBar("מטופל לא נמצא, הקלד ידנית");
-          } else {
-            let patientDetails = {
-              PM_ROW_ID: this.patientsList[0].PM_ROW_ID,
-              PM_CASE_NUMBER: this.patientsList[0].PM_CASE_NUMBER,
-              PM_MOVE_DEPART_SEODE: this.patientsList[0].PM_MOVE_DEPART_SEODE,
-              PM_PATIENT_GENDER: this.patientsList[0].PM_PATIENT_GENDER,
-              PM_LAST_NAME: this.patientsList[0].PM_LAST_NAME,
-              PM_FIRST_NAME: this.patientsList[0].PM_FIRST_NAME,
-              PM_DOB: this.patientsList[0].PM_DOB,
-              PM_PATIENT_ID: this.patientsList[0].PM_PATIENT_ID,
-              RECORD_EXISTS: this.patientsList[0].RECORD_EXISTS,
-            }
-            this.SurgeryFormGroup.controls['SurgeryPatientDetails'].setValue(patientDetails);
-          }
-        });
-    }
-  }
+  // checkIfPatientExists() {
+  //   if (this.SurgeryFormGroup.value.SurgeryPatientDetails.PM_PATIENT_ID == "") {
+  //     this.openSnackBar("לא הקלדת ת.ז של מטופל");
+  //   } else {
+  //     this.http
+  //       .post(environment.url + "GetSurgeryCalendarPatientDetailsByIdNumber", {
+  //         IDNumber: this.SurgeryFormGroup.value.SurgeryPatientDetails.PM_PATIENT_ID
+  //       })
+  //       .subscribe((Response) => {
+  //         this.patientsList = Response["d"];
+  //         if (this.patientsList.length == 0) {
+  //           this.openSnackBar("מטופל לא נמצא, הקלד ידנית");
+  //         } else {
+  //           let patientDetails = {
+  //             PM_ROW_ID: this.patientsList[0].PM_ROW_ID,
+  //             PM_CASE_NUMBER: this.patientsList[0].PM_CASE_NUMBER,
+  //             PM_MOVE_DEPART_SEODE: this.patientsList[0].PM_MOVE_DEPART_SEODE,
+  //             PM_PATIENT_GENDER: this.patientsList[0].PM_PATIENT_GENDER,
+  //             PM_LAST_NAME: this.patientsList[0].PM_LAST_NAME,
+  //             PM_FIRST_NAME: this.patientsList[0].PM_FIRST_NAME,
+  //             PM_DOB: this.patientsList[0].PM_DOB,
+  //             PM_PATIENT_ID: this.patientsList[0].PM_PATIENT_ID,
+  //             RECORD_EXISTS: this.patientsList[0].RECORD_EXISTS,
+  //           }
+  //           this.SurgeryFormGroup.controls['SurgeryPatientDetails'].setValue(patientDetails);
+  //         }
+  //       });
+  //   }
+  // }
 
   checkAutoCompleteSelection() {
     if (this.surgeriesCtrl.value.S_ROW_ID == undefined) {

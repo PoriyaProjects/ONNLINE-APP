@@ -243,14 +243,14 @@
                     </div>
                 </div>
                 <div class="row-btn">
-                    <div class="exists-info" *ngIf="patientsList.length != 0 && patientsList[0].ArrivalDate != ''">
+                    <!-- <div class="exists-info" *ngIf="patientsList.length != 0 && patientsList[0].ArrivalDate != ''">
                         <h2>למטופל קיים רשומות!</h2><br>
                         <ul>
                             <li *ngFor="let patient of patientsList">תאריך: {{patient.ArrivalDate}}, חדר:
                                 {{patient.SurgeryRoom}}
                             </li>
                         </ul>
-                    </div>
+                    </div> -->
                     <div class="example-button-container">
                         <button mat-fab color="primary" matTooltip="שמירה" (click)="saveSurgeryDetails()"
                             aria-label="Example icon button with a save icon">
