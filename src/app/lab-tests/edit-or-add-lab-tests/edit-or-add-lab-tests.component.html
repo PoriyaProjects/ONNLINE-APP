@@ -1,9 +1,11 @@
-<form *ngIf="showForm" class="form text-right" [formGroup]="serverForm" dir="rtl" (ngSubmit)="onSubmit()">
-    <h2 mat-dialog-title *ngIf="data.element.RowID != '0'">
+<form id="labTests" *ngIf="showForm" class="form text-right" [formGroup]="serverForm" dir="rtl" (ngSubmit)="onSubmit()">
+    <h2 mat-dialog-title *ngIf="data.element.RowID != '0'  && !disableInputs">
         עריכת בדיקה: {{ data.element.TestCode }} - {{data.element.TestName_1}}
     </h2>
-
-    <h2 mat-dialog-title *ngIf="data.element.RowID == '0'">
+    <h2 mat-dialog-title *ngIf="disableInputs">
+        בדיקה: {{ data.element.TestCode }} - {{data.element.TestName_1}}
+    </h2>
+    <h2 mat-dialog-title *ngIf="data.element.RowID == '0' && !disableInputs">
         הוספת בדיקה
     </h2>
     <mat-dialog-content class="mat-typography text-right" dir="rtl">
@@ -78,17 +80,6 @@
                     </mat-form-field>
                 </div>
             </div>            
-        
-            <div class="col">
-                <div class="form-group">
-                    <mat-form-field>
-                        <input matInput autocomplete="off" class="form-control" placeholder="תנאי לקיחה ושינוע"
-                            formControlName="PickUpDeliveryConditions" type="text" />
-                    </mat-form-field>
-                </div>
-            </div>
-        </div>
-        <div class="row text-right" dir="rtl">
             <div class="col">
                 <div class="form-group">
                     <mat-form-field>
@@ -96,7 +87,11 @@
                             formControlName="LabTestTimeArrival" type="text" />
                     </mat-form-field>
                 </div>
-            </div>            
+            </div>    
+            
+        </div>
+        <div class="row text-right" dir="rtl">
+        
             <div class="col">
                 <div class="form-group">
                     <mat-form-field>
@@ -105,16 +100,8 @@
                     </mat-form-field>
                 </div>
             </div>            
-            <div class="col">
-                <div class="form-group">
-                    <mat-form-field>
-                        <input matInput autocomplete="off" class="form-control" placeholder="שעות פעילות מעבדה מבצעת/ טלפון"
-                            formControlName="LabHours" type="text" />
-                    </mat-form-field>
-                </div>
-            </div>            
-        </div>
-        <div class="row text-right" dir="rtl">
+               
+
             
             <div class="col">
                 <div class="form-group">
@@ -124,14 +111,32 @@
                     </mat-form-field>
                 </div>
             </div>  
+        </div>
+        <div class="row text-right" dir="rtl">
             <div class="col">
                 <div class="form-group">
                     <mat-form-field>
                         <textarea matInput autocomplete="off" class="form-control" placeholder="הערות למעבדה"
-                            formControlName="LabNotes" rows="4"></textarea>
+                            formControlName="LabNotes" rows="5"></textarea>
                     </mat-form-field>
                 </div>
             </div>  
+            <div class="col">
+                <div class="form-group">
+                    <mat-form-field>
+                        <textarea matInput autocomplete="off" class="form-control" placeholder="תנאי לקיחה ושינוע"
+                            formControlName="PickUpDeliveryConditions" rows="5"></textarea>
+                    </mat-form-field>
+                </div>
+            </div>
+            <div class="col">
+                <div class="form-group">
+                    <mat-form-field>
+                        <textarea matInput autocomplete="off" class="form-control" placeholder="שעות פעילות מעבדה מבצעת/ טלפון"
+                            formControlName="LabHours" type="text"  rows="5"></textarea>
+                    </mat-form-field>
+                </div>
+            </div>        
         </div>
         <div class="row text-right" dir="rtl">        
             <div class="col">
@@ -161,8 +166,12 @@
         <input type="hidden" formControlName="UserInsert">
         <input type="hidden" formControlName="UserUpdate">
         <button mat-button mat-dialog-close>סגור</button>
-        <button mat-button color="primary" type="submit" cdkFocusInitial [class.spinner]="loading"
+        <button *ngIf="!disableInputs" mat-button color="primary" type="submit" cdkFocusInitial [class.spinner]="loading"
             [disabled]="loading">שמור</button>
     </mat-dialog-actions>
 </form>
-<img *ngIf="!showForm" src="assets/images/labTest.jpg">
+<img style="
+width: 72%;
+margin: auto;
+display: block;
+" *ngIf="!showForm" src="assets/images/labTest.jpg">

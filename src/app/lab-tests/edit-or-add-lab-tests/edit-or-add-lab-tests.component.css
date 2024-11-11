@@ -25,3 +25,14 @@
     text-align: right;
     width: 100%;
 }
+
+.mat-form-field-appearance-legacy .mat-form-field-label {
+    font-size: 2rem !important; 
+  }
+
+
+  #labTests .mat-form-field-appearance-legacy.mat-form-field-can-float.mat-form-field-should-float .mat-form-field-label, #labTests  .mat-form-field-appearance-legacy.mat-form-field-can-float .mat-input-server:focus+.mat-form-field-label-wrapper .mat-form-field-label {
+    transform: translateY(-1.4em) scale(1.15) perspective(107px) translateZ(-0.999px) !important;
+    -ms-transform: translateY(-1.4em) scale(1.15) !important;
+    width: 133.3333333333%;
+}

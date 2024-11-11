@@ -37,6 +37,7 @@ export interface Supplier {
 export interface DialogData {
   element: Supplier;
   showForm: boolean;
+  disable: boolean;
   dialog: MatDialog;
 }
 @Component({
@@ -59,6 +60,7 @@ export class EditOrAddLabTestsComponent implements OnInit {
   ]
   serverForm: FormGroup;
   loading: boolean = false;
+  disableInputs: boolean = false;
   constructor(
     @Inject(MAT_DIALOG_DATA) public data: DialogData,
     private formBuilder: FormBuilder,
@@ -80,13 +82,39 @@ export class EditOrAddLabTestsComponent implements OnInit {
     debugger
     if(this.data.showForm == false){
       this.showForm = this.data.showForm;
+    }else if (this.data.disable){
+      this.disableInputs = true;
+      this.serverForm = this.formBuilder.group({
+        RowID: [{ value: this.data.element.RowID, disabled: true }, null],
+        TestCode: [{ value: this.data.element.TestCode, disabled: true }, Validators.required],
+        TestName_1: [{ value: this.data.element.TestName_1, disabled: true }, Validators.required],
+        TestName_2: [{ value: this.data.element.TestName_2, disabled: true }, null],
+        TestShortName: [{ value: this.data.element.TestShortName, disabled: true }, null],
+        DoingLabName: [{ value: this.data.element.DoingLabName, disabled: true }, null],
+        SampleMaterial: [{ value: this.data.element.SampleMaterial, disabled: true }, null],
+        TypeTestOrSamplingTool: [{ value: this.data.element.TypeTestOrSamplingTool, disabled: true }, null],
+        SampleVolume: [{ value: this.data.element.SampleVolume, disabled: true }, null],
+        PickUpDeliveryConditions: [{ value: this.data.element.PickUpDeliveryConditions, disabled: true }, null],
+        LabTestTimeArrival: [{ value: this.data.element.LabTestTimeArrival, disabled: true }, null],
+        LabTestTime: [{ value: this.data.element.LabTestTime, disabled: true }, null],
+        LabHours: [{ value: this.data.element.LabHours, disabled: true }, null],
+        LabNotes: [{ value: this.data.element.LabNotes, disabled: true }, null],
+        TimeOfPerforming: [{ value: this.data.element.TimeOfPerforming, disabled: true }, null],
+        TestCat: [{ value: this.data.element.TestCat, disabled: true }, null],
+        StatusRow: [{ value: this.data.element.StatusRow, disabled: true }, null],
+        DateTimeInsert: [{ value: this.data.element.DateTimeInsert, disabled: true }, null],
+        UserInsert: [{ value: localStorage.getItem("loginUserName"), disabled: true }, null],
+        UserUpdate: [{ value: localStorage.getItem("loginUserName"), disabled: true }, null],
+        DateTimeUpdate: [{ value: this.data.element.DateTimeUpdate, disabled: true }, null],
+      });
+      
     }else{
       this.serverForm = this.formBuilder.group({
         RowID: [this.data.element.RowID, null],
         TestCode: [this.data.element.TestCode, Validators.required],
-        TestName_1: [this.data.element.TestName_1, null],
+        TestName_1: [this.data.element.TestName_1,  Validators.required],
         TestName_2: [this.data.element.TestName_2, null],
-        TestShortName: [this.data.element.TestShortName,  Validators.required],
+        TestShortName: [this.data.element.TestShortName, null],
         DoingLabName: [this.data.element.DoingLabName, null],
         SampleMaterial: [this.data.element.SampleMaterial, null],
         TypeTestOrSamplingTool: [this.data.element.TypeTestOrSamplingTool, null],
