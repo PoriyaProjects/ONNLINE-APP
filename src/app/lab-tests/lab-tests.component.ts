@@ -94,6 +94,8 @@ export class LabTestsComponent implements OnInit {
     // }, 2000);
     switch(localStorage.getItem("loginUserName").toLowerCase()){
       case "jmassalha":
+      case "thajouj":
+      case "massadi":
         this.AdminToEdit = true;
         break;
 
