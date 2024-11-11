@@ -93,7 +93,7 @@ export class LabTestsComponent implements OnInit {
     //   }
     // }, 2000);
     switch(localStorage.getItem("loginUserName").toLowerCase()){
-      case "jmassalha":
+      //case "jmassalha":
       case "thajouj":
       case "massadi":
         this.AdminToEdit = true;
@@ -148,6 +148,8 @@ export class LabTestsComponent implements OnInit {
       DateTimeUpdate: (new Date()).toString(),
     };
     const dialogRef = this.dialog.open(EditOrAddLabTestsComponent, {
+      
+      width: "100%",    
       data: {
         element: element,
         dialog: this.dialog,
@@ -161,7 +163,25 @@ export class LabTestsComponent implements OnInit {
   }
   editRow(element: Supplier): void {
     const dialogRef = this.dialog.open(EditOrAddLabTestsComponent, {
+      width: "100%", 
       data: {
+        
+        element: element,
+        dialog: this.dialog,
+      },
+    });
+
+    dialogRef.afterClosed().subscribe((result) => {
+      console.log(`Dialog result: ${result}`);
+      this.getTableFromServer();
+    });
+
+  }
+  showRow(element: Supplier): void {
+    const dialogRef = this.dialog.open(EditOrAddLabTestsComponent, {
+      width: "100%", 
+      data: {
+        disable: true,
         element: element,
         dialog: this.dialog,
       },
