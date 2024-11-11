@@ -1,32 +1,11 @@
 import { DatePipe } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
-import { Component, OnInit } from '@angular/core';
-import { FormBuilder, FormControl, FormGroup } from '@angular/forms';
+import { Component, OnInit, TemplateRef, ViewChild } from '@angular/core';
+import { FormBuilder } from '@angular/forms';
 import { environment } from 'src/environments/environment';
-import { Chart } from 'chart.js';
 import { MatTableDataSource } from '@angular/material/table';
-import { MatDatepickerModule } from '@angular/material/datepicker';
-import { MatInputModule } from '@angular/material/input';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { debugPort } from 'process';
-import { MatSelectModule } from '@angular/material/select';
-import { NgbDropdownModule } from '@ng-bootstrap/ng-bootstrap';
-import { MatDatepicker } from '@angular/material/datepicker';
 import * as XLSX from 'xlsx';
-import { cssNumber } from 'jquery';
-import { getYear } from 'date-fns';
-
-
-
-export interface ReHospMonitor {
-  CaseNumber: string;
-  FirstName: string;
-  LastName: string;
-  ID: string;
-  ReleaseDepartment: string;
-  HospDepartment: string;
-  Numerator: string;
-}
+import { MatDialog } from '@angular/material/dialog';
 
 @Component({
   selector: 'app-re-hosp',
@@ -36,22 +15,20 @@ export interface ReHospMonitor {
 
 export class ReHospComponent implements OnInit {
 
-
   isLoading = false;
   IsbTirm = false;
   selectedPeriodType: string = ''; // Stores the selected period type
   selectedQuarter: string = ''; // Stores the selected quarter
   quarters: any[] = []; // Stores the quarter options
   numeratorValue: number = 0;
-  //onesCount = { numerator: 0, denominator: 0 };
   percentage = 0;
   selectedColor: string = '';
-
-
-
+  admission_depts = [];
+  dialog_data: any;
   months: string[] = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
   selectedMonth: string = '';
   showDropdown: boolean = false;
+  @ViewChild('modalContent', { static: true }) modalContent: TemplateRef<any>;
 
   selectMonth(month: string) {
     this.selectedMonth = month;
@@ -61,7 +38,6 @@ export class ReHospComponent implements OnInit {
   toggleDropdown() {
     this.showDropdown = !this.showDropdown;
   }
-
 
   onPeriodTypeChange(): void {
     if (this.selectedPeriodType === 'quarterly') {
@@ -80,7 +56,6 @@ export class ReHospComponent implements OnInit {
     }
   }
 
-
   options = [
     { value: '', label: '' }
   ];
@@ -90,26 +65,25 @@ export class ReHospComponent implements OnInit {
     this.selectedValue = value;
   }
 
-
-  dataSource = new MatTableDataSource<ReHospMonitor>();
-
-
-
+  dataSource = new MatTableDataSource<any>();
   displayedColumnReHosp: string[] = [
-  'CaseNumber',
-  'FirstName',
-  'LastName',
-  'ID',
-  'ReleaseDepartment',
-  'HospDepartment',
-  //'Numerator'
+    'CaseNumber',
+    'FirstName',
+    'LastName',
+    'ID',
+    'ReleaseDepartment',
+    'release_text',
+    'PM_LAST_ESHPOZE_DATE',
+    'HospDepartment',
+    'PM_MOVE_DATE',
+    'admission_text'
   ]
-
   form: any;
 
   constructor(
     private http: HttpClient,
     private fb: FormBuilder,
+    public dialog: MatDialog,
     private datePipe: DatePipe,
   ) {
     this.onPeriodTypeChange();
@@ -130,36 +104,48 @@ export class ReHospComponent implements OnInit {
       toDate: Date,
       quarterDate: Date
     });
-    console.log("init ReHosp");
   }
-  
+
+  handleDialog(row) {
+    this.dialog_data = row;
+    this.dialog.open(this.modalContent, {
+      width: '60%',
+      disableClose: false
+    });
+  }
+  applyFilter(event: any) {
+    const filterValue = event;//(event.target as HTMLInputElement).value;
+    this.dataSource.filter = filterValue.trim().toLowerCase();
+  }
   fetchReHospReport(date1: string, date2: string): void {
     this.dataSource.data = [];
     this.IsbTirm = true;
     this.isLoading = true; // Start loading
-    console.log("fetchReHospReport");
-  
+
     const url = `${environment.url}FetchReHospReport`;
     let data = {
       DateIn: date1,
-      DateOut: date2,
+      DateOut: date2
     };
-  
-    console.log(data.DateIn, data.DateOut);
-  
-    this.http.post<ReHospMonitor[]>(url, data).subscribe({
+
+    this.http.post(url, data).subscribe({
       next: (records: any) => {
-        console.log("data", records.d);
-        this.dataSource.data = records.d;
-  
+        this.admission_depts = [];
+        this.dataSource = new MatTableDataSource<any>(records['d']);
+        // Custom filter for the "name" field
+        this.dataSource.filterPredicate = (data, filter: string): boolean => {
+          return data.ReleaseDepartment.toLowerCase() == filter;
+        };
         // Calculate the numerator value
-        if (this.dataSource.data.length > 0) {
-          this.numeratorValue = parseInt(this.dataSource.data[0].Numerator, 10);
+        if (this.dataSource.filteredData.length > 0) {
+          this.dataSource.filteredData.forEach(element => {
+            this.admission_depts.push(element.ReleaseDepartment);
+          });
+          this.admission_depts = this.removeDuplicates(this.admission_depts);
+          this.numeratorValue = parseInt(this.dataSource.filteredData[0].Numerator, 10);
         } else {
           this.numeratorValue = 0; // Or handle it as needed
         }
-  
-        console.log(this.dataSource.data);
         this.isLoading = false; // Stop loading upon success
       },
       error: (error) => {
@@ -168,22 +154,16 @@ export class ReHospComponent implements OnInit {
       }
     });
   }
-  
-
-
-
-
-
+  removeDuplicates<T>(array: T[]): T[] {
+    return Array.from(new Set(array));
+  }
   onSearch() {
     const measureType = this.form.get('measureType').value; // Accessing the measureType value
-    console.log('Selected measure type:', measureType); // Log the selected measure type
     const selectedyear = this.form.get('selectedyear').value; // Accessing the measureType value
     this.ReHosp();
-
   }
 
   ReHosp() {
-    console.log("hi ... :)")
     this.dataSource.data = [];
     let quarterDate = this.form.get('quarterDate').value;
     let fromDate = this.form.get('fromDate').value;
@@ -191,74 +171,54 @@ export class ReHospComponent implements OnInit {
     let selectedPeriod = this.form.get('selectedPeriod').value;
     let EraChoosen = this.form.get('EraChoosen').value;
     let selectedYear = this.form.get('selectedyear').value; // Ensure this matches your form control name exactly
-
-   
-
     let dateNow = new Date();
 
-    if((!(toDate instanceof Date) &&  !(fromDate instanceof Date)) || (  (toDate instanceof Date) > (fromDate instanceof Date) ) ) {
+    if ((!(toDate instanceof Date) && !(fromDate instanceof Date)) || ((toDate instanceof Date) > (fromDate instanceof Date))) {
       alert("Please enter valid dates");
-      console.log("1ssad")
       return;
     }
-    if(!(toDate instanceof Date)){
-      console.log("yeo")
+    if (!(toDate instanceof Date)) {
       toDate = this.datePipe.transform(dateNow, 'yyyy-MM-dd');
     }
-
-
-
-      if(fromDate){
-        const formattedFromDate = this.datePipe.transform(fromDate, 'yyyy-MM-dd');
-        const formattedToDate = this.datePipe.transform(toDate, 'yyyy-MM-dd');
-        console.log(formattedFromDate, formattedToDate); // For debugging
-        this.fetchReHospReport(formattedFromDate, formattedToDate);
-
-      }else{
-        console.log("1ssad")
-        alert("Please enter valid dates");
-      }
-
-    
+    if (fromDate) {
+      const formattedFromDate = this.datePipe.transform(fromDate, 'yyyy-MM-dd');
+      const formattedToDate = this.datePipe.transform(toDate, 'yyyy-MM-dd');
+      this.fetchReHospReport(formattedFromDate, formattedToDate);
+    } else {
+      alert("Please enter valid dates");
+    }
   }
-
-
-
+  saveNote(note_text, row_id) {
+    this.http.post(environment.url + "SaveReHospNote", {
+      _id: row_id,
+      _note: note_text
+    }).subscribe(res => {
+      if (!res['d']) {
+        alert("תקלה בשמירה.");
+      }
+    });
+  }
   onClear() {
     this.dataSource.data = [];
   }
 
-
-
-
   exportexcel(): void {
-
-
-
     if (this.IsbTirm === true) {
       if (!this.dataSource || !this.dataSource.filteredData || this.dataSource.filteredData.length === 0) {
         alert('The data is empty!');
         return;
       }
-
       const dataToExport = this.dataSource.filteredData.map(item => {
         const itemCopy = { ...item };
         delete itemCopy['__type'];
         return itemCopy;
       });
-
       const ws: XLSX.WorkSheet = XLSX.utils.json_to_sheet(dataToExport);
       const wb: XLSX.WorkBook = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
       XLSX.writeFile(wb, "ReHosp.xlsx");
     }
-
-
-
     if (this.IsbTirm === false) {
-
     }
-
   }
-
 }

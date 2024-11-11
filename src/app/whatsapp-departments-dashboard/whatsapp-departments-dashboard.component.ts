@@ -25,7 +25,8 @@ export class WhatsappDepartmentsDashboardComponent implements OnInit {
   messages = [];
   users_filter = new FormControl('');
   filteredOptions: Observable<string[]>;
-
+  notification = "";
+  secondsLeft = 5;
   user_name = localStorage.getItem('loginUserName');
   @ViewChild('scrollTarget') scrollTarget: ElementRef;
   contacts = [];
@@ -40,6 +41,7 @@ export class WhatsappDepartmentsDashboardComponent implements OnInit {
   @ViewChild('tooltipTemplate') tooltipTemplate: TemplateRef<any>;
   base64String: string | ArrayBuffer | null = '';
   _searchNewPatient: any;
+  loadingUnRegistered: boolean;
 
   constructor(
     private fb: FormBuilder,
@@ -53,8 +55,8 @@ export class WhatsappDepartmentsDashboardComponent implements OnInit {
 
   ngOnInit(): void {
     this.getPatientsForWhatsapp(1);
-    this.getHrWhatsAppUsers();
-    this.getHRWhatsAppServiceFixedFiles();
+    this.getDepartmentsWhatsAppUsers();
+    // this.getDepartmentsWhatsAppServiceFixedFiles();
     // this.getContactsAndConversations();
     this.currentContact = this.contacts[0];
     this.newMessage = this.fb.group({
@@ -156,22 +158,28 @@ export class WhatsappDepartmentsDashboardComponent implements OnInit {
   }
 
   searchNewPatient() {
+    this.loadingUnRegistered = true;
     this.http
-      .post(environment.url + "selectDetailsFromNamer", {
+      .post(environment.urlipracticom + "selectDetailsFromNamer", {
         patientId: this._searchNewPatient
       })
       .subscribe((Response) => {
         let patient = Response['d'];
+        if (patient.PhoneNumber == null) {
+          this.openSnackBar("תעודת זהות לא נמצאה");
+          return;
+        }
         this.currentContact = {
-          FirstName: patient.FirstName,
-          FatherName: patient.FatherName,
-          LastName: patient.LastName,
+          FirstName: patient.FirstName.replace(/'/g, ''),
+          FatherName: patient.FatherName.replace(/'/g, ''),
+          LastName: patient.LastName.replace(/'/g, ''),
           CellNumber: patient.PhoneNumber.replace('-', '')
         }
+        this.loadingUnRegistered = false;
       });
   }
 
-  async getHrWhatsAppUsers() {
+  async getDepartmentsWhatsAppUsers() {
     this.http
       .post(environment.url + "getDepartmentsWhatsAppUsers", {
         _user_name: this.user_name
@@ -181,23 +189,35 @@ export class WhatsappDepartmentsDashboardComponent implements OnInit {
         this.unAnsweredConversations_filter = this.unAnsweredConversations;
         if (this.currentContact !== undefined && this.currentContact.maxRow !== '') {
           this.currentContact = this.unAnsweredConversations.filter(x => x.Row_ID == this.currentContact.Row_ID)[0];
-          if (this.currentContact.Row_ID !== undefined) this.getHRWhatsAppConversationsByIDFK(this.currentContact.Row_ID);
+          if (this.currentContact.Row_ID !== undefined) this.getDepartmentsWhatsAppConversationsByIDFK(this.currentContact.Row_ID);
         }
         this.filteredOptions = this.users_filter.valueChanges.pipe(
           startWith(''),
           map(value => this._filter(value || '')),
         );
         let interval = setTimeout(() => {
-          if (this.router.url !== '/hr-dashboard') {
+          if (this.router.url !== '/departments-whatsapp') {
             clearTimeout(interval);
           } else {
             console.log("Refreshing..");
-            this.getHrWhatsAppUsers();
+            this.getDepartmentsWhatsAppUsers();
           }
         }, 10000);
       });
   }
+  startCountdown() {
+    const interval = setInterval(() => {
+      this.secondsLeft--;
+      this.notification = `השיחה תיסגר בעוד ${this.secondsLeft} שניות`;
 
+      if (this.secondsLeft === 0) {
+        clearInterval(interval);
+        // בצע את הפעולה הרצויה לאחר סיום הספירה, לדוגמה:
+        console.log('השיחה נסגרה');
+        // this.closeCall(); // פונקציה לסגירת השיחה
+      }
+    }, 1000);
+  }
   endConversation(contact) {
     this.confirmationDialogService
       .confirm("נא לאשר..", "אתה מנסה לסיים את השיחה ? ")
@@ -206,12 +226,16 @@ export class WhatsappDepartmentsDashboardComponent implements OnInit {
         if (confirmed) {
           // remove the conversation chat from the request to avoid error maximum size request
           contact.WhatsApp_Bot_Convesations = contact.WhatsApp_Bot_Convesations.filter(x => x.IfFileMessage === "False");
+          this.startCountdown();
           this.http
             .post(environment.url + "EndDepartmentsWhatsAppConversation", {
               uncontact: contact
             })
             .subscribe((Response) => {
-              if (Response["d"]) this.getHrWhatsAppUsers();
+              if (Response["d"]) {
+                this.notification = "";
+                this.getDepartmentsWhatsAppUsers();
+              }
               else alert("אירעה שגיאה בסיום שיחה");
             });
         } else {
@@ -225,7 +249,7 @@ export class WhatsappDepartmentsDashboardComponent implements OnInit {
 
   }
 
-  async getHRWhatsAppConversationsByIDFK(row_id) {
+  async getDepartmentsWhatsAppConversationsByIDFK(row_id) {
     this.loadChat = true;
     this.http
       .post(environment.url + "GetDepartmentsWhatsAppConversationsByIDFK", {
@@ -256,7 +280,7 @@ export class WhatsappDepartmentsDashboardComponent implements OnInit {
     this.currentContact = contact;
     let check = this.checkIfContactHasConversation(contact);
     if (contact.Row_ID !== undefined) {
-      this.getHRWhatsAppConversationsByIDFK(contact.Row_ID);
+      this.getDepartmentsWhatsAppConversationsByIDFK(contact.Row_ID);
     }
   }
 
@@ -270,9 +294,12 @@ export class WhatsappDepartmentsDashboardComponent implements OnInit {
         })
         .subscribe((Response) => {
           if (Response["d"]) {
-            window.location.reload();
+            if (this.selectedFile) window.location.reload();
             this.currentContact.WhatsApp_Bot_Convesations.push({ Message_Text: this.selectedFile ? this.base64String : this.newMessage.controls['Message_Text'].value, From_ServiceEmployee: 'True', IfFileMessage: this.selectedFile ? 'True' : 'False' });
             this.newMessage.controls['Message_Text'].setValue('');
+            setTimeout(() => {
+              this.getDepartmentsWhatsAppConversationsByIDFK(this.newMessage.value.EndUserIDFK);
+            }, 3000);
           } else {
             alert("Error")
           }
@@ -281,16 +308,18 @@ export class WhatsappDepartmentsDashboardComponent implements OnInit {
   }
 
   sendOneWayMessage() {
-    if (this.newMessage.controls['Message_Text'].value.trim() !== '') {
+    if (this.newMessage.controls['Message_Text'].value.trim() !== '' || this.base64String.toString() !== '') {
       this.newMessage.controls['ServiceEmployeeIDFK'].setValue(this.currentContact.CellNumber);
       this.newMessage.controls['EndUserIDFK'].setValue(this.currentContact.FirstName + ' ' + this.currentContact.LastName);
       this.http
         .post(environment.url + "SendDepartmentsWhatsAppMessageToUserOneWay", {
-          messageForm: this.newMessage.value
+          messageForm: this.newMessage.value,
+          file: this.base64String == "" ? "" : this.base64String.toString().split(',')[1]
         })
         .subscribe((Response) => {
           if (Response["d"]) {
             alert("הודעה נשלחה בהצלחה");
+            if (this.selectedFile) window.location.reload();
             this.newMessage.controls['Message_Text'].setValue('');
           } else {
             alert("הודעה לא נשלחה עקב תקלה");
@@ -299,9 +328,9 @@ export class WhatsappDepartmentsDashboardComponent implements OnInit {
     }
   }
 
-  getHRWhatsAppServiceFixedFiles() {
+  getDepartmentsWhatsAppServiceFixedFiles() {
     this.http
-      .post(environment.url + "GetHRWhatsAppServiceFixedFiles", {
+      .post(environment.url + "GetDepartmentsWhatsAppServiceFixedFiles", {
         _user_name: this.user_name
       })
       .subscribe((Response) => {
@@ -349,8 +378,8 @@ export class WhatsappDepartmentsDashboardComponent implements OnInit {
       const file_type = await this.detectFileType(base64Data);
       // Replace 'filename.pdf' with the desired file name
       let fileName = "";
-      if (file_type == 'application/pdf') fileName = 'HR_WhatsApp_Service_Media_File.pdf';
-      else fileName = 'HR_WhatsApp_Service_Media_File.png';
+      if (file_type == 'application/pdf') fileName = 'Inquiries_WhatsApp_Service_Media_File.pdf';
+      else fileName = 'Inquiries_WhatsApp_Service_Media_File.png';
 
       await this.convertBase64ToPDF(base64Data, fileName, file_type);
     } catch (error) {

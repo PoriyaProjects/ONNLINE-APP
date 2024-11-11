@@ -5,7 +5,7 @@
                 <mat-icon>cancel</mat-icon>
             </button>
             <div class="row">
-                <div class="col-10">
+                <div class="col-8">
                     <label style="font-size: 35px;"
                         *ngIf="!EmployeeExists && managerType != 'stager'">{{employeePersonalDetails.controls['FirstName'].value}}
                         {{employeePersonalDetails.controls['LastName'].value}} -
@@ -14,6 +14,13 @@
                     <label style="font-size: 40px;color: red;" *ngIf="EmployeeExists">העובד
                         כבר קיים במערכת - ליצור קשר
                         עם מערכות מידע</label>
+                </div>
+                <div class="col-2">
+                    <img src="http://srv-apps-prod/Images/{{employee.EmployeeID}}.jpg" width="100" alt="תמונת עובד"
+                        (click)="togglePreview()" style="cursor: pointer;border-radius: 40%" height="100" />
+                    <div *ngIf="previewImage" class="image-preview-overlay" (click)="closePreview()">
+                        <img [src]="previewImage" alt="Full Image" class="full-image" />
+                    </div>
                 </div>
                 <div class="col-2">
                     <button class="submitBtn" (click)="duplicateToNewEmployee()" matTooltip="שכפול" color="primary"
@@ -89,6 +96,10 @@
                                     <mat-datepicker-toggle matSuffix [for]="picker">
                                     </mat-datepicker-toggle>
                                     <mat-datepicker #picker></mat-datepicker>
+                                </mat-form-field></div>
+                            <div class="col-3"><mat-form-field class="example-full-width">
+                                    <mat-label>כתובת</mat-label>
+                                    <input matInput matInput placeholder="כתובת" formControlName="Address">
                                 </mat-form-field></div>
                             <div class="col-3"><mat-form-field>
                                     <mat-label>קופת
@@ -279,6 +290,30 @@
                             </div>
                             <div class="col-3">
                                 <mat-form-field>
+                                    <mat-label>מנהל ישיר</mat-label>
+                                    <input type="text" aria-label="man" matInput [formControl]="manfilter"
+                                        [matAutocomplete]="auto">
+                                    <mat-autocomplete #auto="matAutocomplete" [displayWith]="displayFn">
+                                        <mat-option *ngFor="let man of filteredOptions | async" [value]="man">
+                                            {{man.firstname}}
+                                        </mat-option>
+                                    </mat-autocomplete>
+                                </mat-form-field>
+                            </div>
+                            <div class="col-3">
+                                <mat-form-field>
+                                    <mat-label>מנהל עקיף</mat-label>
+                                    <input type="text" aria-label="man2" matInput [formControl]="man2filter"
+                                        [matAutocomplete]="auto2">
+                                    <mat-autocomplete #auto2="matAutocomplete" [displayWith]="displayFn2">
+                                        <mat-option *ngFor="let man2 of filteredOptions2 | async" [value]="man2">
+                                            {{man2.firstname}}
+                                        </mat-option>
+                                    </mat-autocomplete>
+                                </mat-form-field>
+                            </div>
+                            <div class="col-3">
+                                <mat-form-field>
                                     <input matInput placeholder="הערות" formControlName="Remarks">
                                 </mat-form-field>
                             </div>
@@ -463,9 +498,9 @@
 </form>
 
 <ng-template #modalEmployeeHistory let-close="close" dir="rtl">
-    <button type="button" class="close" matTooltip="סגירה" aria-label="Close" (click)="closeModal()">
+    <!-- <button type="button" class="close" matTooltip="סגירה" aria-label="Close" (click)="closeModal()">
         <span aria-hidden="true">&times;</span>
-    </button>
+    </button> -->
 
     <div class="mat-card mt-5">
         <!-- Dynamic Table -->

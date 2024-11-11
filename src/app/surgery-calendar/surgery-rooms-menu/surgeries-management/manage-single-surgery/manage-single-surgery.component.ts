@@ -18,7 +18,6 @@ export class ManageSingleSurgeryComponent implements OnInit {
 
   horizontalPosition: MatSnackBarHorizontalPosition = 'start';
   verticalPosition: MatSnackBarVerticalPosition = 'bottom';
-  // surgeonCtrl = new FormControl('');
   surgeonsList: any[] = [];
   filteredOptions: Observable<any[]>;
   surgeriesCtrl = new FormControl('');
@@ -30,7 +29,6 @@ export class ManageSingleSurgeryComponent implements OnInit {
   filteredOptionssurgeries: Observable<any[]>;
   filteredOptionsservices: Observable<any[]>;
   @ViewChild('modalContent', { static: true }) modalContent: TemplateRef<any>;
-  // @ViewChild('toolsModal', { static: true }) toolsModal: TemplateRef<any>;
   displayedColumns = ['code', 'name', 'side'];
   displayedColumns1 = ['name'];
   displayedColumns2 = ['name', 'code', 'tool'];
@@ -64,15 +62,8 @@ export class ManageSingleSurgeryComponent implements OnInit {
 
   ngOnInit(): void {
     this.getSurgeryDepartmentsList();
-    this.buildFormGroup(this.data.action);
+    this.buildFormGroup();
     this.SurgeryRoomsList = this.data.event.RoomsList;
-    // this.filteredOptions = this.surgeonCtrl.valueChanges.pipe(
-    //   startWith(''),
-    //   map(value => {
-    //     const name = typeof value === 'string' ? value : value;
-    //     return name ? this._filter(name as string) : this.surgeonsList.slice();
-    //   }),
-    // );
     this.filteredOptionssurgeries = this.surgeriesCtrl.valueChanges.pipe(
       startWith(''),
       map(value => {
@@ -118,123 +109,53 @@ export class ManageSingleSurgeryComponent implements OnInit {
     return this.servicesList.filter(option => option.S_SERVICE_VAL.toLowerCase().includes(filterValue));
   }
 
-  buildFormGroup(action) {
-    if (action == "New") {
-      this.SurgeryFormGroup = this.fb.group({
-        SurgeryPatientDetails: this.fb.group({
-          PM_ROW_ID: new FormControl('', null),
-          PM_PATIENT_ID: new FormControl('', Validators.required),
-          PM_CASE_NUMBER: new FormControl('', null),
-          PM_FIRST_NAME: new FormControl('', Validators.required),
-          PM_LAST_NAME: new FormControl('', Validators.required),
-          PM_PATIENT_GENDER: new FormControl('', null),
-          PM_DOB: new FormControl('', null),
-          PM_MOVE_DEPART_SEODE: new FormControl('', null),
-          RECORD_EXISTS: new FormControl('', null)
-        }),
-        SurgeryRequestDepartments: this.fb.group({
-          SD_Priority: new FormControl('', null),
-          SD_ROW_ID: new FormControl('', null),
-          S_DEPARTMENT: new FormControl('', Validators.required),
-          S_DEPARTMENT_NAME: new FormControl('', null),
-          S_DEPARTMENT_SHORT_DESC: new FormControl('', null)
-        }),
-        SurgeriesCalendar_Susgeries: this.fb.group({
-          Services: [{
-            Row_ID: new FormControl('', null),
-            Surgery_Name: new FormControl('', null),
-            Surgery_Code: new FormControl('', null),
-            Side: new FormControl('', null),
-            SurgeriesCalendarIDFK: new FormControl('', null),
-            ServiceNameIDFK: new FormControl('', null),
-            Duration: new FormControl('', null)
-          }]
-        }),
-        SurgeriesCalendar_Service: this.fb.group({
-          Services: [{
-            Row_ID: new FormControl('', null),
-            ServiceNameIDFK: new FormControl('', null),
-            ServiceCode: new FormControl('', null),
-            Service_Name: new FormControl('', null),
-            SurgeriesCalendarIDFK: new FormControl('', null),
-            Duration: new FormControl('', null)
-          }]
-        }),
-        SurgeriesCalendar_Tools: this.fb.group({
-          Tools: [{
-            Row_ID: new FormControl('', null),
-            Tool_Name: new FormControl('', null),
-            Tool_Code: new FormControl('', null),
-            Tool_Need: new FormControl('', null),
-            SurgeriesCalendarIDFK: new FormControl('', null)
-          }]
-        }),
-        DoctorSurgeon: new FormControl('', Validators.required),
-        NoteType: new FormControl('', Validators.required),
-        NoteTypeRequest: new FormControl('', Validators.required),
-        SurgeryTypeReasonRequest: new FormControl('', Validators.required),
-        SurgeryTypeReason: new FormControl('', Validators.required),
-        SurgeryReasonNoteRequest: new FormControl('', Validators.required),
-        SurgeryReasonNote: new FormControl('', Validators.required),
-        AdditionalDetails: this.buildAdditionalFormGroupByDepartment(""),
-        Row_ID: new FormControl(null, null),
-        Urgency: new FormControl('', null),
-        Duration: new FormControl('', null),
-        ArrivalDate: new FormControl(this.data.event.start, Validators.required),
-        ArrivalTime: new FormControl('', Validators.required),
-        SurgeryRoom: new FormControl(this.data.event.SurgeryRoom, Validators.required),
-        EndTime: new FormControl({ value: '', disabled: true }, null),
-        LastUpdateUserName: new FormControl({ value: localStorage.getItem('loginUserName'), disabled: true }, null),
-      });
-    } else {
-      this.SurgeryFormGroup = this.fb.group({
-        SurgeryPatientDetails: this.fb.group({
-          PM_ROW_ID: new FormControl(this.data.event.SurgeryPatientDetails.PM_ROW_ID, null),
-          PM_PATIENT_ID: new FormControl(this.data.event.SurgeryPatientDetails.PM_PATIENT_ID, Validators.required),
-          PM_CASE_NUMBER: new FormControl(this.data.event.SurgeryPatientDetails.PM_CASE_NUMBER, null),
-          PM_FIRST_NAME: new FormControl(this.data.event.SurgeryPatientDetails.PM_FIRST_NAME, Validators.required),
-          PM_LAST_NAME: new FormControl(this.data.event.SurgeryPatientDetails.PM_LAST_NAME, Validators.required),
-          PM_PATIENT_GENDER: new FormControl(this.data.event.SurgeryPatientDetails.PM_PATIENT_GENDER, null),
-          PM_DOB: new FormControl(this.data.event.SurgeryPatientDetails.PM_DOB, null),
-          PM_MOVE_DEPART_SEODE: new FormControl(this.data.event.SurgeryPatientDetails.PM_MOVE_DEPART_SEODE, null),
-          RECORD_EXISTS: new FormControl(this.data.event.SurgeryPatientDetails.RECORD_EXISTS, null)
-        }),
-        SurgeryRequestDepartments: this.fb.group({
-          SD_Priority: new FormControl(this.data.event.SurgeryRequestDepartments.SD_Priority, null),
-          SD_ROW_ID: new FormControl(this.data.event.SurgeryRequestDepartments.SD_ROW_ID, null),
-          S_DEPARTMENT: new FormControl(this.data.event.SurgeryRequestDepartments.S_DEPARTMENT, null),
-          S_DEPARTMENT_NAME: new FormControl(this.data.event.SurgeryRequestDepartments.S_DEPARTMENT_NAME, null),
-          S_DEPARTMENT_SHORT_DESC: new FormControl(this.data.event.SurgeryRequestDepartments.S_DEPARTMENT_SHORT_DESC, null)
-        }),
-        SurgeriesCalendar_Susgeries: this.calendarPatientSurgeriesForm(),
-        SurgeriesCalendar_Service: this.calendarPatientServicesForm(),
-        SurgeriesCalendar_Tools: this.calendarPatientToolsForm(),
-        DoctorSurgeon: new FormControl(this.data.event.DoctorSurgeon, null),
-        Urgency: new FormControl(this.data.event.Urgency, null),
-        Duration: new FormControl(this.data.event.Duration, null),
-        NoteType: new FormControl(this.data.event.NoteType, null),
-        NoteTypeRequest: new FormControl(this.data.event.NoteTypeRequest, null),
-        SurgeryTypeReasonRequest: new FormControl(this.data.event.SurgeryTypeReasonRequest.Row_ID, null),
-        SurgeryTypeReason: new FormControl(this.data.event.SurgeryTypeReason.Row_ID, null),
-        SurgeryReasonNoteRequest: new FormControl(this.data.event.SurgeryReasonNoteRequest, null),
-        SurgeryReasonNote: new FormControl(this.data.event.SurgeryReasonNote, null),
-        AdditionalDetails: this.buildAdditionalFormGroupByDepartment(this.data.event.AdditionalDetails),
-        Row_ID: new FormControl(this.data.event.Row_ID, Validators.required),
-        ArrivalDate: new FormControl(this.data.event.start, Validators.required),
-        ArrivalTime: new FormControl(this.data.event.ArrivalTime, Validators.required),
-        SurgeryRoom: new FormControl(this.data.event.SurgeryRoom, Validators.required),
-        SurgeryRoomName: new FormControl(this.data.event.SurgeryRoomName, Validators.required),
-        EndTime: new FormControl({ value: this.data.event.EndTime, disabled: true }, null),
-        LastUpdateUserName: new FormControl({ value: localStorage.getItem('loginUserName'), disabled: true }, null),
-      });
-      setTimeout(() => {
-        this.choosenReasonNotCommitSurgery(this.data.event.SurgeryTypeReason.Type);
-        this.choosenReasonNotCommitSurgeryRequest(this.data.event.SurgeryTypeReasonRequest.Type);
-      }, 1000);
-      // this.surgeonCtrl.setValue(this.SurgeryFormGroup.controls['DoctorSurgeon'].value);
-      this.surgeriesCtrl.setValue(this.SurgeryFormGroup.controls['SurgeriesCalendar_Susgeries'].value);
-      this.calculateSurgeryDuration('endTime');
-    }
+  buildFormGroup() {
+    this.SurgeryFormGroup = this.fb.group({
+      SurgeryPatientDetails: this.fb.group({
+        PM_ROW_ID: new FormControl(this.data.event.SurgeryPatientDetails.PM_ROW_ID, null),
+        PM_PATIENT_ID: new FormControl(this.data.event.SurgeryPatientDetails.PM_PATIENT_ID, Validators.required),
+        PM_CASE_NUMBER: new FormControl(this.data.event.SurgeryPatientDetails.PM_CASE_NUMBER, null),
+        PM_FIRST_NAME: new FormControl(this.data.event.SurgeryPatientDetails.PM_FIRST_NAME, Validators.required),
+        PM_LAST_NAME: new FormControl(this.data.event.SurgeryPatientDetails.PM_LAST_NAME, Validators.required),
+        PM_PATIENT_GENDER: new FormControl(this.data.event.SurgeryPatientDetails.PM_PATIENT_GENDER, null),
+        PM_DOB: new FormControl(this.data.event.SurgeryPatientDetails.PM_DOB, null),
+        PM_MOVE_DEPART_SEODE: new FormControl(this.data.event.SurgeryPatientDetails.PM_MOVE_DEPART_SEODE, null),
+        RECORD_EXISTS: new FormControl(this.data.event.SurgeryPatientDetails.RECORD_EXISTS, null)
+      }),
+      SurgeryRequestDepartments: this.fb.group({
+        SD_Priority: new FormControl(this.data.event.SurgeryRequestDepartments.SD_Priority, null),
+        SD_ROW_ID: new FormControl(this.data.event.SurgeryRequestDepartments.SD_ROW_ID, null),
+        S_DEPARTMENT: new FormControl(this.data.event.SurgeryRequestDepartments.S_DEPARTMENT, null),
+        S_DEPARTMENT_NAME: new FormControl(this.data.event.SurgeryRequestDepartments.S_DEPARTMENT_NAME, null),
+        S_DEPARTMENT_SHORT_DESC: new FormControl(this.data.event.SurgeryRequestDepartments.S_DEPARTMENT_SHORT_DESC, null)
+      }),
+      SurgeriesCalendar_Susgeries: this.calendarPatientSurgeriesForm(),
+      SurgeriesCalendar_Service: this.calendarPatientServicesForm(),
+      SurgeriesCalendar_Tools: this.calendarPatientToolsForm(),
+      DoctorSurgeon: new FormControl(this.data.event.DoctorSurgeon, null),
+      Urgency: new FormControl(this.data.event.Urgency, null),
+      Duration: new FormControl(this.data.event.Duration, null),
+      NoteType: new FormControl(this.data.event.NoteType, null),
+      NoteTypeRequest: new FormControl(this.data.event.NoteTypeRequest, null),
+      SurgeryTypeReasonRequest: new FormControl(this.data.event.SurgeryTypeReasonRequest.Row_ID, null),
+      SurgeryTypeReason: new FormControl(this.data.event.SurgeryTypeReason.Row_ID, null),
+      SurgeryReasonNoteRequest: new FormControl(this.data.event.SurgeryReasonNoteRequest, null),
+      SurgeryReasonNote: new FormControl(this.data.event.SurgeryReasonNote, null),
+      AdditionalDetails: this.buildAdditionalFormGroupByDepartment(this.data.event.AdditionalDetails),
+      Row_ID: new FormControl(this.data.event.Row_ID, Validators.required),
+      ArrivalDate: new FormControl(this.data.event.start, Validators.required),
+      ArrivalTime: new FormControl(this.data.event.ArrivalTime, Validators.required),
+      SurgeryRoom: new FormControl(this.data.event.SurgeryRoom, Validators.required),
+      SurgeryRoomName: new FormControl(this.data.event.SurgeryRoomName, Validators.required),
+      EndTime: new FormControl({ value: this.data.event.EndTime, disabled: true }, null),
+      LastUpdateUserName: new FormControl({ value: localStorage.getItem('loginUserName'), disabled: true }, null),
+    });
+    setTimeout(() => {
+      this.choosenReasonNotCommitSurgery(this.data.event.SurgeryTypeReason.Type);
+      this.choosenReasonNotCommitSurgeryRequest(this.data.event.SurgeryTypeReasonRequest.Type);
+    }, 1000);
+    this.surgeriesCtrl.setValue(this.SurgeryFormGroup.controls['SurgeriesCalendar_Susgeries'].value);
+    // this.calculateSurgeryDuration('endTime');
     this.enableDisableSurgeryNameSelect();
   }
 
@@ -263,8 +184,7 @@ export class ManageSingleSurgeryComponent implements OnInit {
         ServiceNameIDFK: element.ServiceNameIDFK,
         ServiceCode: element.ServiceCode,
         Service_Name: element.Service_Name,
-        SurgeriesCalendarIDFK: element.SurgeriesCalendarIDFK,
-        Duration: element.Duration
+        SurgeriesCalendarIDFK: element.SurgeriesCalendarIDFK
       }))
     });
     return Services;
@@ -305,10 +225,6 @@ export class ManageSingleSurgeryComponent implements OnInit {
     return x;
   }
 
-  // openToolsDialog() {
-  //   this.dialog.open(this.toolsModal, { width: '60%' });
-  // }
-
   stringToArray(commaSeparatedString: string): string[] {
     return commaSeparatedString.split(',');
   }
@@ -317,10 +233,6 @@ export class ManageSingleSurgeryComponent implements OnInit {
     let department = this.SurgeryDepartments.filter(x => x.S_DEPARTMENT == departmentRowID);
     delete department[0].__type;
     this.SurgeryFormGroup.controls['SurgeryRequestDepartments'].setValue(department[0]);
-    // build the additional fields of the form by the requesting department
-    // this.buildAdditionalFormGroupByDepartment(department[0]);
-    // get surgery names by requested department
-    // this.getSurgeriesByRequestedDepartment(department);
   }
 
   getSurgeriesByRequestedDepartment(department) {
@@ -330,14 +242,6 @@ export class ManageSingleSurgeryComponent implements OnInit {
       })
       .subscribe((Response) => {
         this.surgeriesList = Response["d"];
-        // update the surgery names list after getting a response
-        // this.filteredOptionssurgeries = this.surgeriesCtrl.valueChanges.pipe(
-        //   startWith(''),
-        //   map(value => {
-        //     const name = typeof value === 'string' ? value : value?.S_SERVICE_VAL;
-        //     return name ? this._filter2(name as string) : this.surgeriesList.slice();
-        //   }),
-        // );
       });
   }
 
@@ -358,7 +262,7 @@ export class ManageSingleSurgeryComponent implements OnInit {
     if (this.surgeriesCtrl.value != "") {
       setTimeout(() => {
         this.SurgeryFormGroup.controls['SurgeriesCalendar_Susgeries'].setValue(this.surgeriesCtrl.value);
-        this.calculateSurgeryDuration('duration');
+        // this.calculateSurgeryDuration('duration');
       }, 500);
     }
   }
@@ -429,10 +333,6 @@ export class ManageSingleSurgeryComponent implements OnInit {
       this.openSnackBar("לבחור ניתוח מתוך הרשימה ולא הקלדה ידנית");
       return false;
     }
-    // if (this.surgeonCtrl.value == undefined) {
-    //   this.openSnackBar("לבחור מנתח מתוך הרשימה ולא הקלדה ידנית");
-    //   return false;
-    // }
     return true;
   }
 
@@ -493,7 +393,6 @@ export class ManageSingleSurgeryComponent implements OnInit {
     } catch (err) {
       this.openSnackBar("שדות לא מולאו");
     }
-    // if (this.checkAutoCompleteSelection() && (!this.SurgeryFormGroup.invalid)) {
     if (!this.SurgeryFormGroup.invalid) {
       this.confirmationDialogService
         .confirm("נא לאשר..", "האם אתה בטוח ...? ")
@@ -524,7 +423,6 @@ export class ManageSingleSurgeryComponent implements OnInit {
             "User dismissed the dialog (e.g., by using ESC, clicking the cross icon, or clicking outside the dialog)"
           )
         );
-
     } else {
       this.openSnackBar("שכחת למלא שדה חובה");
     }

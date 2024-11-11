@@ -139,7 +139,7 @@
                                                 <mat-option [value]="''">
                                                     הכל </mat-option>
                                                 <mat-option *ngFor="let dept of DepartmentsList"
-                                                    [value]="dept.DepartnentDescripton">
+                                                    [value]="dept.DepartnentCode">
                                                     {{dept.DepartnentDescripton}} </mat-option>
                                             </mat-select>
                                         </mat-form-field>
@@ -227,6 +227,19 @@
         </div>
         <!-- <mat-spinner class="spinner" *ngIf="!loaded"></mat-spinner> -->
         <table mat-table *ngIf="loaded" [dataSource]="dataSource" matSort class="mat-elevation-z8">
+
+            <ng-container matColumnDef="Image">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header> תמונת פרופיל
+                </th>
+                <td mat-cell *matCellDef="let element" style="justify-content: center;">
+                    <img [src]="getEmployeeImage(element.EmployeeID)" width="60" alt="תמונת עובד"
+                        style="cursor: pointer;border-radius: 50%;" height="60" />
+                    <!-- <img
+                        [src]="getEmployeeImage(element.EmployeeID) | async"
+                        (error)="onImageError($event, element.EmployeeID)" width="60" alt="תמונת עובד"
+                        style="cursor: pointer;border-radius: 50%;" height="60" />  -->
+                </td>
+            </ng-container>
 
             <ng-container matColumnDef="EmployeeID">
                 <th mat-header-cell *matHeaderCellDef mat-sort-header> תעודת זהות

@@ -276,16 +276,17 @@ export class NursesDepartmentManageComponent implements OnInit {
   //   this.getPatientsPerDepart(this.event, '');
   // }
 
-
   openGoogleSheets() {
     window.open("https://docs.google.com/spreadsheets/d/1045oyB5WpXvgKHnIoxBgRHVxWqnXeTWnOVoo1YRpE84/edit?usp=sharing", "_blank");
   }
-
   openGoogleSheets2() {
     window.open("https://docs.google.com/spreadsheets/d/1as8TwO3WurD4Mn8aIuaDVbtMHyr6Bgu_bGS1w91TPA4/edit?usp=sharing", "_blank");
   }
   openGoogleSheets3() {
     window.open("https://docs.google.com/spreadsheets/d/1wJj9XGJBTUzoK-PEJUFy1CVt368N904Fn6cgKYvgBIs/edit?usp=sharing", "_blank");
+  }
+  openGoogleSheets4() {
+    window.open("https://docs.google.com/spreadsheets/d/1FNFp3SB_NUFYrEI1juvbWuo4Ell6J8yf_8JyV4rliUc/edit?usp=sharing", "_blank");
   }
 
   otherApps() {

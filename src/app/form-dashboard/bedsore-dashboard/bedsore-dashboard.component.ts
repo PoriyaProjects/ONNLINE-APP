@@ -36,6 +36,7 @@ export class BedsoreDashboardComponent implements OnInit {
   searchPatient: FormGroup;
   departsList = [];
   department = "";
+  loading: boolean = false;
   searchPatientProgressBar: boolean = true;
   @ViewChild(MatPaginator) paginator: MatPaginator;
   dataSource = new MatTableDataSource();
@@ -89,12 +90,14 @@ export class BedsoreDashboardComponent implements OnInit {
   }
 
   getAllBedsoreList() {
+    this.loading = true;
     this.http
       .post(environment.url + "GetAllBedsoreList", {
       })
       .subscribe((Response) => {
         this.dataSource = new MatTableDataSource<any>(Response["d"]);
         this.dataSource.paginator = this.paginator;
+        this.loading = false;
       });
   }
 
@@ -253,18 +256,6 @@ export class BedsoreDashboardComponent implements OnInit {
               </div>
             </div>
             <hr>`;
-    for (let i = 0; i < data.ImagesList.length; i++) {
-      if (data.ImagesList[i].Content !== '') {
-        this.pdfString += `<img height="500" width="600" src='` + data.ImagesList[i].Content + `'>
-        <p class="note" style="text-align: right;font-family: monospace;font-weight: normal;">` + data.ImagesList[i].Note + `</p>`;
-      }
-    }
-    this.pdfString += `
-                            </div>
-                        </div>
-          </div>
-      </div>
-    </body></html>`;
     $("#loader_2").removeClass("d-none");
     this.http.post(environment.urlipracticom + "CreateBedsorePdf", {
       _patient: data.PatientDetails,

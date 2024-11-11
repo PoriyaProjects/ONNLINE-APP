@@ -2,16 +2,12 @@ import {
   Component,
   OnInit,
   ViewChild,
-  ElementRef,
 } from "@angular/core";
 
 import * as XLSX from "xlsx";
-import { ActivatedRoute, Router } from "@angular/router";
 import { HttpClient } from "@angular/common/http";
-import * as fileSaver from "file-saver";
-import { MatPaginator, PageEvent } from "@angular/material/paginator";
+import { MatPaginator } from "@angular/material/paginator";
 import {
-  MatSnackBar,
   MatSnackBarHorizontalPosition,
   MatSnackBarVerticalPosition,
 } from "@angular/material/snack-bar";
@@ -19,23 +15,17 @@ import { MatSort } from "@angular/material/sort";
 import { MatTable, MatTableDataSource } from "@angular/material/table";
 
 import {
-  NgbModal,
   NgbModalOptions,
   NgbActiveModal,
 } from "@ng-bootstrap/ng-bootstrap";
-import * as $ from "jquery";
 import {
   FormControl,
   FormBuilder,
   FormGroup,
 } from "@angular/forms";
 import { Observable } from "rxjs";
-import { map, startWith } from "rxjs/operators";
 import { environment } from "src/environments/environment";
 
-const EXCEL_TYPE =
-  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8";
-const EXCEL_EXTENSION = ".xlsx";
 export interface SurgeryDetails {
   CaseNumber: number;
   RequestDepart: string;
@@ -95,7 +85,7 @@ export class SurgeriesUnclosedReportsComponent implements OnInit {
   rowFormData = {} as SurgeryDetails;
   dataSource = new MatTableDataSource();
   loader: Boolean;
-  tableLoader: Boolean;
+  tableLoader: Boolean = false;
   resultsLength = 0;
   fliterValPatient = "";
   StatusPatient = "-1";

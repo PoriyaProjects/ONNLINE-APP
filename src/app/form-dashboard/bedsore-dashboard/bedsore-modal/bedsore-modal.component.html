@@ -61,12 +61,16 @@
                         <img [src]="image.get('Content').value" *ngIf="image.get('Content').value" height="100"
                             width="100">
                         <!-- <div class="body-container">
-                            <div class="head" #head></div>
-                            <div class="torso" #torso></div>
-                            <div class="left-arm" #leftarm></div>
-                            <div class="right-arm" #rightarm></div>
-                            <div class="left-leg" #leftleg></div>
-                            <div class="right-leg" #rightleg></div>
+                            <div class="head" #head (click)="bodyPartClick('ראש')" matTooltip="ראש"></div>
+                            <div class="torso" #torso (click)="bodyPartClick('בטן')" matTooltip="בטן"></div>
+                            <div class="left-arm" #leftarm (click)="bodyPartClick('יד שמאל')" matTooltip="יד שמאל">
+                            </div>
+                            <div class="right-arm" #rightarm (click)="bodyPartClick('יד ימין')" matTooltip="יד ימין">
+                            </div>
+                            <div class="left-leg" #leftleg (click)="bodyPartClick('רגל שמאל')" matTooltip="רגל שמאל">
+                            </div>
+                            <div class="right-leg" #rightleg (click)="bodyPartClick('רגל ימין')" matTooltip="רגל ימין">
+                            </div>
                         </div> -->
                     </div>
                     <br>

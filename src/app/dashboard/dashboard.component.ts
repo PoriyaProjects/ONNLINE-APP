@@ -36,7 +36,12 @@ export class DashboardComponent implements OnInit {
     };
     aobjTotal: string;
     resporatoryCount: number;
-    name: string;
+    first_name: string;
+    last_name: string;
+    full_date: string;
+    employee_id: string;
+    birth_day_people = [];
+    userName = localStorage.getItem("loginUserName").toLowerCase();
     birthdayUser: boolean = false;
     constructor(private router: Router, private http: HttpClient) { }
     today: number = Date.now();
@@ -60,7 +65,8 @@ export class DashboardComponent implements OnInit {
             .attr('fill', '#938F8F');
 
         this.getDataFormServer("");
-        this.getEmployeesBirthDates();
+        this.getLoginUserDetails();
+        this.getBirthDayPeople();
     }
     // public getData(){
     //     this.Departmints["departs"].forEach((element, key) => {
@@ -71,16 +77,29 @@ export class DashboardComponent implements OnInit {
     //     });
     // }
 
-    getEmployeesBirthDates() {
-        let userName = localStorage.getItem("loginUserName").toLowerCase();
+    getBirthDayPeople() {
         this.http
-            .post(environment.url + "GetEmployeesBirthDates", {
-                _userName: userName
+            .post(environment.url + "GetBirthDayPeople", {})
+            .subscribe((Response) => {
+                try {
+                    this.birth_day_people = Response['d'];
+                } catch (error) {
+                    console.log("error in birthday list");
+                }
+            });
+    }
+    getLoginUserDetails() {
+        this.http
+            .post(environment.url + "GetLoginUserDetails", {
+                _userName: this.userName
             })
             .subscribe((Response) => {
                 let user = Response["d"];
                 try {
-                    this.name = user.FirstName;
+                    this.employee_id = user.EmployeeID;
+                    this.first_name = user.FirstName;
+                    this.last_name = user.LastName;
+                    this.full_date = user.FullBirthDate;
                     let currentDate = new Date();
                     let day = user.DateOfBirth.split("-")[1];
                     let month = user.DateOfBirth.split("-")[0];
@@ -92,6 +111,10 @@ export class DashboardComponent implements OnInit {
                 }
 
             });
+    }
+    getEmployeeImage(employee_id) {
+        const img = `http://srv-apps-prod/Images/${employee_id}.jpg`;
+        return img;
     }
     public getDataFormServer(_Depart: string) {
         $("#loader").removeClass("d-none");

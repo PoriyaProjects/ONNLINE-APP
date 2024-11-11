@@ -36,7 +36,15 @@
     max-height: 600px;
   }
   
-  
+  .row {
+    width: 100%;
+    margin-bottom: 25px;
+  }
+
+  .container {
+    direction: rtl;
+    text-align: right;
+  }
   
   mat-header-cell, mat-cell {
     padding-left: 0px; 
@@ -62,17 +70,21 @@
   td.mat-cell {
     padding: 8px; 
     text-align: center;
+    border: 1px solid black;
   }
   
   th.mat-header-cell {
     padding: 8px; 
     text-align: center;
     border: none !important; 
+    color: #fff;
+    font-weight: bold;
+    background-color: #1976d2;
   }
   
 
   .custom-table th.mat-header-cell {
-    text-align: Center;
+    text-align: center;
   }
   
 

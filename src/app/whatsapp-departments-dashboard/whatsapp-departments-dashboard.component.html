@@ -61,28 +61,31 @@
                     <form #fileForm="ngForm">
                         <input type="file" (change)="onFileSelected($event)" />
                     </form>
-                    <!-- <mat-icon style="margin-left: 20px;" matTooltipClass="right-align-tooltip"
-                        matTooltip="צירוף מסמך" (click)="attachFile()">attach</mat-icon> -->
-                    <mat-form-field class="message-input">
+                    <mat-form-field class="message-input" *ngIf="!selectedFile">
                         <mat-label>שליחת הודעה בתוך שיחה</mat-label>
                         <input matInput placeholder="הודעה חדשה" formControlName="Message_Text"
                             (keydown.enter)="sendMessage()">
                     </mat-form-field>
-                    <button mat-icon-button type="submit" class="send-btn" (click)="sendMessage()">
+                    <button mat-icon-button type="submit" class="send-btn" (click)="sendMessage()" matTooltip="שליחה">
                         <mat-icon>send</mat-icon>
                     </button>
                 </div>
                 <!-- send one way message -->
                 <div class="input-container"
                     *ngIf="currentContact !== undefined && (currentContact.maxRow === '' || currentContact.maxRow === undefined)">
-                    <mat-form-field class="message-input">
+                    <form #fileForm="ngForm">
+                        <input type="file" (change)="onFileSelected($event)" />
+                    </form>
+                    <mat-form-field class="message-input" *ngIf="!selectedFile">
                         <mat-label>שליחת הודעה רגילה</mat-label>
                         <input matInput placeholder="הודעה חדשה" formControlName="Message_Text"
                             (keydown.enter)="sendOneWayMessage()">
                     </mat-form-field>
-                    <button mat-icon-button type="submit" class="send-btn" (click)="sendOneWayMessage()">
+                    <button mat-icon-button type="submit" class="send-btn" (click)="sendOneWayMessage()"
+                        matTooltip="שליחה">
                         <mat-icon>send</mat-icon>
                     </button>
+                    <mat-progress-bar mode="query" *ngIf="loadingUnRegistered"></mat-progress-bar>
                 </div>
                 <div class="chat-container" #scrollTarget *ngIf="currentContact !== undefined">
                     <mat-spinner *ngIf="loadChat"></mat-spinner>
@@ -130,7 +133,8 @@
                         <mat-icon mat-list-icon
                             [ngStyle]="{'background-color': uncontact.maxRow == '' ? '' : uncontact.LateSessions == 'Late' ? 'orangered' : 'limegreen'}">account_circle</mat-icon>
                         <span mat-line>{{ uncontact.FirstName }} {{ uncontact.LastName }} -
-                            {{uncontact.CellNumber}}</span>
+                            {{uncontact.CellNumber}}</span><span
+                            *ngIf="notification != '' && currentContact?.CellNumber == uncontact.CellNumber">{{notification}}</span>
                         <mat-icon mat-list-icon *ngIf="uncontact.maxRow != ''" style="color: orangered;"
                             matTooltip="סיום שיחה" (click)="endConversation(uncontact)">cancel_presentation</mat-icon>
                     </mat-list-item>
