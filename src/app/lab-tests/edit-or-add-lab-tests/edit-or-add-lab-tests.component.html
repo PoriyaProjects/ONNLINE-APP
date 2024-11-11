@@ -1,0 +1,168 @@
+<form *ngIf="showForm" class="form text-right" [formGroup]="serverForm" dir="rtl" (ngSubmit)="onSubmit()">
+    <h2 mat-dialog-title *ngIf="data.element.RowID != '0'">
+        עריכת בדיקה: {{ data.element.TestCode }} - {{data.element.TestName_1}}
+    </h2>
+
+    <h2 mat-dialog-title *ngIf="data.element.RowID == '0'">
+        הוספת בדיקה
+    </h2>
+    <mat-dialog-content class="mat-typography text-right" dir="rtl">
+
+        <div class="row text-right" dir="rtl">
+            <div class="col">
+                <div class="form-group">
+                    <mat-form-field>
+                        <input matInput autocomplete="off" class="form-control" placeholder="קוד הבדיקה"
+                            formControlName="TestCode" type="text" />
+                    </mat-form-field>
+                </div>
+            </div>
+            <div class="col">
+                <div class="form-group">
+                    <mat-form-field>
+                        <input matInput autocomplete="off" class="form-control" placeholder="שם הבדיקה"
+                            formControlName="TestName_1" type="text" />
+                    </mat-form-field>
+                </div>
+            </div>            
+            <div class="col">
+                <div class="form-group">
+                    <mat-form-field>
+                        <input matInput autocomplete="off" class="form-control" placeholder="שם חלופי"
+                            formControlName="TestName_2" type="text" />
+                    </mat-form-field>
+                </div>
+            </div>  
+        </div>
+        <div class="row text-right" dir="rtl">          
+            <div class="col">
+                <div class="form-group">
+                    <mat-form-field>
+                        <input matInput autocomplete="off" class="form-control" placeholder="קיצור"
+                            formControlName="TestShortName" type="text" />
+                    </mat-form-field>
+                </div>
+            </div>            
+       
+            <div class="col">
+                <div class="form-group">
+                    <mat-form-field>
+                        <input matInput autocomplete="off" class="form-control" placeholder="מעבדה מבצעת"
+                            formControlName="DoingLabName" type="text" />
+                    </mat-form-field>
+                </div>
+            </div>
+            <div class="col">
+                <div class="form-group">
+                    <mat-form-field>
+                        <input matInput autocomplete="off" class="form-control" placeholder="חומר הדגימה"
+                            formControlName="SampleMaterial" type="text" />
+                    </mat-form-field>
+                </div>
+            </div>    
+        </div>
+        <div class="row text-right" dir="rtl">        
+            <div class="col">
+                <div class="form-group">
+                    <mat-form-field>
+                        <input matInput autocomplete="off" class="form-control" placeholder="סוג מבחנה / כלי דיגום"
+                            formControlName="TypeTestOrSamplingTool" type="text" />
+                    </mat-form-field>
+                </div>
+            </div>            
+            <div class="col">
+                <div class="form-group">
+                    <mat-form-field>
+                        <input matInput autocomplete="off" class="form-control" placeholder="נפח הדגימה"
+                            formControlName="SampleVolume" type="text" />
+                    </mat-form-field>
+                </div>
+            </div>            
+        
+            <div class="col">
+                <div class="form-group">
+                    <mat-form-field>
+                        <input matInput autocomplete="off" class="form-control" placeholder="תנאי לקיחה ושינוע"
+                            formControlName="PickUpDeliveryConditions" type="text" />
+                    </mat-form-field>
+                </div>
+            </div>
+        </div>
+        <div class="row text-right" dir="rtl">
+            <div class="col">
+                <div class="form-group">
+                    <mat-form-field>
+                        <input matInput autocomplete="off" class="form-control" placeholder="זמן מירבי מלקיחה עד ההגעה למעבדה"
+                            formControlName="LabTestTimeArrival" type="text" />
+                    </mat-form-field>
+                </div>
+            </div>            
+            <div class="col">
+                <div class="form-group">
+                    <mat-form-field>
+                        <input matInput autocomplete="off" class="form-control" placeholder="זמן ביצוע הבדיקה מקבלת הדגימה במעבדה המבצעת "
+                            formControlName="LabTestTime" type="text" />
+                    </mat-form-field>
+                </div>
+            </div>            
+            <div class="col">
+                <div class="form-group">
+                    <mat-form-field>
+                        <input matInput autocomplete="off" class="form-control" placeholder="שעות פעילות מעבדה מבצעת/ טלפון"
+                            formControlName="LabHours" type="text" />
+                    </mat-form-field>
+                </div>
+            </div>            
+        </div>
+        <div class="row text-right" dir="rtl">
+            
+            <div class="col">
+                <div class="form-group">
+                    <mat-form-field>
+                        <input matInput autocomplete="off" class="form-control" placeholder="זמן ביצוע הבדיקה מקבלת הדגימה  במעבדת חוץ"
+                            formControlName="TimeOfPerforming" type="text" />
+                    </mat-form-field>
+                </div>
+            </div>  
+            <div class="col">
+                <div class="form-group">
+                    <mat-form-field>
+                        <textarea matInput autocomplete="off" class="form-control" placeholder="הערות למעבדה"
+                            formControlName="LabNotes" rows="4"></textarea>
+                    </mat-form-field>
+                </div>
+            </div>  
+        </div>
+        <div class="row text-right" dir="rtl">        
+            <div class="col">
+                <div class="form-group">
+                    <mat-form-field>
+                        <mat-label>קטגוריה</mat-label>
+                        <mat-select formControlName="TestCat">
+                            <mat-option *ngFor="let ab of CatList" [value]="ab.id"> {{ab.value}} </mat-option>
+                        </mat-select>
+                    </mat-form-field>
+                </div>
+            </div>
+            <div class="col">
+                <div class="form-group">
+                    <mat-form-field>
+                        <mat-label>מצב</mat-label>
+                        <mat-select formControlName="StatusRow">
+                            <mat-option *ngFor="let ab of StatusList" [value]="ab.id"> {{ab.value}} </mat-option>
+                        </mat-select>
+                    </mat-form-field>
+                </div>
+            </div>
+        </div>
+    </mat-dialog-content>
+    <mat-dialog-actions align="end">
+        <input type="hidden" formControlName="RowID">
+        <input type="hidden" formControlName="UserInsert">
+        <input type="hidden" formControlName="UserUpdate">
+        <button mat-button mat-dialog-close>סגור</button>
+        <button mat-button color="primary" type="submit" cdkFocusInitial [class.spinner]="loading"
+            [disabled]="loading">שמור</button>
+    </mat-dialog-actions>
+</form>
+<img *ngIf="!showForm" src="../../../assets/images/labTest.jpg">
