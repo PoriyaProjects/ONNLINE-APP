@@ -1,12 +1,7 @@
-import { Component, OnInit, NgModule, ViewChild } from "@angular/core";
+import { Component, OnInit, ViewChild } from "@angular/core";
 import { Router } from "@angular/router";
 import { HttpClient } from "@angular/common/http";
 import { CircleProgressComponent } from "ng-circle-progress";
-import {
-    NgbModal,
-    ModalDismissReasons,
-    NgbModalOptions,
-} from "@ng-bootstrap/ng-bootstrap";
 import { environment } from "src/environments/environment";
 export interface DepartRefoee {
     DepartName: string;
@@ -115,6 +110,11 @@ export class DashboardComponent implements OnInit {
     getEmployeeImage(employee_id) {
         const img = `http://srv-apps-prod/Images/${employee_id}.jpg`;
         return img;
+    }
+    openFolder() {
+        let link = "\\\\srv-apps-02\\bin2\\פרוטוקולים לטיפול אנטיביוטי אמפירי";
+        window.location.href = link;
+        // window.open("", "_blank");
     }
     public getDataFormServer(_Depart: string) {
         $("#loader").removeClass("d-none");
