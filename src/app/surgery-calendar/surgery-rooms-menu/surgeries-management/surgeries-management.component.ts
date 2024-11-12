@@ -506,7 +506,7 @@ export class SurgeriesManagementComponent {
           </body>
         </html>`;
 
-        this.http.post(environment.url + 'SentDepartmentFinalSurgeryPlan', {
+        this.http.post(environment.urlipracticom + 'SentDepartmentFinalSurgeryPlan', {
           department: department,
           fileString: this.pdfString,
           username: this.UserName
