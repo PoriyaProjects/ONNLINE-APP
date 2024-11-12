@@ -463,7 +463,6 @@ export class SurgeriesManagementComponent {
                   <th>שם מלא, ת.ז</th>
                   <th>גיל</th>
                   <th>תיאור פרוצדורה</th>
-                  <th>צד ניתוח</th>
                   <th>תנוחת השכבה</th>
                   <th>בידוד</th>
                   <th>בנק הדם</th>
@@ -485,7 +484,6 @@ export class SurgeriesManagementComponent {
                                 <td> ${data[i].id} </td>
                                 <td> ${data[i].age} </td>
                                 <td> ${data[i].s_name} </td>
-                                <td> ${data[i].side} </td>
                                 <td> ${data[i].position} </td>
                                 <td> ${data[i].isolation} </td>
                                 <td> ${data[i].blood} </td>
@@ -508,7 +506,7 @@ export class SurgeriesManagementComponent {
           </body>
         </html>`;
 
-        this.http.post(environment.urlipracticom + 'SentDepartmentFinalSurgeryPlan', {
+        this.http.post(environment.url + 'SentDepartmentFinalSurgeryPlan', {
           department: department,
           fileString: this.pdfString,
           username: this.UserName
@@ -531,7 +529,6 @@ export class SurgeriesManagementComponent {
         'גיל': element.age,
         // 'קוד פרוצדורה': element.code,
         'תיאור פרוצדורה': element.s_name,
-        'צד ניתוח': element.side,
         'תנוחת השכבה': element.position,
         'בידוד': element.isolation,
         'בנק הדם': element.blood,
