@@ -659,7 +659,7 @@ export class FillSurveyComponent implements OnInit {
         if (this.Passport != "") {
             this.http
                 .post(
-                    environment.urlipracticom + "selectDetailsFromNamer",
+                    environment.url + "GetCardiologyPatientDetails",
                     {
                         patientId: this.Passport,
                     }

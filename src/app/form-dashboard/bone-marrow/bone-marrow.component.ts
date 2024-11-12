@@ -74,16 +74,16 @@ export class BoneMarrowComponent implements OnInit {
     }
     this.searchPatientProgressBar = false;
     this.http
-      .post(environment.urlipracticom + "selectDetailsFromNamer", {
+      .post(environment.url + "GetCardiologyPatientDetails", {
         patientId: passport
       })
       .subscribe((Response) => {
         this.searchPatientProgressBar = true;
         let details = Response["d"];
-        if (details.PASSNR === null) return;
+        if (details.PersonID === null) return;
         this.patientDetails = {
           RowID: null,
-          Passport: details.PASSNR,
+          Passport: details.PersonID,
           FirstName: details.FirstName,
           FatherName: details.FatherName,
           LastName: details.LastName,
