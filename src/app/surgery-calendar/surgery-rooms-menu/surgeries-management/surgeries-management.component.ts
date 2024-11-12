@@ -82,6 +82,7 @@ export class SurgeriesManagementComponent {
   UserName = localStorage.getItem("loginUserName").toLowerCase();
   loader: boolean = true;
   surgerySurf: boolean = false;
+  loadingDataServer: boolean;
   IfPlannedSurgeries: string = "original"
 
 
@@ -123,6 +124,15 @@ export class SurgeriesManagementComponent {
       }
       this.viewDate = date;
     }
+  }
+
+  surgeriesRefreshDataInServer() {
+    this.loadingDataServer = true;
+    this.http.post(environment.url + 'SurgeriesRefreshDataInServer', {}).subscribe(res => {
+      if (!res['d']) alert("תקלה בטעינת נתונים");
+      this.loadingDataServer = false;
+      this.ngOnInit();
+    });
   }
 
   eventTimesChanged({
@@ -449,10 +459,10 @@ export class SurgeriesManagementComponent {
                   <table class="table">  <thead>  <tr>
                   <th>#</th>  
                   <th>מספר מקרה</th>
+                  <th>חדר</th>
                   <th>שם מלא, ת.ז</th>
                   <th>גיל</th>
                   <th>תיאור פרוצדורה</th>
-                  <th>צד ניתוח</th>
                   <th>תנוחת השכבה</th>
                   <th>בידוד</th>
                   <th>בנק הדם</th>
@@ -470,10 +480,10 @@ export class SurgeriesManagementComponent {
           this.pdfString += `<tr>
                                 <td> ${i + 1} </td>
                                 <td> ${data[i].casenumber} </td>
+                                <td> ${data[i].room} </td>
                                 <td> ${data[i].id} </td>
                                 <td> ${data[i].age} </td>
                                 <td> ${data[i].s_name} </td>
-                                <td> ${data[i].side} </td>
                                 <td> ${data[i].position} </td>
                                 <td> ${data[i].isolation} </td>
                                 <td> ${data[i].blood} </td>
@@ -496,7 +506,7 @@ export class SurgeriesManagementComponent {
           </body>
         </html>`;
 
-        this.http.post(environment.urlipracticom + 'SentDepartmentFinalSurgeryPlan', {
+        this.http.post(environment.url + 'SentDepartmentFinalSurgeryPlan', {
           department: department,
           fileString: this.pdfString,
           username: this.UserName
@@ -514,11 +524,11 @@ export class SurgeriesManagementComponent {
     json.forEach(element => {
       json = {
         'מספר מקרה': element.casenumber,
+        'חדר': element.room,
         'שם מלא, ת.ז': element.id,
         'גיל': element.age,
         // 'קוד פרוצדורה': element.code,
         'תיאור פרוצדורה': element.s_name,
-        'צד ניתוח': element.side,
         'תנוחת השכבה': element.position,
         'בידוד': element.isolation,
         'בנק הדם': element.blood,

@@ -160,8 +160,8 @@ export class WhatsappDepartmentsDashboardComponent implements OnInit {
   searchNewPatient() {
     this.loadingUnRegistered = true;
     this.http
-      .post(environment.urlipracticom + "selectDetailsFromNamer", {
-        patientId: this._searchNewPatient
+      .post(environment.url + "GetCardiologyPatientDetails", {
+        _passport: this._searchNewPatient
       })
       .subscribe((Response) => {
         let patient = Response['d'];
