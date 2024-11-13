@@ -113,6 +113,7 @@ import { VisitorsRegistrationComponent } from './visitors-monitoring/visitors-re
 import { VisitorNameDialog } from './visitors-monitoring/visitors-registration/visitors-registration.component';
 import { ShareReportsDialog } from './nurses-dashboard/nurses-dashboard.component';
 import { ShareReportsFillDialog } from './fill-report/fill-report.component';
+import { ShareSurgeriesPDFDialog } from './surgery-calendar/surgery-rooms-menu/surgeries-management/surgeries-management.component';
 import { FastCovid19TestComponent } from './fast-covid19-test/fast-covid19-test.component';
 import { FastCovidTestDashboardComponent } from './fast-covid-test-dashboard/fast-covid-test-dashboard.component';
 import { AddResponseFillDialog } from './fill-report/fill-report.component';
@@ -319,6 +320,7 @@ const maskConfig: Partial<IConfig> = {
     VisitorsRegistrationComponent,
     ShareReportsDialog,
     ShareReportsFillDialog,
+    ShareSurgeriesPDFDialog,
     FastCovid19TestComponent,
     FastCovidTestDashboardComponent,
     UrgentSurgeriesComponent,
