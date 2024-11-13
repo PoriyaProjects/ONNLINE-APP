@@ -10,7 +10,7 @@ import {
   isSameDay,
   isSameMonth,
 } from 'date-fns';
-import { Subject } from 'rxjs';
+import { Observable, Subject } from 'rxjs';
 import {
   CalendarEvent,
   CalendarEventTimesChangedEvent,
@@ -25,12 +25,15 @@ import { ConfirmationDialogService } from '../../../confirmation-dialog/confirma
 import { HttpClient } from '@angular/common/http';
 import { MatDialog, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { MatSnackBar, MatSnackBarHorizontalPosition, MatSnackBarVerticalPosition } from '@angular/material/snack-bar';
-import { FormGroup } from '@angular/forms';
+import { FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
 import { registerLocaleData } from '@angular/common';
 import localeHe from '@angular/common/locales/he';
 import { environment } from 'src/environments/environment';
 import { ManageSingleSurgeryComponent } from './manage-single-surgery/manage-single-surgery.component';
 import * as XLSX from 'xlsx';
+import { map, startWith } from 'rxjs/operators';
+import { MatChipInputEvent } from '@angular/material/chips';
+import { MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
 
 const colors: any = {
   red: '#ad2121',
@@ -237,7 +240,7 @@ export class SurgeriesManagementComponent {
             tempTitle = hr + ` 
             מחלקה: <b>${element.SurgeryRequestDepartments.S_DEPARTMENT}</b><br>
             שם: <b>${element.SurgeryPatientDetails.PM_FIRST_NAME} ${element.SurgeryPatientDetails.PM_LAST_NAME}</b><b> -- ${element.SurgeryPatientDetails.PM_CASE_NUMBER}</b> <br>
-            סוג ניתוח: <b>${element.SurgeryType}</b><br>
+            דחיפות: <b>${element.SurgeryType}</b><br>
             S:<b>${element.ArrivalDate.split(' ')[1]}</b> - E:<b>${element.EndDate.split(' ')[1]}</b>`;
           }
           // set start and end time for surgeries
@@ -436,7 +439,6 @@ export class SurgeriesManagementComponent {
       date: fullDate
     }).subscribe(res => {
       if (res['d'].length > 0) {
-        console.log(res['d']);
         let data = res['d'];
         this.pdfString = `
         <!doctype html>
@@ -506,14 +508,7 @@ export class SurgeriesManagementComponent {
           </body>
         </html>`;
 
-        this.http.post(environment.urlipracticom + 'SentDepartmentFinalSurgeryPlan', {
-          department: department,
-          fileString: this.pdfString,
-          username: this.UserName
-        }).subscribe(res => {
-          if (res['d']) this.openSnackBar("התוכנית נשלחה בהצלחה");
-          else this.openSnackBar("אירעה תקלה, לא נשלח");
-        })
+        this.openShareDialog(this.pdfString, department);
       }
     });
   }
@@ -551,7 +546,169 @@ export class SurgeriesManagementComponent {
     XLSX.writeFile(wb, this.fileName + ' מחלקה ' + department + '.xlsx');
   }
 
+  openShareDialog(pdf, department) {
+    let dialogRef = this.dialog.open(ShareSurgeriesPDFDialog);
+    dialogRef.componentInstance.reportArray = pdf;
+    dialogRef.componentInstance.department = department;
+  }
+
 }
+
+
+
+export interface User {
+  FirstName: string;
+  LastName: string;
+  id: string;
+  Email: string;
+}
+
+@Component({
+  selector: 'share-pdf-dialog',
+  templateUrl: 'share-pdf-dialog.html',
+})
+export class ShareSurgeriesPDFDialog {
+
+  horizontalPosition: MatSnackBarHorizontalPosition = 'start';
+  verticalPosition: MatSnackBarVerticalPosition = 'bottom';
+
+  constructor(
+    public dialogRef: MatDialogRef<ShareSurgeriesPDFDialog>,
+    @Inject(MAT_DIALOG_DATA) public data: string,
+    private _snackBar: MatSnackBar,
+    private http: HttpClient,
+    private fb: FormBuilder) { }
+  specialForces: User[] = [
+  ]
+  filteredOptions: Observable<string[]>;
+  myControl = new FormControl('', Validators.required);
+  users = [];
+  removable = true;
+  selectable = true;
+  user_name = localStorage.getItem("loginUserName").toLowerCase();
+  all_users_filter = [];
+  reportArray: string;
+  department: string;
+  disableBtn: boolean;
+  separatorKeysCodes: number[] = [ENTER, COMMA];
+  fruits: any[] = [
+    { FirstName: 'מאיר', LastName: 'רוח', id: '', Email: 'MRuach@tzmc.gov.il' },
+    { FirstName: 'רובא', LastName: 'יוסף', id: '', Email: 'RYousef@tzmc.gov.il' },
+    { FirstName: 'נוי', LastName: 'טובול', id: '', Email: 'NYairtubul@tzmc.gov.il' },
+    { FirstName: this.user_name, LastName: '', id: '', Email: this.user_name + '@tzmc.gov.il' },
+  ];
+  @ViewChild('fruitInput') fruitInput: ElementRef<HTMLInputElement>;
+
+  ngOnInit() {
+    this.filteredOptions = this.myControl.valueChanges.pipe(
+      startWith(null),
+      map((fruit: string | null) => fruit ? this._filter(fruit) : this.users.slice()));
+    this.getUsers();
+  }
+
+  add(event: MatChipInputEvent): void {
+    const value = (event.value || '').trim();
+    if (value) {
+      this.fruits.push(value);
+    }
+
+    // event.chipInput!.clear();
+    this.myControl.setValue(null);
+  }
+
+  remove(fruit: string): void {
+    const index = this.fruits.indexOf(fruit);
+    if (index >= 0) {
+      this.fruits.splice(index, 1);
+    }
+  }
+
+  selected(event: MatAutocompleteSelectedEvent): void {
+    if (event.option.value.id == "1") {
+      this.specialForces.forEach(element => {
+        this.fruits.push(element);
+      });
+    } else {
+      this.fruits.push(event.option.value);
+    }
+    this.fruitInput.nativeElement.value = '';
+    this.myControl.setValue(null);
+  }
+
+  private _filter(value: any): string[] {
+    let filterValue = "";
+    if (value != '' && value.FirstName == undefined) {
+      filterValue = value.toLowerCase();
+    }
+    return this.users.filter(fruit => fruit.FirstName.toLowerCase().includes(filterValue));
+  }
+
+
+
+  shareReportWithOthers() {
+    this.disableBtn = true;
+    if (this.fruits.length == 0) {
+      this.openSnackBar("נא לבחור אחראי לשליחה");
+      this.disableBtn = false;
+    } else {
+      this.http.post(environment.urlipracticom + 'SentDepartmentFinalSurgeryPlan', {
+        department: this.department,
+        fileString: this.reportArray,
+        users: this.fruits, // people list
+      }).subscribe(res => {
+        if (res['d']) {
+          this.openSnackBar("התוכנית נשלחה בהצלחה");
+          this.dialogRef.close();
+        }
+        else this.openSnackBar("אירעה תקלה, לא נשלח");
+      });
+      // this.http
+      //   .post(environment.urlipracticom + "AttachReportToUser", {
+      //     _userSender: localStorage.getItem('loginUserName').toLowerCase(),
+      //     users: this.fruits, // people list
+      //     _reportArray: this.reportArray, // pdf string
+      //   })
+      //   .subscribe((Response) => {
+      //     console.log(Response);
+      //     if (Response["d"]) {
+      //       this.openSnackBar("! נשלח בהצלחה לנמען");
+      //       this.dialogRef.close();
+      //     } else {
+      //       this.openSnackBar("! אירעה תקלה, לא נשלח");
+      //     }
+      //     this.disableBtn = false;
+      //   });
+    }
+  }
+
+  openSnackBar(message) {
+    this._snackBar.open(message, 'X', {
+      duration: 5000,
+      horizontalPosition: this.horizontalPosition,
+      verticalPosition: this.verticalPosition,
+    });
+  }
+  getUsers() {
+    this.http
+      .post(environment.url + "GetUsersForInquiries", {
+
+      })
+      .subscribe((Response) => {
+        this.all_users_filter = Response["d"];
+
+        this.all_users_filter.forEach(element => {
+          this.users.push({
+            FirstName: element.firstname,
+            LastName: element.lastname,
+            id: element.id,
+            Email: element.email
+          });
+        });
+      });
+  }
+}
+
+
 @Component({
   selector: 'app-summary-dialog',
   templateUrl: 'summary-dialog.html',
