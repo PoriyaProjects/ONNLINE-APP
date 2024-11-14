@@ -2,7 +2,7 @@
     <!-- <a href="file://srv-apps-02\bin2\פרוטוקולים לטיפול אנטיביוטי אמפירי">תיקיית S</a> -->
     <!-- User Details Section -->
     <div class="user-details">
-        <img src="http://srv-apps-prod/Images/{{employee_id}}.jpg" alt="Profile Picture" class="profile-picture">
+        <img [src]="ProfilePicture" alt="Profile Picture" class="profile-picture">
         <div class="user-info">
             <h2>{{ first_name }} {{ last_name }}</h2>
             <h5>{{ userName }}</h5>
@@ -15,7 +15,7 @@
         <h5>ימי הולדת | {{today | date: 'dd-MM-yyyy'}}</h5>
         <ul>
             <li *ngFor="let person of birth_day_people">
-                <img [src]="getEmployeeImage(person.EmployeeID)" alt="תמונת עובד" class="birthday-profile-picture" />
+                <img [src]="person.ProfilePicture" alt="תמונת עובד" class="birthday-profile-picture" />
                 <span class="birthday-info">
                     {{ person.FirstName }} {{ person.LastName }}
                 </span>
@@ -105,7 +105,7 @@
             <!-- <a href="file://srv-apps-02\bin2\פרוטוקולים לטיפול אנטיביוטי אמפירי">תיקיית S</a> -->
             <!-- User Details Section -->
             <div class="user-details">
-                <img src="http://srv-apps-prod/Images/{{employee_id}}.jpg" alt="Profile Picture"
+                <img [src]="ProfilePicture" alt="Profile Picture"
                     class="profile-picture">
                 <div class="user-info">
                     <h2>{{ first_name }} {{ last_name }}</h2>
@@ -121,7 +121,7 @@
                 <h5>ימי הולדת | {{today | date: 'dd-MM-yyyy'}}</h5>
                 <ul>
                     <li *ngFor="let person of birth_day_people">
-                        <img [src]="getEmployeeImage(person.EmployeeID)" alt="תמונת עובד"
+                        <img [src]="person.ProfilePicture" alt="תמונת עובד"
                             class="birthday-profile-picture" />
                         <span class="birthday-info">
                             {{ person.FirstName }} {{ person.LastName }}
