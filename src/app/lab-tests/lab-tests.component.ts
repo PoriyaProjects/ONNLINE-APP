@@ -96,6 +96,7 @@ export class LabTestsComponent implements OnInit {
       //case "jmassalha":
       case "thajouj":
       case "massadi":
+      case "hroshrosh":
         this.AdminToEdit = true;
         break;
 
