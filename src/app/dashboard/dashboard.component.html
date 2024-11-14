@@ -101,15 +101,14 @@
         </table>
     </div>
     <div class="col-md-6">
-        <div dir="rtl" class="user-row-container" *ngIf="userName == 'adahabre'">
+        <div dir="rtl" class="user-row-container">
             <!-- <a href="file://srv-apps-02\bin2\פרוטוקולים לטיפול אנטיביוטי אמפירי">תיקיית S</a> -->
             <!-- User Details Section -->
             <div class="user-details">
-                <img [src]="ProfilePicture" alt="Profile Picture"
-                    class="profile-picture">
+                <img [src]="ProfilePicture" alt="Profile Picture" class="profile-picture">
                 <div class="user-info">
                     <h2>{{ first_name }} {{ last_name }}</h2>
-                    <h5>{{ userName }}</h5>
+                    <h5>&#8734; {{ userName }} &#8734;</h5>
                     <!-- <button>
                         <a (click)="openFolder()">פרוטוקולים</a>
                     </button> -->
@@ -117,12 +116,12 @@
             </div>
 
             <!-- Profiles List Section -->
-            <div class="profiles-list" *ngIf="birth_day_people.length > 0">
+            <div class="profiles-list">
                 <h5>ימי הולדת | {{today | date: 'dd-MM-yyyy'}}</h5>
-                <ul>
+                <p *ngIf="birth_day_people.length == 0">אין ימי הולדת במחלקה שלך ליום הזה</p>
+                <ul *ngIf="birth_day_people.length > 0">
                     <li *ngFor="let person of birth_day_people">
-                        <img [src]="person.ProfilePicture" alt="תמונת עובד"
-                            class="birthday-profile-picture" />
+                        <img [src]="person.ProfilePicture" alt="תמונת עובד" class="birthday-profile-picture" />
                         <span class="birthday-info">
                             {{ person.FirstName }} {{ person.LastName }}
                         </span>
