@@ -35,6 +35,7 @@ export class DashboardComponent implements OnInit {
     last_name: string;
     full_date: string;
     employee_id: string;
+    ProfilePicture: string;
     birth_day_people = [];
     userName = localStorage.getItem("loginUserName").toLowerCase();
     birthdayUser: boolean = false;
@@ -92,6 +93,7 @@ export class DashboardComponent implements OnInit {
                 let user = Response["d"];
                 try {
                     this.employee_id = user.EmployeeID;
+                    this.ProfilePicture = user.ProfilePicture;
                     this.first_name = user.FirstName;
                     this.last_name = user.LastName;
                     this.full_date = user.FullBirthDate;

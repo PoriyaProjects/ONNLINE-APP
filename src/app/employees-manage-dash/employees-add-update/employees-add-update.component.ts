@@ -107,6 +107,7 @@ export class EmployeesAddUpdateComponent implements OnInit {
       PersonalEmail: new FormControl(this.employee.PersonalEmail, null),
       CellNumber: new FormControl(this.employee.CellNumber, [Validators.required, Validators.pattern("[0-9 ]{10}")]),
       Address: new FormControl(this.employee.Address, null),
+      ProfilePicture: new FormControl(this.employee.ProfilePicture, null),
       // Image: new FormControl(`http://srv-apps-prod/Images/${this.employee.EmployeeID}.jpg`, null),
       // KupaID: new FormControl(this.employee.KupaID, null),
       // KupaName: new FormControl(this.employee.KupaName, null),
@@ -275,7 +276,7 @@ export class EmployeesAddUpdateComponent implements OnInit {
   // }
 
   togglePreview() {
-    this.previewImage = `http://srv-apps-prod/Images/${this.employee.EmployeeID}.jpg`;//this.employeePersonalDetails.controls['Image'].value;
+    this.previewImage = this.employeePersonalDetails.controls['ProfilePicture'].value;
   }
 
   closePreview() {

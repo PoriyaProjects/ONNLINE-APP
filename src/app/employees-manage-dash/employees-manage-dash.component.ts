@@ -108,6 +108,7 @@ export class EmployeesManageDashComponent implements OnInit, OnDestroy {
       JobTitleID: "",
       Image: "",
       EmployeeID: "",
+      ProfilePicture: "",
       FirstName: "",
       FirstNameEng: "",
       LastName: "",
