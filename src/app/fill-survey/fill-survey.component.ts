@@ -661,7 +661,7 @@ export class FillSurveyComponent implements OnInit {
                 .post(
                     environment.url + "GetCardiologyPatientDetails",
                     {
-                        patientId: this.Passport,
+                        _passport: this.Passport,
                     }
                 )
                 .subscribe((Response) => {
