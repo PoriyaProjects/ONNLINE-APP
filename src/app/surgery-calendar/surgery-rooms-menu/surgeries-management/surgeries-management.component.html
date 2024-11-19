@@ -1,8 +1,8 @@
 <mat-spinner *ngIf="loader"></mat-spinner>
 <div class="row head" dir="rtl">
-  <button mat-icon-button color="warn" aria-label="Example icon button with a close icon" mat-dialog-close
-    style="float: right;">
-    <mat-icon>close</mat-icon>
+  <!--  style="float: right;" -->
+  <button mat-mini-fab aria-label="close icon" (click)="closeDialog()">
+    X
   </button>
   <div class="col-md-3">
     <div class="btn-group">

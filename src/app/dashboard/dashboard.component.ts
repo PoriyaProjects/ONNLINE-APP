@@ -29,6 +29,7 @@ export class DashboardComponent implements OnInit {
             return "";
         },
     };
+    shortcuts = [];
     aobjTotal: string;
     resporatoryCount: number;
     first_name: string;
@@ -63,6 +64,7 @@ export class DashboardComponent implements OnInit {
         this.getDataFormServer("");
         this.getLoginUserDetails();
         this.getBirthDayPeople();
+        this.getShortCutsLinks();
     }
     // public getData(){
     //     this.Departmints["departs"].forEach((element, key) => {
@@ -85,6 +87,33 @@ export class DashboardComponent implements OnInit {
                     console.log("error in birthday list");
                 }
             });
+    }
+    getShortCutsLinks() {
+        this.http
+            .post(environment.url + "GetShortCutsLinks", {
+                _userName: this.userName
+            })
+            .subscribe((Response) => {
+                try {
+                    this.shortcuts = Response['d'];
+                } catch (error) {
+                    console.log("error in birthday list");
+                }
+            });
+    }
+    openWithEdge(link: string): void {
+        link = 'microsoft-edge:' + link;
+        const blob = new Blob(
+            [`[InternetShortcut]\nURL=${link}\n`],
+            { type: 'application/octet-stream' }
+        );
+        const downloadUrl = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = downloadUrl;
+        a.download = 'OpenInEdge.url';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
     }
     getLoginUserDetails() {
         this.http
