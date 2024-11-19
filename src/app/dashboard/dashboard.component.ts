@@ -75,7 +75,9 @@ export class DashboardComponent implements OnInit {
 
     getBirthDayPeople() {
         this.http
-            .post(environment.url + "GetBirthDayPeople", {})
+            .post(environment.url + "GetBirthDayPeople", {
+                user_name: this.userName
+            })
             .subscribe((Response) => {
                 try {
                     this.birth_day_people = Response['d'];
