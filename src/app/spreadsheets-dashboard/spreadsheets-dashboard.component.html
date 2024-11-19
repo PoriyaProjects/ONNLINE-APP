@@ -1,0 +1,31 @@
+<div class="dashboard-container">
+    <!-- Search Section -->
+    <div class="search-section">
+        <input type="text" class="search-bar" placeholder="חיפוש לפי כותרת" [(ngModel)]="searchQuery" />
+        <button mat-raised-button type="submit" (click)="addNewSheet()" class="btn btn-primary btn-raised mr-5"
+            matTooltip="דוח חדש">
+            <span class="material-icons">
+                add
+            </span>
+        </button>
+    </div>
+
+    <!-- Spreadsheet Cards Section -->
+    <div class="cards-container">
+        <div class="card" *ngFor="let spreadsheet of filteredSpreadsheets" (click)="openSpreadSheetDialog(spreadsheet)">
+            <div class="card-header">
+                <p class="sheet-id">{{ spreadsheet.SheetID }}.</p>
+                {{ spreadsheet.SheetName }}
+                <button mat-raised-button type="submit" (click)="deleteSheet(spreadsheet.SheetID)"
+                    *ngIf="user_name == 'adahabre'" class="btn btn-raised delete-btn" matTooltip="מחיקה">
+                    <span class="material-icons">
+                        delete
+                    </span>
+                </button>
+            </div>
+            <div class="card-image">
+                <img src="assets/images/logo.png" alt="{{ spreadsheet.SheetName }}" />
+            </div>
+        </div>
+    </div>
+</div>

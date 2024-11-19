@@ -1,0 +1,20 @@
+.e-spreadsheet {
+  padding-top: 1.5rem !important;
+  margin: auto;
+}
+.header {
+  font-size: 18px;
+  font-weight: bold;
+  background: #f4f4f4;
+  padding: 10px;
+  border-bottom: 1px solid #ddd;
+}
+.title-bar {
+  direction: rtl;
+  width: 100%;
+  padding: 10px;
+  font-size: 30px;
+  font-weight: bold;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}

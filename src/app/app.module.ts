@@ -235,6 +235,9 @@ import { TreeItemDialogComponent } from './new-header/tree-item-dialog/tree-item
 import { AngularEditorModule } from '@kolkov/angular-editor';
 import { LabTestsComponent } from './lab-tests/lab-tests.component';
 import { EditOrAddLabTestsComponent } from './lab-tests/edit-or-add-lab-tests/edit-or-add-lab-tests.component';
+import { SpreadsheetComponent } from './spreadsheets-dashboard/spreadsheet/spreadsheet.component';
+import { SpreadsheetAllModule } from '@syncfusion/ej2-angular-spreadsheet';
+import { SpreadsheetsDashboardComponent } from './spreadsheets-dashboard/spreadsheets-dashboard.component';
 
 
 const maskConfig: Partial<IConfig> = {
@@ -422,9 +425,12 @@ const maskConfig: Partial<IConfig> = {
     EditOrAddSupplierComponent,
     TreeItemDialogComponent,
     LabTestsComponent,
-    EditOrAddLabTestsComponent
+    EditOrAddLabTestsComponent,
+    SpreadsheetComponent,
+    SpreadsheetsDashboardComponent
   ],
-  imports: [    
+  imports: [
+    SpreadsheetAllModule,
     AngularEditorModule,
     JpTimeMaskModule,
     NgxBarcodeModule,

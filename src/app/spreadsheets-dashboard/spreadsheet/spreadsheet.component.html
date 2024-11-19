@@ -1,0 +1,13 @@
+<!-- <div class="header">{{ sheet_details.SheetName }}</div> -->
+<input type="text" class="title-bar" placeholder="כותרת חדשה" [(ngModel)]="sheet_details.SheetName"
+    (blur)="onCellSave(null)" />
+<!--  [showFormulaBar]="false" -->
+<ejs-spreadsheet #spreadsheet (cellSave)="onCellSave($event)" [enableRtl]="true" [showRibbon]="false">
+    <e-sheets>
+        <e-sheet>
+            <e-ranges>
+                <e-range [dataSource]='data'></e-range>
+            </e-ranges>
+        </e-sheet>
+    </e-sheets>
+</ejs-spreadsheet>

@@ -127,6 +127,8 @@ import {BedsoreDashboardComponent} from '../form-dashboard/bedsore-dashboard/bed
 import {AuthorizedComponent} from '../authorized/authorized.component'
 import { SupplierComponent } from '../supplier/supplier.component';
 import { LabTestsComponent } from '../lab-tests/lab-tests.component';
+import { SpreadsheetComponent } from '../spreadsheets-dashboard/spreadsheet/spreadsheet.component';
+import { SpreadsheetsDashboardComponent } from '../spreadsheets-dashboard/spreadsheets-dashboard.component';
 
 
 const routes: Routes = [
@@ -260,6 +262,8 @@ const routes: Routes = [
   {path : "Reporting" , component : ReportReportingComponent }, 
   {path : "authorized" , component : AuthorizedComponent },
   { path: "suppliers", component: SupplierComponent } ,
+  { path: "spreadsheet", component: SpreadsheetComponent } ,
+  { path: "spreadsheets-dashboard", component: SpreadsheetsDashboardComponent } ,
   { path: "LabTests", component: LabTestsComponent }
   
 

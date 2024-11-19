@@ -567,7 +567,9 @@
         <mat-icon>more_vert</mat-icon>
     </button>
     <mat-menu #menu="matMenu">
-        <button mat-menu-item (click)="openGoogleSheets()" matTooltip="איזוק אסירים">איזוק
+        <button mat-menu-item *ngFor="let sheet of spreadsheets" (click)="openSpreadSheets(sheet)"
+            matTooltip="{{sheet.SheetName}}">{{sheet.SheetName}}</button>
+        <!-- <button mat-menu-item (click)="openGoogleSheets()" matTooltip="איזוק אסירים">איזוק
             אסירים</button>
         <button mat-menu-item (click)="openGoogleSheets2()" matTooltip="העברה למוסד אחר">העברה למוסד
             אחר</button>
@@ -581,7 +583,7 @@
             matTooltip="עדכון סטטוס 'טיפול מוגבר' במחלקות הפנימיות 2024">סטטוס טיפול מוגבר</button>
         <button mat-menu-item (click)="openGoogleSheets7()" matTooltip="חולים נוטים למות">חולים נוטים למות</button>
         <button mat-menu-item (click)="openGoogleSheets8()" matTooltip="בקרת מזרונים">בקרת מזרונים</button>
-        <button mat-menu-item (click)="openGoogleSheets9()" matTooltip="מטופלים חוסים">מטופלים חוסים</button>
+        <button mat-menu-item (click)="openGoogleSheets9()" matTooltip="מטופלים חוסים">מטופלים חוסים</button> -->
     </mat-menu>
     <h1 mat-dialog-title style="text-align: center;">יישומים</h1>
     <hr>

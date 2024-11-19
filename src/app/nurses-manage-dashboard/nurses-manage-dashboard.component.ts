@@ -12,6 +12,7 @@ import { int } from '@zxing/library/esm/customTypings';
 import { MatSnackBar, MatSnackBarHorizontalPosition, MatSnackBarVerticalPosition } from '@angular/material/snack-bar';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { environment } from 'src/environments/environment';
+import { SpreadsheetComponent } from '../spreadsheets-dashboard/spreadsheet/spreadsheet.component';
 declare let ClientIP: any;
 @Component({
   selector: 'app-nurses-manage-dashboard',
@@ -71,6 +72,7 @@ export class NursesManageDashboardComponent implements OnInit {
   dateToDisplayString: string;
   loaded: boolean;
   occLoaded: boolean;
+  spreadsheets = [];
   deliveryOccLoaded: boolean;
   allErOccupancy: int;
   allDeliveryErOccupancy: int;
@@ -343,40 +345,56 @@ export class NursesManageDashboardComponent implements OnInit {
 
   otherApps() {
     this.dialog.open(this.modalOtherApps, { width: '60%', disableClose: false });
+    this.loadData();
   }
 
-  openGoogleSheets() {
-    window.open("https://docs.google.com/spreadsheets/d/1045oyB5WpXvgKHnIoxBgRHVxWqnXeTWnOVoo1YRpE84/edit?usp=sharing", "_blank");
+  loadData(): void {
+    this.http.post(environment.url + 'GetSpreadSheetsList', {
+      _section: 'Nurses'
+    }).subscribe((response: any) => {
+      this.spreadsheets = response['d'];
+      // console.log(temp_data);
+    });
   }
 
-  openGoogleSheets2() {
-    window.open("https://docs.google.com/spreadsheets/d/1as8TwO3WurD4Mn8aIuaDVbtMHyr6Bgu_bGS1w91TPA4/edit?usp=sharing", "_blank");
+  openSpreadSheets(sheet) {
+    let dialog = this.dialog.open(SpreadsheetComponent);
+    dialog.updateSize('80%', '100%');
+    dialog.componentInstance.sheet_details = sheet;
   }
 
-  openGoogleSheets3() {
-    window.open("https://docs.google.com/spreadsheets/d/1ztL0tg1J3pn0OfpOHjkkn9O2ylffh84YweUoFWUdHK8/edit?usp=sharing", "_blank");
-  }
+  // openGoogleSheets() {
+  //   window.open("https://docs.google.com/spreadsheets/d/1045oyB5WpXvgKHnIoxBgRHVxWqnXeTWnOVoo1YRpE84/edit?usp=sharing", "_blank");
+  // }
 
-  openGoogleSheets4() {
-    window.open("https://docs.google.com/spreadsheets/d/1XxOfVkSoooGTgCc6TBRQlgfmGU5k-8Ar_gsWyIMA4r8/edit?usp=sharing", "_blank");
-  }
+  // openGoogleSheets2() {
+  //   window.open("https://docs.google.com/spreadsheets/d/1as8TwO3WurD4Mn8aIuaDVbtMHyr6Bgu_bGS1w91TPA4/edit?usp=sharing", "_blank");
+  // }
 
-  openGoogleSheets5() {
-    window.open("https://docs.google.com/spreadsheets/d/13GxqUzfkjFGpe8XCxBVoeCm5OBTpSw5C7Gq_NU2iOSE/edit?usp=sharing", "_blank");
-  }
+  // openGoogleSheets3() {
+  //   window.open("https://docs.google.com/spreadsheets/d/1ztL0tg1J3pn0OfpOHjkkn9O2ylffh84YweUoFWUdHK8/edit?usp=sharing", "_blank");
+  // }
 
-  openGoogleSheets6() {
-    window.open("https://docs.google.com/spreadsheets/d/1wJj9XGJBTUzoK-PEJUFy1CVt368N904Fn6cgKYvgBIs/edit?usp=sharing", "_blank");
-  }
-  openGoogleSheets7() {
-    window.open("https://docs.google.com/spreadsheets/d/1UUsuMGVbb_YKkRwLmoSwBpCrl_K_yJWD0iYw5BndTGw/edit?usp=sharing", "_blank");
-  }
-  openGoogleSheets8() {
-    window.open("https://docs.google.com/spreadsheets/d/1nkc2O3q8itTIjl7-lVJtqN5waFyVSPQw4aHN0aX2V2s/edit?usp=sharing", "_blank");
-  }
-  openGoogleSheets9() {
-    window.open("https://docs.google.com/spreadsheets/d/1FNFp3SB_NUFYrEI1juvbWuo4Ell6J8yf_8JyV4rliUc/edit?usp=sharing", "_blank");
-  }
+  // openGoogleSheets4() {
+  //   window.open("https://docs.google.com/spreadsheets/d/1XxOfVkSoooGTgCc6TBRQlgfmGU5k-8Ar_gsWyIMA4r8/edit?usp=sharing", "_blank");
+  // }
+
+  // openGoogleSheets5() {
+  //   window.open("https://docs.google.com/spreadsheets/d/13GxqUzfkjFGpe8XCxBVoeCm5OBTpSw5C7Gq_NU2iOSE/edit?usp=sharing", "_blank");
+  // }
+
+  // openGoogleSheets6() {
+  //   window.open("https://docs.google.com/spreadsheets/d/1wJj9XGJBTUzoK-PEJUFy1CVt368N904Fn6cgKYvgBIs/edit?usp=sharing", "_blank");
+  // }
+  // openGoogleSheets7() {
+  //   window.open("https://docs.google.com/spreadsheets/d/1UUsuMGVbb_YKkRwLmoSwBpCrl_K_yJWD0iYw5BndTGw/edit?usp=sharing", "_blank");
+  // }
+  // openGoogleSheets8() {
+  //   window.open("https://docs.google.com/spreadsheets/d/1nkc2O3q8itTIjl7-lVJtqN5waFyVSPQw4aHN0aX2V2s/edit?usp=sharing", "_blank");
+  // }
+  // openGoogleSheets9() {
+  //   window.open("https://docs.google.com/spreadsheets/d/1FNFp3SB_NUFYrEI1juvbWuo4Ell6J8yf_8JyV4rliUc/edit?usp=sharing", "_blank");
+  // }
 
   MonitorReports() {
     if (this.onlyDisplay) this.openSnackBar("אין אישור צפייה!");
