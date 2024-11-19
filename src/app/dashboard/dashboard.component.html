@@ -27,8 +27,8 @@
     </div>
 </div>
 <div dir="rtl" class="row">
-    <div class="col-md-6">
-        <div class="card">
+    <div class="col-md-6" dir="rtl">
+        <!-- <div class="card">
             <h3 class="text-center card-header">
                 נכון ל - {{ today | date: "dd/MM/yyyy hh:mm a" }}
             </h3>
@@ -98,39 +98,59 @@
                     </td>
                 </tr>
             </tbody>
-        </table>
+        </table> -->
+
+        <div class="shortcuts-row-container">
+            <!-- Example card -->
+            <h2 class="shortcuts-header">קיצורי דרך</h2>
+            <div class="card" *ngFor="let shortcut of shortcuts">
+                <a [href]="shortcut.Link" *ngIf="shortcut.ChromeBrowser == 'True'" target="_blank">
+                    <img [src]="shortcut.Image" alt="Shortcut Image" class="card-image">
+                    <div class="card-title">{{ shortcut.Title }}</div>
+                </a>
+                <!-- <a [href]="'microsoft-edge:' + shortcut.Link" *ngIf="shortcut.ChromeBrowser == 'False'" target="_blank">
+                    <img [src]="shortcut.Image" alt="Shortcut Image" class="card-image">
+                    <div class="card-title">{{ shortcut.Title }}</div>
+                </a> -->
+                <a  (click)="openWithEdge(shortcut.Link)" *ngIf="shortcut.ChromeBrowser == 'False'" target="_blank">
+                    <img [src]="shortcut.Image" alt="Shortcut Image" class="card-image">
+                    <div class="card-title">{{ shortcut.Title }}</div>
+                </a>
+            </div>
+        </div>
     </div>
-    <div class="col-md-6">
-        <div dir="rtl" class="user-row-container">
-            <!-- <a href="file://srv-apps-02\bin2\פרוטוקולים לטיפול אנטיביוטי אמפירי">תיקיית S</a> -->
-            <!-- User Details Section -->
-            <div class="user-details">
-                <img [src]="ProfilePicture" alt="Profile Picture" class="profile-picture">
-                <div class="user-info">
-                    <h2>{{ first_name }} {{ last_name }}</h2>
-                    <h5>&#8734; {{ userName }} &#8734;</h5>
-                    <!-- <button>
-                        <a (click)="openFolder()">פרוטוקולים</a>
-                    </button> -->
+    <div class="col-md-6" dir="rtl">
+        <div class="user-row-container">
+            <h2 class="user-header">פרופיל</h2>
+            <div class="row">
+                <div class="user-details">
+                    <img [src]="ProfilePicture" alt="Profile Picture" class="profile-picture">
+                    <div class="user-info">
+                        <h2>{{ first_name }} {{ last_name }}</h2>
+                        <h5>&#8734; {{ userName }} &#8734;</h5>
+                        <!-- <button>
+                            <a (click)="openFolder()">פרוטוקולים</a>
+                        </button> -->
+                    </div>
+                </div>
+                <!-- Profiles List Section -->
+                <div class="profiles-list">
+                    <h5>ימי הולדת | {{today | date: 'dd-MM-yyyy'}}</h5>
+                    <p *ngIf="birth_day_people.length == 0">אין ימי הולדת במחלקה שלך ליום הזה</p>
+                    <ul *ngIf="birth_day_people.length > 0">
+                        <li *ngFor="let person of birth_day_people">
+                            <img [src]="person.ProfilePicture" alt="תמונת עובד" class="birthday-profile-picture" />
+                            <span class="birthday-info">
+                                {{ person.FirstName }} {{ person.LastName }}
+                            </span>
+                            <a href="mailto:{{ person.Email }}" class="email-icon" matTooltip="שלח מייל">
+                                <mat-icon>email</mat-icon>
+                            </a>
+                        </li>
+                    </ul>
                 </div>
             </div>
 
-            <!-- Profiles List Section -->
-            <div class="profiles-list">
-                <h5>ימי הולדת | {{today | date: 'dd-MM-yyyy'}}</h5>
-                <p *ngIf="birth_day_people.length == 0">אין ימי הולדת במחלקה שלך ליום הזה</p>
-                <ul *ngIf="birth_day_people.length > 0">
-                    <li *ngFor="let person of birth_day_people">
-                        <img [src]="person.ProfilePicture" alt="תמונת עובד" class="birthday-profile-picture" />
-                        <span class="birthday-info">
-                            {{ person.FirstName }} {{ person.LastName }}
-                        </span>
-                        <a href="mailto:{{ person.Email }}" class="email-icon" matTooltip="שלח מייל">
-                            <mat-icon>email</mat-icon>
-                        </a>
-                    </li>
-                </ul>
-            </div>
         </div>
         <div dir="rtl" class="row h-85" *ngIf="birthdayUser">
             <div id="birthdayCake">

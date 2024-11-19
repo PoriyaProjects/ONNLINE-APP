@@ -187,6 +187,10 @@ export class SurgeriesManagementComponent {
     });
   }
 
+  closeDialog() {
+    this.dialogRef.close();
+  }
+
   closeOpenDayViewDay() {
     this.getPatientsQueues();
     // this.activeDayIsOpen = false;
