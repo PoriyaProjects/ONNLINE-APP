@@ -599,6 +599,11 @@ export class ShareSurgeriesPDFDialog {
     { FirstName: 'מאיר', LastName: 'רוח', id: '', Email: 'MRuach@tzmc.gov.il' },
     { FirstName: 'רובא', LastName: 'יוסף', id: '', Email: 'RYousef@tzmc.gov.il' },
     { FirstName: 'נוי', LastName: 'טובול', id: '', Email: 'NYairtubul@tzmc.gov.il' },
+    { FirstName: 'אילנה', LastName: 'גורודצקי', id: '', Email: 'EGORODETSKY@tzmc.gov.il' },
+    { FirstName: 'עאטף', LastName: 'גאנם', id: '', Email: 'AGANEM@tzmc.gov.il' },
+    { FirstName: 'כנעאן', LastName: 'מנסור', id: '', Email: 'KMANSOUR@tzmc.gov.il' },
+    { FirstName: 'מוניר', LastName: 'נשאשיבי', id: '', Email: 'MNASHASHIB@tzmc.gov.il' },
+    { FirstName: 'מרואן', LastName: 'ארמלי', id: '', Email: 'MARMALY@tzmc.gov.il' },
     { FirstName: this.user_name, LastName: '', id: '', Email: this.user_name + '@tzmc.gov.il' },
   ];
   @ViewChild('fruitInput') fruitInput: ElementRef<HTMLInputElement>;
