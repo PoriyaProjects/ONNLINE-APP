@@ -320,17 +320,15 @@
   <h1 mat-dialog-title style="text-align: center;">יישומים</h1>
   <hr>
   <div class="row">
-    <mat-card class="card-img" (click)="openGoogleSheets()">איזוק אסירים
+    <mat-card class="card-img" *ngFor="let sheet of spreadsheets" (click)="openSpreadSheets(sheet)"
+      matTooltip="{{sheet.SheetName}}">{{sheet.SheetName}}
     </mat-card>
-    <!-- <mat-card class="card-img" style="background-image:url('../../assets/images/transferTo.png');width: 50%;"
-      (click)="openGoogleSheets2()">
-      <div class="card-img"><span class="tooltiptext">העברה למוסד
-        אחר</span></div>
-      </mat-card> -->
+    <!-- <mat-card class="card-img" (click)="openGoogleSheets()">איזוק אסירים
+    </mat-card>
     <mat-card class="card-img" (click)="openGoogleSheets3()">עדכון סטטוס 'טיפול מוגבר' במחלקות
       הפנימיות 2024
     </mat-card>
     <mat-card class="card-img" (click)="openGoogleSheets4()">מטופלים חוסים
-    </mat-card>
+    </mat-card> -->
   </div>
 </ng-template>

@@ -3,7 +3,6 @@ import { Component, Inject, Input, OnInit, TemplateRef, ViewChild } from '@angul
 import { FormBuilder, FormControl, FormGroup } from '@angular/forms';
 import { MatDialog, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { MatTableDataSource } from '@angular/material/table';
-import { FillReportComponent } from '../fill-report/fill-report.component';
 import { NursesDashboardComponent } from '../nurses-dashboard/nurses-dashboard.component';
 import { Router } from '@angular/router';
 import {
@@ -12,8 +11,8 @@ import {
   MatSnackBarVerticalPosition,
 } from '@angular/material/snack-bar';
 import { DatePipe } from '@angular/common';
-import { interval, Subscription } from 'rxjs';
 import { environment } from 'src/environments/environment';
+import { SpreadsheetComponent } from '../spreadsheets-dashboard/spreadsheet/spreadsheet.component';
 
 @Component({
   selector: 'bug-report-component',
@@ -87,6 +86,7 @@ export class NursesDepartmentManageComponent implements OnInit {
 
   displayedColumns: string[] = [];
   dataSource = new MatTableDataSource<any>();
+  spreadsheets = [];
 
   displayedColumns2: string[] = ['casenumber', 'departmentmedical', 'roomnumber', 'lastname', 'firstname', 'dadname', 'age', 'gender', 'enterdate', 'entertime', 'displayreports'];
   dataSource2 = new MatTableDataSource<any>();
@@ -103,7 +103,7 @@ export class NursesDepartmentManageComponent implements OnInit {
       if (filval == "מונשם") {
         let newArr = this.dataSource2.filteredData.filter((obj) => obj.SSP_DESCRIPTION.includes(filval) && !obj.SSP_DESCRIPTION.includes("ECMO"));
         this.dataSource2 = new MatTableDataSource<any>(newArr);
-      }else if (filval == "ארן") {
+      } else if (filval == "ארן") {
         let newArr = this.dataSource2.filteredData.filter((obj) => obj.AranStatus !== '');
         this.dataSource2 = new MatTableDataSource<any>(newArr);
       } else {
@@ -157,6 +157,7 @@ export class NursesDepartmentManageComponent implements OnInit {
   // dateToDisplayString: string = this.datePipe.transform(this.date, 'yyyy-MM-dd');
 
   ngOnInit(): void {
+    this.loadData();
     if (this.Dept_Name == 'מיון יולדות (חדר לידה)' || this.Dept_Name == 'חדר לידה') {
       this.displayedColumns = ['nursing', 'receipts', 'released'];
     } else if (this.Dept_Name == 'ילוד בריא' || this.Dept_Name == 'יולדות') {
@@ -275,6 +276,27 @@ export class NursesDepartmentManageComponent implements OnInit {
   //   this.getDepartDetails();
   //   this.getPatientsPerDepart(this.event, '');
   // }
+
+  loadData(): void {
+    this.http.post(environment.url + 'GetSpreadSheetsList', {
+      _section: 'Nurses'
+    }).subscribe((response: any) => {
+      let permission_to = ['1', '7', '10'];
+      response['d'].forEach(element => {
+        if (element.SheetID == '1' || element.SheetID == '7' || element.SheetID == '10') {
+          this.spreadsheets.push(element);
+        }
+      });
+      // console.log(temp_data); 1 7 10
+    });
+  }
+
+  openSpreadSheets(sheet) {
+    let dialog = this.dialog.open(SpreadsheetComponent);
+    dialog.updateSize('80%', '100%');
+    dialog.componentInstance.sheet_details = sheet;
+  }
+
 
   openGoogleSheets() {
     window.open("https://docs.google.com/spreadsheets/d/1045oyB5WpXvgKHnIoxBgRHVxWqnXeTWnOVoo1YRpE84/edit?usp=sharing", "_blank");
