@@ -101,6 +101,9 @@ export class DashboardComponent implements OnInit {
                 }
             });
     }
+    openWithEdge2(link: string) {
+        window.open("microsoft-edge:" + link);
+    }
     openWithEdge(link: string): void {
         link = 'microsoft-edge:' + link;
         const blob = new Blob(

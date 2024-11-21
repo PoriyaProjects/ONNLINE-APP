@@ -71,7 +71,7 @@
                     <img [src]="shortcut.Image" alt="Shortcut Image" class="card-image">
                     <div class="card-title">{{ shortcut.Title }}</div>
                 </a> -->
-                <a (click)="openWithEdge(shortcut.Link)" *ngIf="shortcut.ChromeBrowser == 'False'" target="_blank">
+                <a (click)="openWithEdge2(shortcut.Link)" *ngIf="shortcut.ChromeBrowser == 'False'" target="_blank">
                     <img [src]="shortcut.Image" alt="Shortcut Image" class="card-image">
                     <div class="card-title">{{ shortcut.Title }}</div>
                 </a>
