@@ -459,7 +459,6 @@ export class FormsansweredComponent implements OnInit {
                     this.http
                         .post(
                             environment.urlipracticom + "createPdfOnServer",
-                            // environment.url + "createPdfOnServer",
                             {
                                 pdf: this.pdf,
                             }
@@ -468,10 +467,7 @@ export class FormsansweredComponent implements OnInit {
                             this.http
                                 .post(
                                     environment.urlipracticom + "LinkPdfToPatientNamer",
-                                    // environment.url + "LinkPdfToPatientNamer",
                                     {
-                                        //.post("http://srv-ipracticom:8080/WebService.asmx/LinkPdfToPatientNamer", {
-                                        // .post(environment.url + "LinkPdfToPatientNamer", {
                                         CaseNumber: patientIDPr,
                                         FormID: element.FormID,
                                         Catigory: "ZPO_ONLINE",
@@ -479,7 +475,6 @@ export class FormsansweredComponent implements OnInit {
                                     }
                                 )
                                 .subscribe((Response) => {
-                                    //need to check if saved completed
                                     if (Response["d"] == "success") {
                                         this.openSnackBar(
                                             "! נשמר בהצלחה לתיק מטופל בנמר"
