@@ -71,6 +71,7 @@ export class SurgeriesUnclosedReportsComponent implements OnInit {
     "room",
     "department",
     "surgeon",
+    "cancel",
   ];
 
   modalOptions: NgbModalOptions = {

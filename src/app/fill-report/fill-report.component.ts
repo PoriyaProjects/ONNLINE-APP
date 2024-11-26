@@ -93,6 +93,12 @@ export class ShareReportsFillDialog {
     }
   }
 
+  theLostKey(event) {
+    if (event.code == "Comma") {
+      this._filter(event.key);
+    }
+  }
+
   selected(event: MatAutocompleteSelectedEvent): void {
     if (event.option.value.id == "1") {
       this.specialForces.forEach(element => {

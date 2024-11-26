@@ -20,8 +20,6 @@ export class SpreadsheetComponent implements OnInit {
   @Input()
   sheet_details: any;
   user_name: string = localStorage.getItem("loginUserName");
-  // Define the options for specific columns
-  departmentOptions: string[] = ['HR', 'IT', 'Finance', 'Admin'];
   @ViewChild('spreadsheet') spreadsheetObj: Spreadsheet;
 
   constructor(private http: HttpClient,

@@ -77,6 +77,21 @@
                 </a>
             </div>
         </div>
+        <div class="shortcuts-row-container" *ngIf="userName == 'adahabre'">
+            <!-- Example card -->
+            <h2 class="shortcuts-header">תיקיות
+                <button matTooltip="תיקייה ראשית" mat-raised-button type="submit" class="btn btn-primary btn-raised"
+                    (click)="displayFiles(undefined)">
+                    <i class="material-icons">arrow_back</i>
+                </button>
+            </h2>
+            <div class="card" *ngFor="let folder of folders_display">
+                <a (click)="displayFiles(folder)">
+                    <img [src]="folder.Image" alt="Shortcut Image" class="card-image">
+                    <div class="card-title">{{ folder.Title }}</div>
+                </a>
+            </div>
+        </div>
     </div>
     <div class="col-md-6" dir="rtl">
         <a href="#" title="Example tile shortcut" class="tile-box tile-box-alt btn-info" style="border-radius: 15px;"

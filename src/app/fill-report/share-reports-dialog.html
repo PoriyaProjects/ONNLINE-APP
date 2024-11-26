@@ -6,7 +6,8 @@
     </div>
     <div class="row" style="margin: 15px 0px 15px 0px;" [formGroup]="mail">
         <div class="col-12">
-           <textarea style="width: 100%;border-radius: 10px;" rows="3" placeholder="נושא/הערה" formControlName="mailSubject"></textarea> 
+            <textarea style="width: 100%;border-radius: 10px;" rows="3" placeholder="נושא/הערה"
+                formControlName="mailSubject"></textarea>
         </div>
     </div>
     <div class="row">
@@ -23,8 +24,7 @@
                         </mat-chip>
                         <input placeholder="בחר אחראי מהרשימה" #fruitInput [formControl]="myControl"
                             [matAutocomplete]="auto" [matChipInputFor]="chipList"
-                            [matChipInputSeparatorKeyCodes]="separatorKeysCodes"
-                            (matChipInputTokenEnd)="add($event)">
+                            [matChipInputSeparatorKeyCodes]="separatorKeysCodes">
                     </mat-chip-list>
                     <mat-autocomplete #auto="matAutocomplete" (optionSelected)="selected($event)">
                         <mat-option *ngFor="let option of filteredOptions | async" [value]="option">

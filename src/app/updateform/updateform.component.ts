@@ -124,6 +124,7 @@ export class UpdateformComponent implements OnInit {
         this.rowFormData.NursesTable.forEach(element => {
           this._tableArr.push(element);
         });
+        
 
         $("#loader").removeClass("d-none");
         setTimeout(function () {

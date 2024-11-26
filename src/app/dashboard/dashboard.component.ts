@@ -30,6 +30,8 @@ export class DashboardComponent implements OnInit {
         },
     };
     shortcuts = [];
+    folders = [];
+    folders_display = [];
     aobjTotal: string;
     resporatoryCount: number;
     first_name: string;
@@ -65,6 +67,7 @@ export class DashboardComponent implements OnInit {
         this.getLoginUserDetails();
         this.getBirthDayPeople();
         this.getShortCutsLinks();
+        this.getFoldersLinks();
     }
     // public getData(){
     //     this.Departmints["departs"].forEach((element, key) => {
@@ -75,6 +78,19 @@ export class DashboardComponent implements OnInit {
     //     });
     // }
 
+    displayFiles(folder) {
+        if (folder != undefined) {
+            if (folder.Type == 'File') {
+                this.openFileInTab(folder.Link);
+            }
+            else this.folders_display = this.folders.filter(x => x.Parent == folder.Row_ID);
+        }
+        else this.folders_display = this.folders.filter(x => x.Parent == "0");
+    }
+    openFileInTab(link: string) {
+        if (link == '') return;
+        window.open(link, "_blank");
+    }
     getBirthDayPeople() {
         this.http
             .post(environment.url + "GetBirthDayPeople", {
@@ -96,6 +112,20 @@ export class DashboardComponent implements OnInit {
             .subscribe((Response) => {
                 try {
                     this.shortcuts = Response['d'];
+                } catch (error) {
+                    console.log("error in birthday list");
+                }
+            });
+    }
+    getFoldersLinks() {
+        this.http
+            .post(environment.url + "GetFoldersLinks", {
+                _userName: this.userName
+            })
+            .subscribe((Response) => {
+                try {
+                    this.folders = Response['d'];
+                    this.folders_display = this.folders.filter(x => x.Parent == "0");
                 } catch (error) {
                     console.log("error in birthday list");
                 }
