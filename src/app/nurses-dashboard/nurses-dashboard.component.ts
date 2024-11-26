@@ -4,21 +4,15 @@ import {
   Inject,
   Input,
   OnInit,
-  Renderer2,
   ViewChild,
 } from "@angular/core";
 import { DatePipe } from "@angular/common";
-import { Router } from "@angular/router";
 import { HttpClient } from "@angular/common/http";
 import {
   MatSnackBar,
   MatSnackBarHorizontalPosition,
   MatSnackBarVerticalPosition,
 } from "@angular/material/snack-bar";
-import {
-  NgbModal,
-  NgbActiveModal,
-} from "@ng-bootstrap/ng-bootstrap";
 import {
   FormControl,
   FormBuilder,
@@ -33,8 +27,8 @@ import { MatTableDataSource } from "@angular/material/table";
 import { Observable } from "rxjs";
 import { map, startWith } from "rxjs/operators";
 import { FillReportComponent } from "../fill-report/fill-report.component";
-import { MatAutocompleteSelectedEvent, MatAutocompleteTrigger } from "@angular/material/autocomplete";
-import { MatAccordion, MatExpansionModule } from '@angular/material/expansion';
+import { MatAutocompleteSelectedEvent } from "@angular/material/autocomplete";
+import { MatAccordion } from '@angular/material/expansion';
 import { VoiceRecognitionService } from '../header/service/voice-recognition.service'
 import { MatChipInputEvent } from "@angular/material/chips";
 import { COMMA, ENTER } from '@angular/cdk/keycodes';

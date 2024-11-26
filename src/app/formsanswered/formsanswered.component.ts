@@ -79,7 +79,7 @@ export class FormsansweredComponent implements OnInit {
     _tableArr = [];
     todaysDate = Date.now;
     UserName = localStorage.getItem("loginUserName").toLowerCase();
-
+    pdf: string = "";
     formSearchPatient: FormGroup;
     formSearchEmployee: FormGroup;
     urlID: number;
@@ -186,6 +186,267 @@ export class FormsansweredComponent implements OnInit {
     }
 
     saveFormToNamer(element) {
+        element.NursesTable.forEach(e => {
+            this._tableArr.push(e);
+        });
+        this.pdf = `
+        <!doctype html>
+        <html lang="he">
+          <head>
+            <meta charset="utf-8"/>
+              <title>מערכת טפסים אונליין</title>
+              <style>
+              body {
+                direction: rtl;
+                text-align: right;
+            }
+            .card {
+                min-height: 100%;
+            }
+            .card-header {
+                position: relative;
+                border-bottom: 1px solid #ccc;
+            }
+            .full-width {
+                width: 100%;
+            }
+            .pos-abs-center {
+                position: absolute;
+                text-align: center;
+            }
+            .pd-10 {
+                padding: 10px;
+            }
+            .row {
+                width: 100%;
+                display: flex;
+            }
+            .col-12{
+                width: 100%
+            }
+            .col-6{
+                width: 50%
+            }
+            .col-4{
+                width: 25%
+            }
+            .text-up {
+                text-transform: uppercase;
+            }
+            .text-right {
+                text-align: right;
+            }
+            .pad-30 {
+                padding: 30px;
+            }
+            .justify-content-md-center {
+                justify-content: center;
+            }
+            .b-bottom {
+                border-bottom: 1px solid #ccc;
+                display: inline-block;
+                padding: 2px 4px;
+            }
+            .fix-mb-5 {
+                margin-bottom: 5px;
+            }
+            #table-overflow {
+                overflow-x: auto;
+            }
+            .responsive-table {
+                width: 100%;
+                border-collapse: collapse;
+            }
+            .responsive-table th, .responsive-table td {
+                border: 1px solid #ccc;
+                padding: 8px;
+                text-align: center;
+            }
+            .example-section p {
+                margin: 0;
+            }
+            .fix-my-width {
+                width: fit-content;
+            }
+            .pos-botom-fixed {
+                position: fixed;
+                bottom: 0;
+                width: 100%;
+            }
+    </style>
+          </head>
+          <body dir="rtl">
+        <div dir="rtl" class="card">
+              <div class="card-header">
+                  <img class="full-width" src="https://poria.is-great.org/images/covid_2_header.png" />
+                  <h2 class="text-center">${element.FormName}</h2>
+                  <h2 class="text-center" style="top: 100px;">${element.DateOfFillForm}</h2>
+              </div>
+              <div class="card-body">
+                  <div class="row">
+                      <div class="col-12">
+                          <h4>פרטים אישיים</h4>
+                      </div>
+                  </div>
+                  <br />
+                  `;
+        if (element.PatientID != '') {
+            this.pdf += `<div class="row text-right">
+                    <div class="col-4">
+                          <label><b>מספר מקרה</b></label>
+                          <span class="b-bottom">${element.PatientID}</span>
+                      </div>
+                      <div class="col-4">
+                          <label><b>תעודת זהות</b></label>
+                          <span class="b-bottom">${element.PatientPassport}</span>
+                      </div>
+                      <div class="col-4">
+                          <label><b>שם נבדק</b></label>
+                          <span class="b-bottom">${element.PatientName
+                }</span>
+                      </div>
+      
+                      <div class="col-4">
+                          <label><b>טלפון נייד</b></label>
+                          <span class="b-bottom">${element.PatientPhone
+                }</span>
+                      </div>
+      
+                      <div class="col-4">
+                          <label><b>מין</b></label><span class="b-bottom">${element.PatientGender
+                }</span>
+                      </div>
+                      <div class="col-4">
+                          <label><b>תאריך לידה</b></label><span class="b-bottom">${element.PatientBirthday
+                }</span>
+                      </div>
+                      <div class="col-6">
+                          <label><b>מייל</b></label><span class="b-bottom">${element.PatientEmail}</span>
+                      </div>
+                      <div class="col-6">
+                          <label><b>כתובת</b></label><span class="b-bottom">${element.PatientAddress
+                }</span>
+                      </div>
+                  </div>
+                    `
+        }
+        this.pdf += `
+                  <form>
+                      <div class="row">
+                          <h3>חלק שאלות :</h3>
+                      </div>
+                      `;
+        element.Questions.forEach(item => {
+            this.pdf += `<div class="row">
+                        <div class="colr-12 brs-1">
+                            <p class="fix-mb-5">
+                                <span>
+                                    <span><b>${item.questionValue}</b>:&nbsp;&nbsp;</span><span
+                                        *ngIf="${item.AnswerType} != 'Signature'">${item.AnswerValue}</span><img
+                                        *ngIf="${item.AnswerType} == 'Signature'" width="100" height="100"
+                                        [src]="${item.AnswerValue}">
+                                </span>
+                            </p>
+                        </div>
+                    </div>`
+        });
+        this.pdf += `
+                          <div class="row">
+                              <h3 style="text-align: right;"><strong>חלק טבלאות</strong></h3>
+                          </div>
+                          `
+        this._tableArr.forEach(table => {
+
+            this.pdf += `<div style="margin-top: 20px;">
+                                  <mat-divider></mat-divider>
+                                  <div class="row" style="display: block;">
+                                      <h3 style="text-align: center;">${table.TableText}</h3>
+                                  </div>
+          
+                                  <mat-divider></mat-divider>
+                                  <div class="row" style="display: block;">
+                                      <h4 style="text-align: center;font-size: 22px;">${table.SubTitle}</h4>
+                                  </div>
+                                  <div class="row" id="table-overflow">
+                                      <div class="col">
+                                          <table class="table responsive-table">
+                                              <tr>
+                                              `;
+            table.colsGroup.forEach(column => {
+                this.pdf += `<th style="text-align: center;">
+                                                      ${column.colsText}
+                                                  </th>`;
+            });
+            this.pdf += `
+                                              </tr>
+                                              `
+            table.rowsGroup.forEach(row => {
+                this.pdf += `<tr>
+                                                                            `;
+                row.Answers.forEach((answer, output2) => {
+                    this.pdf += `
+                                                    <td>`;
+                    if (output2 == '0' && row.rowsText != '') {
+                        this.pdf += `
+                                                        <span style="text-align: right;float: right;">${row.rowsText}</span>`;
+                    } else {
+                        this.pdf += `
+                                                        <ng-template>
+                                                        `;
+                        if (answer.AnswerType == 'Text') {
+                            this.pdf += `
+                                                            <div>
+                                                          ${answer.AnswerValue}
+                                                      </div>`
+                        }
+                        if (answer.AnswerType == 'Time') {
+                            this.pdf += `<div>
+                                                          ${answer.AnswerValue}
+                                                      </div>`
+                        }
+                        if (answer.AnswerType == 'Date') {
+                            this.pdf += `<div>
+                                                            ${answer.AnswerValue}
+                                                        </div>`
+                        }
+                        if (answer.AnswerType == 'CheckBox') {
+                            this.pdf += `
+                                                            <section class="example-section">`
+                            if (answer.AnswerValue == 'True') this.pdf += `<p>V</p>`;
+                            else this.pdf += `<p></p>`;
+                            this.pdf += `</section>`;
+                        }
+                        if (answer.AnswerType == 'Signature' && answer.AnswerValue != '') {
+                            this.pdf += `
+                                                            <div class="fix-my-width">
+                                                            <img width="100" height="100" [src]="${answer.AnswerValue}">
+                                                        </div>
+                                                            `
+                        }
+                        this.pdf += `                                                      
+                                                  </ng-template>`;
+                    }
+                    this.pdf += `</td>`;
+                });
+                `</tr>`;
+            });
+            this.pdf += `
+                                          </table>
+                                      </div>
+                                  </div>
+                              </div>`
+        });
+        this.pdf += `
+                  </form>      
+              </div>      
+              <div class="card-footer" style="margin-top: 250px;"></div>
+              <div class="pos-botom-fixed">
+                  <img class="full-width" src="https://poria.is-great.org/images/covid_footer.png" />
+              </div>
+          </div>
+          </body>
+        </html>
+        `;
         this.confirmationDialogService
             .confirm("נא לאשר..", "האם אתה בטוח ...? ")
             .then((confirmed) => {
@@ -197,13 +458,10 @@ export class FormsansweredComponent implements OnInit {
                     }
                     this.http
                         .post(
-                            "http://srv-ipracticom:8080/WebService.asmx/createPdfOnServer",
+                            environment.urlipracticom + "createPdfOnServer",
                             // environment.url + "createPdfOnServer",
                             {
-                                CaseNumber: patientIDPr,
-                                FormID: element.FormID,
-                                Catigory: "ZPO_ONLINE",
-                                Row_ID: element.PersonFormID,
+                                pdf: this.pdf,
                             }
                         )
                         .subscribe((Response) => {

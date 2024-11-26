@@ -16,14 +16,14 @@
                             <div class="form-group mt-2 col-lg-4 col-sm-12">
                                 <mat-form-field class="example-full-width" appearance="fill">
                                     <mat-label>מחלקה</mat-label>
-                                    <input type="text" placeholder="בחר מחלקה" matInput [formControl]="departmentControl"
-                                      [matAutocomplete]="auto">
+                                    <input type="text" placeholder="בחר מחלקה" matInput
+                                        [formControl]="departmentControl" [matAutocomplete]="auto">
                                     <mat-autocomplete autoActiveFirstOption #auto="matAutocomplete">
-                                      <mat-option *ngFor="let dept of filteredOptions | async" [value]="dept">
-                                        {{dept}}
-                                      </mat-option>
+                                        <mat-option *ngFor="let dept of filteredOptions | async" [value]="dept">
+                                            {{dept}}
+                                        </mat-option>
                                     </mat-autocomplete>
-                                  </mat-form-field>
+                                </mat-form-field>
                             </div>
                         </div>
                         <button mat-raised-button type="submit" (click)="searchForm()"
@@ -102,7 +102,7 @@
         </mat-table>
         <button (click)="openDialogToUpdate(0)" type="button" id="rolesDetailsBtn" mat-fab color="primary"><i
                 class="material-icons" matTooltip="טופס חדש">add</i></button>
-        <mat-paginator [pageSizeOptions]="[5, 10, 20, 50]" showFirstLastButtons></mat-paginator>
+        <mat-paginator [pageSizeOptions]="[10, 20, 50]" showFirstLastButtons></mat-paginator>
     </div>
 </div>
 
@@ -164,10 +164,10 @@
                         }}</span>
                 </div>
             </div>
-            <form class="worker-form-in">
+            <form>
                 <div class="row-1">
                     <h3>חלק שאלות :</h3>
-                </div> 
+                </div>
                 <div class="row-1" *ngFor="let item of rowFormData.Questions">
                     <div class="colr-12 brs-1">
                         <p class="fix-mb-5">
@@ -189,10 +189,10 @@
                         <div class="row" style="display: block;">
                             <h3 style="text-align: center;">{{table.TableText}}</h3>
                         </div>
-                        
+
                         <mat-divider></mat-divider>
                         <div class="row" style="display: block;">
-                           <h4 style="text-align: center;font-size: 22px;">{{table.SubTitle}}</h4>
+                            <h4 style="text-align: center;font-size: 22px;">{{table.SubTitle}}</h4>
                         </div>
                         <div class="row" id="table-overflow">
                             <div class="col">
@@ -202,7 +202,7 @@
                                             {{column.colsText}}
                                         </th>
                                     </tr>
-                                    <tr *ngFor="let row of table.rowsGroup; let output = index">
+                                    <tr *ngFor="let row of table.rowsGroup">
                                         <td *ngFor="let answer of row.Answers; let output2 = index">
                                             <span style="text-align: right;float: right;"
                                                 *ngIf="output2 == '0' && row.rowsText != '';else input_other">{{row.rowsText}}</span>
@@ -216,14 +216,21 @@
                                                 <div *ngIf="answer.AnswerType == 'Date'">
                                                     {{answer.AnswerValue}}
                                                 </div>
-                                                <section class="example-section" *ngIf="answer.AnswerType == 'CheckBox'">
-                                                        <mat-radio-group>
-                                                            <mat-checkbox class="list-title m-3 text-center"
-                                                                [value]="answer.AnswerValue">
-                                                            </mat-checkbox>
-                                                        </mat-radio-group>
-                                                    </section>
-                                                <div class="fix-my-width" *ngIf="answer.AnswerType == 'Signature' && answer.AnswerValue != ''">
+                                                <section class="example-section"
+                                                    *ngIf="answer.AnswerType == 'CheckBox'">
+                                                    <p *ngIf="answer.AnswerValue == 'True'">V</p>
+                                                    <p *ngIf="answer.AnswerValue == 'False'"></p>
+                                                    <!-- <mat-radio-group>
+                                                        <mat-checkbox class="list-title m-3 text-center"
+                                                            *ngIf="answer.AnswerValue == 'True'" value="true">
+                                                        </mat-checkbox>
+                                                        <mat-checkbox class="list-title m-3 text-center"
+                                                            *ngIf="answer.AnswerValue == 'False'" value="false">
+                                                        </mat-checkbox>
+                                                    </mat-radio-group> -->
+                                                </section>
+                                                <div class="fix-my-width"
+                                                    *ngIf="answer.AnswerType == 'Signature' && answer.AnswerValue != ''">
                                                     <img width="100" height="100" [src]="answer.AnswerValue">
                                                 </div>
                                             </ng-template>
