@@ -531,12 +531,12 @@ export class FillSurveyComponent implements OnInit {
         var c = 0;
         var d = 0;
         surveyAnswers.forEach((answer, index, array) => {
-            
+
             if (this._questionArr[index].QuestionType == "CheckBox") {
                 answer.answerContent = this.ChekBoxQ[c].QAns.toString();
                 c++;
             }
-            
+
             if (this._questionArr[index].QuestionType == "Date") {
                 answer.answerContent = this.datePipe.transform(answer.answerContent, 'yyyy-MM-dd');
             }
@@ -586,43 +586,9 @@ export class FillSurveyComponent implements OnInit {
                             .subscribe((Response) => {
                                 if (Response["d"] != -1) {
                                     this.openSnackBar("!נשמר בהצלחה");
-                                    this.http
-                                        // .post(environment.url + "createPdfOnServer", {
-                                        .post("http://srv-ipracticom:8080/WebService.asmx/createPdfOnServer", {
-                                            CaseNumber: this.CaseNumber,
-                                            FormID: survey.FormID,
-                                            Catigory: "ZPO_ONLINE",
-                                            Row_ID: Response["d"],
-                                        }
-                                        )
-                                        .subscribe((Response) => {
-                                            //debugger;
-                                            this.http
-                                                // .post(environment.url + "LinkPdfToPatientNamer", {
-                                                .post(environment.urlipracticom + "LinkPdfToPatientNamer", {
-                                                    CaseNumber:
-                                                        this.CaseNumber,
-                                                    FormID: survey.FormID,
-                                                    Catigory: "ZPO_ONLINE",
-                                                    fileSource:
-                                                        Response["d"],
-                                                }
-                                                )
-                                                .subscribe((Response) => {
-                                                    if (
-                                                        Response["d"] ==
-                                                        "success"
-                                                    ) {
-                                                        this.openSnackBar(
-                                                            "! נשמר בהצלחה לתיק מטופל בנמר"
-                                                        );
-                                                    } else {
-                                                        this.openSnackBar(
-                                                            "! משהו לא תקין"
-                                                        );
-                                                    }
-                                                });
-                                        });
+                                    let passport = survey.FormAnswers.filter(x => x.PinQuestion == '1' && x.AnswerType == 'ID')[0].AnswerValue;
+                                    let pdf = this.getDataToSendToNamer(survey.FormID, this.CaseNumber, passport, "", "", Response['d'], survey.FormID);
+
                                 } else {
                                     this.openSnackBar("משהו השתבש, לא נשמר");
                                 }
@@ -648,9 +614,413 @@ export class FillSurveyComponent implements OnInit {
             }
             this.openSnackBar("!שאלה מספר" + invalid[0] + " לא תקינה ");
         }
-        // }
     }
+    getDataToSendToNamer(FormID, caseNumber, personalPassport, FillDate, EmployeeUserName, row_ID, id) {
+        this.http
+            .post(
+                environment.url + "GetPersonalDetailsForForms",
+                {
+                    _formID: FormID,
+                    _caseNumber: caseNumber,
+                    _personalPassport: personalPassport,
+                    _fillDate: FillDate,
+                    _employeeUserName: EmployeeUserName,
+                    Row_ID: row_ID,
+                }
+            )
+            .subscribe((Response) => {
+                let all_forms_filter = Response["d"];
+                if (all_forms_filter[0]) {
+                    this.isCaseNumber = all_forms_filter[0].isCaseNumber;
+                }
+                let element = [];
+                for (var i = 0; i < all_forms_filter.length; i++) {
+                    if (all_forms_filter[i].Patient_ID != "") {
+                        element.push({
+                            FormID: all_forms_filter[i].formID,
+                            PatientID: all_forms_filter[i].CaseNumber,
+                            PatientName:
+                                all_forms_filter[i].PatientsList[0]
+                                    .PersonalFirstName +
+                                " " +
+                                all_forms_filter[i].PatientsList[0]
+                                    .PersonalLastName,
+                            DateOfFillForm:
+                                all_forms_filter[
+                                    i
+                                ].PatientsList[0].DateOfFillForm.split(" ")[0],
+                            PatientBirthday:
+                                all_forms_filter[
+                                    i
+                                ].PatientsList[0].PersonalBirthday.split(
+                                    " "
+                                )[0],
+                            PatientPassport:
+                                all_forms_filter[i].PatientsList[0]
+                                    .PersonalID,
+                            PatientPhone:
+                                all_forms_filter[i].PatientsList[0]
+                                    .PersonalPhone,
+                            Row_ID: all_forms_filter[i].PatientsList[0]
+                                .Row_ID,
+                            PatientEmail:
+                                all_forms_filter[i].PatientsList[0]
+                                    .PersonalEmail,
+                            PatientGender:
+                                all_forms_filter[i].PatientsList[0]
+                                    .PersonalGender,
+                            PatientAddress:
+                                all_forms_filter[i].PatientsList[0]
+                                    .PersonalAddress,
+                            SavedToNamer:
+                                all_forms_filter[i].PatientsList[0]
+                                    .SavedToNamer,
+                            NurseInCharge:
+                                all_forms_filter[i].PatientsList[0]
+                                    .NurseFullName,
+                            PersonFormID:
+                                all_forms_filter[i].PersonFormID,
+                            FormName: all_forms_filter[i].FormName,
+                            Signature:
+                                this._sanitizer.bypassSecurityTrustResourceUrl(
+                                    all_forms_filter[i].Signature
+                                ),
+                            Questions: all_forms_filter[i].NurseAnswers,
+                            NursesTable: all_forms_filter[i].NursesTable,
+                        });
+                    } else {
+                        element.push({
+                            FormID: all_forms_filter[i].formID,
+                            PatientID: "",
+                            PatientName: all_forms_filter[i].Patient_Name,
+                            DateOfFillForm:
+                                all_forms_filter[i].DateOfFillForm.split(
+                                    " "
+                                )[0],
+                            PatientBirthday: "",
+                            PatientPassport:
+                                all_forms_filter[i].PersonalID,
+                            PatientPhone: "",
+                            Row_ID: "",
+                            PatientEmail: "",
+                            PatientGender: "",
+                            SavedToNamer: "1",
+                            PatientAddress: "",
+                            NurseInCharge:
+                                all_forms_filter[i].FirstName +
+                                " " +
+                                all_forms_filter[i].LastName,
+                            PersonFormID:
+                                all_forms_filter[i].PersonFormID,
+                            FormName: all_forms_filter[i].FormName,
+                            Signature:
+                                this._sanitizer.bypassSecurityTrustResourceUrl(
+                                    all_forms_filter[i].PersonalSignature
+                                ),
+                            Questions: all_forms_filter[i].NurseAnswers,
+                            NursesTable: all_forms_filter[i].NursesTable,
+                        });
+                    }
+                }
+                let tableArr = [];
+                element[0].NursesTable.forEach(e => {
+                    tableArr.push(e);
+                });
+                let pdf = this.makePdfString(element[0], tableArr)
+                this.http
+                    .post(environment.urlipracticom + "createPdfOnServer", {
+                        pdf: pdf
+                    }
+                    )
+                    .subscribe((Response) => {
+                        this.http
+                            .post(environment.urlipracticom + "LinkPdfToPatientNamer", {
+                                CaseNumber:
+                                    this.CaseNumber,
+                                FormID: id,
+                                Catigory: "ZPO_ONLINE",
+                                fileSource:
+                                    Response["d"],
+                            }
+                            )
+                            .subscribe((Response) => {
+                                if (
+                                    Response["d"] ==
+                                    "success"
+                                ) {
+                                    this.openSnackBar(
+                                        "! נשמר בהצלחה לתיק מטופל בנמר"
+                                    );
+                                } else {
+                                    this.openSnackBar(
+                                        "! משהו לא תקין"
+                                    );
+                                }
+                            });
+                    });
+            });
+    }
+    makePdfString(element, tableArr) {
+        let pdf = `
+        <!doctype html>
+        <html lang="he">
+          <head>
+            <meta charset="utf-8"/>
+              <title>מערכת טפסים אונליין</title>
+              <style>
+              body {
+                direction: rtl;
+                text-align: right;
+            }
+            .card {
+                min-height: 100%;
+            }
+            .card-header {
+                position: relative;
+                border-bottom: 1px solid #ccc;
+            }
+            .full-width {
+                width: 100%;
+            }
+            .pos-abs-center {
+                position: absolute;
+                text-align: center;
+            }
+            .pd-10 {
+                padding: 10px;
+            }
+            .row {
+                width: 100%;
+                display: flex;
+            }
+            .col-12{
+                width: 100%
+            }
+            .col-6{
+                width: 50%
+            }
+            .col-4{
+                width: 25%
+            }
+            .text-up {
+                text-transform: uppercase;
+            }
+            .text-right {
+                text-align: right;
+            }
+            .pad-30 {
+                padding: 30px;
+            }
+            .justify-content-md-center {
+                justify-content: center;
+            }
+            .b-bottom {
+                border-bottom: 1px solid #ccc;
+                display: inline-block;
+                padding: 2px 4px;
+            }
+            .fix-mb-5 {
+                margin-bottom: 5px;
+            }
+            #table-overflow {
+                overflow-x: auto;
+            }
+            .responsive-table {
+                width: 100%;
+                border-collapse: collapse;
+            }
+            .responsive-table th, .responsive-table td {
+                border: 1px solid #ccc;
+                padding: 8px;
+                text-align: center;
+            }
+            .example-section p {
+                margin: 0;
+            }
+            .fix-my-width {
+                width: fit-content;
+            }
+            .pos-botom-fixed {
+                position: fixed;
+                bottom: 0;
+                width: 100%;
+            }
+    </style>
+          </head>
+          <body dir="rtl">
+        <div dir="rtl" class="card">
+              <div class="card-header">
+                  <img class="full-width" src="https://poria.is-great.org/images/covid_2_header.png" />
+                  <h2 class="text-center">${element.FormName}</h2>
+                  <h2 class="text-center" style="top: 100px;">${element.DateOfFillForm}</h2>
+              </div>
+              <div class="card-body">
+                  <div class="row">
+                      <div class="col-12">
+                          <h4>פרטים אישיים</h4>
+                      </div>
+                  </div>
+                  <br />
+                  `;
+        if (element.PatientID != '') {
+            pdf += `<div class="row text-right">
+                    <div class="col-4">
+                          <label><b>מספר מקרה</b></label>
+                          <span class="b-bottom">${element.PatientID}</span>
+                      </div>
+                      <div class="col-4">
+                          <label><b>תעודת זהות</b></label>
+                          <span class="b-bottom">${element.PatientPassport}</span>
+                      </div>
+                      <div class="col-4">
+                          <label><b>שם נבדק</b></label>
+                          <span class="b-bottom">${element.PatientName
+                }</span>
+                      </div>
+      
+                      <div class="col-4">
+                          <label><b>טלפון נייד</b></label>
+                          <span class="b-bottom">${element.PatientPhone
+                }</span>
+                      </div>
+      
+                      <div class="col-4">
+                          <label><b>מין</b></label><span class="b-bottom">${element.PatientGender
+                }</span>
+                      </div>
+                      <div class="col-4">
+                          <label><b>תאריך לידה</b></label><span class="b-bottom">${element.PatientBirthday
+                }</span>
+                      </div>
+                      <div class="col-6">
+                          <label><b>מייל</b></label><span class="b-bottom">${element.PatientEmail}</span>
+                      </div>
+                      <div class="col-6">
+                          <label><b>כתובת</b></label><span class="b-bottom">${element.PatientAddress
+                }</span>
+                      </div>
+                  </div>
+                    `
+        }
+        pdf += `
+                  <form>
+                      <div class="row">
+                          <h3>חלק שאלות :</h3>
+                      </div>
+                      `;
+        element.Questions.forEach(item => {
+            pdf += `<div class="row">
+                        <div class="colr-12 brs-1">
+                            <p class="fix-mb-5">
+                                <span>
+                                    <span><b>${item.questionValue}</b>:&nbsp;&nbsp;</span><span
+                                        *ngIf="${item.AnswerType} != 'Signature'">${item.AnswerValue}</span><img
+                                        *ngIf="${item.AnswerType} == 'Signature'" width="100" height="100"
+                                        [src]="${item.AnswerValue}">
+                                </span>
+                            </p>
+                        </div>
+                    </div>`
+        });
+        pdf += `
+                          <div class="row">
+                              <h3 style="text-align: right;"><strong>חלק טבלאות</strong></h3>
+                          </div>
+                          `
+        tableArr.forEach(table => {
 
+            pdf += `<div style="margin-top: 20px;">
+                                  <mat-divider></mat-divider>
+                                  <div class="row" style="display: block;">
+                                      <h3 style="text-align: center;">${table.TableText}</h3>
+                                  </div>
+          
+                                  <mat-divider></mat-divider>
+                                  <div class="row" style="display: block;">
+                                      <h4 style="text-align: center;font-size: 22px;">${table.SubTitle}</h4>
+                                  </div>
+                                  <div class="row" id="table-overflow">
+                                      <div class="col">
+                                          <table class="table responsive-table">
+                                              <tr>
+                                              `;
+            table.colsGroup.forEach(column => {
+                pdf += `<th style="text-align: center;">
+                                                      ${column.colsText}
+                                                  </th>`;
+            });
+            pdf += `
+                                              </tr>
+                                              `
+            table.rowsGroup.forEach(row => {
+                pdf += `<tr>
+                                                                            `;
+                row.Answers.forEach((answer, output2) => {
+                    pdf += `
+                                                    <td>`;
+                    if (output2 == '0' && row.rowsText != '') {
+                        pdf += `
+                                                        <span style="text-align: right;float: right;">${row.rowsText}</span>`;
+                    } else {
+                        pdf += `
+                                                        <ng-template>
+                                                        `;
+                        if (answer.AnswerType == 'Text') {
+                            pdf += `
+                                                            <div>
+                                                          ${answer.AnswerValue}
+                                                      </div>`
+                        }
+                        if (answer.AnswerType == 'Time') {
+                            pdf += `<div>
+                                                          ${answer.AnswerValue}
+                                                      </div>`
+                        }
+                        if (answer.AnswerType == 'Date') {
+                            pdf += `<div>
+                                                            ${answer.AnswerValue}
+                                                        </div>`
+                        }
+                        if (answer.AnswerType == 'CheckBox') {
+                            pdf += `
+                                                            <section class="example-section">`
+                            if (answer.AnswerValue == 'True') pdf += `<p>V</p>`;
+                            else pdf += `<p></p>`;
+                            pdf += `</section>`;
+                        }
+                        if (answer.AnswerType == 'Signature' && answer.AnswerValue != '') {
+                            pdf += `
+                                                            <div class="fix-my-width">
+                                                            <img width="100" height="100" [src]="${answer.AnswerValue}">
+                                                        </div>
+                                                            `
+                        }
+                        pdf += `                                                      
+                                                  </ng-template>`;
+                    }
+                    pdf += `</td>`;
+                });
+                `</tr>`;
+            });
+            pdf += `
+                                          </table>
+                                      </div>
+                                  </div>
+                              </div>`
+        });
+        pdf += `
+                  </form>      
+              </div>      
+              <div class="card-footer" style="margin-top: 250px;"></div>
+              <div class="pos-botom-fixed">
+                  <img class="full-width" src="https://poria.is-great.org/images/covid_footer.png" />
+              </div>
+          </div>
+          </body>
+        </html>
+        `;
+        return pdf;
+    }
     searchCaseNumber() {
         this.CaseNumber = this.caseNumberForm.controls["CaseNumber"].value;
         this.Passport = this.caseNumberForm.controls["Passport"].value;
