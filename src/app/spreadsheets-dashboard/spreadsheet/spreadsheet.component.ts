@@ -5,132 +5,183 @@ import { environment } from 'src/environments/environment';
 import { Spreadsheet } from '@syncfusion/ej2-angular-spreadsheet';
 
 @Component({
-  selector: 'app-spreadsheet',
-  templateUrl: './spreadsheet.component.html',
-  styleUrls: ['./spreadsheet.component.css']
+    selector: 'app-spreadsheet',
+    templateUrl: './spreadsheet.component.html',
+    styleUrls: ['./spreadsheet.component.css']
 })
 export class SpreadsheetComponent implements OnInit {
 
-  horizontalPosition: MatSnackBarHorizontalPosition = "start";
-  verticalPosition: MatSnackBarVerticalPosition = "bottom";
-  data: any[] = [];
-  columns: any[] = [];
-  last_cell = "";
-  last_header_cell = "";
-  @Input()
-  sheet_details: any;
-  user_name: string = localStorage.getItem("loginUserName");
-  @ViewChild('spreadsheet') spreadsheetObj: Spreadsheet;
+    horizontalPosition: MatSnackBarHorizontalPosition = "start";
+    verticalPosition: MatSnackBarVerticalPosition = "bottom";
+    data: any[] = [];
+    columns: any[] = [];
+    last_cell = "";
+    number_of_columns = 0;
+    last_header_cell = "";
+    @Input()
+    sheet_details: any;
+    user_name: string = localStorage.getItem("loginUserName");
+    @ViewChild('spreadsheet') spreadsheetObj: Spreadsheet;
 
-  constructor(private http: HttpClient,
-    private _snackBar: MatSnackBar,) { }
+    constructor(private http: HttpClient,
+        private _snackBar: MatSnackBar,) { }
 
-  ngOnInit(): void {
-    this.loadData();
-  }
-
-  loadData(): void {
-    this.http.post(environment.url + 'GetSpreadSheetsCellsData', {
-      id: this.sheet_details.SheetID
-    }).subscribe((response: any) => {
-      let temp_data: any = response['d'];
-      // console.log(temp_data);
-      this.sheet_details.SheetID = temp_data[0].SheetID;
-      if (temp_data[0].CellID != '0') this.data = this.transformSpreadsheetData(temp_data);
-      this.onSpreadsheetCreated();
-    });
-  }
-
-  // onSpreadsheetCreated(spreadsheet: Spreadsheet): void {
-  //   // Department column (Column C)
-  //   spreadsheet.addDataValidation({
-  //     type: 'List',
-  //     operator: 'EqualTo',
-  //     value1: this.departmentOptions.join(','),
-  //   }, 'C2:C100');
-
-  //   // Age column (Column B) with fixed age ranges
-  //   spreadsheet.addDataValidation({
-  //     type: 'List',
-  //     operator: 'EqualTo',
-  //     value1: '20,25,30,35,40',
-  //   }, 'B2:B100');
-  // }
-
-  onCellSave(args: any): void {
-    let address = '';
-    let value = '';
-    if (args != null) {
-      address = args.address;
-      value = args.value;
+    ngOnInit(): void {
+        this.loadData();
     }
-    setTimeout(() => {
-      this.saveCellTimeOut(address, value);
-    }, 1000);
-  }
 
-  saveCellTimeOut(address, value) {
-    this.http
-      .post(environment.url + 'UpdateSpreadSheetsCell', {
-        cell_adress: address,
-        sheet: this.sheet_details,
-        user_name: this.user_name,
-        value: value,
-      })
-      .subscribe({
-        next: () => this.openSnackBar('נשמר בהצלחה'),
-        error: (err) => this.openSnackBar('תקלה בשמירה:' + err),
-      });
-  }
+    loadData(): void {
+        this.http.post(environment.url + 'GetSpreadSheetsCellsData', {
+            id: this.sheet_details.SheetID
+        }).subscribe((response: any) => {
+            let temp_data: any = response['d'];
+            // console.log(temp_data);
+            this.sheet_details.SheetID = temp_data[0].SheetID;
+            // this.data = temp_data.map(row => {
+            //     const rowData: any = {};
+            //     row.Data.forEach(pair => {
+            //       rowData[pair.Key] = pair.Value; // Map key-value pairs to an object
+            //     });
+            //     return rowData;
+            //   });
+            if (temp_data[0].CellID != '0') this.data = this.transformSpreadsheetData(temp_data);
+            this.onSpreadsheetCreated();
+        });
+    }
 
-  transformSpreadsheetData(rawData: any[]): any[] {
-    const rows: { [key: string]: any } = {}; // Object to hold rows
-    const headers: { [key: string]: string } = {}; // Object to hold headers
+    // onSpreadsheetCreated(spreadsheet: Spreadsheet): void {
+    //   // Department column (Column C)
+    //   spreadsheet.addDataValidation({
+    //     type: 'List',
+    //     operator: 'EqualTo',
+    //     value1: this.departmentOptions.join(','),
+    //   }, 'C2:C100');
 
-    rawData.forEach((cell) => {
-      const cellAddress = cell.CellAddress.split('!')[1];
-      const column = cellAddress.match(/[A-Z]+/)[0]; // Extract column letter
-      const row = parseInt(cellAddress.match(/\d+/)[0], 10); // Extract row number
+    //   // Age column (Column B) with fixed age ranges
+    //   spreadsheet.addDataValidation({
+    //     type: 'List',
+    //     operator: 'EqualTo',
+    //     value1: '20,25,30,35,40',
+    //   }, 'B2:B100');
+    // }
 
-      if (row === 1) {
-        this.last_header_cell = cellAddress;
-        // If it's the first row, treat it as the header
-        headers[column] = cell.CellValue; // Save the column name
-      } else {
-        this.last_cell = cellAddress;
-        // For other rows, assign cell values
-        if (!rows[row]) {
-          rows[row] = {}; // Initialize row object if not present
+    onCellSave(args: any): void {
+        let address = '';
+        let value = '';
+        if (args != null) {
+            address = args.address;
+            value = args.value;
         }
-        const columnName = headers[column]; // Use header name or fallback to column letter
-        rows[row][columnName] = cell.CellValue;
-      }
-    });
-
-    // Convert rows object to array and return
-    return Object.values(rows);
-  }
-
-  onSpreadsheetCreated(): void {
-    // this.spreadsheetObj.wrap('A1:' + this.last_header_cell, true);
-    this.spreadsheetObj.cellFormat({ textAlign: 'center' }, 'A1:Z10000');
-    this.spreadsheetObj.cellFormat({ backgroundColor: '#357cd2', color: '#fff', fontWeight: 'bold' }, 'A1:' + this.last_header_cell);
-  }
-
-  charToNumber(char: string): number {
-    if (!/^[A-Z]$/i.test(char)) {
-      throw new Error('Input must be a single English alphabet character.');
+        setTimeout(() => {
+            this.saveCellTimeOut(address, value);
+        }, 1000);
     }
 
-    // Convert the character to uppercase and subtract 64 (A = 1, B = 2, ..., Z = 26)
-    return char.toUpperCase().charCodeAt(0) - 64;
-  }
+    saveCellTimeOut(address, value) {
+        this.http
+            .post(environment.url + 'UpdateSpreadSheetsCell', {
+                cell_adress: address,
+                sheet: this.sheet_details,
+                user_name: this.user_name,
+                value: value,
+            })
+            .subscribe({
+                next: () => this.openSnackBar('נשמר בהצלחה'),
+                error: (err) => this.openSnackBar('תקלה בשמירה:' + err),
+            });
+    }
 
-  openSnackBar(message) {
-    this._snackBar.open(message, "X", {
-      duration: 2000,
-      horizontalPosition: this.horizontalPosition,
-      verticalPosition: this.verticalPosition,
-    });
-  }
+    ngAfterViewInit(): void {
+        // this.spreadsheetObj.addDataValidation(
+        //   {
+        //     type: 'List',
+        //     operator: 'Between',
+        //     value1: 'HR,IT,Finance', // Comma-separated values for the dropdown
+        //   },
+        //   'K2' // Apply to the 'Department' column from row 2 to 100
+        // );
+    }
+
+    transformSpreadsheetData(rawData: any[]): any[] {
+        const rows: { [key: string]: any } = {}; // Object to hold rows
+        const headers: { [key: string]: string } = {}; // Object to hold headers
+
+        rawData.forEach((cell) => {
+            const cellAddress = cell.CellAddress.split('!')[1];
+            const column = cellAddress.match(/[A-Z]+/)[0]; // Extract column letter
+            const row = parseInt(cellAddress.match(/\d+/)[0], 10); // Extract row number
+
+            if (row === 1) {
+                this.last_header_cell = cellAddress;
+                // If it's the first row, treat it as the header
+                headers[column] = cell.CellValue; // Save the column name
+            } else {
+                this.last_cell = cellAddress;
+                // For other rows, assign cell values
+                if (!rows[row]) {
+                    rows[row] = {}; // Initialize row object if not present
+                }
+                const columnName = headers[column]; // Use header name or fallback to column letter
+                rows[row][columnName] = cell.CellValue;
+            }
+        });
+        // for (let i = 0; i < Object.keys(rows[2]).length; i++) {
+        //     this.columns.push({ width: 100 });
+        // }
+        // Convert rows object to array and return
+        return Object.values(rows);
+    }
+
+    onSpreadsheetCreated(): void {
+        // this.spreadsheetObj.wrap('A1:' + this.last_header_cell, true);
+        this.spreadsheetObj.cellFormat({ textAlign: 'center' }, 'A1:Z10000');
+        this.spreadsheetObj.cellFormat({ backgroundColor: '#357cd2', color: '#fff', fontWeight: 'bold' }, 'A1:' + this.last_header_cell);
+        this.spreadsheetObj.freezePanes(1, 0); // Freeze the first row
+        switch (this.sheet_details.SheetID) {
+            case '1':
+                this.spreadsheetObj.addDataValidation({ type: 'List', value1: 'בוקר, ערב, לילה', ignoreBlank: false }, 'E2:' + this.addTenCellsDown('E', this.last_cell));
+                this.spreadsheetObj.addDataValidation({ type: 'List', value1: 'רגל ויד נגדיים למיטה בהצלבה, רגל ויד של אותו הצד למיטה, גפה אחת למיטה, שתי ידיים או שתי רגליים אלו לאלו, שתי ידיים וגם שתי רגליים אלו לאלו', ignoreBlank: false }, 'I2:' + this.addTenCellsDown('I', this.last_cell));
+            case '2':
+                this.spreadsheetObj.addDataValidation({ type: 'List', value1: 'אלשיפא, מריזן, מד"א, אחר', ignoreBlank: false }, 'E2:' + this.addTenCellsDown('E', this.last_cell));
+                this.spreadsheetObj.addDataValidation({ type: 'List', value1: 'כן, לא', ignoreBlank: false }, 'H2:' + this.addTenCellsDown('H', this.last_cell));
+                this.spreadsheetObj.addDataValidation({ type: 'List', value1: 'כן, לא', ignoreBlank: false }, 'I2:' + this.addTenCellsDown('I', this.last_cell));
+                this.spreadsheetObj.addDataValidation({ type: 'List', value1: 'כן, לא', ignoreBlank: false }, 'J2:' + this.addTenCellsDown('J', this.last_cell));
+            case '9':
+                this.spreadsheetObj.addDataValidation({ type: 'List', value1: 'דרגה 1, דרגה 2, דרגה 3, דרגה 4, DTI, לא מסווג', ignoreBlank: false }, 'I2:' + this.addTenCellsDown('I', this.last_cell));
+                this.spreadsheetObj.addDataValidation({ type: 'List', value1: 'מזרון ספוג, מזרון ויסקי, מזרון ריאקטיבי, מזרון דינמי', ignoreBlank: false }, 'J2:' + this.addTenCellsDown('J', this.last_cell));
+                this.spreadsheetObj.addDataValidation({ type: 'List', value1: 'כן, לא', ignoreBlank: false }, 'H2:' + this.addTenCellsDown('H', this.last_cell));
+                this.spreadsheetObj.addDataValidation({ type: 'List', value1: 'רמת סיכון נמוך, רמת סיכון בינוני, רמת סיכון גבוה', ignoreBlank: false }, 'G2:' + this.addTenCellsDown('G', this.last_cell));
+                this.spreadsheetObj.addDataValidation({ type: 'List', value1: 'פנימית א, פנימית ב, קרדיולוגיה, טיפול נמרץ לב, כירורגיה, אורטופדיה', ignoreBlank: false }, 'B2:' + this.addTenCellsDown('B', this.last_cell));
+            case '10':
+                this.spreadsheetObj.addDataValidation({ type: 'List', value1: 'נווה כנרת, נופים, מהבית, רמת טבריה, מעון כפר כנא', ignoreBlank: false }, 'G2:' + this.addTenCellsDown('G', this.last_cell));
+                this.spreadsheetObj.addDataValidation({ type: 'List', value1: 'כן ,לא', ignoreBlank: false }, 'H2:' + this.addTenCellsDown('H', this.last_cell));
+                this.spreadsheetObj.addDataValidation({ type: 'List', value1: 'מטפלת מהמוסד, משפחה', ignoreBlank: false }, 'I2:' + this.addTenCellsDown('I', this.last_cell));
+                this.spreadsheetObj.addDataValidation({ type: 'List', value1: 'כן ,לא, לסירוגין', ignoreBlank: false }, 'J2:' + this.addTenCellsDown('J', this.last_cell));
+                this.spreadsheetObj.addDataValidation({ type: 'List', value1: 'כן ,לא, לא רלוונטי', ignoreBlank: false }, 'L2:' + this.addTenCellsDown('L', this.last_cell));
+                this.spreadsheetObj.addDataValidation({ type: 'List', value1: 'מגן ראש, חפץ ייחודי, הגבלה פיזית, אחר', ignoreBlank: false }, 'K2:' + this.addTenCellsDown('K', this.last_cell));
+                this.spreadsheetObj.addDataValidation({ type: 'List', value1: 'כן ,לא, לא מונה אפוטרופוס', ignoreBlank: false }, 'M2:' + this.addTenCellsDown('M', this.last_cell));
+        }
+    }
+
+    addTenCellsDown(column, original) {
+        let result = (column + (parseInt(original.substring(1,)) + 10).toString());
+        return result;
+    }
+
+    charToNumber(char: string): number {
+        if (!/^[A-Z]$/i.test(char)) {
+            throw new Error('Input must be a single English alphabet character.');
+        }
+
+        // Convert the character to uppercase and subtract 64 (A = 1, B = 2, ..., Z = 26)
+        return char.toUpperCase().charCodeAt(0) - 64;
+    }
+
+    openSnackBar(message) {
+        this._snackBar.open(message, "X", {
+            duration: 2000,
+            horizontalPosition: this.horizontalPosition,
+            verticalPosition: this.verticalPosition,
+        });
+    }
 }
