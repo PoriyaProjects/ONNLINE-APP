@@ -34,7 +34,7 @@ export class SpreadsheetsDashboardComponent implements OnInit {
     temp_dialog.updateSize('80%', '100%');
     temp_dialog.componentInstance.sheet_details = spreadsheet;
     temp_dialog.afterClosed().subscribe(response => {
-      this.loadData();
+      // window.location.reload();
     });
   }
 
