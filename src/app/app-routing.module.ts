@@ -121,6 +121,8 @@ import { LabTestsComponent } from "./lab-tests/lab-tests.component";
 import { SpreadsheetComponent } from "./spreadsheets-dashboard/spreadsheet/spreadsheet.component";
 import { SpreadsheetsDashboardComponent } from "./spreadsheets-dashboard/spreadsheets-dashboard.component";
 import { TreeItemDialogComponent } from "./new-header/tree-item-dialog/tree-item-dialog.component";
+import { HospitalTonnageComponent } from "./hospital-bi-dashboard/hospital-tonnage/hospital-tonnage.component";
+import { FolderTreeComponent } from "./dashboard/folder-tree/folder-tree.component";
 
 
 const routes: Routes = [ 
@@ -267,6 +269,8 @@ const routes: Routes = [
     { path: "tree-item-dialog", component: TreeItemDialogComponent },
     { path: "spreadsheet", component: SpreadsheetComponent },
     { path: "spreadsheets-dashboard", component: SpreadsheetsDashboardComponent },
+    { path: "hospital-tonnage", component: HospitalTonnageComponent },
+    { path: "folder-tree", component: FolderTreeComponent },
     { path: "LabTests", component: LabTestsComponent }
 
 

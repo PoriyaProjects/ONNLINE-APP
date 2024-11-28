@@ -15,9 +15,11 @@ export class SpreadsheetComponent implements OnInit {
     verticalPosition: MatSnackBarVerticalPosition = "bottom";
     data: any[] = [];
     columns: any[] = [];
+    chars = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q'];
     last_cell = "";
-    number_of_columns = 0;
     last_header_cell = "";
+    last_column_cell = "";
+    number_of_columns = 0;
     @Input()
     sheet_details: any;
     user_name: string = localStorage.getItem("loginUserName");
@@ -35,16 +37,17 @@ export class SpreadsheetComponent implements OnInit {
             id: this.sheet_details.SheetID
         }).subscribe((response: any) => {
             let temp_data: any = response['d'];
-            // console.log(temp_data);
-            this.sheet_details.SheetID = temp_data[0].SheetID;
-            // this.data = temp_data.map(row => {
-            //     const rowData: any = {};
-            //     row.Data.forEach(pair => {
-            //       rowData[pair.Key] = pair.Value; // Map key-value pairs to an object
-            //     });
-            //     return rowData;
-            //   });
-            if (temp_data[0].CellID != '0') this.data = this.transformSpreadsheetData(temp_data);
+            this.data = temp_data.map((row, index) => {
+                const rowData: any = {};
+                this.last_header_cell = this.chars[temp_data[0].Data.length - 1] + '1';
+                row.Data.forEach(pair => {
+                    rowData[pair.Key] = pair.Value;
+                });
+                this.last_cell = this.chars[temp_data[0].Data.length - 1] + (index + 3).toString();
+                this.last_column_cell = 'A' + (index + 3).toString();
+                return rowData;
+            });
+            // if (temp_data[0].CellID != '0') this.data = this.transformSpreadsheetData(temp_data);
             this.onSpreadsheetCreated();
         });
     }
@@ -133,34 +136,51 @@ export class SpreadsheetComponent implements OnInit {
     }
 
     onSpreadsheetCreated(): void {
-        // this.spreadsheetObj.wrap('A1:' + this.last_header_cell, true);
-        this.spreadsheetObj.cellFormat({ textAlign: 'center' }, 'A1:Z10000');
+        this.spreadsheetObj.cellFormat({ textAlign: 'center' }, 'A1:' + this.last_cell);
         this.spreadsheetObj.cellFormat({ backgroundColor: '#357cd2', color: '#fff', fontWeight: 'bold' }, 'A1:' + this.last_header_cell);
-        this.spreadsheetObj.freezePanes(1, 0); // Freeze the first row
+        this.spreadsheetObj.freezePanes(1, 0);
         switch (this.sheet_details.SheetID) {
             case '1':
-                this.spreadsheetObj.addDataValidation({ type: 'List', value1: 'בוקר, ערב, לילה', ignoreBlank: false }, 'E2:' + this.addTenCellsDown('E', this.last_cell));
-                this.spreadsheetObj.addDataValidation({ type: 'List', value1: 'רגל ויד נגדיים למיטה בהצלבה, רגל ויד של אותו הצד למיטה, גפה אחת למיטה, שתי ידיים או שתי רגליים אלו לאלו, שתי ידיים וגם שתי רגליים אלו לאלו', ignoreBlank: false }, 'I2:' + this.addTenCellsDown('I', this.last_cell));
-            case '2':
-                this.spreadsheetObj.addDataValidation({ type: 'List', value1: 'אלשיפא, מריזן, מד"א, אחר', ignoreBlank: false }, 'E2:' + this.addTenCellsDown('E', this.last_cell));
-                this.spreadsheetObj.addDataValidation({ type: 'List', value1: 'כן, לא', ignoreBlank: false }, 'H2:' + this.addTenCellsDown('H', this.last_cell));
-                this.spreadsheetObj.addDataValidation({ type: 'List', value1: 'כן, לא', ignoreBlank: false }, 'I2:' + this.addTenCellsDown('I', this.last_cell));
-                this.spreadsheetObj.addDataValidation({ type: 'List', value1: 'כן, לא', ignoreBlank: false }, 'J2:' + this.addTenCellsDown('J', this.last_cell));
+                this.spreadsheetObj.addDataValidation({ type: 'List', value1: '-, בוקר, ערב, לילה', ignoreBlank: false }, 'E2:' + this.addTenCellsDown('E', this.last_cell));
+                this.spreadsheetObj.addDataValidation({ type: 'List', value1: '-, רגל ויד נגדיים למיטה בהצלבה, רגל ויד של אותו הצד למיטה, גפה אחת למיטה, שתי ידיים או שתי רגליים אלו לאלו, שתי ידיים וגם שתי רגליים אלו לאלו', ignoreBlank: false }, 'I2:' + this.addTenCellsDown('I', this.last_cell));
+                break;
+            case '3':
+                this.spreadsheetObj.addDataValidation({ type: 'List', value1: '-, אלשיפא, מריזן, מד"א, אחר', ignoreBlank: false }, 'E2:' + this.addTenCellsDown('E', this.last_cell));
+                this.spreadsheetObj.addDataValidation({ type: 'List', value1: '-, לא נדרש, בוצע', ignoreBlank: false }, 'F2:' + this.addTenCellsDown('F', this.last_cell));
+                this.spreadsheetObj.addDataValidation({ type: 'List', value1: '-, כן, לא', ignoreBlank: false }, 'H2:' + this.addTenCellsDown('H', this.last_cell));
+                this.spreadsheetObj.addDataValidation({ type: 'List', value1: '-, כן, לא', ignoreBlank: false }, 'I2:' + this.addTenCellsDown('I', this.last_cell));
+                this.spreadsheetObj.addDataValidation({ type: 'List', value1: '-, כן, לא', ignoreBlank: false }, 'J2:' + this.addTenCellsDown('J', this.last_cell));
+                break;
+            case '7':
+                this.spreadsheetObj.addDataValidation({ type: 'List', value1: '-, בוקר, ערב, לילה', ignoreBlank: false }, 'E2:' + this.addTenCellsDown('E', this.last_cell));
+                this.spreadsheetObj.addDataValidation({ type: 'List', value1: "-, פנימית א', פנימית ב'", ignoreBlank: false }, 'D2:' + this.addTenCellsDown('D', this.last_cell));
+                this.spreadsheetObj.addDataValidation({ type: 'List', value1: '-, רופא, אחות, רופא+אחות', ignoreBlank: false }, 'F2:' + this.addTenCellsDown('F', this.last_cell));
+                this.spreadsheetObj.addDataValidation({ type: 'List', value1: '-, כן, לא', ignoreBlank: false }, 'H2:' + this.addTenCellsDown('H', this.last_cell));
+                this.spreadsheetObj.addDataValidation({ type: 'List', value1: '-, כן, לא', ignoreBlank: false }, 'I2:' + this.addTenCellsDown('I', this.last_cell));
+                this.spreadsheetObj.addDataValidation({ type: 'List', value1: '-, כן, לא', ignoreBlank: false }, 'J2:' + this.addTenCellsDown('J', this.last_cell));
+                this.spreadsheetObj.addDataValidation({ type: 'List', value1: '-, V', ignoreBlank: false }, 'K2:' + this.addTenCellsDown('K', this.last_cell));
+                break;
             case '9':
-                this.spreadsheetObj.addDataValidation({ type: 'List', value1: 'דרגה 1, דרגה 2, דרגה 3, דרגה 4, DTI, לא מסווג', ignoreBlank: false }, 'I2:' + this.addTenCellsDown('I', this.last_cell));
-                this.spreadsheetObj.addDataValidation({ type: 'List', value1: 'מזרון ספוג, מזרון ויסקי, מזרון ריאקטיבי, מזרון דינמי', ignoreBlank: false }, 'J2:' + this.addTenCellsDown('J', this.last_cell));
-                this.spreadsheetObj.addDataValidation({ type: 'List', value1: 'כן, לא', ignoreBlank: false }, 'H2:' + this.addTenCellsDown('H', this.last_cell));
-                this.spreadsheetObj.addDataValidation({ type: 'List', value1: 'רמת סיכון נמוך, רמת סיכון בינוני, רמת סיכון גבוה', ignoreBlank: false }, 'G2:' + this.addTenCellsDown('G', this.last_cell));
-                this.spreadsheetObj.addDataValidation({ type: 'List', value1: 'פנימית א, פנימית ב, קרדיולוגיה, טיפול נמרץ לב, כירורגיה, אורטופדיה', ignoreBlank: false }, 'B2:' + this.addTenCellsDown('B', this.last_cell));
+                this.spreadsheetObj.addDataValidation({ type: 'List', value1: '-, דרגה 1, דרגה 2, דרגה 3, דרגה 4, DTI, לא מסווג', ignoreBlank: false }, 'I2:' + this.addTenCellsDown('I', this.last_cell));
+                this.spreadsheetObj.addDataValidation({ type: 'List', value1: '-, מזרון ספוג, מזרון ויסקי, מזרון ריאקטיבי, מזרון דינמי', ignoreBlank: false }, 'J2:' + this.addTenCellsDown('J', this.last_cell));
+                this.spreadsheetObj.addDataValidation({ type: 'List', value1: '-, כן, לא', ignoreBlank: false }, 'H2:' + this.addTenCellsDown('H', this.last_cell));
+                this.spreadsheetObj.addDataValidation({ type: 'List', value1: '-, רמת סיכון נמוך, רמת סיכון בינוני, רמת סיכון גבוה', ignoreBlank: false }, 'G2:' + this.addTenCellsDown('G', this.last_cell));
+                this.spreadsheetObj.addDataValidation({ type: 'List', value1: '-, פנימית א, פנימית ב, קרדיולוגיה, טיפול נמרץ לב, כירורגיה, אורטופדיה', ignoreBlank: false }, 'B2:' + this.addTenCellsDown('B', this.last_cell));
+                break;
             case '10':
-                this.spreadsheetObj.addDataValidation({ type: 'List', value1: 'נווה כנרת, נופים, מהבית, רמת טבריה, מעון כפר כנא', ignoreBlank: false }, 'G2:' + this.addTenCellsDown('G', this.last_cell));
-                this.spreadsheetObj.addDataValidation({ type: 'List', value1: 'כן ,לא', ignoreBlank: false }, 'H2:' + this.addTenCellsDown('H', this.last_cell));
-                this.spreadsheetObj.addDataValidation({ type: 'List', value1: 'מטפלת מהמוסד, משפחה', ignoreBlank: false }, 'I2:' + this.addTenCellsDown('I', this.last_cell));
-                this.spreadsheetObj.addDataValidation({ type: 'List', value1: 'כן ,לא, לסירוגין', ignoreBlank: false }, 'J2:' + this.addTenCellsDown('J', this.last_cell));
-                this.spreadsheetObj.addDataValidation({ type: 'List', value1: 'כן ,לא, לא רלוונטי', ignoreBlank: false }, 'L2:' + this.addTenCellsDown('L', this.last_cell));
-                this.spreadsheetObj.addDataValidation({ type: 'List', value1: 'מגן ראש, חפץ ייחודי, הגבלה פיזית, אחר', ignoreBlank: false }, 'K2:' + this.addTenCellsDown('K', this.last_cell));
-                this.spreadsheetObj.addDataValidation({ type: 'List', value1: 'כן ,לא, לא מונה אפוטרופוס', ignoreBlank: false }, 'M2:' + this.addTenCellsDown('M', this.last_cell));
+                this.spreadsheetObj.addDataValidation({ type: 'List', value1: '-, נווה כנרת, נופים, מהבית, רמת טבריה, מעון כפר כנא', ignoreBlank: false }, 'G2:' + this.addTenCellsDown('G', this.last_cell));
+                this.spreadsheetObj.addDataValidation({ type: 'List', value1: '-, כן ,לא', ignoreBlank: false }, 'H2:' + this.addTenCellsDown('H', this.last_cell));
+                this.spreadsheetObj.addDataValidation({ type: 'List', value1: '-, מטפלת מהמוסד, משפחה', ignoreBlank: false }, 'I2:' + this.addTenCellsDown('I', this.last_cell));
+                this.spreadsheetObj.addDataValidation({ type: 'List', value1: '-, כן ,לא, לסירוגין', ignoreBlank: false }, 'J2:' + this.addTenCellsDown('J', this.last_cell));
+                this.spreadsheetObj.addDataValidation({ type: 'List', value1: '-, כן ,לא, לא רלוונטי', ignoreBlank: false }, 'L2:' + this.addTenCellsDown('L', this.last_cell));
+                this.spreadsheetObj.addDataValidation({ type: 'List', value1: '-, מגן ראש, חפץ ייחודי, הגבלה פיזית, אחר', ignoreBlank: false }, 'K2:' + this.addTenCellsDown('K', this.last_cell));
+                this.spreadsheetObj.addDataValidation({ type: 'List', value1: '-, כן ,לא, לא מונה אפוטרופוס', ignoreBlank: false }, 'M2:' + this.addTenCellsDown('M', this.last_cell));
+                break;
         }
+        setTimeout(() => {
+            this.spreadsheetObj.goTo(this.last_column_cell);
+            this.spreadsheetObj.selectRange(this.last_column_cell);
+        }, 2500);
     }
 
     addTenCellsDown(column, original) {

@@ -238,6 +238,8 @@ import { EditOrAddLabTestsComponent } from './lab-tests/edit-or-add-lab-tests/ed
 import { SpreadsheetComponent } from './spreadsheets-dashboard/spreadsheet/spreadsheet.component';
 import { SpreadsheetAllModule } from '@syncfusion/ej2-angular-spreadsheet';
 import { SpreadsheetsDashboardComponent } from './spreadsheets-dashboard/spreadsheets-dashboard.component';
+import { HospitalTonnageComponent } from './hospital-bi-dashboard/hospital-tonnage/hospital-tonnage.component';
+import { FolderTreeComponent } from './dashboard/folder-tree/folder-tree.component';
 
 
 const maskConfig: Partial<IConfig> = {
@@ -427,7 +429,9 @@ const maskConfig: Partial<IConfig> = {
     LabTestsComponent,
     EditOrAddLabTestsComponent,
     SpreadsheetComponent,
-    SpreadsheetsDashboardComponent
+    SpreadsheetsDashboardComponent,
+    HospitalTonnageComponent,
+    FolderTreeComponent
   ],
   imports: [
     SpreadsheetAllModule,

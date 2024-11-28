@@ -1,0 +1,37 @@
+.folder-tree {
+    padding-left: 20px;
+  }
+  
+  .folder-item {
+    margin: 5px 0;
+  }
+  
+  .folder-header {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+  }
+  
+  .folder-title {
+    margin-left: 10px;
+    font-size: 1rem;
+  }
+  
+  .folder-icon {
+    width: 20px;
+    height: 20px;
+  }
+  
+  .folder-children {
+    margin-left: 20px;
+    border-left: 1px solid #ccc;
+  }
+  
+  .expand-collapse {
+    border: none;
+    background: none;
+    font-size: 1.2rem;
+    cursor: pointer;
+    width: 25px;
+    text-align: center;
+  }

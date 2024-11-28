@@ -1,7 +1,6 @@
 import { Component, OnInit, ViewChild } from "@angular/core";
 import { Router } from "@angular/router";
 import { HttpClient } from "@angular/common/http";
-import { CircleProgressComponent } from "ng-circle-progress";
 import { environment } from "src/environments/environment";
 export interface DepartRefoee {
     DepartName: string;
@@ -16,24 +15,9 @@ export interface DepartRefoee {
     styleUrls: ["./dashboard.component.scss"],
 })
 export class DashboardComponent implements OnInit {
-    @ViewChild("circleProgress", { static: true })
-    circleProgress: CircleProgressComponent;
-    ngCircleOptions = {
-        outerStrokeColor: "blue",
-        subtitleFormat: (percent: number): string => {
-            if (percent > 100) {
-                $("#real-precent")
-                    .find("svg")
-                    .append($("#extra-precent").find("path"));
-            }
-            return "";
-        },
-    };
+    folders_display = [];
     shortcuts = [];
     folders = [];
-    folders_display = [];
-    aobjTotal: string;
-    resporatoryCount: number;
     first_name: string;
     last_name: string;
     full_date: string;
@@ -44,13 +28,6 @@ export class DashboardComponent implements OnInit {
     birthdayUser: boolean = false;
     constructor(private router: Router, private http: HttpClient) { }
     today: number = Date.now();
-    // date = new Date();
-    Departmints = {
-        departs: [],
-        total: 0,
-        resp: 0
-    };
-    arrDepartsRefoee: DepartRefoee[] = [];
     _dotsLoader =
         '<div class="spinner">' +
         '<div class="bounce1"></div>' +
@@ -63,29 +40,10 @@ export class DashboardComponent implements OnInit {
             .attr('y', 150)
             .attr('fill', '#938F8F');
 
-        this.getDataFormServer("");
         this.getLoginUserDetails();
         this.getBirthDayPeople();
         this.getShortCutsLinks();
         this.getFoldersLinks();
-    }
-    // public getData(){
-    //     this.Departmints["departs"].forEach((element, key) => {
-    //         this.Departmints["departs"][key].Used = "";
-    //        // ////debugger
-    //         //$(document).find("._Departmints li:nth("+key+") .append-dots").append($(this._dotsLoader));
-    //         this.getDataFormServer(key, element.Code);
-    //     });
-    // }
-
-    displayFiles(folder) {
-        if (folder != undefined) {
-            if (folder.Type == 'File') {
-                this.openFileInTab(folder.Link);
-            }
-            else this.folders_display = this.folders.filter(x => x.Parent == folder.Row_ID);
-        }
-        else this.folders_display = this.folders.filter(x => x.Parent == "0");
     }
     openFileInTab(link: string) {
         if (link == '') return;
@@ -134,20 +92,6 @@ export class DashboardComponent implements OnInit {
     openWithEdge2(link: string) {
         window.open("microsoft-edge:" + link);
     }
-    openWithEdge(link: string): void {
-        link = 'microsoft-edge:' + link;
-        const blob = new Blob(
-            [`[InternetShortcut]\nURL=${link}\n`],
-            { type: 'application/octet-stream' }
-        );
-        const downloadUrl = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = downloadUrl;
-        a.download = 'OpenInEdge.url';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-    }
     getLoginUserDetails() {
         this.http
             .post(environment.url + "GetLoginUserDetails", {
@@ -181,76 +125,5 @@ export class DashboardComponent implements OnInit {
         let link = "\\\\srv-apps-02\\bin2\\פרוטוקולים לטיפול אנטיביוטי אמפירי";
         window.location.href = link;
         // window.open("", "_blank");
-    }
-    public getDataFormServer(_Depart: string) {
-        $("#loader").removeClass("d-none");
-        this.http
-            .post(
-                environment.url + "TfosaDashBoardAppRefoee",
-                //environment.url + "TfosaDashBoardAppRefoee",
-                {
-                    _depart: _Depart,
-                }
-            )
-            .subscribe(
-                (Response: DepartRefoee[]) => {
-                    this.arrDepartsRefoee = Response["d"];
-                    var totalBeds = 0;
-                    var totalInUsed = 0;
-                    var totalMonshame = 0;
-                    for (var i = 0; i < this.arrDepartsRefoee.length; i++) {
-                        totalBeds += parseInt(this.arrDepartsRefoee[i].DepartBedsNumber + "");
-                        totalInUsed += parseInt(this.arrDepartsRefoee[i].DepartBedsInUsed + "");
-                        totalMonshame = parseInt(this.arrDepartsRefoee[i].Moshamem + "");
-                    }
-                    this.resporatoryCount = totalMonshame;
-                    this.aobjTotal = totalBeds + " / " + totalInUsed;
-                    // debugger
-                    // var obj = JSON.parse(Response["d"]);
-                    // var aobjTotal = JSON.parse(obj["total"]);
-                    // var aobj = JSON.parse(obj["DepartObjects"]);
-                    // var totalReal = JSON.parse(obj["totalReal"]);
-                    // this.resporatoryCount = JSON.parse(obj["totalReal2"]);
-                    // var aaobj = JSON.parse("[" + aobj[0] + "]");
-                    // aobjTotal = JSON.parse(aobjTotal);
-                    // this.aobjTotal = aobjTotal["total"];
-                    // aaobj.forEach((element, index) => {
-                    //     if (element.BedsReal != "0") {
-                    //         for (var i = index + 1; i < aaobj.length; i++) {
-                    //             if (aaobj[i].BedsReal == "0" && aaobj[i].Name != 'ילוד בריא') {
-                    //                 element.Used =
-                    //                     parseInt(element.Used) +
-                    //                     parseInt(aaobj[i].Used);
-                    //             } else {
-                    //                 break;
-                    //             }
-                    //         }
-                    //     } else {
-                    //     }
-                    // });
-
-                    // this.Departmints["departs"] = aaobj;
-                    // //debugger
-                    this.Departmints["total"] = parseInt(
-                        ((
-                            totalInUsed / totalBeds) * 100).toFixed(
-                                0
-                            )
-                    );
-                    this.Departmints["resp"] = parseInt(
-                        ((totalMonshame / totalBeds) * 100).toFixed(
-                            0
-                        )
-                    );
-                    setTimeout(() => {
-                        $("#loader").addClass("d-none");
-                    });
-                },
-                (error) => {
-                    setTimeout(() => {
-                        $("#loader").addClass("d-none");
-                    });
-                }
-            );
     }
 }
