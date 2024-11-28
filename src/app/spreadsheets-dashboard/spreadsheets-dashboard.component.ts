@@ -35,6 +35,7 @@ export class SpreadsheetsDashboardComponent implements OnInit {
     temp_dialog.componentInstance.sheet_details = spreadsheet;
     temp_dialog.afterClosed().subscribe(response => {
       // window.location.reload();
+      this.loadData();
     });
   }
 

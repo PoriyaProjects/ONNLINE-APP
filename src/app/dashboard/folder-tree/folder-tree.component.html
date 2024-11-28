@@ -1,0 +1,23 @@
+<div class="folder-tree">
+    <div class="folder-item" *ngFor="let folder of folders">
+      <!-- Folder Details -->
+      <div class="folder-header">
+        <button
+          *ngIf="folder.Children?.length"
+          class="expand-collapse"
+          (click)="toggleExpand(folder)"
+        >
+          {{ folder.isExpanded ? '-' : '+' }}
+        </button>
+        <span (click)="displayFiles(folder)" class="folder-title">
+          <img [src]="folder.Image" alt="Folder Image" class="folder-icon" />
+          {{ folder.Title }}
+        </span>
+      </div>
+  
+      <!-- Recursive Rendering of Child Folders -->
+      <div *ngIf="folder.isExpanded && folder.Children?.length" class="folder-children">
+        <app-folder-tree [folders]="folder.Children"></app-folder-tree>
+      </div>
+    </div>
+  </div>
