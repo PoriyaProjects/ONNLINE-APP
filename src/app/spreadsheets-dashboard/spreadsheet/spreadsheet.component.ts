@@ -138,7 +138,7 @@ export class SpreadsheetComponent implements OnInit {
     onSpreadsheetCreated(): void {
         this.spreadsheetObj.cellFormat({ textAlign: 'center' }, 'A1:' + this.last_cell);
         this.spreadsheetObj.cellFormat({ backgroundColor: '#357cd2', color: '#fff', fontWeight: 'bold' }, 'A1:' + this.last_header_cell);
-        // this.spreadsheetObj.freezePanes(1, 0);
+        this.spreadsheetObj.freezePanes(1, 0);
         switch (this.sheet_details.SheetID) {
             case '1':
                 this.spreadsheetObj.addDataValidation({ type: 'List', value1: '-, בוקר, ערב, לילה', ignoreBlank: false }, 'E2:' + this.addTenCellsDown('E', this.last_cell));
