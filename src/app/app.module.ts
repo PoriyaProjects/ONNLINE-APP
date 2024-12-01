@@ -240,6 +240,7 @@ import { SpreadsheetAllModule } from '@syncfusion/ej2-angular-spreadsheet';
 import { SpreadsheetsDashboardComponent } from './spreadsheets-dashboard/spreadsheets-dashboard.component';
 import { HospitalTonnageComponent } from './hospital-bi-dashboard/hospital-tonnage/hospital-tonnage.component';
 import { FolderTreeComponent } from './dashboard/folder-tree/folder-tree.component';
+import { FeedLineComponent } from './dashboard/feed-line/feed-line.component';
 
 
 const maskConfig: Partial<IConfig> = {
@@ -431,7 +432,8 @@ const maskConfig: Partial<IConfig> = {
     SpreadsheetComponent,
     SpreadsheetsDashboardComponent,
     HospitalTonnageComponent,
-    FolderTreeComponent
+    FolderTreeComponent,
+    FeedLineComponent
   ],
   imports: [
     SpreadsheetAllModule,
