@@ -1,28 +1,5 @@
-<div dir="rtl" class="user-row-container" *ngIf="userName == 'adahabre2'">
-    <!-- User Details Section -->
-    <div class="user-details">
-        <img [src]="ProfilePicture" alt="Profile Picture" class="profile-picture">
-        <div class="user-info">
-            <h2>{{ first_name }} {{ last_name }}</h2>
-            <h5>{{ userName }}</h5>
-        </div>
-    </div>
-
-    <!-- Profiles List Section -->
-    <div class="profiles-list" *ngIf="birth_day_people.length > 0">
-        <h5>ימי הולדת | {{today | date: 'dd-MM-yyyy'}}</h5>
-        <ul>
-            <li *ngFor="let person of birth_day_people">
-                <img [src]="person.ProfilePicture" alt="תמונת עובד" class="birthday-profile-picture" />
-                <span class="birthday-info">
-                    {{ person.FirstName }} {{ person.LastName }}
-                </span>
-                <a href="mailto:{{ person.Email }}" class="email-icon" matTooltip="שלח מייל">
-                    <mat-icon>email</mat-icon>
-                </a>
-            </li>
-        </ul>
-    </div>
+<div class="row">
+    <app-feed-line style="margin: auto;width: 100%;direction: rtl;padding-right: 15px;"></app-feed-line>
 </div>
 <div dir="rtl" class="row" style="padding-bottom: 90px;">
     <div class="col-md-6" dir="rtl">
@@ -71,7 +48,7 @@
         <div class="shortcuts-row-container" *ngIf="userName === 'adahabre'">
             <h2 class="shortcuts-header">תיקיות</h2>
             <app-folder-tree [folders]="folders_display"></app-folder-tree>
-          </div>
+        </div>
         <div class="col-md-6" dir="rtl">
             <div dir="rtl" class="row h-85" *ngIf="birthdayUser">
                 <div id="birthdayCake">

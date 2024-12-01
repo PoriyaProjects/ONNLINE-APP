@@ -1,0 +1,14 @@
+<div class="feed-line-container">
+  <div class="feed-line">
+    <div class="feed-item" *ngFor="let item of feedItems">
+      <span class="feed-time">{{ item.RecordDate | date: 'MM-dd-yyyy HH:mm' }}</span>
+      <input [value]="item.Description" (blur)="updateFeedLineContent($event.target.value, item.Row_ID)"
+        *ngIf="user_name == 'adahabre'" />
+      <span class="feed-content" *ngIf="user_name != 'adahabre'" [innerHTML]="transformText(item.Description)"></span>
+    </div>
+  </div>
+  <button type="submit" mat-raised-button class="add-btn" *ngIf="user_name == 'adahabre'"
+    (click)="updateFeedLineContent('', 0)">
+    <mat-icon>add</mat-icon>
+  </button>
+</div>
