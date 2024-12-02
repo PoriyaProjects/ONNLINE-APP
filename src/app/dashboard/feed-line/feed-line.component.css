@@ -9,7 +9,7 @@
 .feed-line {
   display: inline-block;
   white-space: nowrap;
-  animation: scroll-left 30s linear infinite;
+  animation: scroll-right 15s linear infinite;
 }
 
 .feed-item {
@@ -39,13 +39,13 @@
   background-color: #1976d2;
 }
 
-@keyframes scroll-left {
+@keyframes scroll-right {
   0% {
-    transform: translateX(100%);
+    transform: translateX(-100%);
   }
 
   100% {
-    transform: translateX(-100%);
+    transform: translateX(100%);
   }
 }
 
