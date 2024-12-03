@@ -12,7 +12,7 @@ import { environment } from "src/environments/environment";
 
 @Injectable()
 export class LogAllRequestsInterceptor implements HttpInterceptor {
-    constructor(private logHttp: HttpClient, private router: Router) {}
+    constructor(private logHttp: HttpClient, private router: Router) { }
 
     intercept(
         request: HttpRequest<unknown>,
@@ -26,37 +26,43 @@ export class LogAllRequestsInterceptor implements HttpInterceptor {
                     this.router.url.replace("/", "")
                 );
                 this.logHttp
-                    .post(                        
+                    .post(
                         environment.url + "LinksLog",
                         {
                             usaerName: localStorage.getItem("loginUserName"),
                             linkId: this.router.url.replace("/", ""),
                         }
                     )
-                    .subscribe((Response) => {});
+                    .subscribe((Response) => { });
             }
             if (request.url.indexOf("LinksLog") < 0)
                 if (
                     localStorage.getItem("LastRout") !=
                     this.router.url.replace("/", "")
-                && localStorage.getItem("loginUserName")) {
+                    && localStorage.getItem("loginUserName")) {
                     localStorage.setItem(
                         "LastRout",
                         this.router.url.replace("/", "")
                     );
                     this.logHttp
                         .post(
-                           
+
                             environment.url + "LinksLog",
                             {
                                 usaerName: localStorage.getItem("loginUserName"),
                                 linkId: this.router.url.replace("/", ""),
                             }
                         )
-                        .subscribe((Response) => {});
+                        .subscribe((Response) => { });
                 }
-        }
 
+        }
+        // if (request.url.indexOf("GetFileByDocumentID") >= 0 || request.url.indexOf("GetActiveWorkflowIndicators") >= 0 || request.url.indexOf("GenerateProcessWorkflowItemSummaryAsFileStream") >= 0) { }
+        // else {
+        //     request = request.clone({
+        //         withCredentials: true
+        //     });
+        // }
         return next.handle(request);
     }
 }
