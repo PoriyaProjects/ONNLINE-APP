@@ -111,11 +111,6 @@ export class NursesManageDashboardComponent implements OnInit {
         that.getDeliveryEROccupancy('');
         that.privateIP = this.ClientIP;
       }, 1500);
-      // this.ipAddressUpdate();
-
-      // this.http.get('https://api.ipify.org?format=json').subscribe(data => {
-      //   this.publicIP = data['ip'];
-      // });
     } else {
       this.handleEvent3();
     }
@@ -139,16 +134,6 @@ export class NursesManageDashboardComponent implements OnInit {
           this.dialog.open(this.modalIp, { width: '60%', disableClose: true });
         }
       });
-  }
-
-  IpAddressMonitoring() {
-    this.http
-      .post(environment.url + "IpAddressMonitoring", {
-        _userName: this.UserName,
-        IpAdress_Login: this.ClientIP
-      }).subscribe(() => {
-
-      })
   }
 
   getBugsTable() {

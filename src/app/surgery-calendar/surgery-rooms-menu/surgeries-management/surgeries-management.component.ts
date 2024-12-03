@@ -244,7 +244,7 @@ export class SurgeriesManagementComponent {
             tempTitle = hr + ` 
             מחלקה: <b>${element.SurgeryRequestDepartments.S_DEPARTMENT}</b><br>
             שם: <b>${element.SurgeryPatientDetails.PM_FIRST_NAME} ${element.SurgeryPatientDetails.PM_LAST_NAME}</b><b> -- ${element.SurgeryPatientDetails.PM_CASE_NUMBER}</b> <br>
-            דחיפות: <b>${element.SurgeryType}</b><br>
+            דחיפות: <b>${element.Urgency}</b><br>
             S:<b>${element.ArrivalDate.split(' ')[1]}</b> - E:<b>${element.EndDate.split(' ')[1]}</b>`;
           }
           // set start and end time for surgeries
