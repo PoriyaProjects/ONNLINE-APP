@@ -1,10 +1,13 @@
 import { Component, OnInit } from "@angular/core";
 import { Router } from "@angular/router";
 import { MatSnackBar } from "@angular/material/snack-bar";
-import { HttpClient } from "@angular/common/http";
+import { HttpClient, HttpHeaders } from "@angular/common/http";
 import * as $ from "jquery";
 import { MenuPerm } from "../menu-perm";
 import { environment } from "src/environments/environment";
+import { first, map } from "rxjs/operators";
+import { AuthenticationService } from "./authentication.service";
+
 @Component({
     selector: "app-login",
     templateUrl: "./login.component.html",
@@ -14,6 +17,7 @@ export class LoginComponent implements OnInit {
     constructor(
         private snackBar: MatSnackBar,
         private http: HttpClient,
+        private authenticationService: AuthenticationService,
         private router: Router,
         private mMenuPerm: MenuPerm
     ) { }
@@ -21,6 +25,8 @@ export class LoginComponent implements OnInit {
     password: string;
     hide: boolean = true;
     user_details: any;
+    returnUrl: string = "";
+    returnParams: any = {};
 
     ngOnInit() {
         // Apply styles to the global <body> tag
@@ -31,7 +37,15 @@ export class LoginComponent implements OnInit {
         // document.body.style.justifyContent = 'center';
         // document.body.style.alignItems = 'center';
         // document.body.style.fontFamily = "'Arial', sans-serif";
-        this.autoLogin();
+        // this.authenticationService.login()
+        //     .pipe(first())
+        //     .subscribe(
+        //         data => {
+        //             this.router.navigate([this.returnUrl], { queryParams: this.returnParams });
+        //         },
+        //         error => {
+        //             console.log(error);
+        //         });
         if (
             localStorage.getItem("loginState") == "true" &&
             localStorage.getItem("loginUserName") != ""
@@ -52,40 +66,28 @@ export class LoginComponent implements OnInit {
     hidePassword() {
         this.hide = !this.hide;
     }
-    autoLogin() {
-        this.http.get('http://srv-apps-prod:44343/Authentication', { observe: 'response', withCredentials: true })
-            .subscribe({
-                next: (response) => {
-                    console.log(response.body);
-                },
-                error: (error) => {
-                    console.error(error);
-                }
-            });
-        this.http
-            .post('http://srv-apps-prod/RCF_WS/WebService.asmx/' + "AutoAuthentication", { withCredentials: true })
-            .subscribe((Response) => {
-                try {
-                    this.user_details = Response['d'];
-                    console.log(this.user_details.FirstName);
-                    console.log(this.user_details.LastName);
-                    console.log(this.user_details.ADUserName);
-                    console.log(this.user_details.DepartmentDescripton);
-                    // this.mMenuPerm.setUserName(this.user_details.ADUserName.toString().toLowerCase());
-                    // localStorage.setItem("loginState", "true");
-                    // localStorage.setItem("Depart", this.user_details.DepartmentDescripton);
-                    // localStorage.setItem(
-                    //     "loginUserName",
-                    //     this.user_details.ADUserName.toLowerCase()
-                    // );
-                    // setTimeout(() => {
-                    //     this.router.navigate(['/dashboard']);
-                    // }, 8000);
-                } catch (error) {
-                    console.log("error in AutoAuthentication list");
-                }
-            });
-    }
+    // autoLogin() {
+    //     const headers = new HttpHeaders().set('Content-Type', 'application/json');
+    //     let url = "http://srv-apps-prod:47001/AutoAuthentication";
+    //     // let url = "http://localhost:53287/AutoAuthentication";
+
+    //     return this.http.get<any>(url, { headers, withCredentials: true });
+    // }
+    // autoLogin() {
+    //     const headers = new HttpHeaders().set('Content-Type', 'application/json');
+    //     let url = "http://srv-apps-prod:47001/AutoAuthentication";
+    //     // let url = "http://localhost:53287/AutoAuthentication";
+
+    //     this.http.get(url, { headers, withCredentials: true }).subscribe(
+    //         (response: any) => {
+    //             this.user_details = response;
+    //             console.log(response);
+    //         },
+    //         (error) => {
+    //             console.error("Error:", error);
+    //         }
+    //     );
+    // }
     login(): void {
         $("#loader").removeClass("d-none");
         if (this.username && this.password) {

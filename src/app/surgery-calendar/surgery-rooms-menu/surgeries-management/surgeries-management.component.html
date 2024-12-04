@@ -64,10 +64,10 @@
           <button mat-menu-item (click)="filterDepartment(depart)"
             *ngFor="let depart of room.uniqueDepartments">{{depart}}
             <div class="example-button-container" *ngIf="depart != null">
-              <a (click)="getPlannedSurgeriesData(depart)">
+              <a (click)="getPlannedSurgeriesData(depart, room.SurgeryRoom)">
                 <img src="../../assets/images/excel.png" alt="Excel File" matTooltip="יצירת קובץ אקסל {{depart}}">
               </a>
-              <a (click)="sentDepartmentFinalSurgeryPlan(depart)">
+              <a (click)="sentDepartmentFinalSurgeryPlan(depart, room.SurgeryRoom)">
                 <img src="../../assets/images/transferTo.png" alt="Send Final Plan"
                   matTooltip="שליחת תוכנית סופית {{depart}}">
               </a>
@@ -82,10 +82,10 @@
           <button mat-menu-item (click)="filterDepartment(depart)"
             *ngFor="let depart of room.uniqueDepartments">{{depart}}
             <div class="example-button-container" *ngIf="depart != null">
-              <a (click)="getPlannedSurgeriesData(depart)">
+              <a (click)="getPlannedSurgeriesData(depart, room.SurgeryRoom)">
                 <img src="../../assets/images/excel.png" alt="Excel File">
               </a>
-              <a (click)="sentDepartmentFinalSurgeryPlan(depart)">
+              <a (click)="sentDepartmentFinalSurgeryPlan(depart, room.SurgeryRoom)">
                 <img src="../../assets/images/transferTo.png" alt="Send Final Plan"
                   matTooltip="שליחת תוכנית סופית {{depart}}">
               </a>
