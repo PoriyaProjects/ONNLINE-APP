@@ -424,22 +424,22 @@ export class SurgeriesManagementComponent {
     return cloneObj;
   }
 
-  getPlannedSurgeriesData(department) {
+  getPlannedSurgeriesData(department, room) {
     let fullDate = this.datePipe.transform(this.viewDate, 'yyyy-MM-dd');
     this.http.post(environment.url + 'GetSurgeriesPlannedExcel', {
       Department: department,
-      _surRoomCode: this.data.room.CalendarRoomsArea,
+      _surRoomCode: room,
       date: fullDate
     }).subscribe(res => {
       if (res['d'].length > 0) this.planningExcelFile(res['d'], department);
     })
   }
 
-  sentDepartmentFinalSurgeryPlan(department) {
+  sentDepartmentFinalSurgeryPlan(department, room) {
     let fullDate = this.datePipe.transform(this.viewDate, 'yyyy-MM-dd');
     this.http.post(environment.url + 'GetSurgeriesPlannedExcel', {
       Department: department,
-      _surRoomCode: this.data.room.CalendarRoomsArea,
+      _surRoomCode: room,
       date: fullDate
     }).subscribe(res => {
       if (res['d'].length > 0) {
