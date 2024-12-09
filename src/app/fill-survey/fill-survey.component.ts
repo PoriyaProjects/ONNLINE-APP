@@ -821,6 +821,7 @@ export class FillSurveyComponent implements OnInit {
             }
             .fix-mb-5 {
                 margin-bottom: 5px;
+                font-size: 25px;
             }
             #table-overflow {
                 overflow-x: auto;
