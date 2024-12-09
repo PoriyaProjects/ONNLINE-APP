@@ -5,7 +5,6 @@ import { HttpClient, HttpHeaders } from "@angular/common/http";
 import * as $ from "jquery";
 import { MenuPerm } from "../menu-perm";
 import { environment } from "src/environments/environment";
-import { first, map } from "rxjs/operators";
 import { AuthenticationService } from "./authentication.service";
 
 @Component({
@@ -27,6 +26,7 @@ export class LoginComponent implements OnInit {
     user_details: any;
     returnUrl: string = "";
     returnParams: any = {};
+    scriptOutput: string = '';
 
     ngOnInit() {
         // Apply styles to the global <body> tag
@@ -46,6 +46,15 @@ export class LoginComponent implements OnInit {
         //         error => {
         //             console.log(error);
         //         });
+        // this.http.get<{ output: string }>('http://localhost:3000/run-script')
+        //     .subscribe({
+        //         next: (response) => {
+        //             this.scriptOutput = response.output;
+        //         },
+        //         error: (err) => {
+        //             console.error('Error fetching script output:', err);
+        //         }
+        //     });
         if (
             localStorage.getItem("loginState") == "true" &&
             localStorage.getItem("loginUserName") != ""
