@@ -29,6 +29,18 @@ export class LoginComponent implements OnInit {
     returnParams: any = {};
 
     ngOnInit() {
+
+        
+        this.authenticationService.getAuthentication().subscribe(
+            (response) => {
+                debugger
+                console.log('Authentication Successful:', response);
+            },
+            (error) => {
+                debugger
+                console.error('Authentication Failed:', error);
+            }
+        );
         // Apply styles to the global <body> tag
         // document.body.style.background = 'linear-gradient(to bottom right, #4a90e2, #9013fe)';
         // document.body.style.height = '100vh';
