@@ -23,7 +23,7 @@ export class ReHospComponent implements OnInit {
   numeratorValue: number = 0;
   percentage = 0;
   selectedColor: string = '';
-  admission_depts = [];
+  release_depts = [];
   dialog_data: any;
   months: string[] = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
   selectedMonth: string = '';
@@ -130,7 +130,7 @@ export class ReHospComponent implements OnInit {
 
     this.http.post(url, data).subscribe({
       next: (records: any) => {
-        this.admission_depts = [];
+        this.release_depts = [];
         this.dataSource = new MatTableDataSource<any>(records['d']);
         // Custom filter for the "name" field
         this.dataSource.filterPredicate = (data, filter: string): boolean => {
@@ -139,9 +139,9 @@ export class ReHospComponent implements OnInit {
         // Calculate the numerator value
         if (this.dataSource.filteredData.length > 0) {
           this.dataSource.filteredData.forEach(element => {
-            this.admission_depts.push(element.ReleaseDepartment);
+            this.release_depts.push(element.ReleaseDepartment);
           });
-          this.admission_depts = this.removeDuplicates(this.admission_depts);
+          this.release_depts = this.removeDuplicates(this.release_depts);
           this.numeratorValue = parseInt(this.dataSource.filteredData[0].Numerator, 10);
         } else {
           this.numeratorValue = 0; // Or handle it as needed

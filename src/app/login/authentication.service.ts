@@ -7,8 +7,9 @@ import { environment } from 'src/environments/environment';
   providedIn: 'root'
 })
 export class AuthenticationService {
-  private apiUrl = environment.AuthUrl+'AutoAuthentication';//'http://srv-apps-prod:47001/AutoAuthentication';
+  private apiUrl = environment.AuthUrl+'Authentication';//'http://srv-apps-prod:47001/AutoAuthentication';
    
+  url = this.apiUrl;
 
   constructor(private http: HttpClient) {}
 
