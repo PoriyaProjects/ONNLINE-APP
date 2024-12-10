@@ -15,13 +15,9 @@ export class AuthenticationService {
 
   getAuthentication(): Observable<any> {
     // Example headers if needed, otherwise you can omit
-    const headers = new HttpHeaders({
-      'Content-Type': 'application/json',
-    });
+    
   
     return this.http.get(this.apiUrl, {
-      headers: headers,
-      responseType: 'text' as 'json',
       withCredentials: true, // Include credentials (e.g., cookies, auth headers)
     });
   }
