@@ -29,14 +29,24 @@ export class LoginComponent implements OnInit {
     scriptOutput: string = '';
 
     ngOnInit() {
+        this.authenticationService.getAuthentication().subscribe(
+            (response) => {
+                //debugger
+                console.log('Authentication Successful:', response.message);
+            },
+            (error) => {
+                //debugger
+                console.error('Authentication Failed:', error);
+            }
+        );
         // Apply styles to the global <body> tag
-        document.body.style.background = 'linear-gradient(to bottom right, #4a90e2, #9013fe)';
-        document.body.style.height = '100vh';
-        document.body.style.margin = '0';
-        document.body.style.display = 'flex';
-        document.body.style.justifyContent = 'center';
-        document.body.style.alignItems = 'center';
-        document.body.style.fontFamily = "'Arial', sans-serif";
+        // document.body.style.background = 'linear-gradient(to bottom right, #4a90e2, #9013fe)';
+        // document.body.style.height = '100vh';
+        // document.body.style.margin = '0';
+        // document.body.style.display = 'flex';
+        // document.body.style.justifyContent = 'center';
+        // document.body.style.alignItems = 'center';
+        // document.body.style.fontFamily = "'Arial', sans-serif";
         if (
             localStorage.getItem("loginState") == "true" &&
             localStorage.getItem("loginUserName") != ""

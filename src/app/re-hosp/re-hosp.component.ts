@@ -29,6 +29,7 @@ export class ReHospComponent implements OnInit {
   selectedMonth: string = '';
   showDropdown: boolean = false;
   @ViewChild('modalContent', { static: true }) modalContent: TemplateRef<any>;
+  admission_depts: any;
 
   selectMonth(month: string) {
     this.selectedMonth = month;
