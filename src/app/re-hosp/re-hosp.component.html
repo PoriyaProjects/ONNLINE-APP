@@ -12,12 +12,12 @@
             <mat-datepicker-toggle matIconSuffix [for]="picker2"></mat-datepicker-toggle>
             <mat-datepicker #picker2></mat-datepicker>
         </mat-form-field>
-        <div class="element" *ngIf="admission_depts.length > 0">
+        <div class="element" *ngIf="release_depts.length > 0">
             <mat-form-field>
                 <mat-label>מחלקה משחררת</mat-label>
                 <mat-select>
                     <mat-option (click)="applyFilter('')">הכל</mat-option>
-                    <mat-option *ngFor="let dept of admission_depts" (click)="applyFilter(dept)">{{dept}}</mat-option>
+                    <mat-option *ngFor="let dept of release_depts" (click)="applyFilter(dept)">{{dept}}</mat-option>
                 </mat-select>
             </mat-form-field>
         </div>
