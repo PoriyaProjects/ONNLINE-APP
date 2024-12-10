@@ -29,6 +29,18 @@ export class LoginComponent implements OnInit {
     scriptOutput: string = '';
 
     ngOnInit() {
+
+        
+        this.authenticationService.getAuthentication().subscribe(
+            (response) => {
+                //debugger
+                console.log('Authentication Successful:', response.message);
+            },
+            (error) => {
+                //debugger
+                console.error('Authentication Failed:', error);
+            }
+        );
         // Apply styles to the global <body> tag
         // document.body.style.background = 'linear-gradient(to bottom right, #4a90e2, #9013fe)';
         // document.body.style.height = '100vh';
@@ -46,21 +58,22 @@ export class LoginComponent implements OnInit {
         //         error => {
         //             console.log(error);
         //         });
-        const xhr = new XMLHttpRequest();
-        xhr.open('GET', 'http://srv-apps-prod:47001/Api/Authentication', true);
-        xhr.withCredentials = true;
+        // const xhr = new XMLHttpRequest();
+        // xhr.open('GET', 'http://srv-apps-prod:47001/Api/Authentication', true);
+        // xhr.withCredentials = true;
 
-        xhr.onload = function () {
-            if (xhr.status === 200) {
-                console.log('User Identity:', xhr.responseText);
-            } else {
-                console.error('Error:', xhr.status, xhr.statusText);
-            }
-        };
-        xhr.onerror = function () {
-            console.error('Request failed.');
-        };
-        xhr.send();
+        // xhr.onload = function () {
+        //     if (xhr.status === 200) {
+        //         let json = JSON.parse(xhr.responseText);
+        //         console.log( json.message);
+        //     } else {
+        //         console.error(xhr.status, xhr.statusText);
+        //     }
+        // };
+        // xhr.onerror = function () {
+        //     console.error('Request failed.');
+        // };
+        // xhr.send();
         if (
             localStorage.getItem("loginState") == "true" &&
             localStorage.getItem("loginUserName") != ""
