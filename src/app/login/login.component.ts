@@ -46,15 +46,21 @@ export class LoginComponent implements OnInit {
         //         error => {
         //             console.log(error);
         //         });
-        // this.http.get<{ output: string }>('http://localhost:3000/run-script')
-        //     .subscribe({
-        //         next: (response) => {
-        //             this.scriptOutput = response.output;
-        //         },
-        //         error: (err) => {
-        //             console.error('Error fetching script output:', err);
-        //         }
-        //     });
+        const xhr = new XMLHttpRequest();
+        xhr.open('GET', 'http://srv-apps-prod:47001/Api/Authentication', true);
+        xhr.withCredentials = true;
+
+        xhr.onload = function () {
+            if (xhr.status === 200) {
+                console.log('User Identity:', xhr.responseText);
+            } else {
+                console.error('Error:', xhr.status, xhr.statusText);
+            }
+        };
+        xhr.onerror = function () {
+            console.error('Request failed.');
+        };
+        xhr.send();
         if (
             localStorage.getItem("loginState") == "true" &&
             localStorage.getItem("loginUserName") != ""
