@@ -1,33 +1,5 @@
-<div class="login-form">
-  <mat-card class="card form">
-    <mat-card-header>
-      <mat-card-title>Login</mat-card-title>
-    </mat-card-header>
-    <mat-card-content>
-      <form class="form">     
-          <div class="full-width">
-              <mat-form-field class="full-width">
-                  <input (keydown.enter)="login()" autocomplete="off" matInput placeholder="Username" [(ngModel)]="username" name="username" required>
-                </mat-form-field>          
-                <mat-form-field class="full-width">
-                  <input (keydown.enter)="login()" autocomplete="off" matInput placeholder="Password" [(ngModel)]="password" [type]="hide ? 'password' : 'text'" name="password" required>
-                  <mat-icon matSuffix class="my-icon" (mousedown)="hidePassword()" (touchstart)="hidePassword()" (touchend)="hidePassword()" (mouseup)="hidePassword()">visibility</mat-icon>
-                </mat-form-field>
-          </div>
-      </form>
-    </mat-card-content>
-    <mat-card-actions>
-      <button class="full-width" mat-raised-button (click)="login()" color="primary">Login</button>
-    </mat-card-actions>
-  </mat-card>
-</div>
-
-<!-- <div class="container">
-  <div *ngIf="user_details == undefined">
-    <p>לא מצאנו את המשתמש שלך אנא צור קשר</p>
-    <p>adahabre@tzmc.gov.il</p>
-  </div>
-  <div class="animated-text" *ngIf="user_details != undefined">
+<div class="container" *ngIf="user_details.ADUserName == null">
+  <div class="animated-text">
     <div class="user-detail-fullname">
       {{ user_details.FirstName }} {{ user_details.LastName }}
     </div>
@@ -41,4 +13,30 @@
       כמה רגעים, מכינים את האונליין עבורך...
     </div>
   </div>
-</div> -->
+</div>
+<div class="login-form" *ngIf="user_details.ADUserName != null">
+  <mat-card class="card form">
+    <mat-card-header>
+      <mat-card-title>Login</mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      <form class="form">
+        <div class="full-width">
+          <mat-form-field class="full-width">
+            <input (keydown.enter)="login()" autocomplete="off" matInput placeholder="Username" [(ngModel)]="username"
+              name="username" required>
+          </mat-form-field>
+          <mat-form-field class="full-width">
+            <input (keydown.enter)="login()" autocomplete="off" matInput placeholder="Password" [(ngModel)]="password"
+              [type]="hide ? 'password' : 'text'" name="password" required>
+            <mat-icon matSuffix class="my-icon" (mousedown)="hidePassword()" (touchstart)="hidePassword()"
+              (touchend)="hidePassword()" (mouseup)="hidePassword()">visibility</mat-icon>
+          </mat-form-field>
+        </div>
+      </form>
+    </mat-card-content>
+    <mat-card-actions>
+      <button class="full-width" mat-raised-button (click)="login()" color="primary">Login</button>
+    </mat-card-actions>
+  </mat-card>
+</div>

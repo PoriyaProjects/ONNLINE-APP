@@ -30,29 +30,33 @@ export class LoginComponent implements OnInit {
 
     ngOnInit() {
         // Apply styles to the global <body> tag
-        // document.body.style.background = 'linear-gradient(to bottom right, #4a90e2, #9013fe)';
-        // document.body.style.height = '100vh';
-        // document.body.style.margin = '0';
-        // document.body.style.display = 'flex';
-        // document.body.style.justifyContent = 'center';
-        // document.body.style.alignItems = 'center';
-        // document.body.style.fontFamily = "'Arial', sans-serif";
-        // this.authenticationService.login()
-        //     .pipe(first())
-        //     .subscribe(
-        //         data => {
-        //             this.router.navigate([this.returnUrl], { queryParams: this.returnParams });
-        //         },
-        //         error => {
-        //             console.log(error);
-        //         });
+        document.body.style.background = 'linear-gradient(to bottom right, #4a90e2, #9013fe)';
+        document.body.style.height = '100vh';
+        document.body.style.margin = '0';
+        document.body.style.display = 'flex';
+        document.body.style.justifyContent = 'center';
+        document.body.style.alignItems = 'center';
+        document.body.style.fontFamily = "'Arial', sans-serif";
+
         const xhr = new XMLHttpRequest();
         xhr.open('GET', 'http://srv-apps-prod:47001/Api/Authentication', true);
         xhr.withCredentials = true;
-
+        let that = this;
         xhr.onload = function () {
             if (xhr.status === 200) {
                 console.log('User Identity:', xhr.responseText);
+                let user = xhr.responseText['message'].split('\\')[1];
+                that.http.post(environment.url + 'GetUserFullNameByUserID', {
+                    userID: user
+                }).subscribe(
+                    (response: any) => {
+                        that.user_details = response;
+                        console.log(that.user_details);
+                    },
+                    (error) => {
+                        console.error("Error:", error);
+                    }
+                );
             } else {
                 console.error('Error:', xhr.status, xhr.statusText);
             }
@@ -61,12 +65,12 @@ export class LoginComponent implements OnInit {
             console.error('Request failed.');
         };
         xhr.send();
-        if (
-            localStorage.getItem("loginState") == "true" &&
-            localStorage.getItem("loginUserName") != ""
-        ) {
-            this.router.navigate(["dashboard"]);
-        }
+        // if (
+        //     localStorage.getItem("loginState") == "true" &&
+        //     localStorage.getItem("loginUserName") != ""
+        // ) {
+        //     this.router.navigate(["dashboard"]);
+        // }
     }
     ngOnDestroy(): void {
         // Reset styles when leaving the component
@@ -81,28 +85,7 @@ export class LoginComponent implements OnInit {
     hidePassword() {
         this.hide = !this.hide;
     }
-    // autoLogin() {
-    //     const headers = new HttpHeaders().set('Content-Type', 'application/json');
-    //     let url = "http://srv-apps-prod:47001/AutoAuthentication";
-    //     // let url = "http://localhost:53287/AutoAuthentication";
 
-    //     return this.http.get<any>(url, { headers, withCredentials: true });
-    // }
-    // autoLogin() {
-    //     const headers = new HttpHeaders().set('Content-Type', 'application/json');
-    //     let url = "http://srv-apps-prod:47001/AutoAuthentication";
-    //     // let url = "http://localhost:53287/AutoAuthentication";
-
-    //     this.http.get(url, { headers, withCredentials: true }).subscribe(
-    //         (response: any) => {
-    //             this.user_details = response;
-    //             console.log(response);
-    //         },
-    //         (error) => {
-    //             console.error("Error:", error);
-    //         }
-    //     );
-    // }
     login(): void {
         $("#loader").removeClass("d-none");
         if (this.username && this.password) {
