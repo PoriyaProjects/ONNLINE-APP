@@ -5,7 +5,7 @@ import { map } from 'rxjs/operators';
   providedIn: 'root'
 })
 export class AuthenticationService {
-  url = "http://srv-apps-prod:47001/AutoAuthentication";
+  url = "http://srv-apps-prod:47001/Api/Authentication";
 
   constructor(
     private http: HttpClient,
