@@ -1,4 +1,4 @@
-<!-- <div class="container" *ngIf="user_details.ADUserName == undefined">
+<div class="container" *ngIf="user_details.ADUserName != undefined">
   <div class="animated-text">
     <div class="user-detail-fullname">
       {{ user_details.FirstName }} {{ user_details.LastName }}
@@ -13,8 +13,8 @@
       כמה רגעים, מכינים את האונליין עבורך...
     </div>
   </div>
-</div> -->
-<div class="login-form" >
+</div>
+<div class="login-form" *ngIf="user_details.ADUserName == undefined">
   <mat-card class="card form">
     <mat-card-header>
       <mat-card-title>Login</mat-card-title>
