@@ -51,6 +51,12 @@ export class DashboardComponent implements OnInit {
     }
     userClickedProfilePicture(person) {
         console.log(person);
+        this.http
+            .post(environment.url + "userClickedProfilePicture", {
+                user_name: this.userName,
+                first_name: person.FirstName,
+                last_name: person.LastName
+            });
     }
     getBirthDayPeople() {
         this.http

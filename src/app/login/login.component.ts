@@ -29,6 +29,7 @@ export class LoginComponent implements OnInit {
     scriptOutput: string = '';
 
     ngOnInit() {
+        if (localStorage.getItem('LastRout') == '') localStorage.setItem('LastRout', 'login');
         // Apply styles to the global <body> tag
         document.body.style.background = 'linear-gradient(to bottom right, #4a90e2, #9013fe)';
         document.body.style.height = '100vh';
@@ -68,7 +69,8 @@ export class LoginComponent implements OnInit {
         }).subscribe(
             (response: any) => {
                 this.user_details = response['d'];
-                console.log(this.user_details);
+                console.log(this.user_details.ADUserName);
+                console.log(this.user_details.DepartmentDescripton);
                 if (this.user_details.ADUserName != undefined) {
                     setTimeout(() => {
                         this.mMenuPerm.setUserName(this.user_details.ADUserName);
@@ -76,7 +78,7 @@ export class LoginComponent implements OnInit {
                         localStorage.setItem("Depart", this.user_details.DepartmentDescripton);
                         localStorage.setItem(
                             "loginUserName",
-                            this.username
+                            this.user_details.ADUserName
                         );
                         this.router.navigate(["dashboard"]);
                     }, 8000);

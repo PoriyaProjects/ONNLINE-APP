@@ -235,7 +235,6 @@ const routes: Routes = [
     { path: "stikers", component: StikersComponent },
     { path: "medigate", component: MedigateServersComponent },
     { path: "surgerycontrolmain", component: SurgeryControlMainComponent },
-
     { path: "servers4onnline", component: ServersForOnnlineComponent },
     { path: "ippoints", component: IpPointsComponent },
     { path: "masterhpid", component: MasterHpidComponent },
@@ -260,7 +259,7 @@ const routes: Routes = [
     { path: "Cath", component: CathReportComponent },
     { path: "employees-update-managers", component: EmployeesUpdateManagersComponent },
     { path: "patients-system-conflicts", component: PatientsSystemConflictsComponent },
-    {path : "WorkerCases" , component : WorkerCasesComponent },
+    { path : "WorkerCases" , component : WorkerCasesComponent },
     { path: "bedsore-dashboard", component: BedsoreDashboardComponent },
     { path: "patients-system-conflicts", component: PatientsSystemConflictsComponent },
     { path: "authorized", component: AuthorizedComponent },    
