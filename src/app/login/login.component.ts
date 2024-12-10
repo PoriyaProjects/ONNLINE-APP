@@ -37,40 +37,12 @@ export class LoginComponent implements OnInit {
         document.body.style.justifyContent = 'center';
         document.body.style.alignItems = 'center';
         document.body.style.fontFamily = "'Arial', sans-serif";
-
-        const xhr = new XMLHttpRequest();
-        xhr.open('GET', 'http://srv-apps-prod:47001/Api/Authentication', true);
-        xhr.withCredentials = true;
-        let that = this;
-        xhr.onload = function () {
-            if (xhr.status === 200) {
-                console.log('User Identity:', xhr.responseText);
-                let user = xhr.responseText['message'].split('\\')[1];
-                that.http.post(environment.url + 'GetUserFullNameByUserID', {
-                    userID: user
-                }).subscribe(
-                    (response: any) => {
-                        that.user_details = response;
-                        console.log(that.user_details);
-                    },
-                    (error) => {
-                        console.error("Error:", error);
-                    }
-                );
-            } else {
-                console.error('Error:', xhr.status, xhr.statusText);
-            }
-        };
-        xhr.onerror = function () {
-            console.error('Request failed.');
-        };
-        xhr.send();
-        // if (
-        //     localStorage.getItem("loginState") == "true" &&
-        //     localStorage.getItem("loginUserName") != ""
-        // ) {
-        //     this.router.navigate(["dashboard"]);
-        // }
+        if (
+            localStorage.getItem("loginState") == "true" &&
+            localStorage.getItem("loginUserName") != ""
+        ) {
+            this.router.navigate(["dashboard"]);
+        }
     }
     ngOnDestroy(): void {
         // Reset styles when leaving the component
@@ -85,7 +57,19 @@ export class LoginComponent implements OnInit {
     hidePassword() {
         this.hide = !this.hide;
     }
-
+    getUserDetailsFromDBByUserName(user) {
+        this.http.post(environment.url + 'GetUserFullNameByUserID', {
+            userID: user
+        }).subscribe(
+            (response: any) => {
+                this.user_details = response;
+                console.log(this.user_details);
+            },
+            (error) => {
+                console.error("Error:", error);
+            }
+        );
+    }
     login(): void {
         $("#loader").removeClass("d-none");
         if (this.username && this.password) {
