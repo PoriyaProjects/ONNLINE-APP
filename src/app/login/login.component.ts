@@ -23,63 +23,38 @@ export class LoginComponent implements OnInit {
     username: string;
     password: string;
     hide: boolean = true;
-    user_details: any;
+    user_details: any = {
+        FirstName: undefined,
+        LastName: undefined,
+        ADUserName: undefined,
+        DepartmentDescripton: undefined,
+        ID: undefined,
+    };
     returnUrl: string = "";
     returnParams: any = {};
     scriptOutput: string = '';
 
     ngOnInit() {
-
-        
+        if (localStorage.getItem('LastRout') == '') localStorage.setItem('LastRout', 'login');
+        // Apply styles to the global <body> tag
+        document.body.style.background = 'linear-gradient(to bottom right, #4a90e2, #9013fe)';
+        document.body.style.height = '100vh';
+        document.body.style.margin = '0';
+        document.body.style.display = 'flex';
+        document.body.style.justifyContent = 'center';
+        document.body.style.alignItems = 'center';
+        document.body.style.fontFamily = "'Arial', sans-serif";
         this.authenticationService.getAuthentication().subscribe(
             (response) => {
-                //debugger
                 console.log('Authentication Successful:', response.message);
+                let user = response.message.split('\\')[1];
+                console.log(user);
+                this.getUserDetailsFromDBByUserName(user.toLowerCase());
             },
             (error) => {
-                //debugger
                 console.error('Authentication Failed:', error);
             }
         );
-        // Apply styles to the global <body> tag
-        // document.body.style.background = 'linear-gradient(to bottom right, #4a90e2, #9013fe)';
-        // document.body.style.height = '100vh';
-        // document.body.style.margin = '0';
-        // document.body.style.display = 'flex';
-        // document.body.style.justifyContent = 'center';
-        // document.body.style.alignItems = 'center';
-        // document.body.style.fontFamily = "'Arial', sans-serif";
-        // this.authenticationService.login()
-        //     .pipe(first())
-        //     .subscribe(
-        //         data => {
-        //             this.router.navigate([this.returnUrl], { queryParams: this.returnParams });
-        //         },
-        //         error => {
-        //             console.log(error);
-        //         });
-        // const xhr = new XMLHttpRequest();
-        // xhr.open('GET', 'http://srv-apps-prod:47001/Api/Authentication', true);
-        // xhr.withCredentials = true;
-
-        // xhr.onload = function () {
-        //     if (xhr.status === 200) {
-        //         let json = JSON.parse(xhr.responseText);
-        //         console.log( json.message);
-        //     } else {
-        //         console.error(xhr.status, xhr.statusText);
-        //     }
-        // };
-        // xhr.onerror = function () {
-        //     console.error('Request failed.');
-        // };
-        // xhr.send();
-        if (
-            localStorage.getItem("loginState") == "true" &&
-            localStorage.getItem("loginUserName") != ""
-        ) {
-            this.router.navigate(["dashboard"]);
-        }
     }
     ngOnDestroy(): void {
         // Reset styles when leaving the component
@@ -94,28 +69,32 @@ export class LoginComponent implements OnInit {
     hidePassword() {
         this.hide = !this.hide;
     }
-    // autoLogin() {
-    //     const headers = new HttpHeaders().set('Content-Type', 'application/json');
-    //     let url = "http://srv-apps-prod:47001/AutoAuthentication";
-    //     // let url = "http://localhost:53287/AutoAuthentication";
-
-    //     return this.http.get<any>(url, { headers, withCredentials: true });
-    // }
-    // autoLogin() {
-    //     const headers = new HttpHeaders().set('Content-Type', 'application/json');
-    //     let url = "http://srv-apps-prod:47001/AutoAuthentication";
-    //     // let url = "http://localhost:53287/AutoAuthentication";
-
-    //     this.http.get(url, { headers, withCredentials: true }).subscribe(
-    //         (response: any) => {
-    //             this.user_details = response;
-    //             console.log(response);
-    //         },
-    //         (error) => {
-    //             console.error("Error:", error);
-    //         }
-    //     );
-    // }
+    getUserDetailsFromDBByUserName(user) {
+        this.http.post(environment.url + 'GetUserFullNameByUserID', {
+            userID: user
+        }).subscribe(
+            (response: any) => {
+                this.user_details = response['d'];
+                console.log(this.user_details.ADUserName);
+                console.log(this.user_details.DepartmentDescripton);
+                if (this.user_details.ADUserName != undefined) {
+                    setTimeout(() => {
+                        this.mMenuPerm.setUserName(this.user_details.ADUserName);
+                        localStorage.setItem("loginState", "true");
+                        localStorage.setItem("Depart", this.user_details.DepartmentDescripton);
+                        localStorage.setItem(
+                            "loginUserName",
+                            this.user_details.ADUserName
+                        );
+                        this.router.navigate(["dashboard"]);
+                    }, 8000);
+                }
+            },
+            (error) => {
+                console.error("Error:", error);
+            }
+        );
+    }
     login(): void {
         $("#loader").removeClass("d-none");
         if (this.username && this.password) {
