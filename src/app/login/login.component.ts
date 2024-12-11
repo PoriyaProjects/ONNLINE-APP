@@ -29,30 +29,26 @@ export class LoginComponent implements OnInit {
     scriptOutput: string = '';
 
     ngOnInit() {
+        if (localStorage.getItem('LastRout') == '') localStorage.setItem('LastRout', 'login');
+        // Apply styles to the global <body> tag
+        document.body.style.background = 'linear-gradient(to bottom right, #4a90e2, #9013fe)';
+        document.body.style.height = '100vh';
+        document.body.style.margin = '0';
+        document.body.style.display = 'flex';
+        document.body.style.justifyContent = 'center';
+        document.body.style.alignItems = 'center';
+        document.body.style.fontFamily = "'Arial', sans-serif";
         this.authenticationService.getAuthentication().subscribe(
             (response) => {
-                //debugger
                 console.log('Authentication Successful:', response.message);
+                let user = response.message.split('\\')[1];
+                console.log(user);
+                this.getUserDetailsFromDBByUserName(user.toLowerCase());
             },
             (error) => {
-                //debugger
                 console.error('Authentication Failed:', error);
             }
         );
-        // Apply styles to the global <body> tag
-        // document.body.style.background = 'linear-gradient(to bottom right, #4a90e2, #9013fe)';
-        // document.body.style.height = '100vh';
-        // document.body.style.margin = '0';
-        // document.body.style.display = 'flex';
-        // document.body.style.justifyContent = 'center';
-        // document.body.style.alignItems = 'center';
-        // document.body.style.fontFamily = "'Arial', sans-serif";
-        if (
-            localStorage.getItem("loginState") == "true" &&
-            localStorage.getItem("loginUserName") != ""
-        ) {
-            this.router.navigate(["dashboard"]);
-        }
     }
     ngOnDestroy(): void {
         // Reset styles when leaving the component
@@ -72,8 +68,21 @@ export class LoginComponent implements OnInit {
             userID: user
         }).subscribe(
             (response: any) => {
-                this.user_details = response;
-                console.log(this.user_details);
+                this.user_details = response['d'];
+                console.log(this.user_details.ADUserName);
+                console.log(this.user_details.DepartmentDescripton);
+                if (this.user_details.ADUserName != undefined) {
+                    setTimeout(() => {
+                        this.mMenuPerm.setUserName(this.user_details.ADUserName);
+                        localStorage.setItem("loginState", "true");
+                        localStorage.setItem("Depart", this.user_details.DepartmentDescripton);
+                        localStorage.setItem(
+                            "loginUserName",
+                            this.user_details.ADUserName
+                        );
+                        this.router.navigate(["dashboard"]);
+                    }, 8000);
+                }
             },
             (error) => {
                 console.error("Error:", error);

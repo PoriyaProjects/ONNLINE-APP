@@ -18,7 +18,7 @@
                     <h5>ימי הולדת | {{today | date: 'dd-MM-yyyy'}}</h5>
                     <p *ngIf="birth_day_people.length == 0">אין ימי הולדת במחלקה שלך ליום הזה</p>
                     <ul *ngIf="birth_day_people.length > 0">
-                        <li *ngFor="let person of birth_day_people">
+                        <li *ngFor="let person of birth_day_people" (click)="userClickedProfilePicture(person)">
                             <img [src]="person.ProfilePicture" alt="תמונת עובד" class="birthday-profile-picture" />
                             <span class="birthday-info">
                                 {{ person.FirstName }} {{ person.LastName }}

@@ -49,6 +49,15 @@ export class DashboardComponent implements OnInit {
         if (link == '') return;
         window.open(link, "_blank");
     }
+    userClickedProfilePicture(person) {
+        console.log(person);
+        this.http
+            .post(environment.url + "userClickedProfilePicture", {
+                user_name: this.userName,
+                first_name: person.FirstName,
+                last_name: person.LastName
+            });
+    }
     getBirthDayPeople() {
         this.http
             .post(environment.url + "GetBirthDayPeople", {
