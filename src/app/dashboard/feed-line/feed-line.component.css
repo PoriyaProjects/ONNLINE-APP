@@ -9,7 +9,7 @@
 .feed-line {
   display: inline-block;
   white-space: nowrap;
-  animation: scroll-right 15s linear infinite;
+  animation: scroll-right 40s linear infinite;
 }
 
 .feed-item {
