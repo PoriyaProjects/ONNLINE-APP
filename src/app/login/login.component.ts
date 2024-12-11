@@ -23,7 +23,13 @@ export class LoginComponent implements OnInit {
     username: string;
     password: string;
     hide: boolean = true;
-    user_details: any;
+    user_details: any = {
+        FirstName: undefined,
+        LastName: undefined,
+        ADUserName: undefined,
+        DepartmentDescripton: undefined,
+        ID: undefined,
+    };
     returnUrl: string = "";
     returnParams: any = {};
     scriptOutput: string = '';
