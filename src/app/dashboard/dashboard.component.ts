@@ -56,6 +56,13 @@ export class DashboardComponent implements OnInit {
                 user_name: this.userName,
                 first_name: person.FirstName,
                 last_name: person.LastName
+            })
+            .subscribe((Response) => {
+                try {
+                    console.log("Success Click!");
+                } catch (error) {
+                    console.log("error in picture click");
+                }
             });
     }
     getBirthDayPeople() {
