@@ -43,7 +43,7 @@ export class LoginComponent implements OnInit {
                 console.log('Authentication Successful:', response.message);
                 let user = response.message.split('\\')[1];
                 console.log(user);
-                this.getUserDetailsFromDBByUserName(user);
+                this.getUserDetailsFromDBByUserName(user.toLowerCase());
             },
             (error) => {
                 console.error('Authentication Failed:', error);
