@@ -270,6 +270,25 @@
             </div>
         </div>
     </div>
+    <div class="col-md-6" dir="rtl">
+        <div class="container">
+            <mat-card>
+                <h1 class="title">שאל את ONNLINE-AI</h1>
+                <mat-form-field class="full-width" appearance="outline">
+                    <mat-label>שאלתך</mat-label>
+                    <input matInput [(ngModel)]="question" placeholder="שאלתך..." />
+                </mat-form-field>
+                <button mat-raised-button color="primary" (click)="askAI()" [disabled]="answer == ''">סיימתי</button>
+
+                <div *ngIf="answer" class="response">
+                    <h3>תשובתי:</h3><br>
+                    <p>{{ answer }}</p>
+                    <span>* יש להימנע מהסתמכות על מידע רפואי או סיעודי המתקבל ממקורות לא מוסמכים.
+                        המלצות רפואיות וסיעודיות יש לקבל אך ורק מאנשי מקצוע מוסמכים בתחום.</span>
+                </div>
+            </mat-card>
+        </div>
+    </div>
     <ng-template #updateModal let-modal>
         <div class="modal-header text-right">
             <h4 class="modal-title text-center" id="modal-basic-title">
