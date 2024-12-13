@@ -2,6 +2,10 @@ import { Component, OnInit, ViewChild } from "@angular/core";
 import { Router } from "@angular/router";
 import { HttpClient } from "@angular/common/http";
 import { environment } from "src/environments/environment";
+const { GoogleGenerativeAI } = require("@google/generative-ai");
+const genAI = new GoogleGenerativeAI("AIzaSyDUXWL5SIEjh4K016nbWQp0yPfRp1KS2eY");
+const MODEL_NAME = "gemini-1.5-flash";
+
 export interface DepartRefoee {
     DepartName: string;
     DepartBedsNumber: number;
@@ -24,6 +28,8 @@ export class DashboardComponent implements OnInit {
     employee_id: string;
     ProfilePicture: string;
     birth_day_people = [];
+    question: string = '';
+    answer: string | null = null;
     userName = localStorage.getItem("loginUserName").toLowerCase();
     birthdayUser: boolean = false;
     constructor(private router: Router, private http: HttpClient) { }
@@ -45,9 +51,36 @@ export class DashboardComponent implements OnInit {
         this.getShortCutsLinks();
         this.getFoldersLinks();
     }
+    async askAI() {
+        this.answer = '';
+        // Simulate an AI response. Replace this with an actual API call to your backend/AI service.
+        this.answer = await this.runChat(this.question);
+        this.userAskedAIQuestionNotification();
+    }
+    async runChat(question) {
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+        const result = await model.generateContent(question);
+
+        const response = result.response;
+        return response.text();
+    }
     openFileInTab(link: string) {
         if (link == '') return;
         window.open(link, "_blank");
+    }
+    userAskedAIQuestionNotification() {
+        this.http
+            .post(environment.url + "UserAskedAIQuestionNotification", {
+                user_name: this.userName,
+                question: this.question
+            })
+            .subscribe((Response) => {
+                try {
+                    console.log("Success Ask!");
+                } catch (error) {
+                    console.log("error in asking question");
+                }
+            });
     }
     userClickedProfilePicture(person) {
         console.log(person);
@@ -56,6 +89,13 @@ export class DashboardComponent implements OnInit {
                 user_name: this.userName,
                 first_name: person.FirstName,
                 last_name: person.LastName
+            })
+            .subscribe((Response) => {
+                try {
+                    console.log("Success Click!");
+                } catch (error) {
+                    console.log("error in picture click");
+                }
             });
     }
     getBirthDayPeople() {
