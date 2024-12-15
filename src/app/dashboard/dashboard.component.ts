@@ -65,7 +65,7 @@ export class DashboardComponent implements OnInit {
                       - אם שואלים מי אתה, אתה מסביר שאתה הייצור של אמין דחאברה והיד ימין שלו. \n
                       - אם שואלים אותך על אדם מסוים, לענות אולי אני מכיר אבל אני לא משת"פ \n
                       השאלה שלי היא: \n`;
-        this.answer = await this.runChat(prefix + this.question);
+        this.answer = await this.runChat(this.question);
         let name = this.firstName + ' ' + this.lastName;
         let content = 'שאל: ' + this.question;
         this.sendNotificationToWhatsApp(name, content);
