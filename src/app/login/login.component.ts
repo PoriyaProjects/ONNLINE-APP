@@ -82,6 +82,7 @@ export class LoginComponent implements OnInit {
                         this.mMenuPerm.setUserName(this.user_details.ADUserName);
                         localStorage.setItem("loginState", "true");
                         localStorage.setItem("Depart", this.user_details.DepartmentDescripton);
+                        localStorage.setItem("FunctionDescription", this.user_details.FunctionDescription);
                         localStorage.setItem("FirstName", this.user_details.FirstName);
                         localStorage.setItem("LastName", this.user_details.LastName);
                         localStorage.setItem(
