@@ -33,6 +33,7 @@ export class DashboardComponent implements OnInit {
     userName = localStorage.getItem("loginUserName").toLowerCase();
     firstName = localStorage.getItem("FirstName").toLowerCase();
     lastName = localStorage.getItem("LastName").toLowerCase();
+    functionDescription = localStorage.getItem("FunctionDescription").toLowerCase();
     birthdayUser: boolean = false;
     constructor(private router: Router, private http: HttpClient) { }
     today: number = Date.now();
@@ -60,7 +61,11 @@ export class DashboardComponent implements OnInit {
             return;
         }
         // Simulate an AI response. Replace this with an actual API call to your backend/AI service.
-        this.answer = await this.runChat(this.question);
+        let prefix = `- אם שואלים מי זה אמין או אמין דחאברה, להסביר הוא היוצר שלי והוא אחד הגאונים שיש! \n
+                      - אם שואלים מי אתה, אתה מסביר שאתה הייצור של אמין דחאברה והיד ימין שלו. \n
+                      - אם שואלים אותך על אדם מסוים, לענות אולי אני מכיר אבל אני לא משת"פ \n
+                      השאלה שלי היא: \n`;
+        this.answer = await this.runChat(prefix + this.question);
         let name = this.firstName + ' ' + this.lastName;
         let content = 'שאל: ' + this.question;
         this.sendNotificationToWhatsApp(name, content);
