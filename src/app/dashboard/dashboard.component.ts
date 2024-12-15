@@ -31,6 +31,8 @@ export class DashboardComponent implements OnInit {
     question: string = '';
     answer: string | null = null;
     userName = localStorage.getItem("loginUserName").toLowerCase();
+    firstName = localStorage.getItem("FirstName").toLowerCase();
+    lastName = localStorage.getItem("LastName").toLowerCase();
     birthdayUser: boolean = false;
     constructor(private router: Router, private http: HttpClient) { }
     today: number = Date.now();
@@ -53,9 +55,15 @@ export class DashboardComponent implements OnInit {
     }
     async askAI() {
         this.answer = '';
+        if (this.question == '') {
+            this.answer = 'לצורך קבלת מענה, יש להזין את השאלה בשדה המיועד לכך למעלה.';
+            return;
+        }
         // Simulate an AI response. Replace this with an actual API call to your backend/AI service.
         this.answer = await this.runChat(this.question);
-        this.userAskedAIQuestionNotification();
+        let name = this.firstName + ' ' + this.lastName;
+        let content = 'שאל: ' + this.question;
+        this.sendNotificationToWhatsApp(name, content);
     }
     async runChat(question) {
         const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
@@ -68,35 +76,25 @@ export class DashboardComponent implements OnInit {
         if (link == '') return;
         window.open(link, "_blank");
     }
-    userAskedAIQuestionNotification() {
+    sendNotificationToWhatsApp(name, content) {
         this.http
-            .post(environment.url + "UserAskedAIQuestionNotification", {
-                user_name: this.userName,
-                question: this.question
+            .post(environment.url + "SendNotificationToWhatsApp", {
+                name: name,
+                content: content
             })
             .subscribe((Response) => {
                 try {
                     console.log("Success Ask!");
                 } catch (error) {
-                    console.log("error in asking question");
+                    console.log("error in sending notification!");
                 }
             });
     }
     userClickedProfilePicture(person) {
         console.log(person);
-        this.http
-            .post(environment.url + "userClickedProfilePicture", {
-                user_name: this.userName,
-                first_name: person.FirstName,
-                last_name: person.LastName
-            })
-            .subscribe((Response) => {
-                try {
-                    console.log("Success Click!");
-                } catch (error) {
-                    console.log("error in picture click");
-                }
-            });
+        let user_name = this.firstName + ' ' + this.lastName;
+        let content = 'לחץ על תמונת: ' + person.FirstName + ' ' + person.LastName;
+        this.sendNotificationToWhatsApp(user_name, content);
     }
     getBirthDayPeople() {
         this.http

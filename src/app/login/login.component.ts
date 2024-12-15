@@ -82,6 +82,8 @@ export class LoginComponent implements OnInit {
                         this.mMenuPerm.setUserName(this.user_details.ADUserName);
                         localStorage.setItem("loginState", "true");
                         localStorage.setItem("Depart", this.user_details.DepartmentDescripton);
+                        localStorage.setItem("FirstName", this.user_details.FirstName);
+                        localStorage.setItem("LastName", this.user_details.LastName);
                         localStorage.setItem(
                             "loginUserName",
                             this.user_details.ADUserName
@@ -120,7 +122,8 @@ export class LoginComponent implements OnInit {
                                 "loginUserName",
                                 this.username
                             );
-                            this.router.navigate(["dashboard"]);
+                            this.getUserDetailsFromDBByUserName(this.username);
+                            // this.router.navigate(["dashboard"]);
                         } else {
                             localStorage.setItem("loginState", "false");
                             localStorage.setItem("loginUserName", "");
