@@ -278,11 +278,12 @@
                     <mat-label>שאלתך</mat-label>
                     <input matInput [(ngModel)]="question" placeholder="שאלתך..." />
                 </mat-form-field>
-                <button mat-raised-button color="primary" (click)="askAI()" [disabled]="answer == ''">סיימתי</button>
+                <button mat-raised-button style="background-color: #1976d2;font-weight: bold;color: #ffffff;"
+                    (click)="askAI()" [disabled]="answer == ''">סיימתי</button>
 
                 <div *ngIf="answer" class="response">
-                    <h3>תשובתי:</h3><br>
-                    <p>{{ answer }}</p>
+                    <h3>תשובתי:</h3>
+                    <p>{{ answer }}</p><br>
                     <span>* יש להימנע מהסתמכות על מידע רפואי או סיעודי המתקבל ממקורות לא מוסמכים.
                         המלצות רפואיות וסיעודיות יש לקבל אך ורק מאנשי מקצוע מוסמכים בתחום.</span>
                 </div>
