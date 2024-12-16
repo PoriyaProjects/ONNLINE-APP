@@ -914,10 +914,13 @@ export class FillSurveyComponent implements OnInit {
                         <div class="colr-12 brs-1">
                             <p class="fix-mb-5">
                                 <span>
-                                    <span><b>${item.questionValue}</b>:&nbsp;&nbsp;</span><span
-                                        *ngIf="${item.AnswerType} != 'Signature'">${item.AnswerValue}</span><img
-                                        *ngIf="${item.AnswerType} == 'Signature'" width="100" height="100"
-                                        [src]="${item.AnswerValue}">
+                                    <span><b>${item.questionValue}</b>:&nbsp;&nbsp;</span>`;
+                                    if(item.AnswerType != 'Signature'){
+                                        pdf += `<span>${item.AnswerValue}</span>`;
+                                    }else{
+                                        pdf += `<img width="100" height="100" [src]="${item.AnswerValue}">`;
+                                    }
+                                    pdf += `
                                 </span>
                             </p>
                         </div>
