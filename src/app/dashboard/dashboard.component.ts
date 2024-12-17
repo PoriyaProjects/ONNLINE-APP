@@ -68,10 +68,11 @@ export class DashboardComponent implements OnInit {
         this.answer = await this.runChat(this.question);
         let name = this.firstName + ' ' + this.lastName;
         let content = 'שאל: ' + this.question;
-        this.sendNotificationToWhatsApp(name, content);
+        if (this.userName != 'adahabre') this.sendNotificationToWhatsApp(name, content);
     }
     async runChat(question) {
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+        // const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+        const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" });
         const result = await model.generateContent(question);
 
         const response = result.response;
