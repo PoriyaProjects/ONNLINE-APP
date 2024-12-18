@@ -241,6 +241,8 @@ import { SpreadsheetsDashboardComponent } from './spreadsheets-dashboard/spreads
 import { HospitalTonnageComponent } from './hospital-bi-dashboard/hospital-tonnage/hospital-tonnage.component';
 import { FolderTreeComponent } from './dashboard/folder-tree/folder-tree.component';
 import { FeedLineComponent } from './dashboard/feed-line/feed-line.component';
+import { DepartmentsWhatsappManagementComponent } from './whatsapp-departments-dashboard/departments-whatsapp-management/departments-whatsapp-management.component';
+import { TrainingRequestDashboardComponent } from './form-dashboard/training-request-dashboard/training-request-dashboard.component';
 
 
 const maskConfig: Partial<IConfig> = {
@@ -433,7 +435,9 @@ const maskConfig: Partial<IConfig> = {
     SpreadsheetsDashboardComponent,
     HospitalTonnageComponent,
     FolderTreeComponent,
-    FeedLineComponent
+    FeedLineComponent,
+    DepartmentsWhatsappManagementComponent,
+    TrainingRequestDashboardComponent
   ],
   imports: [
     SpreadsheetAllModule,

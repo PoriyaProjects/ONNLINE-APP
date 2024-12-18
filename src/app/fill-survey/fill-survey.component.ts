@@ -1071,7 +1071,7 @@ export class FillSurveyComponent implements OnInit {
         } else {
             this.http
                 .post(
-                    environment.url + "GetPersonalDetailsFromDB",
+                    environment.url + "GetPersonalDetails",
                     {
                         CaseNumber: this.CaseNumber,
                     }

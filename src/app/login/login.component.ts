@@ -37,7 +37,7 @@ export class LoginComponent implements OnInit {
     ngOnInit() {
         if (localStorage.getItem('LastRout') == '') localStorage.setItem('LastRout', 'login');
         // Apply styles to the global <body> tag
-        document.body.style.background = 'linear-gradient(to bottom right, #4a90e2, #9013fe)';
+        document.body.style.background = 'linear-gradient(to right bottom, rgb(224 229 235), rgb(28 30 33))';
         document.body.style.height = '100vh';
         document.body.style.margin = '0';
         document.body.style.display = 'flex';
@@ -90,7 +90,7 @@ export class LoginComponent implements OnInit {
                             this.user_details.ADUserName
                         );
                         this.router.navigate(["dashboard"]);
-                    }, 8000);
+                    }, 7000);
                 }
             },
             (error) => {

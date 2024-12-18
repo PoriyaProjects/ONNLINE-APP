@@ -70,6 +70,7 @@
 .feed-time {
   color: #000000;
   font-size: 14px;
+  border-bottom: 1px solid darkgrey;
 }
 
 .feed-content {
