@@ -5,13 +5,13 @@ import * as $ from "jquery";
 import { environment } from "src/environments/environment";
 
 export interface Link {
-  RowId: string;
-  LinkId: string;
-  LinkDescription: string;
-  LinkStatus: string;
-  Level: string;
-  SubToLinkId: string;
-  Children: Link[];
+    RowId: string;
+    LinkId: string;
+    LinkDescription: string;
+    LinkStatus: string;
+    Level: string;
+    SubToLinkId: string;
+    Children: Link[];
 }
 
 @Component({
@@ -21,7 +21,8 @@ export interface Link {
 })
 export class NewHeaderComponent implements OnInit {
     personReadInquiry: boolean = false;
-    constructor(private router: Router, private http: HttpClient) {}
+    headerLoad: boolean = true;
+    constructor(private router: Router, private http: HttpClient) { }
     Links: Link[] = [];
     ngOnInit(): void {
         $(document).on("click", "[routerlink], .nav-link", function () {
@@ -50,19 +51,21 @@ export class NewHeaderComponent implements OnInit {
         $("#menu-btn").removeClass("show");
         this.router.navigate(["login"]);
     }
-    getMenuLinks(){
-      $("#loader").removeClass("d-none");
+    getMenuLinks() {
+        $("#loader").removeClass("d-none");
+        this.headerLoad = true;
         this.http
             .post(
                 //environment.url + "GetOnnLineLinks",
                 environment.url + "GetOnnLineLinks2",
                 {
-                    user: localStorage.getItem("loginUserName") ,
+                    user: localStorage.getItem("loginUserName"),
                 }
             )
             .subscribe((Response) => {
-              //debugger
-              this.Links = Response["d"];
+                //debugger
+                this.Links = Response["d"];
+                this.headerLoad = false;
                 setTimeout(function () {
                     $("#loader").addClass("d-none");
                 });

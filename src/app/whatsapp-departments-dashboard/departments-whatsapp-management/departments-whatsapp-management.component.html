@@ -1,1 +1,74 @@
-<p>departments-whatsapp-management works!</p>
+<div class="permissions-container">
+    <div class="row">
+        <h1>ניהול הרשאות עובדים לוואטסאפ</h1>
+        <button mat-mini-fab color="primary" (click)="addEmployeeShow()" *ngIf="showBtn">
+            <mat-icon>add</mat-icon>
+        </button>
+        <button mat-mini-fab color="primary" (click)="savePermissions()" *ngIf="showBtn">
+            <mat-icon>save</mat-icon>
+        </button>
+    </div>
+    <hr>
+    <!-- Add New Employee -->
+    <mat-card class="add-employee-card" *ngIf="add_employee_display">
+        <h2>הוסף עובד חדש</h2>
+        <div class="row">
+            <div class="col">
+                <mat-form-field class="full-width">
+                    <mat-label>שם עובד</mat-label>
+                    <input matInput [(ngModel)]="newEmployeeName" placeholder="הכנס שם" />
+                </mat-form-field>
+            </div>
+            <div class="col">
+                <mat-form-field class="full-width">
+                    <mat-label>שם משתמש</mat-label>
+                    <input matInput [(ngModel)]="newEmployeeUserName" placeholder="הכנס שם משתמש" />
+                </mat-form-field>
+            </div>
+        </div>
+        <button mat-raised-button color="primary" (click)="addEmployee()">הוסף
+        </button>
+    </mat-card>
+    <mat-form-field appearance="standard" style="padding-right: 10px;">
+        <mat-label class="filterClass">מסנן</mat-label>
+        <input matInput (keyup)="applyFilter($event)" placeholder="הקלד מסנן" #input>
+    </mat-form-field>
+    <mat-card *ngFor="let employee of employees.filteredData; let i = index;" class="employee-card"
+        [ngStyle]="{ 'background-color': employee.Status == 'True' ? '#dbf7eb' : '#edd3cd' }">
+        <!-- <h2>{{ employee.Employee_Name }}</h2> -->
+        <div class="row">
+            <div class="col">
+                <mat-form-field class="full-width">
+                    <mat-label>שם עובד</mat-label>
+                    <input matInput [value]="employee.Employee_Name">
+                </mat-form-field>
+            </div>
+            <div class="col">
+                <mat-form-field class="full-width">
+                    <mat-label>שם משתמש</mat-label>
+                    <input matInput [value]="employee.Employee_UserName">
+                </mat-form-field>
+            </div>
+        </div>
+        <mat-form-field class="full-width">
+            <mat-label>שיוך שירות</mat-label>
+            <mat-select [(ngModel)]="employee.Services" [compareWith]="compareFn" multiple>
+                <mat-option *ngFor="let service of Services" [value]="service.Service_Order">
+                    {{ service.Service_Name }}
+                </mat-option>
+            </mat-select>
+        </mat-form-field>
+        <button mat-raised-button (click)="removeEmployee(i)" style="float: left;background-color: #edd3cd;"
+            *ngIf="employee.Status == 'True'">
+            <mat-icon>delete</mat-icon>
+        </button>
+        <button mat-raised-button (click)="removeEmployee(i)" style="float: left;background-color: #dbf7eb;"
+            *ngIf="employee.Status == 'False'">
+            <mat-icon>refresh</mat-icon>
+        </button>
+    </mat-card>
+
+    <button mat-raised-button color="primary" (click)="savePermissions()" style="width: 100%;" *ngIf="showBtn">
+        שמירה
+    </button>
+</div>

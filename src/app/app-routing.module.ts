@@ -124,6 +124,7 @@ import { TreeItemDialogComponent } from "./new-header/tree-item-dialog/tree-item
 import { HospitalTonnageComponent } from "./hospital-bi-dashboard/hospital-tonnage/hospital-tonnage.component";
 import { FolderTreeComponent } from "./dashboard/folder-tree/folder-tree.component";
 import { DepartmentsWhatsappManagementComponent } from "./whatsapp-departments-dashboard/departments-whatsapp-management/departments-whatsapp-management.component";
+import { TrainingRequestDashboardComponent } from "./form-dashboard/training-request-dashboard/training-request-dashboard.component";
 
 
 const routes: Routes = [ 
@@ -272,6 +273,7 @@ const routes: Routes = [
     { path: "hospital-tonnage", component: HospitalTonnageComponent },
     { path: "folder-tree", component: FolderTreeComponent },
     { path: "departments-whatsapp-management", component: DepartmentsWhatsappManagementComponent },
+    { path: "training-request-dashboard", component: TrainingRequestDashboardComponent },
     { path: "LabTests", component: LabTestsComponent }
 
 
