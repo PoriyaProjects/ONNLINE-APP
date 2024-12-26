@@ -249,6 +249,7 @@ export class FormsansweredComponent implements OnInit {
             }
             .fix-mb-5 {
                 margin-bottom: 5px;
+                font-size: 25px;
             }
             #table-overflow {
                 overflow-x: auto;
@@ -277,8 +278,8 @@ export class FormsansweredComponent implements OnInit {
           </head>
           <body dir="rtl">
         <div dir="rtl" class="card">
-              <div class="card-header">
-                  <img class="full-width" src="https://poria.is-great.org/images/covid_2_header.png" />
+        <div class="card-header border-bottomIn rel" style="text-align: center;">
+              <img class="full-width" style="width: 100%;" [src]="https://poria.is-great.org/images/covid_2_header.png" />
                   <h2 class="text-center">${element.FormName}</h2>
                   <h2 class="text-center" style="top: 100px;">${element.DateOfFillForm}</h2>
               </div>
@@ -345,7 +346,7 @@ export class FormsansweredComponent implements OnInit {
                                     if(item.AnswerType != 'Signature'){
                                         this.pdf += `<span>${item.AnswerValue}</span>`
                                     }else{
-                                        this.pdf += `<img width="100" height="100" [src]="${item.AnswerValue}">`;
+                                        this.pdf += `<img width="100" height="100" src='${item.AnswerValue}'>`;
                                     }
                                     this.pdf += `
                                 </span>
@@ -444,7 +445,7 @@ export class FormsansweredComponent implements OnInit {
               </div>      
               <div class="card-footer" style="margin-top: 250px;"></div>
               <div class="pos-botom-fixed">
-                  <img class="full-width" src="https://poria.is-great.org/images/covid_footer.png" />
+                  <img class="full-width" [src]="https://poria.is-great.org/images/covid_footer.png" />
               </div>
           </div>
           </body>

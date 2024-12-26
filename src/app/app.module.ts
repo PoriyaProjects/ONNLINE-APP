@@ -243,6 +243,7 @@ import { FolderTreeComponent } from './dashboard/folder-tree/folder-tree.compone
 import { FeedLineComponent } from './dashboard/feed-line/feed-line.component';
 import { DepartmentsWhatsappManagementComponent } from './whatsapp-departments-dashboard/departments-whatsapp-management/departments-whatsapp-management.component';
 import { TrainingRequestDashboardComponent } from './form-dashboard/training-request-dashboard/training-request-dashboard.component';
+import { TrainingRequestFormComponent } from './form-dashboard/training-request-dashboard/training-request-form/training-request-form.component';
 
 
 const maskConfig: Partial<IConfig> = {
@@ -437,7 +438,8 @@ const maskConfig: Partial<IConfig> = {
     FolderTreeComponent,
     FeedLineComponent,
     DepartmentsWhatsappManagementComponent,
-    TrainingRequestDashboardComponent
+    TrainingRequestDashboardComponent,
+    TrainingRequestFormComponent
   ],
   imports: [
     SpreadsheetAllModule,

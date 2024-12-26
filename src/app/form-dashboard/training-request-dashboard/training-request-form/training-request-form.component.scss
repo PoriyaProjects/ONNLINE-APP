@@ -1,0 +1,19 @@
+.training-request-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  direction: rtl;
+
+  mat-card {
+    padding: 20px;
+  }
+
+  .form-row {
+    display: flex;
+    gap: 20px;
+
+    mat-form-field {
+      flex: 1;
+    }
+  }
+}

@@ -1,1 +1,82 @@
-<p>training-request-dashboard works!</p>
+<!-- <div class="dashboard-container" dir="rtl">
+    <h1>טופס בקשת השתלמות</h1>
+    <table class="request-table">
+        <thead>
+            <tr>
+                <th>מזהה</th>
+                <th>תאריך יצירה</th>
+                <th>שם מלא</th>
+                <th>מספר זהות</th>
+                <th>כתובת</th>
+                <th>השכלה</th>
+                <th>מספר טלפון</th>
+                <th>פעולות</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr *ngFor="let request of trainingRequests">
+                <td>{{ request.Row_ID }}</td>
+                <td>{{ request.Form_Fill_Date }}</td>
+                <td>{{ request.First_Name }} {{ request.Family_Name }}</td>
+                <td>{{ request.Passport_ID }}</td>
+                <td>{{ request.Address }}</td>
+                <td>{{ request.Education }}</td>
+                <td>{{ request.Phone_Number }}</td>
+                <td>
+                    <button (click)="handleAction(request.Row_ID, 'view')">הצגה</button>
+                    <button (click)="handleAction(request.Row_ID, 'approve')" class="approve">אשר</button>
+                    <button (click)="handleAction(request.Row_ID, 'reject')" class="reject">סרב</button>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</div> -->
+
+<div class="dashboard-container">
+    <h1>רשימת טפסי בקשות השתלמות</h1>
+    <div class="card-table">
+        <div class="card-header">
+            <span>רשימה מלאה</span>
+            <input type="text" placeholder="חפש..." class="search-bar" />
+        </div>
+        <table class="request-table">
+            <thead>
+                <tr>
+                    <th>מזהה</th>
+                    <th>תאריך יצירה</th>
+                    <th>שם מלא</th>
+                    <th>מספר זהות</th>
+                    <th>כתובת</th>
+                    <th>השכלה</th>
+                    <th>מספר טלפון</th>
+                    <th>פעולות</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr *ngFor="let request of trainingRequests">
+                    <td>{{ request.Row_ID }}</td>
+                    <td>{{ request.Form_Fill_Date }}</td>
+                    <td>{{ request.First_Name }} {{ request.Family_Name }}</td>
+                    <td>{{ request.Passport_ID }}</td>
+                    <td>{{ request.Address }}</td>
+                    <td>{{ request.Education }}</td>
+                    <td>{{ request.Phone_Number }}</td>
+                    <td>
+                        <button mat-mini-fab style="background-color: #6fd7d7;"
+                            (click)="handleAction(request.Row_ID, 'view')">
+                            הצגה
+                        </button>
+                        <button mat-mini-fab style="background-color: #6cdda4;"
+                            (click)="handleAction(request.Row_ID, 'approve')">
+                            אשר
+                        </button>
+                        <button mat-mini-fab style="background-color: #f14c7a;"
+                            (click)="handleAction(request.Row_ID, 'reject')">
+                            סרב
+                        </button>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>

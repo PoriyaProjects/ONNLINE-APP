@@ -116,7 +116,7 @@ export class HrDashboardComponent implements OnInit {
         _role: "",
         _sektor: "",
         _on: "",
-        _workPlace: "1" // the 1 doesnt do anything
+        _workPlace: ""
       })
       .subscribe((Response) => {
         this.contacts = Response["d"];

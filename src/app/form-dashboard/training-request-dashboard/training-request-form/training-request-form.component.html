@@ -1,0 +1,34 @@
+<form class="training-request-form" [formGroup]="trainingForm" (ngSubmit)="onSubmit()">
+    <mat-card>
+      <mat-card-title>Personal Details</mat-card-title>
+      <mat-card-content>
+        <div class="form-row">
+          <mat-form-field>
+            <mat-label>First Name</mat-label>
+            <input matInput formControlName="First_Name" />
+          </mat-form-field>
+          <mat-form-field>
+            <mat-label>Family Name</mat-label>
+            <input matInput formControlName="Family_Name" />
+          </mat-form-field>
+        </div>
+        <div class="form-row">
+          <mat-form-field>
+            <mat-label>Passport ID</mat-label>
+            <input matInput formControlName="Passport_ID" />
+          </mat-form-field>
+          <mat-form-field>
+            <mat-label>Phone Number</mat-label>
+            <input matInput formControlName="Phone_Number" />
+          </mat-form-field>
+        </div>
+      </mat-card-content>
+    </mat-card>
+    <mat-card>
+      <mat-card-title>Training Details</mat-card-title>
+      <mat-card-content>
+        <!-- Add more form fields here -->
+      </mat-card-content>
+    </mat-card>
+    <button mat-raised-button color="primary" type="submit">Submit</button>
+  </form>

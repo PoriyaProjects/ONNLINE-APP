@@ -3,7 +3,7 @@ import { Router } from "@angular/router";
 import { HttpClient } from "@angular/common/http";
 import { environment } from "src/environments/environment";
 const { GoogleGenerativeAI } = require("@google/generative-ai");
-const genAI = new GoogleGenerativeAI("AIzaSyDUXWL5SIEjh4K016nbWQp0yPfRp1KS2eY");
+const genAI = new GoogleGenerativeAI("AIzaSyBl1kxtY4EvoOmG1Xm-bOj82hqFb-amw50");
 const MODEL_NAME = "gemini-1.5-flash";
 
 export interface DepartRefoee {
@@ -72,7 +72,8 @@ export class DashboardComponent implements OnInit {
     }
     async runChat(question) {
         // const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-        const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" });
+        // const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" });
+        const model = genAI.getGenerativeModel({ model: MODEL_NAME });
         const result = await model.generateContent(question);
 
         const response = result.response;
