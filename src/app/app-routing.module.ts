@@ -125,6 +125,7 @@ import { HospitalTonnageComponent } from "./hospital-bi-dashboard/hospital-tonna
 import { FolderTreeComponent } from "./dashboard/folder-tree/folder-tree.component";
 import { DepartmentsWhatsappManagementComponent } from "./whatsapp-departments-dashboard/departments-whatsapp-management/departments-whatsapp-management.component";
 import { TrainingRequestDashboardComponent } from "./form-dashboard/training-request-dashboard/training-request-dashboard.component";
+import { TrainingRequestFormComponent } from "./form-dashboard/training-request-dashboard/training-request-form/training-request-form.component";
 
 
 const routes: Routes = [ 
@@ -274,6 +275,7 @@ const routes: Routes = [
     { path: "folder-tree", component: FolderTreeComponent },
     { path: "departments-whatsapp-management", component: DepartmentsWhatsappManagementComponent },
     { path: "training-request-dashboard", component: TrainingRequestDashboardComponent },
+    { path: "training-request-form", component: TrainingRequestFormComponent },
     { path: "LabTests", component: LabTestsComponent }
 
 

@@ -85,6 +85,7 @@ export class DepartmentsWhatsappManagementComponent implements OnInit, OnDestroy
         Row_ID: null,
         Employee_Name: this.newEmployeeName,
         Employee_UserName: this.newEmployeeUserName,
+        Status: 'True',
         Services: [],
       };
       this.employees.filteredData.push(newEmployee);
