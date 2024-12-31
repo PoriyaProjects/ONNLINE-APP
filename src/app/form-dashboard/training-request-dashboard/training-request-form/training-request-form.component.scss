@@ -4,8 +4,70 @@
   gap: 20px;
   direction: rtl;
 
+  .dialog-actions {
+    display: flex;
+    justify-content: right;
+    gap: 10px;
+    margin-top: 20px;
+
+    .closeBtn {
+      border-radius: 50%;
+      //   width: 100%;
+      //   margin-top: 50px;
+      //   font-weight: bold;
+    }
+  }
+
+  .signBtn {
+    font-weight: bold;
+    font-size: 20px;
+    color: white;
+    width: 100%;
+  }
+
+  img {
+    width: 100%;
+    height: 100%;
+  }
+
+  .submitBtn {
+    min-width: 100px;
+  }
+
+  .mat-tab-group {
+    margin-bottom: 48px;
+  }
+
+  mat-form-field {
+    flex: 1;
+    text-align: right;
+    width: 100%;
+  }
+
+  .submitBtn {
+    width: 100%;
+    margin-top: 50px;
+    font-weight: bold;
+    background-color: #10508e;
+  }
+
   mat-card {
-    padding: 20px;
+    padding: 50px;
+    text-align: right;
+    border-style: groove;
+
+    .section {
+      width: 50%;
+    }
+
+    .example-section {
+      margin: 12px 0;
+
+      .checkbox-label {
+        margin-right: 10px;
+        /* Adjust the spacing as needed */
+      }
+    }
   }
 
   .form-row {
@@ -14,6 +76,7 @@
 
     mat-form-field {
       flex: 1;
+      text-align: right;
     }
   }
 }

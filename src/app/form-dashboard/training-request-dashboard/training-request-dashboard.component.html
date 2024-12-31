@@ -1,82 +1,77 @@
-<!-- <div class="dashboard-container" dir="rtl">
-    <h1>טופס בקשת השתלמות</h1>
-    <table class="request-table">
-        <thead>
-            <tr>
-                <th>מזהה</th>
-                <th>תאריך יצירה</th>
-                <th>שם מלא</th>
-                <th>מספר זהות</th>
-                <th>כתובת</th>
-                <th>השכלה</th>
-                <th>מספר טלפון</th>
-                <th>פעולות</th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr *ngFor="let request of trainingRequests">
-                <td>{{ request.Row_ID }}</td>
-                <td>{{ request.Form_Fill_Date }}</td>
-                <td>{{ request.First_Name }} {{ request.Family_Name }}</td>
-                <td>{{ request.Passport_ID }}</td>
-                <td>{{ request.Address }}</td>
-                <td>{{ request.Education }}</td>
-                <td>{{ request.Phone_Number }}</td>
-                <td>
-                    <button (click)="handleAction(request.Row_ID, 'view')">הצגה</button>
-                    <button (click)="handleAction(request.Row_ID, 'approve')" class="approve">אשר</button>
-                    <button (click)="handleAction(request.Row_ID, 'reject')" class="reject">סרב</button>
-                </td>
-            </tr>
-        </tbody>
-    </table>
-</div> -->
-
+<h2 class="page-title text-center">{{UserName}} - בקשות השתלמות </h2>
 <div class="dashboard-container">
-    <h1>רשימת טפסי בקשות השתלמות</h1>
+    <!-- <h1>בקשות השתלמות</h1> -->
     <div class="card-table">
         <div class="card-header">
-            <span>רשימה מלאה</span>
             <input type="text" placeholder="חפש..." class="search-bar" />
+            <button mat-fab aria-label="Example icon button with add icon" (click)="handleAction('', 'new')">
+                <mat-icon>add</mat-icon>
+            </button>
         </div>
-        <table class="request-table">
-            <thead>
-                <tr>
-                    <th>מזהה</th>
-                    <th>תאריך יצירה</th>
-                    <th>שם מלא</th>
-                    <th>מספר זהות</th>
-                    <th>כתובת</th>
-                    <th>השכלה</th>
-                    <th>מספר טלפון</th>
-                    <th>פעולות</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr *ngFor="let request of trainingRequests">
-                    <td>{{ request.Row_ID }}</td>
-                    <td>{{ request.Form_Fill_Date }}</td>
-                    <td>{{ request.First_Name }} {{ request.Family_Name }}</td>
-                    <td>{{ request.Passport_ID }}</td>
-                    <td>{{ request.Address }}</td>
-                    <td>{{ request.Education }}</td>
-                    <td>{{ request.Phone_Number }}</td>
-                    <td>
-                        <button mat-mini-fab style="background-color: #6fd7d7;"
-                            (click)="handleAction(request.Row_ID, 'view')">
-                            הצגה
-                        </button>
-                        <button mat-mini-fab style="background-color: #6cdda4;"
-                            (click)="handleAction(request.Row_ID, 'approve')">
-                            אשר
-                        </button>
-                        <button mat-mini-fab style="background-color: #f14c7a;"
-                            (click)="handleAction(request.Row_ID, 'reject')">
-                            סרב
-                        </button>
-                    </td>
-                </tr>
-            </tbody>
+        <table mat-table [dataSource]="trainingRequests" matSort class="mat-elevation-z8"
+            style="width: 100%;margin-top: 30px;">
+
+            <ng-container matColumnDef="Row_ID">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header> מזהה </th>
+                <td mat-cell *matCellDef="let element"> {{ element.Row_ID }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="Form_Fill_Date">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header> תאריך יצירה </th>
+                <td mat-cell *matCellDef="let element"> {{ element.Form_Fill_Date }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="First_Name">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header> שם פרטי </th>
+                <td mat-cell *matCellDef="let element"> {{ element.First_Name }} </td>
+            </ng-container>
+
+            <ng-container matColumnDef="Family_Name">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header> שם משפחה </th>
+                <td mat-cell *matCellDef="let element"> {{ element.Family_Name }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="Passport_ID">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header> מספר זהות </th>
+                <td mat-cell *matCellDef="let element"> {{ element.Passport_ID }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="Address">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header> כתובת </th>
+                <td mat-cell *matCellDef="let element"> {{ element.Address }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="Phone_Number">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header> מספר טלפון </th>
+                <td mat-cell *matCellDef="let element">
+                    {{ element.Phone_Number }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="Department">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header> תפקיד/מחלקה </th>
+                <td mat-cell *matCellDef="let element"> {{ element.Function_Department }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="Actions">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header> פעולות </th>
+                <td mat-cell *matCellDef="let element"> <button mat-mini-fab style="background-color: #6fd7d7;"
+                        (click)="handleAction(element.Row_ID, 'view')">
+                        O
+                    </button>
+                    <button mat-mini-fab style="background-color: #6cdda4;"
+                        (click)="handleAction(element.Row_ID, 'approve')">
+                        V
+                    </button>
+                    <button mat-mini-fab style="background-color: #f14c7a;"
+                        (click)="handleAction(element.Row_ID, 'reject')">
+                        X
+                    </button>
+                </td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+            <tr mat-row *matRowDef="let row; columns: displayedColumns;"> </tr>
         </table>
+        <mat-paginator [pageSizeOptions]="[10,20,35,50]" showFirstLastButtons></mat-paginator>
     </div>
 </div>
