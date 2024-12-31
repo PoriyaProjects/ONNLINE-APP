@@ -1,34 +1,440 @@
-<form class="training-request-form" [formGroup]="trainingForm" (ngSubmit)="onSubmit()">
-    <mat-card>
-      <mat-card-title>Personal Details</mat-card-title>
-      <mat-card-content>
-        <div class="form-row">
-          <mat-form-field>
-            <mat-label>First Name</mat-label>
-            <input matInput formControlName="First_Name" />
-          </mat-form-field>
-          <mat-form-field>
-            <mat-label>Family Name</mat-label>
-            <input matInput formControlName="Family_Name" />
-          </mat-form-field>
-        </div>
-        <div class="form-row">
-          <mat-form-field>
-            <mat-label>Passport ID</mat-label>
-            <input matInput formControlName="Passport_ID" />
-          </mat-form-field>
-          <mat-form-field>
-            <mat-label>Phone Number</mat-label>
-            <input matInput formControlName="Phone_Number" />
-          </mat-form-field>
-        </div>
-      </mat-card-content>
-    </mat-card>
-    <mat-card>
-      <mat-card-title>Training Details</mat-card-title>
-      <mat-card-content>
-        <!-- Add more form fields here -->
-      </mat-card-content>
-    </mat-card>
-    <button mat-raised-button color="primary" type="submit">Submit</button>
-  </form>
+<form class="training-request-form">
+  <!-- Close button -->
+  <div class="dialog-actions">
+    <button mat-raised-button color="warn" type="button" class="closeBtn" (click)="onClose()">
+      X
+    </button>
+  </div>
+  <mat-tab-group mat-stretch-tabs="false" mat-align-tabs="center" *ngIf="Training_Request_Forms_A != undefined">
+    <mat-tab label="חלק א' - פרטים אישים">
+      <mat-card [formGroup]="Training_Request_Forms_A">
+        <!-- <mat-card-title>חלק א' - פרטים אישים</mat-card-title> -->
+        <mat-card-content>
+          <div class="row">
+            <div class="col-lg-2 col-md-4 col-sm-6">
+              <mat-form-field>
+                <mat-label>מס' ת.ז</mat-label>
+                <input matInput formControlName="Passport_ID" (blur)="getPersonDetails()" />
+                <mat-error *ngIf="Training_Request_Forms_A.get('Passport_ID')?.hasError('required')">
+                  מספר תעודת זהות חובה
+                </mat-error>
+                <mat-error *ngIf="Training_Request_Forms_A.get('Passport_ID')?.hasError('pattern')">
+                  יש להזין רק מספרים
+                </mat-error>
+              </mat-form-field>
+            </div>
+            <div class="col-lg-2 col-md-4 col-sm-6">
+              <mat-form-field>
+                <mat-label>שם משפחה</mat-label>
+                <input matInput formControlName="Family_Name" />
+              </mat-form-field>
+            </div>
+            <div class="col-lg-2 col-md-4 col-sm-6">
+              <mat-form-field>
+                <mat-label>שם פרטי</mat-label>
+                <input matInput formControlName="First_Name" />
+              </mat-form-field>
+            </div>
+            <div class="col-lg-2 col-md-4 col-sm-6">
+              <mat-form-field>
+                <mat-label>עיר/ישוב</mat-label>
+                <input matInput formControlName="Address" />
+              </mat-form-field>
+            </div>
+            <div class="col-lg-2 col-md-4 col-sm-6">
+              <mat-form-field>
+                <mat-label>השכלה</mat-label>
+                <input matInput formControlName="Education" />
+                <mat-error *ngIf="Training_Request_Forms_A.get('Education')?.hasError('required')">
+                  השכלה חובה
+                </mat-error>
+              </mat-form-field>
+            </div>
+            <div class="col-lg-2 col-md-4 col-sm-6">
+              <mat-form-field>
+                <mat-label>נייד</mat-label>
+                <input matInput formControlName="Phone_Number" />
+                <mat-error *ngIf="Training_Request_Forms_A.get('Phone_Number')?.hasError('required')">
+                  מספר טלפון חובה
+                </mat-error>
+                <mat-error *ngIf="Training_Request_Forms_A.get('Phone_Number')?.hasError('pattern')">
+                  יש להזין רק מספרים
+                </mat-error>
+              </mat-form-field>
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </mat-tab>
+    <mat-tab label="חלק ב' - בקשת המועמד">
+      <mat-card [formGroup]="Training_Request_Forms_B">
+        <mat-card-title>פרטי ההשתלמות המבוקשת (יש לצרף תוכנית)</mat-card-title>
+        <mat-card-content>
+          <div class="row">
+            <div class="col-lg-2 col-md-4 col-sm-6">
+              <mat-form-field>
+                <mat-label>שם ההשתלמות ומטרתה</mat-label>
+                <input matInput formControlName="Request_Name" />
+              </mat-form-field>
+            </div>
+            <div class="col-lg-2 col-md-4 col-sm-6">
+              <mat-form-field>
+                <mat-label>מקום ההשתלמות והמוסד המארגן</mat-label>
+                <input matInput formControlName="Request_Location" />
+              </mat-form-field>
+            </div>
+            <div class="col-lg-2 col-md-4 col-sm-6">
+              <mat-form-field>
+                <mat-label>תאריך התחלה</mat-label>
+                <input matInput formControlName="Date_Start" type="date" />
+              </mat-form-field>
+            </div>
+            <div class="col-lg-2 col-md-4 col-sm-6">
+              <mat-form-field>
+                <mat-label>תאריך סיום</mat-label>
+                <input matInput formControlName="Date_End" type="date" />
+              </mat-form-field>
+            </div>
+            <div class="col-lg-2 col-md-4 col-sm-6">
+              <mat-form-field>
+                <mat-label>משך ההשתלמות</mat-label>
+                <input matInput formControlName="Request_Duration" />
+              </mat-form-field>
+            </div>
+            <div class="col-lg-2 col-md-4 col-sm-6">
+              <mat-form-field>
+                <mat-label>שכר לימוד</mat-label>
+                <input matInput formControlName="Education_Fee" />
+                <mat-error *ngIf="Training_Request_Forms_B.get('Education_Fee')?.hasError('pattern')">
+                  יש להזין רק מספרים
+                </mat-error>
+              </mat-form-field>
+            </div>
+            <div class="col-lg-2 col-md-4 col-sm-6">
+              <section class="example-section">
+                <p><mat-checkbox formControlName="Transportation"><span
+                      class="checkbox-label">נסיעות</span></mat-checkbox>
+                </p>
+              </section>
+            </div>
+            <div class="col-lg-2 col-md-4 col-sm-6">
+              <section class="example-section">
+                <p><mat-checkbox formControlName="Program_Attached"><span class="checkbox-label">תוכנית
+                      מצורפת</span></mat-checkbox>
+                </p>
+              </section>
+            </div>
+            <div class="col-lg-2 col-md-4 col-sm-6">
+              <mat-form-field>
+                <mat-label>ימי העדרות</mat-label>
+                <input matInput formControlName="Absence_Time" />
+                <mat-error *ngIf="Training_Request_Forms_B.get('Absence_Time')?.hasError('pattern')">
+                  יש להזין רק מספרים
+                </mat-error>
+              </mat-form-field>
+            </div>
+            <div class="col-lg-2 col-md-4 col-sm-6">
+              <section class="example-section">
+                <p><mat-checkbox formControlName="Training_Out"><span class="checkbox-label">השתלמות
+                      בחו"ל</span></mat-checkbox>
+                </p>
+              </section>
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </mat-tab>
+    <mat-tab label="חלק ג' - התחייבות העובד">
+      <mat-card [formGroup]="Training_Request_Forms_C">
+        <!-- <mat-card-title>חלק ג' - התחייבות העובד</mat-card-title> -->
+        <mat-card-content>
+          <div class="row">
+            <p>1. עם קבלת מענק ההשתלמות הנני מתחייב/ת לשרת בשירות מדינת ישראל, במשרתי הנוכחית או בכל משרה אחרת אשר אתמנה
+              לה כחוק, אחרי תום ההשתלמות, תקופה המתאימה לסכום המענק שאושר לי ועל פי הוראות התקשי"ר בנדון (כולל משכורת,
+              שכר לימוד,
+
+              אש"ל והוצאות אחרות).</p>
+            <p>2. אם אעזוב את שירות מדינת ישראל לפני תום התקופה שאני חייב/ת לשרת, או אפסיק את השתלמותי לפני סיומה, הנני
+              מתחייב/ת להחזיר לאוצר מדינת ישראל את מענק ההשתלמות לפי שהוא מוגדר ב- 52.141 בתקשי"ר, או חלק ממנו יחסית
+              לתקופת השירות שהיה
+
+              עלי להמשיך לשרת לאחר תום ההשתלמות.</p>
+            <p>3. ידוע לי כי התקופה שעלי לשרת על פי ההוראות, היא במקביל למענק, כמוגדר ב- 52.142 בתקשי"ר. החזרת סכומי
+              ההתחייבות תהיה צמודה למדד המחירים לצרכן לפי נתוני הלשכה המרכזית לסטטיסטיקה. בקורסים הנמשכים מעל שנה
+              (מתחילת הקורס ועד קבלת התעודה) מתחייב העובד להמשיך לעבוד במרכז הרפואי פדה, פוריה, למשך 3 שנים מקבלת תעודת
+              הרישום, בהיקף משרה של 75% ומעלה, או בהיקף זהה להיקף עבודתו ערב היציאה להשתלמות, על פי צרכי
+
+              המערכת.</p>
+            <p>4. במקרה של תמיכה מחברה חיצונית - הנני מצהיר/ה כי לא נתתי כל ייעוץ ולא הועסקתי ע"י החברה המממנת בשום שלב
+              במהלך 12 חודשים קודמים וידוע לי כי ב-12 החודשים שלאחר מכן לא אהיה רשאי להגיש בקשה להיתר עבודה פרטית עבור
+              החברה המממנת</p>
+          </div>
+          <hr>
+          <div class="row">
+            <div class="col-lg-2 col-md-4 col-sm-6">
+              <mat-form-field>
+                <mat-label>תאריך הגשת הבקשה</mat-label>
+                <input matInput formControlName="Request_Name" type="date" />
+              </mat-form-field>
+            </div>
+            <div class="col-lg-2 col-md-4 col-sm-6">
+              <button mat-raised-button class="signBtn" color="warn" (click)="signForm(3, 'Request_Sign')">
+                <span *ngIf="Training_Request_Forms_C.get('Request_Sign').value == undefined">לחתום</span>
+                <span *ngIf="Training_Request_Forms_C.get('Request_Sign').value != undefined">נחתם
+                </span>
+              </button>
+              <img *ngIf="Training_Request_Forms_C.get('Request_Sign').value != undefined"
+                [src]="Training_Request_Forms_C.get('Request_Sign').value" />
+              <!-- <mat-form-field>
+                <mat-label>חתימת העובד/ת</mat-label>
+                <input matInput formControlName="Request_Sign" />
+              </mat-form-field> -->
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </mat-tab>
+    <mat-tab label="חלק ד' - מקור מימון">
+      <mat-card [formGroup]="Training_Request_Forms_D">
+        <mat-card-title>מקור מימון</mat-card-title>
+        <mat-card-content>
+          <div class="section">
+            <section class="example-section">
+              <p><mat-checkbox formControlName="Hospital_Budget"><span class="checkbox-label">תקציב המרכז
+                    הרפואי</span></mat-checkbox>
+              </p>
+            </section>
+          </div>
+          <hr>
+          <div class="section">
+            <section class="example-section">
+              <p><mat-checkbox formControlName="OutSource_Company"><span class="checkbox-label">חברה
+                    חיצונית</span></mat-checkbox>
+              </p>
+            </section>
+          </div>
+          <div class="section" *ngIf="Training_Request_Forms_D.get('OutSource_Company').value">
+            <mat-form-field>
+              <mat-label>סכום המימון</mat-label>
+              <input matInput formControlName="Budget_Amount" />
+              <mat-error *ngIf="Training_Request_Forms_D.get('Budget_Amount')?.hasError('pattern')">
+                יש להזין רק מספרים
+              </mat-error>
+            </mat-form-field>
+          </div>
+          <hr>
+          <div class="section">
+            <section class="example-section">
+              <p><mat-checkbox formControlName="Extracurricular_Work"><span class="checkbox-label">ע"ח תקציב
+                    מחקר</span></mat-checkbox>
+              </p>
+            </section>
+          </div>
+          <div class="section" *ngIf="Training_Request_Forms_D.get('Extracurricular_Work').value">
+            <mat-form-field>
+              <mat-label>מספר: </mat-label>
+              <input matInput formControlName="Extracurricular_Work_Number" />
+            </mat-form-field>
+          </div>
+          <hr>
+          <div class="section">
+            <section class="example-section">
+              <h5>תאגיד הבריאות-קרן מרכזית למימון</h5>
+              <div formArrayName="Health_Corporation">
+                <p *ngFor="let option of Health_Corporation_Options; let i = index">
+                  <mat-checkbox [formControlName]="i"><span class="checkbox-label">{{ option }}</span></mat-checkbox>
+                </p>
+              </div>
+            </section>
+            <!-- <section class="example-section" formControlName="Health_Corporation">
+              <h5>תאגיד הבריאות-קרן
+                מרכזית למימון</h5>
+              <p><mat-checkbox value="טיסה"><span
+                    class="checkbox-label">טיסה</span></mat-checkbox>
+              </p>
+              <p><mat-checkbox value="לינה"><span
+                    class="checkbox-label">לינה</span></mat-checkbox>
+              </p>
+              <p><mat-checkbox value="רישום"><span
+                    class="checkbox-label">רישום</span></mat-checkbox>
+              </p>
+              <p><mat-checkbox value="אחר"><span
+                    class="checkbox-label">אחר</span></mat-checkbox>
+              </p>
+            </section> -->
+          </div>
+          <div class="section" *ngIf="Training_Request_Forms_D.get('Health_Corporation').value[3]">
+            <mat-form-field>
+              <mat-label>אחר</mat-label>
+              <input matInput formControlName="Health_Corporation_Description" />
+            </mat-form-field>
+          </div>
+          <hr>
+          <div class="section">
+            <section class="example-section">
+              <h5>קרן מחלקה: למימון</h5>
+              <div formArrayName="Department_Fund">
+                <p *ngFor="let option of Department_Fund_Options; let i = index">
+                  <mat-checkbox [formControlName]="i"><span class="checkbox-label">{{ option }}</span></mat-checkbox>
+                </p>
+              </div>
+            </section>
+            <!-- <section class="example-section">
+              <h5>קרן מחלקה: למימון</h5>
+              <p><mat-checkbox formControlName="Department_Fund"><span class="checkbox-label">טיסה</span></mat-checkbox>
+              </p>
+              <p><mat-checkbox formControlName="Department_Fund"><span class="checkbox-label">לינה</span></mat-checkbox>
+              </p>
+              <p><mat-checkbox formControlName="Department_Fund"><span
+                    class="checkbox-label">רישום</span></mat-checkbox>
+              </p>
+              <p><mat-checkbox formControlName="Department_Fund"><span class="checkbox-label">אחר</span></mat-checkbox>
+              </p>
+            </section> -->
+          </div>
+          <div class="section" *ngIf="Training_Request_Forms_D.get('Department_Fund').value[3]">
+            <mat-form-field>
+              <mat-label>אחר</mat-label>
+              <input matInput formControlName="Department_Fund_Description" />
+            </mat-form-field>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </mat-tab>
+    <mat-tab label="חלק ה' - חוות דעת">
+      <mat-card>
+        <!-- <mat-card-title>חלק ה' - חוות דעת</mat-card-title> -->
+        <mat-card-content [formGroup]="Training_Request_Forms_E">
+          <p>ממונה ישיר</p>
+          <div class="row">
+            <div class="col-lg-2 col-md-4 col-sm-6">
+              <mat-form-field>
+                <mat-label>מידת החשיבות של ההשתלמות לתפקיד העובד</mat-label>
+                <input matInput formControlName="Training_Importantce" />
+              </mat-form-field>
+            </div>
+            <div class="col-lg-2 col-md-4 col-sm-6">
+              <mat-form-field>
+                <mat-label>המלצות ונימוקים</mat-label>
+                <input matInput formControlName="Recommendations" />
+              </mat-form-field>
+            </div>
+            <div class="col-lg-2 col-md-4 col-sm-6">
+              <mat-form-field>
+                <mat-label>תאריך</mat-label>
+                <input matInput formControlName="Opinion_Date" type="date" />
+              </mat-form-field>
+            </div>
+            <div class="col-lg-2 col-md-4 col-sm-6">
+              <mat-form-field>
+                <mat-label>שם הממונה</mat-label>
+                <input matInput formControlName="Supervisor_Name" />
+              </mat-form-field>
+            </div>
+            <div class="col-lg-2 col-md-4 col-sm-6">
+              <button mat-raised-button class="signBtn" color="warn" (click)="signForm(5, 'Supervisor_Sign')">
+                <span *ngIf="Training_Request_Forms_E.get('Supervisor_Sign').value == undefined">לחתום</span>
+                <span *ngIf="Training_Request_Forms_E.get('Supervisor_Sign').value != undefined">נחתם</span>
+              </button>
+              <img *ngIf="Training_Request_Forms_E.get('Supervisor_Sign').value != undefined"
+                [src]="Training_Request_Forms_E.get('Supervisor_Sign').value" />
+              <!-- <mat-form-field>
+                <mat-label>חתימה</mat-label>
+                <input matInput formControlName="Supervisor_Sign" />
+              </mat-form-field> -->
+            </div>
+          </div>
+        </mat-card-content>
+        <hr>
+        <mat-card-content [formGroup]="Training_Request_Forms_F">
+          <p>ממונה עקיף</p>
+          <div class="row">
+            <div class="col-lg-2 col-md-4 col-sm-6">
+              <mat-form-field>
+                <mat-label>מידת החשיבות של ההשתלמות לתפקיד העובד</mat-label>
+                <input matInput formControlName="Training_Importantce" />
+              </mat-form-field>
+            </div>
+            <div class="col-lg-2 col-md-4 col-sm-6">
+              <mat-form-field>
+                <mat-label>המלצות ונימוקים</mat-label>
+                <input matInput formControlName="Recommendations" />
+              </mat-form-field>
+            </div>
+            <div class="col-lg-2 col-md-4 col-sm-6">
+              <mat-form-field>
+                <mat-label>תאריך</mat-label>
+                <input matInput formControlName="Opinion_Date" type="date" />
+              </mat-form-field>
+            </div>
+            <div class="col-lg-2 col-md-4 col-sm-6">
+              <mat-form-field>
+                <mat-label>שם הממונה</mat-label>
+                <input matInput formControlName="Supervisor_Name" />
+              </mat-form-field>
+            </div>
+            <div class="col-lg-2 col-md-4 col-sm-6">
+              <button mat-raised-button class="signBtn" color="warn" (click)="signForm(6, 'Supervisor_Sign')">
+                <span *ngIf="Training_Request_Forms_F.get('Supervisor_Sign').value == undefined">לחתום</span>
+                <span *ngIf="Training_Request_Forms_F.get('Supervisor_Sign').value != undefined">נחתם</span>
+              </button>
+              <img *ngIf="Training_Request_Forms_F.get('Supervisor_Sign').value != undefined"
+                [src]="Training_Request_Forms_F.get('Supervisor_Sign').value" />
+              <!-- <mat-form-field>
+                <mat-label>חתימה</mat-label>
+                <input matInput formControlName="Supervisor_Sign" />
+              </mat-form-field> -->
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </mat-tab>
+    <mat-tab label="חלק ו' - ימולא ע'י מחלקת משאבי אנוש">
+      <mat-card [formGroup]="Training_Request_Forms_G">
+        <!-- <mat-card-title>חלק ו' - ימולא ע'י מחלקת משאבי אנוש</mat-card-title> -->
+        <mat-card-content>
+          <div class="row">
+            <div class="col-lg-4 col-md-4 col-sm-6">
+              <mat-form-field>
+                <mat-label>ניצול מס' ימי השתלמות מתחילת השנה</mat-label>
+                <input matInput formControlName="Training_Days_Utilization" />
+              </mat-form-field>
+            </div>
+            <div class="col-lg-2 col-md-4 col-sm-6">
+              <mat-form-field>
+                <mat-label>הדרגה והדירוג בתקן</mat-label>
+                <input matInput formControlName="Standart_Level" />
+              </mat-form-field>
+            </div>
+            <div class="col-lg-2 col-md-4 col-sm-6">
+              <mat-form-field>
+                <mat-label>תפקיד העובד ומחלקה</mat-label>
+                <input matInput formControlName="Function_Department" />
+              </mat-form-field>
+            </div>
+            <div class="col-lg-2 col-md-4 col-sm-6">
+              <mat-form-field>
+                <mat-label>תאריך תחילת עבודה</mat-label>
+                <input matInput formControlName="Work_Start_Date" type="date" />
+              </mat-form-field>
+            </div>
+            <div class="col-lg-2 col-md-4 col-sm-6">
+              <mat-form-field>
+                <mat-label>מעמד קבוע/ארעי/חוזה</mat-label>
+                <input matInput formControlName="Standart_Status" />
+              </mat-form-field>
+            </div>
+            <div class="col-lg-2 col-md-4 col-sm-6">
+              <mat-form-field>
+                <mat-label>חלקיות משרה</mat-label>
+                <input matInput formControlName="Standart_Job_Type" />
+              </mat-form-field>
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+      <button mat-raised-button color="primary" type="submit" class="submitBtn" (click)="onSubmit()">שמירה</button>
+      <!-- [disabled]="!Training_Request_Forms_A.valid" -->
+    </mat-tab>
+  </mat-tab-group>
+</form>
