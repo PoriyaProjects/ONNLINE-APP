@@ -66,7 +66,7 @@
         </mat-card-content>
       </mat-card>
     </mat-tab>
-    <mat-tab label="חלק ב' - בקשת המועמד">
+    <mat-tab label="חלק ב' - בקשת המועמד" [disabled]="Training_Request_Forms_A.invalid">
       <mat-card [formGroup]="Training_Request_Forms_B">
         <mat-card-title>פרטי ההשתלמות המבוקשת (יש לצרף תוכנית)</mat-card-title>
         <mat-card-content>
@@ -86,13 +86,17 @@
             <div class="col-lg-2 col-md-4 col-sm-6">
               <mat-form-field>
                 <mat-label>תאריך התחלה</mat-label>
-                <input matInput formControlName="Date_Start" type="date" />
+                <input matInput [matDatepicker]="Date_Start" formControlName="Date_Start">
+                <mat-datepicker-toggle matIconSuffix [for]="Date_Start"></mat-datepicker-toggle>
+                <mat-datepicker #Date_Start></mat-datepicker>
               </mat-form-field>
             </div>
             <div class="col-lg-2 col-md-4 col-sm-6">
               <mat-form-field>
                 <mat-label>תאריך סיום</mat-label>
-                <input matInput formControlName="Date_End" type="date" />
+                <input matInput [matDatepicker]="Date_End" formControlName="Date_End">
+                <mat-datepicker-toggle matIconSuffix [for]="Date_End"></mat-datepicker-toggle>
+                <mat-datepicker #Date_End></mat-datepicker>
               </mat-form-field>
             </div>
             <div class="col-lg-2 col-md-4 col-sm-6">
@@ -118,12 +122,21 @@
               </section>
             </div>
             <div class="col-lg-2 col-md-4 col-sm-6">
-              <section class="example-section">
-                <p><mat-checkbox formControlName="Program_Attached"><span class="checkbox-label">תוכנית
-                      מצורפת</span></mat-checkbox>
-                </p>
-              </section>
+              <label for="fileInput" class="file-label">תוכנית מצורפת(תמונה/PDF)</label>
+              <input type="file" id="fileInput" (change)="onFileSelected($event)" class="file-input"
+                accept="application/pdf, image/*" />
+              <button mat-raised-button class="fileOpenBtn" color="primary" (click)="file_in_new_window_base64()"
+                *ngIf="Training_Request_Forms_B.get('Program_Attached').value != undefined">
+                <span class="material-icons"> zoom_in </span>
+              </button>
             </div>
+            <!-- <div class="col-lg-2 col-md-4 col-sm-6">
+            <section class="example-section">
+              <p><mat-checkbox formControlName="Program_Attached"><span class="checkbox-label">תוכנית
+                    מצורפת</span></mat-checkbox>
+              </p>
+            </section>
+          </div> -->
             <div class="col-lg-2 col-md-4 col-sm-6">
               <mat-form-field>
                 <mat-label>ימי העדרות</mat-label>
@@ -135,7 +148,8 @@
             </div>
             <div class="col-lg-2 col-md-4 col-sm-6">
               <section class="example-section">
-                <p><mat-checkbox formControlName="Training_Out"><span class="checkbox-label">השתלמות
+                <p><mat-checkbox formControlName="Training_Out" (change)="Training_Out_Check()"><span
+                      class="checkbox-label">השתלמות
                       בחו"ל</span></mat-checkbox>
                 </p>
               </section>
@@ -144,7 +158,8 @@
         </mat-card-content>
       </mat-card>
     </mat-tab>
-    <mat-tab label="חלק ג' - התחייבות העובד">
+    <mat-tab label="חלק ג' - התחייבות העובד"
+      [disabled]="Training_Request_Forms_A.invalid || Training_Request_Forms_B.invalid">
       <mat-card [formGroup]="Training_Request_Forms_C">
         <!-- <mat-card-title>חלק ג' - התחייבות העובד</mat-card-title> -->
         <mat-card-content>
@@ -174,7 +189,9 @@
             <div class="col-lg-2 col-md-4 col-sm-6">
               <mat-form-field>
                 <mat-label>תאריך הגשת הבקשה</mat-label>
-                <input matInput formControlName="Request_Name" type="date" />
+                <input matInput [matDatepicker]="Request_Name" formControlName="Request_Name">
+                <mat-datepicker-toggle matIconSuffix [for]="Request_Name"></mat-datepicker-toggle>
+                <mat-datepicker #Request_Name></mat-datepicker>
               </mat-form-field>
             </div>
             <div class="col-lg-2 col-md-4 col-sm-6">
@@ -194,7 +211,8 @@
         </mat-card-content>
       </mat-card>
     </mat-tab>
-    <mat-tab label="חלק ד' - מקור מימון">
+    <mat-tab label="חלק ד' - מקור מימון"
+      [disabled]="Training_Request_Forms_A.invalid || Training_Request_Forms_B.invalid || Training_Request_Forms_C.invalid">
       <mat-card [formGroup]="Training_Request_Forms_D">
         <mat-card-title>מקור מימון</mat-card-title>
         <mat-card-content>
@@ -238,32 +256,15 @@
           </div>
           <hr>
           <div class="section">
-            <section class="example-section">
-              <h5>תאגיד הבריאות-קרן מרכזית למימון</h5>
-              <div formArrayName="Health_Corporation">
-                <p *ngFor="let option of Health_Corporation_Options; let i = index">
-                  <mat-checkbox [formControlName]="i"><span class="checkbox-label">{{ option }}</span></mat-checkbox>
-                </p>
-              </div>
-            </section>
-            <!-- <section class="example-section" formControlName="Health_Corporation">
-              <h5>תאגיד הבריאות-קרן
-                מרכזית למימון</h5>
-              <p><mat-checkbox value="טיסה"><span
-                    class="checkbox-label">טיסה</span></mat-checkbox>
-              </p>
-              <p><mat-checkbox value="לינה"><span
-                    class="checkbox-label">לינה</span></mat-checkbox>
-              </p>
-              <p><mat-checkbox value="רישום"><span
-                    class="checkbox-label">רישום</span></mat-checkbox>
-              </p>
-              <p><mat-checkbox value="אחר"><span
-                    class="checkbox-label">אחר</span></mat-checkbox>
-              </p>
-            </section> -->
+            <mat-label>{{ Health_Corporation_Options.QuestionText }}</mat-label>
+            <mat-select formControlName="Health_Corporation" [compareWith]="compareFn" multiple>
+              <mat-option *ngFor="let option of Health_Corporation_Options.Training_Request_Options"
+                [value]="option.OptionID">
+                {{ option.OptionText }}
+              </mat-option>
+            </mat-select>
           </div>
-          <div class="section" *ngIf="Training_Request_Forms_D.get('Health_Corporation').value[3]">
+          <div class="section">
             <mat-form-field>
               <mat-label>אחר</mat-label>
               <input matInput formControlName="Health_Corporation_Description" />
@@ -271,28 +272,15 @@
           </div>
           <hr>
           <div class="section">
-            <section class="example-section">
-              <h5>קרן מחלקה: למימון</h5>
-              <div formArrayName="Department_Fund">
-                <p *ngFor="let option of Department_Fund_Options; let i = index">
-                  <mat-checkbox [formControlName]="i"><span class="checkbox-label">{{ option }}</span></mat-checkbox>
-                </p>
-              </div>
-            </section>
-            <!-- <section class="example-section">
-              <h5>קרן מחלקה: למימון</h5>
-              <p><mat-checkbox formControlName="Department_Fund"><span class="checkbox-label">טיסה</span></mat-checkbox>
-              </p>
-              <p><mat-checkbox formControlName="Department_Fund"><span class="checkbox-label">לינה</span></mat-checkbox>
-              </p>
-              <p><mat-checkbox formControlName="Department_Fund"><span
-                    class="checkbox-label">רישום</span></mat-checkbox>
-              </p>
-              <p><mat-checkbox formControlName="Department_Fund"><span class="checkbox-label">אחר</span></mat-checkbox>
-              </p>
-            </section> -->
+            <mat-label>{{ Department_Fund_Options.QuestionText }}</mat-label>
+            <mat-select formControlName="Department_Fund" [compareWith]="compareFn" multiple>
+              <mat-option *ngFor="let option of Department_Fund_Options.Training_Request_Options"
+                [value]="option.OptionID">
+                {{ option.OptionText }}
+              </mat-option>
+            </mat-select>
           </div>
-          <div class="section" *ngIf="Training_Request_Forms_D.get('Department_Fund').value[3]">
+          <div class="section">
             <mat-form-field>
               <mat-label>אחר</mat-label>
               <input matInput formControlName="Department_Fund_Description" />
@@ -300,29 +288,37 @@
           </div>
         </mat-card-content>
       </mat-card>
+      <button mat-raised-button color="primary" type="submit" class="submitBtn" (click)="onSubmit()">שמירה</button>
     </mat-tab>
-    <mat-tab label="חלק ה' - חוות דעת">
+    <mat-tab label="חלק ה' - חוות דעת" *ngIf="!requested"
+      [disabled]="Training_Request_Forms_A.invalid || Training_Request_Forms_B.invalid || Training_Request_Forms_C.invalid || Training_Request_Forms_D.invalid">
       <mat-card>
         <!-- <mat-card-title>חלק ה' - חוות דעת</mat-card-title> -->
         <mat-card-content [formGroup]="Training_Request_Forms_E">
           <p>ממונה ישיר</p>
           <div class="row">
             <div class="col-lg-2 col-md-4 col-sm-6">
-              <mat-form-field>
-                <mat-label>מידת החשיבות של ההשתלמות לתפקיד העובד</mat-label>
-                <input matInput formControlName="Training_Importantce" />
-              </mat-form-field>
+              <mat-label>{{ Training_Importantce_Options.QuestionText }}</mat-label>
+              <mat-select formControlName="Training_Importantce" [compareWith]="compareFn">
+                <mat-option *ngFor="let option of Training_Importantce_Options.Training_Request_Options"
+                  [value]="option.OptionText">
+                  {{ option.OptionText }}
+                </mat-option>
+              </mat-select>
             </div>
-            <div class="col-lg-2 col-md-4 col-sm-6">
+            <div class="col-lg-4 col-md-4 col-sm-6">
               <mat-form-field>
                 <mat-label>המלצות ונימוקים</mat-label>
-                <input matInput formControlName="Recommendations" />
+                <textarea matInput formControlName="Recommendations" rows="2"></textarea>
               </mat-form-field>
             </div>
             <div class="col-lg-2 col-md-4 col-sm-6">
               <mat-form-field>
                 <mat-label>תאריך</mat-label>
-                <input matInput formControlName="Opinion_Date" type="date" />
+                <input matInput [matDatepicker]="Opinion_Date1" formControlName="Opinion_Date">
+                <mat-hint>DD/MM/YYYY</mat-hint>
+                <mat-datepicker-toggle matIconSuffix [for]="Opinion_Date1"></mat-datepicker-toggle>
+                <mat-datepicker #Opinion_Date1></mat-datepicker>
               </mat-form-field>
             </div>
             <div class="col-lg-2 col-md-4 col-sm-6">
@@ -350,21 +346,27 @@
           <p>ממונה עקיף</p>
           <div class="row">
             <div class="col-lg-2 col-md-4 col-sm-6">
-              <mat-form-field>
-                <mat-label>מידת החשיבות של ההשתלמות לתפקיד העובד</mat-label>
-                <input matInput formControlName="Training_Importantce" />
-              </mat-form-field>
+              <mat-label>{{ Training_Importantce_Options.QuestionText }}</mat-label>
+              <mat-select formControlName="Training_Importantce" [compareWith]="compareFn">
+                <mat-option *ngFor="let option of Training_Importantce_Options.Training_Request_Options"
+                  [value]="option.OptionText">
+                  {{ option.OptionText }}
+                </mat-option>
+              </mat-select>
             </div>
-            <div class="col-lg-2 col-md-4 col-sm-6">
+            <div class="col-lg-4 col-md-4 col-sm-6">
               <mat-form-field>
                 <mat-label>המלצות ונימוקים</mat-label>
-                <input matInput formControlName="Recommendations" />
+                <textarea matInput formControlName="Recommendations" rows="2"></textarea>
               </mat-form-field>
             </div>
             <div class="col-lg-2 col-md-4 col-sm-6">
               <mat-form-field>
                 <mat-label>תאריך</mat-label>
-                <input matInput formControlName="Opinion_Date" type="date" />
+                <input matInput [matDatepicker]="Opinion_Date2" formControlName="Opinion_Date">
+                <mat-hint>DD/MM/YYYY</mat-hint>
+                <mat-datepicker-toggle matIconSuffix [for]="Opinion_Date2"></mat-datepicker-toggle>
+                <mat-datepicker #Opinion_Date2></mat-datepicker>
               </mat-form-field>
             </div>
             <div class="col-lg-2 col-md-4 col-sm-6">
@@ -389,12 +391,13 @@
         </mat-card-content>
       </mat-card>
     </mat-tab>
-    <mat-tab label="חלק ו' - ימולא ע'י מחלקת משאבי אנוש">
+    <mat-tab label="חלק ו' - ימולא ע'י מחלקת משאבי אנוש" *ngIf="!requested"
+      [disabled]="Training_Request_Forms_A.invalid || Training_Request_Forms_B.invalid || Training_Request_Forms_C.invalid || Training_Request_Forms_D.invalid">
       <mat-card [formGroup]="Training_Request_Forms_G">
         <!-- <mat-card-title>חלק ו' - ימולא ע'י מחלקת משאבי אנוש</mat-card-title> -->
         <mat-card-content>
           <div class="row">
-            <div class="col-lg-4 col-md-4 col-sm-6">
+            <div class="col-lg-2 col-md-4 col-sm-6">
               <mat-form-field>
                 <mat-label>ניצול מס' ימי השתלמות מתחילת השנה</mat-label>
                 <input matInput formControlName="Training_Days_Utilization" />
@@ -415,7 +418,9 @@
             <div class="col-lg-2 col-md-4 col-sm-6">
               <mat-form-field>
                 <mat-label>תאריך תחילת עבודה</mat-label>
-                <input matInput formControlName="Work_Start_Date" type="date" />
+                <input matInput [matDatepicker]="Work_Start_Date" formControlName="Work_Start_Date">
+                <mat-datepicker-toggle matIconSuffix [for]="Work_Start_Date"></mat-datepicker-toggle>
+                <mat-datepicker #Work_Start_Date></mat-datepicker>
               </mat-form-field>
             </div>
             <div class="col-lg-2 col-md-4 col-sm-6">

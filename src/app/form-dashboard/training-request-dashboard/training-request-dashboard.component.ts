@@ -6,6 +6,8 @@ import { TrainingRequestFormComponent } from './training-request-form/training-r
 import { MatTableDataSource } from '@angular/material/table';
 import { MatPaginator } from '@angular/material/paginator';
 import { MatSort } from '@angular/material/sort';
+import { MatSnackBar, MatSnackBarHorizontalPosition, MatSnackBarVerticalPosition } from '@angular/material/snack-bar';
+import { ConfirmationDialogService } from 'src/app/confirmation-dialog/confirmation-dialog.service';
 
 @Component({
   selector: 'app-training-request-dashboard',
@@ -21,9 +23,13 @@ export class TrainingRequestDashboardComponent implements OnInit {
   @ViewChild(MatPaginator) paginator: MatPaginator;
   @ViewChild(MatSort) sort: MatSort;
   UserName = localStorage.getItem('loginUserName').toLowerCase();
+  horizontalPosition: MatSnackBarHorizontalPosition = "start";
+  verticalPosition: MatSnackBarVerticalPosition = "bottom";
 
   constructor(
     public dialog: MatDialog,
+    private _snackBar: MatSnackBar,
+    private confirmationDialogService: ConfirmationDialogService,
     private http: HttpClient,
   ) { }
 
@@ -50,8 +56,49 @@ export class TrainingRequestDashboardComponent implements OnInit {
         height: '90%'
       }).afterClosed().subscribe(res => {
         this.getAllTrainingRequestFormsList();
-      });;
+      });
+    } else if (action == 'approve') {
+      this.trainingRequestApprovedOrNot(rowId, 1);
+    } else if (action == 'reject') {
+      this.trainingRequestApprovedOrNot(rowId, 0);
     }
+  }
+
+  trainingRequestApprovedOrNot(rowId, approved) {
+    this.confirmationDialogService
+      .confirm("נא לאשר..", "האם אתה בטוח ...? ")
+      .then((confirmed) => {
+        console.log("User confirmed:", confirmed);
+        if (confirmed) {
+          this.http
+            .post(environment.url + "TrainingRequestApprovedOrNot", {
+              id: rowId,
+              approved: approved
+            })
+            .subscribe((Response) => {
+              if (Response['d']) {
+                this.openSnackBar("נשמר בהצלחה");
+              } else {
+                this.openSnackBar("תקלה! לא נשמר");
+              }
+            });
+        } else {
+        }
+      })
+      .catch(() =>
+        console.log(
+          "User dismissed the dialog (e.g., by using ESC, clicking the cross icon, or clicking outside the dialog)"
+        )
+      );
+
+  }
+
+  openSnackBar(message) {
+    this._snackBar.open(message, "X", {
+      duration: 3000,
+      horizontalPosition: this.horizontalPosition,
+      verticalPosition: this.verticalPosition,
+    });
   }
 
   getAllTrainingRequestFormsList() {
