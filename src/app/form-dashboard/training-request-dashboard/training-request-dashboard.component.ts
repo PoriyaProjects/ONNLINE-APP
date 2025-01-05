@@ -58,9 +58,9 @@ export class TrainingRequestDashboardComponent implements OnInit {
         this.getAllTrainingRequestFormsList();
       });
     } else if (action == 'approve') {
-      this.trainingRequestApprovedOrNot(rowId, 1);
+      this.trainingRequestApprovedOrNot(rowId, true);
     } else if (action == 'reject') {
-      this.trainingRequestApprovedOrNot(rowId, 0);
+      this.trainingRequestApprovedOrNot(rowId, false);
     }
   }
 
@@ -77,8 +77,10 @@ export class TrainingRequestDashboardComponent implements OnInit {
             })
             .subscribe((Response) => {
               if (Response['d']) {
+                this.getAllTrainingRequestFormsList();
                 this.openSnackBar("נשמר בהצלחה");
               } else {
+                this.getAllTrainingRequestFormsList();
                 this.openSnackBar("תקלה! לא נשמר");
               }
             });

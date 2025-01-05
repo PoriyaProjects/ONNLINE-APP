@@ -70,7 +70,9 @@
             </ng-container>
 
             <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-            <tr mat-row *matRowDef="let row; columns: displayedColumns;"> </tr>
+            <tr mat-row *matRowDef="let row; columns: displayedColumns;"
+                [ngStyle]="{ 'background-color': row.Approved == 'True' ? '#9ff99f' : row.Approved == 'False' ? '#ffa5a5' : ''}">
+            </tr>
         </table>
         <mat-paginator [pageSizeOptions]="[10,20,35,50]" showFirstLastButtons></mat-paginator>
     </div>

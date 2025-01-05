@@ -261,6 +261,10 @@ export class TrainingRequestFormComponent implements OnInit {
     return optionValue === selectedValue;
   }
 
+  healtCorporationChoose(section, event) {
+    console.log(event);
+  }
+
   getPersonDetails() {
     let id = "000000000";
     if (this.Training_Request_Forms_A != undefined) {
