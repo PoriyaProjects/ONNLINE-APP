@@ -75,6 +75,10 @@
 
     .section {
       width: 50%;
+      .multi-select {
+        font-weight: bold;
+        padding: 15px;
+      }
     }
 
     .example-section {

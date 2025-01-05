@@ -257,7 +257,8 @@
           <hr>
           <div class="section">
             <mat-label>{{ Health_Corporation_Options.QuestionText }}</mat-label>
-            <mat-select formControlName="Health_Corporation" [compareWith]="compareFn" multiple>
+            <mat-select formControlName="Health_Corporation" class="multi-select" [compareWith]="compareFn"
+              (selectionChange)="healtCorporationChoose(1, $event)" multiple>
               <mat-option *ngFor="let option of Health_Corporation_Options.Training_Request_Options"
                 [value]="option.OptionID">
                 {{ option.OptionText }}
@@ -273,7 +274,8 @@
           <hr>
           <div class="section">
             <mat-label>{{ Department_Fund_Options.QuestionText }}</mat-label>
-            <mat-select formControlName="Department_Fund" [compareWith]="compareFn" multiple>
+            <mat-select formControlName="Department_Fund" class="multi-select"
+              (selectionChange)="healtCorporationChoose(2, $event)" [compareWith]="compareFn" multiple>
               <mat-option *ngFor="let option of Department_Fund_Options.Training_Request_Options"
                 [value]="option.OptionID">
                 {{ option.OptionText }}

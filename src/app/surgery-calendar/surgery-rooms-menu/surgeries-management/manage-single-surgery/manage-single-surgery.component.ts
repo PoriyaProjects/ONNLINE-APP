@@ -1,6 +1,6 @@
 import { DatePipe } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
-import { Component, Inject, OnInit, TemplateRef, ViewChild } from '@angular/core';
+import { Component, Inject, OnDestroy, OnInit, TemplateRef, ViewChild } from '@angular/core';
 import { FormArray, FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
 import { MatDialog, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { MatSnackBar, MatSnackBarHorizontalPosition, MatSnackBarVerticalPosition } from '@angular/material/snack-bar';
@@ -14,7 +14,7 @@ import { ConfirmationDialogService } from "../../../../confirmation-dialog/confi
   templateUrl: './manage-single-surgery.component.html',
   styleUrls: ['./manage-single-surgery.component.css']
 })
-export class ManageSingleSurgeryComponent implements OnInit {
+export class ManageSingleSurgeryComponent implements OnInit, OnDestroy {
 
   horizontalPosition: MatSnackBarHorizontalPosition = 'start';
   verticalPosition: MatSnackBarVerticalPosition = 'bottom';
@@ -23,6 +23,10 @@ export class ManageSingleSurgeryComponent implements OnInit {
   surgeriesCtrl = new FormControl('');
   surgeriesList: any[] = [];
   servicesList: any[] = [];
+  dashboard_date: any;
+  card_date: any;
+  current_date: any;
+  now = new Date();
   surgeryFilteredNotes: any[] = [];
   surgeryFilteredNotesRequest: any[] = [];
   surgeriesFixedNotes: any[] = [];
@@ -32,6 +36,7 @@ export class ManageSingleSurgeryComponent implements OnInit {
   displayedColumns = ['code', 'name', 'side'];
   displayedColumns1 = ['name'];
   displayedColumns2 = ['name', 'code', 'tool'];
+  private intervalId: any;
 
   constructor(
     public datePipe: DatePipe,
@@ -60,6 +65,13 @@ export class ManageSingleSurgeryComponent implements OnInit {
   }];
 
   ngOnInit(): void {
+    // Initialize the time and start updating it every second
+    this.updateTime();
+    this.intervalId = setInterval(() => {
+      this.updateTime();
+    }, 1000); // Update every second
+    this.dashboard_date = this.data.timeOpened;
+    this.card_date = this.now;
     this.getSurgeryDepartmentsList();
     this.buildFormGroup();
     this.SurgeryRoomsList = this.data.event.RoomsList;
@@ -70,6 +82,17 @@ export class ManageSingleSurgeryComponent implements OnInit {
         return name ? this._filter2(name as string) : this.surgeriesList.slice();
       }),
     );
+  }
+
+  ngOnDestroy(): void {
+    // Clear the interval when the component is destroyed
+    if (this.intervalId) {
+      clearInterval(this.intervalId);
+    }
+  }
+
+  updateTime(): void {
+    this.current_date = new Date();
   }
 
   displayFnSurgery(surgery: any): string {

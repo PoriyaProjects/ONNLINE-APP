@@ -7,6 +7,9 @@
         <h3>
             <b> עריכת פרטי ניתוח </b>
         </h3>
+        <h6> פתיחת מסך ראשי: {{ dashboard_date | date: 'HH:mm:ss' }} - פתיחת כרטיסיית מטופל: {{ card_date | date:
+            'HH:mm:ss'
+            }} - זמן נוכחי: {{ current_date | date: 'HH:mm:ss' }} </h6>
     </div>
     <hr>
     <mat-tab-group [formGroup]="SurgeryFormGroup" dir="rtl">
