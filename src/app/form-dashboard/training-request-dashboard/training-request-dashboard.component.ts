@@ -23,6 +23,7 @@ export class TrainingRequestDashboardComponent implements OnInit {
   @ViewChild(MatPaginator) paginator: MatPaginator;
   @ViewChild(MatSort) sort: MatSort;
   UserName = localStorage.getItem('loginUserName').toLowerCase();
+  ID = localStorage.getItem('ID').toLowerCase();
   horizontalPosition: MatSnackBarHorizontalPosition = "start";
   verticalPosition: MatSnackBarVerticalPosition = "bottom";
 
@@ -34,7 +35,12 @@ export class TrainingRequestDashboardComponent implements OnInit {
   ) { }
 
   ngOnInit(): void {
-    this.getAllTrainingRequestFormsList();
+    this.getAllTrainingRequestFormsList("");
+  }
+
+  applyFilter(event: Event) {
+    const filterValue = (event.target as HTMLInputElement).value;
+    this.trainingRequests.filter = filterValue.trim().toLowerCase();
   }
 
   handleAction(rowId: string, action: string): void {
@@ -46,7 +52,7 @@ export class TrainingRequestDashboardComponent implements OnInit {
         width: '90%',
         height: '90%'
       }).afterClosed().subscribe(res => {
-        this.getAllTrainingRequestFormsList();
+        this.getAllTrainingRequestFormsList("");
       });
     } else if (action == 'new') {
       this.dialog.open(TrainingRequestFormComponent, {
@@ -55,7 +61,7 @@ export class TrainingRequestDashboardComponent implements OnInit {
         width: '90%',
         height: '90%'
       }).afterClosed().subscribe(res => {
-        this.getAllTrainingRequestFormsList();
+        this.getAllTrainingRequestFormsList("");
       });
     } else if (action == 'approve') {
       this.trainingRequestApprovedOrNot(rowId, true);
@@ -77,10 +83,10 @@ export class TrainingRequestDashboardComponent implements OnInit {
             })
             .subscribe((Response) => {
               if (Response['d']) {
-                this.getAllTrainingRequestFormsList();
+                this.getAllTrainingRequestFormsList("");
                 this.openSnackBar("נשמר בהצלחה");
               } else {
-                this.getAllTrainingRequestFormsList();
+                this.getAllTrainingRequestFormsList("");
                 this.openSnackBar("תקלה! לא נשמר");
               }
             });
@@ -103,9 +109,12 @@ export class TrainingRequestDashboardComponent implements OnInit {
     });
   }
 
-  getAllTrainingRequestFormsList() {
+  getAllTrainingRequestFormsList(approved) {
     this.http
-      .post(environment.url + "GetAllTrainingRequestFormsList", {})
+      .post(environment.url + "GetAllTrainingRequestFormsList", {
+        _id: this.ID,
+        _approved: approved
+      })
       .subscribe((Response) => {
         this.trainingRequests = new MatTableDataSource<any>(Response["d"]);
         this.trainingRequests.paginator = this.paginator;

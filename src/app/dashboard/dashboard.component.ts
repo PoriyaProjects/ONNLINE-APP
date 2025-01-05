@@ -3,7 +3,7 @@ import { Router } from "@angular/router";
 import { HttpClient } from "@angular/common/http";
 import { environment } from "src/environments/environment";
 const { GoogleGenerativeAI } = require("@google/generative-ai");
-const genAI = new GoogleGenerativeAI("AIzaSyBl1kxtY4EvoOmG1Xm-bOj82hqFb-amw50");
+const genAI = new GoogleGenerativeAI("AIzaSyDUXWL5SIEjh4K016nbWQp0yPfRp1KS2eY");
 const MODEL_NAME = "gemini-1.5-flash";
 
 export interface DepartRefoee {
