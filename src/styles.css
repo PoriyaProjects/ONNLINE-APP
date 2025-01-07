@@ -2280,3 +2280,28 @@ button:hover{
     -ms-transform: translateY(-1.4em) scale(1.15) !important;
     width: 133.3333333333%;
 }
+.my-row{
+    display: block;
+    width: 100%;
+    float: right;
+}
+
+.my-row>.m-col-md-6{
+    display: block;
+    width: 50%;
+    float: right;
+}
+
+.my-row>.m-col-md-3{
+    display: block;
+    width: 25%;
+    float: right;
+}
+.full-container .google-chart:not(.not-auto) {
+    width: auto !important;
+    height: auto !important;
+}
+/*
+13950
+90489061
+*/
