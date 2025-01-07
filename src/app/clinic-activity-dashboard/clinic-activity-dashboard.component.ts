@@ -202,10 +202,10 @@ export class ClinicActivityDashboardComponent implements OnInit {
   ) {
     mMenuPerm.setRoutName("clinicactivitydashboard");
     setTimeout(() => {
-      if (!mMenuPerm.getHasPerm()) {
-        localStorage.clear();
-        this.router.navigate(["login"]);
-      }
+      // if (!mMenuPerm.getHasPerm()) {
+      //   localStorage.clear();
+      //   this.router.navigate(["login"]);
+      // }
     }, 2000);
     this.getClinicActivityTotal();
     this.getClinicActivityMonthTotal();

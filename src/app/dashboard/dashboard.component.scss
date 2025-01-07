@@ -1,8 +1,8 @@
-.container {
+.container_Ai {
   display: flex;
   justify-content: center;
   align-items: center;
-  min-height: 100vh;
+  min-height: 54vh;
   border-radius: 8px;
   margin: 20px auto;
   background: linear-gradient(90deg, #1976d2, #f8f9fa);
@@ -734,4 +734,9 @@ body {
   h1 {
     font-size: 1.4em;
   }
+}
+
+
+.card.w-100100{
+  width: 100% !important;
 }

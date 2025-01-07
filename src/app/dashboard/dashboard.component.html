@@ -275,10 +275,24 @@
         </div>
     </div>
     <div class="col-md-6" dir="rtl">
-        <div class="container">
+        <div class="row">
+            <div class="col-3 text-right">
+                <br>
+                <div class="card w-100100">
+                    <a [href]="clinicactivitydashboard" >
+                        <div class="card-title">נתוני מרפאות</div>
+                        <div class="container-img">
+                            <img src="../../assets/images/clinic_d.PNG" alt="Shortcut Image" class="card-image">
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="container_Ai">
             <mat-card>
                 <h1 class="title">שאל את ה A.I</h1>
-                <h6>השירות אינו מעודכן בזמן אמת ואינו יכול לענות לשאלות הנוגעות באונליין או לבית החולים. התשובות ניתנות
+                <h6>השירות אינו מעודכן בזמן אמת ואינו יכול לענות לשאלות הנוגעות באונליין או לבית החולים. התשובות
+                    ניתנות
                     באופן כללי בלבד.</h6>
                 <mat-form-field class="full-width" appearance="outline">
                     <mat-label>שאלתך</mat-label>
@@ -295,22 +309,21 @@
                 </div>
             </mat-card>
         </div>
-    </div>
-    <ng-template #updateModal let-modal>
-        <div class="modal-header text-right">
-            <h4 class="modal-title text-center" id="modal-basic-title">
-                נתונים שעתיים ל- <span id="row_title"></span>
-            </h4>
-            <button type="button" class="close" aria-label="Close" (click)="modal.dismiss('Cross click')">
-                <span aria-hidden="true">&times;</span>
-            </button>
-        </div>
-        <div class="modal-body">
-            <div class="row"></div>
-        </div>
-        <div class="modal-footer text-left">
-            <button type="button" class="btn btn-outline-dark" (click)="modal.dismiss('Cross click')">
-                סגור
-            </button>
-        </div>
-    </ng-template>
+        <ng-template #updateModal let-modal>
+            <div class="modal-header text-right">
+                <h4 class="modal-title text-center" id="modal-basic-title">
+                    נתונים שעתיים ל- <span id="row_title"></span>
+                </h4>
+                <button type="button" class="close" aria-label="Close" (click)="modal.dismiss('Cross click')">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="row"></div>
+            </div>
+            <div class="modal-footer text-left">
+                <button type="button" class="btn btn-outline-dark" (click)="modal.dismiss('Cross click')">
+                    סגור
+                </button>
+            </div>
+        </ng-template>
