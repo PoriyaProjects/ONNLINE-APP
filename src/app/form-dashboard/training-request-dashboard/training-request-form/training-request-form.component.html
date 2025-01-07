@@ -74,7 +74,12 @@
             <div class="col-lg-2 col-md-4 col-sm-6">
               <mat-form-field>
                 <mat-label>שם ההשתלמות ומטרתה</mat-label>
-                <input matInput formControlName="Request_Name" />
+                <!-- <input matInput formControlName="Request_Name" /> -->
+                <mat-select formControlName="Request_Name">
+                  <mat-option *ngFor="let plan of plansList" [value]="plan.Name">
+                    {{ plan.Name }}
+                  </mat-option>
+                </mat-select>
               </mat-form-field>
             </div>
             <div class="col-lg-2 col-md-4 col-sm-6">
@@ -126,7 +131,7 @@
               <input type="file" id="fileInput" (change)="onFileSelected($event)" class="file-input"
                 accept="application/pdf, image/*" />
               <button mat-raised-button class="fileOpenBtn" color="primary" (click)="file_in_new_window_base64()"
-                *ngIf="Training_Request_Forms_B.get('Program_Attached').value != undefined">
+                *ngIf="Training_Request_Forms_B.get('Program_Attached').value != undefined && Training_Request_Forms_B.get('Program_Attached').value != ''">
                 <span class="material-icons"> zoom_in </span>
               </button>
             </div>
@@ -232,6 +237,13 @@
             </section>
           </div>
           <div class="section" *ngIf="Training_Request_Forms_D.get('OutSource_Company').value">
+            <label for="fileInput" class="file-label">תוכנית מצורפת(תמונה/PDF)</label>
+            <input type="file" id="fileInput2" (change)="onFileSelected2($event)" class="file-input"
+              accept="application/pdf, image/*" />
+            <button mat-raised-button class="fileOpenBtn" color="primary" (click)="file_in_new_window_base642()"
+              *ngIf="Training_Request_Forms_D.get('OutSource_Company_Plan').value != undefined && Training_Request_Forms_D.get('OutSource_Company_Plan').value != ''">
+              <span class="material-icons"> zoom_in </span>
+            </button>
             <mat-form-field>
               <mat-label>סכום המימון</mat-label>
               <input matInput formControlName="Budget_Amount" />

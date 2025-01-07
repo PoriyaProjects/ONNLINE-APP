@@ -134,6 +134,7 @@ import { FolderTreeComponent } from '../dashboard/folder-tree/folder-tree.compon
 import { DepartmentsWhatsappManagementComponent } from '../whatsapp-departments-dashboard/departments-whatsapp-management/departments-whatsapp-management.component';
 import { TrainingRequestDashboardComponent } from '../form-dashboard/training-request-dashboard/training-request-dashboard.component';
 import { TrainingRequestFormComponent } from '../form-dashboard/training-request-dashboard/training-request-form/training-request-form.component';
+import { TrainingRequestDialogComponent } from '../form-dashboard/training-request-dashboard/training-request-dialog/training-request-dialog.component';
 
 
 const routes: Routes = [
@@ -274,6 +275,7 @@ const routes: Routes = [
   { path: "departments-whatsapp-management", component: DepartmentsWhatsappManagementComponent } ,
   { path: "training-request-dashboard", component: TrainingRequestDashboardComponent } ,
   { path: "training-request-form", component: TrainingRequestFormComponent } ,
+  { path: "training-request-dialog", component: TrainingRequestDialogComponent } ,
   { path: "LabTests", component: LabTestsComponent }
   
 

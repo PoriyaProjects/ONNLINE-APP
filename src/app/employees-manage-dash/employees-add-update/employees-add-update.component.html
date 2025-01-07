@@ -1,4 +1,4 @@
-<form dir="rtl" autocomplete="off">
+<form dir="rtl" autocomplete="off" *ngIf="employeePersonalDetails != undefined">
     <div class="row">
         <mat-card class="text-center">
             <button mat-mini-fab color="warn" class="close" matTooltip="סגירה" aria-label="Close" mat-dialog-close>
@@ -16,9 +16,8 @@
                         עם מערכות מידע</label>
                 </div>
                 <div class="col-2">
-                    <img [src]="employeePersonalDetails.controls['ProfilePicture'].value" width="100"
-                        alt="תמונת עובד" (click)="togglePreview()" style="cursor: pointer;border-radius: 40%"
-                        height="100" />
+                    <img [src]="employeePersonalDetails.controls['ProfilePicture'].value" width="100" alt="תמונת עובד"
+                        (click)="togglePreview()" style="cursor: pointer;border-radius: 40%" height="100" />
                     <div *ngIf="previewImage" class="image-preview-overlay" (click)="closePreview()">
                         <img [src]="previewImage" alt="Full Image" class="full-image" />
                     </div>

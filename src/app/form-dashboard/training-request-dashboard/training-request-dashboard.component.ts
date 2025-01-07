@@ -8,6 +8,7 @@ import { MatPaginator } from '@angular/material/paginator';
 import { MatSort } from '@angular/material/sort';
 import { MatSnackBar, MatSnackBarHorizontalPosition, MatSnackBarVerticalPosition } from '@angular/material/snack-bar';
 import { ConfirmationDialogService } from 'src/app/confirmation-dialog/confirmation-dialog.service';
+import { TrainingRequestDialogComponent } from './training-request-dialog/training-request-dialog.component';
 
 @Component({
   selector: 'app-training-request-dashboard',
@@ -26,6 +27,7 @@ export class TrainingRequestDashboardComponent implements OnInit {
   ID = localStorage.getItem('ID').toLowerCase();
   horizontalPosition: MatSnackBarHorizontalPosition = "start";
   verticalPosition: MatSnackBarVerticalPosition = "bottom";
+  trainingPlans: any[] = []; // Replace with a real data source
 
   constructor(
     public dialog: MatDialog,
@@ -41,6 +43,26 @@ export class TrainingRequestDashboardComponent implements OnInit {
   applyFilter(event: Event) {
     const filterValue = (event.target as HTMLInputElement).value;
     this.trainingRequests.filter = filterValue.trim().toLowerCase();
+  }
+
+  openDialog(trainingPlan?: any) {
+    const dialogRef = this.dialog.open(TrainingRequestDialogComponent, {
+      width: '90%',
+      height: '90%',
+      data: trainingPlan, // Pass data for editing
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        if (trainingPlan) {
+          // Update existing plan
+          Object.assign(trainingPlan, result);
+        } else {
+          // Add new plan
+          this.trainingPlans.push(result);
+        }
+      }
+    });
   }
 
   handleAction(rowId: string, action: string): void {

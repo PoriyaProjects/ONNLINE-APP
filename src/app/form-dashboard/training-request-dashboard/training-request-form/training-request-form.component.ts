@@ -45,6 +45,7 @@ export class TrainingRequestFormComponent implements OnInit {
       { OptionID: 0, OptionText: '' }
     ]
   };
+  plansList = [];
   requested: boolean = false;
   horizontalPosition: MatSnackBarHorizontalPosition = "start";
   verticalPosition: MatSnackBarVerticalPosition = "bottom";
@@ -67,6 +68,7 @@ export class TrainingRequestFormComponent implements OnInit {
       this.getPersonDetails();
     }
     this.getAllTrainingRequestQuestionsList();
+    this.getTrainingRequestPlansList();
   }
 
   buildFormGroup() {
@@ -111,6 +113,7 @@ export class TrainingRequestFormComponent implements OnInit {
         this.Training_Request_Forms_D = this.fb.group({
           Hospital_Budget: new FormControl(Training_Request_Forms_D?.Hospital_Budget == 'True' ? true : false, null),
           OutSource_Company: new FormControl(Training_Request_Forms_D?.OutSource_Company == 'True' ? true : false, null),
+          OutSource_Company_Plan: new FormControl(Training_Request_Forms_D?.OutSource_Company_Plan, null),
           Budget_Amount: new FormControl(Training_Request_Forms_D?.Budget_Amount, [Validators.pattern(/^\d+(\.\d{1,2})?$/)]),
           Extracurricular_Work: new FormControl(Training_Request_Forms_D?.Extracurricular_Work == 'True' ? true : false, null),
           Extracurricular_Work_Number: new FormControl(Training_Request_Forms_D?.Extracurricular_Work_Number, null),
@@ -161,6 +164,22 @@ export class TrainingRequestFormComponent implements OnInit {
     }
   }
 
+  onFileSelected2(event: Event) {
+    const input = event.target as HTMLInputElement;
+
+    if (input.files && input.files.length > 0) {
+      const file = input.files[0];
+      const reader = new FileReader();
+
+      // Convert file to Base64 string
+      reader.onload = () => {
+        const base64String = reader.result as string;
+        this.Training_Request_Forms_D.get('OutSource_Company_Plan')?.setValue(base64String);
+      };
+      reader.readAsDataURL(file);
+    }
+  }
+
   openFile(base64String: string) {
     // Extract the MIME type from the Base64 string
     const mimeType = base64String.match(/data:(.*?);base64,/)?.[1] || 'application/octet-stream';
@@ -178,6 +197,15 @@ export class TrainingRequestFormComponent implements OnInit {
 
   file_in_new_window_base64() {
     const base64String = this.Training_Request_Forms_B.get('Program_Attached')?.value;
+    if (base64String) {
+      this.openFile(base64String);
+    } else {
+      console.error('No file available to open');
+    }
+  }
+
+  file_in_new_window_base642() {
+    const base64String = this.Training_Request_Forms_D.get('OutSource_Company_Plan')?.value;
     if (base64String) {
       this.openFile(base64String);
     } else {
@@ -244,6 +272,14 @@ export class TrainingRequestFormComponent implements OnInit {
       horizontalPosition: this.horizontalPosition,
       verticalPosition: this.verticalPosition,
     });
+  }
+
+  getTrainingRequestPlansList() {
+    this.http
+      .post(environment.url + "GetTrainingRequestPlansList", {})
+      .subscribe((Response) => {
+        this.plansList = Response["d"];
+      });
   }
 
   getAllTrainingRequestQuestionsList() {
