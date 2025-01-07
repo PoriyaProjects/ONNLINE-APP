@@ -5,19 +5,23 @@
         <div class="card-header">
             <div class="search-section">
                 <input type="text" placeholder="חפש..." class="search-bar" (keyup)="applyFilter($event)" />
-                <button mat-mini-fab (click)="getAllTrainingRequestFormsList('1')">
-                    אישורים
+                <button mat-mini-fab (click)="getAllTrainingRequestFormsList('1')" matTooltip="אישורים">
+                    <mat-icon>check</mat-icon>
                 </button>
-                <button mat-mini-fab (click)="getAllTrainingRequestFormsList('0')">
-                    סירובים
+                <button mat-mini-fab (click)="getAllTrainingRequestFormsList('0')" matTooltip="סירובים">
+                    <mat-icon>cancel</mat-icon>
                 </button>
                 <button mat-mini-fab (click)="getAllTrainingRequestFormsList('')">
                     הכל
                 </button>
             </div>
             <div class="new-section">
-                <button mat-fab aria-label="Example icon button with add icon" (click)="handleAction('', 'new')">
+                <button mat-fab aria-label="Example icon button with add icon" (click)="handleAction('', 'new')"
+                    matTooltip="בקשה חדשה">
                     <mat-icon>add</mat-icon>
+                </button>
+                <button mat-fab (click)="openDialog()" matTooltip="השתלמויות" *ngIf="UserName == 'adahabre'">
+                    <mat-icon>view_list</mat-icon>
                 </button>
             </div>
         </div>
@@ -68,15 +72,15 @@
             <ng-container matColumnDef="Actions">
                 <th mat-header-cell *matHeaderCellDef mat-sort-header> פעולות </th>
                 <td mat-cell *matCellDef="let element"> <button mat-mini-fab style="background-color: #6fd7d7;"
-                        (click)="handleAction(element.Row_ID, 'view')">
+                        (click)="handleAction(element.Row_ID, 'view')" matTooltip="הצג">
                         <mat-icon>remove_red_eye</mat-icon>
                     </button>
                     <button mat-mini-fab style="background-color: #6cdda4;"
-                        (click)="handleAction(element.Row_ID, 'approve')">
+                        (click)="handleAction(element.Row_ID, 'approve')" matTooltip="אשר">
                         <mat-icon>check</mat-icon>
                     </button>
                     <button mat-mini-fab style="background-color: #f14c7a;"
-                        (click)="handleAction(element.Row_ID, 'reject')">
+                        (click)="handleAction(element.Row_ID, 'reject')" matTooltip="סרב">
                         <mat-icon>cancel</mat-icon>
                     </button>
                 </td>

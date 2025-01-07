@@ -78,112 +78,97 @@ export class EmployeesAddUpdateComponent implements OnInit {
   ngOnInit(): void {
     // this.getImageUrl(this.employee.EmployeeID);
     this.getEmployeesList();
-    let RankID = this.employee.RankID;
-    let DepartnentCode = this.employee.DepartnentCode;
-    let WorkPlaceID = this.employee.WorkPlaceID;
-    let functionDefault = this.employee.FunctionID;
-    let employeeBlossomSektorID = this.employee.EmployeeBlossomSektorID;
-    if (this.managerType == "stager") {
-      RankID = "031";
-      DepartnentCode = "00079150";
-      employeeBlossomSektorID = "1";
-      WorkPlaceID = "1";
-      functionDefault = "18";
-    } else if (this.managerType == "research") {
-      WorkPlaceID = "2";
-    }
 
     this.getSektorsList();
-    this.employeePersonalDetails = this.formBuilder.group({
-      RowID: new FormControl(this.employee.RowID, null),
-      EmployeeID: new FormControl(this.employee.EmployeeID, [Validators.required, Validators.pattern("[0-9 ]{1,9}")]),
-      FirstName: new FormControl(this.employee.FirstName, [Validators.required]),
-      FirstNameEng: new FormControl(this.employee.FirstNameEng, null),
-      LastName: new FormControl(this.employee.LastName, [Validators.required]),
-      LastNameEng: new FormControl(this.employee.LastNameEng, null),
-      Gender: new FormControl(this.employee.Gender, [Validators.required]),
-      KupaID: new FormControl(this.employee.KupaID, null),
-      Email: new FormControl(this.employee.Email, null),
-      PersonalEmail: new FormControl(this.employee.PersonalEmail, null),
-      CellNumber: new FormControl(this.employee.CellNumber, [Validators.required, Validators.pattern("[0-9 ]{10}")]),
-      Address: new FormControl(this.employee.Address, null),
-      ProfilePicture: new FormControl(this.employee.ProfilePicture, null),
-      // Image: new FormControl(`http://srv-apps-prod/Images/${this.employee.EmployeeID}.jpg`, null),
-      // KupaID: new FormControl(this.employee.KupaID, null),
-      // KupaName: new FormControl(this.employee.KupaName, null),
-      DateOfBirth: new FormControl(this.employee.DateOfBirth, [Validators.required]),
-    });
-    // if(this.employee.GymParticipation.StartGymDate == null) this.employee.GymParticipation.StartGymDate = '2023-07-27'
-    // if(this.employee.GymParticipation.EndGymDate == null) this.employee.GymParticipation.EndGymDate = '2023-07-27'
-    this.gymDetails = this.formBuilder.group({
-      GymParticipant: new FormControl(this.employee.GymParticipation.Row_ID != null, null),
-      Row_ID: new FormControl(this.employee.GymParticipation.Row_ID, null),
-      PaymentDate: new FormControl(this.employee.GymParticipation.PaymentDate, null),
-      Payment: new FormControl(this.employee.GymParticipation.Payment, null),
-      StartGymDate: new FormControl(this.employee.GymParticipation.StartGymDate, null),
-      EndGymDate: new FormControl(this.employee.GymParticipation.EndGymDate, null),
-      MedicalProblems: new FormControl(this.employee.GymParticipation.MedicalProblems, null),
-      MedicalApproval: new FormControl(this.employee.GymParticipation.MedicalApproval.toLowerCase() == 'true', null),
-      PausePeriod: new FormControl(this.employee.GymParticipation.PausePeriod.toLowerCase() == 'true', null),
-      PausePeriodExplain: new FormControl(this.employee.GymParticipation.PausePeriodExplain, null),
-      EmployeesID: new FormControl(this.employee.GymParticipation.EmployeesID === null ? this.employee.RowID : null, null),
-      Status: new FormControl(this.employee.GymParticipation.Status, null),
-    });
-    this.employeeWorkDetails = this.formBuilder.group({
-      RowID: new FormControl(this.employee.RowID, null),
-      EmployeeIndex: new FormControl('', null),
-      StartWorkDate: new FormControl(this.employee.StartWorkDate, Validators.required),
-      EmployeeSektorID: new FormControl(this.employee.EmployeeSektorID, Validators.required),
-      EmployeeBlossomSektorID: new FormControl(employeeBlossomSektorID, Validators.required),
-      Title: new FormControl(this.employee.Title, null),
-      FunctionID: new FormControl(functionDefault, null),
-      // FunctionDescription: new FormControl(this.employee.FunctionDescription, null),
-      DepartnentCode: new FormControl(DepartnentCode, Validators.required),
-      SubDepartmentCode: new FormControl(this.employee.SubDepartmentCode, null),
-      // DepartnentDescripton: new FormControl(this.employee.DepartnentDescripton, null),
-      // JobTitleID: new FormControl('NULL', null),
-      RankID: new FormControl(RankID, null),
-      ADUserName: new FormControl('', null),
-      WorkPlaceID: new FormControl(WorkPlaceID, null),
-      EndWorkDate: new FormControl(this.employee.EndWorkDate, null),
-      DateToEndWork: new FormControl(this.employee.DateToEndWork, null),
-      CarType: new FormControl(this.employee.CarType, null),
-      CarNumber: new FormControl(this.employee.CarNumber, null),
-      CarType2: new FormControl(this.employee.CarType2, null),
-      CarNumber2: new FormControl(this.employee.CarNumber2, null),
-      Remarks: new FormControl(this.employee.Remarks, null),
-      // UpdateDate: new FormControl(this.employee.UpdateDate, null),
-      // SentToMOHDate: new FormControl(this.employee.SentToMOHDate, null),
-      DocLicence: new FormControl(this.employee.DocLicence, null),
-      DocStartExperience: new FormControl(this.employee.DocStartExperience, null),
-      InternLearnCountry: new FormControl(this.employee.InternLearnCountry, null),
-      InternLearnCountryDesc: new FormControl(this.employee.InternLearnCountryDesc, null),
-      InternUniversity: new FormControl(this.employee.InternUniversity, null),
-      StatusRow: new FormControl(this.employee.StatusRow, null),
-      ApprovedToBlossom: new FormControl(this.employee.ApprovedToBlossom, null),
-      AcceptTerms: new FormControl(this.employee.AcceptTerms, null),
-      Toranot: new FormControl(this.employee.Toranot, null),
-      ManagerID1: new FormControl({id: this.employee.ManagerID1.id, firstname: "", lastname: "", ADUserName: ""}, null),
-      ManagerID2: new FormControl({id: this.employee.ManagerID2.id, firstname: "", lastname: "", ADUserName: ""}, null),
-      JcpFromDate: new FormControl(this.employee.JcpFromDate, null),
-      JcpToDate: new FormControl(this.employee.JcpToDate, null),
-    });
-    if (this.employee.RowID == null || this.employee.StatusRow == "1") {
-      this.employeePersonalDetails.controls['FirstNameEng'].setValidators(Validators.required);
-      this.employeePersonalDetails.controls['LastNameEng'].setValidators(Validators.required);
-    }
-    this.markRequiredFields();
-    this._switchHTOK = this.employee.StatusRow;
-    this._switchBlossom = this.employee.ApprovedToBlossom;
-    this.AcceptTerms = this.employee.AcceptTerms;
+    this.getEmployeesToUpdateByID();
+    // this.employeePersonalDetails = this.formBuilder.group({
+    //   RowID: new FormControl(this.employee.RowID, null),
+    //   EmployeeID: new FormControl(this.employee.EmployeeID, [Validators.required, Validators.pattern("[0-9 ]{1,9}")]),
+    //   FirstName: new FormControl(this.employee.FirstName, [Validators.required]),
+    //   FirstNameEng: new FormControl(this.employee.FirstNameEng, null),
+    //   LastName: new FormControl(this.employee.LastName, [Validators.required]),
+    //   LastNameEng: new FormControl(this.employee.LastNameEng, null),
+    //   Gender: new FormControl(this.employee.Gender, [Validators.required]),
+    //   KupaID: new FormControl(this.employee.KupaID, null),
+    //   Email: new FormControl(this.employee.Email, null),
+    //   PersonalEmail: new FormControl(this.employee.PersonalEmail, null),
+    //   CellNumber: new FormControl(this.employee.CellNumber, [Validators.required, Validators.pattern("[0-9 ]{10}")]),
+    //   Address: new FormControl(this.employee.Address, null),
+    //   ProfilePicture: new FormControl(this.employee.ProfilePicture, null),
+    //   // Image: new FormControl(`http://srv-apps-prod/Images/${this.employee.EmployeeID}.jpg`, null),
+    //   // KupaID: new FormControl(this.employee.KupaID, null),
+    //   // KupaName: new FormControl(this.employee.KupaName, null),
+    //   DateOfBirth: new FormControl(this.employee.DateOfBirth, [Validators.required]),
+    // });
+    // // if(this.employee.GymParticipation.StartGymDate == null) this.employee.GymParticipation.StartGymDate = '2023-07-27'
+    // // if(this.employee.GymParticipation.EndGymDate == null) this.employee.GymParticipation.EndGymDate = '2023-07-27'
+    // this.gymDetails = this.formBuilder.group({
+    //   GymParticipant: new FormControl(this.employee.GymParticipation.Row_ID != null, null),
+    //   Row_ID: new FormControl(this.employee.GymParticipation.Row_ID, null),
+    //   PaymentDate: new FormControl(this.employee.GymParticipation.PaymentDate, null),
+    //   Payment: new FormControl(this.employee.GymParticipation.Payment, null),
+    //   StartGymDate: new FormControl(this.employee.GymParticipation.StartGymDate, null),
+    //   EndGymDate: new FormControl(this.employee.GymParticipation.EndGymDate, null),
+    //   MedicalProblems: new FormControl(this.employee.GymParticipation.MedicalProblems, null),
+    //   MedicalApproval: new FormControl(this.employee.GymParticipation.MedicalApproval.toLowerCase() == 'true', null),
+    //   PausePeriod: new FormControl(this.employee.GymParticipation.PausePeriod.toLowerCase() == 'true', null),
+    //   PausePeriodExplain: new FormControl(this.employee.GymParticipation.PausePeriodExplain, null),
+    //   EmployeesID: new FormControl(this.employee.GymParticipation.EmployeesID === null ? this.employee.RowID : null, null),
+    //   Status: new FormControl(this.employee.GymParticipation.Status, null),
+    // });
+    // this.employeeWorkDetails = this.formBuilder.group({
+    //   RowID: new FormControl(this.employee.RowID, null),
+    //   EmployeeIndex: new FormControl('', null),
+    //   StartWorkDate: new FormControl(this.employee.StartWorkDate, Validators.required),
+    //   EmployeeSektorID: new FormControl(this.employee.EmployeeSektorID, Validators.required),
+    //   EmployeeBlossomSektorID: new FormControl(employeeBlossomSektorID, Validators.required),
+    //   Title: new FormControl(this.employee.Title, null),
+    //   FunctionID: new FormControl(functionDefault, null),
+    //   // FunctionDescription: new FormControl(this.employee.FunctionDescription, null),
+    //   DepartnentCode: new FormControl(DepartnentCode, Validators.required),
+    //   SubDepartmentCode: new FormControl(this.employee.SubDepartmentCode, null),
+    //   // DepartnentDescripton: new FormControl(this.employee.DepartnentDescripton, null),
+    //   // JobTitleID: new FormControl('NULL', null),
+    //   RankID: new FormControl(RankID, null),
+    //   ADUserName: new FormControl('', null),
+    //   WorkPlaceID: new FormControl(WorkPlaceID, null),
+    //   EndWorkDate: new FormControl(this.employee.EndWorkDate, null),
+    //   DateToEndWork: new FormControl(this.employee.DateToEndWork, null),
+    //   CarType: new FormControl(this.employee.CarType, null),
+    //   CarNumber: new FormControl(this.employee.CarNumber, null),
+    //   CarType2: new FormControl(this.employee.CarType2, null),
+    //   CarNumber2: new FormControl(this.employee.CarNumber2, null),
+    //   Remarks: new FormControl(this.employee.Remarks, null),
+    //   // UpdateDate: new FormControl(this.employee.UpdateDate, null),
+    //   // SentToMOHDate: new FormControl(this.employee.SentToMOHDate, null),
+    //   DocLicence: new FormControl(this.employee.DocLicence, null),
+    //   DocStartExperience: new FormControl(this.employee.DocStartExperience, null),
+    //   InternLearnCountry: new FormControl(this.employee.InternLearnCountry, null),
+    //   InternLearnCountryDesc: new FormControl(this.employee.InternLearnCountryDesc, null),
+    //   InternUniversity: new FormControl(this.employee.InternUniversity, null),
+    //   StatusRow: new FormControl(this.employee.StatusRow, null),
+    //   ApprovedToBlossom: new FormControl(this.employee.ApprovedToBlossom, null),
+    //   AcceptTerms: new FormControl(this.employee.AcceptTerms, null),
+    //   Toranot: new FormControl(this.employee.Toranot, null),
+    //   ManagerID1: new FormControl({ id: this.employee.ManagerID1.id, firstname: "", lastname: "", ADUserName: "" }, null),
+    //   ManagerID2: new FormControl({ id: this.employee.ManagerID2.id, firstname: "", lastname: "", ADUserName: "" }, null),
+    //   JcpFromDate: new FormControl(this.employee.JcpFromDate, null),
+    //   JcpToDate: new FormControl(this.employee.JcpToDate, null),
+    // });
+    // if (this.employee.RowID == null || this.employee.StatusRow == "1") {
+    //   this.employeePersonalDetails.controls['FirstNameEng'].setValidators(Validators.required);
+    //   this.employeePersonalDetails.controls['LastNameEng'].setValidators(Validators.required);
+    // }
+    // this.markRequiredFields();
+    // this._switchHTOK = this.employee.StatusRow;
+    // this._switchBlossom = this.employee.ApprovedToBlossom;
+    // this.AcceptTerms = this.employee.AcceptTerms;
 
-    this.sektorSelection(this.employee.EmployeeSektorID);
     this.getEmployeesFunctionsList();
     this.getRanksList();
     this.getWorkPlacesList();
     this.getEmployeesBlossomSektorList();
     this.getEmployeeDepartmentList();
-    this.getUserName(this.employee.Email);
 
     this.filteredOptions = this.manfilter.valueChanges
       .pipe(
@@ -221,6 +206,114 @@ export class EmployeesAddUpdateComponent implements OnInit {
 
   displayFn2(user: any): string {
     return user && user.firstname ? user.firstname : "";
+  }
+
+  getEmployeesToUpdateByID() {
+    this.http
+      .post(this.Api + "GetEmployeesToUpdateByID", {
+        _empId: this.employee.EmployeeID
+      })
+      .subscribe((Response) => {
+        this.employee = Response["d"][0];
+        let RankID = this.employee.RankID;
+        let DepartnentCode = this.employee.DepartnentCode;
+        let WorkPlaceID = this.employee.WorkPlaceID;
+        let functionDefault = this.employee.FunctionID;
+        let employeeBlossomSektorID = this.employee.EmployeeBlossomSektorID;
+        if (this.managerType == "stager") {
+          RankID = "031";
+          DepartnentCode = "00079150";
+          employeeBlossomSektorID = "1";
+          WorkPlaceID = "1";
+          functionDefault = "18";
+        } else if (this.managerType == "research") {
+          WorkPlaceID = "2";
+        }
+        this.employeePersonalDetails = this.formBuilder.group({
+          RowID: new FormControl(this.employee.RowID, null),
+          EmployeeID: new FormControl(this.employee.EmployeeID, [Validators.required, Validators.pattern("[0-9 ]{1,9}")]),
+          FirstName: new FormControl(this.employee.FirstName, [Validators.required]),
+          FirstNameEng: new FormControl(this.employee.FirstNameEng, null),
+          LastName: new FormControl(this.employee.LastName, [Validators.required]),
+          LastNameEng: new FormControl(this.employee.LastNameEng, null),
+          Gender: new FormControl(this.employee.Gender, [Validators.required]),
+          KupaID: new FormControl(this.employee.KupaID, null),
+          Email: new FormControl(this.employee.Email, null),
+          PersonalEmail: new FormControl(this.employee.PersonalEmail, null),
+          CellNumber: new FormControl(this.employee.CellNumber, [Validators.required, Validators.pattern("[0-9 ]{10}")]),
+          Address: new FormControl(this.employee.Address, null),
+          ProfilePicture: new FormControl(this.employee.ProfilePicture, null),
+          // Image: new FormControl(`http://srv-apps-prod/Images/${this.employee.EmployeeID}.jpg`, null),
+          // KupaID: new FormControl(this.employee.KupaID, null),
+          // KupaName: new FormControl(this.employee.KupaName, null),
+          DateOfBirth: new FormControl(this.employee.DateOfBirth, [Validators.required]),
+        });
+        // if(this.employee.GymParticipation.StartGymDate == null) this.employee.GymParticipation.StartGymDate = '2023-07-27'
+        // if(this.employee.GymParticipation.EndGymDate == null) this.employee.GymParticipation.EndGymDate = '2023-07-27'
+        this.gymDetails = this.formBuilder.group({
+          GymParticipant: new FormControl(this.employee.GymParticipation.Row_ID != null, null),
+          Row_ID: new FormControl(this.employee.GymParticipation.Row_ID, null),
+          PaymentDate: new FormControl(this.employee.GymParticipation.PaymentDate, null),
+          Payment: new FormControl(this.employee.GymParticipation.Payment, null),
+          StartGymDate: new FormControl(this.employee.GymParticipation.StartGymDate, null),
+          EndGymDate: new FormControl(this.employee.GymParticipation.EndGymDate, null),
+          MedicalProblems: new FormControl(this.employee.GymParticipation.MedicalProblems, null),
+          MedicalApproval: new FormControl(this.employee.GymParticipation.MedicalApproval.toLowerCase() == 'true', null),
+          PausePeriod: new FormControl(this.employee.GymParticipation.PausePeriod.toLowerCase() == 'true', null),
+          PausePeriodExplain: new FormControl(this.employee.GymParticipation.PausePeriodExplain, null),
+          EmployeesID: new FormControl(this.employee.GymParticipation.EmployeesID === null ? this.employee.RowID : null, null),
+          Status: new FormControl(this.employee.GymParticipation.Status, null),
+        });
+        this.employeeWorkDetails = this.formBuilder.group({
+          RowID: new FormControl(this.employee.RowID, null),
+          EmployeeIndex: new FormControl('', null),
+          StartWorkDate: new FormControl(this.employee.StartWorkDate, Validators.required),
+          EmployeeSektorID: new FormControl(this.employee.EmployeeSektorID, Validators.required),
+          EmployeeBlossomSektorID: new FormControl(employeeBlossomSektorID, Validators.required),
+          Title: new FormControl(this.employee.Title, null),
+          FunctionID: new FormControl(functionDefault, null),
+          // FunctionDescription: new FormControl(this.employee.FunctionDescription, null),
+          DepartnentCode: new FormControl(DepartnentCode, Validators.required),
+          SubDepartmentCode: new FormControl(this.employee.SubDepartmentCode, null),
+          // DepartnentDescripton: new FormControl(this.employee.DepartnentDescripton, null),
+          // JobTitleID: new FormControl('NULL', null),
+          RankID: new FormControl(RankID, null),
+          ADUserName: new FormControl('', null),
+          WorkPlaceID: new FormControl(WorkPlaceID, null),
+          EndWorkDate: new FormControl(this.employee.EndWorkDate, null),
+          DateToEndWork: new FormControl(this.employee.DateToEndWork, null),
+          CarType: new FormControl(this.employee.CarType, null),
+          CarNumber: new FormControl(this.employee.CarNumber, null),
+          CarType2: new FormControl(this.employee.CarType2, null),
+          CarNumber2: new FormControl(this.employee.CarNumber2, null),
+          Remarks: new FormControl(this.employee.Remarks, null),
+          // UpdateDate: new FormControl(this.employee.UpdateDate, null),
+          // SentToMOHDate: new FormControl(this.employee.SentToMOHDate, null),
+          DocLicence: new FormControl(this.employee.DocLicence, null),
+          DocStartExperience: new FormControl(this.employee.DocStartExperience, null),
+          InternLearnCountry: new FormControl(this.employee.InternLearnCountry, null),
+          InternLearnCountryDesc: new FormControl(this.employee.InternLearnCountryDesc, null),
+          InternUniversity: new FormControl(this.employee.InternUniversity, null),
+          StatusRow: new FormControl(this.employee.StatusRow, null),
+          ApprovedToBlossom: new FormControl(this.employee.ApprovedToBlossom, null),
+          AcceptTerms: new FormControl(this.employee.AcceptTerms, null),
+          Toranot: new FormControl(this.employee.Toranot, null),
+          ManagerID1: new FormControl({ id: this.employee.ManagerID1.id, firstname: "", lastname: "", ADUserName: "" }, null),
+          ManagerID2: new FormControl({ id: this.employee.ManagerID2.id, firstname: "", lastname: "", ADUserName: "" }, null),
+          JcpFromDate: new FormControl(this.employee.JcpFromDate, null),
+          JcpToDate: new FormControl(this.employee.JcpToDate, null),
+        });
+        if (this.employee.RowID == null || this.employee.StatusRow == "1") {
+          this.employeePersonalDetails.controls['FirstNameEng'].setValidators(Validators.required);
+          this.employeePersonalDetails.controls['LastNameEng'].setValidators(Validators.required);
+        }
+        this.markRequiredFields();
+        this._switchHTOK = this.employee.StatusRow;
+        this._switchBlossom = this.employee.ApprovedToBlossom;
+        this.AcceptTerms = this.employee.AcceptTerms;
+        this.sektorSelection(this.employee.EmployeeSektorID);
+        this.getUserName(this.employee.Email);
+      });
   }
 
   getEmployeesList() {
