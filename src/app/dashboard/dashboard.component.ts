@@ -19,6 +19,7 @@ export interface DepartRefoee {
     styleUrls: ["./dashboard.component.scss"],
 })
 export class DashboardComponent implements OnInit {
+    clinicactivitydashboard = "#/clinicactivitydashboard";
     folders_display = [];
     shortcuts = [];
     folders = [];

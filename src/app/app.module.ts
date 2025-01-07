@@ -121,6 +121,7 @@ import { UrgentSurgeriesComponent } from './urgent-surgeries/urgent-surgeries.co
 import { OnlineAppointmentsComponent } from './online-appointments/online-appointments.component';
 import { TreeItemComponent } from './new-header/tree-item.component';
 import localeHe from '@angular/common/locales/he';
+import {MatIconModule} from '@angular/material/icon';
 //import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 registerLocaleData(localeHe);
 import { CalendarModule, DateAdapter } from 'angular-calendar';
@@ -241,6 +242,8 @@ import { SpreadsheetsDashboardComponent } from './spreadsheets-dashboard/spreads
 import { HospitalTonnageComponent } from './hospital-bi-dashboard/hospital-tonnage/hospital-tonnage.component';
 import { FolderTreeComponent } from './dashboard/folder-tree/folder-tree.component';
 import { FeedLineComponent } from './dashboard/feed-line/feed-line.component';
+import { ClinicActivityDashboardComponent } from './clinic-activity-dashboard/clinic-activity-dashboard.component';
+import { CliniDataComponent } from './clinic-activity-dashboard/clini-data/clini-data.component';
 import { DepartmentsWhatsappManagementComponent } from './whatsapp-departments-dashboard/departments-whatsapp-management/departments-whatsapp-management.component';
 import { TrainingRequestDashboardComponent } from './form-dashboard/training-request-dashboard/training-request-dashboard.component';
 import { TrainingRequestFormComponent } from './form-dashboard/training-request-dashboard/training-request-form/training-request-form.component';
@@ -438,12 +441,15 @@ const maskConfig: Partial<IConfig> = {
     HospitalTonnageComponent,
     FolderTreeComponent,
     FeedLineComponent,
+    ClinicActivityDashboardComponent,
+    CliniDataComponent,
     DepartmentsWhatsappManagementComponent,
     TrainingRequestDashboardComponent,
     TrainingRequestFormComponent,
     TrainingRequestDialogComponent
   ],
   imports: [
+    MatIconModule,
     SpreadsheetAllModule,
     AngularEditorModule,
     JpTimeMaskModule,

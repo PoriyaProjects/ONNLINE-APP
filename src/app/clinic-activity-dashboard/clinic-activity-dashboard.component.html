@@ -1,0 +1,198 @@
+<div class="full-container">
+    <div dir="rtl" class="row">
+        <div class="wh-500px col-3 text-right">
+            <mat-card class="total-card" appearance="outlined">
+                <mat-card-header>
+                    <div mat-card-avatar>
+                        <span class="material-icons md-36">calendar_month</span>
+                    </div>
+                    <mat-card-title>פעילות מרפאות - ביקורים</mat-card-title>
+                </mat-card-header>
+                <mat-card-content>
+                    <div class="row">
+                        <div class="col-5" *ngIf="isDataLoadedClinicActivityTotalArrya">
+                            <h4>שנתי</h4>
+                            <div>
+                                <label><b>{{currentYear}}</b></label>:
+                                <span>{{ClinicActivityTotalArrya[0][0]?.TotalMovements
+                                    | number}}</span>
+                            </div>
+                            <div>
+                                <label><b>{{pevYear}}</b></label>:
+                                <span>{{ClinicActivityTotalArrya[1][0]?.TotalMovements |
+                                    number}}</span>
+                            </div>
+
+                            <div>
+                                <label><b>{{pevYear - 1}}</b></label>:
+                                <span>{{ClinicActivityTotalArrya[2][0]?.TotalMovements |
+                                    number}}</span>
+                            </div>
+                        </div>
+                        <div class="col-7" *ngIf="isDataLoadedClinicActivityTotalMonthArrya">
+                            <h4>חודש נוכחי ({{Months[currentMonth - 1]}})</h4>
+                            <div>
+                                <label><b>{{currentYear}}-{{Months[currentMonth - 1]}}</b></label>:
+                                <span>{{ClinicActivityTotalMonthArrya[0][currentMonth-1]?.TotalMovements |
+                                    number}}</span>
+                            </div>
+                            <div>
+                                <label><b>{{pevYear}}-{{Months[currentMonth - 1]}}</b></label>:
+                                <span>{{ClinicActivityTotalMonthArrya[1][currentMonth-1]?.TotalMovements |
+                                    number}}</span>
+                            </div>
+                            <div>
+                                <label><b>{{pevYear - 1}}-{{Months[currentMonth - 1]}}</b></label>:
+                                <span>{{ClinicActivityTotalMonthArrya[2][currentMonth-1]?.TotalMovements |
+                                    number}}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                </mat-card-content>
+            </mat-card>
+        </div>
+        <div class="col-5 ">
+            <div class="bg-c">
+                <google-chart [type]="chartTypeQuarterly" [data]="chartDataQuarterly" [columns]="chartColumnsQuarterly"
+                    [options]="chartOptionsQuarterly" [height]="'270px'">
+                </google-chart>
+            </div>
+        </div>
+        <div class="col-4">
+            <div class="bg-c">
+                <google-chart type="BarChart" [columns]="chartColumnsResult" [data]="chartDataResult"
+                    [options]="chartResultOptions" [height]="'270px'">
+                </google-chart>
+            </div>
+
+        </div>
+    </div>
+    <br>
+    <div class="row">
+        <!-- [columns]="chartLineColumns" -->
+        <div *ngFor="let chart of pieCharts" class="col">
+            <div class="chart-container bg-c ">
+                <h3>{{ chart.options.title }}</h3>
+                <google-chart type="PieChart" [data]="chart.data" [columns]="['קופת חולים', 'מבקרים']"
+                    [options]="chart.options" [width]="'100%'" [height]="'400px'">
+                </google-chart>
+            </div>
+        </div>
+    </div>
+    <br>
+    <div class="row">
+        <div class="col-12">
+            <!-- [columns]="chartLineColumns" -->
+            <div class="bg-c">
+                <google-chart [type]="'ComboChart'" [columns]="chartLineColumns" [data]="monthchartData" class="not-auto"
+                    [options]="monthchartOptions" [width]="'100%'" [height]="'500px'">
+                </google-chart>
+            </div>
+        </div>
+    </div>
+    <br>
+    <div dir="rtl" class="row">
+        <div class="col">
+            <div class="bg-c text-right max-height">
+
+                <mat-form-field appearance="standard" class="width-100-100 search-bar">
+                    <mat-label>חפש מרפאה</mat-label>
+                    <input class="" matInput (keyup)="applyFilter($event)" placeholder="חפש מרפאה" />
+                </mat-form-field>
+
+                <table mat-table [dataSource]="dataSource" class="mat-table width-100-100 mat-elevation-z8 " matSort>
+
+                    <!-- Clinic Activity Column -->
+                    <ng-container matColumnDef="Department">
+                        <th mat-header-cell *matHeaderCellDef mat-sort-header sticky="true"> מרפאה / מכון </th>
+                        <td mat-cell *matCellDef="let element"> {{element.Department}} </td>
+                    </ng-container>
+
+                    <!-- Total Movements Current Year Column -->
+                    <ng-container matColumnDef="TotalMovementsCurrentYear">
+                        <th mat-header-cell *matHeaderCellDef mat-sort-header sticky="true"> ביקורים {{currentYear}}
+                        </th>
+                        <td mat-cell *matCellDef="let element"> {{element.TotalMovementsCurrentYear}} </td>
+                    </ng-container>
+
+                    <!-- Total Movements Previous Year Column -->
+                    <ng-container matColumnDef="TotalMovementsPreviousYear">
+                        <th mat-header-cell *matHeaderCellDef mat-sort-header sticky="true"> ביקורים {{pevYear}} </th>
+                        <td mat-cell *matCellDef="let element"> {{element.TotalMovementsPreviousYear}} </td>
+                    </ng-container>
+
+                    <!-- Total Movements Previous Year Column -->
+                    <ng-container matColumnDef="TotalMovementsPrevious2Year">
+                        <th mat-header-cell *matHeaderCellDef mat-sort-header sticky="true"> ביקורים {{pevYear - 1}}
+                        </th>
+                        <td mat-cell *matCellDef="let element"> {{element.TotalMovementsPrevious2Year}} </td>
+                    </ng-container>
+
+                    <!-- Avg Patient Age Current Year Column -->
+                    <ng-container matColumnDef="ApprovedCurrentYear">
+                        <th mat-header-cell *matHeaderCellDef mat-sort-header sticky="true"> שירותים {{currentYear}}
+                        </th>
+                        <td mat-cell *matCellDef="let element"> {{element.ApprovedCurrentYear}} </td>
+                    </ng-container>
+
+                    <!-- Avg Patient Age Previous Year Column -->
+                    <ng-container matColumnDef="ApprovedPreviousYear">
+                        <th mat-header-cell *matHeaderCellDef mat-sort-header sticky="true"> שירותים {{pevYear}} </th>
+                        <td mat-cell *matCellDef="let element"> {{element.ApprovedPreviousYear}} </td>
+                    </ng-container>
+                    <!-- Avg Patient Age Previous Year Column -->
+                    <ng-container matColumnDef="ApprovedPrevious2Year">
+                        <th mat-header-cell *matHeaderCellDef mat-sort-header sticky="true"> שירותים {{pevYear - 1}}
+                        </th>
+                        <td mat-cell *matCellDef="let element"> {{element.ApprovedPrevious2Year}} </td>
+                    </ng-container>
+
+                    <!-- Male Count Current Year Column -->
+                    <ng-container matColumnDef="NoShowCurrentYear">
+                        <th mat-header-cell *matHeaderCellDef mat-sort-header sticky="true"> אין הופעה {{currentYear}}
+                        </th>
+                        <td mat-cell *matCellDef="let element"> {{element.NoShowCurrentYear}} </td>
+                    </ng-container>
+
+                    <!-- Male Count Previous Year Column -->
+                    <ng-container matColumnDef="NoShowPreviousYear">
+                        <th mat-header-cell *matHeaderCellDef mat-sort-header sticky="true"> אין הופעה {{pevYear}} </th>
+                        <td mat-cell *matCellDef="let element"> {{element.NoShowPreviousYear}} </td>
+                    </ng-container>
+
+                    <!-- Male Count Previous Year Column -->
+                    <ng-container matColumnDef="NoShowPrevious2Year">
+                        <th mat-header-cell *matHeaderCellDef mat-sort-header sticky="true"> אין הופעה {{pevYear - 1}}
+                        </th>
+                        <td mat-cell *matCellDef="let element"> {{element.NoShowPrevious2Year}} </td>
+                    </ng-container>
+
+                    <!-- Female Count Current Year Column -->
+                    <ng-container matColumnDef="CanceledCurrentYear">
+                        <th mat-header-cell *matHeaderCellDef mat-sort-header sticky="true"> ביטולים {{currentYear}}
+                        </th>
+                        <td mat-cell *matCellDef="let element"> {{element.CanceledCurrentYear}} </td>
+                    </ng-container>
+
+                    <!-- Female Count Previous Year Column -->
+                    <ng-container matColumnDef="CanceledPreviousYear">
+                        <th mat-header-cell *matHeaderCellDef mat-sort-header sticky="true"> ביטולים {{pevYear}} </th>
+                        <td mat-cell *matCellDef="let element"> {{element.CanceledPreviousYear}} </td>
+                    </ng-container>
+                    <!-- Female Count Previous Year Column -->
+                    <ng-container matColumnDef="CanceledPrevious2Year">
+                        <th mat-header-cell *matHeaderCellDef mat-sort-header sticky="true"> ביטולים {{pevYear - 1}}
+                        </th>
+                        <td mat-cell *matCellDef="let element"> {{element.CanceledPrevious2Year}} </td>
+                    </ng-container>
+
+                    <!-- Table Header and Rows -->
+                    <tr mat-header-row *matHeaderRowDef="displayedColumns;  sticky: true" class="sticky-header"></tr>
+                    <tr mat-row *matRowDef="let row; columns: displayedColumns;" (click)="onRowClick(row)"></tr>
+                </table>
+            </div>
+        </div>
+    </div>
+    <br><br><br><br><br>
+</div>

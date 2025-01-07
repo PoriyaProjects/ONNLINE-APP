@@ -131,6 +131,7 @@ import { SpreadsheetComponent } from '../spreadsheets-dashboard/spreadsheet/spre
 import { SpreadsheetsDashboardComponent } from '../spreadsheets-dashboard/spreadsheets-dashboard.component';
 import { HospitalTonnageComponent } from '../hospital-bi-dashboard/hospital-tonnage/hospital-tonnage.component';
 import { FolderTreeComponent } from '../dashboard/folder-tree/folder-tree.component';
+import { ClinicActivityDashboardComponent } from '../clinic-activity-dashboard/clinic-activity-dashboard.component';
 import { DepartmentsWhatsappManagementComponent } from '../whatsapp-departments-dashboard/departments-whatsapp-management/departments-whatsapp-management.component';
 import { TrainingRequestDashboardComponent } from '../form-dashboard/training-request-dashboard/training-request-dashboard.component';
 import { TrainingRequestFormComponent } from '../form-dashboard/training-request-dashboard/training-request-form/training-request-form.component';
@@ -272,6 +273,8 @@ const routes: Routes = [
   { path: "spreadsheets-dashboard", component: SpreadsheetsDashboardComponent } ,
   { path: "hospital-tonnage", component: HospitalTonnageComponent } ,
   { path: "folder-tree", component: FolderTreeComponent } ,
+  { path: "LabTests", component: LabTestsComponent },
+  { path: "clinicactivitydashboard", component: ClinicActivityDashboardComponent },
   { path: "departments-whatsapp-management", component: DepartmentsWhatsappManagementComponent } ,
   { path: "training-request-dashboard", component: TrainingRequestDashboardComponent } ,
   { path: "training-request-form", component: TrainingRequestFormComponent } ,
