@@ -244,6 +244,10 @@ import { FolderTreeComponent } from './dashboard/folder-tree/folder-tree.compone
 import { FeedLineComponent } from './dashboard/feed-line/feed-line.component';
 import { ClinicActivityDashboardComponent } from './clinic-activity-dashboard/clinic-activity-dashboard.component';
 import { CliniDataComponent } from './clinic-activity-dashboard/clini-data/clini-data.component';
+import { DepartmentsWhatsappManagementComponent } from './whatsapp-departments-dashboard/departments-whatsapp-management/departments-whatsapp-management.component';
+import { TrainingRequestDashboardComponent } from './form-dashboard/training-request-dashboard/training-request-dashboard.component';
+import { TrainingRequestFormComponent } from './form-dashboard/training-request-dashboard/training-request-form/training-request-form.component';
+import { TrainingRequestDialogComponent } from './form-dashboard/training-request-dashboard/training-request-dialog/training-request-dialog.component';
 
 
 const maskConfig: Partial<IConfig> = {
@@ -438,7 +442,11 @@ const maskConfig: Partial<IConfig> = {
     FolderTreeComponent,
     FeedLineComponent,
     ClinicActivityDashboardComponent,
-    CliniDataComponent
+    CliniDataComponent,
+    DepartmentsWhatsappManagementComponent,
+    TrainingRequestDashboardComponent,
+    TrainingRequestFormComponent,
+    TrainingRequestDialogComponent
   ],
   imports: [
     MatIconModule,

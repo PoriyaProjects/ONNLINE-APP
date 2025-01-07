@@ -37,7 +37,7 @@ export class LoginComponent implements OnInit {
     ngOnInit() {
         if (localStorage.getItem('LastRout') == '') localStorage.setItem('LastRout', 'login');
         // Apply styles to the global <body> tag
-        document.body.style.background = 'linear-gradient(to bottom right, #4a90e2, #9013fe)';
+        document.body.style.background = 'linear-gradient(to right bottom, rgb(224 229 235), rgb(28 30 33))';
         document.body.style.height = '100vh';
         document.body.style.margin = '0';
         document.body.style.display = 'flex';
@@ -81,13 +81,17 @@ export class LoginComponent implements OnInit {
                     setTimeout(() => {
                         this.mMenuPerm.setUserName(this.user_details.ADUserName);
                         localStorage.setItem("loginState", "true");
+                        localStorage.setItem("ID", this.user_details.ID);
                         localStorage.setItem("Depart", this.user_details.DepartmentDescripton);
+                        localStorage.setItem("FunctionDescription", this.user_details.FunctionDescription);
+                        localStorage.setItem("FirstName", this.user_details.FirstName);
+                        localStorage.setItem("LastName", this.user_details.LastName);
                         localStorage.setItem(
                             "loginUserName",
                             this.user_details.ADUserName
                         );
                         this.router.navigate(["dashboard"]);
-                    }, 8000);
+                    }, 7000);
                 }
             },
             (error) => {
@@ -120,7 +124,8 @@ export class LoginComponent implements OnInit {
                                 "loginUserName",
                                 this.username
                             );
-                            this.router.navigate(["dashboard"]);
+                            this.getUserDetailsFromDBByUserName(this.username);
+                            // this.router.navigate(["dashboard"]);
                         } else {
                             localStorage.setItem("loginState", "false");
                             localStorage.setItem("loginUserName", "");

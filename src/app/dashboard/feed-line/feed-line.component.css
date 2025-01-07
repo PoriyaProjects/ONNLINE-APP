@@ -1,3 +1,47 @@
+/* Style for WebKit Browsers */
+.feed-item::-webkit-scrollbar {
+  width: 10px;
+  /* Scrollbar width */
+}
+
+.feed-item::-webkit-scrollbar-track {
+  background: #f0f0f0;
+  /* Scrollbar track background */
+  border-radius: 8px;
+}
+
+.feed-item::-webkit-scrollbar-thumb {
+  background: #888;
+  /* Scrollbar thumb color */
+  border-radius: 8px;
+  border: 2px solid #f0f0f0;
+  /* Adds space around the thumb */
+}
+
+.feed-item::-webkit-scrollbar-thumb:hover {
+  background: #555;
+  /* Thumb color on hover */
+}
+
+/* Style for Firefox */
+.feed-item {
+  scrollbar-color: #dbd5d5 #f0f0f0;
+  /* Thumb color and track color */
+  scrollbar-width: thin;
+  /* Thin scrollbar */
+}
+
+.user-header {
+  width: 100%;
+  font-size: 20px;
+  font-weight: bold;
+  margin: 0 0 10px 0;
+  text-align: right;
+  color: #333;
+  border-bottom: 2px solid #ddd;
+  padding-bottom: 5px;
+}
+
 .feed-line-container {
   width: 94%;
   overflow: hidden;
@@ -7,24 +51,26 @@
 }
 
 .feed-line {
-  display: inline-block;
-  white-space: nowrap;
+  display: flex;
+  height: 80px;
+  white-space: break-spaces;
   animation: scroll-right 40s linear infinite;
 }
 
 .feed-item {
-  display: inline-block;
-  margin-right: 50px;
+  margin-right: 100px;
   font-size: 16px;
   color: #333;
-  /* border-style: ridge; */
-  /* padding: 10px; */
-  /* border-radius: 8px; */
+  width: 300px;
+  text-align: right;
+  overflow-y: auto;
+  padding-left: 40px;
 }
 
 .feed-time {
   color: #000000;
   font-size: 14px;
+  border-bottom: 1px solid darkgrey;
 }
 
 .feed-content {

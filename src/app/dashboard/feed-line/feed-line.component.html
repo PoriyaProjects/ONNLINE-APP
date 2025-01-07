@@ -1,7 +1,10 @@
 <div class="feed-line-container">
+  <h2 class="user-header">מבזקים</h2>
   <div class="feed-line">
     <div class="feed-item" *ngFor="let item of feedItems">
-      <span class="feed-time">{{ item.RecordDate | date: 'MM-dd-yyyy HH:mm' }}</span>
+      <div class="row">
+        <span class="feed-time">{{ item.RecordDate }}</span>
+      </div>
       <textarea [value]="item.Description" (blur)="updateFeedLineContent($event.target.value, item.Row_ID)"
         *ngIf="user_name == 'adahabre' || user_name == 'sbarniv' || user_name == 'talontimss'"></textarea>
       <span class="feed-content" *ngIf="user_name != 'adahabre' && user_name != 'sbarniv' && user_name != 'talontimss'"

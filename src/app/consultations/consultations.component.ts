@@ -238,6 +238,7 @@ export class ConsultationsComponent implements OnInit {
     selectedIndexTab: number;
     fliterVal = "";
     _selectedYear = 0;
+    loading: boolean;
     typeOf = -1;
     patientNumber: string;
     caseNumber: string;
@@ -802,6 +803,7 @@ DepartsDataRequestAvgAllNotPara
         this.getWorkers(val);
     }
     getReport($event: any): void {
+        this.loading = true;
         if (this.startdateVal && this.enddateVal)
             this.getDataFormServer(
                 this.startdateVal,
@@ -1182,6 +1184,7 @@ DepartsDataRequestAvgAllNotPara
             })
             .subscribe(
                 (Response) => {
+                    this.loading = false;
                     this.TABLE_DATA.splice(0, this.TABLE_DATA.length);
                     var json = JSON.parse(Response["d"]);
                     ////debugger;

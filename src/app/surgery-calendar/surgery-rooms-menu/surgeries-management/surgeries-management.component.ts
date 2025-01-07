@@ -4,7 +4,8 @@ import {
   TemplateRef,
   OnInit,
   ElementRef,
-  Inject
+  Inject,
+  OnDestroy
 } from '@angular/core';
 import {
   isSameDay,
@@ -52,7 +53,7 @@ registerLocaleData(localeHe);
   templateUrl: './surgeries-management.component.html',
   styleUrls: ['./surgeries-management.component.css']
 })
-export class SurgeriesManagementComponent {
+export class SurgeriesManagementComponent implements OnInit, OnDestroy {
 
   pdfString: string;
   selectable = true;
@@ -87,6 +88,7 @@ export class SurgeriesManagementComponent {
   surgerySurf: boolean = false;
   loadingDataServer: boolean;
   IfPlannedSurgeries: string = "original"
+  private intervalId: any;
 
 
   constructor(
@@ -107,12 +109,23 @@ export class SurgeriesManagementComponent {
       // let day = this.datePipe.transform(this.viewDate, 'dd');
       this.specificRooms = this.data.room.SurgeryRooms.filter(x => x.SurgeryRoom.includes(this.data.room.type));
       this.getPatientsQueues();
+      // Start the interval when the component initializes
+      this.intervalId = setInterval(() => {
+        this.getPatientsQueues();
+      }, 120000); // 60000ms = 1 minute
     }
     this.setView(CalendarView.Day);
   }
 
   setView(view: CalendarView) {
     this.view = view;
+  }
+
+  ngOnDestroy(): void {
+    // Clear the interval when the component is destroyed
+    if (this.intervalId) {
+      clearInterval(this.intervalId);
+    }
   }
 
   dayClicked({ date, events }: { date: Date; events: CalendarEvent[] }, event): void {
@@ -162,14 +175,15 @@ export class SurgeriesManagementComponent {
         let dialogRef = this.dialog.open(ManageSingleSurgeryComponent, {
           data: {
             event: event,
-            action: action
+            action: action,
+            timeOpened: this.date
           },
           width: '80%',
           height: '80%',
           disableClose: true
         });
         dialogRef.afterClosed().subscribe(res => {
-          if (res != "") this.getPatientsQueues();
+          this.getPatientsQueues();
         })
       }
     }

@@ -124,6 +124,10 @@ import { TreeItemDialogComponent } from "./new-header/tree-item-dialog/tree-item
 import { HospitalTonnageComponent } from "./hospital-bi-dashboard/hospital-tonnage/hospital-tonnage.component";
 import { FolderTreeComponent } from "./dashboard/folder-tree/folder-tree.component";
 import { ClinicActivityDashboardComponent } from "./clinic-activity-dashboard/clinic-activity-dashboard.component";
+import { DepartmentsWhatsappManagementComponent } from "./whatsapp-departments-dashboard/departments-whatsapp-management/departments-whatsapp-management.component";
+import { TrainingRequestDashboardComponent } from "./form-dashboard/training-request-dashboard/training-request-dashboard.component";
+import { TrainingRequestFormComponent } from "./form-dashboard/training-request-dashboard/training-request-form/training-request-form.component";
+import { TrainingRequestDialogComponent } from "./form-dashboard/training-request-dashboard/training-request-dialog/training-request-dialog.component";
 
 
 const routes: Routes = [ 
@@ -272,7 +276,12 @@ const routes: Routes = [
     { path: "hospital-tonnage", component: HospitalTonnageComponent },
     { path: "folder-tree", component: FolderTreeComponent },
     { path: "LabTests", component: LabTestsComponent },
-    { path: "clinicactivitydashboard", component: ClinicActivityDashboardComponent }
+    { path: "clinicactivitydashboard", component: ClinicActivityDashboardComponent },
+    { path: "departments-whatsapp-management", component: DepartmentsWhatsappManagementComponent },
+    { path: "training-request-dashboard", component: TrainingRequestDashboardComponent },
+    { path: "training-request-form", component: TrainingRequestFormComponent },
+    { path: "training-request-dialog", component: TrainingRequestDialogComponent },
+    { path: "LabTests", component: LabTestsComponent }
 
 
 ];

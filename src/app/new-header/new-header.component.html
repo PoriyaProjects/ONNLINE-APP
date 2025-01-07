@@ -3,19 +3,20 @@
         <i class="material-icons closeMe"> close </i>
         <i class="material-icons open"> menu </i>
     </button>
-    
-        <div dir="rtl" class="text-right" id="app-menu">
-            <ul class="navbar-nav mr-auto">
-                <tree-item [data]="Links"></tree-item>
-                <li class="nav-item">
-                    <button class="full-width clearCach" mat-raised-button (click)="logout($event)">
-                        Logout
-                    </button>
-                </li>
-            </ul>
-        </div>
-        
+
+    <div dir="rtl" class="text-right" id="app-menu">
+        <mat-spinner *ngIf="headerLoad"></mat-spinner>
+        <ul class="navbar-nav mr-auto">
+            <tree-item [data]="Links"></tree-item>
+            <li class="nav-item">
+                <button class="full-width clearCach" mat-raised-button (click)="logout($event)">
+                    Logout
+                </button>
+            </li>
+        </ul>
+    </div>
+
     <div id="logo" routerLink="dashboard">
-        <img alt="צפון" src="assets/images/logo.png"/>
+        <img alt="צפון" src="assets/images/logo.png" />
     </div>
 </nav>

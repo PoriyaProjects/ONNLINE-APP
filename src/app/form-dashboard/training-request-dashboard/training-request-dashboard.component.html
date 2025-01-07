@@ -1,0 +1,96 @@
+<h2 class="page-title text-center">{{UserName}} - בקשות השתלמות </h2>
+<div class="dashboard-container">
+    <!-- <h1>בקשות השתלמות</h1> -->
+    <div class="card-table">
+        <div class="card-header">
+            <div class="search-section">
+                <input type="text" placeholder="חפש..." class="search-bar" (keyup)="applyFilter($event)" />
+                <button mat-mini-fab (click)="getAllTrainingRequestFormsList('1')" matTooltip="אישורים">
+                    <mat-icon>check</mat-icon>
+                </button>
+                <button mat-mini-fab (click)="getAllTrainingRequestFormsList('0')" matTooltip="סירובים">
+                    <mat-icon>cancel</mat-icon>
+                </button>
+                <button mat-mini-fab (click)="getAllTrainingRequestFormsList('')">
+                    הכל
+                </button>
+            </div>
+            <div class="new-section">
+                <button mat-fab aria-label="Example icon button with add icon" (click)="handleAction('', 'new')"
+                    matTooltip="בקשה חדשה">
+                    <mat-icon>add</mat-icon>
+                </button>
+                <button mat-fab (click)="openDialog()" matTooltip="השתלמויות" *ngIf="UserName == 'adahabre'">
+                    <mat-icon>view_list</mat-icon>
+                </button>
+            </div>
+        </div>
+        <table mat-table [dataSource]="trainingRequests" matSort class="mat-elevation-z8"
+            style="width: 100%;margin-top: 30px;">
+
+            <ng-container matColumnDef="Row_ID">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header> מזהה </th>
+                <td mat-cell *matCellDef="let element"> {{ element.Row_ID }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="Form_Fill_Date">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header> תאריך יצירה </th>
+                <td mat-cell *matCellDef="let element"> {{ element.Form_Fill_Date }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="First_Name">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header> שם פרטי </th>
+                <td mat-cell *matCellDef="let element"> {{ element.First_Name }} </td>
+            </ng-container>
+
+            <ng-container matColumnDef="Family_Name">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header> שם משפחה </th>
+                <td mat-cell *matCellDef="let element"> {{ element.Family_Name }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="Passport_ID">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header> מספר זהות </th>
+                <td mat-cell *matCellDef="let element"> {{ element.Passport_ID }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="Address">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header> כתובת </th>
+                <td mat-cell *matCellDef="let element"> {{ element.Address }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="Phone_Number">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header> מספר טלפון </th>
+                <td mat-cell *matCellDef="let element">
+                    {{ element.Phone_Number }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="Department">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header> תפקיד/מחלקה </th>
+                <td mat-cell *matCellDef="let element"> {{ element.Function_Department }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="Actions">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header> פעולות </th>
+                <td mat-cell *matCellDef="let element"> <button mat-mini-fab style="background-color: #6fd7d7;"
+                        (click)="handleAction(element.Row_ID, 'view')" matTooltip="הצג">
+                        <mat-icon>remove_red_eye</mat-icon>
+                    </button>
+                    <button mat-mini-fab style="background-color: #6cdda4;"
+                        (click)="handleAction(element.Row_ID, 'approve')" matTooltip="אשר">
+                        <mat-icon>check</mat-icon>
+                    </button>
+                    <button mat-mini-fab style="background-color: #f14c7a;"
+                        (click)="handleAction(element.Row_ID, 'reject')" matTooltip="סרב">
+                        <mat-icon>cancel</mat-icon>
+                    </button>
+                </td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+            <tr mat-row *matRowDef="let row; columns: displayedColumns;"
+                [ngStyle]="{ 'background-color': row.Approved == 'True' ? '#9ff99f' : row.Approved == 'False' ? '#ffa5a5' : ''}">
+            </tr>
+        </table>
+        <mat-paginator [pageSizeOptions]="[10,20,35,50]" showFirstLastButtons></mat-paginator>
+    </div>
+</div>

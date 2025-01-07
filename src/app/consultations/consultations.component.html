@@ -148,6 +148,7 @@
         </div>
     </div>
 </div>
+<mat-progress-bar mode="indeterminate" *ngIf="loading"></mat-progress-bar>
 <mat-tab-group mat-align-tabs="end" (selectedTabChange)="onTabChanged($event)">
     <mat-tab label="נתונים בטבלה">
         <div class="container-fluid pb-60">

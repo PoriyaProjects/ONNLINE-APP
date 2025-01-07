@@ -17,18 +17,19 @@
 <div class="login-form" *ngIf="user_details.ADUserName == undefined">
   <mat-card class="card form">
     <mat-card-header>
-      <mat-card-title>Login</mat-card-title>
+      <mat-card-title>כניסה</mat-card-title>
     </mat-card-header>
+    <hr>
     <mat-card-content>
       <form class="form">
         <div class="full-width">
           <mat-form-field class="full-width">
-            <input (keydown.enter)="login()" autocomplete="off" matInput placeholder="Username" [(ngModel)]="username"
-              name="username" required>
+            <input (keydown.enter)="login()" autocomplete="off" matInput placeholder="שם משתמש" [(ngModel)]="username"
+              name="שם משתמש" required>
           </mat-form-field>
           <mat-form-field class="full-width">
-            <input (keydown.enter)="login()" autocomplete="off" matInput placeholder="Password" [(ngModel)]="password"
-              [type]="hide ? 'password' : 'text'" name="password" required>
+            <input (keydown.enter)="login()" autocomplete="off" matInput placeholder="סיסמה" [(ngModel)]="password"
+              [type]="hide ? 'password' : 'text'" name="סיסמה" required>
             <mat-icon matSuffix class="my-icon" (mousedown)="hidePassword()" (touchstart)="hidePassword()"
               (touchend)="hidePassword()" (mouseup)="hidePassword()">visibility</mat-icon>
           </mat-form-field>
@@ -36,7 +37,8 @@
       </form>
     </mat-card-content>
     <mat-card-actions>
-      <button class="full-width" mat-raised-button (click)="login()" color="primary">Login</button>
+      <button class="full-width" mat-raised-button (click)="login()"
+        style="background-color: #4e76e7;color: #ffffff;font-weight: bold;">בצע</button>
     </mat-card-actions>
   </mat-card>
 </div>
