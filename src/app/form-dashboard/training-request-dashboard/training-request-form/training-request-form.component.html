@@ -268,6 +268,14 @@
           </div>
           <hr>
           <div class="section">
+            <section class="example-section">
+              <p><mat-checkbox formControlName="Galilean_Partnership"><span class="checkbox-label">שותפות
+                    גלילית</span></mat-checkbox>
+              </p>
+            </section>
+          </div>
+          <hr>
+          <div class="section">
             <mat-label>{{ Health_Corporation_Options.QuestionText }}</mat-label>
             <mat-select formControlName="Health_Corporation" class="multi-select" [compareWith]="compareFn"
               (selectionChange)="healtCorporationChoose(1, $event)" multiple>
