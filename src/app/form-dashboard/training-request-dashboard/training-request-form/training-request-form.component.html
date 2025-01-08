@@ -75,7 +75,7 @@
               <mat-form-field>
                 <mat-label>שם ההשתלמות ומטרתה</mat-label>
                 <!-- <input matInput formControlName="Request_Name" /> -->
-                <mat-select formControlName="Request_Name">
+                <mat-select formControlName="Request_Name" (selectionChange)="checkPlanAvailability()">
                   <mat-option *ngFor="let plan of plansList" [value]="plan.Name">
                     {{ plan.Name }}
                   </mat-option>

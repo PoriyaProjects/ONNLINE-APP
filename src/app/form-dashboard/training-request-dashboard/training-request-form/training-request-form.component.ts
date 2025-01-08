@@ -213,6 +213,23 @@ export class TrainingRequestFormComponent implements OnInit {
     }
   }
 
+  checkPlanAvailability() {
+    let plan_selected = this.Training_Request_Forms_B.controls['Request_Name'].value;
+    let plan_list = this.plansList.filter(x => x.Name == plan_selected)[0];
+    let date_today: any = new Date();
+    date_today = this.datePipe.transform(date_today, 'yyyy-MM-dd');
+    console.log(date_today);
+    console.log(plan_list);
+    // Calculate the difference in days (avoiding date string manipulation)
+    const differenceInDays = Math.floor((Date.parse(date_today) - Date.parse(plan_list.Plan_Date)) / (1000 * 60 * 60 * 24));
+
+    if (differenceInDays > -14) {
+      alert("אין אפשרות להגיש לתוכנית זו, \nתוכנית זו תתקיים ב: " + plan_list.Plan_Date + "");
+      this.Training_Request_Forms_B.controls['Request_Name'].setValue('');
+      this.Training_Request_Forms_B.controls['Date_Start'].setValue('');
+    } else this.Training_Request_Forms_B.controls['Date_Start'].setValue(plan_list.Plan_Date);
+  }
+
   Training_Out_Check() {
     if (this.Training_Request_Forms_B.controls['Training_Out'].value) this.Training_Request_Forms_B.controls['Education_Fee'].disable();
     else this.Training_Request_Forms_B.controls['Education_Fee'].enable();

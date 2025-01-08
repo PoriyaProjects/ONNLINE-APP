@@ -1144,6 +1144,7 @@ DepartsDataRequestAvgAllNotPara
     }
     fileName = 'consultations.xlsx';
     exportexcel(): void {
+        this.getDataFormServer(this.startdateVal, this.enddateVal, 0, 0, this.fliterVal, this.departsName, this.workersName, this.requestdepartsName);
         setTimeout(() => {
             /* table id is passed over here */
             let element = document.getElementById('excel-table');
@@ -1157,19 +1158,7 @@ DepartsDataRequestAvgAllNotPara
             XLSX.writeFile(wb, this.fileName);
         }, 1000);
     }
-    public getDataFormServer(
-        _startDate: string,
-        _endDate: string,
-        _pageIndex: number,
-        _pageSize: number,
-        _filterVal: string,
-        _Depart: string,
-        _Workers: string,
-        _Request: string
-    ) {
-        //;
-        //////debugger;
-        $("#loader").removeClass("d-none");
+    public getDataFormServer(_startDate, _endDate, _pageIndex, _pageSize, _filterVal, _Depart, _Workers, _Request) {
         this.http
             .post(environment.url + "GetAllConsultations", {
                 _fromDate: _startDate,
@@ -1185,119 +1174,116 @@ DepartsDataRequestAvgAllNotPara
             .subscribe(
                 (Response) => {
                     this.loading = false;
-                    this.TABLE_DATA.splice(0, this.TABLE_DATA.length);
-                    var json = JSON.parse(Response["d"]);
-                    ////debugger;
-                    this.Departs = JSON.parse(json["Departs"]);
-                    this.MulBarsRequestDepart = JSON.parse(
-                        json["MulBarsRequestDepart"]
-                    );
-                    this.MulBarsRequestDepartTotalRows = JSON.parse(
-                        json["MulBarsRequestDepartTotalRows"]
-                    );
-                    this.MulBarsRequestDepartAvgTime = JSON.parse(
-                        json["MulBarsRequestDepartAvgTime"]
-                    );
-                    this.MulBarsRequestDepartAll = JSON.parse(
-                        json["MulBarsRequestDepartAll"]
-                    );
-                    this.MulBarsRequestDepartTotalRowsAll = JSON.parse(
-                        json["MulBarsRequestDepartTotalRowsAll"]
-                    );
-                    this.MulBarsRequestDepartAvgTimeAll = JSON.parse(
-                        json["MulBarsRequestDepartAvgTimeAll"]
-                    );
-                    this.MulBarsDoingDepart = JSON.parse(
-                        json["MulBarsDoingDepart"]
-                    );
-                    this.MulBarsDoingDepartAvgTime = JSON.parse(
-                        json["MulBarsDoingDepartAvgTime"]
-                    );
-                    this.MulBarsRequestDepartNotPara = JSON.parse(
-                        json["MulBarsRequestDepartNotPara"]
-                    );
-                    this.MulBarsRequestDepartTotalRowsNotPara = JSON.parse(
-                        json["MulBarsRequestDepartTotalRowsNotPara"]
-                    );
-                    this.MulBarsRequestDepartAvgTimeNotPara = JSON.parse(
-                        json["MulBarsRequestDepartAvgTimeNotPara"]
-                    );
-                    this.MulBarsRequestDepartAvgTimeAllNotPara = JSON.parse(
-                        json["MulBarsRequestDepartAvgTimeAllNotPara"]
-                    );
-                    this.MulBarsRequestDepartTotalRowsAllNotPara = JSON.parse(
-                        json["MulBarsRequestDepartTotalRowsAllNotPara"]
-                    );
-                    this.MulBarsRequestDepartAllNotPara = JSON.parse(
-                        json["MulBarsRequestDepartAllNotPara"]
-                    );
-                    this.MulBarsDoingDepartTotalRows = JSON.parse(
-                        json["MulBarsDoingDepartTotalRows"]
-                    );
-                    this.MulBarsDoingDepartAll = JSON.parse(
-                        json["MulBarsDoingDepartAll"]
-                    );
-                    this.MulBarsDoingDepartAvgTimeAll = JSON.parse(
-                        json["MulBarsDoingDepartAvgTimeAll"]
-                    );
-                    this.MulBarsDoingDepartTotalRowsAll = JSON.parse(
-                        json["MulBarsDoingDepartTotalRowsAll"]
-                    );
+                    this.TABLE_DATA = Response["d"];
+                    // var json = JSON.parse(Response["d"]);
+                    // this.Departs = JSON.parse(json["Departs"]);
+                    // this.MulBarsRequestDepart = JSON.parse(
+                    //     json["MulBarsRequestDepart"]
+                    // );
+                    // this.MulBarsRequestDepartTotalRows = JSON.parse(
+                    //     json["MulBarsRequestDepartTotalRows"]
+                    // );
+                    // this.MulBarsRequestDepartAvgTime = JSON.parse(
+                    //     json["MulBarsRequestDepartAvgTime"]
+                    // );
+                    // this.MulBarsRequestDepartAll = JSON.parse(
+                    //     json["MulBarsRequestDepartAll"]
+                    // );
+                    // this.MulBarsRequestDepartTotalRowsAll = JSON.parse(
+                    //     json["MulBarsRequestDepartTotalRowsAll"]
+                    // );
+                    // this.MulBarsRequestDepartAvgTimeAll = JSON.parse(
+                    //     json["MulBarsRequestDepartAvgTimeAll"]
+                    // );
+                    // this.MulBarsDoingDepart = JSON.parse(
+                    //     json["MulBarsDoingDepart"]
+                    // );
+                    // this.MulBarsDoingDepartAvgTime = JSON.parse(
+                    //     json["MulBarsDoingDepartAvgTime"]
+                    // );
+                    // this.MulBarsRequestDepartNotPara = JSON.parse(
+                    //     json["MulBarsRequestDepartNotPara"]
+                    // );
+                    // this.MulBarsRequestDepartTotalRowsNotPara = JSON.parse(
+                    //     json["MulBarsRequestDepartTotalRowsNotPara"]
+                    // );
+                    // this.MulBarsRequestDepartAvgTimeNotPara = JSON.parse(
+                    //     json["MulBarsRequestDepartAvgTimeNotPara"]
+                    // );
+                    // this.MulBarsRequestDepartAvgTimeAllNotPara = JSON.parse(
+                    //     json["MulBarsRequestDepartAvgTimeAllNotPara"]
+                    // );
+                    // this.MulBarsRequestDepartTotalRowsAllNotPara = JSON.parse(
+                    //     json["MulBarsRequestDepartTotalRowsAllNotPara"]
+                    // );
+                    // this.MulBarsRequestDepartAllNotPara = JSON.parse(
+                    //     json["MulBarsRequestDepartAllNotPara"]
+                    // );
+                    // this.MulBarsDoingDepartTotalRows = JSON.parse(
+                    //     json["MulBarsDoingDepartTotalRows"]
+                    // );
+                    // this.MulBarsDoingDepartAll = JSON.parse(
+                    //     json["MulBarsDoingDepartAll"]
+                    // );
+                    // this.MulBarsDoingDepartAvgTimeAll = JSON.parse(
+                    //     json["MulBarsDoingDepartAvgTimeAll"]
+                    // );
+                    // this.MulBarsDoingDepartTotalRowsAll = JSON.parse(
+                    //     json["MulBarsDoingDepartTotalRowsAll"]
+                    // );
 
-                    this.DepartsDoingTotal = JSON.parse(
-                        json["DepartsDoingTotal"]
-                    );
-                    this.WorkersDoingTotal = JSON.parse(
-                        json["WorkersDoingTotal"]
-                    );
-                    this.Workers = JSON.parse(json["Workers"]);
-                    ////debugger;
-                    //////debugger
-                    let Consultations = JSON.parse(json["aaData"]);
-                    for (var i = 0; i < Consultations.length; i++) {
-                        if (Consultations[i].MeasurementStatus != "1") {
-                            this.isShow = false;
-                        } else {
-                            this.isShow = false;
-                        }
-                        this.TABLE_DATA.push({
-                            Row_Id: Consultations[i].Row_Id,
-                            Case_Number: Consultations[i].Case_Number,
-                            Patient_Numbae: Consultations[i].Patient_Numbae,
-                            Request_Depart: Consultations[i].Request_Depart,
-                            Request_Depart_Seode:
-                                Consultations[i].Request_Depart_Seode,
-                            Doing_Depart: Consultations[i].Doing_Depart,
-                            Request_Persone_Name:
-                                Consultations[i].Request_Persone_Name,
-                            Doing_Persone_Name:
-                                Consultations[i].Doing_Persone_Name,
-                            Request_Date: Consultations[i].Request_Date,
-                            Request_Time: Consultations[i].Request_Time,
-                            Doing_Date: Consultations[i].Doing_Date,
-                            Doing_Time: Consultations[i].Doing_Time,
-                            Cancel_Date: Consultations[i].Cancel_Date,
-                            Cancel_Time: Consultations[i].Cancel_Time,
-                            Waiting_Time: Consultations[i].Waiting_Time,
-                            Case_Type: Consultations[i].Case_Type,
-                            Patient_First_Name:
-                                Consultations[i].Patient_First_Name,
-                            Patient_Last_Name:
-                                Consultations[i].Patient_Last_Name,
-                            Patient_ID: Consultations[i].Patient_ID,
-                            Patient_DOB: Consultations[i].Patient_DOB,
-                            Patient_Gender: Consultations[i].Patient_Gender,
-                            Service_Code: Consultations[i].Service_Code,
-                            Service_Name: Consultations[i].Service_Name,
-                            Hospital_Date: Consultations[i].Hospital_Date,
-                            Discharge_Date: Consultations[i].Discharge_Date,
-                            Order_Number: Consultations[i].Order_Number,
-                            Consult_Answer: Consultations[i].Consult_Answer,
-                            Age: Consultations[i].Age,
-                            Pay_Institute: Consultations[i].Pay_Institute,
-                            Release_Date: Consultations[i].Release_Date,
-                        });
-                    }
+                    // this.DepartsDoingTotal = JSON.parse(
+                    //     json["DepartsDoingTotal"]
+                    // );
+                    // this.WorkersDoingTotal = JSON.parse(
+                    //     json["WorkersDoingTotal"]
+                    // );
+                    // this.Workers = JSON.parse(json["Workers"]);
+                    // let Consultations = JSON.parse(json["aaData"]);
+                    // for (var i = 0; i < Consultations.length; i++) {
+                    //     if (Consultations[i].MeasurementStatus != "1") {
+                    //         this.isShow = false;
+                    //     } else {
+                    //         this.isShow = false;
+                    //     }
+                    //     this.TABLE_DATA.push({
+                    //         Row_Id: Consultations[i].Row_Id,
+                    //         Case_Number: Consultations[i].Case_Number,
+                    //         Patient_Numbae: Consultations[i].Patient_Numbae,
+                    //         Request_Depart: Consultations[i].Request_Depart,
+                    //         Request_Depart_Seode:
+                    //             Consultations[i].Request_Depart_Seode,
+                    //         Doing_Depart: Consultations[i].Doing_Depart,
+                    //         Request_Persone_Name:
+                    //             Consultations[i].Request_Persone_Name,
+                    //         Doing_Persone_Name:
+                    //             Consultations[i].Doing_Persone_Name,
+                    //         Request_Date: Consultations[i].Request_Date,
+                    //         Request_Time: Consultations[i].Request_Time,
+                    //         Doing_Date: Consultations[i].Doing_Date,
+                    //         Doing_Time: Consultations[i].Doing_Time,
+                    //         Cancel_Date: Consultations[i].Cancel_Date,
+                    //         Cancel_Time: Consultations[i].Cancel_Time,
+                    //         Waiting_Time: Consultations[i].Waiting_Time,
+                    //         Case_Type: Consultations[i].Case_Type,
+                    //         Patient_First_Name:
+                    //             Consultations[i].Patient_First_Name,
+                    //         Patient_Last_Name:
+                    //             Consultations[i].Patient_Last_Name,
+                    //         Patient_ID: Consultations[i].Patient_ID,
+                    //         Patient_DOB: Consultations[i].Patient_DOB,
+                    //         Patient_Gender: Consultations[i].Patient_Gender,
+                    //         Service_Code: Consultations[i].Service_Code,
+                    //         Service_Name: Consultations[i].Service_Name,
+                    //         Hospital_Date: Consultations[i].Hospital_Date,
+                    //         Discharge_Date: Consultations[i].Discharge_Date,
+                    //         Order_Number: Consultations[i].Order_Number,
+                    //         Consult_Answer: Consultations[i].Consult_Answer,
+                    //         Age: Consultations[i].Age,
+                    //         Pay_Institute: Consultations[i].Pay_Institute,
+                    //         Release_Date: Consultations[i].Release_Date,
+                    //     });
+                    // }
                     if (this.selectedIndexTab == 1) {
                         let eventIndex = {
                             index: 1,
@@ -1308,21 +1294,7 @@ DepartsDataRequestAvgAllNotPara
                         this.TABLE_DATA
                     );
                     this.dataSource.paginator = this.paginator;
-                    this.resultsLength = parseFloat(json["iTotalRecords"]);
-                    //;
-                    /* */
-                    //this.paginator. = parseFloat(json["iTotalRecords"]);
-                    //this.dataSource.sort = this.sort;
-                    // // ////
-                    setTimeout(() => {
-                        //this.dataSource.paginator = this.paginator
-                        $("#loader").addClass("d-none");
-                    });
-                    //this.dataSource.paginator = this.paginator;
-                },
-                (error) => {
-                    // // ////;
-                    $("#loader").addClass("d-none");
+                    // this.resultsLength = parseFloat(json["iTotalRecords"]);
                 }
             );
     }
