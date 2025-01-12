@@ -167,6 +167,7 @@ export class DashboardComponent implements OnInit {
             .subscribe((Response) => {
                 try {
                     this.claude_version_list = Response['d'];
+                    this.claude_version = this.claude_version_list[0];
                 } catch (error) {
                     console.log("error in claude list");
                 }
