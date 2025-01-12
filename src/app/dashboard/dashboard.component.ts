@@ -88,17 +88,9 @@ export class DashboardComponent implements OnInit {
 
     async askGemini(model) {
         this.answer = '';
-        if (this.question == '') {
-            this.answer = 'לצורך קבלת מענה, יש להזין את השאלה בשדה המיועד לכך למעלה.';
-            return;
-        }
-        // Simulate an AI response. Replace this with an actual API call to your backend/AI service.
-        let prefix = ``;
-        this.answer = await this.runChat(model, this.question);
-        // this.answer = this.sanitizer.bypassSecurityTrustHtml(this.formatAnswer(this.answer));
-        let name = this.firstName + ' ' + this.lastName;
-        let content = 'שאל: ' + this.question;
-        if (this.userName != 'adahabre') this.sendNotificationToWhatsApp(name, content);
+        let resp = await this.runChat(model, this.question);
+        this.answer = resp.text();
+        this.AskAIRequestData(this.userName, resp.modelVersion, this.question);
     }
 
     async runChat(model, question) {
@@ -107,7 +99,7 @@ export class DashboardComponent implements OnInit {
         const result = await gen_model.generateContent(question);
 
         const response = result.response;
-        return response.text();
+        return response;
     }
 
     async askClaude(model) {
@@ -132,6 +124,38 @@ export class DashboardComponent implements OnInit {
             console.error("Error invoking the model:", error);
             throw error;
         }
+    }
+
+    AskAIRequestData(user_name, model_id, prompt) {
+        this.http
+            .post(environment.url + "AskAIRequestData", {
+                user_name: user_name,
+                model_id: model_id,
+                prompt: prompt,
+            })
+            .subscribe((Response) => {
+                try {
+                    console.log("saved to db");
+                } catch (error) {
+                    console.log("error in AskAIRequestData!");
+                }
+            });
+    }
+
+    AskAIResponseData(user_name, model_id, prompt) {
+        this.http
+            .post(environment.url + "AskAIResponseData", {
+                user_name: user_name,
+                model_id: model_id,
+                prompt: prompt,
+            })
+            .subscribe((Response) => {
+                try {
+                    console.log("saved to db");
+                } catch (error) {
+                    console.log("error in AskAIRequestData!");
+                }
+            });
     }
 
     openFileInTab(link: string) {
