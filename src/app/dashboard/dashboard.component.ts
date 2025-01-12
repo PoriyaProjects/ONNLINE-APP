@@ -1,10 +1,10 @@
 import { Component, OnInit, ViewChild } from "@angular/core";
 import { Router } from "@angular/router";
-import { HttpClient } from "@angular/common/http";
+import { HttpClient, HttpHeaders } from "@angular/common/http";
 import { environment } from "src/environments/environment";
 const { GoogleGenerativeAI } = require("@google/generative-ai");
-const genAI = new GoogleGenerativeAI("AIzaSyDUXWL5SIEjh4K016nbWQp0yPfRp1KS2eY");
-const MODEL_NAME = "gemini-1.5-flash";
+import { DomSanitizer } from '@angular/platform-browser';
+
 
 export interface DepartRefoee {
     DepartName: string;
@@ -28,6 +28,8 @@ export class DashboardComponent implements OnInit {
     full_date: string;
     employee_id: string;
     ProfilePicture: string;
+    claude_version_list = [];
+    claude_version: any = '';
     birth_day_people = [];
     question: string = '';
     answer: string | null = null;
@@ -36,7 +38,11 @@ export class DashboardComponent implements OnInit {
     lastName = localStorage.getItem("LastName").toLowerCase();
     functionDescription = localStorage.getItem("FunctionDescription").toLowerCase();
     birthdayUser: boolean = false;
-    constructor(private router: Router, private http: HttpClient) { }
+    constructor(
+        private router: Router,
+        private sanitizer: DomSanitizer,
+        private http: HttpClient
+    ) { }
     today: number = Date.now();
     _dotsLoader =
         '<div class="spinner">' +
@@ -54,36 +60,85 @@ export class DashboardComponent implements OnInit {
         this.getBirthDayPeople();
         this.getShortCutsLinks();
         this.getFoldersLinks();
+        this.getAWSClaudeConfiguration();
     }
-    async askAI() {
+
+    formatAnswer(text: string): string {
+        text = text.replace(/\*\*(.+?)\*\*/g, '<b>$1</b>');
+        text = text.replace(/\n/g, '<br>');
+        return text;
+    }
+
+    chooseAiModelToAsk(model) {
+        this.claude_version = model;
+    }
+
+    get safeAnswer() {
+        return this.sanitizer.bypassSecurityTrustHtml(this.formatAnswer(this.answer));
+    }
+
+    async askModel() {
+        if (this.question == '') {
+            this.answer = 'לצורך קבלת מענה, יש להזין את השאלה בשדה המיועד לכך למעלה.';
+            return;
+        }
+        if (this.claude_version.model_identify == 'Gemeni') this.askGemini(this.claude_version);
+        else if (this.claude_version.model_identify == 'Claude') await this.askClaude(this.claude_version);
+    }
+
+    async askGemini(model) {
         this.answer = '';
         if (this.question == '') {
             this.answer = 'לצורך קבלת מענה, יש להזין את השאלה בשדה המיועד לכך למעלה.';
             return;
         }
         // Simulate an AI response. Replace this with an actual API call to your backend/AI service.
-        let prefix = `- אם שואלים מי זה אמין או אמין דחאברה, להסביר הוא היוצר שלי והוא אחד הגאונים שיש! \n
-                      - אם שואלים מי אתה, אתה מסביר שאתה הייצור של אמין דחאברה והיד ימין שלו. \n
-                      - אם שואלים אותך על אדם מסוים, לענות אולי אני מכיר אבל אני לא משת"פ \n
-                      השאלה שלי היא: \n`;
-        this.answer = await this.runChat(this.question);
+        let prefix = ``;
+        this.answer = await this.runChat(model, this.question);
+        // this.answer = this.sanitizer.bypassSecurityTrustHtml(this.formatAnswer(this.answer));
         let name = this.firstName + ' ' + this.lastName;
         let content = 'שאל: ' + this.question;
         if (this.userName != 'adahabre') this.sendNotificationToWhatsApp(name, content);
     }
-    async runChat(question) {
-        // const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-        // const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" });
-        const model = genAI.getGenerativeModel({ model: MODEL_NAME });
-        const result = await model.generateContent(question);
+
+    async runChat(model, question) {
+        const genAI = new GoogleGenerativeAI(model.aws_secret_access_key);
+        const gen_model = genAI.getGenerativeModel({ model: model.modelId });
+        const result = await gen_model.generateContent(question);
 
         const response = result.response;
         return response.text();
     }
+
+    async askClaude(model) {
+        model['prompt'] = this.question;
+        try {
+            this.http
+                .post("http://srv-apps-prod:5769/api/BedrockModel/InvokeModel", {
+                    config: model
+                })
+                .subscribe((Response) => {
+                    try {
+                        console.log(Response);
+                        this.answer = Response['Message'];
+                    } catch (error) {
+                        console.log("error in sending notification!");
+                    }
+                });
+            // let name = this.firstName + ' ' + this.lastName;
+            // let content = 'שאל: ' + prompt;
+            // if (this.userName != 'adahabre') this.sendNotificationToWhatsApp(name, content);
+        } catch (error) {
+            console.error("Error invoking the model:", error);
+            throw error;
+        }
+    }
+
     openFileInTab(link: string) {
         if (link == '') return;
         window.open(link, "_blank");
     }
+
     sendNotificationToWhatsApp(name, content) {
         this.http
             .post(environment.url + "SendNotificationToWhatsApp", {
@@ -98,12 +153,26 @@ export class DashboardComponent implements OnInit {
                 }
             });
     }
+
     userClickedProfilePicture(person) {
         console.log(person);
         let user_name = this.firstName + ' ' + this.lastName;
         let content = 'לחץ על תמונת: ' + person.FirstName + ' ' + person.LastName;
         this.sendNotificationToWhatsApp(user_name, content);
     }
+
+    getAWSClaudeConfiguration() {
+        this.http
+            .post(environment.url + "GetAWSClaudeConfiguration", {})
+            .subscribe((Response) => {
+                try {
+                    this.claude_version_list = Response['d'];
+                } catch (error) {
+                    console.log("error in claude list");
+                }
+            });
+    }
+
     getBirthDayPeople() {
         this.http
             .post(environment.url + "GetBirthDayPeople", {
@@ -117,6 +186,7 @@ export class DashboardComponent implements OnInit {
                 }
             });
     }
+
     getShortCutsLinks() {
         this.http
             .post(environment.url + "GetShortCutsLinks", {
@@ -130,6 +200,7 @@ export class DashboardComponent implements OnInit {
                 }
             });
     }
+
     getFoldersLinks() {
         this.http
             .post(environment.url + "GetFoldersLinks", {
@@ -144,9 +215,11 @@ export class DashboardComponent implements OnInit {
                 }
             });
     }
+
     openWithEdge2(link: string) {
         window.open("microsoft-edge:" + link);
     }
+
     getLoginUserDetails() {
         this.http
             .post(environment.url + "GetLoginUserDetails", {
@@ -172,10 +245,12 @@ export class DashboardComponent implements OnInit {
 
             });
     }
+
     getEmployeeImage(employee_id) {
         const img = `http://srv-apps-prod/Images/${employee_id}.jpg`;
         return img;
     }
+
     openFolder() {
         let link = "\\\\srv-apps-02\\bin2\\פרוטוקולים לטיפול אנטיביוטי אמפירי";
         window.location.href = link;

@@ -279,7 +279,7 @@
             <div class="col-3 text-right">
                 <br>
                 <div class="card w-100100">
-                    <a [href]="clinicactivitydashboard" >
+                    <a [href]="clinicactivitydashboard">
                         <div class="card-title">נתוני מרפאות</div>
                         <div class="container-img">
                             <img src="assets/images/clinic_d.PNG" alt="Shortcut Image" class="card-image">
@@ -291,19 +291,30 @@
         <div class="container_Ai">
             <mat-card>
                 <h1 class="title">שאל את ה A.I</h1>
-                <h6>השירות אינו מעודכן בזמן אמת ואינו יכול לענות לשאלות הנוגעות באונליין או לבית החולים. התשובות
+                <h6>השירות אינו מעודכן בזמן אמת ואינו יכול לענות לשאלות הנוגעות לאונליין או למרכז הרפואי צפון. התשובות
                     ניתנות
                     באופן כללי בלבד.</h6>
+                <mat-form-field class="full-width" appearance="outline">
+                    <mat-label>מודל</mat-label>
+                    <mat-select [(ngModel)]="claude_version" (selectionChange)="chooseAiModelToAsk($event.value)">
+                        <mat-option *ngFor="let ver of claude_version_list" [value]="ver">
+                            {{ ver.model_name }}
+                        </mat-option>
+                    </mat-select>
+                </mat-form-field>
                 <mat-form-field class="full-width" appearance="outline">
                     <mat-label>שאלתך</mat-label>
                     <input matInput [(ngModel)]="question" placeholder="שאלתך..." />
                 </mat-form-field>
                 <button mat-raised-button style="background-color: #1976d2;font-weight: bold;color: #ffffff;"
-                    (click)="askAI()" [disabled]="answer == ''">בצע</button>
+                    (click)="askModel()" [disabled]="answer == ''">בצע</button>
 
                 <div *ngIf="answer" class="response">
                     <h3>תשובתי:</h3>
-                    <p>{{ answer }}</p><br>
+                    <div [innerHTML]="safeAnswer"></div>
+                    <!-- <p>
+                    </p> -->
+                    <br>
                     <span>* יש להימנע מהסתמכות על מידע רפואי או סיעודי המתקבל ממקורות לא מוסמכים.
                         המלצות רפואיות וסיעודיות יש לקבל אך ורק מאנשי מקצוע מוסמכים בתחום.</span>
                 </div>
