@@ -103,18 +103,34 @@ export class DashboardComponent implements OnInit {
     }
 
     async askClaude(model) {
-        model['prompt'] = this.question;
+        let new_model = {
+            region_name: model.region_name,
+            aws_access_key_id: model.aws_access_key_id,
+            aws_secret_access_key: model.aws_secret_access_key,
+            modelId: model.modelId,
+            anthropic_version: model.anthropic_version,
+            max_tokens: model.max_tokens,
+            prompt: this.question,
+        }
         try {
             this.http
                 .post("http://srv-apps-prod:5769/api/BedrockModel/InvokeModel", {
-                    config: model
-                })
+                    config: new_model
+                },)
                 .subscribe((Response) => {
                     try {
-                        console.log(Response);
-                        this.answer = Response['Message'];
+                        if (Response && typeof Response['Responses'] === 'string') {
+                            const parsedResponse = JSON.parse(Response['Responses']);
+                            if (parsedResponse && typeof parsedResponse.text === 'string') {
+                                this.answer = parsedResponse.text;
+                            } else {
+                                console.error('Invalid response format: missing "text" property');
+                            }
+                        } else {
+                            console.error('Invalid response format: missing "Responses" property');
+                        }
                     } catch (error) {
-                        console.log("error in sending notification!");
+                        console.error('Error parsing response:', error);
                     }
                 });
             // let name = this.firstName + ' ' + this.lastName;

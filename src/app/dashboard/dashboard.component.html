@@ -303,17 +303,14 @@
                     </mat-select>
                 </mat-form-field>
                 <mat-form-field class="full-width" appearance="outline">
-                    <mat-label>שאלתך</mat-label>
+                    <mat-label>שאל</mat-label>
                     <input matInput [(ngModel)]="question" placeholder="שאלתך..." />
                 </mat-form-field>
                 <button mat-raised-button style="background-color: #1976d2;font-weight: bold;color: #ffffff;"
                     (click)="askModel()" [disabled]="answer == ''">בצע</button>
-
                 <div *ngIf="answer" class="response">
-                    <h3>תשובתי:</h3>
+                    <h3>תשובה:</h3>
                     <div [innerHTML]="safeAnswer"></div>
-                    <!-- <p>
-                    </p> -->
                     <br>
                     <span>* יש להימנע מהסתמכות על מידע רפואי או סיעודי המתקבל ממקורות לא מוסמכים.
                         המלצות רפואיות וסיעודיות יש לקבל אך ורק מאנשי מקצוע מוסמכים בתחום.</span>
