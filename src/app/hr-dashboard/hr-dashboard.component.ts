@@ -29,6 +29,8 @@ export class HrDashboardComponent implements OnInit {
   fixed_files_list = [];
   unAnsweredConversations = [];
   unAnsweredConversations_filter = [];
+  selectedFile: File | null = null;
+  base64String: string | ArrayBuffer | null = '';
   whatsAppGroup: FormGroup;
   newMessage: FormGroup;
   loadChat: boolean;
@@ -217,7 +219,8 @@ export class HrDashboardComponent implements OnInit {
       this.newMessage.controls['ServiceEmployeeIDFK'].setValue(this.user_name);
       this.http
         .post(environment.url + "SendHrWhatsAppMessageToUser", {
-          messageForm: this.newMessage.value
+          messageForm: this.newMessage.value,
+          // file: this.base64String == "" ? "" : this.base64String.toString().split(',')[1]
         })
         .subscribe((Response) => {
           if (Response["d"]) {
@@ -236,7 +239,8 @@ export class HrDashboardComponent implements OnInit {
       this.newMessage.controls['EndUserIDFK'].setValue(this.currentContact.FirstName + ' ' + this.currentContact.LastName);
       this.http
         .post(environment.url + "SendHrWhatsAppMessageToUserOneWay", {
-          messageForm: this.newMessage.value
+          messageForm: this.newMessage.value,
+          // file: this.base64String == "" ? "" : this.base64String.toString().split(',')[1]
         })
         .subscribe((Response) => {
           if (Response["d"]) {
@@ -257,6 +261,25 @@ export class HrDashboardComponent implements OnInit {
       .subscribe((Response) => {
         this.fixed_files_list = Response['d'];
       });
+  }
+
+  onFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files.length > 0) {
+      this.selectedFile = input.files[0];
+      this.convertFileToBase64(this.selectedFile);
+    }
+  }
+
+  convertFileToBase64(file: File): void {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => {
+      this.base64String = reader.result;
+    };
+    reader.onerror = (error) => {
+      console.error('Error: ', error);
+    };
   }
 
   checkIfContactHasConversation(contact) {

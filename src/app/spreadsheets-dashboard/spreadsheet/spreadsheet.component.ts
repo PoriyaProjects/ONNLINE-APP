@@ -1,8 +1,8 @@
 import { HttpClient } from '@angular/common/http';
-import { Component, Input, OnInit, ViewChild } from '@angular/core';
+import { Component, HostListener, Input, OnInit, ViewChild } from '@angular/core';
 import { MatSnackBar, MatSnackBarHorizontalPosition, MatSnackBarVerticalPosition } from '@angular/material/snack-bar';
 import { environment } from 'src/environments/environment';
-import { Spreadsheet } from '@syncfusion/ej2-angular-spreadsheet';
+import { Spreadsheet, CellSaveEventArgs } from '@syncfusion/ej2-angular-spreadsheet';
 
 @Component({
     selector: 'app-spreadsheet',
@@ -10,6 +10,12 @@ import { Spreadsheet } from '@syncfusion/ej2-angular-spreadsheet';
     styleUrls: ['./spreadsheet.component.css']
 })
 export class SpreadsheetComponent implements OnInit {
+
+    // @HostListener('paste', ['event'])
+    // @HostListener('paste', ['event']) onPaste(event: ClipboardEvent) {
+    //     console.log("trying to paste");
+    //     event.preventDefault();
+    // }
 
     horizontalPosition: MatSnackBarHorizontalPosition = "start";
     verticalPosition: MatSnackBarVerticalPosition = "bottom";
@@ -69,16 +75,24 @@ export class SpreadsheetComponent implements OnInit {
     //   }, 'B2:B100');
     // }
 
-    onCellSave(args: any): void {
+    onCellSave(args: CellSaveEventArgs): void {
         let address = '';
         let value = '';
-        if (args != null) {
+
+        if (args != null && args['requestType'] == undefined) {
             address = args.address;
             value = args.value;
-        }
-        setTimeout(() => {
-            this.saveCellTimeOut(address, value);
-        }, 1000);
+
+            // Check if the pasted value is valid (e.g., not empty)
+            if (value && value.trim() !== '') {
+                setTimeout(() => {
+                    this.saveCellTimeOut(address, value);
+                }, 1000);
+            } else {
+                // Handle invalid paste (e.g., show an error message)
+                console.warn('Invalid paste: Empty value.');
+            }
+        } else if (args != null && args['requestType'] == 'paste') alert("לא נשמר, אסור להשתמש בפעולת הדבקה.");
     }
 
     saveCellTimeOut(address, value) {
