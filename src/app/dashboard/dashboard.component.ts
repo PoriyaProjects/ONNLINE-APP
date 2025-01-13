@@ -102,25 +102,24 @@ export class DashboardComponent implements OnInit {
         return response;
     }
 
-    async askClaude(model) {
-        let new_model = {
-            region_name: model.region_name,
-            aws_access_key_id: model.aws_access_key_id,
-            aws_secret_access_key: model.aws_secret_access_key,
-            modelId: model.modelId,
-            anthropic_version: model.anthropic_version,
-            max_tokens: model.max_tokens,
-            prompt: this.question,
-        }
+    async askClaude(model: any) {
+        // Transform the payload to the new structure
+        const updatedModel = {
+            Region_Name: model.region_name,
+            AWS_Access_Key_ID: model.aws_access_key_id,
+            AWS_Secret_Access_Key: model.aws_secret_access_key,
+            ModelId: model.modelId,
+            Max_Tokens: model.max_tokens,
+            Prompt: this.question,
+        };
+    
         try {
             this.http
-                .post("http://srv-apps-prod:5769/api/BedrockModel/InvokeModel", {
-                    config: new_model
-                },)
-                .subscribe((Response) => {
+                .post("http://srv-apps-prod:5769/api/BedrockModel/InvokeModel", updatedModel)
+                .subscribe((response: any) => {
                     try {
-                        if (Response && typeof Response['Responses'] === 'string') {
-                            const parsedResponse = JSON.parse(Response['Responses']);
+                        if (response && typeof response['Responses'] === 'string') {
+                            const parsedResponse = JSON.parse(response['Responses']);
                             if (parsedResponse && typeof parsedResponse.text === 'string') {
                                 this.answer = parsedResponse.text;
                             } else {
@@ -133,9 +132,6 @@ export class DashboardComponent implements OnInit {
                         console.error('Error parsing response:', error);
                     }
                 });
-            // let name = this.firstName + ' ' + this.lastName;
-            // let content = 'שאל: ' + prompt;
-            // if (this.userName != 'adahabre') this.sendNotificationToWhatsApp(name, content);
         } catch (error) {
             console.error("Error invoking the model:", error);
             throw error;
