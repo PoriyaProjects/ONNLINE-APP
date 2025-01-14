@@ -27,6 +27,8 @@ export class WhatsappMessagesDashboardComponent implements OnInit, OnDestroy {
   typeOfScreen: boolean;
   searchEmployeesGroup: FormGroup;
   WorkPlacesList = [];
+  selectedFile: File | null = null;
+  base64String: string | ArrayBuffer | null = '';
   DepartmentsList = [];
   FunctionsList = [];
   SektorsList = [];
@@ -126,6 +128,25 @@ export class WhatsappMessagesDashboardComponent implements OnInit, OnDestroy {
       this.customForm.controls['customInputs']['controls'][index].controls.SenderIDFK.setValue(this.customForm.controls['customInputs'].value[0].SenderIDFK);
     });
   }
+  
+  onFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files.length > 0) {
+      this.selectedFile = input.files[0];
+      this.convertFileToBase64(this.selectedFile);
+    }
+  }
+
+  convertFileToBase64(file: File): void {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => {
+      this.base64String = reader.result;
+    };
+    reader.onerror = (error) => {
+      console.error('Error: ', error);
+    };
+  }
 
   setMessageTiming(index) {
     if (this.customForm.controls['customInputs']['controls'][index].controls.Message_Timing.value == null)
@@ -158,7 +179,8 @@ export class WhatsappMessagesDashboardComponent implements OnInit, OnDestroy {
         this.sending = true;
         this.http
           .post(environment.url + "Send_Custom_WhatsApp_Messages", {
-            customForm: this.customForm.value
+            customForm: this.customForm.value,
+            file: this.base64String == "" ? "" : this.base64String.toString().split(',')[1]
           })
           .subscribe((Response) => {
             if (Response["d"]) {
@@ -195,10 +217,6 @@ export class WhatsappMessagesDashboardComponent implements OnInit, OnDestroy {
       }
 
     }
-  }
-
-  onFileSelected(event: any) {
-    this.selectedFiles = event.target.files;
   }
 
   uploadFiles() {
