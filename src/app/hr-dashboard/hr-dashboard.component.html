@@ -60,9 +60,9 @@
                             <p>{{ item.File_Numeric }}. {{ item.File_Name }}</p>
                         </div>
                     </ng-template>
-                    <!-- <form #fileForm="ngForm">
-                        <input type="file" (change)="onFileSelected($event)" accept="application/pdf, image/*" />
-                    </form> -->
+                    <form #fileForm="ngForm">
+                        <input type="file" (change)="onFileSelected($event)" accept="image/*" />
+                    </form>
                     <mat-form-field class="message-input">
                         <mat-label>שליחת הודעה בתוך שיחה</mat-label>
                         <input matInput placeholder="הודעה חדשה" formControlName="Message_Text"
@@ -75,9 +75,9 @@
                 <!-- send one way message -->
                 <div class="input-container"
                     *ngIf="currentContact !== undefined && (currentContact.maxRow === '' || currentContact.maxRow === undefined)">
-                    <!-- <form #fileForm="ngForm" ng>
-                        <input type="file" (change)="onFileSelected($event)" accept="application/pdf, image/*" />
-                    </form> -->
+                    <form #fileForm="ngForm" ng>
+                        <input type="file" (change)="onFileSelected($event)" accept="image/*" />
+                    </form>
                     <mat-form-field class="message-input">
                         <mat-label>שליחת הודעה רגילה</mat-label>
                         <input matInput placeholder="הודעה חדשה" formControlName="Message_Text"

@@ -215,16 +215,17 @@ export class HrDashboardComponent implements OnInit {
   }
 
   sendMessage() {
-    if (this.newMessage.controls['Message_Text'].value.trim() !== '') {
+    if (this.newMessage.controls['Message_Text'].value.trim() !== '' || this.base64String.toString() !== '') {
       this.newMessage.controls['ServiceEmployeeIDFK'].setValue(this.user_name);
       this.http
         .post(environment.url + "SendHrWhatsAppMessageToUser", {
           messageForm: this.newMessage.value,
-          // file: this.base64String == "" ? "" : this.base64String.toString().split(',')[1]
+          file: this.base64String == "" ? "" : this.base64String.toString().split(',')[1]
         })
         .subscribe((Response) => {
           if (Response["d"]) {
-            this.currentContact.WhatsApp_Bot_Convesations.push({ Message_Text: this.newMessage.controls['Message_Text'].value, From_ServiceEmployee: 'True', IfFileMessage: 'False' });
+            if (this.selectedFile) window.location.reload();
+            this.currentContact.WhatsApp_Bot_Convesations.push({ Message_Text: this.newMessage.controls['Message_Text'].value, From_ServiceEmployee: 'True', IfFileMessage: this.selectedFile ? 'True' : 'False' });
             this.newMessage.controls['Message_Text'].setValue('');
           } else {
             alert("Error")
@@ -234,17 +235,18 @@ export class HrDashboardComponent implements OnInit {
   }
 
   sendOneWayMessage() {
-    if (this.newMessage.controls['Message_Text'].value.trim() !== '') {
+    if (this.newMessage.controls['Message_Text'].value.trim() !== '' || this.base64String.toString() !== '') {
       this.newMessage.controls['ServiceEmployeeIDFK'].setValue(this.currentContact.CellNumber);
       this.newMessage.controls['EndUserIDFK'].setValue(this.currentContact.FirstName + ' ' + this.currentContact.LastName);
       this.http
         .post(environment.url + "SendHrWhatsAppMessageToUserOneWay", {
           messageForm: this.newMessage.value,
-          // file: this.base64String == "" ? "" : this.base64String.toString().split(',')[1]
+          file: this.base64String == "" ? "" : this.base64String.toString().split(',')[1]
         })
         .subscribe((Response) => {
           if (Response["d"]) {
             alert("הודעה נשלחה בהצלחה");
+            if (this.selectedFile) window.location.reload();
             this.newMessage.controls['Message_Text'].setValue('');
           } else {
             alert("הודעה לא נשלחה עקב תקלה");
