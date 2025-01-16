@@ -4,6 +4,8 @@ import { Component, ElementRef, Inject, OnInit, ViewChild } from '@angular/core'
 import { FormArray, FormBuilder, FormControl, FormGroup } from '@angular/forms';
 import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { Observable } from 'rxjs';
+// import * as THREE from 'three';
+// import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { MatSnackBar, MatSnackBarHorizontalPosition, MatSnackBarVerticalPosition } from '@angular/material/snack-bar';
 import { environment } from 'src/environments/environment';
 
@@ -14,6 +16,14 @@ import { environment } from 'src/environments/environment';
 })
 export class BedsoreModalComponent implements OnInit {
 
+  // private scene!: THREE.Scene;
+  // private camera!: THREE.PerspectiveCamera;
+  // private renderer!: THREE.WebGLRenderer;
+  // private controls!: OrbitControls;
+  // private raycaster = new THREE.Raycaster();
+  // private mouse = new THREE.Vector2();
+  // private INTERSECTED: THREE.Object3D | null = null;
+  selectedPart: string = '';
 
   horizontalPosition: MatSnackBarHorizontalPosition = "start";
   verticalPosition: MatSnackBarVerticalPosition = "bottom";
@@ -21,6 +31,7 @@ export class BedsoreModalComponent implements OnInit {
   users = [];
   doctors = [];
   filteredDoctors: Observable<string[]>;
+  @ViewChild('hologramContainer') hologramContainer: ElementRef<HTMLInputElement>;
   @ViewChild('doctorsInput') doctorsInput: ElementRef<HTMLInputElement>;
   @ViewChild('head') head: ElementRef<HTMLInputElement>;
   @ViewChild('torso') torso: ElementRef<HTMLInputElement>;
@@ -40,6 +51,7 @@ export class BedsoreModalComponent implements OnInit {
     public dialog: MatDialogRef<BedsoreModalComponent>,
     @Inject(MAT_DIALOG_DATA) public DataDialog: any,
     private fb: FormBuilder,
+    private el: ElementRef,
     private http: HttpClient,
     private _snackBar: MatSnackBar
   ) { }
@@ -93,7 +105,103 @@ export class BedsoreModalComponent implements OnInit {
         this.onAddImage(null);
       }
     }
+    // setTimeout(() => {
+    //   this.initThreeJS();
+    //   this.addLights();
+    //   this.add3DHumanModel();
+    //   this.animate();
+    // }, 1000);
   }
+  // private initThreeJS() {
+  //   const container = this.hologramContainer.nativeElement;
+  //   this.scene = new THREE.Scene();
+  //   this.scene.background = new THREE.Color(0x222222);
+
+  //   const aspect = container.clientWidth / container.clientHeight;
+  //   this.camera = new THREE.PerspectiveCamera(50, aspect, 0.1, 1000);
+  //   this.camera.position.set(0, 2, 5);
+
+  //   this.renderer = new THREE.WebGLRenderer({ antialias: true });
+  //   this.renderer.setSize(container.clientWidth, container.clientHeight);
+  //   container.appendChild(this.renderer.domElement);
+
+  //   this.controls = new OrbitControls(this.camera, this.renderer.domElement);
+  //   this.controls.enableDamping = true;
+  // }
+
+  // private addLights() {
+  //   const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+  //   this.scene.add(ambientLight);
+
+  //   const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+  //   directionalLight.position.set(5, 10, 7.5);
+  //   this.scene.add(directionalLight);
+  // }
+
+  // private add3DHumanModel() {
+  //   const bodyMaterial = new THREE.MeshPhongMaterial({ color: 0x2194ce, transparent: true, opacity: 0.8 });
+
+  //   // Head
+  //   const head = new THREE.Mesh(new THREE.SphereGeometry(0.3), bodyMaterial);
+  //   head.position.set(0, 1.5, 0);
+  //   head.name = 'Head';
+  //   this.scene.add(head);
+
+  //   // Torso
+  //   const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.5, 1.5), bodyMaterial);
+  //   torso.position.set(0, 0.5, 0);
+  //   torso.name = 'Torso';
+  //   this.scene.add(torso);
+
+  //   // Arms
+  //   const leftArm = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 1), bodyMaterial);
+  //   leftArm.position.set(-0.7, 1, 0);
+  //   leftArm.rotation.z = Math.PI / 2;
+  //   leftArm.name = 'Left Arm';
+  //   this.scene.add(leftArm);
+
+  //   const rightArm = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 1), bodyMaterial);
+  //   rightArm.position.set(0.7, 1, 0);
+  //   rightArm.rotation.z = Math.PI / 2;
+  //   rightArm.name = 'Right Arm';
+  //   this.scene.add(rightArm);
+
+  //   // Legs
+  //   const leftLeg = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.15, 1), bodyMaterial);
+  //   leftLeg.position.set(-0.3, -0.75, 0);
+  //   leftLeg.name = 'Left Leg';
+  //   this.scene.add(leftLeg);
+
+  //   const rightLeg = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.15, 1), bodyMaterial);
+  //   rightLeg.position.set(0.3, -0.75, 0);
+  //   rightLeg.name = 'Right Leg';
+  //   this.scene.add(rightLeg);
+  // }
+
+  // private animate() {
+  //   requestAnimationFrame(() => this.animate());
+  //   this.controls.update();
+  //   this.renderer.render(this.scene, this.camera);
+  // }
+
+  // onMouseMove(event: MouseEvent) {
+  //   const rect = this.renderer.domElement.getBoundingClientRect();
+  //   this.mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+  //   this.mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+  //   this.raycaster.setFromCamera(this.mouse, this.camera);
+
+  //   const intersects = this.raycaster.intersectObjects(this.scene.children, false);
+  //   if (intersects.length > 0) {
+  //     const part = intersects[0].object.name;
+  //     if (this.INTERSECTED !== intersects[0].object) {
+  //       this.INTERSECTED = intersects[0].object;
+  //       this.selectedPart = part;
+  //     }
+  //   } else {
+  //     this.INTERSECTED = null;
+  //   }
+  // }
 
   editFormFunc(data: any) {
     this.patientGroup = this.fb.group({

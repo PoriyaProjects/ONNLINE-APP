@@ -129,7 +129,8 @@ export class HrDashboardComponent implements OnInit {
   async getHrWhatsAppUsers() {
     this.http
       .post(environment.url + "GetHrWhatsAppUsers", {
-        _user_name: this.user_name
+        _user_name: this.user_name,
+        type: "3"
       })
       .subscribe((Response) => {
         this.unAnsweredConversations = Response["d"];
@@ -220,7 +221,8 @@ export class HrDashboardComponent implements OnInit {
       this.http
         .post(environment.url + "SendHrWhatsAppMessageToUser", {
           messageForm: this.newMessage.value,
-          file: this.base64String == "" ? "" : this.base64String.toString().split(',')[1]
+          file: this.base64String == "" ? "" : this.base64String.toString().split(',')[1],
+          type: ''
         })
         .subscribe((Response) => {
           if (Response["d"]) {
@@ -241,7 +243,8 @@ export class HrDashboardComponent implements OnInit {
       this.http
         .post(environment.url + "SendHrWhatsAppMessageToUserOneWay", {
           messageForm: this.newMessage.value,
-          file: this.base64String == "" ? "" : this.base64String.toString().split(',')[1]
+          file: this.base64String == "" ? "" : this.base64String.toString().split(',')[1],
+          type: "3"
         })
         .subscribe((Response) => {
           if (Response["d"]) {

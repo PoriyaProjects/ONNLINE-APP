@@ -136,6 +136,7 @@ import { DepartmentsWhatsappManagementComponent } from '../whatsapp-departments-
 import { TrainingRequestDashboardComponent } from '../form-dashboard/training-request-dashboard/training-request-dashboard.component';
 import { TrainingRequestFormComponent } from '../form-dashboard/training-request-dashboard/training-request-form/training-request-form.component';
 import { TrainingRequestDialogComponent } from '../form-dashboard/training-request-dashboard/training-request-dialog/training-request-dialog.component';
+import { WhatsappLungCancerComponent } from '../whatsapp-messages-dashboard/whatsapp-lung-cancer/whatsapp-lung-cancer.component';
 
 
 const routes: Routes = [
@@ -279,6 +280,7 @@ const routes: Routes = [
   { path: "training-request-dashboard", component: TrainingRequestDashboardComponent } ,
   { path: "training-request-form", component: TrainingRequestFormComponent } ,
   { path: "training-request-dialog", component: TrainingRequestDialogComponent } ,
+  { path: "whatsapp-lung-cancer", component: WhatsappLungCancerComponent } ,
   { path: "LabTests", component: LabTestsComponent }
   
 

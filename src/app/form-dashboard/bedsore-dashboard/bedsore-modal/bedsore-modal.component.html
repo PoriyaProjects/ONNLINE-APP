@@ -60,6 +60,8 @@
                         </button>
                         <img [src]="image.get('Content').value" *ngIf="image.get('Content').value" height="100"
                             width="100">
+                        <!-- <div id="hologramContainer" #hologramContainer (mousemove)="onMouseMove($event)"></div>
+                        <div class="selected-part">Selected Body Part: {{ selectedPart }}</div> -->
                         <!-- <div class="body-container">
                             <div class="head" #head (click)="bodyPartClick('ראש')" matTooltip="ראש"></div>
                             <div class="torso" #torso (click)="bodyPartClick('בטן')" matTooltip="בטן"></div>

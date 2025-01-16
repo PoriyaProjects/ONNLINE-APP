@@ -5,12 +5,12 @@
   height: 100%;
 }
 
-mat-sidenav-container{
+mat-sidenav-container {
   padding-bottom: 2%;
   background-color: #efeae2;
 }
 
-.list-item :hover{
+.list-item :hover {
   cursor: pointer;
   background-color: darkgray;
 }
@@ -21,19 +21,19 @@ mat-sidenav-container{
   visibility: visible;
 }
 
-mat-list{
+mat-list {
   height: 70vh;
 }
 
-mat-icon{
+mat-icon {
   cursor: pointer;
 }
 
-.mat-card-header-text{
+.mat-card-header-text {
   text-align: center;
 }
 
-.list-of-contact{
+.list-of-contact {
   overflow-y: scroll;
   display: block;
 }
@@ -55,64 +55,61 @@ mat-icon{
   overflow-y: auto;
 }
 
-.row.chat{
+.row.chat-sent-system {
   margin: 4px 0px 4px 0px;
   padding-top: 10px;
+  justify-content: right;
+}
+
+.row.chat-sent {
+  margin: 4px 0px 4px 0px;
+  padding-top: 10px;
+  justify-content: right;
+}
+
+.row.chat-received {
+  margin: 4px 0px 4px 0px;
+  padding-top: 10px;
+  justify-content: left;
 }
 
 .message-sent {
   background-color: #dcf8c6;
-  /* align-self: flex-end; */ /* Remove or modify this line */
   border-style: outset;
-  /* margin: 4px 0px 4px 0px; */
   padding: 10px;
   border-radius: 10px;
-  /* width: 50%; */
-  /* float: left; */ /* Remove this line */
   text-align: right;
+  width: 50%;
 }
 
 .message-sent-system {
   background-color: #d1d3ce;
-  /* align-self: flex-end; */ /* Remove or modify this line */
   border-style: outset;
-  /* margin: 4px 0px 4px 0px; */
   padding: 10px;
   border-radius: 10px;
-  /* width: 50%; */
-  /* float: left; */ /* Remove this line */
   text-align: right;
+  width: 50%;
 }
 
-/* Global option */
 .mat-tooltip {
   text-align: right;
 }
 
-/* Specific class option */
 .right-align-tooltip {
   text-align: right;
 }
 
-/* img:hover{
-  display: block;
-  z-index: 10;
-  transform: scale(5);
-} */
-
 .message-received {
   background-color: #fff;
-  /* align-self: flex-start; */
   border-style: outset;
   border-radius: 10px;
-  /* margin: 4px 0px 4px 0px; */
   padding: 10px;
-  /* width: 50%; */
-  float: right;
+  /* float: right; */
   text-align: right;
+  width: 50%;
 }
 
-.send-btn{
+.send-btn {
   transform: rotate(180deg);
 }
 
@@ -128,5 +125,3 @@ mat-icon{
 .message-input {
   flex-grow: 1;
 }
-
-/* Add more styles as needed */
