@@ -248,6 +248,7 @@ import { DepartmentsWhatsappManagementComponent } from './whatsapp-departments-d
 import { TrainingRequestDashboardComponent } from './form-dashboard/training-request-dashboard/training-request-dashboard.component';
 import { TrainingRequestFormComponent } from './form-dashboard/training-request-dashboard/training-request-form/training-request-form.component';
 import { TrainingRequestDialogComponent } from './form-dashboard/training-request-dashboard/training-request-dialog/training-request-dialog.component';
+import { WhatsappLungCancerComponent } from './whatsapp-messages-dashboard/whatsapp-lung-cancer/whatsapp-lung-cancer.component';
 
 
 const maskConfig: Partial<IConfig> = {
@@ -446,7 +447,8 @@ const maskConfig: Partial<IConfig> = {
     DepartmentsWhatsappManagementComponent,
     TrainingRequestDashboardComponent,
     TrainingRequestFormComponent,
-    TrainingRequestDialogComponent
+    TrainingRequestDialogComponent,
+    WhatsappLungCancerComponent
   ],
   imports: [
     MatIconModule,
