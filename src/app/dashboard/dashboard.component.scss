@@ -737,6 +737,42 @@ body {
 }
 
 
-.card.w-100100{
+.card.w-100100 {
   width: 100% !important;
+}
+
+//  =========================  new tabs shortcuts =============================
+
+.tabs-group {
+  margin: 20px auto;
+  .row {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+  }
+
+  .col-3 {
+    flex: 0 0 25%;
+    max-width: 25%;
+    padding: 10px;
+  }
+
+  .card {
+    cursor: pointer;
+    transition: transform 0.3s ease;
+  }
+
+  .card:hover {
+    transform: scale(1.05);
+  }
+
+  .container-img {
+    text-align: center;
+  }
+
+  .card-image {
+    width: 100%;
+    height: auto;
+    border-radius: 4px;
+  }
 }
