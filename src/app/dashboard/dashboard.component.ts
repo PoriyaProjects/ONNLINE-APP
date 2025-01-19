@@ -248,12 +248,28 @@ export class DashboardComponent implements OnInit {
                     console.log(Response['d']);
                     this.shortcuts = Response['d'].filter(x => x.ParentTab == "");
                     this.mainshortcuts = Response['d'].filter(x => x.ParentTab != "");
-                    this.mainshortcuts.forEach(element => {
-                        this.tabs.push({
-                            title: element.ParentTab,
-                            cards: this.mainshortcuts.filter(x => x.ParentTab == element.ParentTab)
-                        });
+                    // this.mainshortcuts.forEach(element => {
+                    //     this.tabs.push({
+                    //         title: element.ParentTab,
+                    //         cards: this.mainshortcuts.filter(x => x.ParentTab == element.ParentTab)
+                    //     });
+                    // });
+                    this.tabs = [];
+                    const parentTabMap = new Map<string, any[]>();
+
+                    // Group shortcuts by ParentTab
+                    this.mainshortcuts.forEach((shortcut) => {
+                        if (!parentTabMap.has(shortcut.ParentTab)) {
+                            parentTabMap.set(shortcut.ParentTab, []);
+                        }
+                        parentTabMap.get(shortcut.ParentTab)?.push(shortcut);
                     });
+
+                    // Transform map into an array of tabs
+                    this.tabs = Array.from(parentTabMap.entries()).map(([title, cards]) => ({
+                        title,
+                        cards,
+                    }));
                 } catch (error) {
                     console.log("error in ShortCuts list");
                 }
