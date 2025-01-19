@@ -22,6 +22,8 @@ export class DashboardComponent implements OnInit {
     clinicactivitydashboard = "#/clinicactivitydashboard";
     folders_display = [];
     shortcuts = [];
+    shortcutstabs = [];
+    mainshortcuts = [];
     folders = [];
     first_name: string;
     last_name: string;
@@ -38,6 +40,13 @@ export class DashboardComponent implements OnInit {
     lastName = localStorage.getItem("LastName").toLowerCase();
     functionDescription = localStorage.getItem("FunctionDescription").toLowerCase();
     birthdayUser: boolean = false;
+
+    tabs = [];
+
+    // Track selected tab index
+    selectedTabIndex: number | null = 0;
+
+
     constructor(
         private router: Router,
         private sanitizer: DomSanitizer,
@@ -61,6 +70,11 @@ export class DashboardComponent implements OnInit {
         this.getShortCutsLinks();
         this.getFoldersLinks();
         this.getAWSClaudeConfiguration();
+    }
+
+    // Method to select a tab
+    selectTab(index: number): void {
+        this.selectedTabIndex = index;
     }
 
     formatAnswer(text: string): string {
@@ -112,7 +126,7 @@ export class DashboardComponent implements OnInit {
             Max_Tokens: model.max_tokens,
             Prompt: this.question,
         };
-    
+
         try {
             this.http
                 .post("http://srv-apps-prod:5769/api/BedrockModel/InvokeModel", updatedModel)
@@ -231,9 +245,17 @@ export class DashboardComponent implements OnInit {
             })
             .subscribe((Response) => {
                 try {
-                    this.shortcuts = Response['d'];
+                    console.log(Response['d']);
+                    this.shortcuts = Response['d'].filter(x => x.ParentTab == "");
+                    this.mainshortcuts = Response['d'].filter(x => x.ParentTab != "");
+                    this.mainshortcuts.forEach(element => {
+                        this.tabs.push({
+                            title: element.ParentTab,
+                            cards: this.mainshortcuts.filter(x => x.ParentTab == element.ParentTab)
+                        });
+                    });
                 } catch (error) {
-                    console.log("error in birthday list");
+                    console.log("error in ShortCuts list");
                 }
             });
     }
@@ -248,7 +270,7 @@ export class DashboardComponent implements OnInit {
                     this.folders = Response['d'];
                     this.folders_display = this.folders.filter(x => x.Parent == "0");
                 } catch (error) {
-                    console.log("error in birthday list");
+                    console.log("error in Folders list");
                 }
             });
     }

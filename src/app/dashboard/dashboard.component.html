@@ -275,29 +275,26 @@
         </div>
     </div>
     <div class="col-md-6" dir="rtl">
-        <div class="row">
-            <div class="col-3 text-right">
-                <br>
-                <div class="card w-100100">
-                    <a [href]="clinicactivitydashboard">
-                        <div class="card-title">נתוני מרפאות</div>
-                        <div class="container-img">
-                            <img src="assets/images/clinic_d.PNG" alt="Shortcut Image" class="card-image">
+        <div class="tabs-group">
+            <mat-tab-group>
+                <mat-tab *ngFor="let tab of tabs" [label]="tab.title">
+                    <div class="row">
+                        <div *ngFor="let card of tab.cards" class="col-3 text-right">
+                            <br />
+                            <mat-card class="card w-100">
+                                <a [href]="card.Link">
+                                    <mat-card-title>{{ card.Title }}</mat-card-title>
+                                    <mat-card-content>
+                                        <div class="container-img">
+                                            <img [src]="card.Image" alt="Shortcut Image" class="card-image" />
+                                        </div>
+                                    </mat-card-content>
+                                </a>
+                            </mat-card>
                         </div>
-                    </a>
-                </div>
-            </div>
-            <div class="col-3 text-right">
-                <br>
-                <div class="card w-100100">
-                    <a href="https://app.powerbi.com/view?r=eyJrIjoiMDIwNzUzZWYtYzNkOS00ZjI5LWFhYWUtZDI4OTE2OWZlNmRjIiwidCI6ImYxOGMzMzE0LWUwZmYtNGYzOS1iZTViLTVkY2I3MDliMmRjMyIsImMiOjl9">
-                        <div class="card-title">HITO - JCI</div>
-                        <div class="container-img">
-                            <img src="assets/images/hito-jci.png" alt="Shortcut Image" class="card-image">
-                        </div>
-                    </a>
-                </div>
-            </div>
+                    </div>
+                </mat-tab>
+            </mat-tab-group>
         </div>
         <div class="container_Ai">
             <mat-card>
