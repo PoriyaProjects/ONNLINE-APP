@@ -31,8 +31,23 @@
                 </div>
             </div>
         </div>
-        <div class="shortcuts-row-container">
-            <!-- Example card -->
+        <div class="tabs-row-container">
+            <mat-tab-group>
+                <mat-tab *ngFor="let tab of righttabs" [label]="tab.title">
+                    <div class="row">
+                        <div *ngFor="let card of tab.cards" class="card">
+                            <a [href]="card.Link">
+                                <div class="card-title">{{ card.Title }}</div>
+                                <div class="container-img">
+                                    <img [src]="card.Image" alt="Shortcut Image" class="card-image" />
+                                </div>
+                            </a>
+                        </div>
+                    </div>
+                </mat-tab>
+            </mat-tab-group>
+        </div>
+        <!-- <div class="shortcuts-row-container">
             <h2 class="shortcuts-header">קיצורי דרך</h2>
             <div class="card" *ngFor="let shortcut of shortcuts">
                 <a [href]="shortcut.Link" *ngIf="shortcut.ChromeBrowser == 'True'" target="_blank">
@@ -48,7 +63,7 @@
                     </div>
                 </a>
             </div>
-        </div>
+        </div> -->
         <div class="shortcuts-row-container">
             <h2 class="shortcuts-header">תיקיות</h2>
             <app-folder-tree [folders]="folders_display"></app-folder-tree>
@@ -275,22 +290,17 @@
         </div>
     </div>
     <div class="col-md-6" dir="rtl">
-        <div class="tabs-group">
+        <div class="tabs-row-container">
             <mat-tab-group>
-                <mat-tab *ngFor="let tab of tabs" [label]="tab.title">
+                <mat-tab *ngFor="let tab of lefttabs" [label]="tab.title">
                     <div class="row">
-                        <div *ngFor="let card of tab.cards" class="col-3 text-right">
-                            <br />
-                            <mat-card class="card w-100">
-                                <a [href]="card.Link">
-                                    <mat-card-title>{{ card.Title }}</mat-card-title>
-                                    <mat-card-content>
-                                        <div class="container-img">
-                                            <img [src]="card.Image" alt="Shortcut Image" class="card-image" />
-                                        </div>
-                                    </mat-card-content>
-                                </a>
-                            </mat-card>
+                        <div *ngFor="let card of tab.cards" class="card">
+                            <a [href]="card.Link">
+                                <div class="card-title">{{ card.Title }}</div>
+                                <div class="container-img">
+                                    <img [src]="card.Image" alt="Shortcut Image" class="card-image" />
+                                </div>
+                            </a>
                         </div>
                     </div>
                 </mat-tab>

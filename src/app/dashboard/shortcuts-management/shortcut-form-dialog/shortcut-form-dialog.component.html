@@ -1,0 +1,22 @@
+<h1 mat-dialog-title>{{ data ? 'Edit Shortcut' : 'Add Shortcut' }}</h1>
+<div mat-dialog-content>
+  <form [formGroup]="shortcutForm">
+    <mat-form-field class="example-full-width">
+      <mat-label>Title</mat-label>
+      <input matInput formControlName="Title" />
+    </mat-form-field>
+    <mat-form-field class="example-full-width">
+      <mat-label>Link</mat-label>
+      <input matInput formControlName="Link" />
+    </mat-form-field>
+    <mat-form-field class="example-full-width">
+      <mat-label>Image URL</mat-label>
+      <input matInput formControlName="Image" />
+    </mat-form-field>
+    <mat-checkbox formControlName="Status">Active</mat-checkbox>
+  </form>
+</div>
+<div mat-dialog-actions>
+  <button mat-button (click)="onCancel()">Cancel</button>
+  <button mat-button color="primary" (click)="onSave()">Save</button>
+</div>
