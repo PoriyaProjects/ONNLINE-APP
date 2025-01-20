@@ -40,8 +40,8 @@ export class DashboardComponent implements OnInit {
     lastName = localStorage.getItem("LastName").toLowerCase();
     functionDescription = localStorage.getItem("FunctionDescription").toLowerCase();
     birthdayUser: boolean = false;
-
-    tabs = [];
+    righttabs = [];
+    lefttabs = [];
 
     // Track selected tab index
     selectedTabIndex: number | null = 0;
@@ -245,15 +245,44 @@ export class DashboardComponent implements OnInit {
             })
             .subscribe((Response) => {
                 try {
-                    console.log(Response['d']);
-                    this.shortcuts = Response['d'].filter(x => x.ParentTab == "");
-                    this.mainshortcuts = Response['d'].filter(x => x.ParentTab != "");
-                    this.mainshortcuts.forEach(element => {
-                        this.tabs.push({
-                            title: element.ParentTab,
-                            cards: this.mainshortcuts.filter(x => x.ParentTab == element.ParentTab)
-                        });
+                    this.shortcuts = Response['d'].filter(x => x.TabsPlace == "right");
+                    this.mainshortcuts = Response['d'].filter(x => x.TabsPlace == "left");
+                    this.righttabs = [];
+                    this.lefttabs = [];
+
+                    // ======================================== left ===========================================
+                    const parentTabMap1 = new Map<string, any[]>();
+
+                    // Group shortcuts by ParentTab
+                    this.shortcuts.forEach((shortcut) => {
+                        if (!parentTabMap1.has(shortcut.ParentTab)) {
+                            parentTabMap1.set(shortcut.ParentTab, []);
+                        }
+                        parentTabMap1.get(shortcut.ParentTab)?.push(shortcut);
                     });
+
+                    // Transform map into an array of tabs
+                    this.righttabs = Array.from(parentTabMap1.entries()).map(([title, cards]) => ({
+                        title,
+                        cards,
+                    }));
+
+                    // ======================================== left ===========================================
+                    const parentTabMap2 = new Map<string, any[]>();
+
+                    // Group shortcuts by ParentTab
+                    this.mainshortcuts.forEach((shortcut) => {
+                        if (!parentTabMap2.has(shortcut.ParentTab)) {
+                            parentTabMap2.set(shortcut.ParentTab, []);
+                        }
+                        parentTabMap2.get(shortcut.ParentTab)?.push(shortcut);
+                    });
+
+                    // Transform map into an array of tabs
+                    this.lefttabs = Array.from(parentTabMap2.entries()).map(([title, cards]) => ({
+                        title,
+                        cards,
+                    }));
                 } catch (error) {
                     console.log("error in ShortCuts list");
                 }

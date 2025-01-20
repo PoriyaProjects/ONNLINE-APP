@@ -249,6 +249,8 @@ import { TrainingRequestDashboardComponent } from './form-dashboard/training-req
 import { TrainingRequestFormComponent } from './form-dashboard/training-request-dashboard/training-request-form/training-request-form.component';
 import { TrainingRequestDialogComponent } from './form-dashboard/training-request-dashboard/training-request-dialog/training-request-dialog.component';
 import { WhatsappLungCancerComponent } from './whatsapp-messages-dashboard/whatsapp-lung-cancer/whatsapp-lung-cancer.component';
+import { ShortcutsManagementComponent } from './dashboard/shortcuts-management/shortcuts-management.component';
+import { ShortcutFormDialogComponent } from './dashboard/shortcuts-management/shortcut-form-dialog/shortcut-form-dialog.component';
 
 
 const maskConfig: Partial<IConfig> = {
@@ -448,7 +450,9 @@ const maskConfig: Partial<IConfig> = {
     TrainingRequestDashboardComponent,
     TrainingRequestFormComponent,
     TrainingRequestDialogComponent,
-    WhatsappLungCancerComponent
+    WhatsappLungCancerComponent,
+    ShortcutsManagementComponent,
+    ShortcutFormDialogComponent
   ],
   imports: [
     MatIconModule,
