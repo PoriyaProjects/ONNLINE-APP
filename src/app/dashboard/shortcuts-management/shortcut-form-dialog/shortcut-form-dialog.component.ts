@@ -14,14 +14,19 @@ export class ShortcutFormDialogComponent implements OnInit {
     private fb: FormBuilder,
     private dialogRef: MatDialogRef<ShortcutFormDialogComponent>,
     @Inject(MAT_DIALOG_DATA) public data: any
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     this.shortcutForm = this.fb.group({
+      Row_ID: [this.data?.Row_ID || ''],
       Title: [this.data?.Title || ''],
       Link: [this.data?.Link || ''],
       Image: [this.data?.Image || ''],
-      Status: [this.data?.Status || false],
+      Sort: [this.data?.Sort || ''],
+      ParentTab: [this.data?.ParentTab || ''],
+      TabsPlace: [this.data?.TabsPlace || ''],
+      ChromeBrowser: [this.data?.ChromeBrowser == 'False' ? false : true || false],
+      Status: [this.data?.Status == 'False' ? false : true || false],
     });
   }
 

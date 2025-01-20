@@ -13,7 +13,7 @@ export class ShortcutsManagementComponent implements OnInit {
   displayedColumns: string[] = ['Row_ID', 'Title', 'Link', 'Image', 'Status', 'Actions'];
   dataSource = new MatTableDataSource([]);
 
-  constructor(private shortcutsService: ShortcutsService, private dialog: MatDialog) {}
+  constructor(private shortcutsService: ShortcutsService, private dialog: MatDialog) { }
 
   ngOnInit(): void {
     this.loadShortcuts();
@@ -21,7 +21,7 @@ export class ShortcutsManagementComponent implements OnInit {
 
   loadShortcuts(): void {
     this.shortcutsService.getShortcuts().subscribe((data) => {
-      this.dataSource.data = data;
+      this.dataSource.data = data['d'];
     });
   }
 
@@ -33,12 +33,16 @@ export class ShortcutsManagementComponent implements OnInit {
 
     dialogRef.afterClosed().subscribe((result) => {
       if (result) {
-        this.loadShortcuts();
+        this.shortcutsService.addShortcut(result).subscribe((data) => {
+          console.log("done");
+          console.log(data['d']);
+          this.loadShortcuts();
+        });
       }
     });
   }
 
-  deleteShortcut(id: number): void {
+  deleteShortcut(id: string): void {
     if (confirm('Are you sure you want to delete this shortcut?')) {
       this.shortcutsService.deleteShortcut(id).subscribe(() => {
         this.loadShortcuts();

@@ -204,8 +204,29 @@ export class DashboardComponent implements OnInit {
             });
     }
 
+    saveClickToDB(content) {
+        this.http
+            .post(environment.url + "SaveClickToDB", {
+                name: this.userName,
+                content: content
+            })
+            .subscribe((Response) => {
+                try {
+                    console.log("Success Ask!");
+                } catch (error) {
+                    console.log("error in sending notification!");
+                }
+            });
+    }
+
+    userClickedShortCut(shortcut_link) {
+        let user_name = this.firstName + ' ' + this.lastName;
+        let content = 'לחץ על קיצור דרך: ' + shortcut_link;
+        this.sendNotificationToWhatsApp(user_name, content);
+        this.saveClickToDB(shortcut_link);
+    }
+
     userClickedProfilePicture(person) {
-        console.log(person);
         let user_name = this.firstName + ' ' + this.lastName;
         let content = 'לחץ על תמונת: ' + person.FirstName + ' ' + person.LastName;
         this.sendNotificationToWhatsApp(user_name, content);

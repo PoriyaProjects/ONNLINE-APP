@@ -35,13 +35,26 @@
             <mat-tab-group>
                 <mat-tab *ngFor="let tab of righttabs" [label]="tab.title">
                     <div class="row">
-                        <div *ngFor="let card of tab.cards" class="card">
-                            <a [href]="card.Link">
+                        <div *ngFor="let shortcut of tab.cards" class="card" (click)="userClickedShortCut(shortcut.Title)">
+                            <a [href]="shortcut.Link" *ngIf="shortcut.ChromeBrowser == 'True'" target="_blank">
+                                <div class="card-title">{{ shortcut.Title }}</div>
+                                <div class="container-img">
+                                    <img [src]="shortcut.Image" alt="Shortcut Image" class="card-image">
+                                </div>
+                            </a>
+                            <a (click)="openWithEdge2(shortcut.Link)" *ngIf="shortcut.ChromeBrowser == 'False'"
+                                target="_blank">
+                                <div class="card-title">{{ shortcut.Title }}</div>
+                                <div class="container-img">
+                                    <img [src]="shortcut.Image" alt="Shortcut Image" class="card-image">
+                                </div>
+                            </a>
+                            <!-- <a [href]="card.Link">
                                 <div class="card-title">{{ card.Title }}</div>
                                 <div class="container-img">
                                     <img [src]="card.Image" alt="Shortcut Image" class="card-image" />
                                 </div>
-                            </a>
+                            </a> -->
                         </div>
                     </div>
                 </mat-tab>
@@ -294,8 +307,8 @@
             <mat-tab-group>
                 <mat-tab *ngFor="let tab of lefttabs" [label]="tab.title">
                     <div class="row">
-                        <div *ngFor="let card of tab.cards" class="card">
-                            <a [href]="card.Link">
+                        <div *ngFor="let card of tab.cards" class="card" (click)="userClickedShortCut(card.Title)">
+                            <a [href]="card.Link" target="_blank">
                                 <div class="card-title">{{ card.Title }}</div>
                                 <div class="container-img">
                                     <img [src]="card.Image" alt="Shortcut Image" class="card-image" />
