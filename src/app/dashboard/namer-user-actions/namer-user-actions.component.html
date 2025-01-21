@@ -1,0 +1,19 @@
+<div mat-dialog-content dir="rtl" class="modal-content">
+    <mat-form-field appearance="outline" class="full-width">
+        <mat-label>שם משתמש לנמר</mat-label>
+        <input matInput [(ngModel)]="username" />
+    </mat-form-field>
+    <button mat-button color="warn" (click)="generateRandomNumber()" *ngIf="validationfromwhatsapp == '' && username != ''">שלח קוד
+        אימות</button>
+    <p>{{messageToUser}}</p>
+    <mat-form-field appearance="outline" class="full-width" *ngIf="validationCode">
+        <mat-label>הכנס קוד אימות שקיבלת</mat-label>
+        <input matInput [(ngModel)]="validationfromwhatsapp" />
+    </mat-form-field>
+</div>
+
+<div mat-dialog-actions align="end" dir="rtl">
+    <button mat-button color="warn" (click)="onCancel()">ביטול</button>
+    <!-- <button mat-button color="primary" (click)="onSubmit('unlock')">שחרור</button> -->
+    <button mat-button color="primary" (click)="onSubmit('reset')" *ngIf="validationfromwhatsapp != ''">איפוס</button>
+</div>

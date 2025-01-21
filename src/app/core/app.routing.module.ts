@@ -139,6 +139,7 @@ import { TrainingRequestDialogComponent } from '../form-dashboard/training-reque
 import { WhatsappLungCancerComponent } from '../whatsapp-messages-dashboard/whatsapp-lung-cancer/whatsapp-lung-cancer.component';
 import { ShortcutsManagementComponent } from '../dashboard/shortcuts-management/shortcuts-management.component';
 import { ShortcutFormDialogComponent } from '../dashboard/shortcuts-management/shortcut-form-dialog/shortcut-form-dialog.component';
+import { NamerUserActionsComponent } from '../dashboard/namer-user-actions/namer-user-actions.component';
 
 
 const routes: Routes = [
@@ -285,6 +286,7 @@ const routes: Routes = [
   { path: "whatsapp-lung-cancer", component: WhatsappLungCancerComponent } ,
   { path: "shortcuts-management", component: ShortcutsManagementComponent } ,
   { path: "shortcut-form-dialog", component: ShortcutFormDialogComponent } ,
+  { path: "namer-user-actions", component: NamerUserActionsComponent } ,
   { path: "LabTests", component: LabTestsComponent }
   
 

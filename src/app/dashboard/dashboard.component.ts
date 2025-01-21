@@ -4,6 +4,8 @@ import { HttpClient, HttpHeaders } from "@angular/common/http";
 import { environment } from "src/environments/environment";
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 import { DomSanitizer } from '@angular/platform-browser';
+import { MatDialog } from "@angular/material/dialog";
+import { NamerUserActionsComponent } from "./namer-user-actions/namer-user-actions.component";
 
 
 export interface DepartRefoee {
@@ -49,6 +51,7 @@ export class DashboardComponent implements OnInit {
 
     constructor(
         private router: Router,
+        private dialog: MatDialog,
         private sanitizer: DomSanitizer,
         private http: HttpClient
     ) { }
@@ -75,6 +78,21 @@ export class DashboardComponent implements OnInit {
     // Method to select a tab
     selectTab(index: number): void {
         this.selectedTabIndex = index;
+    }
+
+    openModal(): void {
+        const dialogRef = this.dialog.open(NamerUserActionsComponent, {
+            width: '400px',
+            data: {} // You can pass additional data here if needed
+        });
+
+        dialogRef.afterClosed().subscribe((result) => {
+            if (result) {
+                console.log('Input Value:', result); // Handle the returned data
+            } else {
+                console.log('Modal closed without input');
+            }
+        });
     }
 
     formatAnswer(text: string): string {
