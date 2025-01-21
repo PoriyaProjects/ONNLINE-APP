@@ -220,9 +220,6 @@ export class DashboardComponent implements OnInit {
     }
 
     userClickedShortCut(shortcut_link) {
-        let user_name = this.firstName + ' ' + this.lastName;
-        let content = 'לחץ על קיצור דרך: ' + shortcut_link;
-        this.sendNotificationToWhatsApp(user_name, content);
         this.saveClickToDB(shortcut_link);
     }
 
