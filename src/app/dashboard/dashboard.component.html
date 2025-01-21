@@ -7,7 +7,7 @@
             <h2 class="user-header">פרופיל</h2>
             <div class="row-user">
                 <div class="user-details">
-                    <img [src]="ProfilePicture" alt="Profile Picture" class="profile-picture">
+                    <img [src]="ProfilePicture" alt="Profile Picture" class="profile-picture" (click)="openModal()">
                     <div class="user-info">
                         <h2>{{ first_name }} {{ last_name }}</h2>
                         <h5>&#8734; {{ functionDescription }} &#8734;</h5>
@@ -35,7 +35,8 @@
             <mat-tab-group>
                 <mat-tab *ngFor="let tab of righttabs" [label]="tab.title">
                     <div class="row">
-                        <div *ngFor="let shortcut of tab.cards" class="card" (click)="userClickedShortCut(shortcut.Title)">
+                        <div *ngFor="let shortcut of tab.cards" class="card"
+                            (click)="userClickedShortCut(shortcut.Title)">
                             <a [href]="shortcut.Link" *ngIf="shortcut.ChromeBrowser == 'True'" target="_blank">
                                 <div class="card-title">{{ shortcut.Title }}</div>
                                 <div class="container-img">
