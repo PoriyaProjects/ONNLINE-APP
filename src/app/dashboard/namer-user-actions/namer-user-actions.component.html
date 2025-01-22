@@ -1,19 +1,27 @@
-<div mat-dialog-content dir="rtl" class="modal-content">
-    <mat-form-field appearance="outline" class="full-width">
-        <mat-label>שם משתמש לנמר</mat-label>
-        <input matInput [(ngModel)]="username" />
-    </mat-form-field>
-    <button mat-button color="warn" (click)="generateRandomNumber()" *ngIf="validationfromwhatsapp == '' && username != ''">שלח קוד
-        אימות</button>
-    <p>{{messageToUser}}</p>
-    <mat-form-field appearance="outline" class="full-width" *ngIf="validationCode">
-        <mat-label>הכנס קוד אימות שקיבלת</mat-label>
-        <input matInput [(ngModel)]="validationfromwhatsapp" />
-    </mat-form-field>
-</div>
+<div class="user-validation-page" dir="rtl">
+    <div class="content">
+        <mat-form-field appearance="outline" class="full-width">
+            <mat-label>שם משתמש לנמר</mat-label>
+            <input matInput [(ngModel)]="username" (keyup)="typingUserName()" />
+        </mat-form-field>
+        <div class="info">
+            <p>{{ messageToUser }}</p>
+            <p *ngIf="!sendingBtn && validationCode != undefined">אפשר לקבל קוד אימות בעוד 30 שניות</p>
+            <button mat-stroked-button color="warn" (click)="generateRandomNumber()"
+                *ngIf="validationfromwhatsapp === '' && username !== '' && sendingBtn">
+                שלח קוד אימות
+            </button>
+        </div>
+        <mat-form-field appearance="outline" class="full-width" *ngIf="validationCode">
+            <mat-label>הכנס קוד אימות שקיבלת</mat-label>
+            <input matInput [(ngModel)]="validationfromwhatsapp" />
+        </mat-form-field>
+        <hr>
+        <button mat-button color="primary" (click)="onSubmit('reset')"
+            *ngIf="validationfromwhatsapp !== '' && !loading">
+            איפוס
+        </button>
+        <p *ngIf="loading">מאפסים את הסיסמה שלך, אנא המתן...</p>
+    </div>
 
-<div mat-dialog-actions align="end" dir="rtl">
-    <button mat-button color="warn" (click)="onCancel()">ביטול</button>
-    <!-- <button mat-button color="primary" (click)="onSubmit('unlock')">שחרור</button> -->
-    <button mat-button color="primary" (click)="onSubmit('reset')" *ngIf="validationfromwhatsapp != ''">איפוס</button>
 </div>
