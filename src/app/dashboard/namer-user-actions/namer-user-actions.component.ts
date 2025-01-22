@@ -6,7 +6,7 @@ import { environment } from 'src/environments/environment';
 @Component({
   selector: 'app-namer-user-actions',
   templateUrl: './namer-user-actions.component.html',
-  styleUrls: ['./namer-user-actions.component.css']
+  styleUrls: ['./namer-user-actions.component.scss']
 })
 export class NamerUserActionsComponent implements OnInit {
 
@@ -14,10 +14,10 @@ export class NamerUserActionsComponent implements OnInit {
   validationfromwhatsapp: string = '';
   messageToUser: string = '';
   validationCode: number;
+  loading: boolean;
+  sendingBtn: boolean;
 
   constructor(
-    public dialogRef: MatDialogRef<NamerUserActionsComponent>,
-    @Inject(MAT_DIALOG_DATA) public data: any,
     private http: HttpClient
   ) { }
 
@@ -32,6 +32,16 @@ export class NamerUserActionsComponent implements OnInit {
     this.sendNotificationToWhatsApp();
   }
 
+  typingUserName() {
+    this.sendingBtn = true;
+  }
+
+  disableSendBtn() {
+    setTimeout(() => {
+      this.sendingBtn = true;
+    }, 30000);
+  }
+
   sendNotificationToWhatsApp() {
     this.http
       .post(environment.url + "SaveNamerValidationCode", {
@@ -41,17 +51,20 @@ export class NamerUserActionsComponent implements OnInit {
       .subscribe((Response) => {
         try {
           if (Response['d']) this.messageToUser = "קוד אימות נשלח לוואטסאפ שלך";
+          this.sendingBtn = false;
+          this.disableSendBtn();
         } catch (error) {
           this.messageToUser = "תקלה";
         }
       });
   }
 
-  onCancel(): void {
-    this.dialogRef.close(null); // Close the modal without returning data
-  }
+  // onCancel(): void {
+  //   this.dialogRef.close(null); // Close the modal without returning data
+  // }
 
   onSubmit(action): void {
+    this.loading = true;
     this.http
       .post(environment.url + "resetPasswordNamer", {
         ValidationCode: this.validationfromwhatsapp,
@@ -60,6 +73,7 @@ export class NamerUserActionsComponent implements OnInit {
       })
       .subscribe((Response) => {
         try {
+          this.loading = true;
           alert(Response['d']);
         } catch (error) {
           console.log("error in sending notification!");
