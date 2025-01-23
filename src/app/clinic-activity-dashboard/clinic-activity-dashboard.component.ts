@@ -49,6 +49,7 @@ export interface ClinicActivityComparison {
   CanceledCurrentYear: number;
   CanceledPreviousYear: number;
   CanceledPrevious2Year: number;
+  RoomNumber: string;
 }
 @Component({
   selector: 'app-clinic-activity-dashboard',
@@ -582,6 +583,7 @@ export class ClinicActivityDashboardComponent implements OnInit {
     console.log(this.chartDataQuarterly)
   }
   calculateGenderTotalsForCurrentYear(): void {
+    return ;
     const currentYear = new Date().getFullYear(); // Get the current year dynamically
 
     // Filter the array for the current year
