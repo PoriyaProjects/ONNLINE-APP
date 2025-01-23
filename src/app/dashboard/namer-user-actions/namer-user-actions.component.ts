@@ -1,6 +1,5 @@
 import { HttpClient } from '@angular/common/http';
 import { Component, Inject, OnInit } from '@angular/core';
-import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { environment } from 'src/environments/environment';
 
 @Component({
@@ -23,7 +22,6 @@ export class NamerUserActionsComponent implements OnInit {
 
 
   ngOnInit(): void {
-    // throw new Error('Method not implemented.');
   }
 
   generateRandomNumber(): void {
@@ -58,10 +56,6 @@ export class NamerUserActionsComponent implements OnInit {
         }
       });
   }
-
-  // onCancel(): void {
-  //   this.dialogRef.close(null); // Close the modal without returning data
-  // }
 
   onSubmit(action): void {
     this.loading = true;

@@ -7,9 +7,9 @@
   </div>
   <mat-tab-group mat-stretch-tabs="false" mat-align-tabs="center" *ngIf="Training_Request_Forms_A != undefined">
     <mat-tab label="חלק א' - פרטים אישים">
-      <mat-card [formGroup]="Training_Request_Forms_A">
+      <mat-card>
         <!-- <mat-card-title>חלק א' - פרטים אישים</mat-card-title> -->
-        <mat-card-content>
+        <mat-card-content [formGroup]="Training_Request_Forms_A">
           <div class="row">
             <div class="col-lg-2 col-md-4 col-sm-6">
               <mat-form-field>
@@ -21,6 +21,16 @@
                 <mat-error *ngIf="Training_Request_Forms_A.get('Passport_ID')?.hasError('pattern')">
                   יש להזין רק מספרים
                 </mat-error>
+              </mat-form-field>
+            </div>
+            <div class="col-lg-2 col-md-4 col-sm-6">
+              <mat-form-field>
+                <mat-label>תאור</mat-label>
+                <mat-select formControlName="Title">
+                  <mat-option *ngFor="let title of titleList" [value]="title">
+                    {{ title }}
+                  </mat-option>
+                </mat-select>
               </mat-form-field>
             </div>
             <div class="col-lg-2 col-md-4 col-sm-6">
@@ -44,7 +54,11 @@
             <div class="col-lg-2 col-md-4 col-sm-6">
               <mat-form-field>
                 <mat-label>השכלה</mat-label>
-                <input matInput formControlName="Education" />
+                <mat-select formControlName="Education">
+                  <mat-option *ngFor="let edu of educationList" [value]="edu">
+                    {{ edu }}
+                  </mat-option>
+                </mat-select>
                 <mat-error *ngIf="Training_Request_Forms_A.get('Education')?.hasError('required')">
                   השכלה חובה
                 </mat-error>
@@ -64,9 +78,53 @@
             </div>
           </div>
         </mat-card-content>
+        <hr>
+        <mat-card-content [formGroup]="Training_Request_Forms_G">
+          <div class="row">
+            <!-- <div class="col-lg-2 col-md-4 col-sm-6">
+              <mat-form-field>
+                <mat-label>ניצול מס' ימי השתלמות מתחילת השנה</mat-label>
+                <input matInput formControlName="Training_Days_Utilization" />
+              </mat-form-field>
+            </div> -->
+            <div class="col-lg-2 col-md-4 col-sm-6">
+              <mat-form-field>
+                <mat-label>הדרגה והדירוג בתקן</mat-label>
+                <input matInput formControlName="Standart_Level" />
+              </mat-form-field>
+            </div>
+            <div class="col-lg-3 col-md-4 col-sm-6">
+              <mat-form-field>
+                <mat-label>תפקיד העובד ומחלקה</mat-label>
+                <input matInput formControlName="Function_Department" />
+              </mat-form-field>
+            </div>
+            <div class="col-lg-2 col-md-4 col-sm-6">
+              <mat-form-field>
+                <mat-label>תאריך תחילת עבודה</mat-label>
+                <input matInput [matDatepicker]="Work_Start_Date" formControlName="Work_Start_Date">
+                <mat-datepicker-toggle matIconSuffix [for]="Work_Start_Date"></mat-datepicker-toggle>
+                <mat-datepicker #Work_Start_Date></mat-datepicker>
+              </mat-form-field>
+            </div>
+            <div class="col-lg-3 col-md-4 col-sm-6">
+              <mat-form-field>
+                <mat-label>מעמד קבוע/ארעי/חוזה</mat-label>
+                <input matInput formControlName="Standart_Status" />
+              </mat-form-field>
+            </div>
+            <div class="col-lg-2 col-md-4 col-sm-6">
+              <mat-form-field>
+                <mat-label>חלקיות משרה</mat-label>
+                <input matInput formControlName="Standart_Job_Type" />
+              </mat-form-field>
+            </div>
+          </div>
+        </mat-card-content>
       </mat-card>
     </mat-tab>
-    <mat-tab label="חלק ב' - בקשת המועמד" [disabled]="Training_Request_Forms_A.invalid">
+    <mat-tab label="חלק ב' - בקשת המועמד"
+      [disabled]="Training_Request_Forms_A.invalid || Training_Request_Forms_G.invalid">
       <mat-card [formGroup]="Training_Request_Forms_B">
         <mat-card-title>פרטי ההשתלמות המבוקשת (יש לצרף תוכנית)</mat-card-title>
         <mat-card-content>
@@ -84,8 +142,14 @@
             </div>
             <div class="col-lg-2 col-md-4 col-sm-6">
               <mat-form-field>
-                <mat-label>מקום ההשתלמות והמוסד המארגן</mat-label>
+                <mat-label>מקום ההשתלמות</mat-label>
                 <input matInput formControlName="Request_Location" />
+              </mat-form-field>
+            </div>
+            <div class="col-lg-2 col-md-4 col-sm-6">
+              <mat-form-field>
+                <mat-label>המוסד המארגן</mat-label>
+                <input matInput formControlName="Planning_Intity" />
               </mat-form-field>
             </div>
             <div class="col-lg-2 col-md-4 col-sm-6">
@@ -119,13 +183,13 @@
                 </mat-error>
               </mat-form-field>
             </div>
-            <div class="col-lg-2 col-md-4 col-sm-6">
+            <!-- <div class="col-lg-2 col-md-4 col-sm-6">
               <section class="example-section">
                 <p><mat-checkbox formControlName="Transportation"><span
                       class="checkbox-label">נסיעות</span></mat-checkbox>
                 </p>
               </section>
-            </div>
+            </div> -->
             <div class="col-lg-2 col-md-4 col-sm-6">
               <label for="fileInput" class="file-label">תוכנית מצורפת(תמונה/PDF)</label>
               <input type="file" id="fileInput" (change)="onFileSelected($event)" class="file-input"
@@ -156,6 +220,13 @@
                 <p><mat-checkbox formControlName="Training_Out" (change)="Training_Out_Check()"><span
                       class="checkbox-label">השתלמות
                       בחו"ל</span></mat-checkbox>
+                </p>
+              </section>
+            </div>
+            <div class="col-lg-2 col-md-4 col-sm-6" *ngIf="Training_Request_Forms_B.get('Training_Out').value == false">
+              <section class="example-section">
+                <p><mat-checkbox formControlName="Galilean_Partnership" (change)="Galilean_Partnership_Check()"><span
+                      class="checkbox-label">ההשתלמות קשורה למרכז השיקום - שותפות גלילית</span></mat-checkbox>
                 </p>
               </section>
             </div>
@@ -267,13 +338,13 @@
             </mat-form-field>
           </div>
           <hr>
-          <div class="section">
+          <!-- <div class="section">
             <section class="example-section">
               <p><mat-checkbox formControlName="Galilean_Partnership"><span class="checkbox-label">שותפות
                     גלילית</span></mat-checkbox>
               </p>
             </section>
-          </div>
+          </div> -->
           <hr>
           <div class="section">
             <mat-label>{{ Health_Corporation_Options.QuestionText }}</mat-label>
@@ -343,18 +414,27 @@
                 <mat-datepicker #Opinion_Date1></mat-datepicker>
               </mat-form-field>
             </div>
-            <div class="col-lg-2 col-md-4 col-sm-6">
+            <div class="col-lg-2 col-md-4 col-sm-6" *ngIf="filteredOptions != undefined">
               <mat-form-field>
                 <mat-label>שם הממונה</mat-label>
-                <input matInput formControlName="Supervisor_Name" />
+                <!-- <input matInput formControlName="Supervisor_Name" /> -->
+                <input type="text" matInput [formControl]="Supervisor_Name1" [matAutocomplete]="auto">
+                <mat-autocomplete #auto="matAutocomplete" [displayWith]="displayFn">
+                  <mat-option *ngFor="let name of filteredOptions | async" [value]="name">
+                    {{name.firstname}}
+                  </mat-option>
+                </mat-autocomplete>
               </mat-form-field>
             </div>
             <div class="col-lg-2 col-md-4 col-sm-6">
               <button mat-raised-button class="signBtn" color="warn" (click)="signForm(5, 'Supervisor_Sign')">
-                <span *ngIf="Training_Request_Forms_E.get('Supervisor_Sign').value == undefined">לחתום</span>
-                <span *ngIf="Training_Request_Forms_E.get('Supervisor_Sign').value != undefined">נחתם</span>
+                <span
+                  *ngIf="Training_Request_Forms_E.get('Supervisor_Sign').value == undefined || Training_Request_Forms_E.get('Supervisor_Sign').value == ''">לחתום</span>
+                <span
+                  *ngIf="Training_Request_Forms_E.get('Supervisor_Sign').value != undefined && Training_Request_Forms_E.get('Supervisor_Sign').value != ''">נחתם</span>
               </button>
-              <img *ngIf="Training_Request_Forms_E.get('Supervisor_Sign').value != undefined"
+              <img
+                *ngIf="Training_Request_Forms_E.get('Supervisor_Sign').value != undefined && Training_Request_Forms_E.get('Supervisor_Sign').value != ''"
                 [src]="Training_Request_Forms_E.get('Supervisor_Sign').value" />
               <!-- <mat-form-field>
                 <mat-label>חתימה</mat-label>
@@ -391,18 +471,27 @@
                 <mat-datepicker #Opinion_Date2></mat-datepicker>
               </mat-form-field>
             </div>
-            <div class="col-lg-2 col-md-4 col-sm-6">
+            <div class="col-lg-2 col-md-4 col-sm-6" *ngIf="filteredOptions2 != undefined">
               <mat-form-field>
                 <mat-label>שם הממונה</mat-label>
-                <input matInput formControlName="Supervisor_Name" />
+                <!-- <input matInput formControlName="Supervisor_Name" /> -->
+                <input type="text" matInput [formControl]="Supervisor_Name2" [matAutocomplete]="auto2">
+                <mat-autocomplete #auto2="matAutocomplete" [displayWith]="displayFn2">
+                  <mat-option *ngFor="let name2 of filteredOptions2 | async" [value]="name2">
+                    {{name2.firstname}}
+                  </mat-option>
+                </mat-autocomplete>
               </mat-form-field>
             </div>
             <div class="col-lg-2 col-md-4 col-sm-6">
               <button mat-raised-button class="signBtn" color="warn" (click)="signForm(6, 'Supervisor_Sign')">
-                <span *ngIf="Training_Request_Forms_F.get('Supervisor_Sign').value == undefined">לחתום</span>
-                <span *ngIf="Training_Request_Forms_F.get('Supervisor_Sign').value != undefined">נחתם</span>
+                <span
+                  *ngIf="Training_Request_Forms_F.get('Supervisor_Sign').value == undefined || Training_Request_Forms_F.get('Supervisor_Sign').value == ''">לחתום</span>
+                <span
+                  *ngIf="Training_Request_Forms_F.get('Supervisor_Sign').value != undefined && Training_Request_Forms_F.get('Supervisor_Sign').value != ''">נחתם</span>
               </button>
-              <img *ngIf="Training_Request_Forms_F.get('Supervisor_Sign').value != undefined"
+              <img
+                *ngIf="Training_Request_Forms_F.get('Supervisor_Sign').value != undefined && Training_Request_Forms_F.get('Supervisor_Sign').value != ''"
                 [src]="Training_Request_Forms_F.get('Supervisor_Sign').value" />
               <!-- <mat-form-field>
                 <mat-label>חתימה</mat-label>
@@ -412,56 +501,11 @@
           </div>
         </mat-card-content>
       </mat-card>
-    </mat-tab>
-    <mat-tab label="חלק ו' - ימולא ע'י מחלקת משאבי אנוש" *ngIf="!requested"
-      [disabled]="Training_Request_Forms_A.invalid || Training_Request_Forms_B.invalid || Training_Request_Forms_C.invalid || Training_Request_Forms_D.invalid">
-      <mat-card [formGroup]="Training_Request_Forms_G">
-        <!-- <mat-card-title>חלק ו' - ימולא ע'י מחלקת משאבי אנוש</mat-card-title> -->
-        <mat-card-content>
-          <div class="row">
-            <div class="col-lg-2 col-md-4 col-sm-6">
-              <mat-form-field>
-                <mat-label>ניצול מס' ימי השתלמות מתחילת השנה</mat-label>
-                <input matInput formControlName="Training_Days_Utilization" />
-              </mat-form-field>
-            </div>
-            <div class="col-lg-2 col-md-4 col-sm-6">
-              <mat-form-field>
-                <mat-label>הדרגה והדירוג בתקן</mat-label>
-                <input matInput formControlName="Standart_Level" />
-              </mat-form-field>
-            </div>
-            <div class="col-lg-2 col-md-4 col-sm-6">
-              <mat-form-field>
-                <mat-label>תפקיד העובד ומחלקה</mat-label>
-                <input matInput formControlName="Function_Department" />
-              </mat-form-field>
-            </div>
-            <div class="col-lg-2 col-md-4 col-sm-6">
-              <mat-form-field>
-                <mat-label>תאריך תחילת עבודה</mat-label>
-                <input matInput [matDatepicker]="Work_Start_Date" formControlName="Work_Start_Date">
-                <mat-datepicker-toggle matIconSuffix [for]="Work_Start_Date"></mat-datepicker-toggle>
-                <mat-datepicker #Work_Start_Date></mat-datepicker>
-              </mat-form-field>
-            </div>
-            <div class="col-lg-2 col-md-4 col-sm-6">
-              <mat-form-field>
-                <mat-label>מעמד קבוע/ארעי/חוזה</mat-label>
-                <input matInput formControlName="Standart_Status" />
-              </mat-form-field>
-            </div>
-            <div class="col-lg-2 col-md-4 col-sm-6">
-              <mat-form-field>
-                <mat-label>חלקיות משרה</mat-label>
-                <input matInput formControlName="Standart_Job_Type" />
-              </mat-form-field>
-            </div>
-          </div>
-        </mat-card-content>
-      </mat-card>
       <button mat-raised-button color="primary" type="submit" class="submitBtn" (click)="onSubmit()">שמירה</button>
-      <!-- [disabled]="!Training_Request_Forms_A.valid" -->
     </mat-tab>
+    <!-- <mat-tab label="חלק ו' - ימולא ע'י מחלקת משאבי אנוש" *ngIf="!requested"
+      [disabled]="Training_Request_Forms_A.invalid || Training_Request_Forms_B.invalid || Training_Request_Forms_C.invalid || Training_Request_Forms_D.invalid">
+
+    </mat-tab> -->
   </mat-tab-group>
 </form>
