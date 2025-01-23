@@ -6,6 +6,8 @@ import { MatSnackBar, MatSnackBarHorizontalPosition, MatSnackBarVerticalPosition
 import { DialogContentExampleDialog } from "../../../fill-survey/fill-survey.component";
 import { environment } from 'src/environments/environment';
 import { DatePipe } from '@angular/common';
+import { map, startWith } from 'rxjs/operators';
+import { Observable } from 'rxjs';
 
 @Component({
   selector: 'app-training-request-form',
@@ -46,10 +48,18 @@ export class TrainingRequestFormComponent implements OnInit {
     ]
   };
   plansList = [];
+  employees = [];
+  titleList = ["מר", "גב'", "דר'", "פרופ'"];
+  educationList = ["תיכונית", "מקצועית", "תואר ראשון", "תואר שני", "תואר שלישי"];
   requested: boolean = false;
   horizontalPosition: MatSnackBarHorizontalPosition = "start";
   verticalPosition: MatSnackBarVerticalPosition = "bottom";
   passport: any = localStorage.getItem('ID').toLowerCase();
+  filteredOptions: Observable<string[]>;
+  Supervisor_Name1 = new FormControl();
+  filteredOptions2: Observable<string[]>;
+  Supervisor_Name2 = new FormControl();
+  date_now: any = Date.now();
 
   constructor(
     private fb: FormBuilder,
@@ -61,6 +71,7 @@ export class TrainingRequestFormComponent implements OnInit {
     private dialogRef: MatDialogRef<TrainingRequestFormComponent>
   ) {
     this.buildFormGroup();
+    this.date_now = this.datePipe.transform(this.date_now, 'yyyy-MM-dd');
   }
 
   ngOnInit(): void {
@@ -69,6 +80,52 @@ export class TrainingRequestFormComponent implements OnInit {
     }
     this.getAllTrainingRequestQuestionsList();
     this.getTrainingRequestPlansList();
+    this.getEmployeesList();
+    this.filteredOptions = this.Supervisor_Name1.valueChanges
+      .pipe(
+        startWith(''),
+        map(value => this._filter(value))
+      );
+    this.filteredOptions2 = this.Supervisor_Name2.valueChanges
+      .pipe(
+        startWith(''),
+        map(value => this._filter2(value))
+      );
+  }
+
+  private _filter(value: any): any[] {
+    const filterValue1 = typeof value === 'string' ? value : value?.firstname || '';
+    if (value && value.id !== undefined) {
+      const currentValue = this.Training_Request_Forms_E.controls['Supervisor_Name'].value;
+      if (currentValue !== value) {
+        this.Training_Request_Forms_E.controls['Supervisor_Name'].setValue(value, { emitEvent: false });
+      }
+    }
+    // Filter based on the provided value
+    return this.employees.filter(option => option.firstname?.includes(filterValue1));
+  }
+
+  private _filter2(value: any): string[] {
+    const filterValue1 = value;
+    if (value && value.id !== undefined) {
+      const currentValue = this.Training_Request_Forms_F.controls['Supervisor_Name'].value;
+      if (currentValue !== value) {
+        this.Training_Request_Forms_F.controls['Supervisor_Name'].setValue(value, { emitEvent: false }); // Prevent emitting events
+      }
+    }
+    return this.employees.filter(option => option.firstname.includes(filterValue1));
+  }
+
+  displayFn(user: any): string {
+    if (user) {
+      // Display firstname if available, otherwise fallback to id or a placeholder
+      return user.firstname ? user.firstname : user.id ? user.id : '';
+    }
+    return '';
+  }
+
+  displayFn2(user: any): string {
+    return user && user.firstname ? user.firstname : "";
   }
 
   buildFormGroup() {
@@ -87,6 +144,7 @@ export class TrainingRequestFormComponent implements OnInit {
         let Training_Request_Forms_G = this.formData['G'];
         this.Training_Request_Forms_A = this.fb.group({
           Row_ID: new FormControl(Training_Request_Forms_A?.Row_ID, null),
+          Title: new FormControl(Training_Request_Forms_A?.Title, Validators.required),
           Family_Name: new FormControl(Training_Request_Forms_A?.Family_Name, Validators.required),
           First_Name: new FormControl(Training_Request_Forms_A?.First_Name, Validators.required),
           Passport_ID: new FormControl(Training_Request_Forms_A?.Passport_ID, [Validators.required, Validators.pattern(/^\d+$/)]),
@@ -97,14 +155,16 @@ export class TrainingRequestFormComponent implements OnInit {
         this.Training_Request_Forms_B = this.fb.group({
           Request_Name: new FormControl(Training_Request_Forms_B?.Request_Name, Validators.required),
           Request_Location: new FormControl(Training_Request_Forms_B?.Request_Location, null),
+          Planning_Intity: new FormControl(Training_Request_Forms_B?.Planning_Intity, null),
           Date_Start: new FormControl(Training_Request_Forms_B?.Date_Start, null),
           Date_End: new FormControl(Training_Request_Forms_B?.Date_End, null),
           Request_Duration: new FormControl(Training_Request_Forms_B?.Request_Duration, null),
-          Education_Fee: new FormControl({ value: Training_Request_Forms_B?.Education_Fee, disabled: Training_Request_Forms_B?.Training_Out }, [Validators.pattern(/^\d+$/)]),
+          Education_Fee: new FormControl({ value: Training_Request_Forms_B?.Education_Fee, disabled: Training_Request_Forms_B?.Training_Out == 'True' }, [Validators.pattern(/^\d+$/)]),
           Transportation: new FormControl(Training_Request_Forms_B?.Transportation == 'True' ? true : false, null),
           Program_Attached: new FormControl(Training_Request_Forms_B?.Program_Attached, Validators.required),
           Absence_Time: new FormControl(Training_Request_Forms_B?.Absence_Time, [Validators.pattern(/^\d+$/)]),
           Training_Out: new FormControl(Training_Request_Forms_B?.Training_Out == 'True' ? true : false, null),
+          Galilean_Partnership: new FormControl(Training_Request_Forms_B?.Galilean_Partnership == 'True' ? true : false, null),
         });
         this.Training_Request_Forms_C = this.fb.group({
           Request_Name: new FormControl(Training_Request_Forms_C?.Request_Name, null),
@@ -112,6 +172,7 @@ export class TrainingRequestFormComponent implements OnInit {
         });
         this.Training_Request_Forms_D = this.fb.group({
           Hospital_Budget: new FormControl(Training_Request_Forms_D?.Hospital_Budget == 'True' ? true : false, null),
+          Galilean_Partnership: new FormControl(Training_Request_Forms_D?.Galilean_Partnership == 'True' ? true : false, null),
           OutSource_Company: new FormControl(Training_Request_Forms_D?.OutSource_Company == 'True' ? true : false, null),
           OutSource_Company_Plan: new FormControl(Training_Request_Forms_D?.OutSource_Company_Plan, null),
           Budget_Amount: new FormControl(Training_Request_Forms_D?.Budget_Amount, [Validators.pattern(/^\d+(\.\d{1,2})?$/)]),
@@ -125,15 +186,15 @@ export class TrainingRequestFormComponent implements OnInit {
         this.Training_Request_Forms_E = this.fb.group({
           Training_Importantce: new FormControl(Training_Request_Forms_E?.Training_Importantce, null),
           Recommendations: new FormControl(Training_Request_Forms_E?.Recommendations, null),
-          Opinion_Date: new FormControl(Training_Request_Forms_E?.Opinion_Date, null),
+          Opinion_Date: new FormControl(Training_Request_Forms_E?.Opinion_Date == null ? this.date_now : Training_Request_Forms_E?.Opinion_Date, null),
           Supervisor_Name: new FormControl(Training_Request_Forms_E?.Supervisor_Name, null),
           Supervisor_Sign: new FormControl(Training_Request_Forms_E?.Supervisor_Sign, null),
         });
         this.Training_Request_Forms_F = this.fb.group({
           Training_Importantce: new FormControl(Training_Request_Forms_F?.Training_Importantce, null),
           Recommendations: new FormControl(Training_Request_Forms_F?.Recommendations, null),
-          Opinion_Date: new FormControl(Training_Request_Forms_F?.Opinion_Date, null),
-          Supervisor_Name: new FormControl(Training_Request_Forms_F?.Supervisor_Name, null),
+          Opinion_Date: new FormControl(Training_Request_Forms_F?.Opinion_Date == null ? this.date_now : Training_Request_Forms_F?.Opinion_Date, null),
+          Supervisor_Name: new FormControl(Training_Request_Forms_F?.Supervisor_Name, Training_Request_Forms_E?.Supervisor_Name != null ? Validators.required : null),
           Supervisor_Sign: new FormControl(Training_Request_Forms_F?.Supervisor_Sign, null),
         });
         this.Training_Request_Forms_G = this.fb.group({
@@ -213,9 +274,56 @@ export class TrainingRequestFormComponent implements OnInit {
     }
   }
 
+  checkPlanAvailability() {
+    let plan_selected = this.Training_Request_Forms_B.controls['Request_Name'].value;
+    let plan_list = this.plansList.filter(x => x.Name == plan_selected)[0];
+    let date_today: any = new Date();
+    date_today = this.datePipe.transform(date_today, 'yyyy-MM-dd');
+    console.log(date_today);
+    console.log(plan_list);
+    // Calculate the difference in days (avoiding date string manipulation)
+    const differenceInDays = Math.floor((Date.parse(date_today) - Date.parse(plan_list.Plan_Date)) / (1000 * 60 * 60 * 24));
+
+    if (differenceInDays > -14) {
+      alert("אין אפשרות להגיש לתוכנית זו, \nתוכנית זו תתקיים ב: " + plan_list.Plan_Date + "");
+      this.Training_Request_Forms_B.controls['Request_Name'].setValue('');
+      this.Training_Request_Forms_B.controls['Date_Start'].setValue('');
+    } else this.Training_Request_Forms_B.controls['Date_Start'].setValue(plan_list.Plan_Date);
+  }
+
   Training_Out_Check() {
-    if (this.Training_Request_Forms_B.controls['Training_Out'].value) this.Training_Request_Forms_B.controls['Education_Fee'].disable();
+    if (this.Training_Request_Forms_B.controls['Training_Out'].value) {
+      this.Training_Request_Forms_B.controls['Galilean_Partnership'].setValue(false);
+      this.Training_Request_Forms_B.controls['Education_Fee'].setValue('');
+      this.Training_Request_Forms_B.controls['Education_Fee'].disable();
+    }
     else this.Training_Request_Forms_B.controls['Education_Fee'].enable();
+  }
+
+  Galilean_Partnership_Check() {
+  }
+
+  getEmployeesList() {
+    this.http
+      .post(environment.url + "GetUsersForInquiries", {
+      })
+      .subscribe((Response) => {
+        let all_users_filter = Response["d"];
+        all_users_filter.forEach(element => {
+          this.employees.push({
+            firstname: element.firstname + " " + element.lastname,
+            id: element.id,
+            email: element.email,
+            doc: element.DocLicence,
+            derug: element.derug,
+            ADUserName: element.ADUserName.toLowerCase()
+          });
+        });
+        setTimeout(() => {
+          this.Supervisor_Name1.setValue(this.employees.filter(t => t.id === this.formData['E']?.Supervisor_Name.id)[0]);
+          this.Supervisor_Name2.setValue(this.employees.filter(t => t.id === this.formData['F']?.Supervisor_Name.id)[0]);
+        }, 1000);
+      });
   }
 
   // Get the FormArray for convenience
@@ -253,6 +361,12 @@ export class TrainingRequestFormComponent implements OnInit {
               this.Training_Request_Forms_E.controls[type].setValue(undefined);
               return;
             }
+            this.Supervisor_Name2.setValidators(Validators.required);
+            this.Supervisor_Name2.updateValueAndValidity();
+            if (this.Training_Request_Forms_F.value.Supervisor_Name.id == "")
+
+              this.Training_Request_Forms_F.controls['Supervisor_Name'].setValidators(Validators.required);
+            this.Training_Request_Forms_F.controls['Supervisor_Name'].updateValueAndValidity();
             this.Training_Request_Forms_E.controls[type].setValue(data.sign);
             break;
           case 6:
@@ -309,23 +423,8 @@ export class TrainingRequestFormComponent implements OnInit {
       this.requested = true;
     }
     this.http
-      .post(environment.url + "GetEmployeesToUpdate", {
-        _empId: id,
-        _empFirstName: "",
-        _empLastName: "",
-        // _elective: elective,
-        _on: "1",
-        _medGrad: "",
-        _phoneNumber: "",
-        _department: "",
-        _role: "",
-        _managerType: "admin",
-        _sektor: "",
-        _workPlace: "",
-        _statusRow: "",
-        _approvedToBlossom: "",
-        _userName: "",
-        _InGym: ""
+      .post(environment.url + "GetEmployeesToUpdateByID", {
+        _empId: id
       })
       .subscribe((Response) => {
         let patient = Response['d'][0];
@@ -335,16 +434,19 @@ export class TrainingRequestFormComponent implements OnInit {
           this.Training_Request_Forms_A.controls['Passport_ID'].setValue(patient.EmployeeID);
           this.Training_Request_Forms_A.controls['Family_Name'].setValue(patient.LastName);
           this.Training_Request_Forms_A.controls['First_Name'].setValue(patient.FirstName);
-          this.Training_Request_Forms_A.controls['Address'].setValue(patient.Address);
+          this.Training_Request_Forms_A.controls['Address'].setValue(patient.CityName);
           this.Training_Request_Forms_A.controls['Phone_Number'].setValue(patient.CellNumber);
+          this.Training_Request_Forms_E.controls['Supervisor_Name'].setValue(patient.Manager1);
+          this.Training_Request_Forms_F.controls['Supervisor_Name'].setValue(patient.Manager2);
           this.Training_Request_Forms_G.controls['Work_Start_Date'].setValue(patient.StartWorkDate);
           this.Training_Request_Forms_G.controls['Function_Department'].setValue(patient.FunctionDescription + ' - ' + patient.DepartnentDescripton);
+          this.Training_Request_Forms_G.controls['Standart_Level'].setValue(patient.RankDescription);
         }
       });
   }
 
   onSubmit() {
-    if (this.Training_Request_Forms_A.valid && this.Training_Request_Forms_B.valid && this.Training_Request_Forms_C.valid && this.Training_Request_Forms_D.valid) {
+    if (this.Training_Request_Forms_A.valid && this.Training_Request_Forms_B.valid && this.Training_Request_Forms_C.valid && this.Training_Request_Forms_D.valid && this.Supervisor_Name2.valid) {
       this.Training_Request_Forms_B.controls['Date_Start'].setValue(this.datePipe.transform(this.Training_Request_Forms_B.value.Date_Start, 'yyyy-MM-dd'));
       this.Training_Request_Forms_B.controls['Date_End'].setValue(this.datePipe.transform(this.Training_Request_Forms_B.value.Date_End, 'yyyy-MM-dd'));
       this.Training_Request_Forms_C.controls['Request_Name'].setValue(this.datePipe.transform(this.Training_Request_Forms_C.value.Request_Name, 'yyyy-MM-dd'));

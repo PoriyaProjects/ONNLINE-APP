@@ -1,0 +1,35 @@
+<h1 mat-dialog-title dir="rtl">{{ data ? 'עריכת קיצור דרך' : 'הוספת קיצור דרך' }}</h1>
+<div mat-dialog-content dir="rtl">
+  <form [formGroup]="shortcutForm">
+    <mat-form-field class="example-full-width">
+      <mat-label>תיאור</mat-label>
+      <input matInput formControlName="Title" />
+    </mat-form-field>
+    <mat-form-field class="example-full-width">
+      <mat-label>קישור</mat-label>
+      <input matInput formControlName="Link" />
+    </mat-form-field>
+    <mat-form-field class="example-full-width">
+      <mat-label>קישור לתמונה</mat-label>
+      <input matInput formControlName="Image" />
+    </mat-form-field>
+    <mat-form-field class="example-full-width">
+      <mat-label>שם טאב</mat-label>
+      <input matInput formControlName="ParentTab" />
+    </mat-form-field>
+    <mat-form-field class="example-full-width">
+      <mat-label>מיקום קבוצת טאבים</mat-label>
+      <input matInput formControlName="TabsPlace" />
+    </mat-form-field>
+    <mat-form-field class="example-full-width">
+      <mat-label>מיון</mat-label>
+      <input matInput formControlName="Sort" />
+    </mat-form-field>
+    <mat-checkbox formControlName="ChromeBrowser">פתיחה בכרום</mat-checkbox>
+    <mat-checkbox formControlName="Status">פעיל</mat-checkbox>
+  </form>
+</div>
+<div mat-dialog-actions>
+  <button mat-button (click)="onCancel()">ביטול</button>
+  <button mat-button color="primary" (click)="onSave()">שמירה</button>
+</div>

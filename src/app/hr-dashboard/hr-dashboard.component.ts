@@ -29,6 +29,8 @@ export class HrDashboardComponent implements OnInit {
   fixed_files_list = [];
   unAnsweredConversations = [];
   unAnsweredConversations_filter = [];
+  selectedFile: File | null = null;
+  base64String: string | ArrayBuffer | null = '';
   whatsAppGroup: FormGroup;
   newMessage: FormGroup;
   loadChat: boolean;
@@ -127,7 +129,8 @@ export class HrDashboardComponent implements OnInit {
   async getHrWhatsAppUsers() {
     this.http
       .post(environment.url + "GetHrWhatsAppUsers", {
-        _user_name: this.user_name
+        _user_name: this.user_name,
+        type: "3"
       })
       .subscribe((Response) => {
         this.unAnsweredConversations = Response["d"];
@@ -213,15 +216,18 @@ export class HrDashboardComponent implements OnInit {
   }
 
   sendMessage() {
-    if (this.newMessage.controls['Message_Text'].value.trim() !== '') {
+    if (this.newMessage.controls['Message_Text'].value.trim() !== '' || this.base64String.toString() !== '') {
       this.newMessage.controls['ServiceEmployeeIDFK'].setValue(this.user_name);
       this.http
         .post(environment.url + "SendHrWhatsAppMessageToUser", {
-          messageForm: this.newMessage.value
+          messageForm: this.newMessage.value,
+          file: this.base64String == "" ? "" : this.base64String.toString().split(',')[1],
+          type: ''
         })
         .subscribe((Response) => {
           if (Response["d"]) {
-            this.currentContact.WhatsApp_Bot_Convesations.push({ Message_Text: this.newMessage.controls['Message_Text'].value, From_ServiceEmployee: 'True', IfFileMessage: 'False' });
+            if (this.selectedFile) window.location.reload();
+            this.currentContact.WhatsApp_Bot_Convesations.push({ Message_Text: this.newMessage.controls['Message_Text'].value, From_ServiceEmployee: 'True', IfFileMessage: this.selectedFile ? 'True' : 'False' });
             this.newMessage.controls['Message_Text'].setValue('');
           } else {
             alert("Error")
@@ -231,16 +237,19 @@ export class HrDashboardComponent implements OnInit {
   }
 
   sendOneWayMessage() {
-    if (this.newMessage.controls['Message_Text'].value.trim() !== '') {
+    if (this.newMessage.controls['Message_Text'].value.trim() !== '' || this.base64String.toString() !== '') {
       this.newMessage.controls['ServiceEmployeeIDFK'].setValue(this.currentContact.CellNumber);
       this.newMessage.controls['EndUserIDFK'].setValue(this.currentContact.FirstName + ' ' + this.currentContact.LastName);
       this.http
         .post(environment.url + "SendHrWhatsAppMessageToUserOneWay", {
-          messageForm: this.newMessage.value
+          messageForm: this.newMessage.value,
+          file: this.base64String == "" ? "" : this.base64String.toString().split(',')[1],
+          type: "3"
         })
         .subscribe((Response) => {
           if (Response["d"]) {
             alert("הודעה נשלחה בהצלחה");
+            if (this.selectedFile) window.location.reload();
             this.newMessage.controls['Message_Text'].setValue('');
           } else {
             alert("הודעה לא נשלחה עקב תקלה");
@@ -257,6 +266,25 @@ export class HrDashboardComponent implements OnInit {
       .subscribe((Response) => {
         this.fixed_files_list = Response['d'];
       });
+  }
+
+  onFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files.length > 0) {
+      this.selectedFile = input.files[0];
+      this.convertFileToBase64(this.selectedFile);
+    }
+  }
+
+  convertFileToBase64(file: File): void {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => {
+      this.base64String = reader.result;
+    };
+    reader.onerror = (error) => {
+      console.error('Error: ', error);
+    };
   }
 
   checkIfContactHasConversation(contact) {

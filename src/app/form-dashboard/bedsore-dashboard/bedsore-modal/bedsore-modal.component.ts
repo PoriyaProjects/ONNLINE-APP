@@ -14,6 +14,7 @@ import { environment } from 'src/environments/environment';
 })
 export class BedsoreModalComponent implements OnInit {
 
+  selectedBodyPart: string = '';
 
   horizontalPosition: MatSnackBarHorizontalPosition = "start";
   verticalPosition: MatSnackBarVerticalPosition = "bottom";
@@ -21,6 +22,7 @@ export class BedsoreModalComponent implements OnInit {
   users = [];
   doctors = [];
   filteredDoctors: Observable<string[]>;
+  @ViewChild('hologramContainer') hologramContainer: ElementRef<HTMLDivElement>;
   @ViewChild('doctorsInput') doctorsInput: ElementRef<HTMLInputElement>;
   @ViewChild('head') head: ElementRef<HTMLInputElement>;
   @ViewChild('torso') torso: ElementRef<HTMLInputElement>;
@@ -40,6 +42,7 @@ export class BedsoreModalComponent implements OnInit {
     public dialog: MatDialogRef<BedsoreModalComponent>,
     @Inject(MAT_DIALOG_DATA) public DataDialog: any,
     private fb: FormBuilder,
+    private el: ElementRef,
     private http: HttpClient,
     private _snackBar: MatSnackBar
   ) { }
@@ -93,6 +96,11 @@ export class BedsoreModalComponent implements OnInit {
         this.onAddImage(null);
       }
     }
+  }
+
+  onBodyPartClick(part: string): void {
+    this.selectedBodyPart = part;
+    console.log(`Selected body part: ${part}`);
   }
 
   editFormFunc(data: any) {

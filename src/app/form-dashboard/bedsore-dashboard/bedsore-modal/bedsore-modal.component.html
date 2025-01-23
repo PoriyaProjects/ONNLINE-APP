@@ -51,29 +51,34 @@
         <form [formGroup]="imageForm">
             <div formArrayName="ImagesList">
                 <div *ngFor="let image of imagesList.controls; let i = index" [formGroupName]="i" class="row">
-                    <div class="col-12 text-right">
-                        <mat-label>העלאת קובץ</mat-label><br>
+                    <div class="col-12 text-right" style="display: flex;">
+                        <mat-label>העלאת קובץ</mat-label><br />
                         <input (change)="onImageFileChange($event.target.files, i)" style="display: none;" #fileInput
-                            type="file" id="file-{{i}}">
+                            type="file" id="file-{{i}}" />
                         <button mat-icon-button color="primary" (click)="triggerFileInput(fileInput)">
                             <mat-icon>camera_enhance</mat-icon>
                         </button>
                         <img [src]="image.get('Content').value" *ngIf="image.get('Content').value" height="100"
-                            width="100">
-                        <!-- <div class="body-container">
-                            <div class="head" #head (click)="bodyPartClick('ראש')" matTooltip="ראש"></div>
-                            <div class="torso" #torso (click)="bodyPartClick('בטן')" matTooltip="בטן"></div>
-                            <div class="left-arm" #leftarm (click)="bodyPartClick('יד שמאל')" matTooltip="יד שמאל">
-                            </div>
-                            <div class="right-arm" #rightarm (click)="bodyPartClick('יד ימין')" matTooltip="יד ימין">
-                            </div>
-                            <div class="left-leg" #leftleg (click)="bodyPartClick('רגל שמאל')" matTooltip="רגל שמאל">
-                            </div>
-                            <div class="right-leg" #rightleg (click)="bodyPartClick('רגל ימין')" matTooltip="רגל ימין">
-                            </div>
-                        </div> -->
+                            width="100" />
+
+                        <div class="body-sketch-container">
+                            <!-- <svg viewBox="0 0 200 600" xmlns="http://www.w3.org/2000/svg" class="body-sketch">
+                                <circle cx="100" cy="50" r="30" class="body-part" (click)="onBodyPartClick('Head')"
+                                    title="Head"></circle>
+                                <rect x="70" y="80" width="60" height="120" class="body-part"
+                                    (click)="onBodyPartClick('Torso')" title="Torso"></rect>
+                                <rect x="40" y="100" width="30" height="80" class="body-part"
+                                    (click)="onBodyPartClick('Left Arm')" title="Left Arm"></rect>
+                                <rect x="130" y="100" width="30" height="80" class="body-part"
+                                    (click)="onBodyPartClick('Right Arm')" title="Right Arm"></rect>
+                                <rect x="70" y="200" width="25" height="100" class="body-part"
+                                    (click)="onBodyPartClick('Left Leg')" title="Left Leg"></rect>
+                                <rect x="105" y="200" width="25" height="100" class="body-part"
+                                    (click)="onBodyPartClick('Right Leg')" title="Right Leg"></rect>
+                            </svg> -->
+                        </div>
                     </div>
-                    <br>
+                    <br />
                     <div class="col-12">
                         <mat-form-field class="example-full-width">
                             <mat-label>הערה</mat-label>

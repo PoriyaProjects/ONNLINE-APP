@@ -1,10 +1,12 @@
 import { Component, OnInit, ViewChild } from "@angular/core";
 import { Router } from "@angular/router";
-import { HttpClient } from "@angular/common/http";
+import { HttpClient, HttpHeaders } from "@angular/common/http";
 import { environment } from "src/environments/environment";
 const { GoogleGenerativeAI } = require("@google/generative-ai");
-const genAI = new GoogleGenerativeAI("AIzaSyDUXWL5SIEjh4K016nbWQp0yPfRp1KS2eY");
-const MODEL_NAME = "gemini-1.5-flash";
+import { DomSanitizer } from '@angular/platform-browser';
+import { MatDialog } from "@angular/material/dialog";
+import { NamerUserActionsComponent } from "./namer-user-actions/namer-user-actions.component";
+
 
 export interface DepartRefoee {
     DepartName: string;
@@ -22,12 +24,16 @@ export class DashboardComponent implements OnInit {
     clinicactivitydashboard = "#/clinicactivitydashboard";
     folders_display = [];
     shortcuts = [];
+    shortcutstabs = [];
+    mainshortcuts = [];
     folders = [];
     first_name: string;
     last_name: string;
     full_date: string;
     employee_id: string;
     ProfilePicture: string;
+    claude_version_list = [];
+    claude_version: any = '';
     birth_day_people = [];
     question: string = '';
     answer: string | null = null;
@@ -36,7 +42,19 @@ export class DashboardComponent implements OnInit {
     lastName = localStorage.getItem("LastName").toLowerCase();
     functionDescription = localStorage.getItem("FunctionDescription").toLowerCase();
     birthdayUser: boolean = false;
-    constructor(private router: Router, private http: HttpClient) { }
+    righttabs = [];
+    lefttabs = [];
+
+    // Track selected tab index
+    selectedTabIndex: number | null = 0;
+
+
+    constructor(
+        private router: Router,
+        private dialog: MatDialog,
+        private sanitizer: DomSanitizer,
+        private http: HttpClient
+    ) { }
     today: number = Date.now();
     _dotsLoader =
         '<div class="spinner">' +
@@ -54,36 +72,141 @@ export class DashboardComponent implements OnInit {
         this.getBirthDayPeople();
         this.getShortCutsLinks();
         this.getFoldersLinks();
+        this.getAWSClaudeConfiguration();
     }
-    async askAI() {
-        this.answer = '';
+
+    // Method to select a tab
+    selectTab(index: number): void {
+        this.selectedTabIndex = index;
+    }
+
+    openModal(): void {
+        const dialogRef = this.dialog.open(NamerUserActionsComponent, {
+            width: '400px',
+            data: {} // You can pass additional data here if needed
+        });
+
+        dialogRef.afterClosed().subscribe((result) => {
+            if (result) {
+                console.log('Input Value:', result); // Handle the returned data
+            } else {
+                console.log('Modal closed without input');
+            }
+        });
+    }
+
+    formatAnswer(text: string): string {
+        text = text.replace(/\*\*(.+?)\*\*/g, '<b>$1</b>');
+        text = text.replace(/\n/g, '<br>');
+        return text;
+    }
+
+    chooseAiModelToAsk(model) {
+        this.claude_version = model;
+    }
+
+    get safeAnswer() {
+        return this.sanitizer.bypassSecurityTrustHtml(this.formatAnswer(this.answer));
+    }
+
+    async askModel() {
         if (this.question == '') {
             this.answer = 'לצורך קבלת מענה, יש להזין את השאלה בשדה המיועד לכך למעלה.';
             return;
         }
-        // Simulate an AI response. Replace this with an actual API call to your backend/AI service.
-        let prefix = `- אם שואלים מי זה אמין או אמין דחאברה, להסביר הוא היוצר שלי והוא אחד הגאונים שיש! \n
-                      - אם שואלים מי אתה, אתה מסביר שאתה הייצור של אמין דחאברה והיד ימין שלו. \n
-                      - אם שואלים אותך על אדם מסוים, לענות אולי אני מכיר אבל אני לא משת"פ \n
-                      השאלה שלי היא: \n`;
-        this.answer = await this.runChat(this.question);
-        let name = this.firstName + ' ' + this.lastName;
-        let content = 'שאל: ' + this.question;
-        if (this.userName != 'adahabre') this.sendNotificationToWhatsApp(name, content);
+        if (this.claude_version.model_identify == 'Gemeni') this.askGemini(this.claude_version);
+        else if (this.claude_version.model_identify == 'Claude') await this.askClaude(this.claude_version);
     }
-    async runChat(question) {
-        // const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-        // const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" });
-        const model = genAI.getGenerativeModel({ model: MODEL_NAME });
-        const result = await model.generateContent(question);
+
+    async askGemini(model) {
+        this.answer = '';
+        let resp = await this.runChat(model, this.question);
+        this.answer = resp.text();
+        this.AskAIRequestData(this.userName, resp.modelVersion, this.question);
+    }
+
+    async runChat(model, question) {
+        const genAI = new GoogleGenerativeAI(model.aws_secret_access_key);
+        const gen_model = genAI.getGenerativeModel({ model: model.modelId });
+        const result = await gen_model.generateContent(question);
 
         const response = result.response;
-        return response.text();
+        return response;
     }
+
+    async askClaude(model: any) {
+        // Transform the payload to the new structure
+        const updatedModel = {
+            Region_Name: model.region_name,
+            AWS_Access_Key_ID: model.aws_access_key_id,
+            AWS_Secret_Access_Key: model.aws_secret_access_key,
+            ModelId: model.modelId,
+            Max_Tokens: model.max_tokens,
+            Prompt: this.question,
+        };
+
+        try {
+            this.http
+                .post("http://srv-apps-prod:5769/api/BedrockModel/InvokeModel", updatedModel)
+                .subscribe((response: any) => {
+                    try {
+                        if (response && typeof response['Responses'] === 'string') {
+                            const parsedResponse = JSON.parse(response['Responses']);
+                            if (parsedResponse && typeof parsedResponse.text === 'string') {
+                                this.answer = parsedResponse.text;
+                            } else {
+                                console.error('Invalid response format: missing "text" property');
+                            }
+                        } else {
+                            console.error('Invalid response format: missing "Responses" property');
+                        }
+                    } catch (error) {
+                        console.error('Error parsing response:', error);
+                    }
+                });
+        } catch (error) {
+            console.error("Error invoking the model:", error);
+            throw error;
+        }
+    }
+
+    AskAIRequestData(user_name, model_id, prompt) {
+        this.http
+            .post(environment.url + "AskAIRequestData", {
+                user_name: user_name,
+                model_id: model_id,
+                prompt: prompt,
+            })
+            .subscribe((Response) => {
+                try {
+                    console.log("saved to db");
+                } catch (error) {
+                    console.log("error in AskAIRequestData!");
+                }
+            });
+    }
+
+    AskAIResponseData(user_name, model_id, prompt) {
+        this.http
+            .post(environment.url + "AskAIResponseData", {
+                user_name: user_name,
+                model_id: model_id,
+                prompt: prompt,
+            })
+            .subscribe((Response) => {
+                try {
+                    console.log("saved to db");
+                } catch (error) {
+                    console.log("error in AskAIRequestData!");
+                }
+            });
+    }
+
     openFileInTab(link: string) {
         if (link == '') return;
         window.open(link, "_blank");
     }
+
     sendNotificationToWhatsApp(name, content) {
         this.http
             .post(environment.url + "SendNotificationToWhatsApp", {
@@ -98,12 +221,45 @@ export class DashboardComponent implements OnInit {
                 }
             });
     }
+
+    saveClickToDB(content) {
+        this.http
+            .post(environment.url + "SaveClickToDB", {
+                name: this.userName,
+                content: content
+            })
+            .subscribe((Response) => {
+                try {
+                    console.log("Success Ask!");
+                } catch (error) {
+                    console.log("error in sending notification!");
+                }
+            });
+    }
+
+    userClickedShortCut(shortcut_link) {
+        this.saveClickToDB(shortcut_link);
+    }
+
     userClickedProfilePicture(person) {
-        console.log(person);
         let user_name = this.firstName + ' ' + this.lastName;
         let content = 'לחץ על תמונת: ' + person.FirstName + ' ' + person.LastName;
         this.sendNotificationToWhatsApp(user_name, content);
     }
+
+    getAWSClaudeConfiguration() {
+        this.http
+            .post(environment.url + "GetAWSClaudeConfiguration", {})
+            .subscribe((Response) => {
+                try {
+                    this.claude_version_list = Response['d'];
+                    this.claude_version = this.claude_version_list[0];
+                } catch (error) {
+                    console.log("error in claude list");
+                }
+            });
+    }
+
     getBirthDayPeople() {
         this.http
             .post(environment.url + "GetBirthDayPeople", {
@@ -117,6 +273,7 @@ export class DashboardComponent implements OnInit {
                 }
             });
     }
+
     getShortCutsLinks() {
         this.http
             .post(environment.url + "GetShortCutsLinks", {
@@ -124,12 +281,50 @@ export class DashboardComponent implements OnInit {
             })
             .subscribe((Response) => {
                 try {
-                    this.shortcuts = Response['d'];
+                    this.shortcuts = Response['d'].filter(x => x.TabsPlace == "right");
+                    this.mainshortcuts = Response['d'].filter(x => x.TabsPlace == "left");
+                    this.righttabs = [];
+                    this.lefttabs = [];
+
+                    // ======================================== left ===========================================
+                    const parentTabMap1 = new Map<string, any[]>();
+
+                    // Group shortcuts by ParentTab
+                    this.shortcuts.forEach((shortcut) => {
+                        if (!parentTabMap1.has(shortcut.ParentTab)) {
+                            parentTabMap1.set(shortcut.ParentTab, []);
+                        }
+                        parentTabMap1.get(shortcut.ParentTab)?.push(shortcut);
+                    });
+
+                    // Transform map into an array of tabs
+                    this.righttabs = Array.from(parentTabMap1.entries()).map(([title, cards]) => ({
+                        title,
+                        cards,
+                    }));
+
+                    // ======================================== left ===========================================
+                    const parentTabMap2 = new Map<string, any[]>();
+
+                    // Group shortcuts by ParentTab
+                    this.mainshortcuts.forEach((shortcut) => {
+                        if (!parentTabMap2.has(shortcut.ParentTab)) {
+                            parentTabMap2.set(shortcut.ParentTab, []);
+                        }
+                        parentTabMap2.get(shortcut.ParentTab)?.push(shortcut);
+                    });
+
+                    // Transform map into an array of tabs
+                    this.lefttabs = Array.from(parentTabMap2.entries()).map(([title, cards]) => ({
+                        title,
+                        cards,
+                    }));
                 } catch (error) {
-                    console.log("error in birthday list");
+                    console.log("error in ShortCuts list");
                 }
             });
     }
+
     getFoldersLinks() {
         this.http
             .post(environment.url + "GetFoldersLinks", {
@@ -140,13 +335,15 @@ export class DashboardComponent implements OnInit {
                     this.folders = Response['d'];
                     this.folders_display = this.folders.filter(x => x.Parent == "0");
                 } catch (error) {
-                    console.log("error in birthday list");
+                    console.log("error in Folders list");
                 }
             });
     }
+
     openWithEdge2(link: string) {
         window.open("microsoft-edge:" + link);
     }
+
     getLoginUserDetails() {
         this.http
             .post(environment.url + "GetLoginUserDetails", {
@@ -172,10 +369,12 @@ export class DashboardComponent implements OnInit {
 
             });
     }
+
     getEmployeeImage(employee_id) {
         const img = `http://srv-apps-prod/Images/${employee_id}.jpg`;
         return img;
     }
+
     openFolder() {
         let link = "\\\\srv-apps-02\\bin2\\פרוטוקולים לטיפול אנטיביוטי אמפירי";
         window.location.href = link;

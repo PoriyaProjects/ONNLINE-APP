@@ -128,6 +128,10 @@ import { DepartmentsWhatsappManagementComponent } from "./whatsapp-departments-d
 import { TrainingRequestDashboardComponent } from "./form-dashboard/training-request-dashboard/training-request-dashboard.component";
 import { TrainingRequestFormComponent } from "./form-dashboard/training-request-dashboard/training-request-form/training-request-form.component";
 import { TrainingRequestDialogComponent } from "./form-dashboard/training-request-dashboard/training-request-dialog/training-request-dialog.component";
+import { WhatsappLungCancerComponent } from "./whatsapp-messages-dashboard/whatsapp-lung-cancer/whatsapp-lung-cancer.component";
+import { ShortcutsManagementComponent } from "./dashboard/shortcuts-management/shortcuts-management.component";
+import { ShortcutFormDialogComponent } from "./dashboard/shortcuts-management/shortcut-form-dialog/shortcut-form-dialog.component";
+import { NamerUserActionsComponent } from "./dashboard/namer-user-actions/namer-user-actions.component";
 
 
 const routes: Routes = [ 
@@ -281,6 +285,10 @@ const routes: Routes = [
     { path: "training-request-dashboard", component: TrainingRequestDashboardComponent },
     { path: "training-request-form", component: TrainingRequestFormComponent },
     { path: "training-request-dialog", component: TrainingRequestDialogComponent },
+    { path: "whatsapp-lung-cancer", component: WhatsappLungCancerComponent },
+    { path: "shortcuts-management", component: ShortcutsManagementComponent },
+    { path: "shortcut-form-dialog", component: ShortcutFormDialogComponent },
+    { path: "namer-user-actions", component: NamerUserActionsComponent },
     { path: "LabTests", component: LabTestsComponent }
 
 

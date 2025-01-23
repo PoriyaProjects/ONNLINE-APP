@@ -1,0 +1,30 @@
+.mat-dialog-title {
+  font-size: 20px;
+  font-weight: bold;
+}
+
+.mat-dialog-content {
+  form {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+
+    .example-full-width {
+      width: 100%;
+    }
+
+    mat-checkbox {
+      margin-top: 10px;
+    }
+  }
+}
+
+.mat-dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 10px;
+
+  button {
+    margin-left: 10px;
+  }
+}

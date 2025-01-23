@@ -60,6 +60,9 @@
                             <p>{{ item.File_Numeric }}. {{ item.File_Name }}</p>
                         </div>
                     </ng-template>
+                    <form #fileForm="ngForm">
+                        <input type="file" (change)="onFileSelected($event)" accept="image/*" />
+                    </form>
                     <mat-form-field class="message-input">
                         <mat-label>שליחת הודעה בתוך שיחה</mat-label>
                         <input matInput placeholder="הודעה חדשה" formControlName="Message_Text"
@@ -72,6 +75,9 @@
                 <!-- send one way message -->
                 <div class="input-container"
                     *ngIf="currentContact !== undefined && (currentContact.maxRow === '' || currentContact.maxRow === undefined)">
+                    <form #fileForm="ngForm" ng>
+                        <input type="file" (change)="onFileSelected($event)" accept="image/*" />
+                    </form>
                     <mat-form-field class="message-input">
                         <mat-label>שליחת הודעה רגילה</mat-label>
                         <input matInput placeholder="הודעה חדשה" formControlName="Message_Text"
@@ -83,8 +89,9 @@
                 </div>
                 <div class="chat-container" #scrollTarget *ngIf="currentContact !== undefined">
                     <mat-spinner *ngIf="loadChat"></mat-spinner>
-                    <div class="row chat" *ngFor="let message of currentContact.WhatsApp_Bot_Convesations"
-                        [ngStyle]="{'border-top': message.Step === '5' ? '2px dotted black' : '', 'margin-top': message.Step === '5' ? '25px' : '0px'}">
+                    <div *ngFor="let message of currentContact.WhatsApp_Bot_Convesations"
+                        [ngStyle]="{'border-top': message.Step === '5' ? '2px dotted black' : '', 'margin-top': message.Step === '5' ? '25px' : '0px'}"
+                        [ngClass]="{'row chat-sent-system': message.From_ServiceEmployee == 'True' && message.Employee_Name === '', 'row chat-sent': message.From_ServiceEmployee == 'True', 'row chat-received': message.From_ServiceEmployee == 'False'}">
                         <div
                             [ngClass]="{'message-sent-system': message.From_ServiceEmployee == 'True' && message.Employee_Name === '', 'message-sent': message.From_ServiceEmployee == 'True', 'message-received': message.From_ServiceEmployee == 'False'}">
                             <div *ngIf="message.IfFileMessage == 'True'">
