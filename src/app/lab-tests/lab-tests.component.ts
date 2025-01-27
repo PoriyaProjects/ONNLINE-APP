@@ -64,11 +64,16 @@ export class LabTestsComponent implements OnInit {
   displayedColumns: string[] = [
     "TestCode",
     "TestName_1",
-    "TestCat",
-    // "DepartWorkRooms",
-    "TestShortName",
+    "TestName_2",
     "DoingLabName",
-    "StatusRow",
+    "TypeTestOrSamplingTool",
+    "PickUpDeliveryConditions",
+    "LabTestTimeArrival",
+   // "TestCat",
+    // "DepartWorkRooms",
+    //"TestShortName",
+    //"DoingLabName",
+    //"StatusRow",
     "editAuthorized"
   ];
   resultsLength = 0;
@@ -110,11 +115,48 @@ export class LabTestsComponent implements OnInit {
   ngOnInit(): void {
     this.getTableFromServer();
   }
-  openImage(){
+  openImage_3(){
     const dialogRef = this.dialog.open(EditOrAddLabTestsComponent, {
       data: {
         element: null,
         showForm: false,
+        showImage_2: false,
+        showImage_1: false,
+        showImage_3: true,
+        dialog: this.dialog,
+      },
+    });
+
+    dialogRef.afterClosed().subscribe((result) => {
+      console.log(`Dialog result: ${result}`);
+    });
+
+  }
+  openImage_1(){
+    const dialogRef = this.dialog.open(EditOrAddLabTestsComponent, {
+      data: {
+        element: null,
+        showForm: false,
+        showImage_2: false,
+        showImage_3: false,
+        showImage_1: true,
+        dialog: this.dialog,
+      },
+    });
+
+    dialogRef.afterClosed().subscribe((result) => {
+      console.log(`Dialog result: ${result}`);
+    });
+
+  }
+  openImage_2(){
+    const dialogRef = this.dialog.open(EditOrAddLabTestsComponent, {
+      data: {
+        element: null,
+        showForm: false,
+        showImage_1: false,
+        showImage_3: false,
+        showImage_2: true,
         dialog: this.dialog,
       },
     });
