@@ -3,9 +3,14 @@
     left: 15px;
     bottom: 55px;
 }
-#infoBtn{
+#infoBtn_1{
     position: fixed;
     left: 75px;
+    bottom: 55px;
+}
+#infoBtn_2{
+    position: fixed;
+    left: 150px;
     bottom: 55px;
 }
 #SendBtn{

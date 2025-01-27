@@ -26,7 +26,7 @@
                             formControlName="TestName_1" type="text" />
                     </mat-form-field>
                 </div>
-            </div>            
+            </div>
             <div class="col">
                 <div class="form-group">
                     <mat-form-field>
@@ -34,9 +34,9 @@
                             formControlName="TestName_2" type="text" />
                     </mat-form-field>
                 </div>
-            </div>  
+            </div>
         </div>
-        <div class="row text-right" dir="rtl">          
+        <div class="row text-right" dir="rtl">
             <div class="col">
                 <div class="form-group">
                     <mat-form-field>
@@ -44,8 +44,8 @@
                             formControlName="TestShortName" type="text" />
                     </mat-form-field>
                 </div>
-            </div>            
-       
+            </div>
+
             <div class="col">
                 <div class="form-group">
                     <mat-form-field>
@@ -61,10 +61,10 @@
                             formControlName="SampleMaterial" type="text" />
                     </mat-form-field>
                 </div>
-            </div>    
+            </div>
         </div>
-        <div class="row text-right" dir="rtl">        
-                  
+        <div class="row text-right" dir="rtl">
+
             <div class="col">
                 <div class="form-group">
                     <mat-form-field>
@@ -72,38 +72,41 @@
                             formControlName="SampleVolume" type="text" />
                     </mat-form-field>
                 </div>
-            </div>            
+            </div>
             <div class="col">
                 <div class="form-group">
                     <mat-form-field>
-                        <input matInput autocomplete="off" class="form-control" placeholder="זמן מירבי מלקיחה עד ההגעה למעבדה"
-                            formControlName="LabTestTimeArrival" type="text" />
+                        <input matInput autocomplete="off" class="form-control"
+                            placeholder="זמן מירבי מלקיחה עד ההגעה למעבדה" formControlName="LabTestTimeArrival"
+                            type="text" />
                     </mat-form-field>
                 </div>
-            </div>    
-               
+            </div>
+
         </div>
         <div class="row text-right" dir="rtl">
-        
-            <div class="col">
-                <div class="form-group">
-                    <mat-form-field>
-                        <input matInput autocomplete="off" class="form-control" placeholder="זמן ביצוע הבדיקה מקבלת הדגימה במעבדה המבצעת "
-                            formControlName="LabTestTime" type="text" />
-                    </mat-form-field>
-                </div>
-            </div>            
-               
 
-            
             <div class="col">
                 <div class="form-group">
                     <mat-form-field>
-                        <input matInput autocomplete="off" class="form-control" placeholder="זמן ביצוע הבדיקה מקבלת הדגימה  במעבדת חוץ"
-                            formControlName="TimeOfPerforming" type="text" />
+                        <input matInput autocomplete="off" class="form-control"
+                            placeholder="זמן ביצוע הבדיקה מקבלת הדגימה במעבדה המבצעת " formControlName="LabTestTime"
+                            type="text" />
                     </mat-form-field>
                 </div>
-            </div>  
+            </div>
+
+
+
+            <div class="col">
+                <div class="form-group">
+                    <mat-form-field>
+                        <input matInput autocomplete="off" class="form-control"
+                            placeholder="זמן ביצוע הבדיקה מקבלת הדגימה  במעבדת חוץ" formControlName="TimeOfPerforming"
+                            type="text" />
+                    </mat-form-field>
+                </div>
+            </div>
         </div>
         <div class="row text-right" dir="rtl">
             <div class="col">
@@ -113,7 +116,7 @@
                             formControlName="TypeTestOrSamplingTool" rows="8"></textarea>
                     </mat-form-field>
                 </div>
-            </div>  
+            </div>
             <div class="col">
                 <div class="form-group">
                     <mat-form-field>
@@ -121,7 +124,7 @@
                             formControlName="LabNotes" rows="8"></textarea>
                     </mat-form-field>
                 </div>
-            </div>  
+            </div>
         </div>
         <div class="row text-right" dir="rtl">
             <div class="col">
@@ -135,13 +138,13 @@
             <div class="col">
                 <div class="form-group">
                     <mat-form-field>
-                        <textarea matInput autocomplete="off" class="form-control" placeholder="שעות פעילות מעבדה מבצעת/ טלפון"
-                            formControlName="LabHours"  rows="8"></textarea>
+                        <textarea matInput autocomplete="off" class="form-control"
+                            placeholder="שעות פעילות מעבדה מבצעת/ טלפון" formControlName="LabHours" rows="8"></textarea>
                     </mat-form-field>
                 </div>
-            </div>        
+            </div>
         </div>
-        <div class="row text-right" dir="rtl">        
+        <div class="row text-right" dir="rtl">
             <div class="col">
                 <div class="form-group">
                     <mat-form-field>
@@ -169,12 +172,120 @@
         <input type="hidden" formControlName="UserInsert">
         <input type="hidden" formControlName="UserUpdate">
         <button mat-button mat-dialog-close>סגור</button>
-        <button *ngIf="!disableInputs" mat-button color="primary" type="submit" cdkFocusInitial [class.spinner]="loading"
-            [disabled]="loading">שמור</button>
+        <button *ngIf="!disableInputs" mat-button color="primary" type="submit" cdkFocusInitial
+            [class.spinner]="loading" [disabled]="loading">שמור</button>
     </mat-dialog-actions>
 </form>
-<img style="
+<div *ngIf="!showForm && showImage_1"  class="row">
+    <div class="col-12">
+        <img style="
+width: 100%;
+margin: auto;
+display: block;
+" src="assets/images/labTest_1.jpg">
+    </div>
+</div>
+<div *ngIf="!showForm && showImage_3"  class="row">
+    <div class="col-12">
+        <img style="
 width: 72%;
 margin: auto;
 display: block;
-" *ngIf="!showForm" src="assets/images/labTest.jpg">
+" src="assets/images/labTest.jpg">
+    </div>
+</div>
+<div *ngIf="!showForm && showImage_2"  class="row">
+    <div class="col-12">
+        <img style="
+        width: 50%;
+        margin: auto;
+        display: block;
+        " src="assets/images/labTest_2.jpg">
+    </div>
+    <div class="col-12">
+        <img style="
+        width: 50%;
+        margin: auto;
+        display: block;
+        " src="assets/images/labTest_3.jpg">
+    </div>
+    <div class="col-12">
+        <img style="
+        width: 50%;
+        margin: auto;
+        display: block;
+        " src="assets/images/labTest_4.jpg">
+    </div>
+    <div class="col-12">
+        <img style="
+        width: 50%;
+        margin: auto;
+        display: block;
+        " src="assets/images/labTest_5.jpg">
+    </div>
+    <div class="col-12">
+        <img style="
+        width: 50%;
+        margin: auto;
+        display: block;
+        " src="assets/images/labTest_6.jpg">
+    </div>
+    <div class="col-12">
+        <img style="
+        width: 50%;
+        margin: auto;
+        display: block;
+        " src="assets/images/labTest_7.jpg">
+    </div>
+    <div class="col-12">
+        <img style="
+        width: 50%;
+        margin: auto;
+        display: block;
+        " src="assets/images/labTest_8.jpg">
+    </div>
+    <div class="col-12">
+        <img style="
+        width: 50%;
+        margin: auto;
+        display: block;
+        " src="assets/images/labTest_9.jpg">
+    </div>
+    <div class="col-12">
+        <img style="
+        width: 50%;
+        margin: auto;
+        display: block;
+        " src="assets/images/labTest_10.jpg">
+    </div>
+    <div class="col-12">
+        <img style="
+        width: 50%;
+        margin: auto;
+        display: block;
+        " src="assets/images/labTest_11.jpg">
+    </div>
+    <div class="col-12">
+        <img style="
+        width: 50%;
+        margin: auto;
+        display: block;
+        " src="assets/images/labTest_12.jpg">
+    </div>
+    <div class="col-12">
+        <img style="
+        width: 50%;
+        margin: auto;
+        display: block;
+        " src="assets/images/labTest_13.jpg">
+    </div>
+    <div class="col-12">
+        <img style="
+        width: 50%;
+        margin: auto;
+        display: block;
+        " src="assets/images/labTest_14.jpg">
+    </div>
+</div>
+
+

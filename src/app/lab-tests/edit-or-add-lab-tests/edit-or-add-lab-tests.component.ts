@@ -36,6 +36,9 @@ export interface Supplier {
 
 export interface DialogData {
   element: Supplier;
+  showImage_2: boolean;
+  showImage_1: boolean;
+  showImage_3: boolean;
   showForm: boolean;
   disable: boolean;
   dialog: MatDialog;
@@ -48,6 +51,9 @@ export interface DialogData {
 export class EditOrAddLabTestsComponent implements OnInit {
 
   showForm: boolean= true;
+  showImage_2: boolean= true;
+  showImage_1: boolean= true;
+  showImage_3: boolean= true;
   CatList  : any =  
   [
     {id: "1", value: 'בדיקות פנים'},
@@ -79,10 +85,20 @@ export class EditOrAddLabTestsComponent implements OnInit {
         public string UpdateUser { get; set; }
         public string UpdateDateTime { get; set; }
     */
-    debugger
+    //debugger
     if(this.data.showForm == false){
       this.showForm = this.data.showForm;
-    }else if (this.data.disable){
+    }
+    if(this.data.showImage_3 == false){
+      this.showImage_3 = this.data.showImage_3;
+    }
+    if(this.data.showImage_2 == false){
+      this.showImage_2 = this.data.showImage_2;
+    }
+    if(this.data.showImage_1 == false){
+      this.showImage_1 = this.data.showImage_1;
+    }
+    if (this.data.disable){
       this.disableInputs = true;
       this.serverForm = this.formBuilder.group({
         RowID: [{ value: this.data.element.RowID, disabled: true }, null],
@@ -108,7 +124,7 @@ export class EditOrAddLabTestsComponent implements OnInit {
         DateTimeUpdate: [{ value: this.data.element.DateTimeUpdate, disabled: true }, null],
       });
       
-    }else{
+    }else if(this.data.showForm){
       this.serverForm = this.formBuilder.group({
         RowID: [this.data.element.RowID, null],
         TestCode: [this.data.element.TestCode, Validators.required],
