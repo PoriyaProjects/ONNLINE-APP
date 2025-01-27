@@ -123,6 +123,7 @@ export class DashboardComponent implements OnInit {
         let resp = await this.runChat(model, this.question);
         this.answer = resp.text();
         this.AskAIRequestData(this.userName, resp.modelVersion, this.question);
+        this.AskAIResponseData(this.userName, resp.modelVersion, resp.text());
     }
 
     async runChat(model, question) {
@@ -154,6 +155,8 @@ export class DashboardComponent implements OnInit {
                             const parsedResponse = JSON.parse(response['Responses']);
                             if (parsedResponse && typeof parsedResponse.text === 'string') {
                                 this.answer = parsedResponse.text;
+                                this.AskAIRequestData(this.userName, model.modelId, this.question);
+                                this.AskAIResponseData(this.userName, model.modelId, this.answer);
                             } else {
                                 console.error('Invalid response format: missing "text" property');
                             }
@@ -191,7 +194,7 @@ export class DashboardComponent implements OnInit {
             .post(environment.url + "AskAIResponseData", {
                 user_name: user_name,
                 model_id: model_id,
-                prompt: prompt,
+                text: prompt,
             })
             .subscribe((Response) => {
                 try {
