@@ -85,43 +85,38 @@ export class TrainingRequestDashboardComponent implements OnInit {
       }).afterClosed().subscribe(res => {
         this.getAllTrainingRequestFormsList("");
       });
-    } else if (action == 'approve') {
-      this.trainingRequestApprovedOrNot(rowId, true);
-    } else if (action == 'reject') {
-      this.trainingRequestApprovedOrNot(rowId, false);
     }
   }
 
-  trainingRequestApprovedOrNot(rowId, approved) {
-    this.confirmationDialogService
-      .confirm("נא לאשר..", "האם אתה בטוח ...? ")
-      .then((confirmed) => {
-        console.log("User confirmed:", confirmed);
-        if (confirmed) {
-          this.http
-            .post(environment.url + "TrainingRequestApprovedOrNot", {
-              id: rowId,
-              approved: approved
-            })
-            .subscribe((Response) => {
-              if (Response['d']) {
-                this.getAllTrainingRequestFormsList("");
-                this.openSnackBar("נשמר בהצלחה");
-              } else {
-                this.getAllTrainingRequestFormsList("");
-                this.openSnackBar("תקלה! לא נשמר");
-              }
-            });
-        } else {
-        }
-      })
-      .catch(() =>
-        console.log(
-          "User dismissed the dialog (e.g., by using ESC, clicking the cross icon, or clicking outside the dialog)"
-        )
-      );
-
-  }
+  // trainingRequestApprovedOrNot(rowId, approved) {
+  //   this.confirmationDialogService
+  //     .confirm("נא לאשר..", "האם אתה בטוח ...? ")
+  //     .then((confirmed) => {
+  //       console.log("User confirmed:", confirmed);
+  //       if (confirmed) {
+  //         this.http
+  //           .post(environment.url + "TrainingRequestApprovedOrNot", {
+  //             id: rowId,
+  //             approved: approved
+  //           })
+  //           .subscribe((Response) => {
+  //             if (Response['d']) {
+  //               this.getAllTrainingRequestFormsList("");
+  //               this.openSnackBar("נשמר בהצלחה");
+  //             } else {
+  //               this.getAllTrainingRequestFormsList("");
+  //               this.openSnackBar("תקלה! לא נשמר");
+  //             }
+  //           });
+  //       } else {
+  //       }
+  //     })
+  //     .catch(() =>
+  //       console.log(
+  //         "User dismissed the dialog (e.g., by using ESC, clicking the cross icon, or clicking outside the dialog)"
+  //       )
+  //     );
+  // }
 
   openSnackBar(message) {
     this._snackBar.open(message, "X", {

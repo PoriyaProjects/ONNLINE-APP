@@ -42,6 +42,7 @@ export class DashboardComponent implements OnInit {
     lastName = localStorage.getItem("LastName").toLowerCase();
     functionDescription = localStorage.getItem("FunctionDescription").toLowerCase();
     birthdayUser: boolean = false;
+    thinking: boolean = false;
     righttabs = [];
     lefttabs = [];
 
@@ -110,7 +111,7 @@ export class DashboardComponent implements OnInit {
     }
 
     async askModel() {
-        if (this.question == '') {
+        if (this.question.trim() == '') {
             this.answer = 'לצורך קבלת מענה, יש להזין את השאלה בשדה המיועד לכך למעלה.';
             return;
         }
@@ -119,11 +120,13 @@ export class DashboardComponent implements OnInit {
     }
 
     async askGemini(model) {
+        this.thinking = true;
         this.answer = '';
         let resp = await this.runChat(model, this.question);
         this.answer = resp.text();
         this.AskAIRequestData(this.userName, resp.modelVersion, this.question);
         this.AskAIResponseData(this.userName, resp.modelVersion, resp.text());
+        this.thinking = false;
     }
 
     async runChat(model, question) {
@@ -136,6 +139,7 @@ export class DashboardComponent implements OnInit {
     }
 
     async askClaude(model: any) {
+        this.thinking = true;
         // Transform the payload to the new structure
         const updatedModel = {
             Region_Name: model.region_name,
@@ -157,6 +161,7 @@ export class DashboardComponent implements OnInit {
                                 this.answer = parsedResponse.text;
                                 this.AskAIRequestData(this.userName, model.modelId, this.question);
                                 this.AskAIResponseData(this.userName, model.modelId, this.answer);
+                                this.thinking = false;
                             } else {
                                 console.error('Invalid response format: missing "text" property');
                             }

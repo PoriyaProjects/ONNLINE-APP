@@ -70,15 +70,15 @@ export class EmployeesManageDashComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    try {
-      this.all_employees?.forEach(subscription => subscription.unsubscribe());
-      this.DepartmentsList?.forEach(subscription => subscription.unsubscribe());
-      this.FunctionsList?.forEach(subscription => subscription.unsubscribe());
-      this.SektorsList?.forEach(subscription => subscription.unsubscribe());
-      this.WorkPlacesList?.forEach(subscription => subscription.unsubscribe());
-    } catch (err) {
-      console.error('Error unsubscribing:', err);
-    }
+    // try {
+    //   this.all_employees?.forEach(subscription => subscription.unsubscribe());
+    //   this.DepartmentsList?.forEach(subscription => subscription.unsubscribe());
+    //   this.FunctionsList?.forEach(subscription => subscription.unsubscribe());
+    //   this.SektorsList?.forEach(subscription => subscription.unsubscribe());
+    //   this.WorkPlacesList?.forEach(subscription => subscription.unsubscribe());
+    // } catch (err) {
+    //   console.error('Error unsubscribing:', err);
+    // }
   }
 
   getEmployeeImage(employee_id) {
