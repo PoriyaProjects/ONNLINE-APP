@@ -9,6 +9,7 @@ import { Observable } from 'rxjs';
 import { map, startWith } from 'rxjs/operators';
 import { ConfirmationDialogService } from 'src/app/confirmation-dialog/confirmation-dialog.service';
 import { environment } from 'src/environments/environment';
+import { MenuPerm } from '../menu-perm';
 
 const ELEMENT_DATA: any[] = [];
 @Component({
@@ -41,10 +42,18 @@ export class DevManageComponent implements OnInit {
   options: any;
   api_url: any;
   modelSelection: any;
+  user_details: any = {
+    FirstName: undefined,
+    LastName: undefined,
+    ADUserName: undefined,
+    DepartmentDescripton: undefined,
+    ID: undefined,
+  };
 
   constructor(public dialog: MatDialog,
     private _snackBar: MatSnackBar,
     private http: HttpClient,
+    private mMenuPerm: MenuPerm,
     private formBuilder: FormBuilder) { }
 
   changeUser: FormGroup;
@@ -149,10 +158,37 @@ export class DevManageComponent implements OnInit {
     if (depart.length > 0) {
       userToChange = depart[0].email.split("@", 1)[0];
       localStorage.setItem("loginUserName", userToChange.toLowerCase());
-      this.openSnackBar("התחלף בהצלחה");
-      window.location.reload();
+      this.getUserDetailsFromDBByUserName(userToChange.toLowerCase());
     }
     return this.users.filter(option => option.firstname.includes(filterValue2));
+  }
+  getUserDetailsFromDBByUserName(user) {
+    this.http.post(environment.url + 'GetUserFullNameByUserID', {
+      userID: user
+    }).subscribe(
+      (response: any) => {
+        this.user_details = response['d'];
+        if (this.user_details.ADUserName != undefined) {
+          setTimeout(() => {
+            this.mMenuPerm.setUserName(this.user_details.ADUserName);
+            localStorage.setItem("loginState", "true");
+            localStorage.setItem("ID", this.user_details.ID);
+            localStorage.setItem("Depart", this.user_details.DepartmentDescripton);
+            localStorage.setItem("FunctionDescription", this.user_details.FunctionDescription);
+            localStorage.setItem("FirstName", this.user_details.FirstName);
+            localStorage.setItem("LastName", this.user_details.LastName);
+            localStorage.setItem(
+              "loginUserName",
+              this.user_details.ADUserName
+            );
+            window.location.reload();
+          }, 2000);
+        }
+      },
+      (error) => {
+        console.error("Error:", error);
+      }
+    );
   }
 
   updateUserPermission(element) {

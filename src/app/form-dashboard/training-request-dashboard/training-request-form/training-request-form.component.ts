@@ -21,6 +21,7 @@ export class TrainingRequestFormComponent implements OnInit {
   Training_Request_Forms_D: FormGroup;
   Training_Request_Forms_E: FormGroup;
   Training_Request_Forms_F: FormGroup;
+  Training_Request_Forms_H: FormGroup;
   Training_Request_Forms_G: FormGroup;
   formData: any;
   Health_Corporation_Options = {
@@ -47,6 +48,12 @@ export class TrainingRequestFormComponent implements OnInit {
       { OptionID: 0, OptionText: '' }
     ]
   };
+  Training_Importantce_Options3 = {
+    QuestionText: '',
+    Training_Request_Options: [
+      { OptionID: 0, OptionText: '' }
+    ]
+  };
   plansList = [];
   employees = [];
   titleList = ["מר", "גב'", "דר'", "פרופ'"];
@@ -59,6 +66,8 @@ export class TrainingRequestFormComponent implements OnInit {
   Supervisor_Name1 = new FormControl();
   filteredOptions2: Observable<string[]>;
   Supervisor_Name2 = new FormControl();
+  filteredOptions3: Observable<string[]>;
+  Supervisor_Name3 = new FormControl();
   date_now: any = Date.now();
 
   constructor(
@@ -91,6 +100,11 @@ export class TrainingRequestFormComponent implements OnInit {
         startWith(''),
         map(value => this._filter2(value))
       );
+    // this.filteredOptions3 = this.Supervisor_Name3.valueChanges
+    //   .pipe(
+    //     startWith(''),
+    //     map(value => this._filter3(value))
+    //   );
   }
 
   private _filter(value: any): any[] {
@@ -116,6 +130,17 @@ export class TrainingRequestFormComponent implements OnInit {
     return this.employees.filter(option => option.firstname.includes(filterValue1));
   }
 
+  // private _filter3(value: any): string[] {
+  //   const filterValue1 = value;
+  //   if (value && value.id !== undefined) {
+  //     const currentValue = this.Training_Request_Forms_H.controls['Supervisor_Name'].value;
+  //     if (currentValue !== value) {
+  //       this.Training_Request_Forms_H.controls['Supervisor_Name'].setValue(value, { emitEvent: false }); // Prevent emitting events
+  //     }
+  //   }
+  //   return this.employees.filter(option => option.firstname.includes(filterValue1));
+  // }
+
   displayFn(user: any): string {
     if (user) {
       // Display firstname if available, otherwise fallback to id or a placeholder
@@ -125,8 +150,20 @@ export class TrainingRequestFormComponent implements OnInit {
   }
 
   displayFn2(user: any): string {
-    return user && user.firstname ? user.firstname : "";
+    if (user) {
+      // Display firstname if available, otherwise fallback to id or a placeholder
+      return user.firstname ? user.firstname : user.id ? user.id : '';
+    }
+    return '';
   }
+
+  // displayFn3(user: any): string {
+  //   if (user) {
+  //     // Display firstname if available, otherwise fallback to id or a placeholder
+  //     return user.firstname ? user.firstname : user.id ? user.id : '';
+  //   }
+  //   return '';
+  // }
 
   buildFormGroup() {
     this.http
@@ -141,6 +178,7 @@ export class TrainingRequestFormComponent implements OnInit {
         let Training_Request_Forms_D = this.formData['D'];
         let Training_Request_Forms_E = this.formData['E'];
         let Training_Request_Forms_F = this.formData['F'];
+        let Training_Request_Forms_H = this.formData['H'];
         let Training_Request_Forms_G = this.formData['G'];
         this.Training_Request_Forms_A = this.fb.group({
           Row_ID: new FormControl(Training_Request_Forms_A?.Row_ID, null),
@@ -154,10 +192,10 @@ export class TrainingRequestFormComponent implements OnInit {
         });
         this.Training_Request_Forms_B = this.fb.group({
           Request_Name: new FormControl(Training_Request_Forms_B?.Request_Name, Validators.required),
-          Request_Location: new FormControl(Training_Request_Forms_B?.Request_Location, null),
+          Request_Location: new FormControl(Training_Request_Forms_B?.Request_Location, Validators.required),
           Planning_Intity: new FormControl(Training_Request_Forms_B?.Planning_Intity, null),
-          Date_Start: new FormControl(Training_Request_Forms_B?.Date_Start, null),
-          Date_End: new FormControl(Training_Request_Forms_B?.Date_End, null),
+          Date_Start: new FormControl(Training_Request_Forms_B?.Date_Start, Validators.required),
+          Date_End: new FormControl(Training_Request_Forms_B?.Date_End, Validators.required),
           Request_Duration: new FormControl(Training_Request_Forms_B?.Request_Duration, null),
           Education_Fee: new FormControl({ value: Training_Request_Forms_B?.Education_Fee, disabled: Training_Request_Forms_B?.Training_Out == 'True' }, [Validators.pattern(/^\d+$/)]),
           Transportation: new FormControl(Training_Request_Forms_B?.Transportation == 'True' ? true : false, null),
@@ -167,7 +205,7 @@ export class TrainingRequestFormComponent implements OnInit {
           Galilean_Partnership: new FormControl(Training_Request_Forms_B?.Galilean_Partnership == 'True' ? true : false, null),
         });
         this.Training_Request_Forms_C = this.fb.group({
-          Request_Name: new FormControl(Training_Request_Forms_C?.Request_Name, null),
+          Request_Name: new FormControl(Training_Request_Forms_C?.Request_Name == null ? this.date_now : Training_Request_Forms_C?.Request_Name, Validators.required),
           Request_Sign: new FormControl(Training_Request_Forms_C?.Request_Sign, Validators.required),
         });
         this.Training_Request_Forms_D = this.fb.group({
@@ -189,6 +227,7 @@ export class TrainingRequestFormComponent implements OnInit {
           Opinion_Date: new FormControl(Training_Request_Forms_E?.Opinion_Date == null ? this.date_now : Training_Request_Forms_E?.Opinion_Date, null),
           Supervisor_Name: new FormControl(Training_Request_Forms_E?.Supervisor_Name, null),
           Supervisor_Sign: new FormControl(Training_Request_Forms_E?.Supervisor_Sign, null),
+          Approved: new FormControl(Training_Request_Forms_E?.Approved == 'True' ? true : false, null),
         });
         this.Training_Request_Forms_F = this.fb.group({
           Training_Importantce: new FormControl(Training_Request_Forms_F?.Training_Importantce, null),
@@ -196,6 +235,15 @@ export class TrainingRequestFormComponent implements OnInit {
           Opinion_Date: new FormControl(Training_Request_Forms_F?.Opinion_Date == null ? this.date_now : Training_Request_Forms_F?.Opinion_Date, null),
           Supervisor_Name: new FormControl(Training_Request_Forms_F?.Supervisor_Name, Training_Request_Forms_E?.Supervisor_Name != null ? Validators.required : null),
           Supervisor_Sign: new FormControl(Training_Request_Forms_F?.Supervisor_Sign, null),
+          Approved: new FormControl(Training_Request_Forms_F?.Approved == 'True' ? true : false, null),
+        });
+        this.Training_Request_Forms_H = this.fb.group({
+          Training_Importantce: new FormControl(Training_Request_Forms_H?.Training_Importantce, null),
+          Recommendations: new FormControl(Training_Request_Forms_H?.Recommendations, null),
+          Opinion_Date: new FormControl(Training_Request_Forms_H?.Opinion_Date == null ? this.date_now : Training_Request_Forms_H?.Opinion_Date, null),
+          Supervisor_Name: new FormControl(Training_Request_Forms_H?.Supervisor_Name, Training_Request_Forms_H?.Supervisor_Name != null ? Validators.required : null),
+          Supervisor_Sign: new FormControl(Training_Request_Forms_H?.Supervisor_Sign, null),
+          Approved: new FormControl(Training_Request_Forms_H?.Approved == 'True' ? true : false, null),
         });
         this.Training_Request_Forms_G = this.fb.group({
           Training_Days_Utilization: new FormControl(Training_Request_Forms_G?.Training_Days_Utilization, null),
@@ -322,6 +370,19 @@ export class TrainingRequestFormComponent implements OnInit {
         setTimeout(() => {
           this.Supervisor_Name1.setValue(this.employees.filter(t => t.id === this.formData['E']?.Supervisor_Name.id)[0]);
           this.Supervisor_Name2.setValue(this.employees.filter(t => t.id === this.formData['F']?.Supervisor_Name.id)[0]);
+          this.Supervisor_Name3.setValue({
+            id: "",
+            firstname: "",
+            lastname: "",
+            ADUserName: "",
+            email: ""
+          });
+          if (this.Supervisor_Name2.value?.id != this.passport) {
+            this.Training_Request_Forms_F.controls['Training_Importantce'].disable();
+            this.Training_Request_Forms_F.controls['Approved'].disable();
+            this.Training_Request_Forms_F.controls['Recommendations'].disable();
+            this.Training_Request_Forms_F.controls['Opinion_Date'].disable();
+          }
         }, 1000);
       });
   }
@@ -376,6 +437,13 @@ export class TrainingRequestFormComponent implements OnInit {
             }
             this.Training_Request_Forms_F.controls[type].setValue(data.sign);
             break;
+          case 7:
+            if (data.sign == "data:image/png;base64,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MACCpYtMgAABAgQMAD9AgAABAgSCAgZAsHSRCRAgQICAAeAHCBAgQIBAUMAACJYuMgECBAgQMAD8AAECBAgQCAoYAMHSRSZAgAABAgaAHyBAgAABAkEBAyBYusgECBAgQMAA8AMECBAgQCAoYAAESxeZAAECBAgYAH6AAAECBAgEBQyAYOkiEyBAgAABA8APECBAgACBoIABECxdZAIECBAgYAD4AQIECBAgEBQwAIKli0yAAAECBAwAP0CAAAECBIICBkCwdJEJECBAgIAB4AcIECBAgEBQwAAIli4yAQIECBAwAPwAAQIECBAIChgAwdJFJkCAAAECBoAfIECAAAECQQEDIFi6yAQIECBAwADwAwQIECBAIChgAARLF5kAAQIECBgAfoAAAQIECAQFDIBg6SITIECAAAEDwA8QIECAAIGggAEQLF1kAgQIECBgAPgBAgQIECAQFDAAgqWLTIAAAQIEDAA/QIAAAQIEggIGQLB0kQkQIECAgAHgBwgQIECAQFDAAAiWLjIBAgQIEDAA/AABAgQIEAgKGADB0kUmQIAAAQIGgB8gQIAAAQJBAQMgWLrIBAgQIEDAAPADBAgQIEAgKGAABEsXmQABAgQIGAB+gAABAgQIBAUMgGDpIhMgQIAAAQPADxAgQIAAgaCAARAsXWQCBAgQIGAA+AECBAgQIBAUMACCpYtMgAABAgQMAD9AgAABAgSCAgZAsHSRCRAgQICAAeAHCBAgQIBAUMAACJYuMgECBAgQMAD8AAECBAgQCAoYAMHSRSZAgAABAgaAHyBAgAABAkEBAyBYusgECBAgQMAA8AMECBAgQCAoYAAESxeZAAECBAgYAH6AAAECBAgEBQyAYOkiEyBAgAABA8APECBAgACBoIABECxdZAIECBAgYAD4AQIECBAgEBQwAIKli0yAAAECBAwAP0CAAAECBIICBkCwdJEJECBAgIAB4AcIECBAgEBQwAAIli4yAQIECBAwAPwAAQIECBAIChgAwdJFJkCAAAECBoAfIECAAAECQQEDIFi6yAQIECBAwADwAwQIECBAIChgAARLF5kAAQIECBgAfoAAAQIECAQFDIBg6SITIECAAAEDwA8QIECAAIGggAEQLF1kAgQIECBgAPgBAgQIECAQFDAAgqWLTIAAAQIEDAA/QIAAAQIEggIGQLB0kQkQIECAgAHgBwgQIECAQFDAAAiWLjIBAgQIEDAA/AABAgQIEAgKGADB0kUmQIAAAQIGgB8gQIAAAQJBAQMgWLrIBAgQIEDAAPADBAgQIEAgKGAABEsXmQABAgQIGAB+gAABAgQIBAUMgGDpIhMgQIAAAQPADxAgQIAAgaCAARAsXWQCBAgQIGAA+AECBAgQIBAUMACCpYtMgAABAgQMAD9AgAABAgSCAgZAsHSRCRAgQICAAeAHCBAgQIBAUMAACJYuMgECBAgQMAD8AAECBAgQCAoYAMHSRSZAgAABAgaAHyBAgAABAkEBAyBYusgECBAgQMAA8AMECBAgQCAoYAAESxeZAAECBAgYAH6AAAECBAgEBQyAYOkiEyBAgAABA8APECBAgACBoIABECxdZAIECBAgYAD4AQIECBAgEBQwAIKli0yAAAECBAwAP0CAAAECBIICBkCwdJEJECBAgIAB4AcIECBAgEBQwAAIli4yAQIECBAwAPwAAQIECBAIChgAwdJFJkCAAAECBoAfIECAAAECQQEDIFi6yAQIECBAwADwAwQIECBAIChgAARLF5kAAQIECBgAfoAAAQIECAQFDIBg6SITIECAAAEDwA8QIECAAIGggAEQLF1kAgQIECBgAPgBAgQIECAQFDAAgqWLTIAAAQIEDAA/QIAAAQIEggIGQLB0kQkQIECAgAHgBwgQIECAQFDAAAiWLjIBAgQIEDAA/AABAgQIEAgKGADB0kUmQIAAAQIGgB8gQIAAAQJBAQMgWLrIBAgQIEDAAPADBAgQIEAgKGAABEsXmQABAgQIGAB+gAABAgQIBAUMgGDpIhMgQIAAAQPADxAgQIAAgaCAARAsXWQCBAgQIGAA+AECBAgQIBAUMACCpYtMgAABAgQMAD9AgAABAgSCAgZAsHSRCRAgQICAAeAHCBAgQIBAUMAACJYuMgECBAgQMAD8AAECBAgQCAoYAMHSRSZAgAABAgaAHyBAgAABAkEBAyBYusgECBAgQMAA8AMECBAgQCAoYAAESxeZAAECBAgYAH6AAAECBAgEBQyAYOkiEyBAgAABA8APECBAgACBoIABECxdZAIECBAgYAD4AQIECBAgEBQwAIKli0yAAAECBAwAP0CAAAECBIICBkCwdJEJECBAgIAB4AcIECBAgEBQwAAIli4yAQIECBAwAPwAAQIECBAIChgAwdJFJkCAAAECBoAfIECAAAECQQEDIFi6yAQIECBAwADwAwQIECBAIChgAARLF5kAAQIECBgAfoAAAQIECAQFDIBg6SITIECAAAEDwA8QIECAAIGggAEQLF1kAgQIECDwoOYBoxwL39cAAAAASUVORK5CYII=") {
+              this.Training_Request_Forms_H.controls[type].setValue(undefined);
+              return;
+            }
+            this.Training_Request_Forms_H.controls[type].setValue(data.sign);
+            break;
         }
       });
   }
@@ -404,6 +472,7 @@ export class TrainingRequestFormComponent implements OnInit {
         this.Department_Fund_Options = Response['d'].filter(x => x.QuestionID == '2')[0];
         this.Training_Importantce_Options = Response['d'].filter(x => x.QuestionID == '3')[0];
         this.Training_Importantce_Options2 = Response['d'].filter(x => x.QuestionID == '4')[0];
+        this.Training_Importantce_Options3 = Response['d'].filter(x => x.QuestionID == '5')[0];
       });
   }
 
@@ -436,19 +505,37 @@ export class TrainingRequestFormComponent implements OnInit {
           this.Training_Request_Forms_A.controls['First_Name'].setValue(patient.FirstName);
           this.Training_Request_Forms_A.controls['Address'].setValue(patient.CityName);
           this.Training_Request_Forms_A.controls['Phone_Number'].setValue(patient.CellNumber);
-          // this.Training_Request_Forms_E.controls['Supervisor_Name'].setValue(patient.ManagerID1);
-          // this.Training_Request_Forms_F.controls['Supervisor_Name'].setValue(patient.ManagerID2);
           this.Training_Request_Forms_G.controls['Work_Start_Date'].setValue(patient.StartWorkDate);
           this.Training_Request_Forms_G.controls['Function_Department'].setValue(patient.FunctionDescription + ' - ' + patient.DepartnentDescripton);
           this.Training_Request_Forms_G.controls['Standart_Level'].setValue(patient.RankDescription);
           this.Supervisor_Name1.setValue(this.employees.filter(t => t.id === patient.ManagerID1.id)[0]);
           this.Supervisor_Name2.setValue(this.employees.filter(t => t.id === patient.ManagerID2.id)[0]);
+          this.Supervisor_Name2.setValue({
+            id: "",
+            firstname: "",
+            lastname: "",
+            ADUserName: "",
+            email: ""
+          });
+          this.Training_Request_Forms_E.controls['Supervisor_Name'].setValue(this.Supervisor_Name1.value);
+          this.Training_Request_Forms_F.controls['Supervisor_Name'].setValue(this.Supervisor_Name2.value);
+          this.Training_Request_Forms_H.controls['Supervisor_Name'].setValue(this.Supervisor_Name3.value);
+          if (this.Supervisor_Name2.value?.id != this.passport) {
+            this.Training_Request_Forms_F.controls['Training_Importantce'].disable();
+            this.Training_Request_Forms_F.controls['Approved'].disable();
+            this.Training_Request_Forms_F.controls['Recommendations'].disable();
+            this.Training_Request_Forms_F.controls['Opinion_Date'].disable();
+          }
         }
       });
   }
 
   onSubmit() {
-    if (this.Training_Request_Forms_A.valid && this.Training_Request_Forms_B.valid && this.Training_Request_Forms_C.valid && this.Training_Request_Forms_D.valid && this.Supervisor_Name2.valid) {
+    if (this.Training_Request_Forms_A.valid && this.Training_Request_Forms_B.valid && this.Training_Request_Forms_C.valid && this.Training_Request_Forms_D.valid) {
+      if (this.Supervisor_Name1.value == undefined) {
+        this.openSnackBar('חסר מנהל ישיר, נא ליצור קשר עם משאבי אנוש');
+        return;
+      }
       this.Training_Request_Forms_B.controls['Date_Start'].setValue(this.datePipe.transform(this.Training_Request_Forms_B.value.Date_Start, 'yyyy-MM-dd'));
       this.Training_Request_Forms_B.controls['Date_End'].setValue(this.datePipe.transform(this.Training_Request_Forms_B.value.Date_End, 'yyyy-MM-dd'));
       this.Training_Request_Forms_C.controls['Request_Name'].setValue(this.datePipe.transform(this.Training_Request_Forms_C.value.Request_Name, 'yyyy-MM-dd'));
@@ -463,6 +550,7 @@ export class TrainingRequestFormComponent implements OnInit {
           D: this.Training_Request_Forms_D.getRawValue(),
           E: this.Training_Request_Forms_E.getRawValue(),
           F: this.Training_Request_Forms_F.getRawValue(),
+          H: this.Training_Request_Forms_H.getRawValue(),
           G: this.Training_Request_Forms_G.getRawValue(),
         })
         .subscribe((Response) => {

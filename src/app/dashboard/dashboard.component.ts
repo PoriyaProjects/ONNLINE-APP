@@ -42,8 +42,12 @@ export class DashboardComponent implements OnInit {
     lastName = localStorage.getItem("LastName").toLowerCase();
     functionDescription = localStorage.getItem("FunctionDescription").toLowerCase();
     birthdayUser: boolean = false;
+    thinking: boolean = false;
     righttabs = [];
     lefttabs = [];
+    requestid = 0;
+    responseid = 0;
+    feedbacksubmited: boolean;
 
     // Track selected tab index
     selectedTabIndex: number | null = 0;
@@ -110,7 +114,7 @@ export class DashboardComponent implements OnInit {
     }
 
     async askModel() {
-        if (this.question == '') {
+        if (this.question.trim() == '') {
             this.answer = 'לצורך קבלת מענה, יש להזין את השאלה בשדה המיועד לכך למעלה.';
             return;
         }
@@ -119,11 +123,12 @@ export class DashboardComponent implements OnInit {
     }
 
     async askGemini(model) {
+        this.thinking = true;
         this.answer = '';
         let resp = await this.runChat(model, this.question);
         this.answer = resp.text();
         this.AskAIRequestData(this.userName, resp.modelVersion, this.question);
-        this.AskAIResponseData(this.userName, resp.modelVersion, resp.text());
+        this.thinking = false;
     }
 
     async runChat(model, question) {
@@ -136,6 +141,7 @@ export class DashboardComponent implements OnInit {
     }
 
     async askClaude(model: any) {
+        this.thinking = true;
         // Transform the payload to the new structure
         const updatedModel = {
             Region_Name: model.region_name,
@@ -156,7 +162,7 @@ export class DashboardComponent implements OnInit {
                             if (parsedResponse && typeof parsedResponse.text === 'string') {
                                 this.answer = parsedResponse.text;
                                 this.AskAIRequestData(this.userName, model.modelId, this.question);
-                                this.AskAIResponseData(this.userName, model.modelId, this.answer);
+                                this.thinking = false;
                             } else {
                                 console.error('Invalid response format: missing "text" property');
                             }
@@ -182,7 +188,8 @@ export class DashboardComponent implements OnInit {
             })
             .subscribe((Response) => {
                 try {
-                    console.log("saved to db");
+                    this.requestid = Response['d'];
+                    this.AskAIResponseData(this.userName, model_id, this.answer);
                 } catch (error) {
                     console.log("error in AskAIRequestData!");
                 }
@@ -195,9 +202,26 @@ export class DashboardComponent implements OnInit {
                 user_name: user_name,
                 model_id: model_id,
                 text: prompt,
+                id: this.requestid,
             })
             .subscribe((Response) => {
                 try {
+                    this.responseid = Response['d'];
+                } catch (error) {
+                    console.log("error in AskAIRequestData!");
+                }
+            });
+    }
+
+    submitFeedback(feedback): void {
+        this.http
+            .post(environment.url + "AIUserFeedBack", {
+                _feedback: feedback,
+                _id: this.responseid
+            })
+            .subscribe((Response) => {
+                try {
+                    this.feedbacksubmited = true;
                     console.log("saved to db");
                 } catch (error) {
                     console.log("error in AskAIRequestData!");
