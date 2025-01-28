@@ -8,6 +8,17 @@
   background: linear-gradient(90deg, #1976d2, #f8f9fa);
 }
 
+.container_Ai .feedback {
+  margin-top: 20px;
+  // display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.container_Ai .feedback h4 {
+  margin: 0;
+}
+
 mat-card {
   max-width: 600px;
   padding: 20px;
