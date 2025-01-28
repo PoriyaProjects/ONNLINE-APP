@@ -42,7 +42,7 @@ export class WhatsappLungCancerComponent implements OnInit {
   ) { }
 
   ngOnInit(): void {
-    this.getHrWhatsAppUsers();
+    this.getLungsCancerWhatsAppUsers();
     // this.getContactsAndConversations();
     this.currentContact = this.contacts[0];
     this.newMessage = this.fb.group({
@@ -82,9 +82,9 @@ export class WhatsappLungCancerComponent implements OnInit {
     return this.contacts.filter(option => option.FirstName.toLowerCase().includes(filterValue));
   }
 
-  async getHrWhatsAppUsers() {
+  async getLungsCancerWhatsAppUsers() {
     this.http
-      .post(environment.url + "GetHrWhatsAppUsers", {
+      .post(environment.url + "GetLungsCancerWhatsAppUsers", {
         _user_name: this.user_name,
         type: "10"
       })
@@ -104,7 +104,7 @@ export class WhatsappLungCancerComponent implements OnInit {
             clearTimeout(interval);
           } else {
             console.log("Refreshing..");
-            this.getHrWhatsAppUsers();
+            this.getLungsCancerWhatsAppUsers();
           }
         }, 10000);
       });
@@ -122,7 +122,7 @@ export class WhatsappLungCancerComponent implements OnInit {
               uncontact: contact
             })
             .subscribe((Response) => {
-              if (Response["d"]) this.getHrWhatsAppUsers();
+              if (Response["d"]) this.getLungsCancerWhatsAppUsers();
               else alert("אירעה שגיאה בסיום שיחה");
             });
         } else {

@@ -20,9 +20,9 @@
                     matTooltip="בקשה חדשה">
                     <mat-icon>add</mat-icon>
                 </button>
-                <button mat-fab (click)="openDialog()" matTooltip="השתלמויות" *ngIf="UserName == 'adahabre'">
+                <!-- <button mat-fab (click)="openDialog()" matTooltip="השתלמויות" *ngIf="UserName == 'adahabre'">
                     <mat-icon>view_list</mat-icon>
-                </button>
+                </button> -->
             </div>
         </div>
         <table mat-table [dataSource]="trainingRequests" matSort class="mat-elevation-z8"
@@ -75,20 +75,19 @@
                         (click)="handleAction(element.Row_ID, 'view')" matTooltip="הצג">
                         <mat-icon>remove_red_eye</mat-icon>
                     </button>
-                    <button mat-mini-fab style="background-color: #6cdda4;"
+                    <!-- <button mat-mini-fab style="background-color: #6cdda4;"
                         (click)="handleAction(element.Row_ID, 'approve')" matTooltip="אשר">
                         <mat-icon>check</mat-icon>
                     </button>
                     <button mat-mini-fab style="background-color: #f14c7a;"
                         (click)="handleAction(element.Row_ID, 'reject')" matTooltip="סרב">
                         <mat-icon>cancel</mat-icon>
-                    </button>
+                    </button> -->
                 </td>
             </ng-container>
 
             <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-            <tr mat-row *matRowDef="let row; columns: displayedColumns;"
-                [ngStyle]="{ 'background-color': row.Approved == 'True' ? '#9ff99f' : row.Approved == 'False' ? '#ffa5a5' : ''}">
+            <tr mat-row *matRowDef="let row; columns: displayedColumns;">
             </tr>
         </table>
         <mat-paginator [pageSizeOptions]="[10,20,35,50]" showFirstLastButtons></mat-paginator>
