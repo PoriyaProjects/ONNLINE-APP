@@ -55,7 +55,7 @@ export class LabTestsComponent implements OnInit {
   ]
   TABLE_DATA: Supplier[] = [];
   FreeText: string = '';
-  Status: string = '-1';
+  Status: string = '1';
   Cat: string = '-1';
   AdminToEdit = false;
   dataSource = new MatTableDataSource<Supplier>(this.TABLE_DATA);
@@ -194,6 +194,10 @@ export class LabTestsComponent implements OnInit {
       
       width: "100%",    
       data: {
+        showForm: true,
+        showImage_1: false,
+        showImage_3: false,
+        showImage_2: false,
         element: element,
         dialog: this.dialog,
       },
@@ -208,7 +212,10 @@ export class LabTestsComponent implements OnInit {
     const dialogRef = this.dialog.open(EditOrAddLabTestsComponent, {
       width: "100%", 
       data: {
-        
+        showForm: true,
+        showImage_1: false,
+        showImage_3: false,
+        showImage_2: false,
         element: element,
         dialog: this.dialog,
       },
@@ -224,6 +231,10 @@ export class LabTestsComponent implements OnInit {
     const dialogRef = this.dialog.open(EditOrAddLabTestsComponent, {
       width: "100%", 
       data: {
+        showForm: true,
+        showImage_1: false,
+        showImage_3: false,
+        showImage_2: false,
         disable: true,
         element: element,
         dialog: this.dialog,
