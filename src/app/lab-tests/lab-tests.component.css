@@ -31,3 +31,37 @@
 td.mat-cell, td.mat-footer-cell, th.mat-header-cell {
     text-align: right;
 }
+
+
+/* Ensure the table uses fixed layout so widths are applied */
+table.mat-table {
+    table-layout: fixed;
+  }
+  
+  
+  
+  /* All other columns (if needed) */
+  .mat-header-cell,
+  .mat-cell {
+    /* Default to 150px if no more specific rule applies */
+    width: 150px;
+  }
+  .mat-column-TestCode  {
+    width: 110px;
+  }
+  .mat-column-PickUpDeliveryConditions {
+    width: 300px;
+  }
+  /* 250px columns */
+  .mat-column-TestName_1,
+  .mat-column-TestName_2{
+    width: 250px;
+  }
+  
+  /* 200px column */
+  .mat-column-LabTestTimeArrival {
+    width: 200px;
+  }
+  .mat-column-editAuthorized  {
+    width: 50px;
+  }
