@@ -37,7 +37,7 @@ export class NamerUserActionsComponent implements OnInit {
   disableSendBtn() {
     setTimeout(() => {
       this.sendingBtn = true;
-    }, 30000);
+    }, 60000);
   }
 
   sendNotificationToWhatsApp() {
