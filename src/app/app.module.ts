@@ -252,6 +252,7 @@ import { WhatsappLungCancerComponent } from './whatsapp-messages-dashboard/whats
 import { ShortcutsManagementComponent } from './dashboard/shortcuts-management/shortcuts-management.component';
 import { ShortcutFormDialogComponent } from './dashboard/shortcuts-management/shortcut-form-dialog/shortcut-form-dialog.component';
 import { NamerUserActionsComponent } from './dashboard/namer-user-actions/namer-user-actions.component';
+import { LearningRequestsDashboardComponent } from './learning-requests-dashboard/learning-requests-dashboard.component';
 
 
 const maskConfig: Partial<IConfig> = {
@@ -454,7 +455,8 @@ const maskConfig: Partial<IConfig> = {
     WhatsappLungCancerComponent,
     ShortcutsManagementComponent,
     ShortcutFormDialogComponent,
-    NamerUserActionsComponent
+    NamerUserActionsComponent,
+    LearningRequestsDashboardComponent
   ],
   imports: [
     MatIconModule,
