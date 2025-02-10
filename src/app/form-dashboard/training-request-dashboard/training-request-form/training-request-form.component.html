@@ -126,7 +126,7 @@
     <mat-tab label="חלק ב' - בקשת המועמד"
       [disabled]="Training_Request_Forms_A.invalid || Training_Request_Forms_G.invalid">
       <mat-card [formGroup]="Training_Request_Forms_B">
-        <mat-card-title>פרטי ההשתלמות המבוקשת (יש לצרף תוכנית)</mat-card-title>
+        <mat-card-title>פרטי ההשתלמות המבוקשת (חובה לצרף תוכנית)</mat-card-title>
         <mat-card-content>
           <div class="row">
             <div class="col-lg-2 col-md-4 col-sm-6">
@@ -151,7 +151,13 @@
             <div class="col-lg-2 col-md-4 col-sm-6">
               <mat-form-field>
                 <mat-label>מקום ההשתלמות</mat-label>
-                <input matInput formControlName="Request_Location" />
+                <!-- <input matInput formControlName="Request_Location" /> -->
+                <input type="text" aria-label="city" matInput [formControl]="cityControl" [matAutocomplete]="auto">
+                <mat-autocomplete #auto="matAutocomplete" (optionSelected)="changeCity($event.option.value)">
+                  <mat-option *ngFor="let City of cityOptions | async" [value]="City.cityName">
+                    {{City.cityName}}
+                  </mat-option>
+                </mat-autocomplete>
               </mat-form-field>
             </div>
             <div class="col-lg-2 col-md-4 col-sm-6">
@@ -342,7 +348,7 @@
           <div class="section">
             <mat-label>{{ Health_Corporation_Options.QuestionText }}</mat-label>
             <mat-select formControlName="Health_Corporation" class="multi-select" [compareWith]="compareFn"
-              (selectionChange)="healtCorporationChoose(1, $event)" multiple>
+              (selectionChange)="check_if_fund_or_health()" multiple>
               <mat-option *ngFor="let option of Health_Corporation_Options.Training_Request_Options"
                 [value]="option.OptionID">
                 {{ option.OptionText }}
@@ -359,7 +365,7 @@
           <div class="section">
             <mat-label>{{ Department_Fund_Options.QuestionText }}</mat-label>
             <mat-select formControlName="Department_Fund" class="multi-select"
-              (selectionChange)="healtCorporationChoose(2, $event)" [compareWith]="compareFn" multiple>
+              (selectionChange)="check_if_fund_or_health()" [compareWith]="compareFn" multiple>
               <mat-option *ngFor="let option of Department_Fund_Options.Training_Request_Options"
                 [value]="option.OptionID">
                 {{ option.OptionText }}
@@ -370,6 +376,13 @@
             <mat-form-field>
               <mat-label>אחר</mat-label>
               <input matInput formControlName="Department_Fund_Description" />
+            </mat-form-field>
+          </div>
+          <br>
+          <div class="section" *ngIf="(user_name == 'dnudelman' || user_name == 'adahabre') && dorit_note_answer">
+            <mat-form-field>
+              <mat-label>תשובת השתלמות תאגיד</mat-label>
+              <textarea matInput formControlName="Training_Fund_Answer" rows="2"></textarea>
             </mat-form-field>
           </div>
         </mat-card-content>
@@ -384,6 +397,12 @@
           <p>ממונה ישיר</p>
           <div class="row">
             <div class="col-lg-1 col-md-4 col-sm-6">
+              <section class="example-section">
+                <p><mat-checkbox formControlName="Approved"><span class="checkbox-label">מאושר</span></mat-checkbox>
+                </p>
+              </section>
+            </div>
+            <div class="col-lg-1 col-md-4 col-sm-6">
               <mat-label>{{ Training_Importantce_Options.QuestionText }}</mat-label>
               <mat-select formControlName="Training_Importantce" [compareWith]="compareFn">
                 <mat-option *ngFor="let option of Training_Importantce_Options.Training_Request_Options"
@@ -392,15 +411,9 @@
                 </mat-option>
               </mat-select>
             </div>
-            <div class="col-lg-1 col-md-4 col-sm-6">
-              <section class="example-section">
-                <p><mat-checkbox formControlName="Approved"><span class="checkbox-label">מאשר</span></mat-checkbox>
-                </p>
-              </section>
-            </div>
             <div class="col-lg-4 col-md-4 col-sm-6">
               <mat-form-field>
-                <mat-label>המלצות ונימוקים</mat-label>
+                <mat-label>נימוקים</mat-label>
                 <textarea matInput formControlName="Recommendations" rows="2"></textarea>
               </mat-form-field>
             </div>
@@ -447,6 +460,12 @@
           <p>ממונה עקיף</p>
           <div class="row">
             <div class="col-lg-1 col-md-4 col-sm-6">
+              <section class="example-section">
+                <p><mat-checkbox formControlName="Approved"><span class="checkbox-label">מאושר</span></mat-checkbox>
+                </p>
+              </section>
+            </div>
+            <div class="col-lg-1 col-md-4 col-sm-6">
               <mat-label>{{ Training_Importantce_Options2.QuestionText }}</mat-label>
               <mat-select formControlName="Training_Importantce" [compareWith]="compareFn">
                 <mat-option *ngFor="let option of Training_Importantce_Options2.Training_Request_Options"
@@ -455,15 +474,9 @@
                 </mat-option>
               </mat-select>
             </div>
-            <div class="col-lg-1 col-md-4 col-sm-6">
-              <section class="example-section">
-                <p><mat-checkbox formControlName="Approved"><span class="checkbox-label">מאשר</span></mat-checkbox>
-                </p>
-              </section>
-            </div>
             <div class="col-lg-4 col-md-4 col-sm-6">
               <mat-form-field>
-                <mat-label>המלצות ונימוקים</mat-label>
+                <mat-label>נימוקים</mat-label>
                 <textarea matInput formControlName="Recommendations" rows="2"></textarea>
               </mat-form-field>
             </div>
@@ -505,75 +518,98 @@
             </div>
           </div>
         </mat-card-content>
-        <hr>
+      </mat-card>
+      <button mat-raised-button color="primary" type="submit" class="submitBtn" (click)="onSubmit()">שמירה</button>
+    </mat-tab>
+    <mat-tab label="חלק ו' - ועדת החלטה" *ngIf="!requested"
+      [disabled]="Training_Request_Forms_A.invalid || Training_Request_Forms_B.invalid || Training_Request_Forms_C.invalid || Training_Request_Forms_D.invalid">
+      <mat-card>
         <mat-card-content [formGroup]="Training_Request_Forms_H">
-          <p>ועדת החלטה</p>
           <div class="row">
-            <div class="col-lg-1 col-md-4 col-sm-6">
-              <mat-label>{{ Training_Importantce_Options3.QuestionText }}</mat-label>
-              <mat-select formControlName="Training_Importantce" [compareWith]="compareFn">
-                <mat-option *ngFor="let option of Training_Importantce_Options3.Training_Request_Options"
-                  [value]="option.OptionText">
-                  {{ option.OptionText }}
-                </mat-option>
-              </mat-select>
-            </div>
-            <div class="col-lg-1 col-md-4 col-sm-6">
-              <section class="example-section">
-                <p><mat-checkbox formControlName="Approved"><span class="checkbox-label">מאשר</span></mat-checkbox>
-                </p>
-              </section>
-            </div>
-            <div class="col-lg-4 col-md-4 col-sm-6">
-              <mat-form-field>
-                <mat-label>המלצות ונימוקים</mat-label>
-                <textarea matInput formControlName="Recommendations" rows="2"></textarea>
-              </mat-form-field>
-            </div>
             <div class="col-lg-2 col-md-4 col-sm-6">
               <mat-form-field>
-                <mat-label>תאריך</mat-label>
+                <mat-label>מועד דיון</mat-label>
                 <input matInput [matDatepicker]="Opinion_Date3" formControlName="Opinion_Date">
                 <mat-hint>DD/MM/YYYY</mat-hint>
                 <mat-datepicker-toggle matIconSuffix [for]="Opinion_Date3"></mat-datepicker-toggle>
                 <mat-datepicker #Opinion_Date3></mat-datepicker>
               </mat-form-field>
             </div>
+            <div class="col-lg-3 col-md-4 col-sm-6">
+              <mat-label>סוג השתלמות</mat-label>
+              <mat-select formControlName="Training_Type" [compareWith]="compareFn3">
+                <mat-option value="העשרה">העשרה</mat-option>
+                <mat-option value="הצגת הרצאה">הצגת הרצאה</mat-option>
+                <mat-option value="השכלה פורמלית אונ' פתוחה">השכלה פורמלית אונ' פתוחה</mat-option>
+                <mat-option value="השכלה פורמלית הסמכה">השכלה פורמלית הסמכה</mat-option>
+                <mat-option value="השכלה פורמלית יסודית">השכלה פורמלית יסודית</mat-option>
+                <mat-option value="השכלה פורמלית ת.ראשון">השכלה פורמלית ת.ראשון</mat-option>
+                <mat-option value="השכלה פורמלית ת.שני">השכלה פורמלית ת.שני</mat-option>
+                <mat-option value="השכלה פורמלית ת.שלישי">השכלה פורמלית ת.שלישי</mat-option>
+                <mat-option value="השכלה פורמלית תיכונית/תגת">השכלה פורמלית תיכונית/תגת</mat-option>
+                <mat-option value="השכלה פורמלית תעודה">השכלה פורמלית תעודה</mat-option>
+                <mat-option value="השתלמות קצרה">השתלמות קצרה</mat-option>
+                <mat-option value="יום עיון">יום עיון</mat-option>
+                <mat-option value="כנס מקצועי">כנס מקצועי</mat-option>
+                <mat-option value="לימודי המשך רופאים">לימודי המשך רופאים</mat-option>
+                <mat-option value="סדנה מקצועית">סדנה מקצועית</mat-option>
+                <mat-option value="פעולות פנים-גיבוש עובדים">קורס במסגרת פרטית</mat-option>
+                <mat-option value="קורס במסגרת פרטית">קורס במסגרת פרטית</mat-option>
+                <mat-option value="קורס הכשרה">קורס הכשרה</mat-option>
+                <mat-option value="קורס למנהלים">קורס למנהלים</mat-option>
+                <mat-option value="קורס מקצועי">קורס מקצועי</mat-option>
+                <mat-option value="קורס קידום קד'ם">קורס קידום קד"ם</mat-option>
+                <mat-option value="רוטציה בהתמחות">רוטציה בהתמחות</mat-option>
+                <mat-option value="שפות">שפות</mat-option>
+              </mat-select>
+            </div>
+            <div class="col-lg-1 col-md-4 col-sm-6">
+              <section class="example-section">
+                <p><mat-checkbox formControlName="Approved"><span class="checkbox-label">מאושר</span></mat-checkbox>
+                </p>
+              </section>
+            </div>
+            <div class="col-lg-1 col-md-4 col-sm-6" *ngIf="Training_Request_Forms_H.get('Approved').value">
+              <section class="example-section">
+                <p><mat-checkbox formControlName="Transportaion"><span
+                      class="checkbox-label">נסיעות</span></mat-checkbox>
+                </p>
+              </section>
+            </div>
             <div class="col-lg-2 col-md-4 col-sm-6">
               <mat-form-field>
-                <mat-label>ועדת החלטה</mat-label>
-                <input matInput formControlName="Supervisor_Name" />
-                <!-- <input type="text" matInput [formControl]="Supervisor_Name3" [matAutocomplete]="auto3">
-                <mat-autocomplete #auto3="matAutocomplete" [displayWith]="displayFn3">
-                  <mat-option *ngFor="let name3 of filteredOptions3 | async" [value]="name3">
-                    {{name3.firstname}}
-                  </mat-option>
-                </mat-autocomplete> -->
+                <mat-label>מענק מאושר באחוזים</mat-label>
+                <input matInput formControlName="Approved_Percent" />
               </mat-form-field>
             </div>
-            <div class="col-lg-2 col-md-4 col-sm-6" *ngIf="Supervisor_Name3.value?.id == passport">
-              <button mat-raised-button class="signBtn" color="warn" (click)="signForm(7, 'Supervisor_Sign')">
-                <span
-                  *ngIf="Training_Request_Forms_H.get('Supervisor_Sign').value == undefined || Training_Request_Forms_H.get('Supervisor_Sign').value == ''">לחתום</span>
-                <span
-                  *ngIf="Training_Request_Forms_H.get('Supervisor_Sign').value != undefined && Training_Request_Forms_H.get('Supervisor_Sign').value != ''">נחתם</span>
-              </button>
-              <img
-                *ngIf="Training_Request_Forms_H.get('Supervisor_Sign').value != undefined && Training_Request_Forms_H.get('Supervisor_Sign').value != ''"
-                [src]="Training_Request_Forms_H.get('Supervisor_Sign').value" />
-              <!-- <mat-form-field>
-                <mat-label>חתימה</mat-label>
-                <input matInput formControlName="Supervisor_Sign" />
-              </mat-form-field> -->
+            <div class="col-lg-1 col-md-4 col-sm-6">
+              <mat-form-field>
+                <mat-label>מתוך סכום של</mat-label>
+                <input matInput formControlName="Approved_Percent_Out_Of" />
+              </mat-form-field>
+            </div>
+            <div class="col-lg-1 col-md-4 col-sm-6">
+              <p style="margin-bottom: 0;">סה"כ</p>
+              <p style="text-align: center;font-weight: bold;">{{
+                (Training_Request_Forms_H.get('Approved_Percent').value *
+                Training_Request_Forms_H.get('Approved_Percent_Out_Of').value) / 100}} </p>
+            </div>
+            <div class="col-lg-1 col-md-4 col-sm-6">
+              <mat-form-field>
+                <mat-label>ימי העדרות שאושרו</mat-label>
+                <input matInput formControlName="Approved_Absence_Time" />
+              </mat-form-field>
+            </div>
+            <div class="col-lg-12 col-md-4 col-sm-6">
+              <mat-form-field>
+                <mat-label>הערות</mat-label>
+                <textarea matInput formControlName="Recommendations" rows="2"></textarea>
+              </mat-form-field>
             </div>
           </div>
         </mat-card-content>
       </mat-card>
       <button mat-raised-button color="primary" type="submit" class="submitBtn" (click)="onSubmit()">שמירה</button>
     </mat-tab>
-    <!-- <mat-tab label="חלק ו' - ימולא ע'י מחלקת משאבי אנוש" *ngIf="!requested"
-      [disabled]="Training_Request_Forms_A.invalid || Training_Request_Forms_B.invalid || Training_Request_Forms_C.invalid || Training_Request_Forms_D.invalid">
-
-    </mat-tab> -->
   </mat-tab-group>
 </form>
