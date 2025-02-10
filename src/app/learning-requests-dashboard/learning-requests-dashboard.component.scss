@@ -1,0 +1,58 @@
+.dashboard-container {
+  padding: 20px;
+  direction: rtl; // Right-to-left layout
+  text-align: right;
+  padding-bottom: 500px;
+}
+
+.chart-section {
+  margin-bottom: 30px;
+}
+
+h2 {
+  font-size: 1.5rem;
+  margin-bottom: 15px;
+  text-align: right; // Align section titles to the right
+}
+
+.charts {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  justify-content: flex-end; // Align items to the right
+}
+
+.mat-card {
+  padding: 15px;
+  flex: 1;
+  min-width: 300px;
+  text-align: right; // Ensure card text aligns right
+}
+
+.table-section {
+  width: 100%;
+}
+
+table {
+  width: 100%;
+  direction: rtl; // Ensure table follows RTL layout
+}
+
+th,
+td {
+  text-align: right; // Align table text to the right
+}
+
+.mat-header-cell {
+  font-weight: bold;
+  text-align: right;
+}
+
+.mat-row {
+  text-align: right;
+}
+
+.google-chart {
+  width: 100% !important;
+  height: 100% !important;
+}
