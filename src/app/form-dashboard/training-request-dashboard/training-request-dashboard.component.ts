@@ -125,7 +125,7 @@ export class TrainingRequestDashboardComponent implements OnInit {
 
   async TrainingRequestSendLastAnswer(data) {
     console.log(data);
-    let header = await this.conversionFunction('https://poria.is-great.org/images/covid_2_header.png');
+    // let header = await this.conversionFunction('https://poria.is-great.org/images/covid_2_header.png');
     // let header = await this.conversionFunction('https://www.poria.org.il/_Pics/logo.jpg');
     let pdf = `<!DOCTYPE html>
     <html lang="he" dir="rtl">
@@ -135,7 +135,7 @@ export class TrainingRequestDashboardComponent implements OnInit {
     </head>
     <body style="font-family: Arial, sans-serif;direction: rtl;text-align: right;padding: 200px;
     margin: 0;">
-    <img style="width: 640px;" src='${header}' />
+    <img style="width: 640px;" src='http://srv-apps-prod/assets/covid_2_header.png' /><br>
         <p style="margin: 5px 0;">תאריך: ${this.date_now}</p><br>
         <p style="margin: 5px 0;">לכבוד:</p><br><br>
         <p style="margin: 5px 0;"><span>${data['A'].First_Name} ${data['A'].Family_Name}</span></p>
