@@ -89,8 +89,6 @@ export class TrainingRequestDashboardComponent implements OnInit {
       }).afterClosed().subscribe(res => {
         this.getAllTrainingRequestFormsList("");
       });
-    } else if (action == 'share') {
-      this.TrainingRequestSendLastAnswer(rowId);
     }
   }
 
@@ -124,9 +122,7 @@ export class TrainingRequestDashboardComponent implements OnInit {
   }
 
   async TrainingRequestSendLastAnswer(data) {
-    console.log(data);
-    let header = await this.conversionFunction('https://poria.is-great.org/images/covid_2_header.png');
-    // let header = await this.conversionFunction('https://www.poria.org.il/_Pics/logo.jpg');
+    // let header = await this.conversionFunction('https://poria.is-great.org/images/covid_2_header.png');
     let pdf = `<!DOCTYPE html>
     <html lang="he" dir="rtl">
     <head>
@@ -135,18 +131,20 @@ export class TrainingRequestDashboardComponent implements OnInit {
     </head>
     <body style="font-family: Arial, sans-serif;direction: rtl;text-align: right;padding: 200px;
     margin: 0;">
-    <img style="width: 640px;" src='${header}' />
+    <img style="width: 640px;" src='http://srv-apps-prod/assets/covid_2_header.png' />
+    <br>
+    <br>
         <p style="margin: 5px 0;">תאריך: ${this.date_now}</p><br>
         <p style="margin: 5px 0;">לכבוד:</p><br><br>
         <p style="margin: 5px 0;"><span>${data['A'].First_Name} ${data['A'].Family_Name}</span></p>
         <p style="margin: 5px 0;">${data['G'].Function_Department}</p>
       <br>
         <p style="font-size: 18px;font-weight: bold;margin-bottom: 5px;margin: 5px 0;">הנדון: בקשתך למענק השתלמות</p>
-        <p style="margin: 5px 0;">לקורס: <span style="font-weight: bold;color: black;background-color: #f0f0f0;padding: 2px 5px;
+        <p style="margin: 5px 0;">לקורס: <span style="font-weight: bold;color: black;;padding: 2px 5px;
         border-radius: 5px;margin: 5px 0;">${data['B'].Request_Name}</span> 
-        בין התאריכים <span style="font-weight: bold;color: black;background-color: #f0f0f0;padding: 2px 5px;
+        בין התאריכים <span style="font-weight: bold;color: black;padding: 2px 5px;
         border-radius: 5px;">${data['B'].Date_Start} - ${data['B'].Date_End}</span> 
-        ב <span style="font-weight: bold;color: black;background-color: #f0f0f0;padding: 2px 5px;
+        ב <span style="font-weight: bold;color: black;padding: 2px 5px;
         border-radius: 5px;">${data['B'].Request_Location}</span></p>
     
         <div style="font-size: 14px;margin-top: 15px;line-height: 1.6;">
@@ -179,34 +177,33 @@ export class TrainingRequestDashboardComponent implements OnInit {
     </body>
     </html>
     `;
-    setTimeout(() => {
-      this.confirmationDialogService
-        .confirm("נא לאשר..", "האם אתה בטוח ...? ")
-        .then((confirmed) => {
-          console.log("User confirmed:", confirmed);
-          if (confirmed) {
-            this.http
-              .post(environment.url + "TrainingRequestSendLastAnswer", {
-                pdfString: pdf
-              })
-              .subscribe((Response) => {
-                if (Response['d']) {
-                  this.getAllTrainingRequestFormsList("");
-                  this.openSnackBar("נשלח בהצלחה");
-                } else {
-                  this.getAllTrainingRequestFormsList("");
-                  this.openSnackBar("תקלה! לא נשלח");
-                }
-              });
-          } else {
-          }
-        })
-        .catch(() =>
-          console.log(
-            "User dismissed the dialog (e.g., by using ESC, clicking the cross icon, or clicking outside the dialog)"
-          )
-        );
-    }, 1500);
+    this.confirmationDialogService
+      .confirm("נא לאשר..", "האם אתה בטוח ...? ")
+      .then((confirmed) => {
+        console.log("User confirmed:", confirmed);
+        if (confirmed) {
+          this.http
+            .post(environment.url + "TrainingRequestSendLastAnswer", {
+              pdfString: pdf,
+              request_email: data['A'].Email
+            })
+            .subscribe((Response) => {
+              if (Response['d']) {
+                this.getAllTrainingRequestFormsList("");
+                this.openSnackBar("נשלח בהצלחה");
+              } else {
+                this.getAllTrainingRequestFormsList("");
+                this.openSnackBar("תקלה! לא נשלח");
+              }
+            });
+        } else {
+        }
+      })
+      .catch(() =>
+        console.log(
+          "User dismissed the dialog (e.g., by using ESC, clicking the cross icon, or clicking outside the dialog)"
+        )
+      );
   }
 
   // trainingRequestApprovedOrNot(rowId, approved) {
