@@ -71,7 +71,7 @@ export class LearningRequestsDashboardComponent implements OnInit {
   };
 
   // Table Data
-  displayedColumns: string[] = ['assignment_id', 'name', 'due_date'];
+  displayedColumns: string[] = ['assignment_id', 'name', 'due_date', 'link'];
   tableData = new MatTableDataSource<any>();
 
   employeeId = localStorage.getItem('ID');
@@ -82,6 +82,11 @@ export class LearningRequestsDashboardComponent implements OnInit {
   ngOnInit(): void {
     this.getLearningCoursesByEmployeeID();
     this.getUnDoneLearningCoursesByEmployeeID();
+  }
+
+  openLink(assignmentId: string): void {
+    const url = `https://platform.blossom-kc.com/poria/mail_link?group=${assignmentId}`;
+    window.open(url, '_blank'); // Opens in a new tab
   }
 
   getLearningCoursesByEmployeeID() {
