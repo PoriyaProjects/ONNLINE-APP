@@ -103,26 +103,8 @@ export class TrainingRequestDashboardComponent implements OnInit {
       });
   }
 
-  async convertImageToBase64(url: string): Promise<string> {
-    const response = await fetch(url);
-    const blob = await response.blob();
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onloadend = () => resolve(reader.result as string);
-      reader.onerror = reject;
-      reader.readAsDataURL(blob);
-    });
-  }
-
-  async conversionFunction(url) {
-    let base = await this.convertImageToBase64(url).then(base64 => {
-      return base64;
-    });
-    return base;
-  }
 
   async TrainingRequestSendLastAnswer(data) {
-    // let header = await this.conversionFunction('https://poria.is-great.org/images/covid_2_header.png');
     let pdf = `<!DOCTYPE html>
     <html lang="he" dir="rtl">
     <head>
@@ -183,16 +165,14 @@ export class TrainingRequestDashboardComponent implements OnInit {
         console.log("User confirmed:", confirmed);
         if (confirmed) {
           this.http
-            .post(environment.url + "TrainingRequestSendLastAnswer", {
+            .post(environment.urlipracticom + "TrainingRequestSendLastAnswer", {
               pdfString: pdf,
               request_email: data['A'].Email
             })
             .subscribe((Response) => {
               if (Response['d']) {
-                this.getAllTrainingRequestFormsList("");
                 this.openSnackBar("נשלח בהצלחה");
               } else {
-                this.getAllTrainingRequestFormsList("");
                 this.openSnackBar("תקלה! לא נשלח");
               }
             });
