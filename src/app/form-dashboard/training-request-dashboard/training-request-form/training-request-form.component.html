@@ -161,10 +161,10 @@
               </mat-form-field>
             </div>
             <div class="col-lg-2 col-md-4 col-sm-6">
-              <mat-form-field>
-                <mat-label>המוסד המארגן</mat-label>
-                <input matInput formControlName="Planning_Intity" />
-              </mat-form-field>
+              <mat-label>המוסד המארגן</mat-label>
+              <mat-select formControlName="Planning_Intity">
+                <mat-option *ngFor="let intity of intity_list" [value]="intity"> {{intity}} </mat-option>
+              </mat-select>
             </div>
             <div class="col-lg-2 col-md-4 col-sm-6">
               <mat-form-field>
@@ -379,6 +379,7 @@
             </mat-form-field>
           </div>
           <br>
+          <hr>
           <div class="section" *ngIf="(user_name == 'dnudelman' || user_name == 'adahabre') && dorit_note_answer">
             <mat-form-field>
               <mat-label>תשובת השתלמות תאגיד</mat-label>

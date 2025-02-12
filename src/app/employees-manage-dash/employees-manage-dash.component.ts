@@ -167,7 +167,7 @@ export class EmployeesManageDashComponent implements OnInit, OnDestroy {
       })
       .subscribe((Response) => {
         let type = Response["d"];
-        if (type == "1" || type == "3" || type == "5") {
+        if (type == "1" || type == "3" || type == "5" || type == "10") {
           this.managerType = "admin";
         } else if (this.UserName == "dporat") {
           this.managerType = "unknown";
