@@ -44,12 +44,12 @@ export interface Supplier {
 export class LabTestsComponent implements OnInit {
 
   StatusList: any = [
-    {id: "-1", value: 'הכול'},
+    {id: "-1", value: 'הכל'},
     {id: "0", value: 'לא פעיל'},
     {id: "1", value: 'פעיל'}
   ]
   CatList: any = [
-    {id: "-1", value: 'הכול'},
+    {id: "-1", value: 'הכל'},
     {id: "1", value: 'בדיקות פנים'},
     {id: "2", value: 'בדיקות חוץ'}
   ]

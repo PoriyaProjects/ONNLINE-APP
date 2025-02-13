@@ -99,6 +99,7 @@
     "ngx-barcode": "^0.3.0",
     "ngx-barcodeput": "^1.1.0",
     "ngx-bootstrap": "^8.0.0",
+    "ngx-doc-viewer": "^0.1.27",
     "ngx-editor": "^9.0.2",
     "ngx-mask": "^9.1.4",
     "ngx-mat-select-search": "^3.3.3",

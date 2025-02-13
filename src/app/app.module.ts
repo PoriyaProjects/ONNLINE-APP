@@ -9,6 +9,8 @@ import { AppComponent } from './app.component';
 import { DashboardComponent } from './dashboard/dashboard.component';
 import { LoginComponent } from './login/login.component';
 import { NgbModule, NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
+
+//import {NgxDocViewerModule} from 'ngx-doc-viewer';
 // import { ZXingScannerModule } from '@zxing/ngx-scanner';
 import { MatButtonModule } from '@angular/material/button';
 import { MatNativeDateModule, MAT_DATE_FORMATS, MAT_DATE_LOCALE } from '@angular/material/core';
@@ -253,7 +255,6 @@ import { ShortcutsManagementComponent } from './dashboard/shortcuts-management/s
 import { ShortcutFormDialogComponent } from './dashboard/shortcuts-management/shortcut-form-dialog/shortcut-form-dialog.component';
 import { NamerUserActionsComponent } from './dashboard/namer-user-actions/namer-user-actions.component';
 
-
 const maskConfig: Partial<IConfig> = {
   validation: false,
 };
@@ -457,6 +458,7 @@ const maskConfig: Partial<IConfig> = {
     NamerUserActionsComponent
   ],
   imports: [
+    //NgxDocViewerModule,
     MatIconModule,
     SpreadsheetAllModule,
     AngularEditorModule,
