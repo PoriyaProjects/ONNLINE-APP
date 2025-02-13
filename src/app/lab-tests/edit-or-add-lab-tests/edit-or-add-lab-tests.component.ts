@@ -49,7 +49,7 @@ export interface DialogData {
   styleUrls: ['./edit-or-add-lab-tests.component.css']
 })
 export class EditOrAddLabTestsComponent implements OnInit {
-
+  doc = "https://docs.google.com/document/d/1Hvyq6GlUzh7rsJ5s0pagqCsu_qx0ebdy/edit?usp=sharing&ouid=106918327265900334707&rtpof=true&sd=true";
   showForm: boolean= true;
   showImage_2: boolean= true;
   showImage_1: boolean= true;

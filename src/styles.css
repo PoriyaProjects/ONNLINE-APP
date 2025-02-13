@@ -2305,3 +2305,8 @@ button:hover{
 13950
 90489061
 */
+
+#labTests .mat-form-field-label-wrapper, #labTests h2{
+    font-size: 18px !important;
+    font-weight: bold !important;
+}
