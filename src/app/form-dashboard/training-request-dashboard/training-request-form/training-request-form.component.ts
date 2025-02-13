@@ -56,18 +56,24 @@ export class TrainingRequestFormComponent implements OnInit {
   };
   plansList = [];
   employees = [];
+  intity_list = [];
+  CitiesArray: any[] = [];
   titleList = ["מר", "גב'", "דר'", "פרופ'"];
   educationList = ["תיכונית", "מקצועית", "תואר ראשון", "תואר שני", "תואר שלישי"];
   requested: boolean = false;
+  dorit_note_answer: boolean = false;
   horizontalPosition: MatSnackBarHorizontalPosition = "start";
   verticalPosition: MatSnackBarVerticalPosition = "bottom";
   passport: any = localStorage.getItem('ID').toLowerCase();
+  user_name: any = localStorage.getItem('loginUserName').toLowerCase();
   filteredOptions: Observable<string[]>;
   Supervisor_Name1 = new FormControl();
   filteredOptions2: Observable<string[]>;
   Supervisor_Name2 = new FormControl();
   filteredOptions3: Observable<string[]>;
   Supervisor_Name3 = new FormControl();
+  cityOptions: Observable<string[]>;
+  cityControl = new FormControl("", Validators.required);
   date_now: any = Date.now();
 
   constructor(
@@ -89,7 +95,9 @@ export class TrainingRequestFormComponent implements OnInit {
     }
     this.getAllTrainingRequestQuestionsList();
     this.getTrainingRequestPlansList();
+    this.getPlanningIntityList();
     this.getEmployeesList();
+    this.getCityCodes();
     this.filteredOptions = this.Supervisor_Name1.valueChanges
       .pipe(
         startWith(''),
@@ -107,6 +115,17 @@ export class TrainingRequestFormComponent implements OnInit {
     //   );
   }
 
+  check_if_fund_or_health() {
+    let health = this.Training_Request_Forms_D.value.Health_Corporation?.filter(x => x != null);
+    let fund = this.Training_Request_Forms_D.value.Department_Fund?.filter(x => x != null);
+    if (health?.length == 0 && fund?.length == 0) this.dorit_note_answer = false;
+    else this.dorit_note_answer = true;
+  }
+
+  changeCity(event) {
+    this.Training_Request_Forms_B.controls["Request_Location"].setValue(event);
+  }
+
   private _filter(value: any): any[] {
     const filterValue1 = typeof value === 'string' ? value : value?.firstname || '';
     if (value && value.id !== undefined) {
@@ -117,6 +136,13 @@ export class TrainingRequestFormComponent implements OnInit {
     }
     // Filter based on the provided value
     return this.employees.filter(option => option.firstname?.includes(filterValue1));
+  }
+
+  private city_filter(value: string): any[] {
+    const filterValue = value.toLowerCase();
+    return this.CitiesArray.filter((option) =>
+      option.cityName.includes(filterValue)
+    );
   }
 
   private _filter2(value: any): string[] {
@@ -139,6 +165,10 @@ export class TrainingRequestFormComponent implements OnInit {
   //     }
   //   }
   //   return this.employees.filter(option => option.firstname.includes(filterValue1));
+  // }
+
+  // displayFnCity(city: any): string {
+  //   return city && city.cityName ? city.cityName : "";
   // }
 
   displayFn(user: any): string {
@@ -220,6 +250,7 @@ export class TrainingRequestFormComponent implements OnInit {
           Health_Corporation_Description: new FormControl(Training_Request_Forms_D?.Health_Corporation_Description, null),
           Department_Fund: new FormControl(Training_Request_Forms_D?.Department_Fund, null),
           Department_Fund_Description: new FormControl(Training_Request_Forms_D?.Department_Fund_Description, null),
+          Training_Fund_Answer: new FormControl(Training_Request_Forms_D?.Training_Fund_Answer, null),
         });
         this.Training_Request_Forms_E = this.fb.group({
           Training_Importantce: new FormControl(Training_Request_Forms_E?.Training_Importantce, null),
@@ -238,12 +269,14 @@ export class TrainingRequestFormComponent implements OnInit {
           Approved: new FormControl(Training_Request_Forms_F?.Approved == 'True' ? true : false, null),
         });
         this.Training_Request_Forms_H = this.fb.group({
-          Training_Importantce: new FormControl(Training_Request_Forms_H?.Training_Importantce, null),
-          Recommendations: new FormControl(Training_Request_Forms_H?.Recommendations, null),
           Opinion_Date: new FormControl(Training_Request_Forms_H?.Opinion_Date == null ? this.date_now : Training_Request_Forms_H?.Opinion_Date, null),
-          Supervisor_Name: new FormControl(Training_Request_Forms_H?.Supervisor_Name, Training_Request_Forms_H?.Supervisor_Name != null ? Validators.required : null),
-          Supervisor_Sign: new FormControl(Training_Request_Forms_H?.Supervisor_Sign, null),
+          Training_Type: new FormControl(Training_Request_Forms_H?.Training_Type, null),
           Approved: new FormControl(Training_Request_Forms_H?.Approved == 'True' ? true : false, null),
+          Transportaion: new FormControl(Training_Request_Forms_H?.Transportaion == 'True' ? true : false, null),
+          Approved_Percent: new FormControl(Training_Request_Forms_H?.Approved_Percent, null),
+          Approved_Percent_Out_Of: new FormControl(Training_Request_Forms_H?.Approved_Percent_Out_Of, null),
+          Approved_Absence_Time: new FormControl(Training_Request_Forms_H?.Approved_Absence_Time, null),
+          Recommendations: new FormControl(Training_Request_Forms_H?.Recommendations, null)
         });
         this.Training_Request_Forms_G = this.fb.group({
           Training_Days_Utilization: new FormControl(Training_Request_Forms_G?.Training_Days_Utilization, null),
@@ -254,6 +287,9 @@ export class TrainingRequestFormComponent implements OnInit {
           Standart_Job_Type: new FormControl(Training_Request_Forms_G?.Standart_Job_Type, null),
         });
         if (this.passport == Training_Request_Forms_A?.Passport_ID) this.requested = true;
+        this.check_if_fund_or_health();
+        this.cityControl.setValue(Training_Request_Forms_B?.Request_Location);
+        this.Training_Out_Check();
       });
   }
 
@@ -322,6 +358,29 @@ export class TrainingRequestFormComponent implements OnInit {
     }
   }
 
+  getCityCodes() {
+    this.CitiesArray = [];
+    this.http
+      .post(
+        environment.url + "GetCityCodes",
+        {}
+      )
+      .subscribe((Response) => {
+        Response["d"].forEach((element) => {
+          this.CitiesArray.push({
+            cityName: element.cityName
+          });
+        });
+        this.cityOptions = this.cityControl.valueChanges.pipe(
+          startWith(""),
+          map((value) => (typeof value === "string" ? value : value.name)),
+          map((name) =>
+            name ? this.city_filter(name) : this.CitiesArray.slice()
+          )
+        );
+      });
+  }
+
   checkPlanAvailability() {
     let plan_selected = this.Training_Request_Forms_B.controls['Request_Name'].value;
     let plan_list = this.plansList.filter(x => x.Name == plan_selected)[0];
@@ -344,8 +403,28 @@ export class TrainingRequestFormComponent implements OnInit {
       this.Training_Request_Forms_B.controls['Galilean_Partnership'].setValue(false);
       this.Training_Request_Forms_B.controls['Education_Fee'].setValue('');
       this.Training_Request_Forms_B.controls['Education_Fee'].disable();
+      this.CitiesArray = [
+        { cityName: 'אסיה' },
+        { cityName: 'אירופה' },
+        { cityName: 'אפריקה' },
+        { cityName: 'צפון אמריקה' },
+        { cityName: 'דרום אמריקה' },
+        { cityName: 'אוסטרליה' },
+        { cityName: 'אנטארקטיקה' }
+      ];
+
+      this.cityOptions = this.cityControl.valueChanges.pipe(
+        startWith(""),
+        map((value) => (typeof value === "string" ? value : value.name)),
+        map((name) =>
+          name ? this.city_filter(name) : this.CitiesArray.slice()
+        )
+      );
     }
-    else this.Training_Request_Forms_B.controls['Education_Fee'].enable();
+    else {
+      this.Training_Request_Forms_B.controls['Education_Fee'].enable();
+      this.getCityCodes();
+    }
   }
 
   Galilean_Partnership_Check() {
@@ -437,13 +516,6 @@ export class TrainingRequestFormComponent implements OnInit {
             }
             this.Training_Request_Forms_F.controls[type].setValue(data.sign);
             break;
-          case 7:
-            if (data.sign == "data:image/png;base64,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MACCpYtMgAABAgQMAD9AgAABAgSCAgZAsHSRCRAgQICAAeAHCBAgQIBAUMAACJYuMgECBAgQMAD8AAECBAgQCAoYAMHSRSZAgAABAgaAHyBAgAABAkEBAyBYusgECBAgQMAA8AMECBAgQCAoYAAESxeZAAECBAgYAH6AAAECBAgEBQyAYOkiEyBAgAABA8APECBAgACBoIABECxdZAIECBAgYAD4AQIECBAgEBQwAIKli0yAAAECBAwAP0CAAAECBIICBkCwdJEJECBAgIAB4AcIECBAgEBQwAAIli4yAQIECBAwAPwAAQIECBAIChgAwdJFJkCAAAECBoAfIECAAAECQQEDIFi6yAQIECBAwADwAwQIECBAIChgAARLF5kAAQIECBgAfoAAAQIECAQFDIBg6SITIECAAAEDwA8QIECAAIGggAEQLF1kAgQIECBgAPgBAgQIECAQFDAAgqWLTIAAAQIEDAA/QIAAAQIEggIGQLB0kQkQIECAgAHgBwgQIECAQFDAAAiWLjIBAgQIEDAA/AABAgQIEAgKGADB0kUmQIAAAQIGgB8gQIAAAQJBAQMgWLrIBAgQIEDAAPADBAgQIEAgKGAABEsXmQABAgQIGAB+gAABAgQIBAUMgGDpIhMgQIAAAQPADxAgQIAAgaCAARAsXWQCBAgQIGAA+AECBAgQIBAUMACCpYtMgAABAgQMAD9AgAABAgSCAgZAsHSRCRAgQICAAeAHCBAgQIBAUMAACJYuMgECBAgQMAD8AAECBAgQCAoYAMHSRSZAgAABAgaAHyBAgAABAkEBAyBYusgECBAgQMAA8AMECBAgQCAoYAAESxeZAAECBAgYAH6AAAECBAgEBQyAYOkiEyBAgAABA8APECBAgACBoIABECxdZAIECBAgYAD4AQIECBAgEBQwAIKli0yAAAECBAwAP0CAAAECBIICBkCwdJEJECBAgIAB4AcIECBAgEBQwAAIli4yAQIECBAwAPwAAQIECBAIChgAwdJFJkCAAAECBoAfIECAAAECQQEDIFi6yAQIECBAwADwAwQIECBAIChgAARLF5kAAQIECBgAfoAAAQIECAQFDIBg6SITIECAAAEDwA8QIECAAIGggAEQLF1kAgQIECBgAPgBAgQIECAQFDAAgqWLTIAAAQIEDAA/QIAAAQIEggIGQLB0kQkQIECAgAHgBwgQIECAQFDAAAiWLjIBAgQIEDAA/AABAgQIEAgKGADB0kUmQIAAAQIGgB8gQIAAAQJBAQMgWLrIBAgQIEDAAPADBAgQIEAgKGAABEsXmQABAgQIGAB+gAABAgQIBAUMgGDpIhMgQIAAAQPADxAgQIAAgaCAARAsXWQCBAgQIGAA+AECBAgQIBAUMACCpYtMgAABAgQMAD9AgAABAgSCAgZAsHSRCRAgQICAAeAHCBAgQIBAUMAACJYuMgECBAgQMAD8AAECBAgQCAoYAMHSRSZAgAABAgaAHyBAgAABAkEBAyBYusgECBAgQMAA8AMECBAgQCAoYAAESxeZAAECBAgYAH6AAAECBAgEBQyAYOkiEyBAgAABA8APECBAgACBoIABECxdZAIECBAgYAD4AQIECBAgEBQwAIKli0yAAAECBAwAP0CAAAECBIICBkCwdJEJECBAgIAB4AcIECBAgEBQwAAIli4yAQIECBAwAPwAAQIECBAIChgAwdJFJkCAAAECBoAfIECAAAECQQEDIFi6yAQIECBAwADwAwQIECBAIChgAARLF5kAAQIECBgAfoAAAQIECAQFDIBg6SITIECAAAEDwA8QIECAAIGggAEQLF1kAgQIECBgAPgBAgQIECAQFDAAgqWLTIAAAQIEDAA/QIAAAQIEggIGQLB0kQkQIECAgAHgBwgQIECAQFDAAAiWLjIBAgQIEDAA/AABAgQIEAgKGADB0kUmQIAAAQIGgB8gQIAAAQJBAQMgWLrIBAgQIEDAAPADBAgQIEAgKGAABEsXmQABAgQIGAB+gAABAgQIBAUMgGDpIhMgQIAAAQPADxAgQIAAgaCAARAsXWQCBAgQIGAA+AECBAgQIBAUMACCpYtMgAABAgQMAD9AgAABAgSCAgZAsHSRCRAgQICAAeAHCBAgQIBAUMAACJYuMgECBAgQMAD8AAECBAgQCAoYAMHSRSZAgAABAgaAHyBAgAABAkEBAyBYusgECBAgQMAA8AMECBAgQCAoYAAESxeZAAECBAgYAH6AAAECBAgEBQyAYOkiEyBAgAABA8APECBAgACBoIABECxdZAIECBAgYAD4AQIECBAgEBQwAIKli0yAAAECBAwAP0CAAAECBIICBkCwdJEJECBAgIAB4AcIECBAgEBQwAAIli4yAQIECBAwAPwAAQIECBAIChgAwdJFJkCAAAECBoAfIECAAAECQQEDIFi6yAQIECBAwADwAwQIECBAIChgAARLF5kAAQIECBgAfoAAAQIECAQFDIBg6SITIECAAAEDwA8QIECAAIGggAEQLF1kAgQIECDwoOYBoxwL39cAAAAASUVORK5CYII=") {
-              this.Training_Request_Forms_H.controls[type].setValue(undefined);
-              return;
-            }
-            this.Training_Request_Forms_H.controls[type].setValue(data.sign);
-            break;
         }
       });
   }
@@ -463,6 +535,14 @@ export class TrainingRequestFormComponent implements OnInit {
         this.plansList = Response["d"];
       });
   }
+  
+  getPlanningIntityList() {
+    this.http
+      .post(environment.url + "GetPlanningIntityList", {})
+      .subscribe((Response) => {
+        this.intity_list = Response["d"];
+      });
+  }
 
   getAllTrainingRequestQuestionsList() {
     this.http
@@ -480,8 +560,8 @@ export class TrainingRequestFormComponent implements OnInit {
     return optionValue === selectedValue;
   }
 
-  healtCorporationChoose(section, event) {
-    console.log(event);
+  compareFn3(optionValue: any, selectedValue: any): boolean {
+    return optionValue === selectedValue;
   }
 
   getPersonDetails() {
@@ -519,7 +599,6 @@ export class TrainingRequestFormComponent implements OnInit {
           });
           this.Training_Request_Forms_E.controls['Supervisor_Name'].setValue(this.Supervisor_Name1.value);
           this.Training_Request_Forms_F.controls['Supervisor_Name'].setValue(this.Supervisor_Name2.value);
-          this.Training_Request_Forms_H.controls['Supervisor_Name'].setValue(this.Supervisor_Name3.value);
           if (this.Supervisor_Name2.value?.id != this.passport) {
             this.Training_Request_Forms_F.controls['Training_Importantce'].disable();
             this.Training_Request_Forms_F.controls['Approved'].disable();

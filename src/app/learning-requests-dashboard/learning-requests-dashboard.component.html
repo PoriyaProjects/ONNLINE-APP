@@ -1,0 +1,76 @@
+<div class="dashboard-container">
+    <!-- Section 1: Two Donut Charts -->
+    <section class="chart-section">
+        <h2>לומדות שלי</h2>
+        <hr>
+        <div class="charts">
+            <mat-card>
+                <google-chart [title]="donutChart1.title" [type]="donutChart1.type" [data]="donutChart1.data"
+                    [options]="donutChart1.options"></google-chart>
+            </mat-card>
+
+            <!-- <mat-card>
+                <google-chart [title]="donutChart2.title" [type]="donutChart2.type" [data]="donutChart2.data"
+                    [options]="donutChart2.options"></google-chart>
+            </mat-card> -->
+        </div>
+    </section>
+
+    <!-- Section 2: Three Pie Charts -->
+    <!-- <section class="chart-section" *ngIf="employeeId == '312312424'">
+        <h2>לומדות המחלקה שלי</h2>
+        <hr>
+        <div class="charts">
+            <mat-card>
+                <google-chart [title]="pieChart1.title" [type]="pieChart1.type" [data]="pieChart1.data"
+                    [options]="pieChart1.options"></google-chart>
+            </mat-card>
+
+            <mat-card>
+                <google-chart [title]="pieChart2.title" [type]="pieChart2.type" [data]="pieChart2.data"
+                    [options]="pieChart2.options"></google-chart>
+            </mat-card>
+
+            <mat-card>
+                <google-chart [title]="pieChart3.title" [type]="pieChart3.type" [data]="pieChart3.data"
+                    [options]="pieChart3.options"></google-chart>
+            </mat-card>
+        </div>
+    </section> -->
+
+    <!-- Section 3: Table -->
+    <section class="table-section">
+        <h2>לומדות שנותרו לביצוע</h2>
+        <hr>
+        <mat-card>
+            <table mat-table [dataSource]="tableData" class="mat-elevation-z8">
+                <ng-container matColumnDef="assignment_id">
+                    <th mat-header-cell *matHeaderCellDef>מזהה לומדה</th>
+                    <td mat-cell *matCellDef="let element">{{ element.assignment_id }}</td>
+                </ng-container>
+
+                <ng-container matColumnDef="name">
+                    <th mat-header-cell *matHeaderCellDef>שם הלומדה</th>
+                    <td mat-cell *matCellDef="let element">{{ element.name }}</td>
+                </ng-container>
+
+                <ng-container matColumnDef="due_date">
+                    <th mat-header-cell *matHeaderCellDef>תאריך אחרון לביצוע</th>
+                    <td mat-cell *matCellDef="let element">{{ element.due_date }}</td>
+                </ng-container>
+
+                <ng-container matColumnDef="link">
+                    <th mat-header-cell *matHeaderCellDef>לינק לביצוע לומדה</th>
+                    <td mat-cell *matCellDef="let element"><span class="clickable-text"
+                            (click)="openLink(element.external_id)">
+                            לחץ כאן לביצוע הלומדה
+                        </span>
+                    </td>
+                </ng-container>
+
+                <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+                <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+            </table>
+        </mat-card>
+    </section>
+</div>
