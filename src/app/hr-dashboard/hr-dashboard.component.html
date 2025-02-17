@@ -61,7 +61,7 @@
                         </div>
                     </ng-template>
                     <form #fileForm="ngForm">
-                        <input type="file" (change)="onFileSelected($event)" accept="image/*" />
+                        <input type="file" (change)="onFileSelected($event)" accept="application/pdf, image/*" />
                     </form>
                     <mat-form-field class="message-input">
                         <mat-label>שליחת הודעה בתוך שיחה</mat-label>
@@ -76,7 +76,7 @@
                 <div class="input-container"
                     *ngIf="currentContact !== undefined && (currentContact.maxRow === '' || currentContact.maxRow === undefined)">
                     <form #fileForm="ngForm" ng>
-                        <input type="file" (change)="onFileSelected($event)" accept="image/*" />
+                        <input type="file" (change)="onFileSelected($event)" accept="application/pdf, image/*" />
                     </form>
                     <mat-form-field class="message-input">
                         <mat-label>שליחת הודעה רגילה</mat-label>
