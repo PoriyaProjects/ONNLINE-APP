@@ -183,7 +183,7 @@
         </div>
         <div class="file-upload-button" *ngIf="customForm.get('customInputs')['controls'].length > 0 && !typeOfScreen">
             <form #fileForm="ngForm">
-                <input type="file" (change)="onFileSelected($event)" accept="image/*" />
+                <input type="file" (change)="onFileSelected($event)" accept="application/pdf, image/*" />
             </form>
             <!-- <input matInput placeholder="קישור לקובץ" [(ngModel)]="file_path"> -->
             <!-- <input type="file" (change)="onFileSelected($event)" accept=".pdf, image/*"> -->

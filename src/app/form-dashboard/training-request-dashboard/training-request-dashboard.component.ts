@@ -167,7 +167,7 @@ export class TrainingRequestDashboardComponent implements OnInit {
           this.http
             .post(environment.urlipracticom + "TrainingRequestSendLastAnswer", {
               pdfString: pdf,
-              request_email: data['A'].Email
+              request_id: data['A'].Passport_ID
             })
             .subscribe((Response) => {
               if (Response['d']) {
