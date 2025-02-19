@@ -30,6 +30,7 @@ export class TrainingRequestDashboardComponent implements OnInit {
   verticalPosition: MatSnackBarVerticalPosition = "bottom";
   trainingPlans: any[] = []; // Replace with a real data source
   date_now: any = Date.now();
+  Plan_Date: any;
 
   constructor(
     public dialog: MatDialog,
@@ -42,6 +43,19 @@ export class TrainingRequestDashboardComponent implements OnInit {
   ngOnInit(): void {
     this.date_now = this.datePipe.transform(this.date_now, 'yyyy-MM-dd');
     this.getAllTrainingRequestFormsList("");
+    this.changeTrainingPlanDate();
+  }
+
+  changeTrainingPlanDate() {
+    if (this.UserName == "ttsarfati") this.Plan_Date = "";
+    if (this.Plan_Date != "") this.Plan_Date = this.datePipe.transform(this.Plan_Date, 'yyyy-MM-dd')
+    this.http
+      .post(environment.url + "ChangeTrainingPlanDate", {
+        plan_date: this.Plan_Date
+      })
+      .subscribe((Response) => {
+        this.Plan_Date = Response['d'];
+      });
   }
 
   applyFilter(event: Event) {
