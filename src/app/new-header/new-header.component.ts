@@ -22,8 +22,10 @@ export interface Link {
 export class NewHeaderComponent implements OnInit {
     personReadInquiry: boolean = false;
     headerLoad: boolean = true;
+    searchTerm: string = '';
+    filteredLinks: any[] = [];
+    Links: any[] = []; // Your original links array
     constructor(private router: Router, private http: HttpClient) { }
-    Links: Link[] = [];
     ngOnInit(): void {
         $(document).on("click", "[routerlink], .nav-link", function () {
             // ////debugger;
@@ -65,10 +67,34 @@ export class NewHeaderComponent implements OnInit {
             .subscribe((Response) => {
                 //debugger
                 this.Links = Response["d"];
+                this.filteredLinks = this.Links;
                 this.headerLoad = false;
                 setTimeout(function () {
                     $("#loader").addClass("d-none");
                 });
             });
+    }
+    filterLinks() {
+        let allLinks = [];
+
+        const flattenAndFilter = (links: any[]): any[] => {
+            let matchingLinks: any[] = [];
+
+            links.forEach(link => {
+                const linkMatches = link.LinkDescription.toLowerCase().includes(this.searchTerm.toLowerCase());
+
+                if (linkMatches) {
+                    matchingLinks.push(link); // Add the link if it matches
+                }
+
+                if (link.Children) { // If it has children, process them recursively
+                    matchingLinks = matchingLinks.concat(flattenAndFilter(link.Children));
+                }
+            });
+            return matchingLinks;
+        };
+
+
+        this.filteredLinks = flattenAndFilter(this.Links);
     }
 }

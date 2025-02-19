@@ -106,3 +106,25 @@ nav {
     top: 0;
     z-index: 999;
 }
+
+mat-form-field {
+    color: white;
+}
+
+mat-form-field input {
+    color: white;
+}
+
+mat-form-field .mat-form-field-mat-label {
+    color: white !important;
+}
+
+mat-form-field .mat-input-element::placeholder {
+    color: white !important;
+    opacity: 1;
+    /* For cross-browser consistency */
+}
+
+mat-form-field .mat-form-field-underline {
+    background-color: white;
+}

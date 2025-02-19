@@ -87,13 +87,13 @@
                 <input matInput formControlName="Training_Days_Utilization" />
               </mat-form-field>
             </div> -->
-            <div class="col-lg-2 col-md-4 col-sm-6">
+            <div class="col-lg-3 col-md-4 col-sm-6">
               <mat-form-field>
                 <mat-label>הדרגה והדירוג בתקן</mat-label>
                 <input matInput formControlName="Standart_Level" />
               </mat-form-field>
             </div>
-            <div class="col-lg-3 col-md-4 col-sm-6">
+            <div class="col-lg-4 col-md-4 col-sm-6">
               <mat-form-field>
                 <mat-label>תפקיד העובד ומחלקה</mat-label>
                 <input matInput formControlName="Function_Department" />
@@ -107,13 +107,13 @@
                 <mat-datepicker #Work_Start_Date></mat-datepicker>
               </mat-form-field>
             </div>
-            <div class="col-lg-3 col-md-4 col-sm-6">
+            <!-- <div class="col-lg-3 col-md-4 col-sm-6">
               <mat-form-field>
                 <mat-label>מעמד קבוע/ארעי/חוזה</mat-label>
                 <input matInput formControlName="Standart_Status" />
               </mat-form-field>
-            </div>
-            <div class="col-lg-2 col-md-4 col-sm-6">
+            </div> -->
+            <div class="col-lg-3 col-md-4 col-sm-6">
               <mat-form-field>
                 <mat-label>חלקיות משרה</mat-label>
                 <input matInput formControlName="Standart_Job_Type" />
@@ -131,7 +131,7 @@
           <div class="row">
             <div class="col-lg-2 col-md-4 col-sm-6">
               <mat-form-field>
-                <mat-label>שם ההשתלמות ומטרתה</mat-label>
+                <mat-label>שם ההשתלמות</mat-label>
                 <input matInput formControlName="Request_Name" />
                 <!-- <mat-select formControlName="Request_Name" (selectionChange)="checkPlanAvailability()">
                   <mat-option *ngFor="let plan of plansList" [value]="plan.Name">
@@ -169,7 +169,8 @@
             <div class="col-lg-2 col-md-4 col-sm-6">
               <mat-form-field>
                 <mat-label>תאריך התחלה</mat-label>
-                <input matInput [matDatepicker]="Date_Start" formControlName="Date_Start">
+                <input matInput [matDatepicker]="Date_Start" formControlName="Date_Start"
+                  (dateChange)="checkPlanAvailability()">
                 <mat-datepicker-toggle matIconSuffix [for]="Date_Start"></mat-datepicker-toggle>
                 <mat-datepicker #Date_Start></mat-datepicker>
               </mat-form-field>
