@@ -4,10 +4,19 @@
         <i class="material-icons open"> menu </i>
     </button>
 
-    <div dir="rtl" class="text-right" id="app-menu">
-        <mat-spinner *ngIf="headerLoad"></mat-spinner>
+    <div dir="rtl" class="text-right sidebar" id="app-menu">
+        <!-- Search Field -->
+        <mat-form-field appearance="outline" class="example-full-width">
+            <mat-label>חיפוש</mat-label>
+            <input matInput [(ngModel)]="searchTerm" (ngModelChange)="filterLinks()" placeholder="חפש בתפריט...">
+        </mat-form-field>
+
+        <!-- Loading Spinner -->
+        <mat-spinner *ngIf="headerLoad" diameter="30"></mat-spinner>
+
+        <!-- Sidebar Links -->
         <ul class="navbar-nav mr-auto">
-            <tree-item [data]="Links"></tree-item>
+            <tree-item [data]="filteredLinks"></tree-item>
             <li class="nav-item">
                 <button class="full-width clearCach" mat-raised-button (click)="logout($event)">
                     Logout
