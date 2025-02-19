@@ -9,9 +9,6 @@ import { AppComponent } from './app.component';
 import { DashboardComponent } from './dashboard/dashboard.component';
 import { LoginComponent } from './login/login.component';
 import { NgbModule, NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
-
-//import {NgxDocViewerModule} from 'ngx-doc-viewer';
-// import { ZXingScannerModule } from '@zxing/ngx-scanner';
 import { MatButtonModule } from '@angular/material/button';
 import { MatNativeDateModule, MAT_DATE_FORMATS, MAT_DATE_LOCALE } from '@angular/material/core';
 import { MatDatepickerModule } from '@angular/material/datepicker';
@@ -460,7 +457,6 @@ const maskConfig: Partial<IConfig> = {
     LearningRequestsDashboardComponent
   ],
   imports: [
-    //NgxDocViewerModule,
     MatIconModule,
     SpreadsheetAllModule,
     AngularEditorModule,
