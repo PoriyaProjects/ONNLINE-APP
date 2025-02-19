@@ -35,6 +35,7 @@
             <mat-tab-group>
                 <mat-tab *ngFor="let tab of righttabs" [label]="tab.title">
                     <div class="row">
+
                         <div *ngFor="let shortcut of tab.cards" class="card"
                             (click)="userClickedShortCut(shortcut.Title)">
                             <a [href]="shortcut.Link" *ngIf="shortcut.ChromeBrowser == 'True'" target="_blank">
