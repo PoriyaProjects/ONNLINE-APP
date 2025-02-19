@@ -75,6 +75,7 @@
     "datatables.net-buttons-dt": "^1.7.1",
     "datatables.net-dt": "^1.11.5",
     "date-fns": "^2.28.0",
+    "docviewhelper": "^0.0.2",
     "dom-to-image": "^2.6.0",
     "exceljs": "^1.12.1",
     "express": "^4.21.1",
