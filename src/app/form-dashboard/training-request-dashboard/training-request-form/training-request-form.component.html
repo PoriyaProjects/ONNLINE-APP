@@ -5,7 +5,8 @@
       X
     </button>
   </div>
-  <mat-tab-group mat-stretch-tabs="false" mat-align-tabs="center" *ngIf="Training_Request_Forms_A != undefined">
+  <mat-tab-group mat-stretch-tabs="false" mat-align-tabs="center" *ngIf="Training_Request_Forms_A != undefined"
+    (selectedTabChange)="onTabChange($event)">
     <mat-tab label="חלק א' - פרטים אישים">
       <mat-card>
         <!-- <mat-card-title>חלק א' - פרטים אישים</mat-card-title> -->
@@ -234,61 +235,8 @@
         </mat-card-content>
       </mat-card>
     </mat-tab>
-    <mat-tab label="חלק ג' - התחייבות העובד"
+    <mat-tab label="חלק ג' - מקור מימון"
       [disabled]="Training_Request_Forms_A.invalid || Training_Request_Forms_B.invalid">
-      <mat-card [formGroup]="Training_Request_Forms_C">
-        <!-- <mat-card-title>חלק ג' - התחייבות העובד</mat-card-title> -->
-        <mat-card-content>
-          <div class="row">
-            <p>1. עם קבלת מענק ההשתלמות הנני מתחייב/ת לשרת בשירות מדינת ישראל, במשרתי הנוכחית או בכל משרה אחרת אשר אתמנה
-              לה כחוק, אחרי תום ההשתלמות, תקופה המתאימה לסכום המענק שאושר לי ועל פי הוראות התקשי"ר בנדון (כולל משכורת,
-              שכר לימוד,
-
-              אש"ל והוצאות אחרות).</p>
-            <p>2. אם אעזוב את שירות מדינת ישראל לפני תום התקופה שאני חייב/ת לשרת, או אפסיק את השתלמותי לפני סיומה, הנני
-              מתחייב/ת להחזיר לאוצר מדינת ישראל את מענק ההשתלמות לפי שהוא מוגדר ב- 52.141 בתקשי"ר, או חלק ממנו יחסית
-              לתקופת השירות שהיה
-
-              עלי להמשיך לשרת לאחר תום ההשתלמות.</p>
-            <p>3. ידוע לי כי התקופה שעלי לשרת על פי ההוראות, היא במקביל למענק, כמוגדר ב- 52.142 בתקשי"ר. החזרת סכומי
-              ההתחייבות תהיה צמודה למדד המחירים לצרכן לפי נתוני הלשכה המרכזית לסטטיסטיקה. בקורסים הנמשכים מעל שנה
-              (מתחילת הקורס ועד קבלת התעודה) מתחייב העובד להמשיך לעבוד במרכז הרפואי פדה, פוריה, למשך 3 שנים מקבלת תעודת
-              הרישום, בהיקף משרה של 75% ומעלה, או בהיקף זהה להיקף עבודתו ערב היציאה להשתלמות, על פי צרכי
-
-              המערכת.</p>
-            <p>4. במקרה של תמיכה מחברה חיצונית - הנני מצהיר/ה כי לא נתתי כל ייעוץ ולא הועסקתי ע"י החברה המממנת בשום שלב
-              במהלך 12 חודשים קודמים וידוע לי כי ב-12 החודשים שלאחר מכן לא אהיה רשאי להגיש בקשה להיתר עבודה פרטית עבור
-              החברה המממנת</p>
-          </div>
-          <hr>
-          <div class="row">
-            <div class="col-lg-2 col-md-4 col-sm-6">
-              <mat-form-field>
-                <mat-label>תאריך הגשת הבקשה</mat-label>
-                <input matInput [matDatepicker]="Request_Name" formControlName="Request_Name">
-                <mat-datepicker-toggle matIconSuffix [for]="Request_Name"></mat-datepicker-toggle>
-                <mat-datepicker #Request_Name></mat-datepicker>
-              </mat-form-field>
-            </div>
-            <div class="col-lg-2 col-md-4 col-sm-6">
-              <button mat-raised-button class="signBtn" color="warn" (click)="signForm(3, 'Request_Sign')">
-                <span *ngIf="Training_Request_Forms_C.get('Request_Sign').value == undefined">לחתום</span>
-                <span *ngIf="Training_Request_Forms_C.get('Request_Sign').value != undefined">נחתם
-                </span>
-              </button>
-              <img *ngIf="Training_Request_Forms_C.get('Request_Sign').value != undefined"
-                [src]="Training_Request_Forms_C.get('Request_Sign').value" />
-              <!-- <mat-form-field>
-                <mat-label>חתימת העובד/ת</mat-label>
-                <input matInput formControlName="Request_Sign" />
-              </mat-form-field> -->
-            </div>
-          </div>
-        </mat-card-content>
-      </mat-card>
-    </mat-tab>
-    <mat-tab label="חלק ד' - מקור מימון"
-      [disabled]="Training_Request_Forms_A.invalid || Training_Request_Forms_B.invalid || Training_Request_Forms_C.invalid">
       <mat-card [formGroup]="Training_Request_Forms_D">
         <mat-card-title>מקור מימון</mat-card-title>
         <mat-card-content>
@@ -302,28 +250,36 @@
           <hr>
           <div class="section">
             <section class="example-section">
-              <p><mat-checkbox formControlName="OutSource_Company"><span class="checkbox-label">חברה
-                    חיצונית</span></mat-checkbox>
+              <p><mat-checkbox formControlName="OutSource_Company"><span class="checkbox-label">חברה חיצונית דרך
+                    התאגיד</span></mat-checkbox>
               </p>
             </section>
           </div>
-          <div class="section" *ngIf="Training_Request_Forms_D.get('OutSource_Company').value">
-            <label for="fileInput" class="file-label">תוכנית מצורפת(תמונה/PDF)</label>
+          <div class="section">
+            <section class="example-section">
+              <p><mat-checkbox formControlName="OutSource_Company_Direct"><span class="checkbox-label">חברה חיצונית
+                    ישירות למארגנים</span></mat-checkbox>
+              </p>
+            </section>
+          </div>
+          <div class="section"
+            *ngIf="Training_Request_Forms_D.get('OutSource_Company').value || Training_Request_Forms_D.get('OutSource_Company_Direct').value">
+            <label for="fileInput" class="file-label">מכתב תמיכה חתום ע"י הנהלת המרכז הרפואי(תמונה/PDF)</label>
             <input type="file" id="fileInput2" (change)="onFileSelected2($event)" class="file-input"
               accept="application/pdf, image/*" />
             <button mat-raised-button class="fileOpenBtn" color="primary" (click)="file_in_new_window_base642()"
               *ngIf="Training_Request_Forms_D.get('OutSource_Company_Plan').value != undefined && Training_Request_Forms_D.get('OutSource_Company_Plan').value != ''">
               <span class="material-icons"> zoom_in </span>
             </button>
-            <mat-form-field>
+            <!-- <mat-form-field>
               <mat-label>סכום המימון</mat-label>
               <input matInput formControlName="Budget_Amount" />
               <mat-error *ngIf="Training_Request_Forms_D.get('Budget_Amount')?.hasError('pattern')">
                 יש להזין רק מספרים
               </mat-error>
-            </mat-form-field>
+            </mat-form-field> -->
           </div>
-          <hr>
+          <!-- <hr>
           <div class="section">
             <section class="example-section">
               <p><mat-checkbox formControlName="Extracurricular_Work"><span class="checkbox-label">ע"ח תקציב
@@ -336,7 +292,7 @@
               <mat-label>מספר: </mat-label>
               <input matInput formControlName="Extracurricular_Work_Number" />
             </mat-form-field>
-          </div>
+          </div> -->
           <hr>
           <div class="section" *ngIf="Training_Request_Forms_B.get('Training_Out').value == false">
             <section class="example-section">
@@ -386,6 +342,59 @@
               <mat-label>תשובת השתלמות תאגיד</mat-label>
               <textarea matInput formControlName="Training_Fund_Answer" rows="2"></textarea>
             </mat-form-field>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </mat-tab>
+    <mat-tab label="חלק ד' - התחייבות העובד"
+      [disabled]="Training_Request_Forms_A.invalid || Training_Request_Forms_B.invalid || Training_Request_Forms_D.invalid">
+      <mat-card [formGroup]="Training_Request_Forms_C">
+        <!-- <mat-card-title>חלק ג' - התחייבות העובד</mat-card-title> -->
+        <mat-card-content>
+          <div class="row">
+            <p>1. עם קבלת מענק ההשתלמות הנני מתחייב/ת לשרת בשירות מדינת ישראל, במשרתי הנוכחית או בכל משרה אחרת אשר אתמנה
+              לה כחוק, אחרי תום ההשתלמות, תקופה המתאימה לסכום המענק שאושר לי ועל פי הוראות התקשי"ר בנדון (כולל משכורת,
+              שכר לימוד,
+
+              אש"ל והוצאות אחרות).</p>
+            <p>2. אם אעזוב את שירות מדינת ישראל לפני תום התקופה שאני חייב/ת לשרת, או אפסיק את השתלמותי לפני סיומה, הנני
+              מתחייב/ת להחזיר לאוצר מדינת ישראל את מענק ההשתלמות לפי שהוא מוגדר ב- 52.141 בתקשי"ר, או חלק ממנו יחסית
+              לתקופת השירות שהיה
+
+              עלי להמשיך לשרת לאחר תום ההשתלמות.</p>
+            <p>3. ידוע לי כי התקופה שעלי לשרת על פי ההוראות, היא במקביל למענק, כמוגדר ב- 52.142 בתקשי"ר. החזרת סכומי
+              ההתחייבות תהיה צמודה למדד המחירים לצרכן לפי נתוני הלשכה המרכזית לסטטיסטיקה. בקורסים הנמשכים מעל שנה
+              (מתחילת הקורס ועד קבלת התעודה) מתחייב העובד להמשיך לעבוד במרכז הרפואי פדה, פוריה, למשך 3 שנים מקבלת תעודת
+              הרישום, בהיקף משרה של 75% ומעלה, או בהיקף זהה להיקף עבודתו ערב היציאה להשתלמות, על פי צרכי
+
+              המערכת.</p>
+            <p>4. במקרה של תמיכה מחברה חיצונית - הנני מצהיר/ה כי לא נתתי כל ייעוץ ולא הועסקתי ע"י החברה המממנת בשום שלב
+              במהלך 12 חודשים קודמים וידוע לי כי ב-12 החודשים שלאחר מכן לא אהיה רשאי להגיש בקשה להיתר עבודה פרטית עבור
+              החברה המממנת</p>
+          </div>
+          <hr>
+          <div class="row">
+            <div class="col-lg-2 col-md-4 col-sm-6">
+              <mat-form-field>
+                <mat-label>תאריך הגשת הבקשה</mat-label>
+                <input matInput [matDatepicker]="Request_Name" formControlName="Request_Name">
+                <mat-datepicker-toggle matIconSuffix [for]="Request_Name"></mat-datepicker-toggle>
+                <mat-datepicker #Request_Name></mat-datepicker>
+              </mat-form-field>
+            </div>
+            <div class="col-lg-2 col-md-4 col-sm-6">
+              <button mat-raised-button class="signBtn" color="warn" (click)="signForm(3, 'Request_Sign')">
+                <span *ngIf="Training_Request_Forms_C.get('Request_Sign').value == undefined">לחתום</span>
+                <span *ngIf="Training_Request_Forms_C.get('Request_Sign').value != undefined">נחתם
+                </span>
+              </button>
+              <img *ngIf="Training_Request_Forms_C.get('Request_Sign').value != undefined"
+                [src]="Training_Request_Forms_C.get('Request_Sign').value" />
+              <!-- <mat-form-field>
+                <mat-label>חתימת העובד/ת</mat-label>
+                <input matInput formControlName="Request_Sign" />
+              </mat-form-field> -->
+            </div>
           </div>
         </mat-card-content>
       </mat-card>

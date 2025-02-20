@@ -120,7 +120,7 @@ import { UrgentSurgeriesComponent } from './urgent-surgeries/urgent-surgeries.co
 import { OnlineAppointmentsComponent } from './online-appointments/online-appointments.component';
 import { TreeItemComponent } from './new-header/tree-item.component';
 import localeHe from '@angular/common/locales/he';
-import {MatIconModule} from '@angular/material/icon';
+import { MatIconModule } from '@angular/material/icon';
 //import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 registerLocaleData(localeHe);
 import { CalendarModule, DateAdapter } from 'angular-calendar';
@@ -252,6 +252,8 @@ import { ShortcutsManagementComponent } from './dashboard/shortcuts-management/s
 import { ShortcutFormDialogComponent } from './dashboard/shortcuts-management/shortcut-form-dialog/shortcut-form-dialog.component';
 import { NamerUserActionsComponent } from './dashboard/namer-user-actions/namer-user-actions.component';
 import { LearningRequestsDashboardComponent } from './learning-requests-dashboard/learning-requests-dashboard.component';
+import * as moment from 'moment';
+import { MomentDateAdapter } from '@angular/material-moment-adapter';
 
 const maskConfig: Partial<IConfig> = {
   validation: false,
@@ -549,13 +551,27 @@ const maskConfig: Partial<IConfig> = {
     CalendarModule.forRoot({ provide: DateAdapter, useFactory: adapterFactory })
   ],
   providers: [
-    { provide: MAT_DATE_LOCALE, useValue: 'en-GB' }
+    { provide: MAT_DATE_LOCALE, useValue: 'he' }
     , DatePipe
     , ConfirmationDialogService
     , MenuPerm
     , NgbActiveModal
     , { provide: GraphsModalComponent, useClass: LogAllRequestsInterceptor, multi: true }
     , { provide: HTTP_INTERCEPTORS, useClass: LogAllRequestsInterceptor, multi: true }
+    , { provide: DateAdapter, useClass: MomentDateAdapter }
+    , {
+      provide: MAT_DATE_FORMATS, useValue: {
+        parse: {
+          dateInput: 'L', // This is how you parse date input.
+        },
+        display: {
+          dateInput: 'L', // This is how the date is displayed in the input.
+          monthYearLabel: 'MMM YYYY',
+          dateA11yLabel: 'LL',
+          monthYearA11yLabel: 'MMMM YYYY',
+        }
+      }
+    }
   ],
   bootstrap: [AppComponent],
   exports: [
@@ -564,4 +580,8 @@ const maskConfig: Partial<IConfig> = {
     ReactiveFormsModule
   ]
 })
-export class AppModule { }
+export class AppModule {
+  constructor() {
+    moment.locale('he'); // Set moment's locale to Hebrew. VERY IMPORTANT!
+  }
+}
