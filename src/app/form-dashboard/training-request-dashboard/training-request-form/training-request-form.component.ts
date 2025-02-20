@@ -8,6 +8,7 @@ import { environment } from 'src/environments/environment';
 import { DatePipe } from '@angular/common';
 import { map, startWith } from 'rxjs/operators';
 import { Observable } from 'rxjs';
+import { MatTabChangeEvent } from '@angular/material/tabs';
 
 @Component({
   selector: 'app-training-request-form',
@@ -243,9 +244,8 @@ export class TrainingRequestFormComponent implements OnInit {
           Galilean_Partnership: new FormControl(Training_Request_Forms_D?.Galilean_Partnership == 'True' ? true : false, null),
           OutSource_Company: new FormControl(Training_Request_Forms_D?.OutSource_Company == 'True' ? true : false, null),
           OutSource_Company_Plan: new FormControl(Training_Request_Forms_D?.OutSource_Company_Plan, null),
+          OutSource_Company_Direct: new FormControl(Training_Request_Forms_D?.OutSource_Company_Direct, null),
           Budget_Amount: new FormControl(Training_Request_Forms_D?.Budget_Amount, [Validators.pattern(/^\d+(\.\d{1,2})?$/)]),
-          Extracurricular_Work: new FormControl(Training_Request_Forms_D?.Extracurricular_Work == 'True' ? true : false, null),
-          Extracurricular_Work_Number: new FormControl(Training_Request_Forms_D?.Extracurricular_Work_Number, null),
           Health_Corporation: new FormControl(Training_Request_Forms_D?.Health_Corporation, null),
           Health_Corporation_Description: new FormControl(Training_Request_Forms_D?.Health_Corporation_Description, null),
           Department_Fund: new FormControl(Training_Request_Forms_D?.Department_Fund, null),
@@ -419,6 +419,10 @@ export class TrainingRequestFormComponent implements OnInit {
     }
   }
 
+  onTabChange(event: MatTabChangeEvent) {
+    console.log(event);
+  }
+
   Training_Out_Check() {
     if (this.Training_Request_Forms_B.controls['Training_Out'].value) {
       this.Training_Request_Forms_B.controls['Galilean_Partnership'].setValue(false);
@@ -446,6 +450,7 @@ export class TrainingRequestFormComponent implements OnInit {
       this.Training_Request_Forms_B.controls['Education_Fee'].enable();
       this.getCityCodes();
     }
+    console.log(this.cityControl.value);
   }
 
   Galilean_Partnership_Check() {

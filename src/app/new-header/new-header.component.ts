@@ -3,6 +3,7 @@ import { Component, OnInit } from "@angular/core";
 import { Router } from "@angular/router";
 import * as $ from "jquery";
 import { environment } from "src/environments/environment";
+import { DomSanitizer, SafeHtml } from "@angular/platform-browser";
 
 export interface Link {
     RowId: string;
@@ -25,7 +26,8 @@ export class NewHeaderComponent implements OnInit {
     searchTerm: string = '';
     filteredLinks: any[] = [];
     Links: any[] = []; // Your original links array
-    constructor(private router: Router, private http: HttpClient) { }
+    constructor(private router: Router,
+        private sanitizer: DomSanitizer, private http: HttpClient) { }
     ngOnInit(): void {
         $(document).on("click", "[routerlink], .nav-link", function () {
             // ////debugger;
@@ -74,6 +76,10 @@ export class NewHeaderComponent implements OnInit {
                 });
             });
     }
+    // Function to sanitize the HTML content
+    sanitizeHtml(htmlContent: string): SafeHtml {
+        return this.sanitizer.bypassSecurityTrustHtml(htmlContent);
+    }
     filterLinks() {
         let allLinks = [];
 
@@ -82,6 +88,7 @@ export class NewHeaderComponent implements OnInit {
 
             links.forEach(link => {
                 const linkMatches = link.LinkDescription.toLowerCase().includes(this.searchTerm.toLowerCase());
+                // let t = this.sanitizeHtml(link.LinkSubject);
 
                 if (linkMatches) {
                     matchingLinks.push(link); // Add the link if it matches
