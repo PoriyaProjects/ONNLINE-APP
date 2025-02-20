@@ -114,3 +114,7 @@ th.mat-header-cell {
 .btn:hover {
   opacity: 0.9;
 }
+
+.new-section {
+  display: contents;
+}

@@ -131,11 +131,12 @@ export class TrainingRequestDashboardComponent implements OnInit {
     <br>
     <br>
         <p style="margin: 5px 0;">תאריך: ${this.date_now}</p><br>
-        <p style="margin: 5px 0;">לכבוד:</p><br><br>
+        <p style="margin: 5px 0;">לכבוד:</p>
         <p style="margin: 5px 0;"><span>${data['A'].First_Name} ${data['A'].Family_Name}</span></p>
         <p style="margin: 5px 0;">${data['G'].Function_Department}</p>
+        <p style="margin: 5px 0;">${data['A'].Passport_ID}</p>
       <br>
-        <p style="font-size: 18px;font-weight: bold;margin-bottom: 5px;margin: 5px 0;">הנדון: בקשתך למענק השתלמות</p>
+        <p style="font-size: 18px;font-weight: bold;margin-bottom: 5px;margin: 5px 0;">הנדון: בקשתך להשתלמות נדונה בתאריך 2025-02-20</p>
         <p style="margin: 5px 0;">לקורס: <span style="font-weight: bold;color: black;;padding: 2px 5px;
         border-radius: 5px;margin: 5px 0;">${data['B'].Request_Name}</span> 
         בין התאריכים <span style="font-weight: bold;color: black;padding: 2px 5px;
@@ -147,28 +148,26 @@ export class TrainingRequestDashboardComponent implements OnInit {
             ${data['H'].Approved === "True" ? `
             <p style="margin: 5px 0;">הריני להודיעך כי הועדה החליטה, לאשר את הבקשה בכפוף לתנאים הבאים:</p>
             <ul style="margin-right: 20px;padding-right: 20px;list-style-type: disc;">
-                <li style="margin-bottom: 5px;">מענק שכר לימוד כולל בגובה של ${data['H'].Approved_Percent} לא יעלה על סכום של 500 ש"ח לכל שעה.</li>
                 ${data['H'].Transportaion === "True" ? `<li style="margin-bottom: 5px;">החזר נסיעות בגובה 100% בתנאי לנסיעה ברכב ציבורי.</li>` : ``}
-            </ul>
-            
-            <p style="margin: 5px 0;">סה"כ החזר: 100% = 200 ש"ח - דרך התחייבות חדשה</p>` : `
-            <p style="margin: 5px 0;">הריני להודיעך כי הועדה החליטה, לא לאשר את הבקשה.</p>`}
-            <p style="margin: 5px 0;">הערות: ${data['H'].Recommendations}</p>
+            </ul>` : `
+            <p style="margin: 5px 0;">הריני להודיעך כי הועדה החליטה, לא לאשר את הבקשה.</p>`
+      }
+            <p style="margin: 5px 0;">הערות ועדה: ${data['H'].Recommendations}</p>
             <p style="margin: 5px 0;">${data['B'].Training_Out == "True" ? `נא לפנות לקב"ט לקבלת תדרוך לפני נסיעה לחו"ל, ללא קבלת התדרוך לפני הנסיעה לא תאושר הבקשה.` : ``}</p>
         </div>
         <br>
         <div style="float: left">
-        	<p>בברכה,</p>
-        	<p>מר שמעון סבח</p>
-        	<p>מנהל אדמינסטרטיבי</p>
-        	<p>יו"ר הועדה</p>
-        </div>
+        	<p style="margin: 0px">בברכה,</p>
+        	<p style="margin: 0px">מר שמעון סבח</p>
+        	<p style="margin: 0px">מנהל אדמינסטרטיבי</p>
+        	<p style="margin: 0px">יו"ר הועדה</p>
+        </div><br><br><br><br><br><br>
         <div>
-        	<p>העתקים:</p>
-        	<p>הנהלת בית החולים</p>
-        	<p>הממונה הישיר: גב'בת אל כץ</p>
-        	<p>מדור השכר</p>
-        	<p>מחלקת כ"א</p>
+        	<p style="margin: 0px">העתקים:</p>
+        	<p style="margin: 0px">הנהלת המרכז הרפואי</p>
+        	<p style="margin: 0px">הממונה הישיר: גב'בת אל כץ</p>
+        	<p style="margin: 0px">מדור השכר</p>
+        	<p style="margin: 0px">מחלקת משאבי אנוש</p>
         </div>
     </body>
     </html>
