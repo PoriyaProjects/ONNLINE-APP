@@ -1,119 +1,125 @@
 /* app.component.css */
 
 .sidenav-container {
-    direction: rtl;
-    height: 100%;
-  }
-  
-  mat-sidenav-container{
-    padding-bottom: 2%;
-    background-color: #efeae2;
-  }
-  
-  .list-item :hover{
-    cursor: pointer;
-    background-color: darkgray;
-  }
-  
-  .sidenav {
-    width: 200px;
-    margin-top: auto;
-    visibility: visible;
-  }
-  
-  mat-list{
-    height: 70vh;
-  }
-  
-  mat-icon{
-    cursor: pointer;
-  }
-  
-  .mat-card-header-text{
-    text-align: center;
-  }
-  
-  .list-of-contact{
-    overflow-y: scroll;
-    display: block;
-  }
-  
-  .mat-toolbar {
-    background: #1976d2;
-    color: white;
-    justify-content: center;
-  }
-  
-  .secondary {
-    color: rgba(255, 255, 255, 0.7);
-  }
-  
-  .chat-container {
-    padding: 16px;
-    height: 72vh;
-    /* height: calc(100% - 64px); */
-    overflow-y: auto;
-  }
-  
-  .row.chat{
-    margin: 4px 0px 4px 0px;
-  }
-  
-  .message-sent {
-    background-color: #dcf8c6;
-    /* align-self: flex-end; */ /* Remove or modify this line */
-    border-style: outset;
-    /* margin: 4px 0px 4px 0px; */
-    padding: 10px;
-    border-radius: 10px;
-    /* width: 50%; */
-    /* float: left; */ /* Remove this line */
-    text-align: right;
-  }
-  
-  /* Global option */
-  .mat-tooltip {
-    text-align: right;
-  }
-  
-  /* Specific class option */
-  .right-align-tooltip {
-    text-align: right;
-  }
-  
-  /* img:hover{
+  direction: rtl;
+  height: 100%;
+}
+
+mat-sidenav-container {
+  padding-bottom: 2%;
+  background-color: #efeae2;
+}
+
+.list-item :hover {
+  cursor: pointer;
+  background-color: darkgray;
+}
+
+.list-item {
+  text-align: right;
+}
+
+.sidenav {
+  width: 200px;
+  margin-top: auto;
+  visibility: visible;
+}
+
+mat-list {
+  height: 70vh;
+}
+
+mat-icon {
+  cursor: pointer;
+}
+
+.mat-card-header-text {
+  text-align: center;
+}
+
+.list-of-contact {
+  overflow-y: scroll;
+  display: block;
+}
+
+.mat-toolbar {
+  background: #1976d2;
+  color: white;
+  justify-content: center;
+}
+
+.secondary {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.chat-container {
+  padding: 16px;
+  height: 72vh;
+  /* height: calc(100% - 64px); */
+  overflow-y: auto;
+}
+
+.row.chat {
+  margin: 4px 0px 4px 0px;
+}
+
+.message-sent {
+  background-color: #dcf8c6;
+  /* align-self: flex-end; */
+  /* Remove or modify this line */
+  border-style: outset;
+  /* margin: 4px 0px 4px 0px; */
+  padding: 10px;
+  border-radius: 10px;
+  /* width: 50%; */
+  /* float: left; */
+  /* Remove this line */
+  text-align: right;
+}
+
+/* Global option */
+.mat-tooltip {
+  text-align: right;
+}
+
+/* Specific class option */
+.right-align-tooltip {
+  text-align: right;
+}
+
+/* img:hover{
     display: block;
     z-index: 10;
     transform: scale(5);
   } */
-  
-  .message-received {
-    background-color: #fff;
-    /* align-self: flex-start; */
-    border-style: outset;
-    border-radius: 10px;
-    /* margin: 4px 0px 4px 0px; */
-    padding: 10px;
-    /* width: 50%; */
-    float: right;
-    text-align: right;
-  }
-  
-  .send-btn{
-    transform: rotate(180deg);
-  }
-  
-  .input-container {
-    display: flex;
-    padding: 8px;
-    position: sticky;
-    bottom: 0;
-    background-color: #efeae2;
-    align-items: center;
-  }
-  
-  .message-input {
-    flex-grow: 1;
-  }
-  
-  /* Add more styles as needed */
+
+.message-received {
+  background-color: #fff;
+  /* align-self: flex-start; */
+  border-style: outset;
+  border-radius: 10px;
+  /* margin: 4px 0px 4px 0px; */
+  padding: 10px;
+  /* width: 50%; */
+  float: right;
+  text-align: right;
+}
+
+.send-btn {
+  transform: rotate(180deg);
+}
+
+.input-container {
+  display: flex;
+  padding: 8px;
+  position: sticky;
+  bottom: 0;
+  background-color: #efeae2;
+  align-items: center;
+}
+
+.message-input {
+  flex-grow: 1;
+}
+
+/* Add more styles as needed */
