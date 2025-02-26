@@ -108,7 +108,7 @@
                                 <span *ngIf="message.Employee_Name !== ''">- {{ message.Employee_Name }}</span>
                                 <span *ngIf="message.From_ServiceEmployee === 'False'">- {{ currentContact.FirstName }}
                                     {{ currentContact.LastName }}</span><span> -
-                                    פניה ל{{ message.Service_Name }}</span>
+                                    פניה ל{{ message.Service_Name }}: {{ message.Action_Name }}</span>
                             </span>
                             <p
                                 *ngIf="(message.Message_Time === '' || currentContact.Message_Time === '') && message.From_ServiceEmployee == 'True'">
@@ -132,8 +132,8 @@
                         *ngFor="let uncontact of unAnsweredConversations_filter" (click)="openChat(uncontact)">
                         <mat-icon mat-list-icon
                             [ngStyle]="{'background-color': uncontact.maxRow == '' ? '' : uncontact.LateSessions == 'Late' ? 'orangered' : 'limegreen'}">account_circle</mat-icon>
-                        <span mat-line>{{ uncontact.FirstName }} {{ uncontact.LastName }} -
-                            {{uncontact.CellNumber}}</span><span
+                        <span mat-line>{{ uncontact.FirstName }} {{ uncontact.LastName }} - {{uncontact.Service_Name}}:
+                            {{uncontact.Action_Name}}</span><span
                             *ngIf="notification != '' && currentContact?.CellNumber == uncontact.CellNumber">{{notification}}</span>
                         <mat-icon mat-list-icon *ngIf="uncontact.maxRow != ''" style="color: orangered;"
                             matTooltip="סיום שיחה" (click)="endConversation(uncontact)">cancel_presentation</mat-icon>

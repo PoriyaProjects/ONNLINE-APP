@@ -3,6 +3,9 @@ import { HttpClient } from '@angular/common/http';
 import { environment } from 'src/environments/environment';
 import { MatTableDataSource } from '@angular/material/table';
 import { MatSnackBar, MatSnackBarHorizontalPosition, MatSnackBarVerticalPosition } from '@angular/material/snack-bar';
+import { map, startWith } from 'rxjs/operators';
+import { Observable } from 'rxjs';
+import { FormControl } from '@angular/forms';
 export interface Employee {
   id: number;
   name: string;
@@ -25,10 +28,11 @@ export class DepartmentsWhatsappManagementComponent implements OnInit, OnDestroy
 
   Services = [];
   employees = new MatTableDataSource<any>();
-  newEmployeeName = ''; // Temporary storage for new employee name
-  newEmployeeUserName = ''; // Temporary storage for new employee name
+  newEmployeeName = new FormControl();
   add_employee_display: boolean = false;
   showBtn: boolean = true;
+  employees_list = [];
+  filteredOptions: Observable<string[]>;
 
   constructor(
     private http: HttpClient,
@@ -38,6 +42,12 @@ export class DepartmentsWhatsappManagementComponent implements OnInit, OnDestroy
   ngOnInit(): void {
     this.getDepartmentsWhatsAppServices();
     this.getDepartmentsWhatsAppEmployees();
+    this.getEmployeesList();
+    this.filteredOptions = this.newEmployeeName.valueChanges
+      .pipe(
+        startWith(''),
+        map(value => this._filter(value))
+      );
   }
 
   ngOnDestroy() {
@@ -80,19 +90,18 @@ export class DepartmentsWhatsappManagementComponent implements OnInit, OnDestroy
   }
 
   addEmployee() {
-    if (this.newEmployeeName.trim() && this.newEmployeeUserName.trim()) {
+    if (this.newEmployeeName.value) {
       const newEmployee = {
-        Row_ID: null,
-        Employee_Name: this.newEmployeeName,
-        Employee_UserName: this.newEmployeeUserName,
+        Row_ID: this.newEmployeeName.value.RowID,
+        Employee_Name: this.newEmployeeName.value.FirstName + ' ' + this.newEmployeeName.value.LastName,
+        Employee_UserName: this.newEmployeeName.value.ADUserName,
         Status: 'True',
         Services: [],
       };
       this.employees.filteredData.push(newEmployee);
-      this.newEmployeeName = '';
-      this.newEmployeeUserName = '';
+      this.newEmployeeName.setValue('');
     } else {
-      alert('Employee name cannot be empty.');
+      alert('משתמש לא יכול להיות ריק.');
     }
   }
 
@@ -103,8 +112,8 @@ export class DepartmentsWhatsappManagementComponent implements OnInit, OnDestroy
   }
 
   // Function to compare options (required for multi-select)
-  compareFn(serviceId1: number, serviceId2: number): boolean {
-    return serviceId1 === serviceId2;
+  compareFn(serviceId1: any, serviceId2: any): boolean {
+    return serviceId1.Row_ID === serviceId2.Row_ID;
   }
 
   getDepartmentsWhatsAppServices() {
@@ -123,6 +132,41 @@ export class DepartmentsWhatsappManagementComponent implements OnInit, OnDestroy
       });
   }
 
+  getEmployeesList() {
+    this.http
+      .post(environment.url + "GetEmployeesForWhatsapp", {
+        _empId: '',
+        _empFirstName: '',
+        _empLastName: '',
+        _phoneNumber: '',
+        _gender: '',
+        _department: '',
+        _role: '',
+        _sektor: '',
+        _on: "1",
+        _workPlace: ''
+      })
+      .subscribe((Response) => {
+        this.employees_list = Response["d"];
+      });
+  }
+
+  displayFn(user: any): string {
+    if (user) {
+      // Display firstname if available, otherwise fallback to id or a placeholder
+      return user && user.FirstName ? user.FirstName + ' ' + user.LastName : ''
+    }
+  }
+
+  private _filter(value: any): any[] {
+    const filterValue1 = value;
+    // if (value.RowID != undefined) {
+    //   this.newEmployeeName.setValue(value);
+    // }
+
+    // Filter based on the provided value
+    return this.employees_list.filter(option => option.FirstName?.includes(filterValue1));
+  }
   // savePermissions() {
   //   this.http.post('/api/save-permissions', this.employees).subscribe({
   //     next: (response) => {

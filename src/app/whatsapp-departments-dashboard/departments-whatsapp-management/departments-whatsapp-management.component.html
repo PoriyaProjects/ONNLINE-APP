@@ -16,13 +16,13 @@
             <div class="col">
                 <mat-form-field class="full-width">
                     <mat-label>שם עובד</mat-label>
-                    <input matInput [(ngModel)]="newEmployeeName" placeholder="הכנס שם" />
-                </mat-form-field>
-            </div>
-            <div class="col">
-                <mat-form-field class="full-width">
-                    <mat-label>שם משתמש</mat-label>
-                    <input matInput [(ngModel)]="newEmployeeUserName" placeholder="הכנס שם משתמש" />
+                    <input type="text" matInput [formControl]="newEmployeeName" [matAutocomplete]="auto">
+                    <mat-autocomplete #auto="matAutocomplete" [displayWith]="displayFn">
+                        <mat-option *ngFor="let name of filteredOptions | async" [value]="name">
+                            {{name.FirstName}} {{name.LastName}}
+                        </mat-option>
+                    </mat-autocomplete>
+                    <!-- <input matInput [(ngModel)]="newEmployeeName" placeholder="הכנס שם" /> -->
                 </mat-form-field>
             </div>
         </div>
@@ -35,7 +35,6 @@
     </mat-form-field>
     <mat-card *ngFor="let employee of employees.filteredData; let i = index;" class="employee-card"
         [ngStyle]="{ 'background-color': employee.Status == 'True' ? '#dbf7eb' : '#edd3cd' }">
-        <!-- <h2>{{ employee.Employee_Name }}</h2> -->
         <div class="row">
             <div class="col">
                 <mat-form-field class="full-width">
@@ -53,8 +52,8 @@
         <mat-form-field class="full-width">
             <mat-label>שיוך שירות</mat-label>
             <mat-select [(ngModel)]="employee.Services" [compareWith]="compareFn" multiple>
-                <mat-option *ngFor="let service of Services" [value]="service.Service_Order">
-                    {{ service.Service_Name }}
+                <mat-option *ngFor="let service of Services" [value]="service">
+                    {{ service.Service_Name }}: {{ service.Action_Name }}
                 </mat-option>
             </mat-select>
         </mat-form-field>
