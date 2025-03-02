@@ -70,7 +70,7 @@ export class DepartmentsWhatsappManagementComponent implements OnInit, OnDestroy
       .subscribe((Response) => {
         if (Response['d']) {
           this.openSnackBar("נשמר בהצלחה");
-          this.getDepartmentsWhatsAppServices();
+          window.location.reload();
         } else {
           this.openSnackBar("תקלה! לא נשמר");
         }
@@ -111,9 +111,27 @@ export class DepartmentsWhatsappManagementComponent implements OnInit, OnDestroy
     else this.employees.filteredData[id].Status = 'True';
   }
 
-  // Function to compare options (required for multi-select)
+  // compareFn(serviceId1: any, serviceId2: any): boolean {
+  //   if (serviceId1 && serviceId2) {
+  //     if (serviceId1.Row_ID && serviceId2.Row_ID) {
+  //       // If both have Row_ID, compare by Row_ID
+  //       return serviceId1.Row_ID === serviceId2.Row_ID;
+  //     } else {
+  //       // If either Row_ID is missing, compare by Service_Name
+  //       return serviceId1.Service_Name === serviceId2.Service_Name;
+  //     }
+  //   }
+  //   return serviceId1 === serviceId2; // Handle null/undefined cases
+  // }
+
   compareFn(serviceId1: any, serviceId2: any): boolean {
-    return serviceId1.Row_ID === serviceId2.Row_ID;
+    if (serviceId1 && serviceId2) {
+      if (serviceId1.Row_ID && serviceId2.Row_ID) {
+        // If both have Row_ID, compare by Row_ID
+        return serviceId1.Row_ID === serviceId2.Row_ID && serviceId1.Service_Name === serviceId2.Service_Name;
+      }
+    }
+    return serviceId1 === serviceId2; // Handle null/undefined cases
   }
 
   getDepartmentsWhatsAppServices() {

@@ -91,7 +91,7 @@ export class LoginComponent implements OnInit {
                             this.user_details.ADUserName
                         );
                         this.router.navigate(["dashboard"]);
-                    }, 7000);
+                    }, 5000);
                 }
             },
             (error) => {
