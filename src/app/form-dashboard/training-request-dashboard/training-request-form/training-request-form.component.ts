@@ -237,14 +237,14 @@ export class TrainingRequestFormComponent implements OnInit {
         });
         this.Training_Request_Forms_C = this.fb.group({
           Request_Name: new FormControl(Training_Request_Forms_C?.Request_Name == null ? this.date_now : Training_Request_Forms_C?.Request_Name, Validators.required),
-          Request_Sign: new FormControl(Training_Request_Forms_C?.Request_Sign, Validators.required),
+          Request_Sign: new FormControl(Training_Request_Forms_C?.Request_Sign === "" ? undefined : Training_Request_Forms_C?.Request_Sign, null),
         });
         this.Training_Request_Forms_D = this.fb.group({
           Hospital_Budget: new FormControl(Training_Request_Forms_D?.Hospital_Budget == 'True' ? true : false, null),
           Galilean_Partnership: new FormControl(Training_Request_Forms_D?.Galilean_Partnership == 'True' ? true : false, null),
           OutSource_Company: new FormControl(Training_Request_Forms_D?.OutSource_Company == 'True' ? true : false, null),
           OutSource_Company_Plan: new FormControl(Training_Request_Forms_D?.OutSource_Company_Plan, null),
-          OutSource_Company_Direct: new FormControl(Training_Request_Forms_D?.OutSource_Company_Direct, null),
+          OutSource_Company_Direct: new FormControl(Training_Request_Forms_D?.OutSource_Company_Direct == 'True' ? true : false, null),
           Budget_Amount: new FormControl(Training_Request_Forms_D?.Budget_Amount, [Validators.pattern(/^\d+(\.\d{1,2})?$/)]),
           Health_Corporation: new FormControl(Training_Request_Forms_D?.Health_Corporation, null),
           Health_Corporation_Description: new FormControl(Training_Request_Forms_D?.Health_Corporation_Description, null),
@@ -420,7 +420,7 @@ export class TrainingRequestFormComponent implements OnInit {
   }
 
   onTabChange(event: MatTabChangeEvent) {
-    console.log(event);
+    // console.log(event);
   }
 
   Training_Out_Check() {

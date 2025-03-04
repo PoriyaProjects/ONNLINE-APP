@@ -73,7 +73,8 @@ export class LearningRequestsDashboardComponent implements OnInit {
   // Table Data
   displayedColumns: string[] = ['assignment_id', 'name', 'due_date', 'link'];
   tableData = new MatTableDataSource<any>();
-
+  managerTableData = new MatTableDataSource<any>();
+  is_manager: boolean;
   employeeId = localStorage.getItem('ID');
 
   constructor(
@@ -97,6 +98,7 @@ export class LearningRequestsDashboardComponent implements OnInit {
       .subscribe((Response) => {
         this.donutChart1.data = Response['d']['personal_list'];
         this.donutChart2.data = Response['d']['personal_department_list'];
+        this.is_manager = Response['d']['is_manager'];
       });
   }
 
@@ -106,7 +108,8 @@ export class LearningRequestsDashboardComponent implements OnInit {
         employee_id: this.employeeId
       })
       .subscribe((Response) => {
-        this.tableData = new MatTableDataSource<any>(Response['d']);
+        this.tableData = new MatTableDataSource<any>(Response['d']['undone_courses_list']);
+        this.managerTableData = new MatTableDataSource<any>(Response['d']['depart_undone_courses_list']);
       });
   }
 
