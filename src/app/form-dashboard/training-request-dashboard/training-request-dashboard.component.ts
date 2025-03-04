@@ -153,7 +153,7 @@ export class TrainingRequestDashboardComponent implements OnInit {
             <p style="margin: 5px 0;">הריני להודיעך כי הועדה החליטה, לא לאשר את הבקשה.</p>`
       }
             <p style="margin: 5px 0;">הערות ועדה: ${data['H'].Recommendations}</p>
-            <p style="margin: 5px 0;">${data['B'].Training_Out == "True" ? `נא לפנות לקב"ט לקבלת תדרוך לפני נסיעה לחו"ל, ללא קבלת התדרוך לפני הנסיעה לא תאושר הבקשה.` : ``}</p>
+            <p style="margin: 5px 0;">${data['B'].Training_Out == "True" && data['H'].Approved === "True" ? `נא לפנות לקב"ט לקבלת תדרוך לפני נסיעה לחו"ל, ללא קבלת התדרוך לפני הנסיעה לא תאושר הבקשה.` : ``}</p>
         </div>
         <br>
         <div style="float: left">
@@ -165,7 +165,7 @@ export class TrainingRequestDashboardComponent implements OnInit {
         <div>
         	<p style="margin: 0px">העתקים:</p>
         	<p style="margin: 0px">הנהלת המרכז הרפואי</p>
-        	<p style="margin: 0px">הממונה הישיר: גב'בת אל כץ</p>
+        	<p style="margin: 0px">הממונה הישיר</p>
         	<p style="margin: 0px">מדור השכר</p>
         	<p style="margin: 0px">מחלקת משאבי אנוש</p>
         </div>

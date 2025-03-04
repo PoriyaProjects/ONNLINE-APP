@@ -7,6 +7,7 @@
 
 .chart-section {
   margin-bottom: 30px;
+  width: 100%;
 }
 
 h2 {
@@ -40,12 +41,17 @@ table {
 
 th,
 td {
-  text-align: right; // Align table text to the right
+  text-align: center; // Align table text to the right
 }
 
 .mat-header-cell {
   font-weight: bold;
-  text-align: right;
+  text-align: center;
+}
+
+.mat-cell {
+  font-weight: bold;
+  text-align: center;
 }
 
 .mat-row {
