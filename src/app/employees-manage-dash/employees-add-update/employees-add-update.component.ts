@@ -185,6 +185,7 @@ export class EmployeesAddUpdateComponent implements OnInit {
         this.employeeWorkDetails = this.formBuilder.group({
           RowID: new FormControl(this.employee.RowID, null),
           EmployeeIndex: new FormControl('', null),
+          StandartJobType: new FormControl(this.employee.StandartJobType, Validators.required),
           StartWorkDate: new FormControl(this.employee.StartWorkDate, Validators.required),
           EmployeeSektorID: new FormControl(this.employee.EmployeeSektorID, Validators.required),
           EmployeeBlossomSektorID: new FormControl(employeeBlossomSektorID, Validators.required),
