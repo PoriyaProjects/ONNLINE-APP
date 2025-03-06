@@ -109,11 +109,6 @@ export class TrainingRequestFormComponent implements OnInit {
         startWith(''),
         map(value => this._filter2(value))
       );
-    // this.filteredOptions3 = this.Supervisor_Name3.valueChanges
-    //   .pipe(
-    //     startWith(''),
-    //     map(value => this._filter3(value))
-    //   );
   }
 
   check_if_fund_or_health() {
@@ -157,21 +152,6 @@ export class TrainingRequestFormComponent implements OnInit {
     return this.employees.filter(option => option.firstname.includes(filterValue1));
   }
 
-  // private _filter3(value: any): string[] {
-  //   const filterValue1 = value;
-  //   if (value && value.id !== undefined) {
-  //     const currentValue = this.Training_Request_Forms_H.controls['Supervisor_Name'].value;
-  //     if (currentValue !== value) {
-  //       this.Training_Request_Forms_H.controls['Supervisor_Name'].setValue(value, { emitEvent: false }); // Prevent emitting events
-  //     }
-  //   }
-  //   return this.employees.filter(option => option.firstname.includes(filterValue1));
-  // }
-
-  // displayFnCity(city: any): string {
-  //   return city && city.cityName ? city.cityName : "";
-  // }
-
   displayFn(user: any): string {
     if (user) {
       // Display firstname if available, otherwise fallback to id or a placeholder
@@ -187,14 +167,6 @@ export class TrainingRequestFormComponent implements OnInit {
     }
     return '';
   }
-
-  // displayFn3(user: any): string {
-  //   if (user) {
-  //     // Display firstname if available, otherwise fallback to id or a placeholder
-  //     return user.firstname ? user.firstname : user.id ? user.id : '';
-  //   }
-  //   return '';
-  // }
 
   buildFormGroup() {
     this.http
@@ -225,6 +197,7 @@ export class TrainingRequestFormComponent implements OnInit {
           Request_Name: new FormControl(Training_Request_Forms_B?.Request_Name, Validators.required),
           Request_Location: new FormControl(Training_Request_Forms_B?.Request_Location, Validators.required),
           Planning_Intity: new FormControl(Training_Request_Forms_B?.Planning_Intity, null),
+          Planning_Intity_Text: new FormControl(Training_Request_Forms_B?.Planning_Intity_Text, null),
           Date_Start: new FormControl(Training_Request_Forms_B?.Date_Start, Validators.required),
           Date_End: new FormControl(Training_Request_Forms_B?.Date_End, Validators.required),
           Request_Duration: new FormControl(Training_Request_Forms_B?.Request_Duration, null),
@@ -314,7 +287,7 @@ export class TrainingRequestFormComponent implements OnInit {
       // Calculate duration in days, hours, minutes, etc. as needed
       const durationDays = Math.ceil(durationMillis / (1000 * 60 * 60 * 24)); // Example: Duration in days
 
-      this.Training_Request_Forms_B.get('Request_Duration').setValue(durationDays); // Set the calculated duration
+      this.Training_Request_Forms_B.get('Request_Duration').setValue(durationDays + 1); // Set the calculated duration
     } else {
       this.Training_Request_Forms_B.get('Request_Duration').setValue(null); // Clear if dates are invalid
     }
@@ -419,10 +392,6 @@ export class TrainingRequestFormComponent implements OnInit {
     }
   }
 
-  onTabChange(event: MatTabChangeEvent) {
-    // console.log(event);
-  }
-
   Training_Out_Check() {
     if (this.Training_Request_Forms_B.controls['Training_Out'].value) {
       this.Training_Request_Forms_B.controls['Galilean_Partnership'].setValue(false);
@@ -450,7 +419,6 @@ export class TrainingRequestFormComponent implements OnInit {
       this.Training_Request_Forms_B.controls['Education_Fee'].enable();
       this.getCityCodes();
     }
-    console.log(this.cityControl.value);
   }
 
   Galilean_Partnership_Check() {
