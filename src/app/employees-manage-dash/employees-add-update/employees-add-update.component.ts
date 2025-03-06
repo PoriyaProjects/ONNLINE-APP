@@ -2,8 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Component, OnInit, TemplateRef, ViewChild } from '@angular/core';
 import { FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
 import { MatDialog, MatDialogRef } from '@angular/material/dialog';
-import { Router } from '@angular/router';
-import { AsyncPipe, DatePipe } from '@angular/common';
+import { DatePipe } from '@angular/common';
 import {
   MatSnackBar,
   MatSnackBarHorizontalPosition,
@@ -14,6 +13,7 @@ import { FillSurveyComponent } from 'src/app/fill-survey/fill-survey.component';
 import { MatTableDataSource } from '@angular/material/table';
 import { Observable } from 'rxjs';
 import { map, startWith } from 'rxjs/operators';
+import { isNull } from '@angular/compiler/src/output/output_ast';
 
 export interface UsersEmployee {
   id: string;
@@ -78,10 +78,8 @@ export class EmployeesAddUpdateComponent implements OnInit {
   ngOnInit(): void {
     // this.getImageUrl(this.employee.EmployeeID);
     this.getEmployeesList();
-
     this.getSektorsList();
     this.getEmployeesToUpdateByID();
-
     this.getEmployeesFunctionsList();
     this.getRanksList();
     this.getWorkPlacesList();
@@ -102,7 +100,6 @@ export class EmployeesAddUpdateComponent implements OnInit {
 
   private _filter1(value: any): string[] {
     const filterValue1 = value;
-    // let manager: any = this.employees.filter(t => t.firstname === filterValue1);
     if (value != "" && value != undefined) {
       if (value.id != undefined) this.employeeWorkDetails.controls['ManagerID1'].setValue(value);
     }
@@ -111,7 +108,6 @@ export class EmployeesAddUpdateComponent implements OnInit {
 
   private _filter2(value: any): string[] {
     const filterValue2 = value;
-    // let manager: any = this.employees.filter(t => t.firstname === filterValue2);
     if (value != "" && value != undefined) {
       if (value.id != undefined) this.employeeWorkDetails.controls['ManagerID2'].setValue(value);
     }
@@ -161,13 +157,8 @@ export class EmployeesAddUpdateComponent implements OnInit {
           CellNumber: new FormControl(this.employee.CellNumber, [Validators.required, Validators.pattern("[0-9 ]{10}")]),
           Address: new FormControl(this.employee.Address, null),
           ProfilePicture: new FormControl(this.employee.ProfilePicture, null),
-          // Image: new FormControl(`http://srv-apps-prod/Images/${this.employee.EmployeeID}.jpg`, null),
-          // KupaID: new FormControl(this.employee.KupaID, null),
-          // KupaName: new FormControl(this.employee.KupaName, null),
           DateOfBirth: new FormControl(this.employee.DateOfBirth, [Validators.required]),
         });
-        // if(this.employee.GymParticipation.StartGymDate == null) this.employee.GymParticipation.StartGymDate = '2023-07-27'
-        // if(this.employee.GymParticipation.EndGymDate == null) this.employee.GymParticipation.EndGymDate = '2023-07-27'
         this.gymDetails = this.formBuilder.group({
           GymParticipant: new FormControl(this.employee.GymParticipation.Row_ID != null, null),
           Row_ID: new FormControl(this.employee.GymParticipation.Row_ID, null),
@@ -185,17 +176,14 @@ export class EmployeesAddUpdateComponent implements OnInit {
         this.employeeWorkDetails = this.formBuilder.group({
           RowID: new FormControl(this.employee.RowID, null),
           EmployeeIndex: new FormControl('', null),
-          StandartJobType: new FormControl(this.employee.StandartJobType, Validators.required),
+          StandartJobType: new FormControl(this.employee.StandartJobType, null),
           StartWorkDate: new FormControl(this.employee.StartWorkDate, Validators.required),
           EmployeeSektorID: new FormControl(this.employee.EmployeeSektorID, Validators.required),
           EmployeeBlossomSektorID: new FormControl(employeeBlossomSektorID, Validators.required),
           Title: new FormControl(this.employee.Title, null),
           FunctionID: new FormControl(functionDefault, null),
-          // FunctionDescription: new FormControl(this.employee.FunctionDescription, null),
           DepartnentCode: new FormControl(DepartnentCode, Validators.required),
           SubDepartmentCode: new FormControl(this.employee.SubDepartmentCode, null),
-          // DepartnentDescripton: new FormControl(this.employee.DepartnentDescripton, null),
-          // JobTitleID: new FormControl('NULL', null),
           RankID: new FormControl(RankID, null),
           ADUserName: new FormControl('', null),
           WorkPlaceID: new FormControl(WorkPlaceID, null),
@@ -206,8 +194,6 @@ export class EmployeesAddUpdateComponent implements OnInit {
           CarType2: new FormControl(this.employee.CarType2, null),
           CarNumber2: new FormControl(this.employee.CarNumber2, null),
           Remarks: new FormControl(this.employee.Remarks, null),
-          // UpdateDate: new FormControl(this.employee.UpdateDate, null),
-          // SentToMOHDate: new FormControl(this.employee.SentToMOHDate, null),
           DocLicence: new FormControl(this.employee.DocLicence, null),
           DocStartExperience: new FormControl(this.employee.DocStartExperience, null),
           InternLearnCountry: new FormControl(this.employee.InternLearnCountry, null),
@@ -277,16 +263,6 @@ export class EmployeesAddUpdateComponent implements OnInit {
     }
   }
 
-  // getImageUrl(emp_id: string) {
-  //   this.http
-  //     .post(this.Api + "ImageToBase64", {
-  //       emp_id: emp_id
-  //     })
-  //     .subscribe((Response) => {
-  //       this.ImageToBase64 = Response['d'];
-  //     });
-  // }
-
   togglePreview() {
     this.previewImage = this.employeePersonalDetails.controls['ProfilePicture'].value;
   }
@@ -317,14 +293,6 @@ export class EmployeesAddUpdateComponent implements OnInit {
     }
     this.employeeWorkDetails.controls['StartWorkDate'].markAsTouched();
   }
-
-  // acceptTermsFunc() {
-  //   if(this.AcceptTerms){
-  //     this.employeeWorkDetails.controls['AcceptTerms'].setValue("1");
-  //   }else{
-  //     this.employeeWorkDetails.controls['AcceptTerms'].setValue("0");
-  //   }
-  // }
 
   getEmployeeIndex() {
     return this.employeeWorkDetails.controls['DepartnentCode'].value + '_' + this.employeeWorkDetails.controls['EmployeeSektorID'].value;
@@ -464,8 +432,6 @@ export class EmployeesAddUpdateComponent implements OnInit {
               PersonalEmail: new FormControl(this.employee.PersonalEmail, null),
               CellNumber: new FormControl(this.employee.CellNumber, [Validators.required, Validators.pattern("[0-9 ]{10}")]),
               Address: new FormControl(this.employee.Address, null),
-              // KupaID: new FormControl(this.employee.KupaID, null),
-              // KupaName: new FormControl(this.employee.KupaName, null),
               DateOfBirth: new FormControl(this.employee.DateOfBirth, [Validators.required]),
             });
             this.gymDetails = this.formBuilder.group({
@@ -490,11 +456,8 @@ export class EmployeesAddUpdateComponent implements OnInit {
               EmployeeBlossomSektorID: new FormControl(employeeBlossomSektorID, Validators.required),
               Title: new FormControl(this.employee.Title, null),
               FunctionID: new FormControl(functionDefault, null),
-              // FunctionDescription: new FormControl(this.employee.FunctionDescription, null),
               DepartnentCode: new FormControl(DepartnentCode, Validators.required),
               SubDepartmentCode: new FormControl(this.employee.SubDepartmentCode, null),
-              // DepartnentDescripton: new FormControl(this.employee.DepartnentDescripton, null),
-              // JobTitleID: new FormControl('NULL', null),
               RankID: new FormControl(RankID, null),
               ADUserName: new FormControl('', null),
               WorkPlaceID: new FormControl(WorkPlaceID, null),
@@ -505,8 +468,6 @@ export class EmployeesAddUpdateComponent implements OnInit {
               CarType2: new FormControl(this.employee.CarType2, null),
               CarNumber2: new FormControl(this.employee.CarNumber2, null),
               Remarks: new FormControl(this.employee.Remarks, null),
-              // UpdateDate: new FormControl(this.employee.UpdateDate, null),
-              // SentToMOHDate: new FormControl(this.employee.SentToMOHDate, null),
               DocLicence: new FormControl(this.employee.DocLicence, null),
               DocStartExperience: new FormControl(this.employee.DocStartExperience, null),
               InternLearnCountry: new FormControl(this.employee.InternLearnCountry, null),
@@ -553,10 +514,6 @@ export class EmployeesAddUpdateComponent implements OnInit {
 
   setEndTime() {
     let pipe = new DatePipe('en-US');
-    // if(this.gymDetails.controls['EndGymDate'].value == null){
-    //   this.gymDetails.controls['EndGymDate'] = this.gymDetails.controls['StartGymDate'];
-    //   this.gymDetails.controls['EndGymDate'].setValue(this.gymDetails.controls['StartGymDate'].value);
-    // }
     this.gymDetails.controls['EndGymDate'].setValue(new Date());
     this.gymDetails.controls['EndGymDate'].value.setMonth(this.gymDetails.controls['StartGymDate'].value.getMonth() + 3);
     this.gymDetails.controls['EndGymDate'].value.setDate(this.gymDetails.controls['StartGymDate'].value.getDate());
