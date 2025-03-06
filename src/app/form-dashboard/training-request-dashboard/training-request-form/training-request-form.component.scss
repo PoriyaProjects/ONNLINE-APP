@@ -75,19 +75,20 @@
 
     .section {
       width: 50%;
+
       .multi-select {
         font-weight: bold;
         padding: 15px;
       }
     }
+  }
 
-    .example-section {
-      margin: 12px 0;
+  .example-section {
+    margin: 12px 0;
 
-      .checkbox-label {
-        margin-right: 10px;
-        /* Adjust the spacing as needed */
-      }
+    .checkbox-label {
+      margin-right: 10px;
+      /* Adjust the spacing as needed */
     }
   }
 
@@ -100,4 +101,12 @@
       text-align: right;
     }
   }
+
+  .stepBtn {
+    margin-top: 20px;
+  }
+}
+
+.mat-card-content {
+  margin-top: 40px;
 }

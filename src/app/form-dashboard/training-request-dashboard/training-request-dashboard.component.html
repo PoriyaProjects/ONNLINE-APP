@@ -1,25 +1,24 @@
-<h2 class="page-title text-center">{{UserName}} - השתלמות במר"צ </h2>
+<h2 class="page-title text-center">{{UserName}} - השתלמות בקליק </h2>
 <div class="dashboard-container">
     <!-- <h1>בקשות השתלמות</h1> -->
     <div class="card-table">
         <div class="card-header">
-            <!-- <div class="search-section">
+            <div class="search-section">
                 <input type="text" placeholder="חפש..." class="search-bar" (keyup)="applyFilter($event)" />
-                <button mat-mini-fab (click)="getAllTrainingRequestFormsList('1')" matTooltip="אישורים">
+                <button mat-mini-fab (click)="getAllTrainingRequestFormsList('1')" matTooltip="מאושרים">
                     <mat-icon>check</mat-icon>
                 </button>
                 <button mat-mini-fab (click)="getAllTrainingRequestFormsList('0')" matTooltip="סירובים">
                     <mat-icon>cancel</mat-icon>
                 </button>
-                <button mat-mini-fab (click)="getAllTrainingRequestFormsList('')">
+                <button mat-mini-fab (click)="getAllTrainingRequestFormsList('null')" matTooltip="בהמתנה">
+                    <mat-icon>pending</mat-icon>
+                </button>
+                <button mat-mini-fab (click)="getAllTrainingRequestFormsList('')" matTooltip="הכל">
                     הכל
                 </button>
-            </div> -->
+            </div>
             <div class="new-section">
-                <button mat-fab aria-label="Example icon button with add icon" (click)="handleAction('', 'new')"
-                    matTooltip="בקשה חדשה">
-                    <mat-icon>add</mat-icon>
-                </button>
                 <!-- <button mat-fab (click)="openDialog()" matTooltip="השתלמויות" *ngIf="UserName == 'adahabre'">
                     <mat-icon>view_list</mat-icon>
                 </button> -->
@@ -104,4 +103,8 @@
         </table>
         <mat-paginator [pageSizeOptions]="[10,20,35,50]" showFirstLastButtons></mat-paginator>
     </div>
+    <button mat-fab aria-label="Example icon button with add icon" (click)="handleAction('', 'new')"
+        matTooltip="בקשה חדשה">
+        <mat-icon>add</mat-icon>
+    </button>
 </div>
