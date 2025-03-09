@@ -25,6 +25,11 @@ th.mat-header-cell {
   overflow: hidden;
 }
 
+.search-section {
+  display: flex;
+  gap: 8px;
+}
+
 .card-header {
   display: flex;
   justify-content: space-between;
