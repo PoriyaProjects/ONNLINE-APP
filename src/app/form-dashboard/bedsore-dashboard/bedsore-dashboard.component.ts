@@ -27,11 +27,10 @@ export class BedsoreDashboardComponent implements OnInit {
   constructor(
     public dialog: MatDialog,
     private fb: FormBuilder,
-    private datePipe: DatePipe,
     private http: HttpClient,
-    private router: Router,
     private _snackBar: MatSnackBar,
-    private confirmationDialogService: ConfirmationDialogService) { }
+    private confirmationDialogService: ConfirmationDialogService
+  ) { }
 
   searchPatient: FormGroup;
   departsList = [];

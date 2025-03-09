@@ -155,7 +155,7 @@ export class EmployeesAddUpdateComponent implements OnInit {
           Email: new FormControl(this.employee.Email, null),
           PersonalEmail: new FormControl(this.employee.PersonalEmail, null),
           CellNumber: new FormControl(this.employee.CellNumber, [Validators.required, Validators.pattern("[0-9 ]{10}")]),
-          Address: new FormControl(this.employee.Address, null),
+          CityName: new FormControl(this.employee.CityName, null),
           ProfilePicture: new FormControl(this.employee.ProfilePicture, null),
           DateOfBirth: new FormControl(this.employee.DateOfBirth, [Validators.required]),
         });
@@ -431,7 +431,7 @@ export class EmployeesAddUpdateComponent implements OnInit {
               Email: new FormControl(this.employee.Email, null),
               PersonalEmail: new FormControl(this.employee.PersonalEmail, null),
               CellNumber: new FormControl(this.employee.CellNumber, [Validators.required, Validators.pattern("[0-9 ]{10}")]),
-              Address: new FormControl(this.employee.Address, null),
+              CityName: new FormControl(this.employee.CityName, null),
               DateOfBirth: new FormControl(this.employee.DateOfBirth, [Validators.required]),
             });
             this.gymDetails = this.formBuilder.group({
@@ -451,6 +451,7 @@ export class EmployeesAddUpdateComponent implements OnInit {
             this.employeeWorkDetails = this.formBuilder.group({
               RowID: new FormControl(this.employee.RowID, null),
               EmployeeIndex: new FormControl('', null),
+              StandartJobType: new FormControl(this.employee.StandartJobType, null),
               StartWorkDate: new FormControl(this.employee.StartWorkDate, Validators.required),
               EmployeeSektorID: new FormControl(this.employee.EmployeeSektorID, Validators.required),
               EmployeeBlossomSektorID: new FormControl(employeeBlossomSektorID, Validators.required),
