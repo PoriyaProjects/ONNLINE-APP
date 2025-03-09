@@ -3,7 +3,7 @@
 </button>
 <h1 mat-dialog-title style="text-align: center;">תיעוד פצע</h1>
 <hr>
-<div class="container" dir="rtl">
+<div class="container" dir="rtl" *ngIf="fullForm != undefined">
     <form class="form" [formGroup]="fullForm">
         <!-- DATE TIME -->
         <div class="row">

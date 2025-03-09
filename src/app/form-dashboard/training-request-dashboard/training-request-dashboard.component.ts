@@ -92,6 +92,9 @@ export class TrainingRequestDashboardComponent implements OnInit {
         width: '90%',
         height: '90%'
       }).afterClosed().subscribe(res => {
+        if (res != null) {
+          this.getDataToPDF(res);
+        }
         this.getAllTrainingRequestFormsList("");
       });
     } else if (action == 'new') {

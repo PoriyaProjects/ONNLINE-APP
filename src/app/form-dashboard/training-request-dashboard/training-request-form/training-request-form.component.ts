@@ -8,12 +8,16 @@ import { environment } from 'src/environments/environment';
 import { DatePipe } from '@angular/common';
 import { map, startWith } from 'rxjs/operators';
 import { Observable } from 'rxjs';
-import { MatTabChangeEvent } from '@angular/material/tabs';
+import { ConfirmationDialogService } from 'src/app/confirmation-dialog/confirmation-dialog.service';
+import { STEPPER_GLOBAL_OPTIONS } from '@angular/cdk/stepper';
 
 @Component({
   selector: 'app-training-request-form',
   templateUrl: './training-request-form.component.html',
-  styleUrls: ['./training-request-form.component.scss']
+  styleUrls: ['./training-request-form.component.scss'],
+  providers: [{
+    provide: STEPPER_GLOBAL_OPTIONS, useValue: { showError: true }
+  }]
 })
 export class TrainingRequestFormComponent implements OnInit {
   Training_Request_Forms_A: FormGroup;
@@ -83,6 +87,7 @@ export class TrainingRequestFormComponent implements OnInit {
     private http: HttpClient,
     private datePipe: DatePipe,
     private _snackBar: MatSnackBar,
+    private confirmationDialogService: ConfirmationDialogService,
     @Inject(MAT_DIALOG_DATA) public form_id: any,
     private dialogRef: MatDialogRef<TrainingRequestFormComponent>
   ) {
@@ -558,6 +563,10 @@ export class TrainingRequestFormComponent implements OnInit {
     return optionValue === selectedValue;
   }
 
+  compareFn4(optionValue: any, selectedValue: any): boolean {
+    return optionValue === selectedValue;
+  }
+
   getPersonDetails() {
     let id = "000000000";
     if (this.Training_Request_Forms_A != undefined) {
@@ -604,7 +613,7 @@ export class TrainingRequestFormComponent implements OnInit {
       });
   }
 
-  onSubmit() {
+  onSubmit(final) {
     if (this.Training_Request_Forms_A.valid && this.Training_Request_Forms_B.valid && this.Training_Request_Forms_C.valid && this.Training_Request_Forms_D.valid) {
       if (this.Supervisor_Name1.value == undefined) {
         this.openSnackBar('חסר מנהל ישיר, נא ליצור קשר עם משאבי אנוש');
@@ -628,9 +637,10 @@ export class TrainingRequestFormComponent implements OnInit {
           G: this.Training_Request_Forms_G.getRawValue(),
         })
         .subscribe((Response) => {
-          if (Response["d"]) {
+          if (Response["d"] != 0) {
             this.openSnackBar('נשמר בהצלחה');
-            this.dialogRef.close();
+            if (final == 1) this.askBeforeSaving(Response["d"]);
+            else this.dialogRef.close(null);
           } else {
             this.openSnackBar('תקלה! לא נשמר');
           }
@@ -638,6 +648,23 @@ export class TrainingRequestFormComponent implements OnInit {
     } else {
       this.openSnackBar('שדה/ות לא תקינים/חסרים');
     }
+  }
+
+  askBeforeSaving(rowId) {
+    this.confirmationDialogService
+      .confirm("נא לאשר..", "האם אתה בטוח ...? ")
+      .then((confirmed) => {
+        console.log("User confirmed:", confirmed);
+        if (confirmed) {
+          this.dialogRef.close(rowId);
+        } else {
+        }
+      })
+      .catch(() =>
+        console.log(
+          "User dismissed the dialog (e.g., by using ESC, clicking the cross icon, or clicking outside the dialog)"
+        )
+      );
   }
 
 }

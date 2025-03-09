@@ -55,6 +55,7 @@ export class BedsoreModalComponent implements OnInit {
   all_doctors_filter = [];
   pipe = new DatePipe('en-US');
   myDate = new Date();
+  images_list = [];
 
   ngOnInit(): void {
     let patient: any;
@@ -64,7 +65,10 @@ export class BedsoreModalComponent implements OnInit {
     this.getEmployeesList();
     if (this.DataDialog.PatientDetails === undefined) {
       // edit
-      this.editFormFunc(this.DataDialog.data);
+      this.getBedsoreImagesByRowID();
+      setTimeout(() => {
+        this.editFormFunc(this.DataDialog.data);
+      }, 1000);
     } else {
       // new
       patient = this.DataDialog.PatientDetails;
@@ -92,7 +96,7 @@ export class BedsoreModalComponent implements OnInit {
       this.imageForm = this.fb.group({
         ImagesList: this.fb.array([])
       });
-      for (let i = 0; i < 4; i++) {
+      for (let i = 0; i < 3; i++) {
         this.onAddImage(null);
       }
     }
@@ -126,8 +130,8 @@ export class BedsoreModalComponent implements OnInit {
     this.imageForm = this.fb.group({
       ImagesList: this.fb.array([])
     });
-    for (let i = 0; i < 4; i++) {
-      this.onAddImage(data.ImagesList[i]);
+    for (let i = 0; i < 3; i++) {
+      this.onAddImage(this.images_list[i]);
     }
   }
 
@@ -155,6 +159,16 @@ export class BedsoreModalComponent implements OnInit {
             firstname: element.firstname + " " + element.lastname
           });
         })
+      });
+  }
+
+  getBedsoreImagesByRowID() {
+    this.http
+      .post(environment.url + "GetBedsoreImagesByRowID", {
+        id: this.DataDialog.data.Row_ID
+      })
+      .subscribe((Response) => {
+        this.images_list = Response["d"];
       });
   }
 

@@ -336,7 +336,7 @@
                 </mat-form-field>
                 <mat-form-field class="full-width" appearance="outline">
                     <mat-label>שאל</mat-label>
-                    <input matInput [(ngModel)]="question" placeholder="שאלתך..." />
+                    <textarea matInput [(ngModel)]="question" rows="3" placeholder="שאלתך..."></textarea>
                 </mat-form-field>
                 <mat-progress-bar mode="query" *ngIf="thinking"></mat-progress-bar>
                 <button mat-raised-button style="background-color: #1976d2;font-weight: bold;color: #ffffff;"

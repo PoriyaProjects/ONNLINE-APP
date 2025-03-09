@@ -4,8 +4,8 @@
       X
     </button>
   </div>
-  <mat-horizontal-stepper linear #stepper *ngIf="Training_Request_Forms_A != undefined">
-    <mat-step [stepControl]="Training_Request_Forms_A">
+  <mat-horizontal-stepper #stepper *ngIf="Training_Request_Forms_A != undefined">
+    <mat-step [stepControl]="Training_Request_Forms_A" errorMessage="שכחת שדות חובה.">
       <form [formGroup]="Training_Request_Forms_A">
         <ng-template matStepLabel>פרטים אישים</ng-template>
         <mat-card>
@@ -115,7 +115,7 @@
         <button mat-button matStepperNext class="stepBtn" style="background-color: #84a8eb;">הבא</button>
       </div>
     </mat-step>
-    <mat-step [stepControl]="Training_Request_Forms_B">
+    <mat-step [stepControl]="Training_Request_Forms_B" errorMessage="שכחת שדות חובה.">
       <form [formGroup]="Training_Request_Forms_B">
         <ng-template matStepLabel>בקשת המועמד</ng-template>
         <mat-card>
@@ -224,7 +224,7 @@
         <button mat-button matStepperNext class="stepBtn" style="background-color: #84a8eb;">הבא</button>
       </div>
     </mat-step>
-    <mat-step [stepControl]="Training_Request_Forms_D">
+    <mat-step [stepControl]="Training_Request_Forms_D" errorMessage="שכחת שדות חובה.">
       <form [formGroup]="Training_Request_Forms_D">
         <ng-template matStepLabel>מקור מימון</ng-template>
         <mat-card>
@@ -307,15 +307,18 @@
             </div>
             <br>
             <hr>
-            <div class="section" *ngIf="(user_name == 'dnudelman' || user_name == 'adahabre') && dorit_note_answer">
-              <mat-form-field>
+            <div class="section" *ngIf="dorit_note_answer">
+              <mat-label>תשובת התאגיד</mat-label>
+              <p *ngIf="user_name != 'dnudelman'"> {{ Training_Request_Forms_D.get('Training_Fund_Answer').value }}
+              </p>
+              <mat-form-field *ngIf="user_name == 'dnudelman'">
                 <mat-label>תשובת השתלמות תאגיד</mat-label>
                 <textarea matInput formControlName="Training_Fund_Answer" rows="2"></textarea>
               </mat-form-field>
             </div>
           </mat-card-content>
         </mat-card>
-        <button mat-raised-button color="primary" type="submit" class="submitBtn" (click)="onSubmit()">שמירה
+        <button mat-raised-button color="primary" type="submit" class="submitBtn" (click)="onSubmit(0)">שמירה
           כטיוטה</button>
       </form>
       <div>
@@ -323,7 +326,7 @@
         <button mat-button matStepperNext class="stepBtn" style="background-color: #84a8eb;">הבא</button>
       </div>
     </mat-step>
-    <mat-step [stepControl]="Training_Request_Forms_C">
+    <mat-step [stepControl]="Training_Request_Forms_C" errorMessage="שכחת שדות חובה.">
       <form [formGroup]="Training_Request_Forms_C">
         <ng-template matStepLabel>התחייבות העובד</ng-template>
         <mat-card>
@@ -376,19 +379,19 @@
           </mat-card-content>
         </mat-card>
         <button mat-raised-button color="primary" type="submit" class="submitBtn" matTooltip="שמירה ללא שליחה"
-          (click)="onSubmit()">שמירה
+          (click)="onSubmit(0)">שמירה
           כטיוטה</button>
         <button mat-raised-button color="primary" type="submit" class="submitBtn" matTooltip="חתימת עובד חובה"
-          (click)="onSubmit()"
+          (click)="onSubmit(0)"
           [disabled]="Training_Request_Forms_C.get('Request_Sign').value === undefined || Training_Request_Forms_C.get('Request_Sign').value === null">שמירה
-          ושליחה</button>
+          והגשה</button>
       </form>
       <div>
         <button mat-button matStepperPrevious class="stepBtn">חזרה</button>
         <button mat-button matStepperNext class="stepBtn" style="background-color: #84a8eb;">הבא</button>
       </div>
     </mat-step>
-    <mat-step [stepControl]="Training_Request_Forms_E" *ngIf="!requested">
+    <mat-step [stepControl]="Training_Request_Forms_E" *ngIf="!requested" errorMessage="שכחת שדות חובה.">
       <form [formGroup]="Training_Request_Forms_E">
         <ng-template matStepLabel>חוות דעת - ממונה ישיר</ng-template>
         <mat-card-content>
@@ -447,14 +450,14 @@
             </div>
           </div>
         </mat-card-content>
-        <button mat-raised-button color="primary" type="submit" class="submitBtn" (click)="onSubmit()">שמירה</button>
+        <button mat-raised-button color="primary" type="submit" class="submitBtn" (click)="onSubmit(0)">שמירה</button>
       </form>
       <div>
         <button mat-button matStepperPrevious class="stepBtn">חזרה</button>
         <button mat-button matStepperNext class="stepBtn" style="background-color: #84a8eb;">הבא</button>
       </div>
     </mat-step>
-    <mat-step [stepControl]="Training_Request_Forms_F" *ngIf="!requested">
+    <mat-step [stepControl]="Training_Request_Forms_F" *ngIf="!requested" errorMessage="שכחת שדות חובה.">
       <form [formGroup]="Training_Request_Forms_F">
         <ng-template matStepLabel>חוות דעת - ממונה עקיף</ng-template>
         <mat-card-content>
@@ -513,14 +516,14 @@
             </div>
           </div>
         </mat-card-content>
-        <button mat-raised-button color="primary" type="submit" class="submitBtn" (click)="onSubmit()">שמירה</button>
+        <button mat-raised-button color="primary" type="submit" class="submitBtn" (click)="onSubmit(0)">שמירה</button>
       </form>
       <div>
         <button mat-button matStepperPrevious class="stepBtn">חזרה</button>
         <button mat-button matStepperNext class="stepBtn" style="background-color: #84a8eb;">הבא</button>
       </div>
     </mat-step>
-    <mat-step [stepControl]="Training_Request_Forms_H" *ngIf="!requested">
+    <mat-step [stepControl]="Training_Request_Forms_H" *ngIf="!requested" errorMessage="שכחת שדות חובה.">
       <form [formGroup]="Training_Request_Forms_H">
         <ng-template matStepLabel>ועדת החלטה</ng-template>
         <mat-card-content>
@@ -563,10 +566,16 @@
               </mat-select>
             </div>
             <div class="col-lg-1 col-md-4 col-sm-6">
-              <section class="example-section">
-                <p><mat-checkbox formControlName="Approved"><span class="checkbox-label">מאושר</span></mat-checkbox>
+              <mat-label>סוג השתלמות</mat-label>
+              <mat-select formControlName="Approved" [compareWith]="compareFn4">
+                <mat-option value=""></mat-option>
+                <mat-option value="מאושר">מאושר</mat-option>
+                <mat-option value="לא מאושר">לא מאושר</mat-option>
+              </mat-select>
+              <!-- <section class="example-section">
+              <p><mat-checkbox formControlName="Approved"><span class="checkbox-label">מאושר</span></mat-checkbox>
                 </p>
-              </section>
+              </section> -->
             </div>
             <div class="col-lg-1 col-md-4 col-sm-6" *ngIf="Training_Request_Forms_H.get('Approved').value">
               <section class="example-section">
@@ -608,9 +617,9 @@
           </div>
         </mat-card-content>
         <button mat-raised-button color="primary" type="submit" class="submitBtn" matTooltip="שמירה ללא שליחה לגורמים"
-          (click)="onSubmit()">שמירה</button>
+          (click)="onSubmit(0)">שמירה</button>
         <button mat-raised-button color="primary" type="submit" class="submitBtn"
-          matTooltip="שמירה ושליחת סיכום ועדה לגורמים" (click)="onSubmit()">שמירה ושליחה</button>
+          matTooltip="שמירה ושליחת סיכום ועדה לגורמים" (click)="onSubmit(1)">שמירה ושליחה</button>
       </form>
       <div>
         <button mat-button matStepperPrevious>חזרה</button>
