@@ -17,7 +17,8 @@ export class LearningRequestsDashboardComponent implements OnInit {
     data: [
     ],
     options: {
-      pieHole: 0.4,
+      pieHole: 0.2,
+      width: 1873,
       height: 300,
       colors: ['#42f57e', '#f54b42']
     }
@@ -29,7 +30,8 @@ export class LearningRequestsDashboardComponent implements OnInit {
     data: [
     ],
     options: {
-      pieHole: 0.4,
+      pieHole: 0.2,
+      width: 1873,
       height: 300,
       colors: ['#42f57e', '#f54b42']
     }
@@ -72,6 +74,7 @@ export class LearningRequestsDashboardComponent implements OnInit {
 
   // Table Data
   displayedColumns: string[] = ['assignment_id', 'name', 'due_date', 'link'];
+  displayedColumns2: string[] = ['assignment_id', 'name', 'due_date', 'employee'];
   tableData = new MatTableDataSource<any>();
   managerTableData = new MatTableDataSource<any>();
   is_manager: boolean;

@@ -265,27 +265,32 @@ export class BedsoreDashboardComponent implements OnInit {
       .subscribe((Response) => {
         let that = this;
         setTimeout(() => {
-          that.http.post(environment.urlipracticom + "LinkPdfToPatientNamer", {
-            // that.http.post("http://localhost:64964/WebService.asmx/LinkPdfToPatientNamer", {
-            CaseNumber:
-              data.PatientDetails.CaseNumber,
-            FormID: data.Row_ID,
-            Catigory: "ZPO_BEDSOR",
-            fileSource:
-              Response["d"],
+          try {
+            that.http.post(environment.urlipracticom + "LinkPdfToPatientNamer", {
+              // that.http.post("http://localhost:64964/WebService.asmx/LinkPdfToPatientNamer", {
+              CaseNumber:
+                data.PatientDetails.CaseNumber,
+              FormID: data.Row_ID,
+              Catigory: "ZPO_BEDSOR",
+              fileSource:
+                Response["d"],
+            }
+            )
+              .subscribe((Response) => {
+                if (
+                  Response["d"] == "success") {
+                  $("#loader_2").addClass("d-none");
+                  that.openSnackBar("! נשמר בהצלחה לתיק מטופל בנמר");
+                  this.loaderPdfNamer = false;
+                  this.getAllBedsoreList();
+                } else {
+                  that.openSnackBar("! משהו לא תקין");
+                }
+              });
+          } catch (err) {
+            console.error(err);
+            this.getAllBedsoreList();
           }
-          )
-            .subscribe((Response) => {
-              if (
-                Response["d"] == "success") {
-                $("#loader_2").addClass("d-none");
-                that.openSnackBar("! נשמר בהצלחה לתיק מטופל בנמר");
-                this.loaderPdfNamer = false;
-                this.getAllBedsoreList();
-              } else {
-                that.openSnackBar("! משהו לא תקין");
-              }
-            });
         }, 1000);
       });
   }

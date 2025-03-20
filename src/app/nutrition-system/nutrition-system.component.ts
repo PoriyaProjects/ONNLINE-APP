@@ -32,7 +32,9 @@ export class NutritionSystemComponent implements OnInit {
   numberOfDepartments: number;
   numberOfClinics: number;
 
-  displayedColumns: string[] = ['CaseNumber', 'IDNumber', 'FirstName', 'LastName', 'FatherName', 'Age', 'DepartName', 'RoomNumber', 'HospitalizationDate', 'HospitalizationDuration', 'FoodType', 'FoodTexture', 'CurrentAllergy', 'OldAllergy'];
+  displayedColumns: string[] = ['CaseNumber', 'IDNumber', 'FirstName', 'LastName', 'FatherName', 'Age', 'DepartName'
+    , 'RoomNumber', 'HospitalizationDate', 'HospitalizationDuration', 'FoodType', 'FoodTexture', 'CurrentAllergy'
+    , 'OldAllergy', 'LiquidCertification', 'NutritionAnamnezes', 'EatingNotes'];
 
   applyFilter(event) {
     let filterValue;

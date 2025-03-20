@@ -69,13 +69,27 @@
                                     <mat-label>שם משפחה (אנגלית)</mat-label>
                                     <input matInput placeholder="שם משפחה (אנגלית)" formControlName="LastNameEng">
                                 </mat-form-field></div>
-                            <div class="col-3"><mat-form-field>
+                            <div class="col-1">
+                                <mat-form-field>
+                                    <mat-label>תיאור</mat-label>
+                                    <mat-select formControlName="JobTitleID" aria-placeholder="תיאור">
+                                        <mat-option value="1"> ד"ר </mat-option>
+                                        <mat-option value="2"> פרופ' </mat-option>
+                                        <mat-option value="3"> עו"ד </mat-option>
+                                        <mat-option value="4"> מר </mat-option>
+                                        <mat-option value="5"> גב' </mat-option>
+                                    </mat-select>
+                                </mat-form-field>
+                            </div>
+                            <div class="col-2">
+                                <mat-form-field>
                                     <mat-label>מגדר</mat-label>
                                     <mat-select formControlName="Gender" aria-placeholder="מגדר">
                                         <mat-option value="Male"> זכר </mat-option>
                                         <mat-option value="Female"> נקבה </mat-option>
                                     </mat-select>
-                                </mat-form-field></div>
+                                </mat-form-field>
+                            </div>
                             <div class="col-3"><mat-form-field class="example-full-width">
                                     <mat-label>מייל</mat-label>
                                     <input matInput matInput (focusout)="getUserName('')" placeholder="מייל"
@@ -314,7 +328,7 @@
                             </div>
                             <div class="col-3">
                                 <mat-form-field>
-                                    <input matInput placeholder="חלקיות משרה" formControlName="StandartJobType">
+                                    <input matInput placeholder="חלקיות משרה" formControlName="StandartJobType" type="number" step="0.0">
                                 </mat-form-field>
                             </div>
                             <div class="col-3">
