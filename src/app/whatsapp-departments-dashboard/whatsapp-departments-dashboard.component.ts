@@ -195,14 +195,14 @@ export class WhatsappDepartmentsDashboardComponent implements OnInit {
           startWith(''),
           map(value => this._filter(value || '')),
         );
-        // let interval = setTimeout(() => {
-        //   if (this.router.url !== '/departments-whatsapp') {
-        //     clearTimeout(interval);
-        //   } else {
-        //     console.log("Refreshing..");
-        //     this.getDepartmentsWhatsAppUsers();
-        //   }
-        // }, 10000);
+        let interval = setTimeout(() => {
+          if (this.router.url !== '/departments-whatsapp') {
+            clearTimeout(interval);
+          } else {
+            console.log("Refreshing..");
+            this.getDepartmentsWhatsAppUsers();
+          }
+        }, 10000);
       });
   }
   startCountdown() {
