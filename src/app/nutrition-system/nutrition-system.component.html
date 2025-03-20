@@ -100,11 +100,11 @@
                 <mat-cell *matCellDef="let row">{{ row.HospitalizationDuration }}</mat-cell>
             </ng-container>
             <ng-container matColumnDef="FoodType">
-                <mat-header-cell *matHeaderCellDef mat-sort-header>סוג כלכלה</mat-header-cell>
+                <mat-header-cell *matHeaderCellDef mat-sort-header>סוג תזונה</mat-header-cell>
                 <mat-cell *matCellDef="let row">{{ row.FoodType }}</mat-cell>
             </ng-container>
             <ng-container matColumnDef="FoodTexture">
-                <mat-header-cell *matHeaderCellDef mat-sort-header>סוג מרקם</mat-header-cell>
+                <mat-header-cell *matHeaderCellDef mat-sort-header>מרקם למזון</mat-header-cell>
                 <mat-cell *matCellDef="let row">{{ row.FoodTexture }}</mat-cell>
             </ng-container>
             <ng-container matColumnDef="CurrentAllergy">
@@ -113,6 +113,18 @@
             </ng-container>
             <ng-container matColumnDef="OldAllergy">
                 <mat-header-cell *matHeaderCellDef mat-sort-header>רגישויות בעבר</mat-header-cell>
+                <mat-cell *matCellDef="let row">{{ row.OldAllergy }}</mat-cell>
+            </ng-container>
+            <ng-container matColumnDef="LiquidCertification">
+                <mat-header-cell *matHeaderCellDef mat-sort-header>הסמכת נוזלים לשתייה</mat-header-cell>
+                <mat-cell *matCellDef="let row">{{ row.OldAllergy }}</mat-cell>
+            </ng-container>
+            <ng-container matColumnDef="NutritionAnamnezes">
+                <mat-header-cell *matHeaderCellDef mat-sort-header>אנמנזה תזונתית</mat-header-cell>
+                <mat-cell *matCellDef="let row">{{ row.OldAllergy }}</mat-cell>
+            </ng-container>
+            <ng-container matColumnDef="EatingNotes">
+                <mat-header-cell *matHeaderCellDef mat-sort-header>הנחיות אכילה</mat-header-cell>
                 <mat-cell *matCellDef="let row">{{ row.OldAllergy }}</mat-cell>
             </ng-container>
 
