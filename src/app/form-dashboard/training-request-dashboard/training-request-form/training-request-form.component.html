@@ -437,7 +437,7 @@
                 </mat-autocomplete>
               </mat-form-field>
             </div>
-            <div class="col-lg-2 col-md-4 col-sm-6">
+            <div class="col-lg-2 col-md-4 col-sm-6" *ngIf="Supervisor_Name1.value?.id == passport">
               <button mat-raised-button class="signBtn" color="warn" (click)="signForm(5, 'Supervisor_Sign')">
                 <span
                   *ngIf="Training_Request_Forms_E.get('Supervisor_Sign').value == undefined || Training_Request_Forms_E.get('Supervisor_Sign').value == ''">לחתום</span>
@@ -523,7 +523,8 @@
         <button mat-button matStepperNext class="stepBtn" style="background-color: #84a8eb;">הבא</button>
       </div>
     </mat-step>
-    <mat-step [stepControl]="Training_Request_Forms_H" *ngIf="!requested" errorMessage="שכחת שדות חובה.">
+    <mat-step [stepControl]="Training_Request_Forms_H"
+      *ngIf="!requested && Training_Request_Forms_F.get('Approved').value" errorMessage="שכחת שדות חובה.">
       <form [formGroup]="Training_Request_Forms_H">
         <ng-template matStepLabel>ועדת החלטה</ng-template>
         <mat-card-content>

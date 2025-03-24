@@ -1,0 +1,127 @@
+<form [formGroup]="resuscitationForm" (ngSubmit)="onSubmit()" dir="rtl">
+    <mat-card class="resus-card">
+        <mat-card-title>טופס החייאת ילוד</mat-card-title>
+        <mat-card-content>
+
+            <h3>פרטי הילוד</h3>
+            <div formGroupName="motherInfo">
+
+                <mat-form-field appearance="outline" style="width: 50%;">
+                    <mat-label>שם הילוד</mat-label>
+                    <input matInput formControlName="babyName">
+                </mat-form-field>
+
+                <mat-form-field appearance="outline" style="width: 50%;">
+                    <mat-label>תעודת זהות הילוד</mat-label>
+                    <input matInput formControlName="babyId">
+                </mat-form-field>
+
+                <mat-form-field appearance="outline" style="width: 50%;">
+                    <mat-label>החייאה בוצעה בתאריך</mat-label>
+                    <input matInput [matDatepicker]="resuscitationDatepicker" formControlName="resuscitationDate">
+                    <mat-datepicker-toggle matSuffix [for]="resuscitationDatepicker"></mat-datepicker-toggle>
+                    <mat-datepicker #resuscitationDatepicker></mat-datepicker>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline" style="width: 50%;">
+                    <mat-label>בשעה</mat-label>
+                    <input matInput type="time" formControlName="resuscitationTime">
+                </mat-form-field>
+
+                <div fxFlex="100%" style="margin-top: 8px;">
+                    <label>מיקום ההחייאה:</label>
+                    <mat-radio-group formControlName="location" fxLayout="row" fxLayoutAlign="start center">
+                        <mat-radio-button value="birthRoom">חדר לידה</mat-radio-button>
+                        <mat-radio-button value="operatingRoom">חדר ניתוח</mat-radio-button>
+                        <mat-radio-button value="other">מקום אחר</mat-radio-button>
+                    </mat-radio-group>
+                </div>
+
+                <mat-form-field appearance="outline" style="width: 50%;">
+                    <mat-label>שעת קריאת רופא ילודים</mat-label>
+                    <input matInput type="time" formControlName="pediatricianCalledTime">
+                </mat-form-field>
+
+                <mat-form-field appearance="outline" style="width: 50%;">
+                    <mat-label>מועד תחילת החייאה</mat-label>
+                    <input matInput type="time" formControlName="resuscitationStartTime">
+                </mat-form-field>
+
+                <div fxFlex="100%" style="margin-top: 8px;">
+                    <label>מין הילוד:</label>
+                    <mat-radio-group formControlName="babyGender" fxLayout="row" fxLayoutAlign="start center">
+                        <mat-radio-button value="male">זכר</mat-radio-button>
+                        <mat-radio-button value="female">נקבה</mat-radio-button>
+                    </mat-radio-group>
+                </div>
+
+                <mat-form-field appearance="outline" style="width: 33.333%;">
+                    <mat-label>גיל הריון בשבועות</mat-label>
+                    <input matInput type="number" formControlName="gestationAgeWeeks">
+                </mat-form-field>
+
+                <mat-form-field appearance="outline" style="width: 33.333%;">
+                    <mat-label>משקל הילוד</mat-label>
+                    <input matInput type="number" formControlName="babyWeight">
+                </mat-form-field>
+
+                <mat-form-field appearance="outline" style="width: 33.333%;">
+                    <mat-label>צורת הלידה</mat-label>
+                    <input matInput formControlName="deliveryMethod">
+                </mat-form-field>
+            </div>
+
+            <div formArrayName="teamMembers">
+                <h3 style="margin-top: 20px;">אנשי צוות בהחייאה</h3>
+                <div *ngFor="let member of resuscitationForm.get('teamMembers')['controls']; let i = index"
+                    [formGroupName]="i">
+                    <mat-form-field appearance="outline" style="width: 50%;">
+                        <mat-label>שם</mat-label>
+                        <input matInput formControlName="name" placeholder="הכנס שם">
+                        <mat-error *ngIf="member.get('name').hasError('required')">שם נדרש</mat-error>
+                    </mat-form-field>
+                    <mat-form-field appearance="outline" style="width: 50%;">
+                        <mat-label>תפקיד</mat-label>
+                        <input matInput formControlName="role" placeholder="הכנס תפקיד">
+                        <mat-error *ngIf="member.get('role').hasError('required')">תפקיד נדרש</mat-error>
+                    </mat-form-field>
+                </div>
+            </div>
+
+            <div formGroupName="pregnancyDeliveryInfo" dir="rtl" style="margin-top: 24px;">
+                <mat-form-field appearance="outline">
+                    <mat-label>מידע על מהלך ההריון והלידה</mat-label>
+                    <textarea matInput formControlName="pregnancyDeliveryDetails" rows="5"></textarea>
+                </mat-form-field>
+
+
+                <div class="row">
+                    <div style="width: 50%;display: flex;">
+                        <span>מים מקוניאליים:</span>
+                        <mat-radio-group formControlName="meconiumStaining">
+                            <mat-radio-button value="true">כן</mat-radio-button>
+                            <mat-radio-button value="false">לא</mat-radio-button>
+                        </mat-radio-group>
+
+                        <span>רופא ילודים נכח בלידה:</span>
+                        <mat-radio-group formControlName="pediatricianPresent">
+                            <mat-radio-button value="true">כן</mat-radio-button>
+                            <mat-radio-button value="false">לא</mat-radio-button>
+                        </mat-radio-group>
+                    </div>
+
+                    <mat-form-field appearance="outline" style="width: 50%;"
+                        *ngIf="resuscitationForm.get('pregnancyDeliveryInfo').get('pediatricianPresent').value == 'true'">
+                        <mat-label>רופא ילודים הגיע בשעה:</mat-label>
+                        <input matInput type="time" formControlName="pediatricianArrivalTime">
+                    </mat-form-field>
+                </div>
+            </div>
+
+
+        </mat-card-content>
+        <mat-card-actions fxLayout="row-reverse" style="margin-top: 16px;">
+            <button mat-raised-button color="primary" type="submit">שלח</button>
+        </mat-card-actions>
+    </mat-card>
+</form>
