@@ -1,5 +1,5 @@
 import { HttpClient } from '@angular/common/http';
-import { Component, Inject, OnInit } from '@angular/core';
+import { Component, Inject, OnInit, Optional } from '@angular/core';
 import { FormArray, FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
 import { MatDialog, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { MatSnackBar, MatSnackBarHorizontalPosition, MatSnackBarVerticalPosition } from '@angular/material/snack-bar';
@@ -10,6 +10,7 @@ import { map, startWith } from 'rxjs/operators';
 import { Observable } from 'rxjs';
 import { ConfirmationDialogService } from 'src/app/confirmation-dialog/confirmation-dialog.service';
 import { STEPPER_GLOBAL_OPTIONS } from '@angular/cdk/stepper';
+import { ActivatedRoute } from '@angular/router';
 
 @Component({
   selector: 'app-training-request-form',
@@ -75,8 +76,6 @@ export class TrainingRequestFormComponent implements OnInit {
   Supervisor_Name1 = new FormControl();
   filteredOptions2: Observable<string[]>;
   Supervisor_Name2 = new FormControl();
-  filteredOptions3: Observable<string[]>;
-  Supervisor_Name3 = new FormControl();
   cityOptions: Observable<string[]>;
   cityControl = new FormControl("", Validators.required);
   date_now: any = Date.now();
@@ -85,12 +84,16 @@ export class TrainingRequestFormComponent implements OnInit {
     private fb: FormBuilder,
     public dialog: MatDialog,
     private http: HttpClient,
+    private activatedRoute: ActivatedRoute,
     private datePipe: DatePipe,
     private _snackBar: MatSnackBar,
     private confirmationDialogService: ConfirmationDialogService,
-    @Inject(MAT_DIALOG_DATA) public form_id: any,
-    private dialogRef: MatDialogRef<TrainingRequestFormComponent>
+    @Optional() @Inject(MAT_DIALOG_DATA) public form_id: any,
+    @Optional() private dialogRef: MatDialogRef<TrainingRequestFormComponent>
   ) {
+    if (this.activatedRoute.snapshot.paramMap.get('id') != null) {
+      this.form_id = this.activatedRoute.snapshot.paramMap.get('id');
+    }
     this.buildFormGroup();
     this.date_now = this.datePipe.transform(this.date_now, 'yyyy-MM-dd');
   }
@@ -448,13 +451,12 @@ export class TrainingRequestFormComponent implements OnInit {
         setTimeout(() => {
           this.Supervisor_Name1.setValue(this.employees.filter(t => t.id === this.formData['E']?.Supervisor_Name.id)[0]);
           this.Supervisor_Name2.setValue(this.employees.filter(t => t.id === this.formData['F']?.Supervisor_Name.id)[0]);
-          this.Supervisor_Name3.setValue({
-            id: "",
-            firstname: "",
-            lastname: "",
-            ADUserName: "",
-            email: ""
-          });
+          if (this.Supervisor_Name1.value?.id != this.passport) {
+            this.Training_Request_Forms_E.controls['Training_Importantce'].disable();
+            this.Training_Request_Forms_E.controls['Approved'].disable();
+            this.Training_Request_Forms_E.controls['Recommendations'].disable();
+            this.Training_Request_Forms_E.controls['Opinion_Date'].disable();
+          }
           if (this.Supervisor_Name2.value?.id != this.passport) {
             this.Training_Request_Forms_F.controls['Training_Importantce'].disable();
             this.Training_Request_Forms_F.controls['Approved'].disable();
@@ -594,15 +596,14 @@ export class TrainingRequestFormComponent implements OnInit {
           this.Training_Request_Forms_G.controls['Standart_Level'].setValue(patient.RankDescription);
           this.Supervisor_Name1.setValue(this.employees.filter(t => t.id === patient.ManagerID1.id)[0]);
           this.Supervisor_Name2.setValue(this.employees.filter(t => t.id === patient.ManagerID2.id)[0]);
-          this.Supervisor_Name2.setValue({
-            id: "",
-            firstname: "",
-            lastname: "",
-            ADUserName: "",
-            email: ""
-          });
           this.Training_Request_Forms_E.controls['Supervisor_Name'].setValue(this.Supervisor_Name1.value);
           this.Training_Request_Forms_F.controls['Supervisor_Name'].setValue(this.Supervisor_Name2.value);
+          if (this.Supervisor_Name1.value?.id != this.passport) {
+            this.Training_Request_Forms_E.controls['Training_Importantce'].disable();
+            this.Training_Request_Forms_E.controls['Approved'].disable();
+            this.Training_Request_Forms_E.controls['Recommendations'].disable();
+            this.Training_Request_Forms_E.controls['Opinion_Date'].disable();
+          }
           if (this.Supervisor_Name2.value?.id != this.passport) {
             this.Training_Request_Forms_F.controls['Training_Importantce'].disable();
             this.Training_Request_Forms_F.controls['Approved'].disable();
@@ -652,7 +653,7 @@ export class TrainingRequestFormComponent implements OnInit {
 
   askBeforeSaving(rowId) {
     this.confirmationDialogService
-      .confirm("נא לאשר..", "האם אתה בטוח ...? ")
+      .confirm("נא לאשר..", "לשמור ולשלוח ...? ")
       .then((confirmed) => {
         console.log("User confirmed:", confirmed);
         if (confirmed) {

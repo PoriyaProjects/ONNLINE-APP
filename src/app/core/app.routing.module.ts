@@ -111,20 +111,20 @@ import { HrDashboardComponent } from '../hr-dashboard/hr-dashboard.component';
 import { PatientStikersComponent } from '../patient-stikers/patient-stikers.component';
 import { NortonEstimateComponent } from '../norton-estimate/norton-estimate.component';
 import { CAMEstimateComponent } from '../cam-estimate/cam-estimate.component';
-import {DialysisReportComponent} from '../dialysis-report/dialysis-report.component';
-import {SurgeriesUnclosedReportsComponent} from '../surgery-reports/surgeries-unclosed-reports/surgeries-unclosed-reports.component';
-import {InjuryReportComponent} from '../injury-report/injury-report.component';
-import {WhatsappDepartmentsDashboardComponent} from '../whatsapp-departments-dashboard/whatsapp-departments-dashboard.component';
-import {CathReportComponent} from '../cath-report/cath-report.component';
+import { DialysisReportComponent } from '../dialysis-report/dialysis-report.component';
+import { SurgeriesUnclosedReportsComponent } from '../surgery-reports/surgeries-unclosed-reports/surgeries-unclosed-reports.component';
+import { InjuryReportComponent } from '../injury-report/injury-report.component';
+import { WhatsappDepartmentsDashboardComponent } from '../whatsapp-departments-dashboard/whatsapp-departments-dashboard.component';
+import { CathReportComponent } from '../cath-report/cath-report.component';
 import { PatientsSystemConflictsComponent } from '../patients-system-conflicts/patients-system-conflicts.component';
-import {BTirmComponent} from '../b-tirm/b-tirm.component';
-import {ReportReportingComponent} from '../report-reporting/report-reporting.component';
-import {ReHospComponent} from '../re-hosp/re-hosp.component';
-import {EmployeesUpdateManagersComponent} from '../employees-manage-dash/employees-update-managers/employees-update-managers.component'
-import {WorkerCasesComponent} from '../worker-cases/worker-cases.component'
-import {EditOrAddWorkerCaseComponent} from '../worker-cases/edit-or-add-worker-case/edit-or-add-worker-case.component'
-import {BedsoreDashboardComponent} from '../form-dashboard/bedsore-dashboard/bedsore-dashboard.component'
-import {AuthorizedComponent} from '../authorized/authorized.component'
+import { BTirmComponent } from '../b-tirm/b-tirm.component';
+import { ReportReportingComponent } from '../report-reporting/report-reporting.component';
+import { ReHospComponent } from '../re-hosp/re-hosp.component';
+import { EmployeesUpdateManagersComponent } from '../employees-manage-dash/employees-update-managers/employees-update-managers.component'
+import { WorkerCasesComponent } from '../worker-cases/worker-cases.component'
+import { EditOrAddWorkerCaseComponent } from '../worker-cases/edit-or-add-worker-case/edit-or-add-worker-case.component'
+import { BedsoreDashboardComponent } from '../form-dashboard/bedsore-dashboard/bedsore-dashboard.component'
+import { AuthorizedComponent } from '../authorized/authorized.component'
 import { SupplierComponent } from '../supplier/supplier.component';
 import { LabTestsComponent } from '../lab-tests/lab-tests.component';
 import { SpreadsheetComponent } from '../spreadsheets-dashboard/spreadsheet/spreadsheet.component';
@@ -141,6 +141,8 @@ import { ShortcutsManagementComponent } from '../dashboard/shortcuts-management/
 import { ShortcutFormDialogComponent } from '../dashboard/shortcuts-management/shortcut-form-dialog/shortcut-form-dialog.component';
 import { NamerUserActionsComponent } from '../dashboard/namer-user-actions/namer-user-actions.component';
 import { LearningRequestsDashboardComponent } from '../learning-requests-dashboard/learning-requests-dashboard.component';
+import { CprNewbordDashboradComponent } from '../form-dashboard/cpr-newbord-dashborad/cpr-newbord-dashborad.component';
+import { CprNewbornFormComponent } from '../form-dashboard/cpr-newbord-dashborad/cpr-newborn-form/cpr-newborn-form.component';
 
 
 const routes: Routes = [
@@ -265,32 +267,34 @@ const routes: Routes = [
   { path: "Cath", component: CathReportComponent },
   { path: "patients-system-conflicts", component: PatientsSystemConflictsComponent },
   { path: "Metav", component: BTirmComponent },
-  {path : "Reporting" , component : ReportReportingComponent } ,
-  {path : "ReHosp" , component : ReHospComponent } ,
+  { path: "Reporting", component: ReportReportingComponent },
+  { path: "ReHosp", component: ReHospComponent },
   { path: "employees-update-managers", component: EmployeesUpdateManagersComponent },
-  {path : "Reporting" , component : ReportReportingComponent },
-  {path : "WorkerCases" , component : WorkerCasesComponent },
+  { path: "Reporting", component: ReportReportingComponent },
+  { path: "WorkerCases", component: WorkerCasesComponent },
   { path: "bedsore-dashboard", component: BedsoreDashboardComponent },
-  {path : "Reporting" , component : ReportReportingComponent }, 
-  {path : "authorized" , component : AuthorizedComponent },
-  { path: "suppliers", component: SupplierComponent } ,
-  { path: "spreadsheet", component: SpreadsheetComponent } ,
-  { path: "spreadsheets-dashboard", component: SpreadsheetsDashboardComponent } ,
-  { path: "hospital-tonnage", component: HospitalTonnageComponent } ,
-  { path: "folder-tree", component: FolderTreeComponent } ,
+  { path: "Reporting", component: ReportReportingComponent },
+  { path: "authorized", component: AuthorizedComponent },
+  { path: "suppliers", component: SupplierComponent },
+  { path: "spreadsheet", component: SpreadsheetComponent },
+  { path: "spreadsheets-dashboard", component: SpreadsheetsDashboardComponent },
+  { path: "hospital-tonnage", component: HospitalTonnageComponent },
+  { path: "folder-tree", component: FolderTreeComponent },
   { path: "LabTests", component: LabTestsComponent },
   { path: "clinicactivitydashboard", component: ClinicActivityDashboardComponent },
-  { path: "departments-whatsapp-management", component: DepartmentsWhatsappManagementComponent } ,
-  { path: "training-request-dashboard", component: TrainingRequestDashboardComponent } ,
-  { path: "training-request-form", component: TrainingRequestFormComponent } ,
-  { path: "training-request-dialog", component: TrainingRequestDialogComponent } ,
-  { path: "whatsapp-lung-cancer", component: WhatsappLungCancerComponent } ,
-  { path: "shortcuts-management", component: ShortcutsManagementComponent } ,
-  { path: "shortcut-form-dialog", component: ShortcutFormDialogComponent } ,
-  { path: "namer-user-actions", component: NamerUserActionsComponent } ,
-  { path: "learning-requests-dashboard", component: LearningRequestsDashboardComponent } ,
+  { path: "departments-whatsapp-management", component: DepartmentsWhatsappManagementComponent },
+  { path: "training-request-dashboard", component: TrainingRequestDashboardComponent },
+  { path: "training-request-form/:id", component: TrainingRequestFormComponent },
+  { path: "training-request-dialog", component: TrainingRequestDialogComponent },
+  { path: "whatsapp-lung-cancer", component: WhatsappLungCancerComponent },
+  { path: "shortcuts-management", component: ShortcutsManagementComponent },
+  { path: "shortcut-form-dialog", component: ShortcutFormDialogComponent },
+  { path: "namer-user-actions", component: NamerUserActionsComponent },
+  { path: "learning-requests-dashboard", component: LearningRequestsDashboardComponent },
+  { path: "cpr-newbord-dashborad", component: CprNewbordDashboradComponent },
+  { path: "cpr-newborn-form", component: CprNewbornFormComponent },
   { path: "LabTests", component: LabTestsComponent }
-  
+
 
 ];
 
