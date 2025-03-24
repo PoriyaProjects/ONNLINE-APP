@@ -16,6 +16,7 @@ h1 {
 
 th.mat-header-cell {
   justify-items: center;
+  font-weight: bold;
 }
 
 .card-table {

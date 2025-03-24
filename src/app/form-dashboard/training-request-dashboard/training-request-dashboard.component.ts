@@ -176,7 +176,7 @@ export class TrainingRequestDashboardComponent implements OnInit {
     </html>
     `;
     this.confirmationDialogService
-      .confirm("נא לאשר..", "האם אתה בטוח ...? ")
+      .confirm("נא לאשר..", "לשלוח את התשובה ...? ")
       .then((confirmed) => {
         console.log("User confirmed:", confirmed);
         if (confirmed) {

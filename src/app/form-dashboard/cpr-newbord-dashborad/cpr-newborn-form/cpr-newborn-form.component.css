@@ -1,0 +1,12 @@
+.resus-card {
+    max-width: 900px;
+    margin: 30px auto;
+    padding: 20px;
+    direction: rtl;
+    text-align: right;
+  }
+    
+  mat-radio-button {
+    margin-left: 20px;
+  }
+  
