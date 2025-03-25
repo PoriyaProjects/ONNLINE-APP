@@ -54,7 +54,7 @@ export class SpreadsheetComponent implements OnInit {
                 return rowData;
             });
             // if (temp_data[0].CellID != '0') this.data = this.transformSpreadsheetData(temp_data);
-            console.log(this.data);
+            // console.log(this.data);
             this.onSpreadsheetCreated();
         });
     }
@@ -78,20 +78,16 @@ export class SpreadsheetComponent implements OnInit {
     onCellSave(args: CellSaveEventArgs): void {
         let address = '';
         let value = '';
-
-        if (args != null && args['requestType'] == undefined) {
+//  && args['requestType'] == undefined
+        if (args != null) {
             address = args.address;
             value = args.value;
 
             // Check if the pasted value is valid (e.g., not empty)
-            if (value && value.trim() !== '') {
-                setTimeout(() => {
-                    this.saveCellTimeOut(address, value);
-                }, 1000);
-            } else {
-                // Handle invalid paste (e.g., show an error message)
-                console.warn('Invalid paste: Empty value.');
-            }
+            if (value && value.toString().trim() == '') value = '-';
+            this.saveCellTimeOut(address, value);
+            // setTimeout(() => {
+            // }, 1000);
         } else if (args != null && args['requestType'] == 'paste') alert("לא נשמר, אסור להשתמש בפעולת הדבקה.");
     }
 
@@ -191,11 +187,11 @@ export class SpreadsheetComponent implements OnInit {
                 this.spreadsheetObj.addDataValidation({ type: 'List', value1: '-, כן ,לא, לא מונה אפוטרופוס', ignoreBlank: false }, 'M2:' + this.addTenCellsDown('M', this.last_cell));
                 break;
         }
-        setTimeout(() => {
-            // this.spreadsheetObj.freezePanes(1, 0);
-            this.spreadsheetObj.goTo(this.last_column_cell);
-            this.spreadsheetObj.selectRange(this.last_column_cell);
-        }, 2500);
+        // setTimeout(() => {
+        //     // this.spreadsheetObj.freezePanes(1, 0);
+        //     // this.spreadsheetObj.goTo(this.last_column_cell);
+        //     // this.spreadsheetObj.selectRange(this.last_column_cell);
+        // }, 2500);
     }
 
     addTenCellsDown(column, original) {
