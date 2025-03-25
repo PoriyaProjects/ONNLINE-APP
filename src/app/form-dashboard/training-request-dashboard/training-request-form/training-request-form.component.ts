@@ -252,10 +252,10 @@ export class TrainingRequestFormComponent implements OnInit {
         this.Training_Request_Forms_H = this.fb.group({
           Opinion_Date: new FormControl(Training_Request_Forms_H?.Opinion_Date == null ? this.date_now : Training_Request_Forms_H?.Opinion_Date, null),
           Training_Type: new FormControl(Training_Request_Forms_H?.Training_Type, null),
-          Approved: new FormControl(Training_Request_Forms_H?.Approved == 'True' ? true : false, null),
+          Approved: new FormControl(Training_Request_Forms_H?.Approved, null),
           Transportaion: new FormControl(Training_Request_Forms_H?.Transportaion == 'True' ? true : false, null),
           Approved_Percent: new FormControl(Training_Request_Forms_H?.Approved_Percent, null),
-          Approved_Percent_Out_Of: new FormControl(Training_Request_Forms_H?.Approved_Percent_Out_Of, null),
+          Approved_Percent_Out_Of: new FormControl(Training_Request_Forms_B?.Education_Fee, null),
           Approved_Absence_Time: new FormControl(Training_Request_Forms_H?.Approved_Absence_Time, null),
           Recommendations: new FormControl(Training_Request_Forms_H?.Recommendations, null)
         });
@@ -366,6 +366,20 @@ export class TrainingRequestFormComponent implements OnInit {
     }
   }
 
+  changeToAccountantApprove() {
+    if (this.Training_Request_Forms_H.controls['Approved'].value == 'מאושר התחייבות חשב') {
+      this.Training_Request_Forms_H.controls['Approved_Percent'].setValue('100');
+    } else {
+      this.Training_Request_Forms_H.controls['Approved_Percent'].setValue('');
+    }
+  }
+
+  addRecommendations(type) {
+    // if(type == 'transportation'){
+    //   this.Training_Request_Forms_H.controls['Recommendations'].setValue(this.Training_Request_Forms_H.value.Recommendations + '');
+    // }
+  }
+
   getCityCodes() {
     this.CitiesArray = [];
     this.http
@@ -463,7 +477,7 @@ export class TrainingRequestFormComponent implements OnInit {
             this.Training_Request_Forms_F.controls['Recommendations'].disable();
             this.Training_Request_Forms_F.controls['Opinion_Date'].disable();
           }
-        }, 1000);
+        }, 1500);
       });
   }
 

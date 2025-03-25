@@ -164,7 +164,7 @@
                 <mat-form-field>
                   <mat-label>תאריך התחלה <p *ngIf="Training_Request_Forms_B.get('Training_Out').value">ללא ימי
                       הטיסה</p></mat-label>
-                  <input matInput [matDatepicker]="Date_Start" formControlName="Date_Start" [min]="date_now"
+                  <input matInput [matDatepicker]="Date_Start" formControlName="Date_Start"
                     (dateChange)="checkPlanAvailability()">
                   <mat-datepicker-toggle matIconSuffix [for]="Date_Start"></mat-datepicker-toggle>
                   <mat-datepicker #Date_Start></mat-datepicker>
@@ -174,7 +174,7 @@
                 <mat-form-field>
                   <mat-label>תאריך סיום <p *ngIf="Training_Request_Forms_B.get('Training_Out').value">ללא ימי
                       הטיסה</p></mat-label>
-                  <input matInput [matDatepicker]="Date_End" formControlName="Date_End" [min]="date_now">
+                  <input matInput [matDatepicker]="Date_End" formControlName="Date_End">
                   <mat-datepicker-toggle matIconSuffix [for]="Date_End"></mat-datepicker-toggle>
                   <mat-datepicker #Date_End></mat-datepicker>
                 </mat-form-field>
@@ -566,26 +566,29 @@
                 <mat-option value="שפות">שפות</mat-option>
               </mat-select>
             </div>
-            <div class="col-lg-1 col-md-4 col-sm-6">
+            <div class="col-lg-2 col-md-4 col-sm-6">
               <mat-label>סוג אישור</mat-label>
-              <mat-select formControlName="Approved" [compareWith]="compareFn4">
+              <mat-select formControlName="Approved" [compareWith]="compareFn4"
+                (selectionChange)="changeToAccountantApprove()">
                 <mat-option value=""></mat-option>
-                <mat-option value="1">מאושר</mat-option>
-                <mat-option value="0">לא מאושר</mat-option>
+                <mat-option value="מאושר">מאושר</mat-option>
+                <mat-option value="מאושר התחייבות חשב">מאושר התחייבות חשב</mat-option>
+                <mat-option value="לא מאושר">לא מאושר</mat-option>
               </mat-select>
               <!-- <section class="example-section">
               <p><mat-checkbox formControlName="Approved"><span class="checkbox-label">מאושר</span></mat-checkbox>
                 </p>
               </section> -->
             </div>
-            <div class="col-lg-1 col-md-4 col-sm-6" *ngIf="Training_Request_Forms_H.get('Approved').value">
+            <div class="col-lg-1 col-md-4 col-sm-6"
+              *ngIf="Training_Request_Forms_H.get('Approved').value != 'לא מאושר'">
               <section class="example-section">
-                <p><mat-checkbox formControlName="Transportaion"><span
+                <p><mat-checkbox formControlName="Transportaion" (change)="addRecommendations('transportation')"><span
                       class="checkbox-label">נסיעות</span></mat-checkbox>
                 </p>
               </section>
             </div>
-            <div class="col-lg-2 col-md-4 col-sm-6">
+            <div class="col-lg-1 col-md-4 col-sm-6">
               <mat-form-field>
                 <mat-label>מענק מאושר באחוזים</mat-label>
                 <input matInput formControlName="Approved_Percent" />
