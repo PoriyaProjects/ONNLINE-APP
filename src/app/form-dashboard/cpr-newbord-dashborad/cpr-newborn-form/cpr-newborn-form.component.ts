@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, FormArray, Validators } from '@angular/forms';
+import { MatTableDataSource } from '@angular/material/table';
 interface ResuscitationFormData {
   motherInfo: {
     name: string;
@@ -23,6 +24,12 @@ interface ResuscitationFormData {
     pediatricianArrivalTime: string;
   };
 }
+interface VitalSignsRow {
+  time: string;
+  pulse: string;
+  o2Sat: string;
+  other: string;
+}
 @Component({
   selector: 'app-cpr-newborn-form',
   templateUrl: './cpr-newborn-form.component.html',
@@ -31,6 +38,49 @@ interface ResuscitationFormData {
 export class CprNewbornFormComponent implements OnInit {
 
   resuscitationForm: FormGroup;
+  displayedColumns: string[] = ['time', 'pulse', 'o2Sat', 'other'];
+  dataSource = new MatTableDataSource<VitalSignsRow>([]);
+  displayedColumns2: string[] = [
+    'time', 'suction', 'oxygenConcentration', 'amboOxygen',
+    'intubationVentilation', 'heartMassage', 'umbilicalVenousCatheterization',
+    'extubation', 'otherAction'
+  ];
+
+  apgarParameters = [
+    { label: 'שמו ותפקידו של נותן הניקוד', key: 'nameRole' },
+    { label: 'צבע העור', key: 'skinColor' },
+    { label: 'קצב לב', key: 'heartRate' },
+    { label: 'התגובה לגירוי', key: 'responseToStimuli' },
+    { label: 'הטונוס', key: 'muscleTone' },
+    { label: 'הנשימה', key: 'respiration' },
+    { label: 'סה"כ', key: 'totalScore' },
+  ];
+
+  times = [
+    { key: 'zero', label: `` },
+    { key: 'one', label: `1'` },
+    { key: 'five', label: `5'` },
+    { key: 'ten', label: `10'` },
+    { key: 'fifteen', label: `15'` },
+    { key: 'twenty', label: `20'` },
+  ];
+  apgardisplayedColumns = ['parameter', ...this.times.map(t => t.key)];
+  headerColumns = [...this.times.map(t => t.key), 'parameter'];
+
+  adrenalineDisplayedColumns: string[] = ['time', 'route', 'volume'];
+  adrenalineDataSource = new MatTableDataSource();
+
+  naclDisplayedColumns: string[] = ['time', 'volume'];
+  naclDataSource = new MatTableDataSource();
+
+  nabicDisplayedColumns: string[] = ['time', 'amount'];
+  nabicDataSource = new MatTableDataSource();
+
+  bloodProductsDisplayedColumns: string[] = ['time', 'type', 'volume'];
+  bloodProductsDataSource = new MatTableDataSource();
+
+  additionalProductsDisplayedColumns: string[] = ['name', 'time', 'route', 'dosageVolume'];
+  additionalProductsDataSource = new MatTableDataSource();
 
   constructor(private fb: FormBuilder) {
     this.resuscitationForm = this.fb.group({
@@ -54,25 +104,148 @@ export class CprNewbornFormComponent implements OnInit {
         pediatricianPresent: ['false'], // Default value
         pediatricianArrivalTime: ['']
       }),
+      vitalSigns: this.fb.array([]),
+      resuscitationActions: this.fb.array([]),
+      adrenaline: this.fb.array([]),
+      nacl: this.fb.array([]),
+      nabic: this.fb.array([]),
+      bloodProducts: this.fb.array([]),
+      additionalProducts: this.fb.array([]),
+      apgarScore: this.fb.array(this.apgarParameters.map(() =>
+        this.fb.group({
+          zero: [''],
+          one: [''],
+          five: [''],
+          ten: [''],
+          fifteen: [''],
+          twenty: ['']
+        })
+      ))
     });
-    for (let i = 0; i < 3; i++) {
-      let name = "name_" + i;
-      let role = "role_" + i;
-
+    for (let i = 0; i <= 3; i++) {
       this.addTeamMember();
     }
+    for (let i = 0; i <= 6; i++) {
+      this.addVitalSignsRow();
+    }
+    for (let i = 0; i <= 6; i++) {
+      this.addResuscitationActionRow();
+    }
+    const array1 = this.resuscitationForm.get('adrenaline') as FormArray;
+    const array2 = this.resuscitationForm.get('nacl') as FormArray;
+    const array3 = this.resuscitationForm.get('nabic') as FormArray;
+    const array4 = this.resuscitationForm.get('bloodProducts') as FormArray;
+    const array5 = this.resuscitationForm.get('additionalProducts') as FormArray;
+    for (let i = 0; i < 6; i++) {
+      array1.push(this.createRow(['time', 'route', 'volume']));
+      array2.push(this.createRow(['time', 'volume']));
+      array3.push(this.createRow(['time', 'amount']));
+      array4.push(this.createRow(['time', 'type', 'volume']));
+      array5.push(this.createRow(['name', 'time', 'route', 'dosageVolume']));
+    }
+    this.updateDataSources();
   }
 
   ngOnInit(): void {
+  }
+
+  createTimeControls() {
+    return {
+      zero: [''],
+      one: [''],
+      five: [''],
+      ten: [''],
+      fifteen: [''],
+      twenty: [''],
+    };
+  }
+
+  createRow(controls: string[]): FormGroup {
+    const group = {};
+    controls.forEach(control => {
+      group[control] = [''];
+    });
+    return this.fb.group(group);
+  }
+
+  createRows(count: number, controls: string[], group: any): FormGroup[] {
+    const rows = [];
+    for (let i = 0; i < count; i++) {
+      rows.push(this.createRow(controls));
+    }
+    return rows;
+  }
+
+  addRow(arrayName: string) {
+    const array = this.resuscitationForm.get(arrayName) as FormArray;
+    array.push(this.createRow(Object.keys(array.at(0).value)));
+    this.updateDataSources();
+  }
+
+  updateDataSources() {
+    this.adrenalineDataSource.data = (this.resuscitationForm.get('adrenaline') as FormArray).controls;
+    this.naclDataSource.data = (this.resuscitationForm.get('nacl') as FormArray).controls;
+    this.nabicDataSource.data = (this.resuscitationForm.get('nabic') as FormArray).controls;
+    this.bloodProductsDataSource.data = (this.resuscitationForm.get('bloodProducts') as FormArray).controls;
+    this.additionalProductsDataSource.data = (this.resuscitationForm.get('additionalProducts') as FormArray).controls;
+    // this.apgarScoreDataSource.data = (this.resuscitationForm.get('apgarScoreForm') as FormArray).controls;
+  }
+
+  addVitalSignsRow() {
+    const vitalSigns = this.resuscitationForm.get('vitalSigns') as FormArray;
+    vitalSigns.push(
+      this.fb.group({
+        time: [''],
+        pulse: [null],
+        o2Sat: [null],
+        other: ['']
+      })
+    );
+  }
+
+  addResuscitationActionRow() {
+    const resuscitationActions = this.resuscitationForm.get('resuscitationActions') as FormArray;
+    resuscitationActions.push(
+      this.fb.group({
+        action: [''],
+        time: [''],
+        suction: [''],
+        oxygenConcentration: [null],
+        amboOxygen: [''],
+        intubationVentilation: [''],
+        heartMassage: [''],
+        umbilicalVenousCatheterization: [''],
+        extubation: [''],
+        otherAction: ['']
+      })
+    );
+  }
+
+  get resuscitationActionsArray(): FormArray {
+    return this.resuscitationForm.get('resuscitationActions') as FormArray;
+  }
+
+  getActionLabel(action: string): string {
+    switch (action) {
+      case 'suction': return 'שאיבה מקנה הנשימה';
+      case 'oxygenConcentration': return 'מתן חמצן חופשי בריכוז %';
+      case 'amboOxygen': return 'הנשמה באמבו עם / ללא חמצן';
+      case 'intubationVentilation': return 'צנרור הקנה + הנשמה';
+      case 'heartMassage': return 'עיסוי לב';
+      case 'umbilicalVenousCatheterization': return 'צנרור וריד הטבור UVC';
+      case 'extubation': return 'הוצאת טובוס';
+      case 'otherAction': return 'פעולה אחרת';
+      default: return '';
+    }
   }
 
   addTeamMember() {
     const teamMembers = this.resuscitationForm.get('teamMembers') as FormArray;
     teamMembers.push(
       this.fb.group({
-        row: ['', Validators.required],
-        name: ['', Validators.required],
-        role: ['', Validators.required]
+        row: ['', null],
+        name: ['', null],
+        role: ['', null]
       })
     );
   }
