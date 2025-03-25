@@ -14,8 +14,11 @@ export class CprNewbordDashboradComponent implements OnInit {
   ngOnInit(): void {
   }
 
-  open(){
-    this.dialog.open(CprNewbornFormComponent);
+  open() {
+    this.dialog.open(CprNewbornFormComponent, {
+      width: '90%',
+      height: '90%'
+    });
   }
 
 }
