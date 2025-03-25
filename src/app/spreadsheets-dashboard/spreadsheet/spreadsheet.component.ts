@@ -78,8 +78,8 @@ export class SpreadsheetComponent implements OnInit {
     onCellSave(args: CellSaveEventArgs): void {
         let address = '';
         let value = '';
-//  && args['requestType'] == undefined
-        if (args != null) {
+
+        if (args != null && args['requestType'] == undefined) {
             address = args.address;
             value = args.value;
 
