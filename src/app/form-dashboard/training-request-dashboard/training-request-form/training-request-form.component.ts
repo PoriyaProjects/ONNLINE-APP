@@ -64,7 +64,7 @@ export class TrainingRequestFormComponent implements OnInit {
   employees = [];
   intity_list = [];
   CitiesArray: any[] = [];
-  titleList = ["מר", "גב'", "דר'", "פרופ'"];
+  // titleList = ["מר", "גב'", "דר'", "פרופ'"];
   educationList = ["תיכונית", "מקצועית", "תואר ראשון", "תואר שני", "תואר שלישי"];
   requested: boolean = false;
   dorit_note_answer: boolean = false;
@@ -272,13 +272,13 @@ export class TrainingRequestFormComponent implements OnInit {
         this.cityControl.setValue(Training_Request_Forms_B?.Request_Location);
         this.Training_Out_Check();
         // Subscribe to changes in Date_End to calculate duration
-        this.Training_Request_Forms_B.get('Date_End').valueChanges.subscribe(() => {
-          this.calculateRequestDuration();
-        });
+        // this.Training_Request_Forms_B.get('Date_End').valueChanges.subscribe(() => {
+        //   this.calculateRequestDuration();
+        // });
 
-        this.Training_Request_Forms_B.get('Date_Start').valueChanges.subscribe(() => {
-          this.calculateRequestDuration();
-        });
+        // this.Training_Request_Forms_B.get('Date_Start').valueChanges.subscribe(() => {
+        //   this.calculateRequestDuration();
+        // });
       });
   }
 
@@ -604,6 +604,7 @@ export class TrainingRequestFormComponent implements OnInit {
           this.Training_Request_Forms_A.controls['First_Name'].setValue(patient.FirstName);
           this.Training_Request_Forms_A.controls['Address'].setValue(patient.CityName);
           this.Training_Request_Forms_A.controls['Phone_Number'].setValue(patient.CellNumber);
+          this.Training_Request_Forms_A.controls['Title'].setValue(patient.JobTitleID);
           this.Training_Request_Forms_G.controls['Work_Start_Date'].setValue(patient.StartWorkDate);
           this.Training_Request_Forms_G.controls['Standart_Job_Type'].setValue(patient.StandartJobType);
           this.Training_Request_Forms_G.controls['Function_Department'].setValue(patient.FunctionDescription + ' - ' + patient.DepartnentDescripton);
@@ -671,6 +672,7 @@ export class TrainingRequestFormComponent implements OnInit {
       .then((confirmed) => {
         console.log("User confirmed:", confirmed);
         if (confirmed) {
+          this.checkPlanAvailability();
           this.dialogRef.close(rowId);
         } else {
         }

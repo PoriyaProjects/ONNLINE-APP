@@ -9,12 +9,14 @@
       <form [formGroup]="Training_Request_Forms_A">
         <ng-template matStepLabel>פרטים אישים</ng-template>
         <mat-card>
+          <p style="color: #ee4e38;"><strong>* למלא ת.ז ולשים לב לשדות חובה</strong></p>
           <mat-card-content>
             <div class="row">
               <div class="col-lg-2 col-md-4 col-sm-6">
                 <mat-form-field>
                   <mat-label>מס' ת.ז</mat-label>
-                  <input matInput formControlName="Passport_ID" (blur)="getPersonDetails()" />
+                  <input matInput formControlName="Passport_ID" type="number" (blur)="getPersonDetails()"
+                    (keydown.enter)="getPersonDetails()" required />
                   <mat-error *ngIf="Training_Request_Forms_A.get('Passport_ID')?.hasError('required')">
                     מספר תעודת זהות חובה
                   </mat-error>
@@ -23,38 +25,50 @@
                   </mat-error>
                 </mat-form-field>
               </div>
-              <div class="col-lg-2 col-md-4 col-sm-6">
+              <div class="col-lg-2 col-md-4 col-sm-6"
+                *ngIf="Training_Request_Forms_G.get('Work_Start_Date')?.value != undefined">
                 <mat-form-field>
-                  <mat-label>תאור</mat-label>
-                  <mat-select formControlName="Title">
+                  <mat-label>תואר</mat-label>
+                  <mat-select formControlName="Title" aria-placeholder="תואר" required>
+                    <mat-option value="1"> ד"ר </mat-option>
+                    <mat-option value="2"> פרופ' </mat-option>
+                    <mat-option value="3"> עו"ד </mat-option>
+                    <mat-option value="4"> מר </mat-option>
+                    <mat-option value="5"> גב' </mat-option>
+                  </mat-select>
+                  <!-- <mat-select formControlName="Title">
                     <mat-option *ngFor="let title of titleList" [value]="title">
                       {{ title }}
                     </mat-option>
-                  </mat-select>
+                  </mat-select> -->
                 </mat-form-field>
               </div>
-              <div class="col-lg-2 col-md-4 col-sm-6">
+              <div class="col-lg-2 col-md-4 col-sm-6"
+                *ngIf="Training_Request_Forms_G.get('Work_Start_Date')?.value != undefined">
                 <mat-form-field>
                   <mat-label>שם משפחה</mat-label>
-                  <input matInput formControlName="Family_Name" />
+                  <input matInput formControlName="Family_Name" required />
                 </mat-form-field>
               </div>
-              <div class="col-lg-2 col-md-4 col-sm-6">
+              <div class="col-lg-2 col-md-4 col-sm-6"
+                *ngIf="Training_Request_Forms_G.get('Work_Start_Date')?.value != undefined">
                 <mat-form-field>
                   <mat-label>שם פרטי</mat-label>
-                  <input matInput formControlName="First_Name" />
+                  <input matInput formControlName="First_Name" required />
                 </mat-form-field>
               </div>
-              <div class="col-lg-2 col-md-4 col-sm-6">
+              <div class="col-lg-2 col-md-4 col-sm-6"
+                *ngIf="Training_Request_Forms_G.get('Work_Start_Date')?.value != undefined">
                 <mat-form-field>
                   <mat-label>עיר/ישוב</mat-label>
-                  <input matInput formControlName="Address" />
+                  <input matInput formControlName="Address" required />
                 </mat-form-field>
               </div>
-              <div class="col-lg-2 col-md-4 col-sm-6">
+              <div class="col-lg-2 col-md-4 col-sm-6"
+                *ngIf="Training_Request_Forms_G.get('Work_Start_Date')?.value != undefined">
                 <mat-form-field>
                   <mat-label>השכלה</mat-label>
-                  <mat-select formControlName="Education">
+                  <mat-select formControlName="Education" required>
                     <mat-option *ngFor="let edu of educationList" [value]="edu">
                       {{ edu }}
                     </mat-option>
@@ -64,10 +78,11 @@
                   </mat-error>
                 </mat-form-field>
               </div>
-              <div class="col-lg-2 col-md-4 col-sm-6">
+              <div class="col-lg-2 col-md-4 col-sm-6"
+                *ngIf="Training_Request_Forms_G.get('Work_Start_Date')?.value != undefined">
                 <mat-form-field>
                   <mat-label>נייד</mat-label>
-                  <input matInput formControlName="Phone_Number" />
+                  <input matInput formControlName="Phone_Number" required />
                   <mat-error *ngIf="Training_Request_Forms_A.get('Phone_Number')?.hasError('required')">
                     מספר טלפון חובה
                   </mat-error>
@@ -79,7 +94,8 @@
             </div>
           </mat-card-content>
           <hr>
-          <mat-card-content [formGroup]="Training_Request_Forms_G">
+          <mat-card-content [formGroup]="Training_Request_Forms_G"
+            *ngIf="Training_Request_Forms_G.get('Work_Start_Date')?.value != undefined">
             <div class="row">
               <div class="col-lg-3 col-md-4 col-sm-6">
                 <mat-form-field>
@@ -125,7 +141,7 @@
               <div class="col-lg-2 col-md-4 col-sm-6">
                 <mat-form-field>
                   <mat-label>שם ההשתלמות</mat-label>
-                  <input matInput formControlName="Request_Name" />
+                  <input matInput formControlName="Request_Name" required />
                 </mat-form-field>
               </div>
               <div class="col-lg-2 col-md-4 col-sm-6">
@@ -164,8 +180,7 @@
                 <mat-form-field>
                   <mat-label>תאריך התחלה <p *ngIf="Training_Request_Forms_B.get('Training_Out').value">ללא ימי
                       הטיסה</p></mat-label>
-                  <input matInput [matDatepicker]="Date_Start" formControlName="Date_Start"
-                    (dateChange)="checkPlanAvailability()">
+                  <input matInput [matDatepicker]="Date_Start" formControlName="Date_Start" required>
                   <mat-datepicker-toggle matIconSuffix [for]="Date_Start"></mat-datepicker-toggle>
                   <mat-datepicker #Date_Start></mat-datepicker>
                 </mat-form-field>
@@ -174,14 +189,14 @@
                 <mat-form-field>
                   <mat-label>תאריך סיום <p *ngIf="Training_Request_Forms_B.get('Training_Out').value">ללא ימי
                       הטיסה</p></mat-label>
-                  <input matInput [matDatepicker]="Date_End" formControlName="Date_End">
+                  <input matInput [matDatepicker]="Date_End" formControlName="Date_End" required>
                   <mat-datepicker-toggle matIconSuffix [for]="Date_End"></mat-datepicker-toggle>
                   <mat-datepicker #Date_End></mat-datepicker>
                 </mat-form-field>
               </div>
               <div class="col-lg-2 col-md-4 col-sm-6">
                 <mat-form-field>
-                  <mat-label>משך ההשתלמות</mat-label>
+                  <mat-label>סה"כ ימי השתלמות</mat-label>
                   <input matInput formControlName="Request_Duration" />
                 </mat-form-field>
               </div>
@@ -197,7 +212,7 @@
               <div class="col-lg-2 col-md-4 col-sm-6">
                 <label for="fileInput" class="file-label">תוכנית מצורפת(תמונה/PDF)</label>
                 <input type="file" id="fileInput" (change)="onFileSelected($event)" class="file-input"
-                  accept="application/pdf, image/*" />
+                  accept="application/pdf, image/*" required />
                 <button mat-raised-button class="fileOpenBtn" color="primary" (click)="file_in_new_window_base64()"
                   *ngIf="Training_Request_Forms_B.get('Program_Attached').value != undefined && Training_Request_Forms_B.get('Program_Attached').value != ''">
                   <span class="material-icons"> zoom_in </span>
@@ -361,7 +376,7 @@
               <div class="col-lg-2 col-md-4 col-sm-6">
                 <mat-form-field>
                   <mat-label>תאריך הגשת הבקשה</mat-label>
-                  <input matInput [matDatepicker]="Request_Name" formControlName="Request_Name">
+                  <input matInput [matDatepicker]="Request_Name" formControlName="Request_Name" required>
                   <mat-datepicker-toggle matIconSuffix [for]="Request_Name"></mat-datepicker-toggle>
                   <mat-datepicker #Request_Name></mat-datepicker>
                 </mat-form-field>
