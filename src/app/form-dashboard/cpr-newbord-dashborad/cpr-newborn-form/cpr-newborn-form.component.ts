@@ -57,15 +57,49 @@ export class CprNewbornFormComponent implements OnInit {
   ];
 
   times = [
-    { key: 'zero', label: `` },
     { key: 'one', label: `1'` },
     { key: 'five', label: `5'` },
     { key: 'ten', label: `10'` },
     { key: 'fifteen', label: `15'` },
     { key: 'twenty', label: `20'` },
   ];
+  headerColumns = ['parameter', ...this.times.map(t => t.key)];
   apgardisplayedColumns = ['parameter', ...this.times.map(t => t.key)];
-  headerColumns = [...this.times.map(t => t.key), 'parameter'];
+
+  labParameters = [
+    { label: 'שעה', key: 'time' },
+    { label: 'תוצאה', key: 'result' },
+    { label: 'PH', key: 'ph' },
+    { label: 'PO2', key: 'po2' },
+    { label: 'PCO2', key: 'pco2' },
+    { label: 'Bic.', key: 'bic' },
+    { label: 'Base Excess', key: 'baseExcess' },
+    { label: 'O2 Sat', key: 'o2Sat' },
+    { label: 'אחר', key: 'other1' },
+    { label: 'אחר', key: 'other2' },
+  ];
+
+  labtimes = [
+    { key: 'uv', label: 'UV/אחר' }
+  ];
+
+  labHeaderColumns = ['source', ...this.labtimes.map(t => t.key)];
+  labDisplayedColumns = ['source', ...this.labtimes.map(t => t.key)];
+
+  labScore = this.fb.array(this.labParameters.map(() =>
+    this.fb.group({
+      uv: ['']
+    })
+  ));
+  apgarScore = this.fb.array(this.apgarParameters.map(() =>
+    this.fb.group({
+      one: [''],
+      five: [''],
+      ten: [''],
+      fifteen: [''],
+      twenty: ['']
+    })
+  ));
 
   adrenalineDisplayedColumns: string[] = ['time', 'route', 'volume'];
   adrenalineDataSource = new MatTableDataSource();
@@ -111,16 +145,32 @@ export class CprNewbornFormComponent implements OnInit {
       nabic: this.fb.array([]),
       bloodProducts: this.fb.array([]),
       additionalProducts: this.fb.array([]),
-      apgarScore: this.fb.array(this.apgarParameters.map(() =>
-        this.fb.group({
-          zero: [''],
-          one: [''],
-          five: [''],
-          ten: [''],
-          fifteen: [''],
-          twenty: ['']
-        })
-      ))
+      apgarScore: this.apgarScore,
+      labScore: this.labScore,
+      labScore2: this.labScore,
+      resuscitationSummary: this.fb.group({
+        summary: [''],
+        summaryTime: [''],
+        conditionAtEnd: [''],
+        transferDestination: [''],
+        conditionUponTransfer: [''],
+        other: [''],
+        oxygenSat: [''],
+        transferTime: [''],
+        transferredBy: [''],
+        role: [''],
+        infoTo: [''],
+        acceptanceDate: [''],
+        acceptanceTime: [''],
+        ByWhoEmployee: [''],
+        receivedBy: [''],
+        notes: [''],
+      }),
+      doctorSignature: this.fb.group({
+        signatureDate: [''],
+        signatureTime: [''],
+        nameAndRole: [''],
+      })
     });
     for (let i = 0; i <= 3; i++) {
       this.addTeamMember();
@@ -252,7 +302,7 @@ export class CprNewbornFormComponent implements OnInit {
 
   onSubmit() {
     if (this.resuscitationForm.valid) {
-      console.log(this.resuscitationForm.value);
+      console.log(this.resuscitationForm.getRawValue());
       // Send the data to your backend
     }
   }
