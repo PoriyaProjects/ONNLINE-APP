@@ -15,7 +15,7 @@
               <div class="col-lg-2 col-md-4 col-sm-6">
                 <mat-form-field>
                   <mat-label>מס' ת.ז</mat-label>
-                  <input matInput formControlName="Passport_ID" type="number" (blur)="getPersonDetails()"
+                  <input matInput formControlName="Passport_ID" (blur)="getPersonDetails()"
                     (keydown.enter)="getPersonDetails()" required />
                   <mat-error *ngIf="Training_Request_Forms_A.get('Passport_ID')?.hasError('required')">
                     מספר תעודת זהות חובה
