@@ -79,6 +79,8 @@ export class TrainingRequestFormComponent implements OnInit {
   cityOptions: Observable<string[]>;
   cityControl = new FormControl("", Validators.required);
   date_now: any = Date.now();
+  health_checkbox: any;
+  fund_checkbox: any;
 
   constructor(
     private fb: FormBuilder,
@@ -124,6 +126,8 @@ export class TrainingRequestFormComponent implements OnInit {
     let fund = this.Training_Request_Forms_D.value.Department_Fund?.filter(x => x != null);
     if ((health?.length == 0 && fund?.length == 0) || (health == undefined && fund == undefined)) this.dorit_note_answer = false;
     else this.dorit_note_answer = true;
+    if (health.length > 0) this.health_checkbox = true;
+    if (fund.length > 0) this.fund_checkbox = true;
   }
 
   changeCity(event) {
@@ -208,8 +212,8 @@ export class TrainingRequestFormComponent implements OnInit {
           Planning_Intity_Text: new FormControl(Training_Request_Forms_B?.Planning_Intity_Text, null),
           Date_Start: new FormControl(Training_Request_Forms_B?.Date_Start, Validators.required),
           Date_End: new FormControl(Training_Request_Forms_B?.Date_End, Validators.required),
-          Request_Duration: new FormControl(Training_Request_Forms_B?.Request_Duration, Validators.pattern(/^[0-9]*$/)),
-          Education_Fee: new FormControl({ value: Training_Request_Forms_B?.Education_Fee, disabled: Training_Request_Forms_B?.Training_Out == 'True' }, [Validators.pattern(/^\d+$/)]),
+          Request_Duration: new FormControl(Training_Request_Forms_B?.Request_Duration, [Validators.required, Validators.pattern(/^[0-9]*$/)]),
+          Education_Fee: new FormControl({ value: Training_Request_Forms_B?.Education_Fee, disabled: Training_Request_Forms_B?.Training_Out == 'True' }, [Validators.required, Validators.pattern(/^\d+$/)]),
           // Transportation: new FormControl(Training_Request_Forms_B?.Transportation == 'True' ? true : false, null),
           Program_Attached: new FormControl(Training_Request_Forms_B?.Program_Attached, Validators.required),
           Absence_Time: new FormControl({ value: Training_Request_Forms_B?.Absence_Time, disabled: this.user_name != 'ttsrefati' ? true : false }, [Validators.pattern(/^\d+$/)]),
@@ -435,7 +439,7 @@ export class TrainingRequestFormComponent implements OnInit {
   Training_Out_Check() {
     if (this.Training_Request_Forms_B.controls['Training_Out'].value) {
       this.Training_Request_Forms_B.controls['Galilean_Partnership'].setValue(false);
-      this.Training_Request_Forms_B.controls['Education_Fee'].setValue('');
+      this.Training_Request_Forms_B.controls['Education_Fee'].setValue(0);
       this.Training_Request_Forms_B.controls['Education_Fee'].disable();
       this.CitiesArray = [
         { cityName: 'אסיה' },
