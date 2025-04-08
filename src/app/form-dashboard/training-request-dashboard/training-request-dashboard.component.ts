@@ -20,7 +20,7 @@ export class TrainingRequestDashboardComponent implements OnInit {
 
   trainingRequests = new MatTableDataSource();
   displayedColumns: string[] = [
-    'Row_ID', 'Form_Fill_Date', 'First_Name', 'Passport_ID', 'Function_Department', 'Name_Location', 'Date', 'EApproved', 'FApproved', 'Actions'
+    'Row_ID', 'Form_Fill_Date', 'First_Name', 'Passport_ID', 'Function_Department', 'Name_Location', 'Date', 'EApproved', 'FApproved', 'HApproved', 'Actions'
   ];
   @ViewChild(MatPaginator) paginator: MatPaginator;
   @ViewChild(MatSort) sort: MatSort;
@@ -42,14 +42,14 @@ export class TrainingRequestDashboardComponent implements OnInit {
   ) { }
 
   ngOnInit(): void {
-    this.date_now = this.datePipe.transform(this.date_now, 'yyyy-MM-dd');
+    this.date_now = this.datePipe.transform(this.date_now, 'dd-MM-yyyy');
     this.getAllTrainingRequestFormsList("");
     this.changeTrainingPlanDate();
   }
 
   changeTrainingPlanDate() {
     if (this.UserName == "ttsrefati") this.Plan_Date = "";
-    if (this.Plan_Date != "") this.Plan_Date = this.datePipe.transform(this.Plan_Date, 'yyyy-MM-dd')
+    if (this.Plan_Date != "") this.Plan_Date = this.datePipe.transform(this.Plan_Date, 'dd-MM-yyyy')
     this.http
       .post(environment.url + "ChangeTrainingPlanDate", {
         plan_date: this.Plan_Date
@@ -195,17 +195,17 @@ export class TrainingRequestDashboardComponent implements OnInit {
     <img style="width: 640px;" src='http://srv-apps-prod/assets/covid_2_header.png' />
     <br>
     <br>
-        <p style="margin: 5px 0;">תאריך: ${this.date_now}</p><br>
+        <p style="margin: 5px 0;">תאריך: ${this.datePipe.transform(this.date_now, 'dd-MM-yyyy')}</p><br>
         <p style="margin: 5px 0;">לכבוד:</p>
         <p style="margin: 5px 0;"><span>${data['A'].First_Name} ${data['A'].Family_Name}</span></p>
         <p style="margin: 5px 0;">${data['G'].Function_Department}</p>
-        <p style="margin: 5px 0;">${data['A'].Passport_ID}</p>
+        <p style="margin: 5px 0;">ת.ז: ${data['A'].Passport_ID}</p>
       <br>
-        <p style="font-size: 18px;font-weight: bold;margin-bottom: 5px;margin: 5px 0;">הנדון: בקשתך להשתלמות נדונה בתאריך ${data['H'].Plan_Date}</p>
+        <p style="font-size: 18px;font-weight: bold;margin-bottom: 5px;margin: 5px 0;">הנדון: בקשתך להשתלמות נדונה בתאריך ${this.datePipe.transform(data['H'].Plan_Date, 'dd-MM-yyyy')}</p>
         <p style="margin: 5px 0;">לקורס: <span style="font-weight: bold;color: black;;padding: 2px 5px;
         border-radius: 5px;margin: 5px 0;">${data['B'].Request_Name}</span> 
         בין התאריכים <span style="font-weight: bold;color: black;padding: 2px 5px;
-        border-radius: 5px;">${data['B'].Date_Start} - ${data['B'].Date_End}</span> 
+        border-radius: 5px;">${this.datePipe.transform(data['B'].Date_Start, 'dd-MM-yyyy')} - ${this.datePipe.transform(data['B'].Date_End, 'dd-MM-yyyy')}</span> 
         ב <span style="font-weight: bold;color: black;padding: 2px 5px;
         border-radius: 5px;">${data['B'].Request_Location}</span></p>
     
@@ -214,11 +214,13 @@ export class TrainingRequestDashboardComponent implements OnInit {
             <p style="margin: 5px 0;">הריני להודיעך כי הועדה החליטה, לאשר את הבקשה בכפוף לתנאים הבאים:</p>
             <ul style="margin-right: 20px;padding-right: 20px;list-style-type: disc;">
                 ${data['H'].Transportaion === "True" ? `<li style="margin-bottom: 5px;">החזר נסיעות בגובה 100% לפי רפורמת דרך שווה.</li>
+                <li style="margin-bottom: 5px;">מספר ימי העדרות שאושרו: ${data['H'].Approved_Absence_Time}, קוד רישום: ${data['H'].Code_Type}</li>
                 <p>יש להגיש קבלה מקורית למדור שכר עד חודשיים מיום ההנפקה</p>` : ``}
             </ul>` : `
             <p style="margin: 5px 0;">הריני להודיעך כי הועדה החליטה, לא לאשר את הבקשה.</p>`
       }
             <p style="margin: 5px 0;">הערות ועדה: ${data['H'].Recommendations}</p>
+            ${data['D'].Training_Fund_Answer == "" ? `` : `<p style="margin: 5px 0;">תשובת התאגיד: ${data['D'].Training_Fund_Answer}</p>`}
             <p style="margin: 5px 0;">${data['B'].Training_Out == "True" && data['H'].Approved === "מאושר" ? `נא לפנות לקב"ט לקבלת תדרוך לפני נסיעה לחו"ל, ללא קבלת התדרוך לפני הנסיעה לא תאושר הבקשה.` : ``}</p>
         </div>
         <br>

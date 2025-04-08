@@ -9,7 +9,7 @@
       <form [formGroup]="Training_Request_Forms_A">
         <ng-template matStepLabel>פרטים אישים</ng-template>
         <mat-card>
-          <p style="color: #ee4e38;"><strong>* למלא ת.ז ולשים לב לשדות חובה</strong></p>
+          <p style="color: #ee4e38;"><strong>* יש למלא ת.ז בת 9 ספרות ולשים לב לשדות חובה</strong></p>
           <mat-card-content>
             <div class="row">
               <div class="col-lg-2 col-md-4 col-sm-6">
@@ -204,7 +204,7 @@
               </div>
               <div class="col-lg-2 col-md-4 col-sm-6">
                 <mat-form-field>
-                  <mat-label>סה"כ ימי השתלמות</mat-label>
+                  <mat-label>סה"כ ימי השתלמות*</mat-label>
                   <input matInput formControlName="Request_Duration" />
                   <mat-error *ngIf="Training_Request_Forms_B.get('Request_Duration')?.hasError('pattern')">
                     הזן מספרים בלבד.
@@ -213,7 +213,7 @@
               </div>
               <div class="col-lg-2 col-md-4 col-sm-6">
                 <mat-form-field>
-                  <mat-label>שכר לימוד</mat-label>
+                  <mat-label>שכר לימוד*</mat-label>
                   <input matInput formControlName="Education_Fee" />
                   <mat-error *ngIf="Training_Request_Forms_B.get('Education_Fee')?.hasError('pattern')">
                     יש להזין רק מספרים
@@ -232,7 +232,7 @@
               </div>
               <div class="col-lg-3 col-md-4 col-sm-6">
                 <mat-form-field>
-                  <mat-label>ימי העדרות (ימולא ע"י ועדת הדרכה)</mat-label>
+                  <mat-label>ימי העדרות מאושרים(ימולא ע"י ועדת הדרכה)</mat-label>
                   <input matInput formControlName="Absence_Time" />
                   <mat-error *ngIf="Training_Request_Forms_B.get('Absence_Time')?.hasError('pattern')">
                     יש להזין רק מספרים
@@ -312,7 +312,12 @@
             </div>
             <hr>
             <div class="section">
-              <mat-label>{{ Health_Corporation_Options.QuestionText }}</mat-label>
+              <section class="example-section">
+                <p><mat-checkbox [(ngModel)]="health_checkbox" [ngModelOptions]="{standalone: true}"><span class="checkbox-label">תאגיד הבריאות-קרן
+                      מרכזית למימון</span></mat-checkbox>
+                </p>
+              </section>
+              <!-- <mat-label>{{ Health_Corporation_Options.QuestionText }}</mat-label> -->
               <mat-select formControlName="Health_Corporation" class="multi-select" [compareWith]="compareFn"
                 (selectionChange)="check_if_fund_or_health()" multiple>
                 <mat-option *ngFor="let option of Health_Corporation_Options.Training_Request_Options"
@@ -323,7 +328,12 @@
             </div>
             <hr>
             <div class="section">
-              <mat-label>{{ Department_Fund_Options.QuestionText }}</mat-label>
+              <section class="example-section">
+                <p><mat-checkbox [(ngModel)]="fund_checkbox" [ngModelOptions]="{standalone: true}"><span class="checkbox-label">קרן מחלקה:
+                      למימון</span></mat-checkbox>
+                </p>
+              </section>
+              <!-- <mat-label>{{ Department_Fund_Options.QuestionText }}</mat-label> -->
               <mat-select formControlName="Department_Fund" class="multi-select"
                 (selectionChange)="check_if_fund_or_health()" [compareWith]="compareFn" multiple>
                 <mat-option *ngFor="let option of Department_Fund_Options.Training_Request_Options"
