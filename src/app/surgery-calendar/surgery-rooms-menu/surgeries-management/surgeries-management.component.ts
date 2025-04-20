@@ -666,7 +666,15 @@ export class ShareSurgeriesPDFDialog {
     return this.users.filter(fruit => fruit.FirstName.toLowerCase().includes(filterValue));
   }
 
-
+  getFruitsList() {
+    this.http.post(environment.urlipracticom + 'GetEmployeesListForSurgeriesCalendar', {}).subscribe(res => {
+      if (res['d']) {
+        this.openSnackBar("התוכנית נשלחה בהצלחה");
+        this.dialogRef.close();
+      }
+      else this.openSnackBar("אירעה תקלה, לא נשלח");
+    });
+  }
 
   shareReportWithOthers() {
     this.disableBtn = true;

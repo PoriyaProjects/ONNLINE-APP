@@ -195,7 +195,7 @@ export class TrainingRequestDashboardComponent implements OnInit {
     <img style="width: 640px;" src='http://srv-apps-prod/assets/covid_2_header.png' />
     <br>
     <br>
-        <p style="margin: 5px 0;">תאריך: ${this.datePipe.transform(this.date_now, 'dd-MM-yyyy')}</p><br>
+        <p style="margin: 5px 0;">תאריך: ${this.date_now}</p><br>
         <p style="margin: 5px 0;">לכבוד:</p>
         <p style="margin: 5px 0;"><span>${data['A'].First_Name} ${data['A'].Family_Name}</span></p>
         <p style="margin: 5px 0;">${data['G'].Function_Department}</p>
