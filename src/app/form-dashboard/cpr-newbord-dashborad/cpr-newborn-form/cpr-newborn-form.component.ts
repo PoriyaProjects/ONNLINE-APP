@@ -254,6 +254,7 @@ export class CprNewbornFormComponent implements OnInit {
   getNewBornCprDataByID() {
     this.http
       .post(environment.url + "GetResuscitationFormData", {
+        _id: this.form_id
       })
       .subscribe((Response) => {
         let data = JSON.parse(Response['d']);
