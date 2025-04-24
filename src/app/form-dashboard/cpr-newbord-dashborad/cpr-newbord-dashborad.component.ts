@@ -7,23 +7,6 @@ import { MatSort } from '@angular/material/sort';
 import { HttpClient } from '@angular/common/http';
 import { environment } from 'src/environments/environment';
 
-const MOCK_DATA = [
-  {
-    babyName: 'דניאל',
-    babyGender: 'זכר',
-    babyWeight: 3.2,
-    deliveryMethod: 'קיסרי',
-    location: 'חדר לידה'
-  },
-  {
-    babyName: 'מאיה',
-    babyGender: 'נקבה',
-    babyWeight: 2.9,
-    deliveryMethod: 'ואגינלי',
-    location: 'מחלקת יולדות'
-  }
-];
-
 @Component({
   selector: 'app-cpr-newbord-dashborad',
   templateUrl: './cpr-newbord-dashborad.component.html',
@@ -43,7 +26,7 @@ export class CprNewbordDashboradComponent implements OnInit {
 
   ngOnInit(): void {
     // Replace with API call from your backend:
-    this.dataSource.data = MOCK_DATA;
+    this.dataSource.data = [];
     this.getNewBornCprList();
   }
 
@@ -62,11 +45,14 @@ export class CprNewbordDashboradComponent implements OnInit {
   }
 
   viewDetails(element: any) {
-    console.log('Viewing:', element);
     // You can open a dialog or navigate
-    this.dialog.open(CprNewbornFormComponent, {
+    let dg = this.dialog.open(CprNewbornFormComponent, {
+      data: element,
       width: '90%',
       height: '90%'
+    });
+    dg.afterClosed().subscribe(res => {
+      this.getNewBornCprList();
     });
   }
 
@@ -80,7 +66,7 @@ export class CprNewbordDashboradComponent implements OnInit {
       .post(environment.url + "GetNewBornCprList", {
       })
       .subscribe((Response) => {
-        let all_users_filter = Response["d"];
+        this.dataSource = new MatTableDataSource<any>(Response["d"])
       });
   }
 

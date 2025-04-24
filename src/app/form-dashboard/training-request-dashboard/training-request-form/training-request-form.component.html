@@ -281,7 +281,7 @@
               </section>
             </div>
             <div class="section"
-              *ngIf="(Training_Request_Forms_D.get('OutSource_Company').value || Training_Request_Forms_D.get('OutSource_Company_Direct').value) || user_name == 'ttsrefati'">
+              *ngIf="(Training_Request_Forms_D.get('OutSource_Company').value || Training_Request_Forms_D.get('OutSource_Company_Direct').value) && user_name == 'ttsrefati'">
               <label for="fileInput" class="file-label">מכתב תמיכה חתום ע"י הנהלת המרכז הרפואי(תמונה/PDF)</label>
               <input type="file" id="fileInput2" (change)="onFileSelected2($event)" class="file-input"
                 accept="application/pdf, image/*" />
@@ -313,13 +313,15 @@
             <hr>
             <div class="section">
               <section class="example-section">
-                <p><mat-checkbox [(ngModel)]="health_checkbox" [ngModelOptions]="{standalone: true}"><span class="checkbox-label">תאגיד הבריאות-קרן
+                <p><mat-checkbox [(ngModel)]="health_checkbox" [ngModelOptions]="{standalone: true}"><span
+                      class="checkbox-label">תאגיד הבריאות-קרן
                       מרכזית למימון</span></mat-checkbox>
                 </p>
               </section>
               <!-- <mat-label>{{ Health_Corporation_Options.QuestionText }}</mat-label> -->
-              <mat-select formControlName="Health_Corporation" class="multi-select" [compareWith]="compareFn"
-                (selectionChange)="check_if_fund_or_health()" multiple>
+              <mat-label *ngIf="health_checkbox"> נא לבחור </mat-label>
+              <mat-select formControlName="Health_Corporation" *ngIf="health_checkbox" class="multi-select"
+                [compareWith]="compareFn" (selectionChange)="check_if_fund_or_health()" multiple>
                 <mat-option *ngFor="let option of Health_Corporation_Options.Training_Request_Options"
                   [value]="option.OptionID">
                   {{ option.OptionText }}
@@ -329,12 +331,14 @@
             <hr>
             <div class="section">
               <section class="example-section">
-                <p><mat-checkbox [(ngModel)]="fund_checkbox" [ngModelOptions]="{standalone: true}"><span class="checkbox-label">קרן מחלקה:
+                <p><mat-checkbox [(ngModel)]="fund_checkbox" [ngModelOptions]="{standalone: true}"><span
+                      class="checkbox-label">קרן מחלקה:
                       למימון</span></mat-checkbox>
                 </p>
               </section>
               <!-- <mat-label>{{ Department_Fund_Options.QuestionText }}</mat-label> -->
-              <mat-select formControlName="Department_Fund" class="multi-select"
+              <mat-label *ngIf="fund_checkbox"> נא לבחור </mat-label>
+              <mat-select formControlName="Department_Fund" *ngIf="fund_checkbox" class="multi-select"
                 (selectionChange)="check_if_fund_or_health()" [compareWith]="compareFn" multiple>
                 <mat-option *ngFor="let option of Department_Fund_Options.Training_Request_Options"
                   [value]="option.OptionID">
