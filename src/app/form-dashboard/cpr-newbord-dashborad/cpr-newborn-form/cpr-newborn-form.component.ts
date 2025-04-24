@@ -1,6 +1,12 @@
-import { Component, OnInit } from '@angular/core';
+import { DatePipe } from '@angular/common';
+import { HttpClient } from '@angular/common/http';
+import { Component, Inject, OnInit, Optional } from '@angular/core';
 import { FormBuilder, FormGroup, FormArray, Validators } from '@angular/forms';
+import { MatDatepickerInputEvent } from '@angular/material/datepicker';
+import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
+import { MatSnackBar, MatSnackBarHorizontalPosition, MatSnackBarVerticalPosition } from '@angular/material/snack-bar';
 import { MatTableDataSource } from '@angular/material/table';
+import { environment } from 'src/environments/environment';
 interface ResuscitationFormData {
   motherInfo: {
     name: string;
@@ -37,6 +43,8 @@ interface VitalSignsRow {
 })
 export class CprNewbornFormComponent implements OnInit {
 
+  horizontalPosition: MatSnackBarHorizontalPosition = "start";
+  verticalPosition: MatSnackBarVerticalPosition = "bottom";
   resuscitationForm: FormGroup;
   displayedColumns: string[] = ['time', 'pulse', 'o2Sat', 'other'];
   dataSource = new MatTableDataSource<VitalSignsRow>([]);
@@ -116,87 +124,27 @@ export class CprNewbornFormComponent implements OnInit {
   additionalProductsDisplayedColumns: string[] = ['name', 'time', 'route', 'dosageVolume'];
   additionalProductsDataSource = new MatTableDataSource();
 
-  constructor(private fb: FormBuilder) {
-    this.resuscitationForm = this.fb.group({
-      motherInfo: this.fb.group({
-        babyName: [''],
-        babyId: [''],
-        resuscitationDate: [null],
-        resuscitationTime: [''],
-        location: ['birthRoom'], // Default value
-        pediatricianCalledTime: [''],
-        resuscitationStartTime: [''],
-        babyGender: ['male'], // Default value
-        gestationAgeWeeks: [null],
-        babyWeight: [null],
-        deliveryMethod: ['']
-      }),
-      teamMembers: this.fb.array([]), // Use FormArray for dynamic table rows
-      pregnancyDeliveryInfo: this.fb.group({
-        pregnancyDeliveryDetails: [''],
-        meconiumStaining: ['false'], // Default value
-        pediatricianPresent: ['false'], // Default value
-        pediatricianArrivalTime: ['']
-      }),
-      vitalSigns: this.fb.array([]),
-      resuscitationActions: this.fb.array([]),
-      adrenaline: this.fb.array([]),
-      nacl: this.fb.array([]),
-      nabic: this.fb.array([]),
-      bloodProducts: this.fb.array([]),
-      additionalProducts: this.fb.array([]),
-      apgarScore: this.apgarScore,
-      labScore: this.labScore,
-      labScore2: this.labScore,
-      resuscitationSummary: this.fb.group({
-        summary: [''],
-        summaryTime: [''],
-        conditionAtEnd: [''],
-        transferDestination: [''],
-        conditionUponTransfer: [''],
-        other: [''],
-        oxygenSat: [''],
-        transferTime: [''],
-        transferredBy: [''],
-        role: [''],
-        infoTo: [''],
-        acceptanceDate: [''],
-        acceptanceTime: [''],
-        ByWhoEmployee: [''],
-        receivedBy: [''],
-        notes: [''],
-      }),
-      doctorSignature: this.fb.group({
-        signatureDate: [''],
-        signatureTime: [''],
-        nameAndRole: [''],
-      })
-    });
-    for (let i = 0; i <= 3; i++) {
-      this.addTeamMember();
-    }
-    for (let i = 0; i <= 6; i++) {
-      this.addVitalSignsRow();
-    }
-    for (let i = 0; i <= 6; i++) {
-      this.addResuscitationActionRow();
-    }
-    const array1 = this.resuscitationForm.get('adrenaline') as FormArray;
-    const array2 = this.resuscitationForm.get('nacl') as FormArray;
-    const array3 = this.resuscitationForm.get('nabic') as FormArray;
-    const array4 = this.resuscitationForm.get('bloodProducts') as FormArray;
-    const array5 = this.resuscitationForm.get('additionalProducts') as FormArray;
-    for (let i = 0; i < 6; i++) {
-      array1.push(this.createRow(['time', 'route', 'volume']));
-      array2.push(this.createRow(['time', 'volume']));
-      array3.push(this.createRow(['time', 'amount']));
-      array4.push(this.createRow(['time', 'type', 'volume']));
-      array5.push(this.createRow(['name', 'time', 'route', 'dosageVolume']));
-    }
-    this.updateDataSources();
+  constructor(
+    private fb: FormBuilder,
+    @Optional() @Inject(MAT_DIALOG_DATA) public form_id: any,
+    private http: HttpClient,
+    private _snackBar: MatSnackBar,
+    private _pipe: DatePipe,
+    @Optional() private dialogRef: MatDialogRef<CprNewbornFormComponent>,
+  ) {
+    this.getNewBornCprDataByID();
+
   }
 
   ngOnInit(): void {
+  }
+
+  openSnackBar(message) {
+    this._snackBar.open(message, "X", {
+      duration: 3000,
+      horizontalPosition: this.horizontalPosition,
+      verticalPosition: this.verticalPosition,
+    });
   }
 
   createTimeControls() {
@@ -257,7 +205,6 @@ export class CprNewbornFormComponent implements OnInit {
     const resuscitationActions = this.resuscitationForm.get('resuscitationActions') as FormArray;
     resuscitationActions.push(
       this.fb.group({
-        action: [''],
         time: [''],
         suction: [''],
         oxygenConcentration: [null],
@@ -300,10 +247,151 @@ export class CprNewbornFormComponent implements OnInit {
     );
   }
 
+  dateChanged(event: MatDatepickerInputEvent<Date>, form_group: any) {
+    form_group.value = this._pipe.transform(event.value, 'yyyy-MM-dd');
+  }
+
+  getNewBornCprDataByID() {
+    this.http
+      .post(environment.url + "GetResuscitationFormData", {
+      })
+      .subscribe((Response) => {
+        let data = JSON.parse(Response['d']);
+        this.resuscitationForm = this.fb.group({
+          motherInfo: this.fb.group({
+            babyName: [data?.motherInfo.babyName],
+            babyId: [data?.motherInfo.babyId],
+            resuscitationDate: [data?.motherInfo.resuscitationDate],
+            resuscitationTime: [data?.motherInfo.resuscitationTime],
+            location: [data?.motherInfo.location],
+            pediatricianCalledTime: [data?.motherInfo.pediatricianCalledTime],
+            resuscitationStartTime: [data?.motherInfo.resuscitationStartTime],
+            babyGender: [data?.motherInfo.babyGender],
+            gestationAgeWeeks: [data?.motherInfo.gestationAgeWeeks],
+            babyWeight: [data?.motherInfo.babyWeight],
+            deliveryMethod: [data?.motherInfo.deliveryMethod]
+          }),
+          teamMembers: this.fb.array(data?.teamMembers.map(member => this.fb.group({
+            row: [member.row],
+            name: [member.name],
+            role: [member.role]
+          })) || []),
+          pregnancyDeliveryInfo: this.fb.group({
+            pregnancyDeliveryDetails: [data?.pregnancyDeliveryInfo.pregnancyDeliveryDetails],
+            meconiumStaining: [data?.pregnancyDeliveryInfo.meconiumStaining],
+            pediatricianPresent: [data?.pregnancyDeliveryInfo.pediatricianPresent],
+            pediatricianArrivalTime: [data?.pregnancyDeliveryInfo.pediatricianArrivalTime]
+          }),
+          vitalSigns: this.fb.array(data?.vitalSigns.map(sign => this.fb.group({
+            o2Sat: [sign.o2Sat],
+            other: [sign.other],
+            pulse: [sign.pulse],
+            time: [sign.time]
+          })) || []),
+          resuscitationActions: this.fb.array(data?.resuscitationActions.map(action => this.fb.group({
+            time: [action.time],
+            suction: [action.suction],
+            oxygenConcentration: [action.oxygenConcentration],
+            amboOxygen: [action.amboOxygen],
+            role: [action.oxygenConcentration],
+            intubationVentilation: [action.intubationVentilation],
+            heartMassage: [action.heartMassage],
+            umbilicalVenousCatheterization: [action.umbilicalVenousCatheterization],
+            extubation: [action.extubation],
+            otherAction: [action.otherAction]
+          })) || []),
+          adrenaline: this.fb.array(data?.adrenaline.map(adr => this.fb.group({
+            time: [adr.time],
+            route: [adr.route],
+            volume: [adr.volume]
+          })) || []),
+          nacl: this.fb.array(data?.nacl.map(na => this.fb.group({
+            time: [na.time],
+            volume: [na.volume]
+          })) || []),
+          nabic: this.fb.array(data?.nabic.map(nab => this.fb.group({
+            time: [nab.time],
+            amount: [nab.amount]
+          })) || []),
+          bloodProducts: this.fb.array(data?.bloodProducts.map(blood => this.fb.group({
+            time: [blood.time],
+            type: [blood.type],
+            volume: [blood.volume]
+          })) || []),
+          additionalProducts: this.fb.array(data?.additionalProducts.map(add => this.fb.group({
+            name: [add.name],
+            time: [add.time],
+            route: [add.route],
+            type: [add.type],
+            dosageVolume: [add.dosageVolume]
+          })) || []),
+          apgarScore: this.apgarScore,
+          labScore: this.labScore,
+          labScore2: this.labScore,
+          resuscitationSummary: this.fb.group({
+            summary: [data?.resuscitationSummary.summary],
+            summaryTime: [data?.resuscitationSummary.summaryTime],
+            conditionAtEnd: [data?.resuscitationSummary.conditionAtEnd],
+            transferDestination: [data?.resuscitationSummary.transferDestination],
+            conditionUponTransfer: [data?.resuscitationSummary.conditionUponTransfer],
+            other: [data?.resuscitationSummary.other],
+            oxygenSat: [data?.resuscitationSummary.oxygenSat],
+            transferTime: [data?.resuscitationSummary.transferTime],
+            transferredBy: [data?.resuscitationSummary.transferredBy],
+            role: [data?.resuscitationSummary.role],
+            infoTo: [data?.resuscitationSummary.infoTo],
+            acceptanceDate: [data?.resuscitationSummary.acceptanceDate],
+            acceptanceTime: [data?.resuscitationSummary.acceptanceTime],
+            ByWhoEmployee: [data?.resuscitationSummary.ByWhoEmployee],
+            receivedBy: [data?.resuscitationSummary.receivedBy],
+            notes: [data?.resuscitationSummary.notes],
+          }),
+          doctorSignature: this.fb.group({
+            signatureDate: [data?.doctorSignature.signatureDate],
+            signatureTime: [data?.doctorSignature.signatureTime],
+            nameAndRole: [data?.doctorSignature.nameAndRole],
+          })
+        });
+        // for (let i = 0; i <= 3; i++) {
+        //   this.addTeamMember();
+        // }
+        // for (let i = 0; i <= 6; i++) {
+        //   this.addVitalSignsRow();
+        // }
+        // for (let i = 0; i <= 6; i++) {
+        //   this.addResuscitationActionRow();
+        // }
+        // const array1 = this.resuscitationForm.get('adrenaline') as FormArray;
+        // const array2 = this.resuscitationForm.get('nacl') as FormArray;
+        // const array3 = this.resuscitationForm.get('nabic') as FormArray;
+        // const array4 = this.resuscitationForm.get('bloodProducts') as FormArray;
+        // const array5 = this.resuscitationForm.get('additionalProducts') as FormArray;
+        // for (let i = 0; i < 6; i++) {
+        //   array1.push(this.createRow(['time', 'route', 'volume']));
+        //   array2.push(this.createRow(['time', 'volume']));
+        //   array3.push(this.createRow(['time', 'amount']));
+        //   array4.push(this.createRow(['time', 'type', 'volume']));
+        //   array5.push(this.createRow(['name', 'time', 'route', 'dosageVolume']));
+        // }
+        this.updateDataSources();
+      });
+  }
+
   onSubmit() {
     if (this.resuscitationForm.valid) {
       console.log(this.resuscitationForm.getRawValue());
       // Send the data to your backend
+      this.http
+        .post(environment.url + "SaveNewBornCprData", {
+          resus: this.resuscitationForm.getRawValue()
+        })
+        .subscribe((Response) => {
+          if (Response['d']) {
+            this.openSnackBar("נשמר בהצלחה");
+            this.dialogRef.close();
+          }
+          else this.openSnackBar("שגיאה!");
+        });
     }
   }
 

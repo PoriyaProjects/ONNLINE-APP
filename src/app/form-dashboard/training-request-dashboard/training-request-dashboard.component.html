@@ -24,6 +24,10 @@
                             <mat-icon>cancel</mat-icon>
                             <span>ביטולים</span>
                         </mat-option>
+                        <mat-option value="3">
+                            <mat-icon>list</mat-icon>
+                            <span>מוכנים לוועדה</span>
+                        </mat-option>
                         <mat-option value="">
                             <mat-icon>filter_list</mat-icon>
                             <span>הכל</span>
@@ -97,6 +101,12 @@
                 <td mat-cell *matCellDef="let element">
                     <mat-icon *ngIf="element.FApproved == 'True'">check_circle </mat-icon>
                     <mat-icon *ngIf="element.FApproved == 'False'">cancel </mat-icon>
+                </td>
+            </ng-container>
+
+            <ng-container matColumnDef="Training_Fund_Answer">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header> תשובת תאגיד </th>
+                <td mat-cell *matCellDef="let element">{{element.Training_Fund_Answer}}
                 </td>
             </ng-container>
 

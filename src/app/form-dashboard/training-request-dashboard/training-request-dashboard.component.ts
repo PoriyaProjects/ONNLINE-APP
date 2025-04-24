@@ -20,7 +20,7 @@ export class TrainingRequestDashboardComponent implements OnInit {
 
   trainingRequests = new MatTableDataSource();
   displayedColumns: string[] = [
-    'Row_ID', 'Form_Fill_Date', 'First_Name', 'Passport_ID', 'Function_Department', 'Name_Location', 'Date', 'EApproved', 'FApproved', 'HApproved', 'Actions'
+    'Row_ID', 'Form_Fill_Date', 'First_Name', 'Passport_ID', 'Function_Department', 'Name_Location', 'Date', 'EApproved', 'FApproved', 'Training_Fund_Answer', 'HApproved', 'Actions'
   ];
   @ViewChild(MatPaginator) paginator: MatPaginator;
   @ViewChild(MatSort) sort: MatSort;
@@ -234,7 +234,6 @@ export class TrainingRequestDashboardComponent implements OnInit {
         	<p style="margin: 0px">העתקים:</p>
         	<p style="margin: 0px">הנהלת המרכז הרפואי</p>
         	<p style="margin: 0px">הממונה הישיר</p>
-        	<p style="margin: 0px">מדור השכר</p>
         	<p style="margin: 0px">מחלקת משאבי אנוש</p>
         </div>
     </body>
