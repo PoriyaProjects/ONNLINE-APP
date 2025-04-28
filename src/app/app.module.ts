@@ -252,10 +252,8 @@ import { ShortcutsManagementComponent } from './dashboard/shortcuts-management/s
 import { ShortcutFormDialogComponent } from './dashboard/shortcuts-management/shortcut-form-dialog/shortcut-form-dialog.component';
 import { NamerUserActionsComponent } from './dashboard/namer-user-actions/namer-user-actions.component';
 import { LearningRequestsDashboardComponent } from './learning-requests-dashboard/learning-requests-dashboard.component';
-<<<<<<< Updated upstream
-=======
-import { CprNewbordDashboradComponent } from './form-dashboard/cpr-newbord-dashborad/cpr-newbord-dashborad.component';
-import { CprNewbornFormComponent } from './form-dashboard/cpr-newbord-dashborad/cpr-newborn-form/cpr-newborn-form.component';
+//import { CprNewbordDashboradComponent } from './form-dashboard/cpr-newbord-dashborad/cpr-newbord-dashborad.component';
+//import { CprNewbornFormComponent } from './form-dashboard/cpr-newbord-dashborad/cpr-newborn-form/cpr-newborn-form.component';
 //import { HospitalCathDashbModule } from './hospital-cath-dashb/hospital-cath-dashb.module';
 import { HospitalCathDashboardComponent } from './hospital-cath-dashboard/hospital-cath-dashboard.component';
 
@@ -271,7 +269,6 @@ import { DashboardService} from './hospital-cath-dashboard/hospital-cath.service
 import { EshpozModalComponent2 } from './hospital-cath-dashboard/eshpoz-modal/eshpoz-modal.component';
 import { HospitalTonnageComponent2 } from './hospital-cath-dashboard/hospital-tonnage/hospital-tonnage.component';
 import { SharedModule } from './shared/shared.module';
->>>>>>> Stashed changes
 
 const maskConfig: Partial<IConfig> = {
   validation: false,
@@ -474,12 +471,9 @@ const maskConfig: Partial<IConfig> = {
     ShortcutsManagementComponent,
     ShortcutFormDialogComponent,
     NamerUserActionsComponent,
-<<<<<<< Updated upstream
-    LearningRequestsDashboardComponent
-=======
     LearningRequestsDashboardComponent,
-    CprNewbordDashboradComponent,
-    CprNewbornFormComponent,
+   // CprNewbordDashboradComponent,
+    //CprNewbornFormComponent,
     HospitalCathDashboardComponent,
     BarChartComponent2,
     GroupedBarChartComponent2,
@@ -492,7 +486,6 @@ const maskConfig: Partial<IConfig> = {
     EshpozModalComponent2,
     HospitalTonnageComponent2,  
     //SharedModule,
->>>>>>> Stashed changes
   ],
   imports: [
     MatIconModule,
