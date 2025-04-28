@@ -30,6 +30,11 @@
     }
   }
 
+  .multi-select {
+    background-color: #84a8eb;
+    border-radius: 10px;
+  }
+
   .signBtn {
     font-weight: bold;
     font-size: 20px;
@@ -109,4 +114,12 @@
 
 .mat-card-content {
   margin-top: 40px;
+}
+
+mat-select {
+  text-align: right;
+}
+
+.label-select {
+  float: right;
 }

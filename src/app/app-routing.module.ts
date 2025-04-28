@@ -105,12 +105,12 @@ import { SwitchesComponent } from "./switches/switches.component";
 import { HrDashboardComponent } from "./hr-dashboard/hr-dashboard.component";
 import { PatientStikersComponent } from "./patient-stikers/patient-stikers.component";
 import { NortonEstimateComponent } from './norton-estimate/norton-estimate.component';
-import {CAMEstimateComponent} from './cam-estimate/cam-estimate.component';
-import {DialysisReportComponent} from './dialysis-report/dialysis-report.component';
-import {SurgeriesUnclosedReportsComponent} from './surgery-reports/surgeries-unclosed-reports/surgeries-unclosed-reports.component';
-import {InjuryReportComponent} from './injury-report/injury-report.component';
-import {WhatsappDepartmentsDashboardComponent} from './whatsapp-departments-dashboard/whatsapp-departments-dashboard.component';
-import {CathReportComponent} from './cath-report/cath-report.component';
+import { CAMEstimateComponent } from './cam-estimate/cam-estimate.component';
+import { DialysisReportComponent } from './dialysis-report/dialysis-report.component';
+import { SurgeriesUnclosedReportsComponent } from './surgery-reports/surgeries-unclosed-reports/surgeries-unclosed-reports.component';
+import { InjuryReportComponent } from './injury-report/injury-report.component';
+import { WhatsappDepartmentsDashboardComponent } from './whatsapp-departments-dashboard/whatsapp-departments-dashboard.component';
+import { CathReportComponent } from './cath-report/cath-report.component';
 import { PatientsSystemConflictsComponent } from "./patients-system-conflicts/patients-system-conflicts.component";
 import { EmployeesUpdateManagersComponent } from "./employees-manage-dash/employees-update-managers/employees-update-managers.component";
 import { WorkerCasesComponent } from "./worker-cases/worker-cases.component";
@@ -133,8 +133,7 @@ import { ShortcutsManagementComponent } from "./dashboard/shortcuts-management/s
 import { ShortcutFormDialogComponent } from "./dashboard/shortcuts-management/shortcut-form-dialog/shortcut-form-dialog.component";
 import { NamerUserActionsComponent } from "./dashboard/namer-user-actions/namer-user-actions.component";
 import { LearningRequestsDashboardComponent } from "./learning-requests-dashboard/learning-requests-dashboard.component";
-<<<<<<< Updated upstream
-=======
+
 import { CprNewbordDashboradComponent } from "./form-dashboard/cpr-newbord-dashborad/cpr-newbord-dashborad.component";
 import { CprNewbornFormComponent } from "./form-dashboard/cpr-newbord-dashborad/cpr-newborn-form/cpr-newborn-form.component";
 import { GoogleChartsComponent } from './hospital-cath-dashb/google-charts/google-charts.component';
@@ -145,13 +144,17 @@ import { GraphsModalComponent2 } from "./hospital-cath-dashboard/graphs-modal/gr
 import { EshpozModalComponent2 } from "./hospital-cath-dashboard/eshpoz-modal/eshpoz-modal.component";
 import { HospitalTonnageComponent2 } from "./hospital-cath-dashboard/hospital-tonnage/hospital-tonnage.component";
 
->>>>>>> Stashed changes
+import { CprNewbordDashboradComponent } from "./form-dashboard/cpr-newbord-dashborad/cpr-newbord-dashborad.component";
+import { CprNewbornFormComponent } from "./form-dashboard/cpr-newbord-dashborad/cpr-newborn-form/cpr-newborn-form.component";
+import { CommercialSupportFormDashboardComponent } from "./form-dashboard/commercial-support-form-dashboard/commercial-support-form-dashboard.component";
+import { CommercialSupportFormDialogComponent } from "./form-dashboard/commercial-support-form-dashboard/commercial-support-form-dialog/commercial-support-form-dialog.component";
 
 
-const routes: Routes = [ 
+
+const routes: Routes = [
     { path: "patientstikers", component: PatientStikersComponent },
     { path: "clinicsrequests", component: ClinicsRequestsComponent },
-    { path: 'switches', component : SwitchesComponent},
+    { path: 'switches', component: SwitchesComponent },
     { path: "dashboard", component: DashboardComponent },
     { path: "login", component: LoginComponent },
     { path: "chads", component: ChadsComponent },
@@ -161,7 +164,7 @@ const routes: Routes = [
     { path: "eshboz", component: EshbozComponent },
     { path: "dimot", component: DimotComponent },
     { path: "coronaform", component: CoronaformComponent },
-    { path: "poriadeparts", component: PoriadepartsComponent }, 
+    { path: "poriadeparts", component: PoriadepartsComponent },
     { path: "roles", component: RolesComponent },
     { path: "sendsms", component: SendsmsComponent },
     { path: "sendsmsadmin", component: SendsmsadminComponent },
@@ -274,7 +277,7 @@ const routes: Routes = [
     { path: "hr-dashboard", component: HrDashboardComponent },
     { path: "", component: LoginComponent },
     { path: "Norton", component: NortonEstimateComponent },
-    { path: "CAM", component: CAMEstimateComponent },   
+    { path: "CAM", component: CAMEstimateComponent },
     { path: "Diaysis", component: DialysisReportComponent },
     { path: "Surgeries-unclosed-reports", component: SurgeriesUnclosedReportsComponent },
     { path: "departments-whatsapp", component: WhatsappDepartmentsDashboardComponent },
@@ -282,10 +285,10 @@ const routes: Routes = [
     { path: "Cath", component: CathReportComponent },
     { path: "employees-update-managers", component: EmployeesUpdateManagersComponent },
     { path: "patients-system-conflicts", component: PatientsSystemConflictsComponent },
-    { path : "WorkerCases" , component : WorkerCasesComponent },
+    { path: "WorkerCases", component: WorkerCasesComponent },
     { path: "bedsore-dashboard", component: BedsoreDashboardComponent },
     { path: "patients-system-conflicts", component: PatientsSystemConflictsComponent },
-    { path: "authorized", component: AuthorizedComponent },    
+    { path: "authorized", component: AuthorizedComponent },
     { path: "authorized", component: AuthorizedComponent },
     { path: "suppliers", component: SupplierComponent },
     { path: "tree-item-dialog", component: TreeItemDialogComponent },
@@ -297,18 +300,23 @@ const routes: Routes = [
     { path: "clinicactivitydashboard", component: ClinicActivityDashboardComponent },
     { path: "departments-whatsapp-management", component: DepartmentsWhatsappManagementComponent },
     { path: "training-request-dashboard", component: TrainingRequestDashboardComponent },
-    { path: "training-request-form", component: TrainingRequestFormComponent },
+    { path: "training-request-form/:id", component: TrainingRequestFormComponent },
     { path: "training-request-dialog", component: TrainingRequestDialogComponent },
     { path: "whatsapp-lung-cancer", component: WhatsappLungCancerComponent },
     { path: "shortcuts-management", component: ShortcutsManagementComponent },
     { path: "shortcut-form-dialog", component: ShortcutFormDialogComponent },
     { path: "namer-user-actions", component: NamerUserActionsComponent },
     { path: "learning-requests-dashboard", component: LearningRequestsDashboardComponent },
-<<<<<<< Updated upstream
-    { path: "LabTests", component: LabTestsComponent }
+
+    { path: "cpr-newbord-dashborad", component: CprNewbordDashboradComponent },
+    { path: "cpr-newborn-form", component: CprNewbornFormComponent },
+    { path: "commercial-support-form-dashboard", component: CommercialSupportFormDashboardComponent },
+    { path: "commercial-support-form-dialog", component: CommercialSupportFormDialogComponent },
+
+    { path: "LabTests", component: LabTestsComponent },
 
 
-=======
+
     { path: "cpr-newbord-dashborad", component: CprNewbordDashboradComponent },
     { path: "cpr-newborn-form", component: CprNewbornFormComponent },
     { path: "LabTests", component: LabTestsComponent },     
@@ -318,7 +326,7 @@ const routes: Routes = [
     { path: "EshpozModalComponent2", component: EshpozModalComponent2 },
     { path: "hospital-tonnage2", component: HospitalTonnageComponent2 },
   
->>>>>>> Stashed changes
+
 ];
 
 

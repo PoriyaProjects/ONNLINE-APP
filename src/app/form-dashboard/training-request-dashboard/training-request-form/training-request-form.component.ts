@@ -1,5 +1,5 @@
 import { HttpClient } from '@angular/common/http';
-import { Component, Inject, OnInit } from '@angular/core';
+import { Component, Inject, OnInit, Optional } from '@angular/core';
 import { FormArray, FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
 import { MatDialog, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { MatSnackBar, MatSnackBarHorizontalPosition, MatSnackBarVerticalPosition } from '@angular/material/snack-bar';
@@ -10,6 +10,7 @@ import { map, startWith } from 'rxjs/operators';
 import { Observable } from 'rxjs';
 import { ConfirmationDialogService } from 'src/app/confirmation-dialog/confirmation-dialog.service';
 import { STEPPER_GLOBAL_OPTIONS } from '@angular/cdk/stepper';
+import { ActivatedRoute } from '@angular/router';
 
 @Component({
   selector: 'app-training-request-form',
@@ -63,7 +64,7 @@ export class TrainingRequestFormComponent implements OnInit {
   employees = [];
   intity_list = [];
   CitiesArray: any[] = [];
-  titleList = ["מר", "גב'", "דר'", "פרופ'"];
+  // titleList = ["מר", "גב'", "דר'", "פרופ'"];
   educationList = ["תיכונית", "מקצועית", "תואר ראשון", "תואר שני", "תואר שלישי"];
   requested: boolean = false;
   dorit_note_answer: boolean = false;
@@ -75,22 +76,26 @@ export class TrainingRequestFormComponent implements OnInit {
   Supervisor_Name1 = new FormControl();
   filteredOptions2: Observable<string[]>;
   Supervisor_Name2 = new FormControl();
-  filteredOptions3: Observable<string[]>;
-  Supervisor_Name3 = new FormControl();
   cityOptions: Observable<string[]>;
   cityControl = new FormControl("", Validators.required);
   date_now: any = Date.now();
+  health_checkbox: any;
+  fund_checkbox: any;
 
   constructor(
     private fb: FormBuilder,
     public dialog: MatDialog,
     private http: HttpClient,
+    private activatedRoute: ActivatedRoute,
     private datePipe: DatePipe,
     private _snackBar: MatSnackBar,
     private confirmationDialogService: ConfirmationDialogService,
-    @Inject(MAT_DIALOG_DATA) public form_id: any,
-    private dialogRef: MatDialogRef<TrainingRequestFormComponent>
+    @Optional() @Inject(MAT_DIALOG_DATA) public form_id: any,
+    @Optional() private dialogRef: MatDialogRef<TrainingRequestFormComponent>
   ) {
+    if (this.activatedRoute.snapshot.paramMap.get('id') != null) {
+      this.form_id = this.activatedRoute.snapshot.paramMap.get('id');
+    }
     this.buildFormGroup();
     this.date_now = this.datePipe.transform(this.date_now, 'yyyy-MM-dd');
   }
@@ -119,8 +124,10 @@ export class TrainingRequestFormComponent implements OnInit {
   check_if_fund_or_health() {
     let health = this.Training_Request_Forms_D.value.Health_Corporation?.filter(x => x != null);
     let fund = this.Training_Request_Forms_D.value.Department_Fund?.filter(x => x != null);
-    if (health?.length == 0 && fund?.length == 0) this.dorit_note_answer = false;
+    if ((health?.length == 0 && fund?.length == 0) || (health == undefined && fund == undefined)) this.dorit_note_answer = false;
     else this.dorit_note_answer = true;
+    if (health.length > 0) this.health_checkbox = true;
+    if (fund.length > 0) this.fund_checkbox = true;
   }
 
   changeCity(event) {
@@ -205,11 +212,11 @@ export class TrainingRequestFormComponent implements OnInit {
           Planning_Intity_Text: new FormControl(Training_Request_Forms_B?.Planning_Intity_Text, null),
           Date_Start: new FormControl(Training_Request_Forms_B?.Date_Start, Validators.required),
           Date_End: new FormControl(Training_Request_Forms_B?.Date_End, Validators.required),
-          Request_Duration: new FormControl(Training_Request_Forms_B?.Request_Duration, null),
-          Education_Fee: new FormControl({ value: Training_Request_Forms_B?.Education_Fee, disabled: Training_Request_Forms_B?.Training_Out == 'True' }, [Validators.pattern(/^\d+$/)]),
-          Transportation: new FormControl(Training_Request_Forms_B?.Transportation == 'True' ? true : false, null),
+          Request_Duration: new FormControl(Training_Request_Forms_B?.Request_Duration, [Validators.required, Validators.pattern(/^[0-9]*$/)]),
+          Education_Fee: new FormControl({ value: Training_Request_Forms_B?.Education_Fee, disabled: Training_Request_Forms_B?.Training_Out == 'True' }, [Validators.required, Validators.pattern(/^\d+$/)]),
+          // Transportation: new FormControl(Training_Request_Forms_B?.Transportation == 'True' ? true : false, null),
           Program_Attached: new FormControl(Training_Request_Forms_B?.Program_Attached, Validators.required),
-          Absence_Time: new FormControl(Training_Request_Forms_B?.Absence_Time, [Validators.pattern(/^\d+$/)]),
+          Absence_Time: new FormControl({ value: Training_Request_Forms_B?.Absence_Time, disabled: this.user_name != 'ttsrefati' ? true : false }, [Validators.pattern(/^\d+$/)]),
           Training_Out: new FormControl(Training_Request_Forms_B?.Training_Out == 'True' ? true : false, null),
           Galilean_Partnership: new FormControl(Training_Request_Forms_B?.Galilean_Partnership == 'True' ? true : false, null),
         });
@@ -224,10 +231,10 @@ export class TrainingRequestFormComponent implements OnInit {
           OutSource_Company_Plan: new FormControl(Training_Request_Forms_D?.OutSource_Company_Plan, null),
           OutSource_Company_Direct: new FormControl(Training_Request_Forms_D?.OutSource_Company_Direct == 'True' ? true : false, null),
           Budget_Amount: new FormControl(Training_Request_Forms_D?.Budget_Amount, [Validators.pattern(/^\d+(\.\d{1,2})?$/)]),
-          Health_Corporation: new FormControl(Training_Request_Forms_D?.Health_Corporation, null),
+          Health_Corporation: new FormControl(Training_Request_Forms_D?.Health_Corporation == undefined ? [] : Training_Request_Forms_D?.Health_Corporation, null),
           Health_Corporation_Description: new FormControl(Training_Request_Forms_D?.Health_Corporation_Description, null),
-          Department_Fund: new FormControl(Training_Request_Forms_D?.Department_Fund, null),
-          Department_Fund_Description: new FormControl(Training_Request_Forms_D?.Department_Fund_Description, null),
+          Department_Fund: new FormControl(Training_Request_Forms_D?.Department_Fund == undefined ? [] : Training_Request_Forms_D?.Department_Fund, null),
+          Galilean_Partnership_Description: new FormControl(Training_Request_Forms_D?.Galilean_Partnership_Description, null),
           Training_Fund_Answer: new FormControl(Training_Request_Forms_D?.Training_Fund_Answer, null),
         });
         this.Training_Request_Forms_E = this.fb.group({
@@ -236,46 +243,52 @@ export class TrainingRequestFormComponent implements OnInit {
           Opinion_Date: new FormControl(Training_Request_Forms_E?.Opinion_Date == null ? this.date_now : Training_Request_Forms_E?.Opinion_Date, null),
           Supervisor_Name: new FormControl(Training_Request_Forms_E?.Supervisor_Name, null),
           Supervisor_Sign: new FormControl(Training_Request_Forms_E?.Supervisor_Sign, null),
+          Sent_To_Manager: new FormControl(Training_Request_Forms_E?.Sent_To_Manager, null),
           Approved: new FormControl(Training_Request_Forms_E?.Approved == 'True' ? true : false, null),
         });
         this.Training_Request_Forms_F = this.fb.group({
           Training_Importantce: new FormControl(Training_Request_Forms_F?.Training_Importantce, null),
           Recommendations: new FormControl(Training_Request_Forms_F?.Recommendations, null),
           Opinion_Date: new FormControl(Training_Request_Forms_F?.Opinion_Date == null ? this.date_now : Training_Request_Forms_F?.Opinion_Date, null),
-          Supervisor_Name: new FormControl(Training_Request_Forms_F?.Supervisor_Name, Training_Request_Forms_E?.Supervisor_Name != null ? Validators.required : null),
+          Supervisor_Name: new FormControl(Training_Request_Forms_F?.Supervisor_Name, null),
           Supervisor_Sign: new FormControl(Training_Request_Forms_F?.Supervisor_Sign, null),
           Approved: new FormControl(Training_Request_Forms_F?.Approved == 'True' ? true : false, null),
         });
         this.Training_Request_Forms_H = this.fb.group({
           Opinion_Date: new FormControl(Training_Request_Forms_H?.Opinion_Date == null ? this.date_now : Training_Request_Forms_H?.Opinion_Date, null),
           Training_Type: new FormControl(Training_Request_Forms_H?.Training_Type, null),
-          Approved: new FormControl(Training_Request_Forms_H?.Approved == 'True' ? true : false, null),
+          Approved: new FormControl(Training_Request_Forms_H?.Approved, null),
           Transportaion: new FormControl(Training_Request_Forms_H?.Transportaion == 'True' ? true : false, null),
-          Approved_Percent: new FormControl(Training_Request_Forms_H?.Approved_Percent, null),
-          Approved_Percent_Out_Of: new FormControl(Training_Request_Forms_H?.Approved_Percent_Out_Of, null),
+          Approved_Percent: new FormControl(Training_Request_Forms_H?.Approved_Percent, [
+            Validators.pattern(/^[0-9]*$/), // Only numbers allowed
+            Validators.max(100)            // Maximum value is 100
+          ]),
+          Approved_Percent_Out_Of: new FormControl(Training_Request_Forms_B?.Education_Fee == '' ? Training_Request_Forms_H?.Approved_Percent_Out_Of : Training_Request_Forms_B?.Education_Fee, null),
           Approved_Absence_Time: new FormControl(Training_Request_Forms_H?.Approved_Absence_Time, null),
+          Code_Type: new FormControl(Training_Request_Forms_H?.Code_Type, null),
           Recommendations: new FormControl(Training_Request_Forms_H?.Recommendations, null)
         });
         this.Training_Request_Forms_G = this.fb.group({
-          Training_Days_Utilization: new FormControl(Training_Request_Forms_G?.Training_Days_Utilization, null),
           Standart_Level: new FormControl(Training_Request_Forms_G?.Standart_Level, null),
           Function_Department: new FormControl(Training_Request_Forms_G?.Function_Department, null),
           Work_Start_Date: new FormControl(Training_Request_Forms_G?.Work_Start_Date, null),
-          Standart_Status: new FormControl(Training_Request_Forms_G?.Standart_Status, null),
-          Standart_Job_Type: new FormControl(Training_Request_Forms_G?.Standart_Job_Type, null),
+          Standart_Job_Type: new FormControl(Training_Request_Forms_G?.Standart_Job_Type, [
+            Validators.pattern(/^[0-9]*$/), // Only numbers allowed
+            Validators.max(100)            // Maximum value is 100
+          ]),
         });
         if (this.passport == Training_Request_Forms_A?.Passport_ID) this.requested = true;
         this.check_if_fund_or_health();
         this.cityControl.setValue(Training_Request_Forms_B?.Request_Location);
         this.Training_Out_Check();
         // Subscribe to changes in Date_End to calculate duration
-        this.Training_Request_Forms_B.get('Date_End').valueChanges.subscribe(() => {
-          this.calculateRequestDuration();
-        });
+        // this.Training_Request_Forms_B.get('Date_End').valueChanges.subscribe(() => {
+        //   this.calculateRequestDuration();
+        // });
 
-        this.Training_Request_Forms_B.get('Date_Start').valueChanges.subscribe(() => {
-          this.calculateRequestDuration();
-        });
+        // this.Training_Request_Forms_B.get('Date_Start').valueChanges.subscribe(() => {
+        //   this.calculateRequestDuration();
+        // });
       });
   }
 
@@ -303,8 +316,14 @@ export class TrainingRequestFormComponent implements OnInit {
 
     if (input.files && input.files.length > 0) {
       const file = input.files[0];
-      const reader = new FileReader();
+      const maxSize = 2 * 1024 * 1024; // 1MB (1,024,000 bytes)
+      if (file.size > maxSize) {
+        alert("הקובץ גדול מדי! יש להעלות קובץ עד 2MB.");
+        input.value = ""; // Clear file input
+        return;
+      }
 
+      const reader = new FileReader();
       // Convert file to Base64 string
       reader.onload = () => {
         const base64String = reader.result as string;
@@ -319,8 +338,14 @@ export class TrainingRequestFormComponent implements OnInit {
 
     if (input.files && input.files.length > 0) {
       const file = input.files[0];
-      const reader = new FileReader();
+      const maxSize = 1 * 1024 * 1024; // 1MB (1,024,000 bytes)
+      if (file.size > maxSize) {
+        alert("הקובץ גדול מדי! יש להעלות קובץ עד 1MB.");
+        input.value = ""; // Clear file input
+        return;
+      }
 
+      const reader = new FileReader();
       // Convert file to Base64 string
       reader.onload = () => {
         const base64String = reader.result as string;
@@ -363,6 +388,20 @@ export class TrainingRequestFormComponent implements OnInit {
     }
   }
 
+  changeToAccountantApprove() {
+    if (this.Training_Request_Forms_H.controls['Approved'].value == 'מאושר התחייבות חשב') {
+      this.Training_Request_Forms_H.controls['Approved_Percent'].setValue('100');
+    } else {
+      this.Training_Request_Forms_H.controls['Approved_Percent'].setValue('');
+    }
+  }
+
+  addRecommendations(type) {
+    // if(type == 'transportation'){
+    //   this.Training_Request_Forms_H.controls['Recommendations'].setValue(this.Training_Request_Forms_H.value.Recommendations + '');
+    // }
+  }
+
   getCityCodes() {
     this.CitiesArray = [];
     this.http
@@ -393,14 +432,14 @@ export class TrainingRequestFormComponent implements OnInit {
     const differenceInDays = Math.floor((Date.parse(date_today) - Date.parse(this.plansList[0].Plan_Date)) / (1000 * 60 * 60 * 24));
 
     if (differenceInDays > -14) {
-      alert("הבקשה שלך תעלה בעוד שתי ועדות\nמועד הועדה הקרוב מתקיים בתאריך: " + this.plansList[0].Plan_Date + "");
+      alert("הבקשה שלך תעלה בעוד שתי ועדות בכפוף להתייחסות מנהלים\nמועד הועדה הקרוב מתקיים בתאריך: " + this.plansList[0].Plan_Date + "");
     }
   }
 
   Training_Out_Check() {
     if (this.Training_Request_Forms_B.controls['Training_Out'].value) {
       this.Training_Request_Forms_B.controls['Galilean_Partnership'].setValue(false);
-      this.Training_Request_Forms_B.controls['Education_Fee'].setValue('');
+      this.Training_Request_Forms_B.controls['Education_Fee'].setValue(0);
       this.Training_Request_Forms_B.controls['Education_Fee'].disable();
       this.CitiesArray = [
         { cityName: 'אסיה' },
@@ -448,20 +487,21 @@ export class TrainingRequestFormComponent implements OnInit {
         setTimeout(() => {
           this.Supervisor_Name1.setValue(this.employees.filter(t => t.id === this.formData['E']?.Supervisor_Name.id)[0]);
           this.Supervisor_Name2.setValue(this.employees.filter(t => t.id === this.formData['F']?.Supervisor_Name.id)[0]);
-          this.Supervisor_Name3.setValue({
-            id: "",
-            firstname: "",
-            lastname: "",
-            ADUserName: "",
-            email: ""
-          });
+          if (this.Supervisor_Name1.value?.id != this.passport) {
+            this.Training_Request_Forms_E.controls['Training_Importantce'].disable();
+            this.Training_Request_Forms_E.controls['Approved'].disable();
+            this.Training_Request_Forms_E.controls['Recommendations'].disable();
+            this.Training_Request_Forms_E.controls['Opinion_Date'].disable();
+            this.Supervisor_Name1.disable();
+          }
           if (this.Supervisor_Name2.value?.id != this.passport) {
             this.Training_Request_Forms_F.controls['Training_Importantce'].disable();
             this.Training_Request_Forms_F.controls['Approved'].disable();
             this.Training_Request_Forms_F.controls['Recommendations'].disable();
             this.Training_Request_Forms_F.controls['Opinion_Date'].disable();
+            this.Supervisor_Name2.disable();
           }
-        }, 1000);
+        }, 1500);
       });
   }
 
@@ -559,6 +599,10 @@ export class TrainingRequestFormComponent implements OnInit {
     return optionValue === selectedValue;
   }
 
+  compareFn2(optionValue: any, selectedValue: any): boolean {
+    return optionValue === selectedValue;
+  }
+
   compareFn3(optionValue: any, selectedValue: any): boolean {
     return optionValue === selectedValue;
   }
@@ -588,21 +632,21 @@ export class TrainingRequestFormComponent implements OnInit {
           this.Training_Request_Forms_A.controls['First_Name'].setValue(patient.FirstName);
           this.Training_Request_Forms_A.controls['Address'].setValue(patient.CityName);
           this.Training_Request_Forms_A.controls['Phone_Number'].setValue(patient.CellNumber);
+          this.Training_Request_Forms_A.controls['Title'].setValue(patient.JobTitleID);
           this.Training_Request_Forms_G.controls['Work_Start_Date'].setValue(patient.StartWorkDate);
           this.Training_Request_Forms_G.controls['Standart_Job_Type'].setValue(patient.StandartJobType);
           this.Training_Request_Forms_G.controls['Function_Department'].setValue(patient.FunctionDescription + ' - ' + patient.DepartnentDescripton);
           this.Training_Request_Forms_G.controls['Standart_Level'].setValue(patient.RankDescription);
           this.Supervisor_Name1.setValue(this.employees.filter(t => t.id === patient.ManagerID1.id)[0]);
           this.Supervisor_Name2.setValue(this.employees.filter(t => t.id === patient.ManagerID2.id)[0]);
-          this.Supervisor_Name2.setValue({
-            id: "",
-            firstname: "",
-            lastname: "",
-            ADUserName: "",
-            email: ""
-          });
           this.Training_Request_Forms_E.controls['Supervisor_Name'].setValue(this.Supervisor_Name1.value);
           this.Training_Request_Forms_F.controls['Supervisor_Name'].setValue(this.Supervisor_Name2.value);
+          if (this.Supervisor_Name1.value?.id != this.passport) {
+            this.Training_Request_Forms_E.controls['Training_Importantce'].disable();
+            this.Training_Request_Forms_E.controls['Approved'].disable();
+            this.Training_Request_Forms_E.controls['Recommendations'].disable();
+            this.Training_Request_Forms_E.controls['Opinion_Date'].disable();
+          }
           if (this.Supervisor_Name2.value?.id != this.passport) {
             this.Training_Request_Forms_F.controls['Training_Importantce'].disable();
             this.Training_Request_Forms_F.controls['Approved'].disable();
@@ -622,9 +666,19 @@ export class TrainingRequestFormComponent implements OnInit {
       this.Training_Request_Forms_B.controls['Date_Start'].setValue(this.datePipe.transform(this.Training_Request_Forms_B.value.Date_Start, 'yyyy-MM-dd'));
       this.Training_Request_Forms_B.controls['Date_End'].setValue(this.datePipe.transform(this.Training_Request_Forms_B.value.Date_End, 'yyyy-MM-dd'));
       this.Training_Request_Forms_C.controls['Request_Name'].setValue(this.datePipe.transform(this.Training_Request_Forms_C.value.Request_Name, 'yyyy-MM-dd'));
-      this.Training_Request_Forms_E.controls['Opinion_Date'].setValue(this.datePipe.transform(this.Training_Request_Forms_E.value.Opinion_Date, 'yyyy-MM-dd'));
-      this.Training_Request_Forms_F.controls['Opinion_Date'].setValue(this.datePipe.transform(this.Training_Request_Forms_F.value.Opinion_Date, 'yyyy-MM-dd'));
+      this.Training_Request_Forms_E.controls['Opinion_Date'].setValue(this.datePipe.transform(this.Training_Request_Forms_E.controls['Opinion_Date'].value, 'yyyy-MM-dd'));
+      this.Training_Request_Forms_F.controls['Opinion_Date'].setValue(this.datePipe.transform(this.Training_Request_Forms_F.controls['Opinion_Date'].value, 'yyyy-MM-dd'));
       this.Training_Request_Forms_G.controls['Work_Start_Date'].setValue(this.datePipe.transform(this.Training_Request_Forms_G.value.Work_Start_Date, 'yyyy-MM-dd'));
+      const base64Data = this.Training_Request_Forms_B.controls['Program_Attached'].value;
+      const base64Data2 = this.Training_Request_Forms_D.controls['OutSource_Company_Plan'].value;
+      const sizeBInBytes = (base64Data.length * 3) / 4 - (base64Data.endsWith("==") ? 2 : base64Data.endsWith("=") ? 1 : 0); // Base64 size calculation
+      const sizeDInBytes = base64Data2 == null ? 0 : (base64Data2.length * 3) / 4 - (base64Data2.endsWith("==") ? 2 : base64Data2.endsWith("=") ? 1 : 0); // Base64 size calculation
+      const sizeInBytes = sizeBInBytes + sizeDInBytes; // Set limit (5MB in this example)
+      const maxSize = 5 * 1024 * 1024; // Set limit (5MB in this example)
+
+      if (sizeInBytes > maxSize) {
+        throw new Error("Base64 data is too large!");
+      }
       this.http
         .post(environment.url + "SaveTrainingRequestForm", {
           A: this.Training_Request_Forms_A.getRawValue(),
@@ -635,6 +689,7 @@ export class TrainingRequestFormComponent implements OnInit {
           F: this.Training_Request_Forms_F.getRawValue(),
           H: this.Training_Request_Forms_H.getRawValue(),
           G: this.Training_Request_Forms_G.getRawValue(),
+          Send_Response: final,
         })
         .subscribe((Response) => {
           if (Response["d"] != 0) {
@@ -652,10 +707,11 @@ export class TrainingRequestFormComponent implements OnInit {
 
   askBeforeSaving(rowId) {
     this.confirmationDialogService
-      .confirm("נא לאשר..", "האם אתה בטוח ...? ")
+      .confirm("נא לאשר..", "לשמור ולשלוח ...? ")
       .then((confirmed) => {
         console.log("User confirmed:", confirmed);
         if (confirmed) {
+          this.checkPlanAvailability();
           this.dialogRef.close(rowId);
         } else {
         }

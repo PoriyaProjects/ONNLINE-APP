@@ -1,20 +1,16 @@
 <div class="feed-line-container">
-  <h2 class="user-header">מבזקים</h2>
+  <h2 class="user-header" (click)="switchPermission()">מבזקים</h2>
   <div class="feed-line">
     <div class="feed-item" *ngFor="let item of feedItems">
       <div class="row">
         <span class="feed-time">{{ item.RecordDate }}</span>
       </div>
       <textarea [value]="item.Description" (blur)="updateFeedLineContent($event.target.value, item.Row_ID)"
-        *ngIf="user_name == 'adahabre' || user_name == 'sbarniv' || user_name == 'talontimss' || user_name == 'ttsrefati' || user_name == 'mmashash'"></textarea>
-      <span class="feed-content"
-        *ngIf="user_name != 'adahabre' && user_name != 'sbarniv' && user_name != 'talontimss' && user_name != 'ttsrefati' && user_name != 'mmashash'"
-        [innerHTML]="transformText(item.Description)"></span>
+        *ngIf="canEdit"></textarea>
+      <span class="feed-content" *ngIf="!canEdit" [innerHTML]="transformText(item.Description)"></span>
     </div>
   </div>
-  <button type="submit" mat-raised-button class="add-btn"
-    *ngIf="user_name == 'adahabre' || user_name == 'sbarniv' || user_name == 'talontimss' || user_name == 'ttsrefati' || user_name == 'mmashash'"
-    (click)="updateFeedLineContent('', 0)">
+  <button type="submit" mat-raised-button class="add-btn" *ngIf="canEdit" (click)="updateFeedLineContent('', 0)">
     <mat-icon>add</mat-icon>
   </button>
 </div>

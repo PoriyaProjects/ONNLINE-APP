@@ -74,7 +74,7 @@ export class LearningRequestsDashboardComponent implements OnInit {
 
   // Table Data
   displayedColumns: string[] = ['assignment_id', 'name', 'due_date', 'link'];
-  displayedColumns2: string[] = ['assignment_id', 'name', 'due_date', 'employee'];
+  displayedColumns2: string[] = ['assignment_id', 'name', 'depart', 'employee'];
   tableData = new MatTableDataSource<any>();
   managerTableData = new MatTableDataSource<any>();
   is_manager: boolean;
