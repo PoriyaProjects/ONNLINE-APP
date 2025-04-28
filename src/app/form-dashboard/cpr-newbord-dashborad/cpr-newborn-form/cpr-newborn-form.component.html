@@ -1,8 +1,4 @@
-<<<<<<< HEAD
-<form [formGroup]="resuscitationForm" dir="rtl">
-=======
 <form [formGroup]="resuscitationForm" dir="rtl" *ngIf="resuscitationForm != undefined">
->>>>>>> 1aa51f3584a09bc93f96febef7b88fe3167780f9
     <mat-horizontal-stepper>
         <!-- Step 1: פרטי הילוד -->
         <mat-step [stepControl]="resuscitationForm.get('motherInfo')">
@@ -23,12 +19,8 @@
                         <mat-form-field appearance="outline" style="width: 50%;">
                             <mat-label>החייאה בוצעה בתאריך</mat-label>
                             <input matInput [matDatepicker]="resuscitationDatepicker"
-<<<<<<< HEAD
-                                formControlName="resuscitationDate">
-=======
                                 formControlName="resuscitationDate"
                                 (dateChange)="dateChanged($event, resuscitationForm.controls['motherInfo']['controls'].resuscitationDate)">
->>>>>>> 1aa51f3584a09bc93f96febef7b88fe3167780f9
                             <mat-datepicker-toggle matSuffix [for]="resuscitationDatepicker"></mat-datepicker-toggle>
                             <mat-datepicker #resuscitationDatepicker></mat-datepicker>
                         </mat-form-field>
@@ -38,21 +30,12 @@
                             <input matInput type="time" formControlName="resuscitationTime">
                         </mat-form-field>
 
-<<<<<<< HEAD
-                        <div fxFlex="100%" style="margin-top: 8px;">
-                            <label>מיקום ההחייאה:</label>
-                            <mat-radio-group formControlName="location" fxLayout="row" fxLayoutAlign="start center">
-                                <mat-radio-button value="birthRoom">חדר לידה</mat-radio-button>
-                                <mat-radio-button value="operatingRoom">חדר ניתוח</mat-radio-button>
-                                <mat-radio-button value="other">מקום אחר</mat-radio-button>
-=======
                         <div fxFlex="100%" style="margin-top: 8px;margin-bottom: 40px;text-align: right;">
                             <label>מיקום ההחייאה:</label>
                             <mat-radio-group formControlName="location" fxLayout="row" fxLayoutAlign="start center">
                                 <mat-radio-button value="חדר לידה">חדר לידה</mat-radio-button>
                                 <mat-radio-button value="חדר ניתוח">חדר ניתוח</mat-radio-button>
                                 <mat-radio-button value="מקום אחר">מקום אחר</mat-radio-button>
->>>>>>> 1aa51f3584a09bc93f96febef7b88fe3167780f9
                             </mat-radio-group>
                         </div>
 
@@ -66,19 +49,11 @@
                             <input matInput type="time" formControlName="resuscitationStartTime">
                         </mat-form-field>
 
-<<<<<<< HEAD
-                        <div fxFlex="100%" style="margin-top: 8px;">
-                            <label>מין הילוד:</label>
-                            <mat-radio-group formControlName="babyGender" fxLayout="row" fxLayoutAlign="start center">
-                                <mat-radio-button value="male">זכר</mat-radio-button>
-                                <mat-radio-button value="female">נקבה</mat-radio-button>
-=======
                         <div fxFlex="100%" style="margin-top: 8px;margin-bottom: 40px;text-align: right;">
                             <label>מין הילוד:</label>
                             <mat-radio-group formControlName="babyGender" fxLayout="row" fxLayoutAlign="start center">
                                 <mat-radio-button value="זכר">זכר</mat-radio-button>
                                 <mat-radio-button value="נקבה">נקבה</mat-radio-button>
->>>>>>> 1aa51f3584a09bc93f96febef7b88fe3167780f9
                             </mat-radio-group>
                         </div>
 
@@ -110,10 +85,7 @@
             <div formArrayName="teamMembers">
                 <div *ngFor="let member of resuscitationForm.get('teamMembers')['controls']; let i = index"
                     [formGroupName]="i">
-<<<<<<< HEAD
-=======
                     <!-- {{member | json}} -->
->>>>>>> 1aa51f3584a09bc93f96febef7b88fe3167780f9
                     <mat-form-field appearance="outline" style="width: 50%;">
                         <mat-label>שם</mat-label>
                         <input matInput formControlName="name" placeholder="הכנס שם">
@@ -123,10 +95,7 @@
                         <input matInput formControlName="role" placeholder="הכנס תפקיד">
                     </mat-form-field>
                 </div>
-<<<<<<< HEAD
-=======
                 <!-- <button color="primary" mat-raised-button (click)="addTeamMember()"><mat-icon>add</mat-icon></button> -->
->>>>>>> 1aa51f3584a09bc93f96febef7b88fe3167780f9
             </div>
             <mat-card-actions fxLayout="row-reverse">
                 <button mat-button matStepperPrevious>חזור</button>
@@ -146,26 +115,16 @@
                 <div style="display: flex; align-items: center;">
                     <span style="margin-right: 10px;">מים מקוניאליים:</span>
                     <mat-radio-group formControlName="meconiumStaining">
-<<<<<<< HEAD
-                        <mat-radio-button value="true">כן</mat-radio-button>
-                        <mat-radio-button value="false">לא</mat-radio-button>
-=======
                         <mat-radio-button value="1">כן</mat-radio-button>
                         <mat-radio-button value="0">לא</mat-radio-button>
->>>>>>> 1aa51f3584a09bc93f96febef7b88fe3167780f9
                     </mat-radio-group>
                 </div>
 
                 <div style="display: flex; align-items: center; margin-top: 10px;">
                     <span style="margin-right: 10px;">רופא ילודים נכח בלידה:</span>
                     <mat-radio-group formControlName="pediatricianPresent">
-<<<<<<< HEAD
-                        <mat-radio-button value="true">כן</mat-radio-button>
-                        <mat-radio-button value="false">לא</mat-radio-button>
-=======
                         <mat-radio-button value="1">כן</mat-radio-button>
                         <mat-radio-button value="0">לא</mat-radio-button>
->>>>>>> 1aa51f3584a09bc93f96febef7b88fe3167780f9
                     </mat-radio-group>
                     <mat-form-field appearance="outline" style="width: 50%;"
                         *ngIf="resuscitationForm.get('pregnancyDeliveryInfo').get('pediatricianPresent').value == 'true'">
@@ -268,13 +227,8 @@
                         <td mat-cell *matCellDef="let row">
                             <div style="display: flex; flex-direction: row-reverse;width: 100%;">
                                 <mat-radio-group [formControl]="row.get('amboOxygen')">
-<<<<<<< HEAD
-                                    <mat-radio-button value="with">עם</mat-radio-button>
-                                    <mat-radio-button value="without">ללא</mat-radio-button>
-=======
                                     <mat-radio-button value="עם">עם</mat-radio-button>
                                     <mat-radio-button value="ללא">ללא</mat-radio-button>
->>>>>>> 1aa51f3584a09bc93f96febef7b88fe3167780f9
                                 </mat-radio-group>
                             </div>
                         </td>
@@ -523,11 +477,7 @@
         </mat-step>
 
         <!-- Step 7: APGAR SCORE -->
-<<<<<<< HEAD
-        <mat-step>
-=======
         <mat-step [stepControl]="resuscitationForm.get('apgarScore')">
->>>>>>> 1aa51f3584a09bc93f96febef7b88fe3167780f9
             <ng-template matStepLabel>APGAR SCORE</ng-template>
             <mat-card
                 style="margin-top: 24px; padding: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border-radius: 12px;">
@@ -537,11 +487,7 @@
 
                         <!-- Parameter name column -->
                         <ng-container matColumnDef="parameter">
-<<<<<<< HEAD
-                            <th mat-header-cell *matHeaderCellDef></th>
-=======
                             <th mat-header-cell *matHeaderCellDef>תאור</th>
->>>>>>> 1aa51f3584a09bc93f96febef7b88fe3167780f9
                             <td mat-cell *matCellDef="let param; let i = index">
                                 {{ param.label }}
                             </td>
@@ -565,16 +511,6 @@
                 </div>
             </mat-card>
         </mat-step>
-<<<<<<< HEAD
-        <!-- Step 5: שליחה -->
-        <mat-step>
-            <ng-template matStepLabel>סיום ושליחה</ng-template>
-            <p>בדוק את כל השדות ולחץ שלח כדי לשמור את הטופס.</p>
-            <mat-card-actions fxLayout="row-reverse">
-                <button mat-button matStepperPrevious>חזור</button>
-                <button mat-raised-button color="primary" type="submit">שלח</button>
-            </mat-card-actions>
-=======
 
         <!-- Step 7: בדיקות מעבדה -->
         <mat-step>
@@ -790,7 +726,6 @@
                     <span>שמירת טופס</span>
                 </button>
             </mat-card>
->>>>>>> 1aa51f3584a09bc93f96febef7b88fe3167780f9
         </mat-step>
     </mat-horizontal-stepper>
 </form>

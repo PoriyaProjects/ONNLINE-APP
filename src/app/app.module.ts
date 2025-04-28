@@ -252,8 +252,6 @@ import { ShortcutsManagementComponent } from './dashboard/shortcuts-management/s
 import { ShortcutFormDialogComponent } from './dashboard/shortcuts-management/shortcut-form-dialog/shortcut-form-dialog.component';
 import { NamerUserActionsComponent } from './dashboard/namer-user-actions/namer-user-actions.component';
 import { LearningRequestsDashboardComponent } from './learning-requests-dashboard/learning-requests-dashboard.component';
-import { CprNewbordDashboradComponent } from './form-dashboard/cpr-newbord-dashborad/cpr-newbord-dashborad.component';
-import { CprNewbornFormComponent } from './form-dashboard/cpr-newbord-dashborad/cpr-newborn-form/cpr-newborn-form.component';
 
 import { CprNewbordDashboradComponent } from './form-dashboard/cpr-newbord-dashborad/cpr-newbord-dashborad.component';
 import { CprNewbornFormComponent } from './form-dashboard/cpr-newbord-dashborad/cpr-newborn-form/cpr-newborn-form.component';
@@ -479,12 +477,7 @@ const maskConfig: Partial<IConfig> = {
     ShortcutFormDialogComponent,
     NamerUserActionsComponent,
     LearningRequestsDashboardComponent,
-<<<<<<< HEAD
     CprNewbordDashboradComponent,
-    CprNewbornFormComponent
-=======
-
-   CprNewbordDashboradComponent,
     CprNewbornFormComponent,
     HospitalCathDashboardComponent,
     BarChartComponent2,
@@ -503,8 +496,6 @@ const maskConfig: Partial<IConfig> = {
     CprNewbornFormComponent,
     CommercialSupportFormDashboardComponent,
     CommercialSupportFormDialogComponent,
-
->>>>>>> 1aa51f3584a09bc93f96febef7b88fe3167780f9
   ],
   imports: [
     MatIconModule,

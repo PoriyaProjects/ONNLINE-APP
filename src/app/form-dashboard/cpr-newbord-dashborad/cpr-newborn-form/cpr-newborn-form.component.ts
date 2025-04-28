@@ -1,8 +1,3 @@
-<<<<<<< HEAD
-import { Component, OnInit } from '@angular/core';
-import { FormBuilder, FormGroup, FormArray, Validators } from '@angular/forms';
-import { MatTableDataSource } from '@angular/material/table';
-=======
 import { DatePipe } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { Component, Inject, OnInit, Optional } from '@angular/core';
@@ -12,7 +7,6 @@ import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { MatSnackBar, MatSnackBarHorizontalPosition, MatSnackBarVerticalPosition } from '@angular/material/snack-bar';
 import { MatTableDataSource } from '@angular/material/table';
 import { environment } from 'src/environments/environment';
->>>>>>> 1aa51f3584a09bc93f96febef7b88fe3167780f9
 interface ResuscitationFormData {
   motherInfo: {
     name: string;
@@ -49,11 +43,8 @@ interface VitalSignsRow {
 })
 export class CprNewbornFormComponent implements OnInit {
 
-<<<<<<< HEAD
-=======
   horizontalPosition: MatSnackBarHorizontalPosition = "start";
   verticalPosition: MatSnackBarVerticalPosition = "bottom";
->>>>>>> 1aa51f3584a09bc93f96febef7b88fe3167780f9
   resuscitationForm: FormGroup;
   displayedColumns: string[] = ['time', 'pulse', 'o2Sat', 'other'];
   dataSource = new MatTableDataSource<VitalSignsRow>([]);
@@ -74,20 +65,12 @@ export class CprNewbornFormComponent implements OnInit {
   ];
 
   times = [
-<<<<<<< HEAD
-    { key: 'zero', label: `` },
-=======
->>>>>>> 1aa51f3584a09bc93f96febef7b88fe3167780f9
     { key: 'one', label: `1'` },
     { key: 'five', label: `5'` },
     { key: 'ten', label: `10'` },
     { key: 'fifteen', label: `15'` },
     { key: 'twenty', label: `20'` },
   ];
-<<<<<<< HEAD
-  apgardisplayedColumns = ['parameter', ...this.times.map(t => t.key)];
-  headerColumns = [...this.times.map(t => t.key), 'parameter'];
-=======
   headerColumns = ['parameter', ...this.times.map(t => t.key)];
   apgardisplayedColumns = ['parameter', ...this.times.map(t => t.key)];
 
@@ -125,7 +108,6 @@ export class CprNewbornFormComponent implements OnInit {
       twenty: ['']
     })
   ));
->>>>>>> 1aa51f3584a09bc93f96febef7b88fe3167780f9
 
   adrenalineDisplayedColumns: string[] = ['time', 'route', 'volume'];
   adrenalineDataSource = new MatTableDataSource();
@@ -142,70 +124,6 @@ export class CprNewbornFormComponent implements OnInit {
   additionalProductsDisplayedColumns: string[] = ['name', 'time', 'route', 'dosageVolume'];
   additionalProductsDataSource = new MatTableDataSource();
 
-<<<<<<< HEAD
-  constructor(private fb: FormBuilder) {
-    this.resuscitationForm = this.fb.group({
-      motherInfo: this.fb.group({
-        babyName: [''],
-        babyId: [''],
-        resuscitationDate: [null],
-        resuscitationTime: [''],
-        location: ['birthRoom'], // Default value
-        pediatricianCalledTime: [''],
-        resuscitationStartTime: [''],
-        babyGender: ['male'], // Default value
-        gestationAgeWeeks: [null],
-        babyWeight: [null],
-        deliveryMethod: ['']
-      }),
-      teamMembers: this.fb.array([]), // Use FormArray for dynamic table rows
-      pregnancyDeliveryInfo: this.fb.group({
-        pregnancyDeliveryDetails: [''],
-        meconiumStaining: ['false'], // Default value
-        pediatricianPresent: ['false'], // Default value
-        pediatricianArrivalTime: ['']
-      }),
-      vitalSigns: this.fb.array([]),
-      resuscitationActions: this.fb.array([]),
-      adrenaline: this.fb.array([]),
-      nacl: this.fb.array([]),
-      nabic: this.fb.array([]),
-      bloodProducts: this.fb.array([]),
-      additionalProducts: this.fb.array([]),
-      apgarScore: this.fb.array(this.apgarParameters.map(() =>
-        this.fb.group({
-          zero: [''],
-          one: [''],
-          five: [''],
-          ten: [''],
-          fifteen: [''],
-          twenty: ['']
-        })
-      ))
-    });
-    for (let i = 0; i <= 3; i++) {
-      this.addTeamMember();
-    }
-    for (let i = 0; i <= 6; i++) {
-      this.addVitalSignsRow();
-    }
-    for (let i = 0; i <= 6; i++) {
-      this.addResuscitationActionRow();
-    }
-    const array1 = this.resuscitationForm.get('adrenaline') as FormArray;
-    const array2 = this.resuscitationForm.get('nacl') as FormArray;
-    const array3 = this.resuscitationForm.get('nabic') as FormArray;
-    const array4 = this.resuscitationForm.get('bloodProducts') as FormArray;
-    const array5 = this.resuscitationForm.get('additionalProducts') as FormArray;
-    for (let i = 0; i < 6; i++) {
-      array1.push(this.createRow(['time', 'route', 'volume']));
-      array2.push(this.createRow(['time', 'volume']));
-      array3.push(this.createRow(['time', 'amount']));
-      array4.push(this.createRow(['time', 'type', 'volume']));
-      array5.push(this.createRow(['name', 'time', 'route', 'dosageVolume']));
-    }
-    this.updateDataSources();
-=======
   constructor(
     private fb: FormBuilder,
     @Optional() @Inject(MAT_DIALOG_DATA) public form_id: any,
@@ -216,14 +134,11 @@ export class CprNewbornFormComponent implements OnInit {
   ) {
     this.getNewBornCprDataByID();
 
->>>>>>> 1aa51f3584a09bc93f96febef7b88fe3167780f9
   }
 
   ngOnInit(): void {
   }
 
-<<<<<<< HEAD
-=======
   openSnackBar(message) {
     this._snackBar.open(message, "X", {
       duration: 3000,
@@ -232,7 +147,6 @@ export class CprNewbornFormComponent implements OnInit {
     });
   }
 
->>>>>>> 1aa51f3584a09bc93f96febef7b88fe3167780f9
   createTimeControls() {
     return {
       zero: [''],
@@ -291,10 +205,6 @@ export class CprNewbornFormComponent implements OnInit {
     const resuscitationActions = this.resuscitationForm.get('resuscitationActions') as FormArray;
     resuscitationActions.push(
       this.fb.group({
-<<<<<<< HEAD
-        action: [''],
-=======
->>>>>>> 1aa51f3584a09bc93f96febef7b88fe3167780f9
         time: [''],
         suction: [''],
         oxygenConcentration: [null],
@@ -337,12 +247,6 @@ export class CprNewbornFormComponent implements OnInit {
     );
   }
 
-<<<<<<< HEAD
-  onSubmit() {
-    if (this.resuscitationForm.valid) {
-      console.log(this.resuscitationForm.value);
-      // Send the data to your backend
-=======
   dateChanged(event: MatDatepickerInputEvent<Date>, form_group: any) {
     form_group.value = this._pipe.transform(event.value, 'yyyy-MM-dd');
   }
@@ -489,7 +393,6 @@ export class CprNewbornFormComponent implements OnInit {
           }
           else this.openSnackBar("שגיאה!");
         });
->>>>>>> 1aa51f3584a09bc93f96febef7b88fe3167780f9
     }
   }
 

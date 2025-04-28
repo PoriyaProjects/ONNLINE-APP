@@ -1,8 +1,3 @@
-<<<<<<< HEAD
-import { Component, OnInit } from '@angular/core';
-import { MatDialog } from '@angular/material/dialog';
-import { CprNewbornFormComponent } from './cpr-newborn-form/cpr-newborn-form.component';
-=======
 import { Component, OnInit, ViewChild } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { MatTableDataSource } from '@angular/material/table';
@@ -11,7 +6,6 @@ import { MatPaginator } from '@angular/material/paginator';
 import { MatSort } from '@angular/material/sort';
 import { HttpClient } from '@angular/common/http';
 import { environment } from 'src/environments/environment';
->>>>>>> 1aa51f3584a09bc93f96febef7b88fe3167780f9
 
 @Component({
   selector: 'app-cpr-newbord-dashborad',
@@ -19,19 +13,6 @@ import { environment } from 'src/environments/environment';
   styleUrls: ['./cpr-newbord-dashborad.component.css']
 })
 export class CprNewbordDashboradComponent implements OnInit {
-<<<<<<< HEAD
-
-  constructor(private dialog: MatDialog) { }
-
-  ngOnInit(): void {
-  }
-
-  open() {
-    this.dialog.open(CprNewbornFormComponent, {
-      width: '90%',
-      height: '90%'
-    });
-=======
   displayedColumns: string[] = ['babyName', 'babyGender', 'babyWeight', 'deliveryMethod', 'location', 'actions'];
   dataSource = new MatTableDataSource<any>();
 
@@ -87,7 +68,6 @@ export class CprNewbordDashboradComponent implements OnInit {
       .subscribe((Response) => {
         this.dataSource = new MatTableDataSource<any>(Response["d"])
       });
->>>>>>> 1aa51f3584a09bc93f96febef7b88fe3167780f9
   }
 
 }

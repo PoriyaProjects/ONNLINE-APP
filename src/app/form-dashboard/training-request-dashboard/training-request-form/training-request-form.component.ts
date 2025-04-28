@@ -231,11 +231,7 @@ export class TrainingRequestFormComponent implements OnInit {
           OutSource_Company_Plan: new FormControl(Training_Request_Forms_D?.OutSource_Company_Plan, null),
           OutSource_Company_Direct: new FormControl(Training_Request_Forms_D?.OutSource_Company_Direct == 'True' ? true : false, null),
           Budget_Amount: new FormControl(Training_Request_Forms_D?.Budget_Amount, [Validators.pattern(/^\d+(\.\d{1,2})?$/)]),
-<<<<<<< HEAD
-          Health_Corporation: new FormControl(Training_Request_Forms_D?.Health_Corporation, null),
-=======
           Health_Corporation: new FormControl(Training_Request_Forms_D?.Health_Corporation == undefined ? [] : Training_Request_Forms_D?.Health_Corporation, null),
->>>>>>> 1aa51f3584a09bc93f96febef7b88fe3167780f9
           Health_Corporation_Description: new FormControl(Training_Request_Forms_D?.Health_Corporation_Description, null),
           Department_Fund: new FormControl(Training_Request_Forms_D?.Department_Fund == undefined ? [] : Training_Request_Forms_D?.Department_Fund, null),
           Galilean_Partnership_Description: new FormControl(Training_Request_Forms_D?.Galilean_Partnership_Description, null),
@@ -263,16 +259,11 @@ export class TrainingRequestFormComponent implements OnInit {
           Training_Type: new FormControl(Training_Request_Forms_H?.Training_Type, null),
           Approved: new FormControl(Training_Request_Forms_H?.Approved, null),
           Transportaion: new FormControl(Training_Request_Forms_H?.Transportaion == 'True' ? true : false, null),
-<<<<<<< HEAD
-          Approved_Percent: new FormControl(Training_Request_Forms_H?.Approved_Percent, null),
-          Approved_Percent_Out_Of: new FormControl(Training_Request_Forms_B?.Education_Fee, null),
-=======
           Approved_Percent: new FormControl(Training_Request_Forms_H?.Approved_Percent, [
             Validators.pattern(/^[0-9]*$/), // Only numbers allowed
             Validators.max(100)            // Maximum value is 100
           ]),
           Approved_Percent_Out_Of: new FormControl(Training_Request_Forms_B?.Education_Fee == '' ? Training_Request_Forms_H?.Approved_Percent_Out_Of : Training_Request_Forms_B?.Education_Fee, null),
->>>>>>> 1aa51f3584a09bc93f96febef7b88fe3167780f9
           Approved_Absence_Time: new FormControl(Training_Request_Forms_H?.Approved_Absence_Time, null),
           Code_Type: new FormControl(Training_Request_Forms_H?.Code_Type, null),
           Recommendations: new FormControl(Training_Request_Forms_H?.Recommendations, null)
@@ -291,15 +282,6 @@ export class TrainingRequestFormComponent implements OnInit {
         this.cityControl.setValue(Training_Request_Forms_B?.Request_Location);
         this.Training_Out_Check();
         // Subscribe to changes in Date_End to calculate duration
-<<<<<<< HEAD
-        this.Training_Request_Forms_B.get('Date_End').valueChanges.subscribe(() => {
-          this.calculateRequestDuration();
-        });
-
-        this.Training_Request_Forms_B.get('Date_Start').valueChanges.subscribe(() => {
-          this.calculateRequestDuration();
-        });
-=======
         // this.Training_Request_Forms_B.get('Date_End').valueChanges.subscribe(() => {
         //   this.calculateRequestDuration();
         // });
@@ -307,7 +289,6 @@ export class TrainingRequestFormComponent implements OnInit {
         // this.Training_Request_Forms_B.get('Date_Start').valueChanges.subscribe(() => {
         //   this.calculateRequestDuration();
         // });
->>>>>>> 1aa51f3584a09bc93f96febef7b88fe3167780f9
       });
   }
 
@@ -451,21 +432,13 @@ export class TrainingRequestFormComponent implements OnInit {
     const differenceInDays = Math.floor((Date.parse(date_today) - Date.parse(this.plansList[0].Plan_Date)) / (1000 * 60 * 60 * 24));
 
     if (differenceInDays > -14) {
-<<<<<<< HEAD
-      alert("הבקשה שלך תעלה בעוד שתי ועדות\nמועד הועדה הקרוב מתקיים בתאריך: " + this.plansList[0].Plan_Date + "");
-=======
       alert("הבקשה שלך תעלה בעוד שתי ועדות בכפוף להתייחסות מנהלים\nמועד הועדה הקרוב מתקיים בתאריך: " + this.plansList[0].Plan_Date + "");
->>>>>>> 1aa51f3584a09bc93f96febef7b88fe3167780f9
     }
   }
 
   Training_Out_Check() {
     if (this.Training_Request_Forms_B.controls['Training_Out'].value) {
-      this.Training_Request_Forms_B.controls['Galilean_Partnership'].setValue(false);
-      this.Training_Request_Forms_B.controls['Education_Fee'].setValue(0);
-      this.Training_Request_Forms_B.controls['Education_Fee'].disable();
       this.CitiesArray = [
-        { cityName: 'אסיה' },
         { cityName: 'אירופה' },
         { cityName: 'אפריקה' },
         { cityName: 'צפון אמריקה' },
@@ -515,10 +488,7 @@ export class TrainingRequestFormComponent implements OnInit {
             this.Training_Request_Forms_E.controls['Approved'].disable();
             this.Training_Request_Forms_E.controls['Recommendations'].disable();
             this.Training_Request_Forms_E.controls['Opinion_Date'].disable();
-<<<<<<< HEAD
-=======
             this.Supervisor_Name1.disable();
->>>>>>> 1aa51f3584a09bc93f96febef7b88fe3167780f9
           }
           if (this.Supervisor_Name2.value?.id != this.passport) {
             this.Training_Request_Forms_F.controls['Training_Importantce'].disable();
@@ -737,10 +707,7 @@ export class TrainingRequestFormComponent implements OnInit {
       .then((confirmed) => {
         console.log("User confirmed:", confirmed);
         if (confirmed) {
-<<<<<<< HEAD
-=======
           this.checkPlanAvailability();
->>>>>>> 1aa51f3584a09bc93f96febef7b88fe3167780f9
           this.dialogRef.close(rowId);
         } else {
         }
