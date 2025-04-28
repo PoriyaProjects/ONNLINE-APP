@@ -1,0 +1,197 @@
+<div dir="rtl" class="form-page-container">
+  <mat-card class="form-card">
+    <mat-card-title class="text-center">בקשה לאישור תמיכת גוף מסחרי</mat-card-title>
+    <mat-card-content>
+
+      <form [formGroup]="SupportRequestDto">
+
+        <!-- Requester Details -->
+        <div fxLayout="column" fxLayoutGap="20px">
+          <mat-form-field appearance="outline">
+            <mat-label>מגיש הבקשה</mat-label>
+            <input matInput formControlName="Requester">
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>תמיכת חברה / איגוד</mat-label>
+            <input matInput formControlName="CompanySupport">
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>אחר</mat-label>
+            <input matInput formControlName="Other">
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>שם הכנס / ההשתלמות / קורס / יום עיון</mat-label>
+            <input matInput formControlName="ConferenceName">
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>מועד</mat-label>
+            <input matInput [matDatepicker]="picker" formControlName="EventDate">
+            <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+            <mat-datepicker #picker></mat-datepicker>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>מקום</mat-label>
+            <input matInput formControlName="Location">
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>מבקש השתתפותו של</mat-label>
+            <input matInput formControlName="JoinPerson">
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>תפקיד</mat-label>
+            <input matInput formControlName="Position">
+          </mat-form-field>
+        </div>
+
+        <!-- Activities Table -->
+        <h3 class="section-title">מהות ואופן ביצוע התמיכה:</h3>
+
+        <div class="table-section">
+          <table mat-table [dataSource]="SupportActivityDto" class="mat-elevation-z2">
+
+            <!-- Activity Name Column -->
+            <ng-container matColumnDef="activity">
+              <th mat-header-cell *matHeaderCellDef>פעילות</th>
+              <td mat-cell *matCellDef="let element">{{ element.ActivityName }}</td>
+            </ng-container>
+
+            <!-- Direct Service Column -->
+            <ng-container matColumnDef="directService">
+              <th mat-header-cell *matHeaderCellDef>תמיכה ישירה ע"י החברה</th>
+              <td mat-cell *matCellDef="let element">
+                <mat-radio-group [formControlName]="element.controlName + '_directService'" fxLayout="row"
+                  fxLayoutAlign="center center">
+                  <mat-radio-button value="yes">כן</mat-radio-button>
+                  <mat-radio-button value="no">לא</mat-radio-button>
+                </mat-radio-group>
+              </td>
+            </ng-container>
+
+            <!-- Indirect Health Column -->
+            <ng-container matColumnDef="indirectHealth">
+              <th mat-header-cell *matHeaderCellDef>תמיכה מועברת לתאגיד הבריאות</th>
+              <td mat-cell *matCellDef="let element; let i = index;">
+                <div [formGroup]="SupportRequestDto">
+                  <mat-radio-group [formControlName]="element.controlName + '_indirectHealth'" fxLayout="row"
+                    fxLayoutAlign="center center" (change)="onIndirectHealthChange($event.value, i)">
+
+                    <mat-radio-button value="yes">כן</mat-radio-button>
+                    <mat-radio-button value="no">לא</mat-radio-button>
+                  </mat-radio-group>
+
+                  <!-- Extra Options if "yes" selected -->
+                  <div *ngIf="selectedIndirectHealth[i] === 'yes'" [@expandCollapse] style="margin-top: 10px;">
+
+                    <label>במידה וכן - האם הסכום כולל תקורה:</label>
+                    <mat-radio-group [formControlName]="element.controlName + '_extraOptions'" fxLayout="row"
+                      fxLayoutAlign="center center">
+                      <mat-radio-button value="yes">כן</mat-radio-button>
+                      <mat-radio-button value="no">לא</mat-radio-button>
+                    </mat-radio-group>
+                  </div>
+                </div>
+              </td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+            <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+
+          </table>
+        </div>
+
+        <!-- Support Amount -->
+        <h3 class="section-title">סכום תמיכה:</h3>
+
+        <div class="amount-section">
+          <mat-form-field appearance="outline" style="width: 100%;">
+            <mat-label>הסכום הוא:</mat-label>
+            <input matInput type="number" formControlName="SupportAmount">
+          </mat-form-field>
+
+          <mat-checkbox formControlName="AmountIncludesTax">
+            האם הסכום כולל תקורה
+          </mat-checkbox>
+        </div>
+        <hr>
+        <p>**יש לצרף מכתב תמיכה מהחברה המופנה למנהל המרכז הרפואי. במכתב יצוין שהחברה מעוניינת לתמוך בנסיעת רופא / איש
+          צוות מתחום... לכנס.... תמיכה עבור רישום / טיסה / לינה/ או בסכום.... והאם תבוצע ישירות ע"י החברה או תועבר
+          לתאגיד הבריאות.<br>
+
+          <br><b>דגשים:</b><br>
+
+          * באחריות מגיש הבקשה להגיש מכתב תמיכה תיקני ותוכנית של הכנס.<br>
+
+          * במידה והתמיכה מועברת לביצוע בתאגיד יש לוודא כי ברור במכתב האם סכום התמיכה מגלם בתוכו את התקורה או שזו תתווסף
+          כמקובל בתאגיד.<br>
+
+          * באחריות איש הצוות שנבחר לצאת לכנס להגיש בקשה לועדת השתלמויות.<br>
+
+          * הוועדה אינה מתחייבת לדון בבקשה שתוגש קרוב למועד הכנס.
+        </p>
+
+        <div class="table-container">
+          <form [formGroup]="SupportRequestDto">
+            <table mat-table [dataSource]="SupportRequestDto.get('SupportManagerDto')['controls']" class="mat-elevation-z8" [formArrayName]="'SupportManagerDto'">
+        
+              <ng-container matColumnDef="first">
+                <th mat-header-cell *matHeaderCellDef> שם פרטי </th>
+                <td mat-cell *matCellDef="let row; let i = index">
+                  <div [formGroupName]="i">
+                    <mat-form-field appearance="fill">
+                      <mat-label>שם פרטי</mat-label>
+                      <input matInput formControlName="FirstName">
+                    </mat-form-field>
+                  </div>
+                </td>
+              </ng-container>
+        
+              <ng-container matColumnDef="last">
+                <th mat-header-cell *matHeaderCellDef> שם משפחה </th>
+                <td mat-cell *matCellDef="let row; let i = index">
+                  <div [formGroupName]="i">
+                    <mat-form-field appearance="fill">
+                      <mat-label>שם משפחה</mat-label>
+                      <input matInput formControlName="LastName">
+                    </mat-form-field>
+                  </div>
+                </td>
+              </ng-container>
+        
+              <ng-container matColumnDef="department">
+                <th mat-header-cell *matHeaderCellDef> מחלקה </th>
+                <td mat-cell *matCellDef="let row; let i = index">
+                  <div [formGroupName]="i">
+                    <mat-form-field appearance="fill">
+                      <mat-label>מחלקה</mat-label>
+                      <input matInput formControlName="Department">
+                    </mat-form-field>
+                  </div>
+                </td>
+              </ng-container>
+        
+              <tr mat-header-row *matHeaderRowDef="displayedColumnsManagers"></tr>
+              <tr mat-row *matRowDef="let row; columns: displayedColumnsManagers;"></tr>
+        
+            </table>
+          </form>
+        </div>
+
+        <!-- Submit Button -->
+        <div class="actions">
+          <button mat-raised-button color="primary" (click)="submitForm()" [disabled]="SupportRequestDto.invalid">
+            שלח בקשה
+          </button>
+        </div>
+
+      </form>
+
+    </mat-card-content>
+  </mat-card>
+</div>

@@ -79,10 +79,6 @@
                 </a>
             </div>
         </div> -->
-        <div class="shortcuts-row-container">
-            <h2 class="shortcuts-header">תיקיות</h2>
-            <app-folder-tree [folders]="folders_display"></app-folder-tree>
-        </div>
         <div class="col-md-6" dir="rtl">
             <div dir="rtl" class="row h-85" *ngIf="birthdayUser">
                 <div id="birthdayCake">
@@ -320,6 +316,10 @@
                     </div>
                 </mat-tab>
             </mat-tab-group>
+        </div>
+        <div class="shortcuts-row-container">
+            <h2 class="shortcuts-header">תיקיות</h2>
+            <app-folder-tree [folders]="folders_display"></app-folder-tree>
         </div>
         <div class="container_Ai">
             <mat-card>

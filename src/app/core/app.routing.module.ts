@@ -144,6 +144,18 @@ import { LearningRequestsDashboardComponent } from '../learning-requests-dashboa
 import { CprNewbordDashboradComponent } from '../form-dashboard/cpr-newbord-dashborad/cpr-newbord-dashborad.component';
 import { CprNewbornFormComponent } from '../form-dashboard/cpr-newbord-dashborad/cpr-newborn-form/cpr-newborn-form.component';
 
+import { GoogleChartsComponent } from '../hospital-cath-dashb/google-charts/google-charts.component';
+import { CprNewbordDashboradComponent } from '../form-dashboard/cpr-newbord-dashborad/cpr-newbord-dashborad.component';
+import { CprNewbornFormComponent } from '../form-dashboard/cpr-newbord-dashborad/cpr-newborn-form/cpr-newborn-form.component';
+import { GraphsModalComponent2 } from '../hospital-cath-dashboard/graphs-modal/graphs-modal.component';
+import { EshpozModalComponent2 } from '../hospital-cath-dashboard/eshpoz-modal/eshpoz-modal.component';
+import { HospitalTonnageComponent2 } from '../hospital-cath-dashboard/hospital-tonnage/hospital-tonnage.component';
+import { HospitalCathDashboardComponent } from '../hospital-cath-dashboard/hospital-cath-dashboard.component';
+
+import { CommercialSupportFormDashboardComponent } from '../form-dashboard/commercial-support-form-dashboard/commercial-support-form-dashboard.component';
+import { CommercialSupportFormDialogComponent } from '../form-dashboard/commercial-support-form-dashboard/commercial-support-form-dialog/commercial-support-form-dialog.component';
+
+
 
 const routes: Routes = [
   { path: "patientstikers", component: PatientStikersComponent },
@@ -282,6 +294,7 @@ const routes: Routes = [
   { path: "folder-tree", component: FolderTreeComponent },
   { path: "LabTests", component: LabTestsComponent },
   { path: "clinicactivitydashboard", component: ClinicActivityDashboardComponent },
+<<<<<<< HEAD
   { path: "departments-whatsapp-management", component: DepartmentsWhatsappManagementComponent },
   { path: "training-request-dashboard", component: TrainingRequestDashboardComponent },
   { path: "training-request-form/:id", component: TrainingRequestFormComponent },
@@ -295,8 +308,52 @@ const routes: Routes = [
   { path: "cpr-newborn-form", component: CprNewbornFormComponent },
   { path: "LabTests", component: LabTestsComponent }
 
+=======
 
-];
+  { path: "departments-whatsapp-management", component: DepartmentsWhatsappManagementComponent } ,
+  { path: "training-request-dashboard", component: TrainingRequestDashboardComponent } ,
+  { path: "training-request-form", component: TrainingRequestFormComponent } ,
+  { path: "training-request-dialog", component: TrainingRequestDialogComponent } ,
+  { path: "whatsapp-lung-cancer", component: WhatsappLungCancerComponent } ,
+  { path: "shortcuts-management", component: ShortcutsManagementComponent } ,
+  { path: "shortcut-form-dialog", component: ShortcutFormDialogComponent } ,
+  { path: "namer-user-actions", component: NamerUserActionsComponent } ,
+  { path: "learning-requests-dashboard", component: LearningRequestsDashboardComponent } ,
+  { path: "LabTests", component: LabTestsComponent }, 
+>>>>>>> 1aa51f3584a09bc93f96febef7b88fe3167780f9
+
+  { path: "departments-whatsapp-management", component: DepartmentsWhatsappManagementComponent },
+  { path: "training-request-dashboard", component: TrainingRequestDashboardComponent },
+  { path: "training-request-form/:id", component: TrainingRequestFormComponent },
+  { path: "training-request-dialog", component: TrainingRequestDialogComponent },
+  { path: "whatsapp-lung-cancer", component: WhatsappLungCancerComponent },
+  { path: "shortcuts-management", component: ShortcutsManagementComponent },
+  { path: "shortcut-form-dialog", component: ShortcutFormDialogComponent },
+  { path: "namer-user-actions", component: NamerUserActionsComponent },
+  { path: "learning-requests-dashboard", component: LearningRequestsDashboardComponent },
+  { path: "cpr-newbord-dashborad", component: CprNewbordDashboradComponent },
+  { path: "cpr-newborn-form", component: CprNewbornFormComponent },
+  { path: "commercial-support-form-dashboard", component: CommercialSupportFormDashboardComponent },
+  { path: "commercial-support-form-dialog", component: CommercialSupportFormDialogComponent },
+  { path: "LabTests", component: LabTestsComponent },
+
+  { path: "departments-whatsapp-management", component: DepartmentsWhatsappManagementComponent },
+  { path: "training-request-dashboard", component: TrainingRequestDashboardComponent },
+  { path: "training-request-form/:id", component: TrainingRequestFormComponent },
+  { path: "training-request-dialog", component: TrainingRequestDialogComponent },
+  { path: "whatsapp-lung-cancer", component: WhatsappLungCancerComponent },
+  { path: "shortcuts-management", component: ShortcutsManagementComponent },
+  { path: "shortcut-form-dialog", component: ShortcutFormDialogComponent },
+  { path: "namer-user-actions", component: NamerUserActionsComponent },
+  { path: "learning-requests-dashboard", component: LearningRequestsDashboardComponent },
+  { path: "cpr-newbord-dashborad", component: CprNewbordDashboradComponent },
+  { path: "cpr-newborn-form", component: CprNewbornFormComponent },
+  { path: "LabTests", component: LabTestsComponent },   
+  { path: "hospital-cath-dashb", component: GoogleChartsComponent },
+  { path: "hospitalcathdashboard", component: HospitalCathDashboardComponent },
+  { path: "GraphsModalComponent2", component: GraphsModalComponent2 },
+  { path: "EshpozModalComponent2", component: EshpozModalComponent2 },
+  ];
 
 @NgModule({
   imports: [

@@ -12,12 +12,17 @@ export class FeedLineComponent implements OnInit {
   feedItems: Array<any> = [];
   user_name = localStorage.getItem("loginUserName").toLowerCase();
   urlRegex = /https?:\/\/[^\s]+/g;
+  canEdit: boolean;
 
   constructor(private http: HttpClient) { }
 
   ngOnInit(): void {
     // Initialize the feed items
     this.getFeedLineContent();
+  }
+
+  switchPermission() {
+    if (this.user_name == 'kkeren' || this.user_name == 'sbarniv' || this.user_name == 'talontimss' || this.user_name == 'ttsrefati' || this.user_name == 'mmashash' || this.user_name == 'adahabre') this.canEdit = !this.canEdit;
   }
 
 

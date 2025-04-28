@@ -95,6 +95,7 @@
     "jszip": "^3.7.1",
     "mat-select-filter": "^2.4.1",
     "mat-table-exporter": "^10.2.4",
+    "material-components-web": "^14.0.0",
     "ng-angular9-datatable": "^0.9.13",
     "ng-circle-progress": "^1.6.0",
     "ng2-charts": "^3.0.0-rc.7",

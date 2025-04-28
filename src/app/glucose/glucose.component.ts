@@ -125,7 +125,8 @@ export class GlucoseComponent implements OnInit {
                 localStorage.clear();
                 this.router.navigate(["login"]);
             }
-        }, 2000);}
+        }, 2000);
+    }
 
     ngOnInit(): void {
         this._fun.RunFunction();

@@ -2,7 +2,6 @@ import { DatePipe } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { ChangeDetectorRef, Component, OnInit, ViewChild } from '@angular/core';
 import { Form, FormArray, FormBuilder, FormControl, FormGroup } from '@angular/forms';
-import { MatSelectionListChange } from '@angular/material/list';
 import { MatPaginator } from '@angular/material/paginator';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatSort } from '@angular/material/sort';
@@ -34,7 +33,11 @@ export class NutritionSystemComponent implements OnInit {
 
   displayedColumns: string[] = ['CaseNumber', 'IDNumber', 'FirstName', 'LastName', 'FatherName', 'Age', 'DepartName'
     , 'RoomNumber', 'HospitalizationDate', 'HospitalizationDuration', 'FoodType', 'FoodTexture', 'CurrentAllergy'
+<<<<<<< HEAD
     , 'OldAllergy', 'LiquidCertification', 'NutritionAnamnezes', 'EatingNotes'];
+=======
+    , 'OldAllergy', 'Liquid_Type', 'Food_Anamnesis', 'Food_Orders'];
+>>>>>>> 1aa51f3584a09bc93f96febef7b88fe3167780f9
 
   applyFilter(event) {
     let filterValue;
@@ -50,10 +53,8 @@ export class NutritionSystemComponent implements OnInit {
 
   constructor(
     private http: HttpClient,
-    private fb: FormBuilder,
-    private _snackBar: MatSnackBar,
-    private _datePipe: DatePipe,
-    private cd: ChangeDetectorRef) { }
+    private fb: FormBuilder
+  ) { }
 
   ngOnInit(): void {
     this.searchGroup = this.fb.group({

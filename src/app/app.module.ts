@@ -255,6 +255,28 @@ import { LearningRequestsDashboardComponent } from './learning-requests-dashboar
 import { CprNewbordDashboradComponent } from './form-dashboard/cpr-newbord-dashborad/cpr-newbord-dashborad.component';
 import { CprNewbornFormComponent } from './form-dashboard/cpr-newbord-dashborad/cpr-newborn-form/cpr-newborn-form.component';
 
+import { CprNewbordDashboradComponent } from './form-dashboard/cpr-newbord-dashborad/cpr-newbord-dashborad.component';
+import { CprNewbornFormComponent } from './form-dashboard/cpr-newbord-dashborad/cpr-newborn-form/cpr-newborn-form.component';
+import { HospitalCathDashbModule } from './hospital-cath-dashb/hospital-cath-dashb.module';
+import { HospitalCathDashboardComponent } from './hospital-cath-dashboard/hospital-cath-dashboard.component';
+
+import { BarChartComponent2 } from './hospital-cath-dashboard/bar-chart/bar-chart.component';
+import { GroupedBarChartComponent2 } from './hospital-cath-dashboard/grouped-bar-chart/grouped-bar-chart.component';
+import { LineChartComponent2 } from './hospital-cath-dashboard/line-chart/line-chart.component';
+import { PieChartComponent2 } from './hospital-cath-dashboard/pie-chart/pie-chart.component';
+import { GroupedBarChart2Component2 } from './hospital-cath-dashboard/grouped-bar-chart2/grouped-bar-chart2.component';
+import { GroupedBarChartReleaseComponent2 } from './hospital-cath-dashboard/grouped-bar-chart-release/grouped-bar-chart-release.component';
+import { GraphsModalComponent2 } from './hospital-cath-dashboard/graphs-modal/graphs-modal.component';
+import { ChartsDialogComponent2 } from './hospital-cath-dashboard/charts-dialog/charts-dialog.component';
+import { DashboardService} from './hospital-cath-dashboard/hospital-cath.service';
+import { EshpozModalComponent2 } from './hospital-cath-dashboard/eshpoz-modal/eshpoz-modal.component';
+import { HospitalTonnageComponent2 } from './hospital-cath-dashboard/hospital-tonnage/hospital-tonnage.component';
+import { SharedModule } from './shared/shared.module';
+
+import { CommercialSupportFormDashboardComponent } from './form-dashboard/commercial-support-form-dashboard/commercial-support-form-dashboard.component';
+import { CommercialSupportFormDialogComponent } from './form-dashboard/commercial-support-form-dashboard/commercial-support-form-dialog/commercial-support-form-dialog.component';
+
+
 const maskConfig: Partial<IConfig> = {
   validation: false,
 };
@@ -457,8 +479,32 @@ const maskConfig: Partial<IConfig> = {
     ShortcutFormDialogComponent,
     NamerUserActionsComponent,
     LearningRequestsDashboardComponent,
+<<<<<<< HEAD
     CprNewbordDashboradComponent,
     CprNewbornFormComponent
+=======
+
+   CprNewbordDashboradComponent,
+    CprNewbornFormComponent,
+    HospitalCathDashboardComponent,
+    BarChartComponent2,
+    GroupedBarChartComponent2,
+    LineChartComponent2,
+    PieChartComponent2,
+    GroupedBarChart2Component2,
+    GroupedBarChartReleaseComponent2,
+    GraphsModalComponent2,
+    ChartsDialogComponent2,
+    EshpozModalComponent2,
+    HospitalTonnageComponent2,  
+    //SharedModule,
+
+    CprNewbordDashboradComponent,
+    CprNewbornFormComponent,
+    CommercialSupportFormDashboardComponent,
+    CommercialSupportFormDialogComponent,
+
+>>>>>>> 1aa51f3584a09bc93f96febef7b88fe3167780f9
   ],
   imports: [
     MatIconModule,
@@ -550,7 +596,10 @@ const maskConfig: Partial<IConfig> = {
     MatListModule,
     MatRadioModule,
     ReactiveFormsModule,
-    CalendarModule.forRoot({ provide: DateAdapter, useFactory: adapterFactory })
+    CalendarModule.forRoot({ provide: DateAdapter, useFactory: adapterFactory }),
+    //HospitalCathDashbModule,
+    AppRoutingModule,
+    SharedModule,
   ],
   providers: [
     { provide: MAT_DATE_LOCALE, useValue: 'en-GB' }
@@ -558,6 +607,7 @@ const maskConfig: Partial<IConfig> = {
     , ConfirmationDialogService
     , MenuPerm
     , NgbActiveModal
+   // , DashboardService
     , { provide: GraphsModalComponent, useClass: LogAllRequestsInterceptor, multi: true }
     , { provide: HTTP_INTERCEPTORS, useClass: LogAllRequestsInterceptor, multi: true }
   ],
@@ -565,7 +615,7 @@ const maskConfig: Partial<IConfig> = {
   exports: [
     MatBadgeModule,
     FormsModule,
-    ReactiveFormsModule
+    ReactiveFormsModule,    
   ]
 })
 export class AppModule { }

@@ -115,6 +115,7 @@
                 <mat-header-cell *matHeaderCellDef mat-sort-header>רגישויות בעבר</mat-header-cell>
                 <mat-cell *matCellDef="let row">{{ row.OldAllergy }}</mat-cell>
             </ng-container>
+<<<<<<< HEAD
             <ng-container matColumnDef="LiquidCertification">
                 <mat-header-cell *matHeaderCellDef mat-sort-header>הסמכת נוזלים לשתייה</mat-header-cell>
                 <mat-cell *matCellDef="let row">{{ row.OldAllergy }}</mat-cell>
@@ -126,6 +127,19 @@
             <ng-container matColumnDef="EatingNotes">
                 <mat-header-cell *matHeaderCellDef mat-sort-header>הנחיות אכילה</mat-header-cell>
                 <mat-cell *matCellDef="let row">{{ row.OldAllergy }}</mat-cell>
+=======
+            <ng-container matColumnDef="Liquid_Type">
+                <mat-header-cell *matHeaderCellDef mat-sort-header>הסמכת נוזלים לשתייה</mat-header-cell>
+                <mat-cell *matCellDef="let row">{{ row.Liquid_Type }}</mat-cell>
+            </ng-container>
+            <ng-container matColumnDef="Food_Anamnesis">
+                <mat-header-cell *matHeaderCellDef mat-sort-header>אנמנזה תזונתית</mat-header-cell>
+                <mat-cell *matCellDef="let row">{{ row.Food_Anamnesis }}</mat-cell>
+            </ng-container>
+            <ng-container matColumnDef="Food_Orders">
+                <mat-header-cell *matHeaderCellDef mat-sort-header>הנחיות אכילה</mat-header-cell>
+                <mat-cell *matCellDef="let row">{{ row.Food_Orders }}</mat-cell>
+>>>>>>> 1aa51f3584a09bc93f96febef7b88fe3167780f9
             </ng-container>
 
             <!-- Add more columns as needed -->

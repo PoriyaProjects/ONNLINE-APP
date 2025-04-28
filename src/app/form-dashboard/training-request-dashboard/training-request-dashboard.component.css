@@ -47,6 +47,8 @@ th.mat-header-cell {
   border-radius: 5px;
   outline: none;
   font-size: 1rem;
+  background-color: #ffffff;
+  text-align: right;
 }
 
 .request-table {
@@ -123,4 +125,11 @@ th.mat-header-cell {
 
 .new-section {
   display: contents;
+<<<<<<< HEAD
+=======
+}
+
+mat-option {
+  text-align: right;
+>>>>>>> 1aa51f3584a09bc93f96febef7b88fe3167780f9
 }

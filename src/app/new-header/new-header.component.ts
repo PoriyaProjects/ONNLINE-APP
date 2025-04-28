@@ -24,11 +24,23 @@ export class NewHeaderComponent implements OnInit {
     personReadInquiry: boolean = false;
     headerLoad: boolean = true;
     searchTerm: string = '';
+<<<<<<< HEAD
+=======
+    ipAddress: string;
+>>>>>>> 1aa51f3584a09bc93f96febef7b88fe3167780f9
     filteredLinks: any[] = [];
     Links: any[] = []; // Your original links array
     constructor(private router: Router,
         private sanitizer: DomSanitizer, private http: HttpClient) { }
     ngOnInit(): void {
+        this.http.post(environment.url + 'GetLocalIPAddress', {}).subscribe(
+            (data) => {
+                this.ipAddress = data['d'];
+            },
+            (error) => {
+                console.error('IP fetch failed', error);
+            }
+        );
         $(document).on("click", "[routerlink], .nav-link", function () {
             // ////debugger;
             localStorage.setItem("ReseachRowId", "0");
