@@ -254,6 +254,8 @@ import { NamerUserActionsComponent } from './dashboard/namer-user-actions/namer-
 import { LearningRequestsDashboardComponent } from './learning-requests-dashboard/learning-requests-dashboard.component';
 import { CprNewbordDashboradComponent } from './form-dashboard/cpr-newbord-dashborad/cpr-newbord-dashborad.component';
 import { CprNewbornFormComponent } from './form-dashboard/cpr-newbord-dashborad/cpr-newborn-form/cpr-newborn-form.component';
+import { CommercialSupportFormDashboardComponent } from './form-dashboard/commercial-support-form-dashboard/commercial-support-form-dashboard.component';
+import { CommercialSupportFormDialogComponent } from './form-dashboard/commercial-support-form-dashboard/commercial-support-form-dialog/commercial-support-form-dialog.component';
 
 const maskConfig: Partial<IConfig> = {
   validation: false,
@@ -458,7 +460,9 @@ const maskConfig: Partial<IConfig> = {
     NamerUserActionsComponent,
     LearningRequestsDashboardComponent,
     CprNewbordDashboradComponent,
-    CprNewbornFormComponent
+    CprNewbornFormComponent,
+    CommercialSupportFormDashboardComponent,
+    CommercialSupportFormDialogComponent,
   ],
   imports: [
     MatIconModule,

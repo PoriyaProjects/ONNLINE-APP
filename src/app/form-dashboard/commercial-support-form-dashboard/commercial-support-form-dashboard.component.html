@@ -1,0 +1,73 @@
+<h2 class="page-title text-center">{{UserName}} - ניהול בקשות תמיכת גוף מסחרי </h2>
+<div dir="rtl" class="dashboard-container">
+  <!-- <mat-toolbar color="primary" class="toolbar">
+    <span>ניהול בקשות תמיכת גוף מסחרי</span>
+  </mat-toolbar> -->
+
+  <div class="dashboard-content">
+
+    <!-- Search / Filters -->
+    <mat-form-field appearance="outline" class="search-field">
+      <mat-label>חיפוש לפי שם מגיש הבקשה</mat-label>
+      <input matInput (input)="applyFilter($event)" placeholder="הקלד שם...">
+      <button mat-button *ngIf="searchValue" matSuffix mat-icon-button aria-label="Clear" (click)="clearFilter()">
+        <mat-icon>close</mat-icon>
+      </button>
+    </mat-form-field>
+
+    <!-- Data Table -->
+    <div class="table-container">
+      <table mat-table [dataSource]="supportRequests" matSort class="mat-elevation-z2">
+
+        <!-- Requester Name Column -->
+        <ng-container matColumnDef="requester">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>מגיש הבקשה</th>
+          <td mat-cell *matCellDef="let element">{{ element.Requester }}</td>
+        </ng-container>
+
+        <!-- Conference Name Column -->
+        <ng-container matColumnDef="conferenceName">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>שם כנס / השתלמות</th>
+          <td mat-cell *matCellDef="let element">{{ element.ConferenceName }}</td>
+        </ng-container>
+
+        <!-- Event Date Column -->
+        <ng-container matColumnDef="eventDate">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>תאריך</th>
+          <td mat-cell *matCellDef="let element">{{ element.EventDate | date: 'dd-MM-yyyy' }}</td>
+        </ng-container>
+
+        <!-- Support Amount Column -->
+        <ng-container matColumnDef="supportAmount">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>סכום תמיכה</th>
+          <td mat-cell *matCellDef="let element">{{ element.SupportAmount | currency: 'ILS':'symbol' }}</td>
+        </ng-container>
+
+        <!-- Actions Column -->
+        <ng-container matColumnDef="actions">
+          <th mat-header-cell *matHeaderCellDef>פעולות</th>
+          <td mat-cell *matCellDef="let element">
+            <button mat-icon-button color="primary" (click)="viewRequest(element)">
+              <mat-icon>visibility</mat-icon>
+            </button>
+            <button mat-icon-button color="warn" (click)="deleteRequest(element)">
+              <mat-icon>delete</mat-icon>
+            </button>
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+
+      </table>
+    </div>
+
+    <!-- No Results -->
+    <div *ngIf="supportRequests.filteredData.length === 0" class="no-results">
+      אין תוצאות להצגה.
+    </div>
+    <button mat-raised-button color="primary" (click)="viewRequest(null)">
+      <mat-icon>add</mat-icon> הוספת בקשה חדשה
+    </button>
+  </div>
+</div>
