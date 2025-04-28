@@ -271,8 +271,6 @@ import { EshpozModalComponent2 } from './hospital-cath-dashboard/eshpoz-modal/es
 import { HospitalTonnageComponent2 } from './hospital-cath-dashboard/hospital-tonnage/hospital-tonnage.component';
 import { SharedModule } from './shared/shared.module';
 
-import { CprNewbordDashboradComponent } from './form-dashboard/cpr-newbord-dashborad/cpr-newbord-dashborad.component';
-import { CprNewbornFormComponent } from './form-dashboard/cpr-newbord-dashborad/cpr-newborn-form/cpr-newborn-form.component';
 import { CommercialSupportFormDashboardComponent } from './form-dashboard/commercial-support-form-dashboard/commercial-support-form-dashboard.component';
 import { CommercialSupportFormDialogComponent } from './form-dashboard/commercial-support-form-dashboard/commercial-support-form-dialog/commercial-support-form-dialog.component';
 

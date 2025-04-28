@@ -145,14 +145,11 @@ import { LearningRequestsDashboardComponent } from '../learning-requests-dashboa
 import { GoogleChartsComponent } from '../hospital-cath-dashb/google-charts/google-charts.component';
 import { CprNewbordDashboradComponent } from '../form-dashboard/cpr-newbord-dashborad/cpr-newbord-dashborad.component';
 import { CprNewbornFormComponent } from '../form-dashboard/cpr-newbord-dashborad/cpr-newborn-form/cpr-newborn-form.component';
-import { GoogleChartsComponent } from '../hospital-cath-dashb/google-charts/google-charts.component';
 import { GraphsModalComponent2 } from '../hospital-cath-dashboard/graphs-modal/graphs-modal.component';
 import { EshpozModalComponent2 } from '../hospital-cath-dashboard/eshpoz-modal/eshpoz-modal.component';
 import { HospitalTonnageComponent2 } from '../hospital-cath-dashboard/hospital-tonnage/hospital-tonnage.component';
 import { HospitalCathDashboardComponent } from '../hospital-cath-dashboard/hospital-cath-dashboard.component';
 
-import { CprNewbordDashboradComponent } from '../form-dashboard/cpr-newbord-dashborad/cpr-newbord-dashborad.component';
-import { CprNewbornFormComponent } from '../form-dashboard/cpr-newbord-dashborad/cpr-newborn-form/cpr-newborn-form.component';
 import { CommercialSupportFormDashboardComponent } from '../form-dashboard/commercial-support-form-dashboard/commercial-support-form-dashboard.component';
 import { CommercialSupportFormDialogComponent } from '../form-dashboard/commercial-support-form-dashboard/commercial-support-form-dialog/commercial-support-form-dialog.component';
 
@@ -320,7 +317,7 @@ const routes: Routes = [
   { path: "cpr-newborn-form", component: CprNewbornFormComponent },
   { path: "commercial-support-form-dashboard", component: CommercialSupportFormDashboardComponent },
   { path: "commercial-support-form-dialog", component: CommercialSupportFormDialogComponent },
-  { path: "LabTests", component: LabTestsComponent }
+  { path: "LabTests", component: LabTestsComponent },
 
   { path: "departments-whatsapp-management", component: DepartmentsWhatsappManagementComponent },
   { path: "training-request-dashboard", component: TrainingRequestDashboardComponent },
