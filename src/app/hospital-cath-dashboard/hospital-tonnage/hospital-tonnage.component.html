@@ -1,0 +1,57 @@
+<a title="Example tile shortcut" class="tile-box tile-box-alt btn-info"
+    style="border-radius: 15px;direction: rtl;">
+    <div class="row" style="display: flex;">
+        <div class="tile-header" style="width: 50%;">
+            <h2>תפוסה: {{aobjTotal}}</h2>
+        </div>
+        <div class="tile-header" style="width: 50%;">
+            <h2>מונשמים: {{resporatoryCount}}</h2>
+        </div>
+    </div>
+    <div class="row" style="display: flex;">
+        <div class="tile-content-wrapper" style="width: 50%;border-right: 2px solid white;border-radius: 5%;">
+            <div class="chart-alt-10 easyPieChart" id="real-precent">
+                <circle-progress [percent]="Departmints.total" [radius]="100" [space]="-12" [outerStrokeWidth]="12"
+                    [innerStrokeWidth]="12" [outerStrokeColor]="'#78C000'" [innerStrokeColor]="'#C7E596'"
+                    [animation]="true" [animationDuration]="300" [options]="ngCircleOptions"></circle-progress>
+            </div>
+            <div class="chart-alt-10 easyPieChart d-none" id="extra-precent">
+                <circle-progress [percent]="Departmints.total - 100" [radius]="100" [space]="-12"
+                    [outerStrokeWidth]="12" [innerStrokeWidth]="12" [outerStrokeColor]="'red'"
+                    [innerStrokeColor]="'#C7E596'" [animation]="true" [animationDuration]="300"
+                    [options]="ngCircleOptions"></circle-progress>
+            </div>
+        </div>
+        <div class="tile-content-wrapper" style="width: 50%;border-right: 2px solid white;border-radius: 5%;">
+            <div class="chart-alt-10 easyPieChart" id="real-precent">
+                <circle-progress [percent]="Departmints.resp" [radius]="100" [space]="-12" [outerStrokeWidth]="12"
+                    [innerStrokeWidth]="12" [outerStrokeColor]="'#78C000'" [innerStrokeColor]="'#C7E596'"
+                    [animation]="true" [animationDuration]="300" [options]="ngCircleOptions"></circle-progress>
+            </div>
+            <div class="chart-alt-10 easyPieChart d-none" id="extra-precent">
+                <circle-progress [percent]="Departmints.resp - 100" [radius]="100" [space]="-12" [outerStrokeWidth]="12"
+                    [innerStrokeWidth]="12" [outerStrokeColor]="'red'" [innerStrokeColor]="'#C7E596'" [animation]="true"
+                    [animationDuration]="300" [options]="ngCircleOptions"></circle-progress>
+            </div>
+        </div>
+    </div>
+</a>
+
+<table dir="rtl" class="table table-striped text-right _Departmints">
+    <thead>
+        <tr>
+            <th>מחלקה</th>
+            <th>מיטות בפועל</th>
+            <th>תפוסה</th>
+            <th>אחוז תפוסה</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr *ngFor="let Depart of arrDepartsRefoee">
+            <td>{{ Depart.DepartName }}</td>
+            <td>{{ Depart.DepartBedsNumber }}</td>
+            <td>{{ Depart.DepartBedsInUsed }}</td>
+            <td> {{ (Depart.DepartBedsInUsedPer | number: "1.0-0") + "%" }} </td>
+        </tr>
+    </tbody>
+</table>
