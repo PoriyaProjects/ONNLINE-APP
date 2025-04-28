@@ -5,7 +5,7 @@
 export const environment = {
   url: 'http://localhost:64964/WebService.asmx/',
   urlipracticom: 'http://localhost:64964/WebService.asmx/',
-  AuthUrl: 'http://srv-apps-prod:47001/api/',
+  AuthUrl: 'http://localhost:64964/WebService.asmx/',
   production: false
 };
 

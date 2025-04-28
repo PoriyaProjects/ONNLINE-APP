@@ -48,6 +48,7 @@
     "@google/generative-ai": "^0.21.0",
     "@julianobrasil/timemask": "^1.1.2",
     "@kolkov/angular-editor": "^1.2.0",
+    "@material/ripple": "^14.0.0",
     "@ncstate/sat-popover": "^8.0.1",
     "@ng-bootstrap/ng-bootstrap": "^5.3.1",
     "@ng-select/ng-select": "^5.1.0",

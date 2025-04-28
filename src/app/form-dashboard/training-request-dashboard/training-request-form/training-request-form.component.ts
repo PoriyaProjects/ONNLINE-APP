@@ -438,11 +438,7 @@ export class TrainingRequestFormComponent implements OnInit {
 
   Training_Out_Check() {
     if (this.Training_Request_Forms_B.controls['Training_Out'].value) {
-      this.Training_Request_Forms_B.controls['Galilean_Partnership'].setValue(false);
-      this.Training_Request_Forms_B.controls['Education_Fee'].setValue(0);
-      this.Training_Request_Forms_B.controls['Education_Fee'].disable();
       this.CitiesArray = [
-        { cityName: 'אסיה' },
         { cityName: 'אירופה' },
         { cityName: 'אפריקה' },
         { cityName: 'צפון אמריקה' },

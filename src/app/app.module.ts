@@ -477,8 +477,7 @@ const maskConfig: Partial<IConfig> = {
     ShortcutFormDialogComponent,
     NamerUserActionsComponent,
     LearningRequestsDashboardComponent,
-
-   CprNewbordDashboradComponent,
+    CprNewbordDashboradComponent,
     CprNewbornFormComponent,
     HospitalCathDashboardComponent,
     BarChartComponent2,
@@ -497,7 +496,6 @@ const maskConfig: Partial<IConfig> = {
     CprNewbornFormComponent,
     CommercialSupportFormDashboardComponent,
     CommercialSupportFormDialogComponent,
-
   ],
   imports: [
     MatIconModule,
