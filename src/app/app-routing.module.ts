@@ -133,6 +133,19 @@ import { ShortcutsManagementComponent } from "./dashboard/shortcuts-management/s
 import { ShortcutFormDialogComponent } from "./dashboard/shortcuts-management/shortcut-form-dialog/shortcut-form-dialog.component";
 import { NamerUserActionsComponent } from "./dashboard/namer-user-actions/namer-user-actions.component";
 import { LearningRequestsDashboardComponent } from "./learning-requests-dashboard/learning-requests-dashboard.component";
+<<<<<<< Updated upstream
+=======
+import { CprNewbordDashboradComponent } from "./form-dashboard/cpr-newbord-dashborad/cpr-newbord-dashborad.component";
+import { CprNewbornFormComponent } from "./form-dashboard/cpr-newbord-dashborad/cpr-newborn-form/cpr-newborn-form.component";
+import { GoogleChartsComponent } from './hospital-cath-dashb/google-charts/google-charts.component';
+import { HospitalCathDashboardComponent } from './hospital-cath-dashboard/hospital-cath-dashboard.component';
+
+
+import { GraphsModalComponent2 } from "./hospital-cath-dashboard/graphs-modal/graphs-modal.component";
+import { EshpozModalComponent2 } from "./hospital-cath-dashboard/eshpoz-modal/eshpoz-modal.component";
+import { HospitalTonnageComponent2 } from "./hospital-cath-dashboard/hospital-tonnage/hospital-tonnage.component";
+
+>>>>>>> Stashed changes
 
 
 const routes: Routes = [ 
@@ -291,10 +304,24 @@ const routes: Routes = [
     { path: "shortcut-form-dialog", component: ShortcutFormDialogComponent },
     { path: "namer-user-actions", component: NamerUserActionsComponent },
     { path: "learning-requests-dashboard", component: LearningRequestsDashboardComponent },
+<<<<<<< Updated upstream
     { path: "LabTests", component: LabTestsComponent }
 
 
+=======
+    { path: "cpr-newbord-dashborad", component: CprNewbordDashboradComponent },
+    { path: "cpr-newborn-form", component: CprNewbornFormComponent },
+    { path: "LabTests", component: LabTestsComponent },     
+    { path: "hospital-cath-dashb", component: GoogleChartsComponent },
+    { path: "hospitalcathdashboard", component: HospitalCathDashboardComponent },
+    { path: "GraphsModalComponent2", component: GraphsModalComponent2 },
+    { path: "EshpozModalComponent2", component: EshpozModalComponent2 },
+    { path: "hospital-tonnage2", component: HospitalTonnageComponent2 },
+  
+>>>>>>> Stashed changes
 ];
+
+
 @NgModule({
     imports: [RouterModule.forRoot(routes)],
     exports: [RouterModule],

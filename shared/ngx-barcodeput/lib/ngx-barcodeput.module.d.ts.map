@@ -1,0 +1,1 @@
+{"version":3,"file":"ngx-barcodeput.module.d.ts","sources":["ngx-barcodeput.module.d.ts"],"names":[],"mappings":";;AAAA;;;AACA","sourcesContent":["export declare class NgxBarCodePutModule {\n}\n"]}
