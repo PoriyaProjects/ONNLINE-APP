@@ -1,10 +1,10 @@
-import { Component, OnInit, Optional } from '@angular/core';
+import { Component, Inject, OnInit, Optional } from '@angular/core';
 import { FormArray, FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
 import { trigger, state, style, transition, animate } from '@angular/animations';
 import { MatTableDataSource } from '@angular/material/table';
 import { SupportRequestService } from '../commercial-support.service';
 import { MatSnackBar, MatSnackBarHorizontalPosition, MatSnackBarVerticalPosition } from '@angular/material/snack-bar';
-import { MatDialogRef } from '@angular/material/dialog';
+import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { DatePipe } from '@angular/common';
 
 @Component({
@@ -24,23 +24,7 @@ import { DatePipe } from '@angular/common';
 export class CommercialSupportFormDialogComponent {
 
   displayedColumnsManagers: string[] = ['first', 'last', 'department'];
-  dataSource = new MatTableDataSource([
-    {
-      col1: new FormControl('John'),
-      col2: new FormControl('Doe'),
-      col3: new FormControl('25')
-    },
-    {
-      col1: new FormControl('Jane'),
-      col2: new FormControl('Smith'),
-      col3: new FormControl('30')
-    },
-    {
-      col1: new FormControl('Alice'),
-      col2: new FormControl('Johnson'),
-      col3: new FormControl('28')
-    }
-  ]);
+  dataSource = new MatTableDataSource([]);
 
   horizontalPosition: MatSnackBarHorizontalPosition = "start";
   verticalPosition: MatSnackBarVerticalPosition = "bottom";
@@ -53,14 +37,15 @@ export class CommercialSupportFormDialogComponent {
     { ActivityName: 'טיסה', controlName: 'flight' }
   ];
   displayedColumns: string[] = ['activity', 'directService', 'indirectHealth'];
-
-  selectedIndirectHealth: { [index: number]: string } = {}; // שומר לכל פעילות אם בחרו כן או לא
+  manager: boolean;
+  selectedIndirectHealth: { [index: number]: string } = {};
 
   constructor(
     private fb: FormBuilder,
     private _snackBar: MatSnackBar,
     private _datePipe: DatePipe,
     private supportRequestsService: SupportRequestService,
+    @Optional() @Inject(MAT_DIALOG_DATA) public form_id: any,
     @Optional() private dialogRef: MatDialogRef<CommercialSupportFormDialogComponent>
   ) { }
 
@@ -83,6 +68,7 @@ export class CommercialSupportFormDialogComponent {
       Other: [''],
       ConferenceName: [''],
       EventDate: [''],
+      EventEndDate: [''],
       Location: [''],
       JoinPerson: [''],
       Position: [''],
@@ -112,12 +98,31 @@ export class CommercialSupportFormDialogComponent {
     });
   }
 
+  // Handle close button
+  onClose() {
+    this.dialogRef.close(); // Close the dialog
+  }
+
   onIndirectHealthChange(value: string, index: number) {
     this.selectedIndirectHealth[index] = value;
   }
 
+  getSupportRequestsByID() {
+    this.supportRequestsService.saveSupportRequest(this.form_id).subscribe({
+      next: (response) => {
+
+        // פה תוכל להציג הודעת הצלחה או לעדכן את המסך
+      },
+      error: (error) => {
+        console.error('שגיאה בשליפת מידע:', error);
+        // אפשר להראות טוסט או דיאלוג שגיאה
+      }
+    });
+  }
+
   submitForm() {
     this.SupportRequestDto.controls['EventDate'].setValue(this._datePipe.transform(this.SupportRequestDto.value.EventDate, 'yyyy-MM-dd'));
+    this.SupportRequestDto.controls['EventEndDate'].setValue(this._datePipe.transform(this.SupportRequestDto.value.EventEndDate, 'yyyy-MM-dd'));
     this.supportRequestsService.saveSupportRequest(this.SupportRequestDto.getRawValue()).subscribe({
       next: (response) => {
         if (response['d']) {

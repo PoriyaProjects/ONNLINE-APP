@@ -22,8 +22,10 @@ export class SupportRequestService {
     });
   }
 
-  getSupportRequestsByRequesterName(name: string): Observable<any[]> {
-    return this.http.get<any[]>(`${this.apiUrl}search?name=${encodeURIComponent(name)}`);
+  getSupportRequestsByID(id: string): Observable<any[]> {
+    return this.http.post<any[]>(`${this.apiUrl}`, {
+      id: id
+    });
   }
 
   saveSupportRequest(request: any): Observable<any> {
