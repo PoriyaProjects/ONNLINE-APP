@@ -14,7 +14,7 @@ export class CommercialSupportFormDashboardComponent {
   UserName = localStorage.getItem('loginUserName').toLowerCase();
   supportRequests = new MatTableDataSource<any>();
   searchValue = '';
-  displayedColumns: string[] = ['requester', 'conferenceName', 'eventDate', 'supportAmount', 'actions'];
+  displayedColumns: string[] = ['requester', 'conferenceName', 'eventDate', 'eventEndDate', 'supportAmount', 'actions'];
 
   constructor(
     private supportRequestService: SupportRequestService,
@@ -47,8 +47,9 @@ export class CommercialSupportFormDashboardComponent {
   viewRequest(request: any) {
     // Example: open a dialog with details
     const dialogRef = this.dialog.open(CommercialSupportFormDialogComponent, {
+      disableClose: true,
       width: '80%',
-      data: {} // אפשר להעביר כאן דאטה אם צריך
+      data: request // אפשר להעביר כאן דאטה אם צריך
     });
 
     dialogRef.afterClosed().subscribe(result => {
@@ -64,10 +65,10 @@ export class CommercialSupportFormDashboardComponent {
       return;
     }
 
-    this.supportRequestService.deleteSupportRequest(request.Id).subscribe({
+    this.supportRequestService.deleteSupportRequest(request).subscribe({
       next: () => {
         // הסרה מהטבלה אחרי שמחיקה הצליחה
-        const index = this.supportRequests.data.findIndex(r => r.Id === request.Id);
+        const index = this.supportRequests.data.findIndex(r => r.Id === request);
         if (index !== -1) {
           this.supportRequests.data.splice(index, 1);
           this.supportRequests._updateChangeSubscription(); // לעדכן את הטבלה

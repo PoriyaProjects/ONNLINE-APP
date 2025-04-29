@@ -111,7 +111,7 @@ export class TrainingRequestDashboardComponent implements OnInit {
   }
 
   async print(rowId: number) {
-    const printWindow = window.open('', '_blank', 'width=800,height=800');
+    const printWindow = window.open('', '_blank', 'width=1000,height=1000');
     if (!printWindow) {
       alert('לא ניתן לפתוח חלון הדפסה');
       return;
@@ -233,7 +233,7 @@ export class TrainingRequestDashboardComponent implements OnInit {
         <div>
         	<p style="margin: 0px">העתקים:</p>
         	<p style="margin: 0px">הנהלת המרכז הרפואי</p>
-        	<p style="margin: 0px">הממונה הישיר</p>
+        	<p style="margin: 0px">${data['E'].Supervisor_Name.lastname}</p>
         	<p style="margin: 0px">מחלקת משאבי אנוש</p>
         </div>
     </body>
