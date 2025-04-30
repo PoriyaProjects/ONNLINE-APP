@@ -75,16 +75,27 @@ export class CprNewbornFormComponent implements OnInit {
   apgardisplayedColumns = ['parameter', ...this.times.map(t => t.key)];
 
   labParameters = [
+    { label: 'מקור', key: 'מקור' },
     { label: 'שעה', key: 'time' },
-    { label: 'תוצאה', key: 'result' },
     { label: 'PH', key: 'ph' },
     { label: 'PO2', key: 'po2' },
     { label: 'PCO2', key: 'pco2' },
     { label: 'Bic.', key: 'bic' },
     { label: 'Base Excess', key: 'baseExcess' },
-    { label: 'O2 Sat', key: 'o2Sat' },
-    { label: 'אחר', key: 'other1' },
-    { label: 'אחר', key: 'other2' },
+    { label: 'lactate', key: 'lactate' },
+  ];
+
+  predefinedNotes: string[] = [
+    'הוסבר למשפחה על מצבו של הילוד כולל פעולות שבוצעו במהלך החייאה ותוכנית להמשך טיפול'
+  ];
+  predefinedSummaries: string[] = [
+    'החייאה בוצעה  לפי הכללים של החייאת ילוד NRP '
+  ];
+  predefinedPregnancyDetails: string[] = [
+    'מעקב הריון (מלא ותקין / חלקי / דל) ',
+    'יולדת ידועה על מחלת',
+    'יולדת מקבלת טיפול תרופתי ',
+    'ניתוח קיסרי (בהול / דחוף / הרדמה כללית )/ לידה מכשירנית , עקב ( מוניטור עוברי לא תקין / מים מקוניאליים / חוסר התקדמות / צניחת חבל הטבור / חום אמהי, אחר )'
   ];
 
   labtimes = [
@@ -137,6 +148,24 @@ export class CprNewbornFormComponent implements OnInit {
   }
 
   ngOnInit(): void {
+  }
+
+  appendPredefinedNote(note: string) {
+    const current = this.resuscitationForm.get('resuscitationSummary').get('notes')?.value || '';
+    const separator = current ? '\n' : '';
+    this.resuscitationForm.get('resuscitationSummary').get('notes')?.setValue(current + separator + note);
+  }
+
+  appendPredefinedSummary(summary: string) {
+    const current = this.resuscitationForm.get('resuscitationSummary').get('summary')?.value || '';
+    const separator = current ? '\n' : '';
+    this.resuscitationForm.get('resuscitationSummary').get('summary')?.setValue(current + separator + summary);
+  }
+
+  appendPregnancyDeliveryDetail(detail: string) {
+    const current = this.resuscitationForm.get('pregnancyDeliveryInfo').get('pregnancyDeliveryDetails')?.value || '';
+    const separator = current ? '\n' : '';
+    this.resuscitationForm.get('pregnancyDeliveryInfo').get('pregnancyDeliveryDetails')?.setValue(current + separator + detail);
   }
 
   openSnackBar(message) {
@@ -260,6 +289,11 @@ export class CprNewbornFormComponent implements OnInit {
         let data = JSON.parse(Response['d']);
         this.resuscitationForm = this.fb.group({
           motherInfo: this.fb.group({
+            motherName: [data?.motherInfo.motherName],
+            motherId: [data?.motherInfo.motherId],
+            babyCasenumber: [data?.motherInfo.babyCasenumber],
+            deliveryTime: [data?.motherInfo.deliveryTime],
+            otherLocation: [data?.motherInfo.otherLocation],
             babyName: [data?.motherInfo.babyName],
             babyId: [data?.motherInfo.babyId],
             resuscitationDate: [data?.motherInfo.resuscitationDate],
