@@ -3,7 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { environment } from 'src/environments/environment';
 
 @Component({
-  selector: 'app-grouped-bar-chart2',
+  selector: 'app-grouped-bar-chart2n',
   templateUrl: './grouped-bar-chart.component.html',
   styleUrls: ['./grouped-bar-chart.component.css']
 })

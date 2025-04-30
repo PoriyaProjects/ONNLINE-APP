@@ -57,22 +57,13 @@ export class GoogleChartsService {
     GAUGE: 'gauge'
   };
 
-  // Data sources 
-  // public DATA_SOURCES = {
-  //   OPERATIONS: 'http://localhost:64964/WebService.asmx/GetCath?param=4&onlyLastMonth=false',
-  //   INCOME: 'http://localhost:64964/WebService.asmx/GetTIncomeData',
-  //   OPERATIONS_3Y:'http://localhost:64964/WebService.asmx/GetTIncomeData',
-  //   TIME_AVG: './assets/data/time_avg_s-m.json',
-  //   GAUGE: 'http://localhost:64964/WebService.asmx/GetCurrentCath?param=1&onlyLastMonth=true',
-  //   //AS: './assets/data/as.json'
-  //   AS: 'http://localhost:64964/WebService.asmx/GetExploitation'
-  // };
 
   public DATA_SOURCES = {
     OPERATIONS: `${environment.url}/GetCath?param=4&onlyLastMonth=false`,
     INCOME: `${environment.url}/GetTIncomeData`,
     OPERATIONS_3Y: `${environment.url}/GetTIncomeData`,
-    TIME_AVG: './assets/data/time_avg_s-m.json', 
+    //TIME_AVG: './assets/data/time_avg_s-m.json', 
+    TIME_AVG:`${environment.url}/GetExploitationTimeAvgJson?groupBy`,
     GAUGE: `${environment.url}/GetCurrentCath?param=1&onlyLastMonth=true`,
     AS: `${environment.url}/GetExploitation`
   };
@@ -254,7 +245,7 @@ export class GoogleChartsService {
         rawData = await this.http.get(url).toPromise();
       }
   
-      // 🛡 Sanitize and parse in one step
+      // Sanitize and parse in one step
       const cleanData = this.sanitizeSoapResponse(rawData);
   
       // Process data
@@ -668,91 +659,91 @@ private drawChart3YJSON(jsonData: any, elementId: string, customOptions: any = {
     return { headers: headerLabels, data: normalizedData };
   }
 
-  private drawTimeAvgChart(chartData: any, elementId: string, customOptions: any = {}): void {
-    const { headers, data } = chartData;
-    const dataTable = new google.visualization.DataTable();
-    dataTable.addColumn('number', headers[0] || 'שנה');
+  /*
+  /*drawTimeAvgChart
+  /**/
 
-    for (let i = 1; i < headers.length; i++) {
-      dataTable.addColumn('number', headers[i] || `Series ${i}`);
+
+  public drawTimeAvgChart(
+    elementId: string = 'bar_chart_time_avg',
+    customOptions: any = {},
+    selectedTypes: { [key: string]: boolean } = { 'אלקטיבי': true, 'דחוף': true, 'ססיה': true }
+  ): void {
+    const dropdownId = 'timeAvgGroupByDropdown';
+    const dropdown = document.getElementById(dropdownId) as HTMLSelectElement;
+    if (!dropdown) {
+      console.error(`Dropdown element with ID '${dropdownId}' not found.`);
+      return;
     }
-    dataTable.addRows(data);
-
-    const defaultOptions: any = {
-      hAxis: {
-        title: headers[0] || 'שנה',
-        format: '####'
-      },
-      vAxis: {
-        title: 'משך (שעות)',
-        minValue: 0,
-        format: (value: any) => this.formatToHHMM(value)
-      },
-      series: {},
-      trendlines: {
-        0: {
-          type: 'linear',
-          color: '#247a3a',
-          lineWidth: 3,
-          opacity: 0.7,
-          showR2: true,
-          visibleInLegend: false
-        }
-    
-      },
-      height: 500,
-      width: 900,
-      chartArea: { left: '10%', top: '15%', width: '80%', height: '65%' },
-      legend: { position: 'top' },
-      interpolateNulls: false,
-      tooltip: {
-        formatter: function (tooltip: any) {
-          if (tooltip.row === null) { return tooltip; }
-          const dataTable = this.getDataTable();
-          const value = dataTable.getValue(tooltip.row, tooltip.column);
-          if (tooltip.column > 0 && value !== null) {
-            tooltip.text = tooltip.text.replace(/\d+\.\d+/, this.formatToHHMM(value));
-          }
-          return tooltip;
-        }.bind(this)
+  
+    const groupBy = dropdown.value;
+    const url = `${this.DATA_SOURCES.TIME_AVG}=${groupBy}`;
+  
+    this.http.get(url, { responseType: 'text' }).toPromise().then(rawData => {
+      const cleanData = this.sanitizeSoapResponse(rawData);
+  
+      if (!cleanData || !cleanData.cols || !cleanData.rows) {
+        console.error('Invalid or empty data for TimeAvg Chart');
+        return;
       }
-    };
-
-    // Set colors and trendlines for each series
-    for (let i = 1; i < headers.length; i++) {
-      const index = i - 1;
-      const colorIndex = index % this.CHART_COLORS.length;
-      defaultOptions.series[index] = {
-        type: 'bars',
-        color: this.CHART_COLORS[colorIndex]
-      };
-      defaultOptions.trendlines[index] = {
-        type: 'linear',
-        color: this.TRENDLINE_COLORS[colorIndex],
-        lineWidth: 3,
-        opacity: 0.7,
-        visibleInLegend: true,
-        labelInLegend: `${headers[i]} מגמה`
-      };
-    }
-
-    const options = this.mergeDeep(defaultOptions, customOptions);
-    const chart = new google.visualization.ComboChart(document.getElementById(elementId));
-
-    // Format y-axis labels after chart is drawn
-    google.visualization.events.addListener(chart, 'ready', () => {
-      const labels = document.querySelectorAll('text[text-anchor="end"][fill="#222222"]');
-      labels.forEach(label => {
-        const value = parseFloat(label.textContent || '');
-        if (!isNaN(value)) {
-          label.textContent = this.formatToHHMM(value);
+  
+      const dataTable = new google.visualization.DataTable();
+  
+      // First column always (Year or Month)
+      dataTable.addColumn('string', cleanData.cols[0].label);
+  
+      // Add only selected procedure types
+      cleanData.cols.slice(1).forEach((col: any) => {
+        if (selectedTypes[col.label]) {
+          dataTable.addColumn('number', col.label);
         }
       });
+  
+      // Add rows with selected types
+      cleanData.rows.forEach((row: any) => {
+        const original = row.c.map((cell: any) => cell ? cell.v : null);
+        const rowData: any[] = [original[0]]; // Period (Month/Year)
+        cleanData.cols.slice(1).forEach((col: any, idx: number) => {
+          if (selectedTypes[col.label]) {
+            rowData.push(original[idx + 1]);
+          }
+        });
+        dataTable.addRow(rowData);
+      });
+  
+      const defaultOptions = {
+        height: 500,
+        legend: { position: 'top' },
+        bar: { groupWidth: "70%" },
+        annotations: {
+          alwaysOutside: true,
+          textStyle: { fontSize: 12, color: '#888' }
+        },
+        colors: this.CHART_COLORS.slice(0, dataTable.getNumberOfColumns() - 1),
+        vAxis: { format: 'short', minValue: 0 },
+        interpolateNulls: true
+      };
+  
+      const options = this.mergeDeep(defaultOptions, customOptions);
+  
+      const chart = new google.visualization.ColumnChart(document.getElementById(elementId));
+      chart.draw(dataTable, options);
+  
+      console.log(`TimeAvg Chart (${groupBy}) drawn successfully.`);
+  
+    }).catch(error => {
+      console.error('Error loading TimeAvg Chart data:', error);
+      const el = document.getElementById(elementId);
+      if (el) {
+        el.innerHTML = 'Failed to load chart data. Check console.';
+      }
     });
-
-    chart.draw(dataTable, options);
   }
+  
 
+  
+/*eof*/
+  
   private processASData(data: any): any {
     const chartData = new google.visualization.DataTable();
   
