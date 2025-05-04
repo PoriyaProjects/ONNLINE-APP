@@ -27,9 +27,19 @@
     <!-- Data Table -->
     <div class="table-container">
         <table mat-table [dataSource]="dataSource" matSort class="mat-elevation-z8">
-            <ng-container matColumnDef="babyName">
-                <th mat-header-cell *matHeaderCellDef mat-sort-header>שם התינוק</th>
-                <td mat-cell *matCellDef="let element">{{element.babyName}}</td>
+            <ng-container matColumnDef="motherName">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header>שם היולדת</th>
+                <td mat-cell *matCellDef="let element">{{element.motherName}}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="motherId">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header>ת.ז היולדת</th>
+                <td mat-cell *matCellDef="let element">{{element.motherId}}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="babyId">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header>ת.ז התינוק</th>
+                <td mat-cell *matCellDef="let element">{{element.babyId}}</td>
             </ng-container>
 
             <ng-container matColumnDef="babyGender">
