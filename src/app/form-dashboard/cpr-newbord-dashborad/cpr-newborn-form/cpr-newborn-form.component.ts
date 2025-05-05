@@ -424,6 +424,20 @@ export class CprNewbornFormComponent implements OnInit {
     }
   }
 
+  getPersonDetails() {
+    this.http
+      .post(
+        environment.url + "GetCardiologyPatientDetails",
+        {
+          _passport: this.resuscitationForm.controls['motherInfo'].value.motherId
+        }
+      )
+      .subscribe((Response) => {
+        let patient = Response['d'];
+        this.resuscitationForm.controls['motherInfo']['controls'].motherName.setValue(patient.FirstName + ' ' + patient.LastName);
+      });
+  }
+
   createPrintableString(data) {
     const motherInfo = data.motherInfo;
     const teamMembers = data.teamMembers;

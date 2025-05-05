@@ -11,7 +11,8 @@
                     <mat-card-content>
                         <mat-form-field appearance="outline" style="width: 50%;">
                             <mat-label>תעודת זהות היולדת</mat-label>
-                            <input matInput formControlName="motherId">
+                            <input matInput formControlName="motherId" (blur)="getPersonDetails()"
+                                (keydown.enter)="getPersonDetails()">
                         </mat-form-field>
 
                         <mat-form-field appearance="outline" style="width: 50%;">
