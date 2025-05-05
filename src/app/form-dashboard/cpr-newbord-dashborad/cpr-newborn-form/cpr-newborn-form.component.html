@@ -1,4 +1,7 @@
-<form [formGroup]="resuscitationForm" dir="rtl" *ngIf="resuscitationForm != undefined">
+<button mat-raised-button color="warn" type="button" class="closeBtn" (click)="onClose()">
+    X
+</button>
+<form [formGroup]="resuscitationForm" dir="rtl" *ngIf="resuscitationForm != undefined" #printSection>
     <mat-horizontal-stepper>
         <!-- Step 1: פרטי הילוד -->
         <mat-step [stepControl]="resuscitationForm.get('motherInfo')">
@@ -16,12 +19,17 @@
                             <input matInput formControlName="motherName">
                         </mat-form-field>
 
-                        <mat-form-field appearance="outline" style="width: 50%;">
+                        <mat-form-field appearance="outline" style="width: 33.333%;">
+                            <mat-label>שם היילוד</mat-label>
+                            <input matInput formControlName="babyName">
+                        </mat-form-field>
+
+                        <mat-form-field appearance="outline" style="width: 33.333%;">
                             <mat-label>תעודת זהות הילוד</mat-label>
                             <input matInput formControlName="babyId">
                         </mat-form-field>
 
-                        <mat-form-field appearance="outline" style="width: 50%;">
+                        <mat-form-field appearance="outline" style="width: 33.333%;">
                             <mat-label>מספר מקרה הילוד</mat-label>
                             <input matInput formControlName="babyCasenumber">
                         </mat-form-field>
@@ -861,13 +869,8 @@
                                     <mat-label>שעה</mat-label>
                                     <input matInput formControlName="signatureTime" type="time">
                                 </mat-form-field>
-                                <!-- <mat-form-field appearance="outline" style="width: 50%;">
-                                    <mat-label>חתימה וחותמת הרופא האחראי על ההחייאה</mat-label>
-                                    <input matInput formControlName="nameAndRole">
-                                </mat-form-field> -->
                                 <div class="col-lg-2 col-md-4 col-sm-6">
-                                    <button mat-raised-button class="signBtn" color="warn"
-                                        (click)="signForm()">
+                                    <button mat-raised-button class="signBtn" color="warn" (click)="signForm()">
                                         <span
                                             *ngIf="resuscitationForm.get('doctorSignature').get('nameAndRole').value == undefined">לחתום</span>
                                         <span

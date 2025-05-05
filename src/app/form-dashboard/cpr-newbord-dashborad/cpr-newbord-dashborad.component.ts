@@ -47,11 +47,59 @@ export class CprNewbordDashboradComponent implements OnInit {
   viewDetails(element: any) {
     // You can open a dialog or navigate
     let dg = this.dialog.open(CprNewbornFormComponent, {
+      disableClose: true,
       data: element,
       width: '90%',
       height: '90%'
     });
     dg.afterClosed().subscribe(res => {
+      if (res != undefined) {
+        const printWindow = window.open('', '_blank');
+
+        // It's good practice to check if the window was successfully opened (e.g., not blocked by a popup blocker)
+        if (printWindow) {
+          // Use document.open() before write() if you're potentially overwriting existing content
+          printWindow.document.open();
+
+          // Write the HTML content
+          printWindow.document.write(`
+    <html>
+      <head>
+        <title>הדפסה</title>
+        <style>
+          /* You might want to add print-specific styles here */
+          @media print {
+            body {
+              /* Add your print styles */
+            }
+          }
+        </style>
+      </head>
+      <body>${res}</body>
+    </html>
+  `);
+
+          // Close the document stream
+          printWindow.document.close();
+
+          // --- Add the event listener to close the window AFTER printing/cancelling ---
+          printWindow.onafterprint = function () {
+            printWindow.close();
+          };
+          // -----------------------------------------------------------------------
+
+          // Call the print function. This will typically block execution
+          // in this window until the print dialog is closed by the user.
+          printWindow.print();
+
+          // The printWindow?.document.close(); line you had after printWindow?.print();
+          // is unnecessary and can be removed. The onafterprint event handles the closing.
+
+        } else {
+          // Handle cases where the popup was blocked
+          alert('אנא אפשר חלונות קופצים להדפסה.'); // "Please allow popups for printing."
+        }
+      }
       this.getNewBornCprList();
     });
   }
@@ -68,6 +116,10 @@ export class CprNewbordDashboradComponent implements OnInit {
       .subscribe((Response) => {
         this.dataSource = new MatTableDataSource<any>(Response["d"])
       });
+  }
+
+  print(id) {
+
   }
 
 }
