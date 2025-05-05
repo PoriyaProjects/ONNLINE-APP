@@ -314,7 +314,8 @@ export class WhatsappDepartmentsDashboardComponent implements OnInit {
       this.http
         .post(environment.url + "SendDepartmentsWhatsAppMessageToUserOneWay", {
           messageForm: this.newMessage.value,
-          file: this.base64String == "" ? "" : this.base64String.toString().split(',')[1]
+          file: this.base64String == "" ? "" : this.base64String.toString().split(',')[1],
+          _user_name: this.user_name
         })
         .subscribe((Response) => {
           if (Response["d"]) {

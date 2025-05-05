@@ -1,6 +1,6 @@
 import { DatePipe } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
-import { Component, Inject, OnInit, Optional } from '@angular/core';
+import { Component, ElementRef, Inject, OnInit, Optional, ViewChild } from '@angular/core';
 import { FormBuilder, FormGroup, FormArray, Validators } from '@angular/forms';
 import { MatDatepickerInputEvent } from '@angular/material/datepicker';
 import { MatDialog, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
@@ -9,29 +9,6 @@ import { MatTableDataSource } from '@angular/material/table';
 import { environment } from 'src/environments/environment';
 import { DialogContentExampleDialog } from "../../../fill-survey/fill-survey.component";
 
-interface ResuscitationFormData {
-  motherInfo: {
-    name: string;
-    id: string;
-    resuscitationDate: Date;
-    resuscitationTime: string;
-    location: string; // 'birthRoom', 'operatingRoom', 'other'
-    pediatricianCalledTime: string;
-    birthTime: string;
-    resuscitationStartTime: string;
-    babyGender: 'male' | 'female';
-    gestationAgeWeeks: number;
-    babyWeight: number;
-    deliveryMethod: string;
-  };
-  teamMembers: { name: string; role: string }[];
-  pregnancyDeliveryInfo: {
-    details: string;
-    meconiumStaining: boolean;
-    pediatricianPresent: boolean;
-    pediatricianArrivalTime: string;
-  };
-}
 interface VitalSignsRow {
   time: string;
   pulse: string;
@@ -137,6 +114,7 @@ export class CprNewbornFormComponent implements OnInit {
 
   additionalProductsDisplayedColumns: string[] = ['name', 'time', 'route', 'dosageVolume'];
   additionalProductsDataSource = new MatTableDataSource();
+  @ViewChild('printSection') printSection: ElementRef;
 
   constructor(
     private fb: FormBuilder,
@@ -170,6 +148,15 @@ export class CprNewbornFormComponent implements OnInit {
     const current = this.resuscitationForm.get('pregnancyDeliveryInfo').get('pregnancyDeliveryDetails')?.value || '';
     const separator = current ? '\n' : '';
     this.resuscitationForm.get('pregnancyDeliveryInfo').get('pregnancyDeliveryDetails')?.setValue(current + separator + detail);
+  }
+
+  getFormAsHtmlString(): string {
+    return this.printSection.nativeElement.innerHTML;
+  }
+
+  // Handle close button
+  onClose() {
+    this.dialogRef.close(); // Close the dialog
   }
 
   openSnackBar(message) {
@@ -291,6 +278,10 @@ export class CprNewbornFormComponent implements OnInit {
       })
       .subscribe((Response) => {
         let data = JSON.parse(Response['d']);
+        if (this.form_id != null) {
+          const pdf = this.createPrintableString(data);
+          this.dialogRef.close(pdf);
+        }
         this.resuscitationForm = this.fb.group({
           motherInfo: this.fb.group({
             motherName: [data?.motherInfo.motherName, Validators.required],
@@ -431,6 +422,587 @@ export class CprNewbornFormComponent implements OnInit {
     } else {
       this.openSnackBar("חסר שדות חובה!");
     }
+  }
+
+  createPrintableString(data) {
+    const motherInfo = data.motherInfo;
+    const teamMembers = data.teamMembers;
+    const pregnancyDeliveryInfo = data.pregnancyDeliveryInfo;
+    const vitalSignsArray = data.vitalSigns;
+    const resuscitationActions = data.resuscitationActions;
+    const adrenaline = data.adrenaline;
+    const nacl = data.nacl;
+    const nabic = data.nabic;
+    const bloodProducts = data.bloodProducts;
+    const additionalProducts = data.additionalProducts;
+    const resuscitationSummary = data.resuscitationSummary;
+    const doctorSignature = data.doctorSignature;
+
+    const rows = teamMembers.map((member: any, index: number) => `
+    <tr>
+      <td style="padding: 8px; border: 1px solid #ccc;">${index + 1}</td>
+      <td style="padding: 8px; border: 1px solid #ccc;">${member.name || ''}</td>
+      <td style="padding: 8px; border: 1px solid #ccc;">${member.role || ''}</td>
+    </tr>
+  `).join('');
+    const rowsHtml = vitalSignsArray.map((row: any) => `
+    <tr>
+      <td>${row.time || ''}</td>
+      <td>${row.pulse || ''}</td>
+      <td>${row.o2Sat || ''}</td>
+      <td>${row.other || ''}</td>
+    </tr>
+  `).join('');
+    const rowsHtml2 = resuscitationActions.map((row: any) => `
+    <tr>
+      <td>${row.time || ''}</td>
+      <td>${row.suction || ''}</td>
+      <td>${row.oxygenConcentration || ''}</td>
+      <td>${row.amboOxygen || ''}</td>
+      <td>${row.intubationVentilation || ''}</td>
+      <td>${row.heartMassage || ''}</td>
+      <td>${row.umbilicalVenousCatheterization || ''}</td>
+      <td>${row.extubation || ''}</td>
+      <td>${row.otherAction || ''}</td>
+    </tr>
+  `).join('');
+    const adrenalineRows = adrenaline.map((row: any) => {
+      const time = row.time;
+      const route = row.route;
+      const volume = row.volume;
+      return `
+      <tr>
+        <td>${time}</td>
+        <td>${route}</td>
+        <td>${volume}</td>
+      </tr>
+    `;
+    }).join('');
+    const naclRows = nacl.map((row: any) => {
+      const time = row.time;
+      const volume = row.volume;
+      return `
+        <tr>
+          <td>${time}</td>
+          <td>${volume}</td>
+        </tr>
+      `;
+    }).join('');
+    const nabicRows = nabic.map((row: any) => {
+      const time = row.time;
+      const amount = row.amount;
+      return `
+        <tr>
+          <td>${time}</td>
+          <td>${amount}</td>
+        </tr>
+      `;
+    }).join('');
+    const rowsHtml3 = bloodProducts.map((row: any) => {
+      const time = row.time;
+      const type = row.type;
+      const volume = row.volume;
+      return `
+      <tr>
+        <td>${time}</td>
+        <td>${type}</td>
+        <td>${volume}</td>
+      </tr>
+    `;
+    }).join('');
+    const rowsHtml4 = additionalProducts.map((row: any) => {
+      const name = row.name;
+      const time = row.time;
+      const route = row.route;
+      const dosageVolume = row.dosageVolume;
+      return `
+      <tr>
+        <td>${name}</td>
+        <td>${time}</td>
+        <td>${route}</td>
+        <td>${dosageVolume}</td>
+      </tr>
+    `;
+    }).join('');
+    const rowsHtml5 = this.apgarParameters.map((param: any, i: number) => {
+      const parameter = param.label || '';
+      const timeColumnsHtml = this.times.map((time: any) => {
+        const score = param[time.key] || '';
+        return `<td>${score}</td>`;
+      }).join('');
+
+      return `
+      <tr>
+        <td>${parameter}</td>
+        ${timeColumnsHtml}
+      </tr>
+    `;
+    }).join('');
+
+    const headerColumnsHtml5 = this.times.map((time: any) => {
+      return `<th>${time.label}</th>`;
+    }).join('');
+    const rowsHtml6 = this.labParameters.map((param: any, i: number) => {
+      const source = param.label || '';
+      const timeColumnsHtml6 = this.labtimes.map((time: any) => {
+        const value = param[time.key] || '';
+        return `<td>${value}</td>`;
+      }).join('');
+
+      return `
+      <tr>
+        <td>${source}</td>
+        ${timeColumnsHtml6}
+      </tr>
+    `;
+    }).join('');
+
+    const headerColumnsHtml6 = this.labtimes.map((time: any) => {
+      return `<th>${time.label}</th>`;
+    }).join('');
+    const rowsHtml7 = this.labParameters.map((param: any, i: number) => {
+      const source = param.label || '';
+      const timeColumnsHtml7 = this.labtimes.map((time: any) => {
+        const value = param[time.key] || '';
+        return `<td>${value}</td>`;
+      }).join('');
+
+      return `
+      <tr>
+        <td>${source}</td>
+        ${timeColumnsHtml7}
+      </tr>
+    `;
+    }).join('');
+
+    const headerColumnsHtml7 = this.labtimes.map((time: any) => {
+      return `<th>${time.label}</th>`;
+    }).join('');
+
+    return `
+    <div style="font-family: Arial, sans-serif; direction: rtl; padding: 20px;">
+      <h2 style="text-align: center;">פרטי הילוד</h2>
+      
+      <table style="width: 100%; border-collapse: collapse;">
+        <tr>
+          <td><strong>תעודת זהות היולדת:</strong> ${motherInfo.motherId || ''}</td>
+          <td><strong>שם היולדת:</strong> ${motherInfo.motherName || ''}</td>
+        </tr>
+        <tr>
+          <td><strong>תעודת זהות הילוד:</strong> ${motherInfo.babyId || ''}</td>
+          <td><strong>מספר מקרה הילוד:</strong> ${motherInfo.babyCasenumber || ''}</td>
+        </tr>
+        <tr>
+          <td><strong>החייאה בוצעה בתאריך:</strong> ${motherInfo.resuscitationDate || ''}</td>
+          <td><strong>בשעה:</strong> ${motherInfo.resuscitationTime || ''}</td>
+        </tr>
+        <tr>
+          <td colspan="2"><strong>מיקום ההחייאה:</strong> ${motherInfo.location || ''}</td>
+        </tr>
+        ${motherInfo.location === 'מקום אחר' ? `
+          <tr>
+            <td colspan="2"><strong>אחר:</strong> ${motherInfo.otherLocation || ''}</td>
+          </tr>
+        ` : ''}
+
+        <tr>
+          <td><strong>שעת הלידה:</strong> ${motherInfo.deliveryTime || ''}</td>
+          <td><strong>שעת קריאת רופא ילודים:</strong> ${motherInfo.pediatricianCalledTime || ''}</td>
+        </tr>
+        <tr>
+          <td colspan="2"><strong>רופא ילודים הגיע בשעה:</strong> ${motherInfo.resuscitationStartTime || ''}</td>
+        </tr>
+        <tr>
+          <td colspan="2"><strong>מין הילוד:</strong> ${motherInfo.babyGender || ''}</td>
+        </tr>
+        <tr>
+          <td><strong>גיל הריון בשבועות:</strong> ${motherInfo.gestationAgeWeeks || ''}</td>
+          <td><strong>משקל הילוד:</strong> ${motherInfo.babyWeight || ''} ק"ג</td>
+        </tr>
+        <tr>
+          <td colspan="2"><strong>צורת הלידה:</strong> ${motherInfo.deliveryMethod || ''}</td>
+        </tr>
+      </table>
+    </div>
+  ` +
+      `
+    <div style="font-family: Arial, sans-serif; direction: rtl; padding: 20px;">
+      <h2 style="text-align: center;">אנשי צוות</h2>
+      <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+        <thead>
+          <tr style="background-color: #f0f0f0;">
+            <th style="padding: 8px; border: 1px solid #ccc;">#</th>
+            <th style="padding: 8px; border: 1px solid #ccc;">שם</th>
+            <th style="padding: 8px; border: 1px solid #ccc;">תפקיד</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rows || '<tr><td colspan="3" style="padding: 8px; text-align: center;">לא הוזנו אנשי צוות</td></tr>'}
+        </tbody>
+      </table>
+    </div>
+  ` +
+      `
+    <div style="font-family: Arial, sans-serif; direction: rtl; padding: 20px;">
+      <h2 style="text-align: center;">מהלך ההריון והלידה</h2>
+
+      <div style="margin-bottom: 16px;">
+        <strong>מידע על מהלך ההריון והלידה:</strong>
+        <div style="padding: 8px; border: 1px solid #ccc; min-height: 80px;">
+          ${pregnancyDeliveryInfo.pregnancyDetails || '<em>לא הוזן</em>'}
+        </div>
+      </div>
+
+      <div style="margin-bottom: 16px;">
+        <strong>מים מקוניאליים:</strong>
+        <span>${pregnancyDeliveryInfo.meconiumStaining === '1' ? 'כן' : pregnancyDeliveryInfo.meconiumStaining === '0' ? 'לא' : 'לא נבחר'}</span>
+      </div>
+
+      <div style="margin-bottom: 16px;">
+        <strong>רופא ילודים נכח בלידה:</strong>
+        <span>${pregnancyDeliveryInfo.pediatricianPresent === '1' ? 'כן' : pregnancyDeliveryInfo.pediatricianPresent === '0' ? 'לא' : 'לא נבחר'}</span>
+      </div>
+
+      ${pregnancyDeliveryInfo.pediatricianPresent === '1'
+        ? `<div style="margin-bottom: 16px;">
+              <strong>שעת הגעת רופא ילודים:</strong>
+              <span>${pregnancyDeliveryInfo.pediatricianArrivalTime || 'לא הוזנה שעה'}</span>
+            </div>`
+        : ''
+      }
+    </div>
+  ` +
+      `
+    <div style="font-family: Arial, sans-serif; direction: rtl; padding: 20px;">
+      <h2 style="text-align: center;">מעקב מדדים</h2>
+      <table border="1" cellpadding="8" cellspacing="0" style="width: 100%; border-collapse: collapse; text-align: center;">
+        <thead style="background-color: #f0f0f0;">
+          <tr>
+            <th>שעה</th>
+            <th>דופק</th>
+            <th>O2Sat</th>
+            <th>אחר</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rowsHtml || '<tr><td colspan="4"><em>אין נתונים</em></td></tr>'}
+        </tbody>
+      </table>
+    </div>
+  ` +
+      `
+    <div style="font-family: Arial, sans-serif; direction: rtl; padding: 20px;">
+      <h2 style="text-align: center;">הפעולות שבוצעו במהלך ההחייאה</h2>
+      <div style="overflow-x: auto;">
+        <table border="1" cellpadding="8" cellspacing="0" style="width: 100%; border-collapse: collapse; text-align: center;">
+          <thead style="background-color: #f0f0f0;">
+            <tr>
+              <th>שעה</th>
+              <th>שאיבה מקנה הנשימה</th>
+              <th>מתן חמצן חופשי %</th>
+              <th>הנשמה באמבו עם/ללא</th>
+              <th>צנרור הקנה + הנשמה</th>D
+              <th>עיסוי לב</th>
+              <th>צנרור וריד הטבור</th>
+              <th>הוצאת טובוס</th>
+              <th>פעולה אחרת</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rowsHtml2 || '<tr><td colspan="9"><em>אין נתונים</em></td></tr>'}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  ` +
+      `
+    <div style="font-family: Arial, sans-serif; direction: rtl; padding: 20px;">
+      <h2 style="text-align: center;">תרופות ותכשירים שניתנו במהלך ההחייאה</h2>
+      <h3 style="text-align: right; margin-top: 24px;">אדרנלין בריכוז 1:10,000</h3>
+      <div style="overflow-x: auto;">
+        <table border="1" cellpadding="8" cellspacing="0" style="width: 100%; border-collapse: collapse; text-align: center;">
+          <thead style="background-color: #f0f0f0;">
+            <tr>
+              <th>שעת המתן</th>
+              <th>דרך המתן</th>
+              <th>נפח התמיסה שניתן (סמ"ק)</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${adrenalineRows || '<tr><td colspan="3"><em>אין נתונים</em></td></tr>'}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  ` +
+      `
+    <div style="font-family: Arial, sans-serif; direction: rtl; padding: 20px;">
+      <h3 style="text-align: right; margin-top: 24px;">IV NaCl 0.9%</h3>
+      <div style="overflow-x: auto;">
+        <table border="1" cellpadding="8" cellspacing="0" style="width: 100%; border-collapse: collapse; text-align: center;">
+          <thead style="background-color: #f0f0f0;">
+            <tr>
+              <th>שעת המתן</th>
+              <th>נפח התמיסה שניתן (סמ"ק)</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${naclRows || '<tr><td colspan="2"><em>אין נתונים</em></td></tr>'}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  ` +
+      `
+    <div style="font-family: Arial, sans-serif; direction: rtl; padding: 20px;">
+      <h3 style="text-align: right; margin-top: 24px;">IV NaBic</h3>
+      <div style="overflow-x: auto;">
+        <table border="1" cellpadding="8" cellspacing="0" style="width: 100%; border-collapse: collapse; text-align: center;">
+          <thead style="background-color: #f0f0f0;">
+            <tr>
+              <th>שעת המתן</th>
+              <th>כמות (meq / kg)</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${nabicRows || '<tr><td colspan="2"><em>אין נתונים</em></td></tr>'}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  ` +
+      `
+    <div style="font-family: Arial, sans-serif; direction: rtl; padding: 20px;">
+      <h3 style="text-align: right; margin-top: 24px;">מוצרי דם</h3>
+      <div style="overflow-x: auto;">
+        <table border="1" cellpadding="8" cellspacing="0" style="width: 100%; border-collapse: collapse; text-align: center;">
+          <thead style="background-color: #f0f0f0;">
+            <tr>
+              <th>שעת המתן</th>
+              <th>סוג המוצר</th>
+              <th>הנפח שניתן (סמ"ק)</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rowsHtml3 || '<tr><td colspan="3"><em>אין נתונים</em></td></tr>'}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  ` +
+      `
+    <div style="font-family: Arial, sans-serif; direction: rtl; padding: 20px;">
+      <h3 style="text-align: right; margin-top: 24px;">מוצרים נוספים</h3>
+      <div style="overflow-x: auto;">
+        <table border="1" cellpadding="8" cellspacing="0" style="width: 100%; border-collapse: collapse; text-align: center;">
+          <thead style="background-color: #f0f0f0;">
+            <tr>
+              <th>שם התכשיר</th>
+              <th>שעת המתן</th>
+              <th>דרך המתן</th>
+              <th>מינון / נפח</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rowsHtml4 || '<tr><td colspan="4"><em>אין נתונים</em></td></tr>'}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  ` +
+      `
+    <div style="font-family: Arial, sans-serif; direction: rtl; padding: 20px;">
+      <h3 style="text-align: right; margin-top: 24px;">פרמטרים של אפגר</h3>
+      <div style="overflow-x: auto;">
+        <table border="1" cellpadding="8" cellspacing="0" style="width: 100%; border-collapse: collapse; text-align: center;">
+          <thead style="background-color: #f0f0f0;">
+            <tr>
+              <th>תאור</th>
+              ${headerColumnsHtml5}
+            </tr>
+          </thead>
+          <tbody>
+            ${rowsHtml5 || '<tr><td colspan="' + (this.times.length + 1) + '"><em>אין נתונים</em></td></tr>'}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  ` +
+      `
+    <div style="font-family: Arial, sans-serif; direction: rtl; padding: 20px;">
+      <h3 style="text-align: right; margin-top: 24px;">פרמטרים של מעבדה</h3>
+      <div style="overflow-x: auto;">
+        <table border="1" cellpadding="8" cellspacing="0" style="width: 100%; border-collapse: collapse; text-align: center;">
+          <thead style="background-color: #f0f0f0;">
+            <tr>
+              <th>מקור הדגימה</th>
+              ${headerColumnsHtml6}
+            </tr>
+          </thead>
+          <tbody>
+            ${rowsHtml6 || '<tr><td colspan="' + (this.labtimes.length + 1) + '"><em>אין נתונים</em></td></tr>'}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  ` +
+      `
+    <div style="font-family: Arial, sans-serif; direction: rtl; padding: 20px;">
+      <h3 style="text-align: right; margin-top: 24px;">פרמטרים של מעבדה (גרסה 2)</h3>
+      <div style="overflow-x: auto;">
+        <table border="1" cellpadding="8" cellspacing="0" style="width: 100%; border-collapse: collapse; text-align: center;">
+          <thead style="background-color: #f0f0f0;">
+            <tr>
+              <th>מקור הדגימה</th>
+              ${headerColumnsHtml7}
+            </tr>
+          </thead>
+          <tbody>
+            ${rowsHtml7 || '<tr><td colspan="' + (this.labtimes.length + 1) + '"><em>אין נתונים</em></td></tr>'}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  ` +
+      `
+    <div style="font-family: Arial, sans-serif; direction: rtl; padding: 20px;">
+      <h3 style="text-align: right;">סיכום החייאה</h3>
+
+      <div style="display: flex; flex-wrap: wrap; margin-bottom: 20px;">
+        <!-- Predefined Summary Selection -->
+        <div style="width: 100%; margin-bottom: 16px;">
+          <strong>בחר סיכום מהיר:</strong>
+          <span>${resuscitationSummary.predefinedSummary || ''}</span>
+        </div>
+
+        <!-- Summary Textarea -->
+        <div style="width: 100%; margin-bottom: 16px;">
+          <strong>סיכום:</strong>
+          <p>${resuscitationSummary.summary || ''}</p>
+        </div>
+
+        <!-- Summary Time -->
+        <div style="width: 50%; margin-bottom: 16px;">
+          <strong>שעת סיום ההחייאה:</strong>
+          <span>${resuscitationSummary.summaryTime || ''}</span>
+        </div>
+
+        <!-- Condition At End -->
+        <div style="width: 50%; margin-bottom: 16px;">
+          <strong>מצב הילוד בתום החייאה:</strong>
+          <span>${resuscitationSummary.conditionAtEnd || ''}</span>
+        </div>
+
+        <!-- Transfer Destination -->
+        <div style="width: 50%; margin-bottom: 16px;">
+          <strong>בתום ההחייאה הילוד הועבר:</strong>
+          <span>${resuscitationSummary.transferDestination || ''}</span>
+        </div>
+
+        <!-- Condition Upon Transfer -->
+        <div style="width: 50%; margin-bottom: 16px;">
+          <strong>מצב הילוד בהעברה:</strong>
+          <span>${resuscitationSummary.conditionUponTransfer || ''}</span>
+        </div>
+
+        <!-- Other Condition Upon Transfer -->
+        <div style="width: 50%; margin-bottom: 16px;" *ngIf="formValue.conditionUponTransfer === 'אחר'">
+          <strong>אחר:</strong>
+          <span>${resuscitationSummary.other || ''}</span>
+        </div>
+
+        <!-- Oxygen Saturation -->
+        <div style="width: 50%; margin-bottom: 16px;">
+          <strong>סטורציה בהעברה %:</strong>
+          <span>${resuscitationSummary.oxygenSat || ''}</span>
+        </div>
+
+        <!-- Transfer Time -->
+        <div style="width: 50%; margin-bottom: 16px;">
+          <strong>שעת העברה:</strong>
+          <span>${resuscitationSummary.transferTime || ''}</span>
+        </div>
+
+        <!-- Transferred By -->
+        <div style="width: 50%; margin-bottom: 16px;">
+          <strong>התינוק הועבר ע"י:</strong>
+          <span>${resuscitationSummary.transferredBy || ''}</span>
+        </div>
+
+        <!-- Role -->
+        <div style="width: 50%; margin-bottom: 16px;">
+          <strong>תפקיד:</strong>
+          <span>${resuscitationSummary.role || ''}</span>
+        </div>
+
+        <!-- Info To -->
+        <div style="width: 50%; margin-bottom: 16px;">
+          <strong>מידע נמסר ל:</strong>
+          <span>${resuscitationSummary.infoTo || ''}</span>
+        </div>
+
+        <!-- Acceptance Date -->
+        <div style="width: 50%; margin-bottom: 16px;">
+          <strong>תאריך:</strong>
+          <span>${resuscitationSummary.acceptanceDate || ''}</span>
+        </div>
+
+        <!-- Acceptance Time -->
+        <div style="width: 50%; margin-bottom: 16px;">
+          <strong>שעה:</strong>
+          <span>${resuscitationSummary.acceptanceTime || ''}</span>
+        </div>
+
+        <!-- By Who -->
+        <div style="width: 50%; margin-bottom: 16px;">
+          <strong>ע"י (שם ותפקיד):</strong>
+          <span>${resuscitationSummary.ByWhoEmployee || ''}</span>
+        </div>
+
+        <!-- Received By -->
+        <div style="width: 50%; margin-bottom: 16px;">
+          <strong>בנוכחות:</strong>
+          <span>${resuscitationSummary.receivedBy || ''}</span>
+        </div>
+
+        <!-- Predefined Message Selection -->
+        <div style="width: 100%; margin-bottom: 16px;">
+          <strong>בחר הודעה מהירה:</strong>
+          <span>${resuscitationSummary.predefinedNote || ''}</span>
+        </div>
+
+        <!-- Notes Textarea -->
+        <div style="width: 100%; margin-bottom: 16px;">
+          <strong>תוכן המידע שנמסר:</strong>
+          <p>${resuscitationSummary.notes || ''}</p>
+        </div>
+      </div>
+
+      <div style="margin-top: 16px;">
+        <h3 style="text-align: right;">חתימה וחותמת הרופא האחראי על החייאה:</h3>
+
+        <div style="display: flex; flex-wrap: wrap; margin-bottom: 16px;">
+          <!-- Signature Date -->
+          <div style="width: 50%; margin-bottom: 16px;">
+            <strong>תאריך:</strong>
+            <span>${doctorSignature.signatureDate || ''}</span>
+          </div>
+
+          <!-- Signature Time -->
+          <div style="width: 50%; margin-bottom: 16px;">
+            <strong>שעה:</strong>
+            <span>${doctorSignature.signatureTime || ''}</span>
+          </div>
+
+          <!-- Signature -->
+          <div style="width: 50%; margin-bottom: 16px;">
+            <strong>חתימה:</strong>
+            <img src="${doctorSignature.nameAndRole}" />
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
   }
 
 }
