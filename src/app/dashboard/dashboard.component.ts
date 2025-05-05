@@ -118,6 +118,7 @@ export class DashboardComponent implements OnInit {
             this.answer = 'לצורך קבלת מענה, יש להזין את השאלה בשדה המיועד לכך למעלה.';
             return;
         }
+        if (this.userName == 'nibrahem') return;
         if (this.claude_version.model_identify == 'Gemeni') this.askGemini(this.claude_version);
         else if (this.claude_version.model_identify == 'Claude') await this.askClaude(this.claude_version);
     }
