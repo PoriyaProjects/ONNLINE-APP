@@ -13,7 +13,7 @@ import { environment } from 'src/environments/environment';
   styleUrls: ['./cpr-newbord-dashborad.component.css']
 })
 export class CprNewbordDashboradComponent implements OnInit {
-  displayedColumns: string[] = ['motherName', 'motherId', 'babyId', 'babyGender', 'babyWeight', 'deliveryMethod', 'location', 'actions'];
+  displayedColumns: string[] = ['Id', 'motherName', 'motherId', 'babyId', 'babyGender', 'babyWeight', 'deliveryMethod', 'location', 'actions'];
   dataSource = new MatTableDataSource<any>();
 
   @ViewChild(MatPaginator) paginator!: MatPaginator;
