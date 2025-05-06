@@ -873,36 +873,6 @@ private parseDurationToDecimalHours(durationString: any): number | null {
   return null;
 }
 
-// Format decimal hours back to HH:MM format
-// private formatDecimalHoursToTime(decimalHours: number | null): string {
-//   if (decimalHours === null || decimalHours === undefined || isNaN(decimalHours)) {
-//     return '';
-//   }
-  
-//   // Handle negative values
-//   const isNegative = decimalHours < 0;
-//   const absHours = Math.abs(decimalHours);
-  
-//   // Extract hours and minutes
-//   const hours = Math.floor(absHours);
-//   const minutes = Math.round((absHours - hours) * 60);
-  
-//   // Handle case when minutes round up to 60
-//   let adjustedHours = hours;
-//   let adjustedMinutes = minutes;
-  
-//   if (adjustedMinutes === 60) {
-//     adjustedHours += 1;
-//     adjustedMinutes = 0;
-//   }
-  
-//   // Format with leading zeros
-//   const formattedHours = adjustedHours.toString().padStart(2, '0');
-//   const formattedMinutes = adjustedMinutes.toString().padStart(2, '0');
-  
-//   return `${isNegative ? '-' : ''}${formattedHours}:${formattedMinutes}`;
-// }
-
 
 private formatDecimalHoursToTime(decimalHours: number | null): string {
   if (decimalHours === null || decimalHours === undefined || isNaN(decimalHours)) {

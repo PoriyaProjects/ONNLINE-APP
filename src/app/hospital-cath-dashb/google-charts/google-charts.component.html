@@ -93,10 +93,16 @@
                             <div class="mdc-layout-grid__cell col-md-6">
                               <!-- Checkboxes to select which procedures to show -->
                               <div id="procedureCheckboxes">
-                                <label><input type="checkbox" value="אלקטיבי" checked (change)="drawTimeAvgChart()"> אלקטיבי</label>
-                                <label><input type="checkbox" value="דחוף" checked (change)="drawTimeAvgChart()"> דחוף</label>
-                                <label><input type="checkbox" value="ססיה" checked (change)="drawTimeAvgChart()"> ססיה</label>
-                              </div>
+                                <label>
+                                  <input type="checkbox" value="אלקטיבי" checked (change)="updateSelectedTypes($event)"> אלקטיבי
+                                </label>
+                                <label>
+                                  <input type="checkbox" value="דחוף" checked (change)="updateSelectedTypes($event)"> דחוף
+                                </label>
+                                <label>
+                                  <input type="checkbox" value="ססיה" checked (change)="updateSelectedTypes($event)"> ססיה
+                                </label>
+                              </div>                              
                             </div></div>
                             <div id="bar_chart_time_avg" style="width: 100%; height: 500px;">Loading chart...</div>
                         </div>
