@@ -1,7 +1,6 @@
 {
   "name": "my-app",
   "version": "0.0.0",
-  
   "sideEffects": false,
   "scripts": {
     "ng": "ng",
@@ -153,6 +152,7 @@
     "karma-jasmine-html-reporter": "^1.7.0",
     "ng2-completer": "^9.0.1",
     "protractor": "^7.0.0",
+    "source-map": "^0.7.4",
     "ts-node": "~7.0.0",
     "tslint": "~5.15.0",
     "typescript": "^3.8.3"
