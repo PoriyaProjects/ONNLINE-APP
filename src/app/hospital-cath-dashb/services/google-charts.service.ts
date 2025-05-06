@@ -237,7 +237,7 @@ private addShortFormatAnnotations(dataTable: google.visualization.DataTable): go
         },
         vAxis: { format: 'short', minValue: 0 },
       },
-      gaugeTextPosition = 120    } = options;
+      gaugeTextPosition = 150    } = options;
   
     await this.chartsReady;
   
@@ -320,7 +320,7 @@ private addShortFormatAnnotations(dataTable: google.visualization.DataTable): go
     console.log('Time average chart complete');
   }
   
-  public async drawChartGaugeFunc(chartOptions: any = {}, textPosition: number = 120): Promise<void> {
+  public async drawChartGaugeFunc(chartOptions: any = {}, textPosition: number = 150): Promise<void> {
     const rawData = await this.http.get(this.DATA_SOURCES.GAUGE, { responseType: 'text' }).toPromise();
     const cleanData = this.sanitizeSoapResponse(rawData);
   
@@ -873,36 +873,6 @@ private parseDurationToDecimalHours(durationString: any): number | null {
   return null;
 }
 
-// Format decimal hours back to HH:MM format
-// private formatDecimalHoursToTime(decimalHours: number | null): string {
-//   if (decimalHours === null || decimalHours === undefined || isNaN(decimalHours)) {
-//     return '';
-//   }
-  
-//   // Handle negative values
-//   const isNegative = decimalHours < 0;
-//   const absHours = Math.abs(decimalHours);
-  
-//   // Extract hours and minutes
-//   const hours = Math.floor(absHours);
-//   const minutes = Math.round((absHours - hours) * 60);
-  
-//   // Handle case when minutes round up to 60
-//   let adjustedHours = hours;
-//   let adjustedMinutes = minutes;
-  
-//   if (adjustedMinutes === 60) {
-//     adjustedHours += 1;
-//     adjustedMinutes = 0;
-//   }
-  
-//   // Format with leading zeros
-//   const formattedHours = adjustedHours.toString().padStart(2, '0');
-//   const formattedMinutes = adjustedMinutes.toString().padStart(2, '0');
-  
-//   return `${isNegative ? '-' : ''}${formattedHours}:${formattedMinutes}`;
-// }
-
 
 private formatDecimalHoursToTime(decimalHours: number | null): string {
   if (decimalHours === null || decimalHours === undefined || isNaN(decimalHours)) {
@@ -1109,6 +1079,10 @@ public drawTimeAvgChart(
               }
             });
           });
+          const texts = document.querySelectorAll('#gauge_chart g g text');
+  texts.forEach(text => {
+    (text as SVGTextElement).setAttribute('style', 'font-size: 20px!important; fill: #000;');
+  });
         }
         
         // Draw the chart with the view containing formatted values

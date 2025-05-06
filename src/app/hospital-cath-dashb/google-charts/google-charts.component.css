@@ -111,3 +111,9 @@ h2 {
 }
 
 #procedureCheckboxes{text-align: right;}
+#procedureCheckboxes label:not(:first-child){margin-right: 20px;}
+#gauge_chart g>g>text {
+    font-size: 16px!important;
+    font-weight: bold;
+  }
+  
