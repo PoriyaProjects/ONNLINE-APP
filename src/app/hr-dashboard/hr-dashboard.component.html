@@ -98,7 +98,7 @@
                                 <img src="{{message.Message_Text}}" width="200" />
                                 <mat-icon mat-list-icon style="color: yellowgreen;float: left;cursor: pointer;"
                                     matTooltip="הורדת קובץ"
-                                    (click)="downloadPDF(message.Message_Text)">cloud_download</mat-icon>
+                                    (click)="downloadPDF(message.Message_Text, message)">cloud_download</mat-icon>
                             </div>
                             <span *ngIf="message.IfFileMessage == 'False'"
                                 style="color: #333;font-size: 18px;line-height: 2;">{{ message.Message_Text

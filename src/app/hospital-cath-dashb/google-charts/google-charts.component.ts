@@ -7,6 +7,10 @@ import { MDCRipple } from '@material/ripple';
   templateUrl: './google-charts.component.html',
   styleUrls: ['./google-charts.component.css']
 })
+
+
+
+
 export class GoogleChartsComponent implements AfterViewInit {
 
   selectedTypes: { [key: string]: boolean } = {
@@ -17,6 +21,8 @@ export class GoogleChartsComponent implements AfterViewInit {
 
   constructor(public googleChartsService: GoogleChartsService) {}
 
+
+  
   ngAfterViewInit(): void {
     this.googleChartsService.loadAndDrawCharts();
     

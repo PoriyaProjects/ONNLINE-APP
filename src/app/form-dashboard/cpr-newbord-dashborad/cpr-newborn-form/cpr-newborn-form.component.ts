@@ -291,9 +291,9 @@ export class CprNewbornFormComponent implements OnInit {
             otherLocation: [data?.motherInfo.otherLocation],
             babyName: [data?.motherInfo.babyName],
             babyId: [data?.motherInfo.babyId, Validators.required],
-            resuscitationDate: [data?.motherInfo.resuscitationDate],
-            resuscitationTime: [data?.motherInfo.resuscitationTime],
-            location: [data?.motherInfo.location],
+            resuscitationDate: [data?.motherInfo.resuscitationDate, Validators.required],
+            resuscitationTime: [data?.motherInfo.resuscitationTime, Validators.required],
+            location: [data?.motherInfo.location, Validators.required],
             pediatricianCalledTime: [data?.motherInfo.pediatricianCalledTime],
             resuscitationStartTime: [data?.motherInfo.resuscitationStartTime],
             babyGender: [data?.motherInfo.babyGender, Validators.required],
@@ -386,6 +386,46 @@ export class CprNewbornFormComponent implements OnInit {
       });
   }
 
+  calculateApgarGrades(key) {
+    let tempGroup = this.resuscitationForm.controls['apgarScore'].value;
+    if (key == 'one') {
+      // index 0
+      let sum = 0;
+      for (let i = 0; i < tempGroup.length - 1; i++) {
+        sum += tempGroup[i].one == '' ? 0 : parseInt(tempGroup[i].one);
+      }
+      this.resuscitationForm.controls['apgarScore']['controls'][6].controls.one.setValue(sum);
+    } else if (key == 'five') {
+      // index 1
+      let sum = 0;
+      for (let i = 0; i < tempGroup.length - 1; i++) {
+        sum += tempGroup[i].five == '' ? 0 : parseInt(tempGroup[i].five);
+      }
+      this.resuscitationForm.controls['apgarScore']['controls'][6].controls.five.setValue(sum);
+    } else if (key == 'ten') {
+      // index 2
+      let sum = 0;
+      for (let i = 0; i < tempGroup.length - 1; i++) {
+        sum += tempGroup[i].ten == '' ? 0 : parseInt(tempGroup[i].ten);
+      }
+      this.resuscitationForm.controls['apgarScore']['controls'][6].controls.ten.setValue(sum);
+    } else if (key == 'fifteen') {
+      // index 3
+      let sum = 0;
+      for (let i = 0; i < tempGroup.length - 1; i++) {
+        sum += tempGroup[i].fifteen == '' ? 0 : parseInt(tempGroup[i].fifteen);
+      }
+      this.resuscitationForm.controls['apgarScore']['controls'][6].controls.fifteen.setValue(sum);
+    } else if (key == 'twenty') {
+      // index 4
+      let sum = 0;
+      for (let i = 0; i < tempGroup.length - 1; i++) {
+        sum += tempGroup[i].twenty == '' ? 0 : parseInt(tempGroup[i].twenty);
+      }
+      this.resuscitationForm.controls['apgarScore']['controls'][6].controls.twenty.setValue(sum);
+    }
+  }
+
   signForm() {
     const dialogRef = this.dialog
       .open(DialogContentExampleDialog, {
@@ -427,7 +467,7 @@ export class CprNewbornFormComponent implements OnInit {
   getPersonDetails() {
     this.http
       .post(
-        environment.url + "GetCardiologyPatientDetails",
+        environment.url + "GetClinicsPatientDetails",
         {
           _passport: this.resuscitationForm.controls['motherInfo'].value.motherId
         }

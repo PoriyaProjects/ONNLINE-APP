@@ -3,7 +3,7 @@ div[id$='_chart'] {
 }
 
 * {
-    font-family: 'Open Sans', sans-serif;
+    font-family: 'Open Sans', sans-serif!important;
     font-optical-sizing: auto;
     font-weight: 500;
     font-style: normal;
@@ -112,7 +112,7 @@ h2 {
 
 #procedureCheckboxes{text-align: right;}
 #procedureCheckboxes label:not(:first-child){margin-right: 20px;}
-#gauge_chart g>g>text {
+#gauge_chart g text {
     font-size: 16px!important;
     font-weight: bold;
   }

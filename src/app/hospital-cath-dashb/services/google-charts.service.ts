@@ -124,10 +124,6 @@ export class GoogleChartsService {
     }
   }
 
-  
-
-  
- 
 
 /**
  * Adds short-format annotation columns to each numeric series in a DataTable.
@@ -199,8 +195,7 @@ private addShortFormatAnnotations(dataTable: google.visualization.DataTable): go
    * Main function to load and draw all charts in sequence with custom options.
    */
   
-  
-  
+   
   public async loadAndDrawCharts(options: any = {}): Promise<void> {
     console.log("loadAndDrawCharts triggered");
   
@@ -639,7 +634,8 @@ private addShortFormatAnnotations(dataTable: google.visualization.DataTable): go
       const year = date.getFullYear();
       return {
         v: date,
-        f: `${hebrewMonths[month]} ${year}`
+        //f: `${hebrewMonths[month]} ${year}`
+        f: `${month}/${year}` // Display as MM/YYYY
       };
     });
   
@@ -756,6 +752,7 @@ private addShortFormatAnnotations(dataTable: google.visualization.DataTable): go
     }
     textElements.forEach(textElement => {
       textElement.setAttribute('y', topPosition.toString());
+      
     });
     console.log(`Repositioned ${textElements.length} text elements to ${topPosition}px from top`);
     return textElements.length;
@@ -796,57 +793,6 @@ private addShortFormatAnnotations(dataTable: google.visualization.DataTable): go
   }// --- TimeAvgChart
 // --- Time Utilities and Data Processing ---
 
-// This method ensures Google Charts API is loaded before using it
-private ensureGoogleChartsLoaded(): Promise<void> {
-  return new Promise<void>((resolve, reject) => {
-    if (typeof google !== 'undefined' && google.visualization && 
-        typeof google.visualization.DataTable === 'function') {
-      // Google Charts is already loaded
-      resolve();
-    } else {
-      // Check if we're already loading Google Charts
-      if (!window['googleChartsLoading']) {
-        window['googleChartsLoading'] = true;
-        
-        // Load Google Charts dynamically
-        const script = document.createElement('script');
-        script.type = 'text/javascript';
-        script.src = 'https://www.gstatic.com/charts/loader.js';
-        
-        script.onload = () => {
-          // Once the loader is available, load the visualization library
-          google.charts.load('current', {'packages':['corechart']});
-          google.charts.setOnLoadCallback(() => {
-            window['googleChartsLoading'] = false;
-            resolve();
-          });
-        };
-        
-        script.onerror = () => {
-          window['googleChartsLoading'] = false;
-          reject('Failed to load Google Charts script');
-        };
-        
-        document.head.appendChild(script);
-      } else {
-        // Wait for the existing loading process
-        const checkLoaded = setInterval(() => {
-          if (typeof google !== 'undefined' && google.visualization && 
-              typeof google.visualization.DataTable === 'function') {
-            clearInterval(checkLoaded);
-            resolve();
-          }
-        }, 100);
-        
-        // Set a timeout to avoid infinite waiting
-        setTimeout(() => {
-          clearInterval(checkLoaded);
-          reject('Timeout waiting for Google Charts to load');
-        }, 10000);
-      }
-    }
-  });
-}
 
 private parseDurationToDecimalHours(durationString: any): number | null {
   // Check if input is null, undefined, or not a string
@@ -926,181 +872,129 @@ public drawTimeAvgChart(
   customOptions: any = {},
   selectedTypes: { [key: string]: boolean } = { 'אלקטיבי': true, 'דחוף': true, 'ססיה': true }
 ): void {
-  const dropdownId = 'timeAvgGroupByDropdown';
-  const dropdown = document.getElementById(dropdownId) as HTMLSelectElement;
-
-  // Fallback to a safe default if dropdown doesn't exist or has no value
+  const dropdown = document.getElementById('timeAvgGroupByDropdown') as HTMLSelectElement;
   const groupBy = dropdown?.value?.trim() || 'month';
-
   const url = `${this.DATA_SOURCES.TIME_AVG}=${groupBy}`;
+  const container = document.getElementById(elementId);
 
-  // Ensure Google Charts API is loaded
-  this.ensureGoogleChartsLoaded().then(() => {
-    this.http.get(url, { responseType: 'text' }).toPromise()
-      .then(rawData => {
-        const cleanData = this.sanitizeSoapResponse(rawData);
+  if (!container) {
+    console.error(`Element with ID "${elementId}" not found.`);
+    return;
+  }
 
-        if (!cleanData || !cleanData.cols || !cleanData.rows) {
-          console.error('Invalid or empty data for TimeAvg Chart');
-          return;
+  this.http.get(url, { responseType: 'text' }).toPromise()
+    .then(rawData => {
+      const cleanData = this.sanitizeSoapResponse(rawData);
+
+      if (!cleanData || !cleanData.cols || !cleanData.rows) {
+        console.error('Invalid or empty data for TimeAvg Chart');
+        container.innerHTML = 'No data available for display.';
+        return;
+      }
+
+      const dataTable = new google.visualization.DataTable();
+      dataTable.addColumn('string', cleanData.cols[0].label); // Time period label (e.g., Month/Year)
+
+      const includedIndexes: number[] = [];
+      cleanData.cols.slice(1).forEach((col: any, idx: number) => {
+        if (selectedTypes[col.label]) {
+          dataTable.addColumn('number', col.label);
+          includedIndexes.push(idx + 1); // +1 due to slicing offset
         }
-
-        // Create the data table
-        const dataTable = new google.visualization.DataTable();
-        dataTable.addColumn('string', cleanData.cols[0].label); // Period (Month/Year)
-
-        const includedIndexes: number[] = [];
-
-        cleanData.cols.slice(1).forEach((col: any, idx: number) => {
-          if (selectedTypes[col.label]) {
-            dataTable.addColumn('number', col.label);
-            includedIndexes.push(idx + 1); // +1 because we sliced
-          }
-        });
-
-        if (includedIndexes.length === 0) {
-          const el = document.getElementById(elementId);
-          if (el) el.innerHTML = 'לא נבחרו עמודות להצגה';
-          return;
-        }
-
-        // Add rows to the data table
-        cleanData.rows.forEach((row: any) => {
-          const original = row.c.map((cell: any) => cell ? cell.v : null);
-          const rowData: any[] = [original[0]];
-
-          includedIndexes.forEach((i: number) => {
-            // Convert the value to decimal for internal calculations
-            // Handle various input types safely
-            let timeValue = null;
-            if (original[i] !== null && original[i] !== undefined) {
-              // If it's already a number, use it directly
-              if (typeof original[i] === 'number') {
-                timeValue = original[i];
-              } else {
-                // Try to parse as time string
-                timeValue = this.parseDurationToDecimalHours(original[i]);
-              }
-            }
-            rowData.push(timeValue);
-          });
-
-          dataTable.addRow(rowData);
-        });
-
-        // Create a formatter for HH:MM time format
-        const timeFormatter = new google.visualization.NumberFormat({
-          pattern: '00:00', // HH:MM format
-          fractionDigits: 0
-        });
-
-        // Apply formatter to all numeric columns
-        for (let i = 1; i < dataTable.getNumberOfColumns(); i++) {
-          timeFormatter.format(dataTable, i);
-        }
-
-        const defaultOptions = {
-          height: 500,
-          legend: { position: 'top' },
-          bar: { groupWidth: "70%" },
-          annotations: {
-            alwaysOutside: true,
-            textStyle: { fontSize: 12, color: '#888' },
-            format: '00:00' // HH:MM format for annotations
-          },
-          colors: this.CHART_COLORS.slice(0, dataTable.getNumberOfColumns() - 1),
-          vAxis: { 
-            format: '00:00', // HH:MM format for y-axis
-            minValue: 0,
-            // Format decimal hours as HH:MM in axis labels
-            ticks: this.generateTimeAxisTicks(dataTable)
-          },
-          interpolateNulls: true,
-          tooltip: { 
-            isHtml: true
-          },
-          formatters: {
-            // Format values in all columns
-            number: [{
-              columnNum: Array.from({ length: dataTable.getNumberOfColumns() - 1 }, (_, i) => i + 1),
-              pattern: '00:00'
-            }]
-          }
-        };
-        
-        // Merge with custom options
-        const options = { ...defaultOptions, ...customOptions };
-
-      
-        // Get the container and create the chart
-        const container = document.getElementById(elementId);
-        if (!container) {
-          console.error(`Element with ID "${elementId}" not found`);
-          return;
-        }
-        
-        const chart = new google.visualization.ColumnChart(container);
-        
-        // Create a view to handle custom formatting
-        const view = new google.visualization.DataView(dataTable);
-        
-        // Set up column formatters to display time in HH:MM format
-        const columns = [];
-        columns.push(0); // First column stays the same (labels)
-        
-        // For each data column, create a calculated column with formatted values
-        for (let i = 1; i < dataTable.getNumberOfColumns(); i++) {
-  columns.push({
-    calc: (dt, row) => {
-      const value = dt.getValue(row, i);
-      return {
-        v: value,
-        f: value !== null ? this.formatDecimalHoursToTime(value) : ''
-      };
-    },
-    type: 'number',
-    label: dataTable.getColumnLabel(i)
-  });
-}
-        
-        view.setColumns(columns);
-        
-        // Create a tooltip formatter
-        if (google.visualization.events) {
-          google.visualization.events.addListener(chart, 'ready', () => {
-            google.visualization.events.addListener(chart, 'onmouseover', (e: any) => {
-              if (e.row !== null && e.column > 0) {
-                // Get the original value
-                const value = dataTable.getValue(e.row, e.column);
-                if (value !== null) {
-                  // Select the hovered element to trigger tooltip
-                  chart.setSelection([{row: e.row, column: e.column}]);
-                }
-              }
-            });
-          });
-          const texts = document.querySelectorAll('#gauge_chart g g text');
-  texts.forEach(text => {
-    (text as SVGTextElement).setAttribute('style', 'font-size: 20px!important; fill: #000;');
-  });
-        }
-        
-        // Draw the chart with the view containing formatted values
-        chart.draw(view, options);
-        
-        console.log(`TimeAvg Chart (${groupBy}) drawn successfully.`);
-      })
-      .catch(error => {
-        console.error('Error loading TimeAvg Chart data:', error);
-        const el = document.getElementById(elementId);
-        if (el) el.innerHTML = 'Failed to load chart data. Check console.';
       });
-  }).catch(error => {
-    console.error('Google Charts library not loaded:', error);
-    const el = document.getElementById(elementId);
-    if (el) el.innerHTML = 'Failed to load Google Charts library.';
-  });
+
+      if (includedIndexes.length === 0) {
+        container.innerHTML = 'לא נבחרו עמודות להצגה';
+        return;
+      }
+
+      cleanData.rows.forEach((row: any) => {
+        const original = row.c.map((cell: any) => (cell ? cell.v : null));
+        const rowData: any[] = [original[0]];
+
+        includedIndexes.forEach((i) => {
+          const value = original[i];
+          const timeValue = typeof value === 'number'
+            ? value
+            : this.parseDurationToDecimalHours(value);
+          rowData.push(timeValue);
+        });
+
+        dataTable.addRow(rowData);
+      });
+
+      // Format numbers as HH:MM
+      const timeFormatter = new google.visualization.NumberFormat({
+        pattern: '00:00',
+        fractionDigits: 0
+      });
+      for (let i = 1; i < dataTable.getNumberOfColumns(); i++) {
+        timeFormatter.format(dataTable, i);
+      }
+
+      const defaultOptions = {
+        height: 500,
+        legend: { position: 'top' },
+        bar: { groupWidth: "70%" },
+        annotations: {
+          alwaysOutside: true,
+          textStyle: { fontSize: 12, color: '#888' },
+          format: '00:00'
+        },
+        colors: this.CHART_COLORS.slice(0, dataTable.getNumberOfColumns() - 1),
+        vAxis: {
+          format: '00:00',
+          minValue: 0,
+          ticks: this.generateTimeAxisTicks(dataTable)
+        },
+        interpolateNulls: true,
+        tooltip: { isHtml: true }
+      };
+
+      const options = { ...defaultOptions, ...customOptions };
+      const chart = new google.visualization.ColumnChart(container);
+      const view = new google.visualization.DataView(dataTable);
+
+      // Custom columns with formatted values
+      const columns: any[] = [0]; // First column (labels)
+      for (let i = 1; i < dataTable.getNumberOfColumns(); i++) {
+        columns.push({
+          sourceColumn: i,
+          calc: (dt: any, row: number) => {
+            const value = dt.getValue(row, i);
+            return {
+              v: value,
+              f: value !== null ? this.formatDecimalHoursToTime(value) : ''
+            };
+          },
+          type: 'number',
+          label: dataTable.getColumnLabel(i)
+        });
+      }
+
+      view.setColumns(columns);
+
+      // Add tooltip interaction
+      google.visualization.events.addListener(chart, 'ready', () => {
+        google.visualization.events.addListener(chart, 'onmouseover', (e: any) => {
+          if (e.row !== null && e.column > 0) {
+            const value = dataTable.getValue(e.row, e.column);
+            if (value !== null) {
+              chart.setSelection([{ row: e.row, column: e.column }]);
+            }
+          }
+        });
+      });
+
+      chart.draw(view, options);
+      console.log(`TimeAvg Chart (${groupBy}) drawn successfully.`);
+    })
+    .catch(error => {
+      console.error('Error loading TimeAvg Chart data:', error);
+      container.innerHTML = 'Failed to load chart data. Check console.';
+    });
 }
+
 
 // --- eof TimeAvgChart
  

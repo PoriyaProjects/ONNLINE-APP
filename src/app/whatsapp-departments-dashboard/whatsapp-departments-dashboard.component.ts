@@ -27,7 +27,7 @@ export class WhatsappDepartmentsDashboardComponent implements OnInit {
   filteredOptions: Observable<string[]>;
   notification = "";
   secondsLeft = 5;
-  user_name = localStorage.getItem('loginUserName');
+  user_name = localStorage.getItem('loginUserName').toLowerCase();
   @ViewChild('scrollTarget') scrollTarget: ElementRef;
   contacts = [];
   contacts_filter = [];
@@ -372,15 +372,15 @@ export class WhatsappDepartmentsDashboardComponent implements OnInit {
     document.body.removeChild(a);
   }
 
-  async downloadPDF(base64Data) {
+  async downloadPDF(base64Data, message) {
     try {
       // Replace 'your-base64-data' with the actual Base64 data
       base64Data = base64Data.replace('data:image/png;base64,', '');
       const file_type = await this.detectFileType(base64Data);
       // Replace 'filename.pdf' with the desired file name
       let fileName = "";
-      if (file_type == 'application/pdf') fileName = 'Inquiries_WhatsApp_Service_Media_File.pdf';
-      else fileName = 'Inquiries_WhatsApp_Service_Media_File.png';
+      if (file_type == 'application/pdf') fileName = message.EndUserIDFK + '-' + this.currentContact.FirstName + ' ' + this.currentContact.LastName + ' ' + message.Message_Time + '.pdf';
+      else fileName = message.EndUserIDFK + '-' + this.currentContact.FirstName + ' ' + this.currentContact.LastName + ' ' + message.Message_Time + '.png';
 
       await this.convertBase64ToPDF(base64Data, fileName, file_type);
     } catch (error) {
