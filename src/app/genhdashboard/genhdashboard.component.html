@@ -1,0 +1,20 @@
+<div style="direction: rtl; text-align: right;" class="gen_direction">
+<mat-form-field appearance="fill">
+    <mat-label>Select Department</mat-label>
+    <mat-select [value]="selectedDepartment" (selectionChange)="onDepartmentChange($event.value)">
+      <mat-option *ngFor="let id of (departments | keyvalue)" [value]="id.key">
+        {{ id.value }}
+      </mat-option>
+    </mat-select>
+  </mat-form-field>
+  
+  <app-gauge-chart [departmentId]="selectedDepartment"></app-gauge-chart>
+  <app-monthly-bar-chart [departmentId]="selectedDepartment"></app-monthly-bar-chart>
+  <app-monthly-line-chart [departmentId]="selectedDepartment"></app-monthly-line-chart>
+  
+  <ng-container *ngIf="hasFinancialAccess">
+    <app-financial-line-chart [departmentId]="selectedDepartment"></app-financial-line-chart>
+    <app-income-trend-chart [departmentId]="selectedDepartment"></app-income-trend-chart>
+    <app-income-bar-chart [departmentId]="selectedDepartment"></app-income-bar-chart>
+  </ng-container>
+</div>

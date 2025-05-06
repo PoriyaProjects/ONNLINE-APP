@@ -1,97 +1,113 @@
-/* You can style your chart containers here */
 div[id$='_chart'] {
-  margin-bottom: 30px;
+    margin-bottom: 30px;
 }
 
-     * {
-            font-family: 'Open Sans', sans-serif;
-            font-optical-sizing: auto;
-            font-weight: 500;
-            font-style: normal;
-        }
+* {
+    font-family: 'Open Sans', sans-serif;
+    font-optical-sizing: auto;
+    font-weight: 500;
+    font-style: normal;
+}
 
-        body {
-            background: #F1F2F6;
-        }
-
-
-        :root {
-            --mdc-theme-primary: #2790b0;
-            /* Purple */
-            --mdc-theme-secondary: #76ff03;
-            /* Neon Green */
-            --mdc-theme-background: #fff;
-            --mdc-theme-surface: #fff;
-            --mdc-theme-on-primary: white;
-            --mdc-theme-on-secondary: black;
-        }
-
-        .mdc-top-app-bar {
-            background: #1976d2 !important;
-        }
-
-        h2 {
-            margin: 60px auto 40px;
-        }
-
-        /* Gauge */
-        #gauge_chart {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 40vh;
-        }
-
-        #gauge_chart svg>g>g:last-child path,
-        #gauge_chart svg>g>g:last-child circle {
-            display: none;
-        }
-
-        #gauge_chart svg>g>g:last-child path,
-        #gauge_chart svg>g>g:last-child circle {
-            display: none!important;
-        }
-
-        #gauge_chart svg>g>g:last-child>* {
-            position: relative;
-            top: 20px;
-        }
-
-        #gauge_chart g>* {
-            stroke: none;
-        }
-
-        #gauge_chart g>g>text {
-            margin-top: -60px;
-        }
-
-        .card-title-custom {
-            text-align: center;
-            margin: 20px auto;
-        }
-
-        .app-bar__logo {
-            height: 60px;
-            width: auto;
-            border-radius: 20%;
-        }
+body {
+    background: #F1F2F6;
+}
 
 
-        #bar_chart2 div svg g > g > g > g > g > * { transform: rotate(90deg)!important; 
-            transform-origin: left top; }
-          
-            #bar_chart2 g > g > g > g > g > * { transform: rotate(90deg)!important; 
-              transform-origin: left top; }
+:root {
+    --mdc-theme-primary: #2790b0;
+    /* Purple */
+    --mdc-theme-secondary: #76ff03;
+    /* Neon Green */
+    --mdc-theme-background: #fff;
+    --mdc-theme-surface: #fff;
+    --mdc-theme-on-primary: white;
+    --mdc-theme-on-secondary: black;
+}
 
-              #bar_chart2 g g g g g { transform: rotate(90deg)!important; 
-                transform-origin: left top; }
-                #bar_chart2 g g g g g g{ transform: rotate(90deg)!important; 
-                    transform-origin: left top; }
-              #bar_chart2 g > g > text { transform: rotate(90deg)!important; 
-                transform-origin: left top; }
-          
-                #bar_chart2 g g text { transform: rotate(90deg)!important; 
-                  transform-origin: left top; }
-                  
-                  #bar_chart2 div * {background: #34495e!important;}
-          
+.mdc-top-app-bar {
+    background: #1976d2 !important;
+}
+
+h2 {
+    margin: 60px auto 40px;
+}
+
+/* Gauge */
+#gauge_chart {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 40vh;
+}
+
+#gauge_chart svg>g>g:last-child path,
+#gauge_chart svg>g>g:last-child circle {
+    display: none;
+}
+
+#gauge_chart svg>g>g:last-child path,
+#gauge_chart svg>g>g:last-child circle {
+    display: none !important;
+}
+
+#gauge_chart svg>g>g:last-child>* {
+    position: relative;
+    top: 20px;
+}
+
+#gauge_chart g>* {
+    stroke: none;
+}
+
+#gauge_chart g>g>text {
+    margin-top: -60px;
+}
+
+.card-title-custom {
+    text-align: center;
+    margin: 20px auto;
+}
+
+.app-bar__logo {
+    height: 60px;
+    width: auto;
+    border-radius: 20%;
+}
+
+
+#bar_chart2 div svg g>g>g>g>g>* {
+    transform: rotate(90deg) !important;
+    transform-origin: left top;
+}
+
+#bar_chart2 g>g>g>g>g>* {
+    transform: rotate(90deg) !important;
+    transform-origin: left top;
+}
+
+#bar_chart2 g g g g g {
+    transform: rotate(90deg) !important;
+    transform-origin: left top;
+}
+
+#bar_chart2 g g g g g g {
+    transform: rotate(90deg) !important;
+    transform-origin: left top;
+}
+
+#bar_chart2 g>g>text {
+    transform: rotate(90deg) !important;
+    transform-origin: left top;
+}
+
+#bar_chart2 g g text {
+    transform: rotate(90deg) !important;
+    transform-origin: left top;
+}
+
+#bar_chart2 div * {
+    background: #34495e !important;
+}
+
+#procedureCheckboxes{text-align: right;}
