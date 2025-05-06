@@ -756,7 +756,8 @@ private addShortFormatAnnotations(dataTable: google.visualization.DataTable): go
       return 0;
     }
     textElements.forEach(textElement => {
-      textElement.setAttribute('y', topPosition.toString());      
+      textElement.setAttribute('y', topPosition.toString());
+      
     });
     console.log(`Repositioned ${textElements.length} text elements to ${topPosition}px from top`);
     return textElements.length;

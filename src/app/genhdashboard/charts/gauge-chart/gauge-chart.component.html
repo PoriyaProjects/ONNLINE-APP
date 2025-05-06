@@ -1,9 +1,0 @@
-<app-chart-container [loading]="loading" [error]="error">
-    <google-chart
-      *ngIf="!loading && !error"
-      [type]="'Gauge'"
-      [data]="chartData"
-      [options]="chartOptions">
-    </google-chart>
-  </app-chart-container>
-  
