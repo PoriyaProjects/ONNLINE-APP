@@ -639,7 +639,8 @@ private addShortFormatAnnotations(dataTable: google.visualization.DataTable): go
       const year = date.getFullYear();
       return {
         v: date,
-        f: `${hebrewMonths[month]} ${year}`
+        //f: `${hebrewMonths[month]} ${year}`
+        f: `${month}/${year}` // Display as MM/YYYY
       };
     });
   
@@ -755,7 +756,7 @@ private addShortFormatAnnotations(dataTable: google.visualization.DataTable): go
       return 0;
     }
     textElements.forEach(textElement => {
-      textElement.setAttribute('y', topPosition.toString());
+      textElement.setAttribute('y', topPosition.toString());      
     });
     console.log(`Repositioned ${textElements.length} text elements to ${topPosition}px from top`);
     return textElements.length;
@@ -1079,10 +1080,7 @@ public drawTimeAvgChart(
               }
             });
           });
-          const texts = document.querySelectorAll('#gauge_chart g g text');
-  texts.forEach(text => {
-    (text as SVGTextElement).setAttribute('style', 'font-size: 20px!important; fill: #000;');
-  });
+          
         }
         
         // Draw the chart with the view containing formatted values
