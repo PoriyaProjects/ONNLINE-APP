@@ -237,7 +237,7 @@ private addShortFormatAnnotations(dataTable: google.visualization.DataTable): go
         },
         vAxis: { format: 'short', minValue: 0 },
       },
-      gaugeTextPosition = 120    } = options;
+      gaugeTextPosition = 150    } = options;
   
     await this.chartsReady;
   
@@ -320,7 +320,7 @@ private addShortFormatAnnotations(dataTable: google.visualization.DataTable): go
     console.log('Time average chart complete');
   }
   
-  public async drawChartGaugeFunc(chartOptions: any = {}, textPosition: number = 120): Promise<void> {
+  public async drawChartGaugeFunc(chartOptions: any = {}, textPosition: number = 150): Promise<void> {
     const rawData = await this.http.get(this.DATA_SOURCES.GAUGE, { responseType: 'text' }).toPromise();
     const cleanData = this.sanitizeSoapResponse(rawData);
   
@@ -1079,6 +1079,10 @@ public drawTimeAvgChart(
               }
             });
           });
+          const texts = document.querySelectorAll('#gauge_chart g g text');
+  texts.forEach(text => {
+    (text as SVGTextElement).setAttribute('style', 'font-size: 20px!important; fill: #000;');
+  });
         }
         
         // Draw the chart with the view containing formatted values
