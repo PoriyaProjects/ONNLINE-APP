@@ -3,7 +3,7 @@ import { RouterModule, Routes } from '@angular/router';
 import { GenhdashboardComponent } from './genhdashboard.component';
 
 const routes: Routes = [
-  { path: '', component: GenhdashboardComponent } // routed as child of /dashboard
+  { path: '/genhdashboard', component: GenhdashboardComponent } // routed as child of /dashboard
 ];
 
 @NgModule({
