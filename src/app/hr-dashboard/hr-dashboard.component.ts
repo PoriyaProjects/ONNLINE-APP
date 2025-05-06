@@ -320,8 +320,9 @@ export class HrDashboardComponent implements OnInit {
     document.body.removeChild(a);
   }
 
-  async downloadPDF(base64Data) {
+  async downloadPDF(base64Data, message) {
     try {
+      console.log(message);
       // Replace 'your-base64-data' with the actual Base64 data
       base64Data = base64Data.replace('data:image/png;base64,', '');
       const file_type = await this.detectFileType(base64Data);

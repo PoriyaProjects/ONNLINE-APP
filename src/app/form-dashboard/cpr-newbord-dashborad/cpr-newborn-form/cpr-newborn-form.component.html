@@ -56,7 +56,8 @@
                                 <mat-radio-button value="חדר ניתוח">חדר ניתוח</mat-radio-button>
                                 <mat-radio-button value="מקום אחר">מקום אחר</mat-radio-button>
                             </mat-radio-group>
-                            <mat-form-field appearance="outline">
+                            <mat-form-field appearance="outline"
+                                *ngIf="resuscitationForm.get('motherInfo').get('location')?.value == 'מקום אחר'">
                                 <mat-label>אחר</mat-label>
                                 <input matInput type="text" formControlName="otherLocation">
                             </mat-form-field>
@@ -154,7 +155,7 @@
             <div formGroupName="pregnancyDeliveryInfo">
                 <!-- Predefined Messages -->
                 <mat-form-field appearance="outline" style="width: 100%;">
-                    <mat-label>בחר מידע מהיר על מהלך ההריון והלידה</mat-label>
+                    <mat-label>בחר סיכום מהיר</mat-label>
                     <mat-select (selectionChange)="appendPregnancyDeliveryDetail($event.value)">
                         <mat-option *ngFor="let detail of predefinedPregnancyDetails" [value]="detail">
                             {{ detail }}
@@ -183,7 +184,7 @@
                         <mat-radio-button value="0">לא</mat-radio-button>
                     </mat-radio-group>
                     <mat-form-field appearance="outline" style="width: 50%;"
-                        *ngIf="resuscitationForm.get('pregnancyDeliveryInfo').get('pediatricianPresent').value == 'true'">
+                        *ngIf="resuscitationForm.get('pregnancyDeliveryInfo').get('pediatricianPresent').value == '1'">
                         <mat-label>רופא ילודים הגיע בשעה:</mat-label>
                         <input matInput type="time" formControlName="pediatricianArrivalTime">
                     </mat-form-field>
@@ -579,7 +580,8 @@
 
                                         <ng-container *ngIf="!last && i !== 0">
                                             <!-- <mat-label>ציון קריטריון</mat-label> -->
-                                            <mat-select [formControlName]="time.key" placeholder="בחר ציון (0-2)">
+                                            <mat-select [formControlName]="time.key" placeholder="בחר ציון (0-2)"
+                                                (selectionChange)="calculateApgarGrades(time.key)">
                                                 <mat-option *ngFor="let num of [0, 1, 2]" [value]="num">{{ num
                                                     }}</mat-option>
                                             </mat-select>
