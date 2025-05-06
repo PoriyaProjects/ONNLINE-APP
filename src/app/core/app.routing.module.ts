@@ -153,7 +153,7 @@ import { HospitalCathDashboardComponent } from '../hospital-cath-dashboard/hospi
 import { CommercialSupportFormDashboardComponent } from '../form-dashboard/commercial-support-form-dashboard/commercial-support-form-dashboard.component';
 import { CommercialSupportFormDialogComponent } from '../form-dashboard/commercial-support-form-dashboard/commercial-support-form-dialog/commercial-support-form-dialog.component';
 
-
+import { GenhdashboardComponent } from '../genhdashboard/genhdashboard.component';
 
 const routes: Routes = [
   { path: "patientstikers", component: PatientStikersComponent },
@@ -350,6 +350,7 @@ const routes: Routes = [
   { path: "hospitalcathdashboard", component: HospitalCathDashboardComponent },
   { path: "GraphsModalComponent2", component: GraphsModalComponent2 },
   { path: "EshpozModalComponent2", component: EshpozModalComponent2 },
+  { path: 'genhdashboard', component: GenhdashboardComponent },
   ];
 
 @NgModule({

@@ -39,3 +39,4 @@ export class GoogleChartsComponent implements AfterViewInit {
     this.drawTimeAvgChart();
   }
 }
+

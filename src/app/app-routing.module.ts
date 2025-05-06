@@ -147,6 +147,7 @@ import { HospitalTonnageComponent2 } from "./hospital-cath-dashboard/hospital-to
 import { CommercialSupportFormDashboardComponent } from "./form-dashboard/commercial-support-form-dashboard/commercial-support-form-dashboard.component";
 import { CommercialSupportFormDialogComponent } from "./form-dashboard/commercial-support-form-dashboard/commercial-support-form-dialog/commercial-support-form-dialog.component";
 
+import { GenhdashboardComponent } from './genhdashboard/genhdashboard.component';
 
 const routes: Routes = [
     { path: "patientstikers", component: PatientStikersComponent },
@@ -326,6 +327,7 @@ const routes: Routes = [
     { path: "GraphsModalComponent2", component: GraphsModalComponent2 },
     { path: "EshpozModalComponent2", component: EshpozModalComponent2 },
     { path: "hospital-tonnage2", component: HospitalTonnageComponent2 },
+    { path: 'genhdashboard', component: GenhdashboardComponent },
   
 
 ];

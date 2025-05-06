@@ -275,6 +275,9 @@ import { CommercialSupportFormDashboardComponent } from './form-dashboard/commer
 import { CommercialSupportFormDialogComponent } from './form-dashboard/commercial-support-form-dashboard/commercial-support-form-dialog/commercial-support-form-dialog.component';
 
 
+import { GenhdashboardModule } from './genhdashboard/genhdashboard.module';
+
+
 const maskConfig: Partial<IConfig> = {
   validation: false,
 };
@@ -590,7 +593,7 @@ const maskConfig: Partial<IConfig> = {
     CalendarModule.forRoot({ provide: DateAdapter, useFactory: adapterFactory }),
     //HospitalCathDashbModule,
     AppRoutingModule,
-    SharedModule,
+    SharedModule,    
   ],
   providers: [
     { provide: MAT_DATE_LOCALE, useValue: 'en-GB' }
