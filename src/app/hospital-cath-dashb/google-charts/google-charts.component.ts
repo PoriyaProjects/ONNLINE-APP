@@ -38,5 +38,11 @@ export class GoogleChartsComponent implements AfterViewInit {
     this.selectedTypes[type] = !this.selectedTypes[type];
     this.drawTimeAvgChart();
   }
+
+  updateSelectedTypes(event: Event): void {
+    const checkbox = event.target as HTMLInputElement;
+    this.selectedTypes[checkbox.value] = checkbox.checked;
+    this.drawTimeAvgChart();
+  }
 }
 
