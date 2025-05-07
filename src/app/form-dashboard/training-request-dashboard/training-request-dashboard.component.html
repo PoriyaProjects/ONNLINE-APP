@@ -1,52 +1,62 @@
 <h2 class="page-title text-center">{{UserName}} - השתלמות בקליק </h2>
 <div class="dashboard-container">
     <div class="card-table">
-        <div class="card-header">
-            <div class="search-section">
-                <input type="text" placeholder="חפש..." style="width: 400px" class="search-bar"
-                    (keyup)="applyFilter($event)" />
-                <mat-form-field class="search-bar">
+        <div class="card-header-modern" dir="rtl">
+            <div class="row">
+                <!-- Search -->
+                <mat-form-field appearance="outline" class="form-field flex-1">
+                    <mat-label>חיפוש</mat-label>
+                    <input matInput type="text" (keyup)="applyFilter($event)" />
+                    <mat-icon matPrefix>search</mat-icon>
+                </mat-form-field>
+
+                <!-- Filter -->
+                <mat-form-field appearance="outline" class="form-field">
                     <mat-label>סינון - ועדת החלטה</mat-label>
                     <mat-select (selectionChange)="getAllTrainingRequestFormsList($event.value)">
                         <mat-option value="1">
-                            <mat-icon color="primary">done</mat-icon>
-                            <span>מאושרים</span>
+                            <mat-icon color="primary">done</mat-icon> מאושרים
                         </mat-option>
                         <mat-option value="0">
-                            <mat-icon color="warn">close</mat-icon>
-                            <span>סירובים</span>
+                            <mat-icon color="warn">close</mat-icon> סירובים
                         </mat-option>
                         <mat-option value="null">
-                            <mat-icon color="accent">schedule</mat-icon>
-                            <span>בהמתנה</span>
+                            <mat-icon color="accent">schedule</mat-icon> בהמתנה
                         </mat-option>
                         <mat-option value="2">
-                            <mat-icon>cancel</mat-icon>
-                            <span>ביטולים</span>
+                            <mat-icon>cancel</mat-icon> ביטולים
                         </mat-option>
                         <mat-option value="3">
-                            <mat-icon>list</mat-icon>
-                            <span>מוכנים לוועדה</span>
+                            <mat-icon>list</mat-icon> מוכנים לוועדה
                         </mat-option>
                         <mat-option value="">
-                            <mat-icon>filter_list</mat-icon>
-                            <span>הכל</span>
+                            <mat-icon>filter_list</mat-icon> הכל
                         </mat-option>
                     </mat-select>
                 </mat-form-field>
+
+                <!-- Print Button -->
+                <button mat-raised-button color="primary" (click)="printProtocol()" matTooltip="הדפסת פרוטוקול"
+                    *ngIf="UserName == 'adahabre' || UserName == 'ttsrefati'">
+                    <mat-icon>line_style</mat-icon>
+                    הדפסת פרוטוקול
+                </button>
             </div>
-            <div class="new-section">
-                <!-- <button mat-fab (click)="openDialog()" matTooltip="השתלמויות" *ngIf="UserName == 'adahabre'">
-                    <mat-icon>view_list</mat-icon>
-                </button> -->
-                <mat-form-field *ngIf="UserName == 'ttsrefati' || UserName == 'tkoren'">
+
+            <div class="row" style="justify-content: left;">
+                <!-- Date Picker (conditional) -->
+                <mat-form-field *ngIf="UserName == 'ttsrefati' || UserName == 'tkoren'" appearance="outline"
+                    class="form-field">
                     <mat-label>תאריך הועדה הקרוב</mat-label>
                     <input matInput [matDatepicker]="PlanDate" [(ngModel)]="Plan_Date"
-                        (dateChange)="changeTrainingPlanDate()">
+                        (dateChange)="changeTrainingPlanDate()" />
                     <mat-datepicker-toggle matIconSuffix [for]="PlanDate"></mat-datepicker-toggle>
                     <mat-datepicker #PlanDate></mat-datepicker>
                 </mat-form-field>
-                <p *ngIf="UserName != 'ttsrefati' && UserName != 'tkoren'">תאריך הועדה הקרוב: {{ Plan_Date }}</p>
+
+                <p *ngIf="UserName != 'ttsrefati' && UserName != 'tkoren'" class="next-meeting">
+                    <strong>תאריך הועדה הקרוב:</strong> {{ Plan_Date }}
+                </p>
             </div>
         </div>
         <mat-progress-bar mode="indeterminate" color="accent" *ngIf="loading"></mat-progress-bar>

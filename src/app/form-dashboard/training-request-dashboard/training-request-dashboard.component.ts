@@ -14,7 +14,7 @@ import { DatePipe } from '@angular/common';
 @Component({
   selector: 'app-training-request-dashboard',
   templateUrl: './training-request-dashboard.component.html',
-  styleUrls: ['./training-request-dashboard.component.css']
+  styleUrls: ['./training-request-dashboard.component.scss']
 })
 export class TrainingRequestDashboardComponent implements OnInit {
 
@@ -152,6 +152,17 @@ export class TrainingRequestDashboardComponent implements OnInit {
     });
   }
 
+  getDataToProtocolPDF(): Promise<any> {
+    return new Promise((resolve, reject) => {
+      this.http
+        .post(environment.url + "GetTrainingRequestProtocolList", {})
+        .subscribe({
+          next: (response) => resolve(response['d']),
+          error: (err) => reject(err)
+        });
+    });
+  }
+
 
   async TrainingRequestSendLastAnswer(rowId) {
     let data = await this.getDataToPDF(rowId);
@@ -181,6 +192,37 @@ export class TrainingRequestDashboardComponent implements OnInit {
           "User dismissed the dialog (e.g., by using ESC, clicking the cross icon, or clicking outside the dialog)"
         )
       );
+  }
+
+  async printProtocol() {
+    const printWindow = window.open('', '_blank', 'width=1500,height=1000');
+    if (!printWindow) {
+      alert('לא ניתן לפתוח חלון הדפסה');
+      return;
+    }
+
+    try {
+      const data = await this.getDataToProtocolPDF();
+      const pdfContent = this.createProtocolPdf(data);
+
+      printWindow.document.open();
+      printWindow.document.write(pdfContent);
+      printWindow.document.close();
+
+      // Give the browser a moment to render before triggering print
+      setTimeout(() => {
+        printWindow.print();
+      }, 300); // Adjust the timeout if needed
+    } catch (error) {
+      console.error('שגיאה בהכנת או הדפסת PDF:', error);
+      if (printWindow) {
+        printWindow.document.open();
+        printWindow.document.write('<h1>שגיאה בהכנת הדפסה</h1><p>אירעה שגיאה בעת יצירת תוכן ההדפסה.</p>');
+        printWindow.document.close();
+      } else {
+        alert('אירעה שגיאה בהכנת הדפסה.');
+      }
+    }
   }
 
   createThePdfFile(data) {
@@ -239,6 +281,88 @@ export class TrainingRequestDashboardComponent implements OnInit {
     </body>
     </html>
     `;
+  }
+
+  createProtocolPdf(data) {
+    let print_content = `
+    <!DOCTYPE html>
+    <html lang="he" dir="rtl">
+    <head>
+        <meta charset="UTF-8">
+        <title>בקשתך למענק השתלמות</title>
+        <style>
+        margin: 0.5,
+        filename: 'meeting-summary.pdf',
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2 },
+        jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
+        </style>
+    </head>
+    <body style="font-family: Arial, sans-serif;direction: rtl;text-align: right;padding: 50px;
+    margin: 0;width: 640px;">
+    <img style="width: 640px;" src='http://srv-apps-prod/assets/covid_2_header.png' />
+    <br>
+    <br>
+    <div #pdfContent>
+  <!-- Replace below with your dynamic printable HTML content -->
+  <div style="font-family: Arial; direction: rtl; padding: 20px;">
+    <div style="text-align: left;">04/05/2025</div>
+    <div style="text-align: right;">סיכום ישיבת ועדת הדרכה מיום: 29/04/2025</div>
+    <br /><br />
+    <div style="text-align: right;">
+      <strong>נוכחים:</strong><br />
+      מר שמעון סבח, יו"ר הועדה<br />
+      יוסר מסאלחה, אחראית הדרכה ופיתוח צוות בסיעוד<br />
+      שרון מנחם, מנהל משאבי אנוש<br />
+      ד"ר מיכאל ז'רדב,מנהל מחלקת רנטגן<br />
+      לילך גסטר,מנהלת כספים<br />
+      תגל צרפתי,מרכזת הועדה<br />
+      <br />
+    </div>
+    <br />
+    <div style="border-top: 1px solid #000; padding-top: 10px;">
+      <strong>הבקשות שנדונו:</strong>
+      <!-- Repeat the following block per request -->
+      `
+    for (const req of data) {
+      print_content += `
+          <div style="margin-top: 20px; padding: 10px 0; border-bottom: 1px dashed #aaa;">
+            <strong>${req['A'].Family_Name} ${req['A'].First_Name}</strong><br />
+            ${req['G'].Function_Department}<br />
+            ${req['G'].Standart_Level}<br />
+            ${req['B'].Request_Name}<br />
+            ${req['B'].Date_Start}<br />
+            ${req['B'].Date_End}<br />
+            ${req['B'].Request_Location}<br />
+            ${req['H'].Approved == '' ? '<strong>הבקשה נדחתה</strong>' : `<strong>הבקשה אושרה, להלן פירוט האישור</strong>:
+                הימים שאושרו: ${req['H'].Approved_Absence_Time} , שעות שאושרו: 0 , בחינות: 0 , אש"ל: נדחה , נסיעות: ${req['H'].Transportaion == 'True' ? '100%' : '0%'} , שכר לימוד שאושר: ${(parseInt(req['H'].Approved_Percent) *
+            parseInt(req['H'].Approved_Percent_Out_Of)) / 100
+          }<br /> הערות:${req['H'].Recommendations == null ? '' : ''}${req['D'].Training_Fund_Answer == '' ? '' : ' , ' + req['D'].Training_Fund_Answer}${req['D'].Galilean_Partnership_Description == null ? '' : ' , ' + req['D'].Galilean_Partnership_Description}`}<br />
+          </div>
+        `;
+    }
+    print_content += `
+    
+    <div><br /><br />
+    רשם:<br />
+    תגל צרפתי - ממונה הדרכה
+    </div>
+    <br />
+    <br />
+    <div>
+    העתק:<br />
+    ד"ר נועם יהודאי, מנהל המרכז הרפואי<br />
+    מר שמעון סבח, מנהל אדמניסטרטיבי<br />
+    גב' מלכה אמר מדמון, מנהלת הסיעוד<br />
+    ועדת הדרכה
+    </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>
+    `
+    return print_content;
   }
 
   // trainingRequestApprovedOrNot(rowId, approved) {
