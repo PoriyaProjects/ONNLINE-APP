@@ -33,7 +33,7 @@ export class GoogleChartsComponent implements AfterViewInit {
     setTimeout(() => {
       (document.getElementById('timeAvgGroupByDropdown') as HTMLSelectElement).value = 'yearly';
       this.drawTimeAvgChart();
-    }, 500); // small delay to ensure charts library is ready
+    }, 2500); 
   }
 
   drawTimeAvgChart(): void {
