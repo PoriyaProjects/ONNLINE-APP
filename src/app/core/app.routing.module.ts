@@ -156,7 +156,6 @@ import { CommercialSupportFormDialogComponent } from '../form-dashboard/commerci
 
 
 const routes: Routes = [
-  { path: '', component: DashboardComponent },
   { path: "patientstikers", component: PatientStikersComponent },
   { path: 'dashboard', component: DashboardComponent },
   { path: 'clinicsrequests', component: ClinicsRequestsComponent },
