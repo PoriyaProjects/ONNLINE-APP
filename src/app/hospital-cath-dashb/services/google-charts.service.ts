@@ -4,7 +4,7 @@ import { environment } from "src/environments/environment";
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { formatNumberShort, parseDurationToDecimalHours, formatDecimalHoursToTime } from '../../shared/number-utils';
 import { sanitizeSoapResponse } from '../../shared/sanitizesoapresponce';
-
+import { addShortFormatAnnotations } from '../../shared/chart-utils';
 
 export interface Department {
   id: string;
@@ -105,106 +105,7 @@ export class GoogleChartsService {
   }
 
 
-  // private sanitizeSoapResponse(rawResponse: any): any {
-  //   if (!rawResponse || typeof rawResponse !== 'string') return rawResponse;
-  
-  //   const trimmed = rawResponse.trim();
-  
-  //   // Match opening <string ...> and closing </string>
-  //   const stringTagOpenMatch = trimmed.match(/<string[^>]*>/);
-  //   const stringTagCloseIndex = trimmed.indexOf('</string>');
-  
-  //   if (stringTagOpenMatch && stringTagCloseIndex !== -1) {
-  //     const start = stringTagOpenMatch.index! + stringTagOpenMatch[0].length;
-  //     const content = trimmed.substring(start, stringTagCloseIndex).trim();
-  
-  //     // Remove outer quotes if present and unescape
-  //     const unquoted = content.startsWith('"') && content.endsWith('"')
-  //       ? content.slice(1, -1).replace(/\\"/g, '"')
-  //       : content;
-  
-  //     try {
-  //       return JSON.parse(unquoted);
-  //     } catch (e) {
-  //       console.warn('Failed to parse JSON from <string> content, returning raw:', e);
-  //       return unquoted;
-  //     }
-  //   }
-  
-  //   // If not wrapped in <string>, try to parse directly as JSON
-  //   try {
-  //     return JSON.parse(trimmed);
-  //   } catch (e) {
-  //     console.warn('Failed to parse JSON, returning raw string:', e);
-  //     return trimmed;
-  //   }
-  // }
-  
-   
-
-  /**
-   * Adds short-format annotation columns to each numeric series in a DataTable.
-   * Also logs all values using a safe access pattern.
-   */
-  private addShortFormatAnnotations(dataTable: google.visualization.DataTable): google.visualization.DataView {
-    if (
-      typeof dataTable?.getNumberOfColumns !== 'function' ||
-      typeof dataTable?.getValue !== 'function'
-    ) {
-      throw new Error('Invalid DataTable passed to addShortFormatAnnotations');
-    }
-
-        const view = new google.visualization.DataView(dataTable);
-    const columns: any[] = [];
-    const numCols = dataTable.getNumberOfColumns();
-    const numRows = dataTable.getNumberOfRows();
-
-    console.log('Preparing short-format annotations...');
-
-    // Optional: use this section to sum or validate chart values
-    for (let col = 1; col < numCols; col++) {  // skip label column
-      let columnSum = 0;
-
-      for (let row = 0; row < numRows; row++) {
-        const value = dataTable.getValue(row, col);
-        if (typeof value === 'number') {
-          columnSum += value;
-        }
-      }
-
-      console.log(`Sum of column ${col} (${dataTable.getColumnLabel(col)}):`, columnSum.toLocaleString());
-    }
-
-    // Build annotation-enhanced column list
-    for (let colIndex = 0; colIndex < numCols; colIndex++) {
-      const colType = dataTable.getColumnType(colIndex);
-
-      columns.push(colIndex); // keep original column
-
-      if (colIndex > 0 && colType === 'number') {
-        columns.push({
-          calc: (dt: any, row: number) => {
-            const val = dt.getValue(row, colIndex);
-            const num = typeof val === 'number' ? val : parseFloat(val);
-            if (isNaN(num)) return null;
-
-            if (num >= 1_000_000) return (num / 1_000_000).toFixed(1) + 'M';
-            if (num >= 1_000) return (num / 1_000).toFixed(1) + 'K';
-            return num.toFixed(0);
-          },
-          type: 'string',
-          role: 'annotation'
-        });
-      }
-    }
-
-    console.log('Final columns for view:', columns);
-    view.setColumns(columns);
-    return view;
-  }
-
-  
-
+ 
   getWorkingDaysInfo(): {
     workingDays: Date[],
     currentWorkingDayIndex: number | null,
@@ -448,7 +349,7 @@ export class GoogleChartsService {
           typeof processedData.getNumberOfColumns === 'function' &&
           typeof processedData.getValue === 'function'
         ) {
-          dataToRender = this.addShortFormatAnnotations(processedData);
+          dataToRender = addShortFormatAnnotations(processedData);
         } else {
           console.error('Processed data is not a valid DataTable. Cannot apply annotations.', processedData);
           dataToRender = processedData;  // fallback
@@ -1167,57 +1068,6 @@ export class GoogleChartsService {
     return ticks;
   }
   
-  
-  // --- Time Utilities and Data Processing ---
-  // private parseDurationToDecimalHours(durationString: any): number | null {
-  //   // Check if input is null, undefined, or not a string
-  //   if (durationString === null || durationString === undefined) {
-  //     return null;
-  //   }
-
-  //   // Convert to string if it's not already a string
-  //   const timeStr = String(durationString);
-  //   if (!timeStr || timeStr.trim() === '') {
-  //     return null;
-  //   }
-
-  //   // Split the time string and convert parts to numbers
-  //   const parts = timeStr.split(':').map(n => parseInt(n, 10));
-  //   if (parts.some(isNaN)) { return null; }
-
-  //   if (parts.length === 2) {
-  //     return parts[0] + (parts[1] / 60);
-  //   } else if (parts.length === 3) {
-  //     return parts[0] + (parts[1] / 60) + (parts[2] / 3600);
-  //   }
-
-  //   return null;
-  // }
-
-  // private formatDecimalHoursToTime(decimalHours: number | null): string {
-  //   if (decimalHours === null || decimalHours === undefined || isNaN(decimalHours)) {
-  //     return '';
-  //   }
-
-  //   const isNegative = decimalHours < 0;
-  //   const absHours = Math.abs(decimalHours);
-  //   const hours = Math.floor(absHours);
-  //   const minutes = Math.round((absHours - hours) * 60);
-
-  //   let adjustedHours = hours;
-  //   let adjustedMinutes = minutes;
-
-  //   if (adjustedMinutes === 60) {
-  //     adjustedHours += 1;
-  //     adjustedMinutes = 0;
-  //   }
-
-  //   const formattedHours = adjustedHours.toString().padStart(2, '0');
-  //   const formattedMinutes = adjustedMinutes.toString().padStart(2, '0');
-
-  //   return `${isNegative ? '-' : ''}${formattedHours}:${formattedMinutes}`;
-  // }
-
   private processTimeAvgData(jsonData: any): any {
     const rawData = jsonData.table && jsonData.table.rows ? jsonData.table.rows : [];
     const headerLabels = jsonData.table && jsonData.table.cols ? jsonData.table.cols.map((col: any) => col.label) : [];
