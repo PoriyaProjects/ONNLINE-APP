@@ -4,7 +4,9 @@ import { environment } from "src/environments/environment";
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { formatNumberShort, parseDurationToDecimalHours, formatDecimalHoursToTime } from '../../shared/number-utils';
 import { sanitizeSoapResponse } from '../../shared/sanitizesoapresponce';
-import { addShortFormatAnnotations } from '../../shared/chart-utils';
+import { addShortFormatAnnotations, filterValidYears } from '../../shared/chart-utils';
+import { filterRecentOffsets, YearlyData } from '../../shared/date-utils';
+import { limitToRecentYears } from '../../shared/limit-utils';
 
 export interface Department {
   id: string;
@@ -32,26 +34,6 @@ export function convertOffsetsToYears(
   const sortedOffsets = isChronological ? offsets : [...offsets].reverse();
 
   return sortedOffsets.map(offset => (baseYear + parseInt(offset)).toString());
-}
-
-
-/**
- * Filters out years with no valid monthly values.
- * @param jsonData Original JSON with yData array
- * @returns Filtered JSON with only valid years
- */
-export function filterValidYears(jsonData: any): any {
-  if (!jsonData || !Array.isArray(jsonData.yData)) return { yData: [] };
-
-  const filteredYears = jsonData.yData.filter((yearObject: any) => {
-    const months = yearObject?.Year?.Months || [];
-    return months.some((m: any) => {
-      const y = parseFloat(m?.y);
-      return !isNaN(y) && y > 0;
-    });
-  });
-
-  return { yData: filteredYears };
 }
 
 
@@ -413,9 +395,30 @@ export class GoogleChartsService {
   }
 
 
+  // private processYearlyData(data: any): any {
+
+  //   const years: any = {};
+  //   data.yData.forEach((yearObject: any) => {
+  //     const yearValue = yearObject.Year.value;
+  //     years[yearValue] = {};
+  //     yearObject.Year.Months.forEach((month: any) => {
+  //       if (this.valueExists(month.y)) {
+  //         years[yearValue][month.name] = parseInt(month.y, 10);
+  //       }
+  //     });
+  //   });
+  //   return years;
+  // }
+
   private processYearlyData(data: any): any {
+    //const limitedData = limitToRecentYears(data.yData, y => y.Year.value, 4);
+    const limitedData = filterRecentOffsets<YearlyData>(
+      data.yData,
+      y => y.Year.value,
+      4
+    );
     const years: any = {};
-    data.yData.forEach((yearObject: any) => {
+    limitedData.forEach((yearObject: any) => {
       const yearValue = yearObject.Year.value;
       years[yearValue] = {};
       yearObject.Year.Months.forEach((month: any) => {
@@ -424,13 +427,64 @@ export class GoogleChartsService {
         }
       });
     });
+  
     return years;
   }
+
+  // private processQuartalData(data: any): any {
+  //   const currentDate = new Date();
+  //   const currentYear = currentDate.getFullYear();
+  //   const currentMonthIndex = currentDate.getMonth(); // 0-based: Jan=0
+  
+  //   const quarters = {
+  //     Q1: ['ינואר', 'פברואר', 'מרץ'],
+  //     Q2: ['אפריל', 'מאי', 'יוני'],
+  //     Q3: ['יולי', 'אוגוסט', 'ספטמבר'],
+  //     Q4: ['אוקטובר', 'נובמבר', 'דצמבר']
+  //   };
+  
+  //   const currentQuarter = Math.floor(currentMonthIndex / 3) + 1;
+  //   const currentQuarterKey = `Q${currentQuarter}`;
+  
+  //   const years: any = {};
+  
+  //   data.yData.forEach((yearObject: any) => {
+  //     const yearValue = yearObject.Year.value;
+  //     const monthMap: { [name: string]: number } = {};
+  
+  //     // Build a map of month name to value
+  //     yearObject.Year.Months.forEach((month: any) => {
+  //       if (this.valueExists(month.y)) {
+  //         monthMap[month.name] = parseInt(month.y, 10);
+  //       }
+  //     });
+  
+  //     // Process only full quarters
+  //     const yearQuarters: any = {};
+  //     for (const [quarter, months] of Object.entries(quarters)) {
+  //       // Skip current (possibly incomplete) quarter of current year
+  //       if (yearValue === currentYear && quarter === currentQuarterKey) continue;
+  
+  //       const hasAllMonths = months.every(name => name in monthMap);
+  //       if (hasAllMonths) {
+  //         const sum = months.reduce((acc, name) => acc + monthMap[name], 0);
+  //         yearQuarters[quarter] = sum;
+  //       }
+  //     }
+  
+  //     if (Object.keys(yearQuarters).length > 0) {
+  //       years[yearValue] = yearQuarters;
+  //     }
+  //   });
+  
+  //   return years;
+  // }
 
   private processQuartalData(data: any): any {
     const currentDate = new Date();
     const currentYear = currentDate.getFullYear();
-    const currentMonthIndex = currentDate.getMonth(); // 0-based: Jan=0
+    const currentQuarter = Math.floor(currentDate.getMonth() / 3) + 1;
+    const currentQuarterKey = `Q${currentQuarter}`;
   
     const quarters = {
       Q1: ['ינואר', 'פברואר', 'מרץ'],
@@ -439,26 +493,27 @@ export class GoogleChartsService {
       Q4: ['אוקטובר', 'נובמבר', 'דצמבר']
     };
   
-    const currentQuarter = Math.floor(currentMonthIndex / 3) + 1;
-    const currentQuarterKey = `Q${currentQuarter}`;
+    //const limitedData = limitToRecentYears(data.yData, y => y.Year.value, 4);
+    const limitedData = filterRecentOffsets<YearlyData>(
+      data.yData,
+      y => y.Year.value,
+      4
+    );
   
     const years: any = {};
   
-    data.yData.forEach((yearObject: any) => {
+    limitedData.forEach((yearObject: any) => {
       const yearValue = yearObject.Year.value;
       const monthMap: { [name: string]: number } = {};
   
-      // Build a map of month name to value
       yearObject.Year.Months.forEach((month: any) => {
         if (this.valueExists(month.y)) {
           monthMap[month.name] = parseInt(month.y, 10);
         }
       });
   
-      // Process only full quarters
       const yearQuarters: any = {};
       for (const [quarter, months] of Object.entries(quarters)) {
-        // Skip current (possibly incomplete) quarter of current year
         if (yearValue === currentYear && quarter === currentQuarterKey) continue;
   
         const hasAllMonths = months.every(name => name in monthMap);
@@ -746,61 +801,141 @@ export class GoogleChartsService {
     chart.draw(dataTable, options);
   }
   
-  private drawChart3Y(jsonData: any, elementId: string, customOptions: any = {}): void {
-    const filteredData = filterValidYears(jsonData);
+  // private drawChart3Y(jsonData: any, elementId: string, customOptions: any = {}): void {
+  //   const filteredData = filterValidYears(jsonData);
 
+  //   const dataTable = new google.visualization.DataTable();
+  //   dataTable.addColumn('date', 'תאריך');
+  //   dataTable.addColumn('number', 'ערך');
+  //   dataTable.addColumn({ type: 'string', role: 'annotation' });
+
+  //   const hebrewMonths = [
+  //     'ינואר', 'פברואר', 'מרץ', 'אפריל', 'מאי', 'יוני',
+  //     'יולי', 'אוגוסט', 'ספטמבר', 'אוקטובר', 'נובמבר', 'דצמבר'
+  //   ];
+
+
+    
+  //   const rows: any[] = [];
+
+  //   filteredData.yData.forEach((yearObject: any) => {
+  //     const year = yearObject.Year.value;
+  //     const months = yearObject.Year.Months;
+
+  //     months.forEach((monthObj: any) => {
+  //       const monthName = monthObj.name;
+  //       const valueRaw = monthObj.y;
+
+  //       const value = parseFloat(valueRaw);
+  //       if (!value || isNaN(value)) return;
+
+  //       const monthIndex = hebrewMonths.indexOf(monthName);
+  //       if (monthIndex === -1) return;
+
+  //       const date = new Date(year, monthIndex, 1);
+  //       rows.push([date, value, formatNumberShort(value)]);
+  //     });
+  //   });
+
+  //   if (rows.length === 0) {
+  //     const el = document.getElementById(elementId);
+  //     if (el) el.innerHTML = "אין נתונים להצגה";
+  //     return;
+  //   }
+
+  //   dataTable.addRows(rows);
+
+  //   const ticks = rows.map(row => {
+  //     const date: Date = row[0];
+  //     const month = date.getMonth();
+  //     const year = date.getFullYear();
+  //     return {
+  //       v: date,
+  //       //f: `${hebrewMonths[month]} ${year}`
+  //       f: `${month}/${year}` // Display as MM/YYYY
+  //     };
+  //   });
+
+  //   const defaultOptions = {
+  //     curveType: 'function',
+  //     legend: 'none',
+  //     trendlines: {
+  //       0: {
+  //         type: 'linear',
+  //         color: '#247a3a',
+  //         lineWidth: 3,
+  //         opacity: 0.7,
+  //         showR2: true,
+  //         visibleInLegend: false
+  //       }
+  //     },
+  //     annotations: {
+  //       alwaysOutside: true,
+  //       textStyle: {
+  //         fontSize: 12,
+  //         color: '#000'
+  //       }
+  //     },
+  //     hAxis: {
+  //       title: '',
+  //       ticks: ticks,
+  //       slantedText: true,
+  //       slantedTextAngle: 45
+  //     },
+  //     vAxis: {
+  //       title: '',
+  //       format: 'short'
+  //     },
+  //     interpolateNulls: false,
+  //   };
+
+  //   const options = this.mergeDeep(defaultOptions, customOptions);
+  //   const chart = new google.visualization.LineChart(document.getElementById(elementId));
+  //   chart.draw(dataTable, options);
+  // }
+
+  private drawChart3Y(jsonData: any, elementId: string, customOptions: any = {}): void {
+    const filteredData = filterValidYears(jsonData, 4); // Limit to last 4 years
+  
     const dataTable = new google.visualization.DataTable();
     dataTable.addColumn('date', 'תאריך');
     dataTable.addColumn('number', 'ערך');
     dataTable.addColumn({ type: 'string', role: 'annotation' });
-
+  
     const hebrewMonths = [
       'ינואר', 'פברואר', 'מרץ', 'אפריל', 'מאי', 'יוני',
       'יולי', 'אוגוסט', 'ספטמבר', 'אוקטובר', 'נובמבר', 'דצמבר'
     ];
-
-
-    
+  
     const rows: any[] = [];
-
+  
     filteredData.yData.forEach((yearObject: any) => {
       const year = yearObject.Year.value;
-      const months = yearObject.Year.Months;
-
-      months.forEach((monthObj: any) => {
-        const monthName = monthObj.name;
-        const valueRaw = monthObj.y;
-
-        const value = parseFloat(valueRaw);
+      yearObject.Year.Months.forEach((monthObj: any) => {
+        const value = parseFloat(monthObj.y);
         if (!value || isNaN(value)) return;
-
-        const monthIndex = hebrewMonths.indexOf(monthName);
+  
+        const monthIndex = hebrewMonths.indexOf(monthObj.name);
         if (monthIndex === -1) return;
-
+  
         const date = new Date(year, monthIndex, 1);
         rows.push([date, value, formatNumberShort(value)]);
       });
     });
-
+  
     if (rows.length === 0) {
       const el = document.getElementById(elementId);
       if (el) el.innerHTML = "אין נתונים להצגה";
       return;
     }
-
+  
     dataTable.addRows(rows);
-
+  
     const ticks = rows.map(row => {
       const date: Date = row[0];
-      const month = date.getMonth();
-      const year = date.getFullYear();
-      return {
-        v: date,
-        //f: `${hebrewMonths[month]} ${year}`
-        f: `${month}/${year}` // Display as MM/YYYY
-      };
+      return { v: date, f: `${date.getMonth() + 1}/${date.getFullYear()}` };
     });
-
+  
     const defaultOptions = {
       curveType: 'function',
       legend: 'none',
@@ -816,102 +951,184 @@ export class GoogleChartsService {
       },
       annotations: {
         alwaysOutside: true,
-        textStyle: {
-          fontSize: 12,
-          color: '#000'
-        }
+        textStyle: { fontSize: 12, color: '#000' }
       },
       hAxis: {
-        title: '',
-        ticks: ticks,
+        ticks,
         slantedText: true,
         slantedTextAngle: 45
       },
       vAxis: {
-        title: '',
         format: 'short'
       },
-      interpolateNulls: false,
+      interpolateNulls: false
     };
-
+  
     const options = this.mergeDeep(defaultOptions, customOptions);
     const chart = new google.visualization.LineChart(document.getElementById(elementId));
     chart.draw(dataTable, options);
   }
+  
+  // private drawOpChart3Y(jsonData: any, elementId: string, customOptions: any = {}): void {
+  //   const filteredData = filterValidYears(jsonData);
 
+  //   const dataTable = new google.visualization.DataTable();
+  //   dataTable.addColumn('date', 'תאריך');
+  //   dataTable.addColumn('number', 'ערך');
+  //   dataTable.addColumn({ type: 'string', role: 'annotation' });
+
+  //   const hebrewMonths = [
+  //     'ינואר', 'פברואר', 'מרץ', 'אפריל', 'מאי', 'יוני',
+  //     'יולי', 'אוגוסט', 'ספטמבר', 'אוקטובר', 'נובמבר', 'דצמבר'
+  //   ];
+
+  //   // const formatNumberShort = (num: number): string => {
+  //   //   if (num >= 1e9) return (num / 1e9).toFixed(2) + 'B';
+  //   //   if (num >= 1e6) return (num / 1e6).toFixed(2) + 'M';
+  //   //   if (num >= 1e3) return (num / 1e3).toFixed(1) + 'K';
+  //   //   return num.toString();
+  //   // };
+
+    
+
+  //   const rows: any[] = [];
+
+  //   filteredData.yData.forEach((yearObject: any) => {
+  //     const year = yearObject.Year.value;
+  //     const months = yearObject.Year.Months;
+
+  //     months.forEach((monthObj: any) => {
+  //       const monthName = monthObj.name;
+  //       const valueRaw = monthObj.y;
+
+  //       const value = parseFloat(valueRaw);
+  //       if (!value || isNaN(value)) return;
+
+  //       const monthIndex = hebrewMonths.indexOf(monthName);
+  //       if (monthIndex === -1) return;
+
+  //       const date = new Date(year, monthIndex, 1);
+  //       rows.push([date, value, formatNumberShort(value)]);
+  //     });
+  //   });
+
+  //   if (rows.length === 0) {
+  //     const el = document.getElementById(elementId);
+  //     if (el) el.innerHTML = "אין נתונים להצגה";
+  //     return;
+  //   }
+
+  //   if (rows.length === 0) {
+  //     const el = document.getElementById(elementId);
+  //     if (el) el.innerHTML = "אין נתונים להצגה";
+  //     return;
+  //   }
+    
+  //   // Remove the last month (latest date) from the graph
+  //   rows.sort((a, b) => a[0].getTime() - b[0].getTime()); // Ensure sorted by date
+  //   rows.pop(); // Remove last item
+    
+  //   dataTable.addRows(rows);
+    
+
+  //   const ticks = rows.map(row => {
+  //     const date: Date = row[0];
+  //     const month = date.getMonth();
+  //     const year = date.getFullYear();
+  //     return {
+  //       v: date,
+  //       //f: `${hebrewMonths[month]} ${year}`
+  //       f: `${month}/${year}` // Display as MM/YYYY
+  //     };
+  //   });
+
+  //   const defaultOptions = {
+  //     curveType: 'function',
+  //     legend: 'none',
+  //     trendlines: {
+  //       0: {
+  //         type: 'linear',
+  //         color: '#247a3a',
+  //         lineWidth: 3,
+  //         opacity: 0.7,
+  //         showR2: true,
+  //         visibleInLegend: false
+  //       }
+  //     },
+  //     annotations: {
+  //       alwaysOutside: true,
+  //       textStyle: {
+  //         fontSize: 12,
+  //         color: '#000'
+  //       }
+  //     },
+  //     hAxis: {
+  //       title: '',
+  //       ticks: ticks,
+  //       slantedText: true,
+  //       slantedTextAngle: 45
+  //     },
+  //     vAxis: {
+  //       title: '',
+  //       format: 'short'
+  //     },
+  //     interpolateNulls: false,
+  //   };
+
+  //   const options = this.mergeDeep(defaultOptions, customOptions);
+  //   const chart = new google.visualization.LineChart(document.getElementById(elementId));    
+  //   chart.draw(dataTable, options);    
+  // }
+
+  // --- Gauge Chart ----
+  
   private drawOpChart3Y(jsonData: any, elementId: string, customOptions: any = {}): void {
-    const filteredData = filterValidYears(jsonData);
-
+    const filteredData = filterValidYears(jsonData, 4); // Enforce 4 most recent valid years
+  
     const dataTable = new google.visualization.DataTable();
     dataTable.addColumn('date', 'תאריך');
     dataTable.addColumn('number', 'ערך');
     dataTable.addColumn({ type: 'string', role: 'annotation' });
-
+  
     const hebrewMonths = [
       'ינואר', 'פברואר', 'מרץ', 'אפריל', 'מאי', 'יוני',
       'יולי', 'אוגוסט', 'ספטמבר', 'אוקטובר', 'נובמבר', 'דצמבר'
     ];
-
-    // const formatNumberShort = (num: number): string => {
-    //   if (num >= 1e9) return (num / 1e9).toFixed(2) + 'B';
-    //   if (num >= 1e6) return (num / 1e6).toFixed(2) + 'M';
-    //   if (num >= 1e3) return (num / 1e3).toFixed(1) + 'K';
-    //   return num.toString();
-    // };
-
-    
-
+  
     const rows: any[] = [];
-
+  
     filteredData.yData.forEach((yearObject: any) => {
       const year = yearObject.Year.value;
       const months = yearObject.Year.Months;
-
+  
       months.forEach((monthObj: any) => {
-        const monthName = monthObj.name;
-        const valueRaw = monthObj.y;
-
-        const value = parseFloat(valueRaw);
+        const value = parseFloat(monthObj.y);
         if (!value || isNaN(value)) return;
-
-        const monthIndex = hebrewMonths.indexOf(monthName);
+  
+        const monthIndex = hebrewMonths.indexOf(monthObj.name);
         if (monthIndex === -1) return;
-
+  
         const date = new Date(year, monthIndex, 1);
         rows.push([date, value, formatNumberShort(value)]);
       });
     });
-
+  
     if (rows.length === 0) {
       const el = document.getElementById(elementId);
       if (el) el.innerHTML = "אין נתונים להצגה";
       return;
     }
-
-    if (rows.length === 0) {
-      const el = document.getElementById(elementId);
-      if (el) el.innerHTML = "אין נתונים להצגה";
-      return;
-    }
-    
-    // Remove the last month (latest date) from the graph
-    rows.sort((a, b) => a[0].getTime() - b[0].getTime()); // Ensure sorted by date
-    rows.pop(); // Remove last item
-    
+  
+    rows.sort((a, b) => a[0].getTime() - b[0].getTime());
+    rows.pop(); // Optionally exclude latest month
+  
     dataTable.addRows(rows);
-    
-
+  
     const ticks = rows.map(row => {
       const date: Date = row[0];
-      const month = date.getMonth();
-      const year = date.getFullYear();
-      return {
-        v: date,
-        //f: `${hebrewMonths[month]} ${year}`
-        f: `${month}/${year}` // Display as MM/YYYY
-      };
+      return { v: date, f: `${date.getMonth() + 1}/${date.getFullYear()}` };
     });
-
+  
     const defaultOptions = {
       curveType: 'function',
       legend: 'none',
@@ -927,30 +1144,25 @@ export class GoogleChartsService {
       },
       annotations: {
         alwaysOutside: true,
-        textStyle: {
-          fontSize: 12,
-          color: '#000'
-        }
+        textStyle: { fontSize: 12, color: '#000' }
       },
       hAxis: {
-        title: '',
-        ticks: ticks,
+        ticks,
         slantedText: true,
         slantedTextAngle: 45
       },
       vAxis: {
-        title: '',
         format: 'short'
       },
-      interpolateNulls: false,
+      interpolateNulls: false
     };
-
+  
     const options = this.mergeDeep(defaultOptions, customOptions);
-    const chart = new google.visualization.LineChart(document.getElementById(elementId));    
-    chart.draw(dataTable, options);    
+    const chart = new google.visualization.LineChart(document.getElementById(elementId));
+    chart.draw(dataTable, options);
   }
+  
 
-  // --- Gauge Chart ----
   private drawChartGauge(data: any, elementId: string, customOptions: any = {}): void {
     try {
       if (!data || !data.yData || !Array.isArray(data.yData)) {
