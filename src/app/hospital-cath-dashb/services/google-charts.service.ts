@@ -105,28 +105,41 @@ export class GoogleChartsService {
 
   private sanitizeSoapResponse(rawResponse: any): any {
     if (!rawResponse || typeof rawResponse !== 'string') return rawResponse;
-    if (rawResponse.trim().startsWith('<?xml')) {
-      const xmlStart = rawResponse.indexOf('<string');
-      const xmlEnd = rawResponse.lastIndexOf('</string>');
-      if (xmlStart !== -1 && xmlEnd !== -1) {
-        const start = rawResponse.indexOf('>', xmlStart) + 1;
-        const jsonString = rawResponse.substring(start, xmlEnd).trim();
-        try {
-          return JSON.parse(jsonString);
-        } catch (e) {
-          console.error('Failed to parse SOAP JSON:', e);
-        }
+  
+    const trimmed = rawResponse.trim();
+  
+    // Match opening <string ...> and closing </string>
+    const stringTagOpenMatch = trimmed.match(/<string[^>]*>/);
+    const stringTagCloseIndex = trimmed.indexOf('</string>');
+  
+    if (stringTagOpenMatch && stringTagCloseIndex !== -1) {
+      const start = stringTagOpenMatch.index! + stringTagOpenMatch[0].length;
+      const content = trimmed.substring(start, stringTagCloseIndex).trim();
+  
+      // Remove outer quotes if present and unescape
+      const unquoted = content.startsWith('"') && content.endsWith('"')
+        ? content.slice(1, -1).replace(/\\"/g, '"')
+        : content;
+  
+      try {
+        return JSON.parse(unquoted);
+      } catch (e) {
+        console.warn('Failed to parse JSON from <string> content, returning raw:', e);
+        return unquoted;
       }
-      return {};
     }
+  
+    // If not wrapped in <string>, try to parse directly as JSON
     try {
-      return JSON.parse(rawResponse.trim());
+      return JSON.parse(trimmed);
     } catch (e) {
-      console.error('Failed to parse JSON:', e);
-      return {};
+      console.warn('Failed to parse JSON, returning raw string:', e);
+      return trimmed;
     }
   }
-
+  
+  
+  
 
   /**
    * Adds short-format annotation columns to each numeric series in a DataTable.
@@ -395,7 +408,7 @@ export class GoogleChartsService {
 
     await this.fetchDataAndDrawDirect(cleanData, (data: any) => data, this.CHART_TYPES.GAUGE, 'gauge_chart', chartOptions);
     this.positionGaugeChartText('gauge_chart', textPosition);
-
+console.log("cleanData:" + cleanData);
     console.log('Gauge chart complete');
   }
 
