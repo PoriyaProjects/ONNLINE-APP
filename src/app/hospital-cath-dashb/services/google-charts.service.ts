@@ -2,7 +2,8 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { environment } from "src/environments/environment";
 import { MatToolbarModule } from '@angular/material/toolbar';
-import { formatNumberShort } from '../../shared/number-utils';
+import { formatNumberShort, parseDurationToDecimalHours, formatDecimalHoursToTime } from '../../shared/number-utils';
+import { sanitizeSoapResponse } from '../../shared/sanitizesoapresponce';
 
 
 export interface Department {
@@ -104,40 +105,40 @@ export class GoogleChartsService {
   }
 
 
-  private sanitizeSoapResponse(rawResponse: any): any {
-    if (!rawResponse || typeof rawResponse !== 'string') return rawResponse;
+  // private sanitizeSoapResponse(rawResponse: any): any {
+  //   if (!rawResponse || typeof rawResponse !== 'string') return rawResponse;
   
-    const trimmed = rawResponse.trim();
+  //   const trimmed = rawResponse.trim();
   
-    // Match opening <string ...> and closing </string>
-    const stringTagOpenMatch = trimmed.match(/<string[^>]*>/);
-    const stringTagCloseIndex = trimmed.indexOf('</string>');
+  //   // Match opening <string ...> and closing </string>
+  //   const stringTagOpenMatch = trimmed.match(/<string[^>]*>/);
+  //   const stringTagCloseIndex = trimmed.indexOf('</string>');
   
-    if (stringTagOpenMatch && stringTagCloseIndex !== -1) {
-      const start = stringTagOpenMatch.index! + stringTagOpenMatch[0].length;
-      const content = trimmed.substring(start, stringTagCloseIndex).trim();
+  //   if (stringTagOpenMatch && stringTagCloseIndex !== -1) {
+  //     const start = stringTagOpenMatch.index! + stringTagOpenMatch[0].length;
+  //     const content = trimmed.substring(start, stringTagCloseIndex).trim();
   
-      // Remove outer quotes if present and unescape
-      const unquoted = content.startsWith('"') && content.endsWith('"')
-        ? content.slice(1, -1).replace(/\\"/g, '"')
-        : content;
+  //     // Remove outer quotes if present and unescape
+  //     const unquoted = content.startsWith('"') && content.endsWith('"')
+  //       ? content.slice(1, -1).replace(/\\"/g, '"')
+  //       : content;
   
-      try {
-        return JSON.parse(unquoted);
-      } catch (e) {
-        console.warn('Failed to parse JSON from <string> content, returning raw:', e);
-        return unquoted;
-      }
-    }
+  //     try {
+  //       return JSON.parse(unquoted);
+  //     } catch (e) {
+  //       console.warn('Failed to parse JSON from <string> content, returning raw:', e);
+  //       return unquoted;
+  //     }
+  //   }
   
-    // If not wrapped in <string>, try to parse directly as JSON
-    try {
-      return JSON.parse(trimmed);
-    } catch (e) {
-      console.warn('Failed to parse JSON, returning raw string:', e);
-      return trimmed;
-    }
-  }
+  //   // If not wrapped in <string>, try to parse directly as JSON
+  //   try {
+  //     return JSON.parse(trimmed);
+  //   } catch (e) {
+  //     console.warn('Failed to parse JSON, returning raw string:', e);
+  //     return trimmed;
+  //   }
+  // }
   
    
 
@@ -237,7 +238,7 @@ export class GoogleChartsService {
   
       date.setDate(date.getDate() + 1);
     }
-    console.log("Wdays:" + workingDays +"|"+ currentWorkingDayIndex +"|"+ workingDays.length);
+    
     return {
       workingDays,
       currentWorkingDayIndex,
@@ -246,7 +247,6 @@ export class GoogleChartsService {
     
   }
    
-
 
   /**
    * Main function to load and draw all charts in sequence with custom options.
@@ -341,7 +341,6 @@ export class GoogleChartsService {
 
     try {
       console.log("Drawing Time Avg Chart...");
-      //await this.initTimeAvgChart(timeAvgOptions);
       await this.initTimeAvgChart(options.timeAvgOptions);
     } catch (e) {
       console.error("Time Avg Chart failed:", e);
@@ -362,8 +361,8 @@ export class GoogleChartsService {
     await this.chartsReady;
     const rawData = await this.http.get(this.DATA_SOURCES.OPERATIONS, { responseType: 'text' }).toPromise();
     const rawFData = await this.http.get(this.DATA_SOURCES.OPERATIONSF, { responseType: 'text' }).toPromise();
-    const cleanData = this.sanitizeSoapResponse(rawData);
-    const cleanFData = this.sanitizeSoapResponse(rawFData);
+    const cleanData = sanitizeSoapResponse(rawData);
+    const cleanFData = sanitizeSoapResponse(rawFData);
     const yearsData = this.processYearlyData(cleanData);
     const quartalData = this.processQuartalData(cleanFData);
     this.drawBarChart(yearsData, 'bar_chart', barChartOptions);
@@ -372,7 +371,7 @@ export class GoogleChartsService {
   }
   public async drawIncomeCharts(barChartOptions: any = {}, lineChartOptions: any = {}): Promise<void> {
     const rawData = await this.http.get(this.DATA_SOURCES.INCOME, { responseType: 'text' }).toPromise();
-    const cleanData = this.sanitizeSoapResponse(rawData);
+    const cleanData = sanitizeSoapResponse(rawData);
     await this.fetchDataAndDrawDirect(cleanData, this.processYearlyData, this.CHART_TYPES.BAR, 'bar_chart2', barChartOptions);
     await this.fetchDataAndDrawDirect(cleanData, this.processYearlyData, this.CHART_TYPES.LINE, 'line_chart2', lineChartOptions);
     console.log('Income charts complete');
@@ -380,28 +379,28 @@ export class GoogleChartsService {
 
   public async loadChart3Y(chartOptions: any = {}): Promise<void> {
     const rawData = await this.http.get(this.DATA_SOURCES.INCOME_3Y, { responseType: 'text' }).toPromise();
-    const cleanData = this.sanitizeSoapResponse(rawData);
+    const cleanData = sanitizeSoapResponse(rawData);
     await this.fetchDataAndDrawDirect(cleanData, (data: any) => data, this.CHART_TYPES.THREE_YEAR, 'bar_chart_3y', chartOptions);
     console.log('3-year chart complete');
   }
 
   public async loadOpChart3Y(chartOptions: any = {}): Promise<void> {
     const rawData = await this.http.get(this.DATA_SOURCES.OPERATIONS_3Y, { responseType: 'text' }).toPromise();
-    const cleanData = this.sanitizeSoapResponse(rawData);
+    const cleanData = sanitizeSoapResponse(rawData);
     await this.fetchDataAndDrawDirect(cleanData, (data: any) => data, this.CHART_TYPES.OPTHREE_YEAR, 'op_bar_chart_3y', chartOptions);
     console.log('Operations 3-year chart complete');
   }
 
   public async initTimeAvgChart(chartOptions: any = {}): Promise<void> {
     const rawData = await this.http.get(this.DATA_SOURCES.TIME_AVG, { responseType: 'text' }).toPromise();
-    const cleanData = this.sanitizeSoapResponse(rawData);
+    const cleanData = sanitizeSoapResponse(rawData);
     await this.fetchDataAndDrawDirect(cleanData, this.processTimeAvgData, this.CHART_TYPES.TIME_AVG, 'bar_chart_time_avg', chartOptions);
     console.log('Time average chart complete');
   }
 
   public async drawChartGaugeFunc(chartOptions: any = {}, textPosition: number = 150): Promise<void> {
     const rawData = await this.http.get(this.DATA_SOURCES.GAUGE, { responseType: 'text' }).toPromise();
-    const cleanData = this.sanitizeSoapResponse(rawData);
+    const cleanData = sanitizeSoapResponse(rawData);
 
     await this.fetchDataAndDrawDirect(cleanData, (data: any) => data, this.CHART_TYPES.GAUGE, 'gauge_chart', chartOptions);
     this.positionGaugeChartText('gauge_chart', textPosition);
@@ -413,7 +412,7 @@ export class GoogleChartsService {
       console.log('drawExploitationChart');
       const rawData = await this.http.get(this.DATA_SOURCES.EXPLOITATION, { responseType: 'text' }).toPromise();
       //const cleanData = JSON.parse(rawData);
-      const cleanData = this.sanitizeSoapResponse(rawData);
+      const cleanData = sanitizeSoapResponse(rawData);
 
       await this.fetchDataAndDrawDirect(cleanData, this.processExploitationData.bind(this), this.CHART_TYPES.EXPLOITATION, 'as_chart', chartOptions);
       console.log('Exploitation chart complete');
@@ -1161,7 +1160,7 @@ export class GoogleChartsService {
     for (let i = 0; i <= roundedMax; i += interval) {
       ticks.push({
         v: i,
-        f: this.formatDecimalHoursToTime(i)
+        f: formatDecimalHoursToTime(i)
       });
     }
 
@@ -1170,54 +1169,54 @@ export class GoogleChartsService {
   
   
   // --- Time Utilities and Data Processing ---
-  private parseDurationToDecimalHours(durationString: any): number | null {
-    // Check if input is null, undefined, or not a string
-    if (durationString === null || durationString === undefined) {
-      return null;
-    }
+  // private parseDurationToDecimalHours(durationString: any): number | null {
+  //   // Check if input is null, undefined, or not a string
+  //   if (durationString === null || durationString === undefined) {
+  //     return null;
+  //   }
 
-    // Convert to string if it's not already a string
-    const timeStr = String(durationString);
-    if (!timeStr || timeStr.trim() === '') {
-      return null;
-    }
+  //   // Convert to string if it's not already a string
+  //   const timeStr = String(durationString);
+  //   if (!timeStr || timeStr.trim() === '') {
+  //     return null;
+  //   }
 
-    // Split the time string and convert parts to numbers
-    const parts = timeStr.split(':').map(n => parseInt(n, 10));
-    if (parts.some(isNaN)) { return null; }
+  //   // Split the time string and convert parts to numbers
+  //   const parts = timeStr.split(':').map(n => parseInt(n, 10));
+  //   if (parts.some(isNaN)) { return null; }
 
-    if (parts.length === 2) {
-      return parts[0] + (parts[1] / 60);
-    } else if (parts.length === 3) {
-      return parts[0] + (parts[1] / 60) + (parts[2] / 3600);
-    }
+  //   if (parts.length === 2) {
+  //     return parts[0] + (parts[1] / 60);
+  //   } else if (parts.length === 3) {
+  //     return parts[0] + (parts[1] / 60) + (parts[2] / 3600);
+  //   }
 
-    return null;
-  }
+  //   return null;
+  // }
 
-  private formatDecimalHoursToTime(decimalHours: number | null): string {
-    if (decimalHours === null || decimalHours === undefined || isNaN(decimalHours)) {
-      return '';
-    }
+  // private formatDecimalHoursToTime(decimalHours: number | null): string {
+  //   if (decimalHours === null || decimalHours === undefined || isNaN(decimalHours)) {
+  //     return '';
+  //   }
 
-    const isNegative = decimalHours < 0;
-    const absHours = Math.abs(decimalHours);
-    const hours = Math.floor(absHours);
-    const minutes = Math.round((absHours - hours) * 60);
+  //   const isNegative = decimalHours < 0;
+  //   const absHours = Math.abs(decimalHours);
+  //   const hours = Math.floor(absHours);
+  //   const minutes = Math.round((absHours - hours) * 60);
 
-    let adjustedHours = hours;
-    let adjustedMinutes = minutes;
+  //   let adjustedHours = hours;
+  //   let adjustedMinutes = minutes;
 
-    if (adjustedMinutes === 60) {
-      adjustedHours += 1;
-      adjustedMinutes = 0;
-    }
+  //   if (adjustedMinutes === 60) {
+  //     adjustedHours += 1;
+  //     adjustedMinutes = 0;
+  //   }
 
-    const formattedHours = adjustedHours.toString().padStart(2, '0');
-    const formattedMinutes = adjustedMinutes.toString().padStart(2, '0');
+  //   const formattedHours = adjustedHours.toString().padStart(2, '0');
+  //   const formattedMinutes = adjustedMinutes.toString().padStart(2, '0');
 
-    return `${isNegative ? '-' : ''}${formattedHours}:${formattedMinutes}`;
-  }
+  //   return `${isNegative ? '-' : ''}${formattedHours}:${formattedMinutes}`;
+  // }
 
   private processTimeAvgData(jsonData: any): any {
     const rawData = jsonData.table && jsonData.table.rows ? jsonData.table.rows : [];
@@ -1233,7 +1232,7 @@ export class GoogleChartsService {
       const year = parseInt(row[0]);
       const processedRow = [year];
       for (let i = 1; i < row.length; i++) {
-        processedRow.push(row[i] ? this.parseDurationToDecimalHours(row[i]) : null);
+        processedRow.push(row[i] ? parseDurationToDecimalHours(row[i]) : null);
       }
       return processedRow;
     });
@@ -1258,7 +1257,7 @@ export class GoogleChartsService {
 
     this.http.get(url, { responseType: 'text' }).toPromise()
       .then(rawData => {
-        const cleanData = this.sanitizeSoapResponse(rawData);
+        const cleanData = sanitizeSoapResponse(rawData);
 
         if (!cleanData || !cleanData.cols || !cleanData.rows) {
           console.error('Invalid or empty data for TimeAvg Chart');
@@ -1290,7 +1289,7 @@ export class GoogleChartsService {
             const value = original[i];
             const timeValue = typeof value === 'number'
               ? value
-              : this.parseDurationToDecimalHours(value);
+              : parseDurationToDecimalHours(value);
             rowData.push(timeValue);
           });
 
@@ -1338,7 +1337,7 @@ export class GoogleChartsService {
               const value = dt.getValue(row, i);
               return {
                 v: value,
-                f: value !== null ? this.formatDecimalHoursToTime(value) : ''
+                f: value !== null ? formatDecimalHoursToTime(value) : ''
               };
             },
             type: 'number',
