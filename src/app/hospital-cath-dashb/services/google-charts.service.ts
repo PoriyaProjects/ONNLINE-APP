@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { environment } from "src/environments/environment";
 import { MatToolbarModule } from '@angular/material/toolbar';
+import { formatNumberShort } from '../../shared/number-utils';
 
 
 export interface Department {
@@ -138,8 +139,7 @@ export class GoogleChartsService {
     }
   }
   
-  
-  
+   
 
   /**
    * Adds short-format annotation columns to each numeric series in a DataTable.
@@ -153,9 +153,7 @@ export class GoogleChartsService {
       throw new Error('Invalid DataTable passed to addShortFormatAnnotations');
     }
 
-    console.log("addShortFormatAnnotations started");
-
-    const view = new google.visualization.DataView(dataTable);
+        const view = new google.visualization.DataView(dataTable);
     const columns: any[] = [];
     const numCols = dataTable.getNumberOfColumns();
     const numRows = dataTable.getNumberOfRows();
@@ -247,8 +245,7 @@ export class GoogleChartsService {
     };
     
   }
-  
-  
+   
 
 
   /**
@@ -408,7 +405,6 @@ export class GoogleChartsService {
 
     await this.fetchDataAndDrawDirect(cleanData, (data: any) => data, this.CHART_TYPES.GAUGE, 'gauge_chart', chartOptions);
     this.positionGaugeChartText('gauge_chart', textPosition);
-console.log("cleanData:" + cleanData);
     console.log('Gauge chart complete');
   }
 
@@ -531,8 +527,6 @@ console.log("cleanData:" + cleanData);
     return years;
   }
 
-
-
   private processQuartalData(data: any): any {
     const currentDate = new Date();
     const currentYear = currentDate.getFullYear();
@@ -581,13 +575,10 @@ console.log("cleanData:" + cleanData);
   
     return years;
   }
-
   
   private valueExists(value: any): boolean {
     return value !== undefined && value !== null && value !== '' && !isNaN(value);
   }
-
-
 
   private drawBarChart(years: any, elementId: string, customOptions: any = {}): void {
     if (!google.visualization || !google.visualization.DataTable) {
@@ -595,14 +586,7 @@ console.log("cleanData:" + cleanData);
       return;
     }
   
-    // Short number formatter
-    const formatNumberShort = (num: number): string => {
-      if (num >= 1e9) return (num / 1e9).toFixed(2) + 'B';
-      if (num >= 1e6) return (num / 1e6).toFixed(2) + 'M';
-      if (num >= 1e3) return (num / 1e3).toFixed(1) + 'K';
-      return num.toString();
-    };
-  
+
     const isValid = (val: any): boolean => {
       const num = parseFloat(val);
       return !isNaN(num) && num > 0;
@@ -662,7 +646,6 @@ console.log("cleanData:" + cleanData);
     chart.draw(dataTable, options);
   }
   
-
   private drawLineChart(years: any, elementId: string, customOptions: any = {}): void {
     if (!google.visualization || !google.visualization.DataTable) {
       console.error('Google Visualization not loaded');
@@ -779,93 +762,7 @@ console.log("cleanData:" + cleanData);
     chart.draw(dataTable, options);
   }
 
-  // private drawBarChartQ(years: any, elementId: string, customOptions: any = {}): void {
-  //   if (!google.visualization || !google.visualization.DataTable) {
-  //     console.error('Google Visualization not loaded');
-  //     return;
-  //   }
   
-  //   const isValid = (val: any): boolean => {
-  //     const num = parseFloat(val);
-  //     return !isNaN(num) && num > 0;
-  //   };
-  
-  //   const filteredYears: any = {};
-  //   Object.keys(years).forEach(year => {
-  //     const quarters = years[year];
-  //     const hasValidQuarter = Object.values(quarters).some(val => isValid(val));
-  //     if (hasValidQuarter) {
-  //       filteredYears[year] = quarters;
-  //     }
-  //   });
-  
-  //   const yearKeys = Object.keys(filteredYears);
-  //   if (yearKeys.length === 0) {
-  //     const el = document.getElementById(elementId);
-  //     if (el) el.innerHTML = "אין נתונים להצגה";
-  //     return;
-  //   }
-  
-  //   const quarterLabels = ['Q1', 'Q2', 'Q3', 'Q4'];
-  //   const rows = quarterLabels.map(q => {
-  //     const row: any[] = [q];
-  //     yearKeys.forEach(year => {
-  //       const val = filteredYears[year][q];
-  //       row.push(isValid(val) ? val : null);
-  //     });
-  //     return row;
-  //   }).filter(row => row.slice(1).some(val => val !== null)); // Keep only rows with at least one value
-  
-  //   const dataTable = new google.visualization.DataTable();
-  //   dataTable.addColumn('string', 'רבעון'); // Quarter
-  //   yearKeys.forEach(year => dataTable.addColumn('number', year));
-  //   dataTable.addRows(rows);
-  
-  //   // Add annotations for values on top of bars
-  //   yearKeys.forEach(() => dataTable.addColumn({ type: 'string', role: 'annotation' }));
-  
-  //   const annotatedRows = rows.map(row => {
-  //     const base = [...row];
-  //     const annotations = row.slice(1).map(val => val != null ? val.toString() : null);
-  //     return base.concat(annotations);
-  //   });
-  
-  //   const annotatedDataTable = new google.visualization.DataTable();
-  //   annotatedDataTable.addColumn('string', 'רבעון');
-  //   yearKeys.forEach(year => {
-  //     annotatedDataTable.addColumn('number', year);
-  //   });
-  //   yearKeys.forEach(() => {
-  //     annotatedDataTable.addColumn({ type: 'string', role: 'annotation' });
-  //   });
-  //   annotatedDataTable.addRows(annotatedRows);
-  
-  //   const defaultOptions = {
-  //     chartArea: { width: '80%', height: '70%' },
-  //     legend: { position: 'top' },
-  //     bar: { groupWidth: '60%' },
-  //     isStacked: false,
-  //     colors: this.CHART_COLORS.slice(0, yearKeys.length),
-  //     annotations: {
-  //       alwaysOutside: true,
-  //       textStyle: {
-  //         fontSize: 11,
-  //         auraColor: 'none'
-  //       }
-  //     },
-  //     vAxis: {
-  //       minValue: 0,
-  //       format: 'short'
-  //     },
-  //     hAxis: {
-  //       //title: 'רבעון'
-  //     }
-  //   };
-  
-  //   const options = { ...defaultOptions, ...customOptions };
-  //   const chart = new google.visualization.ColumnChart(document.getElementById(elementId));
-  //   chart.draw(annotatedDataTable, options);
-  // }
   
   private drawBarChartQ(years: any, elementId: string, customOptions: any = {}): void {
     if (!google.visualization || !google.visualization.DataTable) {
@@ -949,8 +846,6 @@ console.log("cleanData:" + cleanData);
     chart.draw(dataTable, options);
   }
   
-
-
   private drawChart3Y(jsonData: any, elementId: string, customOptions: any = {}): void {
     const filteredData = filterValidYears(jsonData);
 
@@ -964,13 +859,8 @@ console.log("cleanData:" + cleanData);
       'יולי', 'אוגוסט', 'ספטמבר', 'אוקטובר', 'נובמבר', 'דצמבר'
     ];
 
-    const formatNumberShort = (num: number): string => {
-      if (num >= 1e9) return (num / 1e9).toFixed(2) + 'B';
-      if (num >= 1e6) return (num / 1e6).toFixed(2) + 'M';
-      if (num >= 1e3) return (num / 1e3).toFixed(1) + 'K';
-      return num.toString();
-    };
 
+    
     const rows: any[] = [];
 
     filteredData.yData.forEach((yearObject: any) => {
@@ -1062,12 +952,14 @@ console.log("cleanData:" + cleanData);
       'יולי', 'אוגוסט', 'ספטמבר', 'אוקטובר', 'נובמבר', 'דצמבר'
     ];
 
-    const formatNumberShort = (num: number): string => {
-      if (num >= 1e9) return (num / 1e9).toFixed(2) + 'B';
-      if (num >= 1e6) return (num / 1e6).toFixed(2) + 'M';
-      if (num >= 1e3) return (num / 1e3).toFixed(1) + 'K';
-      return num.toString();
-    };
+    // const formatNumberShort = (num: number): string => {
+    //   if (num >= 1e9) return (num / 1e9).toFixed(2) + 'B';
+    //   if (num >= 1e6) return (num / 1e6).toFixed(2) + 'M';
+    //   if (num >= 1e3) return (num / 1e3).toFixed(1) + 'K';
+    //   return num.toString();
+    // };
+
+    
 
     const rows: any[] = [];
 
@@ -1095,8 +987,6 @@ console.log("cleanData:" + cleanData);
       if (el) el.innerHTML = "אין נתונים להצגה";
       return;
     }
-
-    //dataTable.addRows(rows);
 
     if (rows.length === 0) {
       const el = document.getElementById(elementId);
@@ -1482,12 +1372,12 @@ console.log("cleanData:" + cleanData);
 
   // --- eof TimeAvgChart
 
-  private formatNumberShort(num: number): string {
-    if (num >= 1e9) return (num / 1e9).toFixed(2) + 'B';
-    if (num >= 1e6) return (num / 1e6).toFixed(2) + 'M';
-    if (num >= 1e3) return (num / 1e3).toFixed(1) + 'K';
-    return num.toString();
-  }
+  // private formatNumberShort(num: number): string {
+  //   if (num >= 1e9) return (num / 1e9).toFixed(2) + 'B';
+  //   if (num >= 1e6) return (num / 1e6).toFixed(2) + 'M';
+  //   if (num >= 1e3) return (num / 1e3).toFixed(1) + 'K';
+  //   return num.toString();
+  // }
 
   
   private processExploitationData(data: any): any {
@@ -1545,7 +1435,9 @@ console.log("cleanData:" + cleanData);
   
         // Add dummy data for total series: value = null, annotation = total string
         rowData.push(0.001); // invisible value
-        rowData.push(`Total: ${this.formatNumberShort ? this.formatNumberShort(rowSum) : rowSum.toLocaleString()}`);
+ //       rowData.push(`Total: ${this.formatNumberShort ? this.formatNumberShort(rowSum) : rowSum.toLocaleString()}`);
+ rowData.push(`Total: ${formatNumberShort(rowSum)}`);
+
         chartData.addRow(rowData);
       });
   
