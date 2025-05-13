@@ -148,7 +148,6 @@ import { CommercialSupportPresentationDialogComponent } from "./form-dashboard/c
 // import { GenhdashboardComponent } from './genhdashboard/genhdashboard.component';
 
 const routes: Routes = [
-    { path: "", component: LoginComponent },
     { path: "patientstikers", component: PatientStikersComponent },
     { path: "clinicsrequests", component: ClinicsRequestsComponent },
     { path: 'switches', component: SwitchesComponent },
