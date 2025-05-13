@@ -2,13 +2,236 @@
   <button mat-raised-button color="warn" type="button" class="closeBtn" (click)="onClose()">
     X
   </button>
-  <mat-card class="form-card">
-    <mat-card-title class="text-center">בקשה לאישור תמיכת גוף מסחרי</mat-card-title>
+  <mat-horizontal-stepper #stepper>
+    <mat-step [stepControl]="SupportRequestDto">
+      <form [formGroup]="SupportRequestDto">
+        <ng-template matStepLabel>פרטי בקשה</ng-template>
+
+        <mat-card class="form-card">
+          <mat-card-title class="text-center">
+            בקשה לאישור תמיכת גוף מסחרי - כנס/השתלמות
+          </mat-card-title>
+          <mat-card-content>
+            <p><b>דגשים:</b><br>
+
+              * באחריות מגיש הבקשה להגיש מכתב תמיכה תיקני ותוכנית של הכנס.<br>
+
+              * במידה והתמיכה מועברת לביצוע בתאגיד יש לוודא כי ברור במכתב האם סכום התמיכה מגלם בתוכו את התקורה או שזו
+              תתווסף
+              כמקובל בתאגיד.<br>
+
+              * באחריות איש הצוות שנבחר לצאת לכנס להגיש בקשה לועדת השתלמויות.<br>
+
+              * הוועדה אינה מתחייבת לדון בבקשה שתוגש קרוב למועד הכנס.
+            </p>
+            <hr>
+            <div fxLayout="column" fxLayoutGap="20px" style="text-align: right;">
+              <mat-form-field appearance="outline">
+                <mat-label>תעודת זהות מגיש הבקשה</mat-label>
+                <input matInput formControlName="RequesterID" (blur)="getEmployeeDetails()">
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" *ngIf="SupportRequestDto.get('Requester')?.value != ''">
+                <mat-label>מגיש הבקשה</mat-label>
+                <input matInput formControlName="Requester">
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" *ngIf="SupportRequestDto.get('Requester')?.value != ''">
+                <mat-label>תפקיד - מחלקה</mat-label>
+                <input matInput formControlName="RequesterDetails">
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" *ngIf="SupportRequestDto.get('Requester')?.value != ''">
+                <mat-label>שם הגוף התומך</mat-label>
+                <input matInput formControlName="CompanySupport">
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" *ngIf="SupportRequestDto.get('Requester')?.value != ''">
+                <mat-label>שם הכנס / ההשתלמות / קורס / יום עיון</mat-label>
+                <input matInput formControlName="ConferenceName">
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" *ngIf="SupportRequestDto.get('Requester')?.value != ''">
+                <mat-label>מועד התחלת הכנס</mat-label>
+                <input matInput [matDatepicker]="picker" formControlName="EventDate">
+                <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+                <mat-datepicker #picker></mat-datepicker>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" *ngIf="SupportRequestDto.get('Requester')?.value != ''">
+                <mat-label>מועד סיום הכנס</mat-label>
+                <input matInput [matDatepicker]="picker2" formControlName="EventEndDate">
+                <mat-datepicker-toggle matSuffix [for]="picker2"></mat-datepicker-toggle>
+                <mat-datepicker #picker2></mat-datepicker>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" *ngIf="SupportRequestDto.get('Requester')?.value != ''">
+                <mat-label>מקום הכנס</mat-label>
+                <input matInput formControlName="Location">
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" *ngIf="SupportRequestDto.get('Requester')?.value != ''">
+                <mat-label>מבקש השתתפותו של</mat-label>
+                <input matInput formControlName="JoinPerson">
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" *ngIf="SupportRequestDto.get('Requester')?.value != ''">
+                <mat-label>תפקיד של המשתתף</mat-label>
+                <input matInput formControlName="Position">
+              </mat-form-field>
+            </div>
+
+          </mat-card-content>
+        </mat-card>
+
+        <div class="continue-btn">
+          <button mat-button matStepperNext style="background-color: #c7e5e2;">המשך</button>
+        </div>
+      </form>
+    </mat-step>
+    <mat-step [stepControl]="SupportActivityDto" *ngIf="SupportRequestDto.get('Requester')?.value != ''">
+      <form [formGroup]="SupportRequestDto">
+        <ng-template matStepLabel>פרטי בקשה</ng-template>
+
+        <mat-card class="form-card">
+          <mat-card-title class="text-center">
+            מהות ואופן ביצוע התמיכה
+          </mat-card-title>
+          <mat-card-content>
+            <div class="table-section">
+              <table mat-table [dataSource]="SupportActivityDto" class="mat-elevation-z2">
+
+                <ng-container matColumnDef="activity">
+                  <th mat-header-cell *matHeaderCellDef>פעילות</th>
+                  <td mat-cell *matCellDef="let element">{{ element.ActivityName }}</td>
+                </ng-container>
+
+                <ng-container matColumnDef="directService">
+                  <th mat-header-cell *matHeaderCellDef>תמיכה ישירה ע"י החברה</th>
+                  <td mat-cell *matCellDef="let element">
+                    <mat-radio-group [formControlName]="element.controlName + '_directService'" fxLayout="row"
+                      fxLayoutAlign="center center">
+                      <mat-radio-button value="yes">כן</mat-radio-button>
+                      <mat-radio-button value="no">לא</mat-radio-button>
+                    </mat-radio-group>
+                  </td>
+                </ng-container>
+
+                <ng-container matColumnDef="indirectHealth">
+                  <th mat-header-cell *matHeaderCellDef>תמיכה מועברת לתאגיד הבריאות</th>
+                  <td mat-cell *matCellDef="let element; let i = index;">
+                    <div [formGroup]="SupportRequestDto">
+                      <mat-radio-group [formControlName]="element.controlName + '_indirectHealth'" fxLayout="row"
+                        fxLayoutAlign="center center" (change)="onIndirectHealthChange($event.value, i)">
+
+                        <mat-radio-button value="yes">כן</mat-radio-button>
+                        <mat-radio-button value="no">לא</mat-radio-button>
+                      </mat-radio-group>
+
+                      <div *ngIf="selectedIndirectHealth[i] === 'yes'" [@expandCollapse] style="margin-top: 10px;">
+
+                        <label>במידה וכן - האם הסכום כולל תקורה:</label>
+                        <mat-radio-group [formControlName]="element.controlName + '_extraOptions'" fxLayout="row"
+                          fxLayoutAlign="center center">
+                          <mat-radio-button value="yes">כן</mat-radio-button>
+                          <mat-radio-button value="no">לא</mat-radio-button>
+                        </mat-radio-group>
+                      </div>
+                    </div>
+                  </td>
+                </ng-container>
+
+                <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+                <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+
+              </table>
+            </div>
+          </mat-card-content>
+        </mat-card>
+
+        <div class="continue-btn">
+          <button mat-button matStepperNext style="background-color: #c7e5e2;">המשך</button>
+        </div>
+      </form>
+    </mat-step>
+    <mat-step [stepControl]="SupportActivityDto" *ngIf="SupportRequestDto.get('Requester')?.value != ''">
+      <form [formGroup]="SupportRequestDto">
+        <ng-template matStepLabel>פרטי בקשה</ng-template>
+
+        <mat-card class="form-card">
+          <mat-card-title class="text-center">
+            סכום תמיכה (אם החברה מעבירה סכום כללי)
+          </mat-card-title>
+          <mat-card-content>
+            <div class="amount-section">
+              <mat-form-field appearance="outline" style="width: 33.333%;">
+                <mat-label>מטבע</mat-label>
+                <mat-select formControlName="Currency">
+                  <mat-option value="USD">&#x24; דולר</mat-option>
+                  <mat-option value="EUR">&#x20AC; אירו</mat-option>
+                  <mat-option value="ILS">&#x20AA; ש"ח</mat-option>
+                </mat-select>
+              </mat-form-field>
+              <mat-form-field appearance="outline" style="width: 33.333%;">
+                <mat-label>סכום</mat-label>
+                <input matInput type="text" formControlName="SupportAmount">
+              </mat-form-field>
+              <mat-form-field appearance="outline" style="width: 33.333%;">
+                <mat-label>הסכום הוא עבור</mat-label>
+                <mat-select multiple [value]="getSelectedSupportTypeIds()" (selectionChange)="onSupportTypeChange($event)">
+                  <mat-option *ngFor="let type of supportTypes" [value]="type.Id">
+                    {{ type.Description }}
+                  </mat-option>
+                </mat-select>
+              </mat-form-field>
+
+              <mat-checkbox formControlName="AmountIncludesTax">
+                האם הסכום כולל תקורה
+              </mat-checkbox>
+            </div>
+            <p><br>
+              <strong>** יש לצרף מכתב תמיכה מהחברה המופנה למנהל המרכז הרפואי. במכתב יצוין שהחברה מעוניינת לתמוך בנסיעת
+                רופא
+                /
+                איש צוות מתחום... לכנס.... תמיכה עבור רישום / טיסה / לינה/ או בסכום.... והאם תבוצע ישירות ע"י החברה או
+                תועבר
+                לתאגיד הבריאות.</strong>
+            </p>
+            <br>
+            <div fxLayout="column" fxLayoutGap="20px" style="margin-top: 16px;">
+
+              <!-- File Input 1 -->
+              <div style="text-align: right;">
+                <label>מכתב תמיכה מהחברה*</label><br>
+                <input type="file" (change)="onFileChange($event, 'SupportLetter')" required>
+              </div><br>
+
+              <!-- File Input 2 -->
+              <div style="text-align: right;">
+                <label>תוכנית של הקורס*</label><br>
+                <input type="file" (change)="onFileChange($event, 'ConferenceApproval')" required>
+              </div><br>
+
+              <!-- File Input 3 -->
+              <div style="text-align: right;">
+                <label>מסמך אחר</label><br>
+                <input type="file" (change)="onFileChange($event, 'AdditionalDocument')">
+              </div>
+
+            </div>
+          </mat-card-content>
+          <button mat-raised-button color="primary" class="submitBtn" matTooltip="שמירה"
+            (click)="submitForm()">שמירה</button>
+        </mat-card>
+      </form>
+    </mat-step>
+  </mat-horizontal-stepper>
+  <!-- <mat-card class="form-card">
+    <mat-card-title class="text-center">בקשה לאישור תמיכת גוף מסחרי - כנס/השתלמות</mat-card-title>
     <mat-card-content>
 
       <form [formGroup]="SupportRequestDto">
 
-        <!-- Requester Details -->
         <div fxLayout="column" fxLayoutGap="20px">
           <mat-form-field appearance="outline">
             <mat-label>מגיש הבקשה</mat-label>
@@ -60,19 +283,16 @@
           </mat-form-field>
         </div>
 
-        <!-- Activities Table -->
         <h3 class="section-title">מהות ואופן ביצוע התמיכה:</h3>
 
         <div class="table-section">
           <table mat-table [dataSource]="SupportActivityDto" class="mat-elevation-z2">
 
-            <!-- Activity Name Column -->
             <ng-container matColumnDef="activity">
               <th mat-header-cell *matHeaderCellDef>פעילות</th>
               <td mat-cell *matCellDef="let element">{{ element.ActivityName }}</td>
             </ng-container>
 
-            <!-- Direct Service Column -->
             <ng-container matColumnDef="directService">
               <th mat-header-cell *matHeaderCellDef>תמיכה ישירה ע"י החברה</th>
               <td mat-cell *matCellDef="let element">
@@ -84,7 +304,6 @@
               </td>
             </ng-container>
 
-            <!-- Indirect Health Column -->
             <ng-container matColumnDef="indirectHealth">
               <th mat-header-cell *matHeaderCellDef>תמיכה מועברת לתאגיד הבריאות</th>
               <td mat-cell *matCellDef="let element; let i = index;">
@@ -96,7 +315,6 @@
                     <mat-radio-button value="no">לא</mat-radio-button>
                   </mat-radio-group>
 
-                  <!-- Extra Options if "yes" selected -->
                   <div *ngIf="selectedIndirectHealth[i] === 'yes'" [@expandCollapse] style="margin-top: 10px;">
 
                     <label>במידה וכן - האם הסכום כולל תקורה:</label>
@@ -116,7 +334,6 @@
           </table>
         </div>
 
-        <!-- Support Amount -->
         <h3 class="section-title">סכום תמיכה:</h3>
 
         <div class="amount-section">
@@ -195,7 +412,6 @@
           </form>
         </div>
 
-        <!-- Submit Button -->
         <div class="actions">
           <button mat-raised-button color="primary" (click)="submitForm()" [disabled]="SupportRequestDto.invalid">
             שלח בקשה
@@ -205,5 +421,5 @@
       </form>
 
     </mat-card-content>
-  </mat-card>
+  </mat-card> -->
 </div>

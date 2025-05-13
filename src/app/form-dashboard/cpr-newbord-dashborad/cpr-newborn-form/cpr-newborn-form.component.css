@@ -33,6 +33,7 @@ h3 {
 
 mat-form-field {
   margin-bottom: 16px;
+  padding: 5px;
 }
 
 mat-checkbox {

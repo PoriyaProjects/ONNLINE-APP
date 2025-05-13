@@ -152,13 +152,16 @@ import { HospitalCathDashboardComponent } from '../hospital-cath-dashboard/hospi
 
 import { CommercialSupportFormDashboardComponent } from '../form-dashboard/commercial-support-form-dashboard/commercial-support-form-dashboard.component';
 import { CommercialSupportFormDialogComponent } from '../form-dashboard/commercial-support-form-dashboard/commercial-support-form-dialog/commercial-support-form-dialog.component';
+import { CommercialSupportResearchDialogComponent } from '../form-dashboard/commercial-support-form-dashboard/commercial-support-research-dialog/commercial-support-research-dialog.component';
+import { CommercialSupportPresentationDialogComponent } from '../form-dashboard/commercial-support-form-dashboard/commercial-support-presentation-dialog/commercial-support-presentation-dialog.component';
 
 
 
 const routes: Routes = [
+  { path: "", component: LoginComponent },
+  { path: 'clinicsrequests', component: ClinicsRequestsComponent },
   { path: "patientstikers", component: PatientStikersComponent },
   { path: 'dashboard', component: DashboardComponent },
-  { path: 'clinicsrequests', component: ClinicsRequestsComponent },
   { path: 'covid19report', component: Covid19reportComponent },
   { path: 'login', component: LoginComponent },
   { path: 'chads', component: ChadsComponent },
@@ -265,7 +268,6 @@ const routes: Routes = [
   { path: "wagons", component: WagonComponent },
   { path: "whatsapp-dashboard", component: WhatsappMessagesDashboardComponent },
   { path: "nutrition-dashboard", component: NutritionSystemComponent },
-  { path: '', component: LoginComponent },
   { path: 'switches', component: SwitchesComponent },
   { path: 'hr-dashboard', component: HrDashboardComponent },
   { path: 'Norton', component: NortonEstimateComponent },
@@ -332,8 +334,9 @@ const routes: Routes = [
   { path: "cpr-newborn-form", component: CprNewbornFormComponent },
   { path: "commercial-support-form-dashboard", component: CommercialSupportFormDashboardComponent },
   { path: "commercial-support-form-dialog", component: CommercialSupportFormDialogComponent },
+  { path: "commercial-support-research-dialog", component: CommercialSupportResearchDialogComponent },
+  { path: "commercial-support-presentation-dialog", component: CommercialSupportFormDialogComponent },
   { path: "LabTests", component: LabTestsComponent },
-
   { path: "departments-whatsapp-management", component: DepartmentsWhatsappManagementComponent },
   { path: "training-request-dashboard", component: TrainingRequestDashboardComponent },
   { path: "training-request-form/:id", component: TrainingRequestFormComponent },

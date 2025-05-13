@@ -48,7 +48,10 @@ export class CprNewbordDashboradComponent implements OnInit {
     // You can open a dialog or navigate
     let dg = this.dialog.open(CprNewbornFormComponent, {
       disableClose: true,
-      data: element,
+      data: {
+        data: element,
+        type: "print"
+      },
       width: '90%',
       height: '90%'
     });
@@ -105,8 +108,17 @@ export class CprNewbordDashboradComponent implements OnInit {
   }
 
   editForm(element: any) {
-    console.log('Editing:', element);
     // Navigate to edit form
+    // You can open a dialog or navigate
+    this.dialog.open(CprNewbornFormComponent, {
+      disableClose: true,
+      data: {
+        data: element,
+        type: "edit"
+      },
+      width: '90%',
+      height: '90%'
+    });
   }
 
   getNewBornCprList() {

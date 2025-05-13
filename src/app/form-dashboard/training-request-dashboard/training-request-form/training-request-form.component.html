@@ -258,6 +258,7 @@
         <mat-card>
           <mat-card-title>מקור מימון</mat-card-title>
           <mat-card-content>
+            <h5>* מרכז רפואי</h5>
             <div class="section">
               <section class="example-section">
                 <p><mat-checkbox formControlName="Hospital_Budget"><span class="checkbox-label">תקציב המרכז
@@ -266,16 +267,17 @@
               </section>
             </div>
             <hr>
+            <h5>* מכתב תמיכה מחברה חיצונית</h5>
             <div class="section">
               <section class="example-section">
-                <p><mat-checkbox formControlName="OutSource_Company"><span class="checkbox-label">מימון ע"י תמיכה דרך
+                <p><mat-checkbox formControlName="OutSource_Company"><span class="checkbox-label">דרך
                       תאגיד</span></mat-checkbox>
                 </p>
               </section>
             </div>
             <div class="section">
               <section class="example-section">
-                <p><mat-checkbox formControlName="OutSource_Company_Direct"><span class="checkbox-label">מימון ע"י תמיכה
+                <p><mat-checkbox formControlName="OutSource_Company_Direct"><span class="checkbox-label">
                       ישירות למארגני כנס/השתלמות</span></mat-checkbox>
                 </p>
               </section>
@@ -292,6 +294,7 @@
               </button>
             </div>
             <hr>
+            <h5>* מרכז שיקום</h5>
             <div class="section" *ngIf="Training_Request_Forms_B.get('Training_Out').value == false">
               <section class="example-section">
                 <p><mat-checkbox formControlName="Galilean_Partnership"><span class="checkbox-label">ההשתלמות קשורה
@@ -304,13 +307,14 @@
                 <p *ngIf="user_name != 'nedelmanpo' && user_name != 'doz'"> {{
                   Training_Request_Forms_D.get('Training_Fund_Answer').value }}
                 </p>
-                <mat-form-field *ngIf="user_name == 'nedelmanpo' || user_name == 'doz'">
+                <mat-form-field *ngIf="user_name == 'nedelmanpo' || user_name == 'doz' || user_name == 'adahabre'">
                   <mat-label>תשובת השותפות גלילילת</mat-label>
                   <textarea matInput formControlName="Galilean_Partnership_Description" rows="2"></textarea>
                 </mat-form-field>
               </div>
             </div>
             <hr>
+            <h5>* תאגיד הבריאות</h5>
             <div class="section">
               <section class="example-section">
                 <p><mat-checkbox [(ngModel)]="health_checkbox" [ngModelOptions]="{standalone: true}"><span
@@ -352,7 +356,7 @@
               <mat-label>תשובת התאגיד</mat-label>
               <p *ngIf="user_name != 'dnudelman'"> {{ Training_Request_Forms_D.get('Training_Fund_Answer').value }}
               </p>
-              <mat-form-field *ngIf="user_name == 'dnudelman'">
+              <mat-form-field *ngIf="user_name == 'dnudelman' || user_name == 'adahabre'">
                 <mat-label>תשובת התאגיד</mat-label>
                 <textarea matInput formControlName="Training_Fund_Answer" rows="2"></textarea>
               </mat-form-field>

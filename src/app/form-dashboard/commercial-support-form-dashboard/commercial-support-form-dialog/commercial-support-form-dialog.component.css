@@ -44,6 +44,7 @@
 
 .mat-form-field {
   width: 50%;
+  padding: 5px;
 }
 
 h3 {
@@ -104,4 +105,24 @@ mat-row {
 .closeBtn {
   position: relative;
   left: 50px;
+}
+
+input[type="file"] {
+  display: block;
+  margin-top: 4px;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.continue-btn {
+  text-align: left;
+  margin-top: 10px;
+}
+
+.submitBtn {
+  width: 100%;
+  margin-top: 50px;
+  font-weight: bold;
+  background-color: #10508e;
 }

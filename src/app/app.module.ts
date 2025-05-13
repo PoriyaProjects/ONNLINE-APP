@@ -270,9 +270,11 @@ import { DashboardService} from './hospital-cath-dashboard/hospital-cath.service
 import { EshpozModalComponent2 } from './hospital-cath-dashboard/eshpoz-modal/eshpoz-modal.component';
 import { HospitalTonnageComponent2 } from './hospital-cath-dashboard/hospital-tonnage/hospital-tonnage.component';
 import { SharedModule } from './shared/shared.module';
-
 import { CommercialSupportFormDashboardComponent } from './form-dashboard/commercial-support-form-dashboard/commercial-support-form-dashboard.component';
 import { CommercialSupportFormDialogComponent } from './form-dashboard/commercial-support-form-dashboard/commercial-support-form-dialog/commercial-support-form-dialog.component';
+import { PeopleListDialogComponent } from './form-dashboard/training-request-dashboard/training-request-dashboard.component';
+import { CommercialSupportResearchDialogComponent } from './form-dashboard/commercial-support-form-dashboard/commercial-support-research-dialog/commercial-support-research-dialog.component';
+import { CommercialSupportPresentationDialogComponent } from './form-dashboard/commercial-support-form-dashboard/commercial-support-presentation-dialog/commercial-support-presentation-dialog.component';
 
 
 
@@ -498,7 +500,10 @@ const maskConfig: Partial<IConfig> = {
     CprNewbordDashboradComponent,
     CprNewbornFormComponent,
     CommercialSupportFormDashboardComponent,
+    PeopleListDialogComponent,
     CommercialSupportFormDialogComponent,
+    CommercialSupportResearchDialogComponent,
+    CommercialSupportPresentationDialogComponent,
   ],
   imports: [
     MatIconModule,
