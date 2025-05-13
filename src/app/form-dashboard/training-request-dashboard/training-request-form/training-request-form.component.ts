@@ -447,6 +447,7 @@ export class TrainingRequestFormComponent implements OnInit {
         { cityName: 'אנטארקטיקה' }
       ];
 
+      this.Training_Request_Forms_B.controls['Education_Fee'].setValue(0);
       this.cityOptions = this.cityControl.valueChanges.pipe(
         startWith(""),
         map((value) => (typeof value === "string" ? value : value.name)),

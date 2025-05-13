@@ -115,6 +115,7 @@ export class CprNewbornFormComponent implements OnInit {
   additionalProductsDisplayedColumns: string[] = ['name', 'time', 'route', 'dosageVolume'];
   additionalProductsDataSource = new MatTableDataSource();
   @ViewChild('printSection') printSection: ElementRef;
+  date_now: any = Date.now();
 
   constructor(
     private fb: FormBuilder,
@@ -126,10 +127,10 @@ export class CprNewbornFormComponent implements OnInit {
     @Optional() private dialogRef: MatDialogRef<CprNewbornFormComponent>,
   ) {
     this.getNewBornCprDataByID();
-
   }
 
   ngOnInit(): void {
+    this.date_now = this._pipe.transform(this.date_now, 'yyyy-MM-dd');
   }
 
   appendPredefinedNote(note: string) {
@@ -256,17 +257,6 @@ export class CprNewbornFormComponent implements OnInit {
     }
   }
 
-  addTeamMember() {
-    const teamMembers = this.resuscitationForm.get('teamMembers') as FormArray;
-    teamMembers.push(
-      this.fb.group({
-        row: ['', null],
-        name: ['', null],
-        role: ['', null]
-      })
-    );
-  }
-
   dateChanged(event: MatDatepickerInputEvent<Date>, form_group: any) {
     form_group.value = this._pipe.transform(event.value, 'yyyy-MM-dd');
   }
@@ -274,13 +264,14 @@ export class CprNewbornFormComponent implements OnInit {
   getNewBornCprDataByID() {
     this.http
       .post(environment.url + "GetResuscitationFormData", {
-        _id: this.form_id
+        _id: this.form_id.data
       })
       .subscribe((Response) => {
         let data = JSON.parse(Response['d']);
-        if (this.form_id != null) {
+        if (this.form_id.type == 'print') {
           const pdf = this.createPrintableString(data);
           this.dialogRef.close(pdf);
+          return;
         }
         this.resuscitationForm = this.fb.group({
           motherInfo: this.fb.group({
@@ -291,7 +282,7 @@ export class CprNewbornFormComponent implements OnInit {
             otherLocation: [data?.motherInfo.otherLocation],
             babyName: [data?.motherInfo.babyName],
             babyId: [data?.motherInfo.babyId, Validators.required],
-            resuscitationDate: [data?.motherInfo.resuscitationDate, Validators.required],
+            resuscitationDate: [data?.motherInfo.resuscitationDate == null ? this.date_now : data?.motherInfo.resuscitationDate, Validators.required],
             resuscitationTime: [data?.motherInfo.resuscitationTime, Validators.required],
             location: [data?.motherInfo.location, Validators.required],
             pediatricianCalledTime: [data?.motherInfo.pediatricianCalledTime],
@@ -304,7 +295,8 @@ export class CprNewbornFormComponent implements OnInit {
           teamMembers: this.fb.array(data?.teamMembers.map(member => this.fb.group({
             row: [member.row],
             name: [member.name],
-            role: [member.role]
+            role: [member.role],
+            otherRole: [member.otherRole]
           })) || []),
           pregnancyDeliveryInfo: this.fb.group({
             pregnancyDeliveryDetails: [data?.pregnancyDeliveryInfo.pregnancyDeliveryDetails],
@@ -443,7 +435,6 @@ export class CprNewbornFormComponent implements OnInit {
   }
 
   onSubmit() {
-    console.log(this.resuscitationForm.getRawValue());
     if (this.resuscitationForm.valid) {
       this.saving = true;
       // Send the data to your backend
@@ -465,17 +456,28 @@ export class CprNewbornFormComponent implements OnInit {
   }
 
   getPersonDetails() {
-    this.http
-      .post(
-        environment.url + "GetClinicsPatientDetails",
-        {
-          _passport: this.resuscitationForm.controls['motherInfo'].value.motherId
-        }
-      )
-      .subscribe((Response) => {
-        let patient = Response['d'];
-        this.resuscitationForm.controls['motherInfo']['controls'].motherName.setValue(patient.FirstName + ' ' + patient.LastName);
-      });
+    let _passport = this.resuscitationForm.controls['motherInfo'].value.motherId;
+    if (_passport != null && _passport != '') {
+      this.http
+        .post(
+          environment.url + "GetMotherInfoByPassportID",
+          {
+            _passport: this.resuscitationForm.controls['motherInfo'].value.motherId
+          }
+        )
+        .subscribe((Response) => {
+          let patient = Response['d'];
+          this.resuscitationForm.controls['motherInfo']['controls'].motherName.setValue(patient.motherName);
+          this.resuscitationForm.controls['motherInfo']['controls'].babyGender.setValue(patient.babyGender);
+          this.resuscitationForm.controls['motherInfo']['controls'].gestationAgeWeeks.setValue(patient.gestationAgeWeeks);
+          this.resuscitationForm.controls['motherInfo']['controls'].babyWeight.setValue(patient.babyWeight);
+          this.resuscitationForm.controls['motherInfo']['controls'].deliveryMethod.setValue(patient.deliveryMethod);
+          this.resuscitationForm.controls['motherInfo']['controls'].babyId.setValue(patient.babyId);
+          this.resuscitationForm.controls['motherInfo']['controls'].babyCasenumber.setValue(patient.babyCasenumber);
+          this.resuscitationForm.controls['motherInfo']['controls'].babyName.setValue(patient.babyName);
+          this.resuscitationForm.controls['motherInfo']['controls'].deliveryTime.setValue(patient.deliveryTime);
+        });
+    }
   }
 
   createPrintableString(data) {
@@ -497,6 +499,7 @@ export class CprNewbornFormComponent implements OnInit {
       <td style="padding: 8px; border: 1px solid #ccc;">${index + 1}</td>
       <td style="padding: 8px; border: 1px solid #ccc;">${member.name || ''}</td>
       <td style="padding: 8px; border: 1px solid #ccc;">${member.role || ''}</td>
+      <td style="padding: 8px; border: 1px solid #ccc;">${member.otherRole || ''}</td>
     </tr>
   `).join('');
     const rowsHtml = vitalSignsArray.map((row: any) => `

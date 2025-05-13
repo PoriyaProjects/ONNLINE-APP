@@ -1,0 +1,18 @@
+<div class="text-right">
+  <h2 mat-dialog-title>רשימת משתתפים</h2>
+  <mat-dialog-content class="dialog-content">
+    <mat-selection-list [(ngModel)]="selectedPeople">
+      <mat-list-option *ngFor="let person of data" [value]="person">
+        <div class="person-details">
+          <span class="name">{{ person.Full_Name }}</span>
+          <span class="role">{{ person.Role }}</span>
+        </div>
+      </mat-list-option>
+    </mat-selection-list>
+  </mat-dialog-content>
+
+  <mat-dialog-actions align="end">
+    <button mat-button (click)="close()">אישור</button>
+    <button mat-button mat-dialog-close>ביטול</button>
+  </mat-dialog-actions>
+</div>

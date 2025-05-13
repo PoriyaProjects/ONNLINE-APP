@@ -1,7 +1,9 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, TemplateRef, ViewChild } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { MatTableDataSource } from '@angular/material/table';
 import { CommercialSupportFormDialogComponent } from './commercial-support-form-dialog/commercial-support-form-dialog.component';
+import { CommercialSupportPresentationDialogComponent } from './commercial-support-presentation-dialog/commercial-support-presentation-dialog.component';
+import { CommercialSupportResearchDialogComponent } from './commercial-support-research-dialog/commercial-support-research-dialog.component';
 import { SupportRequestService } from './commercial-support.service';
 
 @Component({
@@ -15,6 +17,7 @@ export class CommercialSupportFormDashboardComponent {
   supportRequests = new MatTableDataSource<any>();
   searchValue = '';
   displayedColumns: string[] = ['requester', 'conferenceName', 'eventDate', 'eventEndDate', 'supportAmount', 'actions'];
+  @ViewChild('requestDialog') requestDialog: TemplateRef<any>;
 
   constructor(
     private supportRequestService: SupportRequestService,
@@ -44,7 +47,7 @@ export class CommercialSupportFormDashboardComponent {
     this.supportRequests.filter = '';
   }
 
-  viewRequest(request: any) {
+  viewRequest2(request: any) {
     // Example: open a dialog with details
     const dialogRef = this.dialog.open(CommercialSupportFormDialogComponent, {
       disableClose: true,
@@ -58,6 +61,30 @@ export class CommercialSupportFormDashboardComponent {
         this.loadRequests(); // טען מחדש את הבקשות
       }
     });
+  }
+
+  openDialog() {
+    this.dialog.open(this.requestDialog);
+  }
+
+  selectRequest(type: string) {
+    this.dialog.closeAll();
+    this.viewRequest(type); // Send the selected type
+  }
+
+  viewRequest(type: string | null) {
+    // handle the selected option
+    switch (type) {
+      case 'A':
+        this.dialog.open(CommercialSupportFormDialogComponent);
+        break;
+      case 'B':
+        this.dialog.open(CommercialSupportResearchDialogComponent);
+        break;
+      case 'C':
+        this.dialog.open(CommercialSupportPresentationDialogComponent);
+        break;
+    }
   }
 
   deleteRequest(request: any): void {

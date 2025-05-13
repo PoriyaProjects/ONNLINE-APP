@@ -1,0 +1,20 @@
+.dialog-content {
+  max-height: 400px;
+  overflow: auto;
+
+  .person-details {
+    display: flex;
+    flex-direction: column;
+    margin-right: 8px;
+
+    .name {
+      font-weight: 600;
+      font-size: 16px;
+    }
+
+    .role {
+      font-size: 14px;
+      color: #777;
+    }
+  }
+}
