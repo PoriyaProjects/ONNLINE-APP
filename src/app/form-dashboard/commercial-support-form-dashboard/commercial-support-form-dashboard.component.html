@@ -72,8 +72,27 @@
     <div *ngIf="supportRequests.filteredData.length === 0" class="no-results">
       אין תוצאות להצגה.
     </div>
-    <button mat-raised-button color="primary" (click)="viewRequest(null)">
+    <button mat-raised-button color="primary" (click)="openDialog()">
       <mat-icon>add</mat-icon> הוספת בקשה חדשה
     </button>
   </div>
 </div>
+
+<ng-template #requestDialog>
+  <div dir="rtl">
+    <h2 mat-dialog-title>בחר סוג בקשה</h2>
+    <mat-dialog-content>
+      <div class="cube-options">
+        <button mat-raised-button color="accent" class="cube" (click)="selectRequest('A')">בקשה לאישור תמיכת גוף מסחרי –
+          כנס/השתלמות</button>
+        <button mat-raised-button color="primary" class="cube" (click)="selectRequest('B')">בקשה לאישור תמיכת גוף מסחרי
+          במחקר קליני</button>
+        <button mat-raised-button color="warn" class="cube" (click)="selectRequest('C')">בקשה לקיום הרצאה לסגל המרכז
+          הרפואי</button>
+      </div>
+    </mat-dialog-content>
+    <mat-dialog-actions align="end">
+      <button mat-button mat-dialog-close>ביטול</button>
+    </mat-dialog-actions>
+  </div>
+</ng-template>

@@ -33,4 +33,10 @@ export class SupportRequestService {
       request: request
     });
   }
+
+  getEmployeeDetails(id: any): Observable<any> {
+    return this.http.post(`${this.apiUrl}GetEmployeesToUpdateByID`, {
+      _empId: id
+    });
+  }
 }

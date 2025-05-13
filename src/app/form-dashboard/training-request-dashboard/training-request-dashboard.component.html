@@ -34,16 +34,23 @@
                         </mat-option>
                     </mat-select>
                 </mat-form-field>
+            </div>
 
+            <div class="row" style="justify-content: left;">
                 <!-- Print Button -->
-                <button mat-raised-button color="primary" (click)="printProtocol()" matTooltip="הדפסת פרוטוקול"
+                <button mat-raised-button (click)="openPeopleDialog()" matTooltip="הדפסת פרוטוקול"
+                    style="background-color: #1976d2;color: #ffffff;"
                     *ngIf="UserName == 'adahabre' || UserName == 'ttsrefati'">
                     <mat-icon>line_style</mat-icon>
                     הדפסת פרוטוקול
                 </button>
-            </div>
+                <button mat-raised-button (click)="printProtocol()" matTooltip="הדפסת פרוטוקול"
+                    style="background-color: #1976d2;color: #ffffff;"
+                    *ngIf="print_only_Protocol && !(UserName == 'adahabre' || UserName == 'ttsrefati')">
+                    <mat-icon>line_style</mat-icon>
+                    הדפסת פרוטוקול
+                </button>
 
-            <div class="row" style="justify-content: left;">
                 <!-- Date Picker (conditional) -->
                 <mat-form-field *ngIf="UserName == 'ttsrefati' || UserName == 'tkoren'" appearance="outline"
                     class="form-field">

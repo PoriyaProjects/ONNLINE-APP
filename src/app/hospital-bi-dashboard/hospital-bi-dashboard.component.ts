@@ -53,8 +53,6 @@ export class HospitalBIDashboardComponent implements OnInit {
     { DIMDataTypeID: "10", DIMDataTypeDesc: "צנתורים" },
     { DIMDataTypeID: "12", DIMDataTypeDesc: "אקו" }
   ];
-
-  
   sheet_data_1 = [];
   sheet_data_2 = [];
   sheet_data_3 = [];
@@ -65,7 +63,6 @@ export class HospitalBIDashboardComponent implements OnInit {
   sheet_stat_data_4 = [];
   sheet_stat_data_5 = [];
   sheet_data_filters = [];
-
   surgeryTypesArray = [
     { id: 'אמבולטורי', value: 'אמבולטורי', search: "'_AMBOLATORY','_ELECTIVE_AMBOLATORY'" },
     { id: 'דחוף', value: 'דחוף', search: "'_DHOF_AMBOLATORY','_DHOF_ELECTIVE','_DHOF_SISIA_ELECTIVE'" },
@@ -99,6 +96,7 @@ export class HospitalBIDashboardComponent implements OnInit {
   _ifSeode = 'סיעודיות';
   changePercent: number = 0;
   displayedColumns: string[] = ['DoctorName', 'DepartmentName', 'Q', 'Actions'];
+  displayedColumnsTsintorim: string[] = ['Type', 'Time', 'Q', 'Money'];
   tableView = false;
   UserName = localStorage.getItem("loginUserName").toLowerCase();
   _changeScale = "Up";
@@ -110,6 +108,7 @@ export class HospitalBIDashboardComponent implements OnInit {
   arrayOfEshpozFilters = new Array<number>(4);
   arrayOfEshpozAmbolatoryFilters = new Array<number>(2);
   dataSource = new MatTableDataSource<any>();
+  dataSourceTsintorim = new MatTableDataSource<any>();
   @ViewChild(GraphsModalComponent) graphshidden: GraphsModalComponent;
   @ViewChild(PieChartComponent) pie: PieChartComponent;
   @ViewChild(GroupedBarChartComponent) group: GroupedBarChartComponent;
@@ -320,11 +319,12 @@ export class HospitalBIDashboardComponent implements OnInit {
         break;
       }
     }
-
     if (this.departParam == "1") {
       this.getStatisticGraphsToExcel();
     } else if (this.departParam == "5") {
       this.getHospitalDepartmentsTableChartList();
+    } else if (this.departParam == "10") {
+      this.getTableViewTsintorim(this.TimeLineParam);
     }
   }
 
@@ -568,6 +568,18 @@ export class HospitalBIDashboardComponent implements OnInit {
         this.dataSource = new MatTableDataSource<any>(Response["d"]);
         this.dataSource.paginator = this.paginator;
         this.dataSource.sort = this.sort;
+      });
+  }
+
+  getTableViewTsintorim(time) {
+    this.http
+      .post(environment.url + "GetTableViewTsintorimForHospitalDashboard", {
+        param: time
+      })
+      .subscribe((Response) => {
+        this.dataSourceTsintorim = new MatTableDataSource<any>(Response["d"]);
+        this.dataSourceTsintorim.paginator = this.paginator;
+        this.dataSourceTsintorim.sort = this.sort;
       });
   }
 

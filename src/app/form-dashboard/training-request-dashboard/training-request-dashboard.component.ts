@@ -1,6 +1,6 @@
-import { Component, OnInit, ViewChild } from '@angular/core';
+import { Component, Inject, OnInit, ViewChild } from '@angular/core';
 import { HttpClient } from "@angular/common/http";
-import { MatDialog } from '@angular/material/dialog';
+import { MatDialog, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { environment } from 'src/environments/environment';
 import { TrainingRequestFormComponent } from './training-request-form/training-request-form.component';
 import { MatTableDataSource } from '@angular/material/table';
@@ -10,6 +10,24 @@ import { MatSnackBar, MatSnackBarHorizontalPosition, MatSnackBarVerticalPosition
 import { ConfirmationDialogService } from 'src/app/confirmation-dialog/confirmation-dialog.service';
 import { TrainingRequestDialogComponent } from './training-request-dialog/training-request-dialog.component';
 import { DatePipe } from '@angular/common';
+
+@Component({
+  selector: 'app-people-list-dialog',
+  templateUrl: './people-list-dialog.component.html',
+  styleUrls: ['./people-list-dialog.component.scss']
+})
+export class PeopleListDialogComponent {
+  selectedPeople: any[] = [];
+  constructor(
+    public dialogRef: MatDialogRef<PeopleListDialogComponent>,
+    @Inject(MAT_DIALOG_DATA) public data: any[]
+  ) { }
+
+  close(): void {
+    this.dialogRef.close(this.selectedPeople);
+  }
+}
+
 
 @Component({
   selector: 'app-training-request-dashboard',
@@ -22,6 +40,14 @@ export class TrainingRequestDashboardComponent implements OnInit {
   displayedColumns: string[] = [
     'Row_ID', 'Form_Fill_Date', 'First_Name', 'Passport_ID', 'Function_Department', 'Name_Location', 'Date', 'EApproved', 'FApproved', 'Training_Fund_Answer', 'HApproved', 'Actions'
   ];
+  peopleList = [
+    { Full_Name: 'שמעון סבח', Role: 'יו"ר הועדה' },
+    { Full_Name: 'יוסר מסאלחה', Role: 'אחראית הדרכה ופיתוח צוות בסיעוד' },
+    { Full_Name: 'שרון מנחם', Role: 'מנהל משאבי אנוש' },
+    { Full_Name: 'ד"ר מיכאל זרדב', Role: 'מנהל מחלקת רנטגן' },
+    { Full_Name: 'לילך גסטר', Role: 'מנהלת כספים' },
+    { Full_Name: 'תגל צרפתי', Role: 'מרכזת ועדה' },
+  ];
   @ViewChild(MatPaginator) paginator: MatPaginator;
   @ViewChild(MatSort) sort: MatSort;
   UserName = localStorage.getItem('loginUserName').toLowerCase();
@@ -32,6 +58,7 @@ export class TrainingRequestDashboardComponent implements OnInit {
   date_now: any = Date.now();
   Plan_Date: any;
   loading: boolean;
+  print_only_Protocol: boolean;
 
   constructor(
     public dialog: MatDialog,
@@ -45,6 +72,7 @@ export class TrainingRequestDashboardComponent implements OnInit {
     this.date_now = this.datePipe.transform(this.date_now, 'dd-MM-yyyy');
     this.getAllTrainingRequestFormsList("");
     this.changeTrainingPlanDate();
+    this.getHRDepartmentEmployees();
   }
 
   changeTrainingPlanDate() {
@@ -202,7 +230,8 @@ export class TrainingRequestDashboardComponent implements OnInit {
     }
 
     try {
-      const data = await this.getDataToProtocolPDF();
+      let data = await this.getDataToProtocolPDF();
+      // data[]
       const pdfContent = this.createProtocolPdf(data);
 
       printWindow.document.open();
@@ -284,6 +313,9 @@ export class TrainingRequestDashboardComponent implements OnInit {
   }
 
   createProtocolPdf(data) {
+    const unselectedPeople = this.peopleList.filter(person =>
+      !data[0].people_attendance.some(selected => selected.Full_Name === person.Full_Name)
+    );
     let print_content = `
     <!DOCTYPE html>
     <html lang="he" dir="rtl">
@@ -306,17 +338,23 @@ export class TrainingRequestDashboardComponent implements OnInit {
     <div #pdfContent>
   <!-- Replace below with your dynamic printable HTML content -->
   <div style="font-family: Arial; direction: rtl; padding: 20px;">
-    <div style="text-align: left;">04/05/2025</div>
-    <div style="text-align: right;">סיכום ישיבת ועדת הדרכה מיום: 29/04/2025</div>
+    <div style="text-align: left;">${this.date_now}</div>
+    <div style="text-align: right;">סיכום ישיבת ועדת הדרכה מיום: ${data[0]['H'].Plan_Date}</div>
     <br /><br />
     <div style="text-align: right;">
-      <strong>נוכחים:</strong><br />
-      מר שמעון סבח, יו"ר הועדה<br />
-      יוסר מסאלחה, אחראית הדרכה ופיתוח צוות בסיעוד<br />
-      שרון מנחם, מנהל משאבי אנוש<br />
-      ד"ר מיכאל ז'רדב,מנהל מחלקת רנטגן<br />
-      לילך גסטר,מנהלת כספים<br />
-      תגל צרפתי,מרכזת הועדה<br />
+      <strong>נוכחים:</strong><br />`
+    for (const people of data[0].people_attendance) {
+      print_content += `
+      ${people.Full_Name}, ${people.Role}<br />
+      `}
+    print_content += `
+      <br />
+      <strong>נעדרים:</strong><br />`
+    for (const people of unselectedPeople) {
+      print_content += `
+      ${people.Full_Name}, ${people.Role}<br />
+      `}
+    print_content += `
       <br />
     </div>
     <br />
@@ -345,7 +383,7 @@ export class TrainingRequestDashboardComponent implements OnInit {
     
     <div><br /><br />
     רשם:<br />
-    תגל צרפתי - ממונה הדרכה
+    תגל צרפתי - מנהלת הדרכה
     </div>
     <br />
     <br />
@@ -354,7 +392,8 @@ export class TrainingRequestDashboardComponent implements OnInit {
     ד"ר נועם יהודאי, מנהל המרכז הרפואי<br />
     מר שמעון סבח, מנהל אדמניסטרטיבי<br />
     גב' מלכה אמר מדמון, מנהלת הסיעוד<br />
-    ועדת הדרכה
+    ועדת הדרכה<br />
+    משאבי אנוש ושכר
     </div>
     </div>
   </div>
@@ -439,6 +478,43 @@ export class TrainingRequestDashboardComponent implements OnInit {
         this.trainingRequests.sort = this.sort;
         this.loading = false;
       });
+  }
+
+  getHRDepartmentEmployees() {
+    this.print_only_Protocol = false;
+    this.http
+      .post(environment.url + "GetHRDepartmentEmployees", {})
+      .subscribe((Response) => {
+        const exists = Response['d'].some(obj =>
+          Object.values(obj).some(val =>
+            typeof val === 'string' && val.toLowerCase().includes(this.UserName)
+          )
+        );
+        if (exists) this.print_only_Protocol = true;
+      });
+  }
+
+  saveProtocolPeopleAttendance(res) {
+    this.http
+      .post(environment.url + "SaveProtocolPeopleAttendance", {
+        data: res
+      })
+      .subscribe((Response) => {
+        if (Response['d']) this.printProtocol();
+        else this.openSnackBar("שגיאה בשמירת צוות");
+      });
+  }
+
+  openPeopleDialog(): void {
+    this.dialog.open(PeopleListDialogComponent, {
+      width: '500px',
+      data: this.peopleList,
+      direction: 'rtl'
+    }).afterClosed().subscribe(res => {
+      if (res != '') {
+        this.saveProtocolPeopleAttendance(res);
+      }
+    });
   }
 }
 

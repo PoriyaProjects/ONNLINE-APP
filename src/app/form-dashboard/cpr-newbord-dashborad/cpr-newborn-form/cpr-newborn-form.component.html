@@ -21,11 +21,6 @@
                         </mat-form-field>
 
                         <mat-form-field appearance="outline" style="width: 33.333%;">
-                            <mat-label>שם היילוד</mat-label>
-                            <input matInput formControlName="babyName">
-                        </mat-form-field>
-
-                        <mat-form-field appearance="outline" style="width: 33.333%;">
                             <mat-label>תעודת זהות הילוד</mat-label>
                             <input matInput formControlName="babyId">
                         </mat-form-field>
@@ -33,6 +28,11 @@
                         <mat-form-field appearance="outline" style="width: 33.333%;">
                             <mat-label>מספר מקרה הילוד</mat-label>
                             <input matInput formControlName="babyCasenumber">
+                        </mat-form-field>
+
+                        <mat-form-field appearance="outline" style="width: 33.333%;">
+                            <mat-label>שם היילוד</mat-label>
+                            <input matInput formControlName="babyName">
                         </mat-form-field>
 
                         <mat-form-field appearance="outline" style="width: 50%;">
@@ -121,13 +121,13 @@
             <ng-template matStepLabel>אנשי צוות</ng-template>
             <div formArrayName="teamMembers">
                 <div *ngFor="let member of resuscitationForm.get('teamMembers')['controls']; let i = index"
-                    [formGroupName]="i">
+                    [formGroupName]="i" class="text-right">
                     <!-- {{member | json}} -->
-                    <mat-form-field appearance="outline" style="width: 50%;">
+                    <mat-form-field appearance="outline" style="width: 33.333%;">
                         <mat-label>שם</mat-label>
                         <input matInput formControlName="name" placeholder="הכנס שם">
                     </mat-form-field>
-                    <mat-form-field appearance="outline" style="width: 50%;">
+                    <mat-form-field appearance="outline" style="width: 33.333%;">
                         <mat-label>תפקיד</mat-label>
                         <mat-select formControlName="role">
                             <mat-option value="רופא בכיר">רופא בכיר</mat-option>
@@ -140,8 +140,13 @@
                             <mat-option value="אחר">אחר</mat-option>
                         </mat-select>
                     </mat-form-field>
+                    <!-- Show custom input if role is "אחר" -->
+                    <mat-form-field *ngIf="member.get('role')?.value === 'אחר'" appearance="outline"
+                        style="width: 33.333%;">
+                        <mat-label>תפקיד אחר</mat-label>
+                        <input matInput formControlName="otherRole" placeholder="הכנס תפקיד ידני">
+                    </mat-form-field>
                 </div>
-                <!-- <button color="primary" mat-raised-button (click)="addTeamMember()"><mat-icon>add</mat-icon></button> -->
             </div>
             <mat-card-actions fxLayout="row-reverse">
                 <button mat-button matStepperPrevious>חזור</button>
