@@ -16,7 +16,7 @@ export class CommercialSupportFormDashboardComponent {
   UserName = localStorage.getItem('loginUserName').toLowerCase();
   supportRequests = new MatTableDataSource<any>();
   searchValue = '';
-  displayedColumns: string[] = ['requester', 'conferenceName', 'eventDate', 'eventEndDate', 'supportAmount', 'actions'];
+  displayedColumns: string[] = ['id', 'requestType', 'requester', 'conferenceName', 'insertedDate', 'actions'];
   @ViewChild('requestDialog') requestDialog: TemplateRef<any>;
 
   constructor(
@@ -73,18 +73,47 @@ export class CommercialSupportFormDashboardComponent {
   }
 
   viewRequest(type: string | null) {
+    let dialogTemp;
     // handle the selected option
     switch (type) {
       case 'A':
-        this.dialog.open(CommercialSupportFormDialogComponent);
+        dialogTemp = this.dialog.open(CommercialSupportFormDialogComponent);
         break;
       case 'B':
-        this.dialog.open(CommercialSupportResearchDialogComponent);
+        dialogTemp = this.dialog.open(CommercialSupportResearchDialogComponent);
         break;
       case 'C':
-        this.dialog.open(CommercialSupportPresentationDialogComponent);
+        dialogTemp = this.dialog.open(CommercialSupportPresentationDialogComponent);
         break;
     }
+    dialogTemp.afterClosed().subscribe(() => {
+      this.loadRequests();
+    });
+  }
+
+  editRequest(type: string | null, element: any) {
+    let dialogTemp;
+    // handle the selected option
+    switch (element.Roler) {
+      case 'A':
+        dialogTemp = this.dialog.open(CommercialSupportFormDialogComponent, {
+          data: element
+        });
+        break;
+      case 'B':
+        dialogTemp = this.dialog.open(CommercialSupportResearchDialogComponent, {
+          data: element
+        });
+        break;
+      case 'C':
+        dialogTemp = this.dialog.open(CommercialSupportPresentationDialogComponent, {
+          data: element
+        });
+        break;
+    }
+    dialogTemp.afterClosed().subscribe(() => {
+      this.loadRequests();
+    });
   }
 
   deleteRequest(request: any): void {

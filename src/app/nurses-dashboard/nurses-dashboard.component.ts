@@ -33,6 +33,7 @@ import { VoiceRecognitionService } from '../header/service/voice-recognition.ser
 import { MatChipInputEvent } from "@angular/material/chips";
 import { COMMA, ENTER } from '@angular/cdk/keycodes';
 import { environment } from "src/environments/environment";
+import { DashboardComponent } from "../dashboard/dashboard.component";
 export interface User {
   FirstName: string;
   LastName: string;
@@ -228,6 +229,7 @@ export class ShareReportsDialog {
       transition('expanded <=> collapsed', animate('225ms cubic-bezier(0.4, 0.0, 0.2, 1)')),
     ]),
   ],
+  providers: [DashboardComponent]
 })
 
 export class NursesDashboardComponent implements OnInit {
@@ -263,6 +265,7 @@ export class NursesDashboardComponent implements OnInit {
   dataSource = new MatTableDataSource(this.ELEMENT_DATA);
   @Input()
   autoActiveFirstOption: boolean
+  AI_Load: boolean
 
   pipe = new DatePipe('en-US');
   myDate = new Date();
@@ -273,6 +276,7 @@ export class NursesDashboardComponent implements OnInit {
     private dialogRef: MatDialogRef<NursesDashboardComponent>,
     public dialog: MatDialog,
     public datePipe: DatePipe,
+    public dashboard: DashboardComponent,
     private confirmationDialogService: ConfirmationDialogService
   ) { this.service.init(); }
 
@@ -838,6 +842,29 @@ export class NursesDashboardComponent implements OnInit {
         this.ReportGroup.controls['toContinue'].setValue(false);
       }
     }
+  }
+
+  enhanceWithAI(): void {
+    this.AI_Load = true;
+    const currentText = this.ReportGroup.get('ReportText')?.value || '';
+    this.getAWSClaudeConfiguration(currentText);
+  }
+  
+  async getAWSClaudeConfiguration(input) {
+    this.http
+    .post(environment.url + "GetAWSClaudeConfiguration", {})
+    .subscribe(async (Response) => {
+      try {
+        let claude_version_list = Response['d'][2];
+          // input
+          const enhancedText = '[שכתב בצורה מקצועית: ]\n\n' + input;
+          let resp = await this.dashboard.runChat(claude_version_list, enhancedText);
+          this.ReportGroup.get('ReportText')?.setValue(resp.text());
+          this.AI_Load = false;
+        } catch (error) {
+          console.log("error in claude list");
+        }
+      });
   }
 
   onSubmit(autosave) {
