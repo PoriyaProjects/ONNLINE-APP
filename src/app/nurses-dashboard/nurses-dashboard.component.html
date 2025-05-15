@@ -195,8 +195,8 @@
         </div>
         <div class="col-4">
             <h6><b>{{gender}} {{dob}}</b></h6>
-            <button matTooltip="ילוד חדש" class="btn btn-primary btn-raised" id="BtnStyleNewBorn" *ngIf="Dept_Name == 'חדר לידה'"
-                (click)="openNewBornLink()" type="submit" mat-raised-button>
+            <button matTooltip="ילוד חדש" class="btn btn-primary btn-raised" id="BtnStyleNewBorn"
+                *ngIf="Dept_Name == 'חדר לידה'" (click)="openNewBornLink()" type="submit" mat-raised-button>
                 <span class="material-icons">
                     face_retouching_natural
                 </span>
@@ -326,12 +326,19 @@
                         </div>
                     </div>
                     <div class="col-10">
+                        <mat-progress-bar mode="indeterminate" *ngIf="AI_Load"></mat-progress-bar>
                         <div class="form-group">
-                            <mat-form-field id="reportContentField">
-                                <textarea matInput
-                                    style="font-size: 15px;font-family: 'Roboto';font-weight: bolder;font-size: 18px;"
-                                    rows="5" placeholder="תוכן הדוח" class="form-control border-1"
-                                    formControlName="ReportText" required></textarea>
+                            <mat-form-field id="reportContentField" appearance="outline" style="width: 100%;">
+                                <textarea matInput rows="5" placeholder="תוכן הדוח" formControlName="ReportText"
+                                    required
+                                    style="font-size: 15px; font-family: 'Roboto'; font-weight: bolder; font-size: 18px;">
+                            </textarea>
+
+                                <!-- AI Enhancement Icon Button -->
+                                <button mat-icon-button matSuffix aria-label="הצעה אוטומטית לתוכן"
+                                    (click)="enhanceWithAI()">
+                                    <mat-icon>auto_fix_high</mat-icon>
+                                </button>
                             </mat-form-field>
                         </div>
                     </div>
@@ -377,7 +384,8 @@
                         {{patient[0].Patient_DobGender}}
                     </mat-panel-title>
                     <mat-panel-description style="justify-content: center;">
-                        <span style="font-size: 22px;font-weight: bold;margin-right: 15%;">{{patient[0].PatientName}}</span>
+                        <span
+                            style="font-size: 22px;font-weight: bold;margin-right: 15%;">{{patient[0].PatientName}}</span>
                         <span style="font-size: 22px;font-weight: bold;">{{patient[0].Patient_CaseNumber}}</span>
                     </mat-panel-description>
                 </mat-expansion-panel-header>
@@ -438,8 +446,9 @@
                         </div>
                     </div>
                     <div class="modal-footer text-left">
-                        <button matTooltip="שמור ופתח חדש" class="btn btn-primary btn-raised ml-3 float-left" id="BtnStyle"
-                            (click)="onSubmit('0')" type="submit" [disabled]="waitToSaveBtn" mat-raised-button>
+                        <button matTooltip="שמור ופתח חדש" class="btn btn-primary btn-raised ml-3 float-left"
+                            id="BtnStyle" (click)="onSubmit('0')" type="submit" [disabled]="waitToSaveBtn"
+                            mat-raised-button>
                             <span class="material-icons">
                                 create_new_folder
                             </span>

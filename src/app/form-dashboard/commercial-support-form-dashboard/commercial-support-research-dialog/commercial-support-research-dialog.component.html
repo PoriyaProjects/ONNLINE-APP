@@ -1,1 +1,92 @@
-<p>commercial-support-research-dialog works!</p>
+<div dir="rtl" class="form-page-container">
+    <button mat-raised-button color="warn" type="button" class="closeBtn" (click)="onClose()">
+        X
+    </button>
+    <form [formGroup]="ResearchRequestDto" *ngIf="ResearchRequestDto">
+        <mat-card class="form-card">
+            <mat-card-title class="text-center">
+                בקשה לאישור תמיכת גוף מסחרי במחקר קליני
+            </mat-card-title>
+            <mat-card-content>
+                <div fxLayout="column" fxLayoutGap="20px" style="text-align: right;">
+                    <mat-form-field appearance="outline">
+                        <mat-label>תעודת זהות מגיש הבקשה - החוקר הראשי</mat-label>
+                        <input matInput formControlName="RequesterID" (blur)="getEmployeeDetails()"
+                            (keydown.enter)="getEmployeeDetails()" required>
+                    </mat-form-field>
+
+                    <mat-form-field appearance="outline" *ngIf="ResearchRequestDto.get('Requester')?.value != null">
+                        <mat-label>מגיש הבקשה - החוקר הראשי</mat-label>
+                        <input matInput formControlName="Requester">
+                    </mat-form-field>
+
+                    <mat-form-field appearance="outline" *ngIf="ResearchRequestDto.get('Requester')?.value != null">
+                        <mat-label>תפקיד - מחלקה</mat-label>
+                        <input matInput formControlName="RequesterDetails">
+                    </mat-form-field>
+
+                    <mat-form-field appearance="outline" *ngIf="ResearchRequestDto.get('Requester')?.value != null">
+                        <mat-label>מספר המחקר</mat-label>
+                        <input matInput formControlName="ResearchNumber">
+                    </mat-form-field>
+
+                    <mat-form-field appearance="outline" *ngIf="ResearchRequestDto.get('Requester')?.value != null">
+                        <mat-label>שם החברה</mat-label>
+                        <input matInput formControlName="CompanyName">
+                    </mat-form-field>
+
+                    <mat-form-field appearance="outline" *ngIf="ResearchRequestDto.get('Requester')?.value != null"
+                        style="width: 100%;">
+                        <mat-label>שם המחקר</mat-label>
+                        <textarea matInput formControlName="ResearchName" rows="3"></textarea>
+                    </mat-form-field>
+
+                    <div fxLayout="column" fxLayoutGap="20px" style="margin-top: 16px;"
+                        *ngIf="ResearchRequestDto.get('Requester')?.value != null">
+
+                        <!-- File Input 1 -->
+                        <div style="text-align: right;">
+                            <label>הצעת תקציב*</label><br>
+                            <input type="file" (change)="onFileChange($event, 'BudgetProposal')" required>
+                            <button mat-raised-button class="fileOpenBtn" color="primary"
+                                (click)="file_in_new_window_base64()"
+                                *ngIf="ResearchRequestDto.get('BudgetProposal').value != undefined && ResearchRequestDto.get('BudgetProposal').value != ''">
+                                צפייה במסמך
+                                <span class="material-icons"> zoom_in </span>
+                            </button>
+                        </div><br>
+
+                        <!-- File Input 2 -->
+                        <div style="text-align: right;">
+                            <label>נספח כלכלי</label><br>
+                            <input type="file" (change)="onFileChange($event, 'EconomicAppendix')" required>
+                            <button mat-raised-button class="fileOpenBtn" color="primary"
+                                (click)="file_in_new_window_base64_2()"
+                                *ngIf="ResearchRequestDto.get('EconomicAppendix').value != undefined && ResearchRequestDto.get('EconomicAppendix').value != ''">
+                                צפייה במסמך
+                                <span class="material-icons"> zoom_in </span>
+                            </button>
+                        </div><br>
+
+                        <!-- File Input 3 -->
+                        <div style="text-align: right;">
+                            <label>טופס 6</label><br>
+                            <input type="file" (change)="onFileChange($event, 'Form6')">
+                            <button mat-raised-button class="fileOpenBtn" color="primary"
+                                (click)="file_in_new_window_base64_3()"
+                                *ngIf="ResearchRequestDto.get('Form6').value != undefined && ResearchRequestDto.get('Form6').value != ''">
+                                צפייה במסמך
+                                <span class="material-icons"> zoom_in </span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+            </mat-card-content>
+            <button mat-raised-button color="primary" class="submitBtn" matTooltip="שמירה"
+                *ngIf="ResearchRequestDto.get('Requester')?.value != null && ResearchRequestDto.valid"
+                (click)="submitForm()">שמירה</button>
+        </mat-card>
+
+    </form>
+</div>

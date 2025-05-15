@@ -6,7 +6,6 @@ import { SupportRequestService } from '../commercial-support.service';
 import { MatSnackBar, MatSnackBarHorizontalPosition, MatSnackBarVerticalPosition } from '@angular/material/snack-bar';
 import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { DatePipe } from '@angular/common';
-import { environment } from 'src/environments/environment';
 
 @Component({
   selector: 'app-commercial-support-form-dialog',
@@ -38,11 +37,11 @@ export class CommercialSupportFormDialogComponent {
     { ActivityName: 'טיסה', controlName: 'flight' }
   ];
   supportTypes = [
-    { Id: 'Registration', Description: 'רישום' },
-    { Id: 'Travel', Description: 'טיסה' },
-    { Id: 'Accommodation', Description: 'לינה' },
-    { Id: 'Transportation', Description: 'העברות' },
-    { Id: 'Other', Description: 'אחר' }
+    { Id: null, Description: 'רישום' },
+    { Id: null, Description: 'טיסה' },
+    { Id: null, Description: 'לינה' },
+    { Id: null, Description: 'העברות' },
+    { Id: null, Description: 'אחר' }
   ];
   displayedColumns: string[] = ['activity', 'directService', 'indirectHealth'];
   manager: boolean;
@@ -54,12 +53,13 @@ export class CommercialSupportFormDialogComponent {
     private _snackBar: MatSnackBar,
     private _datePipe: DatePipe,
     private supportRequestsService: SupportRequestService,
-    @Optional() @Inject(MAT_DIALOG_DATA) public form_id: any,
-    @Optional() private dialogRef: MatDialogRef<CommercialSupportFormDialogComponent>
+    @Inject(MAT_DIALOG_DATA) public data: any,
+    public dialogRef: MatDialogRef<CommercialSupportFormDialogComponent>
   ) { }
 
   ngOnInit(): void {
-    this.buildForm();
+    // this.buildForm(null);
+    this.getSupportRequestsByID();
   }
 
   openSnackBar(message) {
@@ -91,56 +91,86 @@ export class CommercialSupportFormDialogComponent {
     }
   }
 
-  buildForm() {
+  buildForm(data) {
+    const supportTypeArray = this.fb.array([]);
+    if (data?.SupportType?.length) {
+      data.SupportType.forEach((item: any) => {
+        supportTypeArray.push(this.fb.group({
+          Id: item.Id,
+          Code: item.Code,
+          Description: item.Description
+        }));
+      });
+    }
     this.SupportRequestDto = this.fb.group({
-      RequesterID: new FormControl('', null),
-      Requester: new FormControl('', null),
-      RequesterDetails: new FormControl('', null),
-      CompanySupport: new FormControl('', null),
-      ConferenceName: new FormControl('', null),
-      EventDate: new FormControl('', null),
-      EventEndDate: new FormControl('', null),
-      Location: new FormControl('', null),
-      JoinPerson: new FormControl('', null),
-      Position: new FormControl('', null),
-      Currency: new FormControl('', null),
-      SupportAmount: new FormControl('', null),
+      Id: new FormControl(data?.Id, null),
+      RequesterID: new FormControl(data?.RequesterID, Validators.required),
+      Requester: new FormControl(data?.Requester, Validators.required),
+      RequesterDetails: new FormControl(data?.RequesterDetails, null),
+      CompanySupport: new FormControl(data?.CompanySupport, null),
+      ConferenceName: new FormControl(data?.ConferenceName, null),
+      EventDate: new FormControl(data?.EventDate, null),
+      EventEndDate: new FormControl(data?.EventEndDate, null),
+      Location: new FormControl(data?.Location, null),
+      JoinPerson: new FormControl(data?.JoinPerson, null),
+      Position: new FormControl(data?.Position, null),
+      Currency: new FormControl(data?.Currency, Validators.required),
+      SupportAmount: new FormControl(data?.SupportAmount, null),
+      flight_directService: new FormControl(data?.flight_directService, null),
+      flight_extraOptions: new FormControl(data?.flight_extraOptions, null),
+      flight_indirectHealth: new FormControl(data?.flight_indirectHealth, null),
+      register_directService: new FormControl(data?.register_directService, null),
+      register_extraOptions: new FormControl(data?.register_extraOptions, null),
+      register_indirectHealth: new FormControl(data?.register_indirectHealth, null),
+      stay_directService: new FormControl(data?.stay_directService, null),
+      stay_extraOptions: new FormControl(data?.stay_extraOptions, null),
+      stay_indirectHealth: new FormControl(data?.stay_indirectHealth, null),
       // File fields
-      SupportLetter: new FormControl(null),
-      ConferenceApproval: new FormControl(null),
-      AdditionalDocument: new FormControl(null),
-      SupportType: this.fb.array([]),
-      AmountIncludesTax: new FormControl(false, null),
+      SupportLetter: new FormControl(data?.SupportLetter, Validators.required),
+      ConferenceApproval: new FormControl(data?.ConferenceApproval, Validators.required),
+      AdditionalDocument: new FormControl(data?.AdditionalDocument, null),
+      SupportType: supportTypeArray,
+      AmountIncludesTax: new FormControl(data?.AmountIncludesTax == null ? false : data?.AmountIncludesTax, null),
       SupportManagerDto: this.fb.array([
         this.createRow(),
         this.createRow()
       ])
     });
     // מוסיף לכל פעילות שדות דינמיים בטופס
-    this.SupportActivityDto.forEach(activity => {
+    this.SupportActivityDto.forEach((activity, index) => {
       this.SupportRequestDto.addControl(activity.controlName + '_directService', new FormControl(''));
       this.SupportRequestDto.addControl(activity.controlName + '_indirectHealth', new FormControl(''));
       this.SupportRequestDto.addControl(activity.controlName + '_extraOptions', new FormControl(''));
+      this.onIndirectHealthChange(this.SupportRequestDto.value[activity.controlName + '_indirectHealth'], index);
     });
   }
 
   onSupportTypeChange(event: any) {
-    const selectedIds = event.value;
-    const updatedArray = this.fb.array([]);
+    const selectedIds: string[] = event.value;
+    const formArray = this.SupportRequestDto.get('SupportType') as FormArray;
 
-    selectedIds.forEach(id => {
-      const match = this.supportTypes.find(t => t.Id === id);
-      if (match) {
-        updatedArray.push(this.fb.group({ Id: match.Id, Description: match.Description }));
+    // Clear only removed items
+    for (let i = formArray.length - 1; i >= 0; i--) {
+      const control = formArray.at(i);
+      if (!selectedIds.includes(control.value.Description)) {
+        formArray.removeAt(i);
+      }
+    }
+
+    // Add new items (only if not already in array)
+    selectedIds.forEach(Description => {
+      const alreadyExists = formArray.controls.some(c => c.value.Description === Description);
+      if (!alreadyExists) {
+        const match = this.supportTypes.find(t => t.Description === Description);
+        if (match) {
+          formArray.push(this.fb.group({ Id: null, Description: match.Description }));
+        }
       }
     });
-
-    this.SupportRequestDto.setControl('SupportType', updatedArray);
   }
 
   getSelectedSupportTypeIds(): string[] {
-    const current = this.supportTypeArray.value as { Id: string; Description: string }[];
-    return current.map(item => item.Id);
+    return this.supportTypeArray.value.map((item: any) => item.Description);
   }
 
   get supportTypeArray(): FormArray {
@@ -163,13 +193,15 @@ export class CommercialSupportFormDialogComponent {
 
   onIndirectHealthChange(value: string, index: number) {
     this.selectedIndirectHealth[index] = value;
+    if (value == "no") {
+      this.SupportRequestDto.controls[this.SupportActivityDto[index].controlName + '_extraOptions'].setValue(value);
+    }
   }
 
   getSupportRequestsByID() {
-    this.supportRequestsService.saveSupportRequest(this.form_id).subscribe({
+    this.supportRequestsService.getSupportRequestsByID(this.data == null ? '0' : this.data.Id).subscribe({
       next: (response) => {
-
-        // פה תוכל להציג הודעת הצלחה או לעדכן את המסך
+        this.buildForm(response['d']);
       },
       error: (error) => {
         console.error('שגיאה בשליפת מידע:', error);
@@ -212,6 +244,46 @@ export class CommercialSupportFormDialogComponent {
         alert('אירעה שגיאה בפרטי עובד');
       }
     });
+  }
+
+  file_in_new_window_base64() {
+    const base64String = this.SupportRequestDto.get('SupportLetter')?.value;
+    if (base64String) {
+      this.openFile(base64String);
+    } else {
+      console.error('No file available to open');
+    }
+  }
+  file_in_new_window_base64_2() {
+    const base64String = this.SupportRequestDto.get('ConferenceApproval')?.value;
+    if (base64String) {
+      this.openFile(base64String);
+    } else {
+      console.error('No file available to open');
+    }
+  }
+  file_in_new_window_base64_3() {
+    const base64String = this.SupportRequestDto.get('AdditionalDocument')?.value;
+    if (base64String) {
+      this.openFile(base64String);
+    } else {
+      console.error('No file available to open');
+    }
+  }
+
+  openFile(base64String: string) {
+    // Extract the MIME type from the Base64 string
+    const mimeType = base64String.match(/data:(.*?);base64,/)?.[1] || 'application/octet-stream';
+
+    // Create a new window and write the file data
+    const fileWindow = window.open();
+    if (fileWindow) {
+      fileWindow.document.write(
+        `<iframe src="${base64String}" frameborder="0" style="width:100%;height:100%;"></iframe>`
+      );
+    } else {
+      console.error('Unable to open a new window');
+    }
   }
 
 }
