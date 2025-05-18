@@ -360,7 +360,7 @@ export class GoogleChartsService {
     await this.loadAndMergeMultipleCharts(
       [
         { label: 'הכנסה', url: this.DATA_SOURCES.INCOME_3Y, chartType: 'bars', color: '#6ba1f8', normalizationFactor: 1, unitLabel: 'מיליון שקל', targetAxisIndex: 0, numberFormat: 'M' },
-        { label: 'צנתורים', url: this.DATA_SOURCES.OPERATIONS_3Y, chartType: 'line', color: '#f86b6b', normalizationFactor: 1, unitLabel: 'פעולות', targetAxisIndex: 1 }
+        { label: 'צנתורים', url: this.DATA_SOURCES.OPERATIONS_3Y, chartType: 'line', color: '#1a1a1a', normalizationFactor: 1, unitLabel: 'פעולות', targetAxisIndex: 1 }
       ],
       'merged_chart_3y',
       {},
