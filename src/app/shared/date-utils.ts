@@ -333,3 +333,71 @@ function calculateCurrentWorkingDayIndex(workingDays: Date[]): number | null {
   );
   return index !== -1 ? index : null;
 }
+
+
+
+/**
+ * Converts any object with Hebrew month keys to numeric month keys ("1" to "12").
+ * Supports deeply nested structures as well.
+ */
+export function convertHebrewMonthsToNumbers(input: any): any {
+  const monthMap: { [key: string]: string } = {
+    'ינואר': '1',
+    'פברואר': '2',
+    'מרץ': '3',
+    'אפריל': '4',
+    'מאי': '5',
+    'יוני': '6',
+    'יולי': '7',
+    'אוגוסט': '8',
+    'ספטמבר': '9',
+    'אוקטובר': '10',
+    'נובמבר': '11',
+    'דצמבר': '12'
+  };
+
+  if (Array.isArray(input)) {
+    return input.map(item => convertHebrewMonthsToNumbers(item));
+  } else if (typeof input === 'object' && input !== null) {
+    const output: any = {};
+    Object.keys(input).forEach(key => {
+      const newKey = monthMap[key] || key;
+      output[newKey] = convertHebrewMonthsToNumbers(input[key]);
+    });
+    return output;
+  } else {
+    return input;
+  }
+}
+
+
+
+/**
+ * Removes current month data from a Year-Month structured dataset.
+ */
+export function filterOutCurrentMonth(data: any): any {
+  const currentDate = new Date();
+  const currentYear = currentDate.getFullYear();
+  const currentMonth = currentDate.getMonth() + 1; // 1-12
+
+  const filteredData: any = {};
+
+  Object.keys(data).forEach(year => {
+    const yearNumber = parseInt(year, 10);
+    const months = data[year];
+
+    const filteredMonths = Object.keys(months).reduce((acc: any, month) => {
+      const monthNumber = parseInt(month, 10);
+      if (!(yearNumber === currentYear && monthNumber === currentMonth)) {
+        acc[month] = months[month];
+      }
+      return acc;
+    }, {});
+
+    if (Object.keys(filteredMonths).length > 0) {
+      filteredData[year] = filteredMonths;
+    }
+  });
+
+  return filteredData;
+}

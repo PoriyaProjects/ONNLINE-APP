@@ -19,6 +19,7 @@ export class GoogleChartsComponent implements AfterViewInit {
     'ססיה': true
   };
 
+
   constructor(public googleChartsService: GoogleChartsService) {}
 
 

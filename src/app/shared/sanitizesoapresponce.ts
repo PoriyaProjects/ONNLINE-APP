@@ -31,3 +31,40 @@ export function sanitizeSoapResponse(rawResponse: any): any {
     return trimmed;
   }
 }
+
+export function sanitizeSoapResponseAndFormatData(raw: string, label: string): any {
+  // Remove all line breaks to ensure safe matching in ES5
+  const cleanRaw = raw.replace(/[\n\r]/g, '');
+  const match = cleanRaw.match(/<string[^>]*>(.*?)<\/string>/);
+  if (!match) throw new Error('Invalid SOAP response');
+
+  let cleanedJsonString = match[1].trim();
+
+  if (cleanedJsonString.startsWith('"') && cleanedJsonString.endsWith('"')) {
+    cleanedJsonString = cleanedJsonString.slice(1, -1);
+  }
+
+  cleanedJsonString = cleanedJsonString.replace(/\\"/g, '"');
+
+  console.log("Cleaned JSON String Preview:", cleanedJsonString);
+
+  const parsedData = JSON.parse(cleanedJsonString);
+
+  const dataTableJson = {
+    cols: [
+      { id: 'month', label: 'Month', type: 'string' },
+      { id: label.toLowerCase(), label: label, type: 'number' }
+    ],
+    rows: []
+  };
+
+  parsedData.yData.forEach((yearBlock: any) => {
+    const year = yearBlock.Year.value;
+    yearBlock.Year.Months.forEach((month: any) => {
+      const monthLabel = `${year} ${month.name}`;
+      dataTableJson.rows.push({ c: [{ v: monthLabel }, { v: month.y }] });
+    });
+  });
+
+  return dataTableJson;
+}

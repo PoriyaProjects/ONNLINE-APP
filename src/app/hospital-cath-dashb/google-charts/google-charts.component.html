@@ -34,8 +34,19 @@
                     </div>
                     <div class="mdc-layout-grid__cell col-md-4">
                         <div class="card text-center">
-                            <h6 class="card-title-custom">צנתורים מתחילת חודש </h6>
-                            <div id="gauge_chart" style="width: 100%; height: 400px;">Loading chart...</div>
+                            <h6 class="card-title-custom">צנתורים מתחילת חודש {{ googleChartsService.gaugeLabel }}</h6>                            
+                            <div id="gauge_chart" style="width: 100%; height: 296px;">Loading chart...</div>
+                            <div class="row">
+                                <div class="mdc-layout-grid__cell col-md-1"></div>                                
+                                <div class="card mdc-layout-grid__cell col-md-10">                                    
+                                    <div><br/>
+                                        יעד לחודש {{ googleChartsService.gaugeLabel }}: {{ googleChartsService.gaugeTargetValue }} | 
+                                        ביצוע עד היום: {{ googleChartsService.gaugeValue }} | 
+                                     תחזית עמידה ביעד: {{ googleChartsService.gaugeTargetStatus }}  </div>
+                                     <br/>
+                                    </div>
+                            </div>
+                            <div class="ctrl-placeholder"></div>
                         </div>
                     </div>
                 </div>
@@ -53,7 +64,7 @@
                     נתונים כספיים
                 </h2>
                 <div class="row" style="text-align: center;">
-                    <h3 style="text-align: center;" class="col-md-12">3 שנים אחרונות</h3>
+                    <h5 style="text-align: center;" class="col-md-12">3 שנים אחרונות</h5>
                     <h6 style="text-align: center;" class="col-md-12">* נתונים כספיים מעודכנים ב-10 לחודש העוקב</h6>
                     <div class="mdc-layout-grid__cell col-md-12">
                         <div class="card text-center">
@@ -63,12 +74,25 @@
                 </div>
 
 
+                <h2 style="text-align: center;">
+                    נתונים משולבים
+                </h2>
+                <div class="row" style="text-align: center;">
+                    <h5 style="text-align: center;" class="col-md-12">3 שנים אחרונות</h5>
+                    <h6 style="text-align: center;" class="col-md-12">* הכנסות ופעולות</h6>
+                    <div class="mdc-layout-grid__cell col-md-12">
+                        <div class="card text-center">
+                            <div id="merged_chart_3y" style="width: 100%; height: 800px;">Loading chart...</div>
+                        </div>
+                    </div>
+                </div>
+
                 <div style="height:60px;"></div>
                 <h3 style="text-align: center;">נתונים פיננסיים</h3>
                 <h4 style="text-align: center;">* הכנסות לפי תאריך פעולה</h4>                
                 <div class="row">
                     <div class="mdc-layout-grid__cell col-md-6">
-                        <div class="card card--outlined">
+                        <div class="card card--outlined text-center">
                             <div id="line_chart2" style="width: 100%; height: 500px;">Loading chart...</div>
                         </div>
                     </div>
@@ -86,11 +110,19 @@
                     <div class="mdc-layout-grid__cell col-md-6">
                         <div class="card text-center">
                             <h6 class="card-title-custom">פרוצדורות</h6>
-                            <div id="as_chart" style="width: 100%; height: 500px;">Loading chart...</div>
+                            <div class="row">
+                                <div class="mdc-layout-grid__cell col-md-12">
+                                    <div class="ctrl-placeholder"></div>
+                                </div>
+                                <div class="mdc-layout-grid__cell col-md-12">
+                                    <div class="ctrl-placeholder"></div>
+                                </div>
+                            </div>
+                            <div id="as_chart" style="width: 100%; height: 440px;">Loading chart...</div>
                         </div>
                     </div>
                     <div class="mdc-layout-grid__cell col-md-6">
-                        <div class="card card--outlined">
+                        <div class="card card--outlined text-center">
                             <h6 class="card-title-custom">פרוצדורות: משך ממוצע בדקות</h6>
                             <div class="row">
                             <div class="mdc-layout-grid__cell col-md-6">
