@@ -232,7 +232,7 @@ export class GoogleChartsService {
       },
       chart3YOptions = {
         chartArea,
-        legend,
+        legend: 'none',
         trendlines: {
           0: {
             type: 'linear',
@@ -247,7 +247,7 @@ export class GoogleChartsService {
       },
       Opchart3YOptions = {
         chartArea,
-        legend,
+        legend: 'none',
         trendlines: {
           0: {
             type: 'linear',
@@ -1594,95 +1594,6 @@ private normalizeCategoryToYearMonth(category: any, fallbackYear: number): { yea
 
   return null;
 }
-
-
-// private mergeMultipleDataTablesByCategory(
-//   dataTables: any[],
-//   sources: ChartSourceConfig[],
-//   allowedCategories: string[] | null = null,
-//   useIntersectionOnly: boolean = false
-// ): any {
-//   const combinedData = new google.visualization.DataTable();
-//   combinedData.addColumn('string', 'Category');
-
-//   sources.forEach((s, index) => {
-//     let dynamicLabel = s.label;
-//     if (s.normalizationFactor && s.normalizationFactor !== 1) {
-//       dynamicLabel += ` (${s.unitLabel || 'normalized'})`;
-//     }
-//     combinedData.addColumn('number', dynamicLabel);
-//     combinedData.addColumn({ type: 'string', role: 'annotation' });
-//   });
-
-//   const now = new Date();
-//   const currentYear = now.getFullYear();
-//   const currentMonth = now.getMonth() + 1;
-
-//   const categoryMaps = dataTables.map((dt, index) => {
-//     const map = new Map<string, number>();
-//     const normalizationFactor = sources[index].normalizationFactor || 1;
-
-//     for (let i = 0; i < dt.getNumberOfRows(); i++) {
-//       const rawCategory = dt.getValue(i, 0);
-//       const rawValue = dt.getValue(i, 1);
-//       if (!rawCategory || rawValue == null) continue;
-
-//       const parsed = this.normalizeCategoryToYearMonth(rawCategory, currentYear);
-//       if (!parsed) {
-//         console.warn(`❌ Unrecognized category: "${rawCategory}"`);
-//         continue;
-//       }
-
-//       if (parsed.year === currentYear && parsed.month === currentMonth) {
-//         console.log(`⏭ Skipped current month: ${parsed.month}/${parsed.year}`);
-//         continue;
-//       }
-
-//       const formattedCategory = `${parsed.month}/${parsed.year}`;
-//       map.set(formattedCategory, rawValue / normalizationFactor);
-//     }
-
-//     return map;
-//   });
-
-//   let allCategories = Array.from(
-//     new Set(categoryMaps.flatMap(map => Array.from(map.keys())))
-//   );
-
-//   // Optional filters
-//   if (allowedCategories?.length) {
-//     allCategories = allCategories.filter(cat => allowedCategories.includes(cat));
-//   }
-
-//   if (useIntersectionOnly) {
-//     allCategories = this.getIntersectionOfCategories(categoryMaps);
-//   }
-
-//   // Sort as MM/YYYY
-//   allCategories.sort((a, b) => {
-//     const [am, ay] = a.split('/').map(Number);
-//     const [bm, by] = b.split('/').map(Number);
-//     return ay === by ? am - bm : ay - by;
-//   });
-
-//   allCategories.forEach(cat => {
-//     const row: any[] = [cat];
-//     categoryMaps.forEach((map, index) => {
-//       const value = map.get(cat) ?? null;
-//       row.push(value);
-
-//       const formatType = sources[index].numberFormat;
-//       const annotation = value != null && formatType
-//         ? this.formatNumberHumanReadable(value, formatType)
-//         : (value != null ? value.toString() : null);
-//       row.push(annotation);
-//     });
-//     combinedData.addRow(row);
-//   });
-
-//   console.log(`✅ Built chart with ${combinedData.getNumberOfRows()} rows`);
-//   return combinedData;
-// }
 
 
 private mergeMultipleDataTablesByCategory(
