@@ -692,6 +692,16 @@
                     <td mat-cell *matCellDef="let element"> {{element.PM_FIRST_NAME}} {{element.PM_LAST_NAME}} </td>
                 </ng-container>
 
+                <ng-container matColumnDef="departName">
+                    <th mat-header-cell *matHeaderCellDef> מחלקה </th>
+                    <td mat-cell *matCellDef="let element"> {{element.Depart_Name}} </td>
+                </ng-container>
+
+                <ng-container matColumnDef="nurseName">
+                    <th mat-header-cell *matHeaderCellDef> אחות </th>
+                    <td mat-cell *matCellDef="let element"> {{element.responsNurse}} </td>
+                </ng-container>
+
                 <ng-container matColumnDef="print">
                     <th mat-header-cell *matHeaderCellDef> פעולות </th>
                     <td mat-cell *matCellDef="let element"> <button mat-raised-button ml-2 type="submit"

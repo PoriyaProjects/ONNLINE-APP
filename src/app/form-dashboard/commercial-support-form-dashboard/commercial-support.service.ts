@@ -23,13 +23,37 @@ export class SupportRequestService {
   }
 
   getSupportRequestsByID(id: string): Observable<any[]> {
-    return this.http.post<any[]>(`${this.apiUrl}`, {
+    return this.http.post<any[]>(`${this.apiUrl}GetSupportRequestById`, {
+      id: id
+    });
+  }
+
+  getPresentationRequestById(id: string): Observable<any[]> {
+    return this.http.post<any[]>(`${this.apiUrl}GetPresentationRequestById`, {
+      id: id
+    });
+  }
+
+  getResearchRequestById(id: string): Observable<any[]> {
+    return this.http.post<any[]>(`${this.apiUrl}GetResearchRequestById`, {
       id: id
     });
   }
 
   saveSupportRequest(request: any): Observable<any> {
     return this.http.post(`${this.apiUrl}SaveSupportRequest`, {
+      request: request
+    });
+  }
+
+  savePresentationRequest(request: any): Observable<any> {
+    return this.http.post(`${this.apiUrl}SavePresentationRequest`, {
+      request: request
+    });
+  }
+
+  saveResearchRequest(request: any): Observable<any> {
+    return this.http.post(`${this.apiUrl}SaveResearchRequest`, {
       request: request
     });
   }
