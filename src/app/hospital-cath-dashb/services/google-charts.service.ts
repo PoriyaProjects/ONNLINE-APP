@@ -108,7 +108,7 @@ export class GoogleChartsService {
     this.chartsReady = new Promise((resolve) => {
       google.charts.load('current', { packages: ['corechart', 'gauge', 'controls'] });
       google.charts.setOnLoadCallback(() => {
-        console.log('Google Charts loaded');
+        //console.log('Google Charts loaded');
         resolve();
       });
     });
@@ -134,7 +134,7 @@ export class GoogleChartsService {
 
 
   public async loadAndDrawCharts(options: any = {}): Promise<void> {
-    console.log("loadAndDrawCharts triggered");
+    //console.log("loadAndDrawCharts triggered");
   
     const chartArea = { width: '85%', height: '70%' };
     const legend = { position: 'top' };
@@ -168,19 +168,7 @@ export class GoogleChartsService {
         annotations,
         vAxis,
         hAxis
-      },
-      // chartArea: { width: '85%', height: '70%' },
-      // legend: { position: 'none' },
-      // bar: { groupWidth: '90%' },
-      // annotations: {
-      //   alwaysOutside: true,
-      //   textStyle: {
-      //     fontSize: 11,
-      //     auraColor: 'none'
-      //   }
-      // },
-      // vAxis: { minValue: 0, format: 'short' },
-      // hAxis: { slantedText: true, slantedTextAngle: 45 },
+      },     
       operationsLineOptions = {
         chartArea,
         legend,
@@ -268,40 +256,49 @@ export class GoogleChartsService {
   
     try {
       await this.loadChart3Y(chart3YOptions);
-    } catch (e) { console.error("3Y Chart failed:", e); }
+    } catch (e) { //console.error("3Y Chart failed:", e); 
+      }
   
     try {
       await this.loadOpChart3Y(Opchart3YOptions);
-    } catch (e) { console.error("3Y Operations Chart failed:", e); }
+    } catch (e) { //console.error("3Y Operations Chart failed:", e); 
+      }
   
     try {
       await this.drawOperationsCharts(operationsBarOptions, operationsLineOptions);
-    } catch (e) { console.error("Operations Charts failed:", e); }
+    } catch (e) { //console.error("Operations Charts failed:", e); 
+      }
   
     try {
       await this.drawIncomeCharts(incomeBarOptions, incomeLineOptions);
-    } catch (e) { console.error("Income Charts failed:", e); }
+    } catch (e) { //console.error("Income Charts failed:", e); 
+      }
   
     try {
       await this.drawOPBarChartQ(barChartQOptions);
-    } catch (e) { console.error("Operationals Quarterly Charts failed:", e); }
+    } catch (e) { //console.error("Operationals Quarterly Charts failed:", e); 
+      }
   
     try {
       await this.drawChartGaugeFunc(gaugeOptions, gaugeTextPosition);
-    } catch (e) { console.error("Gauge Chart failed:", e); }
+    } catch (e) { //console.error("Gauge Chart failed:", e); 
+      }
   
     try {
       await this.initTimeAvgChart(options.timeAvgOptions);
-    } catch (e) { console.error("Time Avg Chart failed:", e); }
+    } catch (e) { //console.error("Time Avg Chart failed:", e); 
+      }
   
     try {
       await this.drawExploitationChart(exploitationOptions);
-    } catch (e) { console.error("Exploitation Chart failed:", e); }
+    } catch (e) { //console.error("Exploitation Chart failed:", e); 
+      }
     try {
       await this.loadCombinedChart3Y(chart3YOptions);
-    } catch (e) { console.error("Combined 3Y Chart failed:", e); }
+    } catch (e) { //console.error("Combined 3Y Chart failed:", e); 
+      }
   
-    console.log("Finished loadAndDrawCharts()");
+    //console.log("Finished loadAndDrawCharts()");
   }
   
   
@@ -328,15 +325,7 @@ export class GoogleChartsService {
     this.drawBarChartQ(quartalData, 'line_chart', barChartQOptions );    
   }
 
-  // public async drawIncomeCharts(barChartOptions: any = {}, lineChartOptions: any = {}): Promise<void> {
-  //   const rawData = await this.http.get(this.DATA_SOURCES.INCOME, { responseType: 'text' }).toPromise();
-  //   const cleanData = sanitizeSoapResponse(rawData);
-  //   const processedData = this.processYearlyData(cleanData);
-  //   const numericMonthData = convertHebrewMonthsToNumbers(processedData);
-  //   await this.fetchDataAndDrawDirect(cleanData, this.processYearlyData, this.CHART_TYPES.BAR, 'bar_chart2', barChartOptions);
-  //   await this.fetchDataAndDrawDirect(cleanData, this.processYearlyData, this.CHART_TYPES.LINE, 'line_chart2', lineChartOptions);
-  //   console.log('Income charts complete');
-  // }
+ 
 
   public async drawIncomeCharts(barChartOptions: any = {}, lineChartOptions: any = {}): Promise<void> {
     const rawData = await this.http.get(this.DATA_SOURCES.INCOME, { responseType: 'text' }).toPromise();
@@ -346,7 +335,7 @@ export class GoogleChartsService {
     const filteredData = filterOutCurrentMonth(numericMonthData);
     await this.fetchDataAndDrawDirect(filteredData, (data: any) => data, this.CHART_TYPES.BAR, 'bar_chart2', barChartOptions);
     await this.fetchDataAndDrawDirect(filteredData, (data: any) => data, this.CHART_TYPES.LINE, 'line_chart2', lineChartOptions);
-    console.log('Income charts complete');
+    //console.log('Income charts complete');
   }
 
   
@@ -355,7 +344,7 @@ export class GoogleChartsService {
     const cleanData = sanitizeSoapResponse(rawData);  
     const processedData = convertHebrewMonthsToNumbers(cleanData);  
     await this.fetchDataAndDrawDirect(processedData, (data: any) => data, this.CHART_TYPES.THREE_YEAR, 'bar_chart_3y', chartOptions);
-    console.log('3-year chart complete');
+    //console.log('3-year chart complete');
   }
   
 
@@ -363,7 +352,7 @@ export class GoogleChartsService {
     const rawData = await this.http.get(this.DATA_SOURCES.OPERATIONS_3Y, { responseType: 'text' }).toPromise();
     const cleanData = sanitizeSoapResponse(rawData);
     await this.fetchDataAndDrawDirect(cleanData, (data: any) => data, this.CHART_TYPES.OPTHREE_YEAR, 'op_bar_chart_3y', chartOptions);
-    console.log('Operations 3-year chart complete');
+    //console.log('Operations 3-year chart complete');
   }
 
 
@@ -378,7 +367,7 @@ export class GoogleChartsService {
       null,
       true
     );
-    console.log('Merged 3-year chart complete');
+    //console.log('Merged 3-year chart complete');
   }
 
   
@@ -387,38 +376,38 @@ export class GoogleChartsService {
     const rawData = await this.http.get(this.DATA_SOURCES.TIME_AVG, { responseType: 'text' }).toPromise();
     const cleanData = sanitizeSoapResponse(rawData);
     await this.fetchDataAndDrawDirect(cleanData, this.processTimeAvgData, this.CHART_TYPES.TIME_AVG, 'bar_chart_time_avg', chartOptions);
-    console.log('Time average chart complete');
+    //console.log('Time average chart complete');
   }
 
   public async drawChartGaugeFunc(chartOptions: any = {}, textPosition: number = 190): Promise<void> {
     const rawData = await this.http.get(this.DATA_SOURCES.GAUGE, { responseType: 'text' }).toPromise();
     const cleanData = sanitizeSoapResponse(rawData);
-    console.log ("cleanData: "+ cleanData);
+    //console.log ("cleanData: "+ cleanData);
     
     await this.fetchDataAndDrawDirect(cleanData, (data: any) => data, this.CHART_TYPES.GAUGE, 'gauge_chart', chartOptions);
     // this.positionGaugeChartText('gauge_chart', textPosition);
     setTimeout(() => {
       this.positionGaugeChartText('gauge_chart', textPosition);
-      console.log('Gauge chart complete');
+      //console.log('Gauge chart complete');
     }, 500);
     
   } catch (error) {
-    console.error('Error drawing gauge chart:', error);
+    //console.error('Error drawing gauge chart:', error);
 
-    console.log('Gauge chart complete');
+    //console.log('Gauge chart complete');
   }
 
   public async drawExploitationChart(chartOptions: any = {}): Promise<void> {
     try {
-      console.log('drawExploitationChart');
+      //console.log('drawExploitationChart');
       const rawData = await this.http.get(this.DATA_SOURCES.EXPLOITATION, { responseType: 'text' }).toPromise();
       //const cleanData = JSON.parse(rawData);
       const cleanData = sanitizeSoapResponse(rawData);
 
       await this.fetchDataAndDrawDirect(cleanData, this.processExploitationData.bind(this), this.CHART_TYPES.EXPLOITATION, 'as_chart', chartOptions);
-      console.log('Exploitation chart complete');
+      //console.log('Exploitation chart complete');
     } catch (error) {
-      console.error("Failed to fetch Exploitation chart data:", error);
+      //console.error("Failed to fetch Exploitation chart data:", error);
       const el = document.getElementById('as_chart');
       if (el) el.innerHTML = "Error loading Exploitation chart.";
     }
@@ -451,7 +440,7 @@ export class GoogleChartsService {
         ) {
           dataToRender = addShortFormatAnnotations(processedData);
         } else {
-          console.error('Processed data is not a valid DataTable. Cannot apply annotations.', processedData);
+          //console.error('Processed data is not a valid DataTable. Cannot apply annotations.', processedData);
           dataToRender = processedData;  // fallback
         }
       } else {
@@ -463,10 +452,10 @@ export class GoogleChartsService {
       // Render the chart
       await this.drawChart(dataToRender, chartType, elementId, chartOptions);
     } catch (error) {
-      console.error('Error processing or drawing chart:', error);
+      //console.error('Error processing or drawing chart:', error);
       const el = document.getElementById(elementId);
       if (el) {
-        el.innerHTML = 'Failed to load chart data. Check console and file path.';
+        el.innerHTML = 'Failed to load chart data. Check //console and file path.';
       }
     }
   }
@@ -478,7 +467,7 @@ export class GoogleChartsService {
   private async drawChart(data: any, chartType: string, elementId: string, chartOptions: any = {}): Promise<void> {
     if (!data) {
       const el = document.getElementById(elementId);
-      if (el) { el.innerHTML = 'Error processing data. Check console.'; }
+      if (el) { el.innerHTML = 'Error processing data. Check //console.'; }
       return;
     }
 
@@ -494,7 +483,7 @@ export class GoogleChartsService {
 
     const drawer = chartDrawers[chartType];
     if (!drawer) {
-      console.error(`Unsupported chart type: ${chartType}`);
+      //console.error(`Unsupported chart type: ${chartType}`);
       return;
     }
 
@@ -503,36 +492,14 @@ export class GoogleChartsService {
         drawer(data, elementId, chartOptions);
         resolve();
       } catch (error) {
-        console.error(`Error drawing ${chartType} chart:`, error);
+        //console.error(`Error drawing ${chartType} chart:`, error);
         const el = document.getElementById(elementId);
-        if (el) { el.innerHTML = 'Error drawing chart. Check console.'; }
+        if (el) { el.innerHTML = 'Error drawing chart. Check //console.'; }
         resolve();
       }
     });
   }
 
-
-
-  // private processYearlyData(data: any): any {
-  //   //const limitedData = limitToRecentYears(data.yData, y => y.Year.value, 4);
-  //   const limitedData = filterRecentOffsets<YearlyData>(
-  //     data.yData,
-  //     y => y.Year.value,
-  //     4
-  //   );
-  //   const years: any = {};
-  //   limitedData.forEach((yearObject: any) => {
-  //     const yearValue = yearObject.Year.value;
-  //     years[yearValue] = {};
-  //     yearObject.Year.Months.forEach((month: any) => {
-  //       if (this.valueExists(month.y)) {
-  //         years[yearValue][month.name] = parseInt(month.y, 10);
-  //       }
-  //     });
-  //   });
-  
-  //   return years;
-  // }
 
   private processYearlyData(data: any): any {
     const limitedData = filterRecentOffsets<YearlyData>(data.yData, y => y.Year.value, 4);
@@ -610,7 +577,7 @@ export class GoogleChartsService {
 
   private drawBarChart(years: any, elementId: string, customOptions: any = {}): void {
     if (!google.visualization || !google.visualization.DataTable) {
-      console.error('Google Visualization not loaded');
+      //console.error('Google Visualization not loaded');
       return;
     }
   
@@ -676,7 +643,7 @@ export class GoogleChartsService {
   
   private drawLineChart(years: any, elementId: string, customOptions: any = {}): void {
     if (!google.visualization || !google.visualization.DataTable) {
-      console.error('Google Visualization not loaded');
+      //console.error('Google Visualization not loaded');
       return;
     }
 
@@ -734,7 +701,7 @@ export class GoogleChartsService {
 
   private drawLineChartQ(years: any, elementId: string, customOptions: any = {}): void {
     if (!google.visualization || !google.visualization.DataTable) {
-      console.error('Google Visualization not loaded');
+      //console.error('Google Visualization not loaded');
       return;
     }
 
@@ -794,7 +761,7 @@ export class GoogleChartsService {
   
   private drawBarChart_Q(years: any, elementId: string, customOptions: any = {}): void {
     if (!google.visualization || !google.visualization.DataTable) {
-      console.error('Google Visualization not loaded');
+      //console.error('Google Visualization not loaded');
       return;
     }
   
@@ -878,7 +845,7 @@ export class GoogleChartsService {
     
   private drawBarChartQ(years: any, elementId: string, barChartQOptions: any = {}, customOptions: any = {}): void {
     if (!google.visualization || !google.visualization.DataTable) {
-      console.error('Google Visualization not loaded');
+      //console.error('Google Visualization not loaded');
       return;
     }
   
@@ -917,18 +884,8 @@ export class GoogleChartsService {
     dataTable.addRows(rows);
   
     const mergedOptions = {
-      // chartArea: { width: '85%', height: '70%' },
       legend: { position: 'none' },
-      // bar: { groupWidth: '90%' },
-      // annotations: {
-      //   alwaysOutside: true,
-      //   textStyle: {
-      //     fontSize: 11,
-      //     auraColor: 'none'
-      //   }
-      // },
       vAxis: { minValue: 0, format: 'short' },
-      // hAxis: { slantedText: true, slantedTextAngle: 45 },
       ...barChartQOptions,
       ...customOptions
     };
@@ -1105,19 +1062,19 @@ export class GoogleChartsService {
   try {
 
     if (typeof elementId !== 'string') {
-      console.error(`Invalid elementId provided to drawChartGauge:`, elementId);
+      //console.error(`Invalid elementId provided to drawChartGauge:`, elementId);
       return;
   }
 
     const container = document.getElementById(elementId);
     if (!container) {
-      console.error(`Element with ID "${elementId}" not found. Aborting chart rendering.`);
+      //console.error(`Element with ID "${elementId}" not found. Aborting chart rendering.`);
       return;
     }
 
     const workingDaysInfo = await getWorkingDaysInfo(this.DATA_SOURCES.WORKING_DAYS);
     if (workingDaysInfo.totalWorkingDays === 0) {
-      console.warn('Working days data invalid or zero, skipping gauge rendering.');
+      //console.warn('Working days data invalid or zero, skipping gauge rendering.');
       return;
     }
 
@@ -1126,7 +1083,7 @@ export class GoogleChartsService {
 
     const monthData = getCurrentMonthData(cleanData?.yData?.[0]?.Year?.Months);
     if (!monthData) {
-      console.error('No valid month data found for Gauge chart.', cleanData);
+      //console.error('No valid month data found for Gauge chart.', cleanData);
       return;
     }
 
@@ -1141,13 +1098,13 @@ export class GoogleChartsService {
     this.gaugePlanned = plannedUpToday;
 
     this.gaugeTargetStatus = this.gaugeValue < this.gaugeTargetValue ? '✅' : '❌';
-    //console.error("plannedUpToday:" + plannedUpToday + "targetValue: "+targetValue + "workingDaysInfo.totalWorkingDays: "+ workingDaysInfo.totalWorkingDays + "workingDaysInfo.currentWorkingDayIndex: "+workingDaysInfo.currentWorkingDayIndex);
+    ////console.error("plannedUpToday:" + plannedUpToday + "targetValue: "+targetValue + "workingDaysInfo.totalWorkingDays: "+ workingDaysInfo.totalWorkingDays + "workingDaysInfo.currentWorkingDayIndex: "+workingDaysInfo.currentWorkingDayIndex);
     const chartData = [
       ['Label', 'Value'],
       [label, value]
     ];
 
-    //console.log('Gauge Chart Prepared:', { label, value, targetValue, chartData, workingDaysInfo });
+    ////console.log('Gauge Chart Prepared:', { label, value, targetValue, chartData, workingDaysInfo });
 
     const defaultOptions = {
       width: 400,
@@ -1174,10 +1131,10 @@ export class GoogleChartsService {
     chart.draw(google.visualization.arrayToDataTable(chartData), options);
 
   } catch (error) {
-    console.error('Error drawing Gauge chart:', error);
+    //console.error('Error drawing Gauge chart:', error);
     const el = document.getElementById(elementId);
     if (el) {
-      el.innerHTML = 'Failed to draw Gauge chart. See console.';
+      el.innerHTML = 'Failed to draw Gauge chart. See //console.';
     }
   }
 }
@@ -1185,13 +1142,13 @@ export class GoogleChartsService {
   
   private positionGaugeChartText(chartId: string = 'gauge_chart', topPosition: number = 190): number {
     if (!chartId) {
-      console.error('Chart ID is required');
+      //console.error('Chart ID is required');
       return 0;
     }
     const selector = `#${chartId} g > g > text`;
     const textElements = document.querySelectorAll(selector);
     if (textElements.length === 0) {
-      console.warn(`No text elements found with selector: ${selector}`);
+      //console.warn(`No text elements found with selector: ${selector}`);
       return 0;
     }
     textElements.forEach(textElement => {
@@ -1201,7 +1158,7 @@ export class GoogleChartsService {
         textElement.setAttribute('style', 'font-size: 22px !important;');
       }
     });
-    console.log(`Repositioned ${textElements.length} text elements to ${topPosition}px from top`);
+    //console.log(`Repositioned ${textElements.length} text elements to ${topPosition}px from top`);
     return textElements.length;
   }
 
@@ -1244,7 +1201,7 @@ export class GoogleChartsService {
     const headerLabels = jsonData.table && jsonData.table.cols ? jsonData.table.cols.map((col: any) => col.label) : [];
 
     if (rawData.length === 0) {
-      console.error('No rows found in JSON data');
+      //console.error('No rows found in JSON data');
       return { headers: [], data: [] };
     }
 
@@ -1272,7 +1229,7 @@ export class GoogleChartsService {
     const container = document.getElementById(elementId);
 
     if (!container) {
-      console.error(`Element with ID "${elementId}" not found.`);
+      //console.error(`Element with ID "${elementId}" not found.`);
       return;
     }
 
@@ -1281,7 +1238,7 @@ export class GoogleChartsService {
         const cleanData = sanitizeSoapResponse(rawData);
 
         if (!cleanData || !cleanData.cols || !cleanData.rows) {
-          console.error('Invalid or empty data for TimeAvg Chart');
+          //console.error('Invalid or empty data for TimeAvg Chart');
           container.innerHTML = 'No data available for display.';
           return;
         }
@@ -1385,11 +1342,11 @@ export class GoogleChartsService {
         });
 
         chart.draw(view, options);
-        console.log(`TimeAvg Chart (${groupBy}) drawn successfully.`);
+        //console.log(`TimeAvg Chart (${groupBy}) drawn successfully.`);
       })
       .catch(error => {
-        console.error('Error loading TimeAvg Chart data:', error);
-        container.innerHTML = 'Failed to load chart data. Check console.';
+        //console.error('Error loading TimeAvg Chart data:', error);
+        container.innerHTML = 'Failed to load chart data. Check //console.';
       });
   }
 
@@ -1399,7 +1356,7 @@ export class GoogleChartsService {
   
 
 private processExploitationData(data: any): any {
-  console.log('processExploitationData started');
+  //console.log('processExploitationData started');
   const chartData = new google.visualization.DataTable();
 
   try {
@@ -1473,14 +1430,14 @@ private processExploitationData(data: any): any {
 
     return chartData;
   } catch (error) {
-    console.error('Error processing JSON data: ', error);
+    //console.error('Error processing JSON data: ', error);
     return null;
   }
 }
 
 
   private renderExploitationChart(dataTable: any, elementId: string, options: any = {}): void {
-    console.log('renderExploitationChart started');
+    //console.log('renderExploitationChart started');
     if (!dataTable || dataTable.getNumberOfRows() === 0) {
       const el = document.getElementById(elementId);
       if (el) el.innerHTML = "אין נתונים להצגה";
@@ -1629,12 +1586,12 @@ private mergeMultipleDataTablesByCategory(
 
       const parsed = this.normalizeCategoryToYearMonth(rawCategory, currentYear);
       if (!parsed) {
-        console.warn(`❌ Unrecognized category: "${rawCategory}"`);
+        //console.warn(`❌ Unrecognized category: "${rawCategory}"`);
         continue;
       }
 
       if (parsed.year === currentYear && parsed.month === currentMonth) {
-        console.log(`⏭ Skipped current month: ${parsed.month}/${parsed.year}`);
+        //console.log(`⏭ Skipped current month: ${parsed.month}/${parsed.year}`);
         continue;
       }
 
@@ -1692,7 +1649,7 @@ private mergeMultipleDataTablesByCategory(
     combinedData.addRow(row);
   }
 
-  console.log(`✅ Built chart with ${combinedData.getNumberOfRows()} rows`);
+  //console.log(`✅ Built chart with ${combinedData.getNumberOfRows()} rows`);
   return combinedData;
 }
 
@@ -1753,11 +1710,11 @@ public async loadAndMergeMultipleCharts(
       const chart = new google.visualization.ComboChart(chartContainer);
       chart.draw(combinedData, mergedOptions);
     } else {
-      console.warn(`Chart container with id '${elementId}' not found.`);
+      //console.warn(`Chart container with id '${elementId}' not found.`);
     }
 
   } catch (error) {
-    console.error('Error loading merged chart:', error);
+    //console.error('Error loading merged chart:', error);
     const el = document.getElementById(elementId);
     if (el) el.innerHTML = 'Failed to load merged chart.';
   }
