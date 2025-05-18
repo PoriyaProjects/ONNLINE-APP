@@ -19,7 +19,7 @@ export function sanitizeSoapResponse(rawResponse: any): any {
     try {
       return JSON.parse(unquoted);
     } catch (e) {
-      console.warn('Failed to parse JSON from <string> content:', e);
+      //console.warn('Failed to parse JSON from <string> content:', e);
       return unquoted;
     }
   }
@@ -27,7 +27,7 @@ export function sanitizeSoapResponse(rawResponse: any): any {
   try {
     return JSON.parse(trimmed);
   } catch (e) {
-    console.warn('Failed to parse raw string as JSON:', e);
+    //console.warn('Failed to parse raw string as JSON:', e);
     return trimmed;
   }
 }
@@ -46,7 +46,7 @@ export function sanitizeSoapResponseAndFormatData(raw: string, label: string): a
 
   cleanedJsonString = cleanedJsonString.replace(/\\"/g, '"');
 
-  console.log("Cleaned JSON String Preview:", cleanedJsonString);
+  //console.log("Cleaned JSON String Preview:", cleanedJsonString);
 
   const parsedData = JSON.parse(cleanedJsonString);
 
