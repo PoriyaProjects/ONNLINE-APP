@@ -118,6 +118,8 @@ export class CprNewbordDashboradComponent implements OnInit {
       },
       width: '90%',
       height: '90%'
+    }).afterClosed().subscribe(() => {
+      this.getNewBornCprList();
     });
   }
 

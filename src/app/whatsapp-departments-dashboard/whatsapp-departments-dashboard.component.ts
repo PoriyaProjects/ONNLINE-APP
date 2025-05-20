@@ -18,7 +18,7 @@ import { MatSnackBar, MatSnackBarHorizontalPosition, MatSnackBarVerticalPosition
   styleUrls: ['./whatsapp-departments-dashboard.component.css']
 })
 export class WhatsappDepartmentsDashboardComponent implements OnInit {
-  // isHandset$ = this.breakpointObserver.observe(Breakpoints.Handset);
+
   horizontalPosition: MatSnackBarHorizontalPosition = "start";
   verticalPosition: MatSnackBarVerticalPosition = "bottom";
   currentContact: any;
@@ -35,13 +35,17 @@ export class WhatsappDepartmentsDashboardComponent implements OnInit {
   unAnsweredConversations = [];
   selectedFile: File | null = null;
   unAnsweredConversations_filter = [];
+  current_contact_cases: any = [];
   whatsAppGroup: FormGroup;
   newMessage: FormGroup;
   loadChat: boolean;
   @ViewChild('tooltipTemplate') tooltipTemplate: TemplateRef<any>;
+  @ViewChild('modalContent', { static: true }) modalContent: TemplateRef<any>;
   base64String: string | ArrayBuffer | null = '';
   _searchNewPatient: any;
+  selectedId: any;
   loadingUnRegistered: boolean;
+  saving_namer: boolean;
 
   constructor(
     private fb: FormBuilder,
@@ -56,8 +60,7 @@ export class WhatsappDepartmentsDashboardComponent implements OnInit {
   ngOnInit(): void {
     this.getPatientsForWhatsapp(1);
     this.getDepartmentsWhatsAppUsers();
-    // this.getDepartmentsWhatsAppServiceFixedFiles();
-    // this.getContactsAndConversations();
+
     this.currentContact = this.contacts[0];
     this.newMessage = this.fb.group({
       Row_ID: new FormControl('', null),
@@ -386,6 +389,100 @@ export class WhatsappDepartmentsDashboardComponent implements OnInit {
     } catch (error) {
       console.error('Error downloading File:', error);
     }
+  }
+
+  displayAllCasesByPhoneNumber(base64Data) {
+    this.http.post(environment.urlipracticom + "getAllPassportIdsByPhoneNumber", {
+      phone_number: this.currentContact.CellNumber
+    }
+    ).subscribe((res) => {
+      this.current_contact_cases = res['d'];
+      this.dialog.open(this.modalContent, {
+        width: '40%'
+      }).afterClosed().subscribe(() => {
+        if (this.selectedId != undefined) this.sendToNamer(base64Data, this.selectedId);
+        else return;
+      });
+    });
+  }
+
+  async sendToNamer(base64Data, select) {
+    console.log(this.currentContact);
+
+    this.confirmationDialogService
+      .confirm("נא לאשר..", "לשלוח לנמר ? ")
+      .then((confirmed) => {
+        console.log("User confirmed:", confirmed);
+        if (confirmed) {
+          this.http.post(environment.urlipracticom + "createDepartmentsWhatsAppPdfOnServer", {
+            case_number: select.casenumber,
+            passport: select.id,
+            base64: base64Data
+          }
+          )
+            .subscribe((Response) => {
+              let that = this;
+              setTimeout(() => {
+                that.http.post(environment.urlipracticom + "LinkPdfToPatientNamer", {
+                  CaseNumber: select.casenumber,
+                  FormID: "1",
+                  Catigory: "ZPO_WTSUPD",
+                  fileSource:
+                    Response["d"],
+                }
+                )
+                  .subscribe((Response) => {
+                    this.saving_namer = false;
+                    if (
+                      Response["d"] ==
+                      "success"
+                    ) {
+                      $("#loader_2").addClass("d-none");
+                      that.openSnackBar(
+                        "! נשמר בהצלחה לתיק מטופל בנמר"
+                      );
+                    } else {
+                      that.openSnackBar(
+                        "! משהו לא תקין"
+                      );
+                    }
+                  });
+              }, 1000);
+            });
+        } else {
+        }
+      })
+      .catch(() =>
+        console.log(
+          "User dismissed the dialog (e.g., by using ESC, clicking the cross icon, or clicking outside the dialog)"
+        )
+      );
+  }
+
+  onSelectionChange(event: any) {
+    const selectedOption = event.option;
+    if (selectedOption.selected) {
+      this.selectedId = selectedOption.value;
+
+      // Deselect all other options manually
+      event.source.selectedOptions.selected.forEach(option => {
+        if (option.value !== selectedOption.value) {
+          option.deselect();
+        } else {
+
+        }
+      });
+    } else {
+      this.selectedId = null;
+    }
+  }
+
+  approveSelection(): void {
+    this.dialog.closeAll();
+  }
+
+  cancel(): void {
+    this.dialog.closeAll();
   }
 
   async detectFileType(base64Data) {

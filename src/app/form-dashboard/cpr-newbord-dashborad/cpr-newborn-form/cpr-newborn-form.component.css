@@ -52,3 +52,7 @@ mat-checkbox {
   position: relative;
   left: 50px;
 }
+
+mat-card-content {
+  text-align: right;
+}
