@@ -96,6 +96,10 @@
                             [ngClass]="{'message-sent': message.From_ServiceEmployee == 'True', 'message-received': message.From_ServiceEmployee == 'False'}">
                             <div *ngIf="message.IfFileMessage == 'True'">
                                 <img src="{{message.Message_Text}}" width="200" />
+                                <mat-icon mat-list-icon
+                                    style="color: rgb(58, 127, 230);float: left;cursor: pointer;margin-right: 5px;"
+                                    matTooltip="שליחה לנמר" *ngIf="user_name == 'adahabre'"
+                                    (click)="displayAllCasesByPhoneNumber(message.Message_Text)">share</mat-icon>
                                 <mat-icon mat-list-icon style="color: yellowgreen;float: left;cursor: pointer;"
                                     matTooltip="הורדת קובץ"
                                     (click)="downloadPDF(message.Message_Text, message)">cloud_download</mat-icon>
@@ -152,3 +156,40 @@
         </div>
     </mat-sidenav-content>
 </mat-sidenav-container>
+
+<ng-template #modalContent let-close="close">
+    <div style="direction: rtl;text-align: right;">
+        <h2 mat-dialog-title>בחר מקרה</h2>
+        <hr>
+        <mat-dialog-content>
+            <mat-selection-list (selectionChange)="onSelectionChange($event)" [multiple]="false">
+                <mat-list-option>
+                    <div class="row">
+                        <div class="col">שם פרטי</div>
+                        <div class="col">תעודת זהות</div>
+                        <div class="col">מספר מקרה</div>
+                        <div class="col">תאריך רישום</div>
+                    </div>
+                </mat-list-option>
+                <hr>
+                <mat-list-option *ngFor="let item of current_contact_cases" [value]="item"
+                    [selected]="selectedId === item">
+                    <div class="row">
+                        <div class="col">{{ item.name }}</div>
+                        <div class="col">{{ item.id }}</div>
+                        <div class="col">{{ item.casenumber }}</div>
+                        <div class="col">{{ item.movedate }}</div>
+                    </div>
+                </mat-list-option>
+            </mat-selection-list>
+        </mat-dialog-content>
+
+        <mat-dialog-actions align="end" class="mt-5">
+            <button mat-button (click)="cancel()">ביטול</button>
+            <button mat-raised-button color="primary" (click)="approveSelection()" [disabled]="selectedId === null">
+                אישור
+            </button>
+        </mat-dialog-actions>
+    </div>
+
+</ng-template>
