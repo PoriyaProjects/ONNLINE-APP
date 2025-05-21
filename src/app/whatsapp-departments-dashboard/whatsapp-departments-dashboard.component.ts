@@ -407,14 +407,15 @@ export class WhatsappDepartmentsDashboardComponent implements OnInit {
   }
 
   async sendToNamer(base64Data, select) {
-    console.log(this.currentContact);
-
+    // base64Data = base64Data.replace('data:image/png;base64,', '');
+    base64Data = base64Data.replace('data:application/pdf;base64,', '');
     this.confirmationDialogService
       .confirm("נא לאשר..", "לשלוח לנמר ? ")
       .then((confirmed) => {
         console.log("User confirmed:", confirmed);
         if (confirmed) {
           this.http.post(environment.urlipracticom + "createDepartmentsWhatsAppPdfOnServer", {
+            // this.http.post("http://srv-ipracticom:8080/WebService.asmx/" + "createDepartmentsWhatsAppPdfOnServer", {
             case_number: select.casenumber,
             passport: select.id,
             base64: base64Data
