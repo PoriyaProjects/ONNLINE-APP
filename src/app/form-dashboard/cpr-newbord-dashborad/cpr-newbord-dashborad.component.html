@@ -76,6 +76,10 @@
                     <button mat-icon-button color="warn" (click)="viewDetails(element.Id)">
                         <mat-icon>print</mat-icon>
                     </button>
+                    <button mat-icon-button style="color: rgb(58, 127, 230);" matTooltip="שמירה בנמר/קמיליון"
+                        (click)="preparePdf(element)">
+                        <mat-icon mat-list-icon>share</mat-icon>
+                    </button>
                 </td>
             </ng-container>
 

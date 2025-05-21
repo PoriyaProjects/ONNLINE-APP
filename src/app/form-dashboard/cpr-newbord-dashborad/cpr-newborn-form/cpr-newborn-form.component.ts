@@ -696,6 +696,7 @@ export class CprNewbornFormComponent implements OnInit {
             <th style="padding: 8px; border: 1px solid #ccc;">#</th>
             <th style="padding: 8px; border: 1px solid #ccc;">שם</th>
             <th style="padding: 8px; border: 1px solid #ccc;">תפקיד</th>
+            <th style="padding: 8px; border: 1px solid #ccc;">אחר</th>
           </tr>
         </thead>
         <tbody>

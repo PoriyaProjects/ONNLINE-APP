@@ -6,6 +6,8 @@ import { MatPaginator } from '@angular/material/paginator';
 import { MatSort } from '@angular/material/sort';
 import { HttpClient } from '@angular/common/http';
 import { environment } from 'src/environments/environment';
+import { ConfirmationDialogService } from 'src/app/confirmation-dialog/confirmation-dialog.service';
+import { MatSnackBar, MatSnackBarHorizontalPosition, MatSnackBarVerticalPosition } from '@angular/material/snack-bar';
 
 @Component({
   selector: 'app-cpr-newbord-dashborad',
@@ -15,6 +17,8 @@ import { environment } from 'src/environments/environment';
 export class CprNewbordDashboradComponent implements OnInit {
   displayedColumns: string[] = ['Id', 'motherName', 'motherId', 'babyId', 'babyGender', 'babyWeight', 'deliveryMethod', 'location', 'actions'];
   dataSource = new MatTableDataSource<any>();
+  horizontalPosition: MatSnackBarHorizontalPosition = "start";
+  verticalPosition: MatSnackBarVerticalPosition = "bottom";
 
   @ViewChild(MatPaginator) paginator!: MatPaginator;
   @ViewChild(MatSort) sort!: MatSort;
@@ -22,6 +26,8 @@ export class CprNewbordDashboradComponent implements OnInit {
   constructor(
     private dialog: MatDialog,
     private http: HttpClient,
+    private _snackBar: MatSnackBar,
+    private confirmationDialogService: ConfirmationDialogService,
   ) { }
 
   ngOnInit(): void {
@@ -132,8 +138,96 @@ export class CprNewbordDashboradComponent implements OnInit {
       });
   }
 
-  print(id) {
+  preparePdf(element) {
+    // You can open a dialog or navigate
+    let dg = this.dialog.open(CprNewbornFormComponent, {
+      disableClose: true,
+      data: {
+        data: element.Id,
+        type: "print"
+      },
+      width: '90%',
+      height: '90%'
+    });
+    dg.afterClosed().subscribe(res => {
+      if (res != undefined) {
+        let html = `
+        <html>
+          <head>
+            <title>הדפסה</title>
+            <style>
+              /* You might want to add print-specific styles here */
+              @media print {
+                body {
+                  /* Add your print styles */
+                }
+              }
+            </style>
+          </head>
+          <body>${res}</body>
+        </html>
+      `;
+        this.sendToNamer(html, element);
+      }
+    });
+  }
 
+  async sendToNamer(html, select) {
+    this.confirmationDialogService
+      .confirm("נא לאשר..", "לשלוח לנמר ? ")
+      .then((confirmed) => {
+        console.log("User confirmed:", confirmed);
+        if (confirmed) {
+          this.http.post(environment.urlipracticom + "createCprNewBornPdfOnServer", {
+            case_number: select.babyCasenumber,
+            passport: select.babyId,
+            html: html
+          }
+          )
+            .subscribe((Response) => {
+              let that = this;
+              setTimeout(() => {
+                that.http.post(environment.urlipracticom + "LinkPdfToPatientNamer", {
+                  CaseNumber: select.casenumber,
+                  FormID: "1",
+                  Catigory: "ZPO_NBCPRF",
+                  fileSource:
+                    Response["d"],
+                }
+                )
+                  .subscribe((Response) => {
+                    if (
+                      Response["d"] ==
+                      "success"
+                    ) {
+                      $("#loader_2").addClass("d-none");
+                      that.openSnackBar(
+                        "! נשמר בהצלחה לתיק מטופל בנמר"
+                      );
+                    } else {
+                      that.openSnackBar(
+                        "! משהו לא תקין"
+                      );
+                    }
+                  });
+              }, 1000);
+            });
+        } else {
+        }
+      })
+      .catch(() =>
+        console.log(
+          "User dismissed the dialog (e.g., by using ESC, clicking the cross icon, or clicking outside the dialog)"
+        )
+      );
+  }
+
+  openSnackBar(message) {
+    this._snackBar.open(message, "X", {
+      duration: 2000,
+      horizontalPosition: this.horizontalPosition,
+      verticalPosition: this.verticalPosition,
+    });
   }
 
 }
