@@ -299,6 +299,7 @@ export class CprNewbornFormComponent implements OnInit {
             time: [sign.time, null]
           })) || []),
           resuscitationActions: this.fb.array(data?.resuscitationActions.map(action => this.fb.group({
+            Id: [action.Id, null],
             time: [action.time, null],
             suction: [action.suction, null],
             oxygenConcentration: [action.oxygenConcentration, null],

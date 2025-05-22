@@ -27,6 +27,8 @@ export class WhatsappMessagesDashboardComponent implements OnInit, OnDestroy {
   typeOfScreen: boolean;
   searchEmployeesGroup: FormGroup;
   WorkPlacesList = [];
+  EmergencyList = [];
+  EmergencyEmployeesList = [];
   selectedFile: File | null = null;
   base64String: string | ArrayBuffer | null = '';
   DepartmentsList = [];
@@ -81,6 +83,7 @@ export class WhatsappMessagesDashboardComponent implements OnInit, OnDestroy {
     this.getEmployeesFunctionsList();
     this.getSektorsList();
     this.getWorkPlacesList();
+    this.getEmergencyContactCategories();
   }
 
   ngOnDestroy(): void {
@@ -96,13 +99,13 @@ export class WhatsappMessagesDashboardComponent implements OnInit, OnDestroy {
     this.customFormArray.removeAt(index);
   }
 
-  addInput(phone, fullName) {
+  addInput(phone, fullName, sender) {
     const contact = new FormGroup({
       Recipient_Type: new FormControl('0', Validators.required),
       Phone_Number: new FormControl(phone, Validators.required),
       Recipient: new FormControl(fullName, null),
       Message_Content: new FormControl('', Validators.required),
-      SenderIDFK: new FormControl('', Validators.required),
+      SenderIDFK: new FormControl(sender, Validators.required),
       Message_Timing: new FormControl(null, null),
       Message_Timing_Time: new FormControl(null, null),
       File_Path: new FormControl(null, null)
@@ -128,7 +131,7 @@ export class WhatsappMessagesDashboardComponent implements OnInit, OnDestroy {
       this.customForm.controls['customInputs']['controls'][index].controls.SenderIDFK.setValue(this.customForm.controls['customInputs'].value[0].SenderIDFK);
     });
   }
-  
+
   onFileSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
     if (input.files && input.files.length > 0) {
@@ -322,7 +325,7 @@ export class WhatsappMessagesDashboardComponent implements OnInit, OnDestroy {
         let t = Response["d"];
         this.total_number_of_reciepents = t.length;
         for (let i = 0; i < t.length; i++) {
-          this.addInput(t[i].CellNumber, t[i].FirstName + ' ' + t[i].LastName);
+          this.addInput(t[i].CellNumber, t[i].FirstName + ' ' + t[i].LastName, '');
         }
       });
   }
@@ -383,6 +386,29 @@ export class WhatsappMessagesDashboardComponent implements OnInit, OnDestroy {
       })
       .subscribe((Response) => {
         this.WorkPlacesList = Response["d"];
+      });
+  }
+
+  getEmergencyContactCategories() {
+    this.http
+      .post(environment.url + "GetEmergencyContactCategories", {
+      })
+      .subscribe((Response) => {
+        this.EmergencyList = Response["d"];
+      });
+  }
+
+  onEmergencyClick(category) {
+    this.http
+      .post(environment.url + "GetEmergencyContactCategoriesEmployees", {
+        category: category
+      })
+      .subscribe((Response) => {
+        let t = Response["d"];
+        this.total_number_of_reciepents = t.length;
+        for (let i = 0; i < t.length; i++) {
+          this.addInput(t[i].Phone_Number, t[i].Employee_Name, '1');
+        }
       });
   }
 

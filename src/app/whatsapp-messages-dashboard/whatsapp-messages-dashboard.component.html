@@ -166,6 +166,14 @@
                         </form>
                     </div>
                 </div>
+                <div class="row" style="display: flex; flex-wrap: wrap; gap: 16px;margin-top: 10px;"
+                    *ngIf="username == 'adahabre' || username == 'owertheim' || username == 'lcerem'">
+                    <mat-card *ngFor="let em of EmergencyList" class="emergency-card"
+                        (click)="onEmergencyClick(em.EmegencyDescription)">
+                        <mat-card-title>אר"ן</mat-card-title>
+                        <mat-card-content>{{ em.EmegencyDescription }}</mat-card-content>
+                    </mat-card>
+                </div>
             </div>
         </div>
     </div>

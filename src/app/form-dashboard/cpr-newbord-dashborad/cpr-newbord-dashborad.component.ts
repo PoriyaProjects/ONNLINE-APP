@@ -152,7 +152,8 @@ export class CprNewbordDashboradComponent implements OnInit {
     dg.afterClosed().subscribe(res => {
       if (res != undefined) {
         let html = `
-        <html>
+        <!DOCTYPE html>
+          <html lang="he" dir="rtl">
           <head>
             <title>הדפסה</title>
             <style>
