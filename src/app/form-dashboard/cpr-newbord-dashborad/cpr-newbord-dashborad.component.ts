@@ -175,9 +175,9 @@ export class CprNewbordDashboradComponent implements OnInit {
       .then((confirmed) => {
         console.log("User confirmed:", confirmed);
         if (confirmed) {
-          // this.http.post(environment.urlipracticom + "createCprNewBornPdfOnServer", {
-          this.http.post('http://srv-ipracticom:8080/WebService.asmx/' + "createCprNewBornPdfOnServer", {
-            case_number: select.babyCasenumber,
+          this.http.post(environment.urlipracticom + "createCprNewBornPdfOnServer", {
+          // this.http.post('http://srv-ipracticom:8080/WebService.asmx/' + "createCprNewBornPdfOnServer", {
+            case_number: '00' + select.babyCasenumber,
             passport: select.babyId,
             html: html
           }
@@ -186,7 +186,7 @@ export class CprNewbordDashboradComponent implements OnInit {
               let that = this;
               setTimeout(() => {
                 that.http.post(environment.urlipracticom + "LinkPdfToPatientNamer", {
-                  CaseNumber: select.babyCasenumber,
+                  CaseNumber: '00' + select.babyCasenumber,
                   FormID: "1",
                   Catigory: "ZPO_NBCPRF",
                   fileSource:

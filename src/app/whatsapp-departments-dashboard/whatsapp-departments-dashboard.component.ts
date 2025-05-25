@@ -379,6 +379,7 @@ export class WhatsappDepartmentsDashboardComponent implements OnInit {
     try {
       // Replace 'your-base64-data' with the actual Base64 data
       base64Data = base64Data.replace('data:image/png;base64,', '');
+      base64Data = base64Data.replace('data:application/pdf;base64,', '');
       const file_type = await this.detectFileType(base64Data);
       // Replace 'filename.pdf' with the desired file name
       let fileName = "";

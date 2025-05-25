@@ -594,7 +594,7 @@ export class CprNewbornFormComponent implements OnInit {
     `;
     }).join('');
     const rowsHtml5 = apgarScore.map((param: any, i: number) => {
-      const parameter = param.label || '';
+      const parameter = this.apgarParameters[i].label || '';
       const timeColumnsHtml = this.times.map((time: any) => {
         const score = param[time.key] || '';
         return `<td>${score}</td>`;
@@ -612,8 +612,8 @@ export class CprNewbornFormComponent implements OnInit {
       return `<th>${time.label}</th>`;
     }).join('');
 
-    const rowsHtml6 = this.labParameters.map((param: any, i: number) => {
-      const source = param.label || '';
+    const rowsHtml6 = labScore.map((param: any, i: number) => {
+      const source = this.labParameters[i].label || '';
       const timeColumnsHtml6 = this.labtimes.map((time: any) => {
         const value = param[time.key] || '';
         return `<td>${value}</td>`;
@@ -631,8 +631,8 @@ export class CprNewbornFormComponent implements OnInit {
       return `<th>${time.label}</th>`;
     }).join('');
 
-    const rowsHtml7 = this.labParameters.map((param: any, i: number) => {
-      const source = param.label || '';
+    const rowsHtml7 = labScore2.map((param: any, i: number) => {
+      const source = this.labParameters[i].label || '';
       const timeColumnsHtml7 = this.labtimes.map((time: any) => {
         const value = param[time.key] || '';
         return `<td>${value}</td>`;
@@ -887,7 +887,11 @@ export class CprNewbornFormComponent implements OnInit {
           <thead style="background-color: #f0f0f0;">
             <tr>
               <th>תאור</th>
-              ${headerColumnsHtml5}
+              <th>1'</th>
+              <th>5'</th>
+              <th>10'</th>
+              <th>15'</th>
+              <th>20'</th>
             </tr>
           </thead>
           <tbody>
