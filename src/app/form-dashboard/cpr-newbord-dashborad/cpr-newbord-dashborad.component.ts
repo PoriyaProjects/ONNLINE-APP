@@ -155,17 +155,13 @@ export class CprNewbordDashboradComponent implements OnInit {
         <!DOCTYPE html>
           <html lang="he" dir="rtl">
           <head>
+            <meta charset="UTF-8">
             <title>הדפסה</title>
-            <style>
-              /* You might want to add print-specific styles here */
-              @media print {
-                body {
-                  /* Add your print styles */
-                }
-              }
-            </style>
           </head>
-          <body>${res}</body>
+          <body>
+          <img style="width: 640px;" src='http://srv-apps-prod/assets/covid_2_header.png' />
+          <br><br>
+          ${res}</body>
         </html>
       `;
         this.sendToNamer(html, element);
@@ -179,7 +175,8 @@ export class CprNewbordDashboradComponent implements OnInit {
       .then((confirmed) => {
         console.log("User confirmed:", confirmed);
         if (confirmed) {
-          this.http.post(environment.urlipracticom + "createCprNewBornPdfOnServer", {
+          // this.http.post(environment.urlipracticom + "createCprNewBornPdfOnServer", {
+          this.http.post('http://srv-ipracticom:8080/WebService.asmx/' + "createCprNewBornPdfOnServer", {
             case_number: select.babyCasenumber,
             passport: select.babyId,
             html: html
