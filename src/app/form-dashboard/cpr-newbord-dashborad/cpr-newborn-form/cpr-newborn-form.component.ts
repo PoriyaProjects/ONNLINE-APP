@@ -498,6 +498,9 @@ export class CprNewbornFormComponent implements OnInit {
     const adrenaline = data.adrenaline;
     const nacl = data.nacl;
     const nabic = data.nabic;
+    const apgarScore = data.apgarScore;
+    const labScore = data.labScore;
+    const labScore2 = data.labScore2;
     const bloodProducts = data.bloodProducts;
     const additionalProducts = data.additionalProducts;
     const resuscitationSummary = data.resuscitationSummary;
@@ -590,7 +593,7 @@ export class CprNewbornFormComponent implements OnInit {
       </tr>
     `;
     }).join('');
-    const rowsHtml5 = this.apgarParameters.map((param: any, i: number) => {
+    const rowsHtml5 = apgarScore.map((param: any, i: number) => {
       const parameter = param.label || '';
       const timeColumnsHtml = this.times.map((time: any) => {
         const score = param[time.key] || '';
@@ -605,9 +608,10 @@ export class CprNewbornFormComponent implements OnInit {
     `;
     }).join('');
 
-    const headerColumnsHtml5 = this.times.map((time: any) => {
+    const headerColumnsHtml5 = apgarScore.map((time: any) => {
       return `<th>${time.label}</th>`;
     }).join('');
+
     const rowsHtml6 = this.labParameters.map((param: any, i: number) => {
       const source = param.label || '';
       const timeColumnsHtml6 = this.labtimes.map((time: any) => {
@@ -623,9 +627,10 @@ export class CprNewbornFormComponent implements OnInit {
     `;
     }).join('');
 
-    const headerColumnsHtml6 = this.labtimes.map((time: any) => {
+    const headerColumnsHtml6 = labScore.map((time: any) => {
       return `<th>${time.label}</th>`;
     }).join('');
+
     const rowsHtml7 = this.labParameters.map((param: any, i: number) => {
       const source = param.label || '';
       const timeColumnsHtml7 = this.labtimes.map((time: any) => {
@@ -641,7 +646,7 @@ export class CprNewbornFormComponent implements OnInit {
     `;
     }).join('');
 
-    const headerColumnsHtml7 = this.labtimes.map((time: any) => {
+    const headerColumnsHtml7 = labScore2.map((time: any) => {
       return `<th>${time.label}</th>`;
     }).join('');
 
@@ -713,7 +718,7 @@ export class CprNewbornFormComponent implements OnInit {
       <div style="margin-bottom: 16px;">
         <strong>מידע על מהלך ההריון והלידה:</strong>
         <div style="padding: 8px; border: 1px solid #ccc; min-height: 80px;">
-          ${pregnancyDeliveryInfo.pregnancyDetails || '<em>לא הוזן</em>'}
+          ${pregnancyDeliveryInfo.pregnancyDeliveryDetails || '<em>לא הוזן</em>'}
         </div>
       </div>
 
@@ -765,7 +770,7 @@ export class CprNewbornFormComponent implements OnInit {
               <th>שאיבה מקנה הנשימה</th>
               <th>מתן חמצן חופשי %</th>
               <th>הנשמה באמבו עם/ללא</th>
-              <th>צנרור הקנה + הנשמה</th>D
+              <th>צנרור הקנה + הנשמה</th>
               <th>עיסוי לב</th>
               <th>צנרור וריד הטבור</th>
               <th>הוצאת טובוס</th>
@@ -900,7 +905,7 @@ export class CprNewbornFormComponent implements OnInit {
           <thead style="background-color: #f0f0f0;">
             <tr>
               <th>מקור הדגימה</th>
-              ${headerColumnsHtml6}
+              <th>UV/אחר</th>
             </tr>
           </thead>
           <tbody>
@@ -918,7 +923,7 @@ export class CprNewbornFormComponent implements OnInit {
           <thead style="background-color: #f0f0f0;">
             <tr>
               <th>מקור הדגימה</th>
-              ${headerColumnsHtml7}
+              <th>UV/אחר</th>
             </tr>
           </thead>
           <tbody>
@@ -932,116 +937,50 @@ export class CprNewbornFormComponent implements OnInit {
     <div style="font-family: Arial, sans-serif; direction: rtl; padding: 20px;">
       <h3 style="text-align: right;">סיכום החייאה</h3>
 
-      <div style="display: flex; flex-wrap: wrap; margin-bottom: 20px;">
-        <!-- Predefined Summary Selection -->
-        <div style="width: 100%; margin-bottom: 16px;">
-          <strong>בחר סיכום מהיר:</strong>
-          <span>${resuscitationSummary.predefinedSummary || ''}</span>
-        </div>
-
-        <!-- Summary Textarea -->
-        <div style="width: 100%; margin-bottom: 16px;">
-          <strong>סיכום:</strong>
-          <p>${resuscitationSummary.summary || ''}</p>
-        </div>
-
-        <!-- Summary Time -->
-        <div style="width: 50%; margin-bottom: 16px;">
-          <strong>שעת סיום ההחייאה:</strong>
-          <span>${resuscitationSummary.summaryTime || ''}</span>
-        </div>
-
-        <!-- Condition At End -->
-        <div style="width: 50%; margin-bottom: 16px;">
-          <strong>מצב הילוד בתום החייאה:</strong>
-          <span>${resuscitationSummary.conditionAtEnd || ''}</span>
-        </div>
-
-        <!-- Transfer Destination -->
-        <div style="width: 50%; margin-bottom: 16px;">
-          <strong>בתום ההחייאה הילוד הועבר:</strong>
-          <span>${resuscitationSummary.transferDestination || ''}</span>
-        </div>
-
-        <!-- Condition Upon Transfer -->
-        <div style="width: 50%; margin-bottom: 16px;">
-          <strong>מצב הילוד בהעברה:</strong>
-          <span>${resuscitationSummary.conditionUponTransfer || ''}</span>
-        </div>
-
-        <!-- Other Condition Upon Transfer -->
-        <div style="width: 50%; margin-bottom: 16px;" *ngIf="formValue.conditionUponTransfer === 'אחר'">
-          <strong>אחר:</strong>
-          <span>${resuscitationSummary.other || ''}</span>
-        </div>
-
-        <!-- Oxygen Saturation -->
-        <div style="width: 50%; margin-bottom: 16px;">
-          <strong>סטורציה בהעברה %:</strong>
-          <span>${resuscitationSummary.oxygenSat || ''}</span>
-        </div>
-
-        <!-- Transfer Time -->
-        <div style="width: 50%; margin-bottom: 16px;">
-          <strong>שעת העברה:</strong>
-          <span>${resuscitationSummary.transferTime || ''}</span>
-        </div>
-
-        <!-- Transferred By -->
-        <div style="width: 50%; margin-bottom: 16px;">
-          <strong>התינוק הועבר ע"י:</strong>
-          <span>${resuscitationSummary.transferredBy || ''}</span>
-        </div>
-
-        <!-- Role -->
-        <div style="width: 50%; margin-bottom: 16px;">
-          <strong>תפקיד:</strong>
-          <span>${resuscitationSummary.role || ''}</span>
-        </div>
-
-        <!-- Info To -->
-        <div style="width: 50%; margin-bottom: 16px;">
-          <strong>מידע נמסר ל:</strong>
-          <span>${resuscitationSummary.infoTo || ''}</span>
-        </div>
-
-        <!-- Acceptance Date -->
-        <div style="width: 50%; margin-bottom: 16px;">
-          <strong>תאריך:</strong>
-          <span>${resuscitationSummary.acceptanceDate || ''}</span>
-        </div>
-
-        <!-- Acceptance Time -->
-        <div style="width: 50%; margin-bottom: 16px;">
-          <strong>שעה:</strong>
-          <span>${resuscitationSummary.acceptanceTime || ''}</span>
-        </div>
-
-        <!-- By Who -->
-        <div style="width: 50%; margin-bottom: 16px;">
-          <strong>ע"י (שם ותפקיד):</strong>
-          <span>${resuscitationSummary.ByWhoEmployee || ''}</span>
-        </div>
-
-        <!-- Received By -->
-        <div style="width: 50%; margin-bottom: 16px;">
-          <strong>בנוכחות:</strong>
-          <span>${resuscitationSummary.receivedBy || ''}</span>
-        </div>
-
-        <!-- Predefined Message Selection -->
-        <div style="width: 100%; margin-bottom: 16px;">
-          <strong>בחר הודעה מהירה:</strong>
-          <span>${resuscitationSummary.predefinedNote || ''}</span>
-        </div>
-
-        <!-- Notes Textarea -->
-        <div style="width: 100%; margin-bottom: 16px;">
-          <strong>תוכן המידע שנמסר:</strong>
-          <p>${resuscitationSummary.notes || ''}</p>
-        </div>
-      </div>
-
+      
+      <table style="width: 100%; border-collapse: collapse;">
+        <tr>
+          <td><strong>סיכום:</strong>${resuscitationSummary.summary || ''}</td>
+          <td><strong>שעת סיום ההחייאה:</strong>${resuscitationSummary.summaryTime || ''}</td>
+        </tr>
+        
+        <tr>
+          <td><strong>מצב הילוד בתום החייאה:</strong>${resuscitationSummary.conditionAtEnd || ''}</td>
+          <td><strong>בתום ההחייאה הילוד הועבר:</strong>${resuscitationSummary.transferDestination || ''}</td>
+        </tr>
+        
+        <tr>
+          <td><strong>מצב הילוד בהעברה:</strong>${resuscitationSummary.conditionUponTransfer || ''}</td>
+          <td *ngIf="formValue.conditionUponTransfer === 'אחר'"><strong>אחר:</strong>${resuscitationSummary.other || ''}</td>
+        </tr>
+        
+        <tr>
+          <td><strong>סטורציה בהעברה %:</strong>${resuscitationSummary.oxygenSat || ''}</td>
+          <td><strong>שעת העברה:</strong>${resuscitationSummary.transferTime || ''}</td>
+        </tr>
+        
+        <tr>
+          <td><strong>התינוק הועבר ע"י:</strong>${resuscitationSummary.transferredBy || ''}</td>
+          <td><strong>תפקיד:</strong>${resuscitationSummary.role || ''}</td>
+        </tr>
+        
+        <tr>
+          <td><strong>מידע נמסר ל:</strong>${resuscitationSummary.infoTo || ''}</td>
+          <td><strong>תאריך:</strong>${resuscitationSummary.acceptanceDate || ''}</td>
+        </tr>
+        
+        <tr>
+          <td><strong>שעה:</strong>${resuscitationSummary.acceptanceTime || ''}</td>
+          <td><strong>ע"י (שם ותפקיד):</strong>${resuscitationSummary.ByWhoEmployee || ''}</td>
+        </tr>
+        
+        <tr>
+          <td><strong>בנוכחות:</strong>${resuscitationSummary.receivedBy || ''}</td>
+          <td><strong>תוכן המידע שנמסר:</strong>${resuscitationSummary.notes || ''}</td>
+        </tr>
+        
+      </table>
+        
       <div style="margin-top: 16px;">
         <h3 style="text-align: right;">חתימה וחותמת הרופא האחראי על החייאה:</h3>
 
