@@ -47,8 +47,9 @@
 }
 
 .delete-btn {
-  float: left;
+  /* float: left; */
   background-color: rgb(241 49 49);
+  width: 100%;
 }
 
 .sheet-id {

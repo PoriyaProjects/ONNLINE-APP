@@ -95,7 +95,9 @@
                         <div
                             [ngClass]="{'message-sent-system': message.From_ServiceEmployee == 'True' && message.Employee_Name === '', 'message-sent': message.From_ServiceEmployee == 'True', 'message-received': message.From_ServiceEmployee == 'False'}">
                             <div *ngIf="message.IfFileMessage == 'True'">
-                                <img src="{{message.Message_Text}}" width="200" />
+                                <img src="{{message.Message_Text}}" width="200" *ngIf="message.FileType == 'image'" />
+                                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/87/PDF_file_icon.svg/267px-PDF_file_icon.svg.png"
+                                    width="50" *ngIf="message.FileType == 'pdf'" />
                                 <mat-icon mat-list-icon style="color: yellowgreen;float: left;cursor: pointer;"
                                     matTooltip="הורדת קובץ"
                                     (click)="downloadPDF(message.Message_Text, message)">cloud_download</mat-icon>

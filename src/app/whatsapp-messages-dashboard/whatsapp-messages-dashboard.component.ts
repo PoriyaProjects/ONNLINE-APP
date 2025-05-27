@@ -2,10 +2,12 @@ import { DatePipe } from '@angular/common';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Component, OnInit, ChangeDetectorRef, OnDestroy } from '@angular/core';
 import { FormArray, FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
+import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar, MatSnackBarHorizontalPosition, MatSnackBarVerticalPosition } from '@angular/material/snack-bar';
 import { MatTableDataSource } from '@angular/material/table';
 import { Observable } from 'rxjs';
 import { environment } from 'src/environments/environment';
+import { WhatsappCategoriesPermissionsComponent } from './whatsapp-categories-permissions/whatsapp-categories-permissions.component';
 
 @Component({
   selector: 'app-whatsapp-messages-dashboard',
@@ -37,7 +39,8 @@ export class WhatsappMessagesDashboardComponent implements OnInit, OnDestroy {
   screenTitle = 'אישי';
   searchProgress: boolean = false;
   sending: boolean = false;
-  username = localStorage.getItem('loginUserName');
+  send_emergency: boolean = false;
+  username = localStorage.getItem('loginUserName').toLowerCase();
   selectedFiles: FileList | null;
   fixed_text: string = "";
   media_file: string = "";
@@ -47,16 +50,13 @@ export class WhatsappMessagesDashboardComponent implements OnInit, OnDestroy {
   constructor(
     private http: HttpClient,
     private fb: FormBuilder,
+    private dialog: MatDialog,
     private _snackBar: MatSnackBar,
     private _datePipe: DatePipe,
     private cd: ChangeDetectorRef
   ) { }
 
   ngOnInit() {
-    // if (this.username == 'kmassalha' || this.username == 'emansour') {
-    //   this.fixed_text = "הקובץ המצורף מכיל מידע חשוב על החייאה, כולל החייאת ילדים. חשוב לשמור את הקובץ במסך הבית של הטלפון הנייד שלכם כדי שתמיד יהיה לכם בהישג יד במקרה הצורך";
-    //   this.media_file = "./files/ACLS.pdf";
-    // }
     this.searchEmployeesGroup = this.fb.group({
       EmpID: new FormControl('', null),
       EmpFirstName: new FormControl('', null),
@@ -77,13 +77,13 @@ export class WhatsappMessagesDashboardComponent implements OnInit, OnDestroy {
       SenderIDFK: new FormControl('1', Validators.required),
       File_Path: new FormControl(this.media_file, null)
     });
-    // this.getWhatsAppMessagesFromServer();
     this.getWhatsAppSendersFromServer();
     this.getEmployeeDepartmentList();
     this.getEmployeesFunctionsList();
     this.getSektorsList();
     this.getWorkPlacesList();
     this.getEmergencyContactCategories();
+    this.sendEmergencyPermission();
   }
 
   ngOnDestroy(): void {
@@ -165,10 +165,6 @@ export class WhatsappMessagesDashboardComponent implements OnInit, OnDestroy {
     let formatedTime = this.customForm.controls['customInputs']['controls'][index].controls.Message_Timing_Time.value;
     this.customForm.controls['customInputs']['controls'][index].controls.Message_Timing.setValue(formatedDate + ' ' + formatedTime + ':00');
   }
-
-  // messagesSendingControl(){
-  //   if(this.selectedFiles)
-  // }
 
   sendMessages() {
     if (!this.typeOfScreen) {
@@ -263,6 +259,14 @@ export class WhatsappMessagesDashboardComponent implements OnInit, OnDestroy {
     }
   }
 
+  openPermissionsManager() {
+    this.dialog.open(WhatsappCategoriesPermissionsComponent, {
+      width: '70%'
+    }).afterClosed().subscribe(() => {
+      this.getEmergencyContactCategories();
+    });
+  }
+
   applyFilter(event: Event) {
     const filterValue = (event.target as HTMLInputElement).value;
     this.dataSource.filter = filterValue.trim().toLowerCase();
@@ -324,6 +328,7 @@ export class WhatsappMessagesDashboardComponent implements OnInit, OnDestroy {
         this.searchProgress = false;
         let t = Response["d"];
         this.total_number_of_reciepents = t.length;
+        this.customForm.controls['customInputs'] = this.fb.array([]);
         for (let i = 0; i < t.length; i++) {
           this.addInput(t[i].CellNumber, t[i].FirstName + ' ' + t[i].LastName, '');
         }
@@ -392,6 +397,7 @@ export class WhatsappMessagesDashboardComponent implements OnInit, OnDestroy {
   getEmergencyContactCategories() {
     this.http
       .post(environment.url + "GetEmergencyContactCategories", {
+        user_name: this.username
       })
       .subscribe((Response) => {
         this.EmergencyList = Response["d"];
@@ -406,9 +412,21 @@ export class WhatsappMessagesDashboardComponent implements OnInit, OnDestroy {
       .subscribe((Response) => {
         let t = Response["d"];
         this.total_number_of_reciepents = t.length;
+        this.customForm.controls['customInputs'] = this.fb.array([]);
         for (let i = 0; i < t.length; i++) {
           this.addInput(t[i].Phone_Number, t[i].Employee_Name, '1');
         }
+      });
+  }
+
+  sendEmergencyPermission() {
+    this.http
+      .post(environment.url + "SendEmergencyPermission", {
+        user_name: this.username
+      })
+      .subscribe((Response) => {
+        if (Response['d']) this.send_emergency = true;
+        else this.send_emergency = false;
       });
   }
 

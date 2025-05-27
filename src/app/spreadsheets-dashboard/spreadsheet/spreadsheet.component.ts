@@ -11,12 +11,6 @@ import { Spreadsheet, CellSaveEventArgs } from '@syncfusion/ej2-angular-spreadsh
 })
 export class SpreadsheetComponent implements OnInit {
 
-    // @HostListener('paste', ['event'])
-    // @HostListener('paste', ['event']) onPaste(event: ClipboardEvent) {
-    //     console.log("trying to paste");
-    //     event.preventDefault();
-    // }
-
     horizontalPosition: MatSnackBarHorizontalPosition = "start";
     verticalPosition: MatSnackBarVerticalPosition = "bottom";
     data: any[] = [];
@@ -53,28 +47,9 @@ export class SpreadsheetComponent implements OnInit {
                 this.last_column_cell = 'A' + (index + 3).toString();
                 return rowData;
             });
-            // if (temp_data[0].CellID != '0') this.data = this.transformSpreadsheetData(temp_data);
-            // console.log(this.data);
             this.onSpreadsheetCreated();
         });
     }
-
-    // onSpreadsheetCreated(spreadsheet: Spreadsheet): void {
-    //   // Department column (Column C)
-    //   spreadsheet.addDataValidation({
-    //     type: 'List',
-    //     operator: 'EqualTo',
-    //     value1: this.departmentOptions.join(','),
-    //   }, 'C2:C100');
-
-    //   // Age column (Column B) with fixed age ranges
-    //   spreadsheet.addDataValidation({
-    //     type: 'List',
-    //     operator: 'EqualTo',
-    //     value1: '20,25,30,35,40',
-    //   }, 'B2:B100');
-    // }
-
     onCellSave(args: CellSaveEventArgs): void {
         let address = '';
         let value = '';
@@ -83,11 +58,8 @@ export class SpreadsheetComponent implements OnInit {
             address = args.address;
             value = args.value;
 
-            // Check if the pasted value is valid (e.g., not empty)
             if (value && value.toString().trim() == '') value = '-';
             this.saveCellTimeOut(address, value);
-            // setTimeout(() => {
-            // }, 1000);
         } else if (args != null && args['requestType'] == 'paste') alert("לא נשמר, אסור להשתמש בפעולת הדבקה.");
     }
 
@@ -139,9 +111,6 @@ export class SpreadsheetComponent implements OnInit {
                 rows[row][columnName] = cell.CellValue;
             }
         });
-        // for (let i = 0; i < Object.keys(rows[2]).length; i++) {
-        //     this.columns.push({ width: 100 });
-        // }
         // Convert rows object to array and return
         return Object.values(rows);
     }
@@ -188,10 +157,10 @@ export class SpreadsheetComponent implements OnInit {
                 break;
         }
         // setTimeout(() => {
-        //     // this.spreadsheetObj.freezePanes(1, 0);
-        //     // this.spreadsheetObj.goTo(this.last_column_cell);
-        //     // this.spreadsheetObj.selectRange(this.last_column_cell);
-        // }, 2500);
+        //     this.spreadsheetObj.freezePanes(1, 0);
+        //     //     // this.spreadsheetObj.goTo(this.last_column_cell);
+        //     //     // this.spreadsheetObj.selectRange(this.last_column_cell);
+        // }, 1000);
     }
 
     addTenCellsDown(column, original) {
