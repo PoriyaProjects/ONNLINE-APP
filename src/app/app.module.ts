@@ -275,6 +275,7 @@ import { CommercialSupportFormDialogComponent } from './form-dashboard/commercia
 import { PeopleListDialogComponent } from './form-dashboard/training-request-dashboard/training-request-dashboard.component';
 import { CommercialSupportResearchDialogComponent } from './form-dashboard/commercial-support-form-dashboard/commercial-support-research-dialog/commercial-support-research-dialog.component';
 import { CommercialSupportPresentationDialogComponent } from './form-dashboard/commercial-support-form-dashboard/commercial-support-presentation-dialog/commercial-support-presentation-dialog.component';
+import { WhatsappCategoriesPermissionsComponent } from './whatsapp-messages-dashboard/whatsapp-categories-permissions/whatsapp-categories-permissions.component';
 
 
 
@@ -504,6 +505,7 @@ const maskConfig: Partial<IConfig> = {
     CommercialSupportFormDialogComponent,
     CommercialSupportResearchDialogComponent,
     CommercialSupportPresentationDialogComponent,
+    WhatsappCategoriesPermissionsComponent,
   ],
   imports: [
     MatIconModule,
