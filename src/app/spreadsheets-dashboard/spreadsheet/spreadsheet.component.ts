@@ -4,6 +4,18 @@ import { MatSnackBar, MatSnackBarHorizontalPosition, MatSnackBarVerticalPosition
 import { environment } from 'src/environments/environment';
 import { Spreadsheet, CellSaveEventArgs } from '@syncfusion/ej2-angular-spreadsheet';
 
+interface CellData {
+    Key: string;
+    Value: string;
+}
+
+interface RowData {
+    Data: CellData[];
+}
+
+interface ApiResponse {
+    d: RowData[];
+}
 @Component({
     selector: 'app-spreadsheet',
     templateUrl: './spreadsheet.component.html',
@@ -15,7 +27,7 @@ export class SpreadsheetComponent implements OnInit {
     verticalPosition: MatSnackBarVerticalPosition = "bottom";
     data: any[] = [];
     columns: any[] = [];
-    chars = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q'];
+    chars = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'];
     last_cell = "";
     last_header_cell = "";
     last_column_cell = "";
@@ -32,23 +44,58 @@ export class SpreadsheetComponent implements OnInit {
         this.loadData();
     }
 
+    // loadData(): void {
+    //     this.http.post(environment.url + 'GetSpreadSheetsCellsData', {
+    //         id: this.sheet_details.SheetID
+    //     }).subscribe((response: any) => {
+    //         let temp_data: any = response['d'];
+    //         this.data = temp_data.map((row, index) => {
+    //             const rowData: any = {};
+    //             this.last_header_cell = this.chars[temp_data[0].Data.length - 1] + '1';
+    //             row.Data.forEach(pair => {
+    //                 rowData[pair.Key] = pair.Value;
+    //             });
+    //             this.last_cell = this.chars[temp_data[0].Data.length - 1] + (index + 3).toString();
+    //             this.last_column_cell = 'A' + (index + 3).toString();
+    //             return rowData;
+    //         });
+    //         this.onSpreadsheetCreated();
+    //     });
+    // }
     loadData(): void {
         this.http.post(environment.url + 'GetSpreadSheetsCellsData', {
             id: this.sheet_details.SheetID
-        }).subscribe((response: any) => {
-            let temp_data: any = response['d'];
-            this.data = temp_data.map((row, index) => {
-                const rowData: any = {};
-                this.last_header_cell = this.chars[temp_data[0].Data.length - 1] + '1';
-                row.Data.forEach(pair => {
-                    rowData[pair.Key] = pair.Value;
-                });
-                this.last_cell = this.chars[temp_data[0].Data.length - 1] + (index + 3).toString();
-                this.last_column_cell = 'A' + (index + 3).toString();
-                return rowData;
+        })
+            .subscribe({
+                next: (rows: RowData[]) => {
+                    if (!rows || rows.length === 0) {
+                        this.data = [];
+                        return;
+                    }
+
+                    const columnCount = rows['d'][0].Data.length;
+                    this.last_header_cell = `${this.chars[columnCount - 1]}1`;
+
+                    this.data = rows['d'].map((row, index) => {
+                        const rowData: { [key: string]: string } = {};
+                        row.Data.forEach(cell => {
+                            rowData[cell.Key] = cell.Value;
+                        });
+
+                        const rowIndex = index + 3;
+                        this.last_cell = `${this.chars[columnCount - 1]}${rowIndex}`;
+                        this.last_column_cell = `A${rowIndex}`;
+
+                        return rowData;
+                    });
+
+                    this.onSpreadsheetCreated();
+                },
+                error: (err) => {
+                    console.error('Error loading spreadsheet data:', err);
+                    // Handle error appropriately
+                }
             });
-            this.onSpreadsheetCreated();
-        });
     }
     onCellSave(args: CellSaveEventArgs): void {
         let address = '';
@@ -62,6 +109,30 @@ export class SpreadsheetComponent implements OnInit {
             this.saveCellTimeOut(address, value);
         } else if (args != null && args['requestType'] == 'paste') alert("לא נשמר, אסור להשתמש בפעולת הדבקה.");
     }
+
+    // saveCell() {
+    //     this.spreadsheetObj.saveAsJson().then((result: any) => {
+    //         const workbookJson = result.jsonObject;
+
+    //         const requestData = {
+    //             JSONData: JSON.stringify(workbookJson)
+    //         };
+
+    //         this.http
+    //             .post(environment.url + 'SaveSpreadsheetData', {
+    //                 request: requestData,
+    //                 _sheet: this.sheet_details.SheetID,
+    //                 _username: this.user_name
+    //             })
+    //             .subscribe(response => {
+    //                 if (response['d'].Result) {
+    //                     this.openSnackBar('Spreadsheet saved successfully.');
+    //                 } else {
+    //                     this.openSnackBar('Error saving spreadsheet.');
+    //                 }
+    //             });
+    //     });
+    // }
 
     saveCellTimeOut(address, value) {
         this.http
