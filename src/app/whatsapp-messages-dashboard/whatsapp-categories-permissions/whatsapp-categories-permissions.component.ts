@@ -20,6 +20,7 @@ export class WhatsappCategoriesPermissionsComponent implements OnInit {
   EmergencyList = [];
 
   choosen_card: any;
+  newCategory: any;
   username = localStorage.getItem('loginUserName').toLowerCase();
 
   constructor(
@@ -94,6 +95,19 @@ export class WhatsappCategoriesPermissionsComponent implements OnInit {
         this.availableUsers = t;
         this.assignedUsers = t;
       });
+  }
+
+  createNewCategory() {
+    if (this.newCategory != undefined) {
+      this.http
+        .post(environment.url + "CreateNewWhatsAppEmergencyCategory", {
+          category_name: this.newCategory,
+          user_name: this.username
+        })
+        .subscribe((Response) => {
+
+        });
+    }
   }
 
   getEmergencyAvailableList() {
