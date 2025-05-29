@@ -1,9 +1,19 @@
 <div class="card-selection-container" dir="rtl" *ngIf="choosen_card == undefined">
+    <!-- <mat-form-field>
+        <input matInput type="text" placeholder="קבוצה חדשה" [(ngModel)]="newCategory" />
+    </mat-form-field> -->
     <mat-card class="select-card" (click)="selectCard(em)" *ngFor="let em of EmergencyList">
         <mat-card-title>{{em.Description}}</mat-card-title>
         <!-- <mat-card-content>
             תיאור קצר של האפשרות הראשונה. ניתן להוסיף כאן מידע נוסף.
         </mat-card-content> -->
+    </mat-card>
+    <mat-card class="select-card">
+        <mat-card-title>
+            <mat-form-field>
+                <input matInput type="text" placeholder="קבוצה חדשה" [(ngModel)]="newCategory" (blur)="createNewCategory()" />
+            </mat-form-field>
+        </mat-card-title>
     </mat-card>
 </div>
 

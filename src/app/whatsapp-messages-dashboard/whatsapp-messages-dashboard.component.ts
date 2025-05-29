@@ -126,7 +126,7 @@ export class WhatsappMessagesDashboardComponent implements OnInit, OnDestroy {
     this.total_number_of_reciepents = 0;
   }
 
-  test() {
+  setSenderIDFK() {
     this.customForm.controls['customInputs'].value.forEach((element, index) => {
       this.customForm.controls['customInputs']['controls'][index].controls.SenderIDFK.setValue(this.customForm.controls['customInputs'].value[0].SenderIDFK);
     });
@@ -328,7 +328,7 @@ export class WhatsappMessagesDashboardComponent implements OnInit, OnDestroy {
         this.searchProgress = false;
         let t = Response["d"];
         this.total_number_of_reciepents = t.length;
-        this.customForm.controls['customInputs'] = this.fb.array([]);
+        // this.customForm.controls['customInputs'] = this.fb.array([]);
         for (let i = 0; i < t.length; i++) {
           this.addInput(t[i].CellNumber, t[i].FirstName + ' ' + t[i].LastName, '');
         }

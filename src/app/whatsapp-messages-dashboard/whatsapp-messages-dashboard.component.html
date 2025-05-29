@@ -10,7 +10,7 @@
                     history
                 </span>
             </button>
-            <button matTooltip="ניהול הרשאות" mat-raised-button type="submit" *ngIf="username == 'adahabre'"
+            <button matTooltip="ניהול הרשאות" mat-raised-button type="submit" *ngIf="send_emergency"
                 (click)="openPermissionsManager()" class="btn btn-primary btn-raised mr-3">
                 <span class="material-icons">
                     settings
@@ -172,7 +172,8 @@
                         </form>
                     </div>
                 </div>
-                <div class="row" style="display: flex; flex-wrap: wrap; gap: 16px;margin-top: 10px;"
+                <div class="row"
+                    style="display: flex; flex-wrap: wrap; gap: 16px;margin-top: 10px;height: 150px;overflow-y: scroll;"
                     *ngIf="send_emergency">
                     <mat-card *ngFor="let em of EmergencyList" class="emergency-card"
                         (click)="onEmergencyClick(em.Row_ID)">
@@ -235,7 +236,7 @@
                         <mat-label class="contacts-numbers">{{i+1}}-</mat-label>
                         <mat-form-field>
                             <mat-label>מספר שולח*</mat-label>
-                            <mat-select formControlName="SenderIDFK" (selectionChange)="test()">
+                            <mat-select formControlName="SenderIDFK" (selectionChange)="setSenderIDFK()">
                                 <mat-option *ngFor="let phone of sendersList" [value]="phone.Row_ID">
                                     <b>{{phone.Row_ID}}.</b> {{phone.Description}}
                                 </mat-option>
