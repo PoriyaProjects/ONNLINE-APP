@@ -124,18 +124,6 @@ export function toLineChartData(
 }
 
 
-// const raw = [
-//   { label: 'Jan', values: [100, 200] },
-//   { label: 'Feb', values: [150, 250] },
-// ];
-
-// const chartData = toChartData(raw, ['Month', 'Revenue', 'Profit'], {
-//   showAnnotations: true,
-//   shortFormat: true,
-//   showPercentage: false
-// });
-
-
 export function toChartDataAdvanced(
   data: { label: string; values: number[] }[],
   categoryLabel: string,
