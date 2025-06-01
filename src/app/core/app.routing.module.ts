@@ -154,7 +154,9 @@ import { CommercialSupportFormDashboardComponent } from '../form-dashboard/comme
 import { CommercialSupportFormDialogComponent } from '../form-dashboard/commercial-support-form-dashboard/commercial-support-form-dialog/commercial-support-form-dialog.component';
 import { CommercialSupportResearchDialogComponent } from '../form-dashboard/commercial-support-form-dashboard/commercial-support-research-dialog/commercial-support-research-dialog.component';
 import { CommercialSupportPresentationDialogComponent } from '../form-dashboard/commercial-support-form-dashboard/commercial-support-presentation-dialog/commercial-support-presentation-dialog.component';
-
+// import { CldashboardModule } from '../cldashboard/cldashboard.module';
+import { CldashboardModule } from '../cldashboard/cldashboard.module';
+import { FullPageDashboardComponent } from '../cldashboard/pages/full-page-dashboard.component';
 
 
 const routes: Routes = [
@@ -353,12 +355,16 @@ const routes: Routes = [
   { path: "hospitalcathdashboard", component: HospitalCathDashboardComponent },
   { path: "GraphsModalComponent2", component: GraphsModalComponent2 },
   { path: "EshpozModalComponent2", component: EshpozModalComponent2 },
+  { path: "EshpozModalComponent2", component: EshpozModalComponent2 },
+  { path: 'clinicsrequests', component: ClinicsRequestsComponent },
+  { path: 'cldashboard', component: FullPageDashboardComponent },
   
   ];
 
 @NgModule({
   imports: [
-    RouterModule.forRoot(routes, { relativeLinkResolution: 'legacy' })
+    RouterModule.forRoot(routes, { relativeLinkResolution: 'legacy' }), 
+    
   ],
   exports: [
     //ConfirmationDialogComponent,

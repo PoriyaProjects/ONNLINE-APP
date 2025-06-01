@@ -184,6 +184,16 @@ function generateWorkingDaysForMonth(year: number, month: number): Date[] {
 /**
  * מחשב את ה-index של היום הנוכחי ברשימת ימי עבודה.
  */
+// function calculateCurrentWorkingDayIndex(workingDays: Date[]): number | null {
+//   const today = new Date();
+//   const index = workingDays.findIndex(d =>
+//     d.getFullYear() === today.getFullYear() &&
+//     d.getMonth() === today.getMonth() &&
+//     d.getDate() === today.getDate()
+//   );
+//   return index !== -1 ? index : null;
+// }
+
 function calculateCurrentWorkingDayIndex(workingDays: Date[]): number | null {
   const today = new Date();
   const index = workingDays.findIndex(d =>
@@ -191,7 +201,7 @@ function calculateCurrentWorkingDayIndex(workingDays: Date[]): number | null {
     d.getMonth() === today.getMonth() &&
     d.getDate() === today.getDate()
   );
-  return index !== -1 ? index : null;
+  return index !== -1 ? index + 1 : null;   
 }
 
 

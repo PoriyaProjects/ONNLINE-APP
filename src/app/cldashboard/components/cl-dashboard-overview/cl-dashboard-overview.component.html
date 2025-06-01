@@ -1,0 +1,161 @@
+<!-- <div class="controls-bar">
+<mat-form-field>
+  <mat-label>בחר תקופה</mat-label>
+  <mat-select [(ngModel)]="filters.param" (selectionChange)="onPeriodChange($event.value)">
+    <mat-option *ngFor="let p of periods" [value]="p.id">{{ p.name }}</mat-option>
+  </mat-select>
+</mat-form-field>
+
+
+<mat-form-field>
+  <mat-label>בחר מחלקה</mat-label>
+  <mat-select [(ngModel)]="filters.deptCode" (selectionChange)="onDepartmentChange($event.value)">
+    <mat-option *ngFor="let d of departments" [value]="d.id">{{ d.name }}</mat-option>
+  </mat-select>
+</mat-form-field>
+</div>
+<app-controls-bar (filtersChanged)="updateFilters($event)" [departments]="departments" [periods]="periods" (filtersChanged)="updateFilters($event)"></app-controls-bar>
+ -->
+ <mat-toolbar class="sticky-toolbar">
+
+<div class="chart-controls">
+        <mat-expansion-panel>
+          <mat-expansion-panel-header>
+            <mat-panel-title> Chart Controls </mat-panel-title>
+            <mat-panel-description>
+              Click to expand
+            </mat-panel-description>
+          </mat-expansion-panel-header>
+          <p>
+          
+            <mat-form-field>
+              <mat-label>בחר מחלקה</mat-label>
+              <mat-select [(ngModel)]="filters.deptCode" (selectionChange)="onDepartmentChange($event.value)">
+                <mat-option *ngFor="let d of departments" [value]="d.id">{{ d.name }}</mat-option>
+              </mat-select>
+            </mat-form-field>
+             | 
+            <input type="date" [(ngModel)]="filters.startDate" (change)="onGlobalControlChange()" />
+            <input type="date" [(ngModel)]="filters.endDate" (change)="onGlobalControlChange()" />
+
+          
+          
+            | <label><input type="checkbox" [(ngModel)]="globalChartControls.showTrendline" (change)="onGlobalControlChange()" /> Trendline</label>
+            | <label><input type="checkbox" [(ngModel)]="globalChartControls.showAnnotations" (change)="onGlobalControlChange()" /> Annotations</label>
+            | <label><input type="checkbox" [(ngModel)]="globalChartControls.showLegend" (change)="onGlobalControlChange()" /> Legend</label>
+            | <label><input type="checkbox" [(ngModel)]="globalChartControls.shortFormat" (change)="onGlobalControlChange()"> Short Format</label>
+            | <label><input type="checkbox" [(ngModel)]="globalChartControls.showPercentageAnnotations" (change)="onGlobalControlChange()"> % Annotation</label>
+            | <label><input type="checkbox" [(ngModel)]="globalChartControls.showHtmlTooltip" (change)="onGlobalControlChange()"> HTML Tooltip</label>
+            | <label><input type="checkbox" [(ngModel)]="globalChartControls.isRtl" (change)="onGlobalControlChange()"> RTL</label>
+
+          
+            | 
+            <label>
+              Granularity:
+              <select [(ngModel)]="filters.granularity" (change)="onGlobalControlChange()">
+                <option *ngFor="let option of granularityOptions" [value]="option.value">
+                  {{ option.label }}
+                </option>
+              </select>
+            </label>
+          <br/>
+          </p>
+        </mat-expansion-panel>
+      </div>
+    </mat-toolbar>
+<!--2--->
+<!-- <div>
+  <h3>Filters</h3>
+  <label>Department:
+    <select [(ngModel)]="filters.deptCode" (change)="onDepartmentChange(filters.deptCode)">
+      <option *ngFor="let dept of departments" [value]="dept.id">{{ dept.name }}</option>
+    </select>
+  </label>
+
+  <label>Period:
+    <select [(ngModel)]="filters.param" (change)="onPeriodChange(filters.param)">
+      <option *ngFor="let p of periods" [value]="p.id">{{ p.name }}</option>
+    </select>
+  </label>
+</div> -->
+<!--/2--->
+
+<!-- <section class="kpi-section">
+  <app-kpi-card label="EBITDA Margin" [value]="18.4" format="percent"></app-kpi-card>
+  <app-kpi-card label="Net Income" [value]="12400000" format="currency"></app-kpi-card>
+  <app-kpi-card label="Bad Debt Rate" [value]="2.5" format="percent"></app-kpi-card>
+</section> -->
+
+<section class="charts-section common-section">
+  <h3> Common Metrics</h3>
+  <div class="row">
+
+<!-- 
+  <app-total-revenue-line-chart [deptCode]="filters.deptCode" [param]="filters.param" class="col-lg-6"></app-total-revenue-line-chart>
+  <app-total-revenue-bar-chart [deptCode]="filters.deptCode" [param]="filters.param" class="col-lg-6"></app-total-revenue-bar-chart>
+  <app-total-revenue-column-chart [deptCode]="filters.deptCode" [param]="filters.param" class="col-lg-6"></app-total-revenue-column-chart>
+  <app-total-revenue-pie-chart class="col-lg-6"></app-total-revenue-pie-chart>
+  <app-total-revenue-pie-chartex [deptCode]="filters.deptCode" [param]="filters.param" class="col-lg-6"></app-total-revenue-pie-chartex> -->
+
+  <!-- <app-total-revenue-column-chart [rawChartData]="rawChartData"   [isLoading]="isLoading" [deptCode]="filters.deptCode" [param]="filters.param" [startDate]="filters.startDate" [endDate]="filters.endDate" [granularity]="filters.granularity"></app-total-revenue-column-chart> -->
+  <app-total-revenue-column-chart [rawChartData]="rawChartData" [isLoading]="isLoading" [deptCode]="filters.deptCode" [param]="filters.param" [startDate]="filters.startDate" [endDate]="filters.endDate" [granularity]="filters.granularity" [showTrendline]="globalChartControls.showTrendline" [showAnnotations]="globalChartControls.showAnnotations" [showLegend]="globalChartControls.showLegend" [shortFormat]="globalChartControls.shortFormat" [showPercentageAnnotations]="globalChartControls.showPercentageAnnotations" [showHtmlTooltip]="globalChartControls.showHtmlTooltip" [isDarkMode]="globalChartControls.isDarkMode" [isStacked]="globalChartControls.isStacked" [isRtl]="globalChartControls.isRtl" [currency]="globalChartControls.currency" [locale]="globalChartControls.locale"></app-total-revenue-column-chart>
+  <!-- <app-total-revenue-line-chart [rawChartData]="rawChartData"   [isLoading]="isLoading" [deptCode]="filters.deptCode" [param]="filters.param" [startDate]="filters.startDate" [endDate]="filters.endDate" [granularity]="filters.granularity"></app-total-revenue-line-chart> -->
+  <app-total-revenue-line-chart [rawChartData]="rawChartData" [startDate]="filters.startDate" [endDate]="filters.endDate" [granularity]="filters.granularity"  [showTrendline]="globalChartControls.showTrendline" [showAnnotations]="globalChartControls.showAnnotations" [showLegend]="globalChartControls.showLegend" [shortFormat]="globalChartControls.shortFormat" [showPercentageAnnotations]="globalChartControls.showPercentageAnnotations" [showHtmlTooltip]="globalChartControls.showHtmlTooltip" [isDarkMode]="globalChartControls.isDarkMode" [isStacked]="globalChartControls.isStacked" [isRtl]="globalChartControls.isRtl" [currency]="globalChartControls.currency" [locale]="globalChartControls.locale" [isLoading]="isLoading"></app-total-revenue-line-chart>
+  
+  <!-- <app-total-revenue-bar-chart [rawChartData]="rawChartData"   [isLoading]="isLoading" [deptCode]="filters.deptCode" [param]="filters.param" [startDate]="filters.startDate" [endDate]="filters.endDate" [granularity]="filters.granularity"></app-total-revenue-bar-chart> -->
+  <app-total-revenue-bar-chart [rawChartData]="rawChartData" [startDate]="filters.startDate" [endDate]="filters.endDate" [granularity]="filters.granularity"  [showTrendline]="globalChartControls.showTrendline" [showAnnotations]="globalChartControls.showAnnotations" [showLegend]="globalChartControls.showLegend" [shortFormat]="globalChartControls.shortFormat" [showPercentageAnnotations]="globalChartControls.showPercentageAnnotations" [showHtmlTooltip]="globalChartControls.showHtmlTooltip" [isDarkMode]="globalChartControls.isDarkMode" [isStacked]="globalChartControls.isStacked" [isRtl]="globalChartControls.isRtl" [currency]="globalChartControls.currency" [locale]="globalChartControls.locale" [isLoading]="isLoading"></app-total-revenue-bar-chart>
+
+  <!-- <app-revenue-by-department-bar-chart [deptCode]="filters.deptCode" [param]="filters.param" class="col-lg-4"></app-revenue-by-department-bar-chart> -->
+  <!-- <app-operating-expenses-line-chart [deptCode]="filters.deptCode" [param]="filters.param" class="col-lg-4"></app-operating-expenses-line-chart> -->
+  </div>
+</section>
+<!-- 
+
+<section class="charts-section operational-section">
+  <h3> Operational Metrics</h3>
+  <app-operations-gauge-chart [deptCode]="filters.deptCode" class="col-lg-4"></app-operations-gauge-chart>
+  <app-operations-monthly-bar-chart [deptCode]="filters.deptCode" class="col-lg-4"></app-operations-monthly-bar-chart>
+  <app-operations-line-trend [deptCode]="filters.deptCode" class="col-lg-4"></app-operations-line-trend>
+</section>
+
+<section class="charts-section billing-section">
+<h3> Billing Metrics </h3>
+<app-appeal-success-rate-line-chart [deptCode]="filters.deptCode" [param]="filters.param" class="col-lg-4"></app-appeal-success-rate-line-chart>
+<app-billing-errors-bar-chart [deptCode]="filters.deptCode" [param]="filters.param" class="col-lg-4"></app-billing-errors-bar-chart>
+<app-claim-processing-time-bar-chart [deptCode]="filters.deptCode" [param]="filters.param" class="col-lg-4"></app-claim-processing-time-bar-chart>
+<app-claims-denial-rate-line-chart [deptCode]="filters.deptCode" [param]="filters.param"></app-claims-denial-rate-line-chart>
+</section>
+
+<section class="charts-section cashflow-section">
+<h3> Cashflow Metrics </h3>
+<app-ar-aging-bar-chart [deptCode]="filters.deptCode" [param]="filters.param" class="col-lg-4"></app-ar-aging-bar-chart>
+<app-bad-debt-rate-area-chart [deptCode]="filters.deptCode" [param]="filters.param" class="col-lg-4"></app-bad-debt-rate-area-chart>
+<app-cash-collections-rate-line-chart [deptCode]="filters.deptCode" [param]="filters.param" class="col-lg-4"></app-cash-collections-rate-line-chart>
+<app-cash-on-hand-line-chart [deptCode]="filters.deptCode" [param]="filters.param" class="col-lg-4"></app-cash-on-hand-line-chart>
+<app-dso-line-chart [deptCode]="filters.deptCode" [param]="filters.param"></app-dso-line-chart>
+</section>
+
+<section class="charts-section expense-section">
+<h3> Expense Metrics </h3>
+<app-equipment-costs-line-chart [deptCode]="filters.deptCode" [param]="filters.param" class="col-lg-4"></app-equipment-costs-line-chart>
+<app-expenses-by-department-bar-chart [deptCode]="filters.deptCode" [param]="filters.param" class="col-lg-4"></app-expenses-by-department-bar-chart>
+<app-fixed-variable-costs-pie-chart [deptCode]="filters.deptCode" [param]="filters.param" class="col-lg-4"></app-fixed-variable-costs-pie-chart>
+<app-operating-expenses-line-chart [deptCode]="filters.deptCode" [param]="filters.param" class="col-lg-4"></app-operating-expenses-line-chart>
+<app-staffing-costs-bar-chart [deptCode]="filters.deptCode" [param]="filters.param"></app-staffing-costs-bar-chart>
+</section>
+
+<section class="charts-section profitability-section">
+<h3> Profitability Metrics </h3>
+<app-department-profitability-bar-chart [deptCode]="filters.deptCode" [param]="filters.param" class="col-lg-4"></app-department-profitability-bar-chart>
+<app-ebitda-margin-line-chart [deptCode]="filters.deptCode" [param]="filters.param" class="col-lg-4"></app-ebitda-margin-line-chart>
+<app-net-income-trend-line-chart [deptCode]="filters.deptCode" [param]="filters.param" class="col-lg-4"></app-net-income-trend-line-chart>
+<app-operating-margin-line-chart [deptCode]="filters.deptCode" [param]="filters.param" class="col-lg-4"></app-operating-margin-line-chart>
+</section>
+
+<section class="charts-section revenue-section">
+<h3> Revenue Metrics </h3>
+<app-revenue-by-department-bar-chart [deptCode]="filters.deptCode" [param]="filters.param"></app-revenue-by-department-bar-chart>
+</section> -->
+
+
+

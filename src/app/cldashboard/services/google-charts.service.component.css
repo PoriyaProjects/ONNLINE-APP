@@ -1,0 +1,10 @@
+/* Styles for GoogleCharts.ServiceComponent */
+div {
+  padding: 16px;
+}
+
+.spinner {
+  text-align: center;
+  font-weight: bold;
+  padding: 20px;
+}

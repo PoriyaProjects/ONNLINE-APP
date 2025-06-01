@@ -1,0 +1,46 @@
+<div class="google-chart-container mat-elevation-z2" style="padding: 12px;">
+  <mat-card style="text-align: center;">
+    <mat-card-title>{{ chartTitle || 'Chart Placeholder' }}</mat-card-title>
+    <mat-card-content>
+      <div class="chart-controls">
+        <mat-expansion-panel>
+          <mat-expansion-panel-header>
+            <mat-panel-title> Chart Controls </mat-panel-title>
+            <mat-panel-description>
+              Click to expand
+            </mat-panel-description>
+          </mat-expansion-panel-header>
+          <p>
+          
+            <input type="date" [(ngModel)]="startDate" (change)="onControlChange()">
+            <input type="date" [(ngModel)]="endDate" (change)="onControlChange()">
+          <br/>
+          
+          
+            <label><input type="checkbox" [(ngModel)]="showTrendline" (change)="onControlChange()" />  Trendline </label>
+            | <label><input type="checkbox" [(ngModel)]="showAnnotations" (change)="onControlChange()" /> Annotations </label>
+            | <label><input type="checkbox" [(ngModel)]="showLegend" (change)="onControlChange()" />  Legend </label>           
+            | <label><input type="checkbox" [(ngModel)]="shortFormat" (change)="onControlChange()"> Short Format</label>
+            | <label><input type="checkbox" [(ngModel)]="showPercentageAnnotations" (change)="onControlChange()"> % Annotation </label>
+            | <label><input type="checkbox" [(ngModel)]="showHtmlTooltip" (change)="onControlChange()"> HTML Tooltip</label>
+
+          <br/>
+          
+            <label>
+              Granularity:
+              <select [(ngModel)]="granularity" (change)="onControlChange()">
+                <option *ngFor="let option of granularityOptions" [value]="option.value">
+                  {{ option.label }}
+                </option>
+              </select>
+            </label>
+          <br/>
+          </p>
+        </mat-expansion-panel>
+      </div>
+      <div style="text-align: center;margin-bottom: 10px;"><mat-spinner *ngIf="isLoading" style="margin:10px auto;"></mat-spinner></div>
+      <div [id]="chartContainer?.nativeElement?.id || 'chart_div'" #chart></div>
+     
+    </mat-card-content>
+  </mat-card>
+</div>

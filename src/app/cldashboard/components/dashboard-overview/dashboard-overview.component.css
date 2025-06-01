@@ -1,0 +1,10 @@
+.dashboard-controls {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+.dashboard-charts {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(480px, 1fr));
+  gap: 20px;
+}

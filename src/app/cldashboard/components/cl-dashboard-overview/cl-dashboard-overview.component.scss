@@ -1,0 +1,23 @@
+.kpi-section {
+  display: flex;
+  gap: 1rem;
+  margin: 1rem 0;
+}
+.charts-section {
+  display: grid;
+  gap: 2rem;
+}
+
+.sticky-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 1000; /* Make sure it's above other elements */
+}
+
+.fixed-toolbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 1000;
+}
