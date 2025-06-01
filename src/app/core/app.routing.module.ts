@@ -137,19 +137,18 @@ import { TrainingRequestDashboardComponent } from '../form-dashboard/training-re
 import { TrainingRequestFormComponent } from '../form-dashboard/training-request-dashboard/training-request-form/training-request-form.component';
 import { TrainingRequestDialogComponent } from '../form-dashboard/training-request-dashboard/training-request-dialog/training-request-dialog.component';
 import { WhatsappLungCancerComponent } from '../whatsapp-messages-dashboard/whatsapp-lung-cancer/whatsapp-lung-cancer.component';
+import { WhatsappCategoriesPermissionsComponent } from '../whatsapp-messages-dashboard/whatsapp-categories-permissions/whatsapp-categories-permissions.component';
 import { ShortcutsManagementComponent } from '../dashboard/shortcuts-management/shortcuts-management.component';
 import { ShortcutFormDialogComponent } from '../dashboard/shortcuts-management/shortcut-form-dialog/shortcut-form-dialog.component';
 import { NamerUserActionsComponent } from '../dashboard/namer-user-actions/namer-user-actions.component';
 import { LearningRequestsDashboardComponent } from '../learning-requests-dashboard/learning-requests-dashboard.component';
 import { CprNewbordDashboradComponent } from '../form-dashboard/cpr-newbord-dashborad/cpr-newbord-dashborad.component';
 import { CprNewbornFormComponent } from '../form-dashboard/cpr-newbord-dashborad/cpr-newborn-form/cpr-newborn-form.component';
-
 import { GoogleChartsComponent } from '../hospital-cath-dashb/google-charts/google-charts.component';
 import { GraphsModalComponent2 } from '../hospital-cath-dashboard/graphs-modal/graphs-modal.component';
 import { EshpozModalComponent2 } from '../hospital-cath-dashboard/eshpoz-modal/eshpoz-modal.component';
 import { HospitalTonnageComponent2 } from '../hospital-cath-dashboard/hospital-tonnage/hospital-tonnage.component';
 import { HospitalCathDashboardComponent } from '../hospital-cath-dashboard/hospital-cath-dashboard.component';
-
 import { CommercialSupportFormDashboardComponent } from '../form-dashboard/commercial-support-form-dashboard/commercial-support-form-dashboard.component';
 import { CommercialSupportFormDialogComponent } from '../form-dashboard/commercial-support-form-dashboard/commercial-support-form-dialog/commercial-support-form-dialog.component';
 import { CommercialSupportResearchDialogComponent } from '../form-dashboard/commercial-support-form-dashboard/commercial-support-research-dialog/commercial-support-research-dialog.component';
@@ -296,7 +295,6 @@ const routes: Routes = [
   { path: "folder-tree", component: FolderTreeComponent },
   { path: "LabTests", component: LabTestsComponent },
   { path: "clinicactivitydashboard", component: ClinicActivityDashboardComponent },
-
   { path: "departments-whatsapp-management", component: DepartmentsWhatsappManagementComponent },
   { path: "training-request-dashboard", component: TrainingRequestDashboardComponent },
   { path: "training-request-form/:id", component: TrainingRequestFormComponent },
@@ -309,20 +307,17 @@ const routes: Routes = [
   { path: "cpr-newbord-dashborad", component: CprNewbordDashboradComponent },
   { path: "cpr-newborn-form", component: CprNewbornFormComponent },
   { path: "LabTests", component: LabTestsComponent },
-
-
-
   { path: "departments-whatsapp-management", component: DepartmentsWhatsappManagementComponent } ,
   { path: "training-request-dashboard", component: TrainingRequestDashboardComponent } ,
   { path: "training-request-form", component: TrainingRequestFormComponent } ,
   { path: "training-request-dialog", component: TrainingRequestDialogComponent } ,
   { path: "whatsapp-lung-cancer", component: WhatsappLungCancerComponent } ,
+  { path: "whatsapp-categories-permissions", component: WhatsappCategoriesPermissionsComponent } ,
   { path: "shortcuts-management", component: ShortcutsManagementComponent } ,
   { path: "shortcut-form-dialog", component: ShortcutFormDialogComponent } ,
   { path: "namer-user-actions", component: NamerUserActionsComponent } ,
   { path: "learning-requests-dashboard", component: LearningRequestsDashboardComponent } ,
   { path: "LabTests", component: LabTestsComponent }, 
-
   { path: "departments-whatsapp-management", component: DepartmentsWhatsappManagementComponent },
   { path: "training-request-dashboard", component: TrainingRequestDashboardComponent },
   { path: "training-request-form/:id", component: TrainingRequestFormComponent },

@@ -1,6 +1,8 @@
 <button mat-raised-button color="warn" type="button" class="closeBtn" (click)="onClose()">
     X
 </button>
+<hr>
+<mat-progress-bar mode="buffer" *ngIf="resuscitationForm == undefined"></mat-progress-bar>
 <form [formGroup]="resuscitationForm" dir="rtl" *ngIf="resuscitationForm != undefined" #printSection>
     <mat-horizontal-stepper>
         <!-- Step 1: פרטי הילוד -->
@@ -100,7 +102,7 @@
                         <mat-form-field appearance="outline" style="width: 33.333%;">
                             <mat-label>משקל הילוד</mat-label>
                             <input matInput type="number" formControlName="babyWeight">
-                            <span matSuffix>ק"ג</span>
+                            <span matSuffix>גרם</span>
                         </mat-form-field>
 
                         <mat-form-field appearance="outline" style="width: 33.333%;">
@@ -893,7 +895,8 @@
                                         </span>
                                     </button>
                                     <img *ngIf="resuscitationForm.get('doctorSignature').get('nameAndRole').value != undefined"
-                                        [src]="resuscitationForm.get('doctorSignature').get('nameAndRole').value" />
+                                        [src]="resuscitationForm.get('doctorSignature').get('nameAndRole').value"
+                                        width="200" />
                                 </div>
                             </div>
                         </div>

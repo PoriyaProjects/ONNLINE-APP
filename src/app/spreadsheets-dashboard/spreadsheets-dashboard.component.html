@@ -14,14 +14,16 @@
     <div class="cards-container">
         <div class="card" *ngFor="let spreadsheet of filteredSpreadsheets" (click)="openSpreadSheetDialog(spreadsheet)">
             <div class="card-header">
-                <p class="sheet-id">{{ spreadsheet.SheetID }}.</p>
-                {{ spreadsheet.SheetName }}
                 <button mat-raised-button type="submit" (click)="deleteSheet(spreadsheet.SheetID)"
                     *ngIf="user_name == 'adahabre'" class="btn btn-raised delete-btn" matTooltip="מחיקה">
                     <span class="material-icons">
                         delete
                     </span>
                 </button>
+                <br>
+                <hr>
+                <p class="sheet-id">{{ spreadsheet.SheetID }}.</p>
+                {{ spreadsheet.SheetName }}
             </div>
             <div class="card-image">
                 <img src="assets/images/logo.png" alt="{{ spreadsheet.SheetName }}" />

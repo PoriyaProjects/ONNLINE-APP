@@ -568,6 +568,8 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
     let dialogRef = this.dialog.open(ShareSurgeriesPDFDialog);
     dialogRef.componentInstance.reportArray = pdf;
     dialogRef.componentInstance.department = department;
+    dialogRef.componentInstance.arrivalDate = this.data.room.ArrivalDate;
+    dialogRef.componentInstance.calendarRoomsArea = this.data.room.CalendarRoomsArea;
   }
 
 }
@@ -607,6 +609,8 @@ export class ShareSurgeriesPDFDialog {
   all_users_filter = [];
   reportArray: string;
   department: string;
+  calendarRoomsArea: string;
+  arrivalDate: string;
   disableBtn: boolean;
   separatorKeysCodes: number[] = [ENTER, COMMA];
   fruits: any[] = [
@@ -618,7 +622,8 @@ export class ShareSurgeriesPDFDialog {
     { FirstName: 'כנעאן', LastName: 'מנסור', id: '', Email: 'KMANSOUR@tzmc.gov.il' },
     { FirstName: 'מוניר', LastName: 'נשאשיבי', id: '', Email: 'MNASHASHIB@tzmc.gov.il' },
     { FirstName: 'מרואן', LastName: 'ארמלי', id: '', Email: 'MARMALY@tzmc.gov.il' },
-    { FirstName: this.user_name, LastName: '', id: '', Email: this.user_name + '@tzmc.gov.il' },
+    { FirstName: 'מרואן', LastName: 'ארמלי', id: '', Email: 'MARMALY@tzmc.gov.il' },
+    { FirstName: 'תפוצת', LastName: 'חדר ניתוח', id: '', Email: this.user_name + 'DL_SurgeryPlaning@tzmc.gov.il' },
   ];
   @ViewChild('fruitInput') fruitInput: ElementRef<HTMLInputElement>;
 
@@ -685,6 +690,8 @@ export class ShareSurgeriesPDFDialog {
       this.http.post(environment.urlipracticom + 'SentDepartmentFinalSurgeryPlan', {
         department: this.department,
         fileString: this.reportArray,
+        arrivalDate: this.arrivalDate,
+        calendarRoomsArea: this.calendarRoomsArea,
         users: this.fruits, // people list
       }).subscribe(res => {
         if (res['d']) {

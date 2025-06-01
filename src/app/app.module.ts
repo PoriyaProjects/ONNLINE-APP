@@ -277,6 +277,8 @@ import { CommercialSupportResearchDialogComponent } from './form-dashboard/comme
 import { CommercialSupportPresentationDialogComponent } from './form-dashboard/commercial-support-form-dashboard/commercial-support-presentation-dialog/commercial-support-presentation-dialog.component';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { CldashboardModule } from './cldashboard/cldashboard.module';
+import { WhatsappCategoriesPermissionsComponent } from './whatsapp-messages-dashboard/whatsapp-categories-permissions/whatsapp-categories-permissions.component';
+
 
 
 
@@ -505,6 +507,7 @@ const maskConfig: Partial<IConfig> = {
     CommercialSupportFormDialogComponent,
     CommercialSupportResearchDialogComponent,
     CommercialSupportPresentationDialogComponent,
+    WhatsappCategoriesPermissionsComponent,
   ],
   imports: [
     MatIconModule,

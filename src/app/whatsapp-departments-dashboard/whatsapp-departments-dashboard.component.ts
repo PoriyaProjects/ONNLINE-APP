@@ -11,6 +11,8 @@ import { ConfirmationDialogService } from '../confirmation-dialog/confirmation-d
 import { MatDialog } from '@angular/material/dialog';
 import { DatePipe } from '@angular/common';
 import { MatSnackBar, MatSnackBarHorizontalPosition, MatSnackBarVerticalPosition } from '@angular/material/snack-bar';
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
 
 @Component({
   selector: 'app-whatsapp-departments-dashboard',
@@ -379,6 +381,7 @@ export class WhatsappDepartmentsDashboardComponent implements OnInit {
     try {
       // Replace 'your-base64-data' with the actual Base64 data
       base64Data = base64Data.replace('data:image/png;base64,', '');
+      base64Data = base64Data.replace('data:application/pdf;base64,', '');
       const file_type = await this.detectFileType(base64Data);
       // Replace 'filename.pdf' with the desired file name
       let fileName = "";
@@ -407,14 +410,41 @@ export class WhatsappDepartmentsDashboardComponent implements OnInit {
   }
 
   async sendToNamer(base64Data, select) {
-    console.log(this.currentContact);
+    let htmlContent;
+    if (base64Data.split(',')[0].includes('image')) {
+      htmlContent = `
+                <!DOCTYPE html>
+                <html lang="en">
+                <head>
+                    <meta charset="UTF-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <title>Simple Image Display</title>
+                    <script src="https://cdn.tailwindcss.com"></script>
+                    <style>
+                        body {
+                            font-family: 'Inter', sans-serif;
+                        }
+                    </style>
+                </head>
+                <body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen flex flex-col items-center justify-center p-4">
 
+                    <img src="${base64Data}"
+                        alt="A beautiful natural landscape with mountains and trees"
+                        class="max-w-full h-auto rounded-xl shadow-2xl object-cover w-full sm:w-3/4 md:w-2/3 lg:w-1/2 mx-auto border-4 border-blue-300 transform transition-transform duration-500 hover:scale-105"
+                        onerror="this.onerror=null;this.src='https://placehold.co/600x400/CCCCCC/000000?text=Image+Not+Found';">
+
+                </body>
+                </html>
+                `;
+      base64Data = this.convertImageToPdfAndSend(base64Data);
+    }
     this.confirmationDialogService
       .confirm("נא לאשר..", "לשלוח לנמר ? ")
       .then((confirmed) => {
         console.log("User confirmed:", confirmed);
         if (confirmed) {
           this.http.post(environment.urlipracticom + "createDepartmentsWhatsAppPdfOnServer", {
+            // this.http.post("http://srv-ipracticom:8080/WebService.asmx/" + "createDepartmentsWhatsAppPdfOnServer", {
             case_number: select.casenumber,
             passport: select.id,
             base64: base64Data
@@ -424,6 +454,7 @@ export class WhatsappDepartmentsDashboardComponent implements OnInit {
               let that = this;
               setTimeout(() => {
                 that.http.post(environment.urlipracticom + "LinkPdfToPatientNamer", {
+                  // that.http.post("http://srv-ipracticom:8080/WebService.asmx/" + "LinkPdfToPatientNamer", {
                   CaseNumber: select.casenumber,
                   FormID: "1",
                   Catigory: "ZPO_WTSUPD",
@@ -457,6 +488,25 @@ export class WhatsappDepartmentsDashboardComponent implements OnInit {
           "User dismissed the dialog (e.g., by using ESC, clicking the cross icon, or clicking outside the dialog)"
         )
       );
+  }
+
+  convertImageToPdfAndSend(base64Image): string {
+    const pdf = new jsPDF();
+
+    // Remove header if needed
+    const imgData = base64Image.startsWith('data:')
+      ? base64Image
+      : 'data:image/png;base64,' + base64Image;
+
+    // Add image to PDF
+    pdf.addImage(imgData, 'PNG', 10, 10, 190, 0); // Auto height
+
+    // Export as base64 PDF string
+    const pdfBase64 = pdf.output('datauristring'); // Includes the "data:application/pdf;base64,..."
+    const base64Only = pdfBase64.split(',')[1]; // Extract only the Base64 part
+
+    return base64Only;
+
   }
 
   onSelectionChange(event: any) {

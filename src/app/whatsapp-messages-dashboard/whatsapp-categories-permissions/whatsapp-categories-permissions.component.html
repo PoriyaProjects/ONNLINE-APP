@@ -1,0 +1,59 @@
+<div class="card-selection-container" dir="rtl" *ngIf="choosen_card == undefined">
+    <!-- <mat-form-field>
+        <input matInput type="text" placeholder="קבוצה חדשה" [(ngModel)]="newCategory" />
+    </mat-form-field> -->
+    <mat-card class="select-card" (click)="selectCard(em)" *ngFor="let em of EmergencyList">
+        <mat-card-title>{{em.Description}}</mat-card-title>
+        <!-- <mat-card-content>
+            תיאור קצר של האפשרות הראשונה. ניתן להוסיף כאן מידע נוסף.
+        </mat-card-content> -->
+    </mat-card>
+    <mat-card class="select-card">
+        <mat-card-title>
+            <mat-form-field>
+                <input matInput type="text" placeholder="קבוצה חדשה" [(ngModel)]="newCategory" (blur)="createNewCategory()" />
+            </mat-form-field>
+        </mat-card-title>
+    </mat-card>
+</div>
+
+<div dir="rtl" class="container text-right" *ngIf="choosen_card != undefined">
+    <h3>הוספת הרשאות לאזעקת {{choosen_card.Description}}</h3>
+    <hr>
+    <div class="row">
+        <!-- Left: Assigned Users -->
+        <div class="column">
+            <h5>עם הרשאות</h5>
+            <button mat-raised-button color="primary" (click)="removeSelected()">מחיקה</button>
+            <mat-form-field appearance="outline" style="width: 100%;">
+                <mat-label>חיפוש</mat-label>
+                <input matInput [(ngModel)]="leftSearch" placeholder="חפש משתמשים">
+            </mat-form-field>
+            <mat-selection-list [(ngModel)]="selectedLeftUsers" class="selection-list">
+                <mat-list-option *ngFor="let user of filteredLeftUsers()" [value]="user">
+                    {{ user.Full_Name }} - {{ user.Department }}
+                </mat-list-option>
+            </mat-selection-list>
+            <button mat-raised-button color="primary" (click)="moveAllLeft()">הכל</button>
+        </div>
+
+        <!-- Right: Available Users -->
+        <div class="column">
+            <h5>בלי הרשאות</h5>
+            <button mat-raised-button color="accent" (click)="addSelected()">הוספה</button>
+            <mat-form-field appearance="outline" style="width: 100%;">
+                <mat-label>חיפוש</mat-label>
+                <input matInput [(ngModel)]="rightSearch" placeholder="חפש משתמשים">
+            </mat-form-field>
+            <mat-selection-list [(ngModel)]="selectedRightUsers" class="selection-list">
+                <mat-list-option *ngFor="let user of filteredRightUsers()" [value]="user">
+                    {{ user.Full_Name }} - {{ user.Department }}
+                </mat-list-option>
+            </mat-selection-list>
+            <button mat-raised-button color="accent" (click)="moveAllRight()">הכל</button>
+        </div>
+    </div>
+</div>
+<hr>
+<button mat-raised-button style="background-color: #1976d2;color: #ffffff;width: 100%;"
+    (click)="saveAllPermissions()">שמירה</button>
