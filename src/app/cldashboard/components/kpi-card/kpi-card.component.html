@@ -1,0 +1,4 @@
+<mat-card [ngClass]="{ 'positive': isPositive, 'negative': isNegative }">
+  <mat-card-title>{{ label }}</mat-card-title>
+  <mat-card-content class="kpi-value">{{ formattedValue }}</mat-card-content>
+</mat-card>

@@ -275,6 +275,8 @@ import { CommercialSupportFormDialogComponent } from './form-dashboard/commercia
 import { PeopleListDialogComponent } from './form-dashboard/training-request-dashboard/training-request-dashboard.component';
 import { CommercialSupportResearchDialogComponent } from './form-dashboard/commercial-support-form-dashboard/commercial-support-research-dialog/commercial-support-research-dialog.component';
 import { CommercialSupportPresentationDialogComponent } from './form-dashboard/commercial-support-form-dashboard/commercial-support-presentation-dialog/commercial-support-presentation-dialog.component';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { CldashboardModule } from './cldashboard/cldashboard.module';
 import { WhatsappCategoriesPermissionsComponent } from './whatsapp-messages-dashboard/whatsapp-categories-permissions/whatsapp-categories-permissions.component';
 
 
@@ -600,7 +602,9 @@ const maskConfig: Partial<IConfig> = {
     CalendarModule.forRoot({ provide: DateAdapter, useFactory: adapterFactory }),
     //HospitalCathDashbModule,
     AppRoutingModule,
-    SharedModule,    
+    SharedModule,        
+    CldashboardModule,
+    MatProgressSpinnerModule
   ],
   providers: [
     { provide: MAT_DATE_LOCALE, useValue: 'en-GB' }

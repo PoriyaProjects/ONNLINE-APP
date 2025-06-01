@@ -1056,90 +1056,103 @@ export class GoogleChartsService {
     chart.draw(dataTable, options);
   }
   
+public async drawChartGauge(data: any, elementId: string, chartOptions: any = {}): Promise<void> {
 
-  public async drawChartGauge(data: any, elementId: string, chartOptions: any = {}): Promise<void> {
-  
   try {
 
     if (typeof elementId !== 'string') {
-      //console.error(`Invalid elementId provided to drawChartGauge:`, elementId);
       return;
-  }
+    }
 
     const container = document.getElementById(elementId);
     if (!container) {
-      //console.error(`Element with ID "${elementId}" not found. Aborting chart rendering.`);
       return;
     }
 
+    // Fetch working days info
     const workingDaysInfo = await getWorkingDaysInfo(this.DATA_SOURCES.WORKING_DAYS);
     if (workingDaysInfo.totalWorkingDays === 0) {
-      //console.warn('Working days data invalid or zero, skipping gauge rendering.');
       return;
     }
 
+    // Fetch latest gauge data
     const rawData = await this.http.get(this.DATA_SOURCES.GAUGE, { responseType: 'text' }).toPromise();
     const cleanData = sanitizeSoapResponse(rawData);
 
     const monthData = getCurrentMonthData(cleanData?.yData?.[0]?.Year?.Months);
     if (!monthData) {
-      //console.error('No valid month data found for Gauge chart.', cleanData);
       return;
     }
 
     const label = monthData.name || 'Current Month';
     const value = monthData.y;
-    const targetValue = 220;    
-    const plannedUpToday = targetValue / workingDaysInfo.totalWorkingDays * ((workingDaysInfo.currentWorkingDayIndex ?? 1) - 1);
 
+    // Define your target for month
+    const targetValue = 220;
+
+    // Calculate per-day target
+    const perDayTarget = targetValue / workingDaysInfo.totalWorkingDays;
+
+    // Calculate planned value INCLUDING today
+    const plannedIncludingToday = perDayTarget * (workingDaysInfo.currentWorkingDayIndex ?? 1);
+
+    // Store state
     this.gaugeLabel = label;
     this.gaugeValue = value;
     this.gaugeTargetValue = targetValue;
-    this.gaugePlanned = plannedUpToday;
+    this.gaugePlanned = plannedIncludingToday;
 
-    this.gaugeTargetStatus = this.gaugeValue < this.gaugeTargetValue ? '✅' : '❌';
-    ////console.error("plannedUpToday:" + plannedUpToday + "targetValue: "+targetValue + "workingDaysInfo.totalWorkingDays: "+ workingDaysInfo.totalWorkingDays + "workingDaysInfo.currentWorkingDayIndex: "+workingDaysInfo.currentWorkingDayIndex);
+    // Detect if LAST WORKING DAY
+    const isLastWorkingDay = (workingDaysInfo.currentWorkingDayIndex === workingDaysInfo.totalWorkingDays);
+
+    // Determine gauge status ✅ / ❌
+    this.gaugeTargetStatus = isLastWorkingDay
+      ? (this.gaugeValue >= this.gaugeTargetValue ? '✅' : '❌')
+      : (this.gaugeValue >= this.gaugePlanned ? '✅' : '❌');
+
+    // --- Green + Yellow only (no red) ---
+   
+
     const chartData = [
       ['Label', 'Value'],
       [label, value]
     ];
 
-    ////console.log('Gauge Chart Prepared:', { label, value, targetValue, chartData, workingDaysInfo });
-
     const defaultOptions = {
       width: 400,
       height: 220,
-      redFrom: targetValue,
-      redTo: targetValue,
-      yellowFrom: plannedUpToday,
-      yellowTo: targetValue,
-      greenFrom: 0,
-      greenTo: plannedUpToday,
+      yellowFrom: 0,
+      yellowTo: plannedIncludingToday,
+      greenFrom: plannedIncludingToday,
+      greenTo: targetValue,
       minorTicks: 0,
       max: targetValue,
       min: 0,
-      majorTicks: ["0", "", "", "", targetValue.toString()],
+      majorTicks: ["0", "", "", "", "", targetValue.toString()],
       animation: { duration: 1000, easing: 'out' },
-      greenColor: '#f86b6b',
-      yellowColor: '#5ed175',
-      redColor: '#5ed175'
+
+      // Colors
+      greenColor: '#5ed175',   // Positive
+      yellowColor: '#f86b6b'   // Negative / lagging
+      
     };
 
     const options = { ...defaultOptions, ...chartOptions };
 
+    // Draw the chart
     const chart = new google.visualization.Gauge(container);
     chart.draw(google.visualization.arrayToDataTable(chartData), options);
 
   } catch (error) {
-    //console.error('Error drawing Gauge chart:', error);
     const el = document.getElementById(elementId);
     if (el) {
-      el.innerHTML = 'Failed to draw Gauge chart. See //console.';
+      el.innerHTML = 'Failed to draw Gauge chart. See console.';
     }
   }
+
 }
 
-  
+
   private positionGaugeChartText(chartId: string = 'gauge_chart', topPosition: number = 190): number {
     if (!chartId) {
       //console.error('Chart ID is required');

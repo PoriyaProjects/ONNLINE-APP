@@ -1,0 +1,11 @@
+<div class="role-config">
+  <mat-form-field>
+    <mat-label>User Role</mat-label>
+    <mat-select [(value)]="selectedRole">
+      <mat-option value="Viewer">Viewer</mat-option>
+      <mat-option value="Admin">Admin</mat-option>
+      <mat-option value="Finance">Finance</mat-option>
+    </mat-select>
+  </mat-form-field>
+  <button mat-stroked-button (click)="updateRolePermissions()">Update</button>
+</div>

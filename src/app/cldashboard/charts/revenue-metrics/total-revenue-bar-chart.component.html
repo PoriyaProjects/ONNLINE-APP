@@ -1,0 +1,83 @@
+<div class="google-chart-container mat-elevation-z2" style="padding: 12px;">
+  <mat-card style="text-align: center;">
+    <mat-card-title>{{ chartTitle || 'Chart Placeholder' }}</mat-card-title>
+    <mat-card-content>
+      <div class="chart-controls">
+        <mat-expansion-panel>
+          <mat-expansion-panel-header>
+            <mat-panel-title> Chart Controls </mat-panel-title>
+            <mat-panel-description>
+              Click to expand
+            </mat-panel-description>
+          </mat-expansion-panel-header>
+          <p>
+          
+            <input type="date" [(ngModel)]="startDate" (change)="onControlChange()">
+            <input type="date" [(ngModel)]="endDate" (change)="onControlChange()">
+          <br/>
+          
+            <label>
+              Format:
+              <select [(ngModel)]="shortFormat" (change)="onControlChange()">
+                <option [ngValue]="true">Short</option>
+                <option [ngValue]="false">Long</option>
+              </select>
+            </label>
+          <br/>
+          
+            <label><input type="checkbox" [(ngModel)]="showTrendline" (change)="onControlChange()" /> Show
+              Trendline</label> | 
+            <label><input type="checkbox" [(ngModel)]="showAnnotations" (change)="onControlChange()" /> Show
+              Annotations</label> | 
+            <label><input type="checkbox" [(ngModel)]="showLegend" (change)="onControlChange()" /> Show Legend</label>
+            | <label><input type="checkbox" [(ngModel)]="shortFormat" (change)="onControlChange()"> Short Format</label>
+            | <label><input type="checkbox" [(ngModel)]="showPercentageAnnotations" (change)="onControlChange()"> % Annotation</label>
+            | <label><input type="checkbox" [(ngModel)]="showHtmlTooltip" (change)="onControlChange()"> HTML Tooltip</label>
+            | <label><input type="checkbox" [(ngModel)]="isRtl" (change)="onControlChange()"> RTL</label>
+          <br/>
+          
+            <label>
+              Granularity:
+              <select [(ngModel)]="granularity" (change)="onControlChange()">
+                <option *ngFor="let option of granularityOptions" [value]="option.value">
+                  {{ option.label }}
+                </option>
+              </select>
+            </label>
+          <br/>
+          </p>
+        </mat-expansion-panel>
+      </div>
+      <div style="text-align: center;margin-bottom: 10px;"><mat-spinner *ngIf="isLoading" style="margin:10px auto;"></mat-spinner></div>
+      <div [id]="chartContainer?.nativeElement?.id || 'chart_div'" #chart></div>
+      <!-- <input type="date" [(ngModel)]="startDate">
+      <input type="date" [(ngModel)]="endDate">      
+      <select [(ngModel)]="granularity" (change)="onGranularityChange()">
+        <option *ngFor="let option of granularityOptions" [value]="option.value">
+          {{ option.label }}
+        </option>
+      </select>
+      <button (click)="loadRevenueOverTime()">Apply Filter</button>
+      <mat-spinner *ngIf="isLoading" style="margin:10px auto;"></mat-spinner>      
+      <div *ngIf="!isLoading" #chart [id]="chartId"></div> -->
+
+    </mat-card-content>
+  </mat-card>
+</div>
+<!-- <div class="google-chart-container mat-elevation-z2" style="padding: 12px;">
+  <mat-card style="text-align: center;">
+    <mat-card-title>{{ chartTitle || 'Chart Placeholder' }}</mat-card-title>
+    <mat-card-content>
+      <input type="date" [(ngModel)]="startDate">
+      <input type="date" [(ngModel)]="endDate">      
+      <select [(ngModel)]="granularity" (change)="onGranularityChange()">
+        <option *ngFor="let option of granularityOptions" [value]="option.value">
+          {{ option.label }}
+        </option>
+      </select>
+      <button (click)="loadRevenueOverTime()">Apply Filter</button>
+      <mat-spinner *ngIf="isLoading" style="margin:10px auto;"></mat-spinner>      
+      <div *ngIf="!isLoading" #chart [id]="chartId"></div>
+    </mat-card-content>
+  </mat-card>
+</div> -->

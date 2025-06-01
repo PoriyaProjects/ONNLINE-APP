@@ -1,0 +1,35 @@
+<div class="controls-bar">
+  <mat-form-field>
+    <mat-label>Department</mat-label>
+    <mat-select [(value)]="selectedDept">
+      <mat-option *ngFor="let dept of departments" [value]="dept.code">
+        {{ dept.name }}
+      </mat-option>
+    </mat-select>
+  </mat-form-field>
+
+
+  <mat-form-field>
+    <mat-label>Date Range</mat-label>
+    <mat-select [(value)]="selectedTimePeriod">
+      <mat-option *ngFor="let period of timePeriods" [value]="period.code">
+        {{ period.name }}
+      </mat-option>
+    </mat-select>
+  </mat-form-field>
+
+  <!-- <mat-form-field>
+    <mat-label>Payer Type</mat-label>
+    <mat-select [(value)]="payerType">
+      <mat-option value="all">All</mat-option>
+      <mat-option value="private">Private</mat-option>
+    </mat-select>
+  </mat-form-field>
+
+  <mat-radio-group [(ngModel)]="granularity" (change)="applyFilters()">
+    <mat-radio-button value="daily">Daily</mat-radio-button>
+    <mat-radio-button value="monthly">Monthly</mat-radio-button>
+  </mat-radio-group> -->
+
+  <button mat-raised-button color="primary" (click)="applyFilters()">Apply</button>
+</div>
