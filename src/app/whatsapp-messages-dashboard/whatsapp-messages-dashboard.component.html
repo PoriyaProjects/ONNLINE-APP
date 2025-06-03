@@ -261,7 +261,7 @@
                         </mat-form-field>
                         <mat-form-field>
                             <textarea matInput placeholder="תוכן ההודעה*" formControlName="Message_Content"
-                                (keyup)="fillAllMessageContentFields(i)"></textarea>
+                                (keyup)="fillAllMessageContentFields(i)" rows="5"></textarea>
                         </mat-form-field>
                         <mat-form-field *ngIf="contact.controls['Message_Timing'].value != null">
                             <mat-label>תזמון הודעה</mat-label>
@@ -336,7 +336,8 @@
             <hr>
             <button mat-raised-button
                 style="background-color: #00a884;color: whitesmoke;margin-top: 20px;transform: rotate(180deg);"
-                matTooltip="שליחה" [disabled]="sending" (click)="uploadFiles()"><mat-icon>send</mat-icon></button>
+                *ngIf="total_number_of_reciepents > 0" matTooltip="שליחה" [disabled]="sending"
+                (click)="uploadFiles()"><mat-icon>send</mat-icon></button>
         </div>
     </div>
 </div>

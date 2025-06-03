@@ -34,6 +34,7 @@ table {
 
 .container {
     padding-bottom: 100px;
+    max-width: 70%;
 }
 
 ::ng-deep .mat-progress-bar-fill::after {
@@ -80,6 +81,7 @@ table {
 .emergency-card {
     text-align: center;
     width: 30.333%;
+    height: 100px;
     cursor: pointer;
     transition: transform 0.2s ease, box-shadow 0.2s ease;
     border-radius: 16px;

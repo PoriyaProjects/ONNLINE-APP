@@ -80,7 +80,7 @@ export class CprFormComponent implements OnInit {
   statusDropDown = ['VF', 'PEA', 'ASYSTOLE', 'VT'];
   rateHeadDropdown = ['יש', 'אין'];
   myDate = new Date();
-  CprFormsColumns: string[] = ['delete', 'rowid', 'date', 'patientID', 'patientName', 'departName', 'nurseName', 'print', 'sign'];
+  CprFormsColumns: string[] = ['delete', 'rowid', 'date', 'patientID', 'patientName', 'location', 'departName', 'nurseName', 'print', 'sign'];
   CprFormsList = [];
   CprFormsList_all = [];
   UserName = localStorage.getItem("loginUserName").toLowerCase();
@@ -1056,7 +1056,7 @@ export class CprFormComponent implements OnInit {
 
   displayCprForms() {
     this.getAllCprFormsList();
-    this.dialog.open(this.modalContent, { width: '60%', height: '60%', disableClose: true });
+    this.dialog.open(this.modalContent, { width: '80%', height: '80%', disableClose: true });
   }
 
   getAllCprFormsList() {
@@ -1073,8 +1073,6 @@ export class CprFormComponent implements OnInit {
 
   sendCprFormEmail(id) {
     this.http
-      // .post(environment.url + "SendCprFormEmail", {
-      // .post(environment.url + "SendCprFormEmail", {
       .post("http://srv-ipracticom:8080/WebService.asmx/SendCprFormEmail", {
         _userSender: this.UserName,
         users: this.usersToSend,

@@ -13,9 +13,6 @@ interface RowData {
     Data: CellData[];
 }
 
-interface ApiResponse {
-    d: RowData[];
-}
 @Component({
     selector: 'app-spreadsheet',
     templateUrl: './spreadsheet.component.html',
@@ -37,31 +34,15 @@ export class SpreadsheetComponent implements OnInit {
     user_name: string = localStorage.getItem("loginUserName");
     @ViewChild('spreadsheet') spreadsheetObj: Spreadsheet;
 
-    constructor(private http: HttpClient,
-        private _snackBar: MatSnackBar,) { }
+    constructor(
+        private http: HttpClient,
+        private _snackBar: MatSnackBar
+    ) { }
 
     ngOnInit(): void {
         this.loadData();
     }
 
-    // loadData(): void {
-    //     this.http.post(environment.url + 'GetSpreadSheetsCellsData', {
-    //         id: this.sheet_details.SheetID
-    //     }).subscribe((response: any) => {
-    //         let temp_data: any = response['d'];
-    //         this.data = temp_data.map((row, index) => {
-    //             const rowData: any = {};
-    //             this.last_header_cell = this.chars[temp_data[0].Data.length - 1] + '1';
-    //             row.Data.forEach(pair => {
-    //                 rowData[pair.Key] = pair.Value;
-    //             });
-    //             this.last_cell = this.chars[temp_data[0].Data.length - 1] + (index + 3).toString();
-    //             this.last_column_cell = 'A' + (index + 3).toString();
-    //             return rowData;
-    //         });
-    //         this.onSpreadsheetCreated();
-    //     });
-    // }
     loadData(): void {
         this.http.post(environment.url + 'GetSpreadSheetsCellsData', {
             id: this.sheet_details.SheetID
@@ -93,7 +74,7 @@ export class SpreadsheetComponent implements OnInit {
                 },
                 error: (err) => {
                     console.error('Error loading spreadsheet data:', err);
-                    // Handle error appropriately
+                    alert("שגיאה בטעינת הנתונים");
                 }
             });
     }
@@ -110,6 +91,7 @@ export class SpreadsheetComponent implements OnInit {
         } else if (args != null && args['requestType'] == 'paste') alert("לא נשמר, אסור להשתמש בפעולת הדבקה.");
     }
 
+    // save all the spreadsheet at once
     // saveCell() {
     //     this.spreadsheetObj.saveAsJson().then((result: any) => {
     //         const workbookJson = result.jsonObject;
@@ -147,7 +129,9 @@ export class SpreadsheetComponent implements OnInit {
                 error: (err) => this.openSnackBar('תקלה בשמירה:' + err),
             });
     }
-
+    onCellSelected(args: any) {
+        console.log('Selected cell:', args.address);
+    }
     ngAfterViewInit(): void {
         // this.spreadsheetObj.addDataValidation(
         //   {
@@ -157,6 +141,8 @@ export class SpreadsheetComponent implements OnInit {
         //   },
         //   'K2' // Apply to the 'Department' column from row 2 to 100
         // );
+        // Hide columns from index 26 (column AA) to the last column
+        // this.spreadsheetObj.hideColumn(26, this.spreadsheetObj.getActiveSheet().colCount);
     }
 
     transformSpreadsheetData(rawData: any[]): any[] {
@@ -227,8 +213,8 @@ export class SpreadsheetComponent implements OnInit {
                 this.spreadsheetObj.addDataValidation({ type: 'List', value1: '-, כן ,לא, לא מונה אפוטרופוס', ignoreBlank: false }, 'M2:' + this.addTenCellsDown('M', this.last_cell));
                 break;
         }
+        // this.spreadsheetObj.freezePanes(1, 0);
         // setTimeout(() => {
-        //     this.spreadsheetObj.freezePanes(1, 0);
         //     //     // this.spreadsheetObj.goTo(this.last_column_cell);
         //     //     // this.spreadsheetObj.selectRange(this.last_column_cell);
         // }, 1000);
