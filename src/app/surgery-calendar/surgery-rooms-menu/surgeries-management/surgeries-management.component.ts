@@ -565,7 +565,10 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
   }
 
   openShareDialog(pdf, department) {
-    let dialogRef = this.dialog.open(ShareSurgeriesPDFDialog);
+    let dialogRef = this.dialog.open(ShareSurgeriesPDFDialog, {
+      width: '25%',
+      height: '50%',
+    });
     dialogRef.componentInstance.reportArray = pdf;
     dialogRef.componentInstance.department = department;
     dialogRef.componentInstance.arrivalDate = this.data.room.ArrivalDate;
@@ -614,15 +617,8 @@ export class ShareSurgeriesPDFDialog {
   disableBtn: boolean;
   separatorKeysCodes: number[] = [ENTER, COMMA];
   fruits: any[] = [
-    { FirstName: 'מאיר', LastName: 'רוח', id: '', Email: 'MRuach@tzmc.gov.il' },
     { FirstName: 'רובא', LastName: 'יוסף', id: '', Email: 'RYousef@tzmc.gov.il' },
-    { FirstName: 'נוי', LastName: 'טובול', id: '', Email: 'NYairtubul@tzmc.gov.il' },
-    { FirstName: 'אילנה', LastName: 'גורודצקי', id: '', Email: 'EGORODETSKY@tzmc.gov.il' },
-    { FirstName: 'עאטף', LastName: 'גאנם', id: '', Email: 'AGANEM@tzmc.gov.il' },
-    { FirstName: 'כנעאן', LastName: 'מנסור', id: '', Email: 'KMANSOUR@tzmc.gov.il' },
     { FirstName: 'מוניר', LastName: 'נשאשיבי', id: '', Email: 'MNASHASHIB@tzmc.gov.il' },
-    { FirstName: 'מרואן', LastName: 'ארמלי', id: '', Email: 'MARMALY@tzmc.gov.il' },
-    { FirstName: 'מרואן', LastName: 'ארמלי', id: '', Email: 'MARMALY@tzmc.gov.il' },
     { FirstName: 'תפוצת', LastName: 'חדר ניתוח', id: '', Email: this.user_name + 'DL_SurgeryPlaning@tzmc.gov.il' },
   ];
   @ViewChild('fruitInput') fruitInput: ElementRef<HTMLInputElement>;
