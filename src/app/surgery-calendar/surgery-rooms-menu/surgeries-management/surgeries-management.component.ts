@@ -619,7 +619,8 @@ export class ShareSurgeriesPDFDialog {
   fruits: any[] = [
     { FirstName: 'רובא', LastName: 'יוסף', id: '', Email: 'RYousef@tzmc.gov.il' },
     { FirstName: 'מוניר', LastName: 'נשאשיבי', id: '', Email: 'MNASHASHIB@tzmc.gov.il' },
-    { FirstName: 'תפוצת', LastName: 'חדר ניתוח', id: '', Email: this.user_name + 'DL_SurgeryPlaning@tzmc.gov.il' },
+    { FirstName: 'תפוצת', LastName: 'חדר ניתוח', id: '', Email: 'DL_SurgeryPlaning@tzmc.gov.il' },
+    { FirstName: this.user_name, LastName: '', id: '', Email: this.user_name + '@tzmc.gov.il' },
   ];
   @ViewChild('fruitInput') fruitInput: ElementRef<HTMLInputElement>;
 
