@@ -1,11 +1,13 @@
 import { DatePipe } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { Component, ElementRef, Inject, OnInit, Optional, ViewChild } from '@angular/core';
-import { FormBuilder, FormGroup, FormArray, Validators } from '@angular/forms';
+import { FormBuilder, FormGroup, FormArray, Validators, AbstractControl } from '@angular/forms';
 import { MatDatepickerInputEvent } from '@angular/material/datepicker';
 import { MatDialog, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { MatSnackBar, MatSnackBarHorizontalPosition, MatSnackBarVerticalPosition } from '@angular/material/snack-bar';
 import { MatTableDataSource } from '@angular/material/table';
+import { Observable } from 'rxjs';
+import { map, startWith } from 'rxjs/operators';
 import { environment } from 'src/environments/environment';
 import { DialogContentExampleDialog } from "../../../fill-survey/fill-survey.component";
 
@@ -101,6 +103,8 @@ export class CprNewbornFormComponent implements OnInit {
   additionalProductsDataSource = new MatTableDataSource();
   @ViewChild('printSection') printSection: ElementRef;
   date_now: any = Date.now();
+  filteredNameOptions: Observable<any[]>[] = [];
+  teamMemberOptions = [];
 
   constructor(
     private fb: FormBuilder,
@@ -116,6 +120,7 @@ export class CprNewbornFormComponent implements OnInit {
 
   ngOnInit(): void {
     this.date_now = this._pipe.transform(this.date_now, 'yyyy-MM-dd');
+    this.getUsersToUpdateUser();
   }
 
   appendPredefinedNote(note: string) {
@@ -276,7 +281,7 @@ export class CprNewbornFormComponent implements OnInit {
             gestationAgeWeeks: [data?.motherInfo.gestationAgeWeeks, null],
             babyWeight: [data?.motherInfo.babyWeight, null],
             deliveryMethod: [data?.motherInfo.deliveryMethod, Validators.required],
-            resuscitationStartDate: [data?.motherInfo.resuscitationStartDate == null ? this.date_now : data?.motherInfo.resuscitationStartDate, null]
+            resuscitationStartDate: [data?.motherInfo.resuscitationStartDate, null]
           }),
           teamMembers: this.fb.array(data?.teamMembers.map(member => this.fb.group({
             Id: [member.Id, null],
@@ -383,9 +388,39 @@ export class CprNewbornFormComponent implements OnInit {
             nameAndRole: [data?.doctorSignature.nameAndRole, null],
           })
         });
+        this.initTeamMembersArray();
         this.updateDataSources();
       });
   }
+
+  getUsersToUpdateUser() {
+    this.http
+      .post(environment.url + "GetUsersForInquiries", {
+      })
+      .subscribe((Response) => {
+        // let allOptions = Response["d"];
+        this.teamMemberOptions = Response["d"];
+      });
+  }
+
+  initTeamMembersArray() {
+    const teamMembers = this.resuscitationForm.get('teamMembers') as FormArray;
+
+    teamMembers.controls.forEach((group: AbstractControl, i: number) => {
+      this.filteredNameOptions[i] = group.get('name').valueChanges.pipe(
+        startWith(''),
+        map(value => this._filterTeamMembers(value || ''))
+      );
+    });
+  }
+
+  private _filterTeamMembers(value: string): any[] {
+    const filterValue = value.toLowerCase();
+    return this.teamMemberOptions.filter(option =>
+      option.firstname.toLowerCase().includes(filterValue)
+    );
+  }
+
 
   calculateApgarGrades(key) {
     let tempGroup = this.resuscitationForm.controls['apgarScore'].value;

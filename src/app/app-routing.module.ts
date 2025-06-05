@@ -145,6 +145,8 @@ import { CommercialSupportFormDashboardComponent } from "./form-dashboard/commer
 import { CommercialSupportFormDialogComponent } from "./form-dashboard/commercial-support-form-dashboard/commercial-support-form-dialog/commercial-support-form-dialog.component";
 import { CommercialSupportResearchDialogComponent } from "./form-dashboard/commercial-support-form-dashboard/commercial-support-research-dialog/commercial-support-research-dialog.component";
 import { CommercialSupportPresentationDialogComponent } from "./form-dashboard/commercial-support-form-dashboard/commercial-support-presentation-dialog/commercial-support-presentation-dialog.component";
+import { ServiceUnitEmailListComponent } from './emailsdashboard/service-unit-email-list/service-unit-email-list.component';
+import { ServiceUnitEmailListDialogComponent } from './emailsdashboard/service-unit-email-list/service-unit-email-list-dialog/service-unit-email-list-dialog.component';
 
 // import { GenhdashboardComponent } from './genhdashboard/genhdashboard.component';
 
@@ -322,6 +324,8 @@ const routes: Routes = [
     { path: "GraphsModalComponent2", component: GraphsModalComponent2 },
     { path: "EshpozModalComponent2", component: EshpozModalComponent2 },
     { path: "hospital-tonnage2", component: HospitalTonnageComponent2 },
+    { path: 'service-unit-email-list', component: ServiceUnitEmailListComponent },
+    { path: 'service-unit-email-list-dialog', component: ServiceUnitEmailListDialogComponent },
     // { path: 'genhdashboard', component: GenhdashboardComponent },
 
 
