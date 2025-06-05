@@ -1,0 +1,50 @@
+<h3 class="page-title text-center" dir="rtl">ניהול רשימת תפוצה - יחידת השירות</h3>
+<div class="modern-container" dir="rtl">
+  <!-- Search Field -->
+  <mat-form-field appearance="outline" class="search-field">
+    <mat-label>חיפוש</mat-label>
+    <input matInput placeholder="הקלד לחיפוש..." [(ngModel)]="searchTerm" (input)="applyFilter()">
+    <mat-icon matSuffix>search</mat-icon>
+  </mat-form-field>
+
+  <!-- Data Table -->
+  <div class="table-container mat-elevation-z4">
+    <table mat-table [dataSource]="filteredData" class="modern-table" matSort>
+
+      <ng-container matColumnDef="col1">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>מחלקה</th>
+        <td mat-cell *matCellDef="let element">{{ element.DepartmentHebFullDesc }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="col2">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>מתנדב</th>
+        <td mat-cell *matCellDef="let element">{{ element.VolunteerName }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="col3">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>מספר טלפון</th>
+        <td mat-cell *matCellDef="let element">{{ element.VolunteerCellNumber }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="actions">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>עדכון</th>
+        <td mat-cell *matCellDef="let element">
+          <button mat-raised-button color="primary" (click)="openDialog(element)">
+            <mat-icon>edit</mat-icon> עדכן רשומה
+          </button>
+        </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="columns"></tr>
+      <tr mat-row *matRowDef="let row; columns: columns;"></tr>
+    </table>
+    <mat-paginator [pageSizeOptions]="[7, 14, 24, 50]" showFirstLastButtons></mat-paginator>
+  </div>
+
+  <!-- Action Button -->
+  <div class="action-button">
+    <button mat-raised-button color="primary" (click)="openDialog('')">
+      <mat-icon>add</mat-icon> הוסף רשומה
+    </button>
+  </div>
+</div>

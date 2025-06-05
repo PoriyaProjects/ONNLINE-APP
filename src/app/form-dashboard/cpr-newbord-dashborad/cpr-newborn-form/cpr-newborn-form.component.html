@@ -37,7 +37,7 @@
                             <input matInput formControlName="babyName">
                         </mat-form-field>
 
-                        <mat-form-field appearance="outline" style="width: 33.333%;">
+                        <!-- <mat-form-field appearance="outline" style="width: 33.333%;">
                             <mat-label>מועד תחילת ההחייאה</mat-label>
                             <input matInput [matDatepicker]="resuscitationStartDatepicker"
                                 formControlName="resuscitationStartDate"
@@ -45,6 +45,10 @@
                             <mat-datepicker-toggle matSuffix
                                 [for]="resuscitationStartDatepicker"></mat-datepicker-toggle>
                             <mat-datepicker #resuscitationStartDatepicker></mat-datepicker>
+                        </mat-form-field> -->
+                        <mat-form-field appearance="outline" style="width: 33.333%;">
+                            <mat-label>מועד תחילת ההחייאה</mat-label>
+                            <input matInput type="time" formControlName="resuscitationStartDate">
                         </mat-form-field>
 
                         <mat-form-field appearance="outline" style="width: 33.333%;">
@@ -130,9 +134,19 @@
                 <div *ngFor="let member of resuscitationForm.get('teamMembers')['controls']; let i = index"
                     [formGroupName]="i" class="text-right">
                     <!-- {{member | json}} -->
-                    <mat-form-field appearance="outline" style="width: 33.333%;">
+                    <!-- <mat-form-field appearance="outline" style="width: 33.333%;">
                         <mat-label>שם</mat-label>
                         <input matInput formControlName="name" placeholder="הכנס שם">
+                    </mat-form-field> -->
+                    <mat-form-field appearance="outline" style="width: 33.333%;">
+                        <mat-label>שם</mat-label>
+                        <input matInput formControlName="name" [matAutocomplete]="auto" placeholder="הכנס שם">
+                        <mat-autocomplete #auto="matAutocomplete">
+                            <mat-option *ngFor="let option of filteredNameOptions[i] | async"
+                                [value]="option.firstname + ' ' + option.lastname">
+                                {{ option.firstname }} {{ option.lastname }} - {{ option.derug }}
+                            </mat-option>
+                        </mat-autocomplete>
                     </mat-form-field>
                     <mat-form-field appearance="outline" style="width: 33.333%;">
                         <mat-label>תפקיד</mat-label>
