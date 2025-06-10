@@ -37,16 +37,16 @@ export class CommercialSupportPresentationDialogComponent implements OnInit {
       RequesterID: new FormControl(data?.RequesterID, Validators.required),
       Requester: new FormControl(data?.Requester, Validators.required),
       RequesterDetails: new FormControl(data?.RequesterDetails, null),
-      PresentationSubject: new FormControl(data?.PresentationSubject, null),
-      Odeince: new FormControl(data?.Odeince, null),
-      PresentationDate: new FormControl(data?.PresentationDate, null),
+      PresentationSubject: new FormControl(data?.PresentationSubject, Validators.required),
+      Odeince: new FormControl(data?.Odeince, Validators.required),
+      PresentationDate: new FormControl(data?.PresentationDate, Validators.required),
       PresentationTime: new FormControl(data?.PresentationTime, null),
       Location: new FormControl(data?.Location, null),
       ManagerSign: new FormControl(data?.ManagerSign, null),
-      CompanyName: new FormControl(data?.CompanyName, null),
-      ReferenceName: new FormControl(data?.ReferenceName, null),
-      Phone: new FormControl(data?.Phone, null),
-      Email: new FormControl(data?.Email, null),
+      CompanyName: new FormControl(data?.CompanyName, Validators.required),
+      ReferenceName: new FormControl(data?.ReferenceName, Validators.required),
+      Phone: new FormControl(data?.Phone, Validators.required),
+      Email: new FormControl(data?.Email, Validators.required),
     });
   }
 

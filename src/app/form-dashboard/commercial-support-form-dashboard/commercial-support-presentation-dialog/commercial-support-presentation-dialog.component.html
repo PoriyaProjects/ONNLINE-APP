@@ -26,12 +26,12 @@
                     </mat-form-field>
 
                     <mat-form-field appearance="outline" *ngIf="PresentationRequestDto.get('Requester')?.value != null">
-                        <mat-label>קהל היעד</mat-label>
+                        <mat-label>קהל היעד*</mat-label>
                         <input matInput formControlName="Odeince">
                     </mat-form-field>
 
                     <mat-form-field appearance="outline" *ngIf="PresentationRequestDto.get('Requester')?.value != null">
-                        <mat-label>מועד ההרצאה</mat-label>
+                        <mat-label>מועד ההרצאה*</mat-label>
                         <input matInput [matDatepicker]="picker" formControlName="PresentationDate">
                         <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
                         <mat-datepicker #picker></mat-datepicker>
@@ -64,7 +64,7 @@
                     <!-- נושא הרצאה -->
                     <mat-form-field appearance="outline" style="width: 100%;"
                         *ngIf="PresentationRequestDto.get('Requester')?.value != null">
-                        <mat-label>נושא הרצאה</mat-label>
+                        <mat-label>נושא הרצאה*</mat-label>
                         <textarea matInput formControlName="PresentationSubject" rows="3"></textarea>
                     </mat-form-field>
                 </div>
@@ -72,22 +72,22 @@
                 <div fxLayout="column" fxLayoutGap="20px" style="text-align: right;"
                     *ngIf="PresentationRequestDto.get('Requester')?.value != null">
                     <mat-form-field appearance="outline">
-                        <mat-label>שם החברה</mat-label>
+                        <mat-label>שם החברה*</mat-label>
                         <input matInput formControlName="CompanyName">
                     </mat-form-field>
 
                     <mat-form-field appearance="outline">
-                        <mat-label>שם הנציג</mat-label>
+                        <mat-label>שם הנציג*</mat-label>
                         <input matInput formControlName="ReferenceName">
                     </mat-form-field>
 
                     <mat-form-field appearance="outline">
-                        <mat-label>טלפון</mat-label>
+                        <mat-label>טלפון הנציג*</mat-label>
                         <input matInput formControlName="Phone">
                     </mat-form-field>
 
                     <mat-form-field appearance="outline">
-                        <mat-label>מייל</mat-label>
+                        <mat-label>מייל הנציג*</mat-label>
                         <input matInput formControlName="Email">
                     </mat-form-field>
                 </div>
