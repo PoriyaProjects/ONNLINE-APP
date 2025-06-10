@@ -506,7 +506,7 @@ export class CprNewbornFormComponent implements OnInit {
         .post(
           environment.url + "GetMotherInfoByPassportID",
           {
-            _passport: this.resuscitationForm.controls['motherInfo'].value.motherId
+            _passport: _passport.replace('-', '').trim()
           }
         )
         .subscribe((Response) => {

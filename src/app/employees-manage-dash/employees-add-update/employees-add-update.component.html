@@ -171,6 +171,16 @@
                             </div>
                             <div class="col-3">
                                 <mat-form-field>
+                                    <mat-label>סיבת סיום עבודה</mat-label>
+                                    <mat-select formControlName="EndWorkReason"
+                                        (selectionChange)="setEndWorkReason($event)" aria-placeholder="סיבת סיום עבודה">
+                                        <mat-option *ngFor="let reason of end_work_reasons" [value]="reason.Row_ID">
+                                            {{reason.Description}} </mat-option>
+                                    </mat-select>
+                                </mat-form-field>
+                            </div>
+                            <div class="col-3">
+                                <mat-form-field>
                                     <mat-label>סקטור</mat-label>
                                     <mat-select formControlName="EmployeeSektorID"
                                         (selectionChange)="sektorSelection($event.value)" aria-placeholder="סקטור">

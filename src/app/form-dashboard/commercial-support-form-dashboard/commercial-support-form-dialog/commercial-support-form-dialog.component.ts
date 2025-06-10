@@ -114,7 +114,7 @@ export class CommercialSupportFormDialogComponent {
       Location: new FormControl(data?.Location, null),
       JoinPerson: new FormControl(data?.JoinPerson, null),
       Position: new FormControl(data?.Position, null),
-      Currency: new FormControl(data?.Currency, Validators.required),
+      Currency: new FormControl(data?.Currency, null),
       SupportAmount: new FormControl(data?.SupportAmount, null),
       flight_directService: new FormControl(data?.flight_directService, null),
       flight_extraOptions: new FormControl(data?.flight_extraOptions, null),

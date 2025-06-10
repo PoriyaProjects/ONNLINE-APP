@@ -13,7 +13,6 @@ import { FillSurveyComponent } from 'src/app/fill-survey/fill-survey.component';
 import { MatTableDataSource } from '@angular/material/table';
 import { Observable } from 'rxjs';
 import { map, startWith } from 'rxjs/operators';
-import { isNull } from '@angular/compiler/src/output/output_ast';
 
 export interface UsersEmployee {
   id: string;
@@ -46,6 +45,7 @@ export class EmployeesAddUpdateComponent implements OnInit {
   FunctionsList = [];
   EmployeeBlossomSektors = [];
   DepartmentsList = [];
+  end_work_reasons = [];
   WorkPlacesList = [];
   actionColumns = [''];
   previewImage: string | null = null;
@@ -84,6 +84,7 @@ export class EmployeesAddUpdateComponent implements OnInit {
     this.getRanksList();
     this.getWorkPlacesList();
     this.getEmployeesBlossomSektorList();
+    this.getEmployeesEndWorkReasons();
     this.getEmployeeDepartmentList();
 
     this.filteredOptions = this.manfilter.valueChanges
@@ -190,6 +191,7 @@ export class EmployeesAddUpdateComponent implements OnInit {
           WorkPlaceID: new FormControl(WorkPlaceID, null),
           EndWorkDate: new FormControl(this.employee.EndWorkDate, null),
           DateToEndWork: new FormControl(this.employee.DateToEndWork, null),
+          EndWorkReason: new FormControl(this.employee.EndWorkReason, null),
           CarType: new FormControl(this.employee.CarType, null),
           CarNumber: new FormControl(this.employee.CarNumber, null),
           CarType2: new FormControl(this.employee.CarType2, null),
@@ -396,6 +398,15 @@ export class EmployeesAddUpdateComponent implements OnInit {
       });
   }
 
+  getEmployeesEndWorkReasons() {
+    this.http
+      .post(this.Api + "GetEmployeesEndWorkReasons", {
+      })
+      .subscribe((Response) => {
+        this.end_work_reasons = Response["d"];
+      });
+  }
+
   openSnackBar(message) {
     this._snackBar.open(message, 'X', {
       duration: 5000,
@@ -466,6 +477,7 @@ export class EmployeesAddUpdateComponent implements OnInit {
               WorkPlaceID: new FormControl(WorkPlaceID, null),
               EndWorkDate: new FormControl(this.employee.EndWorkDate, null),
               DateToEndWork: new FormControl(this.employee.DateToEndWork, null),
+              EndWorkReason: new FormControl(this.employee.EndWorkReason, null),
               CarType: new FormControl(this.employee.CarType, null),
               CarNumber: new FormControl(this.employee.CarNumber, null),
               CarType2: new FormControl(this.employee.CarType2, null),
@@ -502,6 +514,9 @@ export class EmployeesAddUpdateComponent implements OnInit {
     } else {
       this.employeeWorkDetails.controls['InternLearnCountryDesc'].setValue('');
     }
+  }
+
+  setEndWorkReason(country) {
   }
 
   sektorSelection(sektor) {

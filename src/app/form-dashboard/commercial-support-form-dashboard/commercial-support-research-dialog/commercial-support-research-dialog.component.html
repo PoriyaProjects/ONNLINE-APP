@@ -26,18 +26,18 @@
                     </mat-form-field>
 
                     <mat-form-field appearance="outline" *ngIf="ResearchRequestDto.get('Requester')?.value != null">
-                        <mat-label>מספר המחקר</mat-label>
+                        <mat-label>מספר המחקר*</mat-label>
                         <input matInput formControlName="ResearchNumber">
                     </mat-form-field>
 
                     <mat-form-field appearance="outline" *ngIf="ResearchRequestDto.get('Requester')?.value != null">
-                        <mat-label>שם החברה</mat-label>
+                        <mat-label>שם החברה*</mat-label>
                         <input matInput formControlName="CompanyName">
                     </mat-form-field>
 
                     <mat-form-field appearance="outline" *ngIf="ResearchRequestDto.get('Requester')?.value != null"
                         style="width: 100%;">
-                        <mat-label>שם המחקר</mat-label>
+                        <mat-label>שם המחקר*</mat-label>
                         <textarea matInput formControlName="ResearchName" rows="3"></textarea>
                     </mat-form-field>
 

@@ -357,9 +357,9 @@ export class WhatsappMessagesDashboardComponent implements OnInit, OnDestroy {
 
     if (id === 0) {
       customInputs.controls.forEach((group: AbstractControl) => {
-        const recipient = group.get('Recipient')?.value || '';
-        const fullMessage = this.setMessageWithFixedHead(recipient, fullMessageContent);
-        group.get('Message_Content')?.setValue(fullMessage);
+        // const recipient = group.get('Recipient')?.value || '';
+        // const fullMessage = this.setMessageWithFixedHead(recipient, fullMessageContent);
+        group.get('Message_Content')?.setValue(fullMessageContent);
       });
     }
   }
