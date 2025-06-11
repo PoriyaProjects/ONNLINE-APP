@@ -11,7 +11,8 @@
     <mat-card class="select-card">
         <mat-card-title>
             <mat-form-field>
-                <input matInput type="text" placeholder="קבוצה חדשה" [(ngModel)]="newCategory" (blur)="createNewCategory()" />
+                <input matInput type="text" placeholder="קבוצה חדשה" [(ngModel)]="newCategory"
+                    (blur)="createNewCategory()" />
             </mat-form-field>
         </mat-card-title>
     </mat-card>
@@ -31,7 +32,7 @@
             </mat-form-field>
             <mat-selection-list [(ngModel)]="selectedLeftUsers" class="selection-list">
                 <mat-list-option *ngFor="let user of filteredLeftUsers()" [value]="user">
-                    {{ user.Full_Name }} - {{ user.Department }}
+                    {{ user.Full_Name }} - {{ user.Department }} - {{ user.Function }}
                 </mat-list-option>
             </mat-selection-list>
             <button mat-raised-button color="primary" (click)="moveAllLeft()">הכל</button>
@@ -47,7 +48,7 @@
             </mat-form-field>
             <mat-selection-list [(ngModel)]="selectedRightUsers" class="selection-list">
                 <mat-list-option *ngFor="let user of filteredRightUsers()" [value]="user">
-                    {{ user.Full_Name }} - {{ user.Department }}
+                    {{ user.Full_Name }} - {{ user.Department }} - {{ user.Function }}
                 </mat-list-option>
             </mat-selection-list>
             <button mat-raised-button color="accent" (click)="moveAllRight()">הכל</button>
@@ -56,4 +57,4 @@
 </div>
 <hr>
 <button mat-raised-button style="background-color: #1976d2;color: #ffffff;width: 100%;"
-    (click)="saveAllPermissions()">שמירה</button>
+    *ngIf="choosen_card != undefined" (click)="saveAllPermissions()">שמירה</button>

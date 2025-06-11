@@ -147,23 +147,6 @@
 
               </table>
             </div>
-          </mat-card-content>
-        </mat-card>
-
-        <div class="continue-btn">
-          <button mat-button matStepperNext style="background-color: #c7e5e2;">המשך</button>
-        </div>
-      </form>
-    </mat-step>
-    <mat-step [stepControl]="SupportActivityDto" *ngIf="SupportRequestDto.get('Requester')?.value != null">
-      <form [formGroup]="SupportRequestDto">
-        <ng-template matStepLabel>פרטי בקשה</ng-template>
-
-        <mat-card class="form-card">
-          <mat-card-title class="text-center">
-            סכום תמיכה (אם החברה מעבירה סכום כללי)
-          </mat-card-title>
-          <mat-card-content>
             <div class="amount-section">
               <mat-form-field appearance="outline" style="width: 33.333%;">
                 <mat-label>מטבע</mat-label>
@@ -191,6 +174,24 @@
                 האם הסכום כולל תקורה
               </mat-checkbox>
             </div>
+          </mat-card-content>
+        </mat-card>
+
+        <div class="continue-btn">
+          <button mat-button matStepperNext style="background-color: #c7e5e2;">המשך</button>
+        </div>
+      </form>
+    </mat-step>
+    <mat-step [stepControl]="SupportActivityDto" *ngIf="SupportRequestDto.get('Requester')?.value != null">
+      <form [formGroup]="SupportRequestDto">
+        <ng-template matStepLabel>פרטי בקשה</ng-template>
+
+        <mat-card class="form-card">
+          <mat-card-title class="text-center">
+            סכום תמיכה (במידה והחברה מעבירה סכום כללי)
+          </mat-card-title>
+          <mat-card-content>
+            
             <p><br>
               <strong>** יש לצרף מכתב תמיכה מהחברה המופנה למנהל המרכז הרפואי. במכתב יצוין שהחברה מעוניינת לתמוך בנסיעת
                 רופא

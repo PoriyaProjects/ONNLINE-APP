@@ -35,6 +35,8 @@ import * as XLSX from 'xlsx';
 import { map, startWith } from 'rxjs/operators';
 import { MatChipInputEvent } from '@angular/material/chips';
 import { MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
+import * as ExcelJS from 'exceljs';
+import * as FileSaver from 'file-saver';
 
 const colors: any = {
   red: '#ad2121',
@@ -531,41 +533,74 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
     });
   }
 
-  fileName = 'תבנית ניתוחים';
-  planningExcelFile(json, department) {
-    let json_to_excel = [];
-    json.forEach(element => {
-      json = {
-        'מספר מקרה': element.casenumber,
-        'חדר': element.room,
-        'שם מלא, ת.ז': element.id,
-        'גיל': element.age,
-        // 'קוד פרוצדורה': element.code,
-        'תיאור פרוצדורה': element.s_name,
-        'תנוחת השכבה': element.position,
-        'בידוד': element.isolation,
-        'בנק הדם': element.blood,
-        'שם מנתח': element.doctor,
-        'הערות': element.note,
-        'מכשירים נוספים': element.tools,
-        'סוג הרדמה': element.anesthesia,
-        'נדרש שיקוף': element.dimot,
-        'מחלקת אשפוז': element.hospitalization,
-        'משך משוער': element.duration,
-      }
-      json_to_excel.push(json);
+  async planningExcelFile(json, department) {
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('תוכנית ניתוחים', {
+      views: [{ rightToLeft: true }]
     });
-    const worksheet: XLSX.WorkSheet = XLSX.utils.json_to_sheet(json_to_excel);
-    /* generate workbook and add the worksheet */
-    const wb: XLSX.WorkBook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, worksheet, 'תוכנית ניתוחים');
-
-    /* save to file */
-    XLSX.writeFile(wb, this.fileName + ' מחלקה ' + department + '.xlsx');
+  
+    // Add merged header row on top
+    const columnCount = 15; // Adjust based on number of columns
+    const titleCellRange = `A1:P1`;
+    worksheet.mergeCells(titleCellRange);
+    worksheet.getCell('A1').value = `תוכנית ניתוחים - מחלקה ${department}`;
+    worksheet.getCell('A1').alignment = { horizontal: 'center', vertical: 'middle' };
+    worksheet.getCell('A1').font = { size: 16, bold: true, name: 'Arial' };
+  
+    // Define headers (row 2)
+    worksheet.addRow([
+      'מספר מקרה', 'חדר', 'שם מלא, ת.ז', 'גיל', 'תיאור פרוצדורה',
+      'תנוחת השכבה', 'בידוד', 'בנק הדם', 'שם מנתח', 'הערות',
+      'מכשירים נוספים', 'סוג הרדמה', 'נדרש שיקוף', 'מחלקת אשפוז', 'משך משוער'
+    ]);
+  
+    // Style header row (row 2)
+    const headerRow = worksheet.getRow(2);
+    headerRow.font = { bold: true, size: 18 };
+    headerRow.alignment = { horizontal: 'center', vertical: 'middle' };
+    headerRow.eachCell(cell => {
+      cell.border = {
+        top: { style: 'thin' },
+        left: { style: 'thin' },
+        bottom: { style: 'thin' },
+        right: { style: 'thin' }
+      };
+    });
+  
+    // Add data rows (starting from row 3)
+    json.forEach(item => {
+      worksheet.addRow([
+        item.casenumber, item.room, item.id, item.age, item.s_name,
+        item.position, item.isolation, item.blood, item.doctor, item.note,
+        item.tools, item.anesthesia, item.dimot, item.hospitalization, item.duration
+      ]);
+    });  
+    // Style all data rows
+    worksheet.eachRow((row, rowNumber) => {
+      if (rowNumber <= 2) return; // Skip merged title and header
+      row.eachCell(cell => {
+        cell.font = { size: 16 };
+        cell.alignment = { horizontal: 'center', vertical: 'middle' };
+        cell.border = {
+          top: { style: 'thin' },
+          left: { style: 'thin' },
+          bottom: { style: 'thin' },
+          right: { style: 'thin' }
+        };
+      });
+    });
+  
+    // Save the file
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], { type: 'application/octet-stream' });
+    FileSaver.saveAs(blob, `תוכנית ניתוחים מחלקה ${department}.xlsx`);
   }
 
   openShareDialog(pdf, department) {
-    let dialogRef = this.dialog.open(ShareSurgeriesPDFDialog);
+    let dialogRef = this.dialog.open(ShareSurgeriesPDFDialog, {
+      width: '25%',
+      height: '50%',
+    });
     dialogRef.componentInstance.reportArray = pdf;
     dialogRef.componentInstance.department = department;
     dialogRef.componentInstance.arrivalDate = this.data.room.ArrivalDate;
@@ -614,16 +649,12 @@ export class ShareSurgeriesPDFDialog {
   disableBtn: boolean;
   separatorKeysCodes: number[] = [ENTER, COMMA];
   fruits: any[] = [
-    { FirstName: 'מאיר', LastName: 'רוח', id: '', Email: 'MRuach@tzmc.gov.il' },
-    { FirstName: 'רובא', LastName: 'יוסף', id: '', Email: 'RYousef@tzmc.gov.il' },
-    { FirstName: 'נוי', LastName: 'טובול', id: '', Email: 'NYairtubul@tzmc.gov.il' },
-    { FirstName: 'אילנה', LastName: 'גורודצקי', id: '', Email: 'EGORODETSKY@tzmc.gov.il' },
-    { FirstName: 'עאטף', LastName: 'גאנם', id: '', Email: 'AGANEM@tzmc.gov.il' },
-    { FirstName: 'כנעאן', LastName: 'מנסור', id: '', Email: 'KMANSOUR@tzmc.gov.il' },
+    { FirstName: 'אילנה', LastName: 'גורודצקי', id: '', Email: 'EGorodetsky@tzmc.gov.il' },
+    { FirstName: 'כנעאן', LastName: 'מנסור', id: '', Email: 'KMansour@tzmc.gov.il' },
+    { FirstName: 'רנא', LastName: 'סלמאן', id: '', Email: 'RSALMAN@tzmc.gov.il' },
     { FirstName: 'מוניר', LastName: 'נשאשיבי', id: '', Email: 'MNASHASHIB@tzmc.gov.il' },
-    { FirstName: 'מרואן', LastName: 'ארמלי', id: '', Email: 'MARMALY@tzmc.gov.il' },
-    { FirstName: 'מרואן', LastName: 'ארמלי', id: '', Email: 'MARMALY@tzmc.gov.il' },
-    { FirstName: 'תפוצת', LastName: 'חדר ניתוח', id: '', Email: this.user_name + 'DL_SurgeryPlaning@tzmc.gov.il' },
+    { FirstName: 'תפוצת', LastName: 'חדר ניתוח', id: '', Email: 'DL_SurgeryPlaning@tzmc.gov.il' },
+    { FirstName: this.user_name, LastName: '', id: '', Email: this.user_name + '@tzmc.gov.il' },
   ];
   @ViewChild('fruitInput') fruitInput: ElementRef<HTMLInputElement>;
 

@@ -6,7 +6,7 @@
       <input matInput formControlName="Title" />
     </mat-form-field>
     <mat-form-field class="example-full-width">
-      <mat-label>קישור</mat-label>
+      <mat-label>קישור לקיצור</mat-label>
       <input matInput formControlName="Link" />
     </mat-form-field>
     <mat-form-field class="example-full-width">
@@ -19,7 +19,10 @@
     </mat-form-field>
     <mat-form-field class="example-full-width">
       <mat-label>מיקום קבוצת טאבים</mat-label>
-      <input matInput formControlName="TabsPlace" />
+      <mat-select formControlName="TabsPlace">
+        <mat-option value="left">שמאל</mat-option>
+        <mat-option value="right">ימין</mat-option>
+      </mat-select>
     </mat-form-field>
     <mat-form-field class="example-full-width">
       <mat-label>מיון</mat-label>

@@ -1,12 +1,13 @@
 import { DatePipe } from '@angular/common';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Component, OnInit, ChangeDetectorRef, OnDestroy } from '@angular/core';
-import { FormArray, FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
+import { AbstractControl, FormArray, FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar, MatSnackBarHorizontalPosition, MatSnackBarVerticalPosition } from '@angular/material/snack-bar';
 import { MatTableDataSource } from '@angular/material/table';
 import { Observable } from 'rxjs';
 import { environment } from 'src/environments/environment';
+import { ConfirmationDialogService } from '../confirmation-dialog/confirmation-dialog.service';
 import { WhatsappCategoriesPermissionsComponent } from './whatsapp-categories-permissions/whatsapp-categories-permissions.component';
 
 @Component({
@@ -53,7 +54,8 @@ export class WhatsappMessagesDashboardComponent implements OnInit, OnDestroy {
     private dialog: MatDialog,
     private _snackBar: MatSnackBar,
     private _datePipe: DatePipe,
-    private cd: ChangeDetectorRef
+    private cd: ChangeDetectorRef,
+    private confirmationDialogService: ConfirmationDialogService
   ) { }
 
   ngOnInit() {
@@ -99,12 +101,12 @@ export class WhatsappMessagesDashboardComponent implements OnInit, OnDestroy {
     this.customFormArray.removeAt(index);
   }
 
-  addInput(phone, fullName, sender) {
+  addInput(phone, fullName, sender, fixed_message = '') {
     const contact = new FormGroup({
       Recipient_Type: new FormControl('0', Validators.required),
       Phone_Number: new FormControl(phone, Validators.required),
       Recipient: new FormControl(fullName, null),
-      Message_Content: new FormControl('', Validators.required),
+      Message_Content: new FormControl(fixed_message, Validators.required),
       SenderIDFK: new FormControl(sender, Validators.required),
       Message_Timing: new FormControl(null, null),
       Message_Timing_Time: new FormControl(null, null),
@@ -226,7 +228,6 @@ export class WhatsappMessagesDashboardComponent implements OnInit, OnDestroy {
       const formData = new FormData();
       formData.append('files', this.selectedFiles[0]);
       this.http.post(environment.url + 'whatsappRecieveFile', formData, { responseType: 'text' }).subscribe((response: string) => {
-        // this.http.post('http://srv-ipracticom:8080/WebService.asmx/WhatsappRecieveFile', formData, { responseType: 'text' }).subscribe((response: string) => {
         // Parse the XML response to extract the text content
         const parser = new DOMParser();
         const xmlDoc = parser.parseFromString(response, 'text/xml');
@@ -235,7 +236,20 @@ export class WhatsappMessagesDashboardComponent implements OnInit, OnDestroy {
       });
     }
     else {
-      this.sendMessages();
+      this.confirmationDialogService
+        .confirm("נא לאשר..", "לשוח ל " + this.total_number_of_reciepents + " נמענים, אתה בטוח?")
+        .then((confirmed) => {
+          console.log("User confirmed:", confirmed);
+          if (confirmed) {
+            this.sendMessages();
+          } else {
+          }
+        })
+        .catch(() =>
+          console.log(
+            "User dismissed the dialog (e.g., by using ESC, clicking the cross icon, or clicking outside the dialog)"
+          )
+        );
     }
   }
 
@@ -335,15 +349,17 @@ export class WhatsappMessagesDashboardComponent implements OnInit, OnDestroy {
       });
   }
 
-  fillAllMessageContentFields(id) {
-    let messageContent = this.customForm.controls['customInputs'].value[0].Message_Content;
-    let firstNewlineIndex = messageContent.indexOf('\n');
+  fillAllMessageContentFields(id: number): void {
+    const customInputs = this.customForm.get('customInputs') as FormArray;
 
-    let message_content = firstNewlineIndex !== -1 ? messageContent.substring(firstNewlineIndex + 1) : messageContent;
-    if (id == 0) {
-      this.customForm.controls['customInputs'].value.forEach((element, index) => {
-        let message = this.setMessageWithFixedHead(element.Recipient, message_content);
-        this.customForm.controls['customInputs']['controls'][index].controls.Message_Content.setValue(message);
+    // Get the full original content (not cutting the first line)
+    const fullMessageContent: string = customInputs.at(0).get('Message_Content')?.value || '';
+
+    if (id === 0) {
+      customInputs.controls.forEach((group: AbstractControl) => {
+        // const recipient = group.get('Recipient')?.value || '';
+        // const fullMessage = this.setMessageWithFixedHead(recipient, fullMessageContent);
+        group.get('Message_Content')?.setValue(fullMessageContent);
       });
     }
   }
@@ -414,7 +430,8 @@ export class WhatsappMessagesDashboardComponent implements OnInit, OnDestroy {
         this.total_number_of_reciepents = t.length;
         this.customForm.controls['customInputs'] = this.fb.array([]);
         for (let i = 0; i < t.length; i++) {
-          this.addInput(t[i].Phone_Number, t[i].Employee_Name, '1');
+          if (category == '1') this.addInput(t[i].Phone_Number, t[i].Employee_Name, '1', `התקבלה התראת אש !\n אם הנך במרכז הרפואי, נא להגיע בהקדם ל : `);
+          else this.addInput(t[i].Phone_Number, t[i].Employee_Name, '1');
         }
       });
   }

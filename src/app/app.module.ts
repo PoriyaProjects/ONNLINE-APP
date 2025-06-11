@@ -278,6 +278,8 @@ import { CommercialSupportPresentationDialogComponent } from './form-dashboard/c
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { CldashboardModule } from './cldashboard/cldashboard.module';
 import { WhatsappCategoriesPermissionsComponent } from './whatsapp-messages-dashboard/whatsapp-categories-permissions/whatsapp-categories-permissions.component';
+import { ServiceUnitEmailListComponent } from './emailsdashboard/service-unit-email-list/service-unit-email-list.component';
+import { ServiceUnitEmailListDialogComponent } from './emailsdashboard/service-unit-email-list/service-unit-email-list-dialog/service-unit-email-list-dialog.component';
 
 
 
@@ -508,6 +510,8 @@ const maskConfig: Partial<IConfig> = {
     CommercialSupportResearchDialogComponent,
     CommercialSupportPresentationDialogComponent,
     WhatsappCategoriesPermissionsComponent,
+    ServiceUnitEmailListComponent,
+    ServiceUnitEmailListDialogComponent,
   ],
   imports: [
     MatIconModule,
