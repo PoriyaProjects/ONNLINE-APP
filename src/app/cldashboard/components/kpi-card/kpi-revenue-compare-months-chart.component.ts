@@ -44,7 +44,7 @@ export class RevenueCompareMonthsChartComponent extends BaseRevenueChartComponen
 
     
     ngAfterViewInit(): void {
-        console.log('[CompareMonthsChart ngAfterViewInit] Force initial draw');
+       // console.log('[CompareMonthsChart ngAfterViewInit] Force initial draw');
         this.chartService.onReady(() => this.draw());
     }
 
@@ -52,7 +52,7 @@ export class RevenueCompareMonthsChartComponent extends BaseRevenueChartComponen
         const redrawKeys = ['rawChartData', 'isLoading', 'selectedDeptGroupId'];
         const triggered = redrawKeys.filter(key => key in changes);
         if (triggered.length > 0) {
-            console.log('[CompareMonthsChart ngOnChanges] REDRAW triggered by:', triggered);
+           // console.log('[CompareMonthsChart ngOnChanges] REDRAW triggered by:', triggered);
             this.draw();
         }
     }
@@ -64,10 +64,10 @@ export class RevenueCompareMonthsChartComponent extends BaseRevenueChartComponen
     protected draw(): void {
         if (!this.rawChartData?.length || !this.chartContainer?.nativeElement) return;
 
-        console.log('[CompareMonthsChart draw] rawChartData:', this.rawChartData);
+       // console.log('[CompareMonthsChart draw] rawChartData:', this.rawChartData);
 
         const chartData = this.prepareCompareChartData();
-        console.log('[CompareMonthsChart draw] chartData:', chartData);
+       // console.log('[CompareMonthsChart draw] chartData:', chartData);
 
         const dataTable = google.visualization.arrayToDataTable(chartData);
 
@@ -85,10 +85,7 @@ const options = getChartOptions({
     locale: this.locale,
     height: 400,
     showAnnotations: this.showAnnotations,
-    // vAxis: {
-    //     minValue: 0,
-    //     format: vAxisFormat
-    // }
+ 
 });
         const chart = new google.visualization.BarChart(this.chartContainer.nativeElement);
         chart.draw(dataTable, options);
@@ -96,33 +93,7 @@ const options = getChartOptions({
 
 
 
-    // protected prepareCompareChartData(): any[] {
-    //     const chartData: any[] = [['תקופה', 'הכנסה']];
-    
-    //     // ⚠️ Use LAST available label as current month!
-    //     const lastItem = this.rawChartData[this.rawChartData.length - 1];
-    //     const { month: currentMonth, year: currentYear } = this.extractMonthYear(lastItem.label);
-    
-    //     const prevMonthDate = new Date(currentYear, currentMonth - 2, 1);
-    //     const prevYearDate = new Date(currentYear - 1, currentMonth - 1, 1);
-    
-    //     // Find values
-    //     const valueCurrent = this.findValue(currentMonth, currentYear);
-    //     const valuePrevMonth = this.findValue(prevMonthDate.getMonth() + 1, prevMonthDate.getFullYear());
-    //     const valuePrevYear = this.findValue(currentMonth, currentYear - 1);
-    
-    //     console.log('🟢 CompareMonths → Dates:');
-    //     console.log('Current:', currentMonth, currentYear, '→ Value:', valueCurrent);
-    //     console.log('Previous Month:', prevMonthDate.getMonth() + 1, prevMonthDate.getFullYear(), '→ Value:', valuePrevMonth);
-    //     console.log('Previous Year:', currentMonth, currentYear - 1, '→ Value:', valuePrevYear);
-    
-    //     chartData.push(['חודש נוכחי', valueCurrent]);
-    //     chartData.push(['חודש קודם', valuePrevMonth]);
-    //     chartData.push(['חודש זה שנה קודמת', valuePrevYear]);
-    
-    //     console.log('[CompareMonthsChartData] FINAL:', chartData);
-    //     return chartData;
-    // }
+   
     
     protected prepareCompareChartData(): any[] {
         const chartData: any[] = [['תקופה', 'הכנסה', { role: 'annotation' }]];
@@ -175,16 +146,16 @@ const options = getChartOptions({
         const valuePrevMonth = findValue(prevMonthDate.getMonth() + 1, prevMonthDate.getFullYear());
         const valuePrevYear = findValue(currentMonth, currentYear - 1);
     
-        console.log('🟢 CompareMonths → Dates:');
-        console.log('Current:', currentMonth, currentYear, '→ Value:', valueCurrent);
-        console.log('Previous Month:', prevMonthDate.getMonth() + 1, prevMonthDate.getFullYear(), '→ Value:', valuePrevMonth);
-        console.log('Previous Year:', currentMonth, currentYear - 1, '→ Value:', valuePrevYear);
+       // console.log('🟢 CompareMonths → Dates:');
+       // console.log('Current:', currentMonth, currentYear, '→ Value:', valueCurrent);
+       // console.log('Previous Month:', prevMonthDate.getMonth() + 1, prevMonthDate.getFullYear(), '→ Value:', valuePrevMonth);
+       // console.log('Previous Year:', currentMonth, currentYear - 1, '→ Value:', valuePrevYear);
     
         chartData.push(['חודש נוכחי', valueCurrent, formatAnnotation(valueCurrent)]);
         chartData.push(['חודש קודם', valuePrevMonth, formatAnnotation(valuePrevMonth)]);
         chartData.push(['חודש זה שנה קודמת', valuePrevYear, formatAnnotation(valuePrevYear)]);
     
-        console.log('[CompareMonthsChartData] FINAL:', chartData);
+       // console.log('[CompareMonthsChartData] FINAL:', chartData);
         return chartData;
     }
     

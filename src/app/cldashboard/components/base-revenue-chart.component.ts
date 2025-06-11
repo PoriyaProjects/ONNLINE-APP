@@ -42,7 +42,7 @@ onControlChange(): void {
         const keysTriggered = Object.keys(changes).filter(k => redrawKeys.includes(k));
 
         if (keysTriggered.length) {
-            console.log('[Chart ngOnChanges] REDRAW triggered by:', keysTriggered);
+           // console.log('[Chart ngOnChanges] REDRAW triggered by:', keysTriggered);
             this.draw();
         }
     }
@@ -51,10 +51,10 @@ onControlChange(): void {
 
 
 protected prepareChartData(): any[] {
-    console.log('[prepareChartData] chartType:', this.chartType);
-    console.log('[prepareChartData] selectedDeptGroupId:', this.selectedDeptGroupId);
-    console.log('[prepareChartData] shortFormat:', this.shortFormat);
-    console.log('[prepareChartData] rawChartData:', this.rawChartData);
+   // console.log('[prepareChartData] chartType:', this.chartType);
+   // console.log('[prepareChartData] selectedDeptGroupId:', this.selectedDeptGroupId);
+   // console.log('[prepareChartData] shortFormat:', this.shortFormat);
+   // console.log('[prepareChartData] rawChartData:', this.rawChartData);
 
     let chartData: any[] = [];
 
@@ -72,7 +72,7 @@ protected prepareChartData(): any[] {
         const uniqueDeptIds = new Set(this.rawChartData.map(row => row.deptGroupId));
 
         if (uniqueDeptIds.size > 1) {
-            console.log('[prepareChartData] Pie → MULTI DEPT → group by DeptGroupName');
+           // console.log('[prepareChartData] Pie → MULTI DEPT → group by DeptGroupName');
             chartData = [['Department', 'Revenue', { role: 'annotation' }]];
 
             const deptSums = new Map<string, number>();
@@ -88,7 +88,7 @@ protected prepareChartData(): any[] {
             });
 
         } else {
-            console.log('[prepareChartData] Pie → SINGLE DEPT → group by Month');
+           // console.log('[prepareChartData] Pie → SINGLE DEPT → group by Month');
             chartData = [['Month', 'Revenue', { role: 'annotation' }]];
 
             const monthSums = new Map<number, number>();
@@ -108,7 +108,7 @@ protected prepareChartData(): any[] {
             });
         }
 
-        console.log('[prepareChartData] Final PIE chartData:', chartData);
+       // console.log('[prepareChartData] Final PIE chartData:', chartData);
         return chartData;
     }
 
@@ -131,7 +131,7 @@ protected prepareChartData(): any[] {
         chartData.push([label, value, formatAnnotation(value)]);
     });
 
-    console.log('[prepareChartData] Final chartData:', chartData);
+   // console.log('[prepareChartData] Final chartData:', chartData);
     return chartData;
 }
 

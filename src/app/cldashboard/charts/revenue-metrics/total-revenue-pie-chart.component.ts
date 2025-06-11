@@ -37,10 +37,10 @@ export class TotalRevenuePieChart extends BaseRevenueChartComponent {
     protected draw(): void {
         if (!this.rawChartData?.length || !this.chartContainer?.nativeElement) return;
 
-        console.log('[PieChart draw] rawChartData:', this.rawChartData);
+       // console.log('[PieChart draw] rawChartData:', this.rawChartData);
 
         const chartData = this.prepareChartData();
-        console.log('[PieChart draw] chartData:', chartData);
+       // console.log('[PieChart draw] chartData:', chartData);
 
         const dataTable = google.visualization.arrayToDataTable(chartData);
         const vAxisFormat = this.shortFormat ? 'short' : undefined;

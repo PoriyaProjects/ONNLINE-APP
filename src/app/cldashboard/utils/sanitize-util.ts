@@ -17,17 +17,17 @@ export function sanitizeApiJson(
 
         jsonText = response.substring(startTagEnd, endTagStart).trim();
 
-        console.log('[sanitizeApiJson] Raw jsonText (ASMX):', jsonText);
+       // console.log('[sanitizeApiJson] Raw jsonText (ASMX):', jsonText);
       } else {
         // REST fallback
         jsonText = response.trim();
-        console.log('[sanitizeApiJson] Raw jsonText (REST fallback):', jsonText);
+       // console.log('[sanitizeApiJson] Raw jsonText (REST fallback):', jsonText);
       }
 
       const data = JSON.parse(jsonText);
 
-      console.log('[sanitizeApiJson] Parsed data:', data);
-      console.log('[sanitizeApiJson] Is array?', Array.isArray(data));
+     // console.log('[sanitizeApiJson] Parsed data:', data);
+     // console.log('[sanitizeApiJson] Is array?', Array.isArray(data));
 
       // 🚀 1️⃣ RevenueDataPoint mode
       if (mode === 'revenue-data') {
@@ -66,8 +66,8 @@ export function sanitizeApiJson(
 
     return [];
   } catch (e) {
-    console.warn('[sanitizeApiJson] Error:', e);
-    console.warn('Response was:', response);
+   // console.warn('[sanitizeApiJson] Error:', e);
+   // console.warn('Response was:', response);
     return [];
   }
 }

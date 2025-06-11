@@ -31,13 +31,13 @@ public fetchTotalRevenueDataOnce(
 ): Observable<RevenueDataPoint[]> {
   const url = `${environment.url}/GetRevenueOverTimeWChargingDept?startDate=${encodeURIComponent(startDate)}&endDate=${encodeURIComponent(endDate)}&dept=${encodeURIComponent(deptGroupIdParam)}&granularity=${encodeURIComponent(granularity)}`;
 
-  console.log('[fetchTotalRevenueDataOnce] Request URL:', url);
+ // console.log('[fetchTotalRevenueDataOnce] Request URL:', url);
 
   return this.http.get(url, { responseType: 'text' }).pipe(
     map(response => {
-      console.log('[fetchTotalRevenueDataOnce] Response was:', response);
+     // console.log('[fetchTotalRevenueDataOnce] Response was:', response);
       const cleaned = sanitizeApiJson(response, 'label-value-dept');
-      console.log('[fetchTotalRevenueDataOnce] Cleaned RevenueDataPoint[]:', cleaned);
+     // console.log('[fetchTotalRevenueDataOnce] Cleaned RevenueDataPoint[]:', cleaned);
       return cleaned;
     })
   );

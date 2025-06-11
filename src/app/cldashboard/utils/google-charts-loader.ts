@@ -197,7 +197,7 @@ export class ChartLoaderService {
       // Emit to ready$
       this.readySubject.next(true);
 
-      console.log('Google Charts loaded → ready$ emitted TRUE');
+     // console.log('Google Charts loaded → ready$ emitted TRUE');
     });
   }
 

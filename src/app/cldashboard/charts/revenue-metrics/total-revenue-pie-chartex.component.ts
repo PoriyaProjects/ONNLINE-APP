@@ -112,7 +112,7 @@ export class TotalRevenuePieChartEx implements OnInit, OnChanges, AfterViewInit 
         this.isLoading = false;
       }
     );
-    console.table(this.chartData); // optional: for debugging
+   // console.log(this.chartData); // optional: for debugging
 
   }
 
@@ -122,7 +122,7 @@ export class TotalRevenuePieChartEx implements OnInit, OnChanges, AfterViewInit 
   //   } else if (attempt < 10) {
   //     setTimeout(() => this.safeDrawChart(attempt + 1), 100);
   //   } else {
-  //     console.warn('Chart container not initialized after retrying.');
+  //    // console.warn('Chart container not initialized after retrying.');
   //   }
   // }
 
@@ -131,7 +131,7 @@ export class TotalRevenuePieChartEx implements OnInit, OnChanges, AfterViewInit 
       if (attempt < 10) {
         setTimeout(() => this.safeDrawChart(attempt + 1), 100);
       } else {
-        console.warn('Google Charts not ready after retrying.');
+       // console.warn('Google Charts not ready after retrying.');
       }
       return;
     }
@@ -141,15 +141,15 @@ export class TotalRevenuePieChartEx implements OnInit, OnChanges, AfterViewInit 
     } else if (attempt < 10) {
       setTimeout(() => this.safeDrawChart(attempt + 1), 100);
     } else {
-      console.warn('Chart container not initialized after retrying.');
+     // console.warn('Chart container not initialized after retrying.');
     }
   }
   
 
     drawChart(): void {
     const data = google.visualization.arrayToDataTable(this.chartData);
-    console.log(`[${this.constructor.name}]:` ,'📄 Google DataTable columns:', data.getNumberOfColumns());
-    console.log(`[${this.constructor.name}]:` ,'📄 Google DataTable rows:', data.getNumberOfRows());    
+   // console.log(`[${this.constructor.name}]:` ,'📄 Google DataTable columns:', data.getNumberOfColumns());
+   // console.log(`[${this.constructor.name}]:` ,'📄 Google DataTable rows:', data.getNumberOfRows());    
     const options = {
       title: this.chartTitle || 'Total Revenue by Source',
       is3D: true,
@@ -162,8 +162,8 @@ export class TotalRevenuePieChartEx implements OnInit, OnChanges, AfterViewInit 
       height: 400
     };
     
-    console.log(`[${this.constructor.name}]:` ,'📊 Final chart options:', options);
- console.table(this.chartData); // optional: for debugging
+   // console.log(`[${this.constructor.name}]:` ,'📊 Final chart options:', options);
+// console.log(this.chartData); // optional: for debugging
     const chart = new google.visualization.PieChart(this.chartContainer.nativeElement);
     chart.draw(data, options);
   }

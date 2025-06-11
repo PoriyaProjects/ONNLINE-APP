@@ -16,7 +16,7 @@ export function fetchSanitized<T>(
       return Array.isArray(data) ? (data as unknown as T[]) : [];
     }),
     catchError(err => {
-      console.warn(`[API FALLBACK] Using mock data for ${url}:`, err);
+     // console.warn(`[API FALLBACK] Using mock data for ${url}:`, err);
       return of(fallback);
     })
   );
@@ -36,7 +36,7 @@ export function formatDateForApi(date: string): string {
 //         if (retryCount >= maxRetry) {
 //           throw err;
 //         }
-//         console.warn(`Retrying getDepartments() - Attempt #${retryCount + 1}`);
+//        // console.warn(`Retrying getDepartments() - Attempt #${retryCount + 1}`);
 //         return retryCount + 1;
 //       }, 0),
 //       delay(delayMs)

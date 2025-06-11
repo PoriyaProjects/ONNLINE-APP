@@ -37,10 +37,10 @@ export class TotalRevenueLineChart extends BaseRevenueChartComponent {
     protected draw(): void {
         if (!this.rawChartData?.length || !this.chartContainer?.nativeElement) return;
 
-        console.log('[LineChart draw] rawChartData:', this.rawChartData);
+       // console.log('[LineChart draw] rawChartData:', this.rawChartData);
 
         const chartData = this.prepareChartData();
-        console.log('[LineChart draw] chartData:', chartData);
+       // console.log('[LineChart draw] chartData:', chartData);
 
         const dataTable = google.visualization.arrayToDataTable(chartData);
 

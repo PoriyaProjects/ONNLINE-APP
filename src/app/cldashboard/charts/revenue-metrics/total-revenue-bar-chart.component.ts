@@ -36,9 +36,9 @@ export class TotalRevenueBarChart extends BaseRevenueChartComponent {
 
     protected draw(): void {
         if (!this.rawChartData?.length || !this.chartContainer?.nativeElement) return;
-        console.log('[BarChart draw] rawChartData:', this.rawChartData);
+       // console.log('[BarChart draw] rawChartData:', this.rawChartData);
         const chartData = this.prepareChartData();
-        console.log('[BarChart draw] chartData:', chartData);
+       // console.log('[BarChart draw] chartData:', chartData);
         const dataTable = google.visualization.arrayToDataTable(chartData);
         const vAxisFormat = this.shortFormat ? 'short' : undefined;
 
