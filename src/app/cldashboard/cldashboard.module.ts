@@ -20,6 +20,7 @@ import { RevenuePerPatientLineChart } from './charts/revenue-metrics/revenue-per
 import { RevenueVsBudgetComboChart } from './charts/revenue-metrics/revenue-vs-budget-combo-chart.component';
 import { ChartWrapperComponent } from './components/chart-wrapper/chart-wrapper.component';
 import { GoogleChartsService } from './services/google-charts.service';
+import { NgSelectModule } from '@ng-select/ng-select';
 
 import { MatOptionModule } from '@angular/material/core';
 import { NgModule } from '@angular/core';
@@ -38,7 +39,7 @@ import { MatRadioModule } from '@angular/material/radio';
 import { KpiCardComponent } from './components/kpi-card/kpi-card.component';
 import { ClDashboardOverviewComponent } from './components/cl-dashboard-overview/cl-dashboard-overview.component';
 import { ControlsBarComponent } from './components/controls-bar/controls-bar.component';
-import { ExportControlsComponent } from './components/export-controls/export-controls.component';
+//import { ExportControlsComponent } from './components/export-controls/export-controls.component';
 import { AlertThresholdComponent } from './components/alert-threshold/alert-threshold.component';
 import { RoleConfigComponent } from './components/role-config/role-config.component';
 import { FullPageDashboardComponent } from './pages/full-page-dashboard.component';
@@ -50,6 +51,8 @@ import { TotalRevenuePieChart } from './charts/revenue-metrics/total-revenue-pie
 import { TotalRevenuePieChartEx } from './charts/revenue-metrics/total-revenue-pie-chartex.component';
 import { RevenueByDepartmentBarChart } from './charts/revenue-metrics/revenue-by-department-bar-chart.component';
 import { OperatingExpensesLineChart } from './charts/expense-metrics/operating-expenses-line-chart.component';
+
+import { RevenueCompareMonthsChartComponent } from './components/kpi-card/kpi-revenue-compare-months-chart.component';
 
 
 
@@ -86,7 +89,6 @@ import { MaterialWrapper } from '../shared/components/material-wrapper.module';
     KpiCardComponent,
     ClDashboardOverviewComponent,
     ControlsBarComponent,
-    ExportControlsComponent,
     AlertThresholdComponent,
     RoleConfigComponent,
     FullPageDashboardComponent,
@@ -100,7 +102,8 @@ import { MaterialWrapper } from '../shared/components/material-wrapper.module';
     TotalRevenuePieChartEx,
     RevenueByDepartmentBarChart,
     OperatingExpensesLineChart, 
-    ExpensesByDepartmentBarChart,   
+    ExpensesByDepartmentBarChart,
+    RevenueCompareMonthsChartComponent,
   ],
   imports: [
     CustomMaterialModule,
@@ -114,13 +117,13 @@ import { MaterialWrapper } from '../shared/components/material-wrapper.module';
     MatInputModule,
     MatButtonModule,
     MatRadioModule,
-    MaterialWrapper
+    MaterialWrapper,
+    NgSelectModule
   ],
   exports: [
     FullPageDashboardComponent,
     RoleConfigComponent,
-    KpiCardComponent,
-    ExportControlsComponent,
+    KpiCardComponent,    
     ControlsBarComponent,
     ClDashboardOverviewComponent,
     ChartWrapperComponent,
@@ -156,7 +159,7 @@ import { MaterialWrapper } from '../shared/components/material-wrapper.module';
     ClaimsDenialRateLineChart,
     // ArAgingBarChartComponent,
     ClaimsDenialRateLineChart,
-    FullPageDashboardComponent
+    FullPageDashboardComponent,
   ]
 })
 export class CldashboardModule {}

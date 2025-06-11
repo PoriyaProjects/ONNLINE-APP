@@ -10,11 +10,6 @@ import { sanitizeAndFilterYearMonthData} from '../../shared/chart-data-pipeline'
 import { limitToRecentYears } from '../../shared/limit-utils';
 import { ChartDataPipelineService } from '../../shared/ChartDataPipelineService';
 
-
-
-
-
-
 export interface Department {
   id: string;
   name: string;
@@ -66,8 +61,6 @@ declare var google: any; // Declare google as a global variable
 
 
 export class GoogleChartsService {
-
-  
 
   public gaugeLabel: string;
   public gaugeValue: number;
@@ -127,7 +120,6 @@ export class GoogleChartsService {
     }
   }
   
-
   /**
    * Main function to load and draw all charts in sequence with custom options.
    */
@@ -161,7 +153,7 @@ export class GoogleChartsService {
       },
       barChartQOptions = {
         chartArea,
-        legend: { position: 'none' },
+        legend, //: { position: 'none' }
         bar: { groupWidth: '90%' },
         isStacked: false,
         colors,
@@ -179,9 +171,10 @@ export class GoogleChartsService {
       },
       incomeBarOptions = {
         chartArea,
+        height:600,
         legend,
         bar: { groupWidth: '80%' },
-        annotations: { ...annotations, textStyle: { ...annotations.textStyle, opacity: 0.9 } },
+        annotations: { ...annotations, textStyle: { ...annotations.textStyle, opacity: 0.9, auraColor: '#FFFFFF' } },
         vAxis,
         hAxis,
         colors
@@ -204,7 +197,7 @@ export class GoogleChartsService {
           textStyle: {
             fontSize: 11,
             color: '#fff',
-            auraColor: 'none'
+            auraColor: '#FFFFFF'
           }
         },
         series: {
@@ -630,7 +623,7 @@ export class GoogleChartsService {
       bar: { groupWidth: '75%' },
       annotations: {
         alwaysOutside: true,
-        textStyle: { fontSize: 14, color: '#888' }
+        textStyle: { fontSize: 14, color: '#888', auraColor: '#FFFFFF' }
       },
       colors: this.CHART_COLORS.slice(0, yearKeys.length),
       vAxis: { format: 'short', minValue: 0 }
@@ -687,7 +680,7 @@ export class GoogleChartsService {
     dataTable.addRows(rows);
 
     const defaultOptions = {
-      chartArea: { width: '70%', height: '70%' },
+      chartArea: { width: '90%', height: '90%' },
       curveType: 'function',
       legend: { position: 'top' },
       colors: this.CHART_COLORS.slice(0, yearKeys.length),
@@ -824,7 +817,7 @@ export class GoogleChartsService {
         alwaysOutside: true,
         textStyle: {
           fontSize: 11,
-          auraColor: 'none'
+          auraColor: '#FFFFFF'
         }
       },
       vAxis: {
@@ -843,25 +836,135 @@ export class GoogleChartsService {
   
   //_GroupedView
     
+  // private drawBarChartQ(years: any, elementId: string, barChartQOptions: any = {}, customOptions: any = {}): void {
+  //   if (!google.visualization || !google.visualization.DataTable) {
+  //     //console.error('Google Visualization not loaded');
+  //     return;
+  //   }
+  
+  //   const isValid = (val: any): boolean => !isNaN(parseFloat(val));
+  
+  //   const dataTable = new google.visualization.DataTable();
+  //   dataTable.addColumn('string', 'Year-Quarter');
+  //   dataTable.addColumn('number', 'Value');
+  //   dataTable.addColumn({ type: 'string', role: 'style' });       // ✅ use style for per-bar color by year
+  //   dataTable.addColumn({ type: 'string', role: 'annotation' });
+  
+  //   const yearKeys = Object.keys(years).sort();
+  //   const rows: any[] = [];
+  
+  //   yearKeys.forEach((year, yearIndex) => {
+  //     const color = this.CHART_COLORS[yearIndex % this.CHART_COLORS.length];  // 🎯 consistent color per year
+  //     ['Q1', 'Q2', 'Q3', 'Q4'].forEach(q => {
+  //       const val = years[year][q];
+  //       if (isValid(val)) {
+  //         rows.push([
+  //           `${year} ${q}`,
+  //           Number(val),
+  //           `color: ${color}`,
+  //           String(val)
+  //         ]);
+  //       }
+  //     });
+  //   });
+  
+  //   if (rows.length === 0) {
+  //     const el = document.getElementById(elementId);
+  //     if (el) el.innerHTML = "אין נתונים להצגה";
+  //     return;
+  //   }
+  
+  //   dataTable.addRows(rows);
+  
+  //   const mergedOptions = {
+  //     legend: { position: 'none' },
+  //     vAxis: { minValue: 0, format: 'short' },
+  //     ...barChartQOptions,
+  //     ...customOptions
+  //   };
+  
+  //   const chart = new google.visualization.ColumnChart(document.getElementById(elementId));
+  //   chart.draw(dataTable, mergedOptions);
+  // }
+
+  // private drawBarChartQ(years: any, elementId: string, barChartQOptions: any = {}, customOptions: any = {}): void {
+  //   if (!google.visualization || !google.visualization.DataTable) return;
+  
+  //   const quarters = ['Q1', 'Q2', 'Q3', 'Q4'];
+  //   const yearKeys = Object.keys(years).sort();
+  //   const colors = yearKeys.map((_, i) => this.CHART_COLORS[i % this.CHART_COLORS.length]);
+  
+  //   const dataTable = new google.visualization.DataTable();
+  //   dataTable.addColumn('string', 'Quarter');
+  
+  //   // One column per year
+  //   yearKeys.forEach(year => {
+  //     dataTable.addColumn('number', year);
+  //   });
+  
+  //   // Optional: one annotation per year (if you want to show labels)
+  //   yearKeys.forEach(_ => {
+  //     dataTable.addColumn({ type: 'string', role: 'annotation' });
+  //   });
+  
+  //   // Build rows by quarter
+  //   const rows = quarters.map(q => {
+  //     const row: any[] = [q];
+  
+  //     // values per year
+  //     yearKeys.forEach(year => {
+  //       const val = years[year][q];
+  //       row.push(isNaN(val) ? null : Number(val));
+  //     });
+  
+  //     // annotations per year
+  //     yearKeys.forEach(year => {
+  //       const val = years[year][q];
+  //       row.push(isNaN(val) ? null : String(val));
+  //     });
+  
+  //     return row;
+  //   });
+  
+  //   if (rows.every(r => r.slice(1, yearKeys.length + 1).every(val => val === null))) {
+  //     const el = document.getElementById(elementId);
+  //     if (el) el.innerHTML = "אין נתונים להצגה";
+  //     return;
+  //   }
+  
+  //   dataTable.addRows(rows);
+  
+  //   const mergedOptions = {
+  //     height: 400,
+  //     isStacked: false,
+  //     legend: { position: 'top' },
+  //     bar: { groupWidth: '90%' },
+  //     colors,
+  //     vAxis: { minValue: 0, format: 'short' },
+  //     ...barChartQOptions,
+  //     ...customOptions
+  //   };
+  
+  //   const chart = new google.visualization.ColumnChart(document.getElementById(elementId));
+  //   chart.draw(dataTable, mergedOptions);
+  // }
+  
   private drawBarChartQ(years: any, elementId: string, barChartQOptions: any = {}, customOptions: any = {}): void {
-    if (!google.visualization || !google.visualization.DataTable) {
-      //console.error('Google Visualization not loaded');
-      return;
-    }
+    if (!google.visualization || !google.visualization.DataTable) return;
   
     const isValid = (val: any): boolean => !isNaN(parseFloat(val));
   
     const dataTable = new google.visualization.DataTable();
     dataTable.addColumn('string', 'Year-Quarter');
     dataTable.addColumn('number', 'Value');
-    dataTable.addColumn({ type: 'string', role: 'style' });       // ✅ use style for per-bar color by year
+    dataTable.addColumn({ type: 'string', role: 'style' });       // 🎯 per-bar color
     dataTable.addColumn({ type: 'string', role: 'annotation' });
   
     const yearKeys = Object.keys(years).sort();
     const rows: any[] = [];
   
     yearKeys.forEach((year, yearIndex) => {
-      const color = this.CHART_COLORS[yearIndex % this.CHART_COLORS.length];  // 🎯 consistent color per year
+      const color = this.CHART_COLORS[yearIndex % this.CHART_COLORS.length];
       ['Q1', 'Q2', 'Q3', 'Q4'].forEach(q => {
         const val = years[year][q];
         if (isValid(val)) {
@@ -884,7 +987,7 @@ export class GoogleChartsService {
     dataTable.addRows(rows);
   
     const mergedOptions = {
-      legend: { position: 'none' },
+      legend: { position: 'none' }, // 📌 disable internal legend (style column doesn't support it)
       vAxis: { minValue: 0, format: 'short' },
       ...barChartQOptions,
       ...customOptions
@@ -892,7 +995,13 @@ export class GoogleChartsService {
   
     const chart = new google.visualization.ColumnChart(document.getElementById(elementId));
     chart.draw(dataTable, mergedOptions);
+  
+    // ✅ Custom Legend Render (below the chart)
+    this.renderYearLegend(yearKeys, elementId + '-legend');
   }
+
+  
+  
 
   private drawChart3Y(jsonData: any, elementId: string, customOptions: any = {}): void {
     const currentDate = new Date();
@@ -957,7 +1066,8 @@ export class GoogleChartsService {
       },
       annotations: {
         alwaysOutside: true,
-        textStyle: { fontSize: 12, color: '#000' }
+        textStyle: { fontSize: 12, color: '#000' },
+        auraColor: '#FFFFFF'
       },
       hAxis: {
         ticks,
@@ -1038,7 +1148,8 @@ export class GoogleChartsService {
       },
       annotations: {
         alwaysOutside: true,
-        textStyle: { fontSize: 12, color: '#000' }
+        textStyle: { fontSize: 12, color: '#000' },
+        auraColor: '#FFFFFF'
       },
       hAxis: {
         ticks,
@@ -1303,7 +1414,8 @@ public async drawChartGauge(data: any, elementId: string, chartOptions: any = {}
           annotations: {
             alwaysOutside: true,
             textStyle: { fontSize: 12, color: '#888' },
-            format: '00:00'
+            format: '00:00',
+            auraColor: '#FFFFFF'
           },
           colors: this.CHART_COLORS.slice(0, dataTable.getNumberOfColumns() - 1),
           vAxis: {
@@ -1471,6 +1583,7 @@ private processExploitationData(data: any): any {
           textStyle: {
             fontSize: 14,
             bold: true,
+            auraColor: '#FFFFFF',
             color: '#333' // Or any other custom color
           }
         }
@@ -1484,6 +1597,7 @@ private processExploitationData(data: any): any {
       isStacked: true,
       annotations: {
         alwaysOutside: true,
+        auraColor: '#FFFFFF',
         textStyle: { fontSize: 12, color: '#000' } // default for value annotations
       },
       colors: this.CHART_COLORS,
@@ -1714,7 +1828,7 @@ public async loadAndMergeMultipleCharts(
         1: { title: dynamicLabels.find((_, i) => sources[i].targetAxisIndex === 1) || 'Secondary', minValue: 0, format: 'short' }
       },
       hAxis: { slantedText: true, slantedTextAngle: 45 },
-      annotations: { alwaysOutside: true, textStyle: { fontSize: 11, auraColor: 'none' } },
+      annotations: { alwaysOutside: true, textStyle: { fontSize: 11, auraColor: '#FFFFFF' } },
       ...chartOptions
     };
 
@@ -1746,6 +1860,24 @@ private getIntersectionOfCategories(categoryMaps: Map<string, number>[]): string
 
   return intersection.sort();
 }
+
+
+private renderYearLegend(years: string[], legendElementId: string): void {
+  const legendContainer = document.getElementById(legendElementId);
+  if (!legendContainer) return;
+
+  legendContainer.innerHTML = years
+    .map((year, i) => {
+      const color = this.CHART_COLORS[i % this.CHART_COLORS.length];
+      return `
+        <span style="display:inline-block; margin-right:12px;">
+          <span style="display:inline-block; width:12px; height:12px; background-color:${color}; margin-right:6px; vertical-align:middle;"></span>
+          <span style="vertical-align:middle;">${year}</span>
+        </span>`;
+    })
+    .join('');
+}
+
 
 }
   

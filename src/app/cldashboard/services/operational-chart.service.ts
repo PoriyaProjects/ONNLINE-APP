@@ -6,131 +6,49 @@ import { formatDateForApi } from '../utils/api-utils';
 import { toChartData } from '../utils/date-utils';
 import { ChartLoaderService } from '../utils/google-charts-loader';
 import { sanitizeApiJson } from '../utils/sanitize-util';
-import { timeout } from 'rxjs/operators';
+import { map, timeout } from 'rxjs/operators';
+import { RevenueDataPoint } from '../components/cl-dashboard-overview/cl-dashboard-overview.component';
+
+
 
 
 @Injectable({ providedIn: 'root' })
 export class OperationalChartService {
 
-  // private revenueCacheKey = '';
-  // private revenueDataCache: { [key: string]: { label: string; value: number }[] } = {};
-
-  
-  // getRevenueKey(start: string, end: string, granularity: string) {
-  //   return `${start}_${end}_${granularity}`;
-  // }
+  private revenueDataCache: { [key: string]: { label: string; value: number; dept: string }[] } = {};
 
 
-  // fetchTotalRevenueDataOnce(startDate: string, endDate: string, granularity: string): Observable<{ label: string; value: number }[]> {
-  //   const key = this.getRevenueKey(startDate, endDate, granularity);
-  //   if (this.revenueDataCache[key]) {
-  //     return new Observable(observer => {
-  //       observer.next(this.revenueDataCache[key]);
-  //       observer.complete();
-  //     });
-  //   }
-  
-  //   const params = new HttpParams()
-  //     .set('startDate', startDate || '01/01/2024')
-  //     .set('endDate', endDate || '31/05/2025')
-  //     .set('granularity', granularity || 'month');
-  
-  //   return new Observable(observer => {
-  //     this.http.get(`${environment.url}/GetRevenueOverTime`, { params, responseType: 'text' })
-  //       .pipe(timeout(160000))
-  //       .subscribe({
-  //         next: (raw: string) => {
-  //           // זיהוי תגובה ריקה מבוססת XML
-  //           const cleanedRaw = raw.trim();
-  //           if (cleanedRaw.includes('>[]</string>') || cleanedRaw.includes('>[]<')) {
-  //             observer.error(new Error('[Server Response Error] Empty revenue data array returned in XML'));
-  //             return;
-  //           }
-  
-  //           try {
-  //             const clean = sanitizeApiJson(raw, 'label-value');
-  //             this.revenueDataCache[key] = clean;
-  //             observer.next(clean);
-  //             observer.complete();
-  //           } catch (err) {
-  //             observer.error(new Error('[Parse Error] Unable to sanitize revenue data'));
-  //           }
-  //         },
-  //         error: (err) => observer.error(err)
-  //       });
-  //   });
-  // }
+  private getRevenueKey(startDate: string, endDate: string, dept: string, granularity: string): string {
+    return `${startDate}_${endDate}_${dept}_${granularity}`;
+  }
 
-  
-
-  // clearRevenueCache() {
-  //   this.revenueDataCache = {};
-  // }
-  ///////
-
-  private revenueDataCache: { [key: string]: { label: string; value: number }[] } = {};
-
-private getRevenueKey(startDate: string, endDate: string, granularity: string): string {
-  return `${startDate}_${endDate}_${granularity}`;
-}
 
 public fetchTotalRevenueDataOnce(
   startDate: string,
   endDate: string,
+  deptGroupIdParam: string,
   granularity: string
-): Observable<{ label: string; value: number }[]> {
-  const key = this.getRevenueKey(startDate, endDate, granularity);
+): Observable<RevenueDataPoint[]> {
+  const url = `${environment.url}/GetRevenueOverTimeWChargingDept?startDate=${encodeURIComponent(startDate)}&endDate=${encodeURIComponent(endDate)}&dept=${encodeURIComponent(deptGroupIdParam)}&granularity=${encodeURIComponent(granularity)}`;
 
-  if (this.revenueDataCache[key]) {
-    return new Observable(observer => {
-      observer.next(this.revenueDataCache[key]);
-      observer.complete();
-    });
-  }
+  console.log('[fetchTotalRevenueDataOnce] Request URL:', url);
 
-  const params = new HttpParams()
-    .set('startDate', startDate || '01/01/2024')
-    .set('endDate', endDate || '31/05/2025')
-    .set('granularity', granularity || 'month');
-
-  return new Observable(observer => {
-    this.http.get(`${environment.url}/GetRevenueOverTime`, { params, responseType: 'text' })
-      .pipe(timeout(60000))
-      .subscribe({
-        next: (raw: string) => {
-          if (raw.includes('>[]</string>') || raw.includes('>[]<')) {
-            observer.error(new Error('Empty data from server'));
-            return;
-          }
-
-          const cleaned = sanitizeApiJson(raw, 'label-value');
-          this.revenueDataCache[key] = cleaned;
-          observer.next(cleaned);
-          observer.complete();
-        },
-        error: (err) => observer.error(err)
-      });
-  });
+  return this.http.get(url, { responseType: 'text' }).pipe(
+    map(response => {
+      console.log('[fetchTotalRevenueDataOnce] Response was:', response);
+      const cleaned = sanitizeApiJson(response, 'label-value-dept');
+      console.log('[fetchTotalRevenueDataOnce] Cleaned RevenueDataPoint[]:', cleaned);
+      return cleaned;
+    })
+  );
 }
 
-/////////////////////////////////
 
-  // fetchTotalRevenueOverTime(startDate: string, endDate: string, granularity: string): Observable<string> {
+  // fetchTotalRevenueLineChart(startDate: string, endDate: string, granularity: string): Observable<string> {
   //   const params = new HttpParams()
-  //     .set('startDate', startDate || '01/01/2022')
-  //     .set('endDate', endDate || '31/05/2025')
-  //     .set('granularity', granularity || 'month');
-  
-  //   return this.http.get(`${environment.url}/GetRevenueOverTime`, { params, responseType: 'text' }).pipe(timeout(160000));
+  //     .set('startDate', startDate || '01/01/2022').set('endDate', endDate || '31/05/2025').set('dept', dept || '').set('granularity', granularity || 'month');  
+  //   return this.http.get(`${environment.url}/GetRevenueOverTime`, {params, responseType: 'text'}).pipe(timeout(160000));
   // }
-  
-
-
-  fetchTotalRevenueLineChart(startDate: string, endDate: string, granularity: string): Observable<string> {
-    const params = new HttpParams()
-      .set('startDate', startDate || '01/01/2022').set('endDate', endDate || '31/05/2025').set('granularity', granularity || 'month');  
-    return this.http.get(`${environment.url}/GetRevenueOverTime`, {params, responseType: 'text'}).pipe(timeout(160000));
-  }
   
   fetchTotalRevenueBarChart(startDate: string, endDate: string, granularity: string): Observable<string> {
     const params = new HttpParams()
