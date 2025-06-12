@@ -216,9 +216,11 @@ export class TrainingRequestFormComponent implements OnInit {
           Education_Fee: new FormControl({ value: Training_Request_Forms_B?.Education_Fee, disabled: Training_Request_Forms_B?.Training_Out == 'True' }, [Validators.required, Validators.pattern(/^\d+$/)]),
           // Transportation: new FormControl(Training_Request_Forms_B?.Transportation == 'True' ? true : false, null),
           Program_Attached: new FormControl(Training_Request_Forms_B?.Program_Attached, Validators.required),
+          Poster_Attached: new FormControl(Training_Request_Forms_B?.Poster_Attached, null),
           Absence_Time: new FormControl({ value: Training_Request_Forms_B?.Absence_Time, disabled: this.user_name != 'ttsrefati' ? true : false }, [Validators.pattern(/^\d+$/)]),
           Training_Out: new FormControl(Training_Request_Forms_B?.Training_Out == 'True' ? true : false, null),
           Galilean_Partnership: new FormControl(Training_Request_Forms_B?.Galilean_Partnership == 'True' ? true : false, null),
+          Request_Note: new FormControl(Training_Request_Forms_B?.Request_Note, null),
         });
         this.Training_Request_Forms_C = this.fb.group({
           Request_Name: new FormControl(Training_Request_Forms_C?.Request_Name == null ? this.date_now : Training_Request_Forms_C?.Request_Name, Validators.required),
@@ -244,7 +246,7 @@ export class TrainingRequestFormComponent implements OnInit {
           Supervisor_Name: new FormControl(Training_Request_Forms_E?.Supervisor_Name, null),
           Supervisor_Sign: new FormControl(Training_Request_Forms_E?.Supervisor_Sign, null),
           Sent_To_Manager: new FormControl(Training_Request_Forms_E?.Sent_To_Manager, null),
-          Approved: new FormControl(Training_Request_Forms_E?.Approved == 'True' ? true : false, null),
+          Approved: new FormControl(Training_Request_Forms_E?.Approved, null),
         });
         this.Training_Request_Forms_F = this.fb.group({
           Training_Importantce: new FormControl(Training_Request_Forms_F?.Training_Importantce, null),
@@ -252,7 +254,7 @@ export class TrainingRequestFormComponent implements OnInit {
           Opinion_Date: new FormControl(Training_Request_Forms_F?.Opinion_Date == null ? this.date_now : Training_Request_Forms_F?.Opinion_Date, null),
           Supervisor_Name: new FormControl(Training_Request_Forms_F?.Supervisor_Name, null),
           Supervisor_Sign: new FormControl(Training_Request_Forms_F?.Supervisor_Sign, null),
-          Approved: new FormControl(Training_Request_Forms_F?.Approved == 'True' ? true : false, null),
+          Approved: new FormControl(Training_Request_Forms_F?.Approved, null),
         });
         this.Training_Request_Forms_H = this.fb.group({
           Opinion_Date: new FormControl(Training_Request_Forms_H?.Opinion_Date == null ? this.date_now : Training_Request_Forms_H?.Opinion_Date, null),
@@ -332,6 +334,28 @@ export class TrainingRequestFormComponent implements OnInit {
       reader.readAsDataURL(file);
     }
   }
+  
+  onFileSelectedPoster(event: Event) {
+    const input = event.target as HTMLInputElement;
+
+    if (input.files && input.files.length > 0) {
+      const file = input.files[0];
+      const maxSize = 2 * 1024 * 1024; // 1MB (1,024,000 bytes)
+      if (file.size > maxSize) {
+        alert("הקובץ גדול מדי! יש להעלות קובץ עד 2MB.");
+        input.value = ""; // Clear file input
+        return;
+      }
+
+      const reader = new FileReader();
+      // Convert file to Base64 string
+      reader.onload = () => {
+        const base64String = reader.result as string;
+        this.Training_Request_Forms_B.get('Poster_Attached')?.setValue(base64String);
+      };
+      reader.readAsDataURL(file);
+    }
+  }
 
   onFileSelected2(event: Event) {
     const input = event.target as HTMLInputElement;
@@ -372,6 +396,15 @@ export class TrainingRequestFormComponent implements OnInit {
 
   file_in_new_window_base64() {
     const base64String = this.Training_Request_Forms_B.get('Program_Attached')?.value;
+    if (base64String) {
+      this.openFile(base64String);
+    } else {
+      console.error('No file available to open');
+    }
+  }
+  
+  file_in_new_window_base64_Poster() {
+    const base64String = this.Training_Request_Forms_B.get('Poster_Attached')?.value;
     if (base64String) {
       this.openFile(base64String);
     } else {
@@ -486,14 +519,14 @@ export class TrainingRequestFormComponent implements OnInit {
           this.Supervisor_Name2.setValue(this.employees.filter(t => t.id === this.formData['F']?.Supervisor_Name.id)[0]);
           if (this.Supervisor_Name1.value?.id != this.passport) {
             this.Training_Request_Forms_E.controls['Training_Importantce'].disable();
-            this.Training_Request_Forms_E.controls['Approved'].disable();
+            // this.Training_Request_Forms_E.controls['Approved'].disable();
             this.Training_Request_Forms_E.controls['Recommendations'].disable();
             this.Training_Request_Forms_E.controls['Opinion_Date'].disable();
             this.Supervisor_Name1.disable();
           }
           if (this.Supervisor_Name2.value?.id != this.passport) {
             this.Training_Request_Forms_F.controls['Training_Importantce'].disable();
-            this.Training_Request_Forms_F.controls['Approved'].disable();
+            // this.Training_Request_Forms_F.controls['Approved'].disable();
             this.Training_Request_Forms_F.controls['Recommendations'].disable();
             this.Training_Request_Forms_F.controls['Opinion_Date'].disable();
             this.Supervisor_Name2.disable();
@@ -640,13 +673,13 @@ export class TrainingRequestFormComponent implements OnInit {
           this.Training_Request_Forms_F.controls['Supervisor_Name'].setValue(this.Supervisor_Name2.value);
           if (this.Supervisor_Name1.value?.id != this.passport) {
             this.Training_Request_Forms_E.controls['Training_Importantce'].disable();
-            this.Training_Request_Forms_E.controls['Approved'].disable();
+            // this.Training_Request_Forms_E.controls['Approved'].disable();
             this.Training_Request_Forms_E.controls['Recommendations'].disable();
             this.Training_Request_Forms_E.controls['Opinion_Date'].disable();
           }
           if (this.Supervisor_Name2.value?.id != this.passport) {
             this.Training_Request_Forms_F.controls['Training_Importantce'].disable();
-            this.Training_Request_Forms_F.controls['Approved'].disable();
+            // this.Training_Request_Forms_F.controls['Approved'].disable();
             this.Training_Request_Forms_F.controls['Recommendations'].disable();
             this.Training_Request_Forms_F.controls['Opinion_Date'].disable();
           }

@@ -97,15 +97,22 @@ export class WhatsappCategoriesPermissionsComponent implements OnInit {
       });
   }
 
-  createNewCategory() {
-    if (this.newCategory != undefined) {
+  createNewCategory(em) {
+    if (em == null) {
+      em = {
+        Description: this.newCategory,
+        newCategory: this.newCategory
+      }
+    }
+    if (em.newCategory != '' && em.newCategory != undefined) {
       this.http
         .post(environment.url + "CreateNewWhatsAppEmergencyCategory", {
-          category_name: this.newCategory,
+          old: em?.Description,
+          category_name: em.newCategory,
           user_name: this.username
         })
         .subscribe((Response) => {
-
+          if (Response['d']) this.getEmergencyContactCategories();
         });
     }
   }
