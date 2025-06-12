@@ -25,21 +25,21 @@
                         <div class="card card--outlined card text-center">
                             <h6 class="card-title-custom">מגמות רבעוניות</h6>
                             <div id="bar-chart-q"></div>
-                            <div id="bar-chart-q-legend" style="margin-top:10px;"></div>
-                            <div id="line_chart" style="width: 100%; height: 400px;">Loading chart...</div>
+                            <!-- <div id="bar-chart-q-legend" style="margin-top:10px;"></div> -->
+                            <div id="line_chart" style="width: 100%; height: 400px;">טוען נתונים...</div>
                         </div>
                     </div>
                     <div class="mdc-layout-grid__cell col-md-5">
                         <div class="card text-center">
                             <h6 class="card-title-custom">צנתורים חודשי (4 חודשים אחרונים)</h6>
-                            <div id="bar_chart" style="width: 100%; height: 400px;">Loading chart...</div>
+                            <div id="bar_chart" style="width: 100%; height: 400px;">טוען נתונים...</div>
                         </div>
                     </div>
 
                     <div class="mdc-layout-grid__cell col-md-2">
                         <div class="card text-center">
                             <h6 class="card-title-custom">צנתורים מתחילת חודש {{ googleChartsService.gaugeLabel }}</h6>                            
-                            <div id="gauge_chart" style="width: 100%; height: 296px;">Loading chart...</div>
+                            <div id="gauge_chart" style="width: 100%; height: 296px;">טוען נתונים...</div>
                             <div class="row">
                                 <div class="mdc-layout-grid__cell col-md-1"></div>                                
                                 <div class="card mdc-layout-grid__cell col-md-10">                                    
@@ -61,7 +61,7 @@
                     <h6 style="text-align: center;" class="col-md-12">3 שנים אחרונות</h6>
                     <div class="mdc-layout-grid__cell col-md-12">
                         <div class="card text-center">
-                            <div id="op_bar_chart_3y" style="width: 100%; height: 500px;">Loading chart...</div>
+                            <div id="op_bar_chart_3y" style="width: 100%; height: 500px;">טוען נתונים...</div>
                         </div>
                     </div>
                 </div>
@@ -73,7 +73,7 @@
                     <h6 style="text-align: center;" class="col-md-12">* נתונים כספיים מעודכנים ב-10 לחודש העוקב</h6>
                     <div class="mdc-layout-grid__cell col-md-12">
                         <div class="card text-center">
-                            <div id="bar_chart_3y" style="width: 100%; height: 500px;">Loading chart...</div>
+                            <div id="bar_chart_3y" style="width: 100%; height: 500px;">טוען נתונים...</div>
                         </div>
                     </div>
                 </div>
@@ -87,7 +87,7 @@
                     <h6 style="text-align: center;" class="col-md-12">* הכנסות ופעולות</h6>
                     <div class="mdc-layout-grid__cell col-md-12">
                         <div class="card text-center">
-                            <div id="merged_chart_3y" style="width: 100%; height: 800px;">Loading chart...</div>
+                            <div id="merged_chart_3y" style="width: 100%; height: 800px;">טוען נתונים...</div>
                         </div>
                     </div>
                 </div>
@@ -98,32 +98,49 @@
                 <div class="row">
                     <!-- <div class="mdc-layout-grid__cell col-md-6">
                         <div class="card card--outlined text-center">
-                            <div id="line_chart2" style="width: 100%; height: 500px;">Loading chart...</div>
+                            <div id="line_chart2" style="width: 100%; height: 500px;">טוען נתונים...</div>
                         </div>
                     </div> -->
                     <div class="mdc-layout-grid__cell col-md-12">
                         <div class="card text-center">
-                            <div id="bar_chart2" style="width: 100%; height: 600px;">Loading chart...</div>
+                            <div id="bar_chart2" style="width: 100%; height: 600px;">טוען נתונים...</div>
                         </div>
                     </div>
                 </div>
 
 
                 <div style="height:60px;"></div>
-                <h3 style="text-align: center;">ניצולת</h3>
+                <h3 style="text-align: center;">פעילות לפי סוג צנתור</h3>
                 <div class="row">
                     <div class="mdc-layout-grid__cell col-md-6">
                         <div class="card text-center">
                             <h6 class="card-title-custom">פרוצדורות</h6>
                             <div class="row">
                                 <div class="mdc-layout-grid__cell col-md-12">
-                                    <div class="ctrl-placeholder"></div>
+                                    <div class="ctrl-placeholder">שנתי</div>
                                 </div>
                                 <div class="mdc-layout-grid__cell col-md-12">
                                     <div class="ctrl-placeholder"></div>
                                 </div>
                             </div>
-                            <div id="as_chart" style="width: 100%; height: 440px;">Loading chart...</div>
+                            <div id="as_chart" style="width: 100%; height: 440px;">טוען נתונים...</div>
+                        </div>
+                    </div>
+
+                    
+
+                    <div class="mdc-layout-grid__cell col-md-6">
+                        <div class="card text-center">
+                            <h6 class="card-title-custom">פרוצדורות</h6>
+                            <div class="row">
+                                <div class="mdc-layout-grid__cell col-md-12">
+                                    <div class="ctrl-placeholder">שבועי חודש אחרון</div>
+                                </div>
+                                <div class="mdc-layout-grid__cell col-md-12">
+                                    <div class="ctrl-placeholder"></div>
+                                </div>
+                            </div>
+                            <div id="as_chart_weekly" style="width: 100%; height: 440px;">טוען נתונים...</div>
                         </div>
                     </div>
                     <!-- <div class="mdc-layout-grid__cell col-md-6">
@@ -152,9 +169,28 @@
                                 </label>
                               </div>                              
                             </div></div>
-                            <div id="bar_chart_time_avg" style="width: 100%; height: 500px;">Loading chart...</div>
+                            <div id="bar_chart_time_avg" style="width: 100%; height: 500px;">טוען נתונים...</div>
                         </div>
                     </div> -->
+                </div>
+
+                <div style="height:60px;"></div>
+
+                <div class="row">
+                    <div class="mdc-layout-grid__cell col-md-12">
+                        <div class="card text-center">
+                            <h6 class="card-title-custom">פרוצדורות</h6>
+                            <div class="row">
+                                <div class="mdc-layout-grid__cell col-md-12">
+                                    <div class="ctrl-placeholder">36 חודשים אחרונים</div>
+                                </div>
+                                <div class="mdc-layout-grid__cell col-md-12">
+                                    <div class="ctrl-placeholder"></div>
+                                </div>
+                            </div>
+                            <div id="as_chart_monthly" style="width: 100%; height: 440px;">טוען נתונים...</div>
+                        </div>
+                    </div>
                 </div>
                 <div style="height:60px;"></div>
                 <!-- <div class="row">
@@ -169,23 +205,23 @@
 
 
 
-                <div style="height:60px;"></div>
+               
                 <h3 style="text-align: center;">נתוני ביצועים</h3>
                 <h4 style="text-align: center;"></h4>                
                 <div class="row">
                     <!-- <div class="mdc-layout-grid__cell col-md-6">
                         <div class="card card--outlined text-center">
-                            <div id="line_chart2" style="width: 100%; height: 500px;">Loading chart...</div>
+                            <div id="line_chart2" style="width: 100%; height: 500px;">טוען נתונים...</div>
                         </div>
                     </div> -->
                     <div class="mdc-layout-grid__cell col-md-12">
                         <div class="card text-center">
-                            <div id="tv" style="width: 100%; height: 600px;">Loading data...</div>
+                            <div id="pic_table_chart" style="width: 100%; height: 600px;">Loading data...</div>
                         </div>
                     </div>
                 </div>
 
-
+                <div style="height:60px;"></div>
 
             </main>
         </div>

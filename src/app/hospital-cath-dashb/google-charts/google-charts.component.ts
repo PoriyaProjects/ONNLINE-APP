@@ -1,4 +1,4 @@
-import { Component, AfterViewInit } from '@angular/core';
+import { Component, AfterViewInit, HostListener } from '@angular/core';
 import { GoogleChartsService } from '../services/google-charts.service';
 import { MDCRipple } from '@material/ripple';
 
@@ -31,10 +31,22 @@ export class GoogleChartsComponent implements AfterViewInit {
     buttons.forEach(button => new MDCRipple(button as HTMLElement));
 
     // Default load yearly chart
+    // setTimeout(() => {
+    //   (document.getElementById('timeAvgGroupByDropdown') as HTMLSelectElement).value = 'yearly';
+    //   this.drawTimeAvgChart();
+    // }, 2500); 
     setTimeout(() => {
-      (document.getElementById('timeAvgGroupByDropdown') as HTMLSelectElement).value = 'yearly';
-      this.drawTimeAvgChart();
-    }, 2500); 
+      try {
+        const dropdown = document.getElementById('timeAvgGroupByDropdown') as HTMLSelectElement;
+        if (dropdown) {
+          dropdown.value = 'yearly';
+          this.drawTimeAvgChart();
+        }
+      } catch (e) {
+        console.error("Dropdown setting failed:", e);
+      }
+    }, 2500);
+    
   }
 
   drawTimeAvgChart(): void {
@@ -51,5 +63,15 @@ export class GoogleChartsComponent implements AfterViewInit {
     this.selectedTypes[checkbox.value] = checkbox.checked;
     this.drawTimeAvgChart();
   }
+
+private resizeTimeout: any;
+
+@HostListener('window:resize')
+onResize(): void {
+  clearTimeout(this.resizeTimeout);
+  this.resizeTimeout = setTimeout(() => {
+    this.googleChartsService.redrawCharts();
+  }, 300);
+}
 }
 
