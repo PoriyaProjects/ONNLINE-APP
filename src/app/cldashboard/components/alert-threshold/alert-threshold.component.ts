@@ -9,6 +9,6 @@ export class AlertThresholdComponent {
   thresholdValue: number = 10;
 
   saveThreshold() {
-    console.log(`Saved threshold: ${this.thresholdValue}`);
+   // console.log(`Saved threshold: ${this.thresholdValue}`);
   }
 }

@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { HostListener, Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { environment } from "src/environments/environment";
 import { MatToolbarModule } from '@angular/material/toolbar';
@@ -9,11 +9,6 @@ import { filterRecentOffsets, YearlyData, getCurrentMonthData, getWorkingDaysInf
 import { sanitizeAndFilterYearMonthData} from '../../shared/chart-data-pipeline';
 import { limitToRecentYears } from '../../shared/limit-utils';
 import { ChartDataPipelineService } from '../../shared/ChartDataPipelineService';
-
-
-
-
-
 
 export interface Department {
   id: string;
@@ -67,8 +62,6 @@ declare var google: any; // Declare google as a global variable
 
 export class GoogleChartsService {
 
-  
-
   public gaugeLabel: string;
   public gaugeValue: number;
   public gaugeTargetValue: number;
@@ -100,22 +93,49 @@ export class GoogleChartsService {
     TIME_AVG: `${environment.url}/GetExploitationTimeAvgJson?groupBy`,
     GAUGE: `${environment.url}/GetCurrentCath?param=1&onlyLastMonth=true`,
     EXPLOITATION: `${environment.url}/GetExploitation`,
-    WORKING_DAYS : `${environment.url}/GetMonthWorkDays`
+    EXPLOITATIONMONTHLY: `${environment.url}/GetExploitationMonthly`,
+    EXPLOITATIONWEEKLY: `${environment.url}/GetExploitationWeekly`,
+    WORKING_DAYS : `${environment.url}/GetMonthWorkDays`,
+    PIC_TABLE: `${environment.url}/GetPicDetailedData`
   };
 
+  private cachedChartData: {
+    operations?: any;
+    income?: any;
+    exploitation?: any;
+    exploitationMonthly?: any;
+    exploitationWeekly?: any;
+    timeAvg?: {
+      data: any;
+      selectedTypes: { [key: string]: boolean };
+    };
+  } = {};
+  
+  // constructor(private http: HttpClient, private chartPipeline: ChartDataPipelineService) {
+  //   this.chartsReady = new Promise((resolve) => {
+  //     google.charts.load('current', { packages: ['corechart', 'gauge', 'controls', 'table'] });
+  //     google.charts.setOnLoadCallback(() => {
+  //       //console.log('Google Charts loaded');
+  //       resolve();
+  //     });
+  //   });
 
-  constructor(private http: HttpClient, private chartPipeline: ChartDataPipelineService) {
-    this.chartsReady = new Promise((resolve) => {
-      google.charts.load('current', { packages: ['corechart', 'gauge', 'controls'] });
+  //   this.chartsReady.then(() => this.loadAndDrawCharts());
+  // }
+
+  constructor(
+    private http: HttpClient,
+    private chartPipeline: ChartDataPipelineService
+  ) {
+    this.chartsReady = new Promise<void>((resolve) => {
+      google.charts.load('current', {packages: ['corechart', 'gauge', 'controls', 'table']});
       google.charts.setOnLoadCallback(() => {
-        //console.log('Google Charts loaded');
         resolve();
       });
     });
-
+  
     this.chartsReady.then(() => this.loadAndDrawCharts());
   }
-
 
   private formatNumberHumanReadable(value: number, formatType: 'K' | 'M' | 'B'): string {
     if (value == null) return '';
@@ -127,7 +147,6 @@ export class GoogleChartsService {
     }
   }
   
-
   /**
    * Main function to load and draw all charts in sequence with custom options.
    */
@@ -161,7 +180,7 @@ export class GoogleChartsService {
       },
       barChartQOptions = {
         chartArea,
-        legend: { position: 'none' },
+        legend, //: { position: 'none' }
         bar: { groupWidth: '90%' },
         isStacked: false,
         colors,
@@ -179,9 +198,10 @@ export class GoogleChartsService {
       },
       incomeBarOptions = {
         chartArea,
+        height:600,
         legend,
         bar: { groupWidth: '80%' },
-        annotations: { ...annotations, textStyle: { ...annotations.textStyle, opacity: 0.9 } },
+        annotations: { ...annotations, textStyle: { ...annotations.textStyle, opacity: 0.9, auraColor: '#FFFFFF' } },
         vAxis,
         hAxis,
         colors
@@ -203,8 +223,8 @@ export class GoogleChartsService {
           alwaysOutside: false,
           textStyle: {
             fontSize: 11,
-            color: '#fff',
-            auraColor: 'none'
+            color: '#000',
+            //auraColor: '#FFFFFF'
           }
         },
         series: {
@@ -247,6 +267,14 @@ export class GoogleChartsService {
         },
         vAxis,
         hAxis
+      },
+      picTableOptions = {
+        //showRowNumber: true,
+        sort: 'event',
+        allowHtml: true,
+        width: '100%',
+        chartArea,
+        colors
       },
       CombinedChart3Y = {annotations},
       gaugeTextPosition = 150
@@ -293,9 +321,23 @@ export class GoogleChartsService {
       await this.drawExploitationChart(exploitationOptions);
     } catch (e) { //console.error("Exploitation Chart failed:", e); 
       }
+      try {
+        await this.drawExploitationChartMonthly(exploitationOptions);
+      } catch (e) { //console.error("Exploitation Monthly Chart failed:", e); 
+        }
+        try {
+          await this.drawExploitationChartWeekly(exploitationOptions);
+        } catch (e) { //console.error("Exploitation Monthly Chart failed:", e); 
+          }
     try {
       await this.loadCombinedChart3Y(chart3YOptions);
     } catch (e) { //console.error("Combined 3Y Chart failed:", e); 
+      }
+
+      try {
+        await this.drawPicTableChart('pic_table_chart', picTableOptions);
+      } catch (e) {
+        //console.error("PIC Table Chart failed:", e);
       }
   
     //console.log("Finished loadAndDrawCharts()");
@@ -310,6 +352,7 @@ export class GoogleChartsService {
     const yearsData = this.processYearlyData(cleanData); 
     const processedData = this.processYearlyData(cleanData);
     const numericMonthData = convertHebrewMonthsToNumbers(processedData);   
+    this.cachedChartData.operations = numericMonthData;
     const filteredData = filterOutCurrentMonth(numericMonthData);
     this.drawBarChart(numericMonthData, 'bar_chart', barChartOptions);
     //this.drawBarChart(yearsData, 'bar_chart', barChartOptions);
@@ -332,6 +375,7 @@ export class GoogleChartsService {
     const cleanData = sanitizeSoapResponse(rawData);
     const processedData = this.processYearlyData(cleanData);
     const numericMonthData = convertHebrewMonthsToNumbers(processedData);
+    this.cachedChartData.income = numericMonthData;
     const filteredData = filterOutCurrentMonth(numericMonthData);
     await this.fetchDataAndDrawDirect(filteredData, (data: any) => data, this.CHART_TYPES.BAR, 'bar_chart2', barChartOptions);
     await this.fetchDataAndDrawDirect(filteredData, (data: any) => data, this.CHART_TYPES.LINE, 'line_chart2', lineChartOptions);
@@ -404,7 +448,7 @@ export class GoogleChartsService {
       //const cleanData = JSON.parse(rawData);
       const cleanData = sanitizeSoapResponse(rawData);
 
-      await this.fetchDataAndDrawDirect(cleanData, this.processExploitationData.bind(this), this.CHART_TYPES.EXPLOITATION, 'as_chart', chartOptions);
+      await this.fetchDataAndDrawDirect(cleanData, this.processExploitationData.bind(this), this.CHART_TYPES.EXPLOITATION, 'as_chart', chartOptions);      
       //console.log('Exploitation chart complete');
     } catch (error) {
       //console.error("Failed to fetch Exploitation chart data:", error);
@@ -413,6 +457,39 @@ export class GoogleChartsService {
     }
   }
 
+
+  public async drawExploitationChartMonthly(chartOptions: any = {}): Promise<void> {
+    try {
+      //console.log('drawExploitationChart');
+      const rawData = await this.http.get(this.DATA_SOURCES.EXPLOITATIONMONTHLY, { responseType: 'text' }).toPromise();
+      //const cleanData = JSON.parse(rawData);
+      const cleanData = sanitizeSoapResponse(rawData);
+
+      await this.fetchDataAndDrawDirect(cleanData, this.processExploitationData.bind(this), this.CHART_TYPES.EXPLOITATION, 'as_chart_monthly', chartOptions);      
+      //console.log('Exploitation chart complete');
+    } catch (error) {
+      //console.error("Failed to fetch Exploitation chart data:", error);
+      const el = document.getElementById('as_chart');
+      if (el) el.innerHTML = "Error loading Exploitation chart.";
+    }
+  }
+
+
+  public async drawExploitationChartWeekly(chartOptions: any = {}): Promise<void> {
+    try {
+      console.log('draw Exploitation Chart wEEKLY');
+      const rawData = await this.http.get(this.DATA_SOURCES.EXPLOITATIONWEEKLY, { responseType: 'text' }).toPromise();
+      //const cleanData = JSON.parse(rawData);
+      const cleanData = sanitizeSoapResponse(rawData);
+
+      await this.fetchDataAndDrawDirect(cleanData, this.processExploitationData.bind(this), this.CHART_TYPES.EXPLOITATION, 'as_chart_weekly', chartOptions);      
+      console.log('Exploitation chart wEEKLY complete');
+    } catch (error) {
+      console.error("Failed to fetch Exploitation chart wEEKLY data:", error);
+      const el = document.getElementById('as_chart_weekly');
+      if (el) el.innerHTML = "Error loading Exploitation chart.";
+    }
+  }
 
   private async fetchDataAndDrawDirect(
     cleanData: any,
@@ -630,7 +707,7 @@ export class GoogleChartsService {
       bar: { groupWidth: '75%' },
       annotations: {
         alwaysOutside: true,
-        textStyle: { fontSize: 14, color: '#888' }
+        textStyle: { fontSize: 14, color: '#888', auraColor: '#FFFFFF' }
       },
       colors: this.CHART_COLORS.slice(0, yearKeys.length),
       vAxis: { format: 'short', minValue: 0 }
@@ -687,7 +764,7 @@ export class GoogleChartsService {
     dataTable.addRows(rows);
 
     const defaultOptions = {
-      chartArea: { width: '70%', height: '70%' },
+      chartArea: { width: '90%', height: '90%' },
       curveType: 'function',
       legend: { position: 'top' },
       colors: this.CHART_COLORS.slice(0, yearKeys.length),
@@ -824,7 +901,7 @@ export class GoogleChartsService {
         alwaysOutside: true,
         textStyle: {
           fontSize: 11,
-          auraColor: 'none'
+          auraColor: '#FFFFFF'
         }
       },
       vAxis: {
@@ -843,25 +920,23 @@ export class GoogleChartsService {
   
   //_GroupedView
     
+  
   private drawBarChartQ(years: any, elementId: string, barChartQOptions: any = {}, customOptions: any = {}): void {
-    if (!google.visualization || !google.visualization.DataTable) {
-      //console.error('Google Visualization not loaded');
-      return;
-    }
+    if (!google.visualization || !google.visualization.DataTable) return;
   
     const isValid = (val: any): boolean => !isNaN(parseFloat(val));
   
     const dataTable = new google.visualization.DataTable();
     dataTable.addColumn('string', 'Year-Quarter');
     dataTable.addColumn('number', 'Value');
-    dataTable.addColumn({ type: 'string', role: 'style' });       // ✅ use style for per-bar color by year
+    dataTable.addColumn({ type: 'string', role: 'style' });       // 🎯 per-bar color
     dataTable.addColumn({ type: 'string', role: 'annotation' });
   
     const yearKeys = Object.keys(years).sort();
     const rows: any[] = [];
   
     yearKeys.forEach((year, yearIndex) => {
-      const color = this.CHART_COLORS[yearIndex % this.CHART_COLORS.length];  // 🎯 consistent color per year
+      const color = this.CHART_COLORS[yearIndex % this.CHART_COLORS.length];
       ['Q1', 'Q2', 'Q3', 'Q4'].forEach(q => {
         const val = years[year][q];
         if (isValid(val)) {
@@ -884,7 +959,7 @@ export class GoogleChartsService {
     dataTable.addRows(rows);
   
     const mergedOptions = {
-      legend: { position: 'none' },
+      legend: { position: 'none' }, // 📌 disable internal legend (style column doesn't support it)
       vAxis: { minValue: 0, format: 'short' },
       ...barChartQOptions,
       ...customOptions
@@ -892,7 +967,13 @@ export class GoogleChartsService {
   
     const chart = new google.visualization.ColumnChart(document.getElementById(elementId));
     chart.draw(dataTable, mergedOptions);
+  
+    // ✅ Custom Legend Render (below the chart)
+    this.renderYearLegend(yearKeys, elementId + '-legend');
   }
+
+  
+  
 
   private drawChart3Y(jsonData: any, elementId: string, customOptions: any = {}): void {
     const currentDate = new Date();
@@ -957,7 +1038,8 @@ export class GoogleChartsService {
       },
       annotations: {
         alwaysOutside: true,
-        textStyle: { fontSize: 12, color: '#000' }
+        textStyle: { fontSize: 12, color: '#000' },
+        auraColor: '#FFFFFF'
       },
       hAxis: {
         ticks,
@@ -1038,7 +1120,8 @@ export class GoogleChartsService {
       },
       annotations: {
         alwaysOutside: true,
-        textStyle: { fontSize: 12, color: '#000' }
+        textStyle: { fontSize: 12, color: '#000' },
+        auraColor: '#FFFFFF'
       },
       hAxis: {
         ticks,
@@ -1303,7 +1386,8 @@ public async drawChartGauge(data: any, elementId: string, chartOptions: any = {}
           annotations: {
             alwaysOutside: true,
             textStyle: { fontSize: 12, color: '#888' },
-            format: '00:00'
+            format: '00:00',
+            auraColor: '#FFFFFF'
           },
           colors: this.CHART_COLORS.slice(0, dataTable.getNumberOfColumns() - 1),
           vAxis: {
@@ -1471,6 +1555,7 @@ private processExploitationData(data: any): any {
           textStyle: {
             fontSize: 14,
             bold: true,
+            auraColor: '#FFFFFF',
             color: '#333' // Or any other custom color
           }
         }
@@ -1484,6 +1569,7 @@ private processExploitationData(data: any): any {
       isStacked: true,
       annotations: {
         alwaysOutside: true,
+        auraColor: '#FFFFFF',
         textStyle: { fontSize: 12, color: '#000' } // default for value annotations
       },
       colors: this.CHART_COLORS,
@@ -1714,7 +1800,7 @@ public async loadAndMergeMultipleCharts(
         1: { title: dynamicLabels.find((_, i) => sources[i].targetAxisIndex === 1) || 'Secondary', minValue: 0, format: 'short' }
       },
       hAxis: { slantedText: true, slantedTextAngle: 45 },
-      annotations: { alwaysOutside: true, textStyle: { fontSize: 11, auraColor: 'none' } },
+      annotations: { alwaysOutside: true, textStyle: { fontSize: 11, auraColor: '#FFFFFF' } },
       ...chartOptions
     };
 
@@ -1746,6 +1832,149 @@ private getIntersectionOfCategories(categoryMaps: Map<string, number>[]): string
 
   return intersection.sort();
 }
+
+
+private renderYearLegend(years: string[], legendElementId: string): void {
+  const legendContainer = document.getElementById(legendElementId);
+  if (!legendContainer) return;
+
+  legendContainer.innerHTML = years
+    .map((year, i) => {
+      const color = this.CHART_COLORS[i % this.CHART_COLORS.length];
+      return `
+        <span style="display:inline-block; margin-right:12px;">
+          <span style="display:inline-block; width:12px; height:12px; background-color:${color}; margin-right:6px; vertical-align:middle;"></span>
+          <span style="vertical-align:middle;">${year}</span>
+        </span>`;
+    })
+    .join('');
+}
+
+
+public async drawPicTableChart(
+  elementId: string = 'pic_table_chart',
+  options: any = {}
+): Promise<void> {
+  await this.chartsReady;
+
+  const el = document.getElementById(elementId);
+  if (!el) {
+     //console.error(`❌ Chart container '#${elementId}' not found in DOM.`);
+    return;
+  }
+
+  try {
+    const url = this.DATA_SOURCES.PIC_TABLE;
+    //console.log(`📡 Fetching table data from: ${url}`);
+
+    // Use text response to handle SOAP-wrapped XML
+    const rawResponse: string = await this.http
+      .get(url, { responseType: 'text' })
+      .toPromise();
+
+    //console.log('📥 Raw SOAP response:', rawResponse);
+
+    const response = sanitizeSoapResponse(rawResponse);
+    //console.log('✅ Sanitized response:', response);
+
+    if (!response || !Array.isArray(response.rows) || !Array.isArray(response.cols)) {
+      //console.warn("⚠️ Response missing 'rows' or 'cols'");
+      el.innerHTML = "אין נתונים להצגה";
+      return;
+    }
+    
+    // ✅ Reverse the rows
+    response.rows.reverse();
+
+    // Fix date column (index 1) if formatted as string
+    response.rows.forEach((row: any, idx: number) => {
+      const dateCell = row?.c?.[1];
+      if (dateCell?.v && typeof dateCell.v === 'string') {
+        const match = dateCell.v.match(/Date\((\d+),(\d+),(\d+)\)/);
+        if (match) {
+          const [_, y, m, d] = match.map(Number);
+          dateCell.v = new Date(y, m, d);
+        } else {
+          const parsed = new Date(dateCell.v);
+          if (!isNaN(parsed.getTime())) {
+            dateCell.v = parsed;
+          } else {
+            //console.warn(`⚠️ Invalid date format in row ${idx}:`, dateCell.v);
+          }
+        }
+      }
+    });
+
+    const dataTable = new google.visualization.DataTable(response);
+    const chart = new google.visualization.Table(el);
+
+    chart.draw(dataTable, {
+      //showRowNumber: false,
+      allowHtml: true,
+      width: '100%',
+      sort: 'event',      
+      ...options
+    });
+
+    //console.log(`✅ Table chart rendered in #${elementId}`);
+
+  } catch (error) {
+     //console.error("❌ Error drawing table chart:", error);
+    el.innerHTML = "שגיאה בטעינת טבלה";
+  }
+}
+
+
+
+public redrawCharts(): void {
+  if (!google.visualization) return;
+
+  // Re-draw operations chart
+  if (this.cachedChartData.operations) {
+    const el = document.getElementById('bar_chart');
+    if (el) this.drawBarChart(this.cachedChartData.operations, 'bar_chart');
+  }
+
+  // Re-draw income chart
+  if (this.cachedChartData.income) {
+    const elBar = document.getElementById('bar_chart2');
+    const elLine = document.getElementById('line_chart2');
+    if (elBar) this.drawBarChart(this.cachedChartData.income, 'bar_chart2');
+    if (elLine) this.drawLineChart(this.cachedChartData.income, 'line_chart2');
+  }
+
+  // Re-draw exploitation charts
+  if (this.cachedChartData.exploitation) {
+    const el = document.getElementById('as_chart');
+    if (el) this.renderExploitationChart(this.cachedChartData.exploitation, 'as_chart');
+  }
+
+  if (this.cachedChartData.exploitationMonthly) {
+    const el = document.getElementById('as_chart_monthly');
+    if (el) this.renderExploitationChart(this.cachedChartData.exploitationMonthly, 'as_chart_monthly');
+  }
+
+  if (this.cachedChartData.exploitationWeekly) {
+    const el = document.getElementById('as_chart_weekly');
+    if (el) this.renderExploitationChart(this.cachedChartData.exploitationWeekly, 'as_chart_weekly');
+  }
+
+  // Re-draw time average chart
+  if (this.cachedChartData.timeAvg) {
+    const el = document.getElementById('bar_chart_time_avg');
+    if (el) {
+      this.drawTimeAvgChart(
+        'bar_chart_time_avg',
+        {},
+        this.cachedChartData.timeAvg.selectedTypes
+      );
+    }
+  }
+
+  // Add similar blocks for other charts like 3Y, gauge, or merged charts as needed
+}
+
+
 
 }
   

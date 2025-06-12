@@ -14,6 +14,6 @@ export class RoleConfigComponent {
   };
 
   updateRolePermissions() {
-    console.log(`Updated permissions for ${this.selectedRole}`);
+   // console.log(`Updated permissions for ${this.selectedRole}`);
   }
 }

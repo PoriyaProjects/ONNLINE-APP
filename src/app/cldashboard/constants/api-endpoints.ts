@@ -10,6 +10,11 @@ export const API_ENDPOINTS = {
   GAUGE: `${environment.url}/GetCurrentCath?param=1&onlyLastMonth=true`,
   EXPLOITATION: `${environment.url}/GetExploitation`,
   WORKING_DAYS: `${environment.url}/GetMonthWorkDays`,
-  DEPARTMENTS: `${environment.url}/GetDepartmentList`,
+//DEPARTMENTS: `${environment.url}/GetDepartmentList`,
+//DEPARTMENTS: `${environment.url}/GetAvailableDepts`,
+  DEPARTMENTS: `${environment.url}/GetDepartmentListEx`,  
   PERIODS: `${environment.url}/GetTimeTypes`,
+//
+  DIMDEPARTMENTS: `${environment.url}/DIMGetDepartmentList`,
+  DIMPERIODS: `${environment.url}/DIMGetTimeTypes`,
 };

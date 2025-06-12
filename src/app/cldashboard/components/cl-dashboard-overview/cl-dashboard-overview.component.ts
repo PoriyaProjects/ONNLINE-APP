@@ -3,229 +3,288 @@ import { OperationalChartService } from '../../services/operational-chart.servic
 import { ChartLoaderService } from '../../utils/google-charts-loader';
 import { formatDateForApi } from '../../utils/api-utils';
 import { DepartmentService } from '../../services/department.service';
-import { toChartData } from '../../utils/date-utils';
-import { retry, timeout } from 'rxjs/operators';
-import { getChartOptions } from '../../utils/chart-options.util';
+import { map, switchMap, tap, catchError, timeout, retryWhen, scan, delay, startWith } from 'rxjs/operators';
+import { throwError, of, Observable, Subject } from 'rxjs';
+import { defer, combineLatest } from 'rxjs';
+import { Department } from '../../models/department.model';
+import { NgSelectModule } from '@ng-select/ng-select';
+
+export interface RevenueDataPoint {
+    label: string;
+    value: number;
+    deptGroupId: number;
+    deptGroupName: string;
+}
 
 @Component({
-  selector: 'app-cl-dashboard-overview',
-  templateUrl: './cl-dashboard-overview.component.html'
+    selector: 'app-cl-dashboard-overview',
+    templateUrl: './cl-dashboard-overview.component.html'
 })
 export class ClDashboardOverviewComponent implements OnInit {
-  departments: { id: number, name: string }[] = [];
-  periods: { id: number, name: string }[] = [];
+    isLoadingDepartments = false;
+    departmentsLoadError = false;
+    departments: Department[] = [];
+    periods: { id: number; name: string }[] = [];
 
-  filters = {
-    deptCode: '',
-    param: '1',
-    startDate: '2024-01-01',
-    endDate: '2025-05-31',
-    granularity: 'month'
-  };
-
-  rawChartData: { label: string; value: number }[] = [];
-  chartData: any[] = [];
-  isLoading = false;
-
-  // Global chart display controls
-    globalChartControls = {
-    showTrendline: true,
-    showAnnotations: true,
-    showLegend: true,
-    shortFormat: true,
-    showPercentageAnnotations: false,
-    showHtmlTooltip: true,
-    isDarkMode: false,
-    isStacked: false,
-    isRtl: false,
-    currency: '₪',
-    locale: 'he'
-  };
-
-
-
-  granularityOptions = [
-    { label: 'Daily', value: 'day' },
-    { label: 'Monthly', value: 'month' },
-    { label: 'Yearly', value: 'year' }
-  ];
-
-  
-
-  constructor(
-    private deptService: DepartmentService,
-    private ops: OperationalChartService,
-    private chartLoader: ChartLoaderService
-  ) {}
-
-  ngOnInit() {
-    this.deptService.getDepartments().subscribe(list => {
-      this.departments = list;
-      this.filters.deptCode = localStorage.getItem('storage.Depart') || (list[0]?.id?.toString() || '1');
-    });
-
-    this.deptService.getTimeTypes().subscribe(periodList => {
-      this.periods = periodList;
-      if (!this.filters.param && periodList.length > 0) {
-        this.filters.param = periodList[0].id.toString();
-      }
-    });
-
-    this.chartLoader.onReady(() => this.loadChartData());
-  }
-
-  loadChartData() {
-    this.isLoading = true;
-
-    const { startDate, endDate, granularity } = this.filters;
-    const apiStart = formatDateForApi(startDate);
-    const apiEnd = formatDateForApi(endDate);
-
-    this.ops.fetchTotalRevenueDataOnce(apiStart, apiEnd, granularity)
-      .pipe(timeout(60000), retry(10))
-      .subscribe({
-        next: (cleaned) => {
-          this.rawChartData = cleaned;
-          this.chartData = toChartData(this.rawChartData, ['Date', 'Revenue'], {
-            showAnnotations: this.globalChartControls.showAnnotations,
-            shortFormat: this.globalChartControls.shortFormat,
-            showPercentage: this.globalChartControls.showPercentageAnnotations
-          });
-          this.isLoading = false;
-        },
-        error: () => {
-          this.chartData = [['Date', 'Revenue']];
-          this.isLoading = false;
-        }
-      });
-  }
-
-  // onGlobalControlChange(): void {
-  //   // שיכפול אובייקט כדי לגרום ל-change detection
-  //   this.globalChartControls = { ...this.globalChartControls };
-  
-  //   // עדכון הנתונים של התרשים לפי בקרות גלובליות
-  //   if (this.rawChartData?.length) {
-  //     this.chartData = toChartData(this.rawChartData, ['Date', 'Revenue'], {
-  //       showAnnotations: this.globalChartControls.showAnnotations,
-  //       shortFormat: this.globalChartControls.shortFormat,
-  //       showPercentage: this.globalChartControls.showPercentageAnnotations
-  //     });
-  
-  //     // שרטוט מחודש של כל הגרפים עם ההגדרות החדשות
-  //     this.drawAllCharts();
-  //   }
-  // }
-  
-
-  onGlobalControlChange() {
-    this.loadChartData(); // טוען מחדש את הנתונים ומעביר את הערכים החדשים לכל הגרפים
-  }
-
-  
-  onDepartmentChange(id: string) {
-    this.filters.deptCode = id;
-    localStorage.setItem('storage.Depart', id);
-    this.loadChartData();
-  }
-
-  onPeriodChange(id: string) {
-    this.filters.param = id;
-    this.loadChartData();
-  }
-
-  updateFilters(updated: any) {
-    this.filters = { ...this.filters, ...updated };
-    this.loadChartData();
-  }
-
-
-  // drawAllCharts(): void {
-  //   if (!this.chartData?.length || typeof google === 'undefined') return;
-  
-  //   const data = google.visualization.arrayToDataTable(this.chartData);
-  
-  //   const options = {
-  //     ...this.globalChartControls,
-  //     title: 'הכנסות',
-  //     chartType: '', // יתעדכן לכל גרף בנפרד
-  //     height: 400
-  //   };
-  
-  //   const mergedOptions = (chartType: string) => getChartOptions({ ...options, chartType });
-  
-  //   const columnContainer = document.getElementById('columnChart');
-  //   if (columnContainer) {
-  //     const columnChart = new google.visualization.ColumnChart(columnContainer);
-  //     columnChart.draw(data, mergedOptions('column'));
-  //   }
-  
-  //   const lineContainer = document.getElementById('lineChart');
-  //   if (lineContainer) {
-  //     const lineChart = new google.visualization.LineChart(lineContainer);
-  //     lineChart.draw(data, mergedOptions('line'));
-  //   }
-  
-  //   const barContainer = document.getElementById('barChart');
-  //   if (barContainer) {
-  //     const barChart = new google.visualization.BarChart(barContainer);
-  //     barChart.draw(data, mergedOptions('bar'));
-  //   }
-  // }
-
-  drawAllCharts(): void {
-    if (!this.chartData?.length || typeof google === 'undefined') return;
-  
-    const data = google.visualization.arrayToDataTable(this.chartData);
-    
-    const commonOptions = {
-      ...this.globalChartControls,
-      height: 400,
-      currency: this.globalChartControls.currency,
-      locale: this.globalChartControls.locale,
-      isDarkMode: this.globalChartControls.isDarkMode,
-      isRtl: this.globalChartControls.isRtl,
-      isStacked: this.globalChartControls.isStacked,
-      usePercent: this.globalChartControls.showPercentageAnnotations,
-      showHtmlTooltip: this.globalChartControls.showHtmlTooltip,
-      showTrendline: this.globalChartControls.showTrendline,
-      showLegend: this.globalChartControls.showLegend,
-      
+    filters = {
+        param: '1',
+        startDate: '2024-01-01',
+        endDate: '2025-05-31',
+        granularity: 'month'
     };
-  
-    const columnOptions = getChartOptions({
-      ...commonOptions,
-      chartType: 'column',
-      title: 'הכנסות לפי עמודות'
-    });
-  
-    const lineOptions = getChartOptions({
-      ...commonOptions,
-      chartType: 'line',
-      title: 'הכנסות לפי קו מגמה'
-    });
-  
-    const barOptions = getChartOptions({
-      ...commonOptions,
-      chartType: 'bar',
-      title: 'הכנסות לפי בר אופקי'
-    });
-  
-    const columnContainer = document.getElementById('columnChart');
-    if (columnContainer) {
-      new google.visualization.ColumnChart(columnContainer).draw(data, columnOptions);
+
+    rawChartData: RevenueDataPoint[] = [];
+    rawChartDataFull: RevenueDataPoint[] = [];
+    selectedDeptGroupId: number = 0;
+
+    isLoading = false;
+
+    // triggers
+    private chartReloadTrigger$ = new Subject<void>();
+
+    globalChartControls = {
+        showTrendline: true,
+        showAnnotations: true,
+        showLegend: true,
+        shortFormat: true,
+        showPercentageAnnotations: false,
+        showHtmlTooltip: true,
+        isDarkMode: false,
+        isStacked: false,
+        isRtl: false,
+        currency: '₪',
+        locale: 'he'
+    };
+
+    granularityOptions = [
+        { label: 'Monthly', value: 'month' },
+        { label: 'Quarterly', value: 'quarter' },
+        { label: 'Yearly', value: 'year' }
+    ];
+
+    constructor(
+        private deptService: DepartmentService,
+        private ops: OperationalChartService,
+        private chartLoader: ChartLoaderService
+    ) {}
+
+    ngOnInit() {
+        this.loadDepartments$().pipe(
+            switchMap(() => this.chartLoader.ready$),
+            tap(() => this.setupChartReactiveLoad()),
+            tap(() => this.triggerChartReload()) // initial load!
+        ).subscribe();
+
+        this.deptService.getTimeTypes().subscribe(periodList => {
+            this.periods = periodList;
+            if (!this.filters.param && periodList.length > 0) {
+                this.filters.param = periodList[0].id.toString();
+            }
+        });
+
+        const savedGroupId = localStorage.getItem('storage.SelectedDeptGroupId');
+        if (savedGroupId) {
+            this.selectedDeptGroupId = parseInt(savedGroupId, 10);
+        }
     }
-  
-    const lineContainer = document.getElementById('lineChart');
-    if (lineContainer) {
-      new google.visualization.LineChart(lineContainer).draw(data, lineOptions);
+
+    loadDepartments$(): Observable<Department[]> {
+        this.isLoadingDepartments = true;
+        this.departmentsLoadError = false;
+
+        return this.deptService.getDepartments().pipe(
+            timeout(10000),
+            map((list: any) => {
+                if (typeof list === 'string' && list.includes('<?xml')) {
+                   // console.warn('Invalid department response (XML) → forcing retry');
+                    throw new Error('Invalid department response (XML)');
+                }
+
+                if (Array.isArray(list) && list.length === 0) {
+                   // console.warn('Empty department list received → forcing retry');
+                    throw new Error('Empty department list');
+                }
+
+                return list as Department[];
+            }),
+            this.retryWithBackoff(5, 2000),
+            tap((list: Department[]) => {
+                this.departments = list.sort((a, b) => a.name.localeCompare(b.name));
+                this.isLoadingDepartments = false;
+               // console.log('Departments loaded:', this.departments);
+            }),
+            catchError(err => {
+                console.error('Failed to load departments after retries:', err);
+                this.departmentsLoadError = true;
+                this.departments = [];
+                this.isLoadingDepartments = false;
+                return of([] as Department[]);
+            })
+        );
     }
-  
-    const barContainer = document.getElementById('barChart');
-    if (barContainer) {
-      new google.visualization.BarChart(barContainer).draw(data, barOptions);
+
+    // setupChartReactiveLoad() {
+    //     this.chartReloadTrigger$.pipe(
+    //         startWith(void 0), // trigger first load
+    //         switchMap(() => {
+    //             this.isLoading = true;
+
+    //             const { startDate, endDate, granularity } = this.filters;
+    //             const apiStart = formatDateForApi(startDate);
+    //             const apiEnd = formatDateForApi(endDate);
+    //             const deptGroupIdParam = this.selectedDeptGroupId === 0 ? '' : this.selectedDeptGroupId.toString();
+
+    //            // console.log('=== loadChartData ===');
+    //            // console.log('DeptGroupId:', deptGroupIdParam);
+    //            // console.log('Start:', apiStart, 'End:', apiEnd, 'Granularity:', granularity);
+
+    //             return this.ops.fetchTotalRevenueDataOnce(apiStart, apiEnd, deptGroupIdParam, granularity).pipe(
+    //                 timeout(80000),
+    //                 retryWhen(errors =>
+    //                     errors.pipe(
+    //                         scan((retryCount, err) => {
+    //                             if (retryCount >= 10) throw err;
+    //                            // console.warn(`Retrying chart load - Attempt #${retryCount + 1}`);
+    //                             return retryCount + 1;
+    //                         }, 0),
+    //                         delay(2000)
+    //                     )
+    //                 )
+    //             );
+    //         })
+    //     ).subscribe({
+    //         next: (cleaned: RevenueDataPoint[]) => {
+    //             this.rawChartData = cleaned;
+    //            // console.log('[ClDashboardOverview] rawChartData:', this.rawChartData);
+
+    //             localStorage.setItem('storage.SelectedDeptGroupId', this.selectedDeptGroupId.toString());
+    //             this.isLoading = false;
+    //         },
+    //         error: (err) => {
+    //             console.error('Failed to load chart data:', err);
+    //             this.rawChartData = [];
+    //             this.isLoading = false;
+    //         }
+    //     });
+    // }
+
+    setupChartReactiveLoad() {
+        this.chartReloadTrigger$.pipe(
+            startWith(void 0), // trigger first load
+            switchMap(() => {
+                this.isLoading = true;
+    
+                const { startDate, endDate, granularity } = this.filters;
+                const apiStart = formatDateForApi(startDate);
+                const apiEnd = formatDateForApi(endDate);
+                const deptGroupIdParam = this.selectedDeptGroupId === 0 ? '' : this.selectedDeptGroupId.toString();
+    
+               // console.log('=== loadChartData ===');
+               // console.log('DeptGroupId:', deptGroupIdParam);
+               // console.log('Start:', apiStart, 'End:', apiEnd, 'Granularity:', granularity);
+    
+                // Normal chart data (filtered)
+                const normalData$ = this.ops.fetchTotalRevenueDataOnce(apiStart, apiEnd, deptGroupIdParam, granularity).pipe(
+                    timeout(80000),
+                    retryWhen(errors =>
+                        errors.pipe(
+                            scan((retryCount, err) => {
+                                if (retryCount >= 10) throw err;
+                               // console.warn(`Retrying chart load - Attempt #${retryCount + 1}`);
+                                return retryCount + 1;
+                            }, 0),
+                            delay(2000)
+                        )
+                    )
+                );
+    
+                // Full data (for CompareMonths)
+                const fullData$ = this.ops.fetchTotalRevenueDataOnce(apiStart, apiEnd, '', 'month').pipe(
+                    timeout(80000),
+                    retryWhen(errors =>
+                        errors.pipe(
+                            scan((retryCount, err) => {
+                                if (retryCount >= 10) throw err;
+                               // console.warn(`Retrying FULL chart load - Attempt #${retryCount + 1}`);
+                                return retryCount + 1;
+                            }, 0),
+                            delay(2000)
+                        )
+                    )
+                );
+    
+                // Combine both, using defer() for Angular 9 compatibility
+                return defer(() => combineLatest([normalData$, fullData$]));
+            })
+        ).subscribe({
+            next: ([cleaned, full]) => {
+                this.rawChartData = cleaned;
+                this.rawChartDataFull = full;
+    
+               // console.log('[ClDashboardOverview] rawChartData:', this.rawChartData);
+               // console.log('[ClDashboardOverview] rawChartDataFull:', this.rawChartDataFull);
+    
+                localStorage.setItem('storage.SelectedDeptGroupId', this.selectedDeptGroupId.toString());
+                this.isLoading = false;
+            },
+            error: (err) => {
+                console.error('Failed to load chart data:', err);
+                this.rawChartData = [];
+                this.rawChartDataFull = [];
+                this.isLoading = false;
+            }
+        });
     }
-  }
-  
-  
+    
+    triggerChartReload() {
+        this.chartReloadTrigger$.next();
+    }
+
+    onGlobalControlChange() {
+        this.triggerChartReload();
+    }
+
+    onDeptGroupChange(groupId: number) {
+        this.selectedDeptGroupId = groupId;
+        localStorage.setItem('storage.SelectedDeptGroupId', this.selectedDeptGroupId.toString());
+        this.triggerChartReload();
+       // console.log('Dept group changed → reload triggered');
+    }
+
+    onPeriodChange(id: string) {
+        this.filters.param = id;
+        this.triggerChartReload();
+    }
+
+    updateFilters(updated: any) {
+        this.filters = { ...this.filters, ...updated };
+        this.triggerChartReload();
+    }
+
+    getAvailableDeptGroups() {
+        const uniqueGroups = Array.from(
+            new Map(
+                this.rawChartData
+                    .filter(item => item.deptGroupId > 0)
+                    .map(item => [item.deptGroupId, item.deptGroupName])
+            ).entries()
+        ).map(([id, name]) => ({ id, name }));
+
+        return uniqueGroups.sort((a, b) => a.name.localeCompare(b.name));
+    }
+
+    private retryWithBackoff(maxRetry: number, delayMs: number) {
+        return retryWhen(errors =>
+            errors.pipe(
+                scan((retryCount, err) => {
+                    if (retryCount >= maxRetry) {
+                        throw err;
+                    }
+                   // console.warn(`Retrying getDepartments() - Attempt #${retryCount + 1}`);
+                    return retryCount + 1;
+                }, 0),
+                delay(delayMs)
+            )
+        );
+    }
 }

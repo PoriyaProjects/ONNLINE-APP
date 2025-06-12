@@ -11,6 +11,8 @@ import { fetchSanitized } from '../utils/api-utils';
 
 
 @Injectable({ providedIn: 'root' })
+
+
 export class DepartmentService {
   constructor(private http: HttpClient) {}
 

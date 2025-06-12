@@ -1,57 +1,29 @@
-<div class="google-chart-container mat-elevation-z2" style="padding: 12px;">
+<div class="google-chart-container mat-elevation-z22" style="padding: 12px; display:inline-block; margin:20px;">
   <mat-card>
     <mat-card-title class="text-center">
       {{ chartTitle || 'Chart Placeholder' }}
     </mat-card-title>
-
     <mat-card-content>
-      <!-- Chart Controls -->
+      <!-- פקדי שליטה -->
       <mat-expansion-panel>
         <mat-expansion-panel-header>
-          <mat-panel-title> Chart Controls </mat-panel-title>
-          <mat-panel-description>Click to expand</mat-panel-description>
+          <mat-panel-title> פקדי שליטה </mat-panel-title>
+          <mat-panel-description>לחץ להרחבה</mat-panel-description>
         </mat-expansion-panel-header>
 
         <div class="controls-section">
-          <div class="date-controls">
-            <mat-form-field>
-              <mat-label>Start Date</mat-label>
-              <input matInput type="date" [(ngModel)]="startDate" (change)="onControlChange()" />
-            </mat-form-field>
-
-            <mat-form-field>
-              <mat-label>End Date</mat-label>
-              <input matInput type="date" [(ngModel)]="endDate" (change)="onControlChange()" />
-            </mat-form-field>
-          </div>
-
           <div class="toggle-controls">
             <mat-checkbox [(ngModel)]="showTrendline" (change)="onControlChange()">Trendline</mat-checkbox>
             <mat-checkbox [(ngModel)]="showAnnotations" (change)="onControlChange()">Annotations</mat-checkbox>
             <mat-checkbox [(ngModel)]="showLegend" (change)="onControlChange()">Legend</mat-checkbox>
             <mat-checkbox [(ngModel)]="shortFormat" (change)="onControlChange()">Short Format</mat-checkbox>
-            <mat-checkbox [(ngModel)]="showPercentageAnnotations" (change)="onControlChange()">% Annotation</mat-checkbox>
-            <mat-checkbox [(ngModel)]="showHtmlTooltip" (change)="onControlChange()">HTML Tooltip</mat-checkbox>
-            <mat-checkbox [(ngModel)]="isRtl" (change)="onControlChange()">RTL</mat-checkbox>
+            <mat-checkbox [(ngModel)]="showPercentageAnnotations" (change)="onControlChange()">% Annotation</mat-checkbox>           
           </div>
-
-          <mat-form-field>
-            <mat-label>Granularity</mat-label>
-            <mat-select [(ngModel)]="granularity" (selectionChange)="onControlChange()">
-              <mat-option *ngFor="let option of granularityOptions" [value]="option.value">
-                {{ option.label }}
-              </mat-option>
-            </mat-select>
-          </mat-form-field>
         </div>
       </mat-expansion-panel>
 
       <!-- Loading Spinner -->
-      <div class="spinner-wrapper" *ngIf="isLoading">
-        <mat-spinner *ngIf="isLoading" style="margin:10px auto;"></mat-spinner>      
-      </div>
-
-      <!-- Chart Container -->
+      <div style="text-align: center;margin-bottom: 10px;"><mat-spinner *ngIf="isLoading" style="margin:10px auto;"></mat-spinner></div>
       <div #chart class="chart-render-area" style="width: 100%; height: 400px;"></div>
     </mat-card-content>
   </mat-card>
