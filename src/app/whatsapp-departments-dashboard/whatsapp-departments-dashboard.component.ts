@@ -284,7 +284,9 @@ export class WhatsappDepartmentsDashboardComponent implements OnInit {
     this.loadChat = true;
     this.http
       .post(environment.url + "GetDepartmentsWhatsAppConversationsByIDFK", {
-        _row_ID: row_id
+        _row_ID: row_id,
+        _service_idfk: this.employee_service_action.Service_Order,
+        _action_idfk: this.employee_service_action.Action_Order
       })
       .subscribe((Response) => {
         this.currentContact.WhatsApp_Bot_Convesations = Response["d"];
