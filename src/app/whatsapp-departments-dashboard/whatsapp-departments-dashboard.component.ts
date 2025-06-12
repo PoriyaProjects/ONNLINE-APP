@@ -320,6 +320,9 @@ export class WhatsappDepartmentsDashboardComponent implements OnInit {
   sendMessage() {
     if (this.newMessage.controls['Message_Text'].value.trim() !== '' || this.base64String.toString() !== '') {
       this.newMessage.controls['ServiceEmployeeIDFK'].setValue(this.user_name);
+      if (this.newMessage.value.ServiceIDFK == "") this.newMessage.controls['ServiceIDFK'].setValue(this.employee_service_action.Service_Order);
+      if (this.newMessage.value.ActionIDFK == "") this.newMessage.controls['ActionIDFK'].setValue(this.employee_service_action.Action_Order);
+      if (this.newMessage.value.EndUserIDFK == "") this.newMessage.controls['EndUserIDFK'].setValue(this.currentContact.Row_ID);
       this.http
         .post(environment.url + "SendDepartmentsWhatsAppMessageToUser", {
           messageForm: this.newMessage.value,
