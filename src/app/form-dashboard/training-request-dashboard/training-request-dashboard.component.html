@@ -1,10 +1,11 @@
-<h2 class="page-title text-center">{{UserName}} - השתלמות בקליק </h2>
+<h2 class="page-title text-center">{{UserName}} - השתלמות בקליק (במקום טופס מדף 2635)</h2>
 <div class="dashboard-container">
     <div class="card-table">
         <div class="card-header-modern" dir="rtl">
-            <div class="row">
+            <!-- Top Row: Search + Filter -->
+            <div class="toolbar-row">
                 <!-- Search -->
-                <mat-form-field appearance="outline" class="form-field flex-1">
+                <mat-form-field appearance="outline" class="form-field flex-grow">
                     <mat-label>חיפוש</mat-label>
                     <input matInput type="text" (keyup)="applyFilter($event)" />
                     <mat-icon matPrefix>search</mat-icon>
@@ -14,44 +15,31 @@
                 <mat-form-field appearance="outline" class="form-field">
                     <mat-label>סינון - ועדת החלטה</mat-label>
                     <mat-select (selectionChange)="getAllTrainingRequestFormsList($event.value)">
-                        <mat-option value="1">
-                            <mat-icon color="primary">done</mat-icon> מאושרים
-                        </mat-option>
-                        <mat-option value="0">
-                            <mat-icon color="warn">close</mat-icon> סירובים
-                        </mat-option>
-                        <mat-option value="null">
-                            <mat-icon color="accent">schedule</mat-icon> בהמתנה
-                        </mat-option>
-                        <mat-option value="2">
-                            <mat-icon>cancel</mat-icon> ביטולים
-                        </mat-option>
-                        <mat-option value="3">
-                            <mat-icon>list</mat-icon> מוכנים לוועדה
-                        </mat-option>
-                        <mat-option value="">
-                            <mat-icon>filter_list</mat-icon> הכל
-                        </mat-option>
+                        <mat-option value="1"><mat-icon color="primary">done</mat-icon> מאושרים</mat-option>
+                        <mat-option value="0"><mat-icon color="warn">close</mat-icon> סירובים</mat-option>
+                        <mat-option value="null"><mat-icon color="accent">schedule</mat-icon> בהמתנה</mat-option>
+                        <mat-option value="2"><mat-icon>cancel</mat-icon> ביטולים</mat-option>
+                        <mat-option value="3"><mat-icon>list</mat-icon> מוכנים לוועדה</mat-option>
+                        <mat-option value=""><mat-icon>filter_list</mat-icon> הכל</mat-option>
                     </mat-select>
                 </mat-form-field>
             </div>
 
-            <div class="row" style="justify-content: left;">
-                <!-- Print Button -->
-                <button mat-raised-button (click)="openPeopleDialog()" matTooltip="הדפסת פרוטוקול"
-                    style="background-color: #1976d2;color: #ffffff;"
+            <!-- Bottom Row: Actions -->
+            <div class="toolbar-row align-left">
+                <!-- Print Buttons -->
+                <button mat-raised-button color="primary" (click)="openPeopleDialog()" matTooltip="הדפסת פרוטוקול"
                     *ngIf="UserName == 'adahabre' || UserName == 'ttsrefati'">
                     <mat-icon>line_style</mat-icon>
                     הדפסת פרוטוקול
                 </button>
-                <button mat-raised-button (click)="printProtocol()" matTooltip="הדפסת פרוטוקול"
-                    style="background-color: #1976d2;color: #ffffff;"
+                <button mat-raised-button color="primary" (click)="printProtocol()" matTooltip="הדפסת פרוטוקול"
                     *ngIf="print_only_Protocol && !(UserName == 'adahabre' || UserName == 'ttsrefati')">
                     <mat-icon>line_style</mat-icon>
                     הדפסת פרוטוקול
                 </button>
 
-                <!-- Date Picker (conditional) -->
+                <!-- Date Picker -->
                 <mat-form-field *ngIf="UserName == 'ttsrefati' || UserName == 'tkoren'" appearance="outline"
                     class="form-field">
                     <mat-label>תאריך הועדה הקרוב</mat-label>
@@ -61,11 +49,13 @@
                     <mat-datepicker #PlanDate></mat-datepicker>
                 </mat-form-field>
 
+                <!-- Static Display of Date -->
                 <p *ngIf="UserName != 'ttsrefati' && UserName != 'tkoren'" class="next-meeting">
                     <strong>תאריך הועדה הקרוב:</strong> {{ Plan_Date }}
                 </p>
             </div>
         </div>
+
         <mat-progress-bar mode="indeterminate" color="accent" *ngIf="loading"></mat-progress-bar>
         <table mat-table [dataSource]="trainingRequests" matSort class="mat-elevation-z8"
             style="width: 100%;margin-top: 30px;">

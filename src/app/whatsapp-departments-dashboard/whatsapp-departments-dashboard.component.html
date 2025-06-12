@@ -1,12 +1,35 @@
 <!-- app.component.html -->
 <h3 class="page-title text-center" dir="rtl">וואטסאפ המרכז הרפואי - שם משתמש: {{user_name}}</h3>
 <mat-sidenav-container dir="rtl">
-    <mat-sidenav-content class="sidenav-content">
-        <mat-toolbar color="primary">
-            <span>{{ currentContact?.FirstName }} {{ currentContact?.FatherName }} {{ currentContact?.LastName }} - {{
-                currentContact?.CellNumber }} - {{
-                currentContact?.Message_Time }}{{
-                currentContact?.Visit_Date }}</span>
+    <div dir="rtl" *ngIf="employee_service_action == undefined" class="service-selection-container">
+        <h2 mat-dialog-title>בחר סוג שירות</h2>
+
+        <mat-dialog-content>
+            <div class="cube-options">
+                <button mat-raised-button class="cube" *ngFor="let ser of services" (click)="chooseService(ser)">
+                    <div class="service-name">{{ ser.Service_Name }}</div>
+                    <div class="action-name">{{ ser.Action_Name }}</div>
+                </button>
+            </div>
+        </mat-dialog-content>
+    </div>
+    <mat-sidenav-content class="sidenav-content" *ngIf="employee_service_action != undefined">
+        <mat-toolbar>
+            <div class="row" style="width: 100%;">
+                <div class="col-4 text-right">
+                    <button mat-raised-button (click)="returnToHome()" style="background-color: #e9e311;">
+                        <mat-icon>home</mat-icon>
+                    </button>
+                </div>
+                <div class="col-4 text-center">
+                    <span>{{ currentContact?.FirstName }} {{ currentContact?.FatherName }} {{ currentContact?.LastName
+                        }} - {{
+                        currentContact?.CellNumber }} - {{
+                        currentContact?.Message_Time }}{{
+                        currentContact?.Visit_Date }}</span>
+                </div>
+                <div class="col-4"></div>
+            </div>
         </mat-toolbar>
         <!-- Your chat area goes here -->
         <div class="row">
@@ -19,21 +42,21 @@
                 <div class="row">
                     <div class="col-10">
                         <mat-form-field>
-                            <mat-label>חיפוש</mat-label>
+                            <mat-label>חיפוש לפי ת.ז</mat-label>
                             <input matInput [(ngModel)]="_searchNewPatient" placeholder="תעודת זהות.." #input>
                         </mat-form-field>
                     </div>
                     <div class="col-2">
-                        <button matTooltip="חיפוש" mat-raised-button type="submit" class="btn btn-primary btn-raised"
-                            (click)="searchNewPatient()">
+                        <button matTooltip="חיפוש" mat-raised-button class="btn btn-raised"
+                            style="background-color: #00a884;" (click)="searchNewPatient()">
                             <span class="material-icons">
                                 search
                             </span>
                         </button>
                     </div>
                 </div>
-                <mat-form-field class="col-12">
-                    <mat-label>סינון</mat-label>
+                <mat-form-field class="col-12" *ngIf="contacts_filter.length > 0">
+                    <mat-label>סינון מהרשימה</mat-label>
                     <input matInput (keyup)="applyFilter2($event.target.value)" placeholder="הקלד.." #input>
                 </mat-form-field>
                 <!-- <mat-form-field class="col-5">
@@ -42,20 +65,22 @@
                         placeholder="הקלד.." #input2>
                 </mat-form-field> -->
                 <mat-list role="list" class="list-of-contact">
-                    <mat-spinner *ngIf="contacts.length == 0"></mat-spinner>
+                    <div class="row text-center">
+                        <span *ngIf="contacts.length == 0">טוען...</span>
+                    </div>
                     <mat-list-item role="listitem" class="list-item" *ngFor="let contact of contacts_filter"
                         (click)="openChat(contact)">
                         <mat-icon mat-list-icon
                             [ngStyle]="{'background-color': contact.Active == 1 ? 'cornflowerblue' : 'orangered'}">account_circle</mat-icon>
-                        <span mat-line
-                            matTooltip="תאריך: {{contact.Visit_Date}}&#13; גיל: {{contact.Age}}&#13; סוג: {{contact.Type}}">{{
+                        <span mat-line matTooltip="תאריך: {{contact.Visit_Date}}&#13; גיל: {{contact.Age}}">{{
                             contact.FirstName }} {{ contact.FatherName
                             }} {{ contact.LastName }} -
-                            {{contact.CellNumber}}</span>
+                            {{contact.CellNumber}} - {{contact.Type}}</span>
                     </mat-list-item>
                 </mat-list>
             </div>
-            <div class="col-6" [formGroup]="newMessage">
+            <div class="col-6" [formGroup]="newMessage"
+                [ngStyle]="currentContact !== undefined ? { 'background-color': '#efeae2', 'border-radius': '15px' } : { 'background-color': '#f0f2f5' }">
                 <!-- Your input area goes here -->
                 <div class="input-container"
                     *ngIf="currentContact !== undefined && currentContact.maxRow !== '' && currentContact.maxRow !== undefined">
@@ -68,6 +93,7 @@
                             (keydown.enter)="sendMessage()">
                     </mat-form-field>
                     <button mat-icon-button type="submit" class="send-btn" (click)="sendMessage()" matTooltip="שליחה">
+                        <!--  [disabled]="newMessage.get('Message_Text').value == ''" -->
                         <mat-icon>send</mat-icon>
                     </button>
                 </div>
@@ -127,11 +153,12 @@
             <div class="col-3">
                 <mat-card-header>
                     <div class="mat-card-header-text">
-                        <mat-card-title>שיחות וואטסאפ</mat-card-title>
+                        <mat-card-title>שיחות וואטסאפ</mat-card-title><br>
+                        <mat-card-content>{{loading_message}}</mat-card-content>
                     </div>
                 </mat-card-header>
-                <mat-form-field>
-                    <mat-label>סינון</mat-label>
+                <mat-form-field *ngIf="unAnsweredConversations_filter.length > 0">
+                    <mat-label>סינון מהרשימה</mat-label>
                     <input matInput (keyup)="applyFilter($event.target.value)" placeholder="הקלד.." #input>
                 </mat-form-field>
                 <mat-list role="list" class="list-of-contact">
@@ -139,7 +166,7 @@
                         *ngFor="let uncontact of unAnsweredConversations_filter" (click)="openChat(uncontact)">
                         <mat-icon mat-list-icon
                             [ngStyle]="{'background-color': uncontact.maxRow == '' ? '' : uncontact.LateSessions == 'Late' ? 'orangered' : 'limegreen'}">account_circle</mat-icon>
-                        <span mat-line>{{ uncontact.FirstName }} {{ uncontact.LastName }}
+                        <span mat-line>{{ uncontact.FirstName }} {{ uncontact.LastName }} - {{ uncontact.CellNumber }}
                             - <span *ngIf="uncontact.Service_Name != ''">
                                 {{uncontact.Service_Name}}:
                                 {{uncontact.Action_Name}}
