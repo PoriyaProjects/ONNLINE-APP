@@ -81,6 +81,7 @@ export class WhatsappDepartmentsDashboardComponent implements OnInit {
   }
 
   returnToHome() {
+    this.currentContact = null;
     this.employee_service_action = undefined;
   }
 
@@ -218,9 +219,9 @@ export class WhatsappDepartmentsDashboardComponent implements OnInit {
         if (this.unAnsweredConversations.length == 0) this.loading_message = "לא נמצאו שיחות";
         else this.loading_message = "";
         this.unAnsweredConversations_filter = this.unAnsweredConversations;
-        if (this.currentContact !== undefined && this.currentContact.maxRow !== '' && this.currentContact.Row_ID !== undefined) {
-          this.currentContact = this.unAnsweredConversations.filter(x => x.Row_ID == this.currentContact.Row_ID)[0];
-          if (this.currentContact.Row_ID !== undefined) this.getDepartmentsWhatsAppConversationsByIDFK(this.currentContact.Row_ID);
+        if (this.currentContact !== undefined && this.currentContact?.maxRow !== '' && this.currentContact?.Row_ID !== undefined) {
+          this.currentContact = this.unAnsweredConversations.filter(x => x.Row_ID == this.currentContact?.Row_ID)[0];
+          if (this.currentContact?.Row_ID !== undefined) this.getDepartmentsWhatsAppConversationsByIDFK(this.currentContact?.Row_ID);
         }
         this.filteredOptions = this.users_filter.valueChanges.pipe(
           startWith(''),
@@ -290,7 +291,7 @@ export class WhatsappDepartmentsDashboardComponent implements OnInit {
       })
       .subscribe((Response) => {
         this.currentContact.WhatsApp_Bot_Convesations = Response["d"];
-        let indexOfLastMessage = this.currentContact.WhatsApp_Bot_Convesations.length;
+        let indexOfLastMessage = this.currentContact?.WhatsApp_Bot_Convesations.length;
         if (indexOfLastMessage > 0) {
           this.newMessage.controls['Row_ID'].setValue(this.currentContact.WhatsApp_Bot_Convesations[0].Row_ID);
           this.newMessage.controls['From_ServiceEmployee'].setValue(this.currentContact.WhatsApp_Bot_Convesations[0].From_ServiceEmployee);
@@ -322,7 +323,7 @@ export class WhatsappDepartmentsDashboardComponent implements OnInit {
       this.newMessage.controls['ServiceEmployeeIDFK'].setValue(this.user_name);
       if (this.newMessage.value.ServiceIDFK == "") this.newMessage.controls['ServiceIDFK'].setValue(this.employee_service_action.Service_Order);
       if (this.newMessage.value.ActionIDFK == "") this.newMessage.controls['ActionIDFK'].setValue(this.employee_service_action.Action_Order);
-      if (this.newMessage.value.EndUserIDFK == "") this.newMessage.controls['EndUserIDFK'].setValue(this.currentContact.Row_ID);
+      if (this.newMessage.value.EndUserIDFK == "") this.newMessage.controls['EndUserIDFK'].setValue(this.currentContact?.Row_ID);
       this.http
         .post(environment.url + "SendDepartmentsWhatsAppMessageToUser", {
           messageForm: this.newMessage.value,
@@ -331,7 +332,7 @@ export class WhatsappDepartmentsDashboardComponent implements OnInit {
         .subscribe((Response) => {
           if (Response["d"]) {
             if (this.selectedFile) window.location.reload();
-            this.currentContact.WhatsApp_Bot_Convesations.push({ Message_Text: this.selectedFile ? this.base64String : this.newMessage.controls['Message_Text'].value, From_ServiceEmployee: 'True', IfFileMessage: this.selectedFile ? 'True' : 'False' });
+            this.currentContact?.WhatsApp_Bot_Convesations.push({ Message_Text: this.selectedFile ? this.base64String : this.newMessage.controls['Message_Text'].value, From_ServiceEmployee: 'True', IfFileMessage: this.selectedFile ? 'True' : 'False' });
             this.newMessage.controls['Message_Text'].setValue('');
             setTimeout(() => {
               this.getDepartmentsWhatsAppConversationsByIDFK(this.newMessage.value.EndUserIDFK);
@@ -345,8 +346,8 @@ export class WhatsappDepartmentsDashboardComponent implements OnInit {
 
   sendOneWayMessage() {
     if (this.newMessage.controls['Message_Text'].value.trim() !== '' || this.base64String.toString() !== '') {
-      this.newMessage.controls['ServiceEmployeeIDFK'].setValue(this.currentContact.CellNumber);
-      this.newMessage.controls['EndUserIDFK'].setValue(this.currentContact.FirstName + ' ' + this.currentContact.LastName);
+      this.newMessage.controls['ServiceEmployeeIDFK'].setValue(this.currentContact?.CellNumber);
+      this.newMessage.controls['EndUserIDFK'].setValue(this.currentContact?.FirstName + ' ' + this.currentContact?.LastName);
       this.http
         .post(environment.url + "SendDepartmentsWhatsAppMessageToUserOneWay", {
           messageForm: this.newMessage.value,
@@ -416,8 +417,8 @@ export class WhatsappDepartmentsDashboardComponent implements OnInit {
       const file_type = await this.detectFileType(base64Data);
       // Replace 'filename.pdf' with the desired file name
       let fileName = "";
-      if (file_type == 'application/pdf') fileName = message.EndUserIDFK + '-' + this.currentContact.FirstName + ' ' + this.currentContact.LastName + ' ' + message.Message_Time + '.pdf';
-      else fileName = message.EndUserIDFK + '-' + this.currentContact.FirstName + ' ' + this.currentContact.LastName + ' ' + message.Message_Time + '.png';
+      if (file_type == 'application/pdf') fileName = message.EndUserIDFK + '-' + this.currentContact?.FirstName + ' ' + this.currentContact?.LastName + ' ' + message.Message_Time + '.pdf';
+      else fileName = message.EndUserIDFK + '-' + this.currentContact?.FirstName + ' ' + this.currentContact?.LastName + ' ' + message.Message_Time + '.png';
 
       await this.convertBase64ToPDF(base64Data, fileName, file_type);
     } catch (error) {
@@ -427,7 +428,7 @@ export class WhatsappDepartmentsDashboardComponent implements OnInit {
 
   displayAllCasesByPhoneNumber(base64Data) {
     this.http.post(environment.urlipracticom + "getAllPassportIdsByPhoneNumber", {
-      phone_number: this.currentContact.CellNumber
+      phone_number: this.currentContact?.CellNumber
     }
     ).subscribe((res) => {
       this.current_contact_cases = res['d'];
