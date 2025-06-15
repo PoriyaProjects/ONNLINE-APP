@@ -15,6 +15,6 @@ export const API_ENDPOINTS = {
   DEPARTMENTS: `${environment.url}/GetDepartmentListEx`,  
   PERIODS: `${environment.url}/GetTimeTypes`,
 //
-  DIMDEPARTMENTS: `${environment.url}/DIMGetDepartmentList`,
-  DIMPERIODS: `${environment.url}/DIMGetTimeTypes`,
+  DIMDEPARTMENTS: `${environment.url}/GetDepartmentList`,
+  DIMPERIODS: `${environment.url}/GetTimeTypes`,
 };

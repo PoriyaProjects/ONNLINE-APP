@@ -101,7 +101,7 @@ export function getChartOptions({
   // Trendlines → only on line/column/combo
   if ((chartType === 'line' || chartType === 'column' || chartType === 'combo') && showTrendline) {
     commonOptions.trendlines = {
-      0: {
+      1: {
         color: 'green',
         lineWidth: 2,
         opacity: 0.3,

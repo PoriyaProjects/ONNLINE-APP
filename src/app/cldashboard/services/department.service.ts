@@ -19,7 +19,8 @@ export class DepartmentService {
   getDepartments(): Observable<Department[]> {
     return fetchSanitized<Department>(
       this.http,
-      API_ENDPOINTS.DEPARTMENTS,
+      //API_ENDPOINTS.DEPARTMENTS,
+      API_ENDPOINTS.DIMDEPARTMENTS,
       [
         { id: 1, name: 'ניתוחים' },
         { id: 2, name: 'מרפאות ומכונים' },
@@ -42,6 +43,7 @@ export class DepartmentService {
     return fetchSanitized<TimeType>(
       this.http,
       API_ENDPOINTS.PERIODS,
+      //API_ENDPOINTS.DIMPERIODS,
       [
         { id: 1, name: 'שבוע אחרון' },
         { id: 2, name: 'חודש נוכחי' },
@@ -62,6 +64,7 @@ export class TimePeriodService {
     return fetchSanitized<TimeType>(
       this.http,
       API_ENDPOINTS.PERIODS,
+      //API_ENDPOINTS.DIMPERIODS,
       [
         { id: 1, name: 'שבוע אחרון' },
         { id: 2, name: 'חודש נוכחי' },

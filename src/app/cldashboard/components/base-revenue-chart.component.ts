@@ -21,8 +21,9 @@ export abstract class BaseRevenueChartComponent implements OnChanges {
     @Input() chartTitle = '';
 
 granularityOptions = [
-  { value: 'day', label: 'Day' },
+  { value: 'week', label: 'Week' },
   { value: 'month', label: 'Month' },
+  { value: 'quartal', label: 'Quartal' },
   { value: 'year', label: 'Year' }
 ];
 
@@ -37,7 +38,7 @@ onControlChange(): void {
             'isLoading',
             'selectedDeptGroupId',
             'granularity',
-            'shortFormat' // ✅ NEW
+            'shortFormat' 
         ];
         const keysTriggered = Object.keys(changes).filter(k => redrawKeys.includes(k));
 

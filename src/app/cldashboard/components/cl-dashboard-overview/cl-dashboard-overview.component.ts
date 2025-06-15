@@ -123,50 +123,6 @@ export class ClDashboardOverviewComponent implements OnInit {
         );
     }
 
-    // setupChartReactiveLoad() {
-    //     this.chartReloadTrigger$.pipe(
-    //         startWith(void 0), // trigger first load
-    //         switchMap(() => {
-    //             this.isLoading = true;
-
-    //             const { startDate, endDate, granularity } = this.filters;
-    //             const apiStart = formatDateForApi(startDate);
-    //             const apiEnd = formatDateForApi(endDate);
-    //             const deptGroupIdParam = this.selectedDeptGroupId === 0 ? '' : this.selectedDeptGroupId.toString();
-
-    //            // console.log('=== loadChartData ===');
-    //            // console.log('DeptGroupId:', deptGroupIdParam);
-    //            // console.log('Start:', apiStart, 'End:', apiEnd, 'Granularity:', granularity);
-
-    //             return this.ops.fetchTotalRevenueDataOnce(apiStart, apiEnd, deptGroupIdParam, granularity).pipe(
-    //                 timeout(80000),
-    //                 retryWhen(errors =>
-    //                     errors.pipe(
-    //                         scan((retryCount, err) => {
-    //                             if (retryCount >= 10) throw err;
-    //                            // console.warn(`Retrying chart load - Attempt #${retryCount + 1}`);
-    //                             return retryCount + 1;
-    //                         }, 0),
-    //                         delay(2000)
-    //                     )
-    //                 )
-    //             );
-    //         })
-    //     ).subscribe({
-    //         next: (cleaned: RevenueDataPoint[]) => {
-    //             this.rawChartData = cleaned;
-    //            // console.log('[ClDashboardOverview] rawChartData:', this.rawChartData);
-
-    //             localStorage.setItem('storage.SelectedDeptGroupId', this.selectedDeptGroupId.toString());
-    //             this.isLoading = false;
-    //         },
-    //         error: (err) => {
-    //             console.error('Failed to load chart data:', err);
-    //             this.rawChartData = [];
-    //             this.isLoading = false;
-    //         }
-    //     });
-    // }
 
     setupChartReactiveLoad() {
         this.chartReloadTrigger$.pipe(
@@ -179,10 +135,7 @@ export class ClDashboardOverviewComponent implements OnInit {
                 const apiEnd = formatDateForApi(endDate);
                 const deptGroupIdParam = this.selectedDeptGroupId === 0 ? '' : this.selectedDeptGroupId.toString();
     
-               // console.log('=== loadChartData ===');
-               // console.log('DeptGroupId:', deptGroupIdParam);
-               // console.log('Start:', apiStart, 'End:', apiEnd, 'Granularity:', granularity);
-    
+                
                 // Normal chart data (filtered)
                 const normalData$ = this.ops.fetchTotalRevenueDataOnce(apiStart, apiEnd, deptGroupIdParam, granularity).pipe(
                     timeout(80000),
@@ -219,11 +172,8 @@ export class ClDashboardOverviewComponent implements OnInit {
         ).subscribe({
             next: ([cleaned, full]) => {
                 this.rawChartData = cleaned;
-                this.rawChartDataFull = full;
-    
-               // console.log('[ClDashboardOverview] rawChartData:', this.rawChartData);
-               // console.log('[ClDashboardOverview] rawChartDataFull:', this.rawChartDataFull);
-    
+                this.rawChartDataFull = full;    
+                 
                 localStorage.setItem('storage.SelectedDeptGroupId', this.selectedDeptGroupId.toString());
                 this.isLoading = false;
             },
