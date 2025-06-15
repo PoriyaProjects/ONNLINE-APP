@@ -1,4 +1,7 @@
 <div class="card-selection-container" dir="rtl" *ngIf="choosen_card == undefined">
+    <button mat-mini-fab color="warn" class="close" matTooltip="סגירה" aria-label="Close" mat-dialog-close>
+        <mat-icon>cancel</mat-icon>
+    </button>
     <!-- <mat-form-field>
         <input matInput type="text" placeholder="קבוצה חדשה" [(ngModel)]="newCategory" />
     </mat-form-field> -->
@@ -6,11 +9,14 @@
         <mat-card-title>
             <!-- {{em.Description}} -->
             <mat-form-field>
-                <input matInput type="text" placeholder="{{em.Description}}" [(ngModel)]="em.newCategory" (blur)="createNewCategory(em)" />
+                <input matInput type="text" placeholder="{{em.Description}}" [(ngModel)]="em.newCategory"
+                    (blur)="createNewCategory(em)" />
             </mat-form-field>
         </mat-card-title>
         <mat-card-content>
-            <button mat-raised-button color="primary" (click)="selectCard(em)">הרשאות</button>
+            <button mat-raised-button class="permission-btn" (click)="selectCard(em, 'permissions')">הרשאות</button>
+            <button mat-raised-button class="category-btn" *ngIf="username == 'adahabre'"
+                (click)="selectCard(em, 'employees')">תפוצה</button>
         </mat-card-content>
     </mat-card>
     <mat-card class="select-card">
@@ -24,12 +30,15 @@
 </div>
 
 <div dir="rtl" class="container text-right" *ngIf="choosen_card != undefined">
+    <button mat-mini-fab color="warn" class="close" matTooltip="סגירה" aria-label="Close" mat-dialog-close>
+        <mat-icon>cancel</mat-icon>
+    </button>
     <h3>הוספת הרשאות ל {{choosen_card.Description}}</h3>
     <hr>
     <div class="row">
         <!-- Left: Assigned Users -->
         <div class="column">
-            <h5>עם הרשאות</h5>
+            <h5>עם הרשאות - סה"כ {{filteredLeftUsers().length}}</h5>
             <button mat-raised-button color="primary" (click)="removeSelected()">מחיקה</button>
             <mat-form-field appearance="outline" style="width: 100%;">
                 <mat-label>חיפוש</mat-label>
@@ -45,7 +54,7 @@
 
         <!-- Right: Available Users -->
         <div class="column">
-            <h5>בלי הרשאות</h5>
+            <h5>בלי הרשאות - סה"כ {{filteredRightUsers().length}}</h5>
             <button mat-raised-button color="accent" (click)="addSelected()">הוספה</button>
             <mat-form-field appearance="outline" style="width: 100%;">
                 <mat-label>חיפוש</mat-label>
@@ -61,5 +70,5 @@
     </div>
 </div>
 <hr>
-<button mat-raised-button style="background-color: #1976d2;color: #ffffff;width: 100%;"
-    *ngIf="choosen_card != undefined" (click)="saveAllPermissions()">שמירה</button>
+<button mat-raised-button class="save-btn" *ngIf="choosen_card != undefined"
+    (click)="saveAllPermissions()">שמירה</button>

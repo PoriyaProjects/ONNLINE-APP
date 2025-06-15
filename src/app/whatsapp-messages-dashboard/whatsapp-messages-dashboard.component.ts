@@ -275,6 +275,7 @@ export class WhatsappMessagesDashboardComponent implements OnInit, OnDestroy {
 
   openPermissionsManager() {
     this.dialog.open(WhatsappCategoriesPermissionsComponent, {
+      disableClose: true,
       width: '70%'
     }).afterClosed().subscribe(() => {
       this.getEmergencyContactCategories();
