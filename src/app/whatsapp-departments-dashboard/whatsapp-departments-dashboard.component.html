@@ -83,7 +83,7 @@
                 [ngStyle]="currentContact !== undefined ? { 'background-color': '#efeae2', 'border-radius': '15px' } : { 'background-color': '#f0f2f5' }">
                 <!-- Your input area goes here -->
                 <div class="input-container"
-                    *ngIf="currentContact !== undefined && currentContact.maxRow !== '' && currentContact.maxRow !== undefined">
+                    *ngIf="currentContact !== undefined && currentContact?.maxRow !== '' && currentContact?.maxRow !== undefined">
                     <form #fileForm="ngForm">
                         <input type="file" (change)="onFileSelected($event)" />
                     </form>
@@ -99,7 +99,7 @@
                 </div>
                 <!-- send one way message -->
                 <div class="input-container"
-                    *ngIf="currentContact !== undefined && (currentContact.maxRow === '' || currentContact.maxRow === undefined)">
+                    *ngIf="currentContact !== undefined && (currentContact?.maxRow === '' || currentContact?.maxRow === undefined)">
                     <form #fileForm="ngForm">
                         <input type="file" (change)="onFileSelected($event)" />
                     </form>
@@ -116,7 +116,7 @@
                 </div>
                 <div class="chat-container" #scrollTarget *ngIf="currentContact !== undefined">
                     <mat-spinner *ngIf="loadChat"></mat-spinner>
-                    <div class="row chat" *ngFor="let message of currentContact.WhatsApp_Bot_Convesations"
+                    <div class="row chat" *ngFor="let message of currentContact?.WhatsApp_Bot_Convesations"
                         [ngStyle]="{'border-top': message.Step === '5' ? '2px dotted black' : '', 'margin-top': message.Step === '5' ? '25px' : '0px'}">
                         <div
                             [ngClass]="{'message-sent': message.From_ServiceEmployee == 'True', 'message-received': message.From_ServiceEmployee == 'False'}">
@@ -139,12 +139,12 @@
                                 <span *ngIf="message.Employee_Name === '' && message.From_ServiceEmployee == 'True'">-
                                     מערכת</span>
                                 <span *ngIf="message.Employee_Name !== ''">- {{ message.Employee_Name }}</span>
-                                <span *ngIf="message.From_ServiceEmployee === 'False'">- {{ currentContact.FirstName }}
-                                    {{ currentContact.LastName }}</span><span> -
+                                <span *ngIf="message.From_ServiceEmployee === 'False'">- {{ currentContact?.FirstName }}
+                                    {{ currentContact?.LastName }}</span><span> -
                                     פניה ל{{ message.Service_Name }}: {{ message.Action_Name }}</span>
                             </span>
                             <p
-                                *ngIf="(message.Message_Time === '' || currentContact.Message_Time === '') && message.From_ServiceEmployee == 'True'">
+                                *ngIf="(message.Message_Time === '' || currentContact?.Message_Time === '') && message.From_ServiceEmployee == 'True'">
                                 שולח</p>
                         </div>
                     </div>
