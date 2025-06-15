@@ -79,6 +79,7 @@ export class GoogleChartsService {
     THREE_YEAR: '3y',
     OPTHREE_YEAR: 'op3y',
     EXPLOITATION: 'exploitation',
+    EXPLOITATIONMONTHLY: 'exploitation',
     TIME_AVG: 'timeavg',
     GAUGE: 'gauge'
   };
@@ -238,6 +239,29 @@ export class GoogleChartsService {
         hAxis,
         colors
       },
+      exploitationMonthlyOptions = {
+        chartArea,
+        legend,
+        isStacked: true,
+        annotations: {
+          alwaysOutside: false,
+          textStyle: {
+            fontSize: 11,
+            color: '#000',
+            //auraColor: '#FFFFFF'
+          }
+        },
+        series: {
+          0: {},
+          1: {},
+          2: {},
+          3: {},
+          4: { color: 'transparent', visibleInLegend: false }
+        },
+        vAxis,
+        hAxis,
+        colors
+      },
       chart3YOptions = {
         chartArea,
         legend: 'none',
@@ -322,12 +346,12 @@ export class GoogleChartsService {
     } catch (e) { //console.error("Exploitation Chart failed:", e); 
       }
       try {
-        await this.drawExploitationChartMonthly(exploitationOptions);
+        await this.drawExploitationChartMonthly(exploitationMonthlyOptions);
       } catch (e) { //console.error("Exploitation Monthly Chart failed:", e); 
         }
         try {
           await this.drawExploitationChartWeekly(exploitationOptions);
-        } catch (e) { //console.error("Exploitation Monthly Chart failed:", e); 
+        } catch (e) { //console.error("Exploitation Weekly Chart failed:", e); 
           }
     try {
       await this.loadCombinedChart3Y(chart3YOptions);
@@ -465,11 +489,11 @@ export class GoogleChartsService {
       //const cleanData = JSON.parse(rawData);
       const cleanData = sanitizeSoapResponse(rawData);
 
-      await this.fetchDataAndDrawDirect(cleanData, this.processExploitationData.bind(this), this.CHART_TYPES.EXPLOITATION, 'as_chart_monthly', chartOptions);      
+      await this.fetchDataAndDrawDirect(cleanData, this.processExploitationMonthlyData.bind(this), this.CHART_TYPES.EXPLOITATIONMONTHLY, 'as_chart_monthly', chartOptions);      
       //console.log('Exploitation chart complete');
     } catch (error) {
       //console.error("Failed to fetch Exploitation chart data:", error);
-      const el = document.getElementById('as_chart');
+      const el = document.getElementById('as_chart_monthly');
       if (el) el.innerHTML = "Error loading Exploitation chart.";
     }
   }
@@ -477,13 +501,13 @@ export class GoogleChartsService {
 
   public async drawExploitationChartWeekly(chartOptions: any = {}): Promise<void> {
     try {
-      console.log('draw Exploitation Chart wEEKLY');
+      //console.log('draw Exploitation Chart wEEKLY');
       const rawData = await this.http.get(this.DATA_SOURCES.EXPLOITATIONWEEKLY, { responseType: 'text' }).toPromise();
       //const cleanData = JSON.parse(rawData);
       const cleanData = sanitizeSoapResponse(rawData);
 
       await this.fetchDataAndDrawDirect(cleanData, this.processExploitationData.bind(this), this.CHART_TYPES.EXPLOITATION, 'as_chart_weekly', chartOptions);      
-      console.log('Exploitation chart wEEKLY complete');
+      //console.log('Exploitation chart wEEKLY complete');
     } catch (error) {
       console.error("Failed to fetch Exploitation chart wEEKLY data:", error);
       const el = document.getElementById('as_chart_weekly');
@@ -1531,6 +1555,85 @@ private processExploitationData(data: any): any {
     return null;
   }
 }
+
+
+private processExploitationMonthlyData(data: any): any {
+  //console.log('processExploitationData started');
+  const chartData = new google.visualization.DataTable();
+
+  try {
+    const cols = data.cols;
+    if (!cols || cols.length === 0) {
+      throw new Error('No columns found in JSON.');
+    }
+
+    const valueColIndices: number[] = [];
+
+    // Add columns and annotation columns for each numeric series
+    cols.forEach((col: any, index: number) => {
+      chartData.addColumn(col.type, col.label);
+      if (index > 0 && col.type === 'number') {
+        valueColIndices.push(index);
+        chartData.addColumn({ type: 'string', role: 'annotation' });
+      }
+    });
+
+    // Add dummy Total series + annotation for total
+    chartData.addColumn('number', 'Total');
+    chartData.addColumn({ type: 'string', role: 'annotation' });
+
+    const rows = data.rows;
+    if (!rows || rows.length === 0) {
+      throw new Error('No rows found in JSON.');
+    }
+
+    rows.forEach((row: any) => {
+      const rowData: any[] = [];
+      let rowSum = 0;
+
+      // Pre-calculate the total of numeric columns
+      valueColIndices.forEach((colIndex) => {
+        const val = row.c[colIndex]?.v;
+        if (val !== undefined && val !== null && val !== '') {
+          rowSum += val;
+        }
+      });
+
+      // Fill row data and annotations
+      row.c.forEach((cell: any, index: number) => {
+        const isCategory = index === 0;
+        const val = cell?.v;
+
+        if (isCategory) {
+          rowData.push(val?.toString() || '');
+        } else {const numericValue = val !== undefined && val !== null && val !== '' ? val : null;
+          rowData.push(numericValue); // actual value
+          
+          // Annotation: show only the number, no percentage
+          let annotationText = null;
+          if (numericValue !== null) {
+            annotationText = `${numericValue}`;
+          }
+          
+          rowData.push(annotationText);
+          
+        }
+      });
+
+      // Add dummy Total series
+      rowData.push(0.001); // invisible minimal value for stacked bar visual alignment
+      rowData.push(`Total: ${formatNumberShort(rowSum)}`);
+
+      chartData.addRow(rowData);
+    });
+
+    return chartData;
+  } catch (error) {
+    //console.error('Error processing JSON data: ', error);
+    return null;
+  }
+}
+
 
 
   private renderExploitationChart(dataTable: any, elementId: string, options: any = {}): void {
