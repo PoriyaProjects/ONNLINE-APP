@@ -11,7 +11,6 @@ import { ConfirmationDialogService } from '../confirmation-dialog/confirmation-d
 import { MatDialog } from '@angular/material/dialog';
 import { DatePipe } from '@angular/common';
 import { MatSnackBar, MatSnackBarHorizontalPosition, MatSnackBarVerticalPosition } from '@angular/material/snack-bar';
-import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 
 @Component({
@@ -48,6 +47,9 @@ export class WhatsappDepartmentsDashboardComponent implements OnInit {
   selectedId: any;
   loadingUnRegistered: boolean;
   saving_namer: boolean;
+  employee_service_action: any;
+  services = [];
+  loading_message = "";
 
   constructor(
     private fb: FormBuilder,
@@ -60,9 +62,7 @@ export class WhatsappDepartmentsDashboardComponent implements OnInit {
   ) { }
 
   ngOnInit(): void {
-    this.getPatientsForWhatsapp(1);
-    this.getDepartmentsWhatsAppUsers();
-
+    this.getDepartmentsWhatsAppEmployees();
     this.currentContact = this.contacts[0];
     this.newMessage = this.fb.group({
       Row_ID: new FormControl('', null),
@@ -78,6 +78,27 @@ export class WhatsappDepartmentsDashboardComponent implements OnInit {
       Conversation_Status: new FormControl('', null),
     });
 
+  }
+
+  returnToHome() {
+    this.employee_service_action = undefined;
+  }
+
+  getDepartmentsWhatsAppEmployees() {
+    this.http
+      .post(environment.url + "GetDepartmentsWhatsAppEmployees", {})
+      .subscribe((Response) => {
+        let temp_employee = Response['d'].filter(x => x.Employee_UserName.toLowerCase() == this.user_name.toLowerCase());
+        this.services = temp_employee[0].Services;
+        if (false) {
+        }
+      });
+  }
+
+  chooseService(ser) {
+    this.employee_service_action = ser;
+    this.getPatientsForWhatsapp(1);
+    this.getDepartmentsWhatsAppUsers();
   }
 
   attachFile() {
@@ -185,14 +206,19 @@ export class WhatsappDepartmentsDashboardComponent implements OnInit {
   }
 
   async getDepartmentsWhatsAppUsers() {
+    this.loading_message = "טוען...";
     this.http
       .post(environment.url + "getDepartmentsWhatsAppUsers", {
-        _user_name: this.user_name
+        _user_name: this.user_name,
+        _service_idfk: this.employee_service_action.Service_Order,
+        _action_idfk: this.employee_service_action.Action_Order
       })
       .subscribe((Response) => {
         this.unAnsweredConversations = Response["d"];
+        if (this.unAnsweredConversations.length == 0) this.loading_message = "לא נמצאו שיחות";
+        else this.loading_message = "";
         this.unAnsweredConversations_filter = this.unAnsweredConversations;
-        if (this.currentContact !== undefined && this.currentContact.maxRow !== '') {
+        if (this.currentContact !== undefined && this.currentContact.maxRow !== '' && this.currentContact.Row_ID !== undefined) {
           this.currentContact = this.unAnsweredConversations.filter(x => x.Row_ID == this.currentContact.Row_ID)[0];
           if (this.currentContact.Row_ID !== undefined) this.getDepartmentsWhatsAppConversationsByIDFK(this.currentContact.Row_ID);
         }
@@ -201,7 +227,7 @@ export class WhatsappDepartmentsDashboardComponent implements OnInit {
           map(value => this._filter(value || '')),
         );
         let interval = setTimeout(() => {
-          if (this.router.url !== '/departments-whatsapp') {
+          if (this.router.url !== '/departments-whatsapp' || this.employee_service_action == undefined) {
             clearTimeout(interval);
           } else {
             console.log("Refreshing..");
@@ -258,7 +284,9 @@ export class WhatsappDepartmentsDashboardComponent implements OnInit {
     this.loadChat = true;
     this.http
       .post(environment.url + "GetDepartmentsWhatsAppConversationsByIDFK", {
-        _row_ID: row_id
+        _row_ID: row_id,
+        _service_idfk: this.employee_service_action.Service_Order,
+        _action_idfk: this.employee_service_action.Action_Order
       })
       .subscribe((Response) => {
         this.currentContact.WhatsApp_Bot_Convesations = Response["d"];
@@ -292,6 +320,9 @@ export class WhatsappDepartmentsDashboardComponent implements OnInit {
   sendMessage() {
     if (this.newMessage.controls['Message_Text'].value.trim() !== '' || this.base64String.toString() !== '') {
       this.newMessage.controls['ServiceEmployeeIDFK'].setValue(this.user_name);
+      if (this.newMessage.value.ServiceIDFK == "") this.newMessage.controls['ServiceIDFK'].setValue(this.employee_service_action.Service_Order);
+      if (this.newMessage.value.ActionIDFK == "") this.newMessage.controls['ActionIDFK'].setValue(this.employee_service_action.Action_Order);
+      if (this.newMessage.value.EndUserIDFK == "") this.newMessage.controls['EndUserIDFK'].setValue(this.currentContact.Row_ID);
       this.http
         .post(environment.url + "SendDepartmentsWhatsAppMessageToUser", {
           messageForm: this.newMessage.value,

@@ -46,10 +46,6 @@
                                 [for]="resuscitationStartDatepicker"></mat-datepicker-toggle>
                             <mat-datepicker #resuscitationStartDatepicker></mat-datepicker>
                         </mat-form-field> -->
-                        <mat-form-field appearance="outline" style="width: 33.333%;">
-                            <mat-label>מועד תחילת ההחייאה</mat-label>
-                            <input matInput type="time" formControlName="resuscitationStartDate">
-                        </mat-form-field>
 
                         <mat-form-field appearance="outline" style="width: 33.333%;">
                             <mat-label>החייאה בוצעה בתאריך</mat-label>
@@ -58,6 +54,11 @@
                                 (dateChange)="dateChanged($event, resuscitationForm.controls['motherInfo']['controls'].resuscitationDate)">
                             <mat-datepicker-toggle matSuffix [for]="resuscitationDatepicker"></mat-datepicker-toggle>
                             <mat-datepicker #resuscitationDatepicker></mat-datepicker>
+                        </mat-form-field>
+
+                        <mat-form-field appearance="outline" style="width: 33.333%;">
+                            <mat-label>מועד תחילת ההחייאה</mat-label>
+                            <input matInput type="time" formControlName="resuscitationStartDate">
                         </mat-form-field>
 
                         <mat-form-field appearance="outline" style="width: 33.333%;">
@@ -111,13 +112,14 @@
 
                         <mat-form-field appearance="outline" style="width: 33.333%;">
                             <mat-label>צורת הלידה</mat-label>
-                            <mat-select formControlName="deliveryMethod">
+                            <input matInput type="text" formControlName="deliveryMethod">
+                            <!-- <mat-select formControlName="deliveryMethod">
                                 <mat-option value="וגינלית">וגינלית</mat-option>
                                 <mat-option value="קיסרי">קיסרי</mat-option>
                                 <mat-option value="שולפן ריק">שולפן ריק</mat-option>
                                 <mat-option value="מכשירנית">מכשירנית</mat-option>
                                 <mat-option value="אחר">אחר</mat-option>
-                            </mat-select>
+                            </mat-select> -->
                         </mat-form-field>
                     </mat-card-content>
                     <mat-card-actions fxLayout="row-reverse">

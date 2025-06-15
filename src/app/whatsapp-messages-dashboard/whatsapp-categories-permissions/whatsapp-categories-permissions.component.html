@@ -2,24 +2,29 @@
     <!-- <mat-form-field>
         <input matInput type="text" placeholder="קבוצה חדשה" [(ngModel)]="newCategory" />
     </mat-form-field> -->
-    <mat-card class="select-card" (click)="selectCard(em)" *ngFor="let em of EmergencyList">
-        <mat-card-title>{{em.Description}}</mat-card-title>
-        <!-- <mat-card-content>
-            תיאור קצר של האפשרות הראשונה. ניתן להוסיף כאן מידע נוסף.
-        </mat-card-content> -->
+    <mat-card class="select-card" *ngFor="let em of EmergencyList">
+        <mat-card-title>
+            <!-- {{em.Description}} -->
+            <mat-form-field>
+                <input matInput type="text" placeholder="{{em.Description}}" [(ngModel)]="em.newCategory" (blur)="createNewCategory(em)" />
+            </mat-form-field>
+        </mat-card-title>
+        <mat-card-content>
+            <button mat-raised-button color="primary" (click)="selectCard(em)">הרשאות</button>
+        </mat-card-content>
     </mat-card>
     <mat-card class="select-card">
         <mat-card-title>
             <mat-form-field>
                 <input matInput type="text" placeholder="קבוצה חדשה" [(ngModel)]="newCategory"
-                    (blur)="createNewCategory()" />
+                    (blur)="createNewCategory(null)" />
             </mat-form-field>
         </mat-card-title>
     </mat-card>
 </div>
 
 <div dir="rtl" class="container text-right" *ngIf="choosen_card != undefined">
-    <h3>הוספת הרשאות לאזעקת {{choosen_card.Description}}</h3>
+    <h3>הוספת הרשאות ל {{choosen_card.Description}}</h3>
     <hr>
     <div class="row">
         <!-- Left: Assigned Users -->

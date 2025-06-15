@@ -135,7 +135,7 @@ export class HrDashboardComponent implements OnInit {
       .subscribe((Response) => {
         this.unAnsweredConversations = Response["d"];
         this.unAnsweredConversations_filter = this.unAnsweredConversations;
-        if (this.currentContact !== undefined && this.currentContact.maxRow !== '') {
+        if (this.currentContact !== undefined && this.currentContact.maxRow !== '' && this.currentContact.Row_ID !== undefined) {
           this.currentContact = this.unAnsweredConversations.filter(x => x.Row_ID == this.currentContact.Row_ID)[0];
           if (this.currentContact.Row_ID !== undefined) this.getHRWhatsAppConversationsByIDFK(this.currentContact.Row_ID);
         }
@@ -322,9 +322,9 @@ export class HrDashboardComponent implements OnInit {
 
   async downloadPDF(base64Data, message) {
     try {
-      console.log(message);
       // Replace 'your-base64-data' with the actual Base64 data
       base64Data = base64Data.replace('data:image/png;base64,', '');
+      base64Data = base64Data.replace('data:application/pdf;base64,', '');
       const file_type = await this.detectFileType(base64Data);
       // Replace 'filename.pdf' with the desired file name
       let fileName = "";

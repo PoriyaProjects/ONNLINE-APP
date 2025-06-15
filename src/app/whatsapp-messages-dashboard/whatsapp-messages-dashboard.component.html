@@ -177,7 +177,7 @@
                     *ngIf="send_emergency">
                     <mat-card *ngFor="let em of EmergencyList" class="emergency-card"
                         (click)="onEmergencyClick(em.Row_ID)">
-                        <mat-card-title>אזעקת {{ em.Description }}</mat-card-title>
+                        <mat-card-title>{{ em.Description }}</mat-card-title>
                         <!-- <mat-card-content></mat-card-content> -->
                     </mat-card>
                 </div>

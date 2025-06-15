@@ -350,18 +350,28 @@ export class WhatsappMessagesDashboardComponent implements OnInit, OnDestroy {
   }
 
   fillAllMessageContentFields(id: number): void {
-    const customInputs = this.customForm.get('customInputs') as FormArray;
+    let messageContent = this.customForm.controls['customInputs'].value[0].Message_Content;
+    let firstNewlineIndex = messageContent.indexOf('\n');
 
-    // Get the full original content (not cutting the first line)
-    const fullMessageContent: string = customInputs.at(0).get('Message_Content')?.value || '';
-
-    if (id === 0) {
-      customInputs.controls.forEach((group: AbstractControl) => {
-        // const recipient = group.get('Recipient')?.value || '';
-        // const fullMessage = this.setMessageWithFixedHead(recipient, fullMessageContent);
-        group.get('Message_Content')?.setValue(fullMessageContent);
+    let message_content = firstNewlineIndex !== -1 ? messageContent.substring(firstNewlineIndex + 1) : messageContent;
+    if (id == 0) {
+      this.customForm.controls['customInputs'].value.forEach((element, index) => {
+        let message = this.setMessageWithFixedHead(element.Recipient, message_content);
+        this.customForm.controls['customInputs']['controls'][index].controls.Message_Content.setValue(message);
       });
     }
+    // const customInputs = this.customForm.get('customInputs') as FormArray;
+
+    // // Get the full original content (not cutting the first line)
+    // const fullMessageContent: string = customInputs.at(0).get('Message_Content')?.value || '';
+
+    // if (id === 0) {
+    //   customInputs.controls.forEach((group: AbstractControl) => {
+    //     const recipient = group.get('Recipient')?.value || '';
+    //     const fullMessage = this.setMessageWithFixedHead(recipient, fullMessageContent);
+    //     group.get('Message_Content')?.setValue(fullMessageContent);
+    //   });
+    // }
   }
 
   setMessageWithFixedHead(fullName, content) {
