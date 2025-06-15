@@ -33,9 +33,10 @@ export class WhatsappCategoriesPermissionsComponent implements OnInit {
     this.getEmergencyContactCategories();
   }
 
-  selectCard(cardId: any) {
+  selectCard(cardId: any, type: any) {
     this.choosen_card = cardId;
-    this.getEmergencyAvailableList();
+    if (type == 'permissions') this.getEmergencyAvailableList();
+    else this.getEmergencyEmployeesList();
   }
 
   filteredLeftUsers() {
@@ -120,6 +121,17 @@ export class WhatsappCategoriesPermissionsComponent implements OnInit {
   getEmergencyAvailableList() {
     this.http
       .post(environment.url + "GetEmergencyAvailableList", {
+        category: this.choosen_card.Row_ID
+      })
+      .subscribe((Response) => {
+        this.assignedUsers = Response['d'][0];
+        this.availableUsers = Response['d'][1];
+      });
+  }
+  
+  getEmergencyEmployeesList() {
+    this.http
+      .post(environment.url + "GetEmergencyEmployeesList", {
         category: this.choosen_card.Row_ID
       })
       .subscribe((Response) => {

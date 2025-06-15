@@ -52,3 +52,19 @@
     border-color: #3f51b5;
     box-shadow: 0 0 0 4px rgba(63, 81, 181, 0.2);
 }
+
+.category-btn {
+    background-color: #a0d2f5;
+}
+
+.permission-btn {
+    background-color: #7e08ff;
+}
+
+.save-btn {
+    background-color: #1976d2;
+    color: #ffffff;
+    width: 100%;
+    font-size: 30px;
+    font-weight: bold;
+}
