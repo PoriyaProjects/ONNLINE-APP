@@ -519,14 +519,14 @@ export class TrainingRequestFormComponent implements OnInit {
           this.Supervisor_Name2.setValue(this.employees.filter(t => t.id === this.formData['F']?.Supervisor_Name.id)[0]);
           if (this.Supervisor_Name1.value?.id != this.passport) {
             this.Training_Request_Forms_E.controls['Training_Importantce'].disable();
-            // this.Training_Request_Forms_E.controls['Approved'].disable();
+            this.Training_Request_Forms_E.controls['Approved'].disable();
             this.Training_Request_Forms_E.controls['Recommendations'].disable();
             this.Training_Request_Forms_E.controls['Opinion_Date'].disable();
             this.Supervisor_Name1.disable();
           }
           if (this.Supervisor_Name2.value?.id != this.passport) {
             this.Training_Request_Forms_F.controls['Training_Importantce'].disable();
-            // this.Training_Request_Forms_F.controls['Approved'].disable();
+            this.Training_Request_Forms_F.controls['Approved'].disable();
             this.Training_Request_Forms_F.controls['Recommendations'].disable();
             this.Training_Request_Forms_F.controls['Opinion_Date'].disable();
             this.Supervisor_Name2.disable();

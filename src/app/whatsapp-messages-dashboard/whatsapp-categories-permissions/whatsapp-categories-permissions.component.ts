@@ -21,6 +21,7 @@ export class WhatsappCategoriesPermissionsComponent implements OnInit {
 
   choosen_card: any;
   newCategory: any;
+  typeOfScreen: any;
   username = localStorage.getItem('loginUserName').toLowerCase();
 
   constructor(
@@ -35,7 +36,8 @@ export class WhatsappCategoriesPermissionsComponent implements OnInit {
 
   selectCard(cardId: any, type: any) {
     this.choosen_card = cardId;
-    if (type == 'permissions') this.getEmergencyAvailableList();
+    this.typeOfScreen = type;
+    if (this.typeOfScreen == 'permissions') this.getEmergencyAvailableList();
     else this.getEmergencyEmployeesList();
   }
 
@@ -128,7 +130,7 @@ export class WhatsappCategoriesPermissionsComponent implements OnInit {
         this.availableUsers = Response['d'][1];
       });
   }
-  
+
   getEmergencyEmployeesList() {
     this.http
       .post(environment.url + "GetEmergencyEmployeesList", {
@@ -141,8 +143,11 @@ export class WhatsappCategoriesPermissionsComponent implements OnInit {
   }
 
   saveAllPermissions() {
+    let api_string = "";
+    if (this.typeOfScreen == 'permissions') api_string = "SaveAllWhatsAppCategoryPermissions";
+    else api_string = "SaveAllWhatsAppCategoryEmployees";
     this.http
-      .post(environment.url + "SaveAllWhatsAppCategoryPermissions", {
+      .post(environment.url + api_string, {
         _assigned: this.assignedUsers,
         _category: this.choosen_card.Row_ID
       })
