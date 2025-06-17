@@ -78,6 +78,7 @@ export class SpreadsheetComponent implements OnInit {
                 }
             });
     }
+    
     onCellSave(args: CellSaveEventArgs): void {
         let address = '';
         let value = '';

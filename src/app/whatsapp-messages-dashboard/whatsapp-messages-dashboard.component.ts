@@ -27,7 +27,7 @@ export class WhatsappMessagesDashboardComponent implements OnInit, OnDestroy {
   customInputs: any[] = [];
   customForm: FormGroup;
   manyContacts: FormGroup;
-  typeOfScreen: boolean;
+  typeOfScreen: boolean = false;
   searchEmployeesGroup: FormGroup;
   WorkPlacesList = [];
   EmergencyList = [];
@@ -103,7 +103,7 @@ export class WhatsappMessagesDashboardComponent implements OnInit, OnDestroy {
 
   addInput(phone, fullName, sender, fixed_message = '') {
     const contact = new FormGroup({
-      Recipient_Type: new FormControl('0', Validators.required),
+      Recipient_Type: new FormControl(false, Validators.required),
       Phone_Number: new FormControl(phone, Validators.required),
       Recipient: new FormControl(fullName, null),
       Message_Content: new FormControl(fixed_message, Validators.required),
@@ -275,6 +275,7 @@ export class WhatsappMessagesDashboardComponent implements OnInit, OnDestroy {
 
   openPermissionsManager() {
     this.dialog.open(WhatsappCategoriesPermissionsComponent, {
+      disableClose: true,
       width: '70%'
     }).afterClosed().subscribe(() => {
       this.getEmergencyContactCategories();
@@ -438,7 +439,9 @@ export class WhatsappMessagesDashboardComponent implements OnInit, OnDestroy {
       .subscribe((Response) => {
         let t = Response["d"];
         this.total_number_of_reciepents = t.length;
-        this.customForm.controls['customInputs'] = this.fb.array([]);
+        this.customForm = this.fb.group({
+          customInputs: this.fb.array([])
+        });
         for (let i = 0; i < t.length; i++) {
           if (category == '1') this.addInput(t[i].Phone_Number, t[i].Employee_Name, '1', `התקבלה התראת אש !\n אם הנך במרכז הרפואי, נא להגיע בהקדם ל : `);
           else this.addInput(t[i].Phone_Number, t[i].Employee_Name, '1');

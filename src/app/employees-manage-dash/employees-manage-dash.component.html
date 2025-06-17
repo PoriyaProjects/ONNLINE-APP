@@ -314,51 +314,103 @@
     </div>
     <table id="excel-table" dir="rtl" style="display: none;">
         <tr>
+            <th>מזהה</th>
+            <th>תאריך תחילת עבודה</th>
+            <th>סקטור עובד</th>
+            <th>סקטור עובד בבלוסום</th>
+            <th>תאור</th>
+            <th>תפקיד</th>
+            <th>מחלקה</th>
+            <th>תאור עובד</th>
             <th>תעודת זהות</th>
             <th>שם פרטי</th>
+            <th>שם פרטי באנגלית</th>
             <th>שם משפחה</th>
-            <th>טלפון נייד</th>
+            <th>שם משפחה באנגלית</th>
+            <th>מין</th>
+            <th>רמה</th>
+            <th>כתובת</th>
+            <th>שם משתמש</th>
             <th>מייל</th>
-            <th>מגדר</th>
-            <th>תאריך תחילת עבודה</th>
-            <th>תאריך סיום עבודה</th>
-            <th>תאריך לידה</th>
-            <th>סוג עובד</th>
-            <th>מקום עבודה</th>
-            <th>תאריך עדכון</th>
-            <th>רישיון רופא</th>
-            <th>תחילת ניסיון רופא</th>
-            <th>מיקום לימודים</th>
-            <th>מדינת לימודים</th>
-            <th>אונבירסיטת לימודים</th>
-            <th>דירוג</th>
-            <th>מחלקה</th>
-            <th>סקטור</th>
+            <th>מייל אישי</th>
+            <th>מספר נייד</th>
+            <th>מיקום עבודה</th>
+            <th>תאריך סיום</th>
+            <th>תאריך סיום משוער</th>
+            <th>סיבת סיום עבודה</th>
+            <th>סוג רכב</th>
+            <th>מספר רכב</th>
+            <th>מנהל ישיר</th>
+            <th>מנהל עקיף</th>
+            <th>מספר רכב 2</th>
+            <th>סוג רכב 2</th>
             <th>הערות</th>
-
+            <th>קוד קופה</th>
+            <th>שם קופה</th>
+            <th>תאריך לידה</th>
+            <th>מספר רישיון</th>
+            <th>תאריך קבלת רישיון</th>
+            <th>מיקום לימודים</th>
+            <th>ארץ לימודים</th>
+            <th>אונברסיטה</th>
+            <th>מאושר משאבי אנוש</th>
+            <th>אישור תקנון</th>
+            <th>אישור בלוסום</th>
+            <th>מבצע תורנויות</th>
+            <th>תחילת JCP</th>
+            <th>סיום JCP</th>
+            <th>אחוז משרה</th>
+            <th>תת מחלקה</th>
         </tr>
         <tr *ngFor="let emp of dataSourceExcel.filteredData">
+            <td> {{emp.RowID}} </td>
+            <td> {{emp.StartWorkDate}} </td>
+            <td> {{emp.EmployeeSektorDescription}} </td>
+            <td> {{emp.EmployeeBlossomSektor.EmployeeSektorBlossomDescription}} </td>
+            <td> {{emp.EmployeeBlossomSektor.EmployeeSektorBlossomDescription}} </td>
+            <td> {{emp.Title}} </td>
+            <td> {{emp.FunctionDescription}} </td>
+            <td> {{emp.DepartnentDescripton}} </td>
+            <td> {{emp.JobTitleDescription}} </td>
             <td> {{emp.EmployeeID}} </td>
             <td> {{emp.FirstName}} </td>
+            <td> {{emp.FirstNameEng}} </td>
             <td> {{emp.LastName}} </td>
-            <td> {{emp.CellNumber}} </td>
-            <td> {{emp.Email}} </td>
+            <td> {{emp.LastNameEng}} </td>
             <td> {{emp.Gender}} </td>
-            <td> {{emp.StartWorkDate}} </td>
+            <td> {{emp.RankDescription}} </td>
+            <td> {{emp.Address}} </td>
+            <td> {{emp.ADUserName}} </td>
+            <td> {{emp.Email}} </td>
+            <td> {{emp.PersonalEmail}} </td>
+            <td> {{emp.CellNumber}} </td>
+            <td> {{emp.WorkPlaceDescription}} </td>
             <td> {{emp.EndWorkDate}} </td>
+            <td> {{emp.DateToEndWork}} </td>
+            <td> {{emp.ReasonDescription}} </td>
+            <td> {{emp.CarType}} </td>
+            <td> {{emp.CarNumber}} </td>
+            <td> {{emp.ManagerID1.id}} </td>
+            <td> {{emp.ManagerID2.id}} </td>
+            <td> {{emp.CarNumber_2}} </td>
+            <td> {{emp.CarType_2}} </td>
+            <td> {{emp.Remarks}} </td>
+            <td> {{emp.KupaID}} </td>
+            <td> {{emp.KupaName}} </td>
             <td> {{emp.DateOfBirth}} </td>
-            <td> {{emp.FunctionDescription}} </td>
-            <td> {{emp.WorkPlace.WorkPlaceDescription}} </td>
-            <td> {{emp.UpdateDate}} </td>
             <td> {{emp.DocLicence}} </td>
             <td> {{emp.DocStartExperience}} </td>
             <td> {{emp.InternLearnCountry}} </td>
             <td> {{emp.InternLearnCountryDesc}} </td>
             <td> {{emp.InternUniversity}} </td>
-            <td> {{emp.RankID}} </td>
-            <td> {{emp.DepartnentDescripton}} </td>
-            <td> {{emp.EmployeeBlossomSektor.EmployeeSektorBlossomDescription}} </td>
-            <td> {{emp.Remarks}} </td>
+            <td> {{emp.StatusRow}} </td>
+            <td> {{emp.AcceptTerms}} </td>
+            <td> {{emp.ApprovedToBlossom}} </td>
+            <td> {{emp.Toranot}} </td>
+            <td> {{emp.JcpFromDate}} </td>
+            <td> {{emp.JcpToDate}} </td>
+            <td> {{emp.StandartJobType}} </td>
+            <td> {{emp.SubDepartment}} </td>
         </tr>
     </table>
 </div>
