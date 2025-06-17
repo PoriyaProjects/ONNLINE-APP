@@ -1,198 +1,144 @@
-import {
-    Component,
-    Input,
-    ElementRef,
-    ViewChild,
-    OnChanges,
-    SimpleChanges,
-    AfterViewInit
-} from '@angular/core';
+import { Component, Input, OnInit, SimpleChanges } from '@angular/core';
+import { BaseRevenueChartComponent } from '../base-revenue-chart.component';
+import { OperationalChartService } from '../../services/operational-chart.service';
 import { ChartLoaderService } from '../../utils/google-charts-loader';
-import { BaseRevenueChartComponent } from '../../components/base-revenue-chart.component';
 import { getChartOptions } from '../../utils/chart-options.util';
-
-declare var google: any;
-
-
+import { throwError } from 'rxjs';
+import { catchError, retryWhen, scan, delay, map } from 'rxjs/operators';
 
 @Component({
-    selector: 'app-revenue-compare-months-chart',
-    templateUrl: './kpi-revenue-compare-months-chart.component.html',
-    styleUrls: []
+  selector: 'app-revenue-compare-months-chart',
+  templateUrl: './kpi-revenue-compare-months-chart.component.html',
 })
-export class RevenueCompareMonthsChartComponent extends BaseRevenueChartComponent implements AfterViewInit, OnChanges {
+export class RevenueCompareMonthsChartComponent extends BaseRevenueChartComponent implements OnInit {
+  @Input() selectedDeptGroupId: number = 0;
+  @Input() chartTitle = 'הכנסות חודשיות';
+  @Input() showAnnotations = true;
+  @Input() shortFormat = true;
+  @Input() isDarkMode = false;
+  @Input() isRtl = false;
+  @Input() locale = 'he';
+  @Input() currency = '₪';
+  @Input() isStacked = false;
+  @Input() showLegend = true;
+  @Input() showTrendline = true;
+  @Input() usePercent = false;
+  @Input() showHtmlTooltip = true;
+  @Input() width = '800';
 
-    @ViewChild('chart') chartContainer!: ElementRef;
+  constructor(
+    private chartService: OperationalChartService,
+    private chartLoader: ChartLoaderService
+  ) {
+    super();
+    this.chartType = 'column';
+  }
 
-    constructor(private chartService: ChartLoaderService) {
-        super();
-        this.chartType = 'bar';
+  ngOnInit(): void {
+    this.fetchData();
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    super.ngOnChanges(changes);
+    if (changes['selectedDeptGroupId']) {
+      this.fetchData();
     }
+  }
 
-    @Input() chartTitle = 'הכנסות';
-    @Input() showAnnotations = true;
-    @Input() shortFormat = true;
-    @Input() isDarkMode = false;
-    @Input() isRtl = false;
-    @Input() locale = 'he';
-    @Input() currency = '₪';
-    @Input() isStacked = false;
-    @Input() showLegend = true;
-    @Input() showTrendline = true;
-    @Input() usePercent = false;
-    @Input() showHtmlTooltip = true;
+  private fetchData(): void {
+    this.isLoading = true;
+    const deptParam = this.selectedDeptGroupId > 0 ? this.selectedDeptGroupId : '';
 
-    
-    ngAfterViewInit(): void {
-       // console.log('[CompareMonthsChart ngAfterViewInit] Force initial draw');
-        this.chartService.onReady(() => this.draw());
-    }
-
-    ngOnChanges(changes: SimpleChanges): void {
-        const redrawKeys = ['rawChartData', 'isLoading', 'selectedDeptGroupId'];
-        const triggered = redrawKeys.filter(key => key in changes);
-        if (triggered.length > 0) {
-           // console.log('[CompareMonthsChart ngOnChanges] REDRAW triggered by:', triggered);
-            this.draw();
-        }
-    }
-
-    onControlChange(): void {
+    this.chartService.fetchCompareMRevenueDataOnce(deptParam).pipe(
+      retryWhen(errors =>
+        errors.pipe(
+          scan((retryCount, err) => {
+            if (retryCount >= 3) throw err;
+            console.warn(`[Retry] Attempt ${retryCount + 1} after error:`, err.message || err);
+            return retryCount + 1;
+          }, 0),
+          delay(1000)
+        )
+      ),
+      catchError(err => {
+        console.error('[RevenueCompareMonthsChartComponent] Final fetchData error:', err);
+        this.isLoading = false;
+        return throwError(() => err);
+      }),
+      map((data: { aliasName: string; TotalCharging: number }[]) =>
+        data.map(item => ({
+          label: item.aliasName,
+          value: item.TotalCharging,
+        }))
+      )
+    ).subscribe(
+      (normalizedData) => {
+        this.rawChartData = normalizedData;
         this.draw();
-    }
+        this.isLoading = false;
+      }
+    );
+  }
 
-    protected draw(): void {
-        if (!this.rawChartData?.length || !this.chartContainer?.nativeElement) return;
+  protected draw(): void {
+    this.chartLoader.ready$.subscribe((ready) => {
+      if (!ready || !this.rawChartData?.length) return;
 
-       // console.log('[CompareMonthsChart draw] rawChartData:', this.rawChartData);
+      const chartData = this.prepareChartData();
+      const dataTable = google.visualization.arrayToDataTable(chartData);
 
-        const chartData = this.prepareCompareChartData();
-       // console.log('[CompareMonthsChart draw] chartData:', chartData);
+      const options = getChartOptions({
+        chartType: this.chartType,
+        title: this.chartTitle,
+        isDarkMode: this.isDarkMode,
+        currency: this.currency,
+        shortFormat: this.shortFormat,
+        showAnnotations: this.showAnnotations,
+        showLegend: this.showLegend,
+        isRtl: this.isRtl,
+        locale: this.locale,
+        usePercent: this.usePercent,
+        showHtmlTooltip: this.showHtmlTooltip,
+        isStacked: this.isStacked,
+        showTrendline: this.showTrendline,
+        width: 1000,
+      });
 
-        const dataTable = google.visualization.arrayToDataTable(chartData);
-
-
-
-        const vAxisFormat = this.shortFormat ? 'short' : undefined;
-
-const options = getChartOptions({
-    title: this.chartTitle,
-    chartType: this.chartType,
-    showLegend: this.showLegend,
-    isDarkMode: this.isDarkMode,
-    isStacked: this.isStacked ?? false,
-    isRtl: this.isRtl,
-    locale: this.locale,
-    height: 200,
-    showAnnotations: this.showAnnotations,
- 
-});
-        const chart = new google.visualization.BarChart(this.chartContainer.nativeElement);
+      const container = document.getElementById('revenueCompareMonthsChart');
+      if (container) {
+        const chart = new google.visualization.ColumnChart(container);
         chart.draw(dataTable, options);
+      }
+    });
+  }
+
+  protected prepareChartData(): any[] {
+    const chartData: any[] = [['Month', 'הכנסה', { role: 'annotation' }]];
+
+    const formatAnnotation = (value: number): string => {
+      if (this.shortFormat) {
+        if (value >= 1_000_000_000) return (value / 1_000_000_000).toFixed(1) + 'B';
+        if (value >= 1_000_000) return (value / 1_000_000).toFixed(1) + 'M';
+        if (value >= 1_000) return (value / 1_000).toFixed(1) + 'K';
+      }
+      return value.toFixed(0);
+    };
+
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+    const converted = this.rawChartData.map((row) => ({
+      aliasName: row.label,
+      TotalCharging: row.value,
+    }));
+
+    for (const row of converted) {
+      const [year, month] = row.aliasName.split('-');
+      const monthIndex = parseInt(month, 10) - 1;
+      const monthLabel = `${monthNames[monthIndex]} ${year}`;
+      const value = row.TotalCharging || 0;
+      chartData.push([monthLabel, value, formatAnnotation(value)]);
     }
 
-
-
-   
-    
-    protected prepareCompareChartData(): any[] {
-        const chartData: any[] = [['תקופה', 'הכנסה', { role: 'annotation' }]];
-    
-        // Dates
-        const now = new Date();
-        const currentMonth = now.getMonth() + 1; // 1-12
-        const currentYear = now.getFullYear();
-    
-        const prevMonthDate = new Date(currentYear, currentMonth - 2, 1);
-        const prevYearDate = new Date(currentYear - 1, currentMonth - 1, 1);
-    
-        const extractMonthYear = (label: string): { month: number, year: number } => {
-            const parts = label.split(',');
-            if (parts.length < 2) return { month: 0, year: 0 };
-    
-            const monthStr = parts[0].trim().split(' ')[0];
-            const yearStr = parts[1].trim();
-    
-            const monthMap: { [key: string]: number } = {
-                'ינו': 1, 'פבר': 2, 'מרץ': 3, 'אפר': 4, 'מאי': 5, 'יונ': 6,
-                'יול': 7, 'אוג': 8, 'ספט': 9, 'אוק': 10, 'נוב': 11, 'דצמ': 12
-            };
-    
-            const month = monthMap[monthStr] || 0;
-            const year = parseInt(yearStr);
-    
-            return { month, year };
-        };
-    
-        const findValue = (targetMonth: number, targetYear: number): number => {
-            const match = this.rawChartData.find(row => {
-                const { month, year } = extractMonthYear(row.label);
-                return month === targetMonth && year === targetYear &&
-                    (this.selectedDeptGroupId === 0 || row.deptGroupId === this.selectedDeptGroupId);
-            });
-            return match ? match.value : 0;
-        };
-    
-        const formatAnnotation = (value: number): string => {
-            if (this.shortFormat) {
-                if (value >= 1_000_000_000) return (value / 1_000_000_000).toFixed(1) + 'B';
-                if (value >= 1_000_000) return (value / 1_000_000).toFixed(1) + 'M';
-                if (value >= 1_000) return (value / 1_000).toFixed(1) + 'K';
-            }
-            return value.toFixed(0);
-        };
-    
-        const valueCurrent = findValue(currentMonth, currentYear);
-        const valuePrevMonth = findValue(prevMonthDate.getMonth() + 1, prevMonthDate.getFullYear());
-        const valuePrevYear = findValue(currentMonth, currentYear - 1);
-    
-       // console.log('🟢 CompareMonths → Dates:');
-       // console.log('Current:', currentMonth, currentYear, '→ Value:', valueCurrent);
-       // console.log('Previous Month:', prevMonthDate.getMonth() + 1, prevMonthDate.getFullYear(), '→ Value:', valuePrevMonth);
-       // console.log('Previous Year:', currentMonth, currentYear - 1, '→ Value:', valuePrevYear);
-    
-        chartData.push(['חודש נוכחי', valueCurrent, formatAnnotation(valueCurrent)]);
-        chartData.push(['חודש קודם', valuePrevMonth, formatAnnotation(valuePrevMonth)]);
-        chartData.push(['חודש זה שנה קודמת', valuePrevYear, formatAnnotation(valuePrevYear)]);
-    
-       // console.log('[CompareMonthsChartData] FINAL:', chartData);
-        return chartData;
-    }
-    
-    
-    private extractMonthYear(label: string): { month: number, year: number } {
-        // Example: "ינו 01, 2024 - ינו 31, 2024"
-        const parts = label.split(',');
-        if (parts.length < 2) return { month: 0, year: 0 };
-    
-        const monthStr = parts[0].trim().split(' ')[0];
-        const yearStr = parts[1].trim();
-    
-        const monthMap: { [key: string]: number } = {
-            'ינו': 1, 'פבר': 2, 'מרץ': 3, 'אפר': 4, 'מאי': 5, 'יונ': 6,
-            'יול': 7, 'אוג': 8, 'ספט': 9, 'אוק': 10, 'נוב': 11, 'דצמ': 12
-        };
-    
-        const month = monthMap[monthStr] || 0;
-        const year = parseInt(yearStr);
-    
-        return { month, year };
-    }
-    
-    private findValue(targetMonth: number, targetYear: number): number {
-        const match = this.rawChartData.find(row => {
-            const { month, year } = this.extractMonthYear(row.label);
-            return month === targetMonth && year === targetYear &&
-                   (this.selectedDeptGroupId === 0 || row.deptGroupId === this.selectedDeptGroupId);
-        });
-        return match ? match.value : 0;
-    }
-    
-    private getPreviousMonthName(currentMonth: string): string {
-        const months = ['ינו', 'פבר', 'מרץ', 'אפר', 'מאי', 'יונ', 'יול', 'אוג', 'ספט', 'אוק', 'נוב', 'דצמ'];
-        const index = months.indexOf(currentMonth);
-        if (index === -1) return currentMonth;
-        const prevIndex = (index - 1 + months.length) % months.length;
-        return months[prevIndex];
-    }
+    return chartData;
+  }
 }

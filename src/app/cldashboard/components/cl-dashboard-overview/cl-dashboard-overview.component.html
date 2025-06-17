@@ -84,17 +84,67 @@
  <div class="row">
     <h3 style="float: right;"> הכנסות</h3>
 </div>
- <div class="row">
+<div class="row">
+   <app-revenue-compare-years-chart      
+   [selectedDeptGroupId]="selectedDeptGroupId"
+   [shortFormat]="globalChartControls.shortFormat"
+   [showAnnotations]="globalChartControls.showAnnotations"
+   [showLegend]="globalChartControls.showLegend"
+   [isDarkMode]="globalChartControls.isDarkMode"
+   [isRtl]="globalChartControls.isRtl"
+   [currency]="globalChartControls.currency"
+   [locale]="globalChartControls.locale">
+ </app-revenue-compare-years-chart>
+
+ <app-revenue-compare-3months-chart      
+ [selectedDeptGroupId]="selectedDeptGroupId"
+ [shortFormat]="globalChartControls.shortFormat"
+ [showAnnotations]="globalChartControls.showAnnotations"
+ [showLegend]="globalChartControls.showLegend"
+ [isDarkMode]="globalChartControls.isDarkMode"
+ [isRtl]="globalChartControls.isRtl"
+ [currency]="globalChartControls.currency"
+ [locale]="globalChartControls.locale">
+</app-revenue-compare-3months-chart>
+
+<app-revenue-compare-months-chart-depts     
+[selectedDeptGroupId]="selectedDeptGroupId"
+[shortFormat]="globalChartControls.shortFormat"
+[showAnnotations]="globalChartControls.showAnnotations"
+[showLegend]="globalChartControls.showLegend"
+[isDarkMode]="globalChartControls.isDarkMode"
+[isRtl]="globalChartControls.isRtl"
+[currency]="globalChartControls.currency"
+[locale]="globalChartControls.locale">
+</app-revenue-compare-months-chart-depts>
+
+
+ <app-revenue-compare-months-chart      
+ [selectedDeptGroupId]="selectedDeptGroupId"
+ [shortFormat]="globalChartControls.shortFormat"
+ [showAnnotations]="globalChartControls.showAnnotations"
+ [showLegend]="globalChartControls.showLegend"
+ [isDarkMode]="globalChartControls.isDarkMode"
+ [isRtl]="globalChartControls.isRtl"
+ [currency]="globalChartControls.currency"
+ [locale]="globalChartControls.locale">
+</app-revenue-compare-months-chart>
+ <!-- <app-revenue-compare-months-chart [rawChartData]="rawChartData" [isLoading]="isLoading" [selectedDeptGroupId]="selectedDeptGroupId" [shortFormat]="globalChartControls.shortFormat" [showAnnotations]="globalChartControls.showAnnotations" [showLegend]="globalChartControls.showLegend" [isDarkMode]="globalChartControls.isDarkMode" [isRtl]="globalChartControls.isRtl" [currency]="globalChartControls.currency" [locale]="globalChartControls.locale"></app-revenue-compare-months-chart> -->
+</div>
+ <!-- <div class="row">
    <app-total-revenue-column-chart [rawChartData]="rawChartData" [isLoading]="isLoading" [selectedDeptGroupId]="selectedDeptGroupId" [startDate]="filters.startDate" [endDate]="filters.endDate" [granularity]="filters.granularity" [showTrendline]="globalChartControls.showTrendline" [showAnnotations]="globalChartControls.showAnnotations" [showLegend]="globalChartControls.showLegend" [shortFormat]="globalChartControls.shortFormat" [showPercentageAnnotations]="globalChartControls.showPercentageAnnotations" [showHtmlTooltip]="globalChartControls.showHtmlTooltip" [isDarkMode]="globalChartControls.isDarkMode" [isStacked]="globalChartControls.isStacked" [isRtl]="globalChartControls.isRtl" [currency]="globalChartControls.currency" [locale]="globalChartControls.locale"></app-total-revenue-column-chart>
    <app-total-revenue-line-chart [rawChartData]="rawChartData" [isLoading]="isLoading" [selectedDeptGroupId]="selectedDeptGroupId" [startDate]="filters.startDate" [endDate]="filters.endDate" [granularity]="filters.granularity" [showTrendline]="globalChartControls.showTrendline" [showAnnotations]="globalChartControls.showAnnotations" [showLegend]="globalChartControls.showLegend" [shortFormat]="globalChartControls.shortFormat" [showPercentageAnnotations]="globalChartControls.showPercentageAnnotations" [showHtmlTooltip]="globalChartControls.showHtmlTooltip" [isDarkMode]="globalChartControls.isDarkMode" [isStacked]="globalChartControls.isStacked" [isRtl]="globalChartControls.isRtl" [currency]="globalChartControls.currency" [locale]="globalChartControls.locale"></app-total-revenue-line-chart>
    <app-total-revenue-bar-chart [rawChartData]="rawChartData" [isLoading]="isLoading" [selectedDeptGroupId]="selectedDeptGroupId" [startDate]="filters.startDate" [endDate]="filters.endDate" [granularity]="filters.granularity" [showTrendline]="globalChartControls.showTrendline" [showAnnotations]="globalChartControls.showAnnotations" [showLegend]="globalChartControls.showLegend" [shortFormat]="globalChartControls.shortFormat" [showPercentageAnnotations]="globalChartControls.showPercentageAnnotations" [showHtmlTooltip]="globalChartControls.showHtmlTooltip" [isDarkMode]="globalChartControls.isDarkMode" [isStacked]="globalChartControls.isStacked" [isRtl]="globalChartControls.isRtl" [currency]="globalChartControls.currency" [locale]="globalChartControls.locale"></app-total-revenue-bar-chart>
-</div>
-<div class="row">
+</div> -->
+<!-- <div class="row">
    <app-total-revenue-pie-chart [rawChartData]="rawChartData" [isLoading]="isLoading" [selectedDeptGroupId]="selectedDeptGroupId" [startDate]="filters.startDate" [endDate]="filters.endDate" [granularity]="filters.granularity" [showAnnotations]="globalChartControls.showAnnotations" [showLegend]="globalChartControls.showLegend" [shortFormat]="globalChartControls.shortFormat" [showPercentageAnnotations]="globalChartControls.showPercentageAnnotations" [isDarkMode]="globalChartControls.isDarkMode" [isRtl]="globalChartControls.isRtl" [currency]="globalChartControls.currency" [locale]="globalChartControls.locale"></app-total-revenue-pie-chart>
-   <app-revenue-compare-months-chart [rawChartData]="rawChartData" [isLoading]="isLoading" [selectedDeptGroupId]="selectedDeptGroupId" [shortFormat]="globalChartControls.shortFormat" [showAnnotations]="globalChartControls.showAnnotations" [showLegend]="globalChartControls.showLegend" [isDarkMode]="globalChartControls.isDarkMode" [isRtl]="globalChartControls.isRtl" [currency]="globalChartControls.currency" [locale]="globalChartControls.locale"></app-revenue-compare-months-chart>
+  
+    -->
+ 
+
 <!-- <app-total-revenue-stacked-column-chart [rawChartData]="rawChartData" [isLoading]="isLoading" [selectedDeptGroupId]="selectedDeptGroupId" [startDate]="filters.startDate" [endDate]="filters.endDate" [granularity]="filters.granularity" [showTrendline]="globalChartControls.showTrendline" [showAnnotations]="globalChartControls.showAnnotations" [showLegend]="globalChartControls.showLegend" [shortFormat]="globalChartControls.shortFormat" [showPercentageAnnotations]="globalChartControls.showPercentageAnnotations" [showHtmlTooltip]="globalChartControls.showHtmlTooltip" [isDarkMode]="globalChartControls.isDarkMode" [isStacked]="globalChartControls.isStacked" [isRtl]="globalChartControls.isRtl" [currency]="globalChartControls.currency" [locale]="globalChartControls.locale"></app-total-revenue-stacked-column-chart> -->
 
- </div>
+ <!-- </div> -->
 </section>
 <!-- 
 
