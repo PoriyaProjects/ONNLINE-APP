@@ -56,6 +56,7 @@ export class TotalRevenueColumnChart extends BaseRevenueChartComponent {
             locale: this.locale,
             height: 400,
             showAnnotations: this.showAnnotations,
+            showTrendline: true,
            
         });
         const chart = new google.visualization.ColumnChart(this.chartContainer.nativeElement);

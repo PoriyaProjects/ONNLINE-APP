@@ -54,7 +54,8 @@ export class TotalRevenueLineChart extends BaseRevenueChartComponent {
           isRtl: this.isRtl,
           locale: this.locale,
           height: 400,
-          showAnnotations: this.showAnnotations,          
+          showAnnotations: this.showAnnotations,       
+          showTrendline: true,   
       });
         
         const chart = new google.visualization.LineChart(this.chartContainer.nativeElement);

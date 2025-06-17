@@ -83,7 +83,7 @@ const options = getChartOptions({
     isStacked: this.isStacked ?? false,
     isRtl: this.isRtl,
     locale: this.locale,
-    height: 400,
+    height: 200,
     showAnnotations: this.showAnnotations,
  
 });
