@@ -27,7 +27,7 @@ export function getChartOptions({
   chartType = 'column',
   height = 400,
   showLegend = true,
-  showTrendline = false,
+  showTrendline = true,
   showHtmlTooltip = true,
   isDarkMode = false,
   currency = '',
@@ -76,6 +76,7 @@ export function getChartOptions({
       textStyle: { color: textColor },
       titleTextStyle: { color: textColor },
       slantedText: true,
+      minValue: 0,
       slantedTextAngle: 45,
       direction: isRtl ? -1 : 1
     };
@@ -99,15 +100,32 @@ export function getChartOptions({
   }
 
   // Trendlines → only on line/column/combo
+  // if ((chartType === 'line' || chartType === 'column' || chartType === 'combo') && showTrendline) {
+  //   commonOptions.trendlines = {
+  //     0: {
+  //       color: 'green',
+  //       lineWidth: 2,
+  //       opacity: 0.3,
+  //       showR2: true,
+  //       type: 'linear'
+  //     }
+  //   };
+  // }
+
   if ((chartType === 'line' || chartType === 'column' || chartType === 'combo') && showTrendline) {
-    commonOptions.trendlines = {
-      1: {
-        color: 'green',
+    // Create trendlines dynamically for all series (excluding label column)
+    const trendlines: any = {};
+    const seriesCount = effectiveColors.length; // Or: chartData[0].length - 1;
+    for (let i = 0; i < seriesCount; i++) {
+      trendlines[i] = {
+        color: effectiveColors[i] || 'green',
         lineWidth: 2,
         opacity: 0.3,
-        type: 'linear'
-      }
-    };
+        type: 'linear',
+        showR2: true
+      };
+    }
+    commonOptions.trendlines = trendlines;
   }
 
   // Special pie handling
