@@ -18,6 +18,7 @@ export interface ChartOptionsInput {
   shortFormat?: boolean;
   showAnnotations?: boolean;
   colors?: string[];
+  width?:number;
 }
 
 
@@ -26,6 +27,7 @@ export function getChartOptions({
   title = 'Chart',
   chartType = 'column',
   height = 400,
+  width = 400,
   showLegend = true,
   showTrendline = true,
   showHtmlTooltip = true,
@@ -54,6 +56,7 @@ export function getChartOptions({
   const commonOptions: any = {
     title,
     height,
+    width,
     backgroundColor: isDarkMode ? '#1e1e1e' : '#ffffff',
     chartArea: { width: '80%', height: '70%' },
     titleTextStyle: { color: textColor, fontSize: 18, bold: true },

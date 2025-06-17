@@ -53,6 +53,9 @@ import { RevenueByDepartmentBarChart } from './charts/revenue-metrics/revenue-by
 import { OperatingExpensesLineChart } from './charts/expense-metrics/operating-expenses-line-chart.component';
 
 import { RevenueCompareMonthsChartComponent } from './components/kpi-card/kpi-revenue-compare-months-chart.component';
+import { RevenueCompareMonthChartDeptsComponent } from './components/kpi-card/kpi-revenue-compare-month-chart-depts.component';
+import { RevenueCompare3MonthsChartComponent } from './components/kpi-card/kpi-revenue-compare-3months-chart.component';
+import { RevenueCompareYearsChartComponent } from './components/kpi-card/kpi-revenue-compare-years-chart.component';
 
 
 
@@ -104,6 +107,9 @@ import { MaterialWrapper } from '../shared/components/material-wrapper.module';
     OperatingExpensesLineChart, 
     ExpensesByDepartmentBarChart,
     RevenueCompareMonthsChartComponent,
+    RevenueCompareMonthChartDeptsComponent,
+    RevenueCompare3MonthsChartComponent,
+    RevenueCompareYearsChartComponent,
   ],
   imports: [
     CustomMaterialModule,

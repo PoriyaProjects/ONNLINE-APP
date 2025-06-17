@@ -1,13 +1,14 @@
 import { AfterViewInit, ElementRef, Injectable, Input, OnChanges, OnInit, ViewChild } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, throwError } from 'rxjs';
 import { environment } from 'src/environments/environment';
 import { formatDateForApi } from '../utils/api-utils';
 import { toChartData } from '../utils/date-utils';
 import { ChartLoaderService } from '../utils/google-charts-loader';
 import { sanitizeApiJson } from '../utils/sanitize-util';
-import { map, timeout } from 'rxjs/operators';
+import { catchError, map, timeout } from 'rxjs/operators';
 import { RevenueDataPoint } from '../components/cl-dashboard-overview/cl-dashboard-overview.component';
+import { tap } from 'rxjs/operators';
 
 
 
@@ -20,6 +21,124 @@ export class OperationalChartService {
 
   private getRevenueKey(startDate: string, endDate: string, dept: string, granularity: string): string {
     return `${startDate}_${endDate}_${dept}_${granularity}`;
+  }
+
+  
+
+  fetchCompareRevenueDataOnce(deptGroupId: string | number): Observable<{ aliasName: string; TotalCharging: number }[]> {
+    const deptParam = deptGroupId ? deptGroupId : '';
+    const url = `${environment.url}/GetIncome?dimTimeTypeId=4&subDescFilter=${deptParam}`;
+
+    return this.http.get(url, { responseType: 'text' }).pipe(
+      tap((rawXml) => {
+        console.debug('[OperationalChartService] Raw XML response:', rawXml);
+      }),
+      map((xmlResponse: string) => {
+        const match = xmlResponse.match(/<string[^>]*>([\s\S]*?)<\/string>/);
+        
+        if (!match || !match[1]) {
+          console.error('[OperationalChartService] <string> tag not found or empty:', xmlResponse);
+          throw new Error('No valid <string> content found in XML response');
+        }
+
+        let parsed;
+        try {
+          parsed = JSON.parse(match[1]);
+        } catch (e) {
+          console.error('[OperationalChartService] JSON parse error:', e, '\nRaw string:', match[1]);
+          throw new Error('Failed to parse JSON content from XML string');
+        }
+
+        if (!Array.isArray(parsed)) {
+          console.error('[OperationalChartService] Parsed data is not an array:', parsed);
+          throw new Error('Parsed content is not a valid array');
+        }
+
+        return parsed;
+      }),
+      catchError(err => {
+        console.error('[OperationalChartService] HTTP or parsing error:', err);
+        return throwError(() => err);
+      })
+    );
+  }
+  
+
+  fetchCompareMRevenueDataOnce(deptGroupId: string | number): Observable<{ aliasName: string; TotalCharging: number }[]> {
+    const deptParam = deptGroupId ? deptGroupId : '';
+    const url = `${environment.url}/GetIncome?dimTimeTypeId=6&subDescFilter=${deptParam}`;
+
+    return this.http.get(url, { responseType: 'text' }).pipe(
+      tap((rawXml) => {
+        console.debug('[OperationalChartService] Raw XML response:', rawXml);
+      }),
+      map((xmlResponse: string) => {
+        const match = xmlResponse.match(/<string[^>]*>([\s\S]*?)<\/string>/);
+        
+        if (!match || !match[1]) {
+          console.error('[OperationalChartService] <string> tag not found or empty:', xmlResponse);
+          throw new Error('No valid <string> content found in XML response');
+        }
+
+        let parsed;
+        try {
+          parsed = JSON.parse(match[1]);
+        } catch (e) {
+          console.error('[OperationalChartService] JSON parse error:', e, '\nRaw string:', match[1]);
+          throw new Error('Failed to parse JSON content from XML string');
+        }
+
+        if (!Array.isArray(parsed)) {
+          console.error('[OperationalChartService] Parsed data is not an array:', parsed);
+          throw new Error('Parsed content is not a valid array');
+        }
+
+        return parsed;
+      }),
+      catchError(err => {
+        console.error('[OperationalChartService] HTTP or parsing error:', err);
+        return throwError(() => err);
+      })
+    );
+  }
+
+
+  fetchCompareCMRevenueDataOnce(deptGroupId: string | number): Observable<{ aliasName: string; TotalCharging: number }[]> {
+    const deptParam = deptGroupId ? deptGroupId : '';
+    const url = `${environment.url}/GetIncome?dimTimeTypeId=2&subDescFilter=${deptParam}`;
+
+    return this.http.get(url, { responseType: 'text' }).pipe(
+      tap((rawXml) => {
+        console.debug('[OperationalChartService] Raw XML response:', rawXml);
+      }),
+      map((xmlResponse: string) => {
+        const match = xmlResponse.match(/<string[^>]*>([\s\S]*?)<\/string>/);
+        
+        if (!match || !match[1]) {
+          console.error('[OperationalChartService] <string> tag not found or empty:', xmlResponse);
+          throw new Error('No valid <string> content found in XML response');
+        }
+
+        let parsed;
+        try {
+          parsed = JSON.parse(match[1]);
+        } catch (e) {
+          console.error('[OperationalChartService] JSON parse error:', e, '\nRaw string:', match[1]);
+          throw new Error('Failed to parse JSON content from XML string');
+        }
+
+        if (!Array.isArray(parsed)) {
+          console.error('[OperationalChartService] Parsed data is not an array:', parsed);
+          throw new Error('Parsed content is not a valid array');
+        }
+
+        return parsed;
+      }),
+      catchError(err => {
+        console.error('[OperationalChartService] HTTP or parsing error:', err);
+        return throwError(() => err);
+      })
+    );
   }
 
 
@@ -44,11 +163,9 @@ public fetchTotalRevenueDataOnce(
 }
 
 
-  // fetchTotalRevenueLineChart(startDate: string, endDate: string, granularity: string): Observable<string> {
-  //   const params = new HttpParams()
-  //     .set('startDate', startDate || '01/01/2022').set('endDate', endDate || '31/05/2025').set('dept', dept || '').set('granularity', granularity || 'month');  
-  //   return this.http.get(`${environment.url}/GetRevenueOverTime`, {params, responseType: 'text'}).pipe(timeout(160000));
-  // }
+
+
+ 
   
   fetchTotalRevenueBarChart(startDate: string, endDate: string, granularity: string): Observable<string> {
     const params = new HttpParams()
