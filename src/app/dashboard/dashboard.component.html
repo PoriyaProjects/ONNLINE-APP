@@ -1,5 +1,22 @@
+<div class="row search-container" dir="rtl">
+    <mat-form-field appearance="outline" class="search-field w-100">
+        <mat-label>בחר פריט</mat-label>
+        <input type="text" matInput [matAutocomplete]="auto" [(ngModel)]="searchTerm" (input)="filterOptions()">
+        <mat-icon matPrefix>search</mat-icon>
+        <button *ngIf="searchTerm" matSuffix mat-icon-button (click)="clearSearch()" aria-label="נקה">
+            <mat-icon>close</mat-icon>
+        </button>
+    </mat-form-field>
+
+    <mat-autocomplete #auto="matAutocomplete" autoActiveFirstOption
+        (optionSelected)="onOptionSelected($event.option.value)">
+        <mat-option *ngFor="let option of filteredList" [value]="option.LinkId">
+            {{ option.LinkDescription }}
+        </mat-option>
+    </mat-autocomplete>
+</div>
 <div class="row">
-    <app-feed-line style="margin: auto;width: 100%;direction: rtl;padding-right: 15px;"></app-feed-line>
+    <app-feed-line style="margin: auto;width: 99%;direction: rtl;"></app-feed-line>
 </div>
 <div dir="rtl" class="row" style="padding-bottom: 90px;">
     <div class="col-md-6" dir="rtl">

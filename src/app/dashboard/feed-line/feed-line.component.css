@@ -43,10 +43,10 @@
 }
 
 .feed-line-container {
-  width: 94%;
+  width: 99%;
   overflow: hidden;
   background-color: #f9f9f9;
-  /* Light background for better visibility */
+  padding: 6px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 

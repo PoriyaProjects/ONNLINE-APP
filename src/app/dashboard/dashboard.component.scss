@@ -8,6 +8,17 @@
   background: linear-gradient(90deg, #1976d2, #f8f9fa);
 }
 
+.search-container {
+  // margin-bottom: 16px;
+  display: flex;
+  justify-content: center;
+}
+
+.search-field {
+  max-width: 600px;
+  width: 100%;
+}
+
 .container_Ai .feedback {
   margin-top: 20px;
   // display: flex;

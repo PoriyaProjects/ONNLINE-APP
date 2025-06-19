@@ -25,6 +25,10 @@ mat-sidenav-container {
   visibility: visible;
 }
 
+.sidenav-content {
+  overflow-x: hidden;
+}
+
 mat-list {
   height: 70vh;
 }

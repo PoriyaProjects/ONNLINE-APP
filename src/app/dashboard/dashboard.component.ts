@@ -48,6 +48,9 @@ export class DashboardComponent implements OnInit {
     requestid = 0;
     responseid = 0;
     feedbacksubmited: boolean;
+    searchTerm = '';
+    Links: any[] = [];
+    filteredList: any[] = [...this.Links];
 
     // Track selected tab index
     selectedTabIndex: number | null = 0;
@@ -72,6 +75,7 @@ export class DashboardComponent implements OnInit {
             .attr('y', 150)
             .attr('fill', '#938F8F');
 
+        this.getMenuLinks();
         this.getLoginUserDetails();
         this.getBirthDayPeople();
         this.getShortCutsLinks();
@@ -82,6 +86,37 @@ export class DashboardComponent implements OnInit {
     // Method to select a tab
     selectTab(index: number): void {
         this.selectedTabIndex = index;
+    }
+
+    filterOptions() {
+        const val = this.searchTerm.toLowerCase();
+        this.filteredList = this.Links.filter(option =>
+            option.LinkDescription.toLowerCase().includes(val)
+        );
+    }
+
+    clearSearch() {
+        this.searchTerm = '';
+        this.filteredList = [...this.Links];
+    }
+
+    onOptionSelected(url: string) {
+        this.clearSearch();
+        window.open(url, '_blank');
+        // window.location.href = url;
+    }
+
+    getMenuLinks() {
+        this.http
+            .post(
+                environment.url + "GetOnnLineLinksToSearch",
+                {
+                    user: localStorage.getItem("loginUserName"),
+                }
+            )
+            .subscribe((Response) => {
+                this.Links = Response["d"];
+            });
     }
 
     openModal(): void {

@@ -127,6 +127,7 @@ export class CommercialSupportFormDialogComponent {
       stay_indirectHealth: new FormControl(data?.stay_indirectHealth, null),
       // File fields
       SupportLetter: new FormControl(data?.SupportLetter, Validators.required),
+      SupportLetter2: new FormControl(data?.SupportLetter2, null),
       ConferenceApproval: new FormControl(data?.ConferenceApproval, Validators.required),
       AdditionalDocument: new FormControl(data?.AdditionalDocument, null),
       SupportType: supportTypeArray,
@@ -213,19 +214,23 @@ export class CommercialSupportFormDialogComponent {
   submitForm() {
     this.SupportRequestDto.controls['EventDate'].setValue(this._datePipe.transform(this.SupportRequestDto.value.EventDate, 'yyyy-MM-dd'));
     this.SupportRequestDto.controls['EventEndDate'].setValue(this._datePipe.transform(this.SupportRequestDto.value.EventEndDate, 'yyyy-MM-dd'));
-    this.supportRequestsService.saveSupportRequest(this.SupportRequestDto.getRawValue()).subscribe({
-      next: (response) => {
-        if (response['d']) {
-          this.openSnackBar("נשמר בהצלחה");
-          this.dialogRef.close(true);
-        } else {
-          this.openSnackBar("תקלה!");
+    if (this.SupportRequestDto.valid) {
+      this.supportRequestsService.saveSupportRequest(this.SupportRequestDto.getRawValue()).subscribe({
+        next: (response) => {
+          if (response['d']) {
+            this.openSnackBar("נשמר בהצלחה");
+            this.dialogRef.close(true);
+          } else {
+            this.openSnackBar("תקלה!");
+          }
+        },
+        error: (error) => {
+          console.error('שגיאה בשמירת הבקשה:', error);
         }
-      },
-      error: (error) => {
-        console.error('שגיאה בשמירת הבקשה:', error);
-      }
-    });
+      });
+    } else {
+      this.openSnackBar("שכחת שדות חובה");
+    }
   }
 
   getEmployeeDetails() {
@@ -264,6 +269,14 @@ export class CommercialSupportFormDialogComponent {
   }
   file_in_new_window_base64_3() {
     const base64String = this.SupportRequestDto.get('AdditionalDocument')?.value;
+    if (base64String) {
+      this.openFile(base64String);
+    } else {
+      console.error('No file available to open');
+    }
+  }
+  file_in_new_window_base64_1_2() {
+    const base64String = this.SupportRequestDto.get('SupportLetter2')?.value;
     if (base64String) {
       this.openFile(base64String);
     } else {

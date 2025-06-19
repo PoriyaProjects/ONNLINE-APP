@@ -100,9 +100,14 @@
                 </p>
 
             </mat-card-content>
-            <button mat-raised-button color="primary" class="submitBtn" matTooltip="שמירה"
-                *ngIf="PresentationRequestDto.get('Requester')?.value != null && PresentationRequestDto.valid"
-                (click)="submitForm()">שמירה</button>
+            <div class="row" style="justify-content: left;">
+                <button mat-raised-button class="submitBtn" matTooltip="שמירה כטיוטה"
+                    [disabled]="PresentationRequestDto.get('Requester')?.value == null" (click)="submitForm()">שמירה
+                    כטיוטה</button>
+                <button mat-raised-button class="submitBtn2" matTooltip="שמירה והגשה"
+                    [disabled]="PresentationRequestDto.get('Requester')?.value == null || PresentationRequestDto.invalid"
+                    (click)="submitForm()">שמירה והגשה</button>
+            </div>
         </mat-card>
 
     </form>
