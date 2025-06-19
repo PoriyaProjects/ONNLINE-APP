@@ -9,6 +9,7 @@ import { filterRecentOffsets, YearlyData, getCurrentMonthData, getWorkingDaysInf
 import { sanitizeAndFilterYearMonthData} from '../../shared/chart-data-pipeline';
 import { limitToRecentYears } from '../../shared/limit-utils';
 import { ChartDataPipelineService } from '../../shared/ChartDataPipelineService';
+import { drawOverlayDualArcChartHelper } from '../../shared/drawOverlayDualArcChartHelper';
 
 export interface Department {
   id: string;
@@ -67,6 +68,8 @@ export class GoogleChartsService {
   public gaugeTargetValue: number;
   public gaugePlanned: number;
   public gaugeTargetStatus: string;
+  public currentMonthValues: any[] = [];
+
 
   // Chart configuration constants
   private chartsReady: Promise<void>;
@@ -112,17 +115,7 @@ export class GoogleChartsService {
     };
   } = {};
   
-  // constructor(private http: HttpClient, private chartPipeline: ChartDataPipelineService) {
-  //   this.chartsReady = new Promise((resolve) => {
-  //     google.charts.load('current', { packages: ['corechart', 'gauge', 'controls', 'table'] });
-  //     google.charts.setOnLoadCallback(() => {
-  //       //console.log('Google Charts loaded');
-  //       resolve();
-  //     });
-  //   });
-
-  //   this.chartsReady.then(() => this.loadAndDrawCharts());
-  // }
+  
 
   constructor(
     private http: HttpClient,
@@ -147,6 +140,11 @@ export class GoogleChartsService {
       default: return value.toString();
     }
   }
+
+  //public currentMonthValues: { label: string; value: number; color: string }[] = [];
+
+  public workingDaysInfo: { totalWorkingDays: number; currentWorkingDayIndex: number };
+
   
   /**
    * Main function to load and draw all charts in sequence with custom options.
@@ -335,6 +333,13 @@ export class GoogleChartsService {
       await this.drawChartGaugeFunc(gaugeOptions, gaugeTextPosition);
     } catch (e) { //console.error("Gauge Chart failed:", e); 
       }
+
+      try {
+        await this.drawDualArcGaugeOverlay('arc_chart');
+      } catch (e) { //console.error("Gauge Chart failed:", e); 
+        }
+  
+
   
     try {
       await this.initTimeAvgChart(options.timeAvgOptions);
@@ -505,11 +510,18 @@ export class GoogleChartsService {
       const rawData = await this.http.get(this.DATA_SOURCES.EXPLOITATIONWEEKLY, { responseType: 'text' }).toPromise();
       //const cleanData = JSON.parse(rawData);
       const cleanData = sanitizeSoapResponse(rawData);
-
-      await this.fetchDataAndDrawDirect(cleanData, this.processExploitationData.bind(this), this.CHART_TYPES.EXPLOITATION, 'as_chart_weekly', chartOptions);      
+    //  console.log('✅ cleanData from EXPLOITATIONWEEKLY:', cleanData);
+    // console.log('🔍 yData[0]?.Year?.Months:', cleanData?.yData?.[0]?.Year?.Months);
+    // console.log('📅 currentMonthIndex:', new Date().getMonth());
+      await this.fetchDataAndDrawDirect(cleanData, this.processExploitationData.bind(this), this.CHART_TYPES.EXPLOITATION, 'as_chart_weekly', chartOptions);   
+      
+      //const currentMonthValues = this.getWeeklySummaryAsPieValues(cleanData);
+      this.currentMonthValues = this.getWeeklySummaryAsPieValues(cleanData);
+      
+      //console.log('📊 currentMonthValues:', this.currentMonthValues);
       //console.log('Exploitation chart wEEKLY complete');
     } catch (error) {
-      console.error("Failed to fetch Exploitation chart wEEKLY data:", error);
+      //console.error("Failed to fetch Exploitation chart wEEKLY data:", error);
       const el = document.getElementById('as_chart_weekly');
       if (el) el.innerHTML = "Error loading Exploitation chart.";
     }
@@ -1163,62 +1175,45 @@ export class GoogleChartsService {
     chart.draw(dataTable, options);
   }
   
+
+
 public async drawChartGauge(data: any, elementId: string, chartOptions: any = {}): Promise<void> {
-
   try {
-
-    if (typeof elementId !== 'string') {
-      return;
-    }
+    if (typeof elementId !== 'string') return;
 
     const container = document.getElementById(elementId);
-    if (!container) {
-      return;
-    }
+    if (!container) return;
 
     // Fetch working days info
     const workingDaysInfo = await getWorkingDaysInfo(this.DATA_SOURCES.WORKING_DAYS);
-    if (workingDaysInfo.totalWorkingDays === 0) {
-      return;
-    }
+    if (workingDaysInfo.totalWorkingDays === 0) return;
+
+    this.workingDaysInfo = workingDaysInfo; // store for use
 
     // Fetch latest gauge data
     const rawData = await this.http.get(this.DATA_SOURCES.GAUGE, { responseType: 'text' }).toPromise();
     const cleanData = sanitizeSoapResponse(rawData);
-
     const monthData = getCurrentMonthData(cleanData?.yData?.[0]?.Year?.Months);
-    if (!monthData) {
-      return;
-    }
+    if (!monthData) return;
 
     const label = monthData.name || 'Current Month';
     const value = monthData.y;
 
-    // Define your target for month
+    // Target setup
     const targetValue = 220;
-
-    // Calculate per-day target
     const perDayTarget = targetValue / workingDaysInfo.totalWorkingDays;
-
-    // Calculate planned value INCLUDING today
     const plannedIncludingToday = perDayTarget * (workingDaysInfo.currentWorkingDayIndex ?? 1);
 
-    // Store state
+    // Store in class
     this.gaugeLabel = label;
     this.gaugeValue = value;
     this.gaugeTargetValue = targetValue;
     this.gaugePlanned = plannedIncludingToday;
 
-    // Detect if LAST WORKING DAY
     const isLastWorkingDay = (workingDaysInfo.currentWorkingDayIndex === workingDaysInfo.totalWorkingDays);
-
-    // Determine gauge status ✅ / ❌
     this.gaugeTargetStatus = isLastWorkingDay
       ? (this.gaugeValue >= this.gaugeTargetValue ? '✅' : '❌')
       : (this.gaugeValue >= this.gaugePlanned ? '✅' : '❌');
-
-    // --- Green + Yellow only (no red) ---
-   
 
     const chartData = [
       ['Label', 'Value'],
@@ -1237,26 +1232,36 @@ public async drawChartGauge(data: any, elementId: string, chartOptions: any = {}
       min: 0,
       majorTicks: ["0", "", "", "", "", targetValue.toString()],
       animation: { duration: 1000, easing: 'out' },
-
-      // Colors
-      greenColor: '#5ed175',   // Positive
-      yellowColor: '#f86b6b'   // Negative / lagging
-      
+      greenColor: '#5ed175',
+      yellowColor: '#f86b6b'
     };
 
     const options = { ...defaultOptions, ...chartOptions };
 
-    // Draw the chart
+    // Draw Google Gauge
     const chart = new google.visualization.Gauge(container);
     chart.draw(google.visualization.arrayToDataTable(chartData), options);
+
+    // Add SVG overlay after draw
+    // setTimeout(() => {
+    //   drawOverlayDualArcChartHelper({
+    //     containerId: elementId,
+    //     workingDaysInfo: this.workingDaysInfo,
+    //     gaugePlanned: this.gaugePlanned,
+    //     gaugeTargetValue: this.gaugeTargetValue,
+    //     gaugeValue: this.gaugeValue,
+    //     gaugeTargetStatus: this.gaugeTargetStatus,
+    //     markerOptions: { radius: 14, fontSize: 10 }
+    //   });
+    // }, 10);
 
   } catch (error) {
     const el = document.getElementById(elementId);
     if (el) {
       el.innerHTML = 'Failed to draw Gauge chart. See console.';
     }
+    console.error('Gauge chart error:', error);
   }
-
 }
 
 
@@ -2075,6 +2080,110 @@ public redrawCharts(): void {
   }
 
   // Add similar blocks for other charts like 3Y, gauge, or merged charts as needed
+}
+
+private getCurrentMonthPieValues(data: any): { Key: string; Value: number }[] {
+  const months = data?.yData?.[0]?.Year?.Months;
+  if (!Array.isArray(months)) return [];
+
+  const currentMonthIndex = new Date().getMonth(); // 0-11
+  const currentMonth = months.find(m => m?.MonthIndex === currentMonthIndex);
+
+  return currentMonth?.Values || [];
+}
+
+
+
+
+
+
+public async drawDualArcGaugeOverlay(elementId: string): Promise<void> {
+  try {
+    const container = document.getElementById(elementId);
+    if (!container) return;
+
+    // Fetch working days
+    const workingDaysInfo = await getWorkingDaysInfo(this.DATA_SOURCES.WORKING_DAYS);
+    if (workingDaysInfo.totalWorkingDays === 0) return;
+
+    // Fetch gauge values
+    const rawData = await this.http.get(this.DATA_SOURCES.GAUGE, { responseType: 'text' }).toPromise();
+    const cleanData = sanitizeSoapResponse(rawData);
+    const monthData = getCurrentMonthData(cleanData?.yData?.[0]?.Year?.Months);
+    if (!monthData) return;
+
+    const value = monthData.y;
+    const targetValue = 220;
+
+    const perDayTarget = targetValue / workingDaysInfo.totalWorkingDays;
+    const plannedIncludingToday = perDayTarget * (workingDaysInfo.currentWorkingDayIndex ?? 1);
+    const isLastWorkingDay = (workingDaysInfo.currentWorkingDayIndex === workingDaysInfo.totalWorkingDays);
+
+    const gaugeTargetStatus = isLastWorkingDay
+      ? (value >= targetValue ? '✅' : '❌')
+      : (value >= plannedIncludingToday ? '✅' : '❌');
+
+
+
+      //const currentMonthValues = this.getCurrentMonthPieValues(cleanData);
+      //console.log('📦 Raw123 weekly summary input to pie parser:', cleanData);
+      this.currentMonthValues = this.getWeeklySummaryAsPieValues(cleanData);
+      //console.log('📊 !!!currentMonthValues123:', this.currentMonthValues);
+      
+      const parsedPieValues = this.getWeeklySummaryAsPieValues(cleanData);
+      console.log('📊 Final parsed pie:', parsedPieValues);
+
+      
+    // Call overlay helper with self-contained state
+    drawOverlayDualArcChartHelper({
+      containerId: elementId,
+      workingDaysInfo,
+      gaugePlanned: plannedIncludingToday,
+      gaugeTargetValue: targetValue,
+      gaugeValue: value,
+      gaugeTargetStatus,
+      //currentMonthValues: this.currentMonthValues,      
+      currentMonthValues: parsedPieValues,
+      markerOptions: { radius: 14, fontSize: 10 }
+    });
+    console.log('📥 incoming pie data to overlay:', this.currentMonthValues);
+  } catch (err) {
+    console.error('Failed to draw dual arc overlay:', err);
+    const el = document.getElementById(elementId);
+    if (el) {
+      el.innerHTML = 'Error loading dual arc overlay';
+    }
+  }
+}
+
+
+
+public getWeeklySummaryAsPieValues(data: any): any[] {
+  console.log("🧪 Raw weekly summary input to pie parser:", data);
+
+  if (!data || !data.rows || !Array.isArray(data.rows)) return [];
+
+  const totals: { [label: string]: number } = {};
+
+  // Loop through rows
+  for (const row of data.rows) {
+    const cells = row.c;
+    for (let i = 1; i < cells.length; i++) {
+      const label = data.cols[i].label;
+      const value = cells[i]?.v || 0;
+      totals[label] = (totals[label] || 0) + value;
+    }
+  }
+
+  const colors = ['#00cc66', '#6ba1f8', '#cc0033', '#ff9900', '#9966cc'];
+  const result = Object.entries(totals).map(([label, value], index) => ({
+    label,
+    value,
+    color: colors[index % colors.length],
+  }));
+
+  console.log("✅ Parsed pie values:", result);
+  return result;
 }
 
 
