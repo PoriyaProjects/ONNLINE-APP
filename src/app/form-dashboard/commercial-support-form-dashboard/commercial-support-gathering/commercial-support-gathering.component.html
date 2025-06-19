@@ -1,0 +1,123 @@
+<div dir="rtl" class="form-page-container">
+    <button mat-raised-button color="warn" type="button" class="closeBtn" (click)="onClose()">
+        X
+    </button>
+    <form [formGroup]="GatheringRequestDto" *ngIf="GatheringRequestDto">
+        <mat-card class="form-card">
+            <mat-card-title class="text-center">
+                בקשה לקיום יום עיון/כנס
+            </mat-card-title>
+            <mat-card-content>
+                <div fxLayout="column" fxLayoutGap="20px" style="text-align: right;">
+                    <mat-form-field appearance="outline">
+                        <mat-label>תעודת זהות מגיש הבקשה</mat-label>
+                        <input matInput formControlName="RequesterID" (blur)="getEmployeeDetails()"
+                            (keydown.enter)="getEmployeeDetails()" required>
+                    </mat-form-field>
+
+                    <mat-form-field appearance="outline" *ngIf="GatheringRequestDto.get('Requester')?.value != null">
+                        <mat-label>שם מגיש הבקשה</mat-label>
+                        <input matInput formControlName="Requester">
+                    </mat-form-field>
+
+                    <mat-form-field appearance="outline" *ngIf="GatheringRequestDto.get('Requester')?.value != null">
+                        <mat-label>תפקיד - מחלקה</mat-label>
+                        <input matInput formControlName="RequesterDetails">
+                    </mat-form-field>
+
+                    <mat-form-field appearance="outline" *ngIf="GatheringRequestDto.get('Requester')?.value != null">
+                        <mat-label>נושא יום העיון</mat-label>
+                        <input matInput formControlName="GatheringSubject">
+                    </mat-form-field>
+
+                    <mat-form-field appearance="outline" *ngIf="GatheringRequestDto.get('Requester')?.value != null">
+                        <mat-label>תאריך</mat-label>
+                        <input matInput [matDatepicker]="picker" formControlName="GatheringDate">
+                        <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+                        <mat-datepicker #picker></mat-datepicker>
+                    </mat-form-field>
+
+                    <mat-form-field appearance="outline" *ngIf="GatheringRequestDto.get('Requester')?.value != null">
+                        <mat-label>שעת התחלה</mat-label>
+                        <input matInput type="time" formControlName="GatheringStartTime">
+                    </mat-form-field>
+
+                    <mat-form-field appearance="outline" *ngIf="GatheringRequestDto.get('Requester')?.value != null">
+                        <mat-label>שעת סיום</mat-label>
+                        <input matInput type="time" formControlName="GatheringEndTime">
+                    </mat-form-field>
+
+                    <mat-form-field appearance="outline" *ngIf="GatheringRequestDto.get('Requester')?.value != null">
+                        <mat-label>מקום</mat-label>
+                        <input matInput formControlName="GatheringLocation">
+                    </mat-form-field>
+
+
+                    <div fxLayout="column" fxLayoutGap="20px" style="margin-top: 16px;"
+                        *ngIf="GatheringRequestDto.get('Requester')?.value != null">
+                        <hr>
+                        <mat-card-title class="text-right">
+                            טפסים
+                        </mat-card-title>
+
+                        <!-- File Input 1 -->
+                        <div style="text-align: right;">
+                            <label>תוכנית הכנס*</label><br>
+                            <input type="file" (change)="onFileChange($event, 'GatheringPlan')"
+                                accept=".doc,.docx,.xls,.xlsx,.pdf,image/*" required>
+                            <button mat-raised-button class="fileOpenBtn" color="primary"
+                                (click)="file_in_new_window_base64()"
+                                *ngIf="GatheringRequestDto.get('GatheringPlan').value != undefined && GatheringRequestDto.get('GatheringPlan').value != ''">
+                                צפייה במסמך
+                                <span class="material-icons"> zoom_in </span>
+                            </button>
+                        </div><br>
+                        <!-- File Input 2 -->
+                        <div style="text-align: right;">
+                            <label>תקציב* (צפי עלויות משוערות עבור הכנס)</label><br>
+                            <input type="file" (change)="onFileChange($event, 'GatheringOutcome')"
+                                accept=".doc,.docx,.xls,.xlsx,.pdf,image/*" required>
+                            <button mat-raised-button class="fileOpenBtn" color="primary"
+                                (click)="file_in_new_window_base64_2()"
+                                *ngIf="GatheringRequestDto.get('GatheringOutcome').value != undefined && GatheringRequestDto.get('GatheringOutcome').value != ''">
+                                צפייה במסמך
+                                <span class="material-icons"> zoom_in </span>
+                            </button>
+                        </div><br>
+                        <!-- File Input 3 -->
+                        <div style="text-align: right;">
+                            <label>מכתבי תמיכה מחברות מסחריות</label><br>
+                            <input type="file" (change)="onFileChange($event, 'GatheringSupport')"
+                                accept=".doc,.docx,.xls,.xlsx,.pdf,image/*" required>
+                            <button mat-raised-button class="fileOpenBtn" color="primary"
+                                (click)="file_in_new_window_base64_3()"
+                                *ngIf="GatheringRequestDto.get('GatheringSupport').value != undefined && GatheringRequestDto.get('GatheringSupport').value != ''">
+                                צפייה במסמך
+                                <span class="material-icons"> zoom_in </span>
+                            </button>
+                        </div><br>
+                        <hr><br>
+                        <p>* יש לבקש תמיכה מ 3- חברות במידה ו-</p>
+                        <!-- File Input 4 -->
+                        <div style="text-align: right;">
+                            <label>תיעוד פניות לחברות*</label><br>
+                            <input type="file" (change)="onFileChange($event, 'GatheringInquiries')"
+                                accept=".doc,.docx,.xls,.xlsx,.pdf,image/*" required>
+                            <button mat-raised-button class="fileOpenBtn" color="primary"
+                                (click)="file_in_new_window_base64_4()"
+                                *ngIf="GatheringRequestDto.get('GatheringInquiries').value != undefined && GatheringRequestDto.get('GatheringInquiries').value != ''">
+                                צפייה במסמך
+                                <span class="material-icons"> zoom_in </span>
+                            </button>
+                        </div><br>
+                    </div>
+                </div>
+
+            </mat-card-content>
+            <button mat-raised-button class="submitBtn" matTooltip="שמירה"
+                [disabled]="GatheringRequestDto.get('Requester')?.value == null || GatheringRequestDto.invalid"
+                (click)="submitForm()">שמירה</button>
+        </mat-card>
+
+    </form>
+</div>

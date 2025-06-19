@@ -75,19 +75,23 @@ export class CommercialSupportResearchDialogComponent implements OnInit {
   }
 
   submitForm() {
-    this.supportRequestsService.saveResearchRequest(this.ResearchRequestDto.getRawValue()).subscribe({
-      next: (response) => {
-        if (response['d']) {
-          this.openSnackBar("נשמר בהצלחה");
-          this.dialogRef.close(true);
-        } else {
-          this.openSnackBar("תקלה!");
+    if (this.ResearchRequestDto.valid) {
+      this.supportRequestsService.saveResearchRequest(this.ResearchRequestDto.getRawValue()).subscribe({
+        next: (response) => {
+          if (response['d']) {
+            this.openSnackBar("נשמר בהצלחה");
+            this.dialogRef.close(true);
+          } else {
+            this.openSnackBar("תקלה!");
+          }
+        },
+        error: (error) => {
+          console.error('שגיאה בשמירת הבקשה:', error);
         }
-      },
-      error: (error) => {
-        console.error('שגיאה בשמירת הבקשה:', error);
-      }
-    });
+      });
+    } else {
+      this.openSnackBar("שכחת שדות חובה");
+    }
   }
 
   onFileChange(event: Event, field: string) {

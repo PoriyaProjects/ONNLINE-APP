@@ -72,7 +72,7 @@
     <div *ngIf="supportRequests.filteredData.length === 0" class="no-results">
       אין תוצאות להצגה.
     </div>
-    <button mat-raised-button color="primary" (click)="openDialog()">
+    <button mat-raised-button class="addBtn" color="primary" (click)="openDialog()">
       <mat-icon>add</mat-icon> הוספת בקשה חדשה
     </button>
   </div>
@@ -83,12 +83,22 @@
     <h2 mat-dialog-title>בחר סוג בקשה</h2>
     <mat-dialog-content>
       <div class="cube-options">
-        <button mat-raised-button color="accent" class="cube" (click)="selectRequest('A')">בקשה לאישור תמיכת גוף מסחרי –
-          כנס/השתלמות</button>
-        <button mat-raised-button color="primary" class="cube" (click)="selectRequest('B')">בקשה לאישור תמיכת גוף מסחרי
-          במחקר קליני</button>
-        <button mat-raised-button color="warn" class="cube" (click)="selectRequest('C')">בקשה לקיום הרצאה לסגל המרכז
-          הרפואי</button>
+        <button mat-raised-button class="cube accent" (click)="selectRequest('A')">
+          <mat-icon class="cube-icon">event</mat-icon>
+          בקשה לאישור תמיכת גוף מסחרי – כנס/השתלמות
+        </button>
+        <button mat-raised-button class="cube primary" (click)="selectRequest('B')">
+          <mat-icon class="cube-icon">science</mat-icon>
+          בקשה לאישור תמיכת גוף מסחרי במחקר קליני
+        </button>
+        <button mat-raised-button class="cube warn" (click)="selectRequest('C')">
+          <mat-icon class="cube-icon">record_voice_over</mat-icon>
+          בקשה לקיום הרצאה לסגל המרכז הרפואי
+        </button>
+        <button mat-raised-button class="cube info" (click)="selectRequest('D')">
+          <mat-icon class="cube-icon">event_note</mat-icon>
+          בקשה לקיום יום עיון / כנס
+        </button>
       </div>
     </mat-dialog-content>
     <mat-dialog-actions align="end">

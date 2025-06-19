@@ -53,12 +53,19 @@
     box-shadow: 0 0 0 4px rgba(63, 81, 181, 0.2);
 }
 
+mat-card-content {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+}
+
 .category-btn {
     background-color: #a0d2f5;
 }
 
 .permission-btn {
     background-color: #7e08ff;
+    color: #fff;
 }
 
 .save-btn {

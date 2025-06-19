@@ -98,16 +98,16 @@
             <ng-container matColumnDef="EApproved">
                 <th mat-header-cell *matHeaderCellDef mat-sort-header> אישור מנהל ישיר </th>
                 <td mat-cell *matCellDef="let element">
-                    <mat-icon *ngIf="element.EApproved == 'True'">check_circle </mat-icon>
-                    <mat-icon *ngIf="element.EApproved == 'False'">cancel </mat-icon>
+                    <mat-icon *ngIf="element.EApproved == 'מאושר'">check_circle </mat-icon>
+                    <mat-icon *ngIf="element.EApproved != 'מאושר'">cancel </mat-icon>
                 </td>
             </ng-container>
 
             <ng-container matColumnDef="FApproved">
                 <th mat-header-cell *matHeaderCellDef mat-sort-header> אישור מנהל עקיף </th>
                 <td mat-cell *matCellDef="let element">
-                    <mat-icon *ngIf="element.FApproved == 'True'">check_circle </mat-icon>
-                    <mat-icon *ngIf="element.FApproved == 'False'">cancel </mat-icon>
+                    <mat-icon *ngIf="element.FApproved == 'מאושר'">check_circle </mat-icon>
+                    <mat-icon *ngIf="element.FApproved != 'מאושר'">cancel </mat-icon>
                 </td>
             </ng-container>
 

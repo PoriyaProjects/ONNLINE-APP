@@ -11,10 +11,10 @@ import { environment } from 'src/environments/environment';
   styleUrls: ['./service-unit-email-list-dialog.component.css']
 })
 export class ServiceUnitEmailListDialogComponent implements OnInit {
-  form: FormGroup;
-
   horizontalPosition: MatSnackBarHorizontalPosition = 'start';
   verticalPosition: MatSnackBarVerticalPosition = 'bottom';
+
+  form: FormGroup;
   listFields = [
     { value: 'ToMailingList', desc: 'רשימת נמענים' },
     { value: 'CCMailingList', desc: 'רשימת מכותבים' },
@@ -26,10 +26,10 @@ export class ServiceUnitEmailListDialogComponent implements OnInit {
   filteredOptions: { [key: string]: string[] } = {};
 
   allOptions = {
-    ToMailingList: ['Option A', 'Option B', 'Option C'],
-    CCMailingList: ['Alpha', 'Beta', 'Gamma'],
-    ToMailingListThanksClick: ['Red', 'Green', 'Blue'],
-    ToMailingListHospitalization: ['Cat', 'Dog', 'Mouse']
+    ToMailingList: [],
+    CCMailingList: [],
+    ToMailingListThanksClick: [],
+    ToMailingListHospitalization: []
   };
 
   constructor(
@@ -43,7 +43,6 @@ export class ServiceUnitEmailListDialogComponent implements OnInit {
   ngOnInit() {
     this.getDepartmentMailingList();
     this.getUsersToUpdateUser();
-
   }
 
   addChip(field: string, event: any): void {
@@ -61,30 +60,12 @@ export class ServiceUnitEmailListDialogComponent implements OnInit {
   }
 
   selected(field: string, event: any): void {
-    const email = event.option.value;
+    const email = event.option.value.email;
     const current = this.form.get(field).value;
     if (!current.includes(email)) {
       this.form.get(field).setValue([...current, email]);
     }
     this.autoControl[field].setValue('');
-  }
-
-  onCancel() {
-    this.dialogRef.close();
-  }
-
-  onSave() {
-    this.http
-      .post(environment.url + "SaveOrUpdateDepartmentMailingList", {
-        dto: this.form.value
-      })
-      .subscribe((Response) => {
-        if (Response['d']) {
-          this.openSnackBar("נשמר בהצלחה");
-          this.dialogRef.close();
-        }
-        else this.openSnackBar("שגיאה");
-      });
   }
 
   getDepartmentMailingList() {
@@ -122,12 +103,35 @@ export class ServiceUnitEmailListDialogComponent implements OnInit {
         });
         Object.keys(this.autoControl).forEach(field => {
           this.autoControl[field].valueChanges.subscribe(inputValue => {
-            const search = inputValue?.toLowerCase() || '';
+            const search = inputValue.email == undefined ? inputValue?.toLowerCase() : inputValue?.email.toLowerCase() || '';
             this.filteredOptions[field] = this.allOptions[field].filter(option =>
-              `${option.firstname} ${option.lastname} ${option.derug}`.toLowerCase().includes(search)
+              `${option.firstname} ${option.lastname}`.toLowerCase().includes(search)
             );
           });
         });
+      });
+  }
+
+  getDisplayName(email: string, field: string): string {
+    const user = this.allOptions[field]?.find(u => u.email === email);
+    return user ? `${user.firstname} ${user.lastname}` : email;
+  }
+
+  onCancel() {
+    this.dialogRef.close();
+  }
+
+  onSave() {
+    this.http
+      .post(environment.url + "SaveOrUpdateDepartmentMailingList", {
+        dto: this.form.value
+      })
+      .subscribe((Response) => {
+        if (Response['d']) {
+          this.openSnackBar("נשמר בהצלחה");
+          this.dialogRef.close();
+        }
+        else this.openSnackBar("שגיאה");
       });
   }
 

@@ -29,7 +29,7 @@
         <mat-chip-list #chipList [formControl]="form.get(listField.value)" aria-label="רשימת בחירה">
           <mat-chip *ngFor="let item of form.get(listField.value).value" [selectable]="true" [removable]="true"
             (removed)="removeChip(listField.value, item)">
-            {{ item }}
+            {{ getDisplayName(item, listField.value) }}
             <mat-icon matChipRemove>cancel</mat-icon>
           </mat-chip>
 
@@ -40,7 +40,7 @@
         </mat-chip-list>
 
         <mat-autocomplete #auto="matAutocomplete" (optionSelected)="selected(listField.value, $event)">
-          <mat-option *ngFor="let option of filteredOptions[listField.value]" [value]="option.email">
+          <mat-option *ngFor="let option of filteredOptions[listField.value]" [value]="option">
             {{ option.firstname }} {{ option.lastname }} - {{ option.derug }}
           </mat-option>
         </mat-autocomplete>

@@ -12,8 +12,10 @@ export class SupportRequestService {
 
   constructor(private http: HttpClient) { }
 
-  getAllSupportRequests(): Observable<any[]> {
-    return this.http.post<any[]>(`${this.apiUrl}GetAllSupportRequests`, {});
+  getAllSupportRequests(UserName: string): Observable<any[]> {
+    return this.http.post<any[]>(`${this.apiUrl}GetAllSupportRequests`, {
+      user_name: UserName
+    });
   }
 
   deleteSupportRequest(id: any): Observable<void> {
@@ -40,6 +42,12 @@ export class SupportRequestService {
     });
   }
 
+  getGatheringRequestById(id: string): Observable<any[]> {
+    return this.http.post<any[]>(`${this.apiUrl}GetGatheringRequestById`, {
+      id: id
+    });
+  }
+
   saveSupportRequest(request: any): Observable<any> {
     return this.http.post(`${this.apiUrl}SaveSupportRequest`, {
       request: request
@@ -54,6 +62,12 @@ export class SupportRequestService {
 
   saveResearchRequest(request: any): Observable<any> {
     return this.http.post(`${this.apiUrl}SaveResearchRequest`, {
+      request: request
+    });
+  }
+
+  saveGatheringRequest(request: any): Observable<any> {
+    return this.http.post(`${this.apiUrl}SaveGatheringRequest`, {
       request: request
     });
   }
