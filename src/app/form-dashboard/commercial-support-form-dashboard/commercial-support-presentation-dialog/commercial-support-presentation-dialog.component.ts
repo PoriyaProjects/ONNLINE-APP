@@ -82,19 +82,23 @@ export class CommercialSupportPresentationDialogComponent implements OnInit {
 
   submitForm() {
     this.PresentationRequestDto.controls['PresentationDate'].setValue(this._datePipe.transform(this.PresentationRequestDto.value.PresentationDate, 'yyyy-MM-dd'));
-    this.supportRequestsService.savePresentationRequest(this.PresentationRequestDto.getRawValue()).subscribe({
-      next: (response) => {
-        if (response['d']) {
-          this.openSnackBar("נשמר בהצלחה");
-          this.dialogRef.close(true);
-        } else {
-          this.openSnackBar("תקלה!");
+    if (this.PresentationRequestDto.valid) {
+      this.supportRequestsService.savePresentationRequest(this.PresentationRequestDto.getRawValue()).subscribe({
+        next: (response) => {
+          if (response['d']) {
+            this.openSnackBar("נשמר בהצלחה");
+            this.dialogRef.close(true);
+          } else {
+            this.openSnackBar("תקלה!");
+          }
+        },
+        error: (error) => {
+          console.error('שגיאה בשמירת הבקשה:', error);
         }
-      },
-      error: (error) => {
-        console.error('שגיאה בשמירת הבקשה:', error);
-      }
-    });
+      });
+    } else {
+      this.openSnackBar("שכחת שדות חובה");
+    }
   }
 
   signForm() {

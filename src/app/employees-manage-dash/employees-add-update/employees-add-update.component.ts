@@ -1,6 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { Component, OnInit, TemplateRef, ViewChild } from '@angular/core';
-import { FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
+import { FormArray, FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
 import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { DatePipe } from '@angular/common';
 import {
@@ -13,6 +13,7 @@ import { FillSurveyComponent } from 'src/app/fill-survey/fill-survey.component';
 import { MatTableDataSource } from '@angular/material/table';
 import { Observable } from 'rxjs';
 import { map, startWith } from 'rxjs/operators';
+import { MatDatepickerInputEvent } from '@angular/material/datepicker';
 
 export interface UsersEmployee {
   id: string;
@@ -40,6 +41,7 @@ export class EmployeesAddUpdateComponent implements OnInit {
   employeePersonalDetails: FormGroup;
   employeeWorkDetails: FormGroup;
   gymDetails: FormGroup;
+  trainingsDetails: FormGroup;
   RanksList = [];
   SektorsList = [];
   FunctionsList = [];
@@ -67,6 +69,7 @@ export class EmployeesAddUpdateComponent implements OnInit {
   man2filter = new FormControl();
   employees = [];
   @ViewChild('modalEmployeeHistory', { static: true }) modalEmployeeHistory: TemplateRef<any>;
+  dataSource: MatTableDataSource<any>;
 
   constructor(private _snackBar: MatSnackBar,
     public dialog: MatDialogRef<EmployeesAddUpdateComponent>,
@@ -175,6 +178,9 @@ export class EmployeesAddUpdateComponent implements OnInit {
           EmployeesID: new FormControl(this.employee.GymParticipation.EmployeesID === null ? this.employee.RowID : null, null),
           Status: new FormControl(this.employee.GymParticipation.Status, null),
         });
+        this.trainingsDetails = this.formBuilder.group({
+          trainings: this.formBuilder.array([])
+        });
         this.employeeWorkDetails = this.formBuilder.group({
           RowID: new FormControl(this.employee.RowID, null),
           EmployeeIndex: new FormControl('', null),
@@ -221,8 +227,64 @@ export class EmployeesAddUpdateComponent implements OnInit {
         this.AcceptTerms = this.employee.AcceptTerms;
         this.sektorSelection(this.employee.EmployeeSektorID);
         this.getUserName(this.employee.Email);
+        this.dataSource = new MatTableDataSource();
+        this.createTrainingGroup(this.employee.EmployeeTrainings)
       });
   }
+
+  createTrainingGroup(arr) {
+    let temp = this.formBuilder.group({
+      Row_ID: [null, null],
+      TrainingSubject: [null, null],
+      StartDate: [null, null],
+      EndDate: [null, null],
+      Note: [null, null]
+    });
+    if (arr != null) {
+      arr.forEach(element => {
+        temp = this.formBuilder.group({
+          Row_ID: [element.Row_ID, null],
+          TrainingSubject: [element.TrainingSubject, null],
+          StartDate: [element.StartDate, null],
+          EndDate: [element.EndDate, null],
+          Note: [element.Note, null]
+        });
+        this.trainings.push(temp);
+      });
+    } else this.trainings.push(temp);
+
+    this.dataSource.data = this.trainings.controls;
+  }
+
+  get trainings(): FormArray {
+    return this.trainingsDetails.get('trainings') as FormArray;
+  }
+
+  removeTrainingRow(index: number) {
+    this.trainings.removeAt(index);
+    this.dataSource.data = this.trainings.controls; // Refresh table after removal
+  }
+
+  onStartDateInput(event: MatDatepickerInputEvent<Date>, rowIndex: number): void {
+    let pipe = new DatePipe('en-US');
+    const selectedDate = event.value;
+    const currentRow = this.trainings.at(rowIndex) as FormGroup;
+    currentRow.get('StartDate')?.setValue(pipe.transform(selectedDate, 'yyyy-MM-dd'));
+  }
+
+  onEndDateInput(event: MatDatepickerInputEvent<Date>, rowIndex: number): void {
+    let pipe = new DatePipe('en-US');
+    const selectedDate = event.value;
+    const currentRow = this.trainings.at(rowIndex) as FormGroup;
+    currentRow.get('EndDate')?.setValue(pipe.transform(selectedDate, 'yyyy-MM-dd'));
+  }
+
+  // onStartDateChange(event: MatDatepickerInputEvent<Date>, rowIndex: number): void {
+  //   const selectedDate = event.value;
+  //   const currentRowFormGroup = this.trainings.at(rowIndex) as FormGroup;
+  //   const startDateControlValue = currentRowFormGroup.get('StartDate')?.value;
+  //   console.log(`Form control value for StartDate in row ${rowIndex}:`, startDateControlValue);
+  // }
 
   getEmployeesList() {
     this.http
@@ -461,6 +523,9 @@ export class EmployeesAddUpdateComponent implements OnInit {
               EmployeesID: new FormControl(this.employee.GymParticipation.EmployeesID === null ? this.employee.RowID : null, null),
               Status: new FormControl(this.employee.GymParticipation.Status, null),
             });
+            this.trainingsDetails = this.formBuilder.group({
+              trainings: this.formBuilder.array([])
+            });
             this.employeeWorkDetails = this.formBuilder.group({
               RowID: new FormControl(this.employee.RowID, null),
               EmployeeIndex: new FormControl('', null),
@@ -516,9 +581,6 @@ export class EmployeesAddUpdateComponent implements OnInit {
     }
   }
 
-  setEndWorkReason(country) {
-  }
-
   sektorSelection(sektor) {
     this.employeeWorkDetails.controls['EmployeeSektorID'].setValue(sektor);
     if (sektor == "999") {
@@ -565,6 +627,7 @@ export class EmployeesAddUpdateComponent implements OnInit {
           _personalDetails: this.employeePersonalDetails.getRawValue(),
           _workDetails: this.employeeWorkDetails.getRawValue(),
           _gymDetails: this.gymDetails.getRawValue(),
+          _trainingsDetails: this.trainingsDetails.value.trainings,
           _userName: this.UserName,
         })
         .subscribe((Response) => {

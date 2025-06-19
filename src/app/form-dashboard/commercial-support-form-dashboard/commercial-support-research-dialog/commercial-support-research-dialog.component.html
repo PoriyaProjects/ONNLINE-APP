@@ -47,7 +47,8 @@
                         <!-- File Input 1 -->
                         <div style="text-align: right;">
                             <label>הצעת תקציב*</label><br>
-                            <input type="file" (change)="onFileChange($event, 'BudgetProposal')" required>
+                            <input type="file" (change)="onFileChange($event, 'BudgetProposal')"
+                                accept=".doc,.docx,.xls,.xlsx,.pdf,image/*" required>
                             <button mat-raised-button class="fileOpenBtn" color="primary"
                                 (click)="file_in_new_window_base64()"
                                 *ngIf="ResearchRequestDto.get('BudgetProposal').value != undefined && ResearchRequestDto.get('BudgetProposal').value != ''">
@@ -59,7 +60,8 @@
                         <!-- File Input 2 -->
                         <div style="text-align: right;">
                             <label>נספח כלכלי</label><br>
-                            <input type="file" (change)="onFileChange($event, 'EconomicAppendix')" required>
+                            <input type="file" (change)="onFileChange($event, 'EconomicAppendix')"
+                                accept=".doc,.docx,.xls,.xlsx,.pdf,image/*" required>
                             <button mat-raised-button class="fileOpenBtn" color="primary"
                                 (click)="file_in_new_window_base64_2()"
                                 *ngIf="ResearchRequestDto.get('EconomicAppendix').value != undefined && ResearchRequestDto.get('EconomicAppendix').value != ''">
@@ -71,7 +73,8 @@
                         <!-- File Input 3 -->
                         <div style="text-align: right;">
                             <label>טופס 6</label><br>
-                            <input type="file" (change)="onFileChange($event, 'Form6')">
+                            <input type="file" (change)="onFileChange($event, 'Form6')"
+                                accept=".doc,.docx,.xls,.xlsx,.pdf,image/*">
                             <button mat-raised-button class="fileOpenBtn" color="primary"
                                 (click)="file_in_new_window_base64_3()"
                                 *ngIf="ResearchRequestDto.get('Form6').value != undefined && ResearchRequestDto.get('Form6').value != ''">
@@ -83,8 +86,8 @@
                 </div>
 
             </mat-card-content>
-            <button mat-raised-button color="primary" class="submitBtn" matTooltip="שמירה"
-                *ngIf="ResearchRequestDto.get('Requester')?.value != null && ResearchRequestDto.valid"
+            <button mat-raised-button class="submitBtn" matTooltip="שמירה"
+                [disabled]="ResearchRequestDto.get('Requester')?.value == null || ResearchRequestDto.invalid"
                 (click)="submitForm()">שמירה</button>
         </mat-card>
 

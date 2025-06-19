@@ -85,9 +85,7 @@
           </mat-card-content>
         </mat-card>
 
-        <div class="continue-btn">
-          <button mat-button matStepperNext style="background-color: #c7e5e2;">המשך</button>
-        </div>
+        <button mat-button matStepperNext class="continue-btn">המשך</button>
       </form>
     </mat-step>
     <mat-step [stepControl]="SupportActivityDto" *ngIf="SupportRequestDto.get('Requester')?.value != null">
@@ -147,6 +145,10 @@
 
               </table>
             </div>
+            <hr>
+            <mat-card-title class="mt-5 text-center">
+              סכום תמיכה (במידה והחברה מעבירה סכום כללי)
+            </mat-card-title>
             <div class="amount-section">
               <mat-form-field appearance="outline" style="width: 33.333%;">
                 <mat-label>מטבע</mat-label>
@@ -177,9 +179,7 @@
           </mat-card-content>
         </mat-card>
 
-        <div class="continue-btn">
-          <button mat-button matStepperNext style="background-color: #c7e5e2;">המשך</button>
-        </div>
+        <button mat-button matStepperNext class="continue-btn">המשך</button>
       </form>
     </mat-step>
     <mat-step [stepControl]="SupportActivityDto" *ngIf="SupportRequestDto.get('Requester')?.value != null">
@@ -187,11 +187,8 @@
         <ng-template matStepLabel>פרטי בקשה</ng-template>
 
         <mat-card class="form-card">
-          <mat-card-title class="text-center">
-            סכום תמיכה (במידה והחברה מעבירה סכום כללי)
-          </mat-card-title>
           <mat-card-content>
-            
+
             <p><br>
               <strong>** יש לצרף מכתב תמיכה מהחברה המופנה למנהל המרכז הרפואי. במכתב יצוין שהחברה מעוניינת לתמוך בנסיעת
                 רופא
@@ -206,7 +203,8 @@
               <!-- File Input 1 -->
               <div style="text-align: right;">
                 <label>מכתב תמיכה מהחברה*</label><br>
-                <input type="file" (change)="onFileChange($event, 'SupportLetter')" required>
+                <input type="file" (change)="onFileChange($event, 'SupportLetter')"
+                  accept=".doc,.docx,.xls,.xlsx,.pdf,image/*" required>
                 <button mat-raised-button class="fileOpenBtn" color="primary" (click)="file_in_new_window_base64()"
                   *ngIf="SupportRequestDto.get('SupportLetter').value != undefined && SupportRequestDto.get('SupportLetter').value != ''">
                   צפייה במסמך
@@ -217,7 +215,8 @@
               <!-- File Input 2 -->
               <div style="text-align: right;">
                 <label>תוכנית של הקורס*</label><br>
-                <input type="file" (change)="onFileChange($event, 'ConferenceApproval')" required>
+                <input type="file" (change)="onFileChange($event, 'ConferenceApproval')"
+                  accept=".doc,.docx,.xls,.xlsx,.pdf,image/*" required>
                 <button mat-raised-button class="fileOpenBtn" color="primary" (click)="file_in_new_window_base64_2()"
                   *ngIf="SupportRequestDto.get('ConferenceApproval').value != undefined && SupportRequestDto.get('ConferenceApproval').value != ''">
                   צפייה במסמך
@@ -229,17 +228,31 @@
               <div style="text-align: right;">
                 <label>מסמך אחר</label><br>
                 <input type="file" (change)="onFileChange($event, 'AdditionalDocument')">
-                <button mat-raised-button class="fileOpenBtn" color="primary" (click)="file_in_new_window_base64_3()"
+                <button mat-raised-button class="fileOpenBtn" color="primary"
+                  accept=".doc,.docx,.xls,.xlsx,.pdf,image/*" (click)="file_in_new_window_base64_3()"
                   *ngIf="SupportRequestDto.get('AdditionalDocument').value != undefined && SupportRequestDto.get('AdditionalDocument').value != ''">
                   צפייה במסמך
                   <span class="material-icons"> zoom_in </span>
                 </button>
               </div>
 
+              <!-- File Input 1.2 -->
+              <div style="text-align: right;">
+                <label>מכתב תמיכה מהחברה 2</label><br>
+                <input type="file" (change)="onFileChange($event, 'SupportLetter2')"
+                  accept=".doc,.docx,.xls,.xlsx,.pdf,image/*">
+                <button mat-raised-button class="fileOpenBtn" color="primary"
+                  accept=".doc,.docx,.xls,.xlsx,.pdf,image/*" (click)="file_in_new_window_base64_1_2()"
+                  *ngIf="SupportRequestDto.get('SupportLetter2').value != undefined && SupportRequestDto.get('SupportLetter2').value != ''">
+                  צפייה במסמך
+                  <span class="material-icons"> zoom_in </span>
+                </button>
+              </div><br>
+
             </div>
           </mat-card-content>
-          <button mat-raised-button color="primary" class="submitBtn" matTooltip="שמירה"
-            *ngIf="SupportRequestDto.get('Requester')?.value != null && SupportRequestDto.valid"
+          <button mat-raised-button class="submitBtn" matTooltip="שמירה"
+            [disabled]="SupportRequestDto.get('Requester')?.value == null || SupportRequestDto.invalid"
             (click)="submitForm()">שמירה</button>
         </mat-card>
       </form>

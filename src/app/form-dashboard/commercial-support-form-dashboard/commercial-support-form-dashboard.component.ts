@@ -2,6 +2,7 @@ import { Component, OnInit, TemplateRef, ViewChild } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { MatTableDataSource } from '@angular/material/table';
 import { CommercialSupportFormDialogComponent } from './commercial-support-form-dialog/commercial-support-form-dialog.component';
+import { CommercialSupportGatheringComponent } from './commercial-support-gathering/commercial-support-gathering.component';
 import { CommercialSupportPresentationDialogComponent } from './commercial-support-presentation-dialog/commercial-support-presentation-dialog.component';
 import { CommercialSupportResearchDialogComponent } from './commercial-support-research-dialog/commercial-support-research-dialog.component';
 import { SupportRequestService } from './commercial-support.service';
@@ -29,7 +30,7 @@ export class CommercialSupportFormDashboardComponent {
   }
 
   loadRequests(): void {
-    this.supportRequestService.getAllSupportRequests().subscribe(requests => {
+    this.supportRequestService.getAllSupportRequests(this.UserName).subscribe(requests => {
       this.supportRequests = new MatTableDataSource<any>(requests['d']);
     });
   }
@@ -47,21 +48,21 @@ export class CommercialSupportFormDashboardComponent {
     this.supportRequests.filter = '';
   }
 
-  viewRequest2(request: any) {
-    // Example: open a dialog with details
-    const dialogRef = this.dialog.open(CommercialSupportFormDialogComponent, {
-      disableClose: true,
-      width: '80%',
-      data: request // אפשר להעביר כאן דאטה אם צריך
-    });
+  // viewRequest2(request: any) {
+  //   // Example: open a dialog with details
+  //   const dialogRef = this.dialog.open(CommercialSupportFormDialogComponent, {
+  //     disableClose: true,
+  //     width: '80%',
+  //     data: request // אפשר להעביר כאן דאטה אם צריך
+  //   });
 
-    dialogRef.afterClosed().subscribe(result => {
-      if (result) {
-        // אם המשתמש שמר משהו בדיאלוג
-        this.loadRequests(); // טען מחדש את הבקשות
-      }
-    });
-  }
+  //   dialogRef.afterClosed().subscribe(result => {
+  //     if (result) {
+  //       // אם המשתמש שמר משהו בדיאלוג
+  //       this.loadRequests(); // טען מחדש את הבקשות
+  //     }
+  //   });
+  // }
 
   openDialog() {
     this.dialog.open(this.requestDialog);
@@ -77,13 +78,24 @@ export class CommercialSupportFormDashboardComponent {
     // handle the selected option
     switch (type) {
       case 'A':
-        dialogTemp = this.dialog.open(CommercialSupportFormDialogComponent);
+        dialogTemp = this.dialog.open(CommercialSupportFormDialogComponent, {
+          width: '50%'
+        });
         break;
       case 'B':
-        dialogTemp = this.dialog.open(CommercialSupportResearchDialogComponent);
+        dialogTemp = this.dialog.open(CommercialSupportResearchDialogComponent, {
+          width: '50%'
+        });
         break;
       case 'C':
-        dialogTemp = this.dialog.open(CommercialSupportPresentationDialogComponent);
+        dialogTemp = this.dialog.open(CommercialSupportPresentationDialogComponent, {
+          width: '50%'
+        });
+        break;
+      case 'D':
+        dialogTemp = this.dialog.open(CommercialSupportGatheringComponent, {
+          width: '50%'
+        });
         break;
     }
     dialogTemp.afterClosed().subscribe(() => {
@@ -97,16 +109,25 @@ export class CommercialSupportFormDashboardComponent {
     switch (element.Roler) {
       case 'A':
         dialogTemp = this.dialog.open(CommercialSupportFormDialogComponent, {
+          width: '50%',
           data: element
         });
         break;
       case 'B':
         dialogTemp = this.dialog.open(CommercialSupportResearchDialogComponent, {
+          width: '50%',
           data: element
         });
         break;
       case 'C':
         dialogTemp = this.dialog.open(CommercialSupportPresentationDialogComponent, {
+          width: '50%',
+          data: element
+        });
+        break;
+      case 'D':
+        dialogTemp = this.dialog.open(CommercialSupportGatheringComponent, {
+          width: '50%',
           data: element
         });
         break;

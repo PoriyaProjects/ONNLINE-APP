@@ -64,9 +64,9 @@ export class TrainingRequestFormComponent implements OnInit {
   employees = [];
   intity_list = [];
   CitiesArray: any[] = [];
-  // titleList = ["מר", "גב'", "דר'", "פרופ'"];
   educationList = ["תיכונית", "מקצועית", "תואר ראשון", "תואר שני", "תואר שלישי"];
   requested: boolean = false;
+  wantsPoster: boolean = false;
   dorit_note_answer: boolean = false;
   horizontalPosition: MatSnackBarHorizontalPosition = "start";
   verticalPosition: MatSnackBarVerticalPosition = "bottom";
@@ -132,6 +132,16 @@ export class TrainingRequestFormComponent implements OnInit {
 
   changeCity(event) {
     this.Training_Request_Forms_B.controls["Request_Location"].setValue(event);
+  }
+
+  IfPosterAttached() {
+    if (this.wantsPoster) {
+      this.Training_Request_Forms_B.controls['Poster_Attached'].setValidators(Validators.required);
+      this.Training_Request_Forms_B.controls['Poster_Attached'].updateValueAndValidity();
+    } else {
+      this.Training_Request_Forms_B.controls['Poster_Attached'].setValidators(null);
+      this.Training_Request_Forms_B.controls['Poster_Attached'].updateValueAndValidity();
+    }
   }
 
   private _filter(value: any): any[] {
@@ -283,6 +293,8 @@ export class TrainingRequestFormComponent implements OnInit {
         this.check_if_fund_or_health();
         this.cityControl.setValue(Training_Request_Forms_B?.Request_Location);
         this.Training_Out_Check();
+        if (Training_Request_Forms_B?.Poster_Attached != undefined && Training_Request_Forms_B?.Poster_Attached != "") this.wantsPoster = true;
+        else this.wantsPoster = true;
         // Subscribe to changes in Date_End to calculate duration
         // this.Training_Request_Forms_B.get('Date_End').valueChanges.subscribe(() => {
         //   this.calculateRequestDuration();
@@ -334,7 +346,7 @@ export class TrainingRequestFormComponent implements OnInit {
       reader.readAsDataURL(file);
     }
   }
-  
+
   onFileSelectedPoster(event: Event) {
     const input = event.target as HTMLInputElement;
 
@@ -402,7 +414,7 @@ export class TrainingRequestFormComponent implements OnInit {
       console.error('No file available to open');
     }
   }
-  
+
   file_in_new_window_base64_Poster() {
     const base64String = this.Training_Request_Forms_B.get('Poster_Attached')?.value;
     if (base64String) {

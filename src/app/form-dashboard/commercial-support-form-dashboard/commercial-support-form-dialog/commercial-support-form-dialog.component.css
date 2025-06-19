@@ -102,11 +102,6 @@ mat-row {
   height: 60px;
 }
 
-.closeBtn {
-  position: relative;
-  left: 50px;
-}
-
 input[type="file"] {
   display: block;
   margin-top: 4px;
@@ -116,13 +111,19 @@ input[type="file"] {
 }
 
 .continue-btn {
-  text-align: left;
   margin-top: 10px;
+  background-color: #c7e5e2;
 }
 
 .submitBtn {
   width: 100%;
   margin-top: 50px;
   font-weight: bold;
-  background-color: #10508e;
+  background-color: #1976d2;
+  color: #fff;
+}
+
+.closeBtn {
+  float: right;
+  margin-bottom: 20px;
 }

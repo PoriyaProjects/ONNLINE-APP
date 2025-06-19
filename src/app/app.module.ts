@@ -280,6 +280,7 @@ import { CldashboardModule } from './cldashboard/cldashboard.module';
 import { WhatsappCategoriesPermissionsComponent } from './whatsapp-messages-dashboard/whatsapp-categories-permissions/whatsapp-categories-permissions.component';
 import { ServiceUnitEmailListComponent } from './emailsdashboard/service-unit-email-list/service-unit-email-list.component';
 import { ServiceUnitEmailListDialogComponent } from './emailsdashboard/service-unit-email-list/service-unit-email-list-dialog/service-unit-email-list-dialog.component';
+import { CommercialSupportGatheringComponent } from './form-dashboard/commercial-support-form-dashboard/commercial-support-gathering/commercial-support-gathering.component';
 
 
 
@@ -512,6 +513,7 @@ const maskConfig: Partial<IConfig> = {
     WhatsappCategoriesPermissionsComponent,
     ServiceUnitEmailListComponent,
     ServiceUnitEmailListDialogComponent,
+    CommercialSupportGatheringComponent,
   ],
   imports: [
     MatIconModule,

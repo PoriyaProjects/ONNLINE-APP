@@ -180,8 +180,7 @@
                             <div class="col-3">
                                 <mat-form-field>
                                     <mat-label>סיבת סיום עבודה</mat-label>
-                                    <mat-select formControlName="EndWorkReason"
-                                        (selectionChange)="setEndWorkReason($event)" aria-placeholder="סיבת סיום עבודה">
+                                    <mat-select formControlName="EndWorkReason" aria-placeholder="סיבת סיום עבודה">
                                         <mat-option *ngFor="let reason of end_work_reasons" [value]="reason.Row_ID">
                                             {{reason.Description}} </mat-option>
                                     </mat-select>
@@ -437,6 +436,84 @@
                             </div>
                         </div>
                         <button mat-raised-button class="btn btn-primary btn-raised" matStepperNext>הבא</button>
+                    </div>
+                </form>
+            </mat-step>
+            <mat-step [stepControl]="trainingsDetails">
+                <form [formGroup]="trainingsDetails" dir="rtl" autocomplete="off">
+                    <ng-template matStepLabel>הכשרות</ng-template>
+
+                    <table mat-table [dataSource]="dataSource" class="mat-elevation-z2 w-full"
+                        formArrayName="trainings">
+                        <!-- TrainingSubject -->
+                        <ng-container matColumnDef="TrainingSubject">
+                            <th mat-header-cell *matHeaderCellDef>שם הכשרה</th>
+                            <td mat-cell *matCellDef="let row; let i = index" [formGroupName]="i">
+                                <mat-form-field appearance="outline" class="w-full">
+                                    <input matInput placeholder="שם הכשרה" formControlName="TrainingSubject" />
+                                </mat-form-field>
+                            </td>
+                        </ng-container>
+
+                        <!-- StartDate -->
+                        <ng-container matColumnDef="StartDate">
+                            <th mat-header-cell *matHeaderCellDef>תאריך התחלה</th>
+                            <td mat-cell *matCellDef="let row; let i = index" [formGroupName]="i">
+                                <mat-form-field appearance="outline" class="w-full">
+                                    <input matInput [matDatepicker]="picker1" formControlName="StartDate"
+                                        (dateInput)="onStartDateInput($event, i)" />
+                                    <mat-datepicker-toggle matSuffix [for]="picker1"></mat-datepicker-toggle>
+                                    <mat-datepicker #picker1></mat-datepicker>
+                                </mat-form-field>
+                            </td>
+                        </ng-container>
+
+                        <!-- EndDate -->
+                        <ng-container matColumnDef="EndDate">
+                            <th mat-header-cell *matHeaderCellDef>תאריך סיום</th>
+                            <td mat-cell *matCellDef="let row; let i = index" [formGroupName]="i">
+                                <mat-form-field appearance="outline" class="w-full">
+                                    <input matInput [matDatepicker]="picker2" formControlName="EndDate"
+                                        (dateInput)="onEndDateInput($event, i)" />
+                                    <mat-datepicker-toggle matSuffix [for]="picker2"></mat-datepicker-toggle>
+                                    <mat-datepicker #picker2></mat-datepicker>
+                                </mat-form-field>
+                            </td>
+                        </ng-container>
+
+                        <!-- Note -->
+                        <ng-container matColumnDef="Note">
+                            <th mat-header-cell *matHeaderCellDef>הערה</th>
+                            <td mat-cell *matCellDef="let row; let i = index" [formGroupName]="i">
+                                <mat-form-field appearance="outline" class="w-full">
+                                    <textarea matInput placeholder="הערה" cols="3" formControlName="Note"></textarea>
+                                </mat-form-field>
+                            </td>
+                        </ng-container>
+
+                        <!-- <ng-container matColumnDef="Actions">
+                            <th mat-header-cell *matHeaderCellDef></th>
+                            <td mat-cell *matCellDef="let row; let i = index">
+                                <button mat-icon-button color="warn" (click)="removeTrainingRow(i)">
+                                    <mat-icon>delete</mat-icon>
+                                </button>
+                            </td>
+                        </ng-container> -->
+
+                        <!-- Header & Row Definitions -->
+                        <tr mat-header-row *matHeaderRowDef="['TrainingSubject', 'StartDate', 'EndDate', 'Note']">
+                        </tr>
+                        <tr mat-row *matRowDef="let row; columns: ['TrainingSubject', 'StartDate', 'EndDate', 'Note'];">
+                        </tr>
+                    </table>
+
+                    <!-- Add Button -->
+                    <div class="mt-4 text-right">
+                        <button mat-raised-button (click)="createTrainingGroup(null)"
+                            style="background-color: #1976d2;color: #fff">
+                            הוסף הכשרה
+                            <mat-icon>add</mat-icon>
+                        </button>
                     </div>
                 </form>
             </mat-step>

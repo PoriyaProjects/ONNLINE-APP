@@ -1,6 +1,8 @@
-<button mat-raised-button color="warn" type="button" class="closeBtn" (click)="onClose()">
-    X
-</button>
+<div class="row" style="justify-content: right;">
+    <button mat-raised-button color="warn" type="button" class="closeBtn" (click)="onClose()">
+        X
+    </button>
+</div>
 <hr>
 <mat-progress-bar mode="buffer" *ngIf="resuscitationForm == undefined"></mat-progress-bar>
 <form [formGroup]="resuscitationForm" dir="rtl" *ngIf="resuscitationForm != undefined" #printSection>
