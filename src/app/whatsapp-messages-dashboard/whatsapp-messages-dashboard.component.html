@@ -188,11 +188,12 @@
     <hr>
     <div class="block">
         <div class="row mb-3" style="display: block;">
-            <h3 class="text-center" *ngIf="!typeOfScreen">כמות אנשים: {{total_number_of_reciepents}}</h3>
+            <h3 class="text-center" *ngIf="!typeOfScreen">סה"כ נמענים: {{total_number_of_reciepents}}</h3>
             <h5 class="text-center" *ngIf="total_number_of_reciepents > 50">מוצגים רק ה 10 הראשונים</h5>
             <mat-slide-toggle (click)="changeScreens()" *ngIf="username == 'adahabre'"
                 style="float: right;">{{screenTitle}}</mat-slide-toggle>
-            <button mat-icon-button *ngIf="!typeOfScreen" color="warn" matTooltip="ניקוי הכל" (click)="deleteAllRow()">
+            <button mat-icon-button *ngIf="!typeOfScreen && total_number_of_reciepents > 0" color="warn"
+                matTooltip="ניקוי הכל" (click)="deleteAllRow()">
                 <mat-icon>clear</mat-icon>
             </button>
         </div>

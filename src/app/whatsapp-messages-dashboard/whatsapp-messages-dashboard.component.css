@@ -80,8 +80,8 @@ table {
 
 .emergency-card {
     text-align: center;
-    width: 30.333%;
-    height: 100px;
+    width: 20%;
+    height: 70px;
     cursor: pointer;
     transition: transform 0.2s ease, box-shadow 0.2s ease;
     border-radius: 16px;

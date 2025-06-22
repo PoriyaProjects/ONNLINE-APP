@@ -6,14 +6,16 @@
 
   <div class="dashboard-content">
 
-    <!-- Search / Filters -->
-    <mat-form-field appearance="outline" class="search-field">
-      <mat-label>חיפוש לפי שם מגיש הבקשה</mat-label>
-      <input matInput (input)="applyFilter($event)" placeholder="הקלד שם...">
-      <button mat-button *ngIf="searchValue" matSuffix mat-icon-button aria-label="Clear" (click)="clearFilter()">
-        <mat-icon>close</mat-icon>
-      </button>
-    </mat-form-field>
+    <div class="row" style="justify-content: center;">
+      <!-- Search / Filters -->
+      <mat-form-field appearance="outline" class="search-field">
+        <mat-label>חיפוש לפי שם מגיש הבקשה</mat-label>
+        <input matInput (input)="applyFilter($event)" placeholder="הקלד שם...">
+        <button mat-button *ngIf="searchValue" matSuffix mat-icon-button aria-label="Clear" (click)="clearFilter()">
+          <mat-icon>close</mat-icon>
+        </button>
+      </mat-form-field>
+    </div>
 
     <!-- Data Table -->
     <div class="table-container">

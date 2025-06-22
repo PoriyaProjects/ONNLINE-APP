@@ -15,6 +15,9 @@ export class CommercialSupportResearchDialogComponent implements OnInit {
   horizontalPosition: MatSnackBarHorizontalPosition = "start";
   verticalPosition: MatSnackBarVerticalPosition = "bottom";
   ResearchRequestDto!: FormGroup;
+  allCompanies: string[] = ['אבוט', 'אלי לילי', 'אסטרזניקה', 'באייר', 'גד מדיקל', 'גטר גרופ', 'גי-סי הלת"קר בע"מ', 'גמידה', 'טבע', 'טרימקו', 'כמיטק', 'לבנט', 'לברון', 'מדטכניקה', 'מדטרוניק', 'מדיסון פארמה'
+    , 'נובו נורדיסק', 'נאופארם', 'עמוס גזית', 'פייזר', 'צמל', 'רוש', 'רפיד מדיקל', 'ש.שיווק כל מיליניום', 'Abbott', 'Baxter', 'Boehringer Ingelheim', 'Boston Scientific', 'Cook', 'Ferring Pharmaceuticals', 'MSD'];
+  filteredCompanies: string[] = [];
 
   constructor(
     private fb: FormBuilder,
@@ -29,6 +32,18 @@ export class CommercialSupportResearchDialogComponent implements OnInit {
     this.getResearchRequestById();
   }
 
+  private _filterCompanies(value: string): string[] {
+    const filterValue = value.toLowerCase();
+    return this.allCompanies.filter(company =>
+      company.toLowerCase().includes(filterValue)
+    );
+  }
+
+  // Optional: handle user selection
+  onCompanySelected(value: string) {
+    console.log('Selected company:', value);
+  }
+
   buildForm(data) {
     this.ResearchRequestDto = this.fb.group({
       Id: new FormControl(data?.Id, null),
@@ -41,6 +56,9 @@ export class CommercialSupportResearchDialogComponent implements OnInit {
       BudgetProposal: new FormControl(data?.BudgetProposal, null),
       EconomicAppendix: new FormControl(data?.EconomicAppendix, null),
       Form6: new FormControl(data?.Form6, null),
+    });
+    this.ResearchRequestDto.get('CompanyName').valueChanges.subscribe(value => {
+      this.filteredCompanies = this._filterCompanies(value || '');
     });
   }
 

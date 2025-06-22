@@ -73,7 +73,14 @@
                     *ngIf="PresentationRequestDto.get('Requester')?.value != null">
                     <mat-form-field appearance="outline">
                         <mat-label>שם החברה*</mat-label>
-                        <input matInput formControlName="CompanyName">
+                        <input type="text" matInput [matAutocomplete]="companyAuto"
+                            [formControl]="PresentationRequestDto.get('CompanyName')" />
+                        <mat-autocomplete #companyAuto="matAutocomplete"
+                            (optionSelected)="onCompanySelected($event.option.value)">
+                            <mat-option *ngFor="let company of filteredCompanies" [value]="company">
+                                {{ company }}
+                            </mat-option>
+                        </mat-autocomplete>
                     </mat-form-field>
 
                     <mat-form-field appearance="outline">
