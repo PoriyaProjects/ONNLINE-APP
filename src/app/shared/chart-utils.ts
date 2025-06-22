@@ -64,3 +64,32 @@ export function filterValidYears(
 
   return { yData: limited };
 }
+
+
+
+export interface PieSegment {
+  label: string;
+  value: number;
+  color: string;
+}
+
+export function getWeeklySummaryAsPieValues(data: any): PieSegment[] {
+  if (!data || !data.rows || !Array.isArray(data.rows)) return [];
+
+  const totals: { [label: string]: number } = {};
+  for (const row of data.rows) {
+    const cells = row.c;
+    for (let i = 1; i < cells.length; i++) {
+      const label = data.cols[i].label;
+      const value = cells[i]?.v || 0;
+      totals[label] = (totals[label] || 0) + value;
+    }
+  }
+
+  const colors = ['#00cc66', '#6ba1f8', '#cc0033', '#ff9900', '#9966cc'];
+  return Object.entries(totals).map(([label, value], index) => ({
+    label,
+    value,
+    color: colors[index % colors.length],
+  }));
+}

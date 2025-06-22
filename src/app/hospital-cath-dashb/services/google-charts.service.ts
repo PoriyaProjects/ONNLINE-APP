@@ -4,7 +4,7 @@ import { environment } from "src/environments/environment";
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { formatNumberShort, parseDurationToDecimalHours, formatDecimalHoursToTime } from '../../shared/number-utils';
 import { sanitizeSoapResponse, sanitizeSoapResponseAndFormatData } from '../../shared/sanitizesoapresponce';
-import { addShortFormatAnnotations, filterValidYears } from '../../shared/chart-utils';
+import { addShortFormatAnnotations, filterValidYears, getWeeklySummaryAsPieValues  } from '../../shared/chart-utils';
 import { filterRecentOffsets, YearlyData, getCurrentMonthData, getWorkingDaysInfo, convertHebrewMonthsToNumbers, filterOutCurrentMonth } from '../../shared/date-utils';
 import { sanitizeAndFilterYearMonthData} from '../../shared/chart-data-pipeline';
 import { limitToRecentYears } from '../../shared/limit-utils';
@@ -336,11 +336,9 @@ export class GoogleChartsService {
 
       try {
         await this.drawDualArcGaugeOverlay('arc_chart');
-      } catch (e) { //console.error("Gauge Chart failed:", e); 
+      } catch (e) { console.error("|_| drawDualArcGaugeOverlay failed:", e); 
         }
-  
-
-  
+    
     try {
       await this.initTimeAvgChart(options.timeAvgOptions);
     } catch (e) { //console.error("Time Avg Chart failed:", e); 
@@ -372,8 +370,6 @@ export class GoogleChartsService {
     //console.log("Finished loadAndDrawCharts()");
   }
   
-  
-
   public async drawOperationsCharts(barChartOptions: any = {}, lineChartOptions: any = {}): Promise<void> {
     await this.chartsReady;
     const rawData = await this.http.get(this.DATA_SOURCES.OPERATIONS, { responseType: 'text' }).toPromise();    
@@ -397,8 +393,6 @@ export class GoogleChartsService {
     this.drawBarChartQ(quartalData, 'line_chart', barChartQOptions );    
   }
 
- 
-
   public async drawIncomeCharts(barChartOptions: any = {}, lineChartOptions: any = {}): Promise<void> {
     const rawData = await this.http.get(this.DATA_SOURCES.INCOME, { responseType: 'text' }).toPromise();
     const cleanData = sanitizeSoapResponse(rawData);
@@ -410,7 +404,6 @@ export class GoogleChartsService {
     await this.fetchDataAndDrawDirect(filteredData, (data: any) => data, this.CHART_TYPES.LINE, 'line_chart2', lineChartOptions);
     //console.log('Income charts complete');
   }
-
   
   public async loadChart3Y(chartOptions: any = {}): Promise<void> {
     const rawData = await this.http.get(this.DATA_SOURCES.INCOME_3Y, { responseType: 'text' }).toPromise();
@@ -420,7 +413,6 @@ export class GoogleChartsService {
     //console.log('3-year chart complete');
   }
   
-
   public async loadOpChart3Y(chartOptions: any = {}): Promise<void> {
     const rawData = await this.http.get(this.DATA_SOURCES.OPERATIONS_3Y, { responseType: 'text' }).toPromise();
     const cleanData = sanitizeSoapResponse(rawData);
@@ -439,11 +431,9 @@ export class GoogleChartsService {
       {},
       null,
       true
-    );
-    //console.log('Merged 3-year chart complete');
+    );   
   }
-
-  
+ 
 
   public async initTimeAvgChart(chartOptions: any = {}): Promise<void> {
     const rawData = await this.http.get(this.DATA_SOURCES.TIME_AVG, { responseType: 'text' }).toPromise();
@@ -454,20 +444,14 @@ export class GoogleChartsService {
 
   public async drawChartGaugeFunc(chartOptions: any = {}, textPosition: number = 190): Promise<void> {
     const rawData = await this.http.get(this.DATA_SOURCES.GAUGE, { responseType: 'text' }).toPromise();
-    const cleanData = sanitizeSoapResponse(rawData);
-    //console.log ("cleanData: "+ cleanData);
-    
-    await this.fetchDataAndDrawDirect(cleanData, (data: any) => data, this.CHART_TYPES.GAUGE, 'gauge_chart', chartOptions);
-    // this.positionGaugeChartText('gauge_chart', textPosition);
+    const cleanData = sanitizeSoapResponse(rawData);   
+    await this.fetchDataAndDrawDirect(cleanData, (data: any) => data, this.CHART_TYPES.GAUGE, 'gauge_chart', chartOptions);  
     setTimeout(() => {
-      this.positionGaugeChartText('gauge_chart', textPosition);
-      //console.log('Gauge chart complete');
+      this.positionGaugeChartText('gauge_chart', textPosition);     
     }, 500);
     
   } catch (error) {
-    //console.error('Error drawing gauge chart:', error);
-
-    //console.log('Gauge chart complete');
+    
   }
 
   public async drawExploitationChart(chartOptions: any = {}): Promise<void> {
@@ -516,9 +500,9 @@ export class GoogleChartsService {
       await this.fetchDataAndDrawDirect(cleanData, this.processExploitationData.bind(this), this.CHART_TYPES.EXPLOITATION, 'as_chart_weekly', chartOptions);   
       
       //const currentMonthValues = this.getWeeklySummaryAsPieValues(cleanData);
-      this.currentMonthValues = this.getWeeklySummaryAsPieValues(cleanData);
+      this.currentMonthValues = getWeeklySummaryAsPieValues(cleanData);
       
-      //console.log('📊 currentMonthValues:', this.currentMonthValues);
+      console.log('drawExploitationChartWeekly -> 📊 currentMonthValues:', this.currentMonthValues);
       //console.log('Exploitation chart wEEKLY complete');
     } catch (error) {
       //console.error("Failed to fetch Exploitation chart wEEKLY data:", error);
@@ -631,8 +615,6 @@ export class GoogleChartsService {
     return sanitizeAndFilterYearMonthData(years);
   }
   
-  
-
   private processQuartalData(data: any): any {
     const currentDate = new Date();
     const currentYear = currentDate.getFullYear();
@@ -1008,8 +990,6 @@ export class GoogleChartsService {
     this.renderYearLegend(yearKeys, elementId + '-legend');
   }
 
-  
-  
 
   private drawChart3Y(jsonData: any, elementId: string, customOptions: any = {}): void {
     const currentDate = new Date();
@@ -1093,7 +1073,6 @@ export class GoogleChartsService {
     chart.draw(dataTable, options);
   }
   
-
   private drawOpChart3Y(jsonData: any, elementId: string, customOptions: any = {}): void {
     const filteredData = filterValidYears(jsonData, 4); // Enforce 4 most recent valid years
   
@@ -1176,104 +1155,85 @@ export class GoogleChartsService {
   }
   
 
+  public async drawChartGauge(data: any, elementId: string, chartOptions: any = {}): Promise<void> {
+    try {
+      if (typeof elementId !== 'string') return;
 
-public async drawChartGauge(data: any, elementId: string, chartOptions: any = {}): Promise<void> {
-  try {
-    if (typeof elementId !== 'string') return;
+      const container = document.getElementById(elementId);
+      if (!container) return;
 
-    const container = document.getElementById(elementId);
-    if (!container) return;
 
-    // Fetch working days info
-    const workingDaysInfo = await getWorkingDaysInfo(this.DATA_SOURCES.WORKING_DAYS);
-    if (workingDaysInfo.totalWorkingDays === 0) return;
+      const workingDaysInfo = await getWorkingDaysInfo(this.DATA_SOURCES.WORKING_DAYS);
+      if (workingDaysInfo.totalWorkingDays === 0) return;
 
-    this.workingDaysInfo = workingDaysInfo; // store for use
+      this.workingDaysInfo = workingDaysInfo; // store for use
 
-    // Fetch latest gauge data
-    const rawData = await this.http.get(this.DATA_SOURCES.GAUGE, { responseType: 'text' }).toPromise();
-    const cleanData = sanitizeSoapResponse(rawData);
-    const monthData = getCurrentMonthData(cleanData?.yData?.[0]?.Year?.Months);
-    if (!monthData) return;
 
-    const label = monthData.name || 'Current Month';
-    const value = monthData.y;
+      const rawData = await this.http.get(this.DATA_SOURCES.GAUGE, { responseType: 'text' }).toPromise();
+      const cleanData = sanitizeSoapResponse(rawData);
+      const monthData = getCurrentMonthData(cleanData?.yData?.[0]?.Year?.Months);
+      if (!monthData) return;
 
-    // Target setup
-    const targetValue = 220;
-    const perDayTarget = targetValue / workingDaysInfo.totalWorkingDays;
-    const plannedIncludingToday = perDayTarget * (workingDaysInfo.currentWorkingDayIndex ?? 1);
+      const label = monthData.name || 'Current Month';
+      const value = monthData.y;
 
-    // Store in class
-    this.gaugeLabel = label;
-    this.gaugeValue = value;
-    this.gaugeTargetValue = targetValue;
-    this.gaugePlanned = plannedIncludingToday;
+      const targetValue = 220;
+      const perDayTarget = targetValue / workingDaysInfo.totalWorkingDays;
+      const plannedIncludingToday = perDayTarget * (workingDaysInfo.currentWorkingDayIndex ?? 1);
 
-    const isLastWorkingDay = (workingDaysInfo.currentWorkingDayIndex === workingDaysInfo.totalWorkingDays);
-    this.gaugeTargetStatus = isLastWorkingDay
-      ? (this.gaugeValue >= this.gaugeTargetValue ? '✅' : '❌')
-      : (this.gaugeValue >= this.gaugePlanned ? '✅' : '❌');
+      this.gaugeLabel = label;
+      this.gaugeValue = value;
+      this.gaugeTargetValue = targetValue;
+      this.gaugePlanned = plannedIncludingToday;
 
-    const chartData = [
-      ['Label', 'Value'],
-      [label, value]
-    ];
+      const isLastWorkingDay = (workingDaysInfo.currentWorkingDayIndex === workingDaysInfo.totalWorkingDays);
+      this.gaugeTargetStatus = isLastWorkingDay
+        ? (this.gaugeValue >= this.gaugeTargetValue ? '✅' : '❌')
+        : (this.gaugeValue >= this.gaugePlanned ? '✅' : '❌');
 
-    const defaultOptions = {
-      width: 400,
-      height: 220,
-      yellowFrom: 0,
-      yellowTo: plannedIncludingToday,
-      greenFrom: plannedIncludingToday,
-      greenTo: targetValue,
-      minorTicks: 0,
-      max: targetValue,
-      min: 0,
-      majorTicks: ["0", "", "", "", "", targetValue.toString()],
-      animation: { duration: 1000, easing: 'out' },
-      greenColor: '#5ed175',
-      yellowColor: '#f86b6b'
-    };
+      const chartData = [
+        ['Label', 'Value'],
+        [label, value]
+      ];
 
-    const options = { ...defaultOptions, ...chartOptions };
+      const defaultOptions = {
+        width: 400,
+        height: 220,
+        yellowFrom: 0,
+        yellowTo: plannedIncludingToday,
+        greenFrom: plannedIncludingToday,
+        greenTo: targetValue,
+        minorTicks: 0,
+        max: targetValue,
+        min: 0,
+        majorTicks: ["0", "", "", "", "", targetValue.toString()],
+        animation: { duration: 1000, easing: 'out' },
+        greenColor: '#5ed175',
+        yellowColor: '#f86b6b'
+      };
 
-    // Draw Google Gauge
-    const chart = new google.visualization.Gauge(container);
-    chart.draw(google.visualization.arrayToDataTable(chartData), options);
+      const options = { ...defaultOptions, ...chartOptions };
+      const chart = new google.visualization.Gauge(container);
+      chart.draw(google.visualization.arrayToDataTable(chartData), options);
 
-    // Add SVG overlay after draw
-    // setTimeout(() => {
-    //   drawOverlayDualArcChartHelper({
-    //     containerId: elementId,
-    //     workingDaysInfo: this.workingDaysInfo,
-    //     gaugePlanned: this.gaugePlanned,
-    //     gaugeTargetValue: this.gaugeTargetValue,
-    //     gaugeValue: this.gaugeValue,
-    //     gaugeTargetStatus: this.gaugeTargetStatus,
-    //     markerOptions: { radius: 14, fontSize: 10 }
-    //   });
-    // }, 10);
 
-  } catch (error) {
-    const el = document.getElementById(elementId);
-    if (el) {
-      el.innerHTML = 'Failed to draw Gauge chart. See console.';
+    } catch (error) {
+      const el = document.getElementById(elementId);
+      if (el) {
+        el.innerHTML = 'Failed to draw Gauge chart. See console.';
+      }
+      console.error('Gauge chart error:', error);
     }
-    console.error('Gauge chart error:', error);
   }
-}
 
 
   private positionGaugeChartText(chartId: string = 'gauge_chart', topPosition: number = 190): number {
-    if (!chartId) {
-      //console.error('Chart ID is required');
+    if (!chartId) {      
       return 0;
     }
     const selector = `#${chartId} g > g > text`;
     const textElements = document.querySelectorAll(selector);
-    if (textElements.length === 0) {
-      //console.warn(`No text elements found with selector: ${selector}`);
+    if (textElements.length === 0) {      
       return 0;
     }
     textElements.forEach(textElement => {
@@ -1283,7 +1243,7 @@ public async drawChartGauge(data: any, elementId: string, chartOptions: any = {}
         textElement.setAttribute('style', 'font-size: 22px !important;');
       }
     });
-    //console.log(`Repositioned ${textElements.length} text elements to ${topPosition}px from top`);
+    
     return textElements.length;
   }
 
@@ -1478,7 +1438,6 @@ public async drawChartGauge(data: any, elementId: string, chartOptions: any = {}
 
 
   // --- eof TimeAvgChart
-
   
 
 private processExploitationData(data: any): any {
@@ -1688,8 +1647,6 @@ private processExploitationMonthlyData(data: any): any {
     chart.draw(dataTable, this.mergeDeep(defaultOptions, options));
   }
   
-
-  
   /**
    * Deep merge two objects.
    */
@@ -1859,8 +1816,6 @@ private mergeMultipleDataTablesByCategory(
   //console.log(`✅ Built chart with ${combinedData.getNumberOfRows()} rows`);
   return combinedData;
 }
-
-
 
 
 public async loadAndMergeMultipleCharts(
@@ -2079,7 +2034,7 @@ public redrawCharts(): void {
     }
   }
 
-  // Add similar blocks for other charts like 3Y, gauge, or merged charts as needed
+  
 }
 
 private getCurrentMonthPieValues(data: any): { Key: string; Value: number }[] {
@@ -2095,95 +2050,79 @@ private getCurrentMonthPieValues(data: any): { Key: string; Value: number }[] {
 
 
 
-
-
 public async drawDualArcGaugeOverlay(elementId: string): Promise<void> {
   try {
-    const container = document.getElementById(elementId);
-    if (!container) return;
+   
+    const waitForContainer = (id: string, retries = 10): Promise<HTMLElement | null> =>
+      new Promise((resolve) => {
+        let attempts = 0;
+        const interval = setInterval(() => {
+          const el = document.getElementById(id);
+          if (el || ++attempts >= retries) {
+            clearInterval(interval);
+            resolve(el);
+          }
+        }, 100);
+      });
 
-    // Fetch working days
+    const container = await waitForContainer(elementId);
+    if (!container) {
+      console.warn(`Container "${elementId}" not found after retries`);
+      return;
+    }
+    
+    console.log('elementId:'+elementId);
+   
     const workingDaysInfo = await getWorkingDaysInfo(this.DATA_SOURCES.WORKING_DAYS);
     if (workingDaysInfo.totalWorkingDays === 0) return;
 
-    // Fetch gauge values
+   
     const rawData = await this.http.get(this.DATA_SOURCES.GAUGE, { responseType: 'text' }).toPromise();
     const cleanData = sanitizeSoapResponse(rawData);
     const monthData = getCurrentMonthData(cleanData?.yData?.[0]?.Year?.Months);
     if (!monthData) return;
 
+   
     const value = monthData.y;
     const targetValue = 220;
-
     const perDayTarget = targetValue / workingDaysInfo.totalWorkingDays;
     const plannedIncludingToday = perDayTarget * (workingDaysInfo.currentWorkingDayIndex ?? 1);
     const isLastWorkingDay = (workingDaysInfo.currentWorkingDayIndex === workingDaysInfo.totalWorkingDays);
-
     const gaugeTargetStatus = isLastWorkingDay
       ? (value >= targetValue ? '✅' : '❌')
       : (value >= plannedIncludingToday ? '✅' : '❌');
 
+   
+    const weeklyTable = cleanData?.yData?.[0]?.WeekSummaryTable;
+    const parsedPieValues = getWeeklySummaryAsPieValues(weeklyTable);
+    console.log('📊 Parsed pie values:', parsedPieValues);
+
+  
+
+// Delay draw call slightly to ensure data & DOM readiness
+setTimeout(() => {
+  console.log('📈 Drawing overlay after delay...');
+  drawOverlayDualArcChartHelper({
+    containerId: elementId,
+    workingDaysInfo,
+    gaugePlanned: plannedIncludingToday,
+    gaugeTargetValue: targetValue,
+    gaugeValue: value,
+    gaugeTargetStatus,
+    currentMonthValues: parsedPieValues,
+    markerOptions: { radius: 14, fontSize: 10 }
+  });
+}, 100); // Adjust timeout if needed
 
 
-      //const currentMonthValues = this.getCurrentMonthPieValues(cleanData);
-      //console.log('📦 Raw123 weekly summary input to pie parser:', cleanData);
-      this.currentMonthValues = this.getWeeklySummaryAsPieValues(cleanData);
-      //console.log('📊 !!!currentMonthValues123:', this.currentMonthValues);
-      
-      const parsedPieValues = this.getWeeklySummaryAsPieValues(cleanData);
-      console.log('📊 Final parsed pie:', parsedPieValues);
 
-      
-    // Call overlay helper with self-contained state
-    drawOverlayDualArcChartHelper({
-      containerId: elementId,
-      workingDaysInfo,
-      gaugePlanned: plannedIncludingToday,
-      gaugeTargetValue: targetValue,
-      gaugeValue: value,
-      gaugeTargetStatus,
-      //currentMonthValues: this.currentMonthValues,      
-      currentMonthValues: parsedPieValues,
-      markerOptions: { radius: 14, fontSize: 10 }
-    });
-    console.log('📥 incoming pie data to overlay:', this.currentMonthValues);
   } catch (err) {
-    console.error('Failed to draw dual arc overlay:', err);
+    console.error('❌ Failed to draw dual arc overlay:', err);
     const el = document.getElementById(elementId);
     if (el) {
-      el.innerHTML = 'Error loading dual arc overlay';
+      el.innerHTML = '⚠️ Error loading dual arc overlay';
     }
   }
-}
-
-
-
-public getWeeklySummaryAsPieValues(data: any): any[] {
-  console.log("🧪 Raw weekly summary input to pie parser:", data);
-
-  if (!data || !data.rows || !Array.isArray(data.rows)) return [];
-
-  const totals: { [label: string]: number } = {};
-
-  // Loop through rows
-  for (const row of data.rows) {
-    const cells = row.c;
-    for (let i = 1; i < cells.length; i++) {
-      const label = data.cols[i].label;
-      const value = cells[i]?.v || 0;
-      totals[label] = (totals[label] || 0) + value;
-    }
-  }
-
-  const colors = ['#00cc66', '#6ba1f8', '#cc0033', '#ff9900', '#9966cc'];
-  const result = Object.entries(totals).map(([label, value], index) => ({
-    label,
-    value,
-    color: colors[index % colors.length],
-  }));
-
-  console.log("✅ Parsed pie values:", result);
-  return result;
 }
 
 
