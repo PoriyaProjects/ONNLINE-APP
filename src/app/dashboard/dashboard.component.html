@@ -1,6 +1,6 @@
 <div class="row search-container" dir="rtl">
     <mat-form-field appearance="outline" class="search-field w-100">
-        <mat-label>בחר פריט</mat-label>
+        <mat-label>חפש באונליין</mat-label>
         <input type="text" matInput [matAutocomplete]="auto" [(ngModel)]="searchTerm" (input)="filterOptions()">
         <mat-icon matPrefix>search</mat-icon>
         <button *ngIf="searchTerm" matSuffix mat-icon-button (click)="clearSearch()" aria-label="נקה">

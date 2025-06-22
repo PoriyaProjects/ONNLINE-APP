@@ -79,21 +79,25 @@ export class CommercialSupportFormDashboardComponent {
     switch (type) {
       case 'A':
         dialogTemp = this.dialog.open(CommercialSupportFormDialogComponent, {
+          disableClose: true,
           width: '50%'
         });
         break;
       case 'B':
         dialogTemp = this.dialog.open(CommercialSupportResearchDialogComponent, {
+          disableClose: true,
           width: '50%'
         });
         break;
       case 'C':
         dialogTemp = this.dialog.open(CommercialSupportPresentationDialogComponent, {
+          disableClose: true,
           width: '50%'
         });
         break;
       case 'D':
         dialogTemp = this.dialog.open(CommercialSupportGatheringComponent, {
+          disableClose: true,
           width: '50%'
         });
         break;
@@ -109,24 +113,28 @@ export class CommercialSupportFormDashboardComponent {
     switch (element.Roler) {
       case 'A':
         dialogTemp = this.dialog.open(CommercialSupportFormDialogComponent, {
+          disableClose: true,
           width: '50%',
           data: element
         });
         break;
       case 'B':
         dialogTemp = this.dialog.open(CommercialSupportResearchDialogComponent, {
+          disableClose: true,
           width: '50%',
           data: element
         });
         break;
       case 'C':
         dialogTemp = this.dialog.open(CommercialSupportPresentationDialogComponent, {
+          disableClose: true,
           width: '50%',
           data: element
         });
         break;
       case 'D':
         dialogTemp = this.dialog.open(CommercialSupportGatheringComponent, {
+          disableClose: true,
           width: '50%',
           data: element
         });

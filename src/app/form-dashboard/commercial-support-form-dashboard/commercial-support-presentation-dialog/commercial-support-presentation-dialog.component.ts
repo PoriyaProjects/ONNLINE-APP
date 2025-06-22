@@ -16,6 +16,9 @@ export class CommercialSupportPresentationDialogComponent implements OnInit {
   horizontalPosition: MatSnackBarHorizontalPosition = "start";
   verticalPosition: MatSnackBarVerticalPosition = "bottom";
   PresentationRequestDto!: FormGroup;
+  allCompanies: string[] = ['אבוט', 'אלי לילי', 'אסטרזניקה', 'באייר', 'גד מדיקל', 'גטר גרופ', 'גי-סי הלת"קר בע"מ', 'גמידה', 'טבע', 'טרימקו', 'כמיטק', 'לבנט', 'לברון', 'מדטכניקה', 'מדטרוניק', 'מדיסון פארמה'
+    , 'נובו נורדיסק', 'נאופארם', 'עמוס גזית', 'פייזר', 'צמל', 'רוש', 'רפיד מדיקל', 'ש.שיווק כל מיליניום', 'Abbott', 'Baxter', 'Boehringer Ingelheim', 'Boston Scientific', 'Cook', 'Ferring Pharmaceuticals', 'MSD'];
+  filteredCompanies: string[] = [];
 
   constructor(
     private fb: FormBuilder,
@@ -29,6 +32,18 @@ export class CommercialSupportPresentationDialogComponent implements OnInit {
 
   ngOnInit(): void {
     this.getPresentationRequestById();
+  }
+
+  private _filterCompanies(value: string): string[] {
+    const filterValue = value.toLowerCase();
+    return this.allCompanies.filter(company =>
+      company.toLowerCase().includes(filterValue)
+    );
+  }
+
+  // Optional: handle user selection
+  onCompanySelected(value: string) {
+    console.log('Selected company:', value);
   }
 
   buildForm(data) {
@@ -47,6 +62,9 @@ export class CommercialSupportPresentationDialogComponent implements OnInit {
       ReferenceName: new FormControl(data?.ReferenceName, Validators.required),
       Phone: new FormControl(data?.Phone, Validators.required),
       Email: new FormControl(data?.Email, Validators.required),
+    });
+    this.PresentationRequestDto.get('CompanyName').valueChanges.subscribe(value => {
+      this.filteredCompanies = this._filterCompanies(value || '');
     });
   }
 

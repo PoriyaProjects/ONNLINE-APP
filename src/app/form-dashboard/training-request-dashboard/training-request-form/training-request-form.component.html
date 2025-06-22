@@ -524,7 +524,7 @@
             </div>
             <div class="col-lg-1 col-md-4 col-sm-6">
               <button mat-raised-button class="signBtn" color="warn" (click)="signForm(5, 'Supervisor_Sign')"
-                *ngIf="Supervisor_Name1.value?.id == passport">
+                *ngIf="Supervisor_Name1.value?.id == passport && Training_Request_Forms_E.get('Approved').value != 'השלמת נתונים'">
                 <span
                   *ngIf="Training_Request_Forms_E.get('Supervisor_Sign').value == undefined || Training_Request_Forms_E.get('Supervisor_Sign').value == ''">לחתום</span>
                 <span
@@ -595,7 +595,7 @@
             </div>
             <div class="col-lg-1 col-md-4 col-sm-6">
               <button mat-raised-button class="signBtn" color="warn" (click)="signForm(6, 'Supervisor_Sign')"
-                *ngIf="Supervisor_Name2.value?.id == passport">
+                *ngIf="Supervisor_Name2.value?.id == passport && Training_Request_Forms_E.get('Approved').value != 'השלמת נתונים'">
                 <span
                   *ngIf="Training_Request_Forms_F.get('Supervisor_Sign').value == undefined || Training_Request_Forms_F.get('Supervisor_Sign').value == ''">לחתום</span>
                 <span
