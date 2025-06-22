@@ -1,3 +1,34 @@
+export interface WorkingDaysInfo {
+    totalWorkingDays: number;
+    currentWorkingDayIndex: number;
+  }
+  
+  export interface PieSegment {
+    label: string;
+    value: number;
+    color: string;
+  }
+  
+  export interface MarkerOptions {
+    radius: number;
+    fontSize: number;
+  }
+  
+  export interface DualArcChartOptions {
+    containerId: string;
+    workingDaysInfo: WorkingDaysInfo;
+    gaugePlanned: number;
+    gaugeTargetValue: number;
+    gaugeValue: number;
+    gaugeTargetStatus: '✅' | '❌';
+    currentMonthValues?: PieSegment[];
+    showMarker?: boolean;
+    markerOptions?: MarkerOptions;
+  }
+  
+
+  
+
 export function drawOverlayDualArcChartHelper({
     containerId,
     workingDaysInfo,
@@ -170,199 +201,6 @@ if (Array.isArray(currentMonthValues) && currentMonthValues.length > 0) {
   
   
 
-  // === FILLED ORANGE HALF-CIRCLE (DONE vs PLANNED) using circle + dasharray ===
-// (() => {
-//     const percentDone = Math.min(gaugeValue / gaugePlanned, 1); // Clamp to 0–1
-//     const r = 45;
-//     const strokeWidth = 16;
-//     const fullCirc = 2 * Math.PI * r;
-//     const halfCirc = fullCirc / 2;
-//     const dashOffset = (1 - percentDone) * halfCirc;
-  
-//     // Background arc (light gray)
-//     const bg = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-//     bg.setAttribute('cx', '150');
-//     bg.setAttribute('cy', '150');
-//     bg.setAttribute('r', r.toString());
-//     bg.setAttribute('fill', 'none');
-//     bg.setAttribute('stroke', '#e0e0e0');
-//     bg.setAttribute('stroke-width', strokeWidth.toString());
-//     bg.setAttribute('stroke-dasharray', `${halfCirc} ${fullCirc}`);
-//     bg.setAttribute('stroke-dashoffset', '0');
-//     bg.setAttribute('transform', 'rotate(-180 150 150)');
-//     bg.setAttribute('stroke-linecap', 'round');
-//     svg.appendChild(bg);
-  
-//     // Foreground arc (orange/green)
-//     const fg = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-//     fg.setAttribute('cx', '150');
-//     fg.setAttribute('cy', '150');
-//     fg.setAttribute('r', r.toString());
-//     fg.setAttribute('fill', 'none');
-//     fg.setAttribute('stroke', percentDone >= 1 ? '#00cc66' : '#ff9900');
-//     fg.setAttribute('stroke-width', strokeWidth.toString());
-//     fg.setAttribute('stroke-dasharray', `${halfCirc} ${fullCirc}`);
-//     fg.setAttribute('stroke-dashoffset', dashOffset.toString());
-//     fg.setAttribute('transform', 'rotate(-180 150 150)');
-//     fg.setAttribute('stroke-linecap', 'round');
-//     fg.style.transition = 'stroke-dashoffset 0.8s ease';
-//     svg.appendChild(fg);
-  
-//     // Center text
-//     const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-//     text.setAttribute('x', '150');
-//     text.setAttribute('y', '158');
-//     text.setAttribute('text-anchor', 'middle');
-//     text.setAttribute('fill', '#333');
-//     text.setAttribute('font-size', '16');
-//     text.setAttribute('font-family', 'Arial');
-//     text.textContent = `${Math.round(percentDone * 100)}%`;
-//     svg.appendChild(text);
-//   })();
-  
-// correct semi-circle
-
-// (() => {
-//     const cx = 150;
-//     const cy = 160;
-//     const radius = 50;
-//     const percent = Math.max(0, Math.min(gaugeValue / gaugeTargetValue, 1));
-//     const segments = 50;
-//     const sweepAngle = Math.PI * percent; // up to 180°
-  
-//     // === Draw background (gray full semi-circle) ===
-//     const bgPath = [`M ${cx} ${cy}`];
-//     for (let i = 0; i <= segments; i++) {
-//       const angle = Math.PI + (Math.PI * i) / segments; // 180° to 360° (left ➝ right)
-//       const x = cx + radius * Math.cos(angle);
-//       const y = cy + radius * Math.sin(angle);
-//       bgPath.push(`${i === 0 ? 'L' : ''} ${x} ${y}`);
-//     }
-//     bgPath.push('Z');
-  
-//     const bg = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-//     bg.setAttribute('d', bgPath.join(' '));
-//     bg.setAttribute('fill', '#e0e0e0');
-//     svg.appendChild(bg);
-  
-//     // === Draw filled portion (orange or green) ===
-//     const fgPath = [`M ${cx} ${cy}`];
-//     for (let i = 0; i <= segments; i++) {
-//       const angle = Math.PI + (sweepAngle * i) / segments; // dynamic range (0 ➝ percent)
-//       const x = cx + radius * Math.cos(angle);
-//       const y = cy + radius * Math.sin(angle);
-//       fgPath.push(`${i === 0 ? 'L' : ''} ${x} ${y}`);
-//     }
-//     fgPath.push('Z');
-  
-//     const fg = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-//     fg.setAttribute('d', fgPath.join(' '));
-//     fg.setAttribute('fill', percent >= 1 ? '#00cc66' : '#ff9900');
-//     svg.appendChild(fg);
-  
-//     // === Center label ===
-//     // const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-//     // label.setAttribute('x', cx.toString());
-//     // label.setAttribute('y', (cy - 6).toString());
-//     // label.setAttribute('text-anchor', 'middle');
-//     // label.setAttribute('fill', '#333');
-//     // label.setAttribute('font-size', '16');
-//     // label.setAttribute('font-family', 'Arial');
-//     // label.textContent = `${Math.round(percent * 100)}% ממתוכנן`;
-//     // svg.appendChild(label);
-
-//     const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-// label.setAttribute('x', cx.toString());
-// label.setAttribute('y', (cy - 38).toString()); // slightly higher start
-// label.setAttribute('text-anchor', 'middle');
-// label.setAttribute('fill', '#333');
-// label.setAttribute('font-size', '16');
-// label.setAttribute('font-weight', 'bold');
-// label.setAttribute('font-family', 'Arial');
-
-// // First line: percent
-// const tspan1 = document.createElementNS('http://www.w3.org/2000/svg', 'tspan');
-// tspan1.setAttribute('x', cx.toString());
-// tspan1.setAttribute('dy', '1em');
-// tspan1.textContent = `${Math.round(percent * 100)}%`;
-
-// // Second line: label
-// const tspan2 = document.createElementNS('http://www.w3.org/2000/svg', 'tspan');
-// tspan2.setAttribute('x', cx.toString());
-// tspan2.setAttribute('dy', '1.2em');
-// tspan2.textContent = `ממתוכנן`;
-
-// label.appendChild(tspan1);
-// label.appendChild(tspan2);
-// svg.appendChild(label);
-
-//   })();
-    
-//correct but color logic 
-// (() => {
-//     const cx = 150;
-//     const cy = 160;
-//     const radius = 50;
-//     const segments = 50;
-  
-//     const percent = Math.max(0, Math.min(gaugeValue / gaugeTargetValue, 1));
-//     const sweepAngle = Math.PI * percent; // up to 180°
-  
-//     // === Background: full semi-circle (gray) ===
-//     const bgPath = [`M ${cx} ${cy}`];
-//     for (let i = 0; i <= segments; i++) {
-//       const angle = Math.PI + (Math.PI * i) / segments; // from 180° to 360°
-//       const x = cx + radius * Math.cos(angle);
-//       const y = cy + radius * Math.sin(angle);
-//       bgPath.push(`${i === 0 ? 'L' : ''} ${x} ${y}`);
-//     }
-//     bgPath.push('Z');
-  
-//     const bg = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-//     bg.setAttribute('d', bgPath.join(' '));
-//     bg.setAttribute('fill', '#e0e0e0');
-//     svg.appendChild(bg);
-  
-//     // === Foreground: filled portion based on percent ===
-//     const fgPath = [`M ${cx} ${cy}`];
-//     for (let i = 0; i <= segments; i++) {
-//       const angle = Math.PI + (sweepAngle * i) / segments; // from 180° to 180° + %
-//       const x = cx + radius * Math.cos(angle);
-//       const y = cy + radius * Math.sin(angle);
-//       fgPath.push(`${i === 0 ? 'L' : ''} ${x} ${y}`);
-//     }
-//     fgPath.push('Z');
-  
-//     const fg = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-//     fg.setAttribute('d', fgPath.join(' '));
-//     fg.setAttribute('fill', percent >= 1 ? '#cc0033' : '#00cc66');
-//     svg.appendChild(fg);
-  
-//     // === Label: two-line text (percent + caption) ===
-//     const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-//     label.setAttribute('x', cx.toString());
-//     label.setAttribute('y', (cy - 38).toString()); // start higher than center
-//     label.setAttribute('text-anchor', 'middle');
-//     label.setAttribute('fill', '#333');
-//     label.setAttribute('font-size', '16');
-//     label.setAttribute('font-weight', 'bold');
-//     label.setAttribute('font-family', 'Arial');
-  
-//     const tspan1 = document.createElementNS('http://www.w3.org/2000/svg', 'tspan');
-//     tspan1.setAttribute('x', cx.toString());
-//     tspan1.setAttribute('dy', '1em');
-//     tspan1.textContent = `${Math.round(percent * 100)}%`;
-  
-//     const tspan2 = document.createElementNS('http://www.w3.org/2000/svg', 'tspan');
-//     tspan2.setAttribute('x', cx.toString());
-//     tspan2.setAttribute('dy', '1.2em');
-//     tspan2.textContent = `ממתוכנן`;
-  
-//     label.appendChild(tspan1);
-//     label.appendChild(tspan2);
-//     svg.appendChild(label);
-//   })();
-  
 
 (() => {
     const cx = 150;
@@ -467,4 +305,3 @@ if (Array.isArray(currentMonthValues) && currentMonthValues.length > 0) {
    
       
   }
-  
