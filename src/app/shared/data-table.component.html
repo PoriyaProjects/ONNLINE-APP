@@ -1,0 +1,80 @@
+<div class="table-container">
+   
+    <div class="table-controls" style="width:100%">
+      <mat-form-field appearance="outline" style="width:80%; float:right;">
+        <mat-label>חיפוש</mat-label>
+        <input matInput [(ngModel)]="filterValue" (input)="applyFilter()" placeholder="Type to filter..." />
+      </mat-form-field>
+  
+      <button mat-raised-button color="primary" (click)="exportToExcel()" style="float: left; ">
+        <mat-icon>download</mat-icon> יצוא לאקסל
+      </button>
+    </div>
+
+
+    <!-- <div class="table-scroll-wrapper" style="clear:both">
+        <table mat-table [dataSource]="dataSource" class="mat-elevation-z8" style="width:100%">
+      
+          <ng-container *ngFor="let column of displayedColumns" [matColumnDef]="column">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header sticky> {{ column }} <input matInput (input)="applyColumnFilter($event, column)" /></th>
+            <td mat-cell *matCellDef="let row"> {{ row[column] }} </td>
+            <td mat-footer-cell *matFooterCellDef sticky>
+              {{ totalMap[column] !== undefined ? totalMap[column] : '' }}
+            </td>
+          </ng-container>
+      
+          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+          <tr mat-footer-row *matFooterRowDef="displayedColumns"></tr>
+        </table>
+      </div> -->
+
+
+<div class="table-scroll-wrapper" style="clear:both">
+    <table mat-table [dataSource]="dataSource" matSort class="mat-elevation-z8" style="width: 100%;">
+  
+      Dynamic Column Definitions -->
+      <!-- <ng-container *ngFor="let column of displayedColumns" [matColumnDef]="column">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header sticky>
+          {{ column }}
+          <div class="filter-container">
+            <input matInput (input)="applyColumnFilter($event, column)" placeholder="תנאי סינון" />
+          </div>
+        </th>
+        <td mat-cell *matCellDef="let row"> {{ row[column] }} </td>
+        <td mat-footer-cell *matFooterCellDef>
+          {{ totalMap[column] !== undefined ? totalMap[column] : '' }}
+        </td>
+      </ng-container>
+  
+      <!-- Row Definitions -->
+      <!-- <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+      <tr mat-footer-row *matFooterRowDef="displayedColumns">
+        <td mat-footer-cell *matFooterCellDef> -->
+            <!-- {{ totalMap[column] !== undefined ? totalMap[column] : '' }} -->
+          <!-- </td>
+      </tr> -->
+      <ng-container *ngFor="let column of displayedColumns" [matColumnDef]="column">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header sticky>
+          {{ column }}
+          <div class="filter-container">
+            <input matInput (input)="applyColumnFilter($event, column)" placeholder="תנאי סינון" />
+          </div>
+        </th>
+        <td mat-cell *matCellDef="let row"> {{ row[column] }} </td>
+        <td mat-footer-cell *matFooterCellDef>
+          {{ totalMap[column] !== undefined ? totalMap[column] : '' }}
+        </td>
+      </ng-container>
+      
+      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+      <tr mat-footer-row *matFooterRowDef="displayedColumns"></tr>
+      
+    </table>
+  </div>
+      
+    <!-- <mat-paginator [pageSizeOptions]="[5, 10, 20]" showFirstLastButtons></mat-paginator> -->
+  </div>
+  

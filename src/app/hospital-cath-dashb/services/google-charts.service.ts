@@ -10,6 +10,10 @@ import { sanitizeAndFilterYearMonthData} from '../../shared/chart-data-pipeline'
 import { limitToRecentYears } from '../../shared/limit-utils';
 import { ChartDataPipelineService } from '../../shared/ChartDataPipelineService';
 import { drawOverlayDualArcChartHelper } from '../../shared/drawOverlayDualArcChartHelper';
+import { TableComponent  } from '../../shared/dataTable';
+
+
+
 
 export interface Department {
   id: string;
@@ -115,7 +119,7 @@ export class GoogleChartsService {
     };
   } = {};
   
-  
+ 
 
   constructor(
     private http: HttpClient,
@@ -141,10 +145,10 @@ export class GoogleChartsService {
     }
   }
 
-  //public currentMonthValues: { label: string; value: number; color: string }[] = [];
-
   public workingDaysInfo: { totalWorkingDays: number; currentWorkingDayIndex: number };
 
+
+  
   
   /**
    * Main function to load and draw all charts in sequence with custom options.
@@ -367,6 +371,14 @@ export class GoogleChartsService {
         //console.error("PIC Table Chart failed:", e);
       }
   
+
+      try {
+        //await this.drawDataTable('pic_table_chart2', picTableOptions);
+        await this.drawDataTable();
+      } catch (e) { //console.error("drawDataTable failed:", e); 
+        }
+
+
     //console.log("Finished loadAndDrawCharts()");
   }
   
@@ -502,7 +514,7 @@ export class GoogleChartsService {
       //const currentMonthValues = this.getWeeklySummaryAsPieValues(cleanData);
       this.currentMonthValues = getWeeklySummaryAsPieValues(cleanData);
       
-      console.log('drawExploitationChartWeekly -> 📊 currentMonthValues:', this.currentMonthValues);
+      //console.log('drawExploitationChartWeekly -> 📊 currentMonthValues:', this.currentMonthValues);
       //console.log('Exploitation chart wEEKLY complete');
     } catch (error) {
       //console.error("Failed to fetch Exploitation chart wEEKLY data:", error);
@@ -1914,6 +1926,109 @@ private renderYearLegend(years: string[], legendElementId: string): void {
 }
 
 
+// public async drawPicTableChart(
+//   elementId: string = 'pic_table_chart',
+//   options: any = {}
+// ): Promise<void> {
+//   await this.chartsReady;
+
+//   const el = document.getElementById(elementId);
+//   if (!el) {
+//      //console.error(`❌ Chart container '#${elementId}' not found in DOM.`);
+//     return;
+//   }
+
+//   try {
+//     const url = this.DATA_SOURCES.PIC_TABLE;
+//     //console.log(`📡 Fetching table data from: ${url}`);
+
+//     // Use text response to handle SOAP-wrapped XML
+//     const rawResponse: string = await this.http
+//       .get(url, { responseType: 'text' })
+//       .toPromise();
+
+//     //console.log('📥 Raw SOAP response:', rawResponse);
+
+//     const response = sanitizeSoapResponse(rawResponse);
+//     //console.log('✅ Sanitized response:', response);
+
+//     if (!response || !Array.isArray(response.rows) || !Array.isArray(response.cols)) {
+//       //console.warn("⚠️ Response missing 'rows' or 'cols'");
+//       el.innerHTML = "אין נתונים להצגה";
+//       return;
+//     }
+    
+//     // ✅ Reverse the rows
+//     response.rows.reverse();
+
+//     // Fix date column (index 1) if formatted as string
+//     response.rows.forEach((row: any, idx: number) => {
+//       const dateCell = row?.c?.[1];
+//       if (dateCell?.v && typeof dateCell.v === 'string') {
+//         const match = dateCell.v.match(/Date\((\d+),(\d+),(\d+)\)/);
+//         if (match) {
+//           const [_, y, m, d] = match.map(Number);
+//           dateCell.v = new Date(y, m, d);
+//         } else {
+//           const parsed = new Date(dateCell.v);
+//           if (!isNaN(parsed.getTime())) {
+//             dateCell.v = parsed;
+//           } else {
+//             //console.warn(`⚠️ Invalid date format in row ${idx}:`, dateCell.v);
+//           }
+//         }
+//       }
+//     });
+
+
+    
+//     const dataTable = new google.visualization.DataTable(response);
+//     const chart = new google.visualization.Table(el);
+//     this.lastTableDataTable = dataTable;
+
+//     chart.draw(dataTable, {
+//       //showRowNumber: false,
+//       allowHtml: true,
+//       width: '100%',
+//       sort: 'event',      
+//       ...options
+//     });
+
+//     //console.log(`✅ Table chart rendered in #${elementId}`);
+
+//   } catch (error) {
+//      //console.error("❌ Error drawing table chart:", error);
+//     el.innerHTML = "שגיאה בטעינת טבלה";
+//   }
+
+
+
+//   function appendTotalRow(dataTable: any) {
+//     const numCols = dataTable.getNumberOfColumns();
+//     const totalRow = [];
+  
+//     for (let i = 0; i < numCols; i++) {
+//       if (i === 0) {
+//         totalRow.push('סה״כ');
+//       } else if (dataTable.getColumnType(i) === 'number') {
+//         let sum = 0;
+//         for (let j = 0; j < dataTable.getNumberOfRows(); j++) {
+//           const val = dataTable.getValue(j, i);
+//           if (typeof val === 'number') sum += val;
+//         }
+//         totalRow.push(sum);
+//       } else {
+//         totalRow.push(null);
+//       }
+//     }
+  
+//     dataTable.addRow(totalRow);
+//   }
+
+  
+
+// }
+
 public async drawPicTableChart(
   elementId: string = 'pic_table_chart',
   options: any = {}
@@ -1921,72 +2036,80 @@ public async drawPicTableChart(
   await this.chartsReady;
 
   const el = document.getElementById(elementId);
-  if (!el) {
-     //console.error(`❌ Chart container '#${elementId}' not found in DOM.`);
-    return;
-  }
+  if (!el) return;
 
   try {
     const url = this.DATA_SOURCES.PIC_TABLE;
-    //console.log(`📡 Fetching table data from: ${url}`);
-
-    // Use text response to handle SOAP-wrapped XML
     const rawResponse: string = await this.http
       .get(url, { responseType: 'text' })
       .toPromise();
 
-    //console.log('📥 Raw SOAP response:', rawResponse);
-
     const response = sanitizeSoapResponse(rawResponse);
-    //console.log('✅ Sanitized response:', response);
 
     if (!response || !Array.isArray(response.rows) || !Array.isArray(response.cols)) {
-      //console.warn("⚠️ Response missing 'rows' or 'cols'");
-      el.innerHTML = "אין נתונים להצגה";
+      el.innerHTML = "No data available";
       return;
     }
-    
-    // ✅ Reverse the rows
-    response.rows.reverse();
 
-    // Fix date column (index 1) if formatted as string
-    response.rows.forEach((row: any, idx: number) => {
-      const dateCell = row?.c?.[1];
-      if (dateCell?.v && typeof dateCell.v === 'string') {
-        const match = dateCell.v.match(/Date\((\d+),(\d+),(\d+)\)/);
-        if (match) {
-          const [_, y, m, d] = match.map(Number);
-          dateCell.v = new Date(y, m, d);
-        } else {
-          const parsed = new Date(dateCell.v);
-          if (!isNaN(parsed.getTime())) {
-            dateCell.v = parsed;
-          } else {
-            //console.warn(`⚠️ Invalid date format in row ${idx}:`, dateCell.v);
-          }
-        }
-      }
-    });
+    response.rows.reverse();
+    normalizeDateColumn(response.rows, 1);
 
     const dataTable = new google.visualization.DataTable(response);
-    const chart = new google.visualization.Table(el);
+    this.lastTableDataTable = dataTable;
 
+    appendTotalRow(dataTable);
+
+    const chart = new google.visualization.Table(el);
     chart.draw(dataTable, {
-      //showRowNumber: false,
       allowHtml: true,
       width: '100%',
-      sort: 'event',      
+      sort: 'event',
       ...options
     });
 
-    //console.log(`✅ Table chart rendered in #${elementId}`);
-
   } catch (error) {
-     //console.error("❌ Error drawing table chart:", error);
-    el.innerHTML = "שגיאה בטעינת טבלה";
+    el.innerHTML = "Error loading table";
+  }
+
+  // === Utility: Normalize Date Column ===
+  function normalizeDateColumn(rows: any[], columnIndex: number): void {
+    rows.forEach((row, idx) => {
+      const dateCell = row?.c?.[columnIndex];
+      if (!dateCell?.v || typeof dateCell.v !== 'string') return;
+
+      const match = dateCell.v.match(/Date\\((\\d+),(\\d+),(\\d+)\\)/);
+      if (match) {
+        const [_, y, m, d] = match.map(Number);
+        dateCell.v = new Date(y, m, d);
+      } else {
+        const parsed = new Date(dateCell.v);
+        if (!isNaN(parsed.getTime())) {
+          dateCell.v = parsed;
+        }
+      }
+    });
+  }
+
+  // === Utility: Append Total Row ===
+  function appendTotalRow(dataTable: any): void {
+    const totalRow: any[] = [];
+
+    for (let i = 0; i < dataTable.getNumberOfColumns(); i++) {
+      if (i === 0) {
+        totalRow.push('Total');
+      } else if (dataTable.getColumnType(i) === 'number') {
+        const sum = Array.from({ length: dataTable.getNumberOfRows() }, (_, rowIndex) =>
+          dataTable.getValue(rowIndex, i)
+        ).reduce((acc, val) => acc + (typeof val === 'number' ? val : 0), 0);
+        totalRow.push(sum);
+      } else {
+        totalRow.push(null);
+      }
+    }
+
+    dataTable.addRow(totalRow);
   }
 }
-
 
 
 public redrawCharts(): void {
@@ -2095,13 +2218,9 @@ public async drawDualArcGaugeOverlay(elementId: string): Promise<void> {
    
     const weeklyTable = cleanData?.yData?.[0]?.WeekSummaryTable;
     const parsedPieValues = getWeeklySummaryAsPieValues(weeklyTable);
-    console.log('📊 Parsed pie values:', parsedPieValues);
 
-  
-
-// Delay draw call slightly to ensure data & DOM readiness
 setTimeout(() => {
-  console.log('📈 Drawing overlay after delay...');
+  
   drawOverlayDualArcChartHelper({
     containerId: elementId,
     workingDaysInfo,
@@ -2127,5 +2246,182 @@ setTimeout(() => {
 
 
 
+private lastTableDataTable: any[] = [];
+
+public getLastTableData(): any[] {
+  return this.lastTableDataTable;
 }
+
+// public async drawDataTable(): Promise<void> {
+//   await this.chartsReady;
+
+//   try {
+//     const url = this.DATA_SOURCES.PIC_TABLE;
+//     const rawResponse: string = await this.http.get(url, { responseType: 'text' }).toPromise();
+//     //console.log('📥 Raw SOAP response:', rawResponse);
+
+//     const response = sanitizeSoapResponse(rawResponse);
+//     console.log('✅ Sanitized Response:', response);
+
+//     if (!response || !Array.isArray(response.rows) || !Array.isArray(response.cols)) {
+//       //console.warn("⚠️ Invalid table format: missing rows or cols");
+//       this.lastTableDataTable = [];
+//       return;
+//     }
+
+//     response.rows.reverse(); // Match original Google Charts behavior
+
+//     // 🗓 Normalize any date fields in column index 1
+//     response.rows.forEach((row: any, idx: number) => {
+//       const dateCell = row?.c?.[1];
+//       if (dateCell?.v && typeof dateCell.v === 'string') {
+//         const match = dateCell.v.match(/Date\\((\\d+),(\\d+),(\\d+)\\)/);
+//         if (match) {
+//           const [_, y, m, d] = match.map(Number);
+//           dateCell.v = new Date(y, m, d);
+//         } else {
+//           const parsed = new Date(dateCell.v);
+//           if (!isNaN(parsed.getTime())) {
+//             dateCell.v = parsed;
+//           } else {
+//             console.warn(`⚠️ Invalid date format in row ${idx}:`, dateCell.v);
+//           }
+//         }
+//       }
+//     });
+
+//     function formatDateToDDMMYYYY(date: Date | string): string {
+//       const d = new Date(date);
+//       if (isNaN(d.getTime())) return ''; // invalid date
+    
+//       const day = String(d.getDate()).padStart(2, '0');
+//       const month = String(d.getMonth() + 1).padStart(2, '0');
+//       const year = d.getFullYear();
+    
+//       return `${day}-${month}-${year}`;
+//     }
+
+//     const parsedData = response.rows.map((row: any) => {
+//       const obj: any = {};
+    
+//       row?.c?.forEach((cell: any, idx: number) => {
+//         const colLabel = response.cols?.[idx]?.label || `col${idx}`;
+//         let value = cell?.v ?? '';
+    
+//         // Normalize date if in Date(...) format
+//         if (typeof value === 'string' && value.startsWith('Date(')) {
+//           const match = value.match(/Date\((\d+),(\d+),(\d+)\)/);
+//           if (match) {
+//             const [_, y, m, d] = match.map(Number);
+//             const date = new Date(y, m, d);
+//             if (!isNaN(date.getTime())) {
+//               value = formatDateToDDMMYYYY(date);
+//             }
+//           }
+//         }
+    
+//         obj[colLabel] = value;
+//       });
+    
+//       return obj;
+//     });
+
+//     this.lastTableDataTable = parsedData;
+//     console.log('✅ Parsed rows for Angular Material Table:', parsedData);
+
+//   } catch (error) {
+//     console.error("❌ Failed to load or parse data table:", error);
+//     this.lastTableDataTable = [];
+//   }
+// }
+
+public async drawDataTable(): Promise<void> {
+  await this.chartsReady;
+
+  try {
+    const url = this.DATA_SOURCES.PIC_TABLE;
+    const rawResponse: string = await this.http.get(url, { responseType: 'text' }).toPromise();
+    const response = sanitizeSoapResponse(rawResponse);
+    console.log('✅ Sanitized Response:', response);
+
+    if (!response || !Array.isArray(response.rows) || !Array.isArray(response.cols)) {
+      this.lastTableDataTable = [];
+      return;
+    }
+
+    // Reverse rows to match Google Charts rendering
+    response.rows.reverse();
+
+    // Format helper
+    const formatDateToDDMMYYYY = (date: Date | string): string => {
+      const d = new Date(date);
+      if (isNaN(d.getTime())) return '';
+      const day = String(d.getDate()).padStart(2, '0');
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const year = d.getFullYear();
+      return `${day}-${month}-${year}`;
+    };
+
+    // Parse rows to flat object format
+    const parsedData = response.rows.map((row: any, rowIndex: number) => {
+      const obj: any = {};
+
+      row?.c?.forEach((cell: any, idx: number) => {
+        const colLabel = response.cols?.[idx]?.label || `col${idx}`;
+        let value = cell?.v ?? '';
+      
+        // Normalize Google-style Date format
+        if (typeof value === 'string') {
+          const dateMatch = value.match(/^Date\((\d+),(\d+),(\d+)\)$/);
+          if (dateMatch) {
+            const [_, y, m, d] = dateMatch.map(Number);
+            value = formatDateToDDMMYYYY(new Date(y, m, d));
+          }
+      
+          // Normalize time-only format: "13:49:13.4900000" → "13:49"
+          else if (/^\d{2}:\d{2}:\d{2}\.\d+/.test(value)) {
+            const timeParts = value.split(':');
+            if (timeParts.length >= 2) {
+              value = `${timeParts[0]}:${timeParts[1]}`;
+            }
+          }
+      
+          // Normalize durations in specific columns (index 2 and 5)
+          else if ((idx === 2 || idx === 5) && /^\d{1,2}:\d{2}:\d{2}$/.test(value)) {
+            const parts = value.split(':');
+            value = `${parts[0].padStart(2, '0')}:${parts[1]}`;
+          }
+      
+          // Normalize ISO date if present
+          else if (value.includes('-') && value.includes('T')) {
+            const isoDate = new Date(value);
+            if (!isNaN(isoDate.getTime())) {
+              value = formatDateToDDMMYYYY(isoDate);
+            }
+          }
+        }
+      
+        obj[colLabel] = value;
+      });
+      
+      
+      
+
+      return obj;
+    });
+
+    this.lastTableDataTable = parsedData;
+    console.log('✅ Parsed data for table:', parsedData);
+  } catch (error) {
+    console.error("❌ Failed to load or parse data table:", error);
+    this.lastTableDataTable = [];
+  }
+}
+
+
+
+
+
+
+ }
   
