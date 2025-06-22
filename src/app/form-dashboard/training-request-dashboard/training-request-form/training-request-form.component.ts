@@ -285,8 +285,8 @@ export class TrainingRequestFormComponent implements OnInit {
           Function_Department: new FormControl(Training_Request_Forms_G?.Function_Department, null),
           Work_Start_Date: new FormControl(Training_Request_Forms_G?.Work_Start_Date, null),
           Standart_Job_Type: new FormControl(Training_Request_Forms_G?.Standart_Job_Type, [
-            Validators.pattern(/^[0-9]*$/), // Only numbers allowed
-            Validators.max(100)            // Maximum value is 100
+            Validators.pattern(/^[0-9]*$/),
+            Validators.max(100)
           ]),
         });
         if (this.passport == Training_Request_Forms_A?.Passport_ID) this.requested = true;
