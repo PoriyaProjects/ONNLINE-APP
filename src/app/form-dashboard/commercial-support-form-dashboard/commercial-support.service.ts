@@ -48,26 +48,43 @@ export class SupportRequestService {
     });
   }
 
-  saveSupportRequest(request: any): Observable<any> {
+  getSupportDecissionRequestById(id: string): Observable<any[]> {
+    return this.http.post<any[]>(`${this.apiUrl}GetSupportDecissionRequestById`, {
+      id: id,
+      form_char: 'D'
+    });
+  }
+
+  saveSupportRequest(request: any, type: any): Observable<any> {
     return this.http.post(`${this.apiUrl}SaveSupportRequest`, {
-      request: request
+      request: request,
+      type: type,
     });
   }
 
-  savePresentationRequest(request: any): Observable<any> {
+  savePresentationRequest(request: any, type: any): Observable<any> {
     return this.http.post(`${this.apiUrl}SavePresentationRequest`, {
-      request: request
+      request: request,
+      type: type,
     });
   }
 
-  saveResearchRequest(request: any): Observable<any> {
+  saveResearchRequest(request: any, type: any): Observable<any> {
     return this.http.post(`${this.apiUrl}SaveResearchRequest`, {
-      request: request
+      request: request,
+      type: type,
     });
   }
 
-  saveGatheringRequest(request: any): Observable<any> {
+  saveGatheringRequest(request: any, type: any): Observable<any> {
     return this.http.post(`${this.apiUrl}SaveGatheringRequest`, {
+      request: request,
+      type: type,
+    });
+  }
+
+  saveDecission(request: any): Observable<any> {
+    return this.http.post(`${this.apiUrl}SaveSupportRequestDecision`, {
       request: request
     });
   }

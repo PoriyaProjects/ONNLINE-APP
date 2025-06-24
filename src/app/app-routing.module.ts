@@ -70,7 +70,6 @@ import { EmployeesManageDashComponent } from "./employees-manage-dash/employees-
 import { EmployeesAddUpdateComponent } from "./employees-manage-dash/employees-add-update/employees-add-update.component";
 import { OrdersToAppointmentsComponent } from "./orders-to-appointments/orders-to-appointments.component";
 import { NursesReinforcementComponent } from "./nurses-manage-dashboard/nurses-reinforcement/nurses-reinforcement.component";
-// import { OnnLineComponent } from './onn-line/onn-line.component';
 import { HospitalBIDashboardComponent } from "./hospital-bi-dashboard/hospital-bi-dashboard.component";
 import { GraphsModalComponent } from "./hospital-bi-dashboard/graphs-modal/graphs-modal.component";
 import { EshpozModalComponent } from "./hospital-bi-dashboard/eshpoz-modal/eshpoz-modal.component";
@@ -149,7 +148,6 @@ import { CommercialSupportGatheringComponent } from "./form-dashboard/commercial
 import { ServiceUnitEmailListComponent } from './emailsdashboard/service-unit-email-list/service-unit-email-list.component';
 import { ServiceUnitEmailListDialogComponent } from './emailsdashboard/service-unit-email-list/service-unit-email-list-dialog/service-unit-email-list-dialog.component';
 
-// import { GenhdashboardComponent } from './genhdashboard/genhdashboard.component';
 
 const routes: Routes = [
     { path: "patientstikers", component: PatientStikersComponent },
@@ -328,7 +326,6 @@ const routes: Routes = [
     { path: "hospital-tonnage2", component: HospitalTonnageComponent2 },
     { path: 'service-unit-email-list', component: ServiceUnitEmailListComponent },
     { path: 'service-unit-email-list-dialog', component: ServiceUnitEmailListDialogComponent },
-    // { path: 'genhdashboard', component: GenhdashboardComponent },
 
 
 ];

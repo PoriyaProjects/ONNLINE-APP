@@ -98,10 +98,10 @@ export class CommercialSupportPresentationDialogComponent implements OnInit {
     });
   }
 
-  submitForm() {
+  submitForm(type) {
     this.PresentationRequestDto.controls['PresentationDate'].setValue(this._datePipe.transform(this.PresentationRequestDto.value.PresentationDate, 'yyyy-MM-dd'));
-    if (this.PresentationRequestDto.valid) {
-      this.supportRequestsService.savePresentationRequest(this.PresentationRequestDto.getRawValue()).subscribe({
+    if (true) {
+      this.supportRequestsService.savePresentationRequest(this.PresentationRequestDto.getRawValue(), type).subscribe({
         next: (response) => {
           if (response['d']) {
             this.openSnackBar("נשמר בהצלחה");

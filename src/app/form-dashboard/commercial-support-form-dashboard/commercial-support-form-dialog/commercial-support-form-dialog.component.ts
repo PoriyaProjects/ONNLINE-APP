@@ -43,6 +43,9 @@ export class CommercialSupportFormDialogComponent {
     { Id: null, Description: 'העברות' },
     { Id: null, Description: 'אחר' }
   ];
+  allCompanies: string[] = ['אבוט', 'אלי לילי', 'אסטרזניקה', 'באייר', 'גד מדיקל', 'גטר גרופ', 'גי-סי הלת"קר בע"מ', 'גמידה', 'טבע', 'טרימקו', 'כמיטק', 'לבנט', 'לברון', 'מדטכניקה', 'מדטרוניק', 'מדיסון פארמה'
+    , 'נובו נורדיסק', 'נאופארם', 'עמוס גזית', 'פייזר', 'צמל', 'רוש', 'רפיד מדיקל', 'ש.שיווק כל מיליניום', 'Abbott', 'Baxter', 'Boehringer Ingelheim', 'Boston Scientific', 'Cook', 'Ferring Pharmaceuticals', 'MSD'];
+  filteredCompanies: string[] = [];
   displayedColumns: string[] = ['activity', 'directService', 'indirectHealth'];
   manager: boolean;
   selectedIndirectHealth: { [index: number]: string } = {};
@@ -60,6 +63,18 @@ export class CommercialSupportFormDialogComponent {
   ngOnInit(): void {
     // this.buildForm(null);
     this.getSupportRequestsByID();
+  }
+
+  private _filterCompanies(value: string): string[] {
+    const filterValue = value.toLowerCase();
+    return this.allCompanies.filter(company =>
+      company.toLowerCase().includes(filterValue)
+    );
+  }
+
+  // Optional: handle user selection
+  onCompanySelected(value: string) {
+    console.log('Selected company:', value);
   }
 
   openSnackBar(message) {
@@ -144,6 +159,9 @@ export class CommercialSupportFormDialogComponent {
       this.SupportRequestDto.addControl(activity.controlName + '_extraOptions', new FormControl(''));
       this.onIndirectHealthChange(this.SupportRequestDto.value[activity.controlName + '_indirectHealth'], index);
     });
+    this.SupportRequestDto.get('CompanySupport').valueChanges.subscribe(value => {
+      this.filteredCompanies = this._filterCompanies(value || '');
+    });
   }
 
   onSupportTypeChange(event: any) {
@@ -211,11 +229,11 @@ export class CommercialSupportFormDialogComponent {
     });
   }
 
-  submitForm() {
+  submitForm(type) {
     this.SupportRequestDto.controls['EventDate'].setValue(this._datePipe.transform(this.SupportRequestDto.value.EventDate, 'yyyy-MM-dd'));
     this.SupportRequestDto.controls['EventEndDate'].setValue(this._datePipe.transform(this.SupportRequestDto.value.EventEndDate, 'yyyy-MM-dd'));
-    if (this.SupportRequestDto.valid) {
-      this.supportRequestsService.saveSupportRequest(this.SupportRequestDto.getRawValue()).subscribe({
+    if (true) {
+      this.supportRequestsService.saveSupportRequest(this.SupportRequestDto.getRawValue(), type).subscribe({
         next: (response) => {
           if (response['d']) {
             this.openSnackBar("נשמר בהצלחה");

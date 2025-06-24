@@ -43,8 +43,15 @@
               </mat-form-field>
 
               <mat-form-field appearance="outline" *ngIf="SupportRequestDto.get('Requester')?.value != null">
-                <mat-label>שם הגוף התומך</mat-label>
-                <input matInput formControlName="CompanySupport">
+                <mat-label>שם הגוף התומך*</mat-label>
+                <input type="text" matInput [matAutocomplete]="companyAuto"
+                  [formControl]="SupportRequestDto.get('CompanySupport')" />
+                <mat-autocomplete #companyAuto="matAutocomplete"
+                  (optionSelected)="onCompanySelected($event.option.value)">
+                  <mat-option *ngFor="let company of filteredCompanies" [value]="company">
+                    {{ company }}
+                  </mat-option>
+                </mat-autocomplete>
               </mat-form-field>
 
               <mat-form-field appearance="outline" *ngIf="SupportRequestDto.get('Requester')?.value != null">
@@ -251,9 +258,14 @@
 
             </div>
           </mat-card-content>
-          <button mat-raised-button class="submitBtn" matTooltip="שמירה"
-            [disabled]="SupportRequestDto.get('Requester')?.value == null || SupportRequestDto.invalid"
-            (click)="submitForm()">שמירה</button>
+          <div class="row" style="justify-content: left;">
+            <button mat-raised-button class="submitBtn" matTooltip="שמירה כטיוטה"
+              [disabled]="SupportRequestDto.get('Requester')?.value == null" (click)="submitForm(0)">שמירה
+              כטיוטה</button>
+            <button mat-raised-button class="submitBtn2" matTooltip="שמירה והגשה"
+              [disabled]="SupportRequestDto.get('Requester')?.value == null || SupportRequestDto.invalid"
+              (click)="submitForm(1)">שמירה והגשה</button>
+          </div>
         </mat-card>
       </form>
     </mat-step>

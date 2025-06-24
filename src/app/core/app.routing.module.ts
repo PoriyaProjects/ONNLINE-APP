@@ -147,15 +147,11 @@ import { CprNewbornFormComponent } from '../form-dashboard/cpr-newbord-dashborad
 import { GoogleChartsComponent } from '../hospital-cath-dashb/google-charts/google-charts.component';
 import { GraphsModalComponent2 } from '../hospital-cath-dashboard/graphs-modal/graphs-modal.component';
 import { EshpozModalComponent2 } from '../hospital-cath-dashboard/eshpoz-modal/eshpoz-modal.component';
-import { HospitalTonnageComponent2 } from '../hospital-cath-dashboard/hospital-tonnage/hospital-tonnage.component';
 import { HospitalCathDashboardComponent } from '../hospital-cath-dashboard/hospital-cath-dashboard.component';
 import { CommercialSupportFormDashboardComponent } from '../form-dashboard/commercial-support-form-dashboard/commercial-support-form-dashboard.component';
 import { CommercialSupportFormDialogComponent } from '../form-dashboard/commercial-support-form-dashboard/commercial-support-form-dialog/commercial-support-form-dialog.component';
 import { CommercialSupportResearchDialogComponent } from '../form-dashboard/commercial-support-form-dashboard/commercial-support-research-dialog/commercial-support-research-dialog.component';
-import { CommercialSupportPresentationDialogComponent } from '../form-dashboard/commercial-support-form-dashboard/commercial-support-presentation-dialog/commercial-support-presentation-dialog.component';
 import { CommercialSupportGatheringComponent } from '../form-dashboard/commercial-support-form-dashboard/commercial-support-gathering/commercial-support-gathering.component';
-// import { CldashboardModule } from '../cldashboard/cldashboard.module';
-import { CldashboardModule } from '../cldashboard/cldashboard.module';
 import { FullPageDashboardComponent } from '../cldashboard/pages/full-page-dashboard.component';
 import { ServiceUnitEmailListComponent } from '../emailsdashboard/service-unit-email-list/service-unit-email-list.component';
 import { ServiceUnitEmailListDialogComponent } from '../emailsdashboard/service-unit-email-list/service-unit-email-list-dialog/service-unit-email-list-dialog.component';
