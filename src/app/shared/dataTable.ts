@@ -3,15 +3,7 @@ import { MatTableDataSource } from '@angular/material/table';
 import { MatPaginator } from '@angular/material/paginator';
 import * as XLSX from 'xlsx';
 import { GoogleChartsService } from '../hospital-cath-dashb/services/google-charts.service';
-import { MatTableModule } from '@angular/material/table';
-import { MatPaginatorModule } from '@angular/material/paginator';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
-import { MatButtonModule } from '@angular/material/button';
-import { MatIconModule } from '@angular/material/icon';
-import { FormsModule } from '@angular/forms';
 import { MatSort } from '@angular/material/sort';
-
 
 @Component({
   selector: 'app-data-table',
@@ -23,28 +15,53 @@ export class TableComponent implements OnInit {
   displayedColumns: string[] = [];
   totalMap: { [key: string]: number } = {};
   filterValue = '';
+  columnFilters: { [key: string]: string } = {};
 
-  //@ViewChild(MatPaginator) paginator: MatPaginator;
-  
   @ViewChild(MatSort) sort: MatSort;
 
   constructor(private googleChartsService: GoogleChartsService) {}
 
   async ngOnInit(): Promise<void> {
-    
     await this.googleChartsService.drawDataTable();
-    const tableData = this.googleChartsService.getLastTableData() || [];
+    let tableData = this.googleChartsService.getLastTableData() || [];
 
+    if (tableData.length > 0) {
+      this.displayedColumns = Object.keys(tableData[0]);
+
+      const dateColumn = this.displayedColumns[1]; 
+      tableData = tableData.map(row => {
+        const rawDate = row[dateColumn];
+        const parsedDate = typeof rawDate === 'string' ? this.parseDateString(rawDate) : rawDate;
+        return { ...row, [dateColumn]: parsedDate };
+      });
+    }
 
     this.dataSource.data = tableData;
-    
     this.dataSource.sort = this.sort;
-    this.displayedColumns = tableData.length > 0 ? Object.keys(tableData[0]) : [];
-    //this.dataSource.paginator = this.paginator;
+
+    this.dataSource.sortingDataAccessor = (item, property) => {
+      const value = item[property];
+      if (value instanceof Date) return value.getTime();
+      return typeof value === 'string' ? value.toLowerCase() : value;
+    };
 
     this.calculateTotals();
-    console.log('🧮 Totals:', this.totalMap);
-    
+  }
+
+  parseDateString(dateStr: string): Date {
+    if (!dateStr) return new Date(NaN);
+    const [day, month, year] = dateStr.split('-').map(Number);
+    return new Date(year, month - 1, day);
+  }
+
+  formatCell(value: any): string {
+    if (value instanceof Date) {
+      const day = value.getDate().toString().padStart(2, '0');
+      const month = (value.getMonth() + 1).toString().padStart(2, '0');
+      const year = value.getFullYear();
+      return `${day}-${month}-${year}`;
+    }
+    return value;
   }
 
   applyFilter(): void {
@@ -71,19 +88,15 @@ export class TableComponent implements OnInit {
     XLSX.writeFile(workbook, 'connected_table_export.xlsx');
   }
 
+  applyColumnFilter(event: Event, column: string): void {
+    const value = (event.target as HTMLInputElement).value.trim().toLowerCase();
+    this.columnFilters[column] = value;
 
+    this.dataSource.filterPredicate = (row, _) =>
+      Object.entries(this.columnFilters).every(([col, val]) =>
+        row[col]?.toString().toLowerCase().includes(val)
+      );
 
-  columnFilters: { [key: string]: string } = {};
-
-applyColumnFilter(event: Event, column: string): void {
-  const value = (event.target as HTMLInputElement).value.trim().toLowerCase();
-  this.columnFilters[column] = value;
-
-  this.dataSource.filterPredicate = (row, _) =>
-    Object.entries(this.columnFilters).every(([col, val]) =>
-      row[col]?.toString().toLowerCase().includes(val)
-    );
-
-  this.dataSource.filter = JSON.stringify(this.columnFilters); // trigger filter
-}
+    this.dataSource.filter = JSON.stringify(this.columnFilters); // trigger filter
+  }
 }

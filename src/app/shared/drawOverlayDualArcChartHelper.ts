@@ -40,7 +40,7 @@ export function drawOverlayDualArcChartHelper({
     showMarker = true,
     markerOptions = { radius: 14, fontSize: 10 }
   }) {
-    console.log('🎯 drawOverlayDualArcChartHelper - currentMonthValues:', currentMonthValues);
+    //console.log('🎯 drawOverlayDualArcChartHelper - currentMonthValues:', currentMonthValues);
     const container = document.getElementById(containerId);
     if (!container) return;
   
@@ -288,7 +288,8 @@ if (Array.isArray(currentMonthValues) && currentMonthValues.length > 0) {
   
     legend.innerHTML = `
     <div style="white-space: nowrap; text-align:right; float:right; line-height:1.6em;">
-      <span style="color: ${statusColor}; font-weight: bold;font-size:2.4em; vertical-align: middle;">●</span> ביצוע עד היום: ${Math.round(gaugeValue)} מתוכנן: ${Math.round(gaugePlanned)} מתוך ${Math.round(gaugeTargetValue)}
+      <span style="color: ${statusColor}; font-weight: bold;font-size:2.4em; vertical-align: middle; float:right;">●</span>
+      <span style="float:right;padding-right:6px;">ביצוע עד היום: ${Math.round(gaugeValue)} <br> מתוכנן: ${Math.round(gaugePlanned)} מתוך ${Math.round(gaugeTargetValue)}</span>
     </div>
     <div style="white-space: nowrap; text-align:right; float:right; line-height:1.6em;">
       <span style="color: #6ba1f8; font-weight: bold; font-size:2.4em;vertical-align: middle;">●</span> ימים: ${workingDaysInfo.currentWorkingDayIndex} מתוך ${workingDaysInfo.totalWorkingDays} (${Math.round((workingDaysInfo.currentWorkingDayIndex / workingDaysInfo.totalWorkingDays) * 100)}%)

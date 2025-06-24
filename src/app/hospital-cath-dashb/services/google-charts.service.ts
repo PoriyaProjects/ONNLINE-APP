@@ -1926,109 +1926,6 @@ private renderYearLegend(years: string[], legendElementId: string): void {
 }
 
 
-// public async drawPicTableChart(
-//   elementId: string = 'pic_table_chart',
-//   options: any = {}
-// ): Promise<void> {
-//   await this.chartsReady;
-
-//   const el = document.getElementById(elementId);
-//   if (!el) {
-//      //console.error(`❌ Chart container '#${elementId}' not found in DOM.`);
-//     return;
-//   }
-
-//   try {
-//     const url = this.DATA_SOURCES.PIC_TABLE;
-//     //console.log(`📡 Fetching table data from: ${url}`);
-
-//     // Use text response to handle SOAP-wrapped XML
-//     const rawResponse: string = await this.http
-//       .get(url, { responseType: 'text' })
-//       .toPromise();
-
-//     //console.log('📥 Raw SOAP response:', rawResponse);
-
-//     const response = sanitizeSoapResponse(rawResponse);
-//     //console.log('✅ Sanitized response:', response);
-
-//     if (!response || !Array.isArray(response.rows) || !Array.isArray(response.cols)) {
-//       //console.warn("⚠️ Response missing 'rows' or 'cols'");
-//       el.innerHTML = "אין נתונים להצגה";
-//       return;
-//     }
-    
-//     // ✅ Reverse the rows
-//     response.rows.reverse();
-
-//     // Fix date column (index 1) if formatted as string
-//     response.rows.forEach((row: any, idx: number) => {
-//       const dateCell = row?.c?.[1];
-//       if (dateCell?.v && typeof dateCell.v === 'string') {
-//         const match = dateCell.v.match(/Date\((\d+),(\d+),(\d+)\)/);
-//         if (match) {
-//           const [_, y, m, d] = match.map(Number);
-//           dateCell.v = new Date(y, m, d);
-//         } else {
-//           const parsed = new Date(dateCell.v);
-//           if (!isNaN(parsed.getTime())) {
-//             dateCell.v = parsed;
-//           } else {
-//             //console.warn(`⚠️ Invalid date format in row ${idx}:`, dateCell.v);
-//           }
-//         }
-//       }
-//     });
-
-
-    
-//     const dataTable = new google.visualization.DataTable(response);
-//     const chart = new google.visualization.Table(el);
-//     this.lastTableDataTable = dataTable;
-
-//     chart.draw(dataTable, {
-//       //showRowNumber: false,
-//       allowHtml: true,
-//       width: '100%',
-//       sort: 'event',      
-//       ...options
-//     });
-
-//     //console.log(`✅ Table chart rendered in #${elementId}`);
-
-//   } catch (error) {
-//      //console.error("❌ Error drawing table chart:", error);
-//     el.innerHTML = "שגיאה בטעינת טבלה";
-//   }
-
-
-
-//   function appendTotalRow(dataTable: any) {
-//     const numCols = dataTable.getNumberOfColumns();
-//     const totalRow = [];
-  
-//     for (let i = 0; i < numCols; i++) {
-//       if (i === 0) {
-//         totalRow.push('סה״כ');
-//       } else if (dataTable.getColumnType(i) === 'number') {
-//         let sum = 0;
-//         for (let j = 0; j < dataTable.getNumberOfRows(); j++) {
-//           const val = dataTable.getValue(j, i);
-//           if (typeof val === 'number') sum += val;
-//         }
-//         totalRow.push(sum);
-//       } else {
-//         totalRow.push(null);
-//       }
-//     }
-  
-//     dataTable.addRow(totalRow);
-//   }
-
-  
-
-// }
-
 public async drawPicTableChart(
   elementId: string = 'pic_table_chart',
   options: any = {}
@@ -2194,7 +2091,7 @@ public async drawDualArcGaugeOverlay(elementId: string): Promise<void> {
       return;
     }
     
-    console.log('elementId:'+elementId);
+    //console.log('elementId:'+elementId);
    
     const workingDaysInfo = await getWorkingDaysInfo(this.DATA_SOURCES.WORKING_DAYS);
     if (workingDaysInfo.totalWorkingDays === 0) return;
@@ -2252,88 +2149,7 @@ public getLastTableData(): any[] {
   return this.lastTableDataTable;
 }
 
-// public async drawDataTable(): Promise<void> {
-//   await this.chartsReady;
 
-//   try {
-//     const url = this.DATA_SOURCES.PIC_TABLE;
-//     const rawResponse: string = await this.http.get(url, { responseType: 'text' }).toPromise();
-//     //console.log('📥 Raw SOAP response:', rawResponse);
-
-//     const response = sanitizeSoapResponse(rawResponse);
-//     console.log('✅ Sanitized Response:', response);
-
-//     if (!response || !Array.isArray(response.rows) || !Array.isArray(response.cols)) {
-//       //console.warn("⚠️ Invalid table format: missing rows or cols");
-//       this.lastTableDataTable = [];
-//       return;
-//     }
-
-//     response.rows.reverse(); // Match original Google Charts behavior
-
-//     // 🗓 Normalize any date fields in column index 1
-//     response.rows.forEach((row: any, idx: number) => {
-//       const dateCell = row?.c?.[1];
-//       if (dateCell?.v && typeof dateCell.v === 'string') {
-//         const match = dateCell.v.match(/Date\\((\\d+),(\\d+),(\\d+)\\)/);
-//         if (match) {
-//           const [_, y, m, d] = match.map(Number);
-//           dateCell.v = new Date(y, m, d);
-//         } else {
-//           const parsed = new Date(dateCell.v);
-//           if (!isNaN(parsed.getTime())) {
-//             dateCell.v = parsed;
-//           } else {
-//             console.warn(`⚠️ Invalid date format in row ${idx}:`, dateCell.v);
-//           }
-//         }
-//       }
-//     });
-
-//     function formatDateToDDMMYYYY(date: Date | string): string {
-//       const d = new Date(date);
-//       if (isNaN(d.getTime())) return ''; // invalid date
-    
-//       const day = String(d.getDate()).padStart(2, '0');
-//       const month = String(d.getMonth() + 1).padStart(2, '0');
-//       const year = d.getFullYear();
-    
-//       return `${day}-${month}-${year}`;
-//     }
-
-//     const parsedData = response.rows.map((row: any) => {
-//       const obj: any = {};
-    
-//       row?.c?.forEach((cell: any, idx: number) => {
-//         const colLabel = response.cols?.[idx]?.label || `col${idx}`;
-//         let value = cell?.v ?? '';
-    
-//         // Normalize date if in Date(...) format
-//         if (typeof value === 'string' && value.startsWith('Date(')) {
-//           const match = value.match(/Date\((\d+),(\d+),(\d+)\)/);
-//           if (match) {
-//             const [_, y, m, d] = match.map(Number);
-//             const date = new Date(y, m, d);
-//             if (!isNaN(date.getTime())) {
-//               value = formatDateToDDMMYYYY(date);
-//             }
-//           }
-//         }
-    
-//         obj[colLabel] = value;
-//       });
-    
-//       return obj;
-//     });
-
-//     this.lastTableDataTable = parsedData;
-//     console.log('✅ Parsed rows for Angular Material Table:', parsedData);
-
-//   } catch (error) {
-//     console.error("❌ Failed to load or parse data table:", error);
-//     this.lastTableDataTable = [];
-//   }
-// }
 
 public async drawDataTable(): Promise<void> {
   await this.chartsReady;
@@ -2342,7 +2158,7 @@ public async drawDataTable(): Promise<void> {
     const url = this.DATA_SOURCES.PIC_TABLE;
     const rawResponse: string = await this.http.get(url, { responseType: 'text' }).toPromise();
     const response = sanitizeSoapResponse(rawResponse);
-    console.log('✅ Sanitized Response:', response);
+    //console.log('✅ Sanitized Response:', response);
 
     if (!response || !Array.isArray(response.rows) || !Array.isArray(response.cols)) {
       this.lastTableDataTable = [];
@@ -2411,16 +2227,12 @@ public async drawDataTable(): Promise<void> {
     });
 
     this.lastTableDataTable = parsedData;
-    console.log('✅ Parsed data for table:', parsedData);
+    //console.log('✅ Parsed data for table:', parsedData);
   } catch (error) {
-    console.error("❌ Failed to load or parse data table:", error);
+    //console.error("❌ Failed to load or parse data table:", error);
     this.lastTableDataTable = [];
   }
 }
-
-
-
-
 
 
  }
