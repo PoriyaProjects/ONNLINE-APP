@@ -1,46 +1,3 @@
-<!-- <div class="table-container">
-   
-    <div class="table-controls" style="width:100%">
-      <mat-form-field class="top-search-field" appearance="outline" style="width:80%; float:right;">
-        <mat-label>חיפוש</mat-label>
-        <input matInput [(ngModel)]="filterValue" (input)="applyFilter()" placeholder="תנאי סינון" />
-      </mat-form-field>
-  
-      <button mat-raised-button class="excel-button" (click)="exportToExcel()" style="float: left;">
-        <img src="assets/images/excel.png" alt="יצוא לאקסל" width="20" height="20" style="margin-right: 8px; vertical-align: middle;" />
-        יצוא לאקסל
-      </button>
-      
-    </div>
-  
-
-<div class="table-scroll-wrapper" style="clear:both">
-    <table mat-table [dataSource]="dataSource" matSort class="mat-elevation-z8" style="width: 100%;">
-  
-      <ng-container *ngFor="let column of displayedColumns" [matColumnDef]="column">
-        <th mat-header-cell *matHeaderCellDef mat-sort-header sticky [disableClear]="true">
-          {{ column }}
-          <div class="filter-container">
-            <input matInput (input)="applyColumnFilter($event, column)" placeholder="תנאי סינון" />
-          </div>
-        </th>
-        <td mat-cell *matCellDef="let row"> {{ row[column] }} </td>
-        <td mat-footer-cell *matFooterCellDef>
-          {{ totalMap[column] !== undefined ? totalMap[column] : '' }}
-        </td>
-      </ng-container>
-      
-      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-      <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
-      <tr mat-footer-row *matFooterRowDef="displayedColumns"></tr>
-      
-    </table>
-  </div>
-      
-    <mat-paginator [pageSizeOptions]="[20, 50, 100]" showFirstLastButtons></mat-paginator> 
-  </div>
-   -->
-
    <div class="table-container">
 
     <!-- 🔍 Top Search + Export -->
@@ -79,7 +36,10 @@
           <th mat-header-cell *matHeaderCellDef mat-sort-header sticky [disableClear]="true">
             {{ column }}
           </th>
-          <td mat-cell *matCellDef="let row">{{ row[column] }}</td>
+          <!-- <td mat-cell *matCellDef="let row">{{ row[column] }}</td> -->
+          <td mat-cell *matCellDef="let row">
+            {{ formatCell(row[column]) }}
+          </td>
         </ng-container>
   
         <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
