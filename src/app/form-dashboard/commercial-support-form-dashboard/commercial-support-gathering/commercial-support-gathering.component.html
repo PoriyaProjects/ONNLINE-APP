@@ -31,10 +31,17 @@
                     </mat-form-field>
 
                     <mat-form-field appearance="outline" *ngIf="GatheringRequestDto.get('Requester')?.value != null">
-                        <mat-label>תאריך</mat-label>
+                        <mat-label>תאריך התחלה</mat-label>
                         <input matInput [matDatepicker]="picker" formControlName="GatheringDate">
                         <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
                         <mat-datepicker #picker></mat-datepicker>
+                    </mat-form-field>
+
+                    <mat-form-field appearance="outline" *ngIf="GatheringRequestDto.get('Requester')?.value != null">
+                        <mat-label>תאריך סיום</mat-label>
+                        <input matInput [matDatepicker]="picker2" formControlName="GatheringEndDate">
+                        <mat-datepicker-toggle matSuffix [for]="picker2"></mat-datepicker-toggle>
+                        <mat-datepicker #picker2></mat-datepicker>
                     </mat-form-field>
 
                     <mat-form-field appearance="outline" *ngIf="GatheringRequestDto.get('Requester')?.value != null">
@@ -97,7 +104,8 @@
                             </button>
                         </div><br>
                         <hr><br>
-                        <p>* יש לבקש תמיכה מ 3- חברות במידה ו-</p>
+                        <p>* יש לפנות לקבלת תמיכה משלוש חברות מסחריות. במידה וחברה כלשהי בוחרת שלא לתמוך, יש לצרף תיעוד
+                            של ניסיון הפנייה אליה.</p>
                         <!-- File Input 4 -->
                         <div style="text-align: right;">
                             <label>תיעוד פניות לחברות*</label><br>
@@ -114,9 +122,14 @@
                 </div>
 
             </mat-card-content>
-            <button mat-raised-button class="submitBtn" matTooltip="שמירה"
-                [disabled]="GatheringRequestDto.get('Requester')?.value == null || GatheringRequestDto.invalid"
-                (click)="submitForm()">שמירה</button>
+            <div class="row" style="justify-content: left;">
+                <button mat-raised-button class="submitBtn" matTooltip="שמירה כטיוטה"
+                    [disabled]="GatheringRequestDto.get('Requester')?.value == null" (click)="submitForm(0)">שמירה
+                    כטיוטה</button>
+                <button mat-raised-button class="submitBtn2" matTooltip="שמירה והגשה"
+                    [disabled]="GatheringRequestDto.get('Requester')?.value == null || GatheringRequestDto.invalid"
+                    (click)="submitForm(1)">שמירה והגשה</button>
+            </div>
         </mat-card>
 
     </form>
