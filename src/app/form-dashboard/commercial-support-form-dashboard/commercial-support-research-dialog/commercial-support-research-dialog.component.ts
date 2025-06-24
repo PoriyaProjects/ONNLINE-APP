@@ -92,9 +92,9 @@ export class CommercialSupportResearchDialogComponent implements OnInit {
     });
   }
 
-  submitForm() {
-    if (this.ResearchRequestDto.valid) {
-      this.supportRequestsService.saveResearchRequest(this.ResearchRequestDto.getRawValue()).subscribe({
+  submitForm(type) {
+    if (true) {
+      this.supportRequestsService.saveResearchRequest(this.ResearchRequestDto.getRawValue(), type).subscribe({
         next: (response) => {
           if (response['d']) {
             this.openSnackBar("נשמר בהצלחה");

@@ -348,6 +348,7 @@ export class WhatsappDepartmentsDashboardComponent implements OnInit {
     if (this.newMessage.controls['Message_Text'].value.trim() !== '' || this.base64String.toString() !== '') {
       this.newMessage.controls['ServiceEmployeeIDFK'].setValue(this.currentContact?.CellNumber);
       this.newMessage.controls['EndUserIDFK'].setValue(this.currentContact?.FirstName + ' ' + this.currentContact?.LastName);
+      this.newMessage.controls['ActionIDFK'].setValue(this.employee_service_action.Action_Order);
       this.http
         .post(environment.url + "SendDepartmentsWhatsAppMessageToUserOneWay", {
           messageForm: this.newMessage.value,

@@ -36,6 +36,7 @@ export class CommercialSupportGatheringComponent implements OnInit {
       RequesterDetails: new FormControl(data?.RequesterDetails, Validators.required),
       GatheringSubject: new FormControl(data?.GatheringSubject, Validators.required),
       GatheringDate: new FormControl(data?.GatheringDate, Validators.required),
+      GatheringEndDate: new FormControl(data?.GatheringEndDate, Validators.required),
       GatheringStartTime: new FormControl(data?.GatheringStartTime, Validators.required),
       GatheringEndTime: new FormControl(data?.GatheringEndTime, Validators.required),
       GatheringLocation: new FormControl(data?.GatheringLocation, null),
@@ -76,9 +77,9 @@ export class CommercialSupportGatheringComponent implements OnInit {
     });
   }
 
-  submitForm() {
-    if (this.GatheringRequestDto.valid) {
-      this.supportRequestsService.saveGatheringRequest(this.GatheringRequestDto.getRawValue()).subscribe({
+  submitForm(type) {
+    if (true) {
+      this.supportRequestsService.saveGatheringRequest(this.GatheringRequestDto.getRawValue(), type).subscribe({
         next: (response) => {
           if (response['d']) {
             this.openSnackBar("נשמר בהצלחה");

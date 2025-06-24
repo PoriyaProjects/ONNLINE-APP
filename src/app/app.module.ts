@@ -281,6 +281,7 @@ import { WhatsappCategoriesPermissionsComponent } from './whatsapp-messages-dash
 import { ServiceUnitEmailListComponent } from './emailsdashboard/service-unit-email-list/service-unit-email-list.component';
 import { ServiceUnitEmailListDialogComponent } from './emailsdashboard/service-unit-email-list/service-unit-email-list-dialog/service-unit-email-list-dialog.component';
 import { CommercialSupportGatheringComponent } from './form-dashboard/commercial-support-form-dashboard/commercial-support-gathering/commercial-support-gathering.component';
+import { DialogExampleComponent } from './form-dashboard/commercial-support-form-dashboard/commercial-support-form-dashboard.component';
 
 
 
@@ -507,6 +508,7 @@ const maskConfig: Partial<IConfig> = {
     CprNewbornFormComponent,
     CommercialSupportFormDashboardComponent,
     PeopleListDialogComponent,
+    DialogExampleComponent,
     CommercialSupportFormDialogComponent,
     CommercialSupportResearchDialogComponent,
     CommercialSupportPresentationDialogComponent,

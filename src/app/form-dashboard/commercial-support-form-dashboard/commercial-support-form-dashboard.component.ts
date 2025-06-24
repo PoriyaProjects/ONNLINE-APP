@@ -1,11 +1,59 @@
-import { Component, OnInit, TemplateRef, ViewChild } from '@angular/core';
-import { MatDialog } from '@angular/material/dialog';
+import { DatePipe } from '@angular/common';
+import { Component, Inject, OnInit, TemplateRef, ViewChild } from '@angular/core';
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { MatDialog, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { MatTableDataSource } from '@angular/material/table';
 import { CommercialSupportFormDialogComponent } from './commercial-support-form-dialog/commercial-support-form-dialog.component';
 import { CommercialSupportGatheringComponent } from './commercial-support-gathering/commercial-support-gathering.component';
 import { CommercialSupportPresentationDialogComponent } from './commercial-support-presentation-dialog/commercial-support-presentation-dialog.component';
 import { CommercialSupportResearchDialogComponent } from './commercial-support-research-dialog/commercial-support-research-dialog.component';
 import { SupportRequestService } from './commercial-support.service';
+
+
+@Component({
+  selector: 'app-dialog-example',
+  templateUrl: './dialog-example.component.html',
+  styleUrls: ['./dialog-example.component.css']
+})
+export class DialogExampleComponent {
+  decisionForm: FormGroup;
+  categories = ['מאושר', 'לא מאושר'];
+
+  constructor(
+    private fb: FormBuilder,
+    private dialogRef: MatDialogRef<DialogExampleComponent>,
+    private supportRequestService: SupportRequestService,
+    private _datePipe: DatePipe,
+    @Inject(MAT_DIALOG_DATA) public data: any
+  ) {
+    this.supportRequestService.getSupportDecissionRequestById(this.data.Id).subscribe(requests => {
+      let response = requests['d'];
+      this.decisionForm = this.fb.group({
+        ApprovalDate: [response?.ApprovalDate, Validators.required],
+        Approved: [response?.Approved, Validators.required],
+        Note: [response?.Note, null],
+        FromName: [this.data.RequestType, null],
+        FormID: [this.data.Id, null],
+        FormChar: [this.data.Roler, null],
+        Canceled: [response?.Canceled == 'True' ? true : false, null]
+      });
+      console.log(requests['d']);
+    });
+  }
+
+  onSave() {
+    if (this.decisionForm.valid) {
+      this.decisionForm.controls['ApprovalDate'].setValue(this._datePipe.transform(this.decisionForm.value.ApprovalDate, 'yyyy-MM-dd'));
+      this.supportRequestService.saveDecission(this.decisionForm.value).subscribe(requests => {
+        if (requests['d']) this.dialogRef.close();
+      });
+    }
+  }
+
+  onCancel() {
+    this.dialogRef.close(null);
+  }
+}
 
 @Component({
   selector: 'app-commercial-support-form-dashboard',
@@ -167,5 +215,14 @@ export class CommercialSupportFormDashboardComponent {
     });
   }
 
+  dialogRequest(element) {
+    const dialogRef = this.dialog.open(DialogExampleComponent, {
+      width: '30%',
+      data: element
+    });
+    dialogRef.afterClosed().subscribe(result => {
+      this.loadRequests();
+    });
+  }
 
 }

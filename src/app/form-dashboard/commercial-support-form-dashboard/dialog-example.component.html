@@ -1,0 +1,34 @@
+<h2 mat-dialog-title class="dialog-title">תשובת ועדת התקשרויות - {{data.RequestType}}</h2>
+<h5 mat-dialog-title class="dialog-sub-title">{{data.Requester}}</h5>
+
+<mat-dialog-content [formGroup]="decisionForm" dir="rtl" class="dialog-content" *ngIf="decisionForm != undefined">
+  <div class="form-grid">
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>תאריך ועדה</mat-label>
+      <input matInput [matDatepicker]="picker" formControlName="ApprovalDate" />
+      <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+      <mat-datepicker #picker></mat-datepicker>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>החלטת ועדה</mat-label>
+      <mat-select formControlName="Approved">
+        <mat-option *ngFor="let option of categories" [value]="option">
+          {{ option }}
+        </mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>הערות</mat-label>
+      <textarea matInput formControlName="Note" cols="3" placeholder="הערות"></textarea>
+    </mat-form-field>
+
+    <mat-checkbox class="custom-checkbox" formControlName="Canceled">בוטל</mat-checkbox>
+  </div>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end" class="dialog-actions">
+  <button mat-stroked-button color="warn" (click)="onCancel()">ביטול</button>
+  <button mat-flat-button color="primary" (click)="onSave()" [disabled]="decisionForm?.invalid">שמור</button>
+</mat-dialog-actions>
