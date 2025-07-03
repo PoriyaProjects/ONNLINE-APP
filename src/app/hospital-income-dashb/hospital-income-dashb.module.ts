@@ -17,15 +17,17 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { TableComponent } from '../shared/dataTable';
 import { MatSortModule } from '@angular/material/sort';
+import { ChargingGroupsComponent } from './google-charts/charging-groups.component';
 import { MatExpansionModule } from '@angular/material/expansion';
 import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 
 const routes: Routes = [
   { path: '', component: GoogleChartsIncomeComponent },
-  { path: 'data-table', component: TableComponent }
+  { path: 'data-table', component: TableComponent },
+  { path: 'groups', component: ChargingGroupsComponent }
 ];
 @NgModule({
-  declarations: [GoogleChartsIncomeComponent, TableComponent],
+  declarations: [GoogleChartsIncomeComponent, TableComponent,ChargingGroupsComponent],
   imports: [
     CommonModule,
     RouterModule.forChild(routes),
@@ -41,7 +43,7 @@ const routes: Routes = [
     MatGridListModule,
     MatToolbarModule,
     MatSortModule,
-    MatExpansionModule
+    MatExpansionModule,
   ],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
 })
