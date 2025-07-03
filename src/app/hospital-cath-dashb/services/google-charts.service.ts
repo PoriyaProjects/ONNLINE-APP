@@ -2070,9 +2070,80 @@ private getCurrentMonthPieValues(data: any): { Key: string; Value: number }[] {
 
 
 
+// public async drawDualArcGaugeOverlay(elementId: string): Promise<void> {
+//   try {
+   
+//     const waitForContainer = (id: string, retries = 10): Promise<HTMLElement | null> =>
+//       new Promise((resolve) => {
+//         let attempts = 0;
+//         const interval = setInterval(() => {
+//           const el = document.getElementById(id);
+//           if (el || ++attempts >= retries) {
+//             clearInterval(interval);
+//             resolve(el);
+//           }
+//         }, 100);
+//       });
+
+//     const container = await waitForContainer(elementId);
+//     if (!container) {
+//       console.warn(`Container "${elementId}" not found after retries`);
+//       return;
+//     }
+    
+//     console.log('elementId:'+elementId);
+   
+//     const workingDaysInfo = await getWorkingDaysInfo(this.DATA_SOURCES.WORKING_DAYS);
+//     if (workingDaysInfo.totalWorkingDays === 0) return;
+
+   
+//     const rawData = await this.http.get(this.DATA_SOURCES.GAUGE, { responseType: 'text' }).toPromise();
+//     const cleanData = sanitizeSoapResponse(rawData);
+//     const monthData = getCurrentMonthData(cleanData?.yData?.[0]?.Year?.Months);
+//     if (!monthData) return;
+
+   
+//     const value = monthData.y;
+//     const targetValue = 220;
+//     const perDayTarget = targetValue / workingDaysInfo.totalWorkingDays;
+//     const plannedIncludingToday = perDayTarget * (workingDaysInfo.currentWorkingDayIndex ?? 1);
+//     const isLastWorkingDay = (workingDaysInfo.currentWorkingDayIndex === workingDaysInfo.totalWorkingDays);
+//     const gaugeTargetStatus = isLastWorkingDay
+//       ? (value >= targetValue ? '✅' : '❌')
+//       : (value >= plannedIncludingToday ? '✅' : '❌');
+
+   
+//     const weeklyTable = cleanData?.yData?.[0]?.WeekSummaryTable;
+//     const parsedPieValues = getWeeklySummaryAsPieValues(weeklyTable);
+
+// setTimeout(() => {
+  
+//   drawOverlayDualArcChartHelper({
+//     containerId: elementId,
+//     workingDaysInfo,
+//     gaugePlanned: plannedIncludingToday,
+//     gaugeTargetValue: targetValue,
+//     gaugeValue: value,
+//     gaugeTargetStatus,
+//     currentMonthValues: parsedPieValues,
+//     markerOptions: { radius: 14, fontSize: 10 }
+//   });
+// }, 100); // Adjust timeout if needed
+
+
+
+//   } catch (err) {
+//     console.error('❌ Failed to draw dual arc overlay:', err);
+//     const el = document.getElementById(elementId);
+//     if (el) {
+//       el.innerHTML = '⚠️ Error loading dual arc overlay';
+//     }
+//   }
+// }
+
+
 public async drawDualArcGaugeOverlay(elementId: string): Promise<void> {
   try {
-   
     const waitForContainer = (id: string, retries = 10): Promise<HTMLElement | null> =>
       new Promise((resolve) => {
         let attempts = 0;
@@ -2087,59 +2158,122 @@ public async drawDualArcGaugeOverlay(elementId: string): Promise<void> {
 
     const container = await waitForContainer(elementId);
     if (!container) {
-      console.warn(`Container "${elementId}" not found after retries`);
+      //console.warn(`❌ Container "${elementId}" not found after retrying`);
       return;
     }
-    
-    //console.log('elementId:'+elementId);
-   
-    const workingDaysInfo = await getWorkingDaysInfo(this.DATA_SOURCES.WORKING_DAYS);
-    if (workingDaysInfo.totalWorkingDays === 0) return;
 
-   
+    //console.debug(`[Overlay Gauge] Target Element ID:`, elementId);
+
+    const workingDaysInfo = await getWorkingDaysInfo(this.DATA_SOURCES.WORKING_DAYS);
+    if (workingDaysInfo.totalWorkingDays === 0) {
+      //console.warn(`❌ No working days in the current month`);
+      return;
+    }
+
+    const currentIndex = workingDaysInfo.currentWorkingDayIndex ?? 1;
+    const totalDays = workingDaysInfo.totalWorkingDays;
+
+    const isFirstWorkingDay = currentIndex === 1;
+    const isLastWorkingDay = currentIndex === totalDays;
+
+    //console.debug(`[Overlay Gauge] Working Days Info:`);
+    //console.table(workingDaysInfo);
+    //console.log("currentIndex:", currentIndex);
+    //console.log("isFirstWorkingDay:", isFirstWorkingDay);
+
     const rawData = await this.http.get(this.DATA_SOURCES.GAUGE, { responseType: 'text' }).toPromise();
     const cleanData = sanitizeSoapResponse(rawData);
-    const monthData = getCurrentMonthData(cleanData?.yData?.[0]?.Year?.Months);
-    if (!monthData) return;
 
-   
+    //console.debug(`[Overlay Gauge] Clean Data:`, cleanData);
+
+    if (!Array.isArray(cleanData?.yData) || !cleanData.yData[0]?.Year?.Months) {
+      //console.warn(`❌ cleanData.yData[0].Year.Months is missing or malformed`);
+      return;
+    }
+
+    const months = cleanData.yData[0].Year.Months;
+    //console.debug("months:", months);
+
+    let monthData = getCurrentMonthData(months);
+    if (!monthData && isFirstWorkingDay) {
+      // ⬅️ Fallback to previous month data on first working day
+      const prevMonth = new Date();
+      prevMonth.setMonth(prevMonth.getMonth() - 1);
+      const prevMonthNum = prevMonth.getMonth() + 1; // 1-based
+
+      const hebrewMonthMap: { [key: string]: number } = {
+        'ינואר': 1, 'פברואר': 2, 'מרץ': 3,
+        'אפריל': 4, 'מאי': 5, 'יוני': 6,
+        'יולי': 7, 'אוגוסט': 8, 'ספטמבר': 9,
+        'אוקטובר': 10, 'נובמבר': 11, 'דצמבר': 12
+      };
+
+      const fallbackMonth = months.find(m => hebrewMonthMap[m.name] === prevMonthNum);
+      if (fallbackMonth) {
+        monthData = fallbackMonth;
+        //console.warn(`⚠️ Using previous month's data (${fallbackMonth.name}) as fallback for gauge on first working day`);
+      }
+    }
+
+    if (!monthData) {
+      //console.warn(`❌ No month data available for current or fallback month`);
+      //console.table(months);
+      return;
+    }
+
+    //console.debug("monthData:", monthData);
+
     const value = monthData.y;
     const targetValue = 220;
-    const perDayTarget = targetValue / workingDaysInfo.totalWorkingDays;
-    const plannedIncludingToday = perDayTarget * (workingDaysInfo.currentWorkingDayIndex ?? 1);
-    const isLastWorkingDay = (workingDaysInfo.currentWorkingDayIndex === workingDaysInfo.totalWorkingDays);
-    const gaugeTargetStatus = isLastWorkingDay
-      ? (value >= targetValue ? '✅' : '❌')
-      : (value >= plannedIncludingToday ? '✅' : '❌');
+    const perDayTarget = targetValue / totalDays;
+    const plannedIncludingToday = perDayTarget * currentIndex;
 
-   
+    let gaugeTargetStatus: string;
+
+    if (isFirstWorkingDay) {
+      const relaxedThreshold = perDayTarget * 0.5;
+      gaugeTargetStatus = value >= relaxedThreshold ? '✅' : '❌';
+      //console.debug(`[Overlay Gauge] First working day: expected ≥ ${relaxedThreshold.toFixed(2)} (50% of per-day target)`);
+    } else if (isLastWorkingDay) {
+      gaugeTargetStatus = value >= targetValue ? '✅' : '❌';
+      //console.debug(`[Overlay Gauge] Last working day: expected ≥ ${targetValue}`);
+    } else {
+      gaugeTargetStatus = value >= plannedIncludingToday ? '✅' : '❌';
+      //console.debug(`[Overlay Gauge] Mid-month: expected ≥ ${plannedIncludingToday.toFixed(2)}`);
+    }
+
+    // console.debug(`[Overlay Gauge] Gauge Value: ${value}`);
+    // console.debug(`[Overlay Gauge] Planned Value Up To Today: ${plannedIncludingToday.toFixed(2)}`);
+    // console.debug(`[Overlay Gauge] Target Status: ${gaugeTargetStatus}`);
+
     const weeklyTable = cleanData?.yData?.[0]?.WeekSummaryTable;
     const parsedPieValues = getWeeklySummaryAsPieValues(weeklyTable);
 
-setTimeout(() => {
-  
-  drawOverlayDualArcChartHelper({
-    containerId: elementId,
-    workingDaysInfo,
-    gaugePlanned: plannedIncludingToday,
-    gaugeTargetValue: targetValue,
-    gaugeValue: value,
-    gaugeTargetStatus,
-    currentMonthValues: parsedPieValues,
-    markerOptions: { radius: 14, fontSize: 10 }
-  });
-}, 100); // Adjust timeout if needed
+    // console.debug(`[Overlay Gauge] Weekly Pie Values:`);
+    // console.table(parsedPieValues);
 
-
+    setTimeout(() => {
+      drawOverlayDualArcChartHelper({
+        containerId: elementId,
+        workingDaysInfo,
+        gaugePlanned: plannedIncludingToday,
+        gaugeTargetValue: targetValue,
+        gaugeValue: value,
+        gaugeTargetStatus,
+        currentMonthValues: parsedPieValues,
+        markerOptions: { radius: 14, fontSize: 10 }
+      });
+    }, 100);
 
   } catch (err) {
-    console.error('❌ Failed to draw dual arc overlay:', err);
+    //console.error('❌ Failed to draw dual arc overlay:', err);
     const el = document.getElementById(elementId);
     if (el) {
       el.innerHTML = '⚠️ Error loading dual arc overlay';
     }
   }
 }
+
 
 
 

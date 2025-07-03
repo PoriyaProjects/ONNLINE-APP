@@ -53,8 +53,8 @@
 
 </span>
     
-   |<input type="date" [(ngModel)]="filters.startDate" (change)="onGlobalControlChange()" />
-   <input type="date" [(ngModel)]="filters.endDate" (change)="onGlobalControlChange()" />
+   <!-- |<input type="date" [(ngModel)]="filters.startDate" (change)="onGlobalControlChange()" />
+   <input type="date" [(ngModel)]="filters.endDate" (change)="onGlobalControlChange()" /> -->
    | <label><input type="checkbox" [(ngModel)]="globalChartControls.showTrendline" (change)="onGlobalControlChange()" /> Trendline</label>
    | <label><input type="checkbox" [(ngModel)]="globalChartControls.showAnnotations" (change)="onGlobalControlChange()" /> Annotations</label>
    | <label><input type="checkbox" [(ngModel)]="globalChartControls.showLegend" (change)="onGlobalControlChange()" /> Legend</label>
@@ -63,7 +63,7 @@
    
 
    
-   | 
+   <!-- | 
    <label>
     תקופתיות:
     <select [(ngModel)]="filters.granularity" (change)="onGlobalControlChange()">
@@ -72,7 +72,7 @@
     </option>
     </select>
    </label>
-   <br/>
+   <br/> -->
    </p>
   </mat-expansion-panel>
   </div>
@@ -90,10 +90,7 @@
    [shortFormat]="globalChartControls.shortFormat"
    [showAnnotations]="globalChartControls.showAnnotations"
    [showLegend]="globalChartControls.showLegend"
-   [isDarkMode]="globalChartControls.isDarkMode"
-   [isRtl]="globalChartControls.isRtl"
-   [currency]="globalChartControls.currency"
-   [locale]="globalChartControls.locale">
+   >
  </app-revenue-compare-years-chart>
 
  <app-revenue-compare-3months-chart      
@@ -101,10 +98,7 @@
  [shortFormat]="globalChartControls.shortFormat"
  [showAnnotations]="globalChartControls.showAnnotations"
  [showLegend]="globalChartControls.showLegend"
- [isDarkMode]="globalChartControls.isDarkMode"
- [isRtl]="globalChartControls.isRtl"
- [currency]="globalChartControls.currency"
- [locale]="globalChartControls.locale">
+>
 </app-revenue-compare-3months-chart>
 
 <app-revenue-compare-months-chart-depts     
@@ -112,10 +106,7 @@
 [shortFormat]="globalChartControls.shortFormat"
 [showAnnotations]="globalChartControls.showAnnotations"
 [showLegend]="globalChartControls.showLegend"
-[isDarkMode]="globalChartControls.isDarkMode"
-[isRtl]="globalChartControls.isRtl"
-[currency]="globalChartControls.currency"
-[locale]="globalChartControls.locale">
+>
 </app-revenue-compare-months-chart-depts>
 
 
@@ -124,10 +115,7 @@
  [shortFormat]="globalChartControls.shortFormat"
  [showAnnotations]="globalChartControls.showAnnotations"
  [showLegend]="globalChartControls.showLegend"
- [isDarkMode]="globalChartControls.isDarkMode"
- [isRtl]="globalChartControls.isRtl"
- [currency]="globalChartControls.currency"
- [locale]="globalChartControls.locale">
+ >
 </app-revenue-compare-months-chart>
  <!-- <app-revenue-compare-months-chart [rawChartData]="rawChartData" [isLoading]="isLoading" [selectedDeptGroupId]="selectedDeptGroupId" [shortFormat]="globalChartControls.shortFormat" [showAnnotations]="globalChartControls.showAnnotations" [showLegend]="globalChartControls.showLegend" [isDarkMode]="globalChartControls.isDarkMode" [isRtl]="globalChartControls.isRtl" [currency]="globalChartControls.currency" [locale]="globalChartControls.locale"></app-revenue-compare-months-chart> -->
 </div>

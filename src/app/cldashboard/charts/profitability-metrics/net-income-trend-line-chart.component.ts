@@ -38,7 +38,7 @@ chartId: any;
   }
 
   loadChart() {
-    this.ops.fetchNetIncomeTrend(this.deptCode).subscribe(res => {
+    this.ops.fetchLineTrend(this.deptCode).subscribe(res => {
       const rows = res?.d?.[2]?.[0]?.filter(r => r != null).map(r => [r.x, Number(r.y)]) || [];
       const data = google.visualization.arrayToDataTable([
         ['Month', 'Net Income'],

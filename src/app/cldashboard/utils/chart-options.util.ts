@@ -19,6 +19,7 @@ export interface ChartOptionsInput {
   showAnnotations?: boolean;
   colors?: string[];
   width?:number;
+  hAxisDirection?: number;
 }
 
 
@@ -39,7 +40,8 @@ export function getChartOptions({
   locale = 'he',
   colors,
   shortFormat = true,  
-  showAnnotations = true  
+  showAnnotations = true, 
+  hAxisDirection, 
 }: ChartOptionsInput): any {
   
   const textColor = isDarkMode ? '#ffffff' : '#333333';
@@ -81,7 +83,7 @@ export function getChartOptions({
       slantedText: true,
       minValue: 0,
       slantedTextAngle: 45,
-      direction: isRtl ? -1 : 1
+      direction: hAxisDirection ?? (isRtl ? -1 : 1),
     };
 
     commonOptions.vAxis = {

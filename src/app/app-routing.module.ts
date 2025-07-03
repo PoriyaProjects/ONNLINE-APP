@@ -147,6 +147,8 @@ import { CommercialSupportPresentationDialogComponent } from "./form-dashboard/c
 import { CommercialSupportGatheringComponent } from "./form-dashboard/commercial-support-form-dashboard/commercial-support-gathering/commercial-support-gathering.component";
 import { ServiceUnitEmailListComponent } from './emailsdashboard/service-unit-email-list/service-unit-email-list.component';
 import { ServiceUnitEmailListDialogComponent } from './emailsdashboard/service-unit-email-list/service-unit-email-list-dialog/service-unit-email-list-dialog.component';
+import { HospitalIncomeDashbComponent } from './hospital-income-dashb/hospital-income-dashb.component';
+import { GoogleChartsIncomeComponent } from './hospital-income-dashb/google-charts/google-charts.component';
 
 
 const routes: Routes = [
@@ -326,6 +328,8 @@ const routes: Routes = [
     { path: "hospital-tonnage2", component: HospitalTonnageComponent2 },
     { path: 'service-unit-email-list', component: ServiceUnitEmailListComponent },
     { path: 'service-unit-email-list-dialog', component: ServiceUnitEmailListDialogComponent },
+    { path: "hospitalincomedashb", component: HospitalIncomeDashbComponent },
+    { path: "hospital-income-dashb", component: GoogleChartsIncomeComponent },
 
 
 ];
