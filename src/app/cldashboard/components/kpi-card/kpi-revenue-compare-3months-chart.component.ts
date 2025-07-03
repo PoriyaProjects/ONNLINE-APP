@@ -15,15 +15,12 @@ export class RevenueCompare3MonthsChartComponent extends BaseRevenueChartCompone
   @Input() chartTitle = 'השוואת הכנסות חודשיות';
   @Input() showAnnotations = true;
   @Input() shortFormat = true;
-  @Input() isDarkMode = false;
-  @Input() isRtl = false;
-  @Input() locale = 'he';
-  @Input() currency = '₪';
+ 
   @Input() isStacked = false;
   @Input() showLegend = true;
   @Input() showTrendline = true;
   @Input() usePercent = false;
-  @Input() showHtmlTooltip = true;
+ 
   @Input() width = 400;
 
   constructor(
@@ -103,16 +100,11 @@ export class RevenueCompare3MonthsChartComponent extends BaseRevenueChartCompone
 
       const options = getChartOptions({
         chartType: this.chartType,
-        title: this.chartTitle,
-        isDarkMode: this.isDarkMode,
-        currency: this.currency,
+        title: this.chartTitle,       
         shortFormat: this.shortFormat,
         showAnnotations: this.showAnnotations,
-        showLegend: this.showLegend,
-        isRtl: this.isRtl,
-        locale: this.locale,
-        usePercent: this.usePercent,
-        showHtmlTooltip: this.showHtmlTooltip,
+        showLegend: this.showLegend,        
+        usePercent: this.usePercent,       
         isStacked: this.isStacked,
         showTrendline: this.showTrendline,
         width: this.width

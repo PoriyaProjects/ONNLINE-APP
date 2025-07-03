@@ -245,29 +245,149 @@ export function convertHebrewMonthsToNumbers(input: any): any {
 /**
  * Removes current month data from a Year-Month structured dataset.
  */
+// export function filterOutCurrentMonth(data: any): any {
+//   const currentDate = new Date();
+//   const currentYear = currentDate.getFullYear();
+//   const currentMonth = currentDate.getMonth() + 1; // 1-12
+
+//   const filteredData: any = {};
+
+//   Object.keys(data).forEach(year => {
+//     const yearNumber = parseInt(year, 10);
+//     const months = data[year];
+
+//     const filteredMonths = Object.keys(months).reduce((acc: any, month) => {
+//       const monthNumber = parseInt(month, 10);
+//       if (!(yearNumber === currentYear && monthNumber === currentMonth)) {
+//         acc[month] = months[month];
+//       }
+//       return acc;
+//     }, {});
+
+//     if (Object.keys(filteredMonths).length > 0) {
+//       filteredData[year] = filteredMonths;
+//     }
+//   });
+
+//   return filteredData;
+// }
+
 export function filterOutCurrentMonth(data: any): any {
   const currentDate = new Date();
   const currentYear = currentDate.getFullYear();
-  const currentMonth = currentDate.getMonth() + 1; // 1-12
+  const currentMonth = currentDate.getMonth() + 1; // 1-based (1 = Jan)
+  const currentDay = currentDate.getDate();
+
+  const shouldExcludePrevious = currentDay < 11;
+
+  // Calculate previous month and its year (handle year wraparound)
+  const previousDate = new Date(currentYear, currentMonth - 2); // JS handles wraparound
+  const previousMonth = previousDate.getMonth() + 1;
+  const previousYear = previousDate.getFullYear();
 
   const filteredData: any = {};
 
-  Object.keys(data).forEach(year => {
-    const yearNumber = parseInt(year, 10);
-    const months = data[year];
+  Object.entries(data).forEach(([yearStr, months]) => {
+    const year = parseInt(yearStr, 10);
+    const filteredMonths = Object.keys(months).reduce((acc: any, monthStr) => {
+      const month = parseInt(monthStr, 10);
 
-    const filteredMonths = Object.keys(months).reduce((acc: any, month) => {
-      const monthNumber = parseInt(month, 10);
-      if (!(yearNumber === currentYear && monthNumber === currentMonth)) {
-        acc[month] = months[month];
+      const isCurrent = year === currentYear && month === currentMonth;
+      const isPrevious = year === previousYear && month === previousMonth;
+
+      // Exclude based on rules
+      if ((isCurrent) || (shouldExcludePrevious && isPrevious)) {
+        return acc;
       }
+
+      acc[monthStr] = months[monthStr];
       return acc;
     }, {});
 
     if (Object.keys(filteredMonths).length > 0) {
-      filteredData[year] = filteredMonths;
+      filteredData[yearStr] = filteredMonths;
     }
   });
 
   return filteredData;
 }
+
+
+/**
+ * Removes current month data from a Year-Month structured dataset and 
+ * returns 4 last month data in each year.
+ */
+// export function filterLastN(data: any): any {
+//   const currentDate = new Date();
+//   const currentYear = currentDate.getFullYear();
+//   const currentMonth = currentDate.getMonth() + 1; // 1-based (1 = Jan)
+
+//   // Step 1: Build last 4 months excluding current
+//   const last4Months: { year: number; month: number }[] = [];
+//   for (let i = 1; i <= 4; i++) {
+//     const date = new Date(currentYear, currentMonth - 1 - i);
+//     last4Months.push({ year: date.getFullYear(), month: date.getMonth() + 1 });
+//   }
+
+//   // Step 2: Collect matching data from all years for those months
+//   const filteredData: any = {};
+
+//   Object.keys(data).forEach(yearStr => {
+//     const year = parseInt(yearStr, 10);
+//     const months = data[yearStr];
+//     const matchedMonths: any = {};
+
+//     last4Months.forEach(({ month }) => {
+//       if (months[month] !== undefined) {
+//         matchedMonths[month] = months[month];
+//       }
+//     });
+
+//     if (Object.keys(matchedMonths).length > 0) {
+//       filteredData[year] = matchedMonths;
+//     }
+//   });
+
+//   return filteredData;
+// }
+
+export function filterLastN(data: any, n: number): any {
+  const currentDate = new Date();
+  const currentMonth = currentDate.getMonth() + 1; // 1-based (Jan = 1)
+  const currentDay = currentDate.getDate();
+
+  // Determine how many months to exclude
+  const excludeCurrent = true;
+  const excludePrevious = currentDay < 11;
+
+  // Step 1: Calculate last N months, excluding current and possibly previous
+  const targetMonths: number[] = [];
+  let monthCursor = currentMonth - 1;
+
+  for (let i = 0; targetMonths.length < n + (excludePrevious ? 2 : 1); i++) {
+    const date = new Date(currentDate.getFullYear(), monthCursor - i);
+    const month = date.getMonth() + 1;
+    if (excludeCurrent && month === currentMonth) continue;
+    if (excludePrevious && month === (currentMonth - 1 || 12)) continue;
+    targetMonths.push(month);
+  }
+
+  // Keep only the last N months after exclusion
+  const monthsToInclude = targetMonths.slice(0, n);
+
+  // Step 2: Build result, keeping all years and including only matching months
+  const filteredData: any = {};
+
+  Object.entries(data).forEach(([yearStr, months]) => {
+    const matchedMonths: any = {};
+    monthsToInclude.forEach(month => {
+      if (months[month] !== undefined) {
+        matchedMonths[month] = months[month];
+      }
+    });
+    filteredData[yearStr] = matchedMonths; // always include year, even if empty
+  });
+
+  return filteredData;
+}
+
