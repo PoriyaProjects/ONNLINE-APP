@@ -18,6 +18,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule } from '@angular/material/select';
 import { map } from 'rxjs/operators';
 import { drawOverlayDualArcChartHelperIncome } from 'src/app/shared/drawOverlayDualArcChartHelperIncome';
+import { ChargingGroupsComponent } from 'src/app/hospital-income-dashb/google-charts/charging-groups.component';
 
 
 @Injectable({ providedIn: 'root' })
@@ -94,7 +95,6 @@ export class GoogleChartsService {
     showPercentageAnnotations: false
   };
   
-
   loadDepartments() {
     this.isLoadingDepartments = false;
     this.departments = [
@@ -262,7 +262,8 @@ export class GoogleChartsService {
           const curr = yearMap[currYear] || 0;
           return [dept, prev, formatShort(prev), curr, formatShort(curr)];
         })
-        .sort((a, b) => b[3] - a[3]); // Sort by current year's raw value (column index 3)
+        .sort((a, b) => Number(b[3]) - Number(a[3]));
+ // Sort by current year's raw value (column index 3)
   
       const data = google.visualization.arrayToDataTable([
         ['קבוצה', prevYear, { role: 'annotation' }, currYear, { role: 'annotation' }],
@@ -350,7 +351,8 @@ export class GoogleChartsService {
           const curr = yearMap[currYear] || 0;
           return [dept, prev, formatShort(prev), curr, formatShort(curr)];
         })
-        .sort((a, b) => b[3] - a[3]); 
+        .sort((a, b) => Number(b[3]) - Number(a[3]));
+ 
       const data = google.visualization.arrayToDataTable([
         ['קבוצה', prevYear, { role: 'annotation' }, currYear, { role: 'annotation' }],
         ...dataRows
@@ -630,9 +632,12 @@ export class GoogleChartsService {
                 await this.loadYearlyIncomeDataCombined('tabled_chart2', 2, 'matrix');
               } catch (e) { console.error("|_| loadYearlyIncomeDataTable failed:", e); 
                 }
-           
 
-    //console.log("Finished loadAndDrawCharts()");
+                try {
+                  await this.renderDepartmentButtons('deptgroups');
+                } catch (e) { console.error("|_| loadYearlyIncomeDataTable failed:", e); 
+                  }
+
   }
   
   public async drawOperationsCharts(barChartOptions: any = {}, lineChartOptions: any = {}): Promise<void> {
@@ -2931,6 +2936,225 @@ loadYearlyIncomeDataCombined(
   );
 }
 
+public async getChargingGroupButtons(): Promise<{ department: string, color: string }[]> {
+  try {
+    // console.log('[getChargingGroupButtons] Fetching data from API...');
 
- }
+    const raw = await this.http
+      .get(`${environment.url}/GetChargingGrouspDataEx?groupName=&deptName=`, {
+        responseType: 'text',
+      })
+      .toPromise();
+
+    // console.log('[getChargingGroupButtons] Raw response:', raw);
+
+    const cleanJson = sanitizeSoapResponse(raw);
+    // console.log('[getChargingGroupButtons] Clean JSON after sanitizeSoapResponse:', cleanJson);
+
+    if (!Array.isArray(cleanJson)) {
+      //console.error('[getChargingGroupButtons] Invalid response format: expected array');
+      return [];
+    }
+
+    if (cleanJson.length === 0) {
+      //onsole.warn('[getChargingGroupButtons] Response array is empty');
+      return [];
+    }
+
+    // 🔧 FIX: Use correct property casing ("Year" not "year")
+    const allYears = cleanJson.map((r: any) => +r.Year).filter(y => !isNaN(y));
+    // console.log('[getChargingGroupButtons] All years found:', allYears);
+
+    if (allYears.length === 0) {
+      //console.warn('[getChargingGroupButtons] No valid years found in data');
+      return [];
+    }
+
+    const latestYear = Math.max(...allYears);
+    // console.log('[getChargingGroupButtons] Latest year selected:', latestYear);
+
+    const filtered = cleanJson.filter((r: any) => +r.Year === latestYear);
+    //console.log(`[getChargingGroupButtons] Filtered rows for ${latestYear}:`, filtered);
+
+    const map: { [dept: string]: string } = {};
+
+    filtered.forEach((r: any) => {
+      const dept = r.Department || '(unknown)';
+      const change = r.ChangePercent;
+      const val = parseFloat(change);
+      let color = '#ccc';
+
+      if (!isNaN(val)) {
+        if (val > 20) color = '#006400';
+        else if (val > 10) color = '#228B22';
+        else if (val > 0)  color = '#90EE90';
+        else if (val === 0) color = '#e0e0e0';
+        else if (val > -10) color = '#f08080';
+        else if (val > -20) color = '#ff8c00';
+        else color = '#8b0000';
+      }
+
+      map[dept] = color;
+    });
+
+    const buttons = Object.keys(map).map(dept => ({
+      department: dept,
+      color: map[dept]
+    }));
+
+    // console.log('[getChargingGroupButtons] Final department buttons:', buttons);
+    return buttons;
+  } catch (err) {
+    //console.error('[getChargingGroupButtons] Error fetching or processing data:', err);
+    return [];
+  }
+}
+
+
+
+ /**
+   * Loads department data and renders a chart for a specific department
+   */
+
+
+/**
+   * Renders a bar chart for a single department using consistent SOAP-style API response parsing
+   */
+public async renderDepartmentChart(deptName: string, chartElementId: string): Promise<void> {
+  await this.chartsReady;
+
+  try {
+    const rawResponse = await this.http
+      .get(`${environment.url}/GetChargingGrouspDataEx?groupName=${encodeURIComponent(deptName)}&deptName=`, {
+        responseType: 'text',
+      })
+      .toPromise();
+
+    const cleanJson: any = sanitizeSoapResponse(rawResponse);
+    if (!Array.isArray(cleanJson)) {
+      console.error('Invalid data format for department chart:', cleanJson);
+      return;
+    }
+
+    const grouped: { [year: string]: number } = {};
+    const allYears: Set<string> = new Set();
+
+    cleanJson.forEach((row: any) => {
+      const year = row.year;
+      const total = row.totalCharging || 0;
+      grouped[year] = total;
+      allYears.add(year);
+    });
+
+    const sortedYears = Array.from(allYears).sort();
+    if (sortedYears.length < 2) {
+      console.warn('Not enough data to render chart');
+      return;
+    }
+
+    const prevYear = sortedYears[sortedYears.length - 2];
+    const currYear = sortedYears[sortedYears.length - 1];
+
+    const formatShort = (num: number): string => {
+      if (num >= 1_000_000) return (num / 1_000_000).toFixed(1) + 'M';
+      if (num >= 1_000) return (num / 1_000).toFixed(0) + 'K';
+      return num.toString();
+    };
+
+    const prevVal = grouped[prevYear] || 0;
+    const currVal = grouped[currYear] || 0;
+
+    const chartData = google.visualization.arrayToDataTable([
+      ['שנה', prevYear, { role: 'annotation' }, currYear, { role: 'annotation' }],
+      [deptName, prevVal, formatShort(prevVal), currVal, formatShort(currVal)],
+    ]);
+
+    const options = {
+      title: `סה"כ חיובים - ${deptName}`,
+      chartArea: { width: '70%', height: '80%' },
+      legend: { position: 'top' },
+      isStacked: true,
+      bar: { groupWidth: '75%' },
+      annotations: {
+        alwaysOutside: true,
+        textStyle: { fontSize: 12, color: '#444' },
+      },
+      vAxis: { format: 'short', minValue: 0 },
+      hAxis: {
+        slantedText: true,
+        slantedTextAngle: 45,
+      },
+      colors: ['#00b3d7', '#fcd74e'],
+    };
+
+    const container = document.getElementById(chartElementId);
+    if (container) {
+      const chart = new google.visualization.BarChart(container);
+      chart.draw(chartData, options);
+    }
+  } catch (err) {
+    console.error('Failed to render department chart:', err);
+    const el = document.getElementById(chartElementId);
+    if (el) el.innerHTML = 'שגיאה בטעינת הנתונים';
+  }
+}
+
+
+
+
+
+
+public getHeatColor(change: string | null): string {
+  if (!change || change === 'N/A') return '#ccc';
+
+  const val = parseFloat(change);
+  if (isNaN(val)) return '#ccc';
+
+  if (val > 20) return '#006400';     // dark green
+  if (val > 10) return '#228B22';     // forest green
+  if (val > 0)  return '#90EE90';     // light green
+  if (val === 0) return '#e0e0e0';    // grey
+  if (val > -10) return '#f08080';    // light red
+  if (val > -20) return '#ff8c00';    // orange
+  return '#8b0000';                   // dark red
+}
+
+public async renderDepartmentButtons(containerId: string = 'deptgroups'): Promise<void> {
+  const container = document.getElementById(containerId);
+  if (!container) {
+    //console.warn(`[renderDepartmentButtons] ❌ Container #${containerId} not found.`);
+    return;
+  }
+
+  try {
+    const buttons = await this.getChargingGroupButtons();
+
+    if (!buttons.length) {
+      container.innerHTML = 'No department data available.';
+      return;
+    }
+
+    container.innerHTML = ''; // Clear previous content
+
+    buttons.forEach(({ department, color }) => {
+      const button = document.createElement('button');
+      button.textContent = department;
+      button.style.backgroundColor = color;
+      button.style.margin = '4px';
+      button.onclick = () => this.renderDepartmentChart(department, 'deptChart');
+      container.appendChild(button);
+    });
+
+    //console.log(`[renderDepartmentButtons] ✅ Rendered ${buttons.length} buttons.`);
+  } catch (err) {
+    //console.error('[renderDepartmentButtons] ❌ Error rendering buttons:', err);
+    container.innerHTML = 'Error loading department buttons.';
+  }
+}
+
+
+
+}
+
+
   
