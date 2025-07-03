@@ -36,6 +36,7 @@ export class ClDashboardOverviewComponent implements OnInit {
     rawChartData: RevenueDataPoint[] = [];
     rawChartDataFull: RevenueDataPoint[] = [];
     selectedDeptGroupId: number = 0;
+    selectedDeptId: string = '';
 
     isLoading = false;
 
@@ -49,11 +50,7 @@ export class ClDashboardOverviewComponent implements OnInit {
         shortFormat: true,
         showPercentageAnnotations: false,
         showHtmlTooltip: true,
-        isDarkMode: false,
-        isStacked: false,
-        isRtl: false,
-        currency: '₪',
-        locale: 'he'
+      
     };
 
     granularityOptions = [
@@ -96,12 +93,12 @@ export class ClDashboardOverviewComponent implements OnInit {
             timeout(10000),
             map((list: any) => {
                 if (typeof list === 'string' && list.includes('<?xml')) {
-                   // console.warn('Invalid department response (XML) → forcing retry');
+                    console.warn('Invalid department response (XML) → forcing retry');
                     throw new Error('Invalid department response (XML)');
                 }
 
                 if (Array.isArray(list) && list.length === 0) {
-                   // console.warn('Empty department list received → forcing retry');
+                    console.warn('Empty department list received → forcing retry');
                     throw new Error('Empty department list');
                 }
 
@@ -111,7 +108,7 @@ export class ClDashboardOverviewComponent implements OnInit {
             tap((list: Department[]) => {
                 this.departments = list.sort((a, b) => a.name.localeCompare(b.name));
                 this.isLoadingDepartments = false;
-               // console.log('Departments loaded:', this.departments);
+                console.log('Departments loaded:', this.departments);
             }),
             catchError(err => {
                 console.error('Failed to load departments after retries:', err);
@@ -135,15 +132,18 @@ export class ClDashboardOverviewComponent implements OnInit {
                 const apiEnd = formatDateForApi(endDate);
                 const deptGroupIdParam = this.selectedDeptGroupId === 0 ? '' : this.selectedDeptGroupId.toString();
     
-                
+                console.log('=== loadChartData ===');
+                console.log('DeptGroupId:', deptGroupIdParam);
+                console.log('Start:', apiStart, 'End:', apiEnd, 'Granularity:', granularity);
+    
                 // Normal chart data (filtered)
-                const normalData$ = this.ops.fetchTotalRevenueDataOnce(apiStart, apiEnd, deptGroupIdParam, granularity).pipe(
+                const normalData$ = this.ops.fetchTotalRevenueDataOnce(deptGroupIdParam, this.selectedDeptId).pipe(
                     timeout(80000),
                     retryWhen(errors =>
                         errors.pipe(
                             scan((retryCount, err) => {
                                 if (retryCount >= 10) throw err;
-                               // console.warn(`Retrying chart load - Attempt #${retryCount + 1}`);
+                                console.warn(`Retrying chart load - Attempt #${retryCount + 1}`);
                                 return retryCount + 1;
                             }, 0),
                             delay(2000)
@@ -152,13 +152,13 @@ export class ClDashboardOverviewComponent implements OnInit {
                 );
     
                 // Full data (for CompareMonths)
-                const fullData$ = this.ops.fetchTotalRevenueDataOnce(apiStart, apiEnd, '', 'month').pipe(
+                const fullData$ = this.ops.fetchTotalRevenueDataOnce(deptGroupIdParam, this.selectedDeptId).pipe(
                     timeout(80000),
                     retryWhen(errors =>
                         errors.pipe(
                             scan((retryCount, err) => {
                                 if (retryCount >= 10) throw err;
-                               // console.warn(`Retrying FULL chart load - Attempt #${retryCount + 1}`);
+                                console.warn(`Retrying FULL chart load - Attempt #${retryCount + 1}`);
                                 return retryCount + 1;
                             }, 0),
                             delay(2000)
@@ -172,8 +172,11 @@ export class ClDashboardOverviewComponent implements OnInit {
         ).subscribe({
             next: ([cleaned, full]) => {
                 this.rawChartData = cleaned;
-                this.rawChartDataFull = full;    
-                 
+                this.rawChartDataFull = full;
+    
+                console.log('[ClDashboardOverview] rawChartData:', this.rawChartData);
+                console.log('[ClDashboardOverview] rawChartDataFull:', this.rawChartDataFull);
+    
                 localStorage.setItem('storage.SelectedDeptGroupId', this.selectedDeptGroupId.toString());
                 this.isLoading = false;
             },
@@ -198,7 +201,7 @@ export class ClDashboardOverviewComponent implements OnInit {
         this.selectedDeptGroupId = groupId;
         localStorage.setItem('storage.SelectedDeptGroupId', this.selectedDeptGroupId.toString());
         this.triggerChartReload();
-       // console.log('Dept group changed → reload triggered');
+        console.log('Dept group changed → reload triggered');
     }
 
     onPeriodChange(id: string) {
@@ -230,7 +233,7 @@ export class ClDashboardOverviewComponent implements OnInit {
                     if (retryCount >= maxRetry) {
                         throw err;
                     }
-                   // console.warn(`Retrying getDepartments() - Attempt #${retryCount + 1}`);
+                    console.warn(`Retrying getDepartments() - Attempt #${retryCount + 1}`);
                     return retryCount + 1;
                 }, 0),
                 delay(delayMs)
