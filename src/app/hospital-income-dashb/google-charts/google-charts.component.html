@@ -13,39 +13,6 @@
     </div>
 
 
-    <!-- <div class="custom-toolbar">
-        <label>
-          קבוצת מחלקות:
-          <select [(ngModel)]="selectedGroupId" (change)="onGroupChange($event.target.value)">
-            <option *ngFor="let group of deptGroups" [value]="group.id">{{ group.name }}</option>
-          </select>
-        </label>
-      
-        <label>
-          מחלקה:
-          <select [(ngModel)]="selectedDeptId">
-            <option *ngFor="let dept of filteredDepts" [value]="dept.id">{{ dept.name }}</option>
-          </select>
-        </label>
-      </div> -->
-
-    <!-- <mat-toolbar color="primary">
-        <mat-form-field appearance="fill" style="margin: 8px; width: 200px;">
-          <mat-label>קבוצת מחלקות</mat-label>
-          <mat-select [(ngModel)]="selectedDeptGroupId" (selectionChange)="onDeptGroupChange($event.value)">
-            <mat-option *ngFor="let group of deptGroups" [value]="group.id">{{ group.name }}</mat-option>
-          </mat-select>
-        </mat-form-field>
-      
-        <mat-form-field appearance="fill" style="margin: 8px; width: 200px;">
-          <mat-label>מחלקות</mat-label>
-          <mat-select [(ngModel)]="selectedDeptId">
-            <mat-option *ngFor="let dept of filteredDepts" [value]="dept.id">{{ dept.name }}</mat-option>
-          </mat-select>
-        </mat-form-field>
-      </mat-toolbar> -->
-
-
     <div class="row">
         <div class="mdc-layout-grid__cell col-md-12">
 
@@ -53,49 +20,6 @@
                 <h2 style="text-align: center;">
                     הכנסות כללי
                 </h2>
-
-
-                <!-- <div class="row">    
-        <div class="mdc-layout-grid__cell col-md-6">
-          <div class="card text-center">
-            <h6 class="card-title-custom">Top 5 Departments</h6>
-            <div id="top_depts_chart" style="width: 100%; height: 400px;"></div>
-          </div>
-        </div>
-      
-        <div class="mdc-layout-grid__cell col-md-6">
-          <div class="card text-center">
-            <h6 class="card-title-custom">Year-over-Year Comparison</h6>
-            <div id="yearly_comparison_chart" style="width: 100%; height: 400px;"></div>
-          </div>
-        </div>     
-</div> -->
-                <!-- <div class="row">
-    <div class="mdc-layout-grid__cell col-md-6">
-        <div class="card text-center">
-          <h6 class="card-title-custom">Top Departments</h6>
-    <div id="top_depts_chart" style="width: 100%; height: 400px;"></div></div></div>
-    
-    <div class="mdc-layout-grid__cell col-md-6">
-        <div class="card text-center">
-          <h6 class="card-title-custom">Yearly Comparison</h6>
-          <div id="yearly_comparison_chart" style="width: 100%; height: 400px;"></div></div></div>
-</div> -->
-                <!-- <div class="row">
-          <div class="mdc-layout-grid__cell col-md-6">
-            <div class="card text-center">
-              <h6 class="card-title-custom">Group Share</h6>
-    <div id="group_share_chart" style="width: 100%; height: 400px;"></div></div></div>
-
-    <div class="mdc-layout-grid__cell col-md-6">
-        <div class="card text-center">
-          <h6 class="card-title-custom">Growth Trend</h6>
-    <div id="growth_trend_chart" style="width: 100%; height: 400px;"></div></div></div>
-    <div class="mdc-layout-grid__cell col-md-6">
-        <div class="card text-center">
-          <h6 class="card-title-custom">Growth</h6>
-    <div id="growth_chart" style="width: 100%; height: 400px;"></div></div></div>
-        </div> -->
 
 
 
@@ -125,7 +49,7 @@
                             </div>
                             <div id="tabled_chart2" style="width: 100%; padding:0 20px; margin-top: 0px;">טוען נתונים...
                             </div>
-                            <!-- <div class="ctrl-placeholder"></div> -->
+                           
                         </div>
                     </div>
 
@@ -141,17 +65,7 @@
 
 
                 </div>
-                <!-- <div style="height:60px;"></div>
-                <div class="row" style="text-align: center;">
-                    <h3 style="text-align: center;" class="col-md-12">נתונים מצטברים</h3>
-                    <h6 style="text-align: center;" class="col-md-12">3 שנים אחרונות</h6>
-                    <div class="mdc-layout-grid__cell col-md-12">
-                        <div class="card text-center">
-                            <div id="op_bar_chart_3y" style="width: 100%; height: 500px;">טוען נתונים...</div>
-                        </div>
-                    </div>
-                </div> -->
-
+              
 
                 <h2 style="text-align: center;">
                     מחלקות
@@ -185,12 +99,12 @@
                     3 שנים אחרונות
                 </h2>
                 <div class="row" style="text-align: center;">
-                    <!-- <h5 style="text-align: center;" class="col-md-12">3 שנים אחרונות</h5> -->
+                 
                     <h6 style="text-align: center;" class="col-md-12">* נתונים כספיים מעודכנים ב-10 לחודש עבור חודש קודם
                     </h6>
                     <div class="mdc-layout-grid__cell col-md-12">
                         <div class="card text-center">
-                            <!-- <div id="bar_chart_3y" style="width: 100%; height: 500px;">טוען נתונים...</div> -->
+                           
                             <div id="growth_trend_chart" style="width: 100%; height: 500px;">טוען נתונים...</div>
 
                         </div>
@@ -198,22 +112,11 @@
                 </div>
 
 
-                <!-- <h2 style="text-align: center;">
-                    נתונים משולבים
-                </h2>
-                <div class="row" style="text-align: center;">
-                    <h5 style="text-align: center;" class="col-md-12">3 שנים אחרונות</h5>
-                    <h6 style="text-align: center;" class="col-md-12">* הכנסות ופעולות</h6>
-                    <div class="mdc-layout-grid__cell col-md-12">
-                        <div class="card text-center">
-                            <div id="merged_chart_3y" style="width: 100%; height: 800px;">טוען נתונים...</div>
-                        </div>
-                    </div>
-                </div>-->
+              
 
                 <div style="height:60px;"></div>
                 <h3 style="text-align: center;">הכנסות חודשיות שנים מקבילות</h3>
-                <!-- <h4 style="text-align: center;">* הכנסות לפי תאריך פעולה</h4>                 -->
+               
                 <div class="row">
 
                     <div class="mdc-layout-grid__cell col-md-6">
@@ -227,66 +130,9 @@
 
 
                 <div style="height:60px;"></div>
-                <!-- <h3 style="text-align: center;">הכנסות לפי סוג פעולה</h3>
-                <div class="row">
-                    <div class="mdc-layout-grid__cell col-md-6">
-                        <div class="card text-center">
-                            <h6 class="card-title-custom">פרוצדורות</h6>
-                            <div class="row">
-                                <div class="mdc-layout-grid__cell col-md-12">
-                                    <div class="ctrl-placeholder">שנתי</div>
-                                </div>
-                                <div class="mdc-layout-grid__cell col-md-12">
-                                   
-                                </div>
-                            </div>
-                            <div id="as_chart" style="width: 100%; height: 440px;">טוען נתונים...</div>
-                        </div>
-                    </div>
-
-                    
-
-                    <div class="mdc-layout-grid__cell col-md-6">
-                        <div class="card text-center">
-                            <h6 class="card-title-custom">פרוצדורות</h6>
-                            <div class="row">
-                                <div class="mdc-layout-grid__cell col-md-12">
-                                    <div class="ctrl-placeholder">שבועי חודש אחרון</div>
-                                </div>
-                                <div class="mdc-layout-grid__cell col-md-12">
-                                    <div class="ctrl-placeholder"></div>
-                                </div>
-                            </div>
-                            <div id="as_chart_weekly" style="width: 100%; height: 440px;">טוען נתונים...</div>
-                        </div>
-                    </div>
-                    
-                </div>
-
-                <div style="height:60px;"></div>
-
-                <div class="row">
-                    <div class="mdc-layout-grid__cell col-md-12">
-                        <div class="card text-center">
-                            <h6 class="card-title-custom">פרוצדורות</h6>
-                            <div class="row">
-                                <div class="mdc-layout-grid__cell col-md-12">
-                                    <div class="ctrl-placeholder">36 חודשים אחרונים</div>
-                                </div>
-                                <div class="mdc-layout-grid__cell col-md-12">
-                                    <div class="ctrl-placeholder"></div>
-                                </div>
-                            </div>
-                            <div id="as_chart_monthly" style="width: 100%; height: 440px;">טוען נתונים...</div>
-                        </div>
-                    </div>
-                </div>
+                <div id="deptgroups" style="width: 100%; height: 600px;">טוען נתונים...</div>
                 <div style="height:60px;"></div>
                 
-
-
-               
-                <div style="height:60px;"></div> -->
             </main>
         </div>
     </div>

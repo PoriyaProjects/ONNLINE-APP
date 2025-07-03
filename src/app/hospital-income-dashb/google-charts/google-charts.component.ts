@@ -45,6 +45,9 @@ export class GoogleChartsIncomeComponent implements AfterViewInit {
 
   constructor(public googleChartsService: GoogleChartsService) {}
 
+
+
+  
   ngAfterViewInit(): void {
     this.googleChartsService.loadAndDrawCharts();
 
