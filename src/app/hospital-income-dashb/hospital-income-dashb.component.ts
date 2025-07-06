@@ -1,24 +1,30 @@
-import { Component, OnInit } from '@angular/core';
-
+import {  Component,  ViewChild,  ViewContainerRef,  ComponentFactoryResolver} from '@angular/core';
+import { GroupDashboardComponent } from './group-dashboard.component';
 
 @Component({
   selector: 'app-hospital-income-dashb',
   templateUrl: './hospital-income-dashb.component.html',
-  styleUrls:  ['./hospital-income-dashb.component.scss']
+  styleUrls: ['./hospital-income-dashb.component.scss']
 })
-export class HospitalIncomeDashbComponent implements OnInit {
- 
+export class HospitalIncomeDashbComponent {
+  deptGroups: string[] = ['Finance', 'IT', 'HR', 'Marketing'];
 
-  constructor() { }
+  
 
-  ngOnInit(): void {
-      
-      const script = document.createElement('script');
-      script.src = 'https://unpkg.com/material-components-web@latest/dist/material-components-web.min.js';
-      script.onload = () => {
-        (window as any).mdc?.autoInit();
-      };
-      document.body.appendChild(script);
-    
-  }
+  @ViewChild('groupHost', { read: ViewContainerRef, static: true })
+groupHost!: ViewContainerRef;
+
+constructor(private resolver: ComponentFactoryResolver) {}
+
+
+loadGroupDashboard(groupName: string): void {
+  this.groupHost.clear();
+  const factory = this.resolver.resolveComponentFactory(GroupDashboardComponent);
+  const cmpRef = this.groupHost.createComponent(factory);
+  cmpRef.instance.groupName = groupName;
 }
+
+
+}
+
+

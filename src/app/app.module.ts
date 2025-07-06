@@ -516,7 +516,7 @@ const maskConfig: Partial<IConfig> = {
     ServiceUnitEmailListComponent,
     ServiceUnitEmailListDialogComponent,
     CommercialSupportGatheringComponent,
-    HospitalIncomeDashbComponent,
+    //HospitalIncomeDashbComponent,
   ],
   imports: [
     MatIconModule,
