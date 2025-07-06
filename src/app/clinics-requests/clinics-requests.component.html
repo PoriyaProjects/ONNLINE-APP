@@ -2,11 +2,37 @@
     <h1 class="page-title text-center">זימונים למרפאות</h1>
     <div class="container-fluid">
         <div dir="rtl" class="row  mb-20">
-            <mat-chip-list>
-                <mat-chip [ngClass]="{'chip-depart-selected': depart.selected}"
-                    *ngFor="let depart of unDepartsToSelect;"
-                    (click)="onSelectionChange(depart)">{{depart.name}}</mat-chip>
-            </mat-chip-list>
+            <mat-form-field class="col-6">
+                <mat-label>חפש מרפאה</mat-label>
+                <input (input)="isPanelOpen = true" matInput type="text" [(ngModel)]="searchText" placeholder="מרפאה">
+            </mat-form-field>
+            <mat-form-field class="col-6">
+                <mat-label>חפש ת.ז</mat-label>
+                <input (keyup)="getEventsByEXTNR()" matInput type="text" [(ngModel)]="searchID" placeholder=" ת.ז">
+            </mat-form-field>
+            <mat-accordion class="col-12">
+                <mat-expansion-panel [(expanded)]="isPanelOpen">
+                    <mat-expansion-panel-header>
+                        <mat-panel-title>
+                            מרפאות
+                        </mat-panel-title>
+                        <mat-panel-description>
+                            לחץ כדי להרחיב ולראות את רשימת המרפאות
+                        </mat-panel-description>
+                    </mat-expansion-panel-header>
+
+                    <div dir="rtl" class="row mb-20">
+                        <mat-chip-list>
+                            <mat-chip *ngFor="let depart of unDepartsToSelect | filterDeparts:searchText"
+                                [ngClass]="{'chip-depart-selected': depart.selected}"
+                                (click)="onSelectionChange(depart)">
+                                {{depart.name}}
+                            </mat-chip>
+                        </mat-chip-list>
+                    </div>
+
+                </mat-expansion-panel>
+            </mat-accordion>
         </div>
         <div class="container-fluid">
             <div class="row">
@@ -21,7 +47,7 @@
                             שבוע
                         </div>
                         <div class="btn btn-secondary" (click)="setView(CalendarView.Day)"
-                        [ngClass]="{'btn-primary':view === CalendarView.Day}">
+                            [ngClass]="{'btn-primary':view === CalendarView.Day}">
                             יום
                         </div>
                     </div>

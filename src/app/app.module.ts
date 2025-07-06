@@ -283,6 +283,7 @@ import { ServiceUnitEmailListDialogComponent } from './emailsdashboard/service-u
 import { CommercialSupportGatheringComponent } from './form-dashboard/commercial-support-form-dashboard/commercial-support-gathering/commercial-support-gathering.component';
 import { DialogExampleComponent } from './form-dashboard/commercial-support-form-dashboard/commercial-support-form-dashboard.component';
 import { HospitalIncomeDashbComponent } from './hospital-income-dashb/hospital-income-dashb.component';
+import { FilterDepartsPipe } from './pipe/filter-departs.pipe';
 
 
 
@@ -517,6 +518,7 @@ const maskConfig: Partial<IConfig> = {
     ServiceUnitEmailListDialogComponent,
     CommercialSupportGatheringComponent,
     HospitalIncomeDashbComponent,
+    FilterDepartsPipe,
   ],
   imports: [
     MatIconModule,
