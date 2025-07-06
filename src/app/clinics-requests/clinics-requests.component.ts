@@ -85,6 +85,7 @@ export interface EventDepartDay {
   styleUrls: ['./clinics-requests.component.css'],
 })
 export class ClinicsRequestsComponent implements OnInit {
+  public isPanelOpen = false;
   @ViewChild('toDayCall') toDayCall: ElementRef;
   @ViewChild("modalContent", { static: true }) modalContent: TemplateRef<any>;
   displayedColumns: string[] = [
@@ -96,6 +97,9 @@ export class ClinicsRequestsComponent implements OnInit {
     "PatientLastName",
     // "CLICK_sendtosafe",
   ];
+
+  public searchText: string;
+  public searchID: string;
   EventsDerpatDay = [] as EventDepartDay[];
   EventsDay = [] as EventDay[];
   unDeparts = [] as any[];
@@ -320,6 +324,43 @@ export class ClinicsRequestsComponent implements OnInit {
       .post(
         environment.url + "GetAllClinicsAppointments",
         {}
+      )
+      .subscribe((Response) => {
+        this.events = [];
+        this.unDeparts = [];
+        var obj: Array<any> = [];
+        this.EventsDay = Response["d"] as EventDay[];
+        // //debugger
+        let DateTime = [];
+        let hour = 0;
+        let min = 0;
+        let lastAppointmentDate = '';
+        this.setEvents(false,
+          obj,
+          DateTime,
+          hour,
+          min,
+          lastAppointmentDate)
+        this.viewDate = new Date();
+        this.viewDate.setDate(this.viewDate.getDate() + 31)
+        //this.events.
+        this.refresh.next();
+        // Next
+        //this.viewDate = 
+        this.toDayCall.nativeElement.click();
+        //debugger;
+        $("#loader").addClass("d-none");
+      });
+  }
+  getEventsByEXTNR() {
+    console.log("getEventsByEXTNR")
+    $("#loader").removeClass("d-none");
+    this.http
+      .post(
+        environment.url + "SearchAppointmentsByExtnr",
+        {
+          extnr: this.searchID
+        }
       )
       .subscribe((Response) => {
         this.events = [];

@@ -44,7 +44,10 @@ export interface Bekorem {
     PM_MOVE_RANGE: string;
     PM_PATIENT_ID: string;
 }
-
+interface Department {
+    value: string;
+    viewValue: string;
+}
 @Component({
     selector: "app-eshboz",
     templateUrl: "./eshboz.component.html",
@@ -111,7 +114,7 @@ export class EshbozComponent implements OnInit {
     _yearToSearch = 0;
     chart = null;
     isShow = false;
-    constructor(private router: Router, private http: HttpClient) {}
+    constructor(private router: Router, private http: HttpClient) { }
     startdateVal: string;
     enddateVal: string;
     depart: any[];
@@ -136,7 +139,9 @@ export class EshbozComponent implements OnInit {
     _fun = new Fun.Functions();
     Sdate: FormControl;
     Edate: FormControl;
+    departments: Department[] = [];
     ngOnInit() {
+        this.getDepartments();
         this._fun.RunFunction();
         this.yearsToSelect = this._fun.yearsToSelect;
         if (this.yearsToSelect.list[0]["checked"]) {
@@ -153,9 +158,30 @@ export class EshbozComponent implements OnInit {
 
         //this.SurgeryType[0] = true;
         // this.Depart[0] = "-1";
-        this.dataSource = new MatTableDataSource(this.TABLE_DATA);       
+        this.dataSource = new MatTableDataSource(this.TABLE_DATA);
 
         //console.log(this.paginator.pageIndex);
+    }
+    getDepartments(): void {
+        this.http
+            .post(environment.url + "GetEshbozDepartments", {
+
+                //.post(environment.url + "EshbozimAppNew", {
+                _fromDate: this.startdateVal,
+                _toDate: this.enddateVal,
+                _freeText: this.fliterVal,
+                _depart: this.Depart,
+            })
+            .subscribe(
+                (Response) => {
+                    this.departments =  Response["d"] ;
+                    //this.dataSource.paginator = this.paginator;
+                },
+                (error) => {
+                    // ////////debugger;
+                    $("#loader").addClass("d-none");
+                }
+            );
     }
     radioChange(event: MatRadioChange) {
         ////////debugger
@@ -192,7 +218,7 @@ export class EshbozComponent implements OnInit {
         this.startdateVal = this._fun.Sdate.value;
         this.enddateVal = this._fun.Edate.value;
     }
-    ngAfterViewInit(): void {}
+    ngAfterViewInit(): void { }
     getPaginatorData(event: PageEvent) {
         //console.log(this.paginator.pageIndex);
         if (this.startdateVal && this.enddateVal) {
@@ -204,7 +230,7 @@ export class EshbozComponent implements OnInit {
                 this.fliterVal,
                 this.Depart
             );
-            
+
             this.getDataCharts(
                 this.startdateVal,
                 this.enddateVal,
@@ -243,7 +269,7 @@ export class EshbozComponent implements OnInit {
         }
     }
     getReportExcel($event: any): void {
-        if (this.startdateVal && this.enddateVal){
+        if (this.startdateVal && this.enddateVal) {
             this.getDataFormServer(
                 this.startdateVal,
                 this.enddateVal,
@@ -255,18 +281,18 @@ export class EshbozComponent implements OnInit {
             this.getDataCharts(
                 this.startdateVal,
                 this.enddateVal,
-               0,
+                0,
                 10,
                 this.fliterVal,
                 this.Depart
             );
         }
-            
+
     }
     public newData() {
         this.http
             .post(environment.url + "EshbozimAppNew", {
-            //.post(environment.url + "EshbozimAppNew", {
+                //.post(environment.url + "EshbozimAppNew", {
                 _fromDate: this.startdateVal,
                 _toDate: this.enddateVal,
                 _freeText: this.fliterVal,
@@ -301,7 +327,7 @@ export class EshbozComponent implements OnInit {
                     dateStart.getMonth(),
                     dateStart.getDate()
                 )) /
-                (1000 * 60 * 60 * 24)
+            (1000 * 60 * 60 * 24)
         );
     }
     public getDataFormServer(
@@ -315,7 +341,7 @@ export class EshbozComponent implements OnInit {
         let _surgeryType = "";
         let _counter = 0;
         this.TotalDaysInRange = this.calculateDiff(_startDate, _endDate);
-        
+
         let _yearStart = new Date(_startDate).getFullYear();
         let _yearEnd = new Date(_endDate).getFullYear();
         this.yearStart = new Date(_startDate).getFullYear().toString();
@@ -332,8 +358,8 @@ export class EshbozComponent implements OnInit {
         $("#loader").removeClass("d-none");
         this.http
             .post(environment.url + "EshbozimAppNew", {
-                
-            //.post(environment.url + "EshbozimAppNew", {
+
+                //.post(environment.url + "EshbozimAppNew", {
                 _fromDate: this.startdateVal,
                 _toDate: this.enddateVal,
                 _freeText: this.fliterVal,
@@ -341,7 +367,7 @@ export class EshbozComponent implements OnInit {
             })
             .subscribe(
                 (Response) => {
-                    
+
                     //////////debugger
                     this.TABLE_DATA.splice(0, this.TABLE_DATA.length);
                     var json = JSON.parse(Response["d"]);
@@ -350,7 +376,7 @@ export class EshbozComponent implements OnInit {
                     this.eshpoz = JSON.parse(json["DepartEshpozim"]);
                     this.kabalot = JSON.parse(json["DepartKblot"]);
                     this.kabalotPast = JSON.parse(json["DepartKblotPast"]);
-                    
+
                     this.eshpozPast = JSON.parse(json["DepartEshpozimPast"]);
                     this.departPast = JSON.parse(json["DepartNamePast"]);
                     this.departBedsIn = JSON.parse(json["DepartBeds"]);
@@ -363,10 +389,10 @@ export class EshbozComponent implements OnInit {
                     this.depart7ozremTot = JSON.parse(json["Eshpoz7ozer"]);
                     this.depart7ozremPastTot = JSON.parse(json["Eshpoz7ozerPast"]);
                     //debugger
-                    if(this.Depart[0] == "-1"){
+                    if (this.Depart[0] == "-1") {
                         this.pasttoshow = false;
 
-                    }else{
+                    } else {
                         this.pasttoshow = true;
                     }
                     setTimeout(() => {
@@ -402,8 +428,8 @@ export class EshbozComponent implements OnInit {
         $("#loader").removeClass("d-none");
         this.http
             .post(environment.url + "GetEshbozemApp", {
-            
-            //.post(environment.url + "GetEshbozemApp", {
+
+                //.post(environment.url + "GetEshbozemApp", {
                 _fromDate: _startDate,
                 _toDate: _endDate,
                 _pageIndex: _pageIndex,
