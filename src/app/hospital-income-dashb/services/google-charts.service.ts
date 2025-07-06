@@ -3327,36 +3327,50 @@ public async renderDepartmentButtons({
         wrapper.style.marginBottom = '40px';
         wrapper.style.textAlign = 'center';
         
-        // Add group title
-        const heading = document.createElement('h2');
-        heading.textContent = groupName;
-        wrapper.appendChild(heading);
-        
-        // ⬇ Dynamically create chart containers BEFORE drawing
-        for (const kind of chartKinds) {
-          const chartId = `groupchart-${groupSlug}-${kind}`;
-          const chartDiv = document.createElement('div');
-          chartDiv.id = chartId;
-          chartDiv.classList.add('group-chart');
-          chartDiv.style.marginBottom = '30px';
-          wrapper.appendChild(chartDiv);
-        }
-        
-        // Add dept chart container
-        const deptChartDiv = document.createElement('div');
-        deptChartDiv.id = `deptchart-${groupSlug}`;
-        wrapper.appendChild(deptChartDiv);
-        
-        // Clear and append wrapper to main container
-        chartContainer.innerHTML = '';
-        chartContainer.appendChild(wrapper);
-        
-        // ✅ Get reference AFTER insertion
-        const deptChartContainer = document.getElementById(`deptchart-${groupSlug}`);
-        if (!deptChartContainer) {
-          console.warn(`❌ Missing deptChartContainer: #deptchart-${groupSlug}`);
-          return;
-        }
+       // Clear and prepare chart container
+chartContainer.innerHTML = '';
+
+// Create main wrapper for the group
+// const wrapper = document.createElement('div');
+// const groupSlug = groupName.toLowerCase().replace(/\s+/g, '-');
+
+// Add group title
+const heading = document.createElement('h2');
+heading.textContent = groupName;
+wrapper.appendChild(heading);
+
+// ⬇ Dynamically create chart containers BEFORE drawing
+for (const kind of chartKinds) {
+  const chartId = `groupchart-${groupSlug}-${kind}`;
+  const chartDiv = document.createElement('div');
+  chartDiv.id = chartId;
+  chartDiv.classList.add('group-chart');
+  chartDiv.style.marginBottom = '30px';
+  wrapper.appendChild(chartDiv);
+}
+
+// Add dept chart container
+const deptChartDiv = document.createElement('div');
+deptChartDiv.id = `deptchart-${groupSlug}`;
+
+// Inject your reusable HTML template into deptChartDiv
+const layoutWrapper = document.createElement('div');
+layoutWrapper.innerHTML = this.getDeptGroupHtml(groupSlug);
+deptChartDiv.appendChild(layoutWrapper);
+
+// Append the deptChartDiv into the wrapper
+wrapper.appendChild(deptChartDiv);
+
+// Append everything to the main chart container
+chartContainer.appendChild(wrapper);
+
+// ✅ Get reference AFTER insertion (if needed for follow-up logic)
+const deptChartContainer = document.getElementById(`deptchart-${groupSlug}`);
+if (!deptChartContainer) {
+  console.warn(`❌ Missing deptChartContainer: #deptchart-${groupSlug}`);
+  return;
+}
+
         
        
         for (const kind of chartKinds) {
@@ -3402,20 +3416,21 @@ console.log('me');
           chartContainer.innerHTML = '<p>No valid department data found.</p>';
           return;
         }
-      
-        // 🔧 Setup containers
-        // chartContainer.innerHTML = '';
-        // const buttonBar = document.createElement('div');
-        // const chartZone = document.createElement('div');
-        // chartContainer.appendChild(buttonBar);
-        // chartContainer.appendChild(chartZone);
+    
+       
       
         // 🔧 Setup containers inside deptChartDiv (✅ safe!)
-deptChartDiv.innerHTML = '';
-const buttonBar = document.createElement('div');
-const chartZone = document.createElement('div');
-deptChartDiv.appendChild(buttonBar);
-deptChartDiv.appendChild(chartZone);
+        const deptDynamicArea = document.getElementById(`dept-dynamic-${groupSlug}`);
+        if (!deptDynamicArea) {
+          console.warn(`❌ Missing dynamic container: #dept-dynamic-${groupSlug}`);
+          return;
+        }
+        deptDynamicArea.innerHTML = ''; // ✅ Now safe to clear this area only
+        
+        const buttonBar = document.createElement('div');
+        const chartZone = document.createElement('div');
+        deptChartDiv.appendChild(buttonBar);
+        deptChartDiv.appendChild(chartZone);
 
 
         // 🧩 Create buttons and render logic
@@ -3460,20 +3475,38 @@ deptChartDiv.appendChild(chartZone);
         
           // 📌 OnClick: render charts
           button.onclick = () => {
-            chartZone.innerHTML = `
+            const deptSlug = dept.id.toLowerCase().replace(/\s+/g, '-');
+            const wrapperId = `dept-wrapper-${deptSlug}`;
+          
+            // 🛑 Prevent adding duplicate layout
+            let deptWrapper = document.getElementById(wrapperId);
+            if (!deptWrapper) {
+              deptWrapper = document.createElement('div');
+              deptWrapper.id = wrapperId;
+              deptWrapper.innerHTML = this.getDepartmentLayoutHtml(deptSlug);
+              chartZone.appendChild(deptWrapper);
+            }
+          
+            // ✅ Inject into the dynamic placeholder inside the layout
+            const dynamicArea = deptWrapper.querySelector(`#dept-dynamic-${deptSlug}`);
+            if (!dynamicArea) return;
+          
+            dynamicArea.innerHTML = `
               <h3 style="margin-top:20px;"><center>${dept.name}</center></h3>
-              <div id="${chartId}" style="height: 300px;"></div>
-              <div id="${timeId}" style="height: 300px; margin-top: 20px;"></div>
-              <div id="${gaugeId}" style="height: 220px; margin-top: 20px;"></div>
+              <div id="dept-${dept.id}-chart" style="height: 300px;"></div>
+              <div id="dept-${dept.id}-time" style="height: 300px; margin-top: 20px;"></div>
+              <div id="dept-${dept.id}-gauge" style="height: 220px; margin-top: 20px;"></div>
             `;
-        
-            this.renderDepartmentChart(dept.name, chartId, groupName, {
+          
+            // ✅ Render chart using the known IDs
+            this.renderDepartmentChart(dept.name, `dept-${dept.id}-chart`, groupName, {
               includeTimeSeries: true,
-              timeSeriesElementId: timeId,
+              timeSeriesElementId: `dept-${dept.id}-time`,
               includeGaugeOverlay: true,
-              gaugeElementId: gaugeId
+              gaugeElementId: `dept-${dept.id}-gauge`
             });
           };
+          
         
           buttonBar.appendChild(button);
         
@@ -3705,6 +3738,126 @@ private async drawEntityChartUnified(
   }
 }
 
+
+
+// dubug added
+// private async drawEntityChartUnified(
+//   config: {
+//     entityType: 'group' | 'department';
+//     chartKind: 'bar' | 'line' | '3y' | 'op3y' | 'quarterly' | 'timeavg' | 'gauge' | 'exploitation' | 'dualgauge' | 'combined';
+//     id: string; // groupName or deptId
+//     elementId: string;
+//     extraParams?: { [key: string]: string };
+//     titlePrefix?: string;
+//     dataSourceOverride?: string;
+//     optionsOverride?: any;
+//   }
+// ): Promise<void> {
+//   await this.chartsReady;
+
+//   const {
+//     entityType,
+//     chartKind,
+//     id,
+//     elementId,
+//     extraParams = {},
+//     titlePrefix = '',
+//     dataSourceOverride,
+//     optionsOverride = {}
+//   } = config;
+
+//   const baseParams: any = {
+//     format: 'google',
+//     groupBy: 'month',
+//     ...extraParams
+//   };
+
+//   if (entityType === 'group') {
+//     baseParams.groupName = id;
+//   } else {
+//     baseParams.deptId = id;
+//   }
+
+//   const dataSource = dataSourceOverride ?? this.DATA_SOURCES.INCOME;
+//   const queryString = new URLSearchParams(baseParams).toString();
+//   const fullUrl = `${dataSource}?${queryString}`;
+
+//   try {
+//     console.log(`📡 [drawEntityChartUnified] Requesting ${chartKind} data for ${entityType} (${id})`);
+//     console.log('➡️ URL:', fullUrl);
+
+//     const response = await this.http.get(fullUrl, { responseType: 'text' }).toPromise();
+//     console.log('📨 Raw response:', response);
+
+//     const clean = sanitizeSoapResponse(response);
+//     console.log('🧼 Sanitized response:', clean);
+
+//     let chartData: any = [];
+
+//     if (chartKind === '3y' || chartKind === 'op3y') {
+//       chartData = convertHebrewMonthsToNumbers(clean);
+//     } else if (['quarterly', 'timeavg', 'gauge', 'exploitation'].includes(chartKind)) {
+//       // Handled later
+//     } else {
+//       chartData = this.extractGoogleChartData(clean);
+//     }
+
+//     if (chartData) {
+//       console.log('📊 Parsed chartData:', chartData);
+//     }
+
+//     const title = `${titlePrefix}${entityType === 'group' ? 'Group' : 'Department'}: ${id}`;
+
+//     switch (chartKind) {
+//       case 'bar':
+//         this.renderBarChart(chartData, elementId, { title, ...optionsOverride });
+//         break;
+//       case 'line':
+//         this.renderLineChart(chartData, elementId, { title, ...optionsOverride });
+//         break;
+//       case '3y':
+//         this.drawChart3Y(chartData, elementId, { title, ...optionsOverride });
+//         break;
+//       case 'op3y':
+//         this.drawOpChart3Y(chartData, elementId, { title, ...optionsOverride });
+//         break;
+//       case 'quarterly':
+//         const qData = this.processQuartalData(clean);
+//         console.log('📊 Quarterly data:', qData);
+//         this.drawBarChartQ(qData, elementId, optionsOverride);
+//         break;
+//       case 'timeavg':
+//         const processed = this.processTimeAvgData(clean);
+//         console.log('📊 Time average data:', processed);
+//         await this.drawTimeAvgChart(elementId, optionsOverride, processed.selectedTypes || {});
+//         break;
+//       case 'gauge':
+//         console.log('📊 Gauge data:', clean);
+//         await this.drawChartGauge(clean, elementId, optionsOverride);
+//         break;
+//       case 'dualgauge':
+//         this.drawDualArcGaugeChart(chartData, elementId, optionsOverride);
+//         break;
+//       case 'combined':
+//         this.drawCombinedChart(chartData, elementId, optionsOverride);
+//         break;
+//       case 'exploitation':
+//         const dt = this.processExploitationData(clean);
+//         console.log('📊 Exploitation data:', dt);
+//         this.renderExploitationChart(dt, elementId, optionsOverride);
+//         break;
+//       default:
+//         console.warn(`❌ Unsupported chartKind: ${chartKind}`);
+//         break;
+//     }
+//   } catch (err) {
+//     console.error(`❌ Failed to draw ${chartKind} chart for ${entityType} (${id})`, err);
+//     const el = document.getElementById(elementId);
+//     if (el) el.innerHTML = `Failed to load chart`;
+//   }
+// }
+
+
 async drawDualArcGaugeChart(data: any[][], elementId: string, options: any = {}): Promise<void> {
   const chart = new google.visualization.Gauge(document.getElementById(elementId));
   const dataTable = google.visualization.arrayToDataTable(data);
@@ -3829,6 +3982,140 @@ private async drawEntityChart(
     const el = document.getElementById(elementId);
     if (el) el.innerHTML = `Failed to load ${type} chart.`;
   }
+}
+
+
+private getDeptGroupHtml(slug: string): string {
+  return `
+    <div class="row">
+      <div class="mdc-layout-grid__cell col-md-12">        
+        <h3 style="text-align: center;">הכנסות כללי קבוצת מחלקות</h3>
+        <div class="row">
+          <div class="mdc-layout-grid__cell col-md-6">
+            <div class="card card--outlined card text-center">
+              <h6 class="card-title-custom">הכנסות שנתיות</h6>
+              <div id="bar_chart-${slug}" style="width: 100%; height: 400px;">טוען נתונים...</div>
+              <div class="ctrl-placeholder"></div>
+            </div>
+          </div>
+          <div class="mdc-layout-grid__cell col-md-3">
+            <div class="card text-center">
+              <h6 class="card-title-custom">הכנסות נומינליות ושינוי</h6>
+              <div id="tabled_chart-${slug}" style="width: 100%; height: 300px; padding:0 20px; margin-top: 40px;">טוען נתונים...</div>
+              <div id="tabled_chart2-${slug}" style="width: 100%; padding:0 20px;">טוען נתונים...</div>
+            </div>
+          </div>
+          <div class="mdc-layout-grid__cell col-md-3">
+            <div class="card text-center">
+              <h6 class="card-title-custom">הכנסות</h6>
+              <div id="gauge_chart-${slug}" style="display:none;"></div>
+              <div id="arc_chart-${slug}" style="width: 100%; height: 370px;"></div>
+              <div class="ctrl-placeholder"></div>
+            </div>
+          </div>
+        </div>
+
+        <h3 style="text-align: center;">מחלקות</h3>
+        <div class="row text-center">
+          <h6 class="col-md-12">* נתונים כספיים מעודכנים ב-10 לחודש עבור חודש קודם</h6>
+          <div class="mdc-layout-grid__cell col-md-6">
+            <div class="card text-center">
+              <h6 class="card-title-custom">הכנסות קבוצות מחלקות</h6>
+              <div id="incomedeptslastmonthv-${slug}" style="width: 100%; height: 460px;">טוען נתונים...</div>
+              <div class="ctrl-placeholder"></div>
+            </div>
+          </div>
+          <div class="mdc-layout-grid__cell col-md-6">
+            <div class="card text-center">
+              <h6 class="card-title-custom">הכנסות חודשיות (חודשים רצופים)</h6>
+              <div id="bar_chart2-${slug}" style="width: 100%; height: 460px;">טוען נתונים...</div>
+              <div class="ctrl-placeholder"></div>
+            </div>
+          </div>
+        </div>
+
+        <h2 style="text-align: center;">3 שנים אחרונות</h2>
+        <div class="row text-center">
+          <h6 class="col-md-12">* נתונים כספיים מעודכנים ב-10 לחודש עבור חודש קודם</h6>
+          <div class="mdc-layout-grid__cell col-md-12">
+            <div class="card text-center">
+              <div id="growth_trend_chart-${slug}" style="width: 100%; height: 500px;">טוען נתונים...</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="height:60px;"></div>        
+      </div>
+    </div>
+    <div id="dept-dynamic-${slug}"></div>
+  `;
+}
+
+
+private getDepartmentLayoutHtml(slug: string): string {
+  return `
+    <div class="row">
+      <div class="mdc-layout-grid__cell col-md-12">        
+        <h3 style="text-align: center;">הכנסות כלליות - מחלקה</h3>
+        <div class="row">
+          <div class="mdc-layout-grid__cell col-md-6">
+            <div class="card card--outlined card text-center">
+              <h6 class="card-title-custom">הכנסות שנתיות</h6>
+              <div id="bar_chart-${slug}" style="width: 100%; height: 400px;">טוען נתונים...</div>
+              <div class="ctrl-placeholder"></div>
+            </div>
+          </div>
+          <div class="mdc-layout-grid__cell col-md-3">
+            <div class="card text-center">
+              <h6 class="card-title-custom">נומינלי ושינוי</h6>
+              <div id="tabled_chart-${slug}" style="width: 100%; height: 300px; padding:0 20px; margin-top: 40px;">טוען נתונים...</div>
+              <div id="tabled_chart2-${slug}" style="width: 100%; padding:0 20px;">טוען נתונים...</div>
+            </div>
+          </div>
+          <div class="mdc-layout-grid__cell col-md-3">
+            <div class="card text-center">
+              <h6 class="card-title-custom">הכנסות מדודות</h6>
+              <div id="gauge_chart-${slug}" style="display:none;"></div>
+              <div id="arc_chart-${slug}" style="width: 100%; height: 370px;"></div>
+              <div class="ctrl-placeholder"></div>
+            </div>
+          </div>
+        </div>
+
+        <h3 style="text-align: center;">גרפים וניתוחים</h3>
+        <div class="row text-center">
+          <h6 class="col-md-12">* נתונים מעודכנים ל-10 בכל חודש עבור חודש קודם</h6>
+          <div class="mdc-layout-grid__cell col-md-6">
+            <div class="card text-center">
+              <h6 class="card-title-custom">הכנסות לפי חודש אחרון</h6>
+              <div id="incomedeptslastmonthv-${slug}" style="width: 100%; height: 460px;">טוען נתונים...</div>
+              <div class="ctrl-placeholder"></div>
+            </div>
+          </div>
+          <div class="mdc-layout-grid__cell col-md-6">
+            <div class="card text-center">
+              <h6 class="card-title-custom">הכנסות חודשיות (רצופות)</h6>
+              <div id="bar_chart2-${slug}" style="width: 100%; height: 460px;">טוען נתונים...</div>
+              <div class="ctrl-placeholder"></div>
+            </div>
+          </div>
+        </div>
+
+        <h2 style="text-align: center;">3 שנים אחרונות</h2>
+        <div class="row text-center">
+          <h6 class="col-md-12">* מידע פיננסי מתעדכן ב-10 לכל חודש</h6>
+          <div class="mdc-layout-grid__cell col-md-12">
+            <div class="card text-center">
+              <div id="growth_trend_chart-${slug}" style="width: 100%; height: 500px;">טוען נתונים...</div>
+            </div>
+          </div>
+        </div>
+
+        <div id="dept-dynamic-${slug}" class="ctrl-placeholder" style="margin-top: 40px;"></div>
+        <div style="height:60px;"></div>        
+      </div>
+    </div>
+  `;
 }
 
 
