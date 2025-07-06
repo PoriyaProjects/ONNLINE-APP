@@ -20,4 +20,27 @@
   }
   
 
-  #deptgroups button, .department-button{border-radius: 10%; padding:10px 20px; border-color: #34495e;}
+  #deptgroups button, .department-button, .dept-button{border-radius: 10%; padding:10px 20px; border-color: #34495e;}
+
+
+  #deptgroups {
+    display: flex;
+    flex-wrap: nowrap;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .dept-button {
+    font-size: 14px;
+    color: white;
+    font-weight: 500;
+    border: none;
+    border-radius: 8px;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    box-sizing: border-box;
+    cursor: pointer;
+  }
+  

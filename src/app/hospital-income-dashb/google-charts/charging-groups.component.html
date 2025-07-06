@@ -4,26 +4,12 @@
     <button
       *ngFor="let btn of departmentButtons"
       class="department-button"
-      [style.background-color]="btn.color"
+      [style.background-color]="btn.color"      
       (click)="onDepartmentClick(btn.department)">
       {{ btn.department }}
     </button>
   </div>
   
-
-  <!-- <div id="deptgroups" class="button-container">
-    <button
-      *ngFor="let btn of departmentButtons"
-      mat-raised-button
-      color="primary"
-      [ngStyle]="{ 'background-color': btn.color }"
-      class="dept-button"
-      (click)="onDepartmentClick(btn.department)"
-    >
-      <mat-icon class="button-icon">analytics</mat-icon>
-      {{ btn.department }}
-    </button>
-  </div> -->
 
   
   <div id="deptChart" style="width: 100%; height: 400px; margin-top: 20px;"></div>

@@ -519,6 +519,7 @@ const maskConfig: Partial<IConfig> = {
     CommercialSupportGatheringComponent,
     HospitalIncomeDashbComponent,
     FilterDepartsPipe,
+    //HospitalIncomeDashbComponent,
   ],
   imports: [
     MatIconModule,
