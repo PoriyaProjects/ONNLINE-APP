@@ -124,11 +124,11 @@
             </mat-card-content>
             <div class="row" style="justify-content: left;">
                 <button mat-raised-button class="submitBtn" matTooltip="שמירה כטיוטה"
-                    [disabled]="GatheringRequestDto.get('Requester')?.value == null" (click)="submitForm(0)">שמירה
+                    [disabled]="GatheringRequestDto.get('Requester')?.value == null" (click)="submitForm(1)">שמירה
                     כטיוטה</button>
                 <button mat-raised-button class="submitBtn2" matTooltip="שמירה והגשה"
                     [disabled]="GatheringRequestDto.get('Requester')?.value == null || GatheringRequestDto.invalid"
-                    (click)="submitForm(1)">שמירה והגשה</button>
+                    (click)="submitForm(0)">שמירה והגשה</button>
             </div>
         </mat-card>
 
