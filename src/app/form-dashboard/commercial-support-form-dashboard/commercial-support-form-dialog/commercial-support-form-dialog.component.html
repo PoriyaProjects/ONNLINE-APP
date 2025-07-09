@@ -210,13 +210,20 @@
               <!-- File Input 1 -->
               <div style="text-align: right;">
                 <label>מכתב תמיכה מהחברה*</label><br>
-                <input type="file" (change)="onFileChange($event, 'SupportLetter')"
+                <input type="file" (change)="onFileChange($event, 'SupportLetter')" multiple
                   accept=".doc,.docx,.xls,.xlsx,.pdf,image/*" required>
-                <button mat-raised-button class="fileOpenBtn" color="primary" (click)="file_in_new_window_base64()"
+                <div *ngIf="SupportRequestDto.get('SupportLetter')?.value?.length">
+                  <div *ngFor="let file of SupportRequestDto.get('SupportLetter').value; let i = index">
+                    <button mat-button color="primary" (click)="file_in_new_window_base64(file)">
+                      {{ file.fileName == undefined ? i + 1 : file.fileName }} <mat-icon>visibility</mat-icon>
+                    </button>
+                  </div>
+                </div>
+                <!-- <button mat-raised-button class="fileOpenBtn" color="primary" (click)="file_in_new_window_base64()"
                   *ngIf="SupportRequestDto.get('SupportLetter').value != undefined && SupportRequestDto.get('SupportLetter').value != ''">
                   צפייה במסמך
                   <span class="material-icons"> zoom_in </span>
-                </button>
+                </button> -->
               </div><br>
 
               <!-- File Input 2 -->
@@ -260,11 +267,11 @@
           </mat-card-content>
           <div class="row" style="justify-content: left;">
             <button mat-raised-button class="submitBtn" matTooltip="שמירה כטיוטה"
-              [disabled]="SupportRequestDto.get('Requester')?.value == null" (click)="submitForm(0)">שמירה
+              [disabled]="SupportRequestDto.get('Requester')?.value == null" (click)="submitForm(1)">שמירה
               כטיוטה</button>
             <button mat-raised-button class="submitBtn2" matTooltip="שמירה והגשה"
               [disabled]="SupportRequestDto.get('Requester')?.value == null || SupportRequestDto.invalid"
-              (click)="submitForm(1)">שמירה והגשה</button>
+              (click)="submitForm(0)">שמירה והגשה</button>
           </div>
         </mat-card>
       </form>

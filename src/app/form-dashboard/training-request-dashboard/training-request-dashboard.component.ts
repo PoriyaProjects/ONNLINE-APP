@@ -38,7 +38,7 @@ export class TrainingRequestDashboardComponent implements OnInit {
 
   trainingRequests = new MatTableDataSource();
   displayedColumns: string[] = [
-    'Row_ID', 'Form_Fill_Date', 'First_Name', 'Passport_ID', 'Function_Department', 'Name_Location', 'Date', 'EApproved', 'FApproved', 'Training_Fund_Answer', 'HApproved', 'Actions'
+    'Row_ID', 'Form_Fill_Date', 'First_Name', 'Passport_ID', 'Function_Department', 'Name_Location', 'Date', 'EApproved', 'FApproved', 'Galilean_Partnership_Description', 'Training_Fund_Answer', 'HApproved', 'Actions'
   ];
   peopleList = [
     { Full_Name: 'שמעון סבח', Role: 'יו"ר הועדה' },
@@ -51,6 +51,7 @@ export class TrainingRequestDashboardComponent implements OnInit {
   @ViewChild(MatPaginator) paginator: MatPaginator;
   @ViewChild(MatSort) sort: MatSort;
   UserName = localStorage.getItem('loginUserName').toLowerCase();
+  FullName = localStorage.getItem('FirstName').toLowerCase() + ' ' + localStorage.getItem('LastName').toLowerCase();
   ID = localStorage.getItem('ID').toLowerCase();
   horizontalPosition: MatSnackBarHorizontalPosition = "start";
   verticalPosition: MatSnackBarVerticalPosition = "bottom";

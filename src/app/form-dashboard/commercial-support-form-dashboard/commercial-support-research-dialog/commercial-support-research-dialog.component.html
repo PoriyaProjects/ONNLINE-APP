@@ -95,7 +95,7 @@
             </mat-card-content>
             <div class="row" style="justify-content: left;">
                 <button mat-raised-button class="submitBtn" matTooltip="שמירה כטיוטה"
-                    [disabled]="ResearchRequestDto.get('Requester')?.value == null" (click)="submitForm(0)">שמירה
+                    [disabled]="ResearchRequestDto.get('Requester')?.value == null" (click)="submitForm(1)">שמירה
                     כטיוטה</button>
                 <button mat-raised-button class="submitBtn2" matTooltip="שמירה והגשה"
                     [disabled]="ResearchRequestDto.get('Requester')?.value == null || ResearchRequestDto.invalid"

@@ -87,22 +87,43 @@ export class CommercialSupportFormDialogComponent {
 
   onFileChange(event: Event, field: string) {
     const input = event.target as HTMLInputElement;
+    const maxSize = 2 * 1024 * 1024; // 1MB (1,024,000 bytes)
 
     if (input.files && input.files.length > 0) {
-      const file = input.files[0];
-      const reader = new FileReader();
+      const files = Array.from(input.files);
+      const base64Files: any[] = this.SupportRequestDto.get(field)?.value;
 
-      reader.onload = () => {
-        const base64 = reader.result as string;
-        // You can store the base64 string in the form
-        this.SupportRequestDto.get(field)?.setValue(base64);
-      };
+      let loadedCount = 0;
 
-      reader.onerror = (error) => {
-        console.error('Error reading file:', error);
-      };
+      files.forEach(file => {
+        if (file.size > maxSize) {
+          alert("הקובץ גדול מדי! יש להעלות קובץ עד 2MB.\nשם הקובץ: " + file.name);
+          input.value = ""; // Clear file input
+          return;
+        }
+        const reader = new FileReader();
 
-      reader.readAsDataURL(file); // Converts file to base64
+        reader.onload = () => {
+          base64Files.push({
+            FileName: file.name,
+            FileType: file.type,
+            Base64Content: reader.result as string
+          });
+
+          loadedCount++;
+
+          // Once all files are loaded
+          if (loadedCount === files.length) {
+            this.SupportRequestDto.get(field)?.setValue(base64Files);
+          }
+        };
+
+        reader.onerror = (error) => {
+          console.error('Error reading file:', error);
+        };
+
+        reader.readAsDataURL(file);
+      });
     }
   }
 
@@ -269,10 +290,9 @@ export class CommercialSupportFormDialogComponent {
     });
   }
 
-  file_in_new_window_base64() {
-    const base64String = this.SupportRequestDto.get('SupportLetter')?.value;
-    if (base64String) {
-      this.openFile(base64String);
+  file_in_new_window_base64(file) {
+    if (file.Base64Content) {
+      this.openFile(file.Base64Content);
     } else {
       console.error('No file available to open');
     }

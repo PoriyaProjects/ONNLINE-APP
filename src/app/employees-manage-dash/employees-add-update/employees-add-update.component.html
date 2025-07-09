@@ -443,8 +443,8 @@
                 <form [formGroup]="trainingsDetails" dir="rtl" autocomplete="off">
                     <ng-template matStepLabel>הכשרות</ng-template>
 
-                    <table mat-table [dataSource]="dataSource" class="mat-elevation-z2 w-full"
-                        formArrayName="trainings">
+                    <table mat-table [dataSource]="dataSource" class="mat-elevation-z2 w-full" formArrayName="trainings"
+                        *ngIf="dataSource.filteredData.length > 0">
                         <!-- TrainingSubject -->
                         <ng-container matColumnDef="TrainingSubject">
                             <th mat-header-cell *matHeaderCellDef>שם הכשרה</th>
@@ -457,7 +457,7 @@
 
                         <!-- StartDate -->
                         <ng-container matColumnDef="StartDate">
-                            <th mat-header-cell *matHeaderCellDef>תאריך התחלה</th>
+                            <th mat-header-cell *matHeaderCellDef>תאריך ביצוע</th>
                             <td mat-cell *matCellDef="let row; let i = index" [formGroupName]="i">
                                 <mat-form-field appearance="outline" class="w-full">
                                     <input matInput [matDatepicker]="picker1" formControlName="StartDate"
@@ -470,7 +470,7 @@
 
                         <!-- EndDate -->
                         <ng-container matColumnDef="EndDate">
-                            <th mat-header-cell *matHeaderCellDef>תאריך סיום</th>
+                            <th mat-header-cell *matHeaderCellDef>תאריך פג תוקף</th>
                             <td mat-cell *matCellDef="let row; let i = index" [formGroupName]="i">
                                 <mat-form-field appearance="outline" class="w-full">
                                     <input matInput [matDatepicker]="picker2" formControlName="EndDate"

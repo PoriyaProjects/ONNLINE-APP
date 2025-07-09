@@ -87,7 +87,7 @@ export class CommercialSupportFormDashboardComponent {
     const value = (event.target as HTMLInputElement).value.trim().toLowerCase();
     this.searchValue = value;
     this.supportRequests.filterPredicate = (data: any, filter: string) =>
-      data.requester.toLowerCase().includes(filter);
+      data.Requester.toLowerCase().includes(filter);
     this.supportRequests.filter = this.searchValue;
   }
 
