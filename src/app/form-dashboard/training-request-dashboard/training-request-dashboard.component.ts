@@ -38,7 +38,7 @@ export class TrainingRequestDashboardComponent implements OnInit {
 
   trainingRequests = new MatTableDataSource();
   displayedColumns: string[] = [
-    'Row_ID', 'Form_Fill_Date', 'First_Name', 'Passport_ID', 'Function_Department', 'Name_Location', 'Date', 'EApproved', 'FApproved', 'Galilean_Partnership_Description', 'Training_Fund_Answer', 'HApproved', 'Actions'
+    'Row_ID', 'Form_Fill_Date', 'First_Name', 'Passport_ID', 'Function_Department', 'Name_Location', 'Date', 'EApproved', 'FApproved', 'Training_Fund_Answer', 'Galilean_Partnership_Description', 'HApproved', 'Actions'
   ];
   peopleList = [
     { Full_Name: 'שמעון סבח', Role: 'יו"ר הועדה' },
@@ -304,8 +304,8 @@ export class TrainingRequestDashboardComponent implements OnInit {
         </div><br><br><br><br><br><br>
         <div>
         	<p style="margin: 0px">העתקים:</p>
-        	<p style="margin: 0px">הנהלת המרכז הרפואי</p>
-        	<p style="margin: 0px">${data['E'].Supervisor_Name.lastname}</p>
+        	<p style="margin: 0px">${data['F'].Supervisor_Name.lastname} - מנהל עקיף</p>
+        	<p style="margin: 0px">${data['E'].Supervisor_Name.lastname} - מנהל ישיר</p>
         	<p style="margin: 0px">מחלקת משאבי אנוש</p>
         </div>
     </body>
