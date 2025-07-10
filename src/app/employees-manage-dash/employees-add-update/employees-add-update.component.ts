@@ -214,8 +214,6 @@ export class EmployeesAddUpdateComponent implements OnInit {
           Toranot: new FormControl(this.employee.Toranot, null),
           ManagerID1: new FormControl({ id: this.employee.ManagerID1.id, firstname: "", lastname: "", ADUserName: "" }, null),
           ManagerID2: new FormControl({ id: this.employee.ManagerID2.id, firstname: "", lastname: "", ADUserName: "" }, null),
-          JcpFromDate: new FormControl(this.employee.JcpFromDate, null),
-          JcpToDate: new FormControl(this.employee.JcpToDate, null),
         });
         if (this.employee.RowID == null || this.employee.StatusRow == "1") {
           this.employeePersonalDetails.controls['FirstNameEng'].setValidators(Validators.required);
@@ -559,8 +557,6 @@ export class EmployeesAddUpdateComponent implements OnInit {
               Toranot: new FormControl(this.employee.Toranot, null),
               ManagerID1: new FormControl(this.employee.ManagerID1, null),
               ManagerID2: new FormControl(this.employee.ManagerID2, null),
-              JcpFromDate: new FormControl(this.employee.JcpFromDate, null),
-              JcpToDate: new FormControl(this.employee.JcpToDate, null),
             });
             this._switchHTOK = this.employee.StatusRow;
             this._switchBlossom = this.employee.ApprovedToBlossom;
@@ -600,6 +596,15 @@ export class EmployeesAddUpdateComponent implements OnInit {
     this.gymDetails.controls['EndGymDate'].setValue(pipe.transform(this.gymDetails.controls['EndGymDate'].value, 'yyyy-MM-dd'));
   }
 
+  setTrainingEndTime(index) {
+    let pipe = new DatePipe('en-US');
+    let month = new Date(this.trainingsDetails.controls.trainings['controls'][index].controls.StartDate.value);
+    this.trainingsDetails.controls.trainings['controls'][index].controls.EndDate.setValue(new Date());
+    this.trainingsDetails.controls.trainings['controls'][index].controls.EndDate.value.setYear(month.getFullYear() + 2);
+    this.trainingsDetails.controls.trainings['controls'][index].controls.EndDate.value.setDate(month.getDate());
+    this.trainingsDetails.controls.trainings['controls'][index].controls.EndDate.setValue(pipe.transform(this.trainingsDetails.controls.trainings['controls'][index].controls.EndDate.value, 'yyyy-MM-dd'));
+  }
+
   saveEmployee() {
     this.employeeWorkDetails.controls['EmployeeIndex'].setValue(this.getEmployeeIndex());
     let pipe = new DatePipe('en-US');
@@ -610,8 +615,6 @@ export class EmployeesAddUpdateComponent implements OnInit {
     this.employeePersonalDetails.controls['DateOfBirth'].setValue(pipe.transform(this.employeePersonalDetails.controls['DateOfBirth'].value, 'yyyy-MM-dd'));
     this.gymDetails.controls['StartGymDate'].setValue(pipe.transform(this.gymDetails.controls['StartGymDate'].value, 'yyyy-MM-dd'));
     this.gymDetails.controls['PaymentDate'].setValue(pipe.transform(this.gymDetails.controls['PaymentDate'].value, 'yyyy-MM-dd'));
-    this.employeeWorkDetails.controls['JcpFromDate'].setValue(pipe.transform(this.employeeWorkDetails.controls['JcpFromDate'].value, 'yyyy-MM-dd'));
-    this.employeeWorkDetails.controls['JcpToDate'].setValue(pipe.transform(this.employeeWorkDetails.controls['JcpToDate'].value, 'yyyy-MM-dd'));
     if (this.employeeWorkDetails.controls['StatusRow'].value == null || this.employeeWorkDetails.controls['StatusRow'].value == "0") {
       this.employeeWorkDetails.controls['StatusRow'].setValue('0');
       this.employeePersonalDetails.controls['FirstNameEng'].setValidators(null);

@@ -16,9 +16,13 @@
     <mat-sidenav-content class="sidenav-content" *ngIf="employee_service_action != undefined">
         <mat-toolbar>
             <div class="row" style="width: 100%;">
-                <div class="col-4 text-right">
+                <div class="col-4 col-btns">
                     <button mat-raised-button (click)="returnToHome()" style="background-color: #e9e311;">
                         <mat-icon>home</mat-icon>
+                    </button>
+                    <button mat-raised-button style="background-color: #fff;" (click)="openFixedMessagesDialog()"
+                        *ngIf="user_name == 'adahabre'">
+                        <mat-icon>list</mat-icon>
                     </button>
                 </div>
                 <div class="col-4 text-center">
@@ -221,4 +225,30 @@
         </mat-dialog-actions>
     </div>
 
+</ng-template>
+
+<ng-template #fixedMessagesDialog let-dialogRef="dialogRef" dir="rtl">
+    <h2 mat-dialog-title class="text-center">הודעות קבועות</h2>
+    <hr>
+    <mat-dialog-content>
+        <mat-list dir="rtl">
+            <mat-list-item *ngFor="let msg of fixed_messages_list">
+                <!-- <div class="row"> -->
+                <div class="col-10 text-right">
+                    <span (click)="selectFixedMessage(msg, dialogRef)" style="cursor:pointer;">{{msg.text}}</span>
+                </div>
+                <div class="col-2">
+                    <button mat-icon-button (click)="editFixedMessage(msg)">
+                        <mat-icon>edit</mat-icon>
+                    </button>
+                    <button mat-icon-button (click)="removeFixedMessage(msg)">
+                        <mat-icon>delete</mat-icon>
+                    </button>
+                </div>
+                <!-- </div> -->
+            </mat-list-item>
+        </mat-list>
+        <hr>
+        <button mat-raised-button color="primary" (click)="addFixedMessage()">הוסף הודעה</button>
+    </mat-dialog-content>
 </ng-template>
