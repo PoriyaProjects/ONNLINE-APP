@@ -33,6 +33,7 @@ export class WhatsappDepartmentsDashboardComponent implements OnInit {
   contacts = [];
   contacts_filter = [];
   fixed_files_list = [];
+  fixed_messages_list = [];
   unAnsweredConversations = [];
   selectedFile: File | null = null;
   unAnsweredConversations_filter = [];
@@ -50,6 +51,7 @@ export class WhatsappDepartmentsDashboardComponent implements OnInit {
   employee_service_action: any;
   services = [];
   loading_message = "";
+  @ViewChild('fixedMessagesDialog', { static: true }) fixedMessagesDialog: TemplateRef<any>;
 
   constructor(
     private fb: FormBuilder,
@@ -589,6 +591,50 @@ export class WhatsappDepartmentsDashboardComponent implements OnInit {
 
     // Unknown file type
     return 'unknown';
+  }
+
+  getDepartmentsWhatsAppServiceFixedMessages() {
+    this.http
+      .post(environment.url + "GetDepartmentsWhatsAppServiceFixedMessages", {
+        _user_name: this.user_name
+      })
+      .subscribe((Response) => {
+        this.fixed_messages_list = Response['d'];
+      });
+  }
+
+  openFixedMessagesDialog() {
+    // this.getDepartmentsWhatsAppServiceFixedMessages();
+    this.dialog.open(this.fixedMessagesDialog, { width: '40%' });
+  }
+
+  addFixedMessage() {
+    const text = prompt('הזן הודעה חדשה:');
+    if (text && text.trim()) {
+      // Save to backend if needed, here just add to the list for demo
+      this.fixed_messages_list.push({ text });
+      // TODO: Call backend to persist
+    }
+  }
+
+  editFixedMessage(msg) {
+    const newText = prompt('ערוך הודעה:', msg.text);
+    if (newText && newText.trim()) {
+      msg.text = newText;
+      // TODO: Call backend to persist
+    }
+  }
+
+  removeFixedMessage(msg) {
+    if (confirm('האם אתה בטוח שברצונך למחוק?')) {
+      this.fixed_messages_list = this.fixed_messages_list.filter(m => m !== msg);
+      // TODO: Call backend to persist
+    }
+  }
+
+  selectFixedMessage(msg, dialogRef) {
+    this.newMessage.controls['Message_Text'].setValue(msg.text);
+    dialogRef.close();
   }
 
 }

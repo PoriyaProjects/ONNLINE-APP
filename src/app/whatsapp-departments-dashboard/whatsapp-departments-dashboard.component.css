@@ -30,7 +30,7 @@ mat-sidenav-container {
 }
 
 mat-list {
-  height: 70vh;
+  height: 400px;
 }
 
 mat-icon {
@@ -171,4 +171,10 @@ mat-toolbar {
 .action-name {
   font-size: 15px;
   opacity: 0.9;
+}
+
+.col-btns {
+  text-align: right;
+  display: flex;
+  gap: 20px;
 }

@@ -463,7 +463,7 @@
                                     <input matInput [matDatepicker]="picker1" formControlName="StartDate"
                                         (dateInput)="onStartDateInput($event, i)" />
                                     <mat-datepicker-toggle matSuffix [for]="picker1"></mat-datepicker-toggle>
-                                    <mat-datepicker #picker1></mat-datepicker>
+                                    <mat-datepicker #picker1 (closed)="setTrainingEndTime(i)"></mat-datepicker>
                                 </mat-form-field>
                             </td>
                         </ng-container>
@@ -514,6 +514,9 @@
                             הוסף הכשרה
                             <mat-icon>add</mat-icon>
                         </button>
+                    </div>
+                    <div>
+                        <button mat-raised-button class="btn btn-primary btn-raised" matStepperNext>הבא</button>
                     </div>
                 </form>
             </mat-step>
@@ -570,26 +573,6 @@
                                     <span *ngIf="AcceptTerms == '1'">חתם על טופס סודיות</span>
                                     <span *ngIf="AcceptTerms == '0'">לא חתם על טופס סודיות</span>
                                 </div>
-                            </div>
-                            <div class="col-3">
-                                <mat-form-field appearance="fill" class="example-full-width">
-                                    <span matPrefix>GCP מתאריך &nbsp;</span>
-                                    <input matInput formControlName="JcpFromDate" placeholder="מתאריך"
-                                        [matDatepicker]="picker7" (focus)="picker7.open()">
-                                    <mat-datepicker-toggle matSuffix [for]="picker7">
-                                    </mat-datepicker-toggle>
-                                    <mat-datepicker #picker7></mat-datepicker>
-                                </mat-form-field>
-                            </div>
-                            <div class="col-3">
-                                <mat-form-field appearance="fill" class="example-full-width">
-                                    <span matPrefix>GCP עד תאריך &nbsp;</span>
-                                    <input matInput formControlName="JcpToDate" placeholder="עד תאריך"
-                                        [matDatepicker]="picker8" (focus)="picker8.open()">
-                                    <mat-datepicker-toggle matSuffix [for]="picker8">
-                                    </mat-datepicker-toggle>
-                                    <mat-datepicker #picker8></mat-datepicker>
-                                </mat-form-field>
                             </div>
                         </div>
                     </ol>
