@@ -145,9 +145,6 @@ import { LearningRequestsDashboardComponent } from '../learning-requests-dashboa
 import { CprNewbordDashboradComponent } from '../form-dashboard/cpr-newbord-dashborad/cpr-newbord-dashborad.component';
 import { CprNewbornFormComponent } from '../form-dashboard/cpr-newbord-dashborad/cpr-newborn-form/cpr-newborn-form.component';
 import { GoogleChartsComponent } from '../hospital-cath-dashb/google-charts/google-charts.component';
-import { GraphsModalComponent2 } from '../hospital-cath-dashboard/graphs-modal/graphs-modal.component';
-import { EshpozModalComponent2 } from '../hospital-cath-dashboard/eshpoz-modal/eshpoz-modal.component';
-import { HospitalCathDashboardComponent } from '../hospital-cath-dashboard/hospital-cath-dashboard.component';
 import { CommercialSupportFormDashboardComponent } from '../form-dashboard/commercial-support-form-dashboard/commercial-support-form-dashboard.component';
 import { CommercialSupportFormDialogComponent } from '../form-dashboard/commercial-support-form-dashboard/commercial-support-form-dialog/commercial-support-form-dialog.component';
 import { CommercialSupportResearchDialogComponent } from '../form-dashboard/commercial-support-form-dashboard/commercial-support-research-dialog/commercial-support-research-dialog.component';
@@ -346,11 +343,7 @@ const routes: Routes = [
   { path: "cpr-newbord-dashborad", component: CprNewbordDashboradComponent },
   { path: "cpr-newborn-form", component: CprNewbornFormComponent },
   { path: "LabTests", component: LabTestsComponent },   
-  { path: "hospital-cath-dashb", component: GoogleChartsComponent },
-  { path: "hospitalcathdashboard", component: HospitalCathDashboardComponent },
-  { path: "GraphsModalComponent2", component: GraphsModalComponent2 },
-  { path: "EshpozModalComponent2", component: EshpozModalComponent2 },
-  { path: "EshpozModalComponent2", component: EshpozModalComponent2 },
+  { path: "hospital-cath-dashb", component: GoogleChartsComponent },  
   { path: 'clinicsrequests', component: ClinicsRequestsComponent },
   { path: 'cldashboard', component: FullPageDashboardComponent },
   { path: 'service-unit-email-list', component: ServiceUnitEmailListComponent },

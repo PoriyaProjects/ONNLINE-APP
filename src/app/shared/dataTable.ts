@@ -28,7 +28,7 @@ export class TableComponent implements OnInit {
     if (tableData.length > 0) {
       this.displayedColumns = Object.keys(tableData[0]);
 
-      const dateColumn = this.displayedColumns[1]; 
+      const dateColumn = this.displayedColumns[2]; 
       tableData = tableData.map(row => {
         const rawDate = row[dateColumn];
         const parsedDate = typeof rawDate === 'string' ? this.parseDateString(rawDate) : rawDate;
