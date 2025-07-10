@@ -391,3 +391,43 @@ export function filterLastN(data: any, n: number): any {
   return filteredData;
 }
 
+
+export function filterLastNDept(data: any, n: number): any {
+  const currentDate = new Date();
+  const currentMonth = currentDate.getMonth() + 1; // 1-based (Jan = 1)
+  const currentDay = currentDate.getDate();
+
+  // Determine how many months to exclude
+  const excludeCurrent = true;
+  const excludePrevious = currentDay < 11;
+
+  // Step 1: Calculate last N months, excluding current and possibly previous
+  const targetMonths: number[] = [];
+  let monthCursor = currentMonth - 1;
+
+  for (let i = 0; targetMonths.length < n + (excludePrevious ? 2 : 1); i++) {
+    const date = new Date(currentDate.getFullYear(), monthCursor - i);
+    const month = date.getMonth() + 1;
+    if (excludeCurrent && month === currentMonth) continue;
+    if (excludePrevious && month === (currentMonth - 1 || 12)) continue;
+    targetMonths.push(month);
+  }
+
+  // Keep only the last N months after exclusion
+  const monthsToInclude = targetMonths.slice(0, n);
+
+  // Step 2: Build result, keeping all years and including only matching months
+  const filteredData: any = {};
+
+  Object.entries(data).forEach(([yearStr, months]) => {
+    const matchedMonths: any = {};
+    monthsToInclude.forEach(month => {
+      if (months[month] !== undefined) {
+        matchedMonths[month] = months[month];
+      }
+    });
+    filteredData[yearStr] = matchedMonths; // always include year, even if empty
+  });
+
+  return filteredData;
+}
