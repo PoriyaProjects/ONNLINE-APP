@@ -24,6 +24,7 @@ export class EmployeesManageDashComponent implements OnInit, OnDestroy {
   ];
   dataSource = new MatTableDataSource(this.TABLE_DATA);
   dataSourceExcel = new MatTableDataSource(this.TABLE_DATAExcel);
+  trainingdataSourceExcel = new MatTableDataSource();
   @ViewChild(MatPaginator) paginator: MatPaginator;
   @ViewChild(MatSort) sort: MatSort;
   UserName = localStorage.getItem("loginUserName").toLowerCase();
@@ -274,7 +275,33 @@ export class EmployeesManageDashComponent implements OnInit, OnDestroy {
         this.dataSource.paginator = this.paginator;
         this.dataSource.sort = this.sort;
       });
-    if (toExcel) {
+    if (toExcel == 'tra') {
+      this.http
+        .post(this.url + "EmployeesTrainingsExcelExport", {
+          _empId: empId,
+          _empFirstName: empFirstName,
+          _empLastName: empLastName,
+          _on: on,
+          _medGrad: medGrad,
+          _phoneNumber: phoneNumber,
+          _department: department,
+          _role: role,
+          _managerType: managerType,
+          _sektor: sektor,
+          _workPlace: workPlace,
+          _statusRow: StatusRow,
+          _approvedToBlossom: ApprovedToBlossom,
+          _userName: this.UserName,
+          _InGym: InGym
+        })
+        .subscribe((Response) => {
+          this.trainingdataSourceExcel = new MatTableDataSource<any>(Response["d"]);
+          let that = this;
+          setTimeout(() => {
+            that.trainingexportexcel();
+          }, 1500);
+        });
+    } else if (toExcel) {
       this.http
         .post(this.url + "EmployeesExcelExport", {
           _empId: empId,
@@ -303,7 +330,7 @@ export class EmployeesManageDashComponent implements OnInit, OnDestroy {
     }
   }
 
-  fileName = 'Employees_List.xlsx';
+  fileName = 'רשימת עובדים.xlsx';
   exportexcel(): void {
     /* table id is passed over here */
     let element = document.getElementById('excel-table');
@@ -318,6 +345,20 @@ export class EmployeesManageDashComponent implements OnInit, OnDestroy {
 
   }
 
+  trainingfileName = 'רשימת הכשרות.xlsx';
+  trainingexportexcel(): void {
+    /* table id is passed over here */
+    let element = document.getElementById('training-excel-table');
+    const ws: XLSX.WorkSheet = XLSX.utils.table_to_sheet(element);
+
+    /* generate workbook and add the worksheet */
+    const wb: XLSX.WorkBook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
+
+    /* save to file */
+    XLSX.writeFile(wb, this.fileName);
+
+  }
   addUpdateEmployee(employee) {
     let dialogRef = this.dialog.open(EmployeesAddUpdateComponent, { disableClose: true });
     dialogRef.componentInstance.employee = employee;
