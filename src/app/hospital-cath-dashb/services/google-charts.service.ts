@@ -11,6 +11,9 @@ import { limitToRecentYears } from '../../shared/limit-utils';
 import { ChartDataPipelineService } from '../../shared/ChartDataPipelineService';
 import { drawOverlayDualArcChartHelper } from '../../shared/drawOverlayDualArcChartHelper';
 import { TableComponent  } from '../../shared/dataTable';
+import { DoctorSummaryComponent  } from '../doctor-summary.component';
+import { SurgerySummaryComponent  } from '../surgery-summary.component';
+import { RoomSummaryComponent  } from '../room-summary.component';
 
 
 
