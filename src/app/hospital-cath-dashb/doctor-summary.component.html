@@ -1,0 +1,11 @@
+<table style="margin:0 20px; width:256px; display:block;">
+    <thead style="border-bottom: solid 1px #777;width:256px; display:block;">
+      <tr><th style="text-align: right;width:140px">מנתח</th><th>נתוחים לתקופה</th></tr>
+    </thead>
+    <tbody style="height:168px; overflow-y: scroll; width:256px;display:block;">
+      <tr *ngFor="let entry of sortedDoctorTotals" style="border-bottom: solid 1px #999;">
+        <td style="text-align: right;width:200px">{{ entry.key }}</td>
+        <td style="width:25%">{{ entry.value }}</td>
+      </tr>
+    </tbody>
+  </table>

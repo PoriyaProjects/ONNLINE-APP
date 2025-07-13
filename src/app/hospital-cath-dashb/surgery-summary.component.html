@@ -1,0 +1,15 @@
+<table style="margin:0 20px; width:500px; display:block;">
+    <thead style="border-bottom: solid 1px #777;width:500px; display:block;">
+    <tr>
+      <th style="text-align: right;width:460px">סוג פרוצדורה</th>
+      <th>כמות</th>
+    </tr>
+  </thead>
+  <tbody style="height:168px; overflow-y: scroll; width:500;display:block;">
+    <tr *ngFor="let entry of surgeryCounts" style="border-bottom: solid 1px #999;">
+      <td  style="text-align: right;width:460px">{{ entry.key }}</td>
+      <td>{{ entry.value }}</td>
+    </tr>
+  </tbody>
+</table>
+

@@ -17,13 +17,16 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { TableComponent } from '../shared/dataTable';
 import { MatSortModule } from '@angular/material/sort';
+import { DoctorSummaryComponent  } from './doctor-summary.component';
+import { SurgerySummaryComponent  } from './surgery-summary.component';
+import { RoomSummaryComponent  } from './room-summary.component';
 
 const routes: Routes = [
   { path: '', component: GoogleChartsComponent },
   { path: 'data-table', component: TableComponent }
 ];
 @NgModule({
-  declarations: [GoogleChartsComponent,TableComponent],
+  declarations: [GoogleChartsComponent,TableComponent,DoctorSummaryComponent, SurgerySummaryComponent, RoomSummaryComponent],
   imports: [
     CommonModule,
     RouterModule.forChild(routes),
@@ -38,7 +41,7 @@ const routes: Routes = [
     MatCardModule,
     MatGridListModule,
     MatToolbarModule,
-    MatSortModule
+    MatSortModule    
   ]
 })
 export class HospitalCathDashbModule {}
