@@ -2292,10 +2292,11 @@ public async drawDataTable(): Promise<void> {
       return `${String(day).padStart(2, '0')}-${String(month).padStart(2, '0')}-${year}`;
     };
 
-    // ✅ New: skip formatting by column index
+    
     const shouldSkipFormatting = (idx: number): boolean => {
-      const skipIndexes = [1,9]; 
-      const shouldSkip = skipIndexes.includes(idx);      
+      const skipIndexes = [1]; 
+      const shouldSkip = skipIndexes.includes(idx);
+      
       return shouldSkip;
     };
 
@@ -2323,26 +2324,39 @@ public async drawDataTable(): Promise<void> {
         }
         // Only format if it's a string and NOT skipped
         else if (typeof value === 'string') {
-          const dateMatch = value.match(/^Date\((\d+),(\d+),(\d+)\)$/);
-          if (dateMatch) {
-            const [_, y, m, d] = dateMatch.map(Number);
-            value = formatDateToDDMMYYYY(new Date(y, m, d));
+          const isDotNetDate = /^Date\((\d+),(\d+),(\d+)\)$/.exec(value);
+          const isIsoDate = /^\d{4}-\d{2}-\d{2}$/.test(value);
+          const isFullIsoWithTime = value.includes('-') && value.includes('T');
+          const isTimeWithMs = /^\d{2}:\d{2}:\d{2}\.\d+/.test(value);
+          const isBasicTime = /^\d{1,2}:\d{2}:\d{2}$/.test(value);
+        
+          if (isIsoDate) {
+            const parsed = new Date(value);
+            value = isNaN(parsed.getTime()) ? '' : formatDateToDDMMYYYY(parsed);
           }
-          else if (/^\d{2}:\d{2}:\d{2}\.\d+/.test(value)) {
-            const timeParts = value.split(':');
-            value = `${timeParts[0]}:${timeParts[1]}`;
+        
+          else if (isDotNetDate) {
+            const [, year, month, day] = isDotNetDate.map(Number);
+            const parsed = new Date(year, month, day);
+            value = isNaN(parsed.getTime()) ? '' : formatDateToDDMMYYYY(parsed);
           }
-          else if ((idx === 3 || idx === 6 || idx === 7) && /^\d{1,2}:\d{2}:\d{2}$/.test(value)) {
-            const parts = value.split(':');
-            value = `${parts[0].padStart(2, '0')}:${parts[1]}`;
+        
+          else if (isTimeWithMs) {
+            const [hh, mm] = value.split(':');
+            value = `${hh}:${mm}`;
           }
-          else if (value.includes('-') && value.includes('T')) {
-            const isoDate = new Date(value);
-            if (!isNaN(isoDate.getTime())) {
-              value = formatDateToDDMMYYYY(isoDate);
-            }
+        
+          else if ((idx === 3 || idx === 6 || idx === 7) && isBasicTime) {
+            const [hh, mm] = value.split(':');
+            value = `${hh.padStart(2, '0')}:${mm}`;
+          }
+        
+          else if (isFullIsoWithTime) {
+            const parsed = new Date(value);
+            value = isNaN(parsed.getTime()) ? '' : formatDateToDDMMYYYY(parsed);
           }
         }
+        
       
         obj[colLabel] = value;
       });

@@ -65,8 +65,16 @@ export class TableComponent implements OnInit {
   }
 
   applyFilter(): void {
+    this.dataSource.filterPredicate = (row, filter) => {
+      const filterText = filter.toLowerCase();
+      return Object.values(row).some(value =>
+        this.getCellStringValue(value).includes(filterText)
+      );
+    };
+  
     this.dataSource.filter = this.filterValue.trim().toLowerCase();
   }
+  
 
   calculateTotals(): void {
     this.totalMap = {};
@@ -99,4 +107,18 @@ export class TableComponent implements OnInit {
 
     this.dataSource.filter = JSON.stringify(this.columnFilters); // trigger filter
   }
+
+
+  private getCellStringValue(value: any): string {
+    if (value instanceof Date) {
+      const day = value.getDate().toString().padStart(2, '0');
+      const month = (value.getMonth() + 1).toString().padStart(2, '0');
+      const year = value.getFullYear();
+      return `${day}-${month}-${year}`;
+    }
+    return value?.toString().toLowerCase() || '';
+  }
+
+  
+
 }
