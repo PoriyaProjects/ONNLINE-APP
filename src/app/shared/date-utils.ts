@@ -181,18 +181,6 @@ function generateWorkingDaysForMonth(year: number, month: number): Date[] {
   return workingDays;
 }
 
-/**
- * מחשב את ה-index של היום הנוכחי ברשימת ימי עבודה.
- */
-// function calculateCurrentWorkingDayIndex(workingDays: Date[]): number | null {
-//   const today = new Date();
-//   const index = workingDays.findIndex(d =>
-//     d.getFullYear() === today.getFullYear() &&
-//     d.getMonth() === today.getMonth() &&
-//     d.getDate() === today.getDate()
-//   );
-//   return index !== -1 ? index : null;
-// }
 
 function calculateCurrentWorkingDayIndex(workingDays: Date[]): number | null {
   const today = new Date();
@@ -312,44 +300,6 @@ export function filterOutCurrentMonth(data: any): any {
   return filteredData;
 }
 
-
-/**
- * Removes current month data from a Year-Month structured dataset and 
- * returns 4 last month data in each year.
- */
-// export function filterLastN(data: any): any {
-//   const currentDate = new Date();
-//   const currentYear = currentDate.getFullYear();
-//   const currentMonth = currentDate.getMonth() + 1; // 1-based (1 = Jan)
-
-//   // Step 1: Build last 4 months excluding current
-//   const last4Months: { year: number; month: number }[] = [];
-//   for (let i = 1; i <= 4; i++) {
-//     const date = new Date(currentYear, currentMonth - 1 - i);
-//     last4Months.push({ year: date.getFullYear(), month: date.getMonth() + 1 });
-//   }
-
-//   // Step 2: Collect matching data from all years for those months
-//   const filteredData: any = {};
-
-//   Object.keys(data).forEach(yearStr => {
-//     const year = parseInt(yearStr, 10);
-//     const months = data[yearStr];
-//     const matchedMonths: any = {};
-
-//     last4Months.forEach(({ month }) => {
-//       if (months[month] !== undefined) {
-//         matchedMonths[month] = months[month];
-//       }
-//     });
-
-//     if (Object.keys(matchedMonths).length > 0) {
-//       filteredData[year] = matchedMonths;
-//     }
-//   });
-
-//   return filteredData;
-// }
 
 export function filterLastN(data: any, n: number): any {
   const currentDate = new Date();
