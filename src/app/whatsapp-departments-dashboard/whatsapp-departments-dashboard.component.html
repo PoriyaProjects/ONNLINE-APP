@@ -17,11 +17,12 @@
         <mat-toolbar>
             <div class="row" style="width: 100%;">
                 <div class="col-4 col-btns">
-                    <button mat-raised-button (click)="returnToHome()" style="background-color: #e9e311;">
+                    <button mat-raised-button (click)="returnToHome()" style="background-color: #e9e311;"
+                        matTooltip="חזרה לדף הבית">
                         <mat-icon>home</mat-icon>
                     </button>
                     <button mat-raised-button style="background-color: #fff;" (click)="openFixedMessagesDialog()"
-                        *ngIf="user_name == 'adahabre'">
+                        matTooltip="הודעות קבועות" *ngIf="user_name == 'adahabre'">
                         <mat-icon>list</mat-icon>
                     </button>
                 </div>
@@ -228,27 +229,40 @@
 </ng-template>
 
 <ng-template #fixedMessagesDialog let-dialogRef="dialogRef" dir="rtl">
-    <h2 mat-dialog-title class="text-center">הודעות קבועות</h2>
+    <div class="dialog-header"
+        style="display: flex; justify-content: space-between; align-items: center; padding: 16px; position: relative;">
+        <div style="flex: 1;"></div>
+        <h2 mat-dialog-title class="text-center" style="margin: 0; flex: 1;">הודעות קבועות</h2>
+        <button mat-icon-button (click)="dialogRef.close()"
+            style="color: red; flex: 1; display: flex; justify-content: flex-end;">
+            <mat-icon style="color: red;">close</mat-icon>
+        </button>
+    </div>
     <hr>
     <mat-dialog-content>
-        <mat-list dir="rtl">
-            <mat-list-item *ngFor="let msg of fixed_messages_list">
-                <!-- <div class="row"> -->
-                <div class="col-10 text-right">
-                    <span (click)="selectFixedMessage(msg, dialogRef)" style="cursor:pointer;">{{msg.text}}</span>
-                </div>
-                <div class="col-2">
-                    <button mat-icon-button (click)="editFixedMessage(msg)">
-                        <mat-icon>edit</mat-icon>
-                    </button>
-                    <button mat-icon-button (click)="removeFixedMessage(msg)">
-                        <mat-icon>delete</mat-icon>
-                    </button>
-                </div>
-                <!-- </div> -->
-            </mat-list-item>
+        <mat-list class="message-list" dir="rtl">
+          <mat-divider></mat-divider>
+      
+          <mat-list-item *ngFor="let msg of fixed_messages_list" class="message-item">
+            <div class="message-content" (click)="selectFixedMessage(msg, dialogRef)">
+              {{ msg.Message_Text }}
+            </div>
+      
+            <div class="message-actions">
+              <button mat-icon-button color="primary" (click)="editFixedMessage(msg)" matTooltip="עריכה">
+                <mat-icon>edit</mat-icon>
+              </button>
+              <button mat-icon-button color="warn" (click)="removeFixedMessage(msg)" matTooltip="מחיקה">
+                <mat-icon>delete</mat-icon>
+              </button>
+            </div>
+          </mat-list-item>
+      
+          <mat-divider *ngIf="!fixed_messages_list.length"></mat-divider>
+          <p *ngIf="!fixed_messages_list.length" class="no-messages">אין הודעות להצגה</p>
         </mat-list>
-        <hr>
-        <button mat-raised-button color="primary" (click)="addFixedMessage()">הוסף הודעה</button>
-    </mat-dialog-content>
+      </mat-dialog-content>
+      
+    <hr>
+    <button mat-raised-button color="primary" (click)="addFixedMessage()">הוסף הודעה</button>
 </ng-template>
