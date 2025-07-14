@@ -593,10 +593,12 @@ export class WhatsappDepartmentsDashboardComponent implements OnInit {
     return 'unknown';
   }
 
-  getDepartmentsWhatsAppServiceFixedMessages() {
+  saveEditFixedMessagesWhatsappDepartments(fixed_message) {
     this.http
-      .post(environment.url + "GetDepartmentsWhatsAppServiceFixedMessages", {
-        _user_name: this.user_name
+      .post(environment.url + "SaveEditFixedMessagesWhatsappDepartments", {
+        fixed_message: fixed_message,
+        ServiceIDFK: this.employee_service_action.Service_Order,
+        ActionIDFK: this.employee_service_action.Action_Order
       })
       .subscribe((Response) => {
         this.fixed_messages_list = Response['d'];
@@ -604,36 +606,63 @@ export class WhatsappDepartmentsDashboardComponent implements OnInit {
   }
 
   openFixedMessagesDialog() {
-    // this.getDepartmentsWhatsAppServiceFixedMessages();
+    this.saveEditFixedMessagesWhatsappDepartments(null);
     this.dialog.open(this.fixedMessagesDialog, { width: '40%' });
   }
 
   addFixedMessage() {
     const text = prompt('הזן הודעה חדשה:');
     if (text && text.trim()) {
+      let text_obj = {
+        Row_ID: null,
+        Message_Text: text,
+        Section: 'departments',
+        ServiceIDFK: this.employee_service_action.Service_Order,
+        ActionIDFK: this.employee_service_action.Action_Order,
+        Status: true
+      }
       // Save to backend if needed, here just add to the list for demo
-      this.fixed_messages_list.push({ text });
+      this.fixed_messages_list.push(text_obj);
       // TODO: Call backend to persist
+      this.saveEditFixedMessagesWhatsappDepartments(text_obj);
     }
   }
 
   editFixedMessage(msg) {
-    const newText = prompt('ערוך הודעה:', msg.text);
+    const newText = prompt('ערוך הודעה:', msg.Message_Text);
     if (newText && newText.trim()) {
-      msg.text = newText;
+      msg.Message_Text = newText;
       // TODO: Call backend to persist
+      let text_obj = {
+        Row_ID: msg.Row_ID,
+        Message_Text: newText,
+        Section: 'departments',
+        ServiceIDFK: this.employee_service_action.Service_Order,
+        ActionIDFK: this.employee_service_action.Action_Order,
+        Status: true
+      }
+      this.saveEditFixedMessagesWhatsappDepartments(text_obj);
     }
   }
 
   removeFixedMessage(msg) {
     if (confirm('האם אתה בטוח שברצונך למחוק?')) {
-      this.fixed_messages_list = this.fixed_messages_list.filter(m => m !== msg);
+      this.fixed_messages_list = this.fixed_messages_list.filter(m => m !== msg.Message_Text);
       // TODO: Call backend to persist
+      let text_obj = {
+        Row_ID: msg.Row_ID,
+        Message_Text: msg.Message_Text,
+        Section: 'departments',
+        ServiceIDFK: this.employee_service_action.Service_Order,
+        ActionIDFK: this.employee_service_action.Action_Order,
+        Status: false
+      }
+      this.saveEditFixedMessagesWhatsappDepartments(text_obj);
     }
   }
 
   selectFixedMessage(msg, dialogRef) {
-    this.newMessage.controls['Message_Text'].setValue(msg.text);
+    this.newMessage.controls['Message_Text'].setValue(msg.Message_Text);
     dialogRef.close();
   }
 
