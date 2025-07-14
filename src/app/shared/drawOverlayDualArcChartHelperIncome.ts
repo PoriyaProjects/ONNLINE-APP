@@ -53,7 +53,8 @@ export function drawOverlayDualArcChartHelperIncome({
     svg.setAttribute('width', '100%');
     svg.setAttribute('height', '100%');
     svg.setAttribute('viewBox', '0 0 300 300');
-    svg.setAttribute('id', 'dual_arc_svg');
+    //svg.setAttribute('id', 'dual_arc_svg');
+    svg.setAttribute('id', containerId);
     svg.style.position = 'absolute';
     svg.style.top = '0';
     svg.style.left = '0';

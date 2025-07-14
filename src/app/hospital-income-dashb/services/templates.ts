@@ -19,8 +19,8 @@ export function getDepartmentLayoutHtml(slug: string, deptNameSlug: any): string
           <div class="mdc-layout-grid__cell col-md-3">
             <div class="card text-center">
               <h6 class="card-title-custom" style="margin:20px auto;">נומינלי ושינוי</h6>
-              <div id="tabled_chart-${slug}" style="width: 100%; height: 300px; padding:0 20px; margin-top: 40px;">טוען נתונים...</div>
-              <div id="tabled_chart2-${slug}" style="width: 100%; padding:0 20px;">טוען נתונים...</div>
+              <div id="tabled_chart-${slug}" style="width: 100%; height: 360px; padding:0 20px; margin-top: 40px;">טוען נתונים...</div>
+              
             </div>
           </div>
           <div class="mdc-layout-grid__cell col-md-3">
