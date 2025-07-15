@@ -649,7 +649,6 @@ export class ShareSurgeriesPDFDialog {
   disableBtn: boolean;
   separatorKeysCodes: number[] = [ENTER, COMMA];
   fruits: any[] = [
-    { FirstName: 'מוניר', LastName: 'נשאשיבי', id: '', Email: 'MNASHASHIB@tzmc.gov.il' },
     { FirstName: 'תפוצת', LastName: 'חדר ניתוח', id: '', Email: 'DL_SurgeryPlaning@tzmc.gov.il' },
     { FirstName: this.user_name, LastName: '', id: '', Email: this.user_name + '@tzmc.gov.il' },
   ];

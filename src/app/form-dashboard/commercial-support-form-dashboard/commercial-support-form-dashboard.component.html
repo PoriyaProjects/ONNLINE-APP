@@ -79,9 +79,17 @@
     <div *ngIf="supportRequests.filteredData.length === 0" class="no-results">
       אין תוצאות להצגה.
     </div>
-    <button mat-raised-button class="addBtn" color="primary" (click)="openDialog()">
-      <mat-icon>add</mat-icon> הוספת בקשה חדשה
-    </button>
+
+    <div class="button-container">
+      <button mat-raised-button class="custom-button primary" (click)="openDialog()">
+        <mat-icon>add</mat-icon>
+        הוספת בקשה חדשה
+      </button>
+
+      <button mat-raised-button color="accent" (click)="printTable()">
+        <mat-icon>print</mat-icon> הדפס טבלה
+      </button>
+    </div>
   </div>
 </div>
 

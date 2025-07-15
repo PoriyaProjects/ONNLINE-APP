@@ -29,8 +29,57 @@ mat-sidenav-container {
   overflow-x: hidden;
 }
 
-mat-list {
-  height: 400px;
+::ng-deep mat-dialog-content {
+  padding: 16px 24px;
+  background-color: #f9f9f9;
+}
+
+.message-list {
+  max-height: 400px;
+  overflow-y: auto;
+  background-color: #ffffff;
+  border-radius: 8px;
+  box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.1);
+}
+
+.message-item {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  height: auto !important;
+  padding: 12px 8px !important;
+  border-bottom: 1px solid #eee !important;
+  transition: background-color 0.2s ease !important;
+}
+
+.message-item:hover {
+  background-color: #f0f0f0 !important;
+}
+
+.message-content {
+  flex: 1;
+  text-align: right;
+  font-size: 15px;
+  color: #333;
+  cursor: pointer;
+  padding-right: 12px;
+}
+
+.message-actions {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.no-messages {
+  text-align: center;
+  color: #999;
+  padding: 24px 0;
+  font-size: 14px;
+}
+
+.mat-list-item {
+  height: 50px;
 }
 
 mat-icon {
@@ -42,6 +91,7 @@ mat-icon {
 }
 
 .list-of-contact {
+  height: 500px;
   overflow-y: scroll;
   display: block;
 }
