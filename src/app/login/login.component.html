@@ -1,16 +1,32 @@
+<div class="background-animation"></div>
 <div class="container" *ngIf="user_details.ADUserName != undefined">
-  <div class="animated-text">
-    <div class="user-detail-fullname">
-      {{ user_details.FirstName }} {{ user_details.LastName }}
-    </div>
-    <div class="user-detail">
-      {{ user_details.ADUserName }}
-    </div>
-    <div class="user-detail">
-      {{ user_details.DepartmentDescripton }}
-    </div>
-    <div class="user-detail-buffer">
-      כמה רגעים, מכינים את האונליין עבורך...
+  <div class="welcome-glass-card">
+    <svg class="waves" viewBox="0 0 1440 320">
+      <path fill="#4e76e7" fill-opacity="0.4"
+        d="M0,160L60,170.7C120,181,240,203,360,197.3C480,192,600,160,720,154.7C840,149,960,171,1080,186.7C1200,203,1320,213,1380,218.7L1440,224L1440,320L1380,320C1320,320,1200,320,1080,320C960,320,840,320,720,320C600,320,480,320,360,320C240,320,120,320,60,320L0,320Z">
+      </path>
+      <path fill="#4e76e7" fill-opacity="0.7"
+        d="M0,224L60,208C120,192,240,160,360,154.7C480,149,600,171,720,186.7C840,203,960,213,1080,197.3C1200,181,1320,139,1380,117.3L1440,96L1440,320L1380,320C1320,320,1200,320,1080,320C960,320,840,320,720,320C600,320,480,320,360,320C240,320,120,320,60,320L0,320Z">
+      </path>
+    </svg>
+    <div class="animated-welcome-text">
+      <div class="user-detail-fullname">
+        👋 שלום, {{ user_details.FirstName }} {{ user_details.LastName }}
+      </div>
+      <div class="user-detail-slidein">
+        <span class="label">משתמש:</span> {{ user_details.ADUserName }}
+      </div>
+      <div class="user-detail-slidein">
+        <span class="label">מחלקה:</span> {{ user_details.DepartmentDescripton }}
+      </div>
+      <div class="user-detail-buffer">
+        ברוך הבא! מאחלים לך יום מוצלח ומלא השראה 🌟
+      </div>
+      <div *ngIf="if_birthdate == 'true'" class="birthday-wish">
+        <span class="birthday-emoji">🎊🎂</span>
+        <span class="birthday-text">יום הולדת שמח! שתזכה לשנה מתוקה, בריאה ומלאה בהפתעות טובות!</span>
+        <span class="birthday-emoji">🍰🎉</span>
+      </div>
     </div>
   </div>
 </div>

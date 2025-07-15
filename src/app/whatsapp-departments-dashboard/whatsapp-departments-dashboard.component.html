@@ -22,7 +22,7 @@
                         <mat-icon>home</mat-icon>
                     </button>
                     <button mat-raised-button style="background-color: #fff;" (click)="openFixedMessagesDialog()"
-                        matTooltip="הודעות קבועות" *ngIf="user_name == 'adahabre'">
+                        matTooltip="הודעות קבועות">
                         <mat-icon>list</mat-icon>
                     </button>
                 </div>
@@ -83,6 +83,17 @@
                             {{contact.CellNumber}} - {{contact.Type}}</span>
                     </mat-list-item>
                 </mat-list>
+                <div class="paging-controls text-center" style="margin-top: 8px;margin-bottom: 8px;">
+                    <button mat-mini-fab color="primary" (click)="prevContactsPage()" [disabled]="contactsPage === 1">
+                        <mat-icon>chevron_right</mat-icon>
+                    </button>
+                    <span style="margin: 0 12px; font-size: 15px;">עמוד {{contactsPage}} מתוך {{calculateAllContacts()
+                        || 1}}</span>
+                    <button mat-mini-fab color="primary" (click)="nextContactsPage()"
+                        [disabled]="contactsPage * contactsPageSize >= contactsTotal">
+                        <mat-icon>chevron_left</mat-icon>
+                    </button>
+                </div>
             </div>
             <div class="col-6" [formGroup]="newMessage"
                 [ngStyle]="currentContact !== undefined ? { 'background-color': '#efeae2', 'border-radius': '15px' } : { 'background-color': '#f0f2f5' }">
@@ -186,6 +197,18 @@
                             matTooltip="סיום שיחה" (click)="endConversation(uncontact)">cancel_presentation</mat-icon>
                     </mat-list-item>
                 </mat-list>
+                <div class="paging-controls text-center" style="margin-top: 8px;margin-bottom: 8px;">
+                    <button mat-mini-fab color="primary" (click)="prevUnAnsweredPage()"
+                        [disabled]="unAnsweredPage === 1">
+                        <mat-icon>chevron_right</mat-icon>
+                    </button>
+                    <span style="margin: 0 12px; font-size: 15px;">עמוד {{unAnsweredPage}} מתוך
+                        {{calculateAllUnAnswered() || 1}}</span>
+                    <button mat-mini-fab color="primary" (click)="nextUnAnsweredPage()"
+                        [disabled]="unAnsweredPage * unAnsweredPageSize >= unAnsweredTotal">
+                        <mat-icon>chevron_left</mat-icon>
+                    </button>
+                </div>
             </div>
         </div>
     </mat-sidenav-content>
@@ -241,28 +264,28 @@
     <hr>
     <mat-dialog-content>
         <mat-list class="message-list" dir="rtl">
-          <mat-divider></mat-divider>
-      
-          <mat-list-item *ngFor="let msg of fixed_messages_list" class="message-item">
-            <div class="message-content" (click)="selectFixedMessage(msg, dialogRef)">
-              {{ msg.Message_Text }}
-            </div>
-      
-            <div class="message-actions">
-              <button mat-icon-button color="primary" (click)="editFixedMessage(msg)" matTooltip="עריכה">
-                <mat-icon>edit</mat-icon>
-              </button>
-              <button mat-icon-button color="warn" (click)="removeFixedMessage(msg)" matTooltip="מחיקה">
-                <mat-icon>delete</mat-icon>
-              </button>
-            </div>
-          </mat-list-item>
-      
-          <mat-divider *ngIf="!fixed_messages_list.length"></mat-divider>
-          <p *ngIf="!fixed_messages_list.length" class="no-messages">אין הודעות להצגה</p>
+            <mat-divider></mat-divider>
+
+            <mat-list-item *ngFor="let msg of fixed_messages_list" class="message-item">
+                <div class="message-content" (click)="selectFixedMessage(msg, dialogRef)">
+                    {{ msg.Message_Text }}
+                </div>
+
+                <div class="message-actions">
+                    <button mat-icon-button color="primary" (click)="editFixedMessage(msg)" matTooltip="עריכה">
+                        <mat-icon>edit</mat-icon>
+                    </button>
+                    <button mat-icon-button color="warn" (click)="removeFixedMessage(msg)" matTooltip="מחיקה">
+                        <mat-icon>delete</mat-icon>
+                    </button>
+                </div>
+            </mat-list-item>
+
+            <mat-divider *ngIf="!fixed_messages_list.length"></mat-divider>
+            <p *ngIf="!fixed_messages_list.length" class="no-messages">אין הודעות להצגה</p>
         </mat-list>
-      </mat-dialog-content>
-      
+    </mat-dialog-content>
+
     <hr>
     <button mat-raised-button color="primary" (click)="addFixedMessage()">הוסף הודעה</button>
 </ng-template>
