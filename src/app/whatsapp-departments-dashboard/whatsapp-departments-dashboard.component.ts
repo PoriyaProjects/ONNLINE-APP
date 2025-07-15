@@ -53,6 +53,14 @@ export class WhatsappDepartmentsDashboardComponent implements OnInit {
   loading_message = "";
   @ViewChild('fixedMessagesDialog', { static: true }) fixedMessagesDialog: TemplateRef<any>;
 
+  contactsPage = 1;
+  contactsPageSize = 10;
+  contactsTotal = 0;
+
+  unAnsweredPage = 1;
+  unAnsweredPageSize = 10;
+  unAnsweredTotal = 0;
+
   constructor(
     private fb: FormBuilder,
     private router: Router,
@@ -168,21 +176,24 @@ export class WhatsappDepartmentsDashboardComponent implements OnInit {
     return this.contacts.filter(option => option.FirstName.toLowerCase().includes(filterValue));
   }
 
-  async getPatientsForWhatsapp(period) {
-    if (parseInt(period) < 1 || parseInt(period) > 20) {
-      this.openSnackBar('הטווח בין 1 ל 20');
+  async getPatientsForWhatsapp(page = this.contactsPage, pageSize = this.contactsPageSize) {
+    if (parseInt(pageSize as any) < 1 || parseInt(pageSize as any) > 100) {
+      this.openSnackBar('הטווח בין 1 ל 100');
       return;
     }
     this.contacts = [];
     this.contacts_filter = [];
     this.http
       .post(environment.url + "GetPatientsForDepartmentsWhatsapp", {
-        _period: period,
+        _period: '1', // use string to match expected API
         _user: this.user_name,
+        _page: page,
+        _pageSize: pageSize
       })
       .subscribe((Response) => {
-        this.contacts = Response["d"];
+        this.contacts = Response["d"]?.data || Response["d"] || [];
         this.contacts_filter = this.contacts;
+        this.contactsTotal = Response["d"]?.total || this.contacts.length;
       });
   }
 
@@ -208,19 +219,22 @@ export class WhatsappDepartmentsDashboardComponent implements OnInit {
       });
   }
 
-  async getDepartmentsWhatsAppUsers() {
+  async getDepartmentsWhatsAppUsers(page = this.unAnsweredPage, pageSize = this.unAnsweredPageSize) {
     this.loading_message = "טוען...";
     this.http
       .post(environment.url + "getDepartmentsWhatsAppUsers", {
         _user_name: this.user_name,
         _service_idfk: this.employee_service_action.Service_Order,
-        _action_idfk: this.employee_service_action.Action_Order
+        _action_idfk: this.employee_service_action.Action_Order,
+        _page: page,
+        _pageSize: pageSize
       })
       .subscribe((Response) => {
-        this.unAnsweredConversations = Response["d"];
+        this.unAnsweredConversations = Response["d"]?.data || Response["d"] || [];
         if (this.unAnsweredConversations.length == 0) this.loading_message = "לא נמצאו שיחות";
         else this.loading_message = "";
         this.unAnsweredConversations_filter = this.unAnsweredConversations;
+        this.unAnsweredTotal = Response["d"]?.total || this.unAnsweredConversations.length;
         if (this.currentContact !== undefined && this.currentContact?.maxRow !== '' && this.currentContact?.Row_ID !== undefined) {
           this.currentContact = this.unAnsweredConversations.filter(x => x.Row_ID == this.currentContact?.Row_ID)[0];
           if (this.currentContact?.Row_ID !== undefined) this.getDepartmentsWhatsAppConversationsByIDFK(this.currentContact?.Row_ID);
@@ -666,4 +680,39 @@ export class WhatsappDepartmentsDashboardComponent implements OnInit {
     dialogRef.close();
   }
 
+  // Paging controls for contacts
+  nextContactsPage() {
+    if (this.contactsPage * this.contactsPageSize < this.contactsTotal) {
+      this.contactsPage++;
+      this.getPatientsForWhatsapp(this.contactsPage, this.contactsPageSize);
+    }
+  }
+  prevContactsPage() {
+    if (this.contactsPage > 1) {
+      this.contactsPage--;
+      this.getPatientsForWhatsapp(this.contactsPage, this.contactsPageSize);
+    }
+  }
+
+  // Paging controls for unAnsweredConversations
+  nextUnAnsweredPage() {
+    if (this.unAnsweredPage * this.unAnsweredPageSize < this.unAnsweredTotal) {
+      this.unAnsweredPage++;
+      this.getDepartmentsWhatsAppUsers(this.unAnsweredPage, this.unAnsweredPageSize);
+    }
+  }
+  prevUnAnsweredPage() {
+    if (this.unAnsweredPage > 1) {
+      this.unAnsweredPage--;
+      this.getDepartmentsWhatsAppUsers(this.unAnsweredPage, this.unAnsweredPageSize);
+    }
+  }
+
+  calculateAllContacts() {
+    return Math.ceil(this.contactsTotal / this.contactsPageSize);
+  }
+
+  calculateAllUnAnswered() {
+    return Math.ceil(this.unAnsweredTotal / this.unAnsweredPageSize);
+  }
 }

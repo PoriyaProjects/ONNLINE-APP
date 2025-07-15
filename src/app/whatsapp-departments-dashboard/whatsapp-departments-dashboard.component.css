@@ -91,6 +91,7 @@ mat-icon {
 }
 
 .list-of-contact {
+  height: 500px;
   overflow-y: scroll;
   display: block;
 }

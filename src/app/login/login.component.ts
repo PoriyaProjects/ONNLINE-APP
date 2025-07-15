@@ -33,6 +33,7 @@ export class LoginComponent implements OnInit {
     returnUrl: string = "";
     returnParams: any = {};
     scriptOutput: string = '';
+    if_birthdate: string = '';
 
     ngOnInit() {
         if (localStorage.getItem('LastRout') == '') localStorage.setItem('LastRout', 'login');
@@ -75,8 +76,7 @@ export class LoginComponent implements OnInit {
         }).subscribe(
             (response: any) => {
                 this.user_details = response['d'];
-                console.log(this.user_details.ADUserName);
-                console.log(this.user_details.DepartmentDescripton);
+                this.if_birthdate = this.user_details.DateOfBirth == '1' ? 'true' : 'false';
                 if (this.user_details.ADUserName != undefined) {
                     setTimeout(() => {
                         this.mMenuPerm.setUserName(this.user_details.ADUserName);
