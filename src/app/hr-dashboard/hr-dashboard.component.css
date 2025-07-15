@@ -7,7 +7,7 @@
 
 mat-sidenav-container {
   padding-bottom: 2%;
-  background-color: #efeae2;
+  background-color: #f0f2f5;
 }
 
 .list-item :hover {
@@ -22,7 +22,7 @@ mat-sidenav-container {
 }
 
 mat-list {
-  height: 70vh;
+  height: 500px;
 }
 
 mat-icon {
@@ -118,7 +118,7 @@ mat-icon {
   padding: 8px;
   position: sticky;
   bottom: 0;
-  background-color: #efeae2;
+  background-color: #f0f2f5;
   align-items: center;
 }
 

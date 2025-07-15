@@ -60,15 +60,10 @@
                         </button>
                     </div>
                 </div>
-                <mat-form-field class="col-12" *ngIf="contacts_filter.length > 0">
+                <mat-form-field class="col-12">
                     <mat-label>סינון מהרשימה</mat-label>
                     <input matInput (keyup)="applyFilter2($event.target.value)" placeholder="הקלד.." #input>
                 </mat-form-field>
-                <!-- <mat-form-field class="col-5">
-                    <mat-label>תקופה בימים</mat-label>
-                    <input matInput value="1" type="number" (keyup)="getPatientsForWhatsapp($event.target.value)"
-                        placeholder="הקלד.." #input2>
-                </mat-form-field> -->
                 <mat-list role="list" class="list-of-contact">
                     <div class="row text-center">
                         <span *ngIf="contacts.length == 0">טוען...</span>
@@ -83,17 +78,6 @@
                             {{contact.CellNumber}} - {{contact.Type}}</span>
                     </mat-list-item>
                 </mat-list>
-                <div class="paging-controls text-center" style="margin-top: 8px;margin-bottom: 8px;">
-                    <button mat-mini-fab color="primary" (click)="prevContactsPage()" [disabled]="contactsPage === 1">
-                        <mat-icon>chevron_right</mat-icon>
-                    </button>
-                    <span style="margin: 0 12px; font-size: 15px;">עמוד {{contactsPage}} מתוך {{calculateAllContacts()
-                        || 1}}</span>
-                    <button mat-mini-fab color="primary" (click)="nextContactsPage()"
-                        [disabled]="contactsPage * contactsPageSize >= contactsTotal">
-                        <mat-icon>chevron_left</mat-icon>
-                    </button>
-                </div>
             </div>
             <div class="col-6" [formGroup]="newMessage"
                 [ngStyle]="currentContact !== undefined ? { 'background-color': '#efeae2', 'border-radius': '15px' } : { 'background-color': '#f0f2f5' }">
@@ -173,7 +157,7 @@
                         <mat-card-content>{{loading_message}}</mat-card-content>
                     </div>
                 </mat-card-header>
-                <mat-form-field *ngIf="unAnsweredConversations_filter.length > 0">
+                <mat-form-field>
                     <mat-label>סינון מהרשימה</mat-label>
                     <input matInput (keyup)="applyFilter($event.target.value)" placeholder="הקלד.." #input>
                 </mat-form-field>
@@ -204,8 +188,8 @@
                     </button>
                     <span style="margin: 0 12px; font-size: 15px;">עמוד {{unAnsweredPage}} מתוך
                         {{calculateAllUnAnswered() || 1}}</span>
-                    <button mat-mini-fab color="primary" (click)="nextUnAnsweredPage()"
-                        [disabled]="unAnsweredPage * unAnsweredPageSize >= unAnsweredTotal">
+                    <button mat-mini-fab color="primary" (click)="nextUnAnsweredPage()">
+                        <!-- [disabled]="unAnsweredPage * unAnsweredPageSize > unAnsweredTotal" -->
                         <mat-icon>chevron_left</mat-icon>
                     </button>
                 </div>
