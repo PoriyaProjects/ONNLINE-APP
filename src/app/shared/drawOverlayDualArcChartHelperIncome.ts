@@ -44,6 +44,7 @@ export function drawOverlayDualArcChartHelperIncome({
   }) {
     //console.log('🎯 drawOverlayDualArcChartHelper - currentMonthValues:', currentMonthValues);
     const container = document.getElementById(containerId);
+    console.log("___containerId:" + containerId);
     if (!container) return;
   
     const existing = document.getElementById('dual_arc_svg');
@@ -53,8 +54,7 @@ export function drawOverlayDualArcChartHelperIncome({
     svg.setAttribute('width', '100%');
     svg.setAttribute('height', '100%');
     svg.setAttribute('viewBox', '0 0 300 300');
-    //svg.setAttribute('id', 'dual_arc_svg');
-    svg.setAttribute('id', containerId);
+    svg.setAttribute('id', 'dual_arc_svg');
     svg.style.position = 'absolute';
     svg.style.top = '0';
     svg.style.left = '0';

@@ -9,7 +9,6 @@ import { filterRecentOffsets, YearlyData, getCurrentMonthData, getWorkingDaysInf
 import { sanitizeAndFilterYearMonthData } from '../../shared/chart-data-pipeline';
 import { limitToRecentYears } from '../../shared/limit-utils';
 import { ChartDataPipelineService } from '../../shared/ChartDataPipelineService';
-import { drawOverlayDualArcChartHelper } from '../../shared/drawOverlayDualArcChartHelper';
 import { TableComponent } from '../../shared/dataTable';
 import { FormsModule } from '@angular/forms';
 import { MatExpansionModule } from '@angular/material/expansion';
@@ -1451,7 +1450,7 @@ export class GoogleChartsService {
       }
 
       if (options.includeGaugeOverlay && options.gaugeElementId) {
-        await this.drawDepartmentGaugeOverlay(dept.id, options.gaugeElementId, group.id);
+        await this.drawDepartmentGaugeOverlay(group.id, dept.id, 'totalCharging', options.gaugeElementId );
       }
     } catch (err) {
       console.error('Failed to render department chart:', err);
@@ -1461,40 +1460,203 @@ export class GoogleChartsService {
 
 
 
-  private async drawDepartmentGaugeOverlay(deptName: string, elementId: string, groupName?: string): Promise<void> {
-    const raw = await this.callApi('GetYearlyIncomeFYLData', {
-      groupName: groupName || '',
-      deptName,
-      change: 1,
-      changeperc: 1
-    }, true).toPromise();
+  // private async drawDepartmentGaugeOverlay(groupid: string, deptid: string, incomeCategory:String, elementId: string): Promise<void> {    
 
-    const clean = Array.isArray(raw) ? raw : [];
-    const years = clean.map(r => r.Year);
-    const maxYear = Math.max(...years);
-    const prevYear = maxYear - 1;
+  //   const raw = await this.callApi('GetChargingIncomeMonthly', {     
+  //     deptid,
+  //     groupid,
+  //     incomeCategory,
+  //   }, true).toPromise();
 
-    const current = clean.find(r => r.Year === maxYear);
-    const previous = clean.find(r => r.Year === prevYear);
+  //   // const clean = Array.isArray(raw) ? raw : [];
+  //   // const years = clean.map(r => r.Year);
+  //   // const maxYear = Math.max(...years);
+  //   // const prevYear = maxYear - 1;
 
-    if (!current || !previous) return;
+  //   // const current = clean.find(r => r.Year === maxYear);
+  //   // const previous = clean.find(r => r.Year === prevYear);
+  //   // console.log('__0current0__' + current);
+  //   // if (!current || !previous) return;
+  //   // console.log('__current__' + current);
+  //   // const value = current.TotalCharging;
+  //   // console.log('__value__' + value);
+  //   // const target = previous.TotalCharging * 1.1;
 
-    const value = current.TotalCharging;
-    const target = previous.TotalCharging * 1.1;
+  //   let clean: any[] = [];
 
-    drawOverlayDualArcChartHelperIncome({
-      containerId: elementId,
-      workingDaysInfo: { currentWorkingDayIndex: new Date().getMonth(), totalWorkingDays: 12 },
-      gaugeValue: value,
-      gaugeTargetValue: target,
-      gaugePlanned: target * ((new Date().getMonth() + 1) / 12),
-      gaugeTargetStatus: value >= target ? '✅' : '❌',
-      currentMonthValues: [],
-      markerOptions: { radius: 14, fontSize: 10 },
-    });
+  //   try {
+  //     // Step 1: Parse the raw XML-style string safely
+  //     if (typeof raw === 'string') {
+  //       // Unwrap <string>...</string> if needed
+  //       const rawText = raw.trim();
+    
+  //       // Extract content between <string>...</string> if XML-like
+  //       const innerContentMatch = rawText.match(/^<string[^>]*>(.*?)<\/string>$/);
+  //       const content = innerContentMatch ? innerContentMatch[1] : rawText;
+    
+  //       // Now double-parse if it's a stringified array
+  //       const parsedOnce = JSON.parse(content);
+  //       clean = typeof parsedOnce === 'string' ? JSON.parse(parsedOnce) : parsedOnce;
+  //     }
+    
+  //     if (!Array.isArray(clean)) {
+  //       console.error('❌ Parsed result is not an array:', clean);
+  //       return;
+  //     }
+  //   } catch (err) {
+  //     console.error('❌ Failed to extract and parse department data:', err);
+  //     return;
+  //   }
+    
+  //   // ✅ Extract valid numeric years
+  //   const deptYears: number[] = [];
+    
+  //   clean.forEach((row, i) => {
+  //     const yearStr = (row?.Year ?? '').toString().trim();
+  //     const yearNum = parseInt(yearStr);
+  //     if (!isNaN(yearNum) && yearNum >= 2000) {
+  //       deptYears.push(yearNum);
+  //     } else {
+  //       console.warn(`⚠️ Skipping row ${i}: invalid Year =`, yearStr);
+  //     }
+  //   });
+    
+  //   if (deptYears.length === 0) {
+  //     console.warn('❌ No valid department years found in data');
+  //     return;
+  //   }
+    
+  //   // ✅ Determine latest and previous year
+  //   const latestDeptYear = Math.max(...deptYears);
+  //   const previousDeptYear = latestDeptYear - 1;
+    
+  //   // ✅ Match records by year
+  //   const latestDeptData = clean.find(row => parseInt((row?.Year ?? '').toString().trim()) === latestDeptYear);
+  //   const previousDeptData = clean.find(row => parseInt((row?.Year ?? '').toString().trim()) === previousDeptYear);
+    
+  //   if (!latestDeptData || !previousDeptData) {
+  //     console.warn('❌ Missing data for current or previous year');
+  //     console.log('📆 Available years:', deptYears);
+  //     return;
+  //   }
+    
+  //   // ✅ Extract income and target
+  //   const deptActualIncome = latestDeptData.TotalCharging ?? null;
+  //   const deptPreviousIncome = previousDeptData.TotalCharging ?? null;
+    
+  //   if (deptActualIncome == null || deptPreviousIncome == null) {
+  //     console.warn('❌ Missing TotalCharging values');
+  //     return;
+  //   }
+    
+  //   const deptTargetIncome = deptPreviousIncome * 1.1;
+    
+  //   // ✅ Output for debugging
+  //   console.log('📌 Latest Year:', latestDeptYear);
+  //   console.log('💰 Actual Income:', deptActualIncome);
+  //   console.log('🎯 Target Income (10% increase):', deptTargetIncome);
+    
+  //   // ✅ Draw chart (you can uncomment this when needed)
+  //   drawOverlayDualArcChartHelperIncome({
+  //     containerId: elementId,
+  //     workingDaysInfo: {
+  //       currentWorkingDayIndex: new Date().getMonth(),
+  //       totalWorkingDays: 12
+  //     },
+  //     gaugeValue: deptActualIncome,
+  //     gaugeTargetValue: deptTargetIncome,
+  //     gaugePlanned: deptTargetIncome * ((new Date().getMonth() + 1) / 12),
+  //     gaugeTargetStatus: deptActualIncome >= deptTargetIncome ? '✅' : '❌',
+  //     currentMonthValues: [],
+  //     markerOptions: { radius: 14, fontSize: 10 }
+  //   });
+    
+  //   }
+
+  private async drawDepartmentGaugeOverlay(
+    groupID: string,
+    deptID: string,
+    incomeCategory: string,
+    elementId: string
+  ): Promise<void> {
+    try {
+      const raw = await this.callApi('GetChargingIncomeMonthly', {
+        groupID,
+        deptID,
+        incomeCategory
+      }, true).toPromise();
+  
+      // Step 1: unwrap <string>...</string>
+      const rawStr = typeof raw === 'string' ? raw.trim() : '';
+      const match = rawStr.match(/^<string[^>]*>([\s\S]*?)<\/string>$/);
+      const jsonText = match ? match[1] : rawStr;
+  
+      // Step 2: parse the JSON
+      const parsed = JSON.parse(jsonText);
+      if (!parsed?.success || !Array.isArray(parsed.data) || parsed.data.length < 2) {
+        console.warn('❌ Invalid data structure');
+        return;
+      }
+  
+      const rows = parsed.data.slice(1); // skip header row
+  
+      // Step 3: sum Charging per year
+      const incomeByYear: Record<string, number> = {};
+  
+      for (const row of rows) {
+        const [monthStr, charging] = row;
+        if (!monthStr || typeof charging !== 'number') continue;
+        const year = monthStr.split('-')[0];
+        incomeByYear[year] = (incomeByYear[year] ?? 0) + charging;
+      }
+  
+      const availableYears = Object.keys(incomeByYear).map(Number).filter(y => !isNaN(y));
+      const latestYear = Math.max(...availableYears);
+      const previousYear = latestYear - 1;
+  
+      const deptActualIncome = incomeByYear[latestYear.toString()];
+      const deptPreviousIncome = incomeByYear[previousYear.toString()];
+  
+      if (!deptActualIncome || !deptPreviousIncome) {
+        console.warn('❌ Missing Charging data for required years');
+        console.log('Available:', incomeByYear);
+        return;
+      }
+  
+      const deptTargetIncome = deptPreviousIncome * 1.1;
+      const currentMonthIndex = new Date().getMonth(); // 0–11
+      const plannedToDate = deptTargetIncome * ((currentMonthIndex + 1) / 12);
+  
+      // ✅ Draw the gauge
+      drawOverlayDualArcChartHelperIncome({
+        containerId: elementId,
+        workingDaysInfo: {
+          currentWorkingDayIndex: currentMonthIndex,
+          totalWorkingDays: 12
+        },
+        gaugeValue: deptActualIncome,
+        gaugeTargetValue: deptTargetIncome,
+        gaugePlanned: plannedToDate,
+        gaugeTargetStatus: deptActualIncome >= deptTargetIncome ? '✅' : '❌',
+        currentMonthValues: [],
+        markerOptions: { radius: 14, fontSize: 10 }
+      });
+  
+      console.log('📊 Gauge Data:', {
+        latestYear,
+        previousYear,
+        deptActualIncome,
+        deptPreviousIncome,
+        deptTargetIncome
+      });
+  
+    } catch (err) {
+      console.error('❌ Failed to process department monthly data:', err);
+    }
   }
+  
 
-
+  
   public async renderDepartmentButtons({
     containerId = 'deptgroups',
     chartContainerId = 'deptchart',
@@ -1529,15 +1691,7 @@ export class GoogleChartsService {
       }
 
       // Extract group info with latest ChargingPct
-      const groupMap = new Map<number, { groupId: number; groupName: string; lastPct: number | null }>();
-      // for (const row of clean) {
-      //   const groupId = parseInt(row.GroupID);
-      //   const groupName = row.GroupName?.trim();
-      //   const pct = parseFloat(row.ChargingPct);
-      //   if (!groupId || !groupName || isNaN(pct)) continue;
-
-      //   groupMap.set(groupId, { groupId, groupName, lastPct: pct }); // always override with last
-      // }
+      const groupMap = new Map<number, { groupId: number; groupName: string; lastPct: number | null }>();      
 
       for (const row of clean) {
         const groupId = parseInt(row.GroupID);
@@ -1758,7 +1912,8 @@ export class GoogleChartsService {
     );
 
     // ✅ Department-level gauge/summary tables
-    this.drawDualArcGaugeOverlay(`arc_chart${suffix}`);
+    //this.drawDualArcGaugeOverlay(`arc_chart${suffix}`);
+    this.drawDepartmentGaugeOverlay(group.id, dept.id, 'TotalCharging', `arc_chart-${suffix}` );
     this.loadYearlyIncomeDataCombinedDept(`tabled_chart${suffix}`, dept.id, group.id, 'totalCharging', 5, 'full');
 //    this.loadYearlyIncomeDataCombinedDept(`tabled_chart2${suffix}`, dept.id, group.id, 'totalCharging', 2, 'full');
 
