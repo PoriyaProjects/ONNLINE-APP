@@ -12,21 +12,21 @@ export function getDepartmentLayoutHtml(slug: string, deptNameSlug: any): string
           <div class="mdc-layout-grid__cell col-md-6">
             <div class="card card--outlined card text-center">
               <h6 class="card-title-custom" style="margin:20px auto;">הכנסות שנתיות</h6>
-              <div id="bar_chart-${slug}" style="width: 100%; height: 400px;">טוען נתונים...</div>
+              <div id="bar_chart-${slug}" style="width: 100%; height: 390px;">טוען נתונים...</div>
               <div class="ctrl-placeholder"></div>
             </div>
           </div>
           <div class="mdc-layout-grid__cell col-md-3">
             <div class="card text-center">
               <h6 class="card-title-custom" style="margin:20px auto;">נומינלי ושינוי</h6>
-              <div id="tabled_chart-${slug}" style="width: 100%; height: 360px; padding:0 20px; margin-top: 40px;">טוען נתונים...</div>
+              <div id="tabled_chart-${slug}" style="width: 100%; height: 350px; padding:0 20px; margin-top: 40px;">טוען נתונים...</div>
               
             </div>
           </div>
           <div class="mdc-layout-grid__cell col-md-3">
             <div class="card text-center">
               <h6 class="card-title-custom" style="margin:20px auto;">הכנסות מדודות</h6>              
-              <div id="arc_chart-${slug}" style="width: 100%; height: 370px;"></div>
+              <div id="arc_chart-${slug}" style="width: 100%; height: 390px;"></div>
               <div class="ctrl-placeholder"></div>
             </div>
           </div>
