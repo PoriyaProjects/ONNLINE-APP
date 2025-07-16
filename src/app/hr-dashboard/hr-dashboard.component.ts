@@ -36,6 +36,10 @@ export class HrDashboardComponent implements OnInit {
   loadChat: boolean;
   @ViewChild('tooltipTemplate') tooltipTemplate: TemplateRef<any>;
 
+  unAnsweredPage = 1;
+  unAnsweredPageSize = 20;
+  unAnsweredTotal = 0;
+
   constructor(
     private fb: FormBuilder,
     private router: Router,
@@ -126,32 +130,54 @@ export class HrDashboardComponent implements OnInit {
       });
   }
 
-  async getHrWhatsAppUsers() {
-    this.http
-      .post(environment.url + "GetHrWhatsAppUsers", {
-        _user_name: this.user_name,
-        type: "3"
-      })
-      .subscribe((Response) => {
-        this.unAnsweredConversations = Response["d"];
-        this.unAnsweredConversations_filter = this.unAnsweredConversations;
-        if (this.currentContact !== undefined && this.currentContact.maxRow !== '' && this.currentContact.Row_ID !== undefined) {
-          this.currentContact = this.unAnsweredConversations.filter(x => x.Row_ID == this.currentContact.Row_ID)[0];
-          if (this.currentContact.Row_ID !== undefined) this.getHRWhatsAppConversationsByIDFK(this.currentContact.Row_ID);
-        }
+  getHrWhatsAppUsers(page = this.unAnsweredPage, pageSize = this.unAnsweredPageSize): void {
+    const requestPayload = {
+      _user_name: this.user_name,
+      type: "3",
+      _page: page,
+      _pageSize: pageSize
+    };
+
+    this.http.post<any>(`${environment.url}GetHrWhatsAppUsers`, requestPayload).subscribe({
+      next: (response) => {
+        this.unAnsweredConversations = response?.d || [];
+        this.unAnsweredConversations_filter = [...this.unAnsweredConversations];
+
+        this.syncCurrentContact();
+
         this.filteredOptions = this.users_filter.valueChanges.pipe(
           startWith(''),
-          map(value => this._filter(value || '')),
+          map(value => this._filter(value || ''))
         );
-        let interval = setTimeout(() => {
-          if (this.router.url !== '/hr-dashboard') {
-            clearTimeout(interval);
-          } else {
-            console.log("Refreshing..");
-            this.getHrWhatsAppUsers();
-          }
-        }, 10000);
-      });
+
+        this.setupAutoRefresh();
+      },
+      error: (err) => {
+        console.error("Error loading HR WhatsApp users:", err);
+      }
+    });
+  }
+
+  private syncCurrentContact(): void {
+    if (!this.currentContact?.Row_ID) return;
+
+    // const updated = this.unAnsweredConversations.find(
+    //   (x) => x.Row_ID === this.currentContact.Row_ID
+    // );
+
+    // if (updated) {
+    //   this.currentContact = updated;
+    // }
+    this.getHRWhatsAppConversationsByIDFK(this.currentContact.Row_ID);
+  }
+
+  private setupAutoRefresh(): void {
+    setTimeout(() => {
+      if (this.router.url === '/hr-dashboard') {
+        console.log("Refreshing HR WhatsApp user list...");
+        this.getHrWhatsAppUsers();
+      }
+    }, 10000);
   }
 
   endConversation(contact) {
@@ -358,6 +384,24 @@ export class HrDashboardComponent implements OnInit {
 
     // Unknown file type
     return 'unknown';
+  }
+
+  // Paging controls for unAnsweredConversations
+  nextUnAnsweredPage() {
+    this.unAnsweredPage++;
+    this.getHrWhatsAppUsers(this.unAnsweredPage, this.unAnsweredPageSize);
+    // if (this.unAnsweredPage * this.unAnsweredPageSize <= this.unAnsweredTotal) {
+    // }
+  }
+  prevUnAnsweredPage() {
+    if (this.unAnsweredPage > 1) {
+      this.unAnsweredPage--;
+      this.getHrWhatsAppUsers(this.unAnsweredPage, this.unAnsweredPageSize);
+    }
+  }
+
+  calculateAllUnAnswered() {
+    return Math.ceil(this.unAnsweredTotal / this.unAnsweredPageSize);
   }
 
 }
