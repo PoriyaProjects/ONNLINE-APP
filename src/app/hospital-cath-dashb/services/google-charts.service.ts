@@ -18,10 +18,7 @@ import { RoomSummaryComponent  } from '../room-summary.component';
 
 
 
-export interface Department {
-  id: string;
-  name: string;
-}
+
 
 export interface ChartSourceConfig {
   label: string;
@@ -683,6 +680,21 @@ export class GoogleChartsService {
     }
   
 
+    const HEBREW_MONTHS: { [key: string]: string } = {
+      '1': 'ינואר',
+      '2': 'פברואר',
+      '3': 'מרץ',
+      '4': 'אפריל',
+      '5': 'מאי',
+      '6': 'יוני',
+      '7': 'יולי',
+      '8': 'אוגוסט',
+      '9': 'ספטמבר',
+      '10': 'אוקטובר',
+      '11': 'נובמבר',
+      '12': 'דצמבר'
+    };
+
     const isValid = (val: any): boolean => {
       const num = parseFloat(val);
       return !isNaN(num) && num > 0;
@@ -711,9 +723,13 @@ export class GoogleChartsService {
       dataTable.addColumn({ type: 'string', role: 'annotation' });
     });
   
-    const months = Object.keys(filteredYears[yearKeys[0]]);
+    //const months = Object.keys(filteredYears[yearKeys[0]]);
+    const months = Object.keys(filteredYears[yearKeys[0]]).sort((a, b) => parseInt(a) - parseInt(b));
+    // const rows = months.map(month => {
+    //   const row: any[] = [month];
     const rows = months.map(month => {
-      const row: any[] = [month];
+      const hebrewMonth = HEBREW_MONTHS[month] || month;
+      const row: any[] = [hebrewMonth];
       yearKeys.forEach(year => {
         const val = filteredYears[year][month];
         const numVal = isValid(val) ? parseFloat(val) : null;
@@ -770,14 +786,33 @@ export class GoogleChartsService {
       if (el) el.innerHTML = "אין נתונים להצגה"; // Hebrew: No data to display
       return;
     }
-
+    const HEBREW_MONTHS: { [key: string]: string } = {
+      '1': 'ינואר',
+      '2': 'פברואר',
+      '3': 'מרץ',
+      '4': 'אפריל',
+      '5': 'מאי',
+      '6': 'יוני',
+      '7': 'יולי',
+      '8': 'אוגוסט',
+      '9': 'ספטמבר',
+      '10': 'אוקטובר',
+      '11': 'נובמבר',
+      '12': 'דצמבר'
+    };
+    
     const dataTable = new google.visualization.DataTable();
     dataTable.addColumn('string', 'Month');
     yearKeys.forEach(year => dataTable.addColumn('number', year));
 
-    const months = Object.keys(filteredYears[yearKeys[0]]);
+    //const months = Object.keys(filteredYears[yearKeys[0]]);
+    const months = Object.keys(filteredYears[yearKeys[0]]).sort((a, b) => parseInt(a) - parseInt(b));
+
+    // const rows = months.map(month => {
+    //   const row: any[] = [month];
     const rows = months.map(month => {
-      const row: any[] = [month];
+      const hebrewMonth = HEBREW_MONTHS[month] || month;
+      const row: any[] = [hebrewMonth];
       yearKeys.forEach(year => {
         const val = filteredYears[year][month];
         row.push(isValid(val) ? val : null);
@@ -800,147 +835,11 @@ export class GoogleChartsService {
     chart.draw(dataTable, options);
   }
 
-  private drawLineChartQ(years: any, elementId: string, customOptions: any = {}): void {
-    if (!google.visualization || !google.visualization.DataTable) {
-      //console.error('Google Visualization not loaded');
-      return;
-    }
-
-    // Utility: check if a value is numeric and > 0
-    const isValid = (val: any): boolean => {
-      const num = parseFloat(val);
-      return !isNaN(num) && num > 0;
-    };
-
-    // Filter out years where all values are empty/0
-    const filteredYears: any = {};
-    Object.keys(years).forEach(year => {
-      const months = years[year];
-      const hasValidMonth = Object.values(months).some(val => isValid(val));
-      if (hasValidMonth) {
-        filteredYears[year] = months;
-      }
-    });
-
-    const yearKeys = Object.keys(filteredYears);
-    if (yearKeys.length === 0) {
-      const el = document.getElementById(elementId);
-      if (el) el.innerHTML = "אין נתונים להצגה"; // Hebrew: No data to display
-      return;
-    }
-
-    const dataTable = new google.visualization.DataTable();
-    dataTable.addColumn('string', 'Month');
-    yearKeys.forEach(year => dataTable.addColumn('number', year));
-
-    const months = Object.keys(filteredYears[yearKeys[0]]);
-    const rows = months.map(month => {
-      const row: any[] = [month];
-      yearKeys.forEach(year => {
-        const val = filteredYears[year][month];
-        row.push(isValid(val) ? val : null);
-      });
-      return row;
-    });
-
-    dataTable.addRows(rows);
-
-    const defaultOptions = {
-      chartArea: { width: '70%', height: '70%' },
-      curveType: 'function',
-      legend: { position: 'top' },
-      colors: this.CHART_COLORS.slice(0, yearKeys.length),
-      vAxis: { format: 'short', minValue: 0 }
-    };
-
-    const options = { ...defaultOptions, ...customOptions };
-    const chart = new google.visualization.LineChart(document.getElementById(elementId));
-    chart.draw(dataTable, options);
-  }
+  
 
   
   
-  private drawBarChart_Q(years: any, elementId: string, customOptions: any = {}): void {
-    if (!google.visualization || !google.visualization.DataTable) {
-      //console.error('Google Visualization not loaded');
-      return;
-    }
   
-    const isValid = (val: any): boolean => {
-      const num = parseFloat(val);
-      return !isNaN(num);
-    };
-  
-    const filteredYears: any = {};
-    Object.keys(years).forEach(year => {
-      const quarters = years[year];
-      const hasValidQuarter = Object.values(quarters).some(val => isValid(val));
-      if (hasValidQuarter) {
-        filteredYears[year] = quarters;
-      }
-    });
-  
-    const yearKeys = Object.keys(filteredYears);
-    if (yearKeys.length === 0) {
-      const el = document.getElementById(elementId);
-      if (el) el.innerHTML = "אין נתונים להצגה";
-      return;
-    }
-  
-    const quarterLabels = ['Q1', 'Q2', 'Q3', 'Q4'];
-  
-    const dataTable = new google.visualization.DataTable();
-    dataTable.addColumn('string', 'רבעון'); // X-axis: Quarter
-  
-    // Add columns: number + annotation per year
-    yearKeys.forEach(year => {
-      dataTable.addColumn('number', year);
-      dataTable.addColumn({ type: 'string', role: 'annotation' });
-    });
-  
-    const rows = quarterLabels.map(q => {
-      const row: any[] = [q]; // start row with quarter name
-      yearKeys.forEach(year => {
-        const val = filteredYears[year][q];
-        if (isValid(val)) {
-          row.push(Number(val));
-          row.push(String(val));
-        } else {
-          row.push(null);
-          row.push(null);
-        }
-      });
-      return row;
-    }).filter(row => row.slice(1).some(v => v !== null)); // keep rows with at least one value
-  
-    dataTable.addRows(rows);
-  
-    const defaultOptions = {
-      chartArea: { width: '80%', height: '70%' },
-      legend: { position: 'top' },
-      bar: { groupWidth: '60%' },
-      isStacked: false,
-      colors: this.CHART_COLORS.slice(0, yearKeys.length),
-      annotations: {
-        alwaysOutside: true,
-        textStyle: {
-          fontSize: 11,
-          auraColor: '#FFFFFF'
-        }
-      },
-      vAxis: {
-        minValue: 0,
-        format: 'short'
-      },
-      hAxis: {
-        //title: 'רבעון'
-      }
-    };
-  
-    const options = { ...defaultOptions, ...customOptions };
-    const chart = new google.visualization.ColumnChart(document.getElementById(elementId));
-    chart.draw(dataTable, options);
-  }
   
   //_GroupedView
     
@@ -1047,7 +946,8 @@ export class GoogleChartsService {
   
     const defaultOptions = {
       curveType: 'function',
-      legend: 'none',
+      //legend: 'none',
+      legend: { position: 'bottom' },
       trendlines: {
         0: {
           type: 'linear',
@@ -1055,11 +955,11 @@ export class GoogleChartsService {
           lineWidth: 3,
           opacity: 0.7,
           showR2: true,
-          visibleInLegend: false
+          visibleInLegend: true
         }
       },
       annotations: {
-        alwaysOutside: true,
+        alwaysOutside: false,
         textStyle: { fontSize: 12, color: '#000' },
         auraColor: '#FFFFFF'
       },
@@ -1128,7 +1028,8 @@ export class GoogleChartsService {
   
     const defaultOptions = {
       curveType: 'function',
-      legend: 'none',
+//      legend: 'none',
+    legend: { position: 'bottom' },
       trendlines: {
         0: {
           type: 'linear',
@@ -1136,7 +1037,7 @@ export class GoogleChartsService {
           lineWidth: 3,
           opacity: 0.7,
           showR2: true,
-          visibleInLegend: false
+          visibleInLegend: true
         }
       },
       annotations: {
@@ -1636,7 +1537,7 @@ private processExploitationMonthlyData(data: any): any {
     };
   
     const defaultOptions = {
-      height: 400,
+      height: 480,
       legend: { position: 'top' },
       bar: { groupWidth: '75%' },
       isStacked: true,
@@ -1684,7 +1585,7 @@ private processExploitationMonthlyData(data: any): any {
     };
   
     const defaultOptions = {
-      height: 400,
+      height: 640,
       legend: { position: 'top' },
       bar: { groupWidth: '75%' },
       isStacked: true,
