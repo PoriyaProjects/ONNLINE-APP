@@ -68,6 +68,51 @@ export class EmployeesAddUpdateComponent implements OnInit {
   filteredOptions2: Observable<string[]>;
   man2filter = new FormControl();
   employees = [];
+  columnHeaderMap: { [key: string]: string } = {
+    StartWorkDate: 'תאריך תחילת עבודה',
+    EmployeeSektorID: 'סקטור עובד',
+    EmployeeBlossomSektorID: 'סקטור עובד בבלוסום',
+    Title: 'תאור',
+    FunctionID: 'תפקיד',
+    DepartnentCode: 'מחלקה',
+    JobTitleID: 'תאור תפקיד',
+    EmployeeID: 'תעודת זהות',
+    FirstName: 'שם פרטי',
+    StandartJobType: 'חלקיות משרה',
+    LastName: 'שם משפחה',
+    Gender: 'מגדר',
+    RankID: 'דירוג',
+    ADUserName: 'שם משתמש',
+    Email: 'מייל',
+    CellNumber: 'מספר טלפון',
+    WorkPlaceID: 'מיקום עבודה',
+    EndWorkDate: 'תאריך סיום עבודה',
+    CityName: 'עיר',
+    CityCode: 'קוד עיר',
+    DateOfBirth: 'תאריך לידה',
+    Address: 'כתובת',
+    DocLicence: 'מספר רישיון',
+    DocStartExperience: 'תחילת ניסיון ברישיון',
+    InternLearnCountry: 'מיקום לימודים',
+    InternLearnCountryDesc: 'מדינת לימודים',
+    InternUniversity: 'אונברסיטה',
+    UserName: 'שם משתמש',
+    UpdateDate: 'תאריך עדכון',
+    StatusRow: 'מאושר משאבי אנוש',
+    AcceptTerms: 'אישר תקנון',
+    ApprovedToBlossom: 'אישור בלוסום',
+    FirstNameEng: 'שם פרטי באנגלית',
+    LastNameEng: 'שם משפחה באנגלית',
+    CarType: 'סוג רכב',
+    CarNumber: 'מספר רכב',
+    CarType_2: 'סוג רכב נוסף',
+    CarNumber_2: 'מספר רכב נוסף',
+    Toranot: 'מבצע תורנויות',
+    DateToEndWork: 'תאריך לסיום עבודה',
+    EndWorkReason: 'סיבת סיום עבודה',
+    PersonalEmail: 'מייל אישי',
+    SubDepartmentCode: 'תת מחלקה',
+  };
   @ViewChild('modalEmployeeHistory', { static: true }) modalEmployeeHistory: TemplateRef<any>;
   dataSource: MatTableDataSource<any>;
 
@@ -395,12 +440,12 @@ export class EmployeesAddUpdateComponent implements OnInit {
         if (this.employee_change_history_list.filteredData.length > 0) {
           this.actionColumns = Object.keys(this.employee_change_history_list.filteredData[0]);
         }
-        this.dialog2.open(this.modalEmployeeHistory, { width: '60%', disableClose: false });
+        this.dialog2.open(this.modalEmployeeHistory, { width: '90%', disableClose: false });
       });
   }
 
   closeModal() {
-    this.dialog.close();
+    this.dialog2.closeAll();
   }
 
   getRanksList() {

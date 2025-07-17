@@ -127,7 +127,7 @@ export class NutritionSystemComponent implements OnInit {
       });
   }
 
-  fileName = 'Nutrition_Patients.xlsx';
+  fileName = 'דוח הזנה.xlsx';
   // export the table to excel file
   exportToExcel() {
     /* table id is passed over here */
