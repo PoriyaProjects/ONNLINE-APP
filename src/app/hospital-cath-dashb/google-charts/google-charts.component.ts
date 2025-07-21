@@ -1,77 +1,111 @@
 import { Component, AfterViewInit, HostListener } from '@angular/core';
 import { GoogleChartsService } from '../services/google-charts.service';
 import { MDCRipple } from '@material/ripple';
+import { ActivatedRoute } from '@angular/router';
+import { take } from 'rxjs/operators';
 
 @Component({
   selector: 'app-google-charts',
   templateUrl: './google-charts.component.html',
   styleUrls: ['./google-charts.component.css']
 })
-
-
-
-
 export class GoogleChartsComponent implements AfterViewInit {
+  departments = [
+    { label: 'לב', value: 0 },
+    { label: 'מוח', value: 1 },
+    { label: 'כירורגיה', value: 5 }
+  ];
 
-  selectedTypes: { [key: string]: boolean } = {
-    'אלקטיבי': true,
-    'דחוף': true,
-    'ססיה': true
-  };
+  selectedDepartmentValue = 0;
+  isAdmin = false;
+  showDepartmentSelector = false;
 
+  private lastParam?: number;
+  private lastDparam?: number;
 
-  constructor(public googleChartsService: GoogleChartsService) {}
+  constructor(
+    public googleChartsService: GoogleChartsService,
+    private route: ActivatedRoute
+  ) {}
 
+  ngAfterViewInit(): void {
+    const userDepartment = (localStorage.getItem('Depart') || '').trim();
+    const adminDepartments = ['ניהול', 'מערכות מידע', 'תקציבים', 'הנהלת המרכז הרפואי', 'הנהלה אדמיניסטרטיבית', '19'];
+
+    this.isAdmin = adminDepartments.includes(userDepartment);
+    this.showDepartmentSelector = this.isAdmin;
+
+    if (!this.isAdmin) {
+      this.selectedDepartmentValue = this.mapDepartmentToValue(userDepartment);
+    }
+
+    this.googleChartsService.chartsReady$.pipe(take(1)).subscribe(() => {
+      this.loadCharts();
+    });
+
+    document.querySelectorAll('.mdc-button').forEach(button =>
+      new MDCRipple(button as HTMLElement)
+    );
+  }
+
+  private loadCharts(): void {
+    const param = this.getQueryParam();
+    const dparam = this.selectedDepartmentValue;
+
+    // Skip if already loaded
+    if (param === this.lastParam && dparam === this.lastDparam) {
+      console.log('⚠️ Same param/dparam – skipping reload');
+      return;
+    }
+
+    console.log('📊 Loading charts with param:', param, 'dparam:', dparam);
+    this.googleChartsService.loadAllDashboardCharts(param, dparam);
+
+    this.lastParam = param;
+    this.lastDparam = dparam;
+  }
+
+  // onDepartmentChange(): void {
+  //   this.loadCharts();
+  // }
+
+  onDepartmentChange(): void {
+    const dparam = this.selectedDepartmentValue;
+    const param = this.getQueryParam();
+  
+    if (param === this.lastParam && dparam === this.lastDparam) {
+      return;
+    }
+  
+    this.lastParam = param;
+    this.lastDparam = dparam;
+  
+    this.googleChartsService.clearCache();
+    this.googleChartsService.setDparam(dparam); // 🔥 Notify table to reload
+    this.googleChartsService.loadAllDashboardCharts(param, dparam);
+  }
 
   
-  ngAfterViewInit(): void {
-    this.googleChartsService.loadAndDrawCharts();
-    
-    const buttons = document.querySelectorAll('.mdc-button');
-    buttons.forEach(button => new MDCRipple(button as HTMLElement));
+  refreshAll(): void {
+    const param = this.getQueryParam();
+    const dparam = this.selectedDepartmentValue;
 
-    // Default load yearly chart
-    // setTimeout(() => {
-    //   (document.getElementById('timeAvgGroupByDropdown') as HTMLSelectElement).value = 'yearly';
-    //   this.drawTimeAvgChart();
-    // }, 2500); 
-    setTimeout(() => {
-      try {
-        const dropdown = document.getElementById('timeAvgGroupByDropdown') as HTMLSelectElement;
-        if (dropdown) {
-          dropdown.value = 'yearly';
-          this.drawTimeAvgChart();
-        }
-      } catch (e) {
-        console.error("Dropdown setting failed:", e);
-      }
-    }, 2500);
-    
+    console.log('🔄 Refresh requested');
+    this.lastParam = undefined;
+    this.lastDparam = undefined;
+
+    this.googleChartsService.clearCache();
+    this.googleChartsService.loadAllDashboardCharts(param, dparam);
   }
 
-  drawTimeAvgChart(): void {
-    this.googleChartsService.drawTimeAvgChart('bar_chart_time_avg', {}, this.selectedTypes);
+  private mapDepartmentToValue(dept: string): number {
+    return dept.includes('מוח') ? 1 : dept.includes('כירורגיה') ? 5 : 0;
   }
 
-  toggleType(type: string): void {
-    this.selectedTypes[type] = !this.selectedTypes[type];
-    this.drawTimeAvgChart();
+  private getQueryParam(): number | undefined {
+    const value = this.route.snapshot.queryParamMap.get('param');
+    return value ? Number(value) : undefined;
   }
-
-  updateSelectedTypes(event: Event): void {
-    const checkbox = event.target as HTMLInputElement;
-    this.selectedTypes[checkbox.value] = checkbox.checked;
-    this.drawTimeAvgChart();
-  }
-
-private resizeTimeout: any;
-
-@HostListener('window:resize')
-onResize(): void {
-  clearTimeout(this.resizeTimeout);
-  this.resizeTimeout = setTimeout(() => {
-    this.googleChartsService.redrawCharts();
-  }, 300);
 }
-}
+
 

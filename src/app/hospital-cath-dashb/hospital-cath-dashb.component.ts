@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { GoogleChartsService } from './services/google-charts.service'; // adjust path
 
 
 @Component({
@@ -19,6 +20,8 @@ export class HospitalCathDashbComponent implements OnInit {
         (window as any).mdc?.autoInit();
       };
       document.body.appendChild(script);
+
+      
     
   }
 }
