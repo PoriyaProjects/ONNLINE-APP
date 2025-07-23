@@ -294,7 +294,7 @@ export class TrainingRequestFormComponent implements OnInit {
         this.cityControl.setValue(Training_Request_Forms_B?.Request_Location);
         this.Training_Out_Check();
         if (Training_Request_Forms_B?.Poster_Attached != undefined && Training_Request_Forms_B?.Poster_Attached != "") this.wantsPoster = true;
-        else this.wantsPoster = true;
+        else this.wantsPoster = false;
         // Subscribe to changes in Date_End to calculate duration
         // this.Training_Request_Forms_B.get('Date_End').valueChanges.subscribe(() => {
         //   this.calculateRequestDuration();
@@ -763,6 +763,24 @@ export class TrainingRequestFormComponent implements OnInit {
           "User dismissed the dialog (e.g., by using ESC, clicking the cross icon, or clicking outside the dialog)"
         )
       );
+  }
+
+  markFormGroupTouched(formGroup: FormGroup) {
+    Object.values(formGroup.controls).forEach(control => {
+      if (control instanceof FormGroup) {
+        this.markFormGroupTouched(control); // recursive for nested groups
+      } else if (control instanceof FormArray) {
+        control.controls.forEach(group => {
+          if (group instanceof FormGroup) {
+            this.markFormGroupTouched(group);
+          } else {
+            group.markAsTouched();
+          }
+        });
+      } else {
+        control.markAsTouched();
+      }
+    });
   }
 
 }
