@@ -18,7 +18,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { map } from 'rxjs/operators';
 import { drawOverlayDualArcChartHelperIncome } from 'src/app/shared/drawOverlayDualArcChartHelperIncome';
 
-import { getDeptGroupHtml, getDepartmentLayoutHtml } from './templates';
+import { getDeptGroupHtml, getDepartmentLayoutHtml, getDeptFeGroupHtml } from './templates';
 import { Renderer2, Inject } from '@angular/core';
 import { DOCUMENT } from '@angular/common';
 
@@ -31,7 +31,7 @@ export class DepartmentService {
 
 
 export interface Department {
-  id: string;
+  id: number;
   name: string;
 }
 
@@ -369,7 +369,7 @@ export class GoogleChartsService {
     //await this.fetchDataAndDrawDirect(filteredData, (data: any) => data, this.CHART_TYPES.BAR, 'bar_chart2', barChartOptions);
     await this.fetchDataAndDrawDirect(filteredData, (data: any) => data, this.CHART_TYPES.BAR, 'bar_chart2', { ...barChartOptions, grouped: false, groupByYear: false } // for cumulative
     );
-    await this.fetchDataAndDrawDirect(filteredData, (data: any) => data, this.CHART_TYPES.LINE, 'line_chart2', lineChartOptions);
+    //await this.fetchDataAndDrawDirect(filteredData, (data: any) => data, this.CHART_TYPES.LINE, 'line_chart2', lineChartOptions);
     //console.log('Income charts complete');
   }
 
@@ -1288,14 +1288,7 @@ export class GoogleChartsService {
 
   //wipe out
   public async getChargingGroupButtons(): Promise<{ department: string, color: string }[]> {
-    try {
-      // console.log('[getChargingGroupButtons] Fetching data from API...');
-
-      // const raw = await this.http
-      //   .get(`${environment.url}/GetChargingGrouspDataEx?groupName=&deptName=`, {
-      //     responseType: 'text',
-      //   })
-      //   .toPromise();
+    try {     
 
       const raw = await this.callApi('GetChargingIncome', {
         groupId: '',
@@ -1671,51 +1664,49 @@ export class GoogleChartsService {
     const container = document.getElementById(containerId);
     const chartContainer = document.getElementById(chartContainerId);
     const chartKinds = Array.isArray(chartKind) ? chartKind : [chartKind];
-
+  
     if (!container || !chartContainer) {
       console.warn(`[renderDepartmentButtons] Missing container(s): #${containerId} or #${chartContainerId}`);
       return;
     }
-
+  
     try {
       const raw = await this.callApi('GetChargingIncome', {
         groupId: null,
         deptId: null,
         incomeCategory: incomeCategory || 'totalCharging'
       }, true).toPromise();
-
+  
       const clean = sanitizeSoapResponse(raw);
       if (!Array.isArray(clean) || clean.length === 0) {
         container.innerHTML = 'No department group data available.';
         return;
       }
-
+  
       // Extract group info with latest ChargingPct
-      const groupMap = new Map<number, { groupId: number; groupName: string; lastPct: number | null }>();      
-
+      const groupMap = new Map<number, { groupId: number; groupName: string; lastPct: number | null }>();
       for (const row of clean) {
         const groupId = parseInt(row.GroupID);
         const groupName = row.GroupName?.trim();
         const pct = parseFloat(row.ChargingPct);
         if (!groupId || !groupName || isNaN(pct)) continue;
-      
-        // Only set if this groupId hasn't been seen yet — this captures the *first* entry
+  
         if (!groupMap.has(groupId)) {
           groupMap.set(groupId, { groupId, groupName, lastPct: pct });
         }
       }
-      
+  
       const sortedGroups = Array.from(groupMap.values())
         .sort((a, b) => (b.lastPct ?? 0) - (a.lastPct ?? 0));
-
+  
       container.innerHTML = '';
       chartContainer.innerHTML = '';
-
+  
       const totalButtons = sortedGroups.length;
       const spacePercent = 4;
       const totalSpace = (totalButtons - 1) * spacePercent;
       const buttonWidth = (100 - totalSpace) / totalButtons;
-
+  
       sortedGroups.forEach(({ groupId, groupName, lastPct }, index) => {
         const button = document.createElement('button');
         const pctLabel = lastPct != null && !isNaN(lastPct)
@@ -1723,129 +1714,128 @@ export class GoogleChartsService {
           : '';
         button.textContent = `${groupName}${pctLabel}`;
         const color = this.getHeatColor(lastPct);
-
+  
         button.style.cssText = `
-        background-color: ${color};
-        width: ${buttonWidth}%;
-        display: inline-block;
-        margin-left: ${index < totalButtons - 1 ? spacePercent : 0}%;
-        border-radius: 10px;
-        padding: 10px 20px;
-        border: none;
-        color: #fff;
-        cursor: pointer;
-      `;
-
+          background-color: ${color};
+          width: ${buttonWidth}%;
+          display: inline-block;
+          margin-left: ${index < totalButtons - 1 ? spacePercent : 0}%;
+          border-radius: 10px;
+          padding: 10px 20px;
+          border: none;
+          color: #fff;
+          cursor: pointer;
+        `;
+  
         button.onclick = async () => {
-          chartContainer.innerHTML = '<p>Loading department data...</p>';
-          const groupSlug = groupName.toLowerCase().replace(/\s+/g, '-');
+          chartContainer.innerHTML = '<p>טעינת נתוני מחלקה...</p>';
           chartContainer.innerHTML = '';
-
+  
           const wrapper = document.createElement('div');
-          wrapper.id = `wrapper-${groupSlug}`;
+          wrapper.id = `wrapper-${groupId}`;
           wrapper.style.marginBottom = '40px';
           wrapper.style.textAlign = 'center';
-
+  
           const heading = document.createElement('h2');
           heading.textContent = groupName;
           wrapper.appendChild(heading);
-
+  
           const deptChartDiv = document.createElement('div');
-          deptChartDiv.id = `deptchart-${groupSlug}`;
-
+          deptChartDiv.id = `deptchart-${groupId}`;
+  
           for (const kind of chartKinds) {
-            const chartId = `groupchart-${groupSlug}-${kind}`;
+            const chartId = `groupchart-${groupId}-${kind}`;
             const chartDiv = document.createElement('div');
             chartDiv.id = chartId;
             chartDiv.classList.add('group-chart');
             chartDiv.style.marginBottom = '30px';
             wrapper.appendChild(chartDiv);
           }
-
+  
           const layoutWrapper = document.createElement('div');
-          layoutWrapper.innerHTML = getDeptGroupHtml(groupSlug);
+          // Use groupId directly (special case 543 handled here)
+          if (groupId === 543) {
+            // Render layout immediately with a loading placeholder
+            layoutWrapper.innerHTML = getDeptFeGroupHtml(groupId);
+            wrapper.appendChild(layoutWrapper);
+          
+            // Add a quick loader to #nbspecial
+            const specialContainer = layoutWrapper.querySelector('#nbspecial');
+            if (specialContainer) specialContainer.innerHTML = '<p>טעינה...</p>';
+          
+            // Fire API call in background, don't block rendering
+            this.loadNBSpecial('nbspecial', 2, 'full').then(() => console.log("fe loaded"));
+          } else {
+            layoutWrapper.innerHTML = getDeptGroupHtml(groupId);
+          }
+          
+          
           deptChartDiv.appendChild(layoutWrapper);
           wrapper.appendChild(deptChartDiv);
           chartContainer.appendChild(wrapper);
-
+  
           const deptRows = clean.filter(r => parseInt(r.GroupID) === groupId);
-          //const seen = new Set<string>();
-          // const latestDepts = [...deptRows].reverse().map(row => {
-          //   const id = row.DeptID?.toString();
-          //   const name = row.DeptName?.trim();
-          //   const percent = parseFloat(row.ChargingPct);
-          //   if (!id || !name || seen.has(id) || isNaN(percent)) return null;
-          //   seen.add(id);
-          //   return { id, name, percent };
-          // }).filter(Boolean);
           const firstDepts: any[] = [];
           const seen = new Set<string>();
-          
+  
           for (const row of deptRows) {
             const id = row.DeptID?.toString();
             const name = row.DeptName?.trim();
             const percent = parseFloat(row.ChargingPct);
             if (!id || !name || seen.has(id) || isNaN(percent)) continue;
-          
             seen.add(id);
             firstDepts.push({ id, name, percent });
           }
-          
-          const deptDynamic = document.getElementById(`dept-dynamic-${groupSlug}`);
+  
+          const deptDynamic = document.getElementById(`dept-dynamic-${groupId}`);
           if (!deptDynamic) {
-            console.warn(`Missing dynamic container: dept-dynamic-${groupSlug}`);
+            console.warn(`Missing dynamic container: dept-dynamic-${groupId}`);
             return;
           }
           deptDynamic.innerHTML = '';
-
+  
           const buttonBar = document.createElement('div');
           const chartZone = document.createElement('div');
           deptChartDiv.appendChild(buttonBar);
           deptChartDiv.appendChild(chartZone);
-
-          //latestDepts.forEach((dept: any, i) => {
-            firstDepts.forEach((dept: any, i) => {
+  
+          firstDepts.forEach((dept: any, i) => {
             const button = document.createElement('button');
             const pctLabel = dept.percent != null && !isNaN(dept.percent)
               ? ` (${dept.percent > 0 ? '+' : ''}${dept.percent.toFixed(1)}%)`
               : '';
             button.textContent = `${dept.name}${pctLabel}`;
-
             button.title = `${dept.percent}%`;
             button.classList.add('mat-raised-button');
             button.style.cssText = `
-            margin: 6px;
-            padding: 8px 16px;
-            border-radius: 6px;
-            background-color: ${this.getHeatColor(dept.percent)};
-            color: #fff;
-          `;
-
+              margin: 6px;
+              padding: 8px 16px;
+              border-radius: 6px;
+              background-color: ${this.getHeatColor(dept.percent)};
+              color: #fff;
+            `;
+  
             button.onclick = () => {
               chartZone.querySelectorAll('[id^="dept-wrapper-"]').forEach(el => el.remove());
-
-              const deptSlug = dept.id.toLowerCase().replace(/\s+/g, '-');
-              const deptNameSlug = dept.name;
-              const wrapperId = `dept-wrapper-${deptSlug}`;
+  
+              const wrapperId = `dept-wrapper-${dept.id}`;
               const deptWrapper = document.createElement('div');
               deptWrapper.id = wrapperId;
-              deptWrapper.innerHTML = getDepartmentLayoutHtml(deptSlug, deptNameSlug);
+              deptWrapper.innerHTML = getDepartmentLayoutHtml(dept.id, dept.name);
               chartZone.appendChild(deptWrapper);
-
-              const dynamicArea = deptWrapper.querySelector(`#dept-dynamic-${deptSlug}`);
+  
+              const dynamicArea = deptWrapper.querySelector(`#dept-dynamic-${dept.id}`);
               if (!dynamicArea) return;
               dynamicArea.innerHTML = '';
-
-              this.renderAllDepartmentCharts(dept, { id: groupId.toString(), name: groupName });
-
-
+  
+              this.renderAllDepartmentCharts(dept, { id: groupId, name: groupName });
             };
-
+  
             buttonBar.appendChild(button);
             if (i === 0) button.click();
           });
         };
-
+  
         container.appendChild(button);
       });
     } catch (err) {
@@ -1853,9 +1843,7 @@ export class GoogleChartsService {
       container.innerHTML = 'Error loading department buttons.';
     }
   }
-
-
-
+  
 
 
 
@@ -1889,8 +1877,8 @@ export class GoogleChartsService {
 
 
   public async renderAllDepartmentCharts(
-    dept: { name: string; id: string },
-    group: { name: string; id: string }
+    dept: { name: string; id: number },
+    group: { name: string; id: number }
   ): Promise<void> {
     const suffix = `-${dept.id}`; // Used for DOM element IDs
 
@@ -1899,9 +1887,9 @@ export class GoogleChartsService {
 
     // ✅ Render main department chart using ID-based API
     await this.renderDepartmentChart(
-      { name: dept.name, id: dept.id },
+      { name: dept.name, id: dept.id.toString() },
       `chart${suffix}`,
-      { name: group.name, id: group.id },
+      { name: group.name, id: group.id.toString() },
       {
         includeTimeSeries: true,
         timeSeriesElementId: `time${suffix}`,
@@ -1913,7 +1901,7 @@ export class GoogleChartsService {
 
     // ✅ Department-level gauge/summary tables
     //this.drawDualArcGaugeOverlay(`arc_chart${suffix}`);
-    this.drawDepartmentGaugeOverlay(group.id, dept.id, 'TotalCharging', `arc_chart-${suffix}` );
+    this.drawDepartmentGaugeOverlay(group.id.toString(), dept.id.toString(), 'TotalCharging', `arc_chart-${suffix}` );
     this.loadYearlyIncomeDataCombinedDept(`tabled_chart${suffix}`, dept.id, group.id, 'totalCharging', 5, 'full');
 //    this.loadYearlyIncomeDataCombinedDept(`tabled_chart2${suffix}`, dept.id, group.id, 'totalCharging', 2, 'full');
 
@@ -1938,22 +1926,23 @@ export class GoogleChartsService {
 
 
 
-  private async ensureDepartmentChartLayoutExists(deptId: string, name: string): Promise<void> {
-    const slug = deptId.toLowerCase().replace(/\s+/g, '-');
-    const deptNameSlug = name;
-    const wrapperId = `dept-wrapper-${slug}`;
-    const chartZone = document.getElementById(`deptchart-${slug}`) || document.getElementById('deptchart');
+  
 
+  private async ensureDepartmentChartLayoutExists(deptId: number, name: string): Promise<void> {
+    const wrapperId = `dept-wrapper-${deptId}`;
+    const chartZone = document.getElementById(`deptchart-${deptId}`) || document.getElementById('deptchart');
+  
     if (!chartZone) return;
-
+  
     if (!document.getElementById(wrapperId)) {
       const wrapper = document.createElement('div');
       wrapper.id = wrapperId;
-      wrapper.innerHTML = getDepartmentLayoutHtml(slug, deptNameSlug);
+      wrapper.innerHTML = getDepartmentLayoutHtml(deptId, name);
       chartZone.appendChild(wrapper);
     }
   }
 
+  
   /**
    * Draws income bar and line charts for a specific department.
    *
@@ -1962,8 +1951,8 @@ export class GoogleChartsService {
    * @param suffix - Optional element ID suffix (used to build chart container IDs)
    */
   public async drawIncomeChartsDept(
-    deptId: string,
-    groupId: string,
+    deptId: number,
+    groupId: number,
     barChartOptions: any = {},
     lineChartOptions: any = {}
   ): Promise<void> {
@@ -2133,8 +2122,8 @@ export class GoogleChartsService {
    * @param elementId Target DOM element ID to render the chart
    */
   public async drawIncomeDeptsLastMonthChartVDept(
-    groupId: string,
-    deptId: string,
+    groupId: number,
+    deptId: number,
     elementId: string
   ): Promise<void> {
     await this.chartsReady;
@@ -2225,8 +2214,8 @@ export class GoogleChartsService {
    * @param barChartOptions - Optional chart styling and config options
    */
   public async drawOperationsChartsDept(
-    deptId: string,
-    groupId: string,
+    deptId: number,
+    groupId: number,
     elementIdSuffix: string = '',
     barChartOptions: any = {}
   ): Promise<void> {
@@ -2418,8 +2407,8 @@ export class GoogleChartsService {
    */
   
   public loadGrowthTrendChartDept(
-    deptId: string,
-    groupId: string,
+    deptId: number,
+    groupId: number,
     containerId?: string
   ): void {
     const finalContainerId = containerId || `growth_trend_chart-${deptId}`;
@@ -2542,8 +2531,8 @@ export class GoogleChartsService {
 
   public loadYearlyIncomeDataCombinedDept(
     containerId: string,
-    deptId: string,
-    groupId: string,
+    deptId: number,
+    groupId: number,
     incomeCategory: string = 'totalCharging',
     yearsToShow?: number,
     tableMode: 'full' | 'matrix' = 'full'
@@ -2686,6 +2675,90 @@ export class GoogleChartsService {
     });
   }
 
+
+
+  private waitForElement(selector: string, timeout = 4000): Promise<Element> {
+    return new Promise((resolve, reject) => {
+      const el = document.querySelector(selector);
+      if (el) return resolve(el);
+  
+      const observer = new MutationObserver(() => {
+        const found = document.querySelector(selector);
+        if (found) {
+          observer.disconnect();
+          resolve(found);
+        }
+      });
+  
+      observer.observe(document.body, { childList: true, subtree: true });
+  
+      setTimeout(() => {
+        observer.disconnect();
+        reject(`Element ${selector} not found within ${timeout}ms`);
+      }, timeout);
+    });
+  }
+  
+  public async loadNBSpecial(
+    containerId: string = 'nbspecial',
+    yearsToShow?: number,
+    tableMode: 'full' | 'matrix' = 'full'
+  ): Promise<void> {
+    try {
+      const container = await this.waitForElement(`#${containerId}`);
+  
+      const params = { change: 1, changeperc: 1 };
+  
+      return new Promise((resolve, reject) => {
+        this.callApi('GetNBSpecial', params, true).subscribe(
+          (response: any) => {
+            console.log('API raw response:', response);
+  
+            // --- Handle Google Charts DataTable format ---
+            if (response?.cols && response?.rows) {
+              let html = '<table class="table table-bordered table-striped"><thead><tr>';
+              response.cols.forEach((col: any) => {
+                html += `<th>${col.label}</th>`;
+              });
+              html += '</tr></thead><tbody>';
+  
+              response.rows.forEach((row: any) => {
+                html += '<tr>';
+                row.c.forEach((cell: any) => {
+                  html += `<td>${cell.v != null ? cell.v : ''}</td>`;
+                });
+                html += '</tr>';
+              });
+  
+              html += '</tbody></table>';
+              (container as HTMLElement).innerHTML = html;
+              resolve();
+              return;
+            }
+  
+            // --- Handle old array-based format (fallback) ---
+            if (!Array.isArray(response) || response.length === 0) {
+              (container as HTMLElement).innerHTML = '<p>No data available.</p>';
+              resolve();
+              return;
+            }
+  
+            // (Your previous "full/matrix" rendering logic here, if needed)
+            (container as HTMLElement).innerHTML = '<p>Data format not recognized.</p>';
+            resolve();
+          },
+          err => {
+            (container as HTMLElement).innerHTML = '<p class="text-danger">Failed to load data.</p>';
+            reject(err);
+          }
+        );
+      });
+    } catch (err) {
+      console.error('loadNBSpecial failed:', err);
+    }
+  }
+  
+  
 
 }
 
