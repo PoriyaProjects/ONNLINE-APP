@@ -146,8 +146,8 @@ setDparam(value: number): void {
     OPERATIONS_3Y: `${environment.url}/GetCathCombined?param=36&onlyLastMonth=false`,
     INCOME: `${environment.url}/GetIncomeDataCombined`,
     INCOME_3Y: `${environment.url}/GetIncomeDataCombined`,
-    TIME_AVG: `${environment.url}/GetExploitationTimeAvgJson?groupBy`,
-    GAUGE: `${environment.url}/GetCurrentCath?param=1&onlyLastMonth=true`,
+    TIME_AVG: `${environment.url}/GetExploitationTimeAvgJson?groupBy`,    
+    GAUGE: `${environment.url}/GetCathCombined?param=1&onlyLastMonth=true`,
     EXPLOITATION: `${environment.url}/GetExploitationCombined`,
     EXPLOITATIONTYPES: `${environment.url}/GetExploitationCombined`,
     EXPLOITATIONMONTHLY: `${environment.url}/GetExploitationMonthlyCombined`,
@@ -170,20 +170,7 @@ setDparam(value: number): void {
   
  
 
-  // constructor(
-  //   private http: HttpClient,
-  //   private chartPipeline: ChartDataPipelineService
-  // ) {
-  //   this.chartsReady = new Promise<void>((resolve) => {
-  //     google.charts.load('current', {packages: ['corechart', 'gauge', 'controls', 'table']});
-  //     google.charts.setOnLoadCallback(() => {
-  //       resolve();
-  //     });
-  //   });
   
-  //   //this.chartsReady.then(() => this.loadAndDrawCharts());
-  //   //this.chartsReady.then(() => {this.loadAllDashboardCharts(param, dparam);});
-  // }
 
   constructor(private http: HttpClient, private chartPipeline: ChartDataPipelineService) {
     this.chartsReady$ = this.chartsReadySubject.asObservable();
@@ -309,13 +296,7 @@ public async drawIncomeCharts(
       barChartOptions
     );
 
-    // await this.fetchDataAndDrawDirect(
-    //   filteredData,
-    //   (data: any) => data,
-    //   this.CHART_TYPES.LINE,
-    //   'line_chart2',
-    //   lineChartOptions
-    // );
+   
   })(), 'drawIncomeCharts');
 }
 
@@ -505,7 +486,7 @@ public async loadOpChart3Y(chartOptions: any = {}, param?: number, dparam?: numb
     try {
       // Special case for GAUGE chart
       if (chartType === this.CHART_TYPES.GAUGE) {
-        this.drawChartGauge(cleanData, elementId, chartOptions);
+        //this.drawChartGauge(cleanData, elementId, chartOptions);
         return;
       }
 
@@ -567,7 +548,7 @@ public async loadOpChart3Y(chartOptions: any = {}, param?: number, dparam?: numb
       [this.CHART_TYPES.TIME_AVG]: this.drawTimeAvgChart.bind(this),
       [this.CHART_TYPES.EXPLOITATION]: this.renderExploitationChart.bind(this),
       [this.CHART_TYPES.EXPLOITATIONTYPES]: this.renderExploitationTypesChart.bind(this),
-      [this.CHART_TYPES.GAUGE]: this.drawChartGauge.bind(this)
+      //[this.CHART_TYPES.GAUGE]: this.drawChartGauge.bind(this)
     };
   
     const drawer = chartDrawers[chartType];
@@ -820,15 +801,6 @@ public async loadOpChart3Y(chartOptions: any = {}, param?: number, dparam?: numb
     const chart = new google.visualization.LineChart(document.getElementById(elementId));
     chart.draw(dataTable, options);
   }
-
-  
-
-  
-  
-  
-  
-  //_GroupedView
-    
   
   private drawBarChartQ(years: any, elementId: string, barChartQOptions: any = {}, customOptions: any = {}): void {
     if (!google.visualization || !google.visualization.DataTable) return;
@@ -1048,76 +1020,6 @@ public async loadOpChart3Y(chartOptions: any = {}, param?: number, dparam?: numb
   }
   
 
-  public async drawChartGauge(data: any, elementId: string, chartOptions: any = {}): Promise<void> {
-    try {
-      if (typeof elementId !== 'string') return;
-
-      const container = document.getElementById(elementId);
-      if (!container) return;
-
-
-      const workingDaysInfo = await getWorkingDaysInfo(this.DATA_SOURCES.WORKING_DAYS);
-      if (workingDaysInfo.totalWorkingDays === 0) return;
-
-      this.workingDaysInfo = workingDaysInfo; // store for use
-
-
-      const rawData = await this.http.get(this.DATA_SOURCES.GAUGE, { responseType: 'text' }).toPromise();
-      const cleanData = sanitizeSoapResponse(rawData);
-      const monthData = getCurrentMonthData(cleanData?.yData?.[0]?.Year?.Months);
-      if (!monthData) return;
-
-      const label = monthData.name || 'Current Month';
-      const value = monthData.y;
-
-      const targetValue = 220;
-      const perDayTarget = targetValue / workingDaysInfo.totalWorkingDays;
-      const plannedIncludingToday = perDayTarget * (workingDaysInfo.currentWorkingDayIndex ?? 1);
-
-      this.gaugeLabel = label;
-      this.gaugeValue = value;
-      this.gaugeTargetValue = targetValue;
-      this.gaugePlanned = plannedIncludingToday;
-
-      const isLastWorkingDay = (workingDaysInfo.currentWorkingDayIndex === workingDaysInfo.totalWorkingDays);
-      this.gaugeTargetStatus = isLastWorkingDay
-        ? (this.gaugeValue >= this.gaugeTargetValue ? '✅' : '❌')
-        : (this.gaugeValue >= this.gaugePlanned ? '✅' : '❌');
-
-      const chartData = [
-        ['Label', 'Value'],
-        [label, value]
-      ];
-
-      const defaultOptions = {
-        width: 400,
-        height: 220,
-        yellowFrom: 0,
-        yellowTo: plannedIncludingToday,
-        greenFrom: plannedIncludingToday,
-        greenTo: targetValue,
-        minorTicks: 0,
-        max: targetValue,
-        min: 0,
-        majorTicks: ["0", "", "", "", "", targetValue.toString()],
-        animation: { duration: 1000, easing: 'out' },
-        greenColor: '#5ed175',
-        yellowColor: '#f86b6b'
-      };
-
-      const options = { ...defaultOptions, ...chartOptions };
-      const chart = new google.visualization.Gauge(container);
-      chart.draw(google.visualization.arrayToDataTable(chartData), options);
-
-
-    } catch (error) {
-      const el = document.getElementById(elementId);
-      if (el) {
-        el.innerHTML = 'Failed to draw Gauge chart. See console.';
-      }
-      console.error('Gauge chart error:', error);
-    }
-  }
 
 
   private positionGaugeChartText(chartId: string = 'gauge_chart', topPosition: number = 190): number {
@@ -1174,27 +1076,7 @@ public async loadOpChart3Y(chartOptions: any = {}, param?: number, dparam?: numb
     return ticks;
   }
   
-  private processTimeAvgData(jsonData: any): any {
-    const rawData = jsonData.table && jsonData.table.rows ? jsonData.table.rows : [];
-    const headerLabels = jsonData.table && jsonData.table.cols ? jsonData.table.cols.map((col: any) => col.label) : [];
-
-    if (rawData.length === 0) {
-      //console.error('No rows found in JSON data');
-      return { headers: [], data: [] };
-    }
-
-    const normalizedData = rawData.map((rowObject: any) => {
-      const row = rowObject.c.map((cell: any) => (cell ? cell.v : null));
-      const year = parseInt(row[0]);
-      const processedRow = [year];
-      for (let i = 1; i < row.length; i++) {
-        processedRow.push(row[i] ? parseDurationToDecimalHours(row[i]) : null);
-      }
-      return processedRow;
-    });
-
-    return { headers: headerLabels, data: normalizedData };
-  }
+ 
 
   public drawTimeAvgChart(
     elementId: string = 'bar_chart_time_avg',
@@ -1894,102 +1776,6 @@ private parseDateString(dateStr: string): Date {
 
 
 
-// public async drawPicTableChart(
-//   elementId: string = 'pic_table_chart',
-//   options: any = {},
-//   dparam?: number
-// ): Promise<void> {
-//   await this.waitUntilChartsReady();
-// console.log ('drawPicTableChart call');
-
-//   const el = document.getElementById(elementId);
-//   if (!el) return;
-
-//   try {    
-//     const url = this.buildUrlWithParams(this.DATA_SOURCES.PIC_TABLE, { dparam });
-
-//     const rawResponse: string = await this.http
-//       .get(url, { responseType: 'text' })
-//       .toPromise();
-
-//     const response = sanitizeSoapResponse(rawResponse);
-
-//     if (!response || !Array.isArray(response.rows) || !Array.isArray(response.cols)) {
-//       el.innerHTML = "No data available";
-//       return;
-//     }
-
-//     // Reverse rows for UI
-//     response.rows.reverse();
-
-//     // ✅ Normalize only date columns
-//     response.cols.forEach((col, idx) => {
-//       if (col.type === 'date') {
-//         normalizeDateColumn(response.rows, idx);
-//       }
-//     });
-
-//     // Build and store DataTable
-//     const dataTable = new google.visualization.DataTable(response);
-//     this.lastTableDataTable = dataTable;
-
-//     // Optional: add summary
-//     appendTotalRow(dataTable);
-
-//     // Draw chart
-//     const chart = new google.visualization.Table(el);
-//     chart.draw(dataTable, {
-//       allowHtml: true,
-//       width: '100%',
-//       sort: 'event',
-//       ...options
-//     });
-
-//   } catch (error) {
-//     el.innerHTML = "Error loading table";
-//   }
-
-//   // === Utility: Normalize Date Column ===
-//   function normalizeDateColumn(rows: any[], columnIndex: number): void {
-//     rows.forEach((row) => {
-//       const cell = row?.c?.[columnIndex];
-//       if (!cell || !cell.v) return;
-
-//       if (typeof cell.v === 'string') {
-//         const match = cell.v.match(/^Date\((\d+),(\d+),(\d+)\)$/);
-//         if (match) {
-//           const [_, y, m, d] = match.map(Number);
-//           cell.v = new Date(y, m, d);
-//         } else {
-//           const parsed = new Date(cell.v);
-//           if (!isNaN(parsed.getTime())) {
-//             cell.v = parsed;
-//           }
-//         }
-//       }
-//     });
-//   }
-
-//   // === Utility: Append Total Row ===
-//   function appendTotalRow(dataTable: any): void {
-//     const totalRow: any[] = [];
-
-//     for (let i = 0; i < dataTable.getNumberOfColumns(); i++) {
-//       if (i === 0) {
-//         totalRow.push('Total');
-//       } else if (dataTable.getColumnType(i) === 'number') {
-//         const sum = Array.from({ length: dataTable.getNumberOfRows() }, (_, rowIndex) =>
-//           dataTable.getValue(rowIndex, i)
-//         ).reduce((acc, val) => acc + (typeof val === 'number' ? val : 0), 0);
-//         totalRow.push(sum);
-//       } else {
-//         totalRow.push(null);
-//       }
-//     }
-
-//     dataTable.addRow(totalRow);
-//   }
-// }
 
 public async drawPicTableChart(
   elementId: string = 'pic_table_chart',
@@ -2105,14 +1891,23 @@ public async drawDualArcGaugeOverlay(
     const container = await this.waitForElement(elementId);
     if (!container) return;
 
+    // --- Clean up all old content (SVG + children) ---
+    while (container.firstChild) {
+      container.removeChild(container.firstChild);
+    }
+
     const workingDaysInfo = await getWorkingDaysInfo(this.DATA_SOURCES.WORKING_DAYS);
     if (!workingDaysInfo?.totalWorkingDays) return;
 
     const url = this.buildUrlWithParams(this.DATA_SOURCES.GAUGE, { param, dparam });
     const rawData = await this.http.get(url, { responseType: 'text' }).toPromise();
     const cleanData = sanitizeSoapResponse(rawData);
-    const months = cleanData?.yData?.[0]?.Year?.Months;
 
+    // Get latest year's data
+    const yData = cleanData?.yData;
+    if (!Array.isArray(yData) || yData.length === 0) return;
+    const latestYearData = yData[yData.length - 1]?.Year;
+    const months = latestYearData?.Months;
     if (!Array.isArray(months)) return;
 
     const currentIndex = workingDaysInfo.currentWorkingDayIndex ?? 1;
@@ -2120,14 +1915,26 @@ public async drawDualArcGaugeOverlay(
     const isFirstDay = currentIndex === 1;
     const isLastDay = currentIndex === totalDays;
 
-    let monthData = getCurrentMonthData(months);
-    if (!monthData && isFirstDay) {
+    // Try to get the current month dynamically
+    let monthData = this.getCurrentMonthFromDate(months);
+    if (!monthData) {
       monthData = this.getFallbackMonthData(months);
     }
     if (!monthData) return;
 
     const value = monthData.y;
-    const targetValue = 220;
+
+    // --- Dynamic target: previous year's same month +10% ---
+    const currentMonthName = monthData.name;
+    const prevYearData = yData.length > 1 ? yData[yData.length - 2]?.Year : null;
+    let targetValue = 220; // fallback
+    if (prevYearData?.Months) {
+      const prevMonth = prevYearData.Months.find(m => m.name === currentMonthName);
+      if (prevMonth?.y) {
+        targetValue = prevMonth.y * 1.1; // add 10%
+      }
+    }
+
     const perDayTarget = targetValue / totalDays;
     const plannedIncludingToday = perDayTarget * currentIndex;
 
@@ -2139,9 +1946,10 @@ public async drawDualArcGaugeOverlay(
       perDayTarget
     });
 
-    const weeklyTable = cleanData?.yData?.[0]?.WeekSummaryTable;
+    const weeklyTable = latestYearData?.WeekSummaryTable;
     const pieValues = getWeeklySummaryAsPieValues(weeklyTable);
 
+    // Draw fresh chart
     setTimeout(() => {
       drawOverlayDualArcChartHelper({
         containerId: elementId,
@@ -2160,6 +1968,18 @@ public async drawDualArcGaugeOverlay(
     if (el) el.innerHTML = '⚠️ Error loading dual arc overlay';
   }
 }
+
+
+
+/**
+ * Get month data for the current month (based on today's date).
+ */
+private getCurrentMonthFromDate(months: any[]): any | null {
+  const currentMonthName = new Date().toLocaleString('he-IL', { month: 'long' }); // Hebrew month names
+  return months.find(m => m.name === currentMonthName) || null;
+}
+
+
 
 
 private waitForElement(id: string, retries = 10): Promise<HTMLElement | null> {
@@ -2314,7 +2134,7 @@ public loadAllDashboardCharts(param: number | undefined, dparam: number): void {
     () => this.loadChart3Y({}, param, dparam),
     () => this.loadOpChart3Y({}, param, dparam),
     () => this.loadCombinedChart3Y({}, param, dparam),
-    () => this.drawChartGaugeFunc({}, 190, param, dparam),
+    //() => this.drawChartGaugeFunc({}, 190, param, dparam),
     () => this.drawDualArcGaugeOverlay('arc_chart', param, dparam),
     () => this.drawExploitationChart({}, param, dparam),
     () => this.drawExploitationChartWeekly({}, param, dparam),
@@ -2349,8 +2169,6 @@ public clearCache(): void {
   this.chartCache.clear();
   console.log('📦 Chart cache cleared.');
 }
-
-
 
 
  }
