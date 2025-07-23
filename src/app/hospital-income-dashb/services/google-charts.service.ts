@@ -1764,7 +1764,14 @@ export class GoogleChartsService {
             if (specialContainer) specialContainer.innerHTML = '<p>טעינה...</p>';
           
             // Fire API call in background, don't block rendering
-            this.loadNBSpecial('nbspecial', 2, 'full').then(() => console.log("fe loaded"));
+            //this.loadNBSpecial('nbspecial', 2, 'full').then(() => console.log("fe loaded"));
+            this.loadNBSpecial('nbspecial', { 
+              limitRows: 20,
+              filters: [{ column: 'משלם', value: 'מוסד לביטוח לאומי - יולדו' }],
+              sortBy: 'count',
+              sortAsc: false
+            });
+            
           } else {
             layoutWrapper.innerHTML = getDeptGroupHtml(groupId);
           }
@@ -2699,56 +2706,132 @@ export class GoogleChartsService {
     });
   }
   
+  // public async loadNBSpecial(
+  //   containerId: string = 'nbspecial',
+  //   yearsToShow?: number,
+  //   tableMode: 'full' | 'matrix' = 'full'
+  // ): Promise<void> {
+  //   try {
+  //     const container = await this.waitForElement(`#${containerId}`);
+  
+  //     const params = { change: 1, changeperc: 1 };
+  
+  //     return new Promise((resolve, reject) => {
+  //       this.callApi('GetNBSpecial', params, true).subscribe(
+  //         (response: any) => {
+  //           console.log('API raw response:', response);
+  
+  //           // --- Handle Google Charts DataTable format ---
+  //           if (response?.cols && response?.rows) {
+  //             let html = '<table class="table table-bordered table-striped"><thead><tr>';
+  //             response.cols.forEach((col: any) => {
+  //               html += `<th>${col.label}</th>`;
+  //             });
+  //             html += '</tr></thead><tbody>';
+  
+  //             response.rows.forEach((row: any) => {
+  //               html += '<tr>';
+  //               row.c.forEach((cell: any) => {
+  //                 html += `<td>${cell.v != null ? cell.v : ''}</td>`;
+  //               });
+  //               html += '</tr>';
+  //             });
+  
+  //             html += '</tbody></table>';
+  //             (container as HTMLElement).innerHTML = html;
+  //             resolve();
+  //             return;
+  //           }
+  
+  //           // --- Handle old array-based format (fallback) ---
+  //           if (!Array.isArray(response) || response.length === 0) {
+  //             (container as HTMLElement).innerHTML = '<p>No data available.</p>';
+  //             resolve();
+  //             return;
+  //           }
+  
+  //           // (Your previous "full/matrix" rendering logic here, if needed)
+  //           (container as HTMLElement).innerHTML = '<p>Data format not recognized.</p>';
+  //           resolve();
+  //         },
+  //         err => {
+  //           (container as HTMLElement).innerHTML = '<p class="text-danger">Failed to load data.</p>';
+  //           reject(err);
+  //         }
+  //       );
+  //     });
+  //   } catch (err) {
+  //     console.error('loadNBSpecial failed:', err);
+  //   }
+  // }
+  
   public async loadNBSpecial(
     containerId: string = 'nbspecial',
-    yearsToShow?: number,
-    tableMode: 'full' | 'matrix' = 'full'
+    options?: {
+      limitRows?: number;
+      filters?: { column: string; value: any }[];
+      sortBy?: string;
+      sortAsc?: boolean;
+    }
   ): Promise<void> {
     try {
-      const container = await this.waitForElement(`#${containerId}`);
+      // ✅ Wait until the container exists
+      const container = (await this.waitForElement(`#${containerId}`)) as HTMLElement;
+  
+      // Load Google Charts table package
+      await this.loadGoogleCharts(['table']);
   
       const params = { change: 1, changeperc: 1 };
   
       return new Promise((resolve, reject) => {
         this.callApi('GetNBSpecial', params, true).subscribe(
           (response: any) => {
-            console.log('API raw response:', response);
+            if (!response?.cols || !response?.rows) {
+              container.innerHTML = '<p>No data available.</p>';
+              resolve();
+              return;
+            }
   
-            // --- Handle Google Charts DataTable format ---
-            if (response?.cols && response?.rows) {
-              let html = '<table class="table table-bordered table-striped"><thead><tr>';
-              response.cols.forEach((col: any) => {
-                html += `<th>${col.label}</th>`;
-              });
-              html += '</tr></thead><tbody>';
+            // Build DataTable
+            const data = new google.visualization.DataTable(response);
+            let view = new google.visualization.DataView(data);
   
-              response.rows.forEach((row: any) => {
-                html += '<tr>';
-                row.c.forEach((cell: any) => {
-                  html += `<td>${cell.v != null ? cell.v : ''}</td>`;
+            // Filtering
+            if (options?.filters?.length) {
+              const matchingRows: number[] = [];
+              for (let i = 0; i < data.getNumberOfRows(); i++) {
+                if (options.filters.every(f => data.getValue(i, data.getColumnIndex(f.column)) === f.value)) {
+                  matchingRows.push(i);
+                }
+              }
+              view.setRows(matchingRows);
+            }
+  
+            // Sorting
+            if (options?.sortBy) {
+              const sortIndex = data.getColumnIndex(options.sortBy);
+              if (sortIndex !== -1) {
+                const sortedRows = view.getViewRows().sort((a, b) => {
+                  const valA = data.getValue(a, sortIndex);
+                  const valB = data.getValue(b, sortIndex);
+                  return (valA < valB ? -1 : valA > valB ? 1 : 0) * (options.sortAsc === false ? -1 : 1);
                 });
-                html += '</tr>';
-              });
-  
-              html += '</tbody></table>';
-              (container as HTMLElement).innerHTML = html;
-              resolve();
-              return;
+                view.setRows(sortedRows);
+              }
             }
   
-            // --- Handle old array-based format (fallback) ---
-            if (!Array.isArray(response) || response.length === 0) {
-              (container as HTMLElement).innerHTML = '<p>No data available.</p>';
-              resolve();
-              return;
+            // Limit rows
+            if (options?.limitRows && options.limitRows > 0) {
+              const limitedRows = view.getViewRows().slice(0, options.limitRows);
+              view.setRows(limitedRows);
             }
   
-            // (Your previous "full/matrix" rendering logic here, if needed)
-            (container as HTMLElement).innerHTML = '<p>Data format not recognized.</p>';
+            // Draw interactive Google Table
+            this.drawGoogleTableWithExport(container, view);
             resolve();
           },
           err => {
-            (container as HTMLElement).innerHTML = '<p class="text-danger">Failed to load data.</p>';
+            container.innerHTML = '<p class="text-danger">Failed to load data.</p>';
             reject(err);
           }
         );
@@ -2759,6 +2842,105 @@ export class GoogleChartsService {
   }
   
   
+  
+  private loadGoogleCharts(packages: string[]): Promise<void> {
+    return new Promise((resolve) => {
+      if (typeof google !== 'undefined' && google.visualization) {
+        resolve();
+        return;
+      }
+      google.charts.load('current', { packages });
+      google.charts.setOnLoadCallback(() => resolve());
+    });
+  }
+  
+  
+  private drawGoogleTableWithExport(container: HTMLElement, data: google.visualization.DataTable | google.visualization.DataView): void {
+    // Wrapper for table + export buttons
+    container.innerHTML = `
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+        <div>
+          <button id="${container.id}-export-csv" class="btn btn-sm btn-outline-primary">Export CSV</button>
+          <button id="${container.id}-export-xls" class="btn btn-sm btn-outline-success">Export Excel</button>
+        </div>
+      </div>
+      <div id="${container.id}-table"></div>
+    `;
+  
+    const tableContainer = container.querySelector(`#${container.id}-table`) as HTMLElement;
+    const table = new google.visualization.Table(tableContainer);
+  
+    table.draw(data, {
+      showRowNumber: true,
+      allowHtml: true,
+      width: '100%',
+      sort: 'enable',
+      page: 'enable',
+      pageSize: 10
+    });
+  
+    // Bind export buttons
+    const exportCsvBtn = container.querySelector(`#${container.id}-export-csv`);
+    const exportXlsBtn = container.querySelector(`#${container.id}-export-xls`);
+  
+    if (exportCsvBtn) {
+      exportCsvBtn.addEventListener('click', () => this.exportTableToCSV(data, `${container.id}.csv`));
+    }
+    if (exportXlsBtn) {
+      exportXlsBtn.addEventListener('click', () => this.exportTableToExcel(data, `${container.id}.xls`));
+    }
+  }
+  
+  private exportTableToCSV(data: google.visualization.DataTable | google.visualization.DataView, filename: string): void {
+    const csvRows = [];
+  
+    // Headers
+    const headers = [];
+    for (let i = 0; i < data.getNumberOfColumns(); i++) {
+      headers.push(`"${data.getColumnLabel(i)}"`);
+    }
+    csvRows.push(headers.join(','));
+  
+    // Rows
+    for (let r = 0; r < data.getNumberOfRows(); r++) {
+      const row = [];
+      for (let c = 0; c < data.getNumberOfColumns(); c++) {
+        row.push(`"${data.getValue(r, c)}"`);
+      }
+      csvRows.push(row.join(','));
+    }
+  
+    const csvContent = csvRows.join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = filename;
+    link.click();
+  }
+  
+  private exportTableToExcel(data: google.visualization.DataTable | google.visualization.DataView, filename: string): void {
+    let tableHtml = '<table><thead><tr>';
+    for (let i = 0; i < data.getNumberOfColumns(); i++) {
+      tableHtml += `<th>${data.getColumnLabel(i)}</th>`;
+    }
+    tableHtml += '</tr></thead><tbody>';
+  
+    for (let r = 0; r < data.getNumberOfRows(); r++) {
+      tableHtml += '<tr>';
+      for (let c = 0; c < data.getNumberOfColumns(); c++) {
+        tableHtml += `<td>${data.getValue(r, c)}</td>`;
+      }
+      tableHtml += '</tr>';
+    }
+    tableHtml += '</tbody></table>';
+  
+    const blob = new Blob([tableHtml], { type: 'application/vnd.ms-excel' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = filename;
+    link.click();
+  }
+   
 
 }
 
