@@ -146,8 +146,7 @@ setDparam(value: number): void {
     OPERATIONS_3Y: `${environment.url}/GetCathCombined?param=36&onlyLastMonth=false`,
     INCOME: `${environment.url}/GetIncomeDataCombined`,
     INCOME_3Y: `${environment.url}/GetIncomeDataCombined`,
-    TIME_AVG: `${environment.url}/GetExploitationTimeAvgJson?groupBy`,
-    //GAUGE: `${environment.url}/GetCurrentCath?param=1&onlyLastMonth=true`,
+    TIME_AVG: `${environment.url}/GetExploitationTimeAvgJson?groupBy`,    
     GAUGE: `${environment.url}/GetCathCombined?param=1&onlyLastMonth=true`,
     EXPLOITATION: `${environment.url}/GetExploitationCombined`,
     EXPLOITATIONTYPES: `${environment.url}/GetExploitationCombined`,
@@ -171,20 +170,7 @@ setDparam(value: number): void {
   
  
 
-  // constructor(
-  //   private http: HttpClient,
-  //   private chartPipeline: ChartDataPipelineService
-  // ) {
-  //   this.chartsReady = new Promise<void>((resolve) => {
-  //     google.charts.load('current', {packages: ['corechart', 'gauge', 'controls', 'table']});
-  //     google.charts.setOnLoadCallback(() => {
-  //       resolve();
-  //     });
-  //   });
   
-  //   //this.chartsReady.then(() => this.loadAndDrawCharts());
-  //   //this.chartsReady.then(() => {this.loadAllDashboardCharts(param, dparam);});
-  // }
 
   constructor(private http: HttpClient, private chartPipeline: ChartDataPipelineService) {
     this.chartsReady$ = this.chartsReadySubject.asObservable();
@@ -310,13 +296,7 @@ public async drawIncomeCharts(
       barChartOptions
     );
 
-    // await this.fetchDataAndDrawDirect(
-    //   filteredData,
-    //   (data: any) => data,
-    //   this.CHART_TYPES.LINE,
-    //   'line_chart2',
-    //   lineChartOptions
-    // );
+   
   })(), 'drawIncomeCharts');
 }
 
@@ -821,15 +801,6 @@ public async loadOpChart3Y(chartOptions: any = {}, param?: number, dparam?: numb
     const chart = new google.visualization.LineChart(document.getElementById(elementId));
     chart.draw(dataTable, options);
   }
-
-  
-
-  
-  
-  
-  
-  //_GroupedView
-    
   
   private drawBarChartQ(years: any, elementId: string, barChartQOptions: any = {}, customOptions: any = {}): void {
     if (!google.visualization || !google.visualization.DataTable) return;
@@ -1049,78 +1020,6 @@ public async loadOpChart3Y(chartOptions: any = {}, param?: number, dparam?: numb
   }
   
 
-  // public async drawChartGauge(data: any, elementId: string, chartOptions: any = {}): Promise<void> {
-  //   try {
-  //     if (typeof elementId !== 'string') return;
-
-  //     const container = document.getElementById(elementId);
-  //     if (!container) return;
-
-
-  //     const workingDaysInfo = await getWorkingDaysInfo(this.DATA_SOURCES.WORKING_DAYS);
-  //     if (workingDaysInfo.totalWorkingDays === 0) return;
-
-  //     this.workingDaysInfo = workingDaysInfo; // store for use
-
-
-  //     const rawData = await this.http.get(this.DATA_SOURCES.GAUGE, { responseType: 'text' }).toPromise();
-  //     const cleanData = sanitizeSoapResponse(rawData);
-  //     const latestYearData = cleanData?.yData?.[cleanData.yData.length - 1]?.Year;
-  //     const monthData = getCurrentMonthData(latestYearData?.Months);
-
-  //     if (!monthData) return;
-
-  //     const label = monthData.name || 'Current Month';
-  //     const value = monthData.y;
-
-  //     const targetValue = 220;
-  //     const perDayTarget = targetValue / workingDaysInfo.totalWorkingDays;
-  //     const plannedIncludingToday = perDayTarget * (workingDaysInfo.currentWorkingDayIndex ?? 1);
-
-  //     this.gaugeLabel = label;
-  //     this.gaugeValue = value;
-  //     this.gaugeTargetValue = targetValue;
-  //     this.gaugePlanned = plannedIncludingToday;
-
-  //     const isLastWorkingDay = (workingDaysInfo.currentWorkingDayIndex === workingDaysInfo.totalWorkingDays);
-  //     this.gaugeTargetStatus = isLastWorkingDay
-  //       ? (this.gaugeValue >= this.gaugeTargetValue ? '✅' : '❌')
-  //       : (this.gaugeValue >= this.gaugePlanned ? '✅' : '❌');
-
-  //     const chartData = [
-  //       ['Label', 'Value'],
-  //       [label, value]
-  //     ];
-
-  //     const defaultOptions = {
-  //       width: 400,
-  //       height: 220,
-  //       yellowFrom: 0,
-  //       yellowTo: plannedIncludingToday,
-  //       greenFrom: plannedIncludingToday,
-  //       greenTo: targetValue,
-  //       minorTicks: 0,
-  //       max: targetValue,
-  //       min: 0,
-  //       majorTicks: ["0", "", "", "", "", targetValue.toString()],
-  //       animation: { duration: 1000, easing: 'out' },
-  //       greenColor: '#5ed175',
-  //       yellowColor: '#f86b6b'
-  //     };
-
-  //     const options = { ...defaultOptions, ...chartOptions };
-  //     const chart = new google.visualization.Gauge(container);
-  //     chart.draw(google.visualization.arrayToDataTable(chartData), options);
-
-
-  //   } catch (error) {
-  //     const el = document.getElementById(elementId);
-  //     if (el) {
-  //       el.innerHTML = 'Failed to draw Gauge chart. See console.';
-  //     }
-  //     console.error('Gauge chart error:', error);
-  //   }
-  // }
 
 
   private positionGaugeChartText(chartId: string = 'gauge_chart', topPosition: number = 190): number {
@@ -1983,81 +1882,6 @@ private appendTotalRow(dataTable: any): void {
 
 
 
-
-// public async drawDualArcGaugeOverlay(
-//   elementId: string,
-//   param?: number,
-//   dparam?: number
-// ): Promise<void> {
-//   try {
-//     const container = await this.waitForElement(elementId);
-//     if (!container) return;
-
-//     // --- Clean up all old content (SVG + children) ---
-//     while (container.firstChild) {
-//       container.removeChild(container.firstChild);
-//     }
-
-//     const workingDaysInfo = await getWorkingDaysInfo(this.DATA_SOURCES.WORKING_DAYS);
-//     if (!workingDaysInfo?.totalWorkingDays) return;
-
-//     const url = this.buildUrlWithParams(this.DATA_SOURCES.GAUGE, { param, dparam });
-//     const rawData = await this.http.get(url, { responseType: 'text' }).toPromise();
-//     const cleanData = sanitizeSoapResponse(rawData);
-
-//     // Always pick the latest year's data
-//     const latestYearData = cleanData?.yData?.[cleanData.yData.length - 1]?.Year;
-//     const months = latestYearData?.Months;
-//     if (!Array.isArray(months)) return;
-
-//     const currentIndex = workingDaysInfo.currentWorkingDayIndex ?? 1;
-//     const totalDays = workingDaysInfo.totalWorkingDays;
-//     const isFirstDay = currentIndex === 1;
-//     const isLastDay = currentIndex === totalDays;
-
-//     // Try to get the current month dynamically
-//     let monthData = this.getCurrentMonthFromDate(months);
-//     if (!monthData) {
-//       monthData = this.getFallbackMonthData(months);
-//     }
-//     if (!monthData) return;
-
-//     const value = monthData.y;
-//     const targetValue = 220;
-//     const perDayTarget = targetValue / totalDays;
-//     const plannedIncludingToday = perDayTarget * currentIndex;
-
-//     const gaugeTargetStatus = this.evaluateStatus(value, {
-//       isFirstDay,
-//       isLastDay,
-//       plannedIncludingToday,
-//       targetValue,
-//       perDayTarget
-//     });
-
-//     const weeklyTable = latestYearData?.WeekSummaryTable;
-//     const pieValues = getWeeklySummaryAsPieValues(weeklyTable);
-
-//     // Draw fresh chart
-//     setTimeout(() => {
-//       drawOverlayDualArcChartHelper({
-//         containerId: elementId,
-//         workingDaysInfo,
-//         gaugePlanned: plannedIncludingToday,
-//         gaugeTargetValue: targetValue,
-//         gaugeValue: value,
-//         gaugeTargetStatus,
-//         currentMonthValues: pieValues,
-//         markerOptions: { radius: 14, fontSize: 10 }
-//       });
-//     }, 100);
-
-//   } catch (err) {
-//     const el = document.getElementById(elementId);
-//     if (el) el.innerHTML = '⚠️ Error loading dual arc overlay';
-//   }
-// }
-
 public async drawDualArcGaugeOverlay(
   elementId: string,
   param?: number,
@@ -2345,8 +2169,6 @@ public clearCache(): void {
   this.chartCache.clear();
   console.log('📦 Chart cache cleared.');
 }
-
-
 
 
  }
