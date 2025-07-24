@@ -1,5 +1,6 @@
 export function getDeptGroupHtml(id: number, slug?: string): string {return `</div><div id="dept-dynamic-${id}"></div>`;}
-export function getDeptFeGroupHtml(id: number, slug?: string): string {return `</div><br/>מחלקות מחייבות עבור טיפול בפגים בתקופה מ- 2024-01-01 עד 2025-05-31<br/><br/><div id="nbspecial"></div><br/><br/><div id="dept-dynamic-${id}"></div>`;}
+export function getDeptFeGroupHtml(id: number, slug?: string): string {return `</div>
+  <div class="card text-center" style=padding:10px;><br/>מחלקות מחייבות עבור טיפול בפגים בתקופה מ- 2024-01-01 עד 2025-05-31<br/><br/><div id="nbspecial"></div></div><br/><br/><div id="dept-dynamic-${id}"></div>`;}
 
     
 export function getDepartmentLayoutHtml(id: number, deptName: string, deptNameSlug?: any): string {      

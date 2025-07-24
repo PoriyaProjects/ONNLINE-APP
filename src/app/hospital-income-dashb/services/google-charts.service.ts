@@ -46,7 +46,16 @@ export interface ChartSourceConfig {
   numberFormat?: 'K' | 'M' | 'B'; // Optional display format
 }
 
-
+export 
+interface NBSpecialOptions {
+  limitRows?: number;
+  filters?: { column: string; value: any }[];
+  sortBy?: string;
+  sortAsc?: boolean;
+  showSearch?: boolean;
+  showTotals?: boolean;
+  tableOptions?: google.visualization.TableOptions;
+}
 
 /**
  * Converts an array of year offsets (e.g., "0", "-1", "-2") to actual year strings.
@@ -1765,12 +1774,30 @@ export class GoogleChartsService {
           
             // Fire API call in background, don't block rendering
             //this.loadNBSpecial('nbspecial', 2, 'full').then(() => console.log("fe loaded"));
+            // this.loadNBSpecial('nbspecial', { 
+            //   //limitRows: 20,
+            //   filters: [{ column: 'משלם', value: 'מוסד לביטוח לאומי - יולדו' }],
+            //   sortBy: 'count',
+            //   sortAsc: false,
+            //   showTotals: true,
+            //   //showSearch: true
+            //   showRowNumber: false,
+            //   allowHtml: true,
+            // });
+            
             this.loadNBSpecial('nbspecial', { 
-              limitRows: 20,
               filters: [{ column: 'משלם', value: 'מוסד לביטוח לאומי - יולדו' }],
               sortBy: 'count',
-              sortAsc: false
+              sortAsc: false,
+              showTotals: true,
+              showSearch: true,
+              tableOptions: {
+                showRowNumber: false,
+                allowHtml: true
+              }
             });
+            
+
             
           } else {
             layoutWrapper.innerHTML = getDeptGroupHtml(groupId);
@@ -2706,81 +2733,15 @@ export class GoogleChartsService {
     });
   }
   
-  // public async loadNBSpecial(
-  //   containerId: string = 'nbspecial',
-  //   yearsToShow?: number,
-  //   tableMode: 'full' | 'matrix' = 'full'
-  // ): Promise<void> {
-  //   try {
-  //     const container = await this.waitForElement(`#${containerId}`);
-  
-  //     const params = { change: 1, changeperc: 1 };
-  
-  //     return new Promise((resolve, reject) => {
-  //       this.callApi('GetNBSpecial', params, true).subscribe(
-  //         (response: any) => {
-  //           console.log('API raw response:', response);
-  
-  //           // --- Handle Google Charts DataTable format ---
-  //           if (response?.cols && response?.rows) {
-  //             let html = '<table class="table table-bordered table-striped"><thead><tr>';
-  //             response.cols.forEach((col: any) => {
-  //               html += `<th>${col.label}</th>`;
-  //             });
-  //             html += '</tr></thead><tbody>';
-  
-  //             response.rows.forEach((row: any) => {
-  //               html += '<tr>';
-  //               row.c.forEach((cell: any) => {
-  //                 html += `<td>${cell.v != null ? cell.v : ''}</td>`;
-  //               });
-  //               html += '</tr>';
-  //             });
-  
-  //             html += '</tbody></table>';
-  //             (container as HTMLElement).innerHTML = html;
-  //             resolve();
-  //             return;
-  //           }
-  
-  //           // --- Handle old array-based format (fallback) ---
-  //           if (!Array.isArray(response) || response.length === 0) {
-  //             (container as HTMLElement).innerHTML = '<p>No data available.</p>';
-  //             resolve();
-  //             return;
-  //           }
-  
-  //           // (Your previous "full/matrix" rendering logic here, if needed)
-  //           (container as HTMLElement).innerHTML = '<p>Data format not recognized.</p>';
-  //           resolve();
-  //         },
-  //         err => {
-  //           (container as HTMLElement).innerHTML = '<p class="text-danger">Failed to load data.</p>';
-  //           reject(err);
-  //         }
-  //       );
-  //     });
-  //   } catch (err) {
-  //     console.error('loadNBSpecial failed:', err);
-  //   }
-  // }
+
   
   public async loadNBSpecial(
     containerId: string = 'nbspecial',
-    options?: {
-      limitRows?: number;
-      filters?: { column: string; value: any }[];
-      sortBy?: string;
-      sortAsc?: boolean;
-    }
+    options: NBSpecialOptions = {}
   ): Promise<void> {
     try {
-      // ✅ Wait until the container exists
       const container = (await this.waitForElement(`#${containerId}`)) as HTMLElement;
-  
-      // Load Google Charts table package
       await this.loadGoogleCharts(['table']);
-  
       const params = { change: 1, changeperc: 1 };
   
       return new Promise((resolve, reject) => {
@@ -2792,22 +2753,24 @@ export class GoogleChartsService {
               return;
             }
   
-            // Build DataTable
             const data = new google.visualization.DataTable(response);
             let view = new google.visualization.DataView(data);
+            let totalRowValues: any[] = [];
   
-            // Filtering
-            if (options?.filters?.length) {
-              const matchingRows: number[] = [];
+            // --- Filtering ---
+            const applyFilters = () => {
+              let filteredRows: number[] = [];
               for (let i = 0; i < data.getNumberOfRows(); i++) {
-                if (options.filters.every(f => data.getValue(i, data.getColumnIndex(f.column)) === f.value)) {
-                  matchingRows.push(i);
-                }
+                const matchesFilters =
+                  !options?.filters?.length ||
+                  options.filters.every(f => data.getValue(i, data.getColumnIndex(f.column)) === f.value);
+                if (matchesFilters) filteredRows.push(i);
               }
-              view.setRows(matchingRows);
-            }
+              view.setRows(filteredRows);
+            };
+            applyFilters();
   
-            // Sorting
+            // --- Sorting ---
             if (options?.sortBy) {
               const sortIndex = data.getColumnIndex(options.sortBy);
               if (sortIndex !== -1) {
@@ -2820,14 +2783,92 @@ export class GoogleChartsService {
               }
             }
   
-            // Limit rows
+            // --- Limit rows ---
             if (options?.limitRows && options.limitRows > 0) {
               const limitedRows = view.getViewRows().slice(0, options.limitRows);
               view.setRows(limitedRows);
             }
   
-            // Draw interactive Google Table
-            this.drawGoogleTableWithExport(container, view);
+            // --- Compute TOTAL row (for footer only) ---
+            if (options?.showTotals) {
+              for (let c = 0; c < data.getNumberOfColumns(); c++) {
+                if (data.getColumnType(c) === 'number') {
+                  const sum = view.getViewRows().reduce((acc, row) => acc + (data.getValue(row, c) || 0), 0);
+                  totalRowValues.push(sum);
+                } else if (c === 0) {
+                  totalRowValues.push('סה"כ');
+                } else {
+                  totalRowValues.push(null);
+                }
+              }
+            }
+  
+            // --- Draw table ---
+            const drawTable = () => {
+              const tableOptions: google.visualization.TableOptions = {
+                showRowNumber: false, // Hide row numbers
+                allowHtml: true,
+                width: '100%',
+                page: 'disable',
+                ...options.tableOptions
+              };
+              this.drawGoogleTableWithExport(container, view, tableOptions);
+  
+              // --- Add sticky TOTAL row ---
+              const existingFooter = document.querySelector(`#${containerId}-footer`);
+              if (existingFooter) existingFooter.remove();
+              if (options?.showTotals) {
+                const footerTable = document.createElement('table');
+                footerTable.id = `${containerId}-footer`;
+                footerTable.style.width = '100%';
+                footerTable.style.position = 'sticky';
+                footerTable.style.bottom = '0';
+                //footerTable.style.background = '#f5f5f5';
+                footerTable.style.fontWeight = 'bold';
+                //footerTable.style.borderTop = '2px solid #ccc';
+                //footerTable.style.marginTop = '5px';
+  
+                // Build footer row
+                const row = footerTable.insertRow();
+                for (let val of totalRowValues) {
+                  const cell = row.insertCell();
+                  cell.innerHTML = val !== null ? val : '';
+                }
+  
+                container.appendChild(footerTable);
+              }
+            };
+            drawTable();
+  
+            // --- Search ---
+            if (options?.showSearch) {
+              const searchBoxId = `${containerId}-search`;
+              if (!document.getElementById(searchBoxId)) {
+                const searchBox = document.createElement('input');
+                searchBox.id = searchBoxId;
+                searchBox.type = 'text';
+                searchBox.placeholder = 'חיפוש...';
+                searchBox.style.marginBottom = '10px';
+                container.parentElement?.insertBefore(searchBox, container);
+  
+                searchBox.addEventListener('input', () => {
+                  const query = searchBox.value.toLowerCase();
+                  const filteredRows: number[] = [];
+                  const allRows = Array.from({ length: data.getNumberOfRows() }, (_, i) => i);
+  
+                  for (let i of allRows) {
+                    const rowText = Array.from({ length: data.getNumberOfColumns() })
+                      .map((_, col) => String(data.getValue(i, col)).toLowerCase())
+                      .join(' ');
+                    if (rowText.includes(query)) filteredRows.push(i);
+                  }
+  
+                  view.setRows(filteredRows);
+                  drawTable();
+                });
+              }
+            }
+  
             resolve();
           },
           err => {
@@ -2843,6 +2884,9 @@ export class GoogleChartsService {
   
   
   
+  
+  
+  
   private loadGoogleCharts(packages: string[]): Promise<void> {
     return new Promise((resolve) => {
       if (typeof google !== 'undefined' && google.visualization) {
@@ -2855,13 +2899,14 @@ export class GoogleChartsService {
   }
   
   
-  private drawGoogleTableWithExport(container: HTMLElement, data: google.visualization.DataTable | google.visualization.DataView): void {
+  
+  private drawGoogleTableWithExport(container: HTMLElement, data: google.visualization.DataTable | google.visualization.DataView, tableOptions: google.visualization.TableOptions): void {
     // Wrapper for table + export buttons
     container.innerHTML = `
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
         <div>
-          <button id="${container.id}-export-csv" class="btn btn-sm btn-outline-primary">Export CSV</button>
-          <button id="${container.id}-export-xls" class="btn btn-sm btn-outline-success">Export Excel</button>
+          <button id="${container.id}-export-csv" class="btn btn-sm btn-outline-primary">ייצוא CSV</button>
+          <button id="${container.id}-export-xls" class="btn btn-sm btn-outline-success">ייצוא Excel</button>
         </div>
       </div>
       <div id="${container.id}-table"></div>
@@ -2871,12 +2916,12 @@ export class GoogleChartsService {
     const table = new google.visualization.Table(tableContainer);
   
     table.draw(data, {
-      showRowNumber: true,
+      showRowNumber: false,
       allowHtml: true,
       width: '100%',
       sort: 'enable',
-      page: 'enable',
-      pageSize: 10
+      page: 'disable',
+      //pageSize: 10
     });
   
     // Bind export buttons
