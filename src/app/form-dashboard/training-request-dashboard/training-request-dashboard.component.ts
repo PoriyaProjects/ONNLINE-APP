@@ -10,6 +10,8 @@ import { MatSnackBar, MatSnackBarHorizontalPosition, MatSnackBarVerticalPosition
 import { ConfirmationDialogService } from 'src/app/confirmation-dialog/confirmation-dialog.service';
 import { TrainingRequestDialogComponent } from './training-request-dialog/training-request-dialog.component';
 import { DatePipe } from '@angular/common';
+import { of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 
 @Component({
   selector: 'app-people-list-dialog',
@@ -60,6 +62,7 @@ export class TrainingRequestDashboardComponent implements OnInit {
   Plan_Date: any;
   loading: boolean;
   print_only_Protocol: boolean;
+  change_plan_date: boolean;
 
   constructor(
     public dialog: MatDialog,
@@ -76,15 +79,31 @@ export class TrainingRequestDashboardComponent implements OnInit {
     this.getHRDepartmentEmployees();
   }
 
-  changeTrainingPlanDate() {
-    if (this.UserName == "ttsrefati") this.Plan_Date = "";
-    if (this.Plan_Date != "") this.Plan_Date = this.datePipe.transform(this.Plan_Date, 'dd-MM-yyyy')
-    this.http
-      .post(environment.url + "ChangeTrainingPlanDate", {
-        plan_date: this.Plan_Date
-      })
-      .subscribe((Response) => {
-        this.Plan_Date = Response['d'];
+  changeTrainingPlanDate(): void {
+    const resetUsers = ['ttsrefati', 'tkoren', 'adahabre'];
+
+    if (!resetUsers.includes(this.UserName)) {
+      this.Plan_Date = '';
+      this.change_plan_date = false;
+    } else {
+      this.change_plan_date = true;
+    }
+
+    const formattedDate = this.Plan_Date
+      ? this.datePipe.transform(this.Plan_Date, 'yyyy-MM-dd')
+      : '';
+
+    this.http.post<{ d: string }>(`${environment.url}ChangeTrainingPlanDate`, {
+      plan_date: formattedDate
+    })
+      .pipe(
+        catchError((error) => {
+          console.error('Error changing training plan date', error);
+          return of({ d: this.Plan_Date });
+        })
+      )
+      .subscribe((response) => {
+        this.Plan_Date = response.d;
       });
   }
 

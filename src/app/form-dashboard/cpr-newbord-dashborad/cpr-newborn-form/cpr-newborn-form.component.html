@@ -39,16 +39,6 @@
                             <input matInput formControlName="babyName">
                         </mat-form-field>
 
-                        <!-- <mat-form-field appearance="outline" style="width: 33.333%;">
-                            <mat-label>מועד תחילת ההחייאה</mat-label>
-                            <input matInput [matDatepicker]="resuscitationStartDatepicker"
-                                formControlName="resuscitationStartDate"
-                                (dateChange)="dateChanged($event, resuscitationForm.controls['motherInfo']['controls'].resuscitationStartDate)">
-                            <mat-datepicker-toggle matSuffix
-                                [for]="resuscitationStartDatepicker"></mat-datepicker-toggle>
-                            <mat-datepicker #resuscitationStartDatepicker></mat-datepicker>
-                        </mat-form-field> -->
-
                         <mat-form-field appearance="outline" style="width: 33.333%;">
                             <mat-label>החייאה בוצעה בתאריך</mat-label>
                             <input matInput [matDatepicker]="resuscitationDatepicker"
@@ -60,11 +50,6 @@
 
                         <mat-form-field appearance="outline" style="width: 33.333%;">
                             <mat-label>מועד תחילת ההחייאה</mat-label>
-                            <input matInput type="time" formControlName="resuscitationStartDate">
-                        </mat-form-field>
-
-                        <mat-form-field appearance="outline" style="width: 33.333%;">
-                            <mat-label>בשעה</mat-label>
                             <input matInput type="time" formControlName="resuscitationTime">
                         </mat-form-field>
 
@@ -155,6 +140,7 @@
                     <mat-form-field appearance="outline" style="width: 33.333%;">
                         <mat-label>תפקיד</mat-label>
                         <mat-select formControlName="role">
+                            <mat-option value="רופא">רופא</mat-option>
                             <mat-option value="רופא בכיר">רופא בכיר</mat-option>
                             <mat-option value="רופא תורן">רופא תורן</mat-option>
                             <mat-option value="אחות פגייה">אחות פגייה</mat-option>
@@ -635,7 +621,7 @@
             </mat-card-actions>
         </mat-step>
 
-        <!-- Step 7: בדיקות מעבדה -->
+        <!-- Step 8: בדיקות מעבדה -->
         <mat-step>
             <ng-template matStepLabel>בדיקות מעבדה</ng-template>
             <mat-card
@@ -743,7 +729,7 @@
             </mat-card-actions>
         </mat-step>
 
-        <!-- Step 7: סיכום החייאה -->
+        <!-- Step 9: סיכום החייאה -->
         <mat-step>
             <ng-template matStepLabel>סיכום החייאה</ng-template>
             <mat-card
