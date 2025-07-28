@@ -1295,82 +1295,6 @@ export class GoogleChartsService {
 
 
 
-  //wipe out
-  public async getChargingGroupButtons(): Promise<{ department: string, color: string }[]> {
-    try {     
-
-      const raw = await this.callApi('GetChargingIncome', {
-        groupId: '',
-        deptId: '',
-        incomeCategory: 'totalCharging'  // or configurable
-      }, true).toPromise();
-
-      // console.log('[getChargingGroupButtons] Raw response:', raw);
-
-      const cleanJson = sanitizeSoapResponse(raw);
-      // console.log('[getChargingGroupButtons] Clean JSON after sanitizeSoapResponse:', cleanJson);
-
-      if (!Array.isArray(cleanJson)) {
-        //console.error('[getChargingGroupButtons] Invalid response format: expected array');
-        return [];
-      }
-
-      if (cleanJson.length === 0) {
-        //onsole.warn('[getChargingGroupButtons] Response array is empty');
-        return [];
-      }
-
-      const allYears = cleanJson.map((r: any) => +r.Year).filter(y => !isNaN(y));
-      // console.log('[getChargingGroupButtons] All years found:', allYears);
-
-      if (allYears.length === 0) {
-        //console.warn('[getChargingGroupButtons] No valid years found in data');
-        return [];
-      }
-
-      const latestYear = Math.max(...allYears);
-      // console.log('[getChargingGroupButtons] Latest year selected:', latestYear);
-
-      const filtered = cleanJson.filter((r: any) => +r.Year === latestYear);
-      //console.log(`[getChargingGroupButtons] Filtered rows for ${latestYear}:`, filtered);
-
-      const map: { [dept: string]: string } = {};
-
-      filtered.forEach((r: any) => {
-        const dept = r.Department || '(unknown)';
-        const change = r.ChangePercent;
-        const val = parseFloat(change);
-        let color = '#ccc';
-
-        if (!isNaN(val)) {
-          if (val > 20) color = '#006400';
-          else if (val > 10) color = '#228B22';
-          else if (val > 0) color = '#90EE90';
-          else if (val === 0) color = '#e0e0e0';
-          else if (val > -10) color = '#f08080';
-          else if (val > -20) color = '#ff8c00';
-          else color = '#8b0000';
-        }
-
-        map[dept] = color;
-      });
-
-      const buttons = Object.keys(map).map(dept => ({
-        department: dept,
-        color: map[dept],
-        class: 'dept-button'
-      }));
-
-      // console.log('[getChargingGroupButtons] Final department buttons:', buttons);
-      return buttons;
-    } catch (err) {
-      //console.error('[getChargingGroupButtons] Error fetching or processing data:', err);
-      return [];
-    }
-  }
-
-
-
   /**
     * Loads department data and renders a chart for a specific department
     */
@@ -1575,6 +1499,88 @@ export class GoogleChartsService {
     
   //   }
 
+  // private async drawDepartmentGaugeOverlay(
+  //   groupID: string,
+  //   deptID: string,
+  //   incomeCategory: string,
+  //   elementId: string
+  // ): Promise<void> {
+  //   try {
+  //     const raw = await this.callApi('GetChargingIncomeMonthly', {
+  //       groupID,
+  //       deptID,
+  //       incomeCategory
+  //     }, true).toPromise();
+  // console.log("here");
+  //     // Step 1: unwrap <string>...</string>
+  //     const rawStr = typeof raw === 'string' ? raw.trim() : '';
+  //     const match = rawStr.match(/^<string[^>]*>([\s\S]*?)<\/string>$/);
+  //     const jsonText = match ? match[1] : rawStr;
+  
+  //     // Step 2: parse the JSON
+  //     const parsed = JSON.parse(jsonText);
+  //     if (!parsed?.success || !Array.isArray(parsed.data) || parsed.data.length < 2) {
+  //       console.warn('❌ Invalid data structure');
+  //       return;
+  //     }
+  
+  //     const rows = parsed.data.slice(1); // skip header row
+  
+  //     // Step 3: sum Charging per year
+  //     const incomeByYear: Record<string, number> = {};
+  
+  //     for (const row of rows) {
+  //       const [monthStr, charging] = row;
+  //       if (!monthStr || typeof charging !== 'number') continue;
+  //       const year = monthStr.split('-')[0];
+  //       incomeByYear[year] = (incomeByYear[year] ?? 0) + charging;
+  //     }
+  
+  //     const availableYears = Object.keys(incomeByYear).map(Number).filter(y => !isNaN(y));
+  //     const latestYear = Math.max(...availableYears);
+  //     const previousYear = latestYear - 1;
+  
+  //     const deptActualIncome = incomeByYear[latestYear.toString()];
+  //     const deptPreviousIncome = incomeByYear[previousYear.toString()];
+  
+  //     if (!deptActualIncome || !deptPreviousIncome) {
+  //       console.warn('❌ Missing Charging data for required years');
+  //       console.log('Available:', incomeByYear);
+  //       return;
+  //     }
+  
+  //     const deptTargetIncome = deptPreviousIncome * 1.1;
+  //     const currentMonthIndex = new Date().getMonth(); // 0–11
+  //     const plannedToDate = deptTargetIncome * ((currentMonthIndex + 1) / 12);
+  // console.log("here2");
+  //     // ✅ Draw the gauge
+  //     drawOverlayDualArcChartHelperIncome({
+  //       containerId: elementId,
+  //       workingDaysInfo: {
+  //         currentWorkingDayIndex: currentMonthIndex,
+  //         totalWorkingDays: 12
+  //       },
+  //       gaugeValue: deptActualIncome,
+  //       gaugeTargetValue: deptTargetIncome,
+  //       gaugePlanned: plannedToDate,
+  //       gaugeTargetStatus: deptActualIncome >= deptTargetIncome ? '✅' : '❌',
+  //       currentMonthValues: [],
+  //       markerOptions: { radius: 14, fontSize: 10 }
+  //     });
+  
+  //     console.log('📊 Gauge Data:', {
+  //       latestYear,
+  //       previousYear,
+  //       deptActualIncome,
+  //       deptPreviousIncome,
+  //       deptTargetIncome
+  //     });
+  
+  //   } catch (err) {
+  //     console.error('❌ Failed to process department monthly data:', err);
+  //   }
+  // }
+  
   private async drawDepartmentGaugeOverlay(
     groupID: string,
     deptID: string,
@@ -1582,70 +1588,121 @@ export class GoogleChartsService {
     elementId: string
   ): Promise<void> {
     try {
+      // 1. Wait for container (same approach as drawDualArcGaugeOverlay)
+      const waitForContainer = (id: string, retries = 10): Promise<HTMLElement | null> =>
+        new Promise((resolve) => {
+          let attempts = 0;
+          const interval = setInterval(() => {
+            const el = document.getElementById(id);
+            if (el || ++attempts >= retries) {
+              clearInterval(interval);
+              resolve(el);
+            }
+          }, 100);
+        });
+  
+      const container = await waitForContainer(elementId);
+      if (!container) {
+        console.warn(`❌ Container "${elementId}" not found after retrying.`);
+        return;
+      }
+  
+      console.debug(`[DeptGaugeOverlay] Fetching data for group ${groupID}, dept ${deptID}...`);
       const raw = await this.callApi('GetChargingIncomeMonthly', {
         groupID,
         deptID,
         incomeCategory
       }, true).toPromise();
   
-      // Step 1: unwrap <string>...</string>
-      const rawStr = typeof raw === 'string' ? raw.trim() : '';
-      const match = rawStr.match(/^<string[^>]*>([\s\S]*?)<\/string>$/);
-      const jsonText = match ? match[1] : rawStr;
+      // 2. Unwrap SOAP if needed (helperized)
+      const unwrapSoap = (input: any): any => {
+        if (typeof input === 'string') {
+          const match = input.trim().match(/^<string[^>]*>([\s\S]*?)<\/string>$/);
+          return JSON.parse(match ? match[1] : input);
+        }
+        return input;
+      };
   
-      // Step 2: parse the JSON
-      const parsed = JSON.parse(jsonText);
+      const parsed = unwrapSoap(raw);
+  
       if (!parsed?.success || !Array.isArray(parsed.data) || parsed.data.length < 2) {
-        console.warn('❌ Invalid data structure');
+        console.warn('❌ Invalid department monthly data');
         return;
       }
   
-      const rows = parsed.data.slice(1); // skip header row
+      const rows = parsed.data.slice(1); // skip header
   
-      // Step 3: sum Charging per year
-      const incomeByYear: Record<string, number> = {};
-  
+      // 3. Aggregate yearly charging
+      const incomeByYear: Record<number, number> = {};
       for (const row of rows) {
         const [monthStr, charging] = row;
         if (!monthStr || typeof charging !== 'number') continue;
-        const year = monthStr.split('-')[0];
-        incomeByYear[year] = (incomeByYear[year] ?? 0) + charging;
+        const year = parseInt(monthStr.split('-')[0]);
+        if (!isNaN(year)) {
+          incomeByYear[year] = (incomeByYear[year] ?? 0) + charging;
+        }
       }
   
-      const availableYears = Object.keys(incomeByYear).map(Number).filter(y => !isNaN(y));
-      const latestYear = Math.max(...availableYears);
-      const previousYear = latestYear - 1;
-  
-      const deptActualIncome = incomeByYear[latestYear.toString()];
-      const deptPreviousIncome = incomeByYear[previousYear.toString()];
-  
-      if (!deptActualIncome || !deptPreviousIncome) {
-        console.warn('❌ Missing Charging data for required years');
-        console.log('Available:', incomeByYear);
+      const years = Object.keys(incomeByYear).map(Number).filter(y => !isNaN(y));
+      if (years.length === 0) {
+        console.warn('❌ No valid yearly data for department');
         return;
       }
   
-      const deptTargetIncome = deptPreviousIncome * 1.1;
-      const currentMonthIndex = new Date().getMonth(); // 0–11
-      const plannedToDate = deptTargetIncome * ((currentMonthIndex + 1) / 12);
+      const maxYear = Math.max(...years);
+      const previousYear = maxYear - 1;
   
-      // ✅ Draw the gauge
+      const deptActualIncome = incomeByYear[maxYear] ?? 0;
+      const deptPreviousIncome = incomeByYear[previousYear] ?? 0;
+  
+      if (!deptActualIncome || !deptPreviousIncome) {
+        console.warn('❌ Missing Charging data for department (current/previous year)');
+        return;
+      }
+  
+      // 4. Compute dynamic target (same as DualArc)
+      const deptTargetIncome = deptPreviousIncome * 1.1;
+  
+      const now = new Date();
+      const today = now.getDate();
+      const rawMonth = now.getMonth() + 1;
+      const adjustedMonth = today > 10 ? rawMonth - 1 : rawMonth - 2;
+      if (adjustedMonth < 1) {
+        console.warn(`⚠️ Adjusted month (${adjustedMonth}) is before January.`);
+        return;
+      }
+  
+      const perMonthTarget = deptTargetIncome / 12;
+      const plannedToDate = perMonthTarget * adjustedMonth;
+  
+      // 5. Determine status
+      let gaugeTargetStatus: string;
+      if (adjustedMonth === 1) {
+        const relaxedThreshold = perMonthTarget * 0.5;
+        gaugeTargetStatus = deptActualIncome >= relaxedThreshold ? '✅' : '❌';
+      } else if (adjustedMonth === 12) {
+        gaugeTargetStatus = deptActualIncome >= deptTargetIncome ? '✅' : '❌';
+      } else {
+        gaugeTargetStatus = deptActualIncome >= plannedToDate ? '✅' : '❌';
+      }
+  
+      // 6. Draw gauge
       drawOverlayDualArcChartHelperIncome({
         containerId: elementId,
         workingDaysInfo: {
-          currentWorkingDayIndex: currentMonthIndex,
+          currentWorkingDayIndex: adjustedMonth,
           totalWorkingDays: 12
         },
         gaugeValue: deptActualIncome,
         gaugeTargetValue: deptTargetIncome,
         gaugePlanned: plannedToDate,
-        gaugeTargetStatus: deptActualIncome >= deptTargetIncome ? '✅' : '❌',
+        gaugeTargetStatus,
         currentMonthValues: [],
         markerOptions: { radius: 14, fontSize: 10 }
       });
   
-      console.log('📊 Gauge Data:', {
-        latestYear,
+      console.log('📊 Dept Gauge Data:', {
+        maxYear,
         previousYear,
         deptActualIncome,
         deptPreviousIncome,
@@ -1654,6 +1711,10 @@ export class GoogleChartsService {
   
     } catch (err) {
       console.error('❌ Failed to process department monthly data:', err);
+      const el = document.getElementById(elementId);
+      if (el) {
+        el.innerHTML = '⚠️ Error loading department gauge';
+      }
     }
   }
   
@@ -1772,18 +1833,7 @@ export class GoogleChartsService {
             const specialContainer = layoutWrapper.querySelector('#nbspecial');
             if (specialContainer) specialContainer.innerHTML = '<p>טעינה...</p>';
           
-            // Fire API call in background, don't block rendering
-            //this.loadNBSpecial('nbspecial', 2, 'full').then(() => console.log("fe loaded"));
-            // this.loadNBSpecial('nbspecial', { 
-            //   //limitRows: 20,
-            //   filters: [{ column: 'משלם', value: 'מוסד לביטוח לאומי - יולדו' }],
-            //   sortBy: 'count',
-            //   sortAsc: false,
-            //   showTotals: true,
-            //   //showSearch: true
-            //   showRowNumber: false,
-            //   allowHtml: true,
-            // });
+           
             
             this.loadNBSpecial('nbspecial', { 
               filters: [{ column: 'משלם', value: 'מוסד לביטוח לאומי - יולדו' }],
@@ -1821,6 +1871,9 @@ export class GoogleChartsService {
             firstDepts.push({ id, name, percent });
           }
   
+          // 🔥 Sort by percent descending
+          firstDepts.sort((a, b) => (b.percent ?? 0) - (a.percent ?? 0)); 
+
           const deptDynamic = document.getElementById(`dept-dynamic-${groupId}`);
           if (!deptDynamic) {
             console.warn(`Missing dynamic container: dept-dynamic-${groupId}`);
@@ -1935,7 +1988,7 @@ export class GoogleChartsService {
 
     // ✅ Department-level gauge/summary tables
     //this.drawDualArcGaugeOverlay(`arc_chart${suffix}`);
-    this.drawDepartmentGaugeOverlay(group.id.toString(), dept.id.toString(), 'TotalCharging', `arc_chart-${suffix}` );
+    this.drawDepartmentGaugeOverlay(group.id.toString(), dept.id.toString(), 'TotalCharging', `arc_chart${suffix}` );
     this.loadYearlyIncomeDataCombinedDept(`tabled_chart${suffix}`, dept.id, group.id, 'totalCharging', 5, 'full');
 //    this.loadYearlyIncomeDataCombinedDept(`tabled_chart2${suffix}`, dept.id, group.id, 'totalCharging', 2, 'full');
 
@@ -2732,9 +2785,10 @@ export class GoogleChartsService {
       }, timeout);
     });
   }
-  
 
-  
+/*  
+//////// NB table ///////////////
+*/
   public async loadNBSpecial(
     containerId: string = 'nbspecial',
     options: NBSpecialOptions = {}
@@ -2881,12 +2935,7 @@ export class GoogleChartsService {
       console.error('loadNBSpecial failed:', err);
     }
   }
-  
-  
-  
-  
-  
-  
+   
   private loadGoogleCharts(packages: string[]): Promise<void> {
     return new Promise((resolve) => {
       if (typeof google !== 'undefined' && google.visualization) {
@@ -2897,9 +2946,7 @@ export class GoogleChartsService {
       google.charts.setOnLoadCallback(() => resolve());
     });
   }
-  
-  
-  
+    
   private drawGoogleTableWithExport(container: HTMLElement, data: google.visualization.DataTable | google.visualization.DataView, tableOptions: google.visualization.TableOptions): void {
     // Wrapper for table + export buttons
     container.innerHTML = `
@@ -2986,6 +3033,9 @@ export class GoogleChartsService {
     link.click();
   }
    
+/*  
+//////// eof NB table ///////////////
+*/
 
 }
 
