@@ -40,7 +40,7 @@
                 </button>
 
                 <!-- Date Picker -->
-                <mat-form-field *ngIf="UserName == 'ttsrefati' || UserName == 'tkoren'" appearance="outline"
+                <mat-form-field *ngIf="change_plan_date" appearance="outline"
                     class="form-field">
                     <mat-label>תאריך הועדה הקרוב</mat-label>
                     <input matInput [matDatepicker]="PlanDate" [(ngModel)]="Plan_Date"
@@ -50,8 +50,8 @@
                 </mat-form-field>
 
                 <!-- Static Display of Date -->
-                <p *ngIf="UserName != 'ttsrefati' && UserName != 'tkoren'" class="next-meeting">
-                    <strong>תאריך הועדה הקרוב:</strong> {{ Plan_Date }}
+                <p *ngIf="!change_plan_date" class="next-meeting">
+                    <strong>תאריך הועדה הקרוב:</strong> <u>{{ Plan_Date }}</u>
                 </p>
             </div>
         </div>
