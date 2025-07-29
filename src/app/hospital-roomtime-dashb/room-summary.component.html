@@ -1,0 +1,18 @@
+<table>
+  <thead style="border-bottom: solid 1px #777;">
+    <tr><th>חדר</th>
+      <th style="transform: rotate(-20deg);font-size:0.8rem;">החודש</th>
+      <th style="transform: rotate(-20deg);font-size:0.8rem;">קודם</th>
+      <th style="transform: rotate(-20deg);font-size:0.8rem;">סה"כ</th>
+    </tr>
+  </thead>
+  <tbody>
+
+    <tr *ngFor="let item of summary | keyvalue: compareTotals"  style="border-bottom: solid 1px #999;">
+      <td>{{ item.key }}</td>
+      <td>{{ item.value.thisMonth }}</td>
+      <td>{{ item.value.prevMonth }}</td>
+      <td>{{ item.value.total }}</td>
+    </tr>
+  </tbody>
+</table>
