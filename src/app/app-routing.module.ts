@@ -136,6 +136,7 @@ import { LearningRequestsDashboardComponent } from "./learning-requests-dashboar
 import { CprNewbordDashboradComponent } from "./form-dashboard/cpr-newbord-dashborad/cpr-newbord-dashborad.component";
 import { CprNewbornFormComponent } from "./form-dashboard/cpr-newbord-dashborad/cpr-newborn-form/cpr-newborn-form.component";
 import { GoogleChartsComponent } from './hospital-cath-dashb/google-charts/google-charts.component';
+import { GoogleChartsTimeComponent } from './hospital-roomtime-dashb/google-charts/google-charts.component';
 import { CommercialSupportFormDashboardComponent } from "./form-dashboard/commercial-support-form-dashboard/commercial-support-form-dashboard.component";
 import { CommercialSupportFormDialogComponent } from "./form-dashboard/commercial-support-form-dashboard/commercial-support-form-dialog/commercial-support-form-dialog.component";
 import { CommercialSupportResearchDialogComponent } from "./form-dashboard/commercial-support-form-dashboard/commercial-support-research-dialog/commercial-support-research-dialog.component";
@@ -318,6 +319,7 @@ const routes: Routes = [
     { path: "cpr-newborn-form", component: CprNewbornFormComponent },
     { path: "LabTests", component: LabTestsComponent },
     { path: "hospital-cath-dashb", component: GoogleChartsComponent },
+    { path: "hospital-roomtime-dashb", component: GoogleChartsTimeComponent },
     { path: 'service-unit-email-list', component: ServiceUnitEmailListComponent },
     { path: 'service-unit-email-list-dialog', component: ServiceUnitEmailListDialogComponent },
     { path: "hospitalincomedashb", component: HospitalIncomeDashbComponent },

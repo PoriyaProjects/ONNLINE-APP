@@ -1,0 +1,55 @@
+<div class="mdc-layout-grid" style="direction: rtl;">
+    <div class="row" style="text-align: center;">
+        <div class="mdc-layout-grid__cell col-md-12">
+            <h1 class="page-title text-center" style="text-align: center;">
+                זמן אבוד (איחור + אובדן + עודף setup time)
+            </h1>
+        </div>
+        <div class="row">
+            <div class="mdc-layout-grid__cell col-md-12">
+
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-12 text-center">
+            <div class="row text-center" *ngIf="showDepartmentSelector">
+                <div *ngIf="showDepartmentSelector" class="row">
+                    <div class="">
+                        <label for="deptSelect" class="form-label">בחר מחלקה: </label>
+                        <select id="deptSelect" [(ngModel)]="selectedDepartmentValue" (change)="onDepartmentChange()"
+                            class="form-select">
+                            <option *ngFor="let dept of departments" [value]="dept.value">{{ dept.label }}</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="mdc-layout-grid__cell col-md-12">
+
+            <main class="mdc-top-app-bar--fixed-adjust">
+                
+                <h3 style="text-align: center;">זמני חדרים (ממוצע)</h3>
+                <div style="height:20px;"></div>
+                <div class="row">
+                    <div id="chartMorningDelayAvg" class="col-md-4" style="height:400px"></div>
+                    <div id="chartLostDaysAvg" class="col-md-4" style="height:400px"></div>
+                    <div id="chartSetupTimeAvg" class="col-md-4" style="height:400px"></div>
+                </div>
+                <div style="height:120px;"></div>
+                <h3 style="text-align: center;">זמני חדרים (מצטבר)</h3>
+                <div style="height:20px;"></div>
+                <div class="row">
+                    <div id="chartMorningDelayAgg" class="col-md-4" style="height:400px"></div>
+                    <div id="chartLostDaysAgg" class="col-md-4" style="height:400px"></div>
+                    <div id="chartSetupTimeAgg" class="col-md-4" style="height:400px"></div>
+                </div>
+                <div style="height:60px;"></div>
+            </main>
+        </div>
+    </div>
+</div>
+
+<hr />
