@@ -41,7 +41,7 @@ const routes: Routes = [
     GoogleChartsIncomeComponent,
     TableComponent,
     // ChargingGroupsComponent,
-    HospitalIncomeDashbComponent,
+    //HospitalIncomeDashbComponent,
     // DepartmentDashboardComponent,
     // GroupDashboardComponent
     

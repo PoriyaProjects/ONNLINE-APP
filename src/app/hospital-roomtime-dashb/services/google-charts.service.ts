@@ -207,70 +207,65 @@ export class GoogleChartsService {
         dt.addColumn({ type: 'string', role: 'annotation' });
   
         let maxValue = 0;
+        // rows.forEach(r => {
+        //   const department = r.c[2]?.v || '';
+        //   const value = r.c[3]?.v ?? 0;
+        //   const color = colorFn(department);
+        //   maxValue = Math.max(maxValue, value);
+  
+        //   // Annotation: days as 1 decimal OR HH:MM
+        //   const annotation = isDays 
+        //     ? `${Number(value).toFixed(1)}` 
+        //     : this.formatToHHMM(Number(value));
+        //   dt.addRow([department, Number(value), `color: ${color}`, annotation]);
+        // });
         rows.forEach(r => {
-          const department = r.c[2]?.v || '';
-          const value = r.c[3]?.v ?? 0;
-          const color = colorFn(department);
-          maxValue = Math.max(maxValue, value);
-  
-          // Annotation: days as 1 decimal OR HH:MM
+          const baseDepartment = r.c[2]?.v || '';
+          const periodDate = r.c[3]?.v || '';
+          const rawValue = Number(r.c[4]?.v ?? 0);
+        
+          // Displayed label: append year for ParallelsPeriod
+          let displayDepartment = baseDepartment;
+          if (dataType === '4-ParallelsPeriod' && periodDate) {
+            const yearSuffix = new Date(periodDate).getFullYear().toString().slice(-2);
+            displayDepartment = `${baseDepartment} - ${yearSuffix}`;
+          }
+        
+          const color = colorFn(baseDepartment); // <--- use base name for color mapping
+          maxValue = Math.max(maxValue, rawValue);
+        
           const annotation = isDays 
-            ? `${Number(value).toFixed(1)}` 
-            : this.formatToHHMM(Number(value));
-          dt.addRow([department, Number(value), `color: ${color}`, annotation]);
+            ? rawValue.toFixed(1)
+            : this.formatToHHMM(rawValue);
+        
+          dt.addRow([displayDepartment, rawValue, `color: ${color}`, annotation]);
         });
-  
-        // const options = {
-        //   title: `${titlePrefix} - ${dataSource}`,
-        //   height: 400,
-        //   bar: { groupWidth: '65%' },
-        //   annotations: { alwaysOutside: true, textStyle: { fontSize: 13 } },
-        //   hAxis: { slantedText: true, slantedTextAngle: 45 },
-        //   vAxis: isDays 
-        //     ? { minValue: 0, format: '0.0', gridlines: { count: Math.ceil(maxValue) + 1 } }
-        //     : { minValue: 0, ticks: this.generateHMMTicks(maxValue, 1800) },
-        //   legend: { position: 'none' }
-        // };
-  const options = {
-  title: '', // remove default title`${titlePrefix} - ${dataSource}`,
-  height: 400,
-  bar: { groupWidth: '65%' },
-  legend: { position: 'right' },
-  annotations: { alwaysOutside: true, textStyle: { fontSize: 13 } },
-  hAxis: { slantedText: true, slantedTextAngle: 45 },
-  vAxis: isDays 
-    //? { minValue: 0, format: '0.0', gridlines: { count: Math.ceil(Math.max(...rowValues.slice(1))) + 1 } }
-    ? { minValue: 0, format: '0.0', gridlines: { count: Math.ceil(maxValue) + 1 } }
-    //: { minValue: 0, ticks: this.generateHMMTicks(Math.max(...rowValues.slice(1)), 1800) },
-    : { minValue: 0, ticks: this.generateHMMTicks(maxValue, 1800) },
-  //colors,
-  titleTextStyle: {
-    alignment: 'start',     // Aligns text to the right
-    fontSize: 16,
-    bold: true,
-    direction: 'rtl'
-  },
-  chartArea: { left: 50, top: 60, right: 20, width: '80%', height: '70%' } // Adjusts padding
-};
+        
+        
+        
+            const options = {
+            title: '', // remove default title`${titlePrefix} - ${dataSource}`,
+            height: 560,
+            bar: { groupWidth: '65%' },
+            legend: { position: 'right' },
+            annotations: { alwaysOutside: true, textStyle: { fontSize: 16 } },
+            hAxis: { slantedText: true, slantedTextAngle: 45 },
+            vAxis: isDays 
+              //? { minValue: 0, format: '0.0', gridlines: { count: Math.ceil(Math.max(...rowValues.slice(1))) + 1 } }
+              ? { minValue: 0, format: '0.0', gridlines: { count: Math.ceil(maxValue) + 1 } }
+              //: { minValue: 0, ticks: this.generateHMMTicks(Math.max(...rowValues.slice(1)), 1800) },
+              : { minValue: 0, ticks: this.generateHMMTicks(maxValue, 1800) },
+            //colors,
+            titleTextStyle: {
+              alignment: 'start',     // Aligns text to the right
+              fontSize: 16,
+              bold: true,
+              direction: 'rtl'
+            },
+            chartArea: { left: 50, top: 40, right: 20, width: '80%', height: '70%' } // Adjusts padding
+          };
 
-// // Clear previous title (if any)
-// const existingTitles = container.parentElement.querySelectorAll('.chart-title');
-// existingTitles.forEach(el => el.remove());
 
-// // Create custom title element
-// const titleDiv = document.createElement('div');
-// titleDiv.innerText = `${titlePrefix} - ${this.translateDataSource(dataSource)}`;
-// titleDiv.style.textAlign = 'center';
-// titleDiv.style.fontSize = '16px';
-// titleDiv.style.fontWeight = 'bold';
-// titleDiv.style.marginBottom = '5px';
-
-// // Insert before chart container
-// if (container && container.parentElement) {
-//   container.parentElement.insertBefore(titleDiv, container);
-// }
-
-      // Set title separately
    // Set title separately
 const titleContainer = document.getElementById(`${elementId}Title`);
 if (titleContainer) {
