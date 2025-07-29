@@ -13,91 +13,85 @@ import { environment } from 'src/environments/environment';
   styleUrls: ['./google-charts.component.css']
 })
 export class RoomTimeDashboardComponent implements OnInit, AfterViewInit {
-  departments: { label: string; value: string }[] = [];
-  selectedDepartmentValue = '';
-  isAdmin = false;
-  showDepartmentSelector = false;
+  dataTypes = [
+    { value: '1-Yesterday', label: 'אתמול' },
+    { value: '2-CurrentMonth', label: 'החודש' },
+    { value: '3-CurrentYear', label: 'השנה' },
+    { value: '4-ParallelsPeriod', label: 'השוואתי' }
+  ];
+  selectedDataType = '2-CurrentMonth';
 
-  constructor(
-    public googleChartsService: GoogleChartsService,
-    private http: HttpClient
-  ) { }
+  // Tabs
+  activeTab: 'avg' | 'agg' = 'avg';
 
-  ngOnInit(): void {
-    this.loadDepartments();
-  }
+  // 13‑color palette for departments
+  departmentColors: string[] = [
+    '#6ba1f8', '#5ed175', '#00b3d7', '#fcd74e', '#f86b6b',
+    '#a17ef8', '#ff8c42', '#c4e86b', '#00d4a3', '#ff9ed4',
+    '#8bdbf2', '#d48efc', '#ffb347'
+  ];
+  departmentColorMap: { [dept: string]: string } = {};
+
+  constructor(public googleChartsService: GoogleChartsService) {}
+
+  ngOnInit(): void {}
 
   ngAfterViewInit(): void {
     this.googleChartsService.chartsReady$.subscribe(() => this.loadCharts());
   }
 
-  /** Load departments list from API */
-  private loadDepartments(): void {
-    this.http.get<string>(`${environment.url}/GetRoomTimeDept`, { responseType: 'text' as 'json' })
-      .subscribe({
-        next: (res: string) => {
-          const cleanData = this.sanitizeSoapResponse(res);
-          const deptArray: string[] = JSON.parse(cleanData);
-          this.departments = deptArray.map(d => ({ label: d, value: d }));
-
-          const userDepartment = (localStorage.getItem('Depart') || '').trim();
-          const adminDepartments = ['ניהול', 'מערכות מידע', 'תקציבים', 'הנהלת המרכז הרפואי', 'הנהלה אדמיניסטרטיבית', '19'];
-
-          this.isAdmin = adminDepartments.includes(userDepartment);
-          this.showDepartmentSelector = this.isAdmin;
-
-          this.selectedDepartmentValue = this.isAdmin
-            ? this.departments[0]?.value || ''
-            : userDepartment;
-        },
-        error: err => console.error('Failed to load departments', err)
-      });
-  }
-
-  /** Reload charts */
-  onDepartmentChange(): void {
-    this.googleChartsService.clearCache();
+  onDataTypeChange(): void {
     this.loadCharts();
   }
 
-  /** Draw all charts */
-  loadCharts(): void {
-    const dparam = this.selectedDepartmentValue;
-
-    // 1st row: AvgTime
-    this.googleChartsService.drawGroupedRoomTimeCharts(
-      {
-        MorningDelay: 'chartMorningDelayAvg',
-        LostDays: 'chartLostDaysAvg',
-        SetupTime: 'chartSetupTimeAvg'
-      },
-      `${environment.url}/GetRoomTimeAvg`,
-      dparam,
-      'זמן ממוצע (HH:MM)',
-      3
-    );
-
-    // 2nd row: AggregateDays
-    this.googleChartsService.drawGroupedRoomTimeCharts(
-      {
-        MorningDelay: 'chartMorningDelayAgg',
-        LostDays: 'chartLostDaysAgg',
-        SetupTime: 'chartSetupTimeAgg'
-      },
-      `${environment.url}/GetRoomTimeAggregated`,
-      dparam,
-      'ימים מצטברים',
-      3
-    );
+  onTabChange(tab: 'avg' | 'agg'): void {
+    this.activeTab = tab; // update immediately for UI
+    setTimeout(() => this.loadCharts(), 0); // redraw charts after DOM update
   }
+  
 
-  /** Strip SOAP wrapper */
-  private sanitizeSoapResponse(response: string): string {
-    const startIndex = response.indexOf('[');
-    const endIndex = response.lastIndexOf(']');
-    if (startIndex === -1 || endIndex === -1) {
-      throw new Error('Invalid SOAP response');
+  // Assign colors consistently to departments
+  getDepartmentColor(department: string): string {
+    if (!this.departmentColorMap[department]) {
+      const index = Object.keys(this.departmentColorMap).length % this.departmentColors.length;
+      this.departmentColorMap[department] = this.departmentColors[index];
     }
-    return response.substring(startIndex, endIndex + 1);
+    return this.departmentColorMap[department];
   }
+
+
+
+  loadCharts(): void {
+    const chartsConfig = this.activeTab === 'avg'
+      ? {
+          ids: {
+            MorningDelay: 'chartMorningDelayAvg',
+            LostDays: 'chartLostDaysAvg',
+            SetupTime: 'chartSetupTimeAvg'
+          },
+          url: `${environment.url}/GetRoomTimeAvgD`,
+          title: 'זמן ממוצע (HH:MM)',
+          isDays: false
+        }
+      : {
+          ids: {
+            MorningDelay: 'chartMorningDelayAgg',
+            LostDays: 'chartLostDaysAgg',
+            SetupTime: 'chartSetupTimeAgg'
+          },
+          url: `${environment.url}/GetRoomAggregateDaysD`,
+          title: 'מספר ימים',
+          isDays: true
+        };
+  
+    this.googleChartsService.drawDepartmentChartsWithColors(
+      chartsConfig.ids,
+      chartsConfig.url,
+      this.selectedDataType,
+      chartsConfig.title,
+      (dept: string) => this.getDepartmentColor(dept),
+      chartsConfig.isDays
+    );
+  }
+  
 }
