@@ -73,46 +73,7 @@ export class GoogleChartsService {
     return ticks;
   }
 
-  /** Translate a period type to Hebrew */
-  private translatePeriodType(type: string): string {
-    return this.PERIOD_TYPE_MAP[type]?.label || type;
-  }
 
-  /** Get color for a given period type */
-  private getColorForType(type: string): string {
-    return this.PERIOD_TYPE_MAP[type]?.color || this.CHART_COLORS[0];
-  }
-
-  /** Create a custom legend below a chart */
-  private createLegend(container: HTMLElement): void {
-    const legend = document.createElement('div');
-    legend.style.display = 'flex';
-    legend.style.justifyContent = 'center';
-    legend.style.marginTop = '10px';
-    legend.style.gap = '20px';
-
-    Object.values(this.PERIOD_TYPE_MAP).forEach(period => {
-      const item = document.createElement('div');
-      item.style.display = 'flex';
-      item.style.alignItems = 'center';
-      item.style.gap = '5px';
-      item.style.fontSize = '14px';
-
-      const colorBox = document.createElement('div');
-      colorBox.style.width = '15px';
-      colorBox.style.height = '15px';
-      colorBox.style.backgroundColor = period.color;
-
-      const label = document.createElement('span');
-      label.innerText = period.label;
-
-      item.appendChild(colorBox);
-      item.appendChild(label);
-      legend.appendChild(item);
-    });
-
-    container.appendChild(legend);
-  }
 
   /**
    * Draw multiple charts grouped by DataSource
@@ -292,19 +253,41 @@ export class GoogleChartsService {
   chartArea: { left: 50, top: 60, right: 20, width: '80%', height: '70%' } // Adjusts padding
 };
 
-// Create custom title element
-const titleDiv = document.createElement('div');
-titleDiv.innerText = `${titlePrefix} - ${this.translateDataSource(dataSource)}`;
-titleDiv.style.textAlign = 'center';
-titleDiv.style.fontSize = '16px';
-titleDiv.style.fontWeight = 'bold';
-titleDiv.style.marginBottom = '5px';
+// // Clear previous title (if any)
+// const existingTitles = container.parentElement.querySelectorAll('.chart-title');
+// existingTitles.forEach(el => el.remove());
 
-// Insert before chart container
-if (container && container.parentElement) {
-  container.parentElement.insertBefore(titleDiv, container);
+// // Create custom title element
+// const titleDiv = document.createElement('div');
+// titleDiv.innerText = `${titlePrefix} - ${this.translateDataSource(dataSource)}`;
+// titleDiv.style.textAlign = 'center';
+// titleDiv.style.fontSize = '16px';
+// titleDiv.style.fontWeight = 'bold';
+// titleDiv.style.marginBottom = '5px';
+
+// // Insert before chart container
+// if (container && container.parentElement) {
+//   container.parentElement.insertBefore(titleDiv, container);
+// }
+
+      // Set title separately
+   // Set title separately
+const titleContainer = document.getElementById(`${elementId}Title`);
+if (titleContainer) {
+  const timeframe = this.translateTimeframe(dataType); // << added
+  titleContainer.innerText = `${titlePrefix} - ${this.translateDataSource(dataSource)} (${timeframe})`;
+  titleContainer.style.textAlign = 'center';
+  titleContainer.style.fontSize = '16px';
+  titleContainer.style.fontWeight = 'bold';
+  titleContainer.style.marginBottom = '5px';
 }
 
+
+    // Draw chart inside the chart container (no more wiping out the title)
+    const chartContainer = document.getElementById(elementId);
+    if (chartContainer) {
+      new google.visualization.ColumnChart(chartContainer).draw(dt, options);
+    }
 
 
 
@@ -324,4 +307,14 @@ if (container && container.parentElement) {
     return map[key] || key; // fallback to original if no translation found
   }
 
+  private translateTimeframe(value: string): string {
+    const map: { [key: string]: string } = {
+      '1-Yesterday': 'אתמול',
+      '2-CurrentMonth': 'החודש',
+      '3-CurrentYear': 'השנה',
+      '4-ParallelsPeriod': 'השוואתי'
+    };
+    return map[value] || value;
+  }
+  
 }
