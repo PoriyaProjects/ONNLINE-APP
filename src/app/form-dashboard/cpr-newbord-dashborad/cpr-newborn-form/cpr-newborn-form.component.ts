@@ -280,8 +280,7 @@ export class CprNewbornFormComponent implements OnInit {
             babyGender: [data?.motherInfo.babyGender, Validators.required],
             gestationAgeWeeks: [data?.motherInfo.gestationAgeWeeks, null],
             babyWeight: [data?.motherInfo.babyWeight, null],
-            deliveryMethod: [data?.motherInfo.deliveryMethod, Validators.required],
-            resuscitationStartDate: [data?.motherInfo.resuscitationStartDate, null]
+            deliveryMethod: [data?.motherInfo.deliveryMethod, Validators.required]
           }),
           teamMembers: this.fb.array(data?.teamMembers.map(member => this.fb.group({
             Id: [member.Id, null],

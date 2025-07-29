@@ -528,11 +528,13 @@
           </mat-card-content>
         </mat-card>
         <button mat-raised-button color="primary" type="submit" class="submitBtn" matTooltip="שמירה ללא שליחה"
-          (click)="onSubmit(0)" *ngIf="Training_Request_Forms_E.get('Sent_To_Manager').value != 'True'"
+          (click)="onSubmit(0)"
+          *ngIf="Training_Request_Forms_E.get('Sent_To_Manager').value != 'True' || Training_Request_Forms_E.get('Approved').value == 'השלמת נתונים'"
           [disabled]="Training_Request_Forms_C.get('Request_Sign').value !== undefined && Training_Request_Forms_C.get('Request_Sign').value !== null">שמירה
           כטיוטה</button>
         <button mat-raised-button color="primary" type="submit" class="submitBtn" matTooltip="חתימת עובד חובה"
-          (click)="onSubmit(0)" *ngIf="Training_Request_Forms_E.get('Sent_To_Manager').value != 'True'"
+          (click)="onSubmit(0)"
+          *ngIf="Training_Request_Forms_E.get('Sent_To_Manager').value != 'True' || Training_Request_Forms_E.get('Approved').value == 'השלמת נתונים'"
           [disabled]="Training_Request_Forms_C.get('Request_Sign').value === undefined || Training_Request_Forms_C.get('Request_Sign').value === null">שמירה
           והגשה</button>
       </form>
