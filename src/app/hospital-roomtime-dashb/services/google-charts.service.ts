@@ -73,46 +73,7 @@ export class GoogleChartsService {
     return ticks;
   }
 
-  /** Translate a period type to Hebrew */
-  private translatePeriodType(type: string): string {
-    return this.PERIOD_TYPE_MAP[type]?.label || type;
-  }
 
-  /** Get color for a given period type */
-  private getColorForType(type: string): string {
-    return this.PERIOD_TYPE_MAP[type]?.color || this.CHART_COLORS[0];
-  }
-
-  /** Create a custom legend below a chart */
-  private createLegend(container: HTMLElement): void {
-    const legend = document.createElement('div');
-    legend.style.display = 'flex';
-    legend.style.justifyContent = 'center';
-    legend.style.marginTop = '10px';
-    legend.style.gap = '20px';
-
-    Object.values(this.PERIOD_TYPE_MAP).forEach(period => {
-      const item = document.createElement('div');
-      item.style.display = 'flex';
-      item.style.alignItems = 'center';
-      item.style.gap = '5px';
-      item.style.fontSize = '14px';
-
-      const colorBox = document.createElement('div');
-      colorBox.style.width = '15px';
-      colorBox.style.height = '15px';
-      colorBox.style.backgroundColor = period.color;
-
-      const label = document.createElement('span');
-      label.innerText = period.label;
-
-      item.appendChild(colorBox);
-      item.appendChild(label);
-      legend.appendChild(item);
-    });
-
-    container.appendChild(legend);
-  }
 
   /**
    * Draw multiple charts grouped by DataSource
@@ -122,14 +83,32 @@ export class GoogleChartsService {
     url: string,
     dparam: string,
     titlePrefix: string,
-    valueIndex: number
+    valueIndex: number,
+    filterDataType?: string
   ): Promise<void> {
     await this.waitUntilChartsReady();
+    const raw = await this.fetchWithCache(this.buildUrl(url, { dparam }));
+    const clean = sanitizeSoapResponse(raw);
+  
+    if (!clean || !clean.rows?.length) return;
+  
+    const filteredRows = filterDataType
+      ? clean.rows.filter((r: any) => r.c[1]?.v === filterDataType)
+      : clean.rows;
+  }
 
+  public async drawDepartmentCharts(
+    elementIds: { [key: string]: string },
+    url: string,
+    dataType: string,
+    titlePrefix: string
+  ): Promise<void> {
+    await this.waitUntilChartsReady();
+  
     try {
-      const raw = await this.fetchWithCache(this.buildUrl(url, { dparam }));
+      const raw = await this.fetchWithCache(this.buildUrl(url, { dataType }));
       const clean = sanitizeSoapResponse(raw);
-
+  
       if (!clean || !clean.rows?.length) {
         Object.values(elementIds).forEach(id => {
           const container = document.getElementById(id);
@@ -137,74 +116,205 @@ export class GoogleChartsService {
         });
         return;
       }
-
-      const isAvgTime = titlePrefix.includes('זמן ממוצע');
-
-      // Group rows by DataSource
+  
+      // Group by DataSource
       const grouped: { [key: string]: any[] } = {};
       clean.rows.forEach((r: any) => {
         const ds = r.c[0]?.v || 'Unknown';
         if (!grouped[ds]) grouped[ds] = [];
         grouped[ds].push(r);
       });
-
-      // Draw chart for each group
+  
       for (const [dataSource, rows] of Object.entries(grouped)) {
         const elementId = elementIds[dataSource];
         if (!elementId) continue;
         const container = document.getElementById(elementId);
         if (!container) continue;
-
+  
         const dt = new google.visualization.DataTable();
-        dt.addColumn('string', 'Period');
+        dt.addColumn('string', 'Department');
         dt.addColumn('number', 'Value');
-        dt.addColumn({ type: 'string', role: 'style' }); // individual bar color
+        dt.addColumn({ type: 'string', role: 'style' });
         dt.addColumn({ type: 'string', role: 'annotation' });
-
+  
         let maxValue = 0;
         rows.forEach(r => {
-          const type = r.c[1]?.v || '';
-          const date = r.c[2]?.v || '';
-          const value = r.c[valueIndex]?.v ?? 0;
+          const department = r.c[2]?.v || '';
+          const value = r.c[3]?.v ?? 0;
           maxValue = Math.max(maxValue, value);
-
-          const hebrewType = this.translatePeriodType(type);
-          const color = this.getColorForType(type);
-          const label = `${hebrewType} (${date})`;
-          const formatted = isAvgTime ? this.formatToHHMM(Number(value)) : String(value);
-
-          dt.addRow([label, Number(value), `color: ${color}`, formatted]);
+          dt.addRow([department, Number(value), 'color: #6ba1f8', this.formatToHHMM(Number(value))]);
         });
-
-        // Format tooltip and axis for AvgTime
-        if (isAvgTime) {
-          for (let i = 0; i < dt.getNumberOfRows(); i++) {
-            const val = dt.getValue(i, 1);
-            dt.setFormattedValue(i, 1, this.formatToHHMM(val));
-          }
-        }
-
+  
         const options = {
           title: `${titlePrefix} - ${dataSource}`,
           height: 400,
           bar: { groupWidth: '65%' },
           annotations: { alwaysOutside: true, textStyle: { fontSize: 13 } },
           hAxis: { slantedText: true, slantedTextAngle: 45 },
-          vAxis: isAvgTime
-            ? { minValue: 0, ticks: this.generateHMMTicks(maxValue, 3600) }
-            : { minValue: 0 },
+          vAxis: { minValue: 0, ticks: this.generateHMMTicks(maxValue, 1800) },
           legend: { position: 'none' }
         };
-
+  
         new google.visualization.ColumnChart(container).draw(dt, options);
-        this.createLegend(container); // add custom legend below each chart
       }
     } catch (err) {
-      console.error('Error drawing grouped charts:', err);
-      Object.values(elementIds).forEach(id => {
-        const container = document.getElementById(id);
-        if (container) container.innerHTML = 'שגיאה בטעינת נתונים';
-      });
+      console.error('Error drawing charts:', err);
     }
   }
+
+  
+
+  public async drawDepartmentChartsWithColors(
+    elementIds: { [key: string]: string },
+    url: string,
+    dataType: string,
+    titlePrefix: string,
+    colorFn: (department: string) => string,
+    isDays: boolean = false // NEW: controls formatting
+  ): Promise<void> {
+    await this.waitUntilChartsReady();
+  
+    try {
+      const raw = await this.fetchWithCache(this.buildUrl(url, { dataType }));
+      const clean = sanitizeSoapResponse(raw);
+  
+      if (!clean || !clean.rows?.length) {
+        Object.values(elementIds).forEach(id => {
+          const container = document.getElementById(id);
+          if (container) container.innerHTML = 'אין נתונים להצגה';
+        });
+        return;
+      }
+  
+      // Group by DataSource
+      const grouped: { [key: string]: any[] } = {};
+      clean.rows.forEach((r: any) => {
+        const ds = r.c[0]?.v || 'Unknown';
+        if (!grouped[ds]) grouped[ds] = [];
+        grouped[ds].push(r);
+      });
+  
+      for (const [dataSource, rows] of Object.entries(grouped)) {
+        const elementId = elementIds[dataSource];
+        if (!elementId) continue;
+        const container = document.getElementById(elementId);
+        if (!container) continue;
+  
+        const dt = new google.visualization.DataTable();
+        dt.addColumn('string', 'Department');
+        dt.addColumn('number', 'Value');
+        dt.addColumn({ type: 'string', role: 'style' });
+        dt.addColumn({ type: 'string', role: 'annotation' });
+  
+        let maxValue = 0;
+        rows.forEach(r => {
+          const department = r.c[2]?.v || '';
+          const value = r.c[3]?.v ?? 0;
+          const color = colorFn(department);
+          maxValue = Math.max(maxValue, value);
+  
+          // Annotation: days as 1 decimal OR HH:MM
+          const annotation = isDays 
+            ? `${Number(value).toFixed(1)}` 
+            : this.formatToHHMM(Number(value));
+          dt.addRow([department, Number(value), `color: ${color}`, annotation]);
+        });
+  
+        // const options = {
+        //   title: `${titlePrefix} - ${dataSource}`,
+        //   height: 400,
+        //   bar: { groupWidth: '65%' },
+        //   annotations: { alwaysOutside: true, textStyle: { fontSize: 13 } },
+        //   hAxis: { slantedText: true, slantedTextAngle: 45 },
+        //   vAxis: isDays 
+        //     ? { minValue: 0, format: '0.0', gridlines: { count: Math.ceil(maxValue) + 1 } }
+        //     : { minValue: 0, ticks: this.generateHMMTicks(maxValue, 1800) },
+        //   legend: { position: 'none' }
+        // };
+  const options = {
+  title: '', // remove default title`${titlePrefix} - ${dataSource}`,
+  height: 400,
+  bar: { groupWidth: '65%' },
+  legend: { position: 'right' },
+  annotations: { alwaysOutside: true, textStyle: { fontSize: 13 } },
+  hAxis: { slantedText: true, slantedTextAngle: 45 },
+  vAxis: isDays 
+    //? { minValue: 0, format: '0.0', gridlines: { count: Math.ceil(Math.max(...rowValues.slice(1))) + 1 } }
+    ? { minValue: 0, format: '0.0', gridlines: { count: Math.ceil(maxValue) + 1 } }
+    //: { minValue: 0, ticks: this.generateHMMTicks(Math.max(...rowValues.slice(1)), 1800) },
+    : { minValue: 0, ticks: this.generateHMMTicks(maxValue, 1800) },
+  //colors,
+  titleTextStyle: {
+    alignment: 'start',     // Aligns text to the right
+    fontSize: 16,
+    bold: true,
+    direction: 'rtl'
+  },
+  chartArea: { left: 50, top: 60, right: 20, width: '80%', height: '70%' } // Adjusts padding
+};
+
+// // Clear previous title (if any)
+// const existingTitles = container.parentElement.querySelectorAll('.chart-title');
+// existingTitles.forEach(el => el.remove());
+
+// // Create custom title element
+// const titleDiv = document.createElement('div');
+// titleDiv.innerText = `${titlePrefix} - ${this.translateDataSource(dataSource)}`;
+// titleDiv.style.textAlign = 'center';
+// titleDiv.style.fontSize = '16px';
+// titleDiv.style.fontWeight = 'bold';
+// titleDiv.style.marginBottom = '5px';
+
+// // Insert before chart container
+// if (container && container.parentElement) {
+//   container.parentElement.insertBefore(titleDiv, container);
+// }
+
+      // Set title separately
+   // Set title separately
+const titleContainer = document.getElementById(`${elementId}Title`);
+if (titleContainer) {
+  const timeframe = this.translateTimeframe(dataType); // << added
+  titleContainer.innerText = `${titlePrefix} - ${this.translateDataSource(dataSource)} (${timeframe})`;
+  titleContainer.style.textAlign = 'center';
+  titleContainer.style.fontSize = '16px';
+  titleContainer.style.fontWeight = 'bold';
+  titleContainer.style.marginBottom = '5px';
+}
+
+
+    // Draw chart inside the chart container (no more wiping out the title)
+    const chartContainer = document.getElementById(elementId);
+    if (chartContainer) {
+      new google.visualization.ColumnChart(chartContainer).draw(dt, options);
+    }
+
+
+
+        new google.visualization.ColumnChart(container).draw(dt, options);
+      }
+    } catch (err) {
+      console.error('Error drawing charts:', err);
+    }
+  }
+  
+  private translateDataSource(key: string): string {
+    const map: { [key: string]: string } = {
+      MorningDelay: 'איחור בוקר',
+      LostDays: 'אובדן יום',
+      SetupTime: 'עודף Setup Time'
+    };
+    return map[key] || key; // fallback to original if no translation found
+  }
+
+  private translateTimeframe(value: string): string {
+    const map: { [key: string]: string } = {
+      '1-Yesterday': 'אתמול',
+      '2-CurrentMonth': 'החודש',
+      '3-CurrentYear': 'השנה',
+      '4-ParallelsPeriod': 'השוואתי'
+    };
+    return map[value] || value;
+  }
+  
 }

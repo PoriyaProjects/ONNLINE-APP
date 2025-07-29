@@ -1,3 +1,90 @@
+<style>
+    .tabs {
+  margin-bottom: 15px;
+}
+
+.tabs button {
+  padding: 10px 20px;
+  margin-right: 5px;
+  background: #f0f0f0;
+  border: 1px solid #ccc;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.tabs button:hover {
+  background: #e6e6e6;
+}
+
+.tabs button.active {
+  background: #6ba1f8;
+  color: #fff;
+  border-color: #6ba1f8;
+  font-weight: bold;
+}
+
+.chart-title{margin:20px 0}
+
+.floating-legend {
+  position: fixed;
+  bottom: 40px;
+  left: 20px;
+  width: 250px;
+  background: #fff;
+  border: 1px solid #ccc;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  border-radius: 5px;
+  overflow: hidden;
+  font-family: Arial, sans-serif;
+  z-index: 9999;
+  transition: all 0.3s ease;
+}
+
+.floating-legend.minimized {
+  height: 40px;
+  width: 200px;
+}
+
+.legend-header {
+  background: #f5f5f5;
+  padding: 8px 12px;
+  font-weight: bold;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+}
+
+.legend-body {
+  max-height: 300px;
+  overflow-y: auto;
+  padding: 10px;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.color-box {
+  width: 20px;
+  height: 20px;
+  display: inline-block;
+  margin-right: 8px;
+  border: 1px solid #aaa;
+}
+ .dept-name {padding-right:10px; text-align: right; font-size:0.8em;}
+.toggle-btn {
+  background: none;
+  border: none;
+  font-size: 12px;
+  cursor: pointer;
+  color: #007bff;
+}
+
+</style>
 <div class="mdc-layout-grid" style="direction: rtl;">
     <div class="row" style="text-align: center;">
         <div class="mdc-layout-grid__cell col-md-12">
@@ -11,45 +98,101 @@
             </div>
         </div>
     </div>
-    <div class="row">
-        <div class="col-md-12 text-center">
-            <div class="row text-center" *ngIf="showDepartmentSelector">
-                <div *ngIf="showDepartmentSelector" class="row">
-                    <div class="">
-                        <label for="deptSelect" class="form-label">בחר מחלקה: </label>
-                        <select id="deptSelect" [(ngModel)]="selectedDepartmentValue" (change)="onDepartmentChange()"
-                            class="form-select">
-                            <option *ngFor="let dept of departments" [value]="dept.value">{{ dept.label }}</option>
-                        </select>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+    
     <div class="row">
         <div class="mdc-layout-grid__cell col-md-12">
 
             <main class="mdc-top-app-bar--fixed-adjust">
-                
-                <h3 style="text-align: center;">זמני חדרים (ממוצע)</h3>
-                <div style="height:20px;"></div>
-                <div class="row">
-                    <div id="chartMorningDelayAvg" class="col-md-4" style="height:400px"></div>
-                    <div id="chartLostDaysAvg" class="col-md-4" style="height:400px"></div>
-                    <div id="chartSetupTimeAvg" class="col-md-4" style="height:400px"></div>
-                </div>
-                <div style="height:120px;"></div>
-                <h3 style="text-align: center;">זמני חדרים (מצטבר)</h3>
-                <div style="height:20px;"></div>
-                <div class="row">
-                    <div id="chartMorningDelayAgg" class="col-md-4" style="height:400px"></div>
-                    <div id="chartLostDaysAgg" class="col-md-4" style="height:400px"></div>
-                    <div id="chartSetupTimeAgg" class="col-md-4" style="height:400px"></div>
-                </div>
-                <div style="height:60px;"></div>
+                 <!-- Tabs -->
+                 <div class="tabs" style="text-align: right; margin: bottom 20px;">
+                    <button (click)="onTabChange('avg')" [class.active]="activeTab === 'avg'" style="border:solid 1px #777;margin-left:20px;" >זמן ממוצע</button>
+                    <button (click)="onTabChange('agg')" [class.active]="activeTab === 'agg'" style="border:solid 1px #777;margin-left:20px;">מספר ימים</button>
+                  </div>
+
+                <div class="filters" style="text-align: right;">
+                    <label *ngFor="let type of dataTypes" style="padding-left:10px;">
+                      <input
+                        type="radio"
+                        name="dataType"
+                        [value]="type.value"
+                        [(ngModel)]="selectedDataType"
+                        (change)="onDataTypeChange()"
+                      />
+                      {{ type.label }}
+                    </label>
+                  </div>
+                  
+                 
+                  
+                  <!-- AvgTime Charts -->
+                  <!-- <div *ngIf="activeTab === 'avg'">
+                    <div id="chartMorningDelayAvg"  class="card text-center" style="width: 100%; height: 400px;margin-bottom:80px ;"></div>
+                    <div id="chartLostDaysAvg"  class="card text-center" style="width: 100%; height: 400px; margin-bottom:80px ;"></div>
+                    <div id="chartSetupTimeAvg"  class="card text-center" style="width: 100%; height: 400px; margin-bottom:80px ;"></div>
+                  </div> -->
+                  
+                  <!-- AggregateDays Charts -->
+                  <!-- <div *ngIf="activeTab === 'agg'">
+                    <div id="chartMorningDelayAgg"  class="card text-center" style="width: 100%; height: 400px; margin-bottom:80px ;"></div>
+                    <div id="chartLostDaysAgg"  class="card text-center" style="width: 100%; height: 400px; margin-bottom:80px ;"></div>
+                    <div id="chartSetupTimeAgg"  class="card text-center" style="width: 100%; height: 400px; margin-bottom:80px ;"></div>
+                  </div> -->
+                  
+
+                  <div *ngIf="activeTab === 'avg'">
+                    <div id="chartMorningDelayAvgWrapper" class="card text-center" style="width: 100%; margin-bottom:80px;">
+                      <div id="chartMorningDelayAvgTitle" class="chart-title"></div>
+                      <div id="chartMorningDelayAvg" style="width: 100%; height: 460px;"></div>
+                    </div>
+                  
+                    <div id="chartLostDaysAvgWrapper" class="card text-center" style="width: 100%; margin-bottom:80px;">
+                      <div id="chartLostDaysAvgTitle" class="chart-title"></div>
+                      <div id="chartLostDaysAvg" style="width: 100%; height: 460px;"></div>
+                    </div>
+                  
+                    <div id="chartSetupTimeAvgWrapper" class="card text-center" style="width: 100%; margin-bottom:80px;">
+                      <div id="chartSetupTimeAvgTitle" class="chart-title"></div>
+                      <div id="chartSetupTimeAvg" style="width: 100%; height: 460px;"></div>
+                    </div>
+                  </div>
+                  
+                  <!-- AggregateDays -->
+                  <div *ngIf="activeTab === 'agg'">
+                    <div id="chartMorningDelayAggWrapper" class="card text-center" style="width: 100%; margin-bottom:80px;">
+                      <div id="chartMorningDelayAggTitle" class="chart-title"></div>
+                      <div id="chartMorningDelayAgg" style="width: 100%; height: 460px;"></div>
+                    </div>
+                  
+                    <div id="chartLostDaysAggWrapper" class="card text-center" style="width: 100%; margin-bottom:80px;">
+                      <div id="chartLostDaysAggTitle" class="chart-title"></div>
+                      <div id="chartLostDaysAgg" style="width: 100%; height: 460px;"></div>
+                    </div>
+                  
+                    <div id="chartSetupTimeAggWrapper" class="card text-center" style="width: 100%; margin-bottom:80px;">
+                      <div id="chartSetupTimeAggTitle" class="chart-title"></div>
+                      <div id="chartSetupTimeAgg" style="width: 100%; height: 460px;"></div>
+                    </div>
+                  </div>
+
             </main>
+            <div style="height:60px;"></div>
         </div>
     </div>
+
+    <!-- Floating Legend Panel -->
+<div class="floating-legend" [class.minimized]="legendMinimized">
+    <div class="legend-header" (click)="toggleLegend()">
+      <span>צבעי מחלקות</span>
+      <button class="toggle-btn">{{ legendMinimized ? 'הרחב' : 'מזער' }}</button>
+    </div>
+    <div class="legend-body" *ngIf="!legendMinimized">
+      <div class="legend-item" *ngFor="let dept of getDepartments()">
+        <span class="color-box" [style.background]="getDepartmentColor(dept)"></span>
+        <span class="dept-name">{{ dept }}</span>
+      </div>
+    </div>
+  </div>
+
 </div>
 
 <hr />
