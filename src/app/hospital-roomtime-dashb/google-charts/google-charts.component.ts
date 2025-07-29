@@ -1,10 +1,11 @@
-import { Component, AfterViewInit, OnInit } from '@angular/core';
+import { Component, AfterViewInit, OnInit, HostListener } from '@angular/core';
 import { GoogleChartsService } from '../services/google-charts.service';
 import { ActivatedRoute } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { take } from 'rxjs/operators';
 import { MDCRipple } from '@material/ripple';
 import { environment } from 'src/environments/environment';
+
 
 
 @Component({
@@ -34,12 +35,24 @@ export class RoomTimeDashboardComponent implements OnInit, AfterViewInit {
 
   constructor(public googleChartsService: GoogleChartsService) {}
 
-  ngOnInit(): void {}
+  private resizeTimeout: any;
+  //ngOnInit(): void {}
 
   ngAfterViewInit(): void {
     this.googleChartsService.chartsReady$.subscribe(() => this.loadCharts());
   }
 
+
+  @HostListener('window:resize', ['$event'])
+  onResize() {
+    // Debounce to avoid too many redraws
+    clearTimeout(this.resizeTimeout);
+    this.resizeTimeout = setTimeout(() => {
+      this.loadCharts();
+    }, 300);
+  }
+
+  
   onDataTypeChange(): void {
     this.loadCharts();
   }
@@ -94,4 +107,23 @@ export class RoomTimeDashboardComponent implements OnInit, AfterViewInit {
     );
   }
   
+
+  legendMinimized = false;
+
+  ngOnInit(): void {
+    // Restore state from localStorage
+    const storedState = localStorage.getItem('legendMinimized');
+    this.legendMinimized = storedState === 'true';
+  }
+  
+  toggleLegend(): void {
+    this.legendMinimized = !this.legendMinimized;
+    // Save state to localStorage
+    localStorage.setItem('legendMinimized', this.legendMinimized.toString());
+  }
+  
+  // Extract all department names from the color map (after charts are loaded)
+  getDepartments(): string[] {
+    return Object.keys(this.departmentColorMap);
+  }
 }
