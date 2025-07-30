@@ -1782,7 +1782,9 @@ export class GoogleChartsService {
         const pctLabel = lastPct != null && !isNaN(lastPct)
           ? ` (${lastPct > 0 ? '+' : ''}${lastPct.toFixed(1)}%)`
           : '';
-        button.textContent = `${groupName}${pctLabel}`;
+        //button.textContent = `${groupName}${pctLabel}`;
+        const iconClass = this.getDeptIconClass(groupId);
+        button.innerHTML = `<i class="klubmed ${iconClass}"></i><br>${groupName}${pctLabel}`;
         const color = this.getHeatColor(lastPct);
   
         button.style.cssText = `
@@ -1891,7 +1893,9 @@ export class GoogleChartsService {
             const pctLabel = dept.percent != null && !isNaN(dept.percent)
               ? ` (${dept.percent > 0 ? '+' : ''}${dept.percent.toFixed(1)}%)`
               : '';
-            button.textContent = `${dept.name}${pctLabel}`;
+            //button.textContent = `${dept.name}${pctLabel}`;
+            const iconClass = this.getDeptIconClass(dept.id);
+            button.innerHTML = `<i class="klubmed ${iconClass}"></i><br>${dept.name}${pctLabel}`;
             button.title = `${dept.percent}%`;
             button.classList.add('mat-raised-button');
             button.style.cssText = `
@@ -3036,6 +3040,69 @@ export class GoogleChartsService {
 /*  
 //////// eof NB table ///////////////
 */
+
+
+private getDeptIconClass(id: number | string): string {
+  const map: Record<string, string> = {
+    // נשים (Women)
+    '543': 'klubmed-gynecology',                  // נשים
+    '570': 'neonatal-care',          // טיפול מיוחד בילוד
+    '572': 'maternity',              // יולדות
+    '599': 'klubmed-obstetricsmonia',           // מיון יולדות
+
+    // פנימית (Internal)
+    '544': 'children',               // ילדים
+    '547': 'internal-b',            // פנימית ב
+    '555': 'neurology',             // נוירולוגיה
+    '561': 'klubmed-intensive_care_unit',        // טיפול נמרץ כללי
+    '562': 'klubmed-respirology',           // ריאות
+    '565': 'klubmed-rheumatology',          // ראומטולוגיה
+    '567': 'klubmed-cardiology',           // קרדיולוגיה
+    '574': 'klubmed-gastroenterology',     // גסטרואנטרולוגיה
+    '591': 'klubmed-hematology',           // המטולוגיה
+    '593': 'klubmed-critical_care',          // טיפול נמרץ לב
+    '595': 'klubmed-endocrinology',        // אנדוקרינולוגיה
+    '601': 'klubmed-oncology',             // אונקולוגיה
+    '614': 'neurointervention',    // צנתורי מוח
+    '643': 'dermatology',          // עור ומין
+    '687': 'infectious-diseases',  // מחלות זיהומיות
+    '747': 'klubmed-pain_managment',          // כאב
+
+    // כירורגיה (Surgery)
+    '545': 'klubmed-orthopaedics',          // אורתופדיה
+    '553': 'klubmed-urology',              // אורולוגיה
+    '556': 'klubmed-vascular_surgery',     // כירורגיה כלי דם
+    '560': 'oral-surgery',         // פה ולסת
+    '569': 'operating-room',       // חדרי ניתוח
+    '575': 'klubmed-general_surgery',      // כירורגיה כללית
+    '581': 'plastic-surgery',      // כירורגיה פלסטית
+    '585': 'klubmed-coronary_care_unit', // כירורגיה לב וחזה
+    '611': 'ent-surgery',          // אאג וכירורגיה ראש וצואר
+    '638': 'thoracic-surgery',     // כירורגיה חזה
+    '644': 'klubmed-opthalmology',        // עיניים
+
+    // מכונים (Institutes)
+    '551': 'klubmed-radiology',            // רנטגן
+    '632': 'klubmed-hematology',             // דיאליזה
+
+    // מיון (ER)
+    '549': 'klubmed-accident_and_emergency',           // חדר מיון כללי
+    '573': 'psychiatry-er',        // פסיכיאטריה מיון
+
+    // שיקום (Rehabilitation)
+    '583': 'klubmed-geriatrics',      // גריאטריה שיקומית
+    '731': 'klubmed-physical_therapy',        // שיקום כללי
+
+    // אחר (Other)
+    '546': 'klubmed-gym',        // פיזיותרפיה א
+    '579': 'occupational-therapy', // ריפוי בעיסוק
+    '586': 'other',                // אחר
+    '600': 'klubmed-biochemistry_laboratory',                  // מעבדה
+  };
+
+  return map[id] || 'default-icon'; // fallback icon
+}
+
 
 }
 

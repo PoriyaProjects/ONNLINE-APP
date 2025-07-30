@@ -1,35 +1,15 @@
 <!-- Group Buttons Section -->
 <div id="group-buttons">
-    <h3>Select Department Group</h3>
-    <div>
-      <!-- <button
-        *ngFor="let group of deptGroups"
-        (click)="loadGroupDashboard(group)"
-        style="margin: 4px;"
-      >
+  <h3>Select Department Group</h3>
+  <div>
+    <!-- Group buttons -->
+    <div *ngFor="let group of deptGroups">
+      <button (click)="loadGroupDashboard(group)">
         {{ group }}
-      </button> -->
-
-<!-- Group buttons -->
-<div *ngFor="let group of deptGroups">
-    <button (click)="loadGroupDashboard(group)">
-      {{ group }}
-    </button>
-  </div>
-  
-  <!-- Render sub-dashboard here -->
-  <ng-template #groupHost></ng-template>
-  
-      
-
-
-  
-      
+      </button>
     </div>
+
+    <!-- Render sub-dashboard here -->
+    <ng-template #groupHost></ng-template>
   </div>
-  
-
-  
-
-
-  
+</div>

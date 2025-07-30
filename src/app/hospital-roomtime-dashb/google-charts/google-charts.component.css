@@ -2,8 +2,15 @@ div[id$='_chart'] {
     margin-bottom: 30px;
 }
 
-* {
+/* * {
     font-family: 'Open Sans', sans-serif!important;
+    font-optical-sizing: auto;
+    font-weight: 500;
+    font-style: normal;
+} */
+
+*:not(.material-icons) {
+    font-family: 'Open Sans', sans-serif !important;
     font-optical-sizing: auto;
     font-weight: 500;
     font-style: normal;

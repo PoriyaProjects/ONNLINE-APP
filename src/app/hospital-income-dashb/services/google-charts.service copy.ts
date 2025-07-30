@@ -31,7 +31,7 @@ export class DepartmentService {
 
 
 export interface Department {
-  id: string;
+  id: number;
   name: string;
 }
 
@@ -46,7 +46,16 @@ export interface ChartSourceConfig {
   numberFormat?: 'K' | 'M' | 'B'; // Optional display format
 }
 
-
+export 
+interface NBSpecialOptions {
+  limitRows?: number;
+  filters?: { column: string; value: any }[];
+  sortBy?: string;
+  sortAsc?: boolean;
+  showSearch?: boolean;
+  showTotals?: boolean;
+  tableOptions?: google.visualization.TableOptions;
+}
 
 /**
  * Converts an array of year offsets (e.g., "0", "-1", "-2") to actual year strings.
@@ -369,7 +378,7 @@ export class GoogleChartsService {
     //await this.fetchDataAndDrawDirect(filteredData, (data: any) => data, this.CHART_TYPES.BAR, 'bar_chart2', barChartOptions);
     await this.fetchDataAndDrawDirect(filteredData, (data: any) => data, this.CHART_TYPES.BAR, 'bar_chart2', { ...barChartOptions, grouped: false, groupByYear: false } // for cumulative
     );
-    await this.fetchDataAndDrawDirect(filteredData, (data: any) => data, this.CHART_TYPES.LINE, 'line_chart2', lineChartOptions);
+    //await this.fetchDataAndDrawDirect(filteredData, (data: any) => data, this.CHART_TYPES.LINE, 'line_chart2', lineChartOptions);
     //console.log('Income charts complete');
   }
 
@@ -1286,89 +1295,6 @@ export class GoogleChartsService {
 
 
 
-  //wipe out
-  public async getChargingGroupButtons(): Promise<{ department: string, color: string }[]> {
-    try {
-      // console.log('[getChargingGroupButtons] Fetching data from API...');
-
-      // const raw = await this.http
-      //   .get(`${environment.url}/GetChargingGrouspDataEx?groupName=&deptName=`, {
-      //     responseType: 'text',
-      //   })
-      //   .toPromise();
-
-      const raw = await this.callApi('GetChargingIncome', {
-        groupId: '',
-        deptId: '',
-        incomeCategory: 'totalCharging'  // or configurable
-      }, true).toPromise();
-
-      // console.log('[getChargingGroupButtons] Raw response:', raw);
-
-      const cleanJson = sanitizeSoapResponse(raw);
-      // console.log('[getChargingGroupButtons] Clean JSON after sanitizeSoapResponse:', cleanJson);
-
-      if (!Array.isArray(cleanJson)) {
-        //console.error('[getChargingGroupButtons] Invalid response format: expected array');
-        return [];
-      }
-
-      if (cleanJson.length === 0) {
-        //onsole.warn('[getChargingGroupButtons] Response array is empty');
-        return [];
-      }
-
-      const allYears = cleanJson.map((r: any) => +r.Year).filter(y => !isNaN(y));
-      // console.log('[getChargingGroupButtons] All years found:', allYears);
-
-      if (allYears.length === 0) {
-        //console.warn('[getChargingGroupButtons] No valid years found in data');
-        return [];
-      }
-
-      const latestYear = Math.max(...allYears);
-      // console.log('[getChargingGroupButtons] Latest year selected:', latestYear);
-
-      const filtered = cleanJson.filter((r: any) => +r.Year === latestYear);
-      //console.log(`[getChargingGroupButtons] Filtered rows for ${latestYear}:`, filtered);
-
-      const map: { [dept: string]: string } = {};
-
-      filtered.forEach((r: any) => {
-        const dept = r.Department || '(unknown)';
-        const change = r.ChangePercent;
-        const val = parseFloat(change);
-        let color = '#ccc';
-
-        if (!isNaN(val)) {
-          if (val > 20) color = '#006400';
-          else if (val > 10) color = '#228B22';
-          else if (val > 0) color = '#90EE90';
-          else if (val === 0) color = '#e0e0e0';
-          else if (val > -10) color = '#f08080';
-          else if (val > -20) color = '#ff8c00';
-          else color = '#8b0000';
-        }
-
-        map[dept] = color;
-      });
-
-      const buttons = Object.keys(map).map(dept => ({
-        department: dept,
-        color: map[dept],
-        class: 'dept-button'
-      }));
-
-      // console.log('[getChargingGroupButtons] Final department buttons:', buttons);
-      return buttons;
-    } catch (err) {
-      //console.error('[getChargingGroupButtons] Error fetching or processing data:', err);
-      return [];
-    }
-  }
-
-
-
   /**
     * Loads department data and renders a chart for a specific department
     */
@@ -1573,6 +1499,88 @@ export class GoogleChartsService {
     
   //   }
 
+  // private async drawDepartmentGaugeOverlay(
+  //   groupID: string,
+  //   deptID: string,
+  //   incomeCategory: string,
+  //   elementId: string
+  // ): Promise<void> {
+  //   try {
+  //     const raw = await this.callApi('GetChargingIncomeMonthly', {
+  //       groupID,
+  //       deptID,
+  //       incomeCategory
+  //     }, true).toPromise();
+  // console.log("here");
+  //     // Step 1: unwrap <string>...</string>
+  //     const rawStr = typeof raw === 'string' ? raw.trim() : '';
+  //     const match = rawStr.match(/^<string[^>]*>([\s\S]*?)<\/string>$/);
+  //     const jsonText = match ? match[1] : rawStr;
+  
+  //     // Step 2: parse the JSON
+  //     const parsed = JSON.parse(jsonText);
+  //     if (!parsed?.success || !Array.isArray(parsed.data) || parsed.data.length < 2) {
+  //       console.warn('❌ Invalid data structure');
+  //       return;
+  //     }
+  
+  //     const rows = parsed.data.slice(1); // skip header row
+  
+  //     // Step 3: sum Charging per year
+  //     const incomeByYear: Record<string, number> = {};
+  
+  //     for (const row of rows) {
+  //       const [monthStr, charging] = row;
+  //       if (!monthStr || typeof charging !== 'number') continue;
+  //       const year = monthStr.split('-')[0];
+  //       incomeByYear[year] = (incomeByYear[year] ?? 0) + charging;
+  //     }
+  
+  //     const availableYears = Object.keys(incomeByYear).map(Number).filter(y => !isNaN(y));
+  //     const latestYear = Math.max(...availableYears);
+  //     const previousYear = latestYear - 1;
+  
+  //     const deptActualIncome = incomeByYear[latestYear.toString()];
+  //     const deptPreviousIncome = incomeByYear[previousYear.toString()];
+  
+  //     if (!deptActualIncome || !deptPreviousIncome) {
+  //       console.warn('❌ Missing Charging data for required years');
+  //       console.log('Available:', incomeByYear);
+  //       return;
+  //     }
+  
+  //     const deptTargetIncome = deptPreviousIncome * 1.1;
+  //     const currentMonthIndex = new Date().getMonth(); // 0–11
+  //     const plannedToDate = deptTargetIncome * ((currentMonthIndex + 1) / 12);
+  // console.log("here2");
+  //     // ✅ Draw the gauge
+  //     drawOverlayDualArcChartHelperIncome({
+  //       containerId: elementId,
+  //       workingDaysInfo: {
+  //         currentWorkingDayIndex: currentMonthIndex,
+  //         totalWorkingDays: 12
+  //       },
+  //       gaugeValue: deptActualIncome,
+  //       gaugeTargetValue: deptTargetIncome,
+  //       gaugePlanned: plannedToDate,
+  //       gaugeTargetStatus: deptActualIncome >= deptTargetIncome ? '✅' : '❌',
+  //       currentMonthValues: [],
+  //       markerOptions: { radius: 14, fontSize: 10 }
+  //     });
+  
+  //     console.log('📊 Gauge Data:', {
+  //       latestYear,
+  //       previousYear,
+  //       deptActualIncome,
+  //       deptPreviousIncome,
+  //       deptTargetIncome
+  //     });
+  
+  //   } catch (err) {
+  //     console.error('❌ Failed to process department monthly data:', err);
+  //   }
+  // }
+  
   private async drawDepartmentGaugeOverlay(
     groupID: string,
     deptID: string,
@@ -1580,70 +1588,121 @@ export class GoogleChartsService {
     elementId: string
   ): Promise<void> {
     try {
+      // 1. Wait for container (same approach as drawDualArcGaugeOverlay)
+      const waitForContainer = (id: string, retries = 10): Promise<HTMLElement | null> =>
+        new Promise((resolve) => {
+          let attempts = 0;
+          const interval = setInterval(() => {
+            const el = document.getElementById(id);
+            if (el || ++attempts >= retries) {
+              clearInterval(interval);
+              resolve(el);
+            }
+          }, 100);
+        });
+  
+      const container = await waitForContainer(elementId);
+      if (!container) {
+        console.warn(`❌ Container "${elementId}" not found after retrying.`);
+        return;
+      }
+  
+      console.debug(`[DeptGaugeOverlay] Fetching data for group ${groupID}, dept ${deptID}...`);
       const raw = await this.callApi('GetChargingIncomeMonthly', {
         groupID,
         deptID,
         incomeCategory
       }, true).toPromise();
   
-      // Step 1: unwrap <string>...</string>
-      const rawStr = typeof raw === 'string' ? raw.trim() : '';
-      const match = rawStr.match(/^<string[^>]*>([\s\S]*?)<\/string>$/);
-      const jsonText = match ? match[1] : rawStr;
+      // 2. Unwrap SOAP if needed (helperized)
+      const unwrapSoap = (input: any): any => {
+        if (typeof input === 'string') {
+          const match = input.trim().match(/^<string[^>]*>([\s\S]*?)<\/string>$/);
+          return JSON.parse(match ? match[1] : input);
+        }
+        return input;
+      };
   
-      // Step 2: parse the JSON
-      const parsed = JSON.parse(jsonText);
+      const parsed = unwrapSoap(raw);
+  
       if (!parsed?.success || !Array.isArray(parsed.data) || parsed.data.length < 2) {
-        console.warn('❌ Invalid data structure');
+        console.warn('❌ Invalid department monthly data');
         return;
       }
   
-      const rows = parsed.data.slice(1); // skip header row
+      const rows = parsed.data.slice(1); // skip header
   
-      // Step 3: sum Charging per year
-      const incomeByYear: Record<string, number> = {};
-  
+      // 3. Aggregate yearly charging
+      const incomeByYear: Record<number, number> = {};
       for (const row of rows) {
         const [monthStr, charging] = row;
         if (!monthStr || typeof charging !== 'number') continue;
-        const year = monthStr.split('-')[0];
-        incomeByYear[year] = (incomeByYear[year] ?? 0) + charging;
+        const year = parseInt(monthStr.split('-')[0]);
+        if (!isNaN(year)) {
+          incomeByYear[year] = (incomeByYear[year] ?? 0) + charging;
+        }
       }
   
-      const availableYears = Object.keys(incomeByYear).map(Number).filter(y => !isNaN(y));
-      const latestYear = Math.max(...availableYears);
-      const previousYear = latestYear - 1;
-  
-      const deptActualIncome = incomeByYear[latestYear.toString()];
-      const deptPreviousIncome = incomeByYear[previousYear.toString()];
-  
-      if (!deptActualIncome || !deptPreviousIncome) {
-        console.warn('❌ Missing Charging data for required years');
-        console.log('Available:', incomeByYear);
+      const years = Object.keys(incomeByYear).map(Number).filter(y => !isNaN(y));
+      if (years.length === 0) {
+        console.warn('❌ No valid yearly data for department');
         return;
       }
   
-      const deptTargetIncome = deptPreviousIncome * 1.1;
-      const currentMonthIndex = new Date().getMonth(); // 0–11
-      const plannedToDate = deptTargetIncome * ((currentMonthIndex + 1) / 12);
+      const maxYear = Math.max(...years);
+      const previousYear = maxYear - 1;
   
-      // ✅ Draw the gauge
+      const deptActualIncome = incomeByYear[maxYear] ?? 0;
+      const deptPreviousIncome = incomeByYear[previousYear] ?? 0;
+  
+      if (!deptActualIncome || !deptPreviousIncome) {
+        console.warn('❌ Missing Charging data for department (current/previous year)');
+        return;
+      }
+  
+      // 4. Compute dynamic target (same as DualArc)
+      const deptTargetIncome = deptPreviousIncome * 1.1;
+  
+      const now = new Date();
+      const today = now.getDate();
+      const rawMonth = now.getMonth() + 1;
+      const adjustedMonth = today > 10 ? rawMonth - 1 : rawMonth - 2;
+      if (adjustedMonth < 1) {
+        console.warn(`⚠️ Adjusted month (${adjustedMonth}) is before January.`);
+        return;
+      }
+  
+      const perMonthTarget = deptTargetIncome / 12;
+      const plannedToDate = perMonthTarget * adjustedMonth;
+  
+      // 5. Determine status
+      let gaugeTargetStatus: string;
+      if (adjustedMonth === 1) {
+        const relaxedThreshold = perMonthTarget * 0.5;
+        gaugeTargetStatus = deptActualIncome >= relaxedThreshold ? '✅' : '❌';
+      } else if (adjustedMonth === 12) {
+        gaugeTargetStatus = deptActualIncome >= deptTargetIncome ? '✅' : '❌';
+      } else {
+        gaugeTargetStatus = deptActualIncome >= plannedToDate ? '✅' : '❌';
+      }
+  
+      // 6. Draw gauge
       drawOverlayDualArcChartHelperIncome({
         containerId: elementId,
         workingDaysInfo: {
-          currentWorkingDayIndex: currentMonthIndex,
+          currentWorkingDayIndex: adjustedMonth,
           totalWorkingDays: 12
         },
         gaugeValue: deptActualIncome,
         gaugeTargetValue: deptTargetIncome,
         gaugePlanned: plannedToDate,
-        gaugeTargetStatus: deptActualIncome >= deptTargetIncome ? '✅' : '❌',
+        gaugeTargetStatus,
         currentMonthValues: [],
         markerOptions: { radius: 14, fontSize: 10 }
       });
   
-      console.log('📊 Gauge Data:', {
-        latestYear,
+      console.log('📊 Dept Gauge Data:', {
+        maxYear,
         previousYear,
         deptActualIncome,
         deptPreviousIncome,
@@ -1652,6 +1711,10 @@ export class GoogleChartsService {
   
     } catch (err) {
       console.error('❌ Failed to process department monthly data:', err);
+      const el = document.getElementById(elementId);
+      if (el) {
+        el.innerHTML = '⚠️ Error loading department gauge';
+      }
     }
   }
   
@@ -1671,51 +1734,49 @@ export class GoogleChartsService {
     const container = document.getElementById(containerId);
     const chartContainer = document.getElementById(chartContainerId);
     const chartKinds = Array.isArray(chartKind) ? chartKind : [chartKind];
-
+  
     if (!container || !chartContainer) {
       console.warn(`[renderDepartmentButtons] Missing container(s): #${containerId} or #${chartContainerId}`);
       return;
     }
-
+  
     try {
       const raw = await this.callApi('GetChargingIncome', {
         groupId: null,
         deptId: null,
         incomeCategory: incomeCategory || 'totalCharging'
       }, true).toPromise();
-
+  
       const clean = sanitizeSoapResponse(raw);
       if (!Array.isArray(clean) || clean.length === 0) {
         container.innerHTML = 'No department group data available.';
         return;
       }
-
+  
       // Extract group info with latest ChargingPct
-      const groupMap = new Map<number, { groupId: number; groupName: string; lastPct: number | null }>();      
-
+      const groupMap = new Map<number, { groupId: number; groupName: string; lastPct: number | null }>();
       for (const row of clean) {
         const groupId = parseInt(row.GroupID);
         const groupName = row.GroupName?.trim();
         const pct = parseFloat(row.ChargingPct);
         if (!groupId || !groupName || isNaN(pct)) continue;
-      
-        // Only set if this groupId hasn't been seen yet — this captures the *first* entry
+  
         if (!groupMap.has(groupId)) {
           groupMap.set(groupId, { groupId, groupName, lastPct: pct });
         }
       }
-      
+  
       const sortedGroups = Array.from(groupMap.values())
         .sort((a, b) => (b.lastPct ?? 0) - (a.lastPct ?? 0));
-
+  
       container.innerHTML = '';
       chartContainer.innerHTML = '';
-
+  
       const totalButtons = sortedGroups.length;
       const spacePercent = 4;
       const totalSpace = (totalButtons - 1) * spacePercent;
       const buttonWidth = (100 - totalSpace) / totalButtons;
-
+  
       sortedGroups.forEach(({ groupId, groupName, lastPct }, index) => {
         const button = document.createElement('button');
         const pctLabel = lastPct != null && !isNaN(lastPct)
@@ -1723,134 +1784,145 @@ export class GoogleChartsService {
           : '';
         button.textContent = `${groupName}${pctLabel}`;
         const color = this.getHeatColor(lastPct);
-
+  
         button.style.cssText = `
-        background-color: ${color};
-        width: ${buttonWidth}%;
-        display: inline-block;
-        margin-left: ${index < totalButtons - 1 ? spacePercent : 0}%;
-        border-radius: 10px;
-        padding: 10px 20px;
-        border: none;
-        color: #fff;
-        cursor: pointer;
-      `;
-
+          background-color: ${color};
+          width: ${buttonWidth}%;
+          display: inline-block;
+          margin-left: ${index < totalButtons - 1 ? spacePercent : 0}%;
+          border-radius: 10px;
+          padding: 10px 20px;
+          border: none;
+          color: #fff;
+          cursor: pointer;
+        `;
+  
         button.onclick = async () => {
           chartContainer.innerHTML = '<p>טעינת נתוני מחלקה...</p>';
-          const groupSlug = groupName.toLowerCase().replace(/\s+/g, '-');
           chartContainer.innerHTML = '';
-
+  
           const wrapper = document.createElement('div');
-          wrapper.id = `wrapper-${groupSlug}`;
+          wrapper.id = `wrapper-${groupId}`;
           wrapper.style.marginBottom = '40px';
           wrapper.style.textAlign = 'center';
-
+  
           const heading = document.createElement('h2');
           heading.textContent = groupName;
           wrapper.appendChild(heading);
-
+  
           const deptChartDiv = document.createElement('div');
-          deptChartDiv.id = `deptchart-${groupSlug}`;
-
+          deptChartDiv.id = `deptchart-${groupId}`;
+  
           for (const kind of chartKinds) {
-            const chartId = `groupchart-${groupSlug}-${kind}`;
+            const chartId = `groupchart-${groupId}-${kind}`;
             const chartDiv = document.createElement('div');
             chartDiv.id = chartId;
             chartDiv.classList.add('group-chart');
             chartDiv.style.marginBottom = '30px';
             wrapper.appendChild(chartDiv);
           }
-
+  
           const layoutWrapper = document.createElement('div');
-          //layoutWrapper.innerHTML = getDeptGroupHtml(groupSlug);
+          // Use groupId directly (special case 543 handled here)
           if (groupId === 543) {
-            layoutWrapper.innerHTML = getDeptFeGroupHtml(groupId, groupSlug);
+            // Render layout immediately with a loading placeholder
+            layoutWrapper.innerHTML = getDeptFeGroupHtml(groupId);
+            wrapper.appendChild(layoutWrapper);
+          
+            // Add a quick loader to #nbspecial
+            const specialContainer = layoutWrapper.querySelector('#nbspecial');
+            if (specialContainer) specialContainer.innerHTML = '<p>טעינה...</p>';
+          
+           
+            
+            this.loadNBSpecial('nbspecial', { 
+              filters: [{ column: 'משלם', value: 'מוסד לביטוח לאומי - יולדו' }],
+              sortBy: 'count',
+              sortAsc: false,
+              showTotals: true,
+              showSearch: true,
+              tableOptions: {
+                showRowNumber: false,
+                allowHtml: true
+              }
+            });
+            
+
+            
           } else {
-            layoutWrapper.innerHTML = getDeptGroupHtml(groupId, groupSlug);
+            layoutWrapper.innerHTML = getDeptGroupHtml(groupId);
           }
+          
+          
           deptChartDiv.appendChild(layoutWrapper);
           wrapper.appendChild(deptChartDiv);
           chartContainer.appendChild(wrapper);
-
+  
           const deptRows = clean.filter(r => parseInt(r.GroupID) === groupId);
-          //const seen = new Set<string>();
-          // const latestDepts = [...deptRows].reverse().map(row => {
-          //   const id = row.DeptID?.toString();
-          //   const name = row.DeptName?.trim();
-          //   const percent = parseFloat(row.ChargingPct);
-          //   if (!id || !name || seen.has(id) || isNaN(percent)) return null;
-          //   seen.add(id);
-          //   return { id, name, percent };
-          // }).filter(Boolean);
           const firstDepts: any[] = [];
           const seen = new Set<string>();
-          
+  
           for (const row of deptRows) {
             const id = row.DeptID?.toString();
             const name = row.DeptName?.trim();
             const percent = parseFloat(row.ChargingPct);
             if (!id || !name || seen.has(id) || isNaN(percent)) continue;
-          
             seen.add(id);
             firstDepts.push({ id, name, percent });
           }
-          
-          const deptDynamic = document.getElementById(`dept-dynamic-${groupSlug}`);
+  
+          // 🔥 Sort by percent descending
+          firstDepts.sort((a, b) => (b.percent ?? 0) - (a.percent ?? 0)); 
+
+          const deptDynamic = document.getElementById(`dept-dynamic-${groupId}`);
           if (!deptDynamic) {
-            console.warn(`Missing dynamic container: dept-dynamic-${groupSlug}`);
+            console.warn(`Missing dynamic container: dept-dynamic-${groupId}`);
             return;
           }
           deptDynamic.innerHTML = '';
-
+  
           const buttonBar = document.createElement('div');
           const chartZone = document.createElement('div');
           deptChartDiv.appendChild(buttonBar);
           deptChartDiv.appendChild(chartZone);
-
-          //latestDepts.forEach((dept: any, i) => {
-            firstDepts.forEach((dept: any, i) => {
+  
+          firstDepts.forEach((dept: any, i) => {
             const button = document.createElement('button');
             const pctLabel = dept.percent != null && !isNaN(dept.percent)
               ? ` (${dept.percent > 0 ? '+' : ''}${dept.percent.toFixed(1)}%)`
               : '';
             button.textContent = `${dept.name}${pctLabel}`;
-
             button.title = `${dept.percent}%`;
             button.classList.add('mat-raised-button');
             button.style.cssText = `
-            margin: 6px;
-            padding: 8px 16px;
-            border-radius: 6px;
-            background-color: ${this.getHeatColor(dept.percent)};
-            color: #fff;
-          `;
-
+              margin: 6px;
+              padding: 8px 16px;
+              border-radius: 6px;
+              background-color: ${this.getHeatColor(dept.percent)};
+              color: #fff;
+            `;
+  
             button.onclick = () => {
               chartZone.querySelectorAll('[id^="dept-wrapper-"]').forEach(el => el.remove());
-
-              const deptSlug = dept.id.toLowerCase().replace(/\s+/g, '-');
-              const deptNameSlug = dept.name;
-              const wrapperId = `dept-wrapper-${deptSlug}`;
+  
+              const wrapperId = `dept-wrapper-${dept.id}`;
               const deptWrapper = document.createElement('div');
               deptWrapper.id = wrapperId;
-              deptWrapper.innerHTML = getDepartmentLayoutHtml(deptSlug, deptNameSlug);
+              deptWrapper.innerHTML = getDepartmentLayoutHtml(dept.id, dept.name);
               chartZone.appendChild(deptWrapper);
-
-              const dynamicArea = deptWrapper.querySelector(`#dept-dynamic-${deptSlug}`);
+  
+              const dynamicArea = deptWrapper.querySelector(`#dept-dynamic-${dept.id}`);
               if (!dynamicArea) return;
               dynamicArea.innerHTML = '';
-
-              this.renderAllDepartmentCharts(dept, { id: groupId.toString(), name: groupName });
-
-
+  
+              this.renderAllDepartmentCharts(dept, { id: groupId, name: groupName });
             };
-
+  
             buttonBar.appendChild(button);
             if (i === 0) button.click();
           });
         };
-
+  
         container.appendChild(button);
       });
     } catch (err) {
@@ -1858,9 +1930,7 @@ export class GoogleChartsService {
       container.innerHTML = 'Error loading department buttons.';
     }
   }
-
-
-
+  
 
 
 
@@ -1894,8 +1964,8 @@ export class GoogleChartsService {
 
 
   public async renderAllDepartmentCharts(
-    dept: { name: string; id: string },
-    group: { name: string; id: string }
+    dept: { name: string; id: number },
+    group: { name: string; id: number }
   ): Promise<void> {
     const suffix = `-${dept.id}`; // Used for DOM element IDs
 
@@ -1904,9 +1974,9 @@ export class GoogleChartsService {
 
     // ✅ Render main department chart using ID-based API
     await this.renderDepartmentChart(
-      { name: dept.name, id: dept.id },
+      { name: dept.name, id: dept.id.toString() },
       `chart${suffix}`,
-      { name: group.name, id: group.id },
+      { name: group.name, id: group.id.toString() },
       {
         includeTimeSeries: true,
         timeSeriesElementId: `time${suffix}`,
@@ -1918,7 +1988,7 @@ export class GoogleChartsService {
 
     // ✅ Department-level gauge/summary tables
     //this.drawDualArcGaugeOverlay(`arc_chart${suffix}`);
-    this.drawDepartmentGaugeOverlay(group.id, dept.id, 'TotalCharging', `arc_chart-${suffix}` );
+    this.drawDepartmentGaugeOverlay(group.id.toString(), dept.id.toString(), 'TotalCharging', `arc_chart${suffix}` );
     this.loadYearlyIncomeDataCombinedDept(`tabled_chart${suffix}`, dept.id, group.id, 'totalCharging', 5, 'full');
 //    this.loadYearlyIncomeDataCombinedDept(`tabled_chart2${suffix}`, dept.id, group.id, 'totalCharging', 2, 'full');
 
@@ -1943,22 +2013,23 @@ export class GoogleChartsService {
 
 
 
-  private async ensureDepartmentChartLayoutExists(deptId: string, name: string): Promise<void> {
-    const slug = deptId.toLowerCase().replace(/\s+/g, '-');
-    const deptNameSlug = name;
-    const wrapperId = `dept-wrapper-${slug}`;
-    const chartZone = document.getElementById(`deptchart-${slug}`) || document.getElementById('deptchart');
+  
 
+  private async ensureDepartmentChartLayoutExists(deptId: number, name: string): Promise<void> {
+    const wrapperId = `dept-wrapper-${deptId}`;
+    const chartZone = document.getElementById(`deptchart-${deptId}`) || document.getElementById('deptchart');
+  
     if (!chartZone) return;
-
+  
     if (!document.getElementById(wrapperId)) {
       const wrapper = document.createElement('div');
       wrapper.id = wrapperId;
-      wrapper.innerHTML = getDepartmentLayoutHtml(slug, deptNameSlug);
+      wrapper.innerHTML = getDepartmentLayoutHtml(deptId, name);
       chartZone.appendChild(wrapper);
     }
   }
 
+  
   /**
    * Draws income bar and line charts for a specific department.
    *
@@ -1967,8 +2038,8 @@ export class GoogleChartsService {
    * @param suffix - Optional element ID suffix (used to build chart container IDs)
    */
   public async drawIncomeChartsDept(
-    deptId: string,
-    groupId: string,
+    deptId: number,
+    groupId: number,
     barChartOptions: any = {},
     lineChartOptions: any = {}
   ): Promise<void> {
@@ -2138,8 +2209,8 @@ export class GoogleChartsService {
    * @param elementId Target DOM element ID to render the chart
    */
   public async drawIncomeDeptsLastMonthChartVDept(
-    groupId: string,
-    deptId: string,
+    groupId: number,
+    deptId: number,
     elementId: string
   ): Promise<void> {
     await this.chartsReady;
@@ -2230,8 +2301,8 @@ export class GoogleChartsService {
    * @param barChartOptions - Optional chart styling and config options
    */
   public async drawOperationsChartsDept(
-    deptId: string,
-    groupId: string,
+    deptId: number,
+    groupId: number,
     elementIdSuffix: string = '',
     barChartOptions: any = {}
   ): Promise<void> {
@@ -2423,8 +2494,8 @@ export class GoogleChartsService {
    */
   
   public loadGrowthTrendChartDept(
-    deptId: string,
-    groupId: string,
+    deptId: number,
+    groupId: number,
     containerId?: string
   ): void {
     const finalContainerId = containerId || `growth_trend_chart-${deptId}`;
@@ -2547,8 +2618,8 @@ export class GoogleChartsService {
 
   public loadYearlyIncomeDataCombinedDept(
     containerId: string,
-    deptId: string,
-    groupId: string,
+    deptId: number,
+    groupId: number,
     incomeCategory: string = 'totalCharging',
     yearsToShow?: number,
     tableMode: 'full' | 'matrix' = 'full'
@@ -2691,6 +2762,280 @@ export class GoogleChartsService {
     });
   }
 
+
+
+  private waitForElement(selector: string, timeout = 4000): Promise<Element> {
+    return new Promise((resolve, reject) => {
+      const el = document.querySelector(selector);
+      if (el) return resolve(el);
+  
+      const observer = new MutationObserver(() => {
+        const found = document.querySelector(selector);
+        if (found) {
+          observer.disconnect();
+          resolve(found);
+        }
+      });
+  
+      observer.observe(document.body, { childList: true, subtree: true });
+  
+      setTimeout(() => {
+        observer.disconnect();
+        reject(`Element ${selector} not found within ${timeout}ms`);
+      }, timeout);
+    });
+  }
+
+/*  
+//////// NB table ///////////////
+*/
+  public async loadNBSpecial(
+    containerId: string = 'nbspecial',
+    options: NBSpecialOptions = {}
+  ): Promise<void> {
+    try {
+      const container = (await this.waitForElement(`#${containerId}`)) as HTMLElement;
+      await this.loadGoogleCharts(['table']);
+      const params = { change: 1, changeperc: 1 };
+  
+      return new Promise((resolve, reject) => {
+        this.callApi('GetNBSpecial', params, true).subscribe(
+          (response: any) => {
+            if (!response?.cols || !response?.rows) {
+              container.innerHTML = '<p>No data available.</p>';
+              resolve();
+              return;
+            }
+  
+            const data = new google.visualization.DataTable(response);
+            let view = new google.visualization.DataView(data);
+            let totalRowValues: any[] = [];
+  
+            // --- Filtering ---
+            const applyFilters = () => {
+              let filteredRows: number[] = [];
+              for (let i = 0; i < data.getNumberOfRows(); i++) {
+                const matchesFilters =
+                  !options?.filters?.length ||
+                  options.filters.every(f => data.getValue(i, data.getColumnIndex(f.column)) === f.value);
+                if (matchesFilters) filteredRows.push(i);
+              }
+              view.setRows(filteredRows);
+            };
+            applyFilters();
+  
+            // --- Sorting ---
+            if (options?.sortBy) {
+              const sortIndex = data.getColumnIndex(options.sortBy);
+              if (sortIndex !== -1) {
+                const sortedRows = view.getViewRows().sort((a, b) => {
+                  const valA = data.getValue(a, sortIndex);
+                  const valB = data.getValue(b, sortIndex);
+                  return (valA < valB ? -1 : valA > valB ? 1 : 0) * (options.sortAsc === false ? -1 : 1);
+                });
+                view.setRows(sortedRows);
+              }
+            }
+  
+            // --- Limit rows ---
+            if (options?.limitRows && options.limitRows > 0) {
+              const limitedRows = view.getViewRows().slice(0, options.limitRows);
+              view.setRows(limitedRows);
+            }
+  
+            // --- Compute TOTAL row (for footer only) ---
+            if (options?.showTotals) {
+              for (let c = 0; c < data.getNumberOfColumns(); c++) {
+                if (data.getColumnType(c) === 'number') {
+                  const sum = view.getViewRows().reduce((acc, row) => acc + (data.getValue(row, c) || 0), 0);
+                  totalRowValues.push(sum);
+                } else if (c === 0) {
+                  totalRowValues.push('סה"כ');
+                } else {
+                  totalRowValues.push(null);
+                }
+              }
+            }
+  
+            // --- Draw table ---
+            const drawTable = () => {
+              const tableOptions: google.visualization.TableOptions = {
+                showRowNumber: false, // Hide row numbers
+                allowHtml: true,
+                width: '100%',
+                page: 'disable',
+                ...options.tableOptions
+              };
+              this.drawGoogleTableWithExport(container, view, tableOptions);
+  
+              // --- Add sticky TOTAL row ---
+              const existingFooter = document.querySelector(`#${containerId}-footer`);
+              if (existingFooter) existingFooter.remove();
+              if (options?.showTotals) {
+                const footerTable = document.createElement('table');
+                footerTable.id = `${containerId}-footer`;
+                footerTable.style.width = '100%';
+                footerTable.style.position = 'sticky';
+                footerTable.style.bottom = '0';
+                //footerTable.style.background = '#f5f5f5';
+                footerTable.style.fontWeight = 'bold';
+                //footerTable.style.borderTop = '2px solid #ccc';
+                //footerTable.style.marginTop = '5px';
+  
+                // Build footer row
+                const row = footerTable.insertRow();
+                for (let val of totalRowValues) {
+                  const cell = row.insertCell();
+                  cell.innerHTML = val !== null ? val : '';
+                }
+  
+                container.appendChild(footerTable);
+              }
+            };
+            drawTable();
+  
+            // --- Search ---
+            if (options?.showSearch) {
+              const searchBoxId = `${containerId}-search`;
+              if (!document.getElementById(searchBoxId)) {
+                const searchBox = document.createElement('input');
+                searchBox.id = searchBoxId;
+                searchBox.type = 'text';
+                searchBox.placeholder = 'חיפוש...';
+                searchBox.style.marginBottom = '10px';
+                container.parentElement?.insertBefore(searchBox, container);
+  
+                searchBox.addEventListener('input', () => {
+                  const query = searchBox.value.toLowerCase();
+                  const filteredRows: number[] = [];
+                  const allRows = Array.from({ length: data.getNumberOfRows() }, (_, i) => i);
+  
+                  for (let i of allRows) {
+                    const rowText = Array.from({ length: data.getNumberOfColumns() })
+                      .map((_, col) => String(data.getValue(i, col)).toLowerCase())
+                      .join(' ');
+                    if (rowText.includes(query)) filteredRows.push(i);
+                  }
+  
+                  view.setRows(filteredRows);
+                  drawTable();
+                });
+              }
+            }
+  
+            resolve();
+          },
+          err => {
+            container.innerHTML = '<p class="text-danger">Failed to load data.</p>';
+            reject(err);
+          }
+        );
+      });
+    } catch (err) {
+      console.error('loadNBSpecial failed:', err);
+    }
+  }
+   
+  private loadGoogleCharts(packages: string[]): Promise<void> {
+    return new Promise((resolve) => {
+      if (typeof google !== 'undefined' && google.visualization) {
+        resolve();
+        return;
+      }
+      google.charts.load('current', { packages });
+      google.charts.setOnLoadCallback(() => resolve());
+    });
+  }
+    
+  private drawGoogleTableWithExport(container: HTMLElement, data: google.visualization.DataTable | google.visualization.DataView, tableOptions: google.visualization.TableOptions): void {
+    // Wrapper for table + export buttons
+    container.innerHTML = `
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+        <div>
+          <button id="${container.id}-export-csv" class="btn btn-sm btn-outline-primary">ייצוא CSV</button>
+          <button id="${container.id}-export-xls" class="btn btn-sm btn-outline-success">ייצוא Excel</button>
+        </div>
+      </div>
+      <div id="${container.id}-table"></div>
+    `;
+  
+    const tableContainer = container.querySelector(`#${container.id}-table`) as HTMLElement;
+    const table = new google.visualization.Table(tableContainer);
+  
+    table.draw(data, {
+      showRowNumber: false,
+      allowHtml: true,
+      width: '100%',
+      sort: 'enable',
+      page: 'disable',
+      //pageSize: 10
+    });
+  
+    // Bind export buttons
+    const exportCsvBtn = container.querySelector(`#${container.id}-export-csv`);
+    const exportXlsBtn = container.querySelector(`#${container.id}-export-xls`);
+  
+    if (exportCsvBtn) {
+      exportCsvBtn.addEventListener('click', () => this.exportTableToCSV(data, `${container.id}.csv`));
+    }
+    if (exportXlsBtn) {
+      exportXlsBtn.addEventListener('click', () => this.exportTableToExcel(data, `${container.id}.xls`));
+    }
+  }
+  
+  private exportTableToCSV(data: google.visualization.DataTable | google.visualization.DataView, filename: string): void {
+    const csvRows = [];
+  
+    // Headers
+    const headers = [];
+    for (let i = 0; i < data.getNumberOfColumns(); i++) {
+      headers.push(`"${data.getColumnLabel(i)}"`);
+    }
+    csvRows.push(headers.join(','));
+  
+    // Rows
+    for (let r = 0; r < data.getNumberOfRows(); r++) {
+      const row = [];
+      for (let c = 0; c < data.getNumberOfColumns(); c++) {
+        row.push(`"${data.getValue(r, c)}"`);
+      }
+      csvRows.push(row.join(','));
+    }
+  
+    const csvContent = csvRows.join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = filename;
+    link.click();
+  }
+  
+  private exportTableToExcel(data: google.visualization.DataTable | google.visualization.DataView, filename: string): void {
+    let tableHtml = '<table><thead><tr>';
+    for (let i = 0; i < data.getNumberOfColumns(); i++) {
+      tableHtml += `<th>${data.getColumnLabel(i)}</th>`;
+    }
+    tableHtml += '</tr></thead><tbody>';
+  
+    for (let r = 0; r < data.getNumberOfRows(); r++) {
+      tableHtml += '<tr>';
+      for (let c = 0; c < data.getNumberOfColumns(); c++) {
+        tableHtml += `<td>${data.getValue(r, c)}</td>`;
+      }
+      tableHtml += '</tr>';
+    }
+    tableHtml += '</tbody></table>';
+  
+    const blob = new Blob([tableHtml], { type: 'application/vnd.ms-excel' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = filename;
+    link.click();
+  }
+   
+/*  
+//////// eof NB table ///////////////
+*/
 
 }
 

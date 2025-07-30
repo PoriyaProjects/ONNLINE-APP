@@ -1,0 +1,245 @@
+@use "variables" as *;
+
+@font-face {
+  font-family: '#{$icomoon-font-family}';
+  src:  url('#{$icomoon-font-path}/#{$icomoon-font-family}.eot?7ws6qa');
+  src:  url('#{$icomoon-font-path}/#{$icomoon-font-family}.eot?7ws6qa#iefix') format('embedded-opentype'),
+    url('#{$icomoon-font-path}/#{$icomoon-font-family}.ttf?7ws6qa') format('truetype'),
+    url('#{$icomoon-font-path}/#{$icomoon-font-family}.woff?7ws6qa') format('woff'),
+    url('#{$icomoon-font-path}/#{$icomoon-font-family}.svg?7ws6qa##{$icomoon-font-family}') format('svg');
+  font-weight: normal;
+  font-style: normal;
+  font-display: block;
+}
+
+.klubmed {
+  /* use !important to prevent issues with browser extensions that change fonts */
+  font-family: '#{$icomoon-font-family}' !important;
+  speak: never;
+  font-style: normal;
+  font-weight: normal;
+  font-variant: normal;
+  text-transform: none;
+  line-height: 1;
+
+  /* Better Font Rendering =========== */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.klubmed-accident_and_emergency {
+  &:before {
+    content: $klubmed-accident_and_emergency; 
+  }
+}
+.klubmed-admissions {
+  &:before {
+    content: $klubmed-admissions; 
+  }
+}
+.klubmed-biochemistry_laboratory {
+  &:before {
+    content: $klubmed-biochemistry_laboratory; 
+  }
+}
+.klubmed-burn_unit {
+  &:before {
+    content: $klubmed-burn_unit; 
+  }
+}
+.klubmed-cardiology {
+  &:before {
+    content: $klubmed-cardiology; 
+  }
+}
+.klubmed-chaplaincy {
+  &:before {
+    content: $klubmed-chaplaincy; 
+  }
+}
+.klubmed-coronary_care_unit {
+  &:before {
+    content: $klubmed-coronary_care_unit; 
+  }
+}
+.klubmed-critical_care {
+  &:before {
+    content: $klubmed-critical_care; 
+  }
+}
+.klubmed-discharge_lounge {
+  &:before {
+    content: $klubmed-discharge_lounge; 
+  }
+}
+.klubmed-ears_nose_and_throat {
+  &:before {
+    content: $klubmed-ears_nose_and_throat; 
+  }
+}
+.klubmed-endocrinology {
+  &:before {
+    content: $klubmed-endocrinology; 
+  }
+}
+.klubmed-finance_dept {
+  &:before {
+    content: $klubmed-finance_dept; 
+  }
+}
+.klubmed-gastroenterology {
+  &:before {
+    content: $klubmed-gastroenterology; 
+  }
+}
+.klubmed-general_surgery {
+  &:before {
+    content: $klubmed-general_surgery; 
+  }
+}
+.klubmed-geriatrics {
+  &:before {
+    content: $klubmed-geriatrics; 
+  }
+}
+.klubmed-gym {
+  &:before {
+    content: $klubmed-gym; 
+  }
+}
+.klubmed-gynecology {
+  &:before {
+    content: $klubmed-gynecology; 
+  }
+}
+.klubmed-hematology {
+  &:before {
+    content: $klubmed-hematology; 
+  }
+}
+.klubmed-hematology_laboratory {
+  &:before {
+    content: $klubmed-hematology_laboratory; 
+  }
+}
+.klubmed-hepatology {
+  &:before {
+    content: $klubmed-hepatology; 
+  }
+}
+.klubmed-human_resoruces {
+  &:before {
+    content: $klubmed-human_resoruces; 
+  }
+}
+.klubmed-intensive_care_unit {
+  &:before {
+    content: $klubmed-intensive_care_unit; 
+  }
+}
+.klubmed-medical_records {
+  &:before {
+    content: $klubmed-medical_records; 
+  }
+}
+.klubmed-nephrology {
+  &:before {
+    content: $klubmed-nephrology; 
+  }
+}
+.klubmed-obstetricsmonia {
+  &:before {
+    content: $klubmed-obstetricsmonia; 
+  }
+}
+.klubmed-occupational_therapy {
+  &:before {
+    content: $klubmed-occupational_therapy; 
+  }
+}
+.klubmed-oncology {
+  &:before {
+    content: $klubmed-oncology; 
+  }
+}
+.klubmed-opthalmology {
+  &:before {
+    content: $klubmed-opthalmology; 
+  }
+}
+.klubmed-orthopaedics {
+  &:before {
+    content: $klubmed-orthopaedics; 
+  }
+}
+.klubmed-outpatient_department {
+  &:before {
+    content: $klubmed-outpatient_department; 
+  }
+}
+.klubmed-pain_managment {
+  &:before {
+    content: $klubmed-pain_managment; 
+  }
+}
+.klubmed-pediatrics {
+  &:before {
+    content: $klubmed-pediatrics; 
+  }
+}
+.klubmed-pharmacy {
+  &:before {
+    content: $klubmed-pharmacy; 
+  }
+}
+.klubmed-physical_therapy {
+  &:before {
+    content: $klubmed-physical_therapy; 
+  }
+}
+.klubmed-psychology {
+  &:before {
+    content: $klubmed-psychology; 
+  }
+}
+.klubmed-radiology {
+  &:before {
+    content: $klubmed-radiology; 
+  }
+}
+.klubmed-respirology {
+  &:before {
+    content: $klubmed-respirology; 
+  }
+}
+.klubmed-rheumatology {
+  &:before {
+    content: $klubmed-rheumatology; 
+  }
+}
+.klubmed-social_work {
+  &:before {
+    content: $klubmed-social_work; 
+  }
+}
+.klubmed-sonography {
+  &:before {
+    content: $klubmed-sonography; 
+  }
+}
+.klubmed-speech_language_therapy {
+  &:before {
+    content: $klubmed-speech_language_therapy; 
+  }
+}
+.klubmed-urology {
+  &:before {
+    content: $klubmed-urology; 
+  }
+}
+.klubmed-vascular_surgery {
+  &:before {
+    content: $klubmed-vascular_surgery; 
+  }
+}
+

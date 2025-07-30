@@ -83,13 +83,13 @@ export class RoomTimeDashboardComponent implements OnInit, AfterViewInit {
   loadCharts(): void {
     const chartsConfig = this.activeTab === 'avg'
       ? {
-          ids: { MorningDelay: 'chartMorningDelayAvg', LostDays: 'chartLostDaysAvg', SetupTime: 'chartSetupTimeAvg' },
+          ids: { MorningDelay: 'chartMorningDelayAvg', EndDay: 'chartEndDayAvg', SetupTime: 'chartSetupTimeAvg' },
           url: `${environment.url}/GetRoomTimeAvgD`,
           title: 'זמן ממוצע (HH:MM)',
           isDays: false
         }
       : {
-          ids: { MorningDelay: 'chartMorningDelayAgg', LostDays: 'chartLostDaysAgg', SetupTime: 'chartSetupTimeAgg' },
+          ids: { MorningDelay: 'chartMorningDelayAgg', EndDay: 'chartEndDayAgg', SetupTime: 'chartSetupTimeAgg' },
           url: `${environment.url}/GetRoomAggregateDaysD`,
           title: 'ימי אובדן',
           isDays: true

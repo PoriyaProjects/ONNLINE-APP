@@ -296,7 +296,7 @@ if (titleContainer) {
   private translateDataSource(key: string): string {
     const map: { [key: string]: string } = {
       MorningDelay: 'איחור בוקר',
-      LostDays: 'אובדן יום',
+      EndDay: 'אובדן יום',
       SetupTime: 'עודף Setup Time'
     };
     return map[key] || key; // fallback to original if no translation found
