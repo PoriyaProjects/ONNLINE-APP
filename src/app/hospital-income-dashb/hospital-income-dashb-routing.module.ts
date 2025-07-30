@@ -5,13 +5,6 @@ import { HospitalIncomeDashbComponent } from './hospital-income-dashb.component'
 import { GoogleChartsIncomeComponent } from './google-charts/google-charts.component';
 import { TableComponent } from '../shared/dataTable';
 
-// const routes: Routes = [
-//   {
-//     path: '',
-//     component: HospitalIncomeDashbComponent
-//   }
-// ];
-
 
 const routes: Routes = [
   { path: '', component: HospitalIncomeDashbComponent },

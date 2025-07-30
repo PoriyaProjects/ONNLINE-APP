@@ -10,7 +10,7 @@
   border: 1px solid #ccc;
   cursor: pointer;
   border-radius: 4px;
-  transition: all 0.2s ease;
+  transition: all 0.2s ease;  
 }
 
 .tabs button:hover {
@@ -84,6 +84,8 @@
   color: #007bff;
 }
 
+
+.material-icons{vertical-align:middle; }
 </style>
 <div class="mdc-layout-grid" style="direction: rtl;">
     <div class="row" style="text-align: center;">
@@ -105,8 +107,8 @@
             <main class="mdc-top-app-bar--fixed-adjust">
                  <!-- Tabs -->
                  <div class="tabs" style="text-align: right; margin: bottom 20px;">
-                    <button (click)="onTabChange('avg')" [class.active]="activeTab === 'avg'" style="border:solid 1px #777;margin-left:20px;" >זמן ממוצע</button>
-                    <button (click)="onTabChange('agg')" [class.active]="activeTab === 'agg'" style="border:solid 1px #777;margin-left:20px;">מספר ימים</button>
+                    <button (click)="onTabChange('avg')" [class.active]="activeTab === 'avg'" style="border:solid 1px #777;margin-left:20px;"><span class="material-icons">av_timer</span> זמן ממוצע</button>
+                    <button (click)="onTabChange('agg')" [class.active]="activeTab === 'agg'" style="border:solid 1px #777;margin-left:20px;"><span class="material-icons">running_with_errors</span> ימי אובדן</button>
                   </div>
 
                 <div class="filters" style="text-align: right;">
@@ -121,38 +123,21 @@
                       {{ type.label }}
                     </label>
                   </div>
-                  
-                 
-                  
-                  <!-- AvgTime Charts -->
-                  <!-- <div *ngIf="activeTab === 'avg'">
-                    <div id="chartMorningDelayAvg"  class="card text-center" style="width: 100%; height: 400px;margin-bottom:80px ;"></div>
-                    <div id="chartLostDaysAvg"  class="card text-center" style="width: 100%; height: 400px; margin-bottom:80px ;"></div>
-                    <div id="chartSetupTimeAvg"  class="card text-center" style="width: 100%; height: 400px; margin-bottom:80px ;"></div>
-                  </div> -->
-                  
-                  <!-- AggregateDays Charts -->
-                  <!-- <div *ngIf="activeTab === 'agg'">
-                    <div id="chartMorningDelayAgg"  class="card text-center" style="width: 100%; height: 400px; margin-bottom:80px ;"></div>
-                    <div id="chartLostDaysAgg"  class="card text-center" style="width: 100%; height: 400px; margin-bottom:80px ;"></div>
-                    <div id="chartSetupTimeAgg"  class="card text-center" style="width: 100%; height: 400px; margin-bottom:80px ;"></div>
-                  </div> -->
-                  
 
                   <div *ngIf="activeTab === 'avg'">
                     <div id="chartMorningDelayAvgWrapper" class="card text-center" style="width: 100%; margin-bottom:80px;">
                       <div id="chartMorningDelayAvgTitle" class="chart-title"></div>
-                      <div id="chartMorningDelayAvg" style="width: 100%; height: 460px;"></div>
+                      <div id="chartMorningDelayAvg" style="width: 100%; height: 580px;">טעינה...</div>
                     </div>
                   
-                    <div id="chartLostDaysAvgWrapper" class="card text-center" style="width: 100%; margin-bottom:80px;">
-                      <div id="chartLostDaysAvgTitle" class="chart-title"></div>
-                      <div id="chartLostDaysAvg" style="width: 100%; height: 460px;"></div>
+                    <div id="chartEndDayAvgWrapper" class="card text-center" style="width: 100%; margin-bottom:80px;">
+                      <div id="chartEndDayAvgTitle" class="chart-title"></div>
+                      <div id="chartEndDayAvg" style="width: 100%; height: 580px;">טעינה...</div>
                     </div>
                   
                     <div id="chartSetupTimeAvgWrapper" class="card text-center" style="width: 100%; margin-bottom:80px;">
                       <div id="chartSetupTimeAvgTitle" class="chart-title"></div>
-                      <div id="chartSetupTimeAvg" style="width: 100%; height: 460px;"></div>
+                      <div id="chartSetupTimeAvg" style="width: 100%; height: 580px;">טעינה...</div>
                     </div>
                   </div>
                   
@@ -160,17 +145,17 @@
                   <div *ngIf="activeTab === 'agg'">
                     <div id="chartMorningDelayAggWrapper" class="card text-center" style="width: 100%; margin-bottom:80px;">
                       <div id="chartMorningDelayAggTitle" class="chart-title"></div>
-                      <div id="chartMorningDelayAgg" style="width: 100%; height: 460px;"></div>
+                      <div id="chartMorningDelayAgg" style="width: 100%; height: 580px;">טעינה...</div>
                     </div>
                   
-                    <div id="chartLostDaysAggWrapper" class="card text-center" style="width: 100%; margin-bottom:80px;">
-                      <div id="chartLostDaysAggTitle" class="chart-title"></div>
-                      <div id="chartLostDaysAgg" style="width: 100%; height: 460px;"></div>
+                    <div id="chartEndDayAggWrapper" class="card text-center" style="width: 100%; margin-bottom:80px;">
+                      <div id="chartEndDayAggTitle" class="chart-title"></div>
+                      <div id="chartEndDayAgg" style="width: 100%; height: 580px;">טעינה...</div>
                     </div>
                   
                     <div id="chartSetupTimeAggWrapper" class="card text-center" style="width: 100%; margin-bottom:80px;">
                       <div id="chartSetupTimeAggTitle" class="chart-title"></div>
-                      <div id="chartSetupTimeAgg" style="width: 100%; height: 460px;"></div>
+                      <div id="chartSetupTimeAgg" style="width: 100%; height: 580px;">טעינה...</div>
                     </div>
                   </div>
 

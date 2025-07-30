@@ -1,4 +1,4 @@
-import { Component, AfterViewInit, HostListener } from '@angular/core';
+import { Component, AfterViewInit, HostListener, Renderer2 } from '@angular/core';
 import { GoogleChartsService } from '../services/google-charts.service';
 import { sanitizeSoapResponse, sanitizeSoapResponseAndFormatData } from '../../shared/sanitizesoapresponce';
 
@@ -13,12 +13,18 @@ import { MDCRipple } from '@material/ripple';
 export class GoogleChartsIncomeComponent implements AfterViewInit {
 
   private resizeTimeout: any;
-  constructor(public googleChartsService: GoogleChartsService) {}
+  constructor(public googleChartsService: GoogleChartsService, private renderer: Renderer2) {}
   
   ngAfterViewInit(): void {    
     this.loadCharts();    
   }
 
+  ngOnInit(): void {
+    const link = this.renderer.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = './assets/kassets/klubmed.css';
+    document.head.appendChild(link);
+  }
 
   @HostListener('window:resize')
   onResize(): void {
