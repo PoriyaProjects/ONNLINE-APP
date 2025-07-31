@@ -22,7 +22,7 @@ export class GoogleChartsIncomeComponent implements AfterViewInit {
   ngOnInit(): void {
     const link = this.renderer.createElement('link');
     link.rel = 'stylesheet';
-    link.href = './assets/kassets/klubmed.css';
+    link.href = './assets/kassets/klubamed.css';
     document.head.appendChild(link);
   }
 
