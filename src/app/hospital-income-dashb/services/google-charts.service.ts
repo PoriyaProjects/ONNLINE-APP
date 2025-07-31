@@ -1740,6 +1740,31 @@ export class GoogleChartsService {
       return;
     }
   
+    // Helpers for hover + active states
+    const applyHoverEffect = (btn: HTMLButtonElement) => {
+      btn.onmouseenter = () => {
+        btn.style.transform = 'scale(1.05)';
+        btn.style.boxShadow = '0 4px 10px rgba(0,0,0,0.3)';
+      };
+      btn.onmouseleave = () => {
+        if (!btn.classList.contains('btnact')) {
+          btn.style.transform = 'scale(1)';
+          btn.style.boxShadow = 'none';
+        }
+      };
+    };
+    const setActiveButton = (container: HTMLElement, btn: HTMLButtonElement) => {
+      container.querySelectorAll('button').forEach(b => {
+        b.classList.remove('btnact');
+        b.style.border = '1px solid rgba(0,0,0,.125)';
+        b.style.boxShadow = 'none';
+        b.style.transform = 'scale(1)';
+      });
+      btn.classList.add('btnact');
+      btn.style.border = '2px solid #888';
+      btn.style.boxShadow = '0 0 12px rgba(0,0,0,0.6)';
+    };
+  
     try {
       const raw = await this.callApi('GetChargingIncome', {
         groupId: null,
@@ -1753,17 +1778,13 @@ export class GoogleChartsService {
         return;
       }
   
-      // Extract group info with latest ChargingPct
       const groupMap = new Map<number, { groupId: number; groupName: string; lastPct: number | null }>();
       for (const row of clean) {
         const groupId = parseInt(row.GroupID);
         const groupName = row.GroupName?.trim();
         const pct = parseFloat(row.ChargingPct);
         if (!groupId || !groupName || isNaN(pct)) continue;
-  
-        if (!groupMap.has(groupId)) {
-          groupMap.set(groupId, { groupId, groupName, lastPct: pct });
-        }
+        if (!groupMap.has(groupId)) groupMap.set(groupId, { groupId, groupName, lastPct: pct });
       }
   
       const sortedGroups = Array.from(groupMap.values())
@@ -1782,11 +1803,10 @@ export class GoogleChartsService {
         const pctLabel = lastPct != null && !isNaN(lastPct)
           ? ` (${lastPct > 0 ? '+' : ''}${lastPct.toFixed(1)}%)`
           : '';
-        //button.textContent = `${groupName}${pctLabel}`;
         const iconClass = this.getDeptIconClass(groupId);
-        button.innerHTML = `<i class="klubmed ${iconClass}"></i><br>${groupName}${pctLabel}`;
+        button.innerHTML = `<i class="klubamed ${iconClass}" style="font-size:48px;"></i><br>${groupName}<br>${pctLabel}`;
         const color = this.getHeatColor(lastPct);
-  
+        button.classList.add('mat-raised-button');
         button.style.cssText = `
           background-color: ${color};
           width: ${buttonWidth}%;
@@ -1794,12 +1814,17 @@ export class GoogleChartsService {
           margin-left: ${index < totalButtons - 1 ? spacePercent : 0}%;
           border-radius: 10px;
           padding: 10px 20px;
-          border: none;
+          border: 1px solid rgba(0,0,0,.125);
           color: #fff;
           cursor: pointer;
+          transition: transform 0.2s ease, box-shadow 0.2s ease;
         `;
   
+        applyHoverEffect(button);
+  
         button.onclick = async () => {
+          setActiveButton(container, button);
+  
           chartContainer.innerHTML = '<p>טעינת נתוני מחלקה...</p>';
           chartContainer.innerHTML = '';
   
@@ -1825,37 +1850,23 @@ export class GoogleChartsService {
           }
   
           const layoutWrapper = document.createElement('div');
-          // Use groupId directly (special case 543 handled here)
           if (groupId === 543) {
-            // Render layout immediately with a loading placeholder
             layoutWrapper.innerHTML = getDeptFeGroupHtml(groupId);
             wrapper.appendChild(layoutWrapper);
-          
-            // Add a quick loader to #nbspecial
             const specialContainer = layoutWrapper.querySelector('#nbspecial');
             if (specialContainer) specialContainer.innerHTML = '<p>טעינה...</p>';
-          
-           
-            
             this.loadNBSpecial('nbspecial', { 
               filters: [{ column: 'משלם', value: 'מוסד לביטוח לאומי - יולדו' }],
               sortBy: 'count',
               sortAsc: false,
               showTotals: true,
               showSearch: true,
-              tableOptions: {
-                showRowNumber: false,
-                allowHtml: true
-              }
+              tableOptions: { showRowNumber: false, allowHtml: true }
             });
-            
-
-            
           } else {
             layoutWrapper.innerHTML = getDeptGroupHtml(groupId);
           }
-          
-          
+  
           deptChartDiv.appendChild(layoutWrapper);
           wrapper.appendChild(deptChartDiv);
           chartContainer.appendChild(wrapper);
@@ -1863,7 +1874,6 @@ export class GoogleChartsService {
           const deptRows = clean.filter(r => parseInt(r.GroupID) === groupId);
           const firstDepts: any[] = [];
           const seen = new Set<string>();
-  
           for (const row of deptRows) {
             const id = row.DeptID?.toString();
             const name = row.DeptName?.trim();
@@ -1872,10 +1882,8 @@ export class GoogleChartsService {
             seen.add(id);
             firstDepts.push({ id, name, percent });
           }
-  
-          // 🔥 Sort by percent descending
           firstDepts.sort((a, b) => (b.percent ?? 0) - (a.percent ?? 0)); 
-
+  
           const deptDynamic = document.getElementById(`dept-dynamic-${groupId}`);
           if (!deptDynamic) {
             console.warn(`Missing dynamic container: dept-dynamic-${groupId}`);
@@ -1889,26 +1897,30 @@ export class GoogleChartsService {
           deptChartDiv.appendChild(chartZone);
   
           firstDepts.forEach((dept: any, i) => {
-            const button = document.createElement('button');
+            const deptButton = document.createElement('button');
             const pctLabel = dept.percent != null && !isNaN(dept.percent)
               ? ` (${dept.percent > 0 ? '+' : ''}${dept.percent.toFixed(1)}%)`
               : '';
-            //button.textContent = `${dept.name}${pctLabel}`;
             const iconClass = this.getDeptIconClass(dept.id);
-            button.innerHTML = `<i class="klubmed ${iconClass}"></i><br>${dept.name}${pctLabel}`;
-            button.title = `${dept.percent}%`;
-            button.classList.add('mat-raised-button');
-            button.style.cssText = `
+            deptButton.innerHTML = `<i class="klubamed ${iconClass}" style="font-size:48px;"></i><br>${dept.name}<br>${pctLabel}`;
+            deptButton.title = `${dept.percent}%`;
+            deptButton.classList.add('mat-raised-button');
+            deptButton.style.cssText = `
               margin: 6px;
               padding: 8px 16px;
               border-radius: 6px;
               background-color: ${this.getHeatColor(dept.percent)};
               color: #fff;
+              border: 1px solid rgba(0,0,0,.125);
+              transition: transform 0.2s ease, box-shadow 0.2s ease;
             `;
   
-            button.onclick = () => {
-              chartZone.querySelectorAll('[id^="dept-wrapper-"]').forEach(el => el.remove());
+            applyHoverEffect(deptButton);
   
+            deptButton.onclick = () => {
+              setActiveButton(buttonBar, deptButton);
+  
+              chartZone.querySelectorAll('[id^="dept-wrapper-"]').forEach(el => el.remove());
               const wrapperId = `dept-wrapper-${dept.id}`;
               const deptWrapper = document.createElement('div');
               deptWrapper.id = wrapperId;
@@ -1922,8 +1934,8 @@ export class GoogleChartsService {
               this.renderAllDepartmentCharts(dept, { id: groupId, name: groupName });
             };
   
-            buttonBar.appendChild(button);
-            if (i === 0) button.click();
+            buttonBar.appendChild(deptButton);
+            if (i === 0) deptButton.click();
           });
         };
   
@@ -1934,6 +1946,7 @@ export class GoogleChartsService {
       container.innerHTML = 'Error loading department buttons.';
     }
   }
+  
   
 
 
@@ -3045,61 +3058,62 @@ export class GoogleChartsService {
 private getDeptIconClass(id: number | string): string {
   const map: Record<string, string> = {
     // נשים (Women)
-    '543': 'klubmed-gynecology',                  // נשים
-    '570': 'neonatal-care',          // טיפול מיוחד בילוד
-    '572': 'maternity',              // יולדות
-    '599': 'klubmed-obstetricsmonia',           // מיון יולדות
+    '543': 'klubamed-gynecology',                  // נשים
+    '570': 'klubamed-child_care',          // טיפול מיוחד בילוד
+    '572': 'klubamed-pregnant',              // יולדות
+    '599': 'klubamed-obstetricsmonia',           // מיון יולדות
 
     // פנימית (Internal)
-    '544': 'children',               // ילדים
-    '547': 'internal-b',            // פנימית ב
-    '555': 'neurology',             // נוירולוגיה
-    '561': 'klubmed-intensive_care_unit',        // טיפול נמרץ כללי
-    '562': 'klubmed-respirology',           // ריאות
-    '565': 'klubmed-rheumatology',          // ראומטולוגיה
-    '567': 'klubmed-cardiology',           // קרדיולוגיה
-    '574': 'klubmed-gastroenterology',     // גסטרואנטרולוגיה
-    '591': 'klubmed-hematology',           // המטולוגיה
-    '593': 'klubmed-critical_care',          // טיפול נמרץ לב
-    '595': 'klubmed-endocrinology',        // אנדוקרינולוגיה
-    '601': 'klubmed-oncology',             // אונקולוגיה
-    '614': 'neurointervention',    // צנתורי מוח
-    '643': 'dermatology',          // עור ומין
-    '687': 'infectious-diseases',  // מחלות זיהומיות
-    '747': 'klubmed-pain_managment',          // כאב
+    '544': 'klubamed-pediatrics',               // ילדים
+    '547': 'klubamed-occupational_therapy',            // פנימית ב
+    '555': 'klubamed-neurology',             // נוירולוגיה
+    '561': 'klubamed-intensive_care_unit',        // טיפול נמרץ כללי
+    '562': 'klubamed-respirology',           // ריאות
+    '565': 'klubamed-rheumatology',          // ראומטולוגיה
+    '567': 'klubamed-cardiology',           // קרדיולוגיה
+    '574': 'klubamed-gastroenterology',     // גסטרואנטרולוגיה
+    '591': 'klubamed-hematology',           // המטולוגיה
+    '593': 'klubamed-critical_care',          // טיפול נמרץ לב
+    '595': 'klubamed-endocrinology',        // אנדוקרינולוגיה
+    '601': 'klubamed-oncology',             // אונקולוגיה
+    '614': 'klubamed-neuro_surgery',    // צנתורי מוח
+    '643': 'klubamed-tissue',          // עור ומין
+    '687': 'klubamed-bacteria',  // מחלות זיהומיות
+    '747': 'klubamed-pain_managment',          // כאב
+    '558': 'klubamed-inpatient',          // פנימית א
 
     // כירורגיה (Surgery)
-    '545': 'klubmed-orthopaedics',          // אורתופדיה
-    '553': 'klubmed-urology',              // אורולוגיה
-    '556': 'klubmed-vascular_surgery',     // כירורגיה כלי דם
-    '560': 'oral-surgery',         // פה ולסת
-    '569': 'operating-room',       // חדרי ניתוח
-    '575': 'klubmed-general_surgery',      // כירורגיה כללית
-    '581': 'plastic-surgery',      // כירורגיה פלסטית
-    '585': 'klubmed-coronary_care_unit', // כירורגיה לב וחזה
-    '611': 'ent-surgery',          // אאג וכירורגיה ראש וצואר
-    '638': 'thoracic-surgery',     // כירורגיה חזה
-    '644': 'klubmed-opthalmology',        // עיניים
+    '545': 'klubamed-orthopaedics',          // אורתופדיה
+    '553': 'klubamed-urology',              // אורולוגיה
+    '556': 'klubamed-vascular_surgery',     // כירורגיה כלי דם
+    '560': 'klubamed-skull',         // פה ולסת
+    '569': 'klubamed-surgical_sterilization',       // חדרי ניתוח
+    '575': 'klubamed-general_surgery',      // כירורגיה כללית
+    '581': 'klubamed-mouth',      // כירורגיה פלסטית
+    '585': 'klubamed-coronary_care_unit', // כירורגיה לב וחזה
+    '611': 'klubamed-ears_nose_and_throat',          // אאג וכירורגיה ראש וצואר
+    '638': 'klubamed-breasts',     // כירורגיה חזה
+    '644': 'klubamed-opthalmology',        // עיניים
 
     // מכונים (Institutes)
-    '551': 'klubmed-radiology',            // רנטגן
-    '632': 'klubmed-hematology',             // דיאליזה
+    '551': 'klubamed-radiology',            // רנטגן
+    '632': 'klubamed-hematology',             // דיאליזה
 
     // מיון (ER)
-    '549': 'klubmed-accident_and_emergency',           // חדר מיון כללי
-    '573': 'psychiatry-er',        // פסיכיאטריה מיון
+    '549': 'klubamed-accident_and_emergency',           // חדר מיון כללי
+    '573': 'klubamed-mental_disorders',        // פסיכיאטריה מיון
 
     // שיקום (Rehabilitation)
-    '583': 'klubmed-geriatrics',      // גריאטריה שיקומית
-    '731': 'klubmed-physical_therapy',        // שיקום כללי
+    '583': 'klubamed-geriatrics',      // גריאטריה שיקומית
+    '731': 'klubamed-physical_therapy',        // שיקום כללי
 
     // אחר (Other)
-    '546': 'klubmed-gym',        // פיזיותרפיה א
-    '579': 'occupational-therapy', // ריפוי בעיסוק
-    '586': 'other',                // אחר
-    '600': 'klubmed-biochemistry_laboratory',                  // מעבדה
+    '546': 'klubamed-gym',        // פיזיותרפיה א
+    '579': 'klubamed-occupational_therapy', // ריפוי בעיסוק
+    '586': 'klubamed-social_work',                // אחר
+    '600': 'klubamed-biochemistry_laboratory',                  // מעבדה
   };
-
+// onimit: klubamed-inpatient
   return map[id] || 'default-icon'; // fallback icon
 }
 

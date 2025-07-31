@@ -1,0 +1,750 @@
+@font-face {
+  font-family: 'klubamed';
+  src:  url('fonts/klubamed.eot?zm7om');
+  src:  url('fonts/klubamed.eot?zm7om#iefix') format('embedded-opentype'),
+    url('fonts/klubamed.ttf?zm7om') format('truetype'),
+    url('fonts/klubamed.woff?zm7om') format('woff'),
+    url('fonts/klubamed.svg?zm7om#klubamed') format('svg');
+  font-weight: normal;
+  font-style: normal;
+  font-display: block;
+}
+
+.klubamed {
+  /* use !important to prevent issues with browser extensions that change fonts */
+  font-family: 'klubamed' !important;
+  speak: never;
+  font-style: normal;
+  font-weight: normal;
+  font-variant: normal;
+  text-transform: none;
+  line-height: 1;
+
+  /* Better Font Rendering =========== */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.klubamed-asthma_inhaler:before {
+  content: "\e9a9";
+}
+.klubamed-blood_pressure:before {
+  content: "\e9aa";
+}
+.klubamed-blood_pressure_2:before {
+  content: "\e9ab";
+}
+.klubamed-blood_pressure_monitor:before {
+  content: "\e9ac";
+}
+.klubamed-breast_pump:before {
+  content: "\e9ad";
+}
+.klubamed-cane:before {
+  content: "\e9ae";
+}
+.klubamed-cast:before {
+  content: "\e9af";
+}
+.klubamed-clinical_a:before {
+  content: "\e9b0";
+}
+.klubamed-cochlear_implant:before {
+  content: "\e9b1";
+}
+.klubamed-cold_chain:before {
+  content: "\e9b2";
+}
+.klubamed-contact_lenses:before {
+  content: "\e9b3";
+}
+.klubamed-cpap_machine:before {
+  content: "\e9b4";
+}
+.klubamed-cpap_masks:before {
+  content: "\e9b5";
+}
+.klubamed-cpap_tubes:before {
+  content: "\e9b6";
+}
+.klubamed-crutches:before {
+  content: "\e9b7";
+}
+.klubamed-defibrillator:before {
+  content: "\e9b8";
+}
+.klubamed-dental_hygiene:before {
+  content: "\e9b9";
+}
+.klubamed-diabetes_measure:before {
+  content: "\e9ba";
+}
+.klubamed-ecmo:before {
+  content: "\e9bb";
+}
+.klubamed-endotracheal_tube:before {
+  content: "\e9bc";
+}
+.klubamed-eyeglasses:before {
+  content: "\e9bd";
+}
+.klubamed-fever:before {
+  content: "\e9be";
+}
+.klubamed-hearing_aid:before {
+  content: "\e9bf";
+}
+.klubamed-hospitalized:before {
+  content: "\e9c0";
+}
+.klubamed-infusion_pump:before {
+  content: "\e9c1";
+}
+.klubamed-inpatient:before {
+  content: "\e9c2";
+}
+.klubamed-intravenous_bag:before {
+  content: "\e9c3";
+}
+.klubamed-intravenous_drip:before {
+  content: "\e9c4";
+}
+.klubamed-laryngoscope:before {
+  content: "\e9c5";
+}
+.klubamed-llin:before {
+  content: "\e9c6";
+}
+.klubamed-medical_sample:before {
+  content: "\e9c7";
+}
+.klubamed-medicine_bottle:before {
+  content: "\e9c8";
+}
+.klubamed-medicine_mortar:before {
+  content: "\e9c9";
+}
+.klubamed-microscope:before {
+  content: "\e9ca";
+}
+.klubamed-microscope_with_specimen:before {
+  content: "\e9cb";
+}
+.klubamed-mobile:before {
+  content: "\e9cc";
+}
+.klubamed-observation:before {
+  content: "\e9cd";
+}
+.klubamed-odontology:before {
+  content: "\e9ce";
+}
+.klubamed-odontology_implant:before {
+  content: "\e9cf";
+}
+.klubamed-orthotics:before {
+  content: "\e9d0";
+}
+.klubamed-oxygen_tank:before {
+  content: "\e9d1";
+}
+.klubamed-patient_band:before {
+  content: "\e9d2";
+}
+.klubamed-patient_band_alt:before {
+  content: "\e9d3";
+}
+.klubamed-ppe_santizer_alt:before {
+  content: "\e9d4";
+}
+.klubamed-pulse_oximeter:before {
+  content: "\e9d5";
+}
+.klubamed-pulse_oximeter_alt:before {
+  content: "\e9d6";
+}
+.klubamed-sling:before {
+  content: "\e9d7";
+}
+.klubamed-sonogram:before {
+  content: "\e9d8";
+}
+.klubamed-staples:before {
+  content: "\e9d9";
+}
+.klubamed-stent:before {
+  content: "\e9da";
+}
+.klubamed-stethoscope:before {
+  content: "\e9db";
+}
+.klubamed-stitches:before {
+  content: "\e9dc";
+}
+.klubamed-surgical_sterilization:before {
+  content: "\e9dd";
+}
+.klubamed-syringe:before {
+  content: "\e9de";
+}
+.klubamed-syringe-vaccine:before {
+  content: "\e9df";
+}
+.klubamed-tac:before {
+  content: "\e9e0";
+}
+.klubamed-test_tubes:before {
+  content: "\e9e1";
+}
+.klubamed-thermometer:before {
+  content: "\e9e2";
+}
+.klubamed-thermometer_digital:before {
+  content: "\e9e3";
+}
+.klubamed-toilet_paper:before {
+  content: "\e9e4";
+}
+.klubamed-treated_water:before {
+  content: "\e9e5";
+}
+.klubamed-ultrasound_scanner:before {
+  content: "\e9e6";
+}
+.klubamed-urine_sample:before {
+  content: "\e9e7";
+}
+.klubamed-ventilator:before {
+  content: "\e9e8";
+}
+.klubamed-ventilator_alt:before {
+  content: "\e9e9";
+}
+.klubamed-virus_lab_research_syringe:before {
+  content: "\e9ea";
+}
+.klubamed-virus_lab_research_test_tube:before {
+  content: "\e9eb";
+}
+.klubamed-virus-sanitizer-spray:before {
+  content: "\e9ec";
+}
+.klubamed-weight:before {
+  content: "\e9ed";
+}
+.klubamed-wheelchair:before {
+  content: "\e9ee";
+}
+.klubamed-wheelchair_alt:before {
+  content: "\e9ef";
+}
+.klubamed-xray:before {
+  content: "\e9f0";
+}
+.klubamed-allergies:before {
+  content: "\e977";
+}
+.klubamed-autoimmune_disease:before {
+  content: "\e978";
+}
+.klubamed-back_pain:before {
+  content: "\e979";
+}
+.klubamed-bladder_cancer:before {
+  content: "\e97a";
+}
+.klubamed-burn:before {
+  content: "\e97b";
+}
+.klubamed-cancerous_cell_nuclei:before {
+  content: "\e97c";
+}
+.klubamed-cervical_cancer:before {
+  content: "\e97d";
+}
+.klubamed-chemical_burn:before {
+  content: "\e97e";
+}
+.klubamed-chills:before {
+  content: "\e97f";
+}
+.klubamed-chills_fever:before {
+  content: "\e980";
+}
+.klubamed-chlamydia:before {
+  content: "\e981";
+}
+.klubamed-chlamydia-alt:before {
+  content: "\e982";
+}
+.klubamed-colorectal_cancer:before {
+  content: "\e983";
+}
+.klubamed-coughing_alt:before {
+  content: "\e984";
+}
+.klubamed-deaf:before {
+  content: "\e985";
+}
+.klubamed-diarrhea:before {
+  content: "\e986";
+}
+.klubamed-dry_eyes:before {
+  content: "\e987";
+}
+.klubamed-dry_mouth:before {
+  content: "\e988";
+}
+.klubamed-gonorrhea:before {
+  content: "\e989";
+}
+.klubamed-gonorrhea-alt:before {
+  content: "\e98a";
+}
+.klubamed-headache:before {
+  content: "\e98b";
+}
+.klubamed-hiv_ind:before {
+  content: "\e98c";
+}
+.klubamed-hiv_neg:before {
+  content: "\e98d";
+}
+.klubamed-hiv_pos:before {
+  content: "\e98e";
+}
+.klubamed-hpv:before {
+  content: "\e98f";
+}
+.klubamed-intestinal-pain:before {
+  content: "\e990";
+}
+.klubamed-loss-smell:before {
+  content: "\e991";
+}
+.klubamed-low_vision:before {
+  content: "\e992";
+}
+.klubamed-lymphoma:before {
+  content: "\e993";
+}
+.klubamed-malnutrition:before {
+  content: "\e994";
+}
+.klubamed-nausea:before {
+  content: "\e995";
+}
+.klubamed-oesophagus_cancer:before {
+  content: "\e996";
+}
+.klubamed-overweight:before {
+  content: "\e997";
+}
+.klubamed-pain:before {
+  content: "\e998";
+}
+.klubamed-pancreatic_cancer:before {
+  content: "\e999";
+}
+.klubamed-pneumonia:before {
+  content: "\e99a";
+}
+.klubamed-prostate_cancer:before {
+  content: "\e99b";
+}
+.klubamed-ribbon:before {
+  content: "\e99c";
+}
+.klubamed-skin_cancer:before {
+  content: "\e99d";
+}
+.klubamed-sti:before {
+  content: "\e99e";
+}
+.klubamed-stomach_cancer:before {
+  content: "\e99f";
+}
+.klubamed-sweating:before {
+  content: "\e9a0";
+}
+.klubamed-syphilis-alt:before {
+  content: "\e9a1";
+}
+.klubamed-tb:before {
+  content: "\e9a2";
+}
+.klubamed-thyroid_cancer:before {
+  content: "\e9a3";
+}
+.klubamed-underweight:before {
+  content: "\e9a4";
+}
+.klubamed-varicose_vein:before {
+  content: "\e9a5";
+}
+.klubamed-vih:before {
+  content: "\e9a6";
+}
+.klubamed-viral_lung_infection:before {
+  content: "\e9a7";
+}
+.klubamed-vomiting:before {
+  content: "\e9a8";
+}
+.klubamed-telemedicine:before {
+  content: "\e95c";
+}
+.klubamed-mental_health:before {
+  content: "\e95d";
+}
+.klubamed-ancv:before {
+  content: "\e95e";
+}
+.klubamed-asthma:before {
+  content: "\e95f";
+}
+.klubamed-baby_0203_alt:before {
+  content: "\e960";
+}
+.klubamed-baby_0203m:before {
+  content: "\e961";
+}
+.klubamed-baby_0306m:before {
+  content: "\e962";
+}
+.klubamed-baby_female_0203m_alt:before {
+  content: "\e963";
+}
+.klubamed-baby_female_0306m:before {
+  content: "\e964";
+}
+.klubamed-baby_female_0609m:before {
+  content: "\e965";
+}
+.klubamed-baby_male_0203m_alt:before {
+  content: "\e966";
+}
+.klubamed-baby_male_0306m:before {
+  content: "\e967";
+}
+.klubamed-baby_male_0609m:before {
+  content: "\e968";
+}
+.klubamed-boy_0105y:before {
+  content: "\e969";
+}
+.klubamed-boy_1015y:before {
+  content: "\e96a";
+}
+.klubamed-call_centre:before {
+  content: "\e96b";
+}
+.klubamed-child_care:before {
+  content: "\e96c";
+}
+.klubamed-child_cognition:before {
+  content: "\e96d";
+}
+.klubamed-child_program:before {
+  content: "\e96e";
+}
+.klubamed-mental_disorders:before {
+  content: "\e96f";
+}
+.klubamed-neuro_surgery:before {
+  content: "\e970";
+}
+.klubamed-pediatric_surgery:before {
+  content: "\e971";
+}
+.klubamed-pregnant:before {
+  content: "\e972";
+}
+.klubamed-pregnant_32w:before {
+  content: "\e973";
+}
+.klubamed-pregnant_0812w:before {
+  content: "\e974";
+}
+.klubamed-pregnant_2426w:before {
+  content: "\e975";
+}
+.klubamed-pregnant_3638w:before {
+  content: "\e976";
+}
+.klubamed-antibody:before {
+  content: "\e92b";
+}
+.klubamed-anus:before {
+  content: "\e92c";
+}
+.klubamed-arm:before {
+  content: "\e92d";
+}
+.klubamed-bacteria:before {
+  content: "\e92e";
+}
+.klubamed-bladder:before {
+  content: "\e92f";
+}
+.klubamed-blood_cells:before {
+  content: "\e930";
+}
+.klubamed-blood_drop:before {
+  content: "\e931";
+}
+.klubamed-blood_vessel:before {
+  content: "\e932";
+}
+.klubamed-body:before {
+  content: "\e933";
+}
+.klubamed-breasts:before {
+  content: "\e934";
+}
+.klubamed-cell_nuclei:before {
+  content: "\e935";
+}
+.klubamed-colon:before {
+  content: "\e936";
+}
+.klubamed-dna:before {
+  content: "\e937";
+}
+.klubamed-ear:before {
+  content: "\e938";
+}
+.klubamed-enzyme:before {
+  content: "\e939";
+}
+.klubamed-eye:before {
+  content: "\e93a";
+}
+.klubamed-female_reproductive_system:before {
+  content: "\e93b";
+}
+.klubamed-foot:before {
+  content: "\e93c";
+}
+.klubamed-gallbladder:before {
+  content: "\e93d";
+}
+.klubamed-head:before {
+  content: "\e93e";
+}
+.klubamed-heart_organ:before {
+  content: "\e93f";
+}
+.klubamed-intestine:before {
+  content: "\e940";
+}
+.klubamed-joints:before {
+  content: "\e941";
+}
+.klubamed-kidneys:before {
+  content: "\e942";
+}
+.klubamed-leg:before {
+  content: "\e943";
+}
+.klubamed-liver:before {
+  content: "\e944";
+}
+.klubamed-liver-alt:before {
+  content: "\e945";
+}
+.klubamed-lungs:before {
+  content: "\e946";
+}
+.klubamed-lymph_nodes:before {
+  content: "\e947";
+}
+.klubamed-mouth:before {
+  content: "\e948";
+}
+.klubamed-nerve:before {
+  content: "\e949";
+}
+.klubamed-neurology:before {
+  content: "\e94a";
+}
+.klubamed-nose:before {
+  content: "\e94b";
+}
+.klubamed-pancreas:before {
+  content: "\e94c";
+}
+.klubamed-penis:before {
+  content: "\e94d";
+}
+.klubamed-penis_alt:before {
+  content: "\e94e";
+}
+.klubamed-prostate:before {
+  content: "\e94f";
+}
+.klubamed-skeleton:before {
+  content: "\e950";
+}
+.klubamed-skull:before {
+  content: "\e951";
+}
+.klubamed-spine:before {
+  content: "\e952";
+}
+.klubamed-spleen:before {
+  content: "\e953";
+}
+.klubamed-stomach:before {
+  content: "\e954";
+}
+.klubamed-testicles:before {
+  content: "\e955";
+}
+.klubamed-thyroid:before {
+  content: "\e956";
+}
+.klubamed-tissue:before {
+  content: "\e957";
+}
+.klubamed-tooth:before {
+  content: "\e958";
+}
+.klubamed-tumour:before {
+  content: "\e959";
+}
+.klubamed-vagina:before {
+  content: "\e95a";
+}
+.klubamed-vagina_alt:before {
+  content: "\e95b";
+}
+.klubamed-accident_and_emergency:before {
+  content: "\e900";
+}
+.klubamed-admissions:before {
+  content: "\e901";
+}
+.klubamed-biochemistry_laboratory:before {
+  content: "\e902";
+}
+.klubamed-burn_unit:before {
+  content: "\e903";
+}
+.klubamed-cardiology:before {
+  content: "\e904";
+}
+.klubamed-chaplaincy:before {
+  content: "\e905";
+}
+.klubamed-coronary_care_unit:before {
+  content: "\e906";
+}
+.klubamed-critical_care:before {
+  content: "\e907";
+}
+.klubamed-discharge_lounge:before {
+  content: "\e908";
+}
+.klubamed-ears_nose_and_throat:before {
+  content: "\e909";
+}
+.klubamed-endocrinology:before {
+  content: "\e90a";
+}
+.klubamed-finance_dept:before {
+  content: "\e90b";
+}
+.klubamed-gastroenterology:before {
+  content: "\e90c";
+}
+.klubamed-general_surgery:before {
+  content: "\e90d";
+}
+.klubamed-geriatrics:before {
+  content: "\e90e";
+}
+.klubamed-gym:before {
+  content: "\e90f";
+}
+.klubamed-gynecology:before {
+  content: "\e910";
+}
+.klubamed-hematology:before {
+  content: "\e911";
+}
+.klubamed-hematology_laboratory:before {
+  content: "\e912";
+}
+.klubamed-hepatology:before {
+  content: "\e913";
+}
+.klubamed-human_resoruces:before {
+  content: "\e914";
+}
+.klubamed-intensive_care_unit:before {
+  content: "\e915";
+}
+.klubamed-medical_records:before {
+  content: "\e916";
+}
+.klubamed-nephrology:before {
+  content: "\e917";
+}
+.klubamed-obstetricsmonia:before {
+  content: "\e918";
+}
+.klubamed-occupational_therapy:before {
+  content: "\e919";
+}
+.klubamed-oncology:before {
+  content: "\e91a";
+}
+.klubamed-opthalmology:before {
+  content: "\e91b";
+}
+.klubamed-orthopaedics:before {
+  content: "\e91c";
+}
+.klubamed-outpatient_department:before {
+  content: "\e91d";
+}
+.klubamed-pain_managment:before {
+  content: "\e91e";
+}
+.klubamed-pediatrics:before {
+  content: "\e91f";
+}
+.klubamed-pharmacy:before {
+  content: "\e920";
+}
+.klubamed-physical_therapy:before {
+  content: "\e921";
+}
+.klubamed-psychology:before {
+  content: "\e922";
+}
+.klubamed-radiology:before {
+  content: "\e923";
+}
+.klubamed-respirology:before {
+  content: "\e924";
+}
+.klubamed-rheumatology:before {
+  content: "\e925";
+}
+.klubamed-social_work:before {
+  content: "\e926";
+}
+.klubamed-sonography:before {
+  content: "\e927";
+}
+.klubamed-speech_language_therapy:before {
+  content: "\e928";
+}
+.klubamed-urology:before {
+  content: "\e929";
+}
+.klubamed-vascular_surgery:before {
+  content: "\e92a";
+}
