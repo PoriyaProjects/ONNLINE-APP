@@ -249,7 +249,8 @@ if (title) {
         <span style="color: ${markerStatusColor}; font-weight: bold;font-size:2.4em; vertical-align: middle; float:right;">●</span>
         <span style="float:right;padding-right:6px;">
             השנה על מול תקופה קודמת: ${formatValue(gaugeValue)} <br>
-            תקופה קודמת: ${formatValue(gaugeTargetValue)} (מתוכנן: ${formatValue(gaugePlanned)})
+            תקופה קודמת: ${formatValue(gaugeTargetValue)} 
+            <!--(מתוכנן: ${formatValue(gaugePlanned)})-->
         </span>
     </div>
     <div style="white-space: nowrap; text-align:right; float:right; line-height:1.6em;">
