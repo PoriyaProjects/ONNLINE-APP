@@ -73,7 +73,7 @@ if (title) {
   titleDiv.style.fontFamily = 'Open Sans, sans-serif';
   titleDiv.style.fontSize = '16px';
   titleDiv.style.fontWeight = 'normal';
-  titleDiv.style.marginTop = '24px';
+  titleDiv.style.marginTop = '18px';
   titleDiv.style.marginBottom = '16px';
   titleDiv.textContent = title;
   container.appendChild(titleDiv);
@@ -249,7 +249,7 @@ if (title) {
         <span style="color: ${markerStatusColor}; font-weight: bold;font-size:2.4em; vertical-align: middle; float:right;">●</span>
         <span style="float:right;padding-right:6px;">
             השנה על מול תקופה קודמת: ${formatValue(gaugeValue)} <br>
-            יעד: ${formatValue(gaugeTargetValue)} (מתוכנן: ${formatValue(gaugePlanned)})
+            תקופה קודמת: ${formatValue(gaugeTargetValue)} (מתוכנן: ${formatValue(gaugePlanned)})
         </span>
     </div>
     <div style="white-space: nowrap; text-align:right; float:right; line-height:1.6em;">
