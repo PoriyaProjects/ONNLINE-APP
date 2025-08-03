@@ -20,7 +20,7 @@ export class EmployeesManageDashComponent implements OnInit, OnDestroy {
   TABLE_DATA: any[] = [];
   TABLE_DATAExcel: any[] = [];
   displayedColumns: string[] = [
-    'Image', 'EmployeeID', 'FirstName', 'LastName', 'DepartnentDescripton', 'FunctionDescription', 'CellNumber', 'Gender', 'DateOfBirth', 'Email'
+    'Image', 'EmployeeID', 'FirstName', 'LastName', 'DepartnentDescripton', 'SubDepartment', 'FunctionDescription', 'CellNumber', 'Email'
   ];
   dataSource = new MatTableDataSource(this.TABLE_DATA);
   dataSourceExcel = new MatTableDataSource(this.TABLE_DATAExcel);
