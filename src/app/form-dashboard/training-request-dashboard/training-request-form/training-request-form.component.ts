@@ -391,18 +391,32 @@ export class TrainingRequestFormComponent implements OnInit {
     }
   }
 
-  openFile(base64String: string) {
-    // Extract the MIME type from the Base64 string
-    const mimeType = base64String.match(/data:(.*?);base64,/)?.[1] || 'application/octet-stream';
+  openFile(base64String: string): void {
+    try {
+      // Extract MIME type & Base64 content
+      const matches = base64String.match(/^data:(.*);base64,(.*)$/);
+      const mimeType = matches ? matches[1] : 'application/pdf';
+      const base64Content = matches ? matches[2] : base64String;
 
-    // Create a new window and write the file data
-    const fileWindow = window.open();
-    if (fileWindow) {
-      fileWindow.document.write(
-        `<iframe src="${base64String}" frameborder="0" style="width:100%;height:100%;"></iframe>`
-      );
-    } else {
-      console.error('Unable to open a new window');
+      // Convert Base64 to binary
+      const byteCharacters = atob(base64Content);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+
+      // Create Blob and object URL
+      const blob = new Blob([byteArray], { type: mimeType });
+      const fileURL = URL.createObjectURL(blob);
+
+      // Open in a new tab
+      window.open(fileURL, '_blank');
+
+      // Release memory after a short delay
+      setTimeout(() => URL.revokeObjectURL(fileURL), 5000);
+    } catch (error) {
+      console.error('Failed to open file:', error);
     }
   }
 
