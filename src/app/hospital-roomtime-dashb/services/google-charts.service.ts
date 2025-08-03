@@ -2,6 +2,8 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { ReplaySubject, Observable } from 'rxjs';
 import { sanitizeSoapResponse } from '../../shared/sanitizesoapresponce';
+import { drawOverlayDualArcChartHelperRoomTime } from 'src/app/shared/drawOverlayDualArcChartHelperRoomTime';
+import { environment } from 'src/environments/environment';
 
 declare const google: any;
 
@@ -206,18 +208,7 @@ export class GoogleChartsService {
         dt.addColumn({ type: 'string', role: 'style' });
         dt.addColumn({ type: 'string', role: 'annotation' });
   
-        let maxValue = 0;
-        // rows.forEach(r => {
-        //   const department = r.c[2]?.v || '';
-        //   const value = r.c[3]?.v ?? 0;
-        //   const color = colorFn(department);
-        //   maxValue = Math.max(maxValue, value);
-  
-        //   // Annotation: days as 1 decimal OR HH:MM
-        //   const annotation = isDays 
-        //     ? `${Number(value).toFixed(1)}` 
-        //     : this.formatToHHMM(Number(value));
-        //   dt.addRow([department, Number(value), `color: ${color}`, annotation]);
+        let maxValue = 0;       
         // });
         rows.forEach(r => {
           const baseDepartment = r.c[2]?.v || '';
@@ -293,6 +284,8 @@ if (titleContainer) {
     }
   }
   
+
+
   private translateDataSource(key: string): string {
     const map: { [key: string]: string } = {
       MorningDelay: 'איחור בוקר',
@@ -311,5 +304,235 @@ if (titleContainer) {
     };
     return map[value] || value;
   }
+  
+
+  public async drawCombinedBarChartsByPeriod(
+    elementIdsAvg: { [period: string]: string },
+    elementIdsAgg: { [period: string]: string },
+    url: string
+  ): Promise<void> {
+    await this.waitUntilChartsReady();
+  
+    try {
+      const raw = await this.fetchWithCache(url);
+      const clean = sanitizeSoapResponse(raw);
+  
+      if (!clean || !clean.rows?.length) {
+        Object.values({ ...elementIdsAvg, ...elementIdsAgg }).forEach(id => {
+          const container = document.getElementById(id);
+          if (container) container.innerHTML = 'אין נתונים להצגה';
+        });
+        return;
+      }
+  
+      // --- Fixed order & colors ---
+      const order = ['MorningDelay', 'EndDay', 'SetupTime'];
+      const colorMap: { [key: string]: string } = {
+        MorningDelay: '#f86b6b',
+        EndDay: '#fcd74e',
+        SetupTime: '#6ba1f8'
+      };
+  
+      // --- Grouping ---
+      const groupedAvg: { [period: string]: { [ds: string]: number } } = {};
+      const groupedAgg: { [period: string]: { [ds: string]: number } } = {};
+  
+      clean.rows.forEach((r: any) => {
+        const ds = r.c[0]?.v || 'Unknown';
+        const period = r.c[1]?.v || 'Unknown';
+        const agg = Number(r.c[4]?.v ?? 0);
+        const avg = Number(r.c[5]?.v ?? 0);
+  
+        if (!groupedAvg[period]) groupedAvg[period] = {};
+        if (!groupedAgg[period]) groupedAgg[period] = {};
+  
+        groupedAvg[period][ds] = (groupedAvg[period][ds] || 0) + avg;
+        groupedAgg[period][ds] = (groupedAgg[period][ds] || 0) + agg;
+      });
+  
+      // --- Helper: build chart ---
+      const buildChart = (
+        containerId: string,
+        values: { [ds: string]: number },
+        isAvg: boolean,
+        title: string,
+        maxFormatter: (val: number) => any
+      ) => {
+        const dt = new google.visualization.DataTable();
+        dt.addColumn('string', 'DataSource');
+        dt.addColumn('number', isAvg ? 'AvgTime' : 'AggregateDays');
+        dt.addColumn({ type: 'string', role: 'annotation' });
+        dt.addColumn({ type: 'string', role: 'style' });
+  
+        let maxValue = 0;
+        order.forEach(ds => {
+          const val = values[ds] || 0;
+          maxValue = Math.max(maxValue, val);
+          const label = this.translateDataSource(ds);
+          const annotation = isAvg ? this.formatToHHMM(val) : val.toFixed(1);
+          dt.addRow([label, val, annotation, `color: ${colorMap[ds] || '#6ba1f8'}`]);
+        });
+  
+        const options = {
+          title,
+          height: 400,
+          legend: { position: 'none' },
+          bar: { groupWidth: '65%' },
+          annotations: { alwaysOutside: true, textStyle: { fontSize: 13, bold: true } },
+          vAxis: isAvg
+            ? { minValue: 0, ticks: this.generateHMMTicks(maxValue, 1800) }
+            : { minValue: 0, format: '0.0' },
+          hAxis: { slantedText: true, slantedTextAngle: 45 }
+        };
+  
+        const container = document.getElementById(containerId);
+        if (container) new google.visualization.ColumnChart(container).draw(dt, options);
+      };
+  
+      // --- Draw AvgTime charts ---
+      for (const [period, dsValues] of Object.entries(groupedAvg)) {
+        const title = `${this.translateTimeframe(period)} - זמן ממוצע (HH:MM)`;
+        buildChart(elementIdsAvg[period], dsValues, true, title, this.formatToHHMM);
+      }
+  
+      // --- Draw AggregateDays charts ---
+      for (const [period, dsValues] of Object.entries(groupedAgg)) {
+        const title = `${this.translateTimeframe(period)} - ימי אובדן`;
+        buildChart(elementIdsAgg[period], dsValues, false, title, val => val.toFixed(1));
+      }
+  
+    } catch (err) {
+      console.error('Error drawing charts:', err);
+    }
+  }
+  
+  
+  
+  public async drawRoomTimeDualArcCharts(containerIds: { [key: string]: string }): Promise<void> {
+    try {
+      const raw = await this.fetchWithCache(`${environment.url}/GetRoomTimeSummaryAllSeparated`);
+      const clean = sanitizeSoapResponse(raw);
+  
+      if (!clean || !clean.rows?.length) {
+        Object.values(containerIds).forEach(id => {
+          const el = document.getElementById(id);
+          if (el) el.innerHTML = 'אין נתונים להצגה';
+        });
+        return;
+      }
+  
+      const grouped: { [ds: string]: { [type: string]: { agg: number; avg: number } } } = {};
+      clean.rows.forEach((r: any) => {
+        const ds = r.c[0]?.v || 'Unknown';
+        const type = r.c[1]?.v || 'Unknown';
+        const agg = Number(r.c[4]?.v ?? 0);
+        const avg = Number(r.c[5]?.v ?? 0);
+        if (!grouped[ds]) grouped[ds] = {};
+        grouped[ds][type] = { agg, avg };
+      });
+  
+      console.group("Grouped Raw Data");
+      console.log(grouped);
+      console.groupEnd();
+  
+      // Hebrew mapping for DataSource & DataType
+      const dataSourceHebrew: { [key: string]: string } = {
+        MorningDelay: 'איחור בוקר',
+        EndDay: 'סיום יום',
+        SetupTime: 'זמן Setup'
+      };
+      const dataTypeHebrew: { [key: string]: string } = {
+        '1-Yesterday': 'אתמול',
+        '2-CurrentMonth': 'החודש',
+        '3-CurrentYear': 'השנה',
+        '4-ParallelsPeriod': 'השוואתי'
+      };
+  
+      // Fixed colors per DataSource
+      const dataSourceColors: { [key: string]: string } = {
+        MorningDelay: '#6ba1f8',
+        EndDay: '#f86b6b',
+        SetupTime: '#a17ef8'
+      };
+  
+      const dataSources = ['MorningDelay', 'EndDay', 'SetupTime'];
+  
+      dataSources.forEach(ds => {
+        const dsData = grouped[ds] || {};
+        const yesterday = dsData['1-Yesterday'] || { agg: 0, avg: 0 };
+        const currentMonth = dsData['2-CurrentMonth'] || { agg: 0, avg: 0 };
+        const currentYear = dsData['3-CurrentYear'] || { agg: 0, avg: 0 };
+        const parallels = dsData['4-ParallelsPeriod'] || { agg: 0, avg: 0 };
+  
+        const yearsInPeriod = 1; // adjust if Parallels covers multiple years
+  
+        // Middle arc (CurrentMonth vs CurrentYear/12) – currently just using full value
+        const plannedMonthAgg = currentYear.agg;
+        const plannedMonthAvg = currentYear.avg;
+  
+        // Outer arc (CurrentYear vs Parallels/year count)
+        const parallelsPerYearAgg = parallels.agg / yearsInPeriod;
+        const parallelsPerYearAvg = parallels.avg / yearsInPeriod;
+  
+        const dsTitle = dataSourceHebrew[ds] || ds;
+        const yearTitle = dataTypeHebrew['3-CurrentYear'] || 'השנה';
+        const arcColor = dataSourceColors[ds] || '#6ba1f8';
+  
+        // === Debugging values for each chart
+        console.group(`Debug for ${dsTitle}`);
+        console.log("CurrentMonth:", currentMonth);
+        console.log("CurrentYear:", currentYear);
+        console.log("ParallelsPeriod:", parallels);
+        console.log("PlannedMonthAgg:", plannedMonthAgg);
+        console.log("PlannedMonthAvg:", plannedMonthAvg);
+        console.log("ParallelsPerYearAgg:", parallelsPerYearAgg);
+        console.log("ParallelsPerYearAvg:", parallelsPerYearAvg);
+        console.groupEnd();
+  
+        // === AggregateDays Chart ===
+        console.log(`Drawing AGG chart for ${dsTitle}`, {
+          gaugePlanned: plannedMonthAgg,
+          gaugeTargetValue: parallelsPerYearAgg,
+          gaugeValue: currentYear.agg
+        });
+  
+        drawOverlayDualArcChartHelperRoomTime({
+          containerId: containerIds[`${ds}_agg`],
+          yesterdayValue: yesterday.agg, // Semi-circle value
+          workingDaysInfo: { currentWorkingDayIndex: currentMonth.agg, totalWorkingDays: currentYear.agg || 1 }, 
+          gaugePlanned: plannedMonthAgg,
+          gaugeTargetValue: parallelsPerYearAgg,
+          gaugeValue: currentYear.agg,
+          gaugeTargetStatus: '✅',
+          currentMonthValues: [],
+          showMarker: true,
+          title: `${dsTitle} – ימי אובדן`,
+          arcColor: arcColor,
+          isTime: false
+        });
+        
+        drawOverlayDualArcChartHelperRoomTime({
+          containerId: containerIds[`${ds}_avg`],
+          yesterdayValue: yesterday.avg, // Semi-circle value
+          workingDaysInfo: { currentWorkingDayIndex: currentMonth.avg, totalWorkingDays: currentYear.avg || 1 }, 
+          gaugePlanned: plannedMonthAvg,
+          gaugeTargetValue: parallelsPerYearAvg,
+          gaugeValue: currentYear.avg,
+          gaugeTargetStatus: '✅',
+          currentMonthValues: [],
+          showMarker: true,
+          title: `${dsTitle} – זמן אובדן (HH:MM)`,
+          arcColor: arcColor,
+          isTime: true
+        });
+        
+        
+      });
+  
+    } catch (err) {
+      console.error('Error drawing room time dual arc charts:', err);
+    }
+  }
+  
   
 }

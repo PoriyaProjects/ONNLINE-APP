@@ -1,6 +1,8 @@
 import { Component, AfterViewInit, OnInit, HostListener } from '@angular/core';
 import { GoogleChartsService } from '../services/google-charts.service';
 import { environment } from 'src/environments/environment';
+import { drawOverlayDualArcChartHelperRoomTime } from 'src/app/shared/drawOverlayDualArcChartHelperRoomTime';
+import { sanitizeSoapResponse } from 'src/app/shared/sanitizesoapresponce';
 
 @Component({
   selector: 'app-google-charts-time',
@@ -42,6 +44,7 @@ export class RoomTimeDashboardComponent implements OnInit, AfterViewInit {
   ngAfterViewInit(): void {
     // Wait for Google Charts to be ready before loading
     this.googleChartsService.chartsReady$.subscribe(() => this.loadCharts());
+    this.loadAllPeriodCharts();
   }
 
   /** Handle window resize (debounced) */
@@ -54,15 +57,28 @@ export class RoomTimeDashboardComponent implements OnInit, AfterViewInit {
   /** When timeframe radio changes */
   onDataTypeChange(): void {
     this.loadCharts();
+    
   }
 
   /** When tab changes */
+  // onTabChange(tab: 'avg' | 'agg'): void {
+  //   this.activeTab = tab;
+  //   // Allow UI to update before redrawing
+  //   setTimeout(() => this.loadCharts(), 0);
+  // }
+
   onTabChange(tab: 'avg' | 'agg'): void {
     this.activeTab = tab;
+  
+    // If switched to 'agg' and current selection is '1-Yesterday', change to '2-CurrentMonth'
+    if (this.activeTab === 'agg' && this.selectedDataType === '1-Yesterday') {
+      this.selectedDataType = '2-CurrentMonth';
+    }
+  
     // Allow UI to update before redrawing
     setTimeout(() => this.loadCharts(), 0);
   }
-
+  
   /** Consistently map departments to colors (persist across reloads) */
   getDepartmentColor(department: string): string {
     if (!this.departmentColorMap[department]) {
@@ -78,6 +94,31 @@ export class RoomTimeDashboardComponent implements OnInit, AfterViewInit {
     }
     return this.departmentColorMap[department];
   }
+
+
+  loadAllPeriodCharts(): void {
+    const url = `${environment.url}/GetRoomTimeSummaryAllSeparated`;
+  
+    const elementIdsAvg = {
+      '1-Yesterday': 'chartAvg_1-Yesterday',
+      '2-CurrentMonth': 'chartAvg_2-CurrentMonth',
+      '3-CurrentYear': 'chartAvg_3-CurrentYear',
+      '4-ParallelsPeriod': 'chartAvg_4-ParallelsPeriod'
+    };
+  
+    const elementIdsAgg = {
+      '1-Yesterday': 'chartAgg_1-Yesterday',
+      '2-CurrentMonth': 'chartAgg_2-CurrentMonth',
+      '3-CurrentYear': 'chartAgg_3-CurrentYear',
+      '4-ParallelsPeriod': 'chartAgg_4-ParallelsPeriod'
+    };
+  
+    this.googleChartsService.drawCombinedBarChartsByPeriod(elementIdsAvg, elementIdsAgg, url);
+  }
+  
+  
+  
+
 
   /** Load charts based on active tab */
   loadCharts(): void {
@@ -103,6 +144,16 @@ export class RoomTimeDashboardComponent implements OnInit, AfterViewInit {
       (dept: string) => this.getDepartmentColor(dept),
       chartsConfig.isDays
     );
+
+    this.googleChartsService.drawRoomTimeDualArcCharts({
+      'MorningDelay_agg': 'MorningDelay_agg',
+      'MorningDelay_avg': 'MorningDelay_avg',
+      'EndDay_agg': 'EndDay_agg',
+      'EndDay_avg': 'EndDay_avg',
+      'SetupTime_agg': 'SetupTime_agg',
+      'SetupTime_avg': 'SetupTime_avg',
+    });
+    
   }
 
   /** Toggle floating legend */
@@ -115,4 +166,17 @@ export class RoomTimeDashboardComponent implements OnInit, AfterViewInit {
   getDepartments(): string[] {
     return Object.keys(this.departmentColorMap);
   }
+
+
+
+
+
+
+
+
+
+
+
+
+  
 }

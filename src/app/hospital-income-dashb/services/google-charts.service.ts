@@ -1759,10 +1759,16 @@ export class GoogleChartsService {
         b.style.border = '1px solid rgba(0,0,0,.125)';
         b.style.boxShadow = 'none';
         b.style.transform = 'scale(1)';
+        // Reset bold
+        const nameSpan = b.querySelector('.btn-name');
+        if (nameSpan) (nameSpan as HTMLElement).style.fontWeight = 'normal';
       });
       btn.classList.add('btnact');
       btn.style.border = '2px solid #888';
       btn.style.boxShadow = '0 0 12px rgba(0,0,0,0.6)';
+      // Make the name bold
+      const nameSpan = btn.querySelector('.btn-name');
+      if (nameSpan) (nameSpan as HTMLElement).style.fontWeight = 'bold';
     };
   
     try {
@@ -1804,7 +1810,7 @@ export class GoogleChartsService {
           ? ` (${lastPct > 0 ? '+' : ''}${lastPct.toFixed(1)}%)`
           : '';
         const iconClass = this.getDeptIconClass(groupId);
-        button.innerHTML = `<i class="klubamed ${iconClass}" style="font-size:48px;"></i><br>${groupName}<br>${pctLabel}`;
+        button.innerHTML = `<i class="klubamed ${iconClass}" style="font-size:48px;"></i><br><span class="btn-name">${groupName}</span><br>${pctLabel}`;
         const color = this.getHeatColor(lastPct);
         button.classList.add('mat-raised-button');
         button.style.cssText = `
@@ -1902,7 +1908,7 @@ export class GoogleChartsService {
               ? ` (${dept.percent > 0 ? '+' : ''}${dept.percent.toFixed(1)}%)`
               : '';
             const iconClass = this.getDeptIconClass(dept.id);
-            deptButton.innerHTML = `<i class="klubamed ${iconClass}" style="font-size:48px;"></i><br>${dept.name}<br>${pctLabel}`;
+            deptButton.innerHTML = `<i class="klubamed ${iconClass}" style="font-size:48px;"></i><br><span class="btn-name">${dept.name}</span><br>${pctLabel}`;
             deptButton.title = `${dept.percent}%`;
             deptButton.classList.add('mat-raised-button');
             deptButton.style.cssText = `
@@ -2303,9 +2309,6 @@ export class GoogleChartsService {
       if (el) el.innerHTML = 'שגיאה בטעינת הנתונים';
     }
   }
-
-
-
 
 
   /**

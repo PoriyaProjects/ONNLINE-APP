@@ -7,26 +7,21 @@ import { MatCardModule } from '@angular/material/card';
 import { MatGridListModule } from '@angular/material/grid-list';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { FormsModule } from '@angular/forms';
-
-// Angular Material Modules
 import { MatTableModule } from '@angular/material/table';
 import { MatPaginatorModule } from '@angular/material/paginator';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-// import { TableTComponent } from '../shared/dataTable';
 import { MatSortModule } from '@angular/material/sort';
-import { DoctorSummaryComponent  } from './doctor-summary.component';
-import { SurgerySummaryComponent  } from './surgery-summary.component';
-import { RoomSummaryComponent  } from './room-summary.component';
+
 
 const routes: Routes = [
   { path: '', component: RoomTimeDashboardComponent },
-  // { path: 'data-table', component: TableTComponent }
+  
 ];
 @NgModule({
-  declarations: [RoomTimeDashboardComponent,DoctorSummaryComponent, SurgerySummaryComponent, RoomSummaryComponent],//TableTComponent,
+  declarations: [RoomTimeDashboardComponent],
   imports: [
     CommonModule,
     RouterModule.forChild(routes),
