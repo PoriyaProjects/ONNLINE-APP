@@ -277,6 +277,14 @@
                 </td>
             </ng-container>
 
+            <ng-container matColumnDef="SubDepartment">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header> תת מחלקה
+                </th>
+                <td mat-cell *matCellDef="let element" style="justify-content: center;">
+                    {{element.SubDepartment}}
+                </td>
+            </ng-container>
+
             <ng-container matColumnDef="FunctionDescription">
                 <th mat-header-cell *matHeaderCellDef mat-sort-header> תפקיד
                 </th>
@@ -288,19 +296,6 @@
                 <th mat-header-cell *matHeaderCellDef mat-sort-header> טלפון נייד
                 </th>
                 <td mat-cell *matCellDef="let element" style="justify-content: center;"> {{element.CellNumber}}</td>
-            </ng-container>
-
-            <ng-container matColumnDef="Gender">
-                <th mat-header-cell *matHeaderCellDef mat-sort-header> מגדר </th>
-                <td mat-cell *matCellDef="let element" style="justify-content: center;"><span
-                        *ngIf="element.Gender == 'Male'">זכר</span><span *ngIf="element.Gender == 'Female'">נקבה</span>
-                </td>
-            </ng-container>
-
-            <ng-container matColumnDef="DateOfBirth">
-                <th mat-header-cell *matHeaderCellDef mat-sort-header> תאריך לידה
-                </th>
-                <td mat-cell *matCellDef="let element" style="justify-content: center;"> {{element.DateOfBirth}}</td>
             </ng-container>
 
             <ng-container matColumnDef="Email">
