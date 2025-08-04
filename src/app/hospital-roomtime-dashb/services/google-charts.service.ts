@@ -438,7 +438,7 @@ if (titleContainer) {
       // Hebrew mapping for DataSource & DataType
       const dataSourceHebrew: { [key: string]: string } = {
         MorningDelay: 'איחור בוקר',
-        EndDay: 'סיום יום',
+        EndDay: 'סוף יום',
         SetupTime: 'זמן Setup'
       };
       const dataTypeHebrew: { [key: string]: string } = {
@@ -533,6 +533,361 @@ if (titleContainer) {
       console.error('Error drawing room time dual arc charts:', err);
     }
   }
+  
+  // public async drawGroupedComparisonCharts(
+  //   elementIdsAgg: { [key: string]: string },
+  //   elementIdsAvg: { [key: string]: string },
+  //   url: string
+  // ): Promise<void> {
+  //   await this.waitUntilChartsReady();
+  
+  //   try {
+  //     const raw = await this.fetchWithCache(url);
+  //     const clean = sanitizeSoapResponse(raw);
+  
+  //     if (!clean || !clean.rows?.length) {
+  //       Object.values({ ...elementIdsAgg, ...elementIdsAvg }).forEach(id => {
+  //         const container = document.getElementById(id);
+  //         if (container) container.innerHTML = 'אין נתונים להצגה';
+  //       });
+  //       return;
+  //     }
+  
+  //     // --- Fixed order ---
+  //     const dataSources = ['MorningDelay', 'EndDay', 'SetupTime'];
+  //     const periods = ['1-Yesterday', '2-CurrentMonth', '3-CurrentYear', '4-ParallelsPeriod'];
+  
+  //     // Hebrew mappings
+  //     const dsHebrew: { [k: string]: string } = {
+  //       MorningDelay: 'איחור בוקר',
+  //       EndDay: 'סוף יום',
+  //       SetupTime: 'זמן Setup'
+  //     };
+  //     const periodHebrew: { [k: string]: string } = {
+  //       '1-Yesterday': 'אתמול',
+  //       '2-CurrentMonth': 'החודש',
+  //       '3-CurrentYear': 'השנה',
+  //       '4-ParallelsPeriod': 'השוואתי'
+  //     };
+  
+  //     // Colors per DataSource
+  //     const colorMap: { [key: string]: string } = {
+  //       MorningDelay: '#6ba1f8',
+  //       EndDay: '#f86b6b',
+  //       SetupTime: '#a17ef8'
+  //     };
+  
+  //     // --- Group by DataSource & Period ---
+  //     const grouped: { [ds: string]: { [period: string]: { agg: number; avg: number } } } = {};
+  //     clean.rows.forEach((r: any) => {
+  //       const ds = r.c[0]?.v || 'Unknown';
+  //       const period = r.c[1]?.v || 'Unknown';
+  //       const agg = Number(r.c[4]?.v ?? 0);
+  //       const avg = Number(r.c[5]?.v ?? 0);
+  //       if (!grouped[ds]) grouped[ds] = {};
+  //       grouped[ds][period] = { agg, avg };
+  //     });
+  
+  //     // === Build DataTable ===
+  //     const buildDataTable = (isAvg: boolean) => {
+  //       const dt = new google.visualization.DataTable();
+  //       dt.addColumn('string', 'תקופה');
+  //       dataSources.forEach(ds => {
+  //         dt.addColumn('number', dsHebrew[ds]);
+  //         dt.addColumn({ type: 'string', role: 'annotation' });
+  //         dt.addColumn({ type: 'string', role: 'style' });
+  //       });
+  
+  //       let maxValue = 0;
+  //       periods.forEach(period => {
+  //         const row: any[] = [periodHebrew[period]];
+  
+  //         dataSources.forEach(ds => {
+  //           const val = grouped[ds]?.[period]?.[isAvg ? 'avg' : 'agg'] || 0;
+  //           maxValue = Math.max(maxValue, val);
+  //           const annotation = isAvg ? this.formatToHHMM(val) : val.toFixed(1);
+  //           row.push(val, annotation, `color: ${colorMap[ds]}`);
+  //         });
+  
+  //         dt.addRow(row);
+  //       });
+  
+  //       return { dt, maxValue };
+  //     };
+  
+  //     // === Aggregate Chart ===
+  //     const { dt: dtAgg, maxValue: maxAgg } = buildDataTable(false);
+  //     const optionsAgg = {
+  //       title: 'השוואת ימי אובדן לפי תקופות',
+  //       height: 500,
+  //       isStacked: false,
+  //       legend: { position: 'top', textStyle: { fontSize: 14 } },
+  //       annotations: { alwaysOutside: true, textStyle: { fontSize: 12, bold: true } },
+  //       vAxis: { minValue: 0, format: '0.0' },
+  //       hAxis: { slantedText: false },
+  //       chartArea: { left: 60, top: 60, right: 20, width: '80%', height: '70%' }
+  //     };
+  //     const containerAgg = document.getElementById(elementIdsAgg['default']);
+  //     if (containerAgg) new google.visualization.ColumnChart(containerAgg).draw(dtAgg, optionsAgg);
+  
+  //     // === Average Chart ===
+  //     const { dt: dtAvg, maxValue: maxAvg } = buildDataTable(true);
+  //     const optionsAvg = {
+  //       title: 'השוואת זמן אובדן (HH:MM) לפי תקופות',
+  //       height: 500,
+  //       isStacked: false,
+  //       legend: { position: 'top', textStyle: { fontSize: 14 } },
+  //       annotations: { alwaysOutside: true, textStyle: { fontSize: 12, bold: true } },
+  //       vAxis: { minValue: 0, ticks: this.generateHMMTicks(maxAvg, 1800) },
+  //       hAxis: { slantedText: false },
+  //       chartArea: { left: 60, top: 60, right: 20, width: '80%', height: '70%' },
+  //       tooltip: { isHtml: true }
+  //     };
+  //     const containerAvg = document.getElementById(elementIdsAvg['default']);
+  //     if (containerAvg) new google.visualization.ColumnChart(containerAvg).draw(dtAvg, optionsAvg);
+  
+  //   } catch (err) {
+  //     console.error('Error drawing grouped comparison charts:', err);
+  //   }
+  // }
+  
+  public async drawGroupedComparisonChartsByType(
+    elementIdsAgg: { [period: string]: string },
+    elementIdsAvg: { [period: string]: string },
+    url: string
+  ): Promise<void> {
+    await this.waitUntilChartsReady();
+  
+    try {
+      const raw = await this.fetchWithCache(url);
+      const clean = sanitizeSoapResponse(raw);
+  
+      if (!clean || !clean.rows?.length) {
+        Object.values({ ...elementIdsAgg, ...elementIdsAvg }).forEach(id => {
+          const container = document.getElementById(id);
+          if (container) container.innerHTML = 'אין נתונים להצגה';
+        });
+        return;
+      }
+  
+      // --- Fixed order & colors ---
+      const dataSources = ['MorningDelay', 'EndDay', 'SetupTime'];
+      const periods = ['1-Yesterday', '2-CurrentMonth', '3-CurrentYear', '4-ParallelsPeriod'];
+  
+      const dsHebrew: { [k: string]: string } = {
+        MorningDelay: 'איחור בוקר',
+        EndDay: 'סוף יום',
+        SetupTime: 'זמן Setup'
+      };
+      const periodHebrew: { [k: string]: string } = {
+        '1-Yesterday': 'אתמול',
+        '2-CurrentMonth': 'החודש',
+        '3-CurrentYear': 'השנה',
+        '4-ParallelsPeriod': 'השוואתי'
+      };
+  
+      const colorMap: { [key: string]: string } = {
+        MorningDelay: '#6ba1f8',
+        EndDay: '#f86b6b',
+        SetupTime: '#a17ef8'
+      };
+  
+      // --- Group by DataType -> DataSource ---
+      const grouped: { [period: string]: { [ds: string]: { agg: number; avg: number } } } = {};
+      clean.rows.forEach((r: any) => {
+        const ds = r.c[0]?.v || 'Unknown';
+        const period = r.c[1]?.v || 'Unknown';
+        const agg = Number(r.c[4]?.v ?? 0);
+        const avg = Number(r.c[5]?.v ?? 0);
+        if (!grouped[period]) grouped[period] = {};
+        grouped[period][ds] = { agg, avg };
+      });
+  
+      // --- Build DataTable with tooltips ---
+      const buildDataTable = (isAvg: boolean) => {
+        const dt = new google.visualization.DataTable();
+        dt.addColumn('string', 'תקופה');
+        dataSources.forEach(ds => {
+          dt.addColumn('number', dsHebrew[ds]);                // value
+          dt.addColumn({ type: 'string', role: 'annotation' }); // annotation (on bar)
+          dt.addColumn({ type: 'string', role: 'style' });      // bar color
+          dt.addColumn({ type: 'string', role: 'tooltip' });    // tooltip (formatted only)
+        });
+  
+        const rows: any[] = [];
+        let maxValue = 0;
+  
+        periods.forEach(period => {
+          const row: any[] = [periodHebrew[period]];
+          dataSources.forEach(ds => {
+            const val = grouped[period]?.[ds]?.[isAvg ? 'avg' : 'agg'] || 0;
+            maxValue = Math.max(maxValue, val);
+            const formatted = isAvg ? this.formatToHHMM(val) : val.toFixed(1);
+            row.push(val, formatted, `color: ${colorMap[ds]}`, formatted); // tooltip = formatted value
+          });
+          rows.push(row);
+        });
+  
+        dt.addRows(rows);
+        return { dt, maxValue };
+      };
+  
+      // --- Draw chart ---
+      const drawChart = (containerId: string, title: string, dt: any, maxValue: number, isAvg: boolean) => {
+        const options = {
+          title: title,
+          height: 450,
+          legend: { position: 'top', textStyle: { fontSize: 14 } },
+          bar: { groupWidth: '55%' },
+          isStacked: false, // side-by-side grouping
+          annotations: { alwaysOutside: true, textStyle: { fontSize: 12, bold: true } },
+          vAxis: isAvg
+            ? { minValue: 0, ticks: this.generateHMMTicks(maxValue, 1800) }
+            : { minValue: 0, format: '0.0' },
+          chartArea: { left: 60, top: 60, right: 20, width: '80%', height: '70%' },
+          tooltip: { isHtml: true }
+        };
+  
+        const container = document.getElementById(containerId);
+        if (container) new google.visualization.ColumnChart(container).draw(dt, options);
+      };
+  
+      // Build & draw Aggregate chart
+      const { dt: dtAgg, maxValue: maxAgg } = buildDataTable(false);
+      drawChart('comparisonAggGrouped', 'השוואת ימי אובדן לפי תקופה', dtAgg, maxAgg, false);
+  
+      // Build & draw Average chart
+      const { dt: dtAvg, maxValue: maxAvg } = buildDataTable(true);
+      drawChart('comparisonAvgGrouped', 'השוואת זמן אובדן (HH:MM) לפי תקופה', dtAvg, maxAvg, true);
+  
+    } catch (err) {
+      console.error('Error drawing grouped comparison charts by type:', err);
+    }
+  }
+  
+  public async drawGroupedComparisonCharts(
+    aggElementId: string,
+    avgElementId: string,
+    url: string
+  ): Promise<void> {
+    await this.waitUntilChartsReady();
+  
+    try {
+      const raw = await this.fetchWithCache(url);
+      const clean = sanitizeSoapResponse(raw);
+  
+      if (!clean || !clean.rows?.length) {
+        [aggElementId, avgElementId].forEach(id => {
+          const container = document.getElementById(id);
+          if (container) container.innerHTML = 'אין נתונים להצגה';
+        });
+        return;
+      }
+  
+      // === Explicit mappings ===
+      const dataSourceOrder = ['MorningDelay', 'EndDay', 'SetupTime'];
+      const dataTypeOrder = ['1-Yesterday', '2-CurrentMonth', '3-CurrentYear', '4-ParallelsPeriod'];
+  
+      const dataSourceHebrew: { [key: string]: string } = {
+        MorningDelay: 'איחור בוקר',
+        EndDay: 'סוף יום',
+        SetupTime: 'זמן Setup'
+      };
+  
+      const dataTypeHebrew: { [key: string]: string } = {
+        '1-Yesterday': 'אתמול',
+        '2-CurrentMonth': 'החודש',
+        '3-CurrentYear': 'השנה',
+        '4-ParallelsPeriod': 'השוואתי'
+      };
+  
+      const colorMap: { [key: string]: string } = {
+        '1-Yesterday': '#6ba1f8',
+        '2-CurrentMonth': '#fcd74e',
+        '3-CurrentYear': '#00cc66',
+        '4-ParallelsPeriod': '#f86b6b'
+      };
+  
+      // === Group data ===
+      const grouped: { [ds: string]: { [type: string]: { agg: number; avg: number } } } = {};
+      clean.rows.forEach((r: any) => {
+        const ds = r.c[0]?.v || 'Unknown';
+        const type = r.c[1]?.v || 'Unknown';
+        const agg = Number(r.c[4]?.v ?? 0);
+        const avg = Number(r.c[5]?.v ?? 0);
+  
+        if (!grouped[ds]) grouped[ds] = {};
+        grouped[ds][type] = { agg, avg };
+      });
+  
+      // === Build DataTables ===
+      const buildDataTable = (isAvg: boolean) => {
+        const dt = new google.visualization.DataTable();
+        dt.addColumn('string', 'קטגוריה'); // X-axis (DataSource)
+        dataTypeOrder.forEach(type => {
+          dt.addColumn('number', dataTypeHebrew[type]);
+          dt.addColumn({ type: 'string', role: 'tooltip' });
+          dt.addColumn({ type: 'string', role: 'style' });
+        });
+  
+        let maxValue = 0;
+  
+        dataSourceOrder.forEach(ds => {
+          const row: any[] = [dataSourceHebrew[ds]];
+          dataTypeOrder.forEach(type => {
+            const val = grouped[ds]?.[type]?.[isAvg ? 'avg' : 'agg'] || 0;
+            maxValue = Math.max(maxValue, val);
+            const formatted = isAvg ? this.formatToHHMM(val) : val.toFixed(1);
+            row.push(val, formatted, `color: ${colorMap[type]}`);
+          });
+          dt.addRow(row);
+        });
+  
+        return { dt, maxValue };
+      };
+  
+      const { dt: aggDt, maxValue: maxAgg } = buildDataTable(false);
+      const { dt: avgDt, maxValue: maxAvg } = buildDataTable(true);
+  
+      // === Chart options ===
+      const buildOptions = (title: string, max: number, isAvg: boolean) => ({
+        title: title,
+        height: 450,
+        legend: { position: 'top', textStyle: { fontSize: 14 } },
+        bar: { groupWidth: '70%' },
+        annotations: { alwaysOutside: true, textStyle: { fontSize: 13, bold: true } },
+        tooltip: { trigger: 'focus', textStyle: { fontSize: 14 } },
+        vAxis: isAvg
+          ? { minValue: 0, ticks: this.generateHMMTicks(max, 1800) }
+          : { minValue: 0, format: '0.0', gridlines: { count: Math.ceil(max) + 1 } },
+        hAxis: { slantedText: true, slantedTextAngle: 0 },
+        isStacked: false,
+        titleTextStyle: { fontSize: 16, bold: true, direction: 'rtl' },
+        chartArea: { left: 80, top: 80, right: 30, width: '80%', height: '65%' }
+      });
+  
+      // === Draw charts ===
+      const aggContainer = document.getElementById(aggElementId);
+      if (aggContainer) {
+        new google.visualization.ColumnChart(aggContainer).draw(
+          aggDt,
+          buildOptions('השוואת ימי אובדן בין תקופות', maxAgg, false)
+        );
+      }
+  
+      const avgContainer = document.getElementById(avgElementId);
+      if (avgContainer) {
+        new google.visualization.ColumnChart(avgContainer).draw(
+          avgDt,
+          buildOptions('השוואת זמן אובדן ממוצע (HH:MM) בין תקופות', maxAvg, true)
+        );
+      }
+    } catch (err) {
+      console.error('Error drawing grouped comparison charts:', err);
+    }
+  }
+  
+  
   
   
 }

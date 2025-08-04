@@ -45,6 +45,27 @@ export class RoomTimeDashboardComponent implements OnInit, AfterViewInit {
     // Wait for Google Charts to be ready before loading
     this.googleChartsService.chartsReady$.subscribe(() => this.loadCharts());
     this.loadAllPeriodCharts();
+    this.googleChartsService.drawGroupedComparisonCharts(
+      'comparisonAggChart',   // Aggregate chart container ID
+      'comparisonAvgChart',   // Average chart container ID
+      `${environment.url}/GetRoomTimeSummaryAllSeparated`
+    );
+    this.googleChartsService.drawGroupedComparisonChartsByType(
+      { 
+        '1-Yesterday': 'comparisonAggYesterday',
+        '2-CurrentMonth': 'comparisonAggMonth',
+        '3-CurrentYear': 'comparisonAggYear',
+        '4-ParallelsPeriod': 'comparisonAggParallel'
+      },
+      { 
+        '1-Yesterday': 'comparisonAvgYesterday',
+        '2-CurrentMonth': 'comparisonAvgMonth',
+        '3-CurrentYear': 'comparisonAvgYear',
+        '4-ParallelsPeriod': 'comparisonAvgParallel'
+      },
+      `${environment.url}/GetRoomTimeSummaryAllSeparated`
+    );
+    
   }
 
   /** Handle window resize (debounced) */

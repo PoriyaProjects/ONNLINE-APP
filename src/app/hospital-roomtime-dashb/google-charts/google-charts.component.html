@@ -116,42 +116,80 @@
 
       <main class="mdc-top-app-bar--fixed-adjust">
 
-
+        <div style="height:60px;"></div>
+       
         <div class="row">
           <div class="mdc-layout-grid__cell col-md-4">
-            <div class="card">
-              <div id="MorningDelay_agg" style="width: 100%; height: 300px;">טעינה...</div>
-          </div>
+            <div class="card text-center">
+              <div id="MorningDelay_avg" style="width: 100%; height: 300px;">טעינה...</div>
+            </div>
+            </div>
+            <div class="mdc-layout-grid__cell col-md-4">
+              <div class="card text-center">
+            <div id="EndDay_avg" style="width: 100%; height: 300px;">טעינה...</div>
+              </div>
           </div>
           <div class="mdc-layout-grid__cell col-md-4">
-            <div class="card">
-              <div id="EndDay_agg" style="width: 100%; height: 300px;">טעינה...</div>
-          </div>
-          </div>
-          <div class="mdc-layout-grid__cell col-md-4">
-            <div class="card">
-              <div id="SetupTime_agg" style="width: 100%; height: 300px;">טעינה...</div>
+            <div class="card text-center">
+            <div id="SetupTime_avg" style="width: 100%; height: 300px;">טעינה...</div>
             </div>
           </div>
         </div>
         <div style="height:60px;"></div>
         <div class="row">
           <div class="mdc-layout-grid__cell col-md-4">
-            <div class="card">
-              <div id="MorningDelay_avg" style="width: 100%; height: 300px;">טעינה...</div>
-            </div>
-            </div>
-            <div class="mdc-layout-grid__cell col-md-4">
-              <div class="card">
-            <div id="EndDay_avg" style="width: 100%; height: 300px;">טעינה...</div>
-              </div>
+            <div class="card text-center">
+              <div id="MorningDelay_agg" style="width: 100%; height: 300px;">טעינה...</div>
+          </div>
           </div>
           <div class="mdc-layout-grid__cell col-md-4">
-            <div class="card">
-            <div id="SetupTime_avg" style="width: 100%; height: 300px;">טעינה...</div>
+            <div class="card text-center">
+              <div id="EndDay_agg" style="width: 100%; height: 300px;">טעינה...</div>
+          </div>
+          </div>
+          <div class="mdc-layout-grid__cell col-md-4">
+            <div class="card text-center">
+              <div id="SetupTime_agg" style="width: 100%; height: 300px;">טעינה...</div>
             </div>
           </div>
         </div>
+        <div style="height:60px;"></div>
+
+        <!-- Comparison: Average Time -->
+<div id="comparisonAvgChart" style="direction:ltr;"></div>
+<div style="height:60px;"></div>
+
+        <!-- Comparison: Aggregate Days -->
+<div id="comparisonAggChart" style="direction:ltr;"></div>
+
+
+
+<div style="height:60px;"></div>
+
+<div style="width: 100%; display: flex; flex-direction: column; gap: 40px;">
+
+  <!-- Aggregate Days Comparison -->
+  <div style="width: 100%; direction: ltr;">
+    <div id="comparisonAggTitle" style="text-align: center; font-size: 18px; font-weight: bold; margin-bottom: 10px;">
+      השוואת ימי אובדן לפי תקופהות    </div>
+    <div id="comparisonAggGrouped" style="width: 100%; height: 450px;"></div>
+  </div>
+
+  <!-- Average Time Comparison -->
+  <div style="width: 100%; direction: ltr;">
+    <div id="comparisonAvgTitle" style="text-align: center; font-size: 18px; font-weight: bold; margin-bottom: 10px;">
+      השוואת זמן אובדן (HH:MM) לפי תקופות
+    </div>
+    <div id="comparisonAvgGrouped" style="width: 100%; height: 450px;"></div>
+  </div>
+
+</div>
+
+
+
+
+
+
 
 
 

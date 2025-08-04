@@ -72,7 +72,7 @@ if (title) {
   titleDiv.style.textAlign = 'center';
   titleDiv.style.fontFamily = 'Open Sans, sans-serif';
   titleDiv.style.fontSize = '16px';
-  titleDiv.style.fontWeight = 'normal';
+  titleDiv.style.fontWeight = 'bold';
   titleDiv.style.marginTop = '18px';
   titleDiv.style.marginBottom = '16px';
   titleDiv.textContent = title;
@@ -100,7 +100,7 @@ if (title) {
     bg.setAttribute('cy', '150');
     bg.setAttribute('r', r.toString());
     bg.setAttribute('fill', 'none');
-    bg.setAttribute('stroke', '#1a1a1a');
+    bg.setAttribute('stroke', '#666666');
     bg.setAttribute('stroke-width', strokeWidth.toString());
     bg.setAttribute('stroke-dasharray', `${halfCirc} ${fullCirc}`);
     bg.setAttribute('transform', 'rotate(-180 150 150)');
@@ -148,7 +148,7 @@ if (title) {
 
     const bg = document.createElementNS('http://www.w3.org/2000/svg', 'path');
     bg.setAttribute('d', bgPath.join(' '));
-    bg.setAttribute('fill', '#1a1a1a');
+    bg.setAttribute('fill', '#666666');
     svg.appendChild(bg);
 
     const fgPath = [`M ${cx} ${cy}`];
@@ -248,13 +248,14 @@ if (title) {
     <div style="white-space: nowrap; text-align:right; float:right; line-height:1.6em;">
         <span style="color: ${markerStatusColor}; font-weight: bold;font-size:2.4em; vertical-align: middle; float:right;">●</span>
         <span style="float:right;padding-right:6px;">
-            השנה על מול תקופה קודמת: ${formatValue(gaugeValue)} <br>
-            תקופה קודמת: ${formatValue(gaugeTargetValue)} (מתוכנן: ${formatValue(gaugePlanned)})
+            מתחילת השנה על מול תקופה מקבילה: ${formatValue(gaugeValue)} <br>
+            תקופה קודמת: ${formatValue(gaugeTargetValue)} 
+            <!--(מתוכנן: ${formatValue(gaugePlanned)})-->
         </span>
     </div>
     <div style="white-space: nowrap; text-align:right; float:right; line-height:1.6em;">
         <span style="color: #6ba1f8; font-weight: bold; font-size:2.4em;vertical-align: middle;">●</span>
-        החודש על מול השנה: ${formatValue(workingDaysInfo.currentWorkingDayIndex)} מתוך ${formatValue(workingDaysInfo.totalWorkingDays)} 
+        החודש על מול השנה: ${formatValue(workingDaysInfo.currentWorkingDayIndex)} על מול ${formatValue(workingDaysInfo.totalWorkingDays)} 
         (${Math.round((workingDaysInfo.currentWorkingDayIndex / workingDaysInfo.totalWorkingDays) * 100)}%)
     </div>
   `;
