@@ -32,7 +32,10 @@ export interface WorkingDaysInfo {
     title?: string;
     arcColor?: string;
     isTime?: boolean;
-    yesterdayValue?: number; // << NEW: yesterday value
+    yesterdayValue?: number; //  yesterday value
+    //tooltipTableId?: string | HTMLElement;
+    tooltipTableIdPrefix?: string; // e.g., "tableMorningDelay_", "tableEndDay_", "tableSetupTime_"
+    tooltipPeriod?: string; // e.g., "1-Yesterday"
 }
 
 export function drawOverlayDualArcChartHelperRoomTime({
@@ -48,6 +51,9 @@ export function drawOverlayDualArcChartHelperRoomTime({
   markerOptions = { radius: 14, fontSize: 10 },
   title = '',
   arcColor = '#6ba1f8',
+  //tooltipTableId,
+   tooltipTableIdPrefix,
+    tooltipPeriod = '1-Yesterday',
   isTime = false
 }: DualArcChartOptions) {
 
@@ -64,22 +70,87 @@ export function drawOverlayDualArcChartHelperRoomTime({
   svg.style.left = '0';
   svg.style.pointerEvents = 'none';
 
+  // === Tooltip container ===
+  const tooltip = document.createElement('div');
+  tooltip.style.position = 'absolute';
+  tooltip.style.padding = '1px';
+  tooltip.style.background = '#fff';
+  tooltip.style.color = '#000';
+  tooltip.style.border = '1px solid #ccc';
+  tooltip.style.borderRadius = '4px';
+  tooltip.style.pointerEvents = 'auto';
+  tooltip.style.display = 'none';
+  tooltip.style.zIndex = '9999';
+  tooltip.style.maxWidth = '400px';
+  tooltip.style.maxHeight = '300px';
+  tooltip.style.overflow = 'auto';
+  tooltip.style.cursor = 'pointer';
+  container.append(tooltip);
+
+    // === Resolve full table ID dynamically ===
+    let sourceTable: HTMLElement | null = null;
+    if (tooltipTableIdPrefix) {
+        const tableId = `${tooltipTableIdPrefix}${tooltipPeriod}`;
+        sourceTable = document.getElementById(tableId);
+    }
+
+    const showTooltip = () => {
+        tooltip.innerHTML = sourceTable ? sourceTable.outerHTML : '<b>Data not available</b>';
+        tooltip.style.display = 'block';
+    };
+    const moveTooltip = (e: MouseEvent) => {
+        const rect = container.getBoundingClientRect();
+        tooltip.style.left = `${e.clientX - rect.left + 10}px`;
+        tooltip.style.top = `${e.clientY - rect.top + 10}px`;
+    };
+    const hideTooltip = () => (tooltip.style.display = 'none');
+    // const scrollToTable = () => {
+    //     if (sourceTable) sourceTable.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    // };
+  //   const scrollToTable = () => {
+  //     if (sourceTable) {
+  //         const rect = sourceTable.getBoundingClientRect();
+  //         const offset = window.pageYOffset + rect.top - 120; // scroll position - 60px
+  //         window.scrollTo({
+  //             top: offset,
+  //             behavior: 'smooth'
+  //         });
+  //     }
+  // };
+
+  const scrollToTable = () => {
+    if (sourceTable) {
+        const rect = sourceTable.getBoundingClientRect();
+        const offset = window.pageYOffset + rect.top - 120; // scroll position - 60px
+        window.scrollTo({
+            top: offset,
+            behavior: 'smooth'
+        });
+
+        // Add flash class
+        sourceTable.classList.add('flash-highlight');
+
+        // Remove class after animation completes
+        setTimeout(() => {
+            sourceTable.classList.remove('flash-highlight');
+        }, 2000); // duration: 0.6s * 3 flashes + buffer
+    }
+};
+
 
 
   // === Title ===
-if (title) {
-  const titleDiv = document.createElement('div');
-  titleDiv.style.textAlign = 'center';
-  titleDiv.style.fontFamily = 'Open Sans, sans-serif';
-  titleDiv.style.fontSize = '16px';
-  titleDiv.style.fontWeight = 'bold';
-  titleDiv.style.marginTop = '18px';
-  titleDiv.style.marginBottom = '16px';
-  titleDiv.textContent = title;
-  container.appendChild(titleDiv);
-}
-
-
+  if (title) {
+    const titleDiv = document.createElement('div');
+    titleDiv.style.textAlign = 'center';
+    titleDiv.style.fontFamily = 'Open Sans, sans-serif';
+    titleDiv.style.fontSize = '16px';
+    titleDiv.style.fontWeight = 'bold';
+    titleDiv.style.marginTop = '18px';
+    titleDiv.style.marginBottom = '16px';
+    titleDiv.textContent = title;
+    container.appendChild(titleDiv);
+  }
 
   const formatToHHMM = (totalSeconds: number): string => {
     if (!totalSeconds || isNaN(totalSeconds)) return '0:00';
@@ -149,7 +220,15 @@ if (title) {
     const bg = document.createElementNS('http://www.w3.org/2000/svg', 'path');
     bg.setAttribute('d', bgPath.join(' '));
     bg.setAttribute('fill', '#666666');
-    svg.appendChild(bg);
+    bg.style.pointerEvents = 'auto';
+        // Tooltip + scroll for background
+        bg.addEventListener('mouseenter', showTooltip);
+        bg.addEventListener('mousemove', moveTooltip);
+        bg.addEventListener('mouseleave', hideTooltip);
+        bg.addEventListener('click', scrollToTable);
+        svg.appendChild(bg);
+
+    
 
     const fgPath = [`M ${cx} ${cy}`];
     for (let i = 0; i <= segments; i++) {
@@ -163,7 +242,18 @@ if (title) {
     const fg = document.createElementNS('http://www.w3.org/2000/svg', 'path');
     fg.setAttribute('d', fgPath.join(' '));
     fg.setAttribute('fill', semiColor);
+    fg.style.pointerEvents = 'auto'; // Enable hover
+    //svg.appendChild(fg);
+
+    
+     // Tooltip events
+    // Tooltip + scroll for foreground
+    fg.addEventListener('mouseenter', showTooltip);
+    fg.addEventListener('mousemove', moveTooltip);
+    fg.addEventListener('mouseleave', hideTooltip);
+    fg.addEventListener('click', scrollToTable);
     svg.appendChild(fg);
+
 
     // Value label inside
     const valueLabel = document.createElementNS('http://www.w3.org/2000/svg', 'text');
@@ -176,7 +266,6 @@ if (title) {
     valueLabel.textContent = formatValue(yesterdayValue);
     svg.appendChild(valueLabel);
 
-    // "אתמול" label
     const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
     label.setAttribute('x', cx.toString());
     label.setAttribute('y', (cy - 10).toString());
@@ -233,6 +322,7 @@ if (title) {
       placeMarker(workingDaysInfo.currentWorkingDayIndex, workingDaysInfo.totalWorkingDays, 65, '#6ba1f8', true);
     });
   }
+
   // === LEGEND ===
   const legend = document.createElement('div');
   legend.style.position = 'absolute';
@@ -250,7 +340,6 @@ if (title) {
         <span style="float:right;padding-right:6px;">
             מתחילת השנה על מול תקופה מקבילה: ${formatValue(gaugeValue)} <br>
             תקופה קודמת: ${formatValue(gaugeTargetValue)} 
-            <!--(מתוכנן: ${formatValue(gaugePlanned)})-->
         </span>
     </div>
     <div style="white-space: nowrap; text-align:right; float:right; line-height:1.6em;">
@@ -259,11 +348,11 @@ if (title) {
         (${Math.round((workingDaysInfo.currentWorkingDayIndex / workingDaysInfo.totalWorkingDays) * 100)}%)
     </div>
   `;
-
   container.appendChild(legend);
 
   container.appendChild(svg);
 }
+
 
 
   
