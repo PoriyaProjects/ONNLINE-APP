@@ -268,18 +268,34 @@
                 </mat-form-field>
               </div>
               <div class="col-lg-2 col-md-4 col-sm-6">
-                <label for="fileInput" class="file-label">תוכנית מצורפת(תמונה/PDF)*</label>
-                <input type="file" id="fileInput" (change)="onFileSelected($event)" class="file-input"
-                  accept="application/pdf, image/*" required />
-                <mat-error
-                  *ngIf="Training_Request_Forms_B.get('Program_Attached').hasError('required') && Training_Request_Forms_B.get('Program_Attached').touched">
+                <mat-label class="file-label">תוכנית מצורפת (תמונה / PDF) *</mat-label>
+
+                <!-- Upload Button -->
+                <div class="file-input-container">
+                  <button mat-raised-button color="primary" (click)="fileInput.click()">
+                    <mat-icon>attach_file</mat-icon>
+                    בחר קובץ
+                  </button>
+                  <input #fileInput type="file" (change)="onFileSelected($event)" accept="application/pdf, image/*"
+                    hidden required />
+                  <span class="selected-file-name" *ngIf="Training_Request_Forms_B.get('Program_Attached')?.value">
+                    {{ Training_Request_Forms_B.get('Program_Attached')?.value?.name || 'קובץ נבחר' }}
+                  </span>
+                </div>
+
+                <!-- Error message -->
+                <mat-error *ngIf="Training_Request_Forms_B.get('Program_Attached')?.hasError('required') &&
+                     Training_Request_Forms_B.get('Program_Attached')?.touched">
                   שדה חובה
                 </mat-error>
-                <button mat-raised-button class="fileOpenBtn" color="primary" (click)="file_in_new_window_base64()"
-                  *ngIf="Training_Request_Forms_B.get('Program_Attached').value != undefined && Training_Request_Forms_B.get('Program_Attached').value != ''">
-                  צפייה במסמך
-                  <span class="material-icons"> zoom_in </span>
-                </button>
+
+                <!-- Preview Button -->
+                <div class="file-preview" *ngIf="Training_Request_Forms_B.get('Program_Attached')?.value">
+                  <button mat-stroked-button color="accent" (click)="file_in_new_window_base64()">
+                    <mat-icon>zoom_in</mat-icon>
+                    צפייה במסמך
+                  </button>
+                </div>
               </div>
               <div class="col-lg-3 col-md-4 col-sm-6">
                 <!-- Toggle to choose if poster is needed -->
@@ -287,24 +303,32 @@
                   [ngModelOptions]="{standalone: true}" (change)="IfPosterAttached()">
                   פוסטר/הצגת הרצאה נדרש?
                 </mat-slide-toggle>
+                <!-- <mat-label class="file-label">פוסטר/הצגת הרצאה (תמונה/PDF)</mat-label> -->
 
-                <!-- Poster file input and view button shown only if wantsPoster is true -->
-                <div *ngIf="wantsPoster">
-                  <label for="fileInputPoster" class="file-label">
-                    פוסטר/הצגת הרצאה (תמונה/PDF)
-                  </label>
-                  <input type="file" id="fileInputPoster" (change)="onFileSelectedPoster($event)" class="file-input"
-                    accept="application/pdf, image/*" />
+                <!-- Upload Button -->
+                <div class="file-input-container" *ngIf="wantsPoster">
+                  <button mat-raised-button color="primary" (click)="fileInputPoster.click()">
+                    <mat-icon>attach_file</mat-icon>
+                    בחר קובץ
+                  </button>
+                  <input #fileInputPoster type="file" (change)="onFileSelectedPoster($event)"
+                    accept="application/pdf, image/*" hidden required />
+                  <span class="selected-file-name" *ngIf="Training_Request_Forms_B.get('Poster_Attached')?.value">
+                    {{ Training_Request_Forms_B.get('Poster_Attached')?.value?.name || 'קובץ נבחר' }}
+                  </span>
+                </div>
 
-                  <mat-error
-                    *ngIf="Training_Request_Forms_B.get('Poster_Attached').hasError('required') && Training_Request_Forms_B.get('Poster_Attached').touched">
-                    שדה חובה
-                  </mat-error>
-                  <button mat-raised-button class="fileOpenBtn" color="primary"
-                    (click)="file_in_new_window_base64_Poster()"
-                    *ngIf="Training_Request_Forms_B.get('Poster_Attached').value">
-                    צפייה במסמך
+                <!-- Error message -->
+                <mat-error *ngIf="Training_Request_Forms_B.get('Poster_Attached')?.hasError('required') &&
+                     Training_Request_Forms_B.get('Poster_Attached')?.touched">
+                  שדה חובה
+                </mat-error>
+
+                <!-- Preview Button -->
+                <div class="file-preview" *ngIf="Training_Request_Forms_B.get('Poster_Attached')?.value">
+                  <button mat-stroked-button color="accent" (click)="file_in_new_window_base64_Poster()">
                     <mat-icon>zoom_in</mat-icon>
+                    צפייה במסמך
                   </button>
                 </div>
               </div>
@@ -529,12 +553,12 @@
         </mat-card>
         <button mat-raised-button color="primary" type="submit" class="submitBtn" matTooltip="שמירה ללא שליחה"
           (click)="onSubmit(0)"
-          *ngIf="Training_Request_Forms_E.get('Sent_To_Manager').value != 'True' || Training_Request_Forms_E.get('Approved').value == 'השלמת נתונים'"
+          *ngIf="Training_Request_Forms_E.get('Approved').value == 'השלמת נתונים' || Training_Request_Forms_E.get('Approved').value == ''"
           [disabled]="Training_Request_Forms_C.get('Request_Sign').value !== undefined && Training_Request_Forms_C.get('Request_Sign').value !== null">שמירה
           כטיוטה</button>
         <button mat-raised-button color="primary" type="submit" class="submitBtn" matTooltip="חתימת עובד חובה"
           (click)="onSubmit(0)"
-          *ngIf="Training_Request_Forms_E.get('Sent_To_Manager').value != 'True' || Training_Request_Forms_E.get('Approved').value == 'השלמת נתונים'"
+          *ngIf="Training_Request_Forms_E.get('Approved').value == 'השלמת נתונים' || Training_Request_Forms_E.get('Approved').value == ''"
           [disabled]="Training_Request_Forms_C.get('Request_Sign').value === undefined || Training_Request_Forms_C.get('Request_Sign').value === null">שמירה
           והגשה</button>
       </form>
