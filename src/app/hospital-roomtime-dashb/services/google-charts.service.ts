@@ -26,7 +26,7 @@ export class GoogleChartsService {
 
   constructor(private http: HttpClient) {
     this.chartsReady$ = this.chartsReadySubject.asObservable();
-    google.charts.load('current', { packages: ['corechart'] });
+    google.charts.load('current', { packages: ['corechart', 'table', 'treemap'] });
     google.charts.setOnLoadCallback(() => {
       this.chartsReadySubject.next();
       this.chartsReadySubject.complete();
@@ -477,6 +477,7 @@ if (titleContainer) {
         const dsTitle = dataSourceHebrew[ds] || ds;
         const yearTitle = dataTypeHebrew['3-CurrentYear'] || 'השנה';
         const arcColor = dataSourceColors[ds] || '#6ba1f8';
+        const prefix = `table${ds}_`; // e.g., "tableMorningDelay_"
   
         // === Debugging values for each chart
         console.group(`Debug for ${dsTitle}`);
@@ -487,13 +488,16 @@ if (titleContainer) {
         console.log("PlannedMonthAvg:", plannedMonthAvg);
         console.log("ParallelsPerYearAgg:", parallelsPerYearAgg);
         console.log("ParallelsPerYearAvg:", parallelsPerYearAvg);
+        console.log("tooltipTableIdPrefix:", prefix);
+        
         console.groupEnd();
   
         // === AggregateDays Chart ===
         console.log(`Drawing AGG chart for ${dsTitle}`, {
           gaugePlanned: plannedMonthAgg,
           gaugeTargetValue: parallelsPerYearAgg,
-          gaugeValue: currentYear.agg
+          gaugeValue: currentYear.agg, prefix
+          
         });
   
         drawOverlayDualArcChartHelperRoomTime({
@@ -508,6 +512,7 @@ if (titleContainer) {
           showMarker: true,
           title: `${dsTitle} – ימי אובדן`,
           arcColor: arcColor,
+          tooltipTableIdPrefix: prefix,
           isTime: false
         });
         
@@ -523,6 +528,9 @@ if (titleContainer) {
           showMarker: true,
           title: `${dsTitle} – זמן אובדן (HH:MM)`,
           arcColor: arcColor,
+          //tooltipTableId: 'myTable',
+          //tableMorningDelay_1-Yesterday
+          tooltipTableIdPrefix: prefix,
           isTime: true
         });
         
@@ -887,7 +895,93 @@ if (titleContainer) {
     }
   }
   
+  public async drawAllDepartmentTables(
+    elementIdsByPeriod: { [period: string]: { [ds: string]: string } },
+    url: string
+  ): Promise<void> {
+    await this.waitUntilChartsReady();
   
+    try {
+      for (const [period, dsMap] of Object.entries(elementIdsByPeriod)) {
+        const raw = await this.fetchWithCache(this.buildUrl(url, { dataType: period }));
+        const clean = sanitizeSoapResponse(raw);
   
+        if (!clean || !clean.rows?.length) {
+          Object.values(dsMap).forEach(id => {
+            const container = document.getElementById(id);
+            if (container) container.innerHTML = 'אין נתונים להצגה';
+          });
+          continue;
+        }
   
+        const groupedByDS: { [ds: string]: any[] } = {};
+        clean.rows.forEach((r: any) => {
+          const ds = r.c[0]?.v || 'Unknown';
+          if (!groupedByDS[ds]) groupedByDS[ds] = [];
+          groupedByDS[ds].push(r);
+        });
+  
+        for (const [dataSource, rows] of Object.entries(groupedByDS)) {
+          const elementId = dsMap[dataSource];
+          if (!elementId) continue;
+  
+          const titleContainer = document.getElementById(`title_${elementId}`);
+          if (titleContainer) {
+            titleContainer.innerText = `${this.translateDataSource(dataSource)} - ${this.translateTimeframe(period)}`;
+            titleContainer.style.fontWeight = 'bold';
+            titleContainer.style.fontSize = '16px';
+            titleContainer.style.textAlign = 'center';
+            titleContainer.style.margin = '10px 0';
+          }
+  
+          const container = document.getElementById(elementId);
+          if (!container) continue;
+  
+          const dt = new google.visualization.DataTable();
+          dt.addColumn('string', 'מחלקה');
+  
+          const includeDateColumn = period === '4-ParallelsPeriod';
+          if (includeDateColumn) {
+            dt.addColumn('string', 'שנה');
+          }
+  
+          dt.addColumn('number', 'זמן');
+  
+          rows.forEach(r => {
+            const department = r.c[2]?.v || '';
+            let date = r.c[3]?.v || '';
+  
+            // === Extract only year if period is 4-ParallelsPeriod ===
+            if (includeDateColumn && typeof date === 'string') {
+              const yearMatch = date.match(/\d{4}/); // Extract 4-digit year
+              date = yearMatch ? yearMatch[0] : '';
+            } else {
+              date = '';
+            }
+  
+            const rawValue = r.c[4]?.v != null && !isNaN(Number(r.c[4]?.v)) ? Number(r.c[4].v) : 0;
+            const formattedValue = this.formatToHHMM(rawValue);
+  
+            if (includeDateColumn) {
+              dt.addRow([department, date, { v: rawValue, f: formattedValue }]);
+            } else {
+              dt.addRow([department, { v: rawValue, f: formattedValue }]);
+            }
+          });
+  
+          const table = new google.visualization.Table(container);
+          table.draw(dt, {
+            showRowNumber: false,
+            width: '100%',
+            height: '150px',
+            allowHtml: true
+          });
+        }
+      }
+    } catch (err) {
+      console.error('Error drawing all tables:', err);
+    }
+  }
+  
+    
 }
