@@ -4,18 +4,6 @@
   gap: 20px;
   direction: rtl;
 
-  .file-label {
-    display: block;
-    margin-bottom: 10px;
-    cursor: pointer;
-    color: #212121;
-  }
-
-  .file-input {
-    display: block;
-    margin-top: 5px;
-  }
-
   .dialog-actions {
     display: flex;
     justify-content: right;
@@ -24,9 +12,44 @@
 
     .closeBtn {
       border-radius: 50%;
-      //   width: 100%;
-      //   margin-top: 50px;
-      //   font-weight: bold;
+    }
+
+    .file-upload-section {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding: 12px;
+      background: #f9f9f9;
+      border-radius: 8px;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .file-label {
+      font-weight: bold;
+      font-size: 14px;
+      margin-bottom: 4px;
+      color: #3f51b5;
+    }
+
+    .file-input-container {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .selected-file-name {
+      font-size: 13px;
+      color: #555;
+      font-style: italic;
+      max-width: 200px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .file-preview {
+      display: flex;
+      justify-content: flex-start;
     }
   }
 
@@ -40,11 +63,6 @@
     font-size: 20px;
     color: white;
     width: 100%;
-  }
-
-  .fileOpenBtn {
-    margin-top: 10px;
-    background-color: #212121;
   }
 
   img {
