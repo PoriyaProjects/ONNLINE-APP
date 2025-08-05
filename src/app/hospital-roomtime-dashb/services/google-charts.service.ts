@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { HostListener, Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { ReplaySubject, Observable } from 'rxjs';
 import { sanitizeSoapResponse } from '../../shared/sanitizesoapresponce';
@@ -779,6 +779,112 @@ if (titleContainer) {
   }
  
   
+  // public async drawAllDepartmentTables(
+  //   elementIdsByPeriod: { [period: string]: { [ds: string]: string } },
+  //   url: string
+  // ): Promise<void> {
+  //   await this.waitUntilChartsReady();
+  
+  //   try {
+  //     for (const [period, dsMap] of Object.entries(elementIdsByPeriod)) {
+  //       const raw = await this.fetchWithCache(this.buildUrl(url, { dataType: period }));
+  //       const clean = sanitizeSoapResponse(raw);
+  
+  //       if (!clean || !clean.rows?.length) {
+  //         Object.values(dsMap).forEach(id => {
+  //           const container = document.getElementById(id);
+  //           if (container) container.innerHTML = 'אין נתונים להצגה';
+  //         });
+  //         continue;
+  //       }
+  
+  //       const groupedByDS: { [ds: string]: any[] } = {};
+  //       clean.rows.forEach((r: any) => {
+  //         const ds = r.c[0]?.v || 'Unknown';
+  //         if (!groupedByDS[ds]) groupedByDS[ds] = [];
+  //         groupedByDS[ds].push(r);
+  //       });
+  
+  //       for (const [dataSource, rows] of Object.entries(groupedByDS)) {
+  //         const elementId = dsMap[dataSource];
+  //         if (!elementId) continue;
+  
+  //         // === Title ===
+  //         const titleContainer = document.getElementById(`title_${elementId}`);
+  //         if (titleContainer) {
+  //           titleContainer.innerText = `${this.translateDataSource(dataSource)} - ${this.translateTimeframe(period)} (ממוצע)`;
+  //           titleContainer.style.fontWeight = 'bold';
+  //           titleContainer.style.fontSize = '16px';
+  //           titleContainer.style.textAlign = 'center';
+  //           titleContainer.style.margin = '10px 0';
+  //         }
+  
+  //         const container = document.getElementById(elementId);
+  //         if (!container) continue;
+  
+  //         const dt = new google.visualization.DataTable();
+  //         dt.addColumn('string', 'מחלקה');
+  
+  //         const includeDateColumn = period === '4-ParallelsPeriod';
+  //         if (includeDateColumn) {
+  //           dt.addColumn('string', 'שנה');
+  //         }
+  
+  //         dt.addColumn('number', 'זמן');
+  
+  //         rows.forEach(r => {
+  //           const department = r.c[2]?.v || '';
+  //           let date = r.c[3]?.v || '';
+  
+  //           // Extract only year if period is 4-ParallelsPeriod
+  //           if (includeDateColumn && typeof date === 'string') {
+  //             const yearMatch = date.match(/\d{4}/);
+  //             date = yearMatch ? yearMatch[0] : '';
+  //           } else {
+  //             date = '';
+  //           }
+  
+  //           const rawValue = r.c[4]?.v != null && !isNaN(Number(r.c[4]?.v)) ? Number(r.c[4].v) : 0; // in seconds
+  //           const formattedValue = this.formatToHHMM(rawValue);
+  
+  //           // === Convert to minutes for comparison ===
+  //           const minutes = rawValue / 60;
+  
+  //           // === Row coloring ===
+  //           let rowColor = '#b9f6ca'; // pastel green
+  //           if (minutes > 30 && minutes <= 59) rowColor = '#fff9c4'; // pastel yellow
+  //           if (minutes >= 60) rowColor = '#ffcdd2'; // pastel red
+  
+  //           const rowValues = includeDateColumn
+  //             ? [department, date, { v: rawValue, f: formattedValue }]
+  //             : [department, { v: rawValue, f: formattedValue }];
+  
+  //           const rowIndex = dt.addRow(rowValues);
+  
+  //           // Color entire row (all columns)
+  //           for (let col = 0; col < dt.getNumberOfColumns(); col++) {
+  //             dt.setProperty(
+  //               rowIndex,
+  //               col,
+  //               'style',
+  //               `background-color:${rowColor}; color:${rowColor === '#ff5252' ? '#fff' : '#000'};`
+  //             );
+  //           }
+  //         });
+  
+  //         const table = new google.visualization.Table(container);
+  //         table.draw(dt, {
+  //           showRowNumber: false,
+  //           width: '100%',
+  //           height: '150px',
+  //           allowHtml: true
+  //         });
+  //       }
+  //     }
+  //   } catch (err) {
+  //     console.error('Error drawing all tables:', err);
+  //   }
+  // }
   public async drawAllDepartmentTables(
     elementIdsByPeriod: { [period: string]: { [ds: string]: string } },
     url: string
@@ -809,10 +915,9 @@ if (titleContainer) {
           const elementId = dsMap[dataSource];
           if (!elementId) continue;
   
-          // === Title ===
           const titleContainer = document.getElementById(`title_${elementId}`);
           if (titleContainer) {
-            titleContainer.innerText = `${this.translateDataSource(dataSource)} - ${this.translateTimeframe(period)} (ממוצע)`;
+            titleContainer.innerText = `${this.translateDataSource(dataSource)} - ${this.translateTimeframe(period)} `;
             titleContainer.style.fontWeight = 'bold';
             titleContainer.style.fontSize = '16px';
             titleContainer.style.textAlign = 'center';
@@ -836,7 +941,6 @@ if (titleContainer) {
             const department = r.c[2]?.v || '';
             let date = r.c[3]?.v || '';
   
-            // Extract only year if period is 4-ParallelsPeriod
             if (includeDateColumn && typeof date === 'string') {
               const yearMatch = date.match(/\d{4}/);
               date = yearMatch ? yearMatch[0] : '';
@@ -844,14 +948,14 @@ if (titleContainer) {
               date = '';
             }
   
-            const rawValue = r.c[4]?.v != null && !isNaN(Number(r.c[4]?.v)) ? Number(r.c[4].v) : 0; // in seconds
+            const rawValue = r.c[4]?.v != null && !isNaN(Number(r.c[4]?.v)) ? Number(r.c[4].v) : 0; // seconds
             const formattedValue = this.formatToHHMM(rawValue);
   
-            // === Convert to minutes for comparison ===
+            // Convert to minutes
             const minutes = rawValue / 60;
   
-            // === Row coloring ===
-            let rowColor = '#b9f6ca'; // pastel green
+            // Pastel color thresholds
+            let rowColor = '#b9f6ca'; // pastel green (0–30 min)
             if (minutes > 30 && minutes <= 59) rowColor = '#fff9c4'; // pastel yellow
             if (minutes >= 60) rowColor = '#ffcdd2'; // pastel red
   
@@ -861,13 +965,13 @@ if (titleContainer) {
   
             const rowIndex = dt.addRow(rowValues);
   
-            // Color entire row (all columns)
+            // Color entire row
             for (let col = 0; col < dt.getNumberOfColumns(); col++) {
               dt.setProperty(
                 rowIndex,
                 col,
                 'style',
-                `background-color:${rowColor}; color:${rowColor === '#ff5252' ? '#fff' : '#000'};`
+                `background-color:${rowColor}; color:${rowColor === '#ffcdd2' ? '#000' : '#000'};`
               );
             }
           });
@@ -976,6 +1080,17 @@ if (titleContainer) {
     }
   }
   
-  
+  @HostListener('window:scroll', [])
+  onScroll() {
+    const el = document.getElementById('stickyTabsFilters');
+    if (el) {
+      const isSticky = window.scrollY > 100; // adjust threshold if needed
+      if (isSticky) {
+        el.classList.add('is-sticky');
+      } else {
+        el.classList.remove('is-sticky');
+      }
+    }
+  }  
     
 }

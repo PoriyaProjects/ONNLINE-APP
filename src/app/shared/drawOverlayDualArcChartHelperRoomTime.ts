@@ -377,13 +377,13 @@ export function drawOverlayDualArcChartHelperRoomTime({
     <div style="white-space: nowrap; text-align:right; float:right; line-height:1.6em;">
         <span style="color: ${markerStatusColor}; font-weight: bold;font-size:2.4em; vertical-align: middle; float:right;">●</span>
         <span style="float:right;padding-right:6px;">
-            מתחילת השנה על מול תקופה מקבילה: ${formatValue(gaugeValue)} <br>
+            מתחילת השנה אל מול תקופה מקבילה: ${formatValue(gaugeValue)} <br>
             תקופה קודמת: ${formatValue(gaugeTargetValue)} 
         </span>
     </div>
     <div style="white-space: nowrap; text-align:right; float:right; line-height:1.6em;">
         <span style="color: #6ba1f8; font-weight: bold; font-size:2.4em;vertical-align: middle;">●</span>
-        החודש על מול השנה: ${formatValue(workingDaysInfo.currentWorkingDayIndex)} על מול ${formatValue(workingDaysInfo.totalWorkingDays)} 
+        החודש אל מול השנה: ${formatValue(workingDaysInfo.currentWorkingDayIndex)} אל מול ${formatValue(workingDaysInfo.totalWorkingDays)} 
         (${Math.round((workingDaysInfo.currentWorkingDayIndex / workingDaysInfo.totalWorkingDays) * 100)}%)
     </div>
   `;

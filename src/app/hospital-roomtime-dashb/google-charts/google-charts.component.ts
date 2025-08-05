@@ -114,7 +114,7 @@ export class RoomTimeDashboardComponent implements OnInit, AfterViewInit {
 
   /** Timeframe change */
   onDataTypeChange(): void {
-    this.loadCharts();
+    setTimeout(() => this.loadCharts(), 100);
   }
 
   /** Tab change */
