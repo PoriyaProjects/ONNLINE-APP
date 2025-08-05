@@ -94,10 +94,18 @@ export function drawOverlayDualArcChartHelperRoomTime({
         sourceTable = document.getElementById(tableId);
     }
 
+    // const showTooltip = () => {
+    //     tooltip.innerHTML = sourceTable ? sourceTable.outerHTML : '<b>Data not available</b>';
+    //     tooltip.style.display = 'block';
+    // };
     const showTooltip = () => {
-        tooltip.innerHTML = sourceTable ? sourceTable.outerHTML : '<b>Data not available</b>';
-        tooltip.style.display = 'block';
-    };
+      const header = '<div style="margin-bottom:8px; font-size:12px; color:#555; text-align:center;">לחץ לפרטים</div>';
+      const content = sourceTable 
+          ? header + sourceTable.outerHTML 
+          : header + '<b>Data not available</b>';
+      tooltip.innerHTML = content;
+      tooltip.style.display = 'block';
+  };  
     const moveTooltip = (e: MouseEvent) => {
         const rect = container.getBoundingClientRect();
         tooltip.style.left = `${e.clientX - rect.left + 10}px`;
@@ -221,10 +229,25 @@ export function drawOverlayDualArcChartHelperRoomTime({
     bg.setAttribute('d', bgPath.join(' '));
     bg.setAttribute('fill', '#666666');
     bg.style.pointerEvents = 'auto';
+    bg.style.cursor = 'pointer';
         // Tooltip + scroll for background
-        bg.addEventListener('mouseenter', showTooltip);
-        bg.addEventListener('mousemove', moveTooltip);
-        bg.addEventListener('mouseleave', hideTooltip);
+        // bg.addEventListener('mouseenter', showTooltip);
+        // bg.addEventListener('mousemove', moveTooltip);
+        // bg.addEventListener('mouseleave', hideTooltip);
+        bg.addEventListener('mouseenter', (e) => {
+          showTooltip();
+          bg.style.opacity = '0.7';       // Dim a bit
+          bg.style.filter = 'drop-shadow(0 0 5px rgba(0,0,0,0.5))'; // Add glow
+          bg.style.transition = 'all 0.2s ease'; // Smooth transition
+      });
+      
+      bg.addEventListener('mousemove', moveTooltip);
+      
+      bg.addEventListener('mouseleave', () => {
+          hideTooltip();
+          bg.style.opacity = '1';         // Reset opacity
+          bg.style.filter = 'none';       // Remove glow
+      });
         bg.addEventListener('click', scrollToTable);
         svg.appendChild(bg);
 
@@ -243,14 +266,29 @@ export function drawOverlayDualArcChartHelperRoomTime({
     fg.setAttribute('d', fgPath.join(' '));
     fg.setAttribute('fill', semiColor);
     fg.style.pointerEvents = 'auto'; // Enable hover
+    fg.style.cursor = 'pointer';
     //svg.appendChild(fg);
 
     
      // Tooltip events
     // Tooltip + scroll for foreground
-    fg.addEventListener('mouseenter', showTooltip);
+    // fg.addEventListener('mouseenter', showTooltip);
+    // fg.addEventListener('mousemove', moveTooltip);
+    // fg.addEventListener('mouseleave', hideTooltip);
+    fg.addEventListener('mouseenter', (e) => {
+        showTooltip();
+        fg.style.opacity = '0.7';       // Dim a bit
+        fg.style.filter = 'drop-shadow(0 0 5px rgba(0,0,0,0.5))'; // Add glow
+        fg.style.transition = 'all 0.2s ease'; // Smooth transition
+    });
+    
     fg.addEventListener('mousemove', moveTooltip);
-    fg.addEventListener('mouseleave', hideTooltip);
+    
+    fg.addEventListener('mouseleave', () => {
+        hideTooltip();
+        fg.style.opacity = '1';         // Reset opacity
+        fg.style.filter = 'none';       // Remove glow
+    });
     fg.addEventListener('click', scrollToTable);
     svg.appendChild(fg);
 

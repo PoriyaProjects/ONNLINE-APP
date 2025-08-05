@@ -53,6 +53,13 @@ export class RoomTimeDashboardComponent implements OnInit, AfterViewInit {
     '4-ParallelsPeriod': { MorningDelay: 'tableMorningDelay_4-ParallelsPeriod', EndDay: 'tableEndDay_4-ParallelsPeriod', SetupTime: 'tableSetupTime_4-ParallelsPeriod' }
   };
 
+  elementIdsByPeriodSummarized = {
+    '1-Yesterday': { MorningDelay: 'summaryMorningDelay_1-Yesterday', EndDay: 'summaryEndDay_1-Yesterday', SetupTime: 'summarySetupTime_1-Yesterday' },
+    '2-CurrentMonth': { MorningDelay: 'summaryMorningDelay_2-CurrentMonth', EndDay: 'summaryEndDay_2-CurrentMonth', SetupTime: 'summarySetupTime_2-CurrentMonth' },
+    '3-CurrentYear': { MorningDelay: 'summaryMorningDelay_3-CurrentYear', EndDay: 'summaryEndDay_3-CurrentYear', SetupTime: 'summarySetupTime_3-CurrentYear' },
+    '4-ParallelsPeriod': { MorningDelay: 'summaryMorningDelay_4-ParallelsPeriod', EndDay: 'summaryEndDay_4-ParallelsPeriod', SetupTime: 'summarySetupTime_4-ParallelsPeriod' }
+  };
+
   constructor(public googleChartsService: GoogleChartsService) {}
 
   ngOnInit(): void {
@@ -67,6 +74,12 @@ export class RoomTimeDashboardComponent implements OnInit, AfterViewInit {
     this.googleChartsService.drawAllDepartmentTables(
       this.elementIdsByPeriod,
       `${environment.url}/GetRoomTimeAvgD`
+    );
+
+
+    this.googleChartsService.drawAllDepartmentTablesSum(
+      this.elementIdsByPeriodSummarized,
+      `${environment.url}/GetRoomAggregateDaysD`
     );
 
     this.googleChartsService.drawGroupedComparisonCharts(

@@ -189,10 +189,14 @@
           </div>
 
         </div>
-        <div style="height:60px;"></div>
+        <!-- <div style="height:60px;"></div> -->
+        
 
-
+        <div class="row text-center">
+          <h2>מידע מפורט</h2>
+        </div>        
         <div class="row">
+          
           <!-- MorningDelay -->
           <div class="mdc-layout-grid__cell col-md-4">
             <div class="card text-center table-block">
@@ -201,6 +205,9 @@
               <button class="btn btn-link toggle-details" (click)="toggleGroup('MorningDelay')"
                 [ngClass]="{ 'active-toggle': isOpen('MorningDelay') }">
                 {{ isOpen('MorningDelay') ? 'הסתר פרטים' : 'מידע מפורט' }}
+                <span class="material-icons">
+                  {{ isOpen('MorningDelay') ? 'arrow_drop_up' : 'arrow_drop_down' }}
+                </span>
               </button>
             </div>
           </div>
@@ -213,6 +220,9 @@
               <button class="btn btn-link toggle-details" (click)="toggleGroup('EndDay')"
                 [ngClass]="{ 'active-toggle': isOpen('EndDay') }">
                 {{ isOpen('EndDay') ? 'הסתר פרטים' : 'מידע מפורט' }}
+                <span class="material-icons">
+                  {{ isOpen('EndDay') ? 'arrow_drop_up' : 'arrow_drop_down' }}
+                </span>
               </button>
             </div>
           </div>
@@ -225,6 +235,9 @@
               <button class="btn btn-link toggle-details" (click)="toggleGroup('SetupTime')"
                 [ngClass]="{ 'active-toggle': isOpen('SetupTime') }">
                 {{ isOpen('SetupTime') ? 'הסתר פרטים' : 'מידע מפורט' }}
+                <span class="material-icons">
+                  {{ isOpen('SetupTime') ? 'arrow_drop_up' : 'arrow_drop_down' }}
+                </span>
               </button>
             </div>
           </div>
@@ -299,8 +312,69 @@
             </div>
           </div>
         </div>
+        
+        
+        <!---->
+        <!--Summ tables-->        
+        <!---->
+        <div class="row text-center">
+          <h2>מידע מפורט (ימים)</h2>
+        </div> 
 
+        <div class="row">
+          <!-- MorningDelay Column -->
+          <div class="mdc-layout-grid__cell col-md-4">
+            <!-- <div class="card text-center table-block">
+              <div id="title_summaryMorningDelay_2-CurrentMonth" class="table-title"></div>
+              <div id="summaryMorningDelay_2-CurrentMonth">טעינה...</div>
+            </div> -->
+            <div class="card text-center table-block">
+              <div id="title_summaryMorningDelay_3-CurrentYear" class="table-title"></div>
+              <div id="summaryMorningDelay_3-CurrentYear">טעינה...</div>
+            </div>
+            <div style="height:60px;"></div>
+            <div class="card text-center table-block">
+              <div id="title_summaryMorningDelay_4-ParallelsPeriod" class="table-title"></div>
+              <div id="summaryMorningDelay_4-ParallelsPeriod">טעינה...</div>
+            </div>
+          </div>
 
+          <!-- EndDay Column -->
+          <div class="mdc-layout-grid__cell col-md-4">
+            <!-- <div class="card text-center table-block">
+              <div id="title_summaryEndDay_2-CurrentMonth" class="table-title"></div>
+              <div id="summaryEndDay_2-CurrentMonth">טעינה...</div>
+            </div> -->
+            <div class="card text-center table-block">
+              <div id="title_summaryEndDay_3-CurrentYear" class="table-title"></div>
+              <div id="summaryEndDay_3-CurrentYear">טעינה...</div>
+            </div>
+            <div style="height:60px;"></div>
+            <div class="card text-center table-block">
+              <div id="title_summaryEndDay_4-ParallelsPeriod" class="table-title"></div>
+              <div id="summaryEndDay_4-ParallelsPeriod">טעינה...</div>
+            </div>
+          </div>
+
+          <!-- SetupTime Column -->
+          <div class="mdc-layout-grid__cell col-md-4">
+            <!-- <div class="card text-center table-block">
+              <div id="title_summarySetupTime_2-CurrentMonth" class="table-title"></div>
+              <div id="summarySetupTime_2-CurrentMonth">טעינה...</div>
+            </div> -->
+            <div class="card text-center table-block">
+              <div id="title_summarySetupTime_3-CurrentYear" class="table-title"></div>
+              <div id="summarySetupTime_3-CurrentYear">טעינה...</div>
+            </div>
+            <div style="height:60px;"></div>
+            <div class="card text-center table-block">
+              <div id="title_summarySetupTime_4-ParallelsPeriod" class="table-title"></div>
+              <div id="summarySetupTime_4-ParallelsPeriod">טעינה...</div>
+            </div>
+          </div>
+        </div>
+
+        <!--eof-->
 
 
 
