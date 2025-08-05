@@ -128,6 +128,68 @@
     background-color: #e6f0ff;
     border-radius: 4px;
   }
+
+  .visible_tbl {
+    background: #e6f0ff;
+    padding: 20px 0 !important;
+    margin: 20px 0;
+  }
+
+  .table-block {
+    transition: all 0.3s ease-in-out;
+    /* smooth animation */
+  }
+
+  .table-block.active {
+    transform: scale(1.02);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    filter: blur(0px) brightness(1);
+    opacity: 1;
+    z-index: 2;
+  }
+
+  .table-block.notactive {
+    filter: blur(2px) brightness(0.9);
+    opacity: 0.6;
+  }
+
+  .tabs-filters-wrapper {
+    direction: rtl;
+    text-align: right;
+    position: sticky;
+    top: 40px;
+    z-index: 9999;
+    /*background: #fff;*/
+    /*background: rgba(0,0,0,0.2);*/
+    /* background: rgb(241, 242, 246); */
+    padding: 10px;
+    border-bottom: 1px solid #ddd;
+    transition: background 0.3s ease, box-shadow 0.3s ease;
+  }
+
+  .tabs button {
+    border: solid 1px #777;
+    margin-left: 20px;
+    background: #f8f9fa;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .tabs button.active {
+    background: #007bff;
+    color: white;
+    border-color: #007bff;
+  }
+
+  .filters label {
+    padding-left: 10px;
+  }
+
+  .tabs-filters-wrapper.is-sticky {
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    background: rgba(0, 0, 0, 0.2);
+    backdrop-filter: blur(5px);
+  }
 </style>
 
 <div class="mdc-layout-grid" style="direction: rtl;">
@@ -190,20 +252,20 @@
 
         </div>
         <!-- <div style="height:60px;"></div> -->
-        
+
 
         <div class="row text-center">
-          <h2>מידע מפורט</h2>
-        </div>        
+          <h2>מידע מפורט (ממוצע)</h2>
+        </div>
         <div class="row">
-          
           <!-- MorningDelay -->
           <div class="mdc-layout-grid__cell col-md-4">
-            <div class="card text-center table-block">
+            <div class="card text-center table-block"
+              [ngClass]="{ 'active': isOpen('MorningDelay'), 'notactive': openGroup && !isOpen('MorningDelay') }">
               <div id="title_tableMorningDelay_1-Yesterday" class="table-title"></div>
               <div id="tableMorningDelay_1-Yesterday">טעינה...</div>
-              <button class="btn btn-link toggle-details" (click)="toggleGroup('MorningDelay')"
-                [ngClass]="{ 'active-toggle': isOpen('MorningDelay') }">
+              <button class="btn btn-link toggle-details" data-group="MorningDelay"
+                (click)="toggleGroup('MorningDelay')" [ngClass]="{ 'active-toggle': isOpen('MorningDelay') }">
                 {{ isOpen('MorningDelay') ? 'הסתר פרטים' : 'מידע מפורט' }}
                 <span class="material-icons">
                   {{ isOpen('MorningDelay') ? 'arrow_drop_up' : 'arrow_drop_down' }}
@@ -214,10 +276,11 @@
 
           <!-- EndDay -->
           <div class="mdc-layout-grid__cell col-md-4">
-            <div class="card text-center table-block">
+            <div class="card text-center table-block"
+              [ngClass]="{ 'active': isOpen('EndDay'), 'notactive': openGroup && !isOpen('EndDay') }">
               <div id="title_tableEndDay_1-Yesterday"></div>
               <div id="tableEndDay_1-Yesterday">טעינה...</div>
-              <button class="btn btn-link toggle-details" (click)="toggleGroup('EndDay')"
+              <button class="btn btn-link toggle-details" data-group="EndDay" (click)="toggleGroup('EndDay')"
                 [ngClass]="{ 'active-toggle': isOpen('EndDay') }">
                 {{ isOpen('EndDay') ? 'הסתר פרטים' : 'מידע מפורט' }}
                 <span class="material-icons">
@@ -229,10 +292,11 @@
 
           <!-- SetupTime -->
           <div class="mdc-layout-grid__cell col-md-4">
-            <div class="card text-center table-block">
+            <div class="card text-center table-block"
+              [ngClass]="{ 'active': isOpen('SetupTime'), 'notactive': openGroup && !isOpen('SetupTime') }">
               <div id="title_tableSetupTime_1-Yesterday"></div>
               <div id="tableSetupTime_1-Yesterday">טעינה...</div>
-              <button class="btn btn-link toggle-details" (click)="toggleGroup('SetupTime')"
+              <button class="btn btn-link toggle-details" data-group="SetupTime" (click)="toggleGroup('SetupTime')"
                 [ngClass]="{ 'active-toggle': isOpen('SetupTime') }">
                 {{ isOpen('SetupTime') ? 'הסתר פרטים' : 'מידע מפורט' }}
                 <span class="material-icons">
@@ -246,21 +310,21 @@
 
         <!-- MorningDelay details -->
         <div class="row table-details" [@slideToggle]="isOpen('MorningDelay') ? 'open' : 'closed'"
-          id="details_MorningDelay">
+          id="details_MorningDelay" style="padding: 20px 0; background-color:#e6f0ff; border:solid #fff 1px">
           <div class="mdc-layout-grid__cell col-md-4">
-            <div class="card text-center table-block">
+            <div class="card text-center table-block visible_tbl">
               <div id="title_tableMorningDelay_2-CurrentMonth"></div>
               <div id="tableMorningDelay_2-CurrentMonth">טעינה...</div>
             </div>
           </div>
           <div class="mdc-layout-grid__cell col-md-4">
-            <div class="card text-center table-block">
+            <div class="card text-center table-block visible_tbl">
               <div id="title_tableMorningDelay_3-CurrentYear"></div>
               <div id="tableMorningDelay_3-CurrentYear">טעינה...</div>
             </div>
           </div>
           <div class="mdc-layout-grid__cell col-md-4">
-            <div class="card text-center table-block">
+            <div class="card text-center table-block visible_tbl">
               <div id="title_tableMorningDelay_4-ParallelsPeriod"></div>
               <div id="tableMorningDelay_4-ParallelsPeriod">טעינה...</div>
             </div>
@@ -269,21 +333,22 @@
 
 
         <!-- EndDay details -->
-        <div class="row table-details" [@slideToggle]="isOpen('EndDay') ? 'open' : 'closed'" id="details_EndDay">
+        <div class="row table-details" [@slideToggle]="isOpen('EndDay') ? 'open' : 'closed'" id="details_EndDay"
+          style="padding:20px 0; background-color:#e6f0ff; border:solid #fff 1px">
           <div class="mdc-layout-grid__cell col-md-4">
-            <div class="card text-center table-block">
+            <div class="card text-center table-block visible_tbl">
               <div id="title_tableEndDay_2-CurrentMonth"></div>
               <div id="tableEndDay_2-CurrentMonth">טעינה...</div>
             </div>
           </div>
           <div class="mdc-layout-grid__cell col-md-4">
-            <div class="card text-center table-block">
+            <div class="card text-center table-block visible_tbl">
               <div id="title_tableEndDay_3-CurrentYear"></div>
               <div id="tableEndDay_3-CurrentYear">טעינה...</div>
             </div>
           </div>
           <div class="mdc-layout-grid__cell col-md-4">
-            <div class="card text-center table-block">
+            <div class="card text-center table-block visible_tbl">
               <div id="title_tableEndDay_4-ParallelsPeriod"></div>
               <div id="tableEndDay_4-ParallelsPeriod">טעינה...</div>
             </div>
@@ -292,34 +357,33 @@
 
 
         <!-- SetupTime details -->
-        <div class="row table-details" [@slideToggle]="isOpen('SetupTime') ? 'open' : 'closed'" id="details_SetupTime">
+        <div class="row table-details" [@slideToggle]="isOpen('SetupTime') ? 'open' : 'closed'" id="details_SetupTime"
+          style="padding:20px 0; background-color:#e6f0ff; border:solid #fff 1px">
           <div class="mdc-layout-grid__cell col-md-4">
-            <div class="card text-center table-block">
+            <div class="card text-center table-block visible_tbl">
               <div id="title_tableSetupTime_2-CurrentMonth"></div>
               <div id="tableSetupTime_2-CurrentMonth">טעינה...</div>
             </div>
           </div>
           <div class="mdc-layout-grid__cell col-md-4">
-            <div class="card text-center table-block">
+            <div class="card text-center table-block visible_tbl">
               <div id="title_tableSetupTime_3-CurrentYear"></div>
               <div id="tableSetupTime_3-CurrentYear">טעינה...</div>
             </div>
           </div>
           <div class="mdc-layout-grid__cell col-md-4">
-            <div class="card text-center table-block">
+            <div class="card text-center table-block visible_tbl">
               <div id="title_tableSetupTime_4-ParallelsPeriod"></div>
               <div id="tableSetupTime_4-ParallelsPeriod">טעינה...</div>
             </div>
           </div>
         </div>
-        
-        
         <!---->
-        <!--Summ tables-->        
+        <!--Summ tables-->
         <!---->
         <div class="row text-center">
-          <h2>מידע מפורט (ימים)</h2>
-        </div> 
+          <h2>מידע מפורט (מצטבר)</h2>
+        </div>
 
         <div class="row">
           <!-- MorningDelay Column -->
@@ -382,28 +446,28 @@
 
         <div style="height:60px;"></div>
         <!-- Comparison: Average Time -->
-        <div id="comparisonAvgChart" style="direction:ltr;"></div>
-        <div style="height:60px;"></div>
+        <!-- <div id="comparisonAvgChart" style="direction:ltr;"></div>
+        <div style="height:60px;"></div> -->
 
         <!-- Comparison: Aggregate Days -->
-        <div id="comparisonAggChart" style="direction:ltr;"></div>
+        <!-- <div id="comparisonAggChart" style="direction:ltr;"></div>
 
 
 
         <div style="height:60px;"></div>
 
-        <div style="width: 100%; display: flex; flex-direction: column; gap: 40px;">
+        <div style="width: 100%; display: flex; flex-direction: column; gap: 40px;"> -->
 
-          <!-- Aggregate Days Comparison -->
-          <div style="width: 100%; direction: ltr;">
+        <!-- Aggregate Days Comparison -->
+        <!-- <div style="width: 100%; direction: ltr;">
             <div id="comparisonAggTitle"
               style="text-align: center; font-size: 18px; font-weight: bold; margin-bottom: 10px;">
               השוואת ימי אובדן לפי תקופהות </div>
             <div id="comparisonAggGrouped" style="width: 100%; height: 450px;"></div>
-          </div>
+          </div> -->
 
-          <!-- Average Time Comparison -->
-          <div style="width: 100%; direction: ltr;">
+        <!-- Average Time Comparison -->
+        <!-- <div style="width: 100%; direction: ltr;">
             <div id="comparisonAvgTitle"
               style="text-align: center; font-size: 18px; font-weight: bold; margin-bottom: 10px;">
               השוואת זמן אובדן (HH:MM) לפי תקופות
@@ -411,12 +475,12 @@
             <div id="comparisonAvgGrouped" style="width: 100%; height: 450px;"></div>
           </div>
 
-        </div>
+        </div> -->
 
 
 
-        <div style="height:60px;"></div>
-
+        <!-- <div style="height:60px;"></div>
+ -->
 
         <!-- <h2 style="text-align: center;">זמן ממוצע</h2>
         <div class="row">
@@ -478,64 +542,85 @@
 
         <div style="height:60px;"></div> -->
 
-        <!-- Tabs -->
-        <div class="tabs" style="text-align: right; margin: bottom 20px;">
-          <button (click)="onTabChange('avg')" [class.active]="activeTab === 'avg'"
-            style="border:solid 1px #777;margin-left:20px;"><span class="material-icons">av_timer</span> זמן
-            ממוצע</button>
-          <button (click)="onTabChange('agg')" [class.active]="activeTab === 'agg'"
-            style="border:solid 1px #777;margin-left:20px;"><span class="material-icons">running_with_errors</span> ימי
-            אובדן</button>
+        <div id="stickyTabsFilters" class="tabs-filters-wrapper">
+          <!-- Tabs -->
+          <div class="tabs">
+            <button (click)="onTabChange('avg')" [class.active]="activeTab === 'avg'">
+              <span class="material-icons">av_timer</span> זמן ממוצע
+            </button>
+            <button (click)="onTabChange('agg')" [class.active]="activeTab === 'agg'">
+              <span class="material-icons">running_with_errors</span> ימי אובדן
+            </button>
+          </div>
+
+          <!-- Filters -->
+          <div class="filters">
+            <ng-container *ngFor="let type of dataTypes">
+              <label *ngIf="!(activeTab === 'agg' && type.value === '1-Yesterday')">
+                <input type="radio" name="dataType" [value]="type.value" [(ngModel)]="selectedDataType"
+                  (change)="onDataTypeChange()" />
+                {{ type.label }}
+              </label>
+            </ng-container>
+          </div>
         </div>
 
 
 
-        <div class="filters" style="text-align: right;">
-          <ng-container *ngFor="let type of dataTypes">
-            <label *ngIf="!(activeTab === 'agg' && type.value === '1-Yesterday')" style="padding-left:10px;">
-              <input type="radio" name="dataType" [value]="type.value" [(ngModel)]="selectedDataType"
-                (change)="onDataTypeChange()" />
-              {{ type.label }}
-            </label>
-          </ng-container>
-        </div>
-
-
-
+        <!-- Average Charts -->
         <div *ngIf="activeTab === 'avg'">
-          <div id="chartMorningDelayAvgWrapper" class="card text-center" style="width: 100%; margin-bottom:80px;">
-            <div id="chartMorningDelayAvgTitle" class="chart-title"></div>
-            <div id="chartMorningDelayAvg" style="width: 100%; height: 580px;">טעינה...</div>
-          </div>
+          <div class="row">
+            <div [ngClass]="selectedDataType !== '4-ParallelsPeriod' ? 'col-md-4' : 'col-md-12'">
+              <div id="chartMorningDelayAvgWrapper" class="card text-center" style="margin-bottom:80px;">
+                <div id="chartMorningDelayAvgTitle" class="chart-title"></div>
+                <div id="chartMorningDelayAvg" style="width: 100%; height: 580px;">טעינה...</div>
+              </div>
+            </div>
 
-          <div id="chartEndDayAvgWrapper" class="card text-center" style="width: 100%; margin-bottom:80px;">
-            <div id="chartEndDayAvgTitle" class="chart-title"></div>
-            <div id="chartEndDayAvg" style="width: 100%; height: 580px;">טעינה...</div>
-          </div>
+            <div [ngClass]="selectedDataType !== '4-ParallelsPeriod' ? 'col-md-4' : 'col-md-12'">
+              <div id="chartEndDayAvgWrapper" class="card text-center" style="margin-bottom:80px;">
+                <div id="chartEndDayAvgTitle" class="chart-title"></div>
+                <div id="chartEndDayAvg" style="width: 100%; height: 580px;">טעינה...</div>
+              </div>
+            </div>
 
-          <div id="chartSetupTimeAvgWrapper" class="card text-center" style="width: 100%; margin-bottom:80px;">
-            <div id="chartSetupTimeAvgTitle" class="chart-title"></div>
-            <div id="chartSetupTimeAvg" style="width: 100%; height: 580px;">טעינה...</div>
+            <div [ngClass]="selectedDataType !== '4-ParallelsPeriod' ? 'col-md-4' : 'col-md-12'">
+              <div id="chartSetupTimeAvgWrapper" class="card text-center" style="margin-bottom:80px;">
+                <div id="chartSetupTimeAvgTitle" class="chart-title"></div>
+                <div id="chartSetupTimeAvg" style="width: 100%; height: 580px;">טעינה...</div>
+              </div>
+            </div>
           </div>
         </div>
 
-        <!-- AggregateDays -->
+        <!-- Aggregate Charts -->
         <div *ngIf="activeTab === 'agg'">
-          <div id="chartMorningDelayAggWrapper" class="card text-center" style="width: 100%; margin-bottom:80px;">
-            <div id="chartMorningDelayAggTitle" class="chart-title"></div>
-            <div id="chartMorningDelayAgg" style="width: 100%; height: 580px;">טעינה...</div>
-          </div>
+          <div class="row">
+            <div [ngClass]="selectedDataType !== '4-ParallelsPeriod' ? 'col-md-4' : 'col-md-12'">
+              <div id="chartMorningDelayAggWrapper" class="card text-center" style="margin-bottom:80px;">
+                <div id="chartMorningDelayAggTitle" class="chart-title"></div>
+                <div id="chartMorningDelayAgg" style="width: 100%; height: 580px;">טעינה...</div>
+              </div>
+            </div>
 
-          <div id="chartEndDayAggWrapper" class="card text-center" style="width: 100%; margin-bottom:80px;">
-            <div id="chartEndDayAggTitle" class="chart-title"></div>
-            <div id="chartEndDayAgg" style="width: 100%; height: 580px;">טעינה...</div>
-          </div>
+            <div [ngClass]="selectedDataType !== '4-ParallelsPeriod' ? 'col-md-4' : 'col-md-12'">
+              <div id="chartEndDayAggWrapper" class="card text-center" style="margin-bottom:80px;">
+                <div id="chartEndDayAggTitle" class="chart-title"></div>
+                <div id="chartEndDayAgg" style="width: 100%; height: 580px;">טעינה...</div>
+              </div>
+            </div>
 
-          <div id="chartSetupTimeAggWrapper" class="card text-center" style="width: 100%; margin-bottom:80px;">
-            <div id="chartSetupTimeAggTitle" class="chart-title"></div>
-            <div id="chartSetupTimeAgg" style="width: 100%; height: 580px;">טעינה...</div>
+            <div [ngClass]="selectedDataType !== '4-ParallelsPeriod' ? 'col-md-4' : 'col-md-12'">
+              <div id="chartSetupTimeAggWrapper" class="card text-center" style="margin-bottom:80px;">
+                <div id="chartSetupTimeAggTitle" class="chart-title"></div>
+                <div id="chartSetupTimeAgg" style="width: 100%; height: 580px;">טעינה...</div>
+              </div>
+            </div>
           </div>
         </div>
+
+
+
 
       </main>
       <div style="height:60px;"></div>

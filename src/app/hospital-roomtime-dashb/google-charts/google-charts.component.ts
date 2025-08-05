@@ -114,7 +114,7 @@ export class RoomTimeDashboardComponent implements OnInit, AfterViewInit {
 
   /** Timeframe change */
   onDataTypeChange(): void {
-    this.loadCharts();
+    setTimeout(() => this.loadCharts(), 100);
   }
 
   /** Tab change */
@@ -225,4 +225,31 @@ export class RoomTimeDashboardComponent implements OnInit, AfterViewInit {
   isOpen(group: string): boolean {
     return this.openGroup === group;
   }
+
+  /** Close active table if clicked outside */
+  @HostListener('document:click', ['$event'])
+onDocumentClick(event: MouseEvent) {
+  if (!this.openGroup) return; // nothing open
+
+  const clickTarget = event.target as Node;
+
+  // Select the main card via data-group
+  const activeCard = document.querySelector(
+    `.toggle-details[data-group="${this.openGroup}"]`
+  )?.closest('.card');
+
+  // Expanded details section
+  const activeDetails = document.getElementById(`details_${this.openGroup}`);
+
+  // If click is outside both → close
+  if (
+    activeCard &&
+    activeDetails &&
+    !activeCard.contains(clickTarget) &&
+    !activeDetails.contains(clickTarget)
+  ) {
+    this.openGroup = null;
+  }
+}
+  
 }

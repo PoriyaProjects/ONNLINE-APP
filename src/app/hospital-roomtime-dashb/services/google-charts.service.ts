@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { HostListener, Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { ReplaySubject, Observable } from 'rxjs';
 import { sanitizeSoapResponse } from '../../shared/sanitizesoapresponce';
@@ -541,124 +541,7 @@ if (titleContainer) {
       console.error('Error drawing room time dual arc charts:', err);
     }
   }
-  
-  // public async drawGroupedComparisonCharts(
-  //   elementIdsAgg: { [key: string]: string },
-  //   elementIdsAvg: { [key: string]: string },
-  //   url: string
-  // ): Promise<void> {
-  //   await this.waitUntilChartsReady();
-  
-  //   try {
-  //     const raw = await this.fetchWithCache(url);
-  //     const clean = sanitizeSoapResponse(raw);
-  
-  //     if (!clean || !clean.rows?.length) {
-  //       Object.values({ ...elementIdsAgg, ...elementIdsAvg }).forEach(id => {
-  //         const container = document.getElementById(id);
-  //         if (container) container.innerHTML = 'אין נתונים להצגה';
-  //       });
-  //       return;
-  //     }
-  
-  //     // --- Fixed order ---
-  //     const dataSources = ['MorningDelay', 'EndDay', 'SetupTime'];
-  //     const periods = ['1-Yesterday', '2-CurrentMonth', '3-CurrentYear', '4-ParallelsPeriod'];
-  
-  //     // Hebrew mappings
-  //     const dsHebrew: { [k: string]: string } = {
-  //       MorningDelay: 'איחור בוקר',
-  //       EndDay: 'סוף יום',
-  //       SetupTime: 'זמן Setup'
-  //     };
-  //     const periodHebrew: { [k: string]: string } = {
-  //       '1-Yesterday': 'אתמול',
-  //       '2-CurrentMonth': 'החודש',
-  //       '3-CurrentYear': 'השנה',
-  //       '4-ParallelsPeriod': 'השוואתי'
-  //     };
-  
-  //     // Colors per DataSource
-  //     const colorMap: { [key: string]: string } = {
-  //       MorningDelay: '#6ba1f8',
-  //       EndDay: '#f86b6b',
-  //       SetupTime: '#a17ef8'
-  //     };
-  
-  //     // --- Group by DataSource & Period ---
-  //     const grouped: { [ds: string]: { [period: string]: { agg: number; avg: number } } } = {};
-  //     clean.rows.forEach((r: any) => {
-  //       const ds = r.c[0]?.v || 'Unknown';
-  //       const period = r.c[1]?.v || 'Unknown';
-  //       const agg = Number(r.c[4]?.v ?? 0);
-  //       const avg = Number(r.c[5]?.v ?? 0);
-  //       if (!grouped[ds]) grouped[ds] = {};
-  //       grouped[ds][period] = { agg, avg };
-  //     });
-  
-  //     // === Build DataTable ===
-  //     const buildDataTable = (isAvg: boolean) => {
-  //       const dt = new google.visualization.DataTable();
-  //       dt.addColumn('string', 'תקופה');
-  //       dataSources.forEach(ds => {
-  //         dt.addColumn('number', dsHebrew[ds]);
-  //         dt.addColumn({ type: 'string', role: 'annotation' });
-  //         dt.addColumn({ type: 'string', role: 'style' });
-  //       });
-  
-  //       let maxValue = 0;
-  //       periods.forEach(period => {
-  //         const row: any[] = [periodHebrew[period]];
-  
-  //         dataSources.forEach(ds => {
-  //           const val = grouped[ds]?.[period]?.[isAvg ? 'avg' : 'agg'] || 0;
-  //           maxValue = Math.max(maxValue, val);
-  //           const annotation = isAvg ? this.formatToHHMM(val) : val.toFixed(1);
-  //           row.push(val, annotation, `color: ${colorMap[ds]}`);
-  //         });
-  
-  //         dt.addRow(row);
-  //       });
-  
-  //       return { dt, maxValue };
-  //     };
-  
-  //     // === Aggregate Chart ===
-  //     const { dt: dtAgg, maxValue: maxAgg } = buildDataTable(false);
-  //     const optionsAgg = {
-  //       title: 'השוואת ימי אובדן לפי תקופות',
-  //       height: 500,
-  //       isStacked: false,
-  //       legend: { position: 'top', textStyle: { fontSize: 14 } },
-  //       annotations: { alwaysOutside: true, textStyle: { fontSize: 12, bold: true } },
-  //       vAxis: { minValue: 0, format: '0.0' },
-  //       hAxis: { slantedText: false },
-  //       chartArea: { left: 60, top: 60, right: 20, width: '80%', height: '70%' }
-  //     };
-  //     const containerAgg = document.getElementById(elementIdsAgg['default']);
-  //     if (containerAgg) new google.visualization.ColumnChart(containerAgg).draw(dtAgg, optionsAgg);
-  
-  //     // === Average Chart ===
-  //     const { dt: dtAvg, maxValue: maxAvg } = buildDataTable(true);
-  //     const optionsAvg = {
-  //       title: 'השוואת זמן אובדן (HH:MM) לפי תקופות',
-  //       height: 500,
-  //       isStacked: false,
-  //       legend: { position: 'top', textStyle: { fontSize: 14 } },
-  //       annotations: { alwaysOutside: true, textStyle: { fontSize: 12, bold: true } },
-  //       vAxis: { minValue: 0, ticks: this.generateHMMTicks(maxAvg, 1800) },
-  //       hAxis: { slantedText: false },
-  //       chartArea: { left: 60, top: 60, right: 20, width: '80%', height: '70%' },
-  //       tooltip: { isHtml: true }
-  //     };
-  //     const containerAvg = document.getElementById(elementIdsAvg['default']);
-  //     if (containerAvg) new google.visualization.ColumnChart(containerAvg).draw(dtAvg, optionsAvg);
-  
-  //   } catch (err) {
-  //     console.error('Error drawing grouped comparison charts:', err);
-  //   }
-  // }
-  
+ 
   public async drawGroupedComparisonChartsByType(
     elementIdsAgg: { [period: string]: string },
     elementIdsAvg: { [period: string]: string },
@@ -895,6 +778,112 @@ if (titleContainer) {
     }
   }
   
+
+  // public async drawAllDepartmentTables(
+  //   elementIdsByPeriod: { [period: string]: { [ds: string]: string } },
+  //   url: string
+  // ): Promise<void> {
+  //   await this.waitUntilChartsReady();
+  
+  //   try {
+  //     for (const [period, dsMap] of Object.entries(elementIdsByPeriod)) {
+  //       const raw = await this.fetchWithCache(this.buildUrl(url, { dataType: period }));
+  //       const clean = sanitizeSoapResponse(raw);
+  
+  //       if (!clean || !clean.rows?.length) {
+  //         Object.values(dsMap).forEach(id => {
+  //           const container = document.getElementById(id);
+  //           if (container) container.innerHTML = 'אין נתונים להצגה';
+  //         });
+  //         continue;
+  //       }
+  
+  //       const groupedByDS: { [ds: string]: any[] } = {};
+  //       clean.rows.forEach((r: any) => {
+  //         const ds = r.c[0]?.v || 'Unknown';
+  //         if (!groupedByDS[ds]) groupedByDS[ds] = [];
+  //         groupedByDS[ds].push(r);
+  //       });
+  
+  //       for (const [dataSource, rows] of Object.entries(groupedByDS)) {
+  //         const elementId = dsMap[dataSource];
+  //         if (!elementId) continue;
+  
+  //         const titleContainer = document.getElementById(`title_${elementId}`);
+  //         if (titleContainer) {
+  //           titleContainer.innerText = `${this.translateDataSource(dataSource)} - ${this.translateTimeframe(period)} `;
+  //           titleContainer.style.fontWeight = 'bold';
+  //           titleContainer.style.fontSize = '16px';
+  //           titleContainer.style.textAlign = 'center';
+  //           titleContainer.style.margin = '10px 0';
+  //         }
+  
+  //         const container = document.getElementById(elementId);
+  //         if (!container) continue;
+  
+  //         const dt = new google.visualization.DataTable();
+  //         dt.addColumn('string', 'מחלקה');
+  
+  //         const includeDateColumn = period === '4-ParallelsPeriod';
+  //         if (includeDateColumn) {
+  //           dt.addColumn('string', 'שנה');
+  //         }
+  
+  //         dt.addColumn('number', 'זמן');
+  
+  //         rows.forEach(r => {
+  //           const department = r.c[2]?.v || '';
+  //           let date = r.c[3]?.v || '';
+  
+  //           if (includeDateColumn && typeof date === 'string') {
+  //             const yearMatch = date.match(/\d{4}/);
+  //             date = yearMatch ? yearMatch[0] : '';
+  //           } else {
+  //             date = '';
+  //           }
+  
+  //           const rawValue = r.c[4]?.v != null && !isNaN(Number(r.c[4]?.v)) ? Number(r.c[4].v) : 0; // seconds
+  //           const formattedValue = this.formatToHHMM(rawValue);
+  
+  //           // Convert to minutes
+  //           const minutes = rawValue / 60;
+  
+  //           // Pastel color thresholds
+  //           let rowColor = '#b9f6ca'; // pastel green (0–30 min)
+  //           if (minutes > 30 && minutes <= 59) rowColor = '#fff9c4'; // pastel yellow
+  //           if (minutes >= 60) rowColor = '#ffcdd2'; // pastel red
+  
+  //           const rowValues = includeDateColumn
+  //             ? [department, date, { v: rawValue, f: formattedValue }]
+  //             : [department, { v: rawValue, f: formattedValue }];
+  
+  //           const rowIndex = dt.addRow(rowValues);
+  
+  //           // Color entire row
+  //           for (let col = 0; col < dt.getNumberOfColumns(); col++) {
+  //             dt.setProperty(
+  //               rowIndex,
+  //               col,
+  //               'style',
+  //               `background-color:${rowColor}; color:${rowColor === '#ffcdd2' ? '#000' : '#000'};`
+  //             );
+  //           }
+  //         });
+  
+  //         const table = new google.visualization.Table(container);
+  //         table.draw(dt, {
+  //           showRowNumber: false,
+  //           width: '100%',
+  //           height: '150px',
+  //           allowHtml: true
+  //         });
+  //       }
+  //     }
+  //   } catch (err) {
+  //     console.error('Error drawing all tables:', err);
+  //   }
+  // }
+  
   public async drawAllDepartmentTables(
     elementIdsByPeriod: { [period: string]: { [ds: string]: string } },
     url: string
@@ -927,7 +916,7 @@ if (titleContainer) {
   
           const titleContainer = document.getElementById(`title_${elementId}`);
           if (titleContainer) {
-            titleContainer.innerText = `${this.translateDataSource(dataSource)} - ${this.translateTimeframe(period)} (מפורט)`;
+            titleContainer.innerText = `${this.translateDataSource(dataSource)} - ${this.translateTimeframe(period)} `;
             titleContainer.style.fontWeight = 'bold';
             titleContainer.style.fontSize = '16px';
             titleContainer.style.textAlign = 'center';
@@ -940,34 +929,87 @@ if (titleContainer) {
           const dt = new google.visualization.DataTable();
           dt.addColumn('string', 'מחלקה');
   
-          const includeDateColumn = period === '4-ParallelsPeriod';
-          if (includeDateColumn) {
-            dt.addColumn('string', 'שנה');
+          const isParallelPeriod = period === '4-ParallelsPeriod';
+          let uniqueYears: string[] = [];
+  
+          if (isParallelPeriod) {
+            // Extract all unique years (last two digits)
+            const yearSet = new Set<string>();
+            rows.forEach(r => {
+              let date = r.c[3]?.v || '';
+              if (typeof date === 'string') {
+                const yearMatch = date.match(/\d{4}/);
+                if (yearMatch) {
+                  yearSet.add(yearMatch[0].substring(2)); // store last 2 digits
+                }
+              }
+            });
+            uniqueYears = Array.from(yearSet).sort((a, b) => Number(b) - Number(a)); // sort descending
+            uniqueYears.forEach(y => dt.addColumn('number', y));
+          } else {
+            dt.addColumn('number', 'זמן');
           }
   
-          dt.addColumn('number', 'זמן');
-  
+          // Group by department
+          const departmentMap: { [dept: string]: { [year: string]: number } } = {};
           rows.forEach(r => {
             const department = r.c[2]?.v || '';
             let date = r.c[3]?.v || '';
+            let year = '';
   
-            // === Extract only year if period is 4-ParallelsPeriod ===
-            if (includeDateColumn && typeof date === 'string') {
-              const yearMatch = date.match(/\d{4}/); // Extract 4-digit year
-              date = yearMatch ? yearMatch[0] : '';
-            } else {
-              date = '';
+            if (isParallelPeriod && typeof date === 'string') {
+              const yearMatch = date.match(/\d{4}/);
+              if (yearMatch) {
+                year = yearMatch[0].substring(2);
+              }
             }
   
             const rawValue = r.c[4]?.v != null && !isNaN(Number(r.c[4]?.v)) ? Number(r.c[4].v) : 0;
-            const formattedValue = this.formatToHHMM(rawValue);
-  
-            if (includeDateColumn) {
-              dt.addRow([department, date, { v: rawValue, f: formattedValue }]);
-            } else {
-              dt.addRow([department, { v: rawValue, f: formattedValue }]);
-            }
+            if (!departmentMap[department]) departmentMap[department] = {};
+            if (isParallelPeriod && year) departmentMap[department][year] = rawValue;
+            if (!isParallelPeriod) departmentMap[department]['value'] = rawValue;
           });
+  
+          // Build rows + color cells
+          for (const [department, yearValues] of Object.entries(departmentMap)) {
+            if (isParallelPeriod) {
+              const row: any[] = [department];
+              const rowIndex = dt.addRow(); // add empty row first
+  
+              dt.setCell(rowIndex, 0, department); // set department name
+  
+              uniqueYears.forEach((y, idx) => {
+                const rawValue = yearValues[y] ?? null;
+                const formatted = rawValue != null ? this.formatToHHMM(rawValue) : '';
+                const colIndex = idx + 1; // first column is department
+  
+                if (rawValue != null) {
+                  dt.setCell(rowIndex, colIndex, rawValue, formatted);
+  
+                  // Color coding based on minutes
+                  const minutes = rawValue / 60;
+                  let cellColor = '#b9f6ca'; // green
+                  if (minutes > 30 && minutes <= 59) cellColor = '#fff9c4'; // yellow
+                  if (minutes >= 60) cellColor = '#ffcdd2'; // red
+  
+                  dt.setProperty(rowIndex, colIndex, 'style', `background-color:${cellColor}; color:#000;`);
+                }
+              });
+            } else {
+              const rawValue = yearValues['value'] ?? 0;
+              const formattedValue = this.formatToHHMM(rawValue);
+              const rowIndex = dt.addRow([department, { v: rawValue, f: formattedValue }]);
+  
+              // Color coding
+              const minutes = rawValue / 60;
+              let rowColor = '#b9f6ca'; // green
+              if (minutes > 30 && minutes <= 59) rowColor = '#fff9c4';
+              if (minutes >= 60) rowColor = '#ffcdd2';
+              for (let col = 0; col < dt.getNumberOfColumns(); col++) {
+                dt.setProperty(rowIndex, col, 'style', `background-color:${rowColor}; color:#000;`);
+              }
+            }
+          }
   
           const table = new google.visualization.Table(container);
           table.draw(dt, {
@@ -983,7 +1025,6 @@ if (titleContainer) {
     }
   }
   
-
   public async drawAllDepartmentTablesSum(
     elementIdsByPeriod: { [period: string]: { [ds: string]: string } },
     url: string
@@ -1073,6 +1114,18 @@ if (titleContainer) {
     }
   }
   
+  @HostListener('window:scroll', [])
+  onScroll() {
+    const el = document.getElementById('stickyTabsFilters');
+    if (el) {
+      const isSticky = window.scrollY > 100; // adjust threshold if needed
+      if (isSticky) {
+        el.classList.add('is-sticky');
+      } else {
+        el.classList.remove('is-sticky');
+      }
+    }
+  }  
   
     
 }
