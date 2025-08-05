@@ -777,8 +777,8 @@ if (titleContainer) {
       console.error('Error drawing grouped comparison charts:', err);
     }
   }
- 
   
+
   // public async drawAllDepartmentTables(
   //   elementIdsByPeriod: { [period: string]: { [ds: string]: string } },
   //   url: string
@@ -809,10 +809,9 @@ if (titleContainer) {
   //         const elementId = dsMap[dataSource];
   //         if (!elementId) continue;
   
-  //         // === Title ===
   //         const titleContainer = document.getElementById(`title_${elementId}`);
   //         if (titleContainer) {
-  //           titleContainer.innerText = `${this.translateDataSource(dataSource)} - ${this.translateTimeframe(period)} (ממוצע)`;
+  //           titleContainer.innerText = `${this.translateDataSource(dataSource)} - ${this.translateTimeframe(period)} `;
   //           titleContainer.style.fontWeight = 'bold';
   //           titleContainer.style.fontSize = '16px';
   //           titleContainer.style.textAlign = 'center';
@@ -836,7 +835,6 @@ if (titleContainer) {
   //           const department = r.c[2]?.v || '';
   //           let date = r.c[3]?.v || '';
   
-  //           // Extract only year if period is 4-ParallelsPeriod
   //           if (includeDateColumn && typeof date === 'string') {
   //             const yearMatch = date.match(/\d{4}/);
   //             date = yearMatch ? yearMatch[0] : '';
@@ -844,14 +842,14 @@ if (titleContainer) {
   //             date = '';
   //           }
   
-  //           const rawValue = r.c[4]?.v != null && !isNaN(Number(r.c[4]?.v)) ? Number(r.c[4].v) : 0; // in seconds
+  //           const rawValue = r.c[4]?.v != null && !isNaN(Number(r.c[4]?.v)) ? Number(r.c[4].v) : 0; // seconds
   //           const formattedValue = this.formatToHHMM(rawValue);
   
-  //           // === Convert to minutes for comparison ===
+  //           // Convert to minutes
   //           const minutes = rawValue / 60;
   
-  //           // === Row coloring ===
-  //           let rowColor = '#b9f6ca'; // pastel green
+  //           // Pastel color thresholds
+  //           let rowColor = '#b9f6ca'; // pastel green (0–30 min)
   //           if (minutes > 30 && minutes <= 59) rowColor = '#fff9c4'; // pastel yellow
   //           if (minutes >= 60) rowColor = '#ffcdd2'; // pastel red
   
@@ -861,13 +859,13 @@ if (titleContainer) {
   
   //           const rowIndex = dt.addRow(rowValues);
   
-  //           // Color entire row (all columns)
+  //           // Color entire row
   //           for (let col = 0; col < dt.getNumberOfColumns(); col++) {
   //             dt.setProperty(
   //               rowIndex,
   //               col,
   //               'style',
-  //               `background-color:${rowColor}; color:${rowColor === '#ff5252' ? '#fff' : '#000'};`
+  //               `background-color:${rowColor}; color:${rowColor === '#ffcdd2' ? '#000' : '#000'};`
   //             );
   //           }
   //         });
@@ -885,6 +883,7 @@ if (titleContainer) {
   //     console.error('Error drawing all tables:', err);
   //   }
   // }
+  
   public async drawAllDepartmentTables(
     elementIdsByPeriod: { [period: string]: { [ds: string]: string } },
     url: string
@@ -930,51 +929,87 @@ if (titleContainer) {
           const dt = new google.visualization.DataTable();
           dt.addColumn('string', 'מחלקה');
   
-          const includeDateColumn = period === '4-ParallelsPeriod';
-          if (includeDateColumn) {
-            dt.addColumn('string', 'שנה');
+          const isParallelPeriod = period === '4-ParallelsPeriod';
+          let uniqueYears: string[] = [];
+  
+          if (isParallelPeriod) {
+            // Extract all unique years (last two digits)
+            const yearSet = new Set<string>();
+            rows.forEach(r => {
+              let date = r.c[3]?.v || '';
+              if (typeof date === 'string') {
+                const yearMatch = date.match(/\d{4}/);
+                if (yearMatch) {
+                  yearSet.add(yearMatch[0].substring(2)); // store last 2 digits
+                }
+              }
+            });
+            uniqueYears = Array.from(yearSet).sort((a, b) => Number(b) - Number(a)); // sort descending
+            uniqueYears.forEach(y => dt.addColumn('number', y));
+          } else {
+            dt.addColumn('number', 'זמן');
           }
   
-          dt.addColumn('number', 'זמן');
-  
+          // Group by department
+          const departmentMap: { [dept: string]: { [year: string]: number } } = {};
           rows.forEach(r => {
             const department = r.c[2]?.v || '';
             let date = r.c[3]?.v || '';
+            let year = '';
   
-            if (includeDateColumn && typeof date === 'string') {
+            if (isParallelPeriod && typeof date === 'string') {
               const yearMatch = date.match(/\d{4}/);
-              date = yearMatch ? yearMatch[0] : '';
-            } else {
-              date = '';
+              if (yearMatch) {
+                year = yearMatch[0].substring(2);
+              }
             }
   
-            const rawValue = r.c[4]?.v != null && !isNaN(Number(r.c[4]?.v)) ? Number(r.c[4].v) : 0; // seconds
-            const formattedValue = this.formatToHHMM(rawValue);
-  
-            // Convert to minutes
-            const minutes = rawValue / 60;
-  
-            // Pastel color thresholds
-            let rowColor = '#b9f6ca'; // pastel green (0–30 min)
-            if (minutes > 30 && minutes <= 59) rowColor = '#fff9c4'; // pastel yellow
-            if (minutes >= 60) rowColor = '#ffcdd2'; // pastel red
-  
-            const rowValues = includeDateColumn
-              ? [department, date, { v: rawValue, f: formattedValue }]
-              : [department, { v: rawValue, f: formattedValue }];
-  
-            const rowIndex = dt.addRow(rowValues);
-  
-            // Color entire row
-            for (let col = 0; col < dt.getNumberOfColumns(); col++) {
-              dt.setProperty(
-                rowIndex,
-                col,
-                'style',
-                `background-color:${rowColor}; color:${rowColor === '#ffcdd2' ? '#000' : '#000'};`
-              );
-            }
+            const rawValue = r.c[4]?.v != null && !isNaN(Number(r.c[4]?.v)) ? Number(r.c[4].v) : 0;
+            if (!departmentMap[department]) departmentMap[department] = {};
+            if (isParallelPeriod && year) departmentMap[department][year] = rawValue;
+            if (!isParallelPeriod) departmentMap[department]['value'] = rawValue;
           });
+  
+          // Build rows + color cells
+          for (const [department, yearValues] of Object.entries(departmentMap)) {
+            if (isParallelPeriod) {
+              const row: any[] = [department];
+              const rowIndex = dt.addRow(); // add empty row first
+  
+              dt.setCell(rowIndex, 0, department); // set department name
+  
+              uniqueYears.forEach((y, idx) => {
+                const rawValue = yearValues[y] ?? null;
+                const formatted = rawValue != null ? this.formatToHHMM(rawValue) : '';
+                const colIndex = idx + 1; // first column is department
+  
+                if (rawValue != null) {
+                  dt.setCell(rowIndex, colIndex, rawValue, formatted);
+  
+                  // Color coding based on minutes
+                  const minutes = rawValue / 60;
+                  let cellColor = '#b9f6ca'; // green
+                  if (minutes > 30 && minutes <= 59) cellColor = '#fff9c4'; // yellow
+                  if (minutes >= 60) cellColor = '#ffcdd2'; // red
+  
+                  dt.setProperty(rowIndex, colIndex, 'style', `background-color:${cellColor}; color:#000;`);
+                }
+              });
+            } else {
+              const rawValue = yearValues['value'] ?? 0;
+              const formattedValue = this.formatToHHMM(rawValue);
+              const rowIndex = dt.addRow([department, { v: rawValue, f: formattedValue }]);
+  
+              // Color coding
+              const minutes = rawValue / 60;
+              let rowColor = '#b9f6ca'; // green
+              if (minutes > 30 && minutes <= 59) rowColor = '#fff9c4';
+              if (minutes >= 60) rowColor = '#ffcdd2';
+              for (let col = 0; col < dt.getNumberOfColumns(); col++) {
+                dt.setProperty(rowIndex, col, 'style', `background-color:${rowColor}; color:#000;`);
+              }
+            }
+          }
   
           const table = new google.visualization.Table(container);
           table.draw(dt, {
@@ -990,7 +1025,6 @@ if (titleContainer) {
     }
   }
   
-
   public async drawAllDepartmentTablesSum(
     elementIdsByPeriod: { [period: string]: { [ds: string]: string } },
     url: string
@@ -1092,5 +1126,6 @@ if (titleContainer) {
       }
     }
   }  
+  
     
 }
