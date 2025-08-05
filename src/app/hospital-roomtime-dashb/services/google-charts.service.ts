@@ -886,7 +886,8 @@ if (titleContainer) {
   
   public async drawAllDepartmentTables(
     elementIdsByPeriod: { [period: string]: { [ds: string]: string } },
-    url: string
+    url: string,
+    excludeCurrentYear: boolean = true
   ): Promise<void> {
     await this.waitUntilChartsReady();
   
@@ -933,14 +934,17 @@ if (titleContainer) {
           let uniqueYears: string[] = [];
   
           if (isParallelPeriod) {
-            // Extract all unique years (last two digits)
+            const currentYear = new Date().getFullYear().toString().substring(2); // last 2 digits of current year
             const yearSet = new Set<string>();
             rows.forEach(r => {
               let date = r.c[3]?.v || '';
               if (typeof date === 'string') {
                 const yearMatch = date.match(/\d{4}/);
                 if (yearMatch) {
-                  yearSet.add(yearMatch[0].substring(2)); // store last 2 digits
+                  const yearStr = yearMatch[0].substring(2);
+                  if (!(excludeCurrentYear && yearStr === currentYear)) {
+                    yearSet.add(yearStr);
+                  }
                 }
               }
             });
@@ -961,6 +965,7 @@ if (titleContainer) {
               const yearMatch = date.match(/\d{4}/);
               if (yearMatch) {
                 year = yearMatch[0].substring(2);
+                if (excludeCurrentYear && year === new Date().getFullYear().toString().substring(2)) return;
               }
             }
   
@@ -974,19 +979,18 @@ if (titleContainer) {
           for (const [department, yearValues] of Object.entries(departmentMap)) {
             if (isParallelPeriod) {
               const row: any[] = [department];
-              const rowIndex = dt.addRow(); // add empty row first
-  
-              dt.setCell(rowIndex, 0, department); // set department name
+              const rowIndex = dt.addRow();
+              dt.setCell(rowIndex, 0, department);
   
               uniqueYears.forEach((y, idx) => {
                 const rawValue = yearValues[y] ?? null;
                 const formatted = rawValue != null ? this.formatToHHMM(rawValue) : '';
-                const colIndex = idx + 1; // first column is department
+                const colIndex = idx + 1;
   
                 if (rawValue != null) {
                   dt.setCell(rowIndex, colIndex, rawValue, formatted);
   
-                  // Color coding based on minutes
+                  // Color coding
                   const minutes = rawValue / 60;
                   let cellColor = '#b9f6ca'; // green
                   if (minutes > 30 && minutes <= 59) cellColor = '#fff9c4'; // yellow
@@ -1000,9 +1004,8 @@ if (titleContainer) {
               const formattedValue = this.formatToHHMM(rawValue);
               const rowIndex = dt.addRow([department, { v: rawValue, f: formattedValue }]);
   
-              // Color coding
               const minutes = rawValue / 60;
-              let rowColor = '#b9f6ca'; // green
+              let rowColor = '#b9f6ca';
               if (minutes > 30 && minutes <= 59) rowColor = '#fff9c4';
               if (minutes >= 60) rowColor = '#ffcdd2';
               for (let col = 0; col < dt.getNumberOfColumns(); col++) {
@@ -1025,9 +1028,100 @@ if (titleContainer) {
     }
   }
   
+  // public async drawAllDepartmentTablesSum(
+  //   elementIdsByPeriod: { [period: string]: { [ds: string]: string } },
+  //   url: string
+  // ): Promise<void> {
+  //   await this.waitUntilChartsReady();
+  
+  //   try {
+  //     for (const [period, dsMap] of Object.entries(elementIdsByPeriod)) {
+  //       const raw = await this.fetchWithCache(this.buildUrl(url, { dataType: period }));
+  //       const clean = sanitizeSoapResponse(raw);
+  
+  //       if (!clean || !clean.rows?.length) {
+  //         Object.values(dsMap).forEach(id => {
+  //           const container = document.getElementById(id);
+  //           if (container) container.innerHTML = 'אין נתונים להצגה';
+  //         });
+  //         continue;
+  //       }
+  
+  //       const groupedByDS: { [ds: string]: any[] } = {};
+  //       clean.rows.forEach((r: any) => {
+  //         const ds = r.c[0]?.v || 'Unknown';
+  //         if (!groupedByDS[ds]) groupedByDS[ds] = [];
+  //         groupedByDS[ds].push(r);
+  //       });
+  
+  //       for (const [dataSource, rows] of Object.entries(groupedByDS)) {
+  //         const elementId = dsMap[dataSource];
+  //         if (!elementId) continue;
+  
+  //         // === Title ===
+  //         const titleContainer = document.getElementById(`title_${elementId}`);
+  //         if (titleContainer) {
+  //           titleContainer.innerText = `${this.translateDataSource(dataSource)} - ${this.translateTimeframe(period)} (סיכום)`;
+  //           titleContainer.style.fontWeight = 'bold';
+  //           titleContainer.style.fontSize = '16px';
+  //           titleContainer.style.textAlign = 'center';
+  //           titleContainer.style.margin = '10px 0';
+  //         }
+  
+  //         const container = document.getElementById(elementId);
+  //         if (!container) continue;
+  
+  //         const dt = new google.visualization.DataTable();
+  //         dt.addColumn('string', 'מחלקה');
+  
+  //         const includeDateColumn = period === '4-ParallelsPeriod';
+  //         if (includeDateColumn) {
+  //           dt.addColumn('string', 'שנה');
+  //         }
+  
+  //         dt.addColumn('number', 'ימים'); // <-- Change column header
+  
+  //         rows.forEach(r => {
+  //           const department = r.c[2]?.v || '';
+  //           let date = r.c[3]?.v || '';
+  
+  //           // === Extract only year if period is 4-ParallelsPeriod ===
+  //           if (includeDateColumn && typeof date === 'string') {
+  //             const yearMatch = date.match(/\d{4}/);
+  //             date = yearMatch ? yearMatch[0] : '';
+  //           } else {
+  //             date = '';
+  //           }
+  
+  //           const rawValue = r.c[4]?.v != null && !isNaN(Number(r.c[4]?.v)) ? Number(r.c[4].v) : 0;
+  //           const formattedValue = `${rawValue.toFixed(1)} ימים`; // 1 decimal for better precision (or use Math.round for whole days)
+  
+  //           if (includeDateColumn) {
+  //             dt.addRow([department, date, { v: rawValue, f: formattedValue }]);
+  //           } else {
+  //             dt.addRow([department, { v: rawValue, f: formattedValue }]);
+  //           }
+  //         });
+  
+  //         const table = new google.visualization.Table(container);
+  //         table.draw(dt, {
+  //           showRowNumber: false,
+  //           width: '100%',
+  //           height: '150px',
+  //           allowHtml: true
+  //         });
+  //       }
+  //     }
+  //   } catch (err) {
+  //     console.error('Error drawing all tables:', err);
+  //   }
+  // }
+  
+
   public async drawAllDepartmentTablesSum(
     elementIdsByPeriod: { [period: string]: { [ds: string]: string } },
-    url: string
+    url: string,
+    excludeCurrentYear: boolean = false
   ): Promise<void> {
     await this.waitUntilChartsReady();
   
@@ -1071,34 +1165,98 @@ if (titleContainer) {
           const dt = new google.visualization.DataTable();
           dt.addColumn('string', 'מחלקה');
   
-          const includeDateColumn = period === '4-ParallelsPeriod';
-          if (includeDateColumn) {
-            dt.addColumn('string', 'שנה');
+          const isParallelPeriod = period === '4-ParallelsPeriod';
+          let uniqueYears: string[] = [];
+  
+          if (isParallelPeriod) {
+            const currentYear = new Date().getFullYear().toString().substring(2);
+            const yearSet = new Set<string>();
+            rows.forEach(r => {
+              let date = r.c[3]?.v || '';
+              if (typeof date === 'string') {
+                const yearMatch = date.match(/\d{4}/);
+                if (yearMatch) {
+                  const yearStr = yearMatch[0].substring(2);
+                  if (!(excludeCurrentYear && yearStr === currentYear)) {
+                    yearSet.add(yearStr);
+                  }
+                }
+              }
+            });
+            uniqueYears = Array.from(yearSet).sort((a, b) => Number(b) - Number(a)); // descending
+            uniqueYears.forEach(y => dt.addColumn('number', y));
+          } else {
+            dt.addColumn('number', 'ימים');
           }
   
-          dt.addColumn('number', 'ימים'); // <-- Change column header
-  
+          // Group by department
+          const departmentMap: { [dept: string]: { [year: string]: number } } = {};
           rows.forEach(r => {
             const department = r.c[2]?.v || '';
             let date = r.c[3]?.v || '';
+            let year = '';
   
-            // === Extract only year if period is 4-ParallelsPeriod ===
-            if (includeDateColumn && typeof date === 'string') {
+            if (isParallelPeriod && typeof date === 'string') {
               const yearMatch = date.match(/\d{4}/);
-              date = yearMatch ? yearMatch[0] : '';
-            } else {
-              date = '';
+              if (yearMatch) {
+                year = yearMatch[0].substring(2);
+                if (excludeCurrentYear && year === new Date().getFullYear().toString().substring(2)) return;
+              }
             }
   
             const rawValue = r.c[4]?.v != null && !isNaN(Number(r.c[4]?.v)) ? Number(r.c[4].v) : 0;
-            const formattedValue = `${rawValue.toFixed(1)} ימים`; // 1 decimal for better precision (or use Math.round for whole days)
-  
-            if (includeDateColumn) {
-              dt.addRow([department, date, { v: rawValue, f: formattedValue }]);
-            } else {
-              dt.addRow([department, { v: rawValue, f: formattedValue }]);
-            }
+            if (!departmentMap[department]) departmentMap[department] = {};
+            if (isParallelPeriod && year) departmentMap[department][year] = rawValue;
+            if (!isParallelPeriod) departmentMap[department]['value'] = rawValue;
           });
+  
+          // Compute global max for scaling colors
+          let maxVal = 0;
+          Object.values(departmentMap).forEach(yearValues => {
+            Object.values(yearValues).forEach(val => {
+              if (val > maxVal) maxVal = val;
+            });
+          });
+  
+          // Helper: interpolate red shades (10 steps)
+          const getRedShade = (value: number): string => {
+            if (maxVal === 0) return '#ffcdd2';
+            const intensity = Math.min(1, value / maxVal); // normalize 0–1
+            const step = Math.floor(intensity * 9); // 0–9
+            // generate progressively darker red shades
+            const redShades = [
+              '#ffcdd2', '#f8b6b8', '#f49ea0', '#f08888', '#ec7070',
+              '#e75858', '#e24040', '#de2828', '#da1010', '#d50000'
+            ];
+            return redShades[step];
+          };
+  
+          // Build rows + color cells
+          for (const [department, yearValues] of Object.entries(departmentMap)) {
+            if (isParallelPeriod) {
+              const rowIndex = dt.addRow();
+              dt.setCell(rowIndex, 0, department);
+  
+              uniqueYears.forEach((y, idx) => {
+                const rawValue = yearValues[y] ?? null;
+                const formatted = rawValue != null ? `${rawValue.toFixed(1)} ימים` : '';
+                const colIndex = idx + 1;
+  
+                if (rawValue != null) {
+                  dt.setCell(rowIndex, colIndex, rawValue, formatted);
+                  dt.setProperty(rowIndex, colIndex, 'style', `background-color:${getRedShade(rawValue)}; color:#000;`);
+                }
+              });
+            } else {
+              const rawValue = yearValues['value'] ?? 0;
+              const formattedValue = `${rawValue.toFixed(1)} ימים`;
+              const rowIndex = dt.addRow([department, { v: rawValue, f: formattedValue }]);
+              const rowColor = getRedShade(rawValue);
+              for (let col = 0; col < dt.getNumberOfColumns(); col++) {
+                dt.setProperty(rowIndex, col, 'style', `background-color:${rowColor}; color:#000;`);
+              }
+            }
+          }
   
           const table = new google.visualization.Table(container);
           table.draw(dt, {
@@ -1114,6 +1272,7 @@ if (titleContainer) {
     }
   }
   
+
   @HostListener('window:scroll', [])
   onScroll() {
     const el = document.getElementById('stickyTabsFilters');
