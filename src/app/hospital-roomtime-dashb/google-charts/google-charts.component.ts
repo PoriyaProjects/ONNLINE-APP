@@ -1,4 +1,5 @@
 import { Component, AfterViewInit, OnInit, HostListener } from '@angular/core';
+import { trigger, state, style, transition, animate } from '@angular/animations';
 import { GoogleChartsService } from '../services/google-charts.service';
 import { environment } from 'src/environments/environment';
 import { drawOverlayDualArcChartHelperRoomTime } from 'src/app/shared/drawOverlayDualArcChartHelperRoomTime';
@@ -8,9 +9,16 @@ import { sanitizeSoapResponse } from 'src/app/shared/sanitizesoapresponce';
   selector: 'app-google-charts-time',
   templateUrl: './google-charts.component.html',
   styleUrls: ['./google-charts.component.css'],
+  animations: [
+    trigger('slideToggle', [
+      state('closed', style({ height: '0', opacity: 0, overflow: 'hidden', padding: '0' })),
+      state('open', style({ height: '*', opacity: 1, overflow: 'hidden', padding: '*' })),
+      transition('closed <=> open', animate('300ms ease-in-out'))
+    ])
+  ]
 })
 export class RoomTimeDashboardComponent implements OnInit, AfterViewInit {
-  // Data type options
+  /** Tabs & filters */
   readonly dataTypes = [
     { value: '1-Yesterday', label: 'אתמול' },
     { value: '2-CurrentMonth', label: 'החודש' },
@@ -18,11 +26,13 @@ export class RoomTimeDashboardComponent implements OnInit, AfterViewInit {
     { value: '4-ParallelsPeriod', label: 'השוואתי' }
   ];
   selectedDataType = '2-CurrentMonth';
-
   activeTab: 'avg' | 'agg' = 'avg';
-  treeMapActiveTab: 'MorningDelay' | 'EndDay' | 'SetupTime' = 'MorningDelay';
 
-  // Colors for departments
+  /** Expandable sections */
+  dataSources = ['MorningDelay', 'EndDay', 'SetupTime'];
+  openGroup: string | null = null;
+
+  /** Department colors */
   readonly departmentColors: string[] = [
     '#6ba1f8', '#5ed175', '#00b3d7', '#fcd74e', '#f86b6b',
     '#a17ef8', '#ff8c42', '#c4e86b', '#00d4a3', '#ff9ed4',
@@ -30,13 +40,12 @@ export class RoomTimeDashboardComponent implements OnInit, AfterViewInit {
   ];
   departmentColorMap: { [dept: string]: string } = {};
 
+  /** Legend toggle */
   legendMinimized = false;
+
   private resizeTimeout: any;
 
-  // === New: For expand/collapse table groups ===
-  openGroup: string | null = null;
-  dataSources = ['MorningDelay', 'EndDay', 'SetupTime'];
-
+  /** Mapping for table element IDs */
   elementIdsByPeriod = {
     '1-Yesterday': { MorningDelay: 'tableMorningDelay_1-Yesterday', EndDay: 'tableEndDay_1-Yesterday', SetupTime: 'tableSetupTime_1-Yesterday' },
     '2-CurrentMonth': { MorningDelay: 'tableMorningDelay_2-CurrentMonth', EndDay: 'tableEndDay_2-CurrentMonth', SetupTime: 'tableSetupTime_2-CurrentMonth' },
@@ -55,7 +64,6 @@ export class RoomTimeDashboardComponent implements OnInit, AfterViewInit {
     this.googleChartsService.chartsReady$.subscribe(() => this.loadCharts());
     this.loadAllPeriodCharts();
 
-    // === Load tables ===
     this.googleChartsService.drawAllDepartmentTables(
       this.elementIdsByPeriod,
       `${environment.url}/GetRoomTimeAvgD`
@@ -84,27 +92,29 @@ export class RoomTimeDashboardComponent implements OnInit, AfterViewInit {
     );
   }
 
-  /** Handle resize */
+  /** Window resize */
   @HostListener('window:resize')
   onResize() {
     clearTimeout(this.resizeTimeout);
     this.resizeTimeout = setTimeout(() => this.loadCharts(), 300);
   }
 
-  /** Handle timeframe change */
+  /** Timeframe change */
   onDataTypeChange(): void {
     this.loadCharts();
   }
 
+  /** Tab change */
   onTabChange(tab: 'avg' | 'agg'): void {
     this.activeTab = tab;
+    this.openGroup = null; // collapse details when switching tabs
     if (this.activeTab === 'agg' && this.selectedDataType === '1-Yesterday') {
       this.selectedDataType = '2-CurrentMonth';
     }
     setTimeout(() => this.loadCharts(), 0);
   }
 
-  /** Consistent department colors */
+  /** Department color mapping */
   getDepartmentColor(department: string): string {
     if (!this.departmentColorMap[department]) {
       const stored = localStorage.getItem(`deptColor_${department}`);
@@ -120,7 +130,7 @@ export class RoomTimeDashboardComponent implements OnInit, AfterViewInit {
     return this.departmentColorMap[department];
   }
 
-  /** Load bar & arc charts */
+  /** Draw bar & arc charts */
   loadAllPeriodCharts(): void {
     const url = `${environment.url}/GetRoomTimeSummaryAllSeparated`;
     const elementIdsAvg = {
@@ -178,15 +188,13 @@ export class RoomTimeDashboardComponent implements OnInit, AfterViewInit {
     localStorage.setItem('legendMinimized', this.legendMinimized.toString());
   }
 
-  /** Departments for legend */
   getDepartments(): string[] {
     return Object.keys(this.departmentColorMap);
   }
 
-  /** === Expand/collapse group logic === */
+  /** Expand/collapse groups with animation */
   toggleGroup(group: string): void {
     this.openGroup = this.openGroup === group ? null : group;
-
     if (this.openGroup) {
       setTimeout(() => {
         const el = document.getElementById(`group_${group}`);
@@ -194,8 +202,6 @@ export class RoomTimeDashboardComponent implements OnInit, AfterViewInit {
           const rect = el.getBoundingClientRect();
           const offset = window.pageYOffset + rect.top - 60;
           window.scrollTo({ top: offset, behavior: 'smooth' });
-
-          // Flash effect
           el.classList.add('flash-highlight');
           setTimeout(() => el.classList.remove('flash-highlight'), 1500);
         }

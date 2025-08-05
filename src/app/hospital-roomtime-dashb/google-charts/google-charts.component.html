@@ -116,7 +116,20 @@
     animation: flashHighlight 0.6s ease-in-out 3;
     /* 3 flashes */
   }
+
+  .toggle-details.active-toggle {
+    font-weight: bold;
+    color: #007bff;
+    /* highlight color (Bootstrap blue) */
+    text-decoration: underline;
+  }
+
+  .toggle-details.active-toggle {
+    background-color: #e6f0ff;
+    border-radius: 4px;
+  }
 </style>
+
 <div class="mdc-layout-grid" style="direction: rtl;">
   <div class="row" style="text-align: center;">
     <div class="mdc-layout-grid__cell col-md-12">
@@ -136,7 +149,7 @@
       <main class="mdc-top-app-bar--fixed-adjust">
 
         <div style="height:60px;"></div>
-
+        <!-- Arc hh:mm -->
         <div class="row">
           <div class="mdc-layout-grid__cell col-md-4">
             <div class="card text-center">
@@ -153,8 +166,11 @@
               <div id="SetupTime_avg" style="width: 100%; height: 300px;">טעינה...</div>
             </div>
           </div>
+
         </div>
         <div style="height:60px;"></div>
+
+        <!-- Arc days -->
         <div class="row">
           <div class="mdc-layout-grid__cell col-md-4">
             <div class="card text-center">
@@ -171,34 +187,66 @@
               <div id="SetupTime_agg" style="width: 100%; height: 300px;">טעינה...</div>
             </div>
           </div>
-        </div>
 
+        </div>
         <div style="height:60px;"></div>
 
+
         <div class="row">
-          <!-- Avg tables -->
-          <div class="mdc-layout-grid__cell col-md-3">
+          <!-- MorningDelay -->
+          <div class="mdc-layout-grid__cell col-md-4">
             <div class="card text-center table-block">
               <div id="title_tableMorningDelay_1-Yesterday" class="table-title"></div>
               <div id="tableMorningDelay_1-Yesterday">טעינה...</div>
+              <button class="btn btn-link toggle-details" (click)="toggleGroup('MorningDelay')"
+                [ngClass]="{ 'active-toggle': isOpen('MorningDelay') }">
+                {{ isOpen('MorningDelay') ? 'הסתר פרטים' : 'מידע מפורט' }}
+              </button>
             </div>
           </div>
 
-          <div class="mdc-layout-grid__cell col-md-3">
+          <!-- EndDay -->
+          <div class="mdc-layout-grid__cell col-md-4">
+            <div class="card text-center table-block">
+              <div id="title_tableEndDay_1-Yesterday"></div>
+              <div id="tableEndDay_1-Yesterday">טעינה...</div>
+              <button class="btn btn-link toggle-details" (click)="toggleGroup('EndDay')"
+                [ngClass]="{ 'active-toggle': isOpen('EndDay') }">
+                {{ isOpen('EndDay') ? 'הסתר פרטים' : 'מידע מפורט' }}
+              </button>
+            </div>
+          </div>
+
+          <!-- SetupTime -->
+          <div class="mdc-layout-grid__cell col-md-4">
+            <div class="card text-center table-block">
+              <div id="title_tableSetupTime_1-Yesterday"></div>
+              <div id="tableSetupTime_1-Yesterday">טעינה...</div>
+              <button class="btn btn-link toggle-details" (click)="toggleGroup('SetupTime')"
+                [ngClass]="{ 'active-toggle': isOpen('SetupTime') }">
+                {{ isOpen('SetupTime') ? 'הסתר פרטים' : 'מידע מפורט' }}
+              </button>
+            </div>
+          </div>
+        </div>
+        <div style="height:60px;"></div>
+
+        <!-- MorningDelay details -->
+        <div class="row table-details" [@slideToggle]="isOpen('MorningDelay') ? 'open' : 'closed'"
+          id="details_MorningDelay">
+          <div class="mdc-layout-grid__cell col-md-4">
             <div class="card text-center table-block">
               <div id="title_tableMorningDelay_2-CurrentMonth"></div>
               <div id="tableMorningDelay_2-CurrentMonth">טעינה...</div>
             </div>
           </div>
-
-          <div class="mdc-layout-grid__cell col-md-3">
+          <div class="mdc-layout-grid__cell col-md-4">
             <div class="card text-center table-block">
               <div id="title_tableMorningDelay_3-CurrentYear"></div>
               <div id="tableMorningDelay_3-CurrentYear">טעינה...</div>
             </div>
           </div>
-
-          <div class="mdc-layout-grid__cell col-md-3">
+          <div class="mdc-layout-grid__cell col-md-4">
             <div class="card text-center table-block">
               <div id="title_tableMorningDelay_4-ParallelsPeriod"></div>
               <div id="tableMorningDelay_4-ParallelsPeriod">טעינה...</div>
@@ -206,28 +254,22 @@
           </div>
         </div>
 
-        <div style="height:60px;"></div>
 
-        <div class="row">
-          <div class="mdc-layout-grid__cell col-md-3">
-            <div class="card text-center table-block">
-              <div id="title_tableEndDay_1-Yesterday"></div>
-              <div id="tableEndDay_1-Yesterday">טעינה...</div>
-            </div>
-          </div>
-          <div class="mdc-layout-grid__cell col-md-3">
+        <!-- EndDay details -->
+        <div class="row table-details" [@slideToggle]="isOpen('EndDay') ? 'open' : 'closed'" id="details_EndDay">
+          <div class="mdc-layout-grid__cell col-md-4">
             <div class="card text-center table-block">
               <div id="title_tableEndDay_2-CurrentMonth"></div>
               <div id="tableEndDay_2-CurrentMonth">טעינה...</div>
             </div>
           </div>
-          <div class="mdc-layout-grid__cell col-md-3">
+          <div class="mdc-layout-grid__cell col-md-4">
             <div class="card text-center table-block">
               <div id="title_tableEndDay_3-CurrentYear"></div>
               <div id="tableEndDay_3-CurrentYear">טעינה...</div>
             </div>
           </div>
-          <div class="mdc-layout-grid__cell col-md-3">
+          <div class="mdc-layout-grid__cell col-md-4">
             <div class="card text-center table-block">
               <div id="title_tableEndDay_4-ParallelsPeriod"></div>
               <div id="tableEndDay_4-ParallelsPeriod">טעינה...</div>
@@ -235,28 +277,22 @@
           </div>
         </div>
 
-        <div style="height:60px;"></div>
 
-        <div class="row">
-          <div class="mdc-layout-grid__cell col-md-3">
-            <div class="card text-center table-block">
-              <div id="title_tableSetupTime_1-Yesterday"></div>
-              <div id="tableSetupTime_1-Yesterday">טעינה...</div>
-            </div>
-          </div>
-          <div class="mdc-layout-grid__cell col-md-3">
+        <!-- SetupTime details -->
+        <div class="row table-details" [@slideToggle]="isOpen('SetupTime') ? 'open' : 'closed'" id="details_SetupTime">
+          <div class="mdc-layout-grid__cell col-md-4">
             <div class="card text-center table-block">
               <div id="title_tableSetupTime_2-CurrentMonth"></div>
               <div id="tableSetupTime_2-CurrentMonth">טעינה...</div>
             </div>
           </div>
-          <div class="mdc-layout-grid__cell col-md-3">
+          <div class="mdc-layout-grid__cell col-md-4">
             <div class="card text-center table-block">
               <div id="title_tableSetupTime_3-CurrentYear"></div>
               <div id="tableSetupTime_3-CurrentYear">טעינה...</div>
             </div>
           </div>
-          <div class="mdc-layout-grid__cell col-md-3">
+          <div class="mdc-layout-grid__cell col-md-4">
             <div class="card text-center table-block">
               <div id="title_tableSetupTime_4-ParallelsPeriod"></div>
               <div id="tableSetupTime_4-ParallelsPeriod">טעינה...</div>
@@ -264,7 +300,8 @@
           </div>
         </div>
 
-        <div style="height:60px;"></div>
+
+
 
 
 
@@ -307,7 +344,7 @@
         <div style="height:60px;"></div>
 
 
-        <h2 style="text-align: center;">זמן ממוצע</h2>
+        <!-- <h2 style="text-align: center;">זמן ממוצע</h2>
         <div class="row">
           <div class="mdc-layout-grid__cell col-md-3">
             <div id="chartAvg_1-YesterdayWrapper" class="card text-center" style="width: 100%; margin-bottom:80px;">
@@ -365,7 +402,7 @@
           </div>
         </div>
 
-        <div style="height:60px;"></div>
+        <div style="height:60px;"></div> -->
 
         <!-- Tabs -->
         <div class="tabs" style="text-align: right; margin: bottom 20px;">

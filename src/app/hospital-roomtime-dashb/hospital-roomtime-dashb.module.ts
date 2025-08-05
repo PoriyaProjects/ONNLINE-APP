@@ -14,6 +14,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSortModule } from '@angular/material/sort';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 
 const routes: Routes = [
@@ -36,7 +37,8 @@ const routes: Routes = [
     MatCardModule,
     MatGridListModule,
     MatToolbarModule,
-    MatSortModule    
+    MatSortModule,
+    BrowserAnimationsModule
   ]
 })
 export class HospitalRoomTimeDashbModule {}
