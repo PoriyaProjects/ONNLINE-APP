@@ -541,124 +541,7 @@ if (titleContainer) {
       console.error('Error drawing room time dual arc charts:', err);
     }
   }
-  
-  // public async drawGroupedComparisonCharts(
-  //   elementIdsAgg: { [key: string]: string },
-  //   elementIdsAvg: { [key: string]: string },
-  //   url: string
-  // ): Promise<void> {
-  //   await this.waitUntilChartsReady();
-  
-  //   try {
-  //     const raw = await this.fetchWithCache(url);
-  //     const clean = sanitizeSoapResponse(raw);
-  
-  //     if (!clean || !clean.rows?.length) {
-  //       Object.values({ ...elementIdsAgg, ...elementIdsAvg }).forEach(id => {
-  //         const container = document.getElementById(id);
-  //         if (container) container.innerHTML = 'אין נתונים להצגה';
-  //       });
-  //       return;
-  //     }
-  
-  //     // --- Fixed order ---
-  //     const dataSources = ['MorningDelay', 'EndDay', 'SetupTime'];
-  //     const periods = ['1-Yesterday', '2-CurrentMonth', '3-CurrentYear', '4-ParallelsPeriod'];
-  
-  //     // Hebrew mappings
-  //     const dsHebrew: { [k: string]: string } = {
-  //       MorningDelay: 'איחור בוקר',
-  //       EndDay: 'סוף יום',
-  //       SetupTime: 'זמן Setup'
-  //     };
-  //     const periodHebrew: { [k: string]: string } = {
-  //       '1-Yesterday': 'אתמול',
-  //       '2-CurrentMonth': 'החודש',
-  //       '3-CurrentYear': 'השנה',
-  //       '4-ParallelsPeriod': 'השוואתי'
-  //     };
-  
-  //     // Colors per DataSource
-  //     const colorMap: { [key: string]: string } = {
-  //       MorningDelay: '#6ba1f8',
-  //       EndDay: '#f86b6b',
-  //       SetupTime: '#a17ef8'
-  //     };
-  
-  //     // --- Group by DataSource & Period ---
-  //     const grouped: { [ds: string]: { [period: string]: { agg: number; avg: number } } } = {};
-  //     clean.rows.forEach((r: any) => {
-  //       const ds = r.c[0]?.v || 'Unknown';
-  //       const period = r.c[1]?.v || 'Unknown';
-  //       const agg = Number(r.c[4]?.v ?? 0);
-  //       const avg = Number(r.c[5]?.v ?? 0);
-  //       if (!grouped[ds]) grouped[ds] = {};
-  //       grouped[ds][period] = { agg, avg };
-  //     });
-  
-  //     // === Build DataTable ===
-  //     const buildDataTable = (isAvg: boolean) => {
-  //       const dt = new google.visualization.DataTable();
-  //       dt.addColumn('string', 'תקופה');
-  //       dataSources.forEach(ds => {
-  //         dt.addColumn('number', dsHebrew[ds]);
-  //         dt.addColumn({ type: 'string', role: 'annotation' });
-  //         dt.addColumn({ type: 'string', role: 'style' });
-  //       });
-  
-  //       let maxValue = 0;
-  //       periods.forEach(period => {
-  //         const row: any[] = [periodHebrew[period]];
-  
-  //         dataSources.forEach(ds => {
-  //           const val = grouped[ds]?.[period]?.[isAvg ? 'avg' : 'agg'] || 0;
-  //           maxValue = Math.max(maxValue, val);
-  //           const annotation = isAvg ? this.formatToHHMM(val) : val.toFixed(1);
-  //           row.push(val, annotation, `color: ${colorMap[ds]}`);
-  //         });
-  
-  //         dt.addRow(row);
-  //       });
-  
-  //       return { dt, maxValue };
-  //     };
-  
-  //     // === Aggregate Chart ===
-  //     const { dt: dtAgg, maxValue: maxAgg } = buildDataTable(false);
-  //     const optionsAgg = {
-  //       title: 'השוואת ימי אובדן לפי תקופות',
-  //       height: 500,
-  //       isStacked: false,
-  //       legend: { position: 'top', textStyle: { fontSize: 14 } },
-  //       annotations: { alwaysOutside: true, textStyle: { fontSize: 12, bold: true } },
-  //       vAxis: { minValue: 0, format: '0.0' },
-  //       hAxis: { slantedText: false },
-  //       chartArea: { left: 60, top: 60, right: 20, width: '80%', height: '70%' }
-  //     };
-  //     const containerAgg = document.getElementById(elementIdsAgg['default']);
-  //     if (containerAgg) new google.visualization.ColumnChart(containerAgg).draw(dtAgg, optionsAgg);
-  
-  //     // === Average Chart ===
-  //     const { dt: dtAvg, maxValue: maxAvg } = buildDataTable(true);
-  //     const optionsAvg = {
-  //       title: 'השוואת זמן אובדן (HH:MM) לפי תקופות',
-  //       height: 500,
-  //       isStacked: false,
-  //       legend: { position: 'top', textStyle: { fontSize: 14 } },
-  //       annotations: { alwaysOutside: true, textStyle: { fontSize: 12, bold: true } },
-  //       vAxis: { minValue: 0, ticks: this.generateHMMTicks(maxAvg, 1800) },
-  //       hAxis: { slantedText: false },
-  //       chartArea: { left: 60, top: 60, right: 20, width: '80%', height: '70%' },
-  //       tooltip: { isHtml: true }
-  //     };
-  //     const containerAvg = document.getElementById(elementIdsAvg['default']);
-  //     if (containerAvg) new google.visualization.ColumnChart(containerAvg).draw(dtAvg, optionsAvg);
-  
-  //   } catch (err) {
-  //     console.error('Error drawing grouped comparison charts:', err);
-  //   }
-  // }
-  
+ 
   public async drawGroupedComparisonChartsByType(
     elementIdsAgg: { [period: string]: string },
     elementIdsAvg: { [period: string]: string },
@@ -894,6 +777,7 @@ if (titleContainer) {
       console.error('Error drawing grouped comparison charts:', err);
     }
   }
+ 
   
   public async drawAllDepartmentTables(
     elementIdsByPeriod: { [period: string]: { [ds: string]: string } },
@@ -925,9 +809,10 @@ if (titleContainer) {
           const elementId = dsMap[dataSource];
           if (!elementId) continue;
   
+          // === Title ===
           const titleContainer = document.getElementById(`title_${elementId}`);
           if (titleContainer) {
-            titleContainer.innerText = `${this.translateDataSource(dataSource)} - ${this.translateTimeframe(period)} (מפורט)`;
+            titleContainer.innerText = `${this.translateDataSource(dataSource)} - ${this.translateTimeframe(period)} (ממוצע)`;
             titleContainer.style.fontWeight = 'bold';
             titleContainer.style.fontSize = '16px';
             titleContainer.style.textAlign = 'center';
@@ -951,21 +836,39 @@ if (titleContainer) {
             const department = r.c[2]?.v || '';
             let date = r.c[3]?.v || '';
   
-            // === Extract only year if period is 4-ParallelsPeriod ===
+            // Extract only year if period is 4-ParallelsPeriod
             if (includeDateColumn && typeof date === 'string') {
-              const yearMatch = date.match(/\d{4}/); // Extract 4-digit year
+              const yearMatch = date.match(/\d{4}/);
               date = yearMatch ? yearMatch[0] : '';
             } else {
               date = '';
             }
   
-            const rawValue = r.c[4]?.v != null && !isNaN(Number(r.c[4]?.v)) ? Number(r.c[4].v) : 0;
+            const rawValue = r.c[4]?.v != null && !isNaN(Number(r.c[4]?.v)) ? Number(r.c[4].v) : 0; // in seconds
             const formattedValue = this.formatToHHMM(rawValue);
   
-            if (includeDateColumn) {
-              dt.addRow([department, date, { v: rawValue, f: formattedValue }]);
-            } else {
-              dt.addRow([department, { v: rawValue, f: formattedValue }]);
+            // === Convert to minutes for comparison ===
+            const minutes = rawValue / 60;
+  
+            // === Row coloring ===
+            let rowColor = '#b9f6ca'; // pastel green
+            if (minutes > 30 && minutes <= 59) rowColor = '#fff9c4'; // pastel yellow
+            if (minutes >= 60) rowColor = '#ffcdd2'; // pastel red
+  
+            const rowValues = includeDateColumn
+              ? [department, date, { v: rawValue, f: formattedValue }]
+              : [department, { v: rawValue, f: formattedValue }];
+  
+            const rowIndex = dt.addRow(rowValues);
+  
+            // Color entire row (all columns)
+            for (let col = 0; col < dt.getNumberOfColumns(); col++) {
+              dt.setProperty(
+                rowIndex,
+                col,
+                'style',
+                `background-color:${rowColor}; color:${rowColor === '#ff5252' ? '#fff' : '#000'};`
+              );
             }
           });
   

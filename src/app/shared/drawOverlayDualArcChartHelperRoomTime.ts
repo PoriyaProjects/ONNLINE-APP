@@ -179,7 +179,7 @@ export function drawOverlayDualArcChartHelperRoomTime({
     bg.setAttribute('cy', '150');
     bg.setAttribute('r', r.toString());
     bg.setAttribute('fill', 'none');
-    bg.setAttribute('stroke', '#666666');
+    bg.setAttribute('stroke', '#b9f6ca');
     bg.setAttribute('stroke-width', strokeWidth.toString());
     bg.setAttribute('stroke-dasharray', `${halfCirc} ${fullCirc}`);
     bg.setAttribute('transform', 'rotate(-180 150 150)');
@@ -227,7 +227,7 @@ export function drawOverlayDualArcChartHelperRoomTime({
 
     const bg = document.createElementNS('http://www.w3.org/2000/svg', 'path');
     bg.setAttribute('d', bgPath.join(' '));
-    bg.setAttribute('fill', '#666666');
+    bg.setAttribute('fill', '#b9f6ca');
     bg.style.pointerEvents = 'auto';
     bg.style.cursor = 'pointer';
         // Tooltip + scroll for background
@@ -298,7 +298,7 @@ export function drawOverlayDualArcChartHelperRoomTime({
     valueLabel.setAttribute('x', cx.toString());
     valueLabel.setAttribute('y', (cy - 28).toString());
     valueLabel.setAttribute('text-anchor', 'middle');
-    valueLabel.setAttribute('fill', '#fff');
+    valueLabel.setAttribute('fill', '#222');
     valueLabel.setAttribute('font-size', '16');
     valueLabel.setAttribute('font-family', 'Open Sans');
     valueLabel.textContent = formatValue(yesterdayValue);
@@ -308,7 +308,7 @@ export function drawOverlayDualArcChartHelperRoomTime({
     label.setAttribute('x', cx.toString());
     label.setAttribute('y', (cy - 10).toString());
     label.setAttribute('text-anchor', 'middle');
-    label.setAttribute('fill', '#fff');
+    label.setAttribute('fill', '#222');
     label.setAttribute('font-size', '12');
     label.setAttribute('font-family', 'Open Sans');
     label.textContent = 'אתמול';
@@ -357,7 +357,8 @@ export function drawOverlayDualArcChartHelperRoomTime({
       };
 
       placeMarker(gaugeValue, gaugeTargetValue, 90, markerStatusColor, false);
-      placeMarker(workingDaysInfo.currentWorkingDayIndex, workingDaysInfo.totalWorkingDays, 65, '#6ba1f8', true);
+      //placeMarker(workingDaysInfo.currentWorkingDayIndex, workingDaysInfo.totalWorkingDays, 65, '#6ba1f8', true);
+      placeMarker(workingDaysInfo.currentWorkingDayIndex, workingDaysInfo.totalWorkingDays, 65, '#6ba1f8', false);
     });
   }
 

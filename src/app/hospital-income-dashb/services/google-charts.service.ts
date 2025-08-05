@@ -1810,7 +1810,8 @@ export class GoogleChartsService {
           ? ` (${lastPct > 0 ? '+' : ''}${lastPct.toFixed(1)}%)`
           : '';
         const iconClass = this.getDeptIconClass(groupId);
-        button.innerHTML = `<i class="klubamed ${iconClass}" style="font-size:48px;"></i><br><span class="btn-name">${groupName}</span><br>${pctLabel}`;
+        //button.innerHTML = `<i class="klubamed ${iconClass}" style="font-size:48px;"></i><br><span class="btn-name">${groupName}</span><br>${pctLabel}`;
+        button.innerHTML = `<span class="btn-name">${groupName}</span><br>${pctLabel}`;
         const color = this.getHeatColor(lastPct);
         button.classList.add('mat-raised-button');
         button.style.cssText = `
@@ -1908,7 +1909,8 @@ export class GoogleChartsService {
               ? ` (${dept.percent > 0 ? '+' : ''}${dept.percent.toFixed(1)}%)`
               : '';
             const iconClass = this.getDeptIconClass(dept.id);
-            deptButton.innerHTML = `<i class="klubamed ${iconClass}" style="font-size:48px;"></i><br><span class="btn-name">${dept.name}</span><br>${pctLabel}`;
+            //deptButton.innerHTML = `<i class="klubamed ${iconClass}" style="font-size:48px;"></i><br><span class="btn-name">${dept.name}</span><br>${pctLabel}`;
+            deptButton.innerHTML = `<span class="btn-name">${dept.name}</span><br>${pctLabel}`;
             deptButton.title = `${dept.percent}%`;
             deptButton.classList.add('mat-raised-button');
             deptButton.style.cssText = `
