@@ -4,6 +4,7 @@ import { GoogleChartsService } from '../services/google-charts.service';
 import { environment } from 'src/environments/environment';
 import { drawOverlayDualArcChartHelperRoomTime } from 'src/app/shared/drawOverlayDualArcChartHelperRoomTime';
 import { sanitizeSoapResponse } from 'src/app/shared/sanitizesoapresponce';
+import { drawHorizontalMultiPeriodChartHelperRoomTime } from 'src/app/shared/drawHorizontalMultiPeriodChartHelperRoomTime';
 
 @Component({
   selector: 'app-google-charts-time',
@@ -69,6 +70,14 @@ export class RoomTimeDashboardComponent implements OnInit, AfterViewInit {
 
   ngAfterViewInit(): void {
     this.googleChartsService.chartsReady$.subscribe(() => this.loadCharts());
+    //this.loadSummarizedMultiPeriodChart();
+    this.googleChartsService.drawSummarizedMultiPeriodChart(
+      'multiPeriodSummary',
+      `${environment.url}/GetRoomTimeAvgD`,
+      `${environment.url}/GetRoomAggregateDaysD`,
+      '#6ba1f8'
+    );
+    
     this.loadAllPeriodCharts();
 
     this.googleChartsService.drawAllDepartmentTables(
@@ -122,6 +131,18 @@ export class RoomTimeDashboardComponent implements OnInit, AfterViewInit {
     }
     return this.departmentColorMap[department];
   }
+
+
+  loadSummarizedMultiPeriodChart(): void {
+    this.googleChartsService.drawSummarizedMultiPeriodChart(
+      'summarizedMultiPeriodChart',
+      `${environment.url}/GetRoomTimeAvgD`,
+      `${environment.url}/GetRoomAggregateDaysD`,
+      '#6ba1f8'
+    );
+  }
+
+  
 
   /** Draw bar & arc charts */
   loadAllPeriodCharts(): void {
