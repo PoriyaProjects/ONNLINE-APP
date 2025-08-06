@@ -307,15 +307,15 @@ const markerStatusColor = gaugeTargetStatus === '✅' ? '#00cc66' : '#cc0033';
 const [bgInner, fgInner] = createArc(65, 20, arcColor, percentWorked);
 svg.appendChild(bgInner);
 svg.appendChild(fgInner);
-addHoverEffects(fgInner, `<b>חודש נוכחי:</b> ${formatValue(workingDaysInfo.currentWorkingDayIndex)} מתוך ${formatValue(workingDaysInfo.totalWorkingDays)}`);
-addCurvedText(svg, 65 - 10, 'חודש נוכחי', 'innerArcLabel', '50%');
+addHoverEffects(fgInner, `<b>חודש נוכחי:</b> ${formatValue(workingDaysInfo.currentWorkingDayIndex)} לעומת ${formatValue(workingDaysInfo.totalWorkingDays)}`);
+addCurvedText(svg, 65 - 4, 'חודש נוכחי', 'innerArcLabel', '50%');
 
 // === Outer arc (currentYear / parallels)
 const [bgOuter, fgOuter] = createArc(90, 24, arcColor, percentPlanned);
 svg.appendChild(bgOuter);
 svg.appendChild(fgOuter);
-addHoverEffects(fgOuter, `<b>שנה נוכחית:</b> ${formatValue(gaugePlanned)} מתוך ${formatValue(gaugeTargetValue)}`);
-addCurvedText(svg, 90 - 12, 'שנה נוכחית', 'outerArcLabel', '50%');
+addHoverEffects(fgOuter, `<b>שנה נוכחית:</b> ${formatValue(gaugePlanned)} לעומת ${formatValue(gaugeTargetValue)}`);
+addCurvedText(svg, 90 - 6, 'שנה נוכחית', 'outerArcLabel', '50%');
 
 // === MARKERS
 if (showMarker) {
@@ -368,14 +368,14 @@ legend.innerHTML = `
   <div style="display: flex; justify-content: flex-end; align-items: center; line-height:1.6em; gap:6px; white-space: nowrap;">
     <span style="color: ${markerStatusColor}; font-weight: bold; font-size:2.4em;margin-top:-28px;">●</span>
     <span>
-        מתחילת השנה אל מול תקופה מקבילה: ${formatValue(gaugeValue)} <br>
-        תקופה קודמת: ${formatValue(gaugeTargetValue)} 
+        מתחילת השנה לעומת תקופה מקבילה: ${formatValue(gaugeValue)} <br>
+        תקופה מקבילה: ${formatValue(gaugeTargetValue)} 
     </span>
   </div>
   <div style="display: flex; justify-content: flex-end; align-items: center; line-height:1.6em; gap:6px; white-space: nowrap;">
     <span style="color: #6ba1f8; font-weight: bold; font-size:2.4em;margin-top:-6px;">●</span>
     <span>
-        החודש אל מול השנה: ${formatValue(workingDaysInfo.currentWorkingDayIndex)} אל מול ${formatValue(workingDaysInfo.totalWorkingDays)}         
+        החודש לעומת השנה: ${formatValue(workingDaysInfo.currentWorkingDayIndex)} לעומת ${formatValue(workingDaysInfo.totalWorkingDays)}         
     </span>
   </div>
 `;
