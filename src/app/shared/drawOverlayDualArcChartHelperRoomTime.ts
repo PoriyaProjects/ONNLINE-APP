@@ -374,19 +374,23 @@ export function drawOverlayDualArcChartHelperRoomTime({
   legend.style.color = '#343a40';
 
   legend.innerHTML = `
-    <div style="white-space: nowrap; text-align:right; float:right; line-height:1.6em;">
-        <span style="color: ${markerStatusColor}; font-weight: bold;font-size:2.4em; vertical-align: middle; float:right;">●</span>
-        <span style="float:right;padding-right:6px;">
-            מתחילת השנה אל מול תקופה מקבילה: ${formatValue(gaugeValue)} <br>
-            תקופה קודמת: ${formatValue(gaugeTargetValue)} 
-        </span>
-    </div>
-    <div style="white-space: nowrap; text-align:right; float:right; line-height:1.6em;">
-        <span style="color: #6ba1f8; font-weight: bold; font-size:2.4em;vertical-align: middle;">●</span>
-        החודש אל מול השנה: ${formatValue(workingDaysInfo.currentWorkingDayIndex)} אל מול ${formatValue(workingDaysInfo.totalWorkingDays)} 
-        (${Math.round((workingDaysInfo.currentWorkingDayIndex / workingDaysInfo.totalWorkingDays) * 100)}%)
-    </div>
+    <div style="display: flex; justify-content: flex-end; align-items: center; line-height:1.6em; gap:6px; white-space: nowrap;">
+    <span style="color: ${markerStatusColor}; font-weight: bold; font-size:2.4em;margin-top:-28px;">●</span>
+    <span>
+        מתחילת השנה אל מול תקופה מקבילה: ${formatValue(gaugeValue)} <br>
+        תקופה קודמת: ${formatValue(gaugeTargetValue)} 
+    </span>
+</div>
+
+<div style="display: flex; justify-content: flex-end; align-items: center; line-height:1.6em; gap:6px; white-space: nowrap;">
+    <span style="color: #6ba1f8; font-weight: bold; font-size:2.4em;margin-top:-6px;">●</span>
+    <span>
+        החודש אל מול השנה: ${formatValue(workingDaysInfo.currentWorkingDayIndex)} אל מול ${formatValue(workingDaysInfo.totalWorkingDays)}         
+    </span>
+</div>
+
   `;
+  //(${Math.round((workingDaysInfo.currentWorkingDayIndex / workingDaysInfo.totalWorkingDays) * 100)}%)
   container.appendChild(legend);
 
   container.appendChild(svg);

@@ -82,27 +82,7 @@ export class RoomTimeDashboardComponent implements OnInit, AfterViewInit {
       `${environment.url}/GetRoomAggregateDaysD`
     );
 
-    this.googleChartsService.drawGroupedComparisonCharts(
-      'comparisonAggChart',
-      'comparisonAvgChart',
-      `${environment.url}/GetRoomTimeSummaryAllSeparated`
-    );
-
-    this.googleChartsService.drawGroupedComparisonChartsByType(
-      {
-        '1-Yesterday': 'comparisonAggYesterday',
-        '2-CurrentMonth': 'comparisonAggMonth',
-        '3-CurrentYear': 'comparisonAggYear',
-        '4-ParallelsPeriod': 'comparisonAggParallel'
-      },
-      {
-        '1-Yesterday': 'comparisonAvgYesterday',
-        '2-CurrentMonth': 'comparisonAvgMonth',
-        '3-CurrentYear': 'comparisonAvgYear',
-        '4-ParallelsPeriod': 'comparisonAvgParallel'
-      },
-      `${environment.url}/GetRoomTimeSummaryAllSeparated`
-    );
+   
   }
 
   /** Window resize */
@@ -158,7 +138,7 @@ export class RoomTimeDashboardComponent implements OnInit, AfterViewInit {
       '3-CurrentYear': 'chartAgg_3-CurrentYear',
       '4-ParallelsPeriod': 'chartAgg_4-ParallelsPeriod'
     };
-    this.googleChartsService.drawCombinedBarChartsByPeriod(elementIdsAvg, elementIdsAgg, url);
+   
   }
 
   loadCharts(): void {
