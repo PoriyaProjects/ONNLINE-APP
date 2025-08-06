@@ -146,7 +146,7 @@ export class RoomTimeDashboardComponent implements OnInit, AfterViewInit {
       ? {
           ids: { MorningDelay: 'chartMorningDelayAvg', EndDay: 'chartEndDayAvg', SetupTime: 'chartSetupTimeAvg' },
           url: `${environment.url}/GetRoomTimeAvgD`,
-          title: 'זמן ממוצע (HH:MM)',
+          title: 'זמן ממוצע',
           isDays: false
         }
       : {
