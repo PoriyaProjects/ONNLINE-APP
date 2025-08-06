@@ -240,7 +240,7 @@ export class GoogleChartsService {
     dataType: string,
     titlePrefix: string,
     colorFn: (department: string) => string,
-    isDays: boolean = false // NEW: controls formatting
+    isDays: boolean = false 
   ): Promise<void> {
     await this.waitUntilChartsReady();
 
@@ -275,66 +275,76 @@ export class GoogleChartsService {
         dt.addColumn('number', 'Value');
         dt.addColumn({ type: 'string', role: 'style' });
         dt.addColumn({ type: 'string', role: 'annotation' });
+        dt.addColumn({ type: 'string', role: 'tooltip' }); 
 
         let maxValue = 0;
-        // });
         rows.forEach(r => {
           const baseDepartment = r.c[2]?.v || '';
           const periodDate = r.c[3]?.v || '';
           const rawValue = Number(r.c[4]?.v ?? 0);
 
-          // Displayed label: append year for ParallelsPeriod
           let displayDepartment = baseDepartment;
           if (dataType === '4-ParallelsPeriod' && periodDate) {
             const yearSuffix = new Date(periodDate).getFullYear().toString().slice(-2);
             displayDepartment = `${baseDepartment} - ${yearSuffix}`;
           }
 
-          const color = colorFn(baseDepartment); // <--- use base name for color mapping
+          const color = colorFn(baseDepartment);
           maxValue = Math.max(maxValue, rawValue);
 
           const annotation = isDays
-            ? rawValue.toFixed(1)
+            ? rawValue.toFixed(0)
             : this.formatToHHMM(rawValue);
 
-          dt.addRow([displayDepartment, rawValue, `color: ${color}`, annotation]);
+          const tooltip = isDays
+            ? `${rawValue.toFixed(1)} ימים`
+            : this.formatToHHMM(rawValue); 
+
+          dt.addRow([displayDepartment, rawValue, `color: ${color}`, annotation, tooltip]);
         });
 
-
-
         const options = {
-          title: '', // remove default title`${titlePrefix} - ${dataSource}`,
           height: 560,
           bar: { groupWidth: '65%' },
           legend: { position: 'right' },
           annotations: { alwaysOutside: true, textStyle: { fontSize: 16 } },
+          tooltip: { isHtml: false }, 
           hAxis: { slantedText: true, slantedTextAngle: 45 },
           vAxis: isDays
-            //? { minValue: 0, format: '0.0', gridlines: { count: Math.ceil(Math.max(...rowValues.slice(1))) + 1 } }
             ? { minValue: 0, format: '0.0', gridlines: { count: Math.ceil(maxValue) + 1 } }
-            //: { minValue: 0, ticks: this.generateHMMTicks(Math.max(...rowValues.slice(1)), 1800) },
             : { minValue: 0, ticks: this.generateHMMTicks(maxValue, 1800) },
-          //colors,
-          titleTextStyle: {
-            alignment: 'start',     // Aligns text to the right
-            fontSize: 16,
-            bold: true,
-            direction: 'rtl'
-          },
-          chartArea: { left: 50, top: 40, right: 20, width: '80%', height: '70%' } // Adjusts padding
+          chartArea: { left: 50, top: 40, right: 20, width: '80%', height: '70%' }
         };
 
 
         // Set title separately
         const titleContainer = document.getElementById(`${elementId}Title`);
+        // if (titleContainer) {
+        //   const timeframe = this.translateTimeframe(dataType); 
+        //   //titleContainer.innerText = `${this.translateDataSource(dataSource)} - ${titlePrefix} (${timeframe})`;
+        //   titleContainer.innerHTML = `${this.translateDataSource(dataSource)} - ${titlePrefix} <br><span style="font-size:12px"> ${timeframe} ב- (HH:MM)</span>`;
+        //   titleContainer.style.textAlign = 'center';
+        //   titleContainer.style.fontSize = '16px';
+        //   titleContainer.style.fontWeight = 'bold';
+        //   titleContainer.style.marginBottom = '5px';
+        // }
+
         if (titleContainer) {
-          const timeframe = this.translateTimeframe(dataType); // << added
-          titleContainer.innerText = `${titlePrefix} - ${this.translateDataSource(dataSource)} (${timeframe})`;
+          const timeframe = this.translateTimeframe(dataType);
+          const subtitle = isDays
+            ? `${timeframe} בימים`      // For days
+            : `${timeframe} ב- (HH:MM)`;    // For time
+        
+          titleContainer.innerHTML = `
+            ${this.translateDataSource(dataSource)} - ${titlePrefix} 
+            <br><span style="font-size:12px">${subtitle}</span>
+          `;
           titleContainer.style.textAlign = 'center';
           titleContainer.style.fontSize = '16px';
           titleContainer.style.fontWeight = 'bold';
           titleContainer.style.marginBottom = '5px';
         }
+        
 
 
         // Draw chart inside the chart container (no more wiping out the title)
@@ -532,7 +542,7 @@ export class GoogleChartsService {
           // === Title ===
           const titleContainer = document.getElementById(`title_${elementId}`);
           if (titleContainer) {
-            titleContainer.innerText = `${this.translateDataSource(dataSource)} - ${this.translateTimeframe(period)} (מצטבר)`;
+            titleContainer.innerText = `${this.translateDataSource(dataSource)} - ${this.translateTimeframe(period)}`;
             titleContainer.style.fontWeight = 'bold';
             titleContainer.style.fontSize = '16px';
             titleContainer.style.textAlign = 'center';
