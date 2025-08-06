@@ -212,71 +212,116 @@ export function drawOverlayDualArcChartHelperRoomTime({
   const percentPlanned = Math.min(gaugePlanned / gaugeTargetValue, 1);
   const markerStatusColor = gaugeTargetStatus === '✅' ? '#00cc66' : '#cc0033';
 
-  /** === Semi-circle (Yesterday) === */
-  (() => {
-    const cx = 150;
-    const cy = 156;
-    const radius = 50;
-    const segments = 50;
-    const maxSemiValue = 60; // max minutes
-    const yesterdayMinutes = yesterdayValue / 60; // convert seconds → minutes
-    const percent = Math.min(yesterdayMinutes / maxSemiValue, 1);
-    const semiColor = yesterdayMinutes > maxSemiValue ? '#cc0033' : '#ffaa00';
-    const sweepAngle = Math.PI * percent;
-  
-    // Background path
-    const bgPath = [`M ${cx} ${cy}`];
-    for (let i = 0; i <= segments; i++) {
-      const angle = Math.PI + (Math.PI * i) / segments;
-      const x = cx + radius * Math.cos(angle);
-      const y = cy + radius * Math.sin(angle);
-      bgPath.push(`${i === 0 ? 'L' : ''} ${x} ${y}`);
+  /** === Semi-circle (Yesterday/Agg) === */
+(() => {
+  const cx = 150;
+  const cy = 156;
+  const radius = 50;
+  const segments = 50;
+  const maxRef = 60; // reference cap in minutes
+
+  // Detect if "yesterday" or "aggregated" based on DataType
+  const isYesterday = tooltipPeriod === '1-Yesterday';
+
+  // If aggregated: sum all values in the dataset
+  let totalSeconds = 0;
+  let totalRecords = 0;
+  if (isYesterday) {
+    totalSeconds = yesterdayValue; // single value
+    totalRecords = 1;
+  } else {
+    // Sum values across rows (aggregated mode)
+    const allRows = sourceTable?.querySelectorAll("tbody tr");
+    if (allRows) {
+      allRows.forEach((row: any) => {
+        const valueCell = row.querySelector("td:last-child");
+        if (valueCell) {
+          const val = parseFloat(valueCell.textContent.replace(/[^\d.]/g, '')) || 0;
+          totalSeconds += val;
+          totalRecords++;
+        }
+      });
     }
-    bgPath.push('Z');
+  }
+
+  const totalMinutes = totalSeconds / 60;
+  const percent = Math.min(totalMinutes / maxRef, 1);
+  const semiColor = totalMinutes > maxRef ? '#cc0033' : '#e57373';
+
+  const tooltipText = isYesterday
+    ? `<b>אובדן אתמול:</b> ${formatValue(totalSeconds)}`
+    : `<b>סה״כ אובדן מצטבר:</b> ${formatValue(totalSeconds)}<br><b>מספר רשומות:</b> ${totalRecords}`;
+  const labelText = isYesterday ? 'אתמול' : 'סה״כ';
+
+  // === Background path ===
+  const bgPath = [`M ${cx} ${cy}`];
+  for (let i = 0; i <= segments; i++) {
+    const angle = Math.PI + (Math.PI * i) / segments;
+    const x = cx + radius * Math.cos(angle);
+    const y = cy + radius * Math.sin(angle);
+    bgPath.push(`${i === 0 ? 'L' : ''} ${x} ${y}`);
+  }
+  bgPath.push('Z');
+
+  const bg = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+  bg.setAttribute('d', bgPath.join(' '));
+  bg.setAttribute('fill', '#b9f6ca');
+  addHoverEffects(bg, tooltipText);
+  svg.appendChild(bg);
+
+  // === Foreground path ===
+  const fgPath = [`M ${cx} ${cy}`];
+  for (let i = 0; i <= segments; i++) {
+    const angle = Math.PI + (percent * Math.PI * i) / segments;
+    const x = cx + radius * Math.cos(angle);
+    const y = cy + radius * Math.sin(angle);
+    fgPath.push(`${i === 0 ? 'L' : ''} ${x} ${y}`);
+  }
+  fgPath.push('Z');
+
+  const fg = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+  fg.setAttribute('d', fgPath.join(' '));
+  fg.setAttribute('fill', semiColor);
+  addHoverEffects(fg, tooltipText);
+  svg.appendChild(fg);
+
+  // === Value label ===
+  const valueLabel = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+  valueLabel.setAttribute('x', cx.toString());
+  valueLabel.setAttribute('y', (cy - 28).toString());
+  valueLabel.setAttribute('text-anchor', 'middle');
+  valueLabel.setAttribute('fill', semiColor === '#cc0033' ? '#cc0033' : '#222');
+  valueLabel.setAttribute('font-size', '16');
+  valueLabel.setAttribute('font-family', 'Open Sans');
+  valueLabel.textContent = formatValue(totalSeconds);
+  svg.appendChild(valueLabel);
+
+  // === Bottom label ===
+  const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+  label.setAttribute('x', cx.toString());
+  label.setAttribute('y', (cy - 10).toString());
+  label.setAttribute('text-anchor', 'middle');
+  label.setAttribute('fill', '#222');
+  label.setAttribute('font-size', '12');
+  label.setAttribute('font-family', 'Open Sans');
+  label.textContent = labelText;
+  svg.appendChild(label);
+
+  // === Add "+" sign if exceeds 60min ===
+  if (totalMinutes > maxRef) {
+    const plusSign = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    plusSign.setAttribute('x', (cx + 20).toString());
+    plusSign.setAttribute('y', (cy - 32).toString());
+    plusSign.setAttribute('text-anchor', 'middle');
+    plusSign.setAttribute('fill', '#cc0033');
+    plusSign.setAttribute('font-size', '16');
+    plusSign.setAttribute('font-family', 'Open Sans');
+    plusSign.textContent = '+';
+    svg.appendChild(plusSign);
+  }
+})();
+
   
-    const bg = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    bg.setAttribute('d', bgPath.join(' '));
-    bg.setAttribute('fill', '#b9f6ca');
-    addHoverEffects(bg, `<b>אתמול:</b> ${formatValue(yesterdayValue)} מתוך 60 דקות`);
-    svg.appendChild(bg);
-  
-    // Foreground path
-    const fgPath = [`M ${cx} ${cy}`];
-    for (let i = 0; i <= segments; i++) {
-      const angle = Math.PI + (sweepAngle * i) / segments;
-      const x = cx + radius * Math.cos(angle);
-      const y = cy + radius * Math.sin(angle);
-      fgPath.push(`${i === 0 ? 'L' : ''} ${x} ${y}`);
-    }
-    fgPath.push('Z');
-  
-    const fg = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    fg.setAttribute('d', fgPath.join(' '));
-    fg.setAttribute('fill', semiColor);
-    addHoverEffects(fg, `<b>אתמול:</b> ${formatValue(yesterdayValue)} מתוך 60 דקות`);
-    svg.appendChild(fg);
-  
-    // Labels
-    const valueLabel = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-    valueLabel.setAttribute('x', cx.toString());
-    valueLabel.setAttribute('y', (cy - 28).toString());
-    valueLabel.setAttribute('text-anchor', 'middle');
-    valueLabel.setAttribute('fill', '#222');
-    valueLabel.setAttribute('font-size', '16');
-    valueLabel.setAttribute('font-family', 'Open Sans');
-    valueLabel.textContent = formatValue(yesterdayValue);
-    svg.appendChild(valueLabel);
-  
-    const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-    label.setAttribute('x', cx.toString());
-    label.setAttribute('y', (cy - 10).toString());
-    label.setAttribute('text-anchor', 'middle');
-    label.setAttribute('fill', '#222');
-    label.setAttribute('font-size', '12');
-    label.setAttribute('font-family', 'Open Sans');
-    label.textContent = 'אתמול';
-    svg.appendChild(label);
-  })();
   
   
 
@@ -284,13 +329,13 @@ export function drawOverlayDualArcChartHelperRoomTime({
   const [bgInner, fgInner] = createArc(65, 20, arcColor, percentWorked);
   svg.appendChild(bgInner);
   svg.appendChild(fgInner);
-  addHoverEffects(fgInner, `<b>חודש נוכחי:</b> ${formatValue(workingDaysInfo.currentWorkingDayIndex)} מתוך ${formatValue(workingDaysInfo.totalWorkingDays)}`);
+  addHoverEffects(fgInner, `<b>חודש נוכחי:</b> ${formatValue(workingDaysInfo.currentWorkingDayIndex)} לעומת ${formatValue(workingDaysInfo.totalWorkingDays)}`);
   addCurvedText(svg, 65 - 4, 'חודש נוכחי', 'innerArcLabel', '50%');
 
   const [bgOuter, fgOuter] = createArc(90, 24, arcColor, percentPlanned);
   svg.appendChild(bgOuter);
   svg.appendChild(fgOuter);
-  addHoverEffects(fgOuter, `<b>שנה נוכחית:</b> ${formatValue(gaugePlanned)} מתוך ${formatValue(gaugeTargetValue)}`);
+  addHoverEffects(fgOuter, `<b>שנה נוכחית:</b> ${formatValue(gaugePlanned)} לעומת ${formatValue(gaugeTargetValue)}`);
   addCurvedText(svg, 90 - 6, 'שנה נוכחית', 'outerArcLabel', '50%');
 
   /** === Markers === */
@@ -340,17 +385,16 @@ export function drawOverlayDualArcChartHelperRoomTime({
   legend.style.fontSize = '14px';
   legend.style.color = '#343a40';
   legend.innerHTML = `
-    <div style="display: flex; justify-content: flex-end; align-items: center; line-height:1.6em; gap:6px; white-space: nowrap;">
-      <span style="color: ${markerStatusColor}; font-weight: bold; font-size:2.4em;margin-top:-28px;">●</span>
+    <div style="display: flex; justify-content: flex-start; align-items: center; line-height:1.6em; gap:6px; white-space: nowrap;">
+      <span style="color: ${markerStatusColor}; font-weight: bold; font-size:2.4em;margin-top:-6px;">●</span>
       <span>
-          מתחילת השנה לעומת תקופה מקבילה: ${formatValue(gaugeValue)} <br>
-          תקופה מקבילה: ${formatValue(gaugeTargetValue)} 
+          מתחילת השנה: ${formatValue(gaugeValue)} | תקופה מקבילה: ${formatValue(gaugeTargetValue)} 
       </span>
     </div>
-    <div style="display: flex; justify-content: flex-end; align-items: center; line-height:1.6em; gap:6px; white-space: nowrap;">
+    <div style="display: flex; justify-content: flex-start; align-items: center; line-height:1.6em; gap:6px; white-space: nowrap;">
       <span style="color: #6ba1f8; font-weight: bold; font-size:2.4em;margin-top:-6px;">●</span>
       <span>
-          החודש לעומת השנה: ${formatValue(workingDaysInfo.currentWorkingDayIndex)} מתוך ${formatValue(workingDaysInfo.totalWorkingDays)}         
+          החודש לעומת השנה: ${formatValue(workingDaysInfo.currentWorkingDayIndex)} לעומת ${formatValue(workingDaysInfo.totalWorkingDays)}         
       </span>
     </div>
   `;

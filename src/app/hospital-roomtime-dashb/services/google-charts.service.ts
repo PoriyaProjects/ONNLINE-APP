@@ -112,19 +112,47 @@ export class GoogleChartsService {
         return;
       }
 
-      const grouped: { [ds: string]: { [type: string]: { agg: number; avg: number } } } = {};
+      // const grouped: { [ds: string]: { [type: string]: { agg: number; avg: number } } } = {};
+      // clean.rows.forEach((r: any) => {
+      //   const ds = r.c[0]?.v || 'Unknown';
+      //   const type = r.c[1]?.v || 'Unknown';
+      //   const agg = Number(r.c[4]?.v ?? 0);
+      //   const avg = Number(r.c[5]?.v ?? 0);
+      //   if (!grouped[ds]) grouped[ds] = {};
+      //   grouped[ds][type] = { agg, avg };
+      // });
+
+      const grouped: { 
+        [ds: string]: { 
+          [type: string]: { 
+            agg: number; avg: number; 
+            aggDepts: { name: string; value: number }[];
+            avgDepts: { name: string; value: number }[];
+          } 
+        } 
+      } = {};
+      
       clean.rows.forEach((r: any) => {
         const ds = r.c[0]?.v || 'Unknown';
         const type = r.c[1]?.v || 'Unknown';
+        const depart = r.c[2]?.v || '';
         const agg = Number(r.c[4]?.v ?? 0);
         const avg = Number(r.c[5]?.v ?? 0);
         if (!grouped[ds]) grouped[ds] = {};
-        grouped[ds][type] = { agg, avg };
+        if (!grouped[ds][type]) grouped[ds][type] = { agg: 0, avg: 0, aggDepts: [], avgDepts: [] };
+      
+        grouped[ds][type].agg += agg;
+        grouped[ds][type].avg += avg;
+        if (agg > 0) grouped[ds][type].aggDepts.push({ name: depart, value: agg });
+        if (avg > 0) grouped[ds][type].avgDepts.push({ name: depart, value: avg });
       });
+      
+      const getLeadingDept = (depts: { name: string; value: number }[] = []) =>
+      depts.reduce((max, d) => (d.value > max.value ? d : max), { name: '', value: 0 });
 
-      console.group("Grouped Raw Data");
-      console.log(grouped);
-      console.groupEnd();
+      //console.group("Grouped Raw Data");
+      //console.log(grouped);
+      //console.groupEnd();
 
       // Hebrew mapping for DataSource & DataType
       const dataSourceHebrew: { [key: string]: string } = {
@@ -142,7 +170,7 @@ export class GoogleChartsService {
       // Fixed colors per DataSource
       const dataSourceColors: { [key: string]: string } = {
         MorningDelay: '#6ba1f8',
-        EndDay: '#f86b6b',
+        EndDay: '#FFB74D',
         SetupTime: '#a17ef8'
       };
 
