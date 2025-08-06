@@ -703,6 +703,61 @@ export class GoogleChartsService {
     }
   }
 
+  // public async drawSummarizedMultiPeriodChart(
+  //   containerId: string,
+  //   avgUrl: string,
+  //   aggUrl: string,
+  //   color: string
+  // ): Promise<void> {
+  //   await this.waitUntilChartsReady();
+  
+  //   const periods = ['1-Yesterday', '2-CurrentMonth', '3-CurrentYear', '4-ParallelsPeriod'];
+  
+  //   const avgData: { [p: string]: number } = {};
+  //   const aggData: { [p: string]: number } = {};
+  
+  //   // --- Fetch and sum AVERAGE values ---
+  //   for (const p of periods) {
+  //     const raw = await this.fetchWithCache(this.buildUrl(avgUrl, { dataType: p }));
+  //     const clean = sanitizeSoapResponse(raw);
+  //     let total = 0;
+  //     clean.rows.forEach((r: any) => { total += Number(r.c[4]?.v ?? 0); });
+  //     avgData[p] = total;
+  //   }
+  
+  //   // --- Fetch and sum AGGREGATE values ---
+  //   for (const p of periods.slice(1)) { // exclude Yesterday for aggregated
+  //     const raw = await this.fetchWithCache(this.buildUrl(aggUrl, { dataType: p }));
+  //     const clean = sanitizeSoapResponse(raw);
+  //     let total = 0;
+  //     clean.rows.forEach((r: any) => { total += Number(r.c[4]?.v ?? 0); });
+  //     aggData[p] = total;
+  //   }
+  
+  //   // --- Draw chart ---
+  //   drawHorizontalMultiPeriodChartHelperRoomTime({
+  //     containerId,
+  //     title: 'אובדן חדרי ניתוח – סיכום תקופות',
+  //     data: {
+  //       yesterdayAvg: avgData['1-Yesterday'],
+  //       monthAvg: avgData['2-CurrentMonth'],
+  //       yearAvg: avgData['3-CurrentYear'],
+  //       parallelAvg: avgData['4-ParallelsPeriod'],
+  //       monthAgg: aggData['2-CurrentMonth'],
+  //       yearAgg: aggData['3-CurrentYear'],
+  //       parallelAgg: aggData['4-ParallelsPeriod'],
+  //     },
+  //     //colors: ['#f86b6b', '#6ba1f8', '#5ed175', '#fcd74e']
+  //  colors:['#6ba1f8', // blue
+  //     '#a974f7', // purple
+  //     '#ff8c42', // orange
+  //     '#00cfc1', // teal
+  //     '#ff69b4', // pink
+  //     '#8b4513', // brown
+  // ]
+  //   });
+  // }
+  
   public async drawSummarizedMultiPeriodChart(
     containerId: string,
     avgUrl: string,
@@ -716,13 +771,21 @@ export class GoogleChartsService {
     const avgData: { [p: string]: number } = {};
     const aggData: { [p: string]: number } = {};
   
-    // --- Fetch and sum AVERAGE values ---
+    // --- Fetch and calculate AVERAGE values ---
     for (const p of periods) {
       const raw = await this.fetchWithCache(this.buildUrl(avgUrl, { dataType: p }));
       const clean = sanitizeSoapResponse(raw);
+  
       let total = 0;
-      clean.rows.forEach((r: any) => { total += Number(r.c[4]?.v ?? 0); });
-      avgData[p] = total;
+      let count = 0;
+      clean.rows.forEach((r: any) => { 
+        const val = Number(r.c[4]?.v ?? 0);
+        if (!isNaN(val)) {
+          total += val;
+          count++;
+        }
+      });
+      avgData[p] = count > 0 ? total / count : 0; // <-- Average instead of sum
     }
   
     // --- Fetch and sum AGGREGATE values ---
@@ -733,6 +796,12 @@ export class GoogleChartsService {
       clean.rows.forEach((r: any) => { total += Number(r.c[4]?.v ?? 0); });
       aggData[p] = total;
     }
+  
+    // --- Debug (optional) ---
+    console.group("DEBUG: Avg & Agg Data");
+    console.log("Average data:", avgData);
+    console.log("Aggregate data:", aggData);
+    console.groupEnd();
   
     // --- Draw chart ---
     drawHorizontalMultiPeriodChartHelperRoomTime({
@@ -747,17 +816,16 @@ export class GoogleChartsService {
         yearAgg: aggData['3-CurrentYear'],
         parallelAgg: aggData['4-ParallelsPeriod'],
       },
-      //colors: ['#f86b6b', '#6ba1f8', '#5ed175', '#fcd74e']
-   colors:['#6ba1f8', // blue
-      '#a974f7', // purple
-      '#ff8c42', // orange
-      '#00cfc1', // teal
-      '#ff69b4', // pink
-      '#8b4513', // brown
-  ]
+      colors: [
+        '#6ba1f8', // blue
+        '#a974f7', // purple
+        '#ff8c42', // orange
+        '#00cfc1', // teal
+        '#ff69b4', // pink
+        '#8b4513', // brown
+      ]
     });
   }
-  
   
   
 
