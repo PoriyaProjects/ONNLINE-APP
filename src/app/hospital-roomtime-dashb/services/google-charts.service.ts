@@ -75,217 +75,6 @@ export class GoogleChartsService {
     return ticks;
   }
 
-
-
-  /**
-   * Draw multiple charts grouped by DataSource
-   */
-  public async drawGroupedRoomTimeCharts(
-    elementIds: { [key: string]: string },
-    url: string,
-    dparam: string,
-    titlePrefix: string,
-    valueIndex: number,
-    filterDataType?: string
-  ): Promise<void> {
-    await this.waitUntilChartsReady();
-    const raw = await this.fetchWithCache(this.buildUrl(url, { dparam }));
-    const clean = sanitizeSoapResponse(raw);
-  
-    if (!clean || !clean.rows?.length) return;
-  
-    const filteredRows = filterDataType
-      ? clean.rows.filter((r: any) => r.c[1]?.v === filterDataType)
-      : clean.rows;
-  }
-
-  public async drawDepartmentCharts(
-    elementIds: { [key: string]: string },
-    url: string,
-    dataType: string,
-    titlePrefix: string
-  ): Promise<void> {
-    await this.waitUntilChartsReady();
-  
-    try {
-      const raw = await this.fetchWithCache(this.buildUrl(url, { dataType }));
-      const clean = sanitizeSoapResponse(raw);
-  
-      if (!clean || !clean.rows?.length) {
-        Object.values(elementIds).forEach(id => {
-          const container = document.getElementById(id);
-          if (container) container.innerHTML = 'אין נתונים להצגה';
-        });
-        return;
-      }
-  
-      // Group by DataSource
-      const grouped: { [key: string]: any[] } = {};
-      clean.rows.forEach((r: any) => {
-        const ds = r.c[0]?.v || 'Unknown';
-        if (!grouped[ds]) grouped[ds] = [];
-        grouped[ds].push(r);
-      });
-  
-      for (const [dataSource, rows] of Object.entries(grouped)) {
-        const elementId = elementIds[dataSource];
-        if (!elementId) continue;
-        const container = document.getElementById(elementId);
-        if (!container) continue;
-  
-        const dt = new google.visualization.DataTable();
-        dt.addColumn('string', 'Department');
-        dt.addColumn('number', 'Value');
-        dt.addColumn({ type: 'string', role: 'style' });
-        dt.addColumn({ type: 'string', role: 'annotation' });
-  
-        let maxValue = 0;
-        rows.forEach(r => {
-          const department = r.c[2]?.v || '';
-          const value = r.c[3]?.v ?? 0;
-          maxValue = Math.max(maxValue, value);
-          dt.addRow([department, Number(value), 'color: #6ba1f8', this.formatToHHMM(Number(value))]);
-        });
-  
-        const options = {
-          title: `${titlePrefix} - ${dataSource}`,
-          height: 400,
-          bar: { groupWidth: '65%' },
-          annotations: { alwaysOutside: true, textStyle: { fontSize: 13 } },
-          hAxis: { slantedText: true, slantedTextAngle: 45 },
-          vAxis: { minValue: 0, ticks: this.generateHMMTicks(maxValue, 1800) },
-          legend: { position: 'none' }
-        };
-  
-        new google.visualization.ColumnChart(container).draw(dt, options);
-      }
-    } catch (err) {
-      console.error('Error drawing charts:', err);
-    }
-  }
-
-  
-
-  public async drawDepartmentChartsWithColors(
-    elementIds: { [key: string]: string },
-    url: string,
-    dataType: string,
-    titlePrefix: string,
-    colorFn: (department: string) => string,
-    isDays: boolean = false // NEW: controls formatting
-  ): Promise<void> {
-    await this.waitUntilChartsReady();
-  
-    try {
-      const raw = await this.fetchWithCache(this.buildUrl(url, { dataType }));
-      const clean = sanitizeSoapResponse(raw);
-  
-      if (!clean || !clean.rows?.length) {
-        Object.values(elementIds).forEach(id => {
-          const container = document.getElementById(id);
-          if (container) container.innerHTML = 'אין נתונים להצגה';
-        });
-        return;
-      }
-  
-      // Group by DataSource
-      const grouped: { [key: string]: any[] } = {};
-      clean.rows.forEach((r: any) => {
-        const ds = r.c[0]?.v || 'Unknown';
-        if (!grouped[ds]) grouped[ds] = [];
-        grouped[ds].push(r);
-      });
-  
-      for (const [dataSource, rows] of Object.entries(grouped)) {
-        const elementId = elementIds[dataSource];
-        if (!elementId) continue;
-        const container = document.getElementById(elementId);
-        if (!container) continue;
-  
-        const dt = new google.visualization.DataTable();
-        dt.addColumn('string', 'Department');
-        dt.addColumn('number', 'Value');
-        dt.addColumn({ type: 'string', role: 'style' });
-        dt.addColumn({ type: 'string', role: 'annotation' });
-  
-        let maxValue = 0;       
-        // });
-        rows.forEach(r => {
-          const baseDepartment = r.c[2]?.v || '';
-          const periodDate = r.c[3]?.v || '';
-          const rawValue = Number(r.c[4]?.v ?? 0);
-        
-          // Displayed label: append year for ParallelsPeriod
-          let displayDepartment = baseDepartment;
-          if (dataType === '4-ParallelsPeriod' && periodDate) {
-            const yearSuffix = new Date(periodDate).getFullYear().toString().slice(-2);
-            displayDepartment = `${baseDepartment} - ${yearSuffix}`;
-          }
-        
-          const color = colorFn(baseDepartment); // <--- use base name for color mapping
-          maxValue = Math.max(maxValue, rawValue);
-        
-          const annotation = isDays 
-            ? rawValue.toFixed(1)
-            : this.formatToHHMM(rawValue);
-        
-          dt.addRow([displayDepartment, rawValue, `color: ${color}`, annotation]);
-        });
-        
-        
-        
-            const options = {
-            title: '', // remove default title`${titlePrefix} - ${dataSource}`,
-            height: 560,
-            bar: { groupWidth: '65%' },
-            legend: { position: 'right' },
-            annotations: { alwaysOutside: true, textStyle: { fontSize: 16 } },
-            hAxis: { slantedText: true, slantedTextAngle: 45 },
-            vAxis: isDays 
-              //? { minValue: 0, format: '0.0', gridlines: { count: Math.ceil(Math.max(...rowValues.slice(1))) + 1 } }
-              ? { minValue: 0, format: '0.0', gridlines: { count: Math.ceil(maxValue) + 1 } }
-              //: { minValue: 0, ticks: this.generateHMMTicks(Math.max(...rowValues.slice(1)), 1800) },
-              : { minValue: 0, ticks: this.generateHMMTicks(maxValue, 1800) },
-            //colors,
-            titleTextStyle: {
-              alignment: 'start',     // Aligns text to the right
-              fontSize: 16,
-              bold: true,
-              direction: 'rtl'
-            },
-            chartArea: { left: 50, top: 40, right: 20, width: '80%', height: '70%' } // Adjusts padding
-          };
-
-
-   // Set title separately
-const titleContainer = document.getElementById(`${elementId}Title`);
-if (titleContainer) {
-  const timeframe = this.translateTimeframe(dataType); // << added
-  titleContainer.innerText = `${titlePrefix} - ${this.translateDataSource(dataSource)} (${timeframe})`;
-  titleContainer.style.textAlign = 'center';
-  titleContainer.style.fontSize = '16px';
-  titleContainer.style.fontWeight = 'bold';
-  titleContainer.style.marginBottom = '5px';
-}
-
-
-    // Draw chart inside the chart container (no more wiping out the title)
-    const chartContainer = document.getElementById(elementId);
-    if (chartContainer) {
-      new google.visualization.ColumnChart(chartContainer).draw(dt, options);
-    }
-
-
-
-        new google.visualization.ColumnChart(container).draw(dt, options);
-      }
-    } catch (err) {
-      console.error('Error drawing charts:', err);
-    }
-  }
-  
-
-
   private translateDataSource(key: string): string {
     const map: { [key: string]: string } = {
       MorningDelay: 'איחור בוקר',
@@ -304,115 +93,17 @@ if (titleContainer) {
     };
     return map[value] || value;
   }
-  
 
-  public async drawCombinedBarChartsByPeriod(
-    elementIdsAvg: { [period: string]: string },
-    elementIdsAgg: { [period: string]: string },
-    url: string
-  ): Promise<void> {
-    await this.waitUntilChartsReady();
-  
-    try {
-      const raw = await this.fetchWithCache(url);
-      const clean = sanitizeSoapResponse(raw);
-  
-      if (!clean || !clean.rows?.length) {
-        Object.values({ ...elementIdsAvg, ...elementIdsAgg }).forEach(id => {
-          const container = document.getElementById(id);
-          if (container) container.innerHTML = 'אין נתונים להצגה';
-        });
-        return;
-      }
-  
-      // --- Fixed order & colors ---
-      const order = ['MorningDelay', 'EndDay', 'SetupTime'];
-      const colorMap: { [key: string]: string } = {
-        MorningDelay: '#f86b6b',
-        EndDay: '#fcd74e',
-        SetupTime: '#6ba1f8'
-      };
-  
-      // --- Grouping ---
-      const groupedAvg: { [period: string]: { [ds: string]: number } } = {};
-      const groupedAgg: { [period: string]: { [ds: string]: number } } = {};
-  
-      clean.rows.forEach((r: any) => {
-        const ds = r.c[0]?.v || 'Unknown';
-        const period = r.c[1]?.v || 'Unknown';
-        const agg = Number(r.c[4]?.v ?? 0);
-        const avg = Number(r.c[5]?.v ?? 0);
-  
-        if (!groupedAvg[period]) groupedAvg[period] = {};
-        if (!groupedAgg[period]) groupedAgg[period] = {};
-  
-        groupedAvg[period][ds] = (groupedAvg[period][ds] || 0) + avg;
-        groupedAgg[period][ds] = (groupedAgg[period][ds] || 0) + agg;
-      });
-  
-      // --- Helper: build chart ---
-      const buildChart = (
-        containerId: string,
-        values: { [ds: string]: number },
-        isAvg: boolean,
-        title: string,
-        maxFormatter: (val: number) => any
-      ) => {
-        const dt = new google.visualization.DataTable();
-        dt.addColumn('string', 'DataSource');
-        dt.addColumn('number', isAvg ? 'AvgTime' : 'AggregateDays');
-        dt.addColumn({ type: 'string', role: 'annotation' });
-        dt.addColumn({ type: 'string', role: 'style' });
-  
-        let maxValue = 0;
-        order.forEach(ds => {
-          const val = values[ds] || 0;
-          maxValue = Math.max(maxValue, val);
-          const label = this.translateDataSource(ds);
-          const annotation = isAvg ? this.formatToHHMM(val) : val.toFixed(1);
-          dt.addRow([label, val, annotation, `color: ${colorMap[ds] || '#6ba1f8'}`]);
-        });
-  
-        const options = {
-          title,
-          height: 400,
-          legend: { position: 'none' },
-          bar: { groupWidth: '65%' },
-          annotations: { alwaysOutside: true, textStyle: { fontSize: 13, bold: true } },
-          vAxis: isAvg
-            ? { minValue: 0, ticks: this.generateHMMTicks(maxValue, 1800) }
-            : { minValue: 0, format: '0.0' },
-          hAxis: { slantedText: true, slantedTextAngle: 45 }
-        };
-  
-        const container = document.getElementById(containerId);
-        if (container) new google.visualization.ColumnChart(container).draw(dt, options);
-      };
-  
-      // --- Draw AvgTime charts ---
-      for (const [period, dsValues] of Object.entries(groupedAvg)) {
-        const title = `${this.translateTimeframe(period)} - זמן ממוצע (HH:MM)`;
-        buildChart(elementIdsAvg[period], dsValues, true, title, this.formatToHHMM);
-      }
-  
-      // --- Draw AggregateDays charts ---
-      for (const [period, dsValues] of Object.entries(groupedAgg)) {
-        const title = `${this.translateTimeframe(period)} - ימי אובדן`;
-        buildChart(elementIdsAgg[period], dsValues, false, title, val => val.toFixed(1));
-      }
-  
-    } catch (err) {
-      console.error('Error drawing charts:', err);
-    }
-  }
-  
-  
-  
+
+
+  /**
+   * Arc Charts
+   */
   public async drawRoomTimeDualArcCharts(containerIds: { [key: string]: string }): Promise<void> {
     try {
       const raw = await this.fetchWithCache(`${environment.url}/GetRoomTimeSummaryAllSeparated`);
       const clean = sanitizeSoapResponse(raw);
-  
+
       if (!clean || !clean.rows?.length) {
         Object.values(containerIds).forEach(id => {
           const el = document.getElementById(id);
@@ -420,7 +111,7 @@ if (titleContainer) {
         });
         return;
       }
-  
+
       const grouped: { [ds: string]: { [type: string]: { agg: number; avg: number } } } = {};
       clean.rows.forEach((r: any) => {
         const ds = r.c[0]?.v || 'Unknown';
@@ -430,11 +121,11 @@ if (titleContainer) {
         if (!grouped[ds]) grouped[ds] = {};
         grouped[ds][type] = { agg, avg };
       });
-  
+
       console.group("Grouped Raw Data");
       console.log(grouped);
       console.groupEnd();
-  
+
       // Hebrew mapping for DataSource & DataType
       const dataSourceHebrew: { [key: string]: string } = {
         MorningDelay: 'איחור בוקר',
@@ -447,38 +138,38 @@ if (titleContainer) {
         '3-CurrentYear': 'השנה',
         '4-ParallelsPeriod': 'השוואתי'
       };
-  
+
       // Fixed colors per DataSource
       const dataSourceColors: { [key: string]: string } = {
         MorningDelay: '#6ba1f8',
         EndDay: '#f86b6b',
         SetupTime: '#a17ef8'
       };
-  
+
       const dataSources = ['MorningDelay', 'EndDay', 'SetupTime'];
-  
+
       dataSources.forEach(ds => {
         const dsData = grouped[ds] || {};
         const yesterday = dsData['1-Yesterday'] || { agg: 0, avg: 0 };
         const currentMonth = dsData['2-CurrentMonth'] || { agg: 0, avg: 0 };
         const currentYear = dsData['3-CurrentYear'] || { agg: 0, avg: 0 };
         const parallels = dsData['4-ParallelsPeriod'] || { agg: 0, avg: 0 };
-  
+
         const yearsInPeriod = 1; // adjust if Parallels covers multiple years
-  
+
         // Middle arc (CurrentMonth vs CurrentYear/12) – currently just using full value
         const plannedMonthAgg = currentYear.agg;
         const plannedMonthAvg = currentYear.avg;
-  
+
         // Outer arc (CurrentYear vs Parallels/year count)
         const parallelsPerYearAgg = parallels.agg / yearsInPeriod;
         const parallelsPerYearAvg = parallels.avg / yearsInPeriod;
-  
+
         const dsTitle = dataSourceHebrew[ds] || ds;
         const yearTitle = dataTypeHebrew['3-CurrentYear'] || 'השנה';
         const arcColor = dataSourceColors[ds] || '#6ba1f8';
         const prefix = `table${ds}_`; // e.g., "tableMorningDelay_"
-  
+
         // === Debugging values for each chart
         console.group(`Debug for ${dsTitle}`);
         console.log("CurrentMonth:", currentMonth);
@@ -489,21 +180,21 @@ if (titleContainer) {
         console.log("ParallelsPerYearAgg:", parallelsPerYearAgg);
         console.log("ParallelsPerYearAvg:", parallelsPerYearAvg);
         console.log("tooltipTableIdPrefix:", prefix);
-        
+
         console.groupEnd();
-  
+
         // === AggregateDays Chart ===
         console.log(`Drawing AGG chart for ${dsTitle}`, {
           gaugePlanned: plannedMonthAgg,
           gaugeTargetValue: parallelsPerYearAgg,
           gaugeValue: currentYear.agg, prefix
-          
+
         });
-  
+
         drawOverlayDualArcChartHelperRoomTime({
           containerId: containerIds[`${ds}_agg`],
           yesterdayValue: yesterday.agg, // Semi-circle value
-          workingDaysInfo: { currentWorkingDayIndex: currentMonth.agg, totalWorkingDays: currentYear.agg || 1 }, 
+          workingDaysInfo: { currentWorkingDayIndex: currentMonth.agg, totalWorkingDays: currentYear.agg || 1 },
           gaugePlanned: plannedMonthAgg,
           gaugeTargetValue: parallelsPerYearAgg,
           gaugeValue: currentYear.agg,
@@ -515,11 +206,11 @@ if (titleContainer) {
           tooltipTableIdPrefix: prefix,
           isTime: false
         });
-        
+
         drawOverlayDualArcChartHelperRoomTime({
           containerId: containerIds[`${ds}_avg`],
           yesterdayValue: yesterday.avg, // Semi-circle value
-          workingDaysInfo: { currentWorkingDayIndex: currentMonth.avg, totalWorkingDays: currentYear.avg || 1 }, 
+          workingDaysInfo: { currentWorkingDayIndex: currentMonth.avg, totalWorkingDays: currentYear.avg || 1 },
           gaugePlanned: plannedMonthAvg,
           gaugeTargetValue: parallelsPerYearAvg,
           gaugeValue: currentYear.avg,
@@ -533,368 +224,147 @@ if (titleContainer) {
           tooltipTableIdPrefix: prefix,
           isTime: true
         });
-        
-        
+
+
       });
-  
+
     } catch (err) {
       console.error('Error drawing room time dual arc charts:', err);
     }
   }
- 
-  public async drawGroupedComparisonChartsByType(
-    elementIdsAgg: { [period: string]: string },
-    elementIdsAvg: { [period: string]: string },
-    url: string
-  ): Promise<void> {
-    await this.waitUntilChartsReady();
-  
-    try {
-      const raw = await this.fetchWithCache(url);
-      const clean = sanitizeSoapResponse(raw);
-  
-      if (!clean || !clean.rows?.length) {
-        Object.values({ ...elementIdsAgg, ...elementIdsAvg }).forEach(id => {
-          const container = document.getElementById(id);
-          if (container) container.innerHTML = 'אין נתונים להצגה';
-        });
-        return;
-      }
-  
-      // --- Fixed order & colors ---
-      const dataSources = ['MorningDelay', 'EndDay', 'SetupTime'];
-      const periods = ['1-Yesterday', '2-CurrentMonth', '3-CurrentYear', '4-ParallelsPeriod'];
-  
-      const dsHebrew: { [k: string]: string } = {
-        MorningDelay: 'איחור בוקר',
-        EndDay: 'סוף יום',
-        SetupTime: 'זמן Setup'
-      };
-      const periodHebrew: { [k: string]: string } = {
-        '1-Yesterday': 'אתמול',
-        '2-CurrentMonth': 'החודש',
-        '3-CurrentYear': 'השנה',
-        '4-ParallelsPeriod': 'השוואתי'
-      };
-  
-      const colorMap: { [key: string]: string } = {
-        MorningDelay: '#6ba1f8',
-        EndDay: '#f86b6b',
-        SetupTime: '#a17ef8'
-      };
-  
-      // --- Group by DataType -> DataSource ---
-      const grouped: { [period: string]: { [ds: string]: { agg: number; avg: number } } } = {};
-      clean.rows.forEach((r: any) => {
-        const ds = r.c[0]?.v || 'Unknown';
-        const period = r.c[1]?.v || 'Unknown';
-        const agg = Number(r.c[4]?.v ?? 0);
-        const avg = Number(r.c[5]?.v ?? 0);
-        if (!grouped[period]) grouped[period] = {};
-        grouped[period][ds] = { agg, avg };
-      });
-  
-      // --- Build DataTable with tooltips ---
-      const buildDataTable = (isAvg: boolean) => {
-        const dt = new google.visualization.DataTable();
-        dt.addColumn('string', 'תקופה');
-        dataSources.forEach(ds => {
-          dt.addColumn('number', dsHebrew[ds]);                // value
-          dt.addColumn({ type: 'string', role: 'annotation' }); // annotation (on bar)
-          dt.addColumn({ type: 'string', role: 'style' });      // bar color
-          dt.addColumn({ type: 'string', role: 'tooltip' });    // tooltip (formatted only)
-        });
-  
-        const rows: any[] = [];
-        let maxValue = 0;
-  
-        periods.forEach(period => {
-          const row: any[] = [periodHebrew[period]];
-          dataSources.forEach(ds => {
-            const val = grouped[period]?.[ds]?.[isAvg ? 'avg' : 'agg'] || 0;
-            maxValue = Math.max(maxValue, val);
-            const formatted = isAvg ? this.formatToHHMM(val) : val.toFixed(1);
-            row.push(val, formatted, `color: ${colorMap[ds]}`, formatted); // tooltip = formatted value
-          });
-          rows.push(row);
-        });
-  
-        dt.addRows(rows);
-        return { dt, maxValue };
-      };
-  
-      // --- Draw chart ---
-      const drawChart = (containerId: string, title: string, dt: any, maxValue: number, isAvg: boolean) => {
-        const options = {
-          title: title,
-          height: 450,
-          legend: { position: 'top', textStyle: { fontSize: 14 } },
-          bar: { groupWidth: '55%' },
-          isStacked: false, // side-by-side grouping
-          annotations: { alwaysOutside: true, textStyle: { fontSize: 12, bold: true } },
-          vAxis: isAvg
-            ? { minValue: 0, ticks: this.generateHMMTicks(maxValue, 1800) }
-            : { minValue: 0, format: '0.0' },
-          chartArea: { left: 60, top: 60, right: 20, width: '80%', height: '70%' },
-          tooltip: { isHtml: true }
-        };
-  
-        const container = document.getElementById(containerId);
-        if (container) new google.visualization.ColumnChart(container).draw(dt, options);
-      };
-  
-      // Build & draw Aggregate chart
-      const { dt: dtAgg, maxValue: maxAgg } = buildDataTable(false);
-      drawChart('comparisonAggGrouped', 'השוואת ימי אובדן לפי תקופה', dtAgg, maxAgg, false);
-  
-      // Build & draw Average chart
-      const { dt: dtAvg, maxValue: maxAvg } = buildDataTable(true);
-      drawChart('comparisonAvgGrouped', 'השוואת זמן אובדן (HH:MM) לפי תקופה', dtAvg, maxAvg, true);
-  
-    } catch (err) {
-      console.error('Error drawing grouped comparison charts by type:', err);
-    }
-  }
-  
-  public async drawGroupedComparisonCharts(
-    aggElementId: string,
-    avgElementId: string,
-    url: string
-  ): Promise<void> {
-    await this.waitUntilChartsReady();
-  
-    try {
-      const raw = await this.fetchWithCache(url);
-      const clean = sanitizeSoapResponse(raw);
-  
-      if (!clean || !clean.rows?.length) {
-        [aggElementId, avgElementId].forEach(id => {
-          const container = document.getElementById(id);
-          if (container) container.innerHTML = 'אין נתונים להצגה';
-        });
-        return;
-      }
-  
-      // === Explicit mappings ===
-      const dataSourceOrder = ['MorningDelay', 'EndDay', 'SetupTime'];
-      const dataTypeOrder = ['1-Yesterday', '2-CurrentMonth', '3-CurrentYear', '4-ParallelsPeriod'];
-  
-      const dataSourceHebrew: { [key: string]: string } = {
-        MorningDelay: 'איחור בוקר',
-        EndDay: 'סוף יום',
-        SetupTime: 'זמן Setup'
-      };
-  
-      const dataTypeHebrew: { [key: string]: string } = {
-        '1-Yesterday': 'אתמול',
-        '2-CurrentMonth': 'החודש',
-        '3-CurrentYear': 'השנה',
-        '4-ParallelsPeriod': 'השוואתי'
-      };
-  
-      const colorMap: { [key: string]: string } = {
-        '1-Yesterday': '#6ba1f8',
-        '2-CurrentMonth': '#fcd74e',
-        '3-CurrentYear': '#00cc66',
-        '4-ParallelsPeriod': '#f86b6b'
-      };
-  
-      // === Group data ===
-      const grouped: { [ds: string]: { [type: string]: { agg: number; avg: number } } } = {};
-      clean.rows.forEach((r: any) => {
-        const ds = r.c[0]?.v || 'Unknown';
-        const type = r.c[1]?.v || 'Unknown';
-        const agg = Number(r.c[4]?.v ?? 0);
-        const avg = Number(r.c[5]?.v ?? 0);
-  
-        if (!grouped[ds]) grouped[ds] = {};
-        grouped[ds][type] = { agg, avg };
-      });
-  
-      // === Build DataTables ===
-      const buildDataTable = (isAvg: boolean) => {
-        const dt = new google.visualization.DataTable();
-        dt.addColumn('string', 'קטגוריה'); // X-axis (DataSource)
-        dataTypeOrder.forEach(type => {
-          dt.addColumn('number', dataTypeHebrew[type]);
-          dt.addColumn({ type: 'string', role: 'tooltip' });
-          dt.addColumn({ type: 'string', role: 'style' });
-        });
-  
-        let maxValue = 0;
-  
-        dataSourceOrder.forEach(ds => {
-          const row: any[] = [dataSourceHebrew[ds]];
-          dataTypeOrder.forEach(type => {
-            const val = grouped[ds]?.[type]?.[isAvg ? 'avg' : 'agg'] || 0;
-            maxValue = Math.max(maxValue, val);
-            const formatted = isAvg ? this.formatToHHMM(val) : val.toFixed(1);
-            row.push(val, formatted, `color: ${colorMap[type]}`);
-          });
-          dt.addRow(row);
-        });
-  
-        return { dt, maxValue };
-      };
-  
-      const { dt: aggDt, maxValue: maxAgg } = buildDataTable(false);
-      const { dt: avgDt, maxValue: maxAvg } = buildDataTable(true);
-  
-      // === Chart options ===
-      const buildOptions = (title: string, max: number, isAvg: boolean) => ({
-        title: title,
-        height: 450,
-        legend: { position: 'top', textStyle: { fontSize: 14 } },
-        bar: { groupWidth: '70%' },
-        annotations: { alwaysOutside: true, textStyle: { fontSize: 13, bold: true } },
-        tooltip: { trigger: 'focus', textStyle: { fontSize: 14 } },
-        vAxis: isAvg
-          ? { minValue: 0, ticks: this.generateHMMTicks(max, 1800) }
-          : { minValue: 0, format: '0.0', gridlines: { count: Math.ceil(max) + 1 } },
-        hAxis: { slantedText: true, slantedTextAngle: 0 },
-        isStacked: false,
-        titleTextStyle: { fontSize: 16, bold: true, direction: 'rtl' },
-        chartArea: { left: 80, top: 80, right: 30, width: '80%', height: '65%' }
-      });
-  
-      // === Draw charts ===
-      const aggContainer = document.getElementById(aggElementId);
-      if (aggContainer) {
-        new google.visualization.ColumnChart(aggContainer).draw(
-          aggDt,
-          buildOptions('השוואת ימי אובדן בין תקופות', maxAgg, false)
-        );
-      }
-  
-      const avgContainer = document.getElementById(avgElementId);
-      if (avgContainer) {
-        new google.visualization.ColumnChart(avgContainer).draw(
-          avgDt,
-          buildOptions('השוואת זמן אובדן ממוצע (HH:MM) בין תקופות', maxAvg, true)
-        );
-      }
-    } catch (err) {
-      console.error('Error drawing grouped comparison charts:', err);
-    }
-  }
-  
 
-  // public async drawAllDepartmentTables(
-  //   elementIdsByPeriod: { [period: string]: { [ds: string]: string } },
-  //   url: string
-  // ): Promise<void> {
-  //   await this.waitUntilChartsReady();
-  
-  //   try {
-  //     for (const [period, dsMap] of Object.entries(elementIdsByPeriod)) {
-  //       const raw = await this.fetchWithCache(this.buildUrl(url, { dataType: period }));
-  //       const clean = sanitizeSoapResponse(raw);
-  
-  //       if (!clean || !clean.rows?.length) {
-  //         Object.values(dsMap).forEach(id => {
-  //           const container = document.getElementById(id);
-  //           if (container) container.innerHTML = 'אין נתונים להצגה';
-  //         });
-  //         continue;
-  //       }
-  
-  //       const groupedByDS: { [ds: string]: any[] } = {};
-  //       clean.rows.forEach((r: any) => {
-  //         const ds = r.c[0]?.v || 'Unknown';
-  //         if (!groupedByDS[ds]) groupedByDS[ds] = [];
-  //         groupedByDS[ds].push(r);
-  //       });
-  
-  //       for (const [dataSource, rows] of Object.entries(groupedByDS)) {
-  //         const elementId = dsMap[dataSource];
-  //         if (!elementId) continue;
-  
-  //         const titleContainer = document.getElementById(`title_${elementId}`);
-  //         if (titleContainer) {
-  //           titleContainer.innerText = `${this.translateDataSource(dataSource)} - ${this.translateTimeframe(period)} `;
-  //           titleContainer.style.fontWeight = 'bold';
-  //           titleContainer.style.fontSize = '16px';
-  //           titleContainer.style.textAlign = 'center';
-  //           titleContainer.style.margin = '10px 0';
-  //         }
-  
-  //         const container = document.getElementById(elementId);
-  //         if (!container) continue;
-  
-  //         const dt = new google.visualization.DataTable();
-  //         dt.addColumn('string', 'מחלקה');
-  
-  //         const includeDateColumn = period === '4-ParallelsPeriod';
-  //         if (includeDateColumn) {
-  //           dt.addColumn('string', 'שנה');
-  //         }
-  
-  //         dt.addColumn('number', 'זמן');
-  
-  //         rows.forEach(r => {
-  //           const department = r.c[2]?.v || '';
-  //           let date = r.c[3]?.v || '';
-  
-  //           if (includeDateColumn && typeof date === 'string') {
-  //             const yearMatch = date.match(/\d{4}/);
-  //             date = yearMatch ? yearMatch[0] : '';
-  //           } else {
-  //             date = '';
-  //           }
-  
-  //           const rawValue = r.c[4]?.v != null && !isNaN(Number(r.c[4]?.v)) ? Number(r.c[4].v) : 0; // seconds
-  //           const formattedValue = this.formatToHHMM(rawValue);
-  
-  //           // Convert to minutes
-  //           const minutes = rawValue / 60;
-  
-  //           // Pastel color thresholds
-  //           let rowColor = '#b9f6ca'; // pastel green (0–30 min)
-  //           if (minutes > 30 && minutes <= 59) rowColor = '#fff9c4'; // pastel yellow
-  //           if (minutes >= 60) rowColor = '#ffcdd2'; // pastel red
-  
-  //           const rowValues = includeDateColumn
-  //             ? [department, date, { v: rawValue, f: formattedValue }]
-  //             : [department, { v: rawValue, f: formattedValue }];
-  
-  //           const rowIndex = dt.addRow(rowValues);
-  
-  //           // Color entire row
-  //           for (let col = 0; col < dt.getNumberOfColumns(); col++) {
-  //             dt.setProperty(
-  //               rowIndex,
-  //               col,
-  //               'style',
-  //               `background-color:${rowColor}; color:${rowColor === '#ffcdd2' ? '#000' : '#000'};`
-  //             );
-  //           }
-  //         });
-  
-  //         const table = new google.visualization.Table(container);
-  //         table.draw(dt, {
-  //           showRowNumber: false,
-  //           width: '100%',
-  //           height: '150px',
-  //           allowHtml: true
-  //         });
-  //       }
-  //     }
-  //   } catch (err) {
-  //     console.error('Error drawing all tables:', err);
-  //   }
-  // }
-  
+
+  public async drawDepartmentChartsWithColors(
+    elementIds: { [key: string]: string },
+    url: string,
+    dataType: string,
+    titlePrefix: string,
+    colorFn: (department: string) => string,
+    isDays: boolean = false // NEW: controls formatting
+  ): Promise<void> {
+    await this.waitUntilChartsReady();
+
+    try {
+      const raw = await this.fetchWithCache(this.buildUrl(url, { dataType }));
+      const clean = sanitizeSoapResponse(raw);
+
+      if (!clean || !clean.rows?.length) {
+        Object.values(elementIds).forEach(id => {
+          const container = document.getElementById(id);
+          if (container) container.innerHTML = 'אין נתונים להצגה';
+        });
+        return;
+      }
+
+      // Group by DataSource
+      const grouped: { [key: string]: any[] } = {};
+      clean.rows.forEach((r: any) => {
+        const ds = r.c[0]?.v || 'Unknown';
+        if (!grouped[ds]) grouped[ds] = [];
+        grouped[ds].push(r);
+      });
+
+      for (const [dataSource, rows] of Object.entries(grouped)) {
+        const elementId = elementIds[dataSource];
+        if (!elementId) continue;
+        const container = document.getElementById(elementId);
+        if (!container) continue;
+
+        const dt = new google.visualization.DataTable();
+        dt.addColumn('string', 'Department');
+        dt.addColumn('number', 'Value');
+        dt.addColumn({ type: 'string', role: 'style' });
+        dt.addColumn({ type: 'string', role: 'annotation' });
+
+        let maxValue = 0;
+        // });
+        rows.forEach(r => {
+          const baseDepartment = r.c[2]?.v || '';
+          const periodDate = r.c[3]?.v || '';
+          const rawValue = Number(r.c[4]?.v ?? 0);
+
+          // Displayed label: append year for ParallelsPeriod
+          let displayDepartment = baseDepartment;
+          if (dataType === '4-ParallelsPeriod' && periodDate) {
+            const yearSuffix = new Date(periodDate).getFullYear().toString().slice(-2);
+            displayDepartment = `${baseDepartment} - ${yearSuffix}`;
+          }
+
+          const color = colorFn(baseDepartment); // <--- use base name for color mapping
+          maxValue = Math.max(maxValue, rawValue);
+
+          const annotation = isDays
+            ? rawValue.toFixed(1)
+            : this.formatToHHMM(rawValue);
+
+          dt.addRow([displayDepartment, rawValue, `color: ${color}`, annotation]);
+        });
+
+
+
+        const options = {
+          title: '', // remove default title`${titlePrefix} - ${dataSource}`,
+          height: 560,
+          bar: { groupWidth: '65%' },
+          legend: { position: 'right' },
+          annotations: { alwaysOutside: true, textStyle: { fontSize: 16 } },
+          hAxis: { slantedText: true, slantedTextAngle: 45 },
+          vAxis: isDays
+            //? { minValue: 0, format: '0.0', gridlines: { count: Math.ceil(Math.max(...rowValues.slice(1))) + 1 } }
+            ? { minValue: 0, format: '0.0', gridlines: { count: Math.ceil(maxValue) + 1 } }
+            //: { minValue: 0, ticks: this.generateHMMTicks(Math.max(...rowValues.slice(1)), 1800) },
+            : { minValue: 0, ticks: this.generateHMMTicks(maxValue, 1800) },
+          //colors,
+          titleTextStyle: {
+            alignment: 'start',     // Aligns text to the right
+            fontSize: 16,
+            bold: true,
+            direction: 'rtl'
+          },
+          chartArea: { left: 50, top: 40, right: 20, width: '80%', height: '70%' } // Adjusts padding
+        };
+
+
+        // Set title separately
+        const titleContainer = document.getElementById(`${elementId}Title`);
+        if (titleContainer) {
+          const timeframe = this.translateTimeframe(dataType); // << added
+          titleContainer.innerText = `${titlePrefix} - ${this.translateDataSource(dataSource)} (${timeframe})`;
+          titleContainer.style.textAlign = 'center';
+          titleContainer.style.fontSize = '16px';
+          titleContainer.style.fontWeight = 'bold';
+          titleContainer.style.marginBottom = '5px';
+        }
+
+
+        // Draw chart inside the chart container (no more wiping out the title)
+        const chartContainer = document.getElementById(elementId);
+        if (chartContainer) {
+          new google.visualization.ColumnChart(chartContainer).draw(dt, options);
+        }
+
+
+
+        new google.visualization.ColumnChart(container).draw(dt, options);
+      }
+    } catch (err) {
+      console.error('Error drawing charts:', err);
+    }
+  }
+
+
   public async drawAllDepartmentTables(
     elementIdsByPeriod: { [period: string]: { [ds: string]: string } },
-    url: string
+    url: string,
+    excludeCurrentYear: boolean = true
   ): Promise<void> {
     await this.waitUntilChartsReady();
-  
+
     try {
       for (const [period, dsMap] of Object.entries(elementIdsByPeriod)) {
         const raw = await this.fetchWithCache(this.buildUrl(url, { dataType: period }));
         const clean = sanitizeSoapResponse(raw);
-  
+
         if (!clean || !clean.rows?.length) {
           Object.values(dsMap).forEach(id => {
             const container = document.getElementById(id);
@@ -902,18 +372,18 @@ if (titleContainer) {
           });
           continue;
         }
-  
+
         const groupedByDS: { [ds: string]: any[] } = {};
         clean.rows.forEach((r: any) => {
           const ds = r.c[0]?.v || 'Unknown';
           if (!groupedByDS[ds]) groupedByDS[ds] = [];
           groupedByDS[ds].push(r);
         });
-  
+
         for (const [dataSource, rows] of Object.entries(groupedByDS)) {
           const elementId = dsMap[dataSource];
           if (!elementId) continue;
-  
+
           const titleContainer = document.getElementById(`title_${elementId}`);
           if (titleContainer) {
             titleContainer.innerText = `${this.translateDataSource(dataSource)} - ${this.translateTimeframe(period)} `;
@@ -922,25 +392,28 @@ if (titleContainer) {
             titleContainer.style.textAlign = 'center';
             titleContainer.style.margin = '10px 0';
           }
-  
+
           const container = document.getElementById(elementId);
           if (!container) continue;
-  
+
           const dt = new google.visualization.DataTable();
           dt.addColumn('string', 'מחלקה');
-  
+
           const isParallelPeriod = period === '4-ParallelsPeriod';
           let uniqueYears: string[] = [];
-  
+
           if (isParallelPeriod) {
-            // Extract all unique years (last two digits)
+            const currentYear = new Date().getFullYear().toString().substring(2); // last 2 digits of current year
             const yearSet = new Set<string>();
             rows.forEach(r => {
               let date = r.c[3]?.v || '';
               if (typeof date === 'string') {
                 const yearMatch = date.match(/\d{4}/);
                 if (yearMatch) {
-                  yearSet.add(yearMatch[0].substring(2)); // store last 2 digits
+                  const yearStr = yearMatch[0].substring(2);
+                  if (!(excludeCurrentYear && yearStr === currentYear)) {
+                    yearSet.add(yearStr);
+                  }
                 }
               }
             });
@@ -949,49 +422,49 @@ if (titleContainer) {
           } else {
             dt.addColumn('number', 'זמן');
           }
-  
+
           // Group by department
           const departmentMap: { [dept: string]: { [year: string]: number } } = {};
           rows.forEach(r => {
             const department = r.c[2]?.v || '';
             let date = r.c[3]?.v || '';
             let year = '';
-  
+
             if (isParallelPeriod && typeof date === 'string') {
               const yearMatch = date.match(/\d{4}/);
               if (yearMatch) {
                 year = yearMatch[0].substring(2);
+                if (excludeCurrentYear && year === new Date().getFullYear().toString().substring(2)) return;
               }
             }
-  
+
             const rawValue = r.c[4]?.v != null && !isNaN(Number(r.c[4]?.v)) ? Number(r.c[4].v) : 0;
             if (!departmentMap[department]) departmentMap[department] = {};
             if (isParallelPeriod && year) departmentMap[department][year] = rawValue;
             if (!isParallelPeriod) departmentMap[department]['value'] = rawValue;
           });
-  
+
           // Build rows + color cells
           for (const [department, yearValues] of Object.entries(departmentMap)) {
             if (isParallelPeriod) {
               const row: any[] = [department];
-              const rowIndex = dt.addRow(); // add empty row first
-  
-              dt.setCell(rowIndex, 0, department); // set department name
-  
+              const rowIndex = dt.addRow();
+              dt.setCell(rowIndex, 0, department);
+
               uniqueYears.forEach((y, idx) => {
                 const rawValue = yearValues[y] ?? null;
                 const formatted = rawValue != null ? this.formatToHHMM(rawValue) : '';
-                const colIndex = idx + 1; // first column is department
-  
+                const colIndex = idx + 1;
+
                 if (rawValue != null) {
                   dt.setCell(rowIndex, colIndex, rawValue, formatted);
-  
-                  // Color coding based on minutes
+
+                  // Color coding
                   const minutes = rawValue / 60;
                   let cellColor = '#b9f6ca'; // green
                   if (minutes > 30 && minutes <= 59) cellColor = '#fff9c4'; // yellow
                   if (minutes >= 60) cellColor = '#ffcdd2'; // red
-  
+
                   dt.setProperty(rowIndex, colIndex, 'style', `background-color:${cellColor}; color:#000;`);
                 }
               });
@@ -999,10 +472,9 @@ if (titleContainer) {
               const rawValue = yearValues['value'] ?? 0;
               const formattedValue = this.formatToHHMM(rawValue);
               const rowIndex = dt.addRow([department, { v: rawValue, f: formattedValue }]);
-  
-              // Color coding
+
               const minutes = rawValue / 60;
-              let rowColor = '#b9f6ca'; // green
+              let rowColor = '#b9f6ca';
               if (minutes > 30 && minutes <= 59) rowColor = '#fff9c4';
               if (minutes >= 60) rowColor = '#ffcdd2';
               for (let col = 0; col < dt.getNumberOfColumns(); col++) {
@@ -1010,7 +482,7 @@ if (titleContainer) {
               }
             }
           }
-  
+
           const table = new google.visualization.Table(container);
           table.draw(dt, {
             showRowNumber: false,
@@ -1024,18 +496,20 @@ if (titleContainer) {
       console.error('Error drawing all tables:', err);
     }
   }
-  
+
+
   public async drawAllDepartmentTablesSum(
     elementIdsByPeriod: { [period: string]: { [ds: string]: string } },
-    url: string
+    url: string,
+    excludeCurrentYear: boolean = true
   ): Promise<void> {
     await this.waitUntilChartsReady();
-  
+
     try {
       for (const [period, dsMap] of Object.entries(elementIdsByPeriod)) {
         const raw = await this.fetchWithCache(this.buildUrl(url, { dataType: period }));
         const clean = sanitizeSoapResponse(raw);
-  
+
         if (!clean || !clean.rows?.length) {
           Object.values(dsMap).forEach(id => {
             const container = document.getElementById(id);
@@ -1043,63 +517,139 @@ if (titleContainer) {
           });
           continue;
         }
-  
+
         const groupedByDS: { [ds: string]: any[] } = {};
         clean.rows.forEach((r: any) => {
           const ds = r.c[0]?.v || 'Unknown';
           if (!groupedByDS[ds]) groupedByDS[ds] = [];
           groupedByDS[ds].push(r);
         });
-  
+
         for (const [dataSource, rows] of Object.entries(groupedByDS)) {
           const elementId = dsMap[dataSource];
           if (!elementId) continue;
-  
+
           // === Title ===
           const titleContainer = document.getElementById(`title_${elementId}`);
           if (titleContainer) {
-            titleContainer.innerText = `${this.translateDataSource(dataSource)} - ${this.translateTimeframe(period)} (סיכום)`;
+            titleContainer.innerText = `${this.translateDataSource(dataSource)} - ${this.translateTimeframe(period)} (מצטבר)`;
             titleContainer.style.fontWeight = 'bold';
             titleContainer.style.fontSize = '16px';
             titleContainer.style.textAlign = 'center';
             titleContainer.style.margin = '10px 0';
           }
-  
+
           const container = document.getElementById(elementId);
           if (!container) continue;
-  
+
           const dt = new google.visualization.DataTable();
           dt.addColumn('string', 'מחלקה');
-  
-          const includeDateColumn = period === '4-ParallelsPeriod';
-          if (includeDateColumn) {
-            dt.addColumn('string', 'שנה');
+
+          const isParallelPeriod = period === '4-ParallelsPeriod';
+          let uniqueYears: string[] = [];
+
+          if (isParallelPeriod) {
+            const currentYear = new Date().getFullYear().toString().substring(2);
+            const yearSet = new Set<string>();
+            rows.forEach(r => {
+              let date = r.c[3]?.v || '';
+              if (typeof date === 'string') {
+                const yearMatch = date.match(/\d{4}/);
+                if (yearMatch) {
+                  const yearStr = yearMatch[0].substring(2);
+                  if (!(excludeCurrentYear && yearStr === currentYear)) {
+                    yearSet.add(yearStr);
+                  }
+                }
+              }
+            });
+            uniqueYears = Array.from(yearSet).sort((a, b) => Number(b) - Number(a)); // descending
+            uniqueYears.forEach(y => dt.addColumn('number', y));
+          } else {
+            dt.addColumn('number', 'ימים');
           }
-  
-          dt.addColumn('number', 'ימים'); // <-- Change column header
-  
+
+          // Group by department
+          const departmentMap: { [dept: string]: { [year: string]: number } } = {};
           rows.forEach(r => {
             const department = r.c[2]?.v || '';
             let date = r.c[3]?.v || '';
-  
-            // === Extract only year if period is 4-ParallelsPeriod ===
-            if (includeDateColumn && typeof date === 'string') {
+            let year = '';
+
+            if (isParallelPeriod && typeof date === 'string') {
               const yearMatch = date.match(/\d{4}/);
-              date = yearMatch ? yearMatch[0] : '';
-            } else {
-              date = '';
+              if (yearMatch) {
+                year = yearMatch[0].substring(2);
+                if (excludeCurrentYear && year === new Date().getFullYear().toString().substring(2)) return;
+              }
             }
-  
+
             const rawValue = r.c[4]?.v != null && !isNaN(Number(r.c[4]?.v)) ? Number(r.c[4].v) : 0;
-            const formattedValue = `${rawValue.toFixed(1)} ימים`; // 1 decimal for better precision (or use Math.round for whole days)
-  
-            if (includeDateColumn) {
-              dt.addRow([department, date, { v: rawValue, f: formattedValue }]);
-            } else {
-              dt.addRow([department, { v: rawValue, f: formattedValue }]);
-            }
+            if (!departmentMap[department]) departmentMap[department] = {};
+            if (isParallelPeriod && year) departmentMap[department][year] = rawValue;
+            if (!isParallelPeriod) departmentMap[department]['value'] = rawValue;
           });
-  
+
+          // Compute global max for scaling colors
+          let maxVal = 0;
+          Object.values(departmentMap).forEach(yearValues => {
+            Object.values(yearValues).forEach(val => {
+              if (val > maxVal) maxVal = val;
+            });
+          });
+
+          // Helper: interpolate red shades (10 steps)
+          const getRedShade = (value: number): string => {
+            if (maxVal === 0) return '#ffcdd2';
+            const intensity = Math.min(1, value / maxVal); // normalize 0–1
+            const step = Math.floor(intensity * 9); // 0–9
+            // generate progressively darker red shades
+            // const redShades = [
+            //   '#ffcdd2', '#f8b6b8', '#f49ea0', '#f08888', '#ec7070',
+            //   '#e75858', '#e24040', '#de2828', '#da1010', '#d50000'
+            // ];
+            const redShades = [
+              '#ffe5e5', // 1 - lightest
+              '#ffcccc', // 2
+              '#ffb3b3', // 3
+              '#ff9999', // 4
+              '#ff8080', // 5
+              '#e75858', // 6 - strongest
+              '#f06a6a', // 7
+              '#f68383', // 8
+              '#f89c9c', // 9
+              '#fbb5b5'  // 10 - softest
+            ];
+
+            return redShades[step];
+          };
+
+          // Build rows + color cells
+          for (const [department, yearValues] of Object.entries(departmentMap)) {
+            if (isParallelPeriod) {
+              const rowIndex = dt.addRow();
+              dt.setCell(rowIndex, 0, department);
+
+              uniqueYears.forEach((y, idx) => {
+                const rawValue = yearValues[y] ?? null;
+                const formatted = rawValue != null ? `${Math.round(rawValue)} ימים` : '';
+                const colIndex = idx + 1;
+
+                if (rawValue != null) {
+                  dt.setCell(rowIndex, colIndex, rawValue, formatted);
+                  dt.setProperty(rowIndex, colIndex, 'style', `background-color:${getRedShade(rawValue)}; color:#000;`);
+                }
+              });
+            } else {
+              const rawValue = yearValues['value'] ?? 0;
+              const formattedValue = `${Math.round(rawValue)} ימים`; const rowIndex = dt.addRow([department, { v: rawValue, f: formattedValue }]);
+              const rowColor = getRedShade(rawValue);
+              for (let col = 0; col < dt.getNumberOfColumns(); col++) {
+                dt.setProperty(rowIndex, col, 'style', `background-color:${rowColor}; color:#000;`);
+              }
+            }
+          }
+
           const table = new google.visualization.Table(container);
           table.draw(dt, {
             showRowNumber: false,
@@ -1113,7 +663,8 @@ if (titleContainer) {
       console.error('Error drawing all tables:', err);
     }
   }
-  
+
+
   @HostListener('window:scroll', [])
   onScroll() {
     const el = document.getElementById('stickyTabsFilters');
@@ -1125,7 +676,7 @@ if (titleContainer) {
         el.classList.remove('is-sticky');
       }
     }
-  }  
-  
-    
+  }
+
+
 }
