@@ -251,20 +251,20 @@ export class TrainingRequestFormComponent implements OnInit {
         });
         this.Training_Request_Forms_E = this.fb.group({
           Training_Importantce: new FormControl(Training_Request_Forms_E?.Training_Importantce, null),
-          Recommendations: new FormControl(Training_Request_Forms_E?.Recommendations, null),
-          Opinion_Date: new FormControl(Training_Request_Forms_E?.Opinion_Date == null ? this.date_now : Training_Request_Forms_E?.Opinion_Date, null),
+          Recommendations: new FormControl(Training_Request_Forms_E?.Recommendations, this.passport == Training_Request_Forms_E?.Passport_ID ? null : Validators.required),
+          Opinion_Date: new FormControl(Training_Request_Forms_E?.Opinion_Date, null),
           Supervisor_Name: new FormControl(Training_Request_Forms_E?.Supervisor_Name, null),
           Supervisor_Sign: new FormControl(Training_Request_Forms_E?.Supervisor_Sign, null),
           Sent_To_Manager: new FormControl(Training_Request_Forms_E?.Sent_To_Manager, null),
-          Approved: new FormControl(Training_Request_Forms_E?.Approved, null),
+          Approved: new FormControl(Training_Request_Forms_E?.Approved, this.passport == Training_Request_Forms_E?.Passport_ID ? null : Validators.required),
         });
         this.Training_Request_Forms_F = this.fb.group({
           Training_Importantce: new FormControl(Training_Request_Forms_F?.Training_Importantce, null),
-          Recommendations: new FormControl(Training_Request_Forms_F?.Recommendations, null),
-          Opinion_Date: new FormControl(Training_Request_Forms_F?.Opinion_Date == null ? this.date_now : Training_Request_Forms_F?.Opinion_Date, null),
+          Recommendations: new FormControl(Training_Request_Forms_F?.Recommendations, this.passport == Training_Request_Forms_F?.Passport_ID ? null : Validators.required),
+          Opinion_Date: new FormControl(Training_Request_Forms_F?.Opinion_Date, null),
           Supervisor_Name: new FormControl(Training_Request_Forms_F?.Supervisor_Name, null),
           Supervisor_Sign: new FormControl(Training_Request_Forms_F?.Supervisor_Sign, null),
-          Approved: new FormControl(Training_Request_Forms_F?.Approved, null),
+          Approved: new FormControl(Training_Request_Forms_F?.Approved, this.passport == Training_Request_Forms_F?.Passport_ID ? null : Validators.required),
         });
         this.Training_Request_Forms_H = this.fb.group({
           Opinion_Date: new FormControl(Training_Request_Forms_H?.Opinion_Date == null ? this.date_now : Training_Request_Forms_H?.Opinion_Date, null),
@@ -714,7 +714,7 @@ export class TrainingRequestFormComponent implements OnInit {
   }
 
   onSubmit(final) {
-    if (this.Training_Request_Forms_A.valid && this.Training_Request_Forms_B.valid && this.Training_Request_Forms_C.valid && this.Training_Request_Forms_D.valid) {
+    if (this.Training_Request_Forms_A.valid && this.Training_Request_Forms_B.valid && this.Training_Request_Forms_C.valid && this.Training_Request_Forms_D.valid && this.Training_Request_Forms_E.valid && this.Training_Request_Forms_F.valid) {
       if (this.Supervisor_Name1.value == undefined) {
         this.openSnackBar('חסר מנהל ישיר, נא ליצור קשר עם משאבי אנוש');
         return;
