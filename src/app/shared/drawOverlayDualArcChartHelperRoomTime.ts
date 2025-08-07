@@ -290,7 +290,8 @@ export function drawOverlayDualArcChartHelperRoomTime({
   valueLabel.setAttribute('x', cx.toString());
   valueLabel.setAttribute('y', (cy - 28).toString());
   valueLabel.setAttribute('text-anchor', 'middle');
-  valueLabel.setAttribute('fill', semiColor === '#cc0033' ? '#cc0033' : '#222');
+  //valueLabel.setAttribute('fill', semiColor === '#cc0033' ? '#cc0033' : '#222');
+  valueLabel.setAttribute('fill', semiColor === '#cc0033' ? '#ffffff' : '#222');
   valueLabel.setAttribute('font-size', '16');
   valueLabel.setAttribute('font-family', 'Open Sans');
   valueLabel.textContent = formatValue(totalSeconds);
@@ -313,7 +314,7 @@ export function drawOverlayDualArcChartHelperRoomTime({
     plusSign.setAttribute('x', (cx + 20).toString());
     plusSign.setAttribute('y', (cy - 32).toString());
     plusSign.setAttribute('text-anchor', 'middle');
-    plusSign.setAttribute('fill', '#cc0033');
+    plusSign.setAttribute('fill', '#ffffff');
     plusSign.setAttribute('font-size', '16');
     plusSign.setAttribute('font-family', 'Open Sans');
     plusSign.textContent = '+';

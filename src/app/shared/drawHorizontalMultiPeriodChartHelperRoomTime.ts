@@ -100,7 +100,7 @@ export function drawHorizontalMultiPeriodChartHelperRoomTime(opts: HorizontalMul
         const txt = document.createElementNS("http://www.w3.org/2000/svg", "text");
         txt.setAttribute("x", x.toString());
         txt.setAttribute("y", y.toString());
-        txt.setAttribute("fill", "#000");
+        txt.setAttribute("fill", "#fff");
         txt.setAttribute("font-size", fixedFontSize.toString());
         txt.setAttribute("font-family", "Open Sans");
         txt.setAttribute("text-anchor", "middle");
