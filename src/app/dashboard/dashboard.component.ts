@@ -51,6 +51,7 @@ export class DashboardComponent implements OnInit {
     searchTerm = '';
     Links: any[] = [];
     filteredList: any[] = [...this.Links];
+    private geminiChats: Map<string, any> = new Map();
 
     // Track selected tab index
     selectedTabIndex: number | null = 0;
@@ -153,27 +154,42 @@ export class DashboardComponent implements OnInit {
             this.answer = 'לצורך קבלת מענה, יש להזין את השאלה בשדה המיועד לכך למעלה.';
             return;
         }
-        if (this.userName == 'nibrahem') return;
-        if (this.claude_version.model_identify == 'Gemeni') this.askGemini(this.claude_version);
-        else if (this.claude_version.model_identify == 'Claude') await this.askClaude(this.claude_version);
+        if (this.userName === 'nibrahem') return;
+
+        if (this.claude_version.model_identify === 'Gemeni') {
+            await this.askGemini(this.claude_version);
+        } else if (this.claude_version.model_identify === 'Claude') {
+            await this.askClaude(this.claude_version);
+        }
     }
 
     async askGemini(model) {
         this.thinking = true;
         this.answer = '';
-        let resp = await this.runChat(model, this.question);
+
+        const resp = await this.runChat(model, this.userName, this.question);
         this.answer = resp.text();
         this.AskAIRequestData(this.userName, resp.modelVersion, this.question);
+
         this.thinking = false;
     }
 
-    async runChat(model, question) {
+    async runChat(model, username: string, question: string) {
         const genAI = new GoogleGenerativeAI(model.aws_secret_access_key);
         const gen_model = genAI.getGenerativeModel({ model: model.modelId });
-        const result = await gen_model.generateContent(question);
 
-        const response = result.response;
-        return response;
+        // Check if user already has a chat session
+        if (!this.geminiChats.has(username)) {
+            const chatSession = gen_model.startChat({
+                history: [], // fresh chat
+            });
+            this.geminiChats.set(username, chatSession);
+        }
+
+        const chat = this.geminiChats.get(username);
+        const result = await chat.sendMessage(question);
+
+        return result.response;
     }
 
     async askClaude(model: any) {

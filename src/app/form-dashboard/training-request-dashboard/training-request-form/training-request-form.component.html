@@ -553,12 +553,12 @@
         </mat-card>
         <button mat-raised-button color="primary" type="submit" class="submitBtn" matTooltip="שמירה ללא שליחה"
           (click)="onSubmit(0)"
-          *ngIf="Training_Request_Forms_E.get('Approved').value == 'השלמת נתונים' || Training_Request_Forms_E.get('Approved').value == ''"
+          *ngIf="Training_Request_Forms_E.get('Approved').value == 'השלמת נתונים' || Training_Request_Forms_E.get('Approved').value == '' || Training_Request_Forms_E.get('Approved').value == null"
           [disabled]="Training_Request_Forms_C.get('Request_Sign').value !== undefined && Training_Request_Forms_C.get('Request_Sign').value !== null">שמירה
           כטיוטה</button>
         <button mat-raised-button color="primary" type="submit" class="submitBtn" matTooltip="חתימת עובד חובה"
           (click)="onSubmit(0)"
-          *ngIf="Training_Request_Forms_E.get('Approved').value == 'השלמת נתונים' || Training_Request_Forms_E.get('Approved').value == ''"
+          *ngIf="Training_Request_Forms_E.get('Approved').value == 'השלמת נתונים' || Training_Request_Forms_E.get('Approved').value == '' || Training_Request_Forms_E.get('Approved').value == null"
           [disabled]="Training_Request_Forms_C.get('Request_Sign').value === undefined || Training_Request_Forms_C.get('Request_Sign').value === null">שמירה
           והגשה</button>
       </form>
@@ -575,7 +575,7 @@
           <div class="row">
             <div class="col-lg-2 col-md-4 col-sm-6" dir="ltr">
               <mat-form-field appearance="outline" style="width: 100%;">
-                <mat-label>אישור</mat-label>
+                <mat-label class="label-select">סטטוס</mat-label>
                 <mat-select formControlName="Approved">
                   <mat-option value="מאושר">מאושר</mat-option>
                   <mat-option value="לא מאושר">לא מאושר</mat-option>
@@ -587,7 +587,21 @@
                 </mat-error>
               </mat-form-field>
             </div>
-            <div class="col-lg-2 col-md-4 col-sm-6">
+            <div class="col-lg-2 col-md-4 col-sm-6" dir="ltr">
+              <mat-form-field appearance="outline" style="width: 100%;">
+                <mat-label class="label-select">חשיבות</mat-label>
+                <mat-select formControlName="Training_Importantce">
+                  <mat-option value="חיונית ביותר">חיונית ביותר</mat-option>
+                  <mat-option value="חיונית">חיונית</mat-option>
+                  <mat-option value="אינה חיונית">אינה חיונית</mat-option>
+                </mat-select>
+                <mat-error
+                  *ngIf="Training_Request_Forms_E.get('Training_Importantce').hasError('required') && Training_Request_Forms_E.get('Training_Importantce').touched">
+                  שדה חובה
+                </mat-error>
+              </mat-form-field>
+            </div>
+            <!-- <div class="col-lg-2 col-md-4 col-sm-6">
               <mat-label class="label-select">{{ Training_Importantce_Options.QuestionText }}</mat-label>
               <mat-select formControlName="Training_Importantce" [compareWith]="compareFn">
                 <mat-option *ngFor="let option of Training_Importantce_Options.Training_Request_Options"
@@ -599,7 +613,7 @@
                 *ngIf="Training_Request_Forms_E.get('Training_Importantce').hasError('required') && Training_Request_Forms_E.get('Training_Importantce').touched">
                 שדה חובה
               </mat-error>
-            </div>
+            </div> -->
             <div class="col-lg-3 col-md-4 col-sm-6">
               <mat-form-field>
                 <mat-label>נימוקים</mat-label>
@@ -647,7 +661,8 @@
             </div>
           </div>
         </mat-card-content>
-        <button mat-raised-button color="primary" type="submit" class="submitBtn" (click)="onSubmit(0)">שמירה</button>
+        <button mat-raised-button color="primary" type="submit" class="submitBtn" (click)="onSubmit(0)">אישור
+          ושמירה</button>
       </form>
       <div>
         <button mat-button matStepperPrevious class="stepBtn">חזרה</button>
@@ -662,7 +677,7 @@
           <div class="row">
             <div class="col-lg-2 col-md-4 col-sm-6" dir="ltr">
               <mat-form-field appearance="outline" style="width: 100%;">
-                <mat-label>אישור</mat-label>
+                <mat-label class="label-select">סטטוס</mat-label>
                 <mat-select formControlName="Approved">
                   <mat-option value="מאושר">מאושר</mat-option>
                   <mat-option value="לא מאושר">לא מאושר</mat-option>
@@ -674,7 +689,21 @@
                 </mat-error>
               </mat-form-field>
             </div>
-            <div class="col-lg-2 col-md-4 col-sm-6">
+            <div class="col-lg-2 col-md-4 col-sm-6" dir="ltr">
+              <mat-form-field appearance="outline" style="width: 100%;">
+                <mat-label class="label-select">חשיבות</mat-label>
+                <mat-select formControlName="Training_Importantce">
+                  <mat-option value="חיונית ביותר">חיונית ביותר</mat-option>
+                  <mat-option value="חיונית">חיונית</mat-option>
+                  <mat-option value="לא חיונית">לא חיונית</mat-option>
+                </mat-select>
+                <mat-error
+                  *ngIf="Training_Request_Forms_F.get('Training_Importantce').hasError('required') && Training_Request_Forms_F.get('Training_Importantce').touched">
+                  שדה חובה
+                </mat-error>
+              </mat-form-field>
+            </div>
+            <!-- <div class="col-lg-2 col-md-4 col-sm-6">
               <mat-label class="label-select">{{ Training_Importantce_Options2.QuestionText }}</mat-label>
               <mat-select formControlName="Training_Importantce" [compareWith]="compareFn">
                 <mat-option *ngFor="let option of Training_Importantce_Options2.Training_Request_Options"
@@ -686,7 +715,7 @@
                 *ngIf="Training_Request_Forms_F.get('Training_Importantce').hasError('required') && Training_Request_Forms_F.get('Training_Importantce').touched">
                 שדה חובה
               </mat-error>
-            </div>
+            </div> -->
             <div class="col-lg-3 col-md-4 col-sm-6">
               <mat-form-field>
                 <mat-label>נימוקים</mat-label>
@@ -734,7 +763,8 @@
             </div>
           </div>
         </mat-card-content>
-        <button mat-raised-button color="primary" type="submit" class="submitBtn" (click)="onSubmit(0)">שמירה</button>
+        <button mat-raised-button color="primary" type="submit" class="submitBtn" (click)="onSubmit(0)">אישור
+          ושמירה</button>
       </form>
       <div>
         <button mat-button matStepperPrevious class="stepBtn">חזרה</button>
@@ -879,10 +909,10 @@
             </div>
           </div>
         </mat-card-content>
-        <button mat-raised-button color="primary" type="submit" class="submitBtn" matTooltip="שמירה ללא שליחה לגורמים"
-          (click)="onSubmit(0)">שמירה</button>
+        <button mat-raised-button color="primary" type="submit" class="submitBtn" matTooltip="אישור ללא שליחה לגורמים"
+          (click)="onSubmit(0)">אישור ושמירה</button>
         <button mat-raised-button color="primary" type="submit" class="submitBtn"
-          matTooltip="שמירה ושליחת סיכום ועדה לגורמים" (click)="onSubmit(1)">שמירה ושליחה</button>
+          matTooltip="אישור ושליחת סיכום ועדה לגורמים" (click)="onSubmit(1)">אישור ושליחה</button>
       </form>
       <div>
         <button mat-button matStepperPrevious>חזרה</button>
