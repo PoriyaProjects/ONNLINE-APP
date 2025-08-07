@@ -190,6 +190,10 @@
     background: rgba(0, 0, 0, 0.2);
     backdrop-filter: blur(5px);
   }
+  .department-tabs button.active {
+  font-weight: bold;
+  border: 2px solid white;
+}
 </style>
 
 <div class="mdc-layout-grid" style="direction: rtl;">
@@ -521,6 +525,38 @@
           </div>
         </div>
 
+
+
+       <!-- Department Tabs -->
+       <div class="department-tabs">
+        <button
+          *ngFor="let dept of getDepartments()"
+          (click)="selectDepartment(dept)"
+          [ngStyle]="{ 'background-color': getDepartmentColor(dept), color: 'white' }"
+          [class.active]="dept === selectedDepartment"
+        >
+          {{ dept }}
+        </button>
+      </div>
+      
+      <div style="height:60px;"></div>
+
+
+    <!-- Department Charts -->
+    
+    <div *ngIf="selectedDepartment" class="department-charts">
+      <div class="row" *ngFor="let chunk of selectedDepartmentChartChunks">
+        <div class="col-md-4" *ngFor="let chart of chunk">
+          <div class="card text-center" style="margin-bottom: 40px;">            
+            <div [id]="chart.containerId" style="width: 100%; height: 400px;">
+              טוען גרף...
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+        
 
 
 

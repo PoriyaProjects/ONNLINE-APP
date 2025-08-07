@@ -113,16 +113,7 @@ export class GoogleChartsService {
         return;
       }
 
-      // const grouped: { [ds: string]: { [type: string]: { agg: number; avg: number } } } = {};
-      // clean.rows.forEach((r: any) => {
-      //   const ds = r.c[0]?.v || 'Unknown';
-      //   const type = r.c[1]?.v || 'Unknown';
-      //   const agg = Number(r.c[4]?.v ?? 0);
-      //   const avg = Number(r.c[5]?.v ?? 0);
-      //   if (!grouped[ds]) grouped[ds] = {};
-      //   grouped[ds][type] = { agg, avg };
-      // });
-
+     
       const grouped: { 
         [ds: string]: { 
           [type: string]: { 
@@ -348,15 +339,7 @@ export class GoogleChartsService {
 
         // Set title separately
         const titleContainer = document.getElementById(`${elementId}Title`);
-        // if (titleContainer) {
-        //   const timeframe = this.translateTimeframe(dataType); 
-        //   //titleContainer.innerText = `${this.translateDataSource(dataSource)} - ${titlePrefix} (${timeframe})`;
-        //   titleContainer.innerHTML = `${this.translateDataSource(dataSource)} - ${titlePrefix} <br><span style="font-size:12px"> ${timeframe} ב- (HH:MM)</span>`;
-        //   titleContainer.style.textAlign = 'center';
-        //   titleContainer.style.fontSize = '16px';
-        //   titleContainer.style.fontWeight = 'bold';
-        //   titleContainer.style.marginBottom = '5px';
-        // }
+        
 
         if (titleContainer) {
           const timeframe = this.translateTimeframe(dataType);
@@ -703,61 +686,7 @@ export class GoogleChartsService {
     }
   }
 
-  // public async drawSummarizedMultiPeriodChart(
-  //   containerId: string,
-  //   avgUrl: string,
-  //   aggUrl: string,
-  //   color: string
-  // ): Promise<void> {
-  //   await this.waitUntilChartsReady();
-  
-  //   const periods = ['1-Yesterday', '2-CurrentMonth', '3-CurrentYear', '4-ParallelsPeriod'];
-  
-  //   const avgData: { [p: string]: number } = {};
-  //   const aggData: { [p: string]: number } = {};
-  
-  //   // --- Fetch and sum AVERAGE values ---
-  //   for (const p of periods) {
-  //     const raw = await this.fetchWithCache(this.buildUrl(avgUrl, { dataType: p }));
-  //     const clean = sanitizeSoapResponse(raw);
-  //     let total = 0;
-  //     clean.rows.forEach((r: any) => { total += Number(r.c[4]?.v ?? 0); });
-  //     avgData[p] = total;
-  //   }
-  
-  //   // --- Fetch and sum AGGREGATE values ---
-  //   for (const p of periods.slice(1)) { // exclude Yesterday for aggregated
-  //     const raw = await this.fetchWithCache(this.buildUrl(aggUrl, { dataType: p }));
-  //     const clean = sanitizeSoapResponse(raw);
-  //     let total = 0;
-  //     clean.rows.forEach((r: any) => { total += Number(r.c[4]?.v ?? 0); });
-  //     aggData[p] = total;
-  //   }
-  
-  //   // --- Draw chart ---
-  //   drawHorizontalMultiPeriodChartHelperRoomTime({
-  //     containerId,
-  //     title: 'אובדן חדרי ניתוח – סיכום תקופות',
-  //     data: {
-  //       yesterdayAvg: avgData['1-Yesterday'],
-  //       monthAvg: avgData['2-CurrentMonth'],
-  //       yearAvg: avgData['3-CurrentYear'],
-  //       parallelAvg: avgData['4-ParallelsPeriod'],
-  //       monthAgg: aggData['2-CurrentMonth'],
-  //       yearAgg: aggData['3-CurrentYear'],
-  //       parallelAgg: aggData['4-ParallelsPeriod'],
-  //     },
-  //     //colors: ['#f86b6b', '#6ba1f8', '#5ed175', '#fcd74e']
-  //  colors:['#6ba1f8', // blue
-  //     '#a974f7', // purple
-  //     '#ff8c42', // orange
-  //     '#00cfc1', // teal
-  //     '#ff69b4', // pink
-  //     '#8b4513', // brown
-  // ]
-  //   });
-  // }
-  
+
   public async drawSummarizedMultiPeriodChart(
     containerId: string,
     avgUrl: string,
@@ -827,8 +756,49 @@ export class GoogleChartsService {
     });
   }
   
+
+  getAggregateData(dataType: string): Observable<string> {
+    return this.http.get(`${environment.url}/GetRoomAggregateDaysD?dataType=${dataType}`, {
+      responseType: 'text' as const
+    });
+  }
+  
+  getAverageData(dataType: string): Observable<string> {
+    return this.http.get(`${environment.url}/GetRoomTimeAvgD?dataType=${dataType}`, {
+      responseType: 'text' as const
+    });
+  }
   
 
+  drawDepartmentChart(config: {
+    containerId: string;
+    data: any[][];
+    chartTitle: string;
+    chartType: string;
+    color: string;
+    options?: any;
+  })
+   {
+    const chartData = google.visualization.arrayToDataTable(config.data);
+  
+    const chartOptions = {
+      title: config.chartTitle,
+      height: 400,
+      legend: { position: 'bottom' },
+      seriesType: 'bars',
+      series: { 1: { type: 'line' } },
+      colors: config.color ? [config.color, '#000000'] : undefined,
+      tooltip: { isHtml: false },
+      hAxis: { title: 'Data Type' },
+      vAxis: { title: 'Minutes / Days' },
+    };
+  
+    const chartWrapper = new google.visualization.ComboChart(
+      document.getElementById(config.containerId)
+    );
+    chartWrapper.draw(chartData, chartOptions);
+  }
+  
 
   @HostListener('window:scroll', [])
   onScroll() {
