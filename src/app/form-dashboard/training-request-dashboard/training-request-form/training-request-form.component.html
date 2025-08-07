@@ -225,7 +225,7 @@
                 <mat-form-field>
                   <mat-label>תאריך התחלה <p *ngIf="Training_Request_Forms_B.get('Training_Out').value">ללא ימי
                       הטיסה</p></mat-label>
-                  <input matInput [matDatepicker]="Date_Start" formControlName="Date_Start" required>
+                  <input matInput [matDatepicker]="Date_Start" formControlName="Date_Start" [min]="date_now" required>
                   <mat-datepicker-toggle matIconSuffix [for]="Date_Start"></mat-datepicker-toggle>
                   <mat-datepicker #Date_Start></mat-datepicker>
                   <mat-error
@@ -238,7 +238,7 @@
                 <mat-form-field>
                   <mat-label>תאריך סיום <p *ngIf="Training_Request_Forms_B.get('Training_Out').value">ללא ימי
                       הטיסה</p></mat-label>
-                  <input matInput [matDatepicker]="Date_End" formControlName="Date_End" required>
+                  <input matInput [matDatepicker]="Date_End" formControlName="Date_End" [min]="date_now" required>
                   <mat-datepicker-toggle matIconSuffix [for]="Date_End"></mat-datepicker-toggle>
                   <mat-datepicker #Date_End></mat-datepicker>
                   <mat-error

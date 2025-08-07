@@ -498,6 +498,7 @@ export class TrainingRequestFormComponent implements OnInit {
   Training_Out_Check() {
     if (this.Training_Request_Forms_B.controls['Training_Out'].value) {
       this.CitiesArray = [
+        { cityName: 'אסיה' },
         { cityName: 'אירופה' },
         { cityName: 'אפריקה' },
         { cityName: 'צפון אמריקה' },
@@ -714,7 +715,7 @@ export class TrainingRequestFormComponent implements OnInit {
   }
 
   onSubmit(final) {
-    if (this.Training_Request_Forms_A.valid && this.Training_Request_Forms_B.valid && this.Training_Request_Forms_C.valid && this.Training_Request_Forms_D.valid && this.Training_Request_Forms_E.valid && this.Training_Request_Forms_F.valid) {
+    if (this.Training_Request_Forms_A.valid && this.Training_Request_Forms_B.valid && this.Training_Request_Forms_C.valid && this.Training_Request_Forms_D.valid) {
       if (this.Supervisor_Name1.value == undefined) {
         this.openSnackBar('חסר מנהל ישיר, נא ליצור קשר עם משאבי אנוש');
         return;
