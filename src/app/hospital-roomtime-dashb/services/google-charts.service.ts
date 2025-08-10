@@ -1000,36 +1000,7 @@ export class GoogleChartsService {
     });
   }
   
-
-  // drawDepartmentChart(config: {
-  //   containerId: string;
-  //   data: any[][];
-  //   chartTitle: string;
-  //   chartType: string;
-  //   color: string;
-  //   options?: any;
-  // })
-  //  {
-  //   const chartData = google.visualization.arrayToDataTable(config.data);
-  
-  //   const chartOptions = {
-  //     title: config.chartTitle,
-  //     height: 400,
-  //     legend: { position: 'bottom' },
-  //     seriesType: 'bars',
-  //     series: { 1: { type: 'line' } },
-  //     colors: config.color ? [config.color, '#000000'] : undefined,
-  //     tooltip: { isHtml: false },
-  //     hAxis: { title: 'Data Type' },
-  //     vAxis: { title: 'Minutes / Days' },
-  //   };
-  
-  //   const chartWrapper = new google.visualization.ComboChart(
-  //     document.getElementById(config.containerId)
-  //   );
-  //   chartWrapper.draw(chartData, chartOptions);
-  // }
-  
+ 
   drawDepartmentChart(config: {
     containerId: string;
     data: any[][];
