@@ -850,6 +850,138 @@ export class GoogleChartsService {
     });
   }
   
+  public async drawSummarizedMultiPeriodChartForDepartment(
+    containerId: string,
+    avgUrl: string,  // GetRoomTimeAvgD
+    aggUrl: string,  // GetRoomAggregateDaysD
+    color: string,
+    departName: string,
+    opts?: {
+      /** query string key to use for department filtering (if your API expects a specific key) */
+      deptParamKey?: string;           // default: 'departName'
+      /** override how to compare department names (e.g., case-insensitive) */
+      matchDept?: (rowName: string, wanted: string) => boolean;
+    }
+  ): Promise<void> {
+    await this.waitUntilChartsReady();
+  
+    const periods = ['1-Yesterday', '2-CurrentMonth', '3-CurrentYear', '4-ParallelsPeriod'] as const;
+    const COL = { source: 0, dataType: 1, depart: 2, periodDate: 3, value: 4 } as const;
+  
+    const deptKey = opts?.deptParamKey ?? 'departName';
+    const matchDept = opts?.matchDept ?? ((rowName, wanted) => rowName === wanted);
+  
+    const toNum = (v: any) => {
+      const n = Number(v ?? 0);
+      return Number.isFinite(n) ? n : 0;
+    };
+  
+    const formatMinutesToHHMM = (min: number) => {
+      const rounded = Math.round(min);
+      const h = Math.floor(rounded / 60);
+      const mm = rounded % 60;
+      return `${h}:${mm.toString().padStart(2, '0')}`;
+    };
+  
+    // ---- FIRST LINE: SUM of rounded component averages (per period) ----
+    const computeSumOfComponentAverages = (rows: any[]) => {
+      const buckets: Record<'SetupTime' | 'EndDay' | 'MorningDelay', number[]> = {
+        SetupTime: [], EndDay: [], MorningDelay: []
+      };
+      for (const r of rows ?? []) {
+        const dep = r?.c?.[COL.depart]?.v as string;
+        if (!matchDept(dep ?? '', departName)) continue;
+  
+        const src = r?.c?.[COL.source]?.v as string;
+        const val = toNum(r?.c?.[COL.value]?.v);
+        if (src === 'SetupTime' || src === 'EndDay' || src === 'MorningDelay') {
+          buckets[src].push(val);
+        }
+      }
+  
+      const avgRaw = {
+        SetupTime: buckets.SetupTime.length ? buckets.SetupTime.reduce((a, b) => a + b, 0) / buckets.SetupTime.length : 0,
+        EndDay: buckets.EndDay.length ? buckets.EndDay.reduce((a, b) => a + b, 0) / buckets.EndDay.length : 0,
+        MorningDelay: buckets.MorningDelay.length ? buckets.MorningDelay.reduce((a, b) => a + b, 0) / buckets.MorningDelay.length : 0,
+      };
+  
+      // Round EACH component to minute (floor to match your current impl), then sum
+      const avgRounded = {
+        SetupTime: Math.floor(avgRaw.SetupTime),
+        EndDay: Math.floor(avgRaw.EndDay),
+        MorningDelay: Math.floor(avgRaw.MorningDelay),
+      };
+      const sumOfAverages = avgRounded.SetupTime + avgRounded.EndDay + avgRounded.MorningDelay;
+  
+      // Debug (optional)
+      // console.debug('DeptAvg rounded:', avgRounded, 'sum:', sumOfAverages, formatMinutesToHHMM(sumOfAverages));
+  
+      return { sumOfAverages, avgRounded };
+    };
+  
+    // ---- SECOND LINE: SUM totals (per period) ----
+    const computeSumLossFromRows = (rows: any[]) => {
+      const values = (rows ?? [])
+        .filter(r => matchDept(r?.c?.[COL.depart]?.v ?? '', departName))
+        .map(r => toNum(r?.c?.[COL.value]?.v));
+      return values.reduce((a, b) => a + b, 0);
+    };
+  
+    const firstLineData: Record<string, number> = {};   // minutes
+    const secondLineData: Record<string, number> = {};  // minutes
+  
+    // ----- build FIRST line: per period, sum of rounded component averages -----
+    for (const p of periods) {
+      // Try server-side filtering; if API ignores it, we’ll filter client-side.
+      const urlWithDept = this.buildUrl(avgUrl, { dataType: p, [deptKey]: departName });
+      const raw = await this.fetchWithCache(urlWithDept);
+      const clean = sanitizeSoapResponse(raw);
+      const rows = Array.isArray(clean?.rows) ? clean.rows : [];
+  
+      const { sumOfAverages } = computeSumOfComponentAverages(rows);
+      firstLineData[p] = sumOfAverages;
+      // console.debug(`Dept FIRST (${departName} | ${p}) -> ${sumOfAverages} min (${formatMinutesToHHMM(sumOfAverages)})`);
+    }
+  
+    // ----- build SECOND line: totals SUM (note: you originally skip Yesterday for agg) -----
+    for (const p of periods.slice(1)) {
+      const urlWithDept = this.buildUrl(aggUrl, { dataType: p, [deptKey]: departName });
+      const raw = await this.fetchWithCache(urlWithDept);
+      const clean = sanitizeSoapResponse(raw);
+      const rows = Array.isArray(clean?.rows) ? clean.rows : [];
+  
+      const total = computeSumLossFromRows(rows);
+      secondLineData[p] = total;
+      // console.debug(`Dept SECOND (${departName} | ${p}) -> ${total} min (${formatMinutesToHHMM(total)})`);
+    }
+  
+    // ----- draw -----
+    drawHorizontalMultiPeriodChartHelperRoomTime({
+      containerId,
+      title: `אובדן חדרי ניתוח – סיכום תקופות (${departName})`,
+      data: {
+        // First line: sum of (rounded) component averages
+        yesterdayAvg: firstLineData['1-Yesterday'],
+        monthAvg:     firstLineData['2-CurrentMonth'],
+        yearAvg:      firstLineData['3-CurrentYear'],
+        parallelAvg:  firstLineData['4-ParallelsPeriod'],
+  
+        // Second line: totals SUM
+        monthAgg:     secondLineData['2-CurrentMonth'],
+        yearAgg:      secondLineData['3-CurrentYear'],
+        parallelAgg:  secondLineData['4-ParallelsPeriod'],
+        // yesterdayAgg: secondLineData['1-Yesterday'], // uncomment if your agg supports it
+      },
+      colors: [
+        color,        // keep department color as first (bars)
+        '#a974f7',    // purple
+        '#ff8c42',    // orange
+        '#00cfc1',    // teal
+        '#ff69b4',    // pink
+        '#8b4513',    // brown
+      ]
+    });
+  }
   
     
   
@@ -869,33 +1001,78 @@ export class GoogleChartsService {
   }
   
 
+  // drawDepartmentChart(config: {
+  //   containerId: string;
+  //   data: any[][];
+  //   chartTitle: string;
+  //   chartType: string;
+  //   color: string;
+  //   options?: any;
+  // })
+  //  {
+  //   const chartData = google.visualization.arrayToDataTable(config.data);
+  
+  //   const chartOptions = {
+  //     title: config.chartTitle,
+  //     height: 400,
+  //     legend: { position: 'bottom' },
+  //     seriesType: 'bars',
+  //     series: { 1: { type: 'line' } },
+  //     colors: config.color ? [config.color, '#000000'] : undefined,
+  //     tooltip: { isHtml: false },
+  //     hAxis: { title: 'Data Type' },
+  //     vAxis: { title: 'Minutes / Days' },
+  //   };
+  
+  //   const chartWrapper = new google.visualization.ComboChart(
+  //     document.getElementById(config.containerId)
+  //   );
+  //   chartWrapper.draw(chartData, chartOptions);
+  // }
+  
   drawDepartmentChart(config: {
     containerId: string;
     data: any[][];
-    chartTitle: string;
-    chartType: string;
-    color: string;
-    options?: any;
-  })
-   {
-    const chartData = google.visualization.arrayToDataTable(config.data);
+    chartTitle?: string;
+    chartType?: 'ColumnChart' | 'ComboChart' | 'BarChart'; // optional
+    color?: string;
+    options?: any; // must include your hAxis/vAxis if you pass them
+  }): void {
+    const el = document.getElementById(config.containerId);
+    if (!el || !(window as any).google?.visualization) return;
   
-    const chartOptions = {
-      title: config.chartTitle,
+    const dt = new google.visualization.arrayToDataTable(config.data);
+  
+    // Minimal base — DO NOT set hAxis/vAxis here (let caller control them)
+    const base: any = {
+      title: config.chartTitle ?? '',
       height: 400,
       legend: { position: 'bottom' },
-      seriesType: 'bars',
-      series: { 1: { type: 'line' } },
-      colors: config.color ? [config.color, '#000000'] : undefined,
-      tooltip: { isHtml: false },
-      hAxis: { title: 'Data Type' },
-      vAxis: { title: 'Minutes / Days' },
+      tooltip: { isHtml: true },
+      colors: config.color ? [config.color] : undefined
     };
   
-    const chartWrapper = new google.visualization.ComboChart(
-      document.getElementById(config.containerId)
-    );
-    chartWrapper.draw(chartData, chartOptions);
+    // Deep merge so nested axis options from the component are preserved
+    const merge = (a: any, b: any) => {
+      if (!b) return a;
+      const out = Array.isArray(a) ? [...a] : { ...a };
+      for (const [k, v] of Object.entries(b)) {
+        out[k] = v && typeof v === 'object' && !Array.isArray(v)
+          ? merge(out[k] ?? {}, v)
+          : v;
+      }
+      return out;
+    };
+    const opts = merge(base, config.options || {});
+  
+    // Default to classic ColumnChart (slantedText supported)
+    const Ctor =
+      config.chartType === 'ComboChart' ? google.visualization.ComboChart :
+      config.chartType === 'BarChart'   ? google.visualization.BarChart   :
+                                          google.visualization.ColumnChart;
+  
+    const chart = new Ctor(el);
+    chart.draw(dt, opts);
   }
   
 
@@ -912,5 +1089,148 @@ export class GoogleChartsService {
     }
   }
 
+  public async drawDepartmentMultiPeriodSummary(
+    containerId: string,
+    departName: string,
+    color: string,
+    opts: {
+      // if you already have the department metrics in memory, pass them here (fallback path)
+      deptMetrics?: Array<{ period: string; source: string; avgMinutes?: number; aggregateDays?: number }>;
+      // endpoints, same as your total summary function
+      avgUrl?: string;      // e.g. `${environment.url}/GetRoomTimeAvgD`
+      aggUrl?: string;      // e.g. `${environment.url}/GetRoomAggregateDaysD`
+    } = {}
+  ): Promise<void> {
+    await this.waitUntilChartsReady();
+  
+    const container = document.getElementById(containerId);
+    if (!container || !(window as any).google?.visualization) return;
+  
+    // Desired order / labels
+    const order = ['1-Yesterday', '2-CurrentMonth', '3-CurrentYear', '4-ParallelsPeriod'];
+    const labelMap: Record<string,string> = {
+      '1-Yesterday': 'אתמול',
+      '2-CurrentMonth': 'החודש',
+      '3-CurrentYear': 'השנה',
+      '4-ParallelsPeriod': 'השוואתי'
+    };
+  
+    // Try server-side filtered fetch first (if URLs provided)
+    let seriesFromServer: { [period: string]: { avg?: number; days?: number } } | null = null;
+    try {
+      if (opts.avgUrl && opts.aggUrl) {
+        // Try with departName param — change 'departName' to whatever your API expects
+        const [avgRaw, aggRaw] = await Promise.all([
+          this.fetchWithCache(this.buildUrl(opts.avgUrl, { dataType: '', departName })), // dataType blank => server returns all periods
+          this.fetchWithCache(this.buildUrl(opts.aggUrl, { dataType: '', departName }))
+        ]);
+        const avgClean = sanitizeSoapResponse(avgRaw);
+        const aggClean = sanitizeSoapResponse(aggRaw);
+  
+        const acc: any = {};
+        avgClean?.rows?.forEach((r: any) => {
+          const p = r.c[1]?.v;                 // Period
+          const v = Number(r.c[4]?.v ?? 0);    // Value (minutes or seconds)
+          if (!acc[p]) acc[p] = {};
+          acc[p].avg = (acc[p].avg ?? 0) + v;
+        });
+        aggClean?.rows?.forEach((r: any) => {
+          const p = r.c[1]?.v;
+          const v = Number(r.c[4]?.v ?? 0);
+          if (!acc[p]) acc[p] = {};
+          acc[p].days = (acc[p].days ?? 0) + v;
+        });
+        seriesFromServer = acc;
+      }
+    } catch {
+      seriesFromServer = null;
+    }
+  
+    // Fallback: compute from in-memory deptMetrics (what the component already has)
+    const series = seriesFromServer ?? (() => {
+      const acc: any = {};
+      (opts.deptMetrics ?? []).forEach(m => {
+        const p = m.period;
+        if (!acc[p]) acc[p] = { avg: 0, days: 0 };
+        if (m.avgMinutes !== undefined) acc[p].avg += Number(m.avgMinutes);
+        if (m.aggregateDays !== undefined) acc[p].days += Number(m.aggregateDays);
+      });
+      return acc;
+    })();
+  
+    // Build DataTable: 2 series -> Avg time (raw) + Days
+    const dt = new google.visualization.DataTable();
+    dt.addColumn('string', 'תקופה');
+    dt.addColumn('number', 'זמן ממוצע');  // raw numeric (minutes or seconds; we’ll fix ticks with labels)
+    dt.addColumn('number', 'ימי אובדן');
+  
+    // collect raw avg values to build hh:mm ticks (seconds/minutes detection)
+    const rawAvgVals: number[] = [];
+    order.forEach(p => {
+      const row = series[p] || {};
+      const avg = Number(row.avg ?? 0);
+      const days = Number(row.days ?? 0);
+      rawAvgVals.push(avg);
+      dt.addRow([labelMap[p] || p, avg, days]);
+    });
+  
+    // Detect seconds and build hh:mm ticks
+    const detectSeconds = (vals: number[]) => {
+      if (!vals.length) return false;
+      const max = Math.max(...vals);
+      const manyDiv60 = vals.filter(v => v % 60 === 0).length >= Math.ceil(vals.length * 0.6);
+      return max >= 30 * 60 && manyDiv60;
+    };
+    const niceStep = (m: number) => (m<=30?5:m<=60?10:m<=120?15:m<=240?30:m<=480?60:120);
+  
+    const useSeconds = detectSeconds(rawAvgVals);
+    const scale = useSeconds ? 60 : 1; // numeric units per minute
+    const mins = rawAvgVals.map(v => v / scale);
+    const maxMin = Math.max(0, ...mins);
+    const stepMin = niceStep(maxMin || 60);
+    const maxRoundedMin = Math.ceil((maxMin || stepMin) / stepMin) * stepMin;
+    const ticks: { v:number; f:string }[] = [];
+    for (let m = 0; m <= maxRoundedMin; m += stepMin) {
+      const v = m * scale;
+      const h = Math.floor(m / 60), mm = m % 60;
+      ticks.push({ v, f: `${h.toString().padStart(2,'0')}:${mm.toString().padStart(2,'0')}` });
+    }
+  
+    // Options: compact height, slanted labels (just like total)
+    const options: google.visualization.ComboChartOptions = {
+      height: 160,
+      legend: { position: 'right' },
+      tooltip: { isHtml: true },
+      chartArea: { left: 50, top: 10, right: 20, width: '80%', height: '70%' },
+      seriesType: 'bars',
+      series: { 1: { type: 'line' } }, // 0=Avg bars, 1=Days line (tweak as you like)
+      colors: color ? [color, '#333'] : undefined,
+      hAxis: {
+        slantedText: true,
+        slantedTextAngle: 45,
+        textStyle: { fontSize: 12 },
+        showTextEvery: 1,
+        maxAlternation: 1,
+        minTextSpacing: 0
+      },
+      vAxes: {
+        // v0: Avg time w/ hh:mm labels; v1: Days (right)
+        0: { ticks, viewWindow: { min: 0, max: maxRoundedMin * scale } },
+        1: { minValue: 0, format: '0' }
+      },
+      seriesMapping: undefined
+    } as any;
+  
+    // map series to axes: 0 -> v0 (time), 1 -> v1 (days)
+    (options as any).series = {
+      0: { targetAxisIndex: 0, type: 'bars' },
+      1: { targetAxisIndex: 1, type: 'line' }
+    };
+  
+    // Use ComboChart to show both series clearly in the tiny height
+    const chart = new google.visualization.ComboChart(container);
+    chart.draw(dt, options);
+  }
 
+  
 }

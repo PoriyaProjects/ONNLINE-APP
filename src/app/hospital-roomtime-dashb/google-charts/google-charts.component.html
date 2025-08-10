@@ -218,6 +218,16 @@
   outline: 2px solid #fff;
   font-weight: bold;
 }
+
+
+.department-subtabs button.active {
+  background: #6ba1f8;
+  color: #fff;
+  border-color: #6ba1f8;
+  font-weight: bold;
+}
+
+
 </style>
 
 <div class="mdc-layout-grid" style="direction: rtl;">
@@ -471,31 +481,30 @@
 
         <!--eof-->
         <div style="height:60px;"></div>
+        
+          <div id="stickyTabsFilters" class="tabs-filters-wrapper">
+            <!-- Tabs -->
+            <div class="tabs">
+              <button (click)="onTabChange('avg')" [class.active]="activeTab === 'avg'">
+                <span class="material-icons">av_timer</span> זמן ממוצע
+              </button>
+              <button (click)="onTabChange('agg')" [class.active]="activeTab === 'agg'">
+                <span class="material-icons">running_with_errors</span> ימי אובדן
+              </button>
+            </div>
 
-        <div id="stickyTabsFilters" class="tabs-filters-wrapper">
-          <!-- Tabs -->
-          <div class="tabs">
-            <button (click)="onTabChange('avg')" [class.active]="activeTab === 'avg'">
-              <span class="material-icons">av_timer</span> זמן ממוצע
-            </button>
-            <button (click)="onTabChange('agg')" [class.active]="activeTab === 'agg'">
-              <span class="material-icons">running_with_errors</span> ימי אובדן
-            </button>
+            <!-- Filters -->
+            <div class="filters">
+              <ng-container *ngFor="let type of dataTypes">
+                <label *ngIf="!(activeTab === 'agg' && type.value === '1-Yesterday')">
+                  <input type="radio" name="dataType" [value]="type.value" [(ngModel)]="selectedDataType"
+                    (change)="onDataTypeChange()" />
+                  {{ type.label }}
+                </label>
+              </ng-container>
+            </div>
           </div>
-
-          <!-- Filters -->
-          <div class="filters">
-            <ng-container *ngFor="let type of dataTypes">
-              <label *ngIf="!(activeTab === 'agg' && type.value === '1-Yesterday')">
-                <input type="radio" name="dataType" [value]="type.value" [(ngModel)]="selectedDataType"
-                  (change)="onDataTypeChange()" />
-                {{ type.label }}
-              </label>
-            </ng-container>
-          </div>
-        </div>
-
-
+        
 
         <!-- Average Charts -->
         <div *ngIf="activeTab === 'avg'">
@@ -550,7 +559,7 @@
         </div>
 
 
-
+        <div id="deptStickyStart" aria-hidden="true"></div>
        <!-- Department Tabs -->
        <div class="department-tabs">        
         <button
@@ -564,23 +573,41 @@
       </div>      
       <div style="height:60px;"></div>
 
-
+      <div *ngIf="selectedDepartment" class="card text-center" style="margin:10px 0 20px">
+        <h3 style="margin:10px auto 0">סיכום — {{ selectedDepartment }}</h3>
+        <div id="DeptmultiPeriodSummary" style="width: 100%; height: 160px;"></div>
+        <div style="height:60px;"></div>
+      </div>  
     <!-- Department Charts -->
     
-    <div *ngIf="selectedDepartment" class="department-charts">
-      <div class="row" *ngFor="let chunk of selectedDepartmentChartChunks">
-        <div class="col-md-4" *ngFor="let chart of chunk">
-          <div class="card text-center" style="margin-bottom: 40px;">            
-            <div [id]="chart.containerId" style="width: 100%; height: 400px;">
-              טוען גרף...
-            </div>
-          </div>
-        </div>
+
+<!-- Department sub-tabs -->
+<div *ngIf="selectedDepartment" class="tabs department-subtabs" style="margin-top:10px; text-align: right;">
+  <button (click)="onDeptTabChange('avg')" [class.active]="activeDeptTab === 'avg'">ממוצע</button>
+  <button (click)="onDeptTabChange('agg')" [class.active]="activeDeptTab === 'agg'">מצטבר</button>
+</div>
+
+<!-- Department Charts (Avg) -->
+<div *ngIf="selectedDepartment && activeDeptTab === 'avg'" class="department-charts">
+  <div class="row" *ngFor="let chunk of selectedDepartmentAvgChartChunks">
+    <div class="col-md-4" *ngFor="let chart of chunk">
+      <div class="card text-center" style="margin-bottom: 40px;">
+        <div [id]="chart.containerId" style="width: 100%; height: 400px;">טוען גרף...</div>
       </div>
     </div>
-    
-        
+  </div>
+</div>
 
+<!-- Department Charts (Agg) -->
+<div *ngIf="selectedDepartment && activeDeptTab === 'agg'" class="department-charts">
+  <div class="row" *ngFor="let chunk of selectedDepartmentAggChartChunks">
+    <div class="col-md-4" *ngFor="let chart of chunk">
+      <div class="card text-center" style="margin-bottom: 40px;">
+        <div [id]="chart.containerId" style="width: 100%; height: 400px;">טוען גרף...</div>
+      </div>
+    </div>
+  </div>
+</div>
 
 
       </main>
