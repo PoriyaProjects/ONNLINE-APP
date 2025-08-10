@@ -106,6 +106,15 @@ export class RoomTimeDashboardComponent implements OnInit, AfterViewInit {
     this.loadAllAggregateData();
     this.loadAllAverageData();
 
+
+
+
+
+
+
+
+    
+
   }
 
   @HostListener('window:resize')
@@ -126,6 +135,75 @@ export class RoomTimeDashboardComponent implements OnInit, AfterViewInit {
     }
     setTimeout(() => this.loadCharts(), 0);
   }
+
+  // onDeptTabChange(tab: 'avg' | 'agg') {
+  //   this.activeDeptTab = tab;
+  //   // draw the now-visible charts
+  //   setTimeout(() => {
+  //     const list = tab === 'avg' ? this.selectedDepartmentAvgCharts : this.selectedDepartmentAggCharts;
+  //     list.forEach(cfg => {
+  //       try {
+  //         this.googleChartsService.drawDepartmentChart({
+  //           containerId: cfg.containerId,
+  //           data: cfg.data,
+  //           chartTitle: cfg.chartTitle,
+  //           chartType: 'ColumnChart',
+  //           color: this.getDepartmentColor(this.selectedDepartment!),
+  //           options: {
+  //             annotations: { alwaysOutside: true, textStyle: { fontSize: 11, color: '#000', auraColor: 'none' } },
+  //             hAxis: { slantedText: true, slantedTextAngle: 45, textStyle: { fontSize: 12 } },
+  //             legend: { position: 'bottom' },
+  //             tooltip: { isHtml: true },
+  //             chartArea: { left: 60, top: 60, width: '85%', height: '65%' },
+  //             height: 400
+  //           }
+  //         });
+  //       } catch {}
+  //     });
+  //   }, 0);
+  // }
+  
+  onDeptTabChange(tab: 'avg' | 'agg') {
+    this.activeDeptTab = tab;
+  
+    // same base options you use in selectDepartment
+    const baseOptions: any = {
+      annotations: { alwaysOutside: true, textStyle: { fontSize: 11, color: '#000', auraColor: 'none' } },
+      legend: { position: 'bottom' },
+      tooltip: { isHtml: true },
+      chartArea: { left: 60, top: 60, width: '85%', height: '65%' },
+      height: 400,
+      hAxis: {
+        slantedText: true,
+        slantedTextAngle: 45,
+        textStyle: { fontSize: 12 },
+        showTextEvery: 1,
+        maxAlternation: 1,
+        minTextSpacing: 0
+      }
+    };
+  
+    setTimeout(() => {
+      if (!this.selectedDepartment) return;
+      const color = this.getDepartmentColor(this.selectedDepartment);
+      const list = tab === 'avg' ? this.selectedDepartmentAvgCharts : this.selectedDepartmentAggCharts;
+  
+      list.forEach((cfg: any) => {
+        this.googleChartsService.drawDepartmentChart({
+          containerId: cfg.containerId,
+          data: cfg.data,
+          chartTitle: cfg.chartTitle,
+          chartType: 'ColumnChart',               // classic => slantedText works
+          color,
+          options: {
+            ...baseOptions,
+            vAxis: cfg.vAxis                       // <-- keep the hh:mm ticks you computed
+          }
+        });
+      });
+    }, 0);
+  }
+  
 
   getDepartmentColor(department: string): string {
     if (!this.departmentColorMap[department]) {
@@ -345,157 +423,195 @@ export class RoomTimeDashboardComponent implements OnInit, AfterViewInit {
 
 
 
-
 selectDepartment(deptName: string) {
   this.selectedDepartment = deptName;
-  const data = this.departmentMap.get(deptName);
-  if (!data) return;
+  const dept = this.departmentMap.get(deptName);
+  if (!dept) return;
 
-  this.selectedDepartmentCharts = [];
+  // reset lists
+  this.selectedDepartmentAvgCharts = [];
+  this.selectedDepartmentAggCharts = [];
+  this.selectedDepartmentCharts = []; // legacy support if something else still uses it
 
-  const sourceDataMap = new Map<string, Map<string, { avgMinutes?: number; aggregateDays?: number }>>();
+  // group metrics by source → period (store raw avg + days)
+  const grouped = new Map<string, Map<string, { avgRaw?: number; days?: number }>>();
+  for (const { source, period, avgMinutes, aggregateDays } of dept.metrics) {
+    if (!grouped.has(source)) grouped.set(source, new Map());
+    const byPeriod = grouped.get(source)!;
+    if (!byPeriod.has(period)) byPeriod.set(period, {});
+    const rec = byPeriod.get(period)!;
+    if (avgMinutes !== undefined)  rec.avgRaw = Number(avgMinutes);     // NOTE: feed may be minutes OR seconds
+    if (aggregateDays !== undefined) rec.days = Number(aggregateDays);
+  }
 
-  // Group data by source and period
-  data.metrics.forEach(entry => {
-    const { source, period, avgMinutes, aggregateDays } = entry;
+  // column order
+  const displayOrder = ['1-Yesterday', '2-CurrentMonth', '3-CurrentYear', '4-ParallelsPeriod'];
 
-    if (!sourceDataMap.has(source)) {
-      sourceDataMap.set(source, new Map());
+  // base chart options (shared)
+  const baseOptions: any = {
+    annotations: { alwaysOutside: true, textStyle: { fontSize: 11, color: '#000', auraColor: 'none' } },
+    legend: { position: 'bottom' },
+    tooltip: { isHtml: true },
+    chartArea: { left: 60, top: 60, width: '85%', height: '65%' },
+    height: 400,
+    // insist on slanted labels
+    hAxis: {
+      slantedText: true,
+      slantedTextAngle: 45,
+      textStyle: { fontSize: 12 },
+      showTextEvery: 1,
+      maxAlternation: 1,
+      minTextSpacing: 0
     }
+  };
 
-    const dataTypeMap = sourceDataMap.get(source)!;
+  // ===== helpers for Avg axis =====
+  const niceMinuteStep = (maxMin: number) =>
+    maxMin <= 30 ? 5 : maxMin <= 60 ? 10 : maxMin <= 120 ? 15 : maxMin <= 240 ? 30 : maxMin <= 480 ? 60 : 120;
 
-    if (!dataTypeMap.has(period)) {
-      dataTypeMap.set(period, {});
+  // detect if a series is in SECONDS (not minutes)
+  const detectSeconds = (values: number[]) => {
+    if (!values.length) return false;
+    const max = Math.max(...values);
+    const manyDiv60 = values.filter(v => v % 60 === 0).length >= Math.ceil(values.length * 0.6);
+    return max >= 30 * 60 && manyDiv60; // ≥ 30 min and many divisible by 60 ⇒ likely seconds
+  };
+
+  // build {v,f:'hh:mm'} ticks at proper numeric positions
+  const buildTimeTicks = (valuesRaw: number[]) => {
+    if (!valuesRaw.length) return { ticks: [], max: 0 };
+    const useSeconds = detectSeconds(valuesRaw);
+    const scale = useSeconds ? 60 : 1;            // numeric units per 1 minute on the axis
+    const mins = valuesRaw.map(v => v / scale);   // normalize to minutes for step calc
+    const maxMin = Math.max(0, ...mins);
+    const stepMin = niceMinuteStep(maxMin || 60);
+    const maxRoundedMin = Math.ceil((maxMin || stepMin) / stepMin) * stepMin;
+
+    const ticks: { v: number; f: string }[] = [];
+    for (let m = 0; m <= maxRoundedMin; m += stepMin) {
+      ticks.push({ v: m * scale, f: this.formatMinutesToHHMM(m) });
     }
+    return { ticks, max: maxRoundedMin * scale, useSeconds };
+  };
 
-    const record = dataTypeMap.get(period)!;
-    if (avgMinutes !== undefined) record.avgMinutes = avgMinutes;
-    if (aggregateDays !== undefined) record.aggregateDays = aggregateDays;
-  });
-
-  // Define desired period display order
-  const displayOrder = [
-    '1-Yesterday',
-    '2-CurrentMonth',
-    '3-CurrentYear',
-    '4-ParallelsPeriod'
-  ];
-
-  sourceDataMap.forEach((dataTypeMap, source) => {
-    const avgChartData: any[][] = [
-      ['DataType', 'AvgTime (min)', { role: 'tooltip', type: 'string' }, { role: 'annotation' }]
+  // ===== build per-source charts =====
+  grouped.forEach((byPeriod, source) => {
+    const avgData: any[][] = [
+      ['DataType', 'AvgTime', { role: 'tooltip', type: 'string' }, { role: 'annotation' }]
     ];
-
-    const aggChartData: any[][] = [
+    const aggData: any[][] = [
       ['DataType', 'Aggregate Days', { role: 'tooltip', type: 'string' }, { role: 'annotation' }]
     ];
 
-    // Use desired order
-    displayOrder.forEach(dataType => {
-      const val = dataTypeMap.get(dataType);
-      if (!val) return;
-
-      const avg = val.avgMinutes ?? 0;
-      const days = val.aggregateDays ?? 0;
-      const tooltip = `זמן ממוצע: ${this.formatMinutesToHHMM(avg)}\nימי אובדן: ${days}`;
-
-      avgChartData.push([
-        dataType,
-        avg,
-        tooltip,
-        this.formatMinutesToHHMM(avg)
-      ]);
-
-      aggChartData.push([
-        dataType,
-        days,
-        tooltip,
-        days.toString()
-      ]);
+    // collect rows once (so we can detect seconds correctly)
+    const rowsForSource: Array<{ dt: string; raw: number; days: number }> = [];
+    displayOrder.forEach(dt => {
+      const v = byPeriod.get(dt);
+      if (!v) return;
+      rowsForSource.push({
+        dt,
+        raw: Number((v as any).avgRaw ?? 0),            // minutes OR seconds (raw numeric)
+        days: Number((v as any).days ?? 0)
+      });
     });
 
-    const safeSource = source.replace(/\s+/g, '_');
+    // detect unit and push rows with translated labels
+    const useSeconds = detectSeconds(rowsForSource.map(r => r.raw));
+    const toDisplayMinutes = (val: number) => useSeconds ? Math.round(val / 60) : Math.round(val);
+
+    rowsForSource.forEach(({ dt, raw, days }) => {
+      const label = this.translateTimeframe(dt);        // ✅ X-axis bar names in Hebrew
+      const displayMin = toDisplayMinutes(raw);         // for tooltip/annotation only
+      const tip = `זמן ממוצע: ${this.formatMinutesToHHMM(displayMin)}\nימי אובדן: ${days}`;
+
+      avgData.push([label, raw, tip, this.formatMinutesToHHMM(displayMin)]);
+      aggData.push([label, days, tip, String(days)]);
+    });
+
+    // precompute vAxis (Avg -> hh:mm ticks; Agg -> integer days)
+    const { ticks, max } = buildTimeTicks(rowsForSource.map(r => r.raw));
+
     const safeDept = deptName.replace(/\s+/g, '_');
+    const safeSrc  = source.replace(/\s+/g, '_');
 
-    const avgContainerId = `chart_avg_${safeDept}_${safeSource}`;
-    const aggContainerId = `chart_agg_${safeDept}_${safeSource}`;
+    const avgCfg = {
+      dept: deptName,
+      source,
+      containerId: `chart_avg_${safeDept}_${safeSrc}`,
+      data: avgData,
+      chartTitle: `${this.convertSourceToHebrew(source)} – ${deptName} (זמן ממוצע)`,
+      vAxis: { ticks, viewWindow: { min: 0, max } }
+    };
+    const aggCfg = {
+      dept: deptName,
+      source,
+      containerId: `chart_agg_${safeDept}_${safeSrc}`,
+      data: aggData,
+      chartTitle: `${this.convertSourceToHebrew(source)} – ${deptName} (ימי אובדן)`,
+      vAxis: { minValue: 0, format: '0' }
+    };
 
-    const avgTitle = `${this.convertSourceToHebrew(source)} – ${deptName} (זמן ממוצע)`;
-    const aggTitle = `${this.convertSourceToHebrew(source)} – ${deptName} (ימי אובדן)`;
-
-    // Push chart configs for rendering template if needed
-    this.selectedDepartmentCharts.push(
-      {
-        dept: deptName,
-        source,
-        containerId: avgContainerId,
-        data: avgChartData,
-        chartTitle: avgTitle
-      },
-      {
-        dept: deptName,
-        source,
-        containerId: aggContainerId,
-        data: aggChartData,
-        chartTitle: aggTitle
-      }
-    );
-
-    // Draw both charts
-    setTimeout(() => {
-      this.googleChartsService.drawDepartmentChart({
-        containerId: avgContainerId,
-        data: avgChartData,
-        chartTitle: avgTitle,
-        chartType: 'ColumnChart',
-        color: this.getDepartmentColor(deptName),
-        options: {
-          annotations: {
-            alwaysOutside: true,
-            textStyle: { fontSize: 11, color: '#000', auraColor: 'none' }
-          },
-          hAxis: {
-            slantedText: true,
-            slantedTextAngle: 45,
-            textStyle: { fontSize: 12 }
-          },
-          legend: { position: 'bottom' },
-          tooltip: { isHtml: true },
-          chartArea: { left: 60, top: 60, width: '85%', height: '65%' },
-          height: 400
-        }
-      });
-
-      this.googleChartsService.drawDepartmentChart({
-        containerId: aggContainerId,
-        data: aggChartData,
-        chartTitle: aggTitle,
-        chartType: 'ColumnChart',
-        color: this.getDepartmentColor(deptName),
-        options: {
-          annotations: {
-            alwaysOutside: true,
-            textStyle: { fontSize: 11, color: '#000', auraColor: 'none' }
-          },
-          hAxis: {
-            slantedText: true,
-            slantedTextAngle: 45,
-            textStyle: { fontSize: 12 }
-          },
-          legend: { position: 'bottom' },
-          tooltip: { isHtml: true },
-          chartArea: { left: 60, top: 60, width: '85%', height: '65%' },
-          height: 400
-        }
-      });
-    }, 0);
+    this.selectedDepartmentAvgCharts.push(avgCfg);
+    this.selectedDepartmentAggCharts.push(aggCfg);
+    this.selectedDepartmentCharts.push(avgCfg, aggCfg); // legacy
   });
 
-  // Split charts into rows of 3
-  this.selectedDepartmentChartChunks = this.chunkArray(this.selectedDepartmentCharts, 3);
+  // chunk for grid
+  this.selectedDepartmentAvgChartChunks = this.chunkArray(this.selectedDepartmentAvgCharts, 3);
+  this.selectedDepartmentAggChartChunks = this.chunkArray(this.selectedDepartmentAggCharts, 3);
+  this.selectedDepartmentChartChunks    = this.chunkArray(this.selectedDepartmentCharts, 3); // legacy
+
+  // draw only the visible sub-tab (ensures slanted X + hh:mm for Avg)
+  setTimeout(() => {
+    const isAvg = this.activeDeptTab === 'avg';
+    const list  = isAvg ? this.selectedDepartmentAvgCharts : this.selectedDepartmentAggCharts;
+    const color = this.getDepartmentColor(deptName);
+
+    list.forEach((cfg: any) => {
+      const options = {
+        ...baseOptions,
+        vAxis: cfg.vAxis // Avg: hh:mm ticks; Agg: integer days
+      };
+
+      this.googleChartsService.drawDepartmentChart({
+        containerId: cfg.containerId,
+        data: cfg.data,
+        chartTitle: cfg.chartTitle,
+        chartType: 'ColumnChart', // classic chart honors slantedText
+        color,
+        options
+      });
+    });
+  }, 0);
+
+  setTimeout(() => {
+    this.googleChartsService.drawSummarizedMultiPeriodChartForDepartment(
+      'DeptmultiPeriodSummary',
+      `${environment.url}/GetRoomTimeAvgD`,
+      `${environment.url}/GetRoomAggregateDaysD`,
+      this.getDepartmentColor(deptName),
+      deptName,
+      {
+        // optional overrides:
+        // deptParamKey: 'Depart_Name',
+        // matchDept: (rowName, wanted) => rowName?.toLowerCase() === wanted.toLowerCase()
+      }
+    );
+  }, 0);
+  
 }
 
+
+
+private translateTimeframe(value: string): string {
+  const map: { [key: string]: string } = {
+    '1-Yesterday': 'אתמול',
+    '2-CurrentMonth': 'החודש',
+    '3-CurrentYear': 'השנה',
+    '4-ParallelsPeriod': 'השוואתי'
+  };
+  return map[value] || value;
+}
 
   convertSourceToHebrew(source: string): string {
     const map: Record<string, string> = {
@@ -535,4 +651,91 @@ selectDepartment(deptName: string) {
     return result;
   }
 
+
+
+
+  // under existing fields:
+activeDeptTab: 'avg' | 'agg' = 'avg';
+
+selectedDepartmentAvgCharts: any[] = [];
+selectedDepartmentAggCharts: any[] = [];
+selectedDepartmentAvgChartChunks: any[][] = [];
+selectedDepartmentAggChartChunks: any[][] = [];
+
+
+
+
+/** Format minutes -> "hh:mm" (you already have formatMinutesToHHMM; use that if you like) */
+private toHHMM(totalMin: number): string {
+  const h = Math.floor(totalMin / 60);
+  const m = totalMin % 60;
+  return `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}`;
+}
+
+/** Build nice tick size for minutes axis */
+private niceMinuteStep(maxVal: number): number {
+  if (maxVal <= 30) return 5;
+  if (maxVal <= 60) return 10;
+  if (maxVal <= 120) return 15;
+  if (maxVal <= 240) return 30;
+  if (maxVal <= 480) return 60;
+  return 120;
+}
+
+/** Build vAxis ticks as {v:number,f:string} showing hh:mm, based on chart data rows */
+private buildMinuteTicks(dataTableArray: any[][]): { v: number; f: string }[] {
+  // data: [ ['DataType','Value',...], ['1-Yesterday', 34, ...], ... ]
+  const vals = dataTableArray.slice(1).map(r => Number(r[1]) || 0);
+  const maxVal = Math.max(0, ...vals);
+  const step = this.niceMinuteStep(maxVal || 60);
+  const maxRounded = Math.ceil((maxVal || step) / step) * step;
+
+  const ticks: { v:number; f:string }[] = [];
+  for (let v = 0; v <= maxRounded; v += step) {
+    ticks.push({ v, f: this.toHHMM(v) });
+  }
+  return ticks;
+}
+
+/** Merge without losing existing nested option branches */
+private deepMerge<T>(a: T, b: Partial<T>): T {
+  const out: any = Array.isArray(a) ? [...(a as any)] : { ...(a as any) };
+  for (const [k, v] of Object.entries(b as any)) {
+    if (v && typeof v === 'object' && !Array.isArray(v)) {
+      out[k] = this.deepMerge(out[k] ?? {}, v);
+    } else {
+      out[k] = v;
+    }
+  }
+  return out;
+}
+
+/** Apply dept-chart overrides, leaving other options intact */
+private applyDeptChartOptions(
+  kind: 'avg' | 'agg',
+  base: any,
+  dataTableArray: any[][]
+): any {
+  // always slanted X labels
+  let merged = this.deepMerge(base || {}, {
+    hAxis: { slantedText: true, slantedTextAngle: 45, textStyle: { fontSize: 12 } }
+  });
+
+  if (kind === 'avg') {
+    // Y axis in hh:mm
+    const ticks = this.buildMinuteTicks(dataTableArray);
+    merged = this.deepMerge(merged, {
+      vAxis: {
+        ticks,               // show "hh:mm" labels
+        viewWindow: {
+          min: 0,
+          max: ticks.length ? ticks[ticks.length - 1].v : undefined
+        }
+      }
+    });
+  }
+  return merged;
+}
+
+  
 }
