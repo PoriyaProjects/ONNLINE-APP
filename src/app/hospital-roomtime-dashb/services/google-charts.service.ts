@@ -689,61 +689,155 @@ export class GoogleChartsService {
 
   public async drawSummarizedMultiPeriodChart(
     containerId: string,
-    avgUrl: string,
-    aggUrl: string,
+    avgUrl: string,   // rows per component per dept (DataSource=MorningDelay/EndDay/SetupTime, Value in minutes)
+    aggUrl: string,   // rows with totals to SUM (Value in minutes)
     color: string
   ): Promise<void> {
     await this.waitUntilChartsReady();
   
+    // Periods order matters for UI
     const periods = ['1-Yesterday', '2-CurrentMonth', '3-CurrentYear', '4-ParallelsPeriod'];
   
-    const avgData: { [p: string]: number } = {};
-    const aggData: { [p: string]: number } = {};
+    // payload indices (per your sample):
+    // [0]=DataSource, [1]=DataType, [2]=Depart_Name, [3]=PeriodDate, [4]=Value
+    const COL = { source: 0, value: 4 } as const;
   
-    // --- Fetch and calculate AVERAGE values ---
-    for (const p of periods) {
-      const raw = await this.fetchWithCache(this.buildUrl(avgUrl, { dataType: p }));
-      const clean = sanitizeSoapResponse(raw);
+    // ---------- utils ----------
+    const toNum = (v: any) => {
+      const n = Number(v ?? 0);
+      return Number.isFinite(n) ? n : 0;
+    };
   
-      let total = 0;
-      let count = 0;
-      clean.rows.forEach((r: any) => { 
-        const val = Number(r.c[4]?.v ?? 0);
-        if (!isNaN(val)) {
-          total += val;
-          count++;
+    const formatMinutesToHHMM = (min: number) => {
+      const rounded = Math.round(min); // ensure no seconds
+      const h = Math.floor(rounded / 60);
+      const mm = rounded % 60;
+      return `${h}:${mm.toString().padStart(2, '0')}`;
+    };
+  
+    // ---------- FIRST LINE: SUM OF (ROUNDED) COMPONENT AVERAGES ----------
+    // For each period:
+    //   avgSetup = mean(Value where DataSource='SetupTime')
+    //   avgEnd   = mean(Value where DataSource='EndDay')
+    //   avgMorning = mean(Value where DataSource='MorningDelay')
+    //   Round each average to nearest minute, THEN sum: avgSetup + avgEnd + avgMorning
+    const computeSumOfComponentAverages = (rows: any[]) => {
+      const buckets: Record<'SetupTime' | 'EndDay' | 'MorningDelay', number[]> = {
+        SetupTime: [],
+        EndDay: [],
+        MorningDelay: [],
+      };
+  
+      for (const r of rows ?? []) {
+        const src = r?.c?.[COL.source]?.v as string;
+        const val = toNum(r?.c?.[COL.value]?.v);
+        if (src === 'SetupTime' || src === 'EndDay' || src === 'MorningDelay') {
+          buckets[src].push(val);
         }
+      }
+  
+      const avgRaw = {
+        SetupTime: buckets.SetupTime.length ? buckets.SetupTime.reduce((a, b) => a + b, 0) / buckets.SetupTime.length : 0,
+        EndDay: buckets.EndDay.length ? buckets.EndDay.reduce((a, b) => a + b, 0) / buckets.EndDay.length : 0,
+        MorningDelay: buckets.MorningDelay.length ? buckets.MorningDelay.reduce((a, b) => a + b, 0) / buckets.MorningDelay.length : 0,
+      };
+  
+      // Round each component average to the nearest minute BEFORE summing
+      // const avgRounded = {
+      //   SetupTime: Math.round(avgRaw.SetupTime),
+      //   EndDay: Math.round(avgRaw.EndDay),
+      //   MorningDelay: Math.round(avgRaw.MorningDelay),
+      // };
+  
+      const avgRounded = {
+        SetupTime: Math.floor(avgRaw.SetupTime),
+        EndDay: Math.floor(avgRaw.EndDay),
+        MorningDelay: Math.floor(avgRaw.MorningDelay),
+      };
+      const sumOfAverages = avgRounded.SetupTime + avgRounded.EndDay + avgRounded.MorningDelay;
+  
+      // Debug
+      console.group('FIRST LINE | SUM OF (ROUNDED) COMPONENT AVERAGES');
+      console.log('Counts:', {
+        SetupTime: buckets.SetupTime.length,
+        EndDay: buckets.EndDay.length,
+        MorningDelay: buckets.MorningDelay.length
       });
-      avgData[p] = count > 0 ? total / count : 0; // <-- Average instead of sum
-    }
+      console.log('Averages (rounded minutes):', avgRounded);
+      console.log(
+        `Expression (HH:MM): ${formatMinutesToHHMM(avgRounded.SetupTime)} + ${formatMinutesToHHMM(avgRounded.EndDay)} + ${formatMinutesToHHMM(avgRounded.MorningDelay)} = ${formatMinutesToHHMM(sumOfAverages)}`
+      );
+      console.log(
+        `Expression (raw minutes): ${avgRounded.SetupTime} + ${avgRounded.EndDay} + ${avgRounded.MorningDelay} = ${sumOfAverages}`
+      );
+      console.groupEnd();
   
-    // --- Fetch and sum AGGREGATE values ---
-    for (const p of periods.slice(1)) { // exclude Yesterday for aggregated
-      const raw = await this.fetchWithCache(this.buildUrl(aggUrl, { dataType: p }));
+      return { sumOfAverages, avgRounded };
+    };
+  
+    // ---------- SECOND LINE: SUM TOTALS ----------
+    const computeSumLossFromRows = (rows: any[]) => {
+      const values = (rows ?? []).map(r => toNum(r?.c?.[COL.value]?.v));
+      const total = values.reduce((a, b) => a + b, 0);
+  
+      // Debug
+      console.group('SECOND LINE | SUM TOTALS');
+      console.log('Row values (minutes):', values);
+      console.log(`Sum = ${(values.length ? values.join(' + ') : '0')} = ${total} (${formatMinutesToHHMM(total)})`);
+      console.groupEnd();
+  
+      return total;
+    };
+  
+    const firstLineData: Record<string, number> = {};  // sum of rounded component averages (minutes)
+    const secondLineData: Record<string, number> = {}; // total sums (minutes)
+  
+    // ----- build first line (sum of rounded component averages) -----
+    for (const p of periods) {
+      const url = this.buildUrl(avgUrl, { dataType: p });
+      const raw = await this.fetchWithCache(url);
       const clean = sanitizeSoapResponse(raw);
-      let total = 0;
-      clean.rows.forEach((r: any) => { total += Number(r.c[4]?.v ?? 0); });
-      aggData[p] = total;
+      const rows = Array.isArray(clean?.rows) ? clean.rows : [];
+      const { sumOfAverages } = computeSumOfComponentAverages(rows);
+      firstLineData[p] = sumOfAverages;
+      console.debug(`FIRST LINE (${p}) -> ${sumOfAverages} minutes (${formatMinutesToHHMM(sumOfAverages)}) | URL:`, url);
     }
   
-    // --- Debug (optional) ---
-    console.group("DEBUG: Avg & Agg Data");
-    console.log("Average data:", avgData);
-    console.log("Aggregate data:", aggData);
+    // ----- build second line (sum totals) -----
+    // If your agg endpoint supports Yesterday as well, switch to "for (const p of periods)" and add yesterdayAgg below.
+    for (const p of periods.slice(1)) {
+      const url = this.buildUrl(aggUrl, { dataType: p });
+      const raw = await this.fetchWithCache(url);
+      const clean = sanitizeSoapResponse(raw);
+      const rows = Array.isArray(clean?.rows) ? clean.rows : [];
+      const total = computeSumLossFromRows(rows);
+      secondLineData[p] = total;
+      console.debug(`SECOND LINE (${p}) -> ${total} minutes (${formatMinutesToHHMM(total)}) | URL:`, url);
+    }
+  
+    // ----- summary debug -----
+    console.group('DEBUG SUMMARY | Line 1 = Sum of rounded component averages, Line 2 = Sums');
+    console.log('Line 1 [min]:', firstLineData);
+    console.log('Line 2 [min]:', secondLineData);
     console.groupEnd();
   
-    // --- Draw chart ---
+    // ----- draw -----
     drawHorizontalMultiPeriodChartHelperRoomTime({
       containerId,
       title: 'אובדן חדרי ניתוח – סיכום תקופות',
       data: {
-        yesterdayAvg: avgData['1-Yesterday'],
-        monthAvg: avgData['2-CurrentMonth'],
-        yearAvg: avgData['3-CurrentYear'],
-        parallelAvg: avgData['4-ParallelsPeriod'],
-        monthAgg: aggData['2-CurrentMonth'],
-        yearAgg: aggData['3-CurrentYear'],
-        parallelAgg: aggData['4-ParallelsPeriod'],
+        // First line: sum of (rounded) component averages
+        yesterdayAvg: firstLineData['1-Yesterday'],
+        monthAvg:     firstLineData['2-CurrentMonth'],
+        yearAvg:      firstLineData['3-CurrentYear'],
+        parallelAvg:  firstLineData['4-ParallelsPeriod'],
+  
+        // Second line: totals SUM
+        monthAgg:     secondLineData['2-CurrentMonth'],
+        yearAgg:      secondLineData['3-CurrentYear'],
+        parallelAgg:  secondLineData['4-ParallelsPeriod'],
+        // If agg supports Yesterday:
+        // yesterdayAgg: secondLineData['1-Yesterday'],
       },
       colors: [
         '#6ba1f8', // blue
@@ -755,6 +849,11 @@ export class GoogleChartsService {
       ]
     });
   }
+  
+  
+    
+  
+  
   
 
   getAggregateData(dataType: string): Observable<string> {
