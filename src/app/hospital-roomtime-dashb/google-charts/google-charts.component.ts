@@ -6,7 +6,7 @@ import { drawOverlayDualArcChartHelperRoomTime } from 'src/app/shared/drawOverla
 import { sanitizeSoapResponse, sanitizeSoapChartData } from 'src/app/shared/sanitizesoapresponce';
 import { drawHorizontalMultiPeriodChartHelperRoomTime } from 'src/app/shared/drawHorizontalMultiPeriodChartHelperRoomTime';
 
-/** ✅ Move interfaces OUTSIDE the class */
+
 interface DepartmentMetricEntry {
   period: string;
   source: string;
@@ -47,10 +47,10 @@ export class RoomTimeDashboardComponent implements OnInit, AfterViewInit {
   dataSources = ['MorningDelay', 'EndDay', 'SetupTime'];
   openGroup: string | null = null;
 
-  readonly departmentColors: string[] = [
-    '#6ba1f8', '#5ed175', '#00b3d7', '#fcd74e', '#f86b6b',
-    '#a17ef8', '#ff8c42', '#c4e86b', '#00d4a3', '#ff9ed4',
-    '#8bdbf2', '#d48efc', '#ffb347'
+  readonly departmentColors: string[] = [    
+    '#A39DCD', '#FDB913', '#8BB3DF', '#E2C87E', '#BEE0BD', '#E58FBC', '#8DC63F', 
+    '#8DC63F', '#B5AEA3', '#94AA64', '#F1D5D1', '#BC86B5', '#DA549E', '#AF4F76', 
+    '#00A79E', '#C98846', '#BE1E2D', '#FFF9AE'
   ];
   departmentColorMap: { [dept: string]: string } = {};
   legendMinimized = false;
@@ -87,7 +87,7 @@ export class RoomTimeDashboardComponent implements OnInit, AfterViewInit {
       'multiPeriodSummary',
       `${environment.url}/GetRoomTimeAvgD`,
       `${environment.url}/GetRoomAggregateDaysD`,
-      '#6ba1f8'
+      '#A39DCD'
     );
 
     this.loadAllPeriodCharts();

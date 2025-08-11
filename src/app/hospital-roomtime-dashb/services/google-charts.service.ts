@@ -15,7 +15,10 @@ export class GoogleChartsService {
   public chartsReady$: Observable<void>;
 
   /** Fixed colors for chart items */
-  private readonly CHART_COLORS = ['#6ba1f8', '#00b3d7', '#fcd74e', '#f86b6b', '#a17ef8', '#5ed175'];
+  //private readonly CHART_COLORS = ['#A39DCD', '#00b3d7', '#fcd74e', '#f86b6b', '#a17ef8', '#5ed175'];
+//  private readonly CHART_COLORS = ['#5C6232', '#000651', '#744C20', '#1D3781', '#411F42', '#1A7043', '#7239C0'];
+
+  private readonly CHART_COLORS = ['#C7CC9D', '#AEB3FF', '#DFB78A', '#7D98E2', '#DEBDE0', '#8FE5B7', '#783EC6'];
 
   /** Map period types to Hebrew labels & colors */
   private readonly PERIOD_TYPE_MAP: { [key: string]: { label: string; color: string } } = {
@@ -161,7 +164,7 @@ export class GoogleChartsService {
 
       // Fixed colors per DataSource
       const dataSourceColors: { [key: string]: string } = {
-        MorningDelay: '#6ba1f8',
+        MorningDelay: '#A39DCD',
         EndDay: '#FFB74D',
         SetupTime: '#a17ef8'
       };
@@ -187,7 +190,7 @@ export class GoogleChartsService {
 
         const dsTitle = dataSourceHebrew[ds] || ds;
         const yearTitle = dataTypeHebrew['3-CurrentYear'] || 'השנה';
-        const arcColor = dataSourceColors[ds] || '#6ba1f8';
+        const arcColor = dataSourceColors[ds] || '#A39DCD';
         const prefix = `table${ds}_`; // e.g., "tableMorningDelay_"
 
         // === Debugging values for each chart
@@ -839,13 +842,15 @@ export class GoogleChartsService {
         // If agg supports Yesterday:
         // yesterdayAgg: secondLineData['1-Yesterday'],
       },
-      colors: [
-        '#6ba1f8', // blue
-        '#a974f7', // purple
-        '#ff8c42', // orange
-        '#00cfc1', // teal
-        '#ff69b4', // pink
-        '#8b4513', // brown
+       colors: [
+      //   '#A39DCD', // blue
+      //   '#a974f7', // purple
+      //   '#ff8c42', // orange
+      //   '#00cfc1', // teal
+      //   '#ff69b4', // pink
+      //   '#8b4513', // brown
+      //'#5C6232', '#000651', '#744C20', '#1D3781', '#411F42', '#1A7043', '#7239C0'
+      '#C7CC9D', '#AEB3FF', '#DFB78A', '#7D98E2', '#DEBDE0', '#8FE5B7', '#783EC6'
       ],
       rows: ["agg","avg"]
     });
@@ -975,11 +980,14 @@ export class GoogleChartsService {
       },
       colors: [
         color,        // keep department color as first (bars)
-        '#a974f7',    // purple
-        '#ff8c42',    // orange
-        '#00cfc1',    // teal
-        '#ff69b4',    // pink
-        '#8b4513',    // brown
+        // '#a974f7',    // purple
+        // '#ff8c42',    // orange
+        // '#00cfc1',    // teal
+        // '#ff69b4',    // pink
+        // '#8b4513',    // brown
+        //'#5C6232', 
+        //'#000651', '#744C20', '#1D3781', '#411F42', '#1A7043', '#7239C0'
+        '#C7CC9D', '#AEB3FF', '#DFB78A', '#7D98E2', '#DEBDE0', '#8FE5B7', '#783EC6'
       ],
       rows: ["agg","avg"]
     });
