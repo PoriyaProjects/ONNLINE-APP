@@ -846,7 +846,8 @@ export class GoogleChartsService {
         '#00cfc1', // teal
         '#ff69b4', // pink
         '#8b4513', // brown
-      ]
+      ],
+      rows: ["agg","avg"]
     });
   }
   
@@ -979,7 +980,8 @@ export class GoogleChartsService {
         '#00cfc1',    // teal
         '#ff69b4',    // pink
         '#8b4513',    // brown
-      ]
+      ],
+      rows: ["agg","avg"]
     });
   }
   
