@@ -3,24 +3,28 @@ import { Injectable } from '@angular/core';
 // ===== Optional: Department color provider (localStorage aware) =====
 @Injectable({ providedIn: 'root' })
 export class DepartmentColorService {
-  private map: { [dept: string]: string } = {};
-  private palette = DEPARTMENT_BASE_PALETTE.slice(); // ← use constant directly
-
-  colorFor(dept: string): string {
-    if (this.map[dept]) return this.map[dept];
-    const stored = localStorage.getItem('deptColor_' + dept);
-    if (stored) { this.map[dept] = stored; return stored; }
-    const next = this.palette[Object.keys(this.map).length % this.palette.length];
-    this.map[dept] = next;
-    localStorage.setItem('deptColor_' + dept, next);
-    return next;
+    private theme = 'classic';
+    private palette: string[] = [];
+    private map: { [dept: string]: string } = {};
+  
+    /** Call when the theme changes */
+    setPalette(palette: string[], themeName: string) {
+      this.theme = themeName || 'classic';
+      this.palette = (palette && palette.length ? palette : []).slice();
+      this.map = {}; // reset in-memory map; per-theme persisted keys remain
+    }
+  
+    colorFor(dept: string): string {
+      if (this.map[dept]) return this.map[dept];
+      const key = `deptColor_${this.theme}_${dept}`;
+      const stored = localStorage.getItem(key);
+      if (stored) { this.map[dept] = stored; return stored; }
+      const next = this.palette[(Object.keys(this.map).length) % (this.palette.length || 1)] || '#888';
+      this.map[dept] = next;
+      localStorage.setItem(key, next);
+      return next;
+    }
   }
-
-  /** optional runtime swap */
-  setPalette(palette: string[]) {
-    this.palette = (palette && palette.length ? palette : DEPARTMENT_BASE_PALETTE).slice();
-  }
-}
 
 // ===== Palettes =====
 export const CHART_SERIES_PALETTE: string[] = [
@@ -225,4 +229,94 @@ export const CHART_SERIES_PALETTE: string[] = [
   }
   
   
-  
+// charts-config.ts
+
+
+/** ---- Theme presets (same as we discussed earlier) ---- */
+export interface DashboardPalette {
+  name: string;
+  series: string[];
+  department: string[];
+  datasource: { [k: string]: string };
+  // optional: theme-specific status colors for tables
+  tableStatus?: { good: string; warn: string; bad: string };
+  tableHeatmap?: string[]; // light→dark shades for “bad”
+}
+
+const THEME_CLASSIC: DashboardPalette = {
+  name: 'classic',
+  series: ['#C7CC9D','#AEB3FF','#DFB78A','#7D98E2','#DEBDE0','#8FE5B7','#783EC6'],
+  department: [
+    '#A39DCD','#FFF9AE','#8BB3DF','#E2C87E','#BEE0BD','#E58FBC','#8DC63F',
+    '#8DC63F','#B5AEA3','#94AA64','#F1D5D1','#BC86B5','#DA549E','#AF4F76',
+    '#FDB913','#00A79E','#C98846','#BE1E2D'
+  ],
+  datasource: { MorningDelay:'#A39DCD', EndDay:'#FFB74D', SetupTime:'#a17ef8' },
+  tableStatus: { good:'#b9f6ca', warn:'#fff9c4', bad:'#ffcdd2' },
+  tableHeatmap: ['#ffe5e5','#ffcccc','#ffb3b3','#ff9999','#ff8080','#e75858','#f06a6a','#f68383','#f89c9c','#fbb5b5']
+};
+
+const THEME_DARK: DashboardPalette = {
+  name: 'dark',
+  series: ['#9fc1ff','#7fd1ae','#ffd37f','#a29bfe','#ff9fbf','#7ff0ff','#c3f584'],
+  department: ['#3b82f6','#22c55e','#eab308','#ef4444','#a855f7','#06b6d4','#f97316','#84cc16'],
+  datasource: { MorningDelay:'#7aa2f7', EndDay:'#e5c07b', SetupTime:'#bb9af7' },
+  tableStatus: { good:'#064e3b', warn:'#78350f', bad:'#7f1d1d' }, // darker cells for dark UI
+  tableHeatmap: ['#7f1d1d','#991b1b','#b91c1c','#dc2626','#ef4444','#f87171','#fca5a5','#fecaca','#ffe4e6','#fff1f2']
+};
+
+const THEME_MONO: DashboardPalette = {
+  name: 'mono',
+  series: ['#111827','#1f2937','#374151','#4b5563','#6b7280','#9ca3af','#d1d5db'],
+  department: ['#0f172a','#1e293b','#334155','#475569','#64748b','#94a3b8','#cbd5e1'],
+  datasource: { MorningDelay:'#334155', EndDay:'#64748b', SetupTime:'#94a3b8' },
+  tableStatus: { good:'#d1fae5', warn:'#fef9c3', bad:'#fee2e2' },
+  tableHeatmap: ['#fee2e2','#fecaca','#fca5a5','#f87171','#ef4444','#dc2626','#b91c1c','#991b1b','#7f1d1d','#450a0a']
+};
+
+const THEMES: DashboardPalette[] = [THEME_CLASSIC, THEME_DARK, THEME_MONO];
+
+@Injectable({ providedIn: 'root' })
+export class PaletteService {
+  private current: DashboardPalette;
+
+  constructor() {
+    const saved = localStorage.getItem('dashboard_theme');
+    this.current = THEMES.find(t => t.name === saved) || THEME_CLASSIC;
+  }
+
+  get name() { return this.current.name; }
+  list() { return THEMES.map(t => t.name); }
+  setTheme(name: string) {
+    const next = THEMES.find(t => t.name === name);
+    if (!next) return;
+    this.current = next;
+    localStorage.setItem('dashboard_theme', next.name);
+  }
+
+  getSeriesPalette()     { return this.current.series.slice(); }
+  getDepartmentPalette() { return this.current.department.slice(); }
+  getDatasourceColors()  { return { ...this.current.datasource }; }
+  getTableStatus()       { return this.current.tableStatus || THEME_CLASSIC.tableStatus!; }
+  getTableHeatmap()      { return (this.current.tableHeatmap || THEME_CLASSIC.tableHeatmap!).slice(); }
+}
+
+/** Department colors that vary by THEME (namespaced keys in localStorage) */
+
+
+
+/** Status colors for tables (per theme) */
+export function getStatusColors(palette: PaletteService) {
+  return palette.getTableStatus(); // {good, warn, bad}
+}
+
+/** Heatmap scale for “bad” (per theme) */
+export function getHeatmapScale(palette: PaletteService) {
+  const shades = palette.getTableHeatmap(); // 10 shades
+  return (value: number, max: number) => {
+    if (!max || max <= 0) return shades[0];
+    const idx = Math.min(shades.length - 1, Math.floor((value / max) * (shades.length - 1)));
+    return shades[idx];
+  };
+}
+

@@ -640,8 +640,31 @@
     <div class="legend-header" (click)="toggleLegend()">
       <span>צבעי מחלקות</span>
       <button class="toggle-btn">{{ legendMinimized ? 'הרחב' : 'מזער' }}</button>
+ 
     </div>
     <div class="legend-body" *ngIf="!legendMinimized">
+             <!-- Theme switcher -->
+  <div class="theme-switch" [class.minified]="legendMinimized" style="text-align: right;">
+    <ng-container *ngIf="!legendMinimized; else themeIconOnly">
+      <label for="themeSelect">סגנון:  </label>
+      <select id="themeSelect"
+              [ngModel]="palette.name"
+              (ngModelChange)="onThemeChange($event)">
+        <option *ngFor="let t of palette.list()" [value]="t">{{ t }}</option>
+      </select>
+    </ng-container>
+
+    <ng-template #themeIconOnly>      
+      <button *ngFor="let dept of getDepartments()"
+        (click)="selectDepartment(dept)"
+        [ngStyle]="{ 'background-color': getDepartmentColorPublic(dept), color: 'white' }"
+        [ngClass]="['department-btn', dept === selectedDepartment ? 'department-btn-active' : '']">
+  {{ dept }}
+</button>
+    </ng-template>
+  </div>
+
+  
       <div class="legend-item" *ngFor="let dept of getDepartments()">
         <span class="color-box" [style.background]="getDepartmentColor(dept)"></span>
         <span class="dept-name">{{ dept }}</span>
@@ -649,6 +672,14 @@
     </div>
   </div>
 
+
+
+  <!-- <div class="theme-switch">
+    <label>Theme:</label>
+    <select [ngModel]="palette.name" (ngModelChange)="onThemeChange($event)">
+      <option *ngFor="let t of palette.list()" [value]="t">{{ t }}</option>
+    </select>
+  </div> -->
 </div>
 
 <hr />
