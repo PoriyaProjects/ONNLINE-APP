@@ -1,0 +1,114 @@
+<style>
+  #hmpcHost { min-height: 360px; display: block; }
+horizontal-multi-period-chart, app-horizontal-multi-period-chart {
+  display: block;
+  width: 100%;
+  min-height: 340px;
+}
+.plot {
+  width: 80vw;             /* 80% of viewport width */
+  margin: 0 auto;          /* center horizontally */
+  min-height: 320px;
+  position: relative;
+}
+/* google-charts.component.css */
+.subtabs {
+  display: flex;
+  gap: 8px;
+  padding: 8px 0 12px;
+}
+.subtab-btn {
+  border: 1px solid #cfd8dc;
+  background: #fff;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+}
+.subtab-btn.active {
+  border-color: #90caf9;
+  background: #e3f2fd;
+}
+.chart-host > div {
+  width: 100%;
+  min-height: 260px; /* charts will set exact height on draw */
+}
+
+</style>
+
+<!-- Appointments Dashboard (C-level) -->
+<div class="card text-center" style="margin: 10px 0 24px; direction: rtl;">
+  <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; padding:8px 12px;">
+    <h2 style="margin:0">תורים — דאשבורד הנהלה</h2>
+    <div>
+      <button (click)="refreshData()" class="btn btn-light" [disabled]="loading" title="רענון נתונים">
+        רענן
+      </button>
+    </div>
+  </div>
+
+  <!-- Loading / Error -->
+  <div *ngIf="loading" style="padding:24px">טוען נתונים...</div>
+  <div *ngIf="!loading && error" style="padding:24px; color:#b71c1c">{{ error }}</div>
+
+  <ng-container *ngIf="!loading && !error">
+    <!-- Tabs -->
+    <div class="tabs" style="text-align:right; margin: 12px 0;">
+      <button (click)="onApptTabChange('treemap')" [class.active]="activeApptTab==='treemap'">מפת עומסים (Treemap)</button>
+      <!-- <button (click)="onApptTabChange('combo')"   [class.active]="activeApptTab==='combo'">ביקוש מול המתנה (Combo)</button> -->
+      <button (click)="onApptTabChange('leaders')" [class.active]="activeApptTab==='leaders'">ליגת רופאים </button>      
+      <!-- <button (click)="onApptTabChange('multi')"   [class.active]="activeApptTab==='multi'">Horizontal Multi-Period</button> -->
+    </div>
+
+    <!-- Treemap -->
+    <div *ngIf="activeApptTab==='treemap'" style="position:relative;">
+      <div id="apptTreemap" style="width: 100%; height: 600px;">טוען...</div>
+
+      <!-- Optional custom-SVG SLA legend -->
+      <svg width="210" height="60"
+           style="position:absolute; top:8px; left:8px; background:white; border:1px solid #ccc; border-radius:4px">
+        <text x="8" y="16" font-size="12">SLA (ימים):</text>
+        <rect x="8" y="24" width="24" height="12" fill="#e8f5e9"></rect><text x="36" y="34" font-size="11">≤14</text>
+        <rect x="72" y="24" width="24" height="12" fill="#fff9c4"></rect><text x="100" y="34" font-size="11">15–30</text>
+        <rect x="136" y="24" width="24" height="12" fill="#ffebee"></rect><text x="164" y="34" font-size="11">>30</text>
+      </svg>
+    </div>
+
+    <!-- Combo -->
+    <div *ngIf="activeApptTab==='combo'">
+      <div id="apptCombo" style="width: 100%; height: 600px;">טוען...</div>
+    </div>
+
+    <!-- Leaderboards -->
+  <!-- Leaders tab pane -->
+<div *ngIf="activeApptTab === 'leaders'" class="leaders-pane">
+  <div class="subtabs">
+    <button
+      class="subtab-btn"
+      [class.active]="leaderSubTab === 'doctors'"
+      (click)="onLeaderSubTabChange('doctors')">
+      Doctors
+    </button>
+    <button
+      class="subtab-btn"
+      [class.active]="leaderSubTab === 'departments'"
+      (click)="onLeaderSubTabChange('departments')">
+      Departments
+    </button>
+  </div>
+
+  <!-- One visible container at a time -->
+  <div *ngIf="leaderSubTab === 'doctors'" class="chart-host">
+    <div id="apptLeadersDoctors"></div>
+  </div>
+
+  <div *ngIf="leaderSubTab === 'departments'" class="chart-host">
+    <div id="apptLeadersDepts"></div>
+  </div>
+</div>
+
+
+
+  </ng-container>
+  <div style="height:60px;"></div>
+</div>

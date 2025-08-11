@@ -1,6 +1,7 @@
 import { Injectable, HostListener } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { ReplaySubject, Observable } from 'rxjs';
+import { CommonModule } from '@angular/common';
 
 import { environment } from 'src/environments/environment';
 import { sanitizeSoapResponse } from 'src/app/shared/sanitizesoapresponce';

@@ -157,6 +157,7 @@ import { HospitalIncomeDashbComponent } from '../hospital-income-dashb/hospital-
 import { GoogleChartsIncomeComponent } from '../hospital-income-dashb/google-charts/google-charts.component';
 import { HospitalIncomeNBDashbComponent } from '../hospital-incomenb-dashb/hospital-incomenb-dashb.component';
 import { GoogleChartsIncomeNBComponent } from '../hospital-incomenb-dashb/google-charts/google-charts.component';
+import { AppointsDashboardComponent } from '../hospital-appoints-dashb/google-charts/google-charts.component';
 const routes: Routes = [
   { path: "", component: LoginComponent },
   { path: 'clinicsrequests', component: ClinicsRequestsComponent },
@@ -355,6 +356,7 @@ const routes: Routes = [
   { path: "hospitalincomedashb", component: HospitalIncomeDashbComponent },
   { path: "hospital-income-dashb", component: GoogleChartsIncomeComponent },
   { path: "hospital-incomenb-dashb", component: GoogleChartsIncomeNBComponent },
+  { path: "hospital-appoints-dashb", component: AppointsDashboardComponent },
   ];
 
 @NgModule({
