@@ -106,22 +106,39 @@ export class RoomTimeDashboardComponent implements OnInit, AfterViewInit {
     this.loadAllAggregateData();
     this.loadAllAverageData();
 
-
-
-
-
-
-
-
-    
+    const stickyEl = document.getElementById('stickyTabsFilters'); // the one you want to release
+    const markerEl = document.getElementById('deptStickyStart'); // the target marker
+  
+    if (!stickyEl || !markerEl) return;
+  
+    const observer = new IntersectionObserver(
+      entries => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            // Marker is visible — release sticky
+            stickyEl.classList.remove('is-sticky');
+          } else {
+            // Marker not visible — keep sticky
+            stickyEl.classList.add('is-sticky');
+          }
+        });
+      },
+      { root: null, threshold: 0 } // default viewport root, trigger when any part is visible
+    );
+  
+    observer.observe(markerEl);
 
   }
 
+ 
   @HostListener('window:resize')
-  onResize() {
-    clearTimeout(this.resizeTimeout);
-    this.resizeTimeout = setTimeout(() => this.loadCharts(), 300);
-  }
+onResize() {
+  clearTimeout(this.resizeTimeout);
+  this.resizeTimeout = setTimeout(() => {
+    this.loadCharts();                    
+    this.redrawVisibleDepartmentCharts(); 
+  }, 300);
+}
 
   onDataTypeChange(): void {
     setTimeout(() => this.loadCharts(), 100);
@@ -133,41 +150,24 @@ export class RoomTimeDashboardComponent implements OnInit, AfterViewInit {
     if (tab === 'agg' && this.selectedDataType === '1-Yesterday') {
       this.selectedDataType = '2-CurrentMonth';
     }
-    setTimeout(() => this.loadCharts(), 0);
+    setTimeout(() => {
+      this.loadCharts();
+      this.redrawVisibleDepartmentCharts();   
+    }, 0);
   }
 
-  // onDeptTabChange(tab: 'avg' | 'agg') {
-  //   this.activeDeptTab = tab;
-  //   // draw the now-visible charts
-  //   setTimeout(() => {
-  //     const list = tab === 'avg' ? this.selectedDepartmentAvgCharts : this.selectedDepartmentAggCharts;
-  //     list.forEach(cfg => {
-  //       try {
-  //         this.googleChartsService.drawDepartmentChart({
-  //           containerId: cfg.containerId,
-  //           data: cfg.data,
-  //           chartTitle: cfg.chartTitle,
-  //           chartType: 'ColumnChart',
-  //           color: this.getDepartmentColor(this.selectedDepartment!),
-  //           options: {
-  //             annotations: { alwaysOutside: true, textStyle: { fontSize: 11, color: '#000', auraColor: 'none' } },
-  //             hAxis: { slantedText: true, slantedTextAngle: 45, textStyle: { fontSize: 12 } },
-  //             legend: { position: 'bottom' },
-  //             tooltip: { isHtml: true },
-  //             chartArea: { left: 60, top: 60, width: '85%', height: '65%' },
-  //             height: 400
-  //           }
-  //         });
-  //       } catch {}
-  //     });
-  //   }, 0);
-  // }
   
   onDeptTabChange(tab: 'avg' | 'agg') {
     this.activeDeptTab = tab;
+    if (!this.selectedDepartment) return;
   
-    // same base options you use in selectDepartment
-    const baseOptions: any = {
+    const list = tab === 'avg' ? this.selectedDepartmentAvgCharts : this.selectedDepartmentAggCharts;
+    if (!list?.length) return;
+  
+    const color = this.getDepartmentColor(this.selectedDepartment);
+  
+    // same base options used elsewhere
+    const baseOptions: google.visualization.ColumnChartOptions = {
       annotations: { alwaysOutside: true, textStyle: { fontSize: 11, color: '#000', auraColor: 'none' } },
       legend: { position: 'bottom' },
       tooltip: { isHtml: true },
@@ -183,25 +183,28 @@ export class RoomTimeDashboardComponent implements OnInit, AfterViewInit {
       }
     };
   
-    setTimeout(() => {
-      if (!this.selectedDepartment) return;
-      const color = this.getDepartmentColor(this.selectedDepartment);
-      const list = tab === 'avg' ? this.selectedDepartmentAvgCharts : this.selectedDepartmentAggCharts;
-  
-      list.forEach((cfg: any) => {
+    // wait for DOM to settle, then draw
+    requestAnimationFrame(() => {
+      list.forEach((cfg: { containerId: string; data: any[][]; chartTitle: string; vAxis?: any }) => {
         this.googleChartsService.drawDepartmentChart({
           containerId: cfg.containerId,
           data: cfg.data,
-          chartTitle: cfg.chartTitle,
-          chartType: 'ColumnChart',               // classic => slantedText works
+          chartType: 'ColumnChart', 
           color,
           options: {
             ...baseOptions,
-            vAxis: cfg.vAxis                       // <-- keep the hh:mm ticks you computed
+            vAxis: cfg.vAxis,                 
+            title: cfg.chartTitle,            
+            titleTextStyle: {
+              fontSize: 16,
+              bold: true,
+              color: '#000',
+              alignment: 'center'
+            }
           }
         });
       });
-    }, 0);
+    });
   }
   
 
@@ -221,8 +224,7 @@ export class RoomTimeDashboardComponent implements OnInit, AfterViewInit {
   }
 
   loadAllPeriodCharts(): void {
-    const url = `${environment.url}/GetRoomTimeSummaryAllSeparated`;
-    // You can expand this if you intend to use these element IDs
+    const url = `${environment.url}/GetRoomTimeSummaryAllSeparated`;    
   }
 
   loadCharts(): void {
@@ -262,7 +264,7 @@ export class RoomTimeDashboardComponent implements OnInit, AfterViewInit {
     .subscribe((xml: string) => {
       const data = sanitizeSoapChartData(xml);
   
-      // Example: use data to populate department metrics or charts
+      
       data.forEach(row => {
         this.insertDepartmentMetric(row.Depart_Name, {
           period: row.PeriodDate,
@@ -271,16 +273,14 @@ export class RoomTimeDashboardComponent implements OnInit, AfterViewInit {
         });
       });
   
-      // Or pass directly to chart renderer:
-      //this.renderChartFromData(data);
-      //drawDepartmentChartsWithColors
+      
     });
 
     this.googleChartsService.getAverageData(this.selectedDataType)
     .subscribe((xml: string) => {
       const data = sanitizeSoapChartData(xml);
   
-      // Example: use data to populate department metrics or charts
+      
       data.forEach(row => {
         this.insertDepartmentMetric(row.Depart_Name, {
           period: row.PeriodDate,
@@ -289,9 +289,7 @@ export class RoomTimeDashboardComponent implements OnInit, AfterViewInit {
         });
       });
   
-      // Or pass directly to chart renderer:
-      //this.renderChartFromData(data);
-      //drawDepartmentChartsWithColors
+      
     });
 
   }
@@ -342,7 +340,7 @@ export class RoomTimeDashboardComponent implements OnInit, AfterViewInit {
   
   loadAllAggregateData() {
     this.dataTypes.forEach(period => {
-      const dataType = period.value; // 👈 get string value
+      const dataType = period.value;
   
       this.googleChartsService.getAggregateData(dataType).subscribe(response => {
         const data = sanitizeSoapResponse(response);
@@ -351,9 +349,9 @@ export class RoomTimeDashboardComponent implements OnInit, AfterViewInit {
   
         data.rows.forEach(row => {
           this.insertDepartmentMetric(row.c[2].v, {
-            period: row.c[1].v,           // DataType (e.g., "2-CurrentMonth")
-            source: row.c[0].v,           // DataSource (e.g., "EndDay")
-            aggregateDays: row.c[4].v     // Value
+            period: row.c[1].v,           
+            source: row.c[0].v,           
+            aggregateDays: row.c[4].v     
           });
         });
       });
@@ -387,7 +385,7 @@ export class RoomTimeDashboardComponent implements OnInit, AfterViewInit {
   
 
   insertDepartmentMetric(departName: string, newMetric: DepartmentMetricEntry) {
-    //this.departmentMap.clear();
+    
     if (!this.departmentMap.has(departName)) {
       
       this.departmentMap.set(departName, { departName, metrics: [] });
@@ -431,16 +429,16 @@ selectDepartment(deptName: string) {
   // reset lists
   this.selectedDepartmentAvgCharts = [];
   this.selectedDepartmentAggCharts = [];
-  this.selectedDepartmentCharts = []; // legacy support if something else still uses it
+  this.selectedDepartmentCharts = []; 
 
-  // group metrics by source → period (store raw avg + days)
+  
   const grouped = new Map<string, Map<string, { avgRaw?: number; days?: number }>>();
   for (const { source, period, avgMinutes, aggregateDays } of dept.metrics) {
     if (!grouped.has(source)) grouped.set(source, new Map());
     const byPeriod = grouped.get(source)!;
     if (!byPeriod.has(period)) byPeriod.set(period, {});
     const rec = byPeriod.get(period)!;
-    if (avgMinutes !== undefined)  rec.avgRaw = Number(avgMinutes);     // NOTE: feed may be minutes OR seconds
+    if (avgMinutes !== undefined)  rec.avgRaw = Number(avgMinutes);     
     if (aggregateDays !== undefined) rec.days = Number(aggregateDays);
   }
 
@@ -540,7 +538,8 @@ selectDepartment(deptName: string) {
       containerId: `chart_avg_${safeDept}_${safeSrc}`,
       data: avgData,
       chartTitle: `${this.convertSourceToHebrew(source)} – ${deptName} (זמן ממוצע)`,
-      vAxis: { ticks, viewWindow: { min: 0, max } }
+      vAxis: { ticks, viewWindow: { min: 0, max } },
+      titleTextStyle: { fontSize: 16, bold: true, color: '#000', alignment: 'center' }
     };
     const aggCfg = {
       dept: deptName,
@@ -548,7 +547,8 @@ selectDepartment(deptName: string) {
       containerId: `chart_agg_${safeDept}_${safeSrc}`,
       data: aggData,
       chartTitle: `${this.convertSourceToHebrew(source)} – ${deptName} (ימי אובדן)`,
-      vAxis: { minValue: 0, format: '0' }
+      vAxis: { minValue: 0, format: '0' },
+      titleTextStyle: { fontSize: 16, bold: true, color: '#000', alignment: 'center' }
     };
 
     this.selectedDepartmentAvgCharts.push(avgCfg);
@@ -573,14 +573,24 @@ selectDepartment(deptName: string) {
         vAxis: cfg.vAxis // Avg: hh:mm ticks; Agg: integer days
       };
 
+      
       this.googleChartsService.drawDepartmentChart({
         containerId: cfg.containerId,
         data: cfg.data,
-        chartTitle: cfg.chartTitle,
-        chartType: 'ColumnChart', // classic chart honors slantedText
+        chartType: 'ColumnChart',          // classic => slantedText works
         color,
-        options
+        options: {
+          ...options,                      // keep your vAxis/hAxis/etc.
+          title: cfg.chartTitle,           // <-- set title here (not just in cfg)
+          titleTextStyle: {
+            fontSize: 16,
+            bold: true,
+            color: '#000',
+            alignment: 'center'
+          }
+        }
       });
+      
     });
   }, 0);
 
@@ -710,32 +720,82 @@ private deepMerge<T>(a: T, b: Partial<T>): T {
   return out;
 }
 
-/** Apply dept-chart overrides, leaving other options intact */
-private applyDeptChartOptions(
-  kind: 'avg' | 'agg',
-  base: any,
-  dataTableArray: any[][]
-): any {
-  // always slanted X labels
-  let merged = this.deepMerge(base || {}, {
-    hAxis: { slantedText: true, slantedTextAngle: 45, textStyle: { fontSize: 12 } }
-  });
+// /** Apply dept-chart overrides, leaving other options intact */
+// private applyDeptChartOptions(
+//   kind: 'avg' | 'agg',
+//   base: any,
+//   dataTableArray: any[][]
+// ): any {
+//   // always slanted X labels
+//   let merged = this.deepMerge(base || {}, {
+//     hAxis: { slantedText: true, slantedTextAngle: 45, textStyle: { fontSize: 12 } }
+//   });
 
-  if (kind === 'avg') {
-    // Y axis in hh:mm
-    const ticks = this.buildMinuteTicks(dataTableArray);
-    merged = this.deepMerge(merged, {
-      vAxis: {
-        ticks,               // show "hh:mm" labels
-        viewWindow: {
-          min: 0,
-          max: ticks.length ? ticks[ticks.length - 1].v : undefined
+//   if (kind === 'avg') {
+//     // Y axis in hh:mm
+//     const ticks = this.buildMinuteTicks(dataTableArray);
+//     merged = this.deepMerge(merged, {
+//       vAxis: {
+//         ticks,               // show "hh:mm" labels
+//         viewWindow: {
+//           min: 0,
+//           max: ticks.length ? ticks[ticks.length - 1].v : undefined
+//         }
+//       }
+//     });
+//   }
+//   return merged;
+// }
+
+/** Redraw the department charts that are currently visible (avg/agg sub-tab) */
+private redrawVisibleDepartmentCharts(): void {
+  if (!this.selectedDepartment) return;
+
+  const baseOptions: any = {
+    annotations: { alwaysOutside: true, textStyle: { fontSize: 11, color: '#000', auraColor: 'none' } },
+    legend: { position: 'bottom' },
+    tooltip: { isHtml: true },
+    chartArea: { left: 60, top: 60, width: '85%', height: '65%' },
+    height: 400,
+    hAxis: {
+      slantedText: true,
+      slantedTextAngle: 45,
+      textStyle: { fontSize: 12 },
+      showTextEvery: 1,
+      maxAlternation: 1,
+      minTextSpacing: 0
+    }
+  };
+
+  // pick the active sub-tab list
+  const list = this.activeDeptTab === 'avg'
+    ? this.selectedDepartmentAvgCharts
+    : this.selectedDepartmentAggCharts;
+
+  const color = this.getDepartmentColor(this.selectedDepartment);
+
+  // redraw each chart with its precomputed vAxis + centered title
+  requestAnimationFrame(() => {
+    list.forEach((cfg: any) => {
+      this.googleChartsService.drawDepartmentChart({
+        containerId: cfg.containerId,
+        data: cfg.data,
+        chartType: 'ColumnChart',
+        color,
+        options: {
+          ...baseOptions,
+          vAxis: cfg.vAxis,                 // <-- keeps hh:mm ticks for avg / integer for agg
+          title: cfg.chartTitle,
+          titleTextStyle: {
+            fontSize: 16,
+            bold: true,
+            color: '#000',
+            alignment: 'center'
+          }
         }
-      }
+      });
     });
-  }
-  return merged;
+  });
 }
 
-  
 }
