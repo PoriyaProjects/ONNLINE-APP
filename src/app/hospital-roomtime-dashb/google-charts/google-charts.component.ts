@@ -15,7 +15,7 @@ import {
   buildTimeTicksFromRaw,
   buildColumnOptions,
   buildDeptDrilldown,
-  stickyByMarker
+  stickyByMarker, PaletteService 
 } from '../../shared/charts-config';
 
 interface DepartmentMetricEntry {
@@ -85,11 +85,13 @@ export class RoomTimeDashboardComponent implements OnInit, AfterViewInit {
 
   constructor(
     public googleChartsService: GoogleChartsService,
-    private deptColors: DepartmentColorService
+    private deptColors: DepartmentColorService,
+    public palette: PaletteService
   ) {}
 
   ngOnInit(): void {
     this.legendMinimized = localStorage.getItem('legendMinimized') === 'true';
+    this.deptColors.setPalette(this.palette.getDepartmentPalette(), this.palette.name);
   }
 
   ngAfterViewInit(): void {
@@ -431,4 +433,40 @@ export class RoomTimeDashboardComponent implements OnInit, AfterViewInit {
       });
     });
   }
+
+
+
+  onThemeChange(name: string) {
+    this.palette.setTheme(name);
+    this.deptColors.setPalette(this.palette.getDepartmentPalette(), this.palette.name);
+    // pick up new series/datasource palettes on redraw:
+    this.loadCharts();
+    this.redrawVisibleDepartmentCharts();
+    this.googleChartsService.drawSummarizedMultiPeriodChart(
+      'multiPeriodSummary',
+      `${environment.url}/GetRoomTimeAvgD`,
+      `${environment.url}/GetRoomAggregateDaysD`,
+      '#A39DCD'
+    );
+    this.googleChartsService.drawAllDepartmentTables(
+      this.elementIdsByPeriod,
+      `${environment.url}/GetRoomTimeAvgD`
+    );
+    this.googleChartsService.drawAllDepartmentTablesSum(
+      this.elementIdsByPeriodSummarized,
+      `${environment.url}/GetRoomAggregateDaysD`
+    );
+  }
+  
+  cycleTheme() {
+    const all = this.palette.list();
+    const idx = all.indexOf(this.palette.name);
+    const next = all[(idx + 1) % all.length];
+    this.onThemeChange(next);
+  }
+
+  getDepartmentColorPublic(dept: string) {
+    return this.deptColors.colorFor(dept);
+  }
+  
 }
