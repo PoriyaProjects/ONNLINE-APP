@@ -250,45 +250,209 @@ export class GoogleChartsService {
   // ------------------------------------------------------------
   // Treemap (with drilldown; color by worst AvgDay)
   // ------------------------------------------------------------
-/** Dept color = the department's own AvgDay (no aggregation from doctors) */
+// ===================== core (yours, kept) =====================
 private buildDeptColorFromDeptAvg(): Map<string, number> {
   const m = new Map<string, number>();
-  for (const d of this.departments) {
-    m.set(d.Name, Number(d.AvgDay) || 0); // exactly as provided by API
-  }
+  for (const d of this.departments) m.set(d.Name, Number(d.AvgDay) || 0);
   return m;
 }
-
-// Unique (but visually identical) node id to avoid collisions like "ללא שיוך רופא"
 private makeInvisibleUniqueId(name: string, dept: string): string {
   return `${name}\u2063${dept}`; // U+2063 invisible separator
 }
-
-// Drilldown state
 private treemapMode: { mode: 'all' | 'dept'; dept?: string } = { mode: 'all' };
 
-// Small back button overlay
 private mountBackButton(container: HTMLElement, onClick: () => void) {
   Array.from(container.querySelectorAll('.treemap-back')).forEach(n => n.remove());
   const btn = document.createElement('button');
   btn.className = 'treemap-back';
   btn.textContent = '⬅︎ חזרה';
-  btn.style.position = 'absolute';
-  btn.style.top = '8px';
-  btn.style.right = '8px';
-  btn.style.padding = '4px 8px';
-  btn.style.direction = 'rtl';
-  btn.style.fontSize = '12px';
-  btn.style.border = '1px solid #bbb';
-  btn.style.borderRadius = '4px';
-  btn.style.background = '#fff';
-  btn.style.cursor = 'pointer';
+  Object.assign(btn.style, {
+    position: 'absolute', top: '8px', right: '8px', padding: '4px 8px',
+    direction: 'rtl', fontSize: '12px', border: '1px solid #bbb',
+    borderRadius: '4px', background: '#fff', cursor: 'pointer'
+  } as any);
   btn.onclick = onClick;
-
-  container.style.position = container.style.position || 'relative';
+  if (!container.style.position) container.style.position = 'relative';
   container.appendChild(btn);
 }
 
+// ===================== overlay engine (always-visible info) =====================
+
+// detach (typing-safe for TS/Angular 9)
+private detachOverlayObservers(container: HTMLElement) {
+  const refs = (container as any)._treemapOverlayObservers as
+    { mo: MutationObserver; ro: any } | undefined;
+  if (refs) {
+    refs.mo.disconnect();
+    refs.ro.disconnect();
+    delete (container as any)._treemapOverlayObservers;
+  }
+}
+
+private getOverlayLayer(container: HTMLElement): HTMLDivElement {
+  let layer = container.querySelector<HTMLDivElement>(':scope > .treemap-overlay-layer');
+  if (layer) return layer;
+  layer = document.createElement('div');
+  layer.className = 'treemap-overlay-layer';
+  Object.assign(layer.style, {
+    position: 'absolute', inset: '0', pointerEvents: 'none', zIndex: '3'
+  } as any);
+  if (!container.style.position) container.style.position = 'relative';
+  container.appendChild(layer);
+  return layer;
+}
+
+// Reuse your tooltip generator, but strip outer wrapper
+private tooltipInnerHtml(dt: any, options: any, row: number): string {
+  const size = dt.getValue(row, 2);
+  const color = dt.getValue(row, 3);
+  const raw = typeof options.generateTooltip === 'function'
+    ? options.generateTooltip(row, size, color) || ''
+    : '';
+  return raw.replace(/^<div[^>]*>/i, '').replace(/<\/div>\s*$/i, '');
+}
+
+// ---------- NEW: robust label normalization + matching ----------
+private normalizeLabel(s: string | null | undefined): string {
+  if (!s) return '';
+  return s
+    .replace(/[\u2063\u200E\u200F\u202A-\u202E]/g, '') // invisible sep + bidi marks
+    .replace(/\u00A0/g, ' ')                            // NBSP -> space
+    .replace(/\s+/g, ' ')                               // collapse spaces
+    .replace(/[.…]+$/g, '')                             // trailing ellipsis chars
+    .trim();
+}
+
+private findNodeByLabel(root: HTMLElement, label: string, used?: Set<HTMLElement>): HTMLElement | null {
+  const want = this.normalizeLabel(label);
+
+  // 1) aria-label contains
+  const nodes = root.querySelectorAll<HTMLElement>('.google-visualization-treeMap-node[aria-label]');
+  for (const n of Array.from(nodes)) {
+    if (used?.has(n)) continue;
+    const aria = this.normalizeLabel(n.getAttribute('aria-label') || '');
+    if (aria.includes(want)) return n;
+  }
+
+  // 2) fallback: visible text equals
+  const nodes2 = root.querySelectorAll<HTMLElement>('.google-visualization-treeMap-node');
+  for (const n of Array.from(nodes2)) {
+    if (used?.has(n)) continue;
+    const txt = this.normalizeLabel(n.textContent || '');
+    if (txt === want) return n;
+  }
+
+  return null;
+}
+
+// ---------- NEW: safe text fit (don’t mutate innerHTML) ----------
+private adjustTextSize(el: HTMLElement, maxW: number, maxH: number) {
+  let fs = 11;
+  el.style.fontSize = `${fs}px`;
+  el.style.lineHeight = '1.2';
+  for (let i = 0; i < 6; i++) {
+    if (el.scrollHeight <= maxH && el.scrollWidth <= maxW) break;
+    fs -= 0.5;
+    if (fs <= 8) { fs = 8; }
+    el.style.fontSize = `${fs}px`;
+    if (fs === 8) break;
+  }
+}
+
+// ---------- COMBINED & REFACTORED: overlay renderer ----------
+private renderAllOverlays(
+  container: HTMLElement,
+  dt: any,
+  options: { headerHeight: number; generateTooltip: Function },
+  clickable?: (row: number) => boolean
+) {
+  const layer = this.getOverlayLayer(container);
+  layer.innerHTML = '';
+
+  const headerTop = Math.max(0, (options.headerHeight ?? 18)) + 4; // slightly more space
+  const containerRect = container.getBoundingClientRect();
+  const used = new Set<HTMLElement>();
+
+  for (let row = 0; row < dt.getNumberOfRows(); row++) {
+    if (dt.getValue(row, 1) === null) continue; // skip root
+
+    const label = String(dt.getValue(row, 0));
+    const nodeEl = this.findNodeByLabel(container, label, used);
+    if (!nodeEl) continue;
+    used.add(nodeEl);
+
+    // pointer cursor on actual node if clickable
+    if (clickable) (nodeEl.style as any).cursor = clickable(row) ? 'pointer' : 'default';
+
+    const r = nodeEl.getBoundingClientRect();
+
+    // lenient size guard (still avoids illegible clutter)
+    if (r.width < 30 || r.height < headerTop + 8) continue;
+
+    const left = r.left - containerRect.left + 3;
+    const top  = r.top  - containerRect.top  + headerTop;
+    const maxWidth  = Math.max(0, r.width  - 6);
+    const maxHeight = Math.max(0, r.height - headerTop - 4);
+
+    const html = this.tooltipInnerHtml(dt, options, row);
+    if (!html.trim()) continue;
+
+    const box = document.createElement('div');
+    box.className = 'treemap-inline';
+    Object.assign(box.style, {
+      position: 'absolute',
+      left: `${left}px`,
+      top: `${top}px`,
+      width: `${maxWidth}px`,
+      maxHeight: `${maxHeight}px`,
+      overflow: 'hidden',
+      fontSize: '11px',
+      lineHeight: '1.2',
+      color: '#333',
+      textShadow: '0 0 2px rgba(255,255,255,0.8)',
+      padding: '2px',
+      boxSizing: 'border-box'
+    } as any);
+
+    box.innerHTML = html;
+    this.adjustTextSize(box, maxWidth, maxHeight);
+    layer.appendChild(box);
+  }
+}
+
+private attachOverlayObservers(
+  container: HTMLElement,
+  dt: any,
+  options: any,
+  clickable?: (row: number) => boolean
+) {
+  this.detachOverlayObservers(container);
+
+  const mo = new MutationObserver(() => {
+    requestAnimationFrame(() => this.renderAllOverlays(container, dt, options, clickable));
+  });
+  mo.observe(container, { childList: true, subtree: true });
+
+  // Polyfill-friendly ResizeObserver (typed as any)
+  const ResizeObs: any = (window as any).ResizeObserver || class {
+    cb: Function;
+    constructor(cb: Function) {
+      this.cb = cb;
+      window.addEventListener('resize', () => this.cb());
+    }
+    observe() { /* no-op for fallback */ }
+    disconnect() { window.removeEventListener('resize', this.cb as any); }
+  };
+
+  const ro = new ResizeObs(() => {
+    requestAnimationFrame(() => this.renderAllOverlays(container, dt, options, clickable));
+  });
+  ro.observe(container);
+
+  (container as any)._treemapOverlayObservers = { mo, ro };
+}
+
+// ===================== public entry =====================
 public async drawTreemap(targetId: string) {
   await this.loadGoogleCharts();
   await this.waitForGoogleReady();
@@ -297,14 +461,11 @@ public async drawTreemap(targetId: string) {
   const el = document.getElementById(targetId) as HTMLElement | null;
   if (!el) return;
 
-  if (this.treemapMode.mode === 'all') {
-    await this.drawTreemapAll(el);
-  } else {
-    await this.drawTreemapDept(el, this.treemapMode.dept!);
-  }
+  if (this.treemapMode.mode === 'all') await this.drawTreemapAll(el);
+  else await this.drawTreemapDept(el, this.treemapMode.dept!);
 }
 
-// Root view: departments only (color = department's own AvgDay)
+// ===================== ROOT VIEW =====================
 private async drawTreemapAll(el: HTMLElement) {
   const g = (window as any).google;
   const dt = new g.visualization.DataTable();
@@ -315,10 +476,9 @@ private async drawTreemapAll(el: HTMLElement) {
 
   const ROOT_ID = 'כלל';
   const deptColor = this.buildDeptColorFromDeptAvg();
-  const globalMax = Math.max(0, ...Array.from(deptColor.values())); // range for legend
+  const globalMax = Math.max(0, ...Array.from(deptColor.values()));
   dt.addRow([ROOT_ID, null, 0, globalMax]);
 
-  // Departments only (click to drill)
   for (const [dept, q] of this.buildDepartmentRows()) {
     dt.addRow([dept, ROOT_ID, q, deptColor.get(dept) ?? 0]);
   }
@@ -331,36 +491,47 @@ private async drawTreemapAll(el: HTMLElement) {
     maxColor: '#e53935',
     showScale: true,
     useWeightedAverageForAggregation: false,
-    generateTooltip: (row: number, size: number /*ignored*/, _value: number) => {
+    generateTooltip: (row: number, size: number) => {
       const id = dt.getValue(row, 0) as string;
       if (id === ROOT_ID) return '';
-      const deptAvg = dt.getValue(row, 3) as number; // read Color column explicitly
-      return `<div style="padding:6px;direction:rtl">
+      const deptAvg = dt.getValue(row, 3) as number;
+      return `<div style="padding:0;direction:rtl">
                 <b>${id}</b><br/>ממתינים: ${size} | ימים ממוצעים: ${deptAvg}
               </div>`;
     }
   };
 
   const chart = new g.visualization.TreeMap(el);
+
+  // drilldown
   g.visualization.events.addListener(chart, 'select', () => {
     const sel = chart.getSelection();
     if (!sel.length) return;
     const r = sel[0].row;
     if (r == null) return;
-    const parent = dt.getValue(r, 1);
-    const nodeId = dt.getValue(r, 0) as string;
-    if (parent === ROOT_ID) {
-      this.treemapMode = { mode: 'dept', dept: nodeId };
+    if (dt.getValue(r, 1) === ROOT_ID) {
+      this.treemapMode = { mode: 'dept', dept: dt.getValue(r, 0) as string };
       this.drawTreemap(el.id);
     }
   });
 
+  // overlays
+  g.visualization.events.addListener(chart, 'ready', () => {
+    this.renderAllOverlays(
+      el, dt, options,
+      (row) => dt.getValue(row, 1) === ROOT_ID // hand cursor on drillable depts
+    );
+    this.attachOverlayObservers(
+      el, dt, options,
+      (row) => dt.getValue(row, 1) === ROOT_ID
+    );
+    Array.from(el.querySelectorAll('.treemap-back')).forEach(n => n.remove());
+  });
+
   this.drawSafe(chart, dt, options, el.id);
-  // remove back button on root
-  Array.from(el.querySelectorAll('.treemap-back')).forEach(n => n.remove());
 }
 
-// Dept view: selected department as root (root color = department's own AvgDay), doctors as leaves
+// ===================== DEPARTMENT VIEW =====================
 private async drawTreemapDept(el: HTMLElement, deptName: string) {
   const g = (window as any).google;
   const dt = new g.visualization.DataTable();
@@ -370,15 +541,12 @@ private async drawTreemapDept(el: HTMLElement, deptName: string) {
   dt.addColumn('number', 'Color');
 
   const ROOT = deptName;
-
   const docs = this.buildDoctorRows().filter(([, d]) => d === deptName);
   const deptAvg = Number(this.departments.find(d => d.Name === deptName)?.AvgDay) || 0;
 
-  // root color = department's own AvgDay to keep legend consistent with dept view
   dt.addRow([ROOT, null, 0, deptAvg]);
-
   for (const [name, dept, q, avg] of docs) {
-    dt.addRow([this.makeInvisibleUniqueId(name, dept), ROOT, q, avg]); // doctor AvgDay as-is (Color col)
+    dt.addRow([this.makeInvisibleUniqueId(name, dept), ROOT, q, avg]);
   }
 
   const options = {
@@ -389,14 +557,14 @@ private async drawTreemapDept(el: HTMLElement, deptName: string) {
     maxColor: '#e53935',
     showScale: true,
     useWeightedAverageForAggregation: false,
-    generateTooltip: (row: number, size: number /*ignored*/, _value: number) => {
+    generateTooltip: (row: number, size: number) => {
       const rawId = dt.getValue(row, 0) as string;
       const label = rawId.replace(/\u2063.*$/, '');
-      const colorVal = dt.getValue(row, 3) as number; // always get Color column
+      const colorVal = dt.getValue(row, 3) as number;
       if (label === ROOT) {
-        return `<div style="padding:6px;direction:rtl"><b>${ROOT}</b><br/>ימים ממוצעים (מחלקה): ${colorVal}</div>`;
+        return `<div style="padding:0;direction:rtl"><b>${ROOT}</b><br/>ימים ממוצעים (מחלקה): ${colorVal}</div>`;
       }
-      return `<div style="padding:6px;direction:rtl">
+      return `<div style="padding:0;direction:rtl">
                 <b>${label}</b><br/>מחלקה: ${ROOT}
                 <br/>ממתינים: ${size} | ימים ממוצעים: ${colorVal}
               </div>`;
@@ -404,14 +572,21 @@ private async drawTreemapDept(el: HTMLElement, deptName: string) {
   };
 
   const chart = new g.visualization.TreeMap(el);
-  this.drawSafe(chart, dt, options, el.id);
 
-  // Back button
-  this.mountBackButton(el, () => {
-    this.treemapMode = { mode: 'all' };
-    this.drawTreemap(el.id);
+  g.visualization.events.addListener(chart, 'ready', () => {
+    this.renderAllOverlays(el, dt, options);   // not drillable here
+    this.attachOverlayObservers(el, dt, options);
+
+    this.mountBackButton(el, () => {
+      this.detachOverlayObservers(el);
+      this.treemapMode = { mode: 'all' };
+      this.drawTreemap(el.id);
+    });
   });
+
+  this.drawSafe(chart, dt, options, el.id);
 }
+
 
 
   // ------------------------------------------------------------
@@ -453,147 +628,7 @@ private async drawTreemapDept(el: HTMLElement, deptName: string) {
     this.drawSafe(chart, dt, options, targetId);
   }
 
-  // public async drawLeaderboardDoctors(
-  //   containerId: string,
-  //   dir: 'asc' | 'desc' = 'desc' // sort by AvgDay
-  // ) {
-  //   await this.loadGoogleCharts();
-  //   await this.waitForGoogleReady();
-  //   if (!this.googleReady()) return;
-
-  //   type Row = { name: string; dept: string; avg: number; q: number };
-  //   const rows: Row[] = this.buildDoctorRows().map(([name, dept, q, avg]) => ({
-  //     name, dept, avg: Number(avg) || 0, q: Number(q) || 0
-  //   }));
-
-  //   rows.sort((a, b) => dir === 'asc' ? a.avg - b.avg : b.avg - a.avg);
-
-  //   const dt = new (window as any).google.visualization.DataTable();
-  //   dt.addColumn('string', 'רופא – מחלקה');
-  //   dt.addColumn('number', 'ימים ממוצעים');
-  //   dt.addColumn({ type: 'string', role: 'annotation' });
-  //   dt.addColumn({ type: 'string', role: 'annotationText' });
-  //   dt.addColumn({ type: 'string', role: 'tooltip', p: { html: true } });
-
-  //   const rowDept: string[] = [];
-  //   rows.forEach(r => {
-  //     const display = `${r.name} – ${r.dept}`;
-  //     const ann     = `ימים ${r.avg} | תורים ${r.q}`;
-  //     const annText = `ימים ממוצעים: ${r.avg} · תורים: ${r.q}`;
-  //     const tooltip =
-  //       `<div style="direction:rtl;padding:6px 8px;font-size:12px">
-  //          <div><b>${display}</b></div>
-  //          <div>מחלקה: ${r.dept}</div>
-  //          <div>ימים ממוצעים: <b>${r.avg}</b></div>
-  //          <div>תורים: <b>${r.q}</b></div>
-  //        </div>`;
-  //     dt.addRow([display, r.avg, ann, annText, tooltip]);
-  //     rowDept.push(r.dept);
-  //   });
-
-  //   const rowHeight = 26;
-  //   const vPad = 80;
-  //   const height = Math.max(220, rows.length * rowHeight + vPad);
-  //   const el = document.getElementById(containerId)!;
-  //   el.style.height = `${height}px`;
-
-  //   const title = dir === 'desc' ? 'כל הרופאים — ארוכים ← קצרים' : 'כל הרופאים — קצרים ← ארוכים';
-
-  //   const opts: any = {
-  //     title,
-  //     legend: 'none',
-  //     chartArea: { left: 220, right: 24, top: 40, bottom: 20 },
-  //     hAxis: { minValue: 0 },
-  //     height,
-  //     bar: { groupWidth: '90%' },
-  //     tooltip: { isHtml: true },
-  //     annotations: {
-  //       alwaysOutside: false,
-  //       highContrast: true,
-  //       textStyle: { fontSize: 11, auraColor: 'none', color: '#000' }
-  //     }
-  //   };
-
-  //   const chart = new (window as any).google.visualization.BarChart(el);
-
-  //   // Pretty department bands
-  //   (window as any).google.visualization.events.addListener(chart, 'ready', () => {
-  //     Array.from(el.querySelectorAll('.dept-band, .dept-sep, .dept-label')).forEach(n => n.remove());
-  //     const cli = chart.getChartLayoutInterface();
-  //     const ca  = cli.getChartAreaBoundingBox();
-  //     el.style.position = 'relative';
-
-  //     // group contiguous by dept
-  //     const groups: Array<{dept: string; start: number; end: number}> = [];
-  //     let start = 0;
-  //     for (let i = 1; i <= rowDept.length; i++) {
-  //       if (i === rowDept.length || rowDept[i] !== rowDept[start]) {
-  //         groups.push({ dept: rowDept[start], start, end: i - 1 });
-  //         start = i;
-  //       }
-  //     }
-
-  //     const barBox = (i: number) => {
-  //       try { return cli.getBoundingBox(`bar#0#${i}`); } catch { return null; }
-  //     };
-
-  //     groups.forEach((g, idx) => {
-  //       const topBox = barBox(g.start);
-  //       const botBox = barBox(g.end);
-  //       if (!topBox || !botBox) return;
-
-  //       const top    = topBox.top - 2;
-  //       const height = (botBox.top + botBox.height) - topBox.top + 4;
-
-  //       if (idx % 2 === 0) {
-  //         const band = document.createElement('div');
-  //         band.className = 'dept-band';
-  //         band.style.position = 'absolute';
-  //         band.style.left = `${ca.left}px`;
-  //         band.style.top = `${top}px`;
-  //         band.style.width = `${ca.width}px`;
-  //         band.style.height = `${height}px`;
-  //         band.style.background = 'rgba(0,0,0,0.035)';
-  //         band.style.pointerEvents = 'none';
-  //         el.appendChild(band);
-  //       }
-
-  //       if (idx > 0) {
-  //         const sep = document.createElement('div');
-  //         sep.className = 'dept-sep';
-  //         sep.style.position = 'absolute';
-  //         sep.style.left = `${ca.left}px`;
-  //         sep.style.top = `${top}px`;
-  //         sep.style.width = `${ca.width}px`;
-  //         sep.style.height = `1px`;
-  //         sep.style.background = 'rgba(0,0,0,0.15)';
-  //         sep.style.pointerEvents = 'none';
-  //         el.appendChild(sep);
-  //       }
-
-  //       const lbl = document.createElement('div');
-  //       lbl.className = 'dept-label';
-  //       lbl.style.position = 'absolute';
-  //       lbl.style.left = `${Math.max(8, ca.left - 200)}px`;
-  //       lbl.style.width = `190px`;
-  //       lbl.style.top = `${top}px`;
-  //       lbl.style.height = `${height}px`;
-  //       lbl.style.display = 'flex';
-  //       lbl.style.alignItems = 'center';
-  //       lbl.style.justifyContent = 'flex-end';
-  //       lbl.style.fontSize = '12px';
-  //       lbl.style.color = '#37474f';
-  //       lbl.style.pointerEvents = 'none';
-  //       lbl.style.direction = 'rtl';
-  //       lbl.textContent = g.dept;
-  //       el.appendChild(lbl);
-  //     });
-  //   });
-
-  //   this.drawSafe(chart, dt, opts, containerId);
-  // }
-
-  // keep this state + helper in your service as before
+  
 private groupDoctorsByDept = true;
 
 private mountGroupToggleButton(el: HTMLElement, onToggle: () => void) {
