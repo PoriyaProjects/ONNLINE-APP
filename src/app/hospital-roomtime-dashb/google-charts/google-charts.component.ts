@@ -177,9 +177,9 @@ export class RoomTimeDashboardComponent implements OnInit, AfterViewInit {
   loadCharts(): void {
     const chartsConfig = this.activeTab === 'avg'
       ? { ids: { MorningDelay: 'chartMorningDelayAvg', EndDay: 'chartEndDayAvg', SetupTime: 'chartSetupTimeAvg' },
-          url: `${environment.url}/GetRoomTimeAvgD`, title: 'זמן ממוצע', isDays: false }
+          url: `${environment.url}/GetRoomTimeAvgD`, title: '', isDays: false }
       : { ids: { MorningDelay: 'chartMorningDelayAgg', EndDay: 'chartEndDayAgg', SetupTime: 'chartSetupTimeAgg' },
-          url: `${environment.url}/GetRoomAggregateDaysD`, title: 'ימי אובדן', isDays: true };
+          url: `${environment.url}/GetRoomAggregateDaysD`, title: '', isDays: true };
 
     this.googleChartsService.drawDepartmentChartsWithColors(
       chartsConfig.ids,
@@ -351,7 +351,7 @@ export class RoomTimeDashboardComponent implements OnInit, AfterViewInit {
       this.selectedDepartmentAvgCharts.push({
         containerId: 'chart_avg_' + safeDept + '_' + safeSrc,
         data: built.avgData,
-        chartTitle: translateDataSource(source) + ' – ' + deptName + ' (זמן ממוצע)',
+        chartTitle: translateDataSource(source) + ' – ' + deptName + ' (ממוצע)',
         vAxis: built.vAxisAvg
       });
       this.selectedDepartmentAggCharts.push({

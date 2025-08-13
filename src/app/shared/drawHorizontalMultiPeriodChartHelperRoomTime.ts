@@ -17,6 +17,7 @@ export interface HorizontalMultiPeriodChartOptions {
 
   // NEW: control which lines to render & in what order
   // default: ["avg","agg"]
+  //rows?: Array<"avg" | "agg">;
   rows?: Array<"avg" | "agg">;
 }
 

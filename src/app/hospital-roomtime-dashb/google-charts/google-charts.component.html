@@ -271,8 +271,9 @@
   <div class="row">
     <div class="mdc-layout-grid__cell col-md-12">
       <div class="card text-center">
-        <h3 style="margin:10px auto 0">אובדן זמן חדרי ניתוח – סיכום</h3>
-        <div id="multiPeriodSummary" style="width: 100%; height: 160px;"></div>
+        <h3 style="margin:10px auto 0">אובדן זמן חדרי ניתוח</h3>
+        <h5 style="margin:10px auto 0">(איחור תחילת יום + אובדן סוף יום + עודף Setup Time)</h5>
+        <div id="multiPeriodSummary" style="width: 100%; height: 160px;">טעינה...</div>
         <div style="height:10px"></div>
       </div>
     </div>
@@ -507,7 +508,7 @@
           <!-- Tabs -->
           <div class="tabs">
             <button (click)="onTabChange('avg')" [class.active]="activeTab === 'avg'">
-              <span class="material-icons">av_timer</span> זמן ממוצע
+              <span class="material-icons">av_timer</span> ממוצע
             </button>
             <button (click)="onTabChange('agg')" [class.active]="activeTab === 'agg'">
               <span class="material-icons">running_with_errors</span> ימי אובדן
@@ -592,8 +593,9 @@
         <div style="height:60px;"></div>
 
         <div *ngIf="selectedDepartment" class="card text-center" style="margin:10px 0 20px">
-          <h3 style="margin:10px auto 0">סיכום — {{ selectedDepartment }}</h3>
-          <div id="DeptmultiPeriodSummary" style="width: 100%; height: 160px;"></div>
+          <h3 style="margin:10px auto 0">{{ selectedDepartment }}</h3>
+          <h5 style="margin:10px auto 0">(איחור תחילת יום + אובדן סוף יום + עודף Setup Time)</h5>
+          <div id="DeptmultiPeriodSummary" style="width: 100%; height: 160px;">טעינה...</div>
           <div style="height:60px;"></div>
         </div>
         <!-- Department Charts -->
@@ -612,7 +614,7 @@
           <div class="row" *ngFor="let chunk of selectedDepartmentAvgChartChunks">
             <div class="col-md-4" *ngFor="let chart of chunk">
               <div class="card text-center" style="margin-bottom: 40px;">
-                <div [id]="chart.containerId" style="width: 100%; height: 400px;">טוען גרף...</div>
+                <div [id]="chart.containerId" style="width: 100%; height: 400px;">טעינה...</div>
               </div>
             </div>
           </div>
@@ -623,7 +625,7 @@
           <div class="row" *ngFor="let chunk of selectedDepartmentAggChartChunks">
             <div class="col-md-4" *ngFor="let chart of chunk">
               <div class="card text-center" style="margin-bottom: 40px;">
-                <div [id]="chart.containerId" style="width: 100%; height: 400px;">טוען גרף...</div>
+                <div [id]="chart.containerId" style="width: 100%; height: 400px;">טעינה...</div>
               </div>
             </div>
           </div>
