@@ -274,6 +274,8 @@ import { DialogExampleComponent } from './form-dashboard/commercial-support-form
 import { HospitalIncomeDashbComponent } from './hospital-income-dashb/hospital-income-dashb.component';
 import { HospitalIncomeNBDashbComponent } from './hospital-incomenb-dashb/hospital-incomenb-dashb.component';
 import { FilterDepartsPipe } from './pipe/filter-departs.pipe';
+import { FoldersManagementComponent } from './dashboard/folders-management/folders-management.component';
+import { FolderDialogComponent } from './dashboard/folders-management/folder-dialog/folder-dialog.component';
 
 
 
@@ -499,6 +501,8 @@ const maskConfig: Partial<IConfig> = {
     HospitalIncomeDashbComponent,
     HospitalIncomeNBDashbComponent,
     FilterDepartsPipe,
+    FoldersManagementComponent,
+    FolderDialogComponent,
     //HospitalIncomeDashbComponent,
   ],
   imports: [

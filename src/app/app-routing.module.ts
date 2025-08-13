@@ -148,6 +148,8 @@ import { HospitalIncomeDashbComponent } from './hospital-income-dashb/hospital-i
 import { GoogleChartsIncomeComponent } from './hospital-income-dashb/google-charts/google-charts.component';
 import { HospitalIncomeNBDashbComponent } from "./hospital-incomenb-dashb/hospital-incomenb-dashb.component";
 import { GoogleChartsIncomeNBComponent } from "./hospital-incomenb-dashb/google-charts/google-charts.component";
+import { FoldersManagementComponent } from "./dashboard/folders-management/folders-management.component";
+import { FolderDialogComponent } from "./dashboard/folders-management/folder-dialog/folder-dialog.component";
 //import { AppointsDashboardComponent } from './hospital-appoints-dashb/google-charts/google-charts.component';
 
 
@@ -329,9 +331,9 @@ const routes: Routes = [
     { path: "hospital-income-dashb", component: GoogleChartsIncomeComponent },
     { path: "hospitalincomenbdashb", component: HospitalIncomeNBDashbComponent },
     { path: "hospital-incomenb-dashb", component: GoogleChartsIncomeNBComponent },
+    { path: "folders-management", component: FoldersManagementComponent },
+    { path: "folders-dialog", component: FolderDialogComponent },
     //{ path: "hospital-appoints-dashb", component: AppointsDashboardComponent },
-
-
 ];
 
 

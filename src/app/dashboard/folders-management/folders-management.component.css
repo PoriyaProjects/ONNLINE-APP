@@ -1,0 +1,33 @@
+.table-actions {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 15px;
+}
+
+.full-width {
+  width: 100%;
+}
+
+table {
+  width: 100%;
+}
+
+td.truncate {
+  max-width: 200px;       /* Adjust as needed */
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+td.truncate a {
+  display: inline-block;
+  max-width: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  vertical-align: middle;
+}
+
+th {
+  justify-items: center;
+}
