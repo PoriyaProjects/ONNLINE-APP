@@ -464,229 +464,259 @@ private mountBackButton(container: HTMLElement, onClick: () => void) {
 }
 
 
-  // =========================
-  // Other charts (leaderboards kept as you had)
-  // =========================
 
-  private groupDoctorsByDept = true;
+/*************/
+/* Table Chart
+/*************/
+  // Pastel palette for department backgrounds (stable per department)
+// public palette = ['#A3C9F9', '#F9D6A5', '#C5E1A5', '#F9A8D4', '#E6A5F7', '#F8BBD0', '#B2DFDB', '#FFECB3', '#DCEDC8', '#FFE0B2', '#D1C4E9', '#FFCDD2'];
+public palette = [ '#A39DCD','#b9b473','#8BB3DF','#E2C87E','#BEE0BD','#E58FBC','#8DC63F',
+  '#B5AEA3','#94AA64','#F1D5D1','#BC86B5','#DA549E','#AF4F76',
+  '#FDB913','#00A79E','#C98846','#BE1E2D'];
+private groupDoctorsByDept = true;
 
-  private mountGroupToggleButton(el: HTMLElement, onToggle: () => void) {
-    Array.from(el.querySelectorAll('.group-toggle')).forEach(n => n.remove());
-    const btn = document.createElement('button');
-    btn.className = 'group-toggle';
-    btn.textContent = this.groupDoctorsByDept ? 'בטל קיבוץ למחלקות' : 'קבץ לפי מחלקה';
-    Object.assign(btn.style, {
-      position: 'absolute', top: '8px', right: '8px', padding: '6px 10px',
-      direction: 'rtl', fontSize: '12px', border: '1px solid #bbb',
-      borderRadius: '6px', background: '#fff', cursor: 'pointer', zIndex: '5'
-    } as any);
-    btn.onclick = onToggle;
-    if (getComputedStyle(el).position === 'static') el.style.position = 'relative';
-    el.appendChild(btn);
+// Stable index into the palette based on dept name
+private deptColorIndex(dept: string): number {
+  let h = 7;
+  for (let i = 0; i < dept.length; i++) h = (h * 31 + dept.charCodeAt(i)) >>> 0;
+  return h % this.palette.length;
+}
+
+// Convert HEX (#RRGGBB) to rgba
+private hexToRgba(hex: string, alpha: number): string {
+  const m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  if (!m) return hex;
+  const r = parseInt(m[1], 16);
+  const g = parseInt(m[2], 16);
+  const b = parseInt(m[3], 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
+private mountGroupToggleButton(el: HTMLElement, onToggle: () => void) {
+  Array.from(el.querySelectorAll('.group-toggle')).forEach(n => n.remove());
+  const btn = document.createElement('button');
+  btn.className = 'group-toggle';
+  btn.textContent = this.groupDoctorsByDept ? 'בטל קיבוץ למחלקות' : 'קבץ לפי מחלקה';
+  Object.assign(btn.style, {
+    position: 'absolute', top: '8px', left: '8px', padding: '6px 10px',
+    direction: 'rtl', fontSize: '12px', border: '1px solid #bbb',
+    borderRadius: '6px', background: '#fff', cursor: 'pointer', zIndex: '5'
+  } as any);
+  btn.onclick = onToggle;
+  if (getComputedStyle(el).position === 'static') el.style.position = 'relative';
+  el.appendChild(btn);
+}
+
+public async drawLeaderboardDoctors(containerId: string, dir: 'asc' | 'desc' = 'desc') {
+  await this.loadGoogleCharts();
+  await this.waitForGoogleReady();
+  if (!this.googleReady()) return;
+
+  type Row = { name: string; dept: string; avg: number; q: number };
+  const baseRows: Row[] = this.buildDoctorRows().map(([name, dept, q, avg]) => ({ name, dept, avg: Number(avg) || 0, q: Number(q) || 0 }));
+  const sortInDept = (a: Row, b: Row) => (dir === 'asc' ? a.avg - b.avg : b.avg - a.avg);
+
+  let rows: Row[] = [];
+  if (this.groupDoctorsByDept) {
+    const byDept = new Map<string, Row[]>();
+    for (const r of baseRows) (byDept.get(r.dept) || byDept.set(r.dept, []).get(r.dept)!).push(r);
+    byDept.forEach(list => list.sort(sortInDept));
+    const deptOrder = Array.from(byDept.keys()).sort((da, db) => {
+      const la = byDept.get(da)!; const lb = byDept.get(db)!;
+      const scoreA = la[0] ? la[0].avg : 0;
+      const scoreB = lb[0] ? lb[0].avg : 0;
+      return dir === 'asc' ? scoreA - scoreB : scoreB - scoreA;
+    });
+    for (const d of deptOrder) rows.push(...byDept.get(d)!);
+  } else {
+    rows = baseRows.slice().sort(sortInDept);
   }
 
-  public async drawLeaderboardDoctors(containerId: string, dir: 'asc' | 'desc' = 'desc') {
-    await this.loadGoogleCharts();
-    await this.waitForGoogleReady();
-    if (!this.googleReady()) return;
+  const google = (window as any).google;
+  const dt = new google.visualization.DataTable();
+  dt.addColumn('string', 'רופא – מחלקה');
+  dt.addColumn('number', 'תור זמין');
+  dt.addColumn({ type: 'string', role: 'annotation' });
+  dt.addColumn({ type: 'string', role: 'annotationText' });
+  dt.addColumn({ type: 'string', role: 'tooltip', p: { html: true } });
 
-    type Row = { name: string; dept: string; avg: number; q: number };
-    const baseRows: Row[] = this.buildDoctorRows().map(([name, dept, q, avg]) => ({ name, dept, avg: Number(avg) || 0, q: Number(q) || 0 }));
-    const sortInDept = (a: Row, b: Row) => (dir === 'asc' ? a.avg - b.avg : b.avg - a.avg);
+  const rowDept: string[] = [];
+  for (const r of rows) {
+    const display = `${r.name} – ${r.dept}`;
+    const ann     = `ימים ${r.avg} | תורים ${r.q}`;
+    const annText = `תור זמין: ${r.avg} · תורים: ${r.q}`;
+    const tooltip =
+      `<div style="direction:rtl;padding:6px 8px;font-size:12px">
+         <div><b>${r.name}</b></div>
+         <div>מחלקה: ${r.dept}</div>
+         <div>תור זמין: <b>${r.avg}</b></div>
+         <div>תורים: <b>${r.q}</b></div>
+       </div>`;
+    dt.addRow([display, r.avg, ann, annText, tooltip]);
+    rowDept.push(r.dept);
+  }
 
-    let rows: Row[] = [];
-    if (this.groupDoctorsByDept) {
-      const byDept = new Map<string, Row[]>();
-      for (const r of baseRows) (byDept.get(r.dept) || byDept.set(r.dept, []).get(r.dept)!).push(r);
-      byDept.forEach(list => list.sort(sortInDept));
-      const deptOrder = Array.from(byDept.keys()).sort((da, db) => {
-        const la = byDept.get(da)!; const lb = byDept.get(db)!;
-        const scoreA = la[0] ? la[0].avg : 0;
-        const scoreB = lb[0] ? lb[0].avg : 0;
-        return dir === 'asc' ? scoreA - scoreB : scoreB - scoreA;
-      });
-      for (const d of deptOrder) rows.push(...byDept.get(d)!);
-    } else {
-      rows = baseRows.slice().sort(sortInDept);
-    }
+  const rowHeight = 26;
+  const vPad = 80;
+  const height = Math.max(220, rows.length * rowHeight + vPad);
+  const el = document.getElementById(containerId)!;
+  el.style.height = `${height}px`;
+  if (getComputedStyle(el).position === 'static') el.style.position = 'relative';
 
-    const google = (window as any).google;
-    const dt = new google.visualization.DataTable();
-    dt.addColumn('string', 'רופא – מחלקה');
-    dt.addColumn('number', 'תור זמין');
-    dt.addColumn({ type: 'string', role: 'annotation' });
-    dt.addColumn({ type: 'string', role: 'annotationText' });
-    dt.addColumn({ type: 'string', role: 'tooltip', p: { html: true } });
+  const title = dir === 'asc'
+    ? (this.groupDoctorsByDept ? 'רופאים לפי מחלקה — קצרים ← ארוכים' : 'כל הרופאים — קצרים ← ארוכים')
+    : (this.groupDoctorsByDept ? 'רופאים לפי מחלקה — ארוכים ← קצרים' : 'כל הרופאים — ארוכים ← קצרים');
 
-    const rowDept: string[] = [];
-    for (const r of rows) {
-      const display = `${r.name} – ${r.dept}`;
-      const ann     = `ימים ${r.avg} | תורים ${r.q}`;
-      const annText = `תור זמין: ${r.avg} · תורים: ${r.q}`;
-      const tooltip =
-        `<div style="direction:rtl;padding:6px 8px;font-size:12px">
-           <div><b>${r.name}</b></div>
-           <div>מחלקה: ${r.dept}</div>
-           <div>תור זמין: <b>${r.avg}</b></div>
-           <div>תורים: <b>${r.q}</b></div>
-         </div>`;
-      dt.addRow([display, r.avg, ann, annText, tooltip]);
-      rowDept.push(r.dept);
-    }
+  const chartAreaLeft  = this.groupDoctorsByDept ? 220 : 140;
+  const chartAreaRight = this.groupDoctorsByDept ? 110 : 24;
 
-    const rowHeight = 26;
-    const vPad = 80;
-    const height = Math.max(220, rows.length * rowHeight + vPad);
-    const el = document.getElementById(containerId)!;
-    el.style.height = `${height}px`;
-    if (getComputedStyle(el).position === 'static') el.style.position = 'relative';
+  const opts: any = {
+    title,
+    legend: 'none',
+    chartArea: { left: chartAreaLeft, right: chartAreaRight, top: 40, bottom: 20 },
+    hAxis: { minValue: 0 },
+    height,
+    bar: { groupWidth: '90%' },
+    tooltip: { isHtml: true },
+    annotations: { alwaysOutside: false, highContrast: true, textStyle: { fontSize: 11, auraColor: 'none', color: '#000' } }
+  };
 
-    const title = dir === 'asc'
-      ? (this.groupDoctorsByDept ? 'רופאים לפי מחלקה — קצרים ← ארוכים' : 'כל הרופאים — קצרים ← ארוכים')
-      : (this.groupDoctorsByDept ? 'רופאים לפי מחלקה — ארוכים ← קצרים' : 'כל הרופאים — ארוכים ← קצרים');
+  const chart = new google.visualization.BarChart(el);
 
-    const chartAreaLeft  = this.groupDoctorsByDept ? 220 : 140;
-    const chartAreaRight = this.groupDoctorsByDept ? 110 : 24;
+  // === Refactored: use the provided pastel palette per department ===
+  const drawDeptOverlaysIfGrouped = () => {
+    const old = el.querySelectorAll('.dept-band, .dept-sep, .dept-label-rot');
+    old.forEach(n => n.remove());
+    if (!this.groupDoctorsByDept) return;
 
-    const opts: any = {
-      title,
-      legend: 'none',
-      chartArea: { left: chartAreaLeft, right: chartAreaRight, top: 40, bottom: 20 },
-      hAxis: { minValue: 0 },
-      height,
-      bar: { groupWidth: '90%' },
-      tooltip: { isHtml: true },
-      annotations: { alwaysOutside: false, highContrast: true, textStyle: { fontSize: 11, auraColor: 'none', color: '#000' } }
-    };
+    const cli = chart.getChartLayoutInterface();
+    const ca  = cli.getChartAreaBoundingBox();
+    const labelX = ca.left + ca.width + 10;
 
-    const chart = new google.visualization.BarChart(el);
-
-    const drawDeptOverlaysIfGrouped = () => {
-      const old = el.querySelectorAll('.dept-band, .dept-sep, .dept-label-rot');
-      old.forEach(n => n.remove());
-      if (!this.groupDoctorsByDept) return;
-
-      const cli = chart.getChartLayoutInterface();
-      const ca  = cli.getChartAreaBoundingBox();
-      const labelX = ca.left + ca.width + 10;
-
-      const groups: Array<{dept: string; start: number; end: number}> = [];
-      let start = 0;
-      for (let i = 1; i <= rowDept.length; i++) {
-        if (i === rowDept.length || rowDept[i] !== rowDept[start]) {
-          groups.push({ dept: rowDept[start], start, end: i - 1 });
-          start = i;
-        }
+    const groups: Array<{dept: string; start: number; end: number}> = [];
+    let start = 0;
+    for (let i = 1; i <= rowDept.length; i++) {
+      if (i === rowDept.length || rowDept[i] !== rowDept[start]) {
+        groups.push({ dept: rowDept[start], start, end: i - 1 });
+        start = i;
       }
+    }
 
-      const barBox = (i: number) => { try { return cli.getBoundingBox(`bar#0#${i}`); } catch { return null; } };
+    const barBox = (i: number) => { try { return cli.getBoundingBox(`bar#0#${i}`); } catch { return null; } };
 
-      for (let idx = 0; idx < groups.length; idx++) {
-        const g = groups[idx];
-        const topBox = barBox(g.start);
-        const botBox = barBox(g.end);
-        if (!topBox || !botBox) continue;
+    for (let idx = 0; idx < groups.length; idx++) {
+      const g = groups[idx];
+      const topBox = barBox(g.start);
+      const botBox = barBox(g.end);
+      if (!topBox || !botBox) continue;
 
-        const top = topBox.top - 2;
-        const h   = (botBox.top + botBox.height) - topBox.top + 4;
+      const top = topBox.top - 2;
+      const h   = (botBox.top + botBox.height) - topBox.top + 4;
 
-        if (idx % 2 === 0) {
-          const band = document.createElement('div');
-          band.className = 'dept-band';
-          Object.assign(band.style, {
-            position: 'absolute', left: `${ca.left}px`, top: `${top}px`,
-            width: `${ca.width}px`, height: `${h}px`, background: 'rgba(0,0,0,0.035)',
-            pointerEvents: 'none', zIndex: '1'
-          } as any);
-          el.appendChild(band);
-        }
+      // Choose color from palette (stable per department), add alpha for soft band
+      const colorIdx = this.deptColorIndex(g.dept);
+      const bandColor = this.hexToRgba(this.palette[colorIdx], 0.22);
 
-        if (idx > 0) {
-          const sep = document.createElement('div');
-          sep.className = 'dept-sep';
-          Object.assign(sep.style, {
-            position: 'absolute', left: `${ca.left}px`, top: `${top}px`,
-            width: `${ca.width}px`, height: '1px', background: 'rgba(0,0,0,0.15)',
-            pointerEvents: 'none', zIndex: '1'
-          } as any);
-          el.appendChild(sep);
-        }
+      const band = document.createElement('div');
+      band.className = 'dept-band';
+      Object.assign(band.style, {
+        position: 'absolute', left: `${ca.left}px`, top: `${top}px`,
+        width: `${ca.width}px`, height: `${h}px`,
+        background: bandColor,
+        pointerEvents: 'none', zIndex: '1'
+      } as any);
+      el.appendChild(band);
 
-        const rot = document.createElement('div');
-        rot.className = 'dept-label-rot';
-        rot.textContent = g.dept;
-        const centerY = top + h / 2;
-        Object.assign(rot.style, {
-          position: 'absolute', left: `${labelX}px`, top: `${centerY}px`,
-          transform: 'translate(-50%, -50%) rotate(-90deg)', transformOrigin: '50% 50%',
-          fontSize: '12px', color: '#37474f', pointerEvents: 'none', direction: 'rtl',
-          zIndex: '2', whiteSpace: 'nowrap'
+      // subtle separator line between groups
+      if (idx > 0) {
+        const sep = document.createElement('div');
+        sep.className = 'dept-sep';
+        Object.assign(sep.style, {
+          position: 'absolute', left: `${ca.left}px`, top: `${top}px`,
+          width: `${ca.width}px`, height: '1px',
+          background: 'rgba(0,0,0,0.12)',
+          pointerEvents: 'none', zIndex: '1'
         } as any);
-        el.appendChild(rot);
+        el.appendChild(sep);
       }
-    };
 
-    (window as any).google.visualization.events.addListener(chart, 'ready', () => {
-      drawDeptOverlaysIfGrouped();
-      this.mountGroupToggleButton(el, () => {
-        this.groupDoctorsByDept = !this.groupDoctorsByDept;
-        this.drawLeaderboardDoctors(containerId, dir);
-      });
+      // rotated department label
+      const rot = document.createElement('div');
+      rot.className = 'dept-label-rot';
+      rot.textContent = g.dept;
+      const centerY = top + h / 2;
+      Object.assign(rot.style, {
+        position: 'absolute', left: `${labelX}px`, top: `${centerY}px`,
+        transform: 'translate(-50%, -50%) rotate(-90deg)', transformOrigin: '50% 50%',
+        fontSize: '12px', color: '#37474f', pointerEvents: 'none', direction: 'rtl',
+        zIndex: '2', whiteSpace: 'nowrap'
+      } as any);
+      el.appendChild(rot);
+    }
+  };
+
+  (window as any).google.visualization.events.addListener(chart, 'ready', () => {
+    drawDeptOverlaysIfGrouped();
+    this.mountGroupToggleButton(el, () => {
+      this.groupDoctorsByDept = !this.groupDoctorsByDept;
+      this.drawLeaderboardDoctors(containerId, dir);
     });
+  });
 
-    this.drawSafe(chart, dt, opts, containerId);
-  }
+  this.drawSafe(chart, dt, opts, containerId);
+}
 
-  public async drawLeaderboardDepartments(containerId: string, dir: 'asc' | 'desc' = 'desc') {
-    await this.loadGoogleCharts();
-    await this.waitForGoogleReady();
-    if (!this.googleReady()) return;
+public async drawLeaderboardDepartments(containerId: string, dir: 'asc' | 'desc' = 'desc') {
+  await this.loadGoogleCharts();
+  await this.waitForGoogleReady();
+  if (!this.googleReady()) return;
 
-    type Row = { name: string; avg: number; q: number };
-    const rows: Row[] = this.buildDepartmentRows().map(([dept, q, avg]) => ({ name: dept, avg: Number(avg) || 0, q: Number(q) || 0 }));
-    rows.sort((a, b) => dir === 'asc' ? a.avg - b.avg : b.avg - a.avg);
+  type Row = { name: string; avg: number; q: number };
+  const rows: Row[] = this.buildDepartmentRows().map(([dept, q, avg]) => ({ name: dept, avg: Number(avg) || 0, q: Number(q) || 0 }));
+  rows.sort((a, b) => dir === 'asc' ? a.avg - b.avg : b.avg - a.avg);
 
-    const dt = new (window as any).google.visualization.DataTable();
-    dt.addColumn('string', 'מחלקה');
-    dt.addColumn('number', 'תור זמין');
-    dt.addColumn({ type: 'string', role: 'annotation' });
-    dt.addColumn({ type: 'string', role: 'annotationText' });
-    dt.addColumn({ type: 'string', role: 'tooltip', p: { html: true } });
+  const dt = new (window as any).google.visualization.DataTable();
+  dt.addColumn('string', 'מחלקה');
+  dt.addColumn('number', 'תור זמין');
+  dt.addColumn({ type: 'string', role: 'annotation' });
+  dt.addColumn({ type: 'string', role: 'annotationText' });
+  dt.addColumn({ type: 'string', role: 'tooltip', p: { html: true } });
 
-    rows.forEach(r => {
-      const ann     = `ימים ${r.avg} | תורים ${r.q}`;
-      const annText = `תור זמין: ${r.avg} · תורים: ${r.q}`;
-      const tooltip =
-        `<div style="direction:rtl;padding:6px 8px;font-size:12px">
-           <div><b>${r.name}</b></div>
-           <div>תור זמין: <b>${r.avg}</b></div>
-           <div>תורים: <b>${r.q}</b></div>
-         </div>`;
-      dt.addRow([r.name, r.avg, ann, annText, tooltip]);
-    });
+  rows.forEach(r => {
+    const ann     = `ימים ${r.avg} | תורים ${r.q}`;
+    const annText = `תור זמין: ${r.avg} · תורים: ${r.q}`;
+    const tooltip =
+      `<div style="direction:rtl;padding:6px 8px;font-size:12px">
+         <div><b>${r.name}</b></div>
+         <div>תור זמין: <b>${r.avg}</b></div>
+         <div>תורים: <b>${r.q}</b></div>
+       </div>`;
+    dt.addRow([r.name, r.avg, ann, annText, tooltip]);
+  });
 
-    const rowHeight = 26;
-    const vPad = 80;
-    const height = Math.max(220, rows.length * rowHeight + vPad);
-    const el = document.getElementById(containerId)!;
-    el.style.height = `${height}px`;
+  const rowHeight = 26;
+  const vPad = 80;
+  const height = Math.max(220, rows.length * rowHeight + vPad);
+  const el = document.getElementById(containerId)!;
+  el.style.height = `${height}px`;
 
-    const title = dir === 'desc' ? 'כל המחלקות — ארוכים ← קצרים' : 'כל המחלקות — קצרים ← ארוכים';
+  const title = dir === 'desc' ? 'כל המחלקות — ארוכים ← קצרים' : 'כל המחלקות — קצרים ← ארוכים';
 
-    const opts: any = {
-      title,
-      legend: 'none',
-      chartArea: { left: 140, right: 24, top: 40, bottom: 20 },
-      hAxis: { minValue: 0 },
-      height,
-      bar: { groupWidth: '90%' },
-      tooltip: { isHtml: true },
-      annotations: { alwaysOutside: false, highContrast: true, textStyle: { fontSize: 11, auraColor: 'none', color: '#000' } }
-    };
+  const opts: any = {
+    title,
+    legend: 'none',
+    chartArea: { left: 140, right: 24, top: 40, bottom: 20 },
+    hAxis: { minValue: 0 },
+    height,
+    bar: { groupWidth: '90%' },
+    tooltip: { isHtml: true },
+    annotations: { alwaysOutside: false, highContrast: true, textStyle: { fontSize: 11, auraColor: 'none', color: '#000' } }
+  };
 
-    const chart = new (window as any).google.visualization.BarChart(el);
-    this.drawSafe(chart, dt, opts, containerId);
-  }
+  const chart = new (window as any).google.visualization.BarChart(el);
+  this.drawSafe(chart, dt, opts, containerId);
+}
+
 
 
 
@@ -710,12 +740,7 @@ private mountBackButton(container: HTMLElement, onClick: () => void) {
       return;
     }
   
-    // ----------------------------------------------------------------
-    // SOURCE DATA — reuse your existing, working transformations
-    // buildDoctorRows(): [name, dept, q, avg][]
-    // buildDepartmentRows(): [dept, q, avg][]
-    // (These already sit on top of your API; no new HTTP code.)
-    // ----------------------------------------------------------------
+    // SOURCE DATA — reuse existing transformations
     type Doc = { name: string; dept: string; q: number; avg: number };
     const doctorRows: Doc[] = this.buildDoctorRows()
       .map(([name, dept, q, avg]) => ({
@@ -731,19 +756,19 @@ private mountBackButton(container: HTMLElement, onClick: () => void) {
         deptTotals.set(dept, { q: Number(q) || 0, avg: Number(avg) || 0 })
       );
   
-    // --------------------------------------------------------------
-    // GROUPING (no “missing/unassigned” calculation at all)
-    // We simply display whatever the API returns, including
-    // "ללא שיוך רופא" rows already present in Doctors.
-    // --------------------------------------------------------------
+    // GROUPING (display exactly what API returns, incl. "ללא רופא")
     const byDept = new Map<string, Doc[]>();
     for (const d of doctorRows)
       (byDept.get(d.dept) || byDept.set(d.dept, []).get(d.dept)!).push(d);
   
     type UiRow = { dept: string; doctor: string; q: number; avg: number; isHeader: boolean };
-    const ui: UiRow[] = [];
+    const baseUi: UiRow[] = [];
   
-    const palette = ['#f6f9ff','#fff8f2','#f7fff6','#fff6fb','#f6fffe','#f9f6ff','#f6fffa','#fffaf6','#f1f8ff','#f6f1ff'];
+    // Pastel palette for department backgrounds
+    const palette = [
+      '#A3C9F9', '#F9D6A5', '#C5E1A5', '#F9A8D4', '#E6A5F7', '#F8BBD0',
+      '#B2DFDB', '#FFECB3', '#DCEDC8', '#FFE0B2', '#D1C4E9', '#FFCDD2'
+    ];
     const deptBand = (dept: string) => {
       let h = 7; for (const ch of dept) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
       return palette[h % palette.length];
@@ -756,114 +781,231 @@ private mountBackButton(container: HTMLElement, onClick: () => void) {
       return dir === 'asc' ? aa - bb : bb - aa;
     });
   
-    // collect group metadata for banded backgrounds
-    const groupMeta: Array<{ dept: string; start: number; end: number; color: string }> = [];
-    let cursor = 0;
-  
+    // Build UI rows (headers + doctors)
     for (const dept of deptOrder) {
       const totals = deptTotals.get(dept) ?? { q: 0, avg: 0 };
       const docs = (byDept.get(dept) || []).slice().sort((a, b) =>
         dir === 'asc' ? a.avg - b.avg : b.avg - a.avg
       );
-  
-      // header row (department = Depart_Name = Depart_Name2)
-      ui.push({ dept, doctor: dept, q: totals.q, avg: totals.avg, isHeader: true });
-  
-      // doctor rows (includes "ללא שיוך רופא" exactly as provided by API)
-      docs.forEach(d => ui.push({ dept, doctor: d.name, q: d.q, avg: d.avg, isHeader: false }));
-  
-      groupMeta.push({ dept, start: cursor, end: ui.length - 1, color: deptBand(dept) });
-      cursor = ui.length;
+      baseUi.push({ dept, doctor: dept, q: totals.q, avg: totals.avg, isHeader: true });
+      docs.forEach(d => baseUi.push({ dept, doctor: d.name, q: d.q, avg: d.avg, isHeader: false }));
     }
   
-    // --------------------------------------------------------------
-    // GOOGLE DATATABLE (HTML cells for stars + heat bar)
-    // --------------------------------------------------------------
-    const google = (window as any).google;
-    const dt = new google.visualization.DataTable();
-    dt.addColumn('string', 'מחלקה');
-    dt.addColumn('string', 'רופא');
-    dt.addColumn('string', 'תורים (Q)');
-    dt.addColumn('string', 'AvgDay');
-  
-    // stars scale per department
-    const maxQByDept = new Map<string, number>();
-    ui.forEach(r => { if (!r.isHeader) maxQByDept.set(r.dept, Math.max(maxQByDept.get(r.dept) || 0, r.q)); });
-  
-    const ratingHtml = (dept: string, q: number) => {
-      const max = Math.max(1, maxQByDept.get(dept) || q);
-      const scale = 5;
-      const val = Math.min(scale, (q / max) * scale);
-      const full = Math.floor(val);
-      const half = (val - full) >= 0.5 ? 1 : 0;
-      const empty = scale - full - half;
-      const icon = (n: string) => `<span class="material-icons">${n}</span>`;
-      return `
-        <div class="rating">
-          ${icon('star').repeat(full)}${half ? icon('star_half') : ''}${icon('star_border').repeat(empty)}
-          <span class="q-num">${q}</span>
-        </div>`;
-    };
-  
-    // heat bar (global scaling to compare across depts)
-    const maxAvg = Math.max(1, ...ui.map(r => r.avg));
-    const avgBar = (avg: number) => {
-      const p = Math.round((avg / maxAvg) * 100);
-      const h = Math.round((1 - p / 100) * 120); // 120=green → 0=red
-      const color = `hsl(${h}, 65%, 55%)`;
-      return `
-        <div class="avgbar">
-          <div class="bar" style="width:${p}%;background:${color}">
-            <span class="val">${avg}</span>
-          </div>
-        </div>`;
-    };
-  
-    ui.forEach(r => {
-      const deptCell = r.isHeader ? `<span class="dept-bold">${r.dept}</span>` : `<span class="cell-muted">${r.dept}</span>`;
-      const docCell  = r.isHeader ? `<span class="dept-bold">${r.doctor}</span>` : r.doctor;
-      dt.addRow([deptCell, docCell, ratingHtml(r.dept, r.q), avgBar(r.avg)]);
-    });
-  
-    // --------------------------------------------------------------
-    // DRAW + OVERLAYS (bands, bold headers, toggle)
-    // --------------------------------------------------------------
+    // ---- build toolbar (search) + table host ----
+    // reset container and ensure positioning for the toggle button
     el.innerHTML = '';
-    const table = new google.visualization.Table(el);
-    const opts: any = {
-      allowHtml: true,
-      width: '100%',
-      alternatingRowStyle: false,
-      cssClassNames: {
-        tableCell: 'app-table',
-        headerCell: 'app-table'
+    if (getComputedStyle(el).position === 'static') el.style.position = 'relative';
+  
+    // toolbar
+    const toolbar = document.createElement('div');
+    Object.assign(toolbar.style, {
+      position: 'relative',
+      padding: '8px',
+      display: 'flex',
+      gap: '8px',
+      alignItems: 'center',
+      direction: 'rtl',
+      borderBottom: '1px solid #e0e0e0',
+      background: '#fafafa',
+      zIndex: '2'
+    } as any);
+  
+    const searchWrap = document.createElement('div');
+    Object.assign(searchWrap.style, { position: 'relative', display: 'inline-flex', alignItems: 'center' } as any);
+  
+    const searchInput = document.createElement('input');
+    searchInput.type = 'search';
+    searchInput.placeholder = 'חיפוש: מחלקה / רופא / Q / ימים';
+    Object.assign(searchInput.style, {
+      width: '280px',
+      padding: '6px 10px',
+      border: '1px solid #cfd8dc',
+      borderRadius: '6px',
+      fontSize: '13px',
+      outline: 'none',
+      background: '#fff'
+    } as any);
+    searchWrap.appendChild(searchInput);
+    toolbar.appendChild(searchWrap);
+    el.appendChild(toolbar);
+  
+    // table host (separate div so we never wipe the toolbar)
+    const tableHost = document.createElement('div');
+    const hostId = `apptTableHost_${Math.random().toString(36).slice(2)}`;
+    tableHost.id = hostId;
+    tableHost.style.padding = '8px';
+    el.appendChild(tableHost);
+  
+    
+  
+    const drawFiltered = (ui: UiRow[]) => {
+      const google = (window as any).google;
+      const dt = new google.visualization.DataTable();
+    
+      // 🔧 Make Q and AvgDay numeric columns so sorting is numeric.
+      dt.addColumn('string', 'מחלקה');
+      dt.addColumn('string', 'רופא');
+      dt.addColumn('number', 'תורים');   // was 'string'
+      dt.addColumn('number', 'ימי המתנה');      // was 'string'
+    
+      // Department TOTAL Q map (for rating scale)
+      const deptTotalQ = new Map<string, number>();
+      ui.forEach(r => { if (r.isHeader) deptTotalQ.set(r.dept, r.q); });
+    
+      const ratingHtml = (dept: string, q: number) => {
+        const total = Math.max(1, deptTotalQ.get(dept) || q);
+        const scale = 5;
+        const val = Math.min(scale, (q / total) * scale);
+    
+        let full = Math.floor(val);
+        let half = (val - full) >= 0.5 ? 1 : 0;
+        if (q > 0 && full + half === 0) half = 1;
+    
+        const empty = Math.max(0, scale - full - half);
+        const icon = (n: string, style = '') => `<span class="material-icons" style="${style}">${n}</span>`;
+    
+        return `
+          <div class="rating">
+            ${icon('person').repeat(full)}
+            ${half ? icon('person_outline', 'color:#9e9e9e;') : ''}
+            ${icon('person_outline', 'color:#efefef;').repeat(empty)}
+            <span class="q-num" style="line-height:0.34em;vertical-align:text-top;">${q}</span>
+          </div>
+        `;
+      };
+    
+      const totalBadge = (q: number) =>
+        `<span class="q-total-badge" title="סה״כ תורים במחלקה תורים במחלקה">סה״כ תורים במחלקה ${q}</span>`;
+    
+      // Heat bar renderer (kept the same)
+      const maxAvg = Math.max(1, ...ui.map(r => r.avg));
+      const avgBar = (avg: number) => {
+        const p = Math.round((avg / maxAvg) * 100);
+        const h = Math.round((1 - p / 100) * 120);
+        const color = `hsl(${h}, 65%, 55%)`;
+        return `
+          <div class="avgbar">
+            <div class="bar" style="width:${p}%;background:${color}">
+              <span class="val">${avg}</span>
+            </div>
+          </div>`;
+      };
+    
+      // 👉 Add rows: set numeric value in `v`, HTML in `f`
+      ui.forEach(r => {
+        const deptCell = r.isHeader ? `<span class="dept-bold">${r.dept}</span>` : `<span class="cell-muted">${r.dept}</span>`;
+        const docCell  = r.isHeader ? `<span class="dept-bold">${r.doctor}</span>` : r.doctor;
+    
+        const qCell = r.isHeader
+          ? { v: r.q,   f: totalBadge(r.q) }           // header shows badge, but sorts by number
+          : { v: r.q,   f: ratingHtml(r.dept, r.q) };  // doctors: persons, but numeric sort
+    
+        const avgCell = { v: r.avg, f: avgBar(r.avg) }; // 🔥 numeric sort by AvgDay
+    
+        dt.addRow([deptCell, docCell, qCell as any, avgCell as any]);
+      });
+    
+      // (rest of your draw code unchanged) ...
+      const table = new google.visualization.Table(document.getElementById(hostId));
+      const opts: any = {
+        allowHtml: true,
+        width: '100%',
+        alternatingRowStyle: false,
+        cssClassNames: { tableCell: 'app-table', headerCell: 'app-table' }
+      };
+    
+      google.visualization.events.addListener(table, 'ready', () => {
+        // reapply department bands to current DOM order
+        const host = document.getElementById(hostId)!;
+        const trs = host.querySelectorAll('table tbody tr');
+    
+        // recompute groups for current ui (already filtered order)
+        const groupMeta: Array<{ dept: string; start: number; end: number; color: string }> = [];
+        let startIdx = 0;
+        for (let i = 1; i <= ui.length; i++) {
+          if (i === ui.length || ui[i].dept !== ui[startIdx].dept) {
+            const dept = ui[startIdx].dept;
+            groupMeta.push({ dept, start: startIdx, end: i - 1, color: deptBand(dept) });
+            startIdx = i;
+          }
+        }
+    
+        groupMeta.forEach(g => {
+          for (let r = g.start; r <= g.end; r++) {
+            const tr = trs[r] as HTMLElement;
+            if (!tr) continue;
+            tr.style.background = g.color;
+          }
+          const headerTr = trs[g.start] as HTMLElement;
+          if (headerTr) headerTr.style.fontWeight = '700';
+        });
+    
+        this.mountGroupToggleButton(el, () => {
+          this.drawAppointmentsTable(el, dir === 'asc' ? 'desc' : 'asc');
+        });
+    
+        const tbl = host.querySelector('table') as HTMLElement;
+        if (tbl) tbl.setAttribute('dir', 'rtl');
+      });
+    
+      this.drawSafe(table, dt, opts, hostId);
+    };
+    
+    // initial draw with full dataset
+    drawFiltered(baseUi);
+  
+    // ---- search wiring (always include department header) ----
+    let searchTimer: any = null;
+    const applySearch = () => {
+      const q = (searchInput.value || '').toLowerCase().trim();
+      if (!q) {
+        drawFiltered(baseUi);
+        return;
       }
+  
+      // Build filtered list while ALWAYS including the header of any matching department
+      const filtered: UiRow[] = [];
+      // group baseUi by department (preserving order)
+      const deptBlocks: Record<string, UiRow[]> = {};
+      const order: string[] = [];
+      let curDept = '';
+      baseUi.forEach(r => {
+        if (r.isHeader) { curDept = r.dept; order.push(curDept); deptBlocks[curDept] = []; }
+        deptBlocks[curDept].push(r);
+      });
+  
+      for (const dept of order) {
+        const block = deptBlocks[dept] || [];
+        if (block.length === 0) continue;
+  
+        const header = block[0]; // header first
+        const doctors = block.slice(1);
+  
+        const headerMatches =
+          (header.dept || '').toLowerCase().includes(q) ||
+          String(header.q).includes(q) ||
+          String(header.avg).includes(q);
+  
+        const matchedDoctors = doctors.filter(d => {
+          return (d.doctor || '').toLowerCase().includes(q)
+              || (d.dept || '').toLowerCase().includes(q)
+              || String(d.q).includes(q)
+              || String(d.avg).includes(q);
+        });
+  
+        if (headerMatches || matchedDoctors.length > 0) {
+          filtered.push(header);                // ✅ always include header if anything in dept matches
+          filtered.push(...(headerMatches ? doctors : matchedDoctors));
+        }
+      }
+  
+      drawFiltered(filtered);
     };
   
-    google.visualization.events.addListener(table, 'ready', () => {
-      // banded backgrounds per department group
-      const trs = el.querySelectorAll('table tbody tr');
-      groupMeta.forEach(g => {
-        for (let r = g.start; r <= g.end; r++) {
-          const tr = trs[r] as HTMLElement;
-          if (!tr) continue;
-          tr.style.background = g.color;
-        }
-        const headerTr = trs[g.start] as HTMLElement;
-        if (headerTr) headerTr.style.fontWeight = '700';
-      });
-  
-      // Toggle button: flips sort direction and redraws
-      this.mountGroupToggleButton(el, () => {
-        this.drawAppointmentsTable(el, dir === 'asc' ? 'desc' : 'asc');
-      });
-  
-      // RTL on inner table
-      const tbl = el.querySelector('table') as HTMLElement;
-      if (tbl) tbl.setAttribute('dir', 'rtl');
+    searchInput.addEventListener('input', () => {
+      clearTimeout(searchTimer);
+      searchTimer = setTimeout(applySearch, 200);
     });
-  
-    this.drawSafe(table, dt, opts, typeof target === 'string' ? target : (target.id || ''));
   }
   
   
