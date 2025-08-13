@@ -54,7 +54,7 @@ export const CHART_SERIES_PALETTE: string[] = [
   
   const DATASOURCE_HE: Record<string, string> = {
     MorningDelay: 'איחור בוקר',
-    EndDay: 'אובדן יום',
+    EndDay: 'אובדן סוף יום',
     SetupTime: 'עודף Setup Time'
   };
   const TIMEFRAME_HE: Record<string, string> = {
@@ -199,7 +199,7 @@ raw.push(a);
 const label = translateTimeframe(p);
 // For tooltip/annotation we want HH:MM — our formatter expects seconds.
 const hhmm = formatToHHMM(a * 60);
-const tip = 'זמן ממוצע: ' + hhmm + '\nימי אובדן: ' + d;
+const tip = 'ממוצע: ' + hhmm + '\nימי אובדן: ' + d;
 avgData.push([label, a, tip, hhmm]);
 aggData.push([label, d, tip, String(d)]);
     }

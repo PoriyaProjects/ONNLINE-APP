@@ -289,8 +289,7 @@ export function drawOverlayDualArcChartHelperRoomTime({
   const valueLabel = document.createElementNS('http://www.w3.org/2000/svg', 'text');
   valueLabel.setAttribute('x', cx.toString());
   valueLabel.setAttribute('y', (cy - 28).toString());
-  valueLabel.setAttribute('text-anchor', 'middle');
-  //valueLabel.setAttribute('fill', semiColor === '#cc0033' ? '#cc0033' : '#222');
+  valueLabel.setAttribute('text-anchor', 'middle');  
   valueLabel.setAttribute('fill', semiColor === '#cc0033' ? '#ffffff' : '#222');
   valueLabel.setAttribute('font-size', '16');
   valueLabel.setAttribute('font-family', 'Open Sans');
