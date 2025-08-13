@@ -1,37 +1,6 @@
 /**
  * Extracts and parses JSON content from SOAP-wrapped strings.
  */
-// export function sanitizeSoapResponse(rawResponse: any): any {
-//   if (!rawResponse || typeof rawResponse !== 'string') return rawResponse;
-
-//   const trimmed = rawResponse.trim();
-
-//   const stringTagOpenMatch = trimmed.match(/<string[^>]*>/);
-//   const stringTagCloseIndex = trimmed.indexOf('</string>');
-
-//   if (stringTagOpenMatch && stringTagCloseIndex !== -1) {
-//     const start = stringTagOpenMatch.index! + stringTagOpenMatch[0].length;
-//     const content = trimmed.substring(start, stringTagCloseIndex).trim();
-//     const unquoted = content.startsWith('"') && content.endsWith('"')
-//       ? content.slice(1, -1).replace(/\\"/g, '"')
-//       : content;
-
-//     try {
-//       return JSON.parse(unquoted);
-//     } catch (e) {
-//       //console.warn('Failed to parse JSON from <string> content:', e);
-//       return unquoted;
-//     }
-//   }
-
-//   try {
-//     return JSON.parse(trimmed);
-//   } catch (e) {
-//     //console.warn('Failed to parse raw string as JSON:', e);
-//     return trimmed;
-//   }
-// }
-
 
 export function sanitizeSoapResponse(rawResponse: any): any {
   if (!rawResponse || typeof rawResponse !== 'string') return rawResponse;
@@ -140,6 +109,47 @@ export function sanitizeSoapResponseDept(rawResponse: any): any {
   } catch (e) {
     console.warn('Failed to parse raw string as JSON:', e);
     return trimmed;
+  }
+}
+
+
+/**
+ * Extracts chart-style JSON (cols + rows) from a SOAP-wrapped <string>,
+ * and returns a flat array of objects.
+ */
+export function sanitizeSoapChartData(rawResponse: string): any[] {
+  if (!rawResponse || typeof rawResponse !== 'string') return [];
+
+  const trimmed = rawResponse.trim();
+  const openTag = trimmed.match(/<string[^>]*>/);
+  const closeIndex = trimmed.indexOf('</string>');
+
+  if (!openTag || closeIndex === -1) return [];
+
+  const start = openTag.index! + openTag[0].length;
+  const content = trimmed.substring(start, closeIndex).trim();
+
+  const unquoted = content.startsWith('"') && content.endsWith('"')
+    ? content.slice(1, -1).replace(/\\"/g, '"')
+    : content;
+
+  try {
+    const parsed = JSON.parse(unquoted);
+
+    if (!Array.isArray(parsed.rows) || !Array.isArray(parsed.cols)) return [];
+
+    const colIds = parsed.cols.map((col: any) => col.id);
+
+    return parsed.rows.map((row: any) => {
+      const obj: any = {};
+      row.c.forEach((cell: any, idx: number) => {
+        obj[colIds[idx]] = cell?.v ?? null;
+      });
+      return obj;
+    });
+  } catch (e) {
+    console.warn('Failed to parse chart-style SOAP response', e);
+    return [];
   }
 }
 

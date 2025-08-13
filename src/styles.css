@@ -2312,3 +2312,16 @@ button:hover{
     font-size: 18px !important;
     font-weight: bold !important;
 }
+
+
+.treemap-overlay-layer{position:absolute;inset:0;pointer-events:none;z-index:999}
+.treemap-overlay-layer .treemap-inline{
+  direction: rtl; white-space: normal; word-break: break-word;
+  color:#333; text-shadow:0 0 2px rgba(255,255,255,.85); line-height:1.2;
+}
+
+#apptTreemap g text {
+    font-size: 0.9em !important;
+    color:#fff!important;
+    font-weight:bold;
+}
