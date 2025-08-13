@@ -249,6 +249,20 @@
 
 
 
+
+/* Department tabs stick 100px from top when .is-sticky is applied */
+.department-tabs.is-sticky {
+  position: fixed;
+  top: 100px;        /* ← the requested offset */
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  background: #fff;  /* keep readable while overlapping content */
+  box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+}
+
+
+
 </style>
 
 <div class="mdc-layout-grid" style="direction: rtl;">
@@ -592,11 +606,11 @@
         </div>
         <div style="height:60px;"></div>
 
-        <div *ngIf="selectedDepartment" class="card text-center" style="margin:10px 0 20px">
+        <div *ngIf="selectedDepartment" class="card text-center" style="margin:20px 0 20px">
           <h3 style="margin:10px auto 0">{{ selectedDepartment }}</h3>
           <h5 style="margin:10px auto 0">(איחור תחילת יום + אובדן סוף יום + עודף Setup Time)</h5>
           <div id="DeptmultiPeriodSummary" style="width: 100%; height: 160px;">טעינה...</div>
-          <div style="height:60px;"></div>
+          <div style="height:40px;"></div>
         </div>
         <!-- Department Charts -->
 
@@ -633,7 +647,7 @@
 
         
       </main>
-      <div style="height:60px;"></div>
+      <div style="height:20px;"></div>
     </div>
   </div>
 
@@ -674,14 +688,6 @@
     </div>
   </div>
 
-
-
-  <!-- <div class="theme-switch">
-    <label>Theme:</label>
-    <select [ngModel]="palette.name" (ngModelChange)="onThemeChange($event)">
-      <option *ngFor="let t of palette.list()" [value]="t">{{ t }}</option>
-    </select>
-  </div> -->
 </div>
 
 <hr />

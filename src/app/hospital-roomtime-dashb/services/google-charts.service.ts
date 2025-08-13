@@ -796,13 +796,29 @@ public async drawAllDepartmentTablesSum(
     new Ctor(el).draw(dt, opts);
   }
 
+  // @HostListener('window:scroll', [])
+  // onScroll() {
+  //   const el = document.getElementById('stickyTabsFilters');
+  //   if (el) {
+  //     const isSticky = window.scrollY > 100;
+  //     if (isSticky) el.classList.add('is-sticky');
+  //     else el.classList.remove('is-sticky');
+  //   }
+  // }
+
+
   @HostListener('window:scroll', [])
-  onScroll() {
-    const el = document.getElementById('stickyTabsFilters');
-    if (el) {
-      const isSticky = window.scrollY > 100;
-      if (isSticky) el.classList.add('is-sticky');
-      else el.classList.remove('is-sticky');
-    }
-  }
+onScroll() {
+  const stickyEl = document.getElementById('stickyTabsFilters');
+  const deptTabsEl = document.querySelector('.department-tabs') as HTMLElement;
+
+  if (!stickyEl || !deptTabsEl) return;
+
+  // Calculate the scroll threshold: top position of .department-tabs
+  const deptTabsTop = deptTabsEl.getBoundingClientRect().top + window.scrollY;
+
+  const isSticky = window.scrollY >= deptTabsTop;
+  stickyEl.classList.toggle('is-sticky', isSticky);
+}
+
 }
