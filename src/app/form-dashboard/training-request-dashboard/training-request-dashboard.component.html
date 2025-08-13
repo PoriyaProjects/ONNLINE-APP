@@ -40,8 +40,7 @@
                 </button>
 
                 <!-- Date Picker -->
-                <mat-form-field *ngIf="change_plan_date" appearance="outline"
-                    class="form-field">
+                <mat-form-field *ngIf="change_plan_date" appearance="outline" class="form-field">
                     <mat-label>תאריך הועדה הקרוב</mat-label>
                     <input matInput [matDatepicker]="PlanDate" [(ngModel)]="Plan_Date"
                         (dateChange)="changeTrainingPlanDate()" />
@@ -98,16 +97,16 @@
             <ng-container matColumnDef="EApproved">
                 <th mat-header-cell *matHeaderCellDef mat-sort-header> אישור מנהל ישיר </th>
                 <td mat-cell *matCellDef="let element">
-                    <mat-icon *ngIf="element.EApproved == 'מאושר'">check_circle </mat-icon>
-                    <mat-icon *ngIf="element.EApproved != 'מאושר'">cancel </mat-icon>
+                    <mat-icon *ngIf="element.EApproved == 'מאושר'" class="check-icon">check_circle </mat-icon>
+                    <mat-icon *ngIf="element.EApproved != 'מאושר'" class="cancel-icon">cancel </mat-icon>
                 </td>
             </ng-container>
 
             <ng-container matColumnDef="FApproved">
                 <th mat-header-cell *matHeaderCellDef mat-sort-header> אישור מנהל עקיף </th>
                 <td mat-cell *matCellDef="let element">
-                    <mat-icon *ngIf="element.FApproved == 'מאושר'">check_circle </mat-icon>
-                    <mat-icon *ngIf="element.FApproved != 'מאושר'">cancel </mat-icon>
+                    <mat-icon *ngIf="element.FApproved == 'מאושר'" class="check-icon">check_circle </mat-icon>
+                    <mat-icon *ngIf="element.FApproved != 'מאושר'" class="cancel-icon">cancel </mat-icon>
                 </td>
             </ng-container>
 
@@ -147,6 +146,7 @@
                         <mat-icon *ngIf="element.Canceled == 'True'">check</mat-icon>
                     </button>
                     <button mat-mini-fab style="background-color: #b1b0ae;margin: 5px;" (click)="print(element.Row_ID)"
+                        *ngIf="element.HApproved == 'מאושר' || element.HApproved == 'מאושר התחייבות חשב'"
                         matTooltip="הדפס">
                         <mat-icon>print</mat-icon>
                     </button>

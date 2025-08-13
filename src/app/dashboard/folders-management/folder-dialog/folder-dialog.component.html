@@ -1,0 +1,65 @@
+<h1 mat-dialog-title>{{ data.Row_ID ? 'Edit Folder' : 'Add Folder' }}</h1>
+
+<div mat-dialog-content>
+    <form [formGroup]="form">
+
+        <!-- Title -->
+        <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Title</mat-label>
+            <input matInput formControlName="Title">
+        </mat-form-field>
+
+        <!-- Type -->
+        <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Type</mat-label>
+            <mat-select formControlName="Type">
+                <mat-option *ngFor="let type of typeOptions" [value]="type">
+                    {{ type }}
+                </mat-option>
+            </mat-select>
+        </mat-form-field>
+
+        <!-- Link (only for non-file types) -->
+        <!-- <mat-form-field appearance="outline" class="full-width" *ngIf="form.get('Type').value !== 'File'">
+            <mat-label>Link</mat-label>
+            <input matInput formControlName="Link">
+        </mat-form-field> -->
+
+        <!-- File Upload (only for file type) -->
+        <div *ngIf="form.get('Type').value === 'File'" class="file-upload-container">
+            <label class="file-upload-label" for="fileInput">
+                <mat-icon>attach_file</mat-icon>
+                <span>{{ selectedFileName || 'בחר קובץ' }}</span>
+            </label>
+            <input id="fileInput" type="file" hidden (change)="onFileSelected($event)">
+        </div>
+
+        <!-- Toggles -->
+        <div class="toggles">
+            <mat-slide-toggle formControlName="Status">Active</mat-slide-toggle>
+            <mat-slide-toggle formControlName="ChromeBrowser">Chrome Browser</mat-slide-toggle>
+        </div>
+
+        <!-- Sort -->
+        <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Sort</mat-label>
+            <input matInput type="number" formControlName="Sort">
+        </mat-form-field>
+
+        <!-- Parent -->
+        <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Parent</mat-label>
+            <mat-select formControlName="Parent">
+                <mat-option *ngFor="let parent of parents" [value]="parent.Row_ID">
+                    {{ parent.Title }}
+                </mat-option>
+            </mat-select>
+        </mat-form-field>
+
+    </form>
+</div>
+
+<div mat-dialog-actions align="end">
+    <button mat-button mat-dialog-close>Cancel</button>
+    <button mat-raised-button color="primary" [disabled]="form.invalid" (click)="save()">Save</button>
+</div>

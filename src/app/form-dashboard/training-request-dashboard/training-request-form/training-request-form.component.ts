@@ -11,6 +11,7 @@ import { Observable } from 'rxjs';
 import { ConfirmationDialogService } from 'src/app/confirmation-dialog/confirmation-dialog.service';
 import { STEPPER_GLOBAL_OPTIONS } from '@angular/cdk/stepper';
 import { ActivatedRoute } from '@angular/router';
+import imageCompression from 'browser-image-compression';
 
 @Component({
   selector: 'app-training-request-form',

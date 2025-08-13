@@ -155,6 +155,9 @@ import { ServiceUnitEmailListComponent } from '../emailsdashboard/service-unit-e
 import { ServiceUnitEmailListDialogComponent } from '../emailsdashboard/service-unit-email-list/service-unit-email-list-dialog/service-unit-email-list-dialog.component';
 import { HospitalIncomeDashbComponent } from '../hospital-income-dashb/hospital-income-dashb.component';
 import { GoogleChartsIncomeComponent } from '../hospital-income-dashb/google-charts/google-charts.component';
+import { FoldersManagementComponent } from '../dashboard/folders-management/folders-management.component';
+import { FolderDialogComponent } from '../dashboard/folders-management/folder-dialog/folder-dialog.component';
+
 const routes: Routes = [
   { path: "", component: LoginComponent },
   { path: 'clinicsrequests', component: ClinicsRequestsComponent },
@@ -352,6 +355,8 @@ const routes: Routes = [
   { path: 'service-unit-email-list-dialog', component: ServiceUnitEmailListDialogComponent },
   { path: "hospitalincomedashb", component: HospitalIncomeDashbComponent },
   { path: "hospital-income-dashb", component: GoogleChartsIncomeComponent },
+  { path: "folders-management", component: FoldersManagementComponent },
+  { path: "folders-dialog", component: FolderDialogComponent },
   ];
 
 @NgModule({
