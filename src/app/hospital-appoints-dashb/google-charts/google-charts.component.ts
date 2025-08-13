@@ -1,7 +1,10 @@
-import { AfterViewInit, Component, HostListener, OnDestroy, ElementRef, ViewChild, NgZone } from '@angular/core';
+import {
+  AfterViewInit, Component, HostListener, OnDestroy,
+  ElementRef, ViewChild, NgZone
+} from '@angular/core';
 import { GoogleChartsService, HmpcRow } from '../services/google-charts.service';
 
-type Tab = 'treemap' | 'combo' | 'leaders' | 'multi';
+type Tab = 'treemap' | 'combo' | 'leaders' | 'multi' | 'table';
 type LeaderSubTab = 'doctors' | 'departments';
 type HmpcMode = 'kpi' | 'buckets' | 'deptDocs';
 
@@ -17,25 +20,26 @@ export class AppointsDashboardComponent implements AfterViewInit, OnDestroy {
   loading = true;
   error: string | null = null;
 
-  // HorizontalMultiPeriodChart state
   hmpcMode: HmpcMode = 'kpi';
   hmpcRows: HmpcRow[] = [];
 
   private destroyed = false;
   private rafId: number | null = null;
+
   @ViewChild('hmpcRef', { static: false, read: ElementRef }) hmpcElRef!: ElementRef<any>;
 
-  // optional: debug badge on the multi tab
-  hmpcDebugCount = 0;
+  // leaderboards
+  dirDoctors: 'asc'|'desc' = 'desc';
+  dirDepts:   'asc'|'desc' = 'desc';
 
   constructor(private charts: GoogleChartsService, private zone: NgZone) {}
 
   async ngAfterViewInit(): Promise<void> {
     try {
       await this.charts.loadData();
-      await (this.charts as any)['loadGoogleCharts']?.(); // or expose a public ensure method
+      await (this.charts as any)['loadGoogleCharts']?.();
       this.loading = false;
-      this.drawCurrentTab();
+      await this.drawCurrentTab();
     } catch {
       this.error = 'שגיאה בטעינת הנתונים';
       this.loading = false;
@@ -45,9 +49,13 @@ export class AppointsDashboardComponent implements AfterViewInit, OnDestroy {
   ngOnDestroy(): void {
     this.destroyed = true;
     if (this.rafId != null) { cancelAnimationFrame(this.rafId); this.rafId = null; }
+    // ensure observers are cleaned when leaving page
+    this.charts.teardownTreemapOverlays('apptTreemap');
   }
 
+  /** ✅ refactored to match your existing pattern */
   onApptTabChange(tab: Tab) {
+    if (this.activeApptTab === 'treemap') this.charts.teardownTreemapOverlays('apptTreemap');
     if (this.activeApptTab === tab) return;
     this.activeApptTab = tab;
     this.redraw();
@@ -73,21 +81,10 @@ export class AppointsDashboardComponent implements AfterViewInit, OnDestroy {
     }
   }
 
-  // sort directions for leaderboards
-  dirDoctors: 'asc'|'desc' = 'desc';
-  dirDepts:   'asc'|'desc' = 'desc';
-
-  drawDoctors() {
-    this.charts.drawLeaderboardDoctors('apptLeadersDoctors', this.dirDoctors);
-  }
-  drawDepts() {
-    this.charts.drawLeaderboardDepartments('apptLeadersDepts', this.dirDepts);
-  }
-
+  /** ✅ draw per active tab (now includes 'table') */
   private async drawCurrentTab() {
     if (this.loading || this.error) return;
 
-    // Which containers must exist for the active tab?
     const ids =
       this.activeApptTab === 'treemap' ? ['apptTreemap'] :
       this.activeApptTab === 'combo'   ? ['apptCombo']   :
@@ -95,38 +92,40 @@ export class AppointsDashboardComponent implements AfterViewInit, OnDestroy {
         ? (this.leaderSubTab === 'doctors'
             ? ['apptLeadersDoctors']
             : ['apptLeadersDepts'])
+      : this.activeApptTab === 'table'
+        ? ['apptTable']
         : ['hmpcHost'];
 
-    // Wait for containers to appear in the DOM
+    // wait for containers
     let tries = 0;
     while (tries++ < 40) {
       const allPresent = ids.every(id => document.getElementById(id));
       if (allPresent) break;
       await new Promise(r => setTimeout(r, 25));
     }
-
-    // Let layout settle (avoid zero-height)
     await new Promise(r => requestAnimationFrame(() => r(null)));
 
     this.charts.runOutsideAngular(async () => {
       if (this.activeApptTab === 'treemap') {
         await this.charts.drawTreemap('apptTreemap');
-      } else if (this.activeApptTab === 'combo') {
-        await this.charts.drawComboDept('apptCombo');
       } else if (this.activeApptTab === 'leaders') {
         if (this.leaderSubTab === 'doctors') {
-          this.drawDoctors();
+          this.charts.drawLeaderboardDoctors('apptLeadersDoctors', this.dirDoctors);
         } else {
-          this.drawDepts();
+          this.charts.drawLeaderboardDepartments('apptLeadersDepts', this.dirDepts);
         }
-      } else {
-        // 'multi' (if/when you add content)
+      } else if (this.activeApptTab === 'combo') {
+        await (this.charts as any).drawCombo?.('apptCombo');
+      } else if (this.activeApptTab === 'table') {
+        // new: grouped table view (safe with *ngIf; id or element is fine)
+        this.charts.drawAppointmentsTable('apptTable', 'desc');
       }
     });
   }
 
   redraw() {
-    requestAnimationFrame(() => { this.drawCurrentTab(); });
+    if (this.rafId != null) cancelAnimationFrame(this.rafId);
+    this.rafId = requestAnimationFrame(() => { this.drawCurrentTab(); });
   }
 
   formatValue = (v: number, label?: string) => {
