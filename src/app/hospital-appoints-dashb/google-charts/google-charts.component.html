@@ -73,33 +73,98 @@
   }
 
   .treemap-inline {
-  word-wrap: break-word;
-  overflow-wrap: break-word;
-  hyphens: auto;
-}
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    hyphens: auto;
+  }
 
-/* global styles (once) */
-.treemap-overlay-layer{position:absolute;inset:0;pointer-events:none;z-index:999}
-.treemap-overlay-layer .treemap-inline{
-  direction: rtl; white-space: normal; word-break: break-word;
-  color:#333; text-shadow:0 0 2px rgba(255,255,255,.85); line-height:1.2;
-}
+  /* global styles (once) */
+  .treemap-overlay-layer {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 999
+  }
 
-#apptTreemap g text {
+  .treemap-overlay-layer .treemap-inline {
+    direction: rtl;
+    white-space: normal;
+    word-break: break-word;
+    color: #333;
+    text-shadow: 0 0 2px rgba(255, 255, 255, .85);
+    line-height: 1.2;
+  }
+
+  #apptTreemap g text {
     font-size: 14px !important;
+  }
+
+  /* ==== Appointments Table (Google Table) ==== */
+  .app-table .rating {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    vertical-align: middle;
+  }
+
+  .app-table .rating .material-icons {
+    font-size: 18px;
+    line-height: 18px;
+    color: #ffb300;
+  }
+
+  .app-table .rating .q-num {
+    margin-inline-start: 6px;
+    color: #455a64;
+    font-weight: 600;
+  }
+
+  .app-table .avgbar {
+    position: relative;
+    width: 160px;
+    height: 18px;
+    background: #f5f7fa;
+    border-radius: 6px;
+    overflow: hidden;
+    display: inline-block;
+    vertical-align: middle;
+  }
+
+  .app-table .avgbar .bar {
+    height: 100%;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-weight: 700;
+    font-size: 12px;
+    text-shadow: 0 1px 0 rgba(0, 0, 0, .25);
+  }
+
+  .app-table .cell-muted {
+    color: #607d8b;
+  }
+
+  .app-table .dept-bold {
+    font-weight: 700;
+  }
+
+  .app-table .dept-chip {
+    display: inline-block;
+    padding: 2px 6px;
+    border-radius: 12px;
+    background: rgba(0, 0, 0, .06);
+    margin-inline-end: 6px;
+  }
+
+  .q-num{line-height: 0.34em;
+    vertical-align: text-top;
 }
-
-/* ==== Appointments Table (Google Table) ==== */
-.app-table .rating { display:inline-flex; align-items:center; gap:2px; vertical-align:middle; }
-.app-table .rating .material-icons { font-size:18px; line-height:18px; color:#ffb300; }
-.app-table .rating .q-num { margin-inline-start:6px; color:#455a64; font-weight:600; }
-
-.app-table .avgbar { position:relative; width:160px; height:18px; background:#f5f7fa; border-radius:6px; overflow:hidden; display:inline-block; vertical-align:middle; }
-.app-table .avgbar .bar { height:100%; border-radius:6px; display:flex; align-items:center; justify-content:center; color:#fff; font-weight:700; font-size:12px; text-shadow:0 1px 0 rgba(0,0,0,.25); }
-.app-table .cell-muted { color:#607d8b; }
-
-.app-table .dept-bold { font-weight:700; }
-.app-table .dept-chip { display:inline-block; padding:2px 6px; border-radius:12px; background:rgba(0,0,0,.06); margin-inline-end:6px; }
+.app-table .q-total-badge{
+  display:inline-block; padding:2px 8px; border-radius:10px;
+  background:#eceff1; color:#37474f; font-weight:700; font-size:12px;
+}
 
 </style>
 
@@ -108,7 +173,7 @@
   <div class="row" style="text-align: center;">
     <!-- <div class="mdc-layout-grid__cell col-md-12"> -->
     <h1 class="page-title text-center" style="text-align: center;">
-     זמינות תורים (7 ימים אחרונים)
+      זמינות תורים (7 ימים אחרונים)
     </h1>
     <!-- </div> -->
 
@@ -119,66 +184,64 @@
           </button>
         </div> -->
       <div class="row" style="width: 100%; text-align: center;">
-       
-          <div *ngIf="loading" style="padding:24px">טוען נתונים...</div>
-          <div *ngIf="!loading && error" style="padding:24px; color:#b71c1c">{{ error }}</div>
 
-          <ng-container *ngIf="!loading && !error">
-            <!-- Tabs -->
-            <div class="row" style="width:100%">
-              <div class="tabs" style="text-align:right; margin: 12px 0;">
-                <button (click)="onApptTabChange('treemap')" [class.active]="activeApptTab==='treemap'">מפת עומסים
-                  (Treemap)</button>
+        <div *ngIf="loading" style="padding:24px">טוען נתונים...</div>
+        <div *ngIf="!loading && error" style="padding:24px; color:#b71c1c">{{ error }}</div>
 
-                <button (click)="onApptTabChange('leaders')" [class.active]="activeApptTab==='leaders'">ליגת רופאים
-                </button>
+        <ng-container *ngIf="!loading && !error">
+          <!-- Tabs -->
+          <div class="row" style="width:100%">
+            <div class="tabs" style="text-align:right; margin: 12px 0;">
+              <button (click)="onApptTabChange('treemap')" [class.active]="activeApptTab==='treemap'">מפת
+                עומסים</button>
 
-                <button (click)="onApptTabChange('table')" [class.active]="activeApptTab==='table'">
-                  טבלת זמינות
-                </button>
+              <button (click)="onApptTabChange('leaders')" [class.active]="activeApptTab==='leaders'">ליגת
+                רופאים</button>
 
+              <button (click)="onApptTabChange('table')" [class.active]="activeApptTab==='table'">טבלת זמינות</button>
+
+            </div>
+          </div>
+          <!-- Treemap -->
+          <div *ngIf="activeApptTab==='treemap'" style="position:relative;" class="row" style="width:100%">
+            <div class="mdc-layout-grid__cell col-md-12">
+              <div class="card text-center" style="margin: 10px 0 24px; direction: rtl;">
+                <div id="apptTreemap" style="width: 100%; height: 600px;">טוען...</div>
+
+                <!-- Optional custom-SVG SLA legend -->
+                <svg width="210" height="60"
+                  style="position:absolute; top:8px; left:8px; background:white; border:1px solid #ccc; border-radius:4px; text-align: right;">
+                  <text x="200" y="16" font-size="12">זמני המתנה (ימים):</text>
+                  <rect x="12" y="28" width="54" height="16" fill="#e8f5e9"></rect><text x="58" y="40"
+                    font-size="11">≤14 ימים</text>
+                  <rect x="72" y="28" width="64" height="16" fill="#fff9c4"></rect><text x="130" y="40"
+                    font-size="11">15–30 ימים</text>
+                  <rect x="146" y="28" width="54" height="16" fill="#ffebee"></rect><text x="190" y="40"
+                    font-size="11">>30 ימים</text>
+                </svg>
               </div>
             </div>
-            <!-- Treemap -->
-            <div *ngIf="activeApptTab==='treemap'" style="position:relative;" class="row" style="width:100%">
-              <div class="mdc-layout-grid__cell col-md-12">
-                <div class="card text-center" style="margin: 10px 0 24px; direction: rtl;">
-                  <div id="apptTreemap" style="width: 100%; height: 600px;">טוען...</div>
-
-                  <!-- Optional custom-SVG SLA legend -->
-                  <svg width="210" height="60"
-                    style="position:absolute; top:8px; left:8px; background:white; border:1px solid #ccc; border-radius:4px; text-align: right;">
-                    <text x="200" y="16" font-size="12">זמני המתנה (ימים):</text>
-                    <rect x="12" y="28" width="54" height="16" fill="#e8f5e9"></rect><text x="58" y="40"
-                      font-size="11">≤14 ימים</text>
-                    <rect x="72" y="28" width="64" height="16" fill="#fff9c4"></rect><text x="130" y="40"
-                      font-size="11">15–30 ימים</text>
-                    <rect x="146" y="28" width="54" height="16" fill="#ffebee"></rect><text x="190" y="40"
-                      font-size="11">>30 ימים</text>
-                  </svg>
-                </div>
-              </div>
-            </div>
+          </div>
 
 
 
-            <!-- Leaderboards -->
-            <!-- Leaders tab pane -->
-            <div *ngIf="activeApptTab === 'leaders'" class="leaders-pane" class="row" style="width:100%;">
-              <div class="mdc-layout-grid__cell col-md-12">
-                
+          <!-- Leaderboards -->
+          <!-- Leaders tab pane -->
+          <div *ngIf="activeApptTab === 'leaders'" class="leaders-pane" class="row" style="width:100%;">
+            <div class="mdc-layout-grid__cell col-md-12">
+
               <div class="card text-center" style="margin: 10px 0 24px; direction: rtl;">
                 <div class="row" style="margin: 20px 40px 0px;">
-                <div class="subtabs">
-                  <button class="subtab-btn" [class.active]="leaderSubTab === 'doctors'"
-                    (click)="onLeaderSubTabChange('doctors')">
-                    רופאים
-                  </button>
-                  <button class="subtab-btn" [class.active]="leaderSubTab === 'departments'"
-                    (click)="onLeaderSubTabChange('departments')">
-                    מחלקות
-                  </button>
-                </div>
+                  <div class="subtabs">
+                    <button class="subtab-btn" [class.active]="leaderSubTab === 'doctors'"
+                      (click)="onLeaderSubTabChange('doctors')">
+                      רופאים
+                    </button>
+                    <button class="subtab-btn" [class.active]="leaderSubTab === 'departments'"
+                      (click)="onLeaderSubTabChange('departments')">
+                      מחלקות
+                    </button>
+                  </div>
                 </div>
 
                 <!-- One visible container at a time -->
@@ -190,26 +253,26 @@
                   <div id="apptLeadersDepts"></div>
                 </div>
               </div>
-              </div>
-            </div>
-
-
-            <!-- Table panel -->
-            <div *ngIf="activeApptTab === 'table'" class="chart-host" class="row" style="width:100%;">
-              <div class="mdc-layout-grid__cell col-md-12">                
-                <div class="card text-center" style="margin: 10px 0 24px; direction: rtl;">
-              <div id="apptTable"></div>
               <div style="height:60px;"></div>
-              </div>
-              </div>
             </div>
+          </div>
+
+
+          <!-- Table panel -->
+          <div *ngIf="activeApptTab === 'table'" class="chart-host" class="row" style="width:100%;">
+            <div class="mdc-layout-grid__cell col-md-12">
+              <div class="card text-center" style="margin: 40px 0 24px; direction: rtl;">
+                <div id="apptTable"></div>
+              </div>
+              <div style="height:60px;"></div>
+            </div>
+          </div>
 
 
 
-          </ng-container>
-          <div style="height:60px;"></div>
+        </ng-container>
+        <div style="height:60px;"></div>
       </div>
     </div>
   </div>
 </div>
-

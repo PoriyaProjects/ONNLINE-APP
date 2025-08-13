@@ -32,8 +32,8 @@ export const CHART_SERIES_PALETTE: string[] = [
   ];
   
   export const DEPARTMENT_BASE_PALETTE: string[] = [
-    '#A39DCD', '#FFF9AE', '#8BB3DF', '#E2C87E', '#BEE0BD', '#E58FBC', '#8DC63F',
-    '#8DC63F', '#B5AEA3', '#94AA64', '#F1D5D1', '#BC86B5', '#DA549E', '#AF4F76',
+    '#A39DCD', '#b9b473', '#8BB3DF', '#E2C87E', '#BEE0BD', '#E58FBC', '#8DC63F',
+    '#B5AEA3', '#94AA64', '#F1D5D1', '#BC86B5', '#DA549E', '#AF4F76',
     '#FDB913', '#00A79E', '#C98846', '#BE1E2D'
   ];
   
@@ -247,8 +247,8 @@ const THEME_CLASSIC: DashboardPalette = {
   name: 'classic',
   series: ['#C7CC9D','#AEB3FF','#DFB78A','#7D98E2','#DEBDE0','#8FE5B7','#783EC6'],
   department: [
-    '#A39DCD','#FFF9AE','#8BB3DF','#E2C87E','#BEE0BD','#E58FBC','#8DC63F',
-    '#8DC63F','#B5AEA3','#94AA64','#F1D5D1','#BC86B5','#DA549E','#AF4F76',
+    '#A39DCD','#b9b473','#8BB3DF','#E2C87E','#BEE0BD','#E58FBC','#8DC63F',
+    '#B5AEA3','#94AA64','#F1D5D1','#BC86B5','#DA549E','#AF4F76',
     '#FDB913','#00A79E','#C98846','#BE1E2D'
   ],
   datasource: { MorningDelay:'#A39DCD', EndDay:'#FFB74D', SetupTime:'#a17ef8' },
