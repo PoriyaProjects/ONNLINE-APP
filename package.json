@@ -114,6 +114,7 @@
     "ngx-perfect-scrollbar": "^10.1.1",
     "ngx-scan-detect": "^2.0.5",
     "ngx-trend": "^7.0.0",
+    "pdf-lib": "^1.17.1",
     "pdfmake": "^0.1.72",
     "rxjs": "^6.5.5",
     "save": "^2.4.0",
