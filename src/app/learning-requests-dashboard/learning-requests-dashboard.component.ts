@@ -37,41 +37,6 @@ export class LearningRequestsDashboardComponent implements OnInit {
     }
   };
 
-  // Pie Charts
-  pieChart1 = {
-    title: '',
-    type: 'PieChart',
-    data: [
-      ['Satisfied', 60],
-      ['Neutral', 25],
-      ['Dissatisfied', 15]
-    ],
-    options: { height: 300 }
-  };
-
-  pieChart2 = {
-    title: '',
-    type: 'PieChart',
-    data: [
-      ['Mobiles', 35],
-      ['Laptops', 25],
-      ['Accessories', 20],
-      ['Wearables', 20]
-    ],
-    options: { height: 300 }
-  };
-
-  pieChart3 = {
-    title: '',
-    type: 'PieChart',
-    data: [
-      ['Direct', 40],
-      ['Social Media', 35],
-      ['Search Engine', 25]
-    ],
-    options: { height: 300 }
-  };
-
   // Table Data
   displayedColumns: string[] = ['assignment_id', 'name', 'due_date', 'link'];
   displayedColumns2: string[] = ['assignment_id', 'name', 'depart', 'employee'];
@@ -99,9 +64,9 @@ export class LearningRequestsDashboardComponent implements OnInit {
         employee_id: this.employeeId
       })
       .subscribe((Response) => {
+        this.is_manager = Response['d']['is_manager'];
         this.donutChart1.data = Response['d']['personal_list'];
         this.donutChart2.data = Response['d']['personal_department_list'];
-        this.is_manager = Response['d']['is_manager'];
       });
   }
 

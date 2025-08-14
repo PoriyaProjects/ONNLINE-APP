@@ -12,6 +12,7 @@ import { ConfirmationDialogService } from 'src/app/confirmation-dialog/confirmat
 import { STEPPER_GLOBAL_OPTIONS } from '@angular/cdk/stepper';
 import { ActivatedRoute } from '@angular/router';
 import imageCompression from 'browser-image-compression';
+import { PDFDocument } from 'pdf-lib';
 
 @Component({
   selector: 'app-training-request-form',
@@ -65,7 +66,7 @@ export class TrainingRequestFormComponent implements OnInit {
   employees = [];
   intity_list = [];
   CitiesArray: any[] = [];
-  educationList = ["תיכונית", "מקצועית", "תואר ראשון", "תואר שני", "תואר שלישי"];
+  educationList = ["תיכונית", "מקצועית", "תואר ראשון", "תואר שני", "תואר שלישי", "אחר"];
   requested: boolean = false;
   wantsPoster: boolean = false;
   dorit_note_answer: boolean = false;
@@ -326,14 +327,30 @@ export class TrainingRequestFormComponent implements OnInit {
     }
   }
 
-  onFileSelected(event: Event) {
+  async onFileSelected(event: Event) {
     const input = event.target as HTMLInputElement;
 
     if (input.files && input.files.length > 0) {
       const file = input.files[0];
-      const maxSize = 2 * 1024 * 1024; // 1MB (1,024,000 bytes)
+      const maxSize = 10 * 1024 * 1024; // 1MB (1,024,000 bytes)
       if (file.size > maxSize) {
-        alert("הקובץ גדול מדי! יש להעלות קובץ עד 2MB.");
+        alert("הקובץ גדול מדי! יש להעלות קובץ עד 10MB.");
+        // if (file.type.startsWith('image/')) {
+        //   const compressedFile = await imageCompression(file, {
+        //     maxSizeMB: 2,
+        //     maxWidthOrHeight: 1920,
+        //     useWebWorker: true
+        //   });
+        //   console.log(compressedFile);
+        // } else {
+        //   const arrayBuffer = await file.arrayBuffer();
+        //   const pdfDoc = await PDFDocument.load(arrayBuffer, { ignoreEncryption: true });
+
+        //   // Re-save the document to reduce size
+        //   const compressedBytes = await pdfDoc.save({ useObjectStreams: true });
+        //   const compressedFile = new File([compressedBytes], file.name, { type: 'application/pdf' });
+        //   console.log(compressedFile);
+        // }
         input.value = ""; // Clear file input
         return;
       }
@@ -732,10 +749,10 @@ export class TrainingRequestFormComponent implements OnInit {
       const sizeBInBytes = (base64Data.length * 3) / 4 - (base64Data.endsWith("==") ? 2 : base64Data.endsWith("=") ? 1 : 0); // Base64 size calculation
       const sizeDInBytes = base64Data2 == null ? 0 : (base64Data2.length * 3) / 4 - (base64Data2.endsWith("==") ? 2 : base64Data2.endsWith("=") ? 1 : 0); // Base64 size calculation
       const sizeInBytes = sizeBInBytes + sizeDInBytes; // Set limit (5MB in this example)
-      const maxSize = 5 * 1024 * 1024; // Set limit (5MB in this example)
+      const maxSize = 10 * 1024 * 1024; // Set limit (5MB in this example)
 
       if (sizeInBytes > maxSize) {
-        throw new Error("Base64 data is too large!");
+        throw new Error("Base64 data is too large! Limit 10MB");
       }
       this.http
         .post(environment.url + "SaveTrainingRequestForm", {
