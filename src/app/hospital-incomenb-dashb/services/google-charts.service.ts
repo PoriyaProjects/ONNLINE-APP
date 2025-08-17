@@ -31,7 +31,7 @@ export class GoogleChartsService {
   }
 
   private init(resolve: () => void) {
-    (window as any).google.charts.load('current', { packages: ['corechart', 'table', 'bar'] });
+    (window as any).google.charts.load('current', { packages: ['corechart', 'table', 'bar', 'treemap'] });
     (window as any).google.charts.setOnLoadCallback(() => {
       this.loaded = true;
       resolve();
