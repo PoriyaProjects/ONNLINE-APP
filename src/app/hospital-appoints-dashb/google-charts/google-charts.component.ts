@@ -28,7 +28,7 @@ export class AppointsDashboardComponent implements AfterViewInit, OnDestroy {
 
   @ViewChild('hmpcRef', { static: false, read: ElementRef }) hmpcElRef!: ElementRef<any>;
 
-  // leaderboards
+  
   dirDoctors: 'asc'|'desc' = 'desc';
   dirDepts:   'asc'|'desc' = 'desc';
 
@@ -49,11 +49,11 @@ export class AppointsDashboardComponent implements AfterViewInit, OnDestroy {
   ngOnDestroy(): void {
     this.destroyed = true;
     if (this.rafId != null) { cancelAnimationFrame(this.rafId); this.rafId = null; }
-    // ensure observers are cleaned when leaving page
+  
     this.charts.teardownTreemapOverlays('apptTreemap');
   }
 
-  /** ✅ refactored to match your existing pattern */
+  
   onApptTabChange(tab: Tab) {
     if (this.activeApptTab === 'treemap') this.charts.teardownTreemapOverlays('apptTreemap');
     if (this.activeApptTab === tab) return;
@@ -81,7 +81,7 @@ export class AppointsDashboardComponent implements AfterViewInit, OnDestroy {
     }
   }
 
-  /** ✅ draw per active tab (now includes 'table') */
+  
   private async drawCurrentTab() {
     if (this.loading || this.error) return;
 
@@ -116,8 +116,7 @@ export class AppointsDashboardComponent implements AfterViewInit, OnDestroy {
         }
       } else if (this.activeApptTab === 'combo') {
         await (this.charts as any).drawCombo?.('apptCombo');
-      } else if (this.activeApptTab === 'table') {
-        // new: grouped table view (safe with *ngIf; id or element is fine)
+      } else if (this.activeApptTab === 'table') {        
         this.charts.drawAppointmentsTable('apptTable', 'desc');
       }
     });

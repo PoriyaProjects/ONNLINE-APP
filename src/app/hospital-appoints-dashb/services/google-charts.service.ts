@@ -492,20 +492,20 @@ private hexToRgba(hex: string, alpha: number): string {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
-private mountGroupToggleButton(el: HTMLElement, onToggle: () => void) {
-  Array.from(el.querySelectorAll('.group-toggle')).forEach(n => n.remove());
-  const btn = document.createElement('button');
-  btn.className = 'group-toggle';
-  btn.textContent = this.groupDoctorsByDept ? 'בטל קיבוץ למחלקות' : 'קבץ לפי מחלקה';
-  Object.assign(btn.style, {
-    position: 'absolute', top: '8px', left: '8px', padding: '6px 10px',
-    direction: 'rtl', fontSize: '12px', border: '1px solid #bbb',
-    borderRadius: '6px', background: '#fff', cursor: 'pointer', zIndex: '5'
-  } as any);
-  btn.onclick = onToggle;
-  if (getComputedStyle(el).position === 'static') el.style.position = 'relative';
-  el.appendChild(btn);
-}
+// private mountGroupToggleButton(el: HTMLElement, onToggle: () => void) {
+//   Array.from(el.querySelectorAll('.group-toggle')).forEach(n => n.remove());
+//   const btn = document.createElement('button');
+//   btn.className = 'group-toggle';
+//   btn.textContent = this.groupDoctorsByDept ? 'בטל קיבוץ למחלקות' : 'קבץ לפי מחלקה';
+//   Object.assign(btn.style, {
+//     position: 'absolute', top: '8px', left: '8px', padding: '6px 10px',
+//     direction: 'rtl', fontSize: '12px', border: '1px solid #bbb',
+//     borderRadius: '6px', background: '#fff', cursor: 'pointer', zIndex: '5'
+//   } as any);
+//   btn.onclick = onToggle;
+//   if (getComputedStyle(el).position === 'static') el.style.position = 'relative';
+//   el.appendChild(btn);
+// }
 
 public async drawLeaderboardDoctors(containerId: string, dir: 'asc' | 'desc' = 'desc') {
   await this.loadGoogleCharts();
@@ -657,10 +657,10 @@ public async drawLeaderboardDoctors(containerId: string, dir: 'asc' | 'desc' = '
 
   (window as any).google.visualization.events.addListener(chart, 'ready', () => {
     drawDeptOverlaysIfGrouped();
-    this.mountGroupToggleButton(el, () => {
-      this.groupDoctorsByDept = !this.groupDoctorsByDept;
-      this.drawLeaderboardDoctors(containerId, dir);
-    });
+    // this.mountGroupToggleButton(el, () => {
+    //   this.groupDoctorsByDept = !this.groupDoctorsByDept;
+    //   this.drawLeaderboardDoctors(containerId, dir);
+    // });
   });
 
   this.drawSafe(chart, dt, opts, containerId);
@@ -742,19 +742,17 @@ public async drawLeaderboardDepartments(containerId: string, dir: 'asc' | 'desc'
   
     // SOURCE DATA — reuse existing transformations
     type Doc = { name: string; dept: string; q: number; avg: number };
-    const doctorRows: Doc[] = this.buildDoctorRows()
-      .map(([name, dept, q, avg]) => ({
-        name,
-        dept,
-        q: Number(q) || 0,
-        avg: Number(avg) || 0
-      }));
+    const doctorRows: Doc[] = this.buildDoctorRows().map(([name, dept, q, avg]) => ({
+      name,
+      dept,
+      q: Number(q) || 0,
+      avg: Number(avg) || 0
+    }));
   
     const deptTotals = new Map<string, { q: number; avg: number }>();
-    this.buildDepartmentRows()
-      .forEach(([dept, q, avg]: [string, number, number]) =>
-        deptTotals.set(dept, { q: Number(q) || 0, avg: Number(avg) || 0 })
-      );
+    this.buildDepartmentRows().forEach(([dept, q, avg]: [string, number, number]) =>
+      deptTotals.set(dept, { q: Number(q) || 0, avg: Number(avg) || 0 })
+    );
   
     // GROUPING (display exactly what API returns, incl. "ללא רופא")
     const byDept = new Map<string, Doc[]>();
@@ -774,14 +772,12 @@ public async drawLeaderboardDepartments(containerId: string, dir: 'asc' | 'desc'
       return palette[h % palette.length];
     };
   
-    // department order by AvgDay (asc/desc)
     const deptOrder = Array.from(deptTotals.keys()).sort((a, b) => {
       const aa = deptTotals.get(a)?.avg ?? 0;
       const bb = deptTotals.get(b)?.avg ?? 0;
       return dir === 'asc' ? aa - bb : bb - aa;
     });
   
-    // Build UI rows (headers + doctors)
     for (const dept of deptOrder) {
       const totals = deptTotals.get(dept) ?? { q: 0, avg: 0 };
       const docs = (byDept.get(dept) || []).slice().sort((a, b) =>
@@ -791,12 +787,11 @@ public async drawLeaderboardDepartments(containerId: string, dir: 'asc' | 'desc'
       docs.forEach(d => baseUi.push({ dept, doctor: d.name, q: d.q, avg: d.avg, isHeader: false }));
     }
   
-    // ---- build toolbar (search) + table host ----
-    // reset container and ensure positioning for the toggle button
+    // host
     el.innerHTML = '';
     if (getComputedStyle(el).position === 'static') el.style.position = 'relative';
   
-    // toolbar
+    // ==== toolbar ====
     const toolbar = document.createElement('div');
     Object.assign(toolbar.style, {
       position: 'relative',
@@ -815,7 +810,7 @@ public async drawLeaderboardDepartments(containerId: string, dir: 'asc' | 'desc'
   
     const searchInput = document.createElement('input');
     searchInput.type = 'search';
-    searchInput.placeholder = 'חיפוש: מחלקה / רופא / Q / ימים';
+    searchInput.placeholder = 'חיפוש: מחלקה / רופא / תורים / ימים';
     Object.assign(searchInput.style, {
       width: '280px',
       padding: '6px 10px',
@@ -827,6 +822,28 @@ public async drawLeaderboardDepartments(containerId: string, dir: 'asc' | 'desc'
     } as any);
     searchWrap.appendChild(searchInput);
     toolbar.appendChild(searchWrap);
+  
+    // ---- colors toggle button (persisted) ----
+    const LS_KEY_COLOR = 'appt_dept_colors_enabled';
+    let colorsEnabled = ((): boolean => {
+      const v = localStorage.getItem(LS_KEY_COLOR);
+      return v === null ? true : v !== '0';
+    })();
+  
+    const colorBtn = document.createElement('button');
+    colorBtn.type = 'button';
+    colorBtn.textContent = colorsEnabled ? 'כבה צבעי מחלקות' : 'הפעל צבעי מחלקות';
+    Object.assign(colorBtn.style, {
+      position: 'absolute', top: '8px', left: '8px',
+      padding: '6px 10px',
+      border: '1px solid #cfd8dc',
+      borderRadius: '6px',
+      background: '#fff',
+      cursor: 'pointer',
+      fontSize: '13px'
+    } as any);
+    toolbar.appendChild(colorBtn);
+  
     el.appendChild(toolbar);
   
     // table host (separate div so we never wipe the toolbar)
@@ -836,48 +853,152 @@ public async drawLeaderboardDepartments(containerId: string, dir: 'asc' | 'desc'
     tableHost.style.padding = '8px';
     el.appendChild(tableHost);
   
+    // ------- helper: dynamic widths for first 3 columns, table 100% -------
+    const applyDynamicWidths = (hostId: string, fixedCols = 3) => {
+      const host = document.getElementById(hostId);
+      if (!host) return;
+      const tbl = host.querySelector('table') as HTMLTableElement | null;
+      if (!tbl) return;
+  
+      // Make the table occupy full width; last (unfixed) column will grow.
+      tbl.style.width = '100%';
+      tbl.style.tableLayout = 'auto';
+  
+      // Ensure header cells wrapped
+      const thead = tbl.querySelector('thead');
+      if (thead) {
+        thead.querySelectorAll('th').forEach((th, idx) => {
+          if (idx < fixedCols) {
+            if (!th.querySelector('.header-wrap')) {
+              const txt = th.innerHTML;
+              th.innerHTML = `<span class="header-wrap">${txt}</span>`;
+            }
+          }
+        });
+      }
+  
+      // Ensure body cells have inline-block wrappers + padding
+      const tbody = tbl.querySelector('tbody');
+      if (tbody) {
+        tbody.querySelectorAll('tr').forEach(tr => {
+          tr.querySelectorAll('td').forEach((td, idx) => {
+            if (idx < fixedCols) {
+              if (!td.querySelector('.cell-wrap')) {
+                const current = td.innerHTML;
+                td.innerHTML = `<span class="cell-wrap">${current}</span>`;
+              }
+            }
+          });
+        });
+      }
+  
+      // Wrapper styles for fixed columns
+      const setWrapStyles = (el: Element) => {
+        const s = (el as HTMLElement).style;
+        s.display = 'inline-block';
+        s.paddingLeft = '20px';
+        s.paddingRight = '20px';
+        s.whiteSpace = 'nowrap';
+        s.boxSizing = 'content-box';
+      };
+      tbl.querySelectorAll('.cell-wrap').forEach(setWrapStyles);
+      tbl.querySelectorAll('.header-wrap').forEach(setWrapStyles);
+  
+      // Measure max width per fixed column (including wrap + padding)
+      const widths: number[] = new Array(fixedCols).fill(0);
+  
+      if (thead) {
+        const ths = Array.from(thead.querySelectorAll('th')).slice(0, fixedCols);
+        ths.forEach((th, i) => {
+          const wrap = th.querySelector('.header-wrap') as HTMLElement | null;
+          const w = wrap ? wrap.offsetWidth : (th as HTMLElement).offsetWidth;
+          widths[i] = Math.max(widths[i], w);
+        });
+      }
+      if (tbody) {
+        tbody.querySelectorAll('tr').forEach(tr => {
+          Array.from(tr.children).slice(0, fixedCols).forEach((td, i) => {
+            const wrap = (td as HTMLElement).querySelector('.cell-wrap') as HTMLElement | null;
+            const w = wrap ? wrap.offsetWidth : (td as HTMLElement).offsetWidth;
+            widths[i] = Math.max(widths[i], w);
+          });
+        });
+      }
+  
+      // Lock widths on first fixedCols; leave the last column free to expand
+      const setCellWidth = (cell: HTMLElement, w: number) => {
+        cell.style.width = `${w}px`;
+        cell.style.minWidth = `${w}px`;
+        cell.style.maxWidth = `${w}px`;
+      };
+  
+      if (thead) {
+        const ths = Array.from(thead.querySelectorAll('th')) as HTMLElement[];
+        ths.slice(0, fixedCols).forEach((th, i) => setCellWidth(th, widths[i]));
+        // Ensure the last column header doesn't get constrained
+        if (ths[fixedCols]) {
+          ths[fixedCols].style.width = '';
+          ths[fixedCols].style.minWidth = '';
+          ths[fixedCols].style.maxWidth = '';
+        }
+      }
+      if (tbody) {
+        tbody.querySelectorAll('tr').forEach(tr => {
+          const tds = Array.from(tr.children) as HTMLElement[];
+          tds.slice(0, fixedCols).forEach((td, i) => setCellWidth(td, widths[i]));
+          // Unfix the last column cell
+          if (tds[fixedCols]) {
+            tds[fixedCols].style.width = '';
+            tds[fixedCols].style.minWidth = '';
+            tds[fixedCols].style.maxWidth = '';
+          }
+        });
+      }
+    };
+  
     
+    let currentUi: UiRow[] = baseUi.slice();
   
     const drawFiltered = (ui: UiRow[]) => {
+      currentUi = ui.slice();
+  
       const google = (window as any).google;
       const dt = new google.visualization.DataTable();
-    
-      // 🔧 Make Q and AvgDay numeric columns so sorting is numeric.
+  
       dt.addColumn('string', 'מחלקה');
       dt.addColumn('string', 'רופא');
-      dt.addColumn('number', 'תורים');   // was 'string'
-      dt.addColumn('number', 'ימי המתנה');      // was 'string'
-    
-      // Department TOTAL Q map (for rating scale)
+      dt.addColumn('number', 'תורים');
+      dt.addColumn('number', 'ימי המתנה');
+  
       const deptTotalQ = new Map<string, number>();
       ui.forEach(r => { if (r.isHeader) deptTotalQ.set(r.dept, r.q); });
-    
+  
       const ratingHtml = (dept: string, q: number) => {
         const total = Math.max(1, deptTotalQ.get(dept) || q);
         const scale = 5;
         const val = Math.min(scale, (q / total) * scale);
-    
+  
         let full = Math.floor(val);
         let half = (val - full) >= 0.5 ? 1 : 0;
         if (q > 0 && full + half === 0) half = 1;
-    
+  
         const empty = Math.max(0, scale - full - half);
         const icon = (n: string, style = '') => `<span class="material-icons" style="${style}">${n}</span>`;
-    
+  
         return `
           <div class="rating">
             ${icon('person').repeat(full)}
             ${half ? icon('person_outline', 'color:#9e9e9e;') : ''}
-            ${icon('person_outline', 'color:#efefef;').repeat(empty)}
+            ${icon('person_outline', 'color:#cfcfcf;').repeat(empty)}
             <span class="q-num" style="line-height:0.34em;vertical-align:text-top;">${q}</span>
           </div>
         `;
       };
-    
+  
       const totalBadge = (q: number) =>
         `<span class="q-total-badge" title="סה״כ תורים במחלקה תורים במחלקה">סה״כ תורים במחלקה ${q}</span>`;
-    
-      // Heat bar renderer (kept the same)
+  
+      
       const maxAvg = Math.max(1, ...ui.map(r => r.avg));
       const avgBar = (avg: number) => {
         const p = Math.round((avg / maxAvg) * 100);
@@ -890,36 +1011,39 @@ public async drawLeaderboardDepartments(containerId: string, dir: 'asc' | 'desc'
             </div>
           </div>`;
       };
-    
-      // 👉 Add rows: set numeric value in `v`, HTML in `f`
+  
+      
       ui.forEach(r => {
-        const deptCell = r.isHeader ? `<span class="dept-bold">${r.dept}</span>` : `<span class="cell-muted">${r.dept}</span>`;
-        const docCell  = r.isHeader ? `<span class="dept-bold">${r.doctor}</span>` : r.doctor;
-    
-        const qCell = r.isHeader
-          ? { v: r.q,   f: totalBadge(r.q) }           // header shows badge, but sorts by number
-          : { v: r.q,   f: ratingHtml(r.dept, r.q) };  // doctors: persons, but numeric sort
-    
-        const avgCell = { v: r.avg, f: avgBar(r.avg) }; // 🔥 numeric sort by AvgDay
-    
-        dt.addRow([deptCell, docCell, qCell as any, avgCell as any]);
+        const deptCellHtml = r.isHeader
+          ? `<span class="dept-bold">${r.dept}</span>`
+          : `<span class="cell-muted">${r.dept}</span>`;
+        const docCellHtml  = r.isHeader
+          ? `<span class="dept-bold">${r.doctor}</span>`
+          : r.doctor;
+  
+        const qCellHtml = r.isHeader ? totalBadge(r.q) : ratingHtml(r.dept, r.q);
+  
+        const deptCell = { v: r.dept,   f: `<span class="cell-wrap">${deptCellHtml}</span>` };
+        const docCell  = { v: r.doctor, f: `<span class="cell-wrap">${docCellHtml}</span>` };
+        const qCell    = { v: r.q,      f: `<span class="cell-wrap">${qCellHtml}</span>` };
+        const avgCell  = { v: r.avg,    f: avgBar(r.avg) };
+  
+        dt.addRow([deptCell as any, docCell as any, qCell as any, avgCell as any]);
       });
-    
-      // (rest of your draw code unchanged) ...
+  
       const table = new google.visualization.Table(document.getElementById(hostId));
       const opts: any = {
-        allowHtml: true,
+        allowHtml: true,        
         width: '100%',
         alternatingRowStyle: false,
         cssClassNames: { tableCell: 'app-table', headerCell: 'app-table' }
       };
-    
+  
       google.visualization.events.addListener(table, 'ready', () => {
-        // reapply department bands to current DOM order
         const host = document.getElementById(hostId)!;
         const trs = host.querySelectorAll('table tbody tr');
-    
-        // recompute groups for current ui (already filtered order)
+  
+        
         const groupMeta: Array<{ dept: string; start: number; end: number; color: string }> = [];
         let startIdx = 0;
         for (let i = 1; i <= ui.length; i++) {
@@ -929,28 +1053,32 @@ public async drawLeaderboardDepartments(containerId: string, dir: 'asc' | 'desc'
             startIdx = i;
           }
         }
-    
+  
+        // apply or clear department colors based on current toggle
         groupMeta.forEach(g => {
           for (let r = g.start; r <= g.end; r++) {
             const tr = trs[r] as HTMLElement;
             if (!tr) continue;
-            tr.style.background = g.color;
+            tr.style.background = colorsEnabled ? g.color : '';
           }
           const headerTr = trs[g.start] as HTMLElement;
           if (headerTr) headerTr.style.fontWeight = '700';
         });
-    
-        this.mountGroupToggleButton(el, () => {
-          this.drawAppointmentsTable(el, dir === 'asc' ? 'desc' : 'asc');
-        });
-    
+  
+        // this.mountGroupToggleButton(el, () => {
+        //   this.drawAppointmentsTable(el, dir === 'asc' ? 'desc' : 'asc');
+        // });
+  
         const tbl = host.querySelector('table') as HTMLElement;
         if (tbl) tbl.setAttribute('dir', 'rtl');
+  
+        // After the table is in the DOM, fix first 3 column widths; last column fills the rest.
+        applyDynamicWidths(hostId, 3);
       });
-    
+  
       this.drawSafe(table, dt, opts, hostId);
     };
-    
+  
     // initial draw with full dataset
     drawFiltered(baseUi);
   
@@ -1006,7 +1134,17 @@ public async drawLeaderboardDepartments(containerId: string, dir: 'asc' | 'desc'
       clearTimeout(searchTimer);
       searchTimer = setTimeout(applySearch, 200);
     });
+  
+    // toggle button behavior
+    colorBtn.addEventListener('click', () => {
+      colorsEnabled = !colorsEnabled;
+      localStorage.setItem(LS_KEY_COLOR, colorsEnabled ? '1' : '0');
+      colorBtn.textContent = colorsEnabled ? 'כבה צבעי מחלקות' : 'הפעל צבעי מחלקות';
+      // redraw current view to apply/remove colors
+      drawFiltered(currentUi);
+    });
   }
+  
   
   
 }
