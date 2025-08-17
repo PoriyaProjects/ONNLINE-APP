@@ -345,8 +345,55 @@ bad:  '#7F1D1D'  // red-900
     ]
   };
   
+  const THEME_SINGLEBLUE: DashboardPalette = {
+    name: 'אחיד כחול',
+    series: ['#6BA1F8','#6BA1F8','#6BA1F8','#6BA1F8','#6BA1F8','#6BA1F8','#6BA1F8'],
+    department: [
+      '6BA1F8','#6BA1F8','#6BA1F8','#6BA1F8','#6BA1F8','#6BA1F8','#6BA1F8',
+      '#6BA1F8','#6BA1F8','#6BA1F8','#6BA1F8','#6BA1F8','#6BA1F8',
+      '#6BA1F8','#6BA1F8','#6BA1F8','#6BA1F8'
+    ],
+    datasource: { MorningDelay:'#A39DCD', EndDay:'#FFB74D', SetupTime:'#a17ef8' },
+    tableStatus: { good:'#eaf2fe', warn:'#99bdf9', bad:'#236fe0' },
+    tableHeatmap: [
+      '#eaf2fe', // very light
+      '#d6e5fd',
+      '#c2d8fb',
+      '#adcafb',
+      '#99bdf9',
+      '#84aff9',
+      '#6ba1f8', // base color
+      '#4e8ff0',
+      '#377fe8',
+      '#236fe0'  // darkest
+    ]
+  };
 
-const THEMES: DashboardPalette[] = [THEME_CLASSIC, THEME_DARK, THEME_MONO, THEME_PASTEL, HIGH_CONTRAST];
+  const THEME_SINGLELEAD: DashboardPalette = {
+    name: 'אחיד מוביל',
+    series: ['#2B3992','#2B3992','#2B3992','#2B3992','#2B3992','#2B3992','#2B3992'],
+    department: [
+      '2B3992','#2B3992','#2B3992','#2B3992','#2B3992','#2B3992','#2B3992',
+      '#2B3992','#2B3992','#2B3992','#2B3992','#2B3992','#2B3992',
+      '#2B3992','#2B3992','#2B3992','#2B3992'
+    ],
+    datasource: { MorningDelay:'#A39DCD', EndDay:'#FFB74D', SetupTime:'#a17ef8' },
+    tableStatus: { good:'#eceef9', warn:'#9fa4e1', bad:'#2B3992' },
+    tableHeatmap: [
+      '#eceef9', // very light
+      '#d9dcf3',
+      '#c6c9ed',
+      '#b3b7e7',
+      '#9fa4e1',
+      '#8c91db',
+      '#787ed5',
+      '#656ccf',
+      '#5159c9',
+      '#2B3992'  // base / darkest
+    ]
+  };
+  
+const THEMES: DashboardPalette[] = [THEME_SINGLEBLUE, THEME_SINGLELEAD, THEME_CLASSIC, THEME_DARK, THEME_MONO, THEME_PASTEL, HIGH_CONTRAST];
 
 @Injectable({ providedIn: 'root' })
 export class PaletteService {
