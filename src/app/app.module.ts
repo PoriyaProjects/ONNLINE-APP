@@ -257,6 +257,7 @@ import { CprNewbordDashboradComponent } from './form-dashboard/cpr-newbord-dashb
 import { CprNewbornFormComponent } from './form-dashboard/cpr-newbord-dashborad/cpr-newborn-form/cpr-newborn-form.component';
 import { HospitalCathDashbModule } from './hospital-cath-dashb/hospital-cath-dashb.module';
 import { HospitalRoomTimeDashbModule } from './hospital-roomtime-dashb/hospital-roomtime-dashb.module';
+import { HospitalRoomTimeNDashbModule } from './hospital-roomtimen-dashb/hospital-roomtimen-dashb.module';
 import { AppointsDashbModule } from './hospital-appoints-dashb/hospital-appoints-dashb.module';
 import { SharedModule } from './shared/shared.module';
 import { CommercialSupportFormDashboardComponent } from './form-dashboard/commercial-support-form-dashboard/commercial-support-form-dashboard.component';
