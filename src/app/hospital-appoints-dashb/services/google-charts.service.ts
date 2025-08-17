@@ -727,26 +727,19 @@ public async drawLeaderboardDepartments(containerId: string, dir: 'asc' | 'desc'
 
   public async drawAppointmentsTable(
     target: string | HTMLElement,
-    dir: 'asc' | 'desc' = 'desc'
+    initialDir: 'asc' | 'desc' = 'desc'
   ) {
     await this.loadGoogleCharts();
     await this.waitForGoogleReady();
     if (!this.googleReady()) return;
   
-    // ---- resolve container (works with *ngIf) ----
     const el = typeof target === 'string' ? document.getElementById(target) : target;
-    if (!el) {
-      console.warn('[drawAppointmentsTable] container not found:', target);
-      return;
-    }
+    if (!el) { console.warn('[drawAppointmentsTable] container not found:', target); return; }
   
-    // SOURCE DATA — reuse existing transformations
+    // ---------- DATA ----------
     type Doc = { name: string; dept: string; q: number; avg: number };
     const doctorRows: Doc[] = this.buildDoctorRows().map(([name, dept, q, avg]) => ({
-      name,
-      dept,
-      q: Number(q) || 0,
-      avg: Number(avg) || 0
+      name, dept, q: Number(q) || 0, avg: Number(avg) || 0
     }));
   
     const deptTotals = new Map<string, { q: number; avg: number }>();
@@ -754,217 +747,220 @@ public async drawLeaderboardDepartments(containerId: string, dir: 'asc' | 'desc'
       deptTotals.set(dept, { q: Number(q) || 0, avg: Number(avg) || 0 })
     );
   
-    // GROUPING (display exactly what API returns, incl. "ללא רופא")
     const byDept = new Map<string, Doc[]>();
-    for (const d of doctorRows)
-      (byDept.get(d.dept) || byDept.set(d.dept, []).get(d.dept)!).push(d);
+    for (const d of doctorRows) (byDept.get(d.dept) || byDept.set(d.dept, []).get(d.dept)!).push(d);
   
     type UiRow = { dept: string; doctor: string; q: number; avg: number; isHeader: boolean };
-    const baseUi: UiRow[] = [];
   
-    // Pastel palette for department backgrounds
-    const palette = [
-      '#A3C9F9', '#F9D6A5', '#C5E1A5', '#F9A8D4', '#E6A5F7', '#F8BBD0',
-      '#B2DFDB', '#FFECB3', '#DCEDC8', '#FFE0B2', '#D1C4E9', '#FFCDD2'
-    ];
-    const deptBand = (dept: string) => {
-      let h = 7; for (const ch of dept) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
-      return palette[h % palette.length];
+    // palette for non-header rows
+    const palette = ['#A3C9F9','#F9D6A5','#C5E1A5','#F9A8D4','#E6A5F7','#F8BBD0','#B2DFDB','#FFECB3','#DCEDC8','#FFE0B2','#D1C4E9','#FFCDD2'];
+    const deptBand = (dept: string) => { let h = 7; for (const ch of dept) h = (h*31+ch.charCodeAt(0))>>>0; return palette[h % palette.length]; };
+  
+    // ---------- STATE ----------
+    // sortCol: 0=dept, 1=doctor, 2=q, 3=avg
+    let sortCol: 0|1|2|3 = 3;
+    let sortDir: 'asc'|'desc' = initialDir ?? 'desc';
+    let baseUi: UiRow[] = [];
+  
+    // build UI respecting sortCol/dir
+    const cmp = <T>(a: T, b: T) => (a < b ? -1 : a > b ? 1 : 0);
+    const buildUi = (): UiRow[] => {
+      // department-level sort key
+      const deptKey = (dept: string): string|number => {
+        if (sortCol === 0) return dept;                            // dept name
+        if (sortCol === 2) return deptTotals.get(dept)?.q ?? 0;    // total q
+        if (sortCol === 3) return deptTotals.get(dept)?.avg ?? 0;  // total avg
+        // sortCol === 1 (doctor): use dept name for dept order (sensible default)
+        return dept;
+      };
+  
+      const deptOrder = Array.from(deptTotals.keys()).sort((a, b) => {
+        const A = deptKey(a), B = deptKey(b);
+        const r = typeof A === 'string' ? cmp(A.toString(), B.toString()) : cmp(Number(A), Number(B));
+        return sortDir === 'asc' ? r : -r;
+      });
+  
+      const ui: UiRow[] = [];
+      for (const dept of deptOrder) {
+        const totals = deptTotals.get(dept) ?? { q: 0, avg: 0 };
+        ui.push({ dept, doctor: dept, q: totals.q, avg: totals.avg, isHeader: true });
+  
+        // doctor-level sort key within dept
+        const docs = (byDept.get(dept) || []).slice();
+        docs.sort((a, b) => {
+          let r = 0;
+          if (sortCol === 1) r = cmp(a.name.toLowerCase(), b.name.toLowerCase());    // by doctor name
+          else if (sortCol === 2) r = cmp(a.q, b.q);                                  // by q
+          else if (sortCol === 3) r = cmp(a.avg, b.avg);                              // by avg
+          else r = 0; // sortCol===0 within a single dept -> all same dept; keep stable order
+          return sortDir === 'asc' ? r : -r;
+        });
+  
+        docs.forEach(d => ui.push({ dept, doctor: d.name, q: d.q, avg: d.avg, isHeader: false }));
+      }
+      return ui;
     };
+    baseUi = buildUi();
   
-    const deptOrder = Array.from(deptTotals.keys()).sort((a, b) => {
-      const aa = deptTotals.get(a)?.avg ?? 0;
-      const bb = deptTotals.get(b)?.avg ?? 0;
-      return dir === 'asc' ? aa - bb : bb - aa;
-    });
-  
-    for (const dept of deptOrder) {
-      const totals = deptTotals.get(dept) ?? { q: 0, avg: 0 };
-      const docs = (byDept.get(dept) || []).slice().sort((a, b) =>
-        dir === 'asc' ? a.avg - b.avg : b.avg - a.avg
-      );
-      baseUi.push({ dept, doctor: dept, q: totals.q, avg: totals.avg, isHeader: true });
-      docs.forEach(d => baseUi.push({ dept, doctor: d.name, q: d.q, avg: d.avg, isHeader: false }));
-    }
-  
-    // host
+    // ---------- HOST ----------
     el.innerHTML = '';
     if (getComputedStyle(el).position === 'static') el.style.position = 'relative';
   
-    // ==== toolbar ====
+    // toolbar
     const toolbar = document.createElement('div');
     Object.assign(toolbar.style, {
-      position: 'relative',
-      padding: '8px',
-      display: 'flex',
-      gap: '8px',
-      alignItems: 'center',
-      direction: 'rtl',
-      borderBottom: '1px solid #e0e0e0',
-      background: '#fafafa',
-      zIndex: '2'
+      position: 'relative', padding: '8px', display: 'flex', gap: '8px', alignItems: 'center',
+      direction: 'rtl', borderBottom: '1px solid #e0e0e0', background: '#fafafa', zIndex: '2'
     } as any);
   
+    // search
     const searchWrap = document.createElement('div');
     Object.assign(searchWrap.style, { position: 'relative', display: 'inline-flex', alignItems: 'center' } as any);
-  
     const searchInput = document.createElement('input');
     searchInput.type = 'search';
     searchInput.placeholder = 'חיפוש: מחלקה / רופא / תורים / ימים';
     Object.assign(searchInput.style, {
-      width: '280px',
-      padding: '6px 10px',
-      border: '1px solid #cfd8dc',
-      borderRadius: '6px',
-      fontSize: '13px',
-      outline: 'none',
-      background: '#fff'
+      width: '280px', padding: '6px 10px', border: '1px solid #cfd8dc', borderRadius: '6px',
+      fontSize: '13px', outline: 'none', background: '#fff'
     } as any);
     searchWrap.appendChild(searchInput);
     toolbar.appendChild(searchWrap);
   
-    // ---- colors toggle button (persisted) ----
+    // colors toggle (persist)
     const LS_KEY_COLOR = 'appt_dept_colors_enabled';
-    let colorsEnabled = ((): boolean => {
-      const v = localStorage.getItem(LS_KEY_COLOR);
-      return v === null ? true : v !== '0';
-    })();
-  
+    let colorsEnabled = (localStorage.getItem(LS_KEY_COLOR) ?? '1') !== '0';
     const colorBtn = document.createElement('button');
     colorBtn.type = 'button';
     colorBtn.textContent = colorsEnabled ? 'כבה צבעי מחלקות' : 'הפעל צבעי מחלקות';
     Object.assign(colorBtn.style, {
       position: 'absolute', top: '8px', left: '8px',
-      padding: '6px 10px',
-      border: '1px solid #cfd8dc',
-      borderRadius: '6px',
-      background: '#fff',
-      cursor: 'pointer',
-      fontSize: '13px'
+      padding: '6px 10px', border: '1px solid #cfd8dc', borderRadius: '6px',
+      background: '#fff', cursor: 'pointer', fontSize: '13px'
     } as any);
     toolbar.appendChild(colorBtn);
   
+    // RESET button
+    const resetBtn = document.createElement('button');
+    resetBtn.type = 'button';
+    resetBtn.textContent = 'איפוס';
+    Object.assign(resetBtn.style, {
+      position: 'absolute', top: '8px', left: '148px',
+      padding: '6px 10px', border: '1px solid #cfd8dc', borderRadius: '6px',
+      background: '#fff', cursor: 'pointer', fontSize: '13px'
+    } as any);
+    toolbar.appendChild(resetBtn);
+  
     el.appendChild(toolbar);
   
-    // table host (separate div so we never wipe the toolbar)
+    // table host
     const tableHost = document.createElement('div');
     const hostId = `apptTableHost_${Math.random().toString(36).slice(2)}`;
     tableHost.id = hostId;
     tableHost.style.padding = '8px';
     el.appendChild(tableHost);
   
-    // ------- helper: dynamic widths for first 3 columns, table 100% -------
+    // ---------- HELPERS ----------
     const applyDynamicWidths = (hostId: string, fixedCols = 3) => {
-      const host = document.getElementById(hostId);
-      if (!host) return;
-      const tbl = host.querySelector('table') as HTMLTableElement | null;
-      if (!tbl) return;
-  
-      // Make the table occupy full width; last (unfixed) column will grow.
+      const tbl = document.querySelector<HTMLTableElement>(`#${hostId} table`); if (!tbl) return;
       tbl.style.width = '100%';
       tbl.style.tableLayout = 'auto';
   
-      // Ensure header cells wrapped
       const thead = tbl.querySelector('thead');
       if (thead) {
         thead.querySelectorAll('th').forEach((th, idx) => {
-          if (idx < fixedCols) {
-            if (!th.querySelector('.header-wrap')) {
-              const txt = th.innerHTML;
-              th.innerHTML = `<span class="header-wrap">${txt}</span>`;
-            }
-          }
+          if (idx < fixedCols && !th.querySelector('.header-wrap')) th.innerHTML = `<span class="header-wrap">${th.innerHTML}</span>`;
         });
       }
-  
-      // Ensure body cells have inline-block wrappers + padding
       const tbody = tbl.querySelector('tbody');
       if (tbody) {
         tbody.querySelectorAll('tr').forEach(tr => {
           tr.querySelectorAll('td').forEach((td, idx) => {
-            if (idx < fixedCols) {
-              if (!td.querySelector('.cell-wrap')) {
-                const current = td.innerHTML;
-                td.innerHTML = `<span class="cell-wrap">${current}</span>`;
-              }
-            }
+            if (idx < fixedCols && !td.querySelector('.cell-wrap')) td.innerHTML = `<span class="cell-wrap">${td.innerHTML}</span>`;
           });
         });
       }
-  
-      // Wrapper styles for fixed columns
       const setWrapStyles = (el: Element) => {
         const s = (el as HTMLElement).style;
-        s.display = 'inline-block';
-        s.paddingLeft = '20px';
-        s.paddingRight = '20px';
-        s.whiteSpace = 'nowrap';
-        s.boxSizing = 'content-box';
+        s.display = 'inline-block'; s.paddingLeft = '20px'; s.paddingRight = '20px';
+        s.whiteSpace = 'nowrap'; s.boxSizing = 'content-box';
       };
       tbl.querySelectorAll('.cell-wrap').forEach(setWrapStyles);
       tbl.querySelectorAll('.header-wrap').forEach(setWrapStyles);
   
-      // Measure max width per fixed column (including wrap + padding)
       const widths: number[] = new Array(fixedCols).fill(0);
-  
       if (thead) {
-        const ths = Array.from(thead.querySelectorAll('th')).slice(0, fixedCols);
-        ths.forEach((th, i) => {
+        Array.from(thead.querySelectorAll('th')).slice(0, fixedCols).forEach((th, i) => {
           const wrap = th.querySelector('.header-wrap') as HTMLElement | null;
-          const w = wrap ? wrap.offsetWidth : (th as HTMLElement).offsetWidth;
-          widths[i] = Math.max(widths[i], w);
+          widths[i] = Math.max(widths[i], (wrap?.offsetWidth ?? (th as HTMLElement).offsetWidth));
         });
       }
       if (tbody) {
         tbody.querySelectorAll('tr').forEach(tr => {
           Array.from(tr.children).slice(0, fixedCols).forEach((td, i) => {
             const wrap = (td as HTMLElement).querySelector('.cell-wrap') as HTMLElement | null;
-            const w = wrap ? wrap.offsetWidth : (td as HTMLElement).offsetWidth;
-            widths[i] = Math.max(widths[i], w);
+            widths[i] = Math.max(widths[i], (wrap?.offsetWidth ?? (td as HTMLElement).offsetWidth));
           });
         });
       }
-  
-      // Lock widths on first fixedCols; leave the last column free to expand
-      const setCellWidth = (cell: HTMLElement, w: number) => {
-        cell.style.width = `${w}px`;
-        cell.style.minWidth = `${w}px`;
-        cell.style.maxWidth = `${w}px`;
-      };
-  
+      const setW = (el: HTMLElement, w: number) => { el.style.width = el.style.minWidth = el.style.maxWidth = `${w}px`; };
       if (thead) {
         const ths = Array.from(thead.querySelectorAll('th')) as HTMLElement[];
-        ths.slice(0, fixedCols).forEach((th, i) => setCellWidth(th, widths[i]));
-        // Ensure the last column header doesn't get constrained
-        if (ths[fixedCols]) {
-          ths[fixedCols].style.width = '';
-          ths[fixedCols].style.minWidth = '';
-          ths[fixedCols].style.maxWidth = '';
-        }
+        ths.slice(0, fixedCols).forEach((th, i) => setW(th, widths[i]));
+        if (ths[fixedCols]) ths[fixedCols].style.width = ths[fixedCols].style.minWidth = ths[fixedCols].style.maxWidth = '';
       }
       if (tbody) {
         tbody.querySelectorAll('tr').forEach(tr => {
           const tds = Array.from(tr.children) as HTMLElement[];
-          tds.slice(0, fixedCols).forEach((td, i) => setCellWidth(td, widths[i]));
-          // Unfix the last column cell
-          if (tds[fixedCols]) {
-            tds[fixedCols].style.width = '';
-            tds[fixedCols].style.minWidth = '';
-            tds[fixedCols].style.maxWidth = '';
-          }
+          tds.slice(0, fixedCols).forEach((td, i) => setW(td, widths[i]));
+          if (tds[fixedCols]) tds[fixedCols].style.width = tds[fixedCols].style.minWidth = tds[fixedCols].style.maxWidth = '';
         });
       }
     };
   
-    
-    let currentUi: UiRow[] = baseUi.slice();
+    // arrows + sorting on all columns
+    const applyHeaderArrowsAndClicks = (hostId: string) => {
+      const thead = document.querySelector(`#${hostId} table thead`); if (!thead) return;
+      const ths = Array.from(thead.querySelectorAll('th')) as HTMLElement[];
+      const GREY = '#bdbdbd', BLACK = '#000';
+  
+      ths.forEach((th, i) => {
+        th.style.position = 'relative';
+        let arrows = th.querySelector('.sort-arrows') as HTMLElement | null;
+        if (!arrows) {
+          arrows = document.createElement('span');
+          arrows.className = 'sort-arrows';
+          Object.assign(arrows.style, {
+            position: 'absolute', left: '6px', top: '50%', transform: 'translateY(-50%)',
+            display: 'inline-flex', flexDirection: 'column', lineHeight: '10px', gap: '2px',
+            fontSize: '10px', userSelect: 'none', pointerEvents: 'auto', cursor: 'pointer'
+          } as any);
+          const up = document.createElement('span'); up.className = 'arrow-up'; up.textContent = '▲';
+          const dn = document.createElement('span'); dn.className = 'arrow-down'; dn.textContent = '▼';
+          arrows.appendChild(up); arrows.appendChild(dn);
+          th.appendChild(arrows);
+        }
+        const up = arrows.querySelector('.arrow-up') as HTMLElement;
+        const dn = arrows.querySelector('.arrow-down') as HTMLElement;
+        // default: grey
+        up.style.color = GREY; dn.style.color = GREY;
+        if (i === sortCol) (sortDir === 'asc' ? up : dn).style.color = BLACK;
+  
+        // click handlers set (col,dir) and redraw
+        const toAsc  = (ev: Event) => { ev.stopPropagation(); if (sortCol !== i || sortDir !== 'asc') { sortCol = i as 0|1|2|3; sortDir = 'asc'; onSortChanged(); } };
+        const toDesc = (ev: Event) => { ev.stopPropagation(); if (sortCol !== i || sortDir !== 'desc') { sortCol = i as 0|1|2|3; sortDir = 'desc'; onSortChanged(); } };
+        const toggle = () => { sortCol = i as 0|1|2|3; sortDir = (sortCol === i && sortDir === 'asc') ? 'desc' : 'asc'; onSortChanged(); };
+        up.onclick = toAsc; dn.onclick = toDesc; th.onclick = toggle; th.style.cursor = 'pointer';
+      });
+    };
+  
+    // ---------- DRAW ----------
+    let currentUi: UiRow[] = [];
   
     const drawFiltered = (ui: UiRow[]) => {
       currentUi = ui.slice();
   
       const google = (window as any).google;
       const dt = new google.visualization.DataTable();
-  
       dt.addColumn('string', 'מחלקה');
       dt.addColumn('string', 'רופא');
       dt.addColumn('number', 'תורים');
@@ -975,176 +971,145 @@ public async drawLeaderboardDepartments(containerId: string, dir: 'asc' | 'desc'
   
       const ratingHtml = (dept: string, q: number) => {
         const total = Math.max(1, deptTotalQ.get(dept) || q);
-        const scale = 5;
-        const val = Math.min(scale, (q / total) * scale);
-  
-        let full = Math.floor(val);
-        let half = (val - full) >= 0.5 ? 1 : 0;
+        const scale = 5, val = Math.min(scale, (q / total) * scale);
+        let full = Math.floor(val), half = (val - full) >= 0.5 ? 1 : 0;
         if (q > 0 && full + half === 0) half = 1;
-  
         const empty = Math.max(0, scale - full - half);
         const icon = (n: string, style = '') => `<span class="material-icons" style="${style}">${n}</span>`;
-  
         return `
           <div class="rating">
             ${icon('person').repeat(full)}
-            ${half ? icon('person_outline', 'color:#9e9e9e;') : ''}
-            ${icon('person_outline', 'color:#cfcfcf;').repeat(empty)}
+            ${half ? icon('person_outline','color:#9e9e9e;') : ''}
+            ${icon('person_outline','color:#efefef;').repeat(empty)}
             <span class="q-num" style="line-height:0.34em;vertical-align:text-top;">${q}</span>
-          </div>
-        `;
+          </div>`;
       };
   
-      const totalBadge = (q: number) =>
-        `<span class="q-total-badge" title="סה״כ תורים במחלקה תורים במחלקה">סה״כ תורים במחלקה ${q}</span>`;
+      const totalBadge = (q: number) => `<span class="q-total-badge" title="סה״כ תורים במחלקה">סה״כ תורים במחלקה ${q}</span>`;
   
-      
       const maxAvg = Math.max(1, ...ui.map(r => r.avg));
       const avgBar = (avg: number) => {
         const p = Math.round((avg / maxAvg) * 100);
         const h = Math.round((1 - p / 100) * 120);
-        const color = `hsl(${h}, 65%, 55%)`;
-        return `
-          <div class="avgbar">
-            <div class="bar" style="width:${p}%;background:${color}">
-              <span class="val">${avg}</span>
-            </div>
-          </div>`;
+        return `<div class="avgbar"><div class="bar" style="width:${p}%;background:hsl(${h},65%,55%)"><span class="val">${avg}</span></div></div>`;
       };
   
-      
       ui.forEach(r => {
-        const deptCellHtml = r.isHeader
-          ? `<span class="dept-bold">${r.dept}</span>`
-          : `<span class="cell-muted">${r.dept}</span>`;
-        const docCellHtml  = r.isHeader
-          ? `<span class="dept-bold">${r.doctor}</span>`
-          : r.doctor;
-  
-        const qCellHtml = r.isHeader ? totalBadge(r.q) : ratingHtml(r.dept, r.q);
-  
-        const deptCell = { v: r.dept,   f: `<span class="cell-wrap">${deptCellHtml}</span>` };
-        const docCell  = { v: r.doctor, f: `<span class="cell-wrap">${docCellHtml}</span>` };
-        const qCell    = { v: r.q,      f: `<span class="cell-wrap">${qCellHtml}</span>` };
-        const avgCell  = { v: r.avg,    f: avgBar(r.avg) };
-  
-        dt.addRow([deptCell as any, docCell as any, qCell as any, avgCell as any]);
+        const deptCellHtml = r.isHeader ? `<span class="dept-bold">${r.dept}</span>` : `<span class="cell-muted">${r.dept}</span>`;
+        const docCellHtml  = r.isHeader ? `<span class="dept-bold">${r.doctor}</span>` : r.doctor;
+        const qCellHtml    = r.isHeader ? totalBadge(r.q) : ratingHtml(r.dept, r.q);
+        dt.addRow([
+          { v: r.dept,   f: `<span class="cell-wrap">${deptCellHtml}</span>` } as any,
+          { v: r.doctor, f: `<span class="cell-wrap">${docCellHtml}</span>` } as any,
+          { v: r.q,      f: `<span class="cell-wrap">${qCellHtml}</span>` } as any,
+          { v: r.avg,    f: avgBar(r.avg) } as any
+        ]);
       });
   
       const table = new google.visualization.Table(document.getElementById(hostId));
       const opts: any = {
-        allowHtml: true,        
+        allowHtml: true,
         width: '100%',
         alternatingRowStyle: false,
-        cssClassNames: { tableCell: 'app-table', headerCell: 'app-table' }
+        cssClassNames: { tableCell: 'app-table', headerCell: 'app-table' },
+        sort: 'disable' // we control sort
       };
   
       google.visualization.events.addListener(table, 'ready', () => {
         const host = document.getElementById(hostId)!;
         const trs = host.querySelectorAll('table tbody tr');
   
-        
-        const groupMeta: Array<{ dept: string; start: number; end: number; color: string }> = [];
+        // group rows (header first in each group)
+        const groups: Array<{ dept: string; start: number; end: number; color: string }> = [];
         let startIdx = 0;
         for (let i = 1; i <= ui.length; i++) {
           if (i === ui.length || ui[i].dept !== ui[startIdx].dept) {
             const dept = ui[startIdx].dept;
-            groupMeta.push({ dept, start: startIdx, end: i - 1, color: deptBand(dept) });
+            groups.push({ dept, start: startIdx, end: i - 1, color: deptBand(dept) });
             startIdx = i;
           }
         }
   
-        // apply or clear department colors based on current toggle
-        groupMeta.forEach(g => {
+        // style groups: header dark fixed; others optional pastel
+        groups.forEach(g => {
           for (let r = g.start; r <= g.end; r++) {
-            const tr = trs[r] as HTMLElement;
-            if (!tr) continue;
-            tr.style.background = colorsEnabled ? g.color : '';
+            const tr = trs[r] as HTMLElement; if (!tr) continue;
+            if (r === g.start) {
+              tr.style.background = '#7d7d7d';
+              tr.style.color = '#ffffff';
+              tr.style.fontWeight = '700';
+            } else {
+              tr.style.background = colorsEnabled ? g.color : '';
+              tr.style.color = '';
+              tr.style.fontWeight = '';
+            }
           }
-          const headerTr = trs[g.start] as HTMLElement;
-          if (headerTr) headerTr.style.fontWeight = '700';
         });
-  
-        // this.mountGroupToggleButton(el, () => {
-        //   this.drawAppointmentsTable(el, dir === 'asc' ? 'desc' : 'asc');
-        // });
   
         const tbl = host.querySelector('table') as HTMLElement;
         if (tbl) tbl.setAttribute('dir', 'rtl');
   
-        // After the table is in the DOM, fix first 3 column widths; last column fills the rest.
         applyDynamicWidths(hostId, 3);
+        applyHeaderArrowsAndClicks(hostId); // now works for all columns and stays in sync
       });
   
       this.drawSafe(table, dt, opts, hostId);
     };
   
-    // initial draw with full dataset
-    drawFiltered(baseUi);
-  
-    // ---- search wiring (always include department header) ----
-    let searchTimer: any = null;
+    // search + filter (keeps headers if any match in group)
     const applySearch = () => {
       const q = (searchInput.value || '').toLowerCase().trim();
-      if (!q) {
-        drawFiltered(baseUi);
-        return;
-      }
+      const full = buildUi(); // build with current sort
+      if (!q) { baseUi = full; drawFiltered(baseUi); return; }
   
-      // Build filtered list while ALWAYS including the header of any matching department
       const filtered: UiRow[] = [];
-      // group baseUi by department (preserving order)
-      const deptBlocks: Record<string, UiRow[]> = {};
+      const blocks: Record<string, UiRow[]> = {};
       const order: string[] = [];
-      let curDept = '';
-      baseUi.forEach(r => {
-        if (r.isHeader) { curDept = r.dept; order.push(curDept); deptBlocks[curDept] = []; }
-        deptBlocks[curDept].push(r);
-      });
+      let cur = '';
+      full.forEach(r => { if (r.isHeader) { cur = r.dept; order.push(cur); blocks[cur] = []; } blocks[cur].push(r); });
   
       for (const dept of order) {
-        const block = deptBlocks[dept] || [];
-        if (block.length === 0) continue;
-  
-        const header = block[0]; // header first
-        const doctors = block.slice(1);
-  
+        const block = blocks[dept]; if (!block?.length) continue;
+        const header = block[0], doctors = block.slice(1);
         const headerMatches =
-          (header.dept || '').toLowerCase().includes(q) ||
+          header.dept.toLowerCase().includes(q) ||
           String(header.q).includes(q) ||
           String(header.avg).includes(q);
-  
-        const matchedDoctors = doctors.filter(d => {
-          return (d.doctor || '').toLowerCase().includes(q)
-              || (d.dept || '').toLowerCase().includes(q)
-              || String(d.q).includes(q)
-              || String(d.avg).includes(q);
-        });
-  
-        if (headerMatches || matchedDoctors.length > 0) {
-          filtered.push(header);                // ✅ always include header if anything in dept matches
-          filtered.push(...(headerMatches ? doctors : matchedDoctors));
-        }
+        const matches = doctors.filter(d =>
+          d.dept.toLowerCase().includes(q) || d.doctor.toLowerCase().includes(q) ||
+          String(d.q).includes(q) || String(d.avg).includes(q)
+        );
+        if (headerMatches || matches.length) filtered.push(header, ...(headerMatches ? doctors : matches));
       }
-  
-      drawFiltered(filtered);
+      baseUi = filtered;
+      drawFiltered(baseUi);
     };
   
-    searchInput.addEventListener('input', () => {
-      clearTimeout(searchTimer);
-      searchTimer = setTimeout(applySearch, 200);
-    });
+    const onSortChanged = () => { applySearch(); }; // rebuild with new sort & redraw
   
-    // toggle button behavior
+    // initial draw
+    applySearch();
+  
+    // interactions
+    let searchTimer: any = null;
+    searchInput.addEventListener('input', () => { clearTimeout(searchTimer); searchTimer = setTimeout(applySearch, 200); });
+  
     colorBtn.addEventListener('click', () => {
       colorsEnabled = !colorsEnabled;
       localStorage.setItem(LS_KEY_COLOR, colorsEnabled ? '1' : '0');
-      colorBtn.textContent = colorsEnabled ? 'כבה צבעי מחלקות' : 'הפעל צבעי מחלקות';
-      // redraw current view to apply/remove colors
-      drawFiltered(currentUi);
+      applySearch();
+    });
+  
+    // RESET: clear search, reset sort to default (avg desc), enable colors
+    resetBtn.addEventListener('click', () => {
+      searchInput.value = '';
+      sortCol = 3; sortDir = 'desc';
+      colorsEnabled = true;
+      localStorage.setItem(LS_KEY_COLOR, '1');
+      applySearch();
+      // also update button label
+      colorBtn.textContent = 'כבה צבעי מחלקות';
     });
   }
-  
-  
   
 }

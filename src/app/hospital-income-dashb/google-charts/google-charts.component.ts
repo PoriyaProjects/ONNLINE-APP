@@ -19,12 +19,7 @@ export class GoogleChartsIncomeComponent implements AfterViewInit {
     this.loadCharts();    
   }
 
-  ngOnInit(): void {
-    const link = this.renderer.createElement('link');
-    link.rel = 'stylesheet';
-    link.href = './assets/kassets/klubamed.css';
-    document.head.appendChild(link);
-  }
+ 
 
   @HostListener('window:resize')
   onResize(): void {
