@@ -349,7 +349,7 @@ bad:  '#7F1D1D'  // red-900
     name: 'אחיד כחול',
     series: ['#6BA1F8','#6BA1F8','#6BA1F8','#6BA1F8','#6BA1F8','#6BA1F8','#6BA1F8'],
     department: [
-      '6BA1F8','#6BA1F8','#6BA1F8','#6BA1F8','#6BA1F8','#6BA1F8','#6BA1F8',
+      '#6BA1F8','#6BA1F8','#6BA1F8','#6BA1F8','#6BA1F8','#6BA1F8','#6BA1F8',
       '#6BA1F8','#6BA1F8','#6BA1F8','#6BA1F8','#6BA1F8','#6BA1F8',
       '#6BA1F8','#6BA1F8','#6BA1F8','#6BA1F8'
     ],
@@ -393,7 +393,45 @@ bad:  '#7F1D1D'  // red-900
     ]
   };
   
-const THEMES: DashboardPalette[] = [THEME_SINGLEBLUE, THEME_SINGLELEAD, THEME_CLASSIC, THEME_DARK, THEME_MONO, THEME_PASTEL, HIGH_CONTRAST];
+
+    const THEME_SINGLEGRAY: DashboardPalette = {
+  name: 'אחיד אפור',
+  series: [
+    '#555555','#555555','#555555',
+    '#555555','#555555','#555555','#555555'
+  ],
+  department: [
+    '#555555','#555555','#555555','#555555',
+    '#555555','#555555','#555555',
+    '#555555','#555555','#555555',
+    '#555555','#555555','#555555',
+    '#555555','#555555','#555555','#555555'
+  ],
+  datasource: { 
+    MorningDelay: '#999999', 
+    EndDay: '#BBBBBB', 
+    SetupTime: '#777777' 
+  },
+  tableStatus: { 
+    good: '#F0F0F0', 
+    warn: '#AAAAAA', 
+    bad:  '#555555' 
+  },
+  tableHeatmap: [
+    '#F5F5F5', // very light
+    '#E0E0E0',
+    '#CCCCCC',
+    '#B8B8B8',
+    '#A3A3A3',
+    '#8F8F8F',
+    '#7A7A7A',
+    '#666666',
+    '#525252',
+    '#3D3D3D'  // base / darkest
+  ]
+};
+
+const THEMES: DashboardPalette[] = [THEME_SINGLEGRAY, THEME_SINGLEBLUE, THEME_SINGLELEAD, THEME_CLASSIC, THEME_DARK, THEME_MONO, THEME_PASTEL, HIGH_CONTRAST];
 
 @Injectable({ providedIn: 'root' })
 export class PaletteService {
