@@ -8,6 +8,7 @@ import { sanitizeSoapResponse } from 'src/app/shared/sanitizesoapresponce';
 import { drawOverlayDualArcChartHelperRoomTime } from 'src/app/shared/drawOverlayDualArcChartHelperRoomTime';
 import { drawOverlayArcChartHelperRoomTime } from 'src/app/shared/ArcChartHelperRoomTime';
 
+
 import {
   CHART_SERIES_PALETTE,
   PERIOD_TYPE_MAP,
@@ -24,7 +25,8 @@ import {
   DEFAULT_CHART_AREA, DEFAULT_HAXIS, DEFAULT_ANNOTATIONS, 
   getHeatmapScale, getStatusColors, PaletteService,
   readableTextColor,
-  textOutlineCSS
+  textOutlineCSS,
+  buildColumnOptions,
 } from '../../shared/charts-config';
 import { drawHorizontalMultiPeriodChartHelperRoomTime } from 'src/app/shared/drawHorizontalMultiPeriodChartHelperRoomTime';
 
@@ -878,7 +880,6 @@ onScroll() {
 
 
 
-
 public async drawSetupTimeQCharts(
   elementIdsByPeriod: { [period: string]: string }, // period -> chart div id
   url: string,
@@ -886,21 +887,44 @@ public async drawSetupTimeQCharts(
 ): Promise<void> {
   await this.waitUntilChartsReady();
 
+  // ---- helpers (Angular 9 safe) ----
   var isSetupDS = function (ds: string): boolean {
     return /setup\s*time/i.test(String(ds || ''));
   };
-
-  // read Q from last column (SOAP/Google Charts row)
   var getQ = function (r: any): number {
     var cells = (r && (r.cells || r.c)) || r;
     if (cells && cells.length && cells instanceof Array) {
       var last = cells[cells.length - 1];
-      var v = (last && (typeof last === 'object' ? (('v' in last ? (last as any).v : (last as any).value)) : last)) as any;
+      var v: any = (last && typeof last === 'object') ? (('v' in last) ? last.v : (last as any).value) : last;
       var n = Number(v);
       return isFinite(n) ? n : 0;
     }
     return 0;
   };
+
+  // ---- pull colors from DashboardPalette FIRST ----
+  // Expected shape (adapt if needed):
+  //   getDashboardPalette() => { series: string[], datasources: { [key: string]: string } }
+  var dash = (this.palette && (this.palette as any).getDashboardPalette)
+    ? (this.palette as any).getDashboardPalette()
+    : null;
+
+  var seriesPalette = (dash && dash.series && dash.series.length)
+    ? dash.series
+    : ((this.palette && (this.palette as any).getSeriesPalette)
+        ? (this.palette as any).getSeriesPalette()
+        : ['#999', '#777', '#555', '#333', '#111']);
+
+  // robust single-series color for SetupTime (DASHBOARD-DRIVEN)
+  var pickSetupColor = function(): string {
+    if (dash && dash.datasources && (dash.datasources as any)['SetupTime']) return (dash.datasources as any)['SetupTime'];
+    if (dash && dash.series && dash.series.length) return dash.series[0];
+    if (this && (this as any).palette && (this as any).palette.getDataSourceColor) {
+      return (this as any).palette.getDataSourceColor('SetupTime');
+    }
+    if (seriesPalette && seriesPalette.length) return seriesPalette[0];
+    return '#777';
+  }.bind(this);
 
   for (var period in elementIdsByPeriod) {
     if (!elementIdsByPeriod.hasOwnProperty(period)) continue;
@@ -910,34 +934,26 @@ public async drawSetupTimeQCharts(
     var chartEl = document.getElementById(chartElId);
     if (!chartEl) continue;
 
-    // fetch rows for this period
+    // fetch + sanitize
     var raw = await this.fetchWithCache(this.buildUrl(url, { dataType: period }));
     var clean = sanitizeSoapResponse(raw);
+    if (!clean || !clean.rows || !clean.rows.length) { chartEl.innerHTML = 'אין נתונים להצגה'; continue; }
 
-    if (!clean || !clean.rows || !clean.rows.length) {
-      chartEl.innerHTML = 'אין נתונים להצגה';
-      continue;
-    }
-
-    // filter to SetupTime (DataSource is column 0)
+    // filter SetupTime rows (DataSource at col 0)
     var setupRows: any[] = [];
     for (var i = 0; i < clean.rows.length; i++) {
       var rr: any = clean.rows[i];
-      var dsCell = rr && (rr.cells || rr.c);
+      var cells0 = rr && (rr.cells || rr.c);
       var ds = '';
-      if (dsCell && dsCell.length) {
-        var c0 = dsCell[0];
-        ds = String((c0 && (typeof c0 === 'object' ? (('v' in c0 ? c0.v : c0.value)) : c0)) || '');
+      if (cells0 && cells0.length) {
+        var c0 = cells0[0];
+        ds = String((c0 && typeof c0 === 'object') ? (('v' in c0) ? c0.v : c0.value || '') : (c0 || ''));
       }
       if (isSetupDS(ds)) setupRows.push(rr);
     }
+    if (!setupRows.length) { chartEl.innerHTML = 'אין נתונים להצגה'; continue; }
 
-    if (!setupRows.length) {
-      chartEl.innerHTML = 'אין נתונים להצגה';
-      continue;
-    }
-
-    // Aggregate Q
+    // aggregate Q
     var byDept: { [dept: string]: number } = {};
     var byDeptYear: { [dept: string]: { [yy: string]: number } } = {};
     var currYY = new Date().getFullYear().toString().substring(2);
@@ -961,33 +977,20 @@ public async drawSetupTimeQCharts(
 
     var title = 'ספירת מקרים ' + translateDataSource('SetupTime') + ' - ' + translateTimeframe(period);
 
-    // ================= Parallels (multi-years) =================
+    // ========= Parallels (multi-years) =========
     if (period === '4-ParallelsPeriod') {
-      // collect distinct years safely (no flatMap)
       var yearsSeen: { [yy: string]: true } = {};
       for (var deptKey in byDeptYear) {
         if (!byDeptYear.hasOwnProperty(deptKey)) continue;
         var perYear = byDeptYear[deptKey];
-        for (var yyKey in perYear) {
-          if (perYear.hasOwnProperty(yyKey)) yearsSeen[yyKey] = true;
-        }
+        for (var yyKey in perYear) if (perYear.hasOwnProperty(yyKey)) yearsSeen[yyKey] = true;
       }
-
       var years = Object.keys(yearsSeen).sort(function (a, b) { return Number(b) - Number(a); });
-      // if you want to cap to last 3 years, uncomment:
-      // years = years.slice(0, 3);
+      if (!years.length) { chartEl.innerHTML = 'אין נתונים להצגה'; continue; }
 
-      if (!years.length) {
-        chartEl.innerHTML = 'אין נתונים להצגה';
-        continue;
-      }
-
-      // Build DataTable: Dept | '22 | '23 | '24 ...
       var dt = new google.visualization.DataTable();
       dt.addColumn('string', 'מחלקה');
-      for (var yi = 0; yi < years.length; yi++) {
-        dt.addColumn('number', "'" + years[yi]); // series per year
-      }
+      for (var yi = 0; yi < years.length; yi++) dt.addColumn('number', "'" + years[yi]);
 
       var anyRow = false;
       for (var dept2 in byDeptYear) {
@@ -1001,47 +1004,43 @@ public async drawSetupTimeQCharts(
           if (vnum > 0) nonZero = true;
           rowArr.push(vnum);
         }
-        // hide all-zero rows
-        if (nonZero) {
-          dt.addRow(rowArr);
-          anyRow = true;
-        }
+        if (nonZero) { dt.addRow(rowArr); anyRow = true; }
       }
+      if (!anyRow) { chartEl.innerHTML = 'אין נתונים להצגה'; continue; }
 
-      if (!anyRow) {
-        chartEl.innerHTML = 'אין נתונים להצגה';
-        continue;
-      }
-
-      // Add annotations (value labels) for each series via DataView
+      // annotations
       var view = new google.visualization.DataView(dt);
-      var cols: any[] = [0]; // dept name
-      for (var s = 0; s < years.length; s++) {
-        (function (seriesCol: number) {
-          cols.push(seriesCol);
-          cols.push({
-            calc: function (dtAny: any, rowIdx: number) {
-              var vv = dtAny.getValue(rowIdx, seriesCol);
-              return (vv != null && vv !== 0) ? String(vv) : null;
-            },
-            type: 'string',
-            role: 'annotation'
-          });
-        })(s + 1); // series columns start at 1
-      }
+      var cols: any[] = [0];
+      for (var s = 0; s < years.length; s++) (function (seriesCol: number) {
+        cols.push(seriesCol);
+        cols.push({
+          calc: function (dtAny: any, rowIdx: number) {
+            var vv = dtAny.getValue(rowIdx, seriesCol);
+            return (vv != null && vv !== 0) ? String(vv) : null;
+          },
+          type: 'string',
+          role: 'annotation'
+        });
+      })(s + 1);
       view.setColumns(cols);
 
-      var options: any = {
+      // dashboard palette for multi-series
+      var multiColors = seriesPalette.slice(0, years.length);
+
+      var options = buildColumnOptions({
+        title: title,
         legend: { position: 'top' },
-        width: '100%',
-        height: 250,
         hAxis: { slantedText: true },
         vAxis: { minValue: 0 },
-        animation: { duration: 300, easing: 'out' },
         annotations: { alwaysOutside: true, textStyle: { fontSize: 12, bold: true } },
         bar: { groupWidth: '70%' },
-        allowHtml: true
-      };
+        animation: { duration: 300, easing: 'out' }
+      });
+      // enforce dashboard colors AFTER buildColumnOptions
+      options.colors = multiColors;
+      var seriesMap: any = {};
+      for (var si = 0; si < multiColors.length; si++) seriesMap[si] = { color: multiColors[si] };
+      options.series = seriesMap;
 
       var chart = new google.visualization.ColumnChart(chartEl);
       chart.draw(view, options);
@@ -1053,12 +1052,10 @@ public async drawSetupTimeQCharts(
         (titleEl as HTMLElement).style.textAlign = 'center';
         (titleEl as HTMLElement).style.margin = '10px 0';
       }
-
-      continue; // done with parallels
+      continue;
     }
 
-    // ================= Single-period (month / year) =================
-    // Dept | Q  + annotations
+    // ========= Single period (month / year) — DASHBOARD COLOR =========
     var dt2 = new google.visualization.DataTable();
     dt2.addColumn('string', 'מחלקה');
     dt2.addColumn('number', 'כמות מקרים (Q)');
@@ -1068,45 +1065,39 @@ public async drawSetupTimeQCharts(
     for (var dk = 0; dk < deptKeys.length; dk++) {
       var dname = deptKeys[dk];
       var qval = byDept[dname] || 0;
-      if (qval > 0) {
-        dt2.addRow([dname, qval]);
-        anyRow2 = true;
-      }
+      if (qval > 0) { dt2.addRow([dname, qval]); anyRow2 = true; }
     }
+    if (!anyRow2) { chartEl.innerHTML = 'אין נתונים להצגה'; continue; }
 
-    if (!anyRow2) {
-      chartEl.innerHTML = 'אין נתונים להצגה';
-      continue;
-    }
-
-    // DataView to add annotation for the single series
     var view2 = new google.visualization.DataView(dt2);
     view2.setColumns([
-      0,
-      1,
-      {
-        calc: function (dtAny: any, rowIdx: number) {
+      0, 1,
+      { calc: function (dtAny: any, rowIdx: number) {
           var vv = dtAny.getValue(rowIdx, 1);
           return (vv != null && vv !== 0) ? String(vv) : null;
-        },
-        type: 'string',
-        role: 'annotation'
-      }
+        }, type: 'string', role: 'annotation' }
     ]);
 
-    var chart2 = new google.visualization.ColumnChart(chartEl);
-    chart2.draw(view2, {
+    // PICK COLOR STRICTLY FROM DASHBOARD
+    var setupColor = pickSetupColor();
+
+    var options2 = buildColumnOptions({
+      title: title,
       legend: 'none',
-      width: '100%',
-      height: 250,
       hAxis: { slantedText: true },
       vAxis: { minValue: 0 },
-      animation: { duration: 300, easing: 'out' },
       annotations: { alwaysOutside: true, textStyle: { fontSize: 12, bold: true } },
       bar: { groupWidth: '70%' },
-      tooltip: { isHtml: true },
-      allowHtml: true
+      animation: { duration: 300, easing: 'out' },
+      tooltip: { isHtml: true }
     });
+
+    // enforce DashboardPalette color AFTER buildColumnOptions (both colors & series)
+    options2.colors = [setupColor];
+    options2.series = { 0: { color: setupColor } };
+
+    var chart2 = new google.visualization.ColumnChart(chartEl);
+    chart2.draw(view2, options2);
 
     if (titleEl) {
       titleEl.innerHTML = title;
@@ -1117,7 +1108,6 @@ public async drawSetupTimeQCharts(
     }
   }
 }
-
 
 
 }
