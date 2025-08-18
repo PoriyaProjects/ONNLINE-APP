@@ -475,18 +475,19 @@
             <hr>
             <div class="section" *ngIf="dorit_note_answer">
               <mat-label>תשובת התאגיד</mat-label>
-              <p *ngIf="user_name != 'dnudelman'"> {{ Training_Request_Forms_D.get('Training_Fund_Answer').value }}
+              <p *ngIf="user_name != 'dnudelman' && user_name != 'lnachmani'"> {{
+                Training_Request_Forms_D.get('Training_Fund_Answer').value }}
               </p>
-              <mat-form-field *ngIf="user_name == 'dnudelman' || user_name == 'adahabre'">
+              <mat-form-field *ngIf="user_name == 'dnudelman' || user_name != 'lnachmani' || user_name == 'adahabre'">
                 <mat-label>תשובת התאגיד</mat-label>
                 <textarea matInput formControlName="Training_Fund_Answer" rows="2"></textarea>
               </mat-form-field>
             </div>
           </mat-card-content>
         </mat-card>
-        <button mat-raised-button color="primary" type="submit" class="submitBtn" (click)="onSubmit(0)"
+        <!-- <button mat-raised-button color="primary" type="submit" class="submitBtn" (click)="onSubmit(0)"
           *ngIf="Training_Request_Forms_E.get('Sent_To_Manager').value != 'True'">שמירה
-          כטיוטה</button>
+          כטיוטה</button> -->
       </form>
       <div>
         <button mat-button matStepperPrevious class="stepBtn">חזרה</button>
@@ -774,7 +775,8 @@
       </div>
     </mat-step>
     <mat-step [stepControl]="Training_Request_Forms_H"
-      *ngIf="!requested && Training_Request_Forms_F.get('Approved').value" errorMessage="שכחת שדות חובה.">
+      *ngIf="!requested && Training_Request_Forms_F.get('Approved').value && (user_name == 'adahabre' || user_name == 'ttsrefati' || user_name == 'ssabach')"
+      errorMessage="שכחת שדות חובה.">
       <form [formGroup]="Training_Request_Forms_H">
         <ng-template matStepLabel>ועדת החלטה</ng-template>
         <mat-card-content>
