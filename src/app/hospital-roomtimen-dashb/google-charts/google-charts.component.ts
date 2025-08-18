@@ -15,7 +15,7 @@ import {
   buildTimeTicksFromRaw,
   buildColumnOptions,
   buildDeptDrilldown,
-  stickyByMarker, PaletteService 
+  stickyByMarker, PaletteService
 } from '../../shared/charts-config';
 
 interface DepartmentMetricEntry {
@@ -46,12 +46,12 @@ export class RoomTimeNDashboardComponent implements OnInit, AfterViewInit {
   selectedDepartmentCharts: any[] = [];
 
   readonly dataTypes = [
-    { value: '1-Yesterday',      label: PERIOD_TYPE_MAP['1-Yesterday'].label },
-    { value: '2-CurrentMonth',   label: PERIOD_TYPE_MAP['2-CurrentMonth'].label },
-    { value: '3-CurrentYear',    label: PERIOD_TYPE_MAP['3-CurrentYear'].label },
-    { value: '4-ParallelsPeriod',label: PERIOD_TYPE_MAP['4-ParallelsPeriod'].label }
+    { value: '1-Yesterday',       label: PERIOD_TYPE_MAP['1-Yesterday'].label },
+    { value: '2-CurrentMonth',    label: PERIOD_TYPE_MAP['2-CurrentMonth'].label },
+    { value: '3-CurrentYear',     label: PERIOD_TYPE_MAP['3-CurrentYear'].label },
+    { value: '4-ParallelsPeriod', label: PERIOD_TYPE_MAP['4-ParallelsPeriod'].label }
   ];
-  selectedDataType = '2-CurrentMonth';
+  selectedDataType: '1-Yesterday'|'2-CurrentMonth'|'3-CurrentYear'|'4-ParallelsPeriod' = '2-CurrentMonth';
   activeTab: 'avg' | 'agg' = 'avg';
 
   dataSources = ['MorningDelay', 'EndDay', 'SetupTime'];
@@ -83,6 +83,13 @@ export class RoomTimeNDashboardComponent implements OnInit, AfterViewInit {
   selectedDepartmentAggChartChunks: any[][] = [];
   public selectedDepartmentChartChunks: any[][] = [];
 
+  // NEW: SetupTime Q charts (period -> chart div id)
+  private setupTimeQChartIds: { [period: string]: string } = {
+    '2-CurrentMonth':    'chartSetupTimeQ_2-CurrentMonth',
+    '3-CurrentYear':     'chartSetupTimeQ_3-CurrentYear',
+    '4-ParallelsPeriod': 'chartSetupTimeQ_4-ParallelsPeriod'
+  };
+
   constructor(
     public googleChartsService: GoogleChartsService,
     private deptColors: DepartmentColorService,
@@ -104,14 +111,15 @@ export class RoomTimeNDashboardComponent implements OnInit, AfterViewInit {
       '#A39DCD'
     );
 
+    // Tables with Q in last column
     this.googleChartsService.drawAllDepartmentTables(
       this.elementIdsByPeriod,
-      `${environment.url}/GetRoomTimeAvgD`
+      `${environment.url}/GetRoomTimeAvgDQ`
     );
 
     this.googleChartsService.drawAllDepartmentTablesSum(
       this.elementIdsByPeriodSummarized,
-      `${environment.url}/GetRoomAggregateDaysD`
+      `${environment.url}/GetRoomAggregateDaysDQ`
     );
 
     this.loadAllAggregateData();
@@ -126,6 +134,8 @@ export class RoomTimeNDashboardComponent implements OnInit, AfterViewInit {
     this.resizeTimeout = setTimeout(() => {
       this.loadCharts();
       this.redrawVisibleDepartmentCharts();
+      // redraw SetupTime Q charts if details are open
+      if (this.isOpen('SetupTime')) this.drawSetupTimeQSection();
     }, 300);
   }
 
@@ -140,6 +150,7 @@ export class RoomTimeNDashboardComponent implements OnInit, AfterViewInit {
     setTimeout(() => {
       this.loadCharts();
       this.redrawVisibleDepartmentCharts();
+      if (this.isOpen('SetupTime')) this.drawSetupTimeQSection();
     }, 0);
   }
 
@@ -199,7 +210,7 @@ export class RoomTimeNDashboardComponent implements OnInit, AfterViewInit {
       'SetupTime_avg': 'SetupTime_avg'
     });
 
-    // period data for legend + drilldown
+    // legend + drilldown data
     this.googleChartsService.getAggregateData(this.selectedDataType).subscribe((xml: string) => {
       const data = sanitizeSoapChartData(xml);
       data.forEach(row => {
@@ -233,7 +244,9 @@ export class RoomTimeNDashboardComponent implements OnInit, AfterViewInit {
   }
 
   toggleGroup(group: string): void {
-    this.openGroup = this.openGroup === group ? null : group;
+    const wasOpen = this.openGroup === group;
+    this.openGroup = wasOpen ? null : group;
+
     if (this.openGroup) {
       setTimeout(() => {
         const el = document.getElementById('group_' + group);
@@ -245,6 +258,11 @@ export class RoomTimeNDashboardComponent implements OnInit, AfterViewInit {
           setTimeout(() => el.classList.remove('flash-highlight'), 1500);
         }
       }, 300);
+    }
+
+    // NEW: render SetupTime Q charts on open
+    if (group === 'SetupTime' && this.isOpen('SetupTime')) {
+      setTimeout(() => this.drawSetupTimeQSection(), 0);
     }
   }
 
@@ -434,30 +452,36 @@ export class RoomTimeNDashboardComponent implements OnInit, AfterViewInit {
     });
   }
 
-
-
+  // THEME
   onThemeChange(name: string) {
     this.palette.setTheme(name);
     this.deptColors.setPalette(this.palette.getDepartmentPalette(), this.palette.name);
+
     // pick up new series/datasource palettes on redraw:
     this.loadCharts();
     this.redrawVisibleDepartmentCharts();
+
     this.googleChartsService.drawSummarizedMultiPeriodChart(
       'multiPeriodSummary',
       `${environment.url}/GetRoomTimeAvgD`,
       `${environment.url}/GetRoomAggregateDaysD`,
       '#A39DCD'
     );
+
+    // FIX: keep DQ endpoints here so Q is available in tables
     this.googleChartsService.drawAllDepartmentTables(
       this.elementIdsByPeriod,
-      `${environment.url}/GetRoomTimeAvgD`
+      `${environment.url}/GetRoomTimeAvgDQ`
     );
     this.googleChartsService.drawAllDepartmentTablesSum(
       this.elementIdsByPeriodSummarized,
-      `${environment.url}/GetRoomAggregateDaysD`
+      `${environment.url}/GetRoomAggregateDaysDQ`
     );
+
+    // redraw Q charts if SetupTime open
+    if (this.isOpen('SetupTime')) this.drawSetupTimeQSection();
   }
-  
+
   cycleTheme() {
     const all = this.palette.list();
     const idx = all.indexOf(this.palette.name);
@@ -468,5 +492,15 @@ export class RoomTimeNDashboardComponent implements OnInit, AfterViewInit {
   getDepartmentColorPublic(dept: string) {
     return this.deptColors.colorFor(dept);
   }
-  
+
+  // ==== NEW: render SetupTime Q charts (counts) ====
+  private async drawSetupTimeQSection(): Promise<void> {
+    // Uses the endpoint that includes Q (last column)
+    const url = `${environment.url}/GetRoomTimeAvgDQ`;
+    try {
+      await this.googleChartsService.drawSetupTimeQCharts(this.setupTimeQChartIds, url, /*excludeCurrentYear*/ true);
+    } catch (e) {
+      console.error('Error drawing SetupTime Q charts', e);
+    }
+  }
 }
