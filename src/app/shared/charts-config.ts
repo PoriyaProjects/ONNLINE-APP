@@ -191,26 +191,26 @@ return shades[idx];
     const raw: number[] = [];
   
     for (let i = 0; i < order.length; i++) {
-const p = order[i];
-const m = metrics.find(x => x.period === p);
-const a = m && typeof m.avg === 'number' ? m.avg : 0;
-const d = m && typeof m.days === 'number' ? m.days : 0;
-raw.push(a);
-const label = translateTimeframe(p);
-// For tooltip/annotation we want HH:MM — our formatter expects seconds.
-const hhmm = formatToHHMM(a * 60);
-const tip = 'ממוצע: ' + hhmm + '\nימי אובדן: ' + d;
-avgData.push([label, a, tip, hhmm]);
-aggData.push([label, d, tip, String(d)]);
-    }
+    const p = order[i];
+    const m = metrics.find(x => x.period === p);
+    const a = m && typeof m.avg === 'number' ? m.avg : 0;
+    const d = m && typeof m.days === 'number' ? m.days : 0;
+    raw.push(a);
+    const label = translateTimeframe(p);
+    // For tooltip/annotation we want HH:MM — our formatter expects seconds.
+    const hhmm = formatToHHMM(a * 60);
+    const tip = 'ממוצע: ' + hhmm + '\nימי אובדן: ' + d;
+    avgData.push([label, a, tip, hhmm]);
+    aggData.push([label, d, tip, String(d)]);
+        }
   
     const ticksInfo = buildTimeTicksFromRaw(raw);
     return {
-avgData,
-aggData,
-vAxisAvg: { ticks: ticksInfo.ticks, viewWindow: { min: 0, max: ticksInfo.viewMax } },
-vAxisAgg: { minValue: 0, format: '0' }
-    };
+    avgData,
+    aggData,
+    vAxisAvg: { ticks: ticksInfo.ticks, viewWindow: { min: 0, max: ticksInfo.viewMax } },
+    vAxisAgg: { minValue: 0, format: '0' }
+        };
   }
   
   // ===== Simple DOM helper =====
