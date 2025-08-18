@@ -189,7 +189,7 @@ export function drawOverlayArcChartHelperRoomTime({
       plusSign.setAttribute('fill', '#ffffff');
       plusSign.setAttribute('font-size', '16');
       plusSign.setAttribute('font-family', 'Open Sans');
-      plusSign.textContent = '+';
+      plusSign.textContent = '-';
       svg.appendChild(plusSign);
     }
   })();

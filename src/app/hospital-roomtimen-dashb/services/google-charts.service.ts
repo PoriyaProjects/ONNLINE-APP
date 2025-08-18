@@ -261,167 +261,224 @@ drawOverlayArcChartHelperRoomTime({
 
   // ========= Tables (Avg time) =========
   public async drawAllDepartmentTables(
-    elementIdsByPeriod: { [period: string]: { [ds: string]: string } },
-    url: string,
-    excludeCurrentYear: boolean = true
-  ): Promise<void> {
-    await this.waitUntilChartsReady();
-  
-    try {
-      // iterate periods safely
-      for (const period of Object.keys(elementIdsByPeriod)) {
-        const dsMap = elementIdsByPeriod[period];
-  
-        // pull FRESH themed status colors per draw (so theme switches are reflected)
-        const status = this.palette.getTableStatus(); // { good, warn, bad }
-  
-        const raw = await this.fetchWithCache(this.buildUrl(url, { dataType: period }));
-        const clean = sanitizeSoapResponse(raw);
-  
-        if (!clean || !clean.rows || !clean.rows.length) {
-          for (const id of Object.values(dsMap) as string[]) {
-            const container = document.getElementById(id);
-            if (container) container.innerHTML = 'אין נתונים להצגה';
-          }
-          continue;
-        }
-  
-        // group rows by DataSource
-        const groupedByDS = groupBy(clean.rows as SoapRow[], (r) =>
-          String(cell(r, COLS.source) || 'Unknown')
-        );
-  
-        // per datasource table
-        for (const dataSource of Object.keys(groupedByDS)) {
-          const rows = groupedByDS[dataSource];
-          const elementId = (dsMap as any)[dataSource] as string;
-          if (!elementId) continue;
-  
-          const titleContainer = document.getElementById('title_' + elementId) as HTMLElement | null;
-          if (titleContainer) {
-            titleContainer.innerHTML = translateDataSource(dataSource) + ' - ' + translateTimeframe(period) + ' ';
-            titleContainer.style.fontWeight = 'bold';
-            titleContainer.style.fontSize = '16px';
-            titleContainer.style.textAlign = 'center';
-            titleContainer.style.margin = '10px 0';
-          }
-  
-          const container = document.getElementById(elementId);
-          if (!container) continue;
-  
-          const dt = new google.visualization.DataTable();
-          dt.addColumn('string', 'מחלקה');
-  
-          const isParallelPeriod = period === '4-ParallelsPeriod';
-          let uniqueYears: string[] = [];
-  
-          if (isParallelPeriod) {
-            const currentYear = new Date().getFullYear().toString().substring(2);
-            const yearSet: { [y: string]: true } = {};
-            for (let i = 0; i < rows.length; i++) {
-              const date = cell(rows[i], COLS.periodDate) as string;
-              if (typeof date === 'string') {
-                const match = date.match(/\d{4}/);
-                if (match) {
-                  const y2 = match[0].substring(2);
-                  if (!(excludeCurrentYear && y2 === currentYear)) yearSet[y2] = true;
-                }
-              }
-            }
-            uniqueYears = Object.keys(yearSet).sort((a, b) => Number(b) - Number(a));
-            for (let i = 0; i < uniqueYears.length; i++) {
-              dt.addColumn('number', uniqueYears[i]);
-            }
-          } else {
-            dt.addColumn('number', 'זמן');
-          }
-  
-          // build department -> year/value map
-          const departmentMap: { [dept: string]: { [year: string]: number } } = {};
-          for (let i = 0; i < rows.length; i++) {
-            const r = rows[i];
-            const department = String(cell(r, COLS.depart) || '');
-            const date = cell(r, COLS.periodDate) as string;
-            let year = '';
-  
-            if (isParallelPeriod && typeof date === 'string') {
-              const ym = date.match(/\d{4}/);
-              if (ym) {
-                year = ym[0].substring(2);
-                if (excludeCurrentYear && year === new Date().getFullYear().toString().substring(2)) continue;
-              }
-            }
-  
-            const rawValue = num(cell(r, COLS.value));
-            if (!departmentMap[department]) departmentMap[department] = {};
-            if (isParallelPeriod && year) departmentMap[department][year] = rawValue;
-            if (!isParallelPeriod) departmentMap[department]['value'] = rawValue;
-          }
-  
-          // write rows + THEMED colors
-          for (const department of Object.keys(departmentMap)) {
-            const yearValues = departmentMap[department];
-  
-            if (isParallelPeriod) {
-              const rowIndex = dt.addRow();
-              dt.setCell(rowIndex, 0, department);
-  
-              for (let i = 0; i < uniqueYears.length; i++) {
-                const y = uniqueYears[i];
-                const rawValue = yearValues[y] != null ? yearValues[y] : null;
-                const formatted = rawValue != null ? formatToHHMM(rawValue) : '';
-                const colIndex = i + 1;
-  
-                if (rawValue != null) {
-                  dt.setCell(rowIndex, colIndex, rawValue, formatted);
-  
-                  // minutes threshold → THEME traffic-light colors
-                  const minutes = rawValue / 60;
-                  const cellColor = minutes >= 60 ? status.bad : minutes > 30 ? status.warn : status.good;
-                  const fg = readableTextColor(cellColor);
-                  const outline = textOutlineCSS(fg);
-                  dt.setProperty(rowIndex, colIndex, 'style', `background-color:${cellColor}; color:${fg}; ${outline}`);
-
-                }
-              }
-            } else {
-              const rawValue = yearValues['value'] || 0;
-              const formattedValue = formatToHHMM(rawValue);
-              const rowIndex = dt.addRow([department, { v: rawValue, f: formattedValue }]);
-  
-              const minutes = rawValue / 60;
-              let rowColor = status.good;
-              if (minutes > 30 && minutes <= 59) rowColor = status.warn;
-              if (minutes >= 60) rowColor = status.bad;
-  
-              const fg = readableTextColor(rowColor);
-              const outline = textOutlineCSS(fg);
-              for (let col = 0; col < dt.getNumberOfColumns(); col++) {
-                dt.setProperty(rowIndex, col, 'style', `background-color:${rowColor}; color:${fg}; ${outline}`);
-              }
-            }
-          }
-  
-          new google.visualization.Table(container).draw(dt, {
-            showRowNumber: false,
-            width: '100%',
-            height: '150px',
-            allowHtml: true
-          });
-        }
-      }
-    } catch (err) {
-      console.error('Error drawing all tables:', err);
-    }
-  }
-  
-
-public async drawAllDepartmentTablesSum(
   elementIdsByPeriod: { [period: string]: { [ds: string]: string } },
   url: string,
   excludeCurrentYear: boolean = true
 ): Promise<void> {
   await this.waitUntilChartsReady();
+
+  // helpers
+  const isSetupDS = (ds: string) => /setup\s*time/i.test(String(ds || ''));
+  const getQ = (r: any): number => {
+    // Q is the last column in the row structure
+    const cells = r?.cells ?? r?.c ?? r;
+    if (Array.isArray(cells) && cells.length) {
+      const last = cells[cells.length - 1];
+      const v = last?.v ?? last?.value ?? last;
+      const n = Number(v);
+      return isFinite(n) ? n : 0;
+    }
+    // fall back to helper if your code exposes one:
+    try {
+      const v = (window as any)?.cell ? (window as any).cell(r, 9999) : null;
+      const n = Number(v);
+      return isFinite(n) ? n : 0;
+    } catch {
+      return 0;
+    }
+  };
+
+  try {
+    for (const period of Object.keys(elementIdsByPeriod)) {
+      const dsMap = elementIdsByPeriod[period];
+      const status = this.palette.getTableStatus(); // { good, warn, bad }
+
+      const raw = await this.fetchWithCache(this.buildUrl(url, { dataType: period }));
+      const clean = sanitizeSoapResponse(raw);
+
+      if (!clean || !clean.rows || !clean.rows.length) {
+        for (const id of Object.values(dsMap) as string[]) {
+          const container = document.getElementById(id);
+          if (container) container.innerHTML = 'אין נתונים להצגה';
+        }
+        continue;
+      }
+
+      // group rows by DataSource
+      const groupedByDS = groupBy(clean.rows as SoapRow[], (r) =>
+        String(cell(r, COLS.source) || 'Unknown')
+      );
+
+      // per datasource
+      for (const dataSource of Object.keys(groupedByDS)) {
+        const rows = groupedByDS[dataSource];
+        const elementId = (dsMap as any)[dataSource] as string;
+        if (!elementId) continue;
+
+        // title
+        const titleContainer = document.getElementById('title_' + elementId) as HTMLElement | null;
+        if (titleContainer) {
+          titleContainer.innerHTML =
+            translateDataSource(dataSource) + ' - ' + translateTimeframe(period) + ' ';
+          titleContainer.style.fontWeight = 'bold';
+          titleContainer.style.fontSize = '16px';
+          titleContainer.style.textAlign = 'center';
+          titleContainer.style.margin = '10px 0';
+        }
+
+        const container = document.getElementById(elementId);
+        if (!container) continue;
+
+        const dt = new google.visualization.DataTable();
+        dt.addColumn('string', 'מחלקה');
+
+        const isParallelPeriod = period === '4-ParallelsPeriod';
+        let uniqueYears: string[] = [];
+
+        if (isParallelPeriod) {
+          const currentYear = new Date().getFullYear().toString().substring(2);
+          const yearSet: { [y: string]: true } = {};
+          for (let i = 0; i < rows.length; i++) {
+            const date = cell(rows[i], COLS.periodDate) as string;
+            if (typeof date === 'string') {
+              const match = date.match(/\d{4}/);
+              if (match) {
+                const y2 = match[0].substring(2);
+                if (!(excludeCurrentYear && y2 === currentYear)) yearSet[y2] = true;
+              }
+            }
+          }
+          uniqueYears = Object.keys(yearSet).sort((a, b) => Number(b) - Number(a));
+          for (let i = 0; i < uniqueYears.length; i++) {
+            dt.addColumn('number', uniqueYears[i]);
+          }
+        } else {
+          dt.addColumn('number', 'זמן');
+        }
+
+        // build department -> year/value map AND sum Q per department (SetupTime only)
+        const departmentMap: { [dept: string]: { [year: string]: number } } = {};
+        const qSumByDept: { [dept: string]: number } = {};
+
+        for (let i = 0; i < rows.length; i++) {
+          const r = rows[i];
+          const department = String(cell(r, COLS.depart) || '');
+          const date = cell(r, COLS.periodDate) as string;
+          let year = '';
+
+          if (isParallelPeriod && typeof date === 'string') {
+            const ym = date.match(/\d{4}/);
+            if (ym) {
+              year = ym[0].substring(2);
+              if (excludeCurrentYear && year === new Date().getFullYear().toString().substring(2)) {
+                continue;
+              }
+            }
+          }
+
+          const rawValue = num(cell(r, COLS.value));
+          if (!departmentMap[department]) departmentMap[department] = {};
+          if (isParallelPeriod && year) departmentMap[department][year] = rawValue;
+          if (!isParallelPeriod) departmentMap[department]['value'] = rawValue;
+
+          // Q: only for SetupTime
+          if (isSetupDS(dataSource)) {
+            const q = getQ(r);
+            if (isFinite(q)) {
+              qSumByDept[department] = (qSumByDept[department] || 0) + q;
+            }
+          }
+        }
+
+        // write rows with existing color logic; label may include (Q) for SetupTime if Q>0
+        for (const department of Object.keys(departmentMap)) {
+          const yearValues = departmentMap[department];
+
+          const totalQ = qSumByDept[department] ?? 0;
+          const showQ = isSetupDS(dataSource) && totalQ > 0;
+          const deptWithQ = showQ ? `${department} (${Math.round(totalQ)})` : department;
+
+          if (isParallelPeriod) {
+            const rowIndex = dt.addRow();
+            dt.setCell(rowIndex, 0, deptWithQ);
+
+            for (let i = 0; i < uniqueYears.length; i++) {
+              const y = uniqueYears[i];
+              const rawValue = yearValues[y] != null ? yearValues[y] : null;
+              const formatted = rawValue != null ? formatToHHMM(rawValue) : '';
+              const colIndex = i + 1;
+
+              if (rawValue != null) {
+                dt.setCell(rowIndex, colIndex, rawValue, formatted);
+
+                // THEMED traffic-light colors by minutes thresholds
+                const minutes = rawValue / 60;
+                const cellColor = minutes >= 60 ? status.bad : minutes > 30 ? status.warn : status.good;
+                const fg = readableTextColor(cellColor);
+                const outline = textOutlineCSS(fg);
+                dt.setProperty(rowIndex, colIndex, 'style', `background-color:${cellColor}; color:${fg}; ${outline}`);
+              }
+            }
+          } else {
+            const rawValue = yearValues['value'] || 0;
+            const formattedValue = formatToHHMM(rawValue);
+            const rowIndex = dt.addRow([deptWithQ, { v: rawValue, f: formattedValue }]);
+
+            const minutes = rawValue / 60;
+            let rowColor = status.good;
+            if (minutes > 30 && minutes <= 59) rowColor = status.warn;
+            if (minutes >= 60) rowColor = status.bad;
+
+            const fg = readableTextColor(rowColor);
+            const outline = textOutlineCSS(fg);
+            for (let col = 0; col < dt.getNumberOfColumns(); col++) {
+              dt.setProperty(rowIndex, col, 'style', `background-color:${rowColor}; color:${fg}; ${outline}`);
+            }
+          }
+        }
+
+        new google.visualization.Table(container).draw(dt, {
+          showRowNumber: false,
+          width: '100%',
+          height: '150px',
+          allowHtml: true
+        });
+      }
+    }
+  } catch (err) {
+    console.error('Error drawing all tables:', err);
+  }
+}
+
+
+
+  public async drawAllDepartmentTablesSum(
+  elementIdsByPeriod: { [period: string]: { [ds: string]: string } },
+  url: string,
+  excludeCurrentYear: boolean = true
+): Promise<void> {
+  await this.waitUntilChartsReady();
+
+  // helpers
+  const isSetupDS = (ds: string) => /setup\s*time/i.test(String(ds || ''));
+  const getQ = (r: any): number => {
+    // Q is the last column in the SOAP/Google Charts row
+    const cells = r?.cells ?? r?.c ?? r;
+    if (Array.isArray(cells) && cells.length) {
+      const last = cells[cells.length - 1];
+      const v = last?.v ?? last?.value ?? last;
+      const n = Number(v);
+      return isFinite(n) ? n : 0;
+    }
+    try {
+      // fallback if you have a helper available
+      const v = (window as any)?.cell ? (window as any).cell(r, 9999) : null;
+      const n = Number(v);
+      return isFinite(n) ? n : 0;
+    } catch {
+      return 0;
+    }
+  };
 
   try {
     for (const period of Object.keys(elementIdsByPeriod)) {
@@ -484,8 +541,10 @@ public async drawAllDepartmentTablesSum(
           dt.addColumn('number', 'ימים');
         }
 
-        // dept -> year/value
+        // dept -> year/value AND sum Q per dept (SetupTime only)
         const departmentMap: { [dept: string]: { [year: string]: number } } = {};
+        const qSumByDept: { [dept: string]: number } = {};
+
         for (let i = 0; i < rows.length; i++) {
           const r = rows[i];
           const department = String(cell(r, COLS.depart) || '');
@@ -504,6 +563,12 @@ public async drawAllDepartmentTablesSum(
           if (!departmentMap[department]) departmentMap[department] = {};
           if (isParallelPeriod && year) departmentMap[department][year] = rawValue;
           if (!isParallelPeriod) departmentMap[department]['value'] = rawValue;
+
+          // Q aggregation only for SetupTime
+          if (isSetupDS(dataSource)) {
+            const q = getQ(r);
+            if (isFinite(q)) qSumByDept[department] = (qSumByDept[department] || 0) + q;
+          }
         }
 
         // THEME AWARE heat shades per table
@@ -514,7 +579,7 @@ public async drawAllDepartmentTablesSum(
         }
         const maxVal = allVals.length ? Math.max.apply(null, allVals) : 0;
 
-        const shades = this.palette.getTableHeatmap(); // fresh, from active theme
+        const shades = this.palette.getTableHeatmap(); // from active theme
         const heat = (value: number) => {
           if (maxVal <= 0) return shades[0];
           const idx = Math.min(shades.length - 1, Math.floor((value / maxVal) * (shades.length - 1)));
@@ -525,9 +590,13 @@ public async drawAllDepartmentTablesSum(
         for (const department of Object.keys(departmentMap)) {
           const vals = departmentMap[department];
 
+          const totalQ = qSumByDept[department] ?? 0;
+          const showQ = isSetupDS(dataSource) && totalQ > 0;
+          const deptWithQ = showQ ? `${department} (${Math.round(totalQ)})` : department;
+
           if (isParallelPeriod) {
             const rowIndex = dt.addRow();
-            dt.setCell(rowIndex, 0, department);
+            dt.setCell(rowIndex, 0, deptWithQ);
 
             for (let i = 0; i < uniqueYears.length; i++) {
               const y = uniqueYears[i];
@@ -538,35 +607,25 @@ public async drawAllDepartmentTablesSum(
               if (rawValue != null) {
                 dt.setCell(rowIndex, colIndex, rawValue, formatted);
 
-                // compute themed bg + readable fg for EACH cell
+                // themed bg + readable fg per cell
                 const bg = heat(rawValue);
                 const fg = readableTextColor(bg);
                 const outline = textOutlineCSS(fg);
 
-                dt.setProperty(
-                  rowIndex,
-                  colIndex,
-                  'style',
-                  `background-color:${bg}; color:${fg}; ${outline}`
-                );
+                dt.setProperty(rowIndex, colIndex, 'style', `background-color:${bg}; color:${fg}; ${outline}`);
               }
             }
           } else {
             const rawValue = vals['value'] || 0;
             const formatted = Math.round(rawValue) + ' ימים';
-            const rowIndex = dt.addRow([department, { v: rawValue, f: formatted }]);
+            const rowIndex = dt.addRow([deptWithQ, { v: rawValue, f: formatted }]);
 
-            const bg = heat(rawValue);               // themed cell bg
-            const fg = readableTextColor(bg);        // readable text vs bg
-            const outline = textOutlineCSS(fg);      // subtle shadow
+            const bg = heat(rawValue);
+            const fg = readableTextColor(bg);
+            const outline = textOutlineCSS(fg);
 
             for (let col = 0; col < dt.getNumberOfColumns(); col++) {
-              dt.setProperty(
-                rowIndex,
-                col,
-                'style',
-                `background-color:${bg}; color:${fg}; ${outline}`
-              );
+              dt.setProperty(rowIndex, col, 'style', `background-color:${bg}; color:${fg}; ${outline}`);
             }
           }
         }
@@ -584,8 +643,7 @@ public async drawAllDepartmentTablesSum(
   }
 }
 
-
-  // ========= Totals summaries =========
+  
   public async drawSummarizedMultiPeriodChart(
     containerId: string,
     avgUrl: string,
@@ -816,5 +874,250 @@ onScroll() {
   const isSticky = window.scrollY >= deptTabsTop;
   stickyEl.classList.toggle('is-sticky', isSticky);
 }
+
+
+
+
+
+public async drawSetupTimeQCharts(
+  elementIdsByPeriod: { [period: string]: string }, // period -> chart div id
+  url: string,
+  excludeCurrentYear: boolean = true
+): Promise<void> {
+  await this.waitUntilChartsReady();
+
+  var isSetupDS = function (ds: string): boolean {
+    return /setup\s*time/i.test(String(ds || ''));
+  };
+
+  // read Q from last column (SOAP/Google Charts row)
+  var getQ = function (r: any): number {
+    var cells = (r && (r.cells || r.c)) || r;
+    if (cells && cells.length && cells instanceof Array) {
+      var last = cells[cells.length - 1];
+      var v = (last && (typeof last === 'object' ? (('v' in last ? (last as any).v : (last as any).value)) : last)) as any;
+      var n = Number(v);
+      return isFinite(n) ? n : 0;
+    }
+    return 0;
+  };
+
+  for (var period in elementIdsByPeriod) {
+    if (!elementIdsByPeriod.hasOwnProperty(period)) continue;
+
+    var chartElId = elementIdsByPeriod[period];
+    var titleEl = document.getElementById('title_' + chartElId);
+    var chartEl = document.getElementById(chartElId);
+    if (!chartEl) continue;
+
+    // fetch rows for this period
+    var raw = await this.fetchWithCache(this.buildUrl(url, { dataType: period }));
+    var clean = sanitizeSoapResponse(raw);
+
+    if (!clean || !clean.rows || !clean.rows.length) {
+      chartEl.innerHTML = 'אין נתונים להצגה';
+      continue;
+    }
+
+    // filter to SetupTime (DataSource is column 0)
+    var setupRows: any[] = [];
+    for (var i = 0; i < clean.rows.length; i++) {
+      var rr: any = clean.rows[i];
+      var dsCell = rr && (rr.cells || rr.c);
+      var ds = '';
+      if (dsCell && dsCell.length) {
+        var c0 = dsCell[0];
+        ds = String((c0 && (typeof c0 === 'object' ? (('v' in c0 ? c0.v : c0.value)) : c0)) || '');
+      }
+      if (isSetupDS(ds)) setupRows.push(rr);
+    }
+
+    if (!setupRows.length) {
+      chartEl.innerHTML = 'אין נתונים להצגה';
+      continue;
+    }
+
+    // Aggregate Q
+    var byDept: { [dept: string]: number } = {};
+    var byDeptYear: { [dept: string]: { [yy: string]: number } } = {};
+    var currYY = new Date().getFullYear().toString().substring(2);
+
+    for (var j = 0; j < setupRows.length; j++) {
+      var r = setupRows[j];
+      var dept = String(cell(r, COLS.depart) || '');
+      var q = getQ(r);
+      var date = String(cell(r, COLS.periodDate) || '');
+      var m = date.match(/\d{4}/);
+      var yy = m ? m[0].substring(2) : '';
+
+      if (period === '4-ParallelsPeriod') {
+        if (excludeCurrentYear && yy === currYY) continue;
+        if (!byDeptYear[dept]) byDeptYear[dept] = {};
+        byDeptYear[dept][yy] = (byDeptYear[dept][yy] || 0) + q;
+      } else {
+        byDept[dept] = (byDept[dept] || 0) + q;
+      }
+    }
+
+    var title = 'ספירת מקרים ' + translateDataSource('SetupTime') + ' - ' + translateTimeframe(period);
+
+    // ================= Parallels (multi-years) =================
+    if (period === '4-ParallelsPeriod') {
+      // collect distinct years safely (no flatMap)
+      var yearsSeen: { [yy: string]: true } = {};
+      for (var deptKey in byDeptYear) {
+        if (!byDeptYear.hasOwnProperty(deptKey)) continue;
+        var perYear = byDeptYear[deptKey];
+        for (var yyKey in perYear) {
+          if (perYear.hasOwnProperty(yyKey)) yearsSeen[yyKey] = true;
+        }
+      }
+
+      var years = Object.keys(yearsSeen).sort(function (a, b) { return Number(b) - Number(a); });
+      // if you want to cap to last 3 years, uncomment:
+      // years = years.slice(0, 3);
+
+      if (!years.length) {
+        chartEl.innerHTML = 'אין נתונים להצגה';
+        continue;
+      }
+
+      // Build DataTable: Dept | '22 | '23 | '24 ...
+      var dt = new google.visualization.DataTable();
+      dt.addColumn('string', 'מחלקה');
+      for (var yi = 0; yi < years.length; yi++) {
+        dt.addColumn('number', "'" + years[yi]); // series per year
+      }
+
+      var anyRow = false;
+      for (var dept2 in byDeptYear) {
+        if (!byDeptYear.hasOwnProperty(dept2)) continue;
+        var perYear2 = byDeptYear[dept2];
+        var rowArr: any[] = [dept2];
+        var nonZero = false;
+        for (var yi2 = 0; yi2 < years.length; yi2++) {
+          var y = years[yi2];
+          var vnum = (perYear2 && perYear2[y] != null) ? perYear2[y] : 0;
+          if (vnum > 0) nonZero = true;
+          rowArr.push(vnum);
+        }
+        // hide all-zero rows
+        if (nonZero) {
+          dt.addRow(rowArr);
+          anyRow = true;
+        }
+      }
+
+      if (!anyRow) {
+        chartEl.innerHTML = 'אין נתונים להצגה';
+        continue;
+      }
+
+      // Add annotations (value labels) for each series via DataView
+      var view = new google.visualization.DataView(dt);
+      var cols: any[] = [0]; // dept name
+      for (var s = 0; s < years.length; s++) {
+        (function (seriesCol: number) {
+          cols.push(seriesCol);
+          cols.push({
+            calc: function (dtAny: any, rowIdx: number) {
+              var vv = dtAny.getValue(rowIdx, seriesCol);
+              return (vv != null && vv !== 0) ? String(vv) : null;
+            },
+            type: 'string',
+            role: 'annotation'
+          });
+        })(s + 1); // series columns start at 1
+      }
+      view.setColumns(cols);
+
+      var options: any = {
+        legend: { position: 'top' },
+        width: '100%',
+        height: 250,
+        hAxis: { slantedText: true },
+        vAxis: { minValue: 0 },
+        animation: { duration: 300, easing: 'out' },
+        annotations: { alwaysOutside: true, textStyle: { fontSize: 12, bold: true } },
+        bar: { groupWidth: '70%' },
+        allowHtml: true
+      };
+
+      var chart = new google.visualization.ColumnChart(chartEl);
+      chart.draw(view, options);
+
+      if (titleEl) {
+        titleEl.innerHTML = title;
+        (titleEl as HTMLElement).style.fontWeight = 'bold';
+        (titleEl as HTMLElement).style.fontSize = '16px';
+        (titleEl as HTMLElement).style.textAlign = 'center';
+        (titleEl as HTMLElement).style.margin = '10px 0';
+      }
+
+      continue; // done with parallels
+    }
+
+    // ================= Single-period (month / year) =================
+    // Dept | Q  + annotations
+    var dt2 = new google.visualization.DataTable();
+    dt2.addColumn('string', 'מחלקה');
+    dt2.addColumn('number', 'כמות מקרים (Q)');
+
+    var deptKeys = Object.keys(byDept).sort(function (a, b) { return (byDept[b] || 0) - (byDept[a] || 0); });
+    var anyRow2 = false;
+    for (var dk = 0; dk < deptKeys.length; dk++) {
+      var dname = deptKeys[dk];
+      var qval = byDept[dname] || 0;
+      if (qval > 0) {
+        dt2.addRow([dname, qval]);
+        anyRow2 = true;
+      }
+    }
+
+    if (!anyRow2) {
+      chartEl.innerHTML = 'אין נתונים להצגה';
+      continue;
+    }
+
+    // DataView to add annotation for the single series
+    var view2 = new google.visualization.DataView(dt2);
+    view2.setColumns([
+      0,
+      1,
+      {
+        calc: function (dtAny: any, rowIdx: number) {
+          var vv = dtAny.getValue(rowIdx, 1);
+          return (vv != null && vv !== 0) ? String(vv) : null;
+        },
+        type: 'string',
+        role: 'annotation'
+      }
+    ]);
+
+    var chart2 = new google.visualization.ColumnChart(chartEl);
+    chart2.draw(view2, {
+      legend: 'none',
+      width: '100%',
+      height: 250,
+      hAxis: { slantedText: true },
+      vAxis: { minValue: 0 },
+      animation: { duration: 300, easing: 'out' },
+      annotations: { alwaysOutside: true, textStyle: { fontSize: 12, bold: true } },
+      bar: { groupWidth: '70%' },
+      tooltip: { isHtml: true },
+      allowHtml: true
+    });
+
+    if (titleEl) {
+      titleEl.innerHTML = title;
+      (titleEl as HTMLElement).style.fontWeight = 'bold';
+      (titleEl as HTMLElement).style.fontSize = '16px';
+      (titleEl as HTMLElement).style.textAlign = 'center';
+      (titleEl as HTMLElement).style.margin = '10px 0';
+    }
+  }
+}
+
+
 
 }

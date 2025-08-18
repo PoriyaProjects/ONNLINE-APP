@@ -393,7 +393,7 @@
             </div>
           </div>
         </div>
-        <!-- <div style="height:60px;"></div> -->
+        <div style="height:60px;"></div>
 
         <!-- MorningDelay details -->
         <div class="row table-details" [@slideToggle]="isOpen('MorningDelay') ? 'open' : 'closed'"
@@ -464,6 +464,33 @@
               <div id="tableSetupTime_4-ParallelsPeriod">טעינה...</div>
             </div>
           </div>
+          
+          <div class="row" id="setupTimeGraphsWrapper" style="width:100%">
+            <!-- Monthly (Current Month) -->
+            <div class="mdc-layout-grid__cell col-md-4">
+              <div class="card text-center table-block visible_tbl">
+                <div id="title_chartSetupTimeQ_2-CurrentMonth"></div>
+                <div id="chartSetupTimeQ_2-CurrentMonth" style="height:260px">טעינה...</div>
+              </div>
+            </div>
+
+            <!-- Yearly (YTD) -->
+            <div class="mdc-layout-grid__cell col-md-4">
+              <div class="card text-center table-block visible_tbl">
+                <div id="title_chartSetupTimeQ_3-CurrentYear"></div>
+                <div id="chartSetupTimeQ_3-CurrentYear" style="height:260px">טעינה...</div>
+              </div>
+            </div>
+
+            <!-- Last 3 Years (Parallels) -->
+            <div class="mdc-layout-grid__cell col-md-4">
+              <div class="card text-center table-block visible_tbl">
+                <div id="title_chartSetupTimeQ_4-ParallelsPeriod"></div>
+                <div id="chartSetupTimeQ_4-ParallelsPeriod" style="height:260px">טעינה...</div>
+              </div>
+            </div>
+          </div>
+
         </div>
         <!---->
         <!--Summ tables-->

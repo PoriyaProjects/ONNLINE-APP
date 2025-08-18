@@ -251,7 +251,7 @@ const THEME_CLASSIC: DashboardPalette = {
     '#B5AEA3','#94AA64','#F1D5D1','#BC86B5','#DA549E','#AF4F76',
     '#FDB913','#00A79E','#C98846','#BE1E2D'
   ],
-  datasource: { MorningDelay:'#A39DCD', EndDay:'#FFB74D', SetupTime:'#a17ef8' },
+  datasource: { MorningDelay:'#E57373', EndDay:'#E57373', SetupTime:'#E57373' },
   tableStatus: { good:'#b9f6ca', warn:'#fff9c4', bad:'#ffcdd2' },
   tableHeatmap: ['#ffe5e5','#ffcccc','#ffb3b3','#ff9999','#ff8080','#e75858','#f06a6a','#f68383','#f89c9c','#fbb5b5']
 };
@@ -290,10 +290,7 @@ const THEME_PASTEL: DashboardPalette = {
 '#D1C4E9', // lavender
 '#FFCDD2', // light coral
     ],
-    datasource: {  MorningDelay: '#90CAF9', // light blue
-  EndDay: '#FFCC80', // light orange
-  SetupTime:    '#CE93D8'  // light purple
-},
+    datasource: { MorningDelay:'#E57373', EndDay:'#E57373', SetupTime:'#E57373' },
     tableHeatmap: ['#FFF8E1', '#FFF3E0','#FBE9E7','#F3E5F5','#EDE7F6','#E8EAF6','#E0F7FA','#E0F2F1','#E8F5E9','#F1F8E9'  // darkest in this set, still light
     ],
     series: ['#64B5F6', '#81C784', '#FFD54F', '#FF8A65', '#BA68C8', '#4DD0E1', '#A1887F'    ],
@@ -324,11 +321,7 @@ const HIGH_CONTRAST: DashboardPalette = {
     ],
   
     // DataSource colors (kept distinct and high-contrast)
-    datasource: {
-MorningDelay: '#0052CC', // vivid blue
-EndDay: '#FF8B00', // deep orange
-SetupTime:    '#7C3AED'  // purple
-    },
+    datasource: { MorningDelay:'#E57373', EndDay:'#E57373', SetupTime:'#E57373' },
   
     // Time-table status cells: dark backgrounds to ensure strong contrast
     // (readableTextColor will choose white text automatically)
@@ -353,7 +346,7 @@ bad:  '#7F1D1D'  // red-900
       '#6BA1F8','#6BA1F8','#6BA1F8','#6BA1F8','#6BA1F8','#6BA1F8',
       '#6BA1F8','#6BA1F8','#6BA1F8','#6BA1F8'
     ],
-    datasource: { MorningDelay:'#A39DCD', EndDay:'#FFB74D', SetupTime:'#a17ef8' },
+    datasource: { MorningDelay:'#E57373', EndDay:'#E57373', SetupTime:'#E57373' },
     tableStatus: { good:'#eaf2fe', warn:'#99bdf9', bad:'#236fe0' },
     tableHeatmap: [
       '#eaf2fe', // very light
@@ -377,7 +370,7 @@ bad:  '#7F1D1D'  // red-900
       '#2B3992','#2B3992','#2B3992','#2B3992','#2B3992','#2B3992',
       '#2B3992','#2B3992','#2B3992','#2B3992'
     ],
-    datasource: { MorningDelay:'#A39DCD', EndDay:'#FFB74D', SetupTime:'#a17ef8' },
+    datasource: { MorningDelay:'#E57373', EndDay:'#E57373', SetupTime:'#E57373' },
     tableStatus: { good:'#eceef9', warn:'#9fa4e1', bad:'#2B3992' },
     tableHeatmap: [
       '#eceef9', // very light
@@ -407,11 +400,12 @@ bad:  '#7F1D1D'  // red-900
     '#555555','#555555','#555555',
     '#555555','#555555','#555555','#555555'
   ],
-  datasource: { 
-    MorningDelay: '#999999', 
-    EndDay: '#BBBBBB', 
-    SetupTime: '#777777' 
-  },
+  // datasource: { 
+  //   MorningDelay: '#999999', 
+  //   EndDay: '#BBBBBB', 
+  //   SetupTime: '#777777' 
+  // },
+  datasource: { MorningDelay:'#E57373', EndDay:'#E57373', SetupTime:'#E57373' },
   tableStatus: { 
     good: '#F0F0F0', 
     warn: '#AAAAAA', 
