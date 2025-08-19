@@ -66,6 +66,7 @@ export class TrainingRequestFormComponent implements OnInit {
   employees = [];
   intity_list = [];
   CitiesArray: any[] = [];
+  CountriesArray: any[] = [];
   educationList = ["תיכונית", "מקצועית", "תואר ראשון", "תואר שני", "תואר שלישי", "אחר"];
   requested: boolean = false;
   wantsPoster: boolean = false;
@@ -126,7 +127,8 @@ export class TrainingRequestFormComponent implements OnInit {
   check_if_fund_or_health() {
     let health = this.Training_Request_Forms_D.value.Health_Corporation?.filter(x => x != null);
     let fund = this.Training_Request_Forms_D.value.Department_Fund?.filter(x => x != null);
-    if ((health?.length == 0 && fund?.length == 0) || (health == undefined && fund == undefined)) this.dorit_note_answer = false;
+    let outsource = this.Training_Request_Forms_D.value.OutSource_Company;
+    if ((health?.length == 0 && fund?.length == 0 && !outsource) || (health == undefined && fund == undefined && outsource == undefined)) this.dorit_note_answer = false;
     else this.dorit_note_answer = true;
     if (health.length > 0) this.health_checkbox = true;
     if (fund.length > 0) this.fund_checkbox = true;
@@ -161,7 +163,7 @@ export class TrainingRequestFormComponent implements OnInit {
   private city_filter(value: string): any[] {
     const filterValue = value.toLowerCase();
     return this.CitiesArray.filter((option) =>
-      option.cityName.includes(filterValue)
+      option.cityName.toLowerCase().includes(filterValue)
     );
   }
 
@@ -232,7 +234,7 @@ export class TrainingRequestFormComponent implements OnInit {
           Absence_Time: new FormControl({ value: Training_Request_Forms_B?.Absence_Time, disabled: this.user_name != 'ttsrefati' ? true : false }, [Validators.pattern(/^\d+$/)]),
           Training_Out: new FormControl(Training_Request_Forms_B?.Training_Out == 'True' ? true : false, null),
           Galilean_Partnership: new FormControl(Training_Request_Forms_B?.Galilean_Partnership == 'True' ? true : false, null),
-          Request_Note: new FormControl(Training_Request_Forms_B?.Request_Note, null),
+          Request_Note: new FormControl(Training_Request_Forms_B?.Request_Note, Validators.required),
         });
         this.Training_Request_Forms_C = this.fb.group({
           Request_Name: new FormControl(Training_Request_Forms_C?.Request_Name == null ? this.date_now : Training_Request_Forms_C?.Request_Name, Validators.required),
@@ -306,6 +308,19 @@ export class TrainingRequestFormComponent implements OnInit {
         //   this.calculateRequestDuration();
         // });
       });
+  }
+
+  ApprovedStatusChanged(manager) {
+    // direct manager
+    if (manager == 0) {
+      this.Training_Request_Forms_E.controls['Supervisor_Sign'].setValidators(Validators.required);
+      this.Training_Request_Forms_E.controls['Supervisor_Sign'].updateValueAndValidity();
+    }
+    // indirect manager
+    else {
+      this.Training_Request_Forms_F.controls['Supervisor_Sign'].setValidators(Validators.required);
+      this.Training_Request_Forms_F.controls['Supervisor_Sign'].updateValueAndValidity();
+    }
   }
 
   calculateRequestDuration() {
@@ -502,6 +517,29 @@ export class TrainingRequestFormComponent implements OnInit {
       });
   }
 
+  getCountryCodes() {
+    this.CitiesArray = [];
+    this.http
+      .post(
+        environment.url + "GetCountryCodes",
+        {}
+      )
+      .subscribe((Response) => {
+        Response["d"].forEach((element) => {
+          this.CitiesArray.push({
+            cityName: element.cityName
+          });
+        });
+        this.cityOptions = this.cityControl.valueChanges.pipe(
+          startWith(""),
+          map((value) => (typeof value === "string" ? value : value.name)),
+          map((name) =>
+            name ? this.city_filter(name) : this.CitiesArray.slice()
+          )
+        );
+      });
+  }
+
   checkPlanAvailability() {
     let date_today: any = new Date();
     date_today = this.datePipe.transform(date_today, 'yyyy-MM-dd');
@@ -515,24 +553,16 @@ export class TrainingRequestFormComponent implements OnInit {
 
   Training_Out_Check() {
     if (this.Training_Request_Forms_B.controls['Training_Out'].value) {
-      this.CitiesArray = [
-        { cityName: 'אסיה' },
-        { cityName: 'אירופה' },
-        { cityName: 'אפריקה' },
-        { cityName: 'צפון אמריקה' },
-        { cityName: 'דרום אמריקה' },
-        { cityName: 'אוסטרליה' },
-        { cityName: 'אנטארקטיקה' }
-      ];
+      this.getCountryCodes();
 
       this.Training_Request_Forms_B.controls['Education_Fee'].setValue(0);
-      this.cityOptions = this.cityControl.valueChanges.pipe(
-        startWith(""),
-        map((value) => (typeof value === "string" ? value : value.name)),
-        map((name) =>
-          name ? this.city_filter(name) : this.CitiesArray.slice()
-        )
-      );
+      // this.cityOptions = this.cityControl.valueChanges.pipe(
+      //   startWith(""),
+      //   map((value) => (typeof value === "string" ? value : value.name)),
+      //   map((name) =>
+      //     name ? this.city_filter(name) : this.CitiesArray.slice()
+      //   )
+      // );
     }
     else {
       this.Training_Request_Forms_B.controls['Education_Fee'].enable();
@@ -733,7 +763,9 @@ export class TrainingRequestFormComponent implements OnInit {
   }
 
   onSubmit(final) {
-    if (this.Training_Request_Forms_A.valid && this.Training_Request_Forms_B.valid && this.Training_Request_Forms_C.valid && this.Training_Request_Forms_D.valid) {
+    if (this.Training_Request_Forms_A.valid && this.Training_Request_Forms_B.valid && this.Training_Request_Forms_C.valid
+      && this.Training_Request_Forms_D.valid && this.Training_Request_Forms_E.valid && this.Training_Request_Forms_F.valid
+      && this.Training_Request_Forms_G.valid && this.Training_Request_Forms_H.valid) {
       if (this.Supervisor_Name1.value == undefined) {
         this.openSnackBar('חסר מנהל ישיר, נא ליצור קשר עם משאבי אנוש');
         return;

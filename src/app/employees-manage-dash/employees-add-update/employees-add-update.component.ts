@@ -62,6 +62,7 @@ export class EmployeesAddUpdateComponent implements OnInit {
   _switchBlossom: any = "0";
   AcceptTerms: any;
   saveBtnWait: boolean = false;
+  print_only_Protocol: boolean = false;
   Api = environment.url;
   filteredOptions: Observable<string[]>;
   manfilter = new FormControl();
@@ -169,6 +170,20 @@ export class EmployeesAddUpdateComponent implements OnInit {
 
   displayFn2(user: any): string {
     return user && user.firstname ? user.firstname : "";
+  }
+
+  getHRDepartmentEmployees() {
+    this.print_only_Protocol = false;
+    this.http
+      .post(environment.url + "GetHRDepartmentEmployees", {})
+      .subscribe((Response) => {
+        const exists = Response['d'].some(obj =>
+          Object.values(obj).some(val =>
+            typeof val === 'string' && val.toLowerCase().includes(this.UserName)
+          )
+        );
+        if (exists) this.print_only_Protocol = true;
+      });
   }
 
   getEmployeesToUpdateByID() {

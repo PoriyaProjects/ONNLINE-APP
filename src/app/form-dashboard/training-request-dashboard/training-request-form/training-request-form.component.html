@@ -399,14 +399,13 @@
               <label for="fileInput" class="file-label">מכתב תמיכה חתום ע"י הנהלת המרכז הרפואי(תמונה/PDF)</label>
               <input type="file" id="fileInput2" (change)="onFileSelected2($event)" class="file-input"
                 accept="application/pdf, image/*" />
-              <button mat-raised-button class="fileOpenBtn" color="primary" (click)="file_in_new_window_base642()"
-                *ngIf="Training_Request_Forms_D.get('OutSource_Company_Plan').value != undefined && Training_Request_Forms_D.get('OutSource_Company_Plan').value != ''">
-                צפייה במסמך
-                <span class="material-icons"> zoom_in </span>
-              </button>
             </div>
+            <button mat-raised-button class="fileOpenBtn" color="primary" (click)="file_in_new_window_base642()"
+              *ngIf="Training_Request_Forms_D.get('OutSource_Company_Plan').value != undefined && Training_Request_Forms_D.get('OutSource_Company_Plan').value != ''">
+              צפייה במסמך
+              <span class="material-icons"> zoom_in </span>
+            </button>
             <hr>
-            <!--  *ngIf="Training_Request_Forms_B.get('Training_Out').value == false" -->
             <h5>* מרכז שיקום</h5>
             <div class="section">
               <section class="example-section">
@@ -418,7 +417,7 @@
               <div class="section" *ngIf="Training_Request_Forms_D.get('Galilean_Partnership').value == true">
                 <mat-label>תשובת השותפות גלילילת</mat-label>
                 <p *ngIf="user_name != 'nedelmanpo' && user_name != 'doz'"> {{
-                  Training_Request_Forms_D.get('Training_Fund_Answer').value }}
+                  Training_Request_Forms_D.get('Galilean_Partnership_Description').value }}
                 </p>
                 <mat-form-field *ngIf="user_name == 'nedelmanpo' || user_name == 'doz' || user_name == 'adahabre'">
                   <mat-label>תשובת השותפות גלילילת</mat-label>
@@ -435,7 +434,6 @@
                       מרכזית למימון</span></mat-checkbox>
                 </p>
               </section>
-              <!-- <mat-label>{{ Health_Corporation_Options.QuestionText }}</mat-label> -->
               <mat-label *ngIf="health_checkbox"> נא לבחור </mat-label>
               <mat-select formControlName="Health_Corporation" *ngIf="health_checkbox" class="multi-select"
                 [compareWith]="compareFn" (selectionChange)="check_if_fund_or_health()" multiple>
@@ -578,7 +576,7 @@
             <div class="col-lg-2 col-md-4 col-sm-6" dir="ltr">
               <mat-form-field appearance="outline" style="width: 100%;">
                 <mat-label class="label-select">סטטוס</mat-label>
-                <mat-select formControlName="Approved">
+                <mat-select formControlName="Approved" (selectionChange)="ApprovedStatusChanged(0)">
                   <mat-option value="מאושר">מאושר</mat-option>
                   <mat-option value="לא מאושר">לא מאושר</mat-option>
                   <mat-option value="השלמת נתונים">השלמת נתונים</mat-option>
@@ -603,19 +601,6 @@
                 </mat-error>
               </mat-form-field>
             </div>
-            <!-- <div class="col-lg-2 col-md-4 col-sm-6">
-              <mat-label class="label-select">{{ Training_Importantce_Options.QuestionText }}</mat-label>
-              <mat-select formControlName="Training_Importantce" [compareWith]="compareFn">
-                <mat-option *ngFor="let option of Training_Importantce_Options.Training_Request_Options"
-                  [value]="option.OptionText">
-                  {{ option.OptionText }}
-                </mat-option>
-              </mat-select>
-              <mat-error
-                *ngIf="Training_Request_Forms_E.get('Training_Importantce').hasError('required') && Training_Request_Forms_E.get('Training_Importantce').touched">
-                שדה חובה
-              </mat-error>
-            </div> -->
             <div class="col-lg-3 col-md-4 col-sm-6">
               <mat-form-field>
                 <mat-label>נימוקים</mat-label>
@@ -657,6 +642,9 @@
                 <span
                   *ngIf="Training_Request_Forms_E.get('Supervisor_Sign').value != undefined && Training_Request_Forms_E.get('Supervisor_Sign').value != ''">נחתם</span>
               </button>
+              <mat-error *ngIf="Training_Request_Forms_E.get('Supervisor_Sign').hasError('required')">
+                שדה חובה יש לחתום
+              </mat-error>
               <img
                 *ngIf="Training_Request_Forms_E.get('Supervisor_Sign').value != undefined && Training_Request_Forms_E.get('Supervisor_Sign').value != ''"
                 [src]="Training_Request_Forms_E.get('Supervisor_Sign').value" />
@@ -680,7 +668,7 @@
             <div class="col-lg-2 col-md-4 col-sm-6" dir="ltr">
               <mat-form-field appearance="outline" style="width: 100%;">
                 <mat-label class="label-select">סטטוס</mat-label>
-                <mat-select formControlName="Approved">
+                <mat-select formControlName="Approved" (selectionChange)="ApprovedStatusChanged(1)">
                   <mat-option value="מאושר">מאושר</mat-option>
                   <mat-option value="לא מאושר">לא מאושר</mat-option>
                   <mat-option value="השלמת נתונים">השלמת נתונים</mat-option>
@@ -705,19 +693,6 @@
                 </mat-error>
               </mat-form-field>
             </div>
-            <!-- <div class="col-lg-2 col-md-4 col-sm-6">
-              <mat-label class="label-select">{{ Training_Importantce_Options2.QuestionText }}</mat-label>
-              <mat-select formControlName="Training_Importantce" [compareWith]="compareFn">
-                <mat-option *ngFor="let option of Training_Importantce_Options2.Training_Request_Options"
-                  [value]="option.OptionText">
-                  {{ option.OptionText }}
-                </mat-option>
-              </mat-select>
-              <mat-error
-                *ngIf="Training_Request_Forms_F.get('Training_Importantce').hasError('required') && Training_Request_Forms_F.get('Training_Importantce').touched">
-                שדה חובה
-              </mat-error>
-            </div> -->
             <div class="col-lg-3 col-md-4 col-sm-6">
               <mat-form-field>
                 <mat-label>נימוקים</mat-label>
@@ -759,6 +734,9 @@
                 <span
                   *ngIf="Training_Request_Forms_F.get('Supervisor_Sign').value != undefined && Training_Request_Forms_F.get('Supervisor_Sign').value != ''">נחתם</span>
               </button>
+              <mat-error *ngIf="Training_Request_Forms_F.get('Supervisor_Sign').hasError('required')">
+                שדה חובה יש לחתום
+              </mat-error>
               <img
                 *ngIf="Training_Request_Forms_F.get('Supervisor_Sign').value != undefined && Training_Request_Forms_F.get('Supervisor_Sign').value != ''"
                 [src]="Training_Request_Forms_F.get('Supervisor_Sign').value" />
