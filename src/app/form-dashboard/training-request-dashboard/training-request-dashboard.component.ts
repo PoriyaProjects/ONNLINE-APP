@@ -63,6 +63,9 @@ export class TrainingRequestDashboardComponent implements OnInit {
   loading: boolean;
   print_only_Protocol: boolean;
   change_plan_date: boolean;
+  decissions_list = [];
+  filter_types: any = "";
+  filter_plans: any = "";
 
   constructor(
     public dialog: MatDialog,
@@ -74,9 +77,10 @@ export class TrainingRequestDashboardComponent implements OnInit {
 
   ngOnInit(): void {
     this.date_now = this.datePipe.transform(this.date_now, 'dd-MM-yyyy');
-    this.getAllTrainingRequestFormsList("");
+    this.getAllTrainingRequestFormsList();
     this.changeTrainingPlanDate();
     this.getHRDepartmentEmployees();
+    this.getTrainingRequestPlansList();
   }
 
   changeTrainingPlanDate(): void {
@@ -132,6 +136,14 @@ export class TrainingRequestDashboardComponent implements OnInit {
     });
   }
 
+  getTrainingRequestPlansList() {
+    this.http
+      .post(environment.url + "GetTrainingRequestPlansList", {})
+      .subscribe((Response) => {
+        this.decissions_list = Response["d"];
+      });
+  }
+
   handleAction(rowId: string, action: string): void {
     // Add action handling logic here
     if (action == 'view') {
@@ -144,7 +156,7 @@ export class TrainingRequestDashboardComponent implements OnInit {
         if (res != null) {
           this.TrainingRequestSendLastAnswer(res);
         }
-        this.getAllTrainingRequestFormsList("");
+        this.getAllTrainingRequestFormsList();
       });
     } else if (action == 'new') {
       this.dialog.open(TrainingRequestFormComponent, {
@@ -153,7 +165,7 @@ export class TrainingRequestDashboardComponent implements OnInit {
         width: '90%',
         height: '90%'
       }).afterClosed().subscribe(res => {
-        this.getAllTrainingRequestFormsList("");
+        this.getAllTrainingRequestFormsList();
       });
     }
   }
@@ -203,7 +215,9 @@ export class TrainingRequestDashboardComponent implements OnInit {
   getDataToProtocolPDF(): Promise<any> {
     return new Promise((resolve, reject) => {
       this.http
-        .post(environment.url + "GetTrainingRequestProtocolList", {})
+        .post(environment.url + "GetTrainingRequestProtocolList", {
+          filter_plans: this.filter_plans
+        })
         .subscribe({
           next: (response) => resolve(response['d']),
           error: (err) => reject(err)
@@ -273,6 +287,68 @@ export class TrainingRequestDashboardComponent implements OnInit {
       }
     }
   }
+
+  // create a pritable page with the provided data from trainingRequests dataSource
+  // data = your trainingRequests dataSource (array of objects)
+  printDataTable() {
+    let data = this.trainingRequests.filteredData;
+    if (!data || data.length === 0) {
+      alert("No data to print");
+      return;
+    }
+
+    // Get headers dynamically from the object keys
+    const headers = Object.keys(data[0]);
+
+    // Build table rows
+    const tableRows = data.map(row => {
+      return `
+      <tr>
+        ${headers.map(h => `<td style="padding:8px; border:1px solid #ccc;">${row[h] ?? ''}</td>`).join('')}
+      </tr>
+    `;
+    }).join('');
+
+    // Build table headers
+    const tableHeader = `
+    <tr>
+      ${headers.map(h => `<th style="padding:8px; border:1px solid #ccc; background:#f5f5f5;">${h}</th>`).join('')}
+    </tr>
+  `;
+
+    // Full HTML
+    const printContent = `
+    <html>
+      <head>
+        <title>Training Requests</title>
+        <style>
+          body { font-family: Arial, sans-serif; margin: 20px; }
+          table { width: 100%; border-collapse: collapse; }
+          th, td { text-align: left; }
+          th { font-weight: bold; }
+        </style>
+      </head>
+      <body>
+        <h2>Training Requests</h2>
+        <table>
+          ${tableHeader}
+          ${tableRows}
+        </table>
+      </body>
+    </html>
+  `;
+
+    // Open new window and print
+    const popupWin = window.open('', '_blank', 'width=900,height=700');
+    popupWin!.document.open();
+    popupWin!.document.write(printContent);
+    popupWin!.document.close();
+    popupWin!.print();
+  }
+
+
+
+
 
   createThePdfFile(data) {
     return `<!DOCTYPE html>
@@ -424,36 +500,6 @@ export class TrainingRequestDashboardComponent implements OnInit {
     return print_content;
   }
 
-  // trainingRequestApprovedOrNot(rowId, approved) {
-  //   this.confirmationDialogService
-  //     .confirm("נא לאשר..", "האם אתה בטוח ...? ")
-  //     .then((confirmed) => {
-  //       console.log("User confirmed:", confirmed);
-  //       if (confirmed) {
-  //         this.http
-  //           .post(environment.url + "TrainingRequestApprovedOrNot", {
-  //             id: rowId,
-  //             approved: approved
-  //           })
-  //           .subscribe((Response) => {
-  //             if (Response['d']) {
-  //               this.getAllTrainingRequestFormsList("");
-  //               this.openSnackBar("נשמר בהצלחה");
-  //             } else {
-  //               this.getAllTrainingRequestFormsList("");
-  //               this.openSnackBar("תקלה! לא נשמר");
-  //             }
-  //           });
-  //       } else {
-  //       }
-  //     })
-  //     .catch(() =>
-  //       console.log(
-  //         "User dismissed the dialog (e.g., by using ESC, clicking the cross icon, or clicking outside the dialog)"
-  //       )
-  //     );
-  // }
-
   openSnackBar(message) {
     this._snackBar.open(message, "X", {
       duration: 3000,
@@ -473,7 +519,7 @@ export class TrainingRequestDashboardComponent implements OnInit {
               id: id,
             })
             .subscribe((Response) => {
-              this.getAllTrainingRequestFormsList("");
+              this.getAllTrainingRequestFormsList();
             });
         } else {
         }
@@ -485,12 +531,13 @@ export class TrainingRequestDashboardComponent implements OnInit {
       );
   }
 
-  getAllTrainingRequestFormsList(approved) {
+  getAllTrainingRequestFormsList() {
     this.loading = true;
     this.http
       .post(environment.url + "GetAllTrainingRequestFormsList", {
         _id: this.ID,
-        _approved: approved
+        _approved: this.filter_types,
+        _decission_date: this.filter_plans
       })
       .subscribe((Response) => {
         this.trainingRequests = new MatTableDataSource<any>(Response["d"]);
@@ -526,6 +573,10 @@ export class TrainingRequestDashboardComponent implements OnInit {
   }
 
   openPeopleDialog(): void {
+    if (new Date(this.filter_plans) > new Date()) {
+      this.openSnackBar("אין פרוטוקול לתאריך ועדה עתידי!");
+      return;
+    }
     this.dialog.open(PeopleListDialogComponent, {
       width: '500px',
       data: this.peopleList,
