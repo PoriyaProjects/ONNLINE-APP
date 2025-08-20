@@ -537,9 +537,9 @@ roomsData: RoomData[] = [];
 
 
 
-  loadRoomsData(): void {
+loadRoomsData(): void {
   this.googleChartsService.getSurgeryRooms(this.selectedDate).subscribe(result => {
-    const rows = result.surgeries;   // backend returns JSON string
+    const rows = result.surgeries;
 
     const grouped = rows.reduce((acc, row) => {
       const roomId = row.SurgeryRoom;
@@ -557,14 +557,34 @@ roomsData: RoomData[] = [];
       return acc;
     }, {} as Record<string, Surgery[]>);
 
-    this.roomsData = Object.keys(grouped).map(roomId => ({
-      roomId,
-      surgeries: grouped[roomId]
-    }));
+    this.roomsData = Object.keys(grouped).map(roomId => {
+      const list = grouped[roomId].slice().sort((a, b) => {
+        const ae = this.parseClock(a.timeEntrance)?.getTime();
+        const be = this.parseClock(b.timeEntrance)?.getTime();
+        // push invalid/00:00:00 to the end
+        if (ae == null && be == null) return 0;
+        if (ae == null) return 1;
+        if (be == null) return -1;
+        return ae - be;
+      });
+      return { roomId, surgeries: list };
+    });
   });
 }
 
+
   // --------- utility helpers ----------
+
+  private parseClock(t: string): Date | null {
+  if (!t || typeof t !== 'string') return null;
+  const parts = t.split(':').map(n => Number(n));
+  if (parts.length < 2 || parts.some(isNaN)) return null;
+  const [h, m, s = 0] = parts;
+  const d = new Date();
+  d.setHours(h, m, s, 0);
+  return isNaN(d.getTime()) ? null : d;
+}
+
 private parseTime(t: string): Date | null {
   if (!t || t === '00:00:00') return null;
   const [h, m, s] = t.split(':').map(Number);
@@ -573,39 +593,129 @@ private parseTime(t: string): Date | null {
   return d;
 }
 
+// private formatDiff(ms: number): string {
+//   if (isNaN(ms) || ms < 0) return '--:--';
+//   const h = Math.floor(ms / 3600000);
+//   const m = Math.floor((ms % 3600000) / 60000);
+//   return `${('0'+h).slice(-2)}:${('0'+m).slice(-2)}`;
+// }
+
 private formatDiff(ms: number): string {
-  if (isNaN(ms) || ms < 0) return '--:--';
-  const h = Math.floor(ms / 3600000);
-  const m = Math.floor((ms % 3600000) / 60000);
-  return `${('0'+h).slice(-2)}:${('0'+m).slice(-2)}`;
+  if (isNaN(ms)) return '--:--';
+  const sign = ms < 0 ? '-' : '';
+  const abs = Math.abs(ms);
+  const h = Math.floor(abs / 3600000);
+  const m = Math.floor((abs % 3600000) / 60000);
+  return `${sign}${('0'+h).slice(-2)}:${('0'+m).slice(-2)}`;
 }
+
+
+// getStartDiff(room: RoomData): string {
+//   const first = room.surgeries.find(s => this.parseTime(s.timeEntrance));
+//   if (!first) return '--:--';
+//   const entrance = this.parseTime(first.timeEntrance);
+//   const start = new Date(); start.setHours(7,30,0,0);
+//   return this.formatDiff(entrance.getTime() - start.getTime());
+// }
+
+// getStartDiff(room: RoomData): string {
+//   const cutoff = this.parseTime("07:30");
+//   const first = room.surgeries
+//     .filter(s => this.parseTime(s.timeEntrance) && this.parseTime(s.timeEntrance)! >= cutoff)
+//     .sort((a, b) => {
+//       const ta = this.parseTime(a.timeEntrance)?.getTime() || 0;
+//       const tb = this.parseTime(b.timeEntrance)?.getTime() || 0;
+//       return ta - tb;
+//     })[0];
+
+//   if (!first) return "--:--";
+
+//   const entrance = this.parseTime(first.timeEntrance);
+//   const start = this.parseTime("07:30");
+//   return entrance && start ? this.formatDiff(entrance.getTime() - start.getTime()) : "--:--";
+// }
 
 getStartDiff(room: RoomData): string {
-  const first = room.surgeries.find(s => this.parseTime(s.timeEntrance));
-  if (!first) return '--:--';
-  const entrance = this.parseTime(first.timeEntrance);
-  const start = new Date(); start.setHours(7,30,0,0);
-  return this.formatDiff(entrance.getTime() - start.getTime());
+  const opening = this.parseClock('07:30');
+  if (!opening) return '--:--';
+
+  const firstAfter = room.surgeries.find(s => {
+    const e = this.parseClock(s.timeEntrance);
+    return e && e >= opening;
+  });
+
+  if (!firstAfter) return '--:--';
+  const entrance = this.parseClock(firstAfter.timeEntrance)!;
+  return this.formatDiff(entrance.getTime() - opening.getTime());
 }
+
+// getEndDiff(room: RoomData): string {
+//   const completed = room.surgeries.filter(s => this.parseTime(s.timeExit));
+//   if (completed.length === 0) return '--:--';
+//   const lastExit = this.parseTime(completed[completed.length-1].timeExit);
+//   const end = new Date(); end.setHours(15,0,0,0);
+//   return this.formatDiff(end.getTime() - lastExit.getTime());
+// }
 
 getEndDiff(room: RoomData): string {
-  const completed = room.surgeries.filter(s => this.parseTime(s.timeExit));
-  if (completed.length === 0) return '--:--';
-  const lastExit = this.parseTime(completed[completed.length-1].timeExit);
-  const end = new Date(); end.setHours(15,0,0,0);
-  return this.formatDiff(end.getTime() - lastExit.getTime());
+  const closing = this.parseClock('15:00');
+  if (!closing) return '--:--';
+  const exits = room.surgeries
+    .map(s => this.parseClock(s.timeExit))
+    .filter(d => d && d <= closing);
+  if (exits.length === 0) {
+    return this.formatDiff(0);
+  }
+  const lastExit = exits[exits.length - 1];
+  return this.formatDiff(closing.getTime() - lastExit!.getTime());
 }
 
+
 getTurnoverTime(room: RoomData): string {
-  const completed = room.surgeries.filter(s => this.parseTime(s.timeEntrance) && this.parseTime(s.timeExit));
+  const cutoff = this.parseClock('07:33');
+  if (!cutoff) return '--:--';
+
+  // completed with real times
+  const completed = room.surgeries
+    .filter(s =>
+      s.status === 'Completed' &&
+      s.timeEntrance !== '00:00:00' &&
+      s.timeExit !== '00:00:00' &&
+      this.parseClock(s.timeEntrance) &&
+      this.parseClock(s.timeExit)
+    )
+    // list already sorted by entrance in loadRoomsData, but keep it safe:
+    .sort((a, b) =>
+      (this.parseClock(a.timeEntrance)!.getTime()) -
+      (this.parseClock(b.timeEntrance)!.getTime())
+    );
+
   let sum = 0;
-  for (let i=1; i<completed.length; i++) {
-    const prevExit = this.parseTime(completed[i-1].timeExit).getTime();
-    const nextIn = this.parseTime(completed[i].timeEntrance).getTime();
-    sum += (nextIn - prevExit) - (20*60000);
+
+  for (let i = 1; i < completed.length; i++) {
+    const prevExit = this.parseClock(completed[i - 1].timeExit)!;
+    const nextIn   = this.parseClock(completed[i].timeEntrance)!;
+
+    // skip turnover if either side occurs before cutoff
+    if (prevExit < cutoff || nextIn < cutoff) continue;
+
+    const diff = (nextIn.getTime() - prevExit.getTime()) - (20 * 60000);
+    // allow negative values (less than 20m)
+    sum += diff;
   }
+
   return this.formatDiff(sum);
 }
+
+
+
+
+
+
+
+
+
+
 
 plannedSurgeries(room: RoomData): Surgery[] {
   return room.surgeries.filter(s => s.status === 'Planned');
