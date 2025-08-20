@@ -418,6 +418,9 @@ export class RoomTimeNDashboardComponent implements OnInit, AfterViewInit {
         deptName
       );
     }, 0);
+
+
+    
   }
 
   private chunkArray<T>(array: T[], chunkSize: number): T[][] {

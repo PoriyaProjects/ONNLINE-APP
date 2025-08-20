@@ -1028,7 +1028,7 @@ public async drawSetupTimeQCharts(
       var multiColors = seriesPalette.slice(0, years.length);
 
       var options = buildColumnOptions({
-        title: title,
+        //title: title,
         legend: { position: 'top' },
         hAxis: { slantedText: true },
         vAxis: { minValue: 0 },
@@ -1082,7 +1082,7 @@ public async drawSetupTimeQCharts(
     var setupColor = pickSetupColor();
 
     var options2 = buildColumnOptions({
-      title: title,
+      //title: title,
       legend: 'none',
       hAxis: { slantedText: true },
       vAxis: { minValue: 0 },
@@ -1108,6 +1108,9 @@ public async drawSetupTimeQCharts(
     }
   }
 }
+
+
+
 
 
 }
