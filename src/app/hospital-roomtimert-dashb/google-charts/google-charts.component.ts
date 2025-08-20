@@ -537,6 +537,31 @@ roomsData: RoomData[] = [];
 
 
 
+
+// activeRoomId: string | null = null;
+
+// setActiveRoom(roomId: string) {
+//   this.activeRoomId = roomId;
+// }
+
+// toggleExpand(roomId: string) {
+//   this.openRoom = this.openRoom === roomId ? null : roomId;
+// }
+activeRoomId: string | null = null;
+
+toggleRoom(roomId: string) {
+  // If already active → collapse all
+  if (this.activeRoomId === roomId) {
+    this.activeRoomId = null;
+  } else {
+    // Expand only the clicked one
+    this.activeRoomId = roomId;
+  }
+}
+
+
+
+
 loadRoomsData(): void {
   this.googleChartsService.getSurgeryRooms(this.selectedDate).subscribe(result => {
     const rows = result.surgeries;
@@ -610,30 +635,7 @@ private formatDiff(ms: number): string {
 }
 
 
-// getStartDiff(room: RoomData): string {
-//   const first = room.surgeries.find(s => this.parseTime(s.timeEntrance));
-//   if (!first) return '--:--';
-//   const entrance = this.parseTime(first.timeEntrance);
-//   const start = new Date(); start.setHours(7,30,0,0);
-//   return this.formatDiff(entrance.getTime() - start.getTime());
-// }
 
-// getStartDiff(room: RoomData): string {
-//   const cutoff = this.parseTime("07:30");
-//   const first = room.surgeries
-//     .filter(s => this.parseTime(s.timeEntrance) && this.parseTime(s.timeEntrance)! >= cutoff)
-//     .sort((a, b) => {
-//       const ta = this.parseTime(a.timeEntrance)?.getTime() || 0;
-//       const tb = this.parseTime(b.timeEntrance)?.getTime() || 0;
-//       return ta - tb;
-//     })[0];
-
-//   if (!first) return "--:--";
-
-//   const entrance = this.parseTime(first.timeEntrance);
-//   const start = this.parseTime("07:30");
-//   return entrance && start ? this.formatDiff(entrance.getTime() - start.getTime()) : "--:--";
-// }
 
 getStartDiff(room: RoomData): string {
   const opening = this.parseClock('07:30');
@@ -649,13 +651,7 @@ getStartDiff(room: RoomData): string {
   return this.formatDiff(entrance.getTime() - opening.getTime());
 }
 
-// getEndDiff(room: RoomData): string {
-//   const completed = room.surgeries.filter(s => this.parseTime(s.timeExit));
-//   if (completed.length === 0) return '--:--';
-//   const lastExit = this.parseTime(completed[completed.length-1].timeExit);
-//   const end = new Date(); end.setHours(15,0,0,0);
-//   return this.formatDiff(end.getTime() - lastExit.getTime());
-// }
+
 
 getEndDiff(room: RoomData): string {
   const closing = this.parseClock('15:00');
@@ -725,8 +721,8 @@ activeSurgeries(room: RoomData): Surgery[] {
   return room.surgeries.filter(s => s.status !== 'Planned');
 }
 
-toggleRoom(roomId: string) {
-  this.openRoom = this.openRoom === roomId ? null : roomId;
-}
+// toggleRoom(roomId: string) {
+//   this.openRoom = this.openRoom === roomId ? null : roomId;
+// }
 
 }

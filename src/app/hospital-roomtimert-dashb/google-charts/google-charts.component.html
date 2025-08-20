@@ -267,6 +267,21 @@
   gap: 16px;
 }
 
+.room-widget {
+  transition: all 0.3s ease;
+}
+
+.room-widget.blurred {
+  filter: blur(3px);
+  opacity: 0.6;
+}
+
+.room-widget.active {
+  filter: none;
+  opacity: 1;
+  border: 2px solid #007bff;
+}
+
 </style>
 
 <div class="mdc-layout-grid" style="direction: rtl;">
@@ -302,52 +317,53 @@
       <main class="mdc-top-app-bar--fixed-adjust">
 
         <div style="height:60px;"></div>
-          <h3 style="text-align: center;">שימוש בחדרי ניתוח במן אמת</h3>
+          <h3 style="text-align: center;">שימוש בחדרי ניתוח זמן אמת</h3>
           <div style="height:60px;"></div>
           <div style="text-align:right; margin: 10px;">
   <label for="dateSelect">בחר תאריך: </label>
   <input type="date" id="dateSelect" [(ngModel)]="selectedDate" (change)="loadRoomsData()" />
 </div>
 
-          <div id="surgeriesrts">
-            <div class="room-widget card" style="padding:10px;"
-                *ngFor="let room of roomsData"
-                (click)="toggleRoom(room.roomId)">
+<div id="surgeriesrts">
+  <div
+    class="room-widget card"
+    style="padding:10px; max-height:400px; overflow-y:auto;"
+    *ngFor="let room of roomsData"
+    [class.active]="room.roomId === activeRoomId"
+    [class.blurred]="activeRoomId && room.roomId !== activeRoomId"
+  >
+    <!-- Header (always visible, clickable) -->
+    <div class="room-header" (click)="toggleRoom(room.roomId)">
+      <h4 class="text-center">{{ room.roomId }}</h4>
+      <div class="metrics text-center" style="margin-bottom:20px;">
+        ◓ {{ getStartDiff(room) }} | ⏳ {{ getTurnoverTime(room) }} | ◒ {{ getEndDiff(room) }}
+      </div>
+    </div>
 
-              <!-- Minimized -->
-              <div *ngIf="openRoom !== room.roomId" class="minimized">
-                <h4 class="text-center">{{ room.roomId }}</h4>
-                <div class="metrics text-center" style="margin-bottom:20px;">
-                  <div>◓ {{ getStartDiff(room) }}  |  ⏳ {{ getTurnoverTime(room) }}  |  ◒ {{ getEndDiff(room) }}</div>
-                </div>
-              </div>
+    <!-- Expanded details (only for active room) -->
+    <div *ngIf="activeRoomId === room.roomId">
+      <div *ngFor="let s of activeSurgeries(room)" class="surgery-row" style="direction:rtl; text-align: right;">
+        <b style="font-weight:800">{{ s.surgeryId }}</b><br />
+        {{ s.surgeryName }} ({{ s.surgeryCode }}) <br />
+        <i>{{ s.department }}</i><br />
+        <b>{{ s.timeEntrance }} ← {{ s.timeExit || '...' }}</b><br />
+        <span class="status" [ngClass]="s.status">{{ s.status }}</span>
+        <br /><br />
+      </div>
 
-              <!-- Expanded -->
-              <div *ngIf="openRoom === room.roomId" class="expanded">
-                <h4 class="text-center">{{ room.roomId }}</h4>
-                <div class="metrics text-center">
-                  <div>◓ {{ getStartDiff(room) }}  |  ⏳ {{ getTurnoverTime(room) }}  |  ◒ {{ getEndDiff(room) }}</div>
-                </div>
-                <div *ngFor="let s of activeSurgeries(room)" class="surgery-row" style="direction:rtl; text-align: right;">
+      <div *ngIf="plannedSurgeries(room).length">
+        <hr />
+        <h5 style="direction:rtl; text-align: right;">נתוחים מתוכננים</h5>
+        <div *ngFor="let s of plannedSurgeries(room)" class="surgery-row" style="direction:rtl; text-align: right;">
+          {{ s.surgeryName }} ({{ s.surgeryCode }}) - {{ s.department }}
+          <br />
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 
-                  <b style="font-weight:800">{{ s.surgeryId}}</b><br/>
-                  {{ s.surgeryName }} ({{ s.surgeryCode }}) <br/> <i>{{ s.department }}</i><br/>
-                  <b>{{ s.timeEntrance }} ← {{ s.timeExit || '...' }}</b> <br/>
-                  <span class="status" [ngClass]="s.status">{{ s.status }}</span>
-                  <br/><br/>
-                </div>
 
-                <div *ngIf="plannedSurgeries(room).length">
-                  <hr />
-                  <h5 style="direction:rtl; text-align: right;">נתוחים מתוכננים</h5>
-                  <div *ngFor="let s of plannedSurgeries(room)" class="surgery-row" style="direction:rtl; text-align: right;">
-                    {{ s.surgeryName }} ({{ s.surgeryCode }}) - {{ s.department }}
-                    <br/>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
 <div style="height:60px;"></div>
 
         <div class="row">
