@@ -317,7 +317,7 @@
               <!-- Minimized -->
               <div *ngIf="openRoom !== room.roomId" class="minimized">
                 <h4 class="text-center">{{ room.roomId }}</h4>
-                <div class="metrics text-center">
+                <div class="metrics text-center" style="margin-bottom:20px;">
                   <div>◓ {{ getStartDiff(room) }}  |  ⏳ {{ getTurnoverTime(room) }}  |  ◒ {{ getEndDiff(room) }}</div>
                 </div>
               </div>
@@ -325,11 +325,13 @@
               <!-- Expanded -->
               <div *ngIf="openRoom === room.roomId" class="expanded">
                 <h4 class="text-center">{{ room.roomId }}</h4>
-
+                <div class="metrics text-center">
+                  <div>◓ {{ getStartDiff(room) }}  |  ⏳ {{ getTurnoverTime(room) }}  |  ◒ {{ getEndDiff(room) }}</div>
+                </div>
                 <div *ngFor="let s of activeSurgeries(room)" class="surgery-row" style="direction:rtl; text-align: right;">
 
-                  <b>{{ s.surgeryId}}</b><br/>
-                  {{ s.surgeryName }} ({{ s.surgeryCode }}) - {{ s.department }}<br/>
+                  <b style="font-weight:800">{{ s.surgeryId}}</b><br/>
+                  {{ s.surgeryName }} ({{ s.surgeryCode }}) <br/> <i>{{ s.department }}</i><br/>
                   <b>{{ s.timeEntrance }} ← {{ s.timeExit || '...' }}</b> <br/>
                   <span class="status" [ngClass]="s.status">{{ s.status }}</span>
                   <br/><br/>
@@ -337,7 +339,7 @@
 
                 <div *ngIf="plannedSurgeries(room).length">
                   <hr />
-                  <h5>נתוחים מתוכננים</h5>
+                  <h5 style="direction:rtl; text-align: right;">נתוחים מתוכננים</h5>
                   <div *ngFor="let s of plannedSurgeries(room)" class="surgery-row" style="direction:rtl; text-align: right;">
                     {{ s.surgeryName }} ({{ s.surgeryCode }}) - {{ s.department }}
                     <br/>
