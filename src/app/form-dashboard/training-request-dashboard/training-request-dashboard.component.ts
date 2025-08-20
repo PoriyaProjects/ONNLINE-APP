@@ -300,36 +300,59 @@ export class TrainingRequestDashboardComponent implements OnInit {
     // Get headers dynamically from the object keys
     const headers = Object.keys(data[0]);
 
+
     // Build table rows
-    const tableRows = data.map(row => {
-      return `
-      <tr>
-        ${headers.map(h => `<td style="padding:8px; border:1px solid #ccc;">${row[h] ?? ''}</td>`).join('')}
-      </tr>
-    `;
-    }).join('');
+    let tableRows =
+      `<tr>`
+    for (let i = 0; i < data.length; i++) {
+      tableRows += `<td style="padding:8px; border:1px solid #ccc;">${data[i]}</td>`
+    }
+    `</tr>`;
 
     // Build table headers
-    const tableHeader = `
-    <tr>
-      ${headers.map(h => `<th style="padding:8px; border:1px solid #ccc; background:#f5f5f5;">${h}</th>`).join('')}
-    </tr>
-  `;
+    let tableHeader =
+      `<tr>`
+    for (let i = 0; i < headers.length; i++) {
+      tableHeader += `<th style="padding:8px; border:1px solid #ccc; background:#f5f5f5;">${headers[i]}</th>`
+    }
+    `</tr>`;
 
-    // Full HTML
+    // Full HTML with RTL + landscape
     const printContent = `
-    <html>
+    <html dir="rtl" lang="he">
       <head>
-        <title>Training Requests</title>
+        <title>בקשות השתלמות</title>
         <style>
-          body { font-family: Arial, sans-serif; margin: 20px; }
-          table { width: 100%; border-collapse: collapse; }
-          th, td { text-align: left; }
-          th { font-weight: bold; }
+          @page { size: landscape; }
+          body { 
+            font-family: Arial, sans-serif; 
+            margin: 20px; 
+            direction: rtl;
+            text-align: right;
+          }
+          h2 {
+            text-align: center;
+            margin-bottom: 20px;
+          }
+          table { 
+            width: 100%; 
+            border-collapse: collapse; 
+          }
+          th, td { 
+            padding: 8px; 
+            border: 1px solid #ccc; 
+          }
+          th { 
+            background: #f5f5f5; 
+            font-weight: bold; 
+          }
+          tr:nth-child(even) {
+            background-color: #fafafa;
+          }
         </style>
       </head>
       <body>
-        <h2>Training Requests</h2>
+        <h2>בקשות השתלמות</h2>
         <table>
           ${tableHeader}
           ${tableRows}
@@ -339,12 +362,13 @@ export class TrainingRequestDashboardComponent implements OnInit {
   `;
 
     // Open new window and print
-    const popupWin = window.open('', '_blank', 'width=900,height=700');
+    const popupWin = window.open('', '_blank', 'width=1200,height=900');
     popupWin!.document.open();
     popupWin!.document.write(printContent);
     popupWin!.document.close();
     popupWin!.print();
   }
+
 
 
 

@@ -135,6 +135,7 @@ export class EmployeesAddUpdateComponent implements OnInit {
     this.getEmployeesBlossomSektorList();
     this.getEmployeesEndWorkReasons();
     this.getEmployeeDepartmentList();
+    this.getHRDepartmentEmployees();
 
     this.filteredOptions = this.manfilter.valueChanges
       .pipe(
