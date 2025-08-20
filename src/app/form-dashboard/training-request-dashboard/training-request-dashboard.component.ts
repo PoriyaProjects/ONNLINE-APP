@@ -40,7 +40,7 @@ export class TrainingRequestDashboardComponent implements OnInit {
 
   trainingRequests = new MatTableDataSource();
   displayedColumns: string[] = [
-    'Row_ID', 'Form_Fill_Date', 'First_Name', 'Passport_ID', 'Function_Department', 'Name_Location', 'Date', 'EApproved', 'FApproved', 'Training_Fund_Answer', 'Galilean_Partnership_Description', 'HApproved', 'Actions'
+    'Row_ID', 'Form_Fill_Date', 'First_Name', 'Passport_ID', 'Function_Department', 'Name_Location', 'Date', 'EApproved', 'FApproved', 'HApproved', 'Training_Fund_Answer', 'Galilean_Partnership_Description', 'Actions'
   ];
   peopleList = [
     { Full_Name: 'שמעון סבח', Role: 'יו"ר הועדה' },
@@ -369,11 +369,6 @@ export class TrainingRequestDashboardComponent implements OnInit {
     popupWin!.print();
   }
 
-
-
-
-
-
   createThePdfFile(data) {
     return `<!DOCTYPE html>
     <html lang="he" dir="rtl">
@@ -404,8 +399,8 @@ export class TrainingRequestDashboardComponent implements OnInit {
             ${data['H'].Approved == "מאושר" || data['H'].Approved == "מאושר התחייבות חשב" ? `
             <p style="margin: 5px 0;">הריני להודיעך כי הועדה החליטה, לאשר את הבקשה בכפוף לתנאים הבאים:</p>
             <ul style="margin-right: 20px;padding-right: 20px;list-style-type: disc;">
+            <li style="margin-bottom: 5px;">מספר ימי העדרות שאושרו: ${data['H'].Approved_Absence_Time}, קוד רישום: ${data['H'].Code_Type}</li>
                 ${data['H'].Transportaion === "True" ? `<li style="margin-bottom: 5px;">החזר נסיעות בגובה 100% לפי רפורמת דרך שווה.</li>
-                <li style="margin-bottom: 5px;">מספר ימי העדרות שאושרו: ${data['H'].Approved_Absence_Time}, קוד רישום: ${data['H'].Code_Type}</li>
                 <p>יש להגיש קבלה מקורית למדור שכר עד חודשיים מיום ההנפקה</p>` : ``}
             </ul>` : `
             <p style="margin: 5px 0;">הריני להודיעך כי הועדה החליטה, לא לאשר את הבקשה.</p>`

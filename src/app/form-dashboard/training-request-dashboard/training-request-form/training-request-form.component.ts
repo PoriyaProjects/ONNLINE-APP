@@ -818,7 +818,7 @@ export class TrainingRequestFormComponent implements OnInit {
       .then((confirmed) => {
         console.log("User confirmed:", confirmed);
         if (confirmed) {
-          this.checkPlanAvailability();
+          // this.checkPlanAvailability();
           this.dialogRef.close(rowId);
         } else {
         }
