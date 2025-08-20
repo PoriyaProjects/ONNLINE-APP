@@ -258,6 +258,7 @@ import { CprNewbornFormComponent } from './form-dashboard/cpr-newbord-dashborad/
 import { HospitalCathDashbModule } from './hospital-cath-dashb/hospital-cath-dashb.module';
 import { HospitalRoomTimeDashbModule } from './hospital-roomtime-dashb/hospital-roomtime-dashb.module';
 import { HospitalRoomTimeNDashbModule } from './hospital-roomtimen-dashb/hospital-roomtimen-dashb.module';
+import { HospitalRoomTimeRTDashbModule } from './hospital-roomtimert-dashb/hospital-roomtimert-dashb.module';
 import { AppointsDashbModule } from './hospital-appoints-dashb/hospital-appoints-dashb.module';
 import { SharedModule } from './shared/shared.module';
 import { CommercialSupportFormDashboardComponent } from './form-dashboard/commercial-support-form-dashboard/commercial-support-form-dashboard.component';
@@ -277,6 +278,7 @@ import { HospitalIncomeNBDashbComponent } from './hospital-incomenb-dashb/hospit
 import { FilterDepartsPipe } from './pipe/filter-departs.pipe';
 import { FoldersManagementComponent } from './dashboard/folders-management/folders-management.component';
 import { FolderDialogComponent } from './dashboard/folders-management/folder-dialog/folder-dialog.component';
+import { RoomTimeRTDashboardComponent } from './hospital-roomtimert-dashb/google-charts/google-charts.component';
 
 
 
@@ -500,7 +502,7 @@ const maskConfig: Partial<IConfig> = {
     ServiceUnitEmailListDialogComponent,
     CommercialSupportGatheringComponent,
     HospitalIncomeDashbComponent,
-    HospitalIncomeNBDashbComponent,
+    HospitalIncomeNBDashbComponent,    
     FilterDepartsPipe,
     FoldersManagementComponent,
     FolderDialogComponent,
