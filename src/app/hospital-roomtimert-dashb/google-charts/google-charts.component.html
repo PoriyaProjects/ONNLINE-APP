@@ -297,6 +297,36 @@
 
   h2, h3{text-align: center; padding: 20px;width:100%;}
   .panel{background:#eeeff1; margin-bottom: 40px;}
+  .expand_btn{width: 100%; text-align: center;}
+
+  .status-circle {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+}
+
+.status-circle.green { 
+  background-color: #28a745; 
+  animation: blink 1.2s infinite;
+}
+
+.status-circle.red { 
+  background-color: #dc3545; 
+  animation: blink 1.2s infinite;
+}
+
+.status-circle.grey  { 
+  background-color: #6c757d; 
+  animation: none; /* no blinking */
+}
+
+@keyframes blink {
+  50% { opacity: 0.2; }
+}
+
 </style>
 
 <div class="mdc-layout-grid" style="direction: rtl;">
@@ -336,8 +366,8 @@
         <div class="panel" style="padding:20px;width:100%; border: 1px solid rgba(0, 0, 0, .125);
     border-radius: .25rem;">
           <h3 style="text-align: center;">שימוש בחדרי ניתוח (זמן אמת)</h3>
-          <div style="height:20px;"></div>
-          <div style="text-align:right; margin: 10px;">
+          
+          <div style="margin: 10px;">
             <label for="dateSelect">לשינוי תאריך:  </label>
             <input type="date" id="dateSelect" [(ngModel)]="selectedDate" (change)="loadRoomsData()" style="padding-left:10px; margin-right:20px;cursor: pointer;"/>
           </div>
@@ -349,9 +379,13 @@
               <!-- Header (always visible, clickable) -->
               <div class="room-header" (click)="toggleRoom(room.roomId)">
                 <h4 class="text-center">{{ room.roomId }}</h4>
-                <div class="metrics text-center" style="margin-bottom:20px;">
+                <div class="metrics text-center" style="margin-bottom:10px;">
                   ◓ {{ getStartDiff(room) }} | ⏳ {{ getTurnoverTime(room) }} | ◒ {{ getEndDiff(room) }}
                 </div>
+                <div class="expand_btn">
+                  {{ activeRoomId === room.roomId ? '⮝' : '⮟' }}
+                </div>
+                <div class="status-circle" [ngClass]="getRoomStatusClass(room)"></div>
               </div>
 
               <!-- Expanded details (only for active room) -->
@@ -378,6 +412,7 @@
               </div>
             </div>
           </div>
+          <div style="height:20px;"></div>
         </div>
 
         <div style="height:60px;"></div>

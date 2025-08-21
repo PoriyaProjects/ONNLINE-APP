@@ -64,8 +64,8 @@ export class RoomTimeRTDashboardComponent implements OnInit, AfterViewInit {
   departmentMap = new Map<string, DepartmentData>();
   selectedDepartmentCharts: any[] = [];
 
-selectedDate: string = new Date().toISOString().split('T')[0]; // yyyy-MM-dd
-roomsData: RoomData[] = [];
+  selectedDate: string = new Date().toISOString().split('T')[0]; // yyyy-MM-dd
+  roomsData: RoomData[] = [];
   openRoom: string | null = null; // track which widget is expanded
 
 
@@ -538,23 +538,13 @@ roomsData: RoomData[] = [];
 
 
 
-// activeRoomId: string | null = null;
 
-// setActiveRoom(roomId: string) {
-//   this.activeRoomId = roomId;
-// }
-
-// toggleExpand(roomId: string) {
-//   this.openRoom = this.openRoom === roomId ? null : roomId;
-// }
 activeRoomId: string | null = null;
 
-toggleRoom(roomId: string) {
-  // If already active → collapse all
+toggleRoom(roomId: string) {  
   if (this.activeRoomId === roomId) {
     this.activeRoomId = null;
-  } else {
-    // Expand only the clicked one
+  } else {    
     this.activeRoomId = roomId;
   }
 }
@@ -610,20 +600,6 @@ loadRoomsData(): void {
   return isNaN(d.getTime()) ? null : d;
 }
 
-private parseTime(t: string): Date | null {
-  if (!t || t === '00:00:00') return null;
-  const [h, m, s] = t.split(':').map(Number);
-  const d = new Date();
-  d.setHours(h, m, s, 0);
-  return d;
-}
-
-// private formatDiff(ms: number): string {
-//   if (isNaN(ms) || ms < 0) return '--:--';
-//   const h = Math.floor(ms / 3600000);
-//   const m = Math.floor((ms % 3600000) / 60000);
-//   return `${('0'+h).slice(-2)}:${('0'+m).slice(-2)}`;
-// }
 
 private formatDiff(ms: number): string {
   if (isNaN(ms)) return '--:--';
@@ -653,12 +629,27 @@ getStartDiff(room: RoomData): string {
 
 
 
+// getEndDiff(room: RoomData): string {
+//   const closing = this.parseClock('15:00');
+//   if (!closing) return '--:--';
+//   const exits = room.surgeries
+//     .map(s => this.parseClock(s.timeExit))
+//     .filter(d => d && d <= closing);
+//   if (exits.length === 0) {
+//     return this.formatDiff(0);
+//   }
+//   const lastExit = exits[exits.length - 1];
+//   return this.formatDiff(closing.getTime() - lastExit!.getTime());
+// }
 getEndDiff(room: RoomData): string {
+  const opening = this.parseClock('07:30');
   const closing = this.parseClock('15:00');
-  if (!closing) return '--:--';
+  if (!closing || !opening) return '--:--';
+
   const exits = room.surgeries
     .map(s => this.parseClock(s.timeExit))
-    .filter(d => d && d <= closing);
+    .filter(d => d && d >= opening && d <= closing);
+
   if (exits.length === 0) {
     return this.formatDiff(0);
   }
@@ -705,14 +696,6 @@ getTurnoverTime(room: RoomData): string {
 
 
 
-
-
-
-
-
-
-
-
 plannedSurgeries(room: RoomData): Surgery[] {
   return room.surgeries.filter(s => s.status === 'Planned');
 }
@@ -721,8 +704,23 @@ activeSurgeries(room: RoomData): Surgery[] {
   return room.surgeries.filter(s => s.status !== 'Planned');
 }
 
-// toggleRoom(roomId: string) {
-//   this.openRoom = this.openRoom === roomId ? null : roomId;
-// }
+getRoomStatusClass(room: RoomData): string {
+  // check if any active surgery is InProgress
+  const inProgress = room.surgeries.some(s => s.status === 'InProgress');
+  if (inProgress) return 'green';
+
+  // check turnover time > 20 min
+  const turnover = this.getTurnoverTime(room);
+  if (turnover !== '--:--') {
+    const [h, m] = turnover.replace('-', '').split(':').map(Number);
+    const minutes = (h * 60) + m;
+    if (minutes > 20) {
+      return 'red';
+    }
+  }
+
+  return 'grey';
+}
+
 
 }
