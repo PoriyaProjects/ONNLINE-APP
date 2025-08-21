@@ -63,12 +63,7 @@ export class GoogleChartsService {
     );
   }
 
-//   getSurgeryRooms(date: string) {
-//   return this.http.get(
-//     `${environment.url}/GetSurgeryRoomsByDate?date=${encodeURIComponent(date)}`,
-//     { responseType: 'text' as const }
-//   );
-// }
+
 
 
 getSurgeryRooms(date: string) {

@@ -852,15 +852,7 @@ drawOverlayArcChartHelperRoomTime({
     new Ctor(el).draw(dt, opts);
   }
 
-  // @HostListener('window:scroll', [])
-  // onScroll() {
-  //   const el = document.getElementById('stickyTabsFilters');
-  //   if (el) {
-  //     const isSticky = window.scrollY > 100;
-  //     if (isSticky) el.classList.add('is-sticky');
-  //     else el.classList.remove('is-sticky');
-  //   }
-  // }
+
 
 
   @HostListener('window:scroll', [])
@@ -1108,8 +1100,6 @@ public async drawSetupTimeQCharts(
     }
   }
 }
-
-
 
 
 

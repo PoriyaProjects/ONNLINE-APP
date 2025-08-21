@@ -295,8 +295,202 @@
     font-size: 0.9em;
   }
 
-  h2, h3{text-align: center; padding: 20px;width:100%;}
-  .panel{background:#eeeff1; margin-bottom: 40px;}
+  h2,
+  h3 {
+    text-align: center;
+    padding: 20px;
+    width: 100%;
+  }
+
+  .panel {
+    background: #eeeff1;
+    margin-bottom: 40px;
+  }
+
+  .expand_btn {
+    width: 100%;
+    text-align: center;
+  }
+
+.status-circle {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  position: absolute;
+  top: 8px;
+  right: 8px;
+}
+
+/* Base colors */
+.status-circle.green-blink { background: green; }
+.status-circle.grey        { background: grey; }
+.status-circle.blue        { background: blue; }
+.status-circle.orange      { background: orange; }
+.status-circle.red-45      { background: red; }
+.status-circle.red-60      { background: darkred; }
+.status-circle.red-120     { background: maroon; }
+
+/* Quiet blink (for active/healthy states) */
+@keyframes quiet-blink {
+  50% { opacity: 0.6; }
+}
+
+.status-circle.green-blink,
+.status-circle.blue {
+  animation: quiet-blink 2s infinite;
+}
+
+/* Normal blink (warning) */
+@keyframes blink {
+  50% { opacity: 0.3; }
+}
+
+.status-circle.orange,
+.status-circle.red-45 {
+  animation: blink 1s infinite;
+}
+
+/* Stronger escalation */
+@keyframes strong-blink {
+  50% { opacity: 0.1; }
+}
+
+.status-circle.red-60,
+.status-circle.red-120 {
+  animation: strong-blink 0.8s infinite;
+}
+
+/* Pulsing borders for severe delays */
+.card.red-45 {
+  border: 2px solid red;
+}
+.card.red-60 {
+  border: 2px solid darkred;
+  animation: blink 1s infinite;
+}
+.card.red-120 {
+  border: 3px solid darkred;
+  animation: strong-blink 0.5s infinite;
+}
+
+/* acknowledged: keep color but no blink */
+.status-circle.red-45-ack { background: red; }
+.status-circle.red-60-ack { background: darkred; }
+.status-circle.red-120-ack { background: maroon; }
+
+.card.red-45-ack { border: 2px solid red; }
+.card.red-60-ack { border: 2px solid darkred; }
+.card.red-120-ack { border: 3px solid darkred; }
+
+.metric-ok { color: green; }
+.metric-yellow { color: goldenrod; }
+.metric-orange { color: darkorange; font-weight: bold; }
+.metric-red { color: red; font-weight: bold; }
+.metric-red-strong { color: darkred; font-weight: bold; animation: pulse 1s infinite; }
+
+@keyframes pulse {
+  0% { opacity: 1; }
+  50% { opacity: 0.6; }
+  100% { opacity: 1; }
+}
+
+
+.ok {
+  color: green;
+}
+.warning {
+  color: orange;
+}
+.bad {
+  color: red;
+}
+.critical {
+  color: red;
+  animation: blink 1s linear infinite;
+}
+.severe {
+  color: darkred;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes blink {
+  50% { opacity: 0.4; }
+}
+@keyframes pulse {
+  0%   { text-shadow: 0 0 2px red; }
+  50%  { text-shadow: 0 0 8px red; }
+  100% { text-shadow: 0 0 2px red; }
+}
+
+
+  .loader-overlay {
+    position: absolute;
+    inset: 0;
+    /* shorthand for top/left/right/bottom:0 */
+    background: rgba(255, 255, 255, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+  }
+
+  .spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid #ddd;
+    border-top: 4px solid #007bff;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  .refresh-toolbar {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 6px;
+  }
+
+  .refresh-box {
+    display: inline-block;
+    padding: 2px 8px;
+    font-size: 0.85rem;
+    color: #fff;
+    background: #007bff;
+    border-radius: 4px;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.2s;
+  }
+
+  .refresh-box:hover {
+    background: #0056b3;
+  }
+
+  .pause-btn {
+    padding: 2px 8px;
+    font-size: 0.8rem;
+    cursor: pointer;
+  }
+
+  .last-updated {
+    font-size: 0.8rem;
+    color: #555;
+  }
+
+  .metrics-legend {
+  text-align: center;
+  font-size: 0.85rem;
+  color: #555;
+  margin: 5px 0 ;
+}
+
 </style>
 
 <div class="mdc-layout-grid" style="direction: rtl;">
@@ -315,18 +509,7 @@
     </div>
   </div>
 
-
-  <!-- <div class="row">
-    <div class="mdc-layout-grid__cell col-md-12">
-      <div class="card text-center">
-        <h3 style="margin:10px auto 0">אובדן זמן חדרי ניתוח</h3>
-        <h5 style="margin:10px auto 0">(איחור תחילת יום + אובדן סוף יום + עודף Setup Time)</h5>
-        <div id="multiPeriodSummary" style="width: 100%; height: 160px;">טעינה...</div>
-        <div style="height:10px"></div>
-      </div>
-    </div>
-  </div> -->
-
+  
   <div class="row">
     <div class="mdc-layout-grid__cell col-md-12">
       <main class="mdc-top-app-bar--fixed-adjust">
@@ -335,51 +518,115 @@
 
         <div class="panel" style="padding:20px;width:100%; border: 1px solid rgba(0, 0, 0, .125);
     border-radius: .25rem;">
-          <h3 style="text-align: center;">שימוש בחדרי ניתוח (זמן אמת)</h3>
-          <div style="height:20px;"></div>
-          <div style="text-align:right; margin: 10px;">
-            <label for="dateSelect">לשינוי תאריך:  </label>
-            <input type="date" id="dateSelect" [(ngModel)]="selectedDate" (change)="loadRoomsData()" style="padding-left:10px; margin-right:20px;cursor: pointer;"/>
+
+          <h3 style="text-align: center;">
+            שימוש בחדרי ניתוח (זמן אמת)
+          </h3>
+          <div class="refresh-toolbar">
+            <span *ngIf="lastLoaded" class="last-updated">
+              נטען לאחרונה: {{ lastLoaded | date:'HH:mm:ss' }}
+            </span>
+            <button class="pause-btn" (click)="toggleAutoRefresh()">
+              {{ autoRefreshPaused ? '▶️ הפעל רענון' : '⏸ השהה רענון' }}
+            </button>
+            <span class="refresh-box" (click)="manualRefresh()" title="רענן עכשיו">
+              ⟳ {{ formatCountdown(nextRefreshIn) }}
+            </span>
+            
           </div>
 
-          <div id="surgeriesrts">           
-            <div class="room-widget card" style="padding:10px; max-height:400px; overflow-y:auto;"
-              *ngFor="let room of roomsData" [class.active]="room.roomId === activeRoomId"
-              [class.blurred]="activeRoomId && room.roomId !== activeRoomId">
-              <!-- Header (always visible, clickable) -->
-              <div class="room-header" (click)="toggleRoom(room.roomId)">
-                <h4 class="text-center">{{ room.roomId }}</h4>
-                <div class="metrics text-center" style="margin-bottom:20px;">
-                  ◓ {{ getStartDiff(room) }} | ⏳ {{ getTurnoverTime(room) }} | ◒ {{ getEndDiff(room) }}
-                </div>
-              </div>
 
-              <!-- Expanded details (only for active room) -->
-              <div *ngIf="activeRoomId === room.roomId">
-                <div *ngFor="let s of activeSurgeries(room)" class="surgery-row"
-                  style="direction:rtl; text-align: right;">
-                  <b style="font-weight:800">{{ s.surgeryId }}</b><br />
-                  {{ s.surgeryName }} ({{ s.surgeryCode }}) <br />
-                  <i>{{ s.department }}</i><br />
-                  <b>{{ s.timeEntrance }} ← {{ s.timeExit || '...' }}</b><br />
-                  <span class="status" [ngClass]="s.status">{{ s.status }}</span>
-                  <br /><br />
-                </div>
 
-                <div *ngIf="plannedSurgeries(room).length">
-                  <hr />
-                  <h5 style="direction:rtl; text-align: right;">נתוחים מתוכננים</h5>
-                  <div *ngFor="let s of plannedSurgeries(room)" class="surgery-row"
-                    style="direction:rtl; text-align: right;">
-                    {{ s.surgeryName }} ({{ s.surgeryCode }}) - {{ s.department }}
-                    <br />
-                  </div>
-                </div>
-              </div>
+
+          <div style="margin: 10px 0;">
+            <label for="dateSelect">שינוי תאריך </label>
+            <input type="date" id="dateSelect" [(ngModel)]="selectedDate" (change)="loadRoomsData()"
+              style="padding-left:10px; margin-right:20px;cursor: pointer;" />
+          </div>
+
+          <div id="surgeriesrts">
+            <div *ngIf="isLoading" class="loader-overlay">
+              <div class="spinner"></div>
             </div>
-          </div>
-        </div>
+            <div class="room-widget card"
+     *ngFor="let room of roomsData"
+     [ngClass]="[
+       getRoomStatusClass(room),
+       room.roomId === activeRoomId ? 'active' : '',
+       activeRoomId && room.roomId !== activeRoomId ? 'blurred' : ''
+     ]"
+     style="padding:10px; max-height:400px; overflow-y:auto;">
+  
+  <!-- Header (always visible, clickable) -->
+  <div class="room-header" (click)="toggleRoom(room.roomId)">
+    <h4 class="text-center">{{ room.roomId }}</h4>
+   
 
+<div class="metrics text-center" style="margin-bottom:10px;">
+  ◓ <span [ngClass]="getStartDiffClass(room)">{{ getStartDiff(room) }}</span> |
+  ⏳ 
+  <span [ngClass]="getTurnoverTimeClass(room)">
+    {{ getTurnoverTime(room) }}
+  </span>
+  ({{ getTurnoverSummary(room) }}) |
+  ◒ <span [ngClass]="getEndDiffClass(room)">{{ getEndDiff(room) }}</span>
+</div>
+
+    <div class="expand_btn">
+      {{ activeRoomId === room.roomId ? '⮝' : '⮟' }}
+    </div>
+    <div class="status-circle" [ngClass]="getRoomStatusClass(room)"></div>
+  </div>
+
+
+
+  <div *ngIf="activeRoomId === room.roomId">
+  <div *ngFor="let s of activeSurgeries(room); let i = index" style="direction:rtl; text-align:right;">
+    
+    <!-- Turnover line BEFORE each surgery except the first -->
+   <div *ngIf="i > 0" class="turnover-line" [ngClass]="getTurnoverBetweenClass(activeSurgeries(room)[i-1], s)">
+  ⏳ {{ getTurnoverBetween(activeSurgeries(room)[i-1], s) }}
+</div>
+
+
+    <!-- Surgery details -->
+    <div class="surgery-row">
+      <b style="font-weight:800">{{ s.surgeryId }}</b><br />
+      {{ s.surgeryName }} ({{ s.surgeryCode }}) <br />
+      <i>{{ s.department }}</i><br />
+      <b>{{ s.timeEntrance }} ← {{ s.timeExit || '...' }}</b><br />
+      <span class="status" [ngClass]="s.status">{{ s.status }}</span>
+      <br /><br />
+    </div>
+  </div>
+
+  <!-- Planned surgeries -->
+  <div *ngIf="plannedSurgeries(room).length">
+    <hr />
+    <h5 style="direction:rtl; text-align:right;">נתוחים מתוכננים</h5>
+    <div *ngFor="let s of plannedSurgeries(room)" class="surgery-row" style="direction:rtl; text-align:right;">
+      {{ s.surgeryName }} ({{ s.surgeryCode }}) - {{ s.department }}
+      <br />
+    </div>
+  </div>
+</div>
+
+</div>
+
+          </div>
+          <div class="row card" style="margin-top: 20px;">           
+<div class="metrics-legend" style="text-align:center; margin-bottom:10px; font-size:0.9em;">
+  ◓ = עיכוב מתחילת יום | 
+  ⏳ = זמן הכנת חדר (מעבר ל־20 דקות) | 
+  ◒ = פער עד סיום יום <br />
+  🟢 ירוק = ניתוח פעיל | 
+  🔵 כחול = חדר לא מנוצל | 
+  🟠 כתום = עיכוב בהכנת חדר | 
+  🔴 אדום = עיכוב חמור (גבוה מ־45 דק׳, 60 דק׳, 120 דק׳)
+</div>
+          </div>
+          <div style="height:20px;"></div>
+        </div>
         <div style="height:60px;"></div>
 
         <div class="row">
@@ -389,203 +636,183 @@
 
         <div class="panel" style="padding:20px;width:100%; border: 1px solid rgba(0, 0, 0, .125);
     border-radius: .25rem;">
-    <h3 style="text-align: center;margin-bottom: 20px;">אובדן זמן שימוש בחדרי ניתוח (אתמול)</h3>
-        <!-- Arc hh:mm -->
-        <div class="row">
-          <div class="mdc-layout-grid__cell col-md-4">
-            <div class="card text-center">
-              <div id="MorningDelay_avg" style="width: 100%; height: 240px;">טעינה...</div>
+          <h3 style="text-align: center;margin-bottom: 20px;">אובדן זמן שימוש בחדרי ניתוח (אתמול)</h3>
+          <!-- Arc hh:mm -->
+          <div class="row">
+            <div class="mdc-layout-grid__cell col-md-4">
+              <div class="card text-center">
+                <div id="MorningDelay_avg" style="width: 100%; height: 240px;">טעינה...</div>
+              </div>
             </div>
-          </div>
-          <div class="mdc-layout-grid__cell col-md-4">
-            <div class="card text-center">
-              <div id="EndDay_avg" style="width: 100%; height: 240px;">טעינה...</div>
+            <div class="mdc-layout-grid__cell col-md-4">
+              <div class="card text-center">
+                <div id="EndDay_avg" style="width: 100%; height: 240px;">טעינה...</div>
+              </div>
             </div>
-          </div>
-          <div class="mdc-layout-grid__cell col-md-4">
-            <div class="card text-center">
-              <div id="SetupTime_avg" style="width: 100%; height: 240px;">טעינה...</div>
+            <div class="mdc-layout-grid__cell col-md-4">
+              <div class="card text-center">
+                <div id="SetupTime_avg" style="width: 100%; height: 240px;">טעינה...</div>
+              </div>
             </div>
-          </div>
 
+          </div>
         </div>
-        </div>
-        <!-- <div style="height:60px;"></div> -->
-
-        <!-- Arc days -->
-        <!-- <div class="row">
-          <div class="mdc-layout-grid__cell col-md-4">
-            <div class="card text-center">
-              <div id="MorningDelay_agg" style="width: 100%; height: 300px;">טעינה...</div>
-            </div>
-          </div>
-          <div class="mdc-layout-grid__cell col-md-4">
-            <div class="card text-center">
-              <div id="EndDay_agg" style="width: 100%; height: 300px;">טעינה...</div>
-            </div>
-          </div>
-          <div class="mdc-layout-grid__cell col-md-4">
-            <div class="card text-center">
-              <div id="SetupTime_agg" style="width: 100%; height: 300px;">טעינה...</div>
-            </div>
-          </div>
-
-        </div> -->
+      
 
 
-<div class="panel" style="padding:20px;width:100%; border: 1px solid rgba(0, 0, 0, .125);
+        <div class="panel" style="padding:20px;width:100%; border: 1px solid rgba(0, 0, 0, .125);
     border-radius: .25rem;">
-        <div class="row text-center">
-          <h3>מידע מפורט (ממוצע)</h3>
-        </div>
-        <div class="row">
-          <!-- MorningDelay -->
-          <div class="mdc-layout-grid__cell col-md-4">
-            <div class="card text-center table-block"
-              [ngClass]="{ 'active': isOpen('MorningDelay'), 'notactive': openGroup && !isOpen('MorningDelay') }">
-              <div id="title_tableMorningDelay_1-Yesterday" class="table-title"></div>
-              <div id="tableMorningDelay_1-Yesterday">טעינה...</div>
-              <button class="btn btn-link toggle-details" data-group="MorningDelay"
-                (click)="toggleGroup('MorningDelay')" [ngClass]="{ 'active-toggle': isOpen('MorningDelay') }">
-                {{ isOpen('MorningDelay') ? 'הסתר פרטים' : 'מידע מפורט' }}
-                <span class="material-icons">
-                  {{ isOpen('MorningDelay') ? 'arrow_drop_up' : 'arrow_drop_down' }}
-                </span>
-              </button>
-            </div>
+          <div class="row text-center">
+            <h3>מידע מפורט (ממוצע)</h3>
           </div>
-
-          <!-- EndDay -->
-          <div class="mdc-layout-grid__cell col-md-4">
-            <div class="card text-center table-block"
-              [ngClass]="{ 'active': isOpen('EndDay'), 'notactive': openGroup && !isOpen('EndDay') }">
-              <div id="title_tableEndDay_1-Yesterday"></div>
-              <div id="tableEndDay_1-Yesterday">טעינה...</div>
-              <button class="btn btn-link toggle-details" data-group="EndDay" (click)="toggleGroup('EndDay')"
-                [ngClass]="{ 'active-toggle': isOpen('EndDay') }">
-                {{ isOpen('EndDay') ? 'הסתר פרטים' : 'מידע מפורט' }}
-                <span class="material-icons">
-                  {{ isOpen('EndDay') ? 'arrow_drop_up' : 'arrow_drop_down' }}
-                </span>
-              </button>
-            </div>
-          </div>
-
-          <!-- SetupTime -->
-          <div class="mdc-layout-grid__cell col-md-4">
-            <div class="card text-center table-block"
-              [ngClass]="{ 'active': isOpen('SetupTime'), 'notactive': openGroup && !isOpen('SetupTime') }">
-              <div id="title_tableSetupTime_1-Yesterday"></div>
-              <div id="tableSetupTime_1-Yesterday">טעינה...</div>
-              <button class="btn btn-link toggle-details" data-group="SetupTime" (click)="toggleGroup('SetupTime')"
-                [ngClass]="{ 'active-toggle': isOpen('SetupTime') }">
-                {{ isOpen('SetupTime') ? 'הסתר פרטים' : 'מידע מפורט' }}
-                <span class="material-icons">
-                  {{ isOpen('SetupTime') ? 'arrow_drop_up' : 'arrow_drop_down' }}
-                </span>
-              </button>
-            </div>
-          </div>
-        </div>
-        <div style="height:60px;"></div>
-
-        <!-- MorningDelay details -->
-        <div class="row table-details" [@slideToggle]="isOpen('MorningDelay') ? 'open' : 'closed'"
-          id="details_MorningDelay" style="padding: 20px 0; background-color:#e6f0ff; border:solid #fff 1px">
-          <div class="mdc-layout-grid__cell col-md-4">
-            <div class="card text-center table-block visible_tbl">
-              <div id="title_tableMorningDelay_2-CurrentMonth"></div>
-              <div id="tableMorningDelay_2-CurrentMonth">טעינה...</div>
-            </div>
-          </div>
-          <div class="mdc-layout-grid__cell col-md-4">
-            <div class="card text-center table-block visible_tbl">
-              <div id="title_tableMorningDelay_3-CurrentYear"></div>
-              <div id="tableMorningDelay_3-CurrentYear">טעינה...</div>
-            </div>
-          </div>
-          <div class="mdc-layout-grid__cell col-md-4">
-            <div class="card text-center table-block visible_tbl">
-              <div id="title_tableMorningDelay_4-ParallelsPeriod"></div>
-              <div id="tableMorningDelay_4-ParallelsPeriod">טעינה...</div>
-            </div>
-          </div>
-        </div>
-
-
-        <!-- EndDay details -->
-        <div class="row table-details" [@slideToggle]="isOpen('EndDay') ? 'open' : 'closed'" id="details_EndDay"
-          style="padding:20px 0; background-color:#e6f0ff; border:solid #fff 1px">
-          <div class="mdc-layout-grid__cell col-md-4">
-            <div class="card text-center table-block visible_tbl">
-              <div id="title_tableEndDay_2-CurrentMonth"></div>
-              <div id="tableEndDay_2-CurrentMonth">טעינה...</div>
-            </div>
-          </div>
-          <div class="mdc-layout-grid__cell col-md-4">
-            <div class="card text-center table-block visible_tbl">
-              <div id="title_tableEndDay_3-CurrentYear"></div>
-              <div id="tableEndDay_3-CurrentYear">טעינה...</div>
-            </div>
-          </div>
-          <div class="mdc-layout-grid__cell col-md-4">
-            <div class="card text-center table-block visible_tbl">
-              <div id="title_tableEndDay_4-ParallelsPeriod"></div>
-              <div id="tableEndDay_4-ParallelsPeriod">טעינה...</div>
-            </div>
-          </div>
-        </div>
-
-
-        <!-- SetupTime details -->
-        <div class="row table-details" [@slideToggle]="isOpen('SetupTime') ? 'open' : 'closed'" id="details_SetupTime"
-          style="padding:20px 0; background-color:#e6f0ff; border:solid #fff 1px">
-          <div class="mdc-layout-grid__cell col-md-4">
-            <div class="card text-center table-block visible_tbl">
-              <div id="title_tableSetupTime_2-CurrentMonth"></div>
-              <div id="tableSetupTime_2-CurrentMonth">טעינה...</div>
-            </div>
-          </div>
-          <div class="mdc-layout-grid__cell col-md-4">
-            <div class="card text-center table-block visible_tbl">
-              <div id="title_tableSetupTime_3-CurrentYear"></div>
-              <div id="tableSetupTime_3-CurrentYear">טעינה...</div>
-            </div>
-          </div>
-          <div class="mdc-layout-grid__cell col-md-4">
-            <div class="card text-center table-block visible_tbl">
-              <div id="title_tableSetupTime_4-ParallelsPeriod"></div>
-              <div id="tableSetupTime_4-ParallelsPeriod">טעינה...</div>
-            </div>
-          </div>
-
-          <div class="row" id="setupTimeGraphsWrapper" style="width:100%">
-            <!-- Monthly (Current Month) -->
+          <div class="row">
+            <!-- MorningDelay -->
             <div class="mdc-layout-grid__cell col-md-4">
-              <div class="card text-center table-block visible_tbl">
-                <div id="title_chartSetupTimeQ_2-CurrentMonth"></div>
-                <div id="chartSetupTimeQ_2-CurrentMonth" style="height:370px">טעינה...</div>
+              <div class="card text-center table-block"
+                [ngClass]="{ 'active': isOpen('MorningDelay'), 'notactive': openGroup && !isOpen('MorningDelay') }">
+                <div id="title_tableMorningDelay_1-Yesterday" class="table-title"></div>
+                <div id="tableMorningDelay_1-Yesterday">טעינה...</div>
+                <button class="btn btn-link toggle-details" data-group="MorningDelay"
+                  (click)="toggleGroup('MorningDelay')" [ngClass]="{ 'active-toggle': isOpen('MorningDelay') }">
+                  {{ isOpen('MorningDelay') ? 'הסתר פרטים' : 'מידע מפורט' }}
+                  <span class="material-icons">
+                    {{ isOpen('MorningDelay') ? 'arrow_drop_up' : 'arrow_drop_down' }}
+                  </span>
+                </button>
               </div>
             </div>
 
-            <!-- Yearly (YTD) -->
+            <!-- EndDay -->
             <div class="mdc-layout-grid__cell col-md-4">
-              <div class="card text-center table-block visible_tbl">
-                <div id="title_chartSetupTimeQ_3-CurrentYear"></div>
-                <div id="chartSetupTimeQ_3-CurrentYear" style="height:370px">טעינה...</div>
+              <div class="card text-center table-block"
+                [ngClass]="{ 'active': isOpen('EndDay'), 'notactive': openGroup && !isOpen('EndDay') }">
+                <div id="title_tableEndDay_1-Yesterday"></div>
+                <div id="tableEndDay_1-Yesterday">טעינה...</div>
+                <button class="btn btn-link toggle-details" data-group="EndDay" (click)="toggleGroup('EndDay')"
+                  [ngClass]="{ 'active-toggle': isOpen('EndDay') }">
+                  {{ isOpen('EndDay') ? 'הסתר פרטים' : 'מידע מפורט' }}
+                  <span class="material-icons">
+                    {{ isOpen('EndDay') ? 'arrow_drop_up' : 'arrow_drop_down' }}
+                  </span>
+                </button>
               </div>
             </div>
 
-            <!-- Last 3 Years (Parallels) -->
+            <!-- SetupTime -->
+            <div class="mdc-layout-grid__cell col-md-4">
+              <div class="card text-center table-block"
+                [ngClass]="{ 'active': isOpen('SetupTime'), 'notactive': openGroup && !isOpen('SetupTime') }">
+                <div id="title_tableSetupTime_1-Yesterday"></div>
+                <div id="tableSetupTime_1-Yesterday">טעינה...</div>
+                <button class="btn btn-link toggle-details" data-group="SetupTime" (click)="toggleGroup('SetupTime')"
+                  [ngClass]="{ 'active-toggle': isOpen('SetupTime') }">
+                  {{ isOpen('SetupTime') ? 'הסתר פרטים' : 'מידע מפורט' }}
+                  <span class="material-icons">
+                    {{ isOpen('SetupTime') ? 'arrow_drop_up' : 'arrow_drop_down' }}
+                  </span>
+                </button>
+              </div>
+            </div>
+          </div>
+          <div style="height:60px;"></div>
+
+          <!-- MorningDelay details -->
+          <div class="row table-details" [@slideToggle]="isOpen('MorningDelay') ? 'open' : 'closed'"
+            id="details_MorningDelay" style="padding: 20px 0; background-color:#e6f0ff; border:solid #fff 1px">
             <div class="mdc-layout-grid__cell col-md-4">
               <div class="card text-center table-block visible_tbl">
-                <div id="title_chartSetupTimeQ_4-ParallelsPeriod"></div>
-                <div id="chartSetupTimeQ_4-ParallelsPeriod" style="height:370px">טעינה...</div>
+                <div id="title_tableMorningDelay_2-CurrentMonth"></div>
+                <div id="tableMorningDelay_2-CurrentMonth">טעינה...</div>
+              </div>
+            </div>
+            <div class="mdc-layout-grid__cell col-md-4">
+              <div class="card text-center table-block visible_tbl">
+                <div id="title_tableMorningDelay_3-CurrentYear"></div>
+                <div id="tableMorningDelay_3-CurrentYear">טעינה...</div>
+              </div>
+            </div>
+            <div class="mdc-layout-grid__cell col-md-4">
+              <div class="card text-center table-block visible_tbl">
+                <div id="title_tableMorningDelay_4-ParallelsPeriod"></div>
+                <div id="tableMorningDelay_4-ParallelsPeriod">טעינה...</div>
               </div>
             </div>
           </div>
 
-        </div>
+
+          <!-- EndDay details -->
+          <div class="row table-details" [@slideToggle]="isOpen('EndDay') ? 'open' : 'closed'" id="details_EndDay"
+            style="padding:20px 0; background-color:#e6f0ff; border:solid #fff 1px">
+            <div class="mdc-layout-grid__cell col-md-4">
+              <div class="card text-center table-block visible_tbl">
+                <div id="title_tableEndDay_2-CurrentMonth"></div>
+                <div id="tableEndDay_2-CurrentMonth">טעינה...</div>
+              </div>
+            </div>
+            <div class="mdc-layout-grid__cell col-md-4">
+              <div class="card text-center table-block visible_tbl">
+                <div id="title_tableEndDay_3-CurrentYear"></div>
+                <div id="tableEndDay_3-CurrentYear">טעינה...</div>
+              </div>
+            </div>
+            <div class="mdc-layout-grid__cell col-md-4">
+              <div class="card text-center table-block visible_tbl">
+                <div id="title_tableEndDay_4-ParallelsPeriod"></div>
+                <div id="tableEndDay_4-ParallelsPeriod">טעינה...</div>
+              </div>
+            </div>
+          </div>
+
+
+          <!-- SetupTime details -->
+          <div class="row table-details" [@slideToggle]="isOpen('SetupTime') ? 'open' : 'closed'" id="details_SetupTime"
+            style="padding:20px 0; background-color:#e6f0ff; border:solid #fff 1px">
+            <div class="mdc-layout-grid__cell col-md-4">
+              <div class="card text-center table-block visible_tbl">
+                <div id="title_tableSetupTime_2-CurrentMonth"></div>
+                <div id="tableSetupTime_2-CurrentMonth">טעינה...</div>
+              </div>
+            </div>
+            <div class="mdc-layout-grid__cell col-md-4">
+              <div class="card text-center table-block visible_tbl">
+                <div id="title_tableSetupTime_3-CurrentYear"></div>
+                <div id="tableSetupTime_3-CurrentYear">טעינה...</div>
+              </div>
+            </div>
+            <div class="mdc-layout-grid__cell col-md-4">
+              <div class="card text-center table-block visible_tbl">
+                <div id="title_tableSetupTime_4-ParallelsPeriod"></div>
+                <div id="tableSetupTime_4-ParallelsPeriod">טעינה...</div>
+              </div>
+            </div>
+
+            <div class="row" id="setupTimeGraphsWrapper" style="width:100%">
+              <!-- Monthly (Current Month) -->
+              <div class="mdc-layout-grid__cell col-md-4">
+                <div class="card text-center table-block visible_tbl">
+                  <div id="title_chartSetupTimeQ_2-CurrentMonth"></div>
+                  <div id="chartSetupTimeQ_2-CurrentMonth" style="height:370px">טעינה...</div>
+                </div>
+              </div>
+
+              <!-- Yearly (YTD) -->
+              <div class="mdc-layout-grid__cell col-md-4">
+                <div class="card text-center table-block visible_tbl">
+                  <div id="title_chartSetupTimeQ_3-CurrentYear"></div>
+                  <div id="chartSetupTimeQ_3-CurrentYear" style="height:370px">טעינה...</div>
+                </div>
+              </div>
+
+              <!-- Last 3 Years (Parallels) -->
+              <div class="mdc-layout-grid__cell col-md-4">
+                <div class="card text-center table-block visible_tbl">
+                  <div id="title_chartSetupTimeQ_4-ParallelsPeriod"></div>
+                  <div id="chartSetupTimeQ_4-ParallelsPeriod" style="height:370px">טעינה...</div>
+                </div>
+              </div>
+            </div>
+
+          </div>
 
         </div>
         <!---->
@@ -594,53 +821,53 @@
 
         <div class="panel" style="padding:20px;width:100%; border: 1px solid rgba(0, 0, 0, .125);
     border-radius: .25rem;">
-        <div class="row text-center">
-          <h3>מידע מפורט (מצטבר)</h3>
+          <div class="row text-center">
+            <h3>מידע מפורט (מצטבר)</h3>
+          </div>
+
+          <div class="row">
+            <!-- MorningDelay Column -->
+            <div class="mdc-layout-grid__cell col-md-4">
+              <div class="card text-center table-block">
+                <div id="title_summaryMorningDelay_3-CurrentYear" class="table-title"></div>
+                <div id="summaryMorningDelay_3-CurrentYear">טעינה...</div>
+              </div>
+              <div style="height:60px;"></div>
+              <div class="card text-center table-block">
+                <div id="title_summaryMorningDelay_4-ParallelsPeriod" class="table-title"></div>
+                <div id="summaryMorningDelay_4-ParallelsPeriod">טעינה...</div>
+              </div>
+            </div>
+
+            <!-- EndDay Column -->
+            <div class="mdc-layout-grid__cell col-md-4">
+
+              <div class="card text-center table-block">
+                <div id="title_summaryEndDay_3-CurrentYear" class="table-title"></div>
+                <div id="summaryEndDay_3-CurrentYear">טעינה...</div>
+              </div>
+              <div style="height:60px;"></div>
+              <div class="card text-center table-block">
+                <div id="title_summaryEndDay_4-ParallelsPeriod" class="table-title"></div>
+                <div id="summaryEndDay_4-ParallelsPeriod">טעינה...</div>
+              </div>
+            </div>
+
+            <!-- SetupTime Column -->
+            <div class="mdc-layout-grid__cell col-md-4">
+
+              <div class="card text-center table-block">
+                <div id="title_summarySetupTime_3-CurrentYear" class="table-title"></div>
+                <div id="summarySetupTime_3-CurrentYear">טעינה...</div>
+              </div>
+              <div style="height:60px;"></div>
+              <div class="card text-center table-block">
+                <div id="title_summarySetupTime_4-ParallelsPeriod" class="table-title"></div>
+                <div id="summarySetupTime_4-ParallelsPeriod">טעינה...</div>
+              </div>
+            </div>
+          </div>
         </div>
-
-        <div class="row">
-          <!-- MorningDelay Column -->
-          <div class="mdc-layout-grid__cell col-md-4">
-            <div class="card text-center table-block">
-              <div id="title_summaryMorningDelay_3-CurrentYear" class="table-title"></div>
-              <div id="summaryMorningDelay_3-CurrentYear">טעינה...</div>
-            </div>
-            <div style="height:60px;"></div>
-            <div class="card text-center table-block">
-              <div id="title_summaryMorningDelay_4-ParallelsPeriod" class="table-title"></div>
-              <div id="summaryMorningDelay_4-ParallelsPeriod">טעינה...</div>
-            </div>
-          </div>
-
-          <!-- EndDay Column -->
-          <div class="mdc-layout-grid__cell col-md-4">
-
-            <div class="card text-center table-block">
-              <div id="title_summaryEndDay_3-CurrentYear" class="table-title"></div>
-              <div id="summaryEndDay_3-CurrentYear">טעינה...</div>
-            </div>
-            <div style="height:60px;"></div>
-            <div class="card text-center table-block">
-              <div id="title_summaryEndDay_4-ParallelsPeriod" class="table-title"></div>
-              <div id="summaryEndDay_4-ParallelsPeriod">טעינה...</div>
-            </div>
-          </div>
-
-          <!-- SetupTime Column -->
-          <div class="mdc-layout-grid__cell col-md-4">
-
-            <div class="card text-center table-block">
-              <div id="title_summarySetupTime_3-CurrentYear" class="table-title"></div>
-              <div id="summarySetupTime_3-CurrentYear">טעינה...</div>
-            </div>
-            <div style="height:60px;"></div>
-            <div class="card text-center table-block">
-              <div id="title_summarySetupTime_4-ParallelsPeriod" class="table-title"></div>
-              <div id="summarySetupTime_4-ParallelsPeriod">טעינה...</div>
-            </div>
-          </div>
-        </div>
-</div>
         <!--eof-->
         <div style="height:60px;"></div>
 
