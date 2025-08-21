@@ -537,10 +537,10 @@
 
 
 
-
+<!-- (change)="loadRoomsData()" -->
           <div style="margin: 10px 0;">
             <label for="dateSelect">שינוי תאריך </label>
-            <input type="date" id="dateSelect" [(ngModel)]="selectedDate" (change)="loadRoomsData()"
+            <input type="date" id="dateSelect" [(ngModel)]="selectedDate"  (change)="onDateChange()" 
               style="padding-left:10px; margin-right:20px;cursor: pointer;" />
           </div>
 

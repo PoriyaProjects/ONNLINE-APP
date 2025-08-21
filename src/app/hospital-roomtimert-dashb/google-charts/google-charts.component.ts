@@ -816,17 +816,17 @@ getStartDiffClass(room: RoomData): string {
   return 'metric-ok';
 }
 
-getEndDiffClass(room: RoomData): string {
-  const val = this.getEndDiff(room);
-  if (!val || val === '--:--') return '';
-  const [h, m] = val.split(':').map(Number);
-  const minutes = h * 60 + m;
+// getEndDiffClass(room: RoomData): string {
+//   const val = this.getEndDiff(room);
+//   if (!val || val === '--:--') return '';
+//   const [h, m] = val.split(':').map(Number);
+//   const minutes = h * 60 + m;
 
-  if (minutes < 30) return 'metric-red'; // very little time left
-  if (minutes < 60) return 'metric-orange';
-  if (minutes < 120) return 'metric-yellow';
-  return 'metric-ok';
-}
+//   if (minutes < 30) return 'metric-red'; // very little time left
+//   if (minutes < 60) return 'metric-orange';
+//   if (minutes < 120) return 'metric-yellow';
+//   return 'metric-ok';
+// }
 
 
 getTurnoverBetween(prev: Surgery, next: Surgery): string | null {
@@ -926,22 +926,61 @@ getStartDiff(room: RoomData): string {
 
 
 
+// getEndDiff(room: RoomData): string {
+//   const opening = this.parseClock('07:30');
+//   const closing = this.parseClock('15:00');
+//   if (!closing || !opening) return '--:--';
+
+//   const exits = room.surgeries
+//     .map(s => this.parseClock(s.timeExit))
+//     .filter(d => d && d >= opening && d <= closing);
+
+//   if (exits.length === 0) {
+//     return this.formatDiff(0);
+//   }
+//   const lastExit = exits[exits.length - 1];
+//   return this.formatDiff(closing.getTime() - lastExit!.getTime());
+// }
+
 getEndDiff(room: RoomData): string {
   const opening = this.parseClock('07:30');
   const closing = this.parseClock('15:00');
   if (!closing || !opening) return '--:--';
 
-  const exits = room.surgeries
-    .map(s => this.parseClock(s.timeExit))
+  // Filter surgeries within the working day
+  const validExits = room.surgeries
+    .map(s => {
+      // If timeExit is 00:00:00, use start time
+      const exitTime = s.timeExit && s.timeExit !== '00:00:00' ? s.timeExit : s.timeEntrance;
+      const exit = this.parseClock(exitTime);
+      return exit;
+    })
     .filter(d => d && d >= opening && d <= closing);
 
-  if (exits.length === 0) {
+  if (validExits.length === 0) {
     return this.formatDiff(0);
   }
-  const lastExit = exits[exits.length - 1];
-  return this.formatDiff(closing.getTime() - lastExit!.getTime());
+
+  const lastExit = validExits[validExits.length - 1];
+
+  // Do not count time after 15:00
+  const endTime = lastExit! > closing ? closing : lastExit!;
+
+  const diffMs = closing.getTime() - lastExit!.getTime();
+  return diffMs > 0 ? this.formatDiff(diffMs) : this.formatDiff(0);
 }
 
+getEndDiffClass(room: RoomData): string {
+  const val = this.getEndDiff(room);
+  if (!val || val === '--:--') return '';
+  const [h, m] = val.split(':').map(Number);
+  const minutes = h * 60 + m;
+
+  if (minutes < 30) return 'metric-red'; // very little time left
+  if (minutes < 60) return 'metric-orange';
+  if (minutes < 120) return 'metric-yellow';
+  return 'metric-ok';
+}
 
 
 
@@ -997,6 +1036,17 @@ private startAutoRefresh(): void {
 private clearIntervals(): void {
   if (this.refreshInterval) clearInterval(this.refreshInterval);
   if (this.countdownInterval) clearInterval(this.countdownInterval);
+}
+
+onDateChange(): void {
+  // pause auto refresh
+  if (!this.autoRefreshPaused) {
+    this.autoRefreshPaused = true;
+    this.clearIntervals();
+  }
+
+  // load data for the selected date
+  this.loadRoomsData();
 }
 
 
