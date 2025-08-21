@@ -926,21 +926,6 @@ getStartDiff(room: RoomData): string {
 
 
 
-// getEndDiff(room: RoomData): string {
-//   const opening = this.parseClock('07:30');
-//   const closing = this.parseClock('15:00');
-//   if (!closing || !opening) return '--:--';
-
-//   const exits = room.surgeries
-//     .map(s => this.parseClock(s.timeExit))
-//     .filter(d => d && d >= opening && d <= closing);
-
-//   if (exits.length === 0) {
-//     return this.formatDiff(0);
-//   }
-//   const lastExit = exits[exits.length - 1];
-//   return this.formatDiff(closing.getTime() - lastExit!.getTime());
-// }
 
 getEndDiff(room: RoomData): string {
   const opening = this.parseClock('07:30');
@@ -1076,6 +1061,19 @@ private formatHM(mins: number): string {
   const h = Math.floor(mins / 60);
   const m = mins % 60;
   return `${('0' + h).slice(-2)}:${('0' + m).slice(-2)}`;
+}
+
+
+
+statusTranslations: Record<string, string> = {
+  'Completed': 'הסתיים',
+  'InProgress': 'בתהליך',
+  'Scheduled': 'מתוכנן',
+  'Cancelled': 'בוטל',  
+};
+
+translateStatus(status: string): string {
+  return this.statusTranslations[status] || status;
 }
 
 }

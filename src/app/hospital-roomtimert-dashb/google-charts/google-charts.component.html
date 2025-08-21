@@ -562,7 +562,7 @@
     <h4 class="text-center">{{ room.roomId }}</h4>
    
 
-<div class="metrics text-center" style="margin-bottom:10px;">
+<!-- <div class="metrics text-center" style="margin-bottom:10px;">
   ◓ <span [ngClass]="getStartDiffClass(room)">{{ getStartDiff(room) }}</span> |
   ⏳ 
   <span [ngClass]="getTurnoverTimeClass(room)">
@@ -570,7 +570,34 @@
   </span>
   ({{ getTurnoverSummary(room) }}) |
   ◒ <span [ngClass]="getEndDiffClass(room)">{{ getEndDiff(room) }}</span>
+</div> -->
+
+
+<div class="metrics text-center" style="margin-bottom:10px;">
+  <!-- Start delay -->
+  ◓ 
+  <span [ngClass]="getStartDiffClass(room)" 
+        title="עיכוב מתחילת יום">
+    {{ getStartDiff(room) }}
+  </span> |
+
+  <!-- Turnover -->
+  ⏳ 
+  <span [ngClass]="getTurnoverTimeClass(room)" 
+        title="זמן הכנת חדר (מעבר ל־20 דקות)">
+    {{ getTurnoverTime(room) }}
+  </span>
+  <span title="סך כל זמן ההכנה">({{ getTurnoverSummary(room) }})</span> |
+
+  <!-- End of day gap -->
+  ◒ 
+  <span [ngClass]="getEndDiffClass(room)" 
+        title="פער עד סיום יום">
+    {{ getEndDiff(room) }}
+  </span>
 </div>
+
+
 
     <div class="expand_btn">
       {{ activeRoomId === room.roomId ? '⮝' : '⮟' }}
@@ -584,9 +611,14 @@
   <div *ngFor="let s of activeSurgeries(room); let i = index" style="direction:rtl; text-align:right;">
     
     <!-- Turnover line BEFORE each surgery except the first -->
-   <div *ngIf="i > 0" class="turnover-line" [ngClass]="getTurnoverBetweenClass(activeSurgeries(room)[i-1], s)">
-  ⏳ {{ getTurnoverBetween(activeSurgeries(room)[i-1], s) }}
+   <div *ngIf="i > 0">
+  <ng-container *ngIf="getTurnoverBetween(activeSurgeries(room)[i-1], s) as turnover">
+    <div *ngIf="turnover !== '--:--'" class="turnover-line" [ngClass]="getTurnoverBetweenClass(activeSurgeries(room)[i-1], s)">
+      ⏳ {{ turnover }}
+    </div>
+  </ng-container>
 </div>
+
 
 
     <!-- Surgery details -->
@@ -595,7 +627,10 @@
       {{ s.surgeryName }} ({{ s.surgeryCode }}) <br />
       <i>{{ s.department }}</i><br />
       <b>{{ s.timeEntrance }} ← {{ s.timeExit || '...' }}</b><br />
-      <span class="status" [ngClass]="s.status">{{ s.status }}</span>
+      <!-- <span class="status" [ngClass]="s.status">{{ s.status }}</span> -->
+       <span class="status" [ngClass]="s.status">
+  {{ translateStatus(s.status) }}
+</span>
       <br /><br />
     </div>
   </div>
