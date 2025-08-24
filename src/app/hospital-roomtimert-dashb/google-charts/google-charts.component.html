@@ -611,7 +611,7 @@
             <span *ngIf="lastLoaded" class="last-updated">
               נטען לאחרונה: {{ lastLoaded | date:'HH:mm:ss' }}
             </span>
-            <button class="pause-btn" (click)="toggleAutoRefresh()">
+            <button class="pause-btn" (click)="toggleAutoRefresh()" style="border-color: #aaa; border-radius: 6px;">
               {{ autoRefreshPaused ? '▶️ הפעל רענון' : '⏸ השהה רענון' }}
             </button>
             <span class="refresh-box" (click)="manualRefresh()" title="רענן עכשיו">
@@ -625,10 +625,10 @@
           <div style="margin: 10px 0;">
             <label for="dateSelect">שינוי תאריך </label>
             <input type="date" id="dateSelect" [(ngModel)]="selectedDate" (change)="onDateChange()"
-              style="padding-left:10px; margin-right:20px;cursor: pointer;" />
+              style="padding-left:10px; margin-right:20px;cursor: pointer;border-color: #aaa; border-radius: 6px;" />
 
              <button (click)="toggleAll()"
-        style="margin-bottom:10px;margin-right:20px;"
+        style="margin-bottom:10px;margin-right:20px; border-color: #aaa; border-radius: 6px;"
         [title]="allExpanded ? 'סגור את כל החדרים' : 'פתח את כל החדרים'">
   {{ allExpanded ? '🔽 סגור הכל' : '🔼 פתח הכל' }}
 </button>

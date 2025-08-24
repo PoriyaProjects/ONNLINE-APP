@@ -12,8 +12,7 @@ import { take } from 'rxjs/operators';
 export class GoogleChartsComponent implements AfterViewInit {
   departments = [
     { label: 'לב', value: 0 },
-    { label: 'מוח', value: 1 },
-    { label: 'כירורגיה', value: 5 }
+    { label: 'מוח', value: 1 },    
   ];
 
   selectedDepartmentValue = 0;
