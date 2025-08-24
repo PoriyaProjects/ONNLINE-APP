@@ -575,6 +575,7 @@
     color: #555;
     margin: 5px 0;
   }
+  .surgery-row{margin-bottom:10px;}
 </style>
 
 <div class="mdc-layout-grid" style="direction: rtl;">
@@ -690,7 +691,7 @@
 
       <!-- Surgery details -->
       <div class="surgery-row">
-        <b style="font-weight:800">{{ s.surgeryId }}</b><br />
+        <b style="font-weight:800">⮜ {{ s.surgeryId }}</b><br />
         {{ s.surgeryName }} ({{ s.surgeryCode }}) <br />
         <i>{{ s.department }}</i><br />
         <b>{{ s.timeEntrance }} ← {{ s.timeExit || '...' }}</b><br />
@@ -707,7 +708,7 @@
       <h5 style="direction:rtl; text-align:right;">נתוחים מתוכננים</h5>
       <div *ngFor="let s of plannedSurgeries(room)" class="surgery-row"
            style="direction:rtl; text-align:right;">
-        {{ s.surgeryName }} ({{ s.surgeryCode }}) - {{ s.department }}
+        ⮜ {{ s.surgeryName }} ({{ s.surgeryCode }}) - {{ s.department }}
         <br />
       </div>
     </div>
@@ -721,7 +722,7 @@
               ⏳ = זמן הכנת חדר (מעבר ל־20 דקות) |
               ◒ = פער עד סיום יום <br />
               🟢 ירוק = ניתוח פעיל |
-              🔵 כחול = חדר לא מנוצל |
+              🔘 אפור = חדר לא מנוצל |
               🟠 כתום = עיכוב בהכנת חדר |
               🔴 אדום = עיכוב חמור (גבוה מ־45 דק׳, 60 דק׳, 120 דק׳)
             </div>
