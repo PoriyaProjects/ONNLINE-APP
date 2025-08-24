@@ -454,7 +454,7 @@ export class TrainingRequestDashboardComponent implements OnInit {
   <!-- Replace below with your dynamic printable HTML content -->
   <div style="font-family: Arial; direction: rtl; padding: 20px;">
     <div style="text-align: left;">${this.date_now}</div>
-    <div style="text-align: right;">סיכום ישיבת ועדת הדרכה מיום: ${data[0]['H'].Plan_Date}</div>
+    <div style="text-align: right;">סיכום ישיבת ועדת הדרכה מיום: ${data[1]['H'].Plan_Date}</div>
     <br /><br />
     <div style="text-align: right;">
       <strong>נוכחים:</strong><br />`
