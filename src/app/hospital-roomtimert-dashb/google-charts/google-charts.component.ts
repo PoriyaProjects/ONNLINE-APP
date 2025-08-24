@@ -44,7 +44,8 @@ export interface Surgery {
 
 export interface RoomData {
   roomId: string;
-  surgeries: Surgery[];
+  date: string | null; 
+  surgeries: Surgery[];  
 }
 
 
@@ -672,17 +673,23 @@ loadRoomsData(): void {
       return acc;
     }, {} as Record<string, Surgery[]>);
 
-    this.roomsData = Object.keys(grouped).map(roomId => {
-      const list = grouped[roomId].slice().sort((a, b) => {
-        const ae = this.parseClock(a.timeEntrance)?.getTime();
-        const be = this.parseClock(b.timeEntrance)?.getTime();
-        if (ae == null && be == null) return 0;
-        if (ae == null) return 1;
-        if (be == null) return -1;
-        return ae - be;
-      });
-      return { roomId, surgeries: list };
-    });
+   this.roomsData = Object.keys(grouped).map(roomId => {
+  const list = grouped[roomId].slice().sort((a, b) => {
+    const ae = this.parseClock(a.timeEntrance)?.getTime();
+    const be = this.parseClock(b.timeEntrance)?.getTime();
+    if (ae == null && be == null) return 0;
+    if (ae == null) return 1;
+    if (be == null) return -1;
+    return ae - be;
+  });
+
+  const roomDate = list.length ? list[0].surgeryDate : undefined;
+
+  return { roomId, surgeries: list, date: roomDate };
+});
+
+
+
 
     this.isLoading = false;
     this.lastLoaded = new Date();
@@ -804,46 +811,51 @@ getTurnoverTimeClass(room: RoomData): string {
 
 
 
-
 getRoomStatusClass(room: RoomData): string {
-  // Determine weekday from the room's data (take the first surgery date)
-  const referenceSurgery = room.surgeries.find(s => s.surgeryDate);
-  let isWeekendData = false;
+  if (!room || !room.surgeries?.length) return 'grey';
 
-  if (referenceSurgery) {
-    const surgeryDate = new Date(referenceSurgery.surgeryDate);
-    const dayOfWeek = surgeryDate.getDay(); // 0=Sunday, ..., 5=Friday, 6=Saturday
-    isWeekendData = (dayOfWeek === 5 || dayOfWeek === 6);
+  // Determine if the room's date is a weekend (Fri=5, Sat=6)
+  let isWeekend = false;
+  if (room.date) {
+    const roomDate = new Date(room.date);
+    const day = roomDate.getDay();
+    isWeekend = day === 5 || day === 6;
   }
 
-  // Active surgery = always green
+  // If any surgery is in progress, always green (no blinking on weekend)
   if (room.surgeries.some(s => s.status === 'InProgress')) {
-    return isWeekendData ? 'green' : 'green-blink';
+    return isWeekend ? 'green' : 'green-blink';
   }
 
-  const surgeries = [...room.surgeries].sort(
-    (a, b) => this.parseClock(a.timeEntrance).getTime() - this.parseClock(b.timeEntrance).getTime()
-  );
-
-  const lastCompleted = [...surgeries].reverse().find(
+  // Find last completed surgery with valid exit time
+  const lastCompleted = [...room.surgeries].reverse().find(
     s => s.status === 'Completed' && s.timeExit && s.timeExit !== '00:00:00'
   );
 
-  if (lastCompleted) {
-    const exitTime = this.parseClock(lastCompleted.timeExit);
-    if (exitTime) {
-      const diffMin = (Date.now() - exitTime.getTime()) / 60000;
-      // Blinking only if allowed and not Fri/Sat data
-      const blinkingAllowed = !isWeekendData && this.isBlinking(room);
+  if (!lastCompleted) return 'grey';
 
-      if (diffMin > 120) return blinkingAllowed ? 'red-120' : 'red-120-ack';
-      if (diffMin > 60)  return blinkingAllowed ? 'red-60'  : 'red-60-ack';
-      if (diffMin > 45)  return blinkingAllowed ? 'red-45'  : 'red-45-ack';
-    }
+  const exitTime = this.parseClock(lastCompleted.timeExit);
+  if (!exitTime) return 'grey';
+
+  const diffMin = (Date.now() - exitTime.getTime()) / 60000;
+
+  // --- Weekend: never blinking ---
+  if (isWeekend) {
+    if (diffMin > 120) return 'red-120-ack';
+    if (diffMin > 60)  return 'red-60-ack';
+    if (diffMin > 45)  return 'red-45-ack';
+    return 'grey';
   }
+
+  // --- Weekday: blinking if not acknowledged ---
+  const blinkingAllowed = this.isBlinking(room);
+  if (diffMin > 120) return blinkingAllowed ? 'red-120' : 'red-120-ack';
+  if (diffMin > 60)  return blinkingAllowed ? 'red-60'  : 'red-60-ack';
+  if (diffMin > 45)  return blinkingAllowed ? 'red-45'  : 'red-45-ack';
 
   return 'grey';
 }
+
 
 
 
@@ -936,19 +948,51 @@ private formatDiff(ms: number): string {
 
 
 
+// getStartDiff(room: RoomData): string {
+//   const opening = this.parseClock('07:30');
+//   if (!opening) return '--:--';
+
+//   const firstAfter = room.surgeries.find(s => {
+//     const e = this.parseClock(s.timeEntrance);
+//     return e && e >= opening;
+//   });
+
+//   if (!firstAfter) return '--:--';
+//   const entrance = this.parseClock(firstAfter.timeEntrance)!;
+//   return this.formatDiff(entrance.getTime() - opening.getTime());
+// }
+
 getStartDiff(room: RoomData): string {
-  const opening = this.parseClock('07:30');
-  if (!opening) return '--:--';
+  const safeStart = this.parseClock('07:00');
+  const safeEnd = this.parseClock('07:30');
+  if (!safeStart || !safeEnd) return '--:--';
 
-  const firstAfter = room.surgeries.find(s => {
-    const e = this.parseClock(s.timeEntrance);
-    return e && e >= opening;
-  });
+  if (!room.surgeries || room.surgeries.length === 0) return '--:--';
 
-  if (!firstAfter) return '--:--';
-  const entrance = this.parseClock(firstAfter.timeEntrance)!;
-  return this.formatDiff(entrance.getTime() - opening.getTime());
+  // Sort surgeries by entrance time just in case
+  const sortedSurgeries = room.surgeries
+    .map(s => ({ ...s, entrance: this.parseClock(s.timeEntrance) }))
+    .filter(s => s.entrance) // remove invalid times
+    .sort((a, b) => a.entrance!.getTime() - b.entrance!.getTime());
+
+  // Check for surgery inside safe zone
+  const firstInSafeZone = sortedSurgeries.find(
+    s => s.entrance! >= safeStart && s.entrance! <= safeEnd
+  );
+  if (firstInSafeZone) return '00:00';
+
+  // Otherwise, take first surgery after safe zone
+  const firstAfterSafeZone = sortedSurgeries.find(
+    s => s.entrance! > safeEnd
+  );
+
+  if (!firstAfterSafeZone) return '--:--';
+
+  const diffMs = firstAfterSafeZone.entrance!.getTime() - safeEnd.getTime();
+  return this.formatDiff(diffMs);
 }
+
+
 
 
 
