@@ -662,8 +662,8 @@
       <span [ngClass]="getTurnoverTimeClass(room)" title="זמן הכנת חדר (מעבר ל־20 דקות)">
         {{ getTurnoverTime(room) }}
       </span>
-      <span title="סך כל זמן ההכנה">({{ getTurnoverSummary(room) }})</span> |
-      ◒
+      <!-- <span title="סך כל זמן ההכנה">({{ getTurnoverSummary(room) }})</span> | -->
+      ◒|
       <span [ngClass]="getEndDiffClass(room)" title="פער עד סיום יום">
         {{ getEndDiff(room) }}
       </span>

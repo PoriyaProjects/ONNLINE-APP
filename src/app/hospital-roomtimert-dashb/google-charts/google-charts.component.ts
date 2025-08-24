@@ -39,6 +39,7 @@ export interface Surgery {
   status: 'Planned' | 'InProgress' | 'Completed';
   timeEntrance: string;
   timeExit: string;
+  surgeryDate: string;
 }
 
 export interface RoomData {
@@ -628,16 +629,7 @@ trackByRoomId(index: number, room: any) {
   return room.roomId;
 }
 
-// toggleRoom(roomId: string): void {
-//   if (this.activeRoomId === roomId) {
-//     // Collapse
-//     this.activeRoomId = null;
-//   } else {
-//     // Expand
-//     this.activeRoomId = roomId;
-//     this.acknowledgeRoomEvent(roomId);
-//   }
-// }
+
 
 
 
@@ -811,25 +803,38 @@ getTurnoverTimeClass(room: RoomData): string {
 }
 
 
+
+
 getRoomStatusClass(room: RoomData): string {
+  // Determine weekday from the room's data (take the first surgery date)
+  const referenceSurgery = room.surgeries.find(s => s.surgeryDate);
+  let isWeekendData = false;
+
+  if (referenceSurgery) {
+    const surgeryDate = new Date(referenceSurgery.surgeryDate);
+    const dayOfWeek = surgeryDate.getDay(); // 0=Sunday, ..., 5=Friday, 6=Saturday
+    isWeekendData = (dayOfWeek === 5 || dayOfWeek === 6);
+  }
+
   // Active surgery = always green
   if (room.surgeries.some(s => s.status === 'InProgress')) {
-    return 'green-blink';
+    return isWeekendData ? 'green' : 'green-blink';
   }
 
   const surgeries = [...room.surgeries].sort(
     (a, b) => this.parseClock(a.timeEntrance).getTime() - this.parseClock(b.timeEntrance).getTime()
   );
 
-  const lastCompleted = [...surgeries].reverse().find(s =>
-    s.status === 'Completed' && s.timeExit && s.timeExit !== '00:00:00'
+  const lastCompleted = [...surgeries].reverse().find(
+    s => s.status === 'Completed' && s.timeExit && s.timeExit !== '00:00:00'
   );
 
   if (lastCompleted) {
     const exitTime = this.parseClock(lastCompleted.timeExit);
     if (exitTime) {
       const diffMin = (Date.now() - exitTime.getTime()) / 60000;
-      const blinkingAllowed = this.isBlinking(room);
+      // Blinking only if allowed and not Fri/Sat data
+      const blinkingAllowed = !isWeekendData && this.isBlinking(room);
 
       if (diffMin > 120) return blinkingAllowed ? 'red-120' : 'red-120-ack';
       if (diffMin > 60)  return blinkingAllowed ? 'red-60'  : 'red-60-ack';
@@ -854,17 +859,7 @@ getStartDiffClass(room: RoomData): string {
   return 'metric-ok';
 }
 
-// getEndDiffClass(room: RoomData): string {
-//   const val = this.getEndDiff(room);
-//   if (!val || val === '--:--') return '';
-//   const [h, m] = val.split(':').map(Number);
-//   const minutes = h * 60 + m;
 
-//   if (minutes < 30) return 'metric-red'; // very little time left
-//   if (minutes < 60) return 'metric-orange';
-//   if (minutes < 120) return 'metric-yellow';
-//   return 'metric-ok';
-// }
 
 
 getTurnoverBetween(prev: Surgery, next: Surgery): string | null {
@@ -908,13 +903,6 @@ getTurnoverBetweenClass(prev: Surgery, next: Surgery): string {
   // --------- utility helpers ----------
 
 
-
-  // formatMinutesToHHMM(minutes: number | null): string {
-  // if (minutes == null) return '--:--';
-  // const h = Math.floor(minutes / 60);
-  // const m = Math.floor(minutes % 60);
-  // return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
-//}
 
  private formatMinutesToHHMM(totalMinutes: number): string {
   if (isNaN(totalMinutes) || totalMinutes < 0) return '--:--';
