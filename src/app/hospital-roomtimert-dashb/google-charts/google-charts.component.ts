@@ -150,6 +150,9 @@ ngOnInit(): void {
       this.nextRefreshIn--;
     }
   }, 1000);
+  const saved = localStorage.getItem('rooms_allExpanded');
+  if (saved === 'true') this.allExpanded = true;
+  if (saved === 'false') this.allExpanded = false;
 }
 
 ngAfterViewInit(): void {
@@ -590,18 +593,53 @@ onDocumentClick(event: MouseEvent) {
 
 
 isLoading = false;
+allExpanded: boolean = false;
 activeRoomId: string | null = null;
 
-toggleRoom(roomId: string): void {
-  if (this.activeRoomId === roomId) {
-    // Collapse
+toggleAll(): void {
+  this.allExpanded = !this.allExpanded;
+  localStorage.setItem('rooms_allExpanded', String(this.allExpanded));
+
+  // When globally expanded, single selection is irrelevant
+  if (this.allExpanded) {
     this.activeRoomId = null;
-  } else {
-    // Expand
-    this.activeRoomId = roomId;
+  }
+}
+
+/** Is this room currently expanded? */
+isRoomExpanded(roomId: string): boolean {
+  return this.allExpanded || this.activeRoomId === roomId;
+}
+
+/** Toggle a single room only when not in global mode */
+toggleRoom(roomId: string): void {
+  if (this.allExpanded) return; // global override: ignore individual clicks
+
+  this.activeRoomId = (this.activeRoomId === roomId) ? null : roomId;
+
+  if (this.activeRoomId) {
+    // Keep your side-effect
     this.acknowledgeRoomEvent(roomId);
   }
 }
+
+/** Helpful for *ngFor performance */
+trackByRoomId(index: number, room: any) {
+  return room.roomId;
+}
+
+// toggleRoom(roomId: string): void {
+//   if (this.activeRoomId === roomId) {
+//     // Collapse
+//     this.activeRoomId = null;
+//   } else {
+//     // Expand
+//     this.activeRoomId = roomId;
+//     this.acknowledgeRoomEvent(roomId);
+//   }
+// }
+
+
 
 private acknowledgeRoomEvent(roomId: string): void {
   localStorage.setItem(`ack_${roomId}`, this.lastEventKeyForRoom(roomId));

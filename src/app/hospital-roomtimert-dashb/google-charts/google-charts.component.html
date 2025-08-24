@@ -312,115 +312,200 @@
     text-align: center;
   }
 
-.status-circle {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  position: absolute;
-  top: 8px;
-  right: 8px;
-}
+  .status-circle {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    position: absolute;
+    top: 8px;
+    right: 8px;
+  }
 
-/* Base colors */
-.status-circle.green-blink { background: green; }
-.status-circle.grey        { background: grey; }
-.status-circle.blue        { background: blue; }
-.status-circle.orange      { background: orange; }
-.status-circle.red-45      { background: red; }
-.status-circle.red-60      { background: darkred; }
-.status-circle.red-120     { background: maroon; }
+  /* Base colors */
+  .status-circle.green-blink {
+    background: green;
+  }
 
-/* Quiet blink (for active/healthy states) */
-@keyframes quiet-blink {
-  50% { opacity: 0.6; }
-}
+  .status-circle.grey {
+    background: grey;
+  }
 
-.status-circle.green-blink,
-.status-circle.blue {
-  animation: quiet-blink 2s infinite;
-}
+  .status-circle.blue {
+    background: blue;
+  }
 
-/* Normal blink (warning) */
-@keyframes blink {
-  50% { opacity: 0.3; }
-}
+  .status-circle.orange {
+    background: orange;
+  }
 
-.status-circle.orange,
-.status-circle.red-45 {
-  animation: blink 1s infinite;
-}
+  .status-circle.red-45 {
+    background: red;
+  }
 
-/* Stronger escalation */
-@keyframes strong-blink {
-  50% { opacity: 0.1; }
-}
+  .status-circle.red-60 {
+    background: darkred;
+  }
 
-.status-circle.red-60,
-.status-circle.red-120 {
-  animation: strong-blink 0.8s infinite;
-}
+  .status-circle.red-120 {
+    background: maroon;
+  }
 
-/* Pulsing borders for severe delays */
-.card.red-45 {
-  border: 2px solid red;
-}
-.card.red-60 {
-  border: 2px solid darkred;
-  animation: blink 1s infinite;
-}
-.card.red-120 {
-  border: 3px solid darkred;
-  animation: strong-blink 0.5s infinite;
-}
+  /* Quiet blink (for active/healthy states) */
+  @keyframes quiet-blink {
+    50% {
+      opacity: 0.6;
+    }
+  }
 
-/* acknowledged: keep color but no blink */
-.status-circle.red-45-ack { background: red; }
-.status-circle.red-60-ack { background: darkred; }
-.status-circle.red-120-ack { background: maroon; }
+  .status-circle.green-blink,
+  .status-circle.blue {
+    animation: quiet-blink 2s infinite;
+  }
 
-.card.red-45-ack { border: 2px solid red; }
-.card.red-60-ack { border: 2px solid darkred; }
-.card.red-120-ack { border: 3px solid darkred; }
+  /* Normal blink (warning) */
+  @keyframes blink {
+    50% {
+      opacity: 0.3;
+    }
+  }
 
-.metric-ok { color: green; }
-.metric-yellow { color: goldenrod; }
-.metric-orange { color: darkorange; font-weight: bold; }
-.metric-red { color: red; font-weight: bold; }
-.metric-red-strong { color: darkred; font-weight: bold; animation: pulse 1s infinite; }
+  .status-circle.orange,
+  .status-circle.red-45 {
+    animation: blink 1s infinite;
+  }
 
-@keyframes pulse {
-  0% { opacity: 1; }
-  50% { opacity: 0.6; }
-  100% { opacity: 1; }
-}
+  /* Stronger escalation */
+  @keyframes strong-blink {
+    50% {
+      opacity: 0.1;
+    }
+  }
+
+  .status-circle.red-60,
+  .status-circle.red-120 {
+    animation: strong-blink 0.8s infinite;
+  }
+
+  /* Pulsing borders for severe delays */
+  .card.red-45 {
+    border: 2px solid red;
+  }
+
+  .card.red-60 {
+    border: 2px solid darkred;
+    animation: blink 1s infinite;
+  }
+
+  .card.red-120 {
+    border: 3px solid darkred;
+    animation: strong-blink 0.5s infinite;
+  }
+
+  /* acknowledged: keep color but no blink */
+  .status-circle.red-45-ack {
+    background: red;
+  }
+
+  .status-circle.red-60-ack {
+    background: darkred;
+  }
+
+  .status-circle.red-120-ack {
+    background: maroon;
+  }
+
+  .card.red-45-ack {
+    border: 2px solid red;
+  }
+
+  .card.red-60-ack {
+    border: 2px solid darkred;
+  }
+
+  .card.red-120-ack {
+    border: 3px solid darkred;
+  }
+
+  .metric-ok {
+    color: green;
+  }
+
+  .metric-yellow {
+    color: goldenrod;
+  }
+
+  .metric-orange {
+    color: darkorange;
+    font-weight: bold;
+  }
+
+  .metric-red {
+    color: red;
+    font-weight: bold;
+  }
+
+  .metric-red-strong {
+    color: darkred;
+    font-weight: bold;
+    animation: pulse 1s infinite;
+  }
+
+  @keyframes pulse {
+    0% {
+      opacity: 1;
+    }
+
+    50% {
+      opacity: 0.6;
+    }
+
+    100% {
+      opacity: 1;
+    }
+  }
 
 
-.ok {
-  color: green;
-}
-.warning {
-  color: orange;
-}
-.bad {
-  color: red;
-}
-.critical {
-  color: red;
-  animation: blink 1s linear infinite;
-}
-.severe {
-  color: darkred;
-  animation: pulse 1.5s ease-in-out infinite;
-}
+  .ok {
+    color: green;
+  }
 
-@keyframes blink {
-  50% { opacity: 0.4; }
-}
-@keyframes pulse {
-  0%   { text-shadow: 0 0 2px red; }
-  50%  { text-shadow: 0 0 8px red; }
-  100% { text-shadow: 0 0 2px red; }
-}
+  .warning {
+    color: orange;
+  }
+
+  .bad {
+    color: red;
+  }
+
+  .critical {
+    color: red;
+    animation: blink 1s linear infinite;
+  }
+
+  .severe {
+    color: darkred;
+    animation: pulse 1.5s ease-in-out infinite;
+  }
+
+  @keyframes blink {
+    50% {
+      opacity: 0.4;
+    }
+  }
+
+  @keyframes pulse {
+    0% {
+      text-shadow: 0 0 2px red;
+    }
+
+    50% {
+      text-shadow: 0 0 8px red;
+    }
+
+    100% {
+      text-shadow: 0 0 2px red;
+    }
+  }
 
 
   .loader-overlay {
@@ -485,12 +570,11 @@
   }
 
   .metrics-legend {
-  text-align: center;
-  font-size: 0.85rem;
-  color: #555;
-  margin: 5px 0 ;
-}
-
+    text-align: center;
+    font-size: 0.85rem;
+    color: #555;
+    margin: 5px 0;
+  }
 </style>
 
 <div class="mdc-layout-grid" style="direction: rtl;">
@@ -509,7 +593,7 @@
     </div>
   </div>
 
-  
+
   <div class="row">
     <div class="mdc-layout-grid__cell col-md-12">
       <main class="mdc-top-app-bar--fixed-adjust">
@@ -532,133 +616,115 @@
             <span class="refresh-box" (click)="manualRefresh()" title="רענן עכשיו">
               ⟳ {{ formatCountdown(nextRefreshIn) }}
             </span>
-            
+
           </div>
 
 
 
-<!-- (change)="loadRoomsData()" -->
           <div style="margin: 10px 0;">
             <label for="dateSelect">שינוי תאריך </label>
-            <input type="date" id="dateSelect" [(ngModel)]="selectedDate"  (change)="onDateChange()" 
+            <input type="date" id="dateSelect" [(ngModel)]="selectedDate" (change)="onDateChange()"
               style="padding-left:10px; margin-right:20px;cursor: pointer;" />
+
+             <button (click)="toggleAll()"
+        style="margin-bottom:10px;margin-right:20px;"
+        [title]="allExpanded ? 'סגור את כל החדרים' : 'פתח את כל החדרים'">
+  {{ allExpanded ? '🔽 סגור הכל' : '🔼 פתח הכל' }}
+</button>
+
           </div>
 
           <div id="surgeriesrts">
             <div *ngIf="isLoading" class="loader-overlay">
               <div class="spinner"></div>
             </div>
+            
             <div class="room-widget card"
-     *ngFor="let room of roomsData"
+     *ngFor="let room of roomsData; trackBy: trackByRoomId"
      [ngClass]="[
        getRoomStatusClass(room),
-       room.roomId === activeRoomId ? 'active' : '',
-       activeRoomId && room.roomId !== activeRoomId ? 'blurred' : ''
+       isRoomExpanded(room.roomId) ? 'active' : '',
+       (!isRoomExpanded(room.roomId) && !allExpanded && activeRoomId && room.roomId !== activeRoomId) ? 'blurred' : ''
      ]"
      style="padding:10px; max-height:400px; overflow-y:auto;">
-  
+
   <!-- Header (always visible, clickable) -->
   <div class="room-header" (click)="toggleRoom(room.roomId)">
     <h4 class="text-center">{{ room.roomId }}</h4>
-   
 
-<!-- <div class="metrics text-center" style="margin-bottom:10px;">
-  ◓ <span [ngClass]="getStartDiffClass(room)">{{ getStartDiff(room) }}</span> |
-  ⏳ 
-  <span [ngClass]="getTurnoverTimeClass(room)">
-    {{ getTurnoverTime(room) }}
-  </span>
-  ({{ getTurnoverSummary(room) }}) |
-  ◒ <span [ngClass]="getEndDiffClass(room)">{{ getEndDiff(room) }}</span>
-</div> -->
-
-
-<div class="metrics text-center" style="margin-bottom:10px;">
-  <!-- Start delay -->
-  ◓ 
-  <span [ngClass]="getStartDiffClass(room)" 
-        title="עיכוב מתחילת יום">
-    {{ getStartDiff(room) }}
-  </span> |
-
-  <!-- Turnover -->
-  ⏳ 
-  <span [ngClass]="getTurnoverTimeClass(room)" 
-        title="זמן הכנת חדר (מעבר ל־20 דקות)">
-    {{ getTurnoverTime(room) }}
-  </span>
-  <span title="סך כל זמן ההכנה">({{ getTurnoverSummary(room) }})</span> |
-
-  <!-- End of day gap -->
-  ◒ 
-  <span [ngClass]="getEndDiffClass(room)" 
-        title="פער עד סיום יום">
-    {{ getEndDiff(room) }}
-  </span>
-</div>
-
-
+    <div class="metrics text-center" style="margin-bottom:10px;">
+      ◓
+      <span [ngClass]="getStartDiffClass(room)" title="עיכוב מתחילת יום">
+        {{ getStartDiff(room) }}
+      </span> |
+      ⏳
+      <span [ngClass]="getTurnoverTimeClass(room)" title="זמן הכנת חדר (מעבר ל־20 דקות)">
+        {{ getTurnoverTime(room) }}
+      </span>
+      <span title="סך כל זמן ההכנה">({{ getTurnoverSummary(room) }})</span> |
+      ◒
+      <span [ngClass]="getEndDiffClass(room)" title="פער עד סיום יום">
+        {{ getEndDiff(room) }}
+      </span>
+    </div>
 
     <div class="expand_btn">
-      {{ activeRoomId === room.roomId ? '⮝' : '⮟' }}
+      {{ isRoomExpanded(room.roomId) ? '⮝' : '⮟' }}
     </div>
     <div class="status-circle" [ngClass]="getRoomStatusClass(room)"></div>
   </div>
 
+  <!-- Panel Content -->
+  <div *ngIf="isRoomExpanded(room.roomId)">
+    <div *ngFor="let s of activeSurgeries(room); let i = index" style="direction:rtl; text-align:right;">
 
+      <!-- Turnover line BEFORE each surgery except the first -->
+      <div *ngIf="i > 0">
+        <ng-container *ngIf="getTurnoverBetween(activeSurgeries(room)[i-1], s) as turnover">
+          <div *ngIf="turnover !== '--:--'" class="turnover-line"
+               [ngClass]="getTurnoverBetweenClass(activeSurgeries(room)[i-1], s)">
+            ⏳ {{ turnover }}
+          </div>
+        </ng-container>
+      </div>
 
-  <div *ngIf="activeRoomId === room.roomId">
-  <div *ngFor="let s of activeSurgeries(room); let i = index" style="direction:rtl; text-align:right;">
-    
-    <!-- Turnover line BEFORE each surgery except the first -->
-   <div *ngIf="i > 0">
-  <ng-container *ngIf="getTurnoverBetween(activeSurgeries(room)[i-1], s) as turnover">
-    <div *ngIf="turnover !== '--:--'" class="turnover-line" [ngClass]="getTurnoverBetweenClass(activeSurgeries(room)[i-1], s)">
-      ⏳ {{ turnover }}
+      <!-- Surgery details -->
+      <div class="surgery-row">
+        <b style="font-weight:800">{{ s.surgeryId }}</b><br />
+        {{ s.surgeryName }} ({{ s.surgeryCode }}) <br />
+        <i>{{ s.department }}</i><br />
+        <b>{{ s.timeEntrance }} ← {{ s.timeExit || '...' }}</b><br />
+        <span class="status" [ngClass]="s.status">
+          {{ translateStatus(s.status) }}
+        </span>
+        <br /><br />
+      </div>
     </div>
-  </ng-container>
-</div>
 
-
-
-    <!-- Surgery details -->
-    <div class="surgery-row">
-      <b style="font-weight:800">{{ s.surgeryId }}</b><br />
-      {{ s.surgeryName }} ({{ s.surgeryCode }}) <br />
-      <i>{{ s.department }}</i><br />
-      <b>{{ s.timeEntrance }} ← {{ s.timeExit || '...' }}</b><br />
-      <!-- <span class="status" [ngClass]="s.status">{{ s.status }}</span> -->
-       <span class="status" [ngClass]="s.status">
-  {{ translateStatus(s.status) }}
-</span>
-      <br /><br />
+    <!-- Planned surgeries -->
+    <div *ngIf="plannedSurgeries(room).length">
+      <hr />
+      <h5 style="direction:rtl; text-align:right;">נתוחים מתוכננים</h5>
+      <div *ngFor="let s of plannedSurgeries(room)" class="surgery-row"
+           style="direction:rtl; text-align:right;">
+        {{ s.surgeryName }} ({{ s.surgeryCode }}) - {{ s.department }}
+        <br />
+      </div>
     </div>
   </div>
-
-  <!-- Planned surgeries -->
-  <div *ngIf="plannedSurgeries(room).length">
-    <hr />
-    <h5 style="direction:rtl; text-align:right;">נתוחים מתוכננים</h5>
-    <div *ngFor="let s of plannedSurgeries(room)" class="surgery-row" style="direction:rtl; text-align:right;">
-      {{ s.surgeryName }} ({{ s.surgeryCode }}) - {{ s.department }}
-      <br />
-    </div>
-  </div>
-</div>
-
 </div>
 
           </div>
-          <div class="row card" style="margin-top: 20px;">           
-<div class="metrics-legend" style="text-align:center; margin-bottom:10px; font-size:0.9em;">
-  ◓ = עיכוב מתחילת יום | 
-  ⏳ = זמן הכנת חדר (מעבר ל־20 דקות) | 
-  ◒ = פער עד סיום יום <br />
-  🟢 ירוק = ניתוח פעיל | 
-  🔵 כחול = חדר לא מנוצל | 
-  🟠 כתום = עיכוב בהכנת חדר | 
-  🔴 אדום = עיכוב חמור (גבוה מ־45 דק׳, 60 דק׳, 120 דק׳)
-</div>
+          <div class="row card" style="margin-top: 20px;">
+            <div class="metrics-legend" style="text-align:center; margin-bottom:10px; font-size:0.9em;">
+              ◓ = עיכוב מתחילת יום |
+              ⏳ = זמן הכנת חדר (מעבר ל־20 דקות) |
+              ◒ = פער עד סיום יום <br />
+              🟢 ירוק = ניתוח פעיל |
+              🔵 כחול = חדר לא מנוצל |
+              🟠 כתום = עיכוב בהכנת חדר |
+              🔴 אדום = עיכוב חמור (גבוה מ־45 דק׳, 60 דק׳, 120 דק׳)
+            </div>
           </div>
           <div style="height:20px;"></div>
         </div>
@@ -692,7 +758,7 @@
 
           </div>
         </div>
-      
+
 
 
         <div class="panel" style="padding:20px;width:100%; border: 1px solid rgba(0, 0, 0, .125);
