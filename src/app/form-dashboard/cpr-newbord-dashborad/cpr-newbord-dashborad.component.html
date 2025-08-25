@@ -70,14 +70,15 @@
             <ng-container matColumnDef="actions">
                 <th mat-header-cell *matHeaderCellDef mat-sort-header>פעולות</th>
                 <td mat-cell *matCellDef="let element">
-                    <button mat-icon-button color="primary" (click)="editForm(element.Id)" matTooltip="עריכה">
+                    <button mat-icon-button color="primary" (click)="editForm(element.Id)"
+                        *ngIf="element.sentToChamelleon == ''" matTooltip="עריכה">
                         <mat-icon>edit</mat-icon>
                     </button>
                     <button mat-icon-button color="warn" (click)="viewDetails(element.Id)" matTooltip="הדפסה">
                         <mat-icon>print</mat-icon>
                     </button>
                     <button mat-icon-button style="color: rgb(58, 127, 230);" matTooltip="שמירה בנמר/קמיליון"
-                        (click)="preparePdf(element)">
+                        (click)="preparePdf(element)" *ngIf="element.sentToChamelleon == ''">
                         <mat-icon mat-list-icon>share</mat-icon>
                     </button>
                 </td>
