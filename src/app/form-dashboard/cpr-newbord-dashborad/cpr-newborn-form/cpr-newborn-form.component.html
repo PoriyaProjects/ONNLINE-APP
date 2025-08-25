@@ -443,7 +443,7 @@
                 </div>
             </mat-card>
 
-            <mat-card
+            <!-- <mat-card
                 style="margin-top: 24px; padding: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border-radius: 12px;">
                 <mat-card-title style="margin-bottom: 16px; font-size: 20px; text-align: right;">
                     IV NaBic
@@ -470,7 +470,7 @@
                         <tr mat-row *matRowDef="let row; columns: nabicDisplayedColumns;"></tr>
                     </table>
                 </div>
-            </mat-card>
+            </mat-card> -->
 
             <mat-card
                 style="margin-top: 24px; padding: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border-radius: 12px;">
@@ -814,6 +814,7 @@
                             <mat-form-field appearance="outline" style="width: 50%;">
                                 <mat-label>תפקיד</mat-label>
                                 <mat-select formControlName="role">
+                                    <mat-option value="רופא">רופא</mat-option>
                                     <mat-option value="רופא בכיר">רופא בכיר</mat-option>
                                     <mat-option value="רופא תורן">רופא תורן</mat-option>
                                     <mat-option value="אחות פגייה">אחות פגייה</mat-option>

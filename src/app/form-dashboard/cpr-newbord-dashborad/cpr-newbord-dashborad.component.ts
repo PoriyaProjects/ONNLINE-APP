@@ -187,7 +187,7 @@ export class CprNewbordDashboradComponent implements OnInit {
               setTimeout(() => {
                 that.http.post(environment.urlipracticom + "LinkPdfToPatientNamer", {
                   CaseNumber: '00' + select.babyCasenumber,
-                  FormID: "1",
+                  FormID: select.Id,
                   Catigory: "ZPO_NBCPRF",
                   fileSource:
                     Response["d"],
