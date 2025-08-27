@@ -10,6 +10,7 @@ import { CommercialSupportResearchDialogComponent } from './commercial-support-r
 import { SupportRequestService } from './commercial-support.service';
 
 
+
 @Component({
   selector: 'app-dialog-example',
   templateUrl: './dialog-example.component.html',
@@ -37,7 +38,6 @@ export class DialogExampleComponent {
         FormChar: [this.data.Roler, null],
         Canceled: [response?.Canceled == 'True' ? true : false, null]
       });
-      console.log(requests['d']);
     });
   }
 
@@ -87,7 +87,7 @@ export class CommercialSupportFormDashboardComponent {
     const value = (event.target as HTMLInputElement).value.trim().toLowerCase();
     this.searchValue = value;
     this.supportRequests.filterPredicate = (data: any, filter: string) =>
-      data.requester.toLowerCase().includes(filter);
+      data.Requester.toLowerCase().includes(filter);
     this.supportRequests.filter = this.searchValue;
   }
 
@@ -224,5 +224,80 @@ export class CommercialSupportFormDashboardComponent {
       this.loadRequests();
     });
   }
+
+  printTable(): void {
+    const tableHeaders = ['מספר הבקשה', 'סוג הבקשה', 'מגיש הבקשה/עובד משתתף', 'תיאור', 'תאריך הבקשה'];
+
+    const tableRows = this.supportRequests.filteredData.map(item => `
+    <tr>
+      <td>${item.Id || ''}</td>
+      <td>${item.RequestType || ''}</td>
+      <td>${item.Requester || ''}</td>
+      <td>${item.Name || ''}</td>
+      <td>${new Date(item.InsertedDate).toLocaleDateString('he-IL')}</td>
+    </tr>
+  `).join('');
+
+    const htmlContent = `
+    <html dir="rtl" lang="he">
+      <head>
+        <title>בקשות תמיכת גוף מסחרי</title>
+        <style>
+          body {
+            font-family: 'Alef', sans-serif;
+            direction: rtl;
+            padding: 20px;
+            color: #000;
+          }
+          h1 {
+            text-align: center;
+            font-size: 20px;
+            margin-bottom: 20px;
+          }
+          table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+          }
+          th, td {
+            border: 1px solid #ccc;
+            padding: 8px;
+            text-align: right;
+          }
+          th {
+            background-color: #1e88e5;
+            color: white;
+          }
+          tr:nth-child(even) td {
+            background-color: #f5f5f5;
+          }
+        </style>
+      </head>
+      <body>
+        <h1>דוח בקשות תמיכת גוף מסחרי</h1>
+        <p style="text-align: center;">תאריך יצירה: ${new Date().toLocaleDateString('he-IL')}</p>
+        <table>
+          <thead>
+            <tr>${tableHeaders.map(h => `<th>${h}</th>`).join('')}</tr>
+          </thead>
+          <tbody>${tableRows}</tbody>
+        </table>
+        <script>
+          window.onload = () => {
+            window.print();
+            window.onafterprint = () => window.close();
+          };
+        </script>
+      </body>
+    </html>
+  `;
+
+    const printWindow = window.open('', '_blank', 'width=1000,height=1000');
+    if (printWindow) {
+      printWindow.document.write(htmlContent);
+      printWindow.document.close();
+    }
+  }
+
 
 }

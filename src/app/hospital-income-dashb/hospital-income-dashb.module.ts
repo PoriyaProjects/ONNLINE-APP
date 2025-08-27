@@ -6,7 +6,7 @@ import { FormsModule } from '@angular/forms';
 
 // Components
 import { GoogleChartsIncomeComponent } from './google-charts/google-charts.component';
-import { ChargingGroupsComponent } from './google-charts/charging-groups.component';
+// import { ChargingGroupsComponent } from './google-charts/charging-groups.component';
 import { HospitalIncomeDashbComponent } from './hospital-income-dashb.component';
 import { TableComponent } from '../shared/dataTable';
 
@@ -23,7 +23,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatSortModule } from '@angular/material/sort';
 import { MatExpansionModule } from '@angular/material/expansion';
 import { GroupDashboardComponent } from './group-dashboard.component';
-import { DepartmentDashboardComponent } from './department-dashboard.component';
+// import { DepartmentDashboardComponent } from './department-dashboard.component';
 import { HospitalIncomeDashbRoutingModule } from './hospital-income-dashb-routing.module';
 import { MatTabsModule } from '@angular/material/tabs';
 
@@ -32,7 +32,7 @@ import { MatTabsModule } from '@angular/material/tabs';
 const routes: Routes = [
   { path: '', component: GoogleChartsIncomeComponent },
   { path: 'data-table', component: TableComponent },
-  { path: 'groups', component: ChargingGroupsComponent },
+  // { path: 'groups', component: ChargingGroupsComponent },
   { path: 'dashboard', component: HospitalIncomeDashbComponent } // ✅ Your dashboard
 ];
 
@@ -40,10 +40,10 @@ const routes: Routes = [
   declarations: [
     GoogleChartsIncomeComponent,
     TableComponent,
-    ChargingGroupsComponent,
-    HospitalIncomeDashbComponent,
-    DepartmentDashboardComponent,
-    GroupDashboardComponent
+    // ChargingGroupsComponent,
+    //HospitalIncomeDashbComponent,
+    // DepartmentDashboardComponent,
+    // GroupDashboardComponent
     
   ],
   imports: [
@@ -68,7 +68,7 @@ const routes: Routes = [
     MatTabsModule
   ],
   entryComponents: [GroupDashboardComponent],
-  exports: [DepartmentDashboardComponent],
+  // exports: [DepartmentDashboardComponent],
   schemas: [CUSTOM_ELEMENTS_SCHEMA]
 })
 export class HospitalIncomeDashbModule {}

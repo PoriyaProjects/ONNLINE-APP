@@ -33,6 +33,7 @@ export class WhatsappDepartmentsDashboardComponent implements OnInit {
   contacts = [];
   contacts_filter = [];
   fixed_files_list = [];
+  fixed_messages_list = [];
   unAnsweredConversations = [];
   selectedFile: File | null = null;
   unAnsweredConversations_filter = [];
@@ -50,6 +51,11 @@ export class WhatsappDepartmentsDashboardComponent implements OnInit {
   employee_service_action: any;
   services = [];
   loading_message = "";
+  @ViewChild('fixedMessagesDialog', { static: true }) fixedMessagesDialog: TemplateRef<any>;
+
+  unAnsweredPage = 1;
+  unAnsweredPageSize = 20;
+  unAnsweredTotal = 0;
 
   constructor(
     private fb: FormBuilder,
@@ -98,7 +104,7 @@ export class WhatsappDepartmentsDashboardComponent implements OnInit {
 
   chooseService(ser) {
     this.employee_service_action = ser;
-    this.getPatientsForWhatsapp(1);
+    this.getPatientsForWhatsapp();
     this.getDepartmentsWhatsAppUsers();
   }
 
@@ -166,20 +172,15 @@ export class WhatsappDepartmentsDashboardComponent implements OnInit {
     return this.contacts.filter(option => option.FirstName.toLowerCase().includes(filterValue));
   }
 
-  async getPatientsForWhatsapp(period) {
-    if (parseInt(period) < 1 || parseInt(period) > 20) {
-      this.openSnackBar('הטווח בין 1 ל 20');
-      return;
-    }
+  async getPatientsForWhatsapp() {
     this.contacts = [];
     this.contacts_filter = [];
     this.http
       .post(environment.url + "GetPatientsForDepartmentsWhatsapp", {
-        _period: period,
         _user: this.user_name,
       })
       .subscribe((Response) => {
-        this.contacts = Response["d"];
+        this.contacts = Response["d"]?.data || Response["d"] || [];
         this.contacts_filter = this.contacts;
       });
   }
@@ -206,19 +207,22 @@ export class WhatsappDepartmentsDashboardComponent implements OnInit {
       });
   }
 
-  async getDepartmentsWhatsAppUsers() {
+  async getDepartmentsWhatsAppUsers(page = this.unAnsweredPage, pageSize = this.unAnsweredPageSize) {
     this.loading_message = "טוען...";
     this.http
       .post(environment.url + "getDepartmentsWhatsAppUsers", {
         _user_name: this.user_name,
         _service_idfk: this.employee_service_action.Service_Order,
-        _action_idfk: this.employee_service_action.Action_Order
+        _action_idfk: this.employee_service_action.Action_Order,
+        _page: page,
+        _pageSize: pageSize
       })
       .subscribe((Response) => {
-        this.unAnsweredConversations = Response["d"];
+        this.unAnsweredConversations = Response["d"]?.data || Response["d"] || [];
         if (this.unAnsweredConversations.length == 0) this.loading_message = "לא נמצאו שיחות";
         else this.loading_message = "";
         this.unAnsweredConversations_filter = this.unAnsweredConversations;
+        this.unAnsweredTotal = Response["d"]?.total || this.unAnsweredConversations.length;
         if (this.currentContact !== undefined && this.currentContact?.maxRow !== '' && this.currentContact?.Row_ID !== undefined) {
           this.currentContact = this.unAnsweredConversations.filter(x => x.Row_ID == this.currentContact?.Row_ID)[0];
           if (this.currentContact?.Row_ID !== undefined) this.getDepartmentsWhatsAppConversationsByIDFK(this.currentContact?.Row_ID);
@@ -349,6 +353,7 @@ export class WhatsappDepartmentsDashboardComponent implements OnInit {
       this.newMessage.controls['ServiceEmployeeIDFK'].setValue(this.currentContact?.CellNumber);
       this.newMessage.controls['EndUserIDFK'].setValue(this.currentContact?.FirstName + ' ' + this.currentContact?.LastName);
       this.newMessage.controls['ActionIDFK'].setValue(this.employee_service_action.Action_Order);
+      this.newMessage.controls['ServiceIDFK'].setValue(this.employee_service_action.Service_Order);
       this.http
         .post(environment.url + "SendDepartmentsWhatsAppMessageToUserOneWay", {
           messageForm: this.newMessage.value,
@@ -591,4 +596,94 @@ export class WhatsappDepartmentsDashboardComponent implements OnInit {
     return 'unknown';
   }
 
+  saveEditFixedMessagesWhatsappDepartments(fixed_message) {
+    this.http
+      .post(environment.url + "SaveEditFixedMessagesWhatsappDepartments", {
+        fixed_message: fixed_message,
+        ServiceIDFK: this.employee_service_action.Service_Order,
+        ActionIDFK: this.employee_service_action.Action_Order
+      })
+      .subscribe((Response) => {
+        this.fixed_messages_list = Response['d'];
+      });
+  }
+
+  openFixedMessagesDialog() {
+    this.saveEditFixedMessagesWhatsappDepartments(null);
+    this.dialog.open(this.fixedMessagesDialog, { width: '40%' });
+  }
+
+  addFixedMessage() {
+    const text = prompt('הזן הודעה חדשה:');
+    if (text && text.trim()) {
+      let text_obj = {
+        Row_ID: null,
+        Message_Text: text,
+        Section: 'departments',
+        ServiceIDFK: this.employee_service_action.Service_Order,
+        ActionIDFK: this.employee_service_action.Action_Order,
+        Status: true
+      }
+      // Save to backend if needed, here just add to the list for demo
+      this.fixed_messages_list.push(text_obj);
+      // TODO: Call backend to persist
+      this.saveEditFixedMessagesWhatsappDepartments(text_obj);
+    }
+  }
+
+  editFixedMessage(msg) {
+    const newText = prompt('ערוך הודעה:', msg.Message_Text);
+    if (newText && newText.trim()) {
+      msg.Message_Text = newText;
+      // TODO: Call backend to persist
+      let text_obj = {
+        Row_ID: msg.Row_ID,
+        Message_Text: newText,
+        Section: 'departments',
+        ServiceIDFK: this.employee_service_action.Service_Order,
+        ActionIDFK: this.employee_service_action.Action_Order,
+        Status: true
+      }
+      this.saveEditFixedMessagesWhatsappDepartments(text_obj);
+    }
+  }
+
+  removeFixedMessage(msg) {
+    if (confirm('האם אתה בטוח שברצונך למחוק?')) {
+      this.fixed_messages_list = this.fixed_messages_list.filter(m => m !== msg.Message_Text);
+      // TODO: Call backend to persist
+      let text_obj = {
+        Row_ID: msg.Row_ID,
+        Message_Text: msg.Message_Text,
+        Section: 'departments',
+        ServiceIDFK: this.employee_service_action.Service_Order,
+        ActionIDFK: this.employee_service_action.Action_Order,
+        Status: false
+      }
+      this.saveEditFixedMessagesWhatsappDepartments(text_obj);
+    }
+  }
+
+  selectFixedMessage(msg, dialogRef) {
+    this.newMessage.controls['Message_Text'].setValue(msg.Message_Text);
+    dialogRef.close();
+  }
+
+  // Paging controls for unAnsweredConversations
+  nextUnAnsweredPage() {
+    this.unAnsweredPage++;
+    this.getDepartmentsWhatsAppUsers(this.unAnsweredPage, this.unAnsweredPageSize);
+    // if (this.unAnsweredPage * this.unAnsweredPageSize <= this.unAnsweredTotal) {
+    // }
+  }
+  prevUnAnsweredPage() {
+    if (this.unAnsweredPage > 1) {
+      this.unAnsweredPage--;
+      this.getDepartmentsWhatsAppUsers(this.unAnsweredPage, this.unAnsweredPageSize);
+    }
+  }
+
+  calculateAllUnAnswered() {
+    return Math.ceil(this.unAnsweredTotal / this.unAnsweredPageSize);
+  }
 }

@@ -10,6 +10,8 @@ import { MatSnackBar, MatSnackBarHorizontalPosition, MatSnackBarVerticalPosition
 import { ConfirmationDialogService } from 'src/app/confirmation-dialog/confirmation-dialog.service';
 import { TrainingRequestDialogComponent } from './training-request-dialog/training-request-dialog.component';
 import { DatePipe } from '@angular/common';
+import { of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 
 @Component({
   selector: 'app-people-list-dialog',
@@ -38,7 +40,7 @@ export class TrainingRequestDashboardComponent implements OnInit {
 
   trainingRequests = new MatTableDataSource();
   displayedColumns: string[] = [
-    'Row_ID', 'Form_Fill_Date', 'First_Name', 'Passport_ID', 'Function_Department', 'Name_Location', 'Date', 'EApproved', 'FApproved', 'Training_Fund_Answer', 'HApproved', 'Actions'
+    'Row_ID', 'Form_Fill_Date', 'First_Name', 'Passport_ID', 'Function_Department', 'Name_Location', 'Date', 'EApproved', 'FApproved', 'HApproved', 'Training_Fund_Answer', 'Galilean_Partnership_Description', 'Actions'
   ];
   peopleList = [
     { Full_Name: 'שמעון סבח', Role: 'יו"ר הועדה' },
@@ -51,6 +53,7 @@ export class TrainingRequestDashboardComponent implements OnInit {
   @ViewChild(MatPaginator) paginator: MatPaginator;
   @ViewChild(MatSort) sort: MatSort;
   UserName = localStorage.getItem('loginUserName').toLowerCase();
+  FullName = localStorage.getItem('FirstName').toLowerCase() + ' ' + localStorage.getItem('LastName').toLowerCase();
   ID = localStorage.getItem('ID').toLowerCase();
   horizontalPosition: MatSnackBarHorizontalPosition = "start";
   verticalPosition: MatSnackBarVerticalPosition = "bottom";
@@ -59,6 +62,10 @@ export class TrainingRequestDashboardComponent implements OnInit {
   Plan_Date: any;
   loading: boolean;
   print_only_Protocol: boolean;
+  change_plan_date: boolean;
+  decissions_list = [];
+  filter_types: any = "";
+  filter_plans: any = "";
 
   constructor(
     public dialog: MatDialog,
@@ -70,20 +77,37 @@ export class TrainingRequestDashboardComponent implements OnInit {
 
   ngOnInit(): void {
     this.date_now = this.datePipe.transform(this.date_now, 'dd-MM-yyyy');
-    this.getAllTrainingRequestFormsList("");
+    this.getAllTrainingRequestFormsList();
     this.changeTrainingPlanDate();
     this.getHRDepartmentEmployees();
+    this.getTrainingRequestPlansList();
   }
 
-  changeTrainingPlanDate() {
-    if (this.UserName == "ttsrefati") this.Plan_Date = "";
-    if (this.Plan_Date != "") this.Plan_Date = this.datePipe.transform(this.Plan_Date, 'dd-MM-yyyy')
-    this.http
-      .post(environment.url + "ChangeTrainingPlanDate", {
-        plan_date: this.Plan_Date
-      })
-      .subscribe((Response) => {
-        this.Plan_Date = Response['d'];
+  changeTrainingPlanDate(): void {
+    const resetUsers = ['ttsrefati', 'tkoren', 'adahabre'];
+
+    if (!resetUsers.includes(this.UserName)) {
+      this.Plan_Date = '';
+      this.change_plan_date = false;
+    } else {
+      this.change_plan_date = true;
+    }
+
+    const formattedDate = this.Plan_Date
+      ? this.datePipe.transform(this.Plan_Date, 'yyyy-MM-dd')
+      : '';
+
+    this.http.post<{ d: string }>(`${environment.url}ChangeTrainingPlanDate`, {
+      plan_date: formattedDate
+    })
+      .pipe(
+        catchError((error) => {
+          console.error('Error changing training plan date', error);
+          return of({ d: this.Plan_Date });
+        })
+      )
+      .subscribe((response) => {
+        this.Plan_Date = response.d;
       });
   }
 
@@ -112,6 +136,14 @@ export class TrainingRequestDashboardComponent implements OnInit {
     });
   }
 
+  getTrainingRequestPlansList() {
+    this.http
+      .post(environment.url + "GetTrainingRequestPlansList", {})
+      .subscribe((Response) => {
+        this.decissions_list = Response["d"];
+      });
+  }
+
   handleAction(rowId: string, action: string): void {
     // Add action handling logic here
     if (action == 'view') {
@@ -124,7 +156,7 @@ export class TrainingRequestDashboardComponent implements OnInit {
         if (res != null) {
           this.TrainingRequestSendLastAnswer(res);
         }
-        this.getAllTrainingRequestFormsList("");
+        this.getAllTrainingRequestFormsList();
       });
     } else if (action == 'new') {
       this.dialog.open(TrainingRequestFormComponent, {
@@ -133,7 +165,7 @@ export class TrainingRequestDashboardComponent implements OnInit {
         width: '90%',
         height: '90%'
       }).afterClosed().subscribe(res => {
-        this.getAllTrainingRequestFormsList("");
+        this.getAllTrainingRequestFormsList();
       });
     }
   }
@@ -183,7 +215,9 @@ export class TrainingRequestDashboardComponent implements OnInit {
   getDataToProtocolPDF(): Promise<any> {
     return new Promise((resolve, reject) => {
       this.http
-        .post(environment.url + "GetTrainingRequestProtocolList", {})
+        .post(environment.url + "GetTrainingRequestProtocolList", {
+          filter_plans: this.filter_plans
+        })
         .subscribe({
           next: (response) => resolve(response['d']),
           error: (err) => reject(err)
@@ -254,6 +288,87 @@ export class TrainingRequestDashboardComponent implements OnInit {
     }
   }
 
+  // create a pritable page with the provided data from trainingRequests dataSource
+  // data = your trainingRequests dataSource (array of objects)
+  printDataTable() {
+    let data = this.trainingRequests.filteredData;
+    if (!data || data.length === 0) {
+      alert("No data to print");
+      return;
+    }
+
+    // Get headers dynamically from the object keys
+    const headers = Object.keys(data[0]);
+
+
+    // Build table rows
+    let tableRows =
+      `<tr>`
+    for (let i = 0; i < data.length; i++) {
+      tableRows += `<td style="padding:8px; border:1px solid #ccc;">${data[i]}</td>`
+    }
+    `</tr>`;
+
+    // Build table headers
+    let tableHeader =
+      `<tr>`
+    for (let i = 0; i < headers.length; i++) {
+      tableHeader += `<th style="padding:8px; border:1px solid #ccc; background:#f5f5f5;">${headers[i]}</th>`
+    }
+    `</tr>`;
+
+    // Full HTML with RTL + landscape
+    const printContent = `
+    <html dir="rtl" lang="he">
+      <head>
+        <title>בקשות השתלמות</title>
+        <style>
+          @page { size: landscape; }
+          body { 
+            font-family: Arial, sans-serif; 
+            margin: 20px; 
+            direction: rtl;
+            text-align: right;
+          }
+          h2 {
+            text-align: center;
+            margin-bottom: 20px;
+          }
+          table { 
+            width: 100%; 
+            border-collapse: collapse; 
+          }
+          th, td { 
+            padding: 8px; 
+            border: 1px solid #ccc; 
+          }
+          th { 
+            background: #f5f5f5; 
+            font-weight: bold; 
+          }
+          tr:nth-child(even) {
+            background-color: #fafafa;
+          }
+        </style>
+      </head>
+      <body>
+        <h2>בקשות השתלמות</h2>
+        <table>
+          ${tableHeader}
+          ${tableRows}
+        </table>
+      </body>
+    </html>
+  `;
+
+    // Open new window and print
+    const popupWin = window.open('', '_blank', 'width=1200,height=900');
+    popupWin!.document.open();
+    popupWin!.document.write(printContent);
+    popupWin!.document.close();
+    popupWin!.print();
+  }
+
   createThePdfFile(data) {
     return `<!DOCTYPE html>
     <html lang="he" dir="rtl">
@@ -284,8 +399,8 @@ export class TrainingRequestDashboardComponent implements OnInit {
             ${data['H'].Approved == "מאושר" || data['H'].Approved == "מאושר התחייבות חשב" ? `
             <p style="margin: 5px 0;">הריני להודיעך כי הועדה החליטה, לאשר את הבקשה בכפוף לתנאים הבאים:</p>
             <ul style="margin-right: 20px;padding-right: 20px;list-style-type: disc;">
+            <li style="margin-bottom: 5px;">מספר ימי העדרות שאושרו: ${data['H'].Approved_Absence_Time}, קוד רישום: ${data['H'].Code_Type}</li>
                 ${data['H'].Transportaion === "True" ? `<li style="margin-bottom: 5px;">החזר נסיעות בגובה 100% לפי רפורמת דרך שווה.</li>
-                <li style="margin-bottom: 5px;">מספר ימי העדרות שאושרו: ${data['H'].Approved_Absence_Time}, קוד רישום: ${data['H'].Code_Type}</li>
                 <p>יש להגיש קבלה מקורית למדור שכר עד חודשיים מיום ההנפקה</p>` : ``}
             </ul>` : `
             <p style="margin: 5px 0;">הריני להודיעך כי הועדה החליטה, לא לאשר את הבקשה.</p>`
@@ -303,8 +418,8 @@ export class TrainingRequestDashboardComponent implements OnInit {
         </div><br><br><br><br><br><br>
         <div>
         	<p style="margin: 0px">העתקים:</p>
-        	<p style="margin: 0px">הנהלת המרכז הרפואי</p>
-        	<p style="margin: 0px">${data['E'].Supervisor_Name.lastname}</p>
+        	<p style="margin: 0px">${data['F'].Supervisor_Name.lastname} - מנהל עקיף</p>
+        	<p style="margin: 0px">${data['E'].Supervisor_Name.lastname} - מנהל ישיר</p>
         	<p style="margin: 0px">מחלקת משאבי אנוש</p>
         </div>
     </body>
@@ -404,36 +519,6 @@ export class TrainingRequestDashboardComponent implements OnInit {
     return print_content;
   }
 
-  // trainingRequestApprovedOrNot(rowId, approved) {
-  //   this.confirmationDialogService
-  //     .confirm("נא לאשר..", "האם אתה בטוח ...? ")
-  //     .then((confirmed) => {
-  //       console.log("User confirmed:", confirmed);
-  //       if (confirmed) {
-  //         this.http
-  //           .post(environment.url + "TrainingRequestApprovedOrNot", {
-  //             id: rowId,
-  //             approved: approved
-  //           })
-  //           .subscribe((Response) => {
-  //             if (Response['d']) {
-  //               this.getAllTrainingRequestFormsList("");
-  //               this.openSnackBar("נשמר בהצלחה");
-  //             } else {
-  //               this.getAllTrainingRequestFormsList("");
-  //               this.openSnackBar("תקלה! לא נשמר");
-  //             }
-  //           });
-  //       } else {
-  //       }
-  //     })
-  //     .catch(() =>
-  //       console.log(
-  //         "User dismissed the dialog (e.g., by using ESC, clicking the cross icon, or clicking outside the dialog)"
-  //       )
-  //     );
-  // }
-
   openSnackBar(message) {
     this._snackBar.open(message, "X", {
       duration: 3000,
@@ -453,7 +538,7 @@ export class TrainingRequestDashboardComponent implements OnInit {
               id: id,
             })
             .subscribe((Response) => {
-              this.getAllTrainingRequestFormsList("");
+              this.getAllTrainingRequestFormsList();
             });
         } else {
         }
@@ -465,12 +550,13 @@ export class TrainingRequestDashboardComponent implements OnInit {
       );
   }
 
-  getAllTrainingRequestFormsList(approved) {
+  getAllTrainingRequestFormsList() {
     this.loading = true;
     this.http
       .post(environment.url + "GetAllTrainingRequestFormsList", {
         _id: this.ID,
-        _approved: approved
+        _approved: this.filter_types,
+        _decission_date: this.filter_plans
       })
       .subscribe((Response) => {
         this.trainingRequests = new MatTableDataSource<any>(Response["d"]);
@@ -506,6 +592,10 @@ export class TrainingRequestDashboardComponent implements OnInit {
   }
 
   openPeopleDialog(): void {
+    if (new Date(this.filter_plans) > new Date()) {
+      this.openSnackBar("אין פרוטוקול לתאריך ועדה עתידי!");
+      return;
+    }
     this.dialog.open(PeopleListDialogComponent, {
       width: '500px',
       data: this.peopleList,

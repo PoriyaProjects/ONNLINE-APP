@@ -3,14 +3,13 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { environment } from "src/environments/environment";
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { formatNumberShort, parseDurationToDecimalHours, formatDecimalHoursToTime } from '../../shared/number-utils';
-import { sanitizeSoapResponse, sanitizeSoapResponseAndFormatData } from '../../shared/sanitizesoapresponce';
-import { addShortFormatAnnotations, filterValidYears, getWeeklySummaryAsPieValues  } from '../../shared/chart-utils';
+import { sanitizeSoapResponse, sanitizeSoapResponseAndFormatData, sanitizeSoapResponseDept } from '../../shared/sanitizesoapresponce';
+import { addShortFormatAnnotations, filterValidYears, getWeeklySummaryAsPieValues } from '../../shared/chart-utils';
 import { filterRecentOffsets, YearlyData, getCurrentMonthData, getWorkingDaysInfo, convertHebrewMonthsToNumbers, filterOutCurrentMonth, filterLastN } from '../../shared/date-utils';
-import { sanitizeAndFilterYearMonthData} from '../../shared/chart-data-pipeline';
+import { sanitizeAndFilterYearMonthData } from '../../shared/chart-data-pipeline';
 import { limitToRecentYears } from '../../shared/limit-utils';
 import { ChartDataPipelineService } from '../../shared/ChartDataPipelineService';
-import { drawOverlayDualArcChartHelper } from '../../shared/drawOverlayDualArcChartHelper';
-import { TableComponent  } from '../../shared/dataTable';
+import { TableComponent } from '../../shared/dataTable';
 import { FormsModule } from '@angular/forms';
 import { MatExpansionModule } from '@angular/material/expansion';
 import { Observable } from 'rxjs';
@@ -18,21 +17,21 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule } from '@angular/material/select';
 import { map } from 'rxjs/operators';
 import { drawOverlayDualArcChartHelperIncome } from 'src/app/shared/drawOverlayDualArcChartHelperIncome';
-import { ChargingGroupsComponent } from 'src/app/hospital-income-dashb/google-charts/charging-groups.component';
+
+import { getDeptGroupHtml, getDepartmentLayoutHtml, getDeptFeGroupHtml } from './templates';
+import { Renderer2, Inject } from '@angular/core';
+import { DOCUMENT } from '@angular/common';
 
 
 @Injectable({ providedIn: 'root' })
 export class DepartmentService {
-  constructor(private http: HttpClient) {}
-
-  getDepartments(): Observable<{ id: number; name: string }[]> {
-    return this.http.get<{ id: number; name: string }[]>(`${environment.url}/GetDepartments`);
-  }
+  constructor(private http: HttpClient, private renderer: Renderer2,
+    @Inject(DOCUMENT) private document: Document) { }
 }
 
 
 export interface Department {
-  id: string;
+  id: number;
   name: string;
 }
 
@@ -47,7 +46,16 @@ export interface ChartSourceConfig {
   numberFormat?: 'K' | 'M' | 'B'; // Optional display format
 }
 
-
+export 
+interface NBSpecialOptions {
+  limitRows?: number;
+  filters?: { column: string; value: any }[];
+  sortBy?: string;
+  sortAsc?: boolean;
+  showSearch?: boolean;
+  showTotals?: boolean;
+  tableOptions?: google.visualization.TableOptions;
+}
 
 /**
  * Converts an array of year offsets (e.g., "0", "-1", "-2") to actual year strings.
@@ -57,20 +65,7 @@ export interface ChartSourceConfig {
  * @param baseYear Optional base year, defaults to current year
  * @returns Array of year strings in chronological order
  */
-export function convertOffsetsToYears(
-  offsets: string[],
-  baseYear: number = new Date().getFullYear()
-): string[] {
-  // Detect if offsets are already in chronological order
-  const isChronological = offsets.every((label, i, arr) => {
-    return i === 0 || parseInt(arr[i]) > parseInt(arr[i - 1]);
-  });
 
-  // Reverse if not chronological
-  const sortedOffsets = isChronological ? offsets : [...offsets].reverse();
-
-  return sortedOffsets.map(offset => (baseYear + parseInt(offset)).toString());
-}
 
 
 declare var google: any; // Declare google as a global variable
@@ -82,37 +77,8 @@ declare var google: any; // Declare google as a global variable
 
 
 export class GoogleChartsService {
-  public isLoadingDepartments = true;
-  public departmentsLoadError = false;
-  public departments: { id: number; name: string }[] = [];
-  public selectedDeptGroupId = 0;
-  
-  public globalChartControls = {
-    showTrendline: true,
-    showAnnotations: true,
-    showLegend: true,
-    shortFormat: true,
-    showPercentageAnnotations: false
-  };
-  
-  loadDepartments() {
-    this.isLoadingDepartments = false;
-    this.departments = [
-      { id: 1, name: 'קרדיולוגיה' },
-      { id: 2, name: 'אורתופדיה' },
-      { id: 3, name: 'כירורגיה' }
-    ];
-  }
-  
-  onDeptGroupChange(deptId: number) {
-    // Handle selection logic
-  }
-  
-  onGlobalControlChange() {
-    // Apply new chart options or redraw
-  }
 
-  
+
   public gaugeLabel: string;
   public gaugeValue: number;
   public gaugeTargetValue: number;
@@ -139,33 +105,13 @@ export class GoogleChartsService {
 
 
   public DATA_SOURCES = {
-    //
-    //GetChargingChartMonthlyDataEExFull?fromMonth=2025-01&toMonth=&groupName=&deptName=&roomCode=&timeType=&metric=&calcMode=absolute&compareToLast=false&normalize=false&showAnnotations=false&sortBy=&order=&groupBy=month&format=google&chartType=
-    //GetChargingChartMonthlyDataEExFull?
-    // fromMonth=2025-01&toMonth=&
-    // groupName=&deptName=&
-    // roomCode=&timeType=&
-    // metric=
-    // &calcMode=absolute&
-    // compareToLast=false&
-    // normalize=false&showAnnotations=false&sortBy=&order=&groupBy=month&format=google&chartType=
-
     OPERATIONS: `${environment.url}/GetChargingChartMonthlyDataEExx`,
-    OPERATIONSF: `${environment.url}/GetChargingChartMonthlyDataEExx`,
-    OPERATIONS_3Y: `${environment.url}/GetChargingChartMonthlyDataEExx`,
-    //INCOME: `${environment.url}/GetIncomeData`,
-    //INCOME_3Y: `${environment.url}/GetIncomeData`,
     INCOME: `${environment.url}/GetChargingChartMonthlyDataEExx`,
+    INCOMEDEPT: `${environment.url}/GetChargingIncomeMonthly`,
     INCOME_3Y: `${environment.url}/GetChargingChartMonthlyDataEExx`,
-    
-    TIME_AVG: `${environment.url}/GetExploitationTimeAvgJson?groupBy`,
     GAUGE: `${environment.url}/GetCurrentCath?param=1&onlyLastMonth=true`,
-    EXPLOITATION: `${environment.url}/GetExploitation`,
-    EXPLOITATIONMONTHLY: `${environment.url}/GetExploitationMonthly`,
-    EXPLOITATIONWEEKLY: `${environment.url}/GetExploitationWeekly`,
-    WORKING_DAYS : `${environment.url}/GetMonthWorkDays`,
-    PIC_TABLE: `${environment.url}/GetPicDetailedData`,
-    YEARLY_INCOME_FY:`${environment.url}/GetYearlyIncomeFYData?dimTimeTypeId=5&subDesc=&change=1&changeperc=1`
+    WORKING_DAYS: `${environment.url}/GetMonthWorkDays`,
+    YEARLY_INCOME_FY: `${environment.url}/GetYearlyIncomeFYData?dimTimeTypeId=5&subDesc=&change=1&changeperc=1`
   };
 
   private cachedChartData: {
@@ -179,172 +125,71 @@ export class GoogleChartsService {
       selectedTypes: { [key: string]: boolean };
     };
   } = {};
-  
- 
+
+
 
   constructor(
     private http: HttpClient,
     private chartPipeline: ChartDataPipelineService
   ) {
     this.chartsReady = new Promise<void>((resolve) => {
-      google.charts.load('current', {packages: ['corechart', 'gauge', 'controls', 'table']});
+      google.charts.load('current', { packages: ['corechart', 'gauge', 'controls', 'table'] });
       google.charts.setOnLoadCallback(() => {
         resolve();
       });
     });
-  
-    this.chartsReady.then(() => this.loadAndDrawCharts());
-  }
 
-  private formatNumberHumanReadable(value: number, formatType: 'K' | 'M' | 'B'): string {
-    if (value == null) return '';
-    switch (formatType) {
-      case 'K': return `${(value / 1_000).toFixed(1)}K`;
-      case 'M': return `${(value / 1_000_000).toFixed(1)}M`;
-      case 'B': return `${(value / 1_000_000_000).toFixed(1)}B`;
-      default: return value.toString();
-    }
+    this.chartsReady.then(() => this.loadAndDrawCharts());
   }
 
   public workingDaysInfo: { totalWorkingDays: number; currentWorkingDayIndex: number };
 
 
-  
-  
-
-
-  public async drawIncomeDeptsLastMonthChart(): Promise<void> {
-    await this.chartsReady;
-  
-    try {
-      const rawResponse = await this.http
-        .get(`${environment.url}/GetChargingGrouspData?groupName=&deptName=`, { responseType: 'text' })
-        .toPromise();
-  
-      const cleanJson: any = sanitizeSoapResponse(rawResponse); 
-      if (!Array.isArray(cleanJson)) {
-        console.error('Invalid data format:', cleanJson);
-        return;
-      }
-  
-     
-      const grouped = new Map<string, { [year: string]: number }>();
-      const allYears = new Set<string>();
-  
-      cleanJson.forEach((item: any) => {
-        const dept = item.department;
-        const year = item.year;
-        const charge = item.totalCharging || 0;
-  
-        if (!grouped.has(dept)) {
-          grouped.set(dept, {});
-        }
-  
-        grouped.get(dept)![year] = charge;
-        allYears.add(year);
-      });
-  
-      // Sort years (e.g. ['2024', '2025'])
-      const sortedYears = Array.from(allYears).sort();
-      const prevYear = sortedYears[sortedYears.length - 2];
-      const currYear = sortedYears[sortedYears.length - 1];
-  
-      const formatShort = (num: number): string => {
-        if (num >= 1_000_000) return (num / 1_000_000).toFixed(1) + 'M';
-        if (num >= 1_000) return (num / 1_000).toFixed(0) + 'K';
-        return num.toString();
-      };
-  
-      // Build and sort data rows by current year value
-      const dataRows = Array.from(grouped.entries())
-        .map(([dept, yearMap]) => {
-          const prev = yearMap[prevYear] || 0;
-          const curr = yearMap[currYear] || 0;
-          return [dept, prev, formatShort(prev), curr, formatShort(curr)];
-        })
-        .sort((a, b) => Number(b[3]) - Number(a[3]));
- // Sort by current year's raw value (column index 3)
-  
-      const data = google.visualization.arrayToDataTable([
-        ['קבוצה', prevYear, { role: 'annotation' }, currYear, { role: 'annotation' }],
-        ...dataRows
-      ]);
-  
-      const options = {
-        title: 'הכנסות לפי קבוצות - מתחילת שנה מול תקופה השתקד',
-        chartArea: { width: '70%', height: '80%' },
-        legend: { position: 'top' },
-        isStacked: true,
-        bar: { groupWidth: '75%' },
-        annotations: {
-          alwaysOutside: true,
-          textStyle: { fontSize: 12, color: '#444' }
-        },
-        vAxis: { format: 'short', minValue: 0 },
-        hAxis: {
-          slantedText: true,
-          slantedTextAngle: 45
-        },
-        colors: ['#6ba1f8', '#5ed175']
-      };
-  
-      const container = document.getElementById('incomedeptslastmonth');
-      if (container) {
-        const chart = new google.visualization.BarChart(container);
-        chart.draw(data, options);
-      }
-    } catch (err) {
-      console.error('Failed to load or parse department charging data:', err);
-      const el = document.getElementById('incomedeptslastmonth');
-      if (el) el.innerHTML = 'שגיאה בטעינת הנתונים';
-    }
-  }
-  
-
+  // dept groups income bar chart
   public async drawIncomeDeptsLastMonthChartV(): Promise<void> {
     await this.chartsReady;
-  
+
     try {
       const rawResponse = await this.http
         .get(`${environment.url}/GetChargingGrouspData?groupName=&deptName=`, { responseType: 'text' })
         .toPromise();
-  
-      const cleanJson: any = sanitizeSoapResponse(rawResponse); 
-  
+
+      const cleanJson: any = sanitizeSoapResponse(rawResponse);
+
       if (!Array.isArray(cleanJson)) {
         console.error('Invalid data format:', cleanJson);
         return;
       }
-  
+
       // Group by department -> year -> charging
       const grouped = new Map<string, { [year: string]: number }>();
       const allYears = new Set<string>();
-  
+
       cleanJson.forEach((item: any) => {
         const dept = item.department;
         const year = item.year;
         const charge = item.totalCharging || 0;
-  
+
         if (!grouped.has(dept)) {
           grouped.set(dept, {});
         }
-  
+
         grouped.get(dept)![year] = charge;
         allYears.add(year);
       });
-  
+
       // Sort years (e.g. ['2024', '2025'])
       const sortedYears = Array.from(allYears).sort();
       const prevYear = sortedYears[sortedYears.length - 2];
       const currYear = sortedYears[sortedYears.length - 1];
-  
+
       const formatShort = (num: number): string => {
         if (num >= 1_000_000) return (num / 1_000_000).toFixed(1) + 'M';
         if (num >= 1_000) return (num / 1_000).toFixed(0) + 'K';
         return num.toString();
       };
-  
-      
+
+
       const dataRows = Array.from(grouped.entries())
         .map(([dept, yearMap]) => {
           const prev = yearMap[prevYear] || 0;
@@ -352,12 +197,12 @@ export class GoogleChartsService {
           return [dept, prev, formatShort(prev), curr, formatShort(curr)];
         })
         .sort((a, b) => Number(b[3]) - Number(a[3]));
- 
+
       const data = google.visualization.arrayToDataTable([
         ['קבוצה', prevYear, { role: 'annotation' }, currYear, { role: 'annotation' }],
         ...dataRows
       ]);
-  
+
       const options = {
         title: 'הכנסות לפי קבוצות - מתחילת שנה מול תקופה השתקד',
         chartArea: { width: '70%', height: '80%' },
@@ -375,7 +220,7 @@ export class GoogleChartsService {
         },
         colors: ['#6ba1f8', '#5ed175']
       };
-  
+
       const container = document.getElementById('incomedeptslastmonthv');
       if (container) {
         const chart = new google.visualization.ColumnChart(container);
@@ -390,7 +235,7 @@ export class GoogleChartsService {
 
   public async loadAndDrawCharts(options: any = {}): Promise<void> {
     //console.log("loadAndDrawCharts triggered");
-  
+
     const chartArea = { width: '85%', height: '70%' };
     const legend = { position: 'top' };
     const annotations = {
@@ -403,7 +248,7 @@ export class GoogleChartsService {
     const vAxis = { minValue: 0, format: 'short' };
     const hAxis = { slantedText: true, slantedTextAngle: 45 };
     const colors = this.CHART_COLORS;
-  
+
     const {
       operationsBarOptions = {
         chartArea,
@@ -414,16 +259,7 @@ export class GoogleChartsService {
         hAxis,
         colors
       },
-      barChartQOptions = {
-        chartArea,
-        legend, //: { position: 'none' }
-        bar: { groupWidth: '90%' },
-        isStacked: false,
-        colors,
-        annotations,
-        vAxis,
-        hAxis
-      },     
+
       operationsLineOptions = {
         chartArea,
         legend,
@@ -434,7 +270,7 @@ export class GoogleChartsService {
       },
       incomeBarOptions = {
         chartArea,
-        height:460,
+        height: 460,
         legend,
         bar: { groupWidth: '90%' },
         annotations: { ...annotations, textStyle: { ...annotations.textStyle, opacity: 0.9, auraColor: '#FFFFFF' } },
@@ -450,239 +286,84 @@ export class GoogleChartsService {
         hAxis,
         colors
       },
-      gaugeOptions = {},
-      exploitationOptions = {
-        chartArea,
-        legend,
-        isStacked: true,
-        annotations: {
-          alwaysOutside: false,
-          textStyle: {
-            fontSize: 11,
-            color: '#000',
-            //auraColor: '#FFFFFF'
-          }
-        },
-        series: {
-          0: {},
-          1: {},
-          2: {},
-          3: {},
-          4: { color: 'transparent', visibleInLegend: false }
-        },
-        vAxis,
-        hAxis,
-        colors
-      },
-      exploitationMonthlyOptions = {
-        chartArea,
-        legend,
-        isStacked: true,
-        annotations: {
-          alwaysOutside: false,
-          textStyle: {
-            fontSize: 11,
-            color: '#000',
-            //auraColor: '#FFFFFF'
-          }
-        },
-        series: {
-          0: {},
-          1: {},
-          2: {},
-          3: {},
-          4: { color: 'transparent', visibleInLegend: false }
-        },
-        vAxis,
-        hAxis,
-        colors
-      },
-      chart3YOptions = {
-        chartArea,
-        legend: 'none',
-        trendlines: {
-          0: {
-            type: 'linear',
-            color: '#247a3a',
-            lineWidth: 2,
-            opacity: 0.6,
-            visibleInLegend: true
-          }
-        },
-        vAxis,
-        hAxis
-      },
-      Opchart3YOptions = {
-        chartArea,
-        legend: 'none',
-        trendlines: {
-          0: {
-            type: 'linear',
-            color: '#247a3a',
-            lineWidth: 2,
-            opacity: 0.6,
-            visibleInLegend: true
-          }
-        },
-        vAxis,
-        hAxis
-      },
-      picTableOptions = {
-        //showRowNumber: true,
-        sort: 'event',
-        allowHtml: true,
-        width: '100%',
-        chartArea,
-        colors
-      },
-      CombinedChart3Y = {annotations},
-      gaugeTextPosition = 150
     } = options;
-  
+
     await this.chartsReady;
-  
-    try {
-      await this.loadChart3Y(chart3YOptions);
-    } catch (e) { //console.error("3Y Chart failed:", e); 
-      }
-  
-    try {
-      await this.loadOpChart3Y(Opchart3YOptions);
-    } catch (e) { //console.error("3Y Operations Chart failed:", e); 
-      }
-  
+
     try {
       await this.drawOperationsCharts(operationsBarOptions, operationsLineOptions);
     } catch (e) { //console.error("Operations Charts failed:", e); 
-      }
-  
+    }
+
     try {
       await this.drawIncomeCharts(incomeBarOptions, incomeLineOptions);
     } catch (e) { //console.error("Income Charts failed:", e); 
-      }
-  
+    }
+
     try {
-      await this.drawOPBarChartQ(barChartQOptions);
-    } catch (e) { //console.error("Operationals Quarterly Charts failed:", e); 
-      }
-  
+      //await this.drawDataTable('pic_table_chart2', picTableOptions);
+      await this.drawIncomeDeptsLastMonthChartV();
+    } catch (e) { //console.error("drawDataTable failed:", e); 
+    }
+
     try {
-      await this.drawChartGaugeFunc(gaugeOptions, gaugeTextPosition);
-    } catch (e) { //console.error("Gauge Chart failed:", e); 
-      }
-    
+      await this.drawDualArcGaugeOverlay('arc_chart', 529000000);
+      // Use dynamic (110% of previous year): drawDualArcGaugeOverlay('arc_chart');
+      // Use fixed target (e.g. 5,000,000) drawDualArcGaugeOverlay('arc_chart', 5000000);
+
+    } catch (e) {
+      console.error("drawDualArcGaugeOverlay failed:", e);
+    }
+
+
     try {
-      await this.initTimeAvgChart(options.timeAvgOptions);
-    } catch (e) { //console.error("Time Avg Chart failed:", e); 
-      }
-  
+      await this.loadYearlyIncomeDataCombined('tabled_chart');
+    } catch (e) {
+      console.error("loadYearlyIncomeDataCombined failed:", e);
+    }
+    // try {
+    //   await this.loadYearlyIncomeDataCombined('tabled_chart2', 2, 'matrix');
+    // } catch (e) {
+    //   console.error("loadYearlyIncomeDataCombined2 failed:", e);
+    // }
+
     try {
-      await this.drawExploitationChart(exploitationOptions);
-    } catch (e) { //console.error("Exploitation Chart failed:", e); 
-      }
-      try {
-        await this.drawExploitationChartMonthly(exploitationMonthlyOptions);
-      } catch (e) { //console.error("Exploitation Monthly Chart failed:", e); 
-        }
-        try {
-          await this.drawExploitationChartWeekly(exploitationOptions);
-        } catch (e) { //console.error("Exploitation Weekly Chart failed:", e); 
-          }
-    try {
-      await this.loadCombinedChart3Y(chart3YOptions);
-    } catch (e) { //console.error("Combined 3Y Chart failed:", e); 
-      }
-
-      try {
-        await this.drawPicTableChart('pic_table_chart', picTableOptions);
-      } catch (e) {
-        //console.error("PIC Table Chart failed:", e);
-      }
-  
-
-      try {
-        //await this.drawDataTable('pic_table_chart2', picTableOptions);
-        await this.drawDataTable();
-      } catch (e) { //console.error("drawDataTable failed:", e); 
-        }
-
-        try {
-          //await this.drawDataTable('pic_table_chart2', picTableOptions);
-          await this.drawIncomeDeptsLastMonthChart();
-        } catch (e) { //console.error("drawDataTable failed:", e); 
-          }
-
-        try {
-          //await this.drawDataTable('pic_table_chart2', picTableOptions);
-          await this.drawIncomeDeptsLastMonthChartV();
-        } catch (e) { //console.error("drawDataTable failed:", e); 
-          }
-
-          try {
-            await this.drawDualArcGaugeOverlay('arc_chart', 529000000);
-            // Use dynamic (110% of previous year): drawDualArcGaugeOverlay('arc_chart');
-            // Use fixed target (e.g. 5,000,000) drawDualArcGaugeOverlay('arc_chart', 5000000);
-
-          } catch (e) { console.error("|_| drawDualArcGaugeOverlay failed:", e); 
-            }
+      //await this.renderDepartmentButtons('deptgroups');
+      this.renderDepartmentButtons({
+        containerId: 'deptgroups',
+        chartContainerId: 'deptchart',
+        chartKind: ['bar', '3y', 'combined'] as (
+          'bar' | 'line' | '3y' | 'op3y' | 'quarterly' |
+          'timeavg' | 'gauge' | 'exploitation' | 'dualgauge' | 'combined'
+        )[]
+      });
 
 
-            try {
-              await this.loadYearlyIncomeDataCombined('tabled_chart');
-            } catch (e) { console.error("|_| loadYearlyIncomeDataTable failed:", e); 
-              }
-              try {
-                await this.loadYearlyIncomeDataCombined('tabled_chart2', 2, 'matrix');
-              } catch (e) { console.error("|_| loadYearlyIncomeDataTable failed:", e); 
-                }
 
-                try {
-                  //await this.renderDepartmentButtons('deptgroups');
-                  this.renderDepartmentButtons({
-                    containerId: 'deptgroups',
-                    chartContainerId: 'deptchart',
-                    chartKind: ['bar', '3y', 'combined'] as (
-                      'bar' | 'line' | '3y' | 'op3y' | 'quarterly' |
-                      'timeavg' | 'gauge' | 'exploitation' | 'dualgauge' | 'combined'
-                    )[]
-                  });
-                  
-                  
-                  
-                } catch (e) { console.error("|_| loadYearlyIncomeDataTable failed:", e); 
-                  }
+    } catch (e) {
+      console.error("|_| loadYearlyIncomeDataTable failed:", e);
+    }
 
   }
-  
+
+
+  //monthly by years
   public async drawOperationsCharts(barChartOptions: any = {}, lineChartOptions: any = {}): Promise<void> {
     await this.chartsReady;
-    const rawData = await this.http.get(this.DATA_SOURCES.OPERATIONS, { responseType: 'text' }).toPromise();    
-    const cleanData = sanitizeSoapResponse(rawData);    
-    const yearsData = this.processYearlyData(cleanData); 
+    const rawData = await this.http.get(this.DATA_SOURCES.OPERATIONS, { responseType: 'text' }).toPromise();
+    const cleanData = sanitizeSoapResponse(rawData);
+    const yearsData = this.processYearlyData(cleanData);
     const processedData = this.processYearlyData(cleanData);
-    const numericMonthData = convertHebrewMonthsToNumbers(processedData);   
+    const numericMonthData = convertHebrewMonthsToNumbers(processedData);
     this.cachedChartData.operations = numericMonthData;
     const filteredData = filterOutCurrentMonth(numericMonthData);
-    //console.log('drawOperationsCharts filteredData' + JSON.stringify(filteredData));
-    const filterLastNData = filterLastN(filteredData ,5);
-    //console.log('drawOperationsCharts filterLastNData' + JSON.stringify(filterLastNData));
-    //this.drawBarChart(numericMonthData, 'bar_chart', barChartOptions);
+    const filterLastNData = filterLastN(filteredData, 5);
     this.drawBarChart(filterLastNData, 'bar_chart', barChartOptions);
-    //this.drawBarChart(yearsData, 'bar_chart', barChartOptions);
-    
-   
+
   }
 
-  public async drawOPBarChartQ(barChartOptions: any = {}, barChartQOptions : any = {}): Promise<void> {
-    await this.chartsReady;    
-    const rawFData = await this.http.get(this.DATA_SOURCES.OPERATIONSF, { responseType: 'text' }).toPromise();    
-    const cleanFData = sanitizeSoapResponse(rawFData);    
-    //console.log('drawOPBarChartQ cleanFData' + JSON.stringify(cleanFData));  
-    const quartalData = this.processQuartalData(cleanFData);  
-    //console.log('drawOPBarChartQ quartalData' + JSON.stringify(quartalData));      
-    this.drawBarChartQ(quartalData, 'line_chart', barChartQOptions );    
-  }
 
+  //monthly series
   public async drawIncomeCharts(barChartOptions: any = {}, lineChartOptions: any = {}): Promise<void> {
     const rawData = await this.http.get(this.DATA_SOURCES.INCOME, { responseType: 'text' }).toPromise();
     //console.log('IncomeCharts raw data:' + rawData);
@@ -695,117 +376,14 @@ export class GoogleChartsService {
     const filteredData = filterOutCurrentMonth(numericMonthData);
     //console.log('IncomeCharts filteredData data:' + JSON.stringify(filteredData));
     //await this.fetchDataAndDrawDirect(filteredData, (data: any) => data, this.CHART_TYPES.BAR, 'bar_chart2', barChartOptions);
-    await this.fetchDataAndDrawDirect(filteredData, (data: any) => data, this.CHART_TYPES.BAR,  'bar_chart2',{ ...barChartOptions, grouped: false, groupByYear: false } // for cumulative
+    await this.fetchDataAndDrawDirect(filteredData, (data: any) => data, this.CHART_TYPES.BAR, 'bar_chart2', { ...barChartOptions, grouped: false, groupByYear: false } // for cumulative
     );
-    await this.fetchDataAndDrawDirect(filteredData, (data: any) => data, this.CHART_TYPES.LINE, 'line_chart2', lineChartOptions);
+    //await this.fetchDataAndDrawDirect(filteredData, (data: any) => data, this.CHART_TYPES.LINE, 'line_chart2', lineChartOptions);
     //console.log('Income charts complete');
   }
-  
-  public async loadChart3Y(chartOptions: any = {}): Promise<void> {
-    const rawData = await this.http.get(this.DATA_SOURCES.INCOME_3Y, { responseType: 'text' }).toPromise();
-    const cleanData = sanitizeSoapResponse(rawData);  
-    const processedData = convertHebrewMonthsToNumbers(cleanData);  
-    await this.fetchDataAndDrawDirect(processedData, (data: any) => data, this.CHART_TYPES.THREE_YEAR, 'bar_chart_3y', chartOptions);
-    //console.log('3-year chart complete');
-  }
-  
-  public async loadOpChart3Y(chartOptions: any = {}): Promise<void> {
-    const rawData = await this.http.get(this.DATA_SOURCES.OPERATIONS_3Y, { responseType: 'text' }).toPromise();
-    const cleanData = sanitizeSoapResponse(rawData);
-    await this.fetchDataAndDrawDirect(cleanData, (data: any) => data, this.CHART_TYPES.OPTHREE_YEAR, 'op_bar_chart_3y', chartOptions);
-    //console.log('Operations 3-year chart complete');
-  }
 
 
-  public async loadCombinedChart3Y(chartOptions: any = {}): Promise<void> { 
-    await this.loadAndMergeMultipleCharts(
-      [
-        { label: 'הכנסה', url: this.DATA_SOURCES.INCOME_3Y, chartType: 'bars', color: '#6ba1f8', normalizationFactor: 1, unitLabel: 'מיליון שקל', targetAxisIndex: 0, numberFormat: 'M' },
-        { label: 'צנתורים', url: this.DATA_SOURCES.OPERATIONS_3Y, chartType: 'line', color: '#1a1a1a', normalizationFactor: 1, unitLabel: 'פעולות', targetAxisIndex: 1 }
-      ],
-      'merged_chart_3y',
-      {},
-      null,
-      true
-    );   
-  }
- 
 
-  public async initTimeAvgChart(chartOptions: any = {}): Promise<void> {
-    const rawData = await this.http.get(this.DATA_SOURCES.TIME_AVG, { responseType: 'text' }).toPromise();
-    const cleanData = sanitizeSoapResponse(rawData);
-    await this.fetchDataAndDrawDirect(cleanData, this.processTimeAvgData, this.CHART_TYPES.TIME_AVG, 'bar_chart_time_avg', chartOptions);
-    //console.log('Time average chart complete');
-  }
-
-  public async drawChartGaugeFunc(chartOptions: any = {}, textPosition: number = 190): Promise<void> {
-    const rawData = await this.http.get(this.DATA_SOURCES.GAUGE, { responseType: 'text' }).toPromise();
-    const cleanData = sanitizeSoapResponse(rawData);   
-    await this.fetchDataAndDrawDirect(cleanData, (data: any) => data, this.CHART_TYPES.GAUGE, 'gauge_chart', chartOptions);  
-    setTimeout(() => {
-      this.positionGaugeChartText('gauge_chart', textPosition);     
-    }, 500);
-    
-  } catch (error) {
-    
-  }
-
-  public async drawExploitationChart(chartOptions: any = {}): Promise<void> {
-    try {
-      //console.log('drawExploitationChart');
-      const rawData = await this.http.get(this.DATA_SOURCES.EXPLOITATION, { responseType: 'text' }).toPromise();
-      //const cleanData = JSON.parse(rawData);
-      const cleanData = sanitizeSoapResponse(rawData);
-
-      await this.fetchDataAndDrawDirect(cleanData, this.processExploitationData.bind(this), this.CHART_TYPES.EXPLOITATION, 'as_chart', chartOptions);      
-      //console.log('Exploitation chart complete');
-    } catch (error) {
-      //console.error("Failed to fetch Exploitation chart data:", error);
-      const el = document.getElementById('as_chart');
-      if (el) el.innerHTML = "Error loading Exploitation chart.";
-    }
-  }
-
-
-  public async drawExploitationChartMonthly(chartOptions: any = {}): Promise<void> {
-    try {
-      //console.log('drawExploitationChart');
-      const rawData = await this.http.get(this.DATA_SOURCES.EXPLOITATIONMONTHLY, { responseType: 'text' }).toPromise();
-      //const cleanData = JSON.parse(rawData);
-      const cleanData = sanitizeSoapResponse(rawData);
-
-      await this.fetchDataAndDrawDirect(cleanData, this.processExploitationMonthlyData.bind(this), this.CHART_TYPES.EXPLOITATIONMONTHLY, 'as_chart_monthly', chartOptions);      
-      //console.log('Exploitation chart complete');
-    } catch (error) {
-      //console.error("Failed to fetch Exploitation chart data:", error);
-      const el = document.getElementById('as_chart_monthly');
-      if (el) el.innerHTML = "Error loading Exploitation chart.";
-    }
-  }
-
-
-  public async drawExploitationChartWeekly(chartOptions: any = {}): Promise<void> {
-    try {
-      //console.log('draw Exploitation Chart wEEKLY');
-      const rawData = await this.http.get(this.DATA_SOURCES.EXPLOITATIONWEEKLY, { responseType: 'text' }).toPromise();
-      //const cleanData = JSON.parse(rawData);
-      const cleanData = sanitizeSoapResponse(rawData);
-    //  console.log('✅ cleanData from EXPLOITATIONWEEKLY:', cleanData);
-    // console.log('🔍 yData[0]?.Year?.Months:', cleanData?.yData?.[0]?.Year?.Months);
-    // console.log('📅 currentMonthIndex:', new Date().getMonth());
-      await this.fetchDataAndDrawDirect(cleanData, this.processExploitationData.bind(this), this.CHART_TYPES.EXPLOITATION, 'as_chart_weekly', chartOptions);   
-      
-      //const currentMonthValues = this.getWeeklySummaryAsPieValues(cleanData);
-      this.currentMonthValues = getWeeklySummaryAsPieValues(cleanData);
-      
-      //console.log('drawExploitationChartWeekly -> 📊 currentMonthValues:', this.currentMonthValues);
-      //console.log('Exploitation chart wEEKLY complete');
-    } catch (error) {
-      //console.error("Failed to fetch Exploitation chart wEEKLY data:", error);
-      const el = document.getElementById('as_chart_weekly');
-      if (el) el.innerHTML = "Error loading Exploitation chart.";
-    }
-  }
 
   private async fetchDataAndDrawDirect(
     cleanData: any,
@@ -869,8 +447,7 @@ export class GoogleChartsService {
       [this.CHART_TYPES.LINE]: this.drawLineChart.bind(this),
       [this.CHART_TYPES.THREE_YEAR]: this.drawChart3Y.bind(this),
       [this.CHART_TYPES.OPTHREE_YEAR]: this.drawOpChart3Y.bind(this),
-      [this.CHART_TYPES.TIME_AVG]: this.drawTimeAvgChart.bind(this),
-      [this.CHART_TYPES.EXPLOITATION]: this.renderExploitationChart.bind(this),
+      //[this.CHART_TYPES.EXPLOITATION]: this.renderExploitationChart.bind(this),
       [this.CHART_TYPES.GAUGE]: this.drawChartGauge.bind(this)
     };
 
@@ -880,43 +457,43 @@ export class GoogleChartsService {
       return;
     }
 
-  
-  return new Promise(resolve => {
-    try {
-      if (chartType === this.CHART_TYPES.BAR) {
-        const grouped = chartOptions.grouped !== false; // default to true
-        drawer(data, elementId, chartOptions, grouped);
-      } else {
-        drawer(data, elementId, chartOptions);
-      }
-      resolve();
-    } catch (error) {
-      console.error(`Error drawing ${chartType} chart:`, error);
+
+    return new Promise(resolve => {
+      try {
+        if (chartType === this.CHART_TYPES.BAR) {
+          const grouped = chartOptions.grouped !== false; // default to true
+          drawer(data, elementId, chartOptions, grouped);
+        } else {
+          drawer(data, elementId, chartOptions);
+        }
+        resolve();
+      } catch (error) {
+        console.error(`Error drawing ${chartType} chart:`, error);
         const el = document.getElementById(elementId);
         if (el) { el.innerHTML = 'Error drawing chart. Check //console.'; }
         resolve();
-    }
-  });
-}
+      }
+    });
+  }
 
   private processYearlyData(data: any): any {
     const rawData = data.data;
     const yearMonthMap: any = {};
-  
+
     rawData.forEach((entry: any) => {
       const [year, month] = entry.key.split('-');
       const monthNumber = parseInt(month, 10);
-  
+
       if (!yearMonthMap[year]) {
         yearMonthMap[year] = {};
       }
-  
+
       // ✅ Use `charging` instead of `quantity`
       if (this.valueExists(entry.charging)) {
         yearMonthMap[year][monthNumber] = entry.charging;
       }
     });
-  
+
     // Convert to YearlyData-like format
     const transformedData = Object.keys(yearMonthMap).map(year => ({
       Year: {
@@ -927,10 +504,10 @@ export class GoogleChartsService {
         }))
       }
     }));
-  
+
     const limitedData = filterRecentOffsets<any>(transformedData, y => y.Year.value, 4);
     const years: any = {};
-  
+
     limitedData.forEach((yearObject: any) => {
       const yearValue = yearObject.Year.value;
       years[yearValue] = {};
@@ -941,97 +518,17 @@ export class GoogleChartsService {
         }
       });
     });
-  
+
     return sanitizeAndFilterYearMonthData(years);
   }
 
-  
-  private processQuartalData(data: any): any {
-    const currentDate = new Date();
-    const currentYear = currentDate.getFullYear();
-    const currentQuarter = Math.floor(currentDate.getMonth() / 3) + 1;
-  
-    // Step 1: Organize raw data into year -> month -> charging
-    const rawData = data.data;
-    const yearMonthMap: any = {};
-  
-    rawData.forEach((entry: any) => {
-      const [yearStr, monthStr] = entry.key.split('-');
-      const year = parseInt(yearStr, 10);
-      const month = parseInt(monthStr, 10);
-  
-      if (!yearMonthMap[year]) {
-        yearMonthMap[year] = {};
-      }
-  
-      if (this.valueExists(entry.charging)) {
-        yearMonthMap[year][month] = entry.charging;
-      }
-    });
-  
-    // Step 2: Convert yearMonthMap to YearlyData-like array for compatibility
-    const transformedData = Object.keys(yearMonthMap).map(year => ({
-      Year: {
-        value: parseInt(year, 10),
-        Months: Object.entries(yearMonthMap[year]).map(([month, val]) => ({
-          name: parseInt(month), // use numeric month name
-          y: val
-        }))
-      }
-    }));
-  
-    // Step 3: Filter last 4 years
-    const limitedData = filterRecentOffsets<any>(transformedData, y => y.Year.value, 4);
-  
-    // Step 4: Build quarterly sums (excluding current quarter of current year)
-    const years: any = {};
-  
-    limitedData.forEach((yearObject: any) => {
-      const yearValue = yearObject.Year.value;
-      const monthMap: { [monthNumber: number]: number } = {};
-  
-      yearObject.Year.Months.forEach((month: any) => {
-        if (this.valueExists(month.y)) {
-          monthMap[month.name] = parseInt(month.y, 10);
-        }
-      });
-  
-      const yearQuarters: any = {};
-  
-      // Define quarter-month mappings
-      const quarters = {
-        Q1: [1, 2, 3],
-        Q2: [4, 5, 6],
-        Q3: [7, 8, 9],
-        Q4: [10, 11, 12]
-      };
-  
-      for (const [quarterKey, months] of Object.entries(quarters)) {
-        const quarterNumber = parseInt(quarterKey[1]); // "Q1" -> 1
-        if (yearValue === currentYear && quarterNumber === currentQuarter) continue;
-  
-        const hasAll = months.every(m => m in monthMap);
-        if (hasAll) {
-          const sum = months.reduce((acc, m) => acc + monthMap[m], 0);
-          yearQuarters[quarterKey] = sum;
-          //yearQuarters[quarterKey] = formatNumberShort(sum);
-        }
-      }
-  
-      if (Object.keys(yearQuarters).length > 0) {
-        years[yearValue] = yearQuarters;
-      }
-    });
-  
-    return years;
-  }
-  
-  
+
+
   private valueExists(value: any): boolean {
     return value !== undefined && value !== null && value !== '' && !isNaN(value);
   }
 
-  
+
   private drawBarChart(
     years: any,
     elementId: string,
@@ -1040,15 +537,15 @@ export class GoogleChartsService {
     grouped: boolean = true
   ): void {
     if (!google.visualization || !google.visualization.DataTable) return;
-  
+
     const currentYear = new Date().getFullYear();
     const allowedYears = [String(currentYear), String(currentYear - 1)];
-  
+
     const isValid = (val: any): boolean => {
       const num = parseFloat(val);
       return !isNaN(num) && num > 0;
     };
-  
+
     const filteredYears: any = {};
     Object.keys(years).forEach(year => {
       if (!allowedYears.includes(year)) return;
@@ -1058,16 +555,16 @@ export class GoogleChartsService {
         filteredYears[year] = months;
       }
     });
-  
+
     const yearKeys = Object.keys(filteredYears);
     if (yearKeys.length === 0) {
       const el = document.getElementById(elementId);
       if (el) el.innerHTML = "אין נתונים להצגה";
       return;
     }
-  
+
     const dataTable = new google.visualization.DataTable();
-  
+
     if (groupByYear) {
       // === GROUPED BAR MODE ===
       const allMonthsSet = new Set<string>();
@@ -1076,15 +573,15 @@ export class GoogleChartsService {
           allMonthsSet.add(month);
         });
       });
-  
+
       const months = Array.from(allMonthsSet).sort((a, b) => +a - +b);
       dataTable.addColumn('string', 'Month');
-  
+
       yearKeys.forEach(year => {
         dataTable.addColumn('number', year);
         dataTable.addColumn({ type: 'string', role: 'annotation' });
       });
-  
+
       const rows = months.map(month => {
         const row: any[] = [month];
         yearKeys.forEach(year => {
@@ -1095,7 +592,7 @@ export class GoogleChartsService {
         });
         return row;
       });
-  
+
       dataTable.addRows(rows);
     } else {
       // === SEQUENTIAL TIMELINE MODE ===
@@ -1104,9 +601,9 @@ export class GoogleChartsService {
         dataTable.addColumn('number', year);
         dataTable.addColumn({ type: 'string', role: 'annotation' });
       });
-  
+
       const rows: any[] = [];
-  
+
       yearKeys.sort().forEach(year => {
         const months = Object.keys(filteredYears[year]).sort((a, b) => +a - +b);
         months.forEach(month => {
@@ -1126,10 +623,10 @@ export class GoogleChartsService {
           rows.push(row);
         });
       });
-  
+
       dataTable.addRows(rows);
     }
-  
+
     const defaultOptions = {
       height: 400,
       legend: groupByYear ? { position: 'top' } : { position: 'top' },
@@ -1142,14 +639,14 @@ export class GoogleChartsService {
       colors: this.CHART_COLORS.slice(0, yearKeys.length),
       vAxis: { format: 'short', minValue: 0 }
     };
-  
+
     const options = { ...defaultOptions, ...customOptions };
     const chart = new google.visualization.ColumnChart(document.getElementById(elementId));
     chart.draw(dataTable, options);
   }
-  
 
-  
+
+
   private drawLineChart(years: any, elementId: string, customOptions: any = {}): void {
     if (!google.visualization || !google.visualization.DataTable) {
       //console.error('Google Visualization not loaded');
@@ -1208,251 +705,57 @@ export class GoogleChartsService {
     chart.draw(dataTable, options);
   }
 
-  private drawLineChartQ(years: any, elementId: string, customOptions: any = {}): void {
-    if (!google.visualization || !google.visualization.DataTable) {
-      //console.error('Google Visualization not loaded');
-      return;
-    }
-
-    // Utility: check if a value is numeric and > 0
-    const isValid = (val: any): boolean => {
-      const num = parseFloat(val);
-      return !isNaN(num) && num > 0;
-    };
-
-    // Filter out years where all values are empty/0
-    const filteredYears: any = {};
-    Object.keys(years).forEach(year => {
-      const months = years[year];
-      const hasValidMonth = Object.values(months).some(val => isValid(val));
-      if (hasValidMonth) {
-        filteredYears[year] = months;
-      }
-    });
-
-    const yearKeys = Object.keys(filteredYears);
-    if (yearKeys.length === 0) {
-      const el = document.getElementById(elementId);
-      if (el) el.innerHTML = "אין נתונים להצגה"; // Hebrew: No data to display
-      return;
-    }
-
-    const dataTable = new google.visualization.DataTable();
-    dataTable.addColumn('string', 'Month');
-    yearKeys.forEach(year => dataTable.addColumn('number', year));
-
-    const months = Object.keys(filteredYears[yearKeys[0]]);
-    const rows = months.map(month => {
-      const row: any[] = [month];
-      yearKeys.forEach(year => {
-        const val = filteredYears[year][month];
-        row.push(isValid(val) ? val : null);
-      });
-      return row;
-    });
-
-    dataTable.addRows(rows);
-
-    const defaultOptions = {
-      chartArea: { width: '70%', height: '70%' },
-      curveType: 'function',
-      legend: { position: 'top' },
-      colors: this.CHART_COLORS.slice(0, yearKeys.length),
-      vAxis: { format: 'short', minValue: 0 }
-    };
-
-    const options = { ...defaultOptions, ...customOptions };
-    const chart = new google.visualization.LineChart(document.getElementById(elementId));
-    chart.draw(dataTable, options);
-  }
-
-  
-  
-  private drawBarChart_Q(years: any, elementId: string, customOptions: any = {}): void {
-    if (!google.visualization || !google.visualization.DataTable) {
-      //console.error('Google Visualization not loaded');
-      return;
-    }
-  
-    const isValid = (val: any): boolean => {
-      const num = parseFloat(val);
-      return !isNaN(num);
-    };
-  
-    const filteredYears: any = {};
-    Object.keys(years).forEach(year => {
-      const quarters = years[year];
-      const hasValidQuarter = Object.values(quarters).some(val => isValid(val));
-      if (hasValidQuarter) {
-        filteredYears[year] = quarters;
-      }
-    });
-  
-    const yearKeys = Object.keys(filteredYears);
-    if (yearKeys.length === 0) {
-      const el = document.getElementById(elementId);
-      if (el) el.innerHTML = "אין נתונים להצגה";
-      return;
-    }
-  
-    const quarterLabels = ['Q1', 'Q2', 'Q3', 'Q4'];
-  
-    const dataTable = new google.visualization.DataTable();
-    dataTable.addColumn('string', 'רבעון'); // X-axis: Quarter
-  
-    // Add columns: number + annotation per year
-    yearKeys.forEach(year => {
-      dataTable.addColumn('number', year);
-      dataTable.addColumn({ type: 'string', role: 'annotation' });
-    });
-  
-    const rows = quarterLabels.map(q => {
-      const row: any[] = [q]; // start row with quarter name
-      yearKeys.forEach(year => {
-        const val = filteredYears[year][q];
-        if (isValid(val)) {
-          row.push(Number(val));
-          row.push(String(val));
-        } else {
-          row.push(null);
-          row.push(null);
-        }
-      });
-      return row;
-    }).filter(row => row.slice(1).some(v => v !== null)); // keep rows with at least one value
-  
-    dataTable.addRows(rows);
-  
-    const defaultOptions = {
-      chartArea: { width: '80%', height: '70%' },
-      legend: { position: 'top' },
-      bar: { groupWidth: '60%' },
-      isStacked: false,
-      colors: this.CHART_COLORS.slice(0, yearKeys.length),
-      annotations: {
-        alwaysOutside: true,
-        textStyle: {
-          fontSize: 11,
-          auraColor: '#FFFFFF'
-        }
-      },
-      vAxis: {
-        minValue: 0,
-        format: 'short'
-      },
-      hAxis: {
-        //title: 'רבעון'
-      }
-    };
-  
-    const options = { ...defaultOptions, ...customOptions };
-    const chart = new google.visualization.ColumnChart(document.getElementById(elementId));
-    chart.draw(dataTable, options);
-  }
-  
   //_GroupedView
-    
-  
-  private drawBarChartQ(years: any, elementId: string, barChartQOptions: any = {}, customOptions: any = {}): void {
-    if (!google.visualization || !google.visualization.DataTable) return;
-  
-    const isValid = (val: any): boolean => !isNaN(parseFloat(val));
-  
-    const dataTable = new google.visualization.DataTable();
-    dataTable.addColumn('string', 'Year-Quarter');
-    dataTable.addColumn('number', 'Value');
-    dataTable.addColumn({ type: 'string', role: 'style' });       // 🎯 per-bar color
-    dataTable.addColumn({ type: 'string', role: 'annotation' });
-  
-    const yearKeys = Object.keys(years).sort();
-    const rows: any[] = [];
-  
-    yearKeys.forEach((year, yearIndex) => {
-      const color = this.CHART_COLORS[yearIndex % this.CHART_COLORS.length];
-      ['Q1', 'Q2', 'Q3', 'Q4'].forEach(q => {
-        const val = years[year][q];
-        if (isValid(val)) {
-          rows.push([
-            `${year} ${q}`,
-            Number(val),
-            `color: ${color}`,
-            String(val)
-          ]);
-        }
-      });
-    });
-  
-    if (rows.length === 0) {
-      const el = document.getElementById(elementId);
-      if (el) el.innerHTML = "אין נתונים להצגה";
-      return;
-    }
-  
-    dataTable.addRows(rows);
-  
-    const mergedOptions = {
-      legend: { position: 'none' }, // 📌 disable internal legend (style column doesn't support it)
-      vAxis: { minValue: 0, format: 'short' },
-      ...barChartQOptions,
-      ...customOptions
-    };
-  
-    const chart = new google.visualization.ColumnChart(document.getElementById(elementId));
-    chart.draw(dataTable, mergedOptions);
-  
-    // ✅ Custom Legend Render (below the chart)
-    this.renderYearLegend(yearKeys, elementId + '-legend');
-  }
 
-
+  //monthly series
   private drawChart3Y(jsonData: any, elementId: string, customOptions: any = {}): void {
     const currentDate = new Date();
     const currentYear = currentDate.getFullYear();
     const currentMonth = currentDate.getMonth(); // 0-based
-  
+
     const dataTable = new google.visualization.DataTable();
     dataTable.addColumn('date', 'תאריך');
     dataTable.addColumn('number', 'ערך');
     dataTable.addColumn({ type: 'string', role: 'annotation' });
-  
+
     const hebrewMonths = [
       'ינואר', 'פברואר', 'מרץ', 'אפריל', 'מאי', 'יוני',
       'יולי', 'אוגוסט', 'ספטמבר', 'אוקטובר', 'נובמבר', 'דצמבר'
     ];
-  
+
     const rows: any[] = [];
-  
+
     jsonData?.yData?.forEach((yearObject: any) => {
       const year = yearObject.Year.value;
       yearObject.Year.Months.forEach((monthObj: any) => {
         const value = parseFloat(monthObj.y);
         if (!value || isNaN(value)) return;
-  
+
         const monthIndex = hebrewMonths.indexOf(monthObj.name);
         if (monthIndex === -1) return;
-  
+
         // ❌ Exclude current month of current year
         if (year === currentYear && monthIndex === currentMonth) return;
-  
+
         const date = new Date(year, monthIndex, 1);
         rows.push([date, value, formatNumberShort(value)]);
       });
     });
-  
+
     if (rows.length === 0) {
       const el = document.getElementById(elementId);
       if (el) el.innerHTML = "אין נתונים להצגה";
       return;
     }
-  
+
     rows.sort((a, b) => a[0].getTime() - b[0].getTime());
     dataTable.addRows(rows);
-  
+
     const ticks = rows.map(row => {
       const date: Date = row[0];
       return { v: date, f: `${date.getMonth() + 1}/${date.getFullYear()}` };
     });
-  
+
     const defaultOptions = {
       curveType: 'function',
       legend: 'none',
@@ -1481,59 +784,60 @@ export class GoogleChartsService {
       },
       interpolateNulls: false
     };
-  
+
     const options = this.mergeDeep(defaultOptions, customOptions);
     const chart = new google.visualization.LineChart(document.getElementById(elementId));
     chart.draw(dataTable, options);
   }
-  
+
+  //monthly series
   private drawOpChart3Y(jsonData: any, elementId: string, customOptions: any = {}): void {
     const filteredData = filterValidYears(jsonData, 4); // Enforce 4 most recent valid years
-  
+
     const dataTable = new google.visualization.DataTable();
     dataTable.addColumn('date', 'תאריך');
     dataTable.addColumn('number', 'ערך');
     dataTable.addColumn({ type: 'string', role: 'annotation' });
-  
+
     const hebrewMonths = [
       'ינואר', 'פברואר', 'מרץ', 'אפריל', 'מאי', 'יוני',
       'יולי', 'אוגוסט', 'ספטמבר', 'אוקטובר', 'נובמבר', 'דצמבר'
     ];
-  
+
     const rows: any[] = [];
-  
+
     filteredData.yData.forEach((yearObject: any) => {
       const year = yearObject.Year.value;
       const months = yearObject.Year.Months;
-  
+
       months.forEach((monthObj: any) => {
         const value = parseFloat(monthObj.y);
         if (!value || isNaN(value)) return;
-  
+
         const monthIndex = hebrewMonths.indexOf(monthObj.name);
         if (monthIndex === -1) return;
-  
+
         const date = new Date(year, monthIndex, 1);
         rows.push([date, value, formatNumberShort(value)]);
       });
     });
-  
+
     if (rows.length === 0) {
       const el = document.getElementById(elementId);
       if (el) el.innerHTML = "אין נתונים להצגה";
       return;
     }
-  
+
     rows.sort((a, b) => a[0].getTime() - b[0].getTime());
     rows.pop(); // Optionally exclude latest month
-  
+
     dataTable.addRows(rows);
-  
+
     const ticks = rows.map(row => {
       const date: Date = row[0];
       return { v: date, f: `${date.getMonth() + 1}/${date.getFullYear()}` };
     });
-  
+
     const defaultOptions = {
       curveType: 'function',
       legend: 'none',
@@ -1562,12 +866,12 @@ export class GoogleChartsService {
       },
       interpolateNulls: false
     };
-  
+
     const options = this.mergeDeep(defaultOptions, customOptions);
     const chart = new google.visualization.LineChart(document.getElementById(elementId));
     chart.draw(dataTable, options);
   }
-  
+
 
   public async drawChartGauge(data: any, elementId: string, chartOptions: any = {}): Promise<void> {
     try {
@@ -1640,427 +944,6 @@ export class GoogleChartsService {
     }
   }
 
-
-  private positionGaugeChartText(chartId: string = 'gauge_chart', topPosition: number = 190): number {
-    if (!chartId) {      
-      return 0;
-    }
-    const selector = `#${chartId} g > g > text`;
-    const textElements = document.querySelectorAll(selector);
-    if (textElements.length === 0) {      
-      return 0;
-    }
-    textElements.forEach(textElement => {
-      textElement.setAttribute('y', topPosition.toString());
-      if (textElement instanceof SVGTextElement) {
-        textElement.setAttribute('y', topPosition.toString());
-        textElement.setAttribute('style', 'font-size: 22px !important;');
-      }
-    });
-    
-    return textElements.length;
-  }
-
-  // --- eof Gauge Chart ----
-
-
-  // --- TimeAvgChart ---
-  // Generate time-formatted ticks for axis
-  private generateTimeAxisTicks(dataTable: any): any[] {
-    // Find max value in the data
-    let maxValue = 0;
-    for (let col = 1; col < dataTable.getNumberOfColumns(); col++) {
-      for (let row = 0; row < dataTable.getNumberOfRows(); row++) {
-        const val = dataTable.getValue(row, col);
-        if (val !== null && !isNaN(val) && val > maxValue) {
-          maxValue = val;
-        }
-      }
-    }
-
-    // Round up to next hour and add some padding
-    const roundedMax = Math.ceil(maxValue) + 1;
-
-    // Create ticks at 1-hour or 30-minute intervals depending on data range
-    const ticks = [];
-    const interval = roundedMax <= 4 ? 0.5 : 1; // Use 30-min intervals for small ranges
-
-    for (let i = 0; i <= roundedMax; i += interval) {
-      ticks.push({
-        v: i,
-        f: formatDecimalHoursToTime(i)
-      });
-    }
-
-    return ticks;
-  }
-  
-  private processTimeAvgData(jsonData: any): any {
-    const rawData = jsonData.table && jsonData.table.rows ? jsonData.table.rows : [];
-    const headerLabels = jsonData.table && jsonData.table.cols ? jsonData.table.cols.map((col: any) => col.label) : [];
-
-    if (rawData.length === 0) {
-      //console.error('No rows found in JSON data');
-      return { headers: [], data: [] };
-    }
-
-    const normalizedData = rawData.map((rowObject: any) => {
-      const row = rowObject.c.map((cell: any) => (cell ? cell.v : null));
-      const year = parseInt(row[0]);
-      const processedRow = [year];
-      for (let i = 1; i < row.length; i++) {
-        processedRow.push(row[i] ? parseDurationToDecimalHours(row[i]) : null);
-      }
-      return processedRow;
-    });
-
-    return { headers: headerLabels, data: normalizedData };
-  }
-
-  public drawTimeAvgChart(
-    elementId: string = 'bar_chart_time_avg',
-    customOptions: any = {},
-    selectedTypes: { [key: string]: boolean } = { 'אלקטיבי': true, 'דחוף': true, 'ססיה': true }
-  ): void {
-    const dropdown = document.getElementById('timeAvgGroupByDropdown') as HTMLSelectElement;
-    const groupBy = dropdown?.value?.trim() || 'month';
-    const url = `${this.DATA_SOURCES.TIME_AVG}=${groupBy}`;
-    const container = document.getElementById(elementId);
-
-    if (!container) {
-      //console.error(`Element with ID "${elementId}" not found.`);
-      return;
-    }
-
-    this.http.get(url, { responseType: 'text' }).toPromise()
-      .then(rawData => {
-        const cleanData = sanitizeSoapResponse(rawData);
-
-        if (!cleanData || !cleanData.cols || !cleanData.rows) {
-          //console.error('Invalid or empty data for TimeAvg Chart');
-          container.innerHTML = 'No data available for display.';
-          return;
-        }
-
-        const dataTable = new google.visualization.DataTable();
-        dataTable.addColumn('string', cleanData.cols[0].label); // Time period label (e.g., Month/Year)
-
-        const includedIndexes: number[] = [];
-        cleanData.cols.slice(1).forEach((col: any, idx: number) => {
-          if (selectedTypes[col.label]) {
-            dataTable.addColumn('number', col.label);
-            includedIndexes.push(idx + 1); // +1 due to slicing offset
-          }
-        });
-
-        if (includedIndexes.length === 0) {
-          container.innerHTML = 'לא נבחרו עמודות להצגה';
-          return;
-        }
-
-        cleanData.rows.forEach((row: any) => {
-          const original = row.c.map((cell: any) => (cell ? cell.v : null));
-          const rowData: any[] = [original[0]];
-
-          includedIndexes.forEach((i) => {
-            const value = original[i];
-            const timeValue = typeof value === 'number'
-              ? value
-              : parseDurationToDecimalHours(value);
-            rowData.push(timeValue);
-          });
-
-          dataTable.addRow(rowData);
-        });
-
-        // Format numbers as HH:MM
-        const timeFormatter = new google.visualization.NumberFormat({
-          pattern: '00:00',
-          fractionDigits: 0
-        });
-        for (let i = 1; i < dataTable.getNumberOfColumns(); i++) {
-          timeFormatter.format(dataTable, i);
-        }
-
-        const defaultOptions = {
-          height: 500,
-          legend: { position: 'top' },
-          bar: { groupWidth: "70%" },
-          annotations: {
-            alwaysOutside: true,
-            textStyle: { fontSize: 12, color: '#888' },
-            format: '00:00',
-            auraColor: '#FFFFFF'
-          },
-          colors: this.CHART_COLORS.slice(0, dataTable.getNumberOfColumns() - 1),
-          vAxis: {
-            format: '00:00',
-            minValue: 0,
-            ticks: this.generateTimeAxisTicks(dataTable)
-          },
-          interpolateNulls: true,
-          tooltip: { isHtml: true },
-          hAxis: {            
-            slantedText: true,
-            slantedTextAngle: 45
-          },
-        };
-
-        const options = { ...defaultOptions, ...customOptions };
-        const chart = new google.visualization.ColumnChart(container);
-        const view = new google.visualization.DataView(dataTable);
-
-        // Custom columns with formatted values
-        const columns: any[] = [0]; // First column (labels)
-        for (let i = 1; i < dataTable.getNumberOfColumns(); i++) {
-          columns.push({
-            sourceColumn: i,
-            calc: (dt: any, row: number) => {
-              const value = dt.getValue(row, i);
-              return {
-                v: value,
-                f: value !== null ? formatDecimalHoursToTime(value) : ''
-              };
-            },
-            type: 'number',
-            label: dataTable.getColumnLabel(i)
-          });
-        }
-
-        view.setColumns(columns);
-
-        // Add tooltip interaction
-        google.visualization.events.addListener(chart, 'ready', () => {
-          google.visualization.events.addListener(chart, 'onmouseover', (e: any) => {
-            if (e.row !== null && e.column > 0) {
-              const value = dataTable.getValue(e.row, e.column);
-              if (value !== null) {
-                chart.setSelection([{ row: e.row, column: e.column }]);
-              }
-            }
-          });
-        });
-
-        chart.draw(view, options);
-        //console.log(`TimeAvg Chart (${groupBy}) drawn successfully.`);
-      })
-      .catch(error => {
-        //console.error('Error loading TimeAvg Chart data:', error);
-        container.innerHTML = 'Failed to load chart data. Check //console.';
-      });
-  }
-
-
-  // --- eof TimeAvgChart
-  
-
-private processExploitationData(data: any): any {
-  //console.log('processExploitationData started');
-  const chartData = new google.visualization.DataTable();
-
-  try {
-    const cols = data.cols;
-    if (!cols || cols.length === 0) {
-      throw new Error('No columns found in JSON.');
-    }
-
-    const valueColIndices: number[] = [];
-
-    // Add columns and annotation columns for each numeric series
-    cols.forEach((col: any, index: number) => {
-      chartData.addColumn(col.type, col.label);
-      if (index > 0 && col.type === 'number') {
-        valueColIndices.push(index);
-        chartData.addColumn({ type: 'string', role: 'annotation' });
-      }
-    });
-
-    // Add dummy Total series + annotation for total
-    chartData.addColumn('number', 'Total');
-    chartData.addColumn({ type: 'string', role: 'annotation' });
-
-    const rows = data.rows;
-    if (!rows || rows.length === 0) {
-      throw new Error('No rows found in JSON.');
-    }
-
-    rows.forEach((row: any) => {
-      const rowData: any[] = [];
-      let rowSum = 0;
-
-      // Pre-calculate the total of numeric columns
-      valueColIndices.forEach((colIndex) => {
-        const val = row.c[colIndex]?.v;
-        if (val !== undefined && val !== null && val !== '') {
-          rowSum += val;
-        }
-      });
-
-      // Fill row data and annotations
-      row.c.forEach((cell: any, index: number) => {
-        const isCategory = index === 0;
-        const val = cell?.v;
-
-        if (isCategory) {
-          rowData.push(val?.toString() || '');
-        } else {
-          const numericValue = val !== undefined && val !== null && val !== '' ? val : null;
-          rowData.push(numericValue); // actual value
-
-          // Calculate percentage annotation
-          let annotationText = null;
-          if (numericValue !== null && rowSum > 0) {
-            const percent = ((numericValue / rowSum) * 100).toFixed(1);
-            annotationText = `${numericValue} (${percent}%)`;
-          } else if (numericValue !== null) {
-            annotationText = `${numericValue}`;
-          }
-
-          rowData.push(annotationText);
-        }
-      });
-
-      // Add dummy Total series
-      rowData.push(0.001); // invisible minimal value for stacked bar visual alignment
-      rowData.push(`Total: ${formatNumberShort(rowSum)}`);
-
-      chartData.addRow(rowData);
-    });
-
-    return chartData;
-  } catch (error) {
-    //console.error('Error processing JSON data: ', error);
-    return null;
-  }
-}
-
-
-private processExploitationMonthlyData(data: any): any {
-  //console.log('processExploitationData started');
-  const chartData = new google.visualization.DataTable();
-
-  try {
-    const cols = data.cols;
-    if (!cols || cols.length === 0) {
-      throw new Error('No columns found in JSON.');
-    }
-
-    const valueColIndices: number[] = [];
-
-    // Add columns and annotation columns for each numeric series
-    cols.forEach((col: any, index: number) => {
-      chartData.addColumn(col.type, col.label);
-      if (index > 0 && col.type === 'number') {
-        valueColIndices.push(index);
-        chartData.addColumn({ type: 'string', role: 'annotation' });
-      }
-    });
-
-    // Add dummy Total series + annotation for total
-    chartData.addColumn('number', 'Total');
-    chartData.addColumn({ type: 'string', role: 'annotation' });
-
-    const rows = data.rows;
-    if (!rows || rows.length === 0) {
-      throw new Error('No rows found in JSON.');
-    }
-
-    rows.forEach((row: any) => {
-      const rowData: any[] = [];
-      let rowSum = 0;
-
-      // Pre-calculate the total of numeric columns
-      valueColIndices.forEach((colIndex) => {
-        const val = row.c[colIndex]?.v;
-        if (val !== undefined && val !== null && val !== '') {
-          rowSum += val;
-        }
-      });
-
-      // Fill row data and annotations
-      row.c.forEach((cell: any, index: number) => {
-        const isCategory = index === 0;
-        const val = cell?.v;
-
-        if (isCategory) {
-          rowData.push(val?.toString() || '');
-        } else {const numericValue = val !== undefined && val !== null && val !== '' ? val : null;
-          rowData.push(numericValue); // actual value
-          
-          // Annotation: show only the number, no percentage
-          let annotationText = null;
-          if (numericValue !== null) {
-            annotationText = `${numericValue}`;
-          }
-          
-          rowData.push(annotationText);
-          
-        }
-      });
-
-      // Add dummy Total series
-      rowData.push(0.001); // invisible minimal value for stacked bar visual alignment
-      rowData.push(`Total: ${formatNumberShort(rowSum)}`);
-
-      chartData.addRow(rowData);
-    });
-
-    return chartData;
-  } catch (error) {
-    //console.error('Error processing JSON data: ', error);
-    return null;
-  }
-}
-
-
-
-  private renderExploitationChart(dataTable: any, elementId: string, options: any = {}): void {
-    //console.log('renderExploitationChart started');
-    if (!dataTable || dataTable.getNumberOfRows() === 0) {
-      const el = document.getElementById(elementId);
-      if (el) el.innerHTML = "אין נתונים להצגה";
-      return;
-    }
-  
-    const chart = new google.visualization.ColumnChart(document.getElementById(elementId));
-  
-    const totalSeriesIndex = (dataTable.getNumberOfColumns() - 1) / 2 - 1; // last series index
-  
-    const seriesOptions: any = {
-      [totalSeriesIndex]: {
-        color: 'transparent',
-        visibleInLegend: false,
-        enableInteractivity: false,
-        annotations: {
-          style: 'point', // Required to apply custom annotation style
-          textStyle: {
-            fontSize: 14,
-            bold: true,
-            auraColor: '#FFFFFF',
-            color: '#333' // Or any other custom color
-          }
-        }
-      }
-    };
-  
-    const defaultOptions = {
-      height: 400,
-      legend: { position: 'top' },
-      bar: { groupWidth: '75%' },
-      isStacked: true,
-      annotations: {
-        alwaysOutside: true,
-        auraColor: '#FFFFFF',
-        textStyle: { fontSize: 12, color: '#000' } // default for value annotations
-      },
-      colors: this.CHART_COLORS,
-      series: seriesOptions,
-      vAxis: { format: 'short', minValue: 0 }
-    };
-  
-    chart.draw(dataTable, this.mergeDeep(defaultOptions, options));
-  }
-  
   /**
    * Deep merge two objects.
    */
@@ -2086,1754 +969,2159 @@ private processExploitationMonthlyData(data: any): any {
   private isObject(item: any): boolean {
     return item && typeof item === 'object' && !Array.isArray(item);
   }
-  
 
 
-private normalizeCategoryToYearMonth(category: any, fallbackYear: number): { year: number, month: number } | null {
-  const hebrewMonthToNumber: { [key: string]: number } = {
-    'ינואר': 1, 'פברואר': 2, 'מרץ': 3, 'אפריל': 4,
-    'מאי': 5, 'יוני': 6, 'יולי': 7, 'אוגוסט': 8,
-    'ספטמבר': 9, 'אוקטובר': 10, 'נובמבר': 11, 'דצמבר': 12
+
+
+
+  private callApi(
+    endpoint: string,
+    rawParams: { [key: string]: any },
+    sanitize = false
+  ): Observable<any> {
+    const params = new URLSearchParams();
+
+    Object.entries(rawParams).forEach(([key, value]) => {
+      const safeValue = value !== undefined && value !== null ? String(value) : '';
+      params.set(key, safeValue);
+    });
+
+    const url = `${environment.url}/${endpoint}?${params.toString()}`;
+
+    return this.http.get(url, { responseType: 'text' }).pipe(
+      map(res => {
+        let clean = sanitize ? sanitizeSoapResponse(res) : res;
+
+        // Attempt JSON.parse only if it's a string starting with [ or {
+        if (typeof clean === 'string' && /^[\[{]/.test(clean.trim())) {
+          try {
+            return JSON.parse(clean);
+          } catch (err) {
+            console.warn(`[callApi] JSON parse failed for ${endpoint}`, err);
+          }
+        }
+
+        return clean;
+      })
+    );
+  }
+
+
+
+  // 📊 General-purpose full query
+  getChargingChartMonthlyDataEExFull(params: any): Observable<any> {
+    return this.callApi('GetChargingChartMonthlyDataEExx', params, true);
+  }
+
+  // 📈 Year-over-year chart
+  getYearlyComparisonData(): Observable<any> {
+    return this.callApi('GetChargingChartMonthlyDataEExx', {
+      groupBy: 'month',
+      format: 'google',
+      calcMode: 'absolute',
+      compareToLast: 'false'
+    }, true);
+  }
+
+
+
+  // 👥 Department group share
+  getGroupShareData(): Observable<any> {
+    return this.callApi('GetChargingChartMonthlyDataEExx', {
+      groupBy: 'group',
+      format: 'google'
+    }, true);
+  }
+
+  // 📉 Growth trend
+  getGrowthData(): Observable<any> {
+    return this.callApi('GetChargingChartMonthlyDataEExx', {
+      groupBy: 'month',
+      format: 'google',
+      calcMode: 'cumulative'
+    }, true);
+  }
+
+  public formatPercentChange(current: number, previous: number): string {
+    if (previous === 0) {
+      return 'N/A'; // or '∞%' if that's your preference
+    }
+
+    const change = ((current - previous) / previous) * 100;
+    const rounded = Math.abs(change).toFixed(1);
+    const arrow = change > 0 ? '↑' : change < 0 ? '↓' : '';
+    const sign = change > 0 ? '+' : change < 0 ? '-' : '';
+
+    return `${arrow} ${sign}${rounded}%`;
+  }
+
+
+
+  public async drawDualArcGaugeOverlay(
+    elementId: string,
+    targetOverride?: number
+  ): Promise<void> {
+    try {
+      const waitForContainer = (id: string, retries = 10): Promise<HTMLElement | null> =>
+        new Promise((resolve) => {
+          let attempts = 0;
+          const interval = setInterval(() => {
+            const el = document.getElementById(id);
+            if (el || ++attempts >= retries) {
+              clearInterval(interval);
+              resolve(el);
+            }
+          }, 100);
+        });
+
+      const container = await waitForContainer(elementId);
+      if (!container) {
+        console.warn(`❌ Container "${elementId}" not found after retrying.`);
+        return;
+      }
+
+      console.debug(`[GaugeOverlay] Fetching data from API...`);
+      const response: any[] = await this.callApi('GetYearlyIncomeFYLData', {
+        change: 1,
+        changeperc: 1
+      }, true).toPromise();
+
+      if (!Array.isArray(response) || response.length === 0) {
+        console.warn(`❌ No data received from API.`);
+        return;
+      }
+
+      const now = new Date();
+      const today = now.getDate();
+      const rawMonth = now.getMonth() + 1;
+      const adjustedMonth = today > 10 ? rawMonth - 1 : rawMonth - 2;
+
+      if (adjustedMonth < 1) {
+        console.warn(`⚠️ Adjusted month (${adjustedMonth}) is before January. Insufficient data.`);
+        return;
+      }
+
+      const years = response.map(r => r.Year);
+      const maxYear = Math.max(...years);
+      const previousYear = maxYear - 1;
+
+      const currentYearData = response.find(r => r.Year === maxYear);
+      const previousYearData = response.find(r => r.Year === previousYear);
+
+      if (!currentYearData || (!previousYearData && targetOverride === undefined)) {
+        console.warn(`❌ Missing required data to compute target.`);
+        return;
+      }
+
+      const gaugeValue = currentYearData.TotalCharging;
+      const dynamicTarget = previousYearData?.TotalCharging * 1.1;
+
+      const gaugeTargetValue = targetOverride ?? dynamicTarget;
+      const perMonthTarget = gaugeTargetValue / 12;
+      const plannedIncludingThisMonth = perMonthTarget * adjustedMonth;
+
+      let gaugeTargetStatus: string;
+
+      if (adjustedMonth === 1) {
+        const relaxedThreshold = perMonthTarget * 0.5;
+        gaugeTargetStatus = gaugeValue >= relaxedThreshold ? '✅' : '❌';
+      } else if (adjustedMonth === 12) {
+        gaugeTargetStatus = gaugeValue >= gaugeTargetValue ? '✅' : '❌';
+      } else {
+        gaugeTargetStatus = gaugeValue >= plannedIncludingThisMonth ? '✅' : '❌';
+      }
+
+      setTimeout(() => {
+        drawOverlayDualArcChartHelperIncome({
+          containerId: elementId,
+          workingDaysInfo: {
+            currentWorkingDayIndex: adjustedMonth,
+            totalWorkingDays: 12
+          },
+          gaugePlanned: plannedIncludingThisMonth,
+          gaugeTargetValue,
+          gaugeValue,
+          gaugeTargetStatus,
+          currentMonthValues: [],
+          markerOptions: { radius: 14, fontSize: 10 },
+        });
+      }, 100);
+
+    } catch (err) {
+      console.error('❌ Failed to draw dual arc overlay:', err);
+      const el = document.getElementById(elementId);
+      if (el) {
+        el.innerHTML = '⚠️ Error loading dual arc overlay';
+      }
+    }
+  }
+
+
+
+
+  private readonly yearlyIncomeTableHeaders: { [key: string]: string } = {
+    Year: 'שנה',
+    TotalCharging: 'הכנסות (₪)',
+    Change: 'גידול',
+    ChangePercent: 'גידול (%)'
   };
 
-  if (!category) return null;
-  const normalized = category.toString().trim();
 
-  // Handle '2023 מאי'
-  const matchHebrewYearMonth = normalized.match(/^(\d{4})\s([א-ת]+)$/);
-  if (matchHebrewYearMonth) {
-    const year = parseInt(matchHebrewYearMonth[1], 10);
-    const monthName = matchHebrewYearMonth[2];
-    const month = hebrewMonthToNumber[monthName];
-    if (month) return { year, month };
-  }
-
-  // '2025 5' or '2025-5'
-  const match = normalized.match(/^(\d{4})[\s\-](\d{1,2})$/);
-  if (match) {
-    const year = parseInt(match[1], 10);
-    const month = parseInt(match[2], 10);
-    if (month >= 1 && month <= 12) return { year, month };
-  }
-
-  // Just month name
-  if (hebrewMonthToNumber[normalized]) {
-    return { year: fallbackYear, month: hebrewMonthToNumber[normalized] };
-  }
-
-  // Just a numeric month
-  if (/^\d{1,2}$/.test(normalized)) {
-    const month = parseInt(normalized, 10);
-    return { year: fallbackYear, month };
-  }
-
-  return null;
-}
-
-
-private mergeMultipleDataTablesByCategory(
-  dataTables: any[],
-  sources: ChartSourceConfig[],
-  allowedCategories: string[] | null = null,
-  useIntersectionOnly: boolean = false
-): any {
-  const combinedData = new google.visualization.DataTable();
-  combinedData.addColumn('string', 'Category');
-
-  sources.forEach((s, index) => {
-    let dynamicLabel = s.label;
-    if (s.normalizationFactor && s.normalizationFactor !== 1) {
-      dynamicLabel += ` (${s.unitLabel || 'normalized'})`;
-    }
-    combinedData.addColumn('number', dynamicLabel);
-    combinedData.addColumn({ type: 'string', role: 'annotation' });
-  });
-
-  const now = new Date();
-  const currentYear = now.getFullYear();
-  const currentMonth = now.getMonth() + 1;
-
-  const categoryMaps: Map<string, number>[] = dataTables.map((dt, index) => {
-    const map = new Map<string, number>();
-    const normalizationFactor = sources[index].normalizationFactor || 1;
-
-    for (let i = 0; i < dt.getNumberOfRows(); i++) {
-      const rawCategory = dt.getValue(i, 0);
-      const rawValue = dt.getValue(i, 1);
-      if (!rawCategory || rawValue == null) continue;
-
-      const parsed = this.normalizeCategoryToYearMonth(rawCategory, currentYear);
-      if (!parsed) {
-        //console.warn(`❌ Unrecognized category: "${rawCategory}"`);
-        continue;
-      }
-
-      if (parsed.year === currentYear && parsed.month === currentMonth) {
-        //console.log(`⏭ Skipped current month: ${parsed.month}/${parsed.year}`);
-        continue;
-      }
-
-      const formattedCategory = `${parsed.month}/${parsed.year}`;
-      map.set(formattedCategory, rawValue / normalizationFactor);
-    }
-
-    return map;
-  });
-
-  // Aggregate all category keys
-  const allCategorySet = new Set<string>();
-  for (const map of categoryMaps) {
-    for (const key of map.keys()) {
-      allCategorySet.add(key);
-    }
-  }
-
-  let allCategories: string[] = Array.from(allCategorySet);
-
-  if (allowedCategories && allowedCategories.length > 0) {
-    allCategories = allCategories.filter((cat: string) =>
-      allowedCategories.includes(cat)
-    );
-  }
-
-  if (useIntersectionOnly) {
-    allCategories = this.getIntersectionOfCategories(categoryMaps);
-  }
-
-  allCategories.sort((a: string, b: string) => {
-    const [am, ay] = a.split('/').map(Number);
-    const [bm, by] = b.split('/').map(Number);
-    return ay === by ? am - bm : ay - by;
-  });
-
-  for (const cat of allCategories) {
-    const row: any[] = [cat];
-    for (let index = 0; index < categoryMaps.length; index++) {
-      const map = categoryMaps[index];
-      const value = map.get(cat) ?? null;
-
-      row.push(value);
-
-      const formatType = sources[index].numberFormat;
-      const annotation =
-        value != null && formatType
-          ? this.formatNumberHumanReadable(value, formatType)
-          : value != null
-          ? value.toString()
-          : null;
-
-      row.push(annotation);
-    }
-    combinedData.addRow(row);
-  }
-
-  //console.log(`✅ Built chart with ${combinedData.getNumberOfRows()} rows`);
-  return combinedData;
-}
-
-
-public async loadAndMergeMultipleCharts(
-  sources: ChartSourceConfig[],
-  elementId: string,
-  chartOptions: any = {},
-  allowedCategories: string[] | null = null,
-  useIntersectionOnly: boolean = false
-): Promise<void> {
-  try {
-    const rawResponses = await Promise.all(
-      sources.map(s => this.http.get(s.url, { responseType: 'text' }).toPromise())
-    );
-
-    const dataTables = rawResponses.map((raw, i) => {
-      const parsed = sanitizeSoapResponseAndFormatData(raw, sources[i].label);
-      return new google.visualization.DataTable(parsed);
-    });
-
-    const combinedData = this.mergeMultipleDataTablesByCategory(dataTables, sources, allowedCategories, useIntersectionOnly);
-
-    const dynamicLabels = sources.map(s => {
-      if (s.normalizationFactor && s.normalizationFactor !== 1) {
-        return `${s.label} (${s.unitLabel || 'normalized'})`;
-      }
-      return s.label;
-    });
-
-    const colors = sources.map(s => s.color || '#000000');
-    const series: any = {};
-    sources.forEach((s, i) => {
-      series[i] = s.chartType && s.chartType !== 'bars'
-        ? { type: s.chartType, targetAxisIndex: s.targetAxisIndex ?? 0 }
-        : { targetAxisIndex: s.targetAxisIndex ?? 0 };
-    });
-
-    const mergedOptions = {
-      chartArea: { left: 70, right: 70, width: '75%', height: '70%' },
-      legend: { position: 'top' },
-      colors,
-      seriesType: 'bars',
-      series,
-      vAxes: {
-        0: { title: dynamicLabels.find((_, i) => sources[i].targetAxisIndex === 0) || 'Primary', minValue: 0, format: 'short' },
-        1: { title: dynamicLabels.find((_, i) => sources[i].targetAxisIndex === 1) || 'Secondary', minValue: 0, format: 'short' }
-      },
-      hAxis: { slantedText: true, slantedTextAngle: 45 },
-      annotations: { alwaysOutside: true, textStyle: { fontSize: 11, auraColor: '#FFFFFF' } },
-      ...chartOptions
-    };
-
-    const chartContainer = document.getElementById(elementId);
-    if (chartContainer) {
-      const chart = new google.visualization.ComboChart(chartContainer);
-      chart.draw(combinedData, mergedOptions);
-    } else {
-      //console.warn(`Chart container with id '${elementId}' not found.`);
-    }
-
-  } catch (error) {
-    //console.error('Error loading merged chart:', error);
-    const el = document.getElementById(elementId);
-    if (el) el.innerHTML = 'Failed to load merged chart.';
-  }
-}
-
-
-private getIntersectionOfCategories(categoryMaps: Map<string, number>[]): string[] {
-  if (categoryMaps.length === 0) {
-    return [];
-  }
-
-  let intersection = Array.from(categoryMaps[0].keys());
-  for (let i = 1; i < categoryMaps.length; i++) {
-    intersection = intersection.filter(cat => categoryMaps[i].has(cat));
-  }
-
-  return intersection.sort();
-}
-
-
-private renderYearLegend(years: string[], legendElementId: string): void {
-  const legendContainer = document.getElementById(legendElementId);
-  if (!legendContainer) return;
-
-  legendContainer.innerHTML = years
-    .map((year, i) => {
-      const color = this.CHART_COLORS[i % this.CHART_COLORS.length];
-      return `
-        <span style="display:inline-block; margin-right:12px;">
-          <span style="display:inline-block; width:12px; height:12px; background-color:${color}; margin-right:6px; vertical-align:middle;"></span>
-          <span style="vertical-align:middle;">${year}</span>
-        </span>`;
-    })
-    .join('');
-}
-
-
-public async drawPicTableChart(
-  elementId: string = 'pic_table_chart',
-  options: any = {}
-): Promise<void> {
-  await this.chartsReady;
-
-  const el = document.getElementById(elementId);
-  if (!el) return;
-
-  try {
-    const url = this.DATA_SOURCES.PIC_TABLE;
-    const rawResponse: string = await this.http
-      .get(url, { responseType: 'text' })
-      .toPromise();
-
-    const response = sanitizeSoapResponse(rawResponse);
-
-    if (!response || !Array.isArray(response.rows) || !Array.isArray(response.cols)) {
-      el.innerHTML = "No data available";
-      return;
-    }
-
-    response.rows.reverse();
-    normalizeDateColumn(response.rows, 1);
-
-    const dataTable = new google.visualization.DataTable(response);
-    this.lastTableDataTable = dataTable;
-
-    appendTotalRow(dataTable);
-
-    const chart = new google.visualization.Table(el);
-    chart.draw(dataTable, {
-      allowHtml: true,
-      width: '100%',
-      sort: 'event',
-      ...options
-    });
-
-  } catch (error) {
-    el.innerHTML = "Error loading table";
-  }
-
-  // === Utility: Normalize Date Column ===
-  function normalizeDateColumn(rows: any[], columnIndex: number): void {
-    rows.forEach((row, idx) => {
-      const dateCell = row?.c?.[columnIndex];
-      if (!dateCell?.v || typeof dateCell.v !== 'string') return;
-
-      const match = dateCell.v.match(/Date\\((\\d+),(\\d+),(\\d+)\\)/);
-      if (match) {
-        const [_, y, m, d] = match.map(Number);
-        dateCell.v = new Date(y, m, d);
-      } else {
-        const parsed = new Date(dateCell.v);
-        if (!isNaN(parsed.getTime())) {
-          dateCell.v = parsed;
-        }
-      }
-    });
-  }
-
-  // === Utility: Append Total Row ===
-  function appendTotalRow(dataTable: any): void {
-    const totalRow: any[] = [];
-
-    for (let i = 0; i < dataTable.getNumberOfColumns(); i++) {
-      if (i === 0) {
-        totalRow.push('Total');
-      } else if (dataTable.getColumnType(i) === 'number') {
-        const sum = Array.from({ length: dataTable.getNumberOfRows() }, (_, rowIndex) =>
-          dataTable.getValue(rowIndex, i)
-        ).reduce((acc, val) => acc + (typeof val === 'number' ? val : 0), 0);
-        totalRow.push(sum);
-      } else {
-        totalRow.push(null);
-      }
-    }
-
-    dataTable.addRow(totalRow);
-  }
-}
-
-
-public redrawCharts(): void {
-  if (!google.visualization) return;
-
-  // Re-draw operations chart
-  if (this.cachedChartData.operations) {
-    const el = document.getElementById('bar_chart');
-    if (el) this.drawBarChart(this.cachedChartData.operations, 'bar_chart');
-  }
-
-  // Re-draw income chart
-  if (this.cachedChartData.income) {
-    const elBar = document.getElementById('bar_chart2');
-    const elLine = document.getElementById('line_chart2');
-    if (elBar) this.drawBarChart(this.cachedChartData.income, 'bar_chart2');
-    if (elLine) this.drawLineChart(this.cachedChartData.income, 'line_chart2');
-  }
-
-  // Re-draw exploitation charts
-  if (this.cachedChartData.exploitation) {
-    const el = document.getElementById('as_chart');
-    if (el) this.renderExploitationChart(this.cachedChartData.exploitation, 'as_chart');
-  }
-
-  if (this.cachedChartData.exploitationMonthly) {
-    const el = document.getElementById('as_chart_monthly');
-    if (el) this.renderExploitationChart(this.cachedChartData.exploitationMonthly, 'as_chart_monthly');
-  }
-
-  if (this.cachedChartData.exploitationWeekly) {
-    const el = document.getElementById('as_chart_weekly');
-    if (el) this.renderExploitationChart(this.cachedChartData.exploitationWeekly, 'as_chart_weekly');
-  }
-
-  // Re-draw time average chart
-  if (this.cachedChartData.timeAvg) {
-    const el = document.getElementById('bar_chart_time_avg');
-    if (el) {
-      this.drawTimeAvgChart(
-        'bar_chart_time_avg',
-        {},
-        this.cachedChartData.timeAvg.selectedTypes
-      );
-    }
-  }
-  
-}
-
-
-private lastTableDataTable: any[] = [];
-
-public getLastTableData(): any[] {
-  return this.lastTableDataTable;
-}
-
-
-
-public async drawDataTable(): Promise<void> {
-  await this.chartsReady;
-
-  try {
-    const url = this.DATA_SOURCES.PIC_TABLE;
-    const rawResponse: string = await this.http.get(url, { responseType: 'text' }).toPromise();
-    const response = sanitizeSoapResponse(rawResponse);
-    //console.log('✅ Sanitized Response:', response);
-
-    if (!response || !Array.isArray(response.rows) || !Array.isArray(response.cols)) {
-      this.lastTableDataTable = [];
-      return;
-    }
-
-    // Reverse rows to match Google Charts rendering
-    response.rows.reverse();
-
-    // Format helper
-    const formatDateToDDMMYYYY = (date: Date | string): string => {
-      const d = new Date(date);
-      if (isNaN(d.getTime())) return '';
-      const day = String(d.getDate()).padStart(2, '0');
-      const month = String(d.getMonth() + 1).padStart(2, '0');
-      const year = d.getFullYear();
-      return `${day}-${month}-${year}`;
-    };
-
-    // Parse rows to flat object format
-    const parsedData = response.rows.map((row: any, rowIndex: number) => {
-      const obj: any = {};
-
-      row?.c?.forEach((cell: any, idx: number) => {
-        const colLabel = response.cols?.[idx]?.label || `col${idx}`;
-        let value = cell?.v ?? '';
-      
-        // Normalize Google-style Date format
-        if (typeof value === 'string') {
-          const dateMatch = value.match(/^Date\((\d+),(\d+),(\d+)\)$/);
-          if (dateMatch) {
-            const [_, y, m, d] = dateMatch.map(Number);
-            value = formatDateToDDMMYYYY(new Date(y, m, d));
-          }
-      
-          // Normalize time-only format: "13:49:13.4900000" → "13:49"
-          else if (/^\d{2}:\d{2}:\d{2}\.\d+/.test(value)) {
-            const timeParts = value.split(':');
-            if (timeParts.length >= 2) {
-              value = `${timeParts[0]}:${timeParts[1]}`;
-            }
-          }
-      
-          // Normalize durations in specific columns (index 2 and 5)
-          else if ((idx === 2 || idx === 5) && /^\d{1,2}:\d{2}:\d{2}$/.test(value)) {
-            const parts = value.split(':');
-            value = `${parts[0].padStart(2, '0')}:${parts[1]}`;
-          }
-      
-          // Normalize ISO date if present
-          else if (value.includes('-') && value.includes('T')) {
-            const isoDate = new Date(value);
-            if (!isNaN(isoDate.getTime())) {
-              value = formatDateToDDMMYYYY(isoDate);
-            }
-          }
-        }
-      
-        obj[colLabel] = value;
-      });
-      
-      
-      
-
-      return obj;
-    });
-
-    this.lastTableDataTable = parsedData;
-    //console.log('✅ Parsed data for table:', parsedData);
-  } catch (error) {
-    //console.error("❌ Failed to load or parse data table:", error);
-    this.lastTableDataTable = [];
-  }
-}
-
-//
-// addons
-//
-
-private callApi(
-  endpoint: string,
-  rawParams: { [key: string]: any },
-  sanitize = false
-): Observable<any> {
-  const params = new URLSearchParams();
-
-  Object.entries(rawParams).forEach(([key, value]) => {
-    const safeValue = value !== undefined && value !== null ? String(value) : '';
-    params.set(key, safeValue);
-  });
-
-  const url = `${environment.url}/${endpoint}?${params.toString()}`;
-
-  return this.http.get(url, { responseType: 'text' }).pipe(
-    map(res => {
-      let clean = sanitize ? sanitizeSoapResponse(res) : res;
-
-      // Attempt JSON.parse only if it's a string starting with [ or {
-      if (typeof clean === 'string' && /^[\[{]/.test(clean.trim())) {
-        try {
-          return JSON.parse(clean);
-        } catch (err) {
-          console.warn(`[callApi] JSON parse failed for ${endpoint}`, err);
-        }
-      }
-
-      return clean;
-    })
-  );
-}
-
-
-
-// 📊 General-purpose full query
-getChargingChartMonthlyDataEExFull(params: any): Observable<any> {
-  return this.callApi('GetChargingChartMonthlyDataEExx', params, true);
-}
-
-// 📈 Year-over-year chart
-getYearlyComparisonData(): Observable<any> {
-  return this.callApi('GetChargingChartMonthlyDataEExx', {
-    groupBy: 'month',
-    format: 'google',
-    calcMode: 'absolute',
-    compareToLast: 'false'
-  }, true);
-}
-
-// 🏆 Top departments (pie)
-getTopDepartmentsData(): Observable<any> {
-  return this.callApi('GetChargingChartMonthlyDataEExx', {
-    groupBy: 'dept',
-    format: 'google',
-    calcMode: 'absolute'
-  }, true);
-}
-
-// 👥 Department group share
-getGroupShareData(): Observable<any> {
-  return this.callApi('GetChargingChartMonthlyDataEExx', {
-    groupBy: 'group',
-    format: 'google'
-  }, true);
-}
-
-// 📉 Growth trend
-getGrowthData(): Observable<any> {
-  return this.callApi('GetChargingChartMonthlyDataEExx', {
-    groupBy: 'month',
-    format: 'google',
-    calcMode: 'cumulative'
-  }, true);
-}
-
-public formatPercentChange(current: number, previous: number): string {
-  if (previous === 0) {
-    return 'N/A'; // or '∞%' if that's your preference
-  }
-
-  const change = ((current - previous) / previous) * 100;
-  const rounded = Math.abs(change).toFixed(1);
-  const arrow = change > 0 ? '↑' : change < 0 ? '↓' : '';
-  const sign = change > 0 ? '+' : change < 0 ? '-' : '';
-
-  return `${arrow} ${sign}${rounded}%`;
-}
-
-
-
-// public async drawDualArcGaugeOverlay(elementId: string): Promise<void> {
-//   try {
-//     const waitForContainer = (id: string, retries = 10): Promise<HTMLElement | null> =>
-//       new Promise((resolve) => {
-//         let attempts = 0;
-//         const interval = setInterval(() => {
-//           const el = document.getElementById(id);
-//           if (el || ++attempts >= retries) {
-//             clearInterval(interval);
-//             resolve(el);
-//           }
-//         }, 100);
-//       });
-
-//     const container = await waitForContainer(elementId);
-//     if (!container) {
-//       console.warn(`❌ Container "${elementId}" not found after retrying.`);
-//       return;
-//     }
-
-//     console.debug(`[GaugeOverlay] Fetching data from API...`);
-//     const response: any[] = await this.callApi('GetYearlyIncomeFYLData', {
-//       change: 1,
-//       changeperc: 1
-//     }, true).toPromise();
-
-//     if (!Array.isArray(response) || response.length === 0) {
-//       console.warn(`❌ No data received from API.`);
-//       return;
-//     }
-
-//     const now = new Date();
-//     const today = now.getDate();
-//     const rawMonth = now.getMonth() + 1;
-//     const adjustedMonth = today > 10 ? rawMonth - 1 : rawMonth - 2;
-
-//     console.debug(`[GaugeOverlay] Today: ${now.toDateString()}, Raw Month: ${rawMonth}, Adjusted Month: ${adjustedMonth}`);
-
-//     if (adjustedMonth < 1) {
-//       console.warn(`⚠️ Adjusted month (${adjustedMonth}) is before January. Insufficient data.`);
-//       return;
-//     }
-
-//     const years = response.map(r => r.Year);
-//     const maxYear = Math.max(...years);
-//     const previousYear = maxYear - 1;
-
-//     console.debug(`[GaugeOverlay] Latest year in data: ${maxYear}, Previous year: ${previousYear}`);
-
-//     const currentYearData = response.find(r => r.Year === maxYear);
-//     const previousYearData = response.find(r => r.Year === previousYear);
-
-//     if (!currentYearData || !previousYearData) {
-//       console.warn(`❌ Missing income data for year ${maxYear} or ${previousYear}`);
-//       return;
-//     }
-
-//     const gaugeValue = currentYearData.TotalCharging;
-//     const gaugeTargetValue = previousYearData.TotalCharging * 1.1;
-//     const perMonthTarget = gaugeTargetValue / 12;
-//     const plannedIncludingThisMonth = perMonthTarget * adjustedMonth;
-
-//     let gaugeTargetStatus: string;
-//     if (adjustedMonth === 1) {
-//       const relaxedThreshold = perMonthTarget * 0.5;
-//       gaugeTargetStatus = gaugeValue >= relaxedThreshold ? '✅' : '❌';
-//       console.debug(`[GaugeOverlay] First month: Expected ≥ ${relaxedThreshold}, Got: ${gaugeValue}`);
-//     } else if (adjustedMonth === 12) {
-//       gaugeTargetStatus = gaugeValue >= gaugeTargetValue ? '✅' : '❌';
-//       console.debug(`[GaugeOverlay] End of year: Expected ≥ ${gaugeTargetValue}, Got: ${gaugeValue}`);
-//     } else {
-//       gaugeTargetStatus = gaugeValue >= plannedIncludingThisMonth ? '✅' : '❌';
-//       console.debug(`[GaugeOverlay] In-progress: Expected ≥ ${plannedIncludingThisMonth}, Got: ${gaugeValue}`);
-//     }
-
-//     console.debug(`[GaugeOverlay] Final Values (raw):`, {
-//       gaugeValue,
-//       gaugeTargetValue,
-//       plannedIncludingThisMonth,
-//       gaugeTargetStatus,
-//       adjustedMonth
-//     });
-    
-//     console.debug(`[GaugeOverlay] Previous year income: ${previousYearData.TotalCharging}`);
-//     console.debug(`[GaugeOverlay] Target this year (110%): ${gaugeTargetValue}`);
-    
-
-//     setTimeout(() => {
-//       drawOverlayDualArcChartHelperIncome({
-//         containerId: elementId,
-//         workingDaysInfo: {
-//           currentWorkingDayIndex: adjustedMonth,
-//           totalWorkingDays: 12
-//         },
-//         gaugePlanned: plannedIncludingThisMonth,
-//         gaugeTargetValue,
-//         gaugeValue,
-//         gaugeTargetStatus,
-//         currentMonthValues: [],
-//         markerOptions: { radius: 14, fontSize: 10 },
-//       });
-//     }, 100);
-
-//   } catch (err) {
-//     console.error('❌ Failed to draw dual arc overlay:', err);
-//     const el = document.getElementById(elementId);
-//     if (el) {
-//       el.innerHTML = '⚠️ Error loading dual arc overlay';
-//     }
-//   }
-
-
-  
-// }
-
-
-public async drawDualArcGaugeOverlay(
-  elementId: string,
-  targetOverride?: number
-): Promise<void> {
-  try {
-    const waitForContainer = (id: string, retries = 10): Promise<HTMLElement | null> =>
-      new Promise((resolve) => {
-        let attempts = 0;
-        const interval = setInterval(() => {
-          const el = document.getElementById(id);
-          if (el || ++attempts >= retries) {
-            clearInterval(interval);
-            resolve(el);
-          }
-        }, 100);
-      });
-
-    const container = await waitForContainer(elementId);
-    if (!container) {
-      console.warn(`❌ Container "${elementId}" not found after retrying.`);
-      return;
-    }
-
-    console.debug(`[GaugeOverlay] Fetching data from API...`);
-    const response: any[] = await this.callApi('GetYearlyIncomeFYLData', {
+  //tables chart
+  loadYearlyIncomeDataCombined(
+    containerId: string,
+    yearsToShow?: number,
+    tableMode: 'full' | 'matrix' = 'full'
+  ): void {
+    const container = document.querySelector(`#${containerId}`);
+    if (!container) return;
+
+    const params = {
       change: 1,
       changeperc: 1
-    }, true).toPromise();
+    };
 
-    if (!Array.isArray(response) || response.length === 0) {
-      console.warn(`❌ No data received from API.`);
-      return;
+    this.callApi('GetYearlyIncomeFYLData', params, true).subscribe(
+      (response: any[]) => {
+        if (!Array.isArray(response) || response.length === 0) {
+          container.innerHTML = '<p>No data available.</p>';
+          return;
+        }
+
+        // Sort descending by year
+        response.sort((a, b) => b.Year - a.Year);
+
+        const data = yearsToShow ? response.slice(0, yearsToShow) : response;
+        const headerMap: { [key: string]: string } = this.yearlyIncomeTableHeaders || {};
+
+        let html = '<table class="table table-bordered table-striped">';
+
+        if (tableMode === 'full') {
+          const preferredOrder = ['Year', 'TotalCharging', 'Change', 'ChangePercent'];
+          const allKeys = new Set<string>();
+          data.forEach(row => Object.keys(row).forEach(key => allKeys.add(key)));
+
+          const columns = Array.from(allKeys).sort((a, b) => {
+            const ia = preferredOrder.indexOf(a);
+            const ib = preferredOrder.indexOf(b);
+            if (ia === -1 && ib === -1) return a.localeCompare(b);
+            if (ia === -1) return 1;
+            if (ib === -1) return -1;
+            return ia - ib;
+          });
+
+          html += '<thead><tr>';
+          columns.forEach(col => {
+            html += `<th>${headerMap[col] || col}</th>`;
+          });
+          html += '</tr></thead><tbody style="direction:ltr;">';
+
+          const currentYear = new Date().getFullYear();
+
+          data.forEach(row => {
+            html += '<tr>';
+            columns.forEach(col => {
+              let value = row[col];
+
+              if (col === 'Year') {
+                const actualYear = currentYear + row[col]; // convert relative year
+                value = actualYear;
+              } else if (col === 'TotalCharging' && value != null) {
+                value = formatNumberShort(value);
+              } else if (col === 'Change' && value != null && !isNaN(value)) {
+                const sign = value > 0 ? '+' : value < 0 ? '-' : '';
+                value = sign + formatNumberShort(Math.abs(value));
+              } else if (col === 'ChangePercent' && value != null && !isNaN(value)) {
+                const sign = value > 0 ? '+' : value < 0 ? '-' : '';
+                value = sign + Math.abs(value).toFixed(1) + '%';
+              }
+
+              html += `<td>${value != null ? value : ''}</td>`;
+            });
+            html += '</tr>';
+          });
+
+
+          html += '</tbody>';
+        } else {
+          const metrics = ['TotalCharging', 'Change', 'ChangePercent'];
+          const currentYear = new Date().getFullYear();
+        
+          html += '<thead><tr><th>שנה</th>';
+          metrics.forEach(metric => {
+            html += `<th>${headerMap[metric] || metric}</th>`;
+          });
+          html += '</tr></thead><tbody>';
+        
+          data.forEach(row => {
+            const actualYear = currentYear + row.Year; // row.Year is relative (e.g., 0, -1, -2)
+            html += `<tr><td>${actualYear}</td>`;
+        
+            metrics.forEach(metric => {
+              let value = row[metric];
+              if (value != null && !isNaN(value)) {
+                if (metric === 'TotalCharging') {
+                  value = formatNumberShort(value);
+                } else if (metric === 'Change') {
+                  const sign = value > 0 ? '+' : value < 0 ? '-' : '';
+                  value = sign + formatNumberShort(Math.abs(value));
+                } else if (metric === 'ChangePercent') {
+                  const sign = value > 0 ? '+' : value < 0 ? '-' : '';
+                  value = sign + Math.abs(value).toFixed(1) + '%';
+                }
+              } else {
+                value = '';
+              }
+              html += `<td>${value}</td>`;
+            });
+        
+            html += '</tr>';
+          });
+        
+          html += '</tbody>';
+        }
+        
+        
+        
+
+        html += '</table>';
+        container.innerHTML = html;
+      },
+      () => {
+        container.innerHTML = '<p class="text-danger">Failed to load data.</p>';
+      }
+    );
+  }
+
+
+
+  /**
+    * Loads department data and renders a chart for a specific department
+    */
+
+  public async renderDepartmentChart(
+    dept: { name: string; id: string },
+    elementId: string,
+    group: { name: string; id: string },
+    options: {
+      includeTimeSeries?: boolean;
+      timeSeriesElementId?: string;
+      includeGaugeOverlay?: boolean;
+      gaugeElementId?: string;
+      incomeCategory?: string;
+    } = {}
+  ): Promise<void> {
+    await this.chartsReady;
+
+    try {
+      const raw = await this.callApi('GetChargingIncome', {
+        groupId: group.id,
+        deptId: dept.id,
+        incomeCategory: options.incomeCategory || 'totalCharging'
+      }, true).toPromise();
+
+      const clean: any[] = Array.isArray(raw) ? raw : [];
+      if (!clean.length) {
+        document.getElementById(elementId)!.innerHTML = 'אין מספיק נתונים להצגה';
+        return;
+      }
+
+      const grouped: Record<string, number> = {};
+      const allYears: Set<string> = new Set();
+
+      clean.forEach((row: any) => {
+        const year = row.Year;
+        const val = row.TotalCharging ?? row.totalCharging ?? 0;
+        grouped[year] = val;
+        allYears.add(year);
+      });
+
+      const sortedYears = Array.from(allYears).sort();
+      if (sortedYears.length < 2) {
+        document.getElementById(elementId)!.innerHTML = 'אין מספיק נתונים להצגה';
+        return;
+      }
+
+      const prev = sortedYears[sortedYears.length - 2];
+      const curr = sortedYears[sortedYears.length - 1];
+      const prevVal = grouped[prev] || 0;
+      const currVal = grouped[curr] || 0;
+
+      const formatShort = (num: number): string =>
+        num >= 1_000_000 ? (num / 1_000_000).toFixed(1) + 'M'
+          : num >= 1_000 ? (num / 1_000).toFixed(0) + 'K'
+            : num.toString();
+
+      const chartData = google.visualization.arrayToDataTable([
+        ['שנה', prev, { role: 'annotation' }, curr, { role: 'annotation' }],
+        [dept.name, prevVal, formatShort(prevVal), currVal, formatShort(currVal)],
+      ]);
+
+      const optionsBar = {
+        title: `סה"כ חיובים - ${dept.name}`,
+        chartArea: { width: '70%', height: '80%' },
+        legend: { position: 'top' },
+        isStacked: true,
+        bar: { groupWidth: '75%' },
+        annotations: { alwaysOutside: true, textStyle: { fontSize: 12, color: '#444' } },
+        vAxis: { format: 'short', minValue: 0 },
+        hAxis: { slantedText: true, slantedTextAngle: 45 },
+        colors: ['#6ba1f8', '#5ed175']
+      };
+
+      const container = document.getElementById(elementId);
+      if (container) {
+        const chart = new google.visualization.BarChart(container);
+        chart.draw(chartData, optionsBar);
+      }
+
+      if (options.includeGaugeOverlay && options.gaugeElementId) {
+        await this.drawDepartmentGaugeOverlay(group.id, dept.id, 'totalCharging', options.gaugeElementId );
+      }
+    } catch (err) {
+      console.error('Failed to render department chart:', err);
+      document.getElementById(elementId)!.innerHTML = 'שגיאה בטעינת הנתונים';
     }
+  }
 
-    const now = new Date();
-    const today = now.getDate();
-    const rawMonth = now.getMonth() + 1;
-    const adjustedMonth = today > 10 ? rawMonth - 1 : rawMonth - 2;
 
-    if (adjustedMonth < 1) {
-      console.warn(`⚠️ Adjusted month (${adjustedMonth}) is before January. Insufficient data.`);
-      return;
-    }
 
-    const years = response.map(r => r.Year);
-    const maxYear = Math.max(...years);
-    const previousYear = maxYear - 1;
+  // private async drawDepartmentGaugeOverlay(groupid: string, deptid: string, incomeCategory:String, elementId: string): Promise<void> {    
 
-    const currentYearData = response.find(r => r.Year === maxYear);
-    const previousYearData = response.find(r => r.Year === previousYear);
+  //   const raw = await this.callApi('GetChargingIncomeMonthly', {     
+  //     deptid,
+  //     groupid,
+  //     incomeCategory,
+  //   }, true).toPromise();
 
-    if (!currentYearData || (!previousYearData && targetOverride === undefined)) {
-      console.warn(`❌ Missing required data to compute target.`);
-      return;
-    }
+  //   // const clean = Array.isArray(raw) ? raw : [];
+  //   // const years = clean.map(r => r.Year);
+  //   // const maxYear = Math.max(...years);
+  //   // const prevYear = maxYear - 1;
 
-    const gaugeValue = currentYearData.TotalCharging;
-    const dynamicTarget = previousYearData?.TotalCharging * 1.1;
+  //   // const current = clean.find(r => r.Year === maxYear);
+  //   // const previous = clean.find(r => r.Year === prevYear);
+  //   // console.log('__0current0__' + current);
+  //   // if (!current || !previous) return;
+  //   // console.log('__current__' + current);
+  //   // const value = current.TotalCharging;
+  //   // console.log('__value__' + value);
+  //   // const target = previous.TotalCharging * 1.1;
 
-    const gaugeTargetValue = targetOverride ?? dynamicTarget;
-    const perMonthTarget = gaugeTargetValue / 12;
-    const plannedIncludingThisMonth = perMonthTarget * adjustedMonth;
+  //   let clean: any[] = [];
 
-    let gaugeTargetStatus: string;
+  //   try {
+  //     // Step 1: Parse the raw XML-style string safely
+  //     if (typeof raw === 'string') {
+  //       // Unwrap <string>...</string> if needed
+  //       const rawText = raw.trim();
+    
+  //       // Extract content between <string>...</string> if XML-like
+  //       const innerContentMatch = rawText.match(/^<string[^>]*>(.*?)<\/string>$/);
+  //       const content = innerContentMatch ? innerContentMatch[1] : rawText;
+    
+  //       // Now double-parse if it's a stringified array
+  //       const parsedOnce = JSON.parse(content);
+  //       clean = typeof parsedOnce === 'string' ? JSON.parse(parsedOnce) : parsedOnce;
+  //     }
+    
+  //     if (!Array.isArray(clean)) {
+  //       console.error('❌ Parsed result is not an array:', clean);
+  //       return;
+  //     }
+  //   } catch (err) {
+  //     console.error('❌ Failed to extract and parse department data:', err);
+  //     return;
+  //   }
+    
+  //   // ✅ Extract valid numeric years
+  //   const deptYears: number[] = [];
+    
+  //   clean.forEach((row, i) => {
+  //     const yearStr = (row?.Year ?? '').toString().trim();
+  //     const yearNum = parseInt(yearStr);
+  //     if (!isNaN(yearNum) && yearNum >= 2000) {
+  //       deptYears.push(yearNum);
+  //     } else {
+  //       console.warn(`⚠️ Skipping row ${i}: invalid Year =`, yearStr);
+  //     }
+  //   });
+    
+  //   if (deptYears.length === 0) {
+  //     console.warn('❌ No valid department years found in data');
+  //     return;
+  //   }
+    
+  //   // ✅ Determine latest and previous year
+  //   const latestDeptYear = Math.max(...deptYears);
+  //   const previousDeptYear = latestDeptYear - 1;
+    
+  //   // ✅ Match records by year
+  //   const latestDeptData = clean.find(row => parseInt((row?.Year ?? '').toString().trim()) === latestDeptYear);
+  //   const previousDeptData = clean.find(row => parseInt((row?.Year ?? '').toString().trim()) === previousDeptYear);
+    
+  //   if (!latestDeptData || !previousDeptData) {
+  //     console.warn('❌ Missing data for current or previous year');
+  //     console.log('📆 Available years:', deptYears);
+  //     return;
+  //   }
+    
+  //   // ✅ Extract income and target
+  //   const deptActualIncome = latestDeptData.TotalCharging ?? null;
+  //   const deptPreviousIncome = previousDeptData.TotalCharging ?? null;
+    
+  //   if (deptActualIncome == null || deptPreviousIncome == null) {
+  //     console.warn('❌ Missing TotalCharging values');
+  //     return;
+  //   }
+    
+  //   const deptTargetIncome = deptPreviousIncome * 1.1;
+    
+  //   // ✅ Output for debugging
+  //   console.log('📌 Latest Year:', latestDeptYear);
+  //   console.log('💰 Actual Income:', deptActualIncome);
+  //   console.log('🎯 Target Income (10% increase):', deptTargetIncome);
+    
+  //   // ✅ Draw chart (you can uncomment this when needed)
+  //   drawOverlayDualArcChartHelperIncome({
+  //     containerId: elementId,
+  //     workingDaysInfo: {
+  //       currentWorkingDayIndex: new Date().getMonth(),
+  //       totalWorkingDays: 12
+  //     },
+  //     gaugeValue: deptActualIncome,
+  //     gaugeTargetValue: deptTargetIncome,
+  //     gaugePlanned: deptTargetIncome * ((new Date().getMonth() + 1) / 12),
+  //     gaugeTargetStatus: deptActualIncome >= deptTargetIncome ? '✅' : '❌',
+  //     currentMonthValues: [],
+  //     markerOptions: { radius: 14, fontSize: 10 }
+  //   });
+    
+  //   }
 
-    if (adjustedMonth === 1) {
-      const relaxedThreshold = perMonthTarget * 0.5;
-      gaugeTargetStatus = gaugeValue >= relaxedThreshold ? '✅' : '❌';
-    } else if (adjustedMonth === 12) {
-      gaugeTargetStatus = gaugeValue >= gaugeTargetValue ? '✅' : '❌';
-    } else {
-      gaugeTargetStatus = gaugeValue >= plannedIncludingThisMonth ? '✅' : '❌';
-    }
-
-    setTimeout(() => {
+  // private async drawDepartmentGaugeOverlay(
+  //   groupID: string,
+  //   deptID: string,
+  //   incomeCategory: string,
+  //   elementId: string
+  // ): Promise<void> {
+  //   try {
+  //     const raw = await this.callApi('GetChargingIncomeMonthly', {
+  //       groupID,
+  //       deptID,
+  //       incomeCategory
+  //     }, true).toPromise();
+  // console.log("here");
+  //     // Step 1: unwrap <string>...</string>
+  //     const rawStr = typeof raw === 'string' ? raw.trim() : '';
+  //     const match = rawStr.match(/^<string[^>]*>([\s\S]*?)<\/string>$/);
+  //     const jsonText = match ? match[1] : rawStr;
+  
+  //     // Step 2: parse the JSON
+  //     const parsed = JSON.parse(jsonText);
+  //     if (!parsed?.success || !Array.isArray(parsed.data) || parsed.data.length < 2) {
+  //       console.warn('❌ Invalid data structure');
+  //       return;
+  //     }
+  
+  //     const rows = parsed.data.slice(1); // skip header row
+  
+  //     // Step 3: sum Charging per year
+  //     const incomeByYear: Record<string, number> = {};
+  
+  //     for (const row of rows) {
+  //       const [monthStr, charging] = row;
+  //       if (!monthStr || typeof charging !== 'number') continue;
+  //       const year = monthStr.split('-')[0];
+  //       incomeByYear[year] = (incomeByYear[year] ?? 0) + charging;
+  //     }
+  
+  //     const availableYears = Object.keys(incomeByYear).map(Number).filter(y => !isNaN(y));
+  //     const latestYear = Math.max(...availableYears);
+  //     const previousYear = latestYear - 1;
+  
+  //     const deptActualIncome = incomeByYear[latestYear.toString()];
+  //     const deptPreviousIncome = incomeByYear[previousYear.toString()];
+  
+  //     if (!deptActualIncome || !deptPreviousIncome) {
+  //       console.warn('❌ Missing Charging data for required years');
+  //       console.log('Available:', incomeByYear);
+  //       return;
+  //     }
+  
+  //     const deptTargetIncome = deptPreviousIncome * 1.1;
+  //     const currentMonthIndex = new Date().getMonth(); // 0–11
+  //     const plannedToDate = deptTargetIncome * ((currentMonthIndex + 1) / 12);
+  // console.log("here2");
+  //     // ✅ Draw the gauge
+  //     drawOverlayDualArcChartHelperIncome({
+  //       containerId: elementId,
+  //       workingDaysInfo: {
+  //         currentWorkingDayIndex: currentMonthIndex,
+  //         totalWorkingDays: 12
+  //       },
+  //       gaugeValue: deptActualIncome,
+  //       gaugeTargetValue: deptTargetIncome,
+  //       gaugePlanned: plannedToDate,
+  //       gaugeTargetStatus: deptActualIncome >= deptTargetIncome ? '✅' : '❌',
+  //       currentMonthValues: [],
+  //       markerOptions: { radius: 14, fontSize: 10 }
+  //     });
+  
+  //     console.log('📊 Gauge Data:', {
+  //       latestYear,
+  //       previousYear,
+  //       deptActualIncome,
+  //       deptPreviousIncome,
+  //       deptTargetIncome
+  //     });
+  
+  //   } catch (err) {
+  //     console.error('❌ Failed to process department monthly data:', err);
+  //   }
+  // }
+  
+  private async drawDepartmentGaugeOverlay(
+    groupID: string,
+    deptID: string,
+    incomeCategory: string,
+    elementId: string
+  ): Promise<void> {
+    try {
+      // 1. Wait for container (same approach as drawDualArcGaugeOverlay)
+      const waitForContainer = (id: string, retries = 10): Promise<HTMLElement | null> =>
+        new Promise((resolve) => {
+          let attempts = 0;
+          const interval = setInterval(() => {
+            const el = document.getElementById(id);
+            if (el || ++attempts >= retries) {
+              clearInterval(interval);
+              resolve(el);
+            }
+          }, 100);
+        });
+  
+      const container = await waitForContainer(elementId);
+      if (!container) {
+        console.warn(`❌ Container "${elementId}" not found after retrying.`);
+        return;
+      }
+  
+      console.debug(`[DeptGaugeOverlay] Fetching data for group ${groupID}, dept ${deptID}...`);
+      const raw = await this.callApi('GetChargingIncomeMonthly', {
+        groupID,
+        deptID,
+        incomeCategory
+      }, true).toPromise();
+  
+      // 2. Unwrap SOAP if needed (helperized)
+      const unwrapSoap = (input: any): any => {
+        if (typeof input === 'string') {
+          const match = input.trim().match(/^<string[^>]*>([\s\S]*?)<\/string>$/);
+          return JSON.parse(match ? match[1] : input);
+        }
+        return input;
+      };
+  
+      const parsed = unwrapSoap(raw);
+  
+      if (!parsed?.success || !Array.isArray(parsed.data) || parsed.data.length < 2) {
+        console.warn('❌ Invalid department monthly data');
+        return;
+      }
+  
+      const rows = parsed.data.slice(1); // skip header
+  
+      // 3. Aggregate yearly charging
+      const incomeByYear: Record<number, number> = {};
+      for (const row of rows) {
+        const [monthStr, charging] = row;
+        if (!monthStr || typeof charging !== 'number') continue;
+        const year = parseInt(monthStr.split('-')[0]);
+        if (!isNaN(year)) {
+          incomeByYear[year] = (incomeByYear[year] ?? 0) + charging;
+        }
+      }
+  
+      const years = Object.keys(incomeByYear).map(Number).filter(y => !isNaN(y));
+      if (years.length === 0) {
+        console.warn('❌ No valid yearly data for department');
+        return;
+      }
+  
+      const maxYear = Math.max(...years);
+      const previousYear = maxYear - 1;
+  
+      const deptActualIncome = incomeByYear[maxYear] ?? 0;
+      const deptPreviousIncome = incomeByYear[previousYear] ?? 0;
+  
+      if (!deptActualIncome || !deptPreviousIncome) {
+        console.warn('❌ Missing Charging data for department (current/previous year)');
+        return;
+      }
+  
+      // 4. Compute dynamic target (same as DualArc)
+      const deptTargetIncome = deptPreviousIncome * 1.1;
+  
+      const now = new Date();
+      const today = now.getDate();
+      const rawMonth = now.getMonth() + 1;
+      const adjustedMonth = today > 10 ? rawMonth - 1 : rawMonth - 2;
+      if (adjustedMonth < 1) {
+        console.warn(`⚠️ Adjusted month (${adjustedMonth}) is before January.`);
+        return;
+      }
+  
+      const perMonthTarget = deptTargetIncome / 12;
+      const plannedToDate = perMonthTarget * adjustedMonth;
+  
+      // 5. Determine status
+      let gaugeTargetStatus: string;
+      if (adjustedMonth === 1) {
+        const relaxedThreshold = perMonthTarget * 0.5;
+        gaugeTargetStatus = deptActualIncome >= relaxedThreshold ? '✅' : '❌';
+      } else if (adjustedMonth === 12) {
+        gaugeTargetStatus = deptActualIncome >= deptTargetIncome ? '✅' : '❌';
+      } else {
+        gaugeTargetStatus = deptActualIncome >= plannedToDate ? '✅' : '❌';
+      }
+  
+      // 6. Draw gauge
       drawOverlayDualArcChartHelperIncome({
         containerId: elementId,
         workingDaysInfo: {
           currentWorkingDayIndex: adjustedMonth,
           totalWorkingDays: 12
         },
-        gaugePlanned: plannedIncludingThisMonth,
-        gaugeTargetValue,
-        gaugeValue,
+        gaugeValue: deptActualIncome,
+        gaugeTargetValue: deptTargetIncome,
+        gaugePlanned: plannedToDate,
         gaugeTargetStatus,
         currentMonthValues: [],
-        markerOptions: { radius: 14, fontSize: 10 },
+        markerOptions: { radius: 14, fontSize: 10 }
       });
-    }, 100);
-
-  } catch (err) {
-    console.error('❌ Failed to draw dual arc overlay:', err);
-    const el = document.getElementById(elementId);
-    if (el) {
-      el.innerHTML = '⚠️ Error loading dual arc overlay';
+  
+      console.log('📊 Dept Gauge Data:', {
+        maxYear,
+        previousYear,
+        deptActualIncome,
+        deptPreviousIncome,
+        deptTargetIncome
+      });
+  
+    } catch (err) {
+      console.error('❌ Failed to process department monthly data:', err);
+      const el = document.getElementById(elementId);
+      if (el) {
+        el.innerHTML = '⚠️ Error loading department gauge';
+      }
     }
   }
-}
+  
+
+  
+  public async renderDepartmentButtons({
+    containerId = 'deptgroups',
+    chartContainerId = 'deptchart',
+    chartKind = 'bar',
+    incomeCategory = 'totalCharging'
+  }: {
+    containerId?: string;
+    chartContainerId?: string;
+    chartKind?: string | string[];
+    incomeCategory?: string;
+  }): Promise<void> {
+    const container = document.getElementById(containerId);
+    const chartContainer = document.getElementById(chartContainerId);
+    const chartKinds = Array.isArray(chartKind) ? chartKind : [chartKind];
+  
+    if (!container || !chartContainer) {
+      console.warn(`[renderDepartmentButtons] Missing container(s): #${containerId} or #${chartContainerId}`);
+      return;
+    }
+  
+    // Helpers for hover + active states
+    const applyHoverEffect = (btn: HTMLButtonElement) => {
+      btn.onmouseenter = () => {
+        btn.style.transform = 'scale(1.05)';
+        btn.style.boxShadow = '0 4px 10px rgba(0,0,0,0.3)';
+      };
+      btn.onmouseleave = () => {
+        if (!btn.classList.contains('btnact')) {
+          btn.style.transform = 'scale(1)';
+          btn.style.boxShadow = 'none';
+        }
+      };
+    };
+    const setActiveButton = (container: HTMLElement, btn: HTMLButtonElement) => {
+      container.querySelectorAll('button').forEach(b => {
+        b.classList.remove('btnact');
+        b.style.border = '1px solid rgba(0,0,0,.125)';
+        b.style.boxShadow = 'none';
+        b.style.transform = 'scale(1)';
+        // Reset bold
+        const nameSpan = b.querySelector('.btn-name');
+        if (nameSpan) (nameSpan as HTMLElement).style.fontWeight = 'normal';
+      });
+      btn.classList.add('btnact');
+      btn.style.border = '2px solid #888';
+      btn.style.boxShadow = '0 0 12px rgba(0,0,0,0.6)';
+      // Make the name bold
+      const nameSpan = btn.querySelector('.btn-name');
+      if (nameSpan) (nameSpan as HTMLElement).style.fontWeight = 'bold';
+    };
+  
+    try {
+      const raw = await this.callApi('GetChargingIncome', {
+        groupId: null,
+        deptId: null,
+        incomeCategory: incomeCategory || 'totalCharging'
+      }, true).toPromise();
+  
+      const clean = sanitizeSoapResponse(raw);
+      if (!Array.isArray(clean) || clean.length === 0) {
+        container.innerHTML = 'No department group data available.';
+        return;
+      }
+  
+      const groupMap = new Map<number, { groupId: number; groupName: string; lastPct: number | null }>();
+      for (const row of clean) {
+        const groupId = parseInt(row.GroupID);
+        const groupName = row.GroupName?.trim();
+        const pct = parseFloat(row.ChargingPct);
+        if (!groupId || !groupName || isNaN(pct)) continue;
+        if (!groupMap.has(groupId)) groupMap.set(groupId, { groupId, groupName, lastPct: pct });
+      }
+  
+      const sortedGroups = Array.from(groupMap.values())
+        .sort((a, b) => (b.lastPct ?? 0) - (a.lastPct ?? 0));
+  
+      container.innerHTML = '';
+      chartContainer.innerHTML = '';
+  
+      const totalButtons = sortedGroups.length;
+      const spacePercent = 4;
+      const totalSpace = (totalButtons - 1) * spacePercent;
+      const buttonWidth = (100 - totalSpace) / totalButtons;
+  
+      sortedGroups.forEach(({ groupId, groupName, lastPct }, index) => {
+        const button = document.createElement('button');
+        const pctLabel = lastPct != null && !isNaN(lastPct)
+          ? ` (${lastPct > 0 ? '+' : ''}${lastPct.toFixed(1)}%)`
+          : '';
+        const iconClass = this.getDeptIconClass(groupId);        
+        button.innerHTML = `<span class="btn-name">${groupName}</span><br>${pctLabel}`;
+        const color = this.getHeatColor(lastPct);
+        button.classList.add('mat-raised-button');
+        button.style.cssText = `
+          background-color: ${color};
+          width: ${buttonWidth}%;
+          display: inline-block;
+          margin-left: ${index < totalButtons - 1 ? spacePercent : 0}%;
+          border-radius: 10px;
+          padding: 10px 20px;
+          border: 1px solid rgba(0,0,0,.125);
+          color: #fff;
+          cursor: pointer;
+          transition: transform 0.2s ease, box-shadow 0.2s ease;
+        `;
+  
+        applyHoverEffect(button);
+  
+        button.onclick = async () => {
+          setActiveButton(container, button);
+  
+          chartContainer.innerHTML = '<p>טעינת נתוני מחלקה...</p>';
+          chartContainer.innerHTML = '';
+  
+          const wrapper = document.createElement('div');
+          wrapper.id = `wrapper-${groupId}`;
+          wrapper.style.marginBottom = '40px';
+          wrapper.style.textAlign = 'center';
+  
+          const heading = document.createElement('h2');
+          heading.textContent = groupName;
+          wrapper.appendChild(heading);
+  
+          const deptChartDiv = document.createElement('div');
+          deptChartDiv.id = `deptchart-${groupId}`;
+  
+          for (const kind of chartKinds) {
+            const chartId = `groupchart-${groupId}-${kind}`;
+            const chartDiv = document.createElement('div');
+            chartDiv.id = chartId;
+            chartDiv.classList.add('group-chart');
+            chartDiv.style.marginBottom = '30px';
+            wrapper.appendChild(chartDiv);
+          }
+  
+          const layoutWrapper = document.createElement('div');
+          if (groupId === 543) {
+            layoutWrapper.innerHTML = getDeptFeGroupHtml(groupId);
+            wrapper.appendChild(layoutWrapper);
+            const specialContainer = layoutWrapper.querySelector('#nbspecial');
+            if (specialContainer) specialContainer.innerHTML = '<p>טעינה...</p>';
+            this.loadNBSpecial('nbspecial', { 
+              filters: [{ column: 'משלם', value: 'מוסד לביטוח לאומי - יולדו' }],
+              sortBy: 'count',
+              sortAsc: false,
+              showTotals: true,
+              showSearch: true,
+              tableOptions: { showRowNumber: false, allowHtml: true }
+            });
+          } else {
+            layoutWrapper.innerHTML = getDeptGroupHtml(groupId);
+          }
+  
+          deptChartDiv.appendChild(layoutWrapper);
+          wrapper.appendChild(deptChartDiv);
+          chartContainer.appendChild(wrapper);
+  
+          const deptRows = clean.filter(r => parseInt(r.GroupID) === groupId);
+          const firstDepts: any[] = [];
+          const seen = new Set<string>();
+          for (const row of deptRows) {
+            const id = row.DeptID?.toString();
+            const name = row.DeptName?.trim();
+            const percent = parseFloat(row.ChargingPct);
+            if (!id || !name || seen.has(id) || isNaN(percent)) continue;
+            seen.add(id);
+            firstDepts.push({ id, name, percent });
+          }
+          firstDepts.sort((a, b) => (b.percent ?? 0) - (a.percent ?? 0)); 
+  
+          const deptDynamic = document.getElementById(`dept-dynamic-${groupId}`);
+          if (!deptDynamic) {
+            console.warn(`Missing dynamic container: dept-dynamic-${groupId}`);
+            return;
+          }
+          deptDynamic.innerHTML = '';
+  
+          const buttonBar = document.createElement('div');
+          const chartZone = document.createElement('div');
+          deptChartDiv.appendChild(buttonBar);
+          deptChartDiv.appendChild(chartZone);
+  
+          firstDepts.forEach((dept: any, i) => {
+            const deptButton = document.createElement('button');
+            const pctLabel = dept.percent != null && !isNaN(dept.percent)
+              ? ` (${dept.percent > 0 ? '+' : ''}${dept.percent.toFixed(1)}%)`
+              : '';
+            const iconClass = this.getDeptIconClass(dept.id);            
+            deptButton.innerHTML = `<span class="btn-name">${dept.name}</span><br>${pctLabel}`;
+            deptButton.title = `${dept.percent}%`;
+            deptButton.classList.add('mat-raised-button');
+            deptButton.style.cssText = `
+              margin: 6px;
+              padding: 8px 16px;
+              border-radius: 6px;
+              background-color: ${this.getHeatColor(dept.percent)};
+              color: #fff;
+              border: 1px solid rgba(0,0,0,.125);
+              transition: transform 0.2s ease, box-shadow 0.2s ease;
+            `;
+  
+            applyHoverEffect(deptButton);
+  
+            deptButton.onclick = () => {
+              setActiveButton(buttonBar, deptButton);
+  
+              chartZone.querySelectorAll('[id^="dept-wrapper-"]').forEach(el => el.remove());
+              const wrapperId = `dept-wrapper-${dept.id}`;
+              const deptWrapper = document.createElement('div');
+              deptWrapper.id = wrapperId;
+              deptWrapper.innerHTML = getDepartmentLayoutHtml(dept.id, dept.name);
+              chartZone.appendChild(deptWrapper);
+  
+              const dynamicArea = deptWrapper.querySelector(`#dept-dynamic-${dept.id}`);
+              if (!dynamicArea) return;
+              dynamicArea.innerHTML = '';
+  
+              this.renderAllDepartmentCharts(dept, { id: groupId, name: groupName });
+            };
+  
+            buttonBar.appendChild(deptButton);
+            if (i === 0) deptButton.click();
+          });
+        };
+  
+        container.appendChild(button);
+      });
+    } catch (err) {
+      console.error('[renderDepartmentButtons] ❌ Error rendering buttons:', err);
+      container.innerHTML = 'Error loading department buttons.';
+    }
+  }
+  
+  
+
+
+
+  public getHeatColor(change: string | number | null): string {
+    let val: number | null = null;
+
+    if (typeof change === 'string') {
+      val = parseFloat(change.replace('%', '').trim());
+    } else if (typeof change === 'number') {
+      val = change;
+    }
+
+    if (val === null || isNaN(val)) return '#ccc'; // fallback
+
+    if (val > 20) return '#006400';
+    if (val > 10) return '#228B22';
+    if (val > 0) return '#90EE90';
+    if (val === 0) return '#e0e0e0';
+    if (val > -10) return '#f08080';
+    if (val > -20) return '#ff8c00';
+    return '#8b0000';
+  }
+
+  public darkenColor(hex: string, percent: number): string {
+    const amt = Math.round(2.55 * percent);
+    return hex.replace(/^#/, '').replace(/../g, (c) =>
+      ('0' + Math.max(0, parseInt(c, 16) - amt).toString(16)).slice(-2)
+    ).padStart(6, '0').replace(/^(.{6})$/, '#$1');
+  }
+
+
+
+  public async renderAllDepartmentCharts(
+    dept: { name: string; id: number },
+    group: { name: string; id: number }
+  ): Promise<void> {
+    const suffix = `-${dept.id}`; // Used for DOM element IDs
+
+    // ✅ Ensure layout exists for the department (by ID)
+    await this.ensureDepartmentChartLayoutExists(dept.id, dept.name);
+
+    // ✅ Render main department chart using ID-based API
+    await this.renderDepartmentChart(
+      { name: dept.name, id: dept.id.toString() },
+      `chart${suffix}`,
+      { name: group.name, id: group.id.toString() },
+      {
+        includeTimeSeries: true,
+        timeSeriesElementId: `time${suffix}`,
+        includeGaugeOverlay: true,
+        gaugeElementId: `gauge${suffix}`,
+        incomeCategory: 'totalCharging'
+      }
+    );
+
+    // ✅ Department-level gauge/summary tables
+    //this.drawDualArcGaugeOverlay(`arc_chart${suffix}`);
+    this.drawDepartmentGaugeOverlay(group.id.toString(), dept.id.toString(), 'TotalCharging', `arc_chart${suffix}` );
+    this.loadYearlyIncomeDataCombinedDept(`tabled_chart${suffix}`, dept.id, group.id, 'totalCharging', 5, 'full');
+//    this.loadYearlyIncomeDataCombinedDept(`tabled_chart2${suffix}`, dept.id, group.id, 'totalCharging', 2, 'full');
+
+    // ✅ Income trends (bar + line)
+    await this.drawIncomeChartsDept(dept.id, group.id, suffix);
+
+    // ✅ Operational trends (bar + line)
+    //await this.drawOperationsChartsDept(dept.id, group.id, suffix);
+    const barChartOptions = {grouped: true, groupByYear: true };
+    
+    await this.drawOperationsChartsDept(dept.id, group.id, suffix, barChartOptions);
+    
+
+
+    // ✅ Year-over-year income comparison for the department (now using IDs)
+    await this.drawIncomeDeptsLastMonthChartVDept(group.id, dept.id, `incomedeptslastmonthv${suffix}`);
+
+    // ⚠️ Growth trend (update if you build endpoint that accepts ID)
+    this.loadGrowthTrendChartDept(dept.id, group.id, `growth_trend_chart${suffix}`);
+  }
 
 
 
 
-private readonly yearlyIncomeTableHeaders: { [key: string]: string } = {
-  Year: 'שנה',
-  TotalCharging: 'הכנסות (₪)',
-  Change: 'גידול',
-  ChangePercent: 'גידול (%)'
-};
+  
 
+  private async ensureDepartmentChartLayoutExists(deptId: number, name: string): Promise<void> {
+    const wrapperId = `dept-wrapper-${deptId}`;
+    const chartZone = document.getElementById(`deptchart-${deptId}`) || document.getElementById('deptchart');
+  
+    if (!chartZone) return;
+  
+    if (!document.getElementById(wrapperId)) {
+      const wrapper = document.createElement('div');
+      wrapper.id = wrapperId;
+      wrapper.innerHTML = getDepartmentLayoutHtml(deptId, name);
+      chartZone.appendChild(wrapper);
+    }
+  }
 
+  
+  /**
+   * Draws income bar and line charts for a specific department.
+   *
+   * @param deptId - Department ID (string)
+   * @param groupId - Group ID (string)
+   * @param suffix - Optional element ID suffix (used to build chart container IDs)
+   */
+  public async drawIncomeChartsDept(
+    deptId: number,
+    groupId: number,
+    barChartOptions: any = {},
+    lineChartOptions: any = {}
+  ): Promise<void> {
+    try {
+      // Log the incoming params
+      //console.log(`[drawIncomeCharts] DeptID: ${deptId}, GroupID: ${groupId}`);
 
-loadYearlyIncomeDataCombined(
-  containerId: string,
-  yearsToShow?: number,
-  tableMode: 'full' | 'matrix' = 'full'
-): void {
-  const container = document.querySelector(`#${containerId}`);
-  if (!container) return;
+      // Build the URL dynamically using the environment variable and parameters
+      const requestUrl = `${environment.url}/GetChargingIncomeMonthly?groupId=${groupId}&deptId=${deptId}&incomeCategory=totalCharging`;
 
-  const params = {
-    change: 1,
-    changeperc: 1
-  };
+      // Fetch the raw data from the API
+      const rawData = await this.http.get(requestUrl, { responseType: 'text' }).toPromise();
+      //console.log('[drawIncomeCharts] Raw API Data:', rawData); // Log the raw data
 
-  this.callApi('GetYearlyIncomeFYLData', params, true).subscribe(
-    (response: any[]) => {
-      if (!Array.isArray(response) || response.length === 0) {
-        container.innerHTML = '<p>No data available.</p>';
+      // Sanitize and clean the response
+      const cleanData = sanitizeSoapResponseDept(rawData);
+      //console.log('[drawIncomeCharts] Cleaned Data:', cleanData); // Log sanitized data
+
+      // Process the data (assuming processYearlyData is already implemented)
+      const processedData = this.processYearlyDataDept(cleanData);
+      //console.log('[drawIncomeCharts] Processed Data:', processedData);
+
+      // Convert Hebrew months to numbers
+      const numericMonthData = convertHebrewMonthsToNumbers(processedData);
+      this.cachedChartData.income = numericMonthData;
+      //console.log('[drawIncomeCharts] Numeric Month Data:', numericMonthData);
+
+      // Filter out the current month data
+      const filteredData = filterOutCurrentMonth(numericMonthData);
+      //console.log('[drawIncomeCharts] Filtered Data:', filteredData);
+
+      // Check if filteredData is an object with at least one year with data
+      if (!filteredData || Object.keys(filteredData).length === 0) {
+        //console.warn('[drawIncomeCharts] No valid data to display after filtering');
         return;
       }
 
-      // Sort descending by year
-      response.sort((a, b) => b.Year - a.Year);
 
-      const data = yearsToShow ? response.slice(0, yearsToShow) : response;
-      const headerMap: { [key: string]: string } = this.yearlyIncomeTableHeaders || {};
 
-      let html = '<table class="table table-bordered table-striped">';
+      //monthly by years
+      // public async drawOperationsCharts(barChartOptions: any = {}, lineChartOptions: any = {}): Promise<void> {
+      //   await this.chartsReady;
+      //   const rawData = await this.http.get(this.DATA_SOURCES.OPERATIONS, { responseType: 'text' }).toPromise();    
+      //   const cleanData = sanitizeSoapResponse(rawData);    
+      //   const yearsData = this.processYearlyData(cleanData); 
+      //   const processedData = this.processYearlyData(cleanData);
+      //   const numericMonthData = convertHebrewMonthsToNumbers(processedData);   
+      //   this.cachedChartData.operations = numericMonthData;
+      //   const filteredData = filterOutCurrentMonth(numericMonthData);    
+      //   const filterLastNData = filterLastN(filteredData ,5);    
+      //   this.drawBarChart(filterLastNData, 'bar_chart', barChartOptions);
 
-      if (tableMode === 'full') {
-        const preferredOrder = ['Year', 'TotalCharging', 'Change', 'ChangePercent'];
-        const allKeys = new Set<string>();
-        data.forEach(row => Object.keys(row).forEach(key => allKeys.add(key)));
+      // }
 
-        const columns = Array.from(allKeys).sort((a, b) => {
-          const ia = preferredOrder.indexOf(a);
-          const ib = preferredOrder.indexOf(b);
-          if (ia === -1 && ib === -1) return a.localeCompare(b);
-          if (ia === -1) return 1;
-          if (ib === -1) return -1;
-          return ia - ib;
-        });
 
-        html += '<thead><tr>';
-        columns.forEach(col => {
-          html += `<th>${headerMap[col] || col}</th>`;
-        });
-        html += '</tr></thead><tbody style="direction:ltr;">';
+      // 📊 Draw Income Bar Chart
+      console.log('[drawIncomeCharts] Triggering Bar chart drawing...');
+      await this.fetchDataAndDrawDirect(
+        filteredData,
+        (data: any) => data, // Identity function to return the data as is
+        this.CHART_TYPES.BAR,
+        `bar_chart2-${deptId}`,
+        { ...barChartOptions, grouped: false, groupByYear: false } // For cumulative data
+      );
 
-        data.forEach(row => {
-          html += '<tr>';
-          columns.forEach(col => {
-            let value = row[col];
-            if (col === 'TotalCharging' && value != null) {
-              value = formatNumberShort(value);
-            } else if (col === 'Change' && value != null && !isNaN(value)) {
-              const sign = value > 0 ? '+' : value < 0 ? '-' : '';
-              value = sign + formatNumberShort(Math.abs(value));
-            }
-            html += `<td>${value != null ? value : ''}</td>`;
-          });
-          html += '</tr>';
-        });
+      console.log('[drawIncomeCharts] Bar chart2 drawn successfully');
 
-        html += '</tbody>';
+      await this.fetchDataAndDrawDirectDept(
+        filteredData,
+        (data: any) => data, // Identity function to return the data as is
+        this.CHART_TYPES.BAR,
+        `bar_chart-${deptId}`,
+        { ...barChartOptions, grouped: false, groupByYear: false } // For cumulative data
+      );
+      console.log('[drawIncomeCharts] Bar chart1 drawn successfully');
+
+
+      // 📈 Draw Income Line Chart
+      // console.log('[drawIncomeCharts] Triggering Line chart drawing...');
+      // await this.fetchDataAndDrawDirect(
+      //   filteredData,
+      //   (data: any) => data, // Identity function to return the data as is
+      //   this.CHART_TYPES.LINE,
+      //   `bar_chart-${deptId}`,
+      //   lineChartOptions
+      // );
+
+      console.log('[drawIncomeCharts] Line chart drawn successfully');
+    } catch (err) {
+      console.error('[drawIncomeCharts] Error occurred:', err);
+    }
+  }
+
+
+
+
+  private processYearlyDataDept(data: any): any {
+    const rawData = data.data;
+    //console.log('[processYearlyData] Raw Data:', rawData); // Log raw data to inspect its structure
+
+    const yearMonthMap: any = {};
+
+    // Start processing from index 1 to skip the header row
+    for (let i = 1; i < rawData.length; i++) {
+      const entry = rawData[i];  // Get each row (excluding header)
+      //console.log('[processYearlyData] Entry:', entry);  // Log each entry to inspect its values
+
+      const [month, charging, quantity] = entry;  // Destructure the entry into month, charging, and quantity
+
+      // Ensure the month and charging are valid before processing
+      if (month && charging !== undefined && quantity !== undefined) {
+        const [year, monthNumber] = month.split('-');  // Split the month string (e.g., '2022-01')
+        if (!yearMonthMap[year]) {
+          yearMonthMap[year] = {};
+        }
+
+        // Store the charging value for this year-month combination
+        yearMonthMap[year][monthNumber] = charging;
       } else {
-        const metrics = ['TotalCharging', 'Change', 'ChangePercent'];
-
-        html += '<thead><tr><th></th>';
-        data.forEach(year => {
-          html += `<th>${year.Year}</th>`;
-        });
-        html += '</tr></thead><tbody>';
-
-        metrics.forEach(metric => {
-          html += `<tr><td>${headerMap[metric] || metric}</td>`;
-          data.forEach(year => {
-            let value = year[metric];
-            if (metric === 'TotalCharging' && value != null) {
-              value = formatNumberShort(value);
-            } else if (metric === 'Change' && value != null && !isNaN(value)) {
-              const sign = value > 0 ? '+' : value < 0 ? '-' : '';
-              value = sign + formatNumberShort(Math.abs(value));
-            }
-            html += `<td>${value != null ? value : ''}</td>`;
-          });
-          html += '</tr>';
-        });
-
-        html += '</tbody>';
+        console.warn(`[processYearlyData] Invalid entry at index ${i}:`, entry);  // Log invalid entries
       }
-
-      html += '</table>';
-      container.innerHTML = html;
-    },
-    () => {
-      container.innerHTML = '<p class="text-danger">Failed to load data.</p>';
-    }
-  );
-}
-
-public async getChargingGroupButtons(): Promise<{ department: string, color: string }[]> {
-  try {
-    // console.log('[getChargingGroupButtons] Fetching data from API...');
-
-    const raw = await this.http
-      .get(`${environment.url}/GetChargingGrouspDataEx?groupName=&deptName=`, {
-        responseType: 'text',
-      })
-      .toPromise();
-
-    // console.log('[getChargingGroupButtons] Raw response:', raw);
-
-    const cleanJson = sanitizeSoapResponse(raw);
-    // console.log('[getChargingGroupButtons] Clean JSON after sanitizeSoapResponse:', cleanJson);
-
-    if (!Array.isArray(cleanJson)) {
-      //console.error('[getChargingGroupButtons] Invalid response format: expected array');
-      return [];
     }
 
-    if (cleanJson.length === 0) {
-      //onsole.warn('[getChargingGroupButtons] Response array is empty');
-      return [];
-    }
+    //console.log('[processYearlyData] Year-Month Map:', yearMonthMap);  // Log the processed map
 
-    const allYears = cleanJson.map((r: any) => +r.Year).filter(y => !isNaN(y));
-    // console.log('[getChargingGroupButtons] All years found:', allYears);
-
-    if (allYears.length === 0) {
-      //console.warn('[getChargingGroupButtons] No valid years found in data');
-      return [];
-    }
-
-    const latestYear = Math.max(...allYears);
-    // console.log('[getChargingGroupButtons] Latest year selected:', latestYear);
-
-    const filtered = cleanJson.filter((r: any) => +r.Year === latestYear);
-    //console.log(`[getChargingGroupButtons] Filtered rows for ${latestYear}:`, filtered);
-
-    const map: { [dept: string]: string } = {};
-
-    filtered.forEach((r: any) => {
-      const dept = r.Department || '(unknown)';
-      const change = r.ChangePercent;
-      const val = parseFloat(change);
-      let color = '#ccc';
-
-      if (!isNaN(val)) {
-        if (val > 20) color = '#006400';
-        else if (val > 10) color = '#228B22';
-        else if (val > 0)  color = '#90EE90';
-        else if (val === 0) color = '#e0e0e0';
-        else if (val > -10) color = '#f08080';
-        else if (val > -20) color = '#ff8c00';
-        else color = '#8b0000';
+    // Convert to YearlyData-like format
+    const transformedData = Object.keys(yearMonthMap).map(year => ({
+      Year: {
+        value: parseInt(year, 10),
+        Months: Object.entries(yearMonthMap[year]).map(([month, val]) => ({
+          name: month,
+          y: val
+        }))
       }
-
-      map[dept] = color;
-    });
-
-    const buttons = Object.keys(map).map(dept => ({
-      department: dept,
-      color: map[dept],
-      class: 'dept-button'
     }));
 
-    // console.log('[getChargingGroupButtons] Final department buttons:', buttons);
-    return buttons;
-  } catch (err) {
-    //console.error('[getChargingGroupButtons] Error fetching or processing data:', err);
-    return [];
-  }
-}
+    //console.log('[processYearlyData] Transformed Data:', transformedData);  // Log transformed data
 
+    // Filter recent offsets and sanitize data
+    const limitedData = filterRecentOffsets<any>(transformedData, y => y.Year.value, 4);
+    //console.log('[processYearlyData] Limited Data (Filtered):', limitedData);
 
-
- /**
-   * Loads department data and renders a chart for a specific department
-   */
-
-
-/**
-   * Renders a bar chart for a single department using consistent SOAP-style API response parsing
-   */
-public async renderDepartmentChart(
-  deptName: string,
-  elementId: string,
-  groupName?: string,
-  options: {
-    includeTimeSeries?: boolean;
-    timeSeriesElementId?: string;
-    includeGaugeOverlay?: boolean;
-    gaugeElementId?: string;
-  } = {}
-): Promise<void> {
-  await this.chartsReady;
-
-  try {
-    const rawResponse = await this.http.get(
-      `${environment.url}/GetChargingGrouspDataEx?groupName=${encodeURIComponent(groupName || '')}&deptName=${encodeURIComponent(deptName)}`,
-      { responseType: 'text' }
-    ).toPromise();
-
-    const cleanJson: any = sanitizeSoapResponse(rawResponse);
-    if (!Array.isArray(cleanJson)) {
-      console.error('Invalid data format for department chart:', cleanJson);
-      return;
-    }
-
-    const grouped: { [year: string]: number } = {};
-    const allYears: Set<string> = new Set();
-
-    cleanJson.forEach((row: any) => {
-      const year = row.year;
-      const total = row.totalCharging || 0;
-      grouped[year] = total;
-      allYears.add(year);
+    const years: any = {};
+    limitedData.forEach((yearObject: any) => {
+      const yearValue = yearObject.Year.value;
+      years[yearValue] = {};
+      yearObject.Year.Months.forEach((month: any) => {
+        if (this.valueExists(month.y)) {
+          const monthNumber = parseInt(month.name, 10);
+          years[yearValue][monthNumber] = parseInt(month.y, 10);
+        }
+      });
     });
 
-    const sortedYears = Array.from(allYears).sort();
-    if (sortedYears.length < 2) {
-      const el = document.getElementById(elementId);
-      if (el) el.innerHTML = 'אין מספיק נתונים להצגה';
-      return;
-    }
-
-    const prevYear = sortedYears[sortedYears.length - 2];
-    const currYear = sortedYears[sortedYears.length - 1];
-
-    const formatShort = (num: number): string => {
-      if (num >= 1_000_000) return (num / 1_000_000).toFixed(1) + 'M';
-      if (num >= 1_000) return (num / 1_000).toFixed(0) + 'K';
-      return num.toString();
-    };
-
-    const prevVal = grouped[prevYear] || 0;
-    const currVal = grouped[currYear] || 0;
-
-    const chartData = google.visualization.arrayToDataTable([
-      ['שנה', prevYear, { role: 'annotation' }, currYear, { role: 'annotation' }],
-      [deptName, prevVal, formatShort(prevVal), currVal, formatShort(currVal)],
-    ]);
-
-    const optionsBar = {
-      title: `סה"כ חיובים - ${deptName}`,
-      chartArea: { width: '70%', height: '80%' },
-      legend: { position: 'top' },
-      isStacked: true,
-      bar: { groupWidth: '75%' },
-      annotations: {
-        alwaysOutside: true,
-        textStyle: { fontSize: 12, color: '#444' },
-      },
-      vAxis: { format: 'short', minValue: 0 },
-      hAxis: {
-        slantedText: true,
-        slantedTextAngle: 45,
-      },
-      colors: ['#6ba1f8', '#5ed175'],
-    };
-
-    const container = document.getElementById(elementId);
-    if (container) {
-      const chart = new google.visualization.BarChart(container);
-      chart.draw(chartData, optionsBar);
-    }
-
-    // 🔁 Optional: Time-Series Chart (e.g. monthly trend)
-    if (options.includeTimeSeries && options.timeSeriesElementId) {
-      await this.drawDepartmentTimeSeriesChart(deptName, options.timeSeriesElementId, groupName);
-    }
-
-    // ⭕ Optional: Gauge Overlay (e.g. monthly target vs actual)
-    if (options.includeGaugeOverlay && options.gaugeElementId) {
-      await this.drawDepartmentGaugeOverlay(deptName, options.gaugeElementId, groupName);
-    }
-
-  } catch (err) {
-    console.error('Failed to render department chart:', err);
-    const el = document.getElementById(elementId);
-    if (el) el.innerHTML = 'שגיאה בטעינת הנתונים';
-  }
-}
-
-private async drawDepartmentTimeSeriesChart(deptName: string, elementId: string, groupName?: string): Promise<void> {
-  const raw = await this.callApi('GetChargingChartMonthlyDataEExx', {
-    fromMonth: '',
-    toMonth: '',
-    groupName: groupName || '',
-    deptName,
-    format: 'google',
-    groupBy: 'month',
-    calcMode: 'absolute'
-  }, true).toPromise();
-
-  const clean = sanitizeSoapResponse(raw);
-  const data = convertHebrewMonthsToNumbers(clean?.data || []);
-  const processed = filterOutCurrentMonth(data);
-  const filtered = filterLastN(processed, 12); // last 12 months
-  const label = `${deptName} - מגמת חודשים`;
-  const options = {
-    title: label,
-    chartArea: { width: '80%', height: '70%' },
-    colors: ['#3366cc'],
-    curveType: 'function',
-    legend: { position: 'none' },
-    vAxis: { format: 'short' },
-    hAxis: {
-      slantedText: true,
-      slantedTextAngle: 45,
-    }
-  };
-
-  this.drawLineChart(filtered, elementId, options);
-}
-
-private async drawDepartmentGaugeOverlay(deptName: string, elementId: string, groupName?: string): Promise<void> {
-  const raw = await this.callApi('GetYearlyIncomeFYLData', {
-    groupName: groupName || '',
-    deptName,
-    change: 1,
-    changeperc: 1
-  }, true).toPromise();
-
-  const clean = Array.isArray(raw) ? raw : [];
-  const years = clean.map(r => r.Year);
-  const maxYear = Math.max(...years);
-  const prevYear = maxYear - 1;
-
-  const current = clean.find(r => r.Year === maxYear);
-  const previous = clean.find(r => r.Year === prevYear);
-
-  if (!current || !previous) return;
-
-  const value = current.TotalCharging;
-  const target = previous.TotalCharging * 1.1;
-
-  drawOverlayDualArcChartHelperIncome({
-    containerId: elementId,
-    workingDaysInfo: { currentWorkingDayIndex: new Date().getMonth(), totalWorkingDays: 12 },
-    gaugeValue: value,
-    gaugeTargetValue: target,
-    gaugePlanned: target * ((new Date().getMonth() + 1) / 12),
-    gaugeTargetStatus: value >= target ? '✅' : '❌',
-    currentMonthValues: [],
-    markerOptions: { radius: 14, fontSize: 10 },
-  });
-}
-
-
-
-
-public getHeatColor(change: string | number | null): string {
-  let val: number | null = null;
-
-  if (typeof change === 'string') {
-    val = parseFloat(change.replace('%', '').trim());
-  } else if (typeof change === 'number') {
-    val = change;
+    //console.log('[processYearlyData] Years Data:', years);  // Log final years data
+    return sanitizeAndFilterYearMonthData(years);
   }
 
-  if (val === null || isNaN(val)) return '#ccc'; // fallback
-
-  if (val > 20) return '#006400';
-  if (val > 10) return '#228B22';
-  if (val > 0)  return '#90EE90';
-  if (val === 0) return '#e0e0e0';
-  if (val > -10) return '#f08080';
-  if (val > -20) return '#ff8c00';
-  return '#8b0000';
-}
 
 
-public async renderDepartmentButtons({
-  containerId = 'deptgroups',
-  chartContainerId = 'deptchart',
-  chartKind = 'bar'
-}: {
-  containerId?: string;
-  chartContainerId?: string;
-  chartKind?: string | string[];
-}): Promise<void> {
-  const container = document.getElementById(containerId);
-  const chartContainer = document.getElementById(chartContainerId);
-  const chartKinds = Array.isArray(chartKind) ? chartKind : [chartKind];
-  // const chartKinds: (
-  //   'bar' | 'line' | '3y' | 'op3y' | 'quarterly' |
-  //   'timeavg' | 'gauge' | 'exploitation' | 'dualgauge' | 'combined'
-  // )[] = Array.isArray(chartKind) ? chartKind : [chartKind];
-  
-  if (!container || !chartContainer) {
-    console.warn(`[renderDepartmentButtons] Missing container(s): #${containerId} or #${chartContainerId}`);
-    return;
-  }
+  /**
+   * Draws a bar chart comparing current year vs. previous year income for a department.
+   * Uses department and group IDs to fetch data from GetChargingIncome API.
+   * 
+   * @param groupId Group ID (string)
+   * @param deptId Department ID (string)
+   * @param elementId Target DOM element ID to render the chart
+   */
+  public async drawIncomeDeptsLastMonthChartVDept(
+    groupId: number,
+    deptId: number,
+    elementId: string
+  ): Promise<void> {
+    await this.chartsReady;
 
-  try {
-    const buttons = await this.getChargingGroupButtons();
-    if (!buttons.length) {
-      container.innerHTML = 'No department data available.';
-      return;
-    }
+    try {
+      const raw = await this.callApi('GetChargingIncome', {
+        groupId,
+        deptId,
+        incomeCategory: 'totalCharging'
+      }, true).toPromise();
 
+      const data = Array.isArray(raw) ? raw : [];
+      const container = document.getElementById(elementId);
 
-    
-    container.innerHTML = '';
-    chartContainer.innerHTML = '';
+      if (!data.length || !container) {
+        if (container) container.innerHTML = 'אין מספיק נתונים להצגה';
+        return;
+      }
 
-    const totalButtons = buttons.length;
-    const spacePercent = 4;
-    const totalSpace = (totalButtons - 1) * spacePercent;
-    const buttonWidth = (100 - totalSpace) / totalButtons;
+      const grouped = new Map<string, Record<string, number>>();
+      const allYears = new Set<string>();
 
-    let activeButton: HTMLButtonElement | null = null;
+      data.forEach(item => {
+        const dept = item.DeptName || item.deptName || '';
+        const year = item.Year;
+        const val = item.TotalCharging ?? 0;
 
-    buttons.forEach(({ department, color }, index) => {
-      const button = document.createElement('button');
-      button.textContent = department;
+        if (!grouped.has(dept)) grouped.set(dept, {});
+        grouped.get(dept)![year] = val;
+        allYears.add(year);
+      });
 
-      // Style
-      button.style.backgroundColor = color;
-      button.style.width = `${buttonWidth}%`;
-      button.style.display = 'inline-block';
-      button.style.marginLeft = index < totalButtons - 1 ? `${spacePercent}%` : '0';
-      button.style.borderRadius = '10px';
-      button.style.padding = '10px 20px';
-      button.style.borderColor = '#34495e';
-      button.style.border = 'none';
-      button.style.boxSizing = 'border-box';
-      button.style.overflow = 'hidden';
-      button.style.whiteSpace = 'nowrap';
-      button.style.textOverflow = 'ellipsis';
-      button.style.color = '#fff';
-      button.style.cursor = 'pointer';
-      button.style.transition = 'background-color 0.3s';
+      const sortedYears = Array.from(allYears).sort();
+      if (sortedYears.length < 2) {
+        container.innerHTML = 'אין מספיק שנים להשוואה';
+        return;
+      }
 
-      const hoverColor = this.darkenColor(color, 10);
-      button.onmouseenter = () => button.style.backgroundColor = hoverColor;
-      button.onmouseleave = () => {
-        if (button !== activeButton) {
-          button.style.backgroundColor = color;
-        }
+      const [prevYear, currYear] = sortedYears.slice(-2);
+
+      const formatShort = (num: number): string =>
+        num >= 1_000_000 ? (num / 1_000_000).toFixed(1) + 'M' :
+          num >= 1_000 ? (num / 1_000).toFixed(0) + 'K' : num.toString();
+
+      const rows = Array.from(grouped.entries()).map(([deptName, yearMap]) => {
+        const prev = yearMap[prevYear] || 0;
+        const curr = yearMap[currYear] || 0;
+        return [deptName, prev, formatShort(prev), curr, formatShort(curr), curr]; // extra value for sorting
+      }).sort((a, b) => (b[5] as number) - (a[5] as number));
+
+      const chartData = google.visualization.arrayToDataTable([
+        ['קבוצה', prevYear, { role: 'annotation' }, currYear, { role: 'annotation' }],
+        ...rows.map(r => r.slice(0, 5)) // remove raw curr before passing to chart
+      ]);
+
+      const options = {
+        title: 'הכנסות לפי קבוצות - שנה מול שנה קודמת',
+        chartArea: { width: '70%', height: '80%' },
+        legend: { position: 'top' },
+        bar: { groupWidth: '75%' },
+        annotations: { alwaysOutside: true, textStyle: { fontSize: 12, color: '#444' } },
+        vAxis: { format: 'short', minValue: 0 },
+        hAxis: { slantedText: true, slantedTextAngle: 45 },
+        colors: ['#6ba1f8', '#5ed175']
       };
 
-      button.onclick = async () => {
-        const groupName = department;
-        chartContainer.innerHTML = '<p>Loading department data...</p>';
-      ;
+      const chart = new google.visualization.ColumnChart(container);
+      chart.draw(chartData, options);
 
-        const groupSlug = groupName.toLowerCase().replace(/\s+/g, '-');
+    } catch (err) {
+      console.error('❌ Failed to draw income chart:', err);
+      const el = document.getElementById(elementId);
+      if (el) el.innerHTML = 'שגיאה בטעינת הנתונים';
+    }
+  }
 
-        // Create wrapper
-        const wrapper = document.createElement('div');
-        wrapper.id = `wrapper-${groupSlug}`;
-        wrapper.style.marginBottom = '40px';
-        wrapper.style.textAlign = 'center';
-        
-        // Add group title
-        const heading = document.createElement('h2');
-        heading.textContent = groupName;
-        wrapper.appendChild(heading);
-        
-        // ⬇ Dynamically create chart containers BEFORE drawing
-        for (const kind of chartKinds) {
-          const chartId = `groupchart-${groupSlug}-${kind}`;
-          const chartDiv = document.createElement('div');
-          chartDiv.id = chartId;
-          chartDiv.classList.add('group-chart');
-          chartDiv.style.marginBottom = '30px';
-          wrapper.appendChild(chartDiv);
+
+  /**
+   * Draws operational bar chart for a specific department.
+   * Fetches and processes operational data, and renders a Google BarChart.
+   * 
+   * @param deptId - Department ID (string) – used for API filtering
+   * @param groupId - Group ID (string) – optional group filter
+   * @param elementIdSuffix - Element ID suffix for chart container (e.g. '-543')
+   * @param barChartOptions - Optional chart styling and config options
+   */
+  public async drawOperationsChartsDept(
+    deptId: number,
+    groupId: number,
+    elementIdSuffix: string = '',
+    barChartOptions: any = {}
+  ): Promise<void> {
+    await this.chartsReady;
+  
+    try {
+      // Fetch raw data from API
+      const raw = await this.callApi('GetChargingIncomeMonthly', {
+        deptId,
+        groupId,
+        incomeCategory: 'totalCharging'
+      }, true).toPromise();
+      
+      // Debug log to inspect the raw data
+      //console.log('Raw data received:', JSON.stringify(raw, null, 2));
+  
+      // Ensure raw data is an array and parse it
+      const parsed = Array.isArray(raw) ? raw : [];
+      if (!parsed.length) {
+        const el = document.getElementById(`bar_chart-${elementIdSuffix}`);
+        if (el) el.innerHTML = 'No data available.';
+        return;
+      }
+  
+      // Debug log to inspect the parsed data
+      //console.log('Parsed data:', JSON.stringify(parsed, null, 2));
+  
+      // Convert Hebrew months to numeric values
+      const numericMonthData = convertHebrewMonthsToNumbers(parsed);
+      if (!Array.isArray(numericMonthData)) {
+        throw new Error('Converted month data is not an array');
+      }
+  
+      // Filter out current month data
+      const filteredData = filterOutCurrentMonth(numericMonthData) || [];
+      const filteredLastN = filterLastN(filteredData, 5) || [];
+  
+      // Prepare the chart element ID
+      const elementId = `bar_chart-${elementIdSuffix}`;
+  
+      // Log the data being sent to the chart
+      //console.log('Filtered Data:', JSON.stringify(filteredData, null, 2));
+      //console.log('Filtered Last N:', JSON.stringify(filteredLastN, null, 2));
+      //console.log('Chart options:', JSON.stringify(barChartOptions, null, 2));
+  
+      // Draw the bar chart with the filtered data and options
+      this.drawBarChart(filteredLastN, elementId, barChartOptions);
+  
+    } catch (err) {
+      // Handle errors gracefully and log them
+      //console.error('Error in drawOperationsChartsDept:', err);
+      const el = document.getElementById(`bar_chart-${elementIdSuffix}`);
+      if (el) el.innerHTML = 'Error loading data.';
+    }
+  }
+  
+
+  private async fetchDataAndDrawDirectDept(
+    cleanData: any,
+    dataProcessor: Function,
+    chartType: string,
+    elementId: string,
+    chartOptions: any = {}
+  ): Promise<void> {
+    try {
+      if (!cleanData || (Array.isArray(cleanData) && cleanData.length === 0)) {
+        const el = document.getElementById(elementId);
+        if (el) el.innerHTML = 'No data available to draw chart.';
+        return;
+      }
+
+      // Gauge chart uses separate render logic
+      if (chartType === this.CHART_TYPES.GAUGE) {
+        this.drawChartGauge(cleanData, elementId, chartOptions);
+        return;
+      }
+
+      // Apply user-defined processing
+      const processed = dataProcessor.call(this, cleanData);
+
+      let chartData = processed;
+
+      // If applicable, enhance with annotations
+      if (chartOptions.shortFormatAnnotations) {
+        if (
+          typeof processed.getNumberOfColumns === 'function' &&
+          typeof processed.getValue === 'function'
+        ) {
+          chartData = addShortFormatAnnotations(processed);
         }
-        
-        // Add dept chart container
-        const deptChartDiv = document.createElement('div');
-        deptChartDiv.id = `deptchart-${groupSlug}`;
-        wrapper.appendChild(deptChartDiv);
-        
-        // Clear and append wrapper to main container
-        chartContainer.innerHTML = '';
-        chartContainer.appendChild(wrapper);
-        
-        // ✅ Get reference AFTER insertion
-        const deptChartContainer = document.getElementById(`deptchart-${groupSlug}`);
-        if (!deptChartContainer) {
-          console.warn(`❌ Missing deptChartContainer: #deptchart-${groupSlug}`);
+      }
+
+      // Execute chart draw
+      await this.drawChartDept(chartData, chartType, elementId, chartOptions);
+
+    } catch (error) {
+      console.error(`[fetchDataAndDrawDirect] ❌ Chart render failed for: #${elementId}`, error);
+      const el = document.getElementById(elementId);
+      if (el) {
+        el.innerHTML = 'שגיאה בטעינת התרשים.';
+      }
+    }
+  }
+
+
+
+  private async drawChartDept(
+    data: any,
+    chartType: string,
+    elementId: string,
+    chartOptions: any = {}
+  ): Promise<void> {
+    if (!data) {
+      const el = document.getElementById(elementId);
+      if (el) {
+        el.innerHTML = 'שגיאה בעיבוד הנתונים.';  // Error in processing data
+      }
+      console.warn(`[drawChartDept] No data available for chart in element: ${elementId}`);
+      return;
+    }
+
+    // Debug: Log the data and chart type
+    
+    //console.log(`[drawChartDept] Drawing chart with type: ${chartType} in element: ${elementId}`);
+    //console.log(`[drawChartDept] Data to be drawn:`, data);
+    //console.log(`[drawChartDept] Chart options:`, chartOptions);
+
+    const chartDrawers: Record<string, Function> = {
+      [this.CHART_TYPES.BAR]: this.drawBarChart.bind(this),
+      [this.CHART_TYPES.LINE]: this.drawLineChart.bind(this),
+      [this.CHART_TYPES.THREE_YEAR]: this.drawChart3Y.bind(this),
+      [this.CHART_TYPES.OPTHREE_YEAR]: this.drawOpChart3Y.bind(this),
+      [this.CHART_TYPES.GAUGE]: this.drawChartGauge.bind(this)
+    };
+
+    const drawer = chartDrawers[chartType];
+    if (!drawer) {
+      console.warn(`[drawChartDept] Unsupported chart type: ${chartType}`);
+      const el = document.getElementById(elementId);
+      if (el) {
+        el.innerHTML = 'תרשים לא נתמך.';  // Unsupported chart type message
+      }
+      return;
+    }
+
+    // Create and return the promise
+    return new Promise<void>(resolve => {
+      try {
+        // Debug: Log the decision-making process for chart drawing
+        console.log(`[drawChartDept] Starting to draw chart of type: ${chartType} for element: ${elementId}`);
+
+        // Use chart-specific options
+        if (chartType === this.CHART_TYPES.BAR) {
+          const grouped = chartOptions.grouped !== false; // default is true
+          console.log(`[drawChartDept] Bar chart grouped: ${grouped}`);
+          drawer(data, elementId, chartOptions, grouped);
+        } else {
+          drawer(data, elementId, chartOptions);
+        }
+
+        // Debug: Indicate chart drawing is complete
+        console.log(`[drawChartDept] Chart of type ${chartType} successfully drawn in ${elementId}`);
+        resolve();
+      } catch (error) {
+        console.error(`[drawChartDept] Failed to render chart (${chartType}) in #${elementId}:`, error);
+
+        // Display error message in the element
+        const el = document.getElementById(elementId);
+        if (el) {
+          el.innerHTML = 'שגיאה בעת ציור התרשים.';  // Error in drawing chart
+        }
+
+        // Resolve the promise to prevent hanging
+        resolve();
+      }
+    });
+  }
+
+
+
+
+  /** 📈 Monthly revenue growth trend (line) per department */
+  /**
+   * Draws a line chart showing the growth trend of a department's income over time.
+   *
+   * @param deptId - Department ID (string)
+   * @param groupId - Group ID (string)
+   * @param containerId - DOM element ID to render chart into (default: 'growth_trend_chart')
+   */
+  
+  public loadGrowthTrendChartDept(
+    deptId: number,
+    groupId: number,
+    containerId?: string
+  ): void {
+    const finalContainerId = containerId || `growth_trend_chart-${deptId}`;
+  
+    this.callApi('GetChargingIncomeMonthly', {
+      deptId,
+      groupId,
+      incomeCategory: 'totalCharging'
+    }, true).subscribe(raw => {
+      const parsed = sanitizeSoapResponseDept(raw)?.data || [];
+  
+      if (!Array.isArray(parsed) || parsed.length <= 1) {
+        this.showNoDataMessage(finalContainerId);
+        return;
+      }
+  
+      const rows = parsed.slice(1); // remove header
+      const allYears = new Set<string>();
+      const chartMap: { [monthYear: string]: { [year: string]: number } } = {};
+  
+      rows.forEach(([monthStr, charging]) => {
+        const [year, month] = monthStr.split('-');
+        const label = `${month}-${year}`; // e.g., 01-2022
+        if (!chartMap[label]) chartMap[label] = {};
+        chartMap[label][year] = Number(charging) || 0;
+        allYears.add(year);
+      });
+  
+      const sortedYears = Array.from(allYears).sort();
+      const chartData: any[][] = [];
+      chartData.push(['חודש', ...sortedYears]);
+  
+      const sortedLabels = Object.keys(chartMap).sort((a, b) => {
+        const [ma, ya] = a.split('-');
+        const [mb, yb] = b.split('-');
+        return new Date(`${ya}-${ma}-01`).getTime() - new Date(`${yb}-${mb}-01`).getTime();
+      });
+  
+      sortedLabels.forEach(label => {
+        const row: any[] = [label];
+        sortedYears.forEach(year => {
+          row.push(chartMap[label]?.[year] ?? null);
+        });
+        chartData.push(row);
+      });
+  
+      const dataTable = google.visualization.arrayToDataTable(chartData);
+  
+      google.charts.setOnLoadCallback(() => {
+        const container = document.getElementById(finalContainerId);
+        if (!container) {
+          console.warn(`⚠️ Container #${finalContainerId} not found`);
           return;
         }
-        
-       
-        for (const kind of chartKinds) {
-          await this.drawEntityChartUnified({
-            entityType: 'group',
-            chartKind: kind as (
-              'bar' | 'line' | '3y' | 'op3y' | 'quarterly' | 'timeavg' |
-              'gauge' | 'exploitation' | 'dualgauge' | 'combined'
-            ),
-            id: groupName,
-            elementId: `groupchart-${groupSlug}-${kind}`
-          });
-        }
-        
-console.log('me');
-
-
-        const data: any[] = await this.callApi('GetChargingChartMonthlyData', {
-          groupName,
-          deptId: ''
-        }, true).toPromise();
       
-        if (!Array.isArray(data) || data.length === 0) {
-          chartContainer.innerHTML = '<p>No departments found for this group.</p>';
-          return;
-        }
+        const chartData: any[][] = [
+          ['חודש', 'סה״כ חיובים', { role: 'annotation' }]
+        ];
       
-        // 🔍 Extract unique departments
-        const departments: { name: string; id: string }[] = [];
-        const seen = new Set<string>();
+        const formatNumberShort = (n: number): string => {
+          if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + 'M';
+          if (n >= 1_000) return (n / 1_000).toFixed(1) + 'K';
+          return n.toString();
+        };
       
-        for (const item of data) {
-          const name = item.deptName?.toString().trim();
-          const id = (item.deptId || item.id || name)?.toString().trim();
+        const rows = parsed.slice(1); // assume first row is headers
+        rows.forEach(([monthStr, charging]) => {
+          const value = Number(charging) || 0;
+          chartData.push([
+            monthStr,              // e.g., '01-2022'
+            value,
+            formatNumberShort(value)
+          ]);
+        });
       
-          if (name && id && !seen.has(id)) {
-            seen.add(id);
-            departments.push({ name, id });
-          }
-        }
+        const dataTable = google.visualization.arrayToDataTable(chartData);
       
-        if (departments.length === 0) {
-          chartContainer.innerHTML = '<p>No valid department data found.</p>';
-          return;
-        }
-      
-        // 🔧 Setup containers
-        // chartContainer.innerHTML = '';
-        // const buttonBar = document.createElement('div');
-        // const chartZone = document.createElement('div');
-        // chartContainer.appendChild(buttonBar);
-        // chartContainer.appendChild(chartZone);
-      
-        // 🔧 Setup containers inside deptChartDiv (✅ safe!)
-deptChartDiv.innerHTML = '';
-const buttonBar = document.createElement('div');
-const chartZone = document.createElement('div');
-deptChartDiv.appendChild(buttonBar);
-deptChartDiv.appendChild(chartZone);
-
-
-        // 🧩 Create buttons and render logic
-        departments.forEach((dept, index) => {
-          const button = document.createElement('button');
-          button.textContent = dept.name;
-        
-          // 🎯 Find the latest entry for this department (by year)
-          const latest = [...data]
-            .filter(d => d.deptName === dept.name && d.year)
-            .sort((a, b) => b.year.localeCompare(a.year))[0];
-        
-          // 🧠 Parse ChangePercent (string like "-4.3%")
-          const rawPercent = latest?.changePercent ?? latest?.ChangePercent ?? null;
-          const numericPercent = (typeof rawPercent === 'string')
-            ? parseFloat(rawPercent.replace('%', '').trim())
-            : (typeof rawPercent === 'number' ? rawPercent : null);
-        
-          const color = this.getHeatColor(numericPercent);
-        
-          // 🏷 Tooltip on hover
-          button.title = numericPercent !== null && !isNaN(numericPercent)
-            ? `שינוי לעומת שנה קודמת: ${numericPercent}%`
-            : 'אין שינוי זמין';
-        
-          // 🎨 Style the button
-          button.classList.add('mat-raised-button');
-          button.style.cssText = `
-            margin-right: 10px;
-            margin-bottom: 10px;
-            border-radius: 6px;
-            padding: 8px 16px;
-            background-color: ${color};
-            color: #fff;
-          `;
-        
-          // 📊 Chart IDs
-          const idBase = `dept-${dept.id}`;
-          const chartId = `${idBase}-chart`;
-          const timeId = `${idBase}-time`;
-          const gaugeId = `${idBase}-gauge`;
-        
-          // 📌 OnClick: render charts
-          button.onclick = () => {
-            chartZone.innerHTML = `
-              <h3 style="margin-top:20px;"><center>${dept.name}</center></h3>
-              <div id="${chartId}" style="height: 300px;"></div>
-              <div id="${timeId}" style="height: 300px; margin-top: 20px;"></div>
-              <div id="${gaugeId}" style="height: 220px; margin-top: 20px;"></div>
-            `;
-        
-            this.renderDepartmentChart(dept.name, chartId, groupName, {
-              includeTimeSeries: true,
-              timeSeriesElementId: timeId,
-              includeGaugeOverlay: true,
-              gaugeElementId: gaugeId
-            });
-          };
-        
-          buttonBar.appendChild(button);
-        
-          // ▶️ Auto-render first department
-          if (index === 0) {
-            button.click();
+        const chart = new google.visualization.LineChart(container);
+        chart.draw(dataTable, {
+          legend: { position: 'none' },
+          height: 500,
+          chartArea: { width: '90%', height: '70%' },
+          vAxis: {
+            format: 'short',
+            title: 'סה״כ חיובים'
+          },
+          hAxis: {
+            slantedText: true,
+            slantedTextAngle: 45,
+            title: 'חודש'
+          },
+          colors: ['#6ba1f8'],
+          pointSize: 5,
+          lineWidth: 2,
+          interpolateNulls: false,
+          annotations: {
+            alwaysOutside: true,
+            textStyle: {
+              fontSize: 11,
+              color: '#000'
+            }
+          },
+          trendlines: {
+            0: {
+              type: 'linear',
+              color: '#999',
+              lineWidth: 2,
+              opacity: 0.5,
+              visibleInLegend: true
+            }
           }
         });
-      };
-      
-      
-      
-      
-      
 
+      });
       
-
-      container.appendChild(button);
+      
     });
-  } catch (err) {
-    console.error('[renderDepartmentButtons] ❌ Error rendering buttons:', err);
-    container.innerHTML = 'Error loading department buttons.';
   }
-}
-
-
-
-public darkenColor(hex: string, percent: number): string {
-  const amt = Math.round(2.55 * percent);
-  return hex.replace(/^#/, '').replace(/../g, (c) =>
-    ('0' + Math.max(0, parseInt(c, 16) - amt).toString(16)).slice(-2)
-  ).padStart(6, '0').replace(/^(.{6})$/, '#$1');
-}
-
-
-//sub
-
-public getChargingChartMonthlyData(groupName: string, deptId: string = ''): Observable<any> {
-  const params = new URLSearchParams();
-  params.set('groupName', groupName);
-  params.set('deptId', deptId);
-
-  const url = `${environment.url}/GetChargingChartMonthlyData?${params.toString()}`;
-  return this.http.get(url, { responseType: 'text' }).pipe(
-    map(res => sanitizeSoapResponse(res))
-  );
-}
-
-public async renderChart(elementId: string, chartData: any[][], options?: any): Promise<void> {
-  await this.chartsReady;
-
-  if (!chartData || chartData.length < 2) {
-    const el = document.getElementById(elementId);
-    if (el) el.innerHTML = "אין נתונים להצגה";
-    return;
-  }
-
-  const dataTable = google.visualization.arrayToDataTable(chartData);
-
-  const defaultOptions = {
-    title: options?.title || 'Graph',
-    width: '100%',
-    height: 400,
-    legend: { position: 'bottom' },
-    ...options
-  };
-
-  const container = document.getElementById(elementId);
-  if (container) {
-    const chart = new google.visualization.LineChart(container);
-    chart.draw(dataTable, defaultOptions);
-  }
-}
-
-
-////
-
-
-drawIncomeChartsForGroup(groupName: string, elementId: string): void {
-  const params = { groupName, format: 'google', groupBy: 'month' };
-  this.getChargingChartMonthlyDataEExFull(params).subscribe(res => {
-    this.renderBarChart(res, elementId); // use existing method
-  });
-}
-
-drawIncomeLineChartForGroup(groupName: string, elementId: string): void {
-  const params = { groupName, format: 'google', groupBy: 'month' };
-  this.getChargingChartMonthlyDataEExFull(params).subscribe(res => {
-    this.renderLineChart(res, elementId); // use existing method
-  });
-}
-
-drawIncomeChartsForDepartment(deptId: string, elementId: string): void {
-  const params = { deptId, format: 'google', groupBy: 'month' };
-  this.getChargingChartMonthlyDataEExFull(params).subscribe(res => {
-    this.renderBarChart(res, elementId);
-  });
-}
-
-drawIncomeLineChartForDepartment(deptId: string, elementId: string): void {
-  const params = { deptId, format: 'google', groupBy: 'month' };
-  this.getChargingChartMonthlyDataEExFull(params).subscribe(res => {
-    this.renderLineChart(res, elementId);
-  });
-}
-
-// getDepartmentsByGroup(groupName: string): Observable<{ id: string, name: string }[]> {
-//   return this.callApi('GetDepartmentsByGroup', { groupName }, true);
-// }
-
-getDepartmentsByGroup(groupName: string): Observable<{ id: string; name: string }[]> {
-  return this.http.get<{ id: string; name: string }[]>(
-    `${environment.url}/GetDepartmentsByGroup?group=${encodeURIComponent(groupName)}`
-  );
-}
-
-drawGroupBarChart(groupName: string, elementId: string): Promise<void> {
-  return this.drawEntityChart('group', 'bar', groupName, elementId);
-}
-
-drawGroupLineChart(groupName: string, elementId: string): Promise<void> {
-  return this.drawEntityChart('group', 'line', groupName, elementId);
-}
-
-drawDepartmentBarChart(deptId: string, elementId: string): Promise<void> {
-  return this.drawEntityChart('department', 'bar', deptId, elementId);
-}
-
-drawDepartmentLineChart(deptId: string, elementId: string): Promise<void> {
-  return this.drawEntityChart('department', 'line', deptId, elementId);
-}
-
-
-private async drawEntityChartUnified(
-  config: {
-    entityType: 'group' | 'department';
-    chartKind: 'bar' | 'line' | '3y' | 'op3y' | 'quarterly' | 'timeavg' | 'gauge' | 'exploitation' | 'dualgauge' | 'combined';
-    id: string; // groupName or deptId
-    elementId: string;
-    extraParams?: { [key: string]: string };
-    titlePrefix?: string;
-    dataSourceOverride?: string;
-    optionsOverride?: any;
-  }
-): Promise<void> {
-  await this.chartsReady;
-
-  const {
-    entityType,
-    chartKind,
-    id,
-    elementId,
-    extraParams = {},
-    titlePrefix = '',
-    dataSourceOverride,
-    optionsOverride = {}
-  } = config;
-
-  const baseParams: any = {
-    format: 'google',
-    groupBy: 'month',
-    ...extraParams
-  };
-
-  if (entityType === 'group') {
-    baseParams.groupName = id;
-  } else {
-    baseParams.deptId = id;
-  }
-
-  const dataSource = dataSourceOverride ?? this.DATA_SOURCES.INCOME;
-
-  try {
-    const response = await this.http
-      .get(dataSource + '?' + new URLSearchParams(baseParams).toString(), { responseType: 'text' })
-      .toPromise();
-
-    const clean = sanitizeSoapResponse(response);
-    const chartData =
-      chartKind === '3y' || chartKind === 'op3y'
-        ? convertHebrewMonthsToNumbers(clean)
-        : this.extractGoogleChartData(clean);
-
-    const title = `${titlePrefix}${entityType === 'group' ? 'Group' : 'Department'}: ${id}`;
-
-    switch (chartKind) {
-      case 'bar':
-        this.renderBarChart(chartData, elementId, { title, ...optionsOverride });
-        break;
-      case 'line':
-        this.renderLineChart(chartData, elementId, { title, ...optionsOverride });
-        break;
-      case '3y':
-        this.drawChart3Y(chartData, elementId, { title, ...optionsOverride });
-        break;
-      case 'op3y':
-        this.drawOpChart3Y(chartData, elementId, { title, ...optionsOverride });
-        break;
-      case 'quarterly':
-        const qData = this.processQuartalData(clean);
-        this.drawBarChartQ(qData, elementId, optionsOverride);
-        break;
-      case 'timeavg':
-        const processed = this.processTimeAvgData(clean);
-        await this.drawTimeAvgChart(elementId, optionsOverride, processed.selectedTypes || {});
-        break;
-      case 'gauge':
-        await this.drawChartGauge(clean, elementId, optionsOverride);
-        break;
-      case 'dualgauge':
-        await this.drawDualArcGaugeChart(chartData, elementId, optionsOverride);
-        break;
-      case 'combined':
-        await this.drawCombinedChart(chartData, elementId, optionsOverride);
-        break;
-
-      case 'exploitation':
-        const dt = this.processExploitationData(clean);
-        this.renderExploitationChart(dt, elementId, optionsOverride);
-        break;
-      default:
-        console.warn(`❌ Unsupported chartKind: ${chartKind}`);
-        break;
-    }
-  } catch (err) {
-    console.error(`❌ Failed to draw ${chartKind} chart for ${entityType} ${id}`, err);
-    const el = document.getElementById(elementId);
-    if (el) el.innerHTML = `Failed to load chart`;
-  }
-}
-
-async drawDualArcGaugeChart(data: any[][], elementId: string, options: any = {}): Promise<void> {
-  const chart = new google.visualization.Gauge(document.getElementById(elementId));
-  const dataTable = google.visualization.arrayToDataTable(data);
-  const opts = {
-    width: 400,
-    height: 120,
-    redFrom: 90, redTo: 100,
-    yellowFrom: 75, yellowTo: 90,
-    minorTicks: 5,
-    ...options
-  };
-  chart.draw(dataTable, opts);
-}
-
-
-drawCombinedChart(chartData: any[][], elementId: string, options: any = {}): void {
-  const dataTable = google.visualization.arrayToDataTable(chartData);
-  const chart = new google.visualization.ComboChart(document.getElementById(elementId));
-  chart.draw(dataTable, {
-    title: options.title || 'Combined Chart',
-    seriesType: 'bars',
-    series: { 1: { type: 'line' } },
-    ...options
-  });
-}
-
-
-drawGroupMonthlyBar(groupName: string, elId: string) {
-  return this.drawEntityChartUnified({
-    entityType: 'group',
-    chartKind: 'bar',
-    id: groupName,
-    elementId: elId
-  });
-}
-
-drawDeptMonthlyLine(deptId: string, elId: string) {
-  return this.drawEntityChartUnified({
-    entityType: 'department',
-    chartKind: 'line',
-    id: deptId,
-    elementId: elId
-  });
-}
-
-drawGroupQuarterlyChart(groupName: string, elId: string) {
-  return this.drawEntityChartUnified({
-    entityType: 'group',
-    chartKind: 'quarterly',
-    id: groupName,
-    elementId: elId
-  });
-}
-
-drawDepartment3Y(deptId: string, elId: string) {
-  return this.drawEntityChartUnified({
-    entityType: 'department',
-    chartKind: '3y',
-    id: deptId,
-    elementId: elId,
-    dataSourceOverride: this.DATA_SOURCES.INCOME_3Y
-  });
-}
-
-
-
-private extractGoogleChartData(response: any): any[][] {
-  // Assume response is already in Google Charts format or needs parsing
-  // Adapt this logic based on actual structure
-  if (Array.isArray(response) && response.length > 1) {
-    return response;
-  }
-
-  // Fallback if empty or invalid
-  return [['Month', 'Value'], ['N/A', 0]];
-}
-
-
-renderBarChart(chartData: any[][], elementId: string, options?: any): void {
-  const chart = new google.visualization.ColumnChart(document.getElementById(elementId));
-  const dataTable = google.visualization.arrayToDataTable(chartData);
-  chart.draw(dataTable, { ...options });
-}
-
-renderLineChart(chartData: any[][], elementId: string, options?: any): void {
-  const chart = new google.visualization.LineChart(document.getElementById(elementId));
-  const dataTable = google.visualization.arrayToDataTable(chartData);
-  chart.draw(dataTable, { ...options });
-}
-
-
-
-private async drawEntityChart(
-  type: 'group' | 'department',
-  chartKind: 'bar' | 'line',
-  identifier: string,
-  elementId: string
-): Promise<void> {
-  const params: any = {
-    format: 'google',
-    groupBy: 'month'
-  };
-
-  if (type === 'group') {
-    params.groupName = identifier;
-  } else {
-    params.deptId = identifier;
-  }
-
-  try {
-    const response = await this.getChargingChartMonthlyDataEExFull(params).toPromise();
-    const chartData = this.extractGoogleChartData(response);
-    const title = `${type === 'group' ? 'Group' : 'Department'}: ${identifier} (${chartKind.toUpperCase()})`;
-
-    if (chartKind === 'bar') {
-      this.renderBarChart(chartData, elementId, { title });
-    } else {
-      this.renderLineChart(chartData, elementId, { title });
-    }
-  } catch (error) {
-    console.error(`❌ Failed to draw ${type} ${chartKind} chart:`, error);
-    const el = document.getElementById(elementId);
-    if (el) el.innerHTML = `Failed to load ${type} chart.`;
-  }
-}
-
-
-
-}
-
-
   
+
+  public loadYearlyIncomeDataCombinedDept(
+    containerId: string,
+    deptId: number,
+    groupId: number,
+    incomeCategory: string = 'totalCharging',
+    yearsToShow?: number,
+    tableMode: 'full' | 'matrix' = 'full'
+  ): void {
+    const container = document.querySelector(`#${containerId}`);
+    if (!container) return;
+  
+    const params = {
+      deptId,
+      groupId,
+      incomeCategory
+    };
+  
+    this.callApi('GetChargingIncome', params, true).subscribe(
+      (response: any[]) => {
+        if (!Array.isArray(response) || response.length === 0) {
+          container.innerHTML = '<p>No data available.</p>';
+          return;
+        }
+  
+        response.sort((a, b) => b.Year.localeCompare(a.Year));
+        const data = yearsToShow ? response.slice(0, yearsToShow) : response;
+  
+        // Apply column renaming
+        const headerMap: { [key: string]: string } = {
+          ChargingPct: 'גידול (%)',
+          ChargingDiff: 'גידול',
+          Change: 'גידול',
+          ChangePercent: 'גידול (%)',
+          ...this.yearlyIncomeTableHeaders
+        };
+  
+        let html = '<table class="table table-bordered table-striped">';
+  
+        if (tableMode === 'full') {
+          const preferredOrder = ['Year', 'TotalCharging', 'Change', 'ChangePercent'];
+  
+          const allKeys = new Set<string>();
+          data.forEach(row => Object.keys(row).forEach(key => allKeys.add(key)));
+  
+          // Remove unwanted keys
+          const ignored = new Set(['GroupName', 'GroupId', 'DeptName', 'DeptId', 'GroupID', 'DeptID']);
+          const columns = Array.from(allKeys)
+            .filter(key => !ignored.has(key))
+            .sort((a, b) => {
+              const ia = preferredOrder.indexOf(a);
+              const ib = preferredOrder.indexOf(b);
+              if (ia === -1 && ib === -1) return a.localeCompare(b);
+              if (ia === -1) return 1;
+              if (ib === -1) return -1;
+              return ia - ib;
+            });
+  
+          html += '<thead><tr>';
+          columns.forEach(col => {
+            html += `<th>${headerMap[col] || col}</th>`;
+          });
+          html += '</tr></thead><tbody style="direction:ltr;">';
+  
+          data.forEach(row => {
+            html += '<tr>';
+            columns.forEach(col => {
+              let value = row[col];
+              if (col === 'TotalCharging' && value != null) {
+                value = formatNumberShort(value);
+              } else if ((col === 'Change' || col === 'ChargingDiff') && value != null && !isNaN(value)) {
+                const sign = value > 0 ? '+' : value < 0 ? '-' : '';
+                value = sign + formatNumberShort(Math.abs(value));
+              } else if ((col === 'ChangePercent' || col === 'ChargingPct') && value != null && !isNaN(value)) {
+                const sign = value > 0 ? '+' : value < 0 ? '-' : '';
+                value = sign + Math.abs(value).toFixed(1) + '%';
+              }
+              html += `<td>${value != null ? value : ''}</td>`;
+            });
+            html += '</tr>';
+          });
+  
+          html += '</tbody>';
+        } else {
+          const metrics = ['TotalCharging', 'Change', 'ChangePercent'];
+  
+          html += '<thead><tr><th>Year</th>';
+          metrics.forEach(metric => {
+            html += `<th>${headerMap[metric] || metric}</th>`;
+          });
+          html += '</tr></thead><tbody>';
+  
+          data.forEach(year => {
+            html += `<tr><td>${year.Year}</td>`;
+            metrics.forEach(metric => {
+              let value = year[metric];
+              if (metric === 'TotalCharging' && value != null) {
+                value = formatNumberShort(value);
+              } else if (metric === 'Change' && value != null && !isNaN(value)) {
+                const sign = value > 0 ? '+' : value < 0 ? '-' : '';
+                value = sign + formatNumberShort(Math.abs(value));
+              } else if (metric === 'ChangePercent' && value != null && !isNaN(value)) {
+                const sign = value > 0 ? '+' : value < 0 ? '-' : '';
+                value = sign + Math.abs(value).toFixed(1) + '%';
+              }
+              html += `<td>${value != null ? value : ''}</td>`;
+            });
+            html += '</tr>';
+          });
+  
+          html += '</tbody>';
+        }
+  
+        html += '</table>';
+        container.innerHTML = html;
+      },
+      () => {
+        container.innerHTML = '<p class="text-danger">Failed to load data.</p>';
+      }
+    );
+  }
+  
+
+
+
+
+  private showNoDataMessage(containerId: string): void {
+    const container = document.getElementById(containerId);
+    if (container) {
+      container.innerHTML = '<div style="color: gray; text-align: center;">No data available</div>';
+    }
+  }
+
+
+  public removeAllDepartmentWrappers(): void {
+    const idPrefixes = ['dept-wrapper-', 'wrapper-', 'deptchart-'];
+
+    idPrefixes.forEach(prefix => {
+      const elements = Array.from(document.querySelectorAll<HTMLElement>(`[id^="${prefix}"]`));
+      elements.forEach(el => {
+        if (el && el.parentNode) {
+          el.parentNode.removeChild(el);
+        }
+      });
+    });
+  }
+
+
+
+  private waitForElement(selector: string, timeout = 4000): Promise<Element> {
+    return new Promise((resolve, reject) => {
+      const el = document.querySelector(selector);
+      if (el) return resolve(el);
+  
+      const observer = new MutationObserver(() => {
+        const found = document.querySelector(selector);
+        if (found) {
+          observer.disconnect();
+          resolve(found);
+        }
+      });
+  
+      observer.observe(document.body, { childList: true, subtree: true });
+  
+      setTimeout(() => {
+        observer.disconnect();
+        reject(`Element ${selector} not found within ${timeout}ms`);
+      }, timeout);
+    });
+  }
+
+/*  
+//////// NB table ///////////////
+*/
+  public async loadNBSpecial(
+    containerId: string = 'nbspecial',
+    options: NBSpecialOptions = {}
+  ): Promise<void> {
+    try {
+      const container = (await this.waitForElement(`#${containerId}`)) as HTMLElement;
+      await this.loadGoogleCharts(['table']);
+      const params = { change: 1, changeperc: 1 };
+  
+      return new Promise((resolve, reject) => {
+        this.callApi('GetNBSpecial', params, true).subscribe(
+          (response: any) => {
+            if (!response?.cols || !response?.rows) {
+              container.innerHTML = '<p>No data available.</p>';
+              resolve();
+              return;
+            }
+  
+            const data = new google.visualization.DataTable(response);
+            let view = new google.visualization.DataView(data);
+            let totalRowValues: any[] = [];
+  
+            // --- Filtering ---
+            const applyFilters = () => {
+              let filteredRows: number[] = [];
+              for (let i = 0; i < data.getNumberOfRows(); i++) {
+                const matchesFilters =
+                  !options?.filters?.length ||
+                  options.filters.every(f => data.getValue(i, data.getColumnIndex(f.column)) === f.value);
+                if (matchesFilters) filteredRows.push(i);
+              }
+              view.setRows(filteredRows);
+            };
+            applyFilters();
+  
+            // --- Sorting ---
+            if (options?.sortBy) {
+              const sortIndex = data.getColumnIndex(options.sortBy);
+              if (sortIndex !== -1) {
+                const sortedRows = view.getViewRows().sort((a, b) => {
+                  const valA = data.getValue(a, sortIndex);
+                  const valB = data.getValue(b, sortIndex);
+                  return (valA < valB ? -1 : valA > valB ? 1 : 0) * (options.sortAsc === false ? -1 : 1);
+                });
+                view.setRows(sortedRows);
+              }
+            }
+  
+            // --- Limit rows ---
+            if (options?.limitRows && options.limitRows > 0) {
+              const limitedRows = view.getViewRows().slice(0, options.limitRows);
+              view.setRows(limitedRows);
+            }
+  
+            // --- Compute TOTAL row (for footer only) ---
+            if (options?.showTotals) {
+              for (let c = 0; c < data.getNumberOfColumns(); c++) {
+                if (data.getColumnType(c) === 'number') {
+                  const sum = view.getViewRows().reduce((acc, row) => acc + (data.getValue(row, c) || 0), 0);
+                  totalRowValues.push(sum);
+                } else if (c === 0) {
+                  totalRowValues.push('סה"כ');
+                } else {
+                  totalRowValues.push(null);
+                }
+              }
+            }
+  
+            // --- Draw table ---
+            const drawTable = () => {
+              const tableOptions: google.visualization.TableOptions = {
+                showRowNumber: false, // Hide row numbers
+                allowHtml: true,
+                width: '100%',
+                page: 'disable',
+                ...options.tableOptions
+              };
+              this.drawGoogleTableWithExport(container, view, tableOptions);
+  
+              // --- Add sticky TOTAL row ---
+              const existingFooter = document.querySelector(`#${containerId}-footer`);
+              if (existingFooter) existingFooter.remove();
+              if (options?.showTotals) {
+                const footerTable = document.createElement('table');
+                footerTable.id = `${containerId}-footer`;
+                footerTable.style.width = '100%';
+                footerTable.style.position = 'sticky';
+                footerTable.style.bottom = '0';
+                //footerTable.style.background = '#f5f5f5';
+                footerTable.style.fontWeight = 'bold';
+                //footerTable.style.borderTop = '2px solid #ccc';
+                //footerTable.style.marginTop = '5px';
+  
+                // Build footer row
+                const row = footerTable.insertRow();
+                for (let val of totalRowValues) {
+                  const cell = row.insertCell();
+                  cell.innerHTML = val !== null ? val : '';
+                }
+  
+                container.appendChild(footerTable);
+              }
+            };
+            drawTable();
+  
+            // --- Search ---
+            if (options?.showSearch) {
+              const searchBoxId = `${containerId}-search`;
+              if (!document.getElementById(searchBoxId)) {
+                const searchBox = document.createElement('input');
+                searchBox.id = searchBoxId;
+                searchBox.type = 'text';
+                searchBox.placeholder = 'חיפוש...';
+                searchBox.style.marginBottom = '10px';
+                container.parentElement?.insertBefore(searchBox, container);
+  
+                searchBox.addEventListener('input', () => {
+                  const query = searchBox.value.toLowerCase();
+                  const filteredRows: number[] = [];
+                  const allRows = Array.from({ length: data.getNumberOfRows() }, (_, i) => i);
+  
+                  for (let i of allRows) {
+                    const rowText = Array.from({ length: data.getNumberOfColumns() })
+                      .map((_, col) => String(data.getValue(i, col)).toLowerCase())
+                      .join(' ');
+                    if (rowText.includes(query)) filteredRows.push(i);
+                  }
+  
+                  view.setRows(filteredRows);
+                  drawTable();
+                });
+              }
+            }
+  
+            resolve();
+          },
+          err => {
+            container.innerHTML = '<p class="text-danger">Failed to load data.</p>';
+            reject(err);
+          }
+        );
+      });
+    } catch (err) {
+      console.error('loadNBSpecial failed:', err);
+    }
+  }
+   
+  private loadGoogleCharts(packages: string[]): Promise<void> {
+    return new Promise((resolve) => {
+      if (typeof google !== 'undefined' && google.visualization) {
+        resolve();
+        return;
+      }
+      google.charts.load('current', { packages });
+      google.charts.setOnLoadCallback(() => resolve());
+    });
+  }
+    
+  private drawGoogleTableWithExport(container: HTMLElement, data: google.visualization.DataTable | google.visualization.DataView, tableOptions: google.visualization.TableOptions): void {
+    // Wrapper for table + export buttons
+    container.innerHTML = `
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+        <div>
+          <button id="${container.id}-export-csv" class="btn btn-sm btn-outline-primary">ייצוא CSV</button>
+          <button id="${container.id}-export-xls" class="btn btn-sm btn-outline-success">ייצוא Excel</button>
+        </div>
+      </div>
+      <div id="${container.id}-table"></div>
+    `;
+  
+    const tableContainer = container.querySelector(`#${container.id}-table`) as HTMLElement;
+    const table = new google.visualization.Table(tableContainer);
+  
+    table.draw(data, {
+      showRowNumber: false,
+      allowHtml: true,
+      width: '100%',
+      sort: 'enable',
+      page: 'disable',
+      //pageSize: 10
+    });
+  
+    // Bind export buttons
+    const exportCsvBtn = container.querySelector(`#${container.id}-export-csv`);
+    const exportXlsBtn = container.querySelector(`#${container.id}-export-xls`);
+  
+    if (exportCsvBtn) {
+      exportCsvBtn.addEventListener('click', () => this.exportTableToCSV(data, `${container.id}.csv`));
+    }
+    if (exportXlsBtn) {
+      exportXlsBtn.addEventListener('click', () => this.exportTableToExcel(data, `${container.id}.xls`));
+    }
+  }
+  
+  private exportTableToCSV(data: google.visualization.DataTable | google.visualization.DataView, filename: string): void {
+    const csvRows = [];
+  
+    // Headers
+    const headers = [];
+    for (let i = 0; i < data.getNumberOfColumns(); i++) {
+      headers.push(`"${data.getColumnLabel(i)}"`);
+    }
+    csvRows.push(headers.join(','));
+  
+    // Rows
+    for (let r = 0; r < data.getNumberOfRows(); r++) {
+      const row = [];
+      for (let c = 0; c < data.getNumberOfColumns(); c++) {
+        row.push(`"${data.getValue(r, c)}"`);
+      }
+      csvRows.push(row.join(','));
+    }
+  
+    const csvContent = csvRows.join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = filename;
+    link.click();
+  }
+  
+  private exportTableToExcel(data: google.visualization.DataTable | google.visualization.DataView, filename: string): void {
+    let tableHtml = '<table><thead><tr>';
+    for (let i = 0; i < data.getNumberOfColumns(); i++) {
+      tableHtml += `<th>${data.getColumnLabel(i)}</th>`;
+    }
+    tableHtml += '</tr></thead><tbody>';
+  
+    for (let r = 0; r < data.getNumberOfRows(); r++) {
+      tableHtml += '<tr>';
+      for (let c = 0; c < data.getNumberOfColumns(); c++) {
+        tableHtml += `<td>${data.getValue(r, c)}</td>`;
+      }
+      tableHtml += '</tr>';
+    }
+    tableHtml += '</tbody></table>';
+  
+    const blob = new Blob([tableHtml], { type: 'application/vnd.ms-excel' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = filename;
+    link.click();
+  }
+   
+/*  
+//////// eof NB table ///////////////
+*/
+
+
+private getDeptIconClass(id: number | string): string {
+  const map: Record<string, string> = {
+    // נשים (Women)
+    '543': 'klubamed-gynecology',                  // נשים
+    '570': 'klubamed-child_care',          // טיפול מיוחד בילוד
+    '572': 'klubamed-pregnant',              // יולדות
+    '599': 'klubamed-obstetricsmonia',           // מיון יולדות
+
+    // פנימית (Internal)
+    '544': 'klubamed-pediatrics',               // ילדים
+    '547': 'klubamed-occupational_therapy',            // פנימית ב
+    '555': 'klubamed-neurology',             // נוירולוגיה
+    '561': 'klubamed-intensive_care_unit',        // טיפול נמרץ כללי
+    '562': 'klubamed-respirology',           // ריאות
+    '565': 'klubamed-rheumatology',          // ראומטולוגיה
+    '567': 'klubamed-cardiology',           // קרדיולוגיה
+    '574': 'klubamed-gastroenterology',     // גסטרואנטרולוגיה
+    '591': 'klubamed-hematology',           // המטולוגיה
+    '593': 'klubamed-critical_care',          // טיפול נמרץ לב
+    '595': 'klubamed-endocrinology',        // אנדוקרינולוגיה
+    '601': 'klubamed-oncology',             // אונקולוגיה
+    '614': 'klubamed-neuro_surgery',    // צנתורי מוח
+    '643': 'klubamed-tissue',          // עור ומין
+    '687': 'klubamed-bacteria',  // מחלות זיהומיות
+    '747': 'klubamed-pain_managment',          // כאב
+    '558': 'klubamed-inpatient',          // פנימית א
+
+    // כירורגיה (Surgery)
+    '545': 'klubamed-orthopaedics',          // אורתופדיה
+    '553': 'klubamed-urology',              // אורולוגיה
+    '556': 'klubamed-vascular_surgery',     // כירורגיה כלי דם
+    '560': 'klubamed-skull',         // פה ולסת
+    '569': 'klubamed-surgical_sterilization',       // חדרי ניתוח
+    '575': 'klubamed-general_surgery',      // כירורגיה כללית
+    '581': 'klubamed-mouth',      // כירורגיה פלסטית
+    '585': 'klubamed-coronary_care_unit', // כירורגיה לב וחזה
+    '611': 'klubamed-ears_nose_and_throat',          // אאג וכירורגיה ראש וצואר
+    '638': 'klubamed-breasts',     // כירורגיה חזה
+    '644': 'klubamed-opthalmology',        // עיניים
+
+    // מכונים (Institutes)
+    '551': 'klubamed-radiology',            // רנטגן
+    '632': 'klubamed-hematology',             // דיאליזה
+
+    // מיון (ER)
+    '549': 'klubamed-accident_and_emergency',           // חדר מיון כללי
+    '573': 'klubamed-mental_disorders',        // פסיכיאטריה מיון
+
+    // שיקום (Rehabilitation)
+    '583': 'klubamed-geriatrics',      // גריאטריה שיקומית
+    '731': 'klubamed-physical_therapy',        // שיקום כללי
+
+    // אחר (Other)
+    '546': 'klubamed-gym',        // פיזיותרפיה א
+    '579': 'klubamed-occupational_therapy', // ריפוי בעיסוק
+    '586': 'klubamed-social_work',                // אחר
+    '600': 'klubamed-biochemistry_laboratory',                  // מעבדה
+  };
+// onimit: klubamed-inpatient
+  return map[id] || 'default-icon'; // fallback icon
+}
+
+
+}
+
+
+

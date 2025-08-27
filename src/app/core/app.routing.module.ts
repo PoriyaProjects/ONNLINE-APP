@@ -145,9 +145,9 @@ import { LearningRequestsDashboardComponent } from '../learning-requests-dashboa
 import { CprNewbordDashboradComponent } from '../form-dashboard/cpr-newbord-dashborad/cpr-newbord-dashborad.component';
 import { CprNewbornFormComponent } from '../form-dashboard/cpr-newbord-dashborad/cpr-newborn-form/cpr-newborn-form.component';
 import { GoogleChartsComponent } from '../hospital-cath-dashb/google-charts/google-charts.component';
-import { GraphsModalComponent2 } from '../hospital-cath-dashboard/graphs-modal/graphs-modal.component';
-import { EshpozModalComponent2 } from '../hospital-cath-dashboard/eshpoz-modal/eshpoz-modal.component';
-import { HospitalCathDashboardComponent } from '../hospital-cath-dashboard/hospital-cath-dashboard.component';
+import { RoomTimeDashboardComponent } from '../hospital-roomtime-dashb/google-charts/google-charts.component';
+import { RoomTimeNDashboardComponent } from '../hospital-roomtimen-dashb/google-charts/google-charts.component';
+import { RoomTimeRTDashboardComponent } from '../hospital-roomtimert-dashb/google-charts/google-charts.component';
 import { CommercialSupportFormDashboardComponent } from '../form-dashboard/commercial-support-form-dashboard/commercial-support-form-dashboard.component';
 import { CommercialSupportFormDialogComponent } from '../form-dashboard/commercial-support-form-dashboard/commercial-support-form-dialog/commercial-support-form-dialog.component';
 import { CommercialSupportResearchDialogComponent } from '../form-dashboard/commercial-support-form-dashboard/commercial-support-research-dialog/commercial-support-research-dialog.component';
@@ -157,6 +157,11 @@ import { ServiceUnitEmailListComponent } from '../emailsdashboard/service-unit-e
 import { ServiceUnitEmailListDialogComponent } from '../emailsdashboard/service-unit-email-list/service-unit-email-list-dialog/service-unit-email-list-dialog.component';
 import { HospitalIncomeDashbComponent } from '../hospital-income-dashb/hospital-income-dashb.component';
 import { GoogleChartsIncomeComponent } from '../hospital-income-dashb/google-charts/google-charts.component';
+import { FoldersManagementComponent } from '../dashboard/folders-management/folders-management.component';
+import { FolderDialogComponent } from '../dashboard/folders-management/folder-dialog/folder-dialog.component';
+import { HospitalIncomeNBDashbComponent } from '../hospital-incomenb-dashb/hospital-incomenb-dashb.component';
+import { GoogleChartsIncomeNBComponent } from '../hospital-incomenb-dashb/google-charts/google-charts.component';
+import { AppointsDashboardComponent } from '../hospital-appoints-dashb/google-charts/google-charts.component';
 const routes: Routes = [
   { path: "", component: LoginComponent },
   { path: 'clinicsrequests', component: ClinicsRequestsComponent },
@@ -346,17 +351,20 @@ const routes: Routes = [
   { path: "cpr-newbord-dashborad", component: CprNewbordDashboradComponent },
   { path: "cpr-newborn-form", component: CprNewbornFormComponent },
   { path: "LabTests", component: LabTestsComponent },   
-  { path: "hospital-cath-dashb", component: GoogleChartsComponent },
-  { path: "hospitalcathdashboard", component: HospitalCathDashboardComponent },
-  { path: "GraphsModalComponent2", component: GraphsModalComponent2 },
-  { path: "EshpozModalComponent2", component: EshpozModalComponent2 },
-  { path: "EshpozModalComponent2", component: EshpozModalComponent2 },
+  { path: "hospital-cath-dashb", component: GoogleChartsComponent },  
+  { path: "hospital-roomtime-dashb", component: RoomTimeDashboardComponent },
+  { path: "hospital-roomtimen-dashb", component: RoomTimeNDashboardComponent },
+  { path: "hospital-roomtimert-dashb", component: RoomTimeRTDashboardComponent },
   { path: 'clinicsrequests', component: ClinicsRequestsComponent },
   { path: 'cldashboard', component: FullPageDashboardComponent },
   { path: 'service-unit-email-list', component: ServiceUnitEmailListComponent },
   { path: 'service-unit-email-list-dialog', component: ServiceUnitEmailListDialogComponent },
   { path: "hospitalincomedashb", component: HospitalIncomeDashbComponent },
   { path: "hospital-income-dashb", component: GoogleChartsIncomeComponent },
+  { path: "folders-management", component: FoldersManagementComponent },
+  { path: "folders-dialog", component: FolderDialogComponent },
+  { path: "hospital-incomenb-dashb", component: GoogleChartsIncomeNBComponent },
+  { path: "hospital-appoints-dashb", component: AppointsDashboardComponent },
   ];
 
 @NgModule({

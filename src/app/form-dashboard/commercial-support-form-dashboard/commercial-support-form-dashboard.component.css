@@ -104,3 +104,12 @@ h2 {
   background-color: #1976d2;
   background-image: linear-gradient(to right, #2196f3, #1976d2);
 }
+
+.button-container {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 20px;
+}
+
+

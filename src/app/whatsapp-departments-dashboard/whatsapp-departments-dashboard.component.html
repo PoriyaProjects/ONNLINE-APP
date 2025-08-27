@@ -16,9 +16,14 @@
     <mat-sidenav-content class="sidenav-content" *ngIf="employee_service_action != undefined">
         <mat-toolbar>
             <div class="row" style="width: 100%;">
-                <div class="col-4 text-right">
-                    <button mat-raised-button (click)="returnToHome()" style="background-color: #e9e311;">
+                <div class="col-4 col-btns">
+                    <button mat-raised-button (click)="returnToHome()" style="background-color: #e9e311;"
+                        matTooltip="חזרה לדף הבית">
                         <mat-icon>home</mat-icon>
+                    </button>
+                    <button mat-raised-button style="background-color: #fff;" (click)="openFixedMessagesDialog()"
+                        matTooltip="הודעות קבועות">
+                        <mat-icon>list</mat-icon>
                     </button>
                 </div>
                 <div class="col-4 text-center">
@@ -55,15 +60,10 @@
                         </button>
                     </div>
                 </div>
-                <mat-form-field class="col-12" *ngIf="contacts_filter.length > 0">
+                <mat-form-field class="col-12">
                     <mat-label>סינון מהרשימה</mat-label>
                     <input matInput (keyup)="applyFilter2($event.target.value)" placeholder="הקלד.." #input>
                 </mat-form-field>
-                <!-- <mat-form-field class="col-5">
-                    <mat-label>תקופה בימים</mat-label>
-                    <input matInput value="1" type="number" (keyup)="getPatientsForWhatsapp($event.target.value)"
-                        placeholder="הקלד.." #input2>
-                </mat-form-field> -->
                 <mat-list role="list" class="list-of-contact">
                     <div class="row text-center">
                         <span *ngIf="contacts.length == 0">טוען...</span>
@@ -157,7 +157,7 @@
                         <mat-card-content>{{loading_message}}</mat-card-content>
                     </div>
                 </mat-card-header>
-                <mat-form-field *ngIf="unAnsweredConversations_filter.length > 0">
+                <mat-form-field>
                     <mat-label>סינון מהרשימה</mat-label>
                     <input matInput (keyup)="applyFilter($event.target.value)" placeholder="הקלד.." #input>
                 </mat-form-field>
@@ -181,6 +181,18 @@
                             matTooltip="סיום שיחה" (click)="endConversation(uncontact)">cancel_presentation</mat-icon>
                     </mat-list-item>
                 </mat-list>
+                <div class="paging-controls text-center" style="margin-top: 8px;margin-bottom: 8px;">
+                    <button mat-mini-fab color="primary" (click)="prevUnAnsweredPage()"
+                        [disabled]="unAnsweredPage === 1">
+                        <mat-icon>chevron_right</mat-icon>
+                    </button>
+                    <span style="margin: 0 12px; font-size: 15px;">עמוד {{unAnsweredPage}} מתוך
+                        {{calculateAllUnAnswered() || 1}}</span>
+                    <button mat-mini-fab color="primary" (click)="nextUnAnsweredPage()">
+                        <!-- [disabled]="unAnsweredPage * unAnsweredPageSize > unAnsweredTotal" -->
+                        <mat-icon>chevron_left</mat-icon>
+                    </button>
+                </div>
             </div>
         </div>
     </mat-sidenav-content>
@@ -221,4 +233,43 @@
         </mat-dialog-actions>
     </div>
 
+</ng-template>
+
+<ng-template #fixedMessagesDialog let-dialogRef="dialogRef" dir="rtl">
+    <div class="dialog-header"
+        style="display: flex; justify-content: space-between; align-items: center; padding: 16px; position: relative;">
+        <div style="flex: 1;"></div>
+        <h2 mat-dialog-title class="text-center" style="margin: 0; flex: 1;">הודעות קבועות</h2>
+        <button mat-icon-button (click)="dialogRef.close()"
+            style="color: red; flex: 1; display: flex; justify-content: flex-end;">
+            <mat-icon style="color: red;">close</mat-icon>
+        </button>
+    </div>
+    <hr>
+    <mat-dialog-content>
+        <mat-list class="message-list" dir="rtl">
+            <mat-divider></mat-divider>
+
+            <mat-list-item *ngFor="let msg of fixed_messages_list" class="message-item">
+                <div class="message-content" (click)="selectFixedMessage(msg, dialogRef)">
+                    {{ msg.Message_Text }}
+                </div>
+
+                <div class="message-actions">
+                    <button mat-icon-button color="primary" (click)="editFixedMessage(msg)" matTooltip="עריכה">
+                        <mat-icon>edit</mat-icon>
+                    </button>
+                    <button mat-icon-button color="warn" (click)="removeFixedMessage(msg)" matTooltip="מחיקה">
+                        <mat-icon>delete</mat-icon>
+                    </button>
+                </div>
+            </mat-list-item>
+
+            <mat-divider *ngIf="!fixed_messages_list.length"></mat-divider>
+            <p *ngIf="!fixed_messages_list.length" class="no-messages">אין הודעות להצגה</p>
+        </mat-list>
+    </mat-dialog-content>
+
+    <hr>
+    <button mat-raised-button color="primary" (click)="addFixedMessage()">הוסף הודעה</button>
 </ng-template>

@@ -280,8 +280,7 @@ export class CprNewbornFormComponent implements OnInit {
             babyGender: [data?.motherInfo.babyGender, Validators.required],
             gestationAgeWeeks: [data?.motherInfo.gestationAgeWeeks, null],
             babyWeight: [data?.motherInfo.babyWeight, null],
-            deliveryMethod: [data?.motherInfo.deliveryMethod, Validators.required],
-            resuscitationStartDate: [data?.motherInfo.resuscitationStartDate, null]
+            deliveryMethod: [data?.motherInfo.deliveryMethod, Validators.required]
           }),
           teamMembers: this.fb.array(data?.teamMembers.map(member => this.fb.group({
             Id: [member.Id, null],
@@ -852,24 +851,6 @@ export class CprNewbornFormComponent implements OnInit {
           </thead>
           <tbody>
             ${naclRows || '<tr><td colspan="2"><em>אין נתונים</em></td></tr>'}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  ` +
-      `
-    <div style="font-family: Arial, sans-serif; direction: rtl; padding: 20px;">
-      <h3 style="text-align: right; margin-top: 24px;">IV NaBic</h3>
-      <div style="overflow-x: auto;">
-        <table border="1" cellpadding="8" cellspacing="0" style="width: 100%; border-collapse: collapse; text-align: center;">
-          <thead style="background-color: #f0f0f0;">
-            <tr>
-              <th>שעת המתן</th>
-              <th>כמות (meq / kg)</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${nabicRows || '<tr><td colspan="2"><em>אין נתונים</em></td></tr>'}
           </tbody>
         </table>
       </div>

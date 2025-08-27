@@ -3,6 +3,8 @@
     <button mat-raised-button color="warn" type="button" class="closeBtn" (click)="onClose()">
       X
     </button>
+    <h3><u>{{Training_Request_Forms_A?.get('First_Name')?.value}}
+        {{Training_Request_Forms_A?.get('Family_Name')?.value}}</u></h3>
   </div>
   <mat-horizontal-stepper #stepper *ngIf="Training_Request_Forms_A != undefined">
     <mat-step [stepControl]="Training_Request_Forms_A" errorMessage="שכחת שדות חובה.">
@@ -17,10 +19,12 @@
                   <mat-label>מס' ת.ז</mat-label>
                   <input matInput formControlName="Passport_ID" (blur)="getPersonDetails()"
                     (keydown.enter)="getPersonDetails()" required />
-                  <mat-error *ngIf="Training_Request_Forms_A.get('Passport_ID')?.hasError('required')">
-                    מספר תעודת זהות חובה
+                  <mat-error
+                    *ngIf="Training_Request_Forms_A.get('Passport_ID').hasError('required') && Training_Request_Forms_A.get('Passport_ID').touched">
+                    שדה חובה
                   </mat-error>
-                  <mat-error *ngIf="Training_Request_Forms_A.get('Passport_ID')?.hasError('pattern')">
+                  <mat-error
+                    *ngIf="Training_Request_Forms_A.get('Passport_ID').hasError('pattern') && Training_Request_Forms_A.get('Passport_ID').touched">
                     יש להזין רק מספרים
                   </mat-error>
                 </mat-form-field>
@@ -36,6 +40,10 @@
                     <mat-option value="4"> מר </mat-option>
                     <mat-option value="5"> גב' </mat-option>
                   </mat-select>
+                  <mat-error
+                    *ngIf="Training_Request_Forms_A.get('Title').hasError('required') && Training_Request_Forms_A.get('Title').touched">
+                    שדה חובה
+                  </mat-error>
                   <!-- <mat-select formControlName="Title">
                     <mat-option *ngFor="let title of titleList" [value]="title">
                       {{ title }}
@@ -48,6 +56,10 @@
                 <mat-form-field>
                   <mat-label>שם משפחה</mat-label>
                   <input matInput formControlName="Family_Name" required />
+                  <mat-error
+                    *ngIf="Training_Request_Forms_A.get('Family_Name').hasError('required') && Training_Request_Forms_A.get('Family_Name').touched">
+                    שדה חובה
+                  </mat-error>
                 </mat-form-field>
               </div>
               <div class="col-lg-2 col-md-4 col-sm-6"
@@ -55,6 +67,10 @@
                 <mat-form-field>
                   <mat-label>שם פרטי</mat-label>
                   <input matInput formControlName="First_Name" required />
+                  <mat-error
+                    *ngIf="Training_Request_Forms_A.get('First_Name').hasError('required') && Training_Request_Forms_A.get('First_Name').touched">
+                    שדה חובה
+                  </mat-error>
                 </mat-form-field>
               </div>
               <div class="col-lg-2 col-md-4 col-sm-6"
@@ -62,6 +78,10 @@
                 <mat-form-field>
                   <mat-label>עיר/ישוב</mat-label>
                   <input matInput formControlName="Address" required />
+                  <mat-error
+                    *ngIf="Training_Request_Forms_A.get('Address').hasError('required') && Training_Request_Forms_A.get('Address').touched">
+                    שדה חובה
+                  </mat-error>
                 </mat-form-field>
               </div>
               <div class="col-lg-2 col-md-4 col-sm-6"
@@ -73,8 +93,9 @@
                       {{ edu }}
                     </mat-option>
                   </mat-select>
-                  <mat-error *ngIf="Training_Request_Forms_A.get('Education')?.hasError('required')">
-                    השכלה חובה
+                  <mat-error
+                    *ngIf="Training_Request_Forms_A.get('Education').hasError('required') && Training_Request_Forms_A.get('Education').touched">
+                    שדה חובה
                   </mat-error>
                 </mat-form-field>
               </div>
@@ -83,10 +104,12 @@
                 <mat-form-field>
                   <mat-label>נייד</mat-label>
                   <input matInput formControlName="Phone_Number" required />
-                  <mat-error *ngIf="Training_Request_Forms_A.get('Phone_Number')?.hasError('required')">
-                    מספר טלפון חובה
+                  <mat-error
+                    *ngIf="Training_Request_Forms_A.get('Phone_Number').hasError('required') && Training_Request_Forms_A.get('Phone_Number').touched">
+                    שדה חובה
                   </mat-error>
-                  <mat-error *ngIf="Training_Request_Forms_A.get('Phone_Number')?.hasError('pattern')">
+                  <mat-error
+                    *ngIf="Training_Request_Forms_A.get('Phone_Number').hasError('pattern') && Training_Request_Forms_A.get('Phone_Number').touched">
                     יש להזין רק מספרים
                   </mat-error>
                 </mat-form-field>
@@ -134,7 +157,8 @@
         </mat-card>
       </form>
       <div>
-        <button mat-button matStepperNext class="stepBtn" style="background-color: #84a8eb;">הבא</button>
+        <button mat-button matStepperNext class="stepBtn" style="background-color: #84a8eb;"
+          (click)="markFormGroupTouched(Training_Request_Forms_A)">הבא</button>
       </div>
     </mat-step>
     <mat-step [stepControl]="Training_Request_Forms_B" errorMessage="שכחת שדות חובה."
@@ -149,6 +173,10 @@
                 <mat-form-field>
                   <mat-label>שם ההשתלמות</mat-label>
                   <input matInput formControlName="Request_Name" required />
+                  <mat-error
+                    *ngIf="Training_Request_Forms_B.get('Request_Name').hasError('required') && Training_Request_Forms_B.get('Request_Name').touched">
+                    שדה חובה
+                  </mat-error>
                 </mat-form-field>
               </div>
               <div class="col-lg-2 col-md-4 col-sm-6">
@@ -168,45 +196,65 @@
                       {{City.cityName}}
                     </mat-option>
                   </mat-autocomplete>
+                  <mat-error *ngIf="cityControl.hasError('required') && cityControl.touched">
+                    שדה חובה
+                  </mat-error>
                 </mat-form-field>
               </div>
               <div class="col-lg-2 col-md-4 col-sm-6">
                 <mat-label>המוסד המארגן</mat-label>
                 <mat-select formControlName="Planning_Intity">
-                  <mat-option value="מרכז רפואי צפון (פוריה)"> מרכז רפואי צפון (פוריה) </mat-option>
+                  <mat-option value="מרכז רפואי צפון"> מרכז רפואי צפון </mat-option>
                   <mat-option *ngFor="let intity of intity_list" [value]="intity"> {{intity}} </mat-option>
                 </mat-select>
+                <mat-error
+                  *ngIf="Training_Request_Forms_B.get('Planning_Intity').hasError('required') && Training_Request_Forms_B.get('Planning_Intity').touched">
+                  שדה חובה
+                </mat-error>
               </div>
               <div class="col-lg-2 col-md-4 col-sm-6"
                 *ngIf="Training_Request_Forms_B.get('Planning_Intity').value == 'אחר'">
                 <mat-form-field>
                   <mat-label>מוסד מארגן</mat-label>
                   <input matInput formControlName="Planning_Intity_Text" />
+                  <mat-error
+                    *ngIf="Training_Request_Forms_B.get('Planning_Intity_Text').hasError('required') && Training_Request_Forms_B.get('Planning_Intity_Text').touched">
+                    שדה חובה
+                  </mat-error>
                 </mat-form-field>
               </div>
               <div class="col-lg-2 col-md-4 col-sm-6">
                 <mat-form-field>
                   <mat-label>תאריך התחלה <p *ngIf="Training_Request_Forms_B.get('Training_Out').value">ללא ימי
                       הטיסה</p></mat-label>
-                  <input matInput [matDatepicker]="Date_Start" formControlName="Date_Start" required>
+                  <input matInput [matDatepicker]="Date_Start" formControlName="Date_Start" [min]="date_now" required>
                   <mat-datepicker-toggle matIconSuffix [for]="Date_Start"></mat-datepicker-toggle>
                   <mat-datepicker #Date_Start></mat-datepicker>
+                  <mat-error
+                    *ngIf="Training_Request_Forms_B.get('Date_Start').hasError('required') && Training_Request_Forms_B.get('Date_Start').touched">
+                    שדה חובה
+                  </mat-error>
                 </mat-form-field>
               </div>
               <div class="col-lg-2 col-md-4 col-sm-6">
                 <mat-form-field>
                   <mat-label>תאריך סיום <p *ngIf="Training_Request_Forms_B.get('Training_Out').value">ללא ימי
                       הטיסה</p></mat-label>
-                  <input matInput [matDatepicker]="Date_End" formControlName="Date_End" required>
+                  <input matInput [matDatepicker]="Date_End" formControlName="Date_End" [min]="date_now" required>
                   <mat-datepicker-toggle matIconSuffix [for]="Date_End"></mat-datepicker-toggle>
                   <mat-datepicker #Date_End></mat-datepicker>
+                  <mat-error
+                    *ngIf="Training_Request_Forms_B.get('Date_End').hasError('required') && Training_Request_Forms_B.get('Date_End').touched">
+                    שדה חובה
+                  </mat-error>
                 </mat-form-field>
               </div>
               <div class="col-lg-2 col-md-4 col-sm-6">
                 <mat-form-field>
                   <mat-label>סה"כ ימי השתלמות*</mat-label>
                   <input matInput formControlName="Request_Duration" />
-                  <mat-error *ngIf="Training_Request_Forms_B.get('Request_Duration')?.hasError('pattern')">
+                  <mat-error
+                    *ngIf="Training_Request_Forms_B.get('Request_Duration').hasError('pattern') && Training_Request_Forms_B.get('Request_Duration').touched">
                     הזן מספרים בלבד.
                   </mat-error>
                 </mat-form-field>
@@ -215,20 +263,41 @@
                 <mat-form-field>
                   <mat-label>שכר לימוד*</mat-label>
                   <input matInput formControlName="Education_Fee" />
-                  <mat-error *ngIf="Training_Request_Forms_B.get('Education_Fee')?.hasError('pattern')">
+                  <mat-error
+                    *ngIf="Training_Request_Forms_B.get('Education_Fee').hasError('pattern') && Training_Request_Forms_B.get('Education_Fee').touched">
                     יש להזין רק מספרים
                   </mat-error>
                 </mat-form-field>
               </div>
               <div class="col-lg-2 col-md-4 col-sm-6">
-                <label for="fileInput" class="file-label">תוכנית מצורפת(תמונה/PDF)*</label>
-                <input type="file" id="fileInput" (change)="onFileSelected($event)" class="file-input"
-                  accept="application/pdf, image/*" required />
-                <button mat-raised-button class="fileOpenBtn" color="primary" (click)="file_in_new_window_base64()"
-                  *ngIf="Training_Request_Forms_B.get('Program_Attached').value != undefined && Training_Request_Forms_B.get('Program_Attached').value != ''">
-                  צפייה במסמך
-                  <span class="material-icons"> zoom_in </span>
-                </button>
+                <mat-label class="file-label">תוכנית מצורפת (תמונה / PDF) *</mat-label>
+
+                <!-- Upload Button -->
+                <div class="file-input-container">
+                  <button mat-raised-button color="primary" (click)="fileInput.click()">
+                    <mat-icon>attach_file</mat-icon>
+                    בחר קובץ
+                  </button>
+                  <input #fileInput type="file" (change)="onFileSelected($event)" accept="application/pdf, image/*"
+                    hidden required />
+                  <span class="selected-file-name" *ngIf="Training_Request_Forms_B.get('Program_Attached')?.value">
+                    {{ Training_Request_Forms_B.get('Program_Attached')?.value?.name || 'קובץ נבחר' }}
+                  </span>
+                </div>
+
+                <!-- Error message -->
+                <mat-error *ngIf="Training_Request_Forms_B.get('Program_Attached')?.hasError('required') &&
+                     Training_Request_Forms_B.get('Program_Attached')?.touched">
+                  שדה חובה
+                </mat-error>
+
+                <!-- Preview Button -->
+                <div class="file-preview" *ngIf="Training_Request_Forms_B.get('Program_Attached')?.value">
+                  <button mat-stroked-button color="accent" (click)="file_in_new_window_base64()">
+                    <mat-icon>zoom_in</mat-icon>
+                    צפייה במסמך
+                  </button>
+                </div>
               </div>
               <div class="col-lg-3 col-md-4 col-sm-6">
                 <!-- Toggle to choose if poster is needed -->
@@ -236,20 +305,32 @@
                   [ngModelOptions]="{standalone: true}" (change)="IfPosterAttached()">
                   פוסטר/הצגת הרצאה נדרש?
                 </mat-slide-toggle>
+                <!-- <mat-label class="file-label">פוסטר/הצגת הרצאה (תמונה/PDF)</mat-label> -->
 
-                <!-- Poster file input and view button shown only if wantsPoster is true -->
-                <div *ngIf="wantsPoster">
-                  <label for="fileInputPoster" class="file-label">
-                    פוסטר/הצגת הרצאה (תמונה/PDF)
-                  </label>
-                  <input type="file" id="fileInputPoster" (change)="onFileSelectedPoster($event)" class="file-input"
-                    accept="application/pdf, image/*" />
+                <!-- Upload Button -->
+                <div class="file-input-container" *ngIf="wantsPoster">
+                  <button mat-raised-button color="primary" (click)="fileInputPoster.click()">
+                    <mat-icon>attach_file</mat-icon>
+                    בחר קובץ
+                  </button>
+                  <input #fileInputPoster type="file" (change)="onFileSelectedPoster($event)"
+                    accept="application/pdf, image/*" hidden required />
+                  <span class="selected-file-name" *ngIf="Training_Request_Forms_B.get('Poster_Attached')?.value">
+                    {{ Training_Request_Forms_B.get('Poster_Attached')?.value?.name || 'קובץ נבחר' }}
+                  </span>
+                </div>
 
-                  <button mat-raised-button class="fileOpenBtn" color="primary"
-                    (click)="file_in_new_window_base64_Poster()"
-                    *ngIf="Training_Request_Forms_B.get('Poster_Attached').value">
-                    צפייה במסמך
+                <!-- Error message -->
+                <mat-error *ngIf="Training_Request_Forms_B.get('Poster_Attached')?.hasError('required') &&
+                     Training_Request_Forms_B.get('Poster_Attached')?.touched">
+                  שדה חובה
+                </mat-error>
+
+                <!-- Preview Button -->
+                <div class="file-preview" *ngIf="Training_Request_Forms_B.get('Poster_Attached')?.value">
+                  <button mat-stroked-button color="accent" (click)="file_in_new_window_base64_Poster()">
                     <mat-icon>zoom_in</mat-icon>
+                    צפייה במסמך
                   </button>
                 </div>
               </div>
@@ -257,17 +338,18 @@
                 <mat-form-field>
                   <mat-label>ימי העדרות מאושרים(ימולא ע"י ועדת הדרכה)</mat-label>
                   <input matInput formControlName="Absence_Time" />
-                  <mat-error *ngIf="Training_Request_Forms_B.get('Absence_Time')?.hasError('pattern')">
+                  <mat-error
+                    *ngIf="Training_Request_Forms_B.get('Absence_Time').hasError('pattern') && Training_Request_Forms_B.get('Absence_Time').touched">
                     יש להזין רק מספרים
                   </mat-error>
                 </mat-form-field>
               </div>
             </div>
-            <div class="row">
+            <div class="row mt-5">
               <div class="col-lg-12 col-md-12 col-sm-12">
                 <mat-form-field>
                   <mat-label>הערת המבקש</mat-label>
-                  <textarea matInput cols="3" formControlName="Request_Note"></textarea>
+                  <textarea matInput rows="4" formControlName="Request_Note"></textarea>
                 </mat-form-field>
               </div>
             </div>
@@ -279,7 +361,8 @@
       </form>
       <div>
         <button mat-button matStepperPrevious class="stepBtn">חזרה</button>
-        <button mat-button matStepperNext class="stepBtn" style="background-color: #84a8eb;">הבא</button>
+        <button mat-button matStepperNext class="stepBtn" style="background-color: #84a8eb;"
+          (click)="markFormGroupTouched(Training_Request_Forms_B)">הבא</button>
       </div>
     </mat-step>
     <mat-step [stepControl]="Training_Request_Forms_D" errorMessage="שכחת שדות חובה."
@@ -318,15 +401,15 @@
               <label for="fileInput" class="file-label">מכתב תמיכה חתום ע"י הנהלת המרכז הרפואי(תמונה/PDF)</label>
               <input type="file" id="fileInput2" (change)="onFileSelected2($event)" class="file-input"
                 accept="application/pdf, image/*" />
-              <button mat-raised-button class="fileOpenBtn" color="primary" (click)="file_in_new_window_base642()"
-                *ngIf="Training_Request_Forms_D.get('OutSource_Company_Plan').value != undefined && Training_Request_Forms_D.get('OutSource_Company_Plan').value != ''">
-                צפייה במסמך
-                <span class="material-icons"> zoom_in </span>
-              </button>
             </div>
+            <button mat-raised-button class="fileOpenBtn" color="primary" (click)="file_in_new_window_base642()"
+              *ngIf="Training_Request_Forms_D.get('OutSource_Company_Plan').value != undefined && Training_Request_Forms_D.get('OutSource_Company_Plan').value != ''">
+              צפייה במסמך
+              <span class="material-icons"> zoom_in </span>
+            </button>
             <hr>
-            <h5 *ngIf="Training_Request_Forms_B.get('Training_Out').value == false">* מרכז שיקום</h5>
-            <div class="section" *ngIf="Training_Request_Forms_B.get('Training_Out').value == false">
+            <h5>* מרכז שיקום</h5>
+            <div class="section">
               <section class="example-section">
                 <p><mat-checkbox formControlName="Galilean_Partnership"><span class="checkbox-label">ההשתלמות קשורה
                       למרכז
@@ -336,7 +419,7 @@
               <div class="section" *ngIf="Training_Request_Forms_D.get('Galilean_Partnership').value == true">
                 <mat-label>תשובת השותפות גלילילת</mat-label>
                 <p *ngIf="user_name != 'nedelmanpo' && user_name != 'doz'"> {{
-                  Training_Request_Forms_D.get('Training_Fund_Answer').value }}
+                  Training_Request_Forms_D.get('Galilean_Partnership_Description').value }}
                 </p>
                 <mat-form-field *ngIf="user_name == 'nedelmanpo' || user_name == 'doz' || user_name == 'adahabre'">
                   <mat-label>תשובת השותפות גלילילת</mat-label>
@@ -353,7 +436,6 @@
                       מרכזית למימון</span></mat-checkbox>
                 </p>
               </section>
-              <!-- <mat-label>{{ Health_Corporation_Options.QuestionText }}</mat-label> -->
               <mat-label *ngIf="health_checkbox"> נא לבחור </mat-label>
               <mat-select formControlName="Health_Corporation" *ngIf="health_checkbox" class="multi-select"
                 [compareWith]="compareFn" (selectionChange)="check_if_fund_or_health()" multiple>
@@ -362,6 +444,10 @@
                   {{ option.OptionText }}
                 </mat-option>
               </mat-select>
+              <mat-error
+                *ngIf="Training_Request_Forms_D.get('Health_Corporation').hasError('required') && Training_Request_Forms_D.get('Health_Corporation').touched">
+                שדה חובה
+              </mat-error>
             </div>
             <hr>
             <div class="section">
@@ -380,27 +466,33 @@
                   {{ option.OptionText }}
                 </mat-option>
               </mat-select>
+              <mat-error
+                *ngIf="Training_Request_Forms_D.get('Department_Fund').hasError('required') && Training_Request_Forms_D.get('Department_Fund').touched">
+                שדה חובה
+              </mat-error>
             </div>
             <br>
             <hr>
             <div class="section" *ngIf="dorit_note_answer">
               <mat-label>תשובת התאגיד</mat-label>
-              <p *ngIf="user_name != 'dnudelman'"> {{ Training_Request_Forms_D.get('Training_Fund_Answer').value }}
+              <p *ngIf="user_name != 'dnudelman' && user_name != 'lnachmani'"> {{
+                Training_Request_Forms_D.get('Training_Fund_Answer').value }}
               </p>
-              <mat-form-field *ngIf="user_name == 'dnudelman' || user_name == 'adahabre'">
+              <mat-form-field *ngIf="user_name == 'dnudelman' || user_name != 'lnachmani' || user_name == 'adahabre'">
                 <mat-label>תשובת התאגיד</mat-label>
                 <textarea matInput formControlName="Training_Fund_Answer" rows="2"></textarea>
               </mat-form-field>
             </div>
           </mat-card-content>
         </mat-card>
-        <button mat-raised-button color="primary" type="submit" class="submitBtn" (click)="onSubmit(0)"
+        <!-- <button mat-raised-button color="primary" type="submit" class="submitBtn" (click)="onSubmit(0)"
           *ngIf="Training_Request_Forms_E.get('Sent_To_Manager').value != 'True'">שמירה
-          כטיוטה</button>
+          כטיוטה</button> -->
       </form>
       <div>
         <button mat-button matStepperPrevious class="stepBtn">חזרה</button>
-        <button mat-button matStepperNext class="stepBtn" style="background-color: #84a8eb;">הבא</button>
+        <button mat-button matStepperNext class="stepBtn" style="background-color: #84a8eb;"
+          (click)="markFormGroupTouched(Training_Request_Forms_D)">הבא</button>
       </div>
     </mat-step>
     <mat-step [stepControl]="Training_Request_Forms_C" errorMessage="שכחת שדות חובה."
@@ -442,6 +534,10 @@
                   <input matInput [matDatepicker]="Request_Name" formControlName="Request_Name" required>
                   <mat-datepicker-toggle matIconSuffix [for]="Request_Name"></mat-datepicker-toggle>
                   <mat-datepicker #Request_Name></mat-datepicker>
+                  <mat-error
+                    *ngIf="Training_Request_Forms_C.get('Request_Name').hasError('required') && Training_Request_Forms_C.get('Request_Name').touched">
+                    שדה חובה
+                  </mat-error>
                 </mat-form-field>
               </div>
               <div class="col-lg-2 col-md-4 col-sm-6">
@@ -458,18 +554,20 @@
           </mat-card-content>
         </mat-card>
         <button mat-raised-button color="primary" type="submit" class="submitBtn" matTooltip="שמירה ללא שליחה"
-          (click)="onSubmit(0)" *ngIf="Training_Request_Forms_E.get('Sent_To_Manager').value != 'True'"
+          (click)="onSubmit(0)"
+          *ngIf="Training_Request_Forms_E.get('Approved').value == 'השלמת נתונים' || Training_Request_Forms_E.get('Approved').value == '' || Training_Request_Forms_E.get('Approved').value == null"
           [disabled]="Training_Request_Forms_C.get('Request_Sign').value !== undefined && Training_Request_Forms_C.get('Request_Sign').value !== null">שמירה
           כטיוטה</button>
         <button mat-raised-button color="primary" type="submit" class="submitBtn" matTooltip="חתימת עובד חובה"
-          (click)="onSubmit(0)" *ngIf="Training_Request_Forms_E.get('Sent_To_Manager').value != 'True'"
+          (click)="onSubmit(0)"
+          *ngIf="Training_Request_Forms_E.get('Approved').value == 'השלמת נתונים' || Training_Request_Forms_E.get('Approved').value == '' || Training_Request_Forms_E.get('Approved').value == null"
           [disabled]="Training_Request_Forms_C.get('Request_Sign').value === undefined || Training_Request_Forms_C.get('Request_Sign').value === null">שמירה
           והגשה</button>
       </form>
       <div>
         <button mat-button matStepperPrevious class="stepBtn">חזרה</button>
         <button mat-button matStepperNext class="stepBtn" style="background-color: #84a8eb;"
-          *ngIf="!requested">הבא</button>
+          (click)="markFormGroupTouched(Training_Request_Forms_C)" *ngIf="!requested">הבא</button>
       </div>
     </mat-step>
     <mat-step [stepControl]="Training_Request_Forms_E" *ngIf="!requested" errorMessage="שכחת שדות חובה.">
@@ -479,22 +577,31 @@
           <div class="row">
             <div class="col-lg-2 col-md-4 col-sm-6" dir="ltr">
               <mat-form-field appearance="outline" style="width: 100%;">
-                <mat-label>אישור</mat-label>
-                <mat-select formControlName="Approved">
+                <mat-label class="label-select">סטטוס</mat-label>
+                <mat-select formControlName="Approved" (selectionChange)="ApprovedStatusChanged(0)">
                   <mat-option value="מאושר">מאושר</mat-option>
                   <mat-option value="לא מאושר">לא מאושר</mat-option>
                   <mat-option value="השלמת נתונים">השלמת נתונים</mat-option>
                 </mat-select>
+                <mat-error
+                  *ngIf="Training_Request_Forms_E.get('Approved').hasError('required') && Training_Request_Forms_E.get('Approved').touched">
+                  שדה חובה
+                </mat-error>
               </mat-form-field>
             </div>
-            <div class="col-lg-2 col-md-4 col-sm-6">
-              <mat-label class="label-select">{{ Training_Importantce_Options.QuestionText }}</mat-label>
-              <mat-select formControlName="Training_Importantce" [compareWith]="compareFn">
-                <mat-option *ngFor="let option of Training_Importantce_Options.Training_Request_Options"
-                  [value]="option.OptionText">
-                  {{ option.OptionText }}
-                </mat-option>
-              </mat-select>
+            <div class="col-lg-2 col-md-4 col-sm-6" dir="ltr">
+              <mat-form-field appearance="outline" style="width: 100%;">
+                <mat-label class="label-select">חשיבות</mat-label>
+                <mat-select formControlName="Training_Importantce">
+                  <mat-option value="חיונית ביותר">חיונית ביותר</mat-option>
+                  <mat-option value="חיונית">חיונית</mat-option>
+                  <mat-option value="אינה חיונית">אינה חיונית</mat-option>
+                </mat-select>
+                <mat-error
+                  *ngIf="Training_Request_Forms_E.get('Training_Importantce').hasError('required') && Training_Request_Forms_E.get('Training_Importantce').touched">
+                  שדה חובה
+                </mat-error>
+              </mat-form-field>
             </div>
             <div class="col-lg-3 col-md-4 col-sm-6">
               <mat-form-field>
@@ -509,6 +616,10 @@
                 <mat-hint>DD/MM/YYYY</mat-hint>
                 <mat-datepicker-toggle matIconSuffix [for]="Opinion_Date1"></mat-datepicker-toggle>
                 <mat-datepicker #Opinion_Date1></mat-datepicker>
+                <mat-error
+                  *ngIf="Training_Request_Forms_E.get('Opinion_Date').hasError('required') && Training_Request_Forms_E.get('Opinion_Date').touched">
+                  שדה חובה
+                </mat-error>
               </mat-form-field>
             </div>
             <div class="col-lg-2 col-md-4 col-sm-6" *ngIf="filteredOptions != undefined">
@@ -520,6 +631,9 @@
                     {{name.firstname}}
                   </mat-option>
                 </mat-autocomplete>
+                <mat-error *ngIf="Supervisor_Name1.hasError('required') && Supervisor_Name1.touched">
+                  שדה חובה
+                </mat-error>
               </mat-form-field>
             </div>
             <div class="col-lg-1 col-md-4 col-sm-6">
@@ -530,17 +644,22 @@
                 <span
                   *ngIf="Training_Request_Forms_E.get('Supervisor_Sign').value != undefined && Training_Request_Forms_E.get('Supervisor_Sign').value != ''">נחתם</span>
               </button>
+              <mat-error *ngIf="Training_Request_Forms_E.get('Supervisor_Sign').hasError('required')">
+                שדה חובה יש לחתום
+              </mat-error>
               <img
                 *ngIf="Training_Request_Forms_E.get('Supervisor_Sign').value != undefined && Training_Request_Forms_E.get('Supervisor_Sign').value != ''"
                 [src]="Training_Request_Forms_E.get('Supervisor_Sign').value" />
             </div>
           </div>
         </mat-card-content>
-        <button mat-raised-button color="primary" type="submit" class="submitBtn" (click)="onSubmit(0)">שמירה</button>
+        <button mat-raised-button color="primary" type="submit" class="submitBtn" (click)="onSubmit(0)">אישור
+          ושמירה</button>
       </form>
       <div>
         <button mat-button matStepperPrevious class="stepBtn">חזרה</button>
-        <button mat-button matStepperNext class="stepBtn" style="background-color: #84a8eb;">הבא</button>
+        <button mat-button matStepperNext class="stepBtn" style="background-color: #84a8eb;"
+          (click)="markFormGroupTouched(Training_Request_Forms_E)">הבא</button>
       </div>
     </mat-step>
     <mat-step [stepControl]="Training_Request_Forms_F" *ngIf="!requested" errorMessage="שכחת שדות חובה.">
@@ -550,22 +669,31 @@
           <div class="row">
             <div class="col-lg-2 col-md-4 col-sm-6" dir="ltr">
               <mat-form-field appearance="outline" style="width: 100%;">
-                <mat-label>אישור</mat-label>
-                <mat-select formControlName="Approved">
+                <mat-label class="label-select">סטטוס</mat-label>
+                <mat-select formControlName="Approved" (selectionChange)="ApprovedStatusChanged(1)">
                   <mat-option value="מאושר">מאושר</mat-option>
                   <mat-option value="לא מאושר">לא מאושר</mat-option>
                   <mat-option value="השלמת נתונים">השלמת נתונים</mat-option>
                 </mat-select>
+                <mat-error
+                  *ngIf="Training_Request_Forms_F.get('Approved').hasError('required') && Training_Request_Forms_F.get('Approved').touched">
+                  שדה חובה
+                </mat-error>
               </mat-form-field>
             </div>
-            <div class="col-lg-2 col-md-4 col-sm-6">
-              <mat-label class="label-select">{{ Training_Importantce_Options2.QuestionText }}</mat-label>
-              <mat-select formControlName="Training_Importantce" [compareWith]="compareFn">
-                <mat-option *ngFor="let option of Training_Importantce_Options2.Training_Request_Options"
-                  [value]="option.OptionText">
-                  {{ option.OptionText }}
-                </mat-option>
-              </mat-select>
+            <div class="col-lg-2 col-md-4 col-sm-6" dir="ltr">
+              <mat-form-field appearance="outline" style="width: 100%;">
+                <mat-label class="label-select">חשיבות</mat-label>
+                <mat-select formControlName="Training_Importantce">
+                  <mat-option value="חיונית ביותר">חיונית ביותר</mat-option>
+                  <mat-option value="חיונית">חיונית</mat-option>
+                  <mat-option value="לא חיונית">לא חיונית</mat-option>
+                </mat-select>
+                <mat-error
+                  *ngIf="Training_Request_Forms_F.get('Training_Importantce').hasError('required') && Training_Request_Forms_F.get('Training_Importantce').touched">
+                  שדה חובה
+                </mat-error>
+              </mat-form-field>
             </div>
             <div class="col-lg-3 col-md-4 col-sm-6">
               <mat-form-field>
@@ -580,6 +708,10 @@
                 <mat-hint>DD/MM/YYYY</mat-hint>
                 <mat-datepicker-toggle matIconSuffix [for]="Opinion_Date2"></mat-datepicker-toggle>
                 <mat-datepicker #Opinion_Date2></mat-datepicker>
+                <mat-error
+                  *ngIf="Training_Request_Forms_F.get('Opinion_Date').hasError('required') && Training_Request_Forms_F.get('Opinion_Date').touched">
+                  שדה חובה
+                </mat-error>
               </mat-form-field>
             </div>
             <div class="col-lg-2 col-md-4 col-sm-6" *ngIf="filteredOptions2 != undefined">
@@ -591,6 +723,9 @@
                     {{name2.firstname}}
                   </mat-option>
                 </mat-autocomplete>
+                <mat-error *ngIf="Supervisor_Name2.hasError('required') && Supervisor_Name2.touched">
+                  שדה חובה
+                </mat-error>
               </mat-form-field>
             </div>
             <div class="col-lg-1 col-md-4 col-sm-6">
@@ -601,21 +736,27 @@
                 <span
                   *ngIf="Training_Request_Forms_F.get('Supervisor_Sign').value != undefined && Training_Request_Forms_F.get('Supervisor_Sign').value != ''">נחתם</span>
               </button>
+              <mat-error *ngIf="Training_Request_Forms_F.get('Supervisor_Sign').hasError('required')">
+                שדה חובה יש לחתום
+              </mat-error>
               <img
                 *ngIf="Training_Request_Forms_F.get('Supervisor_Sign').value != undefined && Training_Request_Forms_F.get('Supervisor_Sign').value != ''"
                 [src]="Training_Request_Forms_F.get('Supervisor_Sign').value" />
             </div>
           </div>
         </mat-card-content>
-        <button mat-raised-button color="primary" type="submit" class="submitBtn" (click)="onSubmit(0)">שמירה</button>
+        <button mat-raised-button color="primary" type="submit" class="submitBtn" (click)="onSubmit(0)">אישור
+          ושמירה</button>
       </form>
       <div>
         <button mat-button matStepperPrevious class="stepBtn">חזרה</button>
-        <button mat-button matStepperNext class="stepBtn" style="background-color: #84a8eb;">הבא</button>
+        <button mat-button matStepperNext class="stepBtn" style="background-color: #84a8eb;"
+          (click)="markFormGroupTouched(Training_Request_Forms_F)">הבא</button>
       </div>
     </mat-step>
     <mat-step [stepControl]="Training_Request_Forms_H"
-      *ngIf="!requested && Training_Request_Forms_F.get('Approved').value" errorMessage="שכחת שדות חובה.">
+      *ngIf="!requested && Training_Request_Forms_F.get('Approved').value && (user_name == 'adahabre' || user_name == 'ttsrefati' || user_name == 'ssabach')"
+      errorMessage="שכחת שדות חובה.">
       <form [formGroup]="Training_Request_Forms_H">
         <ng-template matStepLabel>ועדת החלטה</ng-template>
         <mat-card-content>
@@ -627,9 +768,13 @@
                 <mat-hint>DD/MM/YYYY</mat-hint>
                 <mat-datepicker-toggle matIconSuffix [for]="Opinion_Date3"></mat-datepicker-toggle>
                 <mat-datepicker #Opinion_Date3></mat-datepicker>
+                <mat-error
+                  *ngIf="Training_Request_Forms_H.get('Opinion_Date').hasError('required') && Training_Request_Forms_H.get('Opinion_Date').touched">
+                  שדה חובה
+                </mat-error>
               </mat-form-field>
             </div>
-            <div class="col-lg-3 col-md-4 col-sm-6">
+            <div class="col-lg-2 col-md-4 col-sm-6">
               <mat-label class="label-select">סוג השתלמות</mat-label>
               <mat-select formControlName="Training_Type" [compareWith]="compareFn3">
                 <mat-option value="העשרה">העשרה</mat-option>
@@ -655,7 +800,12 @@
                 <mat-option value="קורס קידום קד'ם">קורס קידום קד"ם</mat-option>
                 <mat-option value="רוטציה בהתמחות">רוטציה בהתמחות</mat-option>
                 <mat-option value="שפות">שפות</mat-option>
+                <mat-option value="אחר">אחר</mat-option>
               </mat-select>
+              <mat-error
+                *ngIf="Training_Request_Forms_H.get('Training_Type').hasError('required') && Training_Request_Forms_H.get('Training_Type').touched">
+                שדה חובה
+              </mat-error>
             </div>
             <div class="col-lg-2 col-md-4 col-sm-6">
               <mat-label class="label-select">סוג אישור</mat-label>
@@ -679,14 +829,16 @@
                 </p>
               </section>
             </div>
-            <div class="col-lg-1 col-md-4 col-sm-6">
+            <div class="col-lg-2 col-md-4 col-sm-6">
               <mat-form-field>
                 <mat-label>מענק מאושר באחוזים</mat-label>
                 <input matInput formControlName="Approved_Percent" type="number" max="100" />
-                <mat-error *ngIf="Training_Request_Forms_H.get('Approved_Percent')?.hasError('pattern')">
+                <mat-error
+                  *ngIf="Training_Request_Forms_H.get('Approved_Percent').hasError('pattern') && Training_Request_Forms_H.get('Approved_Percent').touched">
                   הזן מספרים בלבד.
                 </mat-error>
-                <mat-error *ngIf="Training_Request_Forms_H.get('Approved_Percent')?.hasError('max')">
+                <mat-error
+                  *ngIf="Training_Request_Forms_H.get('Approved_Percent').hasError('max') && Training_Request_Forms_H.get('Approved_Percent').touched">
                   הערך לא יכול להיות גדול מ-100.
                 </mat-error>
               </mat-form-field>
@@ -695,6 +847,10 @@
               <mat-form-field>
                 <mat-label>מתוך סכום של</mat-label>
                 <input matInput formControlName="Approved_Percent_Out_Of" />
+                <mat-error
+                  *ngIf="Training_Request_Forms_H.get('Approved_Percent_Out_Of').hasError('required') && Training_Request_Forms_H.get('Approved_Percent_Out_Of').touched">
+                  שדה חובה
+                </mat-error>
               </mat-form-field>
             </div>
             <div class="col-lg-1 col-md-4 col-sm-6">
@@ -713,12 +869,20 @@
                   <mat-option value="31">31</mat-option>
                   <mat-option value="166">166</mat-option>
                 </mat-select>
+                <mat-error
+                  *ngIf="Training_Request_Forms_H.get('Code_Type').hasError('required') && Training_Request_Forms_H.get('Code_Type').touched">
+                  שדה חובה
+                </mat-error>
               </mat-form-field>
             </div>
             <div class="col-lg-2 col-md-4 col-sm-12">
               <mat-form-field>
                 <mat-label>ימי העדרות שאושרו</mat-label>
                 <input matInput formControlName="Approved_Absence_Time" />
+                <mat-error
+                  *ngIf="Training_Request_Forms_H.get('Approved_Absence_Time').hasError('pattern') && Training_Request_Forms_H.get('Approved_Absence_Time').touched">
+                  יש להזין רק מספרים
+                </mat-error>
               </mat-form-field>
             </div>
             <div class="col-lg-8 col-md-4 col-sm-12">
@@ -729,10 +893,10 @@
             </div>
           </div>
         </mat-card-content>
-        <button mat-raised-button color="primary" type="submit" class="submitBtn" matTooltip="שמירה ללא שליחה לגורמים"
-          (click)="onSubmit(0)">שמירה</button>
+        <button mat-raised-button color="primary" type="submit" class="submitBtn" matTooltip="אישור ללא שליחה לגורמים"
+          (click)="onSubmit(0)">אישור ושמירה</button>
         <button mat-raised-button color="primary" type="submit" class="submitBtn"
-          matTooltip="שמירה ושליחת סיכום ועדה לגורמים" (click)="onSubmit(1)">שמירה ושליחה</button>
+          matTooltip="אישור ושליחת סיכום ועדה לגורמים" (click)="onSubmit(1)">אישור ושליחה</button>
       </form>
       <div>
         <button mat-button matStepperPrevious>חזרה</button>

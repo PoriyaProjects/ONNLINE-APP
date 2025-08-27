@@ -1,0 +1,38 @@
+<table>
+  <thead style="border-bottom: solid 1px #777;">
+    <tr><th>חדר</th>
+      <th style="transform: rotate(-20deg);font-size:0.8rem;">החודש</th>
+      <th style="transform: rotate(-20deg);font-size:0.8rem;">קודם</th>
+      <th style="transform: rotate(-20deg);font-size:0.8rem;">סה"כ</th>
+    </tr>
+  </thead>
+  <tbody>
+    <!-- <tr *ngFor="let r of roomSummary" style="border-bottom: solid 1px #999;">
+      <td>{{ r.key }}</td>
+      <td>{{ r.value }}</td>
+    </tr> -->
+    <tr *ngFor="let item of summary | keyvalue: compareTotals"  style="border-bottom: solid 1px #999;">
+      <td>{{ item.key }}</td>
+      <td>{{ item.value.thisMonth }}</td>
+      <td>{{ item.value.prevMonth }}</td>
+      <td>{{ item.value.total }}</td>
+    </tr>
+  </tbody>
+</table>
+
+
+<!-- 
+<table style="margin:0 20px; width:500px; display:block;">
+  <thead style="border-bottom: solid 1px #777;width:500px; display:block;">
+  <tr>
+    <th style="text-align: right;width:460px">סוג פרוצדורה</th>
+    <th>כמות</th>
+  </tr>
+</thead>
+<tbody style="height:168px; overflow-y: scroll; width:500;display:block;">
+  <tr *ngFor="let entry of surgeryCounts">
+    <td  style="text-align: right;width:460px">{{ entry.key }}</td>
+    <td>{{ entry.value }}</td>
+  </tr>
+</tbody>
+</table> -->

@@ -1081,7 +1081,7 @@ export class CprFormComponent implements OnInit {
       })
       .subscribe((Response) => {
         if (Response["d"]) {
-          this.openSnackBar("נשלח ל: אמין, מערך החייאה,היחידה לבטיחות בטיפול");
+          this.openSnackBar("הטופס נשלח בהצלחה");
         } else {
           this.openSnackBar("אירעה תקלה, לא נשלח!");
         }

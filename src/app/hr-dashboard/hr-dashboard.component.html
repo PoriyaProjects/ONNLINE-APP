@@ -143,6 +143,18 @@
                         <!-- <span mat-line class="secondary">{{ contact.status }}</span> -->
                     </mat-list-item>
                 </mat-list>
+                <div class="paging-controls text-center" style="margin-top: 8px;margin-bottom: 8px;">
+                    <button mat-mini-fab color="primary" (click)="prevUnAnsweredPage()"
+                        [disabled]="unAnsweredPage === 1">
+                        <mat-icon>chevron_right</mat-icon>
+                    </button>
+                    <span style="margin: 0 12px; font-size: 15px;">עמוד {{unAnsweredPage}} מתוך
+                        {{calculateAllUnAnswered() || 1}}</span>
+                    <button mat-mini-fab color="primary" (click)="nextUnAnsweredPage()">
+                        <!-- [disabled]="unAnsweredPage * unAnsweredPageSize > unAnsweredTotal" -->
+                        <mat-icon>chevron_left</mat-icon>
+                    </button>
+                </div>
             </div>
         </div>
     </mat-sidenav-content>

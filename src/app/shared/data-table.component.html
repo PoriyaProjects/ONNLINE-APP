@@ -28,6 +28,8 @@
       
       </button>
     </div>
+
+    
   
     <!-- 📋 Table -->
     <div class="table-scroll-wrapper" style="clear: both;">
@@ -61,7 +63,21 @@
       </div>
   
       <!-- Paginator -->
-      <mat-paginator [pageSizeOptions]="[20, 50, 100]" showFirstLastButtons></mat-paginator>
+      <!-- <mat-paginator [pageSizeOptions]="[20, 50, 100]" showFirstLastButtons></mat-paginator> -->
     </div>
+<hr/>
+    
+    
   </div>
   
+<div class="table-container">
+  <div class="" style="float:right; margin-left:40px; overflow: hidden; margin-bottom: 12px;">
+    <app-doctor-summary [tableData]="dataSource.data"></app-doctor-summary>
+  </div>
+  <div class="" style="float:right; margin-left:40px; overflow: hidden; margin-bottom: 12px;">
+    <app-surgery-summary [tableData]="dataSource.data"></app-surgery-summary>
+  </div>
+  <div class="" style="float:right; margin-left:40px; overflow: hidden; margin-bottom: 12px;">
+    <app-room-summary [tableData]="dataSource.data"></app-room-summary>
+  </div>
+</div>

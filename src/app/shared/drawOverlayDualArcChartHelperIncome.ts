@@ -40,10 +40,11 @@ export function drawOverlayDualArcChartHelperIncome({
     gaugeTargetStatus,
     currentMonthValues = [],
     showMarker = true,
-    markerOptions = { radius: 14, fontSize: 10 }
+    markerOptions = { radius: 14, fontSize: 10  }
   }) {
     //console.log('🎯 drawOverlayDualArcChartHelper - currentMonthValues:', currentMonthValues);
     const container = document.getElementById(containerId);
+    console.log("___containerId:" + containerId);
     if (!container) return;
   
     const existing = document.getElementById('dual_arc_svg');

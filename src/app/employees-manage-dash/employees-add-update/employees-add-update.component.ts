@@ -62,12 +62,58 @@ export class EmployeesAddUpdateComponent implements OnInit {
   _switchBlossom: any = "0";
   AcceptTerms: any;
   saveBtnWait: boolean = false;
+  print_only_Protocol: boolean = false;
   Api = environment.url;
   filteredOptions: Observable<string[]>;
   manfilter = new FormControl();
   filteredOptions2: Observable<string[]>;
   man2filter = new FormControl();
   employees = [];
+  columnHeaderMap: { [key: string]: string } = {
+    StartWorkDate: 'תאריך תחילת עבודה',
+    EmployeeSektorID: 'סקטור עובד',
+    EmployeeBlossomSektorID: 'סקטור עובד בבלוסום',
+    Title: 'תאור',
+    FunctionID: 'תפקיד',
+    DepartnentCode: 'מחלקה',
+    JobTitleID: 'תאור תפקיד',
+    EmployeeID: 'תעודת זהות',
+    FirstName: 'שם פרטי',
+    StandartJobType: 'חלקיות משרה',
+    LastName: 'שם משפחה',
+    Gender: 'מגדר',
+    RankID: 'דירוג',
+    ADUserName: 'שם משתמש',
+    Email: 'מייל',
+    CellNumber: 'מספר טלפון',
+    WorkPlaceID: 'מיקום עבודה',
+    EndWorkDate: 'תאריך סיום עבודה',
+    CityName: 'עיר',
+    CityCode: 'קוד עיר',
+    DateOfBirth: 'תאריך לידה',
+    Address: 'כתובת',
+    DocLicence: 'מספר רישיון',
+    DocStartExperience: 'תחילת ניסיון ברישיון',
+    InternLearnCountry: 'מיקום לימודים',
+    InternLearnCountryDesc: 'מדינת לימודים',
+    InternUniversity: 'אונברסיטה',
+    UserName: 'שם משתמש',
+    UpdateDate: 'תאריך עדכון',
+    StatusRow: 'מאושר משאבי אנוש',
+    AcceptTerms: 'אישר תקנון',
+    ApprovedToBlossom: 'אישור בלוסום',
+    FirstNameEng: 'שם פרטי באנגלית',
+    LastNameEng: 'שם משפחה באנגלית',
+    CarType: 'סוג רכב',
+    CarNumber: 'מספר רכב',
+    CarType_2: 'סוג רכב נוסף',
+    CarNumber_2: 'מספר רכב נוסף',
+    Toranot: 'מבצע תורנויות',
+    DateToEndWork: 'תאריך לסיום עבודה',
+    EndWorkReason: 'סיבת סיום עבודה',
+    PersonalEmail: 'מייל אישי',
+    SubDepartmentCode: 'תת מחלקה',
+  };
   @ViewChild('modalEmployeeHistory', { static: true }) modalEmployeeHistory: TemplateRef<any>;
   dataSource: MatTableDataSource<any>;
 
@@ -89,6 +135,7 @@ export class EmployeesAddUpdateComponent implements OnInit {
     this.getEmployeesBlossomSektorList();
     this.getEmployeesEndWorkReasons();
     this.getEmployeeDepartmentList();
+    this.getHRDepartmentEmployees();
 
     this.filteredOptions = this.manfilter.valueChanges
       .pipe(
@@ -124,6 +171,20 @@ export class EmployeesAddUpdateComponent implements OnInit {
 
   displayFn2(user: any): string {
     return user && user.firstname ? user.firstname : "";
+  }
+
+  getHRDepartmentEmployees() {
+    this.print_only_Protocol = false;
+    this.http
+      .post(environment.url + "GetHRDepartmentEmployees", {})
+      .subscribe((Response) => {
+        const exists = Response['d'].some(obj =>
+          Object.values(obj).some(val =>
+            typeof val === 'string' && val.toLowerCase().includes(this.UserName)
+          )
+        );
+        if (exists) this.print_only_Protocol = true;
+      });
   }
 
   getEmployeesToUpdateByID() {
@@ -214,8 +275,6 @@ export class EmployeesAddUpdateComponent implements OnInit {
           Toranot: new FormControl(this.employee.Toranot, null),
           ManagerID1: new FormControl({ id: this.employee.ManagerID1.id, firstname: "", lastname: "", ADUserName: "" }, null),
           ManagerID2: new FormControl({ id: this.employee.ManagerID2.id, firstname: "", lastname: "", ADUserName: "" }, null),
-          JcpFromDate: new FormControl(this.employee.JcpFromDate, null),
-          JcpToDate: new FormControl(this.employee.JcpToDate, null),
         });
         if (this.employee.RowID == null || this.employee.StatusRow == "1") {
           this.employeePersonalDetails.controls['FirstNameEng'].setValidators(Validators.required);
@@ -397,12 +456,12 @@ export class EmployeesAddUpdateComponent implements OnInit {
         if (this.employee_change_history_list.filteredData.length > 0) {
           this.actionColumns = Object.keys(this.employee_change_history_list.filteredData[0]);
         }
-        this.dialog2.open(this.modalEmployeeHistory, { width: '60%', disableClose: false });
+        this.dialog2.open(this.modalEmployeeHistory, { width: '90%', disableClose: false });
       });
   }
 
   closeModal() {
-    this.dialog.close();
+    this.dialog2.closeAll();
   }
 
   getRanksList() {
@@ -559,8 +618,6 @@ export class EmployeesAddUpdateComponent implements OnInit {
               Toranot: new FormControl(this.employee.Toranot, null),
               ManagerID1: new FormControl(this.employee.ManagerID1, null),
               ManagerID2: new FormControl(this.employee.ManagerID2, null),
-              JcpFromDate: new FormControl(this.employee.JcpFromDate, null),
-              JcpToDate: new FormControl(this.employee.JcpToDate, null),
             });
             this._switchHTOK = this.employee.StatusRow;
             this._switchBlossom = this.employee.ApprovedToBlossom;
@@ -600,6 +657,15 @@ export class EmployeesAddUpdateComponent implements OnInit {
     this.gymDetails.controls['EndGymDate'].setValue(pipe.transform(this.gymDetails.controls['EndGymDate'].value, 'yyyy-MM-dd'));
   }
 
+  setTrainingEndTime(index) {
+    let pipe = new DatePipe('en-US');
+    let month = new Date(this.trainingsDetails.controls.trainings['controls'][index].controls.StartDate.value);
+    this.trainingsDetails.controls.trainings['controls'][index].controls.EndDate.setValue(new Date());
+    this.trainingsDetails.controls.trainings['controls'][index].controls.EndDate.value.setYear(month.getFullYear() + 2);
+    this.trainingsDetails.controls.trainings['controls'][index].controls.EndDate.value.setDate(month.getDate());
+    this.trainingsDetails.controls.trainings['controls'][index].controls.EndDate.setValue(pipe.transform(this.trainingsDetails.controls.trainings['controls'][index].controls.EndDate.value, 'yyyy-MM-dd'));
+  }
+
   saveEmployee() {
     this.employeeWorkDetails.controls['EmployeeIndex'].setValue(this.getEmployeeIndex());
     let pipe = new DatePipe('en-US');
@@ -610,8 +676,6 @@ export class EmployeesAddUpdateComponent implements OnInit {
     this.employeePersonalDetails.controls['DateOfBirth'].setValue(pipe.transform(this.employeePersonalDetails.controls['DateOfBirth'].value, 'yyyy-MM-dd'));
     this.gymDetails.controls['StartGymDate'].setValue(pipe.transform(this.gymDetails.controls['StartGymDate'].value, 'yyyy-MM-dd'));
     this.gymDetails.controls['PaymentDate'].setValue(pipe.transform(this.gymDetails.controls['PaymentDate'].value, 'yyyy-MM-dd'));
-    this.employeeWorkDetails.controls['JcpFromDate'].setValue(pipe.transform(this.employeeWorkDetails.controls['JcpFromDate'].value, 'yyyy-MM-dd'));
-    this.employeeWorkDetails.controls['JcpToDate'].setValue(pipe.transform(this.employeeWorkDetails.controls['JcpToDate'].value, 'yyyy-MM-dd'));
     if (this.employeeWorkDetails.controls['StatusRow'].value == null || this.employeeWorkDetails.controls['StatusRow'].value == "0") {
       this.employeeWorkDetails.controls['StatusRow'].setValue('0');
       this.employeePersonalDetails.controls['FirstNameEng'].setValidators(null);

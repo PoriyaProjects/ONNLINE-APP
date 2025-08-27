@@ -256,19 +256,10 @@ import { LearningRequestsDashboardComponent } from './learning-requests-dashboar
 import { CprNewbordDashboradComponent } from './form-dashboard/cpr-newbord-dashborad/cpr-newbord-dashborad.component';
 import { CprNewbornFormComponent } from './form-dashboard/cpr-newbord-dashborad/cpr-newborn-form/cpr-newborn-form.component';
 import { HospitalCathDashbModule } from './hospital-cath-dashb/hospital-cath-dashb.module';
-import { HospitalCathDashboardComponent } from './hospital-cath-dashboard/hospital-cath-dashboard.component';
-
-import { BarChartComponent2 } from './hospital-cath-dashboard/bar-chart/bar-chart.component';
-import { GroupedBarChartComponent2 } from './hospital-cath-dashboard/grouped-bar-chart/grouped-bar-chart.component';
-import { LineChartComponent2 } from './hospital-cath-dashboard/line-chart/line-chart.component';
-import { PieChartComponent2 } from './hospital-cath-dashboard/pie-chart/pie-chart.component';
-import { GroupedBarChart2Component2 } from './hospital-cath-dashboard/grouped-bar-chart2/grouped-bar-chart2.component';
-import { GroupedBarChartReleaseComponent2 } from './hospital-cath-dashboard/grouped-bar-chart-release/grouped-bar-chart-release.component';
-import { GraphsModalComponent2 } from './hospital-cath-dashboard/graphs-modal/graphs-modal.component';
-import { ChartsDialogComponent2 } from './hospital-cath-dashboard/charts-dialog/charts-dialog.component';
-import { DashboardService} from './hospital-cath-dashboard/hospital-cath.service';
-import { EshpozModalComponent2 } from './hospital-cath-dashboard/eshpoz-modal/eshpoz-modal.component';
-import { HospitalTonnageComponent2 } from './hospital-cath-dashboard/hospital-tonnage/hospital-tonnage.component';
+import { HospitalRoomTimeDashbModule } from './hospital-roomtime-dashb/hospital-roomtime-dashb.module';
+import { HospitalRoomTimeNDashbModule } from './hospital-roomtimen-dashb/hospital-roomtimen-dashb.module';
+import { HospitalRoomTimeRTDashbModule } from './hospital-roomtimert-dashb/hospital-roomtimert-dashb.module';
+import { AppointsDashbModule } from './hospital-appoints-dashb/hospital-appoints-dashb.module';
 import { SharedModule } from './shared/shared.module';
 import { CommercialSupportFormDashboardComponent } from './form-dashboard/commercial-support-form-dashboard/commercial-support-form-dashboard.component';
 import { CommercialSupportFormDialogComponent } from './form-dashboard/commercial-support-form-dashboard/commercial-support-form-dialog/commercial-support-form-dialog.component';
@@ -283,7 +274,11 @@ import { ServiceUnitEmailListDialogComponent } from './emailsdashboard/service-u
 import { CommercialSupportGatheringComponent } from './form-dashboard/commercial-support-form-dashboard/commercial-support-gathering/commercial-support-gathering.component';
 import { DialogExampleComponent } from './form-dashboard/commercial-support-form-dashboard/commercial-support-form-dashboard.component';
 import { HospitalIncomeDashbComponent } from './hospital-income-dashb/hospital-income-dashb.component';
+import { HospitalIncomeNBDashbComponent } from './hospital-incomenb-dashb/hospital-incomenb-dashb.component';
 import { FilterDepartsPipe } from './pipe/filter-departs.pipe';
+import { FoldersManagementComponent } from './dashboard/folders-management/folders-management.component';
+import { FolderDialogComponent } from './dashboard/folders-management/folder-dialog/folder-dialog.component';
+import { RoomTimeRTDashboardComponent } from './hospital-roomtimert-dashb/google-charts/google-charts.component';
 
 
 
@@ -492,18 +487,7 @@ const maskConfig: Partial<IConfig> = {
     LearningRequestsDashboardComponent,
     CprNewbordDashboradComponent,
     CprNewbornFormComponent,
-    HospitalCathDashboardComponent,
-    BarChartComponent2,
-    GroupedBarChartComponent2,
-    LineChartComponent2,
-    PieChartComponent2,
-    GroupedBarChart2Component2,
-    GroupedBarChartReleaseComponent2,
-    GraphsModalComponent2,
-    ChartsDialogComponent2,
-    EshpozModalComponent2,
-    HospitalTonnageComponent2,  
-    //SharedModule,
+
 
     CprNewbordDashboradComponent,
     CprNewbornFormComponent,
@@ -518,7 +502,10 @@ const maskConfig: Partial<IConfig> = {
     ServiceUnitEmailListDialogComponent,
     CommercialSupportGatheringComponent,
     HospitalIncomeDashbComponent,
+    HospitalIncomeNBDashbComponent,    
     FilterDepartsPipe,
+    FoldersManagementComponent,
+    FolderDialogComponent,
     //HospitalIncomeDashbComponent,
   ],
   imports: [

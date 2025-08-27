@@ -844,28 +844,28 @@ export class NursesDashboardComponent implements OnInit {
     }
   }
 
-  enhanceWithAI(): void {
-    this.AI_Load = true;
-    const currentText = this.ReportGroup.get('ReportText')?.value || '';
-    this.getAWSClaudeConfiguration(currentText);
-  }
+  // enhanceWithAI(): void {
+  //   this.AI_Load = true;
+  //   const currentText = this.ReportGroup.get('ReportText')?.value || '';
+  //   this.getAWSClaudeConfiguration(currentText);
+  // }
   
-  async getAWSClaudeConfiguration(input) {
-    this.http
-    .post(environment.url + "GetAWSClaudeConfiguration", {})
-    .subscribe(async (Response) => {
-      try {
-        let claude_version_list = Response['d'][2];
-          // input
-          const enhancedText = '[שכתב בצורה מקצועית: ]\n\n' + input;
-          let resp = await this.dashboard.runChat(claude_version_list, enhancedText);
-          this.ReportGroup.get('ReportText')?.setValue(resp.text());
-          this.AI_Load = false;
-        } catch (error) {
-          console.log("error in claude list");
-        }
-      });
-  }
+  // async getAWSClaudeConfiguration(input) {
+  //   this.http
+  //   .post(environment.url + "GetAWSClaudeConfiguration", {})
+  //   .subscribe(async (Response) => {
+  //     try {
+  //       let claude_version_list = Response['d'][2];
+  //         // input
+  //         const enhancedText = '[שכתב בצורה מקצועית: ]\n\n' + input;
+  //         let resp = await this.dashboard.runChat(claude_version_list, enhancedText);
+  //         this.ReportGroup.get('ReportText')?.setValue(resp.text());
+  //         this.AI_Load = false;
+  //       } catch (error) {
+  //         console.log("error in claude list");
+  //       }
+  //     });
+  // }
 
   onSubmit(autosave) {
     this.sendReport(autosave);

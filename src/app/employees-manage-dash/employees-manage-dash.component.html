@@ -211,7 +211,7 @@
     </div>
     <div dir="rtl" style="padding-bottom: 10%;">
         <div class="row" style="margin-right: 10px;width: 95%;margin-bottom: -8px;">
-            <div class="col-11">
+            <div class="col-10">
                 <mat-form-field appearance="standard" style="padding-right: 10px;">
                     <mat-label class="filterClass">מסנן</mat-label>
                     <input matInput (keyup)="applyFilter($event)" placeholder="הקלד מסנן" #input>
@@ -219,7 +219,16 @@
             </div>
             <div class="col-1">
                 <div class="example-button-container">
-                    <a (click)="GetEmployeesToUpdate(managerType, true)">
+                    <mat-label>עובדים</mat-label>
+                    <a (click)="GetEmployeesToUpdate(managerType, true)" matTooltip="ייצוא עובדים לאקסל">
+                        <img src="../../assets/images/excel.png" width="50px" alt="Excel File">
+                    </a>
+                </div>
+            </div>
+            <div class="col-1">
+                <div class="example-button-container">
+                    <mat-label>הכשרות</mat-label>
+                    <a (click)="GetEmployeesToUpdate(managerType, 'tra')" matTooltip="ייצוא הכשרות לאקסל">
                         <img src="../../assets/images/excel.png" width="50px" alt="Excel File">
                     </a>
                 </div>
@@ -268,6 +277,14 @@
                 </td>
             </ng-container>
 
+            <ng-container matColumnDef="SubDepartment">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header> תת מחלקה
+                </th>
+                <td mat-cell *matCellDef="let element" style="justify-content: center;">
+                    {{element.SubDepartment}}
+                </td>
+            </ng-container>
+
             <ng-container matColumnDef="FunctionDescription">
                 <th mat-header-cell *matHeaderCellDef mat-sort-header> תפקיד
                 </th>
@@ -279,19 +296,6 @@
                 <th mat-header-cell *matHeaderCellDef mat-sort-header> טלפון נייד
                 </th>
                 <td mat-cell *matCellDef="let element" style="justify-content: center;"> {{element.CellNumber}}</td>
-            </ng-container>
-
-            <ng-container matColumnDef="Gender">
-                <th mat-header-cell *matHeaderCellDef mat-sort-header> מגדר </th>
-                <td mat-cell *matCellDef="let element" style="justify-content: center;"><span
-                        *ngIf="element.Gender == 'Male'">זכר</span><span *ngIf="element.Gender == 'Female'">נקבה</span>
-                </td>
-            </ng-container>
-
-            <ng-container matColumnDef="DateOfBirth">
-                <th mat-header-cell *matHeaderCellDef mat-sort-header> תאריך לידה
-                </th>
-                <td mat-cell *matCellDef="let element" style="justify-content: center;"> {{element.DateOfBirth}}</td>
             </ng-container>
 
             <ng-container matColumnDef="Email">
@@ -312,105 +316,140 @@
             </mat-paginator>
         </div>
     </div>
+    <table id="training-excel-table" dir="rtl" style="display: none;">
+        <tr>
+            <th>מזהה</th>
+            <th>תעודת זהות</th>
+            <th>שם פרטי</th>
+            <th>שם משפחה</th>
+            <th>כתובת מייל</th>
+            <th>מספר טלפון</th>
+            <th>תחילת עבודה</th>
+            <th>סיום עבודה</th>
+            <th>צפי סיום עבודה</th>
+            <th>חלקיות משרה</th>
+            <th>מאושר משאבי אנוש</th>
+            <th>מאושר בלוסום</th>
+            <th>אישר תקנון</th>
+            <th>מנהל ישיר</th>
+            <th>מנהל עקיף</th>
+            <th>הכשרה</th>
+            <th>תאריך ביצוע</th>
+            <th>תאריך פג תוקף</th>
+            <th>הערה</th>
+        </tr>
+        <tr *ngFor="let emp of trainingdataSourceExcel.filteredData">
+            <td> {{emp.Employee.RowID}} </td>
+            <td> {{emp.Employee.EmployeeID}} </td>
+            <td> {{emp.Employee.FirstName}} </td>
+            <td> {{emp.Employee.LastName}} </td>
+            <td> {{emp.Employee.Email}} </td>
+            <td> {{emp.Employee.CellNumber}} </td>
+            <td> {{emp.Employee.StartWorkDate}} </td>
+            <td> {{emp.Employee.EndWorkDate}} </td>
+            <td> {{emp.Employee.DateToEndWork}} </td>
+            <td> {{emp.Employee.StandartJobType}} </td>
+            <td> {{emp.Employee.StatusRow}} </td>
+            <td> {{emp.Employee.ApprovedToBlossom}} </td>
+            <td> {{emp.Employee.AcceptTerms}} </td>
+            <td> {{emp.Employee.ManagerID1.id}} </td>
+            <td> {{emp.Employee.ManagerID2.id}} </td>
+            <td> {{emp.Trainings.TrainingSubject}} </td>
+            <td> {{emp.Trainings.StartDate}} </td>
+            <td> {{emp.Trainings.EndDate}} </td>
+            <td> {{emp.Trainings.Note}} </td>
+        </tr>
+    </table>
     <table id="excel-table" dir="rtl" style="display: none;">
         <tr>
             <th>מזהה</th>
-            <th>תאריך תחילת עבודה</th>
-            <th>סקטור עובד</th>
-            <th>סקטור עובד בבלוסום</th>
-            <th>תאור</th>
-            <th>תפקיד</th>
-            <th>מחלקה</th>
-            <th>תאור עובד</th>
             <th>תעודת זהות</th>
             <th>שם פרטי</th>
             <th>שם פרטי באנגלית</th>
             <th>שם משפחה</th>
             <th>שם משפחה באנגלית</th>
-            <th>מין</th>
-            <th>רמה</th>
-            <th>כתובת</th>
-            <th>שם משתמש</th>
+            <th>תואר</th>
+            <th>מגדר</th>
             <th>מייל</th>
-            <th>מייל אישי</th>
-            <th>מספר נייד</th>
-            <th>מיקום עבודה</th>
-            <th>תאריך סיום</th>
-            <th>תאריך סיום משוער</th>
-            <th>סיבת סיום עבודה</th>
-            <th>סוג רכב</th>
-            <th>מספר רכב</th>
-            <th>מנהל ישיר</th>
-            <th>מנהל עקיף</th>
-            <th>מספר רכב 2</th>
-            <th>סוג רכב 2</th>
-            <th>הערות</th>
-            <th>קוד קופה</th>
-            <th>שם קופה</th>
+            <th>מייל פרטי</th>
+            <th>מספר טלפון</th>
             <th>תאריך לידה</th>
-            <th>מספר רישיון</th>
-            <th>תאריך קבלת רישיון</th>
+            <th>כתובת</th>
+            <th>קופת חולים</th>
+            <th>תחילת עבודה</th>
+            <th>סיום עבודה</th>
+            <th>צפי סיום עבודה</th>
+            <th>סיבת סיום עבודה</th>
+            <th>סקטור</th>
             <th>מיקום לימודים</th>
             <th>ארץ לימודים</th>
             <th>אונברסיטה</th>
-            <th>מאושר משאבי אנוש</th>
-            <th>אישור תקנון</th>
-            <th>אישור בלוסום</th>
+            <th>מספר רישיון</th>
+            <th>תאריך קבלת רישיון</th>
+            <th>תיאור תפקיד</th>
+            <th>מיקום עבודה</th>
+            <th>סקטור בבלוסום</th>
+            <th>דירוג</th>
+            <th>מחלקה</th>
+            <th>תת מחלקה</th>
+            <th>מנהל ישיר</th>
+            <th>מנהל עקיף</th>
+            <th>חלקיות משרה</th>
+            <th>הערות</th>
+            <th>סוג רכב</th>
+            <th>מספר רכב</th>
+            <th>סוג רכב 2</th>
+            <th>מספר רכב 2</th>
             <th>מבצע תורנויות</th>
+            <th>מאושר משאבי אנוש</th>
+            <th>מאושר בלוסום</th>
+            <th>אישור תקנון</th>
             <th>תחילת JCP</th>
             <th>סיום JCP</th>
-            <th>אחוז משרה</th>
-            <th>תת מחלקה</th>
         </tr>
         <tr *ngFor="let emp of dataSourceExcel.filteredData">
             <td> {{emp.RowID}} </td>
-            <td> {{emp.StartWorkDate}} </td>
-            <td> {{emp.EmployeeSektorDescription}} </td>
-            <td> {{emp.EmployeeBlossomSektor.EmployeeSektorBlossomDescription}} </td>
-            <td> {{emp.EmployeeBlossomSektor.EmployeeSektorBlossomDescription}} </td>
-            <td> {{emp.Title}} </td>
-            <td> {{emp.FunctionDescription}} </td>
-            <td> {{emp.DepartnentDescripton}} </td>
-            <td> {{emp.JobTitleDescription}} </td>
             <td> {{emp.EmployeeID}} </td>
             <td> {{emp.FirstName}} </td>
             <td> {{emp.FirstNameEng}} </td>
             <td> {{emp.LastName}} </td>
             <td> {{emp.LastNameEng}} </td>
+            <td> {{emp.JobTitleDescription}} </td>
             <td> {{emp.Gender}} </td>
-            <td> {{emp.RankDescription}} </td>
-            <td> {{emp.Address}} </td>
-            <td> {{emp.ADUserName}} </td>
             <td> {{emp.Email}} </td>
             <td> {{emp.PersonalEmail}} </td>
             <td> {{emp.CellNumber}} </td>
-            <td> {{emp.WorkPlaceDescription}} </td>
+            <td> {{emp.DateOfBirth}} </td>
+            <td> {{emp.Address}} </td>
+            <td> {{emp.KupaName}} </td>
+            <td> {{emp.StartWorkDate}} </td>
             <td> {{emp.EndWorkDate}} </td>
             <td> {{emp.DateToEndWork}} </td>
             <td> {{emp.ReasonDescription}} </td>
-            <td> {{emp.CarType}} </td>
-            <td> {{emp.CarNumber}} </td>
-            <td> {{emp.ManagerID1.id}} </td>
-            <td> {{emp.ManagerID2.id}} </td>
-            <td> {{emp.CarNumber_2}} </td>
-            <td> {{emp.CarType_2}} </td>
-            <td> {{emp.Remarks}} </td>
-            <td> {{emp.KupaID}} </td>
-            <td> {{emp.KupaName}} </td>
-            <td> {{emp.DateOfBirth}} </td>
-            <td> {{emp.DocLicence}} </td>
-            <td> {{emp.DocStartExperience}} </td>
+            <td> {{emp.EmployeeSektorDescription}} </td>
             <td> {{emp.InternLearnCountry}} </td>
+            <td> {{emp.DocLicence}} </td>
             <td> {{emp.InternLearnCountryDesc}} </td>
             <td> {{emp.InternUniversity}} </td>
-            <td> {{emp.StatusRow}} </td>
-            <td> {{emp.AcceptTerms}} </td>
-            <td> {{emp.ApprovedToBlossom}} </td>
-            <td> {{emp.Toranot}} </td>
-            <td> {{emp.JcpFromDate}} </td>
-            <td> {{emp.JcpToDate}} </td>
-            <td> {{emp.StandartJobType}} </td>
+            <td> {{emp.DocStartExperience}} </td>
+            <td> {{emp.FunctionDescription}} </td>
+            <td> {{emp.WorkPlaceDescription}} </td>
+            <td> {{emp.EmployeeBlossomSektor.EmployeeSektorBlossomDescription}} </td>
+            <td> {{emp.RankDescription}} </td>
+            <td> {{emp.DepartnentDescripton}} </td>
             <td> {{emp.SubDepartment}} </td>
+            <td> {{emp.ManagerID1.firstname}} </td>
+            <td> {{emp.ManagerID2.firstname}} </td>
+            <td> {{emp.StandartJobType}} </td>
+            <td> {{emp.Remarks}} </td>
+            <td> {{emp.CarType}} </td>
+            <td> {{emp.CarNumber}} </td>
+            <td> {{emp.CarType_2}} </td>
+            <td> {{emp.CarNumber_2}} </td>
+            <td> {{emp.Toranot}} </td>
+            <td> {{emp.StatusRow}} </td>
+            <td> {{emp.ApprovedToBlossom}} </td>
+            <td> {{emp.AcceptTerms}} </td>
         </tr>
     </table>
 </div>

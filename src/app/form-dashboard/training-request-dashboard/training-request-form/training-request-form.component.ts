@@ -11,6 +11,8 @@ import { Observable } from 'rxjs';
 import { ConfirmationDialogService } from 'src/app/confirmation-dialog/confirmation-dialog.service';
 import { STEPPER_GLOBAL_OPTIONS } from '@angular/cdk/stepper';
 import { ActivatedRoute } from '@angular/router';
+import imageCompression from 'browser-image-compression';
+import { PDFDocument } from 'pdf-lib';
 
 @Component({
   selector: 'app-training-request-form',
@@ -64,7 +66,8 @@ export class TrainingRequestFormComponent implements OnInit {
   employees = [];
   intity_list = [];
   CitiesArray: any[] = [];
-  educationList = ["תיכונית", "מקצועית", "תואר ראשון", "תואר שני", "תואר שלישי"];
+  CountriesArray: any[] = [];
+  educationList = ["תיכונית", "מקצועית", "תואר ראשון", "תואר שני", "תואר שלישי", "אחר"];
   requested: boolean = false;
   wantsPoster: boolean = false;
   dorit_note_answer: boolean = false;
@@ -124,7 +127,8 @@ export class TrainingRequestFormComponent implements OnInit {
   check_if_fund_or_health() {
     let health = this.Training_Request_Forms_D.value.Health_Corporation?.filter(x => x != null);
     let fund = this.Training_Request_Forms_D.value.Department_Fund?.filter(x => x != null);
-    if ((health?.length == 0 && fund?.length == 0) || (health == undefined && fund == undefined)) this.dorit_note_answer = false;
+    let outsource = this.Training_Request_Forms_D.value.OutSource_Company;
+    if ((health?.length == 0 && fund?.length == 0 && !outsource) || (health == undefined && fund == undefined && outsource == undefined)) this.dorit_note_answer = false;
     else this.dorit_note_answer = true;
     if (health.length > 0) this.health_checkbox = true;
     if (fund.length > 0) this.fund_checkbox = true;
@@ -159,7 +163,7 @@ export class TrainingRequestFormComponent implements OnInit {
   private city_filter(value: string): any[] {
     const filterValue = value.toLowerCase();
     return this.CitiesArray.filter((option) =>
-      option.cityName.includes(filterValue)
+      option.cityName.toLowerCase().includes(filterValue)
     );
   }
 
@@ -230,7 +234,7 @@ export class TrainingRequestFormComponent implements OnInit {
           Absence_Time: new FormControl({ value: Training_Request_Forms_B?.Absence_Time, disabled: this.user_name != 'ttsrefati' ? true : false }, [Validators.pattern(/^\d+$/)]),
           Training_Out: new FormControl(Training_Request_Forms_B?.Training_Out == 'True' ? true : false, null),
           Galilean_Partnership: new FormControl(Training_Request_Forms_B?.Galilean_Partnership == 'True' ? true : false, null),
-          Request_Note: new FormControl(Training_Request_Forms_B?.Request_Note, null),
+          Request_Note: new FormControl(Training_Request_Forms_B?.Request_Note, Validators.required),
         });
         this.Training_Request_Forms_C = this.fb.group({
           Request_Name: new FormControl(Training_Request_Forms_C?.Request_Name == null ? this.date_now : Training_Request_Forms_C?.Request_Name, Validators.required),
@@ -251,20 +255,20 @@ export class TrainingRequestFormComponent implements OnInit {
         });
         this.Training_Request_Forms_E = this.fb.group({
           Training_Importantce: new FormControl(Training_Request_Forms_E?.Training_Importantce, null),
-          Recommendations: new FormControl(Training_Request_Forms_E?.Recommendations, null),
-          Opinion_Date: new FormControl(Training_Request_Forms_E?.Opinion_Date == null ? this.date_now : Training_Request_Forms_E?.Opinion_Date, null),
+          Recommendations: new FormControl(Training_Request_Forms_E?.Recommendations, this.passport == Training_Request_Forms_E?.Passport_ID ? null : Validators.required),
+          Opinion_Date: new FormControl(Training_Request_Forms_E?.Opinion_Date, null),
           Supervisor_Name: new FormControl(Training_Request_Forms_E?.Supervisor_Name, null),
           Supervisor_Sign: new FormControl(Training_Request_Forms_E?.Supervisor_Sign, null),
           Sent_To_Manager: new FormControl(Training_Request_Forms_E?.Sent_To_Manager, null),
-          Approved: new FormControl(Training_Request_Forms_E?.Approved, null),
+          Approved: new FormControl(Training_Request_Forms_E?.Approved, this.passport == Training_Request_Forms_E?.Passport_ID ? null : Validators.required),
         });
         this.Training_Request_Forms_F = this.fb.group({
           Training_Importantce: new FormControl(Training_Request_Forms_F?.Training_Importantce, null),
-          Recommendations: new FormControl(Training_Request_Forms_F?.Recommendations, null),
-          Opinion_Date: new FormControl(Training_Request_Forms_F?.Opinion_Date == null ? this.date_now : Training_Request_Forms_F?.Opinion_Date, null),
+          Recommendations: new FormControl(Training_Request_Forms_F?.Recommendations, this.passport == Training_Request_Forms_F?.Passport_ID ? null : Validators.required),
+          Opinion_Date: new FormControl(Training_Request_Forms_F?.Opinion_Date, null),
           Supervisor_Name: new FormControl(Training_Request_Forms_F?.Supervisor_Name, null),
           Supervisor_Sign: new FormControl(Training_Request_Forms_F?.Supervisor_Sign, null),
-          Approved: new FormControl(Training_Request_Forms_F?.Approved, null),
+          Approved: new FormControl(Training_Request_Forms_F?.Approved, this.passport == Training_Request_Forms_F?.Passport_ID ? null : Validators.required),
         });
         this.Training_Request_Forms_H = this.fb.group({
           Opinion_Date: new FormControl(Training_Request_Forms_H?.Opinion_Date == null ? this.date_now : Training_Request_Forms_H?.Opinion_Date, null),
@@ -294,7 +298,7 @@ export class TrainingRequestFormComponent implements OnInit {
         this.cityControl.setValue(Training_Request_Forms_B?.Request_Location);
         this.Training_Out_Check();
         if (Training_Request_Forms_B?.Poster_Attached != undefined && Training_Request_Forms_B?.Poster_Attached != "") this.wantsPoster = true;
-        else this.wantsPoster = true;
+        else this.wantsPoster = false;
         // Subscribe to changes in Date_End to calculate duration
         // this.Training_Request_Forms_B.get('Date_End').valueChanges.subscribe(() => {
         //   this.calculateRequestDuration();
@@ -304,6 +308,19 @@ export class TrainingRequestFormComponent implements OnInit {
         //   this.calculateRequestDuration();
         // });
       });
+  }
+
+  ApprovedStatusChanged(manager) {
+    // direct manager
+    if (manager == 0) {
+      this.Training_Request_Forms_E.controls['Supervisor_Sign'].setValidators(Validators.required);
+      this.Training_Request_Forms_E.controls['Supervisor_Sign'].updateValueAndValidity();
+    }
+    // indirect manager
+    else {
+      this.Training_Request_Forms_F.controls['Supervisor_Sign'].setValidators(Validators.required);
+      this.Training_Request_Forms_F.controls['Supervisor_Sign'].updateValueAndValidity();
+    }
   }
 
   calculateRequestDuration() {
@@ -325,14 +342,30 @@ export class TrainingRequestFormComponent implements OnInit {
     }
   }
 
-  onFileSelected(event: Event) {
+  async onFileSelected(event: Event) {
     const input = event.target as HTMLInputElement;
 
     if (input.files && input.files.length > 0) {
       const file = input.files[0];
-      const maxSize = 2 * 1024 * 1024; // 1MB (1,024,000 bytes)
+      const maxSize = 10 * 1024 * 1024; // 1MB (1,024,000 bytes)
       if (file.size > maxSize) {
-        alert("הקובץ גדול מדי! יש להעלות קובץ עד 2MB.");
+        alert("הקובץ גדול מדי! יש להעלות קובץ עד 10MB.");
+        // if (file.type.startsWith('image/')) {
+        //   const compressedFile = await imageCompression(file, {
+        //     maxSizeMB: 2,
+        //     maxWidthOrHeight: 1920,
+        //     useWebWorker: true
+        //   });
+        //   console.log(compressedFile);
+        // } else {
+        //   const arrayBuffer = await file.arrayBuffer();
+        //   const pdfDoc = await PDFDocument.load(arrayBuffer, { ignoreEncryption: true });
+
+        //   // Re-save the document to reduce size
+        //   const compressedBytes = await pdfDoc.save({ useObjectStreams: true });
+        //   const compressedFile = new File([compressedBytes], file.name, { type: 'application/pdf' });
+        //   console.log(compressedFile);
+        // }
         input.value = ""; // Clear file input
         return;
       }
@@ -391,18 +424,32 @@ export class TrainingRequestFormComponent implements OnInit {
     }
   }
 
-  openFile(base64String: string) {
-    // Extract the MIME type from the Base64 string
-    const mimeType = base64String.match(/data:(.*?);base64,/)?.[1] || 'application/octet-stream';
+  openFile(base64String: string): void {
+    try {
+      // Extract MIME type & Base64 content
+      const matches = base64String.match(/^data:(.*);base64,(.*)$/);
+      const mimeType = matches ? matches[1] : 'application/pdf';
+      const base64Content = matches ? matches[2] : base64String;
 
-    // Create a new window and write the file data
-    const fileWindow = window.open();
-    if (fileWindow) {
-      fileWindow.document.write(
-        `<iframe src="${base64String}" frameborder="0" style="width:100%;height:100%;"></iframe>`
-      );
-    } else {
-      console.error('Unable to open a new window');
+      // Convert Base64 to binary
+      const byteCharacters = atob(base64Content);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+
+      // Create Blob and object URL
+      const blob = new Blob([byteArray], { type: mimeType });
+      const fileURL = URL.createObjectURL(blob);
+
+      // Open in a new tab
+      window.open(fileURL, '_blank');
+
+      // Release memory after a short delay
+      setTimeout(() => URL.revokeObjectURL(fileURL), 5000);
+    } catch (error) {
+      console.error('Failed to open file:', error);
     }
   }
 
@@ -470,6 +517,29 @@ export class TrainingRequestFormComponent implements OnInit {
       });
   }
 
+  getCountryCodes() {
+    this.CitiesArray = [];
+    this.http
+      .post(
+        environment.url + "GetCountryCodes",
+        {}
+      )
+      .subscribe((Response) => {
+        Response["d"].forEach((element) => {
+          this.CitiesArray.push({
+            cityName: element.cityName
+          });
+        });
+        this.cityOptions = this.cityControl.valueChanges.pipe(
+          startWith(""),
+          map((value) => (typeof value === "string" ? value : value.name)),
+          map((name) =>
+            name ? this.city_filter(name) : this.CitiesArray.slice()
+          )
+        );
+      });
+  }
+
   checkPlanAvailability() {
     let date_today: any = new Date();
     date_today = this.datePipe.transform(date_today, 'yyyy-MM-dd');
@@ -483,23 +553,16 @@ export class TrainingRequestFormComponent implements OnInit {
 
   Training_Out_Check() {
     if (this.Training_Request_Forms_B.controls['Training_Out'].value) {
-      this.CitiesArray = [
-        { cityName: 'אירופה' },
-        { cityName: 'אפריקה' },
-        { cityName: 'צפון אמריקה' },
-        { cityName: 'דרום אמריקה' },
-        { cityName: 'אוסטרליה' },
-        { cityName: 'אנטארקטיקה' }
-      ];
+      this.getCountryCodes();
 
       this.Training_Request_Forms_B.controls['Education_Fee'].setValue(0);
-      this.cityOptions = this.cityControl.valueChanges.pipe(
-        startWith(""),
-        map((value) => (typeof value === "string" ? value : value.name)),
-        map((name) =>
-          name ? this.city_filter(name) : this.CitiesArray.slice()
-        )
-      );
+      // this.cityOptions = this.cityControl.valueChanges.pipe(
+      //   startWith(""),
+      //   map((value) => (typeof value === "string" ? value : value.name)),
+      //   map((name) =>
+      //     name ? this.city_filter(name) : this.CitiesArray.slice()
+      //   )
+      // );
     }
     else {
       this.Training_Request_Forms_B.controls['Education_Fee'].enable();
@@ -700,7 +763,9 @@ export class TrainingRequestFormComponent implements OnInit {
   }
 
   onSubmit(final) {
-    if (this.Training_Request_Forms_A.valid && this.Training_Request_Forms_B.valid && this.Training_Request_Forms_C.valid && this.Training_Request_Forms_D.valid) {
+    if (this.Training_Request_Forms_A.valid && this.Training_Request_Forms_B.valid && this.Training_Request_Forms_C.valid
+      && this.Training_Request_Forms_D.valid && this.Training_Request_Forms_E.valid && this.Training_Request_Forms_F.valid
+      && this.Training_Request_Forms_G.valid && this.Training_Request_Forms_H.valid) {
       if (this.Supervisor_Name1.value == undefined) {
         this.openSnackBar('חסר מנהל ישיר, נא ליצור קשר עם משאבי אנוש');
         return;
@@ -716,10 +781,10 @@ export class TrainingRequestFormComponent implements OnInit {
       const sizeBInBytes = (base64Data.length * 3) / 4 - (base64Data.endsWith("==") ? 2 : base64Data.endsWith("=") ? 1 : 0); // Base64 size calculation
       const sizeDInBytes = base64Data2 == null ? 0 : (base64Data2.length * 3) / 4 - (base64Data2.endsWith("==") ? 2 : base64Data2.endsWith("=") ? 1 : 0); // Base64 size calculation
       const sizeInBytes = sizeBInBytes + sizeDInBytes; // Set limit (5MB in this example)
-      const maxSize = 5 * 1024 * 1024; // Set limit (5MB in this example)
+      const maxSize = 10 * 1024 * 1024; // Set limit (5MB in this example)
 
       if (sizeInBytes > maxSize) {
-        throw new Error("Base64 data is too large!");
+        throw new Error("Base64 data is too large! Limit 10MB");
       }
       this.http
         .post(environment.url + "SaveTrainingRequestForm", {
@@ -753,7 +818,7 @@ export class TrainingRequestFormComponent implements OnInit {
       .then((confirmed) => {
         console.log("User confirmed:", confirmed);
         if (confirmed) {
-          this.checkPlanAvailability();
+          // this.checkPlanAvailability();
           this.dialogRef.close(rowId);
         } else {
         }
@@ -763,6 +828,24 @@ export class TrainingRequestFormComponent implements OnInit {
           "User dismissed the dialog (e.g., by using ESC, clicking the cross icon, or clicking outside the dialog)"
         )
       );
+  }
+
+  markFormGroupTouched(formGroup: FormGroup) {
+    Object.values(formGroup.controls).forEach(control => {
+      if (control instanceof FormGroup) {
+        this.markFormGroupTouched(control); // recursive for nested groups
+      } else if (control instanceof FormArray) {
+        control.controls.forEach(group => {
+          if (group instanceof FormGroup) {
+            this.markFormGroupTouched(group);
+          } else {
+            group.markAsTouched();
+          }
+        });
+      } else {
+        control.markAsTouched();
+      }
+    });
   }
 
 }

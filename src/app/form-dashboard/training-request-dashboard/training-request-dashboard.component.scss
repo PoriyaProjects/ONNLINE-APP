@@ -5,6 +5,7 @@
   color: #333;
   min-height: 100vh;
   direction: rtl;
+  padding-bottom: 70px;
 }
 
 h1 {
@@ -139,4 +140,33 @@ mat-option {
   color: #333;
   display: flex;
   align-items: center;
+}
+
+.check-icon {
+  color: #389e0d;
+}
+
+.cancel-icon {
+  color: #cf1322;
+}
+
+td.truncate {
+  max-width: 150px;
+  /* Adjust as needed */
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+td.truncate a {
+  display: inline-block;
+  max-width: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  vertical-align: middle;
+}
+
+th {
+  justify-items: center;
 }
