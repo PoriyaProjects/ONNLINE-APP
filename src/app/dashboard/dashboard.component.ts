@@ -102,7 +102,7 @@ export class DashboardComponent implements OnInit {
     }
 
     onOptionSelected(url: string) {
-        this.clearSearch();
+        
         //if(url.indexOf("onnlinereorts") > 0){
             let t = url.split('/')[url.split('/').length - 1]
            // debugger
@@ -115,6 +115,7 @@ export class DashboardComponent implements OnInit {
             )
             .subscribe((Response) => { });
         //}
+        this.clearSearch();
         window.open(url, '_blank');
         // window.location.href = url;
     }
