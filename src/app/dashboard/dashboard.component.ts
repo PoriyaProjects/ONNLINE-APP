@@ -103,6 +103,18 @@ export class DashboardComponent implements OnInit {
 
     onOptionSelected(url: string) {
         this.clearSearch();
+        //if(url.indexOf("onnlinereorts") > 0){
+            let t = url.split('/')[url.split('/').length - 1]
+           // debugger
+            this.http.post(
+                environment.url + "LinksLog",
+                {
+                    usaerName: localStorage.getItem("loginUserName"),
+                    linkId: t ,
+                }
+            )
+            .subscribe((Response) => { });
+        //}
         window.open(url, '_blank');
         // window.location.href = url;
     }
