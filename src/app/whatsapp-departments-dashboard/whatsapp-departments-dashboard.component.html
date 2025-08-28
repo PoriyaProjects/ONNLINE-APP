@@ -89,8 +89,7 @@
                     </form>
                     <mat-form-field class="message-input" *ngIf="!selectedFile">
                         <mat-label>שליחת הודעה בתוך שיחה</mat-label>
-                        <input matInput placeholder="הודעה חדשה" formControlName="Message_Text"
-                            (keydown.enter)="sendMessage()">
+                        <textarea matInput placeholder="הודעה חדשה" formControlName="Message_Text" rows="3"></textarea>
                     </mat-form-field>
                     <button mat-icon-button type="submit" class="send-btn" (click)="sendMessage()" matTooltip="שליחה">
                         <!--  [disabled]="newMessage.get('Message_Text').value == ''" -->
@@ -105,8 +104,7 @@
                     </form>
                     <mat-form-field class="message-input" *ngIf="!selectedFile">
                         <mat-label>שליחת הודעה רגילה</mat-label>
-                        <input matInput placeholder="הודעה חדשה" formControlName="Message_Text"
-                            (keydown.enter)="sendOneWayMessage()">
+                        <textarea matInput placeholder="הודעה חדשה" formControlName="Message_Text" rows="3"></textarea>
                     </mat-form-field>
                     <button mat-icon-button type="submit" class="send-btn" (click)="sendOneWayMessage()"
                         matTooltip="שליחה">
