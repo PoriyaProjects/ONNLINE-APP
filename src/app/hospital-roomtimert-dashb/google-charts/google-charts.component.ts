@@ -948,19 +948,7 @@ private formatDiff(ms: number): string {
 
 
 
-// getStartDiff(room: RoomData): string {
-//   const opening = this.parseClock('07:30');
-//   if (!opening) return '--:--';
 
-//   const firstAfter = room.surgeries.find(s => {
-//     const e = this.parseClock(s.timeEntrance);
-//     return e && e >= opening;
-//   });
-
-//   if (!firstAfter) return '--:--';
-//   const entrance = this.parseClock(firstAfter.timeEntrance)!;
-//   return this.formatDiff(entrance.getTime() - opening.getTime());
-// }
 
 getStartDiff(room: RoomData): string {
   const safeStart = this.parseClock('07:00');
