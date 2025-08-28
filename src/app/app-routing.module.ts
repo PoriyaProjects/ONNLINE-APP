@@ -153,7 +153,7 @@ import { HospitalRoomTimeRTDashbComponent } from "./hospital-roomtimert-dashb/ho
 import { GoogleChartsIncomeNBComponent } from "./hospital-incomenb-dashb/google-charts/google-charts.component";
 import { FoldersManagementComponent } from "./dashboard/folders-management/folders-management.component";
 import { FolderDialogComponent } from "./dashboard/folders-management/folder-dialog/folder-dialog.component";
-//import { AppointsDashboardComponent } from './hospital-appoints-dashb/google-charts/google-charts.component';
+
 
 
 const routes: Routes = [
@@ -339,7 +339,7 @@ const routes: Routes = [
     { path: "hospital-incomenb-dashb", component: GoogleChartsIncomeNBComponent },
     { path: "folders-management", component: FoldersManagementComponent },
     { path: "folders-dialog", component: FolderDialogComponent },
-    //{ path: "hospital-appoints-dashb", component: AppointsDashboardComponent },
+    
 ];
 
 

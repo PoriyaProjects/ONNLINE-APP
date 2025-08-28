@@ -116,6 +116,7 @@ export class GoogleChartsIncomeNBComponent implements AfterViewInit {
       }
     }
   }
+  
   private numericColumns(data: any): number[] {
     const cols: number[] = [];
     for (let i = 1; i < data.getNumberOfColumns(); i++) cols.push(i);

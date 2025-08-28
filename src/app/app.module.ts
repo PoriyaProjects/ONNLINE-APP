@@ -260,6 +260,7 @@ import { HospitalRoomTimeDashbModule } from './hospital-roomtime-dashb/hospital-
 import { HospitalRoomTimeNDashbModule } from './hospital-roomtimen-dashb/hospital-roomtimen-dashb.module';
 import { HospitalRoomTimeRTDashbModule } from './hospital-roomtimert-dashb/hospital-roomtimert-dashb.module';
 import { AppointsDashbModule } from './hospital-appoints-dashb/hospital-appoints-dashb.module';
+import { AppointsCLDashbModule } from './hospital-appointscl-dashb/hospital-appointscl-dashb.module';
 import { SharedModule } from './shared/shared.module';
 import { CommercialSupportFormDashboardComponent } from './form-dashboard/commercial-support-form-dashboard/commercial-support-form-dashboard.component';
 import { CommercialSupportFormDialogComponent } from './form-dashboard/commercial-support-form-dashboard/commercial-support-form-dialog/commercial-support-form-dialog.component';
