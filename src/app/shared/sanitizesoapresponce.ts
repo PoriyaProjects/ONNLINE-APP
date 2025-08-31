@@ -37,7 +37,7 @@ export function sanitizeSoapResponse(rawResponse: any): any {
 }
 
 
-// rename if you like, but you can keep the same name to minimize diffs
+
 export function sanitizeSoapResponseAndFormatData(rawOrJson: any, label: string): any {
   let payload: any;
 

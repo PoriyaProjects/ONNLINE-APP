@@ -665,7 +665,7 @@ loadRoomsData(): void {
         patientNumber: row.PatientNumber,
         surgeryName: row.SurgeryName,
         surgeryCode: row.SurgeryCode,
-        department: row.DepartNameDoing,
+        department: row.DepartName,
         status: row.SurgeryStatus,
         timeEntrance: row.TimeEntranceToTheOperatingRoom,
         timeExit: row.TimeExitingTheOperatingRoom

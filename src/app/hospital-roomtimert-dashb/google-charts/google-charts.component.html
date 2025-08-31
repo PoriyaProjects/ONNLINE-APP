@@ -660,10 +660,11 @@
       </span> |
       ⏳
       <span [ngClass]="getTurnoverTimeClass(room)" title="זמן הכנת חדר (מעבר ל־20 דקות)">
-        {{ getTurnoverTime(room) }}
+        <!-- {{ getTurnoverTime(room) }} -->
+          {{ getTurnoverSummary(room) }}
       </span>
       <!-- <span title="סך כל זמן ההכנה">({{ getTurnoverSummary(room) }})</span> | -->
-      ◒|
+      | ◒
       <span [ngClass]="getEndDiffClass(room)" title="פער עד סיום יום">
         {{ getEndDiff(room) }}
       </span>
@@ -689,6 +690,7 @@
         </ng-container>
       </div>
 
+      
       <!-- Surgery details -->
       <div class="surgery-row">
         <b style="font-weight:800">⮜ {{ s.surgeryId }}</b><br />
