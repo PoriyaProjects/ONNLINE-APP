@@ -492,20 +492,6 @@ private hexToRgba(hex: string, alpha: number): string {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
-// private mountGroupToggleButton(el: HTMLElement, onToggle: () => void) {
-//   Array.from(el.querySelectorAll('.group-toggle')).forEach(n => n.remove());
-//   const btn = document.createElement('button');
-//   btn.className = 'group-toggle';
-//   btn.textContent = this.groupDoctorsByDept ? 'בטל קיבוץ למחלקות' : 'קבץ לפי מחלקה';
-//   Object.assign(btn.style, {
-//     position: 'absolute', top: '8px', left: '8px', padding: '6px 10px',
-//     direction: 'rtl', fontSize: '12px', border: '1px solid #bbb',
-//     borderRadius: '6px', background: '#fff', cursor: 'pointer', zIndex: '5'
-//   } as any);
-//   btn.onclick = onToggle;
-//   if (getComputedStyle(el).position === 'static') el.style.position = 'relative';
-//   el.appendChild(btn);
-// }
 
 public async drawLeaderboardDoctors(containerId: string, dir: 'asc' | 'desc' = 'desc') {
   await this.loadGoogleCharts();
@@ -583,7 +569,7 @@ public async drawLeaderboardDoctors(containerId: string, dir: 'asc' | 'desc' = '
 
   const chart = new google.visualization.BarChart(el);
 
-  // === Refactored: use the provided pastel palette per department ===
+  
   const drawDeptOverlaysIfGrouped = () => {
     const old = el.querySelectorAll('.dept-band, .dept-sep, .dept-label-rot');
     old.forEach(n => n.remove());
@@ -656,11 +642,7 @@ public async drawLeaderboardDoctors(containerId: string, dir: 'asc' | 'desc' = '
   };
 
   (window as any).google.visualization.events.addListener(chart, 'ready', () => {
-    drawDeptOverlaysIfGrouped();
-    // this.mountGroupToggleButton(el, () => {
-    //   this.groupDoctorsByDept = !this.groupDoctorsByDept;
-    //   this.drawLeaderboardDoctors(containerId, dir);
-    // });
+    drawDeptOverlaysIfGrouped();  
   });
 
   this.drawSafe(chart, dt, opts, containerId);
@@ -753,7 +735,26 @@ public async drawLeaderboardDepartments(containerId: string, dir: 'asc' | 'desc'
     type UiRow = { dept: string; doctor: string; q: number; avg: number; isHeader: boolean };
   
     // palette for non-header rows
-    const palette = ['#A3C9F9','#F9D6A5','#C5E1A5','#F9A8D4','#E6A5F7','#F8BBD0','#B2DFDB','#FFECB3','#DCEDC8','#FFE0B2','#D1C4E9','#FFCDD2'];
+  const palette = [
+  'rgba(163, 157, 205, 0.22)',
+  'rgba(185, 180, 115, 0.22)',
+  'rgba(139, 179, 223, 0.22)',
+  'rgba(226, 200, 126, 0.22)',
+  'rgba(190, 224, 189, 0.22)',
+  'rgba(229, 143, 188, 0.22)',
+  'rgba(141, 198, 63, 0.22)',
+  'rgba(181, 174, 163, 0.22)',
+  'rgba(148, 170, 100, 0.22)',
+  'rgba(241, 213, 209, 0.22)',
+  'rgba(188, 134, 181, 0.22)',
+  'rgba(218, 84, 158, 0.22)',
+  'rgba(175, 79, 118, 0.22)',
+  'rgba(253, 185, 19, 0.22)',
+  'rgba(0, 167, 158, 0.22)',
+  'rgba(201, 136, 70, 0.22)',
+  'rgba(190, 30, 45, 0.22)',
+];
+
     const deptBand = (dept: string) => { let h = 7; for (const ch of dept) h = (h*31+ch.charCodeAt(0))>>>0; return palette[h % palette.length]; };
   
     // ---------- STATE ----------
