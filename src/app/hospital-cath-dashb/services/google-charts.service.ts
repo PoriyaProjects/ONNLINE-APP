@@ -528,7 +528,7 @@ public async loadOpChart3Y(chartOptions: any = {}, param?: number, dparam?: numb
    * Draw chart based on type with custom options.
    */
   private async drawChart(data: any, chartType: string, elementId: string, chartOptions: any = {}): Promise<void> {
-    console.log(`🖼️ drawChart call → ${chartType} → ${elementId}`);
+    //console.log(`🖼️ drawChart call → ${chartType} → ${elementId}`);
   
     const el = document.getElementById(elementId);
     if (!el) {
