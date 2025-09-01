@@ -283,7 +283,7 @@
   .room-widget.active {
     filter: none;
     opacity: 1;
-    border: 2px solid #007bff;
+    border: 1px solid #007bff;
   }
 
   .room-header {
@@ -575,7 +575,68 @@
     color: #555;
     margin: 5px 0;
   }
-  .surgery-row{margin-bottom:10px;}
+
+  .surgery-row {
+    margin-bottom: 10px;
+  }
+
+  .surgery-row.scompleted {
+    opacity: 0.6;
+  }
+
+  .scompleted {
+    opacity: 0.6;
+  }
+
+  /* Card as the scroll container */
+.room-widget.card {
+  max-height: 400px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  /* optional: card look */
+  border-radius: 8px;
+  background: var(--card-bg, #fff);
+  box-shadow: 0 2px 10px rgba(0,0,0,.06);
+}
+
+/* Sticky header */
+.room-widget.card .room-header {
+  position: sticky;          /* sticks within this scrolling card */
+  position: -webkit-sticky;  /* safari */
+  top: 0;
+  z-index: 5;
+  background: inherit;       /* same bg as card to cover content beneath */
+  padding: 10px 12px;
+  border-bottom: 1px solid rgba(0,0,0,.06);
+  /* subtle shadow when stuck */
+  box-shadow: 0 1px 0 rgba(0,0,0,.06);
+}
+
+/* Only matters visually when expanded; sticky is harmless otherwise */
+.room-widget.card.active .room-header { /* (kept for clarity) */ }
+
+/* Scrollable body gets the padding that used to be on the card */
+.room-widget.card .room-body {
+  padding: 10px 12px;
+}
+
+/* Optional: keep status circle above content when header is stuck */
+.room-widget.card .room-header .status-circle {
+  position: relative;
+  z-index: 6;
+  top:-72px;
+}
+
+/* Example: make scompleted rows a bit dimmer or styled */
+.surgery-row.scompleted {
+  opacity: .8;
+}
+
+/* Turnover line spacing */
+.turnover-line {
+  margin: 6px 0;
+}
 </style>
 
 <div class="mdc-layout-grid" style="direction: rtl;">
@@ -611,7 +672,8 @@
             <span *ngIf="lastLoaded" class="last-updated">
               נטען לאחרונה: {{ lastLoaded | date:'HH:mm:ss' }}
             </span>
-            <button class="pause-btn" (click)="toggleAutoRefresh()" style="border-color: #aaa; border-radius: 6px; border-width: 1px;">
+            <button class="pause-btn" (click)="toggleAutoRefresh()"
+              style="border-color: #aaa; border-radius: 6px; border-width: 1px;">
               {{ autoRefreshPaused ? '▶️ הפעל רענון' : '⏸ השהה רענון' }}
             </button>
             <span class="refresh-box" (click)="manualRefresh()" title="רענן עכשיו">
@@ -627,11 +689,16 @@
             <input type="date" id="dateSelect" [(ngModel)]="selectedDate" (change)="onDateChange()"
               style="padding-left:10px; margin-right:20px;cursor: pointer;border-color: #aaa; border-radius: 6px; border-width: 1px;" />
 
-             <button (click)="toggleAll()"
-        style="margin-bottom:10px;margin-right:20px; border-color: #aaa; border-radius: 6px;"
-        [title]="allExpanded ? 'סגור את כל החדרים' : 'פתח את כל החדרים'">
-  {{ allExpanded ? '🔽 סגור הכל' : '🔼 פתח הכל' }}
-</button>
+            <button (click)="toggleAll()"
+              style="margin-bottom:10px;margin-right:20px; border-color: #aaa; border-radius: 6px;"
+              [title]="allExpanded ? 'סגור את כל החדרים' : 'פתח את כל החדרים'">
+              {{ allExpanded ? '🔽 סגור הכל' : '🔼 פתח הכל' }}
+            </button>
+
+
+            <button mat-stroked-button color="primary" (click)="acknowledgeAllRooms()" style="margin-right:10px;" title="סמן כל החדרים כמאושרים">
+              אשר כל החדרים
+            </button>
 
           </div>
 
@@ -639,31 +706,28 @@
             <div *ngIf="isLoading" class="loader-overlay">
               <div class="spinner"></div>
             </div>
-            
+
             <div class="room-widget card"
      *ngFor="let room of roomsData; trackBy: trackByRoomId"
      [ngClass]="[
        getRoomStatusClass(room),
        isRoomExpanded(room.roomId) ? 'active' : '',
        (!isRoomExpanded(room.roomId) && !allExpanded && activeRoomId && room.roomId !== activeRoomId) ? 'blurred' : ''
-     ]"
-     style="padding:10px; max-height:400px; overflow-y:auto;">
+     ]">
 
-  <!-- Header (always visible, clickable) -->
+  <!-- Header (sticky inside the scrolling card) -->
   <div class="room-header" (click)="toggleRoom(room.roomId)">
     <h4 class="text-center">{{ room.roomId }}</h4>
 
-    <div class="metrics text-center" style="margin-bottom:10px;">
+    <div class="metrics text-center">
       ◓
       <span [ngClass]="getStartDiffClass(room)" title="עיכוב מתחילת יום">
         {{ getStartDiff(room) }}
       </span> |
       ⏳
       <span [ngClass]="getTurnoverTimeClass(room)" title="זמן הכנת חדר (מעבר ל־20 דקות)">
-        <!-- {{ getTurnoverTime(room) }} -->
-          {{ getTurnoverSummary(room) }}
+        {{ getTurnoverSummary(room) }}
       </span>
-      <!-- <span title="סך כל זמן ההכנה">({{ getTurnoverSummary(room) }})</span> | -->
       | ◒
       <span [ngClass]="getEndDiffClass(room)" title="פער עד סיום יום">
         {{ getEndDiff(room) }}
@@ -676,46 +740,55 @@
     <div class="status-circle" [ngClass]="getRoomStatusClass(room)"></div>
   </div>
 
-  <!-- Panel Content -->
-  <div *ngIf="isRoomExpanded(room.roomId)">
-    <div *ngFor="let s of activeSurgeries(room); let i = index" style="direction:rtl; text-align:right;">
+  <!-- Body (scrolls under the sticky header) -->
+  <div class="room-body" *ngIf="isRoomExpanded(room.roomId)">
 
-      <!-- Turnover line BEFORE each surgery except the first -->
-      <div *ngIf="i > 0">
-        <ng-container *ngIf="getTurnoverBetween(activeSurgeries(room)[i-1], s) as turnover">
-          <div *ngIf="turnover !== '--:--'" class="turnover-line"
-               [ngClass]="getTurnoverBetweenClass(activeSurgeries(room)[i-1], s)">
-            ⏳ {{ turnover }}
-          </div>
-        </ng-container>
-      </div>
-
-      
-      <!-- Surgery details -->
-      <div class="surgery-row">
-        <b style="font-weight:800">⮜ {{ s.surgeryId }}</b><br />
-        {{ s.surgeryName }} ({{ s.surgeryCode }}) <br />
-        <i>{{ s.department }}</i><br />
-        <b>{{ s.timeEntrance }} ← {{ s.timeExit || '...' }}</b><br />
-        <span class="status" [ngClass]="s.status">
-          {{ translateStatus(s.status) }}
-        </span>
-        <br /><br />
-      </div>
-    </div>
-
-    <!-- Planned surgeries -->
-    <div *ngIf="plannedSurgeries(room).length">
-      <hr />
-      <h5 style="direction:rtl; text-align:right;">נתוחים מתוכננים</h5>
-      <div *ngFor="let s of plannedSurgeries(room)" class="surgery-row"
+    <!-- cache active list once -->
+    <ng-container *ngIf="activeSurgeries(room) as active">
+      <div *ngFor="let s of active; let i = index; trackBy: trackBySurgeryId"
+           class="surgery-block"
            style="direction:rtl; text-align:right;">
-        ⮜ {{ s.surgeryName }} ({{ s.surgeryCode }}) - {{ s.department }}
-        <br />
+
+        <!-- Turnover line BEFORE each surgery except the first -->
+        <ng-container *ngIf="i > 0">
+          <ng-container *ngIf="getTurnoverBetween(active[i-1], s) as turnover">
+            <div class="turnover-line" [ngClass]="getTurnoverBetweenClass(active[i-1], s)">
+              ⏳ {{ turnover }}
+            </div>
+          </ng-container>
+        </ng-container>
+
+        <!-- Surgery details -->
+        <div class="surgery-row" [class.scompleted]="s?.status === 'Completed'">
+          <b style="font-weight:800">⮜ {{ s.surgeryId }}</b><br />
+          {{ s.surgeryName }} ({{ s.surgeryCode }}) <br />
+          <i>{{ s.department }}</i><br />
+          <b>{{ s.timeEntrance }} ← {{ s.timeExit || '...' }}</b><br />
+          <span class="status" [ngClass]="s.status">
+            {{ translateStatus(s.status) }}
+          </span>
+          <br /><br />
+        </div>
       </div>
-    </div>
+    </ng-container>
+
+    <!-- Planned surgeries (cached once as well) -->
+    <ng-container *ngIf="plannedSurgeries(room) as planned">
+      <div *ngIf="planned.length">
+        <hr />
+        <h5 style="direction:rtl; text-align:right;">נתוחים מתוכננים</h5>
+        <div *ngFor="let s of planned; trackBy: trackBySurgeryId"
+             class="surgery-row"
+             style="direction:rtl; text-align:right;">
+          ⮜ {{ s.surgeryName }} ({{ s.surgeryCode }}) - {{ s.department }}
+          <br />
+        </div>
+      </div>
+    </ng-container>
+
   </div>
 </div>
+
 
           </div>
           <div class="row card" style="margin-top: 20px;">
