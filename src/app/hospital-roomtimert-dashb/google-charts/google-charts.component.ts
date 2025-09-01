@@ -882,13 +882,20 @@ getTurnoverSummary(room: RoomData): string {
   return totalMinutes > 0 ? this.formatHM(totalMinutes) : '--:--';
 }
 
-private workingStart(): Date {
-  const d = new Date();
+
+
+private workingStart(): Date;
+private workingStart(baseDate: string | Date): Date;
+private workingStart(baseDate?: string | Date): Date {
+  const d = baseDate ? new Date(baseDate) : new Date();
   d.setHours(7, 30, 0, 0);  // 07:00
   return d;
 }
-private workingEnd(): Date {
-  const d = new Date();
+
+private workingEnd(): Date;
+private workingEnd(baseDate: string | Date): Date;
+private workingEnd(baseDate?: string | Date): Date {
+  const d = baseDate ? new Date(baseDate) : new Date();
   d.setHours(15, 0, 0, 0); // 15:00
   return d;
 }
@@ -1318,6 +1325,63 @@ private isRoomAcked(room: RoomData): boolean {
 private readonly PLANNED_SET = new Set(['Planned', 'Scheduled']);
 
 trackBySurgeryId = (_: number, s: Surgery) => s?.surgeryId ?? _;
+
+
+
+// Optional explicit mappings take priority over heuristics:
+private roomNameOverrides: Record<string, string> = {
+  'פז01-201': 'חדר ניתוח 1',  
+  'פז01-202': 'חדר ניתוח 2',
+  'פז01-203': 'חדר ניתוח 3',
+  'פז01-204': 'חדר ניתוח 4',
+  'פז01-205': 'חדר ניתוח 5',
+  'פז01-206': 'חדר ניתוח 6',
+  'פז01-207': 'חדר ניתוח 7',
+};
+
+translateRoomId(id?: string): string {
+  if (!id) return '';
+
+  // Exact override first
+  const hit = this.roomNameOverrides[id];
+  if (hit) return hit;
+
+  // Heuristic: take the first segment before '-' and extract 1–2 digit room number
+  const norm = String(id).trim();
+  const firstSeg = norm.split(/[-–—]/)[0]; // handles '-', en/em dashes
+  let numStr: string | null = null;
+
+  // Prefer the last 1–2 digit sequence in the first segment (e.g., "פז01" -> "01")
+  const m1 = firstSeg.match(/(\d{1,2})(?!.*\d)/);
+  if (m1) numStr = m1[1];
+
+  // Fallback: any standalone 1–2 digit number in the whole string
+  if (!numStr) {
+    const m2 = norm.match(/\b(0?[1-9]|[1-9]\d)\b/);
+    if (m2) numStr = m2[1];
+  }
+
+  if (numStr) {
+    const n = parseInt(numStr, 10);
+    if (!Number.isNaN(n)) return `חדר ניתוח ${n}`;
+  }
+
+  // Last resort: show the original code
+  return norm;
+}
+
+
+
+hasActionAfterWorkingStart(room: RoomData): boolean {
+  if (!room?.surgeries?.length) return false;
+  const ws = this.workingStart(room.date);
+  return room.surgeries.some(s => {
+    if (!s?.timeEntrance) return false;
+    const entrance = this.parseClockWithDate(s.timeEntrance, room.date);
+    if (!entrance || entrance < ws) return false;
+    return s.status === 'InProgress' || s.status === 'Completed';
+  });
+}
 
 
 }

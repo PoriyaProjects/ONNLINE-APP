@@ -586,6 +586,7 @@
 
   .scompleted {
     opacity: 0.6;
+    font-size:0.9em;
   }
 
   /* Card as the scroll container */
@@ -636,6 +637,12 @@
 /* Turnover line spacing */
 .turnover-line {
   margin: 6px 0;
+}
+
+.metrics .metric-chip + .metric-chip::before {
+  content: '|';
+  margin: 0 .5rem;
+  opacity: .6;
 }
 </style>
 
@@ -717,9 +724,10 @@
 
   <!-- Header (sticky inside the scrolling card) -->
   <div class="room-header" (click)="toggleRoom(room.roomId)">
-    <h4 class="text-center">{{ room.roomId }}</h4>
+    <!-- <h4 class="text-center">{{ room.roomId }}</h4> -->
+     <h4 class="text-center">{{ translateRoomId(room.roomId) }}</h4>
 
-    <div class="metrics text-center">
+    <!-- <div class="metrics text-center">
       ◓
       <span [ngClass]="getStartDiffClass(room)" title="עיכוב מתחילת יום">
         {{ getStartDiff(room) }}
@@ -732,8 +740,38 @@
       <span [ngClass]="getEndDiffClass(room)" title="פער עד סיום יום">
         {{ getEndDiff(room) }}
       </span>
-    </div>
+    </div> -->
 
+    
+    <div class="metrics text-center">
+
+  <!-- Start delay chip (show only before first ≥07:00 action) -->
+  <span class="metric-chip" *ngIf="!hasActionAfterWorkingStart(room)">
+    ◓
+    <span [ngClass]="getStartDiffClass(room)" title="עיכוב מתחילת יום">
+      {{ getStartDiff(room) }}
+    </span>
+  </span>
+
+  <!-- Turnover summary -->
+  <span class="metric-chip">
+    ⏳
+    <span [ngClass]="getTurnoverTimeClass(room)" title="זמן הכנת חדר (מעבר ל־20 דקות)">
+      {{ getTurnoverSummary(room) }}
+    </span>
+  </span>
+
+  <!-- End-of-day gap -->
+  <span class="metric-chip">
+    ◒
+    <span [ngClass]="getEndDiffClass(room)" title="פער עד סיום יום">
+      {{ getEndDiff(room) }}
+    </span>
+  </span>
+
+</div>
+
+    
     <div class="expand_btn">
       {{ isRoomExpanded(room.roomId) ? '⮝' : '⮟' }}
     </div>
