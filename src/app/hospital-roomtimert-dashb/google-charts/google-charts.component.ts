@@ -882,16 +882,7 @@ getTurnoverSummary(room: RoomData): string {
   return totalMinutes > 0 ? this.formatHM(totalMinutes) : '--:--';
 }
 
-// private workingStart(): Date {
-//   const d = new Date();
-//   d.setHours(7, 30, 0, 0);  // 07:00
-//   return d;
-// }
-// private workingEnd(): Date {
-//   const d = new Date();
-//   d.setHours(15, 0, 0, 0); // 15:00
-//   return d;
-// }
+
 
 private workingStart(): Date;
 private workingStart(baseDate: string | Date): Date;
