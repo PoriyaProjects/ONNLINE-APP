@@ -3,6 +3,8 @@ import { trigger, state, style, transition, animate } from '@angular/animations'
 import { GoogleChartsService } from '../services/google-charts.service';
 import { environment } from 'src/environments/environment';
 import { sanitizeSoapResponse, sanitizeSoapChartData } from 'src/app/shared/sanitizesoapresponce';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 
 import {
   CHART_SERIES_PALETTE,
@@ -63,6 +65,10 @@ export interface RoomData {
   ]
 })
 export class RoomTimeRTDashboardComponent implements OnInit, AfterViewInit {
+
+  private destroy$ = new Subject<void>();
+private ackedRooms = new Set<string>();
+
   departmentMap = new Map<string, DepartmentData>();
   selectedDepartmentCharts: any[] = [];
 
@@ -155,6 +161,11 @@ ngOnInit(): void {
   const saved = localStorage.getItem('rooms_allExpanded');
   if (saved === 'true') this.allExpanded = true;
   if (saved === 'false') this.allExpanded = false;
+
+   this.googleChartsService.ackAllRooms$
+    .pipe(takeUntil(this.destroy$))
+    .subscribe(() => this.markAllRoomsAcknowledged());
+
 }
 
 ngAfterViewInit(): void {
@@ -188,6 +199,8 @@ ngOnDestroy(): void {
     if (this.intervalId) {
       clearInterval(this.intervalId);
     }
+     this.destroy$.next();
+  this.destroy$.complete();
   }
 
   @HostListener('window:resize')
@@ -631,25 +644,62 @@ trackByRoomId(index: number, room: any) {
 }
 
 
+private readonly ACK_NS = 'ack_'; // storage prefix
+private ackCache = new Map<string, string>(); // roomId -> lastEventKey
 
-
-
-private acknowledgeRoomEvent(roomId: string): void {
-  localStorage.setItem(`ack_${roomId}`, this.lastEventKeyForRoom(roomId));
+private ackStorageKey(roomId: string): string {
+  return `${this.ACK_NS}${this.storageDateKey()}:${roomId}`;
+}
+private legacyAckStorageKey(roomId: string): string {
+  // backward compat with older versions
+  return `${this.ACK_NS}${roomId}`;
+}
+private storageDateKey(): string {
+  const d = this.selectedDate ? new Date(this.selectedDate) : new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+private lsGet(key: string): string | null {
+  try { return localStorage.getItem(key); } catch { return null; }
+}
+private lsSet(key: string, val: string): void {
+  try { localStorage.setItem(key, val); } catch {}
+}
+private lsRemove(key: string): void {
+  try { localStorage.removeItem(key); } catch {}
 }
 
-isBlinking(room: RoomData): boolean {
-  const currentKey = this.lastEventKeyForRoom(room.roomId);
-  const acknowledgedKey = localStorage.getItem(`ack_${room.roomId}`);
-  return currentKey !== acknowledgedKey;
-}
-
+/** Compute a stable "event key" for the last surgery in a room. */
 private lastEventKeyForRoom(roomId: string): string {
   const room = this.roomsData.find(r => r.roomId === roomId);
   if (!room || !room.surgeries.length) return 'empty';
   const last = room.surgeries[room.surgeries.length - 1];
   return `${last.surgeryId}_${last.status}`;
 }
+
+
+/** Mark a single room as acknowledged (persist + cache). */
+private acknowledgeRoomEvent(roomId: string): void {
+  const key = this.lastEventKeyForRoom(roomId);
+  const storeKey = this.ackStorageKey(roomId);
+
+  this.lsSet(storeKey, key);
+  // clean old format if present
+  this.lsRemove(this.legacyAckStorageKey(roomId));
+
+  this.ackCache.set(roomId, key);
+  // nudge change detection (esp. OnPush)
+  this.roomsData = [...(this.roomsData ?? [])];
+}
+
+/** Blinking is simply "not acknowledged yet" on weekdays. */
+isBlinking(room: RoomData): boolean {
+  return !this.isRoomAcked(room);
+}
+
+
 
 
 loadRoomsData(): void {
@@ -689,7 +739,7 @@ loadRoomsData(): void {
 });
 
 
-
+ this.refreshAckCache();
 
     this.isLoading = false;
     this.lastLoaded = new Date();
@@ -734,43 +784,97 @@ getTurnoverTime(room: RoomData): string {
   return '--:--';
 }
 
+// getTurnoverSummary(room: RoomData): string {
+//   if (!room?.surgeries?.length) return '--:--';
+
+//   let totalMinutes = 0;
+
+//   for (let i = 0; i < room.surgeries.length - 1; i++) {
+//     const current = room.surgeries[i];
+//     const next = room.surgeries[i + 1];
+//     if (!current?.timeExit || !next?.timeEntrance) continue;
+
+//     const exitTime = current.timeExit && current.timeExit !== '00:00:00'
+//       ? current.timeExit
+//       : current.timeEntrance;
+
+//     const exit = this.parseClock(exitTime);
+//     const entrance = this.parseClock(next.timeEntrance);
+//     if (!exit || !entrance) continue;
+
+//     const diffMin = Math.floor((entrance.getTime() - exit.getTime()) / 60000);
+//     if (diffMin > 20) totalMinutes += (diffMin - 20);
+//   }
+
+//   // also include idle after last completed surgery (if not in progress)
+//   const last = room.surgeries[room.surgeries.length - 1];
+//   if (last?.status === 'Completed') {
+//     const exitTime = last.timeExit && last.timeExit !== '00:00:00'
+//       ? last.timeExit
+//       : last.timeEntrance;
+
+//     const exit = this.parseClock(exitTime);
+//     if (exit) {
+//       const limit = new Date(exit);
+//       limit.setHours(15, 0, 0, 0);
+//       const now = new Date();
+//       const endTime = now < limit ? now : limit;
+
+//       const diffMin = Math.floor((endTime.getTime() - exit.getTime()) / 60000);
+//       if (diffMin > 20) totalMinutes += (diffMin - 20);
+//     }
+//   }
+
+//   return totalMinutes > 0 ? this.formatHM(totalMinutes) : '--:--';
+// }
 getTurnoverSummary(room: RoomData): string {
   if (!room?.surgeries?.length) return '--:--';
 
+  const dayStart = this.workingStart(); // 07:00
+  const dayEnd   = this.workingEnd();   // 15:00
   let totalMinutes = 0;
 
+  // gaps between consecutive surgeries
   for (let i = 0; i < room.surgeries.length - 1; i++) {
     const current = room.surgeries[i];
     const next = room.surgeries[i + 1];
-    if (!current?.timeExit || !next?.timeEntrance) continue;
+    if (!current || !next) continue;
 
-    const exitTime = current.timeExit && current.timeExit !== '00:00:00'
-      ? current.timeExit
-      : current.timeEntrance;
+    const currentExitClock =
+      current.timeExit && current.timeExit !== '00:00:00'
+        ? current.timeExit
+        : current.timeEntrance;
 
-    const exit = this.parseClock(exitTime);
-    const entrance = this.parseClock(next.timeEntrance);
+    if (!currentExitClock || !next.timeEntrance) continue;
+
+    // anchor to room.date to avoid day rollover issues
+    const exit = this.parseClockWithDate(currentExitClock, room.date);
+    const entrance = this.parseClockWithDate(next.timeEntrance, room.date);
     if (!exit || !entrance) continue;
 
-    const diffMin = Math.floor((entrance.getTime() - exit.getTime()) / 60000);
+    const start = this.clampToWindow(exit, dayStart, dayEnd);
+    const end   = this.clampToWindow(entrance, dayStart, dayEnd);
+
+    const diffMin = Math.max(0, Math.floor((end.getTime() - start.getTime()) / 60000));
     if (diffMin > 20) totalMinutes += (diffMin - 20);
   }
 
-  // also include idle after last completed surgery (if not in progress)
+  // idle after the last completed surgery (if last isn't InProgress)
   const last = room.surgeries[room.surgeries.length - 1];
   if (last?.status === 'Completed') {
-    const exitTime = last.timeExit && last.timeExit !== '00:00:00'
-      ? last.timeExit
-      : last.timeEntrance;
+    const lastExitClock =
+      last.timeExit && last.timeExit !== '00:00:00'
+        ? last.timeExit
+        : last.timeEntrance;
 
-    const exit = this.parseClock(exitTime);
-    if (exit) {
-      const limit = new Date(exit);
-      limit.setHours(15, 0, 0, 0);
+    const lastExit = this.parseClockWithDate(lastExitClock, room.date);
+    if (lastExit) {
+      const start = this.clampToWindow(lastExit, dayStart, dayEnd);
       const now = new Date();
-      const endTime = now < limit ? now : limit;
+      const endTime = now < dayEnd ? now : dayEnd;
+      const end = this.clampToWindow(endTime, dayStart, dayEnd);
 
-      const diffMin = Math.floor((endTime.getTime() - exit.getTime()) / 60000);
+      const diffMin = Math.max(0, Math.floor((end.getTime() - start.getTime()) / 60000));
       if (diffMin > 20) totalMinutes += (diffMin - 20);
     }
   }
@@ -778,8 +882,19 @@ getTurnoverSummary(room: RoomData): string {
   return totalMinutes > 0 ? this.formatHM(totalMinutes) : '--:--';
 }
 
-
-
+private workingStart(): Date {
+  const d = new Date();
+  d.setHours(7, 30, 0, 0);  // 07:00
+  return d;
+}
+private workingEnd(): Date {
+  const d = new Date();
+  d.setHours(15, 0, 0, 0); // 15:00
+  return d;
+}
+private clampToWindow(d: Date, start: Date, end: Date): Date {
+  return new Date(Math.min(end.getTime(), Math.max(start.getTime(), d.getTime())));
+}
 
 
 getTurnoverClass(room: RoomData): string {
@@ -802,44 +917,41 @@ getTurnoverTimeClass(room: RoomData): string {
   const [h, m] = value.split(':').map(Number);
   const minutes = h * 60 + m;
 
-  if (minutes <= 20) return 'ok';          // ✅ normal
-  if (minutes <= 45) return 'warning';     // 🟠 mild delay
-  if (minutes <= 60) return 'bad';         // 🔴 delay
-  if (minutes <= 120) return 'critical';   // 🔴 blinking red
-  return 'severe';                         // 🔴 pulsing red
+   if (minutes >= 120) return 'severe';    // 🔴 pulsing red
+  if (minutes >= 60)  return 'critical';  // 🔴
+  if (minutes >= 45)  return 'bad';       // 🟠/🔴
+  if (minutes > 20)   return 'warning';   // 🟡
+  return 'ok';
 }
+
 
 
 
 getRoomStatusClass(room: RoomData): string {
   if (!room || !room.surgeries?.length) return 'grey';
 
-  // Determine if the room's date is a weekend (Fri=5, Sat=6)
-  let isWeekend = false;
-  if (room.date) {
-    const roomDate = new Date(room.date);
-    const day = roomDate.getDay();
-    isWeekend = day === 5 || day === 6;
-  }
+  const isWeekend = this.isWeekend(room.date);
 
-  // If any surgery is in progress, always green (no blinking on weekend)
+  // Any surgery in progress: green (no blink on weekends)
   if (room.surgeries.some(s => s.status === 'InProgress')) {
     return isWeekend ? 'green' : 'green-blink';
   }
 
-  // Find last completed surgery with valid exit time
+  // Last completed surgery with a real exit time
   const lastCompleted = [...room.surgeries].reverse().find(
     s => s.status === 'Completed' && s.timeExit && s.timeExit !== '00:00:00'
   );
-
   if (!lastCompleted) return 'grey';
 
-  const exitTime = this.parseClock(lastCompleted.timeExit);
-  if (!exitTime) return 'grey';
+  // Use the room's date to anchor the time so we don't miscount across days
+  //const exitAt = this.parseClock(lastCompleted.timeExit, room.date);
+  const exitAt = this.parseClockWithDate(lastCompleted.timeExit, room.date);
 
-  const diffMin = (Date.now() - exitTime.getTime()) / 60000;
+  if (!exitAt) return 'grey';
 
-  // --- Weekend: never blinking ---
+  const diffMin = Math.max(0, (Date.now() - exitAt.getTime()) / 60000);
+
+  // Weekends: never blink, always show the -ack variants for red thresholds
   if (isWeekend) {
     if (diffMin > 120) return 'red-120-ack';
     if (diffMin > 60)  return 'red-60-ack';
@@ -847,14 +959,22 @@ getRoomStatusClass(room: RoomData): string {
     return 'grey';
   }
 
-  // --- Weekday: blinking if not acknowledged ---
-  const blinkingAllowed = this.isBlinking(room);
-  if (diffMin > 120) return blinkingAllowed ? 'red-120' : 'red-120-ack';
-  if (diffMin > 60)  return blinkingAllowed ? 'red-60'  : 'red-60-ack';
-  if (diffMin > 45)  return blinkingAllowed ? 'red-45'  : 'red-45-ack';
-
+  // Weekdays: blink only if NOT acknowledged
+  const isAcked = this.isRoomAcked(room);
+  if (diffMin > 120) return isAcked ? 'red-120-ack' : 'red-120';
+  if (diffMin > 60)  return isAcked ? 'red-60-ack'  : 'red-60';
+  if (diffMin > 45)  return isAcked ? 'red-45-ack'  : 'red-45';
   return 'grey';
 }
+
+/** Fri/Sat treated as weekend (JS getDay: Sun=0..Sat=6). */
+private isWeekend(dateLike?: string | Date): boolean {
+  const d = dateLike ? new Date(dateLike) : new Date();
+  const day = d.getDay();
+  return day === 5 || day === 6;
+}
+
+
 
 
 
@@ -935,6 +1055,15 @@ getTurnoverBetweenClass(prev: Surgery, next: Surgery): string {
   return isNaN(d.getTime()) ? null : d;
 }
 
+private parseClockWithDate(clock: string, baseDate?: string | Date): Date | null {
+  const t = this.parseClock(clock); // your original 1-arg function
+  if (!t) return null;
+  if (!baseDate) return t;
+
+  const base = new Date(baseDate);
+  base.setHours(t.getHours(), t.getMinutes(), t.getSeconds(), 0);
+  return base;
+}
 
 private formatDiff(ms: number): string {
   if (isNaN(ms)) return '--:--';
@@ -987,7 +1116,7 @@ getStartDiff(room: RoomData): string {
 
 getEndDiff(room: RoomData): string {
   const opening = this.parseClock('07:30');
-  const closing = this.parseClock('15:00');
+  const closing = this.parseClock('14:40');
   if (!closing || !opening) return '--:--';
 
   // Filter surgeries within the working day
@@ -1019,9 +1148,9 @@ getEndDiffClass(room: RoomData): string {
   const [h, m] = val.split(':').map(Number);
   const minutes = h * 60 + m;
 
-  if (minutes < 30) return 'metric-red'; // very little time left
-  if (minutes < 60) return 'metric-orange';
-  if (minutes < 120) return 'metric-yellow';
+  if (minutes > 120) return 'metric-red';
+  if (minutes > 60)  return 'metric-orange';
+  if (minutes > 30)  return 'metric-yellow';
   return 'metric-ok';
 }
 
@@ -1133,5 +1262,62 @@ statusTranslations: Record<string, string> = {
 translateStatus(status: string): string {
   return this.statusTranslations[status] || status;
 }
+
+
+acknowledgeAllRooms(): void {
+  this.googleChartsService.triggerAcknowledgeAllRooms();
+
+  for (const r of this.roomsData ?? []) {
+    if (!r?.roomId) continue;
+    const key = this.lastEventKeyForRoom(r.roomId);
+    const storeKey = this.ackStorageKey(r.roomId);
+    this.lsSet(storeKey, key);
+    this.lsRemove(this.legacyAckStorageKey(r.roomId));
+    this.ackCache.set(r.roomId, key);
+  }
+
+  // trigger change detection if using OnPush
+  this.roomsData = [...(this.roomsData ?? [])];
+  console.log('acknowledged all rooms');
+}
+
+
+private refreshAckCache(): void {
+  this.ackCache.clear();
+  for (const r of this.roomsData ?? []) {
+    const stored =
+      this.lsGet(this.ackStorageKey(r.roomId)) ??
+      this.lsGet(this.legacyAckStorageKey(r.roomId));
+    if (stored) this.ackCache.set(r.roomId, stored);
+  }
+}
+// actually mark them
+private markAllRoomsAcknowledged(): void {
+  for (const r of this.roomsData ?? []) {
+    if (r?.roomId) this.ackedRooms.add(r.roomId);
+  }
+  // trigger change detection if using OnPush
+  this.roomsData = [...(this.roomsData ?? [])];
+}
+
+// helper
+private isRoomAcked(room: RoomData): boolean {
+  if (!room?.roomId) return false;
+
+  const currentKey = this.lastEventKeyForRoom(room.roomId);
+  // prefer cache, then storage (new), then legacy storage (old key)
+  const storedKey =
+    this.ackCache.get(room.roomId) ??
+    this.lsGet(this.ackStorageKey(room.roomId)) ??
+    this.lsGet(this.legacyAckStorageKey(room.roomId));
+
+  return !!storedKey && storedKey === currentKey;
+}
+
+
+private readonly PLANNED_SET = new Set(['Planned', 'Scheduled']);
+
+trackBySurgeryId = (_: number, s: Surgery) => s?.surgeryId ?? _;
+
 
 }
