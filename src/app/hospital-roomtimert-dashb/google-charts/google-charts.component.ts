@@ -719,7 +719,8 @@ loadRoomsData(): void {
         status: row.SurgeryStatus,
         timeEntrance: row.TimeEntranceToTheOperatingRoom,
         timeExit: row.TimeExitingTheOperatingRoom,
-        surgeryDate: row.SurgeryDate
+        surgeryDate: row.SurgeryDate,
+        urgency: row.Urgency
       });
       return acc;
     }, {} as Record<string, Surgery[]>);
@@ -1670,6 +1671,181 @@ getHeaderProgressText(room: RoomData): string {
   return n + ' מתוך ' + x;
 }
 
+/** Compare two dates by local Y/M/D (no timezone surprises). */
+private isSameLocalDay(a: Date, b: Date): boolean {
+  return a.getFullYear() === b.getFullYear() &&
+         a.getMonth()    === b.getMonth() &&
+         a.getDate()     === b.getDate();
+}
 
+/** True if this room’s date is today (fallback to selectedDate if missing). */
+isRoomToday(room: RoomData): boolean {
+  const base = room && room.date ? new Date(room.date) : new Date(this.selectedDate);
+  const now  = new Date();
+  return this.isSameLocalDay(base, now);
+}
+
+
+// Map raw 'Urgency' text to an icon
+private urgencyIconRaw(u: any): string {
+  var s = (u == null ? '' : String(u)).trim();
+  if (!s) return '';
+  var low = s.toLowerCase();
+
+  // Hebrew / English hints
+  if (s.indexOf('דחוף') >= 0 || low.indexOf('urgent') >= 0) return '🚑';     // or '⚠️'
+  if (s.indexOf('ססיה') >= 0 || s.indexOf('אשפוז') >= 0 || low.indexOf('inpatient') >= 0) return '🏥';
+  if (s.indexOf('אלקטיב') >= 0 || low.indexOf('elect') >= 0) return '📖';
+  return '';
+}
+
+// Get icon from a surgery object (handles both camelCase and raw API fields)
+getUrgencyIconFromSurgery(s: any): string {
+  if (!s) return '';
+  var u = (s.urgency != null ? s.urgency : (s as any).Urgency);
+  return this.urgencyIconRaw(u);
+}
+
+/** Pick the icon to show next to N from X in the header:
+ *   1) If there is an InProgress surgery → its icon
+ *   2) Else the next upcoming (today, in work window) non-completed → its icon
+ *   3) Else the last completed (today, in work window) → its icon
+ *   4) Else '' (no icon)
+ */
+getHeaderProgressIcon(room: RoomData): string {
+  if (!room || !room.surgeries || !room.surgeries.length) return '';
+
+  var anchor = room.date || this.selectedDate;
+  var dayStart = this.workingStart(anchor);
+  var dayEnd   = this.workingEnd(anchor);
+  var DAY_MS   = 24 * 60 * 60 * 1000;
+
+  // helper: parse and check overlap
+  function parse(self: any, clk: string, base: any): Date | null {
+    return clk ? self.parseClockWithDate(clk, base) : null;
+  }
+  function overlaps(e: Date, x: Date): boolean {
+    return e < dayEnd && x > dayStart;
+  }
+  function startTs(self: any, s: any): number {
+    var base = s.surgeryDate || anchor;
+    var e = parse(self, s.timeEntrance, base);
+    var x = parse(self, (s.timeExit && s.timeExit !== '00:00:00') ? s.timeExit : s.timeEntrance, base);
+    if (!e || !x) return Number.POSITIVE_INFINITY;
+    if (x.getTime() < e.getTime()) x = new Date(x.getTime() + DAY_MS);
+    return overlaps(e, x) ? e.getTime() : Number.POSITIVE_INFINITY;
+  }
+
+  // 1) InProgress
+  var bestInProg: any = null, bestTs = -Infinity;
+  for (var i = 0; i < room.surgeries.length; i++) {
+    var s = room.surgeries[i];
+    if (s.status !== 'InProgress') continue;
+    var ts = startTs(this, s);
+    if (ts !== Number.POSITIVE_INFINITY && ts > bestTs) { bestInProg = s; bestTs = ts; }
+  }
+  if (bestInProg) return this.getUrgencyIconFromSurgery(bestInProg);
+
+  // 2) Next upcoming non-completed today
+  var next: any = null, nextTs = Number.POSITIVE_INFINITY;
+  for (var j = 0; j < room.surgeries.length; j++) {
+    var t = room.surgeries[j];
+    if (t.status === 'Completed') continue;
+    var ts2 = startTs(this, t);
+    if (ts2 < nextTs) { next = t; nextTs = ts2; }
+  }
+  if (next) return this.getUrgencyIconFromSurgery(next);
+
+  // 3) Last completed today
+  var last: any = null, lastTs = -Infinity;
+  for (var k = 0; k < room.surgeries.length; k++) {
+    var c = room.surgeries[k];
+    if (c.status !== 'Completed') continue;
+    var ts3 = startTs(this, c);
+    if (ts3 !== Number.POSITIVE_INFINITY && ts3 > lastTs) { last = c; lastTs = ts3; }
+  }
+  if (last) return this.getUrgencyIconFromSurgery(last);
+
+  return '';
+}
+
+hasInProgress(room: RoomData): boolean {
+  if (!room || !room.surgeries || !room.surgeries.length) return false;
+  for (var i = 0; i < room.surgeries.length; i++) {
+    var s = room.surgeries[i];
+    if (s && s.status === 'InProgress') return true;
+  }
+  return false;
+}
+
+
+
+/** Get the raw urgency string from a surgery object (handles both shapes). */
+getUrgencyTextFromSurgery(s: any): string {
+  if (!s) return '';
+  var u = (s.urgency != null ? s.urgency : (s as any).Urgency);
+  return u != null ? String(u) : '';
+}
+
+/** Pick the same surgery your header icon represents and return its urgency text. */
+getHeaderProgressTitle(room: RoomData): string {
+  // mirror your getHeaderProgressIcon selection:
+  if (!room || !room.surgeries || !room.surgeries.length) return '';
+
+  var anchor = room.date || this.selectedDate;
+  var dayStart = this.workingStart(anchor);
+  var dayEnd   = this.workingEnd(anchor);
+  var DAY_MS   = 24 * 60 * 60 * 1000;
+
+  var chosen: any = null;
+  var chosenTs = -Infinity;
+
+  function parse(self: any, clk: string, base: any): Date | null {
+    return clk ? self.parseClockWithDate(clk, base) : null;
+  }
+  function overlaps(e: Date, x: Date): boolean {
+    return e < dayEnd && x > dayStart;
+  }
+  function startTs(self: any, s: any): number {
+    var base = s.surgeryDate || anchor;
+    var e = parse(self, s.timeEntrance, base);
+    var x = parse(self, (s.timeExit && s.timeExit !== '00:00:00') ? s.timeExit : s.timeEntrance, base);
+    if (!e || !x) return Number.POSITIVE_INFINITY;
+    if (x.getTime() < e.getTime()) x = new Date(x.getTime() + DAY_MS);
+    return overlaps(e, x) ? e.getTime() : Number.POSITIVE_INFINITY;
+  }
+
+  // 1) InProgress (latest started)
+  for (var i = 0; i < room.surgeries.length; i++) {
+    var s1 = room.surgeries[i];
+    if (s1.status !== 'InProgress') continue;
+    var ts1 = startTs(this, s1);
+    if (ts1 !== Number.POSITIVE_INFINITY && ts1 > chosenTs) { chosen = s1; chosenTs = ts1; }
+  }
+  // 2) Next upcoming today (non-completed)
+  if (!chosen) {
+    var next: any = null, nextTs = Number.POSITIVE_INFINITY;
+    for (var j = 0; j < room.surgeries.length; j++) {
+      var s2 = room.surgeries[j];
+      if (s2.status === 'Completed') continue;
+      var ts2 = startTs(this, s2);
+      if (ts2 < nextTs) { next = s2; nextTs = ts2; }
+    }
+    chosen = next;
+  }
+  // 3) Last completed today
+  if (!chosen) {
+    var last: any = null, lastTs = -Infinity;
+    for (var k = 0; k < room.surgeries.length; k++) {
+      var s3 = room.surgeries[k];
+      if (s3.status !== 'Completed') continue;
+      var ts3 = startTs(this, s3);
+      if (ts3 !== Number.POSITIVE_INFINITY && ts3 > lastTs) { last = s3; lastTs = ts3; }
+    }
+    chosen = last;
+  }
+
+  return chosen ? this.getUrgencyTextFromSurgery(chosen) : '';
+}
 
 }
