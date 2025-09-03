@@ -50,6 +50,67 @@ export interface RoomData {
   surgeries: Surgery[];  
 }
 
+// --- types & presets: TOP-LEVEL, not inside the class ---
+export type DisplayPreset = 'default' | 'all' | 'custom';
+
+export interface DisplaySettings {
+  // existing required keys
+  showHeaderBadge: boolean;
+  showHeaderIcon: boolean;
+  showHeaderProgress: boolean;
+
+  showTurnoverLines: boolean;
+  showPlannedSection: boolean;
+  showSurgeryName: boolean;
+  showSurgeryCode: boolean;
+  showDepartment: boolean;
+  showTimes: boolean;
+  showStatus: boolean;
+
+  colorize: boolean;
+  blinkOnUnacked: boolean;   // <-- required
+  showLegend: boolean;
+
+  // NEW (optional for backward-compat)
+  showHeaderMetrics?: boolean; // group for chips
+  showStartChip?: boolean;
+  showTurnoverChip?: boolean;
+  showEndChip?: boolean;
+  showStatusDot?: boolean;     // right-side status dot
+  showUrgencyIcon?: boolean;   // icon near surgeryId
+}
+
+export const DEFAULT_SETTINGS: DisplaySettings = {
+  // keep all the old required defaults
+  showHeaderBadge: true,
+  showHeaderIcon: true,
+  showHeaderProgress: true,
+
+  showTurnoverLines: true,
+  showPlannedSection: true,
+  showSurgeryName: true,
+  showSurgeryCode: true,
+  showDepartment: true,
+  showTimes: true,
+  showStatus: true,
+
+  colorize: true,
+  blinkOnUnacked: true,   // <-- put it back
+  showLegend: true,
+
+  // NEW defaults (optional keys)
+  showHeaderMetrics: true,
+  showStartChip: true,
+  showTurnoverChip: true,
+  showEndChip: true,
+  showStatusDot: true,
+  showUrgencyIcon: true,
+};
+
+
+
+export const ALL_ON_SETTINGS: DisplaySettings = { ...DEFAULT_SETTINGS };
+
 
 
 @Component({
@@ -79,6 +140,7 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
 
 
   
+  
   constructor(
     public googleChartsService: GoogleChartsService,
     private deptColors: DepartmentColorService,
@@ -93,9 +155,65 @@ nextRefreshIn: number = 300; // 5 minutes in seconds
 autoRefreshPaused = false;
 lastLoaded: Date | null = null;
 
+// fields
+userId: string | null = null;                 // hide panel when null
+displayPreset: DisplayPreset = 'default';
+settings: DisplaySettings = { ...DEFAULT_SETTINGS };
+showDisplayPanel = false;
+
+// storage key
+private settingsKey(uid: string) { return `rtmdashb.display.${uid}`; }
+
+// load/save
+initDisplaySettings(): void { this.loadDisplaySettings(); }
+
+private loadDisplaySettings(): void {
+  if (!this.userId) { this.displayPreset = 'default'; this.settings = { ...DEFAULT_SETTINGS }; this.showDisplayPanel = false; return; }
+  const raw = localStorage.getItem(this.settingsKey(this.userId));
+  if (!raw) { this.displayPreset = 'default'; this.settings = { ...DEFAULT_SETTINGS }; return; }
+  try {
+    const parsed = JSON.parse(raw);
+    const saved = (parsed.settings as Partial<DisplaySettings>) || {};
+    this.displayPreset = (parsed.preset as DisplayPreset) || 'custom';
+    this.settings = { ...DEFAULT_SETTINGS, ...saved }; // <-- merge with defaults
+  } catch {
+    this.displayPreset = 'default';
+    this.settings = { ...DEFAULT_SETTINGS };
+  }
+}
+
+
+private persistDisplaySettings(): void {
+  if (!this.userId) return;
+  localStorage.setItem(this.settingsKey(this.userId), JSON.stringify({
+    preset: this.displayPreset,
+    settings: this.settings
+  }));
+}
+
+// presets
+applyPreset(p: DisplayPreset): void {
+  this.displayPreset = p;
+  this.settings = (p === 'default') ? { ...DEFAULT_SETTINGS }
+               : (p === 'all')     ? { ...ALL_ON_SETTINGS }
+                                   : this.settings;
+  //this.persistDisplaySettings();
+  const next = { ...this.settings } as any;   
+}
+
+// toggle (Angular 9-friendly)
+toggleSetting(key: keyof DisplaySettings): void {
+  const next = { ...this.settings } as any;
+  next[key] = !this.settings[key];
+  this.settings = next;
+  this.displayPreset = 'custom';
+  this.persistDisplaySettings();
+}
 
 
 ngOnInit(): void {
+   this.userId = (localStorage.getItem('ID') || '').trim() || null; // <-- read ID from localStorage
+  this.initDisplaySettings(); 
   this.legendMinimized = localStorage.getItem('legendMinimized') === 'true';
   this.deptColors.setPalette(this.palette.getDepartmentPalette(), this.palette.name);
 
@@ -160,7 +278,7 @@ ngOnDestroy(): void {
 
 
 
-  @HostListener('document:click', ['$event'])
+  
 
 
 isLoading = false;
@@ -1327,14 +1445,14 @@ getHeaderProgressTitle(room: RoomData): string {
     return overlaps(e, x) ? e.getTime() : Number.POSITIVE_INFINITY;
   }
 
-  // 1) InProgress (latest started)
+  
   for (var i = 0; i < room.surgeries.length; i++) {
     var s1 = room.surgeries[i];
     if (s1.status !== 'InProgress') continue;
     var ts1 = startTs(this, s1);
     if (ts1 !== Number.POSITIVE_INFINITY && ts1 > chosenTs) { chosen = s1; chosenTs = ts1; }
   }
-  // 2) Next upcoming today (non-completed)
+  
   if (!chosen) {
     var next: any = null, nextTs = Number.POSITIVE_INFINITY;
     for (var j = 0; j < room.surgeries.length; j++) {
@@ -1345,7 +1463,7 @@ getHeaderProgressTitle(room: RoomData): string {
     }
     chosen = next;
   }
-  // 3) Last completed today
+  
   if (!chosen) {
     var last: any = null, lastTs = -Infinity;
     for (var k = 0; k < room.surgeries.length; k++) {
@@ -1359,5 +1477,28 @@ getHeaderProgressTitle(room: RoomData): string {
 
   return chosen ? this.getUrgencyTextFromSurgery(chosen) : '';
 }
+
+
+/** Room status class with user display settings applied. */
+getRoomStatusClassWithSettings(room: RoomData): string {
+  // keep original behavior if settings not wired yet
+  const base = (this.getRoomStatusClass && room) ? (this.getRoomStatusClass(room) || '') : '';
+
+  // If you haven’t defined `settings`, just return the base classes
+  if (!this.settings) return base;
+
+  // Turn off colors completely
+  if (this.settings.colorize === false) return '';
+
+  // Turn off blinking (convert "green-blink" → "green", strip generic "blink")
+  if (this.settings.blinkOnUnacked === false) {
+    return base
+      .replace(/\bgreen-blink\b/g, 'green')
+      .replace(/\bblink\b/g, ''); // just in case other places add "blink"
+  }
+
+  return base;
+}
+
 
 }
