@@ -259,6 +259,7 @@ import { HospitalCathDashbModule } from './hospital-cath-dashb/hospital-cath-das
 import { HospitalRoomTimeDashbModule } from './hospital-roomtime-dashb/hospital-roomtime-dashb.module';
 import { HospitalRoomTimeNDashbModule } from './hospital-roomtimen-dashb/hospital-roomtimen-dashb.module';
 import { HospitalRoomTimeRTDashbModule } from './hospital-roomtimert-dashb/hospital-roomtimert-dashb.module';
+import { HospitalRoomTimeRTmDashbModule } from './hospital-roomtimert-mdashb/hospital-roomtimert-mdashb.module';
 import { AppointsDashbModule } from './hospital-appoints-dashb/hospital-appoints-dashb.module';
 import { AppointsCLDashbModule } from './hospital-appointscl-dashb/hospital-appointscl-dashb.module';
 import { SharedModule } from './shared/shared.module';
@@ -280,6 +281,7 @@ import { FilterDepartsPipe } from './pipe/filter-departs.pipe';
 import { FoldersManagementComponent } from './dashboard/folders-management/folders-management.component';
 import { FolderDialogComponent } from './dashboard/folders-management/folder-dialog/folder-dialog.component';
 import { RoomTimeRTDashboardComponent } from './hospital-roomtimert-dashb/google-charts/google-charts.component';
+import { RoomTimeRTmDashboardComponent } from './hospital-roomtimert-mdashb/google-charts/google-charts.component';
 
 
 

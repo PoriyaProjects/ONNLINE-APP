@@ -1696,6 +1696,8 @@ private urgencyIconRaw(u: any): string {
   if (s.indexOf('דחוף') >= 0 || low.indexOf('urgent') >= 0) return '🚑';     // or '⚠️'
   if (s.indexOf('ססיה') >= 0 || s.indexOf('אשפוז') >= 0 || low.indexOf('inpatient') >= 0) return '🏥';
   if (s.indexOf('אלקטיב') >= 0 || low.indexOf('elect') >= 0) return '📖';
+  if (s.indexOf('ללא עדיפות') >= 0 || low.indexOf('no priority') >= 0 || low.indexOf('none') >= 0 || low.indexOf('routine') >= 0) return '⬇️';
+  if (s.indexOf('אמבולטורי') >= 0 || low.indexOf('ambulatory') >= 0 || low.indexOf('outpatient') >= 0) return '🚶';
   return '';
 }
 
@@ -1706,12 +1708,7 @@ getUrgencyIconFromSurgery(s: any): string {
   return this.urgencyIconRaw(u);
 }
 
-/** Pick the icon to show next to N from X in the header:
- *   1) If there is an InProgress surgery → its icon
- *   2) Else the next upcoming (today, in work window) non-completed → its icon
- *   3) Else the last completed (today, in work window) → its icon
- *   4) Else '' (no icon)
- */
+
 getHeaderProgressIcon(room: RoomData): string {
   if (!room || !room.surgeries || !room.surgeries.length) return '';
 
