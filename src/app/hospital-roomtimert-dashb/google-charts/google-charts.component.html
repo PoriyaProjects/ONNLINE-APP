@@ -752,8 +752,20 @@
   </span>
 </div>
 
-<div class="status-circle2 text-center" style="margin:10px auto" [ngClass]="getRoomStatusClass(room)" >
-  {{ getHeaderInProgressLabel(room) }}
+<!-- <div  *ngIf="isRoomToday(room)" class="status-circle2 text-center" style="margin:10px auto" [ngClass]="getRoomStatusClass(room)" >
+  {{ getHeaderInProgressLabel(room) }}  {{ getHeaderProgressIcon(room) }}
+</div> -->
+
+<div
+  *ngIf="isRoomToday(room) && hasInProgress(room)"
+  class="status-circle2 text-center"
+  style="margin:10px auto"
+  [ngClass]="getRoomStatusClass(room)"
+>
+  {{ getHeaderInProgressLabel(room) }} <!-- Icon with tooltip (title shows the urgency value) -->
+  <ng-container *ngIf="getHeaderProgressIcon(room) as icon">
+    <span [attr.title]="getHeaderProgressTitle(room)">{{ icon }}</span>
+  </ng-container>
 </div>
 
  <div class="small" style="text-align: right;">
@@ -787,7 +799,9 @@
 
         <!-- Surgery details -->
         <div class="surgery-row" [class.scompleted]="s?.status === 'Completed'">
-          <b style="font-weight:800">⮜ {{ s.surgeryId }}</b><br />
+          <b style="font-weight:800">⮜ {{ s.surgeryId }}  <ng-container *ngIf="getUrgencyIconFromSurgery(s) as icon">
+    <span [attr.title]="getUrgencyTextFromSurgery(s)">{{ icon }}</span>
+  </ng-container></b><br />
           <!-- {{ s.surgeryName }} -->
            ({{ s.surgeryCode }}) <br />
           <i>{{ s.department }}</i><br />
@@ -821,14 +835,18 @@
           </div>
           <div class="row card" style="margin-top: 20px;">
             <div class="metrics-legend" style="text-align:center; margin-bottom:10px; font-size:0.9em;">
-              ◓ = עיכוב מתחילת יום |
-              ⏳ = זמן הכנת חדר (מעבר ל־20 דקות) |
-              ◒ = פער עד סיום יום <br />
-              🟢 ירוק = ניתוח פעיל |
-              🔘 אפור = חדר לא מנוצל |
-              🟠 כתום = עיכוב בהכנת חדר |
-              🔴 אדום = עיכוב חמור (גבוה מ־45 דק׳, 60 דק׳, 120 דק׳)
-            </div>
+  ◓ = עיכוב מתחילת יום |
+  ⏳ = זמן הכנת חדר (מעבר ל־20 דקות) |
+  ◒ = פער עד סיום יום <br />
+  🟢 ירוק = ניתוח פעיל |
+  🔘 אפור = חדר לא מנוצל |
+  🟠 כתום = עיכוב בהכנת חדר |
+  🔴 אדום = עיכוב חמור (גבוה מ־45 דק׳, 60 דק׳, 120 דק׳) <br />
+  🚑/⚠️ = דחוף |
+  🏥 = ססיה - אשפוז |
+  📖 = אלקטיב
+</div>
+
           </div>
           <div style="height:20px;"></div>
         </div>
