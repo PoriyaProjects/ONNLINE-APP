@@ -283,7 +283,7 @@
   .room-widget.active {
     filter: none;
     opacity: 1;
-    border: 1px solid #007bff;
+    /*border: 1px solid #007bff;*/
   }
 
   .room-header {
@@ -626,7 +626,7 @@
 .room-widget.card .room-header .status-circle {
   position: relative;
   z-index: 6;
-  top:-72px;
+  top:-140px;
 }
 
 /* Example: make scompleted rows a bit dimmer or styled */
@@ -667,7 +667,7 @@
     <div class="mdc-layout-grid__cell col-md-12">
       <main class="mdc-top-app-bar--fixed-adjust">
 
-        <div style="height:60px;"></div>
+        <!-- <div style="height:60px;"></div> -->
 
         <div class="panel" style="padding:20px;width:100%; border: 1px solid rgba(0, 0, 0, .125);
     border-radius: .25rem;">
@@ -723,30 +723,12 @@
      ]">
 
   <!-- Header (sticky inside the scrolling card) -->
-  <div class="room-header" (click)="toggleRoom(room.roomId)">
-    <!-- <h4 class="text-center">{{ room.roomId }}</h4> -->
-     <h4 class="text-center">{{ translateRoomId(room.roomId) }}</h4>
-
-    <!-- <div class="metrics text-center">
-      ◓
-      <span [ngClass]="getStartDiffClass(room)" title="עיכוב מתחילת יום">
-        {{ getStartDiff(room) }}
-      </span> |
-      ⏳
-      <span [ngClass]="getTurnoverTimeClass(room)" title="זמן הכנת חדר (מעבר ל־20 דקות)">
-        {{ getTurnoverSummary(room) }}
-      </span>
-      | ◒
-      <span [ngClass]="getEndDiffClass(room)" title="פער עד סיום יום">
-        {{ getEndDiff(room) }}
-      </span>
-    </div> -->
-
-    
+  <div class="room-header" (click)="toggleRoom(room.roomId)">    
+     <h4 class="text-center">{{ translateRoomId(room.roomId) }}</h4>   
     <div class="metrics text-center">
 
-  <!-- Start delay chip (show only before first ≥07:00 action) -->
-  <span class="metric-chip" *ngIf="!hasActionAfterWorkingStart(room)">
+  <!-- Start delay chip -->
+  <span class="metric-chip" *ngIf="shouldShowStartDiff(room)">
     ◓
     <span [ngClass]="getStartDiffClass(room)" title="עיכוב מתחילת יום">
       {{ getStartDiff(room) }}
@@ -768,20 +750,27 @@
       {{ getEndDiff(room) }}
     </span>
   </span>
-
 </div>
 
-    
+<div class="status-circle2 text-center" style="margin:10px auto" [ngClass]="getRoomStatusClass(room)" >
+  {{ getHeaderInProgressLabel(room) }}
+</div>
+
+ <div class="small" style="text-align: right;">
+    {{ getHeaderProgressText(room) }}
+  </div>
+
+
     <div class="expand_btn">
       {{ isRoomExpanded(room.roomId) ? '⮝' : '⮟' }}
     </div>
     <div class="status-circle" [ngClass]="getRoomStatusClass(room)"></div>
   </div>
 
-  <!-- Body (scrolls under the sticky header) -->
+  
   <div class="room-body" *ngIf="isRoomExpanded(room.roomId)">
 
-    <!-- cache active list once -->
+    
     <ng-container *ngIf="activeSurgeries(room) as active">
       <div *ngFor="let s of active; let i = index; trackBy: trackBySurgeryId"
            class="surgery-block"
@@ -799,7 +788,8 @@
         <!-- Surgery details -->
         <div class="surgery-row" [class.scompleted]="s?.status === 'Completed'">
           <b style="font-weight:800">⮜ {{ s.surgeryId }}</b><br />
-          {{ s.surgeryName }} ({{ s.surgeryCode }}) <br />
+          <!-- {{ s.surgeryName }} -->
+           ({{ s.surgeryCode }}) <br />
           <i>{{ s.department }}</i><br />
           <b>{{ s.timeEntrance }} ← {{ s.timeExit || '...' }}</b><br />
           <span class="status" [ngClass]="s.status">
