@@ -125,3 +125,655 @@ h2 {
   }
   
   .ctrl-placeholder{height:32px; display: block;}
+
+
+
+
+
+
+  .tabs {
+    margin-bottom: 15px;
+  }
+
+  .tabs button {
+    padding: 10px 20px;
+    margin-right: 5px;
+    background: #f0f0f0;
+    border: 1px solid #ccc;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+  }
+
+  .tabs button:hover {
+    background: #e6e6e6;
+  }
+
+  .tabs button.active {
+    background: #6ba1f8;
+    color: #fff;
+    border-color: #6ba1f8;
+    font-weight: bold;
+  }
+
+  .chart-title {
+    margin: 20px 0
+  }
+
+  .floating-legend {
+    position: fixed;
+    bottom: 40px;
+    left: 20px;
+    width: 250px;
+    background: #fff;
+    border: 1px solid #ccc;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    border-radius: 5px;
+    overflow: hidden;
+    font-family: Arial, sans-serif;
+    z-index: 9999;
+    transition: all 0.3s ease;
+  }
+
+  .floating-legend.minimized {
+    height: 40px;
+    width: 200px;
+  }
+
+  .legend-header {
+    background: #f5f5f5;
+    padding: 8px 12px;
+    font-weight: bold;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+  }
+
+  .legend-body {
+    max-height: 300px;
+    overflow-y: auto;
+    padding: 10px;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+
+  .color-box {
+    width: 20px;
+    height: 20px;
+    display: inline-block;
+    margin-right: 8px;
+    border: 1px solid #aaa;
+  }
+
+  .dept-name {
+    padding-right: 10px;
+    text-align: right;
+    font-size: 0.8em;
+  }
+
+  .toggle-btn {
+    background: none;
+    border: none;
+    font-size: 12px;
+    cursor: pointer;
+    color: #007bff;
+  }
+
+
+  .material-icons {
+    vertical-align: middle;
+  }
+
+
+  @keyframes flashHighlight {
+
+    0%,
+    100% {
+      background-color: inherit;
+    }
+
+    50% {
+      background-color: #ffeb3b;
+    }
+
+    /* Yellow highlight */
+  }
+
+  .flash-highlight {
+    animation: flashHighlight 0.6s ease-in-out 3;
+    /* 3 flashes */
+  }
+
+  .toggle-details.active-toggle {
+    font-weight: bold;
+    color: #007bff;
+    /* highlight color (Bootstrap blue) */
+    text-decoration: underline;
+  }
+
+  .toggle-details.active-toggle {
+    background-color: #e6f0ff;
+    border-radius: 4px;
+  }
+
+  .visible_tbl {
+    background: #e6f0ff;
+    padding: 20px 0 !important;
+    margin: 20px 0;
+  }
+
+  .table-block {
+    transition: all 0.3s ease-in-out;
+    /* smooth animation */
+  }
+
+  .table-block.active {
+    transform: scale(1.02);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    filter: blur(0px) brightness(1);
+    opacity: 1;
+    z-index: 2;
+  }
+
+  .table-block.notactive {
+    filter: blur(2px) brightness(0.9);
+    opacity: 0.6;
+  }
+
+  .tabs-filters-wrapper {
+    direction: rtl;
+    text-align: right;
+    position: sticky;
+    top: 40px;
+    z-index: 9999;
+    /*background: #fff;*/
+    /*background: rgba(0,0,0,0.2);*/
+    /* background: rgb(241, 242, 246); */
+    padding: 10px;
+    border-bottom: 1px solid #ddd;
+    transition: background 0.3s ease, box-shadow 0.3s ease;
+  }
+
+  .tabs button {
+    border: solid 1px #777;
+    margin-left: 20px;
+    background: #f8f9fa;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .tabs button.active {
+    background: #007bff;
+    color: white;
+    border-color: #007bff;
+  }
+
+  .filters label {
+    padding-left: 10px;
+  }
+
+  .tabs-filters-wrapper.is-sticky {
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    background: rgba(0, 0, 0, 0.2);
+    backdrop-filter: blur(5px);
+  }
+
+  .department-tabs button.active {
+    font-weight: bold;
+    border: 2px solid white;
+  }
+
+  .department-tabs {
+    display: flex;
+    gap: 6px;
+    /* space between buttons, optional */
+  }
+
+  .department-btn {
+    flex: 1;
+    /* each button takes equal space */
+    text-align: center;
+    padding: 8px 0;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+
+  .department-btn.active {
+    outline: 2px solid #fff;
+    font-weight: bold;
+  }
+
+  .department-btn-active {
+    outline: 2px solid #fff;
+    font-weight: bold;
+  }
+
+
+  .department-subtabs button.active {
+    background: #6ba1f8;
+    color: #fff;
+    border-color: #6ba1f8;
+    font-weight: bold;
+  }
+
+
+
+
+  #stickyTabsFilters {
+    position: sticky;
+    top: 45px;
+    z-index: 100;
+  }
+
+  #stickyTabsFilters.is-sticky {
+    position: sticky;
+    /* or fixed, depending on your design */
+  }
+
+  #stickyTabsFilters:not(.is-sticky) {
+    position: static;
+    /* "released" */
+  }
+
+
+
+
+  /* Department tabs stick 100px from top when .is-sticky is applied */
+  .department-tabs.is-sticky {
+    position: fixed;
+    top: 100px;
+    /* ← the requested offset */
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    background: rgba(0, 0, 0, 0.2);
+    /* keep readable while overlapping content */
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+  }
+
+  #surgeriesrts {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(13%, 1fr));
+    gap: 16px;
+  }
+
+  .room-widget {
+    transition: all 0.3s ease;
+  }
+
+  .room-widget.blurred {
+    filter: blur(1px);
+    opacity: 0.6;
+  }
+
+  .room-widget.active {
+    filter: none;
+    opacity: 1;
+    /*border: 1px solid #007bff;*/
+  }
+
+  .room-header {
+    cursor: pointer;
+  }
+
+  .metrics {
+    white-space: nowrap;
+    font-size: 0.9em;
+  }
+
+  h2,
+  h3 {
+    text-align: center;
+    padding: 20px;
+    width: 100%;
+  }
+
+  .panel {
+    background: #eeeff1;
+    margin-bottom: 40px;
+  }
+
+  .expand_btn {
+    width: 100%;
+    text-align: center;
+  }
+
+  .status-circle {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    position: absolute;
+    top: 8px;
+    right: 8px;
+  }
+
+  /* Base colors */
+  .status-circle.green-blink {
+    background: green;
+  }
+
+  .status-circle.grey {
+    background: grey;
+  }
+
+  .status-circle.blue {
+    background: blue;
+  }
+
+  .status-circle.orange {
+    background: orange;
+  }
+
+  .status-circle.red-45 {
+    background: red;
+  }
+
+  .status-circle.red-60 {
+    background: darkred;
+  }
+
+  .status-circle.red-120 {
+    background: maroon;
+  }
+
+  /* Quiet blink (for active/healthy states) */
+  @keyframes quiet-blink {
+    50% {
+      opacity: 0.6;
+    }
+  }
+
+  .status-circle.green-blink,
+  .status-circle.blue {
+    animation: quiet-blink 2s infinite;
+  }
+
+  /* Normal blink (warning) */
+  @keyframes blink {
+    50% {
+      opacity: 0.3;
+    }
+  }
+
+  .status-circle.orange,
+  .status-circle.red-45 {
+    animation: blink 1s infinite;
+  }
+
+  /* Stronger escalation */
+  @keyframes strong-blink {
+    50% {
+      opacity: 0.1;
+    }
+  }
+
+  .status-circle.red-60,
+  .status-circle.red-120 {
+    animation: strong-blink 0.8s infinite;
+  }
+
+  /* Pulsing borders for severe delays */
+  .card.red-45 {
+    border: 2px solid red;
+  }
+
+  .card.red-60 {
+    border: 2px solid darkred;
+    animation: blink 1s infinite;
+  }
+
+  .card.red-120 {
+    border: 3px solid darkred;
+    animation: strong-blink 0.5s infinite;
+  }
+
+  /* acknowledged: keep color but no blink */
+  .status-circle.red-45-ack {
+    background: red;
+  }
+
+  .status-circle.red-60-ack {
+    background: darkred;
+  }
+
+  .status-circle.red-120-ack {
+    background: maroon;
+  }
+
+  .card.red-45-ack {
+    border: 2px solid red;
+  }
+
+  .card.red-60-ack {
+    border: 2px solid darkred;
+  }
+
+  .card.red-120-ack {
+    border: 3px solid darkred;
+  }
+
+  .metric-ok {
+    color: green;
+  }
+
+  .metric-yellow {
+    color: goldenrod;
+  }
+
+  .metric-orange {
+    color: darkorange;
+    font-weight: bold;
+  }
+
+  .metric-red {
+    color: red;
+    font-weight: bold;
+  }
+
+  .metric-red-strong {
+    color: darkred;
+    font-weight: bold;
+    animation: pulse 1s infinite;
+  }
+
+  @keyframes pulse {
+    0% {
+      opacity: 1;
+    }
+
+    50% {
+      opacity: 0.6;
+    }
+
+    100% {
+      opacity: 1;
+    }
+  }
+
+
+  .ok {
+    color: green;
+  }
+
+  .warning {
+    color: orange;
+  }
+
+  .bad {
+    color: red;
+  }
+
+  .critical {
+    color: red;
+    animation: blink 1s linear infinite;
+  }
+
+  .severe {
+    color: darkred;
+    animation: pulse 1.5s ease-in-out infinite;
+  }
+
+  @keyframes blink {
+    50% {
+      opacity: 0.4;
+    }
+  }
+
+  @keyframes pulse {
+    0% {
+      text-shadow: 0 0 2px red;
+    }
+
+    50% {
+      text-shadow: 0 0 8px red;
+    }
+
+    100% {
+      text-shadow: 0 0 2px red;
+    }
+  }
+
+
+  .loader-overlay {
+    position: absolute;
+    inset: 0;
+    /* shorthand for top/left/right/bottom:0 */
+    background: rgba(255, 255, 255, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+  }
+
+  .spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid #ddd;
+    border-top: 4px solid #007bff;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  .refresh-toolbar {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 6px;
+  }
+
+  .refresh-box {
+    display: inline-block;
+    padding: 2px 8px;
+    font-size: 0.85rem;
+    color: #fff;
+    background: #007bff;
+    border-radius: 4px;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.2s;
+  }
+
+  .refresh-box:hover {
+    background: #0056b3;
+  }
+
+  .pause-btn {
+    padding: 2px 8px;
+    font-size: 0.8rem;
+    cursor: pointer;
+  }
+
+  .last-updated {
+    font-size: 0.8rem;
+    color: #555;
+  }
+
+  .metrics-legend {
+    text-align: center;
+    font-size: 0.85rem;
+    color: #555;
+    margin: 5px 0;
+  }
+
+  .surgery-row {
+    margin-bottom: 10px;
+  }
+
+  .surgery-row.scompleted {
+    opacity: 0.6;
+  }
+
+  .scompleted {
+    opacity: 0.6;
+    font-size:0.9em;
+    font-weight: 500!important;
+  }
+
+  /* Card as the scroll container */
+.room-widget.card {
+  max-height: 400px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  /* optional: card look */
+  border-radius: 8px;
+  background: var(--card-bg, #fff);
+  box-shadow: 0 2px 10px rgba(0,0,0,.06);
+}
+
+/* Sticky header */
+.room-widget.card .room-header {
+  position: sticky;          /* sticks within this scrolling card */
+  position: -webkit-sticky;  /* safari */
+  top: 0;
+  z-index: 5;
+  background: inherit;       /* same bg as card to cover content beneath */
+  padding: 10px 12px;
+  border-bottom: 1px solid rgba(0,0,0,.06);
+  /* subtle shadow when stuck */
+  box-shadow: 0 1px 0 rgba(0,0,0,.06);
+}
+
+/* Only matters visually when expanded; sticky is harmless otherwise */
+.room-widget.card.active .room-header { /* (kept for clarity) */ }
+
+/* Scrollable body gets the padding that used to be on the card */
+.room-widget.card .room-body {
+  padding: 10px 12px;
+}
+
+/* Optional: keep status circle above content when header is stuck */
+.room-widget.card .room-header .status-circle {
+  position: relative;
+  z-index: 6;
+  top:-118px;
+}
+
+/* Example: make scompleted rows a bit dimmer or styled */
+.surgery-row.scompleted {
+  opacity: .8;
+}
+
+/* Turnover line spacing */
+.turnover-line {
+  margin: 6px 0;
+}
+
+.metrics .metric-chip + .metric-chip::before {
+  content: '|';
+  margin: 0 .5rem;
+  opacity: .6;
+}
