@@ -227,8 +227,8 @@
 
 
         <!-- Display Settings (hidden entirely if no userId) -->
-       <div *ngIf="userId" class="display-panel">
-  <button type="button" (click)="showDisplayPanel = !showDisplayPanel">⚙️ תצוגה</button>
+       <div *ngIf="userId" class="display-panel" style="text-align: right;">
+  <button type="button" (click)="showDisplayPanel = !showDisplayPanel" style="border: solid 1px #888; border-radius: 4px;;">⚙️ תצוגה</button>
 
   <div *ngIf="showDisplayPanel" class="panel-body">
     <!-- Presets -->
