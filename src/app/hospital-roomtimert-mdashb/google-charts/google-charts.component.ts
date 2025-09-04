@@ -5,6 +5,7 @@ import { environment } from 'src/environments/environment';
 import { sanitizeSoapResponse, sanitizeSoapChartData } from 'src/app/shared/sanitizesoapresponce';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
+import { ChangeDetectorRef, Input } from '@angular/core';
 
 import {
   CHART_SERIES_PALETTE,
@@ -139,12 +140,26 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
   openRoom: string | null = null; // track which widget is expanded
 
 
-  
+  // --- fields ---
+private _userId: string | null = null;
+@Input()
+get userId(): string | null { return this._userId; }
+set userId(val: string | null) {
+  if (this._userId === val) return;
+  this._userId = val;
+  this.loadDisplaySettings();   // reload per-user
+  this.cdr.markForCheck();      // repaint (safe even without OnPush)
+}
+
+displayPreset: DisplayPreset = 'default';
+settings: DisplaySettings = { ...DEFAULT_SETTINGS };
+showDisplayPanel = false;
   
   constructor(
     public googleChartsService: GoogleChartsService,
     private deptColors: DepartmentColorService,
-    public palette: PaletteService
+    public palette: PaletteService,
+    private cdr: ChangeDetectorRef
   ) {}
 
 
@@ -156,49 +171,66 @@ autoRefreshPaused = false;
 lastLoaded: Date | null = null;
 
 // fields
-userId: string | null = null;                 // hide panel when null
-displayPreset: DisplayPreset = 'default';
-settings: DisplaySettings = { ...DEFAULT_SETTINGS };
-showDisplayPanel = false;
+// userId: string | null = null;                 // hide panel when null
+// displayPreset: DisplayPreset = 'default';
+// settings: DisplaySettings = { ...DEFAULT_SETTINGS };
+// showDisplayPanel = false;
 
 // storage key
 private settingsKey(uid: string) { return `rtmdashb.display.${uid}`; }
 
 // load/save
 initDisplaySettings(): void { this.loadDisplaySettings(); }
-
 private loadDisplaySettings(): void {
-  if (!this.userId) { this.displayPreset = 'default'; this.settings = { ...DEFAULT_SETTINGS }; this.showDisplayPanel = false; return; }
+  if (!this.userId) {
+    this.displayPreset = 'default';
+    this.settings = { ...DEFAULT_SETTINGS };
+    this.showDisplayPanel = false;
+    return;
+  }
   const raw = localStorage.getItem(this.settingsKey(this.userId));
-  if (!raw) { this.displayPreset = 'default'; this.settings = { ...DEFAULT_SETTINGS }; return; }
+  if (!raw) {
+    this.displayPreset = 'default';
+    this.settings = { ...DEFAULT_SETTINGS };
+    return;
+  }
   try {
     const parsed = JSON.parse(raw);
     const saved = (parsed.settings as Partial<DisplaySettings>) || {};
     this.displayPreset = (parsed.preset as DisplayPreset) || 'custom';
-    this.settings = { ...DEFAULT_SETTINGS, ...saved }; // <-- merge with defaults
+    this.settings = { ...DEFAULT_SETTINGS, ...saved }; // merge with defaults
   } catch {
     this.displayPreset = 'default';
     this.settings = { ...DEFAULT_SETTINGS };
   }
 }
 
-
 private persistDisplaySettings(): void {
   if (!this.userId) return;
-  localStorage.setItem(this.settingsKey(this.userId), JSON.stringify({
+  const payload = {
     preset: this.displayPreset,
-    settings: this.settings
-  }));
+    settings: { ...this.settings } // write snapshot
+  };
+  localStorage.setItem(this.settingsKey(this.userId), JSON.stringify(payload));
 }
 
-// presets
+// --- presets ---
 applyPreset(p: DisplayPreset): void {
   this.displayPreset = p;
-  this.settings = (p === 'default') ? { ...DEFAULT_SETTINGS }
-               : (p === 'all')     ? { ...ALL_ON_SETTINGS }
-                                   : this.settings;
-  //this.persistDisplaySettings();
-  const next = { ...this.settings } as any;   
+  this.settings =
+    p === 'default' ? { ...DEFAULT_SETTINGS } :
+    p === 'all'     ? { ...ALL_ON_SETTINGS } :
+                      { ...this.settings }; // 'custom' keeps current values
+  this.persistDisplaySettings();
+  this.cdr.markForCheck();
+}
+
+// --- individual toggles ---
+onSettingChange(key: keyof DisplaySettings, value: boolean): void {
+  this.settings = { ...this.settings, [key]: value };
+  this.displayPreset = 'custom';
+  this.persistDisplaySettings();
+  this.cdr.markForCheck();
 }
 
 // toggle (Angular 9-friendly)
@@ -1257,7 +1289,8 @@ getHeaderInProgressLabel(room: RoomData): string {
   var inProg: any[] = [];
   for (var i = 0; i < room.surgeries.length; i++) {
     var s = room.surgeries[i];
-    if (this.isInProgressStatus(s && s.status)) inProg.push(s);
+    // if (this.isInProgressStatus(s && s.status)) inProg.push(s);
+    if (s && this.isInProgressStatus(s.status)) inProg.push(s);
   }
   if (!inProg.length) return 'פנוי';
 
@@ -1269,8 +1302,6 @@ getHeaderInProgressLabel(room: RoomData): string {
 
   return this.getSurgeryIdSafe(picked);
 }
-
-
 
 
 
@@ -1334,7 +1365,7 @@ private urgencyIconRaw(u: any): string {
   return '';
 }
 
-// Get icon from a surgery object (handles both camelCase and raw API fields)
+
 getUrgencyIconFromSurgery(s: any): string {
   if (!s) return '';
   var u = (s.urgency != null ? s.urgency : (s as any).Urgency);
@@ -1342,56 +1373,54 @@ getUrgencyIconFromSurgery(s: any): string {
 }
 
 
+
+
 getHeaderProgressIcon(room: RoomData): string {
-  if (!room || !room.surgeries || !room.surgeries.length) return '';
+  if (!room?.surgeries?.length) return '';
 
-  var anchor = room.date || this.selectedDate;
-  var dayStart = this.workingStart(anchor);
-  var dayEnd   = this.workingEnd(anchor);
-  var DAY_MS   = 24 * 60 * 60 * 1000;
+  const anchor = room.date || this.selectedDate;
+  const dayStart = this.workingStart(anchor);
+  const dayEnd   = this.workingEnd(anchor);
+  const DAY_MS   = 24 * 60 * 60 * 1000;
 
-  // helper: parse and check overlap
-  function parse(self: any, clk: string, base: any): Date | null {
-    return clk ? self.parseClockWithDate(clk, base) : null;
-  }
-  function overlaps(e: Date, x: Date): boolean {
-    return e < dayEnd && x > dayStart;
-  }
-  function startTs(self: any, s: any): number {
-    var base = s.surgeryDate || anchor;
-    var e = parse(self, s.timeEntrance, base);
-    var x = parse(self, (s.timeExit && s.timeExit !== '00:00:00') ? s.timeExit : s.timeEntrance, base);
+  const parse = (clk?: string, base?: any): Date | null =>
+    clk ? this.parseClockWithDate(clk, base) : null;
+
+  const overlaps = (e: Date, x: Date): boolean => e < dayEnd && x > dayStart;
+
+  const startTs = (s: any): number => {
+    const base = s.surgeryDate || anchor;
+    let e = parse(s.timeEntrance, base);
+    let x = parse((s.timeExit && s.timeExit !== '00:00:00') ? s.timeExit : s.timeEntrance, base);
     if (!e || !x) return Number.POSITIVE_INFINITY;
     if (x.getTime() < e.getTime()) x = new Date(x.getTime() + DAY_MS);
     return overlaps(e, x) ? e.getTime() : Number.POSITIVE_INFINITY;
-  }
+  };
 
   // 1) InProgress
-  var bestInProg: any = null, bestTs = -Infinity;
-  for (var i = 0; i < room.surgeries.length; i++) {
-    var s = room.surgeries[i];
-    if (s.status !== 'InProgress') continue;
-    var ts = startTs(this, s);
+  let bestInProg: any = null, bestTs = -Infinity;
+  for (const s of room.surgeries) {
+    if (!s || !this.isInProgressStatus(s.status)) continue;
+    const ts = startTs(s);
     if (ts !== Number.POSITIVE_INFINITY && ts > bestTs) { bestInProg = s; bestTs = ts; }
   }
   if (bestInProg) return this.getUrgencyIconFromSurgery(bestInProg);
 
   // 2) Next upcoming non-completed today
-  var next: any = null, nextTs = Number.POSITIVE_INFINITY;
-  for (var j = 0; j < room.surgeries.length; j++) {
-    var t = room.surgeries[j];
-    if (t.status === 'Completed') continue;
-    var ts2 = startTs(this, t);
-    if (ts2 < nextTs) { next = t; nextTs = ts2; }
+  let next: any = null, nextTs = Number.POSITIVE_INFINITY;
+  for (const t of room.surgeries) {
+    if (t && !this.isCompletedStatus(t.status)) {
+      const ts2 = startTs(t);
+      if (ts2 < nextTs) { next = t; nextTs = ts2; }
+    }
   }
   if (next) return this.getUrgencyIconFromSurgery(next);
 
   // 3) Last completed today
-  var last: any = null, lastTs = -Infinity;
-  for (var k = 0; k < room.surgeries.length; k++) {
-    var c = room.surgeries[k];
-    if (c.status !== 'Completed') continue;
-    var ts3 = startTs(this, c);
+  let last: any = null, lastTs = -Infinity;
+  for (const c of room.surgeries) {
+    if (!c || !this.isCompletedStatus(c.status)) continue;
+    const ts3 = startTs(c);
     if (ts3 !== Number.POSITIVE_INFINITY && ts3 > lastTs) { last = c; lastTs = ts3; }
   }
   if (last) return this.getUrgencyIconFromSurgery(last);
@@ -1399,15 +1428,17 @@ getHeaderProgressIcon(room: RoomData): string {
   return '';
 }
 
+
 hasInProgress(room: RoomData): boolean {
-  if (!room || !room.surgeries || !room.surgeries.length) return false;
-  for (var i = 0; i < room.surgeries.length; i++) {
-    var s = room.surgeries[i];
-    if (s && s.status === 'InProgress') return true;
-  }
-  return false;
+  if (!room?.surgeries?.length) return false;
+  return room.surgeries.some(s => s && this.isInProgressStatus(s.status));
 }
 
+private isCompletedStatus(raw: any): boolean {
+  const s = (raw == null ? '' : String(raw)).toLowerCase().trim();
+  return s === 'completed' || s === 'done' || s === 'סגור' || s.includes('הושל') || s.includes('בוצע');
+  // tailor the Hebrew/variants to your real data, or keep only 'completed' if that's all you use
+}
 
 
 /** Get the raw urgency string from a surgery object (handles both shapes). */
