@@ -980,33 +980,30 @@ getStartDiff(room: RoomData): string {
   return this.formatDiff(diffMs);
 }
 
-
 getEndDiff(room: RoomData): string {
   const opening = this.parseClock('07:30');
-  const closing = this.parseClock('14:40');
+  const closing = this.parseClock('14:40'); 
   if (!closing || !opening) return '--:--';
 
-  // Filter surgeries within the working day
-  const validExits = room.surgeries
+  // collect exits from opening onwards (don't exclude > closing)
+  const exits = room.surgeries
     .map(s => {
-      // If timeExit is 00:00:00, use start time
-      const exitTime = s.timeExit && s.timeExit !== '00:00:00' ? s.timeExit : s.timeEntrance;
-      const exit = this.parseClock(exitTime);
-      return exit;
+      const exitStr = s.timeExit && s.timeExit !== '00:00:00' ? s.timeExit : s.timeEntrance;
+      return this.parseClock(exitStr);
     })
-    .filter(d => d && d >= opening && d <= closing);
+    .filter((d): d is Date => !!d && d >= opening)
+    .sort((a, b) => a.getTime() - b.getTime());
 
-  if (validExits.length === 0) {
-    return this.formatDiff(0);
-  }
+  if (exits.length === 0) return this.formatDiff(0);
 
-  const lastExit = validExits[validExits.length - 1];
+  const lastExit = exits[exits.length - 1];
 
-  // Do not count time after 15:00
-  const endTime = lastExit! > closing ? closing : lastExit!;
+  // later surgery ends after closing → no underutilization counted
+  if (lastExit >= closing) return this.formatDiff(0);
 
-  const diffMs = closing.getTime() - lastExit!.getTime();
-  return diffMs > 0 ? this.formatDiff(diffMs) : this.formatDiff(0);
+  // otherwise: time from last exit until closing
+  const diffMs = closing.getTime() - lastExit.getTime();
+  return this.formatDiff(diffMs);
 }
 
 getEndDiffClass(room: RoomData): string {
