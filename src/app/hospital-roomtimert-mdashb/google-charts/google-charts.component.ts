@@ -51,6 +51,17 @@ export interface RoomData {
   surgeries: Surgery[];  
 }
 
+export type LateMeta = {
+  isLate: boolean;
+  overrunMin: number;        // minutes past shift end
+  predictedEnd: Date | null; // first late planned case end
+  turnoverUsed: number;      // per-gap turnover (min), from getTurnoverSummary or 20
+};
+
+
+export type HeaderProgressOpts = {
+  defaultTurnoverMin?: number; // default if summary is '--:--' (defaults to 20)
+};
 
 export type DisplayPreset = 'default' | 'all' | 'custom';
 export type ColorMode = 'border' | 'background';
@@ -76,7 +87,7 @@ export interface DisplaySettings {
   showStatusDot?: boolean;     // right-side status dot
   showUrgencyIcon?: boolean;   // icon near surgeryId
   colorMode: ColorMode;  
-
+ showLateChip?: boolean;
 }
 
 export const DEFAULT_SETTINGS: DisplaySettings = {  
@@ -1304,28 +1315,167 @@ getHeaderInProgressLabel(room: RoomData): string {
 
 
 
-getHeaderProgressText(room: RoomData): string {
+
+
+// getHeaderProgressText(room: RoomData): string {
+//   let nInShift = 0;   // completed/in-progress within shift
+//   let xInShift = 0;   // total within shift
+//   let xOnDay   = 0;   // total on the calendar day (00:00–23:59:59.999)
+
+//   if (!room || !room.surgeries?.length) return '0 מתוך 0';
+
+//   const baseDate   = room.date || this.selectedDate;
+//   const day        = new Date(baseDate);
+//   const dayStart   = new Date(day); dayStart.setHours(0, 0, 0, 0);
+//   const dayEnd     = new Date(day); dayEnd.setHours(23, 59, 59, 999);
+//   const shiftStart = this.workingStart(baseDate); // 07:30
+//   const shiftEnd   = this.workingEnd(baseDate);   // 15:00
+//   const DAY_MS     = 24 * 60 * 60 * 1000;
+
+//   // Fixed turnover/setup time between cases (minutes)
+//   const TURNOVER_MIN = 20;
+
+//   const isZeroClock = (v?: string) => v === '00:00' || v === '00:00:00';
+
+//   type Norm = {
+//     entrance: Date | null;
+//     exit: Date | null;            // actual/scheduled exit if present
+//     expectedMin: number | null;   // TimeSurgeryToDo or fallback
+//     status: string;               // lowercased
+//     raw: any;
+//   };
+
+//   const list: Norm[] = [];
+
+//   for (const sAny of room.surgeries as any[]) {
+//     const s = sAny || {};
+
+//     // Accept both camelCase and server PascalCase keys
+//     const eClock = s.timeEntrance ?? s.TimeEntranceToTheOperatingRoom;
+//     if (!eClock) continue;
+
+//     const xRaw = s.timeExit ?? s.TimeExitingTheOperatingRoom;
+//     const base = s.surgeryDate ?? s.SurgeryDate ?? baseDate;
+
+//     let entrance = this.parseClockWithDate(eClock, base);
+//     let exit     = xRaw && !isZeroClock(xRaw) ? this.parseClockWithDate(xRaw, base) : null;
+
+//     if (!entrance) continue;
+//     if (exit && exit.getTime() < entrance.getTime()) exit = new Date(exit.getTime() + DAY_MS);
+
+//     const status = String(s.status ?? s.SurgeryStatus ?? '').toLowerCase();
+
+//     // Expected duration (minutes): prefer TimeSurgeryToDo, else scheduled diff if both ends exist
+//     let expectedMin: number | null = null;
+//     const ttd = s.TimeSurgeryToDo ?? s.timeSurgeryToDo;
+//     if (ttd != null && !isNaN(+ttd)) expectedMin = Math.max(0, Math.round(+ttd));
+//     if (expectedMin == null && exit) {
+//       expectedMin = Math.max(0, Math.round((exit.getTime() - entrance.getTime()) / 60000));
+//     }
+
+//     list.push({ entrance, exit, expectedMin, status, raw: s });
+
+//     // ---------- Counting for header ----------
+//     const endForCount = exit ?? entrance; // if no exit, treat as instant at entrance
+//     const overlapsDay   = (entrance < dayEnd)   && (endForCount > dayStart);
+//     const overlapsShift = (entrance < shiftEnd) && (endForCount > shiftStart);
+
+//     if (overlapsDay)   xOnDay++;
+//     if (overlapsShift) {
+//       xInShift++;
+//       if (status === 'completed' || status === 'inprogress' || status === 'in progress' || status === 'in_progress') {
+//         nInShift++;
+//       }
+//     }
+//   }
+
+//   // ---------- Late-finish prediction (propagate delays across this room’s queue) ----------
+//   list.sort((a, b) => {
+//     if (!a.entrance && !b.entrance) return 0;
+//     if (!a.entrance) return 1;
+//     if (!b.entrance) return -1;
+//     return a.entrance.getTime() - b.entrance.getTime();
+//   });
+
+//   let cursor: Date | null = null;
+//   let warnLate = false;
+
+//   for (const s of list) {
+//     if (!cursor) cursor = s.entrance ? new Date(s.entrance) : new Date(shiftStart);
+
+//     // predicted start = max(scheduled entrance, when the room actually becomes free)
+//     const startPred = s.entrance ? new Date(Math.max(s.entrance.getTime(), cursor.getTime())) : new Date(cursor);
+
+//     // Use actual duration when both entrance & exit exist; otherwise expected; default 60
+//     let durMin: number;
+//     if (s.exit && s.entrance) {
+//       durMin = Math.max(0, Math.round((s.exit.getTime() - s.entrance.getTime()) / 60000));
+//     } else {
+//       durMin = s.expectedMin ?? 60;
+//     }
+
+//     const endPred = new Date(startPred.getTime() + (durMin + TURNOVER_MIN) * 60000);
+
+//     // room becomes free (including turnover) for the next case
+//     cursor = endPred;
+
+//     // Alert if any Planned case is predicted to finish past shift end
+//     if (s.status === 'planned' && endPred > shiftEnd) {
+//       warnLate = true;
+//     }
+//   }
+
+//   const outOfShift = Math.max(0, xOnDay - xInShift);
+//   let result = `${nInShift} מתוך ${xInShift}`;
+//   if (outOfShift > 0) result += ` (${outOfShift} מחוץ לשעות העבודה)`;
+//   if (warnLate) result = `⚠️ ${result}`;
+
+//   return result;
+// }
+
+
+
+// Optional options if you later want to override behavior without changing code
+
+
+getHeaderProgressText(room: RoomData, opts?: HeaderProgressOpts): string {
   let nInShift = 0;   // completed/in-progress within shift
   let xInShift = 0;   // total within shift
   let xOnDay   = 0;   // total on the calendar day (00:00–23:59:59.999)
 
   if (!room || !room.surgeries?.length) return '0 מתוך 0';
 
-  const baseDate = room.date || this.selectedDate;
-  const day      = new Date(baseDate);
-  const dayStart = new Date(day); dayStart.setHours(0, 0, 0, 0);
-  const dayEnd   = new Date(day); dayEnd.setHours(23, 59, 59, 999);
-
+  const baseDate   = room.date || this.selectedDate;
+  const day        = new Date(baseDate);
+  const dayStart   = new Date(day); dayStart.setHours(0, 0, 0, 0);
+  const dayEnd     = new Date(day); dayEnd.setHours(23, 59, 59, 999);
   const shiftStart = this.workingStart(baseDate); // 07:30
   const shiftEnd   = this.workingEnd(baseDate);   // 15:00
   const DAY_MS     = 24 * 60 * 60 * 1000;
 
+  // -------- Turnover from your code --------
+  const DEFAULT_TURNOVER = Math.max(0, opts?.defaultTurnoverMin ?? 20);
+  const summaryStr = this.getTurnoverSummary(room);   // e.g. '01:27' or '--:--'
+  const parsedMin  = hmToMin(summaryStr);
+  const TURNOVER_MIN = Math.max(20, parsedMin ?? DEFAULT_TURNOVER); // clamp to >=20
+
   const isZeroClock = (v?: string) => v === '00:00' || v === '00:00:00';
 
+  type Norm = {
+    entrance: Date | null;
+    exit: Date | null;            // actual/scheduled exit if present
+    expectedMin: number | null;   // TimeSurgeryToDo or fallback
+    status: string;               // lowercased
+    raw: any;
+  };
+
+  const list: Norm[] = [];
+
+  // --- Normalize and collect rows ---
   for (const sAny of room.surgeries as any[]) {
     const s = sAny || {};
 
-    // Accept both camelCase and PascalCase keys from server
+    // Accept both camelCase and server PascalCase keys
     const eClock = s.timeEntrance ?? s.TimeEntranceToTheOperatingRoom;
     if (!eClock) continue;
 
@@ -1333,38 +1483,92 @@ getHeaderProgressText(room: RoomData): string {
     const base = s.surgeryDate ?? s.SurgeryDate ?? baseDate;
 
     let entrance = this.parseClockWithDate(eClock, base);
-    let exit     = this.parseClockWithDate((xRaw && !isZeroClock(xRaw)) ? xRaw : eClock, base);
-    if (!entrance || !exit) continue;
+    let exit     = xRaw && !isZeroClock(xRaw) ? this.parseClockWithDate(xRaw, base) : null;
 
-    // Handle overnight cases (exit past midnight)
-    if (exit.getTime() < entrance.getTime()) {
-      exit = new Date(exit.getTime() + DAY_MS);
-    }
-
-    // Count surgeries belonging to this calendar date
-    const overlapsDay = (entrance < dayEnd) && (exit > dayStart);
-    if (overlapsDay) xOnDay++;
-
-    // Main counters respect the working shift
-    const overlapsShift = (entrance < shiftEnd) && (exit > shiftStart);
-    if (!overlapsShift) continue;
-
-    xInShift++;
+    if (!entrance) continue;
+    if (exit && exit.getTime() < entrance.getTime()) exit = new Date(exit.getTime() + DAY_MS);
 
     const status = String(s.status ?? s.SurgeryStatus ?? '').toLowerCase();
-    if (status === 'completed' || status === 'inprogress' || status === 'in progress' || status === 'in_progress') {
-      nInShift++;
+
+    // Expected duration (minutes): prefer TimeSurgeryToDo, else scheduled diff if both ends exist
+    let expectedMin: number | null = null;
+    const ttd = s.TimeSurgeryToDo ?? s.timeSurgeryToDo;
+    if (ttd != null && !isNaN(+ttd)) expectedMin = Math.max(0, Math.round(+ttd));
+    if (expectedMin == null && exit) {
+      expectedMin = Math.max(0, Math.round((exit.getTime() - entrance.getTime()) / 60000));
+    }
+
+    list.push({ entrance, exit, expectedMin, status, raw: s });
+
+    // ---- Counting for header (shift window only) ----
+    const endForCount = exit ?? entrance; // if no exit, treat as instant at entrance
+    const overlapsDay   = (entrance < dayEnd)   && (endForCount > dayStart);
+    const overlapsShift = (entrance < shiftEnd) && (endForCount > shiftStart);
+
+    if (overlapsDay)   xOnDay++;
+    if (overlapsShift) {
+      xInShift++;
+      if (status === 'completed' || status === 'inprogress' || status === 'in progress' || status === 'in_progress') {
+        nInShift++;
+      }
     }
   }
 
-  const outOfShift = Math.max(0, xOnDay - xInShift);
+  // --- Propagate delays to predict late finishes ---
+  list.sort((a, b) => {
+    if (!a.entrance && !b.entrance) return 0;
+    if (!a.entrance) return 1;
+    if (!b.entrance) return -1;
+    return a.entrance.getTime() - b.entrance.getTime();
+  });
 
-  let result = `${nInShift} מתוך ${xInShift}`;
-  if (outOfShift > 0) {
-    result += ` (${outOfShift} מחוץ לשעות העבודה)`;
+  let cursor: Date | null = null; // "room free at" time including turnover
+  let warnLate = false;
+
+  for (const s of list) {
+    if (!cursor) cursor = s.entrance ? new Date(s.entrance) : new Date(shiftStart);
+
+    // predicted start = max(scheduled entrance, room-next-free)
+    const startPred = s.entrance ? new Date(Math.max(s.entrance.getTime(), cursor.getTime())) : new Date(cursor);
+
+    // duration:
+    // - actual if entrance+exit exist
+    // - else expected (TimeSurgeryToDo), default 60 if missing
+    let durMin: number;
+    if (s.exit && s.entrance) {
+      durMin = Math.max(0, Math.round((s.exit.getTime() - s.entrance.getTime()) / 60000));
+    } else {
+      durMin = s.expectedMin ?? 60;
+    }
+
+    const endSurgeryPred = new Date(startPred.getTime() + durMin * 60000);           // surgery end
+    const roomFreeAt     = new Date(endSurgeryPred.getTime() + TURNOVER_MIN * 60000); // + turnover
+    cursor = roomFreeAt;
+
+    // Planned surgery finishing after shift → raise alert
+    if (s.status === 'planned' && endSurgeryPred > shiftEnd) {
+      warnLate = true;
+    }
   }
+
+  // --- Compose header text ---
+  const outOfShift = Math.max(0, xOnDay - xInShift);
+  let result = `${nInShift} מתוך ${xInShift}`;
+  if (outOfShift > 0) result += ` (${outOfShift} מחוץ לשעות העבודה)`;
+  //if (warnLate) result = `⚠️ ${result}`;
+  if (warnLate) result = `${result}`;
+
   return result;
+
+  // ---- helpers ----
+  function hmToMin(s?: string | null): number | null {
+    if (!s || s === '--:--') return null;
+    const p = s.split(':').map(Number);
+    if (p.length < 2 || p.some(isNaN)) return null;
+    return p[0] * 60 + p[1];
+  }
 }
+
 
 
 /** Compare two dates by local Y/M/D (no timezone surprises). */
@@ -1562,6 +1766,127 @@ getRoomStatusClassWithSettings(room: RoomData): string {
 
   return base;
 }
+
+
+
+// Parse 'HH:MM' (or '--:--') into minutes
+private hmToMin(s?: string | null): number | null {
+  if (!s || s === '--:--') return null;
+  var p = s.split(':');
+  if (p.length < 2) return null;
+  var hh = +p[0], mm = +p[1];
+  if (isNaN(hh) || isNaN(mm)) return null;
+  return hh * 60 + mm;
+}
+
+/** Computes {isLate, overrunMin, predictedEnd, turnoverUsed} for template */
+getRoomLateMeta(room: RoomData): LateMeta | null {
+  if (!room) return null;
+
+  var sum = this.getTurnoverSummary(room);     // e.g. '01:27' or '--:--'
+  var parsed = this.hmToMin(sum);
+  var turnoverUsed = Math.max(20, parsed == null ? 20 : parsed); // per your instruction
+
+  var pred = this.predictFirstLatePlanned(room, turnoverUsed);
+  var shiftEnd = this.workingEnd(room.date || this.selectedDate);
+
+  if (!pred) {
+    return { isLate: false, overrunMin: 0, predictedEnd: null, turnoverUsed: turnoverUsed };
+  }
+  var overrun = Math.max(0, Math.round((pred.predictedEnd.getTime() - shiftEnd.getTime()) / 60000));
+  return { isLate: true, overrunMin: overrun, predictedEnd: pred.predictedEnd, turnoverUsed: turnoverUsed };
+}
+
+/** Finds the first Planned case predicted to finish after shift end. */
+private predictFirstLatePlanned(room: RoomData, TURNOVER_MIN: number):
+  { predictedEnd: Date } | null {
+
+  if (!room || !room.surgeries || !room.surgeries.length) return null;
+
+  const baseDate  = room.date || this.selectedDate;
+  const shiftStart = this.workingStart(baseDate);
+  const shiftEnd   = this.workingEnd(baseDate);
+  const DAY_MS     = 24 * 60 * 60 * 1000;
+
+  function statusOf(row: any): string {
+    const raw = row && (row.status != null ? row.status : row.SurgeryStatus);
+    return String(raw == null ? '' : raw).toLowerCase();
+  }
+  function getEClock(row: any): string | null {
+    return row ? (row.timeEntrance != null ? row.timeEntrance : row.TimeEntranceToTheOperatingRoom) : null;
+  }
+  function getXClock(row: any): string | null {
+    return row ? (row.timeExit != null ? row.timeExit : row.TimeExitingTheOperatingRoom) : null;
+  }
+  function getBase(row: any): string | Date {
+    return (row && (row.surgeryDate != null ? row.surgeryDate : row.SurgeryDate)) || baseDate;
+  }
+  function isZeroClock(v?: string | null): boolean {
+    return v === '00:00' || v === '00:00:00';
+  }
+
+  // Normalize rows
+  const list: { entrance: Date | null; exit: Date | null; expectedMin: number | null; status: string }[] = [];
+
+  for (let i = 0; i < room.surgeries.length; i++) {
+    const row: any = room.surgeries[i];
+
+    const eClock = getEClock(row);
+    if (!eClock) continue;
+
+    const base = getBase(row);
+    const xRaw = getXClock(row);
+
+    let entrance = this.parseClockWithDate(eClock, base);
+    let exit     = (xRaw && !isZeroClock(xRaw)) ? this.parseClockWithDate(xRaw, base) : null;
+    if (!entrance) continue;
+    if (exit && exit.getTime() < entrance.getTime()) exit = new Date(exit.getTime() + DAY_MS);
+
+    let expectedMin: number | null = null;
+    const ttd = row && (row.TimeSurgeryToDo != null ? row.TimeSurgeryToDo : row.timeSurgeryToDo);
+    if (ttd != null && !isNaN(+ttd)) expectedMin = Math.max(0, Math.round(+ttd));
+    if (expectedMin == null && exit) expectedMin = Math.max(0, Math.round((exit.getTime() - entrance.getTime()) / 60000));
+
+    const status = statusOf(row);
+    list.push({ entrance: entrance, exit: exit, expectedMin: expectedMin, status: status });
+  }
+
+  // Sort by scheduled entrance (missing go last)
+  list.sort(function(a, b) {
+    if (!a.entrance && !b.entrance) return 0;
+    if (!a.entrance) return 1;
+    if (!b.entrance) return -1;
+    return a.entrance.getTime() - b.entrance.getTime();
+  });
+
+  // Propagate delays
+  let cursor: Date | null = null; // room free time (including turnover)
+  for (let j = 0; j < list.length; j++) {
+    const item = list[j];
+
+    if (!cursor) cursor = item.entrance ? new Date(item.entrance) : new Date(shiftStart);
+    const startPred = item.entrance
+      ? new Date(Math.max(item.entrance.getTime(), cursor.getTime()))
+      : new Date(cursor);
+
+    let durMin: number;
+    if (item.exit && item.entrance) {
+      durMin = Math.max(0, Math.round((item.exit.getTime() - item.entrance.getTime()) / 60000));
+    } else {
+      durMin = item.expectedMin != null ? item.expectedMin : 60;
+    }
+
+    const endSurgeryPred = new Date(startPred.getTime() + durMin * 60000);
+    cursor = new Date(endSurgeryPred.getTime() + TURNOVER_MIN * 60000);
+
+    if (item.status === 'planned' && endSurgeryPred > shiftEnd) {
+      return { predictedEnd: endSurgeryPred };
+    }
+  }
+
+  return null;
+}
+
 
 
 }

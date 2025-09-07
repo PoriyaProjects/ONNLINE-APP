@@ -364,7 +364,7 @@
 .room-widget.card .room-header .status-circle {
   position: relative;
   z-index: 6;
-  top:-118px;
+  top:-176px;
 }
 
 /* Example: make scompleted rows a bit dimmer or styled */
@@ -505,3 +505,61 @@
   animation: none !important;
   border: 0 !important;
 }
+
+
+
+.room-alert-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: .35rem;
+  margin-inline-start: .5rem;
+  padding: .15rem .5rem;
+  border-radius: 999px;
+  background: #ffebee;
+  color: #b71c1c;
+  font-weight: 700;
+  border: 1px solid #ffcdd2;
+}
+
+.warn-dot {
+  width: 10px; height: 10px; border-radius: 50%;
+  background: #d32f2f;
+  box-shadow: 0 0 0 0 rgba(211,47,47,.7);
+  animation: pulse 1.5s infinite;
+}
+@keyframes pulse {
+  0%   { box-shadow: 0 0 0 0 rgba(211,47,47,.7); }
+  70%  { box-shadow: 0 0 0 12px rgba(211,47,47,0); }
+  100% { box-shadow: 0 0 0 0 rgba(211,47,47,0); }
+}
+
+.warn-icon { margin-inline-end: .25rem; font-weight: 700; color: #b71c1c; }
+.progress-line { display: flex; align-items: center; justify-content: center; gap: .25rem; }
+.metric-chip { margin: 0 .25rem; }
+
+
+/* existing styles kept as-is … */
+
+.room-alert-chip--placeholder {
+  visibility: hidden;              /* keeps space but not visible */
+}
+.room-alert-chip--placeholder .warn-dot {
+  display: none;                   /* don’t animate placeholder dot */
+}
+
+/* inline icon before "X מתוך N" — reserve consistent space */
+.warn-icon {
+  margin-inline-end: .25rem;
+  font-weight: 700;
+  color: #b71c1c;
+}
+
+/* placeholder icon occupies the same width but is invisible */
+.warn-icon--placeholder {
+  visibility: hidden;
+  display: inline-block;
+  width: 1.2em;                    /* roughly width of '⚠️' */
+}
+
+/* optional: if the title and chip are on one line and you want fixed min-height */
+h4.text-center { min-height: 2.2rem; }
