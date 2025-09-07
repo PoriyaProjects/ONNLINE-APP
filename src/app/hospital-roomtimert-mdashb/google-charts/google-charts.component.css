@@ -525,8 +525,15 @@
   width: 10px; height: 10px; border-radius: 50%;
   background: #d32f2f;
   box-shadow: 0 0 0 0 rgba(211,47,47,.7);
+}
+
+
+/* Blink only when not acknowledged */
+.warn-dot.blink,
+.warn-icon.blink {
   animation: pulse 1.5s infinite;
 }
+
 @keyframes pulse {
   0%   { box-shadow: 0 0 0 0 rgba(211,47,47,.7); }
   70%  { box-shadow: 0 0 0 12px rgba(211,47,47,0); }
@@ -537,8 +544,6 @@
 .progress-line { display: flex; align-items: center; justify-content: center; gap: .25rem; }
 .metric-chip { margin: 0 .25rem; }
 
-
-/* existing styles kept as-is … */
 
 .room-alert-chip--placeholder {
   visibility: hidden;              /* keeps space but not visible */

@@ -86,28 +86,29 @@
                 <!-- Title + late-warning chip -->
 
 
-                <h4 class="text-center">
-                  {{ translateRoomId(room.roomId) }}
+               <h4 class="text-center">
+  {{ translateRoomId(room.roomId) }}
 
-                  <!-- Show chip or a hidden placeholder to preserve layout -->
-                  <ng-container *ngIf="settings.showLateChip !== false">
-                    <ng-container *ngIf="getRoomLateMeta(room) as late">
-                      <span *ngIf="late && late.isLate; else lateChipPlaceholder" class="room-alert-chip" role="alert"
-                        aria-live="polite"
-                        [attr.title]="'חריגה צפויה: מסתיים ב-' + (late.predictedEnd | date:'HH:mm') + ' (' + late.overrunMin + '׳), זמן הכנה ' + late.turnoverUsed + '׳'">
-                        ⚠️ חריגה צפויה
-                        <span class="warn-dot" aria-hidden="true"></span>
-                      </span>
-                    </ng-container>
-                    <ng-template #lateChipPlaceholder>
-                      <!-- visually hidden but keeps space -->
-                      <span class="room-alert-chip room-alert-chip--placeholder" aria-hidden="true">
-                        ⚠️ חריגה צפויה
-                        <span class="warn-dot" aria-hidden="true"></span>
-                      </span>
-                    </ng-template>
-                  </ng-container>
-                </h4>
+  <ng-container *ngIf="settings.showLateChip !== false">
+    <ng-container *ngIf="getRoomLateMeta(room) as late">
+      <span *ngIf="late && late.isLate; else lateChipPlaceholder"
+            class="room-alert-chip"
+            role="alert"
+            [attr.aria-live]="isRoomAcked(room) ? 'off' : 'polite'"
+            [attr.title]="'חריגה צפויה: מסתיים ב-' + (late.predictedEnd | date:'HH:mm') + ' (' + late.overrunMin + '׳), זמן הכנה ' + late.turnoverUsed + '׳'"
+            (click)="acknowledgeRoomLate(room); $event.stopPropagation()">
+        ⚠️ חריגה צפויה
+        <span class="warn-dot" [class.blink]="!isRoomAcked(room)" aria-hidden="true"></span>
+      </span>
+    </ng-container>
+    <ng-template #lateChipPlaceholder>
+      <span class="room-alert-chip room-alert-chip--placeholder" aria-hidden="true">
+        ⚠️ חריגה צפויה <span class="warn-dot" aria-hidden="true"></span>
+      </span>
+    </ng-template>
+  </ng-container>
+</h4>
+
 
                 <!-- Header metrics chips -->
                 <div class="metrics text-center" *ngIf="settings.showHeaderMetrics !== false">
@@ -149,15 +150,22 @@
                 </div>
 
                 <!-- N from X + inline warn icon -->
-                <div class="small progress-line text-center" style="text-align: center;"
-                  *ngIf="settings.showHeaderProgress">
-                  <ng-container *ngIf="getRoomLateMeta(room) as late">
-                    <span *ngIf="late && late.isLate" class="warn-icon"
-                      [attr.title]="'מסתיים ב-' + (late.predictedEnd | date:'HH:mm') + ' (' + late.overrunMin + '׳)'"
-                      aria-hidden="true">⚠️</span>
-                  </ng-container>
-                  {{ getHeaderProgressText(room) }}
-                </div>
+                <div class="small progress-line" *ngIf="settings.showHeaderProgress">
+  <ng-container *ngIf="getRoomLateMeta(room) as late">
+    <span *ngIf="late && late.isLate; else warnIconPlaceholder"
+          class="warn-icon"
+          [class.blink]="!isRoomAcked(room)"
+          [attr.title]="'מסתיים ב-' + (late.predictedEnd | date:'HH:mm') + ' (' + late.overrunMin + '׳)'"
+          aria-hidden="true"
+          (click)="acknowledgeRoomLate(room); $event.stopPropagation()">⚠️</span>
+  </ng-container>
+  <ng-template #warnIconPlaceholder>
+    <span class="warn-icon warn-icon--placeholder" aria-hidden="true">⚠️</span>
+  </ng-template>
+
+  {{ getHeaderProgressText(room) }}
+</div>
+
 
                 <!-- Expand button -->
                 <div class="expand_btn">
