@@ -51,15 +51,14 @@ export interface RoomData {
   surgeries: Surgery[];  
 }
 
-// --- types & presets: TOP-LEVEL, not inside the class ---
-export type DisplayPreset = 'default' | 'all' | 'custom';
 
+export type DisplayPreset = 'default' | 'all' | 'custom';
+export type ColorMode = 'border' | 'background';
 export interface DisplaySettings {
-  // existing required keys
+  
   showHeaderBadge: boolean;
   showHeaderIcon: boolean;
   showHeaderProgress: boolean;
-
   showTurnoverLines: boolean;
   showPlannedSection: boolean;
   showSurgeryName: boolean;
@@ -67,26 +66,23 @@ export interface DisplaySettings {
   showDepartment: boolean;
   showTimes: boolean;
   showStatus: boolean;
-
   colorize: boolean;
-  blinkOnUnacked: boolean;   // <-- required
+  blinkOnUnacked: boolean;   
   showLegend: boolean;
-
-  // NEW (optional for backward-compat)
-  showHeaderMetrics?: boolean; // group for chips
+  showHeaderMetrics?: boolean; 
   showStartChip?: boolean;
   showTurnoverChip?: boolean;
   showEndChip?: boolean;
   showStatusDot?: boolean;     // right-side status dot
   showUrgencyIcon?: boolean;   // icon near surgeryId
+  colorMode: ColorMode;  
+
 }
 
-export const DEFAULT_SETTINGS: DisplaySettings = {
-  // keep all the old required defaults
+export const DEFAULT_SETTINGS: DisplaySettings = {  
   showHeaderBadge: true,
   showHeaderIcon: true,
   showHeaderProgress: true,
-
   showTurnoverLines: true,
   showPlannedSection: true,
   showSurgeryName: true,
@@ -94,18 +90,16 @@ export const DEFAULT_SETTINGS: DisplaySettings = {
   showDepartment: true,
   showTimes: true,
   showStatus: true,
-
   colorize: true,
-  blinkOnUnacked: true,   // <-- put it back
+  blinkOnUnacked: true, 
   showLegend: true,
-
-  // NEW defaults (optional keys)
   showHeaderMetrics: true,
   showStartChip: true,
   showTurnoverChip: true,
   showEndChip: true,
   showStatusDot: true,
   showUrgencyIcon: true,
+  colorMode: 'border', 
 };
 
 
@@ -127,7 +121,7 @@ export const ALL_ON_SETTINGS: DisplaySettings = { ...DEFAULT_SETTINGS };
   ]
 })
 export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
- legendMinimized = false;
+  legendMinimized = false;
   private resizeTimeout: any;
   private destroy$ = new Subject<void>();
   private ackedRooms = new Set<string>();
@@ -166,15 +160,11 @@ showDisplayPanel = false;
 refreshInterval: any;
 countdownInterval: any;
 private intervalId: any;
-nextRefreshIn: number = 300; // 5 minutes in seconds
+nextRefreshIn: number = 300; 
 autoRefreshPaused = false;
 lastLoaded: Date | null = null;
 
-// fields
-// userId: string | null = null;                 // hide panel when null
-// displayPreset: DisplayPreset = 'default';
-// settings: DisplaySettings = { ...DEFAULT_SETTINGS };
-// showDisplayPanel = false;
+
 
 // storage key
 private settingsKey(uid: string) { return `rtmdashb.display.${uid}`; }
@@ -233,7 +223,7 @@ onSettingChange(key: keyof DisplaySettings, value: boolean): void {
   this.cdr.markForCheck();
 }
 
-// toggle (Angular 9-friendly)
+
 toggleSetting(key: keyof DisplaySettings): void {
   const next = { ...this.settings } as any;
   next[key] = !this.settings[key];
@@ -242,6 +232,15 @@ toggleSetting(key: keyof DisplaySettings): void {
   this.persistDisplaySettings();
 }
 
+// helper: card classes
+getCardClasses(room: RoomData): (string | null | undefined)[] {
+  return [
+    this.settings.colorize ? this.getRoomStatusClassWithSettings(room) : null,
+    (this.settings.colorize && this.settings.colorMode === 'background') ? 'status-mode-bg' : null,
+    this.isRoomExpanded(room.roomId) ? 'active' : '',
+    (!this.isRoomExpanded(room.roomId) && !this.allExpanded && this.activeRoomId && room.roomId !== this.activeRoomId) ? 'blurred' : ''
+  ];
+}
 
 ngOnInit(): void {
    this.userId = (localStorage.getItem('ID') || '').trim() || null; // <-- read ID from localStorage
@@ -1120,7 +1119,8 @@ statusTranslations: Record<string, string> = {
   'Completed': 'הסתיים',
   'InProgress': 'בתהליך',
   'Scheduled': 'מתוכנן',
-  'Cancelled': 'בוטל',  
+  'Cancelled': 'בוטל', 
+  'Planned' : 'מתוכנן'
 };
 
 translateStatus(status: string): string {
@@ -1302,35 +1302,70 @@ getHeaderInProgressLabel(room: RoomData): string {
 
 
 
+
+
 getHeaderProgressText(room: RoomData): string {
-  var n = 0, x = 0;
-  if (!room || !room.surgeries || !room.surgeries.length) return '0 מתוך 0';
+  let nInShift = 0;   // completed/in-progress within shift
+  let xInShift = 0;   // total within shift
+  let xOnDay   = 0;   // total on the calendar day (00:00–23:59:59.999)
 
-  var dayStart = this.workingStart(room.date || this.selectedDate);
-  var dayEnd   = this.workingEnd(room.date || this.selectedDate);
-  var DAY_MS   = 24 * 60 * 60 * 1000;
+  if (!room || !room.surgeries?.length) return '0 מתוך 0';
 
-  for (var i = 0; i < room.surgeries.length; i++) {
-    var s: any = room.surgeries[i];
-    var eClock = s && s.timeEntrance;
+  const baseDate = room.date || this.selectedDate;
+  const day      = new Date(baseDate);
+  const dayStart = new Date(day); dayStart.setHours(0, 0, 0, 0);
+  const dayEnd   = new Date(day); dayEnd.setHours(23, 59, 59, 999);
+
+  const shiftStart = this.workingStart(baseDate); // 07:30
+  const shiftEnd   = this.workingEnd(baseDate);   // 15:00
+  const DAY_MS     = 24 * 60 * 60 * 1000;
+
+  const isZeroClock = (v?: string) => v === '00:00' || v === '00:00:00';
+
+  for (const sAny of room.surgeries as any[]) {
+    const s = sAny || {};
+
+    // Accept both camelCase and PascalCase keys from server
+    const eClock = s.timeEntrance ?? s.TimeEntranceToTheOperatingRoom;
     if (!eClock) continue;
 
-    var xRaw   = s && s.timeExit;
-    var base   = (s && s.surgeryDate) || (room.date || this.selectedDate);
+    const xRaw = s.timeExit ?? s.TimeExitingTheOperatingRoom;
+    const base = s.surgeryDate ?? s.SurgeryDate ?? baseDate;
 
-    var entrance = this.parseClockWithDate(eClock, base);
-    var exit     = this.parseClockWithDate((xRaw && xRaw !== '00:00:00') ? xRaw : eClock, base);
+    let entrance = this.parseClockWithDate(eClock, base);
+    let exit     = this.parseClockWithDate((xRaw && !isZeroClock(xRaw)) ? xRaw : eClock, base);
     if (!entrance || !exit) continue;
-    if (exit.getTime() < entrance.getTime()) exit = new Date(exit.getTime() + DAY_MS);
 
-    var overlaps = (entrance < dayEnd) && (exit > dayStart);
-    if (!overlaps) continue;
+    // Handle overnight cases (exit past midnight)
+    if (exit.getTime() < entrance.getTime()) {
+      exit = new Date(exit.getTime() + DAY_MS);
+    }
 
-    x++;
-    if (s.status === 'Completed' || s.status === 'InProgress') n++;
+    // Count surgeries belonging to this calendar date
+    const overlapsDay = (entrance < dayEnd) && (exit > dayStart);
+    if (overlapsDay) xOnDay++;
+
+    // Main counters respect the working shift
+    const overlapsShift = (entrance < shiftEnd) && (exit > shiftStart);
+    if (!overlapsShift) continue;
+
+    xInShift++;
+
+    const status = String(s.status ?? s.SurgeryStatus ?? '').toLowerCase();
+    if (status === 'completed' || status === 'inprogress' || status === 'in progress' || status === 'in_progress') {
+      nInShift++;
+    }
   }
-  return n + ' מתוך ' + x;
+
+  const outOfShift = Math.max(0, xOnDay - xInShift);
+
+  let result = `${nInShift} מתוך ${xInShift}`;
+  if (outOfShift > 0) {
+    result += ` (${outOfShift} מחוץ לשעות העבודה)`;
+  }
+  return result;
 }
+
 
 /** Compare two dates by local Y/M/D (no timezone surprises). */
 private isSameLocalDay(a: Date, b: Date): boolean {

@@ -1,401 +1,3 @@
-div[id$='_chart'] {
-    margin-bottom: 30px;
-}
-
-/* * {
-    font-family: 'Open Sans', sans-serif!important;
-    font-optical-sizing: auto;
-    font-weight: 500;
-    font-style: normal;
-} */
-
-*:not(.material-icons) {
-    font-family: 'Open Sans', sans-serif !important;
-    font-optical-sizing: auto;
-    font-weight: 500;
-    font-style: normal;
-}
-
-body {
-    background: #F1F2F6;
-}
-
-
-:root {
-    --mdc-theme-primary: #2790b0;
-    /* Purple */
-    --mdc-theme-secondary: #76ff03;
-    /* Neon Green */
-    --mdc-theme-background: #fff;
-    --mdc-theme-surface: #fff;
-    --mdc-theme-on-primary: white;
-    --mdc-theme-on-secondary: black;
-}
-
-.mdc-top-app-bar {
-    background: #1976d2 !important;
-}
-
-h2 {
-    margin: 60px auto 40px;
-}
-
-/* Gauge */
-#gauge_chart {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 40vh;
-}
-
-#gauge_chart svg>g>g:last-child path,
-#gauge_chart svg>g>g:last-child circle {
-    display: none;
-}
-
-#gauge_chart svg>g>g:last-child path,
-#gauge_chart svg>g>g:last-child circle {
-    display: none !important;
-}
-
-#gauge_chart svg>g>g:last-child>* {
-    position: relative;
-    top: 20px;
-}
-
-#gauge_chart g>* {
-    stroke: none;
-}
-
-#gauge_chart g>g>text {
-    margin-top: -60px;
-}
-
-.card-title-custom {
-    text-align: center;
-    margin: 20px auto;
-}
-
-.app-bar__logo {
-    height: 60px;
-    width: auto;
-    border-radius: 20%;
-}
-
-
-#bar_chart2 div svg g>g>g>g>g>* {
-    transform: rotate(90deg) !important;
-    transform-origin: left top;
-}
-
-#bar_chart2 g>g>g>g>g>* {
-    transform: rotate(90deg) !important;
-    transform-origin: left top;
-}
-
-#bar_chart2 g g g g g {
-    transform: rotate(90deg) !important;
-    transform-origin: left top;
-}
-
-#bar_chart2 g g g g g g {
-    transform: rotate(90deg) !important;
-    transform-origin: left top;
-}
-
-#bar_chart2 g>g>text {
-    transform: rotate(90deg) !important;
-    transform-origin: left top;
-}
-
-#bar_chart2 g g text {
-    transform: rotate(90deg) !important;
-    transform-origin: left top;
-}
-
-#bar_chart2 div * {
-    background: #34495e !important;
-}
-
-#procedureCheckboxes{text-align: right;}
-#procedureCheckboxes label:not(:first-child){margin-right: 20px;}
-#gauge_chart g text {
-    font-size: 16px!important;
-    font-weight: bold;
-  }
-  
-  .ctrl-placeholder{height:32px; display: block;}
-
-
-
-
-
-
-  .tabs {
-    margin-bottom: 15px;
-  }
-
-  .tabs button {
-    padding: 10px 20px;
-    margin-right: 5px;
-    background: #f0f0f0;
-    border: 1px solid #ccc;
-    cursor: pointer;
-    border-radius: 4px;
-    transition: all 0.2s ease;
-  }
-
-  .tabs button:hover {
-    background: #e6e6e6;
-  }
-
-  .tabs button.active {
-    background: #6ba1f8;
-    color: #fff;
-    border-color: #6ba1f8;
-    font-weight: bold;
-  }
-
-  .chart-title {
-    margin: 20px 0
-  }
-
-  .floating-legend {
-    position: fixed;
-    bottom: 40px;
-    left: 20px;
-    width: 250px;
-    background: #fff;
-    border: 1px solid #ccc;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-    border-radius: 5px;
-    overflow: hidden;
-    font-family: Arial, sans-serif;
-    z-index: 9999;
-    transition: all 0.3s ease;
-  }
-
-  .floating-legend.minimized {
-    height: 40px;
-    width: 200px;
-  }
-
-  .legend-header {
-    background: #f5f5f5;
-    padding: 8px 12px;
-    font-weight: bold;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    cursor: pointer;
-  }
-
-  .legend-body {
-    max-height: 300px;
-    overflow-y: auto;
-    padding: 10px;
-  }
-
-  .legend-item {
-    display: flex;
-    align-items: center;
-    margin-bottom: 8px;
-  }
-
-  .color-box {
-    width: 20px;
-    height: 20px;
-    display: inline-block;
-    margin-right: 8px;
-    border: 1px solid #aaa;
-  }
-
-  .dept-name {
-    padding-right: 10px;
-    text-align: right;
-    font-size: 0.8em;
-  }
-
-  .toggle-btn {
-    background: none;
-    border: none;
-    font-size: 12px;
-    cursor: pointer;
-    color: #007bff;
-  }
-
-
-  .material-icons {
-    vertical-align: middle;
-  }
-
-
-  @keyframes flashHighlight {
-
-    0%,
-    100% {
-      background-color: inherit;
-    }
-
-    50% {
-      background-color: #ffeb3b;
-    }
-
-    /* Yellow highlight */
-  }
-
-  .flash-highlight {
-    animation: flashHighlight 0.6s ease-in-out 3;
-    /* 3 flashes */
-  }
-
-  .toggle-details.active-toggle {
-    font-weight: bold;
-    color: #007bff;
-    /* highlight color (Bootstrap blue) */
-    text-decoration: underline;
-  }
-
-  .toggle-details.active-toggle {
-    background-color: #e6f0ff;
-    border-radius: 4px;
-  }
-
-  .visible_tbl {
-    background: #e6f0ff;
-    padding: 20px 0 !important;
-    margin: 20px 0;
-  }
-
-  .table-block {
-    transition: all 0.3s ease-in-out;
-    /* smooth animation */
-  }
-
-  .table-block.active {
-    transform: scale(1.02);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-    filter: blur(0px) brightness(1);
-    opacity: 1;
-    z-index: 2;
-  }
-
-  .table-block.notactive {
-    filter: blur(2px) brightness(0.9);
-    opacity: 0.6;
-  }
-
-  .tabs-filters-wrapper {
-    direction: rtl;
-    text-align: right;
-    position: sticky;
-    top: 40px;
-    z-index: 9999;
-    /*background: #fff;*/
-    /*background: rgba(0,0,0,0.2);*/
-    /* background: rgb(241, 242, 246); */
-    padding: 10px;
-    border-bottom: 1px solid #ddd;
-    transition: background 0.3s ease, box-shadow 0.3s ease;
-  }
-
-  .tabs button {
-    border: solid 1px #777;
-    margin-left: 20px;
-    background: #f8f9fa;
-    cursor: pointer;
-    transition: all 0.2s;
-  }
-
-  .tabs button.active {
-    background: #007bff;
-    color: white;
-    border-color: #007bff;
-  }
-
-  .filters label {
-    padding-left: 10px;
-  }
-
-  .tabs-filters-wrapper.is-sticky {
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-    background: rgba(0, 0, 0, 0.2);
-    backdrop-filter: blur(5px);
-  }
-
-  .department-tabs button.active {
-    font-weight: bold;
-    border: 2px solid white;
-  }
-
-  .department-tabs {
-    display: flex;
-    gap: 6px;
-    /* space between buttons, optional */
-  }
-
-  .department-btn {
-    flex: 1;
-    /* each button takes equal space */
-    text-align: center;
-    padding: 8px 0;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-  }
-
-  .department-btn.active {
-    outline: 2px solid #fff;
-    font-weight: bold;
-  }
-
-  .department-btn-active {
-    outline: 2px solid #fff;
-    font-weight: bold;
-  }
-
-
-  .department-subtabs button.active {
-    background: #6ba1f8;
-    color: #fff;
-    border-color: #6ba1f8;
-    font-weight: bold;
-  }
-
-
-
-
-  #stickyTabsFilters {
-    position: sticky;
-    top: 45px;
-    z-index: 100;
-  }
-
-  #stickyTabsFilters.is-sticky {
-    position: sticky;
-    /* or fixed, depending on your design */
-  }
-
-  #stickyTabsFilters:not(.is-sticky) {
-    position: static;
-    /* "released" */
-  }
-
-
-
-
-  /* Department tabs stick 100px from top when .is-sticky is applied */
-  .department-tabs.is-sticky {
-    position: fixed;
-    top: 100px;
-    /* ← the requested offset */
-    left: 0;
-    right: 0;
-    z-index: 1000;
-    background: rgba(0, 0, 0, 0.2);
-    /* keep readable while overlapping content */
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
-  }
 
   #surgeriesrts {
     display: grid;
@@ -558,6 +160,9 @@ h2 {
     border: 3px solid darkred;
   }
 
+  .card.green-blink {
+    border: 2px solid green;
+  }
   .metric-ok {
     color: green;
   }
@@ -776,4 +381,127 @@ h2 {
   content: '|';
   margin: 0 .5rem;
   opacity: .6;
+}
+
+
+
+/* ---------- Background Color Mode ---------- */
+/* When this class is present on the card, we paint the background instead of the border. */
+.room-widget.card.status-mode-bg {
+  /* Clear any border/animations from border-mode */
+  /*border: 1px !important;*/
+  animation: none !important;
+
+  /* Drive colors from CSS vars for easy contrast handling */
+  background: var(--card-bg, #fff);
+  color: var(--card-fg, #111);
+}
+
+/* Make the sticky header look correct on tinted/solid backgrounds */
+.room-widget.card.status-mode-bg .room-header {
+  background: var(--card-bg, #fff);
+  /* softer divider that works on light/dark bg */
+  border-bottom-color: rgba(0,0,0,.08);
+}
+.room-widget.card.status-mode-bg.red-45 .room-header,
+.room-widget.card.status-mode-bg.red-60 .room-header,
+.room-widget.card.status-mode-bg.red-120 .room-header {
+  border-bottom-color: rgba(255,255,255,.25);
+}
+
+/* Status dot: either hide (since the whole card is colored), or outline it */
+.room-widget.card.status-mode-bg .status-circle {
+  /* Option A: hide */
+  /* display: none; */
+  /* Option B: keep but add a white ring for visibility on dark bg */
+  box-shadow: 0 0 0 2px rgba(255,255,255,.65);
+}
+
+/* Chips + metric text should follow foreground color (for readability) */
+.room-widget.card.status-mode-bg .metrics .metric-chip span,
+.room-widget.card.status-mode-bg .small,
+.room-widget.card.status-mode-bg .surgery-row,
+.room-widget.card.status-mode-bg .status {
+  color: var(--card-fg, #111) !important;
+}
+
+/* Give chips a subtle pill background that adapts to light/dark */
+.room-widget.card.status-mode-bg .metrics .metric-chip span {
+  padding: 0 6px;
+  border-radius: 8px;
+  background: var(--chip-bg, rgba(0,0,0,.06));
+}
+
+/* Neutralize explicit metric colors inside colored cards */
+.room-widget.card.status-mode-bg .metric-ok,
+.room-widget.card.status-mode-bg .metric-yellow,
+.room-widget.card.status-mode-bg .metric-orange,
+.room-widget.card.status-mode-bg .metric-red,
+.room-widget.card.status-mode-bg .metric-red-strong {
+  color: inherit !important;
+  text-shadow: none !important;
+  animation: none !important;
+}
+
+/* Completed rows remain slightly dimmer, but still readable */
+.room-widget.card.status-mode-bg .surgery-row.scompleted {
+  opacity: 0.85;
+}
+
+/* ---------- Per-status palettes (set background + foreground + chip bg) ---------- */
+/* Light tints (dark text) */
+.room-widget.card.status-mode-bg.green-blink {
+  --card-bg: #e6f4ea;  /* google-ish green tint */
+  --card-fg: #0b5a2a;
+  --chip-bg: rgba(0,0,0,.06);
+}
+.room-widget.card.status-mode-bg.grey {
+  --card-bg: #f1f3f4;
+  --card-fg: #202124;
+  --chip-bg: rgba(0,0,0,.06);
+}
+.room-widget.card.status-mode-bg.blue {
+  --card-bg: #e8f0fe;
+  --card-fg: #174ea6;
+  --chip-bg: rgba(0,0,0,.06);
+}
+.room-widget.card.status-mode-bg.orange {
+  --card-bg: #fff4e5;
+  --card-fg: #8a4b00;
+  --chip-bg: rgba(0,0,0,.06);
+}
+
+/* Warnings/Severe = solid/darker bg (light text) */
+.room-widget.card.status-mode-bg.red-45,
+.room-widget.card.status-mode-bg.red-45-ack {
+  --card-bg: #d93025;  /* red 600 */
+  --card-fg: #ffffff;
+  --chip-bg: rgba(255,255,255,.18);
+}
+.room-widget.card.status-mode-bg.red-60,
+.room-widget.card.status-mode-bg.red-60-ack {
+  --card-bg: #b31412;  /* deeper red */
+  --card-fg: #ffffff;
+  --chip-bg: rgba(255,255,255,.20);
+}
+.room-widget.card.status-mode-bg.red-120,
+.room-widget.card.status-mode-bg.red-120-ack {
+  --card-bg: #7f1d1d;  /* darkest/maroon */
+  --card-fg: #ffffff;
+  --chip-bg: rgba(255,255,255,.22);
+}
+
+/* If you still want a very subtle border on light modes */
+.room-widget.card.status-mode-bg.green-blink,
+.room-widget.card.status-mode-bg.grey,
+.room-widget.card.status-mode-bg.blue,
+.room-widget.card.status-mode-bg.orange {
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,.06);
+}
+
+/* Kill border-mode animations when background mode is on */
+.room-widget.card.status-mode-bg.red-60,
+.room-widget.card.status-mode-bg.red-120 {
+  animation: none !important;
+  border: 0 !important;
 }

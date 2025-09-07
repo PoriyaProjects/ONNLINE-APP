@@ -68,8 +68,16 @@
               <div class="spinner"></div>
             </div>
 
-            <div class="room-widget card" *ngFor="let room of roomsData; trackBy: trackByRoomId" [ngClass]="[
+            <!-- <div class="room-widget card" *ngFor="let room of roomsData; trackBy: trackByRoomId" [ngClass]="[
        (settings.colorize ? getRoomStatusClassWithSettings(room) : ''),
+       isRoomExpanded(room.roomId) ? 'active' : '',
+       (!isRoomExpanded(room.roomId) && !allExpanded && activeRoomId && room.roomId !== activeRoomId) ? 'blurred' : ''
+     ]"> -->
+<div class="room-widget card"
+     *ngFor="let room of roomsData; trackBy: trackByRoomId"
+     [ngClass]="[
+       (settings.colorize ? getRoomStatusClassWithSettings(room) : ''),
+       (settings.colorize && settings.colorMode === 'background') ? 'status-mode-bg' : '',
        isRoomExpanded(room.roomId) ? 'active' : '',
        (!isRoomExpanded(room.roomId) && !allExpanded && activeRoomId && room.roomId !== activeRoomId) ? 'blurred' : ''
      ]">
@@ -104,16 +112,6 @@
                     </span>
                   </span>
                 </div>
-
-                <!-- In-progress header badge (only today + only when enabled + when there is InProgress) -->
-                <!-- <div *ngIf="settings.showHeaderBadge && isRoomToday(room) && hasInProgress(room)"
-                  class="status-circle2 text-center" style="margin:10px auto"
-                  [ngClass]="getRoomStatusClassWithSettings(room)">
-                  {{ getHeaderInProgressLabel(room) }}
-                  <ng-container *ngIf="settings.showHeaderIcon && getHeaderProgressIcon(room) as icon">
-                    <span [attr.title]="getHeaderProgressTitle(room)">{{ icon }}</span>
-                  </ng-container>
-                </div> -->
 
                 <div *ngIf="settings.showHeaderBadge && isRoomToday(room)"
      class="status-circle2 text-center" style="margin:10px auto"
@@ -194,6 +192,13 @@
                       style="direction:rtl; text-align:right;">
                       ⮜ {{ s.surgeryName }} ({{ s.surgeryCode }}) - {{ s.department }}
                       <br />
+                       <b *ngIf="settings.showTimes">{{ s.timeEntrance }} ← {{ s.timeExit || '...' }}</b>
+                      <br *ngIf="settings.showTimes" />
+
+                      <span *ngIf="settings.showStatus" class="status" [ngClass]="s.status">
+                        {{ translateStatus(s.status) }}
+                      </span>
+                      <br />
                     </div>
                   </div>
                 </ng-container>
@@ -222,7 +227,7 @@
             </div>
 
           </div>
-          <div style="height:20px;"></div>
+          <div style="height:10px;"></div>
         </div>
 
 
@@ -231,6 +236,21 @@
   <button type="button" (click)="showDisplayPanel = !showDisplayPanel" style="border: solid 1px #888; border-radius: 4px;;">⚙️ תצוגה</button>
 
   <div *ngIf="showDisplayPanel" class="panel-body">
+    <div style="margin-top:8px;">
+  <b>מצב צביעה:</b>
+  <label style="margin-inline-start:8px;">
+    <input type="radio" name="colorMode" [value]="'border'"
+           [(ngModel)]="settings.colorMode"
+           [ngModelOptions]="{standalone:true}"
+           (ngModelChange)="onSettingChange('colorMode', $event)"> מסגרת
+  </label>
+  <label style="margin-inline-start:12px;">
+    <input type="radio" name="colorMode" [value]="'background'"
+           [(ngModel)]="settings.colorMode"
+           [ngModelOptions]="{standalone:true}"
+           (ngModelChange)="onSettingChange('colorMode', $event)"> רקע
+  </label>
+</div>
     <!-- Presets -->
     <div class="row">
       <label>
