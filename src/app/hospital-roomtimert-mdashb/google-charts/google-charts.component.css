@@ -568,3 +568,56 @@
 
 /* optional: if the title and chip are on one line and you want fixed min-height */
 h4.text-center { min-height: 2.2rem; }
+
+
+
+.background-mode .room-widget .card .room-header .status-circle{top:-152px!important;}
+
+/* small neutral chip (non-blinking) */
+.overlap-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: .25rem;
+  margin-inline-start: .35rem;
+  padding: .05rem .4rem;
+  border-radius: 999px;
+  background: #eef2ff;   /* soft */
+  color: #283593;        /* indigo-ish */
+  font-weight: 600;
+  border: 1px solid #c5cae9;
+}
+
+.overlap-chip--placeholder { visibility: hidden; }
+
+/* inline icon variant for progress line */
+.overlap-icon {
+  margin-inline-end: .25rem;
+  font-weight: 700;
+  color: #3949ab;
+}
+
+
+
+/* greys out the whole card */
+.past-day {
+  background: #f3f4f6;
+  filter: grayscale(0.35);
+}
+
+/* hide red emphasis inside past days (if you prefer fully hidden) */
+.past-day .room-alert-chip,
+.past-day .warn-icon,
+.past-day .warn-dot {
+  opacity: 0.25;             /* or: display:none; if you want them gone */
+  animation: none !important;
+}
+
+/* placeholders keep layout consistent */
+.room-alert-chip--muted {
+  visibility: hidden;        /* reserves space without showing */
+}
+.warn-icon--placeholder {
+  visibility: hidden;
+  display: inline-block;
+  width: 1.2em;
+}

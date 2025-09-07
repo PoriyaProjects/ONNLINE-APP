@@ -56,6 +56,9 @@ export type LateMeta = {
   overrunMin: number;        // minutes past shift end
   predictedEnd: Date | null; // first late planned case end
   turnoverUsed: number;      // per-gap turnover (min), from getTurnoverSummary or 20
+   hasOverlapBacklog: boolean;  // ⏱️ there is already overlap vs. current InProgress
+  backlogCount?: number;       // (optional) #planned non-exempt overlapping now
+  overlapUntil?: Date | null;  // (optional) expected end of current InProgress
 };
 
 
@@ -63,7 +66,7 @@ export type HeaderProgressOpts = {
   defaultTurnoverMin?: number; // default if summary is '--:--' (defaults to 20)
 };
 
-export type DisplayPreset = 'default' | 'all' | 'custom';
+export type DisplayPreset = 'default' | 'all' | 'custom'| 'minimal';
 export type ColorMode = 'border' | 'background';
 export interface DisplaySettings {
   
@@ -87,7 +90,10 @@ export interface DisplaySettings {
   showStatusDot?: boolean;     // right-side status dot
   showUrgencyIcon?: boolean;   // icon near surgeryId
   colorMode: ColorMode;  
- showLateChip?: boolean;
+  showLateChip?: boolean;
+  showExpandBtn?: boolean;     // default true
+  showDateControls?: boolean;  // default true
+  backgroundMode?: boolean;
 }
 
 export const DEFAULT_SETTINGS: DisplaySettings = {  
@@ -111,12 +117,22 @@ export const DEFAULT_SETTINGS: DisplaySettings = {
   showStatusDot: true,
   showUrgencyIcon: true,
   colorMode: 'border', 
+  showExpandBtn: true,
+  showDateControls: true,
+  backgroundMode: false,
 };
 
 
 
 export const ALL_ON_SETTINGS: DisplaySettings = { ...DEFAULT_SETTINGS };
 
+export const MINIMAL_SETTINGS: DisplaySettings = {
+  ...DEFAULT_SETTINGS,  
+  showExpandBtn: false,
+  showDateControls: false,
+  backgroundMode: true,
+  colorMode: 'background'
+};
 
 
 @Component({
@@ -221,10 +237,12 @@ applyPreset(p: DisplayPreset): void {
   this.settings =
     p === 'default' ? { ...DEFAULT_SETTINGS } :
     p === 'all'     ? { ...ALL_ON_SETTINGS } :
+    p === 'minimal' ? { ...MINIMAL_SETTINGS } :
                       { ...this.settings }; // 'custom' keeps current values
   this.persistDisplaySettings();
   this.cdr.markForCheck();
 }
+
 
 // --- individual toggles ---
 onSettingChange(key: keyof DisplaySettings, value: boolean): void {
@@ -1462,7 +1480,7 @@ getHeaderProgressText(room: RoomData, opts?: HeaderProgressOpts): string {
 
   // --- Propagate delays to predict late finishes ---
   // Deterministic, cross-midnight aware, urgency/status tie-breakers
-  list.sort((a, b) => {
+    list.sort((a, b) => {
     if (a.sortStartMs !== b.sortStartMs) return a.sortStartMs - b.sortStartMs;
     if (a.urgencyRank !== b.urgencyRank) return a.urgencyRank - b.urgencyRank;
     if (a.statusRank  !== b.statusRank)  return a.statusRank  - b.statusRank;
@@ -1470,42 +1488,84 @@ getHeaderProgressText(room: RoomData, opts?: HeaderProgressOpts): string {
     return 0;
   });
 
-  let cursor: Date | null = null; // "room free at" time including turnover
+  const now = new Date();
+  let cursor: Date | null = null;      
   let warnLate = false;
+  let warnOverlap = false;            
 
-  for (const s of list) {
+  
+  let activeIdx = -1;
+  for (let i = 0; i < list.length; i++) {
+    const it = list[i];
+    if ((it.status === 'inprogress' || it.status === 'in progress' || it.status === 'in_progress') && it.entrance && it.entrance <= now) {
+      if (activeIdx === -1 || (list[activeIdx].entrance!.getTime() < it.entrance.getTime())) {
+        activeIdx = i;
+      }
+    }
+  }
+
+  if (activeIdx >= 0) {
+    const cur = list[activeIdx];
+
+    
+    const expMinForCur =
+      (cur.expectedMin != null) ? cur.expectedMin :
+      (cur.exit && cur.entrance) ? Math.max(0, Math.round((cur.exit.getTime() - cur.entrance.getTime()) / 60000)) :
+      60;
+
+    const elapsedMin   = Math.max(0, Math.round((now.getTime() - cur.entrance!.getTime()) / 60000));
+    const remainingMin = Math.max(0, expMinForCur - elapsedMin);
+
+    const endOfCur = remainingMin > 0 ? new Date(now.getTime() + remainingMin * 60000) : now;
+    cursor = new Date(endOfCur.getTime() + TURNOVER_MIN * 60000);
+
+    
+    for (let k = 0; k < list.length; k++) {
+      if (k === activeIdx) continue;
+      const it = list[k];
+      if (it.status === 'planned' && it.entrance && it.entrance < endOfCur) {
+  
+        const exempt = this.isLateExemptByUrgency ? this.isLateExemptByUrgency(it.raw) : false;
+        if (!exempt) { warnOverlap = true; break; }
+      }
+    }
+  }
+
+  
+  for (let i = 0; i < list.length; i++) {
+    if (i === activeIdx) continue;
+    const s = list[i];
+
     if (!cursor) cursor = s.entrance ? new Date(s.entrance) : new Date(shiftStart);
 
-    // predicted start = max(scheduled entrance, room-next-free)
+    // predicted start = max(scheduled, room-next-free)
     const startPred = s.entrance ? new Date(Math.max(s.entrance.getTime(), cursor.getTime())) : new Date(cursor);
-
-    // duration:
-    // - actual if entrance+exit exist
-    // - else expected (TimeSurgeryToDo), default 60 if missing
     let durMin: number;
-    if (s.exit && s.entrance) {
+    if (s.exit && s.entrance && s.status === 'completed') {
       durMin = Math.max(0, Math.round((s.exit.getTime() - s.entrance.getTime()) / 60000));
     } else {
-      durMin = s.expectedMin ?? 60;
+      durMin = (s.expectedMin != null) ? s.expectedMin :
+               (s.exit && s.entrance) ? Math.max(0, Math.round((s.exit.getTime() - s.entrance.getTime()) / 60000)) :
+               60;
     }
 
-    const endSurgeryPred = new Date(startPred.getTime() + durMin * 60000);            // surgery end
-    const roomFreeAt     = new Date(endSurgeryPred.getTime() + TURNOVER_MIN * 60000); // + turnover
+    const endSurgeryPred = new Date(startPred.getTime() + durMin * 60000);           
+    const roomFreeAt     = new Date(endSurgeryPred.getTime() + TURNOVER_MIN * 60000); 
     cursor = roomFreeAt;
 
-    // Planned surgery finishing after shift → raise alert (NEW: skip exempt)
-    if (s.status === 'planned' && endSurgeryPred > shiftEnd && !s.exemptLate) {
+    const exempt = this.isLateExemptByUrgency ? this.isLateExemptByUrgency(s.raw) : false;
+    if (s.status === 'planned' && endSurgeryPred > shiftEnd && !exempt) {
       warnLate = true;
     }
   }
 
-  // --- Compose header text ---
+
+  warnLate = warnLate || warnOverlap;
+
+
   const outOfShift = Math.max(0, xOnDay - xInShift);
   let result = `${nInShift} מתוך ${xInShift}`;
   if (outOfShift > 0) result += ` (${outOfShift} מחוץ לשעות העבודה)`;
-  // Prefix icon handled in template; keep text stable:
-  // if (warnLate) result = `⚠️ ${result}`;
-
   return result;
 
   // ---- helpers ----
@@ -1730,19 +1790,122 @@ private hmToMin(s?: string | null): number | null {
 getRoomLateMeta(room: RoomData): LateMeta | null {
   if (!room) return null;
 
-  var sum = this.getTurnoverSummary(room);     // e.g. '01:27' or '--:--'
-  var parsed = this.hmToMin(sum);
-  var turnoverUsed = Math.max(20, parsed == null ? 20 : parsed); // per your instruction
+   if (this.isRoomPastDay(room)) {
+    // still compute turnover so UI tooltips stay consistent
+    var summary = this.getTurnoverSummary(room);
+    var parsed  = this.hmToMin(summary);
+    var turnoverUsed = Math.max(20, parsed == null ? 20 : parsed);
 
-  var pred = this.predictFirstLatePlanned(room, turnoverUsed);
+    return {
+      isLate: false,
+      predictedEnd: null,
+      overrunMin: 0,
+      turnoverUsed: turnoverUsed,
+      hasOverlapBacklog: false,
+      backlogCount: 0,
+      overlapUntil: null
+    };
+  }
+  // --- turnover from your summary, min 20 ---
+  var summary = this.getTurnoverSummary(room);   // e.g. '01:27' or '--:--'
+  var parsed  = this.hmToMin(summary);
+  var turnoverUsed = Math.max(20, parsed == null ? 20 : parsed);
+
+  // --- late prediction (first non-exempt planned that ends after 15:00) ---
+  var late = this.predictFirstLatePlanned(room, turnoverUsed); // you already have this (patched version)
   var shiftEnd = this.workingEnd(room.date || this.selectedDate);
 
-  if (!pred) {
-    return { isLate: false, overrunMin: 0, predictedEnd: null, turnoverUsed: turnoverUsed };
+  var isLate = !!late;
+  var overrunMin = 0;
+  if (late && late.predictedEnd) {
+    overrunMin = Math.max(0, Math.round((late.predictedEnd.getTime() - shiftEnd.getTime()) / 60000));
   }
-  var overrun = Math.max(0, Math.round((pred.predictedEnd.getTime() - shiftEnd.getTime()) / 60000));
-  return { isLate: true, overrunMin: overrun, predictedEnd: pred.predictedEnd, turnoverUsed: turnoverUsed };
+
+  // --- overlap/backlog at "now" (non-exempt planned scheduled before the in-progress ends) ---
+  var overlapInfo = this.computeOverlapBacklog(room, turnoverUsed); // helper below
+
+  return {
+    isLate: isLate,
+    predictedEnd: late ? late.predictedEnd : null,
+    overrunMin: overrunMin,
+    turnoverUsed: turnoverUsed,
+    hasOverlapBacklog: overlapInfo.hasOverlap,
+    backlogCount: overlapInfo.count,
+    overlapUntil: overlapInfo.until
+  };
 }
+
+// Helper: parse 'HH:MM'
+// private hmToMin(s?: string | null): number | null {
+//   if (!s || s === '--:--') return null;
+//   var p = s.split(':');
+//   if (p.length < 2) return null;
+//   var hh = +p[0], mm = +p[1];
+//   return (isNaN(hh) || isNaN(mm)) ? null : hh * 60 + mm;
+// }
+
+/** Returns {hasOverlap, count, until} for overlap at "now" vs current InProgress. */
+private computeOverlapBacklog(room: RoomData, TURNOVER_MIN: number): { hasOverlap: boolean; count: number; until: Date | null } {
+  if (!room || !room.surgeries || !room.surgeries.length) return { hasOverlap: false, count: 0, until: null };
+  if (this.isRoomPastDay(room)) {return { hasOverlap: false, count: 0, until: null };}
+  var baseDate = room.date || this.selectedDate;
+  var now = new Date();
+  var DAY_MS = 24 * 60 * 60 * 1000;
+
+  // Find latest InProgress that already started
+  var activeEnt: Date | null = null;
+  var activeRow: any = null;
+  for (var i = 0; i < room.surgeries.length; i++) {
+    var r: any = room.surgeries[i];
+    var st = String(r.status != null ? r.status : r.SurgeryStatus || '').toLowerCase();
+    if (st !== 'inprogress' && st !== 'in progress' && st !== 'in_progress') continue;
+
+    var ec = r.timeEntrance != null ? r.timeEntrance : r.TimeEntranceToTheOperatingRoom;
+    if (!ec) continue;
+    var base = (r.surgeryDate != null ? r.surgeryDate : r.SurgeryDate) || baseDate;
+    var ent = this.parseClockWithDate(ec, base);
+    if (!ent || ent > now) continue;
+
+    if (!activeEnt || ent > activeEnt) { activeEnt = ent; activeRow = r; }
+  }
+  if (!activeEnt) return { hasOverlap: false, count: 0, until: null };
+
+  // Estimate expected end of the active case (now + remaining)
+  var xr = activeRow.timeExit != null ? activeRow.timeExit : activeRow.TimeExitingTheOperatingRoom;
+  var exit = (xr && xr !== '00:00' && xr !== '00:00:00') ? this.parseClockWithDate(xr, (activeRow.surgeryDate || activeRow.SurgeryDate || baseDate)) : null;
+
+  var expectedMin: number | null = null;
+  var ttd = activeRow.TimeSurgeryToDo != null ? activeRow.TimeSurgeryToDo : activeRow.timeSurgeryToDo;
+  if (ttd != null && !isNaN(+ttd)) expectedMin = Math.max(0, Math.round(+ttd));
+  if (expectedMin == null && exit) {
+    expectedMin = Math.max(0, Math.round((exit.getTime() - activeEnt.getTime()) / 60000));
+  }
+  if (expectedMin == null) expectedMin = 60;
+
+  var elapsed = Math.max(0, Math.round((now.getTime() - activeEnt.getTime()) / 60000));
+  var remaining = Math.max(0, expectedMin - elapsed);
+  var expectedEnd = remaining > 0 ? new Date(now.getTime() + remaining * 60000) : now;
+
+  // Count non-exempt Planned scheduled before expectedEnd
+  var count = 0;
+  for (var j = 0; j < room.surgeries.length; j++) {
+    var rr: any = room.surgeries[j];
+    var st2 = String(rr.status != null ? rr.status : rr.SurgeryStatus || '').toLowerCase();
+    if (st2 !== 'planned') continue;
+    if (this.isLateExemptByUrgency && this.isLateExemptByUrgency(rr)) continue;
+
+    var ec2 = rr.timeEntrance != null ? rr.timeEntrance : rr.TimeEntranceToTheOperatingRoom;
+    if (!ec2) continue;
+    var base2 = (rr.surgeryDate != null ? rr.surgeryDate : rr.SurgeryDate) || baseDate;
+    var ent2 = this.parseClockWithDate(ec2, base2);
+    if (!ent2) continue;
+
+    if (ent2 < expectedEnd) count++;
+  }
+
+  return { hasOverlap: count > 0, count: count, until: expectedEnd };
+}
+
 
 /** Finds the first Planned case predicted to finish after shift end. */
 // private predictFirstLatePlanned(room: RoomData, TURNOVER_MIN: number):
@@ -1839,7 +2002,8 @@ private predictFirstLatePlanned(room: RoomData, TURNOVER_MIN: number):
 
   if (!room || !room.surgeries || !room.surgeries.length) return null;
 
-  const baseDate  = room.date || this.selectedDate;
+  if (this.isRoomPastDay(room)) return null;
+  const baseDate   = room.date || this.selectedDate;
   const shiftStart = this.workingStart(baseDate);
   const shiftEnd   = this.workingEnd(baseDate);
   const DAY_MS     = 24 * 60 * 60 * 1000;
@@ -1860,6 +2024,24 @@ private predictFirstLatePlanned(room: RoomData, TURNOVER_MIN: number):
   function isZeroClock(v?: string | null): boolean {
     return v === '00:00' || v === '00:00:00';
   }
+  function normalizeUrgencyVal(u: any): string {
+    var s = (u == null ? '' : String(u)).trim();
+    s = s.replace(/\s*-\s*/g, '-').replace(/\s+/g, ' ');
+    return s;
+  }
+  function urgencyRankOf(row: any): number {
+    var raw = row && (row.Urgency != null ? row.Urgency : row.urgency);
+    var n = normalizeUrgencyVal(raw);
+    if (n === 'דחוף') return 0;
+    if (n === 'ססיה-אשפוז') return 1;
+    return 2;
+  }
+  function statusRankOf(st: string): number {
+    if (st === 'completed') return 0;
+    if (st === 'inprogress' || st === 'in progress' || st === 'in_progress') return 1;
+    if (st === 'planned') return 2;
+    return 3;
+  }
 
   // Normalize rows
   const list: {
@@ -1867,7 +2049,13 @@ private predictFirstLatePlanned(room: RoomData, TURNOVER_MIN: number):
     exit: Date | null;
     expectedMin: number | null;
     status: string;
-    exemptLate: boolean;   // <-- NEW
+    exemptLate: boolean;
+
+    // sort helpers
+    sortStartMs: number;
+    urgencyRank: number;
+    statusRank: number;
+    idKey: string;
   }[] = [];
 
   for (let i = 0; i < room.surgeries.length; i++) {
@@ -1890,34 +2078,84 @@ private predictFirstLatePlanned(room: RoomData, TURNOVER_MIN: number):
     if (expectedMin == null && exit) expectedMin = Math.max(0, Math.round((exit.getTime() - entrance.getTime()) / 60000));
 
     const status = statusOf(row);
-    const exemptLate = this.isLateExemptByUrgency(row);   // <-- NEW
+    const exemptLate = this.isLateExemptByUrgency ? this.isLateExemptByUrgency(row) : false;
 
-    list.push({ entrance: entrance, exit: exit, expectedMin: expectedMin, status: status, exemptLate: exemptLate });
+    // sort helpers
+    let sortStartMs = entrance.getTime();
+    if (exit && entrance && exit.getDate() !== entrance.getDate()) {
+      sortStartMs = sortStartMs - DAY_MS; // cross-midnight → treat as "yesterday"
+    }
+    const urgRank = urgencyRankOf(row);
+    const statRank = statusRankOf(status);
+    const idKey = (row.SurgeryID != null ? String(row.SurgeryID)
+                : (row.CaseNumber != null ? String(row.CaseNumber) : ''));
+
+    list.push({
+      entrance, exit, expectedMin, status, exemptLate,
+      sortStartMs, urgencyRank: urgRank, statusRank: statRank, idKey
+    });
   }
 
-  // Sort by scheduled entrance (missing go last)
+  // Stable, cross-midnight aware sort with urgency/status tiebreakers
   list.sort(function(a, b) {
-    if (!a.entrance && !b.entrance) return 0;
-    if (!a.entrance) return 1;
-    if (!b.entrance) return -1;
-    return a.entrance.getTime() - b.entrance.getTime();
+    if (a.sortStartMs !== b.sortStartMs) return a.sortStartMs - b.sortStartMs;
+    if (a.urgencyRank !== b.urgencyRank) return a.urgencyRank - b.urgencyRank;
+    if (a.statusRank  !== b.statusRank)  return a.statusRank  - b.statusRank;
+    if (a.idKey !== b.idKey) return a.idKey < b.idKey ? -1 : 1;
+    return 0;
   });
 
-  // Propagate delays
-  let cursor: Date | null = null; // room free time (including turnover)
+  // Propagate delays; anchor to the current InProgress (now) if present
+  const now = new Date();
+  let cursor: Date | null = null;  // room-free time including turnover
+  let activeIdx = -1;
+
+  // find the latest InProgress that started already
+  for (let i = 0; i < list.length; i++) {
+    const it = list[i];
+    if ((it.status === 'inprogress' || it.status === 'in progress' || it.status === 'in_progress') && it.entrance && it.entrance <= now) {
+      if (activeIdx === -1 || (list[activeIdx].entrance!.getTime() < it.entrance.getTime())) {
+        activeIdx = i;
+      }
+    }
+  }
+
+  if (activeIdx >= 0) {
+    const cur = list[activeIdx];
+    // expected remaining for the current in-progress case
+    const expMinForCur =
+      (cur.expectedMin != null) ? cur.expectedMin :
+      (cur.exit && cur.entrance) ? Math.max(0, Math.round((cur.exit.getTime() - cur.entrance.getTime()) / 60000)) :
+      60;
+
+    const elapsedMin   = Math.max(0, Math.round((now.getTime() - cur.entrance!.getTime()) / 60000));
+    const remainingMin = Math.max(0, expMinForCur - elapsedMin);
+    const endOfCur     = remainingMin > 0 ? new Date(now.getTime() + remainingMin * 60000) : now;
+
+    cursor = new Date(endOfCur.getTime() + TURNOVER_MIN * 60000);
+    // Note: any Planned scheduled before endOfCur automatically becomes backlog when we use `cursor` below.
+  }
+
+  // Walk the queue (skip the active in-progress we already accounted for)
   for (let j = 0; j < list.length; j++) {
+    if (j === activeIdx) continue;
     const item = list[j];
 
     if (!cursor) cursor = item.entrance ? new Date(item.entrance) : new Date(shiftStart);
+
+    // predicted start = max(scheduled entrance, room-next-free)
     const startPred = item.entrance
       ? new Date(Math.max(item.entrance.getTime(), cursor.getTime()))
       : new Date(cursor);
 
+    // duration: actual (if completed with both times), else expected, else scheduled diff, else 60
     let durMin: number;
-    if (item.exit && item.entrance) {
+    if (item.exit && item.entrance && item.status === 'completed') {
       durMin = Math.max(0, Math.round((item.exit.getTime() - item.entrance.getTime()) / 60000));
     } else {
-      durMin = item.expectedMin != null ? item.expectedMin : 60;
+      durMin = (item.expectedMin != null) ? item.expectedMin :
+               (item.exit && item.entrance) ? Math.max(0, Math.round((item.exit.getTime() - item.entrance.getTime()) / 60000)) :
+               60;
     }
 
     const endSurgeryPred = new Date(startPred.getTime() + durMin * 60000);
@@ -1929,8 +2167,10 @@ private predictFirstLatePlanned(room: RoomData, TURNOVER_MIN: number):
     }
   }
 
+  // no late planned case
   return null;
 }
+
 
 // HH:mm formatter
 private toHHmm(dt: Date): string {
@@ -1978,6 +2218,86 @@ private isLateExemptByUrgency(row: any): boolean {
   if (n === 'דחוף') return true;              // avoid catching "לא דחוף"
 
   return false;
+}
+
+
+
+private hasOverlapBacklog(room: RoomData, TURNOVER_MIN: number): boolean {
+  if (!room || !room.surgeries || !room.surgeries.length) return false;
+
+  const baseDate = room.date || this.selectedDate;
+  const DAY_MS   = 24 * 60 * 60 * 1000;
+  const now = new Date();
+
+  // find active in-progress
+  let activeEntrance: Date | null = null;
+  let expectedEnd: Date | null = null;
+
+  for (let i = 0; i < room.surgeries.length; i++) {
+    const r: any = room.surgeries[i];
+    const status = String(r.status != null ? r.status : r.SurgeryStatus || '').toLowerCase();
+    if (status.indexOf('inprogress') === -1 && status !== 'in progress' && status !== 'in_progress') continue;
+
+    const ec = r.timeEntrance != null ? r.timeEntrance : r.TimeEntranceToTheOperatingRoom;
+    if (!ec) continue;
+    const base = (r.surgeryDate != null ? r.surgeryDate : r.SurgeryDate) || baseDate;
+
+    const ent = this.parseClockWithDate(ec, base);
+    if (!ent || ent > now) continue;
+
+    if (!activeEntrance || ent > activeEntrance) {
+      activeEntrance = ent;
+
+      // estimate remaining
+      const xr = r.timeExit != null ? r.timeExit : r.TimeExitingTheOperatingRoom;
+      const exit = (xr && xr !== '00:00' && xr !== '00:00:00') ? this.parseClockWithDate(xr, base) : null;
+
+      let expectedMin: number | null = null;
+      const ttd = r.TimeSurgeryToDo != null ? r.TimeSurgeryToDo : r.timeSurgeryToDo;
+      if (ttd != null && !isNaN(+ttd)) expectedMin = Math.max(0, Math.round(+ttd));
+      if (expectedMin == null && exit) expectedMin = Math.max(0, Math.round((exit.getTime() - ent.getTime()) / 60000));
+      if (expectedMin == null) expectedMin = 60;
+
+      const elapsed = Math.max(0, Math.round((now.getTime() - ent.getTime()) / 60000));
+      const remaining = Math.max(0, expectedMin - elapsed);
+      expectedEnd = new Date(now.getTime() + remaining * 60000);
+    }
+  }
+
+  if (!expectedEnd) return false;
+
+  // any non-exempt planned scheduled before expectedEnd?
+  for (let i = 0; i < room.surgeries.length; i++) {
+    const r: any = room.surgeries[i];
+    const status = String(r.status != null ? r.status : r.SurgeryStatus || '').toLowerCase();
+    if (status !== 'planned') continue;
+    if (this.isLateExemptByUrgency && this.isLateExemptByUrgency(r)) continue;
+
+    const ec = r.timeEntrance != null ? r.timeEntrance : r.TimeEntranceToTheOperatingRoom;
+    if (!ec) continue;
+    const base = (r.surgeryDate != null ? r.surgeryDate : r.SurgeryDate) || baseDate;
+    const ent = this.parseClockWithDate(ec, base);
+    if (!ent) continue;
+
+    if (ent < expectedEnd) return true; // overlap backlog exists
+  }
+
+  return false;
+}
+
+
+
+/** True if the room’s date is strictly before today (local). */
+public isRoomPastDay(room: RoomData): boolean {
+  if (!room || !room.date) return false;
+  const d = new Date(room.date);
+  const endOfD = new Date(d); endOfD.setHours(23,59,59,999);
+
+  const today = new Date();
+  const startOfToday = new Date(today);
+  startOfToday.setHours(0,0,0,0);
+
+  return endOfD.getTime() < startOfToday.getTime();
 }
 
 }
