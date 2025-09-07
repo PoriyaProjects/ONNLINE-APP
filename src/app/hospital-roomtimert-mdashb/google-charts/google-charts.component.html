@@ -43,8 +43,8 @@
           </div>
 
 
-
-          <div style="margin: 10px 0;">
+  <div style="margin: 10px 0;">
+          <span style="margin: 10px 0;" class="date-controls" *ngIf="settings.showDateControls !== false">
             <label for="dateSelect">שינוי תאריך </label>
             <input type="date" id="dateSelect" [(ngModel)]="selectedDate" (change)="onDateChange()"
               style="padding-left:10px; margin-right:20px;cursor: pointer;border-color: #aaa; border-radius: 6px; border-width: 1px;" />
@@ -54,31 +54,30 @@
               [title]="allExpanded ? 'סגור את כל החדרים' : 'פתח את כל החדרים'">
               {{ allExpanded ? '🔽 סגור הכל' : '🔼 פתח הכל' }}
             </button>
-
-
+          </span>
+          <span style="margin: 10px 0;">
             <button mat-stroked-button color="primary" (click)="acknowledgeAllRooms()" style="margin-right:10px;"
               title="סמן כל החדרים כמאושרים">
               אשר כל החדרים
             </button>
+          </span>
+</div>
 
-          </div>
-
-          <div id="surgeriesrts">
+          <div id="surgeriesrts" class="dashboard" [class.background-mode]="settings.backgroundMode === true">
             <div *ngIf="isLoading" class="loader-overlay">
               <div class="spinner"></div>
             </div>
-
-            <!-- <div class="room-widget card" *ngFor="let room of roomsData; trackBy: trackByRoomId" [ngClass]="[
-       (settings.colorize ? getRoomStatusClassWithSettings(room) : ''),
-       isRoomExpanded(room.roomId) ? 'active' : '',
-       (!isRoomExpanded(room.roomId) && !allExpanded && activeRoomId && room.roomId !== activeRoomId) ? 'blurred' : ''
-     ]"> -->
-            <div class="room-widget card" *ngFor="let room of roomsData; trackBy: trackByRoomId" [ngClass]="[
-       (settings.colorize ? getRoomStatusClassWithSettings(room) : ''),
-       (settings.colorize && settings.colorMode === 'background') ? 'status-mode-bg' : '',
+           
+           <div class="room-widget card"
+     *ngFor="let room of roomsData; trackBy: trackByRoomId"
+     [ngClass]="[(settings.colorize && !isRoomPastDay(room)) ? getRoomStatusClassWithSettings(room) : '',
+       (settings.colorize && settings.colorMode === 'background' && !isRoomPastDay(room)) ? 'status-mode-bg' : '',       
+       (settings.backgroundMode ? 'background-mode' : ''),       
+       isRoomPastDay(room) ? 'past-day' : '',       
        isRoomExpanded(room.roomId) ? 'active' : '',
        (!isRoomExpanded(room.roomId) && !allExpanded && activeRoomId && room.roomId !== activeRoomId) ? 'blurred' : ''
      ]">
+
 
               <!-- Header (sticky inside the scrolling card) -->
               <div class="room-header" (click)="toggleRoom(room.roomId)">
@@ -91,16 +90,19 @@
 
   <ng-container *ngIf="settings.showLateChip !== false">
     <ng-container *ngIf="getRoomLateMeta(room) as late">
-      <span *ngIf="late && late.isLate; else lateChipPlaceholder"
-            class="room-alert-chip"
-            role="alert"
-            [attr.aria-live]="isRoomAcked(room) ? 'off' : 'polite'"
-            [attr.title]="'חריגה צפויה: מסתיים ב-' + (late.predictedEnd | date:'HH:mm') + ' (' + late.overrunMin + '׳), זמן הכנה ' + late.turnoverUsed + '׳'"
-            (click)="acknowledgeRoomLate(room); $event.stopPropagation()">
-        ⚠️ חריגה צפויה
-        <span class="warn-dot" [class.blink]="!isRoomAcked(room)" aria-hidden="true"></span>
-      </span>
-    </ng-container>
+  <!-- existing late chip… -->
+
+  <!-- Overlap/backlog chip -->
+  <span *ngIf="late && late.hasOverlapBacklog; else overlapChipPlaceholder"
+        class="overlap-chip"
+        [attr.title]="'Backlog overlap: ' + (late.backlogCount || 0) + ' planned before current case ends (' + (late.overlapUntil | date:'HH:mm') + ')'">
+    ⏱️ עומס
+  </span>
+  <ng-template #overlapChipPlaceholder>
+    <span class="overlap-chip overlap-chip--placeholder" aria-hidden="true">⏱️ עומס</span>
+  </ng-template>
+</ng-container>
+
     <ng-template #lateChipPlaceholder>
       <span class="room-alert-chip room-alert-chip--placeholder" aria-hidden="true">
         ⚠️ חריגה צפויה <span class="warn-dot" aria-hidden="true"></span>
@@ -158,6 +160,9 @@
           [attr.title]="'מסתיים ב-' + (late.predictedEnd | date:'HH:mm') + ' (' + late.overrunMin + '׳)'"
           aria-hidden="true"
           (click)="acknowledgeRoomLate(room); $event.stopPropagation()">⚠️</span>
+          <span *ngIf="late && late.hasOverlapBacklog"
+          class="overlap-icon"
+          [attr.title]="'Overlap backlog (' + (late.backlogCount || 0) + ')'">⏱️</span>
   </ng-container>
   <ng-template #warnIconPlaceholder>
     <span class="warn-icon warn-icon--placeholder" aria-hidden="true">⚠️</span>
@@ -168,9 +173,10 @@
 
 
                 <!-- Expand button -->
-                <div class="expand_btn">
-                  {{ isRoomExpanded(room.roomId) ? '⮝' : '⮟' }}
-                </div>
+                <div class="expand_btn" *ngIf="settings.showExpandBtn !== false">
+  {{ isRoomExpanded(room.roomId) ? '⮝' : '⮟' }}
+</div>
+
 
                 <!-- Right-side status dot -->
                 <div class="status-circle" *ngIf="settings.showStatusDot !== false"
@@ -258,7 +264,7 @@
               🔘 אפור = חדר לא מנוצל |
               <!-- 🟠 כתום = עיכוב בהכנת חדר | -->
               🔴 אדום = עיכוב חמור (גבוה מ־45 דק׳, 60 דק׳, 120 דק׳) <br />
-              🚑/⚠️ = דחוף |
+              🚑 = דחוף |
               🏥 = ססיה - אשפוז |
               📖 = אלקטיב |
               🚶 = אמבולטורי |
@@ -288,20 +294,25 @@
               </label>
             </div>
             <!-- Presets -->
-            <div class="row">
+           <div class="row">
               <label>
                 <input type="radio" name="dispPreset" [value]="'default'" [(ngModel)]="displayPreset"
-                  [ngModelOptions]="{standalone:true}" (ngModelChange)="applyPreset($event)"> ברירת מחדל
+                      [ngModelOptions]="{standalone:true}" (ngModelChange)="applyPreset($event)"> ברירת מחדל
               </label>
               <label style="margin-inline-start:12px;">
                 <input type="radio" name="dispPreset" [value]="'all'" [(ngModel)]="displayPreset"
-                  [ngModelOptions]="{standalone:true}" (ngModelChange)="applyPreset($event)"> הצג הכל
+                      [ngModelOptions]="{standalone:true}" (ngModelChange)="applyPreset($event)"> הצג הכל
               </label>
               <label style="margin-inline-start:12px;">
                 <input type="radio" name="dispPreset" [value]="'custom'" [(ngModel)]="displayPreset"
-                  [ngModelOptions]="{standalone:true}" (ngModelChange)="applyPreset($event)"> מותאם
+                      [ngModelOptions]="{standalone:true}" (ngModelChange)="applyPreset($event)"> מותאם
+              </label>
+              <label style="margin-inline-start:12px;">
+                <input type="radio" name="dispPreset" [value]="'minimal'" [(ngModel)]="displayPreset"
+                      [ngModelOptions]="{standalone:true}" (ngModelChange)="applyPreset($event)"> מינימלי
               </label>
             </div>
+
 
             <!-- Toggles (enabled when 'custom' chosen) -->
             <fieldset [disabled]="displayPreset!=='custom'" style="margin-top:8px;">
