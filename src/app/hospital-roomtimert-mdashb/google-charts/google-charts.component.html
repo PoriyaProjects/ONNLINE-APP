@@ -1,5 +1,9 @@
 <style>
+/* set the container width */
+.date-compact.mat-form-field { width: 120px; }
 
+/* force the infix width (needs deep selector due to encapsulation) */
+:host ::ng-deep .date-compact .mat-form-field-infix { width: 100px; }
 </style>
 
 <div class="mdc-layout-grid" style="direction: rtl;">
@@ -45,9 +49,16 @@
 
   <div style="margin: 10px 0;">
           <span style="margin: 10px 0;" class="date-controls" *ngIf="settings.showDateControls !== false">
-            <label for="dateSelect">שינוי תאריך </label>
-            <input type="date" id="dateSelect" [(ngModel)]="selectedDate" (change)="onDateChange()"
-              style="padding-left:10px; margin-right:20px;cursor: pointer;border-color: #aaa; border-radius: 6px; border-width: 1px;" />
+            <label for="dateSelect">שינוי תאריך </label>            
+            <mat-form-field appearance="legacy" class="date-compact">
+              <input
+                matInput
+                [matDatepicker]="picker"    
+                [(ngModel)]="selectedDateObj"
+                (dateChange)="onMatDateChange($event.value)" />
+              <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+              <mat-datepicker #picker></mat-datepicker>
+            </mat-form-field>
 
             <button (click)="toggleAll()"
               style="margin-bottom:10px;margin-right:20px; border-color: #aaa; border-radius: 6px;"
@@ -68,15 +79,7 @@
               <div class="spinner"></div>
             </div>
            
-           <!-- <div class="room-widget card"
-     *ngFor="let room of roomsData; trackBy: trackByRoomId"
-     [ngClass]="[(settings.colorize && !isRoomPastDay(room)) ? getRoomStatusClassWithSettings(room) : '',
-       (settings.colorize && settings.colorMode === 'background' && !isRoomPastDay(room)) ? 'status-mode-bg' : '',       
-       (settings.backgroundMode ? 'background-mode' : ''),       
-       isRoomPastDay(room) ? 'past-day' : '',       
-       isRoomExpanded(room.roomId) ? 'active' : '',
-       (!isRoomExpanded(room.roomId) && !allExpanded && activeRoomId && room.roomId !== activeRoomId) ? 'blurred' : ''
-     ]"> -->
+          
 
      <div class="room-widget card"
      *ngFor="let room of roomsData; trackBy: trackByRoomId"
@@ -100,7 +103,7 @@
 
   <ng-container *ngIf="settings.showLateChip !== false">
     <ng-container *ngIf="getRoomLateMeta(room) as late">
-  <ng-container *ngIf="getRoomLateMeta(room) as late">
+  <!-- <ng-container *ngIf="getRoomLateMeta(room) as late">
       <span *ngIf="late && late.isLate; else lateChipPlaceholder"
             class="room-alert-chip"
             role="alert"
@@ -110,7 +113,7 @@
         ⚠️ חריגה צפויה
         <span class="warn-dot" [class.blink]="!isRoomAcked(room)" aria-hidden="true"></span>
       </span>
-    </ng-container>
+    </ng-container> -->
 
   <!-- Overlap/backlog chip -->
   <span *ngIf="late && late.hasOverlapBacklog; else overlapChipPlaceholder"
@@ -238,8 +241,8 @@
 
         <span style="font-size:15px;" *ngIf="settings.showSurgeryName">{{ s.surgeryName }}</span>
         <span *ngIf="settings.showSurgeryCode && (s.surgeryCode?.trim())">
-  ({{ s.surgeryCode }})
-</span>
+          ({{ s.surgeryCode }})
+        </span>
 
         <br *ngIf="settings.showSurgeryName || settings.showSurgeryCode" />
 
@@ -267,7 +270,14 @@
            class="surgery-row"
            [attr.data-planned]="true"                
            style="direction:rtl; text-align:right;">
-        ⮜ {{ s.surgeryName }} ({{ s.surgeryCode }}) - {{ s.department }}
+      ⮜ {{ s.surgeryName }}
+      <ng-container *ngIf="settings.showSurgeryCode && s.surgeryCode?.trim()">
+        ({{ s.surgeryCode }})
+      </ng-container>
+      <ng-container *ngIf="s.department?.trim()">
+        - {{ s.department }}
+      </ng-container>
+
         <br />
         <b *ngIf="settings.showTimes">{{ s.timeEntrance }} ← {{ s.timeExit || '...' }}</b>
         <br *ngIf="settings.showTimes" />
