@@ -445,7 +445,8 @@ loadRoomsData(): void {
       const roomId = row.SurgeryRoom;
       if (!acc[roomId]) acc[roomId] = [];
       acc[roomId].push({
-        surgeryId: row.SurgeryID,
+        //surgeryId: row.SurgeryID,
+        surgeryId: row.CaseNumber,
         patientNumber: row.PatientNumber,
         surgeryName: row.SurgeryName,
         surgeryCode: row.SurgeryCode,
@@ -682,18 +683,37 @@ getTurnoverClass(room: RoomData): string {
   return 'metric-ok';
 }
 
+// getTurnoverTimeClass(room: RoomData): string {
+//   const value = this.getTurnoverTime(room);
+//   if (!value || value === '--:--') return 'neutral';
+
+//   const [h, m] = value.split(':').map(Number);
+//   const minutes = h * 60 + m;
+
+//    if (minutes >= 120) return 'severe';    // 🔴 pulsing red
+//   if (minutes >= 60)  return 'critical';  // 🔴
+//   if (minutes >= 45)  return 'bad';       // 🟠/🔴
+//   if (minutes > 20)   return 'warning';   // 🟡
+//   return 'ok';
+// }
+
+
 getTurnoverTimeClass(room: RoomData): string {
-  const value = this.getTurnoverTime(room);
-  if (!value || value === '--:--') return 'neutral';
+  // after-hours or past day: show neutral (grey), not red
+  if (this.isRoomClosedForColoring(room)) return 'metric-neutral';
 
-  const [h, m] = value.split(':').map(Number);
-  const minutes = h * 60 + m;
+  // keep your existing thresholds below
+  var s = this.getTurnoverSummary(room); // 'HH:MM' or '--:--'
+  var m = (function hmToMin(v: string): number {
+    if (!v || v === '--:--') return 0;
+    var p = v.split(':'); if (p.length < 2) return 0;
+    var hh = +p[0], mm = +p[1];
+    return (isNaN(hh) || isNaN(mm)) ? 0 : (hh * 60 + mm);
+  })(s);
 
-   if (minutes >= 120) return 'severe';    // 🔴 pulsing red
-  if (minutes >= 60)  return 'critical';  // 🔴
-  if (minutes >= 45)  return 'bad';       // 🟠/🔴
-  if (minutes > 20)   return 'warning';   // 🟡
-  return 'ok';
+  if (m >= 90) return 'metric-bad';     // red
+  if (m > 0)   return 'metric-warn';    // amber
+  return 'metric-ok';                   // green/ok
 }
 
 
@@ -1035,14 +1055,16 @@ getEndDiff(room: RoomData): string {
 }
 
 getEndDiffClass(room: RoomData): string {
-  const val = this.getEndDiff(room);
-  if (!val || val === '--:--') return '';
-  const [h, m] = val.split(':').map(Number);
-  const minutes = h * 60 + m;
+  // after-hours or past day: neutral (grey)
+  if (this.isRoomClosedForColoring(room)) return 'metric-neutral';
 
-  if (minutes > 120) return 'metric-red';
-  if (minutes > 60)  return 'metric-orange';
-  if (minutes > 30)  return 'metric-yellow';
+  // your existing logic here (example thresholds)
+  var s = this.getEndDiff(room); // e.g. '00:27', '01:15', '--:--'
+  if (!s || s === '--:--') return 'metric-ok';
+  var p = s.split(':'); if (p.length < 2) return 'metric-ok';
+  var mins = (+p[0]) * 60 + (+p[1]);
+  if (isNaN(mins)) return 'metric-ok';
+  if (mins <= 15) return 'metric-warn';
   return 'metric-ok';
 }
 
@@ -1564,8 +1586,8 @@ getHeaderProgressText(room: RoomData, opts?: HeaderProgressOpts): string {
 
 
   const outOfShift = Math.max(0, xOnDay - xInShift);
-  let result = `${nInShift} מתוך ${xInShift}`;
-  if (outOfShift > 0) result += ` (${outOfShift} מחוץ לשעות העבודה)`;
+  let result = `${nInShift} מתוך ${xInShift} מתוכננים`;
+  if (outOfShift > 0) result += ` (+ ${outOfShift} *)`;
   return result;
 
   // ---- helpers ----
@@ -2288,16 +2310,50 @@ private hasOverlapBacklog(room: RoomData, TURNOVER_MIN: number): boolean {
 
 
 /** True if the room’s date is strictly before today (local). */
+// public isRoomPastDay(room: RoomData): boolean {
+//   if (!room || !room.date) return false;
+//   const d = new Date(room.date);
+//   const endOfD = new Date(d); endOfD.setHours(23,59,59,999);
+
+//   const today = new Date();
+//   const startOfToday = new Date(today);
+//   startOfToday.setHours(0,0,0,0);
+
+//   return endOfD.getTime() < startOfToday.getTime();
+// }
+
+
+
+/** Is the room date strictly before today (local)? */
 public isRoomPastDay(room: RoomData): boolean {
   if (!room || !room.date) return false;
-  const d = new Date(room.date);
-  const endOfD = new Date(d); endOfD.setHours(23,59,59,999);
+  var d = new Date(room.date);
+  var end = new Date(d); end.setHours(23, 59, 59, 999);
 
-  const today = new Date();
-  const startOfToday = new Date(today);
-  startOfToday.setHours(0,0,0,0);
+  var today = new Date();
+  var startToday = new Date(today); startToday.setHours(0, 0, 0, 0);
 
-  return endOfD.getTime() < startOfToday.getTime();
+  return end.getTime() < startToday.getTime();
 }
+
+private isSameDay(a: Date, b: Date): boolean {
+  return a.getFullYear() === b.getFullYear() &&
+         a.getMonth() === b.getMonth() &&
+         a.getDate() === b.getDate();
+}
+
+/** Treat “past” OR “today after shift end” as closed (no red coloring). */
+public isRoomClosedForColoring(room: RoomData): boolean {
+  if (!room || !room.date) return false;
+  if (this.isRoomPastDay(room)) return true;
+
+  var d = new Date(room.date);
+  var now = new Date();
+  if (!this.isSameDay(d, now)) return false;        // future day or another day
+  var shiftEnd = this.workingEnd(d);                 // your 15:00
+  return now.getTime() >= shiftEnd.getTime();        // today & after 15:00 ⇒ closed
+}
+
+
 
 }

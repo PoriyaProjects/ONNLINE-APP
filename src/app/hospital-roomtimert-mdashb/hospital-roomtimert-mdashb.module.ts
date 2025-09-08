@@ -15,6 +15,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSortModule } from '@angular/material/sort';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import { SmartAutoScrollDirective } from './smart-auto-scroll.directive';
 
 
 const routes: Routes = [
@@ -22,7 +23,7 @@ const routes: Routes = [
   
 ];
 @NgModule({
-  declarations: [RoomTimeRTmDashboardComponent],
+  declarations: [RoomTimeRTmDashboardComponent, SmartAutoScrollDirective],
   imports: [
     CommonModule,
     RouterModule.forChild(routes),
