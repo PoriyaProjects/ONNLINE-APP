@@ -329,7 +329,7 @@
 
   /* Card as the scroll container */
 .room-widget.card {
-  max-height: 400px;
+  max-height: 460px;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
@@ -364,7 +364,7 @@
 .room-widget.card .room-header .status-circle {
   position: relative;
   z-index: 6;
-  top:-176px;
+  top:-218px;
 }
 
 /* Example: make scompleted rows a bit dimmer or styled */
@@ -519,6 +519,7 @@
   color: #b71c1c;
   font-weight: 700;
   border: 1px solid #ffcdd2;
+  margin: 0.25rem 0 0.4rem;
 }
 
 .warn-dot {
@@ -621,3 +622,6 @@ h4.text-center { min-height: 2.2rem; }
   display: inline-block;
   width: 1.2em;
 }
+
+
+.progress-line{text-align: center;}
