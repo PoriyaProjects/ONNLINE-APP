@@ -236,8 +236,11 @@
           </ng-container>
         </b><br />
 
-        <span *ngIf="settings.showSurgeryName">{{ s.surgeryName }}</span>
-        <span *ngIf="settings.showSurgeryCode"> ({{ s.surgeryCode }})</span>
+        <span style="font-size:15px;" *ngIf="settings.showSurgeryName">{{ s.surgeryName }}</span>
+        <span *ngIf="settings.showSurgeryCode && (s.surgeryCode?.trim())">
+  ({{ s.surgeryCode }})
+</span>
+
         <br *ngIf="settings.showSurgeryName || settings.showSurgeryCode" />
 
         <i *ngIf="settings.showDepartment">{{ s.department }}</i>
@@ -392,6 +395,7 @@
                 <label><input type="checkbox" [(ngModel)]="settings.blinkOnUnacked" [ngModelOptions]="{standalone:true}"
                     (ngModelChange)="onSettingChange('blinkOnUnacked', $event)"> הבהוב ללא אישור</label>
               </div>
+              <div style="height:60px"></div>
             </fieldset>
           </div>
         </div>
