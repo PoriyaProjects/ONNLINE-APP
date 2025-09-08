@@ -238,13 +238,12 @@
             <span [attr.title]="getUrgencyTextFromSurgery(s)">{{ icon }}</span>
           </ng-container>
         </b><br />
-
-        <span style="font-size:15px;" *ngIf="settings.showSurgeryName">{{ s.surgeryName }}</span>
+        <span *ngIf="settings.showSurgeryName && (s.surgeryName?.trim())">{{ s.surgeryName }}</span>
         <span *ngIf="settings.showSurgeryCode && (s.surgeryCode?.trim())">
           ({{ s.surgeryCode }})
         </span>
 
-        <br *ngIf="settings.showSurgeryName || settings.showSurgeryCode" />
+        <br *ngIf="(settings.showSurgeryName || settings.showSurgeryCode) && (s.surgeryName?.trim())" />
 
         <i *ngIf="settings.showDepartment">{{ s.department }}</i>
         <br *ngIf="settings.showDepartment" />
