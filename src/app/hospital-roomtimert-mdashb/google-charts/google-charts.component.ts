@@ -1343,7 +1343,7 @@ private formatHM(mins: number): string {
 statusTranslations: Record<string, string> = {
   'Completed': 'הסתיים',
   'InProgress': 'בתהליך',
-  'Scheduled': 'מתוכנן',
+  'Scheduled': 'מתוזמן',
   'Cancelled': 'בוטל', 
   'Planned' : 'מתוכנן'
 };
