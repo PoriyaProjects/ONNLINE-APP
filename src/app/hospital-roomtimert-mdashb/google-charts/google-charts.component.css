@@ -543,7 +543,7 @@
 
 .warn-icon { margin-inline-end: .25rem; font-weight: 700; color: #b71c1c; }
 .progress-line { display: flex; align-items: center; justify-content: center; gap: .25rem; }
-.metric-chip { margin: 0 .25rem; }
+.metric-chip { margin: 0; } /* .25rem*/
 
 
 .room-alert-chip--placeholder {
@@ -633,3 +633,34 @@ h4.text-center { min-height: 2.2rem; }
 .live-dot { display:inline-block; width:6px; height:6px; margin-inline-start:6px;
   border-radius:50%; background: currentColor; opacity:.6; animation: pulse 1.2s ease-in-out infinite; vertical-align:middle; }
 @keyframes pulse { 0%,100% { transform:scale(.8); opacity:.4 } 50% { transform:scale(1); opacity:1 } }
+
+
+.summary-card > *{direction:rtl; text-align: right;}
+.summary-card { border:1px solid #e5e5e5; border-radius:10px; padding:12px 14px; margin:10px 0 16px; background:#fff; }
+.summary-header { font-weight:700; margin-bottom:8px; }
+.summary-grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(180px,1fr)); gap:10px; }
+.summary-pill { border:1px solid #eee; border-radius:8px; padding:10px; }
+.summary-pill .k { font-size:12px; opacity:.7; margin-bottom:2px; }
+.summary-pill .v { font-size:22px; font-weight:700; line-height:1.2; }
+.summary-pill .sub { font-size:12px; opacity:.8; }
+.summary-section { margin-top:10px; }
+.section-title { font-weight:600; margin-bottom:6px; }
+.now-list { list-style:none; padding:0; margin:0; }
+.now-list li { padding:3px 0; }
+.rooms-list { display:flex; flex-wrap:wrap; gap:8px; }
+.room-chip { border:1px solid #eee; border-radius:20px; padding:6px 10px; font-size:13px; white-space:nowrap; }
+.room-id { font-weight:600; margin-inline-end:6px; }
+.dot { display:inline-block; width:8px; height:8px; border-radius:50%; margin:0 2px; vertical-align:middle; }
+.dot.ok { background:#3cb371; }     /* completed */
+.dot.run { background:#ff8c00; }    /* in progress */
+.dot.plan { background:#1e90ff; }   /* planned */
+.muted { opacity:.65; }
+
+
+
+.urgency-line { margin-top: 4px; }
+.urgency-line .urge {
+  background: transparent; border: 0; cursor: pointer; padding: 0 4px; font: inherit;
+}
+.urgency-line .urge:focus { outline: none; text-decoration: underline; }
+.summary-section .urge.close { float: inline-start; margin-inline-start: 6px; }

@@ -1,9 +1,13 @@
 <style>
-/* set the container width */
-.date-compact.mat-form-field { width: 120px; }
+  /* set the container width */
+  .date-compact.mat-form-field {
+    width: 120px;
+  }
 
-/* force the infix width (needs deep selector due to encapsulation) */
-:host ::ng-deep .date-compact .mat-form-field-infix { width: 100px; }
+  /* force the infix width (needs deep selector due to encapsulation) */
+  :host ::ng-deep .date-compact .mat-form-field-infix {
+    width: 100px;
+  }
 </style>
 
 <div class="mdc-layout-grid" style="direction: rtl;">
@@ -47,43 +51,38 @@
           </div>
 
 
-  <div style="margin: 10px 0;">
-          <span style="margin: 10px 0;" class="date-controls" *ngIf="settings.showDateControls !== false">
-            <label for="dateSelect">שינוי תאריך </label>            
-            <mat-form-field appearance="legacy" class="date-compact">
-              <input
-                matInput
-                [matDatepicker]="picker"    
-                [(ngModel)]="selectedDateObj"
-                (dateChange)="onMatDateChange($event.value)" />
-              <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
-              <mat-datepicker #picker></mat-datepicker>
-            </mat-form-field>
+          <div style="margin: 10px 0;">
+            <span style="margin: 10px 0;" class="date-controls" *ngIf="settings.showDateControls !== false">
+              <label for="dateSelect">שינוי תאריך </label>
+              <mat-form-field appearance="legacy" class="date-compact">
+                <input matInput [matDatepicker]="picker" [(ngModel)]="selectedDateObj"
+                  (dateChange)="onMatDateChange($event.value)" />
+                <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+                <mat-datepicker #picker></mat-datepicker>
+              </mat-form-field>
 
-            <button (click)="toggleAll()"
-              style="margin-bottom:10px;margin-right:20px; border-color: #aaa; border-radius: 6px;"
-              [title]="allExpanded ? 'סגור את כל החדרים' : 'פתח את כל החדרים'">
-              {{ allExpanded ? '🔽 סגור הכל' : '🔼 פתח הכל' }}
-            </button>
-          </span>
-          <span style="margin: 10px 0;">
-            <button mat-stroked-button color="primary" (click)="acknowledgeAllRooms()" style="margin-right:10px;"
-              title="סמן כל החדרים כמאושרים">
-              אשר כל החדרים
-            </button>
-          </span>
-</div>
+              <button (click)="toggleAll()"
+                style="margin-bottom:10px;margin-right:20px; border-color: #aaa; border-radius: 6px;"
+                [title]="allExpanded ? 'סגור את כל החדרים' : 'פתח את כל החדרים'">
+                {{ allExpanded ? '🔽 סגור הכל' : '🔼 פתח הכל' }}
+              </button>
+            </span>
+            <span style="margin: 10px 0;">
+              <button mat-stroked-button color="primary" (click)="acknowledgeAllRooms()" style="margin-right:10px;"
+                title="סמן כל החדרים כמאושרים">
+                אשר כל החדרים
+              </button>
+            </span>
+          </div>
 
           <div id="surgeriesrts" class="dashboard" [class.background-mode]="settings.backgroundMode === true">
             <div *ngIf="isLoading" class="loader-overlay">
               <div class="spinner"></div>
             </div>
-           
-          
 
-     <div class="room-widget card"
-     *ngFor="let room of roomsData; trackBy: trackByRoomId"
-     [ngClass]="[
+
+
+            <div class="room-widget card" *ngFor="let room of roomsData; trackBy: trackByRoomId" [ngClass]="[
        (settings.colorize && !isRoomClosedForColoring(room)) ? getRoomStatusClassWithSettings(room) : '',
        (settings.colorize && settings.colorMode === 'background' && !isRoomClosedForColoring(room)) ? 'status-mode-bg' : '',
        (settings.backgroundMode ? 'background-mode' : ''),
@@ -98,12 +97,12 @@
 
                 <!-- Title + late-warning chip -->
 
-               <h4 class="text-center">
-  {{ translateRoomId(room.roomId) }}
+                <h4 class="text-center">
+                  {{ translateRoomId(room.roomId) }}
 
-  <ng-container *ngIf="settings.showLateChip !== false">
-    <ng-container *ngIf="getRoomLateMeta(room) as late">
-  <!-- <ng-container *ngIf="getRoomLateMeta(room) as late">
+                  <ng-container *ngIf="settings.showLateChip !== false">
+                    <ng-container *ngIf="getRoomLateMeta(room) as late">
+                      <!-- <ng-container *ngIf="getRoomLateMeta(room) as late">
       <span *ngIf="late && late.isLate; else lateChipPlaceholder"
             class="room-alert-chip"
             role="alert"
@@ -115,24 +114,23 @@
       </span>
     </ng-container> -->
 
-  <!-- Overlap/backlog chip -->
-  <span *ngIf="late && late.hasOverlapBacklog; else overlapChipPlaceholder"
-        class="overlap-chip"
-        [attr.title]="'Backlog overlap: ' + (late.backlogCount || 0) + ' planned before current case ends (' + (late.overlapUntil | date:'HH:mm') + ')'">
-    ⏱️ עומס
-  </span>
-  <ng-template #overlapChipPlaceholder>
-    <span class="overlap-chip overlap-chip--placeholder" aria-hidden="true">⏱️ עומס</span>
-  </ng-template>
-</ng-container>
+                      <!-- Overlap/backlog chip -->
+                      <span *ngIf="late && late.hasOverlapBacklog; else overlapChipPlaceholder" class="overlap-chip"
+                        [attr.title]="'Backlog overlap: ' + (late.backlogCount || 0) + ' planned before current case ends (' + (late.overlapUntil | date:'HH:mm') + ')'">
+                        ⏱️ עומס
+                      </span>
+                      <ng-template #overlapChipPlaceholder>
+                        <span class="overlap-chip overlap-chip--placeholder" aria-hidden="true">⏱️ עומס</span>
+                      </ng-template>
+                    </ng-container>
 
-    <ng-template #lateChipPlaceholder>
-      <span class="room-alert-chip room-alert-chip--placeholder" aria-hidden="true">
-        ⚠️ חריגה צפויה <span class="warn-dot" aria-hidden="true"></span>
-      </span>
-    </ng-template>
-  </ng-container>
-</h4>
+                    <ng-template #lateChipPlaceholder>
+                      <span class="room-alert-chip room-alert-chip--placeholder" aria-hidden="true">
+                        ⚠️ חריגה צפויה <span class="warn-dot" aria-hidden="true"></span>
+                      </span>
+                    </ng-template>
+                  </ng-container>
+                </h4>
 
 
                 <!-- Header metrics chips -->
@@ -162,58 +160,53 @@
                   </span>
                 </div>
 
-              <!-- Center badge -->
-<div *ngIf="settings.showHeaderBadge && isRoomToday(room)"
-     class="status-circle2 text-center"
-     style="margin:10px auto"
-     [ngClass]="getRoomStatusClassWithSettings(room)">
-  <ng-container *ngIf="hasInProgress(room); else freeTpl">
-    {{ getHeaderInProgressLabel(room) }}
-    <ng-container *ngIf="settings.showHeaderIcon && getHeaderProgressIcon(room) as icon">
-      <span [attr.title]="getHeaderProgressTitle(room)">{{ icon }}</span>
-    </ng-container>
-  </ng-container>
+                <!-- Center badge -->
+                <div *ngIf="settings.showHeaderBadge && isRoomToday(room)" class="status-circle2 text-center"
+                  style="margin:10px auto" [ngClass]="getRoomStatusClassWithSettings(room)">
+                  <ng-container *ngIf="hasInProgress(room); else freeTpl">
+                    {{ getHeaderInProgressLabel(room) }}
+                    <ng-container *ngIf="settings.showHeaderIcon && getHeaderProgressIcon(room) as icon">
+                      <span [attr.title]="getHeaderProgressTitle(room)">{{ icon }}</span>
+                    </ng-container>
+                  </ng-container>
 
-<ng-template #freeTpl>
-  פנוי
-  <ng-container *ngIf="ticker$ | async as _">
-    <ng-container *ngIf="getRoomIdleCounter(room, !!settings?.showIdleSeconds) as idle">
-      <span class="idle-chip" [attr.title]="idle.title">· {{ idle.display }}</span>
-      <span class="live-dot" aria-hidden="true"></span>
-    </ng-container>
-  </ng-container>
-</ng-template>
+                  <ng-template #freeTpl>
+                    פנוי
+                    <ng-container *ngIf="ticker$ | async as _">
+                      <ng-container *ngIf="getRoomIdleCounter(room, !!settings?.showIdleSeconds) as idle">
+                        <span class="idle-chip" [attr.title]="idle.title">· {{ idle.display }}</span>
+                        <span class="live-dot" aria-hidden="true"></span>
+                      </ng-container>
+                    </ng-container>
+                  </ng-template>
 
 
-</div>
+
+                </div>
 
 
                 <!-- N from X + inline warn icon -->
                 <div class="small progress-line" *ngIf="settings.showHeaderProgress">
-  <ng-container *ngIf="getRoomLateMeta(room) as late">
-    <span *ngIf="late && late.isLate; else warnIconPlaceholder"
-          class="warn-icon"
-          
-          [attr.title]="'תחזית סיום -' + (late.predictedEnd | date:'HH:mm') + ' (' + late.overrunMin + '׳)'"
-          aria-hidden="true"
-          (click)="acknowledgeRoomLate(room); $event.stopPropagation()">⚠️</span>
-          <!-- [class.blink]="!isRoomAcked(room)" -->
-          <span *ngIf="late && late.hasOverlapBacklog"
-          class="overlap-icon"
-          [attr.title]="'Overlap backlog (' + (late.backlogCount || 0) + ')'">⏱️</span>
-  </ng-container>
-  <ng-template #warnIconPlaceholder>
-    <span class="warn-icon warn-icon--placeholder" aria-hidden="true">⚠️</span>
-  </ng-template>
+                  <ng-container *ngIf="getRoomLateMeta(room) as late">
+                    <span *ngIf="late && late.isLate; else warnIconPlaceholder" class="warn-icon"
+                      [attr.title]="'תחזית סיום -' + (late.predictedEnd | date:'HH:mm') + ' (' + late.overrunMin + '׳)'"
+                      aria-hidden="true" (click)="acknowledgeRoomLate(room); $event.stopPropagation()">⚠️</span>
+                    <!-- [class.blink]="!isRoomAcked(room)" -->
+                    <span *ngIf="late && late.hasOverlapBacklog" class="overlap-icon"
+                      [attr.title]="'Overlap backlog (' + (late.backlogCount || 0) + ')'">⏱️</span>
+                  </ng-container>
+                  <ng-template #warnIconPlaceholder>
+                    <span class="warn-icon warn-icon--placeholder" aria-hidden="true">⚠️</span>
+                  </ng-template>
 
-  {{ getHeaderProgressText(room) }}
-</div>
+                  {{ getHeaderProgressText(room) }}
+                </div>
 
 
                 <!-- Expand button -->
                 <div class="expand_btn" *ngIf="settings.showExpandBtn !== false">
-  {{ isRoomExpanded(room.roomId) ? '⮝' : '⮟' }}
-</div>
+                  {{ isRoomExpanded(room.roomId) ? '⮝' : '⮟' }}
+                </div>
 
 
                 <!-- Right-side status dot -->
@@ -223,88 +216,87 @@
 
 
               <!-- Body -->
-              <div class="room-body"
-     *ngIf="isRoomExpanded(room.roomId)"
-     smartAutoScroll                                 
-     [runOnce]="false"
-     style="max-height:460px; overflow:auto;">       
+              <div class="room-body" *ngIf="isRoomExpanded(room.roomId)" smartAutoScroll [runOnce]="false"
+                style="max-height:460px; overflow:auto;">
 
-  <ng-container *ngIf="activeSurgeries(room) as active">
-    <div *ngFor="let s of active; let i = index; trackBy: trackBySurgeryId"
-         class="surgery-block"
-         style="direction:rtl; text-align:right;">
+                <ng-container *ngIf="activeSurgeries(room) as active">
+                  <div *ngFor="let s of active; let i = index; trackBy: trackBySurgeryId" class="surgery-block"
+                    style="direction:rtl; text-align:right;">
 
-      <!-- Turnover line BEFORE each surgery except the first -->
-      <ng-container *ngIf="settings.showTurnoverLines && i > 0">
-        <ng-container *ngIf="getTurnoverBetween(active[i-1], s) as turnover">
-          <div class="turnover-line" [ngClass]="getTurnoverBetweenClass(active[i-1], s)">
-            ⏳ {{ turnover }}
-          </div>
-        </ng-container>
-      </ng-container>
+                    <!-- Turnover line BEFORE each surgery except the first -->
+                    <ng-container *ngIf="settings.showTurnoverLines && i > 0">
+                      <ng-container *ngIf="getTurnoverBetween(active[i-1], s) as turnover">
+                        <div class="turnover-line" [ngClass]="getTurnoverBetweenClass(active[i-1], s)">
+                          ⏳ {{ turnover }}
+                        </div>
+                      </ng-container>
+                    </ng-container>
 
-      <!-- Surgery details -->
-      <div class="surgery-row"
-           [class.scompleted]="s?.status === 'Completed'"
-           [attr.data-status]="s?.status">            
-        <b style="font-weight:800">
-          ⮜ {{ s.surgeryId }}
-          <ng-container *ngIf="(settings.showUrgencyIcon !== false) && getUrgencyIconFromSurgery(s) as icon">
-            <span [attr.title]="getUrgencyTextFromSurgery(s)">{{ icon }}</span>
-          </ng-container>
-        </b><br />
-        <span style="direction:ltr; text-align:left;float: left; font-size: small;" *ngIf="settings.showSurgeryName && (s.surgeryName?.trim())">{{ s.surgeryName }}</span>
-        <span style="direction:ltr; text-align:left;float: left; font-size: small;" *ngIf="settings.showSurgeryCode && (s.surgeryCode?.trim())">
-          ({{ s.surgeryCode }})
-        </span>
+                    <!-- Surgery details -->
+                    <div class="surgery-row" [class.scompleted]="s?.status === 'Completed'"
+                      [attr.data-status]="s?.status">
+                      <b style="font-weight:800">
+                        ⮜ {{ s.surgeryId }}
+                        <ng-container
+                          *ngIf="(settings.showUrgencyIcon !== false) && getUrgencyIconFromSurgery(s) as icon">
+                          <span [attr.title]="getUrgencyTextFromSurgery(s)">{{ icon }}</span>
+                        </ng-container>
+                      </b><br />
+                      <span style="direction:ltr; text-align:left;float: left; font-size: small;"
+                        *ngIf="settings.showSurgeryName && (s.surgeryName?.trim())">{{ s.surgeryName }}</span>
+                      <span style="direction:ltr; text-align:left;float: left; font-size: small;"
+                        *ngIf="settings.showSurgeryCode && (s.surgeryCode?.trim())">
+                        ({{ s.surgeryCode }})
+                      </span>
 
-        <br *ngIf="(settings.showSurgeryName || settings.showSurgeryCode) && (s.surgeryName?.trim())" />
+                      <br *ngIf="(settings.showSurgeryName || settings.showSurgeryCode) && (s.surgeryName?.trim())" />
 
-        <i *ngIf="settings.showDepartment">{{ s.department }}</i>
-        <br *ngIf="settings.showDepartment" />
+                      <i *ngIf="settings.showDepartment">{{ s.department }}</i>
+                      <br *ngIf="settings.showDepartment" />
 
-        <b *ngIf="settings.showTimes">{{ s.timeEntrance }} ← {{ s.timeExit || '...' }}</b>
-        <br *ngIf="settings.showTimes" />
+                      <b *ngIf="settings.showTimes">{{ s.timeEntrance }} ← {{ s.timeExit || '...' }}</b>
+                      <br *ngIf="settings.showTimes" />
 
-        <span *ngIf="settings.showStatus" class="status" [ngClass]="s.status">
-          {{ translateStatus(s.status) }}
-        </span>
-        <br /><br />
-      </div>
-    </div>
-  </ng-container>
+                      <span *ngIf="settings.showStatus" class="status" [ngClass]="s.status">
+                        {{ translateStatus(s.status) }}
+                      </span>
+                      <br /><br />
+                    </div>
+                  </div>
+                </ng-container>
 
-  <!-- Planned surgeries -->
-  <ng-container *ngIf="settings.showPlannedSection && plannedSurgeries(room) as planned">
-    <div *ngIf="planned.length">
-      <hr />
-      <h5 style="direction:rtl; text-align:right;">נתוחים מתוכננים</h5>
+                <!-- Planned surgeries -->
+                <ng-container *ngIf="settings.showPlannedSection && plannedSurgeries(room) as planned">
+                  <div *ngIf="planned.length">
+                    <hr />
+                    <h5 style="direction:rtl; text-align:right;">נתוחים מתוכננים</h5>
 
-      <div *ngFor="let s of planned; trackBy: trackBySurgeryId"
-           class="surgery-row"
-           [attr.data-planned]="true"                
-           style="direction:rtl; text-align:right;">
-      ⮜ {{ s.surgeryName }}
-      <ng-container *ngIf="settings.showSurgeryCode && s.surgeryCode?.trim()">
-        ({{ s.surgeryCode }})
-      </ng-container>
-      <ng-container *ngIf="s.department?.trim()">
-        - {{ s.department }}
-      </ng-container>
+                    <div *ngFor="let s of planned; trackBy: trackBySurgeryId" class="surgery-row"
+                      [attr.data-planned]="true" style="direction:rtl; text-align:right;">
+                      ⮜ <ng-container
+                        *ngIf="(settings.showUrgencyIcon !== false) && getUrgencyIconFromSurgery(s) as icon">
+                        <span [attr.title]="getUrgencyTextFromSurgery(s)">{{ icon }}</span>
+                      </ng-container> {{ s.surgeryName }}
+                      <ng-container *ngIf="settings.showSurgeryCode && s.surgeryCode?.trim()">
+                        ({{ s.surgeryCode }})
+                      </ng-container>
+                      <ng-container *ngIf="s.department?.trim()">
+                        - {{ s.department }}
+                      </ng-container>
 
-        <br />
-        <b *ngIf="settings.showTimes">{{ s.timeEntrance }} ← {{ s.timeExit || '...' }}</b>
-        <br *ngIf="settings.showTimes" />
+                      <br />
+                      <b *ngIf="settings.showTimes">{{ s.timeEntrance }} ← {{ s.timeExit || '...' }}</b>
+                      <br *ngIf="settings.showTimes" />
 
-        <span *ngIf="settings.showStatus" class="status" [ngClass]="s.status">
-          {{ translateStatus(s.status) }}
-        </span>
-        <br />
-      </div>
-    </div>
-  </ng-container>
+                      <span *ngIf="settings.showStatus" class="status" [ngClass]="s.status">
+                        {{ translateStatus(s.status) }}
+                      </span>
+                      <br />
+                    </div>
+                  </div>
+                </ng-container>
 
-</div>
+              </div>
 
             </div>
 
@@ -323,16 +315,10 @@
               🔴 אדום = עיכוב חמור (גבוה מ־45 דק׳, 60 דק׳, 120 דק׳) <br />
               🚑 = דחוף |
               🏥 = ססיה - אשפוז |
-              📖 = אלקטיב |
+              📖 = אלקטיבי |
               🚶 = אמבולטורי |
               ⬇️ = ללא עדיפות
             </div>
-
-          </div>
-          <div style="height:10px;"></div>
-        </div>
-
-
         <!-- Display Settings (hidden entirely if no userId) -->
         <div *ngIf="userId" class="display-panel" style="text-align: right;">
           <button type="button" (click)="showDisplayPanel = !showDisplayPanel"
@@ -351,22 +337,22 @@
               </label>
             </div>
             <!-- Presets -->
-           <div class="row">
+            <div class="row">
               <label>
                 <input type="radio" name="dispPreset" [value]="'default'" [(ngModel)]="displayPreset"
-                      [ngModelOptions]="{standalone:true}" (ngModelChange)="applyPreset($event)"> ברירת מחדל
+                  [ngModelOptions]="{standalone:true}" (ngModelChange)="applyPreset($event)"> ברירת מחדל
               </label>
               <label style="margin-inline-start:12px;">
                 <input type="radio" name="dispPreset" [value]="'all'" [(ngModel)]="displayPreset"
-                      [ngModelOptions]="{standalone:true}" (ngModelChange)="applyPreset($event)"> הצג הכל
+                  [ngModelOptions]="{standalone:true}" (ngModelChange)="applyPreset($event)"> הצג הכל
               </label>
               <label style="margin-inline-start:12px;">
                 <input type="radio" name="dispPreset" [value]="'custom'" [(ngModel)]="displayPreset"
-                      [ngModelOptions]="{standalone:true}" (ngModelChange)="applyPreset($event)"> מותאם
+                  [ngModelOptions]="{standalone:true}" (ngModelChange)="applyPreset($event)"> מותאם
               </label>
               <label style="margin-inline-start:12px;">
                 <input type="radio" name="dispPreset" [value]="'minimal'" [(ngModel)]="displayPreset"
-                      [ngModelOptions]="{standalone:true}" (ngModelChange)="applyPreset($event)"> מינימלי
+                  [ngModelOptions]="{standalone:true}" (ngModelChange)="applyPreset($event)"> מינימלי
               </label>
             </div>
 
@@ -419,20 +405,154 @@
                 <label><input type="checkbox" [(ngModel)]="settings.blinkOnUnacked" [ngModelOptions]="{standalone:true}"
                     (ngModelChange)="onSettingChange('blinkOnUnacked', $event)"> הבהוב ללא אישור</label> |
 
-                    <label style="display:flex;align-items:center;gap:.5rem;">
-                      <input type="checkbox" [(ngModel)]="settings.showIdleSeconds" />
-                      הצג שניות בטיימר "פנוי"
-                    </label> |
+                <label style="display:flex;align-items:center;gap:.5rem;">
+                  <input type="checkbox" [(ngModel)]="settings.showIdleSeconds" />
+                  הצג שניות בטיימר "פנוי"</label> |
+                
+                  <label>
+                  <input type="checkbox" [(ngModel)]="settings.hideIdleWhenNoPlanned"
+                    [ngModelOptions]="{standalone:true}"
+                    (ngModelChange)="onSettingChange('hideIdleWhenNoPlanned', $event)">
+                  הסתר טיימר אם אין עוד "מתוכנן"</label> |
 
-                    | <label>
-    <input type="checkbox"
-           [(ngModel)]="settings.hideIdleWhenNoPlanned"
-           [ngModelOptions]="{standalone:true}"
-           (ngModelChange)="onSettingChange('hideIdleWhenNoPlanned', $event)">
-    הסתר טיימר אם אין עוד "מתוכנן"
-  </label>
+                <label>
+                  <input type="checkbox" [(ngModel)]="settings.continueIdleAfter1500WhenPlanned"
+                    [ngModelOptions]="{standalone:true}"
+                    (ngModelChange)="onSettingChange('continueIdleAfter1500WhenPlanned', $event)">
+                  המשך טיימר אחרי 15:00 אם יש עוד "מתוכנן"
+                </label>
+<label style="display:flex;align-items:center;gap:.5rem;">
+  <input type="checkbox"
+         [(ngModel)]="$any(settings).showSummaryCard"
+         [ngModelOptions]="{standalone:true}"
+         (ngModelChange)="onSettingChange && onSettingChange('showSummaryCard', $event)">
+  הצג כרטיס סיכום יום
+</label>
+
+
+
               </div>
               <div style="height:60px"></div>
             </fieldset>
           </div>
         </div>
+          </div>
+          <div style="height:10px;"></div>
+
+
+          <!-- ───── Summary Card ───── -->
+            <!-- <div class="row card" style="margin-top: 20px;"> -->
+    <div *ngIf="$any(settings)?.showSummaryCard && getSummaryForToday() as s"
+        class="summary-card" dir="rtl">
+
+      <div class="summary-header">
+        🗓️ סיכום · {{ s.dateISO }}
+      </div>
+
+      <div class="summary-grid">
+        <div class="summary-pill">
+          <div class="k">סה״כ ניתוחים</div>
+          <div class="v">{{ s.totals.surgeries }}</div>
+          <div class="sub">✔ {{ s.totals.completed }} · ⏳ {{ s.totals.inProgress }} · 📋 {{ s.totals.planned }}</div>
+          <!-- דחיפות (Urgency) -->
+<div class="sub urgency-line">
+  <button type="button" class="urge"
+          [attr.title]="s.urgency.labels.urgent"
+          (click)="summaryDrilldownUrgency = summaryDrilldownUrgency === 'urgent' ? null : 'urgent'">
+    {{ s.urgency.icons.urgent }} {{ s.urgency.counts.urgent }}
+  </button>
+  |
+  <button type="button" class="urge"
+          [attr.title]="s.urgency.labels.sessionInpatient"
+          (click)="summaryDrilldownUrgency = summaryDrilldownUrgency === 'sessionInpatient' ? null : 'sessionInpatient'">
+    {{ s.urgency.icons.sessionInpatient }} {{ s.urgency.counts.sessionInpatient }}
+  </button>
+  |
+  <button type="button" class="urge"
+          [attr.title]="s.urgency.labels.elective"
+          (click)="summaryDrilldownUrgency = summaryDrilldownUrgency === 'elective' ? null : 'elective'">
+    {{ s.urgency.icons.elective }} {{ s.urgency.counts.elective }}
+  </button>
+  |
+  <button type="button" class="urge"
+          [attr.title]="s.urgency.labels.ambulatory"
+          (click)="summaryDrilldownUrgency = summaryDrilldownUrgency === 'ambulatory' ? null : 'ambulatory'">
+    {{ s.urgency.icons.ambulatory }} {{ s.urgency.counts.ambulatory }}
+  </button>
+  |
+  <button type="button" class="urge"
+          [attr.title]="s.urgency.labels.noPriority"
+          (click)="summaryDrilldownUrgency = summaryDrilldownUrgency === 'noPriority' ? null : 'noPriority'">
+    {{ s.urgency.icons.noPriority }} {{ s.urgency.counts.noPriority }}
+  </button>
+</div>
+
+        </div>
+
+        <div class="summary-pill">
+          <div class="k">חדרים</div>
+          <div class="v">{{ s.rooms.total }}</div>
+          <div class="sub">פעילים: {{ s.rooms.active }} · פנויים: {{ s.rooms.free }}</div>
+        </div>
+
+        <div class="summary-pill">
+          <div class="k">זמן פעילות מצטבר</div>
+          <div class="v">{{ s.time.totalHMM }}</div>
+          <div class="sub">ממוצע למקרה: {{ s.time.avgHMM }}</div>
+        </div>
+
+        <div class="summary-pill" *ngIf="s.busiest">
+          <div class="k">החדר העמוס</div>
+          <div class="v">{{ translateRoomId(s.busiest.room) }}</div>          
+          <div class="sub">{{ s.busiest.totalHMM }} · {{ s.busiest.cases }} מקרים<span *ngIf="s.busiest.hasInProgress"> · ⏳</span></div>
+        </div>
+      </div>
+
+      <div class="summary-section" *ngIf="s.inProgressList?.length">
+        <div class="section-title">⏱️ עכשיו בתהליך ({{ s.totals.inProgress }})</div>
+        <ul class="now-list">
+          <li *ngFor="let it of s.inProgressList">
+            <strong>{{ translateRoomId(it.room) }}</strong> — {{ it.title }} <span class="muted">({{ it.depart || '—' }})</span>
+            · {{ it.start }} – {{ it.end || '—' }}
+          </li>
+        </ul>
+      </div>
+
+      <div class="summary-section">
+        <div class="section-title">מצב חדרים</div>
+        <div class="rooms-list">
+          <div class="room-chip" *ngFor="let r of s.byRoom">
+            <span class="room-id">{{ translateRoomId(r.room) }}</span>             
+            <span class="dot ok" *ngFor="let i of [].constructor(r.completed)"></span>
+            <span class="dot run" *ngFor="let i of [].constructor(r.inProgress)"></span>
+            <span class="dot plan" *ngFor="let i of [].constructor(r.planned)"></span>
+            <span class="muted" *ngIf="!r.inProgress && !r.planned && r.latestExit">· הסתיים {{ r.latestExit }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- דריל־דאון לפי דחיפות -->
+<div class="summary-section" *ngIf="summaryDrilldownUrgency as uKey">
+  <div class="section-title">
+    פירוט לפי דחיפות: {{ s.urgency.icons[uKey] }} {{ s.urgency.labels[uKey] }}
+    <button type="button" class="urge close" (click)="summaryDrilldownUrgency = null" aria-label="סגור">✕</button>
+  </div>
+  <ul class="now-list">
+    <li *ngFor="let it of s.urgency.lists[uKey] | slice:0:20">
+      <strong>{{ it.SurgeryRoom || it.room || '—' }}</strong> —
+      {{ (it.SurgeryName || it.surgeryName || it.SurgeryCode || it.surgeryCode || '—') }}
+      <span class="muted">({{ it.DepartName || it.department || '—' }})</span>
+      · {{ it.TimeEntranceToTheOperatingRoom || it.timeEntrance || '—' }} – {{ it.TimeExitingTheOperatingRoom || it.timeExit || '—' }}
+      · {{ it.SurgeryStatus || it.status || '—' }}
+    </li>
+  </ul>
+</div>
+
+    </div>
+    <!-- </div> -->
+<!-- ───── /Summary Card ───── -->
+
+
+        </div>
+
+
