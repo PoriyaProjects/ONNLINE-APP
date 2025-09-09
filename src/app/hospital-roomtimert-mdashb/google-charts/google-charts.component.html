@@ -193,10 +193,11 @@
   <ng-container *ngIf="getRoomLateMeta(room) as late">
     <span *ngIf="late && late.isLate; else warnIconPlaceholder"
           class="warn-icon"
-          [class.blink]="!isRoomAcked(room)"
+          
           [attr.title]="'תחזית סיום -' + (late.predictedEnd | date:'HH:mm') + ' (' + late.overrunMin + '׳)'"
           aria-hidden="true"
           (click)="acknowledgeRoomLate(room); $event.stopPropagation()">⚠️</span>
+          <!-- [class.blink]="!isRoomAcked(room)" -->
           <span *ngIf="late && late.hasOverlapBacklog"
           class="overlap-icon"
           [attr.title]="'Overlap backlog (' + (late.backlogCount || 0) + ')'">⏱️</span>
