@@ -105,6 +105,7 @@ export interface DisplaySettings {
   showDateControls?: boolean;  // default true
   backgroundMode?: boolean;
   showIdleSeconds?: boolean;
+  hideIdleWhenNoPlanned?: boolean;
 }
 
 export const DEFAULT_SETTINGS: DisplaySettings = {  
@@ -131,7 +132,8 @@ export const DEFAULT_SETTINGS: DisplaySettings = {
   showExpandBtn: true,
   showDateControls: true,
   backgroundMode: false,
-  showIdleSeconds: true
+  showIdleSeconds: true,
+  hideIdleWhenNoPlanned: true
 };
 
 
@@ -2448,6 +2450,11 @@ getRoomIdleCounter(room: any, showSeconds = false):
     if (!this.isRoomToday(room)) return null;
     if (this.hasInProgress(room)) return null;
 
+    if (this.settings?.hideIdleWhenNoPlanned) {
+      const plannedLeft = (this.plannedSurgeries && this.plannedSurgeries(room))?.length > 0;
+      if (!plannedLeft) return null;
+    }
+    
     const now = this._clampTo1500(this._nowInSelectedDay());
     const dayStart = this._parseOnSelectedDay('07:30');
 

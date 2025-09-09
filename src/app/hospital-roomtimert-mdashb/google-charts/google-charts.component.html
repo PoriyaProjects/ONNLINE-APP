@@ -176,15 +176,14 @@
 
 <ng-template #freeTpl>
   פנוי
-  <!-- Re-evaluate every second so the number ticks -->
   <ng-container *ngIf="ticker$ | async as _">
     <ng-container *ngIf="getRoomIdleCounter(room, !!settings?.showIdleSeconds) as idle">
       <span class="idle-chip" [attr.title]="idle.title">· {{ idle.display }}</span>
-      <!-- subtle live indicator even if seconds are off -->
       <span class="live-dot" aria-hidden="true"></span>
     </ng-container>
   </ng-container>
 </ng-template>
+
 
 </div>
 
@@ -417,12 +416,20 @@
                     (ngModelChange)="onSettingChange('colorize', $event)"> צבעי מצב</label> |
 
                 <label><input type="checkbox" [(ngModel)]="settings.blinkOnUnacked" [ngModelOptions]="{standalone:true}"
-                    (ngModelChange)="onSettingChange('blinkOnUnacked', $event)"> הבהוב ללא אישור</label>
+                    (ngModelChange)="onSettingChange('blinkOnUnacked', $event)"> הבהוב ללא אישור</label> |
 
                     <label style="display:flex;align-items:center;gap:.5rem;">
                       <input type="checkbox" [(ngModel)]="settings.showIdleSeconds" />
                       הצג שניות בטיימר "פנוי"
-                    </label>
+                    </label> |
+
+                    | <label>
+    <input type="checkbox"
+           [(ngModel)]="settings.hideIdleWhenNoPlanned"
+           [ngModelOptions]="{standalone:true}"
+           (ngModelChange)="onSettingChange('hideIdleWhenNoPlanned', $event)">
+    הסתר טיימר אם אין עוד "מתוכנן"
+  </label>
               </div>
               <div style="height:60px"></div>
             </fieldset>
