@@ -6,6 +6,8 @@ import { sanitizeSoapResponse, sanitizeSoapChartData } from 'src/app/shared/sani
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { ChangeDetectorRef, Input } from '@angular/core';
+import { interval } from 'rxjs';
+import { startWith, shareReplay } from 'rxjs/operators';
 
 
 
@@ -102,6 +104,7 @@ export interface DisplaySettings {
   showExpandBtn?: boolean;     // default true
   showDateControls?: boolean;  // default true
   backgroundMode?: boolean;
+  showIdleSeconds?: boolean;
 }
 
 export const DEFAULT_SETTINGS: DisplaySettings = {  
@@ -128,6 +131,7 @@ export const DEFAULT_SETTINGS: DisplaySettings = {
   showExpandBtn: true,
   showDateControls: true,
   backgroundMode: false,
+  showIdleSeconds: true
 };
 
 
@@ -1798,7 +1802,7 @@ private urgencyIconRaw(u: any): string {
   // Hebrew / English hints
   if (s.indexOf('דחוף') >= 0 || low.indexOf('urgent') >= 0) return '🚑';     // or '⚠️'
   if (s.indexOf('ססיה') >= 0 || s.indexOf('אשפוז') >= 0 || low.indexOf('inpatient') >= 0) return '🏥';
-  if (s.indexOf('יאלקטיב') >= 0 || low.indexOf('elect') >= 0) return '📖';
+  if (s.indexOf('אלקטיב') >= 0 || low.indexOf('elect') >= 0) return '📖';
   if (s.indexOf('ללא עדיפות') >= 0 || low.indexOf('no priority') >= 0 || low.indexOf('none') >= 0 || low.indexOf('routine') >= 0) return '⬇️';
   if (s.indexOf('אמבולטורי') >= 0 || low.indexOf('ambulatory') >= 0 || low.indexOf('outpatient') >= 0) return '🚶';
   return '';
@@ -2426,6 +2430,96 @@ onMatDateChange(d: Date | null) {
   this.onDateChange();                         // your existing handler
 }
 
+
+/** Inline idle counter shown only when the room is free (no InProgress).
+ *  Returns null when not in a gap, or an object with a short display string.
+ */
+
+// emits every 1s; async pipe will trigger change detection safely
+// 1-sec ticker so the template re-renders and the timer looks alive
+ticker$ = interval(1000).pipe(startWith(0), shareReplay(1));
+
+/** Returns current idle gap for a room (null if no idle).
+ *  If showSeconds=true => HH:MM:SS, else HH:MM.
+ */
+getRoomIdleCounter(room: any, showSeconds = false):
+  { display: string; title: string } | null {
+  try {
+    if (!this.isRoomToday(room)) return null;
+    if (this.hasInProgress(room)) return null;
+
+    const now = this._clampTo1500(this._nowInSelectedDay());
+    const dayStart = this._parseOnSelectedDay('07:30');
+
+    const active = (this.activeSurgeries && this.activeSurgeries(room)) || [];
+    let lastExit: Date | null = null;
+
+    for (const s of active) {
+      const status = (s?.status ?? s?.SurgeryStatus) as string;
+      const exitStr =
+        s?.timeExit ?? s?.TimeExitingTheOperatingRoom ?? null;
+      if (!exitStr) continue;
+
+      const exitAt = this._parseOnSelectedDay(exitStr);
+      if (!exitAt || exitAt > now) continue;
+
+      // Only a *completed* surgery starts a new idle gap (no summarizing across gaps)
+      if (status === 'Completed') {
+        if (!lastExit || exitAt > lastExit) lastExit = exitAt;
+      }
+    }
+
+    const gapStart = lastExit ? new Date(lastExit.getTime() + 20 * 60 * 1000) : dayStart;
+
+    // During turnover or before first case → no idle counter
+    if (now <= gapStart) return null;
+
+    const diffMs = now.getTime() - gapStart.getTime();
+    if (diffMs <= 0) return null;
+
+    const display = showSeconds ? this._formatHMMSS(diffMs) : this._formatHMM(diffMs);
+    const title = `זמן פנוי מאז ${this._formatClock(gapStart)} (כולל 20׳ הכנה)`;
+    return { display, title };
+  } catch {
+    return null;
+  }
+}
+
+/* ===== small utilities ===== */
+private _nowInSelectedDay(): Date {
+  const base = this.selectedDateObj ? new Date(this.selectedDateObj) : new Date();
+  const now = new Date();
+  base.setHours(now.getHours(), now.getMinutes(), now.getSeconds(), now.getMilliseconds());
+  return base;
+}
+private _clampTo1500(d: Date): Date {
+  const cap = new Date(d); cap.setHours(15, 0, 0, 0);
+  return d > cap ? cap : d;
+}
+private _parseOnSelectedDay(hhmm?: string|null): Date|null {
+  if (!hhmm) return null;
+  const [hh, mm] = hhmm.split(':').map(x => +x);
+  if (Number.isNaN(hh) || Number.isNaN(mm)) return null;
+  const d = this.selectedDateObj ? new Date(this.selectedDateObj) : new Date();
+  d.setHours(hh, mm, 0, 0);
+  return d;
+}
+private _formatHMM(ms: number): string {
+  const totalMin = Math.max(0, Math.floor(ms / 60000));
+  const h = Math.floor(totalMin / 60);
+  const m = totalMin % 60;
+  return `${h}:${m.toString().padStart(2,'0')}`;
+}
+private _formatHMMSS(ms: number): string {
+  const total = Math.max(0, Math.floor(ms / 1000));
+  const h = Math.floor(total / 3600);
+  const m = Math.floor((total % 3600) / 60);
+  const s = total % 60;
+  return `${h}:${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
+}
+private _formatClock(d: Date): string {
+  return `${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}`;
+}
 
 
 }
