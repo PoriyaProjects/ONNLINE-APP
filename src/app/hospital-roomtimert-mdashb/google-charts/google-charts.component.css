@@ -364,7 +364,7 @@
 .room-widget.card .room-header .status-circle {
   position: relative;
   z-index: 6;
-  top:-218px;
+  top:-172px;
 }
 
 /* Example: make scompleted rows a bit dimmer or styled */

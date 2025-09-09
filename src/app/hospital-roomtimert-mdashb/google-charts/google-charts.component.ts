@@ -1343,7 +1343,7 @@ private formatHM(mins: number): string {
 statusTranslations: Record<string, string> = {
   'Completed': 'הסתיים',
   'InProgress': 'בתהליך',
-  'Scheduled': 'מתוכנן',
+  'Scheduled': 'מתוזמן',
   'Cancelled': 'בוטל', 
   'Planned' : 'מתוכנן'
 };
@@ -2006,12 +2006,16 @@ getRoomLateMeta(room: RoomData): LateMeta | null {
   var baseDate = room.date || this.selectedDate; // 'YYYY-MM-DD'
   var cutoff   = new Date(String(baseDate) + 'T15:00:00');
 
+  // NEW: actions starting at/after this time are EXEMPT from "late"
+  var EXEMPT_AFTER_CLOCK = '14:30:00';
+  var exemptStart = new Date(String(baseDate) + 'T' + EXEMPT_AFTER_CLOCK);
+
   // Turnover (morning + between cases) = at least 20
   var summary = this.getTurnoverSummary(room);
   var parsed  = this.hmToMin(summary);
   var TURNOVER_MIN = Math.max(20, parsed == null ? 20 : parsed);
 
-  // Collect same-day cases for THIS ROOM (already grouped), using normalized fields
+  // Collect same-day cases for THIS ROOM (normalized fields)
   var list: any[] = [];
   for (var i = 0; i < (room.surgeries || []).length; i++) {
     var r = room.surgeries[i]; if (!r) continue;
@@ -2047,25 +2051,31 @@ getRoomLateMeta(room: RoomData): LateMeta | null {
     }
   }
 
-  // Cursor = predicted "room free" time (applying our rules)
+  // Cursor = predicted "room free" time we consider for *late*
   var cursor: Date | null = null;
 
   if (active) {
-    // Active predicted end = entrance + TimeSurgeryToDo (strict)
-    var actMin = (active.minutes != null ? active.minutes : 60);
-    cursor = new Date(active.entrance.getTime() + actMin * 60000);
+    // Include active ONLY if it STARTED before 14:30
+    if (active.entrance.getTime() < exemptStart.getTime()) {
+      var actMin = (active.minutes != null ? active.minutes : 60);
+      cursor = new Date(active.entrance.getTime() + actMin * 60000);
+    } else {
+      cursor = null; // active started ≥ 14:30 → ignore for late
+    }
   } else {
-    // No active → start at first pending scheduled + ≥20 min (morning+turnover)
+    // No active → start from earliest pending that STARTS before 14:30
     var firstPending: any = null;
     for (var k = 0; k < list.length; k++) {
-      if (list[k].status !== 'completed') { firstPending = list[k]; break; }
+      if (list[k].status !== 'completed' && list[k].entrance && list[k].entrance.getTime() < exemptStart.getTime()) {
+        firstPending = list[k]; break;
+      }
     }
     if (firstPending && firstPending.entrance) {
       cursor = new Date(firstPending.entrance.getTime() + TURNOVER_MIN * 60000);
     }
   }
 
-  // Serialize all not-completed cases in scheduled order, earlier → later
+  // Serialize only cases that START before 14:30; stop once next start >= 14:30
   var predictedEnd: Date | null = null;
   if (cursor) {
     for (var m = 0; m < list.length; m++) {
@@ -2076,10 +2086,14 @@ getRoomLateMeta(room: RoomData): LateMeta | null {
       var durMin = (it.minutes != null ? it.minutes : 60);
       var sched  = it.entrance ? it.entrance : cursor;
 
-      // Start no earlier than both scheduled AND prev end + TURNOVER_MIN
+      // Next case cannot start before both scheduled AND prev end + TURNOVER_MIN
       var earliest = new Date(cursor.getTime() + TURNOVER_MIN * 60000);
       var start    = sched.getTime() > earliest.getTime() ? sched : earliest;
-      cursor       = new Date(start.getTime() + durMin * 60000);
+
+      // NEW: if the case would START at/after 14:30 → do NOT consider it for late
+      if (start.getTime() >= exemptStart.getTime()) break;
+
+      cursor = new Date(start.getTime() + durMin * 60000);
     }
     predictedEnd = cursor;
   }
@@ -2087,7 +2101,7 @@ getRoomLateMeta(room: RoomData): LateMeta | null {
   var isLate = !!predictedEnd && predictedEnd.getTime() > cutoff.getTime();
   var overrunMin = predictedEnd ? Math.max(0, Math.round((predictedEnd.getTime() - cutoff.getTime()) / 60000)) : 0;
 
-  // Keep your existing helper; ensure it also reads normalized fields
+  // Overlap/backlog stays as-is (independent of the late exemption)
   var ol = this.computeOverlapBacklog(room, TURNOVER_MIN);
 
   return {
@@ -2101,67 +2115,7 @@ getRoomLateMeta(room: RoomData): LateMeta | null {
   };
 }
 
-/** Returns {hasOverlap, count, until} for overlap at "now" vs current InProgress. */
-// private computeOverlapBacklog(room: RoomData, TURNOVER_MIN: number): { hasOverlap: boolean; count: number; until: Date | null } {
-//   if (!room || !room.surgeries || !room.surgeries.length) return { hasOverlap: false, count: 0, until: null };
-//   if (this.isRoomPastDay(room)) {return { hasOverlap: false, count: 0, until: null };}
-//   var baseDate = room.date || this.selectedDate;
-//   var now = new Date();
-//   var DAY_MS = 24 * 60 * 60 * 1000;
 
-//   // Find latest InProgress that already started
-//   var activeEnt: Date | null = null;
-//   var activeRow: any = null;
-//   for (var i = 0; i < room.surgeries.length; i++) {
-//     var r: any = room.surgeries[i];
-//     var st = String(r.status != null ? r.status : r.SurgeryStatus || '').toLowerCase();
-//     if (st !== 'inprogress' && st !== 'in progress' && st !== 'in_progress') continue;
-
-//     var ec = r.timeEntrance != null ? r.timeEntrance : r.TimeEntranceToTheOperatingRoom;
-//     if (!ec) continue;
-//     var base = (r.surgeryDate != null ? r.surgeryDate : r.SurgeryDate) || baseDate;
-//     var ent = this.parseClockWithDate(ec, base);
-//     if (!ent || ent > now) continue;
-
-//     if (!activeEnt || ent > activeEnt) { activeEnt = ent; activeRow = r; }
-//   }
-//   if (!activeEnt) return { hasOverlap: false, count: 0, until: null };
-
-//   // Estimate expected end of the active case (now + remaining)
-//   var xr = activeRow.timeExit != null ? activeRow.timeExit : activeRow.TimeExitingTheOperatingRoom;
-//   var exit = (xr && xr !== '00:00' && xr !== '00:00:00') ? this.parseClockWithDate(xr, (activeRow.surgeryDate || activeRow.SurgeryDate || baseDate)) : null;
-
-//   var expectedMin: number | null = null;
-//   var ttd = activeRow.TimeSurgeryToDo != null ? activeRow.TimeSurgeryToDo : activeRow.timeSurgeryToDo;
-//   if (ttd != null && !isNaN(+ttd)) expectedMin = Math.max(0, Math.round(+ttd));
-//   if (expectedMin == null && exit) {
-//     expectedMin = Math.max(0, Math.round((exit.getTime() - activeEnt.getTime()) / 60000));
-//   }
-//   if (expectedMin == null) expectedMin = 60;
-
-//   var elapsed = Math.max(0, Math.round((now.getTime() - activeEnt.getTime()) / 60000));
-//   var remaining = Math.max(0, expectedMin - elapsed);
-//   var expectedEnd = remaining > 0 ? new Date(now.getTime() + remaining * 60000) : now;
-
-//   // Count non-exempt Planned scheduled before expectedEnd
-//   var count = 0;
-//   for (var j = 0; j < room.surgeries.length; j++) {
-//     var rr: any = room.surgeries[j];
-//     var st2 = String(rr.status != null ? rr.status : rr.SurgeryStatus || '').toLowerCase();
-//     if (st2 !== 'planned') continue;
-//     if (this.isLateExemptByUrgency && this.isLateExemptByUrgency(rr)) continue;
-
-//     var ec2 = rr.timeEntrance != null ? rr.timeEntrance : rr.TimeEntranceToTheOperatingRoom;
-//     if (!ec2) continue;
-//     var base2 = (rr.surgeryDate != null ? rr.surgeryDate : rr.SurgeryDate) || baseDate;
-//     var ent2 = this.parseClockWithDate(ec2, base2);
-//     if (!ent2) continue;
-
-//     if (ent2 < expectedEnd) count++;
-//   }
-
-//   return { hasOverlap: count > 0, count: count, until: expectedEnd };
-// }
 
 computeOverlapBacklog(room: RoomData, TURNOVER_MIN: number): { hasOverlap: boolean; count: number; until: Date | null } {
   if (!room || !room.surgeries || !room.surgeries.length) return { hasOverlap: false, count: 0, until: null };
