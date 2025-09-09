@@ -627,3 +627,9 @@ h4.text-center { min-height: 2.2rem; }
 .progress-line{text-align: center;}
 .mat-form-field-wrapper{padding-bottom: 0!important;}
 .mat-form-field-infix{width: 100px !important;}
+
+
+.idle-chip { margin-inline-start:6px; font-weight:600; white-space:nowrap; }
+.live-dot { display:inline-block; width:6px; height:6px; margin-inline-start:6px;
+  border-radius:50%; background: currentColor; opacity:.6; animation: pulse 1.2s ease-in-out infinite; vertical-align:middle; }
+@keyframes pulse { 0%,100% { transform:scale(.8); opacity:.4 } 50% { transform:scale(1); opacity:1 } }
