@@ -640,9 +640,9 @@ h4.text-center { min-height: 2.2rem; }
 .summary-header { font-weight:700; margin-bottom:8px; }
 .summary-grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(180px,1fr)); gap:10px; }
 .summary-pill { border:1px solid #eee; border-radius:8px; padding:10px; }
-.summary-pill .k { font-size:12px; opacity:.7; margin-bottom:2px; }
+.summary-pill .k { font-size:1em; opacity:.7; margin-bottom:2px; }
 .summary-pill .v { font-size:22px; font-weight:700; line-height:1.2; }
-.summary-pill .sub { font-size:12px; opacity:.8; }
+.summary-pill .sub { font-size:1em; opacity:.8; }
 .summary-section { margin-top:10px; }
 .section-title { font-weight:600; margin-bottom:6px; }
 .now-list { list-style:none; padding:0; margin:0; }

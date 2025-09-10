@@ -108,6 +108,7 @@ export interface DisplaySettings {
   hideIdleWhenNoPlanned?: boolean;
    continueIdleAfter1500WhenPlanned?: boolean;
    showSummaryCard?: boolean;
+   showSurgeriesRts?:boolean;
 }
 
 export const DEFAULT_SETTINGS: DisplaySettings = {  
@@ -137,7 +138,8 @@ export const DEFAULT_SETTINGS: DisplaySettings = {
   showIdleSeconds: true,
   hideIdleWhenNoPlanned: true,
   continueIdleAfter1500WhenPlanned: true,
-  showSummaryCard: false
+  showSummaryCard: false,
+  showSurgeriesRts:true
 };
 
 
@@ -196,7 +198,14 @@ set userId(val: string | null) {
 displayPreset: DisplayPreset = 'default';
 settings: DisplaySettings = { ...DEFAULT_SETTINGS };
 showDisplayPanel = false;
-  
+refreshInterval: any;
+countdownInterval: any;
+private intervalId: any;
+nextRefreshIn: number = 300; 
+autoRefreshPaused = false;
+lastLoaded: Date | null = null;
+
+
   constructor(
     public googleChartsService: GoogleChartsService,
     private deptColors: DepartmentColorService,
@@ -205,12 +214,7 @@ showDisplayPanel = false;
   ) {}
 
 
-refreshInterval: any;
-countdownInterval: any;
-private intervalId: any;
-nextRefreshIn: number = 300; 
-autoRefreshPaused = false;
-lastLoaded: Date | null = null;
+
 
 
 
@@ -288,8 +292,9 @@ getCardClasses(room: RoomData): (string | null | undefined)[] {
 }
 
 ngOnInit(): void {
-   this.userId = (localStorage.getItem('ID') || '').trim() || null; // <-- read ID from localStorage
+   this.userId = (localStorage.getItem('ID') || '').trim() || null; 
   this.initDisplaySettings(); 
+  
   this.legendMinimized = localStorage.getItem('legendMinimized') === 'true';
   this.deptColors.setPalette(this.palette.getDepartmentPalette(), this.palette.name);
 
