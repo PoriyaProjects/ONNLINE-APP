@@ -36,10 +36,10 @@
         <div class="panel" style="padding:20px;width:100%; border: 1px solid rgba(0, 0, 0, .125);
     border-radius: .25rem;">
 
-          <div class="refresh-toolbar">1
+          <div class="refresh-toolbar">
             <span *ngIf="lastLoaded" class="last-updated">2
               נטען לאחרונה: {{ lastLoaded | date:'HH:mm:ss' }}3
-            </span>4
+            </span>
             <button class="pause-btn" (click)="toggleAutoRefresh()"
               style="border-color: #aaa; border-radius: 6px; border-width: 1px;">
               {{ autoRefreshPaused ? '▶️ הפעל רענון' : '⏸ השהה רענון' }}
