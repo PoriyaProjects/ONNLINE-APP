@@ -163,7 +163,11 @@ import { FolderDialogComponent } from '../dashboard/folders-management/folder-di
 import { HospitalIncomeNBDashbComponent } from '../hospital-incomenb-dashb/hospital-incomenb-dashb.component';
 import { GoogleChartsIncomeNBComponent } from '../hospital-incomenb-dashb/google-charts/google-charts.component';
 import { AppointsDashboardComponent } from '../hospital-appoints-dashb/google-charts/google-charts.component';
+<<<<<<< Updated upstream
 import { AppointsCLDashboardComponent } from '../hospital-appointscl-dashb/google-charts/google-charts.component';
+=======
+import { HearingSurveyComponent } from '../hearing-survey/hearing-survey/hearing-survey.component';
+>>>>>>> Stashed changes
 const routes: Routes = [
   { path: "", component: LoginComponent },
   { path: 'clinicsrequests', component: ClinicsRequestsComponent },
@@ -173,6 +177,7 @@ const routes: Routes = [
   { path: 'login', component: LoginComponent },
   { path: 'chads', component: ChadsComponent },
   { path: 'hearing', component: HearingComponent },
+  { path: 'hearing-survey', component: HearingSurveyComponent },
   { path: 'surgery', component: SurgeryComponent },
   { path: 'mrbaot', component: MrbaotComponent },
   { path: 'eshboz', component: EshbozComponent },

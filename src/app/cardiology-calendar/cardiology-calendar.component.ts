@@ -42,6 +42,7 @@ import { MenuPerm } from '../menu-perm';
 import { Router } from '@angular/router';
 import { environment } from 'src/environments/environment';
 
+
 const colors: any = {
   red: '#ad2121',
   blue: '#1e90ff',
@@ -51,6 +52,10 @@ export interface Action {
   Row_ID: string,
   ActionDesc: string,
   selected: boolean
+}
+export interface CardiologyCalendarEvent extends CalendarEvent {
+  patientAction?: any;
+  patientDetails?: any;
 }
 registerLocaleData(localeHe);
 @Component({
@@ -80,7 +85,7 @@ export class CardiologyCalendarComponent implements OnInit {
   _actionsList = [];
   modalData: {
     action: string;
-    event: CalendarEvent;
+    event: CardiologyCalendarEvent;
   };
 
   actions: CalendarEventAction[] = [
@@ -92,6 +97,7 @@ export class CardiologyCalendarComponent implements OnInit {
       },
     },
     {
+      
       label: '<i class="fas fa-fw fa-trash-alt"></i>',
       a11yLabel: 'Delete',
       onClick: ({ event }: { event: CalendarEvent }): void => {
@@ -115,7 +121,7 @@ export class CardiologyCalendarComponent implements OnInit {
   ];
 
   refresh: Subject<any> = new Subject();
-  events: CalendarEvent[] = [];
+  events: CardiologyCalendarEvent[] = [];
   activeDayIsOpen: boolean = true;
   patientSearch: FormGroup;
   date = new Date();
@@ -222,18 +228,42 @@ export class CardiologyCalendarComponent implements OnInit {
   }: CalendarEventTimesChangedEvent): void {
     this.events = this.events.map((iEvent) => {
       if (iEvent === event) {
+        // Ensure patientAction is always present
         return {
-          ...event,
+          ...iEvent,
           start: newStart,
-        };
+          patientAction: iEvent.patientAction || {
+            Row_ID: '',
+            PersonID: '',
+            PatientAction: [],
+            MidsOrder: '',
+            Notes: '',
+            ArrivalDate: '',
+            ArrivalTime: '',
+            Status: ''
+          }
+        } as CardiologyCalendarEvent;
       }
-      return iEvent;
+      // Also ensure all events have patientAction
+      return {
+        ...iEvent,
+        patientAction: iEvent.patientAction || {
+          Row_ID: '',
+          PersonID: '',
+          PatientAction: [],
+          MidsOrder: '',
+          Notes: '',
+          ArrivalDate: '',
+          ArrivalTime: '',
+          Status: ''
+        }
+      } as CardiologyCalendarEvent;
     });
     // this.handleEvent('Dropped or resized', event);
   }
 
   handleEvent(action: string, event: CalendarEvent): void {
-    this.modalData = { event, action };
+    this.modalData = { event: event as CardiologyCalendarEvent, action };
     this.modal.open(this.modalContent, { size: 'md' });
   }
 
@@ -249,7 +279,7 @@ export class CardiologyCalendarComponent implements OnInit {
       if (result != undefined) {
         let date = this.datePipe.transform(event, 'yyyy-MM-dd');
         let time = this.datePipe.transform(event, 'HH:mm');
-        let event2 = {
+        let event2: CardiologyCalendarEvent = {
           title: result.FirstName + ' ' + result.LastName,
           patientAction: {
             Row_ID: '',
@@ -274,7 +304,6 @@ export class CardiologyCalendarComponent implements OnInit {
           start: startOfDay(event),
           color: colors.red,
           draggable: true,
-          // actions: this.actions,
           resizable: {
             beforeStart: true,
             afterEnd: true,
@@ -290,7 +319,7 @@ export class CardiologyCalendarComponent implements OnInit {
     });
   }
 
-  deleteEvent(eventToDelete: CalendarEvent, day) {
+  deleteEvent(eventToDelete: CardiologyCalendarEvent, day) {
     this.http
       .post(environment.url + "DeleteEventInCalendarCardiology", {
         _rowID: eventToDelete.patientAction.Row_ID

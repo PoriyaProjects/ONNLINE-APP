@@ -282,6 +282,7 @@ import { FoldersManagementComponent } from './dashboard/folders-management/folde
 import { FolderDialogComponent } from './dashboard/folders-management/folder-dialog/folder-dialog.component';
 import { RoomTimeRTDashboardComponent } from './hospital-roomtimert-dashb/google-charts/google-charts.component';
 import { RoomTimeRTmDashboardComponent } from './hospital-roomtimert-mdashb/google-charts/google-charts.component';
+import { HearingSurveyComponent } from './hearing-survey/hearing-survey/hearing-survey.component';
 
 
 
@@ -509,6 +510,7 @@ const maskConfig: Partial<IConfig> = {
     FilterDepartsPipe,
     FoldersManagementComponent,
     FolderDialogComponent,
+    HearingSurveyComponent,
     //HospitalIncomeDashbComponent,
   ],
   imports: [
@@ -622,7 +624,8 @@ const maskConfig: Partial<IConfig> = {
   exports: [
     MatBadgeModule,
     FormsModule,
-    ReactiveFormsModule,    
+    ReactiveFormsModule,
+    HearingSurveyComponent,    
   ]
 })
 export class AppModule { }
