@@ -294,7 +294,7 @@ getCardClasses(room: RoomData): (string | null | undefined)[] {
 ngOnInit(): void {
    this.userId = (localStorage.getItem('ID') || '').trim() || null; 
   this.initDisplaySettings(); 
-  
+  this.lastLoaded = new Date();
   this.legendMinimized = localStorage.getItem('legendMinimized') === 'true';
   this.deptColors.setPalette(this.palette.getDepartmentPalette(), this.palette.name);
 
@@ -443,6 +443,7 @@ isBlinking(room: RoomData): boolean {
 
 
 loadRoomsData(): void {
+   this.lastLoaded = new Date();
   this.isLoading = true;
   this.googleChartsService.getSurgeryRooms(this.selectedDate).subscribe(result => {
     const rows = result.surgeries || [];
@@ -1008,7 +1009,7 @@ getHeaderInProgressId(room: RoomData): string {
 }
 
 private parseClockWithDate(clock: string, baseDate?: string | Date): Date | null {
-  const t = this.parseClock(clock); // your original 1-arg function
+  const t = this.parseClock(clock); 
   if (!t) return null;
   if (!baseDate) return t;
 
@@ -1112,6 +1113,7 @@ formatCountdown(sec: number): string {
 manualRefresh(): void {
   this.loadRoomsData();
   this.nextRefreshIn = 300; // reset countdown
+   this.lastLoaded = new Date();
 }
 
 toggleAutoRefresh(): void {

@@ -37,8 +37,8 @@
     border-radius: .25rem;">
 
           <div class="refresh-toolbar">
-            <span *ngIf="lastLoaded" class="last-updated">2
-              נטען לאחרונה: {{ lastLoaded | date:'HH:mm:ss' }}3
+            <span *ngIf="lastLoaded" class="last-updated">
+              נטען לאחרונה: {{ lastLoaded | date:'HH:mm:ss' }}
             </span>
             <button class="pause-btn" (click)="toggleAutoRefresh()"
               style="border-color: #aaa; border-radius: 6px; border-width: 1px;">
@@ -211,7 +211,9 @@
 
               <!-- Header (sticky inside the scrolling card) -->
               <div class="room-header" (click)="toggleRoom(room.roomId)">
-
+<!-- Status dot -->
+                <div class="status-circle" *ngIf="settings.showStatusDot !== false"
+                  [ngClass]="getRoomStatusClassWithSettings(room)"></div>
                 <!-- Title + late-warning chip -->
 
                 <h4 class="text-center">
@@ -241,6 +243,8 @@
                 <!-- Header metrics chips -->
                 <div class="metrics text-center" *ngIf="settings.showHeaderMetrics !== false">
                   <!-- Start delay chip -->
+
+
                   <span class="metric-chip" *ngIf="(settings.showStartChip !== false) && shouldShowStartDiff(room)">
                     ◓
                     <span [ngClass]="getStartDiffClass(room)" title="עיכוב מתחילת יום">
@@ -310,9 +314,7 @@
                 </div>
 
 
-                <!-- Right-side status dot -->
-                <div class="status-circle" *ngIf="settings.showStatusDot !== false"
-                  [ngClass]="getRoomStatusClassWithSettings(room)"></div>
+                
               </div>
 
 
