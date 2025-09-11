@@ -152,15 +152,15 @@
     border: 2px solid red;
   }
 
-  .card.red-60-ack {
+  .card.red-60-ack, .room-chip.red-60-ack {
     border: 2px solid darkred;
   }
 
-  .card.red-120-ack {
+  .card.red-120-ack, .room-chip.red-120-ack , .room-chip.red-120{
     border: 3px solid darkred;
   }
 
-  .card.green-blink {
+  .card.green-blink, .room-chip.green-blink {
     border: 2px solid green;
   }
   .metric-ok {

@@ -64,7 +64,7 @@
                 {{ allExpanded ? '🔽 סגור הכל' : '🔼 פתח הכל' }}
               </button>
             </span>
-            <span style="margin: 10px 0;">
+            <span style="margin: 10px 0;"  *ngIf="$any(settings)?.showSurgeriesRts !== false">
               <button mat-stroked-button color="primary" (click)="acknowledgeAllRooms()" style="margin-right:10px;"
                 title="סמן כל החדרים כמאושרים">
                 אשר כל החדרים
@@ -133,7 +133,7 @@
             <div class="summary-section" style="margin-top: 20px;">
               <div class="section-title">מצב חדרים</div>
               <div class="rooms-list">
-                <div class="room-chip" *ngFor="let r of s.byRoom">
+                <div class="room-chip" *ngFor="let r of s.byRoom" [ngClass]="getRoomStatusClassWithSettings(r.roomData)">
                   <span class="room-id">{{ translateRoomId(r.room) }}</span>
                   <span class="dot ok" *ngFor="let i of [].constructor(r.completed)"></span>
                   <span class="dot run" *ngFor="let i of [].constructor(r.inProgress)"></span>
@@ -164,7 +164,6 @@
             </div>
 
           </div>
-
           <!-- ───── /Summary Card ───── -->
 
 
@@ -289,9 +288,6 @@
                 <div class="expand_btn" *ngIf="settings.showExpandBtn !== false">
                   {{ isRoomExpanded(room.roomId) ? '⮝' : '⮟' }}
                 </div>
-
-
-
               </div>
 
 

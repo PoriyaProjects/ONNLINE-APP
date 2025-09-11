@@ -2283,28 +2283,57 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
 
     const avgCaseMinutes = completed.length ? Math.round(sumCompletedMinutes / completed.length) : 0;
 
-    const byRoom = rooms.map(room => {
-      const rCases = todays.filter(s => s.SurgeryRoom === room);
-      const rCompleted = rCases.filter(s => (s.SurgeryStatus ?? s.status) === 'Completed');
-      const rInProg = rCases.filter(s => (s.SurgeryStatus ?? s.status) === 'InProgress');
-      const rPlanned = rCases.filter(s => (s.SurgeryStatus ?? s.status) === 'Planned');
+    // const byRoom = rooms.map(room => {
+    //   const rCases = todays.filter(s => s.SurgeryRoom === room);
+    //   const rCompleted = rCases.filter(s => (s.SurgeryStatus ?? s.status) === 'Completed');
+    //   const rInProg = rCases.filter(s => (s.SurgeryStatus ?? s.status) === 'InProgress');
+    //   const rPlanned = rCases.filter(s => (s.SurgeryStatus ?? s.status) === 'Planned');
 
-      const rMinutes = rCompleted.reduce((acc, s) => acc + this._completedMinutes(s, selectedDateISO), 0);
+    //   const rMinutes = rCompleted.reduce((acc, s) => acc + this._completedMinutes(s, selectedDateISO), 0);
 
-      const latestExit = rCompleted
-        .map(s => s.TimeExitingTheOperatingRoom ?? s.timeExit)
-        .filter(Boolean).sort().slice(-1)[0] || null;
+    //   const latestExit = rCompleted
+    //     .map(s => s.TimeExitingTheOperatingRoom ?? s.timeExit)
+    //     .filter(Boolean).sort().slice(-1)[0] || null;
 
-      return {
-        room,
-        completed: rCompleted.length,
-        inProgress: rInProg.length,
-        planned: rPlanned.length,
-        totalMinutes: rMinutes,
-        latestExit,
-      };
-    });
+    //   return {
+    //     room,
+    //     completed: rCompleted.length,
+    //     inProgress: rInProg.length,
+    //     planned: rPlanned.length,
+    //     totalMinutes: rMinutes,
+    //     latestExit,
+    //   };
+    // });
 
+const byRoom = rooms.map(room => {
+  const rCases = todays.filter(s => s.SurgeryRoom === room);
+  const rCompleted = rCases.filter(s => (s.SurgeryStatus ?? s.status) === 'Completed');
+  const rInProg = rCases.filter(s => (s.SurgeryStatus ?? s.status) === 'InProgress');
+  const rPlanned = rCases.filter(s => (s.SurgeryStatus ?? s.status) === 'Planned');
+
+  const rMinutes = rCompleted.reduce((acc, s) => acc + this._completedMinutes(s, selectedDateISO), 0);
+
+  const latestExit = rCompleted
+    .map(s => s.TimeExitingTheOperatingRoom ?? s.timeExit)
+    .filter(Boolean)
+    .sort()
+    .slice(-1)[0] || null;
+
+  return {
+    room,
+    completed: rCompleted.length,
+    inProgress: rInProg.length,
+    planned: rPlanned.length,
+    totalMinutes: rMinutes,
+    latestExit,
+    // ✅ added RoomData object for getRoomStatusClassWithSettings
+    roomData: {
+      roomId: room,
+      date: selectedDateISO,
+      surgeries: rCases
+    } as RoomData
+  };
+});
 
     const busiest = byRoom.reduce((best, r) => {
       if (!best) return r;
