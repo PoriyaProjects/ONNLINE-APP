@@ -2283,28 +2283,57 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
 
     const avgCaseMinutes = completed.length ? Math.round(sumCompletedMinutes / completed.length) : 0;
 
-    const byRoom = rooms.map(room => {
-      const rCases = todays.filter(s => s.SurgeryRoom === room);
-      const rCompleted = rCases.filter(s => (s.SurgeryStatus ?? s.status) === 'Completed');
-      const rInProg = rCases.filter(s => (s.SurgeryStatus ?? s.status) === 'InProgress');
-      const rPlanned = rCases.filter(s => (s.SurgeryStatus ?? s.status) === 'Planned');
+    // const byRoom = rooms.map(room => {
+    //   const rCases = todays.filter(s => s.SurgeryRoom === room);
+    //   const rCompleted = rCases.filter(s => (s.SurgeryStatus ?? s.status) === 'Completed');
+    //   const rInProg = rCases.filter(s => (s.SurgeryStatus ?? s.status) === 'InProgress');
+    //   const rPlanned = rCases.filter(s => (s.SurgeryStatus ?? s.status) === 'Planned');
 
-      const rMinutes = rCompleted.reduce((acc, s) => acc + this._completedMinutes(s, selectedDateISO), 0);
+    //   const rMinutes = rCompleted.reduce((acc, s) => acc + this._completedMinutes(s, selectedDateISO), 0);
 
-      const latestExit = rCompleted
-        .map(s => s.TimeExitingTheOperatingRoom ?? s.timeExit)
-        .filter(Boolean).sort().slice(-1)[0] || null;
+    //   const latestExit = rCompleted
+    //     .map(s => s.TimeExitingTheOperatingRoom ?? s.timeExit)
+    //     .filter(Boolean).sort().slice(-1)[0] || null;
 
-      return {
-        room,
-        completed: rCompleted.length,
-        inProgress: rInProg.length,
-        planned: rPlanned.length,
-        totalMinutes: rMinutes,
-        latestExit,
-      };
-    });
+    //   return {
+    //     room,
+    //     completed: rCompleted.length,
+    //     inProgress: rInProg.length,
+    //     planned: rPlanned.length,
+    //     totalMinutes: rMinutes,
+    //     latestExit,
+    //   };
+    // });
 
+const byRoom = rooms.map(room => {
+  const rCases = todays.filter(s => s.SurgeryRoom === room);
+  const rCompleted = rCases.filter(s => (s.SurgeryStatus ?? s.status) === 'Completed');
+  const rInProg = rCases.filter(s => (s.SurgeryStatus ?? s.status) === 'InProgress');
+  const rPlanned = rCases.filter(s => (s.SurgeryStatus ?? s.status) === 'Planned');
+
+  const rMinutes = rCompleted.reduce((acc, s) => acc + this._completedMinutes(s, selectedDateISO), 0);
+
+  const latestExit = rCompleted
+    .map(s => s.TimeExitingTheOperatingRoom ?? s.timeExit)
+    .filter(Boolean)
+    .sort()
+    .slice(-1)[0] || null;
+
+  return {
+    room,
+    completed: rCompleted.length,
+    inProgress: rInProg.length,
+    planned: rPlanned.length,
+    totalMinutes: rMinutes,
+    latestExit,
+    // ✅ added RoomData object for getRoomStatusClassWithSettings
+    roomData: {
+      roomId: room,
+      date: selectedDateISO,
+      surgeries: rCases
+    } as RoomData
+  };
+});
 
     const busiest = byRoom.reduce((best, r) => {
       if (!best) return r;
@@ -2341,7 +2370,7 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
       elective: 'אלקטיב',
       ambulatory: 'אמבולטורי',
       noPriority: 'ללא עדיפות',
-      unknown: '—',
+      unknown: 'דחיפות לא מוגדרת',
     };
     const urgencyIcons = {
       urgent: '🚑',
@@ -2349,19 +2378,19 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
       elective: '📖',
       ambulatory: '🚶',
       noPriority: '⬇️',
-      unknown: '？',
+      unknown: '❔',
     };
 
 
     const counts = { urgent: 0, sessionInpatient: 0, elective: 0, ambulatory: 0, noPriority: 0, unknown: 0 };
     const lists = { urgent: [] as any[], sessionInpatient: [] as any[], elective: [] as any[], ambulatory: [] as any[], noPriority: [] as any[], unknown: [] as any[] };
 
+ 
     for (const s of todays) {
-      const key = this._readUrgencyKey(s);
-      counts[key]++;
+      const key = this._readUrgencyKey(s); 
+      counts[key] = (counts[key] ?? 0) + 1; 
       lists[key].push(s);
     }
-
 
     return {
       dateISO: selectedDateISO,
@@ -2406,6 +2435,9 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
 
   }
 
+getUrgencyKeys(urgency: any): string[] {  
+  return ['urgent', 'sessionInpatient', 'elective', 'ambulatory', 'noPriority', 'unknown'];
+}
 
   private _getSurgeriesArray(): any[] {
 
@@ -2545,9 +2577,5 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
 
     return 'unknown';
   }
-
-
-
-
 
 }

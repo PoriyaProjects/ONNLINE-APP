@@ -64,7 +64,7 @@
                 {{ allExpanded ? '🔽 סגור הכל' : '🔼 פתח הכל' }}
               </button>
             </span>
-            <span style="margin: 10px 0;">
+            <span style="margin: 10px 0;"  *ngIf="$any(settings)?.showSurgeriesRts !== false">
               <button mat-stroked-button color="primary" (click)="acknowledgeAllRooms()" style="margin-right:10px;"
                 title="סמן כל החדרים כמאושרים">
                 אשר כל החדרים
@@ -75,7 +75,6 @@
 
 
           <!-- ───── Summary Card ───── -->
-          <!-- <div class="row card" style="margin-top: 20px;"> -->
           <div *ngIf="$any(settings)?.showSummaryCard && getSummaryForToday() as s" class="summary-card" dir="rtl">
 
             <div class="summary-header">
@@ -88,34 +87,16 @@
                 <div class="v">{{ s.totals.surgeries }}</div>
                 <div class="sub">✔ {{ s.totals.completed }} · ⏳ {{ s.totals.inProgress }} · 📋 {{ s.totals.planned }}
                 </div>
-                <!-- דחיפות (Urgency) -->
-                <div class="sub urgency-line">
-                  <button type="button" class="urge" [attr.title]="s.urgency.labels.urgent"
-                    (click)="summaryDrilldownUrgency = summaryDrilldownUrgency === 'urgent' ? null : 'urgent'">
-                    {{ s.urgency.icons.urgent }} {{ s.urgency.counts.urgent }}
-                  </button>
-                  |
-                  <button type="button" class="urge" [attr.title]="s.urgency.labels.sessionInpatient"
-                    (click)="summaryDrilldownUrgency = summaryDrilldownUrgency === 'sessionInpatient' ? null : 'sessionInpatient'">
-                    {{ s.urgency.icons.sessionInpatient }} {{ s.urgency.counts.sessionInpatient }}
-                  </button>
-                  |
-                  <button type="button" class="urge" [attr.title]="s.urgency.labels.elective"
-                    (click)="summaryDrilldownUrgency = summaryDrilldownUrgency === 'elective' ? null : 'elective'">
-                    {{ s.urgency.icons.elective }} {{ s.urgency.counts.elective }}
-                  </button>
-                  |
-                  <button type="button" class="urge" [attr.title]="s.urgency.labels.ambulatory"
-                    (click)="summaryDrilldownUrgency = summaryDrilldownUrgency === 'ambulatory' ? null : 'ambulatory'">
-                    {{ s.urgency.icons.ambulatory }} {{ s.urgency.counts.ambulatory }}
-                  </button>
-                  |
-                  <button type="button" class="urge" [attr.title]="s.urgency.labels.noPriority"
-                    (click)="summaryDrilldownUrgency = summaryDrilldownUrgency === 'noPriority' ? null : 'noPriority'">
-                    {{ s.urgency.icons.noPriority }} {{ s.urgency.counts.noPriority }}
+
+                <div class="sub urgency-line urgency-buttons">
+                  <button *ngFor="let key of getUrgencyKeys(s.urgency)" type="button" class="urge"
+                    [class.selected]="summaryDrilldownUrgency === key" [attr.title]="s.urgency.labels[key]"
+                    (click)="summaryDrilldownUrgency = summaryDrilldownUrgency === key ? null : key">
+                    <span>{{ s.urgency.icons[key] }}</span>
+                    <span>{{ s.urgency.counts[key] }}</span>
                   </button>
                 </div>
-
+               
               </div>
 
               <div class="summary-pill">
@@ -152,7 +133,7 @@
             <div class="summary-section" style="margin-top: 20px;">
               <div class="section-title">מצב חדרים</div>
               <div class="rooms-list">
-                <div class="room-chip" *ngFor="let r of s.byRoom">
+                <div class="room-chip" *ngFor="let r of s.byRoom" [ngClass]="getRoomStatusClassWithSettings(r.roomData)">
                   <span class="room-id">{{ translateRoomId(r.room) }}</span>
                   <span class="dot ok" *ngFor="let i of [].constructor(r.completed)"></span>
                   <span class="dot run" *ngFor="let i of [].constructor(r.inProgress)"></span>
@@ -183,17 +164,16 @@
             </div>
 
           </div>
-          <!-- </div> -->
           <!-- ───── /Summary Card ───── -->
 
 
-          
-          
-          <div id="surgeriesrts"  class="dashboard"  *ngIf="$any(settings)?.showSurgeriesRts !== false"  [class.background-mode]="settings.backgroundMode === true">
+
+
+          <div id="surgeriesrts" class="dashboard" *ngIf="$any(settings)?.showSurgeriesRts !== false"
+            [class.background-mode]="settings.backgroundMode === true">
             <div *ngIf="isLoading" class="loader-overlay">
               <div class="spinner"></div>
             </div>
-
 
 
             <div class="room-widget card" *ngFor="let room of roomsData; trackBy: trackByRoomId" [ngClass]="[
@@ -235,41 +215,34 @@
                   </ng-container>
                 </h4>
 
-
-
-
-
-
                 <div class="metrics text-center" *ngIf="settings.showHeaderMetrics !== false">
+                  <!-- Start delay chip -->
+                  <span class="metric-chip" *ngIf="(settings.showStartChip !== false) && shouldShowStartDiff(room)">
+                    <span class="chip-icon">◓</span>
+                    <span class="chip-title">עיכוב מתחילת יום</span>
+                    <span [ngClass]="getStartDiffClass(room)">
+                      {{ getStartDiff(room) }}
+                    </span>
+                  </span>
 
-  <!-- Start delay chip -->
-  <span class="metric-chip" *ngIf="(settings.showStartChip !== false) && shouldShowStartDiff(room)">
-    <span class="chip-icon">◓</span>
-    <span class="chip-title">עיכוב מתחילת יום</span>
-    <span [ngClass]="getStartDiffClass(room)">
-      {{ getStartDiff(room) }}
-    </span>
-  </span>
+                  <!-- Turnover summary -->
+                  <span class="metric-chip" *ngIf="settings.showTurnoverChip !== false">
+                    <span class="chip-icon">⏳</span>
+                    <span class="chip-title">זמן הכנת חדר</span>
+                    <span [ngClass]="getTurnoverTimeClass(room)">
+                      {{ getTurnoverSummary(room) }}
+                    </span>
+                  </span>
 
-  <!-- Turnover summary -->
-  <span class="metric-chip" *ngIf="settings.showTurnoverChip !== false">
-    <span class="chip-icon">⏳</span>
-    <span class="chip-title">זמן הכנת חדר</span>
-    <span [ngClass]="getTurnoverTimeClass(room)">
-      {{ getTurnoverSummary(room) }}
-    </span>
-  </span>
-
-  <!-- End-of-day gap -->
-  <span class="metric-chip" *ngIf="settings.showEndChip !== false">
-    <span class="chip-icon">◒</span>
-    <span class="chip-title">פער עד סיום יום</span>
-    <span [ngClass]="getEndDiffClass(room)">
-      {{ getEndDiff(room) }}
-    </span>
-  </span>
-
-</div>
+                  <!-- End-of-day gap -->
+                  <span class="metric-chip" *ngIf="settings.showEndChip !== false">
+                    <span class="chip-icon">◒</span>
+                    <span class="chip-title">פער עד סיום יום</span>
+                    <span [ngClass]="getEndDiffClass(room)">
+                      {{ getEndDiff(room) }}
+                    </span>
+                  </span>
+                </div>
 
 
                 <!-- Center badge -->
@@ -315,9 +288,6 @@
                 <div class="expand_btn" *ngIf="settings.showExpandBtn !== false">
                   {{ isRoomExpanded(room.roomId) ? '⮝' : '⮟' }}
                 </div>
-
-
-                
               </div>
 
 
@@ -537,14 +507,13 @@
                         [ngModelOptions]="{standalone:true}"
                         (ngModelChange)="onSettingChange && onSettingChange('showSummaryCard', $event)">
                       הצג כרטיס סיכום יום
-                    </label> |  
+                    </label> |
                     <label>
-  <input type="checkbox" [(ngModel)]="$any(settings).showSurgeriesRts" [ngModelOptions]="{standalone:true}" (ngModelChange)="onSettingChange('showSurgeriesRts', $event)" />
-  הצג רשימת ניתוחים (surgeriesrts)
-</label>
-
-
-
+                      <input type="checkbox" [(ngModel)]="$any(settings).showSurgeriesRts"
+                        [ngModelOptions]="{standalone:true}"
+                        (ngModelChange)="onSettingChange('showSurgeriesRts', $event)" />
+                      הצג רשימת ניתוחים (surgeriesrts)
+                    </label>
                   </div>
                   <div style="height:60px"></div>
                 </fieldset>
@@ -552,9 +521,4 @@
             </div>
           </div>
           <div style="height:10px;"></div>
-
-
-          
-
-
         </div>
