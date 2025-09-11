@@ -30,9 +30,6 @@
   <div class="row">
     <div class="mdc-layout-grid__cell col-md-12">
       <main class="mdc-top-app-bar--fixed-adjust">
-
-        <!-- <div style="height:60px;"></div> -->
-
         <div class="panel" style="padding:20px;width:100%; border: 1px solid rgba(0, 0, 0, .125);
     border-radius: .25rem;">
 
@@ -61,7 +58,7 @@
                 <mat-datepicker #picker></mat-datepicker>
               </mat-form-field>
 
-              <button (click)="toggleAll()"
+              <button *ngIf="$any(settings)?.showSurgeriesRts !== false" (click)="toggleAll()"
                 style="margin-bottom:10px;margin-right:20px; border-color: #aaa; border-radius: 6px;"
                 [title]="allExpanded ? 'סגור את כל החדרים' : 'פתח את כל החדרים'">
                 {{ allExpanded ? '🔽 סגור הכל' : '🔼 פתח הכל' }}
@@ -152,7 +149,7 @@
               </ul>
             </div>
 
-            <div class="summary-section">
+            <div class="summary-section" style="margin-top: 20px;">
               <div class="section-title">מצב חדרים</div>
               <div class="rooms-list">
                 <div class="room-chip" *ngFor="let r of s.byRoom">
@@ -167,7 +164,7 @@
             </div>
 
             <!-- דריל־דאון לפי דחיפות -->
-            <div class="summary-section" *ngIf="summaryDrilldownUrgency as uKey">
+            <div class="summary-section" style="padding-top:20px;" *ngIf="summaryDrilldownUrgency as uKey">
               <div class="section-title">
                 פירוט לפי דחיפות: {{ s.urgency.icons[uKey] }} {{ s.urgency.labels[uKey] }}
                 <button type="button" class="urge close" (click)="summaryDrilldownUrgency = null"
@@ -175,12 +172,12 @@
               </div>
               <ul class="now-list">
                 <li *ngFor="let it of s.urgency.lists[uKey] | slice:0:20">
-                  <strong>{{ it.SurgeryRoom || it.room || '—' }}</strong> —
+                  <strong>{{ translateRoomId(it.SurgeryRoom) || translateRoomId(it.room) || '—' }}</strong> —
                   {{ (it.SurgeryName || it.surgeryName || it.SurgeryCode || it.surgeryCode || '—') }}
                   <span class="muted">({{ it.DepartName || it.department || '—' }})</span>
-                  · {{ it.TimeEntranceToTheOperatingRoom || it.timeEntrance || '—' }} – {{
+                  · {{ it.TimeEntranceToTheOperatingRoom || it.timeEntrance || '—' }} ← {{
                   it.TimeExitingTheOperatingRoom || it.timeExit || '—' }}
-                  · {{ it.SurgeryStatus || it.status || '—' }}
+                  · {{ translateStatus(it.SurgeryStatus) || translateStatus(it.status) || '—' }}
                 </li>
               </ul>
             </div>
@@ -191,7 +188,7 @@
 
 
           
-          <!-- <div id="surgeriesrts" class="dashboard" [class.background-mode]="settings.backgroundMode === true"> -->
+          
           <div id="surgeriesrts"  class="dashboard"  *ngIf="$any(settings)?.showSurgeriesRts !== false"  [class.background-mode]="settings.backgroundMode === true">
             <div *ngIf="isLoading" class="loader-overlay">
               <div class="spinner"></div>
@@ -211,14 +208,13 @@
 
               <!-- Header (sticky inside the scrolling card) -->
               <div class="room-header" (click)="toggleRoom(room.roomId)">
-<!-- Status dot -->
+                <!-- Status dot -->
                 <div class="status-circle" *ngIf="settings.showStatusDot !== false"
                   [ngClass]="getRoomStatusClassWithSettings(room)"></div>
-                <!-- Title + late-warning chip -->
 
+                <!-- Title + late-warning chip -->
                 <h4 class="text-center">
                   {{ translateRoomId(room.roomId) }}
-
                   <ng-container *ngIf="settings.showLateChip !== false">
                     <ng-container *ngIf="getRoomLateMeta(room) as late">
                       <!-- Overlap/backlog chip -->
@@ -240,34 +236,41 @@
                 </h4>
 
 
-                <!-- Header metrics chips -->
+
+
+
+
                 <div class="metrics text-center" *ngIf="settings.showHeaderMetrics !== false">
-                  <!-- Start delay chip -->
 
+  <!-- Start delay chip -->
+  <span class="metric-chip" *ngIf="(settings.showStartChip !== false) && shouldShowStartDiff(room)">
+    <span class="chip-icon">◓</span>
+    <span class="chip-title">עיכוב מתחילת יום</span>
+    <span [ngClass]="getStartDiffClass(room)">
+      {{ getStartDiff(room) }}
+    </span>
+  </span>
 
-                  <span class="metric-chip" *ngIf="(settings.showStartChip !== false) && shouldShowStartDiff(room)">
-                    ◓
-                    <span [ngClass]="getStartDiffClass(room)" title="עיכוב מתחילת יום">
-                      {{ getStartDiff(room) }}
-                    </span>
-                  </span>
+  <!-- Turnover summary -->
+  <span class="metric-chip" *ngIf="settings.showTurnoverChip !== false">
+    <span class="chip-icon">⏳</span>
+    <span class="chip-title">זמן הכנת חדר</span>
+    <span [ngClass]="getTurnoverTimeClass(room)">
+      {{ getTurnoverSummary(room) }}
+    </span>
+  </span>
 
-                  <!-- Turnover summary -->
-                  <span class="metric-chip" *ngIf="settings.showTurnoverChip !== false">
-                    ⏳
-                    <span [ngClass]="getTurnoverTimeClass(room)" title="זמן הכנת חדר (מעבר ל־20 דקות)">
-                      {{ getTurnoverSummary(room) }}
-                    </span>
-                  </span>
+  <!-- End-of-day gap -->
+  <span class="metric-chip" *ngIf="settings.showEndChip !== false">
+    <span class="chip-icon">◒</span>
+    <span class="chip-title">פער עד סיום יום</span>
+    <span [ngClass]="getEndDiffClass(room)">
+      {{ getEndDiff(room) }}
+    </span>
+  </span>
 
-                  <!-- End-of-day gap -->
-                  <span class="metric-chip" *ngIf="settings.showEndChip !== false">
-                    ◒
-                    <span [ngClass]="getEndDiffClass(room)" title="פער עד סיום יום">
-                      {{ getEndDiff(room) }}
-                    </span>
-                  </span>
-                </div>
+</div>
+
 
                 <!-- Center badge -->
                 <div *ngIf="settings.showHeaderBadge && isRoomToday(room)" class="status-circle2 text-center"
