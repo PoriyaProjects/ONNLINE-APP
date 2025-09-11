@@ -114,6 +114,12 @@
                     (click)="summaryDrilldownUrgency = summaryDrilldownUrgency === 'noPriority' ? null : 'noPriority'">
                     {{ s.urgency.icons.noPriority }} {{ s.urgency.counts.noPriority }}
                   </button>
+                  |
+                  <button type="button" class="urge" 
+                    [attr.title]="s.urgency.labels.unknown"
+                    (click)="summaryDrilldownUrgency = summaryDrilldownUrgency === 'unknown' ? null : 'unknown'">
+                    {{ s.urgency.icons.unknown }} {{ s.urgency.counts.unknown }}
+                  </button>
                 </div>
 
               </div>
