@@ -2341,7 +2341,7 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
       elective: 'אלקטיב',
       ambulatory: 'אמבולטורי',
       noPriority: 'ללא עדיפות',
-      unknown: '—',
+      unknown: 'דחיפות לא מוגדרת',
     };
     const urgencyIcons = {
       urgent: '🚑',
@@ -2356,12 +2356,7 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
     const counts = { urgent: 0, sessionInpatient: 0, elective: 0, ambulatory: 0, noPriority: 0, unknown: 0 };
     const lists = { urgent: [] as any[], sessionInpatient: [] as any[], elective: [] as any[], ambulatory: [] as any[], noPriority: [] as any[], unknown: [] as any[] };
 
-    // for (const s of todays) {
-    //   const key = this._readUrgencyKey(s);
-    //   counts[key]++;
-    //   lists[key].push(s);
-    // }
-
+ 
     for (const s of todays) {
       const key = this._readUrgencyKey(s); 
       counts[key] = (counts[key] ?? 0) + 1; 
