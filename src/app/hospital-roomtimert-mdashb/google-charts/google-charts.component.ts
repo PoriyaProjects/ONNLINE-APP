@@ -2406,6 +2406,9 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
 
   }
 
+getUrgencyKeys(urgency: any): string[] {  
+  return ['urgent', 'sessionInpatient', 'elective', 'ambulatory', 'noPriority', 'unknown'];
+}
 
   private _getSurgeriesArray(): any[] {
 

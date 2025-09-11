@@ -716,6 +716,37 @@ h4.text-center { min-height: 2.2rem; }
 
 .room-widget {min-width:200px;}
 
+.urgency-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px; /* small spacing between buttons */
+}
 
-/*chips*/
+.urgency-buttons .urge {
+  display: flex;
+  align-items: center;
+  gap: 2px; /* space between icon and count */
+  font-size: 0.9rem;
+  padding: 4px 8px;
+  border: none;
+  border-radius: 6px;
+  background-color: #f2f2f2; /* light grey for default */
+  cursor: pointer;
+  transition: background-color 0.2s, transform 0.1s;
+}
+
+.urgency-buttons .urge:hover {
+  background-color: #e0e0e0;
+  transform: translateY(-1px);
+}
+
+.urgency-buttons .urge.selected {
+  background-color: #4caf50; /* green for selected */
+  color: white;
+}
+
+.urgency-buttons .urge span {
+  font-weight: 500;
+}
+
 
