@@ -70,11 +70,9 @@
 
           <!-- ───── Summary Card ───── -->
           <div *ngIf="$any(settings)?.showSummaryCard && getSummaryForToday() as s" class="summary-card" dir="rtl">
-
             <div class="summary-header">
               🗓️ סיכום · {{ s.dateISO }}
             </div>
-
             <div class="summary-grid">
               <div class="summary-pill">
                 <div class="k">סה״כ ניתוחים <span class="v">{{ s.totals.surgeries }}</span></div>                

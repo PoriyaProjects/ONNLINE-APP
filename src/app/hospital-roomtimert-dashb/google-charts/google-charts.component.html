@@ -97,15 +97,15 @@
                 </div>
 
 
-                <div *ngIf="isRoomToday(room) && hasInProgress(room)" class="status-circle2 text-center"
+                <div style="height:24px;" *ngIf="isRoomToday(room) " class="status-circle2 text-center"
                   style="margin:10px auto" [ngClass]="getRoomStatusClass(room)">
                   {{ getHeaderInProgressLabel(room) }}
                   <ng-container *ngIf="getHeaderProgressIcon(room) as icon">
-                    <span [attr.title]="getHeaderProgressTitle(room)">{{ icon }}</span>
+                    <span [attr.title]="getHeaderProgressTitle(room)" *ngIf="hasInProgress(room)">{{ icon }}</span>
                   </ng-container>
                 </div>
 
-                <div class="small" style="text-align: right;">
+                <div class="small" style="text-align: center;">
                   {{ getHeaderProgressText(room) }}
                 </div>
 
@@ -140,7 +140,9 @@
                           <span [attr.title]="getUrgencyTextFromSurgery(s)">{{ icon }}</span>
                         </ng-container></b><br />
                       <!-- {{ s.surgeryName }} -->
-                      ({{ s.surgeryCode }}) <br />
+                        <span style="direction:ltr; text-align:left;float: left; font-size: small;"
+                        *ngIf="s.surgeryName?.trim()">{{ s.surgeryName }}<br /></span>
+                      <span  *ngIf="s.surgeryCode?.trim()" >({{ s.surgeryCode }}) <br /></span>
                       <i>{{ s.department }}</i><br />
                       <b>{{ s.timeEntrance }} ← {{ s.timeExit || '...' }}</b><br />
                       <span class="status" [ngClass]="s.status">
