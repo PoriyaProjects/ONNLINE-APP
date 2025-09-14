@@ -64,7 +64,7 @@
                 {{ allExpanded ? '🔽 סגור הכל' : '🔼 פתח הכל' }}
               </button>
             </span>
-            <span style="margin: 10px 0;"  *ngIf="$any(settings)?.showSurgeriesRts !== false">
+            <span style="margin: 10px 0;" *ngIf="$any(settings)?.showSurgeriesRts !== false">
               <button mat-stroked-button color="primary" (click)="acknowledgeAllRooms()" style="margin-right:10px;"
                 title="סמן כל החדרים כמאושרים">
                 אשר כל החדרים
@@ -96,7 +96,7 @@
                     <span>{{ s.urgency.counts[key] }}</span>
                   </button>
                 </div>
-               
+
               </div>
 
               <div class="summary-pill">
@@ -111,12 +111,36 @@
                 <div class="sub">ממוצע למקרה: {{ s.time.avgHMM }}</div>
               </div>
 
-              <div class="summary-pill" *ngIf="s.busiest">
+              <!-- <div class="summary-pill" *ngIf="s.busiest">
                 <div class="k">החדר העמוס</div>
                 <div class="v">{{ translateRoomId(s.busiest.room) }}</div>
                 <div class="sub">{{ s.busiest.totalHMM }} · {{ s.busiest.cases }} מקרים<span
                     *ngIf="s.busiest.hasInProgress"> · ⏳</span></div>
+              </div> -->
+
+
+
+
+
+
+
+
+              <div class="summary-pill" *ngFor="let r of busiestRooms">
+                <div class="k">החדר העמוס</div>
+                <div class="v">{{ translateRoomId(r.room) }}</div>
+                <div class="sub">
+                  {{ r.totalHMM }} · {{ r.cases }} מקרים
+                  <span *ngIf="r.hasInProgress"> · ⏳</span>
+                </div>
               </div>
+
+
+              <div *ngIf="busiestRooms.length > 1">
+                {{ busiestRooms.length }} חדרים בעומס זהה
+              </div>
+
+
+
             </div>
 
             <div class="summary-section" style="margin-top: 20px;" *ngIf="s.inProgressList?.length">
@@ -133,7 +157,8 @@
             <div class="summary-section" style="margin-top: 20px;">
               <div class="section-title">מצב חדרים</div>
               <div class="rooms-list">
-                <div class="room-chip" *ngFor="let r of s.byRoom" [ngClass]="getRoomStatusClassWithSettings(r.roomData)">
+                <div class="room-chip" *ngFor="let r of s.byRoom"
+                  [ngClass]="getRoomStatusClassWithSettings(r.roomData)">
                   <span class="room-id">{{ translateRoomId(r.room) }}</span>
                   <span class="dot ok" *ngFor="let i of [].constructor(r.completed)"></span>
                   <span class="dot run" *ngFor="let i of [].constructor(r.inProgress)"></span>
@@ -199,7 +224,7 @@
                     <ng-container *ngIf="getRoomLateMeta(room) as late">
                       <!-- Overlap/backlog chip -->
                       <span *ngIf="late && late.hasOverlapBacklog; else overlapChipPlaceholder" class="overlap-chip"
-                        [attr.title]="'חפיפת עומס: ' + (late.backlogCount || 0) + ' מתוכננים לפני סיום המקרה הנוכח (' + (late.overlapUntil | date:'HH:mm') + ')'"> 
+                        [attr.title]="'חפיפת עומס: ' + (late.backlogCount || 0) + ' מתוכננים לפני סיום המקרה הנוכח (' + (late.overlapUntil | date:'HH:mm') + ')'">
 
                         ⏱️ עומס
                       </span>
