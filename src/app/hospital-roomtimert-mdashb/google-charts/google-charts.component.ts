@@ -211,7 +211,18 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
   ) { }
 
 
-
+ busiestRooms: Array<{
+    room: string;
+    totalMinutes: number;
+    totalHMM: string;
+    cases: number;
+    hasInProgress: boolean;
+    completed: number;
+    inProgress: number;
+    planned: number;
+    latestExit: string | null;
+    roomData: RoomData;
+  }> = [];
 
 
 
@@ -2283,27 +2294,6 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
 
     const avgCaseMinutes = completed.length ? Math.round(sumCompletedMinutes / completed.length) : 0;
 
-    // const byRoom = rooms.map(room => {
-    //   const rCases = todays.filter(s => s.SurgeryRoom === room);
-    //   const rCompleted = rCases.filter(s => (s.SurgeryStatus ?? s.status) === 'Completed');
-    //   const rInProg = rCases.filter(s => (s.SurgeryStatus ?? s.status) === 'InProgress');
-    //   const rPlanned = rCases.filter(s => (s.SurgeryStatus ?? s.status) === 'Planned');
-
-    //   const rMinutes = rCompleted.reduce((acc, s) => acc + this._completedMinutes(s, selectedDateISO), 0);
-
-    //   const latestExit = rCompleted
-    //     .map(s => s.TimeExitingTheOperatingRoom ?? s.timeExit)
-    //     .filter(Boolean).sort().slice(-1)[0] || null;
-
-    //   return {
-    //     room,
-    //     completed: rCompleted.length,
-    //     inProgress: rInProg.length,
-    //     planned: rPlanned.length,
-    //     totalMinutes: rMinutes,
-    //     latestExit,
-    //   };
-    // });
 
 const byRoom = rooms.map(room => {
   const rCases = todays.filter(s => s.SurgeryRoom === room);
@@ -2326,7 +2316,8 @@ const byRoom = rooms.map(room => {
     planned: rPlanned.length,
     totalMinutes: rMinutes,
     latestExit,
-    
+     cases: rCases.length,
+      hasInProgress: rInProg.length > 0,
     roomData: {
       roomId: room,
       date: selectedDateISO,
@@ -2335,16 +2326,37 @@ const byRoom = rooms.map(room => {
   };
 });
 
-    const busiest = byRoom.reduce((best, r) => {
-      if (!best) return r;
-      if (r.totalMinutes > best.totalMinutes) return r;
-      if (r.totalMinutes === best.totalMinutes) {
-        if (r.completed > best.completed) return r;
-        if (r.completed === best.completed && r.room.localeCompare(best.room) < 0) return r;
-      }
-      return best;
-    }, null as any) || null;
 
+function formatMinutesToHMM(totalMinutes: number): string {
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  return `${hours}:${minutes.toString().padStart(2, '0')}`;
+}
+
+const busiest = byRoom.reduce((best, r) => {
+  if (!best) return r;
+  if (r.totalMinutes > best.totalMinutes) return r;
+  if (r.totalMinutes === best.totalMinutes) {
+    if (r.completed > best.completed) return r;
+    if (r.completed === best.completed && r.room.localeCompare(best.room) < 0) return r;
+  }
+  return best;
+}, null as any) || null;
+
+if (busiest) {
+  busiest.totalHMM = formatMinutesToHMM(busiest.totalMinutes);
+}
+
+
+
+const maxMinutes = Math.max(...byRoom.map(r => r.totalMinutes));
+
+this.busiestRooms = byRoom
+  .filter(r => r.totalMinutes === maxMinutes)
+  .map(r => ({
+    ...r,
+    totalHMM: formatMinutesToHMM(r.totalMinutes) 
+  }));
 
 
     const inProgressList = inProg
@@ -2353,7 +2365,7 @@ const byRoom = rooms.map(room => {
         (a.TimeEntranceToTheOperatingRoom ?? a.timeEntrance ?? '')
           .localeCompare(b.TimeEntranceToTheOperatingRoom ?? b.timeEntrance ?? '')
       )
-      // .slice(0, this.settings.maxInProgressItems ?? inProg.length)
+      
       .map(s => ({
         room: s.SurgeryRoom ?? s.roomId ?? s.surgeryRoom ?? s.room,
         title: this._pickTitleCompat(s),
