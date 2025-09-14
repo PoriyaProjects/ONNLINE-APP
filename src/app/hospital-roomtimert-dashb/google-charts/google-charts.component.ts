@@ -709,7 +709,7 @@ loadRoomsData(): void {
       const roomId = row.SurgeryRoom;
       if (!acc[roomId]) acc[roomId] = [];
       acc[roomId].push({
-        surgeryId: row.SurgeryID,
+        surgeryId: row.CaseNumber,
         patientNumber: row.PatientNumber,
         surgeryName: row.SurgeryName,
         surgeryCode: row.SurgeryCode,
@@ -1398,12 +1398,14 @@ private formatHM(mins: number): string {
 
 
 
-statusTranslations: Record<string, string> = {
-  'Completed': 'הסתיים',
-  'InProgress': 'בתהליך',
-  'Scheduled': 'מתוכנן',
-  'Cancelled': 'בוטל',  
-};
+  statusTranslations: Record<string, string> = {
+    'Completed': '✔️ הסתיים',
+    'InProgress': '🟢 בתהליך',
+    'Scheduled': '🕓 מתוזמן',
+    'Cancelled': '❌ בוטל',
+    'Planned': '📆 מתוכנן'
+  };
+
 
 translateStatus(status: string): string {
   return this.statusTranslations[status] || status;
@@ -1605,7 +1607,7 @@ private getHeaderInProgressIdPlain(room: RoomData): string {
 
 getHeaderProgressText(room: RoomData): string {
   var n = 0, x = 0;
-  if (!room || !room.surgeries || !room.surgeries.length) return '0 מתוך 0';
+  if (!room || !room.surgeries || !room.surgeries.length) return ' 0 מתוך 0 מתוכננים';
 
   var dayStart = this.workingStart(room.date || this.selectedDate);
   var dayEnd   = this.workingEnd(room.date || this.selectedDate);
@@ -1630,7 +1632,7 @@ getHeaderProgressText(room: RoomData): string {
     x++;
     if (s.status === 'Completed' || s.status === 'InProgress') n++;
   }
-  return n + ' מתוך ' + x;
+  return 'הושלמו ' + n + ' מתוך ' + x + ' מתוכננים';
 }
 
 
@@ -1813,5 +1815,5 @@ getHeaderProgressTitle(room: RoomData): string {
     this.selectedDate = `${yyyy}-${mm}-${dd}`;
     this.onDateChange();
   }
-  
+
 }
