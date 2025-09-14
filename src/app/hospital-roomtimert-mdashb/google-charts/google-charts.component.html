@@ -119,7 +119,7 @@
               </div>
             </div>
 
-            <div class="summary-section" *ngIf="s.inProgressList?.length">
+            <div class="summary-section" style="margin-top: 20px;" *ngIf="s.inProgressList?.length">
               <div class="section-title">⏱️ עכשיו בתהליך ({{ s.totals.inProgress }})</div>
               <ul class="now-list">
                 <li *ngFor="let it of s.inProgressList">
@@ -199,7 +199,8 @@
                     <ng-container *ngIf="getRoomLateMeta(room) as late">
                       <!-- Overlap/backlog chip -->
                       <span *ngIf="late && late.hasOverlapBacklog; else overlapChipPlaceholder" class="overlap-chip"
-                        [attr.title]="'Backlog overlap: ' + (late.backlogCount || 0) + ' planned before current case ends (' + (late.overlapUntil | date:'HH:mm') + ')'">
+                        [attr.title]="'חפיפת עומס: ' + (late.backlogCount || 0) + ' מתוכננים לפני סיום המקרה הנוכח (' + (late.overlapUntil | date:'HH:mm') + ')'"> 
+
                         ⏱️ עומס
                       </span>
                       <ng-template #overlapChipPlaceholder>
@@ -275,7 +276,7 @@
                       aria-hidden="true" (click)="acknowledgeRoomLate(room); $event.stopPropagation()">⚠️</span>
                     <!-- [class.blink]="!isRoomAcked(room)" -->
                     <span *ngIf="late && late.hasOverlapBacklog" class="overlap-icon"
-                      [attr.title]="'Overlap backlog (' + (late.backlogCount || 0) + ')'">⏱️</span>
+                      [attr.title]="'חפיפת עומס (' + (late.backlogCount || 0) + ')'">⏱️</span>
                   </ng-container>
                   <ng-template #warnIconPlaceholder>
                     <span class="warn-icon warn-icon--placeholder" aria-hidden="true">⚠️</span>
