@@ -83,8 +83,8 @@
 
             <div class="summary-grid">
               <div class="summary-pill">
-                <div class="k">סה״כ ניתוחים</div>
-                <div class="v">{{ s.totals.surgeries }}</div>
+                <div class="k">סה״כ ניתוחים <span class="v">{{ s.totals.surgeries }}</span></div>
+                <!-- <div class="v">{{ s.totals.surgeries }}</div> -->
                 <div class="sub">✔ {{ s.totals.completed }} · ⏳ {{ s.totals.inProgress }} · 📋 {{ s.totals.planned }}
                 </div>
 
@@ -111,20 +111,7 @@
                 <div class="sub">ממוצע למקרה: {{ s.time.avgHMM }}</div>
               </div>
 
-              <!-- <div class="summary-pill" *ngIf="s.busiest">
-                <div class="k">החדר העמוס</div>
-                <div class="v">{{ translateRoomId(s.busiest.room) }}</div>
-                <div class="sub">{{ s.busiest.totalHMM }} · {{ s.busiest.cases }} מקרים<span
-                    *ngIf="s.busiest.hasInProgress"> · ⏳</span></div>
-              </div> -->
-
-
-
-
-
-
-
-
+           
               <div class="summary-pill" *ngFor="let r of busiestRooms">
                 <div class="k">החדר העמוס</div>
                 <div class="v">{{ translateRoomId(r.room) }}</div>
