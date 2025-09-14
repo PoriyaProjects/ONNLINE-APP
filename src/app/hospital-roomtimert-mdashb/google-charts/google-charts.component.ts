@@ -2326,7 +2326,7 @@ const byRoom = rooms.map(room => {
     planned: rPlanned.length,
     totalMinutes: rMinutes,
     latestExit,
-    // ✅ added RoomData object for getRoomStatusClassWithSettings
+    
     roomData: {
       roomId: room,
       date: selectedDateISO,

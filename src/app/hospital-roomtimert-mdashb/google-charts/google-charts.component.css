@@ -1,10 +1,15 @@
 
-  #surgeriesrts {
+  /* #surgeriesrts {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(13%, 1fr));
     gap: 16px;
-  }
+  } */
 
+  #surgeriesrts {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 16px;
+}
   .room-widget {
     transition: all 0.3s ease;
   }
@@ -750,3 +755,22 @@ h4.text-center { min-height: 2.2rem; }
 }
 
 
+/* Ensure at least 3 cards per row on large screens */
+@media (min-width: 1800px) {
+  #surgeriesrts {
+    grid-template-columns: repeat(7, minmax(250px, 1fr));
+  }
+}
+
+@media (max-width: 900px) {
+  #surgeriesrts {
+    grid-template-columns: repeat(4, minmax(250px, 1fr));
+  }
+}
+
+/* Mobile: force single column */
+@media (max-width: 600px) {
+  #surgeriesrts {
+    grid-template-columns: 1fr;
+  }
+}
