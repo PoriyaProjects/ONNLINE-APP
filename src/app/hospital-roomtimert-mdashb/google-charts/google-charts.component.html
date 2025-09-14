@@ -1,10 +1,9 @@
 <style>
-  /* set the container width */
+
   .date-compact.mat-form-field {
     width: 120px;
   }
 
-  /* force the infix width (needs deep selector due to encapsulation) */
   :host ::ng-deep .date-compact .mat-form-field-infix {
     width: 100px;
   }
@@ -19,9 +18,6 @@
     </div>
     <div class="row">
       <div class="mdc-layout-grid__cell col-md-12">
-
-
-
       </div>
     </div>
   </div>
@@ -32,7 +28,6 @@
       <main class="mdc-top-app-bar--fixed-adjust">
         <div class="panel" style="padding:20px;width:100%; border: 1px solid rgba(0, 0, 0, .125);
     border-radius: .25rem;">
-
           <div class="refresh-toolbar">
             <span *ngIf="lastLoaded" class="last-updated">
               נטען לאחרונה: {{ lastLoaded | date:'HH:mm:ss' }}
@@ -44,7 +39,6 @@
             <span class="refresh-box" (click)="manualRefresh()" title="רענן עכשיו">
               ⟳ {{ formatCountdown(nextRefreshIn) }}
             </span>
-
           </div>
 
 
@@ -83,8 +77,7 @@
 
             <div class="summary-grid">
               <div class="summary-pill">
-                <div class="k">סה״כ ניתוחים <span class="v">{{ s.totals.surgeries }}</span></div>
-                <!-- <div class="v">{{ s.totals.surgeries }}</div> -->
+                <div class="k">סה״כ ניתוחים <span class="v">{{ s.totals.surgeries }}</span></div>                
                 <div class="sub">✔ {{ s.totals.completed }} · ⏳ {{ s.totals.inProgress }} · 📋 {{ s.totals.planned }}
                 </div>
 
@@ -104,14 +97,11 @@
                 <div class="v">{{ s.rooms.total }}</div>
                 <div class="sub">פעילים: {{ s.rooms.active }} · פנויים: {{ s.rooms.free }}</div>
               </div>
-
               <div class="summary-pill">
                 <div class="k">זמן פעילות מצטבר</div>
                 <div class="v">{{ s.time.totalHMM }}</div>
                 <div class="sub">ממוצע למקרה: {{ s.time.avgHMM }}</div>
-              </div>
-
-           
+              </div>           
               <div class="summary-pill" *ngFor="let r of busiestRooms">
                 <div class="k">החדר העמוס</div>
                 <div class="v">{{ translateRoomId(r.room) }}</div>
@@ -121,15 +111,12 @@
                 </div>
               </div>
 
-
               <div *ngIf="busiestRooms.length > 1">
                 {{ busiestRooms.length }} חדרים בעומס זהה
               </div>
 
 
-
             </div>
-
             <div class="summary-section" style="margin-top: 20px;" *ngIf="s.inProgressList?.length">
               <div class="section-title">⏱️ עכשיו בתהליך ({{ s.totals.inProgress }})</div>
               <ul class="now-list">
@@ -156,7 +143,7 @@
               </div>
             </div>
 
-            <!-- דריל־דאון לפי דחיפות -->
+            
             <div class="summary-section" style="padding-top:20px;" *ngIf="summaryDrilldownUrgency as uKey">
               <div class="section-title">
                 פירוט לפי דחיפות: {{ s.urgency.icons[uKey] }} {{ s.urgency.labels[uKey] }}
@@ -177,17 +164,11 @@
 
           </div>
           <!-- ───── /Summary Card ───── -->
-
-
-
-
           <div id="surgeriesrts" class="dashboard" *ngIf="$any(settings)?.showSurgeriesRts !== false"
             [class.background-mode]="settings.backgroundMode === true">
             <div *ngIf="isLoading" class="loader-overlay">
               <div class="spinner"></div>
             </div>
-
-
             <div class="room-widget card" *ngFor="let room of roomsData; trackBy: trackByRoomId" [ngClass]="[
        (settings.colorize && !isRoomClosedForColoring(room)) ? getRoomStatusClassWithSettings(room) : '',
        (settings.colorize && settings.colorMode === 'background' && !isRoomClosedForColoring(room)) ? 'status-mode-bg' : '',
@@ -196,8 +177,6 @@
        isRoomExpanded(room.roomId) ? 'active' : '',
        (!isRoomExpanded(room.roomId) && !allExpanded && activeRoomId && room.roomId !== activeRoomId) ? 'blurred' : ''
      ]">
-
-
               <!-- Header (sticky inside the scrolling card) -->
               <div class="room-header" (click)="toggleRoom(room.roomId)">
                 <!-- Status dot -->
@@ -212,7 +191,6 @@
                       <!-- Overlap/backlog chip -->
                       <span *ngIf="late && late.hasOverlapBacklog; else overlapChipPlaceholder" class="overlap-chip"
                         [attr.title]="'חפיפת עומס: ' + (late.backlogCount || 0) + ' מתוכננים לפני סיום המקרה הנוכח (' + (late.overlapUntil | date:'HH:mm') + ')'">
-
                         ⏱️ עומס
                       </span>
                       <ng-template #overlapChipPlaceholder>
@@ -285,8 +263,7 @@
                   <ng-container *ngIf="getRoomLateMeta(room) as late">
                     <span *ngIf="late && late.isLate; else warnIconPlaceholder" class="warn-icon"
                       [attr.title]="'תחזית סיום -' + (late.predictedEnd | date:'HH:mm') + ' (' + late.overrunMin + '׳)'"
-                      aria-hidden="true" (click)="acknowledgeRoomLate(room); $event.stopPropagation()">⚠️</span>
-                    <!-- [class.blink]="!isRoomAcked(room)" -->
+                      aria-hidden="true" (click)="acknowledgeRoomLate(room); $event.stopPropagation()">⚠️</span>                    
                     <span *ngIf="late && late.hasOverlapBacklog" class="overlap-icon"
                       [attr.title]="'חפיפת עומס (' + (late.backlogCount || 0) + ')'">⏱️</span>
                   </ng-container>
@@ -303,11 +280,9 @@
                 </div>
               </div>
 
-
               <!-- Body -->
               <div class="room-body" *ngIf="isRoomExpanded(room.roomId)" smartAutoScroll [runOnce]="false"
                 style="max-height:460px; overflow:auto;">
-
                 <ng-container *ngIf="activeSurgeries(room) as active">
                   <div *ngFor="let s of active; let i = index; trackBy: trackBySurgeryId" class="surgery-block"
                     style="direction:rtl; text-align:right;">
@@ -370,11 +345,9 @@
                       <ng-container *ngIf="s.department?.trim()">
                         - {{ s.department }}
                       </ng-container>
-
                       <br />
                       <b *ngIf="settings.showTimes">{{ s.timeEntrance }} ← {{ s.timeExit || '...' }}</b>
                       <br *ngIf="settings.showTimes" />
-
                       <span *ngIf="settings.showStatus" class="status" [ngClass]="s.status">
                         {{ translateStatus(s.status) }}
                       </span>
@@ -382,15 +355,11 @@
                     </div>
                   </div>
                 </ng-container>
-
               </div>
-
             </div>
-
-
-
-
           </div>
+
+
           <div class="row card" style="margin-top: 20px;">
             <div class="metrics-legend" style="text-align:center; margin-bottom:10px; font-size:0.9em;">
               ◓ = עיכוב מתחילת יום |
@@ -406,6 +375,7 @@
               🚶 = אמבולטורי |
               ⬇️ = ללא עדיפות
             </div>
+
             <!-- Display Settings (hidden entirely if no userId) -->
             <div *ngIf="userId" class="display-panel" style="text-align: right; margin:10px;">
               <button type="button" (click)="showDisplayPanel = !showDisplayPanel"
