@@ -60,9 +60,11 @@ export class TrainingRequestDashboardComponent implements OnInit {
   trainingPlans: any[] = []; // Replace with a real data source
   date_now: any = Date.now();
   Plan_Date: any;
+  Health_Plan_Date: any;
   loading: boolean;
   print_only_Protocol: boolean;
   change_plan_date: boolean;
+  health_change_plan_date: boolean;
   decissions_list = [];
   filter_types: any = "";
   filter_plans: any = "";
@@ -79,8 +81,10 @@ export class TrainingRequestDashboardComponent implements OnInit {
     this.date_now = this.datePipe.transform(this.date_now, 'dd-MM-yyyy');
     this.getAllTrainingRequestFormsList();
     this.changeTrainingPlanDate();
+    this.changeHealthTrainingPlanDate();
     this.getHRDepartmentEmployees();
     this.getTrainingRequestPlansList();
+    // this.getHealthTrainingRequestPlansList();
   }
 
   changeTrainingPlanDate(): void {
@@ -111,6 +115,34 @@ export class TrainingRequestDashboardComponent implements OnInit {
       });
   }
 
+  changeHealthTrainingPlanDate(): void {
+    const resetUsers = ['ttsrefati', 'tkoren', 'adahabre', 'dnudelman'];
+
+    if (!resetUsers.includes(this.UserName)) {
+      this.Health_Plan_Date = '';
+      this.health_change_plan_date = false;
+    } else {
+      this.health_change_plan_date = true;
+    }
+
+    const formattedDate = this.Health_Plan_Date
+      ? this.datePipe.transform(this.Health_Plan_Date, 'yyyy-MM-dd')
+      : '';
+
+    this.http.post<{ d: string }>(`${environment.url}ChangeHealthTrainingPlanDate`, {
+      plan_date: formattedDate
+    })
+      .pipe(
+        catchError((error) => {
+          console.error('Error changing training plan date', error);
+          return of({ d: this.Health_Plan_Date });
+        })
+      )
+      .subscribe((response) => {
+        this.Health_Plan_Date = response.d;
+      });
+  }
+
   applyFilter(event: Event) {
     const filterValue = (event.target as HTMLInputElement).value;
     this.trainingRequests.filter = filterValue.trim().toLowerCase();
@@ -138,7 +170,15 @@ export class TrainingRequestDashboardComponent implements OnInit {
 
   getTrainingRequestPlansList() {
     this.http
-      .post(environment.url + "GetTrainingRequestPlansList", {})
+      .post(environment.url + "GetMedinaTrainingRequestPlansList", {})
+      .subscribe((Response) => {
+        this.decissions_list = Response["d"];
+      });
+  }
+
+  getHealthTrainingRequestPlansList() {
+    this.http
+      .post(environment.url + "GetHealthTrainingRequestPlansList", {})
       .subscribe((Response) => {
         this.decissions_list = Response["d"];
       });
@@ -297,25 +337,26 @@ export class TrainingRequestDashboardComponent implements OnInit {
       return;
     }
 
-    // Get headers dynamically from the object keys
-    const headers = Object.keys(data[0]);
-
-
-    // Build table rows
-    let tableRows =
-      `<tr>`
-    for (let i = 0; i < data.length; i++) {
-      tableRows += `<td style="padding:8px; border:1px solid #ccc;">${data[i]}</td>`
-    }
-    `</tr>`;
+    // ✅ Define which columns to print (keys from your data objects)
+    const columnTitles = ['מס בקשה', 'תאריך יצירה', 'שם מלא', 'מספר זהות', 'תפקיד/מחלקה', 'שם ההשתלמות', 'מיקום', 'תאריך התחלה', 'תאריך סיום']; // adjust as needed
+    const selectedColumns = ['Row_ID', 'Form_Fill_Date', 'First_Name', 'Passport_ID', 'Function_Department', 'Request_Name', 'Request_Location', 'Date_Start', 'Date_End']; // adjust as needed
 
     // Build table headers
-    let tableHeader =
-      `<tr>`
-    for (let i = 0; i < headers.length; i++) {
-      tableHeader += `<th style="padding:8px; border:1px solid #ccc; background:#f5f5f5;">${headers[i]}</th>`
+    let tableHeader = `<tr>`;
+    for (let col of columnTitles) {
+      tableHeader += `<th style="padding:8px; border:1px solid #ccc; background:#f5f5f5;">${col}</th>`;
     }
-    `</tr>`;
+    tableHeader += `</tr>`;
+
+    // Build table rows
+    let tableRows = data.map(row => {
+      let rowHtml = `<tr>`;
+      for (let col of selectedColumns) {
+        rowHtml += `<td style="padding:8px; border:1px solid #ccc;">${row[col] ?? ''}</td>`;
+      }
+      rowHtml += `</tr>`;
+      return rowHtml;
+    }).join('');
 
     // Full HTML with RTL + landscape
     const printContent = `

@@ -15,13 +15,13 @@
                 <mat-form-field appearance="outline" class="form-field">
                     <mat-label>סינון</mat-label>
                     <mat-select [(ngModel)]="filter_types" (selectionChange)="getAllTrainingRequestFormsList()">
-                        <mat-option value="1"><mat-icon color="primary">done</mat-icon> אושרו בוועדה</mat-option>
-                        <mat-option value="0"><mat-icon color="warn">close</mat-icon> סורבו בוועדה</mat-option>
-                        <mat-option value="null"><mat-icon color="accent">schedule</mat-icon> בהמתנה</mat-option>
-                        <mat-option value="2"><mat-icon>cancel</mat-icon> בוטלו</mat-option>
-                        <mat-option value="3"><mat-icon style="color: #15e139;">list</mat-icon> מוכנים
-                            לוועדה</mat-option>
-                        <mat-option value=""><mat-icon>filter_list</mat-icon> הכל</mat-option>
+                        <mat-option value="1"><span style="color: #b887f9;">1. אושרו בוועדה</span></mat-option>
+                        <mat-option value="0"><span style="color: #ff655a;">2. סורבו בוועדה</span></mat-option>
+                        <mat-option value="null"><span style="color: #11110f;">3. בהמתנה</span></mat-option>
+                        <mat-option value="2"><span style="color: #f3d45d;">4. בוטלו</span></mat-option>
+                        <mat-option value="3"><span style="color: #6eff88;">5. מוכנים
+                                לוועדה</span></mat-option>
+                        <mat-option value=""><span style="color: #b887f9;">6. הכל</span></mat-option>
                     </mat-select>
                 </mat-form-field>
 
@@ -68,6 +68,20 @@
                 <!-- Static Display of Date -->
                 <p *ngIf="!change_plan_date" class="next-meeting">
                     <strong>תאריך הועדה הקרוב:</strong> <u>{{ Plan_Date }}</u>
+                </p>
+
+                <!-- Date Picker -->
+                <mat-form-field *ngIf="health_change_plan_date" appearance="outline" class="form-field">
+                    <mat-label>תאריך ועדת התאגיד הקרוב</mat-label>
+                    <input matInput [matDatepicker]="HealthPlanDate" [(ngModel)]="Health_Plan_Date"
+                        (dateChange)="changeHealthTrainingPlanDate()" />
+                    <mat-datepicker-toggle matIconSuffix [for]="HealthPlanDate"></mat-datepicker-toggle>
+                    <mat-datepicker #HealthPlanDate></mat-datepicker>
+                </mat-form-field>
+
+                <!-- Static Display of Date -->
+                <p *ngIf="!health_change_plan_date" class="next-meeting">
+                    <strong>תאריך ועדת התאגיד הקרוב:</strong> <u>{{ Health_Plan_Date }}</u>
                 </p>
             </div>
         </div>

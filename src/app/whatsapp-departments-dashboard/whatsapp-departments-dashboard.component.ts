@@ -27,7 +27,7 @@ export class WhatsappDepartmentsDashboardComponent implements OnInit {
   users_filter = new FormControl('');
   filteredOptions: Observable<string[]>;
   notification = "";
-  secondsLeft = 5;
+  secondsLeft = 2;
   user_name = localStorage.getItem('loginUserName').toLowerCase();
   @ViewChild('scrollTarget') scrollTarget: ElementRef;
   contacts = [];
