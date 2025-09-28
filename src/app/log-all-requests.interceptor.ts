@@ -12,7 +12,7 @@ import { environment } from "src/environments/environment";
 
 @Injectable()
 export class LogAllRequestsInterceptor implements HttpInterceptor {
-    constructor(private logHttp: HttpClient, private router: Router) { 
+    constructor(private logHttp: HttpClient, private router: Router) {
         //debugger
     }
 
@@ -20,9 +20,6 @@ export class LogAllRequestsInterceptor implements HttpInterceptor {
         request: HttpRequest<unknown>,
         next: HttpHandler
     ): Observable<HttpEvent<unknown>> {
-        //debugger
-        console.log(request.url);
-        console.log(this.router.url.replace("/", ""));
         if (localStorage.getItem('LastRout') == '') localStorage.setItem('LastRout', 'login');
         if (localStorage.getItem("loginUserName") != "" && localStorage.getItem("loginUserName")) {
             if (!localStorage.getItem("LastRout")) {
