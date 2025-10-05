@@ -273,8 +273,8 @@ export class EmployeesAddUpdateComponent implements OnInit {
           ApprovedToBlossom: new FormControl(this.employee.ApprovedToBlossom, null),
           AcceptTerms: new FormControl(this.employee.AcceptTerms, null),
           Toranot: new FormControl(this.employee.Toranot, null),
-          ManagerID1: new FormControl({ id: this.employee.ManagerID1.id, firstname: "", lastname: "", ADUserName: "" }, null),
-          ManagerID2: new FormControl({ id: this.employee.ManagerID2.id, firstname: "", lastname: "", ADUserName: "" }, null),
+          ManagerID1: new FormControl({ id: this.employee.ManagerID1.id, firstname: "", lastname: "", ADUserName: "" }, Validators.required),
+          ManagerID2: new FormControl({ id: this.employee.ManagerID2.id, firstname: "", lastname: "", ADUserName: "" }, Validators.required),
         });
         if (this.employee.RowID == null || this.employee.StatusRow == "1") {
           this.employeePersonalDetails.controls['FirstNameEng'].setValidators(Validators.required);
