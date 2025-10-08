@@ -294,7 +294,7 @@ export class TrainingRequestFormComponent implements OnInit {
           ]),
           Work_Place: new FormControl(Training_Request_Forms_G?.Work_Place, null),
         });
-        if (this.passport == Training_Request_Forms_A?.Passport_ID) this.requested = true;
+        if (this.passport == Training_Request_Forms_A?.Passport_ID && this.passport != '025447285' && this.passport != '055382618' && this.passport != '056045834') this.requested = true;
         this.check_if_fund_or_health();
         this.cityControl.setValue(Training_Request_Forms_B?.Request_Location);
         this.Training_Out_Check();
@@ -732,7 +732,7 @@ export class TrainingRequestFormComponent implements OnInit {
         let patient = Response['d'][0];
         if (patient == undefined) return;
         else if (patient.EmployeeID != null) {
-          if (this.passport == patient.EmployeeID) this.requested = true;
+          if (this.passport == patient.EmployeeID && this.passport != '025447285' && this.passport != '055382618' && this.passport != '056045834') this.requested = true;
           this.Training_Request_Forms_A.controls['Passport_ID'].setValue(patient.EmployeeID);
           this.Training_Request_Forms_A.controls['Family_Name'].setValue(patient.LastName);
           this.Training_Request_Forms_A.controls['First_Name'].setValue(patient.FirstName);
