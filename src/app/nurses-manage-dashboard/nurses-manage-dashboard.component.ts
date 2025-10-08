@@ -599,5 +599,4 @@ export class NursesManageDashboardComponent implements OnInit {
         }
       );
   }
-
 }

@@ -915,12 +915,12 @@ export class FillSurveyComponent implements OnInit {
                             <p class="fix-mb-5">
                                 <span>
                                     <span><b>${item.questionValue}</b>:&nbsp;&nbsp;</span>`;
-                                    if(item.AnswerType != 'Signature'){
-                                        pdf += `<span>${item.AnswerValue}</span>`;
-                                    }else{
-                                        pdf += `<img width="100" height="100" [src]="${item.AnswerValue}">`;
-                                    }
-                                    pdf += `
+            if (item.AnswerType != 'Signature') {
+                pdf += `<span>${item.AnswerValue}</span>`;
+            } else {
+                pdf += `<img width="100" height="100" [src]="${item.AnswerValue}">`;
+            }
+            pdf += `
                                 </span>
                             </p>
                         </div>
@@ -1071,9 +1071,9 @@ export class FillSurveyComponent implements OnInit {
         } else {
             this.http
                 .post(
-                    environment.url + "GetPersonalDetails",
+                    environment.url + "GetPatientDetailsByCaseNumber",
                     {
-                        CaseNumber: this.CaseNumber,
+                        _caseNumber: this.CaseNumber,
                     }
                 )
                 .subscribe((Response) => {
@@ -1098,6 +1098,25 @@ export class FillSurveyComponent implements OnInit {
                             passPatient[0].PatientGender;
                     } else {
                         this.mPersonalDetails = Response["d"];
+                        if (this.mPersonalDetails != undefined) {
+                            this.mPersonalDetails.Address =
+                                Response["d"].PM_CITY;
+                            this.mPersonalDetails.DOB = Response["d"].PM_DOB;
+                            this.mPersonalDetails.Email =
+                                Response["d"].PatientEmail;
+                            this.mPersonalDetails.FirstName =
+                                Response["d"].PM_FIRST_NAME;
+                            this.mPersonalDetails.FatherName =
+                                Response["d"].PM_FATHER_NAME;
+                            this.mPersonalDetails.LastName =
+                                Response["d"].PM_LAST_NAME;
+                            this.mPersonalDetails.PersonID =
+                                Response["d"].PM_PATIENT_ID;
+                            this.mPersonalDetails.PhoneNumber =
+                                Response["d"].PM_PATIENT_PHONE_NUMBER_1;
+                            this.mPersonalDetails.Gender =
+                                Response["d"].PM_PATIENT_GENDER;
+                        }
                     }
                     this.getForm(this.urlID, this.ifContinueForm, this.NurseID);
                     this.selectedSubCheckbox = new Array<any>();
