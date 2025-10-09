@@ -484,7 +484,7 @@
               <p *ngIf="user_name != 'dnudelman' && user_name != 'lnachmani'"> {{
                 Training_Request_Forms_D.get('Training_Fund_Answer').value }}
               </p>
-              <mat-form-field *ngIf="user_name == 'dnudelman' || user_name != 'lnachmani' || user_name == 'adahabre'">
+              <mat-form-field *ngIf="user_name == 'dnudelman' || user_name == 'lnachmani' || user_name == 'adahabre'">
                 <mat-label>תשובת התאגיד</mat-label>
                 <textarea matInput formControlName="Training_Fund_Answer" rows="2"></textarea>
               </mat-form-field>
