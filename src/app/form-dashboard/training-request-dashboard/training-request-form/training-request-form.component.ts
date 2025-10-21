@@ -108,7 +108,7 @@ export class TrainingRequestFormComponent implements OnInit {
       this.getPersonDetails();
     }
     this.getAllTrainingRequestQuestionsList();
-    this.getTrainingRequestPlansList();
+    // this.getTrainingRequestPlansList();
     this.getPlanningIntityList();
     this.getEmployeesList();
     this.getCityCodes();
@@ -271,7 +271,7 @@ export class TrainingRequestFormComponent implements OnInit {
           Approved: new FormControl(Training_Request_Forms_F?.Approved, this.passport == Training_Request_Forms_F?.Passport_ID ? null : Validators.required),
         });
         this.Training_Request_Forms_H = this.fb.group({
-          Opinion_Date: new FormControl(Training_Request_Forms_H?.Opinion_Date == null ? this.date_now : Training_Request_Forms_H?.Opinion_Date, null),
+          Opinion_Date: new FormControl(Training_Request_Forms_H?.Opinion_Date == null || Training_Request_Forms_H?.Opinion_Date == '' ? this.date_now : Training_Request_Forms_H?.Opinion_Date, null),
           Training_Type: new FormControl(Training_Request_Forms_H?.Training_Type, null),
           Approved: new FormControl(Training_Request_Forms_H?.Approved, null),
           Transportaion: new FormControl(Training_Request_Forms_H?.Transportaion == 'True' ? true : false, null),
