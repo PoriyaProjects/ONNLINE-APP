@@ -441,8 +441,9 @@ export class TrainingRequestDashboardComponent implements OnInit {
             <p style="margin: 5px 0;">הריני להודיעך כי הועדה החליטה, לאשר את הבקשה בכפוף לתנאים הבאים:</p>
             <ul style="margin-right: 20px;padding-right: 20px;list-style-type: disc;">
             <li style="margin-bottom: 5px;">מספר ימי העדרות שאושרו: ${data['H'].Approved_Absence_Time}, קוד רישום: ${data['H'].Code_Type}</li>
-                ${data['H'].Transportaion === "True" ? `<li style="margin-bottom: 5px;">החזר נסיעות בגובה 100% לפי רפורמת דרך שווה.</li>
-                <p>יש להגיש קבלה מקורית למדור שכר עד חודשיים מיום ההנפקה</p>` : ``}
+            ${data['H'].Approved_Percent != '' ? `<li>שכ"ל מאושר: ${(parseInt(data['H'].Approved_Percent) * parseInt(data['H'].Approved_Percent_Out_Of)) / 100}</li>` : ``}
+                ${data['H'].Transportaion === "True" ? `<li style="margin-bottom: 5px;">החזר נסיעות בגובה 100% לפי רפורמת דרך שווה.</li>` : ``}
+                ${data['H'].Approved == "מאושר" ? `<p>יש להגיש קבלה מקורית למדור שכר עד חודשיים מיום ההנפקה</p>` : ``}
             </ul>` : `
             <p style="margin: 5px 0;">הריני להודיעך כי הועדה החליטה, לא לאשר את הבקשה.</p>`
       }

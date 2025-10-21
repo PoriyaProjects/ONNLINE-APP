@@ -783,6 +783,7 @@
             <div class="col-lg-2 col-md-4 col-sm-6">
               <mat-label class="label-select">סוג השתלמות</mat-label>
               <mat-select formControlName="Training_Type" [compareWith]="compareFn3">
+                <mat-option value=""></mat-option>
                 <mat-option value="העשרה">העשרה</mat-option>
                 <mat-option value="הצגת הרצאה">הצגת הרצאה</mat-option>
                 <mat-option value="השכלה פורמלית אונ' פתוחה">השכלה פורמלית אונ' פתוחה</mat-option>
@@ -870,6 +871,7 @@
                 <mat-label>קודי השתלמות</mat-label>
                 <!-- <input matInput formControlName="Approved_Absence_Time" /> -->
                 <mat-select formControlName="Code_Type" [compareWith]="compareFn2">
+                  <mat-option value=""></mat-option>
                   <mat-option value="3">3</mat-option>
                   <mat-option value="10">10</mat-option>
                   <mat-option value="31">31</mat-option>
