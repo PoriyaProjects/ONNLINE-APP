@@ -444,6 +444,7 @@ export class TrainingRequestDashboardComponent implements OnInit {
             ${data['H'].Approved_Percent != '' ? `<li>שכ"ל מאושר: ${(parseInt(data['H'].Approved_Percent) * parseInt(data['H'].Approved_Percent_Out_Of)) / 100}</li>` : ``}
                 ${data['H'].Transportaion === "True" ? `<li style="margin-bottom: 5px;">החזר נסיעות בגובה 100% לפי רפורמת דרך שווה.</li>` : ``}
                 ${data['H'].Approved == "מאושר" ? `<p>יש להגיש קבלה מקורית למדור שכר עד חודשיים מיום ההנפקה</p>` : ``}
+                ${data['H'].Approved == "מאושר התחייבות חשב" ? `<p>שכ"ל דרך התחייבות חשב</p>` : ``}
             </ul>` : `
             <p style="margin: 5px 0;">הריני להודיעך כי הועדה החליטה, לא לאשר את הבקשה.</p>`
       }
