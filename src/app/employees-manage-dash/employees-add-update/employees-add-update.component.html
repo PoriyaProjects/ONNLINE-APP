@@ -63,22 +63,6 @@
                                     <input (focusout)="checkIfExists()" placeholder="ת.ז" matInput
                                         formControlName="EmployeeID">
                                 </mat-form-field></div>
-                            <div class="col-3"><mat-form-field class="example-full-width">
-                                    <mat-label>שם פרטי (עברית)</mat-label>
-                                    <input matInput placeholder="שם פרטי (עברית)" formControlName="FirstName">
-                                </mat-form-field></div>
-                            <div class="col-3"><mat-form-field class="example-full-width">
-                                    <mat-label>שם פרטי (אנגלית)</mat-label>
-                                    <input matInput placeholder="שם פרטי (אנגלית)" formControlName="FirstNameEng">
-                                </mat-form-field></div>
-                            <div class="col-3"><mat-form-field class="example-full-width">
-                                    <mat-label>שם משפחה (עברית)</mat-label>
-                                    <input matInput placeholder="שם משפחה (עברית)" formControlName="LastName">
-                                </mat-form-field></div>
-                            <div class="col-3"><mat-form-field class="example-full-width">
-                                    <mat-label>שם משפחה (אנגלית)</mat-label>
-                                    <input matInput placeholder="שם משפחה (אנגלית)" formControlName="LastNameEng">
-                                </mat-form-field></div>
                             <div class="col-1">
                                 <mat-form-field>
                                     <mat-label>תואר</mat-label>
@@ -91,7 +75,23 @@
                                     </mat-select>
                                 </mat-form-field>
                             </div>
-                            <div class="col-2">
+                            <div class="col-2"><mat-form-field class="example-full-width">
+                                    <mat-label>שם פרטי (עברית)</mat-label>
+                                    <input matInput placeholder="שם פרטי (עברית)" formControlName="FirstName">
+                                </mat-form-field></div>
+                            <div class="col-2"><mat-form-field class="example-full-width">
+                                    <mat-label>שם פרטי (אנגלית)</mat-label>
+                                    <input matInput placeholder="שם פרטי (אנגלית)" formControlName="FirstNameEng">
+                                </mat-form-field></div>
+                            <div class="col-2"><mat-form-field class="example-full-width">
+                                    <mat-label>שם משפחה (עברית)</mat-label>
+                                    <input matInput placeholder="שם משפחה (עברית)" formControlName="LastName">
+                                </mat-form-field></div>
+                            <div class="col-2"><mat-form-field class="example-full-width">
+                                    <mat-label>שם משפחה (אנגלית)</mat-label>
+                                    <input matInput placeholder="שם משפחה (אנגלית)" formControlName="LastNameEng">
+                                </mat-form-field></div>
+                            <div class="col-1">
                                 <mat-form-field>
                                     <mat-label>מגדר</mat-label>
                                     <mat-select formControlName="Gender" aria-placeholder="מגדר">
@@ -109,7 +109,7 @@
                                     <mat-label>מייל פרטי</mat-label>
                                     <input matInput matInput placeholder="מייל פרטי" formControlName="PersonalEmail">
                                 </mat-form-field></div>
-                            <div class="col-3"><mat-form-field class="example-full-width">
+                            <div class="col-2"><mat-form-field class="example-full-width">
                                     <mat-label>מס' טלפון</mat-label>
                                     <input matInput matInput placeholder="מס' טלפון" formControlName="CellNumber">
                                 </mat-form-field></div>

@@ -140,7 +140,7 @@
                   <mat-datepicker #Work_Start_Date></mat-datepicker>
                 </mat-form-field>
               </div>
-              <div class="col-lg-3 col-md-4 col-sm-6">
+              <div class="col-lg-1 col-md-4 col-sm-6">
                 <mat-form-field>
                   <mat-label>חלקיות משרה</mat-label>
                   <input matInput formControlName="Standart_Job_Type" />
@@ -150,6 +150,12 @@
                   <mat-error *ngIf="Training_Request_Forms_G.get('Standart_Job_Type')?.hasError('max')">
                     הערך לא יכול להיות גדול מ-100.
                   </mat-error>
+                </mat-form-field>
+              </div>
+              <div class="col-lg-2 col-md-4 col-sm-6">
+                <mat-form-field>
+                  <mat-label>מיקום עבודה</mat-label>
+                  <input matInput formControlName="Work_Place" />
                 </mat-form-field>
               </div>
             </div>
@@ -227,7 +233,7 @@
                 <mat-form-field>
                   <mat-label>תאריך התחלה <p *ngIf="Training_Request_Forms_B.get('Training_Out').value">ללא ימי
                       הטיסה</p></mat-label>
-                  <input matInput [matDatepicker]="Date_Start" formControlName="Date_Start" [min]="date_now" required>
+                  <input matInput [matDatepicker]="Date_Start" formControlName="Date_Start" required>
                   <mat-datepicker-toggle matIconSuffix [for]="Date_Start"></mat-datepicker-toggle>
                   <mat-datepicker #Date_Start></mat-datepicker>
                   <mat-error
@@ -240,7 +246,7 @@
                 <mat-form-field>
                   <mat-label>תאריך סיום <p *ngIf="Training_Request_Forms_B.get('Training_Out').value">ללא ימי
                       הטיסה</p></mat-label>
-                  <input matInput [matDatepicker]="Date_End" formControlName="Date_End" [min]="date_now" required>
+                  <input matInput [matDatepicker]="Date_End" formControlName="Date_End" required>
                   <mat-datepicker-toggle matIconSuffix [for]="Date_End"></mat-datepicker-toggle>
                   <mat-datepicker #Date_End></mat-datepicker>
                   <mat-error
@@ -478,7 +484,7 @@
               <p *ngIf="user_name != 'dnudelman' && user_name != 'lnachmani'"> {{
                 Training_Request_Forms_D.get('Training_Fund_Answer').value }}
               </p>
-              <mat-form-field *ngIf="user_name == 'dnudelman' || user_name != 'lnachmani' || user_name == 'adahabre'">
+              <mat-form-field *ngIf="user_name == 'dnudelman' || user_name == 'lnachmani' || user_name == 'adahabre'">
                 <mat-label>תשובת התאגיד</mat-label>
                 <textarea matInput formControlName="Training_Fund_Answer" rows="2"></textarea>
               </mat-form-field>
@@ -777,6 +783,7 @@
             <div class="col-lg-2 col-md-4 col-sm-6">
               <mat-label class="label-select">סוג השתלמות</mat-label>
               <mat-select formControlName="Training_Type" [compareWith]="compareFn3">
+                <mat-option value=""></mat-option>
                 <mat-option value="העשרה">העשרה</mat-option>
                 <mat-option value="הצגת הרצאה">הצגת הרצאה</mat-option>
                 <mat-option value="השכלה פורמלית אונ' פתוחה">השכלה פורמלית אונ' פתוחה</mat-option>
@@ -864,6 +871,7 @@
                 <mat-label>קודי השתלמות</mat-label>
                 <!-- <input matInput formControlName="Approved_Absence_Time" /> -->
                 <mat-select formControlName="Code_Type" [compareWith]="compareFn2">
+                  <mat-option value=""></mat-option>
                   <mat-option value="3">3</mat-option>
                   <mat-option value="10">10</mat-option>
                   <mat-option value="31">31</mat-option>

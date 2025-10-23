@@ -1,10 +1,15 @@
 
-  #surgeriesrts {
+  /* #surgeriesrts {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(13%, 1fr));
     gap: 16px;
-  }
+  } */
 
+  #surgeriesrts {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 16px;
+}
   .room-widget {
     transition: all 0.3s ease;
   }
@@ -152,15 +157,15 @@
     border: 2px solid red;
   }
 
-  .card.red-60-ack {
+  .card.red-60-ack, .room-chip.red-60-ack {
     border: 2px solid darkred;
   }
 
-  .card.red-120-ack {
+  .card.red-120-ack, .room-chip.red-120-ack , .room-chip.red-120{
     border: 3px solid darkred;
   }
 
-  .card.green-blink {
+  .card.green-blink, .room-chip.green-blink {
     border: 2px solid green;
   }
   .metric-ok {
@@ -364,7 +369,7 @@
 .room-widget.card .room-header .status-circle {
   position: relative;
   z-index: 6;
-  top:-172px;
+  top:0px;
 }
 
 /* Example: make scompleted rows a bit dimmer or styled */
@@ -427,7 +432,7 @@
 
 /* Give chips a subtle pill background that adapts to light/dark */
 .room-widget.card.status-mode-bg .metrics .metric-chip span {
-  padding: 0 6px;
+  padding: 0 3px;
   border-radius: 8px;
   background: var(--chip-bg, rgba(0,0,0,.06));
 }
@@ -640,9 +645,9 @@ h4.text-center { min-height: 2.2rem; }
 .summary-header { font-weight:700; margin-bottom:8px; }
 .summary-grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(180px,1fr)); gap:10px; }
 .summary-pill { border:1px solid #eee; border-radius:8px; padding:10px; }
-.summary-pill .k { font-size:12px; opacity:.7; margin-bottom:2px; }
+.summary-pill .k { font-size:1em; opacity:.7; margin-bottom:2px; }
 .summary-pill .v { font-size:22px; font-weight:700; line-height:1.2; }
-.summary-pill .sub { font-size:12px; opacity:.8; }
+.summary-pill .sub { font-size:1em; opacity:.8; }
 .summary-section { margin-top:10px; }
 .section-title { font-weight:600; margin-bottom:6px; }
 .now-list { list-style:none; padding:0; margin:0; }
@@ -651,8 +656,8 @@ h4.text-center { min-height: 2.2rem; }
 .room-chip { border:1px solid #eee; border-radius:20px; padding:6px 10px; font-size:13px; white-space:nowrap; }
 .room-id { font-weight:600; margin-inline-end:6px; }
 .dot { display:inline-block; width:8px; height:8px; border-radius:50%; margin:0 2px; vertical-align:middle; }
-.dot.ok { background:#3cb371; }     /* completed */
-.dot.run { background:#ff8c00; }    /* in progress */
+.dot.ok { background:#97caaf; }     /* completed */
+.dot.run { background:rgb(1, 92, 1); opacity:.7; animation: quiet-blink 2s ease-in-out infinite;}    /* in progress */
 .dot.plan { background:#1e90ff; }   /* planned */
 .muted { opacity:.65; }
 
@@ -664,3 +669,108 @@ h4.text-center { min-height: 2.2rem; }
 }
 .urgency-line .urge:focus { outline: none; text-decoration: underline; }
 .summary-section .urge.close { float: inline-start; margin-inline-start: 6px; }
+
+
+
+.metrics {
+  display: flex;
+  justify-content: center;
+  /*gap: 1rem;*/ /* space between chips */
+}
+
+.metric-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1rem;
+}
+
+/* For screens less than 1900px */
+@media (max-width: 1899px) {
+  .metrics {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  /* Hide the icons */
+  .metric-chip::before {
+    display: none;
+  }
+}
+
+
+/* Default (wide screen): show icons, hide titles */
+.chip-title {
+  display: none;
+}
+.chip-icon {
+  display: inline;
+}
+
+/* Narrow screen (<1900px): hide icons, show titles */
+@media (max-width: 1899px) {
+  .chip-icon {
+    display: none;
+  }
+  .chip-title {
+    display: inline;
+    font-weight: bold;
+  }
+}
+
+
+.room-widget {min-width:200px;}
+
+.urgency-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px; /* small spacing between buttons */
+}
+
+.urgency-buttons .urge {
+  display: flex;
+  align-items: center;
+  gap: 2px; /* space between icon and count */
+  font-size: 0.9rem;
+  padding: 4px 8px;
+  border: none;
+  border-radius: 6px;
+  background-color: #f2f2f2; /* light grey for default */
+  cursor: pointer;
+  transition: background-color 0.2s, transform 0.1s;
+}
+
+.urgency-buttons .urge:hover {
+  background-color: #e0e0e0;
+  transform: translateY(-1px);
+}
+
+.urgency-buttons .urge.selected {
+  background-color: #4caf50; /* green for selected */
+  color: white;
+}
+
+.urgency-buttons .urge span {
+  font-weight: 500;
+}
+
+
+/* Ensure at least 3 cards per row on large screens */
+@media (min-width: 1800px) {
+  #surgeriesrts {
+    grid-template-columns: repeat(7, minmax(250px, 1fr));
+  }
+}
+
+@media (max-width: 900px) {
+  #surgeriesrts {
+    grid-template-columns: repeat(4, minmax(250px, 1fr));
+  }
+}
+
+/* Mobile: force single column */
+@media (max-width: 600px) {
+  #surgeriesrts {
+    grid-template-columns: 1fr;
+  }
+}

@@ -108,7 +108,7 @@ export class TrainingRequestFormComponent implements OnInit {
       this.getPersonDetails();
     }
     this.getAllTrainingRequestQuestionsList();
-    this.getTrainingRequestPlansList();
+    // this.getTrainingRequestPlansList();
     this.getPlanningIntityList();
     this.getEmployeesList();
     this.getCityCodes();
@@ -271,7 +271,7 @@ export class TrainingRequestFormComponent implements OnInit {
           Approved: new FormControl(Training_Request_Forms_F?.Approved, this.passport == Training_Request_Forms_F?.Passport_ID ? null : Validators.required),
         });
         this.Training_Request_Forms_H = this.fb.group({
-          Opinion_Date: new FormControl(Training_Request_Forms_H?.Opinion_Date == null ? this.date_now : Training_Request_Forms_H?.Opinion_Date, null),
+          Opinion_Date: new FormControl(Training_Request_Forms_H?.Opinion_Date == null || Training_Request_Forms_H?.Opinion_Date == '' ? this.date_now : Training_Request_Forms_H?.Opinion_Date, null),
           Training_Type: new FormControl(Training_Request_Forms_H?.Training_Type, null),
           Approved: new FormControl(Training_Request_Forms_H?.Approved, null),
           Transportaion: new FormControl(Training_Request_Forms_H?.Transportaion == 'True' ? true : false, null),
@@ -292,8 +292,9 @@ export class TrainingRequestFormComponent implements OnInit {
             Validators.pattern(/^[0-9]*$/),
             Validators.max(100)
           ]),
+          Work_Place: new FormControl(Training_Request_Forms_G?.Work_Place, null),
         });
-        if (this.passport == Training_Request_Forms_A?.Passport_ID) this.requested = true;
+        if (this.passport == Training_Request_Forms_A?.Passport_ID && this.passport != '025447285' && this.passport != '055382618' && this.passport != '056045834') this.requested = true;
         this.check_if_fund_or_health();
         this.cityControl.setValue(Training_Request_Forms_B?.Request_Location);
         this.Training_Out_Check();
@@ -731,7 +732,7 @@ export class TrainingRequestFormComponent implements OnInit {
         let patient = Response['d'][0];
         if (patient == undefined) return;
         else if (patient.EmployeeID != null) {
-          if (this.passport == patient.EmployeeID) this.requested = true;
+          if (this.passport == patient.EmployeeID && this.passport != '025447285' && this.passport != '055382618' && this.passport != '056045834') this.requested = true;
           this.Training_Request_Forms_A.controls['Passport_ID'].setValue(patient.EmployeeID);
           this.Training_Request_Forms_A.controls['Family_Name'].setValue(patient.LastName);
           this.Training_Request_Forms_A.controls['First_Name'].setValue(patient.FirstName);
@@ -740,6 +741,7 @@ export class TrainingRequestFormComponent implements OnInit {
           this.Training_Request_Forms_A.controls['Title'].setValue(patient.JobTitleID);
           this.Training_Request_Forms_G.controls['Work_Start_Date'].setValue(patient.StartWorkDate);
           this.Training_Request_Forms_G.controls['Standart_Job_Type'].setValue(patient.StandartJobType);
+          this.Training_Request_Forms_G.controls['Work_Place'].setValue(patient.WorkPlaceDescription);
           this.Training_Request_Forms_G.controls['Function_Department'].setValue(patient.FunctionDescription + ' - ' + patient.DepartnentDescripton);
           this.Training_Request_Forms_G.controls['Standart_Level'].setValue(patient.RankDescription);
           this.Supervisor_Name1.setValue(this.employees.filter(t => t.id === patient.ManagerID1.id)[0]);
