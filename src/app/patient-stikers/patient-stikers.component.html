@@ -1,188 +1,196 @@
 <div id="page-toshow">
-    <h1 class="page-title text-center">מדבקות למטופל</h1>
-    <div class="container-fluid rel" dir="rtl">
-        <div class="row">
-            <div class="col"></div>
-            <div class="col-8">
-                <form (ngSubmit)="submitForm()" [formGroup]="form">
-                    <div class="row">
-                        <div class="col-12 text-right  d-none">
-                            <mat-radio-group formControlName="option">
-                                <mat-radio-button selected="true" value="1">מאושפז לפי ת.ז &nbsp; &nbsp;
-                                    &nbsp;</mat-radio-button>
-                                <mat-radio-button value="2">מאושפז לפי מקרה &nbsp; &nbsp; &nbsp;</mat-radio-button>
-                                <mat-radio-button value="3">קבלה חדשה לפי ת.ז &nbsp; &nbsp; &nbsp;</mat-radio-button>
-                            </mat-radio-group>
-                        </div>
-                        <div class="col-12  text-right">
-                            <mat-form-field>
-                                <input matInput type="text" placeholder="ת.ז" formControlName="textInput">
-                            </mat-form-field>
-                        </div>
-                        <div class="col-2  text-right">
-                            <mat-checkbox class="example-margin" [labelPosition]="labelPosition" (change)="changePos()">
-                                בחירת מחלקה
-                            </mat-checkbox>
-                        </div>
-                        <div *ngIf="checked" class="col-5  text-right">                            
-                            <mat-form-field>
-                                <input type="text" placeholder="מחלקה רפואית"  matInput [matAutocomplete]="autodepart" formControlName="depart">
-                                <mat-autocomplete #autodepart="matAutocomplete">
-                                    <mat-option *ngFor="let option of departsfiltered | async" [value]="option.DepartID">
-                                        {{option.DepartID}}
-                                    </mat-option>
-                                </mat-autocomplete>
-                            </mat-form-field>
-                        </div>
-                        <div *ngIf="checked" class="col-5  text-right">
-                            <mat-form-field>
-                                <input type="text" placeholder="מחלקה סיעודית"  matInput [matAutocomplete]="autoseodeDepart" formControlName="seodeDepart">
-                                <mat-autocomplete #autoseodeDepart="matAutocomplete" >
-                                    <mat-option *ngFor="let option of seodedepartsfiltered | async" [value]="option.DepartID">
-                                        {{option.DepartID}}
-                                    </mat-option>
-                                </mat-autocomplete>
-                            </mat-form-field>
-                        </div>
-                        <div class="col-12">
-                            <button mat-raised-button [class.spinner]="loading" [disabled]="loading" color="primary"
-                                type="submit">שלח</button>
-                        </div>
-                    </div>
-                </form>
-            </div>
-            <div class="col"></div>
-        </div>
-    </div>
-    <div class="d-none">
-        <div #stickers>
-            <table *ngFor="let number of [0,1,2,3,4,5,6,7]; let i = index" dir="ltr" class="text-right table-data">
-                <tr dir="rtl">
-                    <td *ngFor="let number of [0,1,2];">
-                        <div class="d-block pos-1">
-                            <div class="row pos-1-1">
-                                <span class="col">{{ mPersonalDetails.LastName }}
-                                    {{ mPersonalDetails.FirstName }}</span>
-                            </div>
-                            <div class="row  pos-1-2">
-                                <span class="col-4">מ.ז: </span><span class="col-8 text-left">{{
-                                    mPersonalDetails.PersonID
-                                    }}&nbsp;&nbsp;&nbsp;</span>
-                            </div>
-                            <div class="ngx-barcode  pos-1-3">
-                                <ngx-barcode [bc-font-size]="8" [bc-height]="15"
-                                    [bc-value]="mPersonalDetails.CaseNumber" [bc-display-value]="false"></ngx-barcode>
-                            </div>
-                            <div class="row  pos-1-4">
-                                <span class="col text-center">{{
-                                    mPersonalDetails.CaseNumber
-                                    }}</span>
-                            </div>
-                            <div class="row pos-1-5">
-                                <span class="col-3 text-right">{{
-                                    mPersonalDetails.SeodeDepart
-                                    }}</span>
-                                <span class="col-3 text-center">{{
-                                    mPersonalDetails.Gender
-                                    }}</span>
-                                <span class="col-3 text-right">גיל:</span>
-                                <span class="col-3 text-left">{{
-                                    mPersonalDetails.Age
-                                    }}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
-                            </div>
-                        </div>
-                    </td>
-                </tr>
-                <tr dir="rtl">
-                    <td *ngFor="let number of [0,1,2];">
-                        <div class="d-block " style="margin-top:-10px">
-                            <div class="row p-20">
-                                <span class="col">{{ mPersonalDetails.LastName }}
-                                    {{ mPersonalDetails.FirstName }}</span>
-                            </div>
-                            <div class="row p-20">
-                                <span class="col-6">{{
-                                    mPersonalDetails.FatherName
-                                    }}</span><span class="col-6 text-left">{{
-                                    mPersonalDetails.Age
-                                    }}&nbsp;&nbsp;&nbsp;</span>
-                            </div>
-                            <div class="row  p-20">
-                                <span class="col-4">מ.ז: </span><span class="col-8 text-left">{{
-                                    mPersonalDetails.PersonID
-                                    }}&nbsp;&nbsp;&nbsp;</span>
-                            </div>
-                            <div class="row p-20">
-                                <span class="col-6">{{
-                                    mPersonalDetails.SeodeDepartDescription
-                                    }}</span><span class="col-6 text-left">{{
-                                    mPersonalDetails.InDate
-                                    }}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
-                            </div>
-                            <div class="row p-20">
-                                <span class="col">{{
-                                    mPersonalDetails.DepartDescription
-                                    }}</span>
-                            </div>
-                            <div class="row p-20">
-                                <span class="col-4 text-right">מקרה: </span>
-                                <span class="col-8 text-left">{{
-                                    mPersonalDetails.CaseNumber
-                                    }}&nbsp;&nbsp;&nbsp;</span>
-                            </div>
-                            <div class="ngx-barcode pl-20">
-                                <ngx-barcode [bc-font-size]="13" [bc-height]="32"
-                                    [bc-value]="mPersonalDetails.CaseNumber" [bc-display-value]="false"></ngx-barcode>
-                            </div>
-                            <div class="row p-20">
-                                <span class="col">בי"ח צפון</span>
-                            </div>
-                        </div>
-                    </td>
-                </tr>
-                <tr dir="rtl">
-                    <td colspan="3">
-                        <div class="d-block  fz-b">
-                            <div class="row p-20">
-                                <span class="col-4">מיון:
-                                    {{ mPersonalDetails.SeodeDepartDescription }}</span>
-                                <span class="col-4">
-                                    {{ mPersonalDetails.DepartDescription }}</span>
-                                <span class="col-4">מקרה: {{ mPersonalDetails.CaseNumber }}</span>
-                            </div>
-                            <div class="row p-20">
-                                <span class="col-6">מ.ז: {{ mPersonalDetails.PersonID }}&nbsp;&nbsp;&nbsp;</span>
+  <h1 class="page-title text-center">מדבקות למטופל</h1>
+  <div class="container-fluid rel" dir="rtl">
+      <div class="row">
+          <div class="col"></div>
+          <div class="col-8">
+              <form (ngSubmit)="submitForm()" [formGroup]="form">
+                  <div class="row">
+                      <div class="col-12 text-right  d-none">
+                          <mat-radio-group formControlName="option">
+                              <mat-radio-button selected="true" value="1">מאושפז לפי ת.ז &nbsp; &nbsp;
+                                  &nbsp;</mat-radio-button>
+                              <mat-radio-button value="2">מאושפז לפי מקרה &nbsp; &nbsp; &nbsp;</mat-radio-button>
+                              <mat-radio-button value="3">קבלה חדשה לפי ת.ז &nbsp; &nbsp; &nbsp;</mat-radio-button>
+                          </mat-radio-group>
+                      </div>
+                      <div class="col-12  text-right">
+                          <mat-form-field>
+                              <input matInput type="text" placeholder="ת.ז" formControlName="textInput">
+                          </mat-form-field>
+                      </div>
+                      <div class="col-2  text-right">
+                          <mat-checkbox class="example-margin" [labelPosition]="labelPosition" (change)="changePos()">
+                              בחירת מחלקה
+                          </mat-checkbox>
+                      </div>
+                      <div *ngIf="checked" class="col-5  text-right">                            
+                          <mat-form-field>
+                              <input type="text" placeholder="מחלקה רפואית"  matInput [matAutocomplete]="autodepart" formControlName="depart">
+                              <mat-autocomplete #autodepart="matAutocomplete">
+                                  <mat-option *ngFor="let option of departsfiltered | async" [value]="option.DepartID">
+                                      {{option.DepartID}}
+                                  </mat-option>
+                              </mat-autocomplete>
+                          </mat-form-field>
+                      </div>
+                      <div *ngIf="checked" class="col-5  text-right">
+                          <mat-form-field>
+                              <input type="text" placeholder="מחלקה סיעודית"  matInput [matAutocomplete]="autoseodeDepart" formControlName="seodeDepart">
+                              <mat-autocomplete #autoseodeDepart="matAutocomplete" >
+                                  <mat-option *ngFor="let option of seodedepartsfiltered | async" [value]="option.DepartID">
+                                      {{option.DepartID}}
+                                  </mat-option>
+                              </mat-autocomplete>
+                          </mat-form-field>
+                      </div>
+                      <div class="col-12">
+                          <button mat-raised-button [class.spinner]="loading" [disabled]="loading" color="primary"
+                              type="submit">שלח</button>
+                      </div>
+                  </div>
+              </form>
+          </div>
+          <div class="col"></div>
+      </div>
+  </div>
+  <div class="d-none">
+      <div #stickers>
+          <table *ngFor="let number of [0,1,2,3,4,5,6,7]; let i = index" dir="ltr" class="text-right table-data">
+              <tr dir="rtl">
+                  <td *ngFor="let number of [0,1,2];">
+                      <div class="d-block pos-1">
+                          <div class="row pos-1-1">
+                              <span class="col">{{ mPersonalDetails.LastName }}
+                                  {{ mPersonalDetails.FirstName }}</span>
+                          </div>
+                          <div class="row  pos-1-2">
+                              <span class="col-4">מ.ז: </span><span class="col-8 text-left">{{
+                                  mPersonalDetails.PersonID
+                                  }}&nbsp;&nbsp;&nbsp;</span>
+                          </div>
+                          <div class="ngx-barcode  pos-1-3">
+                              <ngx-barcode [bc-font-size]="8" [bc-height]="15"
+                                  [bc-value]="mPersonalDetails.CaseNumber" [bc-display-value]="false"></ngx-barcode>
+                          </div>
+                          <div class="row  pos-1-4">
+                              <span class="col text-center">{{
+                                  mPersonalDetails.CaseNumber
+                                  }}</span>
+                          </div>
+                          <div class="row pos-1-5">
+                              <span class="col-3 text-right">{{
+                                  mPersonalDetails.SeodeDepart
+                                  }}</span>
+                              <span class="col-3 text-center">{{
+                                  mPersonalDetails.Gender
+                                  }}</span>
+                              <span class="col-3 text-right">גיל:</span>
+                              <span class="col-3 text-left">{{
+                                  mPersonalDetails.Age
+                                  }}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
+                          </div>
+                      </div>
+                  </td>
+              </tr>
+              <tr><td colspan="3" style="height:3mm;"></td></tr>
+              <tr><td colspan="3" style="height:3mm;"></td></tr>
+              <tr><td colspan="3" style="height:3mm;"></td></tr>
+              <tr><td colspan="3" style="height:3mm;"></td></tr>
+              <tr><td colspan="3" style="height:3mm;"></td></tr>
+              <tr dir="rtl">
+                  <td *ngFor="let number of [0,1,2];">
+                      <div class="d-block " style="margin-top:-10px">
+                          <div class="row p-20">
+                              <span class="col">{{ mPersonalDetails.LastName }}
+                                  {{ mPersonalDetails.FirstName }}</span>
+                          </div>
+                          <div class="row p-20">
+                              <span class="col-6">{{
+                                  mPersonalDetails.FatherName
+                                  }}</span><span class="col-6 text-left">{{
+                                  mPersonalDetails.Age
+                                  }}&nbsp;&nbsp;&nbsp;</span>
+                          </div>
+                          <div class="row  p-20">
+                              <span class="col-4">מ.ז: </span><span class="col-8 text-left">{{
+                                  mPersonalDetails.PersonID
+                                  }}&nbsp;&nbsp;&nbsp;</span>
+                          </div>
+                          <div class="row p-20">
+                              <span class="col-6">{{
+                                  mPersonalDetails.SeodeDepartDescription
+                                  }}</span><span class="col-6 text-left">{{
+                                  mPersonalDetails.InDate
+                                  }}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
+                          </div>
+                          <div class="row p-20">
+                              <span class="col">{{
+                                  mPersonalDetails.DepartDescription
+                                  }}</span>
+                          </div>
+                          <div class="row p-20">
+                              <span class="col-4 text-right">מקרה: </span>
+                              <span class="col-8 text-left">{{
+                                  mPersonalDetails.CaseNumber
+                                  }}&nbsp;&nbsp;&nbsp;</span>
+                          </div>
+                          <div class="ngx-barcode pl-20">
+                              <ngx-barcode [bc-font-size]="13" [bc-height]="32"
+                                  [bc-value]="mPersonalDetails.CaseNumber" [bc-display-value]="false"></ngx-barcode>
+                          </div>
+                          <div class="row p-20">
+                              <span class="col">בי"ח צפון</span>
+                          </div>
+                      </div>
+                  </td>
+              </tr>
+              <tr><td colspan="3" style="height:3mm;"></td></tr>
+              <tr><td colspan="3" style="height:3mm;"></td></tr>
+              <tr><td colspan="3" style="height:3mm;"></td></tr>
+              <tr dir="rtl">
+                  <td colspan="3">
+                      <div class="d-block  fz-b">
+                          <div class="row p-20">
+                              <span class="col-4">מיון:
+                                  {{ mPersonalDetails.SeodeDepartDescription }}</span>
+                              <span class="col-4">
+                                  {{ mPersonalDetails.DepartDescription }}</span>
+                              <span class="col-4">מקרה: {{ mPersonalDetails.CaseNumber }}</span>
+                          </div>
+                          <div class="row p-20">
+                              <span class="col-6">מ.ז: {{ mPersonalDetails.PersonID }}&nbsp;&nbsp;&nbsp;</span>
 
-                                <span class="col-6 text-left">שם: {{ mPersonalDetails.FirstName }}
-                                    {{ mPersonalDetails.LastName }}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
-                            </div>
-                            <div class="row p-20">
-                                <span class="col-4">אב: {{ mPersonalDetails.FatherName }}</span>
+                              <span class="col-6 text-left">שם: {{ mPersonalDetails.FirstName }}
+                                  {{ mPersonalDetails.LastName }}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
+                          </div>
+                          <div class="row p-20">
+                              <span class="col-4">אב: {{ mPersonalDetails.FatherName }}</span>
 
-                                <span class="col-4">כתובת: {{ mPersonalDetails.Address }}</span>
+                              <span class="col-4">כתובת: {{ mPersonalDetails.Address }}</span>
 
-                                <span class="col-4 text-left">מין: {{ mPersonalDetails.Gender
-                                    }}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
-                            </div>
-                            <div class="row p-20">
-                                <span class="col-6">טל: {{ mPersonalDetails.PhoneNumber }}</span>
+                              <span class="col-4 text-left">מין: {{ mPersonalDetails.Gender
+                                  }}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
+                          </div>
+                          <div class="row p-20">
+                              <span class="col-6">טל: {{ mPersonalDetails.PhoneNumber }}</span>
 
-                                <span class="col-6 text-left">תאריך לידה: {{ mPersonalDetails.DOB
-                                    }}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
-                            </div>
-                            <div class="row p-20">
-                                <span class="col-6">תאריך קבלה: {{ mPersonalDetails.InDate }}
-                                    {{ mPersonalDetails.InTime | slice: 0:5 }}</span>
+                              <span class="col-6 text-left">תאריך לידה: {{ mPersonalDetails.DOB
+                                  }}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
+                          </div>
+                          <div class="row p-20">
+                              <span class="col-6">תאריך קבלה: {{ mPersonalDetails.InDate }}
+                                  {{ mPersonalDetails.InTime | slice: 0:5 }}</span>
 
-                                <span class="col-6 text-left">
-                                    <ngx-barcode [bc-font-size]="13" [bc-height]="32"
-                                        [bc-value]="mPersonalDetails.CaseNumber"
-                                        [bc-display-value]="false"></ngx-barcode>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
-                            </div>
-                        </div>
-                    </td>
-                </tr>
-            </table>
-        </div>
-    </div>
+                              <span class="col-6 text-left">
+                                  <ngx-barcode [bc-font-size]="13" [bc-height]="32"
+                                      [bc-value]="mPersonalDetails.CaseNumber"
+                                      [bc-display-value]="false"></ngx-barcode>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
+                          </div>
+                      </div>
+                  </td>
+              </tr>
+          </table>
+      </div>
+  </div>
 </div>
