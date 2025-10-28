@@ -1,0 +1,133 @@
+<div id="page-toshow" class="not-dimot-activity">
+    <h1 class="page-title text-center">פעילות מכון דימות</h1>
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-4 ">
+                <div class="bg-c">
+                    <google-chart [type]="chartType" [data]="chartData" [columns]="chartColumns"
+                        [options]="chartOptions" style="width: 100%; height: 350px;"></google-chart>
+                </div>
+            </div>
+            <div class="col-4 ">
+                <div class="bg-c">
+                    <google-chart [type]="chartTypeActivityTimes" [columns]="chartColumnsActivityTimes"
+                        [data]="chartDataActivityTimes" [options]="chartOptionsActivityTimes"
+                        style="width: 100%; height: 350px;">
+                    </google-chart>
+                </div>
+            </div>
+            <div class="col-4">
+                <span class="float-left">
+                    <google-chart [type]="GaugeChartType" [data]="GaugeChartDataTech" [columns]="GaugeChartColumns"
+                        [options]="GaugeChartOptions" [width]="GaugeWidth" [height]="GaugeHeight">
+                    </google-chart>
+                </span>
+                <span class="float-left mar-left-15">
+                    <google-chart [type]="GaugeChartType" [data]="GaugeChartData" [columns]="GaugeChartColumns"
+                        [options]="GaugeChartOptions" [width]="GaugeWidth" [height]="GaugeHeight">
+                    </google-chart>
+                </span>
+            </div>
+        </div>
+        <div class="row">
+            <br>
+            <hr>
+            <br>
+        </div>
+
+        <div class="row">
+            <div class="col-1"></div>
+            <div class="col-10 dim-activity">
+                <ng-template #customCellTemplate let-day="day" let-locale="locale">
+                    <div class="cal-cell-top">
+                        <span class="cal-day-badge" *ngIf="day.badgeTotal > 0">בדיקות טכנאים {{
+                            getDateTotalRequests(day.events) }}</span>
+                        <span class="cal-day-badge doc-doing" *ngIf="day.badgeTotal > 0">פענוח ע"י רדיולג לאותם בדיקות
+                            באותו יום {{
+                            getDateTotalDocRequests(day.events) }}</span>
+                        <span class="cal-day-number">{{
+                            day.date | calendarDate: "monthViewDayNumber":locale
+                            }}</span>
+                    </div>
+                    <small style="margin: 5px">
+                        <div *ngFor="let ev of day.events | slice:0:10;" [class]="ev.cssClass"
+                            (click)="handleEvent('Clicked', ev)" style="
+                                display: block;
+                                border: 1px solid #000;
+                                margin: 5px;
+                                padding: 3px;
+                                border-radius: 4px;
+                            ">
+                            <span>{{ ev.title }}</span>
+                        </div>
+                    </small>
+                </ng-template>
+                <div class="row text-center" dir="rtl">
+                    <div class="col-md-4">
+                        <!-- <div class="">
+                            <div class="btn-group">
+                                <div class="btn btn-primary" (click)="setView(CalendarView.Month)"
+                                    [class.active]="view === CalendarView.Month">
+                                    Month
+                                </div>
+                                <div class="btn btn-primary" (click)="setView(CalendarView.Week)"
+                                    [class.active]="view === CalendarView.Week">
+                                    Week
+                                </div>
+                                <div class="btn btn-primary" (click)="setView(CalendarView.Day)"
+                                    [class.active]="view === CalendarView.Day">
+                                    Day
+                                </div>
+                            </div>
+                        </div> -->
+                        <div class="btn-group">
+                            <div class="btn btn-primary" mwlCalendarPreviousView [view]="view" [(viewDate)]="viewDate"
+                                (viewDateChange)="activeDayIsOpen = false">
+                                הקודם
+                            </div>
+                            <div #toDayCall class="btn btn-outline-secondary" mwlCalendarToday [(viewDate)]="viewDate">
+                                היום
+                            </div>
+                            <div class="btn btn-primary" mwlCalendarNextView [view]="view" [(viewDate)]="viewDate"
+                                (viewDateChange)="activeDayIsOpen = false">
+                                הבא
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <h3>
+                            {{
+                            viewDate | calendarDate: view + "ViewTitle":"he"
+                            }}
+                        </h3>
+                    </div>
+                    <div class="col-md-4">
+                        <mat-button-toggle-group #toggleGroup="matButtonToggleGroup" name="departments" multiple
+                            (change)="onDepSelected($event, toggleGroup)">
+                            <mat-button-toggle *ngFor="let dep of departs" [value]="dep">
+                                {{ dep }}
+                            </mat-button-toggle>
+                        </mat-button-toggle-group>
+                    </div>
+                </div>
+                <br />
+                <div [ngSwitch]="view">
+                    <mwl-calendar-month-view dir="rtl" *ngSwitchCase="CalendarView.Month" [viewDate]="viewDate"
+                        [events]="events" [locale]="locale" [cellTemplate]="customCellTemplate"
+                        [activeDayIsOpen]="activeDayIsOpen">
+                    </mwl-calendar-month-view>
+                    <!-- 
+                    (eventClicked)="handleEvent('Clicked', $event.event)"
+                     (dayClicked)="dayClicked($event.day)"
+                    <mwl-calendar-week-view *ngSwitchCase="CalendarView.Week" [viewDate]="viewDate" [events]="events"
+                        [refresh]="refresh" (eventClicked)="handleEvent('Clicked', $event.event)">
+                    </mwl-calendar-week-view>
+                    <mwl-calendar-day-view *ngSwitchCase="CalendarView.Day" [viewDate]="viewDate" [events]="events"
+                        [refresh]="refresh" (eventClicked)="handleEvent('Clicked', $event.event)">
+                    </mwl-calendar-day-view> -->
+                </div>
+            </div>
+            <div class="col-1"></div>
+        </div>
+    </div>
+</div>

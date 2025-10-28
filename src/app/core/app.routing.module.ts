@@ -162,6 +162,7 @@ import { FolderDialogComponent } from '../dashboard/folders-management/folder-di
 import { HospitalIncomeNBDashbComponent } from '../hospital-incomenb-dashb/hospital-incomenb-dashb.component';
 import { GoogleChartsIncomeNBComponent } from '../hospital-incomenb-dashb/google-charts/google-charts.component';
 import { AppointsDashboardComponent } from '../hospital-appoints-dashb/google-charts/google-charts.component';
+import { DimotActivityDashboardComponent } from '../dimot-activity-dashboard/dimot-activity-dashboard.component';
 const routes: Routes = [
   { path: "", component: LoginComponent },
   { path: 'clinicsrequests', component: ClinicsRequestsComponent },
@@ -311,17 +312,17 @@ const routes: Routes = [
   { path: "cpr-newbord-dashborad", component: CprNewbordDashboradComponent },
   { path: "cpr-newborn-form", component: CprNewbornFormComponent },
   { path: "LabTests", component: LabTestsComponent },
-  { path: "departments-whatsapp-management", component: DepartmentsWhatsappManagementComponent } ,
-  { path: "training-request-dashboard", component: TrainingRequestDashboardComponent } ,
-  { path: "training-request-form", component: TrainingRequestFormComponent } ,
-  { path: "training-request-dialog", component: TrainingRequestDialogComponent } ,
-  { path: "whatsapp-lung-cancer", component: WhatsappLungCancerComponent } ,
-  { path: "whatsapp-categories-permissions", component: WhatsappCategoriesPermissionsComponent } ,
-  { path: "shortcuts-management", component: ShortcutsManagementComponent } ,
-  { path: "shortcut-form-dialog", component: ShortcutFormDialogComponent } ,
-  { path: "namer-user-actions", component: NamerUserActionsComponent } ,
-  { path: "learning-requests-dashboard", component: LearningRequestsDashboardComponent } ,
-  { path: "LabTests", component: LabTestsComponent }, 
+  { path: "departments-whatsapp-management", component: DepartmentsWhatsappManagementComponent },
+  { path: "training-request-dashboard", component: TrainingRequestDashboardComponent },
+  { path: "training-request-form", component: TrainingRequestFormComponent },
+  { path: "training-request-dialog", component: TrainingRequestDialogComponent },
+  { path: "whatsapp-lung-cancer", component: WhatsappLungCancerComponent },
+  { path: "whatsapp-categories-permissions", component: WhatsappCategoriesPermissionsComponent },
+  { path: "shortcuts-management", component: ShortcutsManagementComponent },
+  { path: "shortcut-form-dialog", component: ShortcutFormDialogComponent },
+  { path: "namer-user-actions", component: NamerUserActionsComponent },
+  { path: "learning-requests-dashboard", component: LearningRequestsDashboardComponent },
+  { path: "LabTests", component: LabTestsComponent },
   { path: "departments-whatsapp-management", component: DepartmentsWhatsappManagementComponent },
   { path: "training-request-dashboard", component: TrainingRequestDashboardComponent },
   { path: "training-request-form/:id", component: TrainingRequestFormComponent },
@@ -350,8 +351,8 @@ const routes: Routes = [
   { path: "learning-requests-dashboard", component: LearningRequestsDashboardComponent },
   { path: "cpr-newbord-dashborad", component: CprNewbordDashboradComponent },
   { path: "cpr-newborn-form", component: CprNewbornFormComponent },
-  { path: "LabTests", component: LabTestsComponent },   
-  { path: "hospital-cath-dashb", component: GoogleChartsComponent },  
+  { path: "LabTests", component: LabTestsComponent },
+  { path: "hospital-cath-dashb", component: GoogleChartsComponent },
   { path: "hospital-roomtime-dashb", component: RoomTimeDashboardComponent },
   { path: "hospital-roomtimen-dashb", component: RoomTimeNDashboardComponent },
   { path: "hospital-roomtimert-dashb", component: RoomTimeRTDashboardComponent },
@@ -365,12 +366,13 @@ const routes: Routes = [
   { path: "folders-dialog", component: FolderDialogComponent },
   { path: "hospital-incomenb-dashb", component: GoogleChartsIncomeNBComponent },
   { path: "hospital-appoints-dashb", component: AppointsDashboardComponent },
-  ];
+  { path: "dimotactivity", component: DimotActivityDashboardComponent },
+];
 
 @NgModule({
   imports: [
-    RouterModule.forRoot(routes, { relativeLinkResolution: 'legacy' }), 
-    
+    RouterModule.forRoot(routes, { relativeLinkResolution: 'legacy' }),
+
   ],
   exports: [
     //ConfirmationDialogComponent,

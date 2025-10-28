@@ -279,6 +279,8 @@ import { FilterDepartsPipe } from './pipe/filter-departs.pipe';
 import { FoldersManagementComponent } from './dashboard/folders-management/folders-management.component';
 import { FolderDialogComponent } from './dashboard/folders-management/folder-dialog/folder-dialog.component';
 import { RoomTimeRTDashboardComponent } from './hospital-roomtimert-dashb/google-charts/google-charts.component';
+import { DimotActivityDashboardComponent } from './dimot-activity-dashboard/dimot-activity-dashboard.component';
+import { DialogDoingComponent } from './dimot-activity-dashboard/dialog-doing/dialog-doing.component';
 
 
 
@@ -487,8 +489,6 @@ const maskConfig: Partial<IConfig> = {
     LearningRequestsDashboardComponent,
     CprNewbordDashboradComponent,
     CprNewbornFormComponent,
-
-
     CprNewbordDashboradComponent,
     CprNewbornFormComponent,
     CommercialSupportFormDashboardComponent,
@@ -506,6 +506,8 @@ const maskConfig: Partial<IConfig> = {
     FilterDepartsPipe,
     FoldersManagementComponent,
     FolderDialogComponent,
+    DimotActivityDashboardComponent,
+    DialogDoingComponent,
     //HospitalIncomeDashbComponent,
   ],
   imports: [
