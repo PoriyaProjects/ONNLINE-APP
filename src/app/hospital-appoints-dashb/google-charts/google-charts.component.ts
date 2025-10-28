@@ -14,7 +14,7 @@ type HmpcMode = 'kpi' | 'buckets' | 'deptDocs';
   styleUrls: ['./google-charts.component.css']
 })
 export class AppointsDashboardComponent implements AfterViewInit, OnDestroy {
-  activeApptTab: Tab = 'treemap';
+  activeApptTab: Tab = 'table';
   leaderSubTab: LeaderSubTab = 'doctors';
 
   loading = true;

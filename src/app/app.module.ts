@@ -259,7 +259,9 @@ import { HospitalCathDashbModule } from './hospital-cath-dashb/hospital-cath-das
 import { HospitalRoomTimeDashbModule } from './hospital-roomtime-dashb/hospital-roomtime-dashb.module';
 import { HospitalRoomTimeNDashbModule } from './hospital-roomtimen-dashb/hospital-roomtimen-dashb.module';
 import { HospitalRoomTimeRTDashbModule } from './hospital-roomtimert-dashb/hospital-roomtimert-dashb.module';
+import { HospitalRoomTimeRTmDashbModule } from './hospital-roomtimert-mdashb/hospital-roomtimert-mdashb.module';
 import { AppointsDashbModule } from './hospital-appoints-dashb/hospital-appoints-dashb.module';
+import { AppointsCLDashbModule } from './hospital-appointscl-dashb/hospital-appointscl-dashb.module';
 import { SharedModule } from './shared/shared.module';
 import { CommercialSupportFormDashboardComponent } from './form-dashboard/commercial-support-form-dashboard/commercial-support-form-dashboard.component';
 import { CommercialSupportFormDialogComponent } from './form-dashboard/commercial-support-form-dashboard/commercial-support-form-dialog/commercial-support-form-dialog.component';
@@ -281,6 +283,7 @@ import { FolderDialogComponent } from './dashboard/folders-management/folder-dia
 import { RoomTimeRTDashboardComponent } from './hospital-roomtimert-dashb/google-charts/google-charts.component';
 import { DimotActivityDashboardComponent } from './dimot-activity-dashboard/dimot-activity-dashboard.component';
 import { DialogDoingComponent } from './dimot-activity-dashboard/dialog-doing/dialog-doing.component';
+import { HearingSurveyComponent } from './hearing-survey/hearing-survey/hearing-survey.component';
 
 
 
@@ -508,6 +511,7 @@ const maskConfig: Partial<IConfig> = {
     FolderDialogComponent,
     DimotActivityDashboardComponent,
     DialogDoingComponent,
+    HearingSurveyComponent,
     //HospitalIncomeDashbComponent,
   ],
   imports: [
@@ -621,7 +625,8 @@ const maskConfig: Partial<IConfig> = {
   exports: [
     MatBadgeModule,
     FormsModule,
-    ReactiveFormsModule,    
+    ReactiveFormsModule,
+    HearingSurveyComponent,    
   ]
 })
 export class AppModule { }

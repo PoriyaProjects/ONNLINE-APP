@@ -7,6 +7,7 @@ import { environment } from 'src/environments/environment';
 import { sanitizeSoapResponse } from 'src/app/shared/sanitizesoapresponce';
 import { drawOverlayDualArcChartHelperRoomTime } from 'src/app/shared/drawOverlayDualArcChartHelperRoomTime';
 import { drawOverlayArcChartHelperRoomTime } from 'src/app/shared/ArcChartHelperRoomTime';
+import { Subject } from 'rxjs';
 
 
 import {
@@ -1123,7 +1124,13 @@ public async drawSetupTimeQCharts(
 
 
 
+private ackAllRoomsSubject = new Subject<void>();
+  public ackAllRooms$ = this.ackAllRoomsSubject.asObservable();
 
+  /** Triggers acknowledge-all for listeners (e.g., room components). */
+  public triggerAcknowledgeAllRooms(): void {
+    this.ackAllRoomsSubject.next();
+  }
 
 
 

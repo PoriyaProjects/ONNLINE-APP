@@ -37,42 +37,66 @@ export function sanitizeSoapResponse(rawResponse: any): any {
 }
 
 
-export function sanitizeSoapResponseAndFormatData(raw: string, label: string): any {
-  // Remove all line breaks to ensure safe matching in ES5
-  const cleanRaw = raw.replace(/[\n\r]/g, '');
-  const match = cleanRaw.match(/<string[^>]*>(.*?)<\/string>/);
-  if (!match) throw new Error('Invalid SOAP response');
 
-  let cleanedJsonString = match[1].trim();
+export function sanitizeSoapResponseAndFormatData(rawOrJson: any, label: string): any {
+  let payload: any;
 
-  if (cleanedJsonString.startsWith('"') && cleanedJsonString.endsWith('"')) {
-    cleanedJsonString = cleanedJsonString.slice(1, -1);
+  if (typeof rawOrJson === 'string') {
+    // Try SOAP-wrapped first
+    const cleanRaw = rawOrJson.replace(/[\n\r]/g, '');
+    const match = cleanRaw.match(/<string[^>]*>(.*?)<\/string>/);
+
+    if (match) {
+      // Old SOAP path
+      let cleanedJsonString = match[1].trim();
+      if (cleanedJsonString.startsWith('"') && cleanedJsonString.endsWith('"')) {
+        cleanedJsonString = cleanedJsonString.slice(1, -1);
+      }
+      cleanedJsonString = cleanedJsonString.replace(/\\"/g, '"');
+      payload = JSON.parse(cleanedJsonString);
+    } else {
+      // Plain JSON string path
+      payload = JSON.parse(rawOrJson);
+    }
+  } else {
+    // Already a JSON object (Angular HttpClient default)
+    payload = rawOrJson;
   }
 
-  cleanedJsonString = cleanedJsonString.replace(/\\"/g, '"');
+  // If the API already returns a Google DataTable JSON ({ cols, rows }), pass through
+  if (payload && Array.isArray(payload.cols) && Array.isArray(payload.rows)) {
+    return payload;
+  }
 
-  //console.log("Cleaned JSON String Preview:", cleanedJsonString);
-
-  const parsedData = JSON.parse(cleanedJsonString);
-
+  // Otherwise assume your legacy shape and map to DataTable JSON
+  // Expected shape:
+  // {
+  //   yData: [
+  //     { Year: { value: 2024, Months: [{ name: 'Jan', y: 123 }, ...] } },
+  //     ...
+  //   ]
+  // }
   const dataTableJson = {
     cols: [
       { id: 'month', label: 'Month', type: 'string' },
       { id: label.toLowerCase(), label: label, type: 'number' }
     ],
-    rows: []
+    rows: [] as Array<{ c: Array<{ v: any }> }>
   };
 
-  parsedData.yData.forEach((yearBlock: any) => {
-    const year = yearBlock.Year.value;
-    yearBlock.Year.Months.forEach((month: any) => {
-      const monthLabel = `${year} ${month.name}`;
-      dataTableJson.rows.push({ c: [{ v: monthLabel }, { v: month.y }] });
+  const yData = payload?.yData ?? [];
+  yData.forEach((yearBlock: any) => {
+    const year = yearBlock?.Year?.value;
+    const months = yearBlock?.Year?.Months ?? [];
+    months.forEach((m: any) => {
+      const monthLabel = `${year} ${m?.name}`;
+      dataTableJson.rows.push({ c: [{ v: monthLabel }, { v: Number(m?.y) || 0 }] });
     });
   });
 
   return dataTableJson;
 }
+
 
 
 

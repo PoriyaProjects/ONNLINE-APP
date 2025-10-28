@@ -148,6 +148,7 @@ import { GoogleChartsComponent } from '../hospital-cath-dashb/google-charts/goog
 import { RoomTimeDashboardComponent } from '../hospital-roomtime-dashb/google-charts/google-charts.component';
 import { RoomTimeNDashboardComponent } from '../hospital-roomtimen-dashb/google-charts/google-charts.component';
 import { RoomTimeRTDashboardComponent } from '../hospital-roomtimert-dashb/google-charts/google-charts.component';
+import { RoomTimeRTmDashboardComponent } from '../hospital-roomtimert-mdashb/google-charts/google-charts.component';
 import { CommercialSupportFormDashboardComponent } from '../form-dashboard/commercial-support-form-dashboard/commercial-support-form-dashboard.component';
 import { CommercialSupportFormDialogComponent } from '../form-dashboard/commercial-support-form-dashboard/commercial-support-form-dialog/commercial-support-form-dialog.component';
 import { CommercialSupportResearchDialogComponent } from '../form-dashboard/commercial-support-form-dashboard/commercial-support-research-dialog/commercial-support-research-dialog.component';
@@ -163,6 +164,8 @@ import { HospitalIncomeNBDashbComponent } from '../hospital-incomenb-dashb/hospi
 import { GoogleChartsIncomeNBComponent } from '../hospital-incomenb-dashb/google-charts/google-charts.component';
 import { AppointsDashboardComponent } from '../hospital-appoints-dashb/google-charts/google-charts.component';
 import { DimotActivityDashboardComponent } from '../dimot-activity-dashboard/dimot-activity-dashboard.component';
+import { AppointsCLDashboardComponent } from '../hospital-appointscl-dashb/google-charts/google-charts.component';
+import { HearingSurveyComponent } from '../hearing-survey/hearing-survey/hearing-survey.component';
 const routes: Routes = [
   { path: "", component: LoginComponent },
   { path: 'clinicsrequests', component: ClinicsRequestsComponent },
@@ -172,6 +175,7 @@ const routes: Routes = [
   { path: 'login', component: LoginComponent },
   { path: 'chads', component: ChadsComponent },
   { path: 'hearing', component: HearingComponent },
+  { path: 'hearing-survey', component: HearingSurveyComponent },
   { path: 'surgery', component: SurgeryComponent },
   { path: 'mrbaot', component: MrbaotComponent },
   { path: 'eshboz', component: EshbozComponent },
@@ -356,6 +360,7 @@ const routes: Routes = [
   { path: "hospital-roomtime-dashb", component: RoomTimeDashboardComponent },
   { path: "hospital-roomtimen-dashb", component: RoomTimeNDashboardComponent },
   { path: "hospital-roomtimert-dashb", component: RoomTimeRTDashboardComponent },
+  { path: "hospital-roomtimert-mdashb", component: RoomTimeRTmDashboardComponent },
   { path: 'clinicsrequests', component: ClinicsRequestsComponent },
   { path: 'cldashboard', component: FullPageDashboardComponent },
   { path: 'service-unit-email-list', component: ServiceUnitEmailListComponent },
@@ -367,6 +372,8 @@ const routes: Routes = [
   { path: "hospital-incomenb-dashb", component: GoogleChartsIncomeNBComponent },
   { path: "hospital-appoints-dashb", component: AppointsDashboardComponent },
   { path: "dimotactivity", component: DimotActivityDashboardComponent },
+  { path: "hospital-appointscl-dashb", component: AppointsCLDashboardComponent },
+
 ];
 
 @NgModule({

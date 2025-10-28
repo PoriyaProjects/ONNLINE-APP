@@ -322,42 +322,26 @@
             <th>תעודת זהות</th>
             <th>שם פרטי</th>
             <th>שם משפחה</th>
-            <th>כתובת מייל</th>
-            <th>מספר טלפון</th>
-            <th>תחילת עבודה</th>
-            <th>סיום עבודה</th>
-            <th>צפי סיום עבודה</th>
-            <th>חלקיות משרה</th>
-            <th>מאושר משאבי אנוש</th>
-            <th>מאושר בלוסום</th>
-            <th>אישר תקנון</th>
-            <th>מנהל ישיר</th>
-            <th>מנהל עקיף</th>
             <th>הכשרה</th>
             <th>תאריך ביצוע</th>
             <th>תאריך פג תוקף</th>
             <th>הערה</th>
+            <th>סקטור</th>
+            <th>מחלקה</th>
+            <th>דירוג</th>
         </tr>
         <tr *ngFor="let emp of trainingdataSourceExcel.filteredData">
             <td> {{emp.Employee.RowID}} </td>
             <td> {{emp.Employee.EmployeeID}} </td>
             <td> {{emp.Employee.FirstName}} </td>
             <td> {{emp.Employee.LastName}} </td>
-            <td> {{emp.Employee.Email}} </td>
-            <td> {{emp.Employee.CellNumber}} </td>
-            <td> {{emp.Employee.StartWorkDate}} </td>
-            <td> {{emp.Employee.EndWorkDate}} </td>
-            <td> {{emp.Employee.DateToEndWork}} </td>
-            <td> {{emp.Employee.StandartJobType}} </td>
-            <td> {{emp.Employee.StatusRow}} </td>
-            <td> {{emp.Employee.ApprovedToBlossom}} </td>
-            <td> {{emp.Employee.AcceptTerms}} </td>
-            <td> {{emp.Employee.ManagerID1.id}} </td>
-            <td> {{emp.Employee.ManagerID2.id}} </td>
             <td> {{emp.Trainings.TrainingSubject}} </td>
             <td> {{emp.Trainings.StartDate}} </td>
             <td> {{emp.Trainings.EndDate}} </td>
             <td> {{emp.Trainings.Note}} </td>
+            <td> {{emp.Trainings.EmployeeSektorBlossomDescription}} </td>
+            <td> {{emp.Trainings.DepartnentDescripton}} </td>
+            <td> {{emp.Trainings.RankDescription}} </td>
         </tr>
     </table>
     <table id="excel-table" dir="rtl" style="display: none;">

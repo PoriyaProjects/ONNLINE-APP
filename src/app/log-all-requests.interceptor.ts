@@ -12,7 +12,7 @@ import { environment } from "src/environments/environment";
 
 @Injectable()
 export class LogAllRequestsInterceptor implements HttpInterceptor {
-    constructor(private logHttp: HttpClient, private router: Router) { 
+    constructor(private logHttp: HttpClient, private router: Router) {
         //debugger
     }
 

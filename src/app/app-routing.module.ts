@@ -139,6 +139,7 @@ import { GoogleChartsComponent } from './hospital-cath-dashb/google-charts/googl
 import { RoomTimeDashboardComponent } from './hospital-roomtime-dashb/google-charts/google-charts.component';
 import { RoomTimeNDashboardComponent } from './hospital-roomtimen-dashb/google-charts/google-charts.component';
 import { RoomTimeRTDashboardComponent } from './hospital-roomtimert-dashb/google-charts/google-charts.component';
+import { RoomTimeRTmDashboardComponent } from './hospital-roomtimert-mdashb/google-charts/google-charts.component';
 import { CommercialSupportFormDashboardComponent } from "./form-dashboard/commercial-support-form-dashboard/commercial-support-form-dashboard.component";
 import { CommercialSupportFormDialogComponent } from "./form-dashboard/commercial-support-form-dashboard/commercial-support-form-dialog/commercial-support-form-dialog.component";
 import { CommercialSupportResearchDialogComponent } from "./form-dashboard/commercial-support-form-dashboard/commercial-support-research-dialog/commercial-support-research-dialog.component";
@@ -333,6 +334,7 @@ const routes: Routes = [
     { path: "hospital-roomtime-dashb", component: RoomTimeDashboardComponent },
     { path: "hospital-roomtimen-dashb", component: RoomTimeNDashboardComponent },
     { path: "hospital-roomtimert-dashb", component: RoomTimeRTDashboardComponent },
+    { path: "hospital-roomtimert-mdashb", component: RoomTimeRTmDashboardComponent },
     { path: 'service-unit-email-list', component: ServiceUnitEmailListComponent },
     { path: 'service-unit-email-list-dialog', component: ServiceUnitEmailListDialogComponent },
     { path: "hospitalincomedashb", component: HospitalIncomeDashbComponent },
@@ -342,7 +344,7 @@ const routes: Routes = [
     { path: "hospital-incomenb-dashb", component: GoogleChartsIncomeNBComponent },
     { path: "folders-management", component: FoldersManagementComponent },
     { path: "folders-dialog", component: FolderDialogComponent },
-    //{ path: "hospital-appoints-dashb", component: AppointsDashboardComponent },
+    
 ];
 
 

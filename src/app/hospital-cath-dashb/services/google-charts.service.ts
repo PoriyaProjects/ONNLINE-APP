@@ -140,6 +140,7 @@ setDparam(value: number): void {
   };
 
 
+  
   public DATA_SOURCES = {
     OPERATIONS: `${environment.url}/GetCathCombined?param=4&onlyLastMonth=false`,
     OPERATIONSF: `${environment.url}/GetCathCombined?param=12&onlyLastMonth=false`,
@@ -274,7 +275,7 @@ public async drawIncomeCharts(
   param?: number,
   dparam?: number
 ): Promise<void> {
-  console.log('drawIncomeCharts call');
+  //console.log('drawIncomeCharts call');
   await this.waitUntilChartsReady();
 
   await this.safeAwait((async () => {
@@ -303,7 +304,7 @@ public async drawIncomeCharts(
 
   
 public async loadChart3Y(chartOptions: any = {}, param?: number, dparam?: number): Promise<void> {
-  console.log('loadChart3Y call');
+  //console.log('loadChart3Y call');
   await this.waitUntilChartsReady();
 
   await this.safeAwait((async () => {
@@ -325,7 +326,7 @@ public async loadChart3Y(chartOptions: any = {}, param?: number, dparam?: number
 
   
 public async loadOpChart3Y(chartOptions: any = {}, param?: number, dparam?: number): Promise<void> {
-  console.log('loadOpChart3Y call');
+  //console.log('loadOpChart3Y call');
   await this.waitUntilChartsReady();
 
   await this.safeAwait((async () => {
@@ -349,7 +350,7 @@ public async loadOpChart3Y(chartOptions: any = {}, param?: number, dparam?: numb
 
 
   public async loadCombinedChart3Y(chartOptions: any = {}, param?: number, dparam?: number): Promise<void> {
-    console.log('loadCombinedChart3Y call');
+    //console.log('loadCombinedChart3Y call');
     await this.waitUntilChartsReady();
   
     await this.safeAwait((async () => {
@@ -410,7 +411,7 @@ public async loadOpChart3Y(chartOptions: any = {}, param?: number, dparam?: numb
 
   
   public async drawExploitationChart(chartOptions: any = {}, param?: number, dparam?: number): Promise<void> {
-    console.log('drawExploitationChart call');
+    //console.log('drawExploitationChart call');
     await this.waitUntilChartsReady();
   
     await this.safeAwait((async () => {
@@ -432,7 +433,7 @@ public async loadOpChart3Y(chartOptions: any = {}, param?: number, dparam?: numb
 
 
   public async drawExploitationChartMonthly(chartOptions: any = {}, param?: number, dparam?: number): Promise<void> {
-    console.log('drawExploitationChartMonthly call');
+    //console.log('drawExploitationChartMonthly call');
     await this.waitUntilChartsReady();
   
     await this.safeAwait((async () => {
@@ -454,7 +455,7 @@ public async loadOpChart3Y(chartOptions: any = {}, param?: number, dparam?: numb
 
 
   public async drawExploitationChartWeekly(chartOptions: any = {}, param?: number, dparam?: number): Promise<void> {
-    console.log('drawExploitationChartWeekly call');
+    //console.log('drawExploitationChartWeekly call');
     await this.waitUntilChartsReady();
   
     await this.safeAwait((async () => {
@@ -527,7 +528,7 @@ public async loadOpChart3Y(chartOptions: any = {}, param?: number, dparam?: numb
    * Draw chart based on type with custom options.
    */
   private async drawChart(data: any, chartType: string, elementId: string, chartOptions: any = {}): Promise<void> {
-    console.log(`🖼️ drawChart call → ${chartType} → ${elementId}`);
+    //console.log(`🖼️ drawChart call → ${chartType} → ${elementId}`);
   
     const el = document.getElementById(elementId);
     if (!el) {
@@ -1649,7 +1650,7 @@ public async loadAndMergeMultipleCharts(
 ): Promise<void> {
   try {
     const rawResponses = await Promise.all(
-      sources.map(s => this.http.get(s.url, { responseType: 'text' }).toPromise())
+      sources.map(s => this.http.get(s.url, { responseType: 'json' }).toPromise())
     );
 
     const dataTables = rawResponses.map((raw, i) => {
@@ -1783,7 +1784,7 @@ public async drawPicTableChart(
   dparam: number = 0
 ): Promise<void> {
   await this.waitUntilChartsReady();
-  console.log('📊 drawPicTableChart called with dparam:', dparam);
+  //console.log('📊 drawPicTableChart called with dparam:', dparam);
 
   const el = document.getElementById(elementId);
   if (!el) return;
@@ -2040,7 +2041,7 @@ public getLastTableData(): any[] {
 
 public async drawDataTable(dparam: number): Promise<void> {
   await this.waitUntilChartsReady();
-  console.log('📊 drawDataTable call dparam =', dparam);
+  //console.log('📊 drawDataTable call dparam =', dparam);
 
   const cacheKey = `PIC_TABLE_dparam=${dparam}`;
   const cached = this.chartCache.get(cacheKey);
@@ -2125,7 +2126,7 @@ private formatDate(date: Date): string {
 
 
 public loadAllDashboardCharts(param: number | undefined, dparam: number): void {
-  console.log('📊 loadAllDashboardCharts call with param:', param, 'dparam:', dparam);
+  //console.log('📊 loadAllDashboardCharts call with param:', param, 'dparam:', dparam);
 
   const drawTasks = [
     () => this.drawOperationsCharts({}, {}, param, dparam),
@@ -2133,14 +2134,11 @@ public loadAllDashboardCharts(param: number | undefined, dparam: number): void {
     () => this.drawIncomeCharts({}, {}, param, dparam),
     () => this.loadChart3Y({}, param, dparam),
     () => this.loadOpChart3Y({}, param, dparam),
-    () => this.loadCombinedChart3Y({}, param, dparam),
-    //() => this.drawChartGaugeFunc({}, 190, param, dparam),
+    () => this.loadCombinedChart3Y({}, param, dparam),    
     () => this.drawDualArcGaugeOverlay('arc_chart', param, dparam),
     () => this.drawExploitationChart({}, param, dparam),
     () => this.drawExploitationChartWeekly({}, param, dparam),
-    () => this.drawExploitationChartMonthly({}, param, dparam),
-    //() => this.drawDataTable(dparam),
-    //() => this.drawPicTableChart('pic_table_chart2', {}, dparam)
+    () => this.drawExploitationChartMonthly({}, param, dparam),   
     
   ];
 
@@ -2148,18 +2146,11 @@ public loadAllDashboardCharts(param: number | undefined, dparam: number): void {
     this.safeAwait(task(), task.name || 'anonymous draw task');
   });
 
-  // Optional raw fetch log (still optional)
+  
   const queryParams = { param, dparam };
   const picTableUrl = this.buildUrlWithParams(this.DATA_SOURCES.PIC_TABLE, queryParams);
 
-  // this.http.get(picTableUrl).subscribe(
-  //   data => console.log('📦 Pic Table Data loaded'),
-  //   error => {
-  //     console.error('❌ Error loading GetPicDetailedData:', error);
-  //     const el = document.getElementById('pic_table_chart2');
-  //     if (el) el.innerHTML = 'שגיאה בטעינת נתונים (טבלה)';
-  //   }
-  // );
+  
 }
 
 
@@ -2167,7 +2158,7 @@ public loadAllDashboardCharts(param: number | undefined, dparam: number): void {
 
 public clearCache(): void {
   this.chartCache.clear();
-  console.log('📦 Chart cache cleared.');
+  //console.log('📦 Chart cache cleared.');
 }
 
 
