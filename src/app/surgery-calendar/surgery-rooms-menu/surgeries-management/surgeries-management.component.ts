@@ -356,6 +356,25 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
         if (room.Surgeries != undefined) {
           let temp = room.Surgeries.filter(x => x.SurgeryStatus != 'Canceled');
           temp.forEach((surgery, index2) => {
+            if(index2 == 0){
+              let mDate = new Date(temp[index2].start.getTime());
+              temp[index2].start = new Date(this.datePipe.transform(mDate, 'yyyy-MM-dd 07:30'));
+              /*
+              20*60
+              */
+              temp[index2].end = new Date(this.datePipe.transform(temp[index2].start.getTime() + parseInt(temp[index2].Duration)  * 60 * 1000 , 'yyyy-MM-dd HH:mm'));
+            //  / debugger
+              temp[index2].ArrivalDate = this.datePipe.transform(temp[index2].start, 'yyyy-MM-dd HH:mm');
+              temp[index2].ArrivalTime = this.datePipe.transform(temp[index2].start, 'HH:mm');
+              temp[index2].EndDate = this.datePipe.transform(temp[index2].end, 'yyyy-MM-dd HH:mm');
+              temp[index2].EndTime = this.datePipe.transform(temp[index2].end, 'HH:mm');
+              temp[index2].title = ` 
+                מחלקה: <b>${temp[index2].SurgeryRequestDepartments.S_DEPARTMENT}</b><br>
+                שם: <b>${temp[index2].SurgeryPatientDetails.PM_FIRST_NAME} ${temp[index2].SurgeryPatientDetails.PM_LAST_NAME}</b><b> -- ${temp[index2].SurgeryPatientDetails.PM_CASE_NUMBER}</b> <br>
+                דחיפות: <b>${temp[index2].Urgency}</b><br>
+                S:<b>${temp[index2].ArrivalDate.split(' ')[1]}</b> - E:<b>${temp[index2].EndDate.split(' ')[1]}</b>`;
+              
+            }
             // ADDING SETUPTIME TO EACH SURGERY
             let setuptime = {
               title: `Setup Time: <b>20min</b>`,
