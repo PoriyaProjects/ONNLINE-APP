@@ -2351,3 +2351,9 @@ button:hover{
     color:#fff!important;
     font-weight:bold;
 }
+.event-css-Completed{}
+.event-css-InProgress{}
+.event-css-Planned{}
+.event-css-Canceled .cal-event {
+    color:  yellow !important;
+}
