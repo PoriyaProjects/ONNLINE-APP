@@ -19,6 +19,7 @@ export interface ClinicActivityTotal {
   [x: string]: any;
   YearNumber: number;
   TotalMovements: number;
+  TotalMovementsWithInvoices: number;
   AvgPatientAge: number;
   MaleCount: number;
   FemaleCount: number;

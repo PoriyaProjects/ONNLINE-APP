@@ -270,6 +270,8 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
           element.color = {
             primary: '#000000', secondary: colors[element.SurgeryStatus]
           }
+          element.cssClass = 'event-css-'+  element.SurgeryStatus 
+          //element.cla
           // set uniqe color to sesia and dhof surgeries
           if (element.Urgency.includes('ססיה')) element.color = { primary: '#000000', secondary: '#FFA100' }
           if (element.Urgency.includes('דחוף')) element.color = { primary: '#000000', secondary: '#F1F305' }
@@ -348,6 +350,7 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
 
   sortSurgeriesOfEachRoomInDay() {
     this.loader = true;
+    //debugger
     if (this.IfPlannedSurgeries == "original" || this.IfPlannedSurgeries == "dror") {
       this.filteredSpecificRooms.forEach((room, index1) => {
         if (room.Surgeries != undefined) {
@@ -370,6 +373,20 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
               next.start = new Date(current_end_time.getTime() + 1200000);
               // change the end time of the next surgery to suit the new start time of the next surgery
               next.end = new Date(next.start.getTime() + estimated);
+              /*
+              next.EndDate  = next.EndTime = 
+              next.ArrivalDate = next.ArrivalTime = 
+              */
+              next.ArrivalDate = this.datePipe.transform(next.start, 'yyyy-MM-dd HH:mm');
+              next.ArrivalTime = this.datePipe.transform(next.start, 'HH:mm');
+              next.EndDate = this.datePipe.transform(next.end, 'yyyy-MM-dd HH:mm');
+              next.EndTime = this.datePipe.transform(next.end, 'HH:mm');
+              next.title = ` 
+                מחלקה: <b>${next.SurgeryRequestDepartments.S_DEPARTMENT}</b><br>
+                שם: <b>${next.SurgeryPatientDetails.PM_FIRST_NAME} ${next.SurgeryPatientDetails.PM_LAST_NAME}</b><b> -- ${next.SurgeryPatientDetails.PM_CASE_NUMBER}</b> <br>
+                דחיפות: <b>${next.Urgency}</b><br>
+                S:<b>${next.ArrivalDate.split(' ')[1]}</b> - E:<b>${next.EndDate.split(' ')[1]}</b>`;
+              //debugger
             }
           });
         }
@@ -538,7 +555,7 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
     const worksheet = workbook.addWorksheet('תוכנית ניתוחים', {
       views: [{ rightToLeft: true }]
     });
-  
+
     // Add merged header row on top
     const columnCount = 15; // Adjust based on number of columns
     const titleCellRange = `A1:P1`;
@@ -546,14 +563,14 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
     worksheet.getCell('A1').value = `תוכנית ניתוחים - מחלקה ${department}`;
     worksheet.getCell('A1').alignment = { horizontal: 'center', vertical: 'middle' };
     worksheet.getCell('A1').font = { size: 16, bold: true, name: 'Arial' };
-  
+
     // Define headers (row 2)
     worksheet.addRow([
       'מספר מקרה', 'חדר', 'שם מלא, ת.ז', 'גיל', 'תיאור פרוצדורה',
       'תנוחת השכבה', 'בידוד', 'בנק הדם', 'שם מנתח', 'הערות',
       'מכשירים נוספים', 'סוג הרדמה', 'נדרש שיקוף', 'מחלקת אשפוז', 'משך משוער'
     ]);
-  
+
     // Style header row (row 2)
     const headerRow = worksheet.getRow(2);
     headerRow.font = { bold: true, size: 18 };
@@ -566,7 +583,7 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
         right: { style: 'thin' }
       };
     });
-  
+
     // Add data rows (starting from row 3)
     json.forEach(item => {
       worksheet.addRow([
@@ -574,7 +591,7 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
         item.position, item.isolation, item.blood, item.doctor, item.note,
         item.tools, item.anesthesia, item.dimot, item.hospitalization, item.duration
       ]);
-    });  
+    });
     // Style all data rows
     worksheet.eachRow((row, rowNumber) => {
       if (rowNumber <= 2) return; // Skip merged title and header
@@ -589,7 +606,7 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
         };
       });
     });
-  
+
     // Save the file
     const buffer = await workbook.xlsx.writeBuffer();
     const blob = new Blob([buffer], { type: 'application/octet-stream' });
