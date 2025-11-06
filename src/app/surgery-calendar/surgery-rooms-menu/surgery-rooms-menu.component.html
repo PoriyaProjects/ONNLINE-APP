@@ -17,14 +17,14 @@
         </div>
         <br>
         <div class="row">
-            <div class="card text-center" *ngFor="let room of surgeryRooms"
+            <div class="card text-center" *ngFor="let room of physicalSurgeryRoomsArr"
                 (click)="openSurgeryRoomSchedule(room, 'פז');">
-                <div *ngIf="room.SurgeryRooms.length > 0">
-                    <u> {{room.title2}} </u>
+                <div>
+                    <u> {{room.CalendarRoomsArea}} </u>
                     <br>
-                    <p>מספר חדרים: {{room.NumberOfSurgeriesRoomsPhysical}}</p>
+                    <p>מספר חדרים: {{room.CountSurgeryRoom}}</p>
                     <br>
-                    <p>מספר ניתוחים: {{room.NumberOfSurgeriesPhysical}}</p>
+                    <p>מספר ניתוחים: {{room?.TotalSurgeries}}</p>
                 </div>
             </div>
         </div>
@@ -36,14 +36,14 @@
         </div>
         <br>
         <div class="row">
-            <div class="card text-center" *ngFor="let room of surgeryRooms"
+            <div class="card text-center" *ngFor="let room of virtualSurgeryRoomsArr"
                 (click)="openSurgeryRoomSchedule(room, 'ור');">
-                <div *ngIf="room.SurgeryRooms.length > 0">
-                    <u> {{room.title2}} </u>
+                <div>
+                    <u> {{room.CalendarRoomsArea}} </u>
                     <br>
-                    <p>מספר חדרים: {{room.NumberOfSurgeriesRoomsVirtual}}</p>
+                    <p>מספר חדרים: {{room.CountSurgeryRoom}}</p>
                     <br>
-                    <p>מספר ניתוחים: {{room.NumberOfSurgeriesVirtual}}</p>
+                    <p>מספר ניתוחים: {{room?.TotalSurgeries}}</p>
                 </div>
             </div>
         </div>

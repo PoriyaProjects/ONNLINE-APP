@@ -56,7 +56,7 @@ registerLocaleData(localeHe);
   styleUrls: ['./surgeries-management.component.css']
 })
 export class SurgeriesManagementComponent implements OnInit, OnDestroy {
-
+  tempArrOfSurgeryRooms: any = []
   pdfString: string;
   selectable = true;
   removable = true;
@@ -107,14 +107,15 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     if (this.UserName != null) {
-      this.viewDate = this.data.room.start;
+      debugger
+      this.viewDate = this.data.room.Start;
       // let day = this.datePipe.transform(this.viewDate, 'dd');
-      this.specificRooms = this.data.room.SurgeryRooms.filter(x => x.SurgeryRoom.includes(this.data.room.type));
+      this.specificRooms = this.data.room.Rooms;
       this.getPatientsQueues();
       // Start the interval when the component initializes
-      this.intervalId = setInterval(() => {
-        this.getPatientsQueues();
-      }, 120000); // 60000ms = 1 minute
+      // this.intervalId = setInterval(() => {
+      //   this.getPatientsQueues();
+      // }, 120000); // 60000ms = 1 minute
     }
     this.setView(CalendarView.Day);
   }
@@ -226,6 +227,7 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
 
   // get the elements to the main calendar page
   getPatientsQueues() {
+    //debugger;
     this.refresh = new Subject();
     this.loader = true;
     this.events = [];
@@ -236,9 +238,10 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
         _surRoomCode: this.data.room.CalendarRoomsArea
       })
       .subscribe((Response) => {
+        debugger
         let tempArr = Response["d"];
         let tempTitle;
-        let tempArrOfSurgeryRooms = [];
+
         let colors = {
           Completed: '#0ef12f',
           InProgress: '#e8abf1',
@@ -247,7 +250,17 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
         }
         // filter the surgery rooms in array
         this.specificRooms.forEach(x => {
-          tempArrOfSurgeryRooms.push(x.SurgeryRoom);
+          //debugger
+          let ele = {
+            roomName: x,
+            Surgeries: []
+          }
+          if (!x.Surgeries) {
+            this.tempArrOfSurgeryRooms.push(ele);
+          } else {
+            x.Surgeries = []
+          }
+
         });
         this.IfPlannedSurgeries = "original";
         tempArr['SurgeriesCalendarClassList'].forEach(element => {
@@ -270,7 +283,7 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
           element.color = {
             primary: '#000000', secondary: colors[element.SurgeryStatus]
           }
-          element.cssClass = 'event-css-'+  element.SurgeryStatus 
+          element.cssClass = 'event-css-' + element.SurgeryStatus
           //element.cla
           // set uniqe color to sesia and dhof surgeries
           if (element.Urgency.includes('ססיה')) element.color = { primary: '#000000', secondary: '#FFA100' }
@@ -280,19 +293,23 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
           //   afterEnd: true,
           // }
           element.draggable = true;
-          let index = tempArrOfSurgeryRooms.indexOf(element.SurgeryRoom);
+          let index = this.tempArrOfSurgeryRooms.find((ele) => element.SurgeryRoom == ele.roomName);
+          // debugger
           // when there's no room the index is -1, BUG!
-          if (index >= 0) {
+          if (index) {
             // group by the surgeries to the associated room
             if (element.SurgeryRoom != "") {
-              this.specificRooms[index]['Surgeries'] = tempArr['SurgeriesCalendarClassList'].filter(x => x.SurgeryRoom == element.SurgeryRoom);
-              this.specificRooms[index] = this.checkSurfingSurgeryDays(this.specificRooms[index]);
+              index['Surgeries'] = tempArr['SurgeriesCalendarClassList'].filter(x => x.SurgeryRoom == element.SurgeryRoom);
+              index = this.checkSurfingSurgeryDays(index);
               // sort the surgeries in each room from the earlier to the last one
 
             }
           }
           this.events.push(element);
         });
+
+        this.specificRooms = this.tempArrOfSurgeryRooms;
+        //debugger
         // filter the surgery rooms in array
         this.specificRooms.forEach((x, index) => {
           let tempArrayOfDepartments = [];
@@ -356,14 +373,14 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
         if (room.Surgeries != undefined) {
           let temp = room.Surgeries.filter(x => x.SurgeryStatus != 'Canceled');
           temp.forEach((surgery, index2) => {
-            if(index2 == 0){
+            if (index2 == 0) {
               let mDate = new Date(temp[index2].start.getTime());
               temp[index2].start = new Date(this.datePipe.transform(mDate, 'yyyy-MM-dd 07:30'));
               /*
               20*60
               */
-              temp[index2].end = new Date(this.datePipe.transform(temp[index2].start.getTime() + parseInt(temp[index2].Duration)  * 60 * 1000 , 'yyyy-MM-dd HH:mm'));
-            //  / debugger
+              temp[index2].end = new Date(this.datePipe.transform(temp[index2].start.getTime() + parseInt(temp[index2].Duration) * 60 * 1000, 'yyyy-MM-dd HH:mm'));
+              //  / debugger
               temp[index2].ArrivalDate = this.datePipe.transform(temp[index2].start, 'yyyy-MM-dd HH:mm');
               temp[index2].ArrivalTime = this.datePipe.transform(temp[index2].start, 'HH:mm');
               temp[index2].EndDate = this.datePipe.transform(temp[index2].end, 'yyyy-MM-dd HH:mm');
@@ -373,7 +390,7 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
                 שם: <b>${temp[index2].SurgeryPatientDetails.PM_FIRST_NAME} ${temp[index2].SurgeryPatientDetails.PM_LAST_NAME}</b><b> -- ${temp[index2].SurgeryPatientDetails.PM_CASE_NUMBER}</b> <br>
                 דחיפות: <b>${temp[index2].Urgency}</b><br>
                 S:<b>${temp[index2].ArrivalDate.split(' ')[1]}</b> - E:<b>${temp[index2].EndDate.split(' ')[1]}</b>`;
-              
+
             }
             // ADDING SETUPTIME TO EACH SURGERY
             let setuptime = {
@@ -417,6 +434,7 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
   }
 
   checkSurfingSurgeryDays(room) {
+    debugger
     if (room.Surgeries != undefined) {
       let deptsNoSisia = room.Surgeries.filter(x => (x.SurgeryType != 'ססיה' && x.SurgeryType != 'דחוף'));
       if (deptsNoSisia.length > 0) {

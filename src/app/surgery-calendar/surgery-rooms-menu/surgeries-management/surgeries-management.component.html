@@ -58,16 +58,16 @@
       <button mat-raised-button class="rooms-btn-danger" (click)="showSummaryReport(room)" *ngIf="room.surgerySurf"
         matTooltip="ניתוחים חורגים בזמן">{{room.SurgeryRoom}}</button> -->
       <div *ngIf="!room.surgerySurf">
-        <button mat-button [matMenuTriggerFor]="menu" class="rooms-btn">{{room.SurgeryRoom}}</button>
+        <button mat-button [matMenuTriggerFor]="menu" class="rooms-btn">{{room.roomName}}</button>
         <mat-menu #menu="matMenu">
           <button mat-menu-item (click)="showSummaryReport(room)"><b>סיכום חדר</b></button>
           <button mat-menu-item (click)="filterDepartment(depart)"
             *ngFor="let depart of room.uniqueDepartments">{{depart}}
             <div class="example-button-container" *ngIf="depart != null">
-              <a (click)="getPlannedSurgeriesData(depart, room.SurgeryRoom)">
+              <a (click)="getPlannedSurgeriesData(depart, room.roomName)">
                 <img src="../../assets/images/excel.png" alt="Excel File" matTooltip="יצירת קובץ אקסל {{depart}}">
               </a>
-              <a (click)="sentDepartmentFinalSurgeryPlan(depart, room.SurgeryRoom)">
+              <a (click)="sentDepartmentFinalSurgeryPlan(depart, room.roomName)">
                 <img src="../../assets/images/transferTo.png" alt="Send Final Plan"
                   matTooltip="שליחת תוכנית סופית {{depart}}">
               </a>
@@ -76,16 +76,16 @@
         </mat-menu>
       </div>
       <div *ngIf="room.surgerySurf">
-        <button mat-button [matMenuTriggerFor]="menu" class="rooms-btn-danger">{{room.SurgeryRoom}}</button>
+        <button mat-button [matMenuTriggerFor]="menu" class="rooms-btn-danger">{{room.roomName}}</button>
         <mat-menu #menu="matMenu">
           <button mat-menu-item (click)="showSummaryReport(room)"><b>סיכום חדר</b></button>
           <button mat-menu-item (click)="filterDepartment(depart)"
             *ngFor="let depart of room.uniqueDepartments">{{depart}}
             <div class="example-button-container" *ngIf="depart != null">
-              <a (click)="getPlannedSurgeriesData(depart, room.SurgeryRoom)">
+              <a (click)="getPlannedSurgeriesData(depart, room.roomName)">
                 <img src="../../assets/images/excel.png" alt="Excel File">
               </a>
-              <a (click)="sentDepartmentFinalSurgeryPlan(depart, room.SurgeryRoom)">
+              <a (click)="sentDepartmentFinalSurgeryPlan(depart, room.roomName)">
                 <img src="../../assets/images/transferTo.png" alt="Send Final Plan"
                   matTooltip="שליחת תוכנית סופית {{depart}}">
               </a>

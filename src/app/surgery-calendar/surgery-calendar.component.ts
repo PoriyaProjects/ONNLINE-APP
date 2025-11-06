@@ -199,19 +199,8 @@ export class SurgeryCalendarComponent implements OnInit {
 
   // get the elements to the main calendar page
   getSurgeryRooms(month, year) {
-    this.loader = true;
-    this.events = [];
-    this.http
-      .post(environment.url + "GetSurgeryRooms", {
-        _month: month,
-        _year: year
-      })
-      .subscribe((Response) => {
-        this.loader = false;
-        let tempArr = [];
-        tempArr = Response["d"];
-        tempArr.forEach(element => {
-          element.forEach(element2 => {
+    /*
+    element.forEach(element2 => {
             // element2.draggable = true,
             // element.actions = this.actions,
             // element2.resizable = {
@@ -234,6 +223,26 @@ export class SurgeryCalendarComponent implements OnInit {
             element2.color = element2.Color;
             this.events.push(element2);
           });
+    */
+    this.loader = true;
+    this.events = [];
+    this.http
+      .post(environment.url + "GetSurgeryRooms", {
+        _month: month,
+        _year: year
+      })
+      .subscribe((Response) => {
+        this.loader = false;
+        let tempArr = [];
+        tempArr = Response["d"];
+       // debugger;
+        tempArr.forEach(element => {
+          //debugger;
+          element.start = new Date(element.ArrivalDate)
+          element.time = '00:00';
+          element.color = 'linear-gradient(200deg, #c9c14b, #fafafa)';
+          element.title = element.CalendarRoomsArea + ' -פז:' + element.Physical + ' -ור:' + element.Virtual;
+          this.events.push(element);
         });
         this.refresh.next();
 

@@ -25,6 +25,8 @@ export class SurgeryRoomsMenuComponent implements OnInit {
     roomsNumber: 0,
     SurgeriesNumber: 0
   };
+  physicalSurgeryRoomsArr: any = [];
+  virtualSurgeryRoomsArr: any = [];
   dayNamesArray = [
     { number: 0, name: "ראשון" },
     { number: 1, name: "שני" },
@@ -48,22 +50,56 @@ export class SurgeryRoomsMenuComponent implements OnInit {
     private http: HttpClient,
     public dialog: MatDialog
   ) {
+    //debugger;
     this.surgeryRooms = data.event.day.events;
-    this.surgeryRooms.forEach((element, index) => {
-      let numberOfPhysical = element.SurgeryRooms.filter(x => x.SurgeryRoom.includes('פז'));
-      let numberOfVirtual = element.SurgeryRooms.filter(x => x.SurgeryRoom.includes('ור'));
-      this.surgeryRooms[index]['NumberOfSurgeriesRoomsPhysical'] = this.physicalSurgeryRooms.roomsNumber = numberOfPhysical.length;
-      this.surgeryRooms[index]['NumberOfSurgeriesRoomsVirtual'] = numberOfVirtual.length;
-      this.surgeryRooms[index]['NumberOfSurgeriesPhysical'] = 0
-      this.surgeryRooms[index]['NumberOfSurgeriesVirtual'] = 0
-      this.surgeryRooms[index].title2 = this.surgeryRooms[index].title.split(' -')[0];
-      for (let i = 0; i < numberOfPhysical.length; i++) {
-        this.surgeryRooms[index]['NumberOfSurgeriesPhysical'] += parseInt(numberOfPhysical[i].NumberOfSurgeries);
+    this.surgeryRooms[0]['mSurgeriesRoomsGroup']?.forEach((element, index) => {
+      if(element.RoomDes == 'ור'){
+        this.virtualSurgeryRoomsArr.push(element)
+      }else{
+        this.physicalSurgeryRoomsArr.push(element)
       }
-      for (let i = 0; i < numberOfVirtual.length; i++) {
-        this.surgeryRooms[index]['NumberOfSurgeriesVirtual'] += parseInt(numberOfVirtual[i].NumberOfSurgeries);
+    })
+    this.surgeryRooms.forEach((element)=>{
+      let totalVer = element.Virtual;
+      let totalPhy = element.Physical;
+      let roomName = element.CalendarRoomsArea;
+      debugger
+      let start = element.start;//this.datePipe.transform(element.start, 'yyyy-MM-dd')
+      this.virtualSurgeryRoomsArr.forEach((element)=>{
+        element.Start = start
+        element.start = start
+      })
+      this.physicalSurgeryRoomsArr.forEach((element)=>{
+        element.Start = start
+        element.start = start
+      })
+      let findver = this.virtualSurgeryRoomsArr.filter((element)=> element.CalendarRoomsArea == roomName) 
+      if(findver.length > 0){
+        findver[0].TotalSurgeries = totalVer
+        //findver[0].Start = start
       }
-    });
+      let findPhy = this.physicalSurgeryRoomsArr.filter((element)=> element.CalendarRoomsArea == roomName) 
+      if(findPhy.length > 0){
+        findPhy[0].TotalSurgeries = totalPhy
+        //findver[0].Start = start
+      }
+      debugger
+    })
+    // this.surgeryRooms.forEach((element, index) => {
+    //   let numberOfPhysical = element.mSurgeriesRoomsGroup.filter(x => x.RoomDes=='פז');
+    //   let numberOfVirtual = element.mSurgeriesRoomsGroup.filter(x => x.RoomDes == 'ור');
+    //   // this.surgeryRooms[index]['NumberOfSurgeriesRoomsPhysical'] = this.physicalSurgeryRooms.roomsNumber = numberOfPhysical.length;
+    //   // this.surgeryRooms[index]['NumberOfSurgeriesRoomsVirtual'] = numberOfVirtual.length;
+    //   // this.surgeryRooms[index]['NumberOfSurgeriesPhysical'] = 0
+    //   // this.surgeryRooms[index]['NumberOfSurgeriesVirtual'] = 0
+    //   // this.surgeryRooms[index].title2 = this.surgeryRooms[index].title.split(' -')[0];
+    //   // for (let i = 0; i < numberOfPhysical.length; i++) {
+    //   //   this.surgeryRooms[index]['NumberOfSurgeriesPhysical'] += parseInt(numberOfPhysical[i].NumberOfSurgeries);
+    //   // }
+    //   // for (let i = 0; i < numberOfVirtual.length; i++) {
+    //   //   this.surgeryRooms[index]['NumberOfSurgeriesVirtual'] += parseInt(numberOfVirtual[i].NumberOfSurgeries);
+    //   // }
+    // });
     this.todaysName = this.dayNamesArray[data.event.day.day].name;
   }
 
