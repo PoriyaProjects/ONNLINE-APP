@@ -236,7 +236,7 @@ export class FillSurveyComponent implements OnInit {
     displayedColumns: string[] = [];
     TABLE_DATA: Table[] = [];
     dataSource = new MatTableDataSource(this.TABLE_DATA);
-    isSign: boolean = false;
+    isSign: boolean = true;
     availableDevices: MediaDeviceInfo[];
     deviceCurrent: MediaDeviceInfo;
     deviceSelected: string;
@@ -768,6 +768,7 @@ export class FillSurveyComponent implements OnInit {
                 element[0].NursesTable.forEach(e => {
                     tableArr.push(e);
                 });
+                debugger
                 let pdf = this.makePdfString(element[0], tableArr)
                 this.http
                     .post(environment.urlipracticom + "createPdfOnServer", {

@@ -107,7 +107,7 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     if (this.UserName != null) {
-      debugger
+      //debugger
       this.viewDate = this.data.room.Start;
       // let day = this.datePipe.transform(this.viewDate, 'dd');
       this.specificRooms = this.data.room.Rooms;
@@ -175,6 +175,7 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
       // event['SurgeryRooms'] = this.data.room.SurgeryRoom;
       event['RoomsList'] = this.data.roomsList;
       if (event['ArrivalTime'] != null) {
+        debugger
         let dialogRef = this.dialog.open(ManageSingleSurgeryComponent, {
           data: {
             event: event,
@@ -227,7 +228,7 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
 
   // get the elements to the main calendar page
   getPatientsQueues() {
-    //debugger;
+    //////debugger;
     this.refresh = new Subject();
     this.loader = true;
     this.events = [];
@@ -238,7 +239,7 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
         _surRoomCode: this.data.room.CalendarRoomsArea
       })
       .subscribe((Response) => {
-        debugger
+        //debugger
         let tempArr = Response["d"];
         let tempTitle;
 
@@ -250,7 +251,7 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
         }
         // filter the surgery rooms in array
         this.specificRooms.forEach(x => {
-          //debugger
+          ////debugger
           let ele = {
             roomName: x,
             Surgeries: []
@@ -294,7 +295,7 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
           // }
           element.draggable = true;
           let index = this.tempArrOfSurgeryRooms.find((ele) => element.SurgeryRoom == ele.roomName);
-          // debugger
+          // //debugger
           // when there's no room the index is -1, BUG!
           if (index) {
             // group by the surgeries to the associated room
@@ -309,7 +310,7 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
         });
 
         this.specificRooms = this.tempArrOfSurgeryRooms;
-        //debugger
+        ////debugger
         // filter the surgery rooms in array
         this.specificRooms.forEach((x, index) => {
           let tempArrayOfDepartments = [];
@@ -367,7 +368,7 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
 
   sortSurgeriesOfEachRoomInDay() {
     this.loader = true;
-    //debugger
+    ////debugger
     if (this.IfPlannedSurgeries == "original" || this.IfPlannedSurgeries == "dror") {
       this.filteredSpecificRooms.forEach((room, index1) => {
         if (room.Surgeries != undefined) {
@@ -380,7 +381,7 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
               20*60
               */
               temp[index2].end = new Date(this.datePipe.transform(temp[index2].start.getTime() + parseInt(temp[index2].Duration) * 60 * 1000, 'yyyy-MM-dd HH:mm'));
-              //  / debugger
+              //  / //debugger
               temp[index2].ArrivalDate = this.datePipe.transform(temp[index2].start, 'yyyy-MM-dd HH:mm');
               temp[index2].ArrivalTime = this.datePipe.transform(temp[index2].start, 'HH:mm');
               temp[index2].EndDate = this.datePipe.transform(temp[index2].end, 'yyyy-MM-dd HH:mm');
@@ -422,7 +423,7 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
                 שם: <b>${next.SurgeryPatientDetails.PM_FIRST_NAME} ${next.SurgeryPatientDetails.PM_LAST_NAME}</b><b> -- ${next.SurgeryPatientDetails.PM_CASE_NUMBER}</b> <br>
                 דחיפות: <b>${next.Urgency}</b><br>
                 S:<b>${next.ArrivalDate.split(' ')[1]}</b> - E:<b>${next.EndDate.split(' ')[1]}</b>`;
-              //debugger
+              ////debugger
             }
           });
         }
@@ -434,7 +435,7 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
   }
 
   checkSurfingSurgeryDays(room) {
-    debugger
+    //debugger
     if (room.Surgeries != undefined) {
       let deptsNoSisia = room.Surgeries.filter(x => (x.SurgeryType != 'ססיה' && x.SurgeryType != 'דחוף'));
       if (deptsNoSisia.length > 0) {
@@ -655,9 +656,10 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
       width: '25%',
       height: '50%',
     });
+    console.log("this data to check ---> ", this.data)
     dialogRef.componentInstance.reportArray = pdf;
     dialogRef.componentInstance.department = department;
-    dialogRef.componentInstance.arrivalDate = this.data.room.ArrivalDate;
+    dialogRef.componentInstance.arrivalDate = this.datePipe.transform(this.data.room.Start, 'yyyy-MM-dd');
     dialogRef.componentInstance.calendarRoomsArea = this.data.room.CalendarRoomsArea;
   }
 

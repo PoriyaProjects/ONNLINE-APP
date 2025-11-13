@@ -182,6 +182,7 @@ export class ManageSingleSurgeryComponent implements OnInit, OnDestroy {
   }
 
   calendarPatientSurgeriesForm() {
+    debugger;
     let Services = new FormArray([]);
     this.data.event.SurgeriesCalendar_Susgeries.forEach(element => {
       Services.push(this.fb.group({
@@ -263,6 +264,7 @@ export class ManageSingleSurgeryComponent implements OnInit, OnDestroy {
         _requestingDepartmentCode: department[0].S_DEPARTMENT
       })
       .subscribe((Response) => {
+        debugger;
         this.surgeriesList = Response["d"];
       });
   }
