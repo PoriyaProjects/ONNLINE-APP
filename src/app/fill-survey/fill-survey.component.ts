@@ -181,16 +181,22 @@ export class DialogContentExampleDialog {
     }
 
     ngOnDestroy() {
-        if (this.initCanvaValue !== this.canvasEl.toDataURL() && !this.isCanvasBlankOrWhite(this.canvasEl))
+        if (this.initCanvaValue !== this.canvasEl.toDataURL() && !this.isCanvasBlankOrWhite(this.canvasEl)){
             this.data.sign = this.canvasEl.toDataURL();
+            console.log(this.data.sign);
+        }
+         
         this.drawingSubscription.unsubscribe();
 
         this.dialog.close(this.data);
     }
 
     sendToForm() {
-        if (this.initCanvaValue !== this.canvasEl.toDataURL() && !this.isCanvasBlankOrWhite(this.canvasEl))
+        if (this.initCanvaValue !== this.canvasEl.toDataURL() && !this.isCanvasBlankOrWhite(this.canvasEl)){
             this.data.sign = this.canvasEl.toDataURL();
+            console.log(this.data.sign);
+        }
+            
 
         this.dialog.close(this.data);
         // console.log(this.canvasEl);
@@ -230,7 +236,7 @@ export class FillSurveyComponent implements OnInit {
     displayedColumns: string[] = [];
     TABLE_DATA: Table[] = [];
     dataSource = new MatTableDataSource(this.TABLE_DATA);
-
+    isSign: boolean = true;
     availableDevices: MediaDeviceInfo[];
     deviceCurrent: MediaDeviceInfo;
     deviceSelected: string;
@@ -537,6 +543,7 @@ export class FillSurveyComponent implements OnInit {
                 this.sign = this._sanitizer.bypassSecurityTrustResourceUrl(
                     data.sign
                 );
+                this.isSign = true;
                 this.signatureArr.push(data);
             });
     }
@@ -584,6 +591,7 @@ export class FillSurveyComponent implements OnInit {
                         answer.answerContent = this.signatureArr[d].sign;
                         d++;
                     }
+                    this.isSign = true;
                 }
             }
 
@@ -760,6 +768,7 @@ export class FillSurveyComponent implements OnInit {
                 element[0].NursesTable.forEach(e => {
                     tableArr.push(e);
                 });
+                debugger
                 let pdf = this.makePdfString(element[0], tableArr)
                 this.http
                     .post(environment.urlipracticom + "createPdfOnServer", {
