@@ -1026,7 +1026,7 @@ export class CprFormComponent implements OnInit {
     }else
     if (this.saving_form) {
       this.openSnackBar("חתימת רופא שדה חובה");
-    } else if(!this.saving_form && this.ThirdSection.invalid && this.SecondSection.invalid && this.FirstSection.invalid) {
+    } else if(!this.saving_form && !this.ThirdSection.invalid && !this.SecondSection.invalid && !this.FirstSection.invalid) {
       this.confirmationDialogService
         .confirm("נא לאשר..", "האם אתה בטוח ...? ")
         .then((confirmed) => {
