@@ -507,6 +507,7 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
   }
 
   sentDepartmentFinalSurgeryPlan(department, room) {
+    debugger
     let fullDate = this.datePipe.transform(this.viewDate, 'yyyy-MM-dd');
     this.http.post(environment.url + 'GetSurgeriesPlannedExcel', {
       Department: department,
@@ -527,7 +528,7 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
             <div class="d-none-desktop" dir="rtl">
               <div class="card-header border-bottomIn rel" style="text-align: center;">
                   <img class="full-width" style="width: 100%;" src="https://poria.is-great.org/images/covid_2_header.png" />
-                  <h1 class="text-center pos-abs-center"><u>תוכנית ניתוחים סופית ${department}</u></h1>
+                  <h1 class="text-center pos-abs-center"><u>תוכנית ניתוחים סופית ${department} - חדר ${room}</u></h1>
               </div>
               <div class="col-12" style="width: 100%;text-align: center;float: right;">
                 <p>תאריך: ${fullDate}</p>
@@ -765,6 +766,7 @@ export class ShareSurgeriesPDFDialog {
   }
 
   shareReportWithOthers() {
+    debugger
     this.disableBtn = true;
     if (this.fruits.length == 0) {
       this.openSnackBar("נא לבחור אחראי לשליחה");
