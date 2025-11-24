@@ -155,11 +155,12 @@ import { GoogleChartsIncomeNBComponent } from "./hospital-incomenb-dashb/google-
 import { FoldersManagementComponent } from "./dashboard/folders-management/folders-management.component";
 import { FolderDialogComponent } from "./dashboard/folders-management/folder-dialog/folder-dialog.component";
 import { DimotActivityDashboardComponent } from "./dimot-activity-dashboard/dimot-activity-dashboard.component";
+import { DepartmentIncomeDashboardComponent } from "./incomeImporter/department-income-dashboard.component";
 
-//import { AppointsDashboardComponent } from './hospital-appoints-dashb/google-charts/google-charts.component';
 
 
 const routes: Routes = [
+    { path: "IncomeDashboard", component: DepartmentIncomeDashboardComponent },
     { path: "dimotactivity", component: DimotActivityDashboardComponent },
     { path: "patientstikers", component: PatientStikersComponent },
     { path: "clinicsrequests", component: ClinicsRequestsComponent },
