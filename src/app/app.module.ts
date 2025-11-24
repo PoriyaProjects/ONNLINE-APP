@@ -242,6 +242,8 @@ import { HospitalTonnageComponent } from './hospital-bi-dashboard/hospital-tonna
 import { FolderTreeComponent } from './dashboard/folder-tree/folder-tree.component';
 import { FeedLineComponent } from './dashboard/feed-line/feed-line.component';
 import { ClinicActivityDashboardComponent } from './clinic-activity-dashboard/clinic-activity-dashboard.component';
+import { DepartmentIncomeDashboardComponent } from './incomeImporter/department-income-dashboard.component';
+import { MoneyLoaderComponent } from './money-loader/money-loader.component';
 import { CliniDataComponent } from './clinic-activity-dashboard/clini-data/clini-data.component';
 import { DepartmentsWhatsappManagementComponent } from './whatsapp-departments-dashboard/departments-whatsapp-management/departments-whatsapp-management.component';
 import { TrainingRequestDashboardComponent } from './form-dashboard/training-request-dashboard/training-request-dashboard.component';
@@ -456,6 +458,8 @@ const maskConfig: Partial<IConfig> = {
     PollsComponent,
     AddPollComponent,
     CathReportComponent,
+    DepartmentIncomeDashboardComponent,
+    MoneyLoaderComponent,
     PatientsSystemConflictsComponent,
     BTirmComponent,
     ReportReportingComponent,

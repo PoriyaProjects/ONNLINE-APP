@@ -1,0 +1,41 @@
+<div *ngIf="isLoading" class="money-loader-container">
+    <div class="money-loader-background"></div>
+    
+    <div class="money-loader-content">
+      <!-- Floating Money Bills -->
+      <div class="money-bill money-bill-1">💰</div>
+      <div class="money-bill money-bill-2">💵</div>
+      <div class="money-bill money-bill-3">💴</div>
+      <div class="money-bill money-bill-4">💶</div>
+      <div class="money-bill money-bill-5">💷</div>
+  
+      <!-- Center Spinner Circle -->
+      <div class="spinner-circle">
+        <div class="spinner-ring"></div>
+        <div class="spinner-text">
+          <svg viewBox="0 0 100 100" class="spinner-icon">
+            <circle cx="50" cy="50" r="45" fill="none" stroke="currentColor" stroke-width="2"/>
+            <path d="M 50 10 L 50 40" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+          </svg>
+        </div>
+      </div>
+  
+      <!-- Loading Text -->
+      <div class="loading-text">{{ message }}</div>
+  
+      <!-- Dots Animation -->
+      <div class="dots-container">
+        <span class="dot"></span>
+        <span class="dot"></span>
+        <span class="dot"></span>
+      </div>
+  
+      <!-- Percentage Counter -->
+      <div class="loading-progress">
+        <div class="progress-bar">
+          <div class="progress-fill"></div>
+        </div>
+        <div class="progress-text">טוען מידע...</div>
+      </div>
+    </div>
+  </div>

@@ -1,0 +1,318 @@
+<div dir="rtl">
+
+  <!-- Top Controls -->
+  <div dir="ltr" class="wrapper">
+    
+    <div class="element">
+      <mat-form-field appearance="fill">
+        <mat-label>בחר אגף</mat-label>
+        <mat-select [(ngModel)]="selectedDiagnosis" (selectionChange)="loadDepartmentIncomeByDiagnosis()">
+          <mat-option *ngFor="let diagnosis of diagnosesList" [value]="diagnosis">
+            {{ diagnosis }}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+    </div>
+
+    <div class="element">
+      <button mat-raised-button color="primary" (click)="loadDepartmentIncomeData()" class="srch-btn">
+        <mat-icon>refresh</mat-icon>
+        רענן
+      </button>
+    </div>
+
+    <!-- Boss Dashboard Button -->
+    <div class="element">
+      <button mat-raised-button color="accent" (click)="loadBossDashboard()" class="srch-btn" [class.active]="showBossDashboard">
+        <mat-icon>admin_panel_settings</mat-icon>
+        דוח למנהל
+      </button>
+    </div>
+
+  </div>
+
+  <!-- Loading Spinner -->
+  <div dir="ltr" class="wrapper">
+    <mat-spinner *ngIf="isLoading" style="margin:10px auto;"></mat-spinner>
+    <div *ngIf="isLoading" style="text-align: center;">Loading...</div>
+  </div>
+
+  <!-- Main Chart -->
+  <div *ngIf="isDataLoaded" class="mat-elevation-z8">
+    <h3 dir="rtl" style="text-align: right; color: #999; padding: 10px 20px; margin: 0; font-size: 12px;">לחץ על מחלקה לצפייה בפרטים</h3>
+    <google-chart 
+      type="BarChart" 
+      [data]="chartData" 
+      [columns]="chartColumns"
+      [options]="chartOptions" 
+      [width]="'100%'"
+      [height]="700">
+    </google-chart>
+  </div>
+
+  <!-- Boss Dashboard Modal -->
+  <div *ngIf="showBossDashboard" class="boss-dashboard-overlay">
+    <div class="boss-dashboard-modal">
+      <div dir="rtl" class="boss-header">
+        <h2>📊 דוח הכנסות כללי</h2>
+        <button mat-icon-button (click)="closeBossDashboard()" class="close-btn">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+
+      <mat-spinner *ngIf="isLoading" style="margin:10px auto;"></mat-spinner>
+
+      <!-- Beautiful Summary Cards -->
+      <div *ngIf="!isLoading && yearlyTotalData && yearlyTotalData.length > 0" dir="rtl" class="boss-summary-section">
+        
+        <!-- 2024 Card -->
+        <div class="boss-card card-2024">
+          <div class="card-icon">💰</div>
+          <div class="card-year">2024</div>
+          <div class="card-amount">{{ formatNumber(getTotal2024()) }}</div>
+          <div class="card-currency">₪</div>
+        </div>
+
+        <!-- Arrow Icon -->
+        <div class="arrow-container">
+          <div class="arrow-icon" [class.positive]="getTotalDifference() >= 0" [class.negative]="getTotalDifference() < 0">
+            <mat-icon *ngIf="getTotalDifference() >= 0">trending_up</mat-icon>
+            <mat-icon *ngIf="getTotalDifference() < 0">trending_down</mat-icon>
+          </div>
+          <div class="arrow-text">
+            <div class="difference-amount" [class.positive]="getTotalDifference() >= 0" [class.negative]="getTotalDifference() < 0">
+              {{ formatNumber(getTotalDifference()) }} ₪
+            </div>
+            <div class="difference-percent" [class.positive]="getTotalDifference() >= 0" [class.negative]="getTotalDifference() < 0">
+              {{ calculateYearlyPercentageChange() }}
+            </div>
+          </div>
+        </div>
+
+        <!-- 2025 Card -->
+        <div class="boss-card card-2025">
+          <div class="card-icon">📈</div>
+          <div class="card-year">2025</div>
+          <div class="card-amount">{{ formatNumber(getTotal2025()) }}</div>
+          <div class="card-currency">₪</div>
+        </div>
+
+      </div>
+
+      <!-- Summary Statistics -->
+      <div *ngIf="!isLoading && yearlyTotalData && yearlyTotalData.length > 0" dir="rtl" class="boss-stats-section">
+        
+        <div class="stat-box">
+          <span class="stat-label">סך הכנסות 2024:</span>
+          <span class="stat-value">{{ formatNumber(getTotal2024()) }} ₪</span>
+        </div>
+
+        <div class="stat-box">
+          <span class="stat-label">סך הכנסות 2025:</span>
+          <span class="stat-value">{{ formatNumber(getTotal2025()) }} ₪</span>
+        </div>
+
+        <div class="stat-box" [class.positive]="getTotalDifference() >= 0" [class.negative]="getTotalDifference() < 0">
+          <span class="stat-label">הפרש כללי:</span>
+          <span class="stat-value">{{ formatNumber(getTotalDifference()) }} ₪</span>
+        </div>
+
+        <div class="stat-box" [class.positive]="getTotalDifference() >= 0" [class.negative]="getTotalDifference() < 0">
+          <span class="stat-label">אחוז שינוי:</span>
+          <span class="stat-value">{{ calculateYearlyPercentageChange() }}</span>
+        </div>
+
+      </div>
+
+      <div *ngIf="!isLoading && (!yearlyTotalData || yearlyTotalData.length === 0)" style="text-align: center; padding: 40px; color: #999;">
+        <mat-icon style="font-size: 48px; width: 48px; height: 48px; opacity: 0.5;">info</mat-icon>
+        <p>אין נתונים זמינים</p>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Department Details Modal -->
+  <div *ngIf="isDepartmentGraphOpen && selectedDepartment" class="department-graph-overlay">
+    <div class="department-graph-modal">
+      <div dir="rtl" class="graph-header">
+        <h2>{{ departmentGraphTitle }}</h2>
+        <button mat-icon-button (click)="closeDepartmentGraph()" class="close-btn">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+
+      <!-- Summary Cards -->
+      <div dir="rtl" class="summary-section">
+        <mat-card class="summary-card">
+          <mat-card-content>
+            <div class="card-label">הכנסות 2024</div>
+            <div class="card-value">{{ formatNumber(selectedDepartment.Income2024) }} ₪</div>
+          </mat-card-content>
+        </mat-card>
+
+        <mat-card class="summary-card">
+          <mat-card-content>
+            <div class="card-label">הכנסות 2025</div>
+            <div class="card-value">{{ formatNumber(selectedDepartment.Income2025) }} ₪</div>
+          </mat-card-content>
+        </mat-card>
+
+        <mat-card class="summary-card" [class.positive]="calculateDifference(selectedDepartment) >= 0" [class.negative]="calculateDifference(selectedDepartment) < 0">
+          <mat-card-content>
+            <div class="card-label">הפרש</div>
+            <div class="card-value">{{ formatNumber(calculateDifference(selectedDepartment)) }} ₪</div>
+            <div class="card-percentage">{{ calculatePercentageChange(selectedDepartment) }}</div>
+          </mat-card-content>
+        </mat-card>
+      </div>
+
+      <!-- Catalog Table Section -->
+      <div dir="rtl" class="catalog-table-section">
+        <div class="catalog-header">
+          <h3 style="text-align: right; color: #333; margin: 0;">טבלת השירותים לפי שנה</h3>
+          
+          <!-- Toggle Buttons -->
+          <div class="view-type-selector">
+            <button mat-stroked-button 
+                    [class.active]="selectedViewType === 'cash'"
+                    (click)="onViewTypeChange('cash')"
+                    color="primary">
+              💰 עלות
+            </button>
+            <button mat-stroked-button 
+                    [class.active]="selectedViewType === 'units'"
+                    (click)="onViewTypeChange('units')"
+                    color="primary">
+              📊 יחידות
+            </button>
+            <button mat-stroked-button 
+                    [class.active]="selectedViewType === 'both'"
+                    (click)="onViewTypeChange('both')"
+                    color="primary">
+              📋 שניהם
+            </button>
+          </div>
+        </div>
+
+        <!-- Loading Spinner -->
+        <mat-spinner *ngIf="catalogLoading" style="margin:10px auto;"></mat-spinner>
+
+        <!-- Catalog Table -->
+        <div class="table-wrapper" *ngIf="!catalogLoading && detailedDataSource.data && detailedDataSource.data.length > 0">
+          <table mat-table [dataSource]="detailedDataSource" class="catalog-mat-table">
+
+            <!-- CatalogName2 Column -->
+            <ng-container matColumnDef="CatalogName2">
+              <th mat-header-cell *matHeaderCellDef>שירות</th>
+              <td mat-cell *matCellDef="let element">{{ element.CatalogName2 }}</td>
+            </ng-container>
+
+            <!-- CASH COLUMNS -->
+            <ng-container matColumnDef="Cash2021">
+              <th mat-header-cell *matHeaderCellDef>2021</th>
+              <td mat-cell *matCellDef="let element">{{ formatNumber(element.Cash2021) }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="Cash2022">
+              <th mat-header-cell *matHeaderCellDef>2022</th>
+              <td mat-cell *matCellDef="let element">{{ formatNumber(element.Cash2022) }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="Cash2023">
+              <th mat-header-cell *matHeaderCellDef>2023</th>
+              <td mat-cell *matCellDef="let element">{{ formatNumber(element.Cash2023) }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="Cash2024">
+              <th mat-header-cell *matHeaderCellDef>2024</th>
+              <td mat-cell *matCellDef="let element">{{ formatNumber(element.Cash2024) }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="Cash2025">
+              <th mat-header-cell *matHeaderCellDef>2025</th>
+              <td mat-cell *matCellDef="let element">{{ formatNumber(element.Cash2025) }}</td>
+            </ng-container>
+
+            <!-- UNITS COLUMNS -->
+            <ng-container matColumnDef="Units2021">
+              <th mat-header-cell *matHeaderCellDef>2021</th>
+              <td mat-cell *matCellDef="let element">{{ formatNumber(element.Units2021) }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="Units2022">
+              <th mat-header-cell *matHeaderCellDef>2022</th>
+              <td mat-cell *matCellDef="let element">{{ formatNumber(element.Units2022) }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="Units2023">
+              <th mat-header-cell *matHeaderCellDef>2023</th>
+              <td mat-cell *matCellDef="let element">{{ formatNumber(element.Units2023) }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="Units2024">
+              <th mat-header-cell *matHeaderCellDef>2024</th>
+              <td mat-cell *matCellDef="let element">{{ formatNumber(element.Units2024) }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="Units2025">
+              <th mat-header-cell *matHeaderCellDef>2025</th>
+              <td mat-cell *matCellDef="let element">{{ formatNumber(element.Units2025) }}</td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="displayedCatalogColumns; sticky: true"></tr>
+            <tr mat-row *matRowDef="let row; columns: displayedCatalogColumns;"></tr>
+          </table>
+        </div>
+
+        <div *ngIf="!catalogLoading && (!detailedDataSource.data || detailedDataSource.data.length === 0)" style="text-align: center; padding: 20px; color: #999;">
+          אין נתונים זמינים
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Main Data Table -->
+  <div dir="rtl" class="mat-elevation-z8" style="margin-top: 20px;">
+    <h3 style="text-align: right; color: #333; padding: 20px;">טבלת הכנסות מחלקות (לחץ על שם מחלקה לפרטים)</h3>
+
+    <mat-form-field appearance="standard" class="search-bar">
+      <mat-label>חפש מחלקה</mat-label>
+      <input matInput (keyup)="applyMainFilter($event)" placeholder="הקלד שם מחלקה..." />
+    </mat-form-field>
+
+    <table mat-table [dataSource]="dataSource" class="mat-table" matSort>
+
+      <ng-container matColumnDef="DepartmentName">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>מחלקה</th>
+        <td mat-cell *matCellDef="let element" (click)="loadDepartmentSpecificGraph(element.DepartmentName)" class="clickable-cell">
+          {{ element.DepartmentName }}
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="Income2024">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>הכנסות 2024</th>
+        <td mat-cell *matCellDef="let element">{{ formatNumber(element.Income2024) }} ₪</td>
+      </ng-container>
+
+      <ng-container matColumnDef="Income2025">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>הכנסות 2025</th>
+        <td mat-cell *matCellDef="let element">{{ formatNumber(element.Income2025) }} ₪</td>
+      </ng-container>
+
+      <ng-container matColumnDef="Difference">
+        <th mat-header-cell *matHeaderCellDef>הפרש / אחוז שינוי</th>
+        <td mat-cell *matCellDef="let element" [class.positive-change]="calculateDifference(element) >= 0" [class.negative-change]="calculateDifference(element) < 0">
+          {{ formatNumber(calculateDifference(element)) }} ₪
+          <br />
+          <span class="percentage-badge">{{ calculatePercentageChange(element) }}</span>
+        </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+    </table>
+  </div>
+
+</div>
