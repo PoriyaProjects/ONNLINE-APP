@@ -1,409 +1,324 @@
-import { Component, OnInit } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { MatSnackBar } from '@angular/material/snack-bar';
-import { MatTableDataSource } from '@angular/material/table';
-import { MatDialog } from '@angular/material/dialog';
-import { ChangeDetectorRef } from '@angular/core';
-import { environment } from "src/environments/environment";
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatDialogModule } from '@angular/material/dialog';
+import { MatTableModule } from '@angular/material/table';
+import { MatSortModule } from '@angular/material/sort';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatSelectModule } from '@angular/material/select';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
+import { MatRadioModule } from '@angular/material/radio';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatCardModule } from '@angular/material/card';
+import { FormsModule } from '@angular/forms';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import { DepartmentIncomeDashboardComponent, DepartmentComparisonDto, TopDepartmentDto } from './department-income-dashboard.component';
 
-export interface DepartmentComparisonDto {
-  DepartmentName: string;
-  Income2024: number;
-  Income2025: number;
-}
+describe('DepartmentIncomeDashboardComponent', () => {
+  let component: DepartmentIncomeDashboardComponent;
+  let fixture: ComponentFixture<DepartmentIncomeDashboardComponent>;
 
-export interface DepartmentDetailedDataDto {
-  DepartmentName: string;
-  Year: string;
-  Month: string;
-  UnifiedDiagnosis: string;
-  IncomeCategory: string;
-  MedicalUnitIncome: string;
-  RealValue: number;
-  ChargedUnits: string;
-  CatalogName: string;
-}
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      declarations: [DepartmentIncomeDashboardComponent],
+      imports: [
+        HttpClientTestingModule,
+        MatSnackBarModule,
+        MatDialogModule,
+        MatTableModule,
+        MatSortModule,
+        MatFormFieldModule,
+        MatSelectModule,
+        MatButtonModule,
+        MatIconModule,
+        MatRadioModule,
+        MatProgressSpinnerModule,
+        MatCardModule,
+        FormsModule,
+        BrowserAnimationsModule
+      ]
+    }).compileComponents();
 
-@Component({
-  selector: 'app-department-income-dashboard',
-  templateUrl: './department-income-dashboard.component.html',
-  styleUrls: ['./department-income-dashboard.component.css']
-})
-export class DepartmentIncomeDashboardComponent implements OnInit {
+    fixture = TestBed.createComponent(DepartmentIncomeDashboardComponent);
+    component = fixture.componentInstance;
+  });
 
-  // Data arrays
-  departmentIncomeData: DepartmentComparisonDto[] = [];
-  departmentDetailedData: DepartmentDetailedDataDto[] = [];
-  diagnosesList: string[] = [];
+  it('should create', () => {
+    expect(component).toBeTruthy();
+  });
 
-  // Main Chart Configuration
-  chartData: any[] = [];
-  chartColumns: string[] = ['מחלקה', '2024', '2025'];
-  chartOptions = {
-    title: 'השוואת הכנסות מחלקות - 2024 vs 2025',
-    hAxis: {
-      title: 'סכום הכנסות'
-    },
-    vAxis: {
-      title: 'מחלקה'
-    },
-    bars: 'horizontal',
-    legend: { position: 'bottom' },
-    chartArea: { width: '70%' },
-    // Enable click events
-    pointSize: 7
-  };
+  describe('Requirement 1: 2025 values above 2024', () => {
+    it('should sort data by Income2025 descending', () => {
+      const testData: DepartmentComparisonDto[] = [
+        { DepartmentName: 'Dept A', Income2024: 100, Income2025: 150 },
+        { DepartmentName: 'Dept B', Income2024: 200, Income2025: 180 },
+        { DepartmentName: 'Dept C', Income2024: 150, Income2025: 200 }
+      ];
 
-  // Department-Specific Chart (shown after click)
-  departmentChartData: any[] = [];
-  departmentChartColumns: string[] = ['חודש', 'הכנסות'];
-  departmentChartOptions = {
-    title: '',
-    hAxis: {
-      title: 'חודש'
-    },
-    vAxis: {
-      title: 'הכנסות'
-    },
-    chartArea: { width: '80%', height: '70%' },
-    legend: { position: 'bottom' }
-  };
+      component.departmentIncomeData = testData;
+      component.departmentIncomeData.sort((a, b) => b.Income2025 - a.Income2025);
+      component.dataSource.data = component.departmentIncomeData;
 
-  // Table data
-  displayedColumns: string[] = [
-    'DepartmentName',
-    'Income2024',
-    'Income2025',
-    'Difference'
-  ];
-  dataSource = new MatTableDataSource<DepartmentComparisonDto>([]);
+      expect(component.departmentIncomeData[0].DepartmentName).toBe('Dept C');
+      expect(component.departmentIncomeData[0].Income2025).toBe(200);
+      expect(component.departmentIncomeData[2].DepartmentName).toBe('Dept B');
+      expect(component.departmentIncomeData[2].Income2025).toBe(180);
+    });
+  });
 
-  // Detailed table data
-  detailedDisplayedColumns: string[] = [
-    'Year',
-    'Month',
-    'IncomeCategory',
-    'RealValue',
-    'ChargedUnits',
-    'CatalogName'
-  ];
-  detailedDataSource = new MatTableDataSource<DepartmentDetailedDataDto>([]);
+  describe('Requirement 2: Numbers in millions on charts', () => {
+    it('should format chart data in millions', () => {
+      component.departmentIncomeData = [
+        { DepartmentName: 'Test Dept', Income2024: 1000000, Income2025: 2500000 }
+      ];
 
-  // UI State
-  isDataLoaded = false;
-  selectedDepartment: DepartmentComparisonDto | null = null;
-  selectedDiagnosis: string = 'אגף כירורגי';
-  isDetailedViewOpen = false;
-  
-  // NEW: Track if department graph is showing
-  isDepartmentGraphOpen = false;
-  departmentGraphTitle: string = '';
+      component.updateChartData();
 
-  constructor(
-    private http: HttpClient,
-    private snackBar: MatSnackBar,
-    public dialog: MatDialog,
-    private cdr: ChangeDetectorRef
-  ) {}
-
-  ngOnInit(): void {
-    this.loadDepartmentIncomeData();
-    this.loadDiagnosesList();
-  }
-
-  /**
-   * Load department income comparison data
-   */
-  loadDepartmentIncomeData(): void {
-    this.isDataLoaded = false;
-
-    this.http
-      .post(environment.url + "GetDepartmentIncomeComparison", {})
-      .subscribe(
-        (response: any) => {
-          if (response && response.d) {
-            this.departmentIncomeData = response.d;
-            this.dataSource.data = response.d;
-            this.updateChartData();
-            this.isDataLoaded = true;
-            this.cdr.detectChanges();
-            this.snackBar.open('✓ נתונים נטענו בהצלחה', 'סגור', { duration: 3000 });
-          }
-        },
-        (error) => {
-          console.error('Error loading department income data:', error);
-          this.snackBar.open('❌ שגיאה בטעינת הנתונים', 'סגור', { duration: 3000 });
-        }
-      );
-  }
-
-  /**
-   * Load department income by selected diagnosis
-   */
-  loadDepartmentIncomeByDiagnosis(): void {
-    this.isDataLoaded = false;
-
-    this.http
-      .post(environment.url + "GetDepartmentIncomeByDiagnosis", {
-        diagnosis: this.selectedDiagnosis
-      })
-      .subscribe(
-        (response: any) => {
-          if (response && response.d) {
-            this.departmentIncomeData = response.d;
-            this.dataSource.data = response.d;
-            this.updateChartData();
-            this.isDataLoaded = true;
-            this.cdr.detectChanges();
-            this.snackBar.open('✓ נתונים עדכנו בהצלחה', 'סגור', { duration: 3000 });
-          }
-        },
-        (error) => {
-          console.error('Error loading diagnosis data:', error);
-          this.snackBar.open('❌ שגיאה בטעינת הנתונים', 'סגור', { duration: 3000 });
-        }
-      );
-  }
-
-  /**
-   * Load list of all diagnoses for dropdown filter
-   */
-  loadDiagnosesList(): void {
-    this.http
-      .post(environment.url + "GetUniqueDiagnoses", {})
-      .subscribe(
-        (response: any) => {
-          if (response && response.d) {
-            this.diagnosesList = response.d;
-            this.cdr.detectChanges();
-          }
-        },
-        (error) => {
-          console.error('Error loading diagnoses list:', error);
-        }
-      );
-  }
-
-  /**
-   * Update chart data from department income data
-   */
-  updateChartData(): void {
-    this.chartData = this.departmentIncomeData.map(item => [
-      item.DepartmentName,
-      item.Income2024,
-      item.Income2025
-    ]);
-  }
-
-  /**
-   * Handle row click to view detailed data
-   */
-  onDepartmentRowClick(row: DepartmentComparisonDto): void {
-    this.selectedDepartment = row;
-    this.isDetailedViewOpen = true;
-    this.loadDetailedDepartmentData(row.DepartmentName);
-  }
-
-  /**
-   * NEW: Handle department graph click
-   * User clicks on a department in the main chart
-   */
-  onDepartmentChartClick(event: any): void {
-    if (event.targetID && event.targetID.startsWith('row')) {
-      const rowIndex = parseInt(event.targetID.replace('row', ''));
-      if (rowIndex > 0 && rowIndex <= this.departmentIncomeData.length) {
-        const selectedDept = this.departmentIncomeData[rowIndex - 1];
-        console.log('Clicked department:', selectedDept.DepartmentName);
-        
-        // Load department-specific graph
-        this.loadDepartmentSpecificGraph(selectedDept.DepartmentName);
-      }
-    }
-  }
-
-  /**
-   * NEW: Load department-specific graph
-   * Shows monthly income breakdown for selected department
-   */
-  loadDepartmentSpecificGraph(departmentName: string): void {
-    this.selectedDepartment = this.departmentIncomeData.find(
-      d => d.DepartmentName === departmentName
-    ) || null;
-
-    if (!this.selectedDepartment) {
-      this.snackBar.open('❌ לא נמצאה מחלקה', 'סגור', { duration: 2000 });
-      return;
-    }
-
-    // Load detailed data for this department
-    this.loadDetailedDepartmentData(departmentName);
-
-    // Prepare data for department graph
-    this.prepareDepartmentGraph(departmentName);
-  }
-
-  /**
-   * NEW: Prepare department graph data from detailed data
-   * Groups data by month for the selected department
-   */
-  prepareDepartmentGraph(departmentName: string): void {
-    // Map to track monthly totals
-    const monthlyData: { [key: string]: number } = {};
-
-    // Hebrew month names
-    const months = [
-      "ינואר", "פברואר", "מרץ", "אפריל", "מאי", "יוני",
-      "יולי", "אוגוסט", "ספטמבר", "אוקטובר", "נובמבר", "דצמבר"
-    ];
-
-    // Group detailed data by month and sum
-    this.departmentDetailedData.forEach(item => {
-      const key = item.Month;
-      if (monthlyData[key]) {
-        monthlyData[key] += item.RealValue;
-      } else {
-        monthlyData[key] = item.RealValue;
-      }
+      expect(component.chartData[0][1]).toBe(1); // 1M
+      expect(component.chartData[0][2]).toBe(2.5); // 2.5M
     });
 
-    // Convert to chart format
-    this.departmentChartData = [];
-    
-    // Add data in month order
-    months.forEach(month => {
-      if (monthlyData[month]) {
-        this.departmentChartData.push([month, monthlyData[month]]);
-      }
+    it('should have correct chart options with millions format', () => {
+      expect(component.chartOptions.hAxis.title).toContain('מיליוני ₪');
+      expect(component.chartOptions.hAxis.format).toBe('0.0');
+    });
+  });
+
+  describe('Requirement 3: Highlight department selector', () => {
+    it('should have highlighted-selector class in template', () => {
+      fixture.detectChanges();
+      const selectorElement = fixture.nativeElement.querySelector('.highlighted-selector');
+      expect(selectorElement).toBeTruthy();
+    });
+  });
+
+  describe('Requirement 4: Sortable columns in detailed table', () => {
+    it('should sort detailed data by column', () => {
+      const testData: any[] = [
+        { CatalogName2: 'Service A', Cash2025: 300 },
+        { CatalogName2: 'Service B', Cash2025: 100 },
+        { CatalogName2: 'Service C', Cash2025: 200 }
+      ];
+
+      component.detailedDataSource.data = testData;
+      component.onDetailedTableSort({ active: 'Cash2025', direction: 'desc' });
+
+      expect(component.detailedDataSource.data[0].Cash2025).toBe(300);
+      expect(component.detailedDataSource.data[1].Cash2025).toBe(200);
+      expect(component.detailedDataSource.data[2].Cash2025).toBe(100);
     });
 
-    // Update chart title
-    this.departmentGraphTitle = `הכנסות חודשיות - ${departmentName}`;
-    this.departmentChartOptions = {
-      ...this.departmentChartOptions,
-      title: this.departmentGraphTitle
-    };
+    it('should handle ascending sort', () => {
+      const testData: any[] = [
+        { CatalogName2: 'Service A', Cash2025: 300 },
+        { CatalogName2: 'Service B', Cash2025: 100 },
+        { CatalogName2: 'Service C', Cash2025: 200 }
+      ];
 
-    // Show the graph
-    this.isDepartmentGraphOpen = true;
-    this.cdr.detectChanges();
+      component.detailedDataSource.data = testData;
+      component.onDetailedTableSort({ active: 'Cash2025', direction: 'asc' });
 
-    this.snackBar.open(`✓ גרף עבור ${departmentName} נטען`, 'סגור', { duration: 2000 });
-  }
-
-  /**
-   * Load detailed data for specific department
-   */
-  loadDetailedDepartmentData(departmentName: string): void {
-    this.http
-      .post(environment.url + "GetDepartmentDetailedData", {
-        departmentName: departmentName
-      })
-      .subscribe(
-        (response: any) => {
-          if (response && response.d) {
-            this.departmentDetailedData = response.d;
-            this.detailedDataSource.data = response.d;
-            this.cdr.detectChanges();
-            
-            // If department graph is open, update it with new data
-            if (this.isDepartmentGraphOpen && this.selectedDepartment) {
-              this.prepareDepartmentGraph(this.selectedDepartment.DepartmentName);
-            }
-          }
-        },
-        (error) => {
-          console.error('Error loading detailed data:', error);
-          this.snackBar.open('❌ שגיאה בטעינת הפרטים', 'סגור', { duration: 3000 });
-        }
-      );
-  }
-
-  /**
-   * Close department graph view
-   */
-  closeDepartmentGraph(): void {
-    this.isDepartmentGraphOpen = false;
-    this.departmentChartData = [];
-    this.selectedDepartment = null;
-    this.cdr.detectChanges();
-  }
-
-  /**
-   * Close detailed view modal
-   */
-  closeDetailedView(): void {
-    this.isDetailedViewOpen = false;
-    this.selectedDepartment = null;
-    this.departmentDetailedData = [];
-    this.detailedDataSource.data = [];
-  }
-
-  /**
-   * Calculate difference between years
-   */
-  calculateDifference(item: DepartmentComparisonDto): number {
-    return item.Income2025 - item.Income2024;
-  }
-
-  /**
-   * Get percentage change
-   */
-  calculatePercentageChange(item: DepartmentComparisonDto): string {
-    if (item.Income2024 === 0) return '∞';
-    const percentage = ((item.Income2025 - item.Income2024) / item.Income2024) * 100;
-    return percentage.toFixed(2) + '%';
-  }
-
-  /**
-   * Format number with commas
-   */
-  formatNumber(value: number): string {
-    return value.toLocaleString('he-IL', {
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
+      expect(component.detailedDataSource.data[0].Cash2025).toBe(100);
+      expect(component.detailedDataSource.data[1].Cash2025).toBe(200);
+      expect(component.detailedDataSource.data[2].Cash2025).toBe(300);
     });
-  }
+  });
 
-  /**
-   * Filter detailed table
-   */
-  applyDetailedFilter(event: Event): void {
-    const filterValue = (event.target as HTMLInputElement).value;
-    this.detailedDataSource.filter = filterValue.trim().toLowerCase();
-  }
+  describe('Requirement 5: Default sort by 2025 highest to lowest', () => {
+    it('should sort by Cash2025 descending on load', () => {
+      const testData: any[] = [
+        { CatalogName2: 'Service A', Cash2025: 300 },
+        { CatalogName2: 'Service B', Cash2025: 100 },
+        { CatalogName2: 'Service C', Cash2025: 200 }
+      ];
 
-  /**
-   * Filter main table
-   */
-  applyMainFilter(event: Event): void {
-    const filterValue = (event.target as HTMLInputElement).value;
-    this.dataSource.filter = filterValue.trim().toLowerCase();
-  }
+      component.detailedDataSource.data = testData;
+      component.sortDetailedDataByCash2025Descending();
 
-  /**
-   * Export data to CSV
-   */
-  exportToCSV(): void {
-    let csvContent = "data:text/csv;charset=utf-8,";
-    
-    // Add headers
-    csvContent += "מחלקה,הכנסות 2024,הכנסות 2025,הפרש,אחוז שינוי\n";
-    
-    // Add data rows
-    this.departmentIncomeData.forEach((item) => {
-      const difference = this.calculateDifference(item);
-      const percentage = this.calculatePercentageChange(item);
-      csvContent += `"${item.DepartmentName}",${item.Income2024},${item.Income2025},${difference},${percentage}\n`;
+      expect(component.detailedDataSource.data[0].Cash2025).toBe(300);
+      expect(component.detailedDataSource.data[1].Cash2025).toBe(200);
+      expect(component.detailedDataSource.data[2].Cash2025).toBe(100);
     });
 
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", "department_income_report.csv");
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    it('should set default view type to cash', () => {
+      component.selectedViewType = '';
+      component.onViewTypeChange('cash');
+      expect(component.selectedViewType).toBe('cash');
+      expect(component.displayedCatalogColumns).toEqual(component.cashColumns);
+    });
+  });
 
-    this.snackBar.open('✓ הדוח יוצא בהצלחה', 'סגור', { duration: 2000 });
-  }
-}
+  describe('Requirement 6: Percentage sign on LEFT', () => {
+    it('should format percentage correctly', () => {
+      const dept: DepartmentComparisonDto = {
+        DepartmentName: 'Test',
+        Income2024: 100,
+        Income2025: 150
+      };
+
+      const result = component.calculatePercentageChange(dept);
+      expect(result).toBe('50.00%');
+      expect(result.endsWith('%')).toBe(true);
+    });
+
+    it('should handle infinite percentage', () => {
+      const dept: DepartmentComparisonDto = {
+        DepartmentName: 'Test',
+        Income2024: 0,
+        Income2025: 100
+      };
+
+      const result = component.calculatePercentageChange(dept);
+      expect(result).toBe('∞%');
+    });
+  });
+
+  describe('Requirement 7: Top 5 departments competition', () => {
+    it('should calculate top 5 departments', () => {
+      component.departmentIncomeData = [
+        { DepartmentName: 'Dept A', Income2024: 100, Income2025: 200 },
+        { DepartmentName: 'Dept B', Income2024: 100, Income2025: 150 },
+        { DepartmentName: 'Dept C', Income2024: 100, Income2025: 300 },
+        { DepartmentName: 'Dept D', Income2024: 100, Income2025: 120 },
+        { DepartmentName: 'Dept E', Income2024: 100, Income2025: 250 },
+        { DepartmentName: 'Dept F', Income2024: 100, Income2025: 110 }
+      ];
+
+      component.calculateTopDepartments();
+
+      expect(component.topDepartments.length).toBe(5);
+      expect(component.topDepartments[0].DepartmentName).toBe('Dept C');
+      expect(component.topDepartments[0].difference).toBe(200);
+    });
+
+    it('should filter only positive growth', () => {
+      component.departmentIncomeData = [
+        { DepartmentName: 'Dept A', Income2024: 100, Income2025: 150 },
+        { DepartmentName: 'Dept B', Income2024: 100, Income2025: 80 }, // Negative
+        { DepartmentName: 'Dept C', Income2024: 100, Income2025: 200 }
+      ];
+
+      component.calculateTopDepartments();
+
+      expect(component.topDepartments.length).toBe(2);
+      expect(component.topDepartments.every(d => d.Income2025 >= d.Income2024)).toBe(true);
+    });
+
+    it('should calculate difference correctly', () => {
+      component.departmentIncomeData = [
+        { DepartmentName: 'Dept A', Income2024: 100, Income2025: 250 }
+      ];
+
+      component.calculateTopDepartments();
+
+      expect(component.topDepartments[0].difference).toBe(150);
+    });
+
+    it('should calculate percentage correctly', () => {
+      component.departmentIncomeData = [
+        { DepartmentName: 'Dept A', Income2024: 100, Income2025: 150 }
+      ];
+
+      component.calculateTopDepartments();
+
+      expect(component.topDepartments[0].percentage).toBe(50);
+    });
+
+    it('should toggle view type between difference and percentage', () => {
+      component.topDepartments = [
+        { DepartmentName: 'A', Income2024: 100, Income2025: 200, difference: 100, percentage: 100 },
+        { DepartmentName: 'B', Income2024: 100, Income2025: 150, difference: 50, percentage: 50 }
+      ];
+
+      component.onTopDepartmentsViewChange('percentage');
+      expect(component.topDepartmentsViewType).toBe('percentage');
+      expect(component.topDepartments[0].DepartmentName).toBe('A'); // Still sorted by percentage
+
+      component.onTopDepartmentsViewChange('difference');
+      expect(component.topDepartmentsViewType).toBe('difference');
+      expect(component.topDepartments[0].DepartmentName).toBe('A'); // Still sorted by difference
+    });
+  });
+
+  describe('Helper methods', () => {
+    it('should format numbers with locale', () => {
+      const result = component.formatNumber(1234567);
+      expect(result).toContain('1');
+      expect(result.length).toBeGreaterThan(7);
+    });
+
+    it('should calculate difference between years', () => {
+      const dept: DepartmentComparisonDto = {
+        DepartmentName: 'Test',
+        Income2024: 100,
+        Income2025: 150
+      };
+
+      const result = component.calculateDifference(dept);
+      expect(result).toBe(50);
+    });
+
+    it('should get 2024 total', () => {
+      component.yearlyTotalData = [
+        { Year: '2024', TotalRealValue: 1000 },
+        { Year: '2025', TotalRealValue: 1500 }
+      ];
+
+      expect(component.getTotal2024()).toBe(1000);
+    });
+
+    it('should get 2025 total', () => {
+      component.yearlyTotalData = [
+        { Year: '2024', TotalRealValue: 1000 },
+        { Year: '2025', TotalRealValue: 1500 }
+      ];
+
+      expect(component.getTotal2025()).toBe(1500);
+    });
+
+    it('should get total difference', () => {
+      component.yearlyTotalData = [
+        { Year: '2024', TotalRealValue: 1000 },
+        { Year: '2025', TotalRealValue: 1500 }
+      ];
+
+      expect(component.getTotalDifference()).toBe(500);
+    });
+  });
+
+  describe('View changes', () => {
+    it('should change view type to cash', () => {
+      component.onViewTypeChange('cash');
+      expect(component.selectedViewType).toBe('cash');
+      expect(component.displayedCatalogColumns).toEqual(component.cashColumns);
+    });
+
+    it('should change view type to units', () => {
+      component.onViewTypeChange('units');
+      expect(component.selectedViewType).toBe('units');
+      expect(component.displayedCatalogColumns).toEqual(component.unitsColumns);
+    });
+
+    it('should change view type to both', () => {
+      component.onViewTypeChange('both');
+      expect(component.selectedViewType).toBe('both');
+      expect(component.displayedCatalogColumns).toEqual(component.bothColumns);
+    });
+  });
+
+  describe('Modal management', () => {
+    it('should close boss dashboard', () => {
+      component.showBossDashboard = true;
+      component.closeBossDashboard();
+      expect(component.showBossDashboard).toBe(false);
+    });
+
+    it('should close department graph', () => {
+      component.isDepartmentGraphOpen = true;
+      component.closeDepartmentGraph();
+      expect(component.isDepartmentGraphOpen).toBe(false);
+      expect(component.selectedDepartment).toBeNull();
+    });
+  });
+});

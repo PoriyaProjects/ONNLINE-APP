@@ -24,6 +24,22 @@ mat-form-field {
   padding: 10px;
 }
 
+/* HIGHLIGHTED DEPARTMENT SELECTOR */
+.highlighted-selector mat-form-field {
+  box-shadow: 0 0 20px rgba(102, 126, 234, 0.5) !important;
+  border-radius: 4px;
+  transition: all 0.3s ease;
+}
+
+.highlighted-selector mat-form-field:hover {
+  box-shadow: 0 0 30px rgba(102, 126, 234, 0.8) !important;
+  transform: scale(1.02);
+}
+
+.highlighted-selector mat-form-field:focus-within {
+  box-shadow: 0 0 35px rgba(102, 126, 234, 1) !important;
+}
+
 .srch-btn {
   margin: 5px;
 }
@@ -105,6 +121,7 @@ td.mat-cell {
   font-weight: 600;
 }
 
+/* PERCENTAGE BADGE - Sign on LEFT for RTL */
 .percentage-badge {
   background-color: #f0f0f0;
   padding: 4px 8px;
@@ -112,6 +129,8 @@ td.mat-cell {
   font-size: 12px;
   display: inline-block;
   margin-top: 5px;
+  unicode-bidi: bidi-override;
+  direction: ltr;
 }
 
 /* Boss Dashboard Modal */
@@ -241,6 +260,8 @@ td.mat-cell {
   font-size: 16px;
   font-weight: 600;
   color: #667eea;
+  unicode-bidi: bidi-override;
+  direction: ltr;
 }
 
 /* Catalog Table Section */
@@ -264,6 +285,33 @@ td.mat-cell {
   flex: 1;
 }
 
+.sort-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #f5f5f5;
+  padding: 10px 15px;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+}
+
+.sort-label {
+  font-weight: 600;
+  color: #333;
+  font-size: 14px;
+}
+
+.sort-btn {
+  padding: 6px 14px !important;
+  font-size: 12px !important;
+  min-width: auto !important;
+}
+
+.sort-btn:hover {
+  background-color: #667eea !important;
+  color: white !important;
+}
+
 .view-type-selector {
   display: flex;
   gap: 10px;
@@ -285,12 +333,15 @@ td.mat-cell {
   width: 100%;
   overflow-x: auto;
   margin-top: 15px;
+  -webkit-overflow-scrolling: touch;
 }
 
 .catalog-mat-table {
   width: 100%;
   border-collapse: collapse;
   background: white;
+  table-layout: fixed;
+  min-width: 900px;
 }
 
 .catalog-mat-table thead {
@@ -298,7 +349,7 @@ td.mat-cell {
 }
 
 .catalog-mat-table th {
-  padding: 12px;
+  padding: 12px 8px;
   text-align: right;
   font-weight: 600;
   border-bottom: 2px solid #ddd;
@@ -306,92 +357,39 @@ td.mat-cell {
   position: sticky;
   top: 0;
   z-index: 5;
+  cursor: pointer;
+  user-select: none;
+  transition: background-color 0.2s;
+  white-space: nowrap;
+  min-width: 70px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.catalog-mat-table th:hover {
+  background-color: #e8e8e8;
+}
+
+.catalog-mat-table th .sort-icon {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+  line-height: 18px;
+  opacity: 0.5;
+  display: inline-block;
 }
 
 .catalog-mat-table td {
-  padding: 12px;
+  padding: 12px 8px;
   text-align: right;
   border-bottom: 1px solid #e0e0e0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .catalog-mat-table tbody tr:hover {
   background-color: #f9f9f9;
-}
-
-.total-row {
-  display: flex;
-  justify-content: space-around;
-  padding: 20px;
-  background-color: #f0f0f0;
-  border-top: 2px solid #ddd;
-  margin-top: 20px;
-  border-radius: 4px;
-  font-weight: 600;
-}
-
-.boss-mat-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.boss-mat-table th {
-  padding: 12px;
-  text-align: right;
-  background-color: #3f51b5;
-  color: white;
-  border: none;
-}
-
-.boss-mat-table td {
-  padding: 12px;
-  text-align: right;
-  border-bottom: 1px solid #e0e0e0;
-}
-
-.boss-mat-table tbody tr:hover {
-  background-color: #f5f5f5;
-}
-
-.income-cell {
-  font-weight: 600;
-}
-
-.income-2025 {
-  color: #4caf50;
-}
-
-@media (max-width: 768px) {
-  .wrapper {
-    flex-direction: column;
-    align-items: center;
-  }
-
-  .department-graph-modal {
-    width: 90vw;
-    padding: 15px;
-  }
-
-  .summary-section {
-    grid-template-columns: 1fr;
-  }
-
-  .catalog-header {
-    flex-direction: column-reverse;
-    align-items: stretch;
-  }
-
-  .view-type-selector {
-    width: 100%;
-    justify-content: space-around;
-  }
-
-  .view-type-selector button {
-    flex: 1;
-  }
-
-  mat-form-field {
-    width: 100%;
-  }
 }
 
 /* Boss Dashboard Beautiful Styles */
@@ -537,6 +535,8 @@ td.mat-cell {
   font-size: 16px;
   font-weight: 600;
   margin-top: 5px;
+  unicode-bidi: bidi-override;
+  direction: ltr;
 }
 
 .difference-percent.positive {
@@ -604,7 +604,209 @@ td.mat-cell {
   color: #f44336;
 }
 
+/* TOP 5 DEPARTMENTS COMPETITION VIEW */
+.top-departments-section {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 30px;
+  border-radius: 12px;
+  margin: 30px 0;
+  color: white;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
+.top-departments-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+.top-departments-header h2 {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.radio-group {
+  display: flex;
+  gap: 20px;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 10px 20px;
+  border-radius: 8px;
+}
+
+.radio-group mat-radio-button {
+  color: white;
+}
+
+.radio-group ::ng-deep .mat-radio-inner-circle {
+  background: white !important;
+}
+
+.radio-group ::ng-deep .mat-radio-outer-circle {
+  border-color: white !important;
+}
+
+.radio-group ::ng-deep .mat-radio-checked .mat-radio-outer-circle {
+  border-color: white !important;
+}
+
+.top-departments-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.rank-item {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 15px 20px;
+  border-radius: 10px;
+  transition: all 0.3s ease;
+  border-left: 4px solid white;
+}
+
+.rank-item:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateX(-10px);
+}
+
+.rank-item.rank-1 {
+  border-left: 6px solid #ffd700;
+  background: rgba(255, 215, 0, 0.15);
+  padding: 18px 20px;
+}
+
+.rank-item.rank-1:hover {
+  background: rgba(255, 215, 0, 0.25);
+}
+
+.rank-item.rank-2 {
+  border-left: 5px solid #c0c0c0;
+  background: rgba(192, 192, 192, 0.1);
+}
+
+.rank-item.rank-3 {
+  border-left: 5px solid #cd7f32;
+  background: rgba(205, 127, 50, 0.1);
+}
+
+.rank-badge {
+  min-width: 50px;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.rank-item.rank-1 .rank-badge {
+  background: #ffd700;
+  color: #333;
+  box-shadow: 0 0 15px rgba(255, 215, 0, 0.5);
+}
+
+.rank-item.rank-2 .rank-badge {
+  background: #c0c0c0;
+  color: #333;
+}
+
+.rank-item.rank-3 .rank-badge {
+  background: #cd7f32;
+  color: white;
+}
+
+.rank-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.department-name {
+  font-size: 16px;
+  font-weight: 600;
+  text-align: right;
+}
+
+.growth-value {
+  font-size: 18px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.growth-value .icon {
+  font-size: 20px;
+}
+
+.rank-progress {
+  width: 150px;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #ffd700 0%, #ffed4e 100%);
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.rank-item.rank-2 .progress-bar {
+  background: linear-gradient(90deg, #c0c0c0 0%, #e8e8e8 100%);
+}
+
+.rank-item.rank-3 .progress-bar {
+  background: linear-gradient(90deg, #cd7f32 0%, #daa520 100%);
+}
+
+/* Responsive Design */
 @media (max-width: 768px) {
+  .wrapper {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .department-graph-modal {
+    width: 90vw;
+    padding: 15px;
+  }
+
+  .summary-section {
+    grid-template-columns: 1fr;
+  }
+
+  .catalog-header {
+    flex-direction: column-reverse;
+    align-items: stretch;
+  }
+
+  .view-type-selector {
+    width: 100%;
+    justify-content: space-around;
+  }
+
+  .view-type-selector button {
+    flex: 1;
+  }
+
+  mat-form-field {
+    width: 100%;
+  }
+
   .boss-summary-section {
     gap: 15px;
   }
@@ -617,5 +819,35 @@ td.mat-cell {
   .boss-stats-section {
     grid-template-columns: 1fr;
     padding: 20px;
+  }
+
+  .top-departments-section {
+    padding: 20px;
+  }
+
+  .top-departments-header {
+    flex-direction: column-reverse;
+  }
+
+  .top-departments-header h2 {
+    font-size: 18px;
+  }
+
+  .rank-item {
+    flex-direction: column;
+    text-align: right;
+  }
+
+  .rank-progress {
+    width: 100%;
+  }
+
+  .radio-group {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .catalog-mat-table {
+    min-width: 700px;
   }
 }
