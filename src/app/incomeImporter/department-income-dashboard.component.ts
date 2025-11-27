@@ -77,7 +77,7 @@ export class DepartmentIncomeDashboardComponent implements OnInit {
    { type: 'string', role: 'annotation' }
  ];
 
- chartOptions: any = {
+chartOptions: any = {
    title: 'השוואת הכנסות מחלקות - 2024 vs 2025',
    titleTextStyle: {
      color: '#333',
@@ -118,8 +118,10 @@ export class DepartmentIncomeDashboardComponent implements OnInit {
      }
    },
    chartArea: { 
-     width: '75%',
-     height: '90%'
+     width: '60%',
+     height: '85%',
+     left: 200,
+     top: 40
    },
    colors: ['#667eea', '#f5576c'],
    backgroundColor: {
@@ -131,17 +133,15 @@ export class DepartmentIncomeDashboardComponent implements OnInit {
    annotations: {
      alwaysOutside: true,
      textStyle: {
-       fontSize: 12,
+       fontSize: 11,
        bold: true,
        color: '#333',
        fontName: 'Arial'
      }
    },
    bar: { 
-     groupWidth: '70%'
+     groupWidth: '75%'
    },
-   pointSize: 5,
-   lineWidth: 2,
    tooltip: {
      isHtml: true,
      trigger: 'both',
@@ -281,14 +281,27 @@ export class DepartmentIncomeDashboardComponent implements OnInit {
             this.departmentIncomeData.sort((a, b) => b.Income2025 - a.Income2025);
             
             this.dataSource.data = this.departmentIncomeData;
-            this.updateChartData();
             this.calculateTopDepartments();
-            this.isDataLoaded = true;
             
-            // Force chart redraw
-            setTimeout(() => {
-              this.cdr.detectChanges();
-            }, 100);
+            // Create fresh array for chart
+            this.chartData = this.departmentIncomeData.map(item => {
+              const safe2024 = (item.Income2024 && !isNaN(item.Income2024)) ? item.Income2024 : 0;
+              const safe2025 = (item.Income2025 && !isNaN(item.Income2025)) ? item.Income2025 : 0;
+
+              const val2024 = parseFloat((safe2024 / 1000000).toFixed(1));
+              const val2025 = parseFloat((safe2025 / 1000000).toFixed(1));
+
+              return [
+                item.DepartmentName,
+                val2025,
+                val2025 + 'M',
+                val2024,
+                val2024 + 'M'
+              ];
+            });
+            
+            this.isDataLoaded = true;
+            this.cdr.detectChanges();
             
             this.snackBar.open('✓ נתונים עודכנו', 'סגור', { duration: 3000 });
           }
@@ -321,21 +334,20 @@ export class DepartmentIncomeDashboardComponent implements OnInit {
 
 /**
    * Update chart data with numbers formatted in millions with 1 decimal place
-   */
-/**
-   * Update chart data with numbers formatted in millions with 1 decimal place
-   */
-  updateChartData(): void {
-    console.log('updateChartData called');
-    console.log('departmentIncomeData:', this.departmentIncomeData);
-    
-    if (!this.departmentIncomeData || this.departmentIncomeData.length === 0) {
-      this.chartData = [];
-      console.log('No data to chart');
-      return;
-    }
+*/
+updateChartData(): void {
+  console.log('updateChartData called');
+  console.log('departmentIncomeData:', this.departmentIncomeData);
+  
+  if (!this.departmentIncomeData || this.departmentIncomeData.length === 0) {
+    this.chartData = [];
+    console.log('No data to chart');
+    return;
+  }
 
-    this.chartData = this.departmentIncomeData.map(item => {
+  this.chartData = this.departmentIncomeData
+    .filter(item => item.Income2024 > 0 && item.Income2025 > 0) // Remove negative values
+    .map(item => {
       const safe2024 = (item.Income2024 && !isNaN(item.Income2024)) ? item.Income2024 : 0;
       const safe2025 = (item.Income2025 && !isNaN(item.Income2025)) ? item.Income2025 : 0;
 
@@ -344,8 +356,6 @@ export class DepartmentIncomeDashboardComponent implements OnInit {
 
       const label2024 = val2024.toString() + 'M';
       const label2025 = val2025.toString() + 'M';
-
-      console.log(`${item.DepartmentName}: 2024=${safe2024}, 2025=${safe2025}, label2024=${label2024}, label2025=${label2025}`);
 
       return [
         item.DepartmentName,
@@ -356,9 +366,9 @@ export class DepartmentIncomeDashboardComponent implements OnInit {
       ];
     });
 
-    console.log('Final chartData:', this.chartData);
-    this.cdr.detectChanges();
-  }
+  console.log('Final chartData:', this.chartData);
+  this.cdr.detectChanges();
+}
 
 
   /**
