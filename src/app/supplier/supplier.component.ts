@@ -37,6 +37,9 @@ export interface Supplier {
   CorporateNDA: string;
   InsertDateTime: string;
   InsertUser: string;
+  OperationType: string;
+  SignedSecrecyAgreement: string;
+  Comments: string;
   UpdateUser: string;
   UpdateDateTime: string;
 }
@@ -121,6 +124,9 @@ export class SupplierComponent implements OnInit {
       TestAM:  "",
       ISOCer:  "",
       RowStatus:  "",
+      OperationType:  "",
+      Comments:  "",
+      SignedSecrecyAgreement:  "",
       InsertUser: localStorage.getItem("loginUserName"),
       InsertDateTime: (new Date()).toString(),
       UpdateUser: localStorage.getItem("loginUserName"),
