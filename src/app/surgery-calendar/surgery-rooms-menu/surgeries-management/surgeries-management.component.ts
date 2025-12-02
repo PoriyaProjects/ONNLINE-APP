@@ -516,6 +516,8 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
     }).subscribe(res => {
       if (res['d'].length > 0) {
         let data = res['d'];
+
+        debugger
         this.pdfString = `
         <!doctype html>
         <html lang="he">
@@ -528,7 +530,7 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
             <div class="d-none-desktop" dir="rtl">
               <div class="card-header border-bottomIn rel" style="text-align: center;">
                   <img class="full-width" style="width: 100%;" src="https://poria.is-great.org/images/covid_2_header.png" />
-                  <h1 class="text-center pos-abs-center"><u>תוכנית ניתוחים סופית ${department} - חדר ${room}</u></h1>
+                  <h1 class="text-center pos-abs-center"><u>תוכנית ניתוחים סופית ${department} - תאריך ${fullDate} - חדר ${this.specificRooms[0].Surgeries[0].SurgeryRoomName} -  ${room}</u></h1>
               </div>
               <div class="col-12" style="width: 100%;text-align: center;float: right;">
                 <p>תאריך: ${fullDate}</p>
