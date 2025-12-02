@@ -215,6 +215,38 @@
                 </div>
             </div>
         </div>
+         
+        <div class="row text-right" dir="rtl">
+            <div class="col">
+                <div class="form-group">
+                    <mat-form-field>
+                        <mat-label>סוג המערכת הנתמכת</mat-label>
+                        <mat-select formControlName="OperationType">
+                            <mat-option *ngFor="let ab of OperationTypeList" [value]="ab.id"> {{ab.value}} </mat-option>
+                        </mat-select>
+                    </mat-form-field>
+                </div>
+            </div>
+            <div class="col">
+                <div class="form-group">
+                    <mat-form-field>
+                        <mat-label>הסכם סודיות חתום</mat-label>
+                        <mat-select formControlName="SignedSecrecyAgreement">
+                            <mat-option *ngFor="let ab of SignedSecrecyAgreementList" [value]="ab.id"> {{ab.value}} </mat-option>
+                        </mat-select>
+                    </mat-form-field>
+                </div>
+            </div>
+            <div class="col">
+                <div class="form-group">
+                    <mat-form-field>
+                        <mat-label>הערות</mat-label>
+                        <textarea matInput formControlName="Comments" rows="5"></textarea>
+                    </mat-form-field>
+                </div>
+            </div>
+        </div>
+
     </mat-dialog-content>
     <mat-dialog-actions align="end">
         <input type="hidden" formControlName="RowID">
