@@ -166,6 +166,10 @@ import { AppointsDashboardComponent } from '../hospital-appoints-dashb/google-ch
 import { DimotActivityDashboardComponent } from '../dimot-activity-dashboard/dimot-activity-dashboard.component';
 import { AppointsCLDashboardComponent } from '../hospital-appointscl-dashb/google-charts/google-charts.component';
 import { HearingSurveyComponent } from '../hearing-survey/hearing-survey/hearing-survey.component';
+import { DepartmentIncomeDashboardComponent } from "../incomeImporter/department-income-dashboard.component";
+
+
+
 const routes: Routes = [
   { path: "", component: LoginComponent },
   { path: 'clinicsrequests', component: ClinicsRequestsComponent },
@@ -287,6 +291,7 @@ const routes: Routes = [
   { path: "departments-whatsapp", component: WhatsappDepartmentsDashboardComponent },
   { path: "Injury", component: InjuryReportComponent },
   { path: "Cath", component: CathReportComponent },
+  { path: "IncomeDashboard", component: DepartmentIncomeDashboardComponent },
   { path: "patients-system-conflicts", component: PatientsSystemConflictsComponent },
   { path: "Metav", component: BTirmComponent },
   { path: "Reporting", component: ReportReportingComponent },
