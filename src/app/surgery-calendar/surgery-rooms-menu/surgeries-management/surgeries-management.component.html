@@ -74,6 +74,16 @@
               </a>
             </div>
           </button>
+          <button mat-menu-item>כלל המחלקות
+            <div class="example-button-container">
+              <a (click)="getPlannedSurgeriesData(room.uniqueDepartments, room.roomName)">
+                <img src="../../assets/images/excel.png" alt="Excel File" matTooltip="יצירת קובץ אקסל ">
+              </a>
+              <a (click)="sentDepartmentFinalSurgeryPlan(room.uniqueDepartments, room.roomName)">
+                <img src="../../assets/images/transferTo.png" alt="Send Final Plan" matTooltip="שליחת תוכנית סופית ">
+              </a>
+            </div>
+          </button>
         </mat-menu>
       </div>
       <div *ngIf="room.surgerySurf">
@@ -89,6 +99,16 @@
               <a (click)="sentDepartmentFinalSurgeryPlan(depart, room.roomName)">
                 <img src="../../assets/images/transferTo.png" alt="Send Final Plan"
                   matTooltip="שליחת תוכנית סופית {{depart}}">
+              </a>
+            </div>
+          </button>
+          <button mat-menu-item>כלל המחלקות
+            <div class="example-button-container">
+              <a (click)="getPlannedSurgeriesData(room.uniqueDepartments, room.roomName)">
+                <img src="../../assets/images/excel.png" alt="Excel File" matTooltip="יצירת קובץ אקסל ">
+              </a>
+              <a (click)="sentDepartmentFinalSurgeryPlan(room.uniqueDepartments, room.roomName)">
+                <img src="../../assets/images/transferTo.png" alt="Send Final Plan" matTooltip="שליחת תוכנית סופית ">
               </a>
             </div>
           </button>
