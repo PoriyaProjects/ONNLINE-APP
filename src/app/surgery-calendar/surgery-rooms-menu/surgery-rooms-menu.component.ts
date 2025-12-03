@@ -121,6 +121,7 @@ export class SurgeryRoomsMenuComponent implements OnInit {
 
 
   openSurgeryRoomSchedule(room, type) {
+    debugger
     room['type'] = type;
     // open the dialog only by super user and user of the same department and if the surgery room is empty! tooo much SHITTTT IS GOING ON
     if (this.userObject.UserDepartment.includes("All") || (this.userObject.UserDepartment.includes(room.S_DEPARTMENT_NAME) || room.S_DEPARTMENT_NAME == null)) {
