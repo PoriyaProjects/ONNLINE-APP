@@ -107,7 +107,7 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     if (this.UserName != null) {
-      //debugger
+      ////debugger
       this.viewDate = this.data.room.Start;
       // let day = this.datePipe.transform(this.viewDate, 'dd');
       this.specificRooms = this.data.room.Rooms;
@@ -175,7 +175,7 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
       // event['SurgeryRooms'] = this.data.room.SurgeryRoom;
       event['RoomsList'] = this.data.roomsList;
       if (event['ArrivalTime'] != null) {
-        debugger
+        //debugger
         let dialogRef = this.dialog.open(ManageSingleSurgeryComponent, {
           data: {
             event: event,
@@ -215,9 +215,11 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
   }
 
   filterDepartment(departmentName) {
+    //debugger
     this.filteredSpecificRooms = this.deepClone(this.specificRooms);
     if (departmentName != "undo") {
       this.filteredSpecificRooms.forEach((element, index) => {
+        //debugger
         if (element.Surgeries != undefined) {
           let shit = element.Surgeries.filter(x => departmentName == x.SurgeryRequestDepartments.S_DEPARTMENT);
           this.filteredSpecificRooms[index].Surgeries = this.deepClone(shit);
@@ -228,7 +230,7 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
 
   // get the elements to the main calendar page
   getPatientsQueues() {
-    //////debugger;
+    ////////debugger;
     this.refresh = new Subject();
     this.loader = true;
     this.events = [];
@@ -239,7 +241,7 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
         _surRoomCode: this.data.room.CalendarRoomsArea
       })
       .subscribe((Response) => {
-        //debugger
+        ////debugger
         let tempArr = Response["d"];
         let tempTitle;
 
@@ -251,7 +253,7 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
         }
         // filter the surgery rooms in array
         this.specificRooms.forEach(x => {
-          ////debugger
+          //////debugger
           let ele = {
             roomName: x,
             Surgeries: []
@@ -295,7 +297,7 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
           // }
           element.draggable = true;
           let index = this.tempArrOfSurgeryRooms.find((ele) => element.SurgeryRoom == ele.roomName);
-          // //debugger
+          // ////debugger
           // when there's no room the index is -1, BUG!
           if (index) {
             // group by the surgeries to the associated room
@@ -310,7 +312,7 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
         });
 
         this.specificRooms = this.tempArrOfSurgeryRooms;
-        ////debugger
+        //////debugger
         // filter the surgery rooms in array
         this.specificRooms.forEach((x, index) => {
           let tempArrayOfDepartments = [];
@@ -368,7 +370,7 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
 
   sortSurgeriesOfEachRoomInDay() {
     this.loader = true;
-    ////debugger
+    //////debugger
     if (this.IfPlannedSurgeries == "original" || this.IfPlannedSurgeries == "dror") {
       this.filteredSpecificRooms.forEach((room, index1) => {
         if (room.Surgeries != undefined) {
@@ -381,7 +383,7 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
               20*60
               */
               temp[index2].end = new Date(this.datePipe.transform(temp[index2].start.getTime() + parseInt(temp[index2].Duration) * 60 * 1000, 'yyyy-MM-dd HH:mm'));
-              //  / //debugger
+              //  / ////debugger
               temp[index2].ArrivalDate = this.datePipe.transform(temp[index2].start, 'yyyy-MM-dd HH:mm');
               temp[index2].ArrivalTime = this.datePipe.transform(temp[index2].start, 'HH:mm');
               temp[index2].EndDate = this.datePipe.transform(temp[index2].end, 'yyyy-MM-dd HH:mm');
@@ -423,7 +425,7 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
                 שם: <b>${next.SurgeryPatientDetails.PM_FIRST_NAME} ${next.SurgeryPatientDetails.PM_LAST_NAME}</b><b> -- ${next.SurgeryPatientDetails.PM_CASE_NUMBER}</b> <br>
                 דחיפות: <b>${next.Urgency}</b><br>
                 S:<b>${next.ArrivalDate.split(' ')[1]}</b> - E:<b>${next.EndDate.split(' ')[1]}</b>`;
-              ////debugger
+              //////debugger
             }
           });
         }
@@ -435,7 +437,7 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
   }
 
   checkSurfingSurgeryDays(room) {
-    //debugger
+    ////debugger
     if (room.Surgeries != undefined) {
       let deptsNoSisia = room.Surgeries.filter(x => (x.SurgeryType != 'ססיה' && x.SurgeryType != 'דחוף'));
       if (deptsNoSisia.length > 0) {
@@ -496,6 +498,13 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
   }
 
   getPlannedSurgeriesData(department, room) {
+    //debugger
+    if (Array.isArray(department)) {
+      // it's an array
+      department = department.map(x => `'${x}'`).join(',');
+    } else {
+      department = `'${department}'`;
+    }
     let fullDate = this.datePipe.transform(this.viewDate, 'yyyy-MM-dd');
     this.http.post(environment.url + 'GetSurgeriesPlannedExcel', {
       Department: department,
@@ -507,7 +516,14 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
   }
 
   sentDepartmentFinalSurgeryPlan(department, room) {
-    debugger
+    //debugger
+
+    if (Array.isArray(department)) {
+      // it's an array
+      department = department.map(x => `'${x}'`).join(',');
+    } else {
+      department = `'${department}'`;
+    }
     let fullDate = this.datePipe.transform(this.viewDate, 'yyyy-MM-dd');
     this.http.post(environment.url + 'GetSurgeriesPlannedExcel', {
       Department: department,
@@ -517,7 +533,7 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
       if (res['d'].length > 0) {
         let data = res['d'];
 
-        debugger
+        //debugger
         this.pdfString = `
         <!doctype html>
         <html lang="he">
@@ -768,7 +784,7 @@ export class ShareSurgeriesPDFDialog {
   }
 
   shareReportWithOthers() {
-    debugger
+    //debugger
     this.disableBtn = true;
     if (this.fruits.length == 0) {
       this.openSnackBar("נא לבחור אחראי לשליחה");
