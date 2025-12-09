@@ -437,35 +437,53 @@
             <h5>* תאגיד הבריאות</h5>
             <div class="section">
               <section class="example-section">
-                <p><mat-checkbox [(ngModel)]="health_checkbox" [ngModelOptions]="{standalone: true}"><span
-                      class="checkbox-label">תאגיד הבריאות-קרן
-                      מרכזית למימון</span></mat-checkbox>
+                <p><mat-checkbox [(ngModel)]="keren_dept_checkbox"
+                    (change)="fundingSelectOrNot($event.checked, 'Keren_Dept_Corporation')"
+                    [ngModelOptions]="{standalone: true}"><span class="checkbox-label">קרן מחלקה</span></mat-checkbox>
                 </p>
               </section>
-              <mat-label *ngIf="health_checkbox"> נא לבחור </mat-label>
-              <mat-select formControlName="Health_Corporation" *ngIf="health_checkbox" class="multi-select"
+              <mat-label *ngIf="keren_dept_checkbox"> נא לבחור </mat-label>
+              <mat-select formControlName="Keren_Dept_Corporation" *ngIf="keren_dept_checkbox" class="multi-select"
                 [compareWith]="compareFn" (selectionChange)="check_if_fund_or_health()" multiple>
-                <mat-option *ngFor="let option of Health_Corporation_Options.Training_Request_Options"
+                <mat-option *ngFor="let option of Keren_Dept_Corporation_Options.Training_Request_Options"
                   [value]="option.OptionID">
                   {{ option.OptionText }}
                 </mat-option>
               </mat-select>
               <mat-error
-                *ngIf="Training_Request_Forms_D.get('Health_Corporation').hasError('required') && Training_Request_Forms_D.get('Health_Corporation').touched">
+                *ngIf="Training_Request_Forms_D.get('Keren_Dept_Corporation').hasError('required') && Training_Request_Forms_D.get('Keren_Dept_Corporation').touched">
                 שדה חובה
               </mat-error>
             </div>
-            <hr>
             <div class="section">
               <section class="example-section">
-                <p><mat-checkbox [(ngModel)]="fund_checkbox" [ngModelOptions]="{standalone: true}"><span
-                      class="checkbox-label">קרן מחלקה:
-                      למימון</span></mat-checkbox>
+                <p><mat-checkbox [(ngModel)]="number_checkbox"
+                    (change)="fundingSelectOrNot($event.checked, 'Number_Fund')"
+                    [ngModelOptions]="{standalone: true}"><span class="checkbox-label">מחקר מספר</span></mat-checkbox>
                 </p>
               </section>
-              <!-- <mat-label>{{ Department_Fund_Options.QuestionText }}</mat-label> -->
-              <mat-label *ngIf="fund_checkbox"> נא לבחור </mat-label>
-              <mat-select formControlName="Department_Fund" *ngIf="fund_checkbox" class="multi-select"
+              <mat-label *ngIf="number_checkbox"> נא לבחור </mat-label>
+              <mat-select formControlName="Number_Fund" *ngIf="number_checkbox" class="multi-select"
+                (selectionChange)="check_if_fund_or_health()" [compareWith]="compareFn" multiple>
+                <mat-option *ngFor="let option of Number_Fund_Options.Training_Request_Options"
+                  [value]="option.OptionID">
+                  {{ option.OptionText }}
+                </mat-option>
+              </mat-select>
+              <mat-error
+                *ngIf="Training_Request_Forms_D.get('Number_Fund').hasError('required') && Training_Request_Forms_D.get('Number_Fund').touched">
+                שדה חובה
+              </mat-error>
+            </div>
+            <div class="section">
+              <section class="example-section">
+                <p><mat-checkbox [(ngModel)]="closed_checkbox"
+                    (change)="fundingSelectOrNot($event.checked, 'Closed_Fund')"
+                    [ngModelOptions]="{standalone: true}"><span class="checkbox-label">מחקר סגור</span></mat-checkbox>
+                </p>
+              </section>
+              <mat-label *ngIf="closed_checkbox"> נא לבחור </mat-label>
+              <mat-select formControlName="Closed_Fund" *ngIf="closed_checkbox" class="multi-select"
                 (selectionChange)="check_if_fund_or_health()" [compareWith]="compareFn" multiple>
                 <mat-option *ngFor="let option of Department_Fund_Options.Training_Request_Options"
                   [value]="option.OptionID">
@@ -473,12 +491,108 @@
                 </mat-option>
               </mat-select>
               <mat-error
-                *ngIf="Training_Request_Forms_D.get('Department_Fund').hasError('required') && Training_Request_Forms_D.get('Department_Fund').touched">
+                *ngIf="Training_Request_Forms_D.get('Closed_Fund').hasError('required') && Training_Request_Forms_D.get('Closed_Fund').touched">
                 שדה חובה
               </mat-error>
             </div>
-            <br>
+            <div class="section">
+              <section class="example-section">
+                <p><mat-checkbox [(ngModel)]="central_checkbox"
+                    (change)="fundingSelectOrNot($event.checked, 'Central_Fund')"
+                    [ngModelOptions]="{standalone: true}"><span class="checkbox-label">קרן מרכזית</span></mat-checkbox>
+                </p>
+              </section>
+              <mat-label *ngIf="central_checkbox"> נא לבחור </mat-label>
+              <mat-select formControlName="Central_Fund" *ngIf="central_checkbox" class="multi-select"
+                (selectionChange)="check_if_fund_or_health()" [compareWith]="compareFn" multiple>
+                <mat-option *ngFor="let option of Central_Fund_Options.Training_Request_Options"
+                  [value]="option.OptionID">
+                  {{ option.OptionText }}
+                </mat-option>
+              </mat-select>
+              <mat-error
+                *ngIf="Training_Request_Forms_D.get('Central_Fund').hasError('required') && Training_Request_Forms_D.get('Central_Fund').touched">
+                שדה חובה
+              </mat-error>
+            </div>
+            <div class="section">
+              <section class="example-section">
+                <p><mat-checkbox [(ngModel)]="other_checkbox"
+                    (change)="fundingSelectOrNot($event.checked, 'Other_Fund')"
+                    [ngModelOptions]="{standalone: true}"><span class="checkbox-label">אחר</span></mat-checkbox>
+                </p>
+              </section>
+              <mat-label *ngIf="other_checkbox"> נא לבחור </mat-label>
+              <mat-select formControlName="Other_Fund" *ngIf="other_checkbox" class="multi-select"
+                (selectionChange)="check_if_fund_or_health()" [compareWith]="compareFn" multiple>
+                <mat-option *ngFor="let option of Other_Fund_Options.Training_Request_Options"
+                  [value]="option.OptionID">
+                  {{ option.OptionText }}
+                </mat-option>
+              </mat-select>
+              <mat-error
+                *ngIf="Training_Request_Forms_D.get('Other_Fund').hasError('required') && Training_Request_Forms_D.get('Other_Fund').touched">
+                שדה חובה
+              </mat-error>
+            </div>
             <hr>
+            <p
+              *ngIf="user_name != 'dnudelman' && user_name != 'adahabre' && Training_Request_Forms_D.get('Registration_Funding')?.value == 'approved'">
+              במקרים של נסיעות לחו"ל:
+              ככל שהתקבל אישור למימון מלא או חלקי, הרישום יתבצע ע"י המשתלם והתאגיד יבצע החזר בגובה האישור כנגד
+              קבלה
+              שתוגש על שמו בלבד.
+              בכל מקרה אחר - יש ליצור קשר עם התאגיד לבירור הסדרי התשלום.
+            </p>
+            <p
+              *ngIf="user_name != 'dnudelman' && user_name != 'adahabre' && Training_Request_Forms_D.get('Flight_Funding')?.value == 'approved'">
+              שהתקבל אישור למימון מלא או חלקי - יש ליצור קשר עם התאגיד לטיפול בסידורי הנסיעה ואין לבצע הזמנה
+              באופן
+              עצמאי.
+            </p>
+            <p
+              *ngIf="user_name != 'dnudelman' && user_name != 'adahabre' && Training_Request_Forms_D.get('Lodging_Funding')?.value == 'approved'">
+              שהתקבל אישור למימון מלא או חלקי - יש ליצור קשר עם התאגיד לטיפול בסידורי הנסיעה ואין לבצע הזמנה
+              באופן
+              עצמאי, אישורי הלינה בכפוף לתקרת המס.
+            </p>
+            <div *ngIf="user_name == 'dnudelman' || user_name == 'adahabre'">
+              <h3 class="text-center">חלק התאגיד</h3>
+              <div *ngFor="let section of fundingOptions">
+                <h5>* {{ section.label }}</h5>
+
+                <div class="section" *ngFor="let opt of section.options">
+                  <mat-checkbox [checked]="Training_Request_Forms_D.get(section.key)?.value === opt.key"
+                    (change)="onSelect($event, section.key, opt.key)">
+                    {{ opt.label }}
+                  </mat-checkbox>
+                </div>
+
+                <ng-container [ngSwitch]="section.key">
+                  <p *ngSwitchCase="'Registration_Funding'">
+                    במקרים של נסיעות לחו"ל:
+                    ככל שהתקבל אישור למימון מלא או חלקי, הרישום יתבצע ע"י המשתלם והתאגיד יבצע החזר בגובה האישור כנגד
+                    קבלה
+                    שתוגש על שמו בלבד.
+                    בכל מקרה אחר - יש ליצור קשר עם התאגיד לבירור הסדרי התשלום.
+                  </p>
+
+                  <p *ngSwitchCase="'Flight_Funding'">
+                    ככל שהתקבל אישור למימון מלא או חלקי - יש ליצור קשר עם התאגיד לטיפול בסידורי הנסיעה ואין לבצע הזמנה
+                    באופן
+                    עצמאי.
+                  </p>
+
+                  <p *ngSwitchCase="'Lodging_Funding'">
+                    ככל שהתקבל אישור למימון מלא או חלקי - יש ליצור קשר עם התאגיד לטיפול בסידורי הנסיעה ואין לבצע הזמנה
+                    באופן
+                    עצמאי, אישורי הלינה בכפוף לתקרת המס.
+                  </p>
+                </ng-container>
+
+                <hr>
+              </div>
+            </div>
             <div class="section" *ngIf="dorit_note_answer">
               <mat-label>תשובת התאגיד</mat-label>
               <p *ngIf="user_name != 'dnudelman' && user_name != 'lnachmani'"> {{
@@ -491,9 +605,9 @@
             </div>
           </mat-card-content>
         </mat-card>
-        <!-- <button mat-raised-button color="primary" type="submit" class="submitBtn" (click)="onSubmit(0)"
-          *ngIf="Training_Request_Forms_E.get('Sent_To_Manager').value != 'True'">שמירה
-          כטיוטה</button> -->
+        <button mat-raised-button color="primary" type="submit" class="submitBtn" (click)="onSubmit(0)"
+          *ngIf="user_name == 'adahabre'">אמין - שמירה
+          כטיוטה</button>
       </form>
       <div>
         <button mat-button matStepperPrevious class="stepBtn">חזרה</button>
@@ -612,7 +726,7 @@
             <div class="col-lg-3 col-md-4 col-sm-6">
               <mat-form-field>
                 <mat-label>נימוקים</mat-label>
-                <textarea matInput formControlName="Recommendations" rows="2"></textarea>
+                <textarea matInput formControlName="Recommendations" rows="4"></textarea>
               </mat-form-field>
             </div>
             <div class="col-lg-2 col-md-4 col-sm-6">
@@ -668,6 +782,98 @@
           (click)="markFormGroupTouched(Training_Request_Forms_E)">הבא</button>
       </div>
     </mat-step>
+    <mat-step [stepControl]="Training_Request_Forms_I" *ngIf="!requested" errorMessage="שכחת שדות חובה.">
+      <form [formGroup]="Training_Request_Forms_I">
+        <ng-template matStepLabel>חוות דעת - ממונה ישיר תאגיד</ng-template>
+        <mat-card-content>
+          <div class="row">
+            <div class="col-lg-2 col-md-4 col-sm-6" dir="ltr">
+              <mat-form-field appearance="outline" style="width: 100%;">
+                <mat-label class="label-select">סטטוס</mat-label>
+                <mat-select formControlName="Approved" (selectionChange)="ApprovedStatusChanged(0)">
+                  <mat-option value="מאושר">מאושר</mat-option>
+                  <mat-option value="לא מאושר">לא מאושר</mat-option>
+                  <mat-option value="השלמת נתונים">השלמת נתונים</mat-option>
+                </mat-select>
+                <mat-error
+                  *ngIf="Training_Request_Forms_I.get('Approved').hasError('required') && Training_Request_Forms_I.get('Approved').touched">
+                  שדה חובה
+                </mat-error>
+              </mat-form-field>
+            </div>
+            <div class="col-lg-2 col-md-4 col-sm-6" dir="ltr">
+              <mat-form-field appearance="outline" style="width: 100%;">
+                <mat-label class="label-select">חשיבות</mat-label>
+                <mat-select formControlName="Training_Importantce">
+                  <mat-option value="חיונית ביותר">חיונית ביותר</mat-option>
+                  <mat-option value="חיונית">חיונית</mat-option>
+                  <mat-option value="אינה חיונית">אינה חיונית</mat-option>
+                </mat-select>
+                <mat-error
+                  *ngIf="Training_Request_Forms_I.get('Training_Importantce').hasError('required') && Training_Request_Forms_I.get('Training_Importantce').touched">
+                  שדה חובה
+                </mat-error>
+              </mat-form-field>
+            </div>
+            <div class="col-lg-3 col-md-4 col-sm-6">
+              <mat-form-field>
+                <mat-label>נימוקים</mat-label>
+                <textarea matInput formControlName="Recommendations" rows="4"></textarea>
+              </mat-form-field>
+            </div>
+            <div class="col-lg-2 col-md-4 col-sm-6">
+              <mat-form-field>
+                <mat-label>תאריך</mat-label>
+                <input matInput [matDatepicker]="Opinion_Date1" formControlName="Opinion_Date">
+                <mat-hint>DD/MM/YYYY</mat-hint>
+                <mat-datepicker-toggle matIconSuffix [for]="Opinion_Date1"></mat-datepicker-toggle>
+                <mat-datepicker #Opinion_Date1></mat-datepicker>
+                <mat-error
+                  *ngIf="Training_Request_Forms_I.get('Opinion_Date').hasError('required') && Training_Request_Forms_I.get('Opinion_Date').touched">
+                  שדה חובה
+                </mat-error>
+              </mat-form-field>
+            </div>
+            <div class="col-lg-2 col-md-4 col-sm-6" *ngIf="filteredOptions != undefined">
+              <mat-form-field>
+                <mat-label>שם הממונה</mat-label>
+                <input type="text" matInput [formControl]="Supervisor_Name3" [matAutocomplete]="auto3">
+                <mat-autocomplete #auto3="matAutocomplete" [displayWith]="displayFn3">
+                  <mat-option *ngFor="let name of filteredOptions3 | async" [value]="name">
+                    {{name.firstname}}
+                  </mat-option>
+                </mat-autocomplete>
+                <mat-error *ngIf="Supervisor_Name3.hasError('required') && Supervisor_Name3.touched">
+                  שדה חובה
+                </mat-error>
+              </mat-form-field>
+            </div>
+            <div class="col-lg-1 col-md-4 col-sm-6">
+              <button mat-raised-button class="signBtn" color="warn" (click)="signForm(7, 'Supervisor_Sign')"
+                *ngIf="Supervisor_Name3.value?.id == passport && Training_Request_Forms_I.get('Approved').value != 'השלמת נתונים'">
+                <span
+                  *ngIf="Training_Request_Forms_I.get('Supervisor_Sign').value == undefined || Training_Request_Forms_I.get('Supervisor_Sign').value == ''">לחתום</span>
+                <span
+                  *ngIf="Training_Request_Forms_I.get('Supervisor_Sign').value != undefined && Training_Request_Forms_I.get('Supervisor_Sign').value != ''">נחתם</span>
+              </button>
+              <mat-error *ngIf="Training_Request_Forms_I.get('Supervisor_Sign').hasError('required')">
+                שדה חובה יש לחתום
+              </mat-error>
+              <img
+                *ngIf="Training_Request_Forms_I.get('Supervisor_Sign').value != undefined && Training_Request_Forms_I.get('Supervisor_Sign').value != ''"
+                [src]="Training_Request_Forms_I.get('Supervisor_Sign').value" />
+            </div>
+          </div>
+        </mat-card-content>
+        <button mat-raised-button color="primary" type="submit" class="submitBtn" (click)="onSubmit(0)">אישור
+          ושמירה</button>
+      </form>
+      <div>
+        <button mat-button matStepperPrevious class="stepBtn">חזרה</button>
+        <button mat-button matStepperNext class="stepBtn" style="background-color: #84a8eb;"
+          (click)="markFormGroupTouched(Training_Request_Forms_I)">הבא</button>
+      </div>
+    </mat-step>
     <mat-step [stepControl]="Training_Request_Forms_F" *ngIf="!requested" errorMessage="שכחת שדות חובה.">
       <form [formGroup]="Training_Request_Forms_F">
         <ng-template matStepLabel>חוות דעת - ממונה עקיף</ng-template>
@@ -704,7 +910,7 @@
             <div class="col-lg-3 col-md-4 col-sm-6">
               <mat-form-field>
                 <mat-label>נימוקים</mat-label>
-                <textarea matInput formControlName="Recommendations" rows="2"></textarea>
+                <textarea matInput formControlName="Recommendations" rows="4"></textarea>
               </mat-form-field>
             </div>
             <div class="col-lg-2 col-md-4 col-sm-6">
