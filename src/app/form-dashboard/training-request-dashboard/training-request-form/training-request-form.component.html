@@ -537,7 +537,8 @@
             </div>
             <hr>
             <p
-              *ngIf="user_name != 'dnudelman' && user_name != 'adahabre' && Training_Request_Forms_D.get('Registration_Funding')?.value == 'approved'">
+              *ngIf="user_name != 'dnudelman' && user_name != 'adahabre' && (Training_Request_Forms_D.get('Registration_Funding')?.value == 'approved' || Training_Request_Forms_D.get('Registration_Funding')?.value == 'partial')">
+              מימון רישום:
               במקרים של נסיעות לחו"ל:
               ככל שהתקבל אישור למימון מלא או חלקי, הרישום יתבצע ע"י המשתלם והתאגיד יבצע החזר בגובה האישור כנגד
               קבלה
@@ -545,19 +546,21 @@
               בכל מקרה אחר - יש ליצור קשר עם התאגיד לבירור הסדרי התשלום.
             </p>
             <p
-              *ngIf="user_name != 'dnudelman' && user_name != 'adahabre' && Training_Request_Forms_D.get('Flight_Funding')?.value == 'approved'">
+              *ngIf="user_name != 'dnudelman' && user_name != 'adahabre' && (Training_Request_Forms_D.get('Flight_Funding')?.value == 'approved' || Training_Request_Forms_D.get('Flight_Funding')?.value == 'partial')">
+              מימון טיסה:
               שהתקבל אישור למימון מלא או חלקי - יש ליצור קשר עם התאגיד לטיפול בסידורי הנסיעה ואין לבצע הזמנה
               באופן
               עצמאי.
             </p>
             <p
-              *ngIf="user_name != 'dnudelman' && user_name != 'adahabre' && Training_Request_Forms_D.get('Lodging_Funding')?.value == 'approved'">
+              *ngIf="user_name != 'dnudelman' && user_name != 'adahabre' && (Training_Request_Forms_D.get('Lodging_Funding')?.value == 'approved' || Training_Request_Forms_D.get('Lodging_Funding')?.value == 'partial')">
+              מימון לינה:
               שהתקבל אישור למימון מלא או חלקי - יש ליצור קשר עם התאגיד לטיפול בסידורי הנסיעה ואין לבצע הזמנה
               באופן
               עצמאי, אישורי הלינה בכפוף לתקרת המס.
             </p>
-            <div *ngIf="user_name == 'dnudelman' || user_name == 'adahabre'">
-              <h3 class="text-center">חלק התאגיד</h3>
+            <div *ngIf="user_name == 'dnudelman' || user_name == 'adahabre' || user_name == 'lnachmani'">
+              <h3 class="text-center">תשובת התאגיד</h3>
               <div *ngFor="let section of fundingOptions">
                 <h5>* {{ section.label }}</h5>
 
