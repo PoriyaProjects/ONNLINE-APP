@@ -233,7 +233,7 @@
                 <mat-form-field>
                   <mat-label>תאריך התחלה <p *ngIf="Training_Request_Forms_B.get('Training_Out').value">ללא ימי
                       הטיסה</p></mat-label>
-                  <input matInput [matDatepicker]="Date_Start" formControlName="Date_Start" required>
+                  <input matInput [matDatepicker]="Date_Start" formControlName="Date_Start" (dateChange)="calculateDateEndMinimum()" required>
                   <mat-datepicker-toggle matIconSuffix [for]="Date_Start"></mat-datepicker-toggle>
                   <mat-datepicker #Date_Start></mat-datepicker>
                   <mat-error
@@ -246,7 +246,7 @@
                 <mat-form-field>
                   <mat-label>תאריך סיום <p *ngIf="Training_Request_Forms_B.get('Training_Out').value">ללא ימי
                       הטיסה</p></mat-label>
-                  <input matInput [matDatepicker]="Date_End" formControlName="Date_End" required>
+                  <input matInput [matDatepicker]="Date_End" formControlName="Date_End" [min]="minimumDateEnd" required>
                   <mat-datepicker-toggle matIconSuffix [for]="Date_End"></mat-datepicker-toggle>
                   <mat-datepicker #Date_End></mat-datepicker>
                   <mat-error
@@ -1084,7 +1084,9 @@
                   <mat-option value="3">3</mat-option>
                   <mat-option value="10">10</mat-option>
                   <mat-option value="31">31</mat-option>
+                  <mat-option value="51">51</mat-option>
                   <mat-option value="166">166</mat-option>
+                  <mat-option value="206">206</mat-option>
                 </mat-select>
                 <mat-error
                   *ngIf="Training_Request_Forms_H.get('Code_Type').hasError('required') && Training_Request_Forms_H.get('Code_Type').touched">
