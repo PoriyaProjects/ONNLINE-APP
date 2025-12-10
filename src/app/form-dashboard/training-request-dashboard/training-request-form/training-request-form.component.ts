@@ -140,6 +140,7 @@ export class TrainingRequestFormComponent implements OnInit {
   closed_checkbox: any;
   central_checkbox: any;
   other_checkbox: any;
+  minimumDateEnd: Date | null = null;
 
   constructor(
     private fb: FormBuilder,
@@ -192,7 +193,8 @@ export class TrainingRequestFormComponent implements OnInit {
     let central = this.Training_Request_Forms_D.value.Central_Fund?.filter(x => x != null);
     let other = this.Training_Request_Forms_D.value.Other_Fund?.filter(x => x != null);
     let outsource = this.Training_Request_Forms_D.value.OutSource_Company;
-    if ((health?.length == 0 && fund?.length == 0 && !outsource) || (health == undefined && fund == undefined && outsource == undefined)) this.dorit_note_answer = false;
+    if ((health?.length == 0 && fund?.length == 0 && closed?.length == 0 && central?.length == 0 && other?.length == 0 && !outsource)
+      || (health == undefined && fund == undefined && closed?.length == 0 && central?.length == 0 && other?.length == 0 && outsource == undefined)) this.dorit_note_answer = false;
     else this.dorit_note_answer = true;
     if (health.length > 0) this.keren_dept_checkbox = true;
     if (fund.length > 0) this.number_checkbox = true;
@@ -300,6 +302,26 @@ export class TrainingRequestFormComponent implements OnInit {
     return '';
   }
 
+  calculateDateEndMinimum() {
+    const start = this.Training_Request_Forms_B.get('Date_Start')?.value;
+
+    if (start) {
+      // Convert to Date object if Angular stores it as a string
+      const dateStart = new Date(start);
+
+      this.minimumDateEnd = dateStart;
+
+      // If current Date_End is before the new minimum → clear it
+      const currentEnd = this.Training_Request_Forms_B.get('Date_End')?.value;
+      if (currentEnd && new Date(currentEnd) < dateStart) {
+        this.Training_Request_Forms_B.get('Date_End')?.setValue(null);
+      }
+
+    } else {
+      this.minimumDateEnd = null;
+    }
+  }
+
   buildFormGroup() {
     this.http
       .post(environment.url + "GetTrainingRequestFormDataByID", {
@@ -331,7 +353,7 @@ export class TrainingRequestFormComponent implements OnInit {
           Request_Location: new FormControl(Training_Request_Forms_B?.Request_Location, Validators.required),
           Planning_Intity: new FormControl(Training_Request_Forms_B?.Planning_Intity, null),
           Planning_Intity_Text: new FormControl(Training_Request_Forms_B?.Planning_Intity_Text, null),
-          Date_Start: new FormControl(Training_Request_Forms_B?.Date_Start, Validators.required),
+          Date_Start: new FormControl(Training_Request_Forms_B?.Date_Start == undefined ? this.date_now : Training_Request_Forms_B?.Date_Start, Validators.required),
           Date_End: new FormControl(Training_Request_Forms_B?.Date_End, Validators.required),
           Request_Duration: new FormControl(Training_Request_Forms_B?.Request_Duration, [Validators.required, Validators.pattern(/^[0-9]*$/)]),
           Education_Fee: new FormControl({ value: Training_Request_Forms_B?.Education_Fee, disabled: Training_Request_Forms_B?.Training_Out == 'True' }, [Validators.required, Validators.pattern(/^\d+$/)]),
@@ -422,6 +444,7 @@ export class TrainingRequestFormComponent implements OnInit {
         this.Training_Out_Check();
         if (Training_Request_Forms_B?.Poster_Attached != undefined && Training_Request_Forms_B?.Poster_Attached != "") this.wantsPoster = true;
         else this.wantsPoster = false;
+        this.calculateDateEndMinimum();
         // Subscribe to changes in Date_End to calculate duration
         // this.Training_Request_Forms_B.get('Date_End').valueChanges.subscribe(() => {
         //   this.calculateRequestDuration();
@@ -898,9 +921,9 @@ export class TrainingRequestFormComponent implements OnInit {
           this.Training_Request_Forms_G.controls['Work_Place'].setValue(patient.WorkPlaceDescription);
           this.Training_Request_Forms_G.controls['Function_Department'].setValue(patient.FunctionDescription + ' - ' + patient.DepartnentDescripton);
           this.Training_Request_Forms_G.controls['Standart_Level'].setValue(patient.RankDescription);
-          this.Supervisor_Name1.setValue(this.employees.filter(t => t.id === patient.ManagerID1.id)[0]);
-          this.Supervisor_Name2.setValue(this.employees.filter(t => t.id === patient.ManagerID2.id)[0]);
-          this.Supervisor_Name3.setValue(this.employees.filter(t => t.id === patient.ManagerID3.id)[0]);
+          this.Supervisor_Name1.setValue(this.employees.filter(t => t.id === patient.ManagerID1?.id)[0]);
+          this.Supervisor_Name2.setValue(this.employees.filter(t => t.id === patient.ManagerID2?.id)[0]);
+          this.Supervisor_Name3.setValue(this.employees.filter(t => t.id === patient.ManagerID3?.id)[0]);
           this.Training_Request_Forms_E.controls['Supervisor_Name'].setValue(this.Supervisor_Name1.value);
           this.Training_Request_Forms_F.controls['Supervisor_Name'].setValue(this.Supervisor_Name2.value);
           this.Training_Request_Forms_I.controls['Supervisor_Name'].setValue(this.Supervisor_Name3.value);
