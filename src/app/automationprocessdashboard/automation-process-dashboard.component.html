@@ -1,0 +1,161 @@
+<div class="dashboard-container">
+
+  <!-- Header -->
+  <div class="dashboard-header">
+    <h1>🔬 Automation Process Dashboard</h1>
+    <p class="subtitle">Select a department to view metrics</p>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading" class="loading-container">
+    <mat-spinner></mat-spinner>
+    <p>Loading department...</p>
+  </div>
+
+  <!-- Departments Grid (Main View) -->
+  <div *ngIf="!selectedDepartment" class="departments-section">
+    <div class="departments-container">
+      <div *ngFor="let dept of departments" class="department-card" (click)="selectDepartment(dept)">
+        <div class="dept-icon">{{ dept.icon }}</div>
+        <div class="dept-name">{{ dept.name }}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Department Detail View with Metrics & Charts -->
+  <div *ngIf="selectedDepartment && selectedDepartment.id !== 0 && isDataLoaded && metrics" class="detail-container">
+    
+    <!-- Back Button & Header -->
+    <div class="detail-header">
+      <button mat-icon-button (click)="closeDepartment()" class="back-btn">
+        <mat-icon>arrow_back</mat-icon>
+      </button>
+      <h2>{{ selectedDepartment.name }} - Metrics</h2>
+      <div class="spacer"></div>
+    </div>
+
+    <!-- Metrics Cards -->
+    <div class="metrics-grid">
+      <div class="metric-card">
+        <div class="metric-label">ממתין לעיבוד פנימי</div>
+        <div class="metric-value">{{ metrics.WaitingInternal }}</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">ממתין לטיפול</div>
+        <div class="metric-value">{{ metrics.WaitingTreatment }}</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">בטיפול</div>
+        <div class="metric-value">{{ metrics.InTreatment }}</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">סגור</div>
+        <div class="metric-value">{{ metrics.Closed }}</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">נוצר היום</div>
+        <div class="metric-value">{{ metrics.CreatedToday }}</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">שיעור הצלחה</div>
+        <div class="metric-value">{{ metrics.SuccessRate | number:'1.1-2' }}%</div>
+      </div>
+    </div>
+
+    <!-- Charts -->
+    <div class="charts-section">
+      <div class="chart-container" *ngIf="chartData && chartData.length > 0">
+        <h3>Processing Trend</h3>
+        <google-chart type="LineChart" [data]="chartData" [columns]="chartColumns" 
+                       [options]="chartOptions" [width]="'100%'" [height]="400">
+        </google-chart>
+      </div>
+
+      <div class="chart-container" *ngIf="stateChartData && stateChartData.length > 0">
+        <h3>Item States Distribution</h3>
+        <google-chart type="PieChart" [data]="stateChartData" [columns]="stateChartColumns" 
+                       [options]="stateChartOptions" [width]="'100%'" [height]="400">
+        </google-chart>
+      </div>
+    </div>
+
+    <!-- Item States Table -->
+    <div *ngIf="itemStates && itemStates.length > 0" class="table-section">
+      <h3>Item States Breakdown</h3>
+      <table class="status-table">
+        <thead>
+          <tr>
+            <th>State</th>
+            <th>Count</th>
+            <th>Percentage</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let state of itemStates">
+            <td>{{ state.DisplayName }}</td>
+            <td>{{ state.Count }}</td>
+            <td>{{ state.Percentage | number:'1.1-2' }}%</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+
+  <!-- NLP Metrics View -->
+  <div *ngIf="selectedDepartment && selectedDepartment.id === 0 && isDataLoaded && nlpMetrics" class="detail-container">
+    
+    <!-- Back Button & Header -->
+    <div class="detail-header">
+      <button mat-icon-button (click)="closeDepartment()" class="back-btn">
+        <mat-icon>arrow_back</mat-icon>
+      </button>
+      <h2>{{ selectedDepartment.name }} - Metrics</h2>
+      <div class="spacer"></div>
+    </div>
+
+    <!-- Today Metrics -->
+    <h3 style="color: white; margin-left: 20px; margin-top: 20px;">בקשות היום</h3>
+    <div class="metrics-grid">
+      <div class="metric-card">
+        <div class="metric-label">בקשות היום</div>
+        <div class="metric-value">{{ nlpMetrics.TodayRequests }}</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">הושלמו היום</div>
+        <div class="metric-value">{{ nlpMetrics.TodayCompleted }}</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">שיעור הצלחה היום</div>
+        <div class="metric-value">{{ nlpMetrics.TodaySuccessRate | number:'1.1-2' }}%</div>
+      </div>
+    </div>
+
+    <!-- Last 30 Days Metrics -->
+    <h3 style="color: white; margin-left: 20px; margin-top: 20px;">30 ימים אחרונים</h3>
+    <div class="metrics-grid">
+      <div class="metric-card">
+        <div class="metric-label">סה"כ בקשות (30 ימים)</div>
+        <div class="metric-value">{{ nlpMetrics.TotalRequestsLast30 }}</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">הושלמו (30 ימים)</div>
+        <div class="metric-value">{{ nlpMetrics.CompletedRequestsLast30 }}</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">מעובדים (30 ימים)</div>
+        <div class="metric-value">{{ nlpMetrics.ProcessedRequestsLast30 }}</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">זמן עיבוד ממוצע</div>
+        <div class="metric-value">{{ nlpMetrics.AvgProcessingTimeLast30 }} דקות</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">שיעור הצלחה (30 ימים)</div>
+        <div class="metric-value">{{ nlpMetrics.SuccessRateLast30 | number:'1.1-2' }}%</div>
+      </div>
+    </div>
+
+  </div>
+
+</div>

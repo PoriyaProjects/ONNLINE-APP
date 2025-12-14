@@ -287,6 +287,7 @@ import { DimotActivityDashboardComponent } from './dimot-activity-dashboard/dimo
 import { DialogDoingComponent } from './dimot-activity-dashboard/dialog-doing/dialog-doing.component';
 import { HearingSurveyComponent } from './hearing-survey/hearing-survey/hearing-survey.component';
 
+import { AutomationProcessDashboardComponent } from "./automationprocessdashboard/automation-process-dashboard.component";
 
 
 
@@ -296,6 +297,7 @@ const maskConfig: Partial<IConfig> = {
 
 @NgModule({
   declarations: [
+    AutomationProcessDashboardComponent,
     CasenumbersComponent,
     ScannersComponent,
     DialogContentExampleDialog,

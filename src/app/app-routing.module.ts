@@ -156,10 +156,13 @@ import { FoldersManagementComponent } from "./dashboard/folders-management/folde
 import { FolderDialogComponent } from "./dashboard/folders-management/folder-dialog/folder-dialog.component";
 import { DimotActivityDashboardComponent } from "./dimot-activity-dashboard/dimot-activity-dashboard.component";
 import { DepartmentIncomeDashboardComponent } from "./incomeImporter/department-income-dashboard.component";
+import { AutomationProcessDashboardComponent } from "./automationprocessdashboard/automation-process-dashboard.component";
+
 
 
 
 const routes: Routes = [
+    { path: "AutomationProcessDashboard", component: AutomationProcessDashboardComponent },
     { path: "IncomeDashboard", component: DepartmentIncomeDashboardComponent },
     { path: "dimotactivity", component: DimotActivityDashboardComponent },
     { path: "patientstikers", component: PatientStikersComponent },
