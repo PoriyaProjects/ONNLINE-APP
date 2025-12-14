@@ -28,17 +28,36 @@ export class TrainingRequestFormComponent implements OnInit {
   Training_Request_Forms_C: FormGroup;
   Training_Request_Forms_D: FormGroup;
   Training_Request_Forms_E: FormGroup;
+  Training_Request_Forms_I: FormGroup;
   Training_Request_Forms_F: FormGroup;
   Training_Request_Forms_H: FormGroup;
   Training_Request_Forms_G: FormGroup;
   formData: any;
-  Health_Corporation_Options = {
+  Keren_Dept_Corporation_Options = {
     QuestionText: '',
     Training_Request_Options: [
       { OptionID: 0, OptionText: '' }
     ]
   };
   Department_Fund_Options = {
+    QuestionText: '',
+    Training_Request_Options: [
+      { OptionID: 0, OptionText: '' }
+    ]
+  };
+  Number_Fund_Options = {
+    QuestionText: '',
+    Training_Request_Options: [
+      { OptionID: 0, OptionText: '' }
+    ]
+  };
+  Central_Fund_Options = {
+    QuestionText: '',
+    Training_Request_Options: [
+      { OptionID: 0, OptionText: '' }
+    ]
+  };
+  Other_Fund_Options = {
     QuestionText: '',
     Training_Request_Options: [
       { OptionID: 0, OptionText: '' }
@@ -62,6 +81,38 @@ export class TrainingRequestFormComponent implements OnInit {
       { OptionID: 0, OptionText: '' }
     ]
   };
+  fundingOptions = [
+    {
+      key: 'Registration_Funding',
+      label: 'מימון רישום',
+      options: [
+        { key: 'approved', label: 'מאושר' },
+        { key: 'partial', label: 'מאושר בגובה תמיכה' },
+        { key: 'notApproved', label: 'לא מאושר' },
+        { key: 'other', label: 'אחר' }
+      ]
+    },
+    {
+      key: 'Flight_Funding',
+      label: 'מימון טיסה',
+      options: [
+        { key: 'approved', label: 'מאושר' },
+        { key: 'partial', label: 'מאושר בגובה תמיכה' },
+        { key: 'notApproved', label: 'לא מאושר' },
+        { key: 'other', label: 'אחר' }
+      ]
+    },
+    {
+      key: 'Lodging_Funding',
+      label: 'מימון לינה',
+      options: [
+        { key: 'approved', label: 'מאושר' },
+        { key: 'partial', label: 'מאושר בגובה תמיכה' },
+        { key: 'notApproved', label: 'לא מאושר' },
+        { key: 'other', label: 'אחר' }
+      ]
+    }
+  ];
   plansList = [];
   employees = [];
   intity_list = [];
@@ -79,11 +130,17 @@ export class TrainingRequestFormComponent implements OnInit {
   Supervisor_Name1 = new FormControl();
   filteredOptions2: Observable<string[]>;
   Supervisor_Name2 = new FormControl();
+  filteredOptions3: Observable<string[]>;
+  Supervisor_Name3 = new FormControl();
   cityOptions: Observable<string[]>;
   cityControl = new FormControl("", Validators.required);
   date_now: any = Date.now();
-  health_checkbox: any;
-  fund_checkbox: any;
+  keren_dept_checkbox: any;
+  number_checkbox: any;
+  closed_checkbox: any;
+  central_checkbox: any;
+  other_checkbox: any;
+  minimumDateEnd: Date | null = null;
 
   constructor(
     private fb: FormBuilder,
@@ -122,16 +179,48 @@ export class TrainingRequestFormComponent implements OnInit {
         startWith(''),
         map(value => this._filter2(value))
       );
+    this.filteredOptions3 = this.Supervisor_Name3.valueChanges
+      .pipe(
+        startWith(''),
+        map(value => this._filter3(value))
+      );
   }
 
   check_if_fund_or_health() {
-    let health = this.Training_Request_Forms_D.value.Health_Corporation?.filter(x => x != null);
-    let fund = this.Training_Request_Forms_D.value.Department_Fund?.filter(x => x != null);
+    let health = this.Training_Request_Forms_D.value.Keren_Dept_Corporation?.filter(x => x != null);
+    let fund = this.Training_Request_Forms_D.value.Number_Fund?.filter(x => x != null);
+    let closed = this.Training_Request_Forms_D.value.Closed_Fund?.filter(x => x != null);
+    let central = this.Training_Request_Forms_D.value.Central_Fund?.filter(x => x != null);
+    let other = this.Training_Request_Forms_D.value.Other_Fund?.filter(x => x != null);
     let outsource = this.Training_Request_Forms_D.value.OutSource_Company;
-    if ((health?.length == 0 && fund?.length == 0 && !outsource) || (health == undefined && fund == undefined && outsource == undefined)) this.dorit_note_answer = false;
+    if ((health?.length == 0 && fund?.length == 0 && closed?.length == 0 && central?.length == 0 && other?.length == 0 && !outsource)
+      || (health == undefined && fund == undefined && closed?.length == 0 && central?.length == 0 && other?.length == 0 && outsource == undefined)) this.dorit_note_answer = false;
     else this.dorit_note_answer = true;
-    if (health.length > 0) this.health_checkbox = true;
-    if (fund.length > 0) this.fund_checkbox = true;
+    if (health.length > 0) this.keren_dept_checkbox = true;
+    if (fund.length > 0) this.number_checkbox = true;
+    if (closed.length > 0) this.closed_checkbox = true;
+    if (central.length > 0) this.central_checkbox = true;
+    if (other.length > 0) this.other_checkbox = true;
+  }
+
+  fundingSelectOrNot(value, section) {
+    let arr = [null, null, null, null];
+    if (!value) {
+      this.Training_Request_Forms_D.controls[section].setValue(arr);
+    }
+  }
+
+  onSelect(event: any, sectionKey: string, optionKey: string) {
+    if (event.checked) {
+      // Set the selected option
+      this.Training_Request_Forms_D.get(sectionKey)?.setValue(optionKey);
+    } else {
+      // If unchecked and this option is currently selected → clear it
+      const control = this.Training_Request_Forms_D.get(sectionKey);
+      if (control?.value === optionKey) {
+        control.setValue(null);
+      }
+    }
   }
 
   changeCity(event) {
@@ -178,6 +267,17 @@ export class TrainingRequestFormComponent implements OnInit {
     return this.employees.filter(option => option.firstname.includes(filterValue1));
   }
 
+  private _filter3(value: any): string[] {
+    const filterValue2 = value;
+    if (value && value.id !== undefined) {
+      const currentValue = this.Training_Request_Forms_I.controls['Supervisor_Name'].value;
+      if (currentValue !== value) {
+        this.Training_Request_Forms_I.controls['Supervisor_Name'].setValue(value, { emitEvent: false }); // Prevent emitting events
+      }
+    }
+    return this.employees.filter(option => option.firstname.includes(filterValue2));
+  }
+
   displayFn(user: any): string {
     if (user) {
       // Display firstname if available, otherwise fallback to id or a placeholder
@@ -194,6 +294,34 @@ export class TrainingRequestFormComponent implements OnInit {
     return '';
   }
 
+  displayFn3(user: any): string {
+    if (user) {
+      // Display firstname if available, otherwise fallback to id or a placeholder
+      return user.firstname ? user.firstname : user.id ? user.id : '';
+    }
+    return '';
+  }
+
+  calculateDateEndMinimum() {
+    const start = this.Training_Request_Forms_B.get('Date_Start')?.value;
+
+    if (start) {
+      // Convert to Date object if Angular stores it as a string
+      const dateStart = new Date(start);
+
+      this.minimumDateEnd = dateStart;
+
+      // If current Date_End is before the new minimum → clear it
+      const currentEnd = this.Training_Request_Forms_B.get('Date_End')?.value;
+      if (currentEnd && new Date(currentEnd) < dateStart) {
+        this.Training_Request_Forms_B.get('Date_End')?.setValue(null);
+      }
+
+    } else {
+      this.minimumDateEnd = null;
+    }
+  }
+
   buildFormGroup() {
     this.http
       .post(environment.url + "GetTrainingRequestFormDataByID", {
@@ -206,6 +334,7 @@ export class TrainingRequestFormComponent implements OnInit {
         let Training_Request_Forms_C = this.formData['C'];
         let Training_Request_Forms_D = this.formData['D'];
         let Training_Request_Forms_E = this.formData['E'];
+        let Training_Request_Forms_I = this.formData['I'];
         let Training_Request_Forms_F = this.formData['F'];
         let Training_Request_Forms_H = this.formData['H'];
         let Training_Request_Forms_G = this.formData['G'];
@@ -224,7 +353,7 @@ export class TrainingRequestFormComponent implements OnInit {
           Request_Location: new FormControl(Training_Request_Forms_B?.Request_Location, Validators.required),
           Planning_Intity: new FormControl(Training_Request_Forms_B?.Planning_Intity, null),
           Planning_Intity_Text: new FormControl(Training_Request_Forms_B?.Planning_Intity_Text, null),
-          Date_Start: new FormControl(Training_Request_Forms_B?.Date_Start, Validators.required),
+          Date_Start: new FormControl(Training_Request_Forms_B?.Date_Start == undefined ? this.date_now : Training_Request_Forms_B?.Date_Start, Validators.required),
           Date_End: new FormControl(Training_Request_Forms_B?.Date_End, Validators.required),
           Request_Duration: new FormControl(Training_Request_Forms_B?.Request_Duration, [Validators.required, Validators.pattern(/^[0-9]*$/)]),
           Education_Fee: new FormControl({ value: Training_Request_Forms_B?.Education_Fee, disabled: Training_Request_Forms_B?.Training_Out == 'True' }, [Validators.required, Validators.pattern(/^\d+$/)]),
@@ -247,11 +376,17 @@ export class TrainingRequestFormComponent implements OnInit {
           OutSource_Company_Plan: new FormControl(Training_Request_Forms_D?.OutSource_Company_Plan, null),
           OutSource_Company_Direct: new FormControl(Training_Request_Forms_D?.OutSource_Company_Direct == 'True' ? true : false, null),
           Budget_Amount: new FormControl(Training_Request_Forms_D?.Budget_Amount, [Validators.pattern(/^\d+(\.\d{1,2})?$/)]),
-          Health_Corporation: new FormControl(Training_Request_Forms_D?.Health_Corporation == undefined ? [] : Training_Request_Forms_D?.Health_Corporation, null),
-          Health_Corporation_Description: new FormControl(Training_Request_Forms_D?.Health_Corporation_Description, null),
-          Department_Fund: new FormControl(Training_Request_Forms_D?.Department_Fund == undefined ? [] : Training_Request_Forms_D?.Department_Fund, null),
+          Keren_Dept_Corporation: new FormControl(Training_Request_Forms_D?.Keren_Dept_Corporation == undefined ? [] : Training_Request_Forms_D?.Keren_Dept_Corporation, null),
+          Keren_Dept_Corporation_Description: new FormControl(Training_Request_Forms_D?.Keren_Dept_Corporation_Description, null),
+          Number_Fund: new FormControl(Training_Request_Forms_D?.Number_Fund == undefined ? [] : Training_Request_Forms_D?.Number_Fund, null),
+          Closed_Fund: new FormControl(Training_Request_Forms_D?.Closed_Fund == undefined ? [] : Training_Request_Forms_D?.Closed_Fund, null),
+          Central_Fund: new FormControl(Training_Request_Forms_D?.Central_Fund == undefined ? [] : Training_Request_Forms_D?.Central_Fund, null),
+          Other_Fund: new FormControl(Training_Request_Forms_D?.Other_Fund == undefined ? [] : Training_Request_Forms_D?.Other_Fund, null),
           Galilean_Partnership_Description: new FormControl(Training_Request_Forms_D?.Galilean_Partnership_Description, null),
           Training_Fund_Answer: new FormControl(Training_Request_Forms_D?.Training_Fund_Answer, null),
+          Registration_Funding: new FormControl(Training_Request_Forms_D?.Registration_Funding, null),
+          Flight_Funding: new FormControl(Training_Request_Forms_D?.Flight_Funding, null),
+          Lodging_Funding: new FormControl(Training_Request_Forms_D?.Lodging_Funding, null),
         });
         this.Training_Request_Forms_E = this.fb.group({
           Training_Importantce: new FormControl(Training_Request_Forms_E?.Training_Importantce, null),
@@ -261,6 +396,15 @@ export class TrainingRequestFormComponent implements OnInit {
           Supervisor_Sign: new FormControl(Training_Request_Forms_E?.Supervisor_Sign, null),
           Sent_To_Manager: new FormControl(Training_Request_Forms_E?.Sent_To_Manager, null),
           Approved: new FormControl(Training_Request_Forms_E?.Approved, this.passport == Training_Request_Forms_E?.Passport_ID ? null : Validators.required),
+        });
+        this.Training_Request_Forms_I = this.fb.group({
+          Training_Importantce: new FormControl(Training_Request_Forms_I?.Training_Importantce, null),
+          Recommendations: new FormControl(Training_Request_Forms_I?.Recommendations, null),
+          Opinion_Date: new FormControl(Training_Request_Forms_I?.Opinion_Date, null),
+          Supervisor_Name: new FormControl(Training_Request_Forms_I?.Supervisor_Name, null),
+          Supervisor_Sign: new FormControl(Training_Request_Forms_I?.Supervisor_Sign, null),
+          Sent_To_Manager: new FormControl(Training_Request_Forms_I?.Sent_To_Manager, null),
+          Approved: new FormControl(Training_Request_Forms_I?.Approved, null),
         });
         this.Training_Request_Forms_F = this.fb.group({
           Training_Importantce: new FormControl(Training_Request_Forms_F?.Training_Importantce, null),
@@ -300,6 +444,7 @@ export class TrainingRequestFormComponent implements OnInit {
         this.Training_Out_Check();
         if (Training_Request_Forms_B?.Poster_Attached != undefined && Training_Request_Forms_B?.Poster_Attached != "") this.wantsPoster = true;
         else this.wantsPoster = false;
+        this.calculateDateEndMinimum();
         // Subscribe to changes in Date_End to calculate duration
         // this.Training_Request_Forms_B.get('Date_End').valueChanges.subscribe(() => {
         //   this.calculateRequestDuration();
@@ -591,8 +736,9 @@ export class TrainingRequestFormComponent implements OnInit {
           });
         });
         setTimeout(() => {
-          this.Supervisor_Name1.setValue(this.employees.filter(t => t.id === this.formData['E']?.Supervisor_Name.id)[0]);
-          this.Supervisor_Name2.setValue(this.employees.filter(t => t.id === this.formData['F']?.Supervisor_Name.id)[0]);
+          this.Supervisor_Name1.setValue(this.employees.filter(t => t.id === this.formData['E']?.Supervisor_Name?.id)[0]);
+          this.Supervisor_Name2.setValue(this.employees.filter(t => t.id === this.formData['F']?.Supervisor_Name?.id)[0]);
+          this.Supervisor_Name3.setValue(this.employees.filter(t => t.id === this.formData['I']?.Supervisor_Name?.id)[0]);
           if (this.Supervisor_Name1.value?.id != this.passport) {
             this.Training_Request_Forms_E.controls['Training_Importantce'].disable();
             this.Training_Request_Forms_E.controls['Approved'].disable();
@@ -607,17 +753,36 @@ export class TrainingRequestFormComponent implements OnInit {
             this.Training_Request_Forms_F.controls['Opinion_Date'].disable();
             this.Supervisor_Name2.disable();
           }
+          if (this.Supervisor_Name1.value?.id != this.passport && this.Supervisor_Name3.value?.id != this.passport && this.Supervisor_Name3.value?.id != null) {
+            this.Training_Request_Forms_I.controls['Training_Importantce'].disable();
+            this.Training_Request_Forms_I.controls['Approved'].disable();
+            this.Training_Request_Forms_I.controls['Recommendations'].disable();
+            this.Training_Request_Forms_I.controls['Opinion_Date'].disable();
+            this.Supervisor_Name3.disable();
+          }
         }, 1500);
       });
   }
 
   // Get the FormArray for convenience
-  get healthCorporationArray() {
-    return this.Training_Request_Forms_D.get('Health_Corporation') as FormArray;
+  get Keren_Dept_CorporationArray() {
+    return this.Training_Request_Forms_D.get('Keren_Dept_Corporation') as FormArray;
   }
   // Get the FormArray for convenience
-  get DepartmentFundArray() {
-    return this.Training_Request_Forms_D.get('Department_Fund') as FormArray;
+  get Number_FundArray() {
+    return this.Training_Request_Forms_D.get('Number_Fund') as FormArray;
+  }
+  // Get the FormArray for convenience
+  get Closed_FundArray() {
+    return this.Training_Request_Forms_D.get('Closed_Fund') as FormArray;
+  }
+  // Get the FormArray for convenience
+  get Central_FundArray() {
+    return this.Training_Request_Forms_D.get('Central_Fund') as FormArray;
+  }
+  // Get the FormArray for convenience
+  get Other_FundArray() {
+    return this.Training_Request_Forms_D.get('Other_Fund') as FormArray;
   }
 
   // Handle close button
@@ -653,6 +818,19 @@ export class TrainingRequestFormComponent implements OnInit {
               this.Training_Request_Forms_F.controls['Supervisor_Name'].setValidators(Validators.required);
             this.Training_Request_Forms_F.controls['Supervisor_Name'].updateValueAndValidity();
             this.Training_Request_Forms_E.controls[type].setValue(data.sign);
+            break;
+          case 7:
+            if (data.sign == "data:image/png;base64,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MACCpYtMgAABAgQMAD9AgAABAgSCAgZAsHSRCRAgQICAAeAHCBAgQIBAUMAACJYuMgECBAgQMAD8AAECBAgQCAoYAMHSRSZAgAABAgaAHyBAgAABAkEBAyBYusgECBAgQMAA8AMECBAgQCAoYAAESxeZAAECBAgYAH6AAAECBAgEBQyAYOkiEyBAgAABA8APECBAgACBoIABECxdZAIECBAgYAD4AQIECBAgEBQwAIKli0yAAAECBAwAP0CAAAECBIICBkCwdJEJECBAgIAB4AcIECBAgEBQwAAIli4yAQIECBAwAPwAAQIECBAIChgAwdJFJkCAAAECBoAfIECAAAECQQEDIFi6yAQIECBAwADwAwQIECBAIChgAARLF5kAAQIECBgAfoAAAQIECAQFDIBg6SITIECAAAEDwA8QIECAAIGggAEQLF1kAgQIECBgAPgBAgQIECAQFDAAgqWLTIAAAQIEDAA/QIAAAQIEggIGQLB0kQkQIECAgAHgBwgQIECAQFDAAAiWLjIBAgQIEDAA/AABAgQIEAgKGADB0kUmQIAAAQIGgB8gQIAAAQJBAQMgWLrIBAgQIEDAAPADBAgQIEAgKGAABEsXmQABAgQIGAB+gAABAgQIBAUMgGDpIhMgQIAAAQPADxAgQIAAgaCAARAsXWQCBAgQIGAA+AECBAgQIBAUMACCpYtMgAABAgQMAD9AgAABAgSCAgZAsHSRCRAgQICAAeAHCBAgQIBAUMAACJYuMgECBAgQMAD8AAECBAgQCAoYAMHSRSZAgAABAgaAHyBAgAABAkEBAyBYusgECBAgQMAA8AMECBAgQCAoYAAESxeZAAECBAgYAH6AAAECBAgEBQyAYOkiEyBAgAABA8APECBAgACBoIABECxdZAIECBAgYAD4AQIECBAgEBQwAIKli0yAAAECBAwAP0CAAAECBIICBkCwdJEJECBAgIAB4AcIECBAgEBQwAAIli4yAQIECBAwAPwAAQIECBAIChgAwdJFJkCAAAECBoAfIECAAAECQQEDIFi6yAQIECBAwADwAwQIECBAIChgAARLF5kAAQIECBgAfoAAAQIECAQFDIBg6SITIECAAAEDwA8QIECAAIGggAEQLF1kAgQIECBgAPgBAgQIECAQFDAAgqWLTIAAAQIEDAA/QIAAAQIEggIGQLB0kQkQIECAgAHgBwgQIECAQFDAAAiWLjIBAgQIEDAA/AABAgQIEAgKGADB0kUmQIAAAQIGgB8gQIAAAQJBAQMgWLrIBAgQIEDAAPADBAgQIEAgKGAABEsXmQABAgQIGAB+gAABAgQIBAUMgGDpIhMgQIAAAQPADxAgQIAAgaCAARAsXWQCBAgQIGAA+AECBAgQIBAUMACCpYtMgAABAgQMAD9AgAABAgSCAgZAsHSRCRAgQICAAeAHCBAgQIBAUMAACJYuMgECBAgQMAD8AAECBAgQCAoYAMHSRSZAgAABAgaAHyBAgAABAkEBAyBYusgECBAgQMAA8AMECBAgQCAoYAAESxeZAAECBAgYAH6AAAECBAgEBQyAYOkiEyBAgAABA8APECBAgACBoIABECxdZAIECBAgYAD4AQIECBAgEBQwAIKli0yAAAECBAwAP0CAAAECBIICBkCwdJEJECBAgIAB4AcIECBAgEBQwAAIli4yAQIECBAwAPwAAQIECBAIChgAwdJFJkCAAAECBoAfIECAAAECQQEDIFi6yAQIECBAwADwAwQIECBAIChgAARLF5kAAQIECBgAfoAAAQIECAQFDIBg6SITIECAAAEDwA8QIECAAIGggAEQLF1kAgQIECBgAPgBAgQIECAQFDAAgqWLTIAAAQIEDAA/QIAAAQIEggIGQLB0kQkQIECAgAHgBwgQIECAQFDAAAiWLjIBAgQIEDAA/AABAgQIEAgKGADB0kUmQIAAAQIGgB8gQIAAAQJBAQMgWLrIBAgQIEDAAPADBAgQIEAgKGAABEsXmQABAgQIGAB+gAABAgQIBAUMgGDpIhMgQIAAAQPADxAgQIAAgaCAARAsXWQCBAgQIGAA+AECBAgQIBAUMACCpYtMgAABAgQMAD9AgAABAgSCAgZAsHSRCRAgQICAAeAHCBAgQIBAUMAACJYuMgECBAgQMAD8AAECBAgQCAoYAMHSRSZAgAABAgaAHyBAgAABAkEBAyBYusgECBAgQMAA8AMECBAgQCAoYAAESxeZAAECBAgYAH6AAAECBAgEBQyAYOkiEyBAgAABA8APECBAgACBoIABECxdZAIECBAgYAD4AQIECBAgEBQwAIKli0yAAAECBAwAP0CAAAECBIICBkCwdJEJECBAgIAB4AcIECBAgEBQwAAIli4yAQIECBAwAPwAAQIECBAIChgAwdJFJkCAAAECBoAfIECAAAECQQEDIFi6yAQIECBAwADwAwQIECBAIChgAARLF5kAAQIECBgAfoAAAQIECAQFDIBg6SITIECAAAEDwA8QIECAAIGggAEQLF1kAgQIECDwoOYBoxwL39cAAAAASUVORK5CYII=") {
+              this.Training_Request_Forms_I.controls[type].setValue(undefined);
+              return;
+            }
+            // this.Supervisor_Name2.setValidators(Validators.required);
+            // this.Supervisor_Name2.updateValueAndValidity();
+            // if (this.Training_Request_Forms_F.value.Supervisor_Name.id == "")
+
+            //   this.Training_Request_Forms_F.controls['Supervisor_Name'].setValidators(Validators.required);
+            // this.Training_Request_Forms_F.controls['Supervisor_Name'].updateValueAndValidity();
+            this.Training_Request_Forms_I.controls[type].setValue(data.sign);
             break;
           case 6:
             if (data.sign == "data:image/png;base64,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MACCpYtMgAABAgQMAD9AgAABAgSCAgZAsHSRCRAgQICAAeAHCBAgQIBAUMAACJYuMgECBAgQMAD8AAECBAgQCAoYAMHSRSZAgAABAgaAHyBAgAABAkEBAyBYusgECBAgQMAA8AMECBAgQCAoYAAESxeZAAECBAgYAH6AAAECBAgEBQyAYOkiEyBAgAABA8APECBAgACBoIABECxdZAIECBAgYAD4AQIECBAgEBQwAIKli0yAAAECBAwAP0CAAAECBIICBkCwdJEJECBAgIAB4AcIECBAgEBQwAAIli4yAQIECBAwAPwAAQIECBAIChgAwdJFJkCAAAECBoAfIECAAAECQQEDIFi6yAQIECBAwADwAwQIECBAIChgAARLF5kAAQIECBgAfoAAAQIECAQFDIBg6SITIECAAAEDwA8QIECAAIGggAEQLF1kAgQIECBgAPgBAgQIECAQFDAAgqWLTIAAAQIEDAA/QIAAAQIEggIGQLB0kQkQIECAgAHgBwgQIECAQFDAAAiWLjIBAgQIEDAA/AABAgQIEAgKGADB0kUmQIAAAQIGgB8gQIAAAQJBAQMgWLrIBAgQIEDAAPADBAgQIEAgKGAABEsXmQABAgQIGAB+gAABAgQIBAUMgGDpIhMgQIAAAQPADxAgQIAAgaCAARAsXWQCBAgQIGAA+AECBAgQIBAUMACCpYtMgAABAgQMAD9AgAABAgSCAgZAsHSRCRAgQICAAeAHCBAgQIBAUMAACJYuMgECBAgQMAD8AAECBAgQCAoYAMHSRSZAgAABAgaAHyBAgAABAkEBAyBYusgECBAgQMAA8AMECBAgQCAoYAAESxeZAAECBAgYAH6AAAECBAgEBQyAYOkiEyBAgAABA8APECBAgACBoIABECxdZAIECBAgYAD4AQIECBAgEBQwAIKli0yAAAECBAwAP0CAAAECBIICBkCwdJEJECBAgIAB4AcIECBAgEBQwAAIli4yAQIECBAwAPwAAQIECBAIChgAwdJFJkCAAAECBoAfIECAAAECQQEDIFi6yAQIECBAwADwAwQIECBAIChgAARLF5kAAQIECBgAfoAAAQIECAQFDIBg6SITIECAAAEDwA8QIECAAIGggAEQLF1kAgQIECBgAPgBAgQIECAQFDAAgqWLTIAAAQIEDAA/QIAAAQIEggIGQLB0kQkQIECAgAHgBwgQIECAQFDAAAiWLjIBAgQIEDAA/AABAgQIEAgKGADB0kUmQIAAAQIGgB8gQIAAAQJBAQMgWLrIBAgQIEDAAPADBAgQIEAgKGAABEsXmQABAgQIGAB+gAABAgQIBAUMgGDpIhMgQIAAAQPADxAgQIAAgaCAARAsXWQCBAgQIGAA+AECBAgQIBAUMACCpYtMgAABAgQMAD9AgAABAgSCAgZAsHSRCRAgQICAAeAHCBAgQIBAUMAACJYuMgECBAgQMAD8AAECBAgQCAoYAMHSRSZAgAABAgaAHyBAgAABAkEBAyBYusgECBAgQMAA8AMECBAgQCAoYAAESxeZAAECBAgYAH6AAAECBAgEBQyAYOkiEyBAgAABA8APECBAgACBoIABECxdZAIECBAgYAD4AQIECBAgEBQwAIKli0yAAAECBAwAP0CAAAECBIICBkCwdJEJECBAgIAB4AcIECBAgEBQwAAIli4yAQIECBAwAPwAAQIECBAIChgAwdJFJkCAAAECBoAfIECAAAECQQEDIFi6yAQIECBAwADwAwQIECBAIChgAARLF5kAAQIECBgAfoAAAQIECAQFDIBg6SITIECAAAEDwA8QIECAAIGggAEQLF1kAgQIECBgAPgBAgQIECAQFDAAgqWLTIAAAQIEDAA/QIAAAQIEggIGQLB0kQkQIECAgAHgBwgQIECAQFDAAAiWLjIBAgQIEDAA/AABAgQIEAgKGADB0kUmQIAAAQIGgB8gQIAAAQJBAQMgWLrIBAgQIEDAAPADBAgQIEAgKGAABEsXmQABAgQIGAB+gAABAgQIBAUMgGDpIhMgQIAAAQPADxAgQIAAgaCAARAsXWQCBAgQIGAA+AECBAgQIBAUMACCpYtMgAABAgQMAD9AgAABAgSCAgZAsHSRCRAgQICAAeAHCBAgQIBAUMAACJYuMgECBAgQMAD8AAECBAgQCAoYAMHSRSZAgAABAgaAHyBAgAABAkEBAyBYusgECBAgQMAA8AMECBAgQCAoYAAESxeZAAECBAgYAH6AAAECBAgEBQyAYOkiEyBAgAABA8APECBAgACBoIABECxdZAIECBAgYAD4AQIECBAgEBQwAIKli0yAAAECBAwAP0CAAAECBIICBkCwdJEJECBAgIAB4AcIECBAgEBQwAAIli4yAQIECBAwAPwAAQIECBAIChgAwdJFJkCAAAECBoAfIECAAAECQQEDIFi6yAQIECBAwADwAwQIECBAIChgAARLF5kAAQIECBgAfoAAAQIECAQFDIBg6SITIECAAAEDwA8QIECAAIGggAEQLF1kAgQIECDwoOYBoxwL39cAAAAASUVORK5CYII=") {
@@ -693,8 +871,7 @@ export class TrainingRequestFormComponent implements OnInit {
     this.http
       .post(environment.url + "GetAllTrainingRequestQuestionsList", {})
       .subscribe((Response) => {
-        this.Health_Corporation_Options = Response['d'].filter(x => x.QuestionID == '1')[0];
-        this.Department_Fund_Options = Response['d'].filter(x => x.QuestionID == '2')[0];
+        this.Keren_Dept_Corporation_Options = this.Number_Fund_Options = this.Central_Fund_Options = this.Other_Fund_Options = this.Department_Fund_Options = Response['d'].filter(x => x.QuestionID == '1')[0];
         this.Training_Importantce_Options = Response['d'].filter(x => x.QuestionID == '3')[0];
         this.Training_Importantce_Options2 = Response['d'].filter(x => x.QuestionID == '4')[0];
         this.Training_Importantce_Options3 = Response['d'].filter(x => x.QuestionID == '5')[0];
@@ -744,10 +921,12 @@ export class TrainingRequestFormComponent implements OnInit {
           this.Training_Request_Forms_G.controls['Work_Place'].setValue(patient.WorkPlaceDescription);
           this.Training_Request_Forms_G.controls['Function_Department'].setValue(patient.FunctionDescription + ' - ' + patient.DepartnentDescripton);
           this.Training_Request_Forms_G.controls['Standart_Level'].setValue(patient.RankDescription);
-          this.Supervisor_Name1.setValue(this.employees.filter(t => t.id === patient.ManagerID1.id)[0]);
-          this.Supervisor_Name2.setValue(this.employees.filter(t => t.id === patient.ManagerID2.id)[0]);
+          this.Supervisor_Name1.setValue(this.employees.filter(t => t.id === patient.ManagerID1?.id)[0]);
+          this.Supervisor_Name2.setValue(this.employees.filter(t => t.id === patient.ManagerID2?.id)[0]);
+          this.Supervisor_Name3.setValue(this.employees.filter(t => t.id === patient.ManagerID3?.id)[0]);
           this.Training_Request_Forms_E.controls['Supervisor_Name'].setValue(this.Supervisor_Name1.value);
           this.Training_Request_Forms_F.controls['Supervisor_Name'].setValue(this.Supervisor_Name2.value);
+          this.Training_Request_Forms_I.controls['Supervisor_Name'].setValue(this.Supervisor_Name3.value);
           if (this.Supervisor_Name1.value?.id != this.passport) {
             this.Training_Request_Forms_E.controls['Training_Importantce'].disable();
             // this.Training_Request_Forms_E.controls['Approved'].disable();
@@ -759,6 +938,12 @@ export class TrainingRequestFormComponent implements OnInit {
             // this.Training_Request_Forms_F.controls['Approved'].disable();
             this.Training_Request_Forms_F.controls['Recommendations'].disable();
             this.Training_Request_Forms_F.controls['Opinion_Date'].disable();
+          }
+          if (this.Supervisor_Name3.value?.id != this.passport) {
+            this.Training_Request_Forms_I.controls['Training_Importantce'].disable();
+            // this.Training_Request_Forms_F.controls['Approved'].disable();
+            this.Training_Request_Forms_I.controls['Recommendations'].disable();
+            this.Training_Request_Forms_I.controls['Opinion_Date'].disable();
           }
         }
       });
@@ -776,6 +961,7 @@ export class TrainingRequestFormComponent implements OnInit {
       this.Training_Request_Forms_B.controls['Date_End'].setValue(this.datePipe.transform(this.Training_Request_Forms_B.value.Date_End, 'yyyy-MM-dd'));
       this.Training_Request_Forms_C.controls['Request_Name'].setValue(this.datePipe.transform(this.Training_Request_Forms_C.value.Request_Name, 'yyyy-MM-dd'));
       this.Training_Request_Forms_E.controls['Opinion_Date'].setValue(this.datePipe.transform(this.Training_Request_Forms_E.controls['Opinion_Date'].value, 'yyyy-MM-dd'));
+      this.Training_Request_Forms_I.controls['Opinion_Date'].setValue(this.datePipe.transform(this.Training_Request_Forms_I.controls['Opinion_Date'].value, 'yyyy-MM-dd'));
       this.Training_Request_Forms_F.controls['Opinion_Date'].setValue(this.datePipe.transform(this.Training_Request_Forms_F.controls['Opinion_Date'].value, 'yyyy-MM-dd'));
       this.Training_Request_Forms_G.controls['Work_Start_Date'].setValue(this.datePipe.transform(this.Training_Request_Forms_G.value.Work_Start_Date, 'yyyy-MM-dd'));
       const base64Data = this.Training_Request_Forms_B.controls['Program_Attached'].value;
@@ -795,6 +981,7 @@ export class TrainingRequestFormComponent implements OnInit {
           C: this.Training_Request_Forms_C.getRawValue(),
           D: this.Training_Request_Forms_D.getRawValue(),
           E: this.Training_Request_Forms_E.getRawValue(),
+          I: this.Training_Request_Forms_I.getRawValue(),
           F: this.Training_Request_Forms_F.getRawValue(),
           H: this.Training_Request_Forms_H.getRawValue(),
           G: this.Training_Request_Forms_G.getRawValue(),

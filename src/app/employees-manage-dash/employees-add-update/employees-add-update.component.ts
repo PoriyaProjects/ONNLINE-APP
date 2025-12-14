@@ -114,6 +114,16 @@ export class EmployeesAddUpdateComponent implements OnInit {
     PersonalEmail: 'מייל אישי',
     SubDepartmentCode: 'תת מחלקה',
   };
+  notify_arr = [
+    { value: 1, text: 'שמירת הריון' },
+    { value: 1, text: 'מחלה ממושכת' },
+    { value: 2, text: 'חל"ד' },
+    { value: 3, text: 'סיום העסקה בגין התפטרות' },
+    { value: 3, text: 'סיום חוזה במועד' },
+    { value: 3, text: 'סיום התמחות' },
+    { value: 3, text: 'חיצוני סיום העסקה' },
+    { value: 4, text: 'סיום העסקה בגין פרישה' }
+  ];
   @ViewChild('modalEmployeeHistory', { static: true }) modalEmployeeHistory: TemplateRef<any>;
   dataSource: MatTableDataSource<any>;
 
@@ -264,6 +274,7 @@ export class EmployeesAddUpdateComponent implements OnInit {
           CarType2: new FormControl(this.employee.CarType2, null),
           CarNumber2: new FormControl(this.employee.CarNumber2, null),
           Remarks: new FormControl(this.employee.Remarks, null),
+          Notifications: new FormControl(this.employee.Notifications, null),
           DocLicence: new FormControl(this.employee.DocLicence, null),
           DocStartExperience: new FormControl(this.employee.DocStartExperience, null),
           InternLearnCountry: new FormControl(this.employee.InternLearnCountry, null),
@@ -607,6 +618,7 @@ export class EmployeesAddUpdateComponent implements OnInit {
               CarType2: new FormControl(this.employee.CarType2, null),
               CarNumber2: new FormControl(this.employee.CarNumber2, null),
               Remarks: new FormControl(this.employee.Remarks, null),
+              Notifications: new FormControl(this.employee.Notifications, null),
               DocLicence: new FormControl(this.employee.DocLicence, null),
               DocStartExperience: new FormControl(this.employee.DocStartExperience, null),
               InternLearnCountry: new FormControl(this.employee.InternLearnCountry, null),

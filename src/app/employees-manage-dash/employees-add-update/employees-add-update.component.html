@@ -358,6 +358,16 @@
                                     <input matInput placeholder="הערות" formControlName="Remarks">
                                 </mat-form-field>
                             </div>
+                            <div class="col-3">
+                                <mat-form-field>
+                                    <mat-label>התראות</mat-label>
+                                    <mat-select formControlName="Notifications" aria-placeholder="התראות">
+                                        <mat-option value=""> </mat-option>
+                                        <mat-option *ngFor="let not of notify_arr" [value]="not.value">
+                                            {{not.text}} </mat-option>
+                                    </mat-select>
+                                </mat-form-field>
+                            </div>
                         </div>
                     </ol>
                     <div>

@@ -31,6 +31,9 @@ export interface Supplier {
   CorporateNDA: string;
   ISOCer: string;
   RowStatus: string;
+  OperationType: string;
+  SignedSecrecyAgreement: string;
+  Comments: string;
   InsertDateTime: string;
   InsertUser: string;
   UpdateUser: string;
@@ -96,6 +99,19 @@ export class EditOrAddSupplierComponent implements OnInit {
     {id: "0", value: 'לא פעיל'},
     {id: "1", value: 'פעיל'}
   ]
+  OperationTypeList  : any =  
+  [
+    {id: "1", value: 'מערכת מחשב'},
+    {id: "2", value: 'מערכת אבטחת מידע'},
+    {id: "3", value: 'מכשור רפואי'}
+  ]
+  
+  SignedSecrecyAgreementList  : any =  
+  [
+    {id: "1", value: 'כן'},
+    {id: "2", value: 'לא'},
+    {id: "3", value: 'משרד הבריאות'}
+  ]
   ABCList : any = 
   [
     {id: "A", value: 'A'},
@@ -145,6 +161,9 @@ export class EditOrAddSupplierComponent implements OnInit {
       TestAM: [this.data.element.TestAM, null],
       ISOCer: [this.data.element.ISOCer, null],
       RowStatus: [this.data.element.RowStatus, null],
+      OperationType: [this.data.element.OperationType, null],
+      SignedSecrecyAgreement: [this.data.element.SignedSecrecyAgreement, null],
+      Comments: [this.data.element.Comments, null],
       InsertDateTime: [this.data.element.InsertDateTime, null],
       UpdateDateTime: [this.data.element.UpdateDateTime, null],
       UpdateUser: [localStorage.getItem("loginUserName"), null],
