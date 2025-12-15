@@ -25,6 +25,7 @@ import { PDFDocument } from 'pdf-lib';
 export class TrainingRequestFormComponent implements OnInit {
   Training_Request_Forms_A: FormGroup;
   Training_Request_Forms_B: FormGroup;
+  AttachmentsForm: FormGroup;
   Training_Request_Forms_C: FormGroup;
   Training_Request_Forms_D: FormGroup;
   Training_Request_Forms_E: FormGroup;
@@ -306,12 +307,28 @@ export class TrainingRequestFormComponent implements OnInit {
     const start = this.Training_Request_Forms_B.get('Date_Start')?.value;
 
     if (start) {
-      // Convert to Date object if Angular stores it as a string
       const dateStart = new Date(start);
 
+      // Today's date (clear time for accurate comparison)
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      // 14 days from today
+      const minStartDate = new Date();
+      minStartDate.setDate(today.getDate() + 14);
+
+      // Validate: Date_Start must be 14 days ahead
+      if (dateStart < minStartDate) {
+        // If invalid → clear Date_Start and show error message
+        this.Training_Request_Forms_B.get('Date_Start')?.setErrors({ minDate: true });
+        this.minimumDateEnd = null;
+        return;
+      }
+
+      // If valid: set Date_End minimum to Date_Start
       this.minimumDateEnd = dateStart;
 
-      // If current Date_End is before the new minimum → clear it
+      // If Date_End is earlier than Date_Start → clear it
       const currentEnd = this.Training_Request_Forms_B.get('Date_End')?.value;
       if (currentEnd && new Date(currentEnd) < dateStart) {
         this.Training_Request_Forms_B.get('Date_End')?.setValue(null);
@@ -331,6 +348,7 @@ export class TrainingRequestFormComponent implements OnInit {
         this.formData = Response['d'];
         let Training_Request_Forms_A = this.formData['A'];
         let Training_Request_Forms_B = this.formData['B'];
+        let Training_Request_Program_Attach = this.formData['B']['Program_Attached'];
         let Training_Request_Forms_C = this.formData['C'];
         let Training_Request_Forms_D = this.formData['D'];
         let Training_Request_Forms_E = this.formData['E'];
@@ -357,13 +375,17 @@ export class TrainingRequestFormComponent implements OnInit {
           Date_End: new FormControl(Training_Request_Forms_B?.Date_End, Validators.required),
           Request_Duration: new FormControl(Training_Request_Forms_B?.Request_Duration, [Validators.required, Validators.pattern(/^[0-9]*$/)]),
           Education_Fee: new FormControl({ value: Training_Request_Forms_B?.Education_Fee, disabled: Training_Request_Forms_B?.Training_Out == 'True' }, [Validators.required, Validators.pattern(/^\d+$/)]),
-          // Transportation: new FormControl(Training_Request_Forms_B?.Transportation == 'True' ? true : false, null),
-          Program_Attached: new FormControl(Training_Request_Forms_B?.Program_Attached, Validators.required),
           Poster_Attached: new FormControl(Training_Request_Forms_B?.Poster_Attached, null),
           Absence_Time: new FormControl({ value: Training_Request_Forms_B?.Absence_Time, disabled: this.user_name != 'ttsrefati' ? true : false }, [Validators.pattern(/^\d+$/)]),
           Training_Out: new FormControl(Training_Request_Forms_B?.Training_Out == 'True' ? true : false, null),
           Galilean_Partnership: new FormControl(Training_Request_Forms_B?.Galilean_Partnership == 'True' ? true : false, null),
-          Request_Note: new FormControl(Training_Request_Forms_B?.Request_Note, Validators.required),
+          Request_Note: new FormControl(Training_Request_Forms_B?.Request_Note, [Validators.required, Validators.maxLength(5000)]),
+        });
+        this.AttachmentsForm = this.fb.group({
+          Training_Request_Program_Attach: this.fb.array([
+            this.createFileAttachmentGroup(Training_Request_Program_Attach[0]),
+            this.createFileAttachmentGroup(Training_Request_Program_Attach[1])
+          ])
         });
         this.Training_Request_Forms_C = this.fb.group({
           Request_Name: new FormControl(Training_Request_Forms_C?.Request_Name == null ? this.date_now : Training_Request_Forms_C?.Request_Name, Validators.required),
@@ -390,7 +412,7 @@ export class TrainingRequestFormComponent implements OnInit {
         });
         this.Training_Request_Forms_E = this.fb.group({
           Training_Importantce: new FormControl(Training_Request_Forms_E?.Training_Importantce, null),
-          Recommendations: new FormControl(Training_Request_Forms_E?.Recommendations, this.passport == Training_Request_Forms_E?.Passport_ID ? null : Validators.required),
+          Recommendations: new FormControl(Training_Request_Forms_E?.Recommendations, this.passport == Training_Request_Forms_E?.Passport_ID ? null : [Validators.required, Validators.maxLength(300)]),
           Opinion_Date: new FormControl(Training_Request_Forms_E?.Opinion_Date, null),
           Supervisor_Name: new FormControl(Training_Request_Forms_E?.Supervisor_Name, null),
           Supervisor_Sign: new FormControl(Training_Request_Forms_E?.Supervisor_Sign, null),
@@ -408,7 +430,7 @@ export class TrainingRequestFormComponent implements OnInit {
         });
         this.Training_Request_Forms_F = this.fb.group({
           Training_Importantce: new FormControl(Training_Request_Forms_F?.Training_Importantce, null),
-          Recommendations: new FormControl(Training_Request_Forms_F?.Recommendations, this.passport == Training_Request_Forms_F?.Passport_ID ? null : Validators.required),
+          Recommendations: new FormControl(Training_Request_Forms_F?.Recommendations, this.passport == Training_Request_Forms_F?.Passport_ID ? null : [Validators.required, Validators.maxLength(300)]),
           Opinion_Date: new FormControl(Training_Request_Forms_F?.Opinion_Date, null),
           Supervisor_Name: new FormControl(Training_Request_Forms_F?.Supervisor_Name, null),
           Supervisor_Sign: new FormControl(Training_Request_Forms_F?.Supervisor_Sign, null),
@@ -456,6 +478,23 @@ export class TrainingRequestFormComponent implements OnInit {
       });
   }
 
+  createFileAttachmentGroup(fileData: any) {
+    if (fileData == undefined) return;
+    return this.fb.group({
+      Row_ID: new FormControl(fileData?.Row_ID || null),
+      Program_String: new FormControl(fileData?.Program_String || null),
+      Size: new FormControl(fileData?.Size || null),
+      status: new FormControl(fileData?.status || null),
+      Training_Request_Forms_A_IDFK: new FormControl(fileData?.Training_Request_Forms_A_IDFK || null),
+      Update_Date: new FormControl(fileData?.Update_Date || null),
+      FileObject: new FormControl(null) // actual File upload (binary)
+    });
+  }
+
+  get Training_Request_Program_Attach_FA(): FormArray {
+    return this.AttachmentsForm.get('Training_Request_Program_Attach').value as FormArray;
+  }
+
   ApprovedStatusChanged(manager) {
     // direct manager
     if (manager == 0) {
@@ -488,7 +527,7 @@ export class TrainingRequestFormComponent implements OnInit {
     }
   }
 
-  async onFileSelected(event: Event) {
+  async onFileSelect(event: any, index: number) {
     const input = event.target as HTMLInputElement;
 
     if (input.files && input.files.length > 0) {
@@ -496,23 +535,7 @@ export class TrainingRequestFormComponent implements OnInit {
       const maxSize = 10 * 1024 * 1024; // 1MB (1,024,000 bytes)
       if (file.size > maxSize) {
         alert("הקובץ גדול מדי! יש להעלות קובץ עד 10MB.");
-        // if (file.type.startsWith('image/')) {
-        //   const compressedFile = await imageCompression(file, {
-        //     maxSizeMB: 2,
-        //     maxWidthOrHeight: 1920,
-        //     useWebWorker: true
-        //   });
-        //   console.log(compressedFile);
-        // } else {
-        //   const arrayBuffer = await file.arrayBuffer();
-        //   const pdfDoc = await PDFDocument.load(arrayBuffer, { ignoreEncryption: true });
-
-        //   // Re-save the document to reduce size
-        //   const compressedBytes = await pdfDoc.save({ useObjectStreams: true });
-        //   const compressedFile = new File([compressedBytes], file.name, { type: 'application/pdf' });
-        //   console.log(compressedFile);
-        // }
-        input.value = ""; // Clear file input
+        input.value = "";
         return;
       }
 
@@ -520,11 +543,32 @@ export class TrainingRequestFormComponent implements OnInit {
       // Convert file to Base64 string
       reader.onload = () => {
         const base64String = reader.result as string;
-        this.Training_Request_Forms_B.get('Program_Attached')?.setValue(base64String);
+        const group = this.AttachmentsForm.get('Training_Request_Program_Attach')['controls'][index]
+        // this.Training_Request_Forms_B.get('Program_Attached')?.setValue(base64String);
+        group.patchValue({
+          FileObject: file,
+          Program_String: base64String,
+          Size: file.size,
+          Update_Date: new Date()
+        });
       };
       reader.readAsDataURL(file);
     }
   }
+
+  // onFileSelect(event: any, index: number) {
+  //   const file = event.target.files[0];
+  //   if (!file) return;
+
+  //   const group = this.Training_Request_Forms_B.get('Training_Request_Program_Attach')['controls'][index];
+
+  //   group.patchValue({
+  //     FileObject: file,
+  //     Program_String: file.name,
+  //     Size: file.size,
+  //     Update_Date: new Date()
+  //   });
+  // }
 
   onFileSelectedPoster(event: Event) {
     const input = event.target as HTMLInputElement;
@@ -599,8 +643,17 @@ export class TrainingRequestFormComponent implements OnInit {
     }
   }
 
+  file_in_new_window_base64_prog(id) {
+    const base64String = this.AttachmentsForm.get('Training_Request_Program_Attach')?.value.at(id).Program_String;
+    if (base64String) {
+      this.openFile(base64String);
+    } else {
+      console.error('No file available to open');
+    }
+  }
+
   file_in_new_window_base64() {
-    const base64String = this.Training_Request_Forms_B.get('Program_Attached')?.value;
+    const base64String = this.AttachmentsForm.get('Program_Attached')?.value;
     if (base64String) {
       this.openFile(base64String);
     } else {
@@ -964,16 +1017,16 @@ export class TrainingRequestFormComponent implements OnInit {
       this.Training_Request_Forms_I.controls['Opinion_Date'].setValue(this.datePipe.transform(this.Training_Request_Forms_I.controls['Opinion_Date'].value, 'yyyy-MM-dd'));
       this.Training_Request_Forms_F.controls['Opinion_Date'].setValue(this.datePipe.transform(this.Training_Request_Forms_F.controls['Opinion_Date'].value, 'yyyy-MM-dd'));
       this.Training_Request_Forms_G.controls['Work_Start_Date'].setValue(this.datePipe.transform(this.Training_Request_Forms_G.value.Work_Start_Date, 'yyyy-MM-dd'));
-      const base64Data = this.Training_Request_Forms_B.controls['Program_Attached'].value;
+      // const base64Data = this.Training_Request_Forms_B.controls['Program_Attached'].value;
       const base64Data2 = this.Training_Request_Forms_D.controls['OutSource_Company_Plan'].value;
-      const sizeBInBytes = (base64Data.length * 3) / 4 - (base64Data.endsWith("==") ? 2 : base64Data.endsWith("=") ? 1 : 0); // Base64 size calculation
+      // const sizeBInBytes = (base64Data.length * 3) / 4 - (base64Data.endsWith("==") ? 2 : base64Data.endsWith("=") ? 1 : 0); // Base64 size calculation
       const sizeDInBytes = base64Data2 == null ? 0 : (base64Data2.length * 3) / 4 - (base64Data2.endsWith("==") ? 2 : base64Data2.endsWith("=") ? 1 : 0); // Base64 size calculation
-      const sizeInBytes = sizeBInBytes + sizeDInBytes; // Set limit (5MB in this example)
+      // const sizeInBytes = sizeBInBytes + sizeDInBytes; // Set limit (5MB in this example)
       const maxSize = 10 * 1024 * 1024; // Set limit (5MB in this example)
 
-      if (sizeInBytes > maxSize) {
-        throw new Error("Base64 data is too large! Limit 10MB");
-      }
+      // if (sizeInBytes > maxSize) {
+      //   throw new Error("Base64 data is too large! Limit 10MB");
+      // }
       this.http
         .post(environment.url + "SaveTrainingRequestForm", {
           A: this.Training_Request_Forms_A.getRawValue(),
@@ -990,6 +1043,7 @@ export class TrainingRequestFormComponent implements OnInit {
         .subscribe((Response) => {
           if (Response["d"] != 0) {
             this.openSnackBar('נשמר בהצלחה');
+            this.submitAttachedFiles(Response["d"]);
             if (final == 1) this.askBeforeSaving(Response["d"]);
             else this.dialogRef.close(null);
           } else {
@@ -998,6 +1052,32 @@ export class TrainingRequestFormComponent implements OnInit {
         });
     } else {
       this.openSnackBar('שדה/ות לא תקינים/חסרים');
+    }
+  }
+
+  submitAttachedFiles(idfk) {
+    // let file_data = {
+    //   Row_ID: file.Row_ID,
+    //   Program_String: file.Program_String,
+    //   Size: file.Size,
+    //   status: true,
+    //   Training_Request_Forms_A_IDFK: idfk,
+    //   FileObject: file.FileObject
+    // }
+    for (let i = 0; i < this.AttachmentsForm.value.Training_Request_Program_Attach.length; i++) {
+      this.http
+        .post(environment.url + "SaveForm_Program_Attached", {
+          program: this.AttachmentsForm.value.Training_Request_Program_Attach[i],
+          idfk: idfk,
+          edit: this.Training_Request_Forms_A.value.Row_ID == undefined ? false : true
+        })
+        .subscribe((Response) => {
+          if (Response["d"] != 0) {
+            this.openSnackBar('נשמר בהצלחה');
+          } else {
+            this.openSnackBar('תקלה! לא נשמר');
+          }
+        });
     }
   }
 
