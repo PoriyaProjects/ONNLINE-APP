@@ -13,16 +13,20 @@
                 <mat-form-field>
                     <mat-label>מצב</mat-label>
                     <mat-select [(ngModel)]="Status">
-                        <mat-option *ngFor="let ab of StatusList" [value]="ab.id"> {{ab.value}}
+                        <mat-option *ngFor="let ab of StatusListSearch" [value]="ab.id"> {{ab.value}}
                         </mat-option>
                     </mat-select>
                 </mat-form-field>
             </div>
         </div>
         <div class="row text-left" dir="ltr">
-            <div class="col-2">
-                <button mat-flat-button (click)="applyFilter()" color="primary" type="button">חפש</button>
+            <div class="col-4">
+                <button mat-flat-button (click)="applyFilter()" color="primary" type="button">חפש</button> &nbsp; &nbsp; &nbsp;
+                <button mat-raised-button color="" (click)="exportToExcel()">
+                    <img src="../../assets/images/excel.png" width="35px" alt="Image description" >
+                </button>
             </div>
+            
         </div>
         <br>
         <hr>
@@ -82,13 +86,13 @@
                             </ng-container>
                             <ng-container matColumnDef="RowStatus">
                                 <th mat-header-cell *matHeaderCellDef>
-                                   מצב
+                                    מצב
                                 </th>
                                 <td mat-cell *matCellDef="let element">
                                     <span *ngIf="element.RowStatus == 1">פעיל</span>
                                     <span *ngIf="element.RowStatus == 0">לא פעיל</span>
-                                    
-                                    
+
+
                                 </td>
                             </ng-container>
                             <ng-container matColumnDef="editAuthorized">
