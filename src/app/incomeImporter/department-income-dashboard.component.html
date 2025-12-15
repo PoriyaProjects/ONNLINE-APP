@@ -1,48 +1,153 @@
-<!-- TOP 5 DEPARTMENTS SECTION - Competition View with Medals -->
-<div *ngIf="isDataLoaded && topDepartments && topDepartments.length > 0" dir="rtl" class="top-departments-section">
-  <div class="top-departments-header">
-    <h2>🏆 5 המחלקות עם גידול ההכנסות הגבוה ביותר</h2>
+<!-- EXPLANATORY TEXT SECTION -->
+<div dir="rtl">
+  <div class="explanation-section">
+    <!-- Interactive Character Guide Avatar -->
+    <div class="character-guide-widget" *ngIf="showGuideAvatar">
+      <div class="character-avatar">
+        <div class="avatar-bubble">
+          <mat-icon class="avatar-icon-large">psychology</mat-icon>
+        </div>
+        
+        <div class="character-info">
+          <div class="character-name">🔍 מדריך הדוח</div>
+          <div class="character-subtitle">לחץ על סעיף כדי להרחיב</div>
+        </div>
 
-    <!-- Radio Buttons for View Type -->
-    <div class="radio-group">
-      <mat-radio-group [(ngModel)]="topDepartmentsViewType"
-        (change)="onTopDepartmentsViewChange(topDepartmentsViewType)">
-        <mat-radio-button value="difference">גידול בשקלים</mat-radio-button>
-        <mat-radio-button value="percentage">גידול באחוזים</mat-radio-button>
-      </mat-radio-group>
-    </div>
-  </div>
+        <button class="avatar-close-btn" 
+                (click)="dismissGuideAvatar()" 
+                aria-label="Close guide"
+                mat-icon-button>
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
 
-  <!-- Top 5 Ranking with Medal Icons -->
-  <div class="top-departments-list">
-    <div *ngFor="let dept of topDepartments; let i = index" class="rank-item" [class]="'rank-' + (i + 1)">
-      <div class="rank-badge">
-        <span *ngIf="i === 0">🥇</span>
-        <span *ngIf="i === 1">🥈</span>
-        <span *ngIf="i === 2">🥉</span>
-        <span *ngIf="i > 2">{{ i + 1 }}</span>
+      <div class="guide-sections">
+        <button class="guide-section-btn" 
+                (click)="openArticleShowcase('purpose')"
+                class="section-1">
+          <span class="section-icon">📋</span>
+          <span class="section-text">מטרת הדוח</span>
+        </button>
+
+        <button class="guide-section-btn" 
+                (click)="openArticleShowcase('notes')"
+                class="section-2">
+          <span class="section-icon">⚠️</span>
+          <span class="section-text">הערות חשובות</span>
+        </button>
+
+        <button class="guide-section-btn" 
+                (click)="openArticleShowcase('structure')"
+                class="section-3">
+          <span class="section-icon">🗂️</span>
+          <span class="section-text">מבנה הדוח</span>
+        </button>
       </div>
-      <div class="rank-info">
-        <div class="department-name">{{ dept.DepartmentName }}</div>
-        <div class="growth-value" *ngIf="topDepartmentsViewType === 'difference'">
-          <span class="icon">📈</span>
-          {{ formatNumber(dept.difference) }} ₪
+    </div>
+
+    <!-- Article Showcase Modal -->
+    <div class="article-showcase-overlay" *ngIf="showArticleShowcase" @fadeInOut>
+      <div class="article-showcase-modal" dir="rtl">
+        <div class="showcase-header">
+          <div class="showcase-title">
+            <span class="showcase-icon">{{ getArticleIcon() }}</span>
+            {{ getArticleTitle() }}
+          </div>
+          <button class="showcase-close-btn" 
+                  (click)="closeArticleShowcase()" 
+                  mat-icon-button
+                  aria-label="Close article">
+            <mat-icon>close</mat-icon>
+          </button>
         </div>
-        <div class="growth-value" *ngIf="topDepartmentsViewType === 'percentage'">
-          <span class="icon">📊</span>
-          {{ dept.percentage.toFixed(2) }}%
+
+        <div class="showcase-content">
+          <!-- Purpose Section -->
+          <div *ngIf="currentArticle === 'purpose'" class="article-section-display" @fadeInOut>
+            <h2>📋 מטרת הדוח</h2>
+            <p class="intro-text">לשקף את פעילות המרכז הרפואי, ברמת מחלקה ובערכים כספיים.</p>
+            <p class="explanation-note">
+              דוח זה מספק תמונת מצב מקיפה על הפעילות וההכנסות של כל מחלקה בבית החולים, 
+              תוך השוואה בין שנים שונות לזיהוי מגמות וגדילה בפעילות.
+            </p>
+          </div>
+
+          <!-- Notes Section -->
+          <div *ngIf="currentArticle === 'notes'" class="article-section-display" @fadeInOut>
+            <h2>⚠️ הערות חשובות</h2>
+            <div class="notes-list">
+              <div class="note-item">
+                <span class="note-number">1</span>
+                <p>הנתונים מופעים במחירים מלאים (מחיר ברוטו) כמופיע במחירון משרד הבריאות ובניכוי הנחות הסכמיות.</p>
+              </div>
+              <div class="note-item">
+                <span class="note-number">2</span>
+                <p>מחירים מלאים אינם מבטאים את הכנסות המרכז הרפואי בפועל. הכנסות המרכז הרפואי עומדות על 68% מהמחיר המחירון, בממוצע.</p>
+              </div>
+              <div class="note-item">
+                <span class="note-number">3</span>
+                <p>הדו"ח אינו כולל הוצאות ואינו מבטא רווחיות של מחלקות.</p>
+              </div>
+              <div class="note-item">
+                <span class="note-number">4</span>
+                <p>נתוני כל השנים מופעים בערכים ריאליים - מחירי 2025.</p>
+              </div>
+              <div class="note-item highlight">
+                <span class="note-number">⚡</span>
+                <p><strong>כל הנתונים מודדים את אותה התקופה.</strong> לדוגמא: אם נתוני 2025 כוללים 9 חודשים, נתוני השנים הקודמות יכללו גם הם את נתוני 9 חודשים מקבילים.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Structure Section -->
+          <div *ngIf="currentArticle === 'structure'" class="article-section-display" @fadeInOut>
+            <h2>🗂️ מבנה הדוח</h2>
+            <div class="structure-list">
+              <div class="structure-item">
+                <div class="structure-number">1</div>
+                <div class="structure-content">
+                  <h4>בסרגל העליון</h4>
+                  <p>בחר אגף בבית החולים כדי להצג את הנתונים הרלוונטיים.</p>
+                </div>
+              </div>
+              <div class="structure-item">
+                <div class="structure-number">2</div>
+                <div class="structure-content">
+                  <h4>לכל אגף מופיעים הנתונים הבאים:</h4>
+                  <ul>
+                    <li>✨ 5 המחלקות עם גידול הפעילות הגבוה ביותר בערכים מוחלטים / אחוזים</li>
+                    <li>📊 גרף השוואה של הכנסות שנה נוכחית לעומת שנה קודמת</li>
+                    <li>📋 טבלת הכנסות של כל מחלקה</li>
+                  </ul>
+                </div>
+              </div>
+              <div class="structure-item">
+                <div class="structure-number">3</div>
+                <div class="structure-content">
+                  <h4>בטבלה התחתונה</h4>
+                  <p>לחץ על שם המחלקה לקבל פירוט הכנסות לפי סוגי פעילות. הנתונים זמינים בערך כספי או במספר יחידות שירות.</p>
+                </div>
+              </div>
+              <div class="structure-item">
+                <div class="structure-number">4</div>
+                <div class="structure-content">
+                  <h4>מיון נתונים</h4>
+                  <p>ממיין נתוני כל מחלקה באמצעות החיצים בכותרת הטבלה.</p>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
-      <div class="rank-progress">
-        <div class="progress-bar"
-          [style.width]="(topDepartmentsViewType === 'difference' ? dept.difference / topDepartments[0].difference * 100 : dept.percentage / topDepartments[0].percentage * 100) + '%'">
+
+        <div class="showcase-footer">
+          <p class="info-text">💡 טיפ: תוכל לסגור חלון זה בכל עת על ידי לחיצה על X או בכל מקום מחוץ לתיבה</p>
         </div>
       </div>
     </div>
+
   </div>
 </div>
-
-<div dir="rtl">
+<!-- END EXPLANATION SECTION -->
 
   <!-- Top Controls -->
   <div dir="ltr" class="wrapper">
@@ -75,6 +180,48 @@
       </button>
     </div>
 
+  </div>
+
+  <!-- TOP 5 DEPARTMENTS SECTION - Competition View with Medals (Moved here and made smaller) -->
+  <div *ngIf="isDataLoaded && topDepartments && topDepartments.length > 0" dir="rtl" class="top-departments-section-compact">
+    <div class="top-departments-header-compact">
+      <h3>🏆 המחלקות עם גידול ההכנסות הגבוה ביותר</h3>
+
+      <!-- Radio Buttons for View Type -->
+      <div class="radio-group-compact">
+        <mat-radio-group [(ngModel)]="topDepartmentsViewType"
+          (change)="onTopDepartmentsViewChange(topDepartmentsViewType)">
+          <mat-radio-button value="difference">גידול בשקלים</mat-radio-button>
+          <mat-radio-button value="percentage">גידול באחוזים</mat-radio-button>
+        </mat-radio-group>
+      </div>
+    </div>
+
+    <!-- Top 5 Ranking with Medal Icons (Compact) -->
+    <div class="top-departments-list-compact">
+      <div *ngFor="let dept of topDepartments; let i = index" class="rank-item-compact" [class]="'rank-' + (i + 1)">
+        <div class="rank-badge-compact">
+          <span *ngIf="i === 0">🥇</span>
+          <span *ngIf="i === 1">🥈</span>
+          <span *ngIf="i === 2">🥉</span>
+          <span *ngIf="i > 2">{{ i + 1 }}</span>
+        </div>
+        <div class="rank-info-compact">
+          <div class="department-name-compact">{{ dept.DepartmentName }}</div>
+          <div class="growth-value-compact" *ngIf="topDepartmentsViewType === 'difference'">
+            {{ formatNumber(dept.difference) }} ₪
+          </div>
+          <div class="growth-value-compact" *ngIf="topDepartmentsViewType === 'percentage'">
+            {{ dept.percentage.toFixed(2) }}%
+          </div>
+        </div>
+        <div class="rank-progress-compact">
+          <div class="progress-bar-compact"
+            [style.width]="(topDepartmentsViewType === 'difference' ? dept.difference / topDepartments[0].difference * 100 : dept.percentage / topDepartments[0].percentage * 100) + '%'">
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- Loading Spinner -->
@@ -374,5 +521,3 @@
       <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
     </table>
   </div>
-
-</div>

@@ -5,6 +5,7 @@ import { MatTableDataSource } from '@angular/material/table';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSort, Sort } from '@angular/material/sort';
 import { ChangeDetectorRef } from '@angular/core';
+import { trigger, transition, style, animate } from '@angular/animations';
 import { environment } from "src/environments/environment";
 
 export interface DepartmentComparisonDto {
@@ -52,11 +53,27 @@ export interface TopDepartmentDto {
 @Component({
   selector: 'app-department-income-dashboard',
   templateUrl: './department-income-dashboard.component.html',
-  styleUrls: ['./department-income-dashboard.component.css']
+  styleUrls: ['./department-income-dashboard.component.css'],
+  animations: [
+    trigger('fadeInOut', [
+      transition(':enter', [
+        style({ opacity: 0, transform: 'scale(0.95)' }),
+        animate('300ms ease-in', style({ opacity: 1, transform: 'scale(1)' }))
+      ]),
+      transition(':leave', [
+        animate('300ms ease-out', style({ opacity: 0, transform: 'scale(0.95)' }))
+      ])
+    ])
+  ]
 })
 export class DepartmentIncomeDashboardComponent implements OnInit {
 
   @ViewChild(MatSort) sort!: MatSort;
+
+  // Guide Avatar
+  showGuideAvatar = true;
+  showArticleShowcase = false;
+  currentArticle: string = '';
 
   // Data arrays
   departmentIncomeData: DepartmentComparisonDto[] = [];
@@ -651,5 +668,91 @@ updateChartData(): void {
     document.body.removeChild(link);
 
     this.snackBar.open('✓ הדוח יוצא בהצלחה', 'סגור', { duration: 2000 });
+  }
+
+  /**
+   * Dismiss the guide avatar
+   */
+  dismissGuideAvatar(): void {
+    this.showGuideAvatar = false;
+    localStorage.setItem('dashboardGuideAvatarDismissed', 'true');
+  }
+
+  /**
+   * Open article showcase modal
+   */
+  openArticleShowcase(article: string): void {
+    this.currentArticle = article;
+    this.showArticleShowcase = true;
+  }
+
+  /**
+   * Close article showcase modal
+   */
+  closeArticleShowcase(): void {
+    this.showArticleShowcase = false;
+    this.currentArticle = '';
+  }
+
+  /**
+   * Get icon for current article
+   */
+  getArticleIcon(): string {
+    switch(this.currentArticle) {
+      case 'purpose':
+        return '📋';
+      case 'notes':
+        return '⚠️';
+      case 'structure':
+        return '🗂️';
+      default:
+        return '📖';
+    }
+  }
+
+  /**
+   * Get title for current article
+   */
+  getArticleTitle(): string {
+    switch(this.currentArticle) {
+      case 'purpose':
+        return 'מטרת הדוח';
+      case 'notes':
+        return 'הערות חשובות';
+      case 'structure':
+        return 'מבנה הדוח';
+      default:
+        return 'מדריך הדוח';
+    }
+  }
+
+  /**
+   * Scroll to a specific section in the explanation
+   */
+  scrollToSection(section: string): void {
+    let targetId = '';
+    
+    switch(section) {
+      case 'purpose':
+        targetId = 'section-purpose';
+        break;
+      case 'notes':
+        targetId = 'section-notes';
+        break;
+      case 'structure':
+        targetId = 'section-structure';
+        break;
+    }
+
+    if (targetId) {
+      const element = document.getElementById(targetId);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        element.classList.add('section-highlight');
+        setTimeout(() => {
+          element.classList.remove('section-highlight');
+        }, 2000);
+      }
+    }
   }
 }

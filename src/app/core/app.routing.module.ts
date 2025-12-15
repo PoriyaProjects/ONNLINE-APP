@@ -167,6 +167,8 @@ import { DimotActivityDashboardComponent } from '../dimot-activity-dashboard/dim
 import { AppointsCLDashboardComponent } from '../hospital-appointscl-dashb/google-charts/google-charts.component';
 import { HearingSurveyComponent } from '../hearing-survey/hearing-survey/hearing-survey.component';
 import { DepartmentIncomeDashboardComponent } from "../incomeImporter/department-income-dashboard.component";
+import { AutomationProcessDashboardComponent } from "../automationprocessdashboard/automation-process-dashboard.component";
+
 
 
 
@@ -292,6 +294,7 @@ const routes: Routes = [
   { path: "Injury", component: InjuryReportComponent },
   { path: "Cath", component: CathReportComponent },
   { path: "IncomeDashboard", component: DepartmentIncomeDashboardComponent },
+  { path: "AutomationProcessDashboard", component: AutomationProcessDashboardComponent },
   { path: "patients-system-conflicts", component: PatientsSystemConflictsComponent },
   { path: "Metav", component: BTirmComponent },
   { path: "Reporting", component: ReportReportingComponent },
