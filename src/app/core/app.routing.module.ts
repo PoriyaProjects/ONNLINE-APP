@@ -168,6 +168,7 @@ import { AppointsCLDashboardComponent } from '../hospital-appointscl-dashb/googl
 import { HearingSurveyComponent } from '../hearing-survey/hearing-survey/hearing-survey.component';
 import { DepartmentIncomeDashboardComponent } from "../incomeImporter/department-income-dashboard.component";
 import { AutomationProcessDashboardComponent } from "../automationprocessdashboard/automation-process-dashboard.component";
+import { DepartmentalTextureReportComponent } from "../nutrition-system/departmental-texture-report/departmental-texture-report.component";
 
 
 
@@ -381,6 +382,7 @@ const routes: Routes = [
   { path: "hospital-appoints-dashb", component: AppointsDashboardComponent },
   { path: "dimotactivity", component: DimotActivityDashboardComponent },
   { path: "hospital-appointscl-dashb", component: AppointsCLDashboardComponent },
+  { path: "departmental-texture-report", component: DepartmentalTextureReportComponent },
 
 ];
 

@@ -93,7 +93,7 @@
     "ipware": "^2.0.0",
     "jquery": "^3.7.1",
     "jsonc-parser": "^3.2.0",
-    "jspdf": "^2.5.1",
+    "jspdf": "^2.5.2",
     "jszip": "^3.7.1",
     "mat-select-filter": "^2.4.1",
     "mat-table-exporter": "^10.2.4",
