@@ -1,0 +1,204 @@
+<h2 class="page-title text-center">דוח מרקמים</h2>
+<div class="page-container" dir="rtl">
+
+    <div class="page-header" *ngIf="searchForm.get('ViewMode').value == 'department'">
+        <h2>{{searchForm.get('Departments').value}}</h2>
+    </div>
+    <mat-card class="filter-card">
+        <form [formGroup]="searchForm" class="filter-form">
+
+            <!-- Toggle -->
+            <div class="toggle-container">
+                <mat-button-toggle-group formControlName="ViewMode" appearance="legacy" exclusive class="view-toggle"
+                    (change)="viewModeToggle()">
+
+                    <mat-button-toggle value="department">
+                        <mat-icon>apartment</mat-icon>
+                        מחלקה
+                    </mat-button-toggle>
+
+                    <mat-button-toggle value="kitchen">
+                        <mat-icon>restaurant</mat-icon>
+                        מטבח
+                    </mat-button-toggle>
+
+                </mat-button-toggle-group>
+            </div>
+
+            <!-- Departments -->
+            <mat-form-field appearance="outline" *ngIf="isDepartmentView">
+                <mat-label>מחלקות</mat-label>
+                <mat-select formControlName="Departments" (selectionChange)="searchPatients()">
+                    <mat-option *ngFor="let d of departments" [value]="d">
+                        {{ d }}
+                    </mat-option>
+                </mat-select>
+            </mat-form-field>
+
+            <!-- Actions -->
+            <div class="filter-actions" *ngIf="searchForm.get('ViewMode').value == 'department'">
+                <!-- <button mat-raised-button color="primary" (click)="searchPatients()">
+                    <mat-icon>search</mat-icon>
+                    חיפוש
+                </button> -->
+
+                <button mat-stroked-button color="accent" (click)="resetTable()">
+                    <mat-icon>refresh</mat-icon>
+                    איפוס
+                </button>
+            </div>
+
+        </form>
+    </mat-card>
+
+    <!-- =====================
+       Table Card
+  ====================== -->
+    <mat-card class="table-card">
+
+        <!-- Table Search -->
+        <div class="table-toolbar">
+            <mat-form-field appearance="standard">
+                <mat-label>חיפוש חופשי</mat-label>
+                <input matInput (keyup)="applyFilter($event.target.value)">
+            </mat-form-field>
+
+            <button mat-raised-button color="success" (click)="exportToExcel()">
+                <mat-icon>file_download</mat-icon>
+                ייצוא לאקסל
+            </button>
+            <button mat-raised-button color="success" (click)="exportToPdf()">
+                <mat-icon>file_download</mat-icon>
+                <span *ngIf="!creating_pdf">קובץ PDF</span>
+                <span *ngIf="creating_pdf">מייצר קובץ ...</span>
+            </button>
+        </div>
+
+        <!-- Table -->
+        <div class="table-wrapper">
+            <table mat-table [dataSource]="dataSource" matSort>
+
+                <ng-container matColumnDef="CaseNumber">
+                    <mat-header-cell mat-header-cell *matHeaderCellDef mat-sort-header>מס' מקרה</mat-header-cell>
+                    <mat-cell mat-cell *matCellDef="let r">{{ r.CaseNumber }}</mat-cell>
+                </ng-container>
+
+                <ng-container matColumnDef="IDNumber">
+                    <mat-header-cell mat-header-cell *matHeaderCellDef mat-sort-header>ת.ז</mat-header-cell>
+                    <mat-cell mat-cell *matCellDef="let r">{{ r.IDNumber }}</mat-cell>
+                </ng-container>
+
+                <ng-container matColumnDef="LastName">
+                    <mat-header-cell mat-header-cell *matHeaderCellDef>שם מלא</mat-header-cell>
+                    <mat-cell mat-cell *matCellDef="let r">{{ r.FirstName }} {{ r.LastName }}</mat-cell>
+                </ng-container>
+
+                <ng-container matColumnDef="FatherName">
+                    <mat-header-cell mat-header-cell *matHeaderCellDef>שם אב</mat-header-cell>
+                    <mat-cell mat-cell *matCellDef="let r">{{ r.FatherName }}</mat-cell>
+                </ng-container>
+
+                <ng-container matColumnDef="DepartName" *ngIf="searchForm.get('ViewMode').value == 'kitchen'">
+                    <mat-header-cell mat-header-cell *matHeaderCellDef>מחלקה</mat-header-cell>
+                    <mat-cell mat-cell *matCellDef="let r">{{ r.DepartName }}</mat-cell>
+                </ng-container>
+
+                <ng-container matColumnDef="CurrentAllergy">
+                    <mat-header-cell mat-header-cell *matHeaderCellDef>רגישות</mat-header-cell>
+                    <mat-cell mat-cell *matCellDef="let r">{{ r.CurrentAllergy }} {{ r.OldAllergy }}</mat-cell>
+                </ng-container>
+
+                <ng-container matColumnDef="FoodType">
+                    <mat-header-cell mat-header-cell *matHeaderCellDef>סוג תזונה</mat-header-cell>
+                    <mat-cell mat-cell *matCellDef="let r">{{ r.FoodType }}</mat-cell>
+                </ng-container>
+
+                <ng-container matColumnDef="FoodTexture">
+                    <mat-header-cell mat-header-cell *matHeaderCellDef>מרקם</mat-header-cell>
+                    <mat-cell mat-cell *matCellDef="let r">{{ r.FoodTexture }}</mat-cell>
+                </ng-container>
+
+                <ng-container matColumnDef="Liquid_Type">
+                    <mat-header-cell mat-header-cell *matHeaderCellDef>נוזלים</mat-header-cell>
+                    <mat-cell mat-cell *matCellDef="let r">{{ r.Liquid_Type }}</mat-cell>
+                </ng-container>
+
+                <ng-container matColumnDef="Food_Orders">
+                    <mat-header-cell mat-header-cell *matHeaderCellDef>הנחיות אכילה</mat-header-cell>
+                    <mat-cell mat-cell *matCellDef="let r">{{ r.Food_Orders }}</mat-cell>
+                </ng-container>
+
+                <mat-header-row *matHeaderRowDef="displayedColumns"></mat-header-row>
+                <mat-row *matRowDef="let row; columns: displayedColumns"></mat-row>
+
+            </table>
+        </div>
+
+        <mat-paginator [pageSizeOptions]="[20, 50, 100]" showFirstLastButtons></mat-paginator>
+
+    </mat-card>
+
+    <!-- =====================
+       Hidden Excel Table
+  ====================== -->
+    <table id="excel-table" style="display:none">
+        <tr>
+            <th>ת.ז</th>
+            <th>שם מלא</th>
+            <th>שם אב</th>
+            <th>רגישות</th>
+            <th>סוג תזונה</th>
+            <th>מרקם</th>
+            <th>נוזלים</th>
+            <th>הנחיות אכילה</th>
+        </tr>
+        <tr *ngFor="let r of dataSource.data">
+            <td>{{ r.IDNumber }}</td>
+            <td>{{ r.FirstName }} {{ r.LastName }}</td>
+            <td>{{ r.FatherName }}</td>
+            <td>{{ r.CurrentAllergy }}</td>
+            <td>{{ r.FoodType }}</td>
+            <td>{{ r.FoodTexture }}</td>
+            <td>{{ r.Liquid_Type }}</td>
+            <td>{{ r.Food_Orders }}</td>
+        </tr>
+    </table>
+
+</div>
+
+<div #pdfContent class="pdf-container" dir="rtl" style="position: absolute; top: -10000px; right: 0; width: 1120px;">
+
+    <h2 style="text-align:center; margin-bottom:20px" *ngIf="searchForm.get('Departments').value == ''">
+        {{searchForm.get('Departments').value}}
+    </h2>
+    <h2 style="text-align:center; margin-bottom:20px" *ngIf="searchForm.get('Departments').value != ''">
+        דוח מרקמי תזונה
+    </h2>
+
+    <table class="pdf-table">
+        <thead>
+            <tr>
+                <th>ת.ז</th>
+                <th>שם מלא</th>
+                <th>שם אב</th>
+                <th>רגישות</th>
+                <th>סוג תזונה</th>
+                <th>מרקם</th>
+                <th>נוזלים</th>
+                <th>הנחיות אכילה</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr *ngFor="let r of dataSource.data">
+                <td>{{ r.IDNumber }}</td>
+                <td>{{ r.FirstName }} {{ r.LastName }}</td>
+                <td>{{ r.FatherName }}</td>
+                <td>{{ r.CurrentAllergy }}</td>
+                <td>{{ r.FoodType }}</td>
+                <td>{{ r.FoodTexture }}</td>
+                <td>{{ r.Liquid_Type }}</td>
+                <td>{{ r.Food_Orders }}</td>
+            </tr>
+        </tbody>
+    </table>
+</div>

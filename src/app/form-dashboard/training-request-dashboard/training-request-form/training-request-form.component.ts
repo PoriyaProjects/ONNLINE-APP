@@ -11,8 +11,6 @@ import { Observable } from 'rxjs';
 import { ConfirmationDialogService } from 'src/app/confirmation-dialog/confirmation-dialog.service';
 import { STEPPER_GLOBAL_OPTIONS } from '@angular/cdk/stepper';
 import { ActivatedRoute } from '@angular/router';
-import imageCompression from 'browser-image-compression';
-import { PDFDocument } from 'pdf-lib';
 
 @Component({
   selector: 'app-training-request-form',
@@ -348,7 +346,12 @@ export class TrainingRequestFormComponent implements OnInit {
         this.formData = Response['d'];
         let Training_Request_Forms_A = this.formData['A'];
         let Training_Request_Forms_B = this.formData['B'];
-        let Training_Request_Program_Attach = this.formData['B']['Program_Attached'];
+        let Training_Request_Program_Attach = [];
+        try {
+          Training_Request_Program_Attach = this.formData['B']['Program_Attached'];
+        }catch(err){
+          console.log('no programs attached');
+        }
         let Training_Request_Forms_C = this.formData['C'];
         let Training_Request_Forms_D = this.formData['D'];
         let Training_Request_Forms_E = this.formData['E'];
