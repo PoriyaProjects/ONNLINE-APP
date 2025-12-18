@@ -624,6 +624,15 @@
                   </mat-checkbox>
                 </div>
 
+                <!-- Show textarea ONLY if this section has a selected value -->
+                <div *ngIf="Training_Request_Forms_D.get(section.key)?.value">
+                  <mat-form-field>
+                    <mat-label><b>הערה ל: {{ section.label }}</b></mat-label>
+                    <textarea matInput [formControlName]="section.answer" rows="2">
+    </textarea>
+                  </mat-form-field>
+                </div>
+
                 <ng-container [ngSwitch]="section.key">
                   <p *ngSwitchCase="'Registration_Funding'">
                     במקרים של נסיעות לחו"ל:
@@ -650,12 +659,12 @@
               </div>
             </div>
             <div class="section" *ngIf="dorit_note_answer">
-              <mat-label>תשובת התאגיד</mat-label>
+              <mat-label><b>תשובת התאגיד</b></mat-label>
               <p *ngIf="user_name != 'dnudelman' && user_name != 'lnachmani'"> {{
                 Training_Request_Forms_D.get('Training_Fund_Answer').value }}
               </p>
               <mat-form-field *ngIf="user_name == 'dnudelman' || user_name == 'lnachmani' || user_name == 'adahabre'">
-                <mat-label>תשובת התאגיד</mat-label>
+                <mat-label><b>תשובת התאגיד</b></mat-label>
                 <textarea matInput formControlName="Training_Fund_Answer" rows="2"></textarea>
               </mat-form-field>
             </div>

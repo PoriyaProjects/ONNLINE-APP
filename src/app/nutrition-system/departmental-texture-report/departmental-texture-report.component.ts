@@ -20,7 +20,7 @@ interface NutritionPatient {
   FatherName: string;
   Age: number;
   DepartName: string;
-  UnitType: 'h' | 'v';
+  UnitType: 'h';
   FoodType?: string;
   FoodTexture?: string;
   CurrentAllergy?: string;

@@ -89,7 +89,8 @@ export class TrainingRequestFormComponent implements OnInit {
         { key: 'partial', label: 'מאושר בגובה תמיכה' },
         { key: 'notApproved', label: 'לא מאושר' },
         { key: 'other', label: 'אחר' }
-      ]
+      ],
+      answer: 'Registration_Funding_Answer'
     },
     {
       key: 'Flight_Funding',
@@ -99,7 +100,8 @@ export class TrainingRequestFormComponent implements OnInit {
         { key: 'partial', label: 'מאושר בגובה תמיכה' },
         { key: 'notApproved', label: 'לא מאושר' },
         { key: 'other', label: 'אחר' }
-      ]
+      ],
+      answer: 'Flight_Funding_Answer'
     },
     {
       key: 'Lodging_Funding',
@@ -109,7 +111,8 @@ export class TrainingRequestFormComponent implements OnInit {
         { key: 'partial', label: 'מאושר בגובה תמיכה' },
         { key: 'notApproved', label: 'לא מאושר' },
         { key: 'other', label: 'אחר' }
-      ]
+      ],
+      answer: 'Lodging_Funding_Answer'
     }
   ];
   plansList = [];
@@ -210,15 +213,15 @@ export class TrainingRequestFormComponent implements OnInit {
   }
 
   onSelect(event: any, sectionKey: string, optionKey: string) {
+    const control = this.Training_Request_Forms_D.get(sectionKey);
+
+    if (!control) return;
+
     if (event.checked) {
-      // Set the selected option
-      this.Training_Request_Forms_D.get(sectionKey)?.setValue(optionKey);
-    } else {
-      // If unchecked and this option is currently selected → clear it
-      const control = this.Training_Request_Forms_D.get(sectionKey);
-      if (control?.value === optionKey) {
-        control.setValue(null);
-      }
+      control.setValue(optionKey);
+    } else if (control.value === optionKey) {
+      control.setValue('');
+      this.Training_Request_Forms_D.get(sectionKey + '_Answer').setValue('');
     }
   }
 
@@ -313,7 +316,7 @@ export class TrainingRequestFormComponent implements OnInit {
 
       // 14 days from today
       const minStartDate = new Date();
-      minStartDate.setDate(today.getDate() + 14);
+      minStartDate.setDate(today.getDate() - 14);
 
       // Validate: Date_Start must be 14 days ahead
       if (dateStart < minStartDate) {
@@ -349,7 +352,7 @@ export class TrainingRequestFormComponent implements OnInit {
         let Training_Request_Program_Attach = [];
         try {
           Training_Request_Program_Attach = this.formData['B']['Program_Attached'];
-        }catch(err){
+        } catch (err) {
           console.log('no programs attached');
         }
         let Training_Request_Forms_C = this.formData['C'];
@@ -412,6 +415,9 @@ export class TrainingRequestFormComponent implements OnInit {
           Registration_Funding: new FormControl(Training_Request_Forms_D?.Registration_Funding, null),
           Flight_Funding: new FormControl(Training_Request_Forms_D?.Flight_Funding, null),
           Lodging_Funding: new FormControl(Training_Request_Forms_D?.Lodging_Funding, null),
+          Registration_Funding_Answer: new FormControl(Training_Request_Forms_D?.Registration_Funding_Answer, null),
+          Flight_Funding_Answer: new FormControl(Training_Request_Forms_D?.Flight_Funding_Answer, null),
+          Lodging_Funding_Answer: new FormControl(Training_Request_Forms_D?.Lodging_Funding_Answer, null),
         });
         this.Training_Request_Forms_E = this.fb.group({
           Training_Importantce: new FormControl(Training_Request_Forms_E?.Training_Importantce, null),
@@ -1067,12 +1073,12 @@ export class TrainingRequestFormComponent implements OnInit {
     //   Training_Request_Forms_A_IDFK: idfk,
     //   FileObject: file.FileObject
     // }
-    for (let i = 0; i < this.AttachmentsForm.value.Training_Request_Program_Attach.length; i++) {
+    const programs = this.AttachmentsForm.controls['Training_Request_Program_Attach'].value.filter(x => x != null);
+    for (let i = 0; i < programs.length; i++) {
       this.http
         .post(environment.url + "SaveForm_Program_Attached", {
-          program: this.AttachmentsForm.value.Training_Request_Program_Attach[i],
-          idfk: idfk,
-          edit: this.Training_Request_Forms_A.value.Row_ID == undefined ? false : true
+          program: programs[i],
+          idfk: idfk
         })
         .subscribe((Response) => {
           if (Response["d"] != 0) {

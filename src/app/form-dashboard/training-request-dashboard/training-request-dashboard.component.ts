@@ -30,7 +30,6 @@ export class PeopleListDialogComponent {
   }
 }
 
-
 @Component({
   selector: 'app-training-request-dashboard',
   templateUrl: './training-request-dashboard.component.html',
@@ -443,7 +442,7 @@ export class TrainingRequestDashboardComponent implements OnInit {
             <li style="margin-bottom: 5px;">מספר ימי העדרות שאושרו: ${data['H'].Approved_Absence_Time}, קוד רישום: ${data['H'].Code_Type}</li>
             ${data['H'].Approved_Percent != '' ? `<li>שכ"ל מאושר: ${(parseInt(data['H'].Approved_Percent) * parseInt(data['H'].Approved_Percent_Out_Of)) / 100}</li>` : ``}
                 ${data['H'].Transportaion === "True" ? `<li style="margin-bottom: 5px;">החזר נסיעות בגובה 100% לפי רפורמת דרך שווה.</li>` : ``}
-                ${data['H'].Approved == "מאושר" ? `<p>יש להגיש קבלה מקורית למדור שכר עד חודשיים מיום ההנפקה</p>` : ``}
+                ${data['H'].Approved == "מאושר" && data['H'].Approved_Percent != '' ? `<p>יש להגיש קבלה מקורית למדור שכר עד חודשיים מיום ההנפקה</p>` : ``}
                 ${data['H'].Approved == "מאושר התחייבות חשב" ? `<p>שכ"ל דרך התחייבות חשב</p>` : ``}
             </ul>` : `
             <p style="margin: 5px 0;">הריני להודיעך כי הועדה החליטה, לא לאשר את הבקשה.</p>`
@@ -637,6 +636,9 @@ export class TrainingRequestDashboardComponent implements OnInit {
   openPeopleDialog(): void {
     if (new Date(this.filter_plans) > new Date()) {
       this.openSnackBar("אין פרוטוקול לתאריך ועדה עתידי!");
+      return;
+    } else if (this.filter_plans == '') {
+      this.openSnackBar("יש לבחור תאריך ועדה!");
       return;
     }
     this.dialog.open(PeopleListDialogComponent, {
