@@ -233,12 +233,16 @@
                 <mat-form-field>
                   <mat-label>תאריך התחלה <p *ngIf="Training_Request_Forms_B.get('Training_Out').value">ללא ימי
                       הטיסה</p></mat-label>
-                  <input matInput [matDatepicker]="Date_Start" formControlName="Date_Start" (dateChange)="calculateDateEndMinimum()" required>
+                  <input matInput [matDatepicker]="Date_Start" formControlName="Date_Start"
+                    (dateChange)="calculateDateEndMinimum()" required>
                   <mat-datepicker-toggle matIconSuffix [for]="Date_Start"></mat-datepicker-toggle>
                   <mat-datepicker #Date_Start></mat-datepicker>
                   <mat-error
                     *ngIf="Training_Request_Forms_B.get('Date_Start').hasError('required') && Training_Request_Forms_B.get('Date_Start').touched">
                     שדה חובה
+                  </mat-error>
+                  <mat-error *ngIf="Training_Request_Forms_B.get('Date_Start').hasError('minDate')">
+                    יש לבחור תאריך שהוא לפחות 14 ימים מהיום
                   </mat-error>
                 </mat-form-field>
               </div>
@@ -275,34 +279,83 @@
                   </mat-error>
                 </mat-form-field>
               </div>
-              <div class="col-lg-2 col-md-4 col-sm-6">
-                <mat-label class="file-label">תוכנית מצורפת (תמונה / PDF) *</mat-label>
+              <div [formGroup]="AttachmentsForm">
+                <div formArrayName="Training_Request_Program_Attach" class="row">
 
-                <!-- Upload Button -->
-                <div class="file-input-container">
-                  <button mat-raised-button color="primary" (click)="fileInput.click()">
-                    <mat-icon>attach_file</mat-icon>
-                    בחר קובץ
-                  </button>
-                  <input #fileInput type="file" (change)="onFileSelected($event)" accept="application/pdf, image/*"
-                    hidden required />
-                  <span class="selected-file-name" *ngIf="Training_Request_Forms_B.get('Program_Attached')?.value">
-                    {{ Training_Request_Forms_B.get('Program_Attached')?.value?.name || 'קובץ נבחר' }}
-                  </span>
-                </div>
+                  <!-- FILE #1 -->
+                  <div class="col-lg-6 col-md-4 col-sm-6" [formGroupName]="0">
+                    <mat-label class="file-label">תוכנית מצורפת 1 (תמונה / PDF) *</mat-label>
 
-                <!-- Error message -->
-                <mat-error *ngIf="Training_Request_Forms_B.get('Program_Attached')?.hasError('required') &&
-                     Training_Request_Forms_B.get('Program_Attached')?.touched">
-                  שדה חובה
-                </mat-error>
+                    <!-- Upload -->
+                    <div class="file-input-container">
+                      <button mat-raised-button color="primary" (click)="fileInput1.click()">
+                        <mat-icon>attach_file</mat-icon>
+                        בחר קובץ 1
+                      </button>
 
-                <!-- Preview Button -->
-                <div class="file-preview" *ngIf="Training_Request_Forms_B.get('Program_Attached')?.value">
-                  <button mat-stroked-button color="accent" (click)="file_in_new_window_base64()">
-                    <mat-icon>zoom_in</mat-icon>
-                    צפייה במסמך
-                  </button>
+                      <input #fileInput1 type="file" accept="application/pdf,image/*" hidden
+                        (change)="onFileSelect($event, 0)" />
+
+                      <!-- Display filename (preferred) -->
+                      <span class="selected-file-name" *ngIf="Training_Request_Program_Attach_FA[0]">
+                        {{ Training_Request_Program_Attach_FA[0].FileName }}
+                      </span>
+                    </div>
+
+                    <!-- Validation -->
+                    <!-- <mat-error *ngIf="
+        Training_Request_Program_Attach_FA.at(0).get('Program_String')?.hasError('required') &&
+        Training_Request_Program_Attach_FA.at(0).get('Program_String')?.touched
+      ">
+                      שדה חובה
+                    </mat-error> -->
+
+                    <!-- Preview -->
+                    <div class="file-preview" *ngIf="Training_Request_Program_Attach_FA[0]">
+                      <button mat-stroked-button color="accent" (click)="file_in_new_window_base64_prog(0)">
+                        <mat-icon>zoom_in</mat-icon>
+                        צפייה במסמך 1
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- FILE #2 -->
+                  <div class="col-lg-6 col-md-4 col-sm-6" [formGroupName]="1">
+                    <mat-label class="file-label">תוכנית מצורפת 2 (תמונה / PDF) *</mat-label>
+
+                    <!-- Upload -->
+                    <div class="file-input-container">
+                      <button mat-raised-button color="primary" (click)="fileInput2.click()">
+                        <mat-icon>attach_file</mat-icon>
+                        בחר קובץ 2
+                      </button>
+
+                      <input #fileInput2 type="file" accept="application/pdf,image/*" hidden
+                        (change)="onFileSelect($event, 1)" />
+
+                      <!-- Display filename (preferred) -->
+                      <span class="selected-file-name" *ngIf="Training_Request_Program_Attach_FA[1]">
+                        {{ Training_Request_Program_Attach_FA[1].FileName }}
+                      </span>
+                    </div>
+
+                    <!-- Validation -->
+                    <!-- <mat-error *ngIf="
+        Training_Request_Program_Attach_FA.at(1).get('Program_String')?.hasError('required') &&
+        Training_Request_Program_Attach_FA.at(1).get('Program_String')?.touched
+      ">
+                      שדה חובה
+                    </mat-error> -->
+
+                    <!-- Preview -->
+                    <div class="file-preview" *ngIf="Training_Request_Program_Attach_FA[1]">
+                      <button mat-stroked-button color="accent" (click)="file_in_new_window_base64_prog(1)">
+                        <mat-icon>zoom_in</mat-icon>
+                        צפייה במסמך 2
+                      </button>
+                    </div>
+                  </div>
+
                 </div>
               </div>
               <div class="col-lg-3 col-md-4 col-sm-6">
@@ -571,6 +624,15 @@
                   </mat-checkbox>
                 </div>
 
+                <!-- Show textarea ONLY if this section has a selected value -->
+                <div *ngIf="Training_Request_Forms_D.get(section.key)?.value">
+                  <mat-form-field>
+                    <mat-label><b>הערה ל: {{ section.label }}</b></mat-label>
+                    <textarea matInput [formControlName]="section.answer" rows="2">
+    </textarea>
+                  </mat-form-field>
+                </div>
+
                 <ng-container [ngSwitch]="section.key">
                   <p *ngSwitchCase="'Registration_Funding'">
                     במקרים של נסיעות לחו"ל:
@@ -597,12 +659,12 @@
               </div>
             </div>
             <div class="section" *ngIf="dorit_note_answer">
-              <mat-label>תשובת התאגיד</mat-label>
+              <mat-label><b>תשובת התאגיד</b></mat-label>
               <p *ngIf="user_name != 'dnudelman' && user_name != 'lnachmani'"> {{
                 Training_Request_Forms_D.get('Training_Fund_Answer').value }}
               </p>
               <mat-form-field *ngIf="user_name == 'dnudelman' || user_name == 'lnachmani' || user_name == 'adahabre'">
-                <mat-label>תשובת התאגיד</mat-label>
+                <mat-label><b>תשובת התאגיד</b></mat-label>
                 <textarea matInput formControlName="Training_Fund_Answer" rows="2"></textarea>
               </mat-form-field>
             </div>
@@ -731,6 +793,14 @@
                 <mat-label>נימוקים</mat-label>
                 <textarea matInput formControlName="Recommendations" rows="4"></textarea>
               </mat-form-field>
+              <mat-hint align="end">
+                {{ Training_Request_Forms_E.get('Recommendations')?.value?.length || 0 }} / 300
+              </mat-hint>
+
+              <!-- Validation error -->
+              <mat-error *ngIf="Training_Request_Forms_E.get('Recommendations')?.hasError('maxlength')">
+                ניתן להזין עד 300 תווים בלבד
+              </mat-error>
             </div>
             <div class="col-lg-2 col-md-4 col-sm-6">
               <mat-form-field>
@@ -785,7 +855,7 @@
           (click)="markFormGroupTouched(Training_Request_Forms_E)">הבא</button>
       </div>
     </mat-step>
-    <mat-step [stepControl]="Training_Request_Forms_I" *ngIf="!requested" errorMessage="שכחת שדות חובה.">
+    <!-- <mat-step [stepControl]="Training_Request_Forms_I" *ngIf="!requested" errorMessage="שכחת שדות חובה.">
       <form [formGroup]="Training_Request_Forms_I">
         <ng-template matStepLabel>חוות דעת - ממונה ישיר תאגיד</ng-template>
         <mat-card-content>
@@ -876,7 +946,7 @@
         <button mat-button matStepperNext class="stepBtn" style="background-color: #84a8eb;"
           (click)="markFormGroupTouched(Training_Request_Forms_I)">הבא</button>
       </div>
-    </mat-step>
+    </mat-step> -->
     <mat-step [stepControl]="Training_Request_Forms_F" *ngIf="!requested" errorMessage="שכחת שדות חובה.">
       <form [formGroup]="Training_Request_Forms_F">
         <ng-template matStepLabel>חוות דעת - ממונה עקיף</ng-template>
@@ -915,6 +985,14 @@
                 <mat-label>נימוקים</mat-label>
                 <textarea matInput formControlName="Recommendations" rows="4"></textarea>
               </mat-form-field>
+              <mat-hint align="end">
+                {{ Training_Request_Forms_F.get('Recommendations')?.value?.length || 0 }} / 300
+              </mat-hint>
+
+              <!-- Validation error -->
+              <mat-error *ngIf="Training_Request_Forms_F.get('Recommendations')?.hasError('maxlength')">
+                ניתן להזין עד 300 תווים בלבד
+              </mat-error>
             </div>
             <div class="col-lg-2 col-md-4 col-sm-6">
               <mat-form-field>

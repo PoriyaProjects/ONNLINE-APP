@@ -288,6 +288,7 @@ import { DialogDoingComponent } from './dimot-activity-dashboard/dialog-doing/di
 import { HearingSurveyComponent } from './hearing-survey/hearing-survey/hearing-survey.component';
 
 import { AutomationProcessDashboardComponent } from "./automationprocessdashboard/automation-process-dashboard.component";
+import { DepartmentalTextureReportComponent } from './nutrition-system/departmental-texture-report/departmental-texture-report.component';
 
 
 
@@ -518,6 +519,7 @@ const maskConfig: Partial<IConfig> = {
     DimotActivityDashboardComponent,
     DialogDoingComponent,
     HearingSurveyComponent,
+    DepartmentalTextureReportComponent,
     //HospitalIncomeDashbComponent,
   ],
   imports: [

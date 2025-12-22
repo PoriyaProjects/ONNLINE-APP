@@ -2356,4 +2356,5 @@ button:hover{
 .event-css-Planned{}
 .event-css-Canceled .cal-event {
     color:  yellow !important;
+    background: red !important;
 }

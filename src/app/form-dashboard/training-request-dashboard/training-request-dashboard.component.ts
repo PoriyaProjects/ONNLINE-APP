@@ -30,7 +30,6 @@ export class PeopleListDialogComponent {
   }
 }
 
-
 @Component({
   selector: 'app-training-request-dashboard',
   templateUrl: './training-request-dashboard.component.html',
@@ -68,6 +67,41 @@ export class TrainingRequestDashboardComponent implements OnInit {
   decissions_list = [];
   filter_types: any = "";
   filter_plans: any = "";
+  fundingOptions = [
+    {
+      key: 'Registration_Funding',
+      label: 'מימון רישום',
+      options: [
+        { key: 'approved', label: 'מאושר' },
+        { key: 'partial', label: 'מאושר בגובה תמיכה' },
+        { key: 'notApproved', label: 'לא מאושר' },
+        { key: 'other', label: 'אחר' }
+      ],
+      answer: 'Registration_Funding_Answer'
+    },
+    {
+      key: 'Flight_Funding',
+      label: 'מימון טיסה',
+      options: [
+        { key: 'approved', label: 'מאושר' },
+        { key: 'partial', label: 'מאושר בגובה תמיכה' },
+        { key: 'notApproved', label: 'לא מאושר' },
+        { key: 'other', label: 'אחר' }
+      ],
+      answer: 'Flight_Funding_Answer'
+    },
+    {
+      key: 'Lodging_Funding',
+      label: 'מימון לינה',
+      options: [
+        { key: 'approved', label: 'מאושר' },
+        { key: 'partial', label: 'מאושר בגובה תמיכה' },
+        { key: 'notApproved', label: 'לא מאושר' },
+        { key: 'other', label: 'אחר' }
+      ],
+      answer: 'Lodging_Funding_Answer'
+    }
+  ];
 
   constructor(
     public dialog: MatDialog,
@@ -443,13 +477,16 @@ export class TrainingRequestDashboardComponent implements OnInit {
             <li style="margin-bottom: 5px;">מספר ימי העדרות שאושרו: ${data['H'].Approved_Absence_Time}, קוד רישום: ${data['H'].Code_Type}</li>
             ${data['H'].Approved_Percent != '' ? `<li>שכ"ל מאושר: ${(parseInt(data['H'].Approved_Percent) * parseInt(data['H'].Approved_Percent_Out_Of)) / 100}</li>` : ``}
                 ${data['H'].Transportaion === "True" ? `<li style="margin-bottom: 5px;">החזר נסיעות בגובה 100% לפי רפורמת דרך שווה.</li>` : ``}
-                ${data['H'].Approved == "מאושר" ? `<p>יש להגיש קבלה מקורית למדור שכר עד חודשיים מיום ההנפקה</p>` : ``}
+                ${data['H'].Approved == "מאושר" && data['H'].Approved_Percent != '' ? `<p>יש להגיש קבלה מקורית למדור שכר עד חודשיים מיום ההנפקה</p>` : ``}
                 ${data['H'].Approved == "מאושר התחייבות חשב" ? `<p>שכ"ל דרך התחייבות חשב</p>` : ``}
             </ul>` : `
             <p style="margin: 5px 0;">הריני להודיעך כי הועדה החליטה, לא לאשר את הבקשה.</p>`
       }
             <p style="margin: 5px 0;">הערות ועדה: ${data['H'].Recommendations}</p>
             ${data['D'].Training_Fund_Answer == "" ? `` : `<p style="margin: 5px 0;">תשובת התאגיד: ${data['D'].Training_Fund_Answer}</p>`}
+            ${data['D'].Registration_Funding == "" ? `` : `<p style="margin: 5px 0;">מימון רישום: ${this.getOptionLabel('Registration_Funding', data['D'].Registration_Funding)}</p> ${data['D'].Registration_Funding_Answer == '' ? `` : `<p style="margin: 5px 0;">הערה: ${data['D'].Registration_Funding_Answer}</p>`}`}
+            ${data['D'].Lodging_Funding == "" ? `` : `<p style="margin: 5px 0;">מימון לינה: ${this.getOptionLabel('Flight_Funding', data['D'].Lodging_Funding)}</p> ${data['D'].Lodging_Funding_Answer == '' ? `` : `<p style="margin: 5px 0;">הערה: ${data['D'].Lodging_Funding_Answer}</p>`}`}
+            ${data['D'].Flight_Funding == "" ? `` : `<p style="margin: 5px 0;">מימון טיסה: ${this.getOptionLabel('Lodging_Funding', data['D'].Flight_Funding)}</p> ${data['D'].Flight_Funding_Answer == '' ? `` : `<p style="margin: 5px 0;">הערה: ${data['D'].Flight_Funding_Answer}</p>`}`}
             <p style="margin: 5px 0;">${data['B'].Training_Out == "True" && data['H'].Approved === "מאושר" ? `נא לפנות לקב"ט לקבלת תדרוך לפני נסיעה לחו"ל, ללא קבלת התדרוך לפני הנסיעה לא תאושר הבקשה.` : ``}</p>
         </div>
         <br>
@@ -468,6 +505,16 @@ export class TrainingRequestDashboardComponent implements OnInit {
     </body>
     </html>
     `;
+  }
+
+  getOptionLabel(sectionKey: string, selectedKey: string): string {
+    if (!selectedKey) return '';
+
+    const section = this.fundingOptions.find(f => f.key === sectionKey);
+    if (!section) return '';
+
+    const option = section.options.find(o => o.key === selectedKey);
+    return option?.label || '';
   }
 
   createProtocolPdf(data) {
@@ -637,6 +684,9 @@ export class TrainingRequestDashboardComponent implements OnInit {
   openPeopleDialog(): void {
     if (new Date(this.filter_plans) > new Date()) {
       this.openSnackBar("אין פרוטוקול לתאריך ועדה עתידי!");
+      return;
+    } else if (this.filter_plans == '') {
+      this.openSnackBar("יש לבחור תאריך ועדה!");
       return;
     }
     this.dialog.open(PeopleListDialogComponent, {
