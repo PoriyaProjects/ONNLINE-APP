@@ -264,3 +264,92 @@
     grid-template-columns: repeat(2, 1fr);
   }
 }
+
+
+/* Item Protocols Section */
+.item-protocols-section {
+  margin-top: 60px;
+  padding-top: 40px;
+  border-top: 2px solid #e0e0e0;
+}
+
+.item-protocols-section h3 {
+  color: #333;
+  margin-bottom: 20px;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.protocol-filters {
+  margin-bottom: 20px;
+  padding: 20px;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+.protocol-filters-row {
+  display: flex;
+  gap: 20px;
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+
+.protocol-filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.protocol-filter-group label {
+  font-weight: 600;
+  font-size: 13px;
+  color: #333;
+  text-transform: uppercase;
+}
+
+.protocol-filter-group input[type="date"] {
+  padding: 10px 12px;
+  border-radius: 6px;
+  border: 1px solid #ddd;
+  font-size: 14px;
+  background: white;
+  transition: all 0.3s ease;
+}
+
+.protocol-filter-group input[type="date"]:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.protocol-checkbox-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.protocol-checkbox-group input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+}
+
+.protocol-checkbox-group label {
+  margin: 0;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 14px;
+  color: #333;
+}
+
+.protocol-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+.protocol-buttons button {
+  padding: 10px 24px !important;
+  font-size: 14px !important;
+  min-width: 140px !important;
+}

@@ -24,7 +24,7 @@
 
   <!-- Department Detail View with Metrics & Charts -->
   <div *ngIf="selectedDepartment && selectedDepartment.id !== 0 && isDataLoaded && metrics" class="detail-container">
-    
+
     <!-- Back Button & Header -->
     <div class="detail-header">
       <button mat-icon-button (click)="closeDepartment()" class="back-btn">
@@ -66,15 +66,15 @@
     <div class="charts-section">
       <div class="chart-container" *ngIf="chartData && chartData.length > 0">
         <h3>Processing Trend</h3>
-        <google-chart type="LineChart" [data]="chartData" [columns]="chartColumns" 
-                       [options]="chartOptions" [width]="'100%'" [height]="400">
+        <google-chart type="LineChart" [data]="chartData" [columns]="chartColumns" [options]="chartOptions"
+          [width]="'100%'" [height]="400">
         </google-chart>
       </div>
 
       <div class="chart-container" *ngIf="stateChartData && stateChartData.length > 0">
         <h3>Item States Distribution</h3>
-        <google-chart type="PieChart" [data]="stateChartData" [columns]="stateChartColumns" 
-                       [options]="stateChartOptions" [width]="'100%'" [height]="400">
+        <google-chart type="PieChart" [data]="stateChartData" [columns]="stateChartColumns"
+          [options]="stateChartOptions" [width]="'100%'" [height]="400">
         </google-chart>
       </div>
     </div>
@@ -100,62 +100,133 @@
       </table>
     </div>
 
+    <!-- Item Protocols Table (MRI Only) -->
+    <!-- Item Protocols Section (MRI Only) -->
+    <div *ngIf="selectedDepartment?.id === 3" class="item-protocols-section table-section">
+      <h3>📋 Item Protocols</h3>
+
+      <!-- Filters -->
+      <div class="protocol-filters">
+        <div class="protocol-filters-row">
+          <div class="protocol-filter-group">
+            <label>From Date</label>
+            <input type="date" [(ngModel)]="protocolFilters.fromDate">
+          </div>
+
+          <div class="protocol-checkbox-group">
+            <input type="checkbox" [(ngModel)]="protocolFilters.useContrast" id="useContrastCheckbox">
+            <label for="useContrastCheckbox">זריקה (Use Contrast)</label>
+          </div>
+
+          <div class="protocol-checkbox-group">
+            <input type="checkbox" [(ngModel)]="protocolFilters.IsRequireFIRSTShirn" id="IsRequireFIRSTShirnCheckbox">
+            <label for="IsRequireFIRSTShirnCheckbox">דרישה IsRequireFIRSTShirn</label>
+          </div>
+
+          <div class="protocol-buttons">
+            <button mat-raised-button color="primary" (click)="applyProtocolFilters(selectedDepartment.id)">
+              Apply Filters
+            </button>
+            <button mat-raised-button (click)="clearProtocolFilters(selectedDepartment.id)">
+              Clear Filters
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Table (only show if data exists) -->
+      <div *ngIf="itemProtocols && itemProtocols.length > 0">
+        <table class="status-table">
+          <thead>
+            <tr>
+              <th>Item ID</th>
+              <th>Protocol Name</th>
+              <th>Instructions</th>
+              <th>Create Date</th>
+              <th>Use Contrast</th>
+              <th>IsRequireFIRSTShirn</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let protocol of itemProtocols">
+              <td>{{ protocol.ItemID }}</td>
+              <td>{{ protocol.ProtocolName }}</td>
+              <td>{{ protocol.Instructions }}</td>
+              <td>{{ protocol.CreateDate | date:'short' }}</td>
+              <td>
+                <span *ngIf="protocol.UseContrast" style="color: #4caf50; font-weight: 600;">✓ Yes</span>
+                <span *ngIf="!protocol.UseContrast" style="color: #f44336; font-weight: 600;">✗ No</span>
+              </td>
+              <td>
+                <span *ngIf="protocol.IsRequireFIRSTShirn" style="color: #4caf50; font-weight: 600;">✓ Yes</span>
+                <span *ngIf="!protocol.IsRequireFIRSTShirn" style="color: #f44336; font-weight: 600;">✗ No</span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- No data message -->
+      <div *ngIf="!itemProtocols || itemProtocols.length === 0"
+        style="padding: 30px; text-align: center; color: #999; background: #f9f9f9; border-radius: 8px;">
+        <p>Select a date and click "Apply Filters" to view protocols</p>
+      </div>
+    </div>
+    <!-- NLP Metrics View -->
+    <div *ngIf="selectedDepartment && selectedDepartment.id === 0 && isDataLoaded && nlpMetrics"
+      class="detail-container">
+
+      <!-- Back Button & Header -->
+      <div class="detail-header">
+        <button mat-icon-button (click)="closeDepartment()" class="back-btn">
+          <mat-icon>arrow_back</mat-icon>
+        </button>
+        <h2>{{ selectedDepartment.name }} - Metrics</h2>
+        <div class="spacer"></div>
+      </div>
+
+      <!-- Today Metrics -->
+      <h3 style="color: white; margin-left: 20px; margin-top: 20px;">בקשות היום</h3>
+      <div class="metrics-grid">
+        <div class="metric-card">
+          <div class="metric-label">בקשות היום</div>
+          <div class="metric-value">{{ nlpMetrics.TodayRequests }}</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">הושלמו היום</div>
+          <div class="metric-value">{{ nlpMetrics.TodayCompleted }}</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">שיעור הצלחה היום</div>
+          <div class="metric-value">{{ nlpMetrics.TodaySuccessRate | number:'1.1-2' }}%</div>
+        </div>
+      </div>
+
+      <!-- Last 30 Days Metrics -->
+      <h3 style="color: white; margin-left: 20px; margin-top: 20px;">30 ימים אחרונים</h3>
+      <div class="metrics-grid">
+        <div class="metric-card">
+          <div class="metric-label">סה"כ בקשות (30 ימים)</div>
+          <div class="metric-value">{{ nlpMetrics.TotalRequestsLast30 }}</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">הושלמו (30 ימים)</div>
+          <div class="metric-value">{{ nlpMetrics.CompletedRequestsLast30 }}</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">מעובדים (30 ימים)</div>
+          <div class="metric-value">{{ nlpMetrics.ProcessedRequestsLast30 }}</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">זמן עיבוד ממוצע</div>
+          <div class="metric-value">{{ nlpMetrics.AvgProcessingTimeLast30 }} דקות</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">שיעור הצלחה (30 ימים)</div>
+          <div class="metric-value">{{ nlpMetrics.SuccessRateLast30 | number:'1.1-2' }}%</div>
+        </div>
+      </div>
+
+    </div>
+
   </div>
-
-  <!-- NLP Metrics View -->
-  <div *ngIf="selectedDepartment && selectedDepartment.id === 0 && isDataLoaded && nlpMetrics" class="detail-container">
-    
-    <!-- Back Button & Header -->
-    <div class="detail-header">
-      <button mat-icon-button (click)="closeDepartment()" class="back-btn">
-        <mat-icon>arrow_back</mat-icon>
-      </button>
-      <h2>{{ selectedDepartment.name }} - Metrics</h2>
-      <div class="spacer"></div>
-    </div>
-
-    <!-- Today Metrics -->
-    <h3 style="color: white; margin-left: 20px; margin-top: 20px;">בקשות היום</h3>
-    <div class="metrics-grid">
-      <div class="metric-card">
-        <div class="metric-label">בקשות היום</div>
-        <div class="metric-value">{{ nlpMetrics.TodayRequests }}</div>
-      </div>
-      <div class="metric-card">
-        <div class="metric-label">הושלמו היום</div>
-        <div class="metric-value">{{ nlpMetrics.TodayCompleted }}</div>
-      </div>
-      <div class="metric-card">
-        <div class="metric-label">שיעור הצלחה היום</div>
-        <div class="metric-value">{{ nlpMetrics.TodaySuccessRate | number:'1.1-2' }}%</div>
-      </div>
-    </div>
-
-    <!-- Last 30 Days Metrics -->
-    <h3 style="color: white; margin-left: 20px; margin-top: 20px;">30 ימים אחרונים</h3>
-    <div class="metrics-grid">
-      <div class="metric-card">
-        <div class="metric-label">סה"כ בקשות (30 ימים)</div>
-        <div class="metric-value">{{ nlpMetrics.TotalRequestsLast30 }}</div>
-      </div>
-      <div class="metric-card">
-        <div class="metric-label">הושלמו (30 ימים)</div>
-        <div class="metric-value">{{ nlpMetrics.CompletedRequestsLast30 }}</div>
-      </div>
-      <div class="metric-card">
-        <div class="metric-label">מעובדים (30 ימים)</div>
-        <div class="metric-value">{{ nlpMetrics.ProcessedRequestsLast30 }}</div>
-      </div>
-      <div class="metric-card">
-        <div class="metric-label">זמן עיבוד ממוצע</div>
-        <div class="metric-value">{{ nlpMetrics.AvgProcessingTimeLast30 }} דקות</div>
-      </div>
-      <div class="metric-card">
-        <div class="metric-label">שיעור הצלחה (30 ימים)</div>
-        <div class="metric-value">{{ nlpMetrics.SuccessRateLast30 | number:'1.1-2' }}%</div>
-      </div>
-    </div>
-
-  </div>
-
-</div>
