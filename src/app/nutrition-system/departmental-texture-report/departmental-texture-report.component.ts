@@ -20,7 +20,7 @@ interface NutritionPatient {
   FatherName: string;
   Age: number;
   DepartName: string;
-  UnitType: 'h' | 'v';
+  UnitType: 'h';
   FoodType?: string;
   FoodTexture?: string;
   CurrentAllergy?: string;
@@ -219,45 +219,48 @@ export class DepartmentalTextureReportComponent implements OnInit {
 
   exportToPdf(): void {
     this.creating_pdf = true;
-    const element = this.pdfContent.nativeElement;
 
-    html2canvas(element, {
-      scale: 2,              // איכות גבוהה
-      useCORS: true,
-      backgroundColor: '#ffffff'
-    }).then(canvas => {
+    // Allow Angular to render the PDF DOM
+    setTimeout(() => {
+      const element = this.pdfContent.nativeElement;
 
-      const imgData = canvas.toDataURL('image/png');
+      html2canvas(element, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: '#ffffff'
+      }).then(canvas => {
+        const imgData = canvas.toDataURL('image/png');
 
-      const pdf = new jsPDF({
-        orientation: 'landscape',
-        unit: 'mm',
-        format: 'a4'
-      });
+        const pdf = new jsPDF({
+          orientation: 'landscape',
+          unit: 'mm',
+          format: 'a4'
+        });
 
-      const pageWidth = pdf.internal.pageSize.getWidth();
-      const pageHeight = pdf.internal.pageSize.getHeight();
+        const pageWidth = pdf.internal.pageSize.getWidth();
+        const pageHeight = pdf.internal.pageSize.getHeight();
 
-      const imgWidth = pageWidth;
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+        const imgWidth = pageWidth;
+        const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
-      let heightLeft = imgHeight;
-      let position = 0;
+        let heightLeft = imgHeight;
+        let position = 0;
 
-      // עמוד ראשון
-      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-      heightLeft -= pageHeight;
-
-      // עמודים נוספים (אם צריך)
-      while (heightLeft > 0) {
-        position = heightLeft - imgHeight;
-        pdf.addPage();
         pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
         heightLeft -= pageHeight;
-      }
-      this.creating_pdf = false;
 
-      pdf.save(this.searchForm.value.Departments + ' - דוח_מרקמי_תזונה.pdf');
-    });
+        while (heightLeft > 0) {
+          position = heightLeft - imgHeight;
+          pdf.addPage();
+          pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+          heightLeft -= pageHeight;
+        }
+
+        pdf.save(this.searchForm.value.Departments + ' - דוח_מרקמי_תזונה.pdf');
+
+        // 🔴 Hide PDF DOM after export
+        this.creating_pdf = false;
+      });
+    }, 0);
   }
 }

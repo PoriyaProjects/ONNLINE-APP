@@ -26,7 +26,7 @@
                 </mat-form-field>
 
                 <mat-form-field appearance="outline" class="form-field">
-                    <mat-label>רשימת ועדות החלטה</mat-label>
+                    <mat-label>תאריכי ועדות החלטה</mat-label>
                     <mat-select [(ngModel)]="filter_plans" (selectionChange)="getAllTrainingRequestFormsList()">
                         <mat-option value=""> </mat-option>
                         <mat-option *ngFor="let des of decissions_list" [value]="des.Plan_Date"> {{des.Plan_Date}}

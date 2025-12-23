@@ -99,3 +99,17 @@ mat-button-toggle mat-icon {
   background: #f0f0f0;
   font-weight: bold;
 }
+
+.highlight-liquid {
+  background-color: #fff3cd; /* light yellow */
+}
+
+/* Optional: make text stand out */
+.highlight-liquid mat-cell {
+  font-weight: 600;
+}
+
+/* Optional: hover effect */
+.highlight-liquid:hover {
+  background-color: #ffe8a1;
+}

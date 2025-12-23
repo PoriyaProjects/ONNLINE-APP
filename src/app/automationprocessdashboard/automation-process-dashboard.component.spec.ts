@@ -35,8 +35,8 @@ describe('AutomationProcessDashboardComponent', () => {
   it('should have 4 departments including NLP', () => {
     expect(component.departments.length).toBe(4);
     expect(component.departments[0].name).toBe('CT');
-    expect(component.departments[1].name).toBe('MRI');
-    expect(component.departments[2].name).toBe('GASTRO');
+    expect(component.departments[1].name).toBe('GASTRO');
+    expect(component.departments[2].name).toBe('MRI');
     expect(component.departments[3].name).toBe('NLP');
   });
 

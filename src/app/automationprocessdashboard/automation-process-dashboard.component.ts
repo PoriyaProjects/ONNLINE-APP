@@ -54,6 +54,16 @@ export interface DepartmentDto {
   icon: string;
 }
 
+
+export interface ItemProtocolDto {
+  ItemID: number;
+  ProtocolName: string;
+  Instructions: string;
+  CreateDate: Date;
+  UseContrast: boolean;
+  IsRequireFIRSTShirn: boolean;
+}
+
 @Component({
   selector: 'app-automation-process-dashboard',
   templateUrl: './automation-process-dashboard.component.html',
@@ -63,8 +73,8 @@ export class AutomationProcessDashboardComponent implements OnInit {
 
   departments: DepartmentDto[] = [
     { id: 1, name: 'CT', icon: '🩺' },
-    { id: 2, name: 'MRI', icon: '🧲' },
-    { id: 3, name: 'GASTRO', icon: '🔍' },
+    { id: 3, name: 'MRI', icon: '🧲' },
+    { id: 2, name: 'GASTRO', icon: '🔍' },
     { id: 0, name: 'NLP', icon: '🤖' }
   ];
 
@@ -77,6 +87,14 @@ export class AutomationProcessDashboardComponent implements OnInit {
 
   isLoading = false;
   isDataLoaded = false;
+
+
+itemProtocols: ItemProtocolDto[] = [];
+protocolFilters = {
+  fromDate: null as Date | null,
+  useContrast: false,
+  IsRequireFIRSTShirn: false
+};
 
   chartData: any[] = [];
   chartColumns: any[] = [
@@ -122,6 +140,75 @@ export class AutomationProcessDashboardComponent implements OnInit {
       this.loadDepartmentMetrics(dept.id);
     }
   }
+
+
+
+loadItemProtocols(unitProcessID: number): void {
+    // Check if date is selected
+    if (!this.protocolFilters.fromDate) {
+      this.snackBar.open('⚠ Please select a start date', 'Close', { duration: 3000 });
+      this.itemProtocols = [];
+      return;
+    }
+
+    let fromDate: string;
+    
+    // Check if fromDate is a string or Date object
+    if (typeof this.protocolFilters.fromDate === 'string') {
+      fromDate = this.protocolFilters.fromDate;
+    } else {
+      fromDate = this.protocolFilters.fromDate.toISOString().split('T')[0];
+    }
+
+    const useContrastStr = this.protocolFilters.useContrast ? "true" : "";
+    const IsRequireFIRSTShirnStr = this.protocolFilters.IsRequireFIRSTShirn ? "true" : "";
+
+
+    const params = {
+      unitProcessID: unitProcessID,
+      fromDate: fromDate,
+      useContrastStr: useContrastStr,
+      IsRequireFIRSTShirnStr: IsRequireFIRSTShirnStr
+    };
+
+    this.http.post(environment.url + "GetAutomationItemProtocols", params)
+      .subscribe(
+        (response: any) => {
+          // Handle both XML response and JSON response
+          let data = response.d || response;
+          
+          // If response is XML-like string, try to parse
+          if (typeof data === 'string') {
+            try {
+              data = JSON.parse(data);
+            } catch (e) {
+              console.error('Failed to parse response:', e);
+              data = [];
+            }
+          }
+          
+          this.itemProtocols = Array.isArray(data) ? data : [];
+          this.cdr.detectChanges();
+          this.snackBar.open('✓ Protocols loaded', 'Close', { duration: 2000 });
+        },
+        (error) => {
+          console.error('Error:', error);
+          this.snackBar.open('✗ Error loading protocols', 'Close', { duration: 3000 });
+          this.itemProtocols = [];
+        }
+      );
+}
+
+applyProtocolFilters(unitProcessID: number): void {
+    this.loadItemProtocols(unitProcessID);
+}
+
+clearProtocolFilters(unitProcessID: number): void {
+    this.protocolFilters.fromDate = null;
+    this.protocolFilters.useContrast = false;
+    this.protocolFilters.IsRequireFIRSTShirn = false;
+    this.loadItemProtocols(unitProcessID);
+}
 
   loadNlpDashboard(): void {
     this.isLoading = true;
@@ -231,6 +318,7 @@ export class AutomationProcessDashboardComponent implements OnInit {
     this.statusDistribution = [];
     this.itemStates = [];
     this.isDataLoaded = false;
+    this.itemProtocols = [];
   }
 
   getStatusName(status: number): string {
