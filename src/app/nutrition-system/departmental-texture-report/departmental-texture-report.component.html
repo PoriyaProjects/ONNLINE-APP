@@ -129,7 +129,10 @@
                 </ng-container>
 
                 <mat-header-row *matHeaderRowDef="displayedColumns"></mat-header-row>
-                <mat-row *matRowDef="let row; columns: displayedColumns"></mat-row>
+                <mat-row *matRowDef="let row; columns: displayedColumns" [ngClass]="{
+    'highlight-liquid': (row.Liquid_Type !== 'IDDSI =O ללא הסמכה' && row.Liquid_Type !== '') || (row.FoodTexture != 'רגיל (IDDSI 7)' && row.FoodTexture != '')
+  }">
+                </mat-row>
 
             </table>
         </div>
@@ -166,7 +169,8 @@
 
 </div>
 
-<div #pdfContent class="pdf-container" dir="rtl" style="position: absolute; top: -10000px; right: 0; width: 1120px;">
+<div *ngIf="creating_pdf" #pdfContent class="pdf-container" dir="rtl"
+    style="position: absolute; top: -10000px; right: 0; width: 1120px;">
 
     <h2 style="text-align:center; margin-bottom:20px" *ngIf="searchForm.get('Departments').value == ''">
         {{searchForm.get('Departments').value}}
