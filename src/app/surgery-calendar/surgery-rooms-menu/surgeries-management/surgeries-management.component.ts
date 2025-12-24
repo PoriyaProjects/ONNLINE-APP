@@ -267,7 +267,21 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
         });
         this.IfPlannedSurgeries = "original";
         tempArr['SurgeriesCalendarClassList'].forEach(element => {
-          const base = new Date(element.ArrivalDate.split(' ')[0] + 'T'+ element.ArrivalTime);
+          const base = new Date(element.ArrivalDate.split(' ')[0] + 'T' + element.ArrivalTime);
+          if (!element.AvgDauration || element.AvgDauration.trim() === '') {
+            const totalMinutes = Number(element.Duration);
+
+            if (!Number.isFinite(totalMinutes)) {
+              console.error('Invalid Duration:', element.Duration);
+            } else {
+              const hours = Math.floor(totalMinutes / 60);
+              const minutes = totalMinutes % 60;
+
+              element.AvgDauration =
+                String(hours).padStart(2, '0') + ':' +
+                String(minutes).padStart(2, '0');
+            }
+          }
           const [h, m] = element.AvgDauration.split(':').map(Number);
           base.setMinutes(base.getMinutes() + h * 60 + m);
           console.log(base)
