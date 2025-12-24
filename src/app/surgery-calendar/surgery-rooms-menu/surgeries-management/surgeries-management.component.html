@@ -35,8 +35,8 @@
         [ngStyle]="{'background-color': IfPlannedSurgeries == 'original' ? 'cornflowerblue' : '' }">מקור</button>
       <button *ngIf="IfPlannedSurgeries != 'dror'" mat-raised-button (click)="sortSurgeriesOfEachRoomInDay()"
         [ngStyle]="{'background-color': IfPlannedSurgeries == 'planned' ? 'cornflowerblue' : '' }">תכנון</button>
-      <button *ngIf="IfPlannedSurgeries != 'planned'" mat-raised-button (click)="plannedFromDrorSystem()"
-        [ngStyle]="{'background-color': IfPlannedSurgeries == 'dror' ? 'cornflowerblue' : '' }">דרור</button>
+      <!-- <button *ngIf="IfPlannedSurgeries != 'planned'" mat-raised-button (click)="plannedFromDrorSystem()"
+        [ngStyle]="{'background-color': IfPlannedSurgeries == 'dror' ? 'cornflowerblue' : '' }">דרור</button> -->
     </div>
     <mat-spinner *ngIf="loadingDataServer"></mat-spinner>
   </div>

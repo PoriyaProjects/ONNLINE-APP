@@ -65,6 +65,17 @@ export class ManageSingleSurgeryComponent implements OnInit, OnDestroy {
   }];
 
   ngOnInit(): void {
+    const base = new Date(`1970-01-01T${this.data.event.ArrivalTime}:00`);
+    const [h, m] = this.data.event.AvgDauration.split(':').map(Number);
+
+    base.setMinutes(base.getMinutes() + h * 60 + m);
+
+    // NO ISO, NO UTC, NO DST
+    this.data.event.EndTime =
+      `${base.getHours().toString().padStart(2, '0')}:${base.getMinutes().toString().padStart(2, '0')}`;
+
+    //this.data.event.EndTime = this.data.event.ArrivalTime + this.data.event.AvgDauration
+
     // Initialize the time and start updating it every second
     this.updateTime();
     this.intervalId = setInterval(() => {
@@ -157,6 +168,7 @@ export class ManageSingleSurgeryComponent implements OnInit, OnDestroy {
       DoctorSurgeon: new FormControl(this.data.event.DoctorSurgeon, null),
       Urgency: new FormControl(this.data.event.Urgency, null),
       Duration: new FormControl(this.data.event.Duration, null),
+      AvgDauration: new FormControl(this.data.event.AvgDauration, null),
       NoteType: new FormControl(this.data.event.NoteType, null),
       NoteTypeRequest: new FormControl(this.data.event.NoteTypeRequest, null),
       SurgeryTypeReasonRequest: new FormControl(this.data.event.SurgeryTypeReasonRequest.Row_ID, null),

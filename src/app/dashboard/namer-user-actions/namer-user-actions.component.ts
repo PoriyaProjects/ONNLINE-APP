@@ -48,7 +48,7 @@ export class NamerUserActionsComponent implements OnInit {
       })
       .subscribe((Response) => {
         try {
-          if (Response['d']) this.messageToUser = "קוד אימות נשלח לוואטסאפ שלך";
+          if (Response['d']) this.messageToUser = "קוד אימות נשלח לטלפון שלך";
           this.sendingBtn = false;
           this.disableSendBtn();
         } catch (error) {
@@ -68,7 +68,8 @@ export class NamerUserActionsComponent implements OnInit {
       .subscribe((Response) => {
         try {
           this.loading = true;
-          alert(Response['d']);
+          alert(Response['d'] + '/n סיסמה חדשה נשלחה לטלפון שלך');
+          window.location.reload();
         } catch (error) {
           console.log("error in sending notification!");
         }

@@ -267,6 +267,26 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
         });
         this.IfPlannedSurgeries = "original";
         tempArr['SurgeriesCalendarClassList'].forEach(element => {
+          const base = new Date(element.ArrivalDate.split(' ')[0] + 'T' + element.ArrivalTime);
+          if (!element.AvgDauration || element.AvgDauration.trim() === '') {
+            const totalMinutes = Number(element.Duration);
+
+            if (!Number.isFinite(totalMinutes)) {
+              console.error('Invalid Duration:', element.Duration);
+            } else {
+              const hours = Math.floor(totalMinutes / 60);
+              const minutes = totalMinutes % 60;
+
+              element.AvgDauration =
+                String(hours).padStart(2, '0') + ':' +
+                String(minutes).padStart(2, '0');
+            }
+          }
+          const [h, m] = element.AvgDauration.split(':').map(Number);
+          base.setMinutes(base.getMinutes() + h * 60 + m);
+          console.log(base)
+          element.EndTime = base.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' });
+          //debugger
           // set the title of the surgeries tabs in the dashboard
           if (element.SurgeryPatientDetails == null) {
             tempTitle = `<h6 class="text-center"><b>זמן הכנה משעה: </b>${element.ArrivalDate.split(' ')[1]}</h6>`;
@@ -277,11 +297,11 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
             מחלקה: <b>${element.SurgeryRequestDepartments.S_DEPARTMENT}</b><br>
             שם: <b>${element.SurgeryPatientDetails.PM_FIRST_NAME} ${element.SurgeryPatientDetails.PM_LAST_NAME}</b><b> -- ${element.SurgeryPatientDetails.PM_CASE_NUMBER}</b> <br>
             דחיפות: <b>${element.Urgency}</b><br>
-            S:<b>${element.ArrivalDate.split(' ')[1]}</b> - E:<b>${element.EndDate.split(' ')[1]}</b>`;
+            S:<b>${element.ArrivalDate.split(' ')[1]}</b> - E:<b>${element.EndTime}</b>`;
           }
           // set start and end time for surgeries
           element.start = new Date(element.ArrivalDate);
-          element.end = new Date(element.EndDate);
+          element.end = new Date(base);
           element.title = tempTitle;
           element.color = {
             primary: '#000000', secondary: colors[element.SurgeryStatus]
@@ -376,6 +396,7 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
         if (room.Surgeries != undefined) {
           let temp = room.Surgeries.filter(x => x.SurgeryStatus != 'Canceled');
           temp.forEach((surgery, index2) => {
+            debugger
             if (index2 == 0) {
               let mDate = new Date(temp[index2].start.getTime());
               temp[index2].start = new Date(this.datePipe.transform(mDate, 'yyyy-MM-dd 07:30'));
@@ -411,7 +432,7 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
               // change the start time of the next surgery to begin after the end of the current surgery
               next.start = new Date(current_end_time.getTime() + 1200000);
               // change the end time of the next surgery to suit the new start time of the next surgery
-              next.end = new Date(next.start.getTime() + estimated);
+              next.end = new Date(next.start.getTime() + parseInt(next.Duration) * 60 * 1000);
               /*
               next.EndDate  = next.EndTime = 
               next.ArrivalDate = next.ArrivalTime = 
