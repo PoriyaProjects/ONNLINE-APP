@@ -50,7 +50,7 @@ export class SurgeryRoomsMenuComponent implements OnInit {
     private http: HttpClient,
     public dialog: MatDialog
   ) {
-    //debugger;
+    ////debugger;
     this.surgeryRooms = data.event.day.events;
     this.surgeryRooms[0]['mSurgeriesRoomsGroup']?.forEach((element, index) => {
       if(element.RoomDes == 'ור'){
@@ -63,7 +63,7 @@ export class SurgeryRoomsMenuComponent implements OnInit {
       let totalVer = element.Virtual;
       let totalPhy = element.Physical;
       let roomName = element.CalendarRoomsArea;
-      debugger
+      //debugger
       let start = element.start;//this.datePipe.transform(element.start, 'yyyy-MM-dd')
       this.virtualSurgeryRoomsArr.forEach((element)=>{
         element.Start = start
@@ -83,7 +83,7 @@ export class SurgeryRoomsMenuComponent implements OnInit {
         findPhy[0].TotalSurgeries = totalPhy
         //findver[0].Start = start
       }
-      debugger
+      //debugger
     })
     // this.surgeryRooms.forEach((element, index) => {
     //   let numberOfPhysical = element.mSurgeriesRoomsGroup.filter(x => x.RoomDes=='פז');
@@ -121,7 +121,7 @@ export class SurgeryRoomsMenuComponent implements OnInit {
 
 
   openSurgeryRoomSchedule(room, type) {
-    debugger
+    //debugger
     room['type'] = type;
     // open the dialog only by super user and user of the same department and if the surgery room is empty! tooo much SHITTTT IS GOING ON
     if (this.userObject.UserDepartment.includes("All") || (this.userObject.UserDepartment.includes(room.S_DEPARTMENT_NAME) || room.S_DEPARTMENT_NAME == null)) {
