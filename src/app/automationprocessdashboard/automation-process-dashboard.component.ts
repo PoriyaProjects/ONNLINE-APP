@@ -54,6 +54,10 @@ export interface DepartmentDto {
   icon: string;
 }
 
+export interface ProtocolModifierDto {
+  ModifiedBy: string;
+  RowsCount: number;
+}
 
 export interface ItemProtocolDto {
   ItemID: number;
@@ -90,11 +94,31 @@ export class AutomationProcessDashboardComponent implements OnInit {
 
 
 itemProtocols: ItemProtocolDto[] = [];
+protocolModifiers: ProtocolModifierDto[] = [];
+
+
 protocolFilters = {
   fromDate: null as Date | null,
   useContrast: false,
   IsRequireFIRSTShirn: false
 };
+
+modifierFilters = {
+  fromDate: null as Date | null,
+  toDate: null as Date | null
+};
+
+
+
+applyModifierFilters(unitProcessID: number): void {
+    this.loadProtocolModifiers(unitProcessID);
+}
+
+clearModifierFilters(): void {
+    this.modifierFilters.fromDate = null;
+    this.modifierFilters.toDate = null;
+    this.protocolModifiers = [];
+}
 
   chartData: any[] = [];
   chartColumns: any[] = [
@@ -294,6 +318,56 @@ clearProtocolFilters(unitProcessID: number): void {
         (error) => console.error('Error:', error)
       );
   }
+
+
+  loadProtocolModifiers(unitProcessID: number): void {
+    if (!this.modifierFilters.fromDate || !this.modifierFilters.toDate) {
+      this.snackBar.open('⚠ Please select both From Date and To Date', 'Close', { duration: 3000 });
+      return;
+    }
+
+    let fromDate: string;
+    let toDate: string;
+    
+    if (typeof this.modifierFilters.fromDate === 'string') {
+      fromDate = this.modifierFilters.fromDate;
+    } else {
+      fromDate = this.modifierFilters.fromDate.toISOString().split('T')[0];
+    }
+
+    if (typeof this.modifierFilters.toDate === 'string') {
+      toDate = this.modifierFilters.toDate;
+    } else {
+      toDate = this.modifierFilters.toDate.toISOString().split('T')[0];
+    }
+
+    const params = {
+      unitProcessID: unitProcessID,
+      fromDate: fromDate,
+      ToDate: toDate
+    };
+
+    this.http.post(environment.url + "GetAutomationProtocolModifiers", params)
+      .subscribe(
+        (response: any) => {
+          let data = response.d || response;
+          if (typeof data === 'string') {
+            try {
+              data = JSON.parse(data);
+            } catch (e) {
+              console.error('Failed to parse response:', e);
+              data = [];
+            }
+          }
+          this.protocolModifiers = Array.isArray(data) ? data : [];
+          this.cdr.detectChanges();
+        },
+        (error) => {
+          console.error('Error:', error);
+          this.protocolModifiers = [];
+        }
+      );
+}
 
   updateTrendChart(): void {
     this.chartData = this.processingTrend.map(t => [

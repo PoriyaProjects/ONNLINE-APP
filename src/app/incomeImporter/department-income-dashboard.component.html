@@ -46,8 +46,8 @@
     </div>
 
     <!-- Article Showcase Modal -->
-    <div class="article-showcase-overlay" *ngIf="showArticleShowcase" @fadeInOut>
-      <div class="article-showcase-modal" dir="rtl">
+   <div class="article-showcase-overlay" *ngIf="showArticleShowcase" @fadeInOut (click)="closeArticleShowcase()">
+     <div class="article-showcase-modal" dir="rtl" (click)="$event.stopPropagation()">
         <div class="showcase-header">
           <div class="showcase-title">
             <span class="showcase-icon">{{ getArticleIcon() }}</span>
@@ -82,7 +82,7 @@
               </div>
               <div class="note-item">
                 <span class="note-number">2</span>
-                <p>מחירים מלאים אינם מבטאים את הכנסות המרכז הרפואי בפועל. הכנסות המרכז הרפואי עומדות על 68% מהמחיר המחירון, בממוצע.</p>
+              <p>מחירים מלאים אינם מבטאים את הכנסות המרכז הרפואי בפועל. הכנסות המרכז הרפואי עומדות על כ-68% מהמחיר המחירון, בממוצע (השיעור משתנה בין השנים).</p>
               </div>
               <div class="note-item">
                 <span class="note-number">3</span>

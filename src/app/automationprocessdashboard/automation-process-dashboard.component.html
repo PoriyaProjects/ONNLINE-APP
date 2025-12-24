@@ -100,7 +100,7 @@
       </table>
     </div>
 
-    <!-- Item Protocols Table (MRI Only) -->
+
     <!-- Item Protocols Section (MRI Only) -->
     <div *ngIf="selectedDepartment?.id === 3" class="item-protocols-section table-section">
       <h3>📋 Item Protocols</h3>
@@ -172,6 +172,70 @@
         <p>Select a date and click "Apply Filters" to view protocols</p>
       </div>
     </div>
+
+
+    <!-- Protocol Modifiers Section -->
+    <div *ngIf="selectedDepartment?.id === 3" class="table-section"
+      style="margin-top: 60px; padding-top: 40px; border-top: 2px solid #e0e0e0;">
+      <h3>👤 Who Modified the Protocols</h3>
+
+      <!-- Separate filters for modifiers -->
+      <div class="protocol-filters" style="margin-bottom: 20px;">
+        <div class="protocol-filters-row">
+          <div class="protocol-filter-group">
+            <label>From Date</label>
+            <input type="date" [(ngModel)]="modifierFilters.fromDate">
+          </div>
+
+          <div class="protocol-filter-group">
+            <label>To Date</label>
+            <input type="date" [(ngModel)]="modifierFilters.toDate">
+          </div>
+
+          <div class="protocol-buttons">
+            <button mat-raised-button color="primary" (click)="applyModifierFilters(selectedDepartment.id)">
+              Apply Filters
+            </button>
+            <button mat-raised-button (click)="clearModifierFilters()">
+              Clear Filters
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modifiers Table -->
+      <div *ngIf="protocolModifiers && protocolModifiers.length > 0">
+        <table class="status-table">
+          <thead>
+            <tr>
+              <th>Modified By</th>
+              <th>Number of Modifications</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let modifier of protocolModifiers">
+              <td>{{ modifier.ModifiedBy }}</td>
+              <td style="text-align: center;">
+                <span
+                  style="background: #667eea; color: white; padding: 6px 12px; border-radius: 20px; font-weight: 600;">
+                  {{ modifier.RowsCount }}
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- No data message -->
+      <div *ngIf="!protocolModifiers || protocolModifiers.length === 0"
+        style="padding: 30px; text-align: center; color: #999; background: #f9f9f9; border-radius: 8px;">
+        <p>Select date range and click "Apply Filters" to view who modified protocols</p>
+      </div>
+    </div>
+
+
+
+
     <!-- NLP Metrics View -->
     <div *ngIf="selectedDepartment && selectedDepartment.id === 0 && isDataLoaded && nlpMetrics"
       class="detail-container">
