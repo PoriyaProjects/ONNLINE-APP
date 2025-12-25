@@ -158,6 +158,7 @@ import { DimotActivityDashboardComponent } from "./dimot-activity-dashboard/dimo
 import { DepartmentIncomeDashboardComponent } from "./incomeImporter/department-income-dashboard.component";
 import { AutomationProcessDashboardComponent } from "./automationprocessdashboard/automation-process-dashboard.component";
 import { DepartmentalTextureReportComponent } from "./nutrition-system/departmental-texture-report/departmental-texture-report.component";
+import { WindowsUserActionsComponent } from "./dashboard/windows-user-actions/windows-user-actions.component";
 
 
 
@@ -350,6 +351,7 @@ const routes: Routes = [
     { path: "folders-management", component: FoldersManagementComponent },
     { path: "folders-dialog", component: FolderDialogComponent },
     { path: "departmental-texture-report", component: DepartmentalTextureReportComponent },
+    { path: "windows-user-actions", component: WindowsUserActionsComponent },
     
 ];
 
