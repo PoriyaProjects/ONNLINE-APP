@@ -37,6 +37,7 @@ import { MatChipInputEvent } from '@angular/material/chips';
 import { MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
 import * as ExcelJS from 'exceljs';
 import * as FileSaver from 'file-saver';
+import { de } from 'date-fns/locale';
 
 const colors: any = {
   red: '#ad2121',
@@ -267,6 +268,7 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
         });
         this.IfPlannedSurgeries = "original";
         tempArr['SurgeriesCalendarClassList'].forEach(element => {
+          debugger
           const base = new Date(element.ArrivalDate.split(' ')[0] + 'T' + element.ArrivalTime);
           if (!element.AvgDauration || element.AvgDauration.trim() === '') {
             const totalMinutes = Number(element.Duration);
