@@ -308,6 +308,23 @@ export class PatientStikersComponent implements OnInit {
       RealDateTime: [new Date(), null]
     })
   }
+  resetForm() {
+    this.form.reset({
+      option: '1',   // default radio
+      tz: '',
+      caseNumber: '',
+      depart: '',
+      seodeDepart: ''
+    });
+
+    // reset UI-related flags
+    this.checked = false;
+    this.isDepartmentChecked = false;
+
+    // optional: mark as pristine
+    this.form.markAsPristine();
+    this.form.markAsUntouched();
+  }
   submitForm() {
     if (this.form.valid) {
       console.log('Form submitted:', this.form.value);
