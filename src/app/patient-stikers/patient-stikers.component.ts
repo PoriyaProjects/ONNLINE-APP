@@ -8,8 +8,8 @@ import { FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms'
 import { environment } from "src/environments/environment";
 import { MatDialog } from '@angular/material/dialog';
 import { CreatePatientComponent } from './create-patient/create-patient.component';
-import { Observable } from 'rxjs';
-import { map, startWith } from 'rxjs/operators';
+import { Observable, Subject } from 'rxjs';
+import { map, startWith, takeUntil } from 'rxjs/operators';
 export interface DialogData {
   Gender: string;
   PhoneNumber: string;
@@ -58,6 +58,7 @@ export class PatientStikersComponent implements OnInit {
   seodedeparts: any[] = [];
   form: FormGroup;
   checked = false;
+  isDepartmentChecked = false;
   indeterminate = false;
   departsfiltered: Observable<any[]>;
   seodedepartsfiltered: Observable<any[]>;
@@ -155,6 +156,11 @@ export class PatientStikersComponent implements OnInit {
         this.loading = false
     });
   }
+  private destroy$ = new Subject<void>();
+  ngOnDestroy() {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
   ngOnInit(): void {
     this.getNamerDepatrs();
 
@@ -189,10 +195,51 @@ export class PatientStikersComponent implements OnInit {
     })
     this.form = this.fb.group({
       option: ['1', Validators.required],
-      textInput: ['', Validators.required],
+      tz: [''],
+      caseNumber: [''],
       depart: ['', null],
       seodeDepart: ['', null],
     });
+    this.form.get('option')!.valueChanges.subscribe(value => {
+      const tzCtrl = this.form.get('tz')!;
+      const caseCtrl = this.form.get('caseNumber')!;
+      const departCtrl = this.form.get('depart')!;
+      const seodeDepartCtrl = this.form.get('seodeDepart')!;
+
+      // clear everything first
+      tzCtrl.clearValidators();
+      caseCtrl.clearValidators();
+      seodeDepartCtrl.clearValidators();
+      departCtrl.clearValidators();
+
+      if (value === '1' || value === '3' || value === '4') {
+        tzCtrl.setValidators([Validators.required]);
+      }
+
+      if (value === '2' || value === '3' || value === '4') {
+        caseCtrl.setValidators([Validators.required]);
+      }
+      if (value === '3' || value === '4') {
+        seodeDepartCtrl.setValidators([Validators.required]);
+        departCtrl.setValidators([Validators.required]);
+        this.isDepartmentChecked = value === '3' || value === '4';
+        this.changePos();
+      } else {
+        if (this.isDepartmentChecked) {
+          this.changePos();
+        }
+        this.isDepartmentChecked = false;
+      }
+      seodeDepartCtrl.updateValueAndValidity();
+      departCtrl.updateValueAndValidity();
+      tzCtrl.updateValueAndValidity();
+      caseCtrl.updateValueAndValidity();
+    });
+    this.form.get('caseNumber')!.valueChanges
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(value => {
+        console.log('caseNumber changed:', value);
+      });
     let departCont = this.form.get('depart') as FormControl;
     let seodeDepartCont = this.form.get('seodeDepart') as FormControl;
     this.departsfiltered = departCont.valueChanges.pipe(
@@ -270,7 +317,9 @@ export class PatientStikersComponent implements OnInit {
 
       //this.http.post("http://localhost/RCF_WS/WebService.asmx/findPatientByIDToCreateNewMove", {
       this.http.post(environment.url + "findPatientByIDToCreateNewMove", {
-        PatientId: this.form.value.textInput,
+        PatientId: this.form.value.tz,
+        CaseNumber: this.form.value.caseNumber,
+        patientType: this.form.value.option,
         depart: this.form.value.depart,
         seodeDepart: this.form.value.seodeDepart
       }).subscribe((t: any) => {
