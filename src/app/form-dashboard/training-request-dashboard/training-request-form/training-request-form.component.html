@@ -785,7 +785,7 @@
           (click)="markFormGroupTouched(Training_Request_Forms_C)" *ngIf="!requested">הבא</button>
       </div>
     </mat-step>
-    <mat-step [stepControl]="Training_Request_Forms_E" *ngIf="!requested" errorMessage="שכחת שדות חובה.">
+    <mat-step [stepControl]="Training_Request_Forms_E" *ngIf="!requested || user_name == 'nyehudai'" errorMessage="שכחת שדות חובה.">
       <form [formGroup]="Training_Request_Forms_E">
         <ng-template matStepLabel>חוות דעת - ממונה ישיר</ng-template>
         <mat-card-content>
@@ -977,7 +977,7 @@
           (click)="markFormGroupTouched(Training_Request_Forms_I)">הבא</button>
       </div>
     </mat-step> -->
-    <mat-step [stepControl]="Training_Request_Forms_F" *ngIf="!requested" errorMessage="שכחת שדות חובה.">
+    <mat-step [stepControl]="Training_Request_Forms_F" *ngIf="!requested || user_name == 'nyehudai'" errorMessage="שכחת שדות חובה.">
       <form [formGroup]="Training_Request_Forms_F">
         <ng-template matStepLabel>חוות דעת - ממונה עקיף</ng-template>
         <mat-card-content>
