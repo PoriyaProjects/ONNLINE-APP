@@ -38,8 +38,7 @@
         <div class="row" dir="rtl">
             <div class="col">
                 <button mat-raised-button type="submit" (click)="returnToSearch()" *ngIf="searching == 'Found'"
-                    class="btn btn-primary btn-raised"
-                    matTooltip="טופס חדש">
+                    class="btn btn-primary btn-raised" matTooltip="טופס חדש">
                     <span class="material-icons">
                         home
                     </span>
@@ -651,6 +650,7 @@
             <mat-label>סינון</mat-label>
             <input matInput (keyup)="applyFilter($event,'')" placeholder="התחל הקלדה ..." #input>
         </mat-form-field>
+        <mat-progress-bar mode="indeterminate" *ngIf="loading_forms"></mat-progress-bar>
         <div class="row mt-5" dir="rtl">
             <table mat-table [dataSource]="dataSource" style="width: 100%;" class="mat-elevation-z8">
                 <ng-container matColumnDef="delete">
