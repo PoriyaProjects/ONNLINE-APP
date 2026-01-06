@@ -877,7 +877,7 @@ export class DepartmentIncomeDashboardComponent implements OnInit {
     }
 
  
-    get diffTooltip(): string {
+  get diffTooltip(): string {
         return `השוואה בין ${this.currentYear - 1} ל־${this.currentYear - 2}: הפרש כספי ואחוז שינוי`;
     }
 }
