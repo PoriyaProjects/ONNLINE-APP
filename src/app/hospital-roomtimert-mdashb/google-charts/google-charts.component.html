@@ -1,5 +1,4 @@
 <style>
-
   .date-compact.mat-form-field {
     width: 120px;
   }
@@ -75,7 +74,7 @@
             </div>
             <div class="summary-grid">
               <div class="summary-pill">
-                <div class="k">סה״כ ניתוחים <span class="v">{{ s.totals.surgeries }}</span></div>                
+                <div class="k">סה״כ ניתוחים <span class="v">{{ s.totals.surgeries }}</span></div>
                 <div class="sub">✔ {{ s.totals.completed }} · ⏳ {{ s.totals.inProgress }} · 📋 {{ s.totals.planned }}
                 </div>
 
@@ -99,7 +98,7 @@
                 <div class="k">זמן פעילות מצטבר</div>
                 <div class="v">{{ s.time.totalHMM }}</div>
                 <div class="sub">ממוצע למקרה: {{ s.time.avgHMM }}</div>
-              </div>           
+              </div>
               <div class="summary-pill" *ngFor="let r of busiestRooms">
                 <div class="k">החדר העמוס</div>
                 <div class="v">{{ translateRoomId(r.room) }}</div>
@@ -141,7 +140,7 @@
               </div>
             </div>
 
-            
+
             <div class="summary-section" style="padding-top:20px;" *ngIf="summaryDrilldownUrgency as uKey">
               <div class="section-title">
                 פירוט לפי דחיפות: {{ s.urgency.icons[uKey] }} {{ s.urgency.labels[uKey] }}
@@ -168,13 +167,20 @@
               <div class="spinner"></div>
             </div>
             <div class="room-widget card" *ngFor="let room of roomsData; trackBy: trackByRoomId" [ngClass]="[
-       (settings.colorize && !isRoomClosedForColoring(room)) ? getRoomStatusClassWithSettings(room) : '',
+(settings.colorize && !isRoomClosedForColoring(room)) ? getRoomStatusClassWithSettings(room) : '',
        (settings.colorize && settings.colorMode === 'background' && !isRoomClosedForColoring(room)) ? 'status-mode-bg' : '',
        (settings.backgroundMode ? 'background-mode' : ''),
        isRoomPastDay(room) ? 'past-day' : '',
        isRoomExpanded(room.roomId) ? 'active' : '',
        (!isRoomExpanded(room.roomId) && !allExpanded && activeRoomId && room.roomId !== activeRoomId) ? 'blurred' : ''
      ]">
+              <div class="room-status-line">
+                <span class="status-box" [class.busy]="getRoomShortStatus(room) === 'בניתוח'"
+                  [class.free]="getRoomShortStatus(room) === 'פנוי'">
+                  {{ getRoomShortStatus(room) }}
+                </span>
+              </div>
+
               <!-- Header (sticky inside the scrolling card) -->
               <div class="room-header" (click)="toggleRoom(room.roomId)">
                 <!-- Status dot -->
@@ -187,13 +193,13 @@
                   <ng-container *ngIf="settings.showLateChip !== false">
                     <ng-container *ngIf="getRoomLateMeta(room) as late">
                       <!-- Overlap/backlog chip -->
-                      <span *ngIf="late && late.hasOverlapBacklog; else overlapChipPlaceholder" class="overlap-chip"
+                      <!-- <span *ngIf="late && late.hasOverlapBacklog; else overlapChipPlaceholder" class="overlap-chip"
                         [attr.title]="'חפיפת עומס: ' + (late.backlogCount || 0) + ' מתוכננים לפני סיום המקרה הנוכח (' + (late.overlapUntil | date:'HH:mm') + ')'">
                         ⏱️ עומס
                       </span>
                       <ng-template #overlapChipPlaceholder>
                         <span class="overlap-chip overlap-chip--placeholder" aria-hidden="true">⏱️ עומס</span>
-                      </ng-template>
+                      </ng-template> -->
                     </ng-container>
 
                     <ng-template #lateChipPlaceholder>
@@ -206,45 +212,48 @@
 
                 <div class="metrics text-center" *ngIf="settings.showHeaderMetrics !== false">
                   <!-- Start delay chip -->
-                  <span class="metric-chip" *ngIf="(settings.showStartChip !== false) && shouldShowStartDiff(room)">
-                    <span class="chip-icon">◓</span>
+                  <!-- <span class="metric-chip" *ngIf="(settings.showStartChip !== false) && shouldShowStartDiff(room)"> -->
+                  <!-- <span class="chip-icon">◓</span>
                     <span class="chip-title">עיכוב מתחילת יום</span>
                     <span [ngClass]="getStartDiffClass(room)">
                       {{ getStartDiff(room) }}
-                    </span>
-                  </span>
+                    </span> -->
+                  <!-- </span> -->
 
                   <!-- Turnover summary -->
-                  <span class="metric-chip" *ngIf="settings.showTurnoverChip !== false">
-                    <span class="chip-icon">⏳</span>
-                    <span class="chip-title">זמן הכנת חדר</span>
-                    <span [ngClass]="getTurnoverTimeClass(room)">
-                      {{ getTurnoverSummary(room) }}
-                    </span>
+                  <!-- <span class="metric-chip" *ngIf="settings.showTurnoverChip !== false"> -->
+                  <!-- <span class="chip-icon">⏳</span> -->
+                  <!-- <span class="chip-title">זמן הכנת חדר</span> -->
+                  <span [ngClass]="getTurnoverTimeClass(room)">{{ getTurnoverSummary(room) }}</span>
+
+                  <span class="chip-warn" *ngIf="isTurnoverLong(room)">
+                    זמן הכנת החדר ארוך מ־20 דקות
                   </span>
+                  <!-- </span> -->
+
 
                   <!-- End-of-day gap -->
-                  <span class="metric-chip" *ngIf="settings.showEndChip !== false">
-                    <span class="chip-icon">◒</span>
+                  <!-- <span class="metric-chip" *ngIf="settings.showEndChip !== false"> -->
+                  <!-- <span class="chip-icon">◒</span>
                     <span class="chip-title">פער עד סיום יום</span>
                     <span [ngClass]="getEndDiffClass(room)">
                       {{ getEndDiff(room) }}
-                    </span>
-                  </span>
+                    </span> -->
+                  <!-- </span> -->
                 </div>
 
 
                 <!-- Center badge -->
-                <div *ngIf="settings.showHeaderBadge && isRoomToday(room)" class="status-circle2 text-center"
-                  style="margin:10px auto" [ngClass]="getRoomStatusClassWithSettings(room)">
-                  <ng-container *ngIf="hasInProgress(room); else freeTpl">
+                <!-- <div *ngIf="settings.showHeaderBadge && isRoomToday(room)" class="status-circle2 text-center"
+                  style="margin:10px auto" [ngClass]="getRoomStatusClassWithSettings(room)"> -->
+                <!-- <ng-container *ngIf="hasInProgress(room); else freeTpl">
                     {{ getHeaderInProgressLabel(room) }}
                     <ng-container *ngIf="settings.showHeaderIcon && getHeaderProgressIcon(room) as icon">
                       <span [attr.title]="getHeaderProgressTitle(room)">{{ icon }}</span>
                     </ng-container>
-                  </ng-container>
+                  </ng-container> -->
 
-                  <ng-template #freeTpl>
+                <!-- <ng-template #freeTpl>
                     פנוי
                     <ng-container *ngIf="ticker$ | async as _">
                       <ng-container *ngIf="getRoomIdleCounter(room, !!settings?.showIdleSeconds) as idle">
@@ -252,13 +261,13 @@
                         <span class="live-dot" aria-hidden="true"></span>
                       </ng-container>
                     </ng-container>
-                  </ng-template>
-                </div>
+                  </ng-template> -->
+                <!-- </div> -->
 
 
                 <!-- N from X + inline warn icon -->
-                <div class="small progress-line" *ngIf="settings.showHeaderProgress">
-                  <ng-container *ngIf="getRoomLateMeta(room) as late">
+                <!-- <div class="small progress-line" *ngIf="settings.showHeaderProgress"> -->
+                <!-- <ng-container *ngIf="getRoomLateMeta(room) as late">
                     <span *ngIf="late && late.isLate; else warnIconPlaceholder" class="warn-icon"
                       [attr.title]="'תחזית סיום -' + (late.predictedEnd | date:'HH:mm') + ' (' + late.overrunMin + '׳)'"
                       aria-hidden="true" (click)="acknowledgeRoomLate(room); $event.stopPropagation()">⚠️</span>                    
@@ -267,9 +276,9 @@
                   </ng-container>
                   <ng-template #warnIconPlaceholder>
                     <span class="warn-icon warn-icon--placeholder" aria-hidden="true">⚠️</span>
-                  </ng-template>
-                  {{ getHeaderProgressText(room) }}
-                </div>
+                  </ng-template> -->
+                <!-- {{ getHeaderProgressText(room) }} -->
+                <!-- </div> -->
 
 
                 <!-- Expand button -->
@@ -298,17 +307,17 @@
                     <div class="surgery-row" [class.scompleted]="s?.status === 'Completed'"
                       [attr.data-status]="s?.status">
                       <b style="font-weight:800">
-                        ⮜ {{ s.surgeryId }}
+                        <!-- ⮜ {{ s.surgeryId }} -->
                         <ng-container
                           *ngIf="(settings.showUrgencyIcon !== false) && getUrgencyIconFromSurgery(s) as icon">
-                          <span [attr.title]="getUrgencyTextFromSurgery(s)">{{ icon }}</span>
+                          <!-- <span [attr.title]="getUrgencyTextFromSurgery(s)">{{ icon }}</span> -->
                         </ng-container>
                       </b><br />
-                      <span style="direction:ltr; text-align:left;float: left; font-size: small;"
-                        *ngIf="settings.showSurgeryName && (s.surgeryName?.trim())">{{ s.surgeryName }}</span>
+                      <!-- <span style="direction:ltr; text-align:left;float: left; font-size: small;"
+                        *ngIf="settings.showSurgeryName && (s.surgeryName?.trim())">{{ s.surgeryName }}</span> -->
                       <span style="direction:ltr; text-align:left;float: left; font-size: small;"
                         *ngIf="settings.showSurgeryCode && (s.surgeryCode?.trim())">
-                        ({{ s.surgeryCode }})
+                        <!-- ({{ s.surgeryCode }}) -->
                       </span>
 
                       <br *ngIf="(settings.showSurgeryName || settings.showSurgeryCode) && (s.surgeryName?.trim())" />
@@ -318,7 +327,7 @@
                       <br *ngIf="settings.showTimes" />
 
                       <span *ngIf="settings.showStatus" class="status" [ngClass]="s.status">
-                        {{ translateStatus(s.status) }}
+                        <!-- {{ translateStatus(s.status) }} -->
                       </span>
                       <br /><br />
                     </div>
@@ -333,13 +342,13 @@
 
                     <div *ngFor="let s of planned; trackBy: trackBySurgeryId" class="surgery-row"
                       [attr.data-planned]="true" style="direction:rtl; text-align:right;">
-                      ⮜ <ng-container
+                      <!-- ⮜ <ng-container
                         *ngIf="(settings.showUrgencyIcon !== false) && getUrgencyIconFromSurgery(s) as icon">
                         <span [attr.title]="getUrgencyTextFromSurgery(s)">{{ icon }}</span>
-                      </ng-container> {{ s.surgeryName }}
-                      <ng-container *ngIf="settings.showSurgeryCode && s.surgeryCode?.trim()">
+                      </ng-container> {{ s.surgeryName }} -->
+                      <!-- <ng-container *ngIf="settings.showSurgeryCode && s.surgeryCode?.trim()">
                         ({{ s.surgeryCode }})
-                      </ng-container>
+                      </ng-container> -->
                       <ng-container *ngIf="s.department?.trim()">
                         - {{ s.department }}
                       </ng-container>
@@ -367,11 +376,11 @@
               🔘 אפור = חדר לא מנוצל |
               <!-- 🟠 כתום = עיכוב בהכנת חדר | -->
               🔴 אדום = עיכוב חמור (גבוה מ־45 דק׳, 60 דק׳, 120 דק׳) <br />
-              🚑 = דחוף |
+              <!-- 🚑 = דחוף |
               🏥 = ססיה - אשפוז |
               📖 = אלקטיבי |
               🚶 = אמבולטורי |
-              ⬇️ = ללא עדיפות
+              ⬇️ = ללא עדיפות -->
             </div>
 
             <!-- Display Settings (hidden entirely if no userId) -->

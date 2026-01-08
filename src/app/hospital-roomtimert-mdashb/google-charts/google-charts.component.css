@@ -382,11 +382,6 @@
   margin: 6px 0;
 }
 
-.metrics .metric-chip + .metric-chip::before {
-  content: '|';
-  margin: 0 .5rem;
-  opacity: .6;
-}
 
 
 
@@ -430,11 +425,45 @@
   color: var(--card-fg, #111) !important;
 }
 
-/* Give chips a subtle pill background that adapts to light/dark */
-.room-widget.card.status-mode-bg .metrics .metric-chip span {
-  padding: 0 3px;
-  border-radius: 8px;
-  background: var(--chip-bg, rgba(0,0,0,.06));
+/* chip */
+.metric-chip{
+  display:inline-flex;
+  align-items:center;
+  gap:.5rem;
+  font-size:1rem;
+  margin:0;
+  direction:rtl;
+  white-space:nowrap;
+}
+
+/* רק ה־spans בתוך chip מקבלים "כדור" */
+.room-widget.card.status-mode-bg .metrics .metric-chip span{
+  padding:0 6px;
+  border-radius:8px;
+  background:var(--chip-bg, rgba(0,0,0,.06));
+}
+
+/* אל תבטל ::before של chip (כי אנחנו משתמשים בו כמפריד) */
+/* במקום זה – בטל רק אייקונים אם היו */
+.metric-chip .chip-icon{
+  display:none; /* אם אתה באמת רוצה להסתיר אייקון */
+}
+
+/* מפריד בין chips */
+.metrics .metric-chip + .metric-chip::before{
+  content:'|';
+  margin:0 .5rem;
+  opacity:.6;
+}
+
+/* אינדיקציה/אזהרה */
+.metric-chip .chip-warn{
+  background:rgba(255, 193, 7, .22);
+  border:1px solid rgba(255, 193, 7, .55);
+  border-radius:10px;
+  padding:0 8px;
+  font-weight:600;
+  font-size:.95rem;
 }
 
 /* Neutralize explicit metric colors inside colored cards */
@@ -483,19 +512,23 @@
   --card-fg: #ffffff;
   --chip-bg: rgba(255,255,255,.18);
 }
+/* Google Red 700 - התראה בולטת וברורה */
 .room-widget.card.status-mode-bg.red-60,
 .room-widget.card.status-mode-bg.red-60-ack {
-  --card-bg: #b31412;  /* deeper red */
+  --card-bg: #D32F2F; 
   --card-fg: #ffffff;
-  --chip-bg: rgba(255,255,255,.20);
-}
-.room-widget.card.status-mode-bg.red-120,
-.room-widget.card.status-mode-bg.red-120-ack {
-  --card-bg: #7f1d1d;  /* darkest/maroon */
-  --card-fg: #ffffff;
-  --chip-bg: rgba(255,255,255,.22);
+  --chip-bg: rgba(255, 255, 255, 0.2);
+  border: none;
 }
 
+/* Google Red 900 - התראה קריטית (עמוקה וסמכותית) */
+.room-widget.card.status-mode-bg.red-120,
+.room-widget.card.status-mode-bg.red-120-ack {
+  --card-bg: #B71C1C;
+  --card-fg: #ffffff;
+  --chip-bg: rgba(255, 255, 255, 0.25);
+  border: none;
+}
 /* If you still want a very subtle border on light modes */
 .room-widget.card.status-mode-bg.green-blink,
 .room-widget.card.status-mode-bg.grey,
@@ -548,7 +581,6 @@
 
 .warn-icon { margin-inline-end: .25rem; font-weight: 700; color: #b71c1c; }
 .progress-line { display: flex; align-items: center; justify-content: center; gap: .25rem; }
-.metric-chip { margin: 0; } /* .25rem*/
 
 
 .room-alert-chip--placeholder {
@@ -678,12 +710,6 @@ h4.text-center { min-height: 2.2rem; }
   /*gap: 1rem;*/ /* space between chips */
 }
 
-.metric-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 1rem;
-}
 
 /* For screens less than 1900px */
 @media (max-width: 1899px) {
@@ -692,10 +718,8 @@ h4.text-center { min-height: 2.2rem; }
     align-items: center;
   }
 
-  /* Hide the icons */
-  .metric-chip::before {
-    display: none;
-  }
+
+
 }
 
 
@@ -774,3 +798,39 @@ h4.text-center { min-height: 2.2rem; }
     grid-template-columns: 1fr;
   }
 }
+
+.room-status-line {
+  text-align: center;
+  margin-top: 4px;
+}
+
+.status-box {
+  display: inline-block;
+  min-width: 48px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-weight: bold;
+  font-size: 0.85em;
+}
+
+.status-box.free {
+background: #e53935;
+color: #fff;
+}
+
+  .status-box.busy {
+  background: #43a047;
+  color: #fff;
+}
+.room-status-text{
+  text-align:center;
+  font-weight:900;
+  font-size:50px;
+  line-height:1;
+  margin-top:4px;
+}
+
+.room-status-text.busy{ color:#0a8f3c; } /* תפוס - ירוק */
+.room-status-text.free{ color:#c62828; } /* פנוי - אדום */
+
+.chip-warn { margin-right: 8px; font-weight: 600; }
