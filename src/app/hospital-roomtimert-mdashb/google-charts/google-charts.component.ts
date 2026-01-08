@@ -1,111 +1,114 @@
-import { Component, AfterViewInit, OnInit, HostListener } from '@angular/core';
-import { trigger, state, style, transition, animate } from '@angular/animations';
-import { GoogleChartsService } from '../services/google-charts.service';
-import { Subject } from 'rxjs';
-import { takeUntil } from 'rxjs/operators';
-import { ChangeDetectorRef, Input } from '@angular/core';
-import { interval } from 'rxjs';
-import { startWith, shareReplay } from 'rxjs/operators';
-
-
+import { Component, AfterViewInit, OnInit, HostListener } from "@angular/core";
+import {
+    trigger,
+    state,
+    style,
+    transition,
+    animate,
+} from "@angular/animations";
+import { GoogleChartsService } from "../services/google-charts.service";
+import { Subject } from "rxjs";
+import { takeUntil } from "rxjs/operators";
+import { ChangeDetectorRef, Input } from "@angular/core";
+import { interval } from "rxjs";
+import { startWith, shareReplay } from "rxjs/operators";
 
 import {
-  CHART_SERIES_PALETTE,
-  PERIOD_TYPE_MAP,
-  DEPARTMENT_BASE_PALETTE,
-  DepartmentColorService,
-  translateDataSource,
-  translateTimeframe,
-  formatToHHMM,
-  buildTimeTicksFromRaw,
-  buildColumnOptions,
-  buildDeptDrilldown,
-  stickyByMarker, PaletteService
-} from '../../shared/charts-config';
+    CHART_SERIES_PALETTE,
+    PERIOD_TYPE_MAP,
+    DEPARTMENT_BASE_PALETTE,
+    DepartmentColorService,
+    translateDataSource,
+    translateTimeframe,
+    formatToHHMM,
+    buildTimeTicksFromRaw,
+    buildColumnOptions,
+    buildDeptDrilldown,
+    stickyByMarker,
+    PaletteService,
+} from "../../shared/charts-config";
 
 interface DepartmentMetricEntry {
-  period: string;
-  source: string;
-  aggregateDays?: number;
-  avgMinutes?: number; 
+    period: string;
+    source: string;
+    aggregateDays?: number;
+    avgMinutes?: number;
 }
 interface DepartmentData {
-  departName: string;
-  metrics: DepartmentMetricEntry[];
+    departName: string;
+    metrics: DepartmentMetricEntry[];
 }
 
-
 export interface Surgery {
-  surgeryId: string;
-  patientNumber: string;
-  surgeryName: string;
-  surgeryCode: string;
-  department: string;
-  status: 'Planned' | 'InProgress' | 'Completed';
-  timeEntrance: string;
-  timeExit: string;
-  surgeryDate: string;
-  SurgeryRoom: string;
-  SurgeryDate: string; // 'YYYY-MM-DD'
-  TimeEntranceToTheOperatingRoom: string | null; // 'HH:mm' or null
-  TimeExitingTheOperatingRoom: string | null;    // 'HH:mm' or null
-  SurgeryStatus: 'Completed' | 'InProgress' | 'Planned' | string;
-  TimeSurgeryToDo: string | number | null;
+    surgeryId: string;
+    patientNumber: string;
+    surgeryName: string;
+    surgeryCode: string;
+    department: string;
+    status: "Planned" | "InProgress" | "Completed";
+    timeEntrance: string;
+    timeExit: string;
+    surgeryDate: string;
+    SurgeryRoom: string;
+    SurgeryDate: string; // 'YYYY-MM-DD'
+    TimeEntranceToTheOperatingRoom: string | null; // 'HH:mm' or null
+    TimeExitingTheOperatingRoom: string | null; // 'HH:mm' or null
+    SurgeryStatus: "Completed" | "InProgress" | "Planned" | string;
+    TimeSurgeryToDo: string | number | null;
 }
 
 export interface RoomData {
-  roomId: string;
-  date: string | null;
-  surgeries: Surgery[];
+    roomId: string;
+    date: string | null;
+    surgeries: Surgery[];
 }
 
 export type LateMeta = {
-  isLate: boolean;
-  overrunMin: number;        
-  predictedEnd: Date | null; 
-  turnoverUsed: number;      
-  hasOverlapBacklog: boolean;  
-  backlogCount?: number;       
-  overlapUntil?: Date | null;  
+    isLate: boolean;
+    overrunMin: number;
+    predictedEnd: Date | null;
+    turnoverUsed: number;
+    hasOverlapBacklog: boolean;
+    backlogCount?: number;
+    overlapUntil?: Date | null;
 };
-
 
 export type HeaderProgressOpts = {
-  defaultTurnoverMin?: number; 
+    defaultTurnoverMin?: number;
 };
 
-export type DisplayPreset = 'default' | 'all' | 'custom' | 'minimal';
-export type ColorMode = 'border' | 'background';
+export type DisplayPreset = "default" | "all" | "custom" | "minimal";
+export type ColorMode = "border" | "background";
 export interface DisplaySettings {
-  showHeaderBadge: boolean;
-  showHeaderIcon: boolean;
-  showHeaderProgress: boolean;
-  showTurnoverLines: boolean;
-  showPlannedSection: boolean;
-  showSurgeryName: boolean;
-  showSurgeryCode: boolean;
-  showDepartment: boolean;
-  showTimes: boolean;
-  showStatus: boolean;
-  colorize: boolean;
-  blinkOnUnacked: boolean;
-  showLegend: boolean;
-  showHeaderMetrics?: boolean;
-  showStartChip?: boolean;
-  showTurnoverChip?: boolean;
-  showEndChip?: boolean;
-  showStatusDot?: boolean;
-  showUrgencyIcon?: boolean;
-  colorMode: ColorMode;
-  showLateChip?: boolean;
-  showExpandBtn?: boolean;
-  showDateControls?: boolean;
-  backgroundMode?: boolean;
-  showIdleSeconds?: boolean;
-  hideIdleWhenNoPlanned?: boolean;
-  continueIdleAfter1500WhenPlanned?: boolean;
-  showSummaryCard?: boolean;
-  showSurgeriesRts?: boolean;
+    showHeaderBadge: boolean;
+    showHeaderIcon: boolean;
+    showHeaderProgress: boolean;
+    showTurnoverLines: boolean;
+    showPlannedSection: boolean;
+    showSurgeryName: boolean;
+    showSurgeryCode: boolean;
+    showDepartment: boolean;
+    showTimes: boolean;
+    showStatus: boolean;
+    colorize: boolean;
+    blinkOnUnacked: boolean;
+    showLegend: boolean;
+    showHeaderMetrics?: boolean;
+    showStartChip?: boolean;
+    showTurnoverChip?: boolean;
+    showEndChip?: boolean;
+    showStatusDot?: boolean;
+    showUrgencyIcon?: boolean;
+    colorMode: ColorMode;
+    showLateChip?: boolean;
+    showExpandBtn?: boolean;
+    showDateControls?: boolean;
+    backgroundMode?: boolean;
+    showIdleSeconds?: boolean;
+    hideIdleWhenNoPlanned?: boolean;
+    continueIdleAfter1500WhenPlanned?: boolean;
+    showSummaryCard?: boolean;
+    showSurgeriesRts?: boolean;
 }
 
 export const DEFAULT_SETTINGS: DisplaySettings = {
@@ -139,18 +142,15 @@ export const DEFAULT_SETTINGS: DisplaySettings = {
     showSurgeriesRts: true,
 };
 
-
-
 export const ALL_ON_SETTINGS: DisplaySettings = { ...DEFAULT_SETTINGS };
 
 export const MINIMAL_SETTINGS: DisplaySettings = {
-  ...DEFAULT_SETTINGS,
-  showExpandBtn: true,
-  showDateControls: false,
-  backgroundMode: true,
-  colorMode: 'border',
+    ...DEFAULT_SETTINGS,
+    showExpandBtn: true,
+    showDateControls: false,
+    backgroundMode: true,
+    colorMode: "border",
 };
-
 
 @Component({
     selector: "app-google-charts-time",
@@ -3102,17 +3102,21 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
         const dayStart = this.workingStart(room.date);
         const dayEnd = this.workingEnd(room.date);
         const now = new Date();
-
+        // אם החדר פנוי - חישוב זמן פנאי
         // אם החדר פעיל כרגע
         if (this.hasInProgress(room)) {
-            const inProgSurgery = room.surgeries.find(
-                (s) => s.status === "InProgress"
+            const inProgSurgery = room.surgeries.find((s: any) =>
+                this.isInProgressStatus(
+                    (s as any).status ?? (s as any).SurgeryStatus
+                )
             );
-            if (inProgSurgery?.timeEntrance) {
-                const startTime = this.parseClockWithDate(
-                    inProgSurgery.timeEntrance,
-                    room.date
-                );
+
+            const startStr =
+                (inProgSurgery as any)?.timeEntrance ??
+                (inProgSurgery as any)?.TimeEntranceToTheOperatingRoom;
+
+            if (startStr) {
+                const startTime = this.parseClockWithDate(startStr, room.date);
                 if (startTime) {
                     const elapsedMin = Math.max(
                         0,
@@ -3133,44 +3137,65 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
         }
 
         // אם החדר פנוי - חישוב זמן פנאי
-        const lastCompleted = [...room.surgeries]
-            .reverse()
-            .find(
-                (s) =>
-                    s.status === "Completed" &&
-                    s.timeExit &&
-                    s.timeExit !== "00:00:00"
-            );
+        const baseDate = room.date;
+        const nowClamped = now < dayEnd ? now : dayEnd;
+
+        const lastCompleted = [...room.surgeries].reverse().find((s: any) => {
+            const st = s.status ?? s.SurgeryStatus;
+            if (st !== "Completed") return false;
+
+            const endStr =
+                s.timeEndSurgery ??
+                s.TimeEndSurgery ??
+                s.timeExit ??
+                s.TimeExitingTheOperatingRoom;
+
+            if (!endStr || endStr === "00:00:00") return false;
+            return !!this.parseClockWithDate(endStr, baseDate);
+        });
 
         if (lastCompleted) {
-            const exitTime = this.parseClockWithDate(
-                lastCompleted.timeExit!,
-                room.date
-            );
+            const endStr: any =
+                (lastCompleted as any).timeEndSurgery ??
+                (lastCompleted as any).TimeEndSurgery ??
+                (lastCompleted as any).timeExit ??
+                (lastCompleted as any).TimeExitingTheOperatingRoom;
 
-            if (exitTime) {
-                const clampedNow = now < dayEnd ? now : dayEnd;
-                const idleMin = Math.max(
-                    0,
-                    Math.floor(
-                        (clampedNow.getTime() - exitTime.getTime()) / 60000
-                    )
-                );
+            const lastEnd = this.parseClockWithDate(endStr, baseDate);
 
-                if (idleMin > 0) {
-                    const hm = this.formatHM(idleMin);
-                    // אם פנוי מעל 20 דקות - אפשר להוסיף שדה color או class
-                    const isOverdue = idleMin > 20;
+            if (lastEnd) {
+                const hasStartAfter = (room.surgeries || []).some((s: any) => {
+                    const startStr =
+                        s.timeEntrance ?? s.TimeEntranceToTheOperatingRoom;
+                    if (!startStr || startStr === "00:00:00") return false;
+                    const start = this.parseClockWithDate(startStr, baseDate);
+                    return start && start.getTime() > lastEnd.getTime();
+                });
 
-                    return {
-                        icon: isOverdue ? "⚠️" : "😴",
-                        text: `חדר פנוי ${hm}`,
-                        time: hm,
-                        color: isOverdue ? "red" : "inherit", // לצורך סימון אדום ב-UI
-                        isIdleOver20Min: isOverdue,
-                    };
+                if (!hasStartAfter) {
+                    const gapStart = new Date(lastEnd.getTime() + 20 * 60000); // +20 הכנה
+                    const idleMin = Math.max(
+                        0,
+                        Math.floor(
+                            (nowClamped.getTime() - gapStart.getTime()) / 60000
+                        )
+                    );
+
+                    if (idleMin > 0) {
+                        const hm = this.formatHM(idleMin);
+                        const isOverdue = idleMin > 20;
+
+                        return {
+                            icon: isOverdue ? "⚠️" : "😴",
+                            text: `חדר פנוי ${hm}`,
+                            time: hm,
+                            color: isOverdue ? "red" : "inherit",
+                            isIdleOver20Min: isOverdue,
+                        };
+                    }
                 }
             }
+            return null;
         }
 
         return null;
