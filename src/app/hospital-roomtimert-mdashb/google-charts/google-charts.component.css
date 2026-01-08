@@ -1,836 +1,552 @@
-
-  /* #surgeriesrts {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(13%, 1fr));
-    gap: 16px;
-  } */
-
-  #surgeriesrts {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-  gap: 16px;
-}
-  .room-widget {
-    transition: all 0.3s ease;
-  }
-
-  .room-widget.blurred {
-    filter: blur(1px);
-    opacity: 0.6;
-  }
-
-  .room-widget.active {
-    filter: none;
-    opacity: 1;
-    /*border: 1px solid #007bff;*/
-  }
-
-  .room-header {
-    cursor: pointer;
-  }
-
-  .metrics {
-    white-space: nowrap;
-    font-size: 0.9em;
-  }
-
-  h2,
-  h3 {
-    text-align: center;
-    padding: 20px;
-    width: 100%;
-  }
-
-  .panel {
-    background: #eeeff1;
-    margin-bottom: 40px;
-  }
-
-  .expand_btn {
-    width: 100%;
-    text-align: center;
-  }
-
-  .status-circle {
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-    position: absolute;
-    top: 8px;
-    right: 8px;
-  }
-
-  /* Base colors */
-  .status-circle.green-blink {
-    background: green;
-  }
-
-  .status-circle.grey {
-    background: grey;
-  }
-
-  .status-circle.blue {
-    background: blue;
-  }
-
-  .status-circle.orange {
-    background: orange;
-  }
-
-  .status-circle.red-45 {
-    background: red;
-  }
-
-  .status-circle.red-60 {
-    background: darkred;
-  }
-
-  .status-circle.red-120 {
-    background: maroon;
-  }
-
-  /* Quiet blink (for active/healthy states) */
-  @keyframes quiet-blink {
-    50% {
-      opacity: 0.6;
-    }
-  }
-
-  .status-circle.green-blink,
-  .status-circle.blue {
-    animation: quiet-blink 2s infinite;
-  }
-
-  /* Normal blink (warning) */
-  @keyframes blink {
-    50% {
-      opacity: 0.3;
-    }
-  }
-
-  .status-circle.orange,
-  .status-circle.red-45 {
-    animation: blink 1s infinite;
-  }
-
-  /* Stronger escalation */
-  @keyframes strong-blink {
-    50% {
-      opacity: 0.1;
-    }
-  }
-
-  .status-circle.red-60,
-  .status-circle.red-120 {
-    animation: strong-blink 0.8s infinite;
-  }
-
-  /* Pulsing borders for severe delays */
-  .card.red-45 {
-    border: 2px solid red;
-  }
-
-  .card.red-60 {
-    border: 2px solid darkred;
-    animation: blink 1s infinite;
-  }
-
-  .card.red-120 {
-    border: 3px solid darkred;
-    animation: strong-blink 0.5s infinite;
-  }
-
-  /* acknowledged: keep color but no blink */
-  .status-circle.red-45-ack {
-    background: red;
-  }
-
-  .status-circle.red-60-ack {
-    background: darkred;
-  }
-
-  .status-circle.red-120-ack {
-    background: maroon;
-  }
-
-  .card.red-45-ack {
-    border: 2px solid red;
-  }
-
-  .card.red-60-ack, .room-chip.red-60-ack {
-    border: 2px solid darkred;
-  }
-
-  .card.red-120-ack, .room-chip.red-120-ack , .room-chip.red-120{
-    border: 3px solid darkred;
-  }
-
-  .card.green-blink, .room-chip.green-blink {
-    border: 2px solid green;
-  }
-  .metric-ok {
-    color: green;
-  }
-
-  .metric-yellow {
-    color: goldenrod;
-  }
-
-  .metric-orange {
-    color: darkorange;
-    font-weight: bold;
-  }
-
-  .metric-red {
-    color: red;
-    font-weight: bold;
-  }
-
-  .metric-red-strong {
-    color: darkred;
-    font-weight: bold;
-    animation: pulse 1s infinite;
-  }
-
-  @keyframes pulse {
-    0% {
-      opacity: 1;
-    }
-
-    50% {
-      opacity: 0.6;
-    }
-
-    100% {
-      opacity: 1;
-    }
-  }
-
-
-  .ok {
-    color: green;
-  }
-
-  .warning {
-    color: orange;
-  }
-
-  .bad {
-    color: red;
-  }
-
-  .critical {
-    color: red;
-    animation: blink 1s linear infinite;
-  }
-
-  .severe {
-    color: darkred;
-    animation: pulse 1.5s ease-in-out infinite;
-  }
-
-  @keyframes blink {
-    50% {
-      opacity: 0.4;
-    }
-  }
-
-  @keyframes pulse {
-    0% {
-      text-shadow: 0 0 2px red;
-    }
-
-    50% {
-      text-shadow: 0 0 8px red;
-    }
-
-    100% {
-      text-shadow: 0 0 2px red;
-    }
-  }
-
-
-  .loader-overlay {
-    position: absolute;
-    inset: 0;
-    /* shorthand for top/left/right/bottom:0 */
-    background: rgba(255, 255, 255, 0.8);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 10;
-  }
-
-  .spinner {
-    width: 40px;
-    height: 40px;
-    border: 4px solid #ddd;
-    border-top: 4px solid #007bff;
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
-  }
-
-  @keyframes spin {
-    to {
-      transform: rotate(360deg);
-    }
-  }
-
-  .refresh-toolbar {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 6px;
-  }
-
-  .refresh-box {
-    display: inline-block;
-    padding: 2px 8px;
-    font-size: 0.85rem;
-    color: #fff;
-    background: #007bff;
-    border-radius: 4px;
-    cursor: pointer;
-    user-select: none;
-    transition: background 0.2s;
-  }
-
-  .refresh-box:hover {
-    background: #0056b3;
-  }
-
-  .pause-btn {
-    padding: 2px 8px;
-    font-size: 0.8rem;
-    cursor: pointer;
-  }
-
-  .last-updated {
-    font-size: 0.8rem;
-    color: #555;
-  }
-
-  .metrics-legend {
-    text-align: center;
-    font-size: 0.85rem;
-    color: #555;
-    margin: 5px 0;
-  }
-
-  .surgery-row {
-    margin-bottom: 10px;
-  }
-
-  .surgery-row.scompleted {
-    opacity: 0.6;
-  }
-
-  .scompleted {
-    opacity: 0.6;
-    font-size:0.9em;
-    font-weight: 500!important;
-  }
-
-  /* Card as the scroll container */
-.room-widget.card {
-  max-height: 460px;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  /* optional: card look */
-  border-radius: 8px;
-  background: var(--card-bg, #fff);
-  box-shadow: 0 2px 10px rgba(0,0,0,.06);
+#surgeriesrts{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(250px,1fr));
+  gap:16px;
 }
 
-/* Sticky header */
-.room-widget.card .room-header {
-  position: sticky;          /* sticks within this scrolling card */
-  position: -webkit-sticky;  /* safari */
-  top: 0;
-  z-index: 5;
-  background: inherit;       /* same bg as card to cover content beneath */
-  padding: 10px 12px;
-  border-bottom: 1px solid rgba(0,0,0,.06);
-  /* subtle shadow when stuck */
-  box-shadow: 0 1px 0 rgba(0,0,0,.06);
+/* room card states */
+.room-widget{min-width:200px;transition:all .3s ease;}
+.room-widget.blurred{filter:blur(1px);opacity:.6;}
+.room-widget.active{filter:none;opacity:1;}
+.room-header{cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 12px;}
+.metrics{white-space:nowrap;font-size:.9em;display:flex;justify-content:center;}
+
+/* headings/panels */
+h2,h3{text-align:center;padding:20px;width:100%;}
+h4.text-center{margin:0 0 4px 0;min-height:2.2rem;}
+.panel{background:#eeeff1;margin-bottom:40px;}
+.expand_btn{width:100%;text-align:center;}
+
+/* status circles */
+.status-circle{
+  width:12px;height:12px;border-radius:50%;
+  position:absolute;top:8px;right:8px;
+}
+.status-circle.green-blink{background:green;}
+.status-circle.grey{background:grey;}
+.status-circle.blue{background:blue;}
+.status-circle.orange{background:orange;}
+.status-circle.red-45{background:red;}
+.status-circle.red-60{background:darkred;}
+.status-circle.red-120{background:maroon;}
+
+/* animations (single definitions) */
+@keyframes quiet-blink{50%{opacity:.6}}
+@keyframes blink{50%{opacity:.4}}
+@keyframes strong-blink{50%{opacity:.1}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes pulse{
+  0%,100%{opacity:1}
+  50%{opacity:.6}
 }
 
-/* Only matters visually when expanded; sticky is harmless otherwise */
-.room-widget.card.active .room-header { /* (kept for clarity) */ }
+.status-circle.green-blink,
+.status-circle.blue{animation:quiet-blink 2s infinite;}
 
-/* Scrollable body gets the padding that used to be on the card */
-.room-widget.card .room-body {
-  padding: 10px 12px;
+.status-circle.orange,
+.status-circle.red-45{animation:blink 1s infinite;}
+
+.status-circle.red-60,
+.status-circle.red-120{animation:strong-blink .8s infinite;}
+
+/* border-mode cards */
+.card.red-45{border:2px solid red;}
+.card.red-60{border:2px solid darkred;animation:blink 1s infinite;}
+.card.red-120{border:3px solid darkred;animation:strong-blink .5s infinite;}
+
+.status-circle.red-45-ack{background:red;}
+.status-circle.red-60-ack{background:darkred;}
+.status-circle.red-120-ack{background:maroon;}
+
+.card.red-45-ack{border:2px solid red;}
+.card.red-60-ack,.room-chip.red-60-ack{border:2px solid darkred;}
+.card.red-120-ack,.room-chip.red-120-ack,.room-chip.red-120{border:3px solid darkred;}
+
+.card.green-blink,.room-chip.green-blink{border:2px solid green;}
+
+/* metric colors */
+.metric-ok{color:green;}
+.metric-yellow{color:goldenrod;}
+.metric-orange{color:darkorange;font-weight:700;}
+.metric-red{color:red;font-weight:700;}
+.metric-red-strong{color:darkred;font-weight:700;animation:pulse 1s infinite;}
+
+.ok{color:green;}
+.warning{color:orange;}
+.bad{color:red;}
+.critical{color:red;animation:blink 1s linear infinite;}
+.severe{color:darkred;animation:pulse 1.5s ease-in-out infinite;}
+
+/* loader/spinner */
+.loader-overlay{
+  position:absolute;inset:0;
+  background:rgba(255,255,255,.8);
+  display:flex;align-items:center;justify-content:center;
+  z-index:10;
+}
+.spinner{
+  width:40px;height:40px;
+  border:4px solid #ddd;border-top:4px solid #007bff;
+  border-radius:50%;
+  animation:spin .8s linear infinite;
 }
 
-/* Optional: keep status circle above content when header is stuck */
-.room-widget.card .room-header .status-circle {
-  position: relative;
-  z-index: 6;
-  top:0px;
+/* refresh toolbar */
+.refresh-toolbar{
+  display:flex;justify-content:center;align-items:center;
+  gap:12px;margin-bottom:6px;
 }
-
-/* Example: make scompleted rows a bit dimmer or styled */
-.surgery-row.scompleted {
-  opacity: .8;
+.refresh-box{
+  display:inline-block;padding:2px 8px;font-size:.85rem;
+  color:#fff;background:#007bff;border-radius:4px;
+  cursor:pointer;user-select:none;transition:background .2s;
 }
+.refresh-box:hover{background:#0056b3;}
+.pause-btn{padding:2px 8px;font-size:.8rem;cursor:pointer;}
+.last-updated{font-size:.8rem;color:#555;}
+.metrics-legend{text-align:center;font-size:.85rem;color:#555;margin:5px 0;}
 
-/* Turnover line spacing */
-.turnover-line {
-  margin: 6px 0;
+/* rows */
+.surgery-row{margin-bottom:10px;}
+.surgery-row.scompleted,.scompleted{opacity:.6;}
+.scompleted{font-size:.9em;font-weight:500!important;}
+
+/* Card scroll container + sticky header */
+.room-widget.card{
+  max-height:700px;overflow-y:auto;
+  display:flex;flex-direction:column;
+  border-radius:8px;
+  background:var(--card-bg,#fff);
+  box-shadow:0 2px 10px rgba(0,0,0,.06);
 }
-
-
-
+.room-widget.card .room-header{
+  position:sticky;position:-webkit-sticky;top:0;z-index:5;
+  background:inherit;padding:10px 12px;
+  border-bottom:1px solid rgba(0,0,0,.06);
+  box-shadow:0 1px 0 rgba(0,0,0,.06);
+}
+.room-widget.card .room-body{padding:10px 12px;}
+.room-widget.card .room-header .status-circle{position:relative;z-index:6;top:0;}
+.turnover-line{margin:6px 0;}
 
 /* ---------- Background Color Mode ---------- */
-/* When this class is present on the card, we paint the background instead of the border. */
-.room-widget.card.status-mode-bg {
-  /* Clear any border/animations from border-mode */
-  /*border: 1px !important;*/
-  animation: none !important;
-
-  /* Drive colors from CSS vars for easy contrast handling */
-  background: var(--card-bg, #fff);
-  color: var(--card-fg, #111);
+.room-widget.card.status-mode-bg{
+  animation:none!important;
+  background:var(--card-bg,#fff);
+  color:var(--card-fg,#111);
 }
-
-/* Make the sticky header look correct on tinted/solid backgrounds */
-.room-widget.card.status-mode-bg .room-header {
-  background: var(--card-bg, #fff);
-  /* softer divider that works on light/dark bg */
-  border-bottom-color: rgba(0,0,0,.08);
+.room-widget.card.status-mode-bg .room-header{
+  background:var(--card-bg,#fff);
+  border-bottom-color:rgba(0,0,0,.08);
 }
 .room-widget.card.status-mode-bg.red-45 .room-header,
 .room-widget.card.status-mode-bg.red-60 .room-header,
-.room-widget.card.status-mode-bg.red-120 .room-header {
-  border-bottom-color: rgba(255,255,255,.25);
+.room-widget.card.status-mode-bg.red-120 .room-header{
+  border-bottom-color:rgba(255,255,255,.25);
 }
-
-/* Status dot: either hide (since the whole card is colored), or outline it */
-.room-widget.card.status-mode-bg .status-circle {
-  /* Option A: hide */
-  /* display: none; */
-  /* Option B: keep but add a white ring for visibility on dark bg */
-  box-shadow: 0 0 0 2px rgba(255,255,255,.65);
+.room-widget.card.status-mode-bg .status-circle{
+  box-shadow:0 0 0 2px rgba(255,255,255,.65);
 }
-
-/* Chips + metric text should follow foreground color (for readability) */
 .room-widget.card.status-mode-bg .metrics .metric-chip span,
 .room-widget.card.status-mode-bg .small,
 .room-widget.card.status-mode-bg .surgery-row,
-.room-widget.card.status-mode-bg .status {
-  color: var(--card-fg, #111) !important;
+.room-widget.card.status-mode-bg .status{
+  color:var(--card-fg,#111)!important;
 }
 
 /* chip */
 .metric-chip{
-  display:inline-flex;
-  align-items:center;
-  gap:.5rem;
-  font-size:1rem;
-  margin:0;
-  direction:rtl;
-  white-space:nowrap;
+  display:inline-flex;align-items:center;gap:.5rem;
+  font-size:1rem;margin:0;direction:rtl;white-space:nowrap;
 }
-
-/* רק ה־spans בתוך chip מקבלים "כדור" */
 .room-widget.card.status-mode-bg .metrics .metric-chip span{
-  padding:0 6px;
-  border-radius:8px;
-  background:var(--chip-bg, rgba(0,0,0,.06));
+  padding:0 6px;border-radius:8px;
+  background:var(--chip-bg,rgba(0,0,0,.06));
 }
-
-/* אל תבטל ::before של chip (כי אנחנו משתמשים בו כמפריד) */
-/* במקום זה – בטל רק אייקונים אם היו */
-.metric-chip .chip-icon{
-  display:none; /* אם אתה באמת רוצה להסתיר אייקון */
-}
-
-/* מפריד בין chips */
+.metric-chip .chip-icon{display:none;}
 .metrics .metric-chip + .metric-chip::before{
-  content:'|';
-  margin:0 .5rem;
-  opacity:.6;
+  content:'|';margin:0 .5rem;opacity:.6;
 }
-
-/* אינדיקציה/אזהרה */
 .metric-chip .chip-warn{
-  background:rgba(255, 193, 7, .22);
-  border:1px solid rgba(255, 193, 7, .55);
-  border-radius:10px;
-  padding:0 8px;
-  font-weight:600;
-  font-size:.95rem;
+  background:rgba(255,193,7,.22);
+  border:1px solid rgba(255,193,7,.55);
+  border-radius:10px;padding:0 8px;
+  font-weight:600;font-size:.95rem;
 }
-
-/* Neutralize explicit metric colors inside colored cards */
 .room-widget.card.status-mode-bg .metric-ok,
 .room-widget.card.status-mode-bg .metric-yellow,
 .room-widget.card.status-mode-bg .metric-orange,
 .room-widget.card.status-mode-bg .metric-red,
-.room-widget.card.status-mode-bg .metric-red-strong {
-  color: inherit !important;
-  text-shadow: none !important;
-  animation: none !important;
+.room-widget.card.status-mode-bg .metric-red-strong{
+  color:inherit!important;text-shadow:none!important;animation:none!important;
 }
+.room-widget.card.status-mode-bg .surgery-row.scompleted{opacity:.85;}
 
-/* Completed rows remain slightly dimmer, but still readable */
-.room-widget.card.status-mode-bg .surgery-row.scompleted {
-  opacity: 0.85;
+/* palettes */
+.room-widget.card.status-mode-bg.green-blink{
+  --card-bg:#e6f4ea;--card-fg:#0b5a2a;--chip-bg:rgba(0,0,0,.06);
 }
-
-/* ---------- Per-status palettes (set background + foreground + chip bg) ---------- */
-/* Light tints (dark text) */
-.room-widget.card.status-mode-bg.green-blink {
-  --card-bg: #e6f4ea;  /* google-ish green tint */
-  --card-fg: #0b5a2a;
-  --chip-bg: rgba(0,0,0,.06);
+.room-widget.card.status-mode-bg.grey{
+  --card-bg:#f1f3f4;--card-fg:#202124;--chip-bg:rgba(0,0,0,.06);
 }
-.room-widget.card.status-mode-bg.grey {
-  --card-bg: #f1f3f4;
-  --card-fg: #202124;
-  --chip-bg: rgba(0,0,0,.06);
+.room-widget.card.status-mode-bg.blue{
+  --card-bg:#e8f0fe;--card-fg:#174ea6;--chip-bg:rgba(0,0,0,.06);
 }
-.room-widget.card.status-mode-bg.blue {
-  --card-bg: #e8f0fe;
-  --card-fg: #174ea6;
-  --chip-bg: rgba(0,0,0,.06);
+.room-widget.card.status-mode-bg.orange{
+  --card-bg:#fff4e5;--card-fg:#8a4b00;--chip-bg:rgba(0,0,0,.06);
 }
-.room-widget.card.status-mode-bg.orange {
-  --card-bg: #fff4e5;
-  --card-fg: #8a4b00;
-  --chip-bg: rgba(0,0,0,.06);
-}
-
-/* Warnings/Severe = solid/darker bg (light text) */
 .room-widget.card.status-mode-bg.red-45,
-.room-widget.card.status-mode-bg.red-45-ack {
-  --card-bg: #d93025;  /* red 600 */
-  --card-fg: #ffffff;
-  --chip-bg: rgba(255,255,255,.18);
+.room-widget.card.status-mode-bg.red-45-ack{
+  --card-bg:#ff6c67;--card-fg:#fff;--chip-bg:rgba(255,255,255,.18);
 }
-/* Google Red 700 - התראה בולטת וברורה */
 .room-widget.card.status-mode-bg.red-60,
-.room-widget.card.status-mode-bg.red-60-ack {
-  --card-bg: #D32F2F; 
-  --card-fg: #ffffff;
-  --chip-bg: rgba(255, 255, 255, 0.2);
-  border: none;
+.room-widget.card.status-mode-bg.red-60-ack{
+  --card-bg:#ff6c67;--card-fg:#fff;--chip-bg:rgba(255,255,255,.2);
+  border:none;
 }
-
-/* Google Red 900 - התראה קריטית (עמוקה וסמכותית) */
 .room-widget.card.status-mode-bg.red-120,
-.room-widget.card.status-mode-bg.red-120-ack {
-  --card-bg: #B71C1C;
-  --card-fg: #ffffff;
-  --chip-bg: rgba(255, 255, 255, 0.25);
-  border: none;
+.room-widget.card.status-mode-bg.red-120-ack{
+  --card-bg:#fb6060;--card-fg:#fff;--chip-bg:rgba(255,255,255,.25);
+  border:none;
 }
-/* If you still want a very subtle border on light modes */
 .room-widget.card.status-mode-bg.green-blink,
 .room-widget.card.status-mode-bg.grey,
 .room-widget.card.status-mode-bg.blue,
-.room-widget.card.status-mode-bg.orange {
-  box-shadow: inset 0 0 0 1px rgba(0,0,0,.06);
+.room-widget.card.status-mode-bg.orange{
+  box-shadow:inset 0 0 0 1px rgba(0,0,0,.06);
 }
-
-/* Kill border-mode animations when background mode is on */
 .room-widget.card.status-mode-bg.red-60,
-.room-widget.card.status-mode-bg.red-120 {
-  animation: none !important;
-  border: 0 !important;
+.room-widget.card.status-mode-bg.red-120{
+  animation:none!important;border:0!important;
 }
 
-
-
-.room-alert-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: .35rem;
-  margin-inline-start: .5rem;
-  padding: .15rem .5rem;
-  border-radius: 999px;
-  background: #ffebee;
-  color: #b71c1c;
-  font-weight: 700;
-  border: 1px solid #ffcdd2;
-  margin: 0.25rem 0 0.4rem;
+/* alert chip */
+.room-alert-chip{
+  display:inline-flex;align-items:center;gap:.35rem;
+  margin-inline-start:.5rem;
+  padding:.15rem .5rem;border-radius:999px;
+  background:#ffebee;color:#b71c1c;
+  font-weight:700;border:1px solid #ffcdd2;
+  margin:.25rem 0 .4rem;
 }
-
-.warn-dot {
-  width: 10px; height: 10px; border-radius: 50%;
-  background: #d32f2f;
-  box-shadow: 0 0 0 0 rgba(211,47,47,.7);
+.warn-dot{
+  width:10px;height:10px;border-radius:50%;
+  background:#ff6c67;
+  box-shadow:0 0 0 0 rgba(211,47,47,.7);
 }
-
-
-/* Blink only when not acknowledged */
-.warn-dot.blink,
-.warn-icon.blink {
-  animation: pulse 1.5s infinite;
+.warn-dot.blink,.warn-icon.blink{animation:warn-pulse 1.5s infinite;}
+@keyframes warn-pulse{
+  0%{box-shadow:0 0 0 0 rgba(211,47,47,.7)}
+  70%{box-shadow:0 0 0 12px rgba(211,47,47,0)}
+  100%{box-shadow:0 0 0 0 rgba(211,47,47,0)}
 }
+.warn-icon{margin-inline-end:.25rem;font-weight:700;color:#b71c1c;}
+.progress-line{display:flex;align-items:center;justify-content:center;gap:.25rem;text-align:center;}
 
-@keyframes pulse {
-  0%   { box-shadow: 0 0 0 0 rgba(211,47,47,.7); }
-  70%  { box-shadow: 0 0 0 12px rgba(211,47,47,0); }
-  100% { box-shadow: 0 0 0 0 rgba(211,47,47,0); }
-}
+.room-alert-chip--placeholder{visibility:hidden;}
+.room-alert-chip--placeholder .warn-dot{display:none;}
+.warn-icon--placeholder{visibility:hidden;display:inline-block;width:1.2em;}
 
-.warn-icon { margin-inline-end: .25rem; font-weight: 700; color: #b71c1c; }
-.progress-line { display: flex; align-items: center; justify-content: center; gap: .25rem; }
-
-
-.room-alert-chip--placeholder {
-  visibility: hidden;              /* keeps space but not visible */
-}
-.room-alert-chip--placeholder .warn-dot {
-  display: none;                   /* don’t animate placeholder dot */
-}
-
-/* inline icon before "X מתוך N" — reserve consistent space */
-.warn-icon {
-  margin-inline-end: .25rem;
-  font-weight: 700;
-  color: #b71c1c;
-}
-
-/* placeholder icon occupies the same width but is invisible */
-.warn-icon--placeholder {
-  visibility: hidden;
-  display: inline-block;
-  width: 1.2em;                    /* roughly width of '⚠️' */
-}
-
-/* optional: if the title and chip are on one line and you want fixed min-height */
-h4.text-center { min-height: 2.2rem; }
-
-
-
+/* background-mode override (kept as-is) */
 .background-mode .room-widget .card .room-header .status-circle{top:-152px!important;}
 
-/* small neutral chip (non-blinking) */
-.overlap-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: .25rem;
-  margin-inline-start: .35rem;
-  padding: .05rem .4rem;
-  border-radius: 999px;
-  background: #eef2ff;   /* soft */
-  color: #283593;        /* indigo-ish */
-  font-weight: 600;
-  border: 1px solid #c5cae9;
+/* overlap chip */
+.overlap-chip{
+  display:inline-flex;align-items:center;gap:.25rem;
+  margin-inline-start:.35rem;
+  padding:.05rem .4rem;border-radius:999px;
+  background:#eef2ff;color:#283593;
+  font-weight:600;border:1px solid #c5cae9;
 }
+.overlap-chip--placeholder{visibility:hidden;}
+.overlap-icon{margin-inline-end:.25rem;font-weight:700;color:#3949ab;}
 
-.overlap-chip--placeholder { visibility: hidden; }
-
-/* inline icon variant for progress line */
-.overlap-icon {
-  margin-inline-end: .25rem;
-  font-weight: 700;
-  color: #3949ab;
-}
-
-
-
-/* greys out the whole card */
-.past-day {
-  background: #f3f4f6;
-  filter: grayscale(0.35);
-}
-
-/* hide red emphasis inside past days (if you prefer fully hidden) */
+/* past day */
+.past-day{background:#f3f4f6;filter:grayscale(.35);}
 .past-day .room-alert-chip,
 .past-day .warn-icon,
-.past-day .warn-dot {
-  opacity: 0.25;             /* or: display:none; if you want them gone */
-  animation: none !important;
+.past-day .warn-dot{
+  opacity:.25;
+  animation:none!important;
+}
+.room-alert-chip--muted{visibility:hidden;}
+
+/* mat form */
+.mat-form-field-wrapper{padding-bottom:0!important;}
+.mat-form-field-infix{width:100px!important;}
+
+/* idle chip + live dot */
+.idle-chip{margin-inline-start:6px;font-weight:600;white-space:nowrap;}
+.live-dot{
+  display:inline-block;width:6px;height:6px;margin-inline-start:6px;
+  border-radius:50%;background:currentColor;opacity:.6;
+  animation:pulse 1.2s ease-in-out infinite;
+  vertical-align:middle;
+}
+@keyframes pulse{
+  0%,100%{transform:scale(.8);opacity:.4}
+  50%{transform:scale(1);opacity:1}
 }
 
-/* placeholders keep layout consistent */
-.room-alert-chip--muted {
-  visibility: hidden;        /* reserves space without showing */
+/* summary */
+.summary-card>*{direction:rtl;text-align:right;}
+.summary-card{
+  border:1px solid #e5e5e5;border-radius:10px;
+  padding:12px 14px;margin:10px 0 16px;background:#fff;
 }
-.warn-icon--placeholder {
-  visibility: hidden;
-  display: inline-block;
-  width: 1.2em;
+.summary-header{font-weight:700;margin-bottom:8px;}
+.summary-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;}
+.summary-pill{border:1px solid #eee;border-radius:8px;padding:10px;}
+.summary-pill .k{font-size:1em;opacity:.7;margin-bottom:2px;}
+.summary-pill .v{font-size:22px;font-weight:700;line-height:1.2;}
+.summary-pill .sub{font-size:1em;opacity:.8;}
+.summary-section{margin-top:10px;}
+.section-title{font-weight:600;margin-bottom:6px;}
+.now-list{list-style:none;padding:0;margin:0;}
+.now-list li{padding:3px 0;}
+.rooms-list{display:flex;flex-wrap:wrap;gap:8px;}
+.room-chip{border:1px solid #eee;border-radius:20px;padding:6px 10px;font-size:13px;white-space:nowrap;}
+.room-id{font-weight:600;margin-inline-end:6px;}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin:0 2px;vertical-align:middle;}
+.dot.ok{background:#97caaf;}
+.dot.run{background:rgb(1,92,1);opacity:.7;animation:quiet-blink 2s ease-in-out infinite;}
+.dot.plan{background:#1e90ff;}
+.muted{opacity:.65;}
+
+/* urgency */
+.urgency-line{margin-top:4px;}
+.urgency-line .urge{background:transparent;border:0;cursor:pointer;padding:0 4px;font:inherit;}
+.urgency-line .urge:focus{outline:none;text-decoration:underline;}
+.summary-section .urge.close{float:inline-start;margin-inline-start:6px;}
+
+.urgency-buttons{display:flex;flex-wrap:wrap;gap:4px;}
+.urgency-buttons .urge{
+  display:flex;align-items:center;gap:2px;
+  font-size:.9rem;padding:4px 8px;border:none;border-radius:6px;
+  background-color:#f2f2f2;cursor:pointer;
+  transition:background-color .2s,transform .1s;
+}
+.urgency-buttons .urge:hover{background-color:#e0e0e0;transform:translateY(-1px);}
+.urgency-buttons .urge.selected{background-color:#4caf50;color:#fff;}
+.urgency-buttons .urge span{font-weight:500;}
+
+/* responsive metrics */
+@media (max-width:1899px){
+  .metrics{flex-direction:column;align-items:center;}
+  .chip-icon{display:none;}
+  .chip-title{display:inline;font-weight:700;}
+}
+.chip-title{display:none;}
+.chip-icon{display:inline;}
+
+/* grid breakpoints */
+@media (min-width:1800px){
+  #surgeriesrts{grid-template-columns:repeat(7,minmax(250px,1fr));}
+}
+@media (max-width:900px){
+  #surgeriesrts{grid-template-columns:repeat(4,minmax(250px,1fr));}
+}
+@media (max-width:600px){
+  #surgeriesrts{grid-template-columns:1fr;}
 }
 
-
-.progress-line{text-align: center;}
-.mat-form-field-wrapper{padding-bottom: 0!important;}
-.mat-form-field-infix{width: 100px !important;}
-
-
-.idle-chip { margin-inline-start:6px; font-weight:600; white-space:nowrap; }
-.live-dot { display:inline-block; width:6px; height:6px; margin-inline-start:6px;
-  border-radius:50%; background: currentColor; opacity:.6; animation: pulse 1.2s ease-in-out infinite; vertical-align:middle; }
-@keyframes pulse { 0%,100% { transform:scale(.8); opacity:.4 } 50% { transform:scale(1); opacity:1 } }
-
-
-.summary-card > *{direction:rtl; text-align: right;}
-.summary-card { border:1px solid #e5e5e5; border-radius:10px; padding:12px 14px; margin:10px 0 16px; background:#fff; }
-.summary-header { font-weight:700; margin-bottom:8px; }
-.summary-grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(180px,1fr)); gap:10px; }
-.summary-pill { border:1px solid #eee; border-radius:8px; padding:10px; }
-.summary-pill .k { font-size:1em; opacity:.7; margin-bottom:2px; }
-.summary-pill .v { font-size:22px; font-weight:700; line-height:1.2; }
-.summary-pill .sub { font-size:1em; opacity:.8; }
-.summary-section { margin-top:10px; }
-.section-title { font-weight:600; margin-bottom:6px; }
-.now-list { list-style:none; padding:0; margin:0; }
-.now-list li { padding:3px 0; }
-.rooms-list { display:flex; flex-wrap:wrap; gap:8px; }
-.room-chip { border:1px solid #eee; border-radius:20px; padding:6px 10px; font-size:13px; white-space:nowrap; }
-.room-id { font-weight:600; margin-inline-end:6px; }
-.dot { display:inline-block; width:8px; height:8px; border-radius:50%; margin:0 2px; vertical-align:middle; }
-.dot.ok { background:#97caaf; }     /* completed */
-.dot.run { background:rgb(1, 92, 1); opacity:.7; animation: quiet-blink 2s ease-in-out infinite;}    /* in progress */
-.dot.plan { background:#1e90ff; }   /* planned */
-.muted { opacity:.65; }
-
-
-
-.urgency-line { margin-top: 4px; }
-.urgency-line .urge {
-  background: transparent; border: 0; cursor: pointer; padding: 0 4px; font: inherit;
+/* room status (big text) */
+.room-status-line{text-align:center;margin-top:4px;}
+.status-box{
+  display:inline-block;min-width:48px;
+  padding:4px 10px;border-radius:6px;
+  font-weight:700;font-size:.85em;
 }
-.urgency-line .urge:focus { outline: none; text-decoration: underline; }
-.summary-section .urge.close { float: inline-start; margin-inline-start: 6px; }
+.status-box.free{background:#e53935;color:#fff;}
+.status-box.busy{background:#43a047;color:#fff;}
 
+.room-status-text{
+  text-align:center;font-weight:900;font-size:50px;
+  line-height:1;margin-top:4px;
+}
+.room-status-text.busy{color:#0a8f3c;}
+.room-status-text.free{color:#c62828;}
 
+.chip-warn{margin-right:8px;font-weight:600;}
 
-.metrics {
-  display: flex;
-  justify-content: center;
-  /*gap: 1rem;*/ /* space between chips */
+/* --- Department Badge (single) --- */
+.room-dept-badge{
+  display:inline-block;margin-inline-start:6px;
+  padding:2px 8px;border-radius:4px;
+  background:rgba(0,0,0,.05);
+  font-size:.85em;font-weight:500;
+  color:#555;white-space:nowrap;
+}
+.room-dept-badge::before{content:'|';margin-inline-end:4px;opacity:.4;}
+
+/* --- Status/Duration/Turnover/Progress blocks (single) --- */
+.room-status-info{margin:8px 0 4px;text-align:center;}
+.status-display{
+  display:inline-block;padding:4px 12px;border-radius:6px;
+  font-weight:600;font-size:.9em;min-width:140px;
+}
+.status-display.status-active{background:#ffebee;color:#c62828;animation:pulse-red 2s infinite;}
+.status-display.status-completed{background:#e8f5e9;color:#2e7d32;}
+.status-display.status-free{background:#e3f2fd;color:#1976d2;}
+.status-display.status-planned{background:#fff3e0;color:#e65100;}
+@keyframes pulse-red{0%,100%{opacity:1}50%{opacity:.7}}
+
+.room-duration-info{margin:4px 0;text-align:center;}
+.duration-display{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:3px 10px;border-radius:6px;
+  background:rgba(0,0,0,.03);font-size:.85em;
+}
+.duration-icon{font-size:1.1em;}
+.duration-text{font-weight:500;color:#555;}
+
+.room-turnover-info{
+  margin:4px 0;text-align:center;
+  display:flex;justify-content:center;align-items:center;
+  gap:8px;flex-wrap:wrap;
+}
+.turnover-time{
+  display:inline-block;padding:5px 12px;border-radius:6px;
+  font-weight:600;font-size:.85em;
+  background:rgba(0,0,0,.04);
+  transition:all .3s ease;
+}
+.turnover-time.metric-ok{color:#2e7d32;background:rgba(76,175,80,.15);}
+.turnover-time.metric-warn{
+  color:#fff;background:#fbc02d;font-weight:700;
+  box-shadow:0 2px 8px rgba(251,192,45,.4);
+}
+.turnover-time.metric-bad{
+  color:#fff;background:#ff5252;font-weight:700;
+  animation:turnover-blink-text 1s infinite;
+  box-shadow:0 2px 12px rgba(211,47,47,.5);
+}
+@keyframes turnover-blink-text{
+  0%,100%{background:#ff5252;text-shadow:0 0 8px rgba(211,47,47,.6)}
+  50%{background:#ff7070;text-shadow:0 0 12px rgba(211,47,47,.8)}
+}
+.turnover-warning-text{
+  display:block;margin-top:4px;font-size:.75em;
+  font-weight:700;color:#b71c1c;
+  animation:warning-pulse 1.2s infinite;text-align:center;
+}
+@keyframes warning-pulse{
+  0%,100%{color:#b71c1c;transform:scale(1)}
+  50%{color:#ff6c67;transform:scale(1.05)}
 }
 
+.room-progress-info{margin:4px 0 8px;text-align:center;}
+.progress-display{
+  display:inline-flex;align-items:baseline;gap:8px;
+  padding:4px 12px;border-radius:6px;
+  background:rgba(76,175,80,.1);
+  border:1px solid rgba(76,175,80,.3);
+}
+.progress-counter{font-weight:700;font-size:1.1em;color:#2e7d32;}
+.progress-label{font-size:.85em;color:#558b2f;font-weight:500;}
 
-/* For screens less than 1900px */
-@media (max-width: 1899px) {
-  .metrics {
-    flex-direction: column;
-    align-items: center;
+@media (max-width:768px){
+  .status-display,.progress-display,.duration-display,.turnover-time{
+    font-size:.8em;padding:3px 8px;
   }
-
-
-
+  .room-dept-badge{display:none;}
+  .chip-warn{font-size:.7em;padding:2px 6px;}
+  .room-turnover-info{gap:6px;}
 }
 
-
-/* Default (wide screen): show icons, hide titles */
-.chip-title {
-  display: none;
+/* turnover-warning card border */
+.room-widget.card.turnover-warning{
+  border:3px solid #1f0d0c;
+  animation:turnover-blink 1s infinite;
+  box-shadow:0 0 12px rgba(211,47,47,.4);
 }
-.chip-icon {
-  display: inline;
+@keyframes turnover-blink{
+  0%,100%{border-color:#ff6c67;box-shadow:0 0 12px rgba(211,47,47,.6)}
+  50%{border-color:#b71c1c;box-shadow:0 0 20px rgba(211,47,47,.3)}
 }
-
-/* Narrow screen (<1900px): hide icons, show titles */
-@media (max-width: 1899px) {
-  .chip-icon {
-    display: none;
-  }
-  .chip-title {
-    display: inline;
-    font-weight: bold;
-  }
+.room-widget.card.turnover-warning .room-header{background:rgba(211,47,47,.05);}
+@media (max-width:768px){
+  .room-widget.card.turnover-warning{border:2px solid #ff6c67;}
 }
 
-
-.room-widget {min-width:200px;}
-
-.urgency-buttons {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px; /* small spacing between buttons */
-}
-
-.urgency-buttons .urge {
-  display: flex;
-  align-items: center;
-  gap: 2px; /* space between icon and count */
-  font-size: 0.9rem;
-  padding: 4px 8px;
-  border: none;
-  border-radius: 6px;
-  background-color: #f2f2f2; /* light grey for default */
-  cursor: pointer;
-  transition: background-color 0.2s, transform 0.1s;
-}
-
-.urgency-buttons .urge:hover {
-  background-color: #e0e0e0;
-  transform: translateY(-1px);
-}
-
-.urgency-buttons .urge.selected {
-  background-color: #4caf50; /* green for selected */
-  color: white;
-}
-
-.urgency-buttons .urge span {
-  font-weight: 500;
-}
-
-
-/* Ensure at least 3 cards per row on large screens */
-@media (min-width: 1800px) {
-  #surgeriesrts {
-    grid-template-columns: repeat(7, minmax(250px, 1fr));
-  }
-}
-
-@media (max-width: 900px) {
-  #surgeriesrts {
-    grid-template-columns: repeat(4, minmax(250px, 1fr));
-  }
-}
-
-/* Mobile: force single column */
-@media (max-width: 600px) {
-  #surgeriesrts {
-    grid-template-columns: 1fr;
-  }
-}
-
-.room-status-line {
-  text-align: center;
-  margin-top: 4px;
-}
-
-.status-box {
-  display: inline-block;
-  min-width: 48px;
-  padding: 4px 10px;
-  border-radius: 6px;
-  font-weight: bold;
+.room-extra-panel {
+  margin-top: 8px;
+  padding: 8px 10px;
+  border-top: 1px dashed rgba(0,0,0,.25);
   font-size: 0.85em;
 }
 
-.status-box.free {
-background: #e53935;
-color: #fff;
+.room-extra-panel .extra-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 2px 0;
 }
 
-  .status-box.busy {
-  background: #43a047;
-  color: #fff;
-}
-.room-status-text{
-  text-align:center;
-  font-weight:900;
-  font-size:50px;
-  line-height:1;
-  margin-top:4px;
+.room-extra-panel .k {
+  opacity: 0.85;
 }
 
-.room-status-text.busy{ color:#0a8f3c; } /* תפוס - ירוק */
-.room-status-text.free{ color:#c62828; } /* פנוי - אדום */
+.room-extra-panel .v {
+  font-weight: 700;
+  direction: ltr;
+  text-align: left;
+}
+/* google-charts.component.css */
 
-.chip-warn { margin-right: 8px; font-weight: 600; }
+/* כותרת section */
+.section-title{
+  margin: 4px 0 6px;
+  font-size: 0.95em;
+  font-weight: 700;
+}
+
+/* קוביות ניתוחים - רווחים קטנים */
+.surgery-card{
+  margin: 4px 0;          /* היה גדול יותר -> עכשיו קטן */
+  padding: 6px 8px;       /* קומפקט */
+  border: 1px solid rgba(0,0,0,.12);
+  border-radius: 6px;
+  background: #fff;
+  line-height: 1.2;
+}
+
+/* שורה עליונה */
+.surgery-top{
+  display:flex;
+  justify-content: space-between;
+  gap: 8px;
+  align-items: center;
+}
+.dept{
+  font-style: normal;
+  font-size: 0.85em;
+  color: #444;          /* כהה וברור על רקע לבן */
+  font-weight: 500;
+}
+
+.times{
+  direction: ltr;
+  font-weight: 600;
+  font-size: 0.9em;
+  color: #1f2937;       /* אפור כהה (כמו Material text primary) */
+}
+/* אותו עיצוב + טוויסט קטן ל"מתוכנן" */
+.surgery-card.planned{
+  background: #fafafa;
+  border-style: dashed;
+}
+
+/* נקודת סטטוס קטנה */
+.status-dot{
+  display:inline-block;
+  width:8px;
+  height:8px;
+  border-radius:50%;
+  margin-top: 4px;
+}
+
+/* צבעים לפי סטטוס */
+.status-dot.Completed{ background:#43a047; }
+.status-dot.InProgress{ background:#1e88e5; }
+.status-dot.Planned{ background:#9e9e9e; }
