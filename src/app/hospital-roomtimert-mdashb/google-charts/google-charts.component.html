@@ -306,9 +306,9 @@
                     <span class="room-dept-badge">{{ dept }}</span>
                   </ng-container>
 
-                  <ng-container *ngIf="settings.showLateChip !== false">
+                  <!-- <ng-container *ngIf="settings.showLateChip !== false"> -->
                     <!-- existing late chip logic -->
-                  </ng-container>
+                  <!-- </ng-container> -->
                 </h4>
 
                 <!-- Status row: Active/Finished/Free -->
@@ -466,7 +466,8 @@
   </div>
 </ng-container> -->
                 <!-- Planned surgeries -->
-                <ng-container *ngIf="settings.showPlannedSection && plannedSurgeries(room) as planned">
+                 
+                <ng-container *ngIf="settings.showPlannedSection && isRoomExpanded(room.roomId) && plannedSurgeries(room) as planned">
                   <div *ngIf="planned.length">
                     <hr />
                     <h5 class="section-title">ניתוחים מתוכננים</h5>
