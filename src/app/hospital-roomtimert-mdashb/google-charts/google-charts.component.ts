@@ -2931,56 +2931,56 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
         return { totalDelayHMM, overrunText, freeFromText, idleTimeText };
     }
 
-    private getRoomFreeFrom(room: RoomData): Date | null {
-        if (!room) return null;
+    // private getRoomFreeFrom(room: RoomData): Date | null {
+    //     if (!room) return null;
 
-        // אם אין ניתוח פעיל → פנוי עכשיו (אבל נציג את השעה הנוכחית ב"יום הנבחר")
-        if (!this.hasInProgress(room)) {
-            return this._nowInSelectedDay();
-        }
+    //     // אם אין ניתוח פעיל → פנוי עכשיו (אבל נציג את השעה הנוכחית ב"יום הנבחר")
+    //     if (!this.hasInProgress(room)) {
+    //         return this._nowInSelectedDay();
+    //     }
 
-        // אם יש פעיל → ננסה לנבא לפי active + TimeSurgeryToDo (+ 20 דק' הכנה)
-        const baseDate = room.date || this.selectedDate;
-        const now = this._nowInSelectedDay();
+    //     // אם יש פעיל → ננסה לנבא לפי active + TimeSurgeryToDo (+ 20 דק' הכנה)
+    //     const baseDate = room.date || this.selectedDate;
+    //     const now = this._nowInSelectedDay();
 
-        let active: any = null;
-        for (const s of room.surgeries || []) {
-            if (
-                this.isInProgressStatus(
-                    (s as any).status ?? (s as any).SurgeryStatus
-                )
-            ) {
-                const ent = this.parseClockWithDate(
-                    (s as any).timeEntrance ??
-                        (s as any).TimeEntranceToTheOperatingRoom,
-                    baseDate
-                );
-                if (
-                    !active ||
-                    (ent &&
-                        active._ent &&
-                        ent.getTime() > active._ent.getTime())
-                ) {
-                    active = { row: s, _ent: ent };
-                }
-            }
-        }
-        if (!active || !active._ent) return null;
+    //     let active: any = null;
+    //     for (const s of room.surgeries || []) {
+    //         if (
+    //             this.isInProgressStatus(
+    //                 (s as any).status ?? (s as any).SurgeryStatus
+    //             )
+    //         ) {
+    //             const ent = this.parseClockWithDate(
+    //                 (s as any).timeEntrance ??
+    //                     (s as any).TimeEntranceToTheOperatingRoom,
+    //                 baseDate
+    //             );
+    //             if (
+    //                 !active ||
+    //                 (ent &&
+    //                     active._ent &&
+    //                     ent.getTime() > active._ent.getTime())
+    //             ) {
+    //                 active = { row: s, _ent: ent };
+    //             }
+    //         }
+    //     }
+    //     if (!active || !active._ent) return null;
 
-        const plannedMinRaw =
-            (active.row as any).timeSurgeryToDo ??
-            (active.row as any).TimeSurgeryToDo;
-        const plannedMin =
-            Number.isFinite(+plannedMinRaw) && +plannedMinRaw > 0
-                ? Math.round(+plannedMinRaw)
-                : 60;
+    //     const plannedMinRaw =
+    //         (active.row as any).timeSurgeryToDo ??
+    //         (active.row as any).TimeSurgeryToDo;
+    //     const plannedMin =
+    //         Number.isFinite(+plannedMinRaw) && +plannedMinRaw > 0
+    //             ? Math.round(+plannedMinRaw)
+    //             : 60;
 
-        const end = new Date(active._ent.getTime() + plannedMin * 60000);
-        const free = new Date(end.getTime() + 20 * 60000);
+    //     const end = new Date(active._ent.getTime() + plannedMin * 60000);
+    //     const free = new Date(end.getTime() + 20 * 60000);
 
-        // אם החישוב יצא בעבר, לפחות "עכשיו"
-        return free < now ? now : free;
-    }
+    //     // אם החישוב יצא בעבר, לפחות "עכשיו"
+    //     return free < now ? now : free;
+    // }
 
     /**
      * חילוץ זמן הסיום של הניתוח (תומך במספר שדות)
@@ -3851,5 +3851,12 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
         const now = this._nowInSelectedDay();
         const diffMin = Math.floor((now.getTime() - end.getTime()) / 60000);
         return diffMin >= 40;
+    }
+
+    isAllSurgeriesCompleted(room: RoomData): boolean {
+        if (!room?.surgeries?.length) return false;
+        return room.surgeries.every(
+            (s) => (s?.status ?? s?.SurgeryStatus) === "Completed"
+        );
     }
 }

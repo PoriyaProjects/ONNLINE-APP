@@ -793,3 +793,14 @@ h4.text-center {
   animation: idleBlinkBorder 0.9s linear infinite !important;
 }
 
+.room-widget.all-done{
+  outline: 3px solid #8fd3ff !important;
+  outline-offset: -3px;
+  box-shadow: 0 0 0 4px rgba(143,211,255,.25);
+}
+
+.all-done-text{
+  color:#2b7fb8;
+  font-size:12px;
+  font-weight:600;
+}

@@ -170,6 +170,10 @@
             <div class="room-status-title" *ngIf="getRoomStatusInfo(room) as statusInfo">
               <div class="status-display" [ngClass]="statusInfo.cssClass">
                 {{ statusInfo.label }}
+                <small *ngIf="isAllSurgeriesCompleted(room)" class="all-done-text">
+                  תמו הניתוחים להיום
+                </small>
+
               </div>
             </div>
 
@@ -179,7 +183,8 @@
           isRoomPastDay(room) ? 'past-day' : '',
           isRoomExpanded(room.roomId) ? 'active' : '',
           isIdleOver40(room) ? 'idle-alert' : '',
-          
+            isAllSurgeriesCompleted(room) ? 'all-done' : '',
+       isIdleOver40(room) && !isAllSurgeriesCompleted(room) ? 'idle-alert' : '' ,
           isTurnoverLong(room) && !hasInProgress(room) ? 'turnover-warning' : '',
           getIdleBorderClass(room)
           ]">
