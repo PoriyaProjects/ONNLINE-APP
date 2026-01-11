@@ -436,6 +436,18 @@ export class DashboardComponent implements OnInit {
         window.open("microsoft-edge:" + link);
     }
 
+  ifnotebooklm(link: string, event?: Event) {
+    if (link == 'notebooklm') {
+        event?.preventDefault(); // Prevent link from opening
+        
+        this.http
+            .post(environment.url + "OpenLM", {})
+            .subscribe((Response) => {
+                console.log(Response);
+            });
+    }
+}
+
     getLoginUserDetails() {
         this.http
             .post(environment.url + "GetLoginUserDetails", {

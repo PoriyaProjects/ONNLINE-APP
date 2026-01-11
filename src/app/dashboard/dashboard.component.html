@@ -56,7 +56,7 @@
 
                         <div *ngFor="let shortcut of tab.cards" class="card"
                             (click)="userClickedShortCut(shortcut.Title)">
-                            <a [href]="shortcut.Link" *ngIf="shortcut.ChromeBrowser == 'True'" target="_blank">
+                            <a [href]="shortcut.Link" *ngIf="shortcut.ChromeBrowser == 'True'" target="_blank" (click)="ifnotebooklm(shortcut.Link, $event)">
                                 <div class="card-title">{{ shortcut.Title }}</div>
                                 <div class="container-img">
                                     <img [src]="shortcut.Image" alt="Shortcut Image" class="card-image">
