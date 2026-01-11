@@ -6,180 +6,198 @@
    ========================= */
 
 /* Grid */
+/* יישור גלובלי לימין עבור כל הקומפוננטה */
 #surgeriesrts {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-  gap: 16px;
+    direction: rtl;
+    text-align: right;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 16px;
 }
 
+/* יישור כותרות למרכז (כפי שהיה) אך עם תמיכה בעברית */
+h2, h3, h4 {
+    direction: rtl;
+    text-align: center;
+}
 /* Titles / panels */
-h2, h3 {
-  text-align: center;
-  padding: 20px;
-  width: 100%;
+h2,
+h3 {
+    text-align: center;
+    padding: 20px;
+    width: 100%;
 }
 h4.text-center {
-  margin: 0 0 4px 0;
-  min-height: 2.2rem;
+    margin: 0 0 4px 0;
+    min-height: 2.2rem;
 }
 
 .panel {
-  background: #eeeff1;
-  margin-bottom: 40px;
+    background: #eeeff1;
+    margin-bottom: 40px;
 }
 
 .expand_btn {
-  width: 100%;
-  text-align: center;
+    width: 100%;
+    text-align: center;
 }
 
 /* Loader */
 .loader-overlay {
-  position: absolute;
-  inset: 0;
-  background: rgba(255, 255, 255, 0.8);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 10;
+    position: absolute;
+    inset: 0;
+    background: rgba(255, 255, 255, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
 }
 .spinner {
-  width: 40px;
-  height: 40px;
-  border: 4px solid #ddd;
-  border-top: 4px solid #007bff;
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
+    width: 40px;
+    height: 40px;
+    border: 4px solid #ddd;
+    border-top: 4px solid #007bff;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
 }
-@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
 
 /* Toolbar */
 .refresh-toolbar {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 6px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 6px;
 }
 .refresh-box {
-  display: inline-block;
-  padding: 2px 8px;
-  font-size: 0.85rem;
-  color: #fff;
-  background: #007bff;
-  border-radius: 4px;
-  cursor: pointer;
-  user-select: none;
-  transition: background 0.2s;
+    display: inline-block;
+    padding: 2px 8px;
+    font-size: 0.85rem;
+    color: #fff;
+    background: #007bff;
+    border-radius: 4px;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.2s;
 }
-.refresh-box:hover { background: #0056b3; }
+.refresh-box:hover {
+    background: #0056b3;
+}
 .pause-btn {
-  padding: 2px 8px;
-  font-size: 0.8rem;
-  cursor: pointer;
+    padding: 2px 8px;
+    font-size: 0.8rem;
+    cursor: pointer;
 }
 .last-updated {
-  font-size: 0.8rem;
-  color: #555;
+    font-size: 0.8rem;
+    color: #555;
 }
 .metrics-legend {
-  text-align: center;
-  font-size: 0.85rem;
-  color: #555;
-  margin: 5px 0;
+    text-align: center;
+    font-size: 0.85rem;
+    color: #555;
+    margin: 5px 0;
 }
 
 /* =========================
    Room Card (base)
    ========================= */
 .room-widget {
-  min-width: 200px;
-  transition: filter 0.25s ease, opacity 0.25s ease, box-shadow 0.25s ease;
+    min-width: 200px;
+    transition: filter 0.25s ease, opacity 0.25s ease, box-shadow 0.25s ease;
 }
 
 /* Scroll container */
 .room-widget.card {
-  max-height: 700px;
-  overflow-y: auto;
-  height: fit-content;
-  display: flex;
-  flex-direction: column;
-  border-radius: 10px;
+    max-height: 700px;
+    overflow-y: auto;
+    height: fit-content;
+    display: flex;
+    flex-direction: column;
+    border-radius: 10px;
 
-  /* White inside always */
-  background: #fff !important;
-  color: #111;
+    /* White inside always */
+    background: #fff !important;
+    color: #111;
 
-  /* Bold border (colored via classes below) */
-  border: 3px solid rgba(0,0,0,0.15);
-  box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+    /* Bold border (colored via classes below) */
+    border: 3px solid rgba(0, 0, 0, 0.15);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+    scrollbar-width: thin;
+    scrollbar-color: rgba(0, 0, 0, 0.1) transparent;
+    /* min-width : '-webkit-fill-available'; */
+    min-width: stretch;
+    
+
 }
 
 /* עיצוב פס הגלילה */
 .room-widget.card::-webkit-scrollbar {
-  width: 4px; /* רוחב דק מאוד */
+    width: 4px; /* רוחב דק מאוד */
 }
 
 .room-widget.card::-webkit-scrollbar-track {
-  background: transparent; /* רקע שקוף */
+    background: transparent; /* רקע שקוף */
 }
 
 .room-widget.card::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0.1); /* צבע עדין מאוד ובלתי נראה כמעט */
-  border-radius: 10px;
+    background: rgba(0, 0, 0, 0.1); /* צבע עדין מאוד ובלתי נראה כמעט */
+    border-radius: 10px;
 }
 
 .room-widget.card::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 0, 0, 0.2); /* מתכהה מעט רק כשעוברים עליו */
+    background: rgba(0, 0, 0, 0.2); /* מתכהה מעט רק כשעוברים עליו */
 }
 
 /* תמיכה ב-Firefox */
-.room-widget.card {
-  scrollbar-width: thin;
-  scrollbar-color: rgba(0, 0, 0, 0.1) transparent;
-}
+
 /* Keep header white too */
 .room-widget.card .room-header {
-  position: sticky;
-  position: -webkit-sticky;
-  top: 0;
-  z-index: 5;
-  background: #fff !important;
-  padding: 10px 12px;
-  border-bottom: 1px solid rgba(0,0,0,0.08);
-  box-shadow: 0 1px 0 rgba(0,0,0,0.06);
-  cursor: pointer;
+    position: sticky;
+    position: -webkit-sticky;
+    top: 0;
+    z-index: 5;
+    background: #fff !important;
+    padding: 10px 12px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+    box-shadow: 0 1px 0 rgba(0, 0, 0, 0.06);
+    cursor: pointer;
 
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
 }
 
 .room-widget.card .room-body {
-  padding: 10px 12px;
+    padding: 10px 12px;
 }
 
 /* Focus/blur states */
 .room-widget.blurred {
-  filter: blur(1px);
-  opacity: 0.6;
+    filter: blur(1px);
+    opacity: 0.6;
 }
 .room-widget.active {
-  filter: none;
-  opacity: 1;
+    filter: none;
+    opacity: 1;
 }
 
 /* Past day */
 .past-day {
-  background: #fff !important;
-  filter: grayscale(0.35);
+    background: #fff !important;
+    filter: grayscale(0.35);
 }
 .past-day .room-alert-chip,
 .past-day .warn-icon,
 .past-day .warn-dot {
-  opacity: 0.25;
-  animation: none !important;
+    opacity: 0.25;
+    animation: none !important;
 }
 
 /* =========================
@@ -187,40 +205,62 @@ h4.text-center {
    You already add: border- + getRoomStatusClassWithSettings(room)
    e.g. border-green-blink / border-grey / border-blue / border-orange / border-red-45 ...
    ========================= */
-.room-white { background: #fff !important; }
+.room-white {
+    background: #fff !important;
+}
 
 /* Cancel background-mode if some class exists */
 .status-mode-bg,
 .room-widget.card.status-mode-bg {
-  background: #fff !important;
-  color: #111 !important;
-  animation: none !important;
+    background: #fff !important;
+    color: #111 !important;
+    animation: none !important;
 }
 
 /* Default mapping to border color only */
-.border-green-blink { border-color: #2ecc71 !important; }
-.border-grey       { border-color: #95a5a6 !important; }
-.border-blue       { border-color: #1e88e5 !important; }
-.border-orange     { border-color: #ff9800 !important; }
+.border-green-blink {
+    border-color: #2ecc71 !important;
+}
+.border-grey {
+    border-color: #95a5a6 !important;
+}
+.border-blue {
+    border-color: #1e88e5 !important;
+}
+.border-orange {
+    border-color: #ff9800 !important;
+}
 
 .border-red-45,
-.border-red-45-ack  { border-color: #e53935 !important; }
+.border-red-45-ack {
+    border-color: #e53935 !important;
+}
 
 .border-red-60,
-.border-red-60-ack  { border-color: #b71c1c !important; }
+.border-red-60-ack {
+    border-color: #b71c1c !important;
+}
 
 .border-red-120,
-.border-red-120-ack { border-color: #7f0000 !important; }
+.border-red-120-ack {
+    border-color: #7f0000 !important;
+}
 
 /* If you still use .card.red-.. somewhere */
 .room-widget.card.red-45,
-.room-widget.card.red-45-ack { border-color: #e53935 !important; }
+.room-widget.card.red-45-ack {
+    border-color: #e53935 !important;
+}
 
 .room-widget.card.red-60,
-.room-widget.card.red-60-ack { border-color: #b71c1c !important; }
+.room-widget.card.red-60-ack {
+    border-color: #b71c1c !important;
+}
 
 .room-widget.card.red-120,
-.room-widget.card.red-120-ack { border-color: #7f0000 !important; }
+.room-widget.card.red-120-ack {
+    border-color: #7f0000 !important;
+}
 
 /* =========================
    Idle escalation (YOUR RULES)
@@ -230,346 +270,504 @@ h4.text-center {
    Also: text should show "40 דקות" etc. (handled in TS)
    ========================= */
 .room-widget.card.idle-20 {
-  border-color: #f9e79f !important; /* light yellow */
+    border-color: #f9e79f !important; /* light yellow */
 }
 
 @keyframes border-blink {
-  0%, 100% { border-color: #ff9800; }
-  50%      { border-color: rgba(255,152,0,0.25); }
+    0%,
+    100% {
+        border-color: #ff9800;
+    }
+    50% {
+        border-color: rgba(255, 152, 0, 0.25);
+    }
 }
 .room-widget.card.idle-40 {
-  border-color: #ff9800 !important; /* orange */
-  animation: border-blink 0.9s linear infinite;
+    border-color: #ff9800 !important; /* orange */
+    animation: border-blink 0.9s linear infinite;
 }
 
 /* Ensure inside stays white even during blink */
 .room-widget.card.idle-40,
 .room-widget.card.idle-40 .room-header,
 .room-widget.card.idle-40 .room-body {
-  background: #fff !important;
+    background: #fff !important;
 }
 
 /* Turnover warning (kept, but border-only; inside stays white) */
 @keyframes turnover-border-blink {
-  0%, 100% { border-color: #ff6c67; box-shadow: 0 0 12px rgba(211,47,47,0.35); }
-  50%      { border-color: #b71c1c; box-shadow: 0 0 20px rgba(211,47,47,0.20); }
+    0%,
+    100% {
+        border-color: #ff6c67;
+        box-shadow: 0 0 12px rgba(211, 47, 47, 0.35);
+    }
+    50% {
+        border-color: #b71c1c;
+        box-shadow: 0 0 20px rgba(211, 47, 47, 0.2);
+    }
 }
 .room-widget.card.turnover-warning {
-  border: 3px solid #ff6c67;
-  animation: turnover-border-blink 1s infinite;
-  background: #fff !important;
+    border: 3px solid #ff6c67;
+    animation: turnover-border-blink 1s infinite;
+    background: #fff !important;
 }
 .room-widget.card.turnover-warning .room-header {
-  background: #fff !important;
+    background: #fff !important;
 }
 
 /* =========================
    Department badge / Info blocks
    ========================= */
 .room-dept-badge {
-  display: inline-block;
-  margin-inline-start: 6px;
-  padding: 2px 8px;
-  border-radius: 6px;
-  background: rgba(0,0,0,0.05);
-  font-size: 0.85em;
-  font-weight: 600;
-  color: #555;
-  white-space: nowrap;
+    display: inline-block;
+    margin-inline-start: 6px;
+    padding: 2px 8px;
+    border-radius: 6px;
+    background: rgba(0, 0, 0, 0.05);
+    font-size: 0.85em;
+    font-weight: 600;
+    color: #555;
+    white-space: nowrap;
 }
 
 .room-status-info,
 .room-duration-info,
 .room-progress-info {
-  margin: 6px 0 4px;
-  text-align: center;
+    margin: 6px 0 4px;
+    text-align: center;
 }
 
 .status-display {
-  display: inline-block;
-  padding: 4px 12px;
-  border-radius: 8px;
-  font-weight: 700;
-  font-size: 0.9em;
-  min-width: 140px;
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 0.9em;
+    min-width: 140px;
 }
 .status-display.status-active {
-  background: #ffebee;
-  color: #c62828;
-  animation: status-pulse 2s infinite;
+    background: #ffebee;
+    color: #c62828;
+    animation: status-pulse 2s infinite;
 }
 .status-display.status-completed {
-  background: #e8f5e9;
-  color: #2e7d32;
+    background: #e8f5e9;
+    color: #2e7d32;
 }
 .status-display.status-free {
-  background: #e3f2fd;
-  color: #1976d2;
+    background: #e3f2fd;
+    color: #1976d2;
 }
 .status-display.status-planned {
-  background: #fff3e0;
-  color: #e65100;
+    background: #fff3e0;
+    color: #e65100;
 }
 @keyframes status-pulse {
-  0%,100% { opacity: 1; }
-  50%     { opacity: 0.7; }
+    0%,
+    100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.7;
+    }
 }
 
 .duration-display {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 3px 10px;
-  border-radius: 8px;
-  background: rgba(0,0,0,0.03);
-  font-size: 0.85em;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 10px;
+    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.03);
+    font-size: 0.85em;
 }
-.duration-icon { font-size: 1.1em; }
-.duration-text { font-weight: 600; color: #444; }
+.duration-icon {
+    font-size: 1.1em;
+}
+.duration-text {
+    font-weight: 600;
+    color: #444;
+}
 
 .progress-display {
-  display: inline-flex;
-  align-items: baseline;
-  gap: 8px;
-  padding: 4px 12px;
-  border-radius: 8px;
-  background: rgba(76,175,80,0.08);
-  border: 1px solid rgba(76,175,80,0.25);
+    display: inline-flex;
+    align-items: baseline;
+    gap: 8px;
+    padding: 4px 12px;
+    border-radius: 8px;
+    background: rgba(76, 175, 80, 0.08);
+    border: 1px solid rgba(76, 175, 80, 0.25);
 }
 .progress-counter {
-  font-weight: 800;
-  font-size: 1.1em;
-  color: #2e7d32;
+    font-weight: 800;
+    font-size: 1.1em;
+    color: #2e7d32;
 }
 .progress-label {
-  font-size: 0.85em;
-  color: #558b2f;
-  font-weight: 600;
+    font-size: 0.85em;
+    color: #558b2f;
+    font-weight: 600;
 }
 
 /* idle warning text */
 .turnover-warning-text {
-  display: block;
-  margin-top: 4px;
-  font-size: 0.78em;
-  font-weight: 800;
-  color: #b71c1c;
+    display: block;
+    margin-top: 4px;
+    font-size: 0.78em;
+    font-weight: 800;
+    color: #b71c1c;
 }
 
-/* extra panel */
+/* extra panel – RTL */
 .room-extra-panel {
-  margin-top: 8px;
-  padding: 8px 10px;
-  border-top: 1px dashed rgba(0,0,0,0.25);
-  font-size: 0.85em;
-  width: 100%;
+    direction: rtl;
+    text-align: right;
 }
+
 .room-extra-panel .extra-row {
-  display: flex;
-  justify-content: space-between;
-  gap: 10px;
-  padding: 2px 0;
+    justify-content: flex-start; /* לא space-between */
+    align-items: center;
 }
-.room-extra-panel .k { opacity: 0.85; }
+
+.room-extra-panel .k {
+    margin-left: 12px; /* רווח בין label לערך */
+    opacity: 0.85;
+    text-align: right;
+}
+
+/* הערכים (שעות/מספרים) */
 .room-extra-panel .v {
-  font-weight: 800;
-  direction: ltr;
-  text-align: left;
+    font-weight: 800;
+    direction: ltr;
+    text-align: right; /* מוצמד לימין */
+    margin-right: auto; /* דוחף הכל לימין */
 }
 
 /* =========================
    Surgery cards
    ========================= */
 .section-title {
-  margin: 4px 0 6px;
-  font-size: 0.95em;
-  font-weight: 800;
+    margin: 4px 0 6px;
+    font-size: 0.95em;
+    font-weight: 800;
 }
 
 .surgery-card {
-  margin: 4px 0;
-  padding: 6px 8px;
-  border: 1px solid rgba(0,0,0,0.12);
-  border-radius: 8px;
-  background: #fff;
-  line-height: 1.2;
+    margin: 4px 0;
+    padding: 6px 2px;
+    border: 1px solid rgba(0, 0, 0, 0.12);
+    border-radius: 8px;
+    background: #fff;
+    line-height: 1.2;
 }
 .surgery-card.planned {
-  background: #fafafa;
-  border-style: dashed;
+    background: #fafafa;
+    border-style: dashed;
 }
 
 .surgery-top {
-  display: flex;
-  justify-content: space-between;
-  gap: 8px;
-  align-items: center;
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    align-items: center;
 }
-.dept {
-  font-size: 0.85em;
-  color: #444;
-  font-weight: 600;
-}
+
 .times {
-  direction: ltr;
-  font-weight: 700;
-  font-size: 0.9em;
-  color: #1f2937;
+    direction: ltr;
+    font-weight: 700;
+    font-size: 0.9em;
+    color: #1f2937;
+    unicode-bidi: embed;
 }
 
 /* status pill (single definition) */
 .status-wrap {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 4px 12px;
-  border-radius: 16px;
-  font-size: 13px;
-  font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 700;
 }
 .status-wrap .status-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
 }
 
 /* status colors */
 .status-wrap.Completed {
-  background-color: #e8f5e9;
-  color: #2e7d32;
+    background-color: #e8f5e9;
+    color: #2e7d32;
 }
-.status-wrap.Completed .status-dot { background-color: #2e7d32; }
+.status-wrap.Completed .status-dot {
+    background-color: #2e7d32;
+}
 
 .status-wrap.InProgress {
-  background-color: #e3f2fd;
-  color: #1565c0;
+    background-color: #e3f2fd;
+    color: #1565c0;
 }
-.status-wrap.InProgress .status-dot { background-color: #1565c0; }
+.status-wrap.InProgress .status-dot {
+    background-color: #1565c0;
+}
 
 .status-wrap.Planned {
-  background-color: #f5f5f5;
-  color: #616161;
+    background-color: #f5f5f5;
+    color: #616161;
 }
-.status-wrap.Planned .status-dot { background-color: #616161; }
+.status-wrap.Planned .status-dot {
+    background-color: #616161;
+}
 
 /* =========================
    Summary card
    ========================= */
 .summary-card > * {
-  direction: rtl;
-  text-align: right;
+    direction: rtl;
+    text-align: right;
 }
 .summary-card {
-  border: 1px solid #e5e5e5;
-  border-radius: 10px;
-  padding: 12px 14px;
-  margin: 10px 0 16px;
-  background: #fff;
+    border: 1px solid #e5e5e5;
+    border-radius: 10px;
+    padding: 12px 14px;
+    margin: 10px 0 16px;
+    background: #fff;
 }
 .summary-header {
-  font-weight: 800;
-  margin-bottom: 8px;
+    font-weight: 800;
+    margin-bottom: 8px;
 }
 .summary-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 10px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 10px;
 }
 .summary-pill {
-  border: 1px solid #eee;
-  border-radius: 8px;
-  padding: 10px;
+    border: 1px solid #eee;
+    border-radius: 8px;
+    padding: 10px;
 }
-.summary-pill .k { font-size: 1em; opacity: 0.7; margin-bottom: 2px; }
-.summary-pill .v { font-size: 22px; font-weight: 900; line-height: 1.2; }
-.summary-pill .sub { font-size: 1em; opacity: 0.8; }
+.summary-pill .k {
+    font-size: 1em;
+    opacity: 0.7;
+    margin-bottom: 2px;
+}
+.summary-pill .v {
+    font-size: 22px;
+    font-weight: 900;
+    line-height: 1.2;
+}
+.summary-pill .sub {
+    font-size: 1em;
+    opacity: 0.8;
+}
 
 .now-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
+    list-style: none;
+    padding: 0;
+    margin: 0;
 }
-.now-list li { padding: 3px 0; }
+.now-list li {
+    padding: 3px 0;
+}
 
 .rooms-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
 }
 .room-chip {
-  border: 1px solid #eee;
-  border-radius: 20px;
-  padding: 6px 10px;
-  font-size: 13px;
-  white-space: nowrap;
+    border: 1px solid #eee;
+    border-radius: 20px;
+    padding: 6px 10px;
+    font-size: 13px;
+    white-space: nowrap;
 }
-.room-id { font-weight: 800; margin-inline-end: 6px; }
+.room-id {
+    font-weight: 800;
+    margin-inline-end: 6px;
+}
 .dot {
-  display: inline-block;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  margin: 0 2px;
-  vertical-align: middle;
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin: 0 2px;
+    vertical-align: middle;
 }
-.dot.ok { background: #97caaf; }
+.dot.ok {
+    background: #97caaf;
+}
 .dot.run {
-  background: rgb(1, 92, 1);
-  opacity: 0.7;
-  animation: quiet-blink 2s ease-in-out infinite;
+    background: rgb(1, 92, 1);
+    opacity: 0.7;
+    animation: quiet-blink 2s ease-in-out infinite;
 }
-.dot.plan { background: #1e90ff; }
-.muted { opacity: 0.65; }
+.dot.plan {
+    background: #1e90ff;
+}
+.muted {
+    opacity: 0.65;
+}
 
 /* Small animations */
-@keyframes quiet-blink { 50% { opacity: 0.6; } }
+@keyframes quiet-blink {
+    50% {
+        opacity: 0.6;
+    }
+}
 
 /* =========================
    Responsive
    ========================= */
 @media (min-width: 1800px) {
-  #surgeriesrts { grid-template-columns: repeat(7, minmax(250px, 1fr)); }
+    #surgeriesrts {
+        grid-template-columns: repeat(7, minmax(250px, 1fr));
+    }
 }
 @media (max-width: 900px) {
-  #surgeriesrts { grid-template-columns: repeat(4, minmax(250px, 1fr)); }
+    #surgeriesrts {
+        grid-template-columns: repeat(4, minmax(250px, 1fr));
+    }
 }
 @media (max-width: 600px) {
-  #surgeriesrts { grid-template-columns: 1fr; }
+    #surgeriesrts {
+        grid-template-columns: 1fr;
+    }
 }
 
 @media (max-width: 768px) {
-  .status-display,
-  .progress-display,
-  .duration-display {
-    font-size: 0.8em;
-    padding: 3px 8px;
-  }
-  .room-dept-badge { display: none; }
+    .status-display,
+    .progress-display,
+    .duration-display {
+        font-size: 0.8em;
+        padding: 3px 8px;
+    }
+    .room-dept-badge {
+        display: none;
+    }
 }
 
 /* =========================
    Material date input (compact)
    ========================= */
-.date-compact.mat-form-field { width: 120px; }
-:host ::ng-deep .date-compact .mat-form-field-infix { width: 100px; }
+.date-compact.mat-form-field {
+    width: 120px;
+}
+:host ::ng-deep .date-compact .mat-form-field-infix {
+    width: 100px;
+}
 .dashboard-header {
-  padding: 40px 0 20px;
-  background: linear-gradient(to left, #1976d2, #2196f3);
-  border-radius: 12px;
-  margin-bottom: 25px;
-  /* color: white; */
+    padding: 40px 0 20px;
+    background: linear-gradient(to left, #1976d2, #2196f3);
+    border-radius: 12px;
+    margin-bottom: 25px;
+    /* color: white; */
 }
 
 .page-title {
-  font-size: 2.2rem;
-  font-weight: 700;
-  margin: 0;
-  letter-spacing: 1px;
-  text-shadow: 0 2px 4px rgba(0,0,0,0.25);
-  color: black;
-
+    font-size: 2.2rem;
+    font-weight: 700;
+    margin: 0;
+    letter-spacing: 1px;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.25);
+    color: black;
 }
 
 .text-center {
-  text-align: center;
+    text-align: center;
+}
+
+.room-widget.card .room-header {
+    /* ... הגדרות קיימות ... */
+    direction: rtl;
+    text-align: center; /* כותרת החדר נשארת במרכז */
+}
+
+.room-widget.card .room-body {
+    direction: rtl;
+    text-align: right; /* תוכן החדר לימין */
+    padding: 10px 12px;
+}
+
+/* תיקון לשורות מידע נוסף */
+.room-extra-panel .extra-row {
+    display: flex;
+    flex-direction: row; /* מבטיח סדר עברית */
+    justify-content: flex-start;
+    align-items: center;
+    gap: 8px;
+}
+
+.room-extra-panel .k {
+    margin-left: 12px; /* רווח מהערך */
+    margin-right: 0;
+    text-align: right;
+}
+
+.room-extra-panel .v {
+    font-weight: 800;
+    direction: ltr; /* מספרים ושעות נשארים משמאל לימין לקריאות */
+    text-align: left; 
+    margin-right: auto; /* דוחף את הערך לצד הנגדי */
+}
+
+.surgery-top {
+    display: flex;
+    flex-direction: row-reverse; /* הופך את סדר הדיספליי להתאמה לעברית */
+    justify-content: space-between;
+    align-items: center;
+}
+
+
+.dept {
+    text-align: right;
+    font-size: 0.85em;
+    color: #444;
+    font-weight: 600;
+
+    background: #f7f9fc;        /* רקע בהיר מודרני */
+    border: 1px solid #e2e6ea;  /* מסגרת עדינה */
+    padding: 6px 10px;          /* ריווח פנימי נעים */
+    border-radius: 6px;         /* פינות מעוגלות */
+    display: inline-block;      /* שומר על גודל קומפקטי */
+        max-width: 77px;
+
+}
+
+.summary-card {
+    direction: rtl;
+    text-align: right;
+}
+
+.summary-pill {
+    text-align: right;
+}
+
+.room-chip {
+    display: inline-flex;
+    flex-direction: row-reverse; /* שהנקודה תהיה בצד הנכון */
+    align-items: center;
+    gap: 5px;
+}
+
+/* small estimated text */
+.small.est-end{
+  font-size: 12px;
+  opacity: .85;
+  margin-top: 4px;
+  direction: rtl;
+  text-align: right;
+}
+.room-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.room-status-title {
+    margin-bottom: 6px;
+    text-align: center;
 }
