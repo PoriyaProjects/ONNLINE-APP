@@ -158,66 +158,67 @@
 
         </div>
         <!-- ───── /Summary Card ───── -->
-         
+
         <div id="surgeriesrts" class="dashboard" *ngIf="$any(settings)?.showSurgeriesRts !== false"
           [class.background-mode]="settings.backgroundMode === true">
           <div *ngIf="isLoading" class="loader-overlay">
             <div class="spinner"></div>
           </div>
-<div class="room-wrapper" *ngFor="let room of roomsData; trackBy: trackByRoomId">
+          <div class="room-wrapper" *ngFor="let room of roomsData; trackBy: trackByRoomId">
 
-  <!-- Status ABOVE the card -->
-  <div class="room-status-title" *ngIf="getRoomStatusInfo(room) as statusInfo">
-    <div class="status-display" [ngClass]="statusInfo.cssClass">
-      {{ statusInfo.label }}
-    </div>
-  </div>
+            <!-- Status ABOVE the card -->
+            <div class="room-status-title" *ngIf="getRoomStatusInfo(room) as statusInfo">
+              <div class="status-display" [ngClass]="statusInfo.cssClass">
+                {{ statusInfo.label }}
+              </div>
+            </div>
 
-  <!-- The card itself -->
-  <div class="room-widget card room-white" [ngClass]="[
+            <!-- The card itself -->
+            <div class="room-widget card room-white" [ngClass]="[
           (settings.colorize && !isRoomClosedForColoring(room)) ? ('border-' + getRoomStatusClassWithSettings(room)) : '',
           isRoomPastDay(room) ? 'past-day' : '',
           isRoomExpanded(room.roomId) ? 'active' : '',
-          (!isRoomExpanded(room.roomId) && !allExpanded && openRooms.size > 0) ? 'blurred' : '',
+          isIdleOver40(room) ? 'idle-alert' : '',
           
           isTurnoverLong(room) && !hasInProgress(room) ? 'turnover-warning' : '',
           getIdleBorderClass(room)
           ]">
-          <!-- (!isRoomExpanded(room.roomId) && !allExpanded && activeRoomId && room.roomId !== activeRoomId) ? 'blurred' : '', -->
+          <!-- (!isRoomExpanded(room.roomId) && !allExpanded && openRooms.size > 0) ? 'blurred' : '', -->
+              <!-- (!isRoomExpanded(room.roomId) && !allExpanded && activeRoomId && room.roomId !== activeRoomId) ? 'blurred' : '', -->
 
-    <!-- כל התוכן של הכרטיס שלך כרגיל -->
+              <!-- כל התוכן של הכרטיס שלך כרגיל -->
 
-  <!-- </div>
+              <!-- </div>
 
 </div> -->
 
-            <!-- <div class="room-status-line">
+              <!-- <div class="room-status-line">
                 <span class="status-box" [class.busy]="getRoomShortStatus(room) === 'בניתוח'"
                   [class.free]="getRoomShortStatus(room) === 'פנוי'">
                   {{ getRoomShortStatus(room) }}
                 </span>
               </div> -->
 
-            <!-- Header (sticky inside the scrolling card) -->
-            <!-- <div class="room-header" (click)="toggleRoom(room.roomId)"> -->
-            <!-- Status dot -->
-            <!-- <div class="status-circle" *ngIf="settings.showStatusDot !== false"
+              <!-- Header (sticky inside the scrolling card) -->
+              <!-- <div class="room-header" (click)="toggleRoom(room.roomId)"> -->
+              <!-- Status dot -->
+              <!-- <div class="status-circle" *ngIf="settings.showStatusDot !== false"
                   [ngClass]="getRoomStatusClassWithSettings(room)"></div> -->
 
-            <!-- Title + late-warning chip -->
-            <!-- <h4 class="text-center">
+              <!-- Title + late-warning chip -->
+              <!-- <h4 class="text-center">
                   {{ translateRoomId(room.roomId) }}
                   <ng-container *ngIf="settings.showLateChip !== false">
                     <ng-container *ngIf="getRoomLateMeta(room) as late"> -->
-            <!-- Overlap/backlog chip -->
-            <!-- <span *ngIf="late && late.hasOverlapBacklog; else overlapChipPlaceholder" class="overlap-chip"
+              <!-- Overlap/backlog chip -->
+              <!-- <span *ngIf="late && late.hasOverlapBacklog; else overlapChipPlaceholder" class="overlap-chip"
                         [attr.title]="'חפיפת עומס: ' + (late.backlogCount || 0) + ' מתוכננים לפני סיום המקרה הנוכח (' + (late.overlapUntil | date:'HH:mm') + ')'">
                         ⏱️ עומס
                       </span>
                       <ng-template #overlapChipPlaceholder>
                         <span class="overlap-chip overlap-chip--placeholder" aria-hidden="true">⏱️ עומס</span>
                       </ng-template> -->
-            <!-- </ng-container>
+              <!-- </ng-container>
 
                     <ng-template #lateChipPlaceholder>
                       <span class="room-alert-chip room-alert-chip--placeholder" aria-hidden="true">
@@ -227,50 +228,50 @@
                   </ng-container>
                 </h4> -->
 
-            <!-- <div class="metrics text-center" *ngIf="settings.showHeaderMetrics !== false"> -->
-            <!-- Start delay chip -->
-            <!-- <span class="metric-chip" *ngIf="(settings.showStartChip !== false) && shouldShowStartDiff(room)"> -->
-            <!-- <span class="chip-icon">◓</span>
+              <!-- <div class="metrics text-center" *ngIf="settings.showHeaderMetrics !== false"> -->
+              <!-- Start delay chip -->
+              <!-- <span class="metric-chip" *ngIf="(settings.showStartChip !== false) && shouldShowStartDiff(room)"> -->
+              <!-- <span class="chip-icon">◓</span>
                     <span class="chip-title">עיכוב מתחילת יום</span>
                     <span [ngClass]="getStartDiffClass(room)">
                       {{ getStartDiff(room) }}
                     </span> -->
-            <!-- </span> -->
+              <!-- </span> -->
 
-            <!-- Turnover summary -->
-            <!-- <span class="metric-chip" *ngIf="settings.showTurnoverChip !== false"> -->
-            <!-- <span class="chip-icon">⏳</span> -->
-            <!-- <span class="chip-title">זמן הכנת חדר</span> -->
-            <!-- <span [ngClass]="getTurnoverTimeClass(room)">{{ getTurnoverSummary(room) }}</span>
+              <!-- Turnover summary -->
+              <!-- <span class="metric-chip" *ngIf="settings.showTurnoverChip !== false"> -->
+              <!-- <span class="chip-icon">⏳</span> -->
+              <!-- <span class="chip-title">זמן הכנת חדר</span> -->
+              <!-- <span [ngClass]="getTurnoverTimeClass(room)">{{ getTurnoverSummary(room) }}</span>
                   <span class="chip-warn" *ngIf="isTurnoverLong(room)">
                     זמן הכנת החדר ארוך מ־20 דקות
                   </span> -->
-            <!-- </span> -->
+              <!-- </span> -->
 
 
 
-            <!-- End-of-day gap -->
-            <!-- <span class="metric-chip" *ngIf="settings.showEndChip !== false"> -->
-            <!-- <span class="chip-icon">◒</span>
+              <!-- End-of-day gap -->
+              <!-- <span class="metric-chip" *ngIf="settings.showEndChip !== false"> -->
+              <!-- <span class="chip-icon">◒</span>
                     <span class="chip-title">פער עד סיום יום</span>
                     <span [ngClass]="getEndDiffClass(room)">
                       {{ getEndDiff(room) }}
                     </span> -->
-            <!-- </span> -->
-            <!-- </div> -->
+              <!-- </span> -->
+              <!-- </div> -->
 
 
-            <!-- Center badge -->
-            <!-- <div *ngIf="settings.showHeaderBadge && isRoomToday(room)" class="status-circle2 text-center"
+              <!-- Center badge -->
+              <!-- <div *ngIf="settings.showHeaderBadge && isRoomToday(room)" class="status-circle2 text-center"
                   style="margin:10px auto" [ngClass]="getRoomStatusClassWithSettings(room)"> -->
-            <!-- <ng-container *ngIf="hasInProgress(room); else freeTpl">
+              <!-- <ng-container *ngIf="hasInProgress(room); else freeTpl">
                     {{ getHeaderInProgressLabel(room) }}
                     <ng-container *ngIf="settings.showHeaderIcon && getHeaderProgressIcon(room) as icon">
                       <span [attr.title]="getHeaderProgressTitle(room)">{{ icon }}</span>
                     </ng-container>
                   </ng-container> -->
 
-            <!-- <ng-template #freeTpl>
+              <!-- <ng-template #freeTpl>
                     פנוי
                     <ng-container *ngIf="ticker$ | async as _">
                       <ng-container *ngIf="getRoomIdleCounter(room, !!settings?.showIdleSeconds) as idle">
@@ -279,12 +280,12 @@
                       </ng-container>
                     </ng-container>
                   </ng-template> -->
-            <!-- </div> -->
+              <!-- </div> -->
 
 
-            <!-- N from X + inline warn icon -->
-            <!-- <div class="small progress-line" *ngIf="settings.showHeaderProgress"> -->
-            <!-- <ng-container *ngIf="getRoomLateMeta(room) as late">
+              <!-- N from X + inline warn icon -->
+              <!-- <div class="small progress-line" *ngIf="settings.showHeaderProgress"> -->
+              <!-- <ng-container *ngIf="getRoomLateMeta(room) as late">
                     <span *ngIf="late && late.isLate; else warnIconPlaceholder" class="warn-icon"
                       [attr.title]="'תחזית סיום -' + (late.predictedEnd | date:'HH:mm') + ' (' + late.overrunMin + '׳)'"
                       aria-hidden="true" (click)="acknowledgeRoomLate(room); $event.stopPropagation()">⚠️</span>                    
@@ -294,104 +295,104 @@
                   <ng-template #warnIconPlaceholder>
                     <span class="warn-icon warn-icon--placeholder" aria-hidden="true">⚠️</span>
                   </ng-template> -->
-            <!-- {{ getHeaderProgressText(room) }} -->
-            <!-- </div> -->
-            <!-- 
+              <!-- {{ getHeaderProgressText(room) }} -->
+              <!-- </div> -->
+              <!-- 
                 <ng-container *ngIf="getRoomDepartment(room) as dept">
                   מחלקה - {{ dept }}
                 </ng-container> -->
-            <!-- Expand button -->
-            <!-- <div class="expand_btn" *ngIf="settings.showExpandBtn !== false">
+              <!-- Expand button -->
+              <!-- <div class="expand_btn" *ngIf="settings.showExpandBtn !== false">
                   {{ isRoomExpanded(room.roomId) ? '⮝' : '⮟' }}
                 </div>
               </div> -->
-            <!-- ה-HTML המעודכן לכותרת החדר -->
+              <!-- ה-HTML המעודכן לכותרת החדר -->
 
-            <!-- ה-HTML המעודכן לכותרת החדר -->
-            <div class="room-header" (click)="toggleRoom(room.roomId)">
-              <!-- Status dot -->
-              <!-- <div class="status-circle" *ngIf="settings.showStatusDot !== false" [ngClass]="getRoomStatusClassWithSettings(room)">
+              <!-- ה-HTML המעודכן לכותרת החדר -->
+              <div class="room-header" (click)="toggleRoom(room.roomId)">
+                <!-- Status dot -->
+                <!-- <div class="status-circle" *ngIf="settings.showStatusDot !== false" [ngClass]="getRoomStatusClassWithSettings(room)">
           </div> -->
 
-              <!-- Title + Department -->
-              <h4 class="text-center">
-                {{ translateRoomId(room.roomId) }}
+                <!-- Title + Department -->
+                <h4 class="text-center">
+                  {{ translateRoomId(room.roomId) }}
 
-                <!-- Department name if available -->
-                <br />
-                <ng-container *ngIf="getRoomDepartment(room) as dept">
-                  <span class="room-dept-badge">{{ dept }}</span>
-                </ng-container>
+                  <!-- Department name if available -->
+                  <br />
+                  <ng-container *ngIf="getRoomDepartment(room) as dept">
+                    <span class="room-dept-badge">{{ dept }}</span>
+                  </ng-container>
 
-                <!-- <ng-container *ngIf="settings.showLateChip !== false"> -->
-                <!-- existing late chip logic -->
-                <!-- </ng-container> -->
-              </h4>
+                  <!-- <ng-container *ngIf="settings.showLateChip !== false"> -->
+                  <!-- existing late chip logic -->
+                  <!-- </ng-container> -->
+                </h4>
 
-           
 
-              <!-- Duration row: Time active or idle -->
-              <div class="room-duration-info" *ngIf="getRoomDurationInfo(room) as durationInfo">
-                <div class="duration-display">
-                  <span class="duration-icon">{{ durationInfo.icon }}</span>
-                  <span class="duration-text">{{ durationInfo.text }}</span>
+
+                <!-- Duration row: Time active or idle -->
+                <div class="room-duration-info" *ngIf="getRoomDurationInfo(room) as durationInfo">
+                  <div class="duration-display">
+                    <span class="duration-icon">{{ durationInfo.icon }}</span>
+                    <span class="duration-text">{{ durationInfo.text }}</span>
+                  </div>
                 </div>
-              </div>
 
-              <ng-container *ngIf="!hasInProgress(room)">
-                <div class="room-turnover-info" *ngIf="getRoomDurationInfo(room) as durationInfo">
-                  <!-- <div [style.color]="durationInfo.isIdleOver20Min ? 'red' : 'inherit'"
+                <ng-container *ngIf="!hasInProgress(room)">
+                  <div class="room-turnover-info" *ngIf="getRoomDurationInfo(room) as durationInfo">
+                    <!-- <div [style.color]="durationInfo.isIdleOver20Min ? 'red' : 'inherit'"
             [class.blink-text]="durationInfo.isIdleOver20Min" style="font-weight:bold;font-size:1.1em;">
             {{ durationInfo.icon }} {{ durationInfo.text }}
           </div> -->
 
-                  <div class="turnover-warning-text" *ngIf="durationInfo.isIdleOver20Min">
-                    חדר פנוי למעלה מ-{{ toMinutes(durationInfo.time) }} דקות!
-                  </div>
-                </div>
-              </ng-container>
-
-
-              <!-- Progress row: X/Y surgeries completed -->
-              <div class="room-progress-info" *ngIf="getRoomProgressInfo(room) as progressInfo">
-                <div class="progress-display">
-                  <span class="progress-counter">{{ progressInfo.completed }}/{{ progressInfo.total }}</span>
-                  <span class="progress-label">בוצעו</span>
-                </div>
-              </div>
-              <div class="room-extra-panel" *ngIf="isRoomExpanded(room.roomId)">
-                <ng-container *ngIf="getRoomDetailsPanel(room) as d">
-                  <div class="extra-row">
-                    <span class="k rtl-start">
-                      עיכוב מצטבר מתחילת יום
-                      <span class="tip" title="מ07:30"></span>
-                      <!-- ): -->
-                    </span>
-                    <span class="v">{{ d.totalDelayHMM }}</span>
-                  </div>
-                  <div class="extra-row">
-                    <span class="k">משך גלישה צפוי:</span>
-                    <span class="v">{{ d.overrunText }}</span>
-                  </div>
-                  <div class="extra-row">
-                    <span class="k">חדר פנוי החל מ:</span>
-                    <span class="v">{{ d.freeFromText }}</span>
+                    <div class="turnover-warning-text" *ngIf="durationInfo.isIdleOver20Min">
+                      חדר פנוי למעלה מ-{{ toMinutes(durationInfo.time) }} דקות!
+                    </div>
                   </div>
                 </ng-container>
-              </div>
 
-              <!-- Expand button -->
-              <!-- <div class="expand_btn" *ngIf="settings.showExpandBtn !== false">
+
+                <!-- Progress row: X/Y surgeries completed -->
+                <div class="room-progress-info" *ngIf="getRoomProgressInfo(room) as progressInfo">
+                  <div class="progress-display">
+                    <span class="progress-counter">{{ progressInfo.completed }}/{{ progressInfo.total }}</span>
+                    <span class="progress-label">בוצעו</span>
+                  </div>
+                </div>
+                <div class="room-extra-panel" *ngIf="isRoomExpanded(room.roomId)">
+                  <ng-container *ngIf="getRoomDetailsPanel(room) as d">
+                    <div class="extra-row">
+                      <span class="k rtl-start">
+                        עיכוב מצטבר מתחילת יום
+                        <span class="tip" title="מ07:30"></span>
+                        <!-- ): -->
+                      </span>
+                      <span class="v">{{ d.totalDelayHMM }}</span>
+                    </div>
+                    <div class="extra-row">
+                      <span class="k">משך גלישה צפוי:</span>
+                      <span class="v">{{ d.overrunText }}</span>
+                    </div>
+                    <div class="extra-row">
+                      <span class="k">חדר פנוי החל מ:</span>
+                      <span class="v">{{ d.freeFromText }}</span>
+                    </div>
+                  </ng-container>
+                </div>
+
+                <!-- Expand button -->
+                <!-- <div class="expand_btn" *ngIf="settings.showExpandBtn !== false">
                 {{ isRoomExpanded(room.roomId) ? '⮝' : '⮟' }}
               </div> -->
-              <div class="expand_btn" *ngIf="settings.showExpandBtn !== false"
-                (click)="toggleRoom(room.roomId); $event.stopPropagation()">
-                {{ isRoomExpanded(room.roomId) ? '⮝' : '⮟' }}
-              </div>
+                <div class="expand_btn" *ngIf="settings.showExpandBtn !== false"
+                  (click)="toggleRoom(room.roomId); $event.stopPropagation()">
+                  {{ isRoomExpanded(room.roomId) ? '⮝' : '⮟' }}
+                </div>
 
-              <!-- </div> -->
-              <!-- Body -->
-              <!-- <div class="room-body" *ngIf="isRoomExpanded(room.roomId)" smartAutoScroll [runOnce]="false"
+                <!-- </div> -->
+                <!-- Body -->
+                <!-- <div class="room-body" *ngIf="isRoomExpanded(room.roomId)" smartAutoScroll [runOnce]="false"
                 style="max-height:460px; overflow:auto;">
                 <ng-container *ngIf="activeSurgeries(room) as active">
                   <h5 style="direction:rtl; text-align:right;">נתוחים שבוצעו</h5>
@@ -399,34 +400,34 @@
                   <div *ngFor="let s of active; let i = index; trackBy: trackBySurgeryId" class="surgery-block"
                     style="direction:rtl; text-align:right;"> -->
 
-              <!-- Turnover line BEFORE each surgery except the first -->
-              <!-- <ng-container *ngIf="settings.showTurnoverLines && i > 0">
+                <!-- Turnover line BEFORE each surgery except the first -->
+                <!-- <ng-container *ngIf="settings.showTurnoverLines && i > 0">
                       <ng-container *ngIf="getTurnoverBetween(active[i-1], s) as turnover">
                         <div class="turnover-line" [ngClass]="getTurnoverBetweenClass(active[i-1], s)"> -->
-              <!-- ⏳ {{ turnover }} -->
-              <!-- </div>
+                <!-- ⏳ {{ turnover }} -->
+                <!-- </div>
                       </ng-container>
                     </ng-container> -->
 
-              <!-- Surgery details -->
-              <!-- <div class="surgery-row" [class.scompleted]="s?.status === 'Completed'"
+                <!-- Surgery details -->
+                <!-- <div class="surgery-row" [class.scompleted]="s?.status === 'Completed'"
                       [attr.data-status]="s?.status"> -->
-              <!-- <b style="font-weight:800"> -->
-              <!-- ⮜ {{ s.surgeryId }} -->
-              <!-- <ng-container -->
-              <!-- *ngIf="(settings.showUrgencyIcon !== false) && getUrgencyIconFromSurgery(s) as icon"> -->
-              <!-- <span [attr.title]="getUrgencyTextFromSurgery(s)">{{ icon }}</span> -->
-              <!-- </ng-container> -->
-              <!-- </b> -->
-              <!-- <br /> -->
-              <!-- <span style="direction:ltr; text-align:left;float: left; font-size: small;"
+                <!-- <b style="font-weight:800"> -->
+                <!-- ⮜ {{ s.surgeryId }} -->
+                <!-- <ng-container -->
+                <!-- *ngIf="(settings.showUrgencyIcon !== false) && getUrgencyIconFromSurgery(s) as icon"> -->
+                <!-- <span [attr.title]="getUrgencyTextFromSurgery(s)">{{ icon }}</span> -->
+                <!-- </ng-container> -->
+                <!-- </b> -->
+                <!-- <br /> -->
+                <!-- <span style="direction:ltr; text-align:left;float: left; font-size: small;"
                         *ngIf="settings.showSurgeryName && (s.surgeryName?.trim())">{{ s.surgeryName }}</span> -->
-              <!-- <span style="direction:ltr; text-align:left;float: left; font-size: small;" -->
-              <!-- *ngIf="settings.showSurgeryCode && (s.surgeryCode?.trim())"> -->
-              <!-- ({{ s.surgeryCode }}) -->
-              <!-- </span> -->
+                <!-- <span style="direction:ltr; text-align:left;float: left; font-size: small;" -->
+                <!-- *ngIf="settings.showSurgeryCode && (s.surgeryCode?.trim())"> -->
+                <!-- ({{ s.surgeryCode }}) -->
+                <!-- </span> -->
 
-              <!-- <br *ngIf="(settings.showSurgeryName || settings.showSurgeryCode) && (s.surgeryName?.trim())" />
+                <!-- <br *ngIf="(settings.showSurgeryName || settings.showSurgeryCode) && (s.surgeryName?.trim())" />
                       <i *ngIf="settings.showDepartment">{{ s.department }}</i>
                       <br *ngIf="settings.showDepartment" />
                       <b *ngIf="settings.showTimes">{{ s.timeEntrance }} ← {{ s.timeExit || '...' }}</b>
@@ -439,32 +440,32 @@
                     </div>
                   </div>
                 </ng-container> -->
-              <!-- Body -->
-              <div class="room-body" *ngIf="isRoomExpanded(room.roomId)" smartAutoScroll [runOnce]="false"
-                style="max-height:460px; overflow:auto;">
+                <!-- Body -->
+                <div class="room-body" *ngIf="isRoomExpanded(room.roomId)" smartAutoScroll [runOnce]="false"
+                  style="max-height:460px; overflow:auto;">
 
-                <ng-container *ngIf="activeSurgeries(room) as active">
-                  <h5 class="section-title">ניתוחים שבוצעו</h5>
+                  <ng-container *ngIf="activeSurgeries(room) as active">
+                    <h5 class="section-title">ניתוחים שבוצעו</h5>
 
-                  <div *ngFor="let s of active; trackBy: trackBySurgeryId" class="surgery-card">
-                    <div class="surgery-top">
-                      <span class="times" *ngIf="settings.showTimes">
-                        {{ formatSurgeryTimes(s) }}
+                    <div *ngFor="let s of active; trackBy: trackBySurgeryId" class="surgery-card">
+                      <div class="surgery-top">
+                        <span class="times" *ngIf="settings.showTimes">
+                          {{ formatSurgeryTimes(s) }}
+                        </span>
+                        <span class="dept" *ngIf="settings.showDepartment">{{ s.department }}</span>
+                      </div>
+
+                      <span *ngIf="settings.showStatus" class="status-wrap" [ngClass]="s.status">
+                        <span class="status-dot"></span>
+                        <span class="status-text">
+                          {{ statusHebrew[s.status] }}
+                        </span>
                       </span>
-                      <span class="dept" *ngIf="settings.showDepartment">{{ s.department }}</span>
                     </div>
+                  </ng-container>
 
-                    <span *ngIf="settings.showStatus" class="status-wrap" [ngClass]="s.status">
-                      <span class="status-dot"></span>
-                      <span class="status-text">
-                        {{ statusHebrew[s.status] }}
-                      </span>
-                    </span>
-                  </div>
-                </ng-container>
-
-              </div>
-              <!-- Planned surgeries
+                </div>
+                <!-- Planned surgeries
 <ng-container *ngIf="settings.showPlannedSection && plannedSurgeries(room) as planned">
   <div *ngIf="planned.length">
     <hr />
@@ -476,10 +477,10 @@
                         *ngIf="(settings.showUrgencyIcon !== false) && getUrgencyIconFromSurgery(s) as icon">
                         <span [attr.title]="getUrgencyTextFromSurgery(s)">{{ icon }}</span>
                       </ng-container> {{ s.surgeryName }} -->
-              <!-- <ng-container *ngIf="settings.showSurgeryCode && s.surgeryCode?.trim()">
+                <!-- <ng-container *ngIf="settings.showSurgeryCode && s.surgeryCode?.trim()">
                         ({{ s.surgeryCode }})
                       </ng-container> -->
-              <!-- <ng-container *ngIf="s.department?.trim()">
+                <!-- <ng-container *ngIf="s.department?.trim()">
         - {{ s.department }}
       </ng-container>
       <br />
@@ -492,38 +493,38 @@
     </div>
   </div>
 </ng-container> -->
-              <!-- Planned surgeries -->
+                <!-- Planned surgeries -->
 
-              <ng-container
-                *ngIf="settings.showPlannedSection && isRoomExpanded(room.roomId) && plannedSurgeries(room) as planned">
-                <div *ngIf="planned.length">
-                  <hr />
-                  <h5 class="section-title">ניתוחים מתוכננים</h5>
+                <ng-container
+                  *ngIf="settings.showPlannedSection && isRoomExpanded(room.roomId) && plannedSurgeries(room) as planned">
+                  <div *ngIf="planned.length">
+                    <hr />
+                    <h5 class="section-title">ניתוחים מתוכננים</h5>
 
-                  <div *ngFor="let s of planned; trackBy: trackBySurgeryId" class="surgery-card planned">
-                    <div class="surgery-top">
-                      <span class="times" *ngIf="settings.showTimes">{{ formatSurgeryTimes(s) }}</span>
-                      <span class="dept" *ngIf="s.department?.trim()">{{ s.department }}</span>
-                      <!-- <span class="times" *ngIf="settings.showTimes">{{ s.timeEntrance }} ← {{ s.timeExit || '...'}}</span> -->
-                    </div>
+                    <div *ngFor="let s of planned; trackBy: trackBySurgeryId" class="surgery-card planned">
+                      <div class="surgery-top">
+                        <span class="times" *ngIf="settings.showTimes">{{ formatSurgeryTimes(s) }}</span>
+                        <span class="dept" *ngIf="s.department?.trim()">{{ s.department }}</span>
+                        <!-- <span class="times" *ngIf="settings.showTimes">{{ s.timeEntrance }} ← {{ s.timeExit || '...'}}</span> -->
+                      </div>
 
-                    <span *ngIf="settings.showStatus" class="status-wrap" [ngClass]="s.status">
-                      <span class="status-dot"></span>
-                      <span class="status-text">
-                        {{ statusHebrew[s.status] }}
+                      <span *ngIf="settings.showStatus" class="status-wrap" [ngClass]="s.status">
+                        <span class="status-dot"></span>
+                        <span class="status-text">
+                          {{ statusHebrew[s.status] }}
+                        </span>
                       </span>
-                    </span>
+                    </div>
                   </div>
-                </div>
-              </ng-container>
+                </ng-container>
 
+              </div>
             </div>
           </div>
-        </div>
 
 
-        <div class="row card" style="margin-top: 20px;">
-          <!-- <div class="metrics-legend" style="text-align:center; margin-bottom:10px; font-size:0.9em;"> -->
+          <div class="row card" style="margin-top: 20px;">
+            <!-- <div class="metrics-legend" style="text-align:center; margin-bottom:10px; font-size:0.9em;"> -->
             <!-- ◓ = עיכוב מתחילת יום |
               ⏳ = זמן הכנת חדר (מעבר ל־20 דקות) |
               ◒ = פער עד סיום יום <br />
@@ -536,131 +537,137 @@
               📖 = אלקטיבי |
               🚶 = אמבולטורי |
               ⬇️ = ללא עדיפות -->
-          <!-- </div> -->
+            <!-- </div> -->
 
-          <!-- Display Settings (hidden entirely if no userId) -->
-          <div *ngIf="userId" class="display-panel" style="text-align: right; margin:10px;">
-            <button type="button" (click)="showDisplayPanel = !showDisplayPanel"
-              style="border: solid 1px #888; border-radius: 4px; float:left;">⚙️ תצוגה</button>
+            <!-- Display Settings (hidden entirely if no userId) -->
+            <div *ngIf="userId" class="display-panel" style="text-align: right; margin:10px;">
+              <button type="button" (click)="showDisplayPanel = !showDisplayPanel"
+                style="border: solid 1px #888; border-radius: 4px; float:left;">⚙️ תצוגה</button>
 
-            <div *ngIf="showDisplayPanel" class="panel-body">
-              <div style="margin-top:8px;">
-                <b>מצב צביעה:</b>
-                <label style="margin-inline-start:8px;">
-                  <input type="radio" name="colorMode" [value]="'border'" [(ngModel)]="settings.colorMode"
-                    [ngModelOptions]="{standalone:true}" (ngModelChange)="onSettingChange('colorMode', $event)"> מסגרת
-                </label>
-                <label style="margin-inline-start:12px;">
-                  <input type="radio" name="colorMode" [value]="'background'" [(ngModel)]="settings.colorMode"
-                    [ngModelOptions]="{standalone:true}" (ngModelChange)="onSettingChange('colorMode', $event)"> רקע
-                </label>
-              </div>
-              <!-- Presets -->
-              <div class="row">
-                <label>
-                  <input type="radio" name="dispPreset" [value]="'default'" [(ngModel)]="displayPreset"
-                    [ngModelOptions]="{standalone:true}" (ngModelChange)="applyPreset($event)"> ברירת מחדל
-                </label>
-                <label style="margin-inline-start:12px;">
-                  <input type="radio" name="dispPreset" [value]="'all'" [(ngModel)]="displayPreset"
-                    [ngModelOptions]="{standalone:true}" (ngModelChange)="applyPreset($event)"> הצג הכל
-                </label>
-                <label style="margin-inline-start:12px;">
-                  <input type="radio" name="dispPreset" [value]="'custom'" [(ngModel)]="displayPreset"
-                    [ngModelOptions]="{standalone:true}" (ngModelChange)="applyPreset($event)"> מותאם
-                </label>
-                <label style="margin-inline-start:12px;">
-                  <input type="radio" name="dispPreset" [value]="'minimal'" [(ngModel)]="displayPreset"
-                    [ngModelOptions]="{standalone:true}" (ngModelChange)="applyPreset($event)"> מינימלי
-                </label>
-              </div>
-
-
-              <!-- Toggles (enabled when 'custom' chosen) -->
-              <fieldset [disabled]="displayPreset!=='custom'" style="margin-top:8px;">
-                <div class="grid">
-                  <!-- Header -->
-                  <label><input type="checkbox" [(ngModel)]="settings.showHeaderBadge"
-                      [ngModelOptions]="{standalone:true}" (ngModelChange)="onSettingChange('showHeaderBadge', $event)">
-                    תגית כותרת (ID פעיל)</label> |
-
-                  <label><input type="checkbox" [(ngModel)]="settings.showHeaderIcon"
-                      [ngModelOptions]="{standalone:true}" (ngModelChange)="onSettingChange('showHeaderIcon', $event)">
-                    אייקון דחיפות בכותרת</label> |
-
-                  <label><input type="checkbox" [(ngModel)]="settings.showHeaderProgress"
-                      [ngModelOptions]="{standalone:true}"
-                      (ngModelChange)="onSettingChange('showHeaderProgress', $event)"> N מתוך X בכותרת</label> |
-
-                  <!-- List -->
-                  <label><input type="checkbox" [(ngModel)]="settings.showTurnoverLines"
-                      [ngModelOptions]="{standalone:true}"
-                      (ngModelChange)="onSettingChange('showTurnoverLines', $event)">
-                    קווי ⏳ בין ניתוחים</label> |
-
-                  <label><input type="checkbox" [(ngModel)]="settings.showPlannedSection"
-                      [ngModelOptions]="{standalone:true}"
-                      (ngModelChange)="onSettingChange('showPlannedSection', $event)"> ניתוחים מתוכננים</label> |
-
-                  <label><input type="checkbox" [(ngModel)]="settings.showSurgeryName"
-                      [ngModelOptions]="{standalone:true}" (ngModelChange)="onSettingChange('showSurgeryName', $event)">
-                    שם ניתוח</label> |
-
-                  <label><input type="checkbox" [(ngModel)]="settings.showSurgeryCode"
-                      [ngModelOptions]="{standalone:true}" (ngModelChange)="onSettingChange('showSurgeryCode', $event)">
-                    קוד ניתוח</label> |
-
-                  <label><input type="checkbox" [(ngModel)]="settings.showDepartment"
-                      [ngModelOptions]="{standalone:true}" (ngModelChange)="onSettingChange('showDepartment', $event)">
-                    מחלקה</label> |
-
-                  <label><input type="checkbox" [(ngModel)]="settings.showTimes" [ngModelOptions]="{standalone:true}"
-                      (ngModelChange)="onSettingChange('showTimes', $event)"> שעות כניסה/יציאה</label> |
-
-                  <label><input type="checkbox" [(ngModel)]="settings.showStatus" [ngModelOptions]="{standalone:true}"
-                      (ngModelChange)="onSettingChange('showStatus', $event)"> סטטוס</label> |
-
-                  <!-- Visuals -->
-                  <label><input type="checkbox" [(ngModel)]="settings.colorize" [ngModelOptions]="{standalone:true}"
-                      (ngModelChange)="onSettingChange('colorize', $event)"> צבעי מצב</label> |
-
-                  <label><input type="checkbox" [(ngModel)]="settings.blinkOnUnacked"
-                      [ngModelOptions]="{standalone:true}" (ngModelChange)="onSettingChange('blinkOnUnacked', $event)">
-                    הבהוב ללא אישור</label> |
-
-                  <label>
-                    <input type="checkbox" [(ngModel)]="settings.showIdleSeconds" />
-                    הצג שניות בטיימר "פנוי"</label> |
-
-                  <label>
-                    <input type="checkbox" [(ngModel)]="settings.hideIdleWhenNoPlanned"
-                      [ngModelOptions]="{standalone:true}"
-                      (ngModelChange)="onSettingChange('hideIdleWhenNoPlanned', $event)">
-                    הסתר טיימר אם אין עוד "מתוכנן"</label> |
-
-                  <label>
-                    <input type="checkbox" [(ngModel)]="settings.continueIdleAfter1500WhenPlanned"
-                      [ngModelOptions]="{standalone:true}"
-                      (ngModelChange)="onSettingChange('continueIdleAfter1500WhenPlanned', $event)">
-                    המשך טיימר אחרי 15:00 אם יש עוד "מתוכנן"
+              <div *ngIf="showDisplayPanel" class="panel-body">
+                <div style="margin-top:8px;">
+                  <b>מצב צביעה:</b>
+                  <label style="margin-inline-start:8px;">
+                    <input type="radio" name="colorMode" [value]="'border'" [(ngModel)]="settings.colorMode"
+                      [ngModelOptions]="{standalone:true}" (ngModelChange)="onSettingChange('colorMode', $event)"> מסגרת
                   </label>
-                  <label>
-                    <input type="checkbox" [(ngModel)]="$any(settings).showSummaryCard"
-                      [ngModelOptions]="{standalone:true}"
-                      (ngModelChange)="onSettingChange && onSettingChange('showSummaryCard', $event)">
-                    הצג כרטיס סיכום יום
-                  </label> |
-                  <label>
-                    <input type="checkbox" [(ngModel)]="$any(settings).showSurgeriesRts"
-                      [ngModelOptions]="{standalone:true}"
-                      (ngModelChange)="onSettingChange('showSurgeriesRts', $event)" />
-                    הצג רשימת ניתוחים (surgeriesrts)
+                  <label style="margin-inline-start:12px;">
+                    <input type="radio" name="colorMode" [value]="'background'" [(ngModel)]="settings.colorMode"
+                      [ngModelOptions]="{standalone:true}" (ngModelChange)="onSettingChange('colorMode', $event)"> רקע
                   </label>
                 </div>
-                <div style="height:60px"></div>
-              </fieldset>
+                <!-- Presets -->
+                <div class="row">
+                  <label>
+                    <input type="radio" name="dispPreset" [value]="'default'" [(ngModel)]="displayPreset"
+                      [ngModelOptions]="{standalone:true}" (ngModelChange)="applyPreset($event)"> ברירת מחדל
+                  </label>
+                  <label style="margin-inline-start:12px;">
+                    <input type="radio" name="dispPreset" [value]="'all'" [(ngModel)]="displayPreset"
+                      [ngModelOptions]="{standalone:true}" (ngModelChange)="applyPreset($event)"> הצג הכל
+                  </label>
+                  <label style="margin-inline-start:12px;">
+                    <input type="radio" name="dispPreset" [value]="'custom'" [(ngModel)]="displayPreset"
+                      [ngModelOptions]="{standalone:true}" (ngModelChange)="applyPreset($event)"> מותאם
+                  </label>
+                  <label style="margin-inline-start:12px;">
+                    <input type="radio" name="dispPreset" [value]="'minimal'" [(ngModel)]="displayPreset"
+                      [ngModelOptions]="{standalone:true}" (ngModelChange)="applyPreset($event)"> מינימלי
+                  </label>
+                </div>
+
+
+                <!-- Toggles (enabled when 'custom' chosen) -->
+                <fieldset [disabled]="displayPreset!=='custom'" style="margin-top:8px;">
+                  <div class="grid">
+                    <!-- Header -->
+                    <label><input type="checkbox" [(ngModel)]="settings.showHeaderBadge"
+                        [ngModelOptions]="{standalone:true}"
+                        (ngModelChange)="onSettingChange('showHeaderBadge', $event)">
+                      תגית כותרת (ID פעיל)</label> |
+
+                    <label><input type="checkbox" [(ngModel)]="settings.showHeaderIcon"
+                        [ngModelOptions]="{standalone:true}"
+                        (ngModelChange)="onSettingChange('showHeaderIcon', $event)">
+                      אייקון דחיפות בכותרת</label> |
+
+                    <label><input type="checkbox" [(ngModel)]="settings.showHeaderProgress"
+                        [ngModelOptions]="{standalone:true}"
+                        (ngModelChange)="onSettingChange('showHeaderProgress', $event)"> N מתוך X בכותרת</label> |
+
+                    <!-- List -->
+                    <label><input type="checkbox" [(ngModel)]="settings.showTurnoverLines"
+                        [ngModelOptions]="{standalone:true}"
+                        (ngModelChange)="onSettingChange('showTurnoverLines', $event)">
+                      קווי ⏳ בין ניתוחים</label> |
+
+                    <label><input type="checkbox" [(ngModel)]="settings.showPlannedSection"
+                        [ngModelOptions]="{standalone:true}"
+                        (ngModelChange)="onSettingChange('showPlannedSection', $event)"> ניתוחים מתוכננים</label> |
+
+                    <label><input type="checkbox" [(ngModel)]="settings.showSurgeryName"
+                        [ngModelOptions]="{standalone:true}"
+                        (ngModelChange)="onSettingChange('showSurgeryName', $event)">
+                      שם ניתוח</label> |
+
+                    <label><input type="checkbox" [(ngModel)]="settings.showSurgeryCode"
+                        [ngModelOptions]="{standalone:true}"
+                        (ngModelChange)="onSettingChange('showSurgeryCode', $event)">
+                      קוד ניתוח</label> |
+
+                    <label><input type="checkbox" [(ngModel)]="settings.showDepartment"
+                        [ngModelOptions]="{standalone:true}"
+                        (ngModelChange)="onSettingChange('showDepartment', $event)">
+                      מחלקה</label> |
+
+                    <label><input type="checkbox" [(ngModel)]="settings.showTimes" [ngModelOptions]="{standalone:true}"
+                        (ngModelChange)="onSettingChange('showTimes', $event)"> שעות כניסה/יציאה</label> |
+
+                    <label><input type="checkbox" [(ngModel)]="settings.showStatus" [ngModelOptions]="{standalone:true}"
+                        (ngModelChange)="onSettingChange('showStatus', $event)"> סטטוס</label> |
+
+                    <!-- Visuals -->
+                    <label><input type="checkbox" [(ngModel)]="settings.colorize" [ngModelOptions]="{standalone:true}"
+                        (ngModelChange)="onSettingChange('colorize', $event)"> צבעי מצב</label> |
+
+                    <label><input type="checkbox" [(ngModel)]="settings.blinkOnUnacked"
+                        [ngModelOptions]="{standalone:true}"
+                        (ngModelChange)="onSettingChange('blinkOnUnacked', $event)">
+                      הבהוב ללא אישור</label> |
+
+                    <label>
+                      <input type="checkbox" [(ngModel)]="settings.showIdleSeconds" />
+                      הצג שניות בטיימר "פנוי"</label> |
+
+                    <label>
+                      <input type="checkbox" [(ngModel)]="settings.hideIdleWhenNoPlanned"
+                        [ngModelOptions]="{standalone:true}"
+                        (ngModelChange)="onSettingChange('hideIdleWhenNoPlanned', $event)">
+                      הסתר טיימר אם אין עוד "מתוכנן"</label> |
+
+                    <label>
+                      <input type="checkbox" [(ngModel)]="settings.continueIdleAfter1500WhenPlanned"
+                        [ngModelOptions]="{standalone:true}"
+                        (ngModelChange)="onSettingChange('continueIdleAfter1500WhenPlanned', $event)">
+                      המשך טיימר אחרי 15:00 אם יש עוד "מתוכנן"
+                    </label>
+                    <label>
+                      <input type="checkbox" [(ngModel)]="$any(settings).showSummaryCard"
+                        [ngModelOptions]="{standalone:true}"
+                        (ngModelChange)="onSettingChange && onSettingChange('showSummaryCard', $event)">
+                      הצג כרטיס סיכום יום
+                    </label> |
+                    <label>
+                      <input type="checkbox" [(ngModel)]="$any(settings).showSurgeriesRts"
+                        [ngModelOptions]="{standalone:true}"
+                        (ngModelChange)="onSettingChange('showSurgeriesRts', $event)" />
+                      הצג רשימת ניתוחים (surgeriesrts)
+                    </label>
+                  </div>
+                  <div style="height:60px"></div>
+                </fieldset>
+              </div>
             </div>
           </div>
+          <div style="height:10px;"></div>
         </div>
-        <div style="height:10px;"></div>
-      </div>

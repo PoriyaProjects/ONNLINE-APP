@@ -3839,4 +3839,17 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
 
         return { idKey, predictedEnd: end };
     }
+    isIdleOver40(room: RoomData): boolean {
+        if (!room || this.hasInProgress(room)) return false;
+
+        const last = this.findLastCompletedSurgery(room);
+        if (!last) return false;
+
+        const end = this.getLastSurgeryEndTime(last, new Date(room.date));
+        if (!end) return false;
+
+        const now = this._nowInSelectedDay();
+        const diffMin = Math.floor((now.getTime() - end.getTime()) / 60000);
+        return diffMin >= 40;
+    }
 }
