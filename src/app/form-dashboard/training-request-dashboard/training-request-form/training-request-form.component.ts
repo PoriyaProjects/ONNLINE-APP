@@ -984,7 +984,7 @@ export class TrainingRequestFormComponent implements OnInit {
           this.Training_Request_Forms_A.controls['Title'].setValue(patient.JobTitleID);
           this.Training_Request_Forms_G.controls['Work_Start_Date'].setValue(patient.StartWorkDate);
           this.Training_Request_Forms_G.controls['Standart_Job_Type'].setValue(patient.StandartJobType);
-          this.Training_Request_Forms_G.controls['Work_Place'].setValue(patient.WorkPlaceDescription);
+          this.Training_Request_Forms_G.controls['Work_Place'].setValue(patient.WorkPlaceDescription.trim());
           this.Training_Request_Forms_G.controls['Function_Department'].setValue(patient.FunctionDescription + ' - ' + patient.DepartnentDescripton);
           this.Training_Request_Forms_G.controls['Standart_Level'].setValue(patient.RankDescription);
           this.Supervisor_Name1.setValue(this.employees.filter(t => t.id === patient.ManagerID1?.id)[0]);
