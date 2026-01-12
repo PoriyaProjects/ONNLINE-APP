@@ -3881,4 +3881,9 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
     nextPlannedSurgery(room: RoomData) {
         return room.surgeries?.find((s) => s.IsWaitingForSurgery);
     }
+    showSummary: boolean = false; 
+
+    toggleSummary() {
+        this.showSummary = !this.showSummary;
+    }
 }
