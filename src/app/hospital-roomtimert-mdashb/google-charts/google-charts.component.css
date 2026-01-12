@@ -1,1109 +1,230 @@
-/* =========================
-   surgeriesrts.component.css
-   White inside, bold colored border only.
-   Idle >20m => light yellow border
-   Idle >40m => orange border + blinking border
-   ========================= */
-
-/* Grid */
-/* יישור גלובלי לימין עבור כל הקומפוננטה */
-#surgeriesrts {
-    direction: rtl;
-    text-align: right;
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-    gap: 16px;
-}
-
-/* יישור כותרות למרכז (כפי שהיה) אך עם תמיכה בעברית */
-h2,
-h3,
-h4 {
-    direction: rtl;
-    text-align: center;
-}
-/* Titles / panels */
-h2,
-h3 {
-    text-align: center;
-    padding: 20px;
-    width: 100%;
-}
-h4.text-center {
-    margin: 0 0 4px 0;
-    min-height: 2.2rem;
-}
-
-.panel {
-    background: #eeeff1;
-    margin-bottom: 40px;
-}
-
-.expand_btn {
-    width: 100%;
-    text-align: center;
-}
-
-/* Loader */
-.loader-overlay {
-    position: absolute;
-    inset: 0;
-    background: rgba(255, 255, 255, 0.8);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 10;
-}
-.spinner {
-    width: 40px;
-    height: 40px;
-    border: 4px solid #ddd;
-    border-top: 4px solid #007bff;
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
-}
-@keyframes spin {
-    to {
-        transform: rotate(360deg);
-    }
-}
-
-/* Toolbar */
-.refresh-toolbar {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 6px;
-}
-.refresh-box {
-    display: inline-block;
-    padding: 2px 8px;
-    font-size: 0.85rem;
-    color: #fff;
-    background: #007bff;
-    border-radius: 4px;
-    cursor: pointer;
-    user-select: none;
-    transition: background 0.2s;
-}
-.refresh-box:hover {
-    background: #0056b3;
-}
-.pause-btn {
-    padding: 2px 8px;
-    font-size: 0.8rem;
-    cursor: pointer;
-}
-.last-updated {
-    font-size: 0.8rem;
-    color: #555;
-}
-.metrics-legend {
-    text-align: center;
-    font-size: 0.85rem;
-    color: #555;
-    margin: 5px 0;
-}
-
-/* =========================
-   Room Card (base)
-   ========================= */
-.room-widget {
-    min-width: 200px;
-    transition: filter 0.25s ease, opacity 0.25s ease, box-shadow 0.25s ease;
-}
-
-/* Scroll container */
-.room-widget.card {
-    max-height: 700px;
-    overflow-y: auto;
-    height: fit-content;
-    display: flex;
-    flex-direction: column;
-    border-radius: 10px;
-
-    /* White inside always */
-    background: #fff !important;
-    color: #111;
-
-    /* Bold border (colored via classes below) */
-    border: 3px solid rgba(0, 0, 0, 0.15);
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
-    scrollbar-width: thin;
-    scrollbar-color: rgba(0, 0, 0, 0.1) transparent;
-    /* min-width : '-webkit-fill-available'; */
-    min-width: stretch;
-}
-
-/* עיצוב פס הגלילה */
-.room-widget.card::-webkit-scrollbar {
-    width: 4px; /* רוחב דק מאוד */
-}
-
-.room-widget.card::-webkit-scrollbar-track {
-    background: transparent; /* רקע שקוף */
-}
-
-.room-widget.card::-webkit-scrollbar-thumb {
-    background: rgba(0, 0, 0, 0.1); /* צבע עדין מאוד ובלתי נראה כמעט */
-    border-radius: 10px;
-}
-
-.room-widget.card::-webkit-scrollbar-thumb:hover {
-    background: rgba(0, 0, 0, 0.2); /* מתכהה מעט רק כשעוברים עליו */
-}
-
-/* תמיכה ב-Firefox */
-
-/* Keep header white too */
-.room-widget.card .room-header {
-    position: sticky;
-    position: -webkit-sticky;
-    top: 0;
-    z-index: 5;
-    background: #fff !important;
-    padding: 10px 12px;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
-    box-shadow: 0 1px 0 rgba(0, 0, 0, 0.06);
-    cursor: pointer;
-
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 4px;
-}
-
-.room-widget.card .room-body {
-    padding: 10px 12px;
-}
-
-/* Focus/blur states */
-.room-widget.blurred {
-    filter: blur(1px);
-    opacity: 0.6;
-}
-.room-widget.active {
-    filter: none;
-    opacity: 1;
-}
-
-/* Past day */
-.past-day {
-    background: #fff !important;
-    filter: grayscale(0.35);
-}
-.past-day .room-alert-chip,
-.past-day .warn-icon,
-.past-day .warn-dot {
-    opacity: 0.25;
-    animation: none !important;
-}
-
-/* =========================
-   Border color palette (status)
-   You already add: border- + getRoomStatusClassWithSettings(room)
-   e.g. border-green-blink / border-grey / border-blue / border-orange / border-red-45 ...
-   ========================= */
-.room-white {
-    background: #fff !important;
-}
-
-/* Cancel background-mode if some class exists */
-.status-mode-bg,
-.room-widget.card.status-mode-bg {
-    background: #fff !important;
-    color: #111 !important;
-    animation: none !important;
-}
-
-/* Default mapping to border color only */
-.border-green-blink {
-    border-color: #2ecc71 !important;
-}
-.border-grey {
-    border-color: #95a5a6 !important;
-}
-.border-blue {
-    border-color: #1e88e5 !important;
-}
-.border-orange {
-    border-color: #ff9800 !important;
-}
-
-.border-red-45,
-.border-red-45-ack {
-    border-color: #e53935 !important;
-}
-
-.border-red-60,
-.border-red-60-ack {
-    border-color: #b71c1c !important;
-}
-
-.border-red-120,
-.border-red-120-ack {
-    border-color: #7f0000 !important;
-}
-
-/* If you still use .card.red-.. somewhere */
-.room-widget.card.red-45,
-.room-widget.card.red-45-ack {
-    border-color: #e53935 !important;
-}
-
-.room-widget.card.red-60,
-.room-widget.card.red-60-ack {
-    border-color: #b71c1c !important;
-}
-
-.room-widget.card.red-120,
-.room-widget.card.red-120-ack {
-    border-color: #7f0000 !important;
-}
-
-/* =========================
-   Idle escalation (YOUR RULES)
-   Add these classes from TS when room is free:
-   - idle-20  (>=20min)
-   - idle-40  (>=40min)  => blink border
-   Also: text should show "40 דקות" etc. (handled in TS)
-   ========================= */
-.room-widget.card.idle-20 {
-    border-color: #f9e79f !important; /* light yellow */
-}
-
-@keyframes border-blink {
-    0%,
-    100% {
-        border-color: #ff9800;
-    }
-    50% {
-        border-color: rgba(255, 152, 0, 0.25);
-    }
-}
-.room-widget.card.idle-40 {
-    border-color: #ff9800 !important; /* orange */
-    animation: border-blink 0.9s linear infinite;
-}
-
-/* Ensure inside stays white even during blink */
-.room-widget.card.idle-40,
-.room-widget.card.idle-40 .room-header,
-.room-widget.card.idle-40 .room-body {
-    background: #fff !important;
-}
-
-/* Turnover warning (kept, but border-only; inside stays white) */
-@keyframes turnover-border-blink {
-    0%,
-    100% {
-        border-color: #ff6c67;
-        box-shadow: 0 0 12px rgba(211, 47, 47, 0.35);
-    }
-    50% {
-        border-color: #b71c1c;
-        box-shadow: 0 0 20px rgba(211, 47, 47, 0.2);
-    }
-}
-.room-widget.card.turnover-warning {
-    border: 3px solid #ff6c67;
-    animation: turnover-border-blink 1s infinite;
-    background: #fff !important;
-}
-.room-widget.card.turnover-warning .room-header {
-    background: #fff !important;
-}
-
-/* =========================
-   Department badge / Info blocks
-   ========================= */
-.room-dept-badge {
-    display: inline-block;
-    margin-inline-start: 6px;
-    padding: 2px 8px;
-    border-radius: 6px;
-    background: rgba(0, 0, 0, 0.05);
-    font-size: 0.85em;
-    font-weight: 600;
-    color: #555;
-    white-space: nowrap;
-}
-
-.room-status-info,
-.room-duration-info,
-.room-progress-info {
-    margin: 6px 0 4px;
-    text-align: center;
-}
-
-.status-display {
-    display: inline-block;
-    padding: 4px 12px;
-    border-radius: 8px;
-    font-weight: 700;
-    font-size: 0.9em;
-    min-width: 140px;
-}
-.status-display.status-active {
-    background: #ffebee;
-    color: #c62828;
-    animation: status-pulse 2s infinite;
-}
-.status-display.status-completed {
-    background: #e8f5e9;
-    color: #2e7d32;
-}
-.status-display.status-free {
-    background: #e3f2fd;
-    color: #1976d2;
-}
-.status-display.status-planned {
-    background: #fff3e0;
-    color: #e65100;
-}
-@keyframes status-pulse {
-    0%,
-    100% {
-        opacity: 1;
-    }
-    50% {
-        opacity: 0.7;
-    }
-}
-
-.duration-display {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 3px 10px;
-    border-radius: 8px;
-    background: rgba(0, 0, 0, 0.03);
-    font-size: 0.85em;
-}
-.duration-icon {
-    font-size: 1.1em;
-}
-.duration-text {
-    font-weight: 600;
-    color: #444;
-}
-
-.progress-display {
-    display: inline-flex;
-    align-items: baseline;
-    gap: 8px;
-    padding: 4px 12px;
-    border-radius: 8px;
-    background: rgba(76, 175, 80, 0.08);
-    border: 1px solid rgba(76, 175, 80, 0.25);
-}
-.progress-counter {
-    font-weight: 800;
-    font-size: 1.1em;
-    color: #2e7d32;
-}
-.progress-label {
-    font-size: 0.85em;
-    color: #558b2f;
-    font-weight: 600;
-}
-
-/* idle warning text */
-.turnover-warning-text {
-    display: block;
-    margin-top: 4px;
-    font-size: 0.78em;
-    font-weight: 800;
-    color: #b71c1c;
-}
-
-/* extra panel – RTL */
-.room-extra-panel {
-    direction: rtl;
-    text-align: right;
-}
-
-.room-extra-panel .extra-row {
-    justify-content: flex-start; /* לא space-between */
-    align-items: center;
-}
-
-.room-extra-panel .k {
-    margin-left: 12px; /* רווח בין label לערך */
-    opacity: 0.85;
-    text-align: right;
-}
-
-/* הערכים (שעות/מספרים) */
-.room-extra-panel .v {
-    font-weight: 800;
-    direction: ltr;
-    text-align: right; /* מוצמד לימין */
-    margin-right: auto; /* דוחף הכל לימין */
-}
-
-/* =========================
-   Surgery cards
-   ========================= */
-.section-title {
-    margin: 4px 0 6px;
-    font-size: 0.95em;
-    font-weight: 800;
-}
-
-.surgery-card {
-    margin: 4px 0;
-    padding: 6px 2px;
-    border: 1px solid rgba(0, 0, 0, 0.12);
-    border-radius: 8px;
-    background: #fff;
-    line-height: 1.2;
-}
-.surgery-card.planned {
-    background: #fafafa;
-    border-style: dashed;
-}
-
-.surgery-top {
-    display: flex;
-    justify-content: space-between;
-    gap: 8px;
-    align-items: center;
-}
-
-.times {
-    direction: ltr;
-    font-weight: 700;
-    font-size: 0.9em;
-    color: #1f2937;
-    unicode-bidi: embed;
-}
-
-/* status pill (single definition) */
-.status-wrap {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 4px 12px;
-    border-radius: 16px;
-    font-size: 13px;
-    font-weight: 700;
-}
-.status-wrap .status-dot {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-}
-
-/* status colors */
-.status-wrap.Completed {
-    background-color: #e8f5e9;
-    color: #2e7d32;
-}
-.status-wrap.Completed .status-dot {
-    background-color: #2e7d32;
-}
-
-.status-wrap.InProgress {
-    background-color: #e3f2fd;
-    color: #1565c0;
-}
-.status-wrap.InProgress .status-dot {
-    background-color: #1565c0;
-}
-
-.status-wrap.Planned {
-    background-color: #f5f5f5;
-    color: #616161;
-}
-.status-wrap.Planned .status-dot {
-    background-color: #616161;
-}
-
-/* =========================
-   Summary card
-   ========================= */
-.summary-card > * {
-    direction: rtl;
-    text-align: right;
-}
-.summary-card {
-    border: 1px solid #e5e5e5;
-    border-radius: 10px;
-    padding: 12px 14px;
-    margin: 10px 0 16px;
-    background: #fff;
-}
-.summary-header {
-    font-weight: 800;
-    margin-bottom: 8px;
-}
-.summary-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-    gap: 10px;
-}
-.summary-pill {
-    border: 1px solid #eee;
-    border-radius: 8px;
-    padding: 10px;
-}
-.summary-pill .k {
-    font-size: 1em;
-    opacity: 0.7;
-    margin-bottom: 2px;
-}
-.summary-pill .v {
-    font-size: 22px;
-    font-weight: 900;
-    line-height: 1.2;
-}
-.summary-pill .sub {
-    font-size: 1em;
-    opacity: 0.8;
-}
-
-.now-list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-}
-.now-list li {
-    padding: 3px 0;
-}
-
-.rooms-list {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-}
-.room-chip {
-    border: 1px solid #eee;
-    border-radius: 20px;
-    padding: 6px 10px;
-    font-size: 13px;
-    white-space: nowrap;
-}
-.room-id {
-    font-weight: 800;
-    margin-inline-end: 6px;
-}
-.dot {
-    display: inline-block;
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    margin: 0 2px;
-    vertical-align: middle;
-}
-.dot.ok {
-    background: #97caaf;
-}
-.dot.run {
-    background: rgb(1, 92, 1);
-    opacity: 0.7;
-    animation: quiet-blink 2s ease-in-out infinite;
-}
-.dot.plan {
-    background: #1e90ff;
-}
-.muted {
-    opacity: 0.65;
-}
-
-/* Small animations */
-@keyframes quiet-blink {
-    50% {
-        opacity: 0.6;
-    }
-}
-
-/* =========================
-   Responsive
-   ========================= */
-@media (min-width: 1800px) {
-    #surgeriesrts {
-        grid-template-columns: repeat(7, minmax(250px, 1fr));
-    }
-}
-@media (max-width: 900px) {
-    #surgeriesrts {
-        grid-template-columns: repeat(4, minmax(250px, 1fr));
-    }
-}
-@media (max-width: 600px) {
-    #surgeriesrts {
-        grid-template-columns: 1fr;
-    }
-}
-
-@media (max-width: 768px) {
-    .status-display,
-    .progress-display,
-    .duration-display {
-        font-size: 0.8em;
-        padding: 3px 8px;
-    }
-    .room-dept-badge {
-        display: none;
-    }
-}
-
-/* =========================
-   Material date input (compact)
-   ========================= */
-.date-compact.mat-form-field {
-    width: 120px;
-}
-:host ::ng-deep .date-compact .mat-form-field-infix {
-    width: 100px;
-}
-.dashboard-header {
-    padding: 40px 0 20px;
-    background: linear-gradient(to left, #1976d2, #2196f3);
-    border-radius: 12px;
-    margin-bottom: 25px;
-    /* color: white; */
-}
-
-.page-title {
-    font-size: 2.2rem;
-    font-weight: 700;
-    margin: 0;
-    letter-spacing: 1px;
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.25);
-    color: black;
-}
-
-.text-center {
-    text-align: center;
-}
-
-.room-widget.card .room-header {
-    /* ... הגדרות קיימות ... */
-    direction: rtl;
-    text-align: center; /* כותרת החדר נשארת במרכז */
-}
-
-.room-widget.card .room-body {
-    direction: rtl;
-    text-align: right; /* תוכן החדר לימין */
-    padding: 10px 12px;
-}
-
-/* תיקון לשורות מידע נוסף */
-.room-extra-panel .extra-row {
-    display: flex;
-    flex-direction: row; /* מבטיח סדר עברית */
-    justify-content: flex-start;
-    align-items: center;
-    gap: 8px;
-}
-
-.room-extra-panel .k {
-    margin-left: 12px; /* רווח מהערך */
-    margin-right: 0;
-    text-align: right;
-}
-
-.room-extra-panel .v {
-    font-weight: 800;
-    direction: ltr; /* מספרים ושעות נשארים משמאל לימין לקריאות */
-    text-align: left;
-    margin-right: auto; /* דוחף את הערך לצד הנגדי */
-}
-
-.surgery-top {
-    display: flex;
-    flex-direction: row-reverse; /* הופך את סדר הדיספליי להתאמה לעברית */
-    justify-content: space-between;
-    align-items: center;
-}
-
-.dept {
-    text-align: right;
-    font-size: 0.85em;
-    color: #444;
-    font-weight: 600;
-
-    background: #f7f9fc; /* רקע בהיר מודרני */
-    border: 1px solid #e2e6ea; /* מסגרת עדינה */
-    padding: 6px 10px; /* ריווח פנימי נעים */
-    border-radius: 6px; /* פינות מעוגלות */
-    display: inline-block; /* שומר על גודל קומפקטי */
-    max-width: 77px;
-}
-
-.summary-card {
-    direction: rtl;
-    text-align: right;
-}
-
-.summary-pill {
-    text-align: right;
-}
-
-.room-chip {
-    display: inline-flex;
-    flex-direction: row-reverse; /* שהנקודה תהיה בצד הנכון */
-    align-items: center;
-    gap: 5px;
-}
-
-/* small estimated text */
-.small.est-end {
-    font-size: 12px;
-    opacity: 0.85;
-    margin-top: 4px;
-    direction: rtl;
-    text-align: right;
-}
-.room-wrapper {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-}
-
-.room-status-title {
-    margin-bottom: 6px;
-    text-align: center;
-}
-@keyframes blinkRed {
-    0% {
-        box-shadow: 0 0 0 0 rgba(220, 0, 0, 0.9);
-        border-color: #dc0000;
-    }
-    50% {
-        box-shadow: 0 0 0 4px rgba(220, 0, 0, 0.6);
-        border-color: #ff3b3b;
-    }
-    100% {
-        box-shadow: 0 0 0 0 rgba(220, 0, 0, 0.9);
-        border-color: #dc0000;
-    }
-}
-
-.idle-alert {
-    border: 2px solid #dc0000;
-    animation: blinkRed 1s infinite;
-}
-@keyframes idleBlinkBorder {
-    0% {
-        outline-color: rgba(220, 0, 0, 0.15);
-        box-shadow: 0 0 0 0 rgba(220, 0, 0, 0);
-    }
-    50% {
-        outline-color: rgba(220, 0, 0, 1);
-        box-shadow: 0 0 0 6px rgba(220, 0, 0, 0.35);
-    }
-    100% {
-        outline-color: rgba(220, 0, 0, 0.15);
-        box-shadow: 0 0 0 0 rgba(220, 0, 0, 0);
-    }
-}
-
-.room-widget.idle-alert {
-    outline: 3px solid rgba(220, 0, 0, 1) !important;
-    outline-offset: -3px !important; /* שישב על המסגרת */
-    animation: idleBlinkBorder 0.9s linear infinite !important;
-}
-
-.room-widget.all-done {
-    outline: 3px solid #8fd3ff !important;
-    outline-offset: -3px;
-    box-shadow: 0 0 0 4px rgba(143, 211, 255, 0.25);
-}
-
-.all-done-text {
-    color: #2b7fb8;
-    font-size: 12px;
-    font-weight: 600;
-}
-.next-ready-chip {
-    margin-top: 6px;
-    padding: 4px 8px;
-    border-radius: 6px;
-    font-size: 0.85em;
-    font-weight: 600;
-    display: inline-block;
-}
-
-.next-ready-chip.ready {
-    background: #e6f7ea;
-    color: #1b7f3a;
-    border: 1px solid #7ddc9a;
-}
-
-.next-ready-chip.warn {
-    background: #fff4e5;
-    color: #b45309;
-    border: 1px solid #fbbf24;
-}
-.container { padding: 20px; font-family: 'Segoe UI', sans-serif; }
-
-.action-btn {
-  background: #3182ce; color: white; border: none;
-  padding: 10px 20px; border-radius: 8px; cursor: pointer;
-  font-weight: bold; margin-bottom: 15px; transition: 0.3s;
-}
-.action-btn:hover { background: #2b6cb0; transform: translateY(-2px); }
-
-.summary-card {
-  background: white; border-radius: 15px; padding: 20px;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.1); max-width: 500px;
-  border: 1px solid #e2e8f0;
-}
-
-.summary-header { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; }
-.header-title { font-weight: 800; font-size: 1.1rem; flex-grow: 1; }
-
-.summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-
-.summary-pill {
-  background: #f7fafc; border-radius: 12px; padding: 15px;
-  border: 1px solid #edf2f7; text-align: center;
-}
-.summary-pill.main { grid-column: span 2; background: #fff; }
+/* ========== GRID & RTL ========== */
+#surgeriesrts { direction: rtl; text-align: right; display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 16px; }
+h2, h3, h4 { direction: rtl; text-align: center; }
+h2, h3 { padding: 20px; width: 100%; }
+h4.text-center { margin: 0 0 4px 0; min-height: 2.2rem; }
+.panel { background: #eeeff1; margin-bottom: 40px; }
+.expand_btn { width: 100%; text-align: center; }
+
+/* ========== LOADER & TOOLBAR ========== */
+.loader-overlay { position: absolute; inset: 0; background: rgba(255,255,255,0.8); display: flex; align-items: center; justify-content: center; z-index: 10; }
+.spinner { width: 40px; height: 40px; border: 4px solid #ddd; border-top: 4px solid #007bff; border-radius: 50%; animation: spin 0.8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.refresh-toolbar { display: flex; justify-content: center; align-items: center; gap: 12px; margin-bottom: 6px; }
+.refresh-box { display: inline-block; padding: 2px 8px; font-size: 0.85rem; color: #fff; background: #007bff; border-radius: 4px; cursor: pointer; user-select: none; transition: background 0.2s; }
+.refresh-box:hover { background: #0056b3; }
+.pause-btn { padding: 2px 8px; font-size: 0.8rem; cursor: pointer; }
+.last-updated, .metrics-legend { font-size: 0.8rem; color: #555; }
+.metrics-legend { text-align: center; margin: 5px 0; }
+
+/* ========== ROOM CARD BASE ========== */
+.room-widget { min-width: 200px; transition: filter 0.25s ease, opacity 0.25s ease, box-shadow 0.25s ease; }
+.room-widget.card { max-height: 700px; overflow-y: auto; height: fit-content; display: flex; flex-direction: column; border-radius: 10px; background: #fff !important; color: #111; border: 3px solid rgba(0,0,0,0.15); box-shadow: 0 2px 10px rgba(0,0,0,0.06); scrollbar-width: thin; scrollbar-color: rgba(0,0,0,0.1) transparent; min-width: stretch; }
+.room-widget.card::-webkit-scrollbar { width: 4px; }
+.room-widget.card::-webkit-scrollbar-track { background: transparent; }
+.room-widget.card::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); border-radius: 10px; }
+.room-widget.card::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.2); }
+.room-widget.card .room-header { position: sticky; position: -webkit-sticky; top: 0; z-index: 5; background: #fff !important; padding: 10px 12px; border-bottom: 1px solid rgba(0,0,0,0.08); box-shadow: 0 1px 0 rgba(0,0,0,0.06); cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 4px; direction: rtl; text-align: center; }
+.room-widget.card .room-body { padding: 10px 12px; direction: rtl; text-align: right; }
+.room-widget.blurred { filter: blur(1px); opacity: 0.6; }
+.room-widget.active { filter: none; opacity: 1; }
+.past-day { background: #fff !important; filter: grayscale(0.35); }
+.past-day .room-alert-chip, .past-day .warn-icon, .past-day .warn-dot { opacity: 0.25; animation: none !important; }
+
+/* ========== BORDER COLORS ========== */
+.room-white { background: #fff !important; }
+.status-mode-bg, .room-widget.card.status-mode-bg { background: #fff !important; color: #111 !important; animation: none !important; }
+.border-green-blink { border-color: #2ecc71 !important; }
+.border-grey { border-color: #95a5a6 !important; }
+.border-blue { border-color: #1e88e5 !important; }
+.border-orange { border-color: #ff9800 !important; }
+.border-red-45, .border-red-45-ack { border-color: #e53935 !important; }
+.border-red-60, .border-red-60-ack { border-color: #b71c1c !important; }
+.border-red-120, .border-red-120-ack { border-color: #7f0000 !important; }
+.room-widget.card.red-45, .room-widget.card.red-45-ack { border-color: #e53935 !important; }
+.room-widget.card.red-60, .room-widget.card.red-60-ack { border-color: #b71c1c !important; }
+.room-widget.card.red-120, .room-widget.card.red-120-ack { border-color: #7f0000 !important; }
+
+/* ========== IDLE ESCALATION ========== */
+.room-widget.card.idle-20 { border-color: #f9e79f !important; }
+@keyframes border-blink { 0%, 100% { border-color: #ff9800; } 50% { border-color: rgba(255,152,0,0.25); } }
+.room-widget.card.idle-40 { border-color: #ff9800 !important; animation: border-blink 0.9s linear infinite; background: #fff !important; }
+.room-widget.card.idle-40, .room-widget.card.idle-40 .room-header, .room-widget.card.idle-40 .room-body { background: #fff !important; }
+
+/* ========== TURNOVER WARNING ========== */
+@keyframes turnover-border-blink { 0%, 100% { border-color: #ff6c67; box-shadow: 0 0 12px rgba(211,47,47,0.35); } 50% { border-color: #b71c1c; box-shadow: 0 0 20px rgba(211,47,47,0.2); } }
+.room-widget.card.turnover-warning { border: 3px solid #ff6c67; animation: turnover-border-blink 1s infinite; background: #fff !important; }
+.room-widget.card.turnover-warning .room-header { background: #fff !important; }
+
+/* ========== DEPT BADGE ========== */
+.room-dept-badge { display: inline-block; margin-inline-start: 6px; padding: 2px 8px; border-radius: 6px; background: rgba(0,0,0,0.05); font-size: 0.85em; font-weight: 600; color: #555; white-space: nowrap; }
+
+/* ========== STATUS & INFO BLOCKS ========== */
+.room-status-info, .room-duration-info, .room-progress-info { margin: 6px 0 4px; text-align: center; }
+.status-display { display: inline-block; padding: 4px 12px; border-radius: 8px; font-weight: 700; font-size: 0.9em; min-width: 140px; }
+.status-display.status-active { background: #ffebee; color: #c62828; animation: status-pulse 2s infinite; }
+.status-display.status-completed { background: #e8f5e9; color: #2e7d32; }
+.status-display.status-free { background: #e3f2fd; color: #1976d2; }
+.status-display.status-planned { background: #fff3e0; color: #e65100; }
+@keyframes status-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
+
+/* ========== DURATION & PROGRESS ========== */
+.duration-display { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 8px; background: rgba(0,0,0,0.03); font-size: 0.85em; }
+.duration-icon { font-size: 1.1em; }
+.duration-text { font-weight: 600; color: #444; }
+.progress-display { display: inline-flex; align-items: baseline; gap: 8px; padding: 4px 12px; border-radius: 8px; background: rgba(76,175,80,0.08); border: 1px solid rgba(76,175,80,0.25); }
+.progress-counter { font-weight: 800; font-size: 1.1em; color: #2e7d32; }
+.progress-label { font-size: 0.85em; color: #558b2f; font-weight: 600; }
+
+/* ========== EXTRA PANEL ========== */
+.room-extra-panel { direction: rtl; text-align: right; }
+.room-extra-panel .extra-row { display: flex; flex-direction: row; justify-content: flex-start; align-items: center; gap: 8px; }
+.room-extra-panel .k { margin-left: 12px; margin-right: 0; opacity: 0.85; text-align: right; }
+.room-extra-panel .v { font-weight: 800; direction: ltr; text-align: left; margin-right: auto; }
+
+/* ========== SURGERY CARDS ========== */
+.section-title { margin: 4px 0 6px; font-size: 0.95em; font-weight: 800; }
+.surgery-card { margin: 4px 0; padding: 6px 2px; border: 1px solid rgba(0,0,0,0.12); border-radius: 8px; background: #fff; line-height: 1.2; }
+.surgery-card.planned { background: #fafafa; border-style: dashed; }
+.surgery-top { display: flex; flex-direction: row-reverse; justify-content: space-between; gap: 8px; align-items: center; }
+.times { direction: ltr; font-weight: 700; font-size: 0.9em; color: #1f2937; unicode-bidi: embed; }
+.dept { text-align: right; font-size: 0.85em; color: #444; font-weight: 600; background: #f7f9fc; border: 1px solid #e2e6ea; padding: 6px 10px; border-radius: 6px; display: inline-block; max-width: 77px; }
+
+/* ========== STATUS WRAP ========== */
+.status-wrap { display: inline-flex; align-items: center; gap: 8px; padding: 4px 12px; border-radius: 16px; font-size: 13px; font-weight: 700; }
+.status-wrap .status-dot { width: 6px; height: 6px; border-radius: 50%; }
+.status-wrap.Completed { background-color: #e8f5e9; color: #2e7d32; }
+.status-wrap.Completed .status-dot { background-color: #2e7d32; }
+.status-wrap.InProgress { background-color: #e3f2fd; color: #1565c0; }
+.status-wrap.InProgress .status-dot { background-color: #1565c0; }
+.status-wrap.Planned { background-color: #f5f5f5; color: #616161; }
+.status-wrap.Planned .status-dot { background-color: #616161; }
+
+/* ========== SUMMARY CARD ========== */
+.summary-card > * { direction: rtl; text-align: right; }
+.summary-card { direction: rtl; text-align: right; border: 1px solid #e5e5e5; border-radius: 10px; padding: 12px 14px; margin: 10px 0 16px; background: #fff; }
+.summary-header { font-weight: 800; margin-bottom: 8px; display: flex; align-items: center; gap: 10px; padding-bottom: 10px; border-bottom: 1px solid #eee; }
+.header-title { font-weight: 700; font-size: 1.2rem; flex-grow: 1; }
+.header-date { color: #666; font-size: 0.9rem; }
+.summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; }
+.summary-pill { border: 1px solid #eee; border-radius: 8px; padding: 10px; text-align: right; }
+.summary-pill .k { font-size: 1em; opacity: 0.7; margin-bottom: 2px; }
+.summary-pill .v { font-size: 22px; font-weight: 900; line-height: 1.2; }
+.summary-pill .sub { font-size: 1em; opacity: 0.8; }
+.summary-pill.main { grid-column: span 2; background: #fff; border: 2px solid #e2e8f0; }
 .summary-pill.warning { border-color: #fc8181; background: #fff5f5; }
 
-.label { font-size: 0.8rem; color: #718096; margin-bottom: 4px; }
-.value { font-size: 2.2rem; font-weight: 900; color: #2d3748; }
-.value-small { font-size: 1.5rem; font-weight: 700; }
+/* ========== NOW LIST & ROOMS ========== */
+.now-list { list-style: none; padding: 0; margin: 0; }
+.now-list li { padding: 3px 0; }
+.rooms-list { display: flex; flex-wrap: wrap; gap: 8px; }
+.room-chip { display: inline-flex; flex-direction: row-reverse; align-items: center; gap: 5px; border: 1px solid #eee; border-radius: 20px; padding: 6px 10px; font-size: 13px; white-space: nowrap; }
+.room-id { font-weight: 800; margin-inline-end: 6px; }
 
-.stats-row { display: flex; justify-content: center; gap: 10px; margin-top: 10px; }
-.status-tag { padding: 4px 10px; border-radius: 15px; font-size: 0.75rem; font-weight: bold; }
+/* ========== DOTS ========== */
+.dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin: 0 2px; vertical-align: middle; }
+.dot.ok { background: #97caaf; }
+.dot.run { background: rgb(1,92,1); opacity: 0.7; animation: quiet-blink 2s ease-in-out infinite; }
+.dot.plan { background: #1e90ff; }
+@keyframes quiet-blink { 50% { opacity: 0.6; } }
+.muted { opacity: 0.65; }
+
+/* ========== TURNOVER WARNING ========== */
+.turnover-warning-text { display: block; margin-top: 4px; font-size: 0.78em; font-weight: 800; color: #b71c1c; }
+.small.est-end { font-size: 12px; opacity: 0.85; margin-top: 4px; direction: rtl; text-align: right; }
+
+/* ========== IDLE ALERT ========== */
+@keyframes blinkRed { 0% { box-shadow: 0 0 0 0 rgba(220,0,0,0.9); border-color: #dc0000; } 50% { box-shadow: 0 0 0 4px rgba(220,0,0,0.6); border-color: #ff3b3b; } 100% { box-shadow: 0 0 0 0 rgba(220,0,0,0.9); border-color: #dc0000; } }
+.idle-alert { border: 2px solid #dc0000; animation: blinkRed 1s infinite; }
+@keyframes idleBlinkBorder { 0% { outline-color: rgba(220,0,0,0.15); box-shadow: 0 0 0 0 rgba(220,0,0,0); } 50% { outline-color: rgba(220,0,0,1); box-shadow: 0 0 0 6px rgba(220,0,0,0.35); } 100% { outline-color: rgba(220,0,0,0.15); box-shadow: 0 0 0 0 rgba(220,0,0,0); } }
+.room-widget.idle-alert { outline: 3px solid rgba(220,0,0,1) !important; outline-offset: -3px !important; animation: idleBlinkBorder 0.9s linear infinite !important; }
+
+/* ========== ALL DONE ========== */
+.room-widget.all-done { outline: 3px solid #8fd3ff !important; outline-offset: -3px; box-shadow: 0 0 0 4px rgba(143,211,255,0.25); }
+.all-done-text { color: #2b7fb8; font-size: 12px; font-weight: 600; }
+
+/* ========== NEXT READY CHIP ========== */
+.next-ready-chip { margin-top: 6px; padding: 4px 8px; border-radius: 6px; font-size: 0.85em; font-weight: 600; display: inline-block; }
+.next-ready-chip.ready { background: #e6f7ea; color: #1b7f3a; border: 1px solid #7ddc9a; }
+.next-ready-chip.warn { background: #fff4e5; color: #b45309; border: 1px solid #fbbf24; }
+
+/* ========== GENERIC ========== */
+.container { padding: 20px; font-family: 'Segoe UI', sans-serif; }
+.text-center { text-align: center; }
+.room-wrapper { display: flex; flex-direction: column; align-items: center; }
+.room-status-title { margin-bottom: 6px; text-align: center; }
+.label { font-size: 0.85rem; color: #718096; margin-bottom: 5px; }
+.value { font-size: 2rem; font-weight: 800; color: #2d3748; line-height: 1; }
+.value-small { font-size: 1.4rem; font-weight: 700; }
+.divider { border: 0; border-top: 1px solid #eee; margin: 20px 0; }
+
+/* ========== PROGRESS BAR ========== */
+.progress-bar { height: 6px; background: #edf2f7; border-radius: 3px; margin-top: 10px; overflow: hidden; }
+.progress-fill { height: 100%; background: #48bb78; transition: width 0.5s ease-in-out; }
+
+/* ========== ACTION BUTTONS ========== */
+.action-btn { background: #3182ce; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; margin-bottom: 15px; transition: 0.3s; }
+.action-btn:hover { background: #2b6cb0; transform: translateY(-2px); }
+.refresh-btn { background: none; border: 1px solid #e2e8f0; color: #4a5568; padding: 5px 12px; border-radius: 6px; cursor: pointer; font-size: 0.8rem; }
+.refresh-btn:hover { background: #f7fafc; }
+
+/* ========== STATUS TAGS ========== */
+.stats-row { display: flex; justify-content: center; gap: 8px; margin: 10px 0; }
+.status-tag { padding: 2px 8px; border-radius: 20px; font-size: 0.8rem; font-weight: bold; }
+.status-tag.completed { background: #e6fffa; color: #2c7a7b; }
+.status-tag.progress { background: #fffaf0; color: #9c4221; }
+.status-tag.planned { background: #ebf8ff; color: #2b6cb0; }
 .status-tag.ok { background: #c6f6d5; color: #22543d; }
 .status-tag.run { background: #feebc8; color: #744210; }
 .status-tag.plan { background: #bee3f8; color: #2a4365; }
 
-.progress-bar { height: 6px; background: #edf2f7; border-radius: 3px; margin-top: 10px; overflow: hidden; }
-.progress-fill { height: 100%; background: #48bb78; transition: width 0.5s ease-in-out; }
+/* ========== DASHBOARD HEADER ========== */
+.dashboard-header { padding: 40px 0 20px; background: linear-gradient(to left, #1976d2, #2196f3); border-radius: 12px; margin-bottom: 25px; }
+.page-title { font-size: 2.2rem; font-weight: 700; margin: 0; letter-spacing: 1px; text-shadow: 0 2px 4px rgba(0,0,0,0.25); color: black; }
 
-.card-footer { margin-top: 20px; text-align: left; }
-.refresh-btn { background: none; border: 1px solid #e2e8f0; color: #4a5568; padding: 5px 12px; border-radius: 6px; cursor: pointer; font-size: 0.8rem; }
-.refresh-btn:hover { background: #f7fafc; }
-.summary-card {
-  background: #ffffff;
-  border-radius: 16px;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-  padding: 20px;
-  font-family: system-ui, -apple-system, sans-serif;
-  color: #333;
-}
-
-.summary-header {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 20px;
-  padding-bottom: 10px;
-  border-bottom: 1px solid #eee;
-}
-
-.header-title { font-weight: 700; font-size: 1.2rem; flex-grow: 1; }
-.header-date { color: #666; font-size: 0.9rem; }
-
-.summary-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 15px;
-}
-
-.summary-pill {
-  background: #f8f9fa;
-  border-radius: 12px;
-  padding: 15px;
-  text-align: center;
-  border: 1px solid #edf2f7;
-}
-/* כפתור פתיחה צף */
-.floating-summary-btn {
-  position: fixed;
-  bottom: 20px;
-  left: 20px;
-  z-index: 1000;
-  background: #2c3e50;
-  color: white;
-  border: none;
-  padding: 12px 20px;
-  border-radius: 30px;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-  cursor: pointer;
-  font-weight: bold;
-}
-
-/* הבר התחתון - תופס שליש מסך */
-.bottom-summary-bar {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 30vh; /* שליש גובה מסך */
-  background: #ffffff;
-  border-top: 4px solid #3498db;
-  box-shadow: 0 -5px 25px rgba(0,0,0,0.15);
-  z-index: 1001;
-  display: flex;
-  flex-direction: column;
-  padding: 15px 25px;
-  animation: slideUp 0.4s ease-out;
-}
-
-@keyframes slideUp {
-  from { transform: translateY(100%); }
-  to { transform: translateY(0); }
-}
-
-.close-bar-btn {
-  position: absolute;
-  top: 10px;
-  left: 15px;
-  background: #eee;
-  border: none;
-  border-radius: 50%;
-  width: 25px;
-  height: 25px;
-  cursor: pointer;
-}
-
-.bar-content {
-  display: flex;
-  gap: 30px;
-  height: 100%;
-  align-items: center;
-}
-
-.bar-header {
-  border-left: 2px solid #eee;
-  padding-left: 20px;
-  min-width: 150px;
-}
-
+/* ========== BOTTOM SUMMARY BAR ========== */
+.floating-summary-btn { position: fixed; bottom: 20px; left: 20px; z-index: 1000; background: #2c3e50; color: white; border: none; padding: 12px 20px; border-radius: 30px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); cursor: pointer; font-weight: bold; }
+.bottom-summary-bar { position: fixed; bottom: 0; left: 0; right: 0; height: 30vh; background: #ffffff; border-top: 4px solid #3498db; box-shadow: 0 -5px 25px rgba(0,0,0,0.15); z-index: 1001; display: flex; flex-direction: column; padding: 15px 25px; animation: slideUp 0.4s ease-out; }
+@keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+.close-bar-btn { position: absolute; top: 10px; left: 15px; background: #eee; border: none; border-radius: 50%; width: 25px; height: 25px; cursor: pointer; }
+.bar-content { display: flex; gap: 30px; height: 100%; align-items: center; }
+.bar-header { border-left: 2px solid #eee; padding-left: 20px; min-width: 150px; }
 .header-main { font-size: 1.4rem; font-weight: 800; color: #2c3e50; }
 .header-sub { color: #7f8c8d; }
-
-.bar-grid {
-  display: flex;
-  flex: 1;
-  justify-content: space-around;
-  align-items: center;
-  gap: 20px;
-}
-
+.bar-grid { display: flex; flex: 1; justify-content: space-around; align-items: center; gap: 20px; }
 .bar-item { text-align: center; }
 .bar-label { font-size: 0.85rem; color: #7f8c8d; margin-bottom: 5px; }
 .bar-value { font-size: 2.5rem; font-weight: 900; line-height: 1; color: #2980b9; }
 .bar-value-mid { font-size: 1.8rem; font-weight: 700; color: #34495e; }
-
 .bar-sub-row { display: flex; gap: 5px; margin-top: 5px; justify-content: center; }
 .tag { font-size: 0.75rem; padding: 2px 8px; border-radius: 10px; background: #f0f3f5; }
 .tag.ok { color: #27ae60; background: #eafaf1; }
 .tag.run { color: #d35400; background: #fef5e7; }
 
-.urgency-row { display: flex; gap: 8px; }
-.bar-urge-btn {
-  background: white; border: 1px solid #ddd; padding: 8px 12px;
-  border-radius: 8px; cursor: pointer; display: flex; flex-direction: column;
-}
-.bar-urge-btn.active { background: #3498db; color: white; border-color: #3498db; }
+/* ========== BAR URGENCY BUTTONS ========== */
+.urgency-row { display: flex; gap: 12px; padding: 5px; }
+.bar-urge-btn { display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 90px; padding: 8px 12px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; cursor: pointer; position: relative; transition: all 0.2s cubic-bezier(0.4,0,0.2,1); box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+.bar-urge-btn:hover { transform: translateY(-3px); box-shadow: 0 6px 12px rgba(0,0,0,0.1); border-color: #3182ce; background-color: #f8fbff; }
+.bar-urge-btn.active { background: #ebf8ff; border-color: #3182ce; border-width: 2px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.06); }
+.btn-top { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
+.btn-icon { font-size: 1.2rem; }
+.btn-count { font-size: 1.1rem; color: #2d3748; }
+.btn-text { font-size: 0.75rem; font-weight: 600; color: #718096; white-space: nowrap; }
+.active-indicator { position: absolute; bottom: -4px; width: 20px; height: 4px; background: #3182ce; border-radius: 2px; }
+.bar-urge-btn[title="דחוף"] .btn-count { color: #e53e3e; }
 
-/* פאנל דריל דאון צף */
-.bar-drilldown {
-  position: absolute;
-  bottom: 105%;
-  right: 20px;
-  width: 400px;
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 -5px 20px rgba(0,0,0,0.2);
-  border: 1px solid #3498db;
-  max-height: 300px;
-  display: flex;
-  flex-direction: column;
-}
-
+/* ========== DRILLDOWN PANEL ========== */
+.bar-drilldown { position: absolute; bottom: 105%; right: 20px; width: 400px; background: white; border-radius: 12px; box-shadow: 0 -5px 20px rgba(0,0,0,0.2); border: 1px solid #3498db; max-height: 300px; display: flex; flex-direction: column; }
 .drill-header { background: #3498db; color: white; padding: 10px; display: flex; justify-content: space-between; font-weight: bold; }
 .drill-scroll { overflow-y: auto; padding: 10px; }
 .drill-item { padding: 8px; border-bottom: 1px solid #eee; font-size: 0.9rem; }
 
+/* ========== RESPONSIVE ========== */
+@media (min-width: 1800px) { #surgeriesrts { grid-template-columns: repeat(7, minmax(250px, 1fr)); } }
+@media (max-width: 900px) { #surgeriesrts { grid-template-columns: repeat(4, minmax(250px, 1fr)); } }
+@media (max-width: 600px) { #surgeriesrts { grid-template-columns: 1fr; } }
+@media (max-width: 768px) { .status-display, .progress-display, .duration-display { font-size: 0.8em; padding: 3px 8px; } .room-dept-badge { display: none; } }
 
-.urgency-row {
-  display: flex;
-  gap: 12px;
-  padding: 5px;
-}
-
-.bar-urge-btn {
-  /* מבנה בסיסי */
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-width: 90px;
-  padding: 8px 12px;
-  
-  /* עיצוב כפתור לחיץ */
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
-  cursor: pointer;
-  position: relative;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-}
-
-/* אפקט מעבר עכבר - אינדיקציה ללחיצה */
-.bar-urge-btn:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 6px 12px rgba(0,0,0,0.1);
-  border-color: #3182ce;
-  background-color: #f8fbff;
-}
-
-/* מצב לחוץ (Active) */
-.bar-urge-btn.active {
-  background: #ebf8ff;
-  border-color: #3182ce;
-  border-width: 2px;
-  box-shadow: inset 0 2px 4px rgba(0,0,0,0.06);
-}
-
-/* סידור פנימי */
-.btn-top {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-bottom: 4px;
-}
-
-.btn-icon {
-  font-size: 1.2rem;
-}
-
-.btn-count {
-  font-size: 1.1rem;
-  color: #2d3748;
-}
-
-.btn-text {
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: #718096;
-  white-space: nowrap; /* מניעת שבירת שורה לטקסט ארוך */
-}
-
-/* אינדיקטור לחיצה פעילה */
-.active-indicator {
-  position: absolute;
-  bottom: -4px;
-  width: 20px;
-  height: 4px;
-  background: #3182ce;
-  border-radius: 2px;
-}
-
-/* צבעים ייחודיים לפי טקסט (אופציונלי - להוסיף צבע לטקסט של "דחוף") */
-.bar-urge-btn[title="דחוף"] .btn-count {
-  color: #e53e3e;
-}
+/* ========== MATERIAL DATE INPUT ========== */
+.date-compact.mat-form-field { width: 120px; }
+:host ::ng-deep .date-compact .mat-form-field-infix { width: 100px; }
