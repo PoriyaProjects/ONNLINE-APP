@@ -188,7 +188,7 @@
           isTurnoverLong(room) && !hasInProgress(room) ? 'turnover-warning' : '',
           getIdleBorderClass(room)
           ]">
-          <!-- (!isRoomExpanded(room.roomId) && !allExpanded && openRooms.size > 0) ? 'blurred' : '', -->
+              <!-- (!isRoomExpanded(room.roomId) && !allExpanded && openRooms.size > 0) ? 'blurred' : '', -->
               <!-- (!isRoomExpanded(room.roomId) && !allExpanded && activeRoomId && room.roomId !== activeRoomId) ? 'blurred' : '', -->
 
               <!-- כל התוכן של הכרטיס שלך כרגיל -->
@@ -318,6 +318,21 @@
                 <!-- Status dot -->
                 <!-- <div class="status-circle" *ngIf="settings.showStatusDot !== false" [ngClass]="getRoomStatusClassWithSettings(room)">
           </div> -->
+                <!-- 🔐 Indication: Next patient readiness -->
+                <ng-container *ngIf="nextPlannedSurgery(room) as s">
+
+                  <!-- 🟢 Ready -->
+                  <div *ngIf="s.NextPatientReadyGreen" class="next-ready-chip ready">
+                    🟢 המטופל הבא מוכן לניתוח
+                  </div>
+
+                  <!-- ⚠️ Missing signatures -->
+                  <div *ngIf="!s.NextPatientReadyGreen && s.MissingSignaturesText" class="next-ready-chip warn"
+                    [attr.title]="s.MissingSignaturesText">
+                    ⚠️ חסרה חתימה: {{ s.MissingSignaturesText }}
+                  </div>
+
+                </ng-container>
 
                 <!-- Title + Department -->
                 <h4 class="text-center">
@@ -344,18 +359,18 @@
                   </div>
                 </div>
 
-                <ng-container *ngIf="!hasInProgress(room)">
-                  <div class="room-turnover-info" *ngIf="getRoomDurationInfo(room) as durationInfo">
+                <!-- <ng-container *ngIf="!hasInProgress(room)">
+                  <div class="room-turnover-info" *ngIf="getRoomDurationInfo(room) as durationInfo"> -->
                     <!-- <div [style.color]="durationInfo.isIdleOver20Min ? 'red' : 'inherit'"
             [class.blink-text]="durationInfo.isIdleOver20Min" style="font-weight:bold;font-size:1.1em;">
             {{ durationInfo.icon }} {{ durationInfo.text }}
           </div> -->
 
-                    <div class="turnover-warning-text" *ngIf="durationInfo.isIdleOver20Min">
+                    <!-- <div class="turnover-warning-text" *ngIf="durationInfo.isIdleOver20Min">
                       חדר פנוי למעלה מ-{{ toMinutes(durationInfo.time) }} דקות!
-                    </div>
-                  </div>
-                </ng-container>
+                    </div> -->
+                  <!-- </div>
+                </ng-container> -->
 
 
                 <!-- Progress row: X/Y surgeries completed -->
@@ -365,24 +380,26 @@
                     <span class="progress-label">בוצעו</span>
                   </div>
                 </div>
-                <div class="room-extra-panel" *ngIf="isRoomExpanded(room.roomId)">
-                  <ng-container *ngIf="getRoomDetailsPanel(room) as d">
-                    <div class="extra-row">
-                      <span class="k rtl-start">
+                <div class="room-extra-panel"
+              
+                 >
+                  <ng-container *ngIf="getRoomDetailsPanel(room) as d" >
+                    <div class="extra-row" *ngIf="d.totalDelayHMM !== '--:--'" >
+                      <span class="k rtl-start"  >
                         עיכוב מצטבר מתחילת יום
                         <span class="tip" title="מ07:30"></span>
                         <!-- ): -->
                       </span>
                       <span class="v">{{ d.totalDelayHMM }}</span>
                     </div>
-                    <div class="extra-row">
+                    <div class="extra-row" *ngIf="d.overrunText !== '--:--'">
                       <span class="k">משך גלישה צפוי:</span>
                       <span class="v">{{ d.overrunText }}</span>
                     </div>
-                    <div class="extra-row">
+                    <!-- <div class="extra-row">
                       <span class="k">חדר פנוי החל מ:</span>
                       <span class="v">{{ d.freeFromText }}</span>
-                    </div>
+                    </div> -->
                   </ng-container>
                 </div>
 

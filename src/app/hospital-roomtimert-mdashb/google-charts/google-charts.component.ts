@@ -55,6 +55,17 @@ export interface Surgery {
     TimeExitingTheOperatingRoom: string | null; // 'HH:mm' or null
     SurgeryStatus: "Completed" | "InProgress" | "Planned" | string;
     TimeSurgeryToDo: string | number | null;
+    // 🆕 חתימות
+    AdmissionNo?: number;
+    ReadyForSurgery?: number; // 0 | 1
+    MissingSignatures?: string | null; // טקסט
+    SignatureByRole?: string | null; // JSON string
+
+    // 🆕 אינדיקציות UI
+    IsWaitingForSurgery?: boolean;
+    NextPatientReadyGreen?: boolean;
+    MissingSignaturesText?: string | null;
+    
 }
 
 export interface RoomData {
@@ -540,6 +551,10 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
                         surgeryDate: row.SurgeryDate, // 'YYYY-MM-DD'
                         urgency: row.Urgency,
                         timeSurgeryToDo: row.TimeSurgeryToDo, // minutes (string or number)
+
+                        IsWaitingForSurgery: row.IsWaitingForSurgery,
+                        NextPatientReadyGreen: row.NextPatientReadyGreen,
+                        MissingSignaturesText: row.MissingSignaturesText,
                     });
                     return acc;
                 }, {} as Record<string, any[]>);
@@ -2861,7 +2876,6 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
             cssClass: "status-planned",
         };
     }
-
     getRoomProgressInfo(room: RoomData): {
         completed: number;
         total: number;
@@ -2869,9 +2883,12 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
     } | null {
         if (!room?.surgeries?.length) return null;
 
-        const completed = room.surgeries.filter(
-            (s) => s.status === "Completed"
-        ).length;
+        const completed = room.surgeries.filter((s) => {
+            const t =
+                s.TimeEntranceToTheOperatingRoom || (s as any).timeEntrance;
+            return !!t && t !== "00:00" && t !== "00:00:00";
+        }).length;
+
         const total = room.surgeries.length;
 
         return {
@@ -2880,6 +2897,7 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
             label: completed === total ? "הושלמו הכל" : "בוצעו",
         };
     }
+
     getRoomDetailsPanel(room: RoomData): {
         totalDelayHMM: string; // משך עיכובים מצטבר מתחילת יום (7:30)
         overrunText: string; // משך גלישה צפוי
@@ -3456,7 +3474,8 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
 
         return {
             icon: isOverdue ? "⚠️" : "😴",
-            text: `חדר פנוי ${hm} (מאז ${idleStartTime})`,
+            text: `חדר פנוי ${hm}
+            `,
             time: hm,
             color: isOverdue ? "red" : "inherit",
             isIdleOver20Min: isOverdue,
@@ -3858,5 +3877,8 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
         return room.surgeries.every(
             (s) => (s?.status ?? s?.SurgeryStatus) === "Completed"
         );
+    }
+    nextPlannedSurgery(room: RoomData) {
+        return room.surgeries?.find((s) => s.IsWaitingForSurgery);
     }
 }

@@ -16,7 +16,9 @@
 }
 
 /* יישור כותרות למרכז (כפי שהיה) אך עם תמיכה בעברית */
-h2, h3, h4 {
+h2,
+h3,
+h4 {
     direction: rtl;
     text-align: center;
 }
@@ -132,8 +134,6 @@ h4.text-center {
     scrollbar-color: rgba(0, 0, 0, 0.1) transparent;
     /* min-width : '-webkit-fill-available'; */
     min-width: stretch;
-    
-
 }
 
 /* עיצוב פס הגלילה */
@@ -710,7 +710,7 @@ h4.text-center {
 .room-extra-panel .v {
     font-weight: 800;
     direction: ltr; /* מספרים ושעות נשארים משמאל לימין לקריאות */
-    text-align: left; 
+    text-align: left;
     margin-right: auto; /* דוחף את הערך לצד הנגדי */
 }
 
@@ -721,20 +721,18 @@ h4.text-center {
     align-items: center;
 }
 
-
 .dept {
     text-align: right;
     font-size: 0.85em;
     color: #444;
     font-weight: 600;
 
-    background: #f7f9fc;        /* רקע בהיר מודרני */
-    border: 1px solid #e2e6ea;  /* מסגרת עדינה */
-    padding: 6px 10px;          /* ריווח פנימי נעים */
-    border-radius: 6px;         /* פינות מעוגלות */
-    display: inline-block;      /* שומר על גודל קומפקטי */
-        max-width: 77px;
-
+    background: #f7f9fc; /* רקע בהיר מודרני */
+    border: 1px solid #e2e6ea; /* מסגרת עדינה */
+    padding: 6px 10px; /* ריווח פנימי נעים */
+    border-radius: 6px; /* פינות מעוגלות */
+    display: inline-block; /* שומר על גודל קומפקטי */
+    max-width: 77px;
 }
 
 .summary-card {
@@ -754,12 +752,12 @@ h4.text-center {
 }
 
 /* small estimated text */
-.small.est-end{
-  font-size: 12px;
-  opacity: .85;
-  margin-top: 4px;
-  direction: rtl;
-  text-align: right;
+.small.est-end {
+    font-size: 12px;
+    opacity: 0.85;
+    margin-top: 4px;
+    direction: rtl;
+    text-align: right;
 }
 .room-wrapper {
     display: flex;
@@ -772,35 +770,73 @@ h4.text-center {
     text-align: center;
 }
 @keyframes blinkRed {
-  0%   { box-shadow: 0 0 0 0 rgba(220,0,0,.9); border-color:#dc0000; }
-  50%  { box-shadow: 0 0 0 4px rgba(220,0,0,.6); border-color:#ff3b3b; }
-  100% { box-shadow: 0 0 0 0 rgba(220,0,0,.9); border-color:#dc0000; }
+    0% {
+        box-shadow: 0 0 0 0 rgba(220, 0, 0, 0.9);
+        border-color: #dc0000;
+    }
+    50% {
+        box-shadow: 0 0 0 4px rgba(220, 0, 0, 0.6);
+        border-color: #ff3b3b;
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(220, 0, 0, 0.9);
+        border-color: #dc0000;
+    }
 }
 
-.idle-alert{
-  border: 2px solid #dc0000;
-  animation: blinkRed 1s infinite;
+.idle-alert {
+    border: 2px solid #dc0000;
+    animation: blinkRed 1s infinite;
 }
 @keyframes idleBlinkBorder {
-  0%   { outline-color: rgba(220,0,0,.15); box-shadow: 0 0 0 0 rgba(220,0,0,.0); }
-  50%  { outline-color: rgba(220,0,0,1);   box-shadow: 0 0 0 6px rgba(220,0,0,.35); }
-  100% { outline-color: rgba(220,0,0,.15); box-shadow: 0 0 0 0 rgba(220,0,0,.0); }
+    0% {
+        outline-color: rgba(220, 0, 0, 0.15);
+        box-shadow: 0 0 0 0 rgba(220, 0, 0, 0);
+    }
+    50% {
+        outline-color: rgba(220, 0, 0, 1);
+        box-shadow: 0 0 0 6px rgba(220, 0, 0, 0.35);
+    }
+    100% {
+        outline-color: rgba(220, 0, 0, 0.15);
+        box-shadow: 0 0 0 0 rgba(220, 0, 0, 0);
+    }
 }
 
-.room-widget.idle-alert{
-  outline: 3px solid rgba(220,0,0,1) !important;
-  outline-offset: -3px !important; /* שישב על המסגרת */
-  animation: idleBlinkBorder 0.9s linear infinite !important;
+.room-widget.idle-alert {
+    outline: 3px solid rgba(220, 0, 0, 1) !important;
+    outline-offset: -3px !important; /* שישב על המסגרת */
+    animation: idleBlinkBorder 0.9s linear infinite !important;
 }
 
-.room-widget.all-done{
-  outline: 3px solid #8fd3ff !important;
-  outline-offset: -3px;
-  box-shadow: 0 0 0 4px rgba(143,211,255,.25);
+.room-widget.all-done {
+    outline: 3px solid #8fd3ff !important;
+    outline-offset: -3px;
+    box-shadow: 0 0 0 4px rgba(143, 211, 255, 0.25);
 }
 
-.all-done-text{
-  color:#2b7fb8;
-  font-size:12px;
-  font-weight:600;
+.all-done-text {
+    color: #2b7fb8;
+    font-size: 12px;
+    font-weight: 600;
+}
+.next-ready-chip {
+    margin-top: 6px;
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 0.85em;
+    font-weight: 600;
+    display: inline-block;
+}
+
+.next-ready-chip.ready {
+    background: #e6f7ea;
+    color: #1b7f3a;
+    border: 1px solid #7ddc9a;
+}
+
+.next-ready-chip.warn {
+    background: #fff4e5;
+    color: #b45309;
+    border: 1px solid #fbbf24;
 }
