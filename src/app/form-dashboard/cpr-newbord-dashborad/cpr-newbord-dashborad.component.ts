@@ -46,9 +46,15 @@ export class CprNewbordDashboradComponent implements OnInit {
   }
 
   getAverageWeight(): number {
-    const weights = this.dataSource.data.map((d: any) => d.babyWeight || 0);
-    return weights.reduce((a: number, b: number) => a + b, 0) / weights.length;
-  }
+  const weights = this.dataSource.data
+    .map((d: any) => Number(d.babyWeight))
+    .filter(w => !isNaN(w) && w > 0);
+
+  if (weights.length === 0) return 0;
+
+  const sum = weights.reduce((a, b) => a + b, 0);
+  return sum / weights.length;
+}
 
   viewDetails(element: any) {
     // You can open a dialog or navigate
