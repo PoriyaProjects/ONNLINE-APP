@@ -1,2593 +1,3884 @@
-import { Component, AfterViewInit, OnInit, HostListener } from '@angular/core';
-import { trigger, state, style, transition, animate } from '@angular/animations';
-import { GoogleChartsService } from '../services/google-charts.service';
-import { Subject } from 'rxjs';
-import { takeUntil } from 'rxjs/operators';
-import { ChangeDetectorRef, Input } from '@angular/core';
-import { interval } from 'rxjs';
-import { startWith, shareReplay } from 'rxjs/operators';
-
-
+import { Component, AfterViewInit, OnInit, HostListener } from "@angular/core";
+import {
+    trigger,
+    state,
+    style,
+    transition,
+    animate,
+} from "@angular/animations";
+import { GoogleChartsService } from "../services/google-charts.service";
+import { Subject } from "rxjs";
+import { takeUntil } from "rxjs/operators";
+import { ChangeDetectorRef, Input } from "@angular/core";
+import { interval } from "rxjs";
+import { startWith, shareReplay } from "rxjs/operators";
 
 import {
-  CHART_SERIES_PALETTE,
-  PERIOD_TYPE_MAP,
-  DEPARTMENT_BASE_PALETTE,
-  DepartmentColorService,
-  translateDataSource,
-  translateTimeframe,
-  formatToHHMM,
-  buildTimeTicksFromRaw,
-  buildColumnOptions,
-  buildDeptDrilldown,
-  stickyByMarker, PaletteService
-} from '../../shared/charts-config';
+    CHART_SERIES_PALETTE,
+    PERIOD_TYPE_MAP,
+    DEPARTMENT_BASE_PALETTE,
+    DepartmentColorService,
+    translateDataSource,
+    translateTimeframe,
+    formatToHHMM,
+    buildTimeTicksFromRaw,
+    buildColumnOptions,
+    buildDeptDrilldown,
+    stickyByMarker,
+    PaletteService,
+} from "../../shared/charts-config";
 
 interface DepartmentMetricEntry {
-  period: string;
-  source: string;
-  aggregateDays?: number;
-  avgMinutes?: number; 
+    period: string;
+    source: string;
+    aggregateDays?: number;
+    avgMinutes?: number;
 }
 interface DepartmentData {
-  departName: string;
-  metrics: DepartmentMetricEntry[];
+    departName: string;
+    metrics: DepartmentMetricEntry[];
 }
 
-
 export interface Surgery {
-  surgeryId: string;
-  patientNumber: string;
-  surgeryName: string;
-  surgeryCode: string;
-  department: string;
-  status: 'Planned' | 'InProgress' | 'Completed';
-  timeEntrance: string;
-  timeExit: string;
-  surgeryDate: string;
-  SurgeryRoom: string;
-  SurgeryDate: string; // 'YYYY-MM-DD'
-  TimeEntranceToTheOperatingRoom: string | null; // 'HH:mm' or null
-  TimeExitingTheOperatingRoom: string | null;    // 'HH:mm' or null
-  SurgeryStatus: 'Completed' | 'InProgress' | 'Planned' | string;
-  TimeSurgeryToDo: string | number | null;
+    surgeryId: string;
+    patientNumber: string;
+    surgeryName: string;
+    surgeryCode: string;
+    department: string;
+    status: "Planned" | "InProgress" | "Completed";
+    timeEntrance: string;
+    timeExit: string;
+    surgeryDate: string;
+    SurgeryRoom: string;
+    SurgeryDate: string; // 'YYYY-MM-DD'
+    TimeEntranceToTheOperatingRoom: string | null; // 'HH:mm' or null
+    TimeExitingTheOperatingRoom: string | null; // 'HH:mm' or null
+    SurgeryStatus: "Completed" | "InProgress" | "Planned" | string;
+    TimeSurgeryToDo: string | number | null;
+    // 🆕 חתימות
+    AdmissionNo?: number;
+    ReadyForSurgery?: number; // 0 | 1
+    MissingSignatures?: string | null; // טקסט
+    SignatureByRole?: string | null; // JSON string
+
+    // 🆕 אינדיקציות UI
+    IsWaitingForSurgery?: boolean;
+    NextPatientReadyGreen?: boolean;
+    MissingSignaturesText?: string | null;
+    
 }
 
 export interface RoomData {
-  roomId: string;
-  date: string | null;
-  surgeries: Surgery[];
+    roomId: string;
+    date: string | null;
+    surgeries: Surgery[];
 }
 
 export type LateMeta = {
-  isLate: boolean;
-  overrunMin: number;        
-  predictedEnd: Date | null; 
-  turnoverUsed: number;      
-  hasOverlapBacklog: boolean;  
-  backlogCount?: number;       
-  overlapUntil?: Date | null;  
+    isLate: boolean;
+    overrunMin: number;
+    predictedEnd: Date | null;
+    turnoverUsed: number;
+    hasOverlapBacklog: boolean;
+    backlogCount?: number;
+    overlapUntil?: Date | null;
 };
-
 
 export type HeaderProgressOpts = {
-  defaultTurnoverMin?: number; 
+    defaultTurnoverMin?: number;
 };
 
-export type DisplayPreset = 'default' | 'all' | 'custom' | 'minimal';
-export type ColorMode = 'border' | 'background';
+export type DisplayPreset = "default" | "all" | "custom" | "minimal";
+export type ColorMode = "border" | "background";
 export interface DisplaySettings {
-  showHeaderBadge: boolean;
-  showHeaderIcon: boolean;
-  showHeaderProgress: boolean;
-  showTurnoverLines: boolean;
-  showPlannedSection: boolean;
-  showSurgeryName: boolean;
-  showSurgeryCode: boolean;
-  showDepartment: boolean;
-  showTimes: boolean;
-  showStatus: boolean;
-  colorize: boolean;
-  blinkOnUnacked: boolean;
-  showLegend: boolean;
-  showHeaderMetrics?: boolean;
-  showStartChip?: boolean;
-  showTurnoverChip?: boolean;
-  showEndChip?: boolean;
-  showStatusDot?: boolean;
-  showUrgencyIcon?: boolean;
-  colorMode: ColorMode;
-  showLateChip?: boolean;
-  showExpandBtn?: boolean;
-  showDateControls?: boolean;
-  backgroundMode?: boolean;
-  showIdleSeconds?: boolean;
-  hideIdleWhenNoPlanned?: boolean;
-  continueIdleAfter1500WhenPlanned?: boolean;
-  showSummaryCard?: boolean;
-  showSurgeriesRts?: boolean;
+    showHeaderBadge: boolean;
+    showHeaderIcon: boolean;
+    showHeaderProgress: boolean;
+    showTurnoverLines: boolean;
+    showPlannedSection: boolean;
+    showSurgeryName: boolean;
+    showSurgeryCode: boolean;
+    showDepartment: boolean;
+    showTimes: boolean;
+    showStatus: boolean;
+    colorize: boolean;
+    blinkOnUnacked: boolean;
+    showLegend: boolean;
+    showHeaderMetrics?: boolean;
+    showStartChip?: boolean;
+    showTurnoverChip?: boolean;
+    showEndChip?: boolean;
+    showStatusDot?: boolean;
+    showUrgencyIcon?: boolean;
+    colorMode: ColorMode;
+    showLateChip?: boolean;
+    showExpandBtn?: boolean;
+    showDateControls?: boolean;
+    backgroundMode?: boolean;
+    showIdleSeconds?: boolean;
+    hideIdleWhenNoPlanned?: boolean;
+    continueIdleAfter1500WhenPlanned?: boolean;
+    showSummaryCard?: boolean;
+    showSurgeriesRts?: boolean;
 }
 
 export const DEFAULT_SETTINGS: DisplaySettings = {
-  showHeaderBadge: true,
-  showHeaderIcon: true,
-  showHeaderProgress: true,
-  showTurnoverLines: true,
-  showPlannedSection: true,
-  showSurgeryName: true,
-  showSurgeryCode: true,
-  showDepartment: true,
-  showTimes: true,
-  showStatus: true,
-  colorize: true,
-  blinkOnUnacked: true,
-  showLegend: true,
-  showHeaderMetrics: true,
-  showStartChip: true,
-  showTurnoverChip: true,
-  showEndChip: true,
-  showStatusDot: true,
-  showUrgencyIcon: true,
-  colorMode: 'border',
-  showExpandBtn: true,
-  showDateControls: true,
-  backgroundMode: false,
-  showIdleSeconds: true,
-  hideIdleWhenNoPlanned: true,
-  continueIdleAfter1500WhenPlanned: true,
-  showSummaryCard: false,
-  showSurgeriesRts: true
+    showHeaderBadge: true,
+    showHeaderIcon: true,
+    showHeaderProgress: true,
+    showTurnoverLines: true,
+    showPlannedSection: true,
+    showSurgeryName: true,
+    showSurgeryCode: true,
+    showDepartment: true,
+    showTimes: true,
+    showStatus: true,
+    colorize: true,
+    blinkOnUnacked: true,
+    showLegend: true,
+    showHeaderMetrics: true,
+    showStartChip: true,
+    showTurnoverChip: true,
+    showEndChip: true,
+    showStatusDot: true,
+    showUrgencyIcon: true,
+    colorMode: "background",
+    showExpandBtn: true,
+    showDateControls: true,
+    backgroundMode: false,
+    showIdleSeconds: true,
+    hideIdleWhenNoPlanned: true,
+    continueIdleAfter1500WhenPlanned: true,
+    showSummaryCard: false,
+    showSurgeriesRts: true,
 };
-
-
 
 export const ALL_ON_SETTINGS: DisplaySettings = { ...DEFAULT_SETTINGS };
 
 export const MINIMAL_SETTINGS: DisplaySettings = {
-  ...DEFAULT_SETTINGS,
-  showExpandBtn: false,
-  showDateControls: false,
-  backgroundMode: true,
-  colorMode: 'background'
+    ...DEFAULT_SETTINGS,
+    showExpandBtn: true,
+    showDateControls: false,
+    backgroundMode: true,
+    colorMode: "border",
 };
 
-
 @Component({
-  selector: 'app-google-charts-time',
-  templateUrl: './google-charts.component.html',
-  styleUrls: ['./google-charts.component.css'],
-  animations: [
-    trigger('slideToggle', [
-      state('closed', style({ height: '0', opacity: 0, overflow: 'hidden', padding: '0' })),
-      state('open', style({ height: '*', opacity: 1, overflow: 'hidden', padding: '*' })),
-      transition('closed <=> open', animate('300ms ease-in-out'))
-    ])
-  ]
+    selector: "app-google-charts-time",
+    templateUrl: "./google-charts.component.html",
+    styleUrls: ["./google-charts.component.css"],
+    animations: [
+        trigger("slideToggle", [
+            state(
+                "closed",
+                style({
+                    height: "0",
+                    opacity: 0,
+                    overflow: "hidden",
+                    padding: "0",
+                })
+            ),
+            state(
+                "open",
+                style({
+                    height: "*",
+                    opacity: 1,
+                    overflow: "hidden",
+                    padding: "*",
+                })
+            ),
+            transition("closed <=> open", animate("300ms ease-in-out")),
+        ]),
+    ],
 })
 export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
-  legendMinimized = false;
-  private resizeTimeout: any;
-  private destroy$ = new Subject<void>();
-  private ackedRooms = new Set<string>();
+    legendMinimized = false;
+    private resizeTimeout: any;
+    private destroy$ = new Subject<void>();
+    private ackedRooms = new Set<string>();
 
-  departmentMap = new Map<string, DepartmentData>();
-  selectedDepartmentCharts: any[] = [];
+    departmentMap = new Map<string, DepartmentData>();
+    selectedDepartmentCharts: any[] = [];
 
-  selectedDate: string = new Date().toISOString().split('T')[0]; // yyyy-MM-dd
+    selectedDate: string = new Date().toISOString().split("T")[0]; // yyyy-MM-dd
 
-  selectedDateObj: Date | null = this.selectedDate ? new Date(this.selectedDate) : null;
+    selectedDateObj: Date | null = this.selectedDate
+        ? new Date(this.selectedDate)
+        : null;
 
+    roomsData: RoomData[] = [];
+    openRoom: string | null = null;
 
-  roomsData: RoomData[] = [];
-  openRoom: string | null = null; 
-
-
-  private _userId: string | null = null;
-  @Input()
-  get userId(): string | null { return this._userId; }
-  set userId(val: string | null) {
-    if (this._userId === val) return;
-    this._userId = val;
-    this.loadDisplaySettings();  
-    this.cdr.markForCheck();      
-  }
-
-  displayPreset: DisplayPreset = 'default';
-  settings: DisplaySettings = { ...DEFAULT_SETTINGS };
-  showDisplayPanel = false;
-  refreshInterval: any;
-  countdownInterval: any;
-  private intervalId: any;
-  nextRefreshIn: number = 300;
-  autoRefreshPaused = false;
-  lastLoaded: Date | null = null;
-
-
-  constructor(
-    public googleChartsService: GoogleChartsService,
-    private deptColors: DepartmentColorService,
-    public palette: PaletteService,
-    private cdr: ChangeDetectorRef
-  ) { }
-
-
- busiestRooms: Array<{
-    room: string;
-    totalMinutes: number;
-    totalHMM: string;
-    cases: number;
-    hasInProgress: boolean;
-    completed: number;
-    inProgress: number;
-    planned: number;
-    latestExit: string | null;
-    roomData: RoomData;
-  }> = [];
-
-
-
-  private settingsKey(uid: string) { return `rtmdashb.display.${uid}`; }
-
-  initDisplaySettings(): void { this.loadDisplaySettings(); }
-  private loadDisplaySettings(): void {
-    if (!this.userId) {
-      this.displayPreset = 'default';
-      this.settings = { ...DEFAULT_SETTINGS };
-      this.showDisplayPanel = false;
-      return;
+    private _userId: string | null = null;
+    @Input()
+    get userId(): string | null {
+        return this._userId;
     }
-    const raw = localStorage.getItem(this.settingsKey(this.userId));
-    if (!raw) {
-      this.displayPreset = 'default';
-      this.settings = { ...DEFAULT_SETTINGS };
-      return;
+    set userId(val: string | null) {
+        if (this._userId === val) return;
+        this._userId = val;
+        this.loadDisplaySettings();
+        this.cdr.markForCheck();
     }
-    try {
-      const parsed = JSON.parse(raw);
-      const saved = (parsed.settings as Partial<DisplaySettings>) || {};
-      this.displayPreset = (parsed.preset as DisplayPreset) || 'custom';
-      this.settings = { ...DEFAULT_SETTINGS, ...saved }; 
-    } catch {
-      this.displayPreset = 'default';
-      this.settings = { ...DEFAULT_SETTINGS };
+
+    displayPreset: DisplayPreset = "default";
+    settings: DisplaySettings = { ...DEFAULT_SETTINGS };
+    showDisplayPanel = false;
+    refreshInterval: any;
+    countdownInterval: any;
+    private intervalId: any;
+    nextRefreshIn: number = 300;
+    autoRefreshPaused = false;
+    lastLoaded: Date | null = null;
+
+    constructor(
+        public googleChartsService: GoogleChartsService,
+        private deptColors: DepartmentColorService,
+        public palette: PaletteService,
+        private cdr: ChangeDetectorRef
+    ) {}
+
+    busiestRooms: Array<{
+        room: string;
+        totalMinutes: number;
+        totalHMM: string;
+        cases: number;
+        hasInProgress: boolean;
+        completed: number;
+        inProgress: number;
+        planned: number;
+        latestExit: string | null;
+        roomData: RoomData;
+    }> = [];
+
+    private settingsKey(uid: string) {
+        return `rtmdashb.display.${uid}`;
     }
-  }
 
-  private persistDisplaySettings(): void {
-    if (!this.userId) return;
-    const payload = {
-      preset: this.displayPreset,
-      settings: { ...this.settings } 
-    };
-    localStorage.setItem(this.settingsKey(this.userId), JSON.stringify(payload));
-  }
-
-  applyPreset(p: DisplayPreset): void {
-    this.displayPreset = p;
-    this.settings =
-      p === 'default' ? { ...DEFAULT_SETTINGS } :
-        p === 'all' ? { ...ALL_ON_SETTINGS } :
-          p === 'minimal' ? { ...MINIMAL_SETTINGS } :
-            { ...this.settings }; 
-    this.persistDisplaySettings();
-    this.cdr.markForCheck();
-  }
-
-
-  onSettingChange(key: keyof DisplaySettings, value: boolean): void {
-    this.settings = { ...this.settings, [key]: value };
-    this.displayPreset = 'custom';
-    this.persistDisplaySettings();
-    this.cdr.markForCheck();
-  }
-
-
-  toggleSetting(key: keyof DisplaySettings): void {
-    const next = { ...this.settings } as any;
-    next[key] = !this.settings[key];
-    this.settings = next;
-    this.displayPreset = 'custom';
-    this.persistDisplaySettings();
-  }
-
-  getCardClasses(room: RoomData): (string | null | undefined)[] {
-    return [
-      this.settings.colorize ? this.getRoomStatusClassWithSettings(room) : null,
-      (this.settings.colorize && this.settings.colorMode === 'background') ? 'status-mode-bg' : null,
-      this.isRoomExpanded(room.roomId) ? 'active' : '',
-      (!this.isRoomExpanded(room.roomId) && !this.allExpanded && this.activeRoomId && room.roomId !== this.activeRoomId) ? 'blurred' : ''
-    ];
-  }
-
-  ngOnInit(): void {
-    this.userId = (localStorage.getItem('ID') || '').trim() || null;
-    this.initDisplaySettings();
-    this.lastLoaded = new Date();
-    this.legendMinimized = localStorage.getItem('legendMinimized') === 'true';
-    this.deptColors.setPalette(this.palette.getDepartmentPalette(), this.palette.name);
-
-    this.loadRoomsData();
-    this.startAutoRefresh();
-
-    this.refreshInterval = setInterval(() => {
-      this.loadRoomsData();
-      this.nextRefreshIn = 300; 
-    }, 5 * 60 * 1000);
-
-    this.countdownInterval = setInterval(() => {
-      if (this.nextRefreshIn > 0) {
-        this.nextRefreshIn--;
-      }
-    }, 1000);
-    const saved = localStorage.getItem('rooms_allExpanded');
-    if (saved === 'true') this.allExpanded = true;
-    if (saved === 'false') this.allExpanded = false;
-
-    this.googleChartsService.ackAllRooms$
-      .pipe(takeUntil(this.destroy$))
-      .subscribe(() => this.markAllRoomsAcknowledged());
-
-  }
-
-  ngAfterViewInit(): void {
-
-
-
-
-  }
-
-  ngOnDestroy(): void {
-    if (this.intervalId) {
-      clearInterval(this.intervalId);
+    initDisplaySettings(): void {
+        this.loadDisplaySettings();
     }
-    this.destroy$.next();
-    this.destroy$.complete();
-  }
-
-  @HostListener('window:resize')
-  onResize() {
-    clearTimeout(this.resizeTimeout);
-    this.resizeTimeout = setTimeout(() => {
-    }, 300);
-  }
-
-  toggleLegend(): void {
-    this.legendMinimized = !this.legendMinimized;
-    localStorage.setItem('legendMinimized', String(this.legendMinimized));
-  }
-
-  isLoading = false;
-  allExpanded: boolean = false;
-  activeRoomId: string | null = null;
-
-  toggleAll(): void {
-    this.allExpanded = !this.allExpanded;
-    localStorage.setItem('rooms_allExpanded', String(this.allExpanded));
-
-    if (this.allExpanded) {
-      this.activeRoomId = null;
-    }
-  }
-
-  isRoomExpanded(roomId: string): boolean {
-    return this.allExpanded || this.activeRoomId === roomId;
-  }
-
-  toggleRoom(roomId: string): void {
-    if (this.allExpanded) return; 
-
-    this.activeRoomId = (this.activeRoomId === roomId) ? null : roomId;
-
-    if (this.activeRoomId) {
-      this.acknowledgeRoomEvent(roomId);
-    }
-  }
-
-  trackByRoomId(index: number, room: any) {
-    return room.roomId;
-  }
-
-
-  private readonly ACK_NS = 'ack_'; // storage prefix
-  private ackCache = new Map<string, string>(); 
-
-  private ackStorageKey(roomId: string): string {
-    return `${this.ACK_NS}${this.storageDateKey()}:${roomId}`;
-  }
-  private legacyAckStorageKey(roomId: string): string {
-    return `${this.ACK_NS}${roomId}`;
-  }
-  private storageDateKey(): string {
-    const d = this.selectedDate ? new Date(this.selectedDate) : new Date();
-    const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    return `${y}-${m}-${day}`;
-  }
-  private lsGet(key: string): string | null {
-    try { return localStorage.getItem(key); } catch { return null; }
-  }
-  private lsSet(key: string, val: string): void {
-    try { localStorage.setItem(key, val); } catch { }
-  }
-  private lsRemove(key: string): void {
-    try { localStorage.removeItem(key); } catch { }
-  }
-
-  private lastEventKeyForRoom(roomId: string): string {
-    const room = this.roomsData.find(r => r.roomId === roomId);
-    if (!room || !room.surgeries.length) return 'empty';
-    const last = room.surgeries[room.surgeries.length - 1];
-    return `${last.surgeryId}_${last.status}`;
-  }
-
-
-  private acknowledgeRoomEvent(roomId: string): void {
-    const key = this.lastEventKeyForRoom(roomId);
-    const storeKey = this.ackStorageKey(roomId);
-
-    this.lsSet(storeKey, key);
-    this.lsRemove(this.legacyAckStorageKey(roomId));
-
-    this.ackCache.set(roomId, key);
-    this.roomsData = [...(this.roomsData ?? [])];
-  }
-
-  isBlinking(room: RoomData): boolean {
-    return !this.isRoomAcked(room);
-  }
-
-
-
-  loadRoomsData(): void {
-    this.lastLoaded = new Date();
-    this.isLoading = true;
-    this.googleChartsService.getSurgeryRooms(this.selectedDate).subscribe(result => {
-      const rows = result.surgeries || [];
-
-      const grouped = rows.reduce((acc, row) => {
-        const roomId = row.SurgeryRoom;
-        if (!acc[roomId]) acc[roomId] = [];
-        acc[roomId].push({
-          surgeryId: row.CaseNumber,
-          patientNumber: row.PatientNumber,
-          surgeryName: row.SurgeryName,
-          surgeryCode: row.SurgeryCode,
-          department: row.DepartName,
-          status: row.SurgeryStatus, // 'Completed' | 'InProgress' | 'Planned' | ...
-          timeEntrance: row.TimeEntranceToTheOperatingRoom, // 'HH:mm'
-          timeExit: row.TimeExitingTheOperatingRoom,        // 'HH:mm'
-          surgeryDate: row.SurgeryDate,                     // 'YYYY-MM-DD'
-          urgency: row.Urgency,
-          timeSurgeryToDo: row.TimeSurgeryToDo              // minutes (string or number)
-        });
-        return acc;
-      }, {} as Record<string, any[]>);
-
-      const self = this;
-
-
-      function two(n: number) { return (n < 10 ? '0' : '') + n; }
-      function parseMinutes(v: any): number | null {
-        if (v === null || v === undefined || v === '') return null;
-        const n = typeof v === 'number' ? v : parseInt(String(v), 10);
-        return isFinite(n) && n > 0 ? n : null;
-      }
-      function addMinutes(d: Date, m: number): Date {
-        return new Date(d.getTime() + m * 60000);
-      }
-
-      function schedDate(item: any, baseDate: string): Date | null {
-        if (!item.timeEntrance) return null;
-        return self.parseClockWithDate(item.timeEntrance, baseDate);
-      }
-
-
-      function sortByPredicted(list: any[], baseDate: string): any[] {
-        if (!list || !list.length) return [];
-
-
-        const DAY_MS = 24 * 60 * 60 * 1000;
-        function sortKeyScheduled(s: any): number {
-          const eClock = s.timeEntrance;
-          const xClock = s.timeExit;
-          if (!eClock) return Number.POSITIVE_INFINITY;
-          const ent = self.parseClockWithDate(eClock, baseDate);
-          const exi = self.parseClockWithDate((xClock && xClock !== '00:00:00') ? xClock : eClock, baseDate);
-          if (!ent || !exi) return Number.POSITIVE_INFINITY;
-          if (exi.getTime() < ent.getTime()) return ent.getTime() - DAY_MS;
-          return ent.getTime();
+    private loadDisplaySettings(): void {
+        if (!this.userId) {
+            this.displayPreset = "default";
+            this.settings = { ...DEFAULT_SETTINGS };
+            this.showDisplayPanel = false;
+            return;
         }
-        list = list.slice().sort(function (a, b) {
-          return sortKeyScheduled(a) - sortKeyScheduled(b);
-        });
+        const raw = localStorage.getItem(this.settingsKey(this.userId));
+        if (!raw) {
+            this.displayPreset = "default";
+            this.settings = { ...DEFAULT_SETTINGS };
+            return;
+        }
+        try {
+            const parsed = JSON.parse(raw);
+            const saved = (parsed.settings as Partial<DisplaySettings>) || {};
+            this.displayPreset = (parsed.preset as DisplayPreset) || "custom";
+            this.settings = { ...DEFAULT_SETTINGS, ...saved };
+        } catch {
+            this.displayPreset = "default";
+            this.settings = { ...DEFAULT_SETTINGS };
+        }
+    }
 
-        const MIN_TURNOVER = 20;
-        let active: any = null;
-        for (let i = 0; i < list.length; i++) {
-          const st = String(list[i].status || '').toLowerCase();
-          if (st === 'inprogress' && list[i].timeEntrance) {
-            if (!active) active = list[i];
-            else {
-              const aEnt = self.parseClockWithDate(active.timeEntrance, baseDate);
-              const bEnt = self.parseClockWithDate(list[i].timeEntrance, baseDate);
-              if (aEnt && bEnt && bEnt.getTime() >= aEnt.getTime()) active = list[i];
+    private persistDisplaySettings(): void {
+        if (!this.userId) return;
+        const payload = {
+            preset: this.displayPreset,
+            settings: { ...this.settings },
+        };
+        localStorage.setItem(
+            this.settingsKey(this.userId),
+            JSON.stringify(payload)
+        );
+    }
+
+    applyPreset(p: DisplayPreset): void {
+        this.displayPreset = p;
+        this.settings =
+            p === "default"
+                ? { ...DEFAULT_SETTINGS }
+                : p === "all"
+                ? { ...ALL_ON_SETTINGS }
+                : p === "minimal"
+                ? { ...MINIMAL_SETTINGS }
+                : { ...this.settings };
+        this.persistDisplaySettings();
+        this.cdr.markForCheck();
+    }
+
+    onSettingChange(key: keyof DisplaySettings, value: boolean): void {
+        this.settings = { ...this.settings, [key]: value };
+        this.displayPreset = "custom";
+        this.persistDisplaySettings();
+        this.cdr.markForCheck();
+    }
+
+    toggleSetting(key: keyof DisplaySettings): void {
+        const next = { ...this.settings } as any;
+        next[key] = !this.settings[key];
+        this.settings = next;
+        this.displayPreset = "custom";
+        this.persistDisplaySettings();
+    }
+
+    getCardClasses(room: RoomData): (string | null | undefined)[] {
+        return [
+            this.settings.colorize
+                ? this.getRoomStatusClassWithSettings(room)
+                : null,
+            this.settings.colorize && this.settings.colorMode === "border"
+                ? "status-mode-bg"
+                : null,
+            this.isRoomExpanded(room.roomId) ? "active" : "",
+            // !this.isRoomExpanded(room.roomId) &&
+            // !this.allExpanded &&
+            // this.activeRoomId &&
+            // room.roomId !== this.activeRoomId
+            //     ? "blurred"
+            //     : "",
+            !this.isRoomExpanded(room.roomId) &&
+            !this.allExpanded &&
+            this.openRooms.size > 0
+                ? "blurred"
+                : "",
+        ];
+    }
+
+    ngOnInit(): void {
+        this.userId = (localStorage.getItem("ID") || "").trim() || null;
+        this.initDisplaySettings();
+        this.lastLoaded = new Date();
+        this.legendMinimized =
+            localStorage.getItem("legendMinimized") === "true";
+        this.deptColors.setPalette(
+            this.palette.getDepartmentPalette(),
+            this.palette.name
+        );
+
+        this.loadRoomsData();
+        this.startAutoRefresh();
+
+        this.refreshInterval = setInterval(() => {
+            this.loadRoomsData();
+            this.nextRefreshIn = 300;
+        }, 5 * 60 * 1000);
+
+        this.countdownInterval = setInterval(() => {
+            if (this.nextRefreshIn > 0) {
+                this.nextRefreshIn--;
             }
-          }
-        }
+        }, 1000);
+        const saved = localStorage.getItem("rooms_allExpanded");
+        const savedAll = localStorage.getItem("rooms_allExpanded");
+        this.allExpanded = savedAll === "true";
 
-        let cursor: Date | null = null; 
-        if (active) {
-          const aStart = self.parseClockWithDate(active.timeEntrance, baseDate);
-          let aDur = parseMinutes(active.timeSurgeryToDo);
-          if (aDur === null) aDur = 60;
-          cursor = aStart ? addMinutes(aStart, aDur) : null;
+        try {
+            const raw = localStorage.getItem("rooms_openRooms");
+            if (raw) this.openRooms = new Set<string>(JSON.parse(raw));
+        } catch {}
+
+        if (saved === "true") this.allExpanded = true;
+        if (saved === "false") this.allExpanded = false;
+
+        this.googleChartsService.ackAllRooms$
+            .pipe(takeUntil(this.destroy$))
+            .subscribe(() => this.markAllRoomsAcknowledged());
+    }
+
+    ngAfterViewInit(): void {}
+
+    ngOnDestroy(): void {
+        if (this.intervalId) {
+            clearInterval(this.intervalId);
+        }
+        this.destroy$.next();
+        this.destroy$.complete();
+    }
+
+    @HostListener("window:resize")
+    onResize() {
+        clearTimeout(this.resizeTimeout);
+        this.resizeTimeout = setTimeout(() => {}, 300);
+    }
+
+    toggleLegend(): void {
+        this.legendMinimized = !this.legendMinimized;
+        localStorage.setItem("legendMinimized", String(this.legendMinimized));
+    }
+
+    isLoading = false;
+    // allExpanded: boolean = false;
+    // activeRoomId: string | null = null;
+    allExpanded = false;
+    openRooms = new Set<string>();
+
+    // toggleAll(): void {
+    //     this.allExpanded = !this.allExpanded;
+    //     localStorage.setItem("rooms_allExpanded", String(this.allExpanded));
+
+    //     if (this.allExpanded) {
+    //         this.activeRoomId = null;
+    //     }
+    // }
+    toggleAll(): void {
+        this.allExpanded = !this.allExpanded;
+        localStorage.setItem("rooms_allExpanded", String(this.allExpanded));
+
+        // אם תרצה: כשפותחים הכל, אין צורך לשנות openRooms
+        // אם תרצה לנקות:
+        // if (this.allExpanded) { this.openRooms.clear(); this.persistOpenRooms(); }
+    }
+
+    private persistOpenRooms(): void {
+        localStorage.setItem(
+            "rooms_openRooms",
+            JSON.stringify([...this.openRooms])
+        );
+    }
+
+    // isRoomExpanded(roomId: string): boolean {
+    //     return this.allExpanded || this.activeRoomId === roomId;
+    // }
+    isRoomExpanded(roomId: string): boolean {
+        return this.allExpanded || this.openRooms.has(roomId);
+    }
+
+    // toggleRoom(roomId: string): void {
+    //     if (this.allExpanded) return;
+
+    //     this.activeRoomId = this.activeRoomId === roomId ? null : roomId;
+
+    //     if (this.activeRoomId) {
+    //         this.acknowledgeRoomEvent(roomId);
+    //     }
+    // }
+    toggleRoom(roomId: string): void {
+        if (this.allExpanded) return;
+
+        if (this.openRooms.has(roomId)) {
+            this.openRooms.delete(roomId);
         } else {
-          let firstPending: any = null;
-          for (let i = 0; i < list.length; i++) {
-            const st = String(list[i].status || '').toLowerCase();
-            if (st !== 'completed') { firstPending = list[i]; break; }
-          }
-          if (firstPending && firstPending.timeEntrance) {
-            const firstSched = self.parseClockWithDate(firstPending.timeEntrance, baseDate);
-            cursor = firstSched ? addMinutes(firstSched, MIN_TURNOVER) : null;
-          }
+            this.openRooms.add(roomId);
+            this.acknowledgeRoomEvent(roomId);
         }
 
-        for (let i = 0; i < list.length; i++) {
-          const it = list[i];
-          const st = String(it.status || '').toLowerCase();
-          const sched = schedDate(it, baseDate); 
-          let dur = parseMinutes(it.timeSurgeryToDo);
-          if (dur === null) dur = 60;
+        this.persistOpenRooms();
+        // טריגר ל-Angular שיעדכן *ngIf / classes
+        this.openRooms = new Set(this.openRooms);
+    }
 
-          if (st === 'completed') {
-            it._displayStart = sched || null;
-            it._displayEnd = it.timeExit ? self.parseClockWithDate(it.timeExit, baseDate) : null;
-          } else if (active && it === active) {
-            it._displayStart = sched || null;
-            it._displayEnd = cursor; 
-          } else {
-            if (!cursor) {
-              it._displayStart = sched || null;
-              it._displayEnd = it._displayStart ? addMinutes(it._displayStart, dur) : null;
-            } else {
-              const earliest = addMinutes(cursor, MIN_TURNOVER);
-              const start = (sched && sched.getTime() > earliest.getTime()) ? sched : earliest;
-              it._displayStart = start;
-              it._displayEnd = addMinutes(start, dur);
-              cursor = it._displayEnd; 
+    trackByRoomId(index: number, room: any) {
+        return room.roomId;
+    }
+
+    private readonly ACK_NS = "ack_"; // storage prefix
+    private ackCache = new Map<string, string>();
+
+    private ackStorageKey(roomId: string): string {
+        return `${this.ACK_NS}${this.storageDateKey()}:${roomId}`;
+    }
+    private legacyAckStorageKey(roomId: string): string {
+        return `${this.ACK_NS}${roomId}`;
+    }
+    private storageDateKey(): string {
+        const d = this.selectedDate ? new Date(this.selectedDate) : new Date();
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, "0");
+        const day = String(d.getDate()).padStart(2, "0");
+        return `${y}-${m}-${day}`;
+    }
+    private lsGet(key: string): string | null {
+        try {
+            return localStorage.getItem(key);
+        } catch {
+            return null;
+        }
+    }
+    private lsSet(key: string, val: string): void {
+        try {
+            localStorage.setItem(key, val);
+        } catch {}
+    }
+    private lsRemove(key: string): void {
+        try {
+            localStorage.removeItem(key);
+        } catch {}
+    }
+
+    private lastEventKeyForRoom(roomId: string): string {
+        const room = this.roomsData.find((r) => r.roomId === roomId);
+        if (!room || !room.surgeries.length) return "empty";
+        const last = room.surgeries[room.surgeries.length - 1];
+        return `${last.surgeryId}_${last.status}`;
+    }
+
+    private acknowledgeRoomEvent(roomId: string): void {
+        const key = this.lastEventKeyForRoom(roomId);
+        const storeKey = this.ackStorageKey(roomId);
+
+        this.lsSet(storeKey, key);
+        this.lsRemove(this.legacyAckStorageKey(roomId));
+
+        this.ackCache.set(roomId, key);
+        this.roomsData = [...(this.roomsData ?? [])];
+    }
+
+    isBlinking(room: RoomData): boolean {
+        return !this.isRoomAcked(room);
+    }
+
+    loadRoomsData(): void {
+        this.lastLoaded = new Date();
+        this.isLoading = true;
+        this.googleChartsService.getSurgeryRooms(this.selectedDate).subscribe(
+            (result) => {
+                const rows = result.surgeries || [];
+
+                const grouped = rows.reduce((acc, row) => {
+                    const roomId = row.SurgeryRoom;
+                    if (!acc[roomId]) acc[roomId] = [];
+                    acc[roomId].push({
+                        surgeryId: row.CaseNumber,
+                        patientNumber: row.PatientNumber,
+                        surgeryName: row.SurgeryName,
+                        surgeryCode: row.SurgeryCode,
+                        department: row.DepartName,
+                        status: row.SurgeryStatus, // 'Completed' | 'InProgress' | 'Planned' | ...
+                        timeEntrance: row.TimeEntranceToTheOperatingRoom, // 'HH:mm'
+                        timeExit: row.TimeExitingTheOperatingRoom, // 'HH:mm'
+                        surgeryDate: row.SurgeryDate, // 'YYYY-MM-DD'
+                        urgency: row.Urgency,
+                        timeSurgeryToDo: row.TimeSurgeryToDo, // minutes (string or number)
+
+                        IsWaitingForSurgery: row.IsWaitingForSurgery,
+                        NextPatientReadyGreen: row.NextPatientReadyGreen,
+                        MissingSignaturesText: row.MissingSignaturesText,
+                    });
+                    return acc;
+                }, {} as Record<string, any[]>);
+
+                const self = this;
+
+                function two(n: number) {
+                    return (n < 10 ? "0" : "") + n;
+                }
+                function parseMinutes(v: any): number | null {
+                    if (v === null || v === undefined || v === "") return null;
+                    const n =
+                        typeof v === "number" ? v : parseInt(String(v), 10);
+                    return isFinite(n) && n > 0 ? n : null;
+                }
+                function addMinutes(d: Date, m: number): Date {
+                    return new Date(d.getTime() + m * 60000);
+                }
+
+                function schedDate(item: any, baseDate: string): Date | null {
+                    if (!item.timeEntrance) return null;
+                    return self.parseClockWithDate(item.timeEntrance, baseDate);
+                }
+
+                function sortByPredicted(list: any[], baseDate: string): any[] {
+                    if (!list || !list.length) return [];
+
+                    const DAY_MS = 24 * 60 * 60 * 1000;
+                    function sortKeyScheduled(s: any): number {
+                        const eClock = s.timeEntrance;
+                        const xClock = s.timeExit;
+                        if (!eClock) return Number.POSITIVE_INFINITY;
+                        const ent = self.parseClockWithDate(eClock, baseDate);
+                        const exi = self.parseClockWithDate(
+                            xClock && xClock !== "00:00:00" ? xClock : eClock,
+                            baseDate
+                        );
+                        if (!ent || !exi) return Number.POSITIVE_INFINITY;
+                        if (exi.getTime() < ent.getTime())
+                            return ent.getTime() - DAY_MS;
+                        return ent.getTime();
+                    }
+                    list = list.slice().sort(function (a, b) {
+                        return sortKeyScheduled(a) - sortKeyScheduled(b);
+                    });
+
+                    const MIN_TURNOVER = 20;
+                    let active: any = null;
+                    for (let i = 0; i < list.length; i++) {
+                        const st = String(list[i].status || "").toLowerCase();
+                        if (st === "inprogress" && list[i].timeEntrance) {
+                            if (!active) active = list[i];
+                            else {
+                                const aEnt = self.parseClockWithDate(
+                                    active.timeEntrance,
+                                    baseDate
+                                );
+                                const bEnt = self.parseClockWithDate(
+                                    list[i].timeEntrance,
+                                    baseDate
+                                );
+                                if (
+                                    aEnt &&
+                                    bEnt &&
+                                    bEnt.getTime() >= aEnt.getTime()
+                                )
+                                    active = list[i];
+                            }
+                        }
+                    }
+
+                    let cursor: Date | null = null;
+                    if (active) {
+                        const aStart = self.parseClockWithDate(
+                            active.timeEntrance,
+                            baseDate
+                        );
+                        let aDur = parseMinutes(active.timeSurgeryToDo);
+                        if (aDur === null) aDur = 60;
+                        cursor = aStart ? addMinutes(aStart, aDur) : null;
+                    } else {
+                        let firstPending: any = null;
+                        for (let i = 0; i < list.length; i++) {
+                            const st = String(
+                                list[i].status || ""
+                            ).toLowerCase();
+                            if (st !== "completed") {
+                                firstPending = list[i];
+                                break;
+                            }
+                        }
+                        if (firstPending && firstPending.timeEntrance) {
+                            const firstSched = self.parseClockWithDate(
+                                firstPending.timeEntrance,
+                                baseDate
+                            );
+                            cursor = firstSched
+                                ? addMinutes(firstSched, MIN_TURNOVER)
+                                : null;
+                        }
+                    }
+
+                    for (let i = 0; i < list.length; i++) {
+                        const it = list[i];
+                        const st = String(it.status || "").toLowerCase();
+                        const sched = schedDate(it, baseDate);
+                        let dur = parseMinutes(it.timeSurgeryToDo);
+                        if (dur === null) dur = 60;
+
+                        if (st === "completed") {
+                            it._displayStart = sched || null;
+                            it._displayEnd = it.timeExit
+                                ? self.parseClockWithDate(it.timeExit, baseDate)
+                                : null;
+                        } else if (active && it === active) {
+                            it._displayStart = sched || null;
+                            it._displayEnd = cursor;
+                        } else {
+                            if (!cursor) {
+                                it._displayStart = sched || null;
+                                it._displayEnd = it._displayStart
+                                    ? addMinutes(it._displayStart, dur)
+                                    : null;
+                            } else {
+                                const earliest = addMinutes(
+                                    cursor,
+                                    MIN_TURNOVER
+                                );
+                                const start =
+                                    sched &&
+                                    sched.getTime() > earliest.getTime()
+                                        ? sched
+                                        : earliest;
+                                it._displayStart = start;
+                                it._displayEnd = addMinutes(start, dur);
+                                cursor = it._displayEnd;
+                            }
+                        }
+
+                        it._displayStartMs = it._displayStart
+                            ? it._displayStart.getTime()
+                            : Number.POSITIVE_INFINITY;
+                    }
+
+                    list.sort(function (a, b) {
+                        if (a._displayStartMs !== b._displayStartMs)
+                            return a._displayStartMs - b._displayStartMs;
+                        const aSched = schedDate(a, baseDate),
+                            bSched = schedDate(b, baseDate);
+                        if (
+                            aSched &&
+                            bSched &&
+                            aSched.getTime() !== bSched.getTime()
+                        )
+                            return aSched.getTime() - bSched.getTime();
+                        const aid = String(a.surgeryId || ""),
+                            bid = String(b.surgeryId || "");
+                        return aid < bid ? -1 : aid > bid ? 1 : 0;
+                    });
+
+                    return list;
+                }
+
+                this.roomsData = Object.keys(grouped).map((roomId) => {
+                    const list = grouped[roomId];
+                    const roomDate = list.length
+                        ? list[0].surgeryDate || this.selectedDate
+                        : this.selectedDate;
+                    const sorted = sortByPredicted(list, roomDate);
+                    return { roomId, surgeries: sorted, date: roomDate };
+                });
+
+                this.isLoading = false;
+            },
+            (_) => {
+                this.isLoading = false;
             }
-          }
+        );
+    }
 
-          it._displayStartMs = it._displayStart ? it._displayStart.getTime() : Number.POSITIVE_INFINITY;
+    getTurnoverTime(room: RoomData): string {
+        if (!room?.surgeries?.length) return "";
+
+        const lastCompleted = [...room.surgeries]
+            .reverse()
+            .find(
+                (s) =>
+                    s.status === "Completed" &&
+                    (s.timeExit || s.timeExit === "00:00:00")
+            );
+
+        if (!lastCompleted) return "";
+
+        const exitTime =
+            lastCompleted.timeExit && lastCompleted.timeExit !== "00:00:00"
+                ? lastCompleted.timeExit
+                : lastCompleted.timeEntrance;
+
+        const exit = this.parseClock(exitTime);
+        if (!exit) return "";
+
+        const limit = new Date(exit);
+        limit.setHours(15, 0, 0, 0);
+        const now = new Date();
+        const endTime = now < limit ? now : limit;
+
+        const diffMin = Math.floor(
+            (endTime.getTime() - exit.getTime()) / 60000
+        );
+
+        if (diffMin > 20) {
+            return this.formatHM(diffMin - 20);
+        }
+
+        return "";
+    }
+
+    getTurnoverMinutes(room: RoomData): number {
+        const s = this.getTurnoverSummary(room); // "HH:MM" או """"
+        if (!s || s === "") return 0;
+        const [h, m] = s.split(":").map((x) => +x);
+        if (Number.isNaN(h) || Number.isNaN(m)) return 0;
+        return h * 60 + m;
+    }
+
+    isTurnoverLong(room: RoomData): boolean {
+        return this.getTurnoverMinutes(room) > 20;
+    }
+
+    private workingStart(): Date;
+    private workingStart(baseDate: string | Date): Date;
+    private workingStart(baseDate?: string | Date): Date {
+        const d = baseDate ? new Date(baseDate) : new Date();
+        d.setHours(7, 30, 0, 0); // 07:30
+        return d;
+    }
+
+    private workingEnd(): Date;
+    private workingEnd(baseDate: string | Date): Date;
+    private workingEnd(baseDate?: string | Date): Date {
+        const d = baseDate ? new Date(baseDate) : new Date();
+        d.setHours(15, 0, 0, 0); // 15:00
+        return d;
+    }
+    private clampToWindow(d: Date, start: Date, end: Date): Date {
+        return new Date(
+            Math.min(end.getTime(), Math.max(start.getTime(), d.getTime()))
+        );
+    }
+
+    getTurnoverClass(room: RoomData): string {
+        const t = this.getTurnoverTime(room);
+        if (!t || t === "") return "";
+        const [h, m] = t.split(":").map(Number);
+        const minutes = h * 60 + m;
+
+        if (minutes > 120) return "metric-red-strong";
+        if (minutes > 60) return "metric-red";
+        if (minutes > 45) return "metric-orange";
+        if (minutes > 20) return "metric-yellow";
+        return "metric-ok";
+    }
+
+    getTurnoverTimeClass(room: RoomData): string {
+        if (this.isRoomClosedForColoring(room)) return "metric-neutral";
+
+        var s = this.getTurnoverSummary(room); // 'HH:MM' or '"  "'
+        var m = (function hmToMin(v: string): number {
+            if (!v || v === "") return 0;
+            var p = v.split(":");
+            if (p.length < 2) return 0;
+            var hh = +p[0],
+                mm = +p[1];
+            return isNaN(hh) || isNaN(mm) ? 0 : hh * 60 + mm;
+        })(s);
+
+        if (m >= 90) return "metric-bad"; // red
+        if (m > 0) return "metric-warn"; // amber
+        return "metric-ok"; // green/ok
+    }
+
+    sortByChronologicalStart(a: any, b: any, roomDate: string | Date): number {
+        var DAY_MS = 24 * 60 * 60 * 1000;
+
+        function clockToDate(clk: string, base: any) {
+            return this.parseClockWithDate(clk, base);
+        }
+
+        function sortKey(s: any, baseDate: any): number {
+            var eClock =
+                s &&
+                (s.timeEntrance != null
+                    ? s.timeEntrance
+                    : s.TimeEntranceToTheOperatingRoom);
+            var xClockRaw =
+                s &&
+                (s.timeExit != null
+                    ? s.timeExit
+                    : s.TimeExitingTheOperatingRoom);
+            var base =
+                (s &&
+                    (s.surgeryDate != null ? s.surgeryDate : s.SurgeryDate)) ||
+                baseDate;
+            if (!eClock) return Number.POSITIVE_INFINITY;
+
+            var entrance = this.parseClockWithDate(eClock, base);
+            var exit = this.parseClockWithDate(
+                xClockRaw && xClockRaw !== "00:00:00" ? xClockRaw : eClock,
+                base
+            );
+            if (!entrance || !exit) return Number.POSITIVE_INFINITY;
+
+            if (exit.getTime() < entrance.getTime())
+                return entrance.getTime() - DAY_MS;
+
+            if (xClockRaw) {
+                var eParts = String(eClock).split(":"),
+                    xParts = String(xClockRaw).split(":");
+                if (eParts.length >= 2 && xParts.length >= 2) {
+                    var eNum = +eParts[0] * 60 + +eParts[1];
+                    var xNum = +xParts[0] * 60 + +xParts[1];
+                    if (xNum < eNum) return entrance.getTime() - DAY_MS;
+                }
+            }
+            return entrance.getTime();
+        }
+
+        var ka = sortKey.call(this, a, roomDate);
+        var kb = sortKey.call(this, b, roomDate);
+        return ka - kb;
+    }
+
+    sortSurgeriesForDisplay(surgeries: any[], roomDate: string | Date): any[] {
+        var DAY_MS = 24 * 60 * 60 * 1000;
+
+        function sortKey(self: any, s: any, baseDate: any): number {
+            var eClock =
+                s &&
+                (s.timeEntrance != null
+                    ? s.timeEntrance
+                    : s.TimeEntranceToTheOperatingRoom);
+            var xClockRaw =
+                s &&
+                (s.timeExit != null
+                    ? s.timeExit
+                    : s.TimeExitingTheOperatingRoom);
+            var base =
+                (s &&
+                    (s.surgeryDate != null ? s.surgeryDate : s.SurgeryDate)) ||
+                baseDate;
+            if (!eClock) return Number.POSITIVE_INFINITY;
+
+            var entrance = self.parseClockWithDate(eClock, base);
+            var exit = self.parseClockWithDate(
+                xClockRaw && xClockRaw !== "00:00:00" ? xClockRaw : eClock,
+                base
+            );
+            if (!entrance || !exit) return Number.POSITIVE_INFINITY;
+
+            if (exit.getTime() < entrance.getTime())
+                return entrance.getTime() - DAY_MS;
+
+            if (xClockRaw) {
+                var ep = String(eClock).split(":"),
+                    xp = String(xClockRaw).split(":");
+                if (ep.length >= 2 && xp.length >= 2) {
+                    var eMin = +ep[0] * 60 + +ep[1];
+                    var xMin = +xp[0] * 60 + +xp[1];
+                    if (xMin < eMin) return entrance.getTime() - DAY_MS;
+                }
+            }
+            return entrance.getTime();
+        }
+
+        var self = this;
+        return (surgeries || []).slice().sort(function (a, b) {
+            return sortKey(self, a, roomDate) - sortKey(self, b, roomDate);
+        });
+    }
+
+    getRoomStatusClass(room: RoomData): string {
+        if (!room || !room.surgeries?.length) return "grey";
+
+        const isWeekend = this.isWeekend(room.date);
+
+        if (room.surgeries.some((s) => s.status === "InProgress")) {
+            return isWeekend ? "green" : "green-blink";
+        }
+
+        const lastCompleted = [...room.surgeries]
+            .reverse()
+            .find(
+                (s) =>
+                    s.status === "Completed" &&
+                    s.timeExit &&
+                    s.timeExit !== "00:00:00"
+            );
+        if (!lastCompleted) return "grey";
+
+        const exitAt = this.parseClockWithDate(
+            lastCompleted.timeExit,
+            room.date
+        );
+
+        if (!exitAt) return "grey";
+
+        const diffMin = Math.max(0, (Date.now() - exitAt.getTime()) / 60000);
+
+        if (isWeekend) {
+            if (diffMin > 120) return "red-120-ack";
+            if (diffMin > 60) return "red-60-ack";
+            if (diffMin > 45) return "red-45-ack";
+            return "grey";
+        }
+
+        const isAcked = this.isRoomAcked(room);
+        if (diffMin > 120) return isAcked ? "red-120-ack" : "red-120";
+        if (diffMin > 60) return isAcked ? "red-60-ack" : "red-60";
+        if (diffMin > 45) return isAcked ? "red-45-ack" : "red-45";
+        return "grey";
+    }
+
+    private isWeekend(dateLike?: string | Date): boolean {
+        const d = dateLike ? new Date(dateLike) : new Date();
+        const day = d.getDay();
+        return day === 5 || day === 6;
+    }
+
+    getStartDiffClass(room: RoomData): string {
+        const val = this.getStartDiff(room);
+        if (!val || val === "") return;
+        const [h, m] = val.split(":").map(Number);
+        const minutes = h * 60 + m;
+
+        if (minutes > 60) return "metric-red";
+        if (minutes > 30) return "metric-orange";
+        if (minutes > 15) return "metric-yellow";
+        return "metric-ok";
+    }
+
+    private isRealCase(s?: Surgery): boolean {
+        return !!s && (s.status === "Completed" || s.status === "InProgress");
+    }
+
+    private toInterval(s: Surgery, baseDate?: string | Date) {
+        const eClock = s.timeEntrance;
+        const xClock =
+            s.timeExit && s.timeExit !== "00:00:00"
+                ? s.timeExit
+                : s.timeEntrance;
+
+        const entrance = eClock
+            ? this.parseClockWithDate(eClock, baseDate ?? s.surgeryDate)
+            : null;
+        let exit = xClock
+            ? this.parseClockWithDate(xClock, baseDate ?? s.surgeryDate)
+            : null;
+
+        if (entrance && exit && exit.getTime() < entrance.getTime()) {
+            exit = new Date(exit.getTime() + 24 * 60 * 60 * 1000);
+        }
+        return { entrance, exit: exit ?? entrance };
+    }
+
+    private overlapsWindow(
+        entrance: Date | null,
+        exit: Date | null,
+        start: Date,
+        end: Date
+    ): boolean {
+        if (!entrance || !exit) return false;
+        return entrance < end && exit > start;
+    }
+
+    getTurnoverBetween(prev: Surgery, next: Surgery): string | null {
+        if (!this.isRealCase(prev) || !this.isRealCase(next)) return null;
+
+        const baseDate =
+            next.surgeryDate ?? prev.surgeryDate ?? this.selectedDate;
+        const dayStart = this.workingStart(baseDate);
+        const dayEnd = this.workingEnd(baseDate);
+
+        const p = this.toInterval(prev, baseDate);
+        const n = this.toInterval(next, baseDate);
+        if (!p.entrance || !p.exit || !n.entrance || !n.exit) return null;
+
+        if (!this.overlapsWindow(p.entrance, p.exit, dayStart, dayEnd))
+            return null;
+        if (!this.overlapsWindow(n.entrance, n.exit, dayStart, dayEnd))
+            return null;
+
+        const prevEnd = this.clampToWindow(p.exit, dayStart, dayEnd);
+        const nextStart = this.clampToWindow(n.entrance, dayStart, dayEnd);
+
+        const gap = this.minutesBetween(prevEnd, nextStart);
+        if (gap <= 20) return null;
+        return this.formatHM(gap - 20);
+    }
+
+    getTurnoverBetweenClass(prev: Surgery, next: Surgery): string {
+        const raw = this.getTurnoverBetween(prev, next);
+        if (!raw) return;
+
+        const [h, m] = raw.split(":").map(Number);
+        const minutes = h * 60 + m;
+
+        if (minutes > 120) return "metric-red blink";
+        if (minutes > 60) return "metric-red";
+        if (minutes > 45) return "metric-orange";
+        return "metric-yellow";
+    }
+
+    private isInProgress(raw: any): boolean {
+        var s = (raw == null ? "" : String(raw)).toLowerCase();
+        return (
+            s === "inprogress" || s === "in progress" || s.indexOf("בתהל") >= 0
+        );
+    }
+
+    private getSurgeryIdFromAny(s: any): string {
+        if (!s) return "";
+        if (s.surgeryId != null && s.surgeryId !== "")
+            return String(s.surgeryId);
+        if (s.SurgeryID != null && s.SurgeryID !== "")
+            return String(s.SurgeryID);
+        return "";
+    }
+
+    private entranceMillisForSort(s: any, roomDate: string | Date): number {
+        var eClock =
+            s &&
+            (s.timeEntrance != null
+                ? s.timeEntrance
+                : s.TimeEntranceToTheOperatingRoom);
+        var base =
+            (s && (s.surgeryDate != null ? s.surgeryDate : s.SurgeryDate)) ||
+            roomDate;
+        var d = eClock ? this.parseClockWithDate(eClock, base) : null;
+        return d ? d.getTime() : -Infinity;
+    }
+
+    getHeaderInProgressId(room: RoomData): string {
+        if (!room || !room.surgeries || !room.surgeries.length) return "";
+
+        var inProg: any[] = [];
+        for (var i = 0; i < room.surgeries.length; i++) {
+            var s = room.surgeries[i];
+            var status = s && s.status != null ? s.status : s && s.status;
+            if (this.isInProgress(status)) inProg.push(s);
+        }
+
+        if (!inProg.length) return "";
+
+        var picked = inProg
+            .slice()
+            .sort(
+                (a, b) =>
+                    this.entranceMillisForSort(
+                        b,
+                        room.date || this.selectedDate
+                    ) -
+                    this.entranceMillisForSort(
+                        a,
+                        room.date || this.selectedDate
+                    )
+            )[0];
+
+        return this.getSurgeryIdFromAny(picked) || "";
+    }
+
+    private parseClock(t: string): Date | null {
+        if (!t || typeof t !== "string") return null;
+        const parts = t.split(":").map((n) => Number(n));
+        if (parts.length < 2 || parts.some(isNaN)) return null;
+        const [h, m, s = 0] = parts;
+        const d = new Date();
+        d.setHours(h, m, s, 0);
+        return isNaN(d.getTime()) ? null : d;
+    }
+
+    private parseClockWithDate(
+        clock: string,
+        baseDate?: string | Date
+    ): Date | null {
+        const t = this.parseClock(clock);
+        if (!t) return null;
+        if (!baseDate) return t;
+
+        const base = new Date(baseDate);
+        base.setHours(t.getHours(), t.getMinutes(), t.getSeconds(), 0);
+        return base;
+    }
+
+    private formatDiff(ms: number): string {
+        if (isNaN(ms)) return "";
+        const sign = ms < 0 ? "-" : "";
+        const abs = Math.abs(ms);
+        const h = Math.floor(abs / 3600000);
+        const m = Math.floor((abs % 3600000) / 60000);
+        return `${sign}${("0" + h).slice(-2)}:${("0" + m).slice(-2)}`;
+    }
+
+    getStartDiff(room: RoomData): string {
+        const safeStart = this.parseClock("07:00");
+        const safeEnd = this.parseClock("07:30");
+        if (!safeStart || !safeEnd) return "";
+
+        if (!room.surgeries || room.surgeries.length === 0) return "";
+
+        const sortedSurgeries = room.surgeries
+            .map((s) => ({ ...s, entrance: this.parseClock(s.timeEntrance) }))
+            .filter((s) => s.entrance)
+            .sort((a, b) => a.entrance!.getTime() - b.entrance!.getTime());
+
+        const firstInSafeZone = sortedSurgeries.find(
+            (s) => s.entrance! >= safeStart && s.entrance! <= safeEnd
+        );
+        if (firstInSafeZone) return "00:00";
+
+        const firstAfterSafeZone = sortedSurgeries.find(
+            (s) => s.entrance! > safeEnd
+        );
+
+        if (!firstAfterSafeZone) return "";
+
+        const diffMs =
+            firstAfterSafeZone.entrance!.getTime() - safeEnd.getTime();
+        return this.formatDiff(diffMs);
+    }
+
+    getEndDiff(room: RoomData): string {
+        const opening = this.parseClock("07:30");
+        const closing = this.parseClock("14:40");
+        if (!closing || !opening) return "";
+
+        const exits = room.surgeries
+            .map((s) => {
+                const exitStr =
+                    s.timeExit && s.timeExit !== "00:00:00"
+                        ? s.timeExit
+                        : s.timeEntrance;
+                return this.parseClock(exitStr);
+            })
+            .filter((d): d is Date => !!d && d >= opening)
+            .sort((a, b) => a.getTime() - b.getTime());
+
+        if (exits.length === 0) return this.formatDiff(0);
+
+        const lastExit = exits[exits.length - 1];
+
+        if (lastExit >= closing) return this.formatDiff(0);
+
+        const diffMs = closing.getTime() - lastExit.getTime();
+        return this.formatDiff(diffMs);
+    }
+
+    getEndDiffClass(room: RoomData): string {
+        if (this.isRoomClosedForColoring(room)) return "metric-neutral";
+
+        var s = this.getEndDiff(room);
+        if (!s || s === "") return "metric-ok";
+        var p = s.split(":");
+        if (p.length < 2) return "metric-ok";
+        var mins = +p[0] * 60 + +p[1];
+        if (isNaN(mins)) return "metric-ok";
+        if (mins <= 15) return "metric-warn";
+        return "metric-ok";
+    }
+
+    plannedSurgeries(room: RoomData): Surgery[] {
+        return room.surgeries.filter((s) => s.status === "Planned");
+    }
+
+    activeSurgeries(room: RoomData): Surgery[] {
+        return room.surgeries.filter((s) => s.status !== "Planned");
+    }
+
+    formatCountdown(sec: number): string {
+        const m = Math.floor(sec / 60);
+        const s = sec % 60;
+        return `${m}:${s.toString().padStart(2, "0")}`;
+    }
+
+    manualRefresh(): void {
+        this.loadRoomsData();
+        this.nextRefreshIn = 300;
+        this.lastLoaded = new Date();
+    }
+
+    toggleAutoRefresh(): void {
+        this.autoRefreshPaused = !this.autoRefreshPaused;
+        if (this.autoRefreshPaused) {
+            this.clearIntervals();
+        } else {
+            this.startAutoRefresh();
+        }
+    }
+
+    private startAutoRefresh(): void {
+        this.clearIntervals();
+        this.nextRefreshIn = 300;
+
+        this.refreshInterval = setInterval(() => {
+            if (!this.autoRefreshPaused) {
+                this.loadRoomsData();
+                this.nextRefreshIn = 300;
+            }
+        }, 5 * 60 * 1000);
+
+        this.countdownInterval = setInterval(() => {
+            if (!this.autoRefreshPaused && this.nextRefreshIn > 0) {
+                this.nextRefreshIn--;
+            }
+        }, 1000);
+    }
+
+    private clearIntervals(): void {
+        if (this.refreshInterval) clearInterval(this.refreshInterval);
+        if (this.countdownInterval) clearInterval(this.countdownInterval);
+    }
+
+    onDateChange(): void {
+        if (!this.autoRefreshPaused) {
+            this.autoRefreshPaused = true;
+            this.clearIntervals();
+        }
+
+        this.loadRoomsData();
+    }
+
+    private openingOfDay(): Date {
+        const d = new Date();
+        d.setHours(7, 30, 0, 0);
+        return d;
+    }
+
+    private closingOfDay(): Date {
+        const d = new Date();
+        d.setHours(15, 0, 0, 0);
+        return d;
+    }
+
+    private clampToDay(d: Date): Date {
+        const open = this.openingOfDay().getTime();
+        const close = this.closingOfDay().getTime();
+        return new Date(Math.min(close, Math.max(open, d.getTime())));
+    }
+
+    private minutesBetween(a: Date, b: Date): number {
+        return Math.max(0, Math.floor((b.getTime() - a.getTime()) / 60000));
+    }
+
+    private formatHM(mins: number): string {
+        const h = Math.floor(mins / 60);
+        const m = mins % 60;
+        return `${("0" + h).slice(-2)}:${("0" + m).slice(-2)}`;
+    }
+
+    statusTranslations: Record<string, string> = {
+        Completed: "✔️ הסתיים",
+        InProgress: "🟢 ניתוח פעיל",
+        Scheduled: "🕓 מתוזמן",
+        Cancelled: "❌ בוטל",
+        Planned: "📆 מתוכנן",
+    };
+
+    translateStatus(status: string): string {
+        return this.statusTranslations[status] || status;
+    }
+
+    acknowledgeAllRooms(): void {
+        this.googleChartsService.triggerAcknowledgeAllRooms();
+
+        for (const r of this.roomsData ?? []) {
+            if (!r || !r.roomId) continue;
+
+            const storeKey = this.ackStorageKey(r.roomId);
+            const compositeKey = this.currentAckKeyForRoom(r);
+
+            this.lsSet(storeKey, compositeKey);
+            this.lsRemove(this.legacyAckStorageKey(r.roomId));
+            this.ackCache.set(r.roomId, compositeKey);
+
+            if (this.ackedRooms) this.ackedRooms.add(r.roomId);
+        }
+
+        this.roomsData = [...(this.roomsData ?? [])];
+        console.log("acknowledged all rooms");
+    }
+
+    private refreshAckCache(): void {
+        this.ackCache.clear();
+        for (const r of this.roomsData ?? []) {
+            const stored =
+                this.lsGet(this.ackStorageKey(r.roomId)) ??
+                this.lsGet(this.legacyAckStorageKey(r.roomId));
+            if (stored) this.ackCache.set(r.roomId, stored);
+        }
+    }
+    private markAllRoomsAcknowledged(): void {
+        for (const r of this.roomsData ?? []) {
+            if (r?.roomId) this.ackedRooms.add(r.roomId);
+        }
+        this.roomsData = [...(this.roomsData ?? [])];
+    }
+
+    public isRoomAcked(room: RoomData): boolean {
+        if (!room || !room.roomId) return false;
+
+        const baseKey = this.lastEventKeyForRoom(room.roomId);
+        const compositeKey = this.currentAckKeyForRoom(room);
+
+        const storedKey =
+            this.ackCache.get(room.roomId) ??
+            this.lsGet(this.ackStorageKey(room.roomId)) ??
+            this.lsGet(this.legacyAckStorageKey(room.roomId));
+
+        if (!storedKey) return false;
+
+        if (storedKey === compositeKey) return true;
+        if (storedKey === baseKey) {
+            const lateNow = this.predictedLateEndHHmm(room);
+            return !lateNow;
+        }
+        return false;
+    }
+
+    acknowledgeRoomLate(room: RoomData): void {
+        if (!room || !room.roomId) return;
+
+        const storeKey = this.ackStorageKey(room.roomId);
+        const compositeKey = this.currentAckKeyForRoom(room);
+
+        this.lsSet(storeKey, compositeKey);
+        this.lsRemove(this.legacyAckStorageKey(room.roomId));
+        this.ackCache.set(room.roomId, compositeKey);
+
+        if (this.ackedRooms) this.ackedRooms.add(room.roomId);
+
+        this.roomsData = [...(this.roomsData ?? [])];
+    }
+
+    private readonly PLANNED_SET = new Set(["Planned", "Scheduled"]);
+
+    trackBySurgeryId = (_: number, s: Surgery) => s?.surgeryId ?? _;
+
+    private roomNameOverrides: Record<string, string> = {
+        "פז01-201": "חדר ניתוח 1",
+        "פז01-202": "חדר ניתוח 2",
+        "פז01-203": "חדר ניתוח 3",
+        "פז01-204": "חדר ניתוח 4",
+        "פז01-205": "חדר ניתוח 5",
+        "פז01-206": "חדר ניתוח 6",
+        "פז01-207": "חדר ניתוח 7",
+    };
+
+    translateRoomId(id?: string): string {
+        if (!id) return "";
+
+        const hit = this.roomNameOverrides[id];
+        if (hit) return hit;
+
+        const norm = String(id).trim();
+        const firstSeg = norm.split(/[-–—]/)[0];
+        let numStr: string | null = null;
+
+        const m1 = firstSeg.match(/(\d{1,2})(?!.*\d)/);
+        if (m1) numStr = m1[1];
+
+        if (!numStr) {
+            const m2 = norm.match(/\b(0?[1-9]|[1-9]\d)\b/);
+            if (m2) numStr = m2[1];
+        }
+
+        if (numStr) {
+            const n = parseInt(numStr, 10);
+            if (!Number.isNaN(n)) return `חדר ניתוח ${n}`;
+        }
+
+        return norm;
+    }
+
+    hasActionAfterWorkingStart(room: RoomData): boolean {
+        if (!room?.surgeries?.length) return false;
+        const ws = this.workingStart(room.date);
+        return room.surgeries.some((s) => {
+            if (!s?.timeEntrance) return false;
+            const entrance = this.parseClockWithDate(s.timeEntrance, room.date);
+            if (!entrance || entrance < ws) return false;
+            return s.status === "InProgress" || s.status === "Completed";
+        });
+    }
+
+    private isBeforeToday(dateLike?: string | Date): boolean {
+        if (!dateLike) return false;
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const d = new Date(dateLike);
+        d.setHours(0, 0, 0, 0);
+        return d.getTime() < today.getTime();
+    }
+
+    shouldShowStartDiff(room: RoomData): boolean {
+        const baseDate = room?.date ?? this.selectedDate;
+        if (this.isBeforeToday(baseDate)) return true;
+        return !this.hasActionAfterWorkingStart(room);
+    }
+
+    // private isInProgressStatus(raw: any): boolean {
+    //     var s = (raw == null ? "" : String(raw)).toLowerCase().trim();
+    //     return (
+    //         s === "inprogress" || s === "in progress" || s.indexOf("בתהל") >= 0
+    //     );
+    // }
+
+    private getSurgeryIdSafe(s: any): string {
+        if (s && s.surgeryId != null && s.surgeryId !== "")
+            return String(s.surgeryId);
+        var rawId = s ? (s as any).SurgeryID : null;
+        return rawId != null && rawId !== "" ? String(rawId) : "—";
+    }
+
+    private entranceMillisForSortSafe(s: any, roomDate: string | Date): number {
+        var eClock = s
+            ? s.timeEntrance != null
+                ? s.timeEntrance
+                : (s as any).TimeEntranceToTheOperatingRoom
+            : null;
+        var base = s
+            ? s.surgeryDate != null
+                ? s.surgeryDate
+                : (s as any).SurgeryDate
+            : null;
+        var anchor = base || roomDate;
+        var d = eClock ? this.parseClockWithDate(eClock, anchor) : null;
+        return d ? d.getTime() : -Infinity;
+    }
+
+    getHeaderInProgressLabel(room: RoomData): string {
+        if (!room || !room.surgeries || !room.surgeries.length) return "פנוי";
+
+        var inProg: any[] = [];
+        for (var i = 0; i < room.surgeries.length; i++) {
+            var s = room.surgeries[i];
+            if (s && this.isInProgressStatus(s.status)) inProg.push(s);
+        }
+        if (!inProg.length) return "פנוי";
+
+        var picked = inProg
+            .slice()
+            .sort(
+                (a, b) =>
+                    this.entranceMillisForSortSafe(
+                        b,
+                        room.date || this.selectedDate
+                    ) -
+                    this.entranceMillisForSortSafe(
+                        a,
+                        room.date || this.selectedDate
+                    )
+            )[0];
+
+        return this.getSurgeryIdSafe(picked);
+    }
+
+    // פונקציות עזר מחוץ ללופ הראשי (או כמתודות פרטיות)
+    private getUrgencyRank(s: any): number {
+        const u = String(s.Urgency || s.urgency || "").trim();
+        if (u.includes("דחוף")) return 0;
+        if (u.includes("ססיה")) return 1;
+        return 2;
+    }
+
+    getHeaderProgressText(room: RoomData, opts?: HeaderProgressOpts): string {
+        if (!room?.surgeries?.length) return "0 מתוך 0";
+
+        const baseDate = room.date || this.selectedDate;
+        const shiftStart = this.workingStart(baseDate);
+        const shiftEnd = this.workingEnd(baseDate);
+
+        // הגדרות וערכי עזר
+        const turnoverMin = Math.max(
+            20,
+            this.hmToMin(this.getTurnoverSummary(room)) ??
+                opts?.defaultTurnoverMin ??
+                20
+        );
+        const isProgress = (s: string) =>
+            ["inprogress", "in progress", "in_progress"].includes(
+                s.toLowerCase()
+            );
+        const isCompleted = (s: string) => s.toLowerCase() === "completed";
+
+        // 1. נרמול וסינון נתונים במעבר אחד
+        const list = room.surgeries
+            .map((s) => {
+                const entrance = this.parseClockWithDate(
+                    s.timeEntrance ?? s.TimeEntranceToTheOperatingRoom,
+                    baseDate
+                );
+                if (!entrance) return null;
+
+                const xRaw = s.timeExit ?? s.TimeExitingTheOperatingRoom;
+                let exit =
+                    xRaw && xRaw !== "00:00"
+                        ? this.parseClockWithDate(xRaw, baseDate)
+                        : null;
+                if (exit && exit < entrance)
+                    exit = new Date(exit.getTime() + 86400000);
+
+                const status = (
+                    s.status ??
+                    s.SurgeryStatus ??
+                    ""
+                ).toLowerCase();
+                const expectedMin =
+                    Number(s.TimeSurgeryToDo ?? s.TimeSurgeryToDo) ||
+                    (exit
+                        ? Math.round(
+                              (exit.getTime() - entrance.getTime()) / 60000
+                          )
+                        : 60);
+
+                return {
+                    entrance,
+                    exit,
+                    status,
+                    expectedMin,
+                    raw: s,
+                    sortKey:
+                        entrance.getTime() -
+                        (exit && exit.getDate() !== entrance.getDate()
+                            ? 86400000
+                            : 0),
+                };
+            })
+            .filter(Boolean) as any[];
+
+        // 2. מיון (לפי זמן, דחיפות וסטטוס)
+        list.sort(
+            (a, b) =>
+                a.sortKey - b.sortKey ||
+                this.getUrgencyRank(a.raw) - this.getUrgencyRank(b.raw)
+        );
+
+        // 3. חישוב מונים וסימולציית זמנים (Warn Late)
+        let nInShift = 0,
+            xInShift = 0,
+            xOnDay = 0;
+        let cursor = new Date(shiftStart);
+        let warnLate = false;
+
+        const dayStart = new Date(baseDate).setHours(0, 0, 0, 0);
+        const dayEnd = new Date(baseDate).setHours(23, 59, 59, 999);
+
+        list.forEach((s) => {
+            const endForCount = s.exit ?? s.entrance;
+            const overlapsDay = s.entrance < dayEnd && endForCount > dayStart;
+            const overlapsShift =
+                s.entrance < shiftEnd && endForCount > shiftStart;
+
+            if (overlapsDay) xOnDay++;
+            if (overlapsShift) {
+                xInShift++;
+                if (isCompleted(s.status) || isProgress(s.status)) nInShift++;
+            }
+
+            // סימולציית "האם נצא מהמשמרת"
+            const startPred = new Date(
+                Math.max(s.entrance.getTime(), cursor.getTime())
+            );
+            const endPred = new Date(
+                startPred.getTime() + s.expectedMin * 60000
+            );
+            cursor = new Date(endPred.getTime() + turnoverMin * 60000);
+
+            if (
+                s.status === "planned" &&
+                endPred > shiftEnd &&
+                !this.isLateExemptByUrgency?.(s.raw)
+            ) {
+                warnLate = true;
+            }
+        });
+
+        const outOfShift = Math.max(0, xOnDay - xInShift);
+        return `${nInShift} מתוך ${xInShift}${
+            outOfShift > 0 ? ` (+${outOfShift}*)` : ""
+        }`;
+    }
+
+    private isSameLocalDay(a: Date, b: Date): boolean {
+        return (
+            a.getFullYear() === b.getFullYear() &&
+            a.getMonth() === b.getMonth() &&
+            a.getDate() === b.getDate()
+        );
+    }
+
+    isRoomToday(room: RoomData): boolean {
+        const base =
+            room && room.date
+                ? new Date(room.date)
+                : new Date(this.selectedDate);
+        const now = new Date();
+        return this.isSameLocalDay(base, now);
+    }
+
+    private urgencyIconRaw(u: any): string {
+        var s = (u == null ? "" : String(u)).trim();
+        if (!s) return "";
+        var low = s.toLowerCase();
+
+        if (s.indexOf("דחוף") >= 0 || low.indexOf("urgent") >= 0) return "🚑"; // or '⚠️'
+        if (
+            s.indexOf("ססיה") >= 0 ||
+            s.indexOf("אשפוז") >= 0 ||
+            low.indexOf("inpatient") >= 0
+        )
+            return "🏥";
+        if (s.indexOf("אלקטיב") >= 0 || low.indexOf("elect") >= 0) return "📖";
+        if (
+            s.indexOf("ללא עדיפות") >= 0 ||
+            low.indexOf("no priority") >= 0 ||
+            low.indexOf("none") >= 0 ||
+            low.indexOf("routine") >= 0
+        )
+            return "⬇️";
+        if (
+            s.indexOf("אמבולטורי") >= 0 ||
+            low.indexOf("ambulatory") >= 0 ||
+            low.indexOf("outpatient") >= 0
+        )
+            return "🚶";
+        return "";
+    }
+
+    getUrgencyIconFromSurgery(s: any): string {
+        if (!s) return "";
+        var u = s.urgency != null ? s.urgency : (s as any).Urgency;
+        return this.urgencyIconRaw(u);
+    }
+
+    getHeaderProgressIcon(room: RoomData): string {
+        if (!room?.surgeries?.length) return "";
+
+        const anchor = room.date || this.selectedDate;
+        const dayStart = this.workingStart(anchor);
+        const dayEnd = this.workingEnd(anchor);
+        const DAY_MS = 24 * 60 * 60 * 1000;
+
+        const parse = (clk?: string, base?: any): Date | null =>
+            clk ? this.parseClockWithDate(clk, base) : null;
+
+        const overlaps = (e: Date, x: Date): boolean =>
+            e < dayEnd && x > dayStart;
+
+        const startTs = (s: any): number => {
+            const base = s.surgeryDate || anchor;
+            let e = parse(s.timeEntrance, base);
+            let x = parse(
+                s.timeExit && s.timeExit !== "00:00:00"
+                    ? s.timeExit
+                    : s.timeEntrance,
+                base
+            );
+            if (!e || !x) return Number.POSITIVE_INFINITY;
+            if (x.getTime() < e.getTime()) x = new Date(x.getTime() + DAY_MS);
+            return overlaps(e, x) ? e.getTime() : Number.POSITIVE_INFINITY;
+        };
+
+        let bestInProg: any = null,
+            bestTs = -Infinity;
+        for (const s of room.surgeries) {
+            if (!s || !this.isInProgressStatus(s.status)) continue;
+            const ts = startTs(s);
+            if (ts !== Number.POSITIVE_INFINITY && ts > bestTs) {
+                bestInProg = s;
+                bestTs = ts;
+            }
+        }
+        if (bestInProg) return this.getUrgencyIconFromSurgery(bestInProg);
+
+        let next: any = null,
+            nextTs = Number.POSITIVE_INFINITY;
+        for (const t of room.surgeries) {
+            if (t && !this.isCompletedStatus(t.status)) {
+                const ts2 = startTs(t);
+                if (ts2 < nextTs) {
+                    next = t;
+                    nextTs = ts2;
+                }
+            }
+        }
+        if (next) return this.getUrgencyIconFromSurgery(next);
+
+        let last: any = null,
+            lastTs = -Infinity;
+        for (const c of room.surgeries) {
+            if (!c || !this.isCompletedStatus(c.status)) continue;
+            const ts3 = startTs(c);
+            if (ts3 !== Number.POSITIVE_INFINITY && ts3 > lastTs) {
+                last = c;
+                lastTs = ts3;
+            }
+        }
+        if (last) return this.getUrgencyIconFromSurgery(last);
+
+        return "";
+    }
+
+    hasInProgress(room: RoomData): boolean {
+        if (!room?.surgeries?.length) return false;
+        return room.surgeries.some(
+            (s) => s && this.isInProgressStatus(s.status)
+        );
+    }
+
+    getUrgencyTextFromSurgery(s: any): string {
+        if (!s) return "";
+        var u = s.urgency != null ? s.urgency : (s as any).Urgency;
+        return u != null ? String(u) : "";
+    }
+
+    getHeaderProgressTitle(room: RoomData): string {
+        if (!room || !room.surgeries || !room.surgeries.length) return "";
+
+        var anchor = room.date || this.selectedDate;
+        var dayStart = this.workingStart(anchor);
+        var dayEnd = this.workingEnd(anchor);
+        var DAY_MS = 24 * 60 * 60 * 1000;
+
+        var chosen: any = null;
+        var chosenTs = -Infinity;
+
+        function parse(self: any, clk: string, base: any): Date | null {
+            return clk ? self.parseClockWithDate(clk, base) : null;
+        }
+        function overlaps(e: Date, x: Date): boolean {
+            return e < dayEnd && x > dayStart;
+        }
+        function startTs(self: any, s: any): number {
+            var base = s.surgeryDate || anchor;
+            var e = parse(self, s.timeEntrance, base);
+            var x = parse(
+                self,
+                s.timeExit && s.timeExit !== "00:00:00"
+                    ? s.timeExit
+                    : s.timeEntrance,
+                base
+            );
+            if (!e || !x) return Number.POSITIVE_INFINITY;
+            if (x.getTime() < e.getTime()) x = new Date(x.getTime() + DAY_MS);
+            return overlaps(e, x) ? e.getTime() : Number.POSITIVE_INFINITY;
+        }
+
+        for (var i = 0; i < room.surgeries.length; i++) {
+            var s1 = room.surgeries[i];
+            if (s1.status !== "InProgress") continue;
+            var ts1 = startTs(this, s1);
+            if (ts1 !== Number.POSITIVE_INFINITY && ts1 > chosenTs) {
+                chosen = s1;
+                chosenTs = ts1;
+            }
+        }
+
+        if (!chosen) {
+            var next: any = null,
+                nextTs = Number.POSITIVE_INFINITY;
+            for (var j = 0; j < room.surgeries.length; j++) {
+                var s2 = room.surgeries[j];
+                if (s2.status === "Completed") continue;
+                var ts2 = startTs(this, s2);
+                if (ts2 < nextTs) {
+                    next = s2;
+                    nextTs = ts2;
+                }
+            }
+            chosen = next;
+        }
+
+        if (!chosen) {
+            var last: any = null,
+                lastTs = -Infinity;
+            for (var k = 0; k < room.surgeries.length; k++) {
+                var s3 = room.surgeries[k];
+                if (s3.status !== "Completed") continue;
+                var ts3 = startTs(this, s3);
+                if (ts3 !== Number.POSITIVE_INFINITY && ts3 > lastTs) {
+                    last = s3;
+                    lastTs = ts3;
+                }
+            }
+            chosen = last;
+        }
+
+        return chosen ? this.getUrgencyTextFromSurgery(chosen) : "";
+    }
+
+    getRoomStatusClassWithSettings(room: RoomData): string {
+        const base =
+            this.getRoomStatusClass && room
+                ? this.getRoomStatusClass(room) || ""
+                : "";
+
+        if (!this.settings) return base;
+
+        if (this.settings.colorize === false) return "";
+
+        if (this.settings.blinkOnUnacked === false) {
+            return base
+                .replace(/\bgreen-blink\b/g, "green")
+                .replace(/\bblink\b/g, "");
+        }
+
+        return base;
+    }
+
+    private hmToMin(s?: string | null): number | null {
+        if (!s || s === "") return null;
+        var p = s.split(":");
+        if (p.length < 2) return null;
+        var hh = +p[0],
+            mm = +p[1];
+        if (isNaN(hh) || isNaN(mm)) return null;
+        return hh * 60 + mm;
+    }
+
+    computeOverlapBacklog(
+        room: RoomData,
+        TURNOVER_MIN: number
+    ): { hasOverlap: boolean; count: number; until: Date | null } {
+        if (!room || !room.surgeries || !room.surgeries.length)
+            return { hasOverlap: false, count: 0, until: null };
+        if (this.isRoomPastDay(room))
+            return { hasOverlap: false, count: 0, until: null };
+
+        var baseDate = room.date || this.selectedDate;
+
+        var active: any = null;
+        for (var i = 0; i < room.surgeries.length; i++) {
+            var r: any = room.surgeries[i];
+            var st = String(r.SurgeryStatus || r.status || "").toLowerCase();
+            if (
+                st.indexOf("inprogress") === -1 &&
+                st !== "in progress" &&
+                st !== "in_progress"
+            )
+                continue;
+            var entClock =
+                r.TimeEntranceToTheOperatingRoom != null
+                    ? r.TimeEntranceToTheOperatingRoom
+                    : r.timeEntrance;
+            if (!entClock) continue;
+            var ent = new Date(
+                String(r.SurgeryDate || baseDate).slice(0, 10) +
+                    "T" +
+                    String(entClock).slice(0, 5) +
+                    ":00"
+            );
+            if (!active || ent.getTime() >= active._ent.getTime()) {
+                active = { row: r, _ent: ent };
+            }
+        }
+
+        if (!active) return { hasOverlap: false, count: 0, until: null };
+
+        var ttd: any =
+            active.row.TimeSurgeryToDo != null
+                ? active.row.TimeSurgeryToDo
+                : active.row.timeSurgeryToDo;
+        var dur =
+            ttd != null && !isNaN(+ttd) ? Math.max(0, Math.round(+ttd)) : 60;
+        var activeEnd = new Date(active._ent.getTime() + dur * 60000);
+        var overlapUntil = new Date(activeEnd.getTime() + TURNOVER_MIN * 60000);
+
+        var count = 0;
+        for (var j = 0; j < room.surgeries.length; j++) {
+            var s: any = room.surgeries[j];
+            if (s === active.row) continue;
+            var st2 = String(s.SurgeryStatus || s.status || "").toLowerCase();
+            if (st2 === "completed") continue;
+
+            var ec =
+                s.TimeEntranceToTheOperatingRoom != null
+                    ? s.TimeEntranceToTheOperatingRoom
+                    : s.timeEntrance;
+            if (!ec) continue;
+            var ent2 = new Date(
+                String(s.SurgeryDate || baseDate).slice(0, 10) +
+                    "T" +
+                    String(ec).slice(0, 5) +
+                    ":00"
+            );
+            if (ent2.getTime() < overlapUntil.getTime()) count++;
+        }
+
+        return { hasOverlap: count > 0, count: count, until: overlapUntil };
+    }
+
+    private predictFirstLatePlanned(
+        room: RoomData,
+        TURNOVER_MIN: number
+    ): { predictedEnd: Date } | null {
+        if (!room || !room.surgeries || !room.surgeries.length) return null;
+
+        if (this.isRoomPastDay(room)) return null;
+        const baseDate = room.date || this.selectedDate;
+        const shiftStart = this.workingStart(baseDate);
+        const shiftEnd = this.workingEnd(baseDate);
+        const DAY_MS = 24 * 60 * 60 * 1000;
+
+        function statusOf(row: any): string {
+            const raw =
+                row && (row.status != null ? row.status : row.SurgeryStatus);
+            return String(raw == null ? "" : raw).toLowerCase();
+        }
+        function getEClock(row: any): string | null {
+            return row
+                ? row.timeEntrance != null
+                    ? row.timeEntrance
+                    : row.TimeEntranceToTheOperatingRoom
+                : null;
+        }
+        function getXClock(row: any): string | null {
+            return row
+                ? row.timeExit != null
+                    ? row.timeExit
+                    : row.TimeExitingTheOperatingRoom
+                : null;
+        }
+        function getBase(row: any): string | Date {
+            return (
+                (row &&
+                    (row.surgeryDate != null
+                        ? row.surgeryDate
+                        : row.SurgeryDate)) ||
+                baseDate
+            );
+        }
+        function isZeroClock(v?: string | null): boolean {
+            return v === "00:00" || v === "00:00:00";
+        }
+        function normalizeUrgencyVal(u: any): string {
+            var s = (u == null ? "" : String(u)).trim();
+            s = s.replace(/\s*-\s*/g, "-").replace(/\s+/g, " ");
+            return s;
+        }
+        function urgencyRankOf(row: any): number {
+            var raw = row && (row.Urgency != null ? row.Urgency : row.urgency);
+            var n = normalizeUrgencyVal(raw);
+            if (n === "דחוף") return 0;
+            if (n === "ססיה-אשפוז") return 1;
+            return 2;
+        }
+        function statusRankOf(st: string): number {
+            if (st === "completed") return 0;
+            if (
+                st === "inprogress" ||
+                st === "in progress" ||
+                st === "in_progress"
+            )
+                return 1;
+            if (st === "planned") return 2;
+            return 3;
+        }
+
+        const list: {
+            entrance: Date | null;
+            exit: Date | null;
+            expectedMin: number | null;
+            status: string;
+            exemptLate: boolean;
+
+            sortStartMs: number;
+            urgencyRank: number;
+            statusRank: number;
+            idKey: string;
+        }[] = [];
+
+        for (let i = 0; i < room.surgeries.length; i++) {
+            const row: any = room.surgeries[i];
+
+            const eClock = getEClock(row);
+            if (!eClock) continue;
+
+            const base = getBase(row);
+            const xRaw = getXClock(row);
+
+            let entrance = this.parseClockWithDate(eClock, base);
+            let exit =
+                xRaw && !isZeroClock(xRaw)
+                    ? this.parseClockWithDate(xRaw, base)
+                    : null;
+            if (!entrance) continue;
+            if (exit && exit.getTime() < entrance.getTime())
+                exit = new Date(exit.getTime() + DAY_MS);
+
+            let expectedMin: number | null = null;
+            const ttd =
+                row &&
+                (row.TimeSurgeryToDo != null
+                    ? row.TimeSurgeryToDo
+                    : row.timeSurgeryToDo);
+            if (ttd != null && !isNaN(+ttd))
+                expectedMin = Math.max(0, Math.round(+ttd));
+            if (expectedMin == null && exit)
+                expectedMin = Math.max(
+                    0,
+                    Math.round((exit.getTime() - entrance.getTime()) / 60000)
+                );
+
+            const status = statusOf(row);
+            const exemptLate = this.isLateExemptByUrgency
+                ? this.isLateExemptByUrgency(row)
+                : false;
+
+            let sortStartMs = entrance.getTime();
+            if (exit && entrance && exit.getDate() !== entrance.getDate()) {
+                sortStartMs = sortStartMs - DAY_MS;
+            }
+            const urgRank = urgencyRankOf(row);
+            const statRank = statusRankOf(status);
+            const idKey =
+                row.SurgeryID != null
+                    ? String(row.SurgeryID)
+                    : row.CaseNumber != null
+                    ? String(row.CaseNumber)
+                    : "";
+
+            list.push({
+                entrance,
+                exit,
+                expectedMin,
+                status,
+                exemptLate,
+                sortStartMs,
+                urgencyRank: urgRank,
+                statusRank: statRank,
+                idKey,
+            });
         }
 
         list.sort(function (a, b) {
-          if (a._displayStartMs !== b._displayStartMs) return a._displayStartMs - b._displayStartMs;
-          const aSched = schedDate(a, baseDate), bSched = schedDate(b, baseDate);
-          if (aSched && bSched && aSched.getTime() !== bSched.getTime()) return aSched.getTime() - bSched.getTime();
-          const aid = String(a.surgeryId || ''), bid = String(b.surgeryId || '');
-          return aid < bid ? -1 : aid > bid ? 1 : 0;
+            if (a.sortStartMs !== b.sortStartMs)
+                return a.sortStartMs - b.sortStartMs;
+            if (a.urgencyRank !== b.urgencyRank)
+                return a.urgencyRank - b.urgencyRank;
+            if (a.statusRank !== b.statusRank)
+                return a.statusRank - b.statusRank;
+            if (a.idKey !== b.idKey) return a.idKey < b.idKey ? -1 : 1;
+            return 0;
         });
 
-        return list;
-      }
+        const now = new Date();
+        let cursor: Date | null = null; // room-free time including turnover
+        let activeIdx = -1;
 
-      this.roomsData = Object.keys(grouped).map(roomId => {
-        const list = grouped[roomId];
-        const roomDate = list.length ? (list[0].surgeryDate || this.selectedDate) : this.selectedDate;
-        const sorted = sortByPredicted(list, roomDate);
-        return { roomId, surgeries: sorted, date: roomDate };
-      });
-
-      this.isLoading = false;
-    }, _ => { this.isLoading = false; });
-  }
-
-
-
-  getTurnoverTime(room: RoomData): string {
-    if (!room?.surgeries?.length) return '--:--';
-
-    const lastCompleted = [...room.surgeries].reverse().find(s =>
-      s.status === 'Completed' && (s.timeExit || s.timeExit === '00:00:00')
-    );
-
-    if (!lastCompleted) return '--:--';
-
-    const exitTime = lastCompleted.timeExit && lastCompleted.timeExit !== '00:00:00'
-      ? lastCompleted.timeExit
-      : lastCompleted.timeEntrance;
-
-    const exit = this.parseClock(exitTime);
-    if (!exit) return '--:--';
-
-    const limit = new Date(exit);
-    limit.setHours(15, 0, 0, 0);
-    const now = new Date();
-    const endTime = now < limit ? now : limit;
-
-    const diffMin = Math.floor((endTime.getTime() - exit.getTime()) / 60000);
-
-    if (diffMin > 20) {
-      return this.formatHM(diffMin - 20);
-    }
-
-    return '--:--';
-  }
-
-
-
-
-  getTurnoverSummary(room: RoomData): string {
-    if (!room || !room.surgeries || !room.surgeries.length || !room.date) return '--:--';
-
-    var dayStart = this.workingStart(room.date);  // 07:30
-    var dayEnd = this.workingEnd(room.date);    // 15:00
-    var DAY_MS = 24 * 60 * 60 * 1000;
-
-    function statusKind(raw: any): 'completed' | 'inprogress' | 'other' {
-      var s = (raw == null ? '' : String(raw)).toLowerCase();
-      if (s.indexOf('complete') >= 0 || s.indexOf('finished') >= 0 || s.indexOf('הסת') >= 0) return 'completed';
-      if (s.indexOf('inprogress') >= 0 || s.indexOf('in progress') >= 0 || s.indexOf('ongoing') >= 0 || s.indexOf('בתהל') >= 0) return 'inprogress';
-      return 'other';
-    }
-
-    function clockToDate(clock: string, baseDate: string | Date): Date | null {
-      if (!clock) return null;
-      var parts = String(clock).split(':');
-      if (parts.length < 2) return null;
-      var d = new Date(baseDate);
-      var hh = +parts[0], mm = +parts[1], ss = parts.length > 2 ? +parts[2] : 0;
-      if (isNaN(hh) || isNaN(mm) || isNaN(ss)) return null;
-      d.setHours(hh, mm, ss, 0);
-      return d;
-    }
-
-    var intervals: { entrance: Date; exit: Date; kind: 'completed' | 'inprogress'; sortStart: Date; }[] = [];
-
-    for (var i = 0; i < room.surgeries.length; i++) {
-      var s: any = room.surgeries[i];
-
-      var kind = statusKind(s && s.status);
-      if (kind === 'other') continue; 
-
-      var eClock = s ? (s.timeEntrance != null ? s.timeEntrance : (s as any).TimeEntranceToTheOperatingRoom) : null;
-      var xRaw = s ? (s.timeExit != null ? s.timeExit : (s as any).TimeExitingTheOperatingRoom) : null;
-      if (!eClock) continue;
-
-      var base = s ? (s.surgeryDate != null ? s.surgeryDate : (s as any).SurgeryDate) : null;
-      var anchor = base || room.date;
-
-      var entrance = clockToDate(eClock, anchor);
-      var exit = clockToDate((xRaw && xRaw !== '00:00:00') ? xRaw : eClock, anchor);
-      if (!entrance || !exit) continue;
-
-      if (exit.getTime() < entrance.getTime()) exit = new Date(exit.getTime() + DAY_MS);
-
-      var overlaps = (entrance < dayEnd) && (exit > dayStart);
-      if (!overlaps) continue;
-
-      var sortStart = entrance;
-      if (xRaw && xRaw !== '00:00:00') {
-        var ep = String(eClock).split(':'), xp = String(xRaw).split(':');
-        if (ep.length >= 2 && xp.length >= 2) {
-          var eMin = (+ep[0]) * 60 + (+ep[1]);
-          var xMin = (+xp[0]) * 60 + (+xp[1]);
-          if (xMin < eMin) sortStart = new Date(entrance.getTime() - DAY_MS);
+        for (let i = 0; i < list.length; i++) {
+            const it = list[i];
+            if (
+                (it.status === "inprogress" ||
+                    it.status === "in progress" ||
+                    it.status === "in_progress") &&
+                it.entrance &&
+                it.entrance <= now
+            ) {
+                if (
+                    activeIdx === -1 ||
+                    list[activeIdx].entrance!.getTime() < it.entrance.getTime()
+                ) {
+                    activeIdx = i;
+                }
+            }
         }
-      }
 
-      intervals.push({ entrance: entrance, exit: exit, kind: kind, sortStart: sortStart });
-    }
+        if (activeIdx >= 0) {
+            const cur = list[activeIdx];
+            const expMinForCur =
+                cur.expectedMin != null
+                    ? cur.expectedMin
+                    : cur.exit && cur.entrance
+                    ? Math.max(
+                          0,
+                          Math.round(
+                              (cur.exit.getTime() - cur.entrance.getTime()) /
+                                  60000
+                          )
+                      )
+                    : 60;
 
-    if (!intervals.length) return '--:--';
+            const elapsedMin = Math.max(
+                0,
+                Math.round((now.getTime() - cur.entrance!.getTime()) / 60000)
+            );
+            const remainingMin = Math.max(0, expMinForCur - elapsedMin);
+            const endOfCur =
+                remainingMin > 0
+                    ? new Date(now.getTime() + remainingMin * 60000)
+                    : now;
 
-    intervals.sort(function (a, b) { return a.sortStart.getTime() - b.sortStart.getTime(); });
-
-    var total = 0;
-    for (var j = 0; j < intervals.length - 1; j++) {
-      var curEnd = clampToWindow(intervals[j].exit, dayStart, dayEnd);
-      var nextBeg = clampToWindow(intervals[j + 1].entrance, dayStart, dayEnd);
-      var gap = Math.max(0, Math.floor((nextBeg.getTime() - curEnd.getTime()) / 60000));
-      if (gap > 20) total += (gap - 20);
-    }
-
-    var last = intervals[intervals.length - 1];
-    if (last.kind === 'completed') {
-      var lastExit = clampToWindow(last.exit, dayStart, dayEnd);
-      var now = new Date();
-      var end = clampToWindow(now < dayEnd ? now : dayEnd, dayStart, dayEnd);
-      var idle = Math.max(0, Math.floor((end.getTime() - lastExit.getTime()) / 60000));
-      if (idle > 20) total += (idle - 20);
-    }
-
-    return total > 0 ? this.formatHM(total) : '--:--';
-
-    function clampToWindow(d: Date, start: Date, end: Date): Date {
-      return new Date(Math.min(end.getTime(), Math.max(start.getTime(), d.getTime())));
-    }
-  }
-
-
-
-  private workingStart(): Date;
-  private workingStart(baseDate: string | Date): Date;
-  private workingStart(baseDate?: string | Date): Date {
-    const d = baseDate ? new Date(baseDate) : new Date();
-    d.setHours(7, 30, 0, 0);  // 07:30
-    return d;
-  }
-
-  private workingEnd(): Date;
-  private workingEnd(baseDate: string | Date): Date;
-  private workingEnd(baseDate?: string | Date): Date {
-    const d = baseDate ? new Date(baseDate) : new Date();
-    d.setHours(15, 0, 0, 0); // 15:00
-    return d;
-  }
-  private clampToWindow(d: Date, start: Date, end: Date): Date {
-    return new Date(Math.min(end.getTime(), Math.max(start.getTime(), d.getTime())));
-  }
-
-
-  getTurnoverClass(room: RoomData): string {
-    const t = this.getTurnoverTime(room);
-    if (!t || t === '--:--') return '';
-    const [h, m] = t.split(':').map(Number);
-    const minutes = h * 60 + m;
-
-    if (minutes > 120) return 'metric-red-strong';
-    if (minutes > 60) return 'metric-red';
-    if (minutes > 45) return 'metric-orange';
-    if (minutes > 20) return 'metric-yellow';
-    return 'metric-ok';
-  }
-
-
-
-
-
-  getTurnoverTimeClass(room: RoomData): string {
-    if (this.isRoomClosedForColoring(room)) return 'metric-neutral';
-
-    var s = this.getTurnoverSummary(room); // 'HH:MM' or '--:--'
-    var m = (function hmToMin(v: string): number {
-      if (!v || v === '--:--') return 0;
-      var p = v.split(':'); if (p.length < 2) return 0;
-      var hh = +p[0], mm = +p[1];
-      return (isNaN(hh) || isNaN(mm)) ? 0 : (hh * 60 + mm);
-    })(s);
-
-    if (m >= 90) return 'metric-bad';     // red
-    if (m > 0) return 'metric-warn';    // amber
-    return 'metric-ok';                   // green/ok
-  }
-
-
-  sortByChronologicalStart(a: any, b: any, roomDate: string | Date): number {
-    var DAY_MS = 24 * 60 * 60 * 1000;
-
-    function clockToDate(clk: string, base: any) { return this.parseClockWithDate(clk, base); }
-
-    function sortKey(s: any, baseDate: any): number {
-      var eClock = s && (s.timeEntrance != null ? s.timeEntrance : s.TimeEntranceToTheOperatingRoom);
-      var xClockRaw = s && (s.timeExit != null ? s.timeExit : s.TimeExitingTheOperatingRoom);
-      var base = (s && (s.surgeryDate != null ? s.surgeryDate : s.SurgeryDate)) || baseDate;
-      if (!eClock) return Number.POSITIVE_INFINITY;
-
-      var entrance = this.parseClockWithDate(eClock, base);
-      var exit = this.parseClockWithDate((xClockRaw && xClockRaw !== '00:00:00') ? xClockRaw : eClock, base);
-      if (!entrance || !exit) return Number.POSITIVE_INFINITY;
-
-      if (exit.getTime() < entrance.getTime()) return entrance.getTime() - DAY_MS;
-
-      if (xClockRaw) {
-        var eParts = String(eClock).split(':'), xParts = String(xClockRaw).split(':');
-        if (eParts.length >= 2 && xParts.length >= 2) {
-          var eNum = (+eParts[0]) * 60 + (+eParts[1]);
-          var xNum = (+xParts[0]) * 60 + (+xParts[1]);
-          if (xNum < eNum) return entrance.getTime() - DAY_MS;
+            cursor = new Date(endOfCur.getTime() + TURNOVER_MIN * 60000);
         }
-      }
-      return entrance.getTime();
-    }
 
-    var ka = sortKey.call(this, a, roomDate);
-    var kb = sortKey.call(this, b, roomDate);
-    return ka - kb;
-  }
+        for (let j = 0; j < list.length; j++) {
+            if (j === activeIdx) continue;
+            const item = list[j];
 
-  sortSurgeriesForDisplay(surgeries: any[], roomDate: string | Date): any[] {
-    var DAY_MS = 24 * 60 * 60 * 1000;
+            if (!cursor)
+                cursor = item.entrance
+                    ? new Date(item.entrance)
+                    : new Date(shiftStart);
 
-    function sortKey(self: any, s: any, baseDate: any): number {
-      var eClock = s && (s.timeEntrance != null ? s.timeEntrance : s.TimeEntranceToTheOperatingRoom);
-      var xClockRaw = s && (s.timeExit != null ? s.timeExit : s.TimeExitingTheOperatingRoom);
-      var base = (s && (s.surgeryDate != null ? s.surgeryDate : s.SurgeryDate)) || baseDate;
-      if (!eClock) return Number.POSITIVE_INFINITY;
+            const startPred = item.entrance
+                ? new Date(Math.max(item.entrance.getTime(), cursor.getTime()))
+                : new Date(cursor);
 
-      var entrance = self.parseClockWithDate(eClock, base);
-      var exit = self.parseClockWithDate((xClockRaw && xClockRaw !== '00:00:00') ? xClockRaw : eClock, base);
-      if (!entrance || !exit) return Number.POSITIVE_INFINITY;
+            let durMin: number;
+            if (item.exit && item.entrance && item.status === "completed") {
+                durMin = Math.max(
+                    0,
+                    Math.round(
+                        (item.exit.getTime() - item.entrance.getTime()) / 60000
+                    )
+                );
+            } else {
+                durMin =
+                    item.expectedMin != null
+                        ? item.expectedMin
+                        : item.exit && item.entrance
+                        ? Math.max(
+                              0,
+                              Math.round(
+                                  (item.exit.getTime() -
+                                      item.entrance.getTime()) /
+                                      60000
+                              )
+                          )
+                        : 60;
+            }
 
-      if (exit.getTime() < entrance.getTime()) return entrance.getTime() - DAY_MS; 
-
-      if (xClockRaw) { 
-        var ep = String(eClock).split(':'), xp = String(xClockRaw).split(':');
-        if (ep.length >= 2 && xp.length >= 2) {
-          var eMin = (+ep[0]) * 60 + (+ep[1]);
-          var xMin = (+xp[0]) * 60 + (+xp[1]);
-          if (xMin < eMin) return entrance.getTime() - DAY_MS;
+            const endSurgeryPred = new Date(
+                startPred.getTime() + durMin * 60000
+            );
+            cursor = new Date(endSurgeryPred.getTime() + TURNOVER_MIN * 60000);
+            if (
+                item.status === "planned" &&
+                endSurgeryPred > shiftEnd &&
+                !item.exemptLate
+            ) {
+                return { predictedEnd: endSurgeryPred };
+            }
         }
-      }
-      return entrance.getTime();
+
+        return null;
     }
 
-    var self = this;
-    return (surgeries || []).slice().sort(function (a, b) {
-      return sortKey(self, a, roomDate) - sortKey(self, b, roomDate);
-    });
-  }
-
-
-  getRoomStatusClass(room: RoomData): string {
-    if (!room || !room.surgeries?.length) return 'grey';
-
-    const isWeekend = this.isWeekend(room.date);
-
-    if (room.surgeries.some(s => s.status === 'InProgress')) {
-      return isWeekend ? 'green' : 'green-blink';
+    private toHHmm(dt: Date): string {
+        const pad = (n: number) => (n < 10 ? "0" + n : "" + n);
+        return pad(dt.getHours()) + ":" + pad(dt.getMinutes());
     }
 
-    const lastCompleted = [...room.surgeries].reverse().find(
-      s => s.status === 'Completed' && s.timeExit && s.timeExit !== '00:00:00'
-    );
-    if (!lastCompleted) return 'grey';
-
-    const exitAt = this.parseClockWithDate(lastCompleted.timeExit, room.date);
-
-    if (!exitAt) return 'grey';
-
-    const diffMin = Math.max(0, (Date.now() - exitAt.getTime()) / 60000);
-
-    if (isWeekend) {
-      if (diffMin > 120) return 'red-120-ack';
-      if (diffMin > 60) return 'red-60-ack';
-      if (diffMin > 45) return 'red-45-ack';
-      return 'grey';
+    private predictedLateEndHHmm(room: RoomData): string | null {
+        const meta = this.getRoomLateMeta(room);
+        return meta && meta.isLate && meta.predictedEnd
+            ? this.toHHmm(meta.predictedEnd)
+            : null;
     }
 
-    const isAcked = this.isRoomAcked(room);
-    if (diffMin > 120) return isAcked ? 'red-120-ack' : 'red-120';
-    if (diffMin > 60) return isAcked ? 'red-60-ack' : 'red-60';
-    if (diffMin > 45) return isAcked ? 'red-45-ack' : 'red-45';
-    return 'grey';
-  }
-
-  private isWeekend(dateLike?: string | Date): boolean {
-    const d = dateLike ? new Date(dateLike) : new Date();
-    const day = d.getDay();
-    return day === 5 || day === 6;
-  }
-
-
-
-
-
-
-  getStartDiffClass(room: RoomData): string {
-    const val = this.getStartDiff(room);
-    if (!val || val === '--:--') return '';
-    const [h, m] = val.split(':').map(Number);
-    const minutes = h * 60 + m;
-
-    if (minutes > 60) return 'metric-red';
-    if (minutes > 30) return 'metric-orange';
-    if (minutes > 15) return 'metric-yellow';
-    return 'metric-ok';
-  }
-
-
-
-
-  private isRealCase(s?: Surgery): boolean {
-    return !!s && (s.status === 'Completed' || s.status === 'InProgress');
-  }
-
-  private toInterval(s: Surgery, baseDate?: string | Date) {
-    const eClock = s.timeEntrance;
-    const xClock = s.timeExit && s.timeExit !== '00:00:00' ? s.timeExit : s.timeEntrance;
-
-    const entrance = eClock ? this.parseClockWithDate(eClock, baseDate ?? s.surgeryDate) : null;
-    let exit = xClock ? this.parseClockWithDate(xClock, baseDate ?? s.surgeryDate) : null;
-
-    if (entrance && exit && exit.getTime() < entrance.getTime()) {
-      exit = new Date(exit.getTime() + 24 * 60 * 60 * 1000);
-    }
-    return { entrance, exit: exit ?? entrance };
-  }
-
-  private overlapsWindow(entrance: Date | null, exit: Date | null, start: Date, end: Date): boolean {
-    if (!entrance || !exit) return false;
-    return entrance < end && exit > start; 
-  }
-
-  getTurnoverBetween(prev: Surgery, next: Surgery): string | null {
-    if (!this.isRealCase(prev) || !this.isRealCase(next)) return null;
-
-    const baseDate = next.surgeryDate ?? prev.surgeryDate ?? this.selectedDate;
-    const dayStart = this.workingStart(baseDate); 
-    const dayEnd = this.workingEnd(baseDate);   
-
-    const p = this.toInterval(prev, baseDate);
-    const n = this.toInterval(next, baseDate);
-    if (!p.entrance || !p.exit || !n.entrance || !n.exit) return null;
-
-
-    if (!this.overlapsWindow(p.entrance, p.exit, dayStart, dayEnd)) return null;
-    if (!this.overlapsWindow(n.entrance, n.exit, dayStart, dayEnd)) return null;
-
-    const prevEnd = this.clampToWindow(p.exit, dayStart, dayEnd);
-    const nextStart = this.clampToWindow(n.entrance, dayStart, dayEnd);
-
-    const gap = this.minutesBetween(prevEnd, nextStart);
-    if (gap <= 20) return null;            
-    return this.formatHM(gap - 20);
-  }
-
-
-
-  getTurnoverBetweenClass(prev: Surgery, next: Surgery): string {
-    const raw = this.getTurnoverBetween(prev, next);
-    if (!raw) return '';
-
-    const [h, m] = raw.split(':').map(Number);
-    const minutes = h * 60 + m;
-
-    if (minutes > 120) return 'metric-red blink';
-    if (minutes > 60) return 'metric-red';
-    if (minutes > 45) return 'metric-orange';
-    return 'metric-yellow';
-  }
-
-
-  private isInProgress(raw: any): boolean {
-    var s = (raw == null ? '' : String(raw)).toLowerCase();
-    return s === 'inprogress' || s === 'in progress' || s.indexOf('בתהל') >= 0;
-  }
-
-  private getSurgeryIdFromAny(s: any): string {
-    if (!s) return '';
-    if (s.surgeryId != null && s.surgeryId !== '') return String(s.surgeryId);
-    if (s.SurgeryID != null && s.SurgeryID !== '') return String(s.SurgeryID);
-    return '';
-  }
-
-  private entranceMillisForSort(s: any, roomDate: string | Date): number {
-    var eClock = s && (s.timeEntrance != null ? s.timeEntrance : s.TimeEntranceToTheOperatingRoom);
-    var base = (s && (s.surgeryDate != null ? s.surgeryDate : s.SurgeryDate)) || roomDate;
-    var d = eClock ? this.parseClockWithDate(eClock, base) : null;
-    return d ? d.getTime() : -Infinity;
-  }
-
-  getHeaderInProgressId(room: RoomData): string {
-    if (!room || !room.surgeries || !room.surgeries.length) return '';
-
-    var inProg: any[] = [];
-    for (var i = 0; i < room.surgeries.length; i++) {
-      var s = room.surgeries[i];
-      var status = (s && s.status != null ? s.status : (s && s.status));
-      if (this.isInProgress(status)) inProg.push(s);
+    private currentAckKeyForRoom(room: RoomData): string {
+        const base = this.lastEventKeyForRoom(room.roomId);
+        const late = this.predictedLateEndHHmm(room) || "OK";
+        return base + "|" + late;
     }
 
-    if (!inProg.length) return ''; 
-
-    var picked = inProg.slice().sort((a, b) =>
-      this.entranceMillisForSort(b, room.date || this.selectedDate) -
-      this.entranceMillisForSort(a, room.date || this.selectedDate)
-    )[0];
-
-    return this.getSurgeryIdFromAny(picked) || '';
-  }
-
-
-
-
-  private parseClock(t: string): Date | null {
-    if (!t || typeof t !== 'string') return null;
-    const parts = t.split(':').map(n => Number(n));
-    if (parts.length < 2 || parts.some(isNaN)) return null;
-    const [h, m, s = 0] = parts;
-    const d = new Date();
-    d.setHours(h, m, s, 0);
-    return isNaN(d.getTime()) ? null : d;
-  }
-
-  private parseClockWithDate(clock: string, baseDate?: string | Date): Date | null {
-    const t = this.parseClock(clock);
-    if (!t) return null;
-    if (!baseDate) return t;
-
-    const base = new Date(baseDate);
-    base.setHours(t.getHours(), t.getMinutes(), t.getSeconds(), 0);
-    return base;
-  }
-
-  private formatDiff(ms: number): string {
-    if (isNaN(ms)) return '--:--';
-    const sign = ms < 0 ? '-' : '';
-    const abs = Math.abs(ms);
-    const h = Math.floor(abs / 3600000);
-    const m = Math.floor((abs % 3600000) / 60000);
-    return `${sign}${('0' + h).slice(-2)}:${('0' + m).slice(-2)}`;
-  }
-
-
-
-  getStartDiff(room: RoomData): string {
-    const safeStart = this.parseClock('07:00');
-    const safeEnd = this.parseClock('07:30');
-    if (!safeStart || !safeEnd) return '--:--';
-
-    if (!room.surgeries || room.surgeries.length === 0) return '--:--';
-
-    const sortedSurgeries = room.surgeries
-      .map(s => ({ ...s, entrance: this.parseClock(s.timeEntrance) }))
-      .filter(s => s.entrance)
-      .sort((a, b) => a.entrance!.getTime() - b.entrance!.getTime());
-
-    const firstInSafeZone = sortedSurgeries.find(
-      s => s.entrance! >= safeStart && s.entrance! <= safeEnd
-    );
-    if (firstInSafeZone) return '00:00';
-
-    const firstAfterSafeZone = sortedSurgeries.find(
-      s => s.entrance! > safeEnd
-    );
-
-    if (!firstAfterSafeZone) return '--:--';
-
-    const diffMs = firstAfterSafeZone.entrance!.getTime() - safeEnd.getTime();
-    return this.formatDiff(diffMs);
-  }
-
-  getEndDiff(room: RoomData): string {
-    const opening = this.parseClock('07:30');
-    const closing = this.parseClock('14:40');
-    if (!closing || !opening) return '--:--';
-
-    const exits = room.surgeries
-      .map(s => {
-        const exitStr = s.timeExit && s.timeExit !== '00:00:00' ? s.timeExit : s.timeEntrance;
-        return this.parseClock(exitStr);
-      })
-      .filter((d): d is Date => !!d && d >= opening)
-      .sort((a, b) => a.getTime() - b.getTime());
-
-    if (exits.length === 0) return this.formatDiff(0);
-
-    const lastExit = exits[exits.length - 1];
-
-    if (lastExit >= closing) return this.formatDiff(0);
-
-    const diffMs = closing.getTime() - lastExit.getTime();
-    return this.formatDiff(diffMs);
-  }
-
-  getEndDiffClass(room: RoomData): string {
-    if (this.isRoomClosedForColoring(room)) return 'metric-neutral';
-
-    var s = this.getEndDiff(room);
-    if (!s || s === '--:--') return 'metric-ok';
-    var p = s.split(':'); if (p.length < 2) return 'metric-ok';
-    var mins = (+p[0]) * 60 + (+p[1]);
-    if (isNaN(mins)) return 'metric-ok';
-    if (mins <= 15) return 'metric-warn';
-    return 'metric-ok';
-  }
-
-
-
-  plannedSurgeries(room: RoomData): Surgery[] {
-    return room.surgeries.filter(s => s.status === 'Planned');
-  }
-
-  activeSurgeries(room: RoomData): Surgery[] {
-    return room.surgeries.filter(s => s.status !== 'Planned');
-  }
-
-
-
-
-  formatCountdown(sec: number): string {
-    const m = Math.floor(sec / 60);
-    const s = sec % 60;
-    return `${m}:${s.toString().padStart(2, '0')}`;
-  }
-
-  manualRefresh(): void {
-    this.loadRoomsData();
-    this.nextRefreshIn = 300; 
-    this.lastLoaded = new Date();
-  }
-
-  toggleAutoRefresh(): void {
-    this.autoRefreshPaused = !this.autoRefreshPaused;
-    if (this.autoRefreshPaused) {
-      this.clearIntervals();
-    } else {
-      this.startAutoRefresh();
-    }
-  }
-
-  private startAutoRefresh(): void {
-    this.clearIntervals();
-    this.nextRefreshIn = 300;
-
-    this.refreshInterval = setInterval(() => {
-      if (!this.autoRefreshPaused) {
-        this.loadRoomsData();
-        this.nextRefreshIn = 300;
-      }
-    }, 5 * 60 * 1000);
-
-    this.countdownInterval = setInterval(() => {
-      if (!this.autoRefreshPaused && this.nextRefreshIn > 0) {
-        this.nextRefreshIn--;
-      }
-    }, 1000);
-  }
-
-  private clearIntervals(): void {
-    if (this.refreshInterval) clearInterval(this.refreshInterval);
-    if (this.countdownInterval) clearInterval(this.countdownInterval);
-  }
-
-  onDateChange(): void {
-    if (!this.autoRefreshPaused) {
-      this.autoRefreshPaused = true;
-      this.clearIntervals();
+    private normalizeUrgency(u: any): string {
+        var s = (u == null ? "" : String(u)).trim();
+        s = s.replace(/\s*-\s*/g, "-");
+        s = s.replace(/\s+/g, " ");
+        s = s.replace(/[.!?，,؛;]+/g, "");
+        return s;
     }
 
-    this.loadRoomsData();
-  }
-
-
-  private openingOfDay(): Date {
-    const d = new Date();
-    d.setHours(7, 30, 0, 0);
-    return d;
-  }
-
-  private closingOfDay(): Date {
-    const d = new Date();
-    d.setHours(15, 0, 0, 0);
-    return d;
-  }
-
-  private clampToDay(d: Date): Date {
-    const open = this.openingOfDay().getTime();
-    const close = this.closingOfDay().getTime();
-    return new Date(Math.min(close, Math.max(open, d.getTime())));
-  }
-
-  private minutesBetween(a: Date, b: Date): number {
-    return Math.max(0, Math.floor((b.getTime() - a.getTime()) / 60000));
-  }
-
-  private formatHM(mins: number): string {
-    const h = Math.floor(mins / 60);
-    const m = mins % 60;
-    return `${('0' + h).slice(-2)}:${('0' + m).slice(-2)}`;
-  }
-
-
-
-  statusTranslations: Record<string, string> = {
-    'Completed': '✔️ הסתיים',
-    'InProgress': '🟢 בתהליך',
-    'Scheduled': '🕓 מתוזמן',
-    'Cancelled': '❌ בוטל',
-    'Planned': '📆 מתוכנן'
-  };
-
-  translateStatus(status: string): string {
-    return this.statusTranslations[status] || status;
-  }
-
-
-
-  acknowledgeAllRooms(): void {
-    this.googleChartsService.triggerAcknowledgeAllRooms();
-
-    for (const r of this.roomsData ?? []) {
-      if (!r || !r.roomId) continue;
-
-      const storeKey = this.ackStorageKey(r.roomId);
-      const compositeKey = this.currentAckKeyForRoom(r);
-
-      this.lsSet(storeKey, compositeKey);
-      this.lsRemove(this.legacyAckStorageKey(r.roomId));
-      this.ackCache.set(r.roomId, compositeKey);
-
-
-      if (this.ackedRooms) this.ackedRooms.add(r.roomId);
+    private isLateExemptByUrgency(row: any): boolean {
+        if (!row) return false;
+        var raw = row.Urgency != null ? row.Urgency : row.urgency;
+        var n = this.normalizeUrgency(raw);
+        var nNoSpaces = n.replace(/\s+/g, "");
+        if (nNoSpaces === "ססיה-אשפוז") return true;
+        if (n === "דחוף") return true;
+        return false;
     }
 
-
-    this.roomsData = [...(this.roomsData ?? [])];
-    console.log('acknowledged all rooms');
-  }
-
-
-
-  private refreshAckCache(): void {
-    this.ackCache.clear();
-    for (const r of this.roomsData ?? []) {
-      const stored =
-        this.lsGet(this.ackStorageKey(r.roomId)) ??
-        this.lsGet(this.legacyAckStorageKey(r.roomId));
-      if (stored) this.ackCache.set(r.roomId, stored);
-    }
-  }
-  private markAllRoomsAcknowledged(): void {
-    for (const r of this.roomsData ?? []) {
-      if (r?.roomId) this.ackedRooms.add(r.roomId);
-    }
-    this.roomsData = [...(this.roomsData ?? [])];
-  }
-
-
-  public isRoomAcked(room: RoomData): boolean {
-    if (!room || !room.roomId) return false;
-
-    const baseKey = this.lastEventKeyForRoom(room.roomId);
-    const compositeKey = this.currentAckKeyForRoom(room);
-
-    const storedKey =
-      this.ackCache.get(room.roomId) ??
-      this.lsGet(this.ackStorageKey(room.roomId)) ??
-      this.lsGet(this.legacyAckStorageKey(room.roomId));
-
-    if (!storedKey) return false;
-
-    if (storedKey === compositeKey) return true;
-    if (storedKey === baseKey) {
-      const lateNow = this.predictedLateEndHHmm(room);
-      return !lateNow;
-    }
-    return false;
-  }
-
-
-
-  acknowledgeRoomLate(room: RoomData): void {
-    if (!room || !room.roomId) return;
-
-    const storeKey = this.ackStorageKey(room.roomId);
-    const compositeKey = this.currentAckKeyForRoom(room);
-
-    this.lsSet(storeKey, compositeKey);
-    this.lsRemove(this.legacyAckStorageKey(room.roomId));
-    this.ackCache.set(room.roomId, compositeKey);
-
-    if (this.ackedRooms) this.ackedRooms.add(room.roomId);
-
-    this.roomsData = [...(this.roomsData ?? [])];
-  }
-
-  private readonly PLANNED_SET = new Set(['Planned', 'Scheduled']);
-
-  trackBySurgeryId = (_: number, s: Surgery) => s?.surgeryId ?? _;
-
-
-
-  private roomNameOverrides: Record<string, string> = {
-    'פז01-201': 'חדר ניתוח 1',
-    'פז01-202': 'חדר ניתוח 2',
-    'פז01-203': 'חדר ניתוח 3',
-    'פז01-204': 'חדר ניתוח 4',
-    'פז01-205': 'חדר ניתוח 5',
-    'פז01-206': 'חדר ניתוח 6',
-    'פז01-207': 'חדר ניתוח 7',
-  };
-
-  translateRoomId(id?: string): string {
-    if (!id) return '';
-
-    const hit = this.roomNameOverrides[id];
-    if (hit) return hit;
-
-    const norm = String(id).trim();
-    const firstSeg = norm.split(/[-–—]/)[0]; 
-    let numStr: string | null = null;
-
-    const m1 = firstSeg.match(/(\d{1,2})(?!.*\d)/);
-    if (m1) numStr = m1[1];
-
-    if (!numStr) {
-      const m2 = norm.match(/\b(0?[1-9]|[1-9]\d)\b/);
-      if (m2) numStr = m2[1];
+    public isRoomPastDay(room: RoomData): boolean {
+        if (!room || !room.date) return false;
+        var d = new Date(room.date);
+        var end = new Date(d);
+        end.setHours(23, 59, 59, 999);
+        var today = new Date();
+        var startToday = new Date(today);
+        startToday.setHours(0, 0, 0, 0);
+        return end.getTime() < startToday.getTime();
     }
 
-    if (numStr) {
-      const n = parseInt(numStr, 10);
-      if (!Number.isNaN(n)) return `חדר ניתוח ${n}`;
+    private isSameDay(a: Date, b: Date): boolean {
+        return (
+            a.getFullYear() === b.getFullYear() &&
+            a.getMonth() === b.getMonth() &&
+            a.getDate() === b.getDate()
+        );
     }
 
-    return norm;
-  }
-
-
-
-  hasActionAfterWorkingStart(room: RoomData): boolean {
-    if (!room?.surgeries?.length) return false;
-    const ws = this.workingStart(room.date);
-    return room.surgeries.some(s => {
-      if (!s?.timeEntrance) return false;
-      const entrance = this.parseClockWithDate(s.timeEntrance, room.date);
-      if (!entrance || entrance < ws) return false;
-      return s.status === 'InProgress' || s.status === 'Completed';
-    });
-  }
-
-
-  private isBeforeToday(dateLike?: string | Date): boolean {
-    if (!dateLike) return false;                
-    const today = new Date(); today.setHours(0, 0, 0, 0);
-    const d = new Date(dateLike); d.setHours(0, 0, 0, 0);
-    return d.getTime() < today.getTime();
-  }
-
-  shouldShowStartDiff(room: RoomData): boolean {
-    const baseDate = room?.date ?? this.selectedDate;  
-    if (this.isBeforeToday(baseDate)) return true;
-    return !this.hasActionAfterWorkingStart(room);
-  }
-
-
-
-  private isInProgressStatus(raw: any): boolean {
-    var s = (raw == null ? '' : String(raw)).toLowerCase().trim();
-    return s === 'inprogress' || s === 'in progress' || s.indexOf('בתהל') >= 0;
-  }
-
-  private getSurgeryIdSafe(s: any): string {
-    if (s && s.surgeryId != null && s.surgeryId !== '') return String(s.surgeryId);
-    var rawId = s ? (s as any).SurgeryID : null;
-    return rawId != null && rawId !== '' ? String(rawId) : '—';
-  }
-
-  private entranceMillisForSortSafe(s: any, roomDate: string | Date): number {
-    var eClock = s ? (s.timeEntrance != null ? s.timeEntrance : (s as any).TimeEntranceToTheOperatingRoom) : null;
-    var base = s ? (s.surgeryDate != null ? s.surgeryDate : (s as any).SurgeryDate) : null;
-    var anchor = base || roomDate;
-    var d = eClock ? this.parseClockWithDate(eClock, anchor) : null;
-    return d ? d.getTime() : -Infinity;
-  }
-
-  getHeaderInProgressLabel(room: RoomData): string {
-    if (!room || !room.surgeries || !room.surgeries.length) return 'פנוי';
-
-    var inProg: any[] = [];
-    for (var i = 0; i < room.surgeries.length; i++) {
-      var s = room.surgeries[i];
-      if (s && this.isInProgressStatus(s.status)) inProg.push(s);
-    }
-    if (!inProg.length) return 'פנוי';
-
-    var picked = inProg.slice().sort((a, b) =>
-      this.entranceMillisForSortSafe(b, room.date || this.selectedDate) -
-      this.entranceMillisForSortSafe(a, room.date || this.selectedDate)
-    )[0];
-
-    return this.getSurgeryIdSafe(picked);
-  }
-
-
-
-  getHeaderProgressText(room: RoomData, opts?: HeaderProgressOpts): string {
-    let nInShift = 0;  
-    let xInShift = 0;
-    let xOnDay = 0;
-
-    if (!room || !room.surgeries?.length) return '0 מתוך 0';
-
-    const baseDate = room.date || this.selectedDate;
-    const day = new Date(baseDate);
-    const dayStart = new Date(day); dayStart.setHours(0, 0, 0, 0);
-    const dayEnd = new Date(day); dayEnd.setHours(23, 59, 59, 999);
-    const shiftStart = this.workingStart(baseDate); 
-    const shiftEnd = this.workingEnd(baseDate);   
-    const DAY_MS = 24 * 60 * 60 * 1000;
-
-    const DEFAULT_TURNOVER = Math.max(0, opts?.defaultTurnoverMin ?? 20);
-    const summaryStr = this.getTurnoverSummary(room);   
-    const parsedMin = hmToMin(summaryStr);
-    const TURNOVER_MIN = Math.max(20, parsedMin ?? DEFAULT_TURNOVER); 
-
-    const isZeroClock = (v?: string) => v === '00:00' || v === '00:00:00';
-
-    function normalizeUrgencyVal(u: any): string {
-      let s = (u == null ? '' : String(u)).trim();
-      s = s.replace(/\s*-\s*/g, '-').replace(/\s+/g, ' ');
-      return s;
-    }
-    function urgencyRankOf(row: any): number {
-      const raw = row && (row.Urgency != null ? row.Urgency : row.urgency);
-      const n = normalizeUrgencyVal(raw);
-      if (n === 'דחוף') return 0;
-      if (n === 'ססיה-אשפוז') return 1;
-      return 2;
-    }
-    function statusRankOf(st: string): number {
-      if (st === 'completed') return 0;
-      if (st === 'inprogress' || st === 'in progress' || st === 'in_progress') return 1;
-      if (st === 'planned') return 2;
-      return 3;
+    public isRoomClosedForColoring(room: RoomData): boolean {
+        if (!room || !room.date) return false;
+        if (this.isRoomPastDay(room)) return true;
+        var d = new Date(room.date);
+        var now = new Date();
+        if (!this.isSameDay(d, now)) return false;
+        var shiftEnd = this.workingEnd(d);
+        return now.getTime() >= shiftEnd.getTime();
     }
 
-    type Norm = {
-      entrance: Date | null;
-      exit: Date | null;
-      expectedMin: number | null;
-      status: string;
-      raw: any;
-      exemptLate: boolean;
-      sortStartMs: number;
-      urgencyRank: number;
-      statusRank: number;
-      idKey: string;
+    onMatDateChange(d: Date | null) {
+        if (!d || isNaN(d.getTime())) {
+            this.selectedDate = null as any;
+            return;
+        }
+        const yyyy = d.getFullYear();
+        const mm = ("0" + (d.getMonth() + 1)).slice(-2);
+        const dd = ("0" + d.getDate()).slice(-2);
+        this.selectedDate = `${yyyy}-${mm}-${dd}`;
+        this.onDateChange();
+    }
+
+    ticker$ = interval(1000).pipe(startWith(0), shareReplay(1));
+
+    getRoomIdleCounter(
+        room: any,
+        showSeconds = false
+    ): { display: string; title: string } | null {
+        try {
+            if (!this.isRoomToday(room)) return null;
+            if (this.hasInProgress(room)) return null;
+
+            const plannedLeft =
+                (this.plannedSurgeries && this.plannedSurgeries(room))?.length >
+                0;
+            if (this.settings?.hideIdleWhenNoPlanned && !plannedLeft)
+                return null;
+            const nowRaw = this._nowInSelectedDay();
+            const now =
+                this.settings?.continueIdleAfter1500WhenPlanned && plannedLeft
+                    ? nowRaw
+                    : this._clampTo1500(nowRaw);
+            const dayStart = this._parseOnSelectedDay("07:30");
+            const active =
+                (this.activeSurgeries && this.activeSurgeries(room)) || [];
+            let lastExit: Date | null = null;
+            for (const s of active) {
+                const status = (s?.status ?? s?.SurgeryStatus) as string;
+                const exitStr =
+                    s?.timeExit ??
+                    s?.TimeExitingTheOperatingRoom ??
+                    s?.timeEntrance ??
+                    null;
+                if (!exitStr) continue;
+                const exitAt = this._parseOnSelectedDay(exitStr);
+                if (!exitAt || exitAt > now) continue;
+                if (status === "Completed") {
+                    if (!lastExit || exitAt > lastExit) lastExit = exitAt;
+                }
+            }
+
+            const gapStart = lastExit
+                ? new Date(lastExit.getTime() + 20 * 60 * 1000)
+                : dayStart;
+            if (now <= gapStart) return null;
+
+            const diffMs = now.getTime() - gapStart.getTime();
+            if (diffMs <= 0) return null;
+
+            const display = showSeconds
+                ? this._formatHMMSS(diffMs)
+                : this._formatHMM(diffMs);
+            const title = `זמן פנוי מאז ${this._formatClock(
+                gapStart
+            )} (כולל 20׳ הכנה)`;
+            return { display, title };
+        } catch {
+            return null;
+        }
+    }
+
+    private _nowInSelectedDay(): Date {
+        const base = this.selectedDateObj
+            ? new Date(this.selectedDateObj)
+            : new Date();
+        const now = new Date();
+        base.setHours(
+            now.getHours(),
+            now.getMinutes(),
+            now.getSeconds(),
+            now.getMilliseconds()
+        );
+        return base;
+    }
+    private _clampTo1500(d: Date): Date {
+        const cap = new Date(d);
+        cap.setHours(15, 0, 0, 0);
+        return d > cap ? cap : d;
+    }
+    private _parseOnSelectedDay(hhmm?: string | null): Date | null {
+        if (!hhmm) return null;
+        const [hh, mm] = hhmm.split(":").map((x) => +x);
+        if (Number.isNaN(hh) || Number.isNaN(mm)) return null;
+        const d = this.selectedDateObj
+            ? new Date(this.selectedDateObj)
+            : new Date();
+        d.setHours(hh, mm, 0, 0);
+        return d;
+    }
+    private _formatHMM(ms: number): string {
+        const totalMin = Math.max(0, Math.floor(ms / 60000));
+        const h = Math.floor(totalMin / 60);
+        const m = totalMin % 60;
+        return `${h}:${m.toString().padStart(2, "0")}`;
+    }
+    private _formatHMMSS(ms: number): string {
+        const total = Math.max(0, Math.floor(ms / 1000));
+        const h = Math.floor(total / 3600);
+        const m = Math.floor((total % 3600) / 60);
+        const s = total % 60;
+        return `${h}:${m.toString().padStart(2, "0")}:${s
+            .toString()
+            .padStart(2, "0")}`;
+    }
+    private _formatClock(d: Date): string {
+        return `${d.getHours().toString().padStart(2, "0")}:${d
+            .getMinutes()
+            .toString()
+            .padStart(2, "0")}`;
+    }
+
+    showSummaryCardDefault = true;
+    getSummaryForToday(): any | null {
+        const surgeries = this._getSurgeriesArray();
+        if (!surgeries?.length) return null;
+
+        const selectedDateISO = this.selectedDateObj
+            ? this._toISODate(this.selectedDateObj)
+            : surgeries[0]?.SurgeryDate ?? this._toISODate(new Date());
+
+        const todays = surgeries.filter(
+            (s) => s?.SurgeryDate === selectedDateISO
+        );
+        if (!todays.length) return null;
+
+        const completed = todays.filter(
+            (s) => (s.SurgeryStatus ?? s.status) === "Completed"
+        );
+        const inProg = todays.filter(
+            (s) => (s.SurgeryStatus ?? s.status) === "InProgress"
+        );
+        const planned = todays.filter(
+            (s) => (s.SurgeryStatus ?? s.status) === "Planned"
+        );
+
+        const rooms = Array.from(
+            new Set(todays.map((s) => s.SurgeryRoom))
+        ).sort();
+        const inProgRooms = new Set(inProg.map((s) => s.SurgeryRoom));
+        const activeRooms = inProgRooms.size;
+        const freeRooms = rooms.length - activeRooms;
+
+        const sumCompletedMinutes = completed.reduce((acc, s) => {
+            const m = this._num(s.TimeSurgeryToDo);
+            if (!Number.isNaN(m)) return acc + m;
+            const ms = this._diffMinutesSafe(
+                selectedDateISO,
+                s.TimeEntranceToTheOperatingRoom,
+                s.TimeExitingTheOperatingRoom
+            );
+            return acc + (ms ?? 0);
+        }, 0);
+
+        const avgCaseMinutes = completed.length
+            ? Math.round(sumCompletedMinutes / completed.length)
+            : 0;
+
+        const byRoom = rooms.map((room) => {
+            const rCases = todays.filter((s) => s.SurgeryRoom === room);
+            const rCompleted = rCases.filter(
+                (s) => (s.SurgeryStatus ?? s.status) === "Completed"
+            );
+            const rInProg = rCases.filter(
+                (s) => (s.SurgeryStatus ?? s.status) === "InProgress"
+            );
+            const rPlanned = rCases.filter(
+                (s) => (s.SurgeryStatus ?? s.status) === "Planned"
+            );
+
+            const rMinutes = rCompleted.reduce(
+                (acc, s) => acc + this._completedMinutes(s, selectedDateISO),
+                0
+            );
+
+            const latestExit =
+                rCompleted
+                    .map((s) => s.TimeExitingTheOperatingRoom ?? s.timeExit)
+                    .filter(Boolean)
+                    .sort()
+                    .slice(-1)[0] || null;
+
+            return {
+                room,
+                completed: rCompleted.length,
+                inProgress: rInProg.length,
+                planned: rPlanned.length,
+                totalMinutes: rMinutes,
+                latestExit,
+                cases: rCases.length,
+                hasInProgress: rInProg.length > 0,
+                roomData: {
+                    roomId: room,
+                    date: selectedDateISO,
+                    surgeries: rCases,
+                } as RoomData,
+            };
+        });
+
+        function formatMinutesToHMM(totalMinutes: number): string {
+            const hours = Math.floor(totalMinutes / 60);
+            const minutes = totalMinutes % 60;
+            return `${hours}:${minutes.toString().padStart(2, "0")}`;
+        }
+
+        const busiest =
+            byRoom.reduce((best, r) => {
+                if (!best) return r;
+                if (r.totalMinutes > best.totalMinutes) return r;
+                if (r.totalMinutes === best.totalMinutes) {
+                    if (r.completed > best.completed) return r;
+                    if (
+                        r.completed === best.completed &&
+                        r.room.localeCompare(best.room) < 0
+                    )
+                        return r;
+                }
+                return best;
+            }, null as any) || null;
+
+        if (busiest) {
+            busiest.totalHMM = formatMinutesToHMM(busiest.totalMinutes);
+        }
+
+        const maxMinutes = Math.max(...byRoom.map((r) => r.totalMinutes));
+
+        this.busiestRooms = byRoom
+            .filter((r) => r.totalMinutes === maxMinutes)
+            .map((r) => ({
+                ...r,
+                totalHMM: formatMinutesToHMM(r.totalMinutes),
+            }));
+
+        const inProgressList = inProg
+            .slice()
+            .sort((a, b) =>
+                (
+                    a.TimeEntranceToTheOperatingRoom ??
+                    a.timeEntrance ??
+                    ""
+                ).localeCompare(
+                    b.TimeEntranceToTheOperatingRoom ?? b.timeEntrance ?? ""
+                )
+            )
+
+            .map((s) => ({
+                room: s.SurgeryRoom ?? s.roomId ?? s.surgeryRoom ?? s.room,
+                title: this._pickTitleCompat(s),
+                depart: (s.DepartName ?? s.department ?? "").toString().trim(),
+                start: s.TimeEntranceToTheOperatingRoom ?? s.timeEntrance ?? "",
+                end: s.TimeExitingTheOperatingRoom ?? s.timeExit ?? "",
+                plannedMinutes: this._num(
+                    s.TimeSurgeryToDo ?? s.timeToDo ?? s.duration
+                ),
+            }));
+
+        const urgencyLabels = {
+            urgent: "דחוף",
+            sessionInpatient: "ססיה - אשפוז",
+            elective: "אלקטיב",
+            ambulatory: "אמבולטורי",
+            noPriority: "ללא עדיפות",
+            unknown: "דחיפות לא מוגדרת",
+        };
+        const urgencyIcons = {
+            urgent: "🚑",
+            sessionInpatient: "🏥",
+            elective: "📖",
+            ambulatory: "🚶",
+            noPriority: "⬇️",
+            unknown: "❔",
+        };
+
+        const counts = {
+            urgent: 0,
+            sessionInpatient: 0,
+            elective: 0,
+            ambulatory: 0,
+            noPriority: 0,
+            unknown: 0,
+        };
+        const lists = {
+            urgent: [] as any[],
+            sessionInpatient: [] as any[],
+            elective: [] as any[],
+            ambulatory: [] as any[],
+            noPriority: [] as any[],
+            unknown: [] as any[],
+        };
+
+        for (const s of todays) {
+            const key = this._readUrgencyKey(s);
+            counts[key] = (counts[key] ?? 0) + 1;
+            lists[key].push(s);
+        }
+
+        return {
+            dateISO: selectedDateISO,
+            totals: {
+                surgeries: todays.length,
+                completed: completed.length,
+                inProgress: inProg.length,
+                planned: planned.length,
+            },
+            urgency: {
+                labels: urgencyLabels,
+                icons: urgencyIcons,
+                counts,
+                lists,
+            },
+            rooms: {
+                total: rooms.length,
+                active: activeRooms,
+                free: freeRooms,
+            },
+            time: {
+                totalMinutes: sumCompletedMinutes,
+                avgMinutes: avgCaseMinutes,
+                totalHMM: this._formatHMM_fromMinutes(sumCompletedMinutes),
+                avgHMM: this._formatHMM_fromMinutes(avgCaseMinutes),
+            },
+            busiest: busiest
+                ? {
+                      room: busiest.room,
+                      totalHMM: this._formatHMM(busiest.totalMinutes),
+                      cases: busiest.completed,
+                      hasInProgress:
+                          byRoom.find((r) => r.room === busiest.room)
+                              ?.inProgress > 0,
+                  }
+                : null,
+            byRoom,
+            inProgressList,
+        };
+    }
+
+    getUrgencyKeys(urgency: any): string[] {
+        return [
+            "urgent",
+            "sessionInpatient",
+            "elective",
+            "ambulatory",
+            "noPriority",
+            "unknown",
+        ];
+    }
+
+    private _getSurgeriesArray(): any[] {
+        const top = (this as any).surgeries || (this as any).data?.surgeries;
+        if (Array.isArray(top) && top.length) return top;
+        if (Array.isArray(this.roomsData) && this.roomsData.length) {
+            const out: any[] = [];
+            for (const r of this.roomsData) {
+                if (!r?.surgeries) continue;
+                for (const s of r.surgeries) {
+                    out.push({
+                        ...s,
+                        SurgeryRoom: s.SurgeryRoom ?? r.roomId,
+                        SurgeryDate:
+                            s.SurgeryDate ??
+                            s.surgeryDate ??
+                            r.date ??
+                            this.selectedDate,
+                        TimeEntranceToTheOperatingRoom:
+                            s.TimeEntranceToTheOperatingRoom ??
+                            s.timeEntrance ??
+                            null,
+                        TimeExitingTheOperatingRoom:
+                            s.TimeExitingTheOperatingRoom ?? s.timeExit ?? null,
+                        SurgeryStatus: s.SurgeryStatus ?? s.status ?? "",
+                    });
+                }
+            }
+            return out;
+        }
+        return [];
+    }
+
+    private _num(v: any): number {
+        const n = parseInt(v as any, 10);
+        return Number.isFinite(n) ? n : NaN;
+    }
+    private _toISODate(d: Date): string {
+        const y = d.getFullYear();
+        const m = (d.getMonth() + 1).toString().padStart(2, "0");
+        const day = d.getDate().toString().padStart(2, "0");
+        return `${y}-${m}-${day}`;
+    }
+
+    private _timeToDate(dateISO: string, hhmm?: string | null): Date | null {
+        if (!hhmm) return null;
+        const [h, m] = hhmm.split(":").map((x) => +x);
+        if (Number.isNaN(h) || Number.isNaN(m)) return null;
+        const d = new Date(dateISO + "T00:00:00");
+        d.setHours(h, m, 0, 0);
+        return d;
+    }
+    private _diffMinutesSafe(
+        dateISO: string,
+        start?: string | null,
+        end?: string | null
+    ): number | null {
+        const s = this._timeToDate(dateISO, start);
+        const e = this._timeToDate(dateISO, end);
+        if (!s || !e) return null;
+        return Math.max(0, Math.round((e.getTime() - s.getTime()) / 60000));
+    }
+
+    private _pickTitleCompat(s: any): string {
+        const name = (s.SurgeryName ?? s.surgeryName ?? "").toString().trim();
+        const code = (s.SurgeryCode ?? s.surgeryCode ?? "").toString().trim();
+        if (name && code) return `${name} (${code})`;
+        if (name) return name;
+        if (code) return code;
+        return "—";
+    }
+
+    private _formatHMM_fromMinutes(
+        totalMinutes: number | string | null | undefined
+    ): string {
+        const tNum = this._toNumber(totalMinutes, 0);
+        const t = Math.max(0, Math.round(tNum));
+        const h = Math.floor(t / 60);
+        const m = t % 60;
+        return `${h}:${m.toString().padStart(2, "0")}`;
+    }
+
+    private _completedMinutes(s: any, dateISO: string): number {
+        const start = this._get<string>(
+            s,
+            "TimeEntranceToTheOperatingRoom",
+            "timeEntrance"
+        );
+        const end = this._get<string>(
+            s,
+            "TimeExitingTheOperatingRoom",
+            "timeExit"
+        );
+
+        const diff = this._diffMinutesSafe(dateISO, start, end);
+        if (diff != null && Number.isFinite(diff)) {
+            return diff >= 0 ? diff : diff + 24 * 60;
+        }
+
+        const declared = this._toNumber(
+            this._get(s, "TimeSurgeryToDo", "timeToDo", "duration"),
+            NaN
+        );
+        return Number.isFinite(declared) ? declared : 0;
+    }
+
+    private _get<T = any>(obj: any, ...keys: string[]): T | null {
+        for (const k of keys) {
+            const v = obj?.[k];
+            if (v !== undefined && v !== null && v !== "") return v as T;
+        }
+        return null;
+    }
+
+    private _toNumber(v: any, fallback = 0): number {
+        if (typeof v === "number") return v;
+        if (typeof v === "string") {
+            const n = Number(v.trim());
+            return Number.isFinite(n) ? n : fallback;
+        }
+        return fallback;
+    }
+
+    summaryDrilldownUrgency:
+        | "urgent"
+        | "sessionInpatient"
+        | "elective"
+        | "ambulatory"
+        | "noPriority"
+        | "unknown"
+        | null = null;
+
+    private _readUrgencyKey(
+        s: any
+    ):
+        | "urgent"
+        | "sessionInpatient"
+        | "elective"
+        | "ambulatory"
+        | "noPriority"
+        | "unknown" {
+        const raw =
+            s?.Urgency ??
+            s?.urgency ??
+            s?.Priority ??
+            s?.priority ??
+            s?.Triage ??
+            s?.triage ??
+            "";
+        return this._normalizeUrgency(raw);
+    }
+
+    private _normalizeUrgency(
+        u: any
+    ):
+        | "urgent"
+        | "sessionInpatient"
+        | "elective"
+        | "ambulatory"
+        | "noPriority"
+        | "unknown" {
+        const s = (u ?? "").toString().trim().toLowerCase();
+        if (!s) return "unknown";
+
+        if (s.includes("דחוף")) return "urgent";
+        if (s.includes("ססיה")) return "sessionInpatient";
+        if (s.includes("אלקט")) return "elective";
+        if (s.includes("אמבול")) return "ambulatory";
+        if (s.includes("ללא עדיפ")) return "noPriority";
+
+        if (s.includes("emerg")) return "urgent";
+        if (s.includes("session") || s.includes("inpatient"))
+            return "sessionInpatient";
+        if (s.includes("elective")) return "elective";
+        if (s.includes("ambul")) return "ambulatory";
+        if (
+            s.includes("no prior") ||
+            s.includes("no-prior") ||
+            s.includes("no priority")
+        )
+            return "noPriority";
+
+        return "unknown";
+    }
+    getRoomShortStatus(room: RoomData): "פנוי" | "בניתוח" {
+        return !this.hasInProgress(room) ? "פנוי" : "בניתוח";
+    }
+    // הוסף לתוך RoomTimeRTmDashboardComponent
+
+    getRoomDepartment(room: RoomData): string | null {
+        if (!room?.surgeries?.length) return null;
+
+        // קח את המחלקה מהניתוח הראשון הפעיל
+        const activeSurgeries = this.activeSurgeries(room);
+        if (activeSurgeries.length > 0) {
+            const dept =
+                activeSurgeries[0].department || activeSurgeries[0].department;
+            return dept?.trim() || null;
+        }
+
+        // אם אין פעילים, קח מהראשון שכל זה
+        const firstSurgery = room.surgeries[0];
+        const dept = firstSurgery?.department || firstSurgery?.department;
+        return dept?.trim() || null;
+    }
+
+    /**
+     * סטטוס החדר: ניתוח פעיל / הסתיים / פנוי
+     */
+    getRoomStatusInfo(room: RoomData): {
+        label: string;
+        cssClass: string;
+    } | null {
+        if (!room?.surgeries?.length) {
+            return {
+                label: "🟢 חדר פנוי",
+                cssClass: "status-free",
+            };
+        }
+
+        // בדוק אם יש ניתוח פעיל
+        if (this.hasInProgress(room)) {
+            return {
+                label: "✅ ניתוח פעיל",
+                cssClass: "status-completed",
+            };
+        }
+
+        // בדוק אם יש ניתוח שהסתיים זה עתה
+        const lastCompleted = [...room.surgeries]
+            .reverse()
+            .find((s) => s.status === "Completed");
+
+        if (lastCompleted) {
+            return {
+                label: "🔴 ניתוח הסתיים",
+                cssClass: "status-active",
+            };
+        }
+
+        return {
+            label: "📋 מתוכנן",
+            cssClass: "status-planned",
+        };
+    }
+    getRoomProgressInfo(room: RoomData): {
+        completed: number;
+        total: number;
+        label: string;
+    } | null {
+        if (!room?.surgeries?.length) return null;
+
+        const completed = room.surgeries.filter((s) => {
+            const t =
+                s.TimeEntranceToTheOperatingRoom || (s as any).timeEntrance;
+            return !!t && t !== "00:00" && t !== "00:00:00";
+        }).length;
+
+        const total = room.surgeries.length;
+
+        return {
+            completed,
+            total,
+            label: completed === total ? "הושלמו הכל" : "בוצעו",
+        };
+    }
+
+    getRoomDetailsPanel(room: RoomData): {
+        totalDelayHMM: string; // משך עיכובים מצטבר מתחילת יום (7:30)
+        overrunText: string; // משך גלישה צפוי
+        freeFromText: string; // חדר פנוי החל מ
+        idleTimeText: string; // זמן שעבר מסיום הניתוח הקודם
+    } {
+        // 1) עיכובים מצטבר = זמן הכנת חדר מעבר ל-20 דק'
+        const totalDelayHMM = this.getTurnoverSummary(room) || "--:--";
+
+        // 2) גלישה צפויה (לפי late meta)
+        const late = this.getRoomLateMeta(room);
+        const overrunText =
+            late && late.isLate && late.overrunMin > 0
+                ? this._formatHMM_fromMinutes(late.overrunMin)
+                : "--:--";
+
+        // 3) חדר פנוי החל מ (שעת סיום הניתוח הקודם)
+        const lastCompletedSurgery = this.findLastCompletedSurgery(room);
+        let freeFromText = "--:--";
+        let idleTimeText = "--:--";
+
+        if (lastCompletedSurgery) {
+            const lastEndTime = this.getLastSurgeryEndTime(
+                lastCompletedSurgery,
+                new Date(room.date)
+            );
+            if (lastEndTime) {
+                // שעה שהחדר התחיל להיות פנוי
+                freeFromText = this._formatClock(lastEndTime);
+
+                // זמן שעבר מסיום הניתוח עד עכשיו
+                const now = new Date();
+                const dayEnd = this.workingEnd(room.date);
+                const nowClamped = now < dayEnd ? now : dayEnd;
+
+                const elapsedMin = Math.max(
+                    0,
+                    Math.floor(
+                        (nowClamped.getTime() - lastEndTime.getTime()) / 60000
+                    )
+                );
+
+                if (elapsedMin > 0) {
+                    idleTimeText = this.formatHM(elapsedMin);
+                }
+            }
+        }
+
+        return { totalDelayHMM, overrunText, freeFromText, idleTimeText };
+    }
+
+    // private getRoomFreeFrom(room: RoomData): Date | null {
+    //     if (!room) return null;
+
+    //     // אם אין ניתוח פעיל → פנוי עכשיו (אבל נציג את השעה הנוכחית ב"יום הנבחר")
+    //     if (!this.hasInProgress(room)) {
+    //         return this._nowInSelectedDay();
+    //     }
+
+    //     // אם יש פעיל → ננסה לנבא לפי active + TimeSurgeryToDo (+ 20 דק' הכנה)
+    //     const baseDate = room.date || this.selectedDate;
+    //     const now = this._nowInSelectedDay();
+
+    //     let active: any = null;
+    //     for (const s of room.surgeries || []) {
+    //         if (
+    //             this.isInProgressStatus(
+    //                 (s as any).status ?? (s as any).SurgeryStatus
+    //             )
+    //         ) {
+    //             const ent = this.parseClockWithDate(
+    //                 (s as any).timeEntrance ??
+    //                     (s as any).TimeEntranceToTheOperatingRoom,
+    //                 baseDate
+    //             );
+    //             if (
+    //                 !active ||
+    //                 (ent &&
+    //                     active._ent &&
+    //                     ent.getTime() > active._ent.getTime())
+    //             ) {
+    //                 active = { row: s, _ent: ent };
+    //             }
+    //         }
+    //     }
+    //     if (!active || !active._ent) return null;
+
+    //     const plannedMinRaw =
+    //         (active.row as any).timeSurgeryToDo ??
+    //         (active.row as any).TimeSurgeryToDo;
+    //     const plannedMin =
+    //         Number.isFinite(+plannedMinRaw) && +plannedMinRaw > 0
+    //             ? Math.round(+plannedMinRaw)
+    //             : 60;
+
+    //     const end = new Date(active._ent.getTime() + plannedMin * 60000);
+    //     const free = new Date(end.getTime() + 20 * 60000);
+
+    //     // אם החישוב יצא בעבר, לפחות "עכשיו"
+    //     return free < now ? now : free;
+    // }
+
+    /**
+     * חילוץ זמן הסיום של הניתוח (תומך במספר שדות)
+     */
+
+    /**
+     * המרת שעה:דקה לדקות
+     */
+    private hmToMinutes(hm: string | null): number | null {
+        if (!hm || !hm.includes(":")) return null;
+        const [h, m] = hm.split(":").map((x) => +x);
+        return Number.isFinite(h) && Number.isFinite(m) ? h * 60 + m : null;
+    }
+
+    /**
+     * בדיקה אם סטטוס הוא "בתהליך"
+     */
+    private isInProgressStatus(status: any): boolean {
+        const s = (status ?? "").toString().toLowerCase().trim();
+        return s === "inprogress" || s === "in progress" || s.includes("בתהל");
+    }
+
+    /**
+     * בדיקה אם סטטוס הוא "הושלם"
+     */
+    private isCompletedStatus(status: any): boolean {
+        const s = (status ?? "").toString().toLowerCase().trim();
+        return (
+            s === "completed" ||
+            s === "סגור" ||
+            s.includes("הושל") ||
+            s.includes("בוצע")
+        );
+    }
+
+    /**
+     * חילוץ שעת סיום ניתוח (תומך בשתי כינויות)
+     */
+    private getExitTime(surgery: any): string | null {
+        return (
+            surgery?.timeExit ?? surgery?.TimeExitingTheOperatingRoom ?? null
+        );
+    }
+
+    /**
+     * חילוץ שעת כניסה ניתוח (תומך בשתי כינויות)
+     */
+    private getEntranceTime(surgery: any): string | null {
+        return (
+            surgery?.timeEntrance ??
+            surgery?.TimeEntranceToTheOperatingRoom ??
+            null
+        );
+    }
+
+    /**
+     * בדיקה אם שעה היא ריקה/אפס
+     */
+    private isZeroTime(time: string | null): boolean {
+        if (!time) return true;
+        return time === "00:00" || time === "00:00:00";
+    }
+
+    // ============================================
+    // 3️⃣ שיפור getTurnoverSummary (חישוב עיכובים)
+    // ============================================
+
+    getTurnoverSummary(room: RoomData): string {
+        if (!room?.surgeries?.length || !room.date) return "";
+
+        const baseDate = room.date;
+        const dayStart = this.workingStart(baseDate);
+        const dayEnd = this.workingEnd(baseDate);
+        const now = new Date();
+        const nowClamped = now < dayEnd ? now : dayEnd;
+
+        // ✅ בנה רשימת ניתוחים שנוסדו בתוך משמרת העבודה
+        const intervals = this.buildCompletedIntervals(
+            room,
+            baseDate,
+            dayStart,
+            dayEnd
+        );
+        if (!intervals.length) return "";
+
+        let totalIdleMin = 0;
+
+        // ✅ חישוב פערים בין ניתוחים
+        for (let i = 0; i < intervals.length - 1; i++) {
+            const gap = Math.floor(
+                (intervals[i + 1].start.getTime() -
+                    intervals[i].end.getTime()) /
+                    60000
+            );
+            if (gap > 20) {
+                totalIdleMin += gap - 20; // הפחת 20 דקות הכנה רגילות
+            }
+        }
+
+        // ✅ חישוב זמן מת אחרי הניתוח האחרון (אם הסתיים)
+        const lastInterval = intervals[intervals.length - 1];
+        if (lastInterval && this.isCompleted(lastInterval)) {
+            const idle = Math.floor(
+                (nowClamped.getTime() - lastInterval.end.getTime()) / 60000
+            );
+            if (idle > 20) {
+                totalIdleMin += idle - 20;
+            }
+        }
+
+        return totalIdleMin > 0 ? this.formatHM(totalIdleMin) : "";
+    }
+
+    /**
+     * בנייה של רשימת ניתוחים שהושלמו בתוך משמרה
+     */
+    private buildCompletedIntervals(
+        room: RoomData,
+        baseDate: string | Date,
+        dayStart: Date,
+        dayEnd: Date
+    ): Array<{ start: Date; end: Date; status: string }> {
+        return room.surgeries
+            .map((s: any) => {
+                const status = (
+                    s.status ??
+                    s.SurgeryStatus ??
+                    ""
+                ).toLowerCase();
+                const isCompleted = this.isCompletedStatus(status);
+                const isInProgress = this.isInProgressStatus(status);
+
+                if (!isCompleted && !isInProgress) return null;
+
+                const startStr = this.getEntranceTime(s);
+                const endStr = this.getExitTime(s);
+                if (!startStr) return null;
+
+                let start = this.parseClockWithDate(startStr, baseDate);
+                let end =
+                    endStr && !this.isZeroTime(endStr)
+                        ? this.parseClockWithDate(endStr, baseDate)
+                        : start;
+
+                if (!start || !end) return null;
+
+                // ✅ טיפול בחציית חצות
+                if (end.getTime() < start.getTime()) {
+                    end = new Date(end.getTime() + 24 * 60 * 60 * 1000);
+                }
+
+                // ✅ בדיקה אם בתוך משמרה
+                if (start >= dayEnd || end <= dayStart) return null;
+
+                return { start, end, status };
+            })
+            .filter((i): i is NonNullable<typeof i> => !!i)
+            .sort((a, b) => a.start.getTime() - b.start.getTime());
+    }
+
+    /**
+     * בדיקה אם הניתוח הושלם (עבור רשימת intervals)
+     */
+    private isCompleted(interval: { status: string }): boolean {
+        return this.isCompletedStatus(interval.status);
+    }
+
+    // ============================================
+    // 4️⃣ שיפור getRoomLateMeta (חישוב עיכוב צפוי)
+    // ============================================
+
+    /**
+     * חישוב כללי של עיכוב צפוי וחפיפת עומס
+     */
+    getRoomLateMeta(room: RoomData): LateMeta | null {
+        if (!room) return null;
+
+        if (this.isRoomPastDay(room)) {
+            const summary = this.getTurnoverSummary(room);
+            const turnoverUsed = Math.max(20, this.hmToMinutes(summary) ?? 20);
+            return {
+                isLate: false,
+                predictedEnd: null,
+                overrunMin: 0,
+                turnoverUsed: turnoverUsed,
+                hasOverlapBacklog: false,
+                backlogCount: 0,
+                overlapUntil: null,
+            };
+        }
+
+        const baseDate = room.date || this.selectedDate;
+        const shiftEnd = this.workingEnd(baseDate);
+        const shiftStart = this.workingStart(baseDate);
+
+        // ✅ בנייה ונרמול רשימת ניתוחים
+        const surgeryList = this.buildSurgeryListForLateMeta(room, baseDate);
+        if (!surgeryList.length) {
+            return {
+                isLate: false,
+                predictedEnd: null,
+                overrunMin: 0,
+                turnoverUsed: 20,
+                hasOverlapBacklog: false,
+            };
+        }
+
+        // ✅ חישוב סיום צפוי
+        const predictedEnd = this.simulateSurgeryEnd(
+            surgeryList,
+            shiftStart,
+            shiftEnd
+        );
+
+        const isLate =
+            predictedEnd && predictedEnd.getTime() > shiftEnd.getTime();
+        const overrunMin = isLate
+            ? Math.max(
+                  0,
+                  Math.round(
+                      (predictedEnd!.getTime() - shiftEnd.getTime()) / 60000
+                  )
+              )
+            : 0;
+
+        const turnoverUsed = Math.max(
+            20,
+            this.hmToMinutes(this.getTurnoverSummary(room)) ?? 20
+        );
+        const overlap = this.computeOverlapBacklog(room, turnoverUsed);
+
+        return {
+            isLate,
+            predictedEnd: predictedEnd ?? null,
+            overrunMin,
+            turnoverUsed,
+            hasOverlapBacklog: overlap.hasOverlap,
+            backlogCount: overlap.count,
+            overlapUntil: overlap.until,
+        };
+    }
+
+    /**
+     * בנייה של רשימת ניתוחים לחישוב עיכוב
+     */
+    private buildSurgeryListForLateMeta(
+        room: RoomData,
+        baseDate: string | Date
+    ): Array<{
+        entrance: Date | null;
+        expectedMin: number;
+        status: string;
+    }> {
+        return room.surgeries
+            .map((s: any) => {
+                const startStr = this.getEntranceTime(s);
+                if (!startStr) return null;
+
+                const entrance = this.parseClockWithDate(startStr, baseDate);
+                if (!entrance) return null;
+
+                const expectedMin = this.getExpectedDuration(s);
+
+                return {
+                    entrance,
+                    expectedMin,
+                    status: (s.status ?? s.SurgeryStatus ?? "").toLowerCase(),
+                };
+            })
+            .filter((s): s is NonNullable<typeof s> => !!s)
+            .sort((a, b) => a.entrance.getTime() - b.entrance.getTime());
+    }
+
+    /**
+     * קבל את משך הניתוח החזוי
+     */
+    private getExpectedDuration(surgery: any): number {
+        const declared = surgery?.TimeSurgeryToDo ?? surgery?.timeSurgeryToDo;
+        if (declared != null && !Number.isNaN(+declared)) {
+            const val = Math.max(0, Math.round(+declared));
+            if (val > 0) return val;
+        }
+        return 60; // ברירת מחדל
+    }
+
+    /**
+     * סימולציית סיום ניתוחים בשורה
+     */
+    private simulateSurgeryEnd(
+        surgeryList: Array<{
+            entrance: Date;
+            expectedMin: number;
+            status: string;
+        }>,
+        shiftStart: Date,
+        shiftEnd: Date
+    ): Date | null {
+        const TURNOVER_MIN = 20;
+        let cursor: Date | null = null;
+        let hasActiveBefore1430 = false;
+
+        for (const item of surgeryList) {
+            if (item.entrance.getTime() >= shiftEnd.getTime()) break;
+
+            const start = cursor
+                ? new Date(
+                      Math.max(
+                          item.entrance.getTime(),
+                          cursor.getTime() + TURNOVER_MIN * 60000
+                      )
+                  )
+                : item.entrance;
+
+            const end = new Date(start.getTime() + item.expectedMin * 60000);
+
+            if (end.getTime() > shiftEnd.getTime()) {
+                hasActiveBefore1430 =
+                    item.entrance.getTime() <
+                    new Date(shiftStart).setHours(14, 30, 0, 0);
+                if (hasActiveBefore1430) {
+                    return end;
+                }
+            }
+
+            cursor = end;
+        }
+
+        return cursor;
+    }
+    getRoomDurationInfo(room: RoomData): {
+        icon: string;
+        text: string;
+        time: string;
+        color: string;
+        isIdleOver20Min: boolean;
+        isIdleOver40Min?: boolean;
+    } | null {
+        if (!room?.surgeries?.length || !room.date) return null;
+
+        const now = new Date();
+        const dayEnd = this.workingEnd(room.date);
+        const nowClamped = now < dayEnd ? now : dayEnd;
+
+        // ✅ בדיקה 1: יש ניתוח בתהליך?
+        const activeSurgery = this.getActiveSurgery(room);
+        if (activeSurgery) {
+            return this.getActiveDurationInfo(activeSurgery, room.date, now);
+        }
+
+        // ✅ בדיקה 2: אם כל הניתוחים בתהליך או מתוכננים ללא זמנים
+        if (this.hasNoTimeEntriesAtAll(room)) {
+            return {
+                icon: "❓",
+                text: "לא הוזנו זמנים",
+                time: "--:--",
+                color: "gray",
+                isIdleOver20Min: false,
+                isIdleOver40Min: false,
+            };
+        }
+
+        // ✅ בדיקה 3: חדר פנוי - חישוב זמן פנאי
+        return this.getIdleDurationInfo(room, nowClamped);
+    }
+
+    /**
+     * בדיקה אם כל הניתוחים בחדר ללא זמנים הוזנים
+     */
+    private hasNoTimeEntriesAtAll(room: RoomData): boolean {
+        return room.surgeries.every((s: any) => {
+            const entrance = this.getEntranceTime(s);
+            const exit = this.getExitTime(s);
+
+            // אם שניהם חסרים או שניהם 00:00 - אין זמנים
+            return (
+                (!entrance || this.isZeroTime(entrance)) &&
+                (!exit || this.isZeroTime(exit))
+            );
+        });
+    }
+
+    /**
+     * זמן הפעילות של הניתוח הנוכחי
+     */
+    private getActiveDurationInfo(
+        surgery: any,
+        baseDate: string | Date,
+        now: Date
+    ): {
+        icon: string;
+        text: string;
+        time: string;
+        color: string;
+        isIdleOver20Min: boolean;
+        isIdleOver40Min: boolean;
+    } | null {
+        const startStr = this.getEntranceTime(surgery);
+
+        // ✅ אם אין שעת כניסה או היא 00:00 - טרם הוזן זמן
+        if (!startStr || this.isZeroTime(startStr)) {
+            return {
+                icon: "📝",
+                text: "ניתוח בביצוע (טרם הוזן זמן)",
+                time: "--:--",
+                color: "orange",
+                isIdleOver20Min: false,
+                isIdleOver40Min: false,
+            };
+        }
+
+        const startTime = this.parseClockWithDate(startStr, baseDate);
+        if (!startTime) return null;
+
+        const elapsedMin = Math.max(
+            0,
+            Math.floor((now.getTime() - startTime.getTime()) / 60000)
+        );
+        const hm = this.formatHM(elapsedMin);
+
+        return {
+            icon: "⏱️",
+            text: `חדר פעיל ${hm}`,
+            time: hm,
+            color: "inherit",
+            isIdleOver20Min: false,
+            isIdleOver40Min: elapsedMin > 40,
+        };
+    }
+
+    /**
+     * זמן ההמתנה/פנאי כשאין ניתוח פעיל
+     * חישוב: מסוף הניתוח הקודם ועד עכשיו
+     */
+    private getIdleDurationInfo(
+        room: RoomData,
+        nowClamped: Date
+    ): {
+        icon: string;
+        text: string;
+        time: string;
+        color: string;
+        isIdleOver20Min: boolean;
+        isIdleOver40Min: boolean;
+    } | null {
+        const lastCompletedSurgery = this.findLastCompletedSurgery(room);
+        if (!lastCompletedSurgery) return null;
+
+        const lastEndTime = this.getLastSurgeryEndTime(
+            lastCompletedSurgery,
+            new Date(room.date)
+        );
+        if (!lastEndTime) return null;
+
+        // ✅ בדוק אם יש ניתוח שהתחיל אחרי הסיום
+        if (this.hasSubsequentSurgery(room, lastEndTime)) {
+            return null;
+        }
+
+        // ✅ חישוב זמן פנאי מסיום הניתוח
+        const idleMin = Math.max(
+            0,
+            Math.floor((nowClamped.getTime() - lastEndTime.getTime()) / 60000)
+        );
+
+        // אם חלפו פחות מ-1 דקה, לא הצג (החדר זה עתה שוחרר)
+        if (idleMin < 1) return null;
+
+        const hm = this.formatHM(idleMin);
+        const isOverdue = idleMin > 20;
+
+        // ✅ הצג שעה שהחדר החל להיות פנוי
+        const idleStartTime = this._formatClock(lastEndTime);
+
+        return {
+            icon: isOverdue ? "⚠️" : "😴",
+            text: `חדר פנוי ${hm}
+            `,
+            time: hm,
+            color: isOverdue ? "red" : "inherit",
+            isIdleOver20Min: isOverdue,
+            isIdleOver40Min: idleMin > 40,
+        };
+    }
+
+    /**
+     * מציאת הניתוח האחרון שהושלם
+     */
+    private findLastCompletedSurgery(room: RoomData): any | null {
+        return [...room.surgeries].reverse().find((s: any) => {
+            const status = s.status ?? s.SurgeryStatus;
+            const endStr = this.getExitTime(s);
+
+            return (
+                this.isCompletedStatus(status) &&
+                endStr &&
+                !this.isZeroTime(endStr)
+            );
+        });
+    }
+
+    /**
+     * חילוץ זמן הסיום של הניתוח (תומך במספר שדות)
+     */
+    private getLastSurgeryEndTime(surgery: any, date: Date): Date | null {
+        const endStr =
+            surgery.timeEndSurgery ??
+            surgery.TimeEndSurgery ??
+            this.getExitTime(surgery);
+
+        if (!endStr || this.isZeroTime(endStr)) return null;
+
+        return this.parseClockWithDate(endStr, date);
+    }
+
+    /**
+     * בדיקה אם יש ניתוח שהתחיל אחרי סיום נתוח מסוים
+     */
+    private hasSubsequentSurgery(
+        room: RoomData,
+        referenceEndTime: Date
+    ): boolean {
+        return room.surgeries.some((s: any) => {
+            const startStr = this.getEntranceTime(s);
+            if (!startStr || this.isZeroTime(startStr)) return false;
+
+            const start = this.parseClockWithDate(startStr, room.date);
+            return start && start.getTime() > referenceEndTime.getTime();
+        });
+    }
+
+    /**
+     * מציאת הניתוח הפעיל ביותר עדכני
+     */
+    private getActiveSurgery(room: RoomData): any | null {
+        let active: any = null;
+        let latestTime = -Infinity;
+
+        for (const s of room.surgeries || []) {
+            if (!this.isInProgressStatus(s.status ?? s.SurgeryStatus)) continue;
+
+            const ent = this.getEntranceTime(s);
+            if (!ent) continue;
+
+            const time = this.parseClockWithDate(ent, room.date);
+            if (time && time.getTime() > latestTime) {
+                active = s;
+                latestTime = time.getTime();
+            }
+        }
+
+        return active;
+    }
+
+    /**
+     * עיצוב זמני כניסה ויציאה של ניתוח
+     * טיפול בחסרות וזמנים לא תקינים (00:00)
+     * אם אין זמן יציאה - מחשב זמן משוער
+     */
+    formatSurgeryTimes(surgery: any): string {
+        const entrance = this.getEntranceTime(surgery);
+        const exit = this.getExitTime(surgery);
+
+        const entranceDisplay = this.formatTimeForDisplay(entrance);
+        const exitDisplay = this.formatTimeForDisplay(exit);
+
+        // אם אין זמן יציאה - הוסף טקסט עם משך משוער
+        if (!exit || this.isZeroTime(exit)) {
+            const expectedMin = this.getExpectedDuration(surgery);
+            const estimatedExit = this.calculateEstimatedEndTime(
+                entrance,
+                expectedMin
+            );
+            const estimatedExitDisplay = estimatedExit
+                ? this._formatClock(estimatedExit)
+                : "--:--";
+
+            return `${entranceDisplay} → ${estimatedExitDisplay} (משוער: ${expectedMin}דקות)`;
+        }
+
+        return `${entranceDisplay} → ${exitDisplay}`;
+    }
+    // private formatTimeForDisplay(time: string | null): string {
+    //     if (!time || this.isZeroTime(time)) {
+    //         return "טרם הוזן";
+    //     }
+    //     return time;
+    // }
+
+    /**
+     * חישוב זמן סיום משוער בהתאם לזמן כניסה ומשך משוער
+     */
+    private calculateEstimatedEndTime(
+        entranceStr: string | null,
+        expectedMin: number
+    ): Date | null {
+        if (!entranceStr || this.isZeroTime(entranceStr)) return null;
+
+        const entrance = this.parseClock(entranceStr);
+        if (!entrance) return null;
+
+        return new Date(entrance.getTime() + expectedMin * 60000);
+    }
+
+    /**
+     * עיצוב זמן יחיד לתצוגה
+     * - אם חסר או 00:00 → "טרם הוזן"
+     * - אחרת → הזמן כפי שהוא
+     */
+    private formatTimeForDisplay(time: string | null): string {
+        if (!time || this.isZeroTime(time)) {
+            return "טרם הוזן";
+        }
+        return time;
+    }
+    /**
+     * עיצוב זמן יחיד לתצוגה
+     * - אם חסר או 00:00 → "טרם הוזן"
+     * - אחרת → הזמן כפי שהוא
+     */
+
+    statusHebrew: Record<string, string> = {
+        Completed: "הושלם",
+        InProgress: "בביצוע",
+        Planned: "מתוכנן",
     };
 
-    const list: Norm[] = [];
+    // הוסף בקומפוננטה
 
-    for (const sAny of room.surgeries as any[]) {
-      const s = sAny || {};
+    getIdleMinutes(room: RoomData): number {
+        if (this.hasInProgress(room)) return 0;
 
-      const eClock = s.timeEntrance ?? s.TimeEntranceToTheOperatingRoom;
-      if (!eClock) continue;
+        // את זה כבר יש לך בפאנל: d.freeFromText / freeFromDate.
+        // נשתמש ב"מאז מתי החדר פנוי" מתוך ה-room details.
+        const d = this.getRoomDetailsPanel(room) as any;
+        const freeFrom: Date | null = d?.freeFromDate ?? null; // <-- אם אין לך freeFromDate, תוסיף שם
 
-      const xRaw = s.timeExit ?? s.TimeExitingTheOperatingRoom;
-      const base = s.surgeryDate ?? s.SurgeryDate ?? baseDate;
+        if (!freeFrom) return 0;
 
-      let entrance = this.parseClockWithDate(eClock, base);
-      let exit = xRaw && !isZeroClock(xRaw) ? this.parseClockWithDate(xRaw, base) : null;
+        const now = new Date();
+        return Math.max(
+            0,
+            Math.floor((now.getTime() - freeFrom.getTime()) / 60000)
+        );
+    }
 
-      if (!entrance) continue;
-      if (exit && exit.getTime() < entrance.getTime()) exit = new Date(exit.getTime() + DAY_MS);
+    getIdleBorderClass(room: RoomData): string {
+        const m = this.getIdleMinutes(room);
+        if (m >= 40) return "idle-40";
+        if (m >= 20) return "idle-20";
+        return "";
+    }
 
-      const status = String(s.status ?? s.SurgeryStatus ?? '').toLowerCase();
+    toMinutes(hhmm: string): number {
+        if (!hhmm) return 0;
+        const [h, m] = hhmm.split(":").map(Number);
+        return h * 60 + m;
+    }
+    // component.ts
 
-      let expectedMin: number | null = null;
-      const ttd = s.TimeSurgeryToDo ?? s.timeSurgeryToDo;
-      if (ttd != null && !isNaN(+ttd)) expectedMin = Math.max(0, Math.round(+ttd));
-      if (expectedMin == null && exit) {
-        expectedMin = Math.max(0, Math.round((exit.getTime() - entrance.getTime()) / 60000));
-      }
+    hasDuration(s: any): boolean {
+        const v = s?.TimeSurgeryToDo ?? s?.timeSurgeryToDo;
+        const n = typeof v === "number" ? v : parseInt(String(v ?? ""), 10);
+        return Number.isFinite(n) && n > 0;
+    }
 
-      const exemptLate = this.isLateExemptByUrgency ? this.isLateExemptByUrgency(s) : false;
-      let sortStartMs = entrance.getTime();
-      if (exit && entrance && exit.getDate() !== entrance.getDate()) {
-        sortStartMs = sortStartMs - DAY_MS; 
-      }
-      const urgRank = urgencyRankOf(s);
-      const statRank = statusRankOf(status);
-      const idKey = (s.SurgeryID != null ? String(s.SurgeryID)
-        : (s.CaseNumber != null ? String(s.CaseNumber) : ''));
+    // uses the already computed _displayEnd from sortByPredicted (loadRoomsData)
+    getEstimatedEnd(s: any, room: RoomData): string | null {
+        const end: Date | null = s?._displayEnd ?? null;
+        if (!end || isNaN(end.getTime())) return null;
+        return this.toHHmm(end);
+    }
+    private getRemainingWorkOverrunText(room: RoomData): string {
+        if (!room?.surgeries?.length) return "--:--";
+        if (this.isRoomPastDay(room) || this.isRoomClosedForColoring(room))
+            return "--:--";
 
-      list.push({
-        entrance, exit, expectedMin, status, raw: s,
-        exemptLate, sortStartMs, urgencyRank: urgRank, statusRank: statRank, idKey
-      });
+        const baseDate = room.date || this.selectedDate;
+        const shiftEnd = this.workingEnd(baseDate); // 15:00
+        const TURNOVER_MIN = 20;
 
-      const endForCount = exit ?? entrance; 
-      const overlapsDay = (entrance < dayEnd) && (endForCount > dayStart);
-      const overlapsShift = (entrance < shiftEnd) && (endForCount > shiftStart);
+        const nowRaw = new Date();
+        // לעבוד על "עכשיו" בתוך יום נבחר (כמו אצלך)
+        const now = this.isRoomToday(room) ? nowRaw : this._nowInSelectedDay();
 
-      if (overlapsDay) xOnDay++;
-      if (overlapsShift) {
-        xInShift++;
-        if (status === 'completed' || status === 'inprogress' || status === 'in progress' || status === 'in_progress') {
-          nInShift++;
+        // לוקחים רק ניתוחים של היום, שלא הושלמו (כולל InProgress + Planned)
+        const list = (room.surgeries as any[])
+            .filter((s) => {
+                const d = s.surgeryDate ?? s.SurgeryDate ?? baseDate;
+                return String(d).slice(0, 10) === String(baseDate).slice(0, 10);
+            })
+            .map((s) => this._normForRemainder(s, baseDate))
+            .filter((x) => x && x.entrance && x.status !== "completed")
+            .sort((a, b) => a.entrance!.getTime() - b.entrance!.getTime());
+
+        if (!list.length) return "--:--";
+
+        // מצביע זמן שממנו מתחילים לתזמן "מהעכשיו"
+        let cursor = now;
+
+        // אם יש ניתוח פעיל עכשיו -> מסיימים אותו לפי remaining, ואז מוסיפים 20 דק'
+        const active = this._pickActiveNow(room, now, baseDate);
+        if (active) {
+            const endOfActive = active.predictedEnd ?? now;
+            cursor = new Date(endOfActive.getTime() + TURNOVER_MIN * 60000);
         }
-      }
-    }
 
-    list.sort((a, b) => {
-      if (a.sortStartMs !== b.sortStartMs) return a.sortStartMs - b.sortStartMs;
-      if (a.urgencyRank !== b.urgencyRank) return a.urgencyRank - b.urgencyRank;
-      if (a.statusRank !== b.statusRank) return a.statusRank - b.statusRank;
-      if (a.idKey !== b.idKey) return a.idKey < b.idKey ? -1 : 1;
-      return 0;
-    });
+        // מתזמנים את כל המתוכננים שלאחר מכן: start=max(entrance,cursor), end=start+dur, cursor=end+20
+        let lastEnd: Date | null = active?.predictedEnd ?? null;
 
-    const now = new Date();
-    let cursor: Date | null = null;
-    let warnLate = false;
-    let warnOverlap = false;
+        for (const it of list) {
+            // מדלגים על הפעיל שכבר חישבנו
+            if (active && it.idKey === active.idKey) continue;
 
+            const start = new Date(
+                Math.max(it.entrance!.getTime(), cursor.getTime())
+            );
+            const end = new Date(start.getTime() + it.durationMin * 60000);
 
-    let activeIdx = -1;
-    for (let i = 0; i < list.length; i++) {
-      const it = list[i];
-      if ((it.status === 'inprogress' || it.status === 'in progress' || it.status === 'in_progress') && it.entrance && it.entrance <= now) {
-        if (activeIdx === -1 || (list[activeIdx].entrance!.getTime() < it.entrance.getTime())) {
-          activeIdx = i;
+            lastEnd = end;
+            cursor = new Date(end.getTime() + TURNOVER_MIN * 60000);
         }
-      }
+
+        if (!lastEnd) return "--:--";
+
+        const overrunMin = Math.max(
+            0,
+            Math.round((lastEnd.getTime() - shiftEnd.getTime()) / 60000)
+        );
+        const remainMin = Math.max(
+            0,
+            Math.round((lastEnd.getTime() - now.getTime()) / 60000)
+        );
+
+        const endHHmm = this._formatClock(lastEnd);
+        const overrunHMM =
+            overrunMin > 0 ? this._formatHMM_fromMinutes(overrunMin) : "00:00";
+        const remainHMM =
+            remainMin > 0 ? this._formatHMM_fromMinutes(remainMin) : "00:00";
+
+        // פורמט קצר: "מסיים ב-16:10 | גלישה 01:10 | נשאר 02:05"
+        return `מסיים ב-${endHHmm} | גלישה ${overrunHMM} | נשאר ${remainHMM}`;
     }
 
-    if (activeIdx >= 0) {
-      const cur = list[activeIdx];
+    private _normForRemainder(
+        s: any,
+        baseDate: string
+    ): {
+        idKey: string;
+        status: "completed" | "inprogress" | "planned" | "other";
+        entrance: Date | null;
+        durationMin: number;
+    } | null {
+        const statusRaw = String(s.status ?? s.SurgeryStatus ?? "")
+            .toLowerCase()
+            .trim();
+        const status =
+            statusRaw === "completed"
+                ? "completed"
+                : statusRaw === "inprogress" ||
+                  statusRaw === "in progress" ||
+                  statusRaw === "in_progress" ||
+                  statusRaw.includes("בתהל")
+                ? "inprogress"
+                : statusRaw === "planned" || statusRaw === "scheduled"
+                ? "planned"
+                : "other";
 
+        const eClock = s.timeEntrance ?? s.TimeEntranceToTheOperatingRoom;
+        if (!eClock) return null;
+        const entrance = this.parseClockWithDate(
+            eClock,
+            s.surgeryDate ?? s.SurgeryDate ?? baseDate
+        );
+        if (!entrance) return null;
 
-      const expMinForCur =
-        (cur.expectedMin != null) ? cur.expectedMin :
-          (cur.exit && cur.entrance) ? Math.max(0, Math.round((cur.exit.getTime() - cur.entrance.getTime()) / 60000)) :
-            60;
-
-      const elapsedMin = Math.max(0, Math.round((now.getTime() - cur.entrance!.getTime()) / 60000));
-      const remainingMin = Math.max(0, expMinForCur - elapsedMin);
-
-      const endOfCur = remainingMin > 0 ? new Date(now.getTime() + remainingMin * 60000) : now;
-      cursor = new Date(endOfCur.getTime() + TURNOVER_MIN * 60000);
-
-
-      for (let k = 0; k < list.length; k++) {
-        if (k === activeIdx) continue;
-        const it = list[k];
-        if (it.status === 'planned' && it.entrance && it.entrance < endOfCur) {
-
-          const exempt = this.isLateExemptByUrgency ? this.isLateExemptByUrgency(it.raw) : false;
-          if (!exempt) { warnOverlap = true; break; }
+        // משך משוער: קודם TimeSurgeryToDo (מתוכנן), אחרת diff אם יש exit, אחרת 60
+        let dur = 60;
+        const ttd = s.TimeSurgeryToDo ?? s.timeSurgeryToDo;
+        if (ttd != null && !isNaN(+ttd) && +ttd > 0) dur = Math.round(+ttd);
+        else {
+            const xClock = s.timeExit ?? s.TimeExitingTheOperatingRoom;
+            if (xClock && xClock !== "00:00:00") {
+                const exit = this.parseClockWithDate(
+                    xClock,
+                    s.surgeryDate ?? s.SurgeryDate ?? baseDate
+                );
+                if (exit) {
+                    const ms = exit.getTime() - entrance.getTime();
+                    const mins = Math.round(ms / 60000);
+                    if (mins > 0) dur = mins;
+                }
+            }
         }
-      }
+
+        const idKey = String(s.surgeryId ?? s.SurgeryID ?? s.CaseNumber ?? "");
+        return { idKey, status, entrance, durationMin: dur };
     }
 
-
-    for (let i = 0; i < list.length; i++) {
-      if (i === activeIdx) continue;
-      const s = list[i];
-
-      if (!cursor) cursor = s.entrance ? new Date(s.entrance) : new Date(shiftStart);
-
-      const startPred = s.entrance ? new Date(Math.max(s.entrance.getTime(), cursor.getTime())) : new Date(cursor);
-      let durMin: number;
-      if (s.exit && s.entrance && s.status === 'completed') {
-        durMin = Math.max(0, Math.round((s.exit.getTime() - s.entrance.getTime()) / 60000));
-      } else {
-        durMin = (s.expectedMin != null) ? s.expectedMin :
-          (s.exit && s.entrance) ? Math.max(0, Math.round((s.exit.getTime() - s.entrance.getTime()) / 60000)) :
-            60;
-      }
-
-      const endSurgeryPred = new Date(startPred.getTime() + durMin * 60000);
-      const roomFreeAt = new Date(endSurgeryPred.getTime() + TURNOVER_MIN * 60000);
-      cursor = roomFreeAt;
-
-      const exempt = this.isLateExemptByUrgency ? this.isLateExemptByUrgency(s.raw) : false;
-      if (s.status === 'planned' && endSurgeryPred > shiftEnd && !exempt) {
-        warnLate = true;
-      }
-    }
-
-
-    warnLate = warnLate || warnOverlap;
-
-
-    const outOfShift = Math.max(0, xOnDay - xInShift);
-    let result = `${nInShift} מתוך ${xInShift} מתוכננים`;
-    if (outOfShift > 0) result += ` (+ ${outOfShift} *)`;
-    return result;
-
-    function hmToMin(s?: string | null): number | null {
-      if (!s || s === '--:--') return null;
-      const p = s.split(':').map(Number);
-      if (p.length < 2 || p.some(isNaN)) return null;
-      return p[0] * 60 + p[1];
-    }
-  }
-
-
-  private isSameLocalDay(a: Date, b: Date): boolean {
-    return a.getFullYear() === b.getFullYear() &&
-      a.getMonth() === b.getMonth() &&
-      a.getDate() === b.getDate();
-  }
-
-  isRoomToday(room: RoomData): boolean {
-    const base = room && room.date ? new Date(room.date) : new Date(this.selectedDate);
-    const now = new Date();
-    return this.isSameLocalDay(base, now);
-  }
-
-
-  private urgencyIconRaw(u: any): string {
-    var s = (u == null ? '' : String(u)).trim();
-    if (!s) return '';
-    var low = s.toLowerCase();
-
-    if (s.indexOf('דחוף') >= 0 || low.indexOf('urgent') >= 0) return '🚑';     // or '⚠️'
-    if (s.indexOf('ססיה') >= 0 || s.indexOf('אשפוז') >= 0 || low.indexOf('inpatient') >= 0) return '🏥';
-    if (s.indexOf('אלקטיב') >= 0 || low.indexOf('elect') >= 0) return '📖';
-    if (s.indexOf('ללא עדיפות') >= 0 || low.indexOf('no priority') >= 0 || low.indexOf('none') >= 0 || low.indexOf('routine') >= 0) return '⬇️';
-    if (s.indexOf('אמבולטורי') >= 0 || low.indexOf('ambulatory') >= 0 || low.indexOf('outpatient') >= 0) return '🚶';
-    return '';
-  }
-
-
-  getUrgencyIconFromSurgery(s: any): string {
-    if (!s) return '';
-    var u = (s.urgency != null ? s.urgency : (s as any).Urgency);
-    return this.urgencyIconRaw(u);
-  }
-
-
-
-
-  getHeaderProgressIcon(room: RoomData): string {
-    if (!room?.surgeries?.length) return '';
-
-    const anchor = room.date || this.selectedDate;
-    const dayStart = this.workingStart(anchor);
-    const dayEnd = this.workingEnd(anchor);
-    const DAY_MS = 24 * 60 * 60 * 1000;
-
-    const parse = (clk?: string, base?: any): Date | null =>
-      clk ? this.parseClockWithDate(clk, base) : null;
-
-    const overlaps = (e: Date, x: Date): boolean => e < dayEnd && x > dayStart;
-
-    const startTs = (s: any): number => {
-      const base = s.surgeryDate || anchor;
-      let e = parse(s.timeEntrance, base);
-      let x = parse((s.timeExit && s.timeExit !== '00:00:00') ? s.timeExit : s.timeEntrance, base);
-      if (!e || !x) return Number.POSITIVE_INFINITY;
-      if (x.getTime() < e.getTime()) x = new Date(x.getTime() + DAY_MS);
-      return overlaps(e, x) ? e.getTime() : Number.POSITIVE_INFINITY;
-    };
-
-    let bestInProg: any = null, bestTs = -Infinity;
-    for (const s of room.surgeries) {
-      if (!s || !this.isInProgressStatus(s.status)) continue;
-      const ts = startTs(s);
-      if (ts !== Number.POSITIVE_INFINITY && ts > bestTs) { bestInProg = s; bestTs = ts; }
-    }
-    if (bestInProg) return this.getUrgencyIconFromSurgery(bestInProg);
-
-    let next: any = null, nextTs = Number.POSITIVE_INFINITY;
-    for (const t of room.surgeries) {
-      if (t && !this.isCompletedStatus(t.status)) {
-        const ts2 = startTs(t);
-        if (ts2 < nextTs) { next = t; nextTs = ts2; }
-      }
-    }
-    if (next) return this.getUrgencyIconFromSurgery(next);
-
-    let last: any = null, lastTs = -Infinity;
-    for (const c of room.surgeries) {
-      if (!c || !this.isCompletedStatus(c.status)) continue;
-      const ts3 = startTs(c);
-      if (ts3 !== Number.POSITIVE_INFINITY && ts3 > lastTs) { last = c; lastTs = ts3; }
-    }
-    if (last) return this.getUrgencyIconFromSurgery(last);
-
-    return '';
-  }
-
-
-  hasInProgress(room: RoomData): boolean {
-    if (!room?.surgeries?.length) return false;
-    return room.surgeries.some(s => s && this.isInProgressStatus(s.status));
-  }
-
-  private isCompletedStatus(raw: any): boolean {
-    const s = (raw == null ? '' : String(raw)).toLowerCase().trim();
-    return s === 'completed' || s === 'done' || s === 'סגור' || s.includes('הושל') || s.includes('בוצע');
-  }
-
-
-  getUrgencyTextFromSurgery(s: any): string {
-    if (!s) return '';
-    var u = (s.urgency != null ? s.urgency : (s as any).Urgency);
-    return u != null ? String(u) : '';
-  }
-
-  getHeaderProgressTitle(room: RoomData): string {
-    if (!room || !room.surgeries || !room.surgeries.length) return '';
-
-    var anchor = room.date || this.selectedDate;
-    var dayStart = this.workingStart(anchor);
-    var dayEnd = this.workingEnd(anchor);
-    var DAY_MS = 24 * 60 * 60 * 1000;
-
-    var chosen: any = null;
-    var chosenTs = -Infinity;
-
-    function parse(self: any, clk: string, base: any): Date | null {
-      return clk ? self.parseClockWithDate(clk, base) : null;
-    }
-    function overlaps(e: Date, x: Date): boolean {
-      return e < dayEnd && x > dayStart;
-    }
-    function startTs(self: any, s: any): number {
-      var base = s.surgeryDate || anchor;
-      var e = parse(self, s.timeEntrance, base);
-      var x = parse(self, (s.timeExit && s.timeExit !== '00:00:00') ? s.timeExit : s.timeEntrance, base);
-      if (!e || !x) return Number.POSITIVE_INFINITY;
-      if (x.getTime() < e.getTime()) x = new Date(x.getTime() + DAY_MS);
-      return overlaps(e, x) ? e.getTime() : Number.POSITIVE_INFINITY;
-    }
-
-
-    for (var i = 0; i < room.surgeries.length; i++) {
-      var s1 = room.surgeries[i];
-      if (s1.status !== 'InProgress') continue;
-      var ts1 = startTs(this, s1);
-      if (ts1 !== Number.POSITIVE_INFINITY && ts1 > chosenTs) { chosen = s1; chosenTs = ts1; }
-    }
-
-    if (!chosen) {
-      var next: any = null, nextTs = Number.POSITIVE_INFINITY;
-      for (var j = 0; j < room.surgeries.length; j++) {
-        var s2 = room.surgeries[j];
-        if (s2.status === 'Completed') continue;
-        var ts2 = startTs(this, s2);
-        if (ts2 < nextTs) { next = s2; nextTs = ts2; }
-      }
-      chosen = next;
-    }
-
-    if (!chosen) {
-      var last: any = null, lastTs = -Infinity;
-      for (var k = 0; k < room.surgeries.length; k++) {
-        var s3 = room.surgeries[k];
-        if (s3.status !== 'Completed') continue;
-        var ts3 = startTs(this, s3);
-        if (ts3 !== Number.POSITIVE_INFINITY && ts3 > lastTs) { last = s3; lastTs = ts3; }
-      }
-      chosen = last;
-    }
-
-    return chosen ? this.getUrgencyTextFromSurgery(chosen) : '';
-  }
-
-
-  getRoomStatusClassWithSettings(room: RoomData): string {
-    const base = (this.getRoomStatusClass && room) ? (this.getRoomStatusClass(room) || '') : '';
-
-    if (!this.settings) return base;
-
-    if (this.settings.colorize === false) return '';
-
-    if (this.settings.blinkOnUnacked === false) {
-      return base
-        .replace(/\bgreen-blink\b/g, 'green')
-        .replace(/\bblink\b/g, ''); 
-    }
-
-    return base;
-  }
-
-
-
-  private hmToMin(s?: string | null): number | null {
-    if (!s || s === '--:--') return null;
-    var p = s.split(':');
-    if (p.length < 2) return null;
-    var hh = +p[0], mm = +p[1];
-    if (isNaN(hh) || isNaN(mm)) return null;
-    return hh * 60 + mm;
-  }
-
-
-
-  getRoomLateMeta(room: RoomData): LateMeta | null {
-    if (!room) return null;
-
-    if (this.isRoomPastDay(room)) {
-      var summary = this.getTurnoverSummary(room);
-      var parsed = this.hmToMin(summary);
-      var turnoverUsed = Math.max(20, parsed == null ? 20 : parsed);
-      return {
-        isLate: false,
-        predictedEnd: null,
-        overrunMin: 0,
-        turnoverUsed: turnoverUsed,
-        hasOverlapBacklog: false,
-        backlogCount: 0,
-        overlapUntil: null
-      };
-    }
-
-    var baseDate = room.date || this.selectedDate; 
-    var cutoff = new Date(String(baseDate) + 'T15:00:00');
-
-    var EXEMPT_AFTER_CLOCK = '14:30:00';
-    var exemptStart = new Date(String(baseDate) + 'T' + EXEMPT_AFTER_CLOCK);
-
-    var summary = this.getTurnoverSummary(room);
-    var parsed = this.hmToMin(summary);
-    var TURNOVER_MIN = Math.max(20, parsed == null ? 20 : parsed);
-
-    var list: any[] = [];
-    for (var i = 0; i < (room.surgeries || []).length; i++) {
-      var r = room.surgeries[i]; if (!r) continue;
-      var rdate = r.surgeryDate ? String(r.surgeryDate) : String(baseDate);
-      if (String(rdate).slice(0, 10) !== String(baseDate).slice(0, 10)) continue;
-
-      var st = String(r.status || '').toLowerCase();
-      var dur = (r.TimeSurgeryToDo != null && !isNaN(+r.TimeSurgeryToDo))
-        ? Math.max(0, Math.round(+r.TimeSurgeryToDo)) : null;
-
-      var ent = r.timeEntrance
-        ? new Date(String(rdate).slice(0, 10) + 'T' + String(r.timeEntrance).slice(0, 5) + ':00') : null;
-      var exi = r.timeExit
-        ? new Date(String(rdate).slice(0, 10) + 'T' + String(r.timeExit).slice(0, 5) + ':00') : null;
-
-      list.push({ raw: r, status: st, entrance: ent, exit: exi, minutes: dur });
-    }
-
-    list.sort(function (a, b) {
-      if (!a.entrance && !b.entrance) return 0;
-      if (!a.entrance) return 1;
-      if (!b.entrance) return -1;
-      return a.entrance.getTime() - b.entrance.getTime();
-    });
-
-    var active: any = null;
-    for (var j = 0; j < list.length; j++) {
-      var c = list[j];
-      if ((c.status === 'inprogress' || c.status === 'in progress' || c.status === 'in_progress') && c.entrance) {
-        if (!active || c.entrance.getTime() >= active.entrance.getTime()) active = c;
-      }
-    }
-
-    var cursor: Date | null = null;
-
-    if (active) {
-      if (active.entrance.getTime() < exemptStart.getTime()) {
-        var actMin = (active.minutes != null ? active.minutes : 60);
-        cursor = new Date(active.entrance.getTime() + actMin * 60000);
-      } else {
-        cursor = null; // active started ≥ 14:30 → ignore for late
-      }
-    } else {
-      var firstPending: any = null;
-      for (var k = 0; k < list.length; k++) {
-        if (list[k].status !== 'completed' && list[k].entrance && list[k].entrance.getTime() < exemptStart.getTime()) {
-          firstPending = list[k]; break;
+    private _pickActiveNow(
+        room: RoomData,
+        now: Date,
+        baseDate: string
+    ): { idKey: string; predictedEnd: Date | null } | null {
+        const TURNOVER_MIN = 20;
+
+        // בוחר ניתוח InProgress האחרון שהתחיל לפני עכשיו
+        let best: any = null;
+        let bestTs = -Infinity;
+
+        for (const s of room.surgeries as any[]) {
+            const st = String(s.status ?? s.SurgeryStatus ?? "").toLowerCase();
+            const isInProg =
+                st === "inprogress" ||
+                st === "in progress" ||
+                st === "in_progress" ||
+                st.includes("בתהל");
+            if (!isInProg) continue;
+
+            const eClock = s.timeEntrance ?? s.TimeEntranceToTheOperatingRoom;
+            if (!eClock) continue;
+
+            const ent = this.parseClockWithDate(
+                eClock,
+                s.surgeryDate ?? s.SurgeryDate ?? baseDate
+            );
+            if (!ent || ent > now) continue;
+
+            if (ent.getTime() > bestTs) {
+                best = s;
+                bestTs = ent.getTime();
+            }
         }
-      }
-      if (firstPending && firstPending.entrance) {
-        cursor = new Date(firstPending.entrance.getTime() + TURNOVER_MIN * 60000);
-      }
+
+        if (!best) return null;
+
+        const ent = this.parseClockWithDate(
+            best.timeEntrance ?? best.TimeEntranceToTheOperatingRoom,
+            best.surgeryDate ?? best.SurgeryDate ?? baseDate
+        );
+        if (!ent) return null;
+
+        // remaining = plannedDur - elapsed
+        let dur = 60;
+        const ttd = best.TimeSurgeryToDo ?? best.timeSurgeryToDo;
+        if (ttd != null && !isNaN(+ttd) && +ttd > 0) dur = Math.round(+ttd);
+
+        const elapsed = Math.max(
+            0,
+            Math.round((now.getTime() - ent.getTime()) / 60000)
+        );
+        const remaining = Math.max(0, dur - elapsed);
+
+        const end = new Date(now.getTime() + remaining * 60000);
+        const idKey = String(
+            best.surgeryId ?? best.SurgeryID ?? best.CaseNumber ?? ""
+        );
+
+        return { idKey, predictedEnd: end };
+    }
+    isIdleOver40(room: RoomData): boolean {
+        if (!room || this.hasInProgress(room)) return false;
+
+        const last = this.findLastCompletedSurgery(room);
+        if (!last) return false;
+
+        const end = this.getLastSurgeryEndTime(last, new Date(room.date));
+        if (!end) return false;
+
+        const now = this._nowInSelectedDay();
+        const diffMin = Math.floor((now.getTime() - end.getTime()) / 60000);
+        return diffMin >= 40;
     }
 
-    var predictedEnd: Date | null = null;
-    if (cursor) {
-      for (var m = 0; m < list.length; m++) {
-        var it = list[m];
-        if (it.status === 'completed') continue;
-        if (active && it === active) continue;
-
-        var durMin = (it.minutes != null ? it.minutes : 60);
-        var sched = it.entrance ? it.entrance : cursor;
-
-        var earliest = new Date(cursor.getTime() + TURNOVER_MIN * 60000);
-        var start = sched.getTime() > earliest.getTime() ? sched : earliest;
-
-        if (start.getTime() >= exemptStart.getTime()) break;
-
-        cursor = new Date(start.getTime() + durMin * 60000);
-      }
-      predictedEnd = cursor;
+    isAllSurgeriesCompleted(room: RoomData): boolean {
+        if (!room?.surgeries?.length) return false;
+        return room.surgeries.every(
+            (s) => (s?.status ?? s?.SurgeryStatus) === "Completed"
+        );
     }
-
-    var isLate = !!predictedEnd && predictedEnd.getTime() > cutoff.getTime();
-    var overrunMin = predictedEnd ? Math.max(0, Math.round((predictedEnd.getTime() - cutoff.getTime()) / 60000)) : 0;
-
-    var ol = this.computeOverlapBacklog(room, TURNOVER_MIN);
-
-    return {
-      isLate: isLate,
-      predictedEnd: predictedEnd,
-      overrunMin: overrunMin,
-      turnoverUsed: TURNOVER_MIN,
-      hasOverlapBacklog: ol.hasOverlap,
-      backlogCount: ol.count,
-      overlapUntil: ol.until
-    };
-  }
-
-
-
-  computeOverlapBacklog(room: RoomData, TURNOVER_MIN: number): { hasOverlap: boolean; count: number; until: Date | null } {
-    if (!room || !room.surgeries || !room.surgeries.length) return { hasOverlap: false, count: 0, until: null };
-    if (this.isRoomPastDay(room)) return { hasOverlap: false, count: 0, until: null };
-
-    var baseDate = room.date || this.selectedDate;
-
-    var active: any = null;
-    for (var i = 0; i < room.surgeries.length; i++) {
-      var r: any = room.surgeries[i];
-      var st = String(r.SurgeryStatus || r.status || '').toLowerCase();
-      if (st.indexOf('inprogress') === -1 && st !== 'in progress' && st !== 'in_progress') continue;
-      var entClock = r.TimeEntranceToTheOperatingRoom != null ? r.TimeEntranceToTheOperatingRoom : r.timeEntrance;
-      if (!entClock) continue;
-      var ent = new Date(String(r.SurgeryDate || baseDate).slice(0, 10) + 'T' + String(entClock).slice(0, 5) + ':00');
-      if (!active || ent.getTime() >= active._ent.getTime()) {
-        active = { row: r, _ent: ent };
-      }
+    nextPlannedSurgery(room: RoomData) {
+        return room.surgeries?.find((s) => s.IsWaitingForSurgery);
     }
-
-    if (!active) return { hasOverlap: false, count: 0, until: null };
-
-    var ttd: any = active.row.TimeSurgeryToDo != null ? active.row.TimeSurgeryToDo : active.row.timeSurgeryToDo;
-    var dur = (ttd != null && !isNaN(+ttd)) ? Math.max(0, Math.round(+ttd)) : 60;
-    var activeEnd = new Date(active._ent.getTime() + dur * 60000);
-    var overlapUntil = new Date(activeEnd.getTime() + TURNOVER_MIN * 60000);
-
-    var count = 0;
-    for (var j = 0; j < room.surgeries.length; j++) {
-      var s: any = room.surgeries[j];
-      if (s === active.row) continue;
-      var st2 = String(s.SurgeryStatus || s.status || '').toLowerCase();
-      if (st2 === 'completed') continue;
-
-      var ec = s.TimeEntranceToTheOperatingRoom != null ? s.TimeEntranceToTheOperatingRoom : s.timeEntrance;
-      if (!ec) continue;
-      var ent2 = new Date(String(s.SurgeryDate || baseDate).slice(0, 10) + 'T' + String(ec).slice(0, 5) + ':00');
-      if (ent2.getTime() < overlapUntil.getTime()) count++;
-    }
-
-    return { hasOverlap: count > 0, count: count, until: overlapUntil };
-  }
-
-
-  private predictFirstLatePlanned(room: RoomData, TURNOVER_MIN: number): { predictedEnd: Date } | null {
-
-    if (!room || !room.surgeries || !room.surgeries.length) return null;
-
-    if (this.isRoomPastDay(room)) return null;
-    const baseDate = room.date || this.selectedDate;
-    const shiftStart = this.workingStart(baseDate);
-    const shiftEnd = this.workingEnd(baseDate);
-    const DAY_MS = 24 * 60 * 60 * 1000;
-
-    function statusOf(row: any): string {
-      const raw = row && (row.status != null ? row.status : row.SurgeryStatus);
-      return String(raw == null ? '' : raw).toLowerCase();
-    }
-    function getEClock(row: any): string | null {
-      return row ? (row.timeEntrance != null ? row.timeEntrance : row.TimeEntranceToTheOperatingRoom) : null;
-    }
-    function getXClock(row: any): string | null {
-      return row ? (row.timeExit != null ? row.timeExit : row.TimeExitingTheOperatingRoom) : null;
-    }
-    function getBase(row: any): string | Date {
-      return (row && (row.surgeryDate != null ? row.surgeryDate : row.SurgeryDate)) || baseDate;
-    }
-    function isZeroClock(v?: string | null): boolean {
-      return v === '00:00' || v === '00:00:00';
-    }
-    function normalizeUrgencyVal(u: any): string {
-      var s = (u == null ? '' : String(u)).trim();
-      s = s.replace(/\s*-\s*/g, '-').replace(/\s+/g, ' ');
-      return s;
-    }
-    function urgencyRankOf(row: any): number {
-      var raw = row && (row.Urgency != null ? row.Urgency : row.urgency);
-      var n = normalizeUrgencyVal(raw);
-      if (n === 'דחוף') return 0;
-      if (n === 'ססיה-אשפוז') return 1;
-      return 2;
-    }
-    function statusRankOf(st: string): number {
-      if (st === 'completed') return 0;
-      if (st === 'inprogress' || st === 'in progress' || st === 'in_progress') return 1;
-      if (st === 'planned') return 2;
-      return 3;
-    }
-
-    const list: {
-      entrance: Date | null;
-      exit: Date | null;
-      expectedMin: number | null;
-      status: string;
-      exemptLate: boolean;
-
-      sortStartMs: number;
-      urgencyRank: number;
-      statusRank: number;
-      idKey: string;
-    }[] = [];
-
-    for (let i = 0; i < room.surgeries.length; i++) {
-      const row: any = room.surgeries[i];
-
-      const eClock = getEClock(row);
-      if (!eClock) continue;
-
-      const base = getBase(row);
-      const xRaw = getXClock(row);
-
-      let entrance = this.parseClockWithDate(eClock, base);
-      let exit = (xRaw && !isZeroClock(xRaw)) ? this.parseClockWithDate(xRaw, base) : null;
-      if (!entrance) continue;
-      if (exit && exit.getTime() < entrance.getTime()) exit = new Date(exit.getTime() + DAY_MS);
-
-      let expectedMin: number | null = null;
-      const ttd = row && (row.TimeSurgeryToDo != null ? row.TimeSurgeryToDo : row.timeSurgeryToDo);
-      if (ttd != null && !isNaN(+ttd)) expectedMin = Math.max(0, Math.round(+ttd));
-      if (expectedMin == null && exit) expectedMin = Math.max(0, Math.round((exit.getTime() - entrance.getTime()) / 60000));
-
-      const status = statusOf(row);
-      const exemptLate = this.isLateExemptByUrgency ? this.isLateExemptByUrgency(row) : false;
-
-      let sortStartMs = entrance.getTime();
-      if (exit && entrance && exit.getDate() !== entrance.getDate()) {
-        sortStartMs = sortStartMs - DAY_MS; 
-      }
-      const urgRank = urgencyRankOf(row);
-      const statRank = statusRankOf(status);
-      const idKey = (row.SurgeryID != null ? String(row.SurgeryID)
-        : (row.CaseNumber != null ? String(row.CaseNumber) : ''));
-
-      list.push({
-        entrance, exit, expectedMin, status, exemptLate,
-        sortStartMs, urgencyRank: urgRank, statusRank: statRank, idKey
-      });
-    }
-
-    list.sort(function (a, b) {
-      if (a.sortStartMs !== b.sortStartMs) return a.sortStartMs - b.sortStartMs;
-      if (a.urgencyRank !== b.urgencyRank) return a.urgencyRank - b.urgencyRank;
-      if (a.statusRank !== b.statusRank) return a.statusRank - b.statusRank;
-      if (a.idKey !== b.idKey) return a.idKey < b.idKey ? -1 : 1;
-      return 0;
-    });
-
-    const now = new Date();
-    let cursor: Date | null = null;  // room-free time including turnover
-    let activeIdx = -1;
-
-    for (let i = 0; i < list.length; i++) {
-      const it = list[i];
-      if ((it.status === 'inprogress' || it.status === 'in progress' || it.status === 'in_progress') && it.entrance && it.entrance <= now) {
-        if (activeIdx === -1 || (list[activeIdx].entrance!.getTime() < it.entrance.getTime())) {
-          activeIdx = i;
-        }
-      }
-    }
-
-    if (activeIdx >= 0) {
-      const cur = list[activeIdx];
-      const expMinForCur =
-        (cur.expectedMin != null) ? cur.expectedMin :
-          (cur.exit && cur.entrance) ? Math.max(0, Math.round((cur.exit.getTime() - cur.entrance.getTime()) / 60000)) :
-            60;
-
-      const elapsedMin = Math.max(0, Math.round((now.getTime() - cur.entrance!.getTime()) / 60000));
-      const remainingMin = Math.max(0, expMinForCur - elapsedMin);
-      const endOfCur = remainingMin > 0 ? new Date(now.getTime() + remainingMin * 60000) : now;
-
-      cursor = new Date(endOfCur.getTime() + TURNOVER_MIN * 60000);
-    }
-
-    for (let j = 0; j < list.length; j++) {
-      if (j === activeIdx) continue;
-      const item = list[j];
-
-      if (!cursor) cursor = item.entrance ? new Date(item.entrance) : new Date(shiftStart);
-
-      const startPred = item.entrance
-        ? new Date(Math.max(item.entrance.getTime(), cursor.getTime()))
-        : new Date(cursor);
-
-      let durMin: number;
-      if (item.exit && item.entrance && item.status === 'completed') {
-        durMin = Math.max(0, Math.round((item.exit.getTime() - item.entrance.getTime()) / 60000));
-      } else {
-        durMin = (item.expectedMin != null) ? item.expectedMin :
-          (item.exit && item.entrance) ? Math.max(0, Math.round((item.exit.getTime() - item.entrance.getTime()) / 60000)) :
-            60;
-      }
-
-      const endSurgeryPred = new Date(startPred.getTime() + durMin * 60000);
-      cursor = new Date(endSurgeryPred.getTime() + TURNOVER_MIN * 60000);
-      if (item.status === 'planned' && endSurgeryPred > shiftEnd && !item.exemptLate) {
-        return { predictedEnd: endSurgeryPred };
-      }
-    }
-
-    return null;
-  }
-
-
-  private toHHmm(dt: Date): string {
-    const pad = (n: number) => (n < 10 ? '0' + n : '' + n);
-    return pad(dt.getHours()) + ':' + pad(dt.getMinutes());
-  }
-
-
-  private predictedLateEndHHmm(room: RoomData): string | null {
-    const meta = this.getRoomLateMeta(room);
-    return meta && meta.isLate && meta.predictedEnd ? this.toHHmm(meta.predictedEnd) : null;
-  }
-
-
-  private currentAckKeyForRoom(room: RoomData): string {
-    const base = this.lastEventKeyForRoom(room.roomId);
-    const late = this.predictedLateEndHHmm(room) || 'OK';
-    return base + '|' + late;
-  }
-
-
-  private normalizeUrgency(u: any): string {
-    var s = (u == null ? '' : String(u)).trim();
-    s = s.replace(/\s*-\s*/g, '-');
-    s = s.replace(/\s+/g, ' ');
-    s = s.replace(/[.!?，,؛;]+/g, '');
-    return s;
-  }
-
-
-  private isLateExemptByUrgency(row: any): boolean {
-    if (!row) return false;
-    var raw = (row.Urgency != null ? row.Urgency : row.urgency);
-    var n = this.normalizeUrgency(raw);
-    var nNoSpaces = n.replace(/\s+/g, '');
-    if (nNoSpaces === 'ססיה-אשפוז') return true;
-    if (n === 'דחוף') return true;
-    return false;
-  }
-
-
-
-  public isRoomPastDay(room: RoomData): boolean {
-    if (!room || !room.date) return false;
-    var d = new Date(room.date);
-    var end = new Date(d); end.setHours(23, 59, 59, 999);
-    var today = new Date();
-    var startToday = new Date(today); startToday.setHours(0, 0, 0, 0);
-    return end.getTime() < startToday.getTime();
-  }
-
-  private isSameDay(a: Date, b: Date): boolean {
-    return a.getFullYear() === b.getFullYear() &&
-      a.getMonth() === b.getMonth() &&
-      a.getDate() === b.getDate();
-  }
-
-  public isRoomClosedForColoring(room: RoomData): boolean {
-    if (!room || !room.date) return false;
-    if (this.isRoomPastDay(room)) return true;
-    var d = new Date(room.date);
-    var now = new Date();
-    if (!this.isSameDay(d, now)) return false;
-    var shiftEnd = this.workingEnd(d);
-    return now.getTime() >= shiftEnd.getTime();
-  }
-
-
-
-  onMatDateChange(d: Date | null) {
-    if (!d || isNaN(d.getTime())) { this.selectedDate = null as any; return; }
-    const yyyy = d.getFullYear();
-    const mm = ('0' + (d.getMonth() + 1)).slice(-2);
-    const dd = ('0' + d.getDate()).slice(-2);
-    this.selectedDate = `${yyyy}-${mm}-${dd}`;
-    this.onDateChange();
-  }
-
-  ticker$ = interval(1000).pipe(startWith(0), shareReplay(1));
-
-
-  getRoomIdleCounter(room: any, showSeconds = false): { display: string; title: string } | null {
-    try {
-      if (!this.isRoomToday(room)) return null;
-      if (this.hasInProgress(room)) return null;
-
-      const plannedLeft = (this.plannedSurgeries && this.plannedSurgeries(room))?.length > 0;
-      if (this.settings?.hideIdleWhenNoPlanned && !plannedLeft) return null;
-      const nowRaw = this._nowInSelectedDay();
-      const now = (this.settings?.continueIdleAfter1500WhenPlanned && plannedLeft)
-        ? nowRaw
-        : this._clampTo1500(nowRaw);
-      const dayStart = this._parseOnSelectedDay('07:30');
-      const active = (this.activeSurgeries && this.activeSurgeries(room)) || [];
-      let lastExit: Date | null = null;
-      for (const s of active) {
-        const status = (s?.status ?? s?.SurgeryStatus) as string;
-        const exitStr = s?.timeExit ?? s?.TimeExitingTheOperatingRoom ?? s?.timeEntrance ?? null;
-        if (!exitStr) continue;
-        const exitAt = this._parseOnSelectedDay(exitStr);
-        if (!exitAt || exitAt > now) continue;
-        if (status === 'Completed') {
-          if (!lastExit || exitAt > lastExit) lastExit = exitAt;
-        }
-      }
-
-      const gapStart = lastExit ? new Date(lastExit.getTime() + 20 * 60 * 1000) : dayStart;
-      if (now <= gapStart) return null;
-
-      const diffMs = now.getTime() - gapStart.getTime();
-      if (diffMs <= 0) return null;
-
-      const display = showSeconds ? this._formatHMMSS(diffMs) : this._formatHMM(diffMs);
-      const title = `זמן פנוי מאז ${this._formatClock(gapStart)} (כולל 20׳ הכנה)`;
-      return { display, title };
-    } catch { return null; }
-  }
-
-  private _nowInSelectedDay(): Date {
-    const base = this.selectedDateObj ? new Date(this.selectedDateObj) : new Date();
-    const now = new Date();
-    base.setHours(now.getHours(), now.getMinutes(), now.getSeconds(), now.getMilliseconds());
-    return base;
-  }
-  private _clampTo1500(d: Date): Date {
-    const cap = new Date(d); cap.setHours(15, 0, 0, 0);
-    return d > cap ? cap : d;
-  }
-  private _parseOnSelectedDay(hhmm?: string | null): Date | null {
-    if (!hhmm) return null;
-    const [hh, mm] = hhmm.split(':').map(x => +x);
-    if (Number.isNaN(hh) || Number.isNaN(mm)) return null;
-    const d = this.selectedDateObj ? new Date(this.selectedDateObj) : new Date();
-    d.setHours(hh, mm, 0, 0);
-    return d;
-  }
-  private _formatHMM(ms: number): string {
-    const totalMin = Math.max(0, Math.floor(ms / 60000));
-    const h = Math.floor(totalMin / 60);
-    const m = totalMin % 60;
-    return `${h}:${m.toString().padStart(2, '0')}`;
-  }
-  private _formatHMMSS(ms: number): string {
-    const total = Math.max(0, Math.floor(ms / 1000));
-    const h = Math.floor(total / 3600);
-    const m = Math.floor((total % 3600) / 60);
-    const s = total % 60;
-    return `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
-  }
-  private _formatClock(d: Date): string {
-    return `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
-  }
-
-
-  showSummaryCardDefault = true;
-  getSummaryForToday(): any | null {
-    const surgeries = this._getSurgeriesArray();
-    if (!surgeries?.length) return null;
-
-
-    const selectedDateISO = this.selectedDateObj
-      ? this._toISODate(this.selectedDateObj)
-      : (surgeries[0]?.SurgeryDate ?? this._toISODate(new Date()));
-
-    const todays = surgeries.filter(s => s?.SurgeryDate === selectedDateISO);
-    if (!todays.length) return null;
-
-
-    const completed = todays.filter(s => (s.SurgeryStatus ?? s.status) === 'Completed');
-    const inProg = todays.filter(s => (s.SurgeryStatus ?? s.status) === 'InProgress');
-    const planned = todays.filter(s => (s.SurgeryStatus ?? s.status) === 'Planned');
-
-
-    const rooms = Array.from(new Set(todays.map(s => s.SurgeryRoom))).sort();
-    const inProgRooms = new Set(inProg.map(s => s.SurgeryRoom));
-    const activeRooms = inProgRooms.size;
-    const freeRooms = rooms.length - activeRooms;
-
-
-    const sumCompletedMinutes = completed.reduce((acc, s) => {
-      const m = this._num(s.TimeSurgeryToDo);
-      if (!Number.isNaN(m)) return acc + m;
-      const ms = this._diffMinutesSafe(selectedDateISO, s.TimeEntranceToTheOperatingRoom, s.TimeExitingTheOperatingRoom);
-      return acc + (ms ?? 0);
-    }, 0);
-
-    const avgCaseMinutes = completed.length ? Math.round(sumCompletedMinutes / completed.length) : 0;
-
-
-const byRoom = rooms.map(room => {
-  const rCases = todays.filter(s => s.SurgeryRoom === room);
-  const rCompleted = rCases.filter(s => (s.SurgeryStatus ?? s.status) === 'Completed');
-  const rInProg = rCases.filter(s => (s.SurgeryStatus ?? s.status) === 'InProgress');
-  const rPlanned = rCases.filter(s => (s.SurgeryStatus ?? s.status) === 'Planned');
-
-  const rMinutes = rCompleted.reduce((acc, s) => acc + this._completedMinutes(s, selectedDateISO), 0);
-
-  const latestExit = rCompleted
-    .map(s => s.TimeExitingTheOperatingRoom ?? s.timeExit)
-    .filter(Boolean)
-    .sort()
-    .slice(-1)[0] || null;
-
-  return {
-    room,
-    completed: rCompleted.length,
-    inProgress: rInProg.length,
-    planned: rPlanned.length,
-    totalMinutes: rMinutes,
-    latestExit,
-     cases: rCases.length,
-      hasInProgress: rInProg.length > 0,
-    roomData: {
-      roomId: room,
-      date: selectedDateISO,
-      surgeries: rCases
-    } as RoomData
-  };
-});
-
-
-function formatMinutesToHMM(totalMinutes: number): string {
-  const hours = Math.floor(totalMinutes / 60);
-  const minutes = totalMinutes % 60;
-  return `${hours}:${minutes.toString().padStart(2, '0')}`;
-}
-
-const busiest = byRoom.reduce((best, r) => {
-  if (!best) return r;
-  if (r.totalMinutes > best.totalMinutes) return r;
-  if (r.totalMinutes === best.totalMinutes) {
-    if (r.completed > best.completed) return r;
-    if (r.completed === best.completed && r.room.localeCompare(best.room) < 0) return r;
-  }
-  return best;
-}, null as any) || null;
-
-if (busiest) {
-  busiest.totalHMM = formatMinutesToHMM(busiest.totalMinutes);
-}
-
-
-
-const maxMinutes = Math.max(...byRoom.map(r => r.totalMinutes));
-
-this.busiestRooms = byRoom
-  .filter(r => r.totalMinutes === maxMinutes)
-  .map(r => ({
-    ...r,
-    totalHMM: formatMinutesToHMM(r.totalMinutes) 
-  }));
-
-
-    const inProgressList = inProg
-      .slice()
-      .sort((a, b) =>
-        (a.TimeEntranceToTheOperatingRoom ?? a.timeEntrance ?? '')
-          .localeCompare(b.TimeEntranceToTheOperatingRoom ?? b.timeEntrance ?? '')
-      )
-      
-      .map(s => ({
-        room: s.SurgeryRoom ?? s.roomId ?? s.surgeryRoom ?? s.room,
-        title: this._pickTitleCompat(s),
-        depart: (s.DepartName ?? s.department ?? '').toString().trim(),
-        start: s.TimeEntranceToTheOperatingRoom ?? s.timeEntrance ?? '',
-        end: s.TimeExitingTheOperatingRoom ?? s.timeExit ?? '',
-        plannedMinutes: this._num(s.TimeSurgeryToDo ?? s.timeToDo ?? s.duration)
-      }));
-
-
-    const urgencyLabels = {
-      urgent: 'דחוף',
-      sessionInpatient: 'ססיה - אשפוז',
-      elective: 'אלקטיב',
-      ambulatory: 'אמבולטורי',
-      noPriority: 'ללא עדיפות',
-      unknown: 'דחיפות לא מוגדרת',
-    };
-    const urgencyIcons = {
-      urgent: '🚑',
-      sessionInpatient: '🏥',
-      elective: '📖',
-      ambulatory: '🚶',
-      noPriority: '⬇️',
-      unknown: '❔',
-    };
-
-
-    const counts = { urgent: 0, sessionInpatient: 0, elective: 0, ambulatory: 0, noPriority: 0, unknown: 0 };
-    const lists = { urgent: [] as any[], sessionInpatient: [] as any[], elective: [] as any[], ambulatory: [] as any[], noPriority: [] as any[], unknown: [] as any[] };
-
- 
-    for (const s of todays) {
-      const key = this._readUrgencyKey(s); 
-      counts[key] = (counts[key] ?? 0) + 1; 
-      lists[key].push(s);
-    }
-
-    return {
-      dateISO: selectedDateISO,
-      totals: {
-        surgeries: todays.length,
-        completed: completed.length,
-        inProgress: inProg.length,
-        planned: planned.length,
-      },
-      urgency: {
-        labels: urgencyLabels,
-        icons: urgencyIcons,
-        counts,
-        lists
-      },
-      rooms: {
-        total: rooms.length,
-        active: activeRooms,
-        free: freeRooms,
-      },
-      time: {
-        totalMinutes: sumCompletedMinutes,
-        avgMinutes: avgCaseMinutes,
-        totalHMM: this._formatHMM_fromMinutes(sumCompletedMinutes),
-        avgHMM: this._formatHMM_fromMinutes(avgCaseMinutes),
-      },
-      busiest: busiest
-        ? {
-          room: busiest.room,
-          totalHMM: this._formatHMM(busiest.totalMinutes),
-          cases: busiest.completed,
-          hasInProgress: byRoom.find(r => r.room === busiest.room)?.inProgress > 0
-        }
-        : null,
-      byRoom,
-      inProgressList,
-    };
-
-
-
-
-
-  }
-
-getUrgencyKeys(urgency: any): string[] {  
-  return ['urgent', 'sessionInpatient', 'elective', 'ambulatory', 'noPriority', 'unknown'];
-}
-
-  private _getSurgeriesArray(): any[] {
-
-    const top = (this as any).surgeries || (this as any).data?.surgeries;
-    if (Array.isArray(top) && top.length) return top;
-    if (Array.isArray(this.roomsData) && this.roomsData.length) {
-      const out: any[] = [];
-      for (const r of this.roomsData) {
-        if (!r?.surgeries) continue;
-        for (const s of r.surgeries) {
-          out.push({
-            ...s,
-            SurgeryRoom: s.SurgeryRoom ?? r.roomId,
-            SurgeryDate: s.SurgeryDate ?? s.surgeryDate ?? r.date ?? this.selectedDate,
-            TimeEntranceToTheOperatingRoom: s.TimeEntranceToTheOperatingRoom ?? s.timeEntrance ?? null,
-            TimeExitingTheOperatingRoom: s.TimeExitingTheOperatingRoom ?? s.timeExit ?? null,
-            SurgeryStatus: s.SurgeryStatus ?? s.status ?? ''
-          });
-        }
-      }
-      return out;
-    }
-    return [];
-  }
-
-
-  private _num(v: any): number { const n = parseInt(v as any, 10); return Number.isFinite(n) ? n : NaN; }
-  private _toISODate(d: Date): string { const y = d.getFullYear(); const m = (d.getMonth() + 1).toString().padStart(2, '0'); const day = d.getDate().toString().padStart(2, '0'); return `${y}-${m}-${day}`; }
-
-  private _timeToDate(dateISO: string, hhmm?: string | null): Date | null {
-    if (!hhmm) return null;
-    const [h, m] = hhmm.split(':').map(x => +x);
-    if (Number.isNaN(h) || Number.isNaN(m)) return null;
-    const d = new Date(dateISO + 'T00:00:00');
-    d.setHours(h, m, 0, 0);
-    return d;
-  }
-  private _diffMinutesSafe(dateISO: string, start?: string | null, end?: string | null): number | null {
-    const s = this._timeToDate(dateISO, start);
-    const e = this._timeToDate(dateISO, end);
-    if (!s || !e) return null;
-    return Math.max(0, Math.round((e.getTime() - s.getTime()) / 60000));
-  }
-
-
-
-  private _pickTitleCompat(s: any): string {
-    const name = (s.SurgeryName ?? s.surgeryName ?? '').toString().trim();
-    const code = (s.SurgeryCode ?? s.surgeryCode ?? '').toString().trim();
-    if (name && code) return `${name} (${code})`;
-    if (name) return name;
-    if (code) return code;
-    return '—';
-  }
-
-
-  private _formatHMM_fromMinutes(totalMinutes: number | string | null | undefined): string {
-    const tNum = this._toNumber(totalMinutes, 0);
-    const t = Math.max(0, Math.round(tNum));
-    const h = Math.floor(t / 60);
-    const m = t % 60;
-    return `${h}:${m.toString().padStart(2, '0')}`;
-  }
-
-
-  private _completedMinutes(s: any, dateISO: string): number {
-    const start = this._get<string>(s, 'TimeEntranceToTheOperatingRoom', 'timeEntrance');
-    const end = this._get<string>(s, 'TimeExitingTheOperatingRoom', 'timeExit');
-
-
-    const diff = this._diffMinutesSafe(dateISO, start, end);
-    if (diff != null && Number.isFinite(diff)) {
-      return diff >= 0 ? diff : diff + 24 * 60;
-    }
-
-    const declared = this._toNumber(this._get(s, 'TimeSurgeryToDo', 'timeToDo', 'duration'), NaN);
-    return Number.isFinite(declared) ? declared : 0;
-  }
-
-
-  private _get<T = any>(obj: any, ...keys: string[]): T | null {
-    for (const k of keys) {
-      const v = obj?.[k];
-      if (v !== undefined && v !== null && v !== '') return v as T;
-    }
-    return null;
-  }
-
-
-  private _toNumber(v: any, fallback = 0): number {
-    if (typeof v === 'number') return v;
-    if (typeof v === 'string') {
-      const n = Number(v.trim());
-      return Number.isFinite(n) ? n : fallback;
-    }
-    return fallback;
-  }
-
-
-
-  summaryDrilldownUrgency:
-    'urgent' | 'sessionInpatient' | 'elective' | 'ambulatory' | 'noPriority' | 'unknown' | null = null;
-
-
-  private _readUrgencyKey(s: any):
-    'urgent' | 'sessionInpatient' | 'elective' | 'ambulatory' | 'noPriority' | 'unknown' {
-    const raw =
-      s?.Urgency ??
-      s?.urgency ??
-      s?.Priority ??
-      s?.priority ??
-      s?.Triage ??
-      s?.triage ??
-      '';
-    return this._normalizeUrgency(raw);
-  }
-
-
-  private _normalizeUrgency(u: any):
-    'urgent' | 'sessionInpatient' | 'elective' | 'ambulatory' | 'noPriority' | 'unknown' {
-    const s = (u ?? '').toString().trim().toLowerCase();
-    if (!s) return 'unknown';
-
-
-    if (s.includes('דחוף')) return 'urgent';
-    if (s.includes('ססיה')) return 'sessionInpatient';
-    if (s.includes('אלקט')) return 'elective';
-    if (s.includes('אמבול')) return 'ambulatory';
-    if (s.includes('ללא עדיפ')) return 'noPriority';
-
-
-    if (s.includes('emerg')) return 'urgent';
-    if (s.includes('session') || s.includes('inpatient')) return 'sessionInpatient';
-    if (s.includes('elective')) return 'elective';
-    if (s.includes('ambul')) return 'ambulatory';
-    if (s.includes('no prior') || s.includes('no-prior') || s.includes('no priority')) return 'noPriority';
-
-    return 'unknown';
-  }
-
 }

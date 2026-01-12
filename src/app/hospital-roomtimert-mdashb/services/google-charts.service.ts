@@ -69,7 +69,9 @@ export class GoogleChartsService {
 
 getSurgeryRooms(date: string) {
   return this.http.get<{ date: string; surgeries: any[] }>(
-    `${environment.url}/GetSurgeryRoomsByDate?date=${encodeURIComponent(date)}`
+      `${
+          environment.url
+      }/GetSurgeriesRealTimeRoomsByDate?date=${encodeURIComponent(date)}`
   );
 }
 

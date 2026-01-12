@@ -1,290 +1,82 @@
+/* =========================
+   surgeriesrts.component.css
+   White inside, bold colored border only.
+   Idle >20m => light yellow border
+   Idle >40m => orange border + blinking border
+   ========================= */
 
-  /* #surgeriesrts {
+/* Grid */
+/* יישור גלובלי לימין עבור כל הקומפוננטה */
+#surgeriesrts {
+    direction: rtl;
+    text-align: right;
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(13%, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
     gap: 16px;
-  } */
-
-  #surgeriesrts {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-  gap: 16px;
 }
-  .room-widget {
-    transition: all 0.3s ease;
-  }
 
-  .room-widget.blurred {
-    filter: blur(1px);
-    opacity: 0.6;
-  }
-
-  .room-widget.active {
-    filter: none;
-    opacity: 1;
-    /*border: 1px solid #007bff;*/
-  }
-
-  .room-header {
-    cursor: pointer;
-  }
-
-  .metrics {
-    white-space: nowrap;
-    font-size: 0.9em;
-  }
-
-  h2,
-  h3 {
+/* יישור כותרות למרכז (כפי שהיה) אך עם תמיכה בעברית */
+h2,
+h3,
+h4 {
+    direction: rtl;
+    text-align: center;
+}
+/* Titles / panels */
+h2,
+h3 {
     text-align: center;
     padding: 20px;
     width: 100%;
-  }
+}
+h4.text-center {
+    margin: 0 0 4px 0;
+    min-height: 2.2rem;
+}
 
-  .panel {
+.panel {
     background: #eeeff1;
     margin-bottom: 40px;
-  }
+}
 
-  .expand_btn {
+.expand_btn {
     width: 100%;
     text-align: center;
-  }
+}
 
-  .status-circle {
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-    position: absolute;
-    top: 8px;
-    right: 8px;
-  }
-
-  /* Base colors */
-  .status-circle.green-blink {
-    background: green;
-  }
-
-  .status-circle.grey {
-    background: grey;
-  }
-
-  .status-circle.blue {
-    background: blue;
-  }
-
-  .status-circle.orange {
-    background: orange;
-  }
-
-  .status-circle.red-45 {
-    background: red;
-  }
-
-  .status-circle.red-60 {
-    background: darkred;
-  }
-
-  .status-circle.red-120 {
-    background: maroon;
-  }
-
-  /* Quiet blink (for active/healthy states) */
-  @keyframes quiet-blink {
-    50% {
-      opacity: 0.6;
-    }
-  }
-
-  .status-circle.green-blink,
-  .status-circle.blue {
-    animation: quiet-blink 2s infinite;
-  }
-
-  /* Normal blink (warning) */
-  @keyframes blink {
-    50% {
-      opacity: 0.3;
-    }
-  }
-
-  .status-circle.orange,
-  .status-circle.red-45 {
-    animation: blink 1s infinite;
-  }
-
-  /* Stronger escalation */
-  @keyframes strong-blink {
-    50% {
-      opacity: 0.1;
-    }
-  }
-
-  .status-circle.red-60,
-  .status-circle.red-120 {
-    animation: strong-blink 0.8s infinite;
-  }
-
-  /* Pulsing borders for severe delays */
-  .card.red-45 {
-    border: 2px solid red;
-  }
-
-  .card.red-60 {
-    border: 2px solid darkred;
-    animation: blink 1s infinite;
-  }
-
-  .card.red-120 {
-    border: 3px solid darkred;
-    animation: strong-blink 0.5s infinite;
-  }
-
-  /* acknowledged: keep color but no blink */
-  .status-circle.red-45-ack {
-    background: red;
-  }
-
-  .status-circle.red-60-ack {
-    background: darkred;
-  }
-
-  .status-circle.red-120-ack {
-    background: maroon;
-  }
-
-  .card.red-45-ack {
-    border: 2px solid red;
-  }
-
-  .card.red-60-ack, .room-chip.red-60-ack {
-    border: 2px solid darkred;
-  }
-
-  .card.red-120-ack, .room-chip.red-120-ack , .room-chip.red-120{
-    border: 3px solid darkred;
-  }
-
-  .card.green-blink, .room-chip.green-blink {
-    border: 2px solid green;
-  }
-  .metric-ok {
-    color: green;
-  }
-
-  .metric-yellow {
-    color: goldenrod;
-  }
-
-  .metric-orange {
-    color: darkorange;
-    font-weight: bold;
-  }
-
-  .metric-red {
-    color: red;
-    font-weight: bold;
-  }
-
-  .metric-red-strong {
-    color: darkred;
-    font-weight: bold;
-    animation: pulse 1s infinite;
-  }
-
-  @keyframes pulse {
-    0% {
-      opacity: 1;
-    }
-
-    50% {
-      opacity: 0.6;
-    }
-
-    100% {
-      opacity: 1;
-    }
-  }
-
-
-  .ok {
-    color: green;
-  }
-
-  .warning {
-    color: orange;
-  }
-
-  .bad {
-    color: red;
-  }
-
-  .critical {
-    color: red;
-    animation: blink 1s linear infinite;
-  }
-
-  .severe {
-    color: darkred;
-    animation: pulse 1.5s ease-in-out infinite;
-  }
-
-  @keyframes blink {
-    50% {
-      opacity: 0.4;
-    }
-  }
-
-  @keyframes pulse {
-    0% {
-      text-shadow: 0 0 2px red;
-    }
-
-    50% {
-      text-shadow: 0 0 8px red;
-    }
-
-    100% {
-      text-shadow: 0 0 2px red;
-    }
-  }
-
-
-  .loader-overlay {
+/* Loader */
+.loader-overlay {
     position: absolute;
     inset: 0;
-    /* shorthand for top/left/right/bottom:0 */
     background: rgba(255, 255, 255, 0.8);
     display: flex;
     align-items: center;
     justify-content: center;
     z-index: 10;
-  }
-
-  .spinner {
+}
+.spinner {
     width: 40px;
     height: 40px;
     border: 4px solid #ddd;
     border-top: 4px solid #007bff;
     border-radius: 50%;
     animation: spin 0.8s linear infinite;
-  }
-
-  @keyframes spin {
+}
+@keyframes spin {
     to {
-      transform: rotate(360deg);
+        transform: rotate(360deg);
     }
-  }
+}
 
-  .refresh-toolbar {
+/* Toolbar */
+.refresh-toolbar {
     display: flex;
     justify-content: center;
     align-items: center;
     gap: 12px;
     margin-bottom: 6px;
-  }
-
-  .refresh-box {
+}
+.refresh-box {
     display: inline-block;
     padding: 2px 8px;
     font-size: 0.85rem;
@@ -294,483 +86,757 @@
     cursor: pointer;
     user-select: none;
     transition: background 0.2s;
-  }
-
-  .refresh-box:hover {
+}
+.refresh-box:hover {
     background: #0056b3;
-  }
-
-  .pause-btn {
+}
+.pause-btn {
     padding: 2px 8px;
     font-size: 0.8rem;
     cursor: pointer;
-  }
-
-  .last-updated {
+}
+.last-updated {
     font-size: 0.8rem;
     color: #555;
-  }
-
-  .metrics-legend {
+}
+.metrics-legend {
     text-align: center;
     font-size: 0.85rem;
     color: #555;
     margin: 5px 0;
-  }
+}
 
-  .surgery-row {
-    margin-bottom: 10px;
-  }
+/* =========================
+   Room Card (base)
+   ========================= */
+.room-widget {
+    min-width: 200px;
+    transition: filter 0.25s ease, opacity 0.25s ease, box-shadow 0.25s ease;
+}
 
-  .surgery-row.scompleted {
-    opacity: 0.6;
-  }
-
-  .scompleted {
-    opacity: 0.6;
-    font-size:0.9em;
-    font-weight: 500!important;
-  }
-
-  /* Card as the scroll container */
+/* Scroll container */
 .room-widget.card {
-  max-height: 460px;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  /* optional: card look */
-  border-radius: 8px;
-  background: var(--card-bg, #fff);
-  box-shadow: 0 2px 10px rgba(0,0,0,.06);
+    max-height: 700px;
+    overflow-y: auto;
+    height: fit-content;
+    display: flex;
+    flex-direction: column;
+    border-radius: 10px;
+
+    /* White inside always */
+    background: #fff !important;
+    color: #111;
+
+    /* Bold border (colored via classes below) */
+    border: 3px solid rgba(0, 0, 0, 0.15);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+    scrollbar-width: thin;
+    scrollbar-color: rgba(0, 0, 0, 0.1) transparent;
+    /* min-width : '-webkit-fill-available'; */
+    min-width: stretch;
 }
 
-/* Sticky header */
+/* עיצוב פס הגלילה */
+.room-widget.card::-webkit-scrollbar {
+    width: 4px; /* רוחב דק מאוד */
+}
+
+.room-widget.card::-webkit-scrollbar-track {
+    background: transparent; /* רקע שקוף */
+}
+
+.room-widget.card::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.1); /* צבע עדין מאוד ובלתי נראה כמעט */
+    border-radius: 10px;
+}
+
+.room-widget.card::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 0, 0, 0.2); /* מתכהה מעט רק כשעוברים עליו */
+}
+
+/* תמיכה ב-Firefox */
+
+/* Keep header white too */
 .room-widget.card .room-header {
-  position: sticky;          /* sticks within this scrolling card */
-  position: -webkit-sticky;  /* safari */
-  top: 0;
-  z-index: 5;
-  background: inherit;       /* same bg as card to cover content beneath */
-  padding: 10px 12px;
-  border-bottom: 1px solid rgba(0,0,0,.06);
-  /* subtle shadow when stuck */
-  box-shadow: 0 1px 0 rgba(0,0,0,.06);
+    position: sticky;
+    position: -webkit-sticky;
+    top: 0;
+    z-index: 5;
+    background: #fff !important;
+    padding: 10px 12px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+    box-shadow: 0 1px 0 rgba(0, 0, 0, 0.06);
+    cursor: pointer;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
 }
 
-/* Only matters visually when expanded; sticky is harmless otherwise */
-.room-widget.card.active .room-header { /* (kept for clarity) */ }
-
-/* Scrollable body gets the padding that used to be on the card */
 .room-widget.card .room-body {
-  padding: 10px 12px;
+    padding: 10px 12px;
 }
 
-/* Optional: keep status circle above content when header is stuck */
-.room-widget.card .room-header .status-circle {
-  position: relative;
-  z-index: 6;
-  top:0px;
+/* Focus/blur states */
+.room-widget.blurred {
+    filter: blur(1px);
+    opacity: 0.6;
+}
+.room-widget.active {
+    filter: none;
+    opacity: 1;
 }
 
-/* Example: make scompleted rows a bit dimmer or styled */
-.surgery-row.scompleted {
-  opacity: .8;
-}
-
-/* Turnover line spacing */
-.turnover-line {
-  margin: 6px 0;
-}
-
-.metrics .metric-chip + .metric-chip::before {
-  content: '|';
-  margin: 0 .5rem;
-  opacity: .6;
-}
-
-
-
-/* ---------- Background Color Mode ---------- */
-/* When this class is present on the card, we paint the background instead of the border. */
-.room-widget.card.status-mode-bg {
-  /* Clear any border/animations from border-mode */
-  /*border: 1px !important;*/
-  animation: none !important;
-
-  /* Drive colors from CSS vars for easy contrast handling */
-  background: var(--card-bg, #fff);
-  color: var(--card-fg, #111);
-}
-
-/* Make the sticky header look correct on tinted/solid backgrounds */
-.room-widget.card.status-mode-bg .room-header {
-  background: var(--card-bg, #fff);
-  /* softer divider that works on light/dark bg */
-  border-bottom-color: rgba(0,0,0,.08);
-}
-.room-widget.card.status-mode-bg.red-45 .room-header,
-.room-widget.card.status-mode-bg.red-60 .room-header,
-.room-widget.card.status-mode-bg.red-120 .room-header {
-  border-bottom-color: rgba(255,255,255,.25);
-}
-
-/* Status dot: either hide (since the whole card is colored), or outline it */
-.room-widget.card.status-mode-bg .status-circle {
-  /* Option A: hide */
-  /* display: none; */
-  /* Option B: keep but add a white ring for visibility on dark bg */
-  box-shadow: 0 0 0 2px rgba(255,255,255,.65);
-}
-
-/* Chips + metric text should follow foreground color (for readability) */
-.room-widget.card.status-mode-bg .metrics .metric-chip span,
-.room-widget.card.status-mode-bg .small,
-.room-widget.card.status-mode-bg .surgery-row,
-.room-widget.card.status-mode-bg .status {
-  color: var(--card-fg, #111) !important;
-}
-
-/* Give chips a subtle pill background that adapts to light/dark */
-.room-widget.card.status-mode-bg .metrics .metric-chip span {
-  padding: 0 3px;
-  border-radius: 8px;
-  background: var(--chip-bg, rgba(0,0,0,.06));
-}
-
-/* Neutralize explicit metric colors inside colored cards */
-.room-widget.card.status-mode-bg .metric-ok,
-.room-widget.card.status-mode-bg .metric-yellow,
-.room-widget.card.status-mode-bg .metric-orange,
-.room-widget.card.status-mode-bg .metric-red,
-.room-widget.card.status-mode-bg .metric-red-strong {
-  color: inherit !important;
-  text-shadow: none !important;
-  animation: none !important;
-}
-
-/* Completed rows remain slightly dimmer, but still readable */
-.room-widget.card.status-mode-bg .surgery-row.scompleted {
-  opacity: 0.85;
-}
-
-/* ---------- Per-status palettes (set background + foreground + chip bg) ---------- */
-/* Light tints (dark text) */
-.room-widget.card.status-mode-bg.green-blink {
-  --card-bg: #e6f4ea;  /* google-ish green tint */
-  --card-fg: #0b5a2a;
-  --chip-bg: rgba(0,0,0,.06);
-}
-.room-widget.card.status-mode-bg.grey {
-  --card-bg: #f1f3f4;
-  --card-fg: #202124;
-  --chip-bg: rgba(0,0,0,.06);
-}
-.room-widget.card.status-mode-bg.blue {
-  --card-bg: #e8f0fe;
-  --card-fg: #174ea6;
-  --chip-bg: rgba(0,0,0,.06);
-}
-.room-widget.card.status-mode-bg.orange {
-  --card-bg: #fff4e5;
-  --card-fg: #8a4b00;
-  --chip-bg: rgba(0,0,0,.06);
-}
-
-/* Warnings/Severe = solid/darker bg (light text) */
-.room-widget.card.status-mode-bg.red-45,
-.room-widget.card.status-mode-bg.red-45-ack {
-  --card-bg: #d93025;  /* red 600 */
-  --card-fg: #ffffff;
-  --chip-bg: rgba(255,255,255,.18);
-}
-.room-widget.card.status-mode-bg.red-60,
-.room-widget.card.status-mode-bg.red-60-ack {
-  --card-bg: #b31412;  /* deeper red */
-  --card-fg: #ffffff;
-  --chip-bg: rgba(255,255,255,.20);
-}
-.room-widget.card.status-mode-bg.red-120,
-.room-widget.card.status-mode-bg.red-120-ack {
-  --card-bg: #7f1d1d;  /* darkest/maroon */
-  --card-fg: #ffffff;
-  --chip-bg: rgba(255,255,255,.22);
-}
-
-/* If you still want a very subtle border on light modes */
-.room-widget.card.status-mode-bg.green-blink,
-.room-widget.card.status-mode-bg.grey,
-.room-widget.card.status-mode-bg.blue,
-.room-widget.card.status-mode-bg.orange {
-  box-shadow: inset 0 0 0 1px rgba(0,0,0,.06);
-}
-
-/* Kill border-mode animations when background mode is on */
-.room-widget.card.status-mode-bg.red-60,
-.room-widget.card.status-mode-bg.red-120 {
-  animation: none !important;
-  border: 0 !important;
-}
-
-
-
-.room-alert-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: .35rem;
-  margin-inline-start: .5rem;
-  padding: .15rem .5rem;
-  border-radius: 999px;
-  background: #ffebee;
-  color: #b71c1c;
-  font-weight: 700;
-  border: 1px solid #ffcdd2;
-  margin: 0.25rem 0 0.4rem;
-}
-
-.warn-dot {
-  width: 10px; height: 10px; border-radius: 50%;
-  background: #d32f2f;
-  box-shadow: 0 0 0 0 rgba(211,47,47,.7);
-}
-
-
-/* Blink only when not acknowledged */
-.warn-dot.blink,
-.warn-icon.blink {
-  animation: pulse 1.5s infinite;
-}
-
-@keyframes pulse {
-  0%   { box-shadow: 0 0 0 0 rgba(211,47,47,.7); }
-  70%  { box-shadow: 0 0 0 12px rgba(211,47,47,0); }
-  100% { box-shadow: 0 0 0 0 rgba(211,47,47,0); }
-}
-
-.warn-icon { margin-inline-end: .25rem; font-weight: 700; color: #b71c1c; }
-.progress-line { display: flex; align-items: center; justify-content: center; gap: .25rem; }
-.metric-chip { margin: 0; } /* .25rem*/
-
-
-.room-alert-chip--placeholder {
-  visibility: hidden;              /* keeps space but not visible */
-}
-.room-alert-chip--placeholder .warn-dot {
-  display: none;                   /* don’t animate placeholder dot */
-}
-
-/* inline icon before "X מתוך N" — reserve consistent space */
-.warn-icon {
-  margin-inline-end: .25rem;
-  font-weight: 700;
-  color: #b71c1c;
-}
-
-/* placeholder icon occupies the same width but is invisible */
-.warn-icon--placeholder {
-  visibility: hidden;
-  display: inline-block;
-  width: 1.2em;                    /* roughly width of '⚠️' */
-}
-
-/* optional: if the title and chip are on one line and you want fixed min-height */
-h4.text-center { min-height: 2.2rem; }
-
-
-
-.background-mode .room-widget .card .room-header .status-circle{top:-152px!important;}
-
-/* small neutral chip (non-blinking) */
-.overlap-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: .25rem;
-  margin-inline-start: .35rem;
-  padding: .05rem .4rem;
-  border-radius: 999px;
-  background: #eef2ff;   /* soft */
-  color: #283593;        /* indigo-ish */
-  font-weight: 600;
-  border: 1px solid #c5cae9;
-}
-
-.overlap-chip--placeholder { visibility: hidden; }
-
-/* inline icon variant for progress line */
-.overlap-icon {
-  margin-inline-end: .25rem;
-  font-weight: 700;
-  color: #3949ab;
-}
-
-
-
-/* greys out the whole card */
+/* Past day */
 .past-day {
-  background: #f3f4f6;
-  filter: grayscale(0.35);
+    background: #fff !important;
+    filter: grayscale(0.35);
 }
-
-/* hide red emphasis inside past days (if you prefer fully hidden) */
 .past-day .room-alert-chip,
 .past-day .warn-icon,
 .past-day .warn-dot {
-  opacity: 0.25;             /* or: display:none; if you want them gone */
-  animation: none !important;
+    opacity: 0.25;
+    animation: none !important;
 }
 
-/* placeholders keep layout consistent */
-.room-alert-chip--muted {
-  visibility: hidden;        /* reserves space without showing */
-}
-.warn-icon--placeholder {
-  visibility: hidden;
-  display: inline-block;
-  width: 1.2em;
-}
-
-
-.progress-line{text-align: center;}
-.mat-form-field-wrapper{padding-bottom: 0!important;}
-.mat-form-field-infix{width: 100px !important;}
-
-
-.idle-chip { margin-inline-start:6px; font-weight:600; white-space:nowrap; }
-.live-dot { display:inline-block; width:6px; height:6px; margin-inline-start:6px;
-  border-radius:50%; background: currentColor; opacity:.6; animation: pulse 1.2s ease-in-out infinite; vertical-align:middle; }
-@keyframes pulse { 0%,100% { transform:scale(.8); opacity:.4 } 50% { transform:scale(1); opacity:1 } }
-
-
-.summary-card > *{direction:rtl; text-align: right;}
-.summary-card { border:1px solid #e5e5e5; border-radius:10px; padding:12px 14px; margin:10px 0 16px; background:#fff; }
-.summary-header { font-weight:700; margin-bottom:8px; }
-.summary-grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(180px,1fr)); gap:10px; }
-.summary-pill { border:1px solid #eee; border-radius:8px; padding:10px; }
-.summary-pill .k { font-size:1em; opacity:.7; margin-bottom:2px; }
-.summary-pill .v { font-size:22px; font-weight:700; line-height:1.2; }
-.summary-pill .sub { font-size:1em; opacity:.8; }
-.summary-section { margin-top:10px; }
-.section-title { font-weight:600; margin-bottom:6px; }
-.now-list { list-style:none; padding:0; margin:0; }
-.now-list li { padding:3px 0; }
-.rooms-list { display:flex; flex-wrap:wrap; gap:8px; }
-.room-chip { border:1px solid #eee; border-radius:20px; padding:6px 10px; font-size:13px; white-space:nowrap; }
-.room-id { font-weight:600; margin-inline-end:6px; }
-.dot { display:inline-block; width:8px; height:8px; border-radius:50%; margin:0 2px; vertical-align:middle; }
-.dot.ok { background:#97caaf; }     /* completed */
-.dot.run { background:rgb(1, 92, 1); opacity:.7; animation: quiet-blink 2s ease-in-out infinite;}    /* in progress */
-.dot.plan { background:#1e90ff; }   /* planned */
-.muted { opacity:.65; }
-
-
-
-.urgency-line { margin-top: 4px; }
-.urgency-line .urge {
-  background: transparent; border: 0; cursor: pointer; padding: 0 4px; font: inherit;
-}
-.urgency-line .urge:focus { outline: none; text-decoration: underline; }
-.summary-section .urge.close { float: inline-start; margin-inline-start: 6px; }
-
-
-
-.metrics {
-  display: flex;
-  justify-content: center;
-  /*gap: 1rem;*/ /* space between chips */
+/* =========================
+   Border color palette (status)
+   You already add: border- + getRoomStatusClassWithSettings(room)
+   e.g. border-green-blink / border-grey / border-blue / border-orange / border-red-45 ...
+   ========================= */
+.room-white {
+    background: #fff !important;
 }
 
-.metric-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 1rem;
+/* Cancel background-mode if some class exists */
+.status-mode-bg,
+.room-widget.card.status-mode-bg {
+    background: #fff !important;
+    color: #111 !important;
+    animation: none !important;
 }
 
-/* For screens less than 1900px */
-@media (max-width: 1899px) {
-  .metrics {
+/* Default mapping to border color only */
+.border-green-blink {
+    border-color: #2ecc71 !important;
+}
+.border-grey {
+    border-color: #95a5a6 !important;
+}
+.border-blue {
+    border-color: #1e88e5 !important;
+}
+.border-orange {
+    border-color: #ff9800 !important;
+}
+
+.border-red-45,
+.border-red-45-ack {
+    border-color: #e53935 !important;
+}
+
+.border-red-60,
+.border-red-60-ack {
+    border-color: #b71c1c !important;
+}
+
+.border-red-120,
+.border-red-120-ack {
+    border-color: #7f0000 !important;
+}
+
+/* If you still use .card.red-.. somewhere */
+.room-widget.card.red-45,
+.room-widget.card.red-45-ack {
+    border-color: #e53935 !important;
+}
+
+.room-widget.card.red-60,
+.room-widget.card.red-60-ack {
+    border-color: #b71c1c !important;
+}
+
+.room-widget.card.red-120,
+.room-widget.card.red-120-ack {
+    border-color: #7f0000 !important;
+}
+
+/* =========================
+   Idle escalation (YOUR RULES)
+   Add these classes from TS when room is free:
+   - idle-20  (>=20min)
+   - idle-40  (>=40min)  => blink border
+   Also: text should show "40 דקות" etc. (handled in TS)
+   ========================= */
+.room-widget.card.idle-20 {
+    border-color: #f9e79f !important; /* light yellow */
+}
+
+@keyframes border-blink {
+    0%,
+    100% {
+        border-color: #ff9800;
+    }
+    50% {
+        border-color: rgba(255, 152, 0, 0.25);
+    }
+}
+.room-widget.card.idle-40 {
+    border-color: #ff9800 !important; /* orange */
+    animation: border-blink 0.9s linear infinite;
+}
+
+/* Ensure inside stays white even during blink */
+.room-widget.card.idle-40,
+.room-widget.card.idle-40 .room-header,
+.room-widget.card.idle-40 .room-body {
+    background: #fff !important;
+}
+
+/* Turnover warning (kept, but border-only; inside stays white) */
+@keyframes turnover-border-blink {
+    0%,
+    100% {
+        border-color: #ff6c67;
+        box-shadow: 0 0 12px rgba(211, 47, 47, 0.35);
+    }
+    50% {
+        border-color: #b71c1c;
+        box-shadow: 0 0 20px rgba(211, 47, 47, 0.2);
+    }
+}
+.room-widget.card.turnover-warning {
+    border: 3px solid #ff6c67;
+    animation: turnover-border-blink 1s infinite;
+    background: #fff !important;
+}
+.room-widget.card.turnover-warning .room-header {
+    background: #fff !important;
+}
+
+/* =========================
+   Department badge / Info blocks
+   ========================= */
+.room-dept-badge {
+    display: inline-block;
+    margin-inline-start: 6px;
+    padding: 2px 8px;
+    border-radius: 6px;
+    background: rgba(0, 0, 0, 0.05);
+    font-size: 0.85em;
+    font-weight: 600;
+    color: #555;
+    white-space: nowrap;
+}
+
+.room-status-info,
+.room-duration-info,
+.room-progress-info {
+    margin: 6px 0 4px;
+    text-align: center;
+}
+
+.status-display {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 0.9em;
+    min-width: 140px;
+}
+.status-display.status-active {
+    background: #ffebee;
+    color: #c62828;
+    animation: status-pulse 2s infinite;
+}
+.status-display.status-completed {
+    background: #e8f5e9;
+    color: #2e7d32;
+}
+.status-display.status-free {
+    background: #e3f2fd;
+    color: #1976d2;
+}
+.status-display.status-planned {
+    background: #fff3e0;
+    color: #e65100;
+}
+@keyframes status-pulse {
+    0%,
+    100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.7;
+    }
+}
+
+.duration-display {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 10px;
+    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.03);
+    font-size: 0.85em;
+}
+.duration-icon {
+    font-size: 1.1em;
+}
+.duration-text {
+    font-weight: 600;
+    color: #444;
+}
+
+.progress-display {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 8px;
+    padding: 4px 12px;
+    border-radius: 8px;
+    background: rgba(76, 175, 80, 0.08);
+    border: 1px solid rgba(76, 175, 80, 0.25);
+}
+.progress-counter {
+    font-weight: 800;
+    font-size: 1.1em;
+    color: #2e7d32;
+}
+.progress-label {
+    font-size: 0.85em;
+    color: #558b2f;
+    font-weight: 600;
+}
+
+/* idle warning text */
+.turnover-warning-text {
+    display: block;
+    margin-top: 4px;
+    font-size: 0.78em;
+    font-weight: 800;
+    color: #b71c1c;
+}
+
+/* extra panel – RTL */
+.room-extra-panel {
+    direction: rtl;
+    text-align: right;
+}
+
+.room-extra-panel .extra-row {
+    justify-content: flex-start; /* לא space-between */
+    align-items: center;
+}
+
+.room-extra-panel .k {
+    margin-left: 12px; /* רווח בין label לערך */
+    opacity: 0.85;
+    text-align: right;
+}
+
+/* הערכים (שעות/מספרים) */
+.room-extra-panel .v {
+    font-weight: 800;
+    direction: ltr;
+    text-align: right; /* מוצמד לימין */
+    margin-right: auto; /* דוחף הכל לימין */
+}
+
+/* =========================
+   Surgery cards
+   ========================= */
+.section-title {
+    margin: 4px 0 6px;
+    font-size: 0.95em;
+    font-weight: 800;
+}
+
+.surgery-card {
+    margin: 4px 0;
+    padding: 6px 2px;
+    border: 1px solid rgba(0, 0, 0, 0.12);
+    border-radius: 8px;
+    background: #fff;
+    line-height: 1.2;
+}
+.surgery-card.planned {
+    background: #fafafa;
+    border-style: dashed;
+}
+
+.surgery-top {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    align-items: center;
+}
+
+.times {
+    direction: ltr;
+    font-weight: 700;
+    font-size: 0.9em;
+    color: #1f2937;
+    unicode-bidi: embed;
+}
+
+/* status pill (single definition) */
+.status-wrap {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 700;
+}
+.status-wrap .status-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+}
+
+/* status colors */
+.status-wrap.Completed {
+    background-color: #e8f5e9;
+    color: #2e7d32;
+}
+.status-wrap.Completed .status-dot {
+    background-color: #2e7d32;
+}
+
+.status-wrap.InProgress {
+    background-color: #e3f2fd;
+    color: #1565c0;
+}
+.status-wrap.InProgress .status-dot {
+    background-color: #1565c0;
+}
+
+.status-wrap.Planned {
+    background-color: #f5f5f5;
+    color: #616161;
+}
+.status-wrap.Planned .status-dot {
+    background-color: #616161;
+}
+
+/* =========================
+   Summary card
+   ========================= */
+.summary-card > * {
+    direction: rtl;
+    text-align: right;
+}
+.summary-card {
+    border: 1px solid #e5e5e5;
+    border-radius: 10px;
+    padding: 12px 14px;
+    margin: 10px 0 16px;
+    background: #fff;
+}
+.summary-header {
+    font-weight: 800;
+    margin-bottom: 8px;
+}
+.summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 10px;
+}
+.summary-pill {
+    border: 1px solid #eee;
+    border-radius: 8px;
+    padding: 10px;
+}
+.summary-pill .k {
+    font-size: 1em;
+    opacity: 0.7;
+    margin-bottom: 2px;
+}
+.summary-pill .v {
+    font-size: 22px;
+    font-weight: 900;
+    line-height: 1.2;
+}
+.summary-pill .sub {
+    font-size: 1em;
+    opacity: 0.8;
+}
+
+.now-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+.now-list li {
+    padding: 3px 0;
+}
+
+.rooms-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+.room-chip {
+    border: 1px solid #eee;
+    border-radius: 20px;
+    padding: 6px 10px;
+    font-size: 13px;
+    white-space: nowrap;
+}
+.room-id {
+    font-weight: 800;
+    margin-inline-end: 6px;
+}
+.dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin: 0 2px;
+    vertical-align: middle;
+}
+.dot.ok {
+    background: #97caaf;
+}
+.dot.run {
+    background: rgb(1, 92, 1);
+    opacity: 0.7;
+    animation: quiet-blink 2s ease-in-out infinite;
+}
+.dot.plan {
+    background: #1e90ff;
+}
+.muted {
+    opacity: 0.65;
+}
+
+/* Small animations */
+@keyframes quiet-blink {
+    50% {
+        opacity: 0.6;
+    }
+}
+
+/* =========================
+   Responsive
+   ========================= */
+@media (min-width: 1800px) {
+    #surgeriesrts {
+        grid-template-columns: repeat(7, minmax(250px, 1fr));
+    }
+}
+@media (max-width: 900px) {
+    #surgeriesrts {
+        grid-template-columns: repeat(4, minmax(250px, 1fr));
+    }
+}
+@media (max-width: 600px) {
+    #surgeriesrts {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    .status-display,
+    .progress-display,
+    .duration-display {
+        font-size: 0.8em;
+        padding: 3px 8px;
+    }
+    .room-dept-badge {
+        display: none;
+    }
+}
+
+/* =========================
+   Material date input (compact)
+   ========================= */
+.date-compact.mat-form-field {
+    width: 120px;
+}
+:host ::ng-deep .date-compact .mat-form-field-infix {
+    width: 100px;
+}
+.dashboard-header {
+    padding: 40px 0 20px;
+    background: linear-gradient(to left, #1976d2, #2196f3);
+    border-radius: 12px;
+    margin-bottom: 25px;
+    /* color: white; */
+}
+
+.page-title {
+    font-size: 2.2rem;
+    font-weight: 700;
+    margin: 0;
+    letter-spacing: 1px;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.25);
+    color: black;
+}
+
+.text-center {
+    text-align: center;
+}
+
+.room-widget.card .room-header {
+    /* ... הגדרות קיימות ... */
+    direction: rtl;
+    text-align: center; /* כותרת החדר נשארת במרכז */
+}
+
+.room-widget.card .room-body {
+    direction: rtl;
+    text-align: right; /* תוכן החדר לימין */
+    padding: 10px 12px;
+}
+
+/* תיקון לשורות מידע נוסף */
+.room-extra-panel .extra-row {
+    display: flex;
+    flex-direction: row; /* מבטיח סדר עברית */
+    justify-content: flex-start;
+    align-items: center;
+    gap: 8px;
+}
+
+.room-extra-panel .k {
+    margin-left: 12px; /* רווח מהערך */
+    margin-right: 0;
+    text-align: right;
+}
+
+.room-extra-panel .v {
+    font-weight: 800;
+    direction: ltr; /* מספרים ושעות נשארים משמאל לימין לקריאות */
+    text-align: left;
+    margin-right: auto; /* דוחף את הערך לצד הנגדי */
+}
+
+.surgery-top {
+    display: flex;
+    flex-direction: row-reverse; /* הופך את סדר הדיספליי להתאמה לעברית */
+    justify-content: space-between;
+    align-items: center;
+}
+
+.dept {
+    text-align: right;
+    font-size: 0.85em;
+    color: #444;
+    font-weight: 600;
+
+    background: #f7f9fc; /* רקע בהיר מודרני */
+    border: 1px solid #e2e6ea; /* מסגרת עדינה */
+    padding: 6px 10px; /* ריווח פנימי נעים */
+    border-radius: 6px; /* פינות מעוגלות */
+    display: inline-block; /* שומר על גודל קומפקטי */
+    max-width: 77px;
+}
+
+.summary-card {
+    direction: rtl;
+    text-align: right;
+}
+
+.summary-pill {
+    text-align: right;
+}
+
+.room-chip {
+    display: inline-flex;
+    flex-direction: row-reverse; /* שהנקודה תהיה בצד הנכון */
+    align-items: center;
+    gap: 5px;
+}
+
+/* small estimated text */
+.small.est-end {
+    font-size: 12px;
+    opacity: 0.85;
+    margin-top: 4px;
+    direction: rtl;
+    text-align: right;
+}
+.room-wrapper {
+    display: flex;
     flex-direction: column;
     align-items: center;
-  }
-
-  /* Hide the icons */
-  .metric-chip::before {
-    display: none;
-  }
 }
 
-
-/* Default (wide screen): show icons, hide titles */
-.chip-title {
-  display: none;
+.room-status-title {
+    margin-bottom: 6px;
+    text-align: center;
 }
-.chip-icon {
-  display: inline;
-}
-
-/* Narrow screen (<1900px): hide icons, show titles */
-@media (max-width: 1899px) {
-  .chip-icon {
-    display: none;
-  }
-  .chip-title {
-    display: inline;
-    font-weight: bold;
-  }
-}
-
-
-.room-widget {min-width:200px;}
-
-.urgency-buttons {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px; /* small spacing between buttons */
+@keyframes blinkRed {
+    0% {
+        box-shadow: 0 0 0 0 rgba(220, 0, 0, 0.9);
+        border-color: #dc0000;
+    }
+    50% {
+        box-shadow: 0 0 0 4px rgba(220, 0, 0, 0.6);
+        border-color: #ff3b3b;
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(220, 0, 0, 0.9);
+        border-color: #dc0000;
+    }
 }
 
-.urgency-buttons .urge {
-  display: flex;
-  align-items: center;
-  gap: 2px; /* space between icon and count */
-  font-size: 0.9rem;
-  padding: 4px 8px;
-  border: none;
-  border-radius: 6px;
-  background-color: #f2f2f2; /* light grey for default */
-  cursor: pointer;
-  transition: background-color 0.2s, transform 0.1s;
+.idle-alert {
+    border: 2px solid #dc0000;
+    animation: blinkRed 1s infinite;
+}
+@keyframes idleBlinkBorder {
+    0% {
+        outline-color: rgba(220, 0, 0, 0.15);
+        box-shadow: 0 0 0 0 rgba(220, 0, 0, 0);
+    }
+    50% {
+        outline-color: rgba(220, 0, 0, 1);
+        box-shadow: 0 0 0 6px rgba(220, 0, 0, 0.35);
+    }
+    100% {
+        outline-color: rgba(220, 0, 0, 0.15);
+        box-shadow: 0 0 0 0 rgba(220, 0, 0, 0);
+    }
 }
 
-.urgency-buttons .urge:hover {
-  background-color: #e0e0e0;
-  transform: translateY(-1px);
+.room-widget.idle-alert {
+    outline: 3px solid rgba(220, 0, 0, 1) !important;
+    outline-offset: -3px !important; /* שישב על המסגרת */
+    animation: idleBlinkBorder 0.9s linear infinite !important;
 }
 
-.urgency-buttons .urge.selected {
-  background-color: #4caf50; /* green for selected */
-  color: white;
+.room-widget.all-done {
+    outline: 3px solid #8fd3ff !important;
+    outline-offset: -3px;
+    box-shadow: 0 0 0 4px rgba(143, 211, 255, 0.25);
 }
 
-.urgency-buttons .urge span {
-  font-weight: 500;
+.all-done-text {
+    color: #2b7fb8;
+    font-size: 12px;
+    font-weight: 600;
+}
+.next-ready-chip {
+    margin-top: 6px;
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 0.85em;
+    font-weight: 600;
+    display: inline-block;
 }
 
-
-/* Ensure at least 3 cards per row on large screens */
-@media (min-width: 1800px) {
-  #surgeriesrts {
-    grid-template-columns: repeat(7, minmax(250px, 1fr));
-  }
+.next-ready-chip.ready {
+    background: #e6f7ea;
+    color: #1b7f3a;
+    border: 1px solid #7ddc9a;
 }
 
-@media (max-width: 900px) {
-  #surgeriesrts {
-    grid-template-columns: repeat(4, minmax(250px, 1fr));
-  }
-}
-
-/* Mobile: force single column */
-@media (max-width: 600px) {
-  #surgeriesrts {
-    grid-template-columns: 1fr;
-  }
+.next-ready-chip.warn {
+    background: #fff4e5;
+    color: #b45309;
+    border: 1px solid #fbbf24;
 }
