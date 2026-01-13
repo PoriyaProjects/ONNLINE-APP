@@ -396,7 +396,7 @@ public async loadOpChart3Y(chartOptions: any = {}, param?: number, dparam?: numb
       const url = this.buildUrlWithParams(this.DATA_SOURCES.GAUGE, { param, dparam });
       const rawData = await this.http.get(url, { responseType: 'text' }).toPromise();
       const cleanData = sanitizeSoapResponse(rawData);
-  
+
       await this.fetchDataAndDrawDirect(cleanData, (data: any) => data, this.CHART_TYPES.GAUGE, 'gauge_chart', chartOptions);
   
       setTimeout(() => {
@@ -1892,48 +1892,57 @@ public async drawDualArcGaugeOverlay(
     const container = await this.waitForElement(elementId);
     if (!container) return;
 
-    // --- Clean up all old content (SVG + children) ---
-    while (container.firstChild) {
-      container.removeChild(container.firstChild);
+    // MUST be visible to measure/draw
+    const el = document.getElementById(elementId);
+    if (!el || el.offsetWidth === 0 || el.offsetHeight === 0) {
+      console.warn('arc overlay container not visible or has 0 size:', elementId);
+      return;
     }
+
+    // Clean old content
+    while (container.firstChild) container.removeChild(container.firstChild);
 
     const workingDaysInfo = await getWorkingDaysInfo(this.DATA_SOURCES.WORKING_DAYS);
     if (!workingDaysInfo?.totalWorkingDays) return;
 
     const url = this.buildUrlWithParams(this.DATA_SOURCES.GAUGE, { param, dparam });
     const rawData = await this.http.get(url, { responseType: 'text' }).toPromise();
-    const cleanData = sanitizeSoapResponse(rawData);
 
-    // Get latest year's data
+    // sanitize may return string (JSON) or object
+    const sanitized = sanitizeSoapResponse(rawData);
+    const cleanData =
+      typeof sanitized === 'string' ? JSON.parse(sanitized) : sanitized;
+
+  
     const yData = cleanData?.yData;
     if (!Array.isArray(yData) || yData.length === 0) return;
+
     const latestYearData = yData[yData.length - 1]?.Year;
     const months = latestYearData?.Months;
-    if (!Array.isArray(months)) return;
+    if (!Array.isArray(months) || months.length === 0) return;
 
     const currentIndex = workingDaysInfo.currentWorkingDayIndex ?? 1;
     const totalDays = workingDaysInfo.totalWorkingDays;
     const isFirstDay = currentIndex === 1;
     const isLastDay = currentIndex === totalDays;
 
-    // Try to get the current month dynamically
-    let monthData = this.getCurrentMonthFromDate(months);
-    if (!monthData) {
-      monthData = this.getFallbackMonthData(months);
-    }
+    // If onlyLastMonth=true -> server returns a single month, use it directly
+    let monthData: any =
+      months.length === 1
+        ? months[0]
+        : this.getCurrentMonthFromDate(months) || this.getFallbackMonthData(months);
+
     if (!monthData) return;
 
-    const value = monthData.y;
-
-    // --- Dynamic target: previous year's same month +10% ---
+    const value = Number(monthData.y ?? 0);
     const currentMonthName = monthData.name;
+
+    // Target: previous year's same month +10%
     const prevYearData = yData.length > 1 ? yData[yData.length - 2]?.Year : null;
     let targetValue = 220; // fallback
-    if (prevYearData?.Months) {
-      const prevMonth = prevYearData.Months.find(m => m.name === currentMonthName);
-      if (prevMonth?.y) {
-        targetValue = prevMonth.y * 1.1; // add 10%
-      }
+    if (prevYearData?.Months && Array.isArray(prevYearData.Months)) {
+      const prevMonth = prevYearData.Months.find((m: any) => m?.name === currentMonthName);
+      if (prevMonth?.y != null) targetValue = Number(prevMonth.y) * 1.1;
     }
 
     const perDayTarget = targetValue / totalDays;
@@ -1944,13 +1953,14 @@ public async drawDualArcGaugeOverlay(
       isLastDay,
       plannedIncludingToday,
       targetValue,
-      perDayTarget
+      perDayTarget,
     });
 
-    const weeklyTable = latestYearData?.WeekSummaryTable;
-    const pieValues = getWeeklySummaryAsPieValues(weeklyTable);
+    // Weekly table may not exist in this endpoint; keep safe
+    const weeklyTable = (latestYearData as any)?.WeekSummaryTable;
+    const pieValues = weeklyTable ? getWeeklySummaryAsPieValues(weeklyTable) : [];
 
-    // Draw fresh chart
+    // Draw
     setTimeout(() => {
       drawOverlayDualArcChartHelper({
         containerId: elementId,
@@ -1960,11 +1970,11 @@ public async drawDualArcGaugeOverlay(
         gaugeValue: value,
         gaugeTargetStatus,
         currentMonthValues: pieValues,
-        markerOptions: { radius: 14, fontSize: 10 }
+        markerOptions: { radius: 14, fontSize: 10 },
       });
-    }, 100);
-
+    }, 0);
   } catch (err) {
+    console.error(err);
     const el = document.getElementById(elementId);
     if (el) el.innerHTML = '⚠️ Error loading dual arc overlay';
   }
