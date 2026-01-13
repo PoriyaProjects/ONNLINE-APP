@@ -114,6 +114,7 @@ export class EshbozComponent implements OnInit {
     _yearToSearch = 0;
     chart = null;
     isShow = false;
+    loading = false;
     constructor(private router: Router, private http: HttpClient) { }
     startdateVal: string;
     enddateVal: string;
@@ -174,7 +175,7 @@ export class EshbozComponent implements OnInit {
             })
             .subscribe(
                 (Response) => {
-                    this.departments =  Response["d"] ;
+                    this.departments = Response["d"];
                     //this.dataSource.paginator = this.paginator;
                 },
                 (error) => {
@@ -424,6 +425,7 @@ export class EshbozComponent implements OnInit {
         if (_counter == 4) {
             _surgeryType = "ALL";
         }
+        this.loading = true;
         //////debugger
         $("#loader").removeClass("d-none");
         this.http
@@ -439,6 +441,7 @@ export class EshbozComponent implements OnInit {
             })
             .subscribe(
                 Response => {
+                    this.loading = false;
                     var json = JSON.parse(Response["d"]);
                     var LineName = JSON.parse(json["LineName"]);
                     var LineCounter = JSON.parse(json["LineCounter"]);
