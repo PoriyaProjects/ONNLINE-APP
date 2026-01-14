@@ -465,7 +465,11 @@ export class EmployeesAddUpdateComponent implements OnInit {
       .subscribe((Response) => {
         this.employee_change_history_list = new MatTableDataSource(Response["d"]);
         if (this.employee_change_history_list.filteredData.length > 0) {
-          this.actionColumns = Object.keys(this.employee_change_history_list.filteredData[0]);
+          const dataKeys = Object.keys(this.employee_change_history_list.filteredData[0]);
+
+          // Only columns that exist in columnHeaderMap
+          this.actionColumns = Object.keys(this.columnHeaderMap)
+            .filter(key => dataKeys.includes(key));
         }
         this.dialog2.open(this.modalEmployeeHistory, { width: '90%', disableClose: false });
       });

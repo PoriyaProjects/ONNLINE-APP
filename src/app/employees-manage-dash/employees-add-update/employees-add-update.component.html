@@ -610,7 +610,7 @@
         <span aria-hidden="true">&times;</span>
     </button>
 
-    <mat-table mat-table [dataSource]="employee_change_history_list" class="table-history">
+    <mat-table mat-table [dataSource]="employee_change_history_list" class="table-history" dir="rtl">
 
         <!-- Dynamically created columns -->
         <ng-container *ngFor="let column of actionColumns" [matColumnDef]="column">
