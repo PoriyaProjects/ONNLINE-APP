@@ -66,7 +66,11 @@ export interface ItemProtocolDto {
   CreateDate: Date;
   UseContrast: boolean;
   IsRequireFIRSTShirn: boolean;
+  IsRequireShirn: boolean;
+  IsMorningAppointment: boolean;
+  IsRequireSleep: boolean;
 }
+
 
 @Component({
   selector: 'app-automation-process-dashboard',
@@ -100,8 +104,12 @@ protocolModifiers: ProtocolModifierDto[] = [];
 protocolFilters = {
   fromDate: null as Date | null,
   useContrast: false,
-  IsRequireFIRSTShirn: false
+  IsRequireFIRSTShirn: false,
+  IsRequireShirn: false,
+  IsMorningAppointment: false,
+  IsRequireSleep: false
 };
+
 
 modifierFilters = {
   fromDate: null as Date | null,
@@ -184,16 +192,16 @@ loadItemProtocols(unitProcessID: number): void {
       fromDate = this.protocolFilters.fromDate.toISOString().split('T')[0];
     }
 
-    const useContrastStr = this.protocolFilters.useContrast ? "true" : "";
-    const IsRequireFIRSTShirnStr = this.protocolFilters.IsRequireFIRSTShirn ? "true" : "";
-
-
     const params = {
       unitProcessID: unitProcessID,
       fromDate: fromDate,
-      useContrastStr: useContrastStr,
-      IsRequireFIRSTShirnStr: IsRequireFIRSTShirnStr
+      useContrastStr: this.protocolFilters.useContrast ? "true" : "",
+      IsRequireFIRSTShirnStr: this.protocolFilters.IsRequireFIRSTShirn ? "true" : "",
+      IsRequireShirnStr: this.protocolFilters.IsRequireShirn ? "true" : "",
+      IsMorningAppointmentStr: this.protocolFilters.IsMorningAppointment ? "true" : "",
+      IsRequireSleepStr: this.protocolFilters.IsRequireSleep ? "true" : ""
     };
+
 
     this.http.post(environment.url + "GetAutomationItemProtocols", params)
       .subscribe(
@@ -227,12 +235,20 @@ applyProtocolFilters(unitProcessID: number): void {
     this.loadItemProtocols(unitProcessID);
 }
 
+
 clearProtocolFilters(unitProcessID: number): void {
-    this.protocolFilters.fromDate = null;
-    this.protocolFilters.useContrast = false;
-    this.protocolFilters.IsRequireFIRSTShirn = false;
-    this.loadItemProtocols(unitProcessID);
+  this.protocolFilters = {
+    fromDate: null,
+    useContrast: false,
+    IsRequireFIRSTShirn: false,
+    IsRequireShirn: false,
+    IsMorningAppointment: false,
+    IsRequireSleep: false
+  };
+
+  this.itemProtocols = [];
 }
+
 
   loadNlpDashboard(): void {
     this.isLoading = true;
