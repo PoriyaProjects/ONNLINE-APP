@@ -67,7 +67,7 @@ export class WindowsUserActionsComponent implements OnInit {
       .subscribe((Response) => {
         try {
           this.loading = true;
-          alert(Response['d'] + '/n סיסמה חדשה נשלחה לטלפון שלך, נא להמתין');
+          alert(Response['d']);
           window.location.reload();
         } catch (error) {
           console.log("error in sending notification!");
