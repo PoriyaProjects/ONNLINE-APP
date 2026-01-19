@@ -352,6 +352,9 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
           this.specificRooms[index]['uniqueDepartments'] = tempArrayOfDepartments;
         });
         this.filteredSpecificRooms = this.deepClone(this.specificRooms);
+        if (this.isPhysicalRoom) {
+          this.sortSurgeriesOfEachRoomInDay();
+        }
         this.refresh.next();
         this.loader = false;
       });
