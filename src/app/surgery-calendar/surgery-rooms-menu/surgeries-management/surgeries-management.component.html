@@ -31,7 +31,7 @@
       </button>
     </div>
     <div class="mt-2">
-      <button mat-raised-button (click)="getPatientsQueues()"
+      <button *ngIf="!isPhysicalRoom" mat-raised-button (click)="getPatientsQueues()"
         [ngStyle]="{'background-color': IfPlannedSurgeries == 'original' ? 'cornflowerblue' : '' }">מקור</button>
       <button *ngIf="IfPlannedSurgeries != 'dror'" mat-raised-button (click)="sortSurgeriesOfEachRoomInDay()"
         [ngStyle]="{'background-color': IfPlannedSurgeries == 'planned' ? 'cornflowerblue' : '' }">תכנון</button>

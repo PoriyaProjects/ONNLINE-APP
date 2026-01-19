@@ -91,6 +91,7 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
   surgerySurf: boolean = false;
   loadingDataServer: boolean;
   IfPlannedSurgeries: string = "original"
+  isPhysicalRoom: boolean = false;
   private intervalId: any;
 
 
@@ -110,6 +111,7 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
     if (this.UserName != null) {
       ////debugger
       this.viewDate = this.data.room.Start;
+      this.isPhysicalRoom = this.data?.room?.type === 'פז';
       // let day = this.datePipe.transform(this.viewDate, 'dd');
       this.specificRooms = this.data.room.Rooms;
       this.getPatientsQueues();
@@ -350,6 +352,9 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
           this.specificRooms[index]['uniqueDepartments'] = tempArrayOfDepartments;
         });
         this.filteredSpecificRooms = this.deepClone(this.specificRooms);
+        if (this.isPhysicalRoom) {
+          this.sortSurgeriesOfEachRoomInDay();
+        }
         this.refresh.next();
         this.loader = false;
       });
@@ -405,7 +410,11 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
               /*
               20*60
               */
-              temp[index2].end = new Date(this.datePipe.transform(temp[index2].start.getTime() + parseInt(temp[index2].Duration) * 60 * 1000, 'yyyy-MM-dd HH:mm'));
+              const firstDurationMinutes = this.getPlannedDurationMinutes(temp[index2]);
+              temp[index2].end = new Date(this.datePipe.transform(
+                temp[index2].start.getTime() + firstDurationMinutes * 60 * 1000,
+                'yyyy-MM-dd HH:mm'
+              ));
               //  / ////debugger
               temp[index2].ArrivalDate = this.datePipe.transform(temp[index2].start, 'yyyy-MM-dd HH:mm');
               temp[index2].ArrivalTime = this.datePipe.transform(temp[index2].start, 'HH:mm');
@@ -434,7 +443,8 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
               // change the start time of the next surgery to begin after the end of the current surgery
               next.start = new Date(current_end_time.getTime() + 1200000);
               // change the end time of the next surgery to suit the new start time of the next surgery
-              next.end = new Date(next.start.getTime() + parseInt(next.Duration) * 60 * 1000);
+              const nextDurationMinutes = this.getPlannedDurationMinutes(next);
+              next.end = new Date(next.start.getTime() + nextDurationMinutes * 60 * 1000);
               /*
               next.EndDate  = next.EndTime = 
               next.ArrivalDate = next.ArrivalTime = 
@@ -457,6 +467,38 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
       this.refresh.next();
     }
     this.loader = false;
+  }
+
+  private getPlannedDurationMinutes(surgery: any): number {
+    const avgDurationMinutes = this.parseAvgDurationMinutes(surgery?.AvgDauration);
+    if (avgDurationMinutes !== null) {
+      return avgDurationMinutes;
+    }
+
+    const durationMinutes = Number(surgery?.Duration);
+    if (Number.isFinite(durationMinutes)) {
+      return durationMinutes;
+    }
+
+    return 0;
+  }
+
+  private parseAvgDurationMinutes(avgDuration: any): number | null {
+    if (typeof avgDuration !== 'string') {
+      return null;
+    }
+
+    const trimmed = avgDuration.trim();
+    if (!trimmed) {
+      return null;
+    }
+
+    const parts = trimmed.split(':').map((part) => Number(part));
+    if (parts.length < 2 || parts.some((part) => !Number.isFinite(part))) {
+      return null;
+    }
+
+    return parts[0] * 60 + parts[1];
   }
 
   checkSurfingSurgeryDays(room) {
