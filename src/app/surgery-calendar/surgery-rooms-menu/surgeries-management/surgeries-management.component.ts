@@ -471,7 +471,7 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
 
   private getPlannedDurationMinutes(surgery: any): number {
     const avgDurationMinutes = this.parseAvgDurationMinutes(surgery?.AvgDauration);
-    if (this.isPhysicalRoom && avgDurationMinutes !== null) {
+    if (avgDurationMinutes !== null) {
       return avgDurationMinutes;
     }
 
@@ -480,7 +480,7 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
       return durationMinutes;
     }
 
-    return avgDurationMinutes ?? 0;
+    return 0;
   }
 
   private parseAvgDurationMinutes(avgDuration: any): number | null {
