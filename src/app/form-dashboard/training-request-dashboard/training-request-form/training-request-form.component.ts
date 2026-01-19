@@ -166,7 +166,6 @@ export class TrainingRequestFormComponent implements OnInit {
     if (this.passport && this.form_id == "") {
       this.getPersonDetails();
     }
-    this.getAllTrainingRequestQuestionsList();
     // this.getTrainingRequestPlansList();
     this.getPlanningIntityList();
     this.getEmployeesList();
@@ -467,7 +466,7 @@ export class TrainingRequestFormComponent implements OnInit {
             Validators.pattern(/^[0-9]*$/),
             Validators.max(100)
           ]),
-          Work_Place: new FormControl(Training_Request_Forms_G?.Work_Place, null),
+          Work_Place: new FormControl(Training_Request_Forms_G?.Work_Place.trim(), null),
         });
         if (this.passport == Training_Request_Forms_A?.Passport_ID && this.passport != '025447285' && this.passport != '055382618' && this.passport != '056045834') this.requested = true;
         this.check_if_fund_or_health();
@@ -476,6 +475,7 @@ export class TrainingRequestFormComponent implements OnInit {
         if (Training_Request_Forms_B?.Poster_Attached != undefined && Training_Request_Forms_B?.Poster_Attached != "") this.wantsPoster = true;
         else this.wantsPoster = false;
         this.calculateDateEndMinimum();
+        this.getAllTrainingRequestQuestionsList();
         // Subscribe to changes in Date_End to calculate duration
         // this.Training_Request_Forms_B.get('Date_End').valueChanges.subscribe(() => {
         //   this.calculateRequestDuration();
@@ -934,6 +934,10 @@ export class TrainingRequestFormComponent implements OnInit {
       .post(environment.url + "GetAllTrainingRequestQuestionsList", {})
       .subscribe((Response) => {
         this.Keren_Dept_Corporation_Options = this.Number_Fund_Options = this.Central_Fund_Options = this.Other_Fund_Options = this.Department_Fund_Options = Response['d'].filter(x => x.QuestionID == '1')[0];
+        if (this.Training_Request_Forms_G.value.Work_Place === 'עובד מדינה') {
+          this.Keren_Dept_Corporation_Options.Training_Request_Options =
+            this.Keren_Dept_Corporation_Options.Training_Request_Options.slice(0, 3);
+        }
         this.Training_Importantce_Options = Response['d'].filter(x => x.QuestionID == '3')[0];
         this.Training_Importantce_Options2 = Response['d'].filter(x => x.QuestionID == '4')[0];
         this.Training_Importantce_Options3 = Response['d'].filter(x => x.QuestionID == '5')[0];
@@ -980,7 +984,7 @@ export class TrainingRequestFormComponent implements OnInit {
           this.Training_Request_Forms_A.controls['Title'].setValue(patient.JobTitleID);
           this.Training_Request_Forms_G.controls['Work_Start_Date'].setValue(patient.StartWorkDate);
           this.Training_Request_Forms_G.controls['Standart_Job_Type'].setValue(patient.StandartJobType);
-          this.Training_Request_Forms_G.controls['Work_Place'].setValue(patient.WorkPlaceDescription);
+          this.Training_Request_Forms_G.controls['Work_Place'].setValue(patient.WorkPlaceDescription.trim());
           this.Training_Request_Forms_G.controls['Function_Department'].setValue(patient.FunctionDescription + ' - ' + patient.DepartnentDescripton);
           this.Training_Request_Forms_G.controls['Standart_Level'].setValue(patient.RankDescription);
           this.Supervisor_Name1.setValue(this.employees.filter(t => t.id === patient.ManagerID1?.id)[0]);

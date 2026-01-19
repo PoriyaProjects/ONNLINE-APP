@@ -11,9 +11,9 @@ export class Functions{
     public Edate: FormControl;
     public yearsToSelect = {
         list: [
+            { name: "year", ID: "2025", checked: true },
             { name: "year", ID: "2024", checked: true },
             { name: "year", ID: "2023", checked: true },
-            { name: "year", ID: "2022", checked: true },
         ]
     };
     public RunFunction(){

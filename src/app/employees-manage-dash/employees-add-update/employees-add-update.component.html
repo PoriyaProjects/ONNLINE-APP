@@ -40,7 +40,7 @@
                     &nbsp;&nbsp;
                     <button class="submitBtn save" matTooltip="שמירה" [disabled]="employeePersonalDetails.invalid"
                         (click)="saveEmployee()" [disabled]="saveBtnWait"
-                        *ngIf="print_only_Protocol || UserName == 'adahabre' || UserName == 'malkobi' || UserName == 'orkatz' || UserName == 'dgolani' || UserName == 'ashoshany' || UserName == 'owertheim' || UserName == 'eofir'"
+                        *ngIf="print_only_Protocol || UserName == 'adahabre' || UserName == 'malkobi' || UserName == 'orkatz' || UserName == 'dgolani' || UserName == 'ashoshany' || UserName == 'owertheim' || UserName == 'eofir' || UserName == 'msuliman' || UserName == 'amarom'"
                         type="submit" mat-fab>
                         <span *ngIf="!saveBtnWait" class="material-icons">
                             save
@@ -610,7 +610,7 @@
         <span aria-hidden="true">&times;</span>
     </button>
 
-    <mat-table mat-table [dataSource]="employee_change_history_list" class="table-history">
+    <mat-table mat-table [dataSource]="employee_change_history_list" class="table-history" dir="rtl">
 
         <!-- Dynamically created columns -->
         <ng-container *ngFor="let column of actionColumns" [matColumnDef]="column">
