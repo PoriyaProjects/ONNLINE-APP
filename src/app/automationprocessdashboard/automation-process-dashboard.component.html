@@ -115,13 +115,35 @@
 
           <div class="protocol-checkbox-group">
             <input type="checkbox" [(ngModel)]="protocolFilters.useContrast" id="useContrastCheckbox">
-            <label for="useContrastCheckbox">זריקה (Use Contrast)</label>
+            <label for="useContrastCheckbox">הזרקה</label>
           </div>
 
           <div class="protocol-checkbox-group">
             <input type="checkbox" [(ngModel)]="protocolFilters.IsRequireFIRSTShirn" id="IsRequireFIRSTShirnCheckbox">
-            <label for="IsRequireFIRSTShirnCheckbox">דרישה IsRequireFIRSTShirn</label>
+            <label for="IsRequireFIRSTShirnCheckbox">ראשון בש"רן</label>
           </div>
+
+           <div class="protocol-checkbox-group">
+            <input type="checkbox"
+                  [(ngModel)]="protocolFilters.IsRequireShirn"
+                  id="IsRequireShirnCheckbox">
+            <label for="IsRequireShirnCheckbox">ש"רן</label>
+          </div>
+
+          <div class="protocol-checkbox-group">
+            <input type="checkbox"
+                  [(ngModel)]="protocolFilters.IsMorningAppointment"
+                  id="IsMorningAppointmentCheckbox">
+            <label for="IsMorningAppointmentCheckbox">בוקר</label>
+          </div>
+
+          <div class="protocol-checkbox-group">
+            <input type="checkbox"
+                  [(ngModel)]="protocolFilters.IsRequireSleep"
+                  id="IsRequireSleepCheckbox">
+            <label for="IsRequireSleepCheckbox">הרדמה</label>
+          </div>
+
 
           <div class="protocol-buttons">
             <button mat-raised-button color="primary" (click)="applyProtocolFilters(selectedDepartment.id)">
@@ -138,14 +160,17 @@
       <div *ngIf="itemProtocols && itemProtocols.length > 0">
         <table class="status-table">
           <thead>
-            <tr>
-              <th>Item ID</th>
-              <th>Protocol Name</th>
-              <th>Instructions</th>
-              <th>Create Date</th>
-              <th>Use Contrast</th>
-              <th>IsRequireFIRSTShirn</th>
-            </tr>
+           <tr>
+          <th>Item ID</th>
+          <th>Protocol Name</th>
+          <th>Instructions</th>
+          <th>Create Date</th>
+          <th>הזרקה</th>
+          <th>ראשון בש"רן</th>
+          <th>ש"רן</th>
+          <th>בוקר</th>
+          <th>הרדמה</th>
+          </tr>
           </thead>
           <tbody>
             <tr *ngFor="let protocol of itemProtocols">
@@ -161,6 +186,21 @@
                 <span *ngIf="protocol.IsRequireFIRSTShirn" style="color: #4caf50; font-weight: 600;">✓ Yes</span>
                 <span *ngIf="!protocol.IsRequireFIRSTShirn" style="color: #f44336; font-weight: 600;">✗ No</span>
               </td>
+               <td>
+                <span *ngIf="protocol.IsRequireShirn" style="color: #4caf50; font-weight: 600;">✓ Yes</span>
+                <span *ngIf="!protocol.IsRequireShirn"  style="color: #f44336; font-weight: 600;">✗ No</span>
+              </td>
+
+              <td>
+                <span *ngIf="protocol.IsMorningAppointment"  style="color: #4caf50; font-weight: 600;">✓ Yes</span>
+                <span *ngIf="!protocol.IsMorningAppointment" style="color: #f44336; font-weight: 600;">✗ No</span>
+              </td>
+
+               <td>
+                <span *ngIf="protocol.IsRequireSleep" style="color: #4caf50; font-weight: 600;">✓ Yes</span>
+                <span *ngIf="!protocol.IsRequireSleep" style="color: #f44336; font-weight: 600;">✗ No</span>
+              </td>
+
             </tr>
           </tbody>
         </table>
