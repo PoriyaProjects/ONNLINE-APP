@@ -65,7 +65,8 @@ export interface Surgery {
     IsWaitingForSurgery?: boolean;
     NextPatientReadyGreen?: boolean;
     MissingSignaturesText?: string | null;
-    
+    AvgDauration?: number | null;
+    DoctorSurgeon: string | null;
 }
 
 export interface RoomData {
@@ -219,6 +220,43 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
         this._userId = val;
         this.loadDisplaySettings();
         this.cdr.markForCheck();
+    }
+    private normalizeSurgery(raw: any): Surgery {
+        const status = raw?.SurgeryStatus ?? raw?.status ?? "Planned";
+        return {
+            // שדות “קליינטים”
+            surgeryId: raw?.surgeryId ?? raw?.SurgeryID ?? "",
+            department: raw?.department ?? raw?.DepartName ?? "",
+            surgeryName: raw?.surgeryName ?? raw?.SurgeryName ?? "",
+            surgeryCode: raw?.surgeryCode ?? raw?.SurgeryCode ?? "",
+            status,
+            timeEntrance:
+                raw?.timeEntrance ?? raw?.TimeEntranceToTheOperatingRoom ?? "",
+            timeExit: raw?.timeExit ?? raw?.TimeExitingTheOperatingRoom ?? "",
+            surgeryDate: raw?.surgeryDate ?? raw?.SurgeryDate ?? "",
+
+            // שדות “שרת”
+            SurgeryRoom: raw?.SurgeryRoom ?? raw?.SurgeryRoomDetails ?? "",
+            SurgeryDate: raw?.SurgeryDate ?? raw?.surgeryDate ?? "",
+            TimeEntranceToTheOperatingRoom:
+                raw?.TimeEntranceToTheOperatingRoom ?? null,
+            TimeExitingTheOperatingRoom:
+                raw?.TimeExitingTheOperatingRoom ?? null,
+            SurgeryStatus: status,
+            TimeSurgeryToDo: raw?.TimeSurgeryToDo ?? null,
+
+            AdmissionNo: raw?.AdmissionNo,
+            ReadyForSurgery: raw?.ReadyForSurgery,
+            MissingSignatures: raw?.MissingSignatures,
+            SignatureByRole: raw?.SignatureByRole,
+            IsWaitingForSurgery: raw?.IsWaitingForSurgery,
+            NextPatientReadyGreen: raw?.NextPatientReadyGreen,
+            MissingSignaturesText: raw?.MissingSignaturesText,
+
+            DoctorSurgeon: raw?.DoctorSurgeon ?? null,
+            AvgDauration: raw?.AvgDauration ?? raw?.DrorDuration ?? null,
+            patientNumber: raw?.PatientNumber ?? "",
+        } as Surgery;
     }
 
     displayPreset: DisplayPreset = "default";
@@ -540,24 +578,48 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
                     const roomId = row.SurgeryRoom;
                     if (!acc[roomId]) acc[roomId] = [];
                     acc[roomId].push({
+                        // ✅ camelCase (מה שאתה כבר משתמש בו)
                         surgeryId: row.CaseNumber,
                         patientNumber: row.PatientNumber,
                         surgeryName: row.SurgeryName,
                         surgeryCode: row.SurgeryCode,
                         department: row.DepartName,
-                        status: row.SurgeryStatus, // 'Completed' | 'InProgress' | 'Planned' | ...
-                        timeEntrance: row.TimeEntranceToTheOperatingRoom, // 'HH:mm'
-                        timeExit: row.TimeExitingTheOperatingRoom, // 'HH:mm'
-                        surgeryDate: row.SurgeryDate, // 'YYYY-MM-DD'
+                        status: row.SurgeryStatus,
+                        timeEntrance: row.TimeEntranceToTheOperatingRoom,
+                        timeExit: row.TimeExitingTheOperatingRoom,
+                        surgeryDate: row.SurgeryDate,
                         urgency: row.Urgency,
-                        timeSurgeryToDo: row.TimeSurgeryToDo, // minutes (string or number)
+                        timeSurgeryToDo: row.TimeSurgeryToDo,
 
+                        // ✅ server-shape mirror (כדי שכל פונקציה ישנה תמשיך לעבוד)
+                        SurgeryID: row.SurgeryID,
+                        CaseNumber: row.CaseNumber,
+                        PatientNumber: row.PatientNumber,
+                        DepartName: row.DepartName,
+                        SurgeryName: row.SurgeryName,
+                        SurgeryCode: row.SurgeryCode,
+                        SurgeryRoom: row.SurgeryRoom,
+                        SurgeryDate: row.SurgeryDate,
+                        SurgeryStatus: row.SurgeryStatus,
+                        TimeEntranceToTheOperatingRoom:
+                            row.TimeEntranceToTheOperatingRoom,
+                        TimeExitingTheOperatingRoom:
+                            row.TimeExitingTheOperatingRoom,
+                        TimeSurgeryToDo: row.TimeSurgeryToDo,
+
+                        // extras
                         IsWaitingForSurgery: row.IsWaitingForSurgery,
                         NextPatientReadyGreen: row.NextPatientReadyGreen,
                         MissingSignaturesText: row.MissingSignaturesText,
+                        AvgDauration: row.AvgDauration,
+                        DoctorSurgeon: row.DoctorSurgeon ?? null,
                     });
+
                     return acc;
                 }, {} as Record<string, any[]>);
+                result.surgeries = result.surgeries.map((x: any) =>
+                    this.normalizeSurgery(x)
+                );
 
                 const self = this;
 
@@ -2906,6 +2968,45 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
     } {
         // 1) עיכובים מצטבר = זמן הכנת חדר מעבר ל-20 דק'
         const totalDelayHMM = this.getTurnoverSummary(room) || "--:--";
+        const inProg = room.surgeries.find(
+            (s) => s.SurgeryStatus === "InProgress"
+        );
+        const start = inProg?.TimeEntranceToTheOperatingRoom;
+        const addMin = Number(inProg?.TimeSurgeryToDo);
+
+        const lastCompletedSurgery = this.findLastCompletedSurgery(room);
+
+        let freeFromText = "--:--";
+
+        if (inProg?.TimeEntranceToTheOperatingRoom && Number.isFinite(addMin)) {
+            // יש ניתוח פעיל
+            const [h, m] =
+                inProg.TimeEntranceToTheOperatingRoom.split(":").map(Number);
+            const total = h * 60 + m + addMin;
+            freeFromText = `${String(Math.floor(total / 60)).padStart(
+                2,
+                "0"
+            )}:${String(total % 60).padStart(2, "0")}`;
+        } else if (lastCompletedSurgery) {
+            // אין ניתוח פעיל → פנוי מאז האחרון
+            const lastEndTime = this.getLastSurgeryEndTime(
+                lastCompletedSurgery,
+                // new Date(room.date)
+                new Date(room.date ?? lastCompletedSurgery.SurgeryDate)
+            );
+            if (lastEndTime) {
+                freeFromText = this._formatClock(lastEndTime);
+            }
+        }
+
+        // if (start && Number.isFinite(addMin)) {
+        //     const [h, m] = start.split(":").map(Number);
+        //     const total = h * 60 + m + addMin;
+        //     freeFromText = `${String(Math.floor(total / 60) % 24).padStart(
+        //         2,
+        //         "0"
+        //     )}:${String(total % 60).padStart(2, "0")}`;
+        // }
 
         // 2) גלישה צפויה (לפי late meta)
         const late = this.getRoomLateMeta(room);
@@ -2915,8 +3016,8 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
                 : "--:--";
 
         // 3) חדר פנוי החל מ (שעת סיום הניתוח הקודם)
-        const lastCompletedSurgery = this.findLastCompletedSurgery(room);
-        let freeFromText = "--:--";
+        // const lastCompletedSurgery = this.findLastCompletedSurgery(room);
+        // let freeFromText = "--:--";
         let idleTimeText = "--:--";
 
         if (lastCompletedSurgery) {
@@ -2926,7 +3027,7 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
             );
             if (lastEndTime) {
                 // שעה שהחדר התחיל להיות פנוי
-                freeFromText = this._formatClock(lastEndTime);
+                // freeFromText = this._formatClock(lastEndTime);
 
                 // זמן שעבר מסיום הניתוח עד עכשיו
                 const now = new Date();
@@ -3057,9 +3158,10 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
     /**
      * בדיקה אם שעה היא ריקה/אפס
      */
-    private isZeroTime(time: string | null): boolean {
-        if (!time) return true;
-        return time === "00:00" || time === "00:00:00";
+    private isZeroTime(t: string | null): boolean {
+        if (!t) return true;
+        const s = String(t).trim();
+        return s === "00:00" || s === "00:00:00" || s === "00:00:00.0000000";
     }
 
     // ============================================
@@ -3275,14 +3377,39 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
     /**
      * קבל את משך הניתוח החזוי
      */
-    private getExpectedDuration(surgery: any): number {
-        const declared = surgery?.TimeSurgeryToDo ?? surgery?.timeSurgeryToDo;
-        if (declared != null && !Number.isNaN(+declared)) {
-            const val = Math.max(0, Math.round(+declared));
-            if (val > 0) return val;
-        }
-        return 60; // ברירת מחדל
+   private getExpectedDuration(surgery: Surgery, room?: RoomData): number {
+  // 1️⃣ Avg (DrorDuration / ממוצע)
+  const drorDuration = surgery?.AvgDauration ?? surgery?.TimeSurgeryToDo;
+  if (drorDuration != null && !Number.isNaN(+drorDuration)) {
+    const val = Math.max(0, Math.round(+drorDuration));
+    if (val >= 5 && val <= 480) return val;
+  }
+
+  // 2️⃣ מתוכנן במערכת
+  const declared = surgery?.TimeSurgeryToDo;
+  if (declared != null && !Number.isNaN(+declared)) {
+    const val = Math.max(0, Math.round(+declared));
+    if (val >= 5 && val <= 480) return val;
+  }
+
+  // 3️⃣ חישוב ממשי רק אם שני הזמנים תקינים (לא 00:00 / לא null)
+  const entStr = surgery?.TimeEntranceToTheOperatingRoom;
+  const exitStr = surgery?.TimeExitingTheOperatingRoom;
+
+  if (entStr && !this.isZeroTime(entStr) && exitStr && !this.isZeroTime(exitStr)) {
+    const entrance = this.parseClock(entStr);
+    const exit = this.parseClock(exitStr);
+
+    if (entrance && exit) {
+      let diff = exit.getTime() - entrance.getTime();
+      if (diff < 0) diff += 24 * 60 * 60 * 1000;
+      const minutes = Math.round(diff / 60000);
+      if (minutes >= 5 && minutes <= 480) return minutes;
     }
+  }
+
+  return 60;
+}
 
     /**
      * סימולציית סיום ניתוחים בשורה
@@ -3487,16 +3614,27 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
      * מציאת הניתוח האחרון שהושלם
      */
     private findLastCompletedSurgery(room: RoomData): any | null {
-        return [...room.surgeries].reverse().find((s: any) => {
-            const status = s.status ?? s.SurgeryStatus;
-            const endStr = this.getExitTime(s);
+        room.surgeries = room.surgeries.map(this.normalizeSurgery);
 
-            return (
-                this.isCompletedStatus(status) &&
-                endStr &&
-                !this.isZeroTime(endStr)
-            );
-        });
+        return (
+            [...(room.surgeries ?? [])]
+                .filter(Boolean)
+                .reverse()
+                .find((s: any) => {
+                    const status = String(
+                        s.SurgeryStatus ?? s.status ?? ""
+                    ).trim();
+                    const endStr = String(
+                        s.TimeExitingTheOperatingRoom ??
+                            this.getExitTime(s) ??
+                            ""
+                    ).trim();
+
+                    return (
+                        status === "Completed" && endStr && endStr !== "00:00"
+                    );
+                }) ?? null
+        );
     }
 
     /**
@@ -3552,34 +3690,50 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
         return active;
     }
 
-    /**
-     * עיצוב זמני כניסה ויציאה של ניתוח
-     * טיפול בחסרות וזמנים לא תקינים (00:00)
-     * אם אין זמן יציאה - מחשב זמן משוער
-     */
-    formatSurgeryTimes(surgery: any): string {
+    formatSurgeryTimes(surgery: Surgery): string {
+   
         const entrance = this.getEntranceTime(surgery);
         const exit = this.getExitTime(surgery);
 
         const entranceDisplay = this.formatTimeForDisplay(entrance);
         const exitDisplay = this.formatTimeForDisplay(exit);
 
-        // אם אין זמן יציאה - הוסף טקסט עם משך משוער
-        if (!exit || this.isZeroTime(exit)) {
-            const expectedMin = this.getExpectedDuration(surgery);
-            const estimatedExit = this.calculateEstimatedEndTime(
-                entrance,
-                expectedMin
-            );
-            const estimatedExitDisplay = estimatedExit
-                ? this._formatClock(estimatedExit)
-                : "--:--";
+        const hasEntrance = !!entrance && !this.isZeroTime(entrance);
+        const hasExit = !!exit && !this.isZeroTime(exit);
 
-            return `${entranceDisplay} → ${estimatedExitDisplay} (משוער: ${expectedMin}דקות)`;
+        // יש יציאה → רגיל
+        if (hasExit) return `${entranceDisplay} → ${exitDisplay}`;
+
+        // אין כניסה → לא מחשבים שעה משוערת, רק משך (HH:MM)
+        if (!hasEntrance) {
+            const expectedMin = this.getExpectedDuration(surgery); // תחזיר TimeSurgeryToDo או AvgDauration
+            const hhmm = Number.isFinite(expectedMin)
+                ? `${String(Math.floor(expectedMin / 60)).padStart(
+                      2,
+                      "0"
+                  )}:${String(expectedMin % 60).padStart(2, "0")}`
+                : "--:--";
+            return `${entranceDisplay} → ${exitDisplay}<br>(משוער, ${hhmm})`;
         }
 
-        return `${entranceDisplay} → ${exitDisplay}`;
+        // יש כניסה ואין יציאה → מחשבים שעה משוערת + משך
+        const expectedMin = this.getExpectedDuration(surgery);
+        const estimatedExit = Number.isFinite(expectedMin)
+            ? this.calculateEstimatedEndTime(entrance!, expectedMin)
+            : null;
+
+        const estimatedExitDisplay = estimatedExit
+            ? this._formatClock(estimatedExit)
+            : "--:--";
+        const hhmm = Number.isFinite(expectedMin)
+            ? `${String(Math.floor(expectedMin / 60)).padStart(
+                  2,
+                  "0"
+              )}:${String(expectedMin % 60).padStart(2, "0")}`
+            : "--:--";
+        return `${entranceDisplay} → ${estimatedExitDisplay}<br>(משוער, ${hhmm})`;
     }
+
     // private formatTimeForDisplay(time: string | null): string {
     //     if (!time || this.isZeroTime(time)) {
     //         return "טרם הוזן";
@@ -3881,7 +4035,7 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
     nextPlannedSurgery(room: RoomData) {
         return room.surgeries?.find((s) => s.IsWaitingForSurgery);
     }
-    showSummary: boolean = false; 
+    showSummary: boolean = false;
 
     toggleSummary() {
         this.showSummary = !this.showSummary;

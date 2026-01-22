@@ -88,7 +88,9 @@ h4.text-center { margin: 0 0 4px 0; min-height: 2.2rem; }
 .surgery-card.planned { background: #fafafa; border-style: dashed; }
 .surgery-top { display: flex; flex-direction: row-reverse; justify-content: space-between; gap: 8px; align-items: center; }
 .times { direction: ltr; font-weight: 700; font-size: 0.9em; color: #1f2937; unicode-bidi: embed; }
-.dept { text-align: right; font-size: 0.85em; color: #444; font-weight: 600; background: #f7f9fc; border: 1px solid #e2e6ea; padding: 6px 10px; border-radius: 6px; display: inline-block; max-width: 77px; }
+.dept { text-align: right; font-size: 0.85em; color: #444; font-weight: 600; background: #f7f9fc; border: 1px solid #e2e6ea; padding: 6px 10px; border-radius: 6px; display: inline-block; 
+    /* max-width: 77px;  */
+}
 
 /* ========== STATUS WRAP ========== */
 .status-wrap { display: inline-flex; align-items: center; gap: 8px; padding: 4px 12px; border-radius: 16px; font-size: 13px; font-weight: 700; }
@@ -228,3 +230,8 @@ h4.text-center { margin: 0 0 4px 0; min-height: 2.2rem; }
 /* ========== MATERIAL DATE INPUT ========== */
 .date-compact.mat-form-field { width: 120px; }
 :host ::ng-deep .date-compact .mat-form-field-infix { width: 100px; }
+
+
+.surgery-time-cell {
+    white-space: pre-line;
+}
