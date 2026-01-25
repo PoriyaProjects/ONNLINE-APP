@@ -3164,55 +3164,86 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
         return s === "00:00" || s === "00:00:00" || s === "00:00:00.0000000";
     }
 
-    // ============================================
-    // 3️⃣ שיפור getTurnoverSummary (חישוב עיכובים)
-    // ============================================
+    // getTurnoverSummary(room: RoomData): string {
+    //     if (!room?.surgeries?.length || !room.date) return "";
+    //     const overrunAfter1500 = this.calcOverrunAfter1500(room, room.date);
 
-    getTurnoverSummary(room: RoomData): string {
-        if (!room?.surgeries?.length || !room.date) return "";
+    //     if (overrunAfter1500 > 0) {
+    //         return this.formatHM(overrunAfter1500); // גלישה בלבד
+    //     }
+    //     const baseDate = room.date;
+    //     const dayStart = this.workingStart(baseDate);
+    //     const dayEnd = this.workingEnd(baseDate);
+    //     const now = new Date();
+    //     const nowClamped = now < dayEnd ? now : dayEnd;
 
-        const baseDate = room.date;
-        const dayStart = this.workingStart(baseDate);
-        const dayEnd = this.workingEnd(baseDate);
-        const now = new Date();
-        const nowClamped = now < dayEnd ? now : dayEnd;
+    //     const intervals = this.buildCompletedIntervals(
+    //         room,
+    //         baseDate,
+    //         dayStart,
+    //         dayEnd
+    //     );
+    //     if (!intervals.length) return "";
 
-        // ✅ בנה רשימת ניתוחים שנוסדו בתוך משמרת העבודה
-        const intervals = this.buildCompletedIntervals(
-            room,
-            baseDate,
-            dayStart,
-            dayEnd
-        );
-        if (!intervals.length) return "";
+    //     const parseDurMin = (v: any): number | null => {
+    //         if (v == null) return null;
+    //         if (typeof v === "number" && isFinite(v))
+    //             return Math.max(0, Math.round(v));
+    //         const s = String(v).trim();
+    //         if (!s) return null;
+    //         if (s.includes(":")) {
+    //             const [hh, mm] = s.split(":").map((x) => parseInt(x, 10));
+    //             return Number.isFinite(hh) && Number.isFinite(mm)
+    //                 ? Math.max(0, hh * 60 + mm)
+    //                 : null;
+    //         }
+    //         const n = Number(s);
+    //         return Number.isFinite(n) ? Math.max(0, Math.round(n)) : null;
+    //     };
 
-        let totalIdleMin = 0;
+    //     const getPlannedMin = (s: any): number | null => {
+    //         const avg = parseDurMin(s.AvgDauration);
+    //         if (avg != null) return avg + 20;
+    //         const t = parseDurMin(s.TimeSurgeryToDo);
+    //         return t != null ? t + 20 : null;
+    //     };
 
-        // ✅ חישוב פערים בין ניתוחים
-        for (let i = 0; i < intervals.length - 1; i++) {
-            const gap = Math.floor(
-                (intervals[i + 1].start.getTime() -
-                    intervals[i].end.getTime()) /
-                    60000
-            );
-            if (gap > 20) {
-                totalIdleMin += gap - 20; // הפחת 20 דקות הכנה רגילות
-            }
-        }
+    //     const byStart = new Map<number, any>();
+    //     for (const s of room.surgeries as any[]) {
+    //         const startStr = this.getEntranceTime(s);
+    //         if (!startStr) continue;
+    //         const start = this.parseClockWithDate(startStr, baseDate);
+    //         if (!start) continue;
+    //         byStart.set(start.getTime(), s);
+    //     }
 
-        // ✅ חישוב זמן מת אחרי הניתוח האחרון (אם הסתיים)
-        const lastInterval = intervals[intervals.length - 1];
-        if (lastInterval && this.isCompleted(lastInterval)) {
-            const idle = Math.floor(
-                (nowClamped.getTime() - lastInterval.end.getTime()) / 60000
-            );
-            if (idle > 20) {
-                totalIdleMin += idle - 20;
-            }
-        }
+    //     let freeMin = 0;
+    //     let overrunMin = 0;
 
-        return totalIdleMin > 0 ? this.formatHM(totalIdleMin) : "";
-    }
+    //     for (const it of intervals) {
+    //         const s = byStart.get(it.start.getTime());
+    //         if (!s) continue;
+
+    //         const plannedMin = getPlannedMin(s);
+    //         if (plannedMin == null) continue;
+
+    //         const actualEnd = this.isInProgressStatus(it.status)
+    //             ? nowClamped
+    //             : it.end;
+
+    //         const actualMin = Math.max(
+    //             0,
+    //             Math.floor((actualEnd.getTime() - it.start.getTime()) / 60000)
+    //         );
+
+    //         const delta = plannedMin - actualMin; // + => פנוי, - => גלישה
+    //         if (delta > 0) freeMin += delta;
+    //         else if (delta < 0) overrunMin += -delta;
+    //     }
+
+    //     if (!freeMin && !overrunMin) return "";
+    //     return `${this.formatHM(freeMin)} `;
+    // }
 
     /**
      * בנייה של רשימת ניתוחים שהושלמו בתוך משמרה
@@ -3377,39 +3408,44 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
     /**
      * קבל את משך הניתוח החזוי
      */
-   private getExpectedDuration(surgery: Surgery, room?: RoomData): number {
-  // 1️⃣ Avg (DrorDuration / ממוצע)
-  const drorDuration = surgery?.AvgDauration ?? surgery?.TimeSurgeryToDo;
-  if (drorDuration != null && !Number.isNaN(+drorDuration)) {
-    const val = Math.max(0, Math.round(+drorDuration));
-    if (val >= 5 && val <= 480) return val;
-  }
+    private getExpectedDuration(surgery: Surgery, room?: RoomData): number {
+        // 1️⃣ Avg (DrorDuration / ממוצע)
+        const drorDuration = surgery?.AvgDauration ?? surgery?.TimeSurgeryToDo;
+        if (drorDuration != null && !Number.isNaN(+drorDuration)) {
+            const val = Math.max(0, Math.round(+drorDuration));
+            if (val >= 5 && val <= 480) return val;
+        }
 
-  // 2️⃣ מתוכנן במערכת
-  const declared = surgery?.TimeSurgeryToDo;
-  if (declared != null && !Number.isNaN(+declared)) {
-    const val = Math.max(0, Math.round(+declared));
-    if (val >= 5 && val <= 480) return val;
-  }
+        // 2️⃣ מתוכנן במערכת
+        const declared = surgery?.TimeSurgeryToDo;
+        if (declared != null && !Number.isNaN(+declared)) {
+            const val = Math.max(0, Math.round(+declared));
+            if (val >= 5 && val <= 480) return val;
+        }
 
-  // 3️⃣ חישוב ממשי רק אם שני הזמנים תקינים (לא 00:00 / לא null)
-  const entStr = surgery?.TimeEntranceToTheOperatingRoom;
-  const exitStr = surgery?.TimeExitingTheOperatingRoom;
+        // 3️⃣ חישוב ממשי רק אם שני הזמנים תקינים (לא 00:00 / לא null)
+        const entStr = surgery?.TimeEntranceToTheOperatingRoom;
+        const exitStr = surgery?.TimeExitingTheOperatingRoom;
 
-  if (entStr && !this.isZeroTime(entStr) && exitStr && !this.isZeroTime(exitStr)) {
-    const entrance = this.parseClock(entStr);
-    const exit = this.parseClock(exitStr);
+        if (
+            entStr &&
+            !this.isZeroTime(entStr) &&
+            exitStr &&
+            !this.isZeroTime(exitStr)
+        ) {
+            const entrance = this.parseClock(entStr);
+            const exit = this.parseClock(exitStr);
 
-    if (entrance && exit) {
-      let diff = exit.getTime() - entrance.getTime();
-      if (diff < 0) diff += 24 * 60 * 60 * 1000;
-      const minutes = Math.round(diff / 60000);
-      if (minutes >= 5 && minutes <= 480) return minutes;
+            if (entrance && exit) {
+                let diff = exit.getTime() - entrance.getTime();
+                if (diff < 0) diff += 24 * 60 * 60 * 1000;
+                const minutes = Math.round(diff / 60000);
+                if (minutes >= 5 && minutes <= 480) return minutes;
+            }
+        }
+
+        return 60;
     }
-  }
-
-  return 60;
-}
 
     /**
      * סימולציית סיום ניתוחים בשורה
@@ -3691,7 +3727,6 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
     }
 
     formatSurgeryTimes(surgery: Surgery): string {
-   
         const entrance = this.getEntranceTime(surgery);
         const exit = this.getExitTime(surgery);
 
@@ -4040,4 +4075,206 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
     toggleSummary() {
         this.showSummary = !this.showSummary;
     }
+    // private calcOverrunAfter1500(
+    //     room: RoomData,
+    //     baseDate: string | Date
+    // ): number {
+    //     const cutoff = this.parseClockWithDate("15:00", baseDate);
+    //     if (!cutoff) return 0;
+
+    //     const surgeries = (room.surgeries ?? [])
+    //         .map((s) => {
+    //             const startStr = this.getEntranceTime(s);
+    //             if (!startStr) return null;
+
+    //             const start = this.parseClockWithDate(startStr, baseDate);
+    //             if (!start) return null;
+
+    //             const status = (
+    //                 s.status ??
+    //                 s.SurgeryStatus ??
+    //                 ""
+    //             ).toLowerCase();
+
+    //             // endActual (אם יש)
+    //             const endStr = this.getExitTime(s);
+    //             const endActual =
+    //                 endStr && !this.isZeroTime(endStr)
+    //                     ? this.parseClockWithDate(endStr, baseDate)
+    //                     : null;
+
+    //             // endPredict (למתוכנן/אין יציאה): start + (AvgDuration+20)
+    //             const avg = Number(s.AvgDauration ?? s.TimeSurgeryToDo ?? 0);
+    //             const plannedMin = isFinite(avg) && avg > 0 ? avg + 20 : 20;
+    //             const endPredict = new Date(
+    //                 start.getTime() + plannedMin * 60000
+    //             );
+
+    //             // קבע end לפי סטטוס
+    //             let end = endActual ?? endPredict;
+    //             if (this.isInProgressStatus(status)) end = new Date(); // עד עכשיו
+
+    //             // חציית חצות
+    //             if (end.getTime() < start.getTime())
+    //                 end = new Date(end.getTime() + 86400000);
+
+    //             return { start, end };
+    //         })
+    //         .filter((x): x is { start: Date; end: Date } => !!x)
+    //         .sort((a, b) => a.start.getTime() - b.start.getTime());
+
+    //     if (!surgeries.length) return 0;
+
+    //     const lastEnd = surgeries[surgeries.length - 1].end;
+    //     return Math.max(
+    //         0,
+    //         Math.floor((lastEnd.getTime() - cutoff.getTime()) / 60000)
+    //     );
+    // }
+
+
+private calcOverrunAfter1500(room: RoomData, baseDate: string | Date): number {
+  const cutoff = this.parseClockWithDate("15:00", baseDate);
+  if (!cutoff) return 0;
+
+  const now = new Date();
+
+  const parseDurMin = (v: any): number | null => {
+    if (v == null) return null;
+    if (typeof v === "number" && isFinite(v)) return Math.max(0, Math.round(v));
+    const str = String(v).trim();
+    if (!str) return null;
+    if (str.includes(":")) {
+      const [hh, mm] = str.split(":").map((x) => parseInt(x, 10));
+      return Number.isFinite(hh) && Number.isFinite(mm) ? Math.max(0, hh * 60 + mm) : null;
+    }
+    const n = Number(str);
+    return Number.isFinite(n) ? Math.max(0, Math.round(n)) : null;
+  };
+
+  const getPlannedMin = (s: any): number => {
+    const avgMin = parseDurMin(s.AvgDauration);
+    const tMin = parseDurMin(s.TimeSurgeryToDo);
+    const baseMin = avgMin ?? tMin ?? 0;
+    return Math.max(0, baseMin) + 20; // AvgDuration + 20
+  };
+
+  // 1) קבע "ציר זמן" שמתחיל מהעכשיו, אבל לא לפני סוף הניתוח האחרון עם התחלה ידועה
+  let timelineEnd = now;
+
+  for (const s of room.surgeries ?? []) {
+    const startStr = this.getEntranceTime(s);
+    if (!startStr) continue;
+
+    const start = this.parseClockWithDate(startStr, baseDate);
+    if (!start) continue;
+
+    const status = String(s.status ?? s.SurgeryStatus ?? "").toLowerCase();
+
+    const endStr = this.getExitTime(s);
+    const endActual =
+      endStr && !this.isZeroTime(endStr) ? this.parseClockWithDate(endStr, baseDate) : null;
+
+    let end: Date;
+    if (this.isInProgressStatus(status)) {
+      end = now; // עד עכשיו
+    } else if (endActual) {
+      end = endActual;
+    } else {
+      end = new Date(start.getTime() + getPlannedMin(s) * 60000); // fallback משוער אם אין יציאה
+    }
+
+    if (end.getTime() < start.getTime()) end = new Date(end.getTime() + 86400000); // חצות
+    if (end.getTime() > timelineEnd.getTime()) timelineEnd = end;
+  }
+
+  if (timelineEnd.getTime() < now.getTime()) timelineEnd = now;
+
+  // 2) הוסף את כל הניתוחים המתוכננים שאין להם התחלה (נכנסים בתור אחרי "עכשיו")
+  const plannedQueue = (room.surgeries ?? []).filter((s: any) => {
+    const status = String(s.status ?? s.SurgeryStatus ?? "").toLowerCase();
+    const hasStart = !!this.getEntranceTime(s);
+    return !hasStart && !this.isCompletedStatus(status) && !this.isInProgressStatus(status);
+  });
+
+  for (const s of plannedQueue) {
+    timelineEnd = new Date(timelineEnd.getTime() + getPlannedMin(s) * 60000);
+  }
+
+  // דרישת לקוח: גלישה = כל דקה מעבר ל-15:00 (כולל מתוכננים)
+  return Math.max(0, Math.floor((timelineEnd.getTime() - cutoff.getTime()) / 60000));
+}
+
+getTurnoverSummary(room: RoomData): string {
+  if (!room?.surgeries?.length || !room.date) return "";
+
+  const overrunAfter1500 = this.calcOverrunAfter1500(room, room.date);
+  if (overrunAfter1500 > 0) return this.formatHM(overrunAfter1500); // גלישה בלבד
+
+  const baseDate = room.date;
+  const dayStart = this.workingStart(baseDate);
+  const dayEnd = this.workingEnd(baseDate);
+  const now = new Date();
+  const nowClamped = now < dayEnd ? now : dayEnd;
+
+  const intervals = this.buildCompletedIntervals(room, baseDate, dayStart, dayEnd);
+  if (!intervals.length) return "";
+
+  const parseDurMin = (v: any): number | null => {
+    if (v == null) return null;
+    if (typeof v === "number" && isFinite(v)) return Math.max(0, Math.round(v));
+    const s = String(v).trim();
+    if (!s) return null;
+    if (s.includes(":")) {
+      const [hh, mm] = s.split(":").map((x) => parseInt(x, 10));
+      return Number.isFinite(hh) && Number.isFinite(mm) ? Math.max(0, hh * 60 + mm) : null;
+    }
+    const n = Number(s);
+    return Number.isFinite(n) ? Math.max(0, Math.round(n)) : null;
+  };
+
+  const getPlannedMin = (s: any): number | null => {
+    const avg = parseDurMin(s.AvgDauration);
+    if (avg != null) return avg + 20;
+    const t = parseDurMin(s.TimeSurgeryToDo);
+    return t != null ? t + 20 : null;
+  };
+
+  // קישור interval ל-surgery ע"י start time (זה מה שהיה אצלך)
+  const byStart = new Map<number, any>();
+  for (const s of room.surgeries as any[]) {
+    const startStr = this.getEntranceTime(s);
+    if (!startStr) continue;
+    const start = this.parseClockWithDate(startStr, baseDate);
+    if (!start) continue;
+    byStart.set(start.getTime(), s);
+  }
+
+  let freeMin = 0;
+  let overrunMin = 0;
+
+  for (const it of intervals) {
+    const s = byStart.get(it.start.getTime());
+    if (!s) continue;
+
+    const plannedMin = getPlannedMin(s);
+    if (plannedMin == null) continue;
+
+    const actualEnd = this.isInProgressStatus(it.status) ? nowClamped : it.end;
+    const actualMin = Math.max(
+      0,
+      Math.floor((actualEnd.getTime() - it.start.getTime()) / 60000)
+    );
+
+    const delta = plannedMin - actualMin; // + => פנוי, - => גלישה
+    if (delta > 0) freeMin += delta;
+    else if (delta < 0) overrunMin += -delta;
+  }
+
+  if (!freeMin && !overrunMin) return "";
+
+  // אם אתה צריך גם גלישה/פנוי בטקסט – פה תבחר. כרגע שומר על ההתנהגות שלך (מחזיר רק פנוי).
+  return `${this.formatHM(freeMin)} `;
+}
+
 }
