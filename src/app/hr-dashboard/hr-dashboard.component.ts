@@ -159,7 +159,7 @@ export class HrDashboardComponent implements OnInit {
   }
 
   private syncCurrentContact(): void {
-    if (!this.currentContact?.Row_ID) return;
+    if (!this.currentContact?.CellNumber) return;
 
     // const updated = this.unAnsweredConversations.find(
     //   (x) => x.Row_ID === this.currentContact.Row_ID
@@ -168,7 +168,8 @@ export class HrDashboardComponent implements OnInit {
     // if (updated) {
     //   this.currentContact = updated;
     // }
-    this.getHRWhatsAppConversationsByIDFK(this.currentContact.Row_ID);
+    
+    this.getHRWhatsAppConversationsByIDFK(this.currentContact.CellNumber);
   }
 
   private setupAutoRefresh(): void {
@@ -207,12 +208,14 @@ export class HrDashboardComponent implements OnInit {
   }
 
   async getHRWhatsAppConversationsByIDFK(row_id) {
+    
     this.loadChat = true;
     this.http
       .post(environment.url + "GetHRWhatsAppConversationsByIDFK", {
         _row_ID: row_id
       })
       .subscribe((Response) => {
+        debugger
         this.currentContact.WhatsApp_Bot_Convesations = Response["d"];
         let indexOfLastMessage = this.currentContact.WhatsApp_Bot_Convesations.length;
         if (indexOfLastMessage > 0) {
@@ -237,7 +240,7 @@ export class HrDashboardComponent implements OnInit {
     this.currentContact = contact;
     let check = this.checkIfContactHasConversation(contact);
     if (contact.Row_ID !== undefined) {
-      this.getHRWhatsAppConversationsByIDFK(contact.Row_ID);
+      this.getHRWhatsAppConversationsByIDFK(contact.CellNumber);
     }
   }
 
