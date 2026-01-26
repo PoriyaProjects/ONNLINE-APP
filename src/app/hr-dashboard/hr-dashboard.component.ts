@@ -501,6 +501,49 @@ export class HrDashboardComponent implements OnInit, OnDestroy {
     this.base64String = '';
   }
 
+  private extractUrlFromText(text: string): string | null {
+    if (!text) {
+      return null;
+    }
+
+    const match = text.match(/https?:\/\/[^\s]+/i);
+    return match ? match[0] : null;
+  }
+
+  private isImageUrl(url: string): boolean {
+    return /\.(png|jpe?g|gif|webp)(\?|#|$)/i.test(url);
+  }
+
+  private isPdfUrl(url: string): boolean {
+    return /\.pdf(\?|#|$)/i.test(url);
+  }
+
+  getMessageLinkInfo(message: any): { type: 'image' | 'pdf' | 'link'; url: string } | null {
+    const text = (message?.Message_Text || '').toString();
+    const url = this.extractUrlFromText(text);
+    if (!url) {
+      return null;
+    }
+
+    if (this.isImageUrl(url)) {
+      return { type: 'image', url };
+    }
+
+    if (this.isPdfUrl(url)) {
+      return { type: 'pdf', url };
+    }
+
+    return { type: 'link', url };
+  }
+
+  shouldRenderMessageText(message: any, linkInfo: { url: string } | null): boolean {
+    if (!linkInfo) {
+      return true;
+    }
+    const text = (message?.Message_Text || '').toString().trim();
+    return text !== linkInfo.url;
+  }
+
   trackByContact(index: number, contact: any): string | number {
     return contact?.CellNumber ?? contact?.Row_ID ?? index;
   }
