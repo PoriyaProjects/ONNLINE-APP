@@ -1,5 +1,91 @@
 /* ========== GRID & RTL ========== */
-#surgeriesrts { direction: rtl; text-align: right; display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 16px; }
+#surgeriesrts { 
+  direction: rtl; 
+  text-align: right; 
+  display: flex; 
+  flex-direction: column; 
+  gap: 30px; 
+}
+
+/* ========== REGULAR ROOMS SECTION ========== */
+.regular-section { 
+  width: 100%; 
+  margin-bottom: 0; 
+  padding: 20px; 
+  border: 1px solid #e0e0e0; 
+  border-radius: 8px; 
+  background: #fafafa; 
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05); 
+}
+
+.regular-section .section-header { 
+  direction: rtl; 
+  text-align: center; 
+  padding: 12px 20px; 
+  margin: 0 0 20px 0; 
+  background: #ffffff; 
+  border-radius: 6px; 
+  font-size: 1.4em; 
+  font-weight: 600; 
+  border: 1px solid #d0d0d0; 
+  width: 100%; 
+  color: #333; 
+}
+
+.regular-section .rooms-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 16px;
+  width: 100%;
+  align-items: stretch;
+}
+
+.regular-section .room-wrapper {
+  width: 100%;
+  display: flex;
+}
+
+/* ========== AMBULATORY ROOMS SECTION ========== */
+.ambulatory-section { 
+  width: 100%;
+  margin-top: 50px;
+  padding: 20px; 
+  border: 2px solid #4caf50; 
+  border-radius: 12px; 
+  background: linear-gradient(135deg, #e8f5e9 0%, #f1f8f4 100%); 
+  box-shadow: 0 4px 12px rgba(76, 175, 80, 0.15); 
+}
+
+.ambulatory-section .section-header { 
+  direction: rtl; 
+  text-align: center; 
+  padding: 15px 25px; 
+  margin: 0 0 20px 0; 
+  background: linear-gradient(135deg, #4caf50 0%, #66bb6a 100%); 
+  border-radius: 8px; 
+  font-size: 1.5em; 
+  font-weight: bold; 
+  border: none; 
+  width: 100%; 
+  color: #ffffff; 
+  text-shadow: 0 1px 2px rgba(0,0,0,0.1); 
+  box-shadow: 0 2px 6px rgba(76, 175, 80, 0.3); 
+}
+
+.ambulatory-section {
+  margin-top: 50px;
+}
+
+.ambulatory-section .rooms-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 24px;
+  align-items: stretch;
+}
+
+.room-wrapper { 
+  flex: 0 0 auto; 
+}
 h2, h3, h4 { direction: rtl; text-align: center; }
 h2, h3 { padding: 20px; width: 100%; }
 h4.text-center { margin: 0 0 4px 0; min-height: 2.2rem; }
@@ -234,4 +320,145 @@ h4.text-center { margin: 0 0 4px 0; min-height: 2.2rem; }
 
 .surgery-time-cell {
     white-space: pre-line;
+}
+
+
+/* ===== Layout: OR Dashboard Grid ===== */
+
+.room-wrapper {
+  width: 100%;
+  display: flex;
+}
+
+.room-widget {
+  width: 100%;
+  /* min-height: 420px; */
+  display: flex;
+  flex-direction: column;
+}
+
+/* Header sizing */
+.room-header h4 {
+  font-size: 1.1rem;
+  line-height: 1.3;
+  margin-bottom: 6px;
+}
+
+/* Compact chips / info */
+.room-duration-info,
+.room-progress-info,
+.room-extra-panel {
+  font-size: 0.9rem;
+}
+
+/* Body scroll consistency */
+.room-body {
+  flex: 1;
+  overflow-y: auto;
+}
+
+/* Section titles */
+.section-header {
+  font-size: 1.4rem;
+  margin-bottom: 12px;
+}
+
+/* Hospital-style clean look */
+.room-widget.card {
+  border-radius: 10px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+}
+
+
+
+/* ===== REGULAR ROOMS – PRIMARY ===== */
+.regular-section {
+  padding: 12px;
+  border-radius: 14px;
+  background: linear-gradient(180deg, #f5f9ff 0%, #ffffff 100%);
+  border: 2px solid #1e88e5;
+  box-shadow: 0 6px 18px rgba(30,136,229,0.25);
+}
+
+.regular-section .section-header {
+  font-size: 1.6rem;
+  font-weight: 800;
+  background: linear-gradient(90deg, #1e88e5, #42a5f5);
+  color: #fff;
+  border-radius: 10px;
+  padding: 14px;
+  margin-bottom: 14px;
+}
+
+.regular-section .rooms-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 12px;
+}
+
+.regular-section .room-widget.card {
+  border-width: 3px;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.15);
+  transform: scale(1.02);
+}
+/* ===== AMBULATORY – SECONDARY ===== */
+.ambulatory-section {
+  margin-top: 20px;
+  padding: 10px;
+  background: #f6fbf7;
+  border: 1px dashed #a5d6a7;
+  box-shadow: none;
+}
+
+.ambulatory-section .section-header {
+  font-size: 1.2rem;
+  font-weight: 600;
+  background: #e8f5e9;
+  color: #2e7d32;
+  border-radius: 8px;
+  padding: 10px;
+}
+
+.ambulatory-section .rooms-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.ambulatory-section .room-widget.card {
+  border-width: 1px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+  transform: none;
+}
+/* ===== ONE-SCREEN MODE ===== */
+.room-widget.card {
+  max-height: 520px;
+  font-size: 0.9rem;
+}
+
+.room-header {
+  padding: 6px 8px;
+}
+
+.room-body {
+  padding: 6px 8px;
+}
+
+.section-title {
+  font-size: 0.85rem;
+  margin: 2px 0 4px;
+}
+
+.surgery-card {
+  padding: 4px 2px;
+  margin: 2px 0;
+}
+
+.dashboard-header {
+  /* padding: 20px 0 10px; */
+  
+}
+
+.panel {
+  margin-bottom: 10px;
 }
