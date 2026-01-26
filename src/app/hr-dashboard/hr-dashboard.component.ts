@@ -1,12 +1,12 @@
 // app.component.ts
 
 import { Component, ElementRef, OnDestroy, OnInit, TemplateRef, ViewChild } from '@angular/core';
-import { FormArray, FormBuilder, FormControl, FormGroup } from '@angular/forms';
+import { FormBuilder, FormControl, FormGroup } from '@angular/forms';
 import { environment } from 'src/environments/environment';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
-import { map, startWith } from 'rxjs/operators';
-import { Observable } from 'rxjs';
+import { EMPTY, Observable, Subject, timer } from 'rxjs';
+import { catchError, exhaustMap, filter, finalize, map, startWith, takeUntil, tap } from 'rxjs/operators';
 import { ConfirmationDialogService } from '../confirmation-dialog/confirmation-dialog.service';
 import { MatDialog } from '@angular/material/dialog';
 
@@ -15,14 +15,14 @@ import { MatDialog } from '@angular/material/dialog';
   templateUrl: './hr-dashboard.component.html',
   styleUrls: ['./hr-dashboard.component.css']
 })
-export class HrDashboardComponent implements OnInit {
+export class HrDashboardComponent implements OnInit, OnDestroy {
 
   currentContact: any;
   messages = [];
   users_filter = new FormControl('');
   filteredOptions: Observable<string[]>;
 
-  user_name = localStorage.getItem('loginUserName');
+  user_name = localStorage.getItem('loginUserName') || '';
   @ViewChild('scrollTarget') scrollTarget: ElementRef;
   contacts = [];
   contacts_filter = [];
@@ -33,12 +33,16 @@ export class HrDashboardComponent implements OnInit {
   base64String: string | ArrayBuffer | null = '';
   whatsAppGroup: FormGroup;
   newMessage: FormGroup;
-  loadChat: boolean;
+  loadChat = false;
   @ViewChild('tooltipTemplate') tooltipTemplate: TemplateRef<any>;
 
   unAnsweredPage = 1;
   unAnsweredPageSize = 20;
   unAnsweredTotal = 0;
+  private readonly refreshIntervalMs = 10000;
+  private readonly destroy$ = new Subject<void>();
+  private unAnsweredFilterValue = '';
+  private contactsFilterValue = '';
 
   constructor(
     private fb: FormBuilder,
@@ -49,11 +53,23 @@ export class HrDashboardComponent implements OnInit {
   ) { }
 
   ngOnInit(): void {
+    this.initMessageForm();
+    this.filteredOptions = this.users_filter.valueChanges.pipe(
+      startWith(''),
+      map(value => this._filter(value || ''))
+    );
+
     this.getEmployeesForWhatsapp();
-    this.getHrWhatsAppUsers();
     this.getHRWhatsAppServiceFixedFiles();
-    // this.getContactsAndConversations();
-    this.currentContact = this.contacts[0];
+    this.startBackgroundRefresh();
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
+  private initMessageForm(): void {
     this.newMessage = this.fb.group({
       Row_ID: new FormControl('', null),
       Message_Text: new FormControl('', null),
@@ -67,7 +83,6 @@ export class HrDashboardComponent implements OnInit {
       Step: new FormControl('', null),
       Conversation_Status: new FormControl('', null),
     });
-
   }
 
   displayFiles() {
@@ -77,40 +92,79 @@ export class HrDashboardComponent implements OnInit {
   }
 
   applyFilter(filterValue: string): void {
-    if (!filterValue) {
-      // If the filter is empty, reset to the original array
-      this.unAnsweredConversations_filter = [...this.unAnsweredConversations];
-      return;
-    }
-
-    // Filter the array based on the input value
-    this.unAnsweredConversations_filter = this.unAnsweredConversations.filter((conversation) => {
-      // Customize this filter condition based on your conversation object properties
-      return conversation.FirstName.includes(filterValue) || conversation.LastName.includes(filterValue);
-    });
+    this.unAnsweredFilterValue = filterValue || '';
+    this.unAnsweredConversations_filter = this.filterUnAnsweredConversations(
+      this.unAnsweredConversations,
+      this.unAnsweredFilterValue
+    );
   }
 
   applyFilter2(filterValue: string): void {
-    if (!filterValue) {
-      // If the filter is empty, reset to the original array
-      this.contacts_filter = [...this.contacts];
-      return;
-    }
-
-    // Filter the array based on the input value
-    this.contacts_filter = this.contacts.filter((conversation) => {
-      // Customize this filter condition based on your conversation object properties
-      return conversation.FirstName.includes(filterValue) || conversation.LastName.includes(filterValue) || conversation.CellNumber.includes(filterValue);
-    });
+    this.contactsFilterValue = filterValue || '';
+    this.contacts_filter = this.filterContacts(this.contacts, this.contactsFilterValue);
   }
 
   private _filter(value: string): string[] {
-    const filterValue = value.toLowerCase();
-
-    return this.contacts.filter(option => option.FirstName.toLowerCase().includes(filterValue));
+    const filterValue = this.normalizeFilterValue(value);
+    return this.contacts.filter(option =>
+      this.normalizeFilterValue(option?.FirstName).includes(filterValue)
+    );
   }
 
-  async getEmployeesForWhatsapp() {
+  private normalizeFilterValue(value: string | null | undefined): string {
+    return (value || '').toString().trim().toLowerCase();
+  }
+
+  private filterUnAnsweredConversations(conversations: any[], filterValue: string): any[] {
+    const normalized = this.normalizeFilterValue(filterValue);
+    if (!normalized) {
+      return [...conversations];
+    }
+
+    return conversations.filter((conversation) => {
+      const firstName = this.normalizeFilterValue(conversation?.FirstName);
+      const lastName = this.normalizeFilterValue(conversation?.LastName);
+      return firstName.includes(normalized) || lastName.includes(normalized);
+    });
+  }
+
+  private filterContacts(contacts: any[], filterValue: string): any[] {
+    const normalized = this.normalizeFilterValue(filterValue);
+    if (!normalized) {
+      return [...contacts];
+    }
+
+    return contacts.filter((contact) => {
+      const firstName = this.normalizeFilterValue(contact?.FirstName);
+      const lastName = this.normalizeFilterValue(contact?.LastName);
+      const cellNumber = this.normalizeFilterValue(contact?.CellNumber);
+      return (
+        firstName.includes(normalized) ||
+        lastName.includes(normalized) ||
+        cellNumber.includes(normalized)
+      );
+    });
+  }
+
+  private startBackgroundRefresh(): void {
+    timer(0, this.refreshIntervalMs)
+      .pipe(
+        filter(() => this.router.url.startsWith('/hr-dashboard')),
+        exhaustMap(() =>
+          this.fetchHrWhatsAppUsers(this.unAnsweredPage, this.unAnsweredPageSize).pipe(
+            tap((response) => this.handleHrWhatsAppUsersResponse(response, true)),
+            catchError((err) => {
+              console.error("Error loading HR WhatsApp users:", err);
+              return EMPTY;
+            })
+          )
+        ),
+        takeUntil(this.destroy$)
+      )
+      .subscribe();
+  }
+
+  getEmployeesForWhatsapp(): void {
     this.http
       .post(environment.url + "GetEmployeesForWhatsapp", {
         _empId: "",
@@ -124,13 +178,37 @@ export class HrDashboardComponent implements OnInit {
         _on: "",
         _workPlace: ""
       })
-      .subscribe((Response) => {
-        this.contacts = Response["d"];
-        this.contacts_filter = this.contacts;
+      .pipe(
+        takeUntil(this.destroy$),
+        catchError((err) => {
+          console.error("Error loading employees for WhatsApp:", err);
+          return EMPTY;
+        })
+      )
+      .subscribe((response) => {
+        this.contacts = response?.d || [];
+        this.contacts_filter = this.filterContacts(this.contacts, this.contactsFilterValue);
+        this.ensureCurrentContact();
       });
   }
 
-  getHrWhatsAppUsers(page = this.unAnsweredPage, pageSize = this.unAnsweredPageSize): void {
+  getHrWhatsAppUsers(
+    page = this.unAnsweredPage,
+    pageSize = this.unAnsweredPageSize,
+    background = false
+  ): void {
+    this.fetchHrWhatsAppUsers(page, pageSize)
+      .pipe(
+        takeUntil(this.destroy$),
+        catchError((err) => {
+          console.error("Error loading HR WhatsApp users:", err);
+          return EMPTY;
+        })
+      )
+      .subscribe((response) => this.handleHrWhatsAppUsersResponse(response, background));
+  }
+
+  private fetchHrWhatsAppUsers(page = this.unAnsweredPage, pageSize = this.unAnsweredPageSize): Observable<any> {
     const requestPayload = {
       _user_name: this.user_name,
       type: "3",
@@ -138,47 +216,57 @@ export class HrDashboardComponent implements OnInit {
       _pageSize: pageSize
     };
 
-    this.http.post<any>(`${environment.url}GetHrWhatsAppUsers`, requestPayload).subscribe({
-      next: (response) => {
-        this.unAnsweredConversations = response?.d || [];
-        this.unAnsweredConversations_filter = [...this.unAnsweredConversations];
-
-        this.syncCurrentContact();
-
-        this.filteredOptions = this.users_filter.valueChanges.pipe(
-          startWith(''),
-          map(value => this._filter(value || ''))
-        );
-
-        this.setupAutoRefresh();
-      },
-      error: (err) => {
-        console.error("Error loading HR WhatsApp users:", err);
-      }
-    });
+    return this.http.post<any>(`${environment.url}GetHrWhatsAppUsers`, requestPayload);
   }
 
-  private syncCurrentContact(): void {
+  private handleHrWhatsAppUsersResponse(response: any, background: boolean): void {
+    this.unAnsweredConversations = response?.d || [];
+    this.unAnsweredTotal = response?.Total ?? response?.total ?? this.unAnsweredTotal;
+    this.unAnsweredConversations_filter = this.filterUnAnsweredConversations(
+      this.unAnsweredConversations,
+      this.unAnsweredFilterValue
+    );
+
+    this.ensureCurrentContact();
+    this.syncCurrentContact(background);
+  }
+
+  private ensureCurrentContact(): void {
+    if (this.currentContact) {
+      return;
+    }
+
+    const defaultContact = this.unAnsweredConversations[0] || this.contacts[0];
+    if (!defaultContact) {
+      return;
+    }
+
+    this.currentContact = defaultContact;
+    if (defaultContact.Row_ID !== undefined) {
+      this.loadConversation(defaultContact.CellNumber, { showLoader: true });
+    } else if (!this.currentContact.WhatsApp_Bot_Convesations) {
+      this.currentContact.WhatsApp_Bot_Convesations = [];
+    }
+  }
+
+  private syncCurrentContact(background: boolean): void {
     if (!this.currentContact?.CellNumber) return;
 
-    // const updated = this.unAnsweredConversations.find(
-    //   (x) => x.Row_ID === this.currentContact.Row_ID
-    // );
+    const updated = this.unAnsweredConversations.find(
+      (contact) => contact.CellNumber === this.currentContact.CellNumber
+    );
 
-    // if (updated) {
-    //   this.currentContact = updated;
-    // }
-    
-    this.getHRWhatsAppConversationsByIDFK(this.currentContact.CellNumber);
-  }
+    if (updated) {
+      const existingConversations = this.currentContact.WhatsApp_Bot_Convesations;
+      this.currentContact = {
+        ...updated,
+        WhatsApp_Bot_Convesations: existingConversations || this.currentContact.WhatsApp_Bot_Convesations
+      };
+    }
 
-  private setupAutoRefresh(): void {
-    setTimeout(() => {
-      if (this.router.url === '/hr-dashboard') {
-        console.log("Refreshing HR WhatsApp user list...");
-        this.getHrWhatsAppUsers();
-      }
-    }, 10000);
+    if (background) {
+      this.refreshActiveConversationInBackground();
+    }
   }
 
   endConversation(contact) {
@@ -192,11 +280,20 @@ export class HrDashboardComponent implements OnInit {
             .post(environment.url + "EndHRWhatsAppConversation", {
               uncontact: contact
             })
+            .pipe(
+              takeUntil(this.destroy$),
+              catchError((err) => {
+                console.error("Error ending conversation:", err);
+                return EMPTY;
+              })
+            )
             .subscribe((Response) => {
-              if (Response["d"]) this.getHrWhatsAppUsers();
-              else alert("אירעה שגיאה בסיום שיחה");
+              if (Response["d"]) {
+                this.getHrWhatsAppUsers(this.unAnsweredPage, this.unAnsweredPageSize, false);
+              } else {
+                alert("אירעה שגיאה בסיום שיחה");
+              }
             });
-        } else {
         }
       })
       .catch(() =>
@@ -207,84 +304,213 @@ export class HrDashboardComponent implements OnInit {
 
   }
 
-  async getHRWhatsAppConversationsByIDFK(row_id) {
-    
-    this.loadChat = true;
-    this.http
-      .post(environment.url + "GetHRWhatsAppConversationsByIDFK", {
-        _row_ID: row_id
-      })
-      .subscribe((Response) => {
-        debugger
-        this.currentContact.WhatsApp_Bot_Convesations = Response["d"];
-        let indexOfLastMessage = this.currentContact.WhatsApp_Bot_Convesations.length;
-        if (indexOfLastMessage > 0) {
-          this.newMessage.controls['Row_ID'].setValue(this.currentContact.WhatsApp_Bot_Convesations[0].Row_ID);
-          this.newMessage.controls['From_ServiceEmployee'].setValue(this.currentContact.WhatsApp_Bot_Convesations[0].From_ServiceEmployee);
-          this.newMessage.controls['ServiceIDFK'].setValue(this.currentContact.WhatsApp_Bot_Convesations[0].ServiceIDFK);
-          this.newMessage.controls['ServiceEmployeeIDFK'].setValue(this.currentContact.WhatsApp_Bot_Convesations[0].ServiceEmployeeIDFK);
-          this.newMessage.controls['EndUserIDFK'].setValue(this.currentContact.WhatsApp_Bot_Convesations[0].EndUserIDFK);
-          this.newMessage.controls['ActionIDFK'].setValue(this.currentContact.WhatsApp_Bot_Convesations[0].ActionIDFK);
-          this.newMessage.controls['Status'].setValue(this.currentContact.WhatsApp_Bot_Convesations[0].Status);
-          this.newMessage.controls['Step'].setValue(this.currentContact.WhatsApp_Bot_Convesations[0].Step);
-          this.newMessage.controls['Conversation_Status'].setValue(this.currentContact.WhatsApp_Bot_Convesations[0].Conversation_Status);
+  private refreshActiveConversationInBackground(): void {
+    if (!this.currentContact?.CellNumber || this.loadChat) {
+      return;
+    }
+    if (this.currentContact.Row_ID === undefined) {
+      return;
+    }
+    this.loadConversation(this.currentContact.CellNumber, { showLoader: false });
+  }
+
+  private loadConversation(rowId: string, options: { showLoader: boolean }): void {
+    if (!rowId || !this.currentContact?.CellNumber) {
+      return;
+    }
+
+    const activeCellNumber = this.currentContact.CellNumber;
+    if (options.showLoader) {
+      this.loadChat = true;
+    }
+
+    this.fetchConversation(rowId)
+      .pipe(
+        takeUntil(this.destroy$),
+        finalize(() => {
+          if (options.showLoader) {
+            this.loadChat = false;
+          }
+        }),
+        catchError((err) => {
+          console.error("Error loading HR WhatsApp conversation:", err);
+          return EMPTY;
+        })
+      )
+      .subscribe((response) => {
+        if (this.currentContact?.CellNumber !== activeCellNumber) {
+          return;
         }
-        this.loadChat = false;
-        // setTimeout(() => {
-        //   this.scrollTarget.nativeElement.scrollTo(0, this.scrollTarget.nativeElement.scrollHeight);
-        // }, 100);
+        this.currentContact.WhatsApp_Bot_Convesations = response?.d || [];
+        this.updateMessageMetadata(this.currentContact.WhatsApp_Bot_Convesations[0]);
       });
   }
 
+  private fetchConversation(rowId: string): Observable<any> {
+    return this.http.post(environment.url + "GetHRWhatsAppConversationsByIDFK", {
+      _row_ID: rowId
+    });
+  }
+
+  private updateMessageMetadata(latestMessage: any): void {
+    if (!latestMessage) {
+      return;
+    }
+
+    this.newMessage.patchValue(
+      {
+        Row_ID: latestMessage.Row_ID ?? '',
+        From_ServiceEmployee: latestMessage.From_ServiceEmployee ?? '',
+        ServiceIDFK: latestMessage.ServiceIDFK ?? '',
+        ServiceEmployeeIDFK: latestMessage.ServiceEmployeeIDFK ?? '',
+        EndUserIDFK: latestMessage.EndUserIDFK ?? '',
+        ActionIDFK: latestMessage.ActionIDFK ?? '',
+        Status: latestMessage.Status ?? '',
+        Step: latestMessage.Step ?? '',
+        Conversation_Status: latestMessage.Conversation_Status ?? ''
+      },
+      { emitEvent: false }
+    );
+  }
+
   openChat(contact: any) {
+    if (!contact) {
+      return;
+    }
     this.currentContact = contact;
-    let check = this.checkIfContactHasConversation(contact);
+    if (!this.currentContact.WhatsApp_Bot_Convesations) {
+      this.currentContact.WhatsApp_Bot_Convesations = [];
+    }
     if (contact.Row_ID !== undefined) {
-      this.getHRWhatsAppConversationsByIDFK(contact.CellNumber);
+      this.loadConversation(contact.CellNumber, { showLoader: true });
     }
   }
 
   sendMessage() {
-    if (this.newMessage.controls['Message_Text'].value.trim() !== '' || this.base64String.toString() !== '') {
-      this.newMessage.controls['ServiceEmployeeIDFK'].setValue(this.user_name);
-      this.http
-        .post(environment.url + "SendHrWhatsAppMessageToUser", {
-          messageForm: this.newMessage.value,
-          file: this.base64String == "" ? "" : this.base64String.toString().split(',')[1],
-          type: ''
-        })
-        .subscribe((Response) => {
-          if (Response["d"]) {
-            if (this.selectedFile) window.location.reload();
-            this.currentContact.WhatsApp_Bot_Convesations.push({ Message_Text: this.newMessage.controls['Message_Text'].value, From_ServiceEmployee: 'True', IfFileMessage: this.selectedFile ? 'True' : 'False' });
-            this.newMessage.controls['Message_Text'].setValue('');
-          } else {
-            alert("Error")
-          }
-        });
+    if (!this.currentContact) {
+      return;
     }
+    const messageText = (this.newMessage.controls['Message_Text'].value || '').toString().trim();
+    const filePayload = this.getFilePayload();
+    const fileBase64 = filePayload ? filePayload.split(',')[1] : '';
+
+    if (!messageText && !fileBase64) {
+      return;
+    }
+
+    this.newMessage.controls['ServiceEmployeeIDFK'].setValue(this.user_name);
+    this.http
+      .post(environment.url + "SendHrWhatsAppMessageToUser", {
+        messageForm: this.newMessage.value,
+        file: fileBase64,
+        type: ''
+      })
+      .pipe(
+        takeUntil(this.destroy$),
+        catchError((err) => {
+          console.error("Error sending message:", err);
+          return EMPTY;
+        })
+      )
+      .subscribe((Response) => {
+        if (Response["d"]) {
+          this.appendOutgoingMessage(messageText, !!fileBase64);
+          this.newMessage.controls['Message_Text'].setValue('');
+          this.clearFileSelection();
+          this.refreshActiveConversationInBackground();
+        } else {
+          alert("Error");
+        }
+      });
   }
 
   sendOneWayMessage() {
-    if (this.newMessage.controls['Message_Text'].value.trim() !== '' || this.base64String.toString() !== '') {
-      this.newMessage.controls['ServiceEmployeeIDFK'].setValue(this.currentContact.CellNumber);
-      this.newMessage.controls['EndUserIDFK'].setValue(this.currentContact.FirstName + ' ' + this.currentContact.LastName);
-      this.http
-        .post(environment.url + "SendHrWhatsAppMessageToUserOneWay", {
-          messageForm: this.newMessage.value,
-          file: this.base64String == "" ? "" : this.base64String.toString().split(',')[1],
-          type: "3"
-        })
-        .subscribe((Response) => {
-          if (Response["d"]) {
-            alert("הודעה נשלחה בהצלחה");
-            if (this.selectedFile) window.location.reload();
-            this.newMessage.controls['Message_Text'].setValue('');
-          } else {
-            alert("הודעה לא נשלחה עקב תקלה");
-          }
-        });
+    if (!this.currentContact) {
+      return;
     }
+    const messageText = (this.newMessage.controls['Message_Text'].value || '').toString().trim();
+    const filePayload = this.getFilePayload();
+    const fileBase64 = filePayload ? filePayload.split(',')[1] : '';
+
+    if (!messageText && !fileBase64) {
+      return;
+    }
+
+    this.newMessage.controls['ServiceEmployeeIDFK'].setValue(this.currentContact.CellNumber);
+    this.newMessage.controls['EndUserIDFK'].setValue(this.currentContact.FirstName + ' ' + this.currentContact.LastName);
+    this.http
+      .post(environment.url + "SendHrWhatsAppMessageToUserOneWay", {
+        messageForm: this.newMessage.value,
+        file: fileBase64,
+        type: "3"
+      })
+      .pipe(
+        takeUntil(this.destroy$),
+        catchError((err) => {
+          console.error("Error sending one-way message:", err);
+          return EMPTY;
+        })
+      )
+      .subscribe((Response) => {
+        if (Response["d"]) {
+          alert("הודעה נשלחה בהצלחה");
+          this.appendOutgoingMessage(messageText, !!fileBase64);
+          this.newMessage.controls['Message_Text'].setValue('');
+          this.clearFileSelection();
+        } else {
+          alert("הודעה לא נשלחה עקב תקלה");
+        }
+      });
+  }
+
+  private appendOutgoingMessage(messageText: string, hasFile: boolean): void {
+    if (!this.currentContact) {
+      return;
+    }
+
+    if (!this.currentContact.WhatsApp_Bot_Convesations) {
+      this.currentContact.WhatsApp_Bot_Convesations = [];
+    }
+
+    const outgoingMessage: any = {
+      Message_Text: messageText,
+      From_ServiceEmployee: 'True',
+      IfFileMessage: hasFile ? 'True' : 'False'
+    };
+
+    if (hasFile) {
+      const filePayload = this.getFilePayload();
+      if (filePayload) {
+        outgoingMessage.Message_Text = filePayload;
+        outgoingMessage.FileType = this.selectedFile?.type?.startsWith('image/') ? 'image' : 'pdf';
+      }
+    }
+
+    this.currentContact.WhatsApp_Bot_Convesations.push(outgoingMessage);
+  }
+
+  private getFilePayload(): string {
+    if (!this.base64String || typeof this.base64String !== 'string') {
+      return '';
+    }
+    return this.base64String;
+  }
+
+  private clearFileSelection(): void {
+    this.selectedFile = null;
+    this.base64String = '';
+  }
+
+  trackByContact(index: number, contact: any): string | number {
+    return contact?.CellNumber ?? contact?.Row_ID ?? index;
+  }
+
+  trackByConversation(index: number, message: any): string | number {
+    return message?.Row_ID ?? message?.Message_Time ?? index;
+  }
+
+  trackByFixedFile(index: number, item: any): string | number {
+    return item?.File_Numeric ?? item?.File_Name ?? index;
   }
 
   getHRWhatsAppServiceFixedFiles() {
@@ -292,8 +518,15 @@ export class HrDashboardComponent implements OnInit {
       .post(environment.url + "GetHRWhatsAppServiceFixedFiles", {
         _user_name: this.user_name
       })
+      .pipe(
+        takeUntil(this.destroy$),
+        catchError((err) => {
+          console.error("Error loading fixed files:", err);
+          return EMPTY;
+        })
+      )
       .subscribe((Response) => {
-        this.fixed_files_list = Response['d'];
+        this.fixed_files_list = Response?.d || [];
       });
   }
 
@@ -314,11 +547,6 @@ export class HrDashboardComponent implements OnInit {
     reader.onerror = (error) => {
       console.error('Error: ', error);
     };
-  }
-
-  checkIfContactHasConversation(contact) {
-    let t = this.unAnsweredConversations.filter(x => x.CellNumber === contact.CellNumber)[0];
-    return true ? t !== undefined : false;
   }
 
   async convertBase64ToPDF(base64Data: string, fileName: string, file_type: string) {
