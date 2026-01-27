@@ -165,7 +165,10 @@
         <div id="surgeriesrts" class="dashboard" *ngIf="$any(settings)?.showSurgeriesRts !== false"
           [class.background-mode]="settings.backgroundMode === true">
           <div *ngIf="isLoading" class="loader-overlay">
-            <div class="spinner"></div>
+            <div class="loader-content">
+              <div class="spinner"></div>
+              <div class="loader-text">טוען...</div>
+            </div>
           </div>
 
           <div class="mdc-layout-grid__cell col-md-12 text-center">
@@ -955,7 +958,9 @@
                 </div>
                 <div class="drill-scroll">
                   <div *ngFor="let it of s.urgency.lists[uKey]" class="drill-item">
-                    <b>{{ translateRoomId(it.room) }}</b> | {{ it.surgeryName }} | {{ it.timeEntrance }}
+                    <b>{{ translateRoomId(it.room) }}</b> | {{ it.surgeryName || it.original?.SurgeryName || it.original?.surgeryName || '—' }} 
+                    <span *ngIf="it.department" class="muted">({{ it.department }})</span>
+                    | {{ it.timeEntrance || '—' }}
                   </div>
                 </div>
               </div>

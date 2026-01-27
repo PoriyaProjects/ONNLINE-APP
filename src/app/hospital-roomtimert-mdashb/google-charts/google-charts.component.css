@@ -4,28 +4,32 @@
   text-align: right; 
   display: flex; 
   flex-direction: column; 
-  gap: 30px; 
+  gap: 10px; 
+  box-sizing: border-box;
+  padding: 8px;
+  width: 100%;
 }
 
 /* ========== REGULAR ROOMS SECTION ========== */
 .regular-section { 
   width: 100%; 
   margin-bottom: 0; 
-  padding: 20px; 
+  padding: 8px; 
   border: 1px solid #e0e0e0; 
   border-radius: 8px; 
   background: #fafafa; 
   box-shadow: 0 1px 3px rgba(0,0,0,0.05); 
+  box-sizing: border-box;
 }
 
 .regular-section .section-header { 
   direction: rtl; 
   text-align: center; 
-  padding-left:20px; 
-  margin: 0 0 20px 0; 
+  padding: 6px 12px; 
+  margin: 0 0 8px 0; 
   background: #ffffff; 
   border-radius: 6px; 
-  font-size: 1.4em; 
+  font-size: 1.1em; 
   font-weight: 600; 
   border: 1px solid #d0d0d0; 
   width: 100%; 
@@ -34,10 +38,17 @@
 
 .regular-section .rooms-grid {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
+  grid-template-columns: repeat(7, minmax(0, 1fr));
   gap: 16px;
   width: 100%;
   align-items: stretch;
+  justify-items: center;
+  justify-content: center;
+}
+
+.ambulatory-section .room-wrapper {
+  width: 100%;
+  display: flex;
 }
 
 .regular-section .room-wrapper {
@@ -48,22 +59,23 @@
 /* ========== AMBULATORY ROOMS SECTION ========== */
 .ambulatory-section { 
   width: 100%;
-  margin-top: 50px;
-  padding: 20px; 
+  margin-top: 8px;
+  padding: 8px; 
   border: 2px solid #4caf50; 
   border-radius: 12px; 
   background: linear-gradient(135deg, #e8f5e9 0%, #f1f8f4 100%); 
   box-shadow: 0 4px 12px rgba(76, 175, 80, 0.15); 
+  box-sizing: border-box;
 }
 
 .ambulatory-section .section-header { 
   direction: rtl; 
   text-align: center; 
-  padding: 15px 25px; 
-  margin: 0 0 20px 0; 
+  padding: 6px 12px; 
+  margin: 0 0 8px 0; 
   background: linear-gradient(135deg, #4caf50 0%, #66bb6a 100%); 
   border-radius: 8px; 
-  font-size: 1.5em; 
+  font-size: 1.1em; 
   font-weight: bold; 
   border: none; 
   width: 100%; 
@@ -73,14 +85,19 @@
 }
 
 .ambulatory-section {
-  margin-top: 50px;
+  margin-top: 10px;
 }
 
 .ambulatory-section .rooms-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: 24px;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 16px;
+  width: fit-content;
+  max-width: 100%;
   align-items: stretch;
+  justify-items: center;
+  justify-content: center;
+  margin: 0 auto;
 }
 
 .room-wrapper { 
@@ -93,8 +110,43 @@ h4.text-center { margin: 0 0 4px 0; min-height: 2.2rem; }
 .expand_btn { width: 100%; text-align: center; }
 
 /* ========== LOADER & TOOLBAR ========== */
-.loader-overlay { position: absolute; inset: 0; background: rgba(255,255,255,0.8); display: flex; align-items: center; justify-content: center; z-index: 10; }
-.spinner { width: 40px; height: 40px; border: 4px solid #ddd; border-top: 4px solid #007bff; border-radius: 50%; animation: spin 0.8s linear infinite; }
+.loader-overlay { 
+  position: fixed; 
+  top: 0; 
+  left: 0; 
+  right: 0; 
+  bottom: 0; 
+  background: rgba(255,255,255,0.95); 
+  display: flex; 
+  flex-direction: column;
+  align-items: center; 
+  justify-content: center; 
+  z-index: 9999; 
+  gap: 20px;
+}
+.loader-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+.spinner { 
+  width: 60px; 
+  height: 60px; 
+  border: 5px solid #e3f2fd; 
+  border-top: 5px solid #1976d2; 
+  border-radius: 50%; 
+  animation: spin 0.8s linear infinite; 
+  box-shadow: 0 4px 12px rgba(25, 118, 210, 0.2);
+}
+.loader-text {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #1976d2;
+  direction: rtl;
+  text-align: center;
+  letter-spacing: 1px;
+}
 @keyframes spin { to { transform: rotate(360deg); } }
 .refresh-toolbar { display: flex; justify-content: center; align-items: center; gap: 12px; margin-bottom: 6px; }
 .refresh-box { display: inline-block; padding: 2px 8px; font-size: 0.85rem; color: #fff; background: #007bff; border-radius: 4px; cursor: pointer; user-select: none; transition: background 0.2s; }
@@ -269,7 +321,7 @@ h4.text-center { margin: 0 0 4px 0; min-height: 2.2rem; }
 /* ========== DASHBOARD HEADER ========== */
 .dashboard-header { padding: 40px 0 20px; background: linear-gradient(to left, #1976d2, #2196f3); border-radius: 12px; margin-bottom: 25px;display: none; }
 .page-title {  z-index: 20;
-  padding-top: 45px; font-size: 2.2rem; font-weight: 700; margin: 0; letter-spacing: 1px; text-shadow: 0 2px 4px rgba(0,0,0,0.25); color: black; }
+  padding-top: 20px; padding-bottom: 6px; font-size: 1.4rem; font-weight: 700; margin: 0; letter-spacing: 1px; text-shadow: 0 2px 4px rgba(0,0,0,0.25); color: black; }
 
 /* ========== BOTTOM SUMMARY BAR ========== */
 .floating-summary-btn { position: fixed; bottom: 55px; padding-bottom:80px; left: 20px; z-index: 1000; background: #2c3e50; color: white; border: none; padding: 12px 20px; border-radius: 30px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); cursor: pointer; font-weight: bold; }
@@ -360,8 +412,8 @@ h4.text-center { margin: 0 0 4px 0; min-height: 2.2rem; }
 
 /* Section titles */
 .section-header {
-  font-size: 1.4rem;
-  margin-bottom: 12px;
+  font-size: 1.1rem;
+  margin-bottom: 8px;
 }
 
 /* Hospital-style clean look */
@@ -374,27 +426,31 @@ h4.text-center { margin: 0 0 4px 0; min-height: 2.2rem; }
 
 /* ===== REGULAR ROOMS – PRIMARY ===== */
 .regular-section {
-  padding: 12px;
+  padding: 8px;
   border-radius: 14px;
   background: linear-gradient(180deg, #f5f9ff 0%, #ffffff 100%);
   border: 2px solid #1e88e5;
   box-shadow: 0 6px 18px rgba(30,136,229,0.25);
+  overflow-y: auto;
+  max-height: 86vh;
 }
 
 .regular-section .section-header {
-  font-size: 1.6rem;
+  font-size: 1.1rem;
   font-weight: 800;
   background: linear-gradient(90deg, #1e88e5, #42a5f5);
   color: #fff;
   border-radius: 10px;
-  /* padding: 14px; */
-  margin-bottom: 14px;
+  padding: 4px 10px;
+  margin-bottom: 6px;
 }
 
 .regular-section .rooms-grid {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
+  grid-template-columns: repeat(7, minmax(0, 1fr));
   gap: 12px;
+  justify-items: center;
+  justify-content: center;
 }
 
 .regular-section .room-widget.card {
@@ -404,26 +460,32 @@ h4.text-center { margin: 0 0 4px 0; min-height: 2.2rem; }
 }
 /* ===== AMBULATORY – SECONDARY ===== */
 .ambulatory-section {
-  margin-top: 20px;
-  padding: 10px;
+  margin-top: 8px;
+  padding: 8px;
   background: #f6fbf7;
   border: 1px dashed #a5d6a7;
   box-shadow: none;
 }
 
 .ambulatory-section .section-header {
-  font-size: 1.2rem;
+  font-size: 1.1rem;
   font-weight: 600;
   background: #e8f5e9;
   color: #2e7d32;
   border-radius: 8px;
-  padding: 10px;
+  padding: 6px 12px;
+  margin-bottom: 8px;
 }
 
 .ambulatory-section .rooms-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 16px;
+  width: fit-content;
+  max-width: 100%;
+  justify-content: center;
+  justify-items: center;
+  margin: 0 auto;
 }
 
 .ambulatory-section .room-widget.card {
@@ -468,25 +530,28 @@ h4.text-center { margin: 0 0 4px 0; min-height: 2.2rem; }
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
+  gap: 12px;
+  padding: 4px 10px;
+  margin-bottom: 6px;
 }
 
 .header-title {
   margin: 0;
-  font-size: 1.6rem;
+  font-size: 1rem;
   font-weight: 800;
+  line-height: 1.2;
 }
 
 /* Toolbar inside header */
 .header-toolbar {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 6px;
   background: rgba(255,255,255,0.85);
-  padding: 6px 10px;
-  border-radius: 10px;
+  padding: 3px 6px;
+  border-radius: 6px;
   box-shadow: 0 2px 6px rgba(0,0,0,0.12);
-  font-size: 0.85rem;
+  font-size: 0.7rem;
 }
 
 .header-toolbar .last-updated {
@@ -519,4 +584,18 @@ h4.text-center { margin: 0 0 4px 0; min-height: 2.2rem; }
   position: relative;
   z-index: 20;
   margin-top: 64px;
+}
+.ambulatory-section .rooms-grid {
+  display: flex;
+  flex-wrap: wrap;       /* מאפשר ירידת שורה אם יש הרבה כרטיסים */
+  justify-content: center; /* ממרכז את הכרטיסים בשורה */
+  gap: 16px;             /* רווח בין הכרטיסים */
+  width: 100%;
+}
+
+.ambulatory-section .room-wrapper {
+  width: 15%;            /* 15% מרוחב האבא כפי שביקשת */
+  min-width: 180px;      /* כדאי להוסיף כדי שהכרטיס לא יתכווץ מדי במסכים קטנים */
+  display: flex;
+  flex-direction: column;
 }

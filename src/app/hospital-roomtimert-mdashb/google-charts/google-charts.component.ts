@@ -1496,27 +1496,112 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
     }
 
     /**
-     * בדיקה אם החדר הוא חדר ניתוח אמבולטורי
-     * בודק לפי השדה SurgeryType של הניתוחים
+     * בדיקה אם החדר הוא אחד מהחדרים הרגילים (1-7)
+     * בודק ישירות לפי roomId ולא לפי חילוץ מספר
      */
-    isAmbulatoryRoom(room: RoomData): boolean {
-        if (!room?.surgeries?.length) return false;
-        // בודק אם יש לפחות ניתוח אחד עם SurgeryType === "אמבולטורי"
-        return room.surgeries.some((s) => {
-            const surgeryType = s.SurgeryType;
-            if (!surgeryType) return false;
-            const typeStr = String(surgeryType).trim();
-            return typeStr === "אמבולטורי" || 
-                   typeStr === "Ambulatory" ||
-                   typeStr.toLowerCase() === "ambulatory";
-        });
+    isStandardOperatingRoom(roomId: string): boolean {
+        if (!roomId) return false;
+        // בודק אם roomId נמצא ב-roomNameOverrides (פז01-201 עד פז01-207)
+        return roomId in this.roomNameOverrides;
     }
 
     /**
-     * קבלת חדרים רגילים (לא אמבולטוריים)
+     * בדיקה אם החדר הוא חדר ניתוח אמבולטורי
+     * כל חדר שאינו 1-7 נחשב כאמבולטורי
+     * חדרים 1-7 לעולם לא נחשבים אמבולטוריים, גם אם יש להם SurgeryType: "אמבולטורי"
+     */
+    isAmbulatoryRoom(room: RoomData): boolean {
+        // חדרים 1-7 תמיד לא אמבולטוריים
+        if (this.isStandardOperatingRoom(room.roomId)) return false;
+        
+        // כל חדר אחר (שאינו 1-7) נחשב כאמבולטורי
+        // בודק גם אם יש ניתוחים עם SurgeryType או Urgency === "אמבולטורי" (למקרה שיש חדרים רגילים נוספים)
+        if (!room?.surgeries?.length) return false;
+        
+        // אם יש לפחות ניתוח אחד עם SurgeryType או Urgency === "אמבולטורי", זה חדר אמבולטורי
+        const hasAmbulatorySurgery = room.surgeries.some((s) => {
+            // בודק SurgeryType
+            const surgeryType = s.SurgeryType;
+            if (surgeryType) {
+                const typeStr = String(surgeryType).trim();
+                if (typeStr === "אמבולטורי" || 
+                    typeStr === "Ambulatory" ||
+                    typeStr.toLowerCase() === "ambulatory") {
+                    return true;
+                }
+            }
+            
+            // בודק Urgency
+            const urgency = (s as any).urgency;
+            if (urgency) {
+                const urgencyStr = String(urgency).trim();
+                if (urgencyStr === "אמבולטורי" || 
+                    urgencyStr === "Ambulatory" ||
+                    urgencyStr.toLowerCase() === "ambulatory") {
+                    return true;
+                }
+            }
+            
+            return false;
+        });
+        
+        // אם יש ניתוח עם סוג אמבולטורי, זה חדר אמבולטורי
+        if (hasAmbulatorySurgery) return true;
+        
+        // אחרת, כל חדר שאינו 1-7 נחשב כאמבולטורי
+        return true;
+    }
+
+    /**
+     * בדיקה אם החדר הוא חדר ניתוח רגיל (1-7)
+     * חדרים 1-7 תמיד נחשבים רגילים, ללא קשר ל-SurgeryType
+     */
+    isRegularOperatingRoom(room: RoomData): boolean {
+        return this.isStandardOperatingRoom(room.roomId);
+    }
+
+    /**
+     * קבלת חדרים רגילים (רק חדרים 1-7)
+     * מסונן לפי roomId ייחודי וממוין לפי מספר החדר
      */
     get regularRooms(): RoomData[] {
-        return this.roomsData.filter((room) => !this.isAmbulatoryRoom(room));
+        const filtered = this.roomsData.filter((room) => this.isRegularOperatingRoom(room));
+        
+        // הסרת כפילויות לפי roomId (אם יש כמה חדרים עם אותו roomId, ניקח רק את הראשון)
+        const uniqueRooms = new Map<string, RoomData>();
+        filtered.forEach(room => {
+            if (!uniqueRooms.has(room.roomId)) {
+                uniqueRooms.set(room.roomId, room);
+            }
+        });
+        
+        // מיון לפי מספר החדר (1-7)
+        const sorted = Array.from(uniqueRooms.values()).sort((a, b) => {
+            const aNum = this.getRoomNumberFromId(a.roomId);
+            const bNum = this.getRoomNumberFromId(b.roomId);
+            if (aNum === null && bNum === null) return 0;
+            if (aNum === null) return 1;
+            if (bNum === null) return -1;
+            return aNum - bNum;
+        });
+        
+        return sorted;
+    }
+
+    /**
+     * חילוץ מספר החדר מ-roomId (רק לחדרים 1-7)
+     */
+    private getRoomNumberFromId(roomId: string): number | null {
+        if (!roomId) return null;
+        const override = this.roomNameOverrides[roomId];
+        if (override) {
+            const match = override.match(/חדר ניתוח (\d+)/);
+            if (match) {
+                const num = parseInt(match[1], 10);
+                if (num >= 1 && num <= 7) return num;
+            }
+        }
+        return null;
     }
 
     /**
@@ -2668,7 +2753,15 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
         for (const s of todays) {
             const key = this._readUrgencyKey(s);
             counts[key] = (counts[key] ?? 0) + 1;
-            lists[key].push(s);
+            // יצירת אובייקט מעובד עם השדות הנכונים לפופאפ
+            lists[key].push({
+                room: s.SurgeryRoom ?? s.roomId ?? s.surgeryRoom ?? s.room ?? '',
+                surgeryName: this._pickTitleCompat(s),
+                timeEntrance: s.TimeEntranceToTheOperatingRoom ?? s.timeEntrance ?? '',
+                department: s.DepartName ?? s.department ?? '',
+                urgency: key,
+                original: s // שמירת האובייקט המקורי למקרה שצריך
+            });
         }
 
         return {
@@ -2861,6 +2954,16 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
         | "ambulatory"
         | "noPriority"
         | "unknown" {
+        // בודק קודם את SurgeryType - אם הוא "אמבולטורי", זה תמיד אמבולטורי
+        const surgeryType = s?.SurgeryType ?? s?.surgeryType ?? '';
+        if (surgeryType) {
+            const typeStr = String(surgeryType).trim().toLowerCase();
+            if (typeStr.includes("אמבול") || typeStr.includes("ambul")) {
+                return "ambulatory";
+            }
+        }
+        
+        // בודק את Urgency הרגיל
         const raw =
             s?.Urgency ??
             s?.urgency ??
@@ -2869,7 +2972,22 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
             s?.Triage ??
             s?.triage ??
             "";
-        return this._normalizeUrgency(raw);
+        const normalized = this._normalizeUrgency(raw);
+        
+        // אם Urgency מזוהה, נשתמש בו
+        if (normalized !== "unknown") {
+            return normalized;
+        }
+        
+        // אם Urgency לא מזוהה, בודק אם החדר הוא חדר אמבולטורי (לא 1-7)
+        const roomId = s?.SurgeryRoom ?? s?.roomId ?? s?.surgeryRoom ?? s?.room ?? '';
+        if (roomId && !this.isStandardOperatingRoom(roomId)) {
+            // אם החדר לא נמצא ב-roomNameOverrides (לא חדר 1-7), זה חדר אמבולטורי
+            return "ambulatory";
+        }
+        
+        // אחרת, נשאר unknown
+        return "unknown";
     }
 
     private _normalizeUrgency(
@@ -3155,11 +3273,39 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
                 }
             }
         } else if (lastSurgeryEnd) {
-            // אין ניתוח בתהליך - זמן פנוי = סיום אחרון + SETUP
-            freeFromDate = new Date(
-                lastSurgeryEnd.getTime() + SETUP_TIME * 60000
-            );
-            freeFromText = this._formatClock(freeFromDate);
+            // אין ניתוח בתהליך
+            // אם כל הניתוחים הסתיימו - זמן פנוי = זמן סיום הניתוח האחרון (ללא SETUP)
+            // אחרת - זמן פנוי = סיום אחרון + SETUP (יש עוד ניתוחים מתוכננים)
+            const allCompleted = this.isAllSurgeriesCompleted(room);
+            if (allCompleted) {
+                // כל הניתוחים הסתיימו - מציגים את זמן סיום הניתוח האחרון
+                // משתמשים ב-findLastCompletedSurgery כדי למצוא את זמן הסיום המדויק
+                const lastCompletedSurgery = this.findLastCompletedSurgery(room);
+                if (lastCompletedSurgery) {
+                    const lastEndTime = this.getLastSurgeryEndTime(
+                        lastCompletedSurgery,
+                        new Date(baseDate)
+                    );
+                    if (lastEndTime) {
+                        freeFromDate = lastEndTime;
+                        freeFromText = this._formatClock(freeFromDate);
+                    } else {
+                        // fallback ל-lastSurgeryEnd אם אין זמן יציאה מדויק
+                        freeFromDate = lastSurgeryEnd;
+                        freeFromText = this._formatClock(freeFromDate);
+                    }
+                } else {
+                    // fallback ל-lastSurgeryEnd
+                    freeFromDate = lastSurgeryEnd;
+                    freeFromText = this._formatClock(freeFromDate);
+                }
+            } else {
+                // יש עוד ניתוחים מתוכננים - זמן פנוי = סיום אחרון + SETUP
+                freeFromDate = new Date(
+                    lastSurgeryEnd.getTime() + SETUP_TIME * 60000
+                );
+                freeFromText = this._formatClock(freeFromDate);
+            }
         }
 
         // חישוב גלישה: זמן סיום צפוי של כל הניתוחים (בוצעו + בתהליך + מתוכננים) - 15:00
