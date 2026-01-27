@@ -1,4 +1,4 @@
-<style>
+<!-- <style>
   .date-compact.mat-form-field {
     width: 120px;
   }
@@ -6,27 +6,27 @@
   :host ::ng-deep .date-compact .mat-form-field-infix {
     width: 100px;
   }
-</style>
+</style> -->
 
-<div class="mdc-layout-grid dashboard-header" style="direction: rtl;">
-  <div class="mdc-layout-grid__inner">
-
-    <div class="mdc-layout-grid__cell col-md-12 text-center">
-      <h1 class="page-title">
-        דאשבורד זמני ניתוח – זמן אמת (מחלקות)
-      </h1>
-    </div>
-
-  </div>
-</div>
 
 
 <div class="row">
   <div
-   class="mdc-layout-grid__cell col-md-12"
-   >
-    <main class="mdc-top-app-bar--fixed-adjust">
-      <div class="panel" style="padding:20px;width:100%; border: 1px solid rgba(0, 0, 0, .125);
+  class="mdc-layout-grid__cell col-md-12"
+  >
+  <main class="mdc-top-app-bar--fixed-adjust">
+      <!-- <div class="mdc-layout-grid dashboard-header" style="direction: rtl;">
+        <div class="mdc-layout-grid__inner"> -->
+<!--       
+          <div class="mdc-layout-grid__cell col-md-12 text-center">
+            <h1 class="page-title">
+              דאשבורד זמני ניתוח – זמן אמת (מחלקות)
+            </h1>
+          </div> -->
+<!--       
+        </div>
+      </div> -->
+      <!-- <div class="panel" style="padding:20px;width:100%; border: 1px solid rgba(0, 0, 0, .125);
     border-radius: .25rem;">
         <div class="refresh-toolbar">
           <span *ngIf="lastLoaded" class="last-updated">
@@ -39,8 +39,8 @@
           <span class="refresh-box" (click)="manualRefresh()" title="רענן עכשיו">
             ⟳ {{ formatCountdown(nextRefreshIn) }}
           </span>
-        </div>
-        <br />
+        </div> -->
+        <!-- <br /> -->
         <!-- <div style="margin: 10px 0;">
             <span style="margin: 10px 0;" class="date-controls" *ngIf="settings.showDateControls !== false">
               <label for="dateSelect">שינוי תאריך </label>
@@ -168,9 +168,32 @@
             <div class="spinner"></div>
           </div>
 
+          <div class="mdc-layout-grid__cell col-md-12 text-center">
+            <h1 class="dashboard-header">
+              דאשבורד זמני ניתוח – זמן אמת (מחלקות)
+            </h1>
+          </div>
           <!-- חדרי ניתוח כללי -->
           <div *ngIf="regularRooms.length > 0" class="rooms-section regular-section">
-            <h2 class="section-header">חדרי ניתוח כללי</h2>
+            <!-- <h2 class="section-header">חדרי ניתוח כללי</h2> -->
+            <div class="section-header header-with-toolbar">
+              <h2 class="header-title">חדרי ניתוח כללי</h2>
+            
+              <div class="header-toolbar">
+                <span *ngIf="lastLoaded" class="last-updated">
+                  נטען: {{ lastLoaded | date:'HH:mm:ss' }}
+                </span>
+            
+                <button class="pause-btn" (click)="toggleAutoRefresh()">
+                  {{ autoRefreshPaused ? '▶️ הפעל' : '⏸ השהה' }}
+                </button>
+            
+                <span class="refresh-box" (click)="manualRefresh()" title="רענן עכשיו">
+                  ⟳ {{ formatCountdown(nextRefreshIn) }}
+                </span>
+              </div>
+            </div>
+            
             <div class="rooms-grid">
               <div class="room-wrapper" *ngFor="let room of regularRooms; trackBy: trackByRoomId">
 

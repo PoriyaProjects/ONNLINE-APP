@@ -267,7 +267,7 @@ h4.text-center { margin: 0 0 4px 0; min-height: 2.2rem; }
 .status-tag.plan { background: #bee3f8; color: #2a4365; }
 
 /* ========== DASHBOARD HEADER ========== */
-.dashboard-header { padding: 40px 0 20px; background: linear-gradient(to left, #1976d2, #2196f3); border-radius: 12px; margin-bottom: 25px; }
+.dashboard-header { padding: 40px 0 20px; background: linear-gradient(to left, #1976d2, #2196f3); border-radius: 12px; margin-bottom: 25px;display: none; }
 .page-title { font-size: 2.2rem; font-weight: 700; margin: 0; letter-spacing: 1px; text-shadow: 0 2px 4px rgba(0,0,0,0.25); color: black; }
 
 /* ========== BOTTOM SUMMARY BAR ========== */
@@ -461,4 +461,61 @@ h4.text-center { margin: 0 0 4px 0; min-height: 2.2rem; }
 
 .panel {
   margin-bottom: 10px;
+}
+/* Header with toolbar */
+.header-with-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.header-title {
+  margin: 0;
+  font-size: 1.6rem;
+  font-weight: 800;
+}
+
+/* Toolbar inside header */
+.header-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(255,255,255,0.85);
+  padding: 6px 10px;
+  border-radius: 10px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+  font-size: 0.85rem;
+}
+
+.header-toolbar .last-updated {
+  color: #555;
+  white-space: nowrap;
+}
+
+.header-toolbar .pause-btn {
+  border: 1px solid #bbb;
+  border-radius: 6px;
+  padding: 4px 8px;
+  background: #fff;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+
+.header-toolbar .refresh-box {
+  background: #1e88e5;
+  color: #fff;
+  padding: 4px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+/* ===== HARD FIX: DASHBOARD HEADER HIDDEN BY MDC ===== */
+
+/* Force space ABOVE the dashboard content */
+.dashboard-header {
+  position: relative;
+  z-index: 20;
+  margin-top: 64px;
 }
