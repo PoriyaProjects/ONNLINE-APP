@@ -3,6 +3,7 @@ import { FormArray, FormBuilder, FormControl, FormGroup, Validators } from '@ang
 import { SupportRequestService } from '../commercial-support.service';
 import { MatSnackBar, MatSnackBarHorizontalPosition, MatSnackBarVerticalPosition } from '@angular/material/snack-bar';
 import { MatDialog, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
+import { DatePipe } from '@angular/common';
 
 @Component({
   selector: 'app-commercial-support-gathering',
@@ -14,10 +15,13 @@ export class CommercialSupportGatheringComponent implements OnInit {
   horizontalPosition: MatSnackBarHorizontalPosition = "start";
   verticalPosition: MatSnackBarVerticalPosition = "bottom";
   GatheringRequestDto!: FormGroup;
+  decision_making: boolean = false;
+  UserName = localStorage.getItem("loginUserName").toLowerCase();
 
   constructor(
     private fb: FormBuilder,
     private _snackBar: MatSnackBar,
+    private datePipe: DatePipe,
     public dialog: MatDialog,
     private supportRequestsService: SupportRequestService,
     @Inject(MAT_DIALOG_DATA) public data: any,
@@ -44,7 +48,11 @@ export class CommercialSupportGatheringComponent implements OnInit {
       GatheringOutcome: new FormControl(data?.GatheringOutcome, Validators.required),
       GatheringSupport: new FormControl(data?.GatheringSupport, null),
       GatheringInquiries: new FormControl(data?.GatheringInquiries, Validators.required),
+      Approved: new FormControl(data?.Approved, null),
+      DecisionDate: new FormControl(data?.DecisionDate, null),
+      Note: new FormControl(data?.Note, null)
     });
+    this.decision_making = data?.RequesterID != undefined && (this.UserName == 'okatz' || this.UserName == 'adahabre') ? true : false;
   }
 
   getEmployeeDetails() {
@@ -56,6 +64,7 @@ export class CommercialSupportGatheringComponent implements OnInit {
         else if (patient.EmployeeID != null) {
           this.GatheringRequestDto.controls['Requester'].setValue(patient.FirstName + ' ' + patient.LastName);
           this.GatheringRequestDto.controls['RequesterDetails'].setValue(patient.RankDescription + ', ' + patient.DepartnentDescripton);
+          this.decision_making = this.UserName == 'okatz' || this.UserName == 'adahabre' ? true : false;
         }
       },
       error: (err) => {
@@ -79,6 +88,8 @@ export class CommercialSupportGatheringComponent implements OnInit {
 
   submitForm(type) {
     if (true) {
+      this.GatheringRequestDto.controls['GatheringDate'].setValue(this.datePipe.transform(this.GatheringRequestDto.controls['GatheringDate'].value, 'yyyy-MM-dd'));
+      this.GatheringRequestDto.controls['GatheringEndDate'].setValue(this.datePipe.transform(this.GatheringRequestDto.controls['GatheringEndDate'].value, 'yyyy-MM-dd'));
       this.supportRequestsService.saveGatheringRequest(this.GatheringRequestDto.getRawValue(), type).subscribe({
         next: (response) => {
           if (response['d']) {

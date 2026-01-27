@@ -628,8 +628,7 @@
                 <div *ngIf="Training_Request_Forms_D.get(section.key)?.value">
                   <mat-form-field>
                     <mat-label><b>הערה ל: {{ section.label }}</b></mat-label>
-                    <textarea matInput [formControlName]="section.answer" rows="2">
-    </textarea>
+                    <textarea matInput [formControlName]="section.answer" rows="2"></textarea>
                   </mat-form-field>
                 </div>
 
@@ -666,6 +665,20 @@
               <mat-form-field *ngIf="user_name == 'dnudelman' || user_name == 'lnachmani' || user_name == 'adahabre'">
                 <mat-label><b>תשובת התאגיד</b></mat-label>
                 <textarea matInput formControlName="Training_Fund_Answer" rows="2"></textarea>
+              </mat-form-field>
+            </div>
+            <hr>
+            <div class="section"
+              *ngIf="dorit_note_answer && (user_name == 'adahabre' || user_name == 'ttsrefati' || user_name == 'ssabach' || user_name == 'lnachmani' || user_name == 'dnudelman')">
+              <mat-label><b>הערת התאגיד לועדה</b></mat-label>
+              <p
+                *ngIf="user_name == 'adahabre' || user_name == 'ttsrefati' || user_name == 'ssabach' || user_name == 'lnachmani' || user_name == 'dnudelman'">
+                {{
+                Training_Request_Forms_D.get('Training_Fund_Answer_To_Descision').value }}
+              </p>
+              <mat-form-field *ngIf="user_name == 'dnudelman' || user_name == 'lnachmani' || user_name == 'adahabre'">
+                <mat-label><b>הערת התאגיד לועדה</b></mat-label>
+                <textarea matInput formControlName="Training_Fund_Answer_To_Descision" rows="2"></textarea>
               </mat-form-field>
             </div>
           </mat-card-content>

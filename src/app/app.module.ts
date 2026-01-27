@@ -290,6 +290,7 @@ import { HearingSurveyComponent } from './hearing-survey/hearing-survey/hearing-
 import { AutomationProcessDashboardComponent } from "./automationprocessdashboard/automation-process-dashboard.component";
 import { DepartmentalTextureReportComponent } from './nutrition-system/departmental-texture-report/departmental-texture-report.component';
 import { WindowsUserActionsComponent } from './dashboard/windows-user-actions/windows-user-actions.component';
+import { AiLettersDashboardComponent } from './ai-letters-dashboard/ai-letters-dashboard.component';
 
 
 
@@ -522,6 +523,7 @@ const maskConfig: Partial<IConfig> = {
     HearingSurveyComponent,
     DepartmentalTextureReportComponent,
     WindowsUserActionsComponent,
+    AiLettersDashboardComponent,
     //HospitalIncomeDashbComponent,
   ],
   imports: [
