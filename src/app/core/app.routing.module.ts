@@ -170,6 +170,7 @@ import { DepartmentIncomeDashboardComponent } from "../incomeImporter/department
 import { AutomationProcessDashboardComponent } from "../automationprocessdashboard/automation-process-dashboard.component";
 import { DepartmentalTextureReportComponent } from "../nutrition-system/departmental-texture-report/departmental-texture-report.component";
 import { WindowsUserActionsComponent } from "../dashboard/windows-user-actions/windows-user-actions.component";
+import { AiLettersDashboardComponent } from "../ai-letters-dashboard/ai-letters-dashboard.component";
 
 
 
@@ -385,6 +386,7 @@ const routes: Routes = [
   { path: "hospital-appointscl-dashb", component: AppointsCLDashboardComponent },
   { path: "departmental-texture-report", component: DepartmentalTextureReportComponent },
   { path: "windows-user-actions", component: WindowsUserActionsComponent },
+  { path: "ai-letters-dashboard", component: AiLettersDashboardComponent },
 
 ];
 

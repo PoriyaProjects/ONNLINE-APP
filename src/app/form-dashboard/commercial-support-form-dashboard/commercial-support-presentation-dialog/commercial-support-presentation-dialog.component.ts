@@ -19,6 +19,8 @@ export class CommercialSupportPresentationDialogComponent implements OnInit {
   allCompanies: string[] = ['אבוט', 'אלי לילי', 'אסטרזניקה', 'באייר', 'גד מדיקל', 'גטר גרופ', 'גי-סי הלת"קר בע"מ', 'גמידה', 'טבע', 'טרימקו', 'כמיטק', 'לבנט', 'לברון', 'מדטכניקה', 'מדטרוניק', 'מדיסון פארמה'
     , 'נובו נורדיסק', 'נאופארם', 'עמוס גזית', 'פייזר', 'צמל', 'רוש', 'רפיד מדיקל', 'ש.שיווק כל מיליניום', 'Abbott', 'Baxter', 'Boehringer Ingelheim', 'Boston Scientific', 'Cook', 'Ferring Pharmaceuticals', 'MSD'];
   filteredCompanies: string[] = [];
+  decision_making: boolean = false;
+  UserName = localStorage.getItem("loginUserName").toLowerCase();
 
   constructor(
     private fb: FormBuilder,
@@ -62,10 +64,14 @@ export class CommercialSupportPresentationDialogComponent implements OnInit {
       ReferenceName: new FormControl(data?.ReferenceName, Validators.required),
       Phone: new FormControl(data?.Phone, Validators.required),
       Email: new FormControl(data?.Email, Validators.required),
+      Approved: new FormControl(data?.Approved, null),
+      DecisionDate: new FormControl(data?.DecisionDate, null),
+      Note: new FormControl(data?.Note, null)
     });
     this.PresentationRequestDto.get('CompanyName').valueChanges.subscribe(value => {
       this.filteredCompanies = this._filterCompanies(value || '');
     });
+    this.decision_making = data?.RequesterID != undefined && (this.UserName == 'okatz' || this.UserName == 'adahabre') ? true : false;
   }
 
   getPresentationRequestById() {
@@ -89,6 +95,7 @@ export class CommercialSupportPresentationDialogComponent implements OnInit {
         else if (patient.EmployeeID != null) {
           this.PresentationRequestDto.controls['Requester'].setValue(patient.FirstName + ' ' + patient.LastName);
           this.PresentationRequestDto.controls['RequesterDetails'].setValue(patient.RankDescription + ', ' + patient.DepartnentDescripton);
+          this.decision_making = this.UserName == 'okatz' || this.UserName == 'adahabre' ? true : false;
         }
       },
       error: (err) => {

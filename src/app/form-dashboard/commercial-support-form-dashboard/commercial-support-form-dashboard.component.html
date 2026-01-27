@@ -15,6 +15,11 @@
           <mat-icon>close</mat-icon>
         </button>
       </mat-form-field>
+
+      <button mat-raised-button class="custom-button-protocol primary" (click)="printProtocol()">
+        <mat-icon>print</mat-icon>
+        הדפסת פרוטוקול
+      </button>
     </div>
 
     <!-- Data Table -->
@@ -121,3 +126,45 @@
     </mat-dialog-actions>
   </div>
 </ng-template>
+
+<!-- Printable document -->
+<div id="print-area" dir="rtl" style="display:none; padding:40px; font-family: Arial">
+
+  <h2 style="text-align:center">
+    פרוטוקול דיון וועדת התקשרויות עם חברות מסחריות
+    <br>
+    <!-- מתאריך {{ protocolDate }} -->
+  </h2>
+
+  <p>
+    <b>בהשתתפות:</b>
+    ד"ר ריזאן סח'ניני ח'ורי (יו"ר), ד"ר אודה-ליה כץ, דורית נודלמן,
+    עו"ד אלון דר, לילך גסטר ונאוה נמימי (נציגת ציבור)
+  </p>
+
+  <table style="width:100%; border-collapse: collapse; margin-top:20px;">
+    <thead>
+      <tr>
+        <th>שם הבקשה/הכנס/המחקר</th>
+        <th>חברה מסחרית</th>
+        <th>מגיש הבקשה</th>
+        <th>מהות</th>
+        <th>החלטה</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let r of supportRequests.data">
+        <td style="white-space: pre-line">{{ r.RequestType }} <br> {{r.Name}} <br> {{r.EventDate}} - {{r.EventEndDate}} <br> {{r.Location}}
+        </td>
+        <td>{{ r.CompanySupport }}</td>
+        <td>{{ r.Requester }} <br> {{r.RequesterDetails}}</td>
+        <td style="white-space: pre-line">{{ r.Note }}</td>
+        <td><b>{{ r.Approved }}</b></td>
+      </tr>
+    </tbody>
+  </table>
+  <p>
+    העתק: ד"ר נועם יהודאי - מנהל המרכז הרפואי
+  </p>
+
+</div>

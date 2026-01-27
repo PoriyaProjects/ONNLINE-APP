@@ -30,3 +30,20 @@
     font-size: 24px;
     font-weight: bold;
 }
+
+
+.decision-step {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.full-width {
+  width: 100%;
+}
+
+.step-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 10px;
+}

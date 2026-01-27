@@ -20,6 +20,11 @@
 .search-field {
   width: 300px;
   margin-bottom: 20px;
+  margin: auto;
+}
+
+.custom-button-protocol {
+  margin: auto;
 }
 
 .table-container {

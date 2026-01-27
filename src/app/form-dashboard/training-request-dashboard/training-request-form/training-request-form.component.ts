@@ -411,6 +411,7 @@ export class TrainingRequestFormComponent implements OnInit {
           Other_Fund: new FormControl(Training_Request_Forms_D?.Other_Fund == undefined ? [] : Training_Request_Forms_D?.Other_Fund, null),
           Galilean_Partnership_Description: new FormControl(Training_Request_Forms_D?.Galilean_Partnership_Description, null),
           Training_Fund_Answer: new FormControl(Training_Request_Forms_D?.Training_Fund_Answer, null),
+          Training_Fund_Answer_To_Descision: new FormControl(Training_Request_Forms_D?.Training_Fund_Answer_To_Descision, null),
           Registration_Funding: new FormControl(Training_Request_Forms_D?.Registration_Funding, null),
           Flight_Funding: new FormControl(Training_Request_Forms_D?.Flight_Funding, null),
           Lodging_Funding: new FormControl(Training_Request_Forms_D?.Lodging_Funding, null),

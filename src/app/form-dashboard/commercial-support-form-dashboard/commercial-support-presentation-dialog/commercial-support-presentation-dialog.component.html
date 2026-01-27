@@ -2,120 +2,174 @@
     <button mat-raised-button color="warn" type="button" class="closeBtn" (click)="onClose()">
         X
     </button>
-    <form [formGroup]="PresentationRequestDto" *ngIf="PresentationRequestDto">
-        <mat-card class="form-card">
-            <mat-card-title class="text-center">
-                בקשה לקיום הרצאה לסגל המרכז רפואי צפון
-            </mat-card-title>
-            <mat-card-content>
-                <div fxLayout="column" fxLayoutGap="20px" style="text-align: right;">
-                    <mat-form-field appearance="outline">
-                        <mat-label>תעודת זהות מגיש הבקשה</mat-label>
-                        <input matInput formControlName="RequesterID" (blur)="getEmployeeDetails()"
-                            (keydown.enter)="getEmployeeDetails()" required>
-                    </mat-form-field>
+    <mat-horizontal-stepper #stepper *ngIf="PresentationRequestDto">
+        <mat-step [stepControl]="PresentationRequestDto" label="פרטי בקשה">
+            <form [formGroup]="PresentationRequestDto">
+                <mat-card class="form-card">
+                    <mat-card-title class="text-center">
+                        בקשה לקיום הרצאה לסגל המרכז רפואי צפון
+                    </mat-card-title>
+                    <mat-card-content>
+                        <div fxLayout="column" fxLayoutGap="20px" style="text-align: right;">
+                            <mat-form-field appearance="outline">
+                                <mat-label>תעודת זהות מגיש הבקשה</mat-label>
+                                <input matInput formControlName="RequesterID" (blur)="getEmployeeDetails()"
+                                    (keydown.enter)="getEmployeeDetails()" required>
+                            </mat-form-field>
 
-                    <mat-form-field appearance="outline" *ngIf="PresentationRequestDto.get('Requester')?.value != null">
-                        <mat-label>מגיש הבקשה</mat-label>
-                        <input matInput formControlName="Requester">
-                    </mat-form-field>
+                            <mat-form-field appearance="outline"
+                                *ngIf="PresentationRequestDto.get('Requester')?.value != null">
+                                <mat-label>מגיש הבקשה</mat-label>
+                                <input matInput formControlName="Requester">
+                            </mat-form-field>
 
-                    <mat-form-field appearance="outline" *ngIf="PresentationRequestDto.get('Requester')?.value != null">
-                        <mat-label>תפקיד - מחלקה</mat-label>
-                        <input matInput formControlName="RequesterDetails">
-                    </mat-form-field>
+                            <mat-form-field appearance="outline"
+                                *ngIf="PresentationRequestDto.get('Requester')?.value != null">
+                                <mat-label>תפקיד - מחלקה</mat-label>
+                                <input matInput formControlName="RequesterDetails">
+                            </mat-form-field>
 
-                    <mat-form-field appearance="outline" *ngIf="PresentationRequestDto.get('Requester')?.value != null">
-                        <mat-label>קהל היעד*</mat-label>
-                        <input matInput formControlName="Odeince">
-                    </mat-form-field>
+                            <mat-form-field appearance="outline"
+                                *ngIf="PresentationRequestDto.get('Requester')?.value != null">
+                                <mat-label>קהל היעד*</mat-label>
+                                <input matInput formControlName="Odeince">
+                            </mat-form-field>
 
-                    <mat-form-field appearance="outline" *ngIf="PresentationRequestDto.get('Requester')?.value != null">
-                        <mat-label>מועד ההרצאה*</mat-label>
-                        <input matInput [matDatepicker]="picker" formControlName="PresentationDate">
-                        <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
-                        <mat-datepicker #picker></mat-datepicker>
-                    </mat-form-field>
+                            <mat-form-field appearance="outline"
+                                *ngIf="PresentationRequestDto.get('Requester')?.value != null">
+                                <mat-label>מועד ההרצאה*</mat-label>
+                                <input matInput [matDatepicker]="picker" formControlName="PresentationDate">
+                                <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+                                <mat-datepicker #picker></mat-datepicker>
+                            </mat-form-field>
 
-                    <mat-form-field appearance="outline" *ngIf="PresentationRequestDto.get('Requester')?.value != null">
-                        <mat-label>שעה</mat-label>
-                        <input matInput type="time" formControlName="PresentationTime">
-                    </mat-form-field>
+                            <mat-form-field appearance="outline"
+                                *ngIf="PresentationRequestDto.get('Requester')?.value != null">
+                                <mat-label>שעה</mat-label>
+                                <input matInput type="time" formControlName="PresentationTime">
+                            </mat-form-field>
 
-                    <!-- מיקום -->
-                    <mat-form-field appearance="outline" *ngIf="PresentationRequestDto.get('Requester')?.value != null">
-                        <mat-label>מקום</mat-label>
-                        <input matInput formControlName="Location">
-                    </mat-form-field>
+                            <!-- מיקום -->
+                            <mat-form-field appearance="outline"
+                                *ngIf="PresentationRequestDto.get('Requester')?.value != null">
+                                <mat-label>מקום</mat-label>
+                                <input matInput formControlName="Location">
+                            </mat-form-field>
 
-                    <!-- חתימה -->
-                    <div *ngIf="PresentationRequestDto.get('Requester')?.value != null"
-                        style="display: inline-block; flex-direction: column; width: 25%; max-width: 25%; margin-bottom: 24px;">
-                        <mat-label style="margin-bottom: 8px;">חתימת מנהל המחלקה</mat-label>
-                        <button mat-raised-button class="signBtn" color="warn" (click)="signForm()">
-                            <span *ngIf="PresentationRequestDto.get('ManagerSign').value == undefined">לחתום</span>
-                            <span *ngIf="PresentationRequestDto.get('ManagerSign').value != undefined">נחתם</span>
-                        </button>
+                            <!-- חתימה -->
+                            <div *ngIf="PresentationRequestDto.get('Requester')?.value != null"
+                                style="display: inline-block; flex-direction: column; width: 25%; max-width: 25%; margin-bottom: 24px;">
+                                <mat-label style="margin-bottom: 8px;">חתימת מנהל המחלקה</mat-label>
+                                <button mat-raised-button class="signBtn" color="warn" (click)="signForm()">
+                                    <span
+                                        *ngIf="PresentationRequestDto.get('ManagerSign').value == undefined">לחתום</span>
+                                    <span
+                                        *ngIf="PresentationRequestDto.get('ManagerSign').value != undefined">נחתם</span>
+                                </button>
+                            </div>
+                            <img *ngIf="PresentationRequestDto.get('ManagerSign').value != undefined"
+                                [src]="PresentationRequestDto.get('ManagerSign').value"
+                                style="margin-top: 12px; max-width: 50%; width: 88px;box-shadow: grey 1px 1px 6px 1px;border-radius: 5px;margin-right: 60px;" />
+
+                            <!-- נושא הרצאה -->
+                            <mat-form-field appearance="outline" style="width: 100%;"
+                                *ngIf="PresentationRequestDto.get('Requester')?.value != null">
+                                <mat-label>נושא הרצאה*</mat-label>
+                                <textarea matInput formControlName="PresentationSubject" rows="3"></textarea>
+                            </mat-form-field>
+                        </div>
+                        <hr>
+                        <div fxLayout="column" fxLayoutGap="20px" style="text-align: right;"
+                            *ngIf="PresentationRequestDto.get('Requester')?.value != null">
+                            <mat-form-field appearance="outline">
+                                <mat-label>שם החברה*</mat-label>
+                                <input type="text" matInput [matAutocomplete]="companyAuto"
+                                    [formControl]="PresentationRequestDto.get('CompanyName')" />
+                                <mat-autocomplete #companyAuto="matAutocomplete"
+                                    (optionSelected)="onCompanySelected($event.option.value)">
+                                    <mat-option *ngFor="let company of filteredCompanies" [value]="company">
+                                        {{ company }}
+                                    </mat-option>
+                                </mat-autocomplete>
+                            </mat-form-field>
+
+                            <mat-form-field appearance="outline">
+                                <mat-label>שם הנציג*</mat-label>
+                                <input matInput formControlName="ReferenceName">
+                            </mat-form-field>
+
+                            <mat-form-field appearance="outline">
+                                <mat-label>טלפון הנציג*</mat-label>
+                                <input matInput formControlName="Phone">
+                            </mat-form-field>
+
+                            <mat-form-field appearance="outline">
+                                <mat-label>מייל הנציג*</mat-label>
+                                <input matInput formControlName="Email">
+                            </mat-form-field>
+                        </div>
+
+                        <p class="text-right">
+                            <b>
+                                * תוכן ההרצאה יהיה העברת מידע מקצועי<br>
+                                * ניתן להגיש כיבוד קל בלבד
+                            </b>
+                        </p>
+
+                    </mat-card-content>
+                    <div class="row" style="justify-content: left;">
+                        <button mat-raised-button class="submitBtn" matTooltip="שמירה כטיוטה"
+                            [disabled]="PresentationRequestDto.get('Requester')?.value == null"
+                            (click)="submitForm(1)">שמירה
+                            כטיוטה</button>
+                        <button mat-raised-button class="submitBtn2" matTooltip="שמירה והגשה"
+                            [disabled]="PresentationRequestDto.get('Requester')?.value == null || PresentationRequestDto.invalid"
+                            (click)="submitForm(0)">שמירה והגשה</button>
                     </div>
-                    <img *ngIf="PresentationRequestDto.get('ManagerSign').value != undefined"
-                        [src]="PresentationRequestDto.get('ManagerSign').value"
-                        style="margin-top: 12px; max-width: 50%; width: 88px;box-shadow: grey 1px 1px 6px 1px;border-radius: 5px;margin-right: 60px;" />
+                </mat-card>
+            </form>
+        </mat-step>
+        <mat-step [stepControl]="PresentationRequestDto" label="ועדת החלטה" *ngIf="decision_making">
 
-                    <!-- נושא הרצאה -->
-                    <mat-form-field appearance="outline" style="width: 100%;"
-                        *ngIf="PresentationRequestDto.get('Requester')?.value != null">
-                        <mat-label>נושא הרצאה*</mat-label>
-                        <textarea matInput formControlName="PresentationSubject" rows="3"></textarea>
-                    </mat-form-field>
+            <form [formGroup]="PresentationRequestDto" dir="rtl" class="decision-step">
+
+                <!-- Decision Date -->
+                <mat-form-field appearance="outline" class="full-width">
+                    <mat-label>תאריך החלטה</mat-label>
+                    <input matInput [matDatepicker]="picker" formControlName="DecisionDate">
+                    <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+                    <mat-datepicker #picker></mat-datepicker>
+                </mat-form-field>
+
+                <!-- Status -->
+                <mat-form-field appearance="outline" class="full-width">
+                    <mat-label>סטטוס החלטה</mat-label>
+                    <mat-select formControlName="Approved" required>
+                        <mat-option value="approved">מאושר</mat-option>
+                        <mat-option value="rejected">לא מאושר</mat-option>
+                        <mat-option value="chairman">אושר בדיון יו"ר</mat-option>
+                        <mat-option value="special">אושר בדיון מיוחד</mat-option>
+                        <mat-option value="other">אחר</mat-option>
+                    </mat-select>
+                </mat-form-field>
+
+                <!-- Note -->
+                <mat-form-field appearance="outline" class="full-width">
+                    <mat-label>הערה</mat-label>
+                    <textarea matInput rows="4" formControlName="Note" placeholder="הכנס הערה להחלטת הוועדה...">
+      </textarea>
+                </mat-form-field>
+
+                <!-- Save -->
+                <div class="step-actions">
+                    <button mat-raised-button class="submitBtn" matTooltip="שמירה כטיוטה" (click)="submitForm(1)">שמירה
+                        כטיוטה</button>
+                    <button mat-raised-button class="submitBtn2" matTooltip="שמירה והגשה"
+                        [disabled]="PresentationRequestDto.invalid" (click)="submitForm(0)">שמירה והגשה</button>
                 </div>
-                <hr>
-                <div fxLayout="column" fxLayoutGap="20px" style="text-align: right;"
-                    *ngIf="PresentationRequestDto.get('Requester')?.value != null">
-                    <mat-form-field appearance="outline">
-                        <mat-label>שם החברה*</mat-label>
-                        <input type="text" matInput [matAutocomplete]="companyAuto"
-                            [formControl]="PresentationRequestDto.get('CompanyName')" />
-                        <mat-autocomplete #companyAuto="matAutocomplete"
-                            (optionSelected)="onCompanySelected($event.option.value)">
-                            <mat-option *ngFor="let company of filteredCompanies" [value]="company">
-                                {{ company }}
-                            </mat-option>
-                        </mat-autocomplete>
-                    </mat-form-field>
 
-                    <mat-form-field appearance="outline">
-                        <mat-label>שם הנציג*</mat-label>
-                        <input matInput formControlName="ReferenceName">
-                    </mat-form-field>
+            </form>
 
-                    <mat-form-field appearance="outline">
-                        <mat-label>טלפון הנציג*</mat-label>
-                        <input matInput formControlName="Phone">
-                    </mat-form-field>
-
-                    <mat-form-field appearance="outline">
-                        <mat-label>מייל הנציג*</mat-label>
-                        <input matInput formControlName="Email">
-                    </mat-form-field>
-                </div>
-
-                <p class="text-right">
-                    <b>
-                        * תוכן ההרצאה יהיה העברת מידע מקצועי<br>
-                        * ניתן להגיש כיבוד קל בלבד
-                    </b>
-                </p>
-
-            </mat-card-content>
-            <div class="row" style="justify-content: left;">
-                <button mat-raised-button class="submitBtn" matTooltip="שמירה כטיוטה"
-                    [disabled]="PresentationRequestDto.get('Requester')?.value == null" (click)="submitForm(1)">שמירה
-                    כטיוטה</button>
-                <button mat-raised-button class="submitBtn2" matTooltip="שמירה והגשה"
-                    [disabled]="PresentationRequestDto.get('Requester')?.value == null || PresentationRequestDto.invalid"
-                    (click)="submitForm(0)">שמירה והגשה</button>
-            </div>
-        </mat-card>
-
-    </form>
+        </mat-step>
+    </mat-horizontal-stepper>
 </div>
