@@ -244,7 +244,15 @@ h4.text-center { margin: 0 0 4px 0; min-height: 2.2rem; }
 .summary-card > * { direction: rtl; text-align: right; }
 .summary-card { direction: rtl; text-align: right; border: 1px solid #e5e5e5; border-radius: 10px; padding: 12px 14px; margin: 10px 0 16px; background: #fff; }
 .summary-header { font-weight: 800; margin-bottom: 8px; display: flex; align-items: center; gap: 10px; padding-bottom: 10px; border-bottom: 1px solid #eee; }
-.header-title { font-weight: 700; font-size: 1.2rem; flex-grow: 1; }
+.header-title {
+   font-weight: 700; flex-grow: 1; 
+    margin: 0;
+    font-size: 2rem !important;
+    padding: 0px !important;
+
+    /* font-weight: 800; */
+    /* line-height: 1.2; */
+  }
 .header-date { color: #666; font-size: 0.9rem; }
 .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; }
 .summary-pill { border: 1px solid #eee; border-radius: 8px; padding: 10px; text-align: right; }
@@ -321,7 +329,7 @@ h4.text-center { margin: 0 0 4px 0; min-height: 2.2rem; }
 /* ========== DASHBOARD HEADER ========== */
 .dashboard-header { padding: 40px 0 20px; background: linear-gradient(to left, #1976d2, #2196f3); border-radius: 12px; margin-bottom: 25px;display: none; }
 .page-title {  z-index: 20;
-  padding-top: 20px; padding-bottom: 6px; font-size: 1.4rem; font-weight: 700; margin: 0; letter-spacing: 1px; text-shadow: 0 2px 4px rgba(0,0,0,0.25); color: black; }
+  padding-top: 35px; padding-bottom: 6px; font-size: 1.4rem; font-weight: 700; margin: 0; letter-spacing: 1px; text-shadow: 0 2px 4px rgba(0,0,0,0.25); color: black; }
 
 /* ========== BOTTOM SUMMARY BAR ========== */
 .floating-summary-btn { position: fixed; bottom: 55px; padding-bottom:80px; left: 20px; z-index: 1000; background: #2c3e50; color: white; border: none; padding: 12px 20px; border-radius: 30px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); cursor: pointer; font-weight: bold; }
@@ -535,12 +543,7 @@ h4.text-center { margin: 0 0 4px 0; min-height: 2.2rem; }
   margin-bottom: 6px;
 }
 
-.header-title {
-  margin: 0;
-  font-size: 1rem;
-  font-weight: 800;
-  line-height: 1.2;
-}
+
 
 /* Toolbar inside header */
 .header-toolbar {
