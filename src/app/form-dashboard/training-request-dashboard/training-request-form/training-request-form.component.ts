@@ -420,9 +420,9 @@ export class TrainingRequestFormComponent implements OnInit {
           Lodging_Funding_Answer: new FormControl(Training_Request_Forms_D?.Lodging_Funding_Answer, null),
         });
         this.Training_Request_Forms_E = this.fb.group({
-          Training_Importantce: new FormControl(Training_Request_Forms_E?.Training_Importantce, null),
+          Training_Importantce: new FormControl(Training_Request_Forms_E?.Training_Importantce, this.passport == Training_Request_Forms_E?.Passport_ID ? null : Validators.required),
           Recommendations: new FormControl(Training_Request_Forms_E?.Recommendations, this.passport == Training_Request_Forms_E?.Passport_ID ? null : [Validators.required, Validators.maxLength(300)]),
-          Opinion_Date: new FormControl(Training_Request_Forms_E?.Opinion_Date, null),
+          Opinion_Date: new FormControl(Training_Request_Forms_E?.Opinion_Date, this.passport == Training_Request_Forms_E?.Passport_ID ? null : Validators.required),
           Supervisor_Name: new FormControl(Training_Request_Forms_E?.Supervisor_Name, null),
           Supervisor_Sign: new FormControl(Training_Request_Forms_E?.Supervisor_Sign, null),
           Sent_To_Manager: new FormControl(Training_Request_Forms_E?.Sent_To_Manager, null),
@@ -438,9 +438,9 @@ export class TrainingRequestFormComponent implements OnInit {
           Approved: new FormControl(Training_Request_Forms_I?.Approved, null),
         });
         this.Training_Request_Forms_F = this.fb.group({
-          Training_Importantce: new FormControl(Training_Request_Forms_F?.Training_Importantce, null),
+          Training_Importantce: new FormControl(Training_Request_Forms_F?.Training_Importantce, this.passport == Training_Request_Forms_E?.Passport_ID ? null : Validators.required),
           Recommendations: new FormControl(Training_Request_Forms_F?.Recommendations, this.passport == Training_Request_Forms_F?.Passport_ID ? null : [Validators.required, Validators.maxLength(300)]),
-          Opinion_Date: new FormControl(Training_Request_Forms_F?.Opinion_Date, null),
+          Opinion_Date: new FormControl(Training_Request_Forms_F?.Opinion_Date, this.passport == Training_Request_Forms_E?.Passport_ID ? null : Validators.required),
           Supervisor_Name: new FormControl(Training_Request_Forms_F?.Supervisor_Name, null),
           Supervisor_Sign: new FormControl(Training_Request_Forms_F?.Supervisor_Sign, null),
           Approved: new FormControl(Training_Request_Forms_F?.Approved, this.passport == Training_Request_Forms_F?.Passport_ID ? null : Validators.required),
