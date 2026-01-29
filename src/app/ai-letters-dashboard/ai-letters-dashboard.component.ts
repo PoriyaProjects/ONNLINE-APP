@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 
 @Component({
   selector: 'app-ai-letters-dashboard',
@@ -7,7 +8,14 @@ import { Component, OnInit } from '@angular/core';
 })
 export class AiLettersDashboardComponent implements OnInit {
 
-  constructor() { }
+  siteUrl!: SafeResourceUrl;
+
+  constructor(private sanitizer: DomSanitizer) {
+    // CHANGE THIS URL
+    this.siteUrl = this.sanitizer.bypassSecurityTrustResourceUrl(
+      'http://10.221.120.144:8501/'
+    );
+  }
 
   ngOnInit(): void {
   }
