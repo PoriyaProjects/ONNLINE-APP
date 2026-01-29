@@ -588,6 +588,7 @@
                 שדה חובה
               </mat-error>
             </div>
+            <p>במקרה של נסיעה לחו״ל במימון תאגיד הבריאות, התאגיד אינו מבצע ואינו מממן ביטוח נסיעות לחו״ל. האחריות לרכישת ביטוח מתאים חלה באופן מלא על העובד.</p>
             <hr>
             <p
               *ngIf="user_name != 'dnudelman' && user_name != 'adahabre' && (Training_Request_Forms_D.get('Registration_Funding')?.value == 'approved' || Training_Request_Forms_D.get('Registration_Funding')?.value == 'partial')">
@@ -628,8 +629,7 @@
                 <div *ngIf="Training_Request_Forms_D.get(section.key)?.value">
                   <mat-form-field>
                     <mat-label><b>הערה ל: {{ section.label }}</b></mat-label>
-                    <textarea matInput [formControlName]="section.answer" rows="2">
-    </textarea>
+                    <textarea matInput [formControlName]="section.answer" rows="2"></textarea>
                   </mat-form-field>
                 </div>
 
@@ -668,11 +668,24 @@
                 <textarea matInput formControlName="Training_Fund_Answer" rows="2"></textarea>
               </mat-form-field>
             </div>
+            <hr>
+            <div class="section"
+              *ngIf="dorit_note_answer && (user_name == 'adahabre' || user_name == 'ttsrefati' || user_name == 'ssabach' || user_name == 'lnachmani' || user_name == 'dnudelman')">
+              <mat-label><b>הערת התאגיד לועדת הדרכה</b></mat-label>
+              <p
+                *ngIf="user_name == 'adahabre' || user_name == 'ttsrefati' || user_name == 'ssabach' || user_name == 'lnachmani' || user_name == 'dnudelman'">
+                {{
+                Training_Request_Forms_D.get('Training_Fund_Answer_To_Descision').value }}
+              </p>
+              <mat-form-field *ngIf="user_name == 'dnudelman' || user_name == 'lnachmani' || user_name == 'adahabre'">
+                <mat-label><b>הערת התאגיד לועדת הדרכה</b></mat-label>
+                <textarea matInput formControlName="Training_Fund_Answer_To_Descision" rows="2"></textarea>
+              </mat-form-field>
+            </div>
           </mat-card-content>
         </mat-card>
         <button mat-raised-button color="primary" type="submit" class="submitBtn" (click)="onSubmit(0)"
-          *ngIf="user_name == 'adahabre'">אמין - שמירה
-          כטיוטה</button>
+          *ngIf="user_name == 'adahabre' || user_name == 'dnudelman'">שמירה</button>
       </form>
       <div>
         <button mat-button matStepperPrevious class="stepBtn">חזרה</button>
@@ -723,12 +736,12 @@
                 בלימודים/השתלמות/קורס/אחר על חשבון ימי העבודה, בהתאם לאישור שקיבלתי בגין המימון המבוקש, וזאת באופן יחסי
                 לתקופת עבודתי בהתאם להתחייבות, בתוך 30 ימים מדרישת העמותה, בתוספת הפרשי הצמדה וריבית חוקית מירבית עד
                 מועד השבת הכספים בפועל. </p>
-              <p>חתימתי על התחייבות זו מהווה אישורי והסכמתי לכל האמור בה ובכלל זה להשבת התשלום לעיל.</p>
+              <p>3. חתימתי על התחייבות זו מהווה אישורי והסכמתי לכל האמור בה ובכלל זה להשבת התשלום לעיל.</p>
               <p>4. אני מצהיר, כי לעמותה עומדת הזכות לקזז את חובי מכל סכום לו אהיה זכאי מהעמותה, מכל מקור שהוא. מבלי
                 לגרוע מכלליות האמור לעיל אני מאשר בזאת, כי העמותה תהיה זכאית לנכות ו/או לקזז את סכום ההחזר מכל סכום
                 שיגיע לי מהעמותה בגין עבודתי, לרבות שכר עבודה, פיצויי פיטורים, פדיון חופשה, דמי הבראה וכיו"ב. ספרי
                 החשבונות של העמותה יהוו ראיה מכרעת לנכונותם.</p>
-              <p>5. ידוע לי כי אין לעיל משום התחייבות מצד העמותה להעסיק אותי תקופה מסוימת.</p>
+              <p>5. ידוע לי כי אין לעיל משום התחייבות מצד העמותה להעסיק אותי תקופה מסוימת.</p><br>
               <p>6.</p>
               <table>
                 <tr>

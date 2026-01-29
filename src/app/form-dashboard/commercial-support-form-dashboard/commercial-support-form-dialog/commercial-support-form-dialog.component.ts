@@ -50,6 +50,8 @@ export class CommercialSupportFormDialogComponent {
   manager: boolean;
   selectedIndirectHealth: { [index: number]: string } = {};
   uploadedFiles: { [key: string]: File } = {};
+  decision_making: boolean = false;
+  UserName = localStorage.getItem("loginUserName").toLowerCase();
 
   constructor(
     private fb: FormBuilder,
@@ -171,7 +173,10 @@ export class CommercialSupportFormDialogComponent {
       SupportManagerDto: this.fb.array([
         this.createRow(),
         this.createRow()
-      ])
+      ]),
+      Approved: new FormControl(data?.Approved, null),
+      DecisionDate: new FormControl(data?.DecisionDate, null),
+      Note: new FormControl(data?.Note, null)
     });
     // מוסיף לכל פעילות שדות דינמיים בטופס
     this.SupportActivityDto.forEach((activity, index) => {
@@ -183,6 +188,7 @@ export class CommercialSupportFormDialogComponent {
     this.SupportRequestDto.get('CompanySupport').valueChanges.subscribe(value => {
       this.filteredCompanies = this._filterCompanies(value || '');
     });
+    this.decision_making = data?.RequesterID != undefined && (this.UserName == 'okatz' || this.UserName == 'adahabre') ? true : false;
   }
 
   onSupportTypeChange(event: any) {
@@ -281,6 +287,7 @@ export class CommercialSupportFormDialogComponent {
         else if (patient.EmployeeID != null) {
           this.SupportRequestDto.controls['Requester'].setValue(patient.FirstName + ' ' + patient.LastName);
           this.SupportRequestDto.controls['RequesterDetails'].setValue(patient.RankDescription + ', ' + patient.DepartnentDescripton);
+          this.decision_making = this.UserName == 'okatz' || this.UserName == 'adahabre' ? true : false;
         }
       },
       error: (err) => {
