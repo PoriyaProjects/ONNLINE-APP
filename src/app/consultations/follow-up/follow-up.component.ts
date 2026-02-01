@@ -171,6 +171,7 @@ export class FollowUpComponent implements OnInit {
     public showSeconds = false;
     public touchUi = false;
     public enableMeridian = false;
+    loading: boolean;
     public stepHour = 1;
     public stepMinute = 1;
     public stepSecond = 1;
@@ -486,6 +487,7 @@ DepartsDataRequestAvgAllNotPara
     }
 
     applyFilter(filterValue: string) {
+        if (filterValue == "") return;
         this.fliterVal = filterValue;
         if (this.startdateVal && this.enddateVal) {
             this.getDataFormServer(
@@ -500,6 +502,28 @@ DepartsDataRequestAvgAllNotPara
             );
         }
         //this.dataSource.filter = filterValue.trim().toLowerCase();
+    }
+    filterByCaseNumber(event: Event): void {
+        const value = (event.target as HTMLInputElement).value
+            .trim()
+            .toLowerCase();
+
+        this.dataSource.filterPredicate = (data: any, filter: string) => {
+            return (data.CaseNumber || '').toLowerCase().includes(filter);
+        };
+
+        this.dataSource.filter = value;
+    }
+    filterByDepartment(event: Event): void {
+        const value = (event.target as HTMLInputElement).value
+            .trim()
+            .toLowerCase();
+
+        this.dataSource.filterPredicate = (data: any, filter: string) => {
+            return (data.FollowUpDepart || '').toLowerCase().includes(filter);
+        };
+
+        this.dataSource.filter = value;
     }
     shuffle(array) {
         var currentIndex = array.length,
@@ -1062,8 +1086,7 @@ DepartsDataRequestAvgAllNotPara
         _Workers: string,
         _Request: string
     ) {
-        //;
-        //////debugger;
+        this.loading = true;
         $("#loader").removeClass("d-none");
         this.http
             .post(environment.url + "GetFollowUpData", {
@@ -1079,10 +1102,12 @@ DepartsDataRequestAvgAllNotPara
             })
             .subscribe(
                 (Response) => {
+                    this.loading = false;
                     this.dataSource = new MatTableDataSource<any>(
                         Response["d"]
                     );
                     this.dataSource.paginator = this.paginator;
+                    this.dataSource.sort = this.sort;
                     this.resultsLength = this.dataSource.filteredData.length;
                     setTimeout(() => {
                         //this.dataSource.paginator = this.paginator

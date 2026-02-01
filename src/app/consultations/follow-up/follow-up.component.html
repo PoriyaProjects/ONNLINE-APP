@@ -147,6 +147,7 @@
         </div>
     </div>
 </div>
+<mat-progress-bar mode="indeterminate" *ngIf="loading"></mat-progress-bar>
 <mat-tab-group mat-align-tabs="end" (selectedTabChange)="onTabChanged($event)">
     <mat-tab label="נתונים בטבלה">
         <div class="container-fluid pb-60">
@@ -154,8 +155,13 @@
                 <div dir="rtl" class="col">
                     <div class="table-responsive">
                         <div class="table-spinner-container">
-                            <mat-form-field>
-                                <input matInput (keyup)="applyFilter($event.target.value)" placeholder="חפש" />
+                            <mat-form-field appearance="outline">
+                                <mat-label>סינון לפי מספר מקרה</mat-label>
+                                <input matInput (blur)="filterByCaseNumber($event)" placeholder="הקלד מספר מקרה" />
+                            </mat-form-field>
+                            <mat-form-field appearance="outline">
+                                <mat-label>סינון לפי מחלקה</mat-label>
+                                <input matInput (keyup)="filterByDepartment($event)" placeholder="הקלד מחלקה">
                             </mat-form-field>
                             <table class="table" matSort mat-table [dataSource]="dataSource">
                                 <ng-container matColumnDef="Row_Id">
@@ -219,8 +225,7 @@
                                         תוכן הדו"ח
                                     </th>
                                     <td mat-cell *matCellDef="let element">
-                                        <button mat-raised-button color="primary"
-                                            (click)="openContentDialog(element)">
+                                        <button mat-raised-button color="primary" (click)="openContentDialog(element)">
                                             <mat-icon>list</mat-icon>
                                         </button>
                                     </td>
