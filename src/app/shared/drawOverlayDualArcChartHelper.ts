@@ -96,7 +96,16 @@ export function drawOverlayDualArcChartHelper({
       return [bg, fg];
     };
   
-    const percentWorked = Math.min(workingDaysInfo.currentWorkingDayIndex / workingDaysInfo.totalWorkingDays, 1);
+    // const percentWorked = Math.min(workingDaysInfo.currentWorkingDayIndex / workingDaysInfo.totalWorkingDays, 1);
+    const percentWorked = Math.min(
+        workingDaysInfo.currentWorkingDayIndex /
+            workingDaysInfo.totalWorkingDays,
+        1
+    );
+    const percentVsPlanned = Math.min(
+        gaugePlanned > 0 ? gaugeValue / gaugePlanned : 0,
+        1
+    );
     const percentPlanned = Math.min(gaugePlanned / gaugeTargetValue, 1);
     const percentActual = Math.min(gaugeValue / gaugeTargetValue, 1);
   
@@ -105,7 +114,9 @@ export function drawOverlayDualArcChartHelper({
     svg.appendChild(fgInner);
   
     const statusColor = gaugeTargetStatus === '✅' ? '#00cc66' : '#cc0033';
-    const [bgOuter, fgOuter] = createArc(90, 24, statusColor, percentPlanned);
+    // const [bgOuter, fgOuter] = createArc(90, 24, statusColor, percentPlanned);
+    const [bgOuter, fgOuter] = createArc(90, 24, statusColor, percentVsPlanned);
+
     svg.appendChild(bgOuter);
     svg.appendChild(fgOuter);
   
@@ -141,7 +152,15 @@ export function drawOverlayDualArcChartHelper({
         };
   
         // Outer arc marker: actual value
-        placeMarker(gaugeValue, gaugeTargetValue, 90, statusColor, false);
+        // placeMarker(gaugeValue, gaugeTargetValue, 90, statusColor, false);
+        placeMarker(
+            gaugeValue,
+            Math.max(gaugePlanned, 1),
+            90,
+            statusColor,
+            false
+        );
+
         // Inner arc marker: working days progress
         placeMarker(workingDaysInfo.currentWorkingDayIndex, workingDaysInfo.totalWorkingDays, 65, '#6ba1f8', true);
       });
@@ -208,7 +227,9 @@ if (Array.isArray(currentMonthValues) && currentMonthValues.length > 0) {
     const radius = 50;
     const segments = 50;
   
-    const percent = Math.max(0, Math.min(gaugeValue / gaugeTargetValue, 1));
+    // const percent = Math.max(0, Math.min(gaugeValue / gaugeTargetValue, 1));
+    const percent = Math.max(0, Math.min(gaugePlanned > 0 ? gaugeValue / gaugePlanned : 0, 1));
+
     const sweepAngle = Math.PI * percent;
   
     // השתמש בלוגיקה האחידה לצבע
@@ -286,15 +307,63 @@ if (Array.isArray(currentMonthValues) && currentMonthValues.length > 0) {
     legend.style.fontSize = '14px';
     legend.style.color = '#343a40';
   
-    legend.innerHTML = `
-    <div style="white-space: nowrap; text-align:right; float:right; line-height:1.6em;">
-      <span style="color: ${statusColor}; font-weight: bold;font-size:2.4em; vertical-align: middle; float:right;">●</span>
-      <span style="float:right;padding-right:6px;">ביצוע עד היום: ${Math.round(gaugeValue)} <br> מתוכנן: ${Math.round(gaugePlanned)} מתוך ${Math.round(gaugeTargetValue)}</span>
+ legend.innerHTML = `
+  <div style="
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+    direction:rtl;
+    font-family:Arial, sans-serif;
+    font-size:14px;
+    color:#343a40;
+  ">
+
+    <!-- ביצוע / מתוכנן -->
+    <div style="
+      display:flex;
+      align-items:flex-start;
+      justify-content:flex-end;
+      gap:10px;
+    ">
+      <span style="color:${statusColor}; font-size:20px; line-height:1;">●</span>
+
+      <div style="text-align:right;">
+        <div style="font-weight:600;">
+          ביצוע עד היום: ${Math.round(gaugeValue)}
+        </div>
+        <div style="font-size:13px; color:#555;">
+          מתוכנן עד היום:
+          <b>${Math.round(gaugePlanned)}</b>
+          מתוך
+          <span style="color:#888;">(${Math.round(
+              gaugeTargetValue
+          )} יעד חודשי)</span>
+        </div>
+      </div>
     </div>
-    <div style="white-space: nowrap; text-align:right; float:right; line-height:1.6em;">
-      <span style="color: #6ba1f8; font-weight: bold; font-size:2.4em;vertical-align: middle;">●</span> ימים: ${workingDaysInfo.currentWorkingDayIndex} מתוך ${workingDaysInfo.totalWorkingDays} (${Math.round((workingDaysInfo.currentWorkingDayIndex / workingDaysInfo.totalWorkingDays) * 100)}%)
+
+    <!-- ימי עבודה -->
+    <div style="
+      display:flex;
+      align-items:center;
+      justify-content:flex-end;
+      gap:10px;
+    ">
+      <span style="color:#6ba1f8; font-size:20px; line-height:1;">●</span>
+      <div style="font-size:13px; color:#555;">
+        ימים: ${workingDaysInfo.currentWorkingDayIndex}
+        מתוך ${workingDaysInfo.totalWorkingDays}
+        (${Math.round(
+            (workingDaysInfo.currentWorkingDayIndex /
+                workingDaysInfo.totalWorkingDays) *
+                100
+        )}%)
+      </div>
     </div>
-  `;
+
+  </div>
+`;
+
   
     container.appendChild(legend);
 
