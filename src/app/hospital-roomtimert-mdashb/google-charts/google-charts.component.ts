@@ -2737,9 +2737,18 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
             ? this._toISODate(this.selectedDateObj)
             : surgeries[0]?.SurgeryDate ?? this._toISODate(new Date());
 
-        const todays = surgeries.filter(
+        let todays = surgeries.filter(
             (s) => s?.SurgeryDate === selectedDateISO
         );
+        // דדופליקציה לפי מזהה ניתוח – רק כשיש מזהה; ניתוחים בלי מזהה נשארים (לא נסננים)
+        const seenIds = new Set<string>();
+        todays = todays.filter((s) => {
+            const id = (s?.SurgeryID ?? s?.surgeryId ?? (s as unknown as Record<string, unknown>)?.CaseNumber ?? "").toString().trim();
+            if (!id) return true;
+            if (seenIds.has(id)) return false;
+            seenIds.add(id);
+            return true;
+        });
         if (!todays.length) return null;
 
         const completed = todays.filter(
@@ -2759,15 +2768,9 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
         const activeRooms = inProgRooms.size;
         const freeRooms = rooms.length - activeRooms;
 
+        // סכום דקות ניתוחים שבוצעו – אותו לוגיקה כמו _completedMinutes (משך בפועל או TimeSurgeryToDo)
         const sumCompletedMinutes = completed.reduce((acc, s) => {
-            const m = this._num(s.TimeSurgeryToDo);
-            if (!Number.isNaN(m)) return acc + m;
-            const ms = this._diffMinutesSafe(
-                selectedDateISO,
-                s.TimeEntranceToTheOperatingRoom,
-                s.TimeExitingTheOperatingRoom
-            );
-            return acc + (ms ?? 0);
+            return acc + this._completedMinutes(s, selectedDateISO);
         }, 0);
 
         const avgCaseMinutes = completed.length
@@ -2840,7 +2843,9 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
             (busiest as { totalHMM?: string }).totalHMM = formatMinutesToHMM(busiest.totalMinutes);
         }
 
-        const maxMinutes = Math.max(...byRoom.map((r) => r.totalMinutes));
+        const maxMinutes = byRoom.length
+            ? Math.max(...byRoom.map((r) => r.totalMinutes))
+            : 0;
 
         this.busiestRooms = byRoom
             .filter((r) => r.totalMinutes === maxMinutes)
@@ -2949,8 +2954,8 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
             busiest: busiest
                 ? {
                       room: busiest.room,
-                      totalHMM: this._formatHMM(busiest.totalMinutes),
-                      cases: busiest.completed,
+                      totalHMM: this._formatHMM_fromMinutes(busiest.totalMinutes),
+                      cases: busiest.cases,
                       hasInProgress:
                           byRoom.find((r) => r.room === busiest.room)
                               ?.inProgress > 0,
@@ -3121,13 +3126,15 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
             return "ambulatory";
         }
         
-        // אם לא אמבולטורי, ממשיכים לבדוק את Urgency הרגיל
-        const raw = (s as Record<string, unknown>).Urgency ?? s?.Urgency ?? s?.urgency ?? (s as Record<string, unknown>).Priority ?? s?.Priority ?? s?.priority ?? (s as Record<string, unknown>).Triage ?? s?.Triage ?? s?.triage ?? "";
-        const normalized = this._normalizeUrgency(raw as string | number | null | undefined);
-        if (normalized !== "unknown" && normalized !== "ambulatory") {
-            return normalized;
-        }
-        
+        // ניתוחים בחדר כללי – מסווגים לפי Urgency/SurgeryType. "אמבולטורי" בחדר כללי נספר כאלקטיב (לא כאמבולטורי)
+        const rawUrgency = (s as Record<string, unknown>).Urgency ?? s?.Urgency ?? s?.urgency ?? (s as Record<string, unknown>).Priority ?? s?.Priority ?? s?.priority ?? (s as Record<string, unknown>).Triage ?? s?.Triage ?? s?.triage ?? "";
+        const rawType = (s as Record<string, unknown>).SurgeryType ?? s?.SurgeryType ?? "";
+        const normUrgency = this._normalizeUrgency((rawUrgency ?? "").toString().trim());
+        const normType = this._normalizeUrgency((rawType ?? "").toString().trim());
+        if (normUrgency === "ambulatory" || normType === "ambulatory") return "elective";
+        if (normUrgency !== "unknown") return normUrgency;
+        if (normType !== "unknown") return normType;
+
         return "unknown";
     }
 
