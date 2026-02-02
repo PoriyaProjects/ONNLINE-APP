@@ -3334,6 +3334,21 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
             (s) => s?.SurgeryDate === selectedDateISO
         );
 
+        // לא לכלול בסיכום היומי ניתוחים אמבולטוריים (יש להם כרטיס ייעודי נפרד)
+        // רק לפי חדר - לא לפי SurgeryType/Urgency כי ניתוחים רגילים יכולים להיות מסוג "אמבולטורי"
+        todays = todays.filter((s) => {
+            const any = s as any;
+            const area = any.CalendarRoomsArea ?? null;
+            const roomName = any.SurgeryRoomName ?? "";
+
+            // לפי CalendarRoomsArea (מלוח) - רק אם זה באמת חדר אמבולטורי
+            if (area === "חדר ניתוח אמבולטורי") return false;
+            // לפי שם חדר (מה-RealTime API): "חדר ניתוח אמבולטורי - X"
+            if (roomName && String(roomName).includes("חדר ניתוח אמבולטורי")) return false;
+
+            return true;
+        });
+
         // מסננים ניתוחים מבוטלים – לא נספר אותם בסיכום היומי
         todays = todays.filter((s) => {
             const status = String(
@@ -4161,8 +4176,9 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
         idleTimeText: string; // זמן שעבר מסיום הניתוח הקודם
         freeFromDate?: Date | null; // תאריך/שעה שהחדר פנוי
     } {
-        // 1) עיכובים מצטבר = זמן הכנת חדר מעבר ל-20 דק'
-        const totalDelayHMM = this.getTurnoverSummary(room) || "--:--";
+        // 1) עיכובים מצטבר = זמן הכנת חדר מעבר ל-20 דק' + גלישות
+        const turnoverSummary = this.getTurnoverSummary(room);
+        const totalDelayHMM = turnoverSummary && turnoverSummary.trim() !== "" ? turnoverSummary : "--:--";
 
         // 2) חישוב חדר פנוי/גלישה בהתאם לדרישות
         const calc = this.calculateFreeTimeAndOverrun(room);
@@ -5554,10 +5570,16 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
             else if (delta < 0) overrunMin += -delta;
         }
 
-        if (!freeMin && !overrunMin) return "";
-
         // החזרת עיכוב מצטבר מתחילת יום (overrunMin) - סכום של כל העיכובים
         // החישוב: ArrivalTime + AvgDauration/Duration + 20 דקות הכנת חדר
-        return overrunMin > 0 ? `${this.formatHM(overrunMin)}` : "";
+        // אם אין עיכובים (overrunMin = 0) אבל יש ניתוחים - נחזיר "00:00", אחרת מחרוזת ריקה
+        if (overrunMin > 0) {
+            return this.formatHM(overrunMin);
+        }
+        // אם יש ניתוחים אבל אין עיכובים - נחזיר "00:00"
+        if (intervals.length > 0) {
+            return "00:00";
+        }
+        return "";
     }
 }
