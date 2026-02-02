@@ -344,10 +344,11 @@ export class HrDashboardComponent implements OnInit, OnDestroy {
         }
         this.currentContact.WhatsApp_Bot_Convesations = response?.d || [];
         this.updateMessageMetadata(this.currentContact.WhatsApp_Bot_Convesations[0]);
+        const rowIds = this.getUserMessageRowIds(this.currentContact.WhatsApp_Bot_Convesations);
         if (options.markRead) {
-          this.markConversationAsRead(activeCellNumber, { force: true });
+          this.markConversationAsRead(activeCellNumber, { force: true, rowIds });
         } else {
-          this.markConversationAsRead(activeCellNumber);
+          this.markConversationAsRead(activeCellNumber, { rowIds });
         }
       });
   }
@@ -507,6 +508,24 @@ export class HrDashboardComponent implements OnInit, OnDestroy {
     this.base64String = '';
   }
 
+  private isUserMessage(message: any): boolean {
+    const flag = message?.From_ServiceEmployee;
+    return flag === false || flag === 'False' || flag === 0 || flag === '0';
+  }
+
+  private getUserMessageRowIds(messages: any[]): string[] {
+    if (!Array.isArray(messages)) {
+      return [];
+    }
+
+    const rowIds = messages
+      .filter((message) => this.isUserMessage(message))
+      .map((message) => (message?.Row_ID ?? message?.RowID ?? '').toString().trim())
+      .filter((rowId) => rowId !== '');
+
+    return Array.from(new Set(rowIds));
+  }
+
   getUnreadCount(contact: any): number {
     if (!contact) {
       return 0;
@@ -655,7 +674,7 @@ export class HrDashboardComponent implements OnInit, OnDestroy {
 
   private markConversationAsRead(
     cellNumber: string,
-    options: { force?: boolean } = {}
+    options: { force?: boolean; rowIds?: string[] } = {}
   ): void {
     if (!cellNumber || !this.user_name) {
       return;
@@ -673,19 +692,31 @@ export class HrDashboardComponent implements OnInit, OnDestroy {
       }
     }
 
-    if (this.pendingReadUpdates.has(normalized)) {
+    const rowIds = (options.rowIds || []).filter((rowId) => rowId);
+    const requestKey = rowIds.length
+      ? `rows:${rowIds.slice().sort().join(',')}`
+      : `cell:${normalized}`;
+
+    if (this.pendingReadUpdates.has(requestKey)) {
       return;
     }
 
-    this.pendingReadUpdates.add(normalized);
-    this.http
-      .post(environment.url + "UpdateHRWhatsAppUserReadStatus", {
+    this.pendingReadUpdates.add(requestKey);
+    const request$ = rowIds.length
+      ? this.http.post(environment.url + "UpdateHRWhatsAppUserReadStatusByRowIds", {
+        _rowIds: rowIds,
         _cellNumber: normalized,
         _user_name: this.user_name
       })
+      : this.http.post(environment.url + "UpdateHRWhatsAppUserReadStatus", {
+        _cellNumber: normalized,
+        _user_name: this.user_name
+      });
+
+    request$
       .pipe(
         takeUntil(this.destroy$),
-        finalize(() => this.pendingReadUpdates.delete(normalized)),
+        finalize(() => this.pendingReadUpdates.delete(requestKey)),
         catchError((err) => {
           console.error("Error updating read status:", err);
           return EMPTY;
