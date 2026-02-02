@@ -5,8 +5,8 @@ import { FormBuilder, FormControl, FormGroup } from '@angular/forms';
 import { environment } from 'src/environments/environment';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
-import { EMPTY, Observable, Subject, timer } from 'rxjs';
-import { catchError, exhaustMap, filter, finalize, map, startWith, takeUntil, tap } from 'rxjs/operators';
+import { EMPTY, Observable, Subject, timer, from } from 'rxjs';
+import { catchError, concatMap, exhaustMap, filter, finalize, map, startWith, takeUntil, tap } from 'rxjs/operators';
 import { ConfirmationDialogService } from '../confirmation-dialog/confirmation-dialog.service';
 import { MatDialog } from '@angular/material/dialog';
 
@@ -693,40 +693,36 @@ export class HrDashboardComponent implements OnInit, OnDestroy {
     }
 
     const rowIds = (options.rowIds || []).filter((rowId) => rowId);
-    const requestKey = rowIds.length
-      ? `rows:${rowIds.slice().sort().join(',')}`
-      : `cell:${normalized}`;
-
-    if (this.pendingReadUpdates.has(requestKey)) {
+    if (rowIds.length === 0) {
       return;
     }
 
-    this.pendingReadUpdates.add(requestKey);
-    const request$ = rowIds.length
-      ? this.http.post(environment.url + "UpdateHRWhatsAppUserReadStatusByRowIds", {
-        _rowIds: rowIds,
-        _cellNumber: normalized,
-        _user_name: this.user_name
-      })
-      : this.http.post(environment.url + "UpdateHRWhatsAppUserReadStatus", {
-        _cellNumber: normalized,
-        _user_name: this.user_name
-      });
+    const rowIdsToUpdate = rowIds.filter((rowId) => !this.pendingReadUpdates.has(rowId));
+    if (rowIdsToUpdate.length === 0) {
+      return;
+    }
 
-    request$
+    rowIdsToUpdate.forEach((rowId) => this.pendingReadUpdates.add(rowId));
+    from(rowIdsToUpdate)
       .pipe(
-        takeUntil(this.destroy$),
-        finalize(() => this.pendingReadUpdates.delete(requestKey)),
-        catchError((err) => {
-          console.error("Error updating read status:", err);
-          return EMPTY;
-        })
+        concatMap((rowId) =>
+          this.http.get(environment.url + "updateRowToReaded", {
+            params: {
+              RowID: rowId,
+              UserName: this.user_name
+            }
+          }).pipe(
+            catchError((err) => {
+              console.error("Error updating read status:", err);
+              return EMPTY;
+            }),
+            finalize(() => this.pendingReadUpdates.delete(rowId))
+          )
+        ),
+        takeUntil(this.destroy$)
       )
-      .subscribe((response) => {
-        if (response?.d === false) {
-          return;
-        }
-        this.clearUnreadCountForCellNumber(normalized);
+      .subscribe({
+        complete: () => this.clearUnreadCountForCellNumber(normalized)
       });
   }
 
