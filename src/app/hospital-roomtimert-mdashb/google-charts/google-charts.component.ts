@@ -3334,20 +3334,8 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
             (s) => s?.SurgeryDate === selectedDateISO
         );
 
-        // לא לכלול בסיכום היומי ניתוחים אמבולטוריים (יש להם כרטיס ייעודי נפרד)
-        // רק לפי חדר - לא לפי SurgeryType/Urgency כי ניתוחים רגילים יכולים להיות מסוג "אמבולטורי"
-        todays = todays.filter((s) => {
-            const any = s as any;
-            const area = any.CalendarRoomsArea ?? null;
-            const roomName = any.SurgeryRoomName ?? "";
-
-            // לפי CalendarRoomsArea (מלוח) - רק אם זה באמת חדר אמבולטורי
-            if (area === "חדר ניתוח אמבולטורי") return false;
-            // לפי שם חדר (מה-RealTime API): "חדר ניתוח אמבולטורי - X"
-            if (roomName && String(roomName).includes("חדר ניתוח אמבולטורי")) return false;
-
-            return true;
-        });
+        // כוללים בסיכום היומי גם ניתוחים רגילים וגם אמבולטוריים
+        // (לא מסננים אמבולטוריים - הם חלק מהסיכום הכללי)
 
         // מסננים ניתוחים מבוטלים – לא נספר אותם בסיכום היומי
         todays = todays.filter((s) => {
@@ -4041,20 +4029,23 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
         );
 
         if (inProg) {
-            // יש ניתוח בתהליך - זמן פנוי = סיום צפוי + SETUP
+            // יש ניתוח בתהליך - זמן פנוי = זמן הניתוח המשוער + 20 דקות
+            // אם עבר הזמן המשוער ועדיין בתהליך - הזמן כרגע + 20 דקות
             const entStr = inProg.TimeEntranceToTheOperatingRoom;
             if (entStr && !this.isZeroTime(entStr)) {
                 const entrance = this.parseClockWithDate(entStr, baseDate);
                 if (entrance) {
                     const expectedMin = this.getExpectedDuration(inProg);
-                    const exitStr = inProg.TimeExitingTheOperatingRoom;
+                    const plannedEnd = new Date(entrance.getTime() + expectedMin * 60000);
+                    
+                    // אם עבר הזמן המשוער ועדיין בתהליך - משתמשים בזמן נוכחי
                     let surgeryEnd: Date;
-
-                    if (exitStr && !this.isZeroTime(exitStr)) {
-                        const exit = this.parseClockWithDate(exitStr, baseDate);
-                        surgeryEnd = exit || new Date(entrance.getTime() + expectedMin * 60000);
+                    if (nowClamped.getTime() > plannedEnd.getTime()) {
+                        // עבר הזמן המשוער - משתמשים בזמן נוכחי
+                        surgeryEnd = nowClamped;
                     } else {
-                        surgeryEnd = new Date(entrance.getTime() + expectedMin * 60000);
+                        // עדיין לא עבר הזמן המשוער - משתמשים בזמן המשוער
+                        surgeryEnd = plannedEnd;
                     }
 
                     freeFromDate = new Date(
@@ -4955,13 +4946,23 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
         const hasEntrance = !!entrance && !this.isZeroTime(entrance);
         const hasExit = !!exit && !this.isZeroTime(exit);
         const durationDisplay = this.getExpectedDurationDisplay(surgery);
+        const status = (surgery.status ?? surgery.SurgeryStatus ?? "").toLowerCase();
 
         // יש יציאה → מציגים גם את המשך (מבוסס AvgDauration/Duration)
         if (hasExit) {
-            const status = (surgery.status ?? surgery.SurgeryStatus ?? "").toLowerCase();
             // למתוכנן / בביצוע תמיד נציג גם את המשך המתוכנן
             if (status === "planned" || status === "inprogress" || status === "in progress") {
                 return `${entranceDisplay} → ${exitDisplay}<br>(משוער, ${durationDisplay})`;
+            }
+            // לניתוח הושלם - מציגים זמן בפועל
+            if (status === "completed" && hasEntrance) {
+                const entranceDate = this.parseClockWithDate(entrance, surgery.SurgeryDate || this.selectedDate);
+                const exitDate = this.parseClockWithDate(exit, surgery.SurgeryDate || this.selectedDate);
+                if (entranceDate && exitDate) {
+                    const actualMinutes = Math.floor((exitDate.getTime() - entranceDate.getTime()) / 60000);
+                    const actualDuration = this.formatHM(actualMinutes);
+                    return `${entranceDisplay} → ${exitDisplay}<br>(בפועל: ${actualDuration})`;
+                }
             }
             // לשאר הסטטוסים נשמור על התצוגה הפשוטה
             return `${entranceDisplay} → ${exitDisplay}`;
@@ -5499,85 +5500,76 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
     getTurnoverSummary(room: RoomData): string {
         if (!room?.surgeries?.length || !room.date) return "";
 
-        const overrunAfter1500 = this.calcOverrunAfter1500(room, room.date);
-        if (overrunAfter1500 > 0) return this.formatHM(overrunAfter1500); // גלישה בלבד
-
         const baseDate = room.date;
-        const dayStart = this.workingStart(baseDate);
-        const dayEnd = this.workingEnd(baseDate);
+        const dayStart = this.workingStart(baseDate); // 07:30
+        const dayEnd = this.workingEnd(baseDate); // 15:00
         const now = new Date();
         const nowClamped = now < dayEnd ? now : dayEnd;
 
-        const intervals = this.buildCompletedIntervals(
-            room,
-            baseDate,
-            dayStart,
-            dayEnd
-        );
-        if (!intervals.length) return "";
+        const SETUP_TIME = 20; // 20 דקות בין ניתוחים
 
-        const parseDurMin = (v: string | number | null | undefined): number | null => {
-            if (v == null) return null;
-            if (typeof v === "number" && isFinite(v))
-                return Math.max(0, Math.round(v));
-            const s = String(v).trim();
-            if (!s) return null;
-            if (s.includes(":")) {
-                const [hh, mm] = s.split(":").map((x) => parseInt(x, 10));
-                return Number.isFinite(hh) && Number.isFinite(mm)
-                    ? Math.max(0, hh * 60 + mm)
-                    : null;
-            }
-            const n = Number(s);
-            return Number.isFinite(n) ? Math.max(0, Math.round(n)) : null;
-        };
-
-        const getPlannedMin = (s: Surgery | Partial<Surgery>): number | null => {
-            const expectedMin = this.getExpectedDuration(s as Surgery);
-            return Number.isFinite(expectedMin) ? expectedMin + 20 : null;
-        };
-
-        // קישור interval ל-surgery ע"י start time (זה מה שהיה אצלך)
-        const byStart = new Map<number, Surgery>();
+        // איסוף כל הניתוחים עם זמן כניסה
+        const surgeriesWithTime: Array<{ start: Date; end: Date | null; status: string }> = [];
         for (const s of room.surgeries) {
             const startStr = this.getEntranceTime(s);
-            if (!startStr) continue;
+            if (!startStr || this.isZeroTime(startStr)) continue;
             const start = this.parseClockWithDate(startStr, baseDate);
             if (!start) continue;
-            byStart.set(start.getTime(), s);
+
+            let end: Date | null = null;
+            const exitStr = this.getExitTime(s);
+            if (exitStr && !this.isZeroTime(exitStr)) {
+                end = this.parseClockWithDate(exitStr, baseDate);
+            } else if (this.isInProgressStatus(s.status || s.SurgeryStatus || "")) {
+                end = nowClamped;
+            }
+
+            surgeriesWithTime.push({
+                start: start < dayStart ? dayStart : start,
+                end: end ? (end > dayEnd ? dayEnd : end) : null,
+                status: s.status || s.SurgeryStatus || ""
+            });
         }
 
-        let freeMin = 0;
-        let overrunMin = 0;
+        if (surgeriesWithTime.length === 0) return "";
 
-        for (const it of intervals) {
-            const s = byStart.get(it.start.getTime());
-            if (!s) continue;
+        // מיון לפי זמן התחלה
+        surgeriesWithTime.sort((a, b) => a.start.getTime() - b.start.getTime());
 
-            const plannedMin = getPlannedMin(s);
-            if (plannedMin == null) continue;
+        // חישוב עיכוב מצטבר = כל זמן פנוי מעבר ל-20 דקות בין ניתוחים (07:30-15:00)
+        let totalDelayMin = 0;
+        let currentTime = dayStart.getTime();
 
-            const actualEnd = this.isInProgressStatus(it.status)
-                ? nowClamped
-                : it.end;
-            const actualMin = Math.max(
-                0,
-                Math.floor((actualEnd.getTime() - it.start.getTime()) / 60000)
-            );
+        for (let i = 0; i < surgeriesWithTime.length; i++) {
+            const surgery = surgeriesWithTime[i];
+            const surgeryStart = surgery.start.getTime();
 
-            const delta = plannedMin - actualMin; // + => פנוי, - => גלישה
-            if (delta > 0) freeMin += delta;
-            else if (delta < 0) overrunMin += -delta;
+            // זמן פנוי לפני הניתוח (אם יש)
+            if (surgeryStart > currentTime) {
+                const idleBefore = Math.floor((surgeryStart - currentTime) / 60000);
+                // עיכוב = זמן פנוי מעבר ל-20 דקות (20 דקות זה תקין)
+                const delayBefore = Math.max(0, idleBefore - SETUP_TIME);
+                totalDelayMin += delayBefore;
+            }
+
+            // עדכון הזמן הנוכחי לסיום הניתוח + 20 דקות הכנה
+            if (surgery.end) {
+                currentTime = surgery.end.getTime() + SETUP_TIME * 60000;
+            } else {
+                // ניתוח ללא סיום - משתמשים בזמן נוכחי
+                currentTime = nowClamped.getTime() + SETUP_TIME * 60000;
+            }
         }
 
-        // החזרת עיכוב מצטבר מתחילת יום (overrunMin) - סכום של כל העיכובים
-        // החישוב: ArrivalTime + AvgDauration/Duration + 20 דקות הכנת חדר
-        // אם אין עיכובים (overrunMin = 0) אבל יש ניתוחים - נחזיר "00:00", אחרת מחרוזת ריקה
-        if (overrunMin > 0) {
-            return this.formatHM(overrunMin);
+        // זמן פנוי אחרי הניתוח האחרון עד סוף היום - זה לא עיכוב, זה זמן פנוי תקין
+        // (לא מוסיפים אותו לעיכוב)
+
+        const delayMin = totalDelayMin;
+
+        if (delayMin > 0) {
+            return this.formatHM(delayMin);
         }
-        // אם יש ניתוחים אבל אין עיכובים - נחזיר "00:00"
-        if (intervals.length > 0) {
+        if (surgeriesWithTime.length > 0) {
             return "00:00";
         }
         return "";
