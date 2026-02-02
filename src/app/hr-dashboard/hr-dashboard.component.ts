@@ -147,6 +147,34 @@ export class HrDashboardComponent implements OnInit, OnDestroy {
     });
   }
 
+  private normalizeUsersResponse(response: any): any[] {
+    if (!response) {
+      return [];
+    }
+
+    if (Array.isArray(response)) {
+      return response;
+    }
+
+    if (Array.isArray(response?.d)) {
+      return response.d;
+    }
+
+    if (Array.isArray(response?.data)) {
+      return response.data;
+    }
+
+    return [];
+  }
+
+  private toNumber(value: any): number {
+    if (value === null || value === undefined || value === '') {
+      return NaN;
+    }
+    const parsed = Number(value);
+    return Number.isNaN(parsed) ? NaN : parsed;
+  }
+
   private startBackgroundRefresh(): void {
     timer(0, this.refreshIntervalMs)
       .pipe(
@@ -223,6 +251,10 @@ export class HrDashboardComponent implements OnInit, OnDestroy {
   private handleHrWhatsAppUsersResponse(response: any, background: boolean): void {
     this.unAnsweredConversations = response["d"] || [];
     this.unAnsweredTotal = response?.Total ?? response?.total ?? this.unAnsweredTotal;
+    const users = this.normalizeUsersResponse(response);
+    this.unAnsweredConversations = users;
+    const totalFromResponse = this.toNumber(response?.Total ?? response?.total);
+    this.unAnsweredTotal = Number.isNaN(totalFromResponse) ? users.length : totalFromResponse;
     this.unAnsweredConversations_filter = this.filterUnAnsweredConversations(
       this.unAnsweredConversations,
       this.unAnsweredFilterValue
