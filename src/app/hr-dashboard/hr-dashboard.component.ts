@@ -501,6 +501,44 @@ export class HrDashboardComponent implements OnInit, OnDestroy {
     this.base64String = '';
   }
 
+  getUnreadCount(contact: any): number {
+    if (!contact) {
+      return 0;
+    }
+
+    const candidates = [
+      'UnreadCount',
+      'NumberOfUnread',
+      'UnreadMessages',
+      'unreadMessages',
+      'UnReadMessages',
+      'NotRead',
+      'NotReadCount',
+      'Unread',
+      'unread',
+      'Unread_Messages',
+      'NotReadMessages'
+    ];
+
+    for (const key of candidates) {
+      const value = contact[key];
+      if (value === undefined || value === null || value === '') {
+        continue;
+      }
+
+      if (typeof value === 'boolean') {
+        return value ? 1 : 0;
+      }
+
+      const parsed = Number(value);
+      if (!Number.isNaN(parsed)) {
+        return parsed;
+      }
+    }
+
+    return 0;
+  }
+
   private extractUrlFromText(text: string): string | null {
     if (!text) {
       return null;
