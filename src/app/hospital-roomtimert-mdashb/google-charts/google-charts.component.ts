@@ -64,6 +64,7 @@ export interface Surgery {
     DoctorSurgeon: string | null;
     SurgeryType : string | null;
     CalendarRoomsArea?: string | null;  // "חדר ניתוח אמבולטורי" או "חדר ניתוח כללי"
+    SurgeryRoomName?: string | null;  // "חדר ניתוח אמבולטורי - 1" או "חדר ניתוח כללי - 1"
     Urgency?: string | null;
     urgency?: string | null;
     Priority?: string | null;
@@ -290,6 +291,7 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
             AvgDuration: raw?.AvgDuration ?? null,
             patientNumber: raw?.patientNumber ?? (raw as Record<string, unknown>)?.PatientNumber ?? "",
             CalendarRoomsArea: raw?.CalendarRoomsArea ?? null,  // "חדר ניתוח אמבולטורי" או "חדר ניתוח כללי"
+            SurgeryRoomName: raw?.SurgeryRoomName ?? null,  // "חדר ניתוח אמבולטורי - 1" או "חדר ניתוח כללי - 1"
         } as Surgery;
         
         
@@ -660,6 +662,7 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
                         DoctorSurgeon: row.DoctorSurgeon ?? null,
                         SurgeryType: row.SurgeryType ?? null,
                         CalendarRoomsArea: row.CalendarRoomsArea ?? null,
+                        SurgeryRoomName: (row as any).SurgeryRoomName ?? null,
                         timeNotEntered: false,
                         AdmissionNo: rowAny.AdmissionNo,
                     });
@@ -2316,20 +2319,25 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
       }
       
       
+      /**
+       * ניתוחים אמבולטוריים להצגה
+       * - ניתוחים שמסומנים כאמבולטוריים ב-CalendarRoomsArea === "חדר ניתוח אמבולטורי"
+       * - או ניתוחים עם SurgeryRoomName שמכיל "חדר ניתוח אמבולטורי" (מהשרת RealTime)
+       */
       ambulatorySurgeries(room: RoomData) {
         if (!room.surgeries || room.surgeries.length === 0) {
           return [];
         }
 
-        const roomIsAmb = this.isAmbulatoryRoom(room);
-
-        // ניתוחים אמבולטוריים:
-        // - כאלה שמסומנים ב-CalendarRoomsArea כאמבולטוריים
-        // - או כאלה שאין להם CalendarRoomsArea אבל החדר עצמו אמבולטורי (למשל מ-RealTime בלבד)
         return room.surgeries.filter(s => {
+          // בדיקה לפי CalendarRoomsArea (מהלוח)
           const sArea = s.CalendarRoomsArea ?? null;
           if (sArea === "חדר ניתוח אמבולטורי") return true;
-          if (!sArea && roomIsAmb) return true;
+          
+          // בדיקה לפי SurgeryRoomName (מה-RealTime API)
+          const roomName = s.SurgeryRoomName ?? null;
+          if (roomName && String(roomName).includes("חדר ניתוח אמבולטורי")) return true;
+          
           return false;
         });
       }
