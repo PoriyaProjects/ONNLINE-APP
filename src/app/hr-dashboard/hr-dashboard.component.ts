@@ -43,6 +43,7 @@ export class HrDashboardComponent implements OnInit, OnDestroy {
   private readonly destroy$ = new Subject<void>();
   private unAnsweredFilterValue = '';
   private contactsFilterValue = '';
+  private readonly pendingReadUpdates = new Set<string>();
 
   constructor(
     private fb: FormBuilder,
@@ -243,7 +244,7 @@ export class HrDashboardComponent implements OnInit, OnDestroy {
 
     this.currentContact = defaultContact;
     if (defaultContact.Row_ID !== undefined) {
-      this.loadConversation(defaultContact.CellNumber, { showLoader: true });
+      this.loadConversation(defaultContact.CellNumber, { showLoader: true, markRead: true });
     } else if (!this.currentContact.WhatsApp_Bot_Convesations) {
       this.currentContact.WhatsApp_Bot_Convesations = [];
     }
@@ -311,10 +312,10 @@ export class HrDashboardComponent implements OnInit, OnDestroy {
     if (this.currentContact.Row_ID === undefined) {
       return;
     }
-    this.loadConversation(this.currentContact.CellNumber, { showLoader: false });
+    this.loadConversation(this.currentContact.CellNumber, { showLoader: false, markRead: false });
   }
 
-  private loadConversation(rowId: string, options: { showLoader: boolean }): void {
+  private loadConversation(rowId: string, options: { showLoader: boolean; markRead?: boolean }): void {
     if (!rowId || !this.currentContact?.CellNumber) {
       return;
     }
@@ -343,6 +344,11 @@ export class HrDashboardComponent implements OnInit, OnDestroy {
         }
         this.currentContact.WhatsApp_Bot_Convesations = response?.d || [];
         this.updateMessageMetadata(this.currentContact.WhatsApp_Bot_Convesations[0]);
+        if (options.markRead) {
+          this.markConversationAsRead(activeCellNumber, { force: true });
+        } else {
+          this.markConversationAsRead(activeCellNumber);
+        }
       });
   }
 
@@ -382,7 +388,7 @@ export class HrDashboardComponent implements OnInit, OnDestroy {
       this.currentContact.WhatsApp_Bot_Convesations = [];
     }
     if (contact.Row_ID !== undefined) {
-      this.loadConversation(contact.CellNumber, { showLoader: true });
+      this.loadConversation(contact.CellNumber, { showLoader: true, markRead: true });
     }
   }
 
@@ -508,8 +514,9 @@ export class HrDashboardComponent implements OnInit, OnDestroy {
 
     const candidates = [
       'UnreadCount',
-      'NumberOfUnread',
+      'UnreadMessagesCount',
       'UnreadMessages',
+      'NumberOfUnread',
       'unreadMessages',
       'UnReadMessages',
       'NotRead',
@@ -517,8 +524,14 @@ export class HrDashboardComponent implements OnInit, OnDestroy {
       'Unread',
       'unread',
       'Unread_Messages',
-      'NotReadMessages'
+      'NotReadMessages',
+      'ReadByUser',
+      'readByUser',
+      'IsRead',
+      'isRead'
     ];
+
+    const readFlagKeys = new Set(['ReadByUser', 'readByUser', 'IsRead', 'isRead']);
 
     for (const key of candidates) {
       const value = contact[key];
@@ -526,17 +539,164 @@ export class HrDashboardComponent implements OnInit, OnDestroy {
         continue;
       }
 
-      if (typeof value === 'boolean') {
-        return value ? 1 : 0;
-      }
+      if (readFlagKeys.has(key)) {
+        if (typeof value === 'boolean') {
+          return value ? 0 : 1;
+        }
+        if (typeof value === 'string') {
+          const normalized = value.trim().toLowerCase();
+          if (normalized === 'true') {
+            return 0;
+          }
+          if (normalized === 'false') {
+            return 1;
+          }
+        }
+        const parsed = Number(value);
+        if (!Number.isNaN(parsed)) {
+          return parsed > 0 ? 0 : 1;
+        }
+      } else {
+        if (typeof value === 'boolean') {
+          return value ? 1 : 0;
+        }
 
-      const parsed = Number(value);
-      if (!Number.isNaN(parsed)) {
-        return parsed;
+        if (typeof value === 'string') {
+          const normalized = value.trim().toLowerCase();
+          if (normalized === 'true') {
+            return 1;
+          }
+          if (normalized === 'false') {
+            return 0;
+          }
+        }
+
+        const parsed = Number(value);
+        if (!Number.isNaN(parsed)) {
+          return parsed;
+        }
       }
     }
 
     return 0;
+  }
+
+  private getUnreadCountForCellNumber(cellNumber: string): number {
+    const contact = this.unAnsweredConversations.find(
+      (item) => item?.CellNumber === cellNumber
+    );
+    if (contact) {
+      return this.getUnreadCount(contact);
+    }
+    if (this.currentContact?.CellNumber === cellNumber) {
+      return this.getUnreadCount(this.currentContact);
+    }
+    return 0;
+  }
+
+  private clearUnreadCountForContact(contact: any): void {
+    if (!contact) {
+      return;
+    }
+
+    const keys = [
+      'UnreadCount',
+      'UnreadMessagesCount',
+      'UnreadMessages',
+      'NumberOfUnread',
+      'unreadMessages',
+      'UnReadMessages',
+      'NotRead',
+      'NotReadCount',
+      'Unread',
+      'unread',
+      'Unread_Messages',
+      'NotReadMessages',
+      'ReadByUser',
+      'readByUser',
+      'IsRead',
+      'isRead'
+    ];
+
+    const readFlagKeys = new Set(['ReadByUser', 'readByUser', 'IsRead', 'isRead']);
+    let updated = false;
+    for (const key of keys) {
+      if (contact[key] !== undefined) {
+        contact[key] = readFlagKeys.has(key) ? 1 : 0;
+        updated = true;
+      }
+    }
+
+    if (!updated) {
+      contact.UnreadCount = 0;
+    }
+  }
+
+  private clearUnreadCountForCellNumber(cellNumber: string): void {
+    let updatedList = false;
+    this.unAnsweredConversations.forEach((item) => {
+      if (item?.CellNumber === cellNumber) {
+        this.clearUnreadCountForContact(item);
+        updatedList = true;
+      }
+    });
+
+    if (this.currentContact?.CellNumber === cellNumber) {
+      this.clearUnreadCountForContact(this.currentContact);
+    }
+
+    if (updatedList) {
+      this.unAnsweredConversations_filter = this.filterUnAnsweredConversations(
+        this.unAnsweredConversations,
+        this.unAnsweredFilterValue
+      );
+    }
+  }
+
+  private markConversationAsRead(
+    cellNumber: string,
+    options: { force?: boolean } = {}
+  ): void {
+    if (!cellNumber || !this.user_name) {
+      return;
+    }
+
+    const normalized = cellNumber.toString().trim();
+    if (!normalized) {
+      return;
+    }
+
+    if (!options.force) {
+      const unreadCount = this.getUnreadCountForCellNumber(normalized);
+      if (unreadCount <= 0) {
+        return;
+      }
+    }
+
+    if (this.pendingReadUpdates.has(normalized)) {
+      return;
+    }
+
+    this.pendingReadUpdates.add(normalized);
+    this.http
+      .post(environment.url + "UpdateHRWhatsAppUserReadStatus", {
+        _cellNumber: normalized,
+        _user_name: this.user_name
+      })
+      .pipe(
+        takeUntil(this.destroy$),
+        finalize(() => this.pendingReadUpdates.delete(normalized)),
+        catchError((err) => {
+          console.error("Error updating read status:", err);
+          return EMPTY;
+        })
+      )
+      .subscribe((response) => {
+        if (response?.d === false) {
+          return;
+        }
+        this.clearUnreadCountForCellNumber(normalized);
+      });
   }
 
   private extractUrlFromText(text: string): string | null {

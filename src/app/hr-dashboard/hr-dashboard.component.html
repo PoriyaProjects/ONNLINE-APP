@@ -164,7 +164,9 @@
                             [ngStyle]="{'background-color': uncontact.maxRow == '' ? '' : uncontact.LateSessions == 'Late' ? 'orangered' : 'limegreen'}">account_circle</mat-icon>
                         <span mat-line>{{ uncontact.FirstName }} {{ uncontact.LastName }} -
                             {{uncontact.CellNumber}}</span>
-                        <span class="unread-badge" *ngIf="getUnreadCount(uncontact) > 0">{{ getUnreadCount(uncontact) }}</span>
+                        <ng-container *ngIf="getUnreadCount(uncontact) as unreadCount">
+                            <span class="unread-badge" *ngIf="unreadCount > 0">{{ unreadCount }}</span>
+                        </ng-container>
                         <mat-icon mat-list-icon *ngIf="uncontact.maxRow != ''" style="color: orangered;"
                             matTooltip="סיום שיחה" (click)="endConversation(uncontact)">cancel_presentation</mat-icon>
                         <!-- <span mat-line class="secondary">{{ contact.status }}</span> -->
