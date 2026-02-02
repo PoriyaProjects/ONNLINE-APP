@@ -49,6 +49,15 @@ mat-icon {
   background-color: #e6e6e6;
 }
 
+.list-of-contact > mat-list-item.unread {
+  background-color: #fff6e1;
+  box-shadow: 0 0 0 1px rgba(245, 124, 0, 0.3);
+}
+
+.list-of-contact > mat-list-item.unread .mat-line {
+  font-weight: 600;
+}
+
 .unread-badge {
   background-color: #e53935;
   color: #fff;
