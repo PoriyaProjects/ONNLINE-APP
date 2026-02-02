@@ -709,8 +709,8 @@ export class HrDashboardComponent implements OnInit, OnDestroy {
         _user_name: this.user_name
       })
       : this.http.post(environment.url + "UpdateHRWhatsAppUserReadStatus", {
-        _cellNumber: normalized,
-        _user_name: this.user_name
+        UserName: localStorage.getItem("loginUserName"),
+        RowID: this.user_name
       });
 
     request$
@@ -723,7 +723,7 @@ export class HrDashboardComponent implements OnInit, OnDestroy {
         })
       )
       .subscribe((response) => {
-        if (response?.d === false) {
+        if (response["d"] === false) {
           return;
         }
         this.clearUnreadCountForCellNumber(normalized);
