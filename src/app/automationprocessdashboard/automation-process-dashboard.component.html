@@ -161,10 +161,11 @@
         <table class="status-table">
           <thead>
            <tr>
-          <th>Item ID</th>
-          <th>Protocol Name</th>
-          <th>Instructions</th>
-          <th>Create Date</th>
+          <th>מספר פריט</th>
+          <th>שם הפרוטוקול</th>
+          <th>הנחיות</th>
+          <th>תאריך יצירה</th>
+          <th>תאריך עדכון</th>
           <th>הזרקה</th>
           <th>ראשון בש"רן</th>
           <th>ש"רן</th>
@@ -178,6 +179,7 @@
               <td>{{ protocol.ProtocolName }}</td>
               <td>{{ protocol.Instructions }}</td>
               <td>{{ protocol.CreateDate | date:'short' }}</td>
+              <td>{{ protocol.ModifyDate | date:'short' }}</td>
               <td>
                 <span *ngIf="protocol.UseContrast" style="color: #4caf50; font-weight: 600;">✓ Yes</span>
                 <span *ngIf="!protocol.UseContrast" style="color: #f44336; font-weight: 600;">✗ No</span>
