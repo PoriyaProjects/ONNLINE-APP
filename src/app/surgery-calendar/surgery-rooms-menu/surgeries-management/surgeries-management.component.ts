@@ -233,7 +233,7 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
 
   // get the elements to the main calendar page
   getPatientsQueues() {
-    ////////debugger;
+    debugger;
     this.refresh = new Subject();
     this.loader = true;
     this.events = [];
@@ -241,9 +241,10 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
     // ה-API הישן GetSurgeriesBySurgeryRoomCode בוטל – כאן לא נקרא יותר לשרת.
     // TODO: אם נרצה להחזיר את המסך הזה, צריך למפות אותו ל-GetSurgeriesRealTimeRoomsByDate או API אחר.
     this.http
-      .post(environment.url + "GetSurgeriesRealTimeRoomsByDate", {
-        date: fullDate
-      })
+    .post(environment.url + "GetSurgeriesBySurgeryRoomCode", {
+      _fullDate: fullDate,
+      _surRoomCode: this.data.room.CalendarRoomsArea
+    })
       .subscribe((Response) => {
         ////debugger
         let tempArr = Response["d"];
