@@ -1477,6 +1477,7 @@ private roomNameOverrides: Record<string, string> = {
   'פז01-205': 'חדר ניתוח 5',
   'פז01-206': 'חדר ניתוח 6',
   'פז01-207': 'חדר ניתוח 7',
+  
 };
 
 translateRoomId(id?: string): string {

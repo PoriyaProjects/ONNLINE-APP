@@ -17,9 +17,11 @@ import { SupportRequestService } from './commercial-support.service';
   styleUrls: ['./dialog-example.component.css']
 })
 export class DialogExampleComponent {
-  decisionForm: FormGroup;
-  categories = ['מאושר', 'לא מאושר'];
 
+  decission_results = {
+    Approved: "",
+    Note: ""
+  };
   constructor(
     private fb: FormBuilder,
     private dialogRef: MatDialogRef<DialogExampleComponent>,
@@ -27,27 +29,7 @@ export class DialogExampleComponent {
     private _datePipe: DatePipe,
     @Inject(MAT_DIALOG_DATA) public data: any
   ) {
-    this.supportRequestService.getSupportDecissionRequestById(this.data.Id).subscribe(requests => {
-      let response = requests['d'];
-      this.decisionForm = this.fb.group({
-        ApprovalDate: [response?.ApprovalDate, Validators.required],
-        Approved: [response?.Approved, Validators.required],
-        Note: [response?.Note, null],
-        FromName: [this.data.RequestType, null],
-        FormID: [this.data.Id, null],
-        FormChar: [this.data.Roler, null],
-        Canceled: [response?.Canceled == 'True' ? true : false, null]
-      });
-    });
-  }
-
-  onSave() {
-    if (this.decisionForm.valid) {
-      this.decisionForm.controls['ApprovalDate'].setValue(this._datePipe.transform(this.decisionForm.value.ApprovalDate, 'yyyy-MM-dd'));
-      this.supportRequestService.saveDecission(this.decisionForm.value).subscribe(requests => {
-        if (requests['d']) this.dialogRef.close();
-      });
-    }
+    this.decission_results = data;
   }
 
   onCancel() {
@@ -84,10 +66,19 @@ export class CommercialSupportFormDashboardComponent {
   }
 
   applyFilter(event: Event): void {
-    const value = (event.target as HTMLInputElement).value.trim().toLowerCase();
+    const value = (event.target as HTMLInputElement).value
+      .trim()
+      .toLowerCase();
+
     this.searchValue = value;
-    this.supportRequests.filterPredicate = (data: any, filter: string) =>
-      data.Requester.toLowerCase().includes(filter);
+
+    this.supportRequests.filterPredicate = (data: any, filter: string) => {
+      const requester = (data.Requester || '').toLowerCase();
+      const requestType = (data.RequestType || '').toLowerCase();
+
+      return requester.includes(filter) || requestType.includes(filter);
+    };
+
     this.supportRequests.filter = this.searchValue;
   }
 
@@ -96,21 +87,25 @@ export class CommercialSupportFormDashboardComponent {
     this.supportRequests.filter = '';
   }
 
-  // viewRequest2(request: any) {
-  //   // Example: open a dialog with details
-  //   const dialogRef = this.dialog.open(CommercialSupportFormDialogComponent, {
-  //     disableClose: true,
-  //     width: '80%',
-  //     data: request // אפשר להעביר כאן דאטה אם צריך
-  //   });
-
-  //   dialogRef.afterClosed().subscribe(result => {
-  //     if (result) {
-  //       // אם המשתמש שמר משהו בדיאלוג
-  //       this.loadRequests(); // טען מחדש את הבקשות
-  //     }
-  //   });
-  // }
+  protocolData = [
+    {
+      title: 'תמיכה בכנס Euretina\n4–7.09.2025\nפריז, צרפת',
+      company: 'Roche',
+      doctor: 'ד"ר בילאל שחאדה\nעיניים',
+      description: `תמיכה ברופא עיניים מומחה רשתית  
+סכום כספי עד לסך 2,850 ₪ כולל תקורה לדמי רישום / טיסה  
+ולינה (4 לילות)`,
+      decision: 'מאושר'
+    },
+    {
+      title: 'תמיכה בקורס SADI\n19–20.05.2025\nברצלונה, ספרד',
+      company: 'ג’י-סי הלת’ קר בע"מ',
+      doctor: 'ד"ר ואיל ח’ורי\nכירורגיה',
+      description: `דמי רישום ולינה 2 לילות  
+תמיכה עד 1,050€ כולל טיסה ולילה נוסף`,
+      decision: 'מאושר'
+    }
+  ];
 
   openDialog() {
     this.dialog.open(this.requestDialog);
@@ -298,6 +293,37 @@ export class CommercialSupportFormDashboardComponent {
       printWindow.document.close();
     }
   }
+
+  printProtocol() {
+    const printContents = document.getElementById('print-area')!.innerHTML;
+
+    const w = window.open('', '', 'width=1000,height=800');
+    w!.document.write(`
+    <html dir="rtl">
+      <head>
+        <title>פרוטוקול ועדה</title>
+        <style>
+          body { font-family: Arial; direction: rtl; }
+          table, th, td {
+            border: 1px solid black;
+            padding: 8px;
+            text-align: right;
+          }
+          th {
+            background-color: #f0f0f0;
+          }
+        </style>
+      </head>
+      <body>${printContents}</body>
+    </html>
+  `);
+
+    w!.document.close();
+    w!.focus();
+    w!.print();
+    w!.close();
+  }
+
 
 
 }

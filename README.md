@@ -31,3 +31,9 @@ run build comand
 ## Build
 
 NODE_OPTIONS=--openssl-legacy-provider node --max_old_space_size=8192 ./node_modules/@angular/cli/bin/ng build --configuration=production
+
+
+## start
+$env:NODE_OPTIONS="--openssl-legacy-provider"
+ npx ng serve --source-map=false
+                                                                                           

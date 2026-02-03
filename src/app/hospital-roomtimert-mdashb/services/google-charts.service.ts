@@ -75,6 +75,21 @@ getSurgeryRooms(date: string) {
   );
 }
 
+// פונקציה לשליפת מידע על החדרים לפי תאריך (למיפוי CalendarRoomsArea)
+getRoomsCalendarInfo(date: string) {
+  const dateObj = new Date(date);
+  const month = String(dateObj.getMonth() + 1).padStart(2, '0'); // "01"-"12"
+  const year = dateObj.getFullYear();
+  
+  return this.http.post<any>(
+    `${environment.url}GetSurgeryRooms`,
+    {
+      _month: month,
+      _year: year
+    }
+  );
+}
+
   /** Clear cache */
   public clearCache(): void { this.cache.clear(); }
 

@@ -276,5 +276,47 @@
         </mat-card>
       </form>
     </mat-step>
+    <mat-step [stepControl]="SupportRequestDto" label="ועדת החלטה" *ngIf="decision_making">
+
+      <form [formGroup]="SupportRequestDto" dir="rtl" class="decision-step">
+
+        <!-- Decision Date -->
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>תאריך החלטה</mat-label>
+          <input matInput [matDatepicker]="picker" formControlName="DecisionDate">
+          <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+          <mat-datepicker #picker></mat-datepicker>
+        </mat-form-field>
+
+        <!-- Status -->
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>סטטוס החלטה</mat-label>
+          <mat-select formControlName="Approved" required>
+            <mat-option value="approved">מאושר</mat-option>
+            <mat-option value="rejected">לא מאושר</mat-option>
+            <mat-option value="chairman">אושר בדיון יו"ר</mat-option>
+            <mat-option value="special">אושר בדיון מיוחד</mat-option>
+            <mat-option value="other">אחר</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <!-- Note -->
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>הערה</mat-label>
+          <textarea matInput rows="4" formControlName="Note" placeholder="הכנס הערה להחלטת הוועדה...">
+      </textarea>
+        </mat-form-field>
+
+        <!-- Save -->
+        <div class="step-actions">
+          <button mat-raised-button class="submitBtn" matTooltip="שמירה כטיוטה" (click)="submitForm(1)">שמירה
+            כטיוטה</button>
+          <button mat-raised-button class="submitBtn2" matTooltip="שמירה והגשה" [disabled]="SupportRequestDto.invalid"
+            (click)="submitForm(0)">שמירה והגשה</button>
+        </div>
+
+      </form>
+
+    </mat-step>
   </mat-horizontal-stepper>
 </div>

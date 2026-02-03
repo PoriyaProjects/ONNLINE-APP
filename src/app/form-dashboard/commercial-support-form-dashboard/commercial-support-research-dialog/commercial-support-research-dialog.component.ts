@@ -18,6 +18,8 @@ export class CommercialSupportResearchDialogComponent implements OnInit {
   allCompanies: string[] = ['אבוט', 'אלי לילי', 'אסטרזניקה', 'באייר', 'גד מדיקל', 'גטר גרופ', 'גי-סי הלת"קר בע"מ', 'גמידה', 'טבע', 'טרימקו', 'כמיטק', 'לבנט', 'לברון', 'מדטכניקה', 'מדטרוניק', 'מדיסון פארמה'
     , 'נובו נורדיסק', 'נאופארם', 'עמוס גזית', 'פייזר', 'צמל', 'רוש', 'רפיד מדיקל', 'ש.שיווק כל מיליניום', 'Abbott', 'Baxter', 'Boehringer Ingelheim', 'Boston Scientific', 'Cook', 'Ferring Pharmaceuticals', 'MSD'];
   filteredCompanies: string[] = [];
+  decision_making: boolean = false;
+  UserName = localStorage.getItem("loginUserName").toLowerCase();
 
   constructor(
     private fb: FormBuilder,
@@ -56,10 +58,14 @@ export class CommercialSupportResearchDialogComponent implements OnInit {
       BudgetProposal: new FormControl(data?.BudgetProposal, null),
       EconomicAppendix: new FormControl(data?.EconomicAppendix, null),
       Form6: new FormControl(data?.Form6, null),
+      Approved: new FormControl(data?.Approved, null),
+      DecisionDate: new FormControl(data?.DecisionDate, null),
+      Note: new FormControl(data?.Note, null)
     });
     this.ResearchRequestDto.get('CompanyName').valueChanges.subscribe(value => {
       this.filteredCompanies = this._filterCompanies(value || '');
     });
+    this.decision_making = data?.RequesterID != undefined && (this.UserName == 'okatz' || this.UserName == 'adahabre') ? true : false;
   }
 
   getEmployeeDetails() {
@@ -71,6 +77,7 @@ export class CommercialSupportResearchDialogComponent implements OnInit {
         else if (patient.EmployeeID != null) {
           this.ResearchRequestDto.controls['Requester'].setValue(patient.FirstName + ' ' + patient.LastName);
           this.ResearchRequestDto.controls['RequesterDetails'].setValue(patient.RankDescription + ', ' + patient.DepartnentDescripton);
+          this.decision_making = this.UserName == 'okatz' || this.UserName == 'adahabre' ? true : false;
         }
       },
       error: (err) => {
