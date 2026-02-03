@@ -10,7 +10,7 @@ mat-sidenav-container {
   background-color: #f0f2f5;
 }
 
-.list-item :hover {
+.list-item:hover {
   cursor: pointer;
   background-color: darkgray;
 }
@@ -36,6 +36,42 @@ mat-icon {
 .list-of-contact {
   overflow-y: scroll;
   display: block;
+}
+
+.list-of-contact > mat-list-item {
+  border-radius: 10px;
+  margin: 4px 0;
+  padding: 6px 8px;
+  transition: background-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.list-of-contact > mat-list-item:hover {
+  background-color: #e6e6e6;
+}
+
+.list-of-contact > mat-list-item.unread {
+  background-color: #fff6e1;
+  box-shadow: 0 0 0 1px rgba(245, 124, 0, 0.3);
+}
+
+.list-of-contact > mat-list-item.unread .mat-line {
+  font-weight: 600;
+}
+
+.unread-badge {
+  background-color: #e53935;
+  color: #fff;
+  border-radius: 999px;
+  min-width: 20px;
+  height: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 0 6px;
+  margin-inline-start: 8px;
+  box-shadow: 0 0 0 1px #fff;
 }
 
 .mat-toolbar {

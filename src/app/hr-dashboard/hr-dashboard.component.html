@@ -25,7 +25,8 @@
                     <mat-spinner *ngIf="contacts.length == 0"></mat-spinner>
                 <mat-list-item role="listitem" class="list-item"
                     *ngFor="let contact of contacts_filter; trackBy: trackByContact"
-                        (click)="openChat(contact)">
+                    [class.unread]="getUnreadCount(contact) > 0"
+                    (click)="openChat(contact)">
                         <!-- (click)="openChat(contact)"> -->
                         <mat-icon mat-list-icon
                             [ngStyle]="{'background-color': contact.Active == '1' ? 'cornflowerblue' : 'orangered'}">account_circle</mat-icon>
@@ -33,7 +34,10 @@
                             <mat-icon mat-list-icon
                                 [ngStyle]="{'color': contact.Active == '1' ? 'cornflowerblue' : 'orangered'}">email</mat-icon>
                         </a>
-                        <span mat-line>{{ contact.FirstName }} {{contact.LastName}} - {{contact.CellNumber}}</span>
+                    <span mat-line>{{ contact.FirstName }} {{contact.LastName}} - {{contact.CellNumber}}</span>
+                    <ng-container *ngIf="getUnreadCount(contact) as unreadCount">
+                        <span class="unread-badge" *ngIf="unreadCount > 0">{{ unreadCount }}</span>
+                    </ng-container>
                     </mat-list-item>
                 </mat-list>
                 <!-- <mat-sidenav #drawer class="sidenav">
@@ -159,11 +163,15 @@
                     <!-- <mat-spinner *ngIf="unAnsweredConversations.length == 0"></mat-spinner> -->
                     <mat-list-item role="listitem" class="list-item" matTooltip="{{uncontact.Message_Time}}"
                         *ngFor="let uncontact of unAnsweredConversations_filter; trackBy: trackByContact"
+                        [class.unread]="getUnreadCount(uncontact) > 0"
                         (click)="openChat(uncontact)">
                         <mat-icon mat-list-icon
                             [ngStyle]="{'background-color': uncontact.maxRow == '' ? '' : uncontact.LateSessions == 'Late' ? 'orangered' : 'limegreen'}">account_circle</mat-icon>
                         <span mat-line>{{ uncontact.FirstName }} {{ uncontact.LastName }} -
                             {{uncontact.CellNumber}}</span>
+                        <ng-container *ngIf="getUnreadCount(uncontact) as unreadCount">
+                            <span class="unread-badge" *ngIf="unreadCount > 0">{{ unreadCount }}</span>
+                        </ng-container>
                         <mat-icon mat-list-icon *ngIf="uncontact.maxRow != ''" style="color: orangered;"
                             matTooltip="סיום שיחה" (click)="endConversation(uncontact)">cancel_presentation</mat-icon>
                         <!-- <span mat-line class="secondary">{{ contact.status }}</span> -->
