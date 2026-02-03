@@ -238,10 +238,11 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
     this.loader = true;
     this.events = [];
     let fullDate = this.datePipe.transform(this.viewDate, 'yyyy-MM-dd');
+    // ה-API הישן GetSurgeriesBySurgeryRoomCode בוטל – כאן לא נקרא יותר לשרת.
+    // TODO: אם נרצה להחזיר את המסך הזה, צריך למפות אותו ל-GetSurgeriesRealTimeRoomsByDate או API אחר.
     this.http
-      .post(environment.url + "GetSurgeriesBySurgeryRoomCode", {
-        _fullDate: fullDate,
-        _surRoomCode: this.data.room.CalendarRoomsArea
+      .post(environment.url + "GetSurgeriesRealTimeRoomsByDate", {
+        date: fullDate
       })
       .subscribe((Response) => {
         ////debugger

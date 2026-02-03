@@ -588,13 +588,6 @@ h4.text-center { margin: 0 0 4px 0; min-height: 2.2rem; }
   z-index: 20;
   margin-top: 64px;
 }
-.ambulatory-section .rooms-grid {
-  display: flex;
-  flex-wrap: wrap;       /* מאפשר ירידת שורה אם יש הרבה כרטיסים */
-  justify-content: center; /* ממרכז את הכרטיסים בשורה */
-  gap: 16px;             /* רווח בין הכרטיסים */
-  width: 100%;
-}
 
 .ambulatory-section .room-wrapper {
   width: 15%;            /* 15% מרוחב האבא כפי שביקשת */
