@@ -43,23 +43,11 @@
                             <div class="col">
                                 <div class="form-group">
                                     <mat-form-field>
-                                        <mat-label>מחלקה מבצעת</mat-label>
+                                        <mat-label>מחלקה מאשפזת</mat-label>
                                         <mat-select name="departsName" [(value)]="departsName" required>
                                             <mat-option *ngFor="
                                                     let depart of departsList
                                                 " [value]="depart">{{ depart }}</mat-option>
-                                        </mat-select>
-                                    </mat-form-field>
-                                </div>
-                            </div>
-                            <!-- <div class="col">
-                                <div class="form-group">
-                                    <mat-form-field>
-                                        <mat-label>עובד מבצע</mat-label>
-                                        <mat-select name="workerName" [(value)]="workersName" required>
-                                            <mat-option *ngFor="
-                                                    let worker of workersList
-                                                " [value]="worker.id">{{ worker.name }}</mat-option>
                                         </mat-select>
                                     </mat-form-field>
                                 </div>
@@ -69,13 +57,11 @@
                                     <mat-form-field>
                                         <mat-label>סוג יעוץ</mat-label>
                                         <mat-select name="typeOf" [(value)]="typeOf" required>
-                                            <mat-option [value]="-1">הכל</mat-option>
-                                            <mat-option [value]="1">אישפוז</mat-option>
-                                            <mat-option [value]="3">אבולטורי</mat-option>
+                                            <mat-option *ngFor="let fol of followTypesList" [value]="fol">{{ fol }}</mat-option>
                                         </mat-select>
                                     </mat-form-field>
                                 </div>
-                            </div> -->
+                            </div>
                         </div>
                         <div class="row">
                             <div dir="rtl" class="col-md-12 text-right">

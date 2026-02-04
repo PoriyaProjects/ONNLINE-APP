@@ -2,8 +2,6 @@ import {
     Component,
     OnInit,
     ViewChild,
-    AfterViewInit,
-    ElementRef,
     Inject,
 } from "@angular/core";
 import { ThemePalette } from "@angular/material/core";
@@ -18,7 +16,6 @@ import { MatTable, MatTableDataSource } from "@angular/material/table";
 import * as XLSX from 'xlsx';
 import {
     NgbModal,
-    ModalDismissReasons,
     NgbModalOptions,
 } from "@ng-bootstrap/ng-bootstrap";
 import * as $ from "jquery";
@@ -27,10 +24,8 @@ import {
     FormControl,
     FormBuilder,
     FormGroup,
-    Validators,
 } from "@angular/forms";
 import { MatRadioChange } from "@angular/material/radio";
-import { data } from "jquery";
 import { MenuPerm } from "../../menu-perm";
 import { environment } from "src/environments/environment";
 
@@ -181,6 +176,7 @@ export class FollowUpComponent implements OnInit {
     titleDepartsChart: string = "יעוצים לפי מחלקה";
     titleWorkersChart: string = "יעוצים לפי רופא";
     departsList = [];
+    followTypesList = [];
     requestdepartsList = [];
     departsName: string;
     requestdepartsName: string;
@@ -482,7 +478,7 @@ DepartsDataRequestAvgAllNotPara
         });
         this.selectedIndexTab = 0;
         this.getDeparts();
-        // this.getWorkers("");
+        this.getFollowUpTypes();
         this.getRequest();
     }
 
@@ -1026,6 +1022,14 @@ DepartsDataRequestAvgAllNotPara
             .post(environment.url + "GetFollowUpDepartments", {})
             .subscribe((Response) => {
                 this.departsList = Response["d"];
+            });
+    }
+
+    getFollowUpTypes() {
+        this.http
+            .post(environment.url + "GetFollowUpTypes", {})
+            .subscribe((Response) => {
+                this.followTypesList = Response["d"];
             });
     }
 

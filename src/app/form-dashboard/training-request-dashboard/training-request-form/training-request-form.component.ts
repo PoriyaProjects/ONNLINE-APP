@@ -467,7 +467,7 @@ export class TrainingRequestFormComponent implements OnInit {
             Validators.pattern(/^[0-9]*$/),
             Validators.max(100)
           ]),
-          Work_Place: new FormControl(Training_Request_Forms_G?.Work_Place.trim(), null),
+          Work_Place: new FormControl({ value: Training_Request_Forms_G?.Work_Place.trim(), disabled: true }, null),
         });
         if (this.passport == Training_Request_Forms_A?.Passport_ID && this.passport != '025447285' && this.passport != '055382618' && this.passport != '056045834') this.requested = true;
         this.check_if_fund_or_health();
