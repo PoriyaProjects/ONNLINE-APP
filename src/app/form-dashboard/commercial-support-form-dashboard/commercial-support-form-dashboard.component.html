@@ -9,7 +9,7 @@
     <div class="row" style="justify-content: center;">
       <!-- Search / Filters -->
       <mat-form-field appearance="outline" class="search-field">
-        <mat-label>חיפוש לפי שם מגיש הבקשה</mat-label>
+        <mat-label>חיפוש לפי שם מגיש הבקשה/סוג הבקשה</mat-label>
         <input matInput (input)="applyFilter($event)" placeholder="הקלד שם...">
         <button mat-button *ngIf="searchValue" matSuffix mat-icon-button aria-label="Clear" (click)="clearFilter()">
           <mat-icon>close</mat-icon>
