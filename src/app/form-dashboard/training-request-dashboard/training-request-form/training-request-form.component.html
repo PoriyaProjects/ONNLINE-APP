@@ -1119,7 +1119,7 @@
       </div>
     </mat-step>
     <mat-step [stepControl]="Training_Request_Forms_H"
-      *ngIf="Training_Request_Forms_F.get('Approved').value && (!requested || user_name == 'adahabre' || user_name == 'ttsrefati' || user_name == 'ssabach' || user_name == 'lnachmani' || user_name == 'dnudelman')"
+      *ngIf="Training_Request_Forms_F.get('Approved').value && (user_name == 'adahabre' || user_name == 'ttsrefati' || user_name == 'ssabach' || user_name == 'lnachmani' || user_name == 'dnudelman')"
       errorMessage="שכחת שדות חובה.">
       <form [formGroup]="Training_Request_Forms_H">
         <ng-template matStepLabel>ועדת החלטה</ng-template>
