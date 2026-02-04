@@ -55,7 +55,7 @@
                             <div class="col">
                                 <div class="form-group">
                                     <mat-form-field>
-                                        <mat-label>סוג יעוץ</mat-label>
+                                        <mat-label>סוג מעקב</mat-label>
                                         <mat-select name="typeOf" [(value)]="typeOf" required>
                                             <mat-option *ngFor="let fol of followTypesList" [value]="fol">{{ fol }}</mat-option>
                                         </mat-select>
@@ -160,7 +160,7 @@
                                 </ng-container>
                                 <ng-container matColumnDef="FollowUpDepart">
                                     <th mat-header-cell *matHeaderCellDef mat-sort-header>
-                                        מחלקה
+                                        סוג מעקב
                                     </th>
                                     <td mat-cell *matCellDef="let element">
                                         {{ element.FollowUpDepart }}
