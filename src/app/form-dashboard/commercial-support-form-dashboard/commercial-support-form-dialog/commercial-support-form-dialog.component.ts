@@ -154,6 +154,7 @@ export class CommercialSupportFormDialogComponent {
       Position: new FormControl(data?.Position, null),
       Currency: new FormControl(data?.Currency, null),
       SupportAmount: new FormControl(data?.SupportAmount, null),
+      SupportAmountOther: new FormControl(data?.SupportAmountOther, null),
       flight_directService: new FormControl(data?.flight_directService, null),
       flight_extraOptions: new FormControl(data?.flight_extraOptions, null),
       flight_indirectHealth: new FormControl(data?.flight_indirectHealth, null),
@@ -193,6 +194,11 @@ export class CommercialSupportFormDialogComponent {
 
   onSupportTypeChange(event: any) {
     const selectedIds: string[] = event.value;
+    if (selectedIds.includes('אחר')) {
+      this.SupportRequestDto.controls['SupportAmountOther'].setValue('');
+    }else{
+      this.SupportRequestDto.controls['SupportAmountOther'].setValue(null);
+    }
     const formArray = this.SupportRequestDto.get('SupportType') as FormArray;
 
     // Clear only removed items
