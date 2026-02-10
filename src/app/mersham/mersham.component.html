@@ -2263,7 +2263,7 @@
                                     *matHeaderCellDef
                                     class="text-center"
                                 >
-                                    מס' שורה
+                                    סדר מתן לטיפול
                                 </th>
                                 <td
                                     mat-cell
@@ -2272,7 +2272,7 @@
                                         let rowIdx = index
                                     "
                                 >
-                                    {{ element.rowIdPreVal }}
+                                    {{ rowIdx + 1 }}
                                 </td>
                             </ng-container>
 
@@ -2283,7 +2283,24 @@
                                     *matHeaderCellDef
                                     class="text-center"
                                 >
-                                    חתימת האחות המבצעת
+                                    חתימת אחות מבצעת
+                                </th>
+                                <td
+                                    mat-cell
+                                    *matCellDef="
+                                        let element;
+                                        let rowIdx = index
+                                    "
+                                ></td>
+                            </ng-container>
+                            <ng-container matColumnDef="SIN_REVIEW">
+                                <th
+                                    width="100"
+                                    mat-header-cell
+                                    *matHeaderCellDef
+                                    class="text-center"
+                                >
+                                    חתימת אחות מבקרת
                                 </th>
                                 <td
                                     mat-cell
@@ -2301,7 +2318,27 @@
                                     *matHeaderCellDef
                                     class="text-center"
                                 >
-                                    שעת מתן
+                                    שעת התחלה
+                                </th>
+                                <td
+                                    mat-cell
+                                    *matCellDef="
+                                        let element;
+                                        let rowIdx = index
+                                    "
+                                    class="text-center"
+                                >
+                                    &nbsp;&nbsp;:&nbsp;&nbsp;
+                                </td>
+                            </ng-container>
+                            <ng-container matColumnDef="TIME_END">
+                                <th
+                                    width="50"
+                                    mat-header-cell
+                                    *matHeaderCellDef
+                                    class="text-center"
+                                >
+                                    שעת סיום
                                 </th>
                                 <td
                                     mat-cell

@@ -139,7 +139,9 @@ export class MershamComponent implements OnInit {
     ];
     tableColsPresPrint: string[] = [
         "SIN",
+        "SIN_REVIEW",
         "TIME",
+        "TIME_END",
         "note",
         "Dosage_Unit",
         "finalMenon",
@@ -152,6 +154,7 @@ export class MershamComponent implements OnInit {
         "Way_Of_Providing",
         "Days_Protocol",
         "MedList",
+        "ROW_ID_PRE",
     ];
     patiant_number_or_id = "";
     drugs: Drug[] = [];
