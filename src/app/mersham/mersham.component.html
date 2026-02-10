@@ -2263,7 +2263,7 @@
                                     *matHeaderCellDef
                                     class="text-center"
                                 >
-                                    מס' שורה
+                                    סדר מתן לטיפול
                                 </th>
                                 <td
                                     mat-cell
@@ -2272,18 +2272,29 @@
                                         let rowIdx = index
                                     "
                                 >
-                                    {{ element.rowIdPreVal }}
+                                    {{ rowIdx + 1 }}
                                 </td>
                             </ng-container>
 
                             <ng-container matColumnDef="SIN">
                                 <th
-                                    width="100"
+                                    width="140"
                                     mat-header-cell
                                     *matHeaderCellDef
-                                    class="text-center"
+                                    class="text-center signature-diagonal-cell"
                                 >
-                                    חתימת האחות המבצעת
+                                    <div class="signature-diagonal signature-diagonal--header">
+                                        <span
+                                            class="signature-diagonal__label signature-diagonal__label--top"
+                                        >
+                                            חתימת אחות מבקרת
+                                        </span>
+                                        <span
+                                            class="signature-diagonal__label signature-diagonal__label--bottom"
+                                        >
+                                            חתימת אחות מבצעת
+                                        </span>
+                                    </div>
                                 </th>
                                 <td
                                     mat-cell
@@ -2291,7 +2302,10 @@
                                         let element;
                                         let rowIdx = index
                                     "
-                                ></td>
+                                    class="signature-diagonal-cell"
+                                >
+                                    <div class="signature-diagonal"></div>
+                                </td>
                             </ng-container>
 
                             <ng-container matColumnDef="TIME">
@@ -2301,7 +2315,27 @@
                                     *matHeaderCellDef
                                     class="text-center"
                                 >
-                                    שעת מתן
+                                    שעת התחלה
+                                </th>
+                                <td
+                                    mat-cell
+                                    *matCellDef="
+                                        let element;
+                                        let rowIdx = index
+                                    "
+                                    class="text-center"
+                                >
+                                    &nbsp;&nbsp;:&nbsp;&nbsp;
+                                </td>
+                            </ng-container>
+                            <ng-container matColumnDef="TIME_END">
+                                <th
+                                    width="50"
+                                    mat-header-cell
+                                    *matHeaderCellDef
+                                    class="text-center"
+                                >
+                                    שעת סיום
                                 </th>
                                 <td
                                     mat-cell
