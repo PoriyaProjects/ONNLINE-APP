@@ -2278,12 +2278,23 @@
 
                             <ng-container matColumnDef="SIN">
                                 <th
-                                    width="100"
+                                    width="140"
                                     mat-header-cell
                                     *matHeaderCellDef
-                                    class="text-center"
+                                    class="text-center signature-diagonal-cell"
                                 >
-                                    חתימת אחות מבצעת
+                                    <div class="signature-diagonal signature-diagonal--header">
+                                        <span
+                                            class="signature-diagonal__label signature-diagonal__label--top"
+                                        >
+                                            חתימת אחות מבקרת
+                                        </span>
+                                        <span
+                                            class="signature-diagonal__label signature-diagonal__label--bottom"
+                                        >
+                                            חתימת אחות מבצעת
+                                        </span>
+                                    </div>
                                 </th>
                                 <td
                                     mat-cell
@@ -2291,24 +2302,10 @@
                                         let element;
                                         let rowIdx = index
                                     "
-                                ></td>
-                            </ng-container>
-                            <ng-container matColumnDef="SIN_REVIEW">
-                                <th
-                                    width="100"
-                                    mat-header-cell
-                                    *matHeaderCellDef
-                                    class="text-center"
+                                    class="signature-diagonal-cell"
                                 >
-                                    חתימת אחות מבקרת
-                                </th>
-                                <td
-                                    mat-cell
-                                    *matCellDef="
-                                        let element;
-                                        let rowIdx = index
-                                    "
-                                ></td>
+                                    <div class="signature-diagonal"></div>
+                                </td>
                             </ng-container>
 
                             <ng-container matColumnDef="TIME">

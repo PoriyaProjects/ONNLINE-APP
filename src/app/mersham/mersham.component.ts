@@ -139,7 +139,6 @@ export class MershamComponent implements OnInit {
     ];
     tableColsPresPrint: string[] = [
         "SIN",
-        "SIN_REVIEW",
         "TIME",
         "TIME_END",
         "note",
