@@ -38,7 +38,7 @@
                             <mat-form-field appearance="outline"
                                 *ngIf="PresentationRequestDto.get('Requester')?.value != null">
                                 <mat-label>מועד ההרצאה*</mat-label>
-                                <input matInput [matDatepicker]="picker" formControlName="PresentationDate">
+                                <input matInput [matDatepicker]="picker" formControlName="PresentationDate" [min]="date_now">
                                 <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
                                 <mat-datepicker #picker></mat-datepicker>
                             </mat-form-field>
