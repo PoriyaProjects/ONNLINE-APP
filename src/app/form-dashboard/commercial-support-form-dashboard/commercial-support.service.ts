@@ -76,11 +76,11 @@ export class SupportRequestService {
     });
   }
 
-  saveGatheringRequest(request: any, type: any): Observable<any> {
-    return this.http.post(`${this.apiUrl}SaveGatheringRequest`, {
-      request: request,
-      type: type,
-    });
+  saveGatheringRequest(formData: FormData): Observable<any> {
+    return this.http.post(
+      `${this.apiUrl}SaveGatheringRequest`,
+      formData
+    );
   }
 
   saveDecission(request: any): Observable<any> {

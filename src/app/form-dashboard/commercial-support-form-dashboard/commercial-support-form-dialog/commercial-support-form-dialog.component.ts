@@ -52,6 +52,7 @@ export class CommercialSupportFormDialogComponent {
   uploadedFiles: { [key: string]: File } = {};
   decision_making: boolean = false;
   UserName = localStorage.getItem("loginUserName").toLowerCase();
+  date_now = new Date();
 
   constructor(
     private fb: FormBuilder,
