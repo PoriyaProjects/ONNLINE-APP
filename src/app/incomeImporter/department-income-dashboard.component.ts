@@ -93,14 +93,14 @@ export class DepartmentIncomeDashboardComponent implements OnInit {
     chartData: any[] = [];
     chartColumns: any[] = [
         "מחלקה",
-        { type: "number", label: "2025" },
+        { type: "number", label: "" }, // Will be updated dynamically
         { type: "string", role: "annotation" },
-        { type: "number", label: "2024" },
+        { type: "number", label: "" }, // Will be updated dynamically
         { type: "string", role: "annotation" },
     ];
 
     chartOptions: any = {
-        title: "השוואת הכנסות מחלקות - 2024 vs 2025",
+        title: "השוואת הכנסות מחלקות", // Will be updated dynamically
         titleTextStyle: {
             color: "#333",
             fontSize: 18,
@@ -176,8 +176,6 @@ export class DepartmentIncomeDashboardComponent implements OnInit {
 
     // Boss Dashboard
     showBossDashboard = false;
-    total2024 = 0;
-    total2025 = 0;
 
     // Table data
     displayedColumns: string[] = [
@@ -279,7 +277,8 @@ export class DepartmentIncomeDashboardComponent implements OnInit {
                         );
 
                         this.dataSource.data = this.departmentIncomeData;
-                        this.updateChartData();
+                        // Load yearly totals to get actual years for dynamic display
+                        this.loadYearlyTotalsForChart();
                         this.calculateTopDepartments();
                         this.isDataLoaded = true;
                         this.cdr.detectChanges();
@@ -348,6 +347,8 @@ export class DepartmentIncomeDashboardComponent implements OnInit {
                         );
 
                         this.dataSource.data = this.departmentIncomeData;
+                        // Load yearly totals to get actual years for dynamic display
+                        this.loadYearlyTotalsForChart();
                         this.calculateTopDepartments();
 
                         // Create fresh array for chart
@@ -495,6 +496,37 @@ export class DepartmentIncomeDashboardComponent implements OnInit {
     }
 
     /**
+     * Load yearly totals silently for chart year detection
+     */
+    loadYearlyTotalsForChart(): void {
+        this.http.post(environment.url + "GetYearlyTotalIncome", {}).subscribe(
+            (response: any) => {
+                if (response && response.d) {
+                    let data = response.d;
+                    if (typeof data === "string") {
+                        data = JSON.parse(data);
+                        data = data.d;
+                    }
+
+                    if (Array.isArray(data)) {
+                        this.yearlyTotalData = data;
+                        this.updateChartColumns(); // Update chart columns with dynamic years
+                        if (this.departmentIncomeData.length > 0) {
+                            this.updateChartData(); // Refresh chart with new columns
+                        }
+                        this.cdr.detectChanges();
+                    }
+                }
+            },
+            (error) => {
+                console.error("Error loading yearly totals for chart:", error);
+                // If failed, still update chart with fallback years
+                this.updateChartColumns();
+            }
+        );
+    }
+
+    /**
      * Load boss dashboard with yearly totals from backend
      */
     loadBossDashboard(): void {
@@ -516,12 +548,18 @@ export class DepartmentIncomeDashboardComponent implements OnInit {
 
                     if (Array.isArray(data)) {
                         this.yearlyTotalData = data;
-                        this.total2024 =
-                            this.yearlyTotalData.find((y) => y.Year === "2024")
-                                ?.TotalRealValue || 0;
-                        this.total2025 =
-                            this.yearlyTotalData.find((y) => y.Year === "2025")
-                                ?.TotalRealValue || 0;
+                        
+                        // Update chart columns if department data is already loaded
+                        if (this.departmentIncomeData.length > 0) {
+                            this.updateChartColumns();
+                        }
+                        
+                        // Debug: Log the data for troubleshooting
+                        console.log("Yearly Total Data:", this.yearlyTotalData);
+                        console.log("Older Year:", this.getOlderYear(), "Total:", this.getOlderYearTotal());
+                        console.log("Latest Year:", this.getLatestYear(), "Total:", this.getLatestYearTotal());
+                        console.log("Difference:", this.getTotalDifference());
+                        console.log("Percentage Change:", this.calculateYearlyPercentageChange());
 
                         this.isLoading = false;
                         this.cdr.detectChanges();
@@ -694,15 +732,11 @@ export class DepartmentIncomeDashboardComponent implements OnInit {
      */
     calculateYearlyPercentageChange(): string {
         if (this.yearlyTotalData.length < 2) return "0%";
-        const year2024 =
-            this.yearlyTotalData.find((y) => y.Year === "2024")
-                ?.TotalRealValue || 0;
-        const year2025 =
-            this.yearlyTotalData.find((y) => y.Year === "2025")
-                ?.TotalRealValue || 0;
-
-        if (year2024 === 0) return "∞%";
-        const percentage = ((year2025 - year2024) / year2024) * 100;
+        const olderYear = this.getOlderYearTotal();
+        const latestYear = this.getLatestYearTotal();
+    
+        if (olderYear === 0) return "∞%";
+        const percentage = ((latestYear - olderYear) / olderYear) * 100;
         return percentage.toFixed(2) + "%";
     }
 
@@ -716,33 +750,104 @@ export class DepartmentIncomeDashboardComponent implements OnInit {
         });
     }
 
-    /**
-     * Get 2024 total
-     */
-    getTotal2024(): number {
-        return (
-            this.yearlyTotalData.find((y) => y.Year === "2024")
-                ?.TotalRealValue || 0
-        );
-    }
+  // במקום getTotal2024() / getTotal2025(), עשה דינמי:
 
-    /**
-     * Get 2025 total
-     */
-    getTotal2025(): number {
-        return (
-            this.yearlyTotalData.find((y) => y.Year === "2025")
-                ?.TotalRealValue || 0
-        );
-    }
+getOlderYearTotal(): number {
+    if (this.yearlyTotalData.length < 2) return 0;
+    // Sort and get the second-to-last year (previous year)
+    const sorted = [...this.yearlyTotalData].sort((a, b) => 
+        parseInt(a.Year) - parseInt(b.Year)
+    );
+    // Get the second-to-last year (previous year before latest)
+    return sorted[sorted.length - 2]?.TotalRealValue || 0;
+}
 
-    /**
-     * Get difference between years
-     */
-    getTotalDifference(): number {
-        return this.getTotal2025() - this.getTotal2024();
-    }
+getLatestYearTotal(): number {
+    if (this.yearlyTotalData.length === 0) return 0;
+    // Sort and get the latest year (last item after sort)
+    const sorted = [...this.yearlyTotalData].sort((a, b) => 
+        parseInt(a.Year) - parseInt(b.Year)
+    );
+    return sorted[sorted.length - 1]?.TotalRealValue || 0;
+}
 
+getOlderYear(): string {
+    if (this.yearlyTotalData.length < 2) return '';
+    const sorted = [...this.yearlyTotalData].sort((a, b) => 
+        parseInt(a.Year) - parseInt(b.Year)
+    );
+    // Get the second-to-last year (previous year before latest)
+    return sorted[sorted.length - 2]?.Year || '';
+}
+
+getLatestYear(): string {
+    if (this.yearlyTotalData.length === 0) return '';
+    const sorted = [...this.yearlyTotalData].sort((a, b) => 
+        parseInt(a.Year) - parseInt(b.Year)
+    );
+    return sorted[sorted.length - 1]?.Year || '';
+}
+
+getTotalDifference(): number {
+    return this.getLatestYearTotal() - this.getOlderYearTotal();
+}
+
+/**
+ * Get the older year from department income data (Income2024)
+ * The server dynamically assigns years, so Income2024 is always the older year
+ */
+getOlderYearFromDeptData(): string {
+    // First try to get from yearlyTotalData if available
+    if (this.yearlyTotalData.length >= 2) {
+        return this.getOlderYear();
+    }
+    // Fallback: if we have department data, try to infer from current year
+    // The server always compares the two latest years
+    if (this.departmentIncomeData.length > 0) {
+        // Assume current year - 1 as older year (most common case)
+        return (this.currentYear - 1).toString();
+    }
+    return '';
+}
+
+/**
+ * Get the latest year from department income data (Income2025)
+ * The server dynamically assigns years, so Income2025 is always the newer year
+ */
+getLatestYearFromDeptData(): string {
+    // First try to get from yearlyTotalData if available
+    if (this.yearlyTotalData.length >= 1) {
+        return this.getLatestYear();
+    }
+    // Fallback: if we have department data, use current year
+    if (this.departmentIncomeData.length > 0) {
+        return this.currentYear.toString();
+    }
+    return '';
+}
+
+/**
+ * Update chart columns dynamically based on years
+ */
+updateChartColumns(): void {
+    const olderYear = this.getOlderYearFromDeptData();
+    const latestYear = this.getLatestYearFromDeptData();
+    
+    this.chartColumns = [
+        "מחלקה",
+        { type: "number", label: latestYear },
+        { type: "string", role: "annotation" },
+        { type: "number", label: olderYear },
+        { type: "string", role: "annotation" },
+    ];
+    
+    // Update chart options title
+    this.chartOptions = {
+        ...this.chartOptions,
+        title: `השוואת הכנסות מחלקות - ${olderYear} vs ${latestYear}`,
+    };
+}
+   
     /**
      * Filter main table
      */
@@ -756,7 +861,9 @@ export class DepartmentIncomeDashboardComponent implements OnInit {
      */
     exportToCSV(): void {
         let csvContent = "data:text/csv;charset=utf-8,";
-        csvContent += "מחלקה,הכנסות 2024,הכנסות 2025,הפרש,אחוז שינוי\n";
+        const olderYear = this.getOlderYearFromDeptData();
+        const latestYear = this.getLatestYearFromDeptData();
+        csvContent += `מחלקה,הכנסות ${olderYear},הכנסות ${latestYear},הפרש,אחוז שינוי\n`;
 
         this.departmentIncomeData.forEach((item) => {
             const difference = this.calculateDifference(item);
@@ -876,6 +983,23 @@ export class DepartmentIncomeDashboardComponent implements OnInit {
         return new Date().getFullYear();
     }
 
+    /**
+     * Check if the latest year is the current year (YTD comparison)
+     */
+    isLatestYearCurrentYear(): boolean {
+        const latestYear = this.getLatestYear();
+        return latestYear && parseInt(latestYear) === this.currentYear;
+    }
+
+    /**
+     * Get YTD comparison description
+     */
+    getYTDDescription(): string {
+        if (this.isLatestYearCurrentYear()) {
+            return `השוואה YTD: החודשים הקיימים ב-${this.getLatestYear()} מול אותם החודשים ב-${this.getOlderYear()}`;
+        }
+        return `השוואה בין שנים שלמות: ${this.getOlderYear()} מול ${this.getLatestYear()}`;
+    }
  
   get diffTooltip(): string {
         return `השוואה בין ${this.currentYear - 1} ל־${this.currentYear - 2}: הפרש כספי ואחוז שינוי`;
