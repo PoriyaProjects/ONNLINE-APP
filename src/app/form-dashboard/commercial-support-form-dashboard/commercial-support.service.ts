@@ -80,7 +80,7 @@ export class SupportRequestService {
 
   saveGatheringRequest(formData: FormData): Observable<string> {
     return this.http.post(
-      `${this.apiUrl}SaveGatheringRequest`,
+      `${this.apiUrlipracticom}SaveGatheringRequest`,
       formData,
       { responseType: 'text' } // 👈 critical
     );
