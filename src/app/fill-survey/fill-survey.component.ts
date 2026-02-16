@@ -83,15 +83,11 @@ export class DialogContentExampleDialog {
     constructor(
         public dialog: MatDialogRef<DialogContentExampleDialog>,
         @Inject(MAT_DIALOG_DATA) public data: any
-    ) {
-
-        console.log(data)
-    }
+    ) { }
 
     ngAfterViewInit() {
         this.canvasEl = this.canvasinside.nativeElement;
         this.initCanvaValue = this.canvasEl.toDataURL();
-        console.log(this.initCanvaValue)
 
         this.cx = this.canvasEl.getContext("2d");
 
@@ -181,26 +177,20 @@ export class DialogContentExampleDialog {
     }
 
     ngOnDestroy() {
-        if (this.initCanvaValue !== this.canvasEl.toDataURL() && !this.isCanvasBlankOrWhite(this.canvasEl)){
+        if (this.initCanvaValue !== this.canvasEl.toDataURL() && !this.isCanvasBlankOrWhite(this.canvasEl)) {
             this.data.sign = this.canvasEl.toDataURL();
-            console.log(this.data.sign);
         }
-         
         this.drawingSubscription.unsubscribe();
-
         this.dialog.close(this.data);
     }
 
     sendToForm() {
-        if (this.initCanvaValue !== this.canvasEl.toDataURL() && !this.isCanvasBlankOrWhite(this.canvasEl)){
+        if (this.initCanvaValue !== this.canvasEl.toDataURL() && !this.isCanvasBlankOrWhite(this.canvasEl)) {
             this.data.sign = this.canvasEl.toDataURL();
-            console.log(this.data.sign);
         }
-            
-
         this.dialog.close(this.data);
-        // console.log(this.canvasEl);
     }
+
     isCanvasBlankOrWhite(canvas) {
         const ctx = canvas.getContext("2d");
         const { width, height } = canvas;
@@ -222,7 +212,6 @@ export class DialogContentExampleDialog {
                 return false; // canvas is NOT blank or all-white
             }
         }
-
         return true; // all pixels are white or transparent
     }
 }

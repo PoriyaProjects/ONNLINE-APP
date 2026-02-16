@@ -152,3 +152,20 @@ input[type="file"] {
   justify-content: flex-end;
   margin-top: 10px;
 }
+
+.table table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+/* Body cells */
+table td.mat-cell {
+  border: 1px solid #d0d0d0;
+  text-align: center;
+  vertical-align: middle;
+}
+
+/* Optional: row hover */
+table tr.mat-row:hover {
+  background-color: #fafafa;
+}

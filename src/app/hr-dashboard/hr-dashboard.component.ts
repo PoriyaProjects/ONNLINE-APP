@@ -5,8 +5,8 @@ import { FormBuilder, FormControl, FormGroup } from '@angular/forms';
 import { environment } from 'src/environments/environment';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
-import { EMPTY, Observable, Subject, timer } from 'rxjs';
-import { catchError, exhaustMap, filter, finalize, map, startWith, takeUntil, tap } from 'rxjs/operators';
+import { EMPTY, Observable, Subject, timer, from } from 'rxjs';
+import { catchError, concatMap, exhaustMap, filter, finalize, map, startWith, takeUntil, tap } from 'rxjs/operators';
 import { ConfirmationDialogService } from '../confirmation-dialog/confirmation-dialog.service';
 import { MatDialog } from '@angular/material/dialog';
 
@@ -43,6 +43,7 @@ export class HrDashboardComponent implements OnInit, OnDestroy {
   private readonly destroy$ = new Subject<void>();
   private unAnsweredFilterValue = '';
   private contactsFilterValue = '';
+  private readonly pendingReadUpdates = new Set<string>();
 
   constructor(
     private fb: FormBuilder,
@@ -146,6 +147,34 @@ export class HrDashboardComponent implements OnInit, OnDestroy {
     });
   }
 
+  private normalizeUsersResponse(response: any): any[] {
+    if (!response) {
+      return [];
+    }
+
+    if (Array.isArray(response)) {
+      return response;
+    }
+
+    if (Array.isArray(response?.d)) {
+      return response.d;
+    }
+
+    if (Array.isArray(response?.data)) {
+      return response.data;
+    }
+
+    return [];
+  }
+
+  private toNumber(value: any): number {
+    if (value === null || value === undefined || value === '') {
+      return NaN;
+    }
+    const parsed = Number(value);
+    return Number.isNaN(parsed) ? NaN : parsed;
+  }
+
   private startBackgroundRefresh(): void {
     timer(0, this.refreshIntervalMs)
       .pipe(
@@ -222,6 +251,10 @@ export class HrDashboardComponent implements OnInit, OnDestroy {
   private handleHrWhatsAppUsersResponse(response: any, background: boolean): void {
     this.unAnsweredConversations = response["d"] || [];
     this.unAnsweredTotal = response?.Total ?? response?.total ?? this.unAnsweredTotal;
+    const users = this.normalizeUsersResponse(response);
+    this.unAnsweredConversations = users;
+    const totalFromResponse = this.toNumber(response?.Total ?? response?.total);
+    this.unAnsweredTotal = Number.isNaN(totalFromResponse) ? users.length : totalFromResponse;
     this.unAnsweredConversations_filter = this.filterUnAnsweredConversations(
       this.unAnsweredConversations,
       this.unAnsweredFilterValue
@@ -243,7 +276,7 @@ export class HrDashboardComponent implements OnInit, OnDestroy {
 
     this.currentContact = defaultContact;
     if (defaultContact.Row_ID !== undefined) {
-      this.loadConversation(defaultContact.CellNumber, { showLoader: true });
+      this.loadConversation(defaultContact.CellNumber, { showLoader: true, markRead: true });
     } else if (!this.currentContact.WhatsApp_Bot_Convesations) {
       this.currentContact.WhatsApp_Bot_Convesations = [];
     }
@@ -311,10 +344,10 @@ export class HrDashboardComponent implements OnInit, OnDestroy {
     if (this.currentContact.Row_ID === undefined) {
       return;
     }
-    this.loadConversation(this.currentContact.CellNumber, { showLoader: false });
+    this.loadConversation(this.currentContact.CellNumber, { showLoader: false, markRead: false });
   }
 
-  private loadConversation(rowId: string, options: { showLoader: boolean }): void {
+  private loadConversation(rowId: string, options: { showLoader: boolean; markRead?: boolean }): void {
     if (!rowId || !this.currentContact?.CellNumber) {
       return;
     }
@@ -343,6 +376,12 @@ export class HrDashboardComponent implements OnInit, OnDestroy {
         }
         this.currentContact.WhatsApp_Bot_Convesations = response["d"] || [];
         this.updateMessageMetadata(this.currentContact.WhatsApp_Bot_Convesations[0]);
+        const rowIds = this.getUserMessageRowIds(this.currentContact.WhatsApp_Bot_Convesations);
+        if (options.markRead) {
+          this.markConversationAsRead(activeCellNumber, { force: true, rowIds });
+        } else {
+          this.markConversationAsRead(activeCellNumber, { rowIds });
+        }
       });
   }
 
@@ -382,7 +421,7 @@ export class HrDashboardComponent implements OnInit, OnDestroy {
       this.currentContact.WhatsApp_Bot_Convesations = [];
     }
     if (contact.Row_ID !== undefined) {
-      this.loadConversation(contact.CellNumber, { showLoader: true });
+      this.loadConversation(contact.CellNumber, { showLoader: true, markRead: true });
     }
   }
 
@@ -499,6 +538,228 @@ export class HrDashboardComponent implements OnInit, OnDestroy {
   private clearFileSelection(): void {
     this.selectedFile = null;
     this.base64String = '';
+  }
+
+  private isUserMessage(message: any): boolean {
+    const flag = message?.From_ServiceEmployee;
+    return flag === false || flag === 'False' || flag === 0 || flag === '0';
+  }
+
+  private getUserMessageRowIds(messages: any[]): string[] {
+    if (!Array.isArray(messages)) {
+      return [];
+    }
+
+    const rowIds = messages
+      .filter((message) => this.isUserMessage(message))
+      .map((message) => (message?.Row_ID ?? message?.RowID ?? '').toString().trim())
+      .filter((rowId) => rowId !== '');
+
+    return Array.from(new Set(rowIds));
+  }
+
+  getUnreadCount(contact: any): number {
+    if (!contact) {
+      return 0;
+    }
+
+    const candidates = [
+      'UnreadCount',
+      'UnreadMessagesCount',
+      'UnreadMessages',
+      'TotalUnreadMessages',
+      'totalUnreadMessages',
+      'NumberOfUnread',
+      'unreadMessages',
+      'UnReadMessages',
+      'NotRead',
+      'NotReadCount',
+      'Unread',
+      'unread',
+      'Unread_Messages',
+      'NotReadMessages',
+      'ReadByUser',
+      'readByUser',
+      'IsRead',
+      'isRead'
+    ];
+
+    const readFlagKeys = new Set(['ReadByUser', 'readByUser', 'IsRead', 'isRead']);
+
+    for (const key of candidates) {
+      const value = contact[key];
+      if (value === undefined || value === null || value === '') {
+        continue;
+      }
+
+      if (readFlagKeys.has(key)) {
+        if (typeof value === 'boolean') {
+          return value ? 0 : 1;
+        }
+        if (typeof value === 'string') {
+          const normalized = value.trim().toLowerCase();
+          if (normalized === 'true') {
+            return 0;
+          }
+          if (normalized === 'false') {
+            return 1;
+          }
+        }
+        const parsed = Number(value);
+        if (!Number.isNaN(parsed)) {
+          return parsed > 0 ? 0 : 1;
+        }
+      } else {
+        if (typeof value === 'boolean') {
+          return value ? 1 : 0;
+        }
+
+        if (typeof value === 'string') {
+          const normalized = value.trim().toLowerCase();
+          if (normalized === 'true') {
+            return 1;
+          }
+          if (normalized === 'false') {
+            return 0;
+          }
+        }
+
+        const parsed = Number(value);
+        if (!Number.isNaN(parsed)) {
+          return parsed;
+        }
+      }
+    }
+
+    return 0;
+  }
+
+  private getUnreadCountForCellNumber(cellNumber: string): number {
+    const contact = this.unAnsweredConversations.find(
+      (item) => item?.CellNumber === cellNumber
+    );
+    if (contact) {
+      return this.getUnreadCount(contact);
+    }
+    if (this.currentContact?.CellNumber === cellNumber) {
+      return this.getUnreadCount(this.currentContact);
+    }
+    return 0;
+  }
+
+  private clearUnreadCountForContact(contact: any): void {
+    if (!contact) {
+      return;
+    }
+
+    const keys = [
+      'UnreadCount',
+      'UnreadMessagesCount',
+      'UnreadMessages',
+      'TotalUnreadMessages',
+      'totalUnreadMessages',
+      'NumberOfUnread',
+      'unreadMessages',
+      'UnReadMessages',
+      'NotRead',
+      'NotReadCount',
+      'Unread',
+      'unread',
+      'Unread_Messages',
+      'NotReadMessages',
+      'ReadByUser',
+      'readByUser',
+      'IsRead',
+      'isRead'
+    ];
+
+    const readFlagKeys = new Set(['ReadByUser', 'readByUser', 'IsRead', 'isRead']);
+    let updated = false;
+    for (const key of keys) {
+      if (contact[key] !== undefined) {
+        contact[key] = readFlagKeys.has(key) ? 1 : 0;
+        updated = true;
+      }
+    }
+
+    if (!updated) {
+      contact.UnreadCount = 0;
+    }
+  }
+
+  private clearUnreadCountForCellNumber(cellNumber: string): void {
+    let updatedList = false;
+    this.unAnsweredConversations.forEach((item) => {
+      if (item?.CellNumber === cellNumber) {
+        this.clearUnreadCountForContact(item);
+        updatedList = true;
+      }
+    });
+
+    if (this.currentContact?.CellNumber === cellNumber) {
+      this.clearUnreadCountForContact(this.currentContact);
+    }
+
+    if (updatedList) {
+      this.unAnsweredConversations_filter = this.filterUnAnsweredConversations(
+        this.unAnsweredConversations,
+        this.unAnsweredFilterValue
+      );
+    }
+  }
+
+  private markConversationAsRead(
+    cellNumber: string,
+    options: { force?: boolean; rowIds?: string[] } = {}
+  ): void {
+    if (!cellNumber || !this.user_name) {
+      return;
+    }
+
+    const normalized = cellNumber.toString().trim();
+    if (!normalized) {
+      return;
+    }
+
+    if (!options.force) {
+      const unreadCount = this.getUnreadCountForCellNumber(normalized);
+      if (unreadCount <= 0) {
+        return;
+      }
+    }
+
+    const rowIds = (options.rowIds || []).filter((rowId) => rowId);
+    if (rowIds.length === 0) {
+      return;
+    }
+
+    const rowIdsToUpdate = rowIds.filter((rowId) => !this.pendingReadUpdates.has(rowId));
+    if (rowIdsToUpdate.length === 0) {
+      return;
+    }
+
+    rowIdsToUpdate.forEach((rowId) => this.pendingReadUpdates.add(rowId));
+    from(rowIdsToUpdate)
+      .pipe(
+        concatMap((rowId) =>
+          this.http.get(environment.url + "updateRowToReaded", {
+            params: {
+              RowID: rowId,
+              UserName: this.user_name
+            }
+          }).pipe(
+            catchError((err) => {
+              console.error("Error updating read status:", err);
+              return EMPTY;
+            }),
+            finalize(() => this.pendingReadUpdates.delete(rowId))
+          )
+        ),
+        takeUntil(this.destroy$)
+      )
+      .subscribe({
+        complete: () => this.clearUnreadCountForCellNumber(normalized)
+      });
   }
 
   private extractUrlFromText(text: string): string | null {

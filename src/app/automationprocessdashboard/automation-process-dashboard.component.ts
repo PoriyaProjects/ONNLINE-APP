@@ -64,6 +64,7 @@ export interface ItemProtocolDto {
   ProtocolName: string;
   Instructions: string;
   CreateDate: Date;
+  ModifyDate: Date;
   UseContrast: boolean;
   IsRequireFIRSTShirn: boolean;
   IsRequireShirn: boolean;

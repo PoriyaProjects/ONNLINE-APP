@@ -227,10 +227,9 @@ export class TrainingRequestDashboardComponent implements OnInit {
         width: '90%',
         height: '90%'
       }).afterClosed().subscribe(res => {
-        if (res != null) {
-          this.TrainingRequestSendLastAnswer(res);
-        }
-        this.getAllTrainingRequestFormsList();
+        if (res === undefined) return;
+        else if (res === null) this.getAllTrainingRequestFormsList();
+        else this.TrainingRequestSendLastAnswer(res);
       });
     } else if (action == 'new') {
       this.dialog.open(TrainingRequestFormComponent, {

@@ -2,6 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from 'src/environments/environment';
+import { environment as environmentprod } from 'src/environments/environment.prod';
 
 @Injectable({
   providedIn: 'root'
@@ -9,6 +10,7 @@ import { environment } from 'src/environments/environment';
 export class SupportRequestService {
 
   private apiUrl = environment.url; // שים לב לשנות ל-API שלך בפועל
+  private apiUrlipracticom = environmentprod.urlipracticom; // שים לב לשנות ל-API שלך בפועל
 
   constructor(private http: HttpClient) { }
 
@@ -76,11 +78,12 @@ export class SupportRequestService {
     });
   }
 
-  saveGatheringRequest(request: any, type: any): Observable<any> {
-    return this.http.post(`${this.apiUrl}SaveGatheringRequest`, {
-      request: request,
-      type: type,
-    });
+  saveGatheringRequest(formData: FormData): Observable<string> {
+    return this.http.post(
+      `${this.apiUrl}SaveGatheringRequest`,
+      formData,
+      { responseType: 'text' } // 👈 critical
+    );
   }
 
   saveDecission(request: any): Observable<any> {

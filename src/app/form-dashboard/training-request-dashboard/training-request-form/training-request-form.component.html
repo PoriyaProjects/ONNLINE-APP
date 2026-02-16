@@ -431,8 +431,8 @@
         <mat-card>
           <mat-card-title>מקור מימון</mat-card-title>
           <mat-card-content>
-            <h5 *ngIf="Training_Request_Forms_G.get('Work_Place').value == 'עובד מדינה'">* מרכז רפואי</h5>
-            <div class="section" *ngIf="Training_Request_Forms_G.get('Work_Place').value == 'עובד מדינה'">
+            <h5 *ngIf="Training_Request_Forms_G.get('Work_Place').value == 'עובד מדינה' || Training_Request_Forms_G.get('Work_Place').value == 'מדינה + תאגיד'">* מרכז רפואי</h5>
+            <div class="section" *ngIf="Training_Request_Forms_G.get('Work_Place').value == 'עובד מדינה' || Training_Request_Forms_G.get('Work_Place').value == 'מדינה + תאגיד'">
               <section class="example-section">
                 <p><mat-checkbox formControlName="Hospital_Budget"><span class="checkbox-label">תקציב המרכז
                       הרפואי</span></mat-checkbox>
@@ -699,7 +699,7 @@
         <ng-template matStepLabel>התחייבות העובד</ng-template>
         <mat-card>
           <mat-card-content>
-            <div class="row" *ngIf="Training_Request_Forms_G.get('Work_Place').value == 'עובד מדינה'">
+            <div class="row" *ngIf="Training_Request_Forms_G.get('Work_Place').value == 'עובד מדינה' || Training_Request_Forms_G.get('Work_Place').value == 'מדינה + תאגיד'">
               <p>1. עם קבלת מענק ההשתלמות הנני מתחייב/ת לשרת בשירות מדינת ישראל, במשרתי הנוכחית או בכל משרה אחרת אשר
                 אתמנה
                 לה כחוק, אחרי תום ההשתלמות, תקופה המתאימה לסכום המענק שאושר לי ועל פי הוראות התקשי"ר בנדון (כולל משכורת,
@@ -724,7 +724,7 @@
                 במהלך 12 חודשים קודמים וידוע לי כי ב-12 החודשים שלאחר מכן לא אהיה רשאי להגיש בקשה להיתר עבודה פרטית עבור
                 החברה המממנת</p>
             </div>
-            <div class="row" *ngIf="Training_Request_Forms_G.get('Work_Place').value != 'עובד מדינה'">
+            <div class="row" *ngIf="Training_Request_Forms_G.get('Work_Place').value != 'עובד מדינה' && Training_Request_Forms_G.get('Work_Place').value != 'מדינה + תאגיד'">
               <p>בהתאם לבקשתי להשתתפות המעסיק במימון לימודים/השתלמות/קורס/אחר ו/או להמשיך לשלם את שכרי בימי
                 הלימודים/השתלמות/קורס/אחר, כאמור,
 
@@ -796,7 +796,7 @@
               </div>
               <div class="col-lg-2 col-md-4 col-sm-6">
                 <button mat-raised-button class="signBtn" color="warn" (click)="signForm(3, 'Request_Sign')"
-                  *ngIf="passport == Training_Request_Forms_A.get('Passport_ID').value">
+                  *ngIf="passport == Training_Request_Forms_A.get('Passport_ID').value || user_name == 'ttsrefati' || user_name == 'adahabre'">
                   <span *ngIf="Training_Request_Forms_C.get('Request_Sign').value == undefined">לחתום</span>
                   <span *ngIf="Training_Request_Forms_C.get('Request_Sign').value != undefined">נחתם
                   </span>
@@ -824,7 +824,7 @@
           (click)="markFormGroupTouched(Training_Request_Forms_C)" *ngIf="!requested">הבא</button>
       </div>
     </mat-step>
-    <mat-step [stepControl]="Training_Request_Forms_E" *ngIf="!requested || user_name == 'nyehudai'"
+    <mat-step [stepControl]="Training_Request_Forms_E" *ngIf="!requested || user_name == 'nyehudai' || user_name == 'ttsrefati'"
       errorMessage="שכחת שדות חובה.">
       <form [formGroup]="Training_Request_Forms_E">
         <ng-template matStepLabel>חוות דעת - ממונה ישיר</ng-template>
@@ -1017,7 +1017,7 @@
           (click)="markFormGroupTouched(Training_Request_Forms_I)">הבא</button>
       </div>
     </mat-step> -->
-    <mat-step [stepControl]="Training_Request_Forms_F" *ngIf="!requested || user_name == 'nyehudai'"
+    <mat-step [stepControl]="Training_Request_Forms_F" *ngIf="!requested || user_name == 'nyehudai' || user_name == 'ttsrefati'"
       errorMessage="שכחת שדות חובה.">
       <form [formGroup]="Training_Request_Forms_F">
         <ng-template matStepLabel>חוות דעת - ממונה עקיף</ng-template>
@@ -1119,7 +1119,7 @@
       </div>
     </mat-step>
     <mat-step [stepControl]="Training_Request_Forms_H"
-      *ngIf="!requested && Training_Request_Forms_F.get('Approved').value && (user_name == 'adahabre' || user_name == 'ttsrefati' || user_name == 'ssabach' || user_name == 'lnachmani' || user_name == 'dnudelman')"
+      *ngIf="Training_Request_Forms_F.get('Approved').value && (user_name == 'adahabre' || user_name == 'ttsrefati' || user_name == 'ssabach' || user_name == 'lnachmani' || user_name == 'dnudelman')"
       errorMessage="שכחת שדות חובה.">
       <form [formGroup]="Training_Request_Forms_H">
         <ng-template matStepLabel>ועדת החלטה</ng-template>
