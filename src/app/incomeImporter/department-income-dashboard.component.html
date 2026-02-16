@@ -148,11 +148,15 @@
   <div class="element highlighted-selector">
     <mat-form-field appearance="fill">
       <mat-label>👉 בחר אגף</mat-label>
-      <mat-select [(ngModel)]="selectedDiagnosis" (selectionChange)="loadDepartmentIncomeByDiagnosis()">
+      <mat-select 
+        [(ngModel)]="selectedDiagnosis" 
+        (selectionChange)="loadDepartmentIncomeByDiagnosis()"
+        [disabled]="isMainDataLoading || diagnosesList.length === 0">
         <mat-option *ngFor="let diagnosis of diagnosesList" [value]="diagnosis">
           {{ diagnosis }}
         </mat-option>
       </mat-select>
+      <mat-spinner *ngIf="isMainDataLoading" diameter="20" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%);"></mat-spinner>
     </mat-form-field>
   </div>
 
@@ -175,7 +179,7 @@
 </div>
 
 <!-- TOP 5 DEPARTMENTS SECTION - Competition View with Medals (Moved here and made smaller) -->
-<div *ngIf="isDataLoaded && topDepartments && topDepartments.length > 0" dir="rtl"
+<div *ngIf="isDataLoaded && !isMainDataLoading && topDepartments && topDepartments.length > 0" dir="rtl"
   class="top-departments-section-compact">
   <div class="top-departments-header-compact">
     <h3>🏆 המחלקות עם גידול ההכנסות הגבוה ביותר</h3>
@@ -217,14 +221,22 @@
   </div>
 </div>
 
-<!-- Loading Spinner -->
+<!-- Loading Overlay for Main Data -->
+<div *ngIf="isMainDataLoading" class="loading-overlay">
+  <div class="loading-container">
+    <mat-spinner diameter="60"></mat-spinner>
+    <div class="loading-text">טוען נתונים...</div>
+  </div>
+</div>
+
+<!-- Loading Spinner for Boss Dashboard -->
 <div dir="ltr" class="wrapper">
   <mat-spinner *ngIf="isLoading" style="margin:10px auto;"></mat-spinner>
   <div *ngIf="isLoading" style="text-align: center;">Loading...</div>
 </div>
 
 <!-- Main Chart with Numbers in Millions -->
-<div *ngIf="isDataLoaded" class="mat-elevation-z8">
+<div *ngIf="isDataLoaded && !isMainDataLoading" class="mat-elevation-z8">
   <!-- <h3 dir="rtl" style="text-align: right; color: #999; padding: 10px 20px; margin: 0; font-size: 12px;">לחץ על מחלקה
       לצפייה בפרטים | הערכים בעמודות בליונים ₪</h3> -->
   <google-chart type="BarChart" [data]="chartData" [columns]="chartColumns" [options]="chartOptions" [width]="'100%'"
@@ -410,8 +422,11 @@
         </div>
       </div>
 
-      <!-- Loading Spinner -->
-      <mat-spinner *ngIf="catalogLoading" style="margin:10px auto;"></mat-spinner>
+      <!-- Loading Spinner for Catalog -->
+      <div *ngIf="catalogLoading" class="catalog-loading-container">
+        <mat-spinner diameter="50"></mat-spinner>
+        <div class="catalog-loading-text">טוען פרטי מחלקה...</div>
+      </div>
 
       <!-- Sortable Catalog Table -->
       <div class="table-wrapper"
@@ -526,7 +541,7 @@
 </div>
 
 <!-- Main Data Table -->
-<div dir="rtl" class="mat-elevation-z8" style="margin-top: 20px;">
+<div dir="rtl" class="mat-elevation-z8" style="margin-top: 20px;" *ngIf="!isMainDataLoading">
   <h3 style="text-align: right; color: #333; padding: 20px;">📊 טבלת הכנסות מחלקות (לחץ על שם מחלקה לפרטים)</h3>
 
   <mat-form-field appearance="standard" class="search-bar">

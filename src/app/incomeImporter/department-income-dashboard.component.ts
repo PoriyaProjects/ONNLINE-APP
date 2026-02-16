@@ -199,6 +199,7 @@ export class DepartmentIncomeDashboardComponent implements OnInit {
     departmentGraphTitle = "";
     isLoading = false;
     catalogLoading = false;
+    isMainDataLoading = false; // Loading for main data table
     selectedViewType: string = "cash";
 
     // Catalog columns - updated for sorting
@@ -263,6 +264,7 @@ export class DepartmentIncomeDashboardComponent implements OnInit {
         console.log("loadDepartmentIncomeData called");
 
         this.isDataLoaded = false;
+        this.isMainDataLoading = true;
 
         this.http
             .post(environment.url + "GetDepartmentIncomeComparison", {})
@@ -277,14 +279,20 @@ export class DepartmentIncomeDashboardComponent implements OnInit {
                         );
 
                         this.dataSource.data = this.departmentIncomeData;
-                        // Load yearly totals to get actual years for dynamic display
-                        this.loadYearlyTotalsForChart();
                         this.calculateTopDepartments();
+                        // Update chart columns immediately with fallback years
+                        this.updateChartColumns();
+                        this.updateChartData();
+                        // Load yearly totals to get actual years for dynamic display (async)
+                        this.loadYearlyTotalsForChart();
                         this.isDataLoaded = true;
+                        this.isMainDataLoading = false;
                         this.cdr.detectChanges();
                         this.snackBar.open("✓ נתונים נטענו בהצלחה", "סגור", {
                             duration: 3000,
                         });
+                    } else {
+                        this.isMainDataLoading = false;
                     }
                 },
                 (error) => {
@@ -292,6 +300,8 @@ export class DepartmentIncomeDashboardComponent implements OnInit {
                         "Error loading department income data:",
                         error
                     );
+                    this.isMainDataLoading = false;
+                    this.cdr.detectChanges();
                     this.snackBar.open("❌ שגיאה בטעינת הנתונים", "סגור", {
                         duration: 3000,
                     });
@@ -315,6 +325,7 @@ export class DepartmentIncomeDashboardComponent implements OnInit {
             this.selectedDiagnosis
         );
         this.isDataLoaded = false;
+        this.isMainDataLoading = true;
 
         this.http
             .post(environment.url + "GetDepartmentIncomeByDiagnosis", {
@@ -329,6 +340,9 @@ export class DepartmentIncomeDashboardComponent implements OnInit {
                             data = JSON.parse(data);
                         }
 
+                        console.log("Raw data from GetDepartmentIncomeByDiagnosis:", data);
+                        console.log("Data length:", Array.isArray(data) ? data.length : "Not an array");
+
                         const uniqueDepts = [];
                         const seen = new Set();
 
@@ -337,59 +351,51 @@ export class DepartmentIncomeDashboardComponent implements OnInit {
                                 if (!seen.has(item.DepartmentName)) {
                                     seen.add(item.DepartmentName);
                                     uniqueDepts.push(item);
+                                    // Log first few items to see the structure
+                                    if (uniqueDepts.length <= 3) {
+                                        console.log("Sample item:", {
+                                            DepartmentName: item.DepartmentName,
+                                            Income2024: item.Income2024,
+                                            Income2025: item.Income2025
+                                        });
+                                    }
                                 }
                             }
                         }
 
                         this.departmentIncomeData = uniqueDepts;
+                        console.log("After deduplication, departmentIncomeData length:", this.departmentIncomeData.length);
+                        console.log("Sample Income2025 values:", this.departmentIncomeData.slice(0, 3).map(d => d.Income2025));
+                        
                         this.departmentIncomeData.sort(
                             (a, b) => b.Income2025 - a.Income2025
                         );
 
                         this.dataSource.data = this.departmentIncomeData;
-                        // Load yearly totals to get actual years for dynamic display
-                        this.loadYearlyTotalsForChart();
                         this.calculateTopDepartments();
-
-                        // Create fresh array for chart
-                        this.chartData = this.departmentIncomeData.map(
-                            (item) => {
-                                const safe2024 =
-                                    item.Income2024 && !isNaN(item.Income2024)
-                                        ? item.Income2024
-                                        : 0;
-                                const safe2025 =
-                                    item.Income2025 && !isNaN(item.Income2025)
-                                        ? item.Income2025
-                                        : 0;
-
-                                const val2024 = parseFloat(
-                                    (safe2024 / 1000000).toFixed(1)
-                                );
-                                const val2025 = parseFloat(
-                                    (safe2025 / 1000000).toFixed(1)
-                                );
-
-                                return [
-                                    item.DepartmentName,
-                                    val2025,
-                                    val2025 + "M",
-                                    val2024,
-                                    val2024 + "M",
-                                ];
-                            }
-                        );
-
+                        // Update chart columns immediately with fallback years
+                        this.updateChartColumns();
+                        // Use updateChartData() instead of creating chartData directly
+                        // This ensures consistent filtering logic
+                        this.updateChartData();
+                        // Load yearly totals to get actual years for dynamic display (async)
+                        this.loadYearlyTotalsForChart();
                         this.isDataLoaded = true;
+                        this.isMainDataLoading = false;
                         this.cdr.detectChanges();
 
                         this.snackBar.open("✓ נתונים עודכנו", "סגור", {
                             duration: 3000,
                         });
+                    } else {
+                        console.warn("No data in response:", response);
+                        this.isMainDataLoading = false;
                     }
                 },
                 (error) => {
                     console.error("Error:", error);
+                    this.isMainDataLoading = false;
+                    this.cdr.detectChanges();
                     this.snackBar.open("❌ שגיאה", "סגור", { duration: 3000 });
                 }
             );
@@ -428,34 +434,58 @@ export class DepartmentIncomeDashboardComponent implements OnInit {
             return;
         }
 
-        this.chartData = this.departmentIncomeData
-            .filter((item) => item.Income2024 > 0 && item.Income2025 > 0) // Remove negative values
-            .map((item) => {
-                const safe2024 =
-                    item.Income2024 && !isNaN(item.Income2024)
-                        ? item.Income2024
-                        : 0;
-                const safe2025 =
-                    item.Income2025 && !isNaN(item.Income2025)
-                        ? item.Income2025
-                        : 0;
+        // Log income values for debugging
+        console.log("Income values sample:", this.departmentIncomeData.slice(0, 3).map(d => ({
+            name: d.DepartmentName,
+            Income2024: d.Income2024,
+            Income2025: d.Income2025
+        })));
 
-                const val2024 = parseFloat((safe2024 / 1000000).toFixed(1));
-                const val2025 = parseFloat((safe2025 / 1000000).toFixed(1));
+        // Filter: include departments that have at least one year with positive income
+        // This prevents the chart from disappearing when some departments have zero values
+        const filtered = this.departmentIncomeData.filter((item) => {
+            const has2024 = item.Income2024 && !isNaN(item.Income2024) && item.Income2024 > 0;
+            const has2025 = item.Income2025 && !isNaN(item.Income2025) && item.Income2025 > 0;
+            return has2024 || has2025; // Show if at least one year has data
+        });
+        
+        console.log("Filtered departments count:", filtered.length);
+        console.log("Filtered sample:", filtered.slice(0, 3).map(d => ({
+            name: d.DepartmentName,
+            Income2024: d.Income2024,
+            Income2025: d.Income2025
+        })));
 
-                const label2024 = val2024.toString() + "M";
-                const label2025 = val2025.toString() + "M";
+        this.chartData = filtered.map((item) => {
+            const safe2024 =
+                item.Income2024 && !isNaN(item.Income2024)
+                    ? item.Income2024
+                    : 0;
+            const safe2025 =
+                item.Income2025 && !isNaN(item.Income2025)
+                    ? item.Income2025
+                    : 0;
 
-                return [
-                    item.DepartmentName,
-                    val2025,
-                    label2025,
-                    val2024,
-                    label2024,
-                ];
-            });
+            const val2024 = parseFloat((safe2024 / 1000000).toFixed(1));
+            const val2025 = parseFloat((safe2025 / 1000000).toFixed(1));
+
+            const label2024 = val2024.toString() + "M";
+            const label2025 = val2025.toString() + "M";
+
+            return [
+                item.DepartmentName,
+                val2025,
+                label2025,
+                val2024,
+                label2024,
+            ];
+        });
 
         console.log("Final chartData:", this.chartData);
+        console.log("Chart data length:", this.chartData.length);
+        if (this.chartData.length > 0) {
+            console.log("First chart row:", this.chartData[0]);
+        }
         this.cdr.detectChanges();
     }
 
@@ -510,11 +540,15 @@ export class DepartmentIncomeDashboardComponent implements OnInit {
 
                     if (Array.isArray(data)) {
                         this.yearlyTotalData = data;
-                        this.updateChartColumns(); // Update chart columns with dynamic years
-                        if (this.departmentIncomeData.length > 0) {
-                            this.updateChartData(); // Refresh chart with new columns
+                        // Only update chart if we have department data loaded
+                        if (this.departmentIncomeData && this.departmentIncomeData.length > 0) {
+                            // Use setTimeout to ensure chart is ready before updating
+                            setTimeout(() => {
+                                this.updateChartColumns(); // Update chart columns with dynamic years
+                                this.updateChartData(); // Refresh chart with new columns
+                                this.cdr.detectChanges();
+                            }, 100);
                         }
-                        this.cdr.detectChanges();
                     }
                 }
             },
@@ -550,8 +584,13 @@ export class DepartmentIncomeDashboardComponent implements OnInit {
                         this.yearlyTotalData = data;
                         
                         // Update chart columns if department data is already loaded
-                        if (this.departmentIncomeData.length > 0) {
-                            this.updateChartColumns();
+                        // Use setTimeout to avoid interfering with chart rendering
+                        if (this.departmentIncomeData && this.departmentIncomeData.length > 0) {
+                            setTimeout(() => {
+                                this.updateChartColumns();
+                                this.updateChartData();
+                                this.cdr.detectChanges();
+                            }, 100);
                         }
                         
                         // Debug: Log the data for troubleshooting
@@ -603,6 +642,7 @@ export class DepartmentIncomeDashboardComponent implements OnInit {
             return;
         }
         this.departmentGraphTitle = `פרטי מחלקה: ${departmentName}`;
+        this.isDepartmentGraphOpen = true; // Open modal immediately
         this.loadDetailedDepartmentData(departmentName);
     }
 
@@ -830,9 +870,20 @@ getLatestYearFromDeptData(): string {
  * Update chart columns dynamically based on years
  */
 updateChartColumns(): void {
+    // Only update if we have data
+    if (!this.departmentIncomeData || this.departmentIncomeData.length === 0) {
+        return;
+    }
+    
     const olderYear = this.getOlderYearFromDeptData();
     const latestYear = this.getLatestYearFromDeptData();
     
+    // Only update if years are valid
+    if (!olderYear || !latestYear) {
+        return;
+    }
+    
+    // Update chart columns
     this.chartColumns = [
         "מחלקה",
         { type: "number", label: latestYear },
@@ -841,11 +892,10 @@ updateChartColumns(): void {
         { type: "string", role: "annotation" },
     ];
     
-    // Update chart options title
-    this.chartOptions = {
-        ...this.chartOptions,
-        title: `השוואת הכנסות מחלקות - ${olderYear} vs ${latestYear}`,
-    };
+    // Update chart options title without creating new object (to preserve Google Charts reference)
+    if (this.chartOptions) {
+        this.chartOptions.title = `השוואת הכנסות מחלקות - ${olderYear} vs ${latestYear}`;
+    }
 }
    
     /**
