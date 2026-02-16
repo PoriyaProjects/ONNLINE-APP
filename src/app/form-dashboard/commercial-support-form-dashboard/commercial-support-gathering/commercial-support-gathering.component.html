@@ -92,26 +92,27 @@
                                         <span class="material-icons"> zoom_in </span>
                                     </button>
                                     <!-- Display file/image -->
-                                    <div *ngIf="GatheringRequestDto.get('GatheringPlan').value != undefined && GatheringRequestDto.get('GatheringPlan').value != ''" 
-                                         style="margin-top: 12px;">
-                                        <div *ngIf="isImageFile(GatheringRequestDto.get('GatheringPlan').value)" 
-                                             style="margin-top: 8px;">
-                                            <img [src]="getFileUrl(GatheringRequestDto.get('GatheringPlan').value)" 
-                                                 [alt]="getFileName(GatheringRequestDto.get('GatheringPlan').value)"
-                                                 style="max-width: 300px; max-height: 300px; border: 1px solid #ddd; border-radius: 4px; cursor: pointer;"
-                                                 (click)="file_in_new_window_base64()"
-                                                 (error)="onImageError($event)">
+                                    <!-- <div *ngIf="GatheringRequestDto.get('GatheringPlan').value != undefined && GatheringRequestDto.get('GatheringPlan').value != ''"
+                                        style="margin-top: 12px;">
+                                        <div *ngIf="isImageFile(GatheringRequestDto.get('GatheringPlan').value)"
+                                            style="margin-top: 8px;">
+                                            <img [src]="getFileUrl(GatheringRequestDto.get('GatheringPlan').value)"
+                                                [alt]="getFileName(GatheringRequestDto.get('GatheringPlan').value)"
+                                                style="max-width: 300px; max-height: 300px; border: 1px solid #ddd; border-radius: 4px; cursor: pointer;"
+                                                (click)="file_in_new_window_base64()" (error)="onImageError($event)">
                                         </div>
-                                        <div *ngIf="!isImageFile(GatheringRequestDto.get('GatheringPlan').value)" 
-                                             style="margin-top: 8px; padding: 8px; background-color: #f5f5f5; border-radius: 4px; display: inline-block;">
-                                            <span class="material-icons" style="vertical-align: middle;">description</span>
+                                        <div *ngIf="!isImageFile(GatheringRequestDto.get('GatheringPlan').value)"
+                                            style="margin-top: 8px; padding: 8px; background-color: #f5f5f5; border-radius: 4px; display: inline-block;">
+                                            <span class="material-icons"
+                                                style="vertical-align: middle;">description</span>
                                             {{ getFileName(GatheringRequestDto.get('GatheringPlan').value) }}
                                         </div>
-                                    </div>
+                                    </div> -->
                                 </div><br>
-                                
+
                                 <!-- Support Options Multiple Select -->
-                                <div style="text-align: right; margin-top: 20px;" *ngIf="GatheringRequestDto.get('Requester')?.value != null">
+                                <div style="text-align: right; margin-top: 20px;"
+                                    *ngIf="GatheringRequestDto.get('Requester')?.value != null">
                                     <mat-form-field appearance="outline" style="width: 100%;">
                                         <mat-label>אפשרויות תמיכה</mat-label>
                                         <mat-select [formControl]="supportOptionsSelectControl" multiple
@@ -137,7 +138,8 @@
                                                     <mat-icon>close</mat-icon>
                                                 </button> -->
                                             </div>
-                                            <mat-form-field appearance="outline" style="width: 100%; margin-bottom: 12px;">
+                                            <mat-form-field appearance="outline"
+                                                style="width: 100%; margin-bottom: 12px;">
                                                 <mat-label>הערה</mat-label>
                                                 <textarea matInput formControlName="Note" rows="2"
                                                     placeholder="הכנס הערה..."></textarea>
@@ -164,22 +166,22 @@
                                         <span class="material-icons"> zoom_in </span>
                                     </button>
                                     <!-- Display file/image -->
-                                    <div *ngIf="GatheringRequestDto.get('GatheringOutcome').value != undefined && GatheringRequestDto.get('GatheringOutcome').value != ''" 
-                                         style="margin-top: 12px;">
-                                        <div *ngIf="isImageFile(GatheringRequestDto.get('GatheringOutcome').value)" 
-                                             style="margin-top: 8px;">
-                                            <img [src]="getFileUrl(GatheringRequestDto.get('GatheringOutcome').value)" 
-                                                 [alt]="getFileName(GatheringRequestDto.get('GatheringOutcome').value)"
-                                                 style="max-width: 300px; max-height: 300px; border: 1px solid #ddd; border-radius: 4px; cursor: pointer;"
-                                                 (click)="file_in_new_window_base64_2()"
-                                                 (error)="onImageError($event)">
+                                    <!-- <div *ngIf="GatheringRequestDto.get('GatheringOutcome').value != undefined && GatheringRequestDto.get('GatheringOutcome').value != ''"
+                                        style="margin-top: 12px;">
+                                        <div *ngIf="isImageFile(GatheringRequestDto.get('GatheringOutcome').value)"
+                                            style="margin-top: 8px;">
+                                            <img [src]="getFileUrl(GatheringRequestDto.get('GatheringOutcome').value)"
+                                                [alt]="getFileName(GatheringRequestDto.get('GatheringOutcome').value)"
+                                                style="max-width: 300px; max-height: 300px; border: 1px solid #ddd; border-radius: 4px; cursor: pointer;"
+                                                (click)="file_in_new_window_base64_2()" (error)="onImageError($event)">
                                         </div>
-                                        <div *ngIf="!isImageFile(GatheringRequestDto.get('GatheringOutcome').value)" 
-                                             style="margin-top: 8px; padding: 8px; background-color: #f5f5f5; border-radius: 4px; display: inline-block;">
-                                            <span class="material-icons" style="vertical-align: middle;">description</span>
+                                        <div *ngIf="!isImageFile(GatheringRequestDto.get('GatheringOutcome').value)"
+                                            style="margin-top: 8px; padding: 8px; background-color: #f5f5f5; border-radius: 4px; display: inline-block;">
+                                            <span class="material-icons"
+                                                style="vertical-align: middle;">description</span>
                                             {{ getFileName(GatheringRequestDto.get('GatheringOutcome').value) }}
                                         </div>
-                                    </div>
+                                    </div> -->
                                 </div><br>
                                 <!-- File Input 3 -->
                                 <div style="text-align: right;">
@@ -193,7 +195,7 @@
                                         <span class="material-icons"> zoom_in </span>
                                     </button>
                                     <!-- Display file/image -->
-                                    <div *ngIf="GatheringRequestDto.get('GatheringSupport').value != undefined && GatheringRequestDto.get('GatheringSupport').value != ''" 
+                                    <!-- <div *ngIf="GatheringRequestDto.get('GatheringSupport').value != undefined && GatheringRequestDto.get('GatheringSupport').value != ''" 
                                          style="margin-top: 12px;">
                                         <div *ngIf="isImageFile(GatheringRequestDto.get('GatheringSupport').value)" 
                                              style="margin-top: 8px;">
@@ -208,7 +210,7 @@
                                             <span class="material-icons" style="vertical-align: middle;">description</span>
                                             {{ getFileName(GatheringRequestDto.get('GatheringSupport').value) }}
                                         </div>
-                                    </div>
+                                    </div> -->
                                 </div><br>
                                 <hr><br>
                                 <p>* יש לפנות לקבלת תמיכה משלוש חברות מסחריות. במידה וחברה כלשהי בוחרת שלא לתמוך, יש
@@ -226,7 +228,7 @@
                                         <span class="material-icons"> zoom_in </span>
                                     </button>
                                     <!-- Display file/image -->
-                                    <div *ngIf="GatheringRequestDto.get('GatheringInquiries').value != undefined && GatheringRequestDto.get('GatheringInquiries').value != ''" 
+                                    <!-- <div *ngIf="GatheringRequestDto.get('GatheringInquiries').value != undefined && GatheringRequestDto.get('GatheringInquiries').value != ''" 
                                          style="margin-top: 12px;">
                                         <div *ngIf="isImageFile(GatheringRequestDto.get('GatheringInquiries').value)" 
                                              style="margin-top: 8px;">
@@ -241,7 +243,7 @@
                                             <span class="material-icons" style="vertical-align: middle;">description</span>
                                             {{ getFileName(GatheringRequestDto.get('GatheringInquiries').value) }}
                                         </div>
-                                    </div>
+                                    </div> -->
                                 </div><br>
                                 <hr><br>
 

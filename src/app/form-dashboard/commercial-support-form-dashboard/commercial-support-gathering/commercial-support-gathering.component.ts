@@ -124,33 +124,24 @@ export class CommercialSupportGatheringComponent implements OnInit {
   }
 
   getFileUrl(file: any): string {
-    // if (!file) return '';
-    
-    // // If file is a File object (new upload), create object URL
-    // if (file instanceof File) {
-    //   return URL.createObjectURL(file);
-    // }
-    
-    // // If file is a base64 string, return it directly
-    // if (typeof file === 'string' && file.startsWith('data:')) {
-    //   return file;
-    // }
-    
-    // // If file is an object with StoredFileName, construct URL
-    // if (file?.StoredFileName) {
-    //   // Construct file URL - adjust the path based on your server structure
-    //   // Try different possible URL patterns
-    //   const baseUrl = environment.url.replace('/WebService.asmx/', '');
-    //   // Common patterns: /Files/, /Uploads/, /Content/Files/, etc.
-    //   return `${baseUrl}/SupportFiles/Uploads/${file.StoredFileName}`;
-    // }
-    
+    if (!file) return '';
+
+    // If file is a base64 string, return it directly
+    if (typeof file === 'string' && file.startsWith('data:')) {
+      return file;
+    }
+
+    // If file is an object with StoredFileName, construct URL
+    if (file?.StoredFileName) {
+      return `http://srv-ipracticom/RCF_WS/SupportFiles/Uploads/${file.StoredFileName}`;
+    }
+
     return '';
   }
 
   isImageFile(file: any): boolean {
     if (!file) return false;
-    
+
     let contentType = '';
     if (file instanceof File) {
       contentType = file.type;
@@ -160,21 +151,21 @@ export class CommercialSupportGatheringComponent implements OnInit {
       const match = file.match(/data:(.*?);base64,/);
       contentType = match ? match[1] : '';
     }
-    
+
     return contentType.startsWith('image/');
   }
 
   getFileName(file: any): string {
     if (!file) return '';
-    
+
     if (file instanceof File) {
       return file.name;
     }
-    
+
     if (file?.OriginalFileName) {
       return file.OriginalFileName;
     }
-    
+
     return '';
   }
 
@@ -335,13 +326,10 @@ export class CommercialSupportGatheringComponent implements OnInit {
     formData.append('Draft', type.toString());
 
     this.supportRequestsService.saveGatheringRequest(formData).subscribe({
-      next: (response) => {
-        if (response?.d) {
-          this.openSnackBar("נשמר בהצלחה");
-          this.dialogRef.close(true);
-        } else {
-          this.openSnackBar("תקלה!");
-        }
+      next: (response: string) => {
+        // response === "OK"
+        this.openSnackBar("נשמר בהצלחה");
+        this.dialogRef.close(true);
       },
       error: (error) => {
         console.error('שגיאה בשמירת הבקשה:', error);
@@ -385,15 +373,15 @@ export class CommercialSupportGatheringComponent implements OnInit {
   file_in_new_window_base64() {
     this.viewGatheringFile('GatheringPlan');
   }
-  
+
   file_in_new_window_base64_2() {
     this.viewGatheringFile('GatheringOutcome');
   }
-  
+
   file_in_new_window_base64_3() {
     this.viewGatheringFile('GatheringSupport');
   }
-  
+
   file_in_new_window_base64_4() {
     this.viewGatheringFile('GatheringInquiries');
   }
