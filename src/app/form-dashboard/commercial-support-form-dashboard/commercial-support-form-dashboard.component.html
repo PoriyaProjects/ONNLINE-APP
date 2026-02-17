@@ -1,4 +1,4 @@
-<h2 class="page-title text-center">{{UserName}} - ניהול בקשות תמיכת גוף מסחרי </h2>
+<h2 class="page-title text-center">{{UserName}} - דאשבורד בקשות ועדת התקשרויות </h2>
 <div dir="rtl" class="dashboard-container">
   <!-- <mat-toolbar color="primary" class="toolbar">
     <span>ניהול בקשות תמיכת גוף מסחרי</span>
@@ -9,7 +9,7 @@
     <div class="row" style="justify-content: center;">
       <!-- Search / Filters -->
       <mat-form-field appearance="outline" class="search-field">
-        <mat-label>חיפוש לפי שם מגיש הבקשה</mat-label>
+        <mat-label>חיפוש לפי שם מגיש הבקשה/סוג הבקשה</mat-label>
         <input matInput (input)="applyFilter($event)" placeholder="הקלד שם...">
         <button mat-button *ngIf="searchValue" matSuffix mat-icon-button aria-label="Clear" (click)="clearFilter()">
           <mat-icon>close</mat-icon>
@@ -117,7 +117,7 @@
         </button>
         <button mat-raised-button class="cube info" (click)="selectRequest('D')">
           <mat-icon class="cube-icon">event_note</mat-icon>
-          בקשה לקיום יום עיון / כנס
+          בקשה לקיום יום עיון / כנס במרכז הרפואי צפון
         </button>
       </div>
     </mat-dialog-content>

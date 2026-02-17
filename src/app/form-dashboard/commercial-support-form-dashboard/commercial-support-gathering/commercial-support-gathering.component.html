@@ -8,7 +8,7 @@
                 <ng-template matStepLabel>פרטי בקשה</ng-template>
                 <mat-card class="form-card">
                     <mat-card-title class="text-center">
-                        בקשה לקיום יום עיון/כנס
+                        בקשה לקיום יום עיון/כנס במרכז הרפואי צפון
                     </mat-card-title>
                     <mat-card-content>
                         <div fxLayout="column" fxLayoutGap="20px" style="text-align: right;">
@@ -39,7 +39,8 @@
                             <mat-form-field appearance="outline"
                                 *ngIf="GatheringRequestDto.get('Requester')?.value != null">
                                 <mat-label>תאריך התחלה</mat-label>
-                                <input matInput [matDatepicker]="picker" formControlName="GatheringDate">
+                                <input matInput [matDatepicker]="picker" formControlName="GatheringDate"
+                                    [min]="date_now">
                                 <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
                                 <mat-datepicker #picker></mat-datepicker>
                             </mat-form-field>
@@ -47,7 +48,8 @@
                             <mat-form-field appearance="outline"
                                 *ngIf="GatheringRequestDto.get('Requester')?.value != null">
                                 <mat-label>תאריך סיום</mat-label>
-                                <input matInput [matDatepicker]="picker2" formControlName="GatheringEndDate">
+                                <input matInput [matDatepicker]="picker2" formControlName="GatheringEndDate"
+                                    [min]="date_now">
                                 <mat-datepicker-toggle matSuffix [for]="picker2"></mat-datepicker-toggle>
                                 <mat-datepicker #picker2></mat-datepicker>
                             </mat-form-field>
@@ -89,7 +91,69 @@
                                         צפייה במסמך
                                         <span class="material-icons"> zoom_in </span>
                                     </button>
+                                    <!-- Display file/image -->
+                                    <!-- <div *ngIf="GatheringRequestDto.get('GatheringPlan').value != undefined && GatheringRequestDto.get('GatheringPlan').value != ''"
+                                        style="margin-top: 12px;">
+                                        <div *ngIf="isImageFile(GatheringRequestDto.get('GatheringPlan').value)"
+                                            style="margin-top: 8px;">
+                                            <img [src]="getFileUrl(GatheringRequestDto.get('GatheringPlan').value)"
+                                                [alt]="getFileName(GatheringRequestDto.get('GatheringPlan').value)"
+                                                style="max-width: 300px; max-height: 300px; border: 1px solid #ddd; border-radius: 4px; cursor: pointer;"
+                                                (click)="file_in_new_window_base64()" (error)="onImageError($event)">
+                                        </div>
+                                        <div *ngIf="!isImageFile(GatheringRequestDto.get('GatheringPlan').value)"
+                                            style="margin-top: 8px; padding: 8px; background-color: #f5f5f5; border-radius: 4px; display: inline-block;">
+                                            <span class="material-icons"
+                                                style="vertical-align: middle;">description</span>
+                                            {{ getFileName(GatheringRequestDto.get('GatheringPlan').value) }}
+                                        </div>
+                                    </div> -->
                                 </div><br>
+
+                                <!-- Support Options Multiple Select -->
+                                <div style="text-align: right; margin-top: 20px;"
+                                    *ngIf="GatheringRequestDto.get('Requester')?.value != null">
+                                    <mat-form-field appearance="outline" style="width: 100%;">
+                                        <mat-label>אפשרויות תמיכה</mat-label>
+                                        <mat-select [formControl]="supportOptionsSelectControl" multiple
+                                            (selectionChange)="onSupportOptionSelected($event.value)">
+                                            <mat-option *ngFor="let option of supportOptions" [value]="option.value">
+                                                {{ option.label }}
+                                            </mat-option>
+                                        </mat-select>
+                                    </mat-form-field>
+
+                                    <!-- Display selected options with note and amount fields -->
+                                    <div formArrayName="SupportOptions" *ngIf="supportOptionsFormArray.length > 0"
+                                        style="margin-top: 20px;">
+                                        <div *ngFor="let option of supportOptionsFormArray.controls; let i = index"
+                                            [formGroupName]="i"
+                                            style="border: 1px solid #e0e0e0; border-radius: 4px; padding: 16px; margin-bottom: 16px; background-color: #f9f9f9;">
+                                            <div style="display: flex; align-items: center; margin-bottom: 12px;">
+                                                <strong style="flex: 1;">
+                                                    {{ getOptionLabel(option.get('SupportOptionCode').value) }}
+                                                </strong>
+                                                <!-- <button mat-icon-button color="warn" type="button"
+                                                    (click)="removeSupportOption(i)" style="margin-right: 8px;">
+                                                    <mat-icon>close</mat-icon>
+                                                </button> -->
+                                            </div>
+                                            <mat-form-field appearance="outline"
+                                                style="width: 100%; margin-bottom: 12px;">
+                                                <mat-label>הערה</mat-label>
+                                                <textarea matInput formControlName="Note" rows="2"
+                                                    placeholder="הכנס הערה..."></textarea>
+                                            </mat-form-field>
+                                            <mat-form-field appearance="outline" style="width: 100%;">
+                                                <mat-label>סכום</mat-label>
+                                                <input matInput type="number" formControlName="Amount"
+                                                    placeholder="הכנס סכום...">
+                                                <span matSuffix>₪</span>
+                                            </mat-form-field>
+                                        </div>
+                                    </div>
+                                </div>
+
                                 <!-- File Input 2 -->
                                 <div style="text-align: right;">
                                     <label>תקציב* (צפי עלויות משוערות עבור הכנס)</label><br>
@@ -101,6 +165,23 @@
                                         צפייה במסמך
                                         <span class="material-icons"> zoom_in </span>
                                     </button>
+                                    <!-- Display file/image -->
+                                    <!-- <div *ngIf="GatheringRequestDto.get('GatheringOutcome').value != undefined && GatheringRequestDto.get('GatheringOutcome').value != ''"
+                                        style="margin-top: 12px;">
+                                        <div *ngIf="isImageFile(GatheringRequestDto.get('GatheringOutcome').value)"
+                                            style="margin-top: 8px;">
+                                            <img [src]="getFileUrl(GatheringRequestDto.get('GatheringOutcome').value)"
+                                                [alt]="getFileName(GatheringRequestDto.get('GatheringOutcome').value)"
+                                                style="max-width: 300px; max-height: 300px; border: 1px solid #ddd; border-radius: 4px; cursor: pointer;"
+                                                (click)="file_in_new_window_base64_2()" (error)="onImageError($event)">
+                                        </div>
+                                        <div *ngIf="!isImageFile(GatheringRequestDto.get('GatheringOutcome').value)"
+                                            style="margin-top: 8px; padding: 8px; background-color: #f5f5f5; border-radius: 4px; display: inline-block;">
+                                            <span class="material-icons"
+                                                style="vertical-align: middle;">description</span>
+                                            {{ getFileName(GatheringRequestDto.get('GatheringOutcome').value) }}
+                                        </div>
+                                    </div> -->
                                 </div><br>
                                 <!-- File Input 3 -->
                                 <div style="text-align: right;">
@@ -113,6 +194,23 @@
                                         צפייה במסמך
                                         <span class="material-icons"> zoom_in </span>
                                     </button>
+                                    <!-- Display file/image -->
+                                    <!-- <div *ngIf="GatheringRequestDto.get('GatheringSupport').value != undefined && GatheringRequestDto.get('GatheringSupport').value != ''" 
+                                         style="margin-top: 12px;">
+                                        <div *ngIf="isImageFile(GatheringRequestDto.get('GatheringSupport').value)" 
+                                             style="margin-top: 8px;">
+                                            <img [src]="getFileUrl(GatheringRequestDto.get('GatheringSupport').value)" 
+                                                 [alt]="getFileName(GatheringRequestDto.get('GatheringSupport').value)"
+                                                 style="max-width: 300px; max-height: 300px; border: 1px solid #ddd; border-radius: 4px; cursor: pointer;"
+                                                 (click)="file_in_new_window_base64_3()"
+                                                 (error)="onImageError($event)">
+                                        </div>
+                                        <div *ngIf="!isImageFile(GatheringRequestDto.get('GatheringSupport').value)" 
+                                             style="margin-top: 8px; padding: 8px; background-color: #f5f5f5; border-radius: 4px; display: inline-block;">
+                                            <span class="material-icons" style="vertical-align: middle;">description</span>
+                                            {{ getFileName(GatheringRequestDto.get('GatheringSupport').value) }}
+                                        </div>
+                                    </div> -->
                                 </div><br>
                                 <hr><br>
                                 <p>* יש לפנות לקבלת תמיכה משלוש חברות מסחריות. במידה וחברה כלשהי בוחרת שלא לתמוך, יש
@@ -129,7 +227,40 @@
                                         צפייה במסמך
                                         <span class="material-icons"> zoom_in </span>
                                     </button>
+                                    <!-- Display file/image -->
+                                    <!-- <div *ngIf="GatheringRequestDto.get('GatheringInquiries').value != undefined && GatheringRequestDto.get('GatheringInquiries').value != ''" 
+                                         style="margin-top: 12px;">
+                                        <div *ngIf="isImageFile(GatheringRequestDto.get('GatheringInquiries').value)" 
+                                             style="margin-top: 8px;">
+                                            <img [src]="getFileUrl(GatheringRequestDto.get('GatheringInquiries').value)" 
+                                                 [alt]="getFileName(GatheringRequestDto.get('GatheringInquiries').value)"
+                                                 style="max-width: 300px; max-height: 300px; border: 1px solid #ddd; border-radius: 4px; cursor: pointer;"
+                                                 (click)="file_in_new_window_base64_4()"
+                                                 (error)="onImageError($event)">
+                                        </div>
+                                        <div *ngIf="!isImageFile(GatheringRequestDto.get('GatheringInquiries').value)" 
+                                             style="margin-top: 8px; padding: 8px; background-color: #f5f5f5; border-radius: 4px; display: inline-block;">
+                                            <span class="material-icons" style="vertical-align: middle;">description</span>
+                                            {{ getFileName(GatheringRequestDto.get('GatheringInquiries').value) }}
+                                        </div>
+                                    </div> -->
                                 </div><br>
+                                <hr><br>
+
+                                <!-- חתימה -->
+                                <div *ngIf="GatheringRequestDto.get('Requester')?.value != null"
+                                    style="display: inline-block; flex-direction: column; width: 25%; max-width: 25%; margin-bottom: 24px;">
+                                    <mat-label style="margin-bottom: 8px;">חתימת מנהל המחלקה</mat-label>
+                                    <button mat-raised-button class="signBtn" color="warn" (click)="signForm()">
+                                        <span
+                                            *ngIf="GatheringRequestDto.get('ManagerSign').value == undefined">לחתום</span>
+                                        <span
+                                            *ngIf="GatheringRequestDto.get('ManagerSign').value != undefined">נחתם</span>
+                                    </button>
+                                </div>
+                                <img *ngIf="GatheringRequestDto.get('ManagerSign').value != undefined"
+                                    [src]="GatheringRequestDto.get('ManagerSign').value"
+                                    style="margin-top: 12px; max-width: 50%; width: 88px;box-shadow: grey 1px 1px 6px 1px;border-radius: 5px;margin-right: 60px;" />
                             </div>
                         </div>
 
@@ -162,7 +293,7 @@
                 <!-- Status -->
                 <mat-form-field appearance="outline" class="full-width">
                     <mat-label>סטטוס החלטה</mat-label>
-                    <mat-select formControlName="Approved" required>
+                    <mat-select formControlName="Approved">
                         <mat-option value="approved">מאושר</mat-option>
                         <mat-option value="rejected">לא מאושר</mat-option>
                         <mat-option value="chairman">אושר בדיון יו"ר</mat-option>
