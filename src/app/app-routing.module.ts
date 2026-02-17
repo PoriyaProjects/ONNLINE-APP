@@ -160,6 +160,7 @@ import { AutomationProcessDashboardComponent } from "./automationprocessdashboar
 import { DepartmentalTextureReportComponent } from "./nutrition-system/departmental-texture-report/departmental-texture-report.component";
 import { WindowsUserActionsComponent } from "./dashboard/windows-user-actions/windows-user-actions.component";
 import { AiLettersDashboardComponent } from "./ai-letters-dashboard/ai-letters-dashboard.component";
+import { MriScheduleComponent } from "./mri-schedule/mri-schedule.component";
 
 
 
@@ -354,6 +355,7 @@ const routes: Routes = [
     { path: "departmental-texture-report", component: DepartmentalTextureReportComponent },
     { path: "windows-user-actions", component: WindowsUserActionsComponent },
     { path: "ai-letters-dashboard", component: AiLettersDashboardComponent },
+    { path: "mri-schedule", component: MriScheduleComponent },
     
 ];
 
