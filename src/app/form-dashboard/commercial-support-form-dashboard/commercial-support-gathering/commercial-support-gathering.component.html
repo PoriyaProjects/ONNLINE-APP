@@ -83,13 +83,18 @@
                                 <!-- File Input 1 -->
                                 <div style="text-align: right;">
                                     <label>תוכנית הכנס*</label><br>
-                                    <input type="file" (change)="onFileChange($event, 'GatheringPlan')"
+                                    <input #gatheringPlanInput type="file" (change)="onFileChange($event, 'GatheringPlan')"
                                         accept=".doc,.docx,.xls,.xlsx,.pdf,image/*" required>
                                     <button mat-raised-button class="fileOpenBtn" color="primary"
                                         (click)="file_in_new_window_base64()"
                                         *ngIf="GatheringRequestDto.get('GatheringPlan').value != undefined && GatheringRequestDto.get('GatheringPlan').value != ''">
                                         צפייה במסמך
                                         <span class="material-icons"> zoom_in </span>
+                                    </button>
+                                    <button mat-icon-button color="warn" type="button" matTooltip="הסרת קובץ"
+                                        (click)="removeFile('GatheringPlan', gatheringPlanInput)"
+                                        *ngIf="GatheringRequestDto.get('GatheringPlan').value != undefined && GatheringRequestDto.get('GatheringPlan').value != ''">
+                                        <mat-icon>delete</mat-icon>
                                     </button>
                                     <!-- Display file/image -->
                                     <!-- <div *ngIf="GatheringRequestDto.get('GatheringPlan').value != undefined && GatheringRequestDto.get('GatheringPlan').value != ''"
@@ -157,13 +162,18 @@
                                 <!-- File Input 2 -->
                                 <div style="text-align: right;">
                                     <label>תקציב* (צפי עלויות משוערות עבור הכנס)</label><br>
-                                    <input type="file" (change)="onFileChange($event, 'GatheringOutcome')"
+                                    <input #gatheringOutcomeInput type="file" (change)="onFileChange($event, 'GatheringOutcome')"
                                         accept=".doc,.docx,.xls,.xlsx,.pdf,image/*" required>
                                     <button mat-raised-button class="fileOpenBtn" color="primary"
                                         (click)="file_in_new_window_base64_2()"
                                         *ngIf="GatheringRequestDto.get('GatheringOutcome').value != undefined && GatheringRequestDto.get('GatheringOutcome').value != ''">
                                         צפייה במסמך
                                         <span class="material-icons"> zoom_in </span>
+                                    </button>
+                                    <button mat-icon-button color="warn" type="button" matTooltip="הסרת קובץ"
+                                        (click)="removeFile('GatheringOutcome', gatheringOutcomeInput)"
+                                        *ngIf="GatheringRequestDto.get('GatheringOutcome').value != undefined && GatheringRequestDto.get('GatheringOutcome').value != ''">
+                                        <mat-icon>delete</mat-icon>
                                     </button>
                                     <!-- Display file/image -->
                                     <!-- <div *ngIf="GatheringRequestDto.get('GatheringOutcome').value != undefined && GatheringRequestDto.get('GatheringOutcome').value != ''"
@@ -186,13 +196,18 @@
                                 <!-- File Input 3 -->
                                 <div style="text-align: right;">
                                     <label>מכתבי תמיכה מחברות מסחריות</label><br>
-                                    <input type="file" (change)="onFileChange($event, 'GatheringSupport')"
+                                    <input #gatheringSupportInput type="file" (change)="onFileChange($event, 'GatheringSupport')"
                                         accept=".doc,.docx,.xls,.xlsx,.pdf,image/*" required>
                                     <button mat-raised-button class="fileOpenBtn" color="primary"
                                         (click)="file_in_new_window_base64_3()"
                                         *ngIf="GatheringRequestDto.get('GatheringSupport').value != undefined && GatheringRequestDto.get('GatheringSupport').value != ''">
                                         צפייה במסמך
                                         <span class="material-icons"> zoom_in </span>
+                                    </button>
+                                    <button mat-icon-button color="warn" type="button" matTooltip="הסרת קובץ"
+                                        (click)="removeFile('GatheringSupport', gatheringSupportInput)"
+                                        *ngIf="GatheringRequestDto.get('GatheringSupport').value != undefined && GatheringRequestDto.get('GatheringSupport').value != ''">
+                                        <mat-icon>delete</mat-icon>
                                     </button>
                                     <!-- Display file/image -->
                                     <!-- <div *ngIf="GatheringRequestDto.get('GatheringSupport').value != undefined && GatheringRequestDto.get('GatheringSupport').value != ''" 
@@ -219,13 +234,18 @@
                                 <!-- File Input 4 -->
                                 <div style="text-align: right;">
                                     <label>תיעוד פניות לחברות*</label><br>
-                                    <input type="file" (change)="onFileChange($event, 'GatheringInquiries')"
+                                    <input #gatheringInquiriesInput type="file" (change)="onFileChange($event, 'GatheringInquiries')"
                                         accept=".doc,.docx,.xls,.xlsx,.pdf,image/*" required>
                                     <button mat-raised-button class="fileOpenBtn" color="primary"
                                         (click)="file_in_new_window_base64_4()"
                                         *ngIf="GatheringRequestDto.get('GatheringInquiries').value != undefined && GatheringRequestDto.get('GatheringInquiries').value != ''">
                                         צפייה במסמך
                                         <span class="material-icons"> zoom_in </span>
+                                    </button>
+                                    <button mat-icon-button color="warn" type="button" matTooltip="הסרת קובץ"
+                                        (click)="removeFile('GatheringInquiries', gatheringInquiriesInput)"
+                                        *ngIf="GatheringRequestDto.get('GatheringInquiries').value != undefined && GatheringRequestDto.get('GatheringInquiries').value != ''">
+                                        <mat-icon>delete</mat-icon>
                                     </button>
                                     <!-- Display file/image -->
                                     <!-- <div *ngIf="GatheringRequestDto.get('GatheringInquiries').value != undefined && GatheringRequestDto.get('GatheringInquiries').value != ''" 

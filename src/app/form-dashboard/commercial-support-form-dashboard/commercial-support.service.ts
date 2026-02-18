@@ -64,18 +64,25 @@ export class SupportRequestService {
     });
   }
 
-  savePresentationRequest(request: any, type: any): Observable<any> {
-    return this.http.post(`${this.apiUrl}SavePresentationRequest`, {
-      request: request,
-      type: type,
-    });
+  saveSupportRequestFormData(formData: FormData): Observable<any> {
+    return this.http.post(`${this.apiUrl}SaveSupportRequest`,
+      formData,
+      { responseType: 'text' }
+    );
   }
 
-  saveResearchRequest(request: any, type: any): Observable<any> {
-    return this.http.post(`${this.apiUrl}SaveResearchRequest`, {
-      request: request,
-      type: type,
-    });
+  savePresentationRequestFormData(formData: FormData): Observable<any> {
+    return this.http.post(`${this.apiUrlipracticom}SavePresentationRequest`, 
+      formData,
+      { responseType: 'text' }
+    );
+  }
+
+  saveResearchRequestFormData(formData: FormData): Observable<any> {
+    return this.http.post(`${this.apiUrlipracticom}SaveResearchRequest`, 
+      formData,
+      { responseType: 'text' }
+    );
   }
 
   saveGatheringRequest(formData: FormData): Observable<string> {
@@ -84,12 +91,6 @@ export class SupportRequestService {
       formData,
       { responseType: 'text' } // 👈 critical
     );
-  }
-
-  saveDecission(request: any): Observable<any> {
-    return this.http.post(`${this.apiUrl}SaveSupportRequestDecision`, {
-      request: request
-    });
   }
 
   getEmployeeDetails(id: any): Observable<any> {
