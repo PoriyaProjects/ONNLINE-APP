@@ -515,7 +515,7 @@
       </mat-card>
     </div>
 
-    <!-- Catalog: one row of controls (sort + view type + chart toggle + zoom) -->
+    <!-- Catalog: one row of controls (sort + view type + zoom) -->
     <div dir="rtl" class="catalog-controls-row">
       <span class="catalog-controls-label">סדר מיון:</span>
       <button mat-stroked-button (click)="onDetailedTableSort({active: 'Cash2025', direction: 'desc'})" class="catalog-btn"
@@ -528,15 +528,7 @@
         matTooltip="הצג נתונים במספר יחידות שירות בלבד - כמות הפעולות שבוצעו" matTooltipPosition="above">📊 יחידות</button>
       <button mat-stroked-button [class.active]="selectedViewType === 'both'" (click)="onViewTypeChange('both')" class="catalog-btn"
         matTooltip="הצג נתונים גם בערכים כספיים וגם במספר יחידות שירות - תצוגה מלאה" matTooltipPosition="above">📋 שניהם</button>
-      <button mat-stroked-button [class.active]="catalogViewMode === 'chart'" (click)="catalogViewMode = 'chart'; updateCatalogChartData()" class="catalog-btn"
-        matTooltip="הצג את השירותים בגרף עמודות - תצוגה ויזואלית של הערכים" matTooltipPosition="above">
-        <mat-icon>bar_chart</mat-icon> גרף
-      </button>
-      <button mat-stroked-button [class.active]="catalogViewMode === 'table'" (click)="catalogViewMode = 'table'" class="catalog-btn"
-        matTooltip="הצג את השירותים בטבלה מפורטת - כולל כל הנתונים והחישובים" matTooltipPosition="above">
-        <mat-icon>table_chart</mat-icon> טבלה
-      </button>
-      <div class="zoom-controls" *ngIf="catalogViewMode === 'table'">
+      <div class="zoom-controls">
         <button mat-icon-button (click)="zoomInCatalog()" class="zoom-btn" matTooltip="זום אין - הגדל את הטבלה" matTooltipPosition="above">
           <mat-icon>zoom_in</mat-icon>
         </button>
@@ -610,7 +602,7 @@
       </span>
     </div>
 
-    <!-- Catalog Table Section -->
+    <!-- Catalog Table Section: כל רשימת השירותים בטבלה מתחת לגרף -->
     <div dir="rtl" class="catalog-table-section">
 
       <!-- Loading Spinner for Catalog -->
@@ -619,15 +611,9 @@
         <div class="catalog-loading-text">טוען פרטי מחלקה...</div>
       </div>
 
-      <!-- Catalog as Chart: שמות שירותים בציר Y (ימין), סכומים בציר X -->
-      <div class="catalog-chart-wrap" *ngIf="!catalogLoading && catalogViewMode === 'chart' && catalogChartData.length > 0">
-        <google-chart type="BarChart" [data]="catalogChartData" [columns]="catalogChartColumns"
-          [options]="catalogChartOptions" [width]="'100%'" [height]="320"></google-chart>
-      </div>
-
       <!-- Sortable Catalog Table (scrollable so all columns visible) -->
       <div class="table-wrapper catalog-table-scroll"
-        *ngIf="!catalogLoading && catalogViewMode === 'table' && detailedDataSource.data && detailedDataSource.data.length > 0"
+        *ngIf="!catalogLoading && detailedDataSource.data && detailedDataSource.data.length > 0"
         [style.transform]="'scale(' + catalogZoomLevel + ')'"
         [style.transform-origin]="'top right'">
         <table mat-table [dataSource]="detailedDataSource" class="catalog-mat-table catalog-table-compact">
