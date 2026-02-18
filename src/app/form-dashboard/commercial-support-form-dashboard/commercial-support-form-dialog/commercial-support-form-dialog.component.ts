@@ -49,7 +49,6 @@ export class CommercialSupportFormDialogComponent {
   displayedColumns: string[] = ['activity', 'directService', 'indirectHealth'];
   manager: boolean;
   selectedIndirectHealth: { [index: number]: string } = {};
-  uploadedFiles: { [key: string]: File } = {};
   decision_making: boolean = false;
   UserName = localStorage.getItem("loginUserName").toLowerCase();
   date_now = new Date();
@@ -90,43 +89,108 @@ export class CommercialSupportFormDialogComponent {
 
   onFileChange(event: Event, field: string) {
     const input = event.target as HTMLInputElement;
-    const maxSize = 2 * 1024 * 1024; // 1MB (1,024,000 bytes)
 
-    if (input.files && input.files.length > 0) {
-      const files = Array.from(input.files);
-      const base64Files: any[] = this.SupportRequestDto.get(field)?.value;
+    if (!input.files || input.files.length === 0) {
+      return;
+    }
 
-      let loadedCount = 0;
+    const originalFile = input.files[0];
 
-      files.forEach(file => {
-        if (file.size > maxSize) {
-          alert("הקובץ גדול מדי! יש להעלות קובץ עד 2MB.\nשם הקובץ: " + file.name);
-          input.value = ""; // Clear file input
-          return;
+    // Validation
+    const maxSizeMB = 5;
+    if (originalFile.size > maxSizeMB * 1024 * 1024) {
+      this.openSnackBar(`הקובץ גדול מ־${maxSizeMB}MB`);
+      input.value = '';
+      return;
+    }
+
+    // Preserve extension
+    const extension = originalFile.name.split('.').pop();
+    const newFileName = `${field}.${extension}`;
+
+    const renamedFile = new File(
+      [originalFile],
+      newFileName,
+      { type: originalFile.type }
+    );
+
+    // Store the File object in the form (like gathering component)
+    this.SupportRequestDto.get(field)?.setValue(renamedFile);
+  }
+
+  removeFile(field: string, fileInput?: HTMLInputElement) {
+    this.SupportRequestDto.get(field)?.setValue(null);
+    if (fileInput) {
+      fileInput.value = '';
+    }
+  }
+
+  getFileUrl(file: any): string {
+    if (!file) return '';
+
+    if (typeof file === 'string' && file.startsWith('data:')) {
+      return file;
+    }
+
+    if (file?.StoredFileName) {
+      return `http://srv-ipracticom/RCF_WS/SupportFiles/Uploads/${file.StoredFileName}`;
+    }
+
+    return '';
+  }
+
+  isImageFile(file: any): boolean {
+    if (!file) return false;
+
+    let contentType = '';
+    if (file instanceof File) {
+      contentType = file.type;
+    } else if (file?.ContentType) {
+      contentType = file.ContentType;
+    } else if (typeof file === 'string' && file.startsWith('data:')) {
+      const match = file.match(/data:(.*?);base64,/);
+      contentType = match ? match[1] : '';
+    }
+
+    return contentType.startsWith('image/');
+  }
+
+  getFileName(file: any): string {
+    if (!file) return '';
+
+    if (file instanceof File) {
+      return file.name;
+    }
+
+    if (file?.OriginalFileName) {
+      return file.OriginalFileName;
+    }
+
+    return '';
+  }
+
+  viewSupportFile(fileControlName: string) {
+    const file = this.SupportRequestDto.get(fileControlName)?.value;
+    if (!file) {
+      this.openSnackBar('לא נמצא קובץ');
+      return;
+    }
+
+    const fileUrl = this.getFileUrl(file);
+    if (fileUrl) {
+      if (this.isImageFile(file)) {
+        window.open(fileUrl, '_blank');
+      } else {
+        if (typeof file === 'string' && file.startsWith('data:')) {
+          this.openFile(file);
+        } else {
+          window.open(fileUrl, '_blank');
         }
-        const reader = new FileReader();
-
-        reader.onload = () => {
-          base64Files.push({
-            FileName: file.name,
-            FileType: file.type,
-            Base64Content: reader.result as string
-          });
-
-          loadedCount++;
-
-          // Once all files are loaded
-          if (loadedCount === files.length) {
-            this.SupportRequestDto.get(field)?.setValue(base64Files);
-          }
-        };
-
-        reader.onerror = (error) => {
-          console.error('Error reading file:', error);
-        };
-
-        reader.readAsDataURL(file);
-      });
+      }
+    } else if (typeof file === 'object' && file?.Base64Content) {
+      this.openFile(file.Base64Content);
+    } else {
+      this.openSnackBar('לא ניתן לפתוח את הקובץ');
     }
   }
 
@@ -141,6 +205,33 @@ export class CommercialSupportFormDialogComponent {
         }));
       });
     }
+
+    // Map SupportFiles to form controls by Type (like gathering component)
+    const toSingle = (v: any) => (Array.isArray(v) && v.length > 0 ? v[0] : v);
+    let supportLetterFile = toSingle(data?.SupportLetter) ?? null;
+    let supportLetter2File = toSingle(data?.SupportLetter2) ?? null;
+    let conferenceApprovalFile = toSingle(data?.ConferenceApproval) ?? null;
+    let additionalDocumentFile = toSingle(data?.AdditionalDocument) ?? null;
+
+    if (data?.SupportFiles && Array.isArray(data.SupportFiles)) {
+      data.SupportFiles.forEach((file: any) => {
+        switch (file.Type) {
+          case 'SupportLetter':
+            supportLetterFile = file;
+            break;
+          case 'SupportLetter2':
+            supportLetter2File = file;
+            break;
+          case 'ConferenceApproval':
+            conferenceApprovalFile = file;
+            break;
+          case 'AdditionalDocument':
+            additionalDocumentFile = file;
+            break;
+        }
+      });
+    }
+
     this.SupportRequestDto = this.fb.group({
       Id: new FormControl(data?.Id, null),
       RequesterID: new FormControl(data?.RequesterID, Validators.required),
@@ -165,11 +256,11 @@ export class CommercialSupportFormDialogComponent {
       stay_directService: new FormControl(data?.stay_directService, null),
       stay_extraOptions: new FormControl(data?.stay_extraOptions, null),
       stay_indirectHealth: new FormControl(data?.stay_indirectHealth, null),
-      // File fields
-      SupportLetter: new FormControl(data?.SupportLetter, Validators.required),
-      SupportLetter2: new FormControl(data?.SupportLetter2, null),
-      ConferenceApproval: new FormControl(data?.ConferenceApproval, Validators.required),
-      AdditionalDocument: new FormControl(data?.AdditionalDocument, null),
+      // File fields (single file per control, like gathering component)
+      SupportLetter: new FormControl(supportLetterFile, Validators.required),
+      SupportLetter2: new FormControl(supportLetter2File, null),
+      ConferenceApproval: new FormControl(conferenceApprovalFile, Validators.required),
+      AdditionalDocument: new FormControl(additionalDocumentFile, null),
       SupportType: supportTypeArray,
       AmountIncludesTax: new FormControl(data?.AmountIncludesTax == null ? false : data?.AmountIncludesTax, null),
       SupportManagerDto: this.fb.array([
@@ -263,26 +354,57 @@ export class CommercialSupportFormDialogComponent {
     });
   }
 
-  submitForm(type) {
-    this.SupportRequestDto.controls['EventDate'].setValue(this._datePipe.transform(this.SupportRequestDto.value.EventDate, 'yyyy-MM-dd'));
-    this.SupportRequestDto.controls['EventEndDate'].setValue(this._datePipe.transform(this.SupportRequestDto.value.EventEndDate, 'yyyy-MM-dd'));
-    if (true) {
-      this.supportRequestsService.saveSupportRequest(this.SupportRequestDto.getRawValue(), type).subscribe({
-        next: (response) => {
-          if (response['d']) {
-            this.openSnackBar("נשמר בהצלחה");
-            this.dialogRef.close(true);
-          } else {
-            this.openSnackBar("תקלה!");
-          }
-        },
-        error: (error) => {
-          console.error('שגיאה בשמירת הבקשה:', error);
-        }
-      });
-    } else {
-      this.openSnackBar("שכחת שדות חובה");
-    }
+  submitForm(type: number) {
+    const eventDate = this._datePipe.transform(this.SupportRequestDto.value.EventDate, 'yyyy-MM-dd');
+    const eventEndDate = this._datePipe.transform(this.SupportRequestDto.value.EventEndDate, 'yyyy-MM-dd');
+    const decisionDate = this.SupportRequestDto.value.DecisionDate ? this._datePipe.transform(this.SupportRequestDto.value.DecisionDate, 'yyyy-MM-dd') : null;
+
+    const formData = new FormData();
+    const raw = this.SupportRequestDto.getRawValue();
+
+    formData.set('EventDate', eventDate || '');
+    formData.set('EventEndDate', eventEndDate || '');
+    formData.set('DecisionDate', decisionDate || '');
+    formData.set('Draft', type.toString());
+
+    const fileFields = ['SupportLetter', 'SupportLetter2', 'ConferenceApproval', 'AdditionalDocument'];
+    const excludeKeys = ['EventDate', 'EventEndDate', 'DecisionDate', 'SupportType', 'SupportManagerDto', ...fileFields];
+
+    Object.keys(raw).forEach(key => {
+      if (excludeKeys.includes(key)) return;
+
+      const value = raw[key];
+      if (value instanceof File) {
+        formData.append(key, value, value.name);
+      } else if (value !== null && value !== undefined) {
+        formData.append(key, value);
+      }
+    });
+
+    // Append file fields: File as binary, server objects as JSON
+    fileFields.forEach(field => {
+      const val = raw[field];
+      if (val instanceof File) {
+        formData.append(field, val, val.name);
+      } else if (val !== null && val !== undefined) {
+        formData.append(field, JSON.stringify(val));
+      }
+    });
+
+    formData.append('SupportType', JSON.stringify(this.supportTypeArray.value));
+    formData.append('SupportManagerDto', JSON.stringify(this.SupportRequestDto.get('SupportManagerDto')?.value));
+
+    this.supportRequestsService.saveSupportRequestFormData(formData).subscribe({
+      next: (response: string) => {
+        // response === "OK"
+        this.openSnackBar("נשמר בהצלחה");
+        this.dialogRef.close(true);
+      },
+      error: (error) => {
+        console.error('שגיאה בשמירת הבקשה:', error);
+        this.openSnackBar("שגיאה בשמירה");
+      }
+    });
   }
 
   getEmployeeDetails() {
@@ -304,37 +426,6 @@ export class CommercialSupportFormDialogComponent {
     });
   }
 
-  file_in_new_window_base64(file) {
-    if (file.Base64Content) {
-      this.openFile(file.Base64Content);
-    } else {
-      console.error('No file available to open');
-    }
-  }
-  file_in_new_window_base64_2() {
-    const base64String = this.SupportRequestDto.get('ConferenceApproval')?.value;
-    if (base64String) {
-      this.openFile(base64String);
-    } else {
-      console.error('No file available to open');
-    }
-  }
-  file_in_new_window_base64_3() {
-    const base64String = this.SupportRequestDto.get('AdditionalDocument')?.value;
-    if (base64String) {
-      this.openFile(base64String);
-    } else {
-      console.error('No file available to open');
-    }
-  }
-  file_in_new_window_base64_1_2() {
-    const base64String = this.SupportRequestDto.get('SupportLetter2')?.value;
-    if (base64String) {
-      this.openFile(base64String);
-    } else {
-      console.error('No file available to open');
-    }
-  }
 
   openFile(base64String: string) {
     // Extract the MIME type from the Base64 string

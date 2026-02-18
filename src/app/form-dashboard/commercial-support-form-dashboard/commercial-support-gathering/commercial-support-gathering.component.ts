@@ -5,7 +5,6 @@ import { MatSnackBar, MatSnackBarHorizontalPosition, MatSnackBarVerticalPosition
 import { MatDialog, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { DatePipe } from '@angular/common';
 import { DialogContentExampleDialog } from "../../../fill-survey/fill-survey.component";
-import { environment } from 'src/environments/environment';
 
 @Component({
   selector: 'app-commercial-support-gathering',
@@ -368,6 +367,13 @@ export class CommercialSupportGatheringComponent implements OnInit {
 
     // Store the File object in the form
     this.GatheringRequestDto.get(field)?.setValue(renamedFile);
+  }
+
+  removeFile(field: string, fileInput?: HTMLInputElement) {
+    this.GatheringRequestDto.get(field)?.setValue(null);
+    if (fileInput) {
+      fileInput.value = '';
+    }
   }
 
   file_in_new_window_base64() {

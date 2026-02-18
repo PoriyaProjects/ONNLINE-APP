@@ -77,6 +77,25 @@
                                 <mat-label>נושא הרצאה*</mat-label>
                                 <textarea matInput formControlName="PresentationSubject" rows="3"></textarea>
                             </mat-form-field>
+
+                            <!-- File Input: תוכנית ההרצאה -->
+                            <div style="text-align: right;"
+                                *ngIf="PresentationRequestDto.get('Requester')?.value != null">
+                                <label>תוכנית ההרצאה</label><br>
+                                <input #presentationPlanInput type="file" (change)="onFileChange($event, 'PresentationPlan')"
+                                    accept=".doc,.docx,.xls,.xlsx,.pdf,image/*">
+                                <button mat-raised-button class="fileOpenBtn" color="primary"
+                                    (click)="viewPresentationFile('PresentationPlan')"
+                                    *ngIf="PresentationRequestDto.get('PresentationPlan').value != undefined && PresentationRequestDto.get('PresentationPlan').value != ''">
+                                    צפייה במסמך
+                                    <span class="material-icons"> zoom_in </span>
+                                </button>
+                                <button mat-icon-button color="warn" type="button" matTooltip="הסרת קובץ"
+                                    (click)="removeFile('PresentationPlan', presentationPlanInput)"
+                                    *ngIf="PresentationRequestDto.get('PresentationPlan').value != undefined && PresentationRequestDto.get('PresentationPlan').value != ''">
+                                    <mat-icon>delete</mat-icon>
+                                </button>
+                            </div>
                         </div>
                         <hr>
                         <div fxLayout="column" fxLayoutGap="20px" style="text-align: right;"
@@ -144,7 +163,7 @@
                 <!-- Status -->
                 <mat-form-field appearance="outline" class="full-width">
                     <mat-label>סטטוס החלטה</mat-label>
-                    <mat-select formControlName="Approved" required>
+                    <mat-select formControlName="Approved">
                         <mat-option value="approved">מאושר</mat-option>
                         <mat-option value="rejected">לא מאושר</mat-option>
                         <mat-option value="chairman">אושר בדיון יו"ר</mat-option>
