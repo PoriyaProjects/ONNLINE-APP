@@ -1,231 +1,292 @@
-<!-- EXPLANATORY TEXT SECTION -->
-<div dir="rtl">
-  <div class="explanation-section">
-    <!-- Interactive Character Guide Avatar -->
-    <div class="character-guide-widget" *ngIf="showGuideAvatar">
-      <div class="character-avatar">
-        <div class="avatar-bubble">
-          <mat-icon class="avatar-icon-large">psychology</mat-icon>
-        </div>
+<!-- EXPLANATORY MODAL (opened only from small buttons, no static guide block) -->
+<div class="article-showcase-overlay" *ngIf="showArticleShowcase" @fadeInOut (click)="closeArticleShowcase()">
+  <div class="article-showcase-modal" dir="rtl" (click)="$event.stopPropagation()">
+    <div class="showcase-header">
+      <div class="showcase-title">
+        <span class="showcase-icon">{{ getArticleIcon() }}</span>
+        {{ getArticleTitle() }}
+      </div>
+      <button class="showcase-close-btn" (click)="closeArticleShowcase()" mat-icon-button aria-label="Close article">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
 
-        <div class="character-info">
-          <div class="character-name">🔍 מדריך הדוח</div>
-          <div class="character-subtitle">לחץ על סעיף כדי להרחיב</div>
-        </div>
-
-        <button class="avatar-close-btn" (click)="dismissGuideAvatar()" aria-label="Close guide" mat-icon-button>
-          <mat-icon>close</mat-icon>
-        </button>
+    <div class="showcase-content">
+      <!-- Purpose Section -->
+      <div *ngIf="currentArticle === 'purpose'" class="article-section-display purpose-section-styled" @fadeInOut>
+        <h2>📋 מטרת הדוח</h2>
+        <p class="intro-text">לשקף את פעילות המרכז הרפואי, ברמת מחלקה ובערכים כספיים.</p>
+        <p class="explanation-note">
+          דוח זה מספק תמונת מצב מקיפה על הפעילות וההכנסות של כל מחלקה בבית החולים,
+          תוך השוואה בין שנים שונות לזיהוי מגמות וגדילה בפעילות.
+        </p>
       </div>
 
-      <div class="guide-sections">
-        <button class="guide-section-btn" (click)="openArticleShowcase('purpose')" class="section-1">
-          <span class="section-icon">📋</span>
-          <span class="section-text">מטרת הדוח</span>
-        </button>
+      <!-- Notes Section -->
+      <div *ngIf="currentArticle === 'notes'" class="article-section-display" @fadeInOut>
+        <h2>⚠️ הערות חשובות</h2>
+        <div class="notes-list">
+          <div class="note-item">
+            <span class="note-number">1</span>
+            <p>הנתונים מופיעים במחירים מלאים (מחיר ברוטו) כמופיע במחירון משרד הבריאות ובניכוי הנחות הסכמיות.</p>
+          </div>
+          <div class="note-item">
+            <span class="note-number">2</span>
+            <p>מחירים מלאים אינם מבטאים את הכנסות המרכז הרפואי בפועל. הכנסות המרכז הרפואי עומדות על כ-68% מהמחיר
+              המחירון, בממוצע (השיעור משתנה בין השנים).</p>
+          </div>
+          <div class="note-item">
+            <span class="note-number">3</span>
+            <p>הדו"ח אינו כולל הוצאות ואינו מבטא רווחיות של מחלקות.</p>
+          </div>
+          <div class="note-item">
+            <span class="note-number">4</span>
+            <p>נתוני כל השנים מופיעים בערכים ריאליים - מחירי 2025.</p>
+          </div>
+          <div class="note-item highlight">
+            <span class="note-number">⚡</span>
+            <p><strong>כל הנתונים מודדים את אותה התקופה.</strong> לדוגמא: אם נתוני 2025 כוללים 9 חודשים, נתוני השנים
+              הקודמות יכללו גם הם את נתוני 9 חודשים מקבילים.</p>
+          </div>
+        </div>
+      </div>
 
-        <button class="guide-section-btn" (click)="openArticleShowcase('notes')" class="section-2">
-          <span class="section-icon">⚠️</span>
-          <span class="section-text">הערות חשובות</span>
-        </button>
-
-        <button class="guide-section-btn" (click)="openArticleShowcase('structure')" class="section-3">
-          <span class="section-icon">🗂️</span>
-          <span class="section-text">מבנה הדוח</span>
-        </button>
+      <!-- Structure Section -->
+      <div *ngIf="currentArticle === 'structure'" class="article-section-display" @fadeInOut>
+        <h2>🗂️ מבנה הדוח</h2>
+        <div class="structure-list">
+          <div class="structure-item">
+            <div class="structure-number">1</div>
+            <div class="structure-content">
+              <h4>בסרגל העליון</h4>
+              <p>בחר אגף בבית החולים כדי להציג את הנתונים הרלוונטיים.</p>
+            </div>
+          </div>
+          <div class="structure-item">
+            <div class="structure-number">2</div>
+            <div class="structure-content">
+              <h4>לכל אגף מופיעים הנתונים הבאים:</h4>
+              <ul>
+                <li>✨ 5 המחלקות עם גידול הפעילות הגבוה ביותר בערכים מוחלטים / אחוזים</li>
+                <li>📊 גרף השוואה של הכנסות שנה נוכחית לעומת שנה קודמת</li>
+                <li>📋 טבלת הכנסות של כל מחלקה</li>
+              </ul>
+            </div>
+          </div>
+          <div class="structure-item">
+            <div class="structure-number">3</div>
+            <div class="structure-content">
+              <h4>בטבלה התחתונה</h4>
+              <p>לחץ על שם המחלקה לקבל פירוט הכנסות לפי סוגי פעילות. הנתונים זמינים בערך כספי או במספר יחידות שירות.
+              </p>
+            </div>
+          </div>
+          <div class="structure-item">
+            <div class="structure-number">4</div>
+            <div class="structure-content">
+              <h4>מיון נתונים</h4>
+              <p>ממיין נתוני כל מחלקה באמצעות החיצים בכותרת הטבלה.</p>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
-    <!-- Article Showcase Modal -->
-    <div class="article-showcase-overlay" *ngIf="showArticleShowcase" @fadeInOut (click)="closeArticleShowcase()">
-      <div class="article-showcase-modal" dir="rtl" (click)="$event.stopPropagation()">
-        <div class="showcase-header">
-          <div class="showcase-title">
-            <span class="showcase-icon">{{ getArticleIcon() }}</span>
-            {{ getArticleTitle() }}
+    <div class="showcase-footer">
+      <p class="info-text">💡 טיפ: ניתן לסגור חלון זה בכל עת על ידי לחיצה על X או בכל מקום מחוץ לתיבה.</p>
+    </div>
+  </div>
+</div>
+<!-- END EXPLANATION MODAL -->
+
+<div class="revenue-dashboard-root light-mode" dir="rtl">
+  <div class="dashboard-layout">
+    <!-- SIDEBAR -->
+    <aside class="dashboard-sidebar" [class.sidebar-collapsed]="sidebarCollapsed">
+      <div class="sidebar-brand" *ngIf="!sidebarCollapsed">
+        <mat-icon class="sidebar-brand-icon">assessment</mat-icon>
+        <span class="sidebar-brand-text">דוחות הכנסות</span>
+        <button mat-icon-button class="sidebar-close-btn" (click)="sidebarCollapsed = true" aria-label="סגור סרגל">
+          <mat-icon>chevron_right</mat-icon>
+        </button>
+      </div>
+      <div class="sidebar-expand-row" *ngIf="sidebarCollapsed">
+        <button mat-icon-button class="sidebar-expand-btn" (click)="sidebarCollapsed = false" aria-label="הרחב סרגל">
+          <mat-icon>chevron_left</mat-icon>
+        </button>
+      </div>
+      <nav class="sidebar-nav" *ngIf="!sidebarCollapsed">
+        <a class="sidebar-item active" href="javascript:void(0)"
+          matTooltip="דוח הכנסות מחלקות - הצגת נתונים לפי אגף ומחלקה" matTooltipPosition="left">
+          <mat-icon>bar_chart</mat-icon>
+          <span>דוח מחלקות</span>
+        </a>
+        <a class="sidebar-item" href="javascript:void(0)" (click)="loadBossDashboard(); $event.preventDefault()"
+          matTooltip="דוח למנהל - סיכום כללי של כל ההכנסות לפי שנים" matTooltipPosition="left">
+          <mat-icon>pie_chart</mat-icon>
+          <span>דוח למנהל</span>
+        </a>
+        <div class="sidebar-divider"></div>
+        <div class="sidebar-label">עזרה</div>
+        <a class="sidebar-item" href="javascript:void(0)" (click)="openArticleShowcase('purpose'); $event.preventDefault()"
+          matTooltip="מטרת הדוח - הסבר קצר על מה הדוח מציג ולמי הוא מיועד" matTooltipPosition="left">
+          <mat-icon>description</mat-icon>
+          <span>מטרת הדוח</span>
+        </a>
+        <a class="sidebar-item" href="javascript:void(0)" (click)="openArticleShowcase('notes'); $event.preventDefault()"
+          matTooltip="הערות חשובות - מידע על אופי הנתונים, מחירון ותיקוני אינפלציה" matTooltipPosition="left">
+          <mat-icon>warning_amber</mat-icon>
+          <span>הערות חשובות</span>
+        </a>
+        <a class="sidebar-item" href="javascript:void(0)" (click)="openArticleShowcase('structure'); $event.preventDefault()"
+          matTooltip="מבנה הדוח - הסבר איך לקרוא את המסכים, הטבלאות והגרפים" matTooltipPosition="left">
+          <mat-icon>view_week</mat-icon>
+          <span>מבנה הדוח</span>
+        </a>
+      </nav>
+    </aside>
+
+    <!-- MAIN: header + scrollable content -->
+    <div class="dashboard-body">
+      <!-- HEADER: single row, all buttons + icons tight to top -->
+      <header class="dashboard-header dashboard-header-compact">
+        <div class="header-left">
+          <h1 class="dashboard-title">דוח הכנסות מחלקות</h1>
+          <p class="dashboard-subtitle">השוואת הכנסות לפי אגף ומחלקה, כולל צפי גידול שנתי.</p>
+        </div>
+        <div class="header-actions header-actions-one-row">
+          <div class="view-toggle-row">
+            <button mat-stroked-button class="view-btn" [class.active]="activeView === 'chart'" (click)="setActiveView('chart')" 
+              matTooltip="הצגת נתונים בגרף עמודות/קו - מאפשר השוואה ויזואלית בין מחלקות" matTooltipPosition="below">
+              <mat-icon>bar_chart</mat-icon>
+              גרף
+            </button>
+            <button mat-stroked-button class="view-btn" [class.active]="activeView === 'table'" (click)="setActiveView('table')"
+              matTooltip="הצגת נתונים בטבלה מפורטת - כולל כל המחלקות עם אפשרות חיפוש ומיון" matTooltipPosition="below">
+              <mat-icon>table_chart</mat-icon>
+              טבלה
+            </button>
           </div>
-          <button class="showcase-close-btn" (click)="closeArticleShowcase()" mat-icon-button
-            aria-label="Close article">
-            <mat-icon>close</mat-icon>
+          <div class="dropdown-wrap highlighted-selector">
+            <mat-form-field appearance="outline" class="rev-select rev-select-compact" 
+              matTooltip="בחר אגף בבית החולים כדי להציג את הנתונים הרלוונטיים למחלקות באותו אגף" matTooltipPosition="below">
+              <mat-label>אגף</mat-label>
+              <mat-select
+                panelClass="rev-select-panel"
+                [(ngModel)]="selectedDiagnosis"
+                (selectionChange)="loadDepartmentIncomeByDiagnosis()"
+                [disabled]="isMainDataLoading || diagnosesList.length === 0">
+                <mat-option *ngFor="let diagnosis of diagnosesList" [value]="diagnosis" 
+                  [matTooltip]="'הצג נתונים עבור אגף: ' + diagnosis" matTooltipPosition="right">
+                  {{ diagnosis }}
+                </mat-option>
+              </mat-select>
+              <mat-spinner *ngIf="isMainDataLoading" diameter="20" matSuffix></mat-spinner>
+            </mat-form-field>
+          </div>
+          <button mat-icon-button class="action-btn-icon" (click)="loadDepartmentIncomeData()" 
+            matTooltip="רענן את הנתונים מהשרת - טוען מחדש את כל הנתונים" matTooltipPosition="below">
+            <mat-icon>refresh</mat-icon>
+          </button>
+          <button mat-icon-button class="action-btn-icon excel-icon-btn" (click)="exportMainTableToExcel()"
+            [disabled]="!departmentIncomeData?.length" 
+            matTooltip="ייצא את טבלת המחלקות לקובץ Excel - כולל כל הנתונים והחישובים" matTooltipPosition="below">
+            <span class="excel-icon" aria-hidden="true"></span>
+          </button>
+          <button mat-icon-button class="action-btn-icon" (click)="exportSummaryDocMain()"
+            [disabled]="!departmentIncomeData?.length" 
+            matTooltip="הורד מסמך סיכום HTML - כולל סיכום הנתונים והמחלקות המובילות" matTooltipPosition="below">
+            <mat-icon>description</mat-icon>
+          </button>
+          <button mat-icon-button class="action-btn-icon" (click)="loadBossDashboard()" [class.active]="showBossDashboard" 
+            matTooltip="פתח דוח למנהל - הצגת סיכום כללי של כל ההכנסות לפי שנים" matTooltipPosition="below">
+            <mat-icon>admin_panel_settings</mat-icon>
           </button>
         </div>
+      </header>
 
-        <div class="showcase-content">
-          <!-- Purpose Section -->
-          <div *ngIf="currentArticle === 'purpose'" class="article-section-display" @fadeInOut>
-            <h2>📋 מטרת הדוח</h2>
-            <p class="intro-text">לשקף את פעילות המרכז הרפואי, ברמת מחלקה ובערכים כספיים.</p>
-            <p class="explanation-note">
-              דוח זה מספק תמונת מצב מקיפה על הפעילות וההכנסות של כל מחלקה בבית החולים,
-              תוך השוואה בין שנים שונות לזיהוי מגמות וגדילה בפעילות.
-            </p>
-          </div>
-
-          <!-- Notes Section -->
-          <div *ngIf="currentArticle === 'notes'" class="article-section-display" @fadeInOut>
-            <h2>⚠️ הערות חשובות</h2>
-            <div class="notes-list">
-              <div class="note-item">
-                <span class="note-number">1</span>
-                <p>הנתונים מופעים במחירים מלאים (מחיר ברוטו) כמופיע במחירון משרד הבריאות ובניכוי הנחות הסכמיות.</p>
-              </div>
-              <div class="note-item">
-                <span class="note-number">2</span>
-                <p>מחירים מלאים אינם מבטאים את הכנסות המרכז הרפואי בפועל. הכנסות המרכז הרפואי עומדות על כ-68% מהמחיר
-                  המחירון, בממוצע (השיעור משתנה בין השנים).</p>
-              </div>
-              <div class="note-item">
-                <span class="note-number">3</span>
-                <p>הדו"ח אינו כולל הוצאות ואינו מבטא רווחיות של מחלקות.</p>
-              </div>
-              <div class="note-item">
-                <span class="note-number">4</span>
-                <p>נתוני כל השנים מופעים בערכים ריאליים - מחירי 2025.</p>
-              </div>
-              <div class="note-item highlight">
-                <span class="note-number">⚡</span>
-                <p><strong>כל הנתונים מודדים את אותה התקופה.</strong> לדוגמא: אם נתוני 2025 כוללים 9 חודשים, נתוני השנים
-                  הקודמות יכללו גם הם את נתוני 9 חודשים מקבילים.</p>
-              </div>
+      <!-- CONTENT: no scroll, fit viewport -->
+      <div class="dashboard-scroll dashboard-no-scroll">
+        <div class="revenue-dashboard-inner">
+    <!-- PODIUM TOP 5: Redesigned beautiful responsive -->
+    <div class="podium-section-new" *ngIf="isDataLoaded && !isMainDataLoading && topDepartments && topDepartments.length > 0">
+      <div class="podium-header-new">
+        <h3 class="podium-title-new">🏆 TOP 5</h3>
+      </div>
+      <div class="podium-stands-new">
+        <ng-container *ngFor="let dept of topDepartments; let i = index">
+          <div class="podium-card-new" [class.rank-1]="i === 0" [class.rank-2]="i === 1" [class.rank-3]="i === 2"
+            (click)="onPodiumDepartmentClick(dept.DepartmentName)"
+            [matTooltip]="'מחלקה: ' + dept.DepartmentName + ' | הכנסה ' + getLatestYear() + ': ' + formatNumber(dept.Income2025) + ' ₪ | גידול: ' + formatNumber(dept.difference) + ' ₪ (' + dept.percentage.toFixed(2) + '%)'"
+            matTooltipPosition="above">
+            <div class="podium-rank-badge">
+              <span *ngIf="i === 0">🥇</span>
+              <span *ngIf="i === 1">🥈</span>
+              <span *ngIf="i === 2">🥉</span>
+              <span *ngIf="i > 2">{{ i + 1 }}</span>
+            </div>
+            <div class="podium-info-new">
+              <div class="podium-name-new">{{ dept.DepartmentName }}</div>
+              <div class="podium-amount-new">{{ formatNumber(dept.Income2025) }} ₪</div>
+              <div class="podium-growth-new">+{{ formatNumber(dept.difference) }} ₪</div>
             </div>
           </div>
+        </ng-container>
+      </div>
+    </div>
 
-          <!-- Structure Section -->
-          <div *ngIf="currentArticle === 'structure'" class="article-section-display" @fadeInOut>
-            <h2>🗂️ מבנה הדוח</h2>
-            <div class="structure-list">
-              <div class="structure-item">
-                <div class="structure-number">1</div>
-                <div class="structure-content">
-                  <h4>בסרגל העליון</h4>
-                  <p>בחר אגף בבית החולים כדי להצג את הנתונים הרלוונטיים.</p>
-                </div>
-              </div>
-              <div class="structure-item">
-                <div class="structure-number">2</div>
-                <div class="structure-content">
-                  <h4>לכל אגף מופיעים הנתונים הבאים:</h4>
-                  <ul>
-                    <li>✨ 5 המחלקות עם גידול הפעילות הגבוה ביותר בערכים מוחלטים / אחוזים</li>
-                    <li>📊 גרף השוואה של הכנסות שנה נוכחית לעומת שנה קודמת</li>
-                    <li>📋 טבלת הכנסות של כל מחלקה</li>
-                  </ul>
-                </div>
-              </div>
-              <div class="structure-item">
-                <div class="structure-number">3</div>
-                <div class="structure-content">
-                  <h4>בטבלה התחתונה</h4>
-                  <p>לחץ על שם המחלקה לקבל פירוט הכנסות לפי סוגי פעילות. הנתונים זמינים בערך כספי או במספר יחידות שירות.
-                  </p>
-                </div>
-              </div>
-              <div class="structure-item">
-                <div class="structure-number">4</div>
-                <div class="structure-content">
-                  <h4>מיון נתונים</h4>
-                  <p>ממיין נתוני כל מחלקה באמצעות החיצים בכותרת הטבלה.</p>
-                </div>
-              </div>
+    <!-- MAIN GRID AREA -->
+    <div class="dashboard-main-grid">
+
+    <!-- TOP 5 DEPARTMENTS SECTION - used as 'Top Customers' list -->
+    <div *ngIf="isDataLoaded && !isMainDataLoading && topDepartments && topDepartments.length > 0 && activeView === 'top5'"
+      dir="rtl"
+      class="top-departments-section-compact">
+      <div class="top-departments-header-compact">
+        <h3>🏆 לקוחות / מחלקות מובילות</h3>
+
+        <!-- Radio Buttons for View Type -->
+        <div class="radio-group-compact">
+          <mat-radio-group [(ngModel)]="topDepartmentsViewType"
+            (change)="onTopDepartmentsViewChange(topDepartmentsViewType)">
+            <mat-radio-button value="difference">גידול בשקלים</mat-radio-button>
+            <mat-radio-button value="percentage">גידול באחוזים</mat-radio-button>
+          </mat-radio-group>
+        </div>
+      </div>
+
+      <!-- Top 5 Ranking with Medal Icons (Compact) -->
+      <div class="top-departments-list-compact">
+        <div *ngFor="let dept of topDepartments; let i = index" class="rank-item-compact" [class]="'rank-' + (i + 1)">
+          <div class="rank-badge-compact">
+            <span *ngIf="i === 0">🥇</span>
+            <span *ngIf="i === 1">🥈</span>
+            <span *ngIf="i === 2">🥉</span>
+            <span *ngIf="i > 2">{{ i + 1 }}</span>
+          </div>
+          <div class="rank-info-compact">
+            <div class="department-name-compact">{{ dept.DepartmentName }}</div>
+            <div class="growth-value-compact" *ngIf="topDepartmentsViewType === 'difference'">
+              {{ formatNumber(dept.difference) }} ₪
+            </div>
+            <div class="growth-value-compact" *ngIf="topDepartmentsViewType === 'percentage'">
+              {{ dept.percentage.toFixed(2) }}%
+            </div>
+          </div>
+          <div class="rank-progress-compact">
+            <div class="progress-bar-compact"
+              [style.width]="(topDepartmentsViewType === 'difference' ? dept.difference / topDepartments[0].difference * 100 : dept.percentage / topDepartments[0].percentage * 100) + '%'">
             </div>
           </div>
         </div>
-
-        <div class="showcase-footer">
-          <p class="info-text">💡 טיפ: תוכל לסגור חלון זה בכל עת על ידי לחיצה על X או בכל מקום מחוץ לתיבה</p>
-        </div>
       </div>
     </div>
-
-  </div>
-</div>
-<!-- END EXPLANATION SECTION -->
-
-<!-- Top Controls -->
-<div dir="ltr" class="wrapper">
-
-  <!-- HIGHLIGHTED: Department Selector -->
-  <div class="element highlighted-selector">
-    <mat-form-field appearance="fill">
-      <mat-label>👉 בחר אגף</mat-label>
-      <mat-select 
-        [(ngModel)]="selectedDiagnosis" 
-        (selectionChange)="loadDepartmentIncomeByDiagnosis()"
-        [disabled]="isMainDataLoading || diagnosesList.length === 0">
-        <mat-option *ngFor="let diagnosis of diagnosesList" [value]="diagnosis">
-          {{ diagnosis }}
-        </mat-option>
-      </mat-select>
-      <mat-spinner *ngIf="isMainDataLoading" diameter="20" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%);"></mat-spinner>
-    </mat-form-field>
-  </div>
-
-  <div class="element">
-    <button mat-raised-button color="primary" (click)="loadDepartmentIncomeData()" class="srch-btn">
-      <mat-icon>refresh</mat-icon>
-      רענן
-    </button>
-  </div>
-
-  <!-- Boss Dashboard Button -->
-  <div class="element">
-    <button mat-raised-button color="accent" (click)="loadBossDashboard()" class="srch-btn"
-      [class.active]="showBossDashboard">
-      <mat-icon>admin_panel_settings</mat-icon>
-      דוח למנהל
-    </button>
-  </div>
-
-</div>
-
-<!-- TOP 5 DEPARTMENTS SECTION - Competition View with Medals (Moved here and made smaller) -->
-<div *ngIf="isDataLoaded && !isMainDataLoading && topDepartments && topDepartments.length > 0" dir="rtl"
-  class="top-departments-section-compact">
-  <div class="top-departments-header-compact">
-    <h3>🏆 המחלקות עם גידול ההכנסות הגבוה ביותר</h3>
-
-    <!-- Radio Buttons for View Type -->
-    <div class="radio-group-compact">
-      <mat-radio-group [(ngModel)]="topDepartmentsViewType"
-        (change)="onTopDepartmentsViewChange(topDepartmentsViewType)">
-        <mat-radio-button value="difference">גידול בשקלים</mat-radio-button>
-        <mat-radio-button value="percentage">גידול באחוזים</mat-radio-button>
-      </mat-radio-group>
-    </div>
-  </div>
-
-  <!-- Top 5 Ranking with Medal Icons (Compact) -->
-  <div class="top-departments-list-compact">
-    <div *ngFor="let dept of topDepartments; let i = index" class="rank-item-compact" [class]="'rank-' + (i + 1)">
-      <div class="rank-badge-compact">
-        <span *ngIf="i === 0">🥇</span>
-        <span *ngIf="i === 1">🥈</span>
-        <span *ngIf="i === 2">🥉</span>
-        <span *ngIf="i > 2">{{ i + 1 }}</span>
-      </div>
-      <div class="rank-info-compact">
-        <div class="department-name-compact">{{ dept.DepartmentName }}</div>
-        <div class="growth-value-compact" *ngIf="topDepartmentsViewType === 'difference'">
-          {{ formatNumber(dept.difference) }} ₪
-        </div>
-        <div class="growth-value-compact" *ngIf="topDepartmentsViewType === 'percentage'">
-          {{ dept.percentage.toFixed(2) }}%
-        </div>
-      </div>
-      <div class="rank-progress-compact">
-        <div class="progress-bar-compact"
-          [style.width]="(topDepartmentsViewType === 'difference' ? dept.difference / topDepartments[0].difference * 100 : dept.percentage / topDepartments[0].percentage * 100) + '%'">
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
 
 <!-- Loading Overlay for Main Data -->
 <div *ngIf="isMainDataLoading" class="loading-overlay">
   <div class="loading-container">
     <mat-spinner diameter="60"></mat-spinner>
-    <div class="loading-text">טוען נתונים...</div>
+  <div class="loading-text">טוען נתונים...</div>
   </div>
 </div>
 
@@ -235,12 +296,46 @@
   <div *ngIf="isLoading" style="text-align: center;">Loading...</div>
 </div>
 
-<!-- Main Chart with Numbers in Millions -->
-<div *ngIf="isDataLoaded && !isMainDataLoading" class="mat-elevation-z8">
-  <!-- <h3 dir="rtl" style="text-align: right; color: #999; padding: 10px 20px; margin: 0; font-size: 12px;">לחץ על מחלקה
-      לצפייה בפרטים | הערכים בעמודות בליונים ₪</h3> -->
-  <google-chart type="BarChart" [data]="chartData" [columns]="chartColumns" [options]="chartOptions" [width]="'100%'"
-    [height]="700">
+<!-- Period explanation -->
+<p class="period-explanation" *ngIf="isDataLoaded && !isMainDataLoading && (activeView === 'chart' || activeView === 'table') && chartData && chartData.length > 0">
+  <mat-icon>info</mat-icon>
+  כל סכום מוצג לתקופה מסוימת בשנה, בהשוואה לאותה תקופה בשנה הקודמת.
+</p>
+
+<!-- No data message -->
+<div *ngIf="isDataLoaded && !isMainDataLoading && (!chartData || chartData.length === 0) && (!departmentIncomeData || departmentIncomeData.length === 0)" 
+  class="no-data-message">
+  <mat-icon>info_outline</mat-icon>
+  <p>לא נמצאו נתונים עבור האגף שנבחר</p>
+</div>
+
+<!-- Main Chart: names on X (bottom), numbers on Y (side) with toggle -->
+<div *ngIf="isDataLoaded && !isMainDataLoading && activeView === 'chart' && chartData && chartData.length > 0" class="mat-elevation-z8 chart-container">
+  <div class="chart-header-controls">
+    <div class="chart-type-toggle">
+      <button mat-icon-button [class.active]="chartType === 'columns'" (click)="chartType = 'columns'; updateChartOptions()" class="chart-toggle-btn-icon" matTooltip="תצוגת עמודות" matTooltipPosition="above">
+        <mat-icon>bar_chart</mat-icon>
+      </button>
+      <button mat-icon-button [class.active]="chartType === 'line'" (click)="chartType = 'line'; updateChartOptions()" class="chart-toggle-btn-icon" matTooltip="תצוגת קו" matTooltipPosition="above">
+        <mat-icon>show_chart</mat-icon>
+      </button>
+    </div>
+    <div class="chart-legend-info">
+      <span class="legend-item" 
+            matTooltip="צפי גידול שנתי (יעד): היעד השנתי לכל מחלקה נקבע לפי גידול ממוצע ב־5 השנים האחרונות בכלל הארגון, עם התאמה לרמת ההכנסה הנוכחית של המחלקה ולכיוון המגמה (עלייה/ירידה)." 
+            matTooltipPosition="left">
+        <span class="legend-color-dashed" style="border-top: 2px solid #ef4444;"></span>
+        צפי גידול שנתי (יעד)
+      </span>
+    </div>
+  </div>
+  <google-chart [type]="'ComboChart'"
+                [data]="chartData"
+                [columns]="chartColumns"
+                [options]="chartOptions"
+                [width]="'100%'"
+                [height]="400"
+                (select)="onMainChartSelect($event)">
   </google-chart>
 </div>
 
@@ -249,9 +344,22 @@
   <div class="boss-dashboard-modal">
     <div dir="rtl" class="boss-header">
       <h2>📊 דוח הכנסות כללי</h2>
-      <button mat-icon-button (click)="closeBossDashboard()" class="close-btn">
-        <mat-icon>close</mat-icon>
-      </button>
+      <div class="modal-header-actions">
+        <button mat-stroked-button (click)="exportBossToExcel()" [disabled]="!yearlyTotalData?.length"
+          matTooltip="ייצא את דוח המנהל לקובץ Excel - כולל כל הנתונים השנתיים והחישובים" matTooltipPosition="below">
+          <mat-icon>table_chart</mat-icon>
+          הורד אקסל
+        </button>
+        <button mat-stroked-button (click)="exportSummaryDocBoss()" [disabled]="!yearlyTotalData?.length"
+          matTooltip="הורד מסמך סיכום HTML עבור דוח המנהל - כולל סיכום כל ההכנסות" matTooltipPosition="below">
+          <mat-icon>description</mat-icon>
+          הורד סיכום
+        </button>
+        <button mat-icon-button (click)="closeBossDashboard()" class="close-btn"
+          matTooltip="סגור את דוח המנהל" matTooltipPosition="below">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
     </div>
 
     <!-- YTD Comparison Notice -->
@@ -275,7 +383,9 @@
     <div *ngIf="!isLoading && yearlyTotalData && yearlyTotalData.length > 0" dir="rtl" class="boss-summary-section">
 
       <!-- 2025 Card (now first) -->
-      <div class="boss-card card-2025">
+      <div class="boss-card card-2025"
+        [matTooltip]="'סך ההכנסות הכללי בשנת ' + getLatestYear() + ': ' + formatNumber(getLatestYearTotal()) + ' ₪'"
+        matTooltipPosition="above">
         <div class="card-icon">📈</div>
         <div class="card-year">{{ getLatestYear() }}</div>
         <div class="card-amount">{{ formatNumber(getLatestYearTotal()) }}</div>
@@ -283,7 +393,9 @@
       </div>
 
       <!-- Arrow Icon -->
-      <div class="arrow-container">
+      <div class="arrow-container"
+        [matTooltip]="'הפרש בין ' + getOlderYear() + ' ל-' + getLatestYear() + ': ' + formatNumber(getTotalDifference()) + ' ₪ (' + calculateYearlyPercentageChange() + ')'"
+        matTooltipPosition="above">
         <div class="arrow-icon" [class.positive]="getTotalDifference() >= 0"
           [class.negative]="getTotalDifference() < 0">
           <mat-icon *ngIf="getTotalDifference() >= 0">trending_up</mat-icon>
@@ -302,7 +414,9 @@
       </div>
 
       <!-- 2024 Card -->
-      <div class="boss-card card-2024">
+      <div class="boss-card card-2024"
+        [matTooltip]="'סך ההכנסות הכללי בשנת ' + getOlderYear() + ': ' + formatNumber(getOlderYearTotal()) + ' ₪'"
+        matTooltipPosition="above">
         <div class="card-icon">💰</div>
         <div class="card-year">{{ getOlderYear() }}</div>
         <div class="card-amount">{{ formatNumber(getOlderYearTotal()) }}</div>
@@ -354,73 +468,150 @@
 <!-- Department Details Modal with Sortable Table -->
 <div *ngIf="isDepartmentGraphOpen && selectedDepartment" class="department-graph-overlay">
   <div class="department-graph-modal">
-    <div dir="rtl" class="graph-header">
+    <div dir="rtl" class="graph-header graph-header-compact">
       <h2>{{ departmentGraphTitle }}</h2>
-      <button mat-icon-button (click)="closeDepartmentGraph()" class="close-btn">
-        <mat-icon>close</mat-icon>
-      </button>
+      <div class="modal-header-actions modal-header-actions-compact">
+        <button mat-icon-button (click)="exportCatalogToExcel()" [disabled]="!detailedDataSource.data?.length" 
+          matTooltip="ייצא את טבלת השירותים לקובץ Excel - כולל כל הנתונים והחישובים" matTooltipPosition="below">
+          <span class="excel-icon" aria-hidden="true"></span>
+        </button>
+        <button mat-icon-button (click)="exportSummaryDocCatalog()" 
+          matTooltip="הורד מסמך סיכום HTML עבור המחלקה - כולל סיכום הנתונים והשירותים" matTooltipPosition="below">
+          <mat-icon>description</mat-icon>
+        </button>
+        <button mat-icon-button (click)="closeDepartmentGraph()" class="close-btn"
+          matTooltip="סגור את חלון הפרטים של המחלקה" matTooltipPosition="below">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
     </div>
 
-    <!-- Summary Cards -->
-    <div dir="rtl" class="summary-section">
-      <mat-card class="summary-card">
+    <!-- Summary Cards: one compact row -->
+    <div dir="rtl" class="summary-section summary-section-compact">
+      <mat-card class="summary-card summary-card-compact" 
+        [matTooltip]="'סך ההכנסות של מחלקת ' + selectedDepartment.DepartmentName + ' בשנת ' + getOlderYearFromDeptData() + ' - ערכים במיליוני שקלים'"
+        matTooltipPosition="above">
         <mat-card-content>
           <div class="card-label">הכנסות {{ getOlderYearFromDeptData() }}</div>
           <div class="card-value">{{ formatNumber(selectedDepartment.Income2024) }} ₪</div>
         </mat-card-content>
       </mat-card>
-
-      <mat-card class="summary-card">
+      <mat-card class="summary-card summary-card-compact"
+        [matTooltip]="'סך ההכנסות של מחלקת ' + selectedDepartment.DepartmentName + ' בשנת ' + getLatestYearFromDeptData() + ' - ערכים במיליוני שקלים (השנה הנוכחית)'"
+        matTooltipPosition="above">
         <mat-card-content>
           <div class="card-label">הכנסות {{ getLatestYearFromDeptData() }}</div>
           <div class="card-value">{{ formatNumber(selectedDepartment.Income2025) }} ₪</div>
         </mat-card-content>
       </mat-card>
-
-      <mat-card class="summary-card" [class.positive]="calculateDifference(selectedDepartment) >= 0"
-        [class.negative]="calculateDifference(selectedDepartment) < 0">
+      <mat-card class="summary-card summary-card-compact" [class.positive]="calculateDifference(selectedDepartment) >= 0"
+        [class.negative]="calculateDifference(selectedDepartment) < 0"
+        [matTooltip]="'הפרש בין ' + getOlderYearFromDeptData() + ' ל-' + getLatestYearFromDeptData() + ': ' + formatNumber(calculateDifference(selectedDepartment)) + ' ₪ (' + calculatePercentageChange(selectedDepartment) + ')'"
+        matTooltipPosition="above">
         <mat-card-content>
           <div class="card-label">הפרש</div>
-          <div class="card-value">{{ formatNumber(calculateDifference(selectedDepartment)) }} ₪</div>
-          <div class="card-percentage">{{ calculatePercentageChange(selectedDepartment) }}</div>
+          <div class="card-value">{{ formatNumber(calculateDifference(selectedDepartment)) }} ₪ {{ calculatePercentageChange(selectedDepartment) }}</div>
         </mat-card-content>
       </mat-card>
     </div>
 
-    <!-- Catalog Table Section with Sortable Columns -->
-    <div dir="rtl" class="catalog-table-section">
-      <div class="catalog-header">
-        <h3 style="text-align: right; color: #333; margin: 0;">📊 טבלת השירותים לפי שנה</h3>
+    <!-- Catalog: one row of controls (sort + view type + chart toggle + zoom) -->
+    <div dir="rtl" class="catalog-controls-row">
+      <span class="catalog-controls-label">סדר מיון:</span>
+      <button mat-stroked-button (click)="onDetailedTableSort({active: 'Cash2025', direction: 'desc'})" class="catalog-btn"
+        matTooltip="מיין את השירותים לפי הכנסות 2025 מהגבוה לנמוך" matTooltipPosition="above">⬇️ גבוה→נמוך</button>
+      <button mat-stroked-button (click)="onDetailedTableSort({active: 'Cash2025', direction: 'asc'})" class="catalog-btn"
+        matTooltip="מיין את השירותים לפי הכנסות 2025 מהנמוך לגבוה" matTooltipPosition="above">⬆️ נמוך→גבוה</button>
+      <button mat-stroked-button [class.active]="selectedViewType === 'cash'" (click)="onViewTypeChange('cash')" class="catalog-btn"
+        matTooltip="הצג נתונים בערכים כספיים בלבד - סכומי הכנסות בשקלים" matTooltipPosition="above">💰 עלות</button>
+      <button mat-stroked-button [class.active]="selectedViewType === 'units'" (click)="onViewTypeChange('units')" class="catalog-btn"
+        matTooltip="הצג נתונים במספר יחידות שירות בלבד - כמות הפעולות שבוצעו" matTooltipPosition="above">📊 יחידות</button>
+      <button mat-stroked-button [class.active]="selectedViewType === 'both'" (click)="onViewTypeChange('both')" class="catalog-btn"
+        matTooltip="הצג נתונים גם בערכים כספיים וגם במספר יחידות שירות - תצוגה מלאה" matTooltipPosition="above">📋 שניהם</button>
+      <button mat-stroked-button [class.active]="catalogViewMode === 'chart'" (click)="catalogViewMode = 'chart'; updateCatalogChartData()" class="catalog-btn"
+        matTooltip="הצג את השירותים בגרף עמודות - תצוגה ויזואלית של הערכים" matTooltipPosition="above">
+        <mat-icon>bar_chart</mat-icon> גרף
+      </button>
+      <button mat-stroked-button [class.active]="catalogViewMode === 'table'" (click)="catalogViewMode = 'table'" class="catalog-btn"
+        matTooltip="הצג את השירותים בטבלה מפורטת - כולל כל הנתונים והחישובים" matTooltipPosition="above">
+        <mat-icon>table_chart</mat-icon> טבלה
+      </button>
+      <div class="zoom-controls" *ngIf="catalogViewMode === 'table'">
+        <button mat-icon-button (click)="zoomInCatalog()" class="zoom-btn" matTooltip="זום אין - הגדל את הטבלה" matTooltipPosition="above">
+          <mat-icon>zoom_in</mat-icon>
+        </button>
+        <button mat-icon-button (click)="zoomOutCatalog()" class="zoom-btn" matTooltip="זום אאוט - הקטן את הטבלה" matTooltipPosition="above">
+          <mat-icon>zoom_out</mat-icon>
+        </button>
+        <button mat-icon-button (click)="resetCatalogZoom()" class="zoom-btn" matTooltip="איפוס זום - חזור לגודל רגיל" matTooltipPosition="above">
+          <mat-icon>fit_screen</mat-icon>
+        </button>
+      </div>
+    </div>
 
-        <!-- Sort Controls -->
-        <div class="sort-controls">
-          <span class="sort-label">סדר מיון:</span>
-          <button mat-stroked-button (click)="onDetailedTableSort({active: 'Cash2025', direction: 'desc'})"
-            color="primary" class="sort-btn">
-            ⬇️ מהגבוה לנמוך
+    <!-- Department yearly trend chart: סכומים/יחידות לפי שנים + יעד גידול שנתי -->
+    <div *ngIf="departmentYearlyChartData && departmentYearlyChartData.length > 0" class="department-yearly-chart-container">
+      <div class="chart-header-controls">
+        <div class="chart-type-toggle">
+          <button
+            mat-icon-button
+            class="chart-toggle-btn-icon"
+            [class.active]="departmentChartType === 'columns'"
+            (click)="departmentChartType = 'columns'; updateDepartmentYearlyChart()"
+            matTooltip="תצוגת עמודות (שנים בציר Y, סכומים / יחידות בציר X)"
+            matTooltipPosition="above"
+          >
+            <mat-icon>bar_chart</mat-icon>
           </button>
-          <button mat-stroked-button (click)="onDetailedTableSort({active: 'Cash2025', direction: 'asc'})"
-            color="primary" class="sort-btn">
-            ⬆️ מהנמוך לגבוה
+          <button
+            mat-icon-button
+            class="chart-toggle-btn-icon"
+            [class.active]="departmentChartType === 'line'"
+            (click)="departmentChartType = 'line'; updateDepartmentYearlyChart()"
+            matTooltip="תצוגת קו (מגמה שנתית)"
+            matTooltipPosition="above"
+          >
+            <mat-icon>show_chart</mat-icon>
           </button>
         </div>
-
-        <!-- Toggle Buttons -->
-        <div class="view-type-selector">
-          <button mat-stroked-button [class.active]="selectedViewType === 'cash'" (click)="onViewTypeChange('cash')"
-            color="primary">
-            💰 עלות
-          </button>
-          <button mat-stroked-button [class.active]="selectedViewType === 'units'" (click)="onViewTypeChange('units')"
-            color="primary">
-            📊 יחידות
-          </button>
-          <button mat-stroked-button [class.active]="selectedViewType === 'both'" (click)="onViewTypeChange('both')"
-            color="primary">
-            📋 שניהם
-          </button>
+        <div class="chart-legend-info">
+          <span
+            class="legend-item"
+            matTooltip="צפי גידול שנתי (יעד): היעד המחלקתי לשנה הבאה מחושב לפי קצב הגידול הממוצע בארגון ובמחלקה, כך שהוא משקף מגמה ריאלית ולא קפיצה חדה."
+            matTooltipPosition="left"
+          >
+            <span class="legend-color-dashed" style="border-top: 2px solid #ef4444;"></span>
+            צפי גידול שנתי (יעד)
+          </span>
         </div>
       </div>
+
+      <google-chart
+        [type]="'ComboChart'"
+        [data]="departmentYearlyChartData"
+        [columns]="departmentYearlyChartColumns"
+        [options]="departmentYearlyChartOptions"
+        [width]="'100%'"
+        [height]="260"
+      >
+      </google-chart>
+
+      <p class="chart-unit-caption">
+        {{ getDepartmentChartUnitLabel() }}
+      </p>
+    </div>
+
+    <!-- צפי גידול שנתי – הסבר בטקסט -->
+    <div dir="rtl" style="padding: 4px 16px 0; font-size: 0.75rem; color: #6b7280; display: flex; align-items: flex-start; gap: 6px;">
+      <mat-icon style="font-size:16px; width:16px; height:16px; color:#0ea5e9;">info</mat-icon>
+      <span>
+        צפי גידול שנתי (יעד) נמדד לפי גידול ממוצע ב־5 השנים האחרונות בכלל הארגון, 
+        כאשר היעד לכל מחלקה מותאם לרמת ההכנסה הנוכחית שלה ולמגמת השינוי (עלייה או ירידה) בפעילות.
+      </span>
+    </div>
+
+    <!-- Catalog Table Section -->
+    <div dir="rtl" class="catalog-table-section">
 
       <!-- Loading Spinner for Catalog -->
       <div *ngIf="catalogLoading" class="catalog-loading-container">
@@ -428,15 +619,24 @@
         <div class="catalog-loading-text">טוען פרטי מחלקה...</div>
       </div>
 
-      <!-- Sortable Catalog Table -->
-      <div class="table-wrapper"
-        *ngIf="!catalogLoading && detailedDataSource.data && detailedDataSource.data.length > 0">
-        <table mat-table [dataSource]="detailedDataSource" class="catalog-mat-table">
+      <!-- Catalog as Chart: שמות שירותים בציר Y (ימין), סכומים בציר X -->
+      <div class="catalog-chart-wrap" *ngIf="!catalogLoading && catalogViewMode === 'chart' && catalogChartData.length > 0">
+        <google-chart type="BarChart" [data]="catalogChartData" [columns]="catalogChartColumns"
+          [options]="catalogChartOptions" [width]="'100%'" [height]="320"></google-chart>
+      </div>
+
+      <!-- Sortable Catalog Table (scrollable so all columns visible) -->
+      <div class="table-wrapper catalog-table-scroll"
+        *ngIf="!catalogLoading && catalogViewMode === 'table' && detailedDataSource.data && detailedDataSource.data.length > 0"
+        [style.transform]="'scale(' + catalogZoomLevel + ')'"
+        [style.transform-origin]="'top right'">
+        <table mat-table [dataSource]="detailedDataSource" class="catalog-mat-table catalog-table-compact">
 
           <!-- Service Name Column -->
           <ng-container matColumnDef="CatalogName2">
-            <th mat-header-cell *matHeaderCellDef style="font-weight:bold;text-align:right;">שירות</th>
-            <td mat-cell *matCellDef="let element" #cell [matTooltip]="element.CatalogName2"
+            <th mat-header-cell *matHeaderCellDef style="font-weight:bold;text-align:right;"
+              matTooltip="שם השירות - סוג הפעילות הרפואית שבוצעה במחלקה" matTooltipPosition="below">שירות</th>
+            <td mat-cell *matCellDef="let element" #cell [matTooltip]="'שירות: ' + element.CatalogName2 + ' | הכנסות 2025: ' + formatNumber(element.Cash2025) + ' ₪'"
               [matTooltipDisabled]="cell.scrollWidth <= cell.clientWidth" matTooltipClass="subtle-tooltip"
               style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
               {{ element.CatalogName2 }}
@@ -446,33 +646,58 @@
           <!-- CASH COLUMNS -->
           <ng-container matColumnDef="Cash2021">
             <th mat-header-cell *matHeaderCellDef style="font-weight: bold; cursor: pointer;"
-              (click)="onDetailedTableSort({active: 'Cash2021', direction: 'desc'})">2021</th>
-            <td mat-cell *matCellDef="let element">{{ formatNumber(element.Cash2021) }}</td>
+              (click)="onDetailedTableSort({active: 'Cash2021', direction: 'desc'})"
+              [matTooltip]="'הכנסות מהשירות בשנת ' + getYearLabelForOffset(4) + ' - ערכים כספיים בשקלים (לחץ למיון)'" matTooltipPosition="below">
+              {{ getYearLabelForOffset(4) }}
+            </th>
+            <td mat-cell *matCellDef="let element" 
+              [matTooltip]="'הכנסות משירות ' + element.CatalogName2 + ' בשנת ' + getYearLabelForOffset(4) + ': ' + formatNumber(element.Cash2021) + ' ₪'"
+              matTooltipPosition="right">{{ formatNumber(element.Cash2021) }}</td>
           </ng-container>
 
           <ng-container matColumnDef="Cash2022">
             <th mat-header-cell *matHeaderCellDef style="font-weight: bold; cursor: pointer;"
-              (click)="onDetailedTableSort({active: 'Cash2022', direction: 'desc'})">2022</th>
-            <td mat-cell *matCellDef="let element">{{ formatNumber(element.Cash2022) }}</td>
+              (click)="onDetailedTableSort({active: 'Cash2022', direction: 'desc'})"
+              [matTooltip]="'הכנסות מהשירות בשנת ' + getYearLabelForOffset(3) + ' - ערכים כספיים בשקלים (לחץ למיון)'" matTooltipPosition="below">
+              {{ getYearLabelForOffset(3) }}
+            </th>
+            <td mat-cell *matCellDef="let element"
+              [matTooltip]="'הכנסות משירות ' + element.CatalogName2 + ' בשנת ' + getYearLabelForOffset(3) + ': ' + formatNumber(element.Cash2022) + ' ₪'"
+              matTooltipPosition="right">{{ formatNumber(element.Cash2022) }}</td>
           </ng-container>
 
           <ng-container matColumnDef="Cash2023">
             <th mat-header-cell *matHeaderCellDef style="font-weight: bold; cursor: pointer;"
-              (click)="onDetailedTableSort({active: 'Cash2023', direction: 'desc'})">2023</th>
-            <td mat-cell *matCellDef="let element">{{ formatNumber(element.Cash2023) }}</td>
+              (click)="onDetailedTableSort({active: 'Cash2023', direction: 'desc'})"
+              [matTooltip]="'הכנסות מהשירות בשנת ' + getYearLabelForOffset(2) + ' - ערכים כספיים בשקלים (לחץ למיון)'" matTooltipPosition="below">
+              {{ getYearLabelForOffset(2) }}
+            </th>
+            <td mat-cell *matCellDef="let element"
+              [matTooltip]="'הכנסות משירות ' + element.CatalogName2 + ' בשנת ' + getYearLabelForOffset(2) + ': ' + formatNumber(element.Cash2023) + ' ₪'"
+              matTooltipPosition="right">{{ formatNumber(element.Cash2023) }}</td>
           </ng-container>
 
           <ng-container matColumnDef="Cash2024">
             <th mat-header-cell *matHeaderCellDef style="font-weight: bold; cursor: pointer;"
-              (click)="onDetailedTableSort({active: 'Cash2024', direction: 'desc'})">2024</th>
-            <td mat-cell *matCellDef="let element">{{ formatNumber(element.Cash2024) }}</td>
+              (click)="onDetailedTableSort({active: 'Cash2024', direction: 'desc'})"
+              [matTooltip]="'הכנסות מהשירות בשנת ' + getYearLabelForOffset(1) + ' - ערכים כספיים בשקלים (לחץ למיון)'" matTooltipPosition="below">
+              {{ getYearLabelForOffset(1) }}
+            </th>
+            <td mat-cell *matCellDef="let element"
+              [matTooltip]="'הכנסות משירות ' + element.CatalogName2 + ' בשנת ' + getYearLabelForOffset(1) + ': ' + formatNumber(element.Cash2024) + ' ₪'"
+              matTooltipPosition="right">{{ formatNumber(element.Cash2024) }}</td>
           </ng-container>
 
           <ng-container matColumnDef="Cash2025">
             <th mat-header-cell *matHeaderCellDef
               style="font-weight: bold; color: #4caf50; cursor: pointer; background-color: #f1f8f4;"
-              (click)="onDetailedTableSort({active: 'Cash2025', direction: 'desc'})">2025 🔝</th>
-            <td mat-cell *matCellDef="let element" style="color: #4caf50; font-weight: 600; background-color: #f1f8f4;">
+              (click)="onDetailedTableSort({active: 'Cash2025', direction: 'desc'})"
+              [matTooltip]="'הכנסות מהשירות בשנת ' + getYearLabelForOffset(0) + ' - ערכים כספיים בשקלים, השנה הנוכחית (לחץ למיון)'" matTooltipPosition="below">
+              {{ getYearLabelForOffset(0) }} 🔝
+            </th>
+            <td mat-cell *matCellDef="let element" style="color: #4caf50; font-weight: 600; background-color: #f1f8f4;"
+              [matTooltip]="'הכנסות משירות ' + element.CatalogName2 + ' בשנת ' + getYearLabelForOffset(0) + ': ' + formatNumber(element.Cash2025) + ' ₪'"
+              matTooltipPosition="right">
               {{ formatNumber(element.Cash2025) }}</td>
           </ng-container>
           <!-- DIFFERENCE (2025 vs 2024) -->
@@ -486,7 +711,9 @@
           </th>
 
             <td mat-cell *matCellDef="let element" [class.positive-change]="cashDiff(element) >= 0"
-              [class.negative-change]="cashDiff(element) < 0">
+              [class.negative-change]="cashDiff(element) < 0"
+              [matTooltip]="'הפרש בין 2024 ל-2025 עבור ' + element.CatalogName2 + ': ' + formatNumber(cashDiff(element)) + ' ₪ (' + cashPct(element) + ')'"
+              matTooltipPosition="right">
               {{ formatNumber(cashDiff(element)) }} ₪
               <div class="percentage-badge">{{ cashPct(element) }}</div>
             </td>
@@ -495,34 +722,73 @@
           <!-- UNITS COLUMNS -->
           <ng-container matColumnDef="Units2021">
             <th mat-header-cell *matHeaderCellDef style="font-weight: bold; cursor: pointer;"
-              (click)="onDetailedTableSort({active: 'Units2021', direction: 'desc'})">2021</th>
-            <td mat-cell *matCellDef="let element">{{ formatNumber(element.Units2021) }}</td>
+              (click)="onDetailedTableSort({active: 'Units2021', direction: 'desc'})"
+              [matTooltip]="'מספר יחידות שירות בשנת ' + getYearLabelForOffset(4) + ' - כמות הפעולות שבוצעו (לחץ למיון)'" matTooltipPosition="below">
+              {{ getYearLabelForOffset(4) }}
+            </th>
+            <td mat-cell *matCellDef="let element"
+              [matTooltip]="'מספר יחידות שירות ' + element.CatalogName2 + ' בשנת ' + getYearLabelForOffset(4) + ': ' + formatNumber(element.Units2021)"
+              matTooltipPosition="right">{{ formatNumber(element.Units2021) }}</td>
           </ng-container>
 
           <ng-container matColumnDef="Units2022">
             <th mat-header-cell *matHeaderCellDef style="font-weight: bold; cursor: pointer;"
-              (click)="onDetailedTableSort({active: 'Units2022', direction: 'desc'})">2022</th>
-            <td mat-cell *matCellDef="let element">{{ formatNumber(element.Units2022) }}</td>
+              (click)="onDetailedTableSort({active: 'Units2022', direction: 'desc'})"
+              [matTooltip]="'מספר יחידות שירות בשנת ' + getYearLabelForOffset(3) + ' - כמות הפעולות שבוצעו (לחץ למיון)'" matTooltipPosition="below">
+              {{ getYearLabelForOffset(3) }}
+            </th>
+            <td mat-cell *matCellDef="let element"
+              [matTooltip]="'מספר יחידות שירות ' + element.CatalogName2 + ' בשנת ' + getYearLabelForOffset(3) + ': ' + formatNumber(element.Units2022)"
+              matTooltipPosition="right">{{ formatNumber(element.Units2022) }}</td>
           </ng-container>
 
           <ng-container matColumnDef="Units2023">
             <th mat-header-cell *matHeaderCellDef style="font-weight: bold; cursor: pointer;"
-              (click)="onDetailedTableSort({active: 'Units2023', direction: 'desc'})">2023</th>
-            <td mat-cell *matCellDef="let element">{{ formatNumber(element.Units2023) }}</td>
+              (click)="onDetailedTableSort({active: 'Units2023', direction: 'desc'})"
+              [matTooltip]="'מספר יחידות שירות בשנת ' + getYearLabelForOffset(2) + ' - כמות הפעולות שבוצעו (לחץ למיון)'" matTooltipPosition="below">
+              {{ getYearLabelForOffset(2) }}
+            </th>
+            <td mat-cell *matCellDef="let element"
+              [matTooltip]="'מספר יחידות שירות ' + element.CatalogName2 + ' בשנת ' + getYearLabelForOffset(2) + ': ' + formatNumber(element.Units2023)"
+              matTooltipPosition="right">{{ formatNumber(element.Units2023) }}</td>
           </ng-container>
 
           <ng-container matColumnDef="Units2024">
             <th mat-header-cell *matHeaderCellDef style="font-weight: bold; cursor: pointer;"
-              (click)="onDetailedTableSort({active: 'Units2024', direction: 'desc'})">2024</th>
-            <td mat-cell *matCellDef="let element">{{ formatNumber(element.Units2024) }}</td>
+              (click)="onDetailedTableSort({active: 'Units2024', direction: 'desc'})"
+              [matTooltip]="'מספר יחידות שירות בשנת ' + getYearLabelForOffset(1) + ' - כמות הפעולות שבוצעו (לחץ למיון)'" matTooltipPosition="below">
+              {{ getYearLabelForOffset(1) }}
+            </th>
+            <td mat-cell *matCellDef="let element"
+              [matTooltip]="'מספר יחידות שירות ' + element.CatalogName2 + ' בשנת ' + getYearLabelForOffset(1) + ': ' + formatNumber(element.Units2024)"
+              matTooltipPosition="right">{{ formatNumber(element.Units2024) }}</td>
           </ng-container>
 
           <ng-container matColumnDef="Units2025">
             <th mat-header-cell *matHeaderCellDef
               style="font-weight: bold; color: #4caf50; cursor: pointer; background-color: #f1f8f4;"
-              (click)="onDetailedTableSort({active: 'Units2025', direction: 'desc'})">2025 🔝</th>
-            <td mat-cell *matCellDef="let element" style="color: #4caf50; font-weight: 600; background-color: #f1f8f4;">
+              (click)="onDetailedTableSort({active: 'Units2025', direction: 'desc'})"
+              [matTooltip]="'מספר יחידות שירות בשנת ' + getYearLabelForOffset(0) + ' - כמות הפעולות שבוצעו, השנה הנוכחית (לחץ למיון)'" matTooltipPosition="below">
+              {{ getYearLabelForOffset(0) }} 🔝
+            </th>
+            <td mat-cell *matCellDef="let element" style="color: #4caf50; font-weight: 600; background-color: #f1f8f4;"
+              [matTooltip]="'מספר יחידות שירות ' + element.CatalogName2 + ' בשנת ' + getYearLabelForOffset(0) + ': ' + formatNumber(element.Units2025)"
+              matTooltipPosition="right">
               {{ formatNumber(element.Units2025) }}</td>
+          </ng-container>
+          <!-- Units Diff / % (2025 vs 2024) -->
+          <ng-container matColumnDef="UnitsDiff">
+            <th mat-header-cell *matHeaderCellDef [matTooltip]="diffTooltip" matTooltipPosition="above"
+              matTooltipClass="diff-tooltip" style="font-weight:600; text-align:right;">
+              <span class="diff-header">הפרש / % שינוי</span>
+            </th>
+            <td mat-cell *matCellDef="let element" [class.positive-change]="unitsDiff(element) >= 0"
+              [class.negative-change]="unitsDiff(element) < 0"
+              [matTooltip]="'הפרש יחידות בין 2024 ל-2025 עבור ' + element.CatalogName2 + ': ' + formatNumber(unitsDiff(element)) + ' (' + unitsPct(element) + ')'"
+              matTooltipPosition="right">
+              {{ formatNumber(unitsDiff(element)) }}
+              <div class="percentage-badge">{{ unitsPct(element) }}</div>
+            </td>
           </ng-container>
 
           <tr mat-header-row *matHeaderRowDef="displayedCatalogColumns; sticky: true"
@@ -540,33 +806,40 @@
   </div>
 </div>
 
-<!-- Main Data Table -->
-<div dir="rtl" class="mat-elevation-z8" style="margin-top: 20px;" *ngIf="!isMainDataLoading">
-  <h3 style="text-align: right; color: #333; padding: 20px;">📊 טבלת הכנסות מחלקות (לחץ על שם מחלקה לפרטים)</h3>
-
+<!-- Main Data Table: full width, entire row clickable -->
+<div dir="rtl" class="mat-elevation-z8 table-container main-table-full-width" style="margin-top: 12px;" *ngIf="!isMainDataLoading && activeView === 'table'">
+  <h3 class="table-title-compact">📊 טבלת הכנסות מחלקות (לחץ על שורה או על גרף לפרטים)</h3>
   <mat-form-field appearance="standard" class="search-bar">
     <mat-label>חפש מחלקה</mat-label>
-    <input matInput (keyup)="applyMainFilter($event)" placeholder="הקלד שם מחלקה..." />
+    <input matInput (keyup)="applyMainFilter($event)" placeholder="הקלד שם מחלקה..." 
+      matTooltip="הקלד שם מחלקה כדי לסנן את הטבלה - החיפוש מתבצע לפי שם המחלקה" matTooltipPosition="above" />
   </mat-form-field>
 
   <table mat-table [dataSource]="dataSource" class="mat-table">
 
     <ng-container matColumnDef="DepartmentName">
-      <th mat-header-cell *matHeaderCellDef>מחלקה</th>
-      <td mat-cell *matCellDef="let element" (click)="loadDepartmentSpecificGraph(element.DepartmentName)"
-        class="clickable-cell">
-        {{ element.DepartmentName }}
-      </td>
+      <th mat-header-cell *matHeaderCellDef 
+        matTooltip="שם המחלקה - לחץ על שורה כדי לראות פרטים נוספים על המחלקה" matTooltipPosition="below">מחלקה</th>
+      <td mat-cell *matCellDef="let element" 
+        [matTooltip]="'לחץ כדי לראות פרטים נוספים על מחלקת ' + element.DepartmentName" matTooltipPosition="right">{{ element.DepartmentName }}</td>
     </ng-container>
 
     <ng-container matColumnDef="Income2024">
-      <th mat-header-cell *matHeaderCellDef>הכנסות {{ getOlderYearFromDeptData() }}</th>
-      <td mat-cell *matCellDef="let element">{{ formatNumber(element.Income2024) }} ₪</td>
+      <th mat-header-cell *matHeaderCellDef 
+        [matTooltip]="'סך ההכנסות של המחלקה בשנת ' + getOlderYearFromDeptData() + ' - ערכים במיליוני שקלים'" matTooltipPosition="below">
+        הכנסות {{ getOlderYearFromDeptData() }}</th>
+      <td mat-cell *matCellDef="let element" 
+        [matTooltip]="'הכנסות מחלקת ' + element.DepartmentName + ' בשנת ' + getOlderYearFromDeptData() + ': ' + formatNumber(element.Income2024) + ' ₪'" 
+        matTooltipPosition="right">{{ formatNumber(element.Income2024) }} ₪</td>
     </ng-container>
 
     <ng-container matColumnDef="Income2025">
-      <th mat-header-cell *matHeaderCellDef>הכנסות {{ getLatestYearFromDeptData() }} 🔝</th>
-      <td mat-cell *matCellDef="let element" style="color: #4caf50; font-weight: 600;">{{
+      <th mat-header-cell *matHeaderCellDef 
+        [matTooltip]="'סך ההכנסות של המחלקה בשנת ' + getLatestYearFromDeptData() + ' - ערכים במיליוני שקלים (השנה הנוכחית)'" matTooltipPosition="below">
+        הכנסות {{ getLatestYearFromDeptData() }} 🔝</th>
+      <td mat-cell *matCellDef="let element" style="color: #4caf50; font-weight: 600;"
+        [matTooltip]="'הכנסות מחלקת ' + element.DepartmentName + ' בשנת ' + getLatestYearFromDeptData() + ': ' + formatNumber(element.Income2025) + ' ₪'" 
+        matTooltipPosition="right">{{
         formatNumber(element.Income2025) }} ₪</td>
     </ng-container>
 
@@ -588,6 +861,15 @@
     </ng-container>
 
     <tr mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></tr>
-    <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+    <tr mat-row *matRowDef="let row; columns: displayedColumns;" (click)="loadDepartmentSpecificGraph(row.DepartmentName)" class="clickable-row"
+      [matTooltip]="'לחץ כדי לראות פרטים נוספים על מחלקת ' + row.DepartmentName + ' - כולל פירוט לפי שירותים'" 
+      matTooltipPosition="left"></tr>
   </table>
 </div>
+
+    </div> <!-- end dashboard-main-grid -->
+        </div> <!-- end revenue-dashboard-inner -->
+      </div> <!-- end dashboard-scroll -->
+    </div> <!-- end dashboard-body -->
+  </div> <!-- end dashboard-layout -->
+</div> <!-- end revenue-dashboard-root -->
