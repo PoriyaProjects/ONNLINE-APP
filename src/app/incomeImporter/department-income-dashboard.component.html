@@ -515,95 +515,36 @@
       </mat-card>
     </div>
 
-    <!-- Catalog: one row of controls (sort + view type + zoom) -->
+    <!-- Catalog: controls (sort + view type) - רספונסיבי -->
     <div dir="rtl" class="catalog-controls-row">
       <span class="catalog-controls-label">סדר מיון:</span>
       <button mat-stroked-button (click)="onDetailedTableSort({active: 'Cash2025', direction: 'desc'})" class="catalog-btn"
-        matTooltip="מיין את השירותים לפי הכנסות 2025 מהגבוה לנמוך" matTooltipPosition="above">⬇️ גבוה→נמוך</button>
+        matTooltip="מיין לפי הכנסות 2025 מהגבוה לנמוך" matTooltipPosition="above">⬇️ גבוה→נמוך</button>
       <button mat-stroked-button (click)="onDetailedTableSort({active: 'Cash2025', direction: 'asc'})" class="catalog-btn"
-        matTooltip="מיין את השירותים לפי הכנסות 2025 מהנמוך לגבוה" matTooltipPosition="above">⬆️ נמוך→גבוה</button>
+        matTooltip="מיין לפי הכנסות 2025 מהנמוך לגבוה" matTooltipPosition="above">⬆️ נמוך→גבוה</button>
+      <span class="catalog-controls-label catalog-controls-label-view">תצוגה:</span>
       <button mat-stroked-button [class.active]="selectedViewType === 'cash'" (click)="onViewTypeChange('cash')" class="catalog-btn"
-        matTooltip="הצג נתונים בערכים כספיים בלבד - סכומי הכנסות בשקלים" matTooltipPosition="above">💰 עלות</button>
+        matTooltip="ערכים כספיים בלבד" matTooltipPosition="above">💰 עלות</button>
       <button mat-stroked-button [class.active]="selectedViewType === 'units'" (click)="onViewTypeChange('units')" class="catalog-btn"
-        matTooltip="הצג נתונים במספר יחידות שירות בלבד - כמות הפעולות שבוצעו" matTooltipPosition="above">📊 יחידות</button>
-      <button mat-stroked-button [class.active]="selectedViewType === 'both'" (click)="onViewTypeChange('both')" class="catalog-btn"
-        matTooltip="הצג נתונים גם בערכים כספיים וגם במספר יחידות שירות - תצוגה מלאה" matTooltipPosition="above">📋 שניהם</button>
-      <div class="zoom-controls">
-        <button mat-icon-button (click)="zoomInCatalog()" class="zoom-btn" matTooltip="זום אין - הגדל את הטבלה" matTooltipPosition="above">
-          <mat-icon>zoom_in</mat-icon>
-        </button>
-        <button mat-icon-button (click)="zoomOutCatalog()" class="zoom-btn" matTooltip="זום אאוט - הקטן את הטבלה" matTooltipPosition="above">
-          <mat-icon>zoom_out</mat-icon>
-        </button>
-        <button mat-icon-button (click)="resetCatalogZoom()" class="zoom-btn" matTooltip="איפוס זום - חזור לגודל רגיל" matTooltipPosition="above">
-          <mat-icon>fit_screen</mat-icon>
-        </button>
-      </div>
+        matTooltip="יחידות שירות בלבד" matTooltipPosition="above">📊 יחידות</button>
+      <button mat-stroked-button [class.active]="selectedViewType === 'both'" (click)="onViewTypeChange('both')" class="catalog-btn catalog-btn-both"
+        matTooltip="כסף + יחידות" matTooltipPosition="above">📋 שניהם</button>
     </div>
 
-    <!-- Department yearly trend chart: סכומים/יחידות לפי שנים + יעד גידול שנתי -->
-    <div *ngIf="departmentYearlyChartData && departmentYearlyChartData.length > 0" class="department-yearly-chart-container">
-      <div class="chart-header-controls">
-        <div class="chart-type-toggle">
-          <button
-            mat-icon-button
-            class="chart-toggle-btn-icon"
-            [class.active]="departmentChartType === 'columns'"
-            (click)="departmentChartType = 'columns'; updateDepartmentYearlyChart()"
-            matTooltip="תצוגת עמודות (שנים בציר Y, סכומים / יחידות בציר X)"
-            matTooltipPosition="above"
-          >
-            <mat-icon>bar_chart</mat-icon>
-          </button>
-          <button
-            mat-icon-button
-            class="chart-toggle-btn-icon"
-            [class.active]="departmentChartType === 'line'"
-            (click)="departmentChartType = 'line'; updateDepartmentYearlyChart()"
-            matTooltip="תצוגת קו (מגמה שנתית)"
-            matTooltipPosition="above"
-          >
-            <mat-icon>show_chart</mat-icon>
-          </button>
-        </div>
-        <div class="chart-legend-info">
-          <span
-            class="legend-item"
-            matTooltip="צפי גידול שנתי (יעד): היעד המחלקתי לשנה הבאה מחושב לפי קצב הגידול הממוצע בארגון ובמחלקה, כך שהוא משקף מגמה ריאלית ולא קפיצה חדה."
-            matTooltipPosition="left"
-          >
-            <span class="legend-color-dashed" style="border-top: 2px solid #ef4444;"></span>
-            צפי גידול שנתי (יעד)
-          </span>
-        </div>
-      </div>
-
-      <google-chart
-        [type]="'ComboChart'"
-        [data]="departmentYearlyChartData"
-        [columns]="departmentYearlyChartColumns"
-        [options]="departmentYearlyChartOptions"
-        [width]="'100%'"
-        [height]="260"
-      >
-      </google-chart>
-
-      <p class="chart-unit-caption">
-        {{ getDepartmentChartUnitLabel() }}
-      </p>
-    </div>
-
-    <!-- צפי גידול שנתי – הסבר בטקסט -->
-    <div dir="rtl" style="padding: 4px 16px 0; font-size: 0.75rem; color: #6b7280; display: flex; align-items: flex-start; gap: 6px;">
-      <mat-icon style="font-size:16px; width:16px; height:16px; color:#0ea5e9;">info</mat-icon>
-      <span>
-        צפי גידול שנתי (יעד) נמדד לפי גידול ממוצע ב־5 השנים האחרונות בכלל הארגון, 
-        כאשר היעד לכל מחלקה מותאם לרמת ההכנסה הנוכחית שלה ולמגמת השינוי (עלייה או ירידה) בפעילות.
-      </span>
-    </div>
-
-    <!-- Catalog Table Section: כל רשימת השירותים בטבלה מתחת לגרף -->
+    <!-- Catalog Table Section: רשימת שירותים + חיפוש -->
     <div dir="rtl" class="catalog-table-section">
+      <h3 class="catalog-table-title">
+        <mat-icon class="catalog-table-title-icon">list_alt</mat-icon>
+        רשימת שירותים
+      </h3>
+
+      <!-- חיפוש לפי סוג שירות -->
+      <mat-form-field appearance="outline" class="catalog-search-field" *ngIf="!catalogLoading && detailedDataSource.data?.length > 0">
+        <mat-label>חפש שירות</mat-label>
+        <input matInput [(ngModel)]="catalogSearchValue" (ngModelChange)="applyCatalogFilterFromValue(catalogSearchValue)" placeholder="הקלד שם שירות..."
+          matTooltip="סנן את הטבלה לפי שם השירות" matTooltipPosition="above">
+        <mat-icon matSuffix>search</mat-icon>
+      </mat-form-field>
 
       <!-- Loading Spinner for Catalog -->
       <div *ngIf="catalogLoading" class="catalog-loading-container">
@@ -611,11 +552,9 @@
         <div class="catalog-loading-text">טוען פרטי מחלקה...</div>
       </div>
 
-      <!-- Sortable Catalog Table (scrollable so all columns visible) -->
+      <!-- Sortable Catalog Table (scrollable) -->
       <div class="table-wrapper catalog-table-scroll"
-        *ngIf="!catalogLoading && detailedDataSource.data && detailedDataSource.data.length > 0"
-        [style.transform]="'scale(' + catalogZoomLevel + ')'"
-        [style.transform-origin]="'top right'">
+        *ngIf="!catalogLoading && detailedDataSource.data && detailedDataSource.data.length > 0">
         <table mat-table [dataSource]="detailedDataSource" class="catalog-mat-table catalog-table-compact">
 
           <!-- Service Name Column -->

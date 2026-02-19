@@ -203,92 +203,6 @@ export class DepartmentIncomeDashboardComponent implements OnInit {
         },
     };
 
-    // Department yearly chart inside details modal
-    departmentYearlyChartData: any[] = [];
-    departmentYearlyChartColumns: any[] = [
-        "שנה",
-        { type: "number", label: "" }, // יתעדכן לפי סוג מדידה (כסף / יחידות)
-        { type: "string", role: "annotation" },
-        { type: "number", label: "צפי גידול שנתי (יעד)" },
-    ];
-    departmentYearlyChartOptions: any = {
-        title: "מגמת פעילות מחלקה לפי שנים",
-        titleTextStyle: {
-            color: "#333",
-            fontSize: 14,
-            bold: true,
-        },
-        hAxis: {
-            title: "",
-            minValue: 0,
-            textStyle: {
-                color: "#555",
-                fontSize: 11,
-            },
-            titleTextStyle: {
-                color: "#333",
-                fontSize: 12,
-                bold: true,
-            },
-        },
-        vAxis: {
-            title: "שנה",
-            textStyle: {
-                color: "#555",
-                fontSize: 11,
-            },
-            titleTextStyle: {
-                color: "#333",
-                fontSize: 12,
-                bold: true,
-            },
-        },
-        legend: {
-            position: "bottom",
-            textStyle: {
-                color: "#555",
-                fontSize: 11,
-            },
-        },
-        chartArea: {
-            width: "78%",
-            height: "65%",
-            top: 24,
-        },
-        colors: ["#0ea5e9", "#ef4444"],
-        backgroundColor: {
-            fill: "#fafafa",
-            stroke: "#e5e7eb",
-            strokeWidth: 1,
-        },
-        dataOpacity: 0.95,
-        annotations: {
-            alwaysOutside: true,
-            textStyle: {
-                fontSize: 9,
-                bold: true,
-                color: "#374151",
-                fontName: "Arial",
-            },
-        },
-        seriesType: "bars",
-        bars: "horizontal",
-        series: {
-            0: { type: "bars", color: "#0ea5e9" },
-            1: {
-                type: "line",
-                lineDashStyle: [6, 6],
-                color: "#ef4444",
-                pointSize: 6,
-                pointShape: "triangle",
-                lineWidth: 2,
-                visibleInLegend: true,
-            },
-        },
-    };
-
-    departmentChartType: "columns" | "line" = "columns";
-
     // Boss Dashboard
     showBossDashboard = false;
 
@@ -319,7 +233,6 @@ export class DepartmentIncomeDashboardComponent implements OnInit {
 
     // In department modal: 'table' | 'chart'
     catalogViewMode: string = "table";
-    catalogZoomLevel: number = 1; // Zoom level: 1 = normal, >1 = zoom in, <1 = zoom out
     catalogChartData: any[] = [];
     catalogChartColumns: any[] = ["שירות", { type: "number", label: "2025 (מיליוני ₪)" }];
     catalogChartOptions: any = {
@@ -394,6 +307,7 @@ export class DepartmentIncomeDashboardComponent implements OnInit {
     ];
 
     displayedCatalogColumns: string[] = this.cashColumns;
+    catalogSearchValue = "";
 
     // Top 5 Departments - Feature
     topDepartmentsViewType: string = "difference"; // 'difference' or 'percentage'
@@ -407,6 +321,10 @@ export class DepartmentIncomeDashboardComponent implements OnInit {
 
     ngOnInit(): void {
         console.log("gOnInit called");
+        this.dataSource.filterPredicate = (data: DepartmentComparisonDto, filter: string) =>
+            (data.DepartmentName || "").toLowerCase().includes(filter);
+        this.detailedDataSource.filterPredicate = (data: DepartmentDetailedDataDto, filter: string) =>
+            (data.CatalogName2 || "").toLowerCase().includes(filter);
         this.loadDepartmentIncomeData();
         this.loadDiagnosesList();
         this.displayedCatalogColumns = this.cashColumns;
@@ -911,6 +829,8 @@ export class DepartmentIncomeDashboardComponent implements OnInit {
                     if (response && response.d) {
                         // Set data source
                         this.detailedDataSource.data = response.d;
+                        this.detailedDataSource.filter = "";
+                        this.catalogSearchValue = "";
 
                         // Set default view to cash and sort by 2025 (descending)
                         this.selectedViewType = "cash";
@@ -919,7 +839,6 @@ export class DepartmentIncomeDashboardComponent implements OnInit {
                         // Sort by Cash2025 descending (highest to lowest)
                         this.sortDetailedDataByCash2025Descending();
                         this.updateCatalogChartData();
-                        this.updateDepartmentYearlyChart();
 
                         this.catalogLoading = false;
                         this.isDepartmentGraphOpen = true;
@@ -929,6 +848,7 @@ export class DepartmentIncomeDashboardComponent implements OnInit {
                 (error) => {
                     console.error("Error loading detailed data:", error);
                     this.catalogLoading = false;
+                    this.cdr.detectChanges();
                     this.snackBar.open("❌ שגיאה בטעינת הפרטים", "סגור", {
                         duration: 3000,
                     });
@@ -982,26 +902,8 @@ export class DepartmentIncomeDashboardComponent implements OnInit {
         this.detailedDataSource.data = [];
         this.selectedViewType = "cash";
         this.catalogViewMode = "table";
-        this.catalogZoomLevel = 1; // Reset zoom when closing
+        this.catalogSearchValue = "";
         this.displayedCatalogColumns = this.cashColumns;
-        this.cdr.detectChanges();
-    }
-
-    /**
-     * Zoom in/out for catalog table
-     */
-    zoomInCatalog(): void {
-        this.catalogZoomLevel = Math.min(this.catalogZoomLevel + 0.1, 2); // Max zoom 2x
-        this.cdr.detectChanges();
-    }
-
-    zoomOutCatalog(): void {
-        this.catalogZoomLevel = Math.max(this.catalogZoomLevel - 0.1, 0.5); // Min zoom 0.5x
-        this.cdr.detectChanges();
-    }
-
-    resetCatalogZoom(): void {
-        this.catalogZoomLevel = 1;
         this.cdr.detectChanges();
     }
 
@@ -1035,7 +937,6 @@ export class DepartmentIncomeDashboardComponent implements OnInit {
             this.displayedCatalogColumns = this.bothColumns;
         }
 
-        this.updateDepartmentYearlyChart();
         this.cdr.detectChanges();
     }
 
@@ -1197,6 +1098,15 @@ updateChartColumns(): void {
     applyMainFilter(event: Event): void {
         const filterValue = (event.target as HTMLInputElement).value;
         this.dataSource.filter = filterValue.trim().toLowerCase();
+    }
+
+    /**
+     * Filter catalog table (פרטי מחלקה) by service name
+     */
+    applyCatalogFilterFromValue(value: string): void {
+        const filterValue = (value || "").trim().toLowerCase();
+        this.detailedDataSource.filter = filterValue;
+        this.cdr.detectChanges();
     }
 
     /**
@@ -1566,160 +1476,10 @@ updateChartColumns(): void {
     }
 
     /**
-     * כיתוב מסביר לפי מה נמדד גרף פרטי מחלקה (כסף / יחידות)
-     */
-    getDepartmentChartUnitLabel(): string {
-        if (this.selectedViewType === "units") {
-            return "הגרף נמדד במספר יחידות שירות (כמות פעולות) לכל שנה במחלקה";
-        }
-        if (this.selectedViewType === "both") {
-            return "הגרף נמדד בסך ההכנסות במיליוני ₪ (מחירי 2025 ריאליים) לכל שנה במחלקה";
-        }
-        return "הגרף נמדד בסך ההכנסות במיליוני ₪ (מחירי 2025 ריאליים) לכל שנה במחלקה";
-    }
-
-    /**
      * Change main dashboard view (chart / table / top5)
      */
     setActiveView(view: string): void {
         this.activeView = view;
-    }
-
-    /**
-     * עדכון גרף שנתי בפרטי מחלקה (כסף / יחידות + יעד גידול שנתי)
-     */
-    updateDepartmentYearlyChart(): void {
-        if (!this.detailedDataSource?.data || this.detailedDataSource.data.length === 0) {
-            this.departmentYearlyChartData = [];
-            return;
-        }
-
-        // סיכום לפי שנים מתוך טבלת השירותים
-        const sum = {
-            cash: { "2021": 0, "2022": 0, "2023": 0, "2024": 0, "2025": 0 },
-            units: { "2021": 0, "2022": 0, "2023": 0, "2024": 0, "2025": 0 },
-        };
-
-        for (const row of this.detailedDataSource.data) {
-            sum.cash["2021"] += Number(row.Cash2021 || 0);
-            sum.cash["2022"] += Number(row.Cash2022 || 0);
-            sum.cash["2023"] += Number(row.Cash2023 || 0);
-            sum.cash["2024"] += Number(row.Cash2024 || 0);
-            sum.cash["2025"] += Number(row.Cash2025 || 0);
-
-            sum.units["2021"] += Number(row.Units2021 || 0);
-            sum.units["2022"] += Number(row.Units2022 || 0);
-            sum.units["2023"] += Number(row.Units2023 || 0);
-            sum.units["2024"] += Number(row.Units2024 || 0);
-            sum.units["2025"] += Number(row.Units2025 || 0);
-        }
-
-        const yearsOrder = ["2021", "2022", "2023", "2024", "2025"];
-        const metricIsUnits = this.selectedViewType === "units";
-
-        const valuesPerYear: { year: string; value: number }[] = [];
-        yearsOrder.forEach((y) => {
-            const raw = metricIsUnits ? sum.units[y] : sum.cash[y];
-            if (raw && !isNaN(raw)) {
-                const val = metricIsUnits ? raw : parseFloat((raw / 1000000).toFixed(1));
-                valuesPerYear.push({ year: y, value: val });
-            }
-        });
-
-        if (valuesPerYear.length === 0) {
-            this.departmentYearlyChartData = [];
-            return;
-        }
-
-        // יעד גידול שנתי – לפי קצב גידול ממוצע (כללי), ואם אין אז לפי המחלקה עצמה
-        const avgOrgGrowth = this.getAverageFiveYearGrowthRate();
-
-        this.departmentYearlyChartColumns = [
-            "שנה",
-            {
-                type: "number",
-                label: metricIsUnits
-                    ? "מספר יחידות"
-                    : "הכנסות (מיליוני ₪)",
-            },
-            { type: "string", role: "annotation" },
-            { type: "number", label: "צפי גידול שנתי (יעד)" },
-        ];
-
-        const rows: any[] = [];
-        for (let i = 0; i < valuesPerYear.length; i++) {
-            const curr = valuesPerYear[i];
-            const prev = i > 0 ? valuesPerYear[i - 1] : null;
-
-            let diffLabel = "";
-            if (prev) {
-                const diff = curr.value - prev.value;
-                const pct = prev.value !== 0 ? (diff / prev.value) * 100 : 0;
-                const sign = diff >= 0 ? "+" : "";
-                diffLabel =
-                    metricIsUnits
-                        ? `${sign}${diff.toFixed(0)} (${pct.toFixed(1)}%)`
-                        : `${sign}${diff.toFixed(1)}M (${pct.toFixed(1)}%)`;
-            }
-
-            // יעד לשנה הבאה על בסיס השנה הנוכחית
-            let growthRate = avgOrgGrowth;
-            if (!growthRate || growthRate === 0) {
-                if (prev && prev.value > 0) {
-                    growthRate = (curr.value - prev.value) / prev.value;
-                } else {
-                    growthRate = 0.05;
-                }
-            }
-            let forecast = curr.value * (1 + growthRate);
-            if (Math.abs(forecast - curr.value) < (metricIsUnits ? 1 : 0.01)) {
-                forecast = curr.value * 1.05;
-            }
-
-            rows.push([curr.year, curr.value, diffLabel, parseFloat(forecast.toFixed(metricIsUnits ? 0 : 1))]);
-        }
-
-        this.departmentYearlyChartData = rows;
-
-        // עדכון אופציות (סוג תרשים: קו / עמודות) + ציר X לפי סוג מדידה
-        this.departmentYearlyChartOptions.hAxis.title = metricIsUnits
-            ? "מספר יחידות שירות"
-            : "הכנסות (מיליוני ₪)";
-
-        if (this.departmentChartType === "line") {
-            this.departmentYearlyChartOptions.seriesType = "line";
-            this.departmentYearlyChartOptions.series = {
-                0: { type: "line", color: "#0ea5e9", lineWidth: 3, pointSize: 5 },
-                1: {
-                    type: "line",
-                    lineDashStyle: [6, 6],
-                    color: "#ef4444",
-                    pointSize: 6,
-                    pointShape: "triangle",
-                    lineWidth: 2,
-                    visibleInLegend: true,
-                },
-            };
-            delete this.departmentYearlyChartOptions.bars;
-        } else {
-            this.departmentYearlyChartOptions.seriesType = "bars";
-            this.departmentYearlyChartOptions.bars = "horizontal";
-            this.departmentYearlyChartOptions.series = {
-                0: { type: "bars", color: "#0ea5e9" },
-                1: {
-                    type: "line",
-                    lineDashStyle: [6, 6],
-                    color: "#ef4444",
-                    pointSize: 6,
-                    pointShape: "triangle",
-                    lineWidth: 2,
-                    visibleInLegend: true,
-                },
-            };
-        }
-
-        this.departmentYearlyChartOptions = { ...this.departmentYearlyChartOptions };
-        this.cdr.detectChanges();
     }
 
     /**
@@ -1747,6 +1507,7 @@ updateChartColumns(): void {
         // עבור ComboChart: עמודות 0 ו-1, קו אדום 2
         if (this.chartType === "line") {
             this.chartOptions.seriesType = "line";
+            delete this.chartOptions.bars;
             this.chartOptions.series = {
                 0: { type: "line", color: "#0ea5e9", lineWidth: 3, pointSize: 5 },
                 1: { type: "line", color: "#8b5cf6", lineWidth: 3, pointSize: 5 },

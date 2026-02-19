@@ -930,23 +930,6 @@
   min-height: 0;
 }
 
-/* גרף שנתי בפרטי מחלקה */
-.department-yearly-chart-container {
-  background: var(--rev-bg-card);
-  border: 1px solid var(--rev-glass-border);
-  border-radius: var(--rev-radius-md);
-  padding: 8px 12px 4px;
-  box-shadow: var(--rev-shadow-soft);
-  margin: 8px 12px;
-}
-
-.chart-unit-caption {
-  margin: 4px 4px 0 0;
-  font-size: 0.6875rem;
-  color: var(--rev-text-muted);
-  text-align: right;
-}
-
 /* Table container: fill space, no page scroll */
 .table-container {
   background: var(--rev-bg-card);
@@ -1036,37 +1019,13 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 6px;
-  padding: 6px 12px;
+  gap: 8px 10px;
+  padding: 10px 16px;
   background: var(--rev-glass);
   border-bottom: 1px solid var(--rev-glass-border);
-}
-
-.zoom-controls {
-  display: flex;
-  gap: 4px;
-  margin-right: auto;
-  border-right: 1px solid var(--rev-glass-border);
-  padding-right: 8px;
-}
-
-.zoom-btn {
-  width: 32px;
-  height: 32px;
-  padding: 0;
-  min-width: auto;
-  color: var(--rev-text-muted);
-}
-
-.zoom-btn:hover {
-  color: var(--rev-accent);
-  background: var(--rev-accent-dim);
-}
-
-.zoom-btn mat-icon {
-  font-size: 18px;
-  width: 18px;
-  height: 18px;
+  min-width: 0;
+  max-width: 100%;
+  flex-shrink: 0;
 }
 
 .catalog-controls-label {
@@ -1076,11 +1035,22 @@
   margin-left: 8px;
 }
 
+.catalog-controls-label-view {
+  margin-right: 4px;
+  margin-left: 12px;
+}
+
 .catalog-btn {
   font-size: 0.75rem;
   padding: 4px 10px;
   min-width: auto;
+  max-width: 100%;
   font-family: var(--rev-font);
+  white-space: nowrap;
+}
+
+.catalog-btn-both {
+  min-width: 0;
 }
 
 .catalog-btn mat-icon {
@@ -1628,9 +1598,9 @@
   background: var(--rev-bg-elevated);
   border: 1px solid var(--rev-glass-border);
   border-radius: var(--rev-radius-lg);
-  box-shadow: var(--rev-shadow);
-  max-width: 95vw;
-  width: 900px;
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.12);
+  width: 95vw;
+  max-width: 960px;
   max-height: 90vh;
   overflow: hidden;
   display: flex;
@@ -1701,11 +1671,59 @@
   color: var(--rev-down);
 }
 
+/* ---- פרטי מחלקה: כותרת טבלה ---- */
+.catalog-table-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 12px 0;
+  font-family: var(--rev-font);
+  font-weight: 700;
+  font-size: 1rem;
+  color: var(--rev-text-strong);
+}
+
+.catalog-table-title-icon {
+  font-size: 22px;
+  width: 22px;
+  height: 22px;
+  color: var(--rev-accent);
+}
+
 .catalog-table-section {
-  padding: 16px 20px;
-  overflow: auto;
+  padding: 16px 20px 20px;
+  overflow: hidden;
   flex: 1;
   min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.catalog-table-title {
+  flex-shrink: 0;
+}
+
+.catalog-search-field {
+  flex-shrink: 0;
+  width: 100%;
+  max-width: 320px;
+  margin-bottom: 12px;
+}
+
+.catalog-table-section .table-wrapper {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.catalog-search-field ::ng-deep .mat-form-field-wrapper {
+  padding-bottom: 0;
+}
+
+.catalog-search-field ::ng-deep .mat-form-field-infix {
+  padding: 0.5em 0;
 }
 
 .catalog-header h3 {
@@ -1746,28 +1764,115 @@
   font-size: 0.875rem;
 }
 
+/* Wrapper טבלת שירותים בפרטי מחלקה - גלילה פנימית */
+.department-graph-modal .table-wrapper {
+  border: 1px solid var(--rev-glass-border);
+  border-radius: var(--rev-radius-md);
+  overflow: hidden;
+  box-shadow: var(--rev-shadow-soft);
+  flex: 1;
+  min-height: 200px;
+  display: flex;
+  flex-direction: column;
+}
+
+.department-graph-modal .catalog-table-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+
 .table-wrapper {
   border: 1px solid var(--rev-glass-border);
   border-radius: var(--rev-radius-sm);
   overflow: hidden;
 }
 
-/* Catalog table: shrink container, horizontal scroll so all columns visible */
+/* Catalog table: גלילה אופקית, כותרת דביקה */
 .catalog-table-scroll {
   overflow-x: auto;
-  overflow-y: visible;
+  overflow-y: auto;
   max-width: 100%;
+  -webkit-overflow-scrolling: touch;
 }
 
 .catalog-table-compact {
-  min-width: 800px;
+  min-width: 720px;
+  width: 100%;
 }
 
 .catalog-table-compact th,
 .catalog-table-compact td {
   white-space: nowrap;
-  padding: 8px 12px !important;
+  padding: 10px 14px !important;
   font-size: 0.8125rem;
+}
+
+.catalog-table-compact th.mat-header-cell {
+  background: var(--rev-bg-card);
+  font-weight: 600;
+  color: var(--rev-text-muted);
+  border-bottom: 2px solid var(--rev-glass-border);
+}
+
+.catalog-table-compact tr.mat-row:hover td {
+  background: var(--rev-accent-dim) !important;
+}
+
+/* רספונסיבי: מודאל פרטי מחלקה */
+@media (max-width: 768px) {
+  .department-graph-overlay {
+    padding: 12px;
+    align-items: flex-start;
+  }
+
+  .department-graph-modal {
+    width: 100%;
+    max-height: 95vh;
+  }
+
+  .summary-section-compact {
+    flex-direction: column;
+  }
+
+  .summary-card-compact {
+    min-width: 100%;
+  }
+
+  .catalog-controls-row {
+    padding: 8px 12px;
+    gap: 6px 8px;
+  }
+
+  .catalog-controls-label,
+  .catalog-controls-label-view {
+    margin-left: 4px;
+    margin-right: 4px;
+  }
+
+  .catalog-btn {
+    font-size: 0.6875rem;
+    padding: 4px 8px;
+  }
+
+  .catalog-search-field {
+    max-width: 100%;
+  }
+
+  .catalog-table-section {
+    padding: 12px 14px 16px;
+  }
+
+  .catalog-table-title {
+    font-size: 0.9375rem;
+    margin-bottom: 10px;
+  }
+
+  .catalog-table-compact th,
+  .catalog-table-compact td {
+    padding: 8px 10px !important;
+    font-size: 0.75rem;
+  }
 }
 
 /* ---- Wrapper (loading) ---- */
