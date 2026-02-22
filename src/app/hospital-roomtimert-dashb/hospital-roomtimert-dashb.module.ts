@@ -69,19 +69,13 @@ const routes: Routes = [
     MatToolbarModule,
     MatSortModule,
     BrowserAnimationsModule,
-      FormsModule,
-        FormsModule,
-        MatFormFieldModule,
-        MatInputModule,
-        MatDatepickerModule,
-        MatNativeDateModule
-      ],
-      providers: [
-        { provide: MAT_DATE_LOCALE, useValue: 'he-IL' },
-        { provide: DateAdapter, useClass: DMYDateAdapter },
-        { provide: MAT_DATE_FORMATS, useValue: DMY_FORMATS }
-      ]
-      
-    })
-    
+    MatDatepickerModule,
+    MatNativeDateModule
+  ],
+  providers: [
+    { provide: MAT_DATE_LOCALE, useValue: 'he-IL' },
+    { provide: DateAdapter, useClass: DMYDateAdapter },
+    { provide: MAT_DATE_FORMATS, useValue: DMY_FORMATS }
+  ]
+})
 export class HospitalRoomTimeRTDashbModule {}
