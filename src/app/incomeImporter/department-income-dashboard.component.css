@@ -26,12 +26,16 @@
     --btnBg: rgba(15, 23, 42, 0.04);
     --btnBgHover: rgba(15, 23, 42, 0.08);
   
-    /* make room for the footer and avoid cutting the page */
-    min-height: calc(100vh - 64px);
-    padding: 8px 12px 80px;
-    margin-top: 40px;
+    /* fit in viewport: leave space for system header (top) and footer (bottom), no scroll */
+    --header-space: 56px;
+    --footer-space: 40px;
+    height: calc(100vh - var(--header-space) - var(--footer-space));
+    min-height: 0;
+    max-height: calc(100vh - var(--header-space) - var(--footer-space));
+    padding: 6px 10px 6px;
+    margin-top: 0;
     margin-bottom: 0;
-    overflow: visible;
+    overflow: hidden;
     position: relative;
   
     /* clean white background so the whole page is white */
@@ -74,10 +78,10 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    gap: 12px;
-    margin-bottom: 6px;
+    gap: 8px;
+    margin-bottom: 4px;
     flex: 0 0 auto;
-    padding: 4px 0;
+    padding: 2px 0;
   }
   
   .top-left {
@@ -102,8 +106,8 @@
   }
   
   .diagnosis-selector {
-    min-width: 210px;
-    width: 210px;
+    min-width: 180px;
+    width: 180px;
   }
 
   .user-card {
@@ -125,8 +129,8 @@
   }
 
   .user-avatar-wrapper {
-    width: 32px;
-    height: 32px;
+    width: 28px;
+    height: 28px;
     border-radius: 50%;
     overflow: hidden;
     flex-shrink: 0;
@@ -148,7 +152,7 @@
   }
 
   .user-name {
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 700;
     color: var(--text);
     white-space: nowrap;
@@ -157,7 +161,7 @@
   }
 
   .user-sub {
-    font-size: 11px;
+    font-size: 10px;
     color: var(--muted);
     white-space: nowrap;
     text-overflow: ellipsis;
@@ -318,26 +322,26 @@
   .panel {
     background: var(--panel);
     border: 1px solid var(--border);
-    border-radius: 12px;
+    border-radius: 10px;
     box-shadow: var(--shadow);
-    padding: 8px 10px 6px;
-    margin-bottom: 6px;
+    padding: 4px 8px 4px;
+    margin-bottom: 4px;
   }
   
   .panel-title {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 4px;
     font-weight: 1000;
-    margin-bottom: 6px;
+    margin-bottom: 4px;
     color: var(--text);
-    font-size: 14px;
+    font-size: 12px;
   }
   
   .panel-title mat-icon {
-    font-size: 18px;
-    width: 18px;
-    height: 18px;
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
   }
   
   .empty {
@@ -433,7 +437,7 @@
   .main-content {
     display: grid;
     grid-template-columns: 2fr 1fr;
-    gap: 8px;
+    gap: 6px;
     flex: 1 1 auto;
     min-height: 0;
     overflow: hidden;
@@ -478,7 +482,7 @@
   .graph-body google-chart {
     width: 100% !important;
     height: 100% !important;
-    min-height: 400px;
+    min-height: 0;
   }
 
   /* Modern chart styling */
@@ -510,7 +514,7 @@
   .table-body {
     flex: 1 1 auto;
     min-height: 0;
-    overflow: auto;
+    overflow: hidden;
   }
   
   /* ===============================
@@ -658,31 +662,34 @@
      Plain HTML table (NOT mat-table)
   ================================ */
   .table-wrap {
-    border-radius: 14px;
+    border-radius: 10px;
     border: 1px solid var(--border);
     background: var(--panel);
     height: 100%;
-    overflow: auto;
+    overflow: hidden;
   }
   
   table.table {
     width: 100%;
     background: transparent;
     border-collapse: collapse;
+    font-size: 11px;
   }
   
   table.table th {
     font-weight: 1000;
     color: var(--muted);
     text-align: right;
-    padding: 8px 10px;
+    padding: 3px 6px;
     border-bottom: 1px solid var(--border);
+    font-size: 11px;
   }
   
   table.table td {
     color: var(--text);
-    padding: 8px 10px;
+    padding: 3px 6px;
     border-bottom: 1px solid var(--border);
+    font-size: 11px;
   }
   
   /* hover */
@@ -713,11 +720,11 @@
   
   .percentage-badge {
     display: inline-block;
-    font-size: 12px;
-    padding: 2px 6px;
-    border-radius: 10px;
+    font-size: 10px;
+    padding: 1px 4px;
+    border-radius: 8px;
     background: #eee;
-    margin-top: 4px;
+    margin-top: 2px;
   }
 
 .positive-change .percentage-badge {

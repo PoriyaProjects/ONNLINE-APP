@@ -269,6 +269,11 @@ import { HospitalIncomeNBDashbComponent } from './hospital-incomenb-dashb/hospit
 import { FilterDepartsPipe } from './pipe/filter-departs.pipe';
 import { SharedModule } from './shared/shared.module';
 import { WhatsappCategoriesPermissionsComponent } from './whatsapp-messages-dashboard/whatsapp-categories-permissions/whatsapp-categories-permissions.component';
+import { HospitalCathDashbModule } from './hospital-cath-dashb/hospital-cath-dashb.module';
+import { HospitalRoomTimeDashbModule } from './hospital-roomtime-dashb/hospital-roomtime-dashb.module';
+import { HospitalRoomTimeNDashbModule } from './hospital-roomtimen-dashb/hospital-roomtimen-dashb.module';
+import { HospitalRoomTimeRTDashbModule } from './hospital-roomtimert-dashb/hospital-roomtimert-dashb.module';
+import { HospitalRoomTimeRTmDashbModule } from './hospital-roomtimert-mdashb/hospital-roomtimert-mdashb.module';
 
 import { AiLettersDashboardComponent } from './ai-letters-dashboard/ai-letters-dashboard.component';
 import { AutomationProcessDashboardComponent } from "./automationprocessdashboard/automation-process-dashboard.component";
@@ -604,9 +609,14 @@ const maskConfig: Partial<IConfig> = {
     CalendarModule.forRoot({ provide: DateAdapter, useFactory: adapterFactory }),
     //HospitalCathDashbModule,
     AppRoutingModule,
-    SharedModule,        
+    SharedModule,
     CldashboardModule,
-    MatProgressSpinnerModule
+    MatProgressSpinnerModule,
+    HospitalCathDashbModule,
+    HospitalRoomTimeDashbModule,
+    HospitalRoomTimeNDashbModule,
+    HospitalRoomTimeRTDashbModule,
+    HospitalRoomTimeRTmDashbModule
   ],
   providers: [
     { provide: MAT_DATE_LOCALE, useValue: 'en-GB' }
