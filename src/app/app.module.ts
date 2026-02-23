@@ -292,6 +292,7 @@ import { DepartmentalTextureReportComponent } from './nutrition-system/departmen
 import { WindowsUserActionsComponent } from './dashboard/windows-user-actions/windows-user-actions.component';
 import { AiLettersDashboardComponent } from './ai-letters-dashboard/ai-letters-dashboard.component';
 import { MriScheduleComponent } from './mri-schedule';
+import { InfectionControlModule } from './infection-control/infection-control.module';
 
 
 
@@ -529,6 +530,7 @@ const maskConfig: Partial<IConfig> = {
     //HospitalIncomeDashbComponent,
   ],
   imports: [
+    InfectionControlModule,
     MatIconModule,
     SpreadsheetAllModule,
     AngularEditorModule,
