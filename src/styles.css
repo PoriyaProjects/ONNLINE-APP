@@ -2358,3 +2358,48 @@ button:hover{
     color:  yellow !important;
     background: red !important;
 }
+
+/* Department Income Dashboard: דרופדאון "בחר אגף" – מה שנפתח במצב לילה כהה יותר */
+body.department-dashboard-dark .mat-mdc-select-panel {
+    background: #0b1220 !important;
+    color: #f1f5f9 !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    border-radius: 14px !important;
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.5) !important;
+}
+body.department-dashboard-dark .mat-mdc-option {
+    color: #e2e8f0 !important;
+}
+body.department-dashboard-dark .mat-mdc-option:hover:not(.mdc-list-item--disabled) {
+    background: rgba(255, 255, 255, 0.06) !important;
+    color: #f1f5f9 !important;
+}
+body.department-dashboard-dark .mat-mdc-option.mdc-list-item--selected {
+    background: rgba(59, 130, 246, 0.2) !important;
+    color: #93c5fd !important;
+}
+body.department-dashboard-dark .mat-mdc-option.mdc-list-item--selected:hover {
+    background: rgba(59, 130, 246, 0.25) !important;
+}
+
+/* טולטיפים באתר במצב לילה – מעט כהים, לא שחורים לגמרי ולא לבנים */
+body.department-dashboard-dark .mat-tooltip,
+body.department-dashboard-dark .mat-mdc-tooltip,
+body.department-dashboard-dark .mdc-tooltip__surface {
+    background: #475569 !important;
+    color: #f1f5f9 !important;
+    font-size: 12px !important;
+    padding: 8px 12px !important;
+    border-radius: 8px !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+/* עמודת הכנסות 2025 בטבלת דשבורד הכנסות – לא תישאר לבנה בדארק מוד */
+body.department-dashboard-dark .income-2025-cell,
+body.department-dashboard-dark td.income-2025-cell,
+body.department-dashboard-dark .mat-mdc-cell.income-2025-cell,
+body.department-dashboard-dark .mdc-data-table__cell.income-2025-cell {
+    background: rgba(255, 255, 255, 0.06) !important;
+    background-color: rgba(255, 255, 255, 0.06) !important;
+    color: #66bb6a !important;
+}
