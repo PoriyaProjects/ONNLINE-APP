@@ -213,56 +213,72 @@
               <!-- File Input 1 -->
               <div style="text-align: right;">
                 <label>מכתב תמיכה מהחברה*</label><br>
-                <input type="file" (change)="onFileChange($event, 'SupportLetter')" multiple
+                <input #supportLetterInput type="file" (change)="onFileChange($event, 'SupportLetter')"
                   accept=".doc,.docx,.xls,.xlsx,.pdf,image/*" required>
-                <div *ngIf="SupportRequestDto.get('SupportLetter')?.value?.length">
-                  <div *ngFor="let file of SupportRequestDto.get('SupportLetter').value; let i = index">
-                    <button mat-button color="primary" (click)="file_in_new_window_base64(file)">
-                      {{ file.fileName == undefined ? i + 1 : file.fileName }} <mat-icon>visibility</mat-icon>
-                    </button>
-                  </div>
-                </div>
-                <!-- <button mat-raised-button class="fileOpenBtn" color="primary" (click)="file_in_new_window_base64()"
+                <button mat-raised-button class="fileOpenBtn" color="primary"
+                  (click)="viewSupportFile('SupportLetter')"
                   *ngIf="SupportRequestDto.get('SupportLetter').value != undefined && SupportRequestDto.get('SupportLetter').value != ''">
                   צפייה במסמך
                   <span class="material-icons"> zoom_in </span>
-                </button> -->
+                </button>
+                <button mat-icon-button color="warn" type="button" matTooltip="הסרת קובץ"
+                  (click)="removeFile('SupportLetter', supportLetterInput)"
+                  *ngIf="SupportRequestDto.get('SupportLetter').value != undefined && SupportRequestDto.get('SupportLetter').value != ''">
+                  <mat-icon>delete</mat-icon>
+                </button>
               </div><br>
 
               <!-- File Input 2 -->
               <div style="text-align: right;">
                 <label>תוכנית של הקורס*</label><br>
-                <input type="file" (change)="onFileChange($event, 'ConferenceApproval')"
+                <input #conferenceApprovalInput type="file" (change)="onFileChange($event, 'ConferenceApproval')"
                   accept=".doc,.docx,.xls,.xlsx,.pdf,image/*" required>
-                <button mat-raised-button class="fileOpenBtn" color="primary" (click)="file_in_new_window_base64_2()"
+                <button mat-raised-button class="fileOpenBtn" color="primary"
+                  (click)="viewSupportFile('ConferenceApproval')"
                   *ngIf="SupportRequestDto.get('ConferenceApproval').value != undefined && SupportRequestDto.get('ConferenceApproval').value != ''">
                   צפייה במסמך
                   <span class="material-icons"> zoom_in </span>
+                </button>
+                <button mat-icon-button color="warn" type="button" matTooltip="הסרת קובץ"
+                  (click)="removeFile('ConferenceApproval', conferenceApprovalInput)"
+                  *ngIf="SupportRequestDto.get('ConferenceApproval').value != undefined && SupportRequestDto.get('ConferenceApproval').value != ''">
+                  <mat-icon>delete</mat-icon>
                 </button>
               </div><br>
 
               <!-- File Input 3 -->
               <div style="text-align: right;">
                 <label>מסמך אחר</label><br>
-                <input type="file" (change)="onFileChange($event, 'AdditionalDocument')">
+                <input #additionalDocumentInput type="file" (change)="onFileChange($event, 'AdditionalDocument')"
+                  accept=".doc,.docx,.xls,.xlsx,.pdf,image/*">
                 <button mat-raised-button class="fileOpenBtn" color="primary"
-                  accept=".doc,.docx,.xls,.xlsx,.pdf,image/*" (click)="file_in_new_window_base64_3()"
+                  (click)="viewSupportFile('AdditionalDocument')"
                   *ngIf="SupportRequestDto.get('AdditionalDocument').value != undefined && SupportRequestDto.get('AdditionalDocument').value != ''">
                   צפייה במסמך
                   <span class="material-icons"> zoom_in </span>
                 </button>
-              </div>
+                <button mat-icon-button color="warn" type="button" matTooltip="הסרת קובץ"
+                  (click)="removeFile('AdditionalDocument', additionalDocumentInput)"
+                  *ngIf="SupportRequestDto.get('AdditionalDocument').value != undefined && SupportRequestDto.get('AdditionalDocument').value != ''">
+                  <mat-icon>delete</mat-icon>
+                </button>
+              </div><br>
 
               <!-- File Input 1.2 -->
               <div style="text-align: right;">
                 <label>מכתב תמיכה מהחברה 2</label><br>
-                <input type="file" (change)="onFileChange($event, 'SupportLetter2')"
+                <input #supportLetter2Input type="file" (change)="onFileChange($event, 'SupportLetter2')"
                   accept=".doc,.docx,.xls,.xlsx,.pdf,image/*">
                 <button mat-raised-button class="fileOpenBtn" color="primary"
-                  accept=".doc,.docx,.xls,.xlsx,.pdf,image/*" (click)="file_in_new_window_base64_1_2()"
+                  (click)="viewSupportFile('SupportLetter2')"
                   *ngIf="SupportRequestDto.get('SupportLetter2').value != undefined && SupportRequestDto.get('SupportLetter2').value != ''">
                   צפייה במסמך
                   <span class="material-icons"> zoom_in </span>
+                </button>
+                <button mat-icon-button color="warn" type="button" matTooltip="הסרת קובץ"
+                  (click)="removeFile('SupportLetter2', supportLetter2Input)"
+                  *ngIf="SupportRequestDto.get('SupportLetter2').value != undefined && SupportRequestDto.get('SupportLetter2').value != ''">
+                  <mat-icon>delete</mat-icon>
                 </button>
               </div><br>
 
@@ -294,7 +310,7 @@
         <!-- Status -->
         <mat-form-field appearance="outline" class="full-width">
           <mat-label>סטטוס החלטה</mat-label>
-          <mat-select formControlName="Approved" required>
+          <mat-select formControlName="Approved">
             <mat-option value="approved">מאושר</mat-option>
             <mat-option value="rejected">לא מאושר</mat-option>
             <mat-option value="chairman">אושר בדיון יו"ר</mat-option>

@@ -60,39 +60,54 @@
                                 <!-- File Input 1 -->
                                 <div style="text-align: right;">
                                     <label>הצעת תקציב*</label><br>
-                                    <input type="file" (change)="onFileChange($event, 'BudgetProposal')"
+                                    <input #budgetProposalInput type="file" (change)="onFileChange($event, 'BudgetProposal')"
                                         accept=".doc,.docx,.xls,.xlsx,.pdf,image/*" required>
                                     <button mat-raised-button class="fileOpenBtn" color="primary"
-                                        (click)="file_in_new_window_base64()"
+                                        (click)="viewResearchFile('BudgetProposal')"
                                         *ngIf="ResearchRequestDto.get('BudgetProposal').value != undefined && ResearchRequestDto.get('BudgetProposal').value != ''">
                                         צפייה במסמך
                                         <span class="material-icons"> zoom_in </span>
+                                    </button>
+                                    <button mat-icon-button color="warn" type="button" matTooltip="הסרת קובץ"
+                                        (click)="removeFile('BudgetProposal', budgetProposalInput)"
+                                        *ngIf="ResearchRequestDto.get('BudgetProposal').value != undefined && ResearchRequestDto.get('BudgetProposal').value != ''">
+                                        <mat-icon>delete</mat-icon>
                                     </button>
                                 </div><br>
 
                                 <!-- File Input 2 -->
                                 <div style="text-align: right;">
                                     <label>נספח כלכלי</label><br>
-                                    <input type="file" (change)="onFileChange($event, 'EconomicAppendix')"
-                                        accept=".doc,.docx,.xls,.xlsx,.pdf,image/*" required>
+                                    <input #economicAppendixInput type="file" (change)="onFileChange($event, 'EconomicAppendix')"
+                                        accept=".doc,.docx,.xls,.xlsx,.pdf,image/*">
                                     <button mat-raised-button class="fileOpenBtn" color="primary"
-                                        (click)="file_in_new_window_base64_2()"
+                                        (click)="viewResearchFile('EconomicAppendix')"
                                         *ngIf="ResearchRequestDto.get('EconomicAppendix').value != undefined && ResearchRequestDto.get('EconomicAppendix').value != ''">
                                         צפייה במסמך
                                         <span class="material-icons"> zoom_in </span>
+                                    </button>
+                                    <button mat-icon-button color="warn" type="button" matTooltip="הסרת קובץ"
+                                        (click)="removeFile('EconomicAppendix', economicAppendixInput)"
+                                        *ngIf="ResearchRequestDto.get('EconomicAppendix').value != undefined && ResearchRequestDto.get('EconomicAppendix').value != ''">
+                                        <mat-icon>delete</mat-icon>
                                     </button>
                                 </div><br>
 
                                 <!-- File Input 3 -->
                                 <div style="text-align: right;">
                                     <label>טופס 6</label><br>
-                                    <input type="file" (change)="onFileChange($event, 'Form6')"
+                                    <input #form6Input type="file" (change)="onFileChange($event, 'Form6')"
                                         accept=".doc,.docx,.xls,.xlsx,.pdf,image/*">
                                     <button mat-raised-button class="fileOpenBtn" color="primary"
-                                        (click)="file_in_new_window_base64_3()"
+                                        (click)="viewResearchFile('Form6')"
                                         *ngIf="ResearchRequestDto.get('Form6').value != undefined && ResearchRequestDto.get('Form6').value != ''">
                                         צפייה במסמך
                                         <span class="material-icons"> zoom_in </span>
+                                    </button>
+                                    <button mat-icon-button color="warn" type="button" matTooltip="הסרת קובץ"
+                                        (click)="removeFile('Form6', form6Input)"
+                                        *ngIf="ResearchRequestDto.get('Form6').value != undefined && ResearchRequestDto.get('Form6').value != ''">
+                                        <mat-icon>delete</mat-icon>
                                     </button>
                                 </div>
                             </div>
@@ -127,7 +142,7 @@
                 <!-- Status -->
                 <mat-form-field appearance="outline" class="full-width">
                     <mat-label>סטטוס החלטה</mat-label>
-                    <mat-select formControlName="Approved" required>
+                    <mat-select formControlName="Approved">
                         <mat-option value="approved">מאושר</mat-option>
                         <mat-option value="rejected">לא מאושר</mat-option>
                         <mat-option value="chairman">אושר בדיון יו"ר</mat-option>

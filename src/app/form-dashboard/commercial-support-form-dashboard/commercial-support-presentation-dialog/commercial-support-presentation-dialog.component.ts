@@ -1,5 +1,5 @@
-import { Component, Inject, OnInit, Optional } from '@angular/core';
-import { FormArray, FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
+import { Component, Inject, OnInit } from '@angular/core';
+import { FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
 import { SupportRequestService } from '../commercial-support.service';
 import { MatSnackBar, MatSnackBarHorizontalPosition, MatSnackBarVerticalPosition } from '@angular/material/snack-bar';
 import { MatDialog, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
@@ -50,6 +50,16 @@ export class CommercialSupportPresentationDialogComponent implements OnInit {
   }
 
   buildForm(data) {
+    // Map PresentationFiles to form controls by Type (like gathering component)
+    const toSingle = (v: any) => (Array.isArray(v) && v.length > 0 ? v[0] : v);
+    let presentationPlanFile = toSingle(data?.PresentationPlan) ?? null;
+
+    if (data?.PresentationFiles && Array.isArray(data.PresentationFiles)) {
+      data.PresentationFiles.forEach((file: any) => {
+        if (file.Type === 'PresentationPlan') presentationPlanFile = file;
+      });
+    }
+
     this.PresentationRequestDto = this.fb.group({
       Id: new FormControl(data?.Id, null),
       RequesterID: new FormControl(data?.RequesterID, Validators.required),
@@ -65,6 +75,7 @@ export class CommercialSupportPresentationDialogComponent implements OnInit {
       ReferenceName: new FormControl(data?.ReferenceName, Validators.required),
       Phone: new FormControl(data?.Phone, Validators.required),
       Email: new FormControl(data?.Email, Validators.required),
+      PresentationPlan: new FormControl(presentationPlanFile, null),
       Approved: new FormControl(data?.Approved, null),
       DecisionDate: new FormControl(data?.DecisionDate, null),
       Note: new FormControl(data?.Note, null)
@@ -106,24 +117,146 @@ export class CommercialSupportPresentationDialogComponent implements OnInit {
     });
   }
 
-  submitForm(type) {
-    this.PresentationRequestDto.controls['PresentationDate'].setValue(this._datePipe.transform(this.PresentationRequestDto.value.PresentationDate, 'yyyy-MM-dd'));
-    if (true) {
-      this.supportRequestsService.savePresentationRequest(this.PresentationRequestDto.getRawValue(), type).subscribe({
-        next: (response) => {
-          if (response['d']) {
-            this.openSnackBar("נשמר בהצלחה");
-            this.dialogRef.close(true);
-          } else {
-            this.openSnackBar("תקלה!");
-          }
-        },
-        error: (error) => {
-          console.error('שגיאה בשמירת הבקשה:', error);
+  submitForm(type: number) {
+    const presentationDate = this._datePipe.transform(
+      this.PresentationRequestDto.controls['PresentationDate'].value,
+      'yyyy-MM-dd'
+    );
+    const decisionDate = this._datePipe.transform(
+      this.PresentationRequestDto.controls['DecisionDate'].value,
+      'yyyy-MM-dd'
+    );
+
+    const formData = new FormData();
+    const raw = this.PresentationRequestDto.getRawValue();
+
+    formData.set('PresentationDate', presentationDate || '');
+    formData.set('DecisionDate', decisionDate || '');
+    formData.set('Draft', type.toString());
+
+    const fileFields = ['PresentationPlan'];
+    const excludeKeys = ['PresentationDate', 'DecisionDate', ...fileFields];
+
+    Object.keys(raw).forEach(key => {
+      if (excludeKeys.includes(key)) return;
+
+      const value = raw[key];
+      if (value instanceof File) {
+        formData.append(key, value, value.name);
+      } else if (value !== null && value !== undefined) {
+        formData.append(key, value);
+      }
+    });
+
+    fileFields.forEach(field => {
+      const val = raw[field];
+      if (val instanceof File) {
+        formData.append(field, val, val.name);
+      } else if (val !== null && val !== undefined) {
+        formData.append(field, JSON.stringify(val));
+      }
+    });
+
+    this.supportRequestsService.savePresentationRequestFormData(formData).subscribe({
+      next: (response: string) => {
+        // response === "OK"
+        this.openSnackBar("נשמר בהצלחה");
+        this.dialogRef.close(true);
+      },
+      error: (error) => {
+        console.error('שגיאה בשמירת הבקשה:', error);
+        this.openSnackBar("שגיאה בשמירה");
+      }
+    });
+  }
+
+  onFileChange(event: Event, field: string) {
+    const input = event.target as HTMLInputElement;
+
+    if (!input.files || input.files.length === 0) return;
+
+    const originalFile = input.files[0];
+    const maxSizeMB = 5;
+    if (originalFile.size > maxSizeMB * 1024 * 1024) {
+      this.openSnackBar(`הקובץ גדול מ־${maxSizeMB}MB`);
+      input.value = '';
+      return;
+    }
+
+    const extension = originalFile.name.split('.').pop();
+    const newFileName = `${field}.${extension}`;
+    const renamedFile = new File([originalFile], newFileName, { type: originalFile.type });
+
+    this.PresentationRequestDto.get(field)?.setValue(renamedFile);
+  }
+
+  removeFile(field: string, fileInput?: HTMLInputElement) {
+    this.PresentationRequestDto.get(field)?.setValue(null);
+    if (fileInput) {
+      fileInput.value = '';
+    }
+  }
+
+  getFileUrl(file: any): string {
+    if (!file) return '';
+    if (typeof file === 'string' && file.startsWith('data:')) return file;
+    if (file?.StoredFileName) {
+      return `http://srv-ipracticom/RCF_WS/SupportFiles/Uploads/${file.StoredFileName}`;
+    }
+    return '';
+  }
+
+  isImageFile(file: any): boolean {
+    if (!file) return false;
+    let contentType = '';
+    if (file instanceof File) contentType = file.type;
+    else if (file?.ContentType) contentType = file.ContentType;
+    else if (typeof file === 'string' && file.startsWith('data:')) {
+      const match = file.match(/data:(.*?);base64,/);
+      contentType = match ? match[1] : '';
+    }
+    return contentType.startsWith('image/');
+  }
+
+  getFileName(file: any): string {
+    if (!file) return '';
+    if (file instanceof File) return file.name;
+    if (file?.OriginalFileName) return file.OriginalFileName;
+    return '';
+  }
+
+  viewPresentationFile(fileControlName: string) {
+    const file = this.PresentationRequestDto.get(fileControlName)?.value;
+    if (!file) {
+      this.openSnackBar('לא נמצא קובץ');
+      return;
+    }
+    const fileUrl = this.getFileUrl(file);
+    if (fileUrl) {
+      if (this.isImageFile(file)) {
+        window.open(fileUrl, '_blank');
+      } else {
+        if (typeof file === 'string' && file.startsWith('data:')) {
+          this.openFile(file);
+        } else {
+          window.open(fileUrl, '_blank');
         }
-      });
+      }
+    } else if (typeof file === 'object' && file?.Base64Content) {
+      this.openFile(file.Base64Content);
     } else {
-      this.openSnackBar("שכחת שדות חובה");
+      this.openSnackBar('לא ניתן לפתוח את הקובץ');
+    }
+  }
+
+  openFile(base64String: string) {
+    const fileWindow = window.open();
+    if (fileWindow) {
+      fileWindow.document.write(
+        `<iframe src="${base64String}" frameborder="0" style="width:100%;height:100%;"></iframe>`
+      );
+    } else {
+      console.error('Unable to open a new window');
     }
   }
 

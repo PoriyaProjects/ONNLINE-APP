@@ -1,9 +1,9 @@
-import { Component, Inject, OnInit, Optional } from '@angular/core';
-import { FormArray, FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
+import { Component, Inject, OnInit } from '@angular/core';
+import { FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
 import { SupportRequestService } from '../commercial-support.service';
 import { MatSnackBar, MatSnackBarHorizontalPosition, MatSnackBarVerticalPosition } from '@angular/material/snack-bar';
-import { MatDialog, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
-
+import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
+import { DatePipe } from '@angular/common';
 
 @Component({
   selector: 'app-commercial-support-research-dialog',
@@ -25,7 +25,7 @@ export class CommercialSupportResearchDialogComponent implements OnInit {
   constructor(
     private fb: FormBuilder,
     private _snackBar: MatSnackBar,
-    public dialog: MatDialog,
+    private datePipe: DatePipe,
     private supportRequestsService: SupportRequestService,
     @Inject(MAT_DIALOG_DATA) public data: any,
     public dialogRef: MatDialogRef<CommercialSupportResearchDialogComponent>
@@ -48,6 +48,28 @@ export class CommercialSupportResearchDialogComponent implements OnInit {
   }
 
   buildForm(data) {
+    // Map ResearchFiles to form controls by Type (like gathering component)
+    const toSingle = (v: any) => (Array.isArray(v) && v.length > 0 ? v[0] : v);
+    let budgetProposalFile = toSingle(data?.BudgetProposal) ?? null;
+    let economicAppendixFile = toSingle(data?.EconomicAppendix) ?? null;
+    let form6File = toSingle(data?.Form6) ?? null;
+
+    if (data?.ResearchFiles && Array.isArray(data.ResearchFiles)) {
+      data.ResearchFiles.forEach((file: any) => {
+        switch (file.Type) {
+          case 'BudgetProposal':
+            budgetProposalFile = file;
+            break;
+          case 'EconomicAppendix':
+            economicAppendixFile = file;
+            break;
+          case 'Form6':
+            form6File = file;
+            break;
+        }
+      });
+    }
+
     this.ResearchRequestDto = this.fb.group({
       Id: new FormControl(data?.Id, null),
       RequesterID: new FormControl(data?.RequesterID, Validators.required),
@@ -56,9 +78,9 @@ export class CommercialSupportResearchDialogComponent implements OnInit {
       ResearchNumber: new FormControl(data?.ResearchNumber, Validators.required),
       ResearchName: new FormControl(data?.ResearchName, Validators.required),
       CompanyName: new FormControl(data?.CompanyName, Validators.required),
-      BudgetProposal: new FormControl(data?.BudgetProposal, null),
-      EconomicAppendix: new FormControl(data?.EconomicAppendix, null),
-      Form6: new FormControl(data?.Form6, null),
+      BudgetProposal: new FormControl(budgetProposalFile, Validators.required),
+      EconomicAppendix: new FormControl(economicAppendixFile, null),
+      Form6: new FormControl(form6File, null),
       Approved: new FormControl(data?.Approved, null),
       DecisionDate: new FormControl(data?.DecisionDate, null),
       Note: new FormControl(data?.Note, null)
@@ -100,69 +122,127 @@ export class CommercialSupportResearchDialogComponent implements OnInit {
     });
   }
 
-  submitForm(type) {
-    if (true) {
-      this.supportRequestsService.saveResearchRequest(this.ResearchRequestDto.getRawValue(), type).subscribe({
-        next: (response) => {
-          if (response['d']) {
-            this.openSnackBar("נשמר בהצלחה");
-            this.dialogRef.close(true);
-          } else {
-            this.openSnackBar("תקלה!");
-          }
-        },
-        error: (error) => {
-          console.error('שגיאה בשמירת הבקשה:', error);
-        }
-      });
-    } else {
-      this.openSnackBar("שכחת שדות חובה");
-    }
+  submitForm(type: number) {
+    const decisionDate = this.ResearchRequestDto.value.DecisionDate ? this.datePipe.transform(this.ResearchRequestDto.value.DecisionDate, 'yyyy-MM-dd') : null;
+
+    const formData = new FormData();
+    const raw = this.ResearchRequestDto.getRawValue();
+
+    formData.set('DecisionDate', decisionDate || '');
+    formData.set('Draft', type.toString());
+
+    const fileFields = ['BudgetProposal', 'EconomicAppendix', 'Form6'];
+    const excludeKeys = ['DecisionDate', ...fileFields];
+
+    Object.keys(raw).forEach(key => {
+      if (excludeKeys.includes(key)) return;
+
+      const value = raw[key];
+      if (value instanceof File) {
+        formData.append(key, value, value.name);
+      } else if (value !== null && value !== undefined) {
+        formData.append(key, value);
+      }
+    });
+
+    fileFields.forEach(field => {
+      const val = raw[field];
+      if (val instanceof File) {
+        formData.append(field, val, val.name);
+      } else if (val !== null && val !== undefined) {
+        formData.append(field, JSON.stringify(val));
+      }
+    });
+
+    this.supportRequestsService.saveResearchRequestFormData(formData).subscribe({
+      next: (response: string) => {
+        // response === "OK"
+        this.openSnackBar("נשמר בהצלחה");
+        this.dialogRef.close(true);
+      },
+      error: (error) => {
+        console.error('שגיאה בשמירת הבקשה:', error);
+        this.openSnackBar("שגיאה בשמירה");
+      }
+    });
   }
 
   onFileChange(event: Event, field: string) {
     const input = event.target as HTMLInputElement;
 
-    if (input.files && input.files.length > 0) {
-      const file = input.files[0];
-      const reader = new FileReader();
+    if (!input.files || input.files.length === 0) return;
 
-      reader.onload = () => {
-        const base64 = reader.result as string;
-        // You can store the base64 string in the form
-        this.ResearchRequestDto.get(field)?.setValue(base64);
-      };
+    const originalFile = input.files[0];
+    const maxSizeMB = 5;
+    if (originalFile.size > maxSizeMB * 1024 * 1024) {
+      this.openSnackBar(`הקובץ גדול מ־${maxSizeMB}MB`);
+      input.value = '';
+      return;
+    }
 
-      reader.onerror = (error) => {
-        console.error('Error reading file:', error);
-      };
+    const extension = originalFile.name.split('.').pop();
+    const newFileName = `${field}.${extension}`;
+    const renamedFile = new File([originalFile], newFileName, { type: originalFile.type });
 
-      reader.readAsDataURL(file); // Converts file to base64
+    this.ResearchRequestDto.get(field)?.setValue(renamedFile);
+  }
+
+  removeFile(field: string, fileInput?: HTMLInputElement) {
+    this.ResearchRequestDto.get(field)?.setValue(null);
+    if (fileInput) {
+      fileInput.value = '';
     }
   }
 
-  file_in_new_window_base64() {
-    const base64String = this.ResearchRequestDto.get('BudgetProposal')?.value;
-    if (base64String) {
-      this.openFile(base64String);
-    } else {
-      console.error('No file available to open');
+  getFileUrl(file: any): string {
+    if (!file) return '';
+    if (typeof file === 'string' && file.startsWith('data:')) return file;
+    if (file?.StoredFileName) {
+      return `http://srv-ipracticom/RCF_WS/SupportFiles/Uploads/${file.StoredFileName}`;
     }
+    return '';
   }
-  file_in_new_window_base64_2() {
-    const base64String = this.ResearchRequestDto.get('EconomicAppendix')?.value;
-    if (base64String) {
-      this.openFile(base64String);
-    } else {
-      console.error('No file available to open');
+
+  isImageFile(file: any): boolean {
+    if (!file) return false;
+    let contentType = '';
+    if (file instanceof File) contentType = file.type;
+    else if (file?.ContentType) contentType = file.ContentType;
+    else if (typeof file === 'string' && file.startsWith('data:')) {
+      const match = file.match(/data:(.*?);base64,/);
+      contentType = match ? match[1] : '';
     }
+    return contentType.startsWith('image/');
   }
-  file_in_new_window_base64_3() {
-    const base64String = this.ResearchRequestDto.get('Form6')?.value;
-    if (base64String) {
-      this.openFile(base64String);
+
+  getFileName(file: any): string {
+    if (!file) return '';
+    if (file instanceof File) return file.name;
+    if (file?.OriginalFileName) return file.OriginalFileName;
+    return '';
+  }
+
+  viewResearchFile(fileControlName: string) {
+    const file = this.ResearchRequestDto.get(fileControlName)?.value;
+    if (!file) {
+      this.openSnackBar('לא נמצא קובץ');
+      return;
+    }
+    const fileUrl = this.getFileUrl(file);
+    if (fileUrl) {
+      if (this.isImageFile(file)) {
+        window.open(fileUrl, '_blank');
+      } else {
+        if (typeof file === 'string' && file.startsWith('data:')) {
+          this.openFile(file);
+        } else {
+          window.open(fileUrl, '_blank');
+        }
+      }
+    } else if (typeof file === 'object' && file?.Base64Content) {
+      this.openFile(file.Base64Content);
     } else {
-      console.error('No file available to open');
+      this.openSnackBar('לא ניתן לפתוח את הקובץ');
     }
   }
 
