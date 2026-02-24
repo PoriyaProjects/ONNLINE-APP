@@ -40,23 +40,45 @@
         </div>
       </div>
 
-      <!-- Diagnosis Selector -->
-      <mat-form-field appearance="outline" class="diagnosis-selector">
-        <mat-label>בחר אגף</mat-label>
-        <mat-select [(ngModel)]="selectedDiagnosis" (selectionChange)="onDiagnosisChange($event)"
-                    [disabled]="isMainDataLoading || isDiagnosesLoading || diagnosesList.length === 0">
-          <mat-option *ngIf="isDiagnosesLoading" disabled>
-            <span>טוען...</span>
-          </mat-option>
-          <mat-option *ngFor="let diagnosis of diagnosesList" [value]="diagnosis">
-            {{ diagnosis }}
-          </mat-option>
-        </mat-select>
-        <mat-icon matPrefix *ngIf="isDiagnosesLoading" class="loading-icon">hourglass_empty</mat-icon>
-      </mat-form-field>
+      <!-- Diagnosis Selector – עיצוב ייחודי -->
+      <div class="wing-and-theme-row" dir="rtl">
+        <div class="custom-dropdown" [class.active]="isDropdownOpen">
+          
+          <div class="dropdown-trigger" (click)="toggleDropdown()">
+            <mat-icon class="dropdown-icon">apartment</mat-icon>
+            <span class="selected-text">
+              {{ selectedDiagnosis || 'בחר אגף' }}
+            </span>
+            <mat-icon class="arrow-icon">{{ isDropdownOpen ? 'expand_less' : 'expand_more' }}</mat-icon>
+          </div>
+      
+          <div class="dropdown-panel" *ngIf="isDropdownOpen">
+            <div class="loading-state" *ngIf="isDiagnosesLoading">טוען...</div>
+            
+            <div class="options-list" *ngIf="!isDiagnosesLoading">
+              <div class="option-item" 
+                   *ngFor="let diagnosis of diagnosesList" 
+                   (click)="selectOption(diagnosis)"
+                   [class.selected]="diagnosis === selectedDiagnosis">
+                {{ diagnosis }}
+              </div>
+            </div>
+          </div>
+      
+        </div>
+      </div>
+      
+      <div class="dropdown-overlay" *ngIf="isDropdownOpen" (click)="isDropdownOpen = false"></div>
+      <!-- </div> -->
     </div>
-
+    
     <div class="top-right">
+      <button mat-icon-button class="icon-btn ghost theme-toggle-in-row"
+              matTooltip="{{ isDark ? 'מצב בהיר' : 'מצב כהה' }}"
+              matTooltipPosition="below"
+              (click)="toggleTheme()">
+        <mat-icon>{{ isDark ? 'light_mode' : 'dark_mode' }}</mat-icon>
+      </button>
       <!-- Guide Icons -->
       <button mat-icon-button class="icon-btn ghost"
               matTooltip="מדריך הדוח" matTooltipPosition="below"
@@ -78,13 +100,6 @@
               matTooltip="רענון" matTooltipPosition="below"
               (click)="loadDepartmentIncomeData()">
         <mat-icon>refresh</mat-icon>
-      </button>
-
-      <button mat-icon-button class="icon-btn ghost"
-              matTooltip="{{ isDark ? 'מצב בהיר' : 'מצב כהה' }}"
-              matTooltipPosition="below"
-              (click)="toggleTheme()">
-        <mat-icon>{{ isDark ? 'light_mode' : 'dark_mode' }}</mat-icon>
       </button>
 
       <button mat-icon-button class="icon-btn ghost"
@@ -239,6 +254,12 @@
           <span class="section-text">מבנה הדוח</span>
         </button>
       </div>
+
+      <div class="guide-dont-show-row">
+        <mat-checkbox [(ngModel)]="dontShowGuideAgain" color="primary">
+          אל תציג שוב בכניסה לעמוד
+        </mat-checkbox>
+      </div>
     </div>
   </div>
 
@@ -346,7 +367,7 @@
 </div>
 
 <!-- ================= DEPARTMENT DETAILS MODAL ================= -->
-<div *ngIf="isDepartmentGraphOpen && selectedDepartment" class="department-graph-overlay">
+<div *ngIf="isDepartmentGraphOpen && selectedDepartment" class="department-graph-overlay" [class.dark]="isDark">
   <div class="department-graph-modal">
     <div dir="rtl" class="graph-header">
       <h2>{{ departmentGraphTitle }}</h2>
@@ -436,31 +457,31 @@
           <!-- CASH COLUMNS -->
           <ng-container matColumnDef="Cash2021">
             <th mat-header-cell *matHeaderCellDef style="font-weight: bold; cursor: pointer;"
-              (click)="onDetailedTableSort({active: 'Cash2021', direction: 'desc'})">2021</th>
+              (click)="onDetailedTableSort({active: 'Cash2021', direction: 'desc'})">{{getFullYear(4)}}</th>
             <td mat-cell *matCellDef="let element">{{ formatNumber(element.Cash2021) }}</td>
           </ng-container>
 
           <ng-container matColumnDef="Cash2022">
             <th mat-header-cell *matHeaderCellDef style="font-weight: bold; cursor: pointer;"
-              (click)="onDetailedTableSort({active: 'Cash2022', direction: 'desc'})">2022</th>
+              (click)="onDetailedTableSort({active: 'Cash2022', direction: 'desc'})">{{getFullYear(3)}}</th>
             <td mat-cell *matCellDef="let element">{{ formatNumber(element.Cash2022) }}</td>
           </ng-container>
 
           <ng-container matColumnDef="Cash2023">
             <th mat-header-cell *matHeaderCellDef style="font-weight: bold; cursor: pointer;"
-              (click)="onDetailedTableSort({active: 'Cash2023', direction: 'desc'})">2023</th>
+              (click)="onDetailedTableSort({active: 'Cash2023', direction: 'desc'})">{{getFullYear(2)}}  </th>
             <td mat-cell *matCellDef="let element">{{ formatNumber(element.Cash2023) }}</td>
           </ng-container>
 
           <ng-container matColumnDef="Cash2024">
             <th mat-header-cell *matHeaderCellDef style="font-weight: bold; cursor: pointer;"
-              (click)="onDetailedTableSort({active: 'Cash2024', direction: 'desc'})">2024</th>
+              (click)="onDetailedTableSort({active: 'Cash2024', direction: 'desc'})">{{getFullYear(1)}}</th>
             <td mat-cell *matCellDef="let element">{{ formatNumber(element.Cash2024) }}</td>
           </ng-container>
 
           <ng-container matColumnDef="Cash2025">
             <th mat-header-cell *matHeaderCellDef class="year-2025-header"
-              (click)="onDetailedTableSort({active: 'Cash2025', direction: 'desc'})">2025 🔝</th>
+              (click)="onDetailedTableSort({active: 'Cash2025', direction: 'desc'})">{{getFullYear(0)}} 🔝</th>
             <td mat-cell *matCellDef="let element" class="year-2025-cell">
               {{ formatNumber(element.Cash2025) }}</td>
           </ng-container>
@@ -483,31 +504,31 @@
           <!-- UNITS COLUMNS -->
           <ng-container matColumnDef="Units2021">
             <th mat-header-cell *matHeaderCellDef style="font-weight: bold; cursor: pointer;"
-              (click)="onDetailedTableSort({active: 'Units2021', direction: 'desc'})">2021</th>
+              (click)="onDetailedTableSort({active: 'Units2021', direction: 'desc'})">{{getFullYear(4)}}</th>
             <td mat-cell *matCellDef="let element">{{ formatNumber(element.Units2021) }}</td>
           </ng-container>
 
           <ng-container matColumnDef="Units2022">
             <th mat-header-cell *matHeaderCellDef style="font-weight: bold; cursor: pointer;"
-              (click)="onDetailedTableSort({active: 'Units2022', direction: 'desc'})">2022</th>
+              (click)="onDetailedTableSort({active: 'Units2022', direction: 'desc'})">{{getFullYear(3)}}</th>
             <td mat-cell *matCellDef="let element">{{ formatNumber(element.Units2022) }}</td>
           </ng-container>
 
           <ng-container matColumnDef="Units2023">
             <th mat-header-cell *matHeaderCellDef style="font-weight: bold; cursor: pointer;"
-              (click)="onDetailedTableSort({active: 'Units2023', direction: 'desc'})">2023</th>
+              (click)="onDetailedTableSort({active: 'Units2023', direction: 'desc'})">{{getFullYear(2)}}</th>
             <td mat-cell *matCellDef="let element">{{ formatNumber(element.Units2023) }}</td>
           </ng-container>
 
           <ng-container matColumnDef="Units2024">
             <th mat-header-cell *matHeaderCellDef style="font-weight: bold; cursor: pointer;"
-              (click)="onDetailedTableSort({active: 'Units2024', direction: 'desc'})">2024</th>
+              (click)="onDetailedTableSort({active: 'Units2024', direction: 'desc'})">{{getFullYear(1)}}</th>
             <td mat-cell *matCellDef="let element">{{ formatNumber(element.Units2024) }}</td>
           </ng-container>
 
           <ng-container matColumnDef="Units2025">
             <th mat-header-cell *matHeaderCellDef class="year-2025-header"
-              (click)="onDetailedTableSort({active: 'Units2025', direction: 'desc'})">2025 🔝</th>
+              (click)="onDetailedTableSort({active: 'Units2025', direction: 'desc'})">{{getFullYear(0)}} 🔝</th>
             <td mat-cell *matCellDef="let element" class="year-2025-cell">
               {{ formatNumber(element.Units2025) }}</td>
           </ng-container>

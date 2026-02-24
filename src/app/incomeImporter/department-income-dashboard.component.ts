@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTableDataSource } from '@angular/material/table';
@@ -81,11 +81,12 @@ interface EmployeeInfo {
         ]),
     ],
 })
-export class DepartmentIncomeDashboardComponent implements OnInit {
+export class DepartmentIncomeDashboardComponent implements OnInit, OnDestroy {
     @ViewChild(MatSort) sort!: MatSort;
 
     // Guide Avatar
     showGuideAvatar = true;
+    dontShowGuideAgain = false; // checkbox "אל תציג יותר"
     showArticleShowcase = false;
     currentArticle: string = "";
 
@@ -291,11 +292,12 @@ export class DepartmentIncomeDashboardComponent implements OnInit {
 
     ngOnInit(): void {
         console.log("gOnInit called");
-        // Check if guide was previously dismissed
-        const guideDismissed = localStorage.getItem("dashboardGuideAvatarDismissed");
-        if (guideDismissed === "true") {
+        // Open guide on every visit unless user checked "אל תציג יותר"
+        const dontShowAgain = localStorage.getItem("dashboardGuideDontShowAgain");
+        if (dontShowAgain === "true") {
             this.showGuideAvatar = false;
         }
+        // else: showGuideAvatar stays true → guide opens automatically
 
        // Load employee info from localStorage + API
        this.employeeUserName = localStorage.getItem("loginUserName");
@@ -308,8 +310,9 @@ export class DepartmentIncomeDashboardComponent implements OnInit {
            this.loadEmployeeInfo(this.employeeUserName);
        }
 
-        // Initialize chart theme
+        // Initialize chart theme and body class for select panel (dark mode)
         this.updateChartTheme();
+        this.syncBodyDarkClass();
         this.updateChartOptionsForType();
         this.loadDiagnosesList();
         // Load data after diagnoses list is loaded
@@ -321,6 +324,10 @@ export class DepartmentIncomeDashboardComponent implements OnInit {
             }
         }, 500);
         this.displayedCatalogColumns = this.cashColumns;
+    }
+
+    ngOnDestroy(): void {
+        document.body.classList.remove('department-dashboard-dark');
     }
 
     /**
@@ -1116,11 +1123,15 @@ updateChartColumns(): void {
     }
 
     /**
-     * Dismiss the guide avatar
+     * Dismiss the guide avatar. If "don't show again" is checked, remember for next visits.
      */
     dismissGuideAvatar(): void {
         this.showGuideAvatar = false;
-        localStorage.setItem("dashboardGuideAvatarDismissed", "true");
+        if (this.dontShowGuideAgain) {
+            localStorage.setItem("dashboardGuideDontShowAgain", "true");
+        } else {
+            localStorage.removeItem("dashboardGuideDontShowAgain");
+        }
     }
 
     /**
@@ -1244,7 +1255,27 @@ updateChartColumns(): void {
     toggleTheme(): void {
         this.isDark = !this.isDark;
         this.updateChartTheme();
+        this.syncBodyDarkClass();
         this.cdr.detectChanges();
+    }
+    /**
+     * מחזיר את שנת הלוח לפי "כמה שנים לאחור" מהשנה הנוכחית.
+     * @param yearsAgo 0 = השנה הנוכחית, 1 = שנה שעברה, 2 = לפני שנתיים וכו'
+     */
+    getFullYear(yearsAgo: number): string {
+        const current = new Date().getFullYear();
+        if (yearsAgo == null || yearsAgo === 0) {
+            return current.toString();
+        }
+        return (current - yearsAgo).toString();
+    }
+
+    private syncBodyDarkClass(): void {
+        if (this.isDark) {
+            document.body.classList.add('department-dashboard-dark');
+        } else {
+            document.body.classList.remove('department-dashboard-dark');
+        }
     }
 
     /**
@@ -1252,31 +1283,68 @@ updateChartColumns(): void {
      */
     updateChartTheme(): void {
         if (this.isDark) {
-            // Dark theme colors
-            this.chartOptions.titleTextStyle.color = "#e5e7eb";
-            this.chartOptions.hAxis.textStyle.color = "rgba(229, 231, 235, 0.85)";
-            this.chartOptions.hAxis.titleTextStyle.color = "#e5e7eb";
-            this.chartOptions.vAxis.textStyle.color = "rgba(229, 231, 235, 0.85)";
-            this.chartOptions.vAxis.titleTextStyle.color = "#e5e7eb";
-            this.chartOptions.legend.textStyle.color = "rgba(229, 231, 235, 0.85)";
-            this.chartOptions.annotations.textStyle.color = "#e5e7eb";
-            this.chartOptions.tooltip.textStyle.color = "#0f172a";
-            this.chartOptions.backgroundColor.fill = "rgba(255, 255, 255, 0.06)";
-            this.chartOptions.backgroundColor.stroke = "rgba(255, 255, 255, 0.10)";
+            // Dark theme: black/dark background so chart area is dark
+            this.chartOptions.titleTextStyle = { ...this.chartOptions.titleTextStyle, color: "#e5e7eb" };
+            this.chartOptions.hAxis = {
+                ...this.chartOptions.hAxis,
+                textStyle: { ...this.chartOptions.hAxis?.textStyle, color: "rgba(229, 231, 235, 0.9)" },
+                titleTextStyle: { ...this.chartOptions.hAxis?.titleTextStyle, color: "#e5e7eb" },
+            };
+            this.chartOptions.vAxis = {
+                ...this.chartOptions.vAxis,
+                textStyle: { ...this.chartOptions.vAxis?.textStyle, color: "rgba(229, 231, 235, 0.9)" },
+                titleTextStyle: { ...this.chartOptions.vAxis?.titleTextStyle, color: "#e5e7eb" },
+            };
+            this.chartOptions.legend = {
+                ...this.chartOptions.legend,
+                textStyle: { ...this.chartOptions.legend?.textStyle, color: "rgba(229, 231, 235, 0.9)" },
+            };
+            this.chartOptions.annotations = {
+                ...this.chartOptions.annotations,
+                textStyle: { ...this.chartOptions.annotations?.textStyle, color: "#e5e7eb" },
+            };
+            this.chartOptions.tooltip = {
+                ...this.chartOptions.tooltip,
+                textStyle: { ...this.chartOptions.tooltip?.textStyle, color: "#e5e7eb" },
+            };
+            this.chartOptions.backgroundColor = {
+                fill: "#0f172a",
+                stroke: "rgba(255, 255, 255, 0.15)",
+                strokeWidth: 1,
+            };
         } else {
             // Light theme colors
-            this.chartOptions.titleTextStyle.color = "#333";
-            this.chartOptions.hAxis.textStyle.color = "#555";
-            this.chartOptions.hAxis.titleTextStyle.color = "#333";
-            this.chartOptions.vAxis.textStyle.color = "#555";
-            this.chartOptions.vAxis.titleTextStyle.color = "#333";
-            this.chartOptions.legend.textStyle.color = "#555";
-            this.chartOptions.annotations.textStyle.color = "#333";
-            this.chartOptions.tooltip.textStyle.color = "#333";
-            this.chartOptions.backgroundColor.fill = "#ffffff";
-            this.chartOptions.backgroundColor.stroke = "#ddd";
+            this.chartOptions.titleTextStyle = { ...this.chartOptions.titleTextStyle, color: "#333" };
+            this.chartOptions.hAxis = {
+                ...this.chartOptions.hAxis,
+                textStyle: { ...this.chartOptions.hAxis?.textStyle, color: "#555" },
+                titleTextStyle: { ...this.chartOptions.hAxis?.titleTextStyle, color: "#333" },
+            };
+            this.chartOptions.vAxis = {
+                ...this.chartOptions.vAxis,
+                textStyle: { ...this.chartOptions.vAxis?.textStyle, color: "#555" },
+                titleTextStyle: { ...this.chartOptions.vAxis?.titleTextStyle, color: "#333" },
+            };
+            this.chartOptions.legend = {
+                ...this.chartOptions.legend,
+                textStyle: { ...this.chartOptions.legend?.textStyle, color: "#555" },
+            };
+            this.chartOptions.annotations = {
+                ...this.chartOptions.annotations,
+                textStyle: { ...this.chartOptions.annotations?.textStyle, color: "#333" },
+            };
+            this.chartOptions.tooltip = {
+                ...this.chartOptions.tooltip,
+                textStyle: { ...this.chartOptions.tooltip?.textStyle, color: "#333" },
+            };
+            this.chartOptions.backgroundColor = {
+                fill: "#ffffff",
+                stroke: "#ddd",
+                strokeWidth: 1,
+            };
         }
-        // Force chart update
+        // New reference so angular-google-charts detects change and redraws with dark background
+        this.chartOptions = { ...this.chartOptions };
         if (this.chartData && this.chartData.length > 0) {
             this.updateChartData();
         }
@@ -1320,6 +1388,19 @@ updateChartColumns(): void {
             console.error("Error handling chart click:", error);
         }
     }
+    isDropdownOpen = false;
+
+toggleDropdown() {
+  if (!this.isDiagnosesLoading && this.diagnosesList.length > 0) {
+    this.isDropdownOpen = !this.isDropdownOpen;
+  }
+}
+
+selectOption(option: any) {
+  this.selectedDiagnosis = option;
+  this.isDropdownOpen = false;
+  this.onDiagnosisChange({ value: option }); // קריאה לפונקציה הקיימת שלך
+}
 }
 
 

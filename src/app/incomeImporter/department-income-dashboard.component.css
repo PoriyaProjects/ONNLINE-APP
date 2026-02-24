@@ -89,6 +89,52 @@
     align-items: center;
     gap: 12px;
   }
+
+  /* בחר אגף – עיצוב ייחודי: כמוהו כרטיס עם אייקון וגרדיאנט */
+  .wing-and-theme-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: nowrap;
+  }
+
+  .wing-dropdown-wrap {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 200px;
+    max-width: 320px;
+    padding: 6px 10px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.9);
+    box-shadow: 0 4px 10px rgba(15, 23, 42, 0.12);
+    border: 1px solid rgba(15, 23, 42, 0.08);
+    transition: box-shadow 0.2s ease, border-color 0.2s ease;
+  }
+
+  .wing-dropdown-wrap:hover {
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.14);
+    border-color: rgba(15, 23, 42, 0.12);
+  }
+
+  .wing-dropdown-icon {
+    color: var(--muted);
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+    margin-left: 4px;
+    flex-shrink: 0;
+  }
+
+  .wing-and-theme-row .diagnosis-selector {
+    margin: 0;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .theme-toggle-in-row {
+    flex-shrink: 0;
+  }
   
   .top-right {
     display: flex;
@@ -106,8 +152,86 @@
   }
   
   .diagnosis-selector {
-    min-width: 180px;
-    width: 180px;
+    min-width: 0;
+    width: 100%;
+    flex-shrink: 1;
+  }
+
+  .diagnosis-selector ::ng-deep .mat-mdc-form-field-wrapper {
+    padding-bottom: 0;
+  }
+
+  .diagnosis-selector ::ng-deep .mat-mdc-text-field-wrapper {
+    padding: 0 6px 0 10px;
+    background: transparent !important;
+    border: none !important;
+    border-radius: 999px;
+    box-shadow: none !important;
+    transition: none;
+  }
+
+  .diagnosis-selector:hover ::ng-deep .mat-mdc-text-field-wrapper,
+  .diagnosis-selector ::ng-deep .mat-mdc-form-field.mat-focused .mat-mdc-text-field-wrapper {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+  }
+
+  .diagnosis-selector ::ng-deep .mat-mdc-form-field-infix {
+    padding: 6px 0;
+    min-height: auto;
+  }
+
+  .diagnosis-selector ::ng-deep .mat-mdc-select-trigger,
+  .diagnosis-selector ::ng-deep .mat-mdc-select-value-text {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text);
+    padding: 4px 0;
+  }
+
+  .diagnosis-selector ::ng-deep .mat-mdc-form-field-label {
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: none;
+    letter-spacing: 0;
+  }
+
+  .diagnosis-selector ::ng-deep .mat-mdc-form-field.mat-focused .mat-mdc-form-field-label,
+  .diagnosis-selector ::ng-deep .mat-mdc-form-field.mat-form-field-should-float .mat-mdc-form-field-label {
+    color: var(--muted);
+  }
+
+  .diagnosis-selector ::ng-deep .mat-mdc-select-arrow {
+    color: var(--muted);
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+  }
+
+  .diagnosis-selector:hover ::ng-deep .mat-mdc-select-arrow,
+  .diagnosis-selector ::ng-deep .mat-mdc-form-field.mat-focused .mat-mdc-select-arrow {
+    color: var(--text);
+  }
+
+  .diagnosis-selector .loading-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+    color: #3b82f6;
+    animation: spin 1s linear infinite;
+    margin-left: 6px;
+  }
+
+  .diagnosis-selector ::ng-deep .mdc-notched-outline .mdc-notched-outline__leading,
+  .diagnosis-selector ::ng-deep .mdc-notched-outline .mdc-notched-outline__notch,
+  .diagnosis-selector ::ng-deep .mdc-notched-outline .mdc-notched-outline__trailing {
+    border: none !important;
+  }
+
+  .diagnosis-selector ::ng-deep .mat-mdc-form-field-subscript-wrapper {
+    display: none;
   }
 
   .user-card {
@@ -168,93 +292,52 @@
     overflow: hidden;
   }
 
-  .diagnosis-selector ::ng-deep .mat-mdc-form-field-wrapper {
-    padding-bottom: 0;
-  }
-
-  .diagnosis-selector ::ng-deep .mat-mdc-text-field-wrapper {
-    padding: 0 12px;
-    background: var(--panel);
-    border-radius: 10px;
-    border: 1.5px solid var(--border);
-    transition: all 0.2s ease;
-  }
-
-  .diagnosis-selector:hover ::ng-deep .mat-mdc-text-field-wrapper {
-    border-color: var(--accent, #3b82f6);
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-  }
-
-  .diagnosis-selector ::ng-deep .mat-mdc-form-field.mat-focused .mat-mdc-text-field-wrapper {
-    border-color: var(--accent, #3b82f6);
-    border-width: 2px;
-    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15);
-  }
-
-  .diagnosis-selector ::ng-deep .mat-mdc-form-field-infix {
-    padding: 10px 0;
-    min-height: auto;
-  }
-
-  .diagnosis-selector ::ng-deep .mat-mdc-select-trigger {
-    font-size: 14px;
-    font-weight: 600;
-    color: var(--text);
-    padding: 4px 0;
-  }
-
-  .diagnosis-selector ::ng-deep .mat-mdc-form-field-label {
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--muted);
-  }
-
-  .diagnosis-selector ::ng-deep .mat-mdc-form-field.mat-focused .mat-mdc-form-field-label {
-    color: var(--accent, #3b82f6);
-  }
-
-  .diagnosis-selector ::ng-deep .mat-mdc-select-arrow-wrapper {
-    transform: translateY(0);
-  }
-
-  .diagnosis-selector ::ng-deep .mat-mdc-select-arrow {
-    color: var(--muted);
-    transition: color 0.2s ease;
-  }
-
-  .diagnosis-selector:hover ::ng-deep .mat-mdc-select-arrow,
-  .diagnosis-selector ::ng-deep .mat-mdc-form-field.mat-focused .mat-mdc-select-arrow {
-    color: var(--accent, #3b82f6);
-  }
-
-  .diagnosis-selector .loading-icon {
-    font-size: 18px;
-    width: 18px;
-    height: 18px;
-    color: var(--accent, #3b82f6);
-    animation: spin 1s linear infinite;
-    margin-left: 8px;
-  }
-
   @keyframes spin {
     from { transform: rotate(0deg); }
     to { transform: rotate(360deg); }
   }
 
-  /* Dark mode adjustments for select */
-  .dash.dark .diagnosis-selector ::ng-deep .mat-mdc-text-field-wrapper {
-    background: rgba(255, 255, 255, 0.06);
-    border-color: rgba(255, 255, 255, 0.10);
+  /* מצב לילה: בחר אגף – כמו כרטיס המשתמש */
+  .dash.dark .wing-dropdown-wrap {
+    background: rgba(15, 23, 42, 0.9);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
   }
 
-  .dash.dark .diagnosis-selector:hover ::ng-deep .mat-mdc-text-field-wrapper {
-    border-color: rgba(59, 130, 246, 0.6);
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+  .dash.dark .wing-dropdown-wrap:hover {
+    border-color: rgba(255, 255, 255, 0.18);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   }
 
-  .dash.dark .diagnosis-selector ::ng-deep .mat-mdc-form-field.mat-focused .mat-mdc-text-field-wrapper {
-    border-color: rgba(59, 130, 246, 0.8);
-    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2);
+  .dash.dark .wing-dropdown-icon {
+    color: var(--muted);
+  }
+
+  .dash.dark .diagnosis-selector ::ng-deep .mat-mdc-select-value,
+  .dash.dark .diagnosis-selector ::ng-deep .mat-mdc-select-value-text {
+    color: var(--text) !important;
+  }
+
+  .dash.dark .diagnosis-selector ::ng-deep .mat-mdc-form-field-label {
+    color: var(--muted) !important;
+  }
+
+  .dash.dark .diagnosis-selector.mat-form-field.mat-focused ::ng-deep .mat-mdc-form-field-label,
+  .dash.dark .diagnosis-selector ::ng-deep .mat-mdc-form-field.mat-form-field-should-float .mat-mdc-form-field-label {
+    color: var(--muted) !important;
+  }
+
+  .dash.dark .diagnosis-selector ::ng-deep .mat-mdc-select-arrow {
+    color: var(--muted) !important;
+  }
+
+  .dash.dark .diagnosis-selector:hover ::ng-deep .mat-mdc-select-arrow,
+  .dash.dark .diagnosis-selector ::ng-deep .mat-mdc-form-field.mat-focused .mat-mdc-select-arrow {
+    color: var(--text) !important;
+  }
+
+  .dash.dark .diagnosis-selector .loading-icon {
+    color: var(--muted);
   }
 
   /* Select panel styling */
@@ -464,6 +547,12 @@
     position: relative;
     cursor: pointer;
     overflow: hidden;
+    border-radius: 8px;
+  }
+
+  /* מצב לילה: רקע הגרף שחור/כהה גם אם הגרף עצמו מתעכב */
+  .dash.dark .graph-body {
+    background: #0f172a;
   }
 
   .graph-body google-chart ::ng-deep svg {
@@ -863,18 +952,6 @@
     color: rgba(255, 255, 255, 0.86) !important;
   }
   
-  /* select panel + datepicker */
-  :host ::ng-deep .mat-mdc-select-panel {
-    background: #0f172a !important;
-    color: rgba(255, 255, 255, 0.92) !important;
-    border: 1px solid rgba(255, 255, 255, 0.10);
-  }
-  
-  :host ::ng-deep .mat-mdc-option { color: rgba(255, 255, 255, 0.90) !important; }
-  :host ::ng-deep .mat-mdc-option:hover:not(.mdc-list-item--disabled) {
-    background: rgba(255, 255, 255, 0.08) !important;
-  }
-  
   /* ===============================
      Department Graph Modal
   ================================ */
@@ -895,13 +972,118 @@
     width: 95vw;
     max-width: 1400px;
     max-height: calc(95vh - 32px);
+    overflow-x: hidden;
     overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
     background: #ffffff;
-    border-radius: 16px;
+    border-radius: 20px;
     padding: 20px;
     box-shadow: var(--shadow2);
     border: 1px solid var(--border);
     backdrop-filter: blur(6px);
+  }
+
+  /* מצב לילה לפופאפ פרטי מחלקה – כהה אבל קריא */
+  .department-graph-overlay.dark .department-graph-modal {
+    background: #0f172a;
+    border-color: rgba(255, 255, 255, 0.12);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+  }
+
+  .department-graph-overlay.dark .graph-header h2,
+  .department-graph-overlay.dark .graph-header .close-btn mat-icon {
+    color: #f1f5f9;
+  }
+
+  .department-graph-overlay.dark .graph-header .close-btn:hover {
+    color: #f8fafc;
+  }
+
+  .department-graph-overlay.dark .graph-header {
+    border-bottom-color: rgba(255, 255, 255, 0.12);
+  }
+
+  .department-graph-overlay.dark .summary-card {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.14);
+    border-radius: 14px;
+  }
+
+  .department-graph-overlay.dark .summary-card.positive {
+    border-color: rgba(74, 222, 128, 0.5);
+    background: rgba(34, 197, 94, 0.14);
+  }
+
+  .department-graph-overlay.dark .summary-card.negative {
+    border-color: rgba(248, 113, 113, 0.5);
+    background: rgba(239, 68, 68, 0.14);
+  }
+
+  .department-graph-overlay.dark .card-label {
+    color: rgba(241, 245, 249, 0.85);
+  }
+
+  .department-graph-overlay.dark .card-value {
+    color: #f1f5f9;
+  }
+
+  .department-graph-overlay.dark .card-percentage {
+    color: #a5b4fc;
+  }
+
+  .department-graph-overlay.dark .catalog-table-section {
+    border-top-color: rgba(255, 255, 255, 0.12);
+  }
+
+  .department-graph-overlay.dark .catalog-title {
+    color: #f1f5f9;
+  }
+
+  .department-graph-overlay.dark .sort-label,
+  .department-graph-overlay.dark .sort-controls {
+    color: #f1f5f9;
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.14);
+  }
+
+  .department-graph-overlay.dark .catalog-mat-table th {
+    background: rgba(30, 41, 59, 0.8);
+    color: #f1f5f9;
+    border-bottom-color: rgba(255, 255, 255, 0.12);
+  }
+
+  .department-graph-overlay.dark .catalog-mat-table td {
+    color: #e2e8f0;
+    border-bottom-color: rgba(255, 255, 255, 0.08);
+  }
+
+  .department-graph-overlay.dark .catalog-mat-table tbody tr:hover td {
+    background: rgba(255, 255, 255, 0.06);
+  }
+
+  .department-graph-overlay.dark .no-data-message {
+    color: rgba(241, 245, 249, 0.8);
+  }
+
+  .department-graph-overlay.dark .view-type-selector button:not(.active) {
+    color: #e2e8f0;
+  }
+
+  .department-graph-overlay.dark .view-type-selector button.active {
+    color: #fff;
+  }
+
+  .department-graph-overlay.dark .catalog-mat-table td.positive-change {
+    color: #86efac;
+  }
+
+  .department-graph-overlay.dark .catalog-mat-table td.negative-change {
+    color: #fca5a5;
+  }
+
+  .department-graph-overlay.dark .percentage-badge {
+    background: rgba(255, 255, 255, 0.1);
+    color: #e2e8f0;
   }
   
   .graph-header {
@@ -1157,8 +1339,22 @@
     font-weight: 600;
   }
 
-  .dash.dark .income-2025-cell {
+  .dash.dark .income-2025-cell,
+  .dash.dark td.income-2025-cell,
+  .dash.dark .mat-mdc-cell.income-2025-cell,
+  .dash.dark .mdc-data-table__cell.income-2025-cell {
     color: #66bb6a !important;
+    background: var(--panel) !important;
+    background-color: var(--panel) !important;
+  }
+
+  :host ::ng-deep .dash.dark .income-2025-cell,
+  :host ::ng-deep .dash.dark td.income-2025-cell,
+  :host ::ng-deep .dash.dark .mat-mdc-cell.income-2025-cell,
+  :host ::ng-deep .dash.dark .mdc-data-table__cell.income-2025-cell {
+    color: #66bb6a !important;
+    background: var(--panel) !important;
+    background-color: var(--panel) !important;
   }
 
   /* Catalog title */
@@ -2048,3 +2244,295 @@
       height: 16px;
     }
   }
+/* עיצוב המעטפת החיצונית - כמו user-card */
+.wing-dropdown-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 14px; /* התאמה לריפוד של כרטיס העובד */
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 4px 10px rgba(15, 23, 42, 0.12);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  min-width: 220px;
+  height: 48px; /* גובה אחיד לכרטיס */
+  box-sizing: border-box;
+}
+
+/* ביטול עיצוב ברירת המחדל של Material כדי שלא יתנגש */
+::ng-deep .wing-dropdown-wrap .mat-mdc-form-field-subscript-wrapper {
+  display: none; /* הסרת הרווח למטה של הודעות השגיאה */
+}
+
+::ng-deep .wing-dropdown-wrap .mat-mdc-text-field-wrapper {
+  background-color: transparent !important;
+  padding: 0 !important;
+}
+
+::ng-deep .wing-dropdown-wrap .mat-mdc-form-field-flex {
+  padding: 0 !important;
+}
+
+::ng-deep .wing-dropdown-wrap .mdc-notched-outline {
+  display: none; /* הסרת המסגרת המקורית של Material */
+}
+
+/* עיצוב הטקסט בתוך ה-Select */
+::ng-deep .wing-dropdown-wrap .mat-mdc-select-value {
+  font-size: 14px;
+  font-weight: 500;
+  color: #0f172a;
+}
+
+/* עיצוב התפריט שנפתח (הפאנל) */
+::ng-deep .mat-mdc-select-panel {
+  background: rgba(255, 255, 255, 0.95) !important;
+  backdrop-filter: blur(10px);
+  border-radius: 16px !important;
+  padding: 8px 0 !important;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1) !important;
+  border: 1px solid rgba(15, 23, 42, 0.08) !important;
+}
+
+/* עיצוב האופציות בתוך הרשימה */
+::ng-deep .mat-mdc-option {
+  min-height: 40px !important;
+  border-radius: 8px;
+  margin: 0 8px;
+  transition: background 0.2s ease;
+}
+
+::ng-deep .mat-mdc-option:hover {
+  background: rgba(15, 23, 42, 0.04) !important;
+}
+
+/* מצב כהה (Dark Mode) */
+.dash.dark .wing-dropdown-wrap {
+  background: rgba(15, 23, 42, 0.9);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.dash.dark ::ng-deep .mat-mdc-select-value {
+  color: #f8fafc;
+}
+
+
+/* עיצוב הפאנל שנפתח */
+::ng-deep .mat-mdc-select-panel {
+  background: rgba(255, 255, 255, 0.9) !important;
+  backdrop-filter: blur(12px) saturate(180%); /* אפקט זכוכית */
+  -webkit-backdrop-filter: blur(12px) saturate(180%);
+  border-radius: 18px !important;
+  border: 1px solid rgba(15, 23, 42, 0.08) !important;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15) !important;
+  margin-top: 8px !important; /* רווח קטן מהכרטיס */
+  padding: 8px !important;
+}
+
+/* עיצוב כל שורה (Option) */
+::ng-deep .mat-mdc-option {
+  border-radius: 12px !important;
+  margin-bottom: 4px !important;
+  transition: all 0.2s ease !important;
+}
+
+/* עיצוב טקסט בתוך האופציה */
+::ng-deep .mat-mdc-option .mdc-list-item__primary-text {
+  font-size: 14px !important;
+  color: #1e293b !important;
+}
+
+/* מצב Hover - מעבר עכבר */
+::ng-deep .mat-mdc-option:hover:not(.mdc-list-item--disabled) {
+  background: rgba(15, 23, 42, 0.05) !important;
+}
+
+/* עיצוב האופציה שנבחרה (Selected) */
+::ng-deep .mat-mdc-option.mdc-list-item--selected:not(.mdc-list-item--disabled) {
+  background: rgba(37, 99, 235, 0.1) !important; /* כחול עדין */
+}
+::ng-deep .mat-mdc-option.mdc-list-item--selected .mdc-list-item__primary-text {
+  color: #2563eb !important; /* טקסט כחול בבחירה */
+  font-weight: 600 !important;
+}
+
+/* --- התאמה למצב לילה (Dark Mode) --- */
+.dash.dark ::ng-deep .mat-mdc-select-panel {
+  background: rgba(30, 41, 59, 0.95) !important; /* כחול כהה עמוק */
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4) !important;
+}
+
+.dash.dark ::ng-deep .mat-mdc-option .mdc-list-item__primary-text {
+  color: #f1f5f9 !important; /* טקסט לבן/אפור בהיר */
+}
+
+.dash.dark ::ng-deep .mat-mdc-option:hover:not(.mdc-list-item--disabled) {
+  background: rgba(255, 255, 255, 0.08) !important;
+}
+
+.dash.dark ::ng-deep .mat-mdc-option.mdc-list-item--selected:not(.mdc-list-item--disabled) {
+  background: rgba(59, 130, 246, 0.2) !important;
+}
+
+
+/* מיכל ראשי */
+.custom-dropdown {
+  position: relative;
+  width: 100%;
+  max-width: 320px;
+  /* z-index: 100; */
+  z-index: 1001;
+}
+
+/* הטריגר - מעוצב בדיוק כמו ה-user-card */
+.dropdown-trigger {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 14px;
+  height: 48px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 4px 10px rgba(15, 23, 42, 0.12);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+}
+
+.dropdown-icon { color: #64748b; font-size: 20px; }
+.selected-text { flex: 1; font-size: 14px; font-weight: 500; color: #1e293b; text-align: right; }
+.arrow-icon { color: #94a3b8; }
+
+/* פאנל הרשימה */
+.dropdown-panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 100%;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(12px);
+  border-radius: 20px;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+  overflow: hidden;
+  padding: 8px;
+  animation: fadeIn 0.2s ease;
+}
+
+/* שורת בחירה */
+.option-item {
+  padding: 10px 16px;
+  border-radius: 12px;
+  font-size: 14px;
+  color: #1e293b;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.option-item:hover { background: rgba(15, 23, 42, 0.05); }
+.option-item.selected { background: rgba(37, 99, 235, 0.1); color: #2563eb; font-weight: 600; }
+
+/* --- מצב לילה (Dark Mode) --- */
+.dash.dark .dropdown-trigger,
+.dash.dark .dropdown-panel {
+  background: rgba(15, 23, 42, 0.9);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.dash.dark .selected-text, 
+.dash.dark .option-item { color: #f1f5f9; }
+
+.dash.dark .option-item:hover { background: rgba(255, 255, 255, 0.08); }
+
+/* שכבת סגירה */
+.dropdown-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 1000; }
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+
+
+/* עיצוב פס הגלילה עבור המודאל */
+.department-graph-modal::-webkit-scrollbar {
+  width: 8px;               /* רוחב פס הגלילה */
+  height: 8px;              /* גובה פס הגלילה (לגלילה אופקית) */
+}
+
+/* עיצוב ה"תעלה" (החלק האחורי) */
+.department-graph-modal::-webkit-scrollbar-track {
+  background: transparent;  /* רקע שקוף למראה נקי */
+  margin: 10px;             /* מרחק מהקצוות כדי שלא יתנגש בקימור המודאל */
+}
+
+/* עיצוב ה"תפס" (החלק שזז) */
+.department-graph-modal::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.15); /* צבע עדין במצב יום */
+  border-radius: 999px;            /* עיגול מלא של הקצוות */
+  border: 2px solid transparent;    /* יוצר רווח סביב התפס */
+  background-clip: content-box;    /* מוודא שהריווח (Padding) נראה לעין */
+}
+
+.department-graph-modal::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.25); /* הכהיה קלה במעבר עכבר */
+}
+
+/* --- התאמת פס הגלילה למצב לילה --- */
+.department-graph-overlay.dark .department-graph-modal::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2); /* צבע בהיר ושקוף על רקע כהה */
+  background-clip: content-box;
+}
+
+.department-graph-overlay.dark .department-graph-modal::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+
+
+/* מצב רגיל (יום) */
+.income-2025-cell {
+  background-color: #ffffff; /* או הצבע שנתת לו */
+  color: #1e293b;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+/* מצב לילה - דריסה לפי ה-Overlay */
+.department-graph-overlay.dark .income-2025-cell {
+  background-color: #0f172a !important; /* תואם לרקע של המודאל שלך */
+  color: #f1f5f9 !important;           /* טקסט בהיר */
+  border-bottom-color: rgba(255, 255, 255, 0.12) !important;
+}
+
+/* אם מדובר ב-Header (הכותרת של העמודה) */
+.department-graph-overlay.dark th.mat-header-cell {
+  background-color: #1e293b !important;
+  color: #f8fafc !important;
+}
+.department-graph-overlay.dark .mat-mdc-cell, 
+.department-graph-overlay.dark .mat-mdc-header-cell {
+  background-color: transparent !important;
+  color: #f1f5f9;
+}
+
+/* פנייה ישירה לתא הספציפי תחת ה-Overlay הכהה */
+.department-graph-overlay.dark .mat-mdc-table .income-2025-cell {
+  background-color: #0f172a !important; /* צבע הרקע של המודאל */
+  color: #f1f5f9 !important;           /* טקסט בהיר */
+}
+
+/* גם עבור הכותרת (Header) של אותה עמודה */
+.department-graph-overlay.dark .mat-mdc-header-row .mat-mdc-header-cell {
+  background-color: #1e293b !important; /* רקע מעט בהיר יותר לכותרת */
+  color: #f1f5f9 !important;
+}
+
+/* ביטול כל רקע לבן שעלול להיצמד לתאים */
+.department-graph-overlay.dark td.mat-mdc-cell {
+  background: transparent !important;
+}
+::ng-deep .department-graph-overlay.dark .mat-mdc-table-sticky {
+  background-color: #0f172a !important;
+}
