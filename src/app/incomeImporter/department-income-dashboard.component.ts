@@ -48,6 +48,7 @@ export interface TopDepartmentDto {
   Income2025: number;
   difference: number;
   percentage: number;
+  managerName?: string;
 }
 
 interface EmployeeInfo {
@@ -112,33 +113,31 @@ export class DepartmentIncomeDashboardComponent implements OnInit, OnDestroy {
     chartOptions: any = {
         title: "השוואת הכנסות מחלקות", // Will be updated dynamically
         titleTextStyle: {
-            color: "#333",
+            color: "#0f172a",
             fontSize: 16,
             bold: true,
         },
         hAxis: {
-            title: "מחלקה",
+            title: "",
             textStyle: {
-                color: "#555",
+                color: "#64748b",
                 fontSize: 11,
-            },
-            titleTextStyle: {
-                color: "#333",
-                fontSize: 12,
-                bold: true,
             },
             slantedText: true,
-            slantedTextAngle: 45,
+            slantedTextAngle: 35,
         },
         vAxis: {
-            title: "סכום הכנסות (מיליוני ₪)",
+            title: "הכנסות (מיליוני ₪)",
             minValue: 0,
+            gridlines: {
+                color: "#e2e8f0",
+            },
             textStyle: {
-                color: "#555",
+                color: "#64748b",
                 fontSize: 11,
             },
             titleTextStyle: {
-                color: "#333",
+                color: "#0f172a",
                 fontSize: 12,
                 bold: true,
             },
@@ -146,53 +145,55 @@ export class DepartmentIncomeDashboardComponent implements OnInit, OnDestroy {
         bars: "vertical",
         legend: {
             position: "top",
+            alignment: "end",
             textStyle: {
-                color: "#555",
+                color: "#64748b",
                 fontSize: 11,
             },
         },
         chartArea: {
-            width: "75%",
-            height: "75%",
-            left: 80,
-            top: 50,
+            width: "94%",
+            height: "80%",
+            left: 20,
+            top: 30,
         },
-        colors: ["#667eea", "#f5576c"],
+        colors: ["#2563eb", "#10b981"],
         backgroundColor: {
-            fill: "#ffffff",
-            stroke: "#ddd",
-            strokeWidth: 1,
+            fill: "transparent",
+            stroke: "transparent",
+            strokeWidth: 0,
         },
-        dataOpacity: 0.9,
+        dataOpacity: 0.95,
         annotations: {
             alwaysOutside: false,
             textStyle: {
                 fontSize: 10,
                 bold: true,
-                color: "#333",
-                fontName: "Arial",
+                color: "#0f172a",
+                fontName: "Segoe UI",
             },
         },
         bar: {
-            groupWidth: "75%",
+            groupWidth: "55%",
         },
         tooltip: {
             isHtml: true,
             trigger: "focus",
             textStyle: {
-                color: "#333",
+                color: "#0f172a",
                 fontSize: 12,
             },
+            showColorCode: true,
         },
         enableInteractivity: true,
         animation: {
             startup: true,
-            duration: 1000,
+            duration: 900,
             easing: "out",
         },
         // Make bars clickable
         focusTarget: "category",
-        // Modern styling
+        // Modern styling for line mode
         pointSize: 6,
         lineWidth: 3,
         curveType: "function",
@@ -267,8 +268,9 @@ export class DepartmentIncomeDashboardComponent implements OnInit, OnDestroy {
 
     displayedCatalogColumns: string[] = this.cashColumns;
 
-    // Top 5 Departments - Feature
-    topDepartmentsViewType: string = "difference"; // 'difference' or 'percentage'
+  // Top 5 Departments - Feature
+  topDepartmentsViewType: string = "difference"; // 'difference' or 'percentage'
+  showTopDepartmentsSidebar: boolean = false;
 
     // Theme
     isDark: boolean = false;
@@ -682,8 +684,9 @@ export class DepartmentIncomeDashboardComponent implements OnInit, OnDestroy {
      * Requirements: 2025 values must be higher than 2024
      */
     calculateTopDepartments(): void {
+        // רק מחלקות עם צמיחה חיובית בהכנסות
         this.topDepartments = this.departmentIncomeData
-            .filter((dept) => dept.Income2025 >= dept.Income2024) // Only show positive growth
+            .filter((dept) => dept.Income2025 > dept.Income2024)
             .map((dept) => ({
                 DepartmentName: dept.DepartmentName,
                 Income2024: dept.Income2024,
@@ -691,13 +694,11 @@ export class DepartmentIncomeDashboardComponent implements OnInit, OnDestroy {
                 difference: dept.Income2025 - dept.Income2024,
                 percentage:
                     dept.Income2024 > 0
-                        ? ((dept.Income2025 - dept.Income2024) /
-                              dept.Income2024) *
-                          100
+                        ? ((dept.Income2025 - dept.Income2024) / dept.Income2024) * 100
                         : 0,
+                managerName: (dept as any).managerName
             }))
-            .sort((a, b) => b.difference - a.difference)
-            .slice(0, 5);
+            .sort((a, b) => b.difference - a.difference);
     }
 
     /**
@@ -1258,6 +1259,29 @@ updateChartColumns(): void {
         this.syncBodyDarkClass();
         this.cdr.detectChanges();
     }
+
+    /**
+     * Toggle Top Departments sidebar and force chart to resize with new layout
+     */
+    toggleTopDepartmentsSidebar(): void {
+        this.showTopDepartmentsSidebar = !this.showTopDepartmentsSidebar;
+
+        // Give grid a tick to recalculate, then trigger chart redraw/resize
+        setTimeout(() => {
+            try {
+                window.dispatchEvent(new Event("resize"));
+            } catch {
+                // ignore if window is not available (SSR safeguard)
+            }
+
+            // New reference so angular-google-charts will detect changes
+            this.chartOptions = { ...this.chartOptions };
+
+            if (this.chartData && this.chartData.length > 0) {
+                this.updateChartData();
+            }
+        }, 0);
+    }
     /**
      * מחזיר את שנת הלוח לפי "כמה שנים לאחור" מהשנה הנוכחית.
      * @param yearsAgo 0 = השנה הנוכחית, 1 = שנה שעברה, 2 = לפני שנתיים וכו'
@@ -1283,29 +1307,59 @@ updateChartColumns(): void {
      */
     updateChartTheme(): void {
         if (this.isDark) {
-            // Dark theme: black/dark background so chart area is dark
-            this.chartOptions.titleTextStyle = { ...this.chartOptions.titleTextStyle, color: "#e5e7eb" };
+            // Dark theme: force all chart texts (axes, legend, annotations, tooltip) to bright color
+            this.chartOptions.titleTextStyle = {
+                ...this.chartOptions.titleTextStyle,
+                color: "#f9fafb",
+            };
             this.chartOptions.hAxis = {
-                ...this.chartOptions.hAxis,
-                textStyle: { ...this.chartOptions.hAxis?.textStyle, color: "rgba(229, 231, 235, 0.9)" },
-                titleTextStyle: { ...this.chartOptions.hAxis?.titleTextStyle, color: "#e5e7eb" },
+                ...(this.chartOptions.hAxis || {}),
+                textStyle: {
+                    color: "#f9fafb",
+                    fontSize: this.chartOptions.hAxis?.textStyle?.fontSize ?? 11,
+                },
+                titleTextStyle: {
+                    color: "#f9fafb",
+                    fontSize: this.chartOptions.hAxis?.titleTextStyle?.fontSize ?? 11,
+                    bold: true,
+                },
             };
             this.chartOptions.vAxis = {
-                ...this.chartOptions.vAxis,
-                textStyle: { ...this.chartOptions.vAxis?.textStyle, color: "rgba(229, 231, 235, 0.9)" },
-                titleTextStyle: { ...this.chartOptions.vAxis?.titleTextStyle, color: "#e5e7eb" },
+                ...(this.chartOptions.vAxis || {}),
+                textStyle: {
+                    color: "#f9fafb",
+                    fontSize: this.chartOptions.vAxis?.textStyle?.fontSize ?? 11,
+                },
+                titleTextStyle: {
+                    color: "#f9fafb",
+                    fontSize: this.chartOptions.vAxis?.titleTextStyle?.fontSize ?? 12,
+                    bold: true,
+                },
+                gridlines: {
+                    color: "rgba(148, 163, 184, 0.45)",
+                },
             };
             this.chartOptions.legend = {
-                ...this.chartOptions.legend,
-                textStyle: { ...this.chartOptions.legend?.textStyle, color: "rgba(229, 231, 235, 0.9)" },
+                ...(this.chartOptions.legend || {}),
+                textStyle: {
+                    color: "#e5e7eb",
+                    fontSize: this.chartOptions.legend?.textStyle?.fontSize ?? 11,
+                },
             };
             this.chartOptions.annotations = {
-                ...this.chartOptions.annotations,
-                textStyle: { ...this.chartOptions.annotations?.textStyle, color: "#e5e7eb" },
+                ...(this.chartOptions.annotations || {}),
+                textStyle: {
+                    color: "#f9fafb",
+                    fontSize: this.chartOptions.annotations?.textStyle?.fontSize ?? 10,
+                    bold: true,
+                },
             };
             this.chartOptions.tooltip = {
-                ...this.chartOptions.tooltip,
-                textStyle: { ...this.chartOptions.tooltip?.textStyle, color: "#e5e7eb" },
+                ...(this.chartOptions.tooltip || {}),
+                textStyle: {
+                    color: "#f9fafb",
+                    fontSize: this.chartOptions.tooltip?.textStyle?.fontSize ?? 12,
+                },
             };
             this.chartOptions.backgroundColor = {
                 fill: "#0f172a",

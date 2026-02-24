@@ -86,6 +86,13 @@
         <mat-icon>help</mat-icon>
       </button>
 
+      <button mat-icon-button class="icon-btn ghost"
+              matTooltip="{{ showTopDepartmentsSidebar ? 'הסתר מובילי צמיחה' : 'הצג מובילי צמיחה' }}"
+              matTooltipPosition="below"
+              (click)="toggleTopDepartmentsSidebar()">
+        <mat-icon>emoji_events</mat-icon>
+      </button>
+
 
       <div class="icon-divider"></div>
 
@@ -112,7 +119,9 @@
 
 
   <!-- ================= MAIN CONTENT: GRAPH + TABLE ================= -->
-  <div class="main-content" *ngIf="isDataLoaded && !isMainDataLoading">
+  <div class="main-content"
+       [class.with-top-sidebar]="showTopDepartmentsSidebar"
+       *ngIf="isDataLoaded && !isMainDataLoading">
     
     <!-- ===== GRAPH SECTION (2/3) ===== -->
     <div class="graph-section">
@@ -129,7 +138,7 @@
                       matTooltip="גרף עמודות"
                       matTooltipPosition="below">
                 <mat-icon>bar_chart</mat-icon>
-                עמודות
+                <!-- עמודות -->
               </button>
               <button mat-stroked-button 
                       [class.active]="chartType === 'LineChart'"
@@ -138,15 +147,16 @@
                       matTooltip="גרף קווי"
                       matTooltipPosition="below">
                 <mat-icon>show_chart</mat-icon>
-                קווי
+                <!-- קווי -->
               </button>
-              <span class="title-total total-badge" [matTooltip]="'לחץ על עמודה/נקודה בגרף כדי לראות פרטי המחלקה'" matTooltipPosition="below">
+              <!-- <span class="title-total total-badge" [matTooltip]="'לחץ על עמודה/נקודה בגרף כדי לראות פרטי המחלקה'" matTooltipPosition="below">
                 לחץ לפרטים
-              </span>
+              </span> -->
             </div>
           </span>
         </div>
 
+  
         <div class="graph-body">
           <div *ngIf="isChartLoading || isMainDataLoading" class="chart-loading-overlay">
             <mat-spinner diameter="50"></mat-spinner>
@@ -223,15 +233,102 @@
       </div>
     </div>
 
+    <!-- ===== TOP DEPARTMENTS SIDEBAR ===== -->
+    <div class="top-departments-sidebar"
+         *ngIf="showTopDepartmentsSidebar && topDepartments?.length > 0">
+      <div class="top-departments-section-compact">
+        <div class="top-departments-header-compact">
+          <div class="title-with-icon">
+            <div class="top-departments-title-row">
+              <h3>🏆 מובילי צמיחה</h3>
+            </div>
+          
+          </div>
+
+          <mat-button-toggle-group
+            [(ngModel)]="topDepartmentsViewType"
+            (change)="onTopDepartmentsViewChange($event.value)"
+            class="compact-toggle"
+            appearance="standard">
+            <mat-button-toggle value="difference">₪</mat-button-toggle>
+            <mat-button-toggle value="percentage">%</mat-button-toggle>
+          </mat-button-toggle-group>
+        </div>
+
+        <div class="top-departments-list-compact">
+          <div *ngFor="let dept of topDepartments; let i = index"
+               class="rank-item-compact"
+               [ngClass]="'rank-' + (i + 1)"
+               matTooltipPosition="left">
+
+            <div class="rank-badge-compact">
+              <span *ngIf="i === 0">🥇</span>
+              <span *ngIf="i === 1">🥈</span>
+              <span *ngIf="i === 2">🥉</span>
+              <span *ngIf="i > 2">{{ i + 1 }}</span>
+            </div>
+
+            <div class="rank-main-content">
+              <div class="dept-header-row">
+                <div
+                  class="department-name-compact"
+                  [matTooltip]="dept.DepartmentName"
+                  matTooltipPosition="left"
+                  matTooltipClass="subtle-tooltip"
+                  [matTooltipDisabled]="!dept.DepartmentName || dept.DepartmentName.length <= 18">
+                  {{ dept.DepartmentName }}
+                </div>
+                <div class="dept-micro-logo" aria-hidden="true"></div>
+              </div>
+
+              <div class="rank-header-row">
+                <div class="growth-chips">
+                  <span class="growth-chip growth-chip-diff">
+                    +{{ formatNumber(dept.difference) }} ₪
+                  </span>
+                  <span class="growth-chip growth-chip-pct">
+                    {{ dept.percentage.toFixed(1) }}%
+                  </span>
+                </div>
+              </div>
+
+              <div class="rank-meta-row">
+                <span class="rank-meta-period">
+                  {{ getOlderYearFromDeptData() }} → {{ getLatestYearFromDeptData() }}
+                </span>
+                <span
+                  class="rank-manager-chip"
+                  *ngIf="dept.managerName">
+                  מנהל/ת: {{ dept.managerName }}
+                </span>
+              </div>
+
+              <div class="rank-progress-compact">
+                <div class="progress-bar-compact"
+                     [style.width.%]="topDepartmentsViewType === 'difference'
+                       ? (dept.difference / topDepartments[0].difference * 100)
+                       : (dept.percentage / topDepartments[0].percentage * 100)">
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="top-departments-footer-compact">
+          אורך הפס והעוצמה הירוקה מייצגים את עוצמת הצמיחה במחלקה ביחס למקום הראשון.
+        </div>
+      </div>
+    </div>
+
   </div>
 
   <!-- Guide Avatar Modal -->
   <div class="guide-avatar-overlay" *ngIf="showGuideAvatar" @fadeInOut (click)="dismissGuideAvatar()">
     <div class="guide-avatar-modal" dir="rtl" (click)="$event.stopPropagation()">
       <div class="guide-avatar-header">
-        <div class="character-info">
-          <div class="character-name">🔍 מדריך הדוח</div>
-          <div class="character-subtitle">לחץ על סעיף כדי להרחיב</div>
+        <div class="character-info" dir="rtl">
+          <div class="character-name" dir="rtl">🔍 מדריך הדוח</div>
+          <div class="character-subtitle" dir="rtl">לחץ על סעיף כדי להרחיב</div>
         </div>
         <button class="avatar-close-btn" (click)="dismissGuideAvatar()" aria-label="Close guide" mat-icon-button>
           <mat-icon>close</mat-icon>
@@ -280,7 +377,7 @@
       <div class="showcase-content" dir="rtl">
         <!-- Purpose Section -->
         <div *ngIf="currentArticle === 'purpose'" class="article-section-display" @fadeInOut dir="rtl">
-          <h2>📋 מטרת הדוח</h2>
+          <!-- <h2>📋 מטרת הדוח</h2> -->
           <p class="intro-text">לשקף את פעילות המרכז הרפואי (ביה"ח והתאגיד), ברמת מחלקה ובערכים כספיים.</p>
           <p class="explanation-note">
             דוח זה מספק תמונת מצב מקיפה על הפעילות וההכנסות של כל מחלקה בבית החולים,
@@ -290,7 +387,7 @@
 
         <!-- Notes Section -->
         <div *ngIf="currentArticle === 'notes'" class="article-section-display" @fadeInOut dir="rtl">
-          <h2>⚠️ הערות חשובות</h2>
+          <!-- <h2>⚠️ הערות חשובות</h2> -->
           <div class="notes-list" dir="rtl">
             <div class="note-item" dir="rtl">
               <span class="note-number">1</span>
@@ -319,7 +416,7 @@
 
         <!-- Structure Section -->
         <div *ngIf="currentArticle === 'structure'" class="article-section-display" @fadeInOut dir="rtl">
-          <h2>🗂️ מבנה הדוח</h2>
+          <!-- <h2>🗂️ מבנה הדוח</h2> -->
           <div class="structure-list" dir="rtl">
             <div class="structure-item" dir="rtl">
               <div class="structure-number">1</div>
@@ -547,8 +644,8 @@
 </div>
 
 <!-- Boss Dashboard Modal -->
-<div *ngIf="showBossDashboard" class="boss-dashboard-overlay">
-  <div class="boss-dashboard-modal">
+<div *ngIf="showBossDashboard" class="boss-dashboard-overlay" [class.dark]="isDark">
+  <div class="boss-dashboard-modal dash" [class.dark]="isDark">
     <div dir="rtl" class="boss-header">
       <h2>📊 דוח הכנסות כללי</h2>
       <button mat-icon-button (click)="closeBossDashboard()" class="close-btn">
