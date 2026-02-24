@@ -326,9 +326,9 @@
   <div class="guide-avatar-overlay" *ngIf="showGuideAvatar" @fadeInOut (click)="dismissGuideAvatar()">
     <div class="guide-avatar-modal" dir="rtl" (click)="$event.stopPropagation()">
       <div class="guide-avatar-header">
-        <div class="character-info">
-          <div class="character-name">🔍 מדריך הדוח</div>
-          <div class="character-subtitle">לחץ על סעיף כדי להרחיב</div>
+        <div class="character-info" dir="rtl">
+          <div class="character-name" dir="rtl">🔍 מדריך הדוח</div>
+          <div class="character-subtitle" dir="rtl">לחץ על סעיף כדי להרחיב</div>
         </div>
         <button class="avatar-close-btn" (click)="dismissGuideAvatar()" aria-label="Close guide" mat-icon-button>
           <mat-icon>close</mat-icon>
@@ -377,7 +377,7 @@
       <div class="showcase-content" dir="rtl">
         <!-- Purpose Section -->
         <div *ngIf="currentArticle === 'purpose'" class="article-section-display" @fadeInOut dir="rtl">
-          <h2>📋 מטרת הדוח</h2>
+          <!-- <h2>📋 מטרת הדוח</h2> -->
           <p class="intro-text">לשקף את פעילות המרכז הרפואי (ביה"ח והתאגיד), ברמת מחלקה ובערכים כספיים.</p>
           <p class="explanation-note">
             דוח זה מספק תמונת מצב מקיפה על הפעילות וההכנסות של כל מחלקה בבית החולים,
@@ -387,7 +387,7 @@
 
         <!-- Notes Section -->
         <div *ngIf="currentArticle === 'notes'" class="article-section-display" @fadeInOut dir="rtl">
-          <h2>⚠️ הערות חשובות</h2>
+          <!-- <h2>⚠️ הערות חשובות</h2> -->
           <div class="notes-list" dir="rtl">
             <div class="note-item" dir="rtl">
               <span class="note-number">1</span>
@@ -416,7 +416,7 @@
 
         <!-- Structure Section -->
         <div *ngIf="currentArticle === 'structure'" class="article-section-display" @fadeInOut dir="rtl">
-          <h2>🗂️ מבנה הדוח</h2>
+          <!-- <h2>🗂️ מבנה הדוח</h2> -->
           <div class="structure-list" dir="rtl">
             <div class="structure-item" dir="rtl">
               <div class="structure-number">1</div>
@@ -644,7 +644,7 @@
 </div>
 
 <!-- Boss Dashboard Modal -->
-<div *ngIf="showBossDashboard" class="boss-dashboard-overlay">
+<div *ngIf="showBossDashboard" class="boss-dashboard-overlay" [class.dark]="isDark">
   <div class="boss-dashboard-modal">
     <div dir="rtl" class="boss-header">
       <h2>📊 דוח הכנסות כללי</h2>
