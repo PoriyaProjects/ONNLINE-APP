@@ -684,8 +684,9 @@ export class DepartmentIncomeDashboardComponent implements OnInit, OnDestroy {
      * Requirements: 2025 values must be higher than 2024
      */
     calculateTopDepartments(): void {
+        // רק מחלקות עם צמיחה חיובית בהכנסות
         this.topDepartments = this.departmentIncomeData
-            .filter((dept) => dept.Income2025 >= dept.Income2024) // Only show positive growth
+            .filter((dept) => dept.Income2025 > dept.Income2024)
             .map((dept) => ({
                 DepartmentName: dept.DepartmentName,
                 Income2024: dept.Income2024,
@@ -693,13 +694,11 @@ export class DepartmentIncomeDashboardComponent implements OnInit, OnDestroy {
                 difference: dept.Income2025 - dept.Income2024,
                 percentage:
                     dept.Income2024 > 0
-                        ? ((dept.Income2025 - dept.Income2024) /
-                              dept.Income2024) *
-                          100
+                        ? ((dept.Income2025 - dept.Income2024) / dept.Income2024) * 100
                         : 0,
+                managerName: (dept as any).managerName
             }))
-            .sort((a, b) => b.difference - a.difference)
-            .slice(0, 5);
+            .sort((a, b) => b.difference - a.difference);
     }
 
     /**

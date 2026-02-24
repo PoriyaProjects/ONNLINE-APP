@@ -370,6 +370,13 @@
   height: 100%;
   max-height: 100%;
   overflow-y: auto;
+  /* הסתרת סקרול בר, שמירה על גלילה */
+  scrollbar-width: none;          /* Firefox */
+  -ms-overflow-style: none;       /* IE/Edge */
+}
+
+.top-departments-sidebar .top-departments-section-compact::-webkit-scrollbar {
+  display: none;                  /* Chrome/Safari/Edge (WebKit) */
 }
 
 .top-departments-header-compact {
@@ -448,12 +455,29 @@
   background: rgba(15,23,42,.03);
 }
 
+.compact-toggle ::ng-deep .mat-button-toggle-button {
+  padding: 0 10px;
+}
+
+.compact-toggle ::ng-deep .mat-button-toggle-label-content {
+  line-height: 22px;
+  padding: 0 6px;
+  font-size: 12px;
+}
+
 .radio-group-compact {
   display: flex; align-items: center; justify-content: flex-end; gap: 8px; flex-wrap: wrap;
   ::ng-deep .mat-mdc-radio-button .mdc-form-field { font-size: 11px; color: var(--muted); }
 }
 
-.top-departments-list-compact { display: flex; flex-direction: column; gap: clamp(3px, .4vw, 6px); }
+.top-departments-list-compact {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(3px, .4vw, 6px);
+  /* הרשימה מנצלת את כל גובה הכרטיס, הגלילה על כל הכרטיס */
+  padding-left: 2px;
+  padding-right: 2px;
+}
 
 .top-departments-footer-compact {
   margin-top: 6px;
@@ -494,6 +518,13 @@
   min-width: 0;
 }
 
+.dept-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
 .rank-header-row {
   display: flex;
   align-items: baseline;
@@ -509,6 +540,29 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.dept-micro-logo {
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  flex-shrink: 0;
+  background:
+    conic-gradient(from 220deg, #22c55e, #4f46e5, #06b6d4, #22c55e);
+  box-shadow: 0 0 0 1px rgba(15,23,42,.08), 0 4px 10px rgba(15,23,42,.25);
+  position: relative;
+  overflow: hidden;
+}
+
+.dept-micro-logo::after {
+  content: "";
+  position: absolute;
+  inset: 4px;
+  border-radius: inherit;
+  background:
+    radial-gradient(circle at 30% 30%, rgba(255,255,255,.9), transparent 55%),
+    radial-gradient(circle at 70% 80%, rgba(15,23,42,.4), transparent 60%);
+  mix-blend-mode: screen;
 }
 
 .growth-chips {

@@ -256,7 +256,7 @@
         </div>
 
         <div class="top-departments-list-compact">
-          <div *ngFor="let dept of topDepartments | slice:0:11; let i = index"
+          <div *ngFor="let dept of topDepartments; let i = index"
                class="rank-item-compact"
                [ngClass]="'rank-' + (i + 1)"
                matTooltipPosition="left">
@@ -269,10 +269,19 @@
             </div>
 
             <div class="rank-main-content">
-              <div class="rank-header-row">
-                <div class="department-name-compact">
+              <div class="dept-header-row">
+                <div
+                  class="department-name-compact"
+                  [matTooltip]="dept.DepartmentName"
+                  matTooltipPosition="left"
+                  matTooltipClass="subtle-tooltip"
+                  [matTooltipDisabled]="!dept.DepartmentName || dept.DepartmentName.length <= 18">
                   {{ dept.DepartmentName }}
                 </div>
+                <div class="dept-micro-logo" aria-hidden="true"></div>
+              </div>
+
+              <div class="rank-header-row">
                 <div class="growth-chips">
                   <span class="growth-chip growth-chip-diff">
                     +{{ formatNumber(dept.difference) }} ₪
