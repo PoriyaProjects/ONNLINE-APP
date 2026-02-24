@@ -147,6 +147,51 @@
           </span>
         </div>
 
+        <div *ngIf="isDataLoaded && topDepartments?.length > 0" dir="rtl" class="top-departments-section-compact">
+  
+          <div class="top-departments-header-compact">
+            <div class="title-with-icon">
+              <h3>🏆 מובילי צמיחה</h3>
+            </div>
+        
+            <mat-button-toggle-group 
+              [(ngModel)]="topDepartmentsViewType" 
+              (change)="onTopDepartmentsViewChange($event.value)"
+              class="compact-toggle"
+              appearance="standard">
+              <mat-button-toggle value="difference">₪</mat-button-toggle>
+              <mat-button-toggle value="percentage">%</mat-button-toggle>
+            </mat-button-toggle-group>
+          </div>
+        
+          <div class="top-departments-list-compact">
+            <div *ngFor="let dept of topDepartments; let i = index" 
+                 class="rank-item-compact" 
+                 [class]="'rank-' + (i + 1)">
+              
+              <div class="rank-badge-compact">
+                <span *ngIf="i === 0">🥇</span>
+                <span *ngIf="i === 1">🥈</span>
+                <span *ngIf="i === 2">🥉</span>
+                <span *ngIf="i > 2">{{ i + 1 }}</span>
+              </div>
+        
+              <div class="rank-info-compact">
+                <div class="department-name-compact">{{ dept.DepartmentName }}</div>
+                <div class="growth-value-compact">
+                  {{ topDepartmentsViewType === 'difference' ? formatNumber(dept.difference) + ' ₪' : dept.percentage.toFixed(1) + '%' }}
+                </div>
+              </div>
+        
+              <div class="rank-progress-compact">
+                <div class="progress-bar-compact"
+                  [style.width.%]="(topDepartmentsViewType === 'difference' ? (dept.difference / topDepartments[0].difference * 100) : (dept.percentage / topDepartments[0].percentage * 100))">
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+          
         <div class="graph-body">
           <div *ngIf="isChartLoading || isMainDataLoading" class="chart-loading-overlay">
             <mat-spinner diameter="50"></mat-spinner>

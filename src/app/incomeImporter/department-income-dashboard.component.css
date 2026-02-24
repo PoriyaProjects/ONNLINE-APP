@@ -432,6 +432,150 @@
     color: var(--muted);
     text-align: center;
   }
+
+  /* ===============================
+     Top 5 Departments - Compact strip
+  ================================ */
+  .top-departments-section-compact {
+    margin: 4px 0 6px;
+    padding: 6px 10px;
+    border-radius: 10px;
+    background: var(--panel-strong);
+    border: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .top-departments-header-compact {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .top-departments-header-compact h3 {
+    margin: 0;
+    font-size: 12px;
+    font-weight: 800;
+    color: var(--text);
+    white-space: nowrap;
+  }
+
+  .radio-group-compact {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .radio-group-compact ::ng-deep .mat-mdc-radio-button .mdc-form-field {
+    font-size: 11px;
+    color: var(--muted);
+  }
+
+  .top-departments-list-compact {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .rank-item-compact {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    grid-template-rows: auto auto;
+    grid-template-areas:
+      "badge info"
+      "badge progress";
+    column-gap: 6px;
+    row-gap: 2px;
+    align-items: center;
+  }
+
+  .rank-badge-compact {
+    grid-area: badge;
+    width: 26px;
+    height: 26px;
+    border-radius: 999px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 700;
+    background: rgba(148, 163, 184, 0.15);
+    color: var(--text);
+  }
+
+  .rank-info-compact {
+    grid-area: info;
+    display: flex;
+    flex-direction: row;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .department-name-compact {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text);
+    max-width: 180px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .growth-value-compact {
+    font-size: 11px;
+    font-weight: 700;
+    color: #16a34a;
+    white-space: nowrap;
+  }
+
+  .rank-progress-compact {
+    grid-area: progress;
+    width: 100%;
+    height: 4px;
+    border-radius: 999px;
+    background: rgba(148, 163, 184, 0.25);
+    overflow: hidden;
+  }
+
+  .progress-bar-compact {
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, #22c55e, #16a34a);
+    transition: width 0.25s ease-out;
+  }
+
+  /* Emphasize top 3 rows */
+  .rank-1 .rank-badge-compact {
+    background: radial-gradient(circle at 30% 0%, #facc15, #eab308);
+    color: #111827;
+  }
+
+  .rank-2 .rank-badge-compact {
+    background: radial-gradient(circle at 30% 0%, #e5e7eb, #9ca3af);
+    color: #111827;
+  }
+
+  .rank-3 .rank-badge-compact {
+    background: radial-gradient(circle at 30% 0%, #fed7aa, #fb923c);
+    color: #111827;
+  }
+
+  .dash.dark .growth-value-compact {
+    color: #4ade80;
+  }
+
+  .dash.dark .rank-progress-compact {
+    background: rgba(15, 23, 42, 0.8);
+  }
+
+  .dash.dark .progress-bar-compact {
+    background: linear-gradient(90deg, #22c55e, #4ade80);
+  }
   
   /* ===============================
      Icon Buttons
