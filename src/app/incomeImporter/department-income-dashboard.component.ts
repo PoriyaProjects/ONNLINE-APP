@@ -1308,29 +1308,59 @@ updateChartColumns(): void {
      */
     updateChartTheme(): void {
         if (this.isDark) {
-            // Dark theme: black/dark background so chart area is dark
-            this.chartOptions.titleTextStyle = { ...this.chartOptions.titleTextStyle, color: "#e5e7eb" };
+            // Dark theme: force all chart texts (axes, legend, annotations, tooltip) to bright color
+            this.chartOptions.titleTextStyle = {
+                ...this.chartOptions.titleTextStyle,
+                color: "#f9fafb",
+            };
             this.chartOptions.hAxis = {
-                ...this.chartOptions.hAxis,
-                textStyle: { ...this.chartOptions.hAxis?.textStyle, color: "rgba(229, 231, 235, 0.9)" },
-                titleTextStyle: { ...this.chartOptions.hAxis?.titleTextStyle, color: "#e5e7eb" },
+                ...(this.chartOptions.hAxis || {}),
+                textStyle: {
+                    color: "#f9fafb",
+                    fontSize: this.chartOptions.hAxis?.textStyle?.fontSize ?? 11,
+                },
+                titleTextStyle: {
+                    color: "#f9fafb",
+                    fontSize: this.chartOptions.hAxis?.titleTextStyle?.fontSize ?? 11,
+                    bold: true,
+                },
             };
             this.chartOptions.vAxis = {
-                ...this.chartOptions.vAxis,
-                textStyle: { ...this.chartOptions.vAxis?.textStyle, color: "rgba(229, 231, 235, 0.9)" },
-                titleTextStyle: { ...this.chartOptions.vAxis?.titleTextStyle, color: "#e5e7eb" },
+                ...(this.chartOptions.vAxis || {}),
+                textStyle: {
+                    color: "#f9fafb",
+                    fontSize: this.chartOptions.vAxis?.textStyle?.fontSize ?? 11,
+                },
+                titleTextStyle: {
+                    color: "#f9fafb",
+                    fontSize: this.chartOptions.vAxis?.titleTextStyle?.fontSize ?? 12,
+                    bold: true,
+                },
+                gridlines: {
+                    color: "rgba(148, 163, 184, 0.45)",
+                },
             };
             this.chartOptions.legend = {
-                ...this.chartOptions.legend,
-                textStyle: { ...this.chartOptions.legend?.textStyle, color: "rgba(229, 231, 235, 0.9)" },
+                ...(this.chartOptions.legend || {}),
+                textStyle: {
+                    color: "#e5e7eb",
+                    fontSize: this.chartOptions.legend?.textStyle?.fontSize ?? 11,
+                },
             };
             this.chartOptions.annotations = {
-                ...this.chartOptions.annotations,
-                textStyle: { ...this.chartOptions.annotations?.textStyle, color: "#e5e7eb" },
+                ...(this.chartOptions.annotations || {}),
+                textStyle: {
+                    color: "#f9fafb",
+                    fontSize: this.chartOptions.annotations?.textStyle?.fontSize ?? 10,
+                    bold: true,
+                },
             };
             this.chartOptions.tooltip = {
-                ...this.chartOptions.tooltip,
-                textStyle: { ...this.chartOptions.tooltip?.textStyle, color: "#e5e7eb" },
+                ...(this.chartOptions.tooltip || {}),
+                textStyle: {
+                    color: "#f9fafb",
+                    fontSize: this.chartOptions.tooltip?.textStyle?.fontSize ?? 12,
+                },
             };
             this.chartOptions.backgroundColor = {
                 fill: "#0f172a",

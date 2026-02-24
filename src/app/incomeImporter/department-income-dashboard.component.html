@@ -256,10 +256,9 @@
         </div>
 
         <div class="top-departments-list-compact">
-          <div *ngFor="let dept of topDepartments | slice:0:5; let i = index"
+          <div *ngFor="let dept of topDepartments | slice:0:11; let i = index"
                class="rank-item-compact"
                [ngClass]="'rank-' + (i + 1)"
-               [matTooltip]="dept.managerName ? 'מנהל המחלקה: ' + dept.managerName : null"
                matTooltipPosition="left">
 
             <div class="rank-badge-compact">
@@ -269,20 +268,38 @@
               <span *ngIf="i > 2">{{ i + 1 }}</span>
             </div>
 
-            <div class="rank-info-compact">
-              <div class="department-name-compact">{{ dept.DepartmentName }}</div>
-              <div class="growth-value-compact">
-                {{ topDepartmentsViewType === 'difference'
-                  ? (formatNumber(dept.difference) + ' ₪')
-                  : (dept.percentage.toFixed(1) + '%') }}
+            <div class="rank-main-content">
+              <div class="rank-header-row">
+                <div class="department-name-compact">
+                  {{ dept.DepartmentName }}
+                </div>
+                <div class="growth-chips">
+                  <span class="growth-chip growth-chip-diff">
+                    +{{ formatNumber(dept.difference) }} ₪
+                  </span>
+                  <span class="growth-chip growth-chip-pct">
+                    {{ dept.percentage.toFixed(1) }}%
+                  </span>
+                </div>
               </div>
-            </div>
 
-            <div class="rank-progress-compact">
-              <div class="progress-bar-compact"
-                   [style.width.%]="topDepartmentsViewType === 'difference'
-                     ? (dept.difference / topDepartments[0].difference * 100)
-                     : (dept.percentage / topDepartments[0].percentage * 100)">
+              <div class="rank-meta-row">
+                <span class="rank-meta-period">
+                  {{ getOlderYearFromDeptData() }} → {{ getLatestYearFromDeptData() }}
+                </span>
+                <span
+                  class="rank-manager-chip"
+                  *ngIf="dept.managerName">
+                  מנהל/ת: {{ dept.managerName }}
+                </span>
+              </div>
+
+              <div class="rank-progress-compact">
+                <div class="progress-bar-compact"
+                     [style.width.%]="topDepartmentsViewType === 'difference'
+                       ? (dept.difference / topDepartments[0].difference * 100)
+                       : (dept.percentage / topDepartments[0].percentage * 100)">
+                </div>
               </div>
             </div>
           </div>
