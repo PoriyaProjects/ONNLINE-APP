@@ -268,8 +268,8 @@ export class DepartmentIncomeDashboardComponent implements OnInit, OnDestroy {
 
     displayedCatalogColumns: string[] = this.cashColumns;
 
-    // Top 5 Departments - Feature
-    topDepartmentsViewType: string = "difference"; // 'difference' or 'percentage'
+  // Top 5 Departments - Feature
+  topDepartmentsViewType: string = "difference"; // 'difference' or 'percentage'
   showTopDepartmentsSidebar: boolean = false;
 
     // Theme
@@ -1259,6 +1259,29 @@ updateChartColumns(): void {
         this.updateChartTheme();
         this.syncBodyDarkClass();
         this.cdr.detectChanges();
+    }
+
+    /**
+     * Toggle Top Departments sidebar and force chart to resize with new layout
+     */
+    toggleTopDepartmentsSidebar(): void {
+        this.showTopDepartmentsSidebar = !this.showTopDepartmentsSidebar;
+
+        // Give grid a tick to recalculate, then trigger chart redraw/resize
+        setTimeout(() => {
+            try {
+                window.dispatchEvent(new Event("resize"));
+            } catch {
+                // ignore if window is not available (SSR safeguard)
+            }
+
+            // New reference so angular-google-charts will detect changes
+            this.chartOptions = { ...this.chartOptions };
+
+            if (this.chartData && this.chartData.length > 0) {
+                this.updateChartData();
+            }
+        }, 0);
     }
     /**
      * מחזיר את שנת הלוח לפי "כמה שנים לאחור" מהשנה הנוכחית.

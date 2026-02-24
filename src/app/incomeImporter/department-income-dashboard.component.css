@@ -456,8 +456,11 @@
 }
 
 .graph-section, .table-section {
-  display: flex; flex-direction: column;
-  min-height: 0; overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .panel-graph, .panel-table {
@@ -698,7 +701,6 @@ table.table {
   .no-data-message   { color: rgba(241,245,249,.8); }
   .sort-label, .sort-controls { color: #f1f5f9; background: rgba(255,255,255,.06); border-color: rgba(255,255,255,.14); }
   .view-type-selector button { color: #e2e8f0; &.active { color: #fff; } }
-  .income-2025-cell  { background-color: #0f172a !important; color: #f1f5f9 !important; border-bottom-color: rgba(255,255,255,.12) !important; }
   td.mat-mdc-cell, .mat-mdc-header-cell { background-color: transparent !important; color: #f1f5f9; }
   .mat-mdc-header-row .mat-mdc-header-cell { background-color: #1e293b !important; color: #f1f5f9 !important; }
   .mat-mdc-table-sticky { background-color: #0f172a !important; }
@@ -781,12 +783,12 @@ table.table {
   tbody tr:hover { background-color: var(--btnBgHover); }
 }
 
-.year-2025-header { font-weight: bold; color: #4caf50; cursor: pointer; background-color: #f1f8f4; }
-.dash.dark .year-2025-header { color: #66bb6a; background-color: rgba(76,175,80,.15); }
-.year-2025-cell  { color: #4caf50; font-weight: 600; background-color: #f1f8f4; }
-.dash.dark .year-2025-cell  { color: #66bb6a; background-color: rgba(76,175,80,.15); }
-.income-2025-cell { color: #4caf50 !important; font-weight: 600; transition: background-color .2s, color .2s; }
-.dash.dark .income-2025-cell { color: #66bb6a !important; background: var(--panel) !important; }
+.year-2025-header { font-weight: bold; color: #16a34a; cursor: pointer; background-color: #ecfdf3; }
+.dash.dark .year-2025-header { color: #4ade80; background-color: rgba(22,163,74,.22); }
+.year-2025-cell  { color: #16a34a; font-weight: 600; background-color: #ecfdf3; }
+.dash.dark .year-2025-cell  { color: #4ade80; background-color: rgba(22,163,74,.22); }
+.income-2025-cell { color: #16a34a !important; font-weight: 600; background-color: #ecfdf3; transition: background-color .2s, color .2s; }
+.dash.dark .income-2025-cell { color: #86efac !important; background-color: #022c22 !important; }
 
 .catalog-header-row { background-color: #f5f5f5; border-bottom: 2px solid #667eea; }
 .dash.dark .catalog-header-row { background-color: rgba(255,255,255,.06); border-bottom-color: rgba(102,126,234,.6); }
