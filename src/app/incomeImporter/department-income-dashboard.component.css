@@ -965,7 +965,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 999;
+    z-index: 2222;
   }
   
   .department-graph-modal {
@@ -1180,6 +1180,7 @@
     padding: 16px 0;
     margin-top: 16px;
     border-top: 1px solid var(--border);
+    
   }
   
   .catalog-header {
