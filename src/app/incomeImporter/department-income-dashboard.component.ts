@@ -48,6 +48,7 @@ export interface TopDepartmentDto {
   Income2025: number;
   difference: number;
   percentage: number;
+  managerName?: string;
 }
 
 interface EmployeeInfo {
@@ -112,33 +113,31 @@ export class DepartmentIncomeDashboardComponent implements OnInit, OnDestroy {
     chartOptions: any = {
         title: "השוואת הכנסות מחלקות", // Will be updated dynamically
         titleTextStyle: {
-            color: "#333",
+            color: "#0f172a",
             fontSize: 16,
             bold: true,
         },
         hAxis: {
-            title: "מחלקה",
+            title: "",
             textStyle: {
-                color: "#555",
+                color: "#64748b",
                 fontSize: 11,
-            },
-            titleTextStyle: {
-                color: "#333",
-                fontSize: 12,
-                bold: true,
             },
             slantedText: true,
-            slantedTextAngle: 45,
+            slantedTextAngle: 35,
         },
         vAxis: {
-            title: "סכום הכנסות (מיליוני ₪)",
+            title: "הכנסות (מיליוני ₪)",
             minValue: 0,
+            gridlines: {
+                color: "#e2e8f0",
+            },
             textStyle: {
-                color: "#555",
+                color: "#64748b",
                 fontSize: 11,
             },
             titleTextStyle: {
-                color: "#333",
+                color: "#0f172a",
                 fontSize: 12,
                 bold: true,
             },
@@ -146,53 +145,55 @@ export class DepartmentIncomeDashboardComponent implements OnInit, OnDestroy {
         bars: "vertical",
         legend: {
             position: "top",
+            alignment: "end",
             textStyle: {
-                color: "#555",
+                color: "#64748b",
                 fontSize: 11,
             },
         },
         chartArea: {
-            width: "75%",
-            height: "75%",
-            left: 80,
-            top: 50,
+            width: "94%",
+            height: "80%",
+            left: 20,
+            top: 30,
         },
-        colors: ["#667eea", "#f5576c"],
+        colors: ["#2563eb", "#10b981"],
         backgroundColor: {
-            fill: "#ffffff",
-            stroke: "#ddd",
-            strokeWidth: 1,
+            fill: "transparent",
+            stroke: "transparent",
+            strokeWidth: 0,
         },
-        dataOpacity: 0.9,
+        dataOpacity: 0.95,
         annotations: {
             alwaysOutside: false,
             textStyle: {
                 fontSize: 10,
                 bold: true,
-                color: "#333",
-                fontName: "Arial",
+                color: "#0f172a",
+                fontName: "Segoe UI",
             },
         },
         bar: {
-            groupWidth: "75%",
+            groupWidth: "55%",
         },
         tooltip: {
             isHtml: true,
             trigger: "focus",
             textStyle: {
-                color: "#333",
+                color: "#0f172a",
                 fontSize: 12,
             },
+            showColorCode: true,
         },
         enableInteractivity: true,
         animation: {
             startup: true,
-            duration: 1000,
+            duration: 900,
             easing: "out",
         },
         // Make bars clickable
         focusTarget: "category",
-        // Modern styling
+        // Modern styling for line mode
         pointSize: 6,
         lineWidth: 3,
         curveType: "function",
@@ -269,6 +270,7 @@ export class DepartmentIncomeDashboardComponent implements OnInit, OnDestroy {
 
     // Top 5 Departments - Feature
     topDepartmentsViewType: string = "difference"; // 'difference' or 'percentage'
+  showTopDepartmentsSidebar: boolean = false;
 
     // Theme
     isDark: boolean = false;
