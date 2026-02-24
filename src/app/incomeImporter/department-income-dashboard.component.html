@@ -645,7 +645,7 @@
 
 <!-- Boss Dashboard Modal -->
 <div *ngIf="showBossDashboard" class="boss-dashboard-overlay" [class.dark]="isDark">
-  <div class="boss-dashboard-modal">
+  <div class="boss-dashboard-modal dash" [class.dark]="isDark">
     <div dir="rtl" class="boss-header">
       <h2>📊 דוח הכנסות כללי</h2>
       <button mat-icon-button (click)="closeBossDashboard()" class="close-btn">
