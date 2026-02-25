@@ -274,7 +274,7 @@ import { HospitalRoomTimeDashbModule } from './hospital-roomtime-dashb/hospital-
 import { HospitalRoomTimeNDashbModule } from './hospital-roomtimen-dashb/hospital-roomtimen-dashb.module';
 import { HospitalRoomTimeRTDashbModule } from './hospital-roomtimert-dashb/hospital-roomtimert-dashb.module';
 import { HospitalRoomTimeRTmDashbModule } from './hospital-roomtimert-mdashb/hospital-roomtimert-mdashb.module';
-
+import { AppointsDashbModule } from './hospital-appoints-dashb/hospital-appoints-dashb.module';
 import { AiLettersDashboardComponent } from './ai-letters-dashboard/ai-letters-dashboard.component';
 import { AutomationProcessDashboardComponent } from "./automationprocessdashboard/automation-process-dashboard.component";
 import { WindowsUserActionsComponent } from './dashboard/windows-user-actions/windows-user-actions.component';
@@ -618,7 +618,8 @@ const maskConfig: Partial<IConfig> = {
     HospitalRoomTimeDashbModule,
     HospitalRoomTimeNDashbModule,
     HospitalRoomTimeRTDashbModule,
-    HospitalRoomTimeRTmDashbModule
+    HospitalRoomTimeRTmDashbModule,
+    AppointsDashbModule
   ],
   providers: [
     { provide: MAT_DATE_LOCALE, useValue: 'en-GB' }
