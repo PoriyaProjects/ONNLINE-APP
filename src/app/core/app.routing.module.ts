@@ -118,6 +118,7 @@ import { MershamComponent } from '../mersham/mersham.component';
 import { MotherChildeLinkComponent } from "../mother-childe-link/mother-childe-link.component";
 import { MrbaotComponent } from '../mrbaot/mrbaot.component';
 import { MriScheduleComponent } from "../mri-schedule/mri-schedule.component";
+import { InfectionControlComponent } from "../infection-control/infection-control.component";
 import { NewBornComponent } from "../new-born/new-born.component";
 import { NmrIframeComponent } from '../nmr-iframe/nmr-iframe.component';
 import { NortonEstimateComponent } from '../norton-estimate/norton-estimate.component';
@@ -387,7 +388,7 @@ const routes: Routes = [
   { path: "windows-user-actions", component: WindowsUserActionsComponent },
   { path: "ai-letters-dashboard", component: AiLettersDashboardComponent },
   { path: "mri-schedule", component: MriScheduleComponent },
-
+  { path: "InfectionControl", component: InfectionControlComponent },
 ];
 
 @NgModule({

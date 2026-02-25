@@ -279,6 +279,7 @@ import { AiLettersDashboardComponent } from './ai-letters-dashboard/ai-letters-d
 import { AutomationProcessDashboardComponent } from "./automationprocessdashboard/automation-process-dashboard.component";
 import { WindowsUserActionsComponent } from './dashboard/windows-user-actions/windows-user-actions.component';
 import { MriScheduleComponent } from './mri-schedule';
+import { InfectionControlModule } from './infection-control/infection-control.module';
 import { DepartmentalTextureReportComponent } from './nutrition-system/departmental-texture-report/departmental-texture-report.component';
 
 
@@ -517,6 +518,7 @@ const maskConfig: Partial<IConfig> = {
     //HospitalIncomeDashbComponent,
   ],
   imports: [
+    InfectionControlModule,
     MatIconModule,
     SpreadsheetAllModule,
     AngularEditorModule,
