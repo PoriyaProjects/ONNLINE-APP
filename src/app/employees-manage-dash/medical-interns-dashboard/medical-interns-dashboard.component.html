@@ -1,0 +1,246 @@
+<div class="interns-dashboard" dir="rtl">
+  <header class="dashboard-header">
+    <div class="header-left">
+      <h1 class="page-title text-center">ניהול סטאג'רים רפואיים</h1>
+      <p class="page-subtitle">חיפוש, עריכה וניהול פרטי סטאג'רים רפואיים</p>
+    </div>
+
+    <div class="header-right">
+      <button mat-stroked-button color="primary" type="button" (click)="resetSearch()" class="header-btn">
+        <mat-icon>restart_alt</mat-icon>
+        איפוס חיפוש
+      </button>
+      <!-- <button mat-flat-button color="primary" type="button" (click)="addUpdateIntern(null)" class="header-btn">
+        <mat-icon>person_add</mat-icon>
+        סטאג'ר חדש
+      </button> -->
+    </div>
+  </header>
+
+  <!-- KPI CARDS -->
+  <section class="kpi-section" *ngIf="loaded">
+    <div class="kpi-card">
+      <div class="kpi-icon bg-blue"><mat-icon>groups</mat-icon></div>
+      <div class="kpi-meta">
+        <div class="kpi-label">סה״כ סטאג׳רים</div>
+        <div class="kpi-value">{{ stats.total }}</div>
+      </div>
+    </div>
+
+    <div class="kpi-card">
+      <div class="kpi-icon bg-green"><mat-icon>verified</mat-icon></div>
+      <div class="kpi-meta">
+        <div class="kpi-label">עם מייל עבודה</div>
+        <div class="kpi-value">{{ stats.withEmail }}</div>
+      </div>
+    </div>
+
+    <div class="kpi-card">
+      <div class="kpi-icon bg-purple"><mat-icon>call</mat-icon></div>
+      <div class="kpi-meta">
+        <div class="kpi-label">עם טלפון</div>
+        <div class="kpi-value">{{ stats.withPhone }}</div>
+      </div>
+    </div>
+
+    <div class="kpi-card">
+      <div class="kpi-icon bg-orange"><mat-icon>apartment</mat-icon></div>
+      <div class="kpi-meta">
+        <div class="kpi-label">מחלקות ייחודיות</div>
+        <div class="kpi-value">{{ stats.uniqueDepartments }}</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="search-section">
+    <div class="search-card">
+      <div class="section-title">
+        <div class="section-title-main">
+          <mat-icon>manage_search</mat-icon>
+          חיפוש וסינון
+        </div>
+
+        <div class="section-title-actions">
+          <mat-chip-list *ngIf="activeFiltersCount > 0" class="chipset">
+            <mat-chip color="primary" selected>מסננים פעילים: {{activeFiltersCount}}</mat-chip>
+          </mat-chip-list>
+        </div>
+      </div>
+
+      <form class="search-form" [formGroup]="searchInternsGroup">
+        <div class="search-row">
+          <mat-form-field appearance="outline" class="search-field">
+            <mat-label>תעודת זהות</mat-label>
+            <mat-icon matPrefix>badge</mat-icon>
+            <input matInput type="text" autocomplete="off" formControlName="EmployeeID" />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="search-field">
+            <mat-label>שם פרטי</mat-label>
+            <mat-icon matPrefix>person</mat-icon>
+            <input matInput type="text" autocomplete="off" formControlName="FirstName" />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="search-field">
+            <mat-label>שם משפחה</mat-label>
+            <mat-icon matPrefix>person_outline</mat-icon>
+            <input matInput type="text" autocomplete="off" formControlName="LastName" />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="search-field">
+            <mat-label>מספר טלפון</mat-label>
+            <mat-icon matPrefix>call</mat-icon>
+            <input matInput type="tel" autocomplete="off" formControlName="PhoneNumber" />
+          </mat-form-field>
+        </div>
+
+        <div class="search-row search-row-actions">
+          <mat-form-field appearance="outline" class="search-field dept-field">
+            <mat-label>מחלקה</mat-label>
+            <mat-icon matPrefix>apartment</mat-icon>
+            <mat-select formControlName="Department">
+              <mat-option [value]="''">הכל</mat-option>
+              <mat-option *ngFor="let dept of DepartmentsList" [value]="dept.DepartnentCode">
+                {{dept.DepartnentDescripton}}
+              </mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="search-field dept-field">
+            <mat-label>פעיל</mat-label>
+            <mat-icon matPrefix>check_circle</mat-icon>
+            <mat-select formControlName="On">
+              <mat-option [value]="''">הכל</mat-option>
+              <mat-option value="1">כן</mat-option>
+              <mat-option value="2">לא</mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <div class="action-buttons">
+            <button mat-flat-button color="primary" type="button" (click)="getMedicalInterns()" class="action-btn">
+              <mat-icon>search</mat-icon>
+              חיפוש
+            </button>
+
+            <button mat-stroked-button color="primary" type="button" (click)="navigateToSms()" class="action-btn">
+              <mat-icon>sms</mat-icon>
+              שליחת SMS
+            </button>
+
+            <button mat-stroked-button type="button" (click)="clearSearchFields()" class="action-btn subtle">
+              <mat-icon>backspace</mat-icon>
+              ניקוי שדות
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <mat-progress-bar mode="indeterminate" *ngIf="!loaded" class="loading-bar"></mat-progress-bar>
+  </section>
+
+  <section class="table-section">
+    <div class="table-toolbar">
+      <mat-form-field appearance="outline" class="filter-field">
+        <mat-label>סינון טבלה</mat-label>
+        <mat-icon matPrefix>filter_list</mat-icon>
+        <input matInput (keyup)="applyFilter($event)" placeholder="הקלד לחיפוש..." #input>
+        <button mat-icon-button matSuffix type="button" *ngIf="input.value" (click)="clearTableFilter(input)">
+          <mat-icon>close</mat-icon>
+        </button>
+      </mat-form-field>
+
+      <div class="toolbar-actions">
+        <button type="button" mat-flat-button color="primary" (click)="exportToExcel()" class="toolbar-btn">
+          <mat-icon>file_download</mat-icon>
+          ייצוא
+        </button>
+
+        <!-- <button type="button" mat-fab color="primary" matTooltip="הוספת סטאג'ר חדש" (click)="addUpdateIntern(null)"
+          class="add-fab">
+          <mat-icon>add</mat-icon>
+        </button> -->
+      </div>
+    </div>
+
+    <div class="table-wrapper">
+      <table mat-table *ngIf="loaded" [dataSource]="dataSource" matSort class="interns-table">
+
+        <ng-container matColumnDef="Image">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header sticky>תמונת פרופיל</th>
+          <td mat-cell *matCellDef="let element" class="cell-center">
+            <img
+              [src]="element.ProfilePicture || 'http://srv-apps-prod/Images/' + element.EmployeeID + '.jpg' || 'http://srv-apps-prod/Images/default.jpg'"
+              alt="תמונת סטאג'ר" class="avatar-img" />
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="EmployeeID">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header sticky>תעודת זהות</th>
+          <td mat-cell *matCellDef="let element" class="cell-center">{{element.EmployeeID}}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="FirstName">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header sticky>שם פרטי</th>
+          <td mat-cell *matCellDef="let element" class="cell-center">{{element.FirstName}}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="LastName">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header sticky>שם משפחה</th>
+          <td mat-cell *matCellDef="let element" class="cell-center">{{element.LastName}}</td>
+        </ng-container>
+
+        <!-- <ng-container matColumnDef="DepartnentDescripton">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header sticky>מחלקה</th>
+          <td mat-cell *matCellDef="let element" class="cell-center">
+            <span class="dept-pill">{{element.DepartnentDescripton}}</span>
+          </td>
+        </ng-container> -->
+
+        <ng-container matColumnDef="CellNumber">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header sticky>טלפון נייד</th>
+          <td mat-cell *matCellDef="let element" class="cell-center">
+            <span [class.muted]="!element.CellNumber">{{element.CellNumber || '—'}}</span>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="Email">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header sticky>מייל</th>
+          <td mat-cell *matCellDef="let element" class="cell-center">
+            <span [class.muted]="!element.Email">{{element.Email || '—'}}</span>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="Actions">
+          <th mat-header-cell *matHeaderCellDef sticky>פעולות</th>
+          <td mat-cell *matCellDef="let element" class="cell-center">
+            <button mat-icon-button matTooltip="ניהול מחלקות" (click)="navigateToDepartments(element, $event)"
+              class="icon-btn">
+              <mat-icon>business</mat-icon>
+            </button>
+
+            <button mat-icon-button matTooltip="עריכה" (click)="addUpdateIntern(element); $event.stopPropagation()"
+              class="icon-btn">
+              <mat-icon>edit</mat-icon>
+            </button>
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumns" class="table-header-row"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns;" (click)="addUpdateIntern(row)" class="table-row">
+        </tr>
+      </table>
+
+      <!-- Empty state -->
+      <div class="empty-state"
+        *ngIf="loaded && dataSource && dataSource.filteredData && dataSource.filteredData.length === 0">
+        <div class="empty-icon"><mat-icon>search_off</mat-icon></div>
+        <div class="empty-title">אין תוצאות להצגה</div>
+        <div class="empty-subtitle">נסה לשנות פילטרים או לנקות חיפוש</div>
+        <button mat-stroked-button color="primary" type="button" (click)="resetSearch()">איפוס מסננים</button>
+      </div>
+    </div>
+
+    <mat-paginator [pageSizeOptions]="[15, 25, 50, 100]" showFirstLastButtons class="table-paginator"></mat-paginator>
+  </section>
+</div>

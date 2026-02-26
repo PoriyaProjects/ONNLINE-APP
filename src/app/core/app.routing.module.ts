@@ -122,7 +122,6 @@ import { ReportReportingComponent } from '../report-reporting/report-reporting.c
 import { ReHospComponent } from '../re-hosp/re-hosp.component';
 import { EmployeesUpdateManagersComponent } from '../employees-manage-dash/employees-update-managers/employees-update-managers.component'
 import { WorkerCasesComponent } from '../worker-cases/worker-cases.component'
-import { EditOrAddWorkerCaseComponent } from '../worker-cases/edit-or-add-worker-case/edit-or-add-worker-case.component'
 import { BedsoreDashboardComponent } from '../form-dashboard/bedsore-dashboard/bedsore-dashboard.component'
 import { AuthorizedComponent } from '../authorized/authorized.component'
 import { SupplierComponent } from '../supplier/supplier.component';
@@ -160,7 +159,6 @@ import { HospitalIncomeDashbComponent } from '../hospital-income-dashb/hospital-
 import { GoogleChartsIncomeComponent } from '../hospital-income-dashb/google-charts/google-charts.component';
 import { FoldersManagementComponent } from '../dashboard/folders-management/folders-management.component';
 import { FolderDialogComponent } from '../dashboard/folders-management/folder-dialog/folder-dialog.component';
-import { HospitalIncomeNBDashbComponent } from '../hospital-incomenb-dashb/hospital-incomenb-dashb.component';
 import { GoogleChartsIncomeNBComponent } from '../hospital-incomenb-dashb/google-charts/google-charts.component';
 import { AppointsDashboardComponent } from '../hospital-appoints-dashb/google-charts/google-charts.component';
 import { DimotActivityDashboardComponent } from '../dimot-activity-dashboard/dimot-activity-dashboard.component';
@@ -172,6 +170,9 @@ import { DepartmentalTextureReportComponent } from "../nutrition-system/departme
 import { WindowsUserActionsComponent } from "../dashboard/windows-user-actions/windows-user-actions.component";
 import { AiLettersDashboardComponent } from "../ai-letters-dashboard/ai-letters-dashboard.component";
 import { MriScheduleComponent } from "../mri-schedule/mri-schedule.component";
+import { MedicalInternsDashboardComponent } from '../employees-manage-dash/medical-interns-dashboard/medical-interns-dashboard.component';
+import { InternDepartmentsManageComponent } from '../employees-manage-dash/medical-interns-dashboard/intern-departments-manage/intern-departments-manage.component';
+import { MedicalInternsSmsComponent } from '../employees-manage-dash/medical-interns-dashboard/medical-interns-sms/medical-interns-sms.component';
 
 
 
@@ -389,6 +390,9 @@ const routes: Routes = [
   { path: "windows-user-actions", component: WindowsUserActionsComponent },
   { path: "ai-letters-dashboard", component: AiLettersDashboardComponent },
   { path: "mri-schedule", component: MriScheduleComponent },
+  { path: "medical-interns-dashboard", component: MedicalInternsDashboardComponent },
+  { path: "medical-intern-departments/:EmployeeID", component: InternDepartmentsManageComponent },
+  { path: "medical-interns-sms", component: MedicalInternsSmsComponent },
 
 ];
 

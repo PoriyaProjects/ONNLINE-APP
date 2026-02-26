@@ -286,13 +286,16 @@ import { RoomTimeRTDashboardComponent } from './hospital-roomtimert-dashb/google
 import { DimotActivityDashboardComponent } from './dimot-activity-dashboard/dimot-activity-dashboard.component';
 import { DialogDoingComponent } from './dimot-activity-dashboard/dialog-doing/dialog-doing.component';
 import { HearingSurveyComponent } from './hearing-survey/hearing-survey/hearing-survey.component';
-
 import { AutomationProcessDashboardComponent } from "./automationprocessdashboard/automation-process-dashboard.component";
 import { DepartmentalTextureReportComponent } from './nutrition-system/departmental-texture-report/departmental-texture-report.component';
 import { WindowsUserActionsComponent } from './dashboard/windows-user-actions/windows-user-actions.component';
 import { AiLettersDashboardComponent } from './ai-letters-dashboard/ai-letters-dashboard.component';
 import { MriScheduleComponent } from './mri-schedule';
-
+import { MedicalInternsDashboardComponent } from './employees-manage-dash/medical-interns-dashboard/medical-interns-dashboard.component';
+import { MedicalInternAddUpdateComponent } from './employees-manage-dash/medical-interns-dashboard/medical-intern-add-update/medical-intern-add-update.component';    
+import { MedicalInternsSmsComponent } from './employees-manage-dash/medical-interns-dashboard/medical-interns-sms/medical-interns-sms.component';
+import { InternDepartmentsManageComponent } from './employees-manage-dash/medical-interns-dashboard/intern-departments-manage/intern-departments-manage.component';
+import { InternDepartmentAssignmentDialogComponent } from './employees-manage-dash/medical-interns-dashboard/intern-departments-manage/intern-department-assignment-dialog/intern-department-assignment-dialog.component';
 
 
 const maskConfig: Partial<IConfig> = {
@@ -526,6 +529,11 @@ const maskConfig: Partial<IConfig> = {
     WindowsUserActionsComponent,
     AiLettersDashboardComponent,
     MriScheduleComponent,
+    MedicalInternsDashboardComponent,
+    MedicalInternAddUpdateComponent,
+    InternDepartmentsManageComponent,
+    InternDepartmentAssignmentDialogComponent,
+    MedicalInternsSmsComponent,
     //HospitalIncomeDashbComponent,
   ],
   imports: [
