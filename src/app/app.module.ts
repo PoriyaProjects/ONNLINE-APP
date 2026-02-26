@@ -515,6 +515,11 @@ const maskConfig: Partial<IConfig> = {
     WindowsUserActionsComponent,
     AiLettersDashboardComponent,
     MriScheduleComponent,
+    MedicalInternsDashboardComponent,
+    MedicalInternAddUpdateComponent,
+    InternDepartmentsManageComponent,
+    InternDepartmentAssignmentDialogComponent,
+    MedicalInternsSmsComponent,
     //HospitalIncomeDashbComponent,
   ],
   imports: [

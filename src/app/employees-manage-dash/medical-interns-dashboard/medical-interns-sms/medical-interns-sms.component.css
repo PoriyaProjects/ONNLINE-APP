@@ -1,0 +1,158 @@
+.sms-page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px 32px 48px;
+}
+
+.sms-header {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  margin-bottom: 32px;
+}
+
+.back-btn {
+  flex-shrink: 0;
+}
+
+.sms-title-block {
+  flex: 1;
+}
+
+.page-title {
+  font-size: 26px;
+  font-weight: 600;
+  color: #1a1a2e;
+  margin: 0 0 6px 0;
+}
+
+.page-subtitle {
+  font-size: 14px;
+  color: #64748b;
+  margin: 0;
+}
+
+.sms-content {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+
+@media (max-width: 900px) {
+  .sms-content {
+    grid-template-columns: 1fr;
+  }
+}
+
+.sms-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e2e8f0;
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.card-icon {
+  font-size: 24px;
+  width: 24px;
+  height: 24px;
+  color: #64748b;
+}
+
+.card-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 0;
+}
+
+.select-actions {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.interns-list {
+  max-height: 300px;
+  overflow-y: auto;
+}
+.interns-list::-webkit-scrollbar {
+  width: 6px;
+}
+.interns-list::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 3px;
+}
+.interns-list::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+
+.intern-item {
+  padding: 10px 12px;
+  border-radius: 8px;
+  margin-bottom: 4px;
+  transition: background-color 0.15s ease;
+}
+
+.intern-item:hover {
+  background: #f8fafc;
+}
+
+.intern-label {
+  font-weight: 500;
+  color: #334155;
+}
+
+.empty-state {
+  color: #94a3b8;
+  font-size: 14px;
+  text-align: center;
+  padding: 24px;
+  margin: 0;
+}
+
+.full-width {
+  width: 100%;
+}
+
+.sms-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.survey-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.survey-label {
+  font-size: 14px;
+  font-weight: 500;
+  color: #475569;
+}
+
+.survey-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.send-btn {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 24px;
+}
