@@ -281,6 +281,11 @@ import { WindowsUserActionsComponent } from './dashboard/windows-user-actions/wi
 import { MriScheduleComponent } from './mri-schedule';
 import { InfectionControlModule } from './infection-control/infection-control.module';
 import { DepartmentalTextureReportComponent } from './nutrition-system/departmental-texture-report/departmental-texture-report.component';
+import { MedicalInternsDashboardComponent } from './employees-manage-dash/medical-interns-dashboard/medical-interns-dashboard.component';
+import { MedicalInternAddUpdateComponent } from './employees-manage-dash/medical-interns-dashboard/medical-intern-add-update/medical-intern-add-update.component';
+import { InternDepartmentsManageComponent } from './employees-manage-dash/medical-interns-dashboard/intern-departments-manage/intern-departments-manage.component';
+import { InternDepartmentAssignmentDialogComponent } from './employees-manage-dash/medical-interns-dashboard/intern-departments-manage/intern-department-assignment-dialog/intern-department-assignment-dialog.component';
+import { MedicalInternsSmsComponent } from './employees-manage-dash/medical-interns-dashboard/medical-interns-sms/medical-interns-sms.component';
 
 
 
