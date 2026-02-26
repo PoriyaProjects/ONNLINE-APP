@@ -9,7 +9,7 @@
         >
           {{ folder.isExpanded ? '-' : '+' }}
         </button>
-        <span (click)="displayFiles(folder)" class="folder-title">
+        <span (click)="saveClickToDB(folder.Title);displayFiles(folder);" class="folder-title">
           <img [src]="folder.Image" alt="Folder Image" class="folder-icon" />
           {{ folder.Title }}
         </span>

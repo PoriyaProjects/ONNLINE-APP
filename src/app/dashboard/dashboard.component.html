@@ -62,7 +62,7 @@
                                     <img [src]="shortcut.Image" alt="Shortcut Image" class="card-image">
                                 </div>
                             </a>
-                            <a (click)="openWithEdge2(shortcut.Link)" *ngIf="shortcut.ChromeBrowser == 'False'"
+                            <a (click)="openWithEdge2(shortcut.Link);" *ngIf="shortcut.ChromeBrowser == 'False'"
                                 target="_blank">
                                 <div class="card-title">{{ shortcut.Title }}</div>
                                 <div class="container-img">
@@ -83,7 +83,7 @@
             <mat-tab-group>
                 <mat-tab *ngFor="let tab of lefttabs" [label]="tab.title">
                     <div class="row">
-                        <div *ngFor="let card of tab.cards" class="card" (click)="userClickedShortCut(card.Title)">
+                        <div *ngFor="let card of tab.cards" class="card" (click)="userClickedShortCut(card.Title);userClickedShortCut(card.Title)">
                             <a [href]="card.Link" target="_blank">
                                 <div class="card-title">{{ card.Title }}</div>
                                 <div class="container-img">

@@ -1,4 +1,6 @@
+import { HttpClient } from '@angular/common/http';
 import { Component, Input, OnInit } from '@angular/core';
+import { environment } from 'src/environments/environment';
 export class Folders {
   Row_ID: string;
   Title: string;
@@ -21,11 +23,25 @@ export class FolderTreeComponent implements OnInit {
   @Input() folders: Folders[] = [];
   folders_display = [];
 
-  constructor() { }
+  constructor( 
+          private http: HttpClient) { }
 
   ngOnInit(): void {
   }
-
+  saveClickToDB(content) {
+    this.http
+      .post(environment.url + "SaveClickToDB", {
+        name: localStorage.getItem("loginUserName").toLowerCase(),
+        content: content
+      })
+      .subscribe((Response) => {
+        try {
+          console.log("Success Ask!");
+        } catch (error) {
+          console.log("error in sending notification!");
+        }
+      });
+  }
   // Toggle expand/collapse state for a folder
   toggleExpand(folder: Folders): void {
     folder.isExpanded = !folder.isExpanded;
@@ -38,7 +54,7 @@ export class FolderTreeComponent implements OnInit {
       this.folders_display = this.folders; // Reset to root folder
       return;
     }
-  
+
     if (folder.Children && folder.Children.length > 0) {
       // If the folder has children, display them
       this.folders_display = folder.Children;
