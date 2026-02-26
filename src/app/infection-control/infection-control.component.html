@@ -1,0 +1,237 @@
+<div class="infection-control-container">
+  <!-- Banner -->
+  <div class="banner">
+    <h1>Bacteria Management</h1>
+    <p class="banner-subtitle">Infection Control</p>
+  </div>
+
+  <mat-tab-group class="tabs" animationDuration="200ms">
+    <!-- UPDATE TAB -->
+    <mat-tab label="Update">
+      <div class="tab-content">
+        <!-- Section 1: Bacteria Management -->
+        <section class="card section">
+          <h2>Bacteria Management</h2>
+          <div *ngIf="loadingMdros" class="loading-wrap">
+            <mat-spinner diameter="36"></mat-spinner>
+            <span>Loading...</span>
+          </div>
+          <div *ngIf="!loadingMdros">
+            <div class="section-actions">
+              <button mat-raised-button color="primary" (click)="openAddBacteria()">
+                Add
+              </button>
+            </div>
+            <table class="data-table" *ngIf="mdros.length">
+              <thead>
+                <tr>
+                  <th class="col-numeric">ID</th>
+                  <th>Description</th>
+                  <th>Active</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let m of mdros">
+                  <td class="col-numeric">{{ m.MDRO_ID }}</td>
+                  <td>{{ m.MDRO_Desc }}</td>
+                  <td>{{ m.IsActive ? 'Yes' : 'No' }}</td>
+                  <td>
+                    <button mat-icon-button (click)="openEditBacteria(m)" matTooltip="Edit">
+                      <mat-icon>edit</mat-icon>
+                    </button>
+                    <button mat-icon-button (click)="deleteBacteria(m)" matTooltip="Delete">
+                      <mat-icon>delete</mat-icon>
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+            <p *ngIf="!loadingMdros && !mdros.length" class="no-data">No bacteria defined.</p>
+          </div>
+        </section>
+
+        <!-- Section 2: Bacteria Log -->
+        <section class="card section">
+          <h2>Bacteria Log</h2>
+          <div *ngIf="loadingDepartments" class="loading-wrap">
+            <mat-spinner diameter="28"></mat-spinner>
+          </div>
+          <div *ngIf="!loadingDepartments" class="form-grid">
+            <mat-form-field appearance="outline" class="field">
+              <mat-label>Bacteria</mat-label>
+              <mat-select [(value)]="bacteriaLogForm.mdroId" required>
+                <mat-option [value]="null">-- Select --</mat-option>
+                <mat-option *ngFor="let m of activeMdros" [value]="m.MDRO_ID">{{ m.MDRO_Desc }}</mat-option>
+              </mat-select>
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="field">
+              <mat-label>Department</mat-label>
+              <mat-select [(value)]="bacteriaLogForm.department" required>
+                <mat-option value="">-- Select --</mat-option>
+                <mat-option *ngFor="let d of departments" [value]="d.DepartnentDescripton">
+                  {{ d.DepartnentDescripton }}
+                </mat-option>
+              </mat-select>
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="field">
+              <mat-label>Year-Month (YYYY-MM)</mat-label>
+              <input matInput type="month" [(ngModel)]="bacteriaLogForm.yearMonth" (ngModelChange)="onBacteriaLogYearMonthChange()" required>
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="field">
+              <mat-label>Total Acc</mat-label>
+              <input matInput type="number" min="0" [(ngModel)]="bacteriaLogForm.totalAcc" required>
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="field">
+              <mat-label>Total Positive Tests</mat-label>
+              <input matInput type="number" min="0" [(ngModel)]="bacteriaLogForm.totalPositiveTests" required>
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="field">
+              <mat-label>Hospitalization Days</mat-label>
+              <input matInput type="number" min="0" [(ngModel)]="bacteriaLogForm.hospitalizationDays" required>
+            </mat-form-field>
+          </div>
+          <div class="form-actions">
+            <button mat-raised-button color="primary" (click)="saveAccuLog()" [disabled]="loadingAccuLog">
+              <mat-spinner *ngIf="loadingAccuLog" diameter="20" class="btn-spinner"></mat-spinner>
+              <span *ngIf="!loadingAccuLog">Save</span>
+            </button>
+          </div>
+          <div *ngIf="loadingAccuLogList" class="loading-wrap">
+            <mat-spinner diameter="32"></mat-spinner>
+            <span>Loading log...</span>
+          </div>
+          <table class="data-table" *ngIf="!loadingAccuLogList && accuLogList.length">
+            <thead>
+              <tr>
+                <th>Bacteria Name</th>
+                <th>EP_Department</th>
+                <th>YearMonth</th>
+                <th class="col-numeric">Total Acc</th>
+                <th class="col-numeric">Total Positive Tests</th>
+                <th class="col-numeric">Hospitalization Days</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let row of accuLogList">
+                <td>{{ row.MDRO_Desc || row.BacteriaName }}</td>
+                <td>{{ row.EP_Department }}</td>
+                <td>{{ row.YearMonth }}</td>
+                <td class="col-numeric">{{ row.Total_Acc }}</td>
+                <td class="col-numeric">{{ row.Total_Positive_Tests }}</td>
+                <td class="col-numeric">{{ row.Hospitalization_Days }}</td>
+                <td>
+                  <button mat-icon-button (click)="deleteAccuLog(row)" matTooltip="Delete">
+                    <mat-icon>delete</mat-icon>
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <p *ngIf="!loadingAccuLogList && !accuLogList.length && bacteriaLogForm.yearMonth" class="no-data">No records for selected month</p>
+        </section>
+
+        <!-- Section 3: Hospitalization Days -->
+        <section class="card section">
+          <h2>Hospitalization Days</h2>
+          <div *ngIf="loadingHospitalDays" class="loading-wrap">
+            <mat-spinner diameter="36"></mat-spinner>
+          </div>
+          <div *ngIf="!loadingHospitalDays" class="hospital-days-form">
+            <mat-form-field appearance="outline" class="field-inline">
+              <mat-label>Year-Month (YYYY-MM)</mat-label>
+              <input matInput type="month" [(ngModel)]="hospitalDaysForm.yearMonth">
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="field-inline">
+              <mat-label>Days</mat-label>
+              <input matInput type="number" min="0" [(ngModel)]="hospitalDaysForm.hospitalizationDays">
+            </mat-form-field>
+            <button mat-raised-button color="primary" (click)="saveHospitalDay()" [disabled]="savingHospitalDay">
+              {{ editingHospitalDayId != null ? 'Update' : 'Add' }}
+            </button>
+            <button *ngIf="editingHospitalDayId != null" mat-button (click)="cancelEditHospitalDay()">Cancel</button>
+          </div>
+          <table class="data-table" *ngIf="!loadingHospitalDays && hospitalDays.length">
+            <thead>
+              <tr>
+                <th>Year-Month</th>
+                <th class="col-numeric">Hospitalization Days</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let h of hospitalDays">
+                <td>{{ h.YearMonth }}</td>
+                <td class="col-numeric">{{ h.Hospitalization_Days }}</td>
+                <td>
+                  <button mat-icon-button (click)="editHospitalDay(h)" matTooltip="Edit">
+                    <mat-icon>edit</mat-icon>
+                  </button>
+                  <button mat-icon-button (click)="deleteHospitalDay(h)" matTooltip="Delete">
+                    <mat-icon>delete</mat-icon>
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <p *ngIf="!loadingHospitalDays && !hospitalDays.length" class="no-data">No hospitalization days defined.</p>
+        </section>
+      </div>
+    </mat-tab>
+
+    <!-- SHOW TAB -->
+    <mat-tab label="Show">
+      <div class="tab-content show-tab">
+        <div class="show-controls">
+          <mat-form-field appearance="outline" class="year-select">
+            <mat-label>Year</mat-label>
+            <mat-select [(value)]="selectedYear">
+              <mat-option *ngFor="let y of years" [value]="y">{{ y }}</mat-option>
+            </mat-select>
+          </mat-form-field>
+          <button mat-raised-button color="primary" (click)="displayShowReport()" [disabled]="loadingShowReport">
+            <mat-spinner *ngIf="loadingShowReport" diameter="24" class="btn-spinner"></mat-spinner>
+            <span *ngIf="!loadingShowReport">Display</span>
+          </button>
+        </div>
+        <div *ngIf="loadingShowReport" class="loading-wrap">
+          <mat-spinner diameter="40"></mat-spinner>
+          <span>Loading report...</span>
+        </div>
+        <div *ngIf="!loadingShowReport && showReportData.length === 0 && selectedYear" class="no-data">
+          Click Display to load the report, or no data for selected year.
+        </div>
+        <div *ngIf="!loadingShowReport && showReportData.length" class="report-section">
+          <div *ngFor="let group of getReportByMonth()" class="month-group">
+            <h3 class="month-title">{{ group.month }}</h3>
+            <table class="report-table">
+              <thead>
+                <tr>
+                  <th>Bacteria Name</th>
+                  <th>Year Month</th>
+                  <th>Department</th>
+                  <th class="col-numeric">Total Acc</th>
+                  <th class="col-numeric">Total Positive Tests</th>
+                  <th class="col-numeric">Hospitalization Days</th>
+                  <th class="col-numeric">Hospitalization</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let row of group.rows">
+                  <td>{{ row.BacteriaName }}</td>
+                  <td>{{ row.YearMonth }}</td>
+                  <td>{{ row.Department }}</td>
+                  <td class="col-numeric">{{ row.Total_Acc }}</td>
+                  <td class="col-numeric">{{ row.Total_Positive_Tests }}</td>
+                  <td class="col-numeric">{{ row.Hospitalization_Days != null ? row.Hospitalization_Days : '' }}</td>
+                  <td class="col-numeric">{{ getHospitalizationForMonth(group.month) }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </mat-tab>
+  </mat-tab-group>
+</div>

@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTableDataSource } from '@angular/material/table';
@@ -48,6 +48,16 @@ export interface TopDepartmentDto {
   Income2025: number;
   difference: number;
   percentage: number;
+  managerName?: string;
+}
+
+interface EmployeeInfo {
+  userName: string;
+  gender: string;
+  employeeID: string;
+  profilePicture: string;
+  departnentCode: string | null;
+  departmentName: string | null;
 }
 
 @Component({
@@ -72,11 +82,12 @@ export interface TopDepartmentDto {
         ]),
     ],
 })
-export class DepartmentIncomeDashboardComponent implements OnInit {
+export class DepartmentIncomeDashboardComponent implements OnInit, OnDestroy {
     @ViewChild(MatSort) sort!: MatSort;
 
     // Guide Avatar
     showGuideAvatar = true;
+    dontShowGuideAgain = false; // checkbox "אל תציג יותר"
     showArticleShowcase = false;
     currentArticle: string = "";
 
@@ -102,76 +113,91 @@ export class DepartmentIncomeDashboardComponent implements OnInit {
     chartOptions: any = {
         title: "השוואת הכנסות מחלקות", // Will be updated dynamically
         titleTextStyle: {
-            color: "#333",
-            fontSize: 18,
+            color: "#0f172a",
+            fontSize: 16,
             bold: true,
         },
         hAxis: {
-            title: "סכום הכנסות (מיליוני ₪)",
-            minValue: 0,
+            title: "",
             textStyle: {
-                color: "#555",
-                fontSize: 12,
+                color: "#64748b",
+                fontSize: 11,
             },
-            titleTextStyle: {
-                color: "#333",
-                fontSize: 13,
-                bold: true,
-            },
+            slantedText: true,
+            slantedTextAngle: 35,
         },
         vAxis: {
-            title: "מחלקה",
+            title: "הכנסות (מיליוני ₪)",
+            minValue: 0,
+            gridlines: {
+                color: "#e2e8f0",
+            },
             textStyle: {
-                color: "#333",
+                color: "#64748b",
                 fontSize: 11,
             },
             titleTextStyle: {
-                color: "#333",
-                fontSize: 13,
+                color: "#0f172a",
+                fontSize: 12,
                 bold: true,
             },
         },
-        bars: "horizontal",
+        bars: "vertical",
         legend: {
-            position: "bottom",
+            position: "top",
+            alignment: "end",
             textStyle: {
-                color: "#555",
-                fontSize: 12,
+                color: "#64748b",
+                fontSize: 11,
             },
         },
         chartArea: {
-            width: "60%",
-            height: "85%",
-            left: 200,
-            top: 40,
+            width: "94%",
+            height: "80%",
+            left: 20,
+            top: 30,
         },
-        colors: ["#667eea", "#f5576c"],
+        colors: ["#2563eb", "#10b981"],
         backgroundColor: {
-            fill: "#ffffff",
-            stroke: "#ddd",
-            strokeWidth: 1,
+            fill: "transparent",
+            stroke: "transparent",
+            strokeWidth: 0,
         },
-        dataOpacity: 0.9,
+        dataOpacity: 0.95,
         annotations: {
-            alwaysOutside: true,
+            alwaysOutside: false,
             textStyle: {
-                fontSize: 11,
+                fontSize: 10,
                 bold: true,
-                color: "#333",
-                fontName: "Arial",
+                color: "#0f172a",
+                fontName: "Segoe UI",
             },
         },
         bar: {
-            groupWidth: "75%",
+            groupWidth: "55%",
         },
         tooltip: {
             isHtml: true,
-            trigger: "both",
+            trigger: "focus",
             textStyle: {
-                color: "#333",
+                color: "#0f172a",
                 fontSize: 12,
             },
+            showColorCode: true,
         },
+        enableInteractivity: true,
+        animation: {
+            startup: true,
+            duration: 900,
+            easing: "out",
+        },
+        // Make bars clickable
+        focusTarget: "category",
+        // Modern styling for line mode
+        pointSize: 6,
+        lineWidth: 3,
+        curveType: "function",
+        pointShape: "circle",
     };
 
     // Boss Dashboard
@@ -200,7 +226,10 @@ export class DepartmentIncomeDashboardComponent implements OnInit {
     isLoading = false;
     catalogLoading = false;
     isMainDataLoading = false; // Loading for main data table
+    isDiagnosesLoading = false; // Loading for diagnoses list
+    isChartLoading = false; // Loading for chart data
     selectedViewType: string = "cash";
+    chartType: string = "ColumnChart"; // 'ColumnChart' or 'LineChart'
 
     // Catalog columns - updated for sorting
     cashColumns: string[] = [
@@ -239,8 +268,22 @@ export class DepartmentIncomeDashboardComponent implements OnInit {
 
     displayedCatalogColumns: string[] = this.cashColumns;
 
-    // Top 5 Departments - Feature
-    topDepartmentsViewType: string = "difference"; // 'difference' or 'percentage'
+  // Top 5 Departments - Feature
+  topDepartmentsViewType: string = "difference"; // 'difference' or 'percentage'
+  showTopDepartmentsSidebar: boolean = false;
+
+    // Theme
+    isDark: boolean = false;
+
+  // Employee info
+  employeeInfo: EmployeeInfo | null = null;
+  employeeLoading = false;
+  employeeError = false;
+  employeeUserName: string | null = null;
+  employeeFirstName: string | null = null;
+  employeeLastName: string | null = null;
+  employeeFunctionDescription: string | null = null;
+  employeeLocalDepartment: string | null = null;
 
     constructor(
         private http: HttpClient,
@@ -251,9 +294,42 @@ export class DepartmentIncomeDashboardComponent implements OnInit {
 
     ngOnInit(): void {
         console.log("gOnInit called");
-        this.loadDepartmentIncomeData();
+        // Open guide on every visit unless user checked "אל תציג יותר"
+        const dontShowAgain = localStorage.getItem("dashboardGuideDontShowAgain");
+        if (dontShowAgain === "true") {
+            this.showGuideAvatar = false;
+        }
+        // else: showGuideAvatar stays true → guide opens automatically
+
+       // Load employee info from localStorage + API
+       this.employeeUserName = localStorage.getItem("loginUserName");
+       this.employeeFirstName = localStorage.getItem("FirstName");
+       this.employeeLastName = localStorage.getItem("LastName");
+       this.employeeFunctionDescription = localStorage.getItem("FunctionDescription");
+       this.employeeLocalDepartment = localStorage.getItem("Depart");
+
+       if (this.employeeUserName) {
+           this.loadEmployeeInfo(this.employeeUserName);
+       }
+
+        // Initialize chart theme and body class for select panel (dark mode)
+        this.updateChartTheme();
+        this.syncBodyDarkClass();
+        this.updateChartOptionsForType();
         this.loadDiagnosesList();
+        // Load data after diagnoses list is loaded
+        setTimeout(() => {
+            if (this.selectedDiagnosis) {
+                this.loadDepartmentIncomeByDiagnosis();
+            } else {
+                this.loadDepartmentIncomeData();
+            }
+        }, 500);
         this.displayedCatalogColumns = this.cashColumns;
+    }
+
+    ngOnDestroy(): void {
+        document.body.classList.remove('department-dashboard-dark');
     }
 
     /**
@@ -282,6 +358,7 @@ export class DepartmentIncomeDashboardComponent implements OnInit {
                         this.calculateTopDepartments();
                         // Update chart columns immediately with fallback years
                         this.updateChartColumns();
+                        this.updateChartTheme(); // Update chart theme after data load
                         this.updateChartData();
                         // Load yearly totals to get actual years for dynamic display (async)
                         this.loadYearlyTotalsForChart();
@@ -316,6 +393,9 @@ export class DepartmentIncomeDashboardComponent implements OnInit {
     onDiagnosisChange(event: any): void {
         console.log("Selection changed to:", this.selectedDiagnosis);
         console.log("Event:", event);
+        // Show loading indicator when switching departments
+        this.isMainDataLoading = true;
+        this.isDataLoaded = false;
         this.loadDepartmentIncomeByDiagnosis();
     }
 
@@ -375,6 +455,7 @@ export class DepartmentIncomeDashboardComponent implements OnInit {
                         this.calculateTopDepartments();
                         // Update chart columns immediately with fallback years
                         this.updateChartColumns();
+                        this.updateChartTheme(); // Update chart theme after data load
                         // Use updateChartData() instead of creating chartData directly
                         // This ensures consistent filtering logic
                         this.updateChartData();
@@ -405,17 +486,93 @@ export class DepartmentIncomeDashboardComponent implements OnInit {
      * Load list of all diagnoses for dropdown filter
      */
     loadDiagnosesList(): void {
+        this.isDiagnosesLoading = true;
         this.http.post(environment.url + "GetUniqueDiagnoses", {}).subscribe(
             (response: any) => {
                 if (response && response.d) {
                     this.diagnosesList = response.d;
+                    // Set default diagnosis if not set
+                    if (!this.selectedDiagnosis && this.diagnosesList.length > 0) {
+                        this.selectedDiagnosis = this.diagnosesList[0];
+                    }
+                  // Try to align with employee department if available
+                  this.applyEmployeeDepartmentFilter();
+                    this.isDiagnosesLoading = false;
                     this.cdr.detectChanges();
+                } else {
+                    this.isDiagnosesLoading = false;
                 }
             },
             (error) => {
                 console.error("Error loading diagnoses list:", error);
+                this.isDiagnosesLoading = false;
+                this.cdr.detectChanges();
             }
         );
+    }
+
+    /**
+     * Toggle chart type between Column and Line
+     */
+    toggleChartType(): void {
+        this.chartType = this.chartType === "ColumnChart" ? "LineChart" : "ColumnChart";
+        this.updateChartOptionsForType();
+        this.cdr.detectChanges();
+    }
+
+    setChartType(type: "ColumnChart" | "LineChart"): void {
+        if (this.chartType === type) {
+            return;
+        }
+        this.chartType = type;
+        this.updateChartOptionsForType();
+        this.cdr.detectChanges();
+    }
+
+  private loadEmployeeInfo(userName: string): void {
+      this.employeeLoading = true;
+      this.employeeError = false;
+
+      const url = `http://srv-apps-prod:5769/api/ServiceCRM/GetEmployeeInfo?username=${encodeURIComponent(userName)}`;
+
+      this.http.get<EmployeeInfo>(url).subscribe({
+          next: (info) => {
+              this.employeeInfo = info;
+              this.employeeLoading = false;
+
+              // Try to apply department filter if we already have diagnoses list
+              this.applyEmployeeDepartmentFilter();
+              this.cdr.detectChanges();
+          },
+          error: (err) => {
+              console.error("Error loading employee info", err);
+              this.employeeLoading = false;
+              this.employeeError = true;
+              this.cdr.detectChanges();
+          },
+      });
+  }
+
+    /**
+     * Update chart options based on chart type
+     */
+    updateChartOptionsForType(): void {
+        if (this.chartType === "LineChart") {
+            // Line chart specific options
+            this.chartOptions.bars = undefined;
+            this.chartOptions.pointSize = 6;
+            this.chartOptions.lineWidth = 3;
+            this.chartOptions.curveType = "function";
+        } else {
+            // Column chart specific options
+            this.chartOptions.bars = "vertical";
+            this.chartOptions.bar = {
+                groupWidth: "75%",
+            };
+            this.chartOptions.pointSize = undefined;
+            this.chartOptions.lineWidth = undefined;
+            this.chartOptions.curveType = undefined;
+        }
     }
 
     /**
@@ -425,11 +582,14 @@ export class DepartmentIncomeDashboardComponent implements OnInit {
         console.log("updateChartData called");
         console.log("departmentIncomeData:", this.departmentIncomeData);
 
+        this.isChartLoading = true;
+
         if (
             !this.departmentIncomeData ||
             this.departmentIncomeData.length === 0
         ) {
             this.chartData = [];
+            this.isChartLoading = false;
             console.log("No data to chart");
             return;
         }
@@ -486,16 +646,47 @@ export class DepartmentIncomeDashboardComponent implements OnInit {
         if (this.chartData.length > 0) {
             console.log("First chart row:", this.chartData[0]);
         }
+        this.isChartLoading = false;
         this.cdr.detectChanges();
     }
+
+  private applyEmployeeDepartmentFilter(): void {
+      if (!this.diagnosesList || this.diagnosesList.length === 0) {
+          return;
+      }
+
+      const deptFromApi = this.employeeInfo?.departmentName?.trim();
+      const deptFromLocal = this.employeeLocalDepartment?.trim();
+
+      const targetDept =
+          deptFromApi && this.diagnosesList.includes(deptFromApi)
+              ? deptFromApi
+              : deptFromLocal && this.diagnosesList.includes(deptFromLocal)
+              ? deptFromLocal
+              : null;
+
+      if (!targetDept) {
+          return;
+      }
+
+      if (this.selectedDiagnosis === targetDept) {
+          return;
+      }
+
+      this.selectedDiagnosis = targetDept;
+      this.isMainDataLoading = true;
+      this.isDataLoaded = false;
+      this.loadDepartmentIncomeByDiagnosis();
+  }
 
     /**
      * Calculate top 5 departments by growth (difference or percentage)
      * Requirements: 2025 values must be higher than 2024
      */
     calculateTopDepartments(): void {
+        // רק מחלקות עם צמיחה חיובית בהכנסות
         this.topDepartments = this.departmentIncomeData
-            .filter((dept) => dept.Income2025 >= dept.Income2024) // Only show positive growth
+            .filter((dept) => dept.Income2025 > dept.Income2024)
             .map((dept) => ({
                 DepartmentName: dept.DepartmentName,
                 Income2024: dept.Income2024,
@@ -503,13 +694,11 @@ export class DepartmentIncomeDashboardComponent implements OnInit {
                 difference: dept.Income2025 - dept.Income2024,
                 percentage:
                     dept.Income2024 > 0
-                        ? ((dept.Income2025 - dept.Income2024) /
-                              dept.Income2024) *
-                          100
+                        ? ((dept.Income2025 - dept.Income2024) / dept.Income2024) * 100
                         : 0,
+                managerName: (dept as any).managerName
             }))
-            .sort((a, b) => b.difference - a.difference)
-            .slice(0, 5);
+            .sort((a, b) => b.difference - a.difference);
     }
 
     /**
@@ -545,6 +734,7 @@ export class DepartmentIncomeDashboardComponent implements OnInit {
                             // Use setTimeout to ensure chart is ready before updating
                             setTimeout(() => {
                                 this.updateChartColumns(); // Update chart columns with dynamic years
+                                this.updateChartTheme(); // Update chart theme
                                 this.updateChartData(); // Refresh chart with new columns
                                 this.cdr.detectChanges();
                             }, 100);
@@ -588,6 +778,7 @@ export class DepartmentIncomeDashboardComponent implements OnInit {
                         if (this.departmentIncomeData && this.departmentIncomeData.length > 0) {
                             setTimeout(() => {
                                 this.updateChartColumns();
+                                this.updateChartTheme(); // Update chart theme
                                 this.updateChartData();
                                 this.cdr.detectChanges();
                             }, 100);
@@ -933,11 +1124,15 @@ updateChartColumns(): void {
     }
 
     /**
-     * Dismiss the guide avatar
+     * Dismiss the guide avatar. If "don't show again" is checked, remember for next visits.
      */
     dismissGuideAvatar(): void {
         this.showGuideAvatar = false;
-        localStorage.setItem("dashboardGuideAvatarDismissed", "true");
+        if (this.dontShowGuideAgain) {
+            localStorage.setItem("dashboardGuideDontShowAgain", "true");
+        } else {
+            localStorage.removeItem("dashboardGuideDontShowAgain");
+        }
     }
 
     /**
@@ -1054,6 +1249,212 @@ updateChartColumns(): void {
   get diffTooltip(): string {
         return `השוואה בין ${this.currentYear - 1} ל־${this.currentYear - 2}: הפרש כספי ואחוז שינוי`;
     }
+
+    /**
+     * Toggle dark/light theme
+     */
+    toggleTheme(): void {
+        this.isDark = !this.isDark;
+        this.updateChartTheme();
+        this.syncBodyDarkClass();
+        this.cdr.detectChanges();
+    }
+
+    /**
+     * Toggle Top Departments sidebar and force chart to resize with new layout
+     */
+    toggleTopDepartmentsSidebar(): void {
+        this.showTopDepartmentsSidebar = !this.showTopDepartmentsSidebar;
+
+        // Give grid a tick to recalculate, then trigger chart redraw/resize
+        setTimeout(() => {
+            try {
+                window.dispatchEvent(new Event("resize"));
+            } catch {
+                // ignore if window is not available (SSR safeguard)
+            }
+
+            // New reference so angular-google-charts will detect changes
+            this.chartOptions = { ...this.chartOptions };
+
+            if (this.chartData && this.chartData.length > 0) {
+                this.updateChartData();
+            }
+        }, 0);
+    }
+    /**
+     * מחזיר את שנת הלוח לפי "כמה שנים לאחור" מהשנה הנוכחית.
+     * @param yearsAgo 0 = השנה הנוכחית, 1 = שנה שעברה, 2 = לפני שנתיים וכו'
+     */
+    getFullYear(yearsAgo: number): string {
+        const current = new Date().getFullYear();
+        if (yearsAgo == null || yearsAgo === 0) {
+            return current.toString();
+        }
+        return (current - yearsAgo).toString();
+    }
+
+    private syncBodyDarkClass(): void {
+        if (this.isDark) {
+            document.body.classList.add('department-dashboard-dark');
+        } else {
+            document.body.classList.remove('department-dashboard-dark');
+        }
+    }
+
+    /**
+     * Update chart colors and styles based on theme
+     */
+    updateChartTheme(): void {
+        if (this.isDark) {
+            // Dark theme: force all chart texts (axes, legend, annotations, tooltip) to bright color
+            this.chartOptions.titleTextStyle = {
+                ...this.chartOptions.titleTextStyle,
+                color: "#f9fafb",
+            };
+            this.chartOptions.hAxis = {
+                ...(this.chartOptions.hAxis || {}),
+                textStyle: {
+                    color: "#f9fafb",
+                    fontSize: this.chartOptions.hAxis?.textStyle?.fontSize ?? 11,
+                },
+                titleTextStyle: {
+                    color: "#f9fafb",
+                    fontSize: this.chartOptions.hAxis?.titleTextStyle?.fontSize ?? 11,
+                    bold: true,
+                },
+            };
+            this.chartOptions.vAxis = {
+                ...(this.chartOptions.vAxis || {}),
+                textStyle: {
+                    color: "#f9fafb",
+                    fontSize: this.chartOptions.vAxis?.textStyle?.fontSize ?? 11,
+                },
+                titleTextStyle: {
+                    color: "#f9fafb",
+                    fontSize: this.chartOptions.vAxis?.titleTextStyle?.fontSize ?? 12,
+                    bold: true,
+                },
+                gridlines: {
+                    color: "rgba(148, 163, 184, 0.45)",
+                },
+            };
+            this.chartOptions.legend = {
+                ...(this.chartOptions.legend || {}),
+                textStyle: {
+                    color: "#e5e7eb",
+                    fontSize: this.chartOptions.legend?.textStyle?.fontSize ?? 11,
+                },
+            };
+            this.chartOptions.annotations = {
+                ...(this.chartOptions.annotations || {}),
+                textStyle: {
+                    color: "#f9fafb",
+                    fontSize: this.chartOptions.annotations?.textStyle?.fontSize ?? 10,
+                    bold: true,
+                },
+            };
+            this.chartOptions.tooltip = {
+                ...(this.chartOptions.tooltip || {}),
+                textStyle: {
+                    color: "#f9fafb",
+                    fontSize: this.chartOptions.tooltip?.textStyle?.fontSize ?? 12,
+                },
+            };
+            this.chartOptions.backgroundColor = {
+                fill: "#0f172a",
+                stroke: "rgba(255, 255, 255, 0.15)",
+                strokeWidth: 1,
+            };
+        } else {
+            // Light theme colors
+            this.chartOptions.titleTextStyle = { ...this.chartOptions.titleTextStyle, color: "#333" };
+            this.chartOptions.hAxis = {
+                ...this.chartOptions.hAxis,
+                textStyle: { ...this.chartOptions.hAxis?.textStyle, color: "#555" },
+                titleTextStyle: { ...this.chartOptions.hAxis?.titleTextStyle, color: "#333" },
+            };
+            this.chartOptions.vAxis = {
+                ...this.chartOptions.vAxis,
+                textStyle: { ...this.chartOptions.vAxis?.textStyle, color: "#555" },
+                titleTextStyle: { ...this.chartOptions.vAxis?.titleTextStyle, color: "#333" },
+            };
+            this.chartOptions.legend = {
+                ...this.chartOptions.legend,
+                textStyle: { ...this.chartOptions.legend?.textStyle, color: "#555" },
+            };
+            this.chartOptions.annotations = {
+                ...this.chartOptions.annotations,
+                textStyle: { ...this.chartOptions.annotations?.textStyle, color: "#333" },
+            };
+            this.chartOptions.tooltip = {
+                ...this.chartOptions.tooltip,
+                textStyle: { ...this.chartOptions.tooltip?.textStyle, color: "#333" },
+            };
+            this.chartOptions.backgroundColor = {
+                fill: "#ffffff",
+                stroke: "#ddd",
+                strokeWidth: 1,
+            };
+        }
+        // New reference so angular-google-charts detects change and redraws with dark background
+        this.chartOptions = { ...this.chartOptions };
+        if (this.chartData && this.chartData.length > 0) {
+            this.updateChartData();
+        }
+    }
+
+    /**
+     * Handle chart click event
+     * When user clicks on a bar in the chart, show department details
+     */
+    onChartClick(event: any): void {
+        try {
+            console.log("Chart select event:", event);
+            
+            // angular-google-charts select event structure: { selection: [{ row: number, column: number }] }
+            let selectedRow: number | null = null;
+            
+            if (event && event.selection && Array.isArray(event.selection) && event.selection.length > 0) {
+                // Standard format: { selection: [{ row: number, column: number }] }
+                selectedRow = event.selection[0].row;
+            } else if (event && event.row !== undefined) {
+                // Direct format: { row: number, column: number }
+                selectedRow = event.row;
+            } else if (Array.isArray(event) && event.length > 0) {
+                // Array format: [{ row: number, column: number }]
+                selectedRow = event[0].row;
+            }
+            
+            if (selectedRow !== null && selectedRow !== undefined) {
+                console.log("Selected row:", selectedRow);
+                
+                if (this.chartData && this.chartData.length > selectedRow) {
+                    const departmentName = this.chartData[selectedRow][0]; // First column is department name
+                    console.log("Department name:", departmentName);
+                    
+                    if (departmentName) {
+                        this.loadDepartmentSpecificGraph(departmentName);
+                    }
+                }
+            }
+        } catch (error) {
+            console.error("Error handling chart click:", error);
+        }
+    }
+    isDropdownOpen = false;
+
+toggleDropdown() {
+  if (!this.isDiagnosesLoading && this.diagnosesList.length > 0) {
+    this.isDropdownOpen = !this.isDropdownOpen;
+  }
+}
+
+selectOption(option: any) {
+  this.selectedDiagnosis = option;
+  this.isDropdownOpen = false;
+  this.onDiagnosisChange({ value: option }); // קריאה לפונקציה הקיימת שלך
+}
 }
 
 

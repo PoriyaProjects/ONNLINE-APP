@@ -1,0 +1,373 @@
+.infection-control-container {
+  min-height: 100vh;
+  background: #f0f4f8;
+}
+
+/* ========== 1) Page Header ========== */
+.banner {
+  background: linear-gradient(135deg, #e3f2fd 0%, #90caf9 40%, #1565c0 100%);
+  padding: 40px 24px;
+  text-align: center;
+  box-shadow: 0 4px 12px rgba(21, 101, 192, 0.25);
+}
+
+.banner h1 {
+  margin: 0;
+  font-size: 36px;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: 0.02em;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+}
+
+.banner-subtitle {
+  margin: 10px 0 0;
+  font-size: 15px;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+/* ========== Tabs ========== */
+.tabs {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 32px 20px 40px;
+  background: transparent;
+}
+
+.tab-content {
+  padding: 28px 0;
+}
+
+.show-tab .tab-content {
+  padding: 24px 0;
+}
+
+/* ========== 2) Cards ========== */
+.card.section {
+  margin-bottom: 32px;
+  padding: 28px;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  background: #fff;
+  border: 1px solid #e8eef5;
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.card.section:hover {
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.card.section h2 {
+  margin: 0 0 20px;
+  font-size: 20px;
+  font-weight: 700;
+  color: #1a237e;
+  border-bottom: 2px solid #e3f2fd;
+  padding-bottom: 12px;
+}
+
+.section-actions {
+  margin-bottom: 16px;
+}
+
+.loading-wrap {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 20px 0;
+  color: #546e7a;
+}
+
+.loading-wrap mat-spinner {
+  flex-shrink: 0;
+}
+
+.no-data {
+  color: #78909c;
+  padding: 20px 0;
+  margin: 0;
+}
+
+/* ========== Tables: clean layout, headers and cells aligned ========== */
+.data-table,
+.report-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  table-layout: auto;
+}
+
+.data-table thead,
+.report-table thead {
+  background: #1e5fa8;
+  color: #fff;
+}
+
+.data-table thead th,
+.data-table tbody td,
+.report-table thead th,
+.report-table tbody td {
+  padding: 12px 14px;
+  text-align: left;
+  vertical-align: middle;
+  box-sizing: border-box;
+  border: none;
+}
+
+.data-table thead th,
+.report-table thead th {
+  font-weight: 600;
+  font-size: 14px;
+  letter-spacing: 0.3px;
+  border-bottom: 2px solid #1e5fa8;
+}
+
+.data-table tbody td,
+.report-table tbody td {
+  border-bottom: 1px solid #e8eef5;
+}
+
+.data-table tbody tr:nth-child(even) td,
+.report-table tbody tr:nth-child(even) td {
+  background: #f8fafc;
+}
+
+.data-table tbody tr:nth-child(odd) td,
+.report-table tbody tr:nth-child(odd) td {
+  background: #fff;
+}
+
+.data-table tbody tr:hover td,
+.report-table tbody tr:hover td {
+  background: #e3f2fd !important;
+}
+
+.data-table td.col-numeric,
+.data-table th.col-numeric,
+.report-table td.col-numeric,
+.report-table th.col-numeric {
+  text-align: center;
+}
+
+.data-table button {
+  margin-right: 4px;
+}
+
+/* Card wrapper: rounded corners and shadow on the table container */
+.card.section .data-table,
+.card.section .report-table {
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+}
+
+/* ========== 4) Buttons ========== */
+.section-actions button[mat-raised-button][color="primary"],
+.form-actions button[mat-raised-button][color="primary"],
+.show-controls button[mat-raised-button][color="primary"],
+.hospital-days-form button[mat-raised-button][color="primary"] {
+  background-color: #1976d2 !important;
+  color: #fff !important;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(25, 118, 210, 0.3);
+  transition: background-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.section-actions button[mat-raised-button][color="primary"]:hover:not([disabled]),
+.form-actions button[mat-raised-button][color="primary"]:hover:not([disabled]),
+.show-controls button[mat-raised-button][color="primary"]:hover:not([disabled]),
+.hospital-days-form button[mat-raised-button][color="primary"]:hover:not([disabled]) {
+  background-color: #1565c0 !important;
+  box-shadow: 0 3px 8px rgba(25, 118, 210, 0.4);
+}
+
+/* ========== 5) Forms ========== */
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.form-grid .field {
+  width: 100%;
+}
+
+.form-grid .mat-form-field,
+.hospital-days-form .mat-form-field,
+.show-controls .mat-form-field {
+  margin-bottom: 4px;
+}
+
+.form-grid .mat-form-field ::ng-deep .mat-form-field-wrapper,
+.hospital-days-form .mat-form-field ::ng-deep .mat-form-field-wrapper {
+  padding-bottom: 0;
+}
+
+/* ========== 1) Fix broken input CSS - single border only, no double/split ========== */
+.infection-control-container ::ng-deep .mat-form-field-appearance-outline .mat-form-field-wrapper,
+.infection-control-container ::ng-deep .mat-form-field-appearance-outline .mat-form-field-flex,
+.infection-control-container ::ng-deep .mat-form-field-appearance-outline input,
+.infection-control-container ::ng-deep .mat-form-field-appearance-outline .mat-form-field-infix,
+.infection-control-container ::ng-deep .mat-form-field-appearance-outline .mat-form-field-outline-start,
+.infection-control-container ::ng-deep .mat-form-field-appearance-outline .mat-form-field-outline-gap,
+.infection-control-container ::ng-deep .mat-form-field-appearance-outline .mat-form-field-outline-end {
+  box-sizing: border-box;
+}
+
+.infection-control-container ::ng-deep .mat-form-field-appearance-outline .mat-form-field-outline,
+.infection-control-container ::ng-deep .mat-form-field-appearance-outline .mat-form-field-outline-thick {
+  box-shadow: none !important;
+}
+
+/* Single border: when focused hide base so only thick shows (no double) */
+.infection-control-container ::ng-deep .mat-form-field-appearance-outline.mat-focused .mat-form-field-outline .mat-form-field-outline-start,
+.infection-control-container ::ng-deep .mat-form-field-appearance-outline.mat-focused .mat-form-field-outline .mat-form-field-outline-gap,
+.infection-control-container ::ng-deep .mat-form-field-appearance-outline.mat-focused .mat-form-field-outline .mat-form-field-outline-end {
+  border-width: 0 !important;
+}
+
+/* Single border: only outline-thick visible, 8px radius, no duplicate shadow */
+.infection-control-container ::ng-deep .mat-form-field-appearance-outline .mat-form-field-outline-thick .mat-form-field-outline-start,
+.infection-control-container ::ng-deep .mat-form-field-appearance-outline .mat-form-field-outline-thick .mat-form-field-outline-gap,
+.infection-control-container ::ng-deep .mat-form-field-appearance-outline .mat-form-field-outline-thick .mat-form-field-outline-end {
+  border-radius: 8px;
+  border-width: 1px !important;
+  box-shadow: none !important;
+  box-sizing: border-box;
+  transition: border-color 0.2s ease;
+}
+
+.infection-control-container ::ng-deep .mat-form-field-appearance-outline .mat-form-field-outline-thick .mat-form-field-outline-start {
+  border-top-left-radius: 8px;
+  border-bottom-left-radius: 8px;
+}
+
+.infection-control-container ::ng-deep .mat-form-field-appearance-outline .mat-form-field-outline-thick .mat-form-field-outline-end {
+  border-top-right-radius: 8px;
+  border-bottom-right-radius: 8px;
+}
+
+.infection-control-container ::ng-deep .mat-form-field-appearance-outline.mat-focused .mat-form-field-outline-thick .mat-form-field-outline-start,
+.infection-control-container ::ng-deep .mat-form-field-appearance-outline.mat-focused .mat-form-field-outline-thick .mat-form-field-outline-gap,
+.infection-control-container ::ng-deep .mat-form-field-appearance-outline.mat-focused .mat-form-field-outline-thick .mat-form-field-outline-end {
+  border-color: #1976d2 !important;
+  border-width: 1px !important;
+  box-shadow: none !important;
+}
+
+.form-actions {
+  margin-top: 12px;
+}
+
+/* Bacteria Log table under form - spacing */
+.card.section .data-table {
+  margin-top: 20px;
+}
+
+.form-actions .btn-spinner {
+  margin-right: 8px;
+  vertical-align: middle;
+}
+
+.hospital-days-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.field-inline {
+  width: 180px;
+}
+
+/* ========== 6) Overall spacing ========== */
+.tab-content > section.card.section:first-child {
+  margin-top: 0;
+}
+
+.tab-content > section.card.section + section.card.section {
+  margin-top: 4px;
+}
+
+/* ========== Show tab ========== */
+.show-controls {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 24px;
+}
+
+.year-select {
+  width: 130px;
+}
+
+/* ========== Show tab – executive report design ========== */
+.report-section {
+  margin-top: 24px;
+}
+
+.month-group {
+  margin-bottom: 32px;
+}
+
+/* 1) Month header – full-width soft blue bar */
+.month-title {
+  margin: 24px 0 12px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #1565c0;
+  padding: 12px 20px;
+  background: linear-gradient(90deg, #e3f2fd, #f5faff);
+  border-radius: 8px;
+  width: 100%;
+  box-sizing: border-box;
+  border: none;
+}
+
+.month-group:first-child .month-title {
+  margin-top: 0;
+}
+
+/* Report table: summary row (optional) */
+.report-table tbody tr.summary-row td {
+  background: #f0f7ff !important;
+  font-weight: 600;
+  border-top: 2px solid #bbdefb;
+  padding: 12px 14px;
+}
+
+.report-table tbody tr.summary-row:hover td {
+  background: #e3f2fd !important;
+}
+
+/* ========== Responsive ========== */
+@media (max-width: 768px) {
+  .banner h1 {
+    font-size: 28px;
+  }
+
+  .banner-subtitle {
+    font-size: 14px;
+  }
+
+  .card.section {
+    padding: 20px;
+  }
+
+  .form-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .hospital-days-form {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .field-inline {
+    width: 100%;
+  }
+}
