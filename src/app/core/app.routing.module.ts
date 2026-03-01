@@ -394,7 +394,7 @@ const routes: Routes = [
   { path: "InfectionControl", component: InfectionControlComponent },
   { path: "medical-interns-dashboard", component: MedicalInternsDashboardComponent },
   { path: "medical-intern-add-update", component: MedicalInternAddUpdateComponent },
-  { path: "intern-departments-manage", component: InternDepartmentsManageComponent },
+  { path: "intern-departments-manage/:EmployeeID", component: InternDepartmentsManageComponent },
   { path: "intern-department-assignment-dialog", component: InternDepartmentAssignmentDialogComponent },
   { path: "medical-interns-sms", component: MedicalInternsSmsComponent },
 ];
