@@ -192,7 +192,7 @@ export class MedicalInternsDashboardComponent implements OnInit {
   navigateToDepartments(intern: any, event: Event) {
     event.stopPropagation();
     if (intern?.EmployeeID) {
-      this.router.navigate(['/medical-intern-departments', intern.EmployeeID]);
+      this.router.navigate(['/intern-departments-manage', intern.EmployeeID]);
     }
   }
 
