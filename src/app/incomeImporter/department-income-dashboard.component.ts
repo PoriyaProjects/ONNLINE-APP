@@ -293,7 +293,7 @@ export class DepartmentIncomeDashboardComponent implements OnInit, OnDestroy {
     ) {}
 
     ngOnInit(): void {
-        console.log("gOnInit called");
+        // console.log("gOnInit called");
         // Open guide on every visit unless user checked "אל תציג יותר"
         const dontShowAgain = localStorage.getItem("dashboardGuideDontShowAgain");
         if (dontShowAgain === "true") {
@@ -336,8 +336,8 @@ export class DepartmentIncomeDashboardComponent implements OnInit, OnDestroy {
      * Load department income comparison data
      */
     loadDepartmentIncomeData(): void {
-        console.log("loadDepartmentIncomeData called");
-        console.log("loadDepartmentIncomeData called");
+        // console.log("loadDepartmentIncomeData called");
+        // console.log("loadDepartmentIncomeData called");
 
         this.isDataLoaded = false;
         this.isMainDataLoading = true;
@@ -391,8 +391,8 @@ export class DepartmentIncomeDashboardComponent implements OnInit, OnDestroy {
      */
 
     onDiagnosisChange(event: any): void {
-        console.log("Selection changed to:", this.selectedDiagnosis);
-        console.log("Event:", event);
+        // console.log("Selection changed to:", this.selectedDiagnosis);
+        // console.log("Event:", event);
         // Show loading indicator when switching departments
         this.isMainDataLoading = true;
         this.isDataLoaded = false;
@@ -400,10 +400,10 @@ export class DepartmentIncomeDashboardComponent implements OnInit, OnDestroy {
     }
 
     loadDepartmentIncomeByDiagnosis(): void {
-        console.log(
-            "loadDepartmentIncomeByDiagnosis called with:",
-            this.selectedDiagnosis
-        );
+        // console.log(
+        //     "loadDepartmentIncomeByDiagnosis called with:",
+        //     this.selectedDiagnosis
+        // );
         this.isDataLoaded = false;
         this.isMainDataLoading = true;
 
@@ -420,8 +420,8 @@ export class DepartmentIncomeDashboardComponent implements OnInit, OnDestroy {
                             data = JSON.parse(data);
                         }
 
-                        console.log("Raw data from GetDepartmentIncomeByDiagnosis:", data);
-                        console.log("Data length:", Array.isArray(data) ? data.length : "Not an array");
+                        // console.log("Raw data from GetDepartmentIncomeByDiagnosis:", data);
+                        // console.log("Data length:", Array.isArray(data) ? data.length : "Not an array");
 
                         const uniqueDepts = [];
                         const seen = new Set();
@@ -432,20 +432,20 @@ export class DepartmentIncomeDashboardComponent implements OnInit, OnDestroy {
                                     seen.add(item.DepartmentName);
                                     uniqueDepts.push(item);
                                     // Log first few items to see the structure
-                                    if (uniqueDepts.length <= 3) {
-                                        console.log("Sample item:", {
-                                            DepartmentName: item.DepartmentName,
-                                            Income2024: item.Income2024,
-                                            Income2025: item.Income2025
-                                        });
-                                    }
+                                    // if (uniqueDepts.length <= 3) {
+                                    //     console.log("Sample item:", {
+                                    //         DepartmentName: item.DepartmentName,
+                                    //         Income2024: item.Income2024,
+                                    //         Income2025: item.Income2025
+                                    //     });
+                                    // }
                                 }
                             }
                         }
 
                         this.departmentIncomeData = uniqueDepts;
-                        console.log("After deduplication, departmentIncomeData length:", this.departmentIncomeData.length);
-                        console.log("Sample Income2025 values:", this.departmentIncomeData.slice(0, 3).map(d => d.Income2025));
+                        // console.log("After deduplication, departmentIncomeData length:", this.departmentIncomeData.length);
+                        // console.log("Sample Income2025 values:", this.departmentIncomeData.slice(0, 3).map(d => d.Income2025));
                         
                         this.departmentIncomeData.sort(
                             (a, b) => b.Income2025 - a.Income2025
@@ -579,8 +579,8 @@ export class DepartmentIncomeDashboardComponent implements OnInit, OnDestroy {
      * Update chart data with numbers formatted in millions with 1 decimal place
      */
     updateChartData(): void {
-        console.log("updateChartData called");
-        console.log("departmentIncomeData:", this.departmentIncomeData);
+        // console.log("updateChartData called");
+        // console.log("departmentIncomeData:", this.departmentIncomeData);
 
         this.isChartLoading = true;
 
@@ -595,11 +595,11 @@ export class DepartmentIncomeDashboardComponent implements OnInit, OnDestroy {
         }
 
         // Log income values for debugging
-        console.log("Income values sample:", this.departmentIncomeData.slice(0, 3).map(d => ({
-            name: d.DepartmentName,
-            Income2024: d.Income2024,
-            Income2025: d.Income2025
-        })));
+        // console.log("Income values sample:", this.departmentIncomeData.slice(0, 3).map(d => ({
+        //     name: d.DepartmentName,
+        //     Income2024: d.Income2024,
+        //     Income2025: d.Income2025
+        // })));
 
         // Filter: include departments that have at least one year with positive income
         // This prevents the chart from disappearing when some departments have zero values
@@ -609,12 +609,12 @@ export class DepartmentIncomeDashboardComponent implements OnInit, OnDestroy {
             return has2024 || has2025; // Show if at least one year has data
         });
         
-        console.log("Filtered departments count:", filtered.length);
-        console.log("Filtered sample:", filtered.slice(0, 3).map(d => ({
-            name: d.DepartmentName,
-            Income2024: d.Income2024,
-            Income2025: d.Income2025
-        })));
+        // console.log("Filtered departments count:", filtered.length);
+        // console.log("Filtered sample:", filtered.slice(0, 3).map(d => ({
+        //     name: d.DepartmentName,
+        //     Income2024: d.Income2024,
+        //     Income2025: d.Income2025
+        // })));
 
         this.chartData = filtered.map((item) => {
             const safe2024 =
@@ -641,10 +641,10 @@ export class DepartmentIncomeDashboardComponent implements OnInit, OnDestroy {
             ];
         });
 
-        console.log("Final chartData:", this.chartData);
-        console.log("Chart data length:", this.chartData.length);
+        // console.log("Final chartData:", this.chartData);
+        // console.log("Chart data length:", this.chartData.length);
         if (this.chartData.length > 0) {
-            console.log("First chart row:", this.chartData[0]);
+            // console.log("First chart row:", this.chartData[0]);
         }
         this.isChartLoading = false;
         this.cdr.detectChanges();
@@ -759,7 +759,7 @@ export class DepartmentIncomeDashboardComponent implements OnInit, OnDestroy {
 
         this.http.post(environment.url + "GetYearlyTotalIncome", {}).subscribe(
             (response: any) => {
-                console.log("Response:", response);
+                // console.log("Response:", response);
 
                 if (response && response.d) {
                     let data = response.d;
@@ -768,7 +768,7 @@ export class DepartmentIncomeDashboardComponent implements OnInit, OnDestroy {
                         data = data.d;
                     }
 
-                    console.log("Parsed data:", data);
+                    // console.log("Parsed data:", data);
 
                     if (Array.isArray(data)) {
                         this.yearlyTotalData = data;
@@ -785,11 +785,11 @@ export class DepartmentIncomeDashboardComponent implements OnInit, OnDestroy {
                         }
                         
                         // Debug: Log the data for troubleshooting
-                        console.log("Yearly Total Data:", this.yearlyTotalData);
-                        console.log("Older Year:", this.getOlderYear(), "Total:", this.getOlderYearTotal());
-                        console.log("Latest Year:", this.getLatestYear(), "Total:", this.getLatestYearTotal());
-                        console.log("Difference:", this.getTotalDifference());
-                        console.log("Percentage Change:", this.calculateYearlyPercentageChange());
+                        // console.log("Yearly Total Data:", this.yearlyTotalData);
+                        // console.log("Older Year:", this.getOlderYear(), "Total:", this.getOlderYearTotal());
+                        // console.log("Latest Year:", this.getLatestYear(), "Total:", this.getLatestYearTotal());
+                        // console.log("Difference:", this.getTotalDifference());
+                        // console.log("Percentage Change:", this.calculateYearlyPercentageChange());
 
                         this.isLoading = false;
                         this.cdr.detectChanges();
@@ -1410,7 +1410,7 @@ updateChartColumns(): void {
      */
     onChartClick(event: any): void {
         try {
-            console.log("Chart select event:", event);
+            // console.log("Chart select event:", event);
             
             // angular-google-charts select event structure: { selection: [{ row: number, column: number }] }
             let selectedRow: number | null = null;
@@ -1427,11 +1427,11 @@ updateChartColumns(): void {
             }
             
             if (selectedRow !== null && selectedRow !== undefined) {
-                console.log("Selected row:", selectedRow);
+                // console.log("Selected row:", selectedRow);
                 
                 if (this.chartData && this.chartData.length > selectedRow) {
                     const departmentName = this.chartData[selectedRow][0]; // First column is department name
-                    console.log("Department name:", departmentName);
+                    // console.log("Department name:", departmentName);
                     
                     if (departmentName) {
                         this.loadDepartmentSpecificGraph(departmentName);
