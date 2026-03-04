@@ -1,45 +1,48 @@
 <div dir="rtl">
-  <h2 mat-dialog-title>הקצאת מחלקה לסטאג'ר</h2>
+  <h2 mat-dialog-title class="dialog-title text-center">הקצאת מחלקה לסטאג'ר</h2>
   <mat-dialog-content>
     <form [formGroup]="assignmentForm">
-      <div class="row">
-        <div class="col-6">
-          <mat-form-field appearance="outline" class="full-width">
-            <mat-label>תאריך התחלה תקופת הסטאג'ר</mat-label>
-            <mat-select formControlName="InternPeriod" (selectionChange)="getDepartmentsForPeriod($event.value); test($event.value)">
-              <mat-option value="">בחר חודש</mat-option>
-              <mat-option *ngFor="let opt of monthOptions" [value]="opt.value">{{ opt.label }}</mat-option>
-            </mat-select>
-            <mat-error *ngIf="assignmentForm.get('InternPeriod')?.hasError('required') && assignmentForm.get('InternPeriod')?.touched">שדה חובה</mat-error>
-          </mat-form-field>
-        </div>
-        <div class="col-6">
-          <mat-form-field appearance="outline" class="full-width">
-            <mat-label>תאריך סיום תקופת הסטאג'ר</mat-label>
-            <input matInput [matDatepicker]="endPicker" formControlName="InternPeriodEnd">
-            <mat-datepicker-toggle matSuffix [for]="endPicker"></mat-datepicker-toggle>
-            <mat-datepicker #endPicker></mat-datepicker>
-            <mat-error
-              *ngIf="assignmentForm.get('InternPeriodEnd')?.hasError('required') && assignmentForm.get('InternPeriodEnd')?.touched">שדה
-              חובה</mat-error>
-            <mat-error
-              *ngIf="assignmentForm.get('InternPeriodEnd')?.hasError('matDatepickerParse') && assignmentForm.get('InternPeriodEnd')?.touched">תאריך
-              שגוי</mat-error>
-          </mat-form-field>
+      <div class="row mb-4">
+        <div class="col-12">
+          <mat-label class="period-label text-center">תקופת הסטאג'ר</mat-label>
+          <mat-chip-list aria-label="בחירת תקופה">
+            <mat-chip
+              *ngFor="let opt of monthOptions"
+              [class.chip-selected]="assignmentForm.get('InternPeriod')?.value === opt.value"
+              (click)="selectPeriod(opt.value)">
+              {{ opt.label }}
+            </mat-chip>
+          </mat-chip-list>
+          <mat-error *ngIf="assignmentForm.get('InternPeriod')?.hasError('required') && assignmentForm.get('InternPeriod')?.touched">שדה חובה</mat-error>
         </div>
       </div>
-      <div class="row">
+      <div class="row" *ngIf="showFirstDepartment">
         <div class="col-12">
           <mat-form-field appearance="outline" class="full-width">
-            <mat-label>מחלקה</mat-label>
+            <mat-label>{{ showSecondDepartment ? 'מחלקה ראשונה' : 'מחלקה' }}</mat-label>
             <mat-select formControlName="DepartnentCodeFirst" [disabled]="departmentsLoading">
               <mat-option [value]="''">בחר מחלקה</mat-option>
-              <mat-option *ngFor="let dept of departments" [value]="dept.DepartnentCodeFirst">
+              <mat-option *ngFor="let dept of departmentsForFirstDropdown" [value]="dept.DepartnentCodeFirst">
                 {{ dept.DepartnentDescripton }} - {{ dept.countMed }} מתוכננים
               </mat-option>
             </mat-select>
             <mat-hint *ngIf="departmentsLoading">טוען מחלקות...</mat-hint>
             <mat-error *ngIf="assignmentForm.get('DepartnentCodeFirst')?.hasError('required')">שדה חובה</mat-error>
+          </mat-form-field>
+        </div>
+      </div>
+      <div class="row" *ngIf="showSecondDepartment">
+        <div class="col-12">
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>מחלקה שנייה</mat-label>
+            <mat-select formControlName="DepartnentCodeSecond" [disabled]="departmentsLoading">
+              <mat-option [value]="''">בחר מחלקה</mat-option>
+              <mat-option *ngFor="let dept of departmentsForSecondDropdown" [value]="dept.DepartnentCodeFirst">
+                {{ dept.DepartnentDescripton }} - {{ dept.countMed }} מתוכננים
+              </mat-option>
+            </mat-select>
+            <mat-hint *ngIf="departmentsLoading">טוען מחלקות...</mat-hint>
+            <mat-error *ngIf="assignmentForm.get('DepartnentCodeSecond')?.hasError('required')">שדה חובה</mat-error>
           </mat-form-field>
         </div>
       </div>

@@ -285,6 +285,7 @@ import { MedicalInternsDashboardComponent } from './employees-manage-dash/medica
 import { MedicalInternAddUpdateComponent } from './employees-manage-dash/medical-interns-dashboard/medical-intern-add-update/medical-intern-add-update.component';
 import { InternDepartmentsManageComponent } from './employees-manage-dash/medical-interns-dashboard/intern-departments-manage/intern-departments-manage.component';
 import { InternDepartmentAssignmentDialogComponent } from './employees-manage-dash/medical-interns-dashboard/intern-departments-manage/intern-department-assignment-dialog/intern-department-assignment-dialog.component';
+import { LecturesManageDialogComponent } from './employees-manage-dash/medical-interns-dashboard/lectures-manage-dialog/lectures-manage-dialog.component';
 import { MedicalInternsSmsComponent } from './employees-manage-dash/medical-interns-dashboard/medical-interns-sms/medical-interns-sms.component';
 
 
@@ -524,6 +525,7 @@ const maskConfig: Partial<IConfig> = {
     MedicalInternAddUpdateComponent,
     InternDepartmentsManageComponent,
     InternDepartmentAssignmentDialogComponent,
+    LecturesManageDialogComponent,
     MedicalInternsSmsComponent,
     //HospitalIncomeDashbComponent,
   ],
