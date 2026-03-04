@@ -6,11 +6,16 @@ import { MatTableDataSource } from '@angular/material/table';
 import { MatPaginator } from '@angular/material/paginator';
 import { MatSort } from '@angular/material/sort';
 import { Router } from '@angular/router';
+import {
+  MatSnackBar,
+  MatSnackBarHorizontalPosition,
+  MatSnackBarVerticalPosition,
+} from '@angular/material/snack-bar';
 import { environment } from 'src/environments/environment';
 import { MedicalInternAddUpdateComponent } from './medical-intern-add-update/medical-intern-add-update.component';
+import { LecturesManageDialogComponent } from './lectures-manage-dialog/lectures-manage-dialog.component';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
-
 
 @Component({
   selector: 'app-medical-interns-dashboard',
@@ -39,11 +44,26 @@ export class MedicalInternsDashboardComponent implements OnInit {
   url = environment.url;
   emptyIntern: any;
 
+  horizontalPosition: MatSnackBarHorizontalPosition = 'start';
+  verticalPosition: MatSnackBarVerticalPosition = 'bottom';
+  /** All departments from API - admin selects which go to first/second dropdown */
+  allDepartments: any[] = [];
+  allDepartmentsLoading = false;
+  /** Department codes selected for first and second dropdown */
+  departmentCodesForFirst: string[] = [];
+  departmentCodesForSecond: string[] = [];
+  /** Map DepartCode -> Row_ID for updates (one row per department with FirstDepartment/SecondDepartment) */
+  private departmentRowIds: Map<string, number> = new Map();
+  displayDepartmentsSaving = false;
+  /** Filter for departments visibility panel */
+  departmentsFilter = '';
+
   constructor(
     public dialog: MatDialog,
     private http: HttpClient,
     private formBuilder: FormBuilder,
-    private router: Router
+    private router: Router,
+    private _snackBar: MatSnackBar
   ) { }
 
   ngOnInit(): void {
@@ -58,6 +78,117 @@ export class MedicalInternsDashboardComponent implements OnInit {
     });
     this.getMedicalInterns();
     this.getDepartmentList();
+    this.loadAllDepartments();
+  }
+
+  get filteredDepartments(): any[] {
+    if (!this.departmentsFilter || !this.departmentsFilter.trim()) {
+      return this.allDepartments;
+    }
+    const term = this.departmentsFilter.trim().toLowerCase();
+    return this.allDepartments.filter(
+      (d) =>
+        (d.DepartDesc || d.DepartnentDescripton || d.DepartmentDescription || '').toLowerCase().includes(term) ||
+        (d.DepartCode || d.DepartnentCodeFirst || d.DepartmentCode || '').toLowerCase().includes(term)
+    );
+  }
+
+  loadAllDepartments(): void {
+    this.allDepartmentsLoading = true;
+    this.http.post(this.url + 'GetMedicalInternDepartmentsAll', {}).subscribe(
+      (response) => {
+        this.allDepartmentsLoading = false;
+        const raw = response['d'] || [];
+        this.allDepartments = raw;
+        this.departmentRowIds.clear();
+        this.departmentCodesForFirst = [];
+        this.departmentCodesForSecond = [];
+        raw.forEach((r: any) => {
+          const code = r.DepartCode || r.DepartnentCodeFirst || r.DepartmentCode || '';
+          if (!code) return;
+          const rowId = r.Row_ID ?? r.RowID;
+          if (rowId != null && rowId !== '') {
+            this.departmentRowIds.set(code, typeof rowId === 'string' ? parseInt(rowId, 10) : rowId);
+          }
+          if (r.FirstDepartment === 'True' || r.FirstDepartment === 1) {
+            this.departmentCodesForFirst.push(code);
+          }
+          if (r.SecondDepartment === 'True' || r.SecondDepartment === 1) {
+            this.departmentCodesForSecond.push(code);
+          }
+        });
+      },
+      () => {
+        this.allDepartmentsLoading = false;
+        this.allDepartments = [];
+        this.openSnackBar('שגיאה בטעינת רשימת המחלקות');
+      }
+    );
+  }
+
+  saveDisplayDepartments(): void {
+    this.displayDepartmentsSaving = true;
+    const records = this.allDepartments.map((d) => {
+      const code = d.DepartCode || d.DepartnentCodeFirst || d.DepartmentCode;
+      const desc = d.DepartDesc || d.DepartnentDescripton || d.DepartmentDescription || '';
+      return {
+        Row_ID: this.departmentRowIds.get(code) || 0,
+        DepartCode: code,
+        DepartDesc: desc,
+        Status: d.Status ?? 1,
+        FirstDepartment: this.departmentCodesForFirst.includes(code) ? 1 : 0,
+        SecondDepartment: this.departmentCodesForSecond.includes(code) ? 1 : 0
+      };
+    });
+    this.http.post(this.url + 'SaveMedicalInternDepartments', { _items: records }).subscribe(
+      (response) => {
+        this.displayDepartmentsSaving = false;
+        if (response['d']) {
+          this.openSnackBar('נשמר בהצלחה');
+          this.loadAllDepartments();
+        } else {
+          this.openSnackBar('משהו השתבש, לא נשמר');
+        }
+      },
+      () => {
+        this.displayDepartmentsSaving = false;
+        this.openSnackBar('משהו השתבש, לא נשמר');
+      }
+    );
+  }
+
+  isInFirstList(code: string): boolean {
+    return this.departmentCodesForFirst.includes(code);
+  }
+
+  isInSecondList(code: string): boolean {
+    return this.departmentCodesForSecond.includes(code);
+  }
+
+  toggleFirstList(code: string): void {
+    const idx = this.departmentCodesForFirst.indexOf(code);
+    if (idx >= 0) {
+      this.departmentCodesForFirst = this.departmentCodesForFirst.filter((c) => c !== code);
+    } else {
+      this.departmentCodesForFirst = [...this.departmentCodesForFirst, code];
+    }
+  }
+
+  toggleSecondList(code: string): void {
+    const idx = this.departmentCodesForSecond.indexOf(code);
+    if (idx >= 0) {
+      this.departmentCodesForSecond = this.departmentCodesForSecond.filter((c) => c !== code);
+    } else {
+      this.departmentCodesForSecond = [...this.departmentCodesForSecond, code];
+    }
+  }
+
+  openSnackBar(message: string) {
+    this._snackBar.open(message, 'X', {
+      duration: 5000,
+      horizontalPosition: this.horizontalPosition,
+      verticalPosition: this.verticalPosition,
+    });
   }
 
   getEmptyIntern(): any {
@@ -198,6 +329,14 @@ export class MedicalInternsDashboardComponent implements OnInit {
 
   navigateToSms() {
     this.router.navigate(['/medical-interns-sms']);
+  }
+
+  openLecturesManage() {
+    this.dialog.open(LecturesManageDialogComponent, {
+      width: '900px',
+      maxWidth: '95vw',
+      disableClose: false
+    });
   }
 
   exportToExcel(): void {

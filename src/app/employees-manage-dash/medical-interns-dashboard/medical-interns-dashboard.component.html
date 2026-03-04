@@ -6,6 +6,51 @@
     </div>
 
     <div class="header-right">
+      <mat-expansion-panel class="departments-visibility-panel">
+        <mat-expansion-panel-header>
+          <mat-panel-title>
+            <mat-icon>settings</mat-icon>
+            בחירת מחלקות לטופס הקצאה
+          </mat-panel-title>
+        </mat-expansion-panel-header>
+        <p class="mb-2 text-muted small">בחר אילו מחלקות יוצגו ברשימה הראשונה והשנייה בטופס ההקצאה</p>
+        <mat-form-field appearance="outline" class="departments-filter-field">
+          <mat-label>סינון מחלקות</mat-label>
+          <mat-icon matPrefix>search</mat-icon>
+          <input matInput [(ngModel)]="departmentsFilter" placeholder="הקלד לחיפוש מחלקה..." />
+          <button mat-icon-button matSuffix *ngIf="departmentsFilter" (click)="departmentsFilter = ''" type="button">
+            <mat-icon>close</mat-icon>
+          </button>
+        </mat-form-field>
+        <mat-spinner *ngIf="allDepartmentsLoading" diameter="24" class="d-inline-block"></mat-spinner>
+        <div class="departments-selection-list" *ngIf="!allDepartmentsLoading && filteredDepartments.length">
+          <div class="department-row" *ngFor="let dept of filteredDepartments">
+            <span class="department-name">{{ dept.DepartDesc || dept.DepartnentDescripton || dept.DepartmentDescription }}</span>
+            <div class="department-checkboxes">
+              <mat-checkbox [checked]="isInFirstList(dept.DepartCode || dept.DepartnentCodeFirst || dept.DepartmentCode)" (change)="toggleFirstList(dept.DepartCode || dept.DepartnentCodeFirst || dept.DepartmentCode)">
+                מחלקה ראשונה
+              </mat-checkbox>
+              <mat-checkbox [checked]="isInSecondList(dept.DepartCode || dept.DepartnentCodeFirst || dept.DepartmentCode)" (change)="toggleSecondList(dept.DepartCode || dept.DepartnentCodeFirst || dept.DepartmentCode)">
+                מחלקה שנייה
+              </mat-checkbox>
+            </div>
+          </div>
+        </div>
+        <p *ngIf="!allDepartmentsLoading && filteredDepartments.length === 0" class="text-muted small">
+          {{ departmentsFilter ? 'אין מחלקות התואמות את החיפוש' : 'אין מחלקות' }}
+        </p>
+        <div class="mt-3">
+          <button mat-raised-button color="primary" [disabled]="displayDepartmentsSaving || allDepartmentsLoading" (click)="saveDisplayDepartments()">
+            <mat-spinner *ngIf="displayDepartmentsSaving" diameter="20" class="d-inline-block mr-1"></mat-spinner>
+            <span *ngIf="!displayDepartmentsSaving">שמור הגדרות</span>
+            <span *ngIf="displayDepartmentsSaving">שומר...</span>
+          </button>
+        </div>
+      </mat-expansion-panel>
+      <button mat-stroked-button color="primary" type="button" (click)="openLecturesManage()" class="header-btn">
+        <mat-icon>school</mat-icon>
+        ניהול הרצאות
+      </button>
       <button mat-stroked-button color="primary" type="button" (click)="resetSearch()" class="header-btn">
         <mat-icon>restart_alt</mat-icon>
         איפוס חיפוש

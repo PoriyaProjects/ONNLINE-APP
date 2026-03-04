@@ -9,11 +9,15 @@
   </div>
   <mat-progress-bar mode="buffer" *ngIf="!loaded"></mat-progress-bar>
   <div class="assignments-section" *ngIf="loaded">
-    <div class="row mb-2">
+    <div class="row mb-2 align-items-center">
       <div class="col">
         <button mat-raised-button color="primary" (click)="addAssignment()">
           <span class="material-icons">add</span>
           הוסף הקצאה למחלקה
+        </button>
+        <button mat-raised-button color="accent" (click)="exportAndSendPdf()" [disabled]="!intern || assignments.length === 0 || sendingPdf">
+          <span class="material-icons">{{ sendingPdf ? 'hourglass_empty' : 'picture_as_pdf' }}</span>
+          {{ sendingPdf ? 'שולח...' : 'יצירת PDF ושליחה לסטאזר' }}
         </button>
       </div>
     </div>

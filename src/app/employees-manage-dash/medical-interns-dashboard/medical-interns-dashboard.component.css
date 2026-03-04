@@ -309,6 +309,51 @@
   margin-bottom: 14px;
 }
 
+/* Departments visibility panel */
+.departments-visibility-panel {
+  max-width: 500px;
+  background-color: #f1f2f6;
+  text-align: right;
+}
+
+.departments-filter-field {
+  width: 100%;
+  margin-bottom: 8px;
+}
+
+.departments-selection-list {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.department-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  gap: 16px;
+}
+
+.department-row:last-child {
+  border-bottom: none;
+}
+
+.department-name {
+  flex: 1;
+  min-width: 0;
+}
+
+.department-checkboxes {
+  display: flex;
+  gap: 16px;
+  flex-shrink: 0;
+}
+
+.departments-visibility-panel .mr-1 {
+  margin-left: 8px;
+}
+
 /* Responsive */
 @media (max-width: 1100px) {
   .kpi-section { grid-template-columns: repeat(2, minmax(180px, 1fr)); }

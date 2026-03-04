@@ -1,0 +1,59 @@
+.dialog-title {
+  font-size: 20px;
+  font-weight: bold;
+  text-align: center;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.section-title {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 16px 0 12px;
+}
+
+.lecture-form-section {
+  margin-bottom: 24px;
+  padding: 16px;
+  background: #f8fafc;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+}
+
+.form-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.form-field {
+  min-width: 180px;
+}
+
+.form-field.full-width {
+  flex: 1;
+  min-width: 100%;
+}
+
+.form-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.lectures-table-section {
+  margin-top: 16px;
+}
+
+.lectures-table {
+  width: 100%;
+}
+
+.lectures-table th {
+  font-weight: 600;
+  background: #f8fafc;
+}
