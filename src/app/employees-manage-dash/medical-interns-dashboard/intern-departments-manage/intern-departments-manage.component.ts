@@ -39,6 +39,7 @@ export class InternDepartmentsManageComponent implements OnInit {
   departmentCodesForFirst: string[] = [];
   departmentCodesForSecond: string[] = [];
   url = environment.url;
+  urlipracticom = environment.urlipracticom;
 
   constructor(
     private route: ActivatedRoute,
@@ -212,13 +213,13 @@ export class InternDepartmentsManageComponent implements OnInit {
       if (confirmed) {
           this.sendingPdf = true;
           this.http
-            .post(this.url + 'SaveInternDepartmentsPDF', {
+            .post(this.urlipracticom + 'SaveInternDepartmentsPDF', {
               pdfString: pdfString
             })
             .subscribe(
               (response) => {
                 this.sendingPdf = false;
-                if (response['d'] !== false && response['d'] !== undefined) {
+                if (response['d']) {
                   this.openSnackBar('ה-PDF נשלח לשרת בהצלחה');
                 } else {
                   this.openSnackBar('השרת החזיר תשובה לא צפויה');
