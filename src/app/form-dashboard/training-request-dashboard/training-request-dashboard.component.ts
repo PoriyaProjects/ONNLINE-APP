@@ -150,7 +150,7 @@ export class TrainingRequestDashboardComponent implements OnInit {
   }
 
   changeHealthTrainingPlanDate(): void {
-    const resetUsers = ['ttsrefati', 'tkoren', 'adahabre', 'dnudelman'];
+    const resetUsers = ['ttsrefati', 'tkoren', 'adahabre', 'dnudelman', 'lnachmani'];
 
     if (!resetUsers.includes(this.UserName)) {
       this.Health_Plan_Date = '';

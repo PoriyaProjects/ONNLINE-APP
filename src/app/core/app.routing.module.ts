@@ -171,8 +171,12 @@ import { WhatsappCategoriesPermissionsComponent } from '../whatsapp-messages-das
 import { WhatsappLungCancerComponent } from '../whatsapp-messages-dashboard/whatsapp-lung-cancer/whatsapp-lung-cancer.component';
 import { WhatsappMessagesDashboardComponent } from '../whatsapp-messages-dashboard/whatsapp-messages-dashboard.component';
 import { WorkerCasesComponent } from '../worker-cases/worker-cases.component';
-
-
+import { MedicalInternsDashboardComponent } from '../employees-manage-dash/medical-interns-dashboard/medical-interns-dashboard.component';
+import { MedicalInternAddUpdateComponent } from '../employees-manage-dash/medical-interns-dashboard/medical-intern-add-update/medical-intern-add-update.component';
+import { InternDepartmentsManageComponent } from '../employees-manage-dash/medical-interns-dashboard/intern-departments-manage/intern-departments-manage.component';
+import { InternDepartmentAssignmentDialogComponent } from '../employees-manage-dash/medical-interns-dashboard/intern-departments-manage/intern-department-assignment-dialog/intern-department-assignment-dialog.component';
+import { MedicalInternsSmsComponent } from '../employees-manage-dash/medical-interns-dashboard/medical-interns-sms/medical-interns-sms.component';
+import { LecturesManageDialogComponent } from '../employees-manage-dash/medical-interns-dashboard/lectures-manage-dialog/lectures-manage-dialog.component';
 
 
 const routes: Routes = [
@@ -389,6 +393,12 @@ const routes: Routes = [
   { path: "ai-letters-dashboard", component: AiLettersDashboardComponent },
   { path: "mri-schedule", component: MriScheduleComponent },
   { path: "InfectionControl", component: InfectionControlComponent },
+  { path: "medical-interns-dashboard", component: MedicalInternsDashboardComponent },
+  { path: "medical-intern-add-update", component: MedicalInternAddUpdateComponent },
+  { path: "intern-departments-manage/:EmployeeID", component: InternDepartmentsManageComponent },
+  { path: "intern-department-assignment-dialog", component: InternDepartmentAssignmentDialogComponent },
+  { path: "medical-interns-sms", component: MedicalInternsSmsComponent },
+  { path: "lectures-manage-dialog", component: LecturesManageDialogComponent },
 ];
 
 @NgModule({

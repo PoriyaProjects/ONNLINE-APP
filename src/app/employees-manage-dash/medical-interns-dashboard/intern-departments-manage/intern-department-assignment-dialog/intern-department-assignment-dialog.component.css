@@ -1,0 +1,31 @@
+.full-width {
+  width: 100%;
+}
+
+.dialog-title {
+  font-size: 20px;
+  font-weight: bold;
+  text-align: right;
+  margin: 0;
+}
+
+.period-label {
+  display: block;
+  font-size: 12px;
+  color: rgba(0, 0, 0, 0.6);
+  margin-bottom: 8px;
+}
+
+mat-chip-list {
+  margin-bottom: 16px;
+}
+
+mat-chip {
+  cursor: pointer;
+}
+
+mat-chip.chip-selected {
+  background-color: var(--mat-primary-color, #1976d2) !important;
+  color: white !important;
+}
+
