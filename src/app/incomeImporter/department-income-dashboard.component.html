@@ -131,14 +131,13 @@
           <span class="title-row">
             <span>השוואת הכנסות מחלקות</span>
             <div class="chart-controls">
-              <button mat-stroked-button 
+              <!-- <button mat-stroked-button 
                       [class.active]="chartType === 'ColumnChart'"
                       (click)="setChartType('ColumnChart')"
                       class="chart-type-btn"
                       matTooltip="גרף עמודות"
                       matTooltipPosition="below">
                 <mat-icon>bar_chart</mat-icon>
-                <!-- עמודות -->
               </button>
               <button mat-stroked-button 
                       [class.active]="chartType === 'LineChart'"
@@ -147,8 +146,7 @@
                       matTooltip="גרף קווי"
                       matTooltipPosition="below">
                 <mat-icon>show_chart</mat-icon>
-                <!-- קווי -->
-              </button>
+              </button> -->
               <!-- <span class="title-total total-badge" [matTooltip]="'לחץ על עמודה/נקודה בגרף כדי לראות פרטי המחלקה'" matTooltipPosition="below">
                 לחץ לפרטים
               </span> -->
@@ -391,7 +389,7 @@
           <div class="notes-list" dir="rtl">
             <div class="note-item" dir="rtl">
               <span class="note-number">1</span>
-              <p>הנתונים מופעים במחירים מלאים (מחיר ברוטו) כמופיע במחירון משרד הבריאות ובניכוי הנחות הסכמיות.</p>
+              <p>הנתונים מופעים במחירים מלאים (מחיר נטו) כמופיע במחירון משרד הבריאות ובניכוי הנחות הסכמיות.</p>
             </div>
             <div class="note-item" dir="rtl">
               <span class="note-number">2</span>
@@ -404,7 +402,7 @@
             </div>
             <div class="note-item" dir="rtl">
               <span class="note-number">4</span>
-              <p>נתוני כל השנים מופעים בערכים ריאליים - מחירי 2025.</p>
+              <p>נתוני כל השנים מופעים בערכים ריאליים - מחירי {{ getLatestYearFromDeptData() }}.</p>
             </div>
             <div class="note-item highlight" dir="rtl">
               <span class="note-number">⚡</span>
