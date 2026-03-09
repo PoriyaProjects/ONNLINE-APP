@@ -168,12 +168,14 @@ import { InternDepartmentsManageComponent } from "./employees-manage-dash/medica
 import { InternDepartmentAssignmentDialogComponent } from "./employees-manage-dash/medical-interns-dashboard/intern-departments-manage/intern-department-assignment-dialog/intern-department-assignment-dialog.component";
 import { MedicalInternsSmsComponent } from "./employees-manage-dash/medical-interns-dashboard/medical-interns-sms/medical-interns-sms.component";
 import { LecturesManageDialogComponent } from "./employees-manage-dash/medical-interns-dashboard/lectures-manage-dialog/lectures-manage-dialog.component";
+import { SurgeriesDashboradComponent } from "./surgeries-dashborad-n/surgeries-dashborad.component";
 
 
 
 const routes: Routes = [
     { path: "AutomationProcessDashboard", component: AutomationProcessDashboardComponent },
     { path: "IncomeDashboard", component: DepartmentIncomeDashboardComponent },
+    { path: "surgeriesDashboard", component: SurgeriesDashboradComponent },
     { path: "dimotactivity", component: DimotActivityDashboardComponent },
     { path: "patientstikers", component: PatientStikersComponent },
     { path: "clinicsrequests", component: ClinicsRequestsComponent },
