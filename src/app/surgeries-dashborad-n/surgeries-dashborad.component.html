@@ -202,7 +202,28 @@
         </div>
 
         <div class="table-body">
-          <div class="table-wrap">
+          <!-- טבלה מצטברת: אותם נתונים של הגרף, מוצגים כטבלה -->
+          <div class="table-wrap" *ngIf="chartTableRows?.length && yearsForChart?.length">
+            <table class="table aggregated-chart-table" dir="rtl">
+              <thead>
+                <tr>
+                  <th>מחלקה</th>
+                  <th *ngFor="let y of yearsForChart">{{ y }}</th>
+                  <th>סה&quot;כ</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let r of chartTableRows">
+                  <td>{{ r.wing }}</td>
+                  <td *ngFor="let y of yearsForChart">{{ r.perYear[y] || 0 }}</td>
+                  <td>{{ r.total }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- טבלת נתונים מפורטים / הכנסות (קיימת) -->
+          <div class="table-wrap" *ngIf="!chartTableRows?.length">
             <table mat-table [dataSource]="dataSource" matSort #mainSort="matSort" class="table" dir="rtl">
 
               <!-- עמודות מעקב ניתוחים -->

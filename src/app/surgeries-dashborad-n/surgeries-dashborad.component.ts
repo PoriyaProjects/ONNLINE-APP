@@ -200,6 +200,9 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy {
         { type: "string", role: "annotation" },
     ];
 
+    /** נתוני הטבלה המייצגת את נתוני הגרף (כמו הגרף אבל בטבלה) */
+    chartTableRows: { wing: string; total: number; perYear: { [year: number]: number } }[] = [];
+
     chartOptions: any = {
         title: "מעקב ניתוחים לפי חדר",
         titleTextStyle: {
@@ -925,6 +928,7 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy {
         this.yearsForChart = [];
         this.yearlySurgeryTotals = {};
         this.yearColorMap = [];
+        this.chartTableRows = [];
 
         // 1) מקור ראשי לגרף: GetCountByDept (5 שנים אחרונות לפי מחלקה)
         //    שים לב: אנחנו משתמשים ב-API המצטבר רק כאשר *אין* פילטרים פעילים.
@@ -982,6 +986,7 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy {
             // אם אחרי פילטרים לא נותרו נתונים – ננקה את הגרף
             if (!source || source.length === 0) {
                 this.chartData = [];
+                this.chartTableRows = [];
                 this.isChartLoading = false;
                 this.cdr.detectChanges();
                 return;
@@ -995,6 +1000,7 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy {
 
             if (years.length === 0) {
                 this.chartData = [];
+                this.chartTableRows = [];
                 this.isChartLoading = false;
                 this.cdr.detectChanges();
                 return;
@@ -1066,6 +1072,20 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy {
             extraWings.forEach((r) => rows.push(r));
 
             this.chartData = rows.map((r) => r.row);
+
+            // בניית טבלת ניתוחים ומחלקות מתוך אותם נתונים של הגרף
+            this.chartTableRows = rows.map((r) => {
+                const perYear: { [year: number]: number } = {};
+                years.forEach((y) => {
+                    const yearMap = byWingYear.get(r.wing) || new Map<number, number>();
+                    perYear[y] = yearMap.get(y) || 0;
+                });
+                return {
+                    wing: r.wing,
+                    total: r.total,
+                    perYear,
+                };
+            });
             this.updateColorsForYears(years);
 
             const firstYear = years[0];
@@ -1135,19 +1155,27 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy {
             this.chartColumns = dynamicColumns;
 
             const rows: any[] = [];
+            const tableRows: { wing: string; total: number; perYear: { [year: number]: number } }[] = [];
+
             byDeptYear.forEach((yearMap, dept) => {
                 const row: any[] = [dept];
                 let total = 0;
+                const perYear: { [year: number]: number } = {};
+
                 years.forEach((y) => {
                     const cnt = yearMap.get(y) || 0;
                     total += cnt;
+                    perYear[y] = cnt;
                     row.push(cnt, cnt > 0 ? String(cnt) : "");
                 });
+
                 rows.push({ dept, total, row });
+                tableRows.push({ wing: dept, total, perYear });
             });
 
             rows.sort((a, b) => b.total - a.total);
             this.chartData = rows.map((r) => r.row);
+            this.chartTableRows = tableRows;
             this.yearsForChart = years;
             this.updateColorsForYears(years);
 
