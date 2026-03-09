@@ -54,6 +54,12 @@ import { EmergencymembersComponent } from "../emergencymembers/emergencymembers.
 import { EmployeesAddUpdateComponent } from '../employees-manage-dash/employees-add-update/employees-add-update.component';
 import { EmployeesManageDashComponent } from '../employees-manage-dash/employees-manage-dash.component';
 import { EmployeesUpdateManagersComponent } from '../employees-manage-dash/employees-update-managers/employees-update-managers.component';
+import { InternDepartmentAssignmentDialogComponent } from '../employees-manage-dash/medical-interns-dashboard/intern-departments-manage/intern-department-assignment-dialog/intern-department-assignment-dialog.component';
+import { InternDepartmentsManageComponent } from '../employees-manage-dash/medical-interns-dashboard/intern-departments-manage/intern-departments-manage.component';
+import { LecturesManageDialogComponent } from '../employees-manage-dash/medical-interns-dashboard/lectures-manage-dialog/lectures-manage-dialog.component';
+import { MedicalInternAddUpdateComponent } from '../employees-manage-dash/medical-interns-dashboard/medical-intern-add-update/medical-intern-add-update.component';
+import { MedicalInternsDashboardComponent } from '../employees-manage-dash/medical-interns-dashboard/medical-interns-dashboard.component';
+import { MedicalInternsSmsComponent } from '../employees-manage-dash/medical-interns-dashboard/medical-interns-sms/medical-interns-sms.component';
 import { EmployeesComponent } from "../employees/employees.component";
 import { EshbozComponent } from '../eshboz/eshboz.component';
 import { EventsscheduleComponent } from '../eventsschedule/eventsschedule.component';
@@ -99,6 +105,7 @@ import { RoomTimeRTDashboardComponent } from '../hospital-roomtimert-dashb/googl
 import { RoomTimeRTmDashboardComponent } from '../hospital-roomtimert-mdashb/google-charts/google-charts.component';
 import { HrDashboardComponent } from '../hr-dashboard/hr-dashboard.component';
 import { DepartmentIncomeDashboardComponent } from "../incomeImporter/department-income-dashboard.component";
+import { InfectionControlComponent } from "../infection-control/infection-control.component";
 import { InfectionDrugsComponent } from '../infection-drugs/infection-drugs.component';
 import { InfectionReportComponent } from "../infection-report/infection-report.component";
 import { InjuryReportComponent } from '../injury-report/injury-report.component';
@@ -118,7 +125,6 @@ import { MershamComponent } from '../mersham/mersham.component';
 import { MotherChildeLinkComponent } from "../mother-childe-link/mother-childe-link.component";
 import { MrbaotComponent } from '../mrbaot/mrbaot.component';
 import { MriScheduleComponent } from "../mri-schedule/mri-schedule.component";
-import { InfectionControlComponent } from "../infection-control/infection-control.component";
 import { NewBornComponent } from "../new-born/new-born.component";
 import { NmrIframeComponent } from '../nmr-iframe/nmr-iframe.component';
 import { NortonEstimateComponent } from '../norton-estimate/norton-estimate.component';
@@ -153,6 +159,7 @@ import { SpreadsheetsDashboardComponent } from '../spreadsheets-dashboard/spread
 import { StaffComponent } from '../staff/staff.component';
 import { StikersComponent } from '../stikers/stikers.component';
 import { SupplierComponent } from '../supplier/supplier.component';
+import { SurgeriesDashboradComponent } from '../surgeries-dashborad-n/surgeries-dashborad.component';
 import { SurgeryCalendarComponent } from '../surgery-calendar/surgery-calendar.component';
 import { SurgeryControlMainComponent } from '../surgery-control-main/surgery-control-main.component';
 import { SurgeriesUnclosedReportsComponent } from '../surgery-reports/surgeries-unclosed-reports/surgeries-unclosed-reports.component';
@@ -171,12 +178,6 @@ import { WhatsappCategoriesPermissionsComponent } from '../whatsapp-messages-das
 import { WhatsappLungCancerComponent } from '../whatsapp-messages-dashboard/whatsapp-lung-cancer/whatsapp-lung-cancer.component';
 import { WhatsappMessagesDashboardComponent } from '../whatsapp-messages-dashboard/whatsapp-messages-dashboard.component';
 import { WorkerCasesComponent } from '../worker-cases/worker-cases.component';
-import { MedicalInternsDashboardComponent } from '../employees-manage-dash/medical-interns-dashboard/medical-interns-dashboard.component';
-import { MedicalInternAddUpdateComponent } from '../employees-manage-dash/medical-interns-dashboard/medical-intern-add-update/medical-intern-add-update.component';
-import { InternDepartmentsManageComponent } from '../employees-manage-dash/medical-interns-dashboard/intern-departments-manage/intern-departments-manage.component';
-import { InternDepartmentAssignmentDialogComponent } from '../employees-manage-dash/medical-interns-dashboard/intern-departments-manage/intern-department-assignment-dialog/intern-department-assignment-dialog.component';
-import { MedicalInternsSmsComponent } from '../employees-manage-dash/medical-interns-dashboard/medical-interns-sms/medical-interns-sms.component';
-import { LecturesManageDialogComponent } from '../employees-manage-dash/medical-interns-dashboard/lectures-manage-dialog/lectures-manage-dialog.component';
 
 
 const routes: Routes = [
@@ -301,6 +302,7 @@ const routes: Routes = [
   { path: "Injury", component: InjuryReportComponent },
   { path: "Cath", component: CathReportComponent },
   { path: "IncomeDashboard", component: DepartmentIncomeDashboardComponent },
+  { path: "surgeriesDashboard", component: SurgeriesDashboradComponent },
   { path: "AutomationProcessDashboard", component: AutomationProcessDashboardComponent },
   { path: "patients-system-conflicts", component: PatientsSystemConflictsComponent },
   { path: "Metav", component: BTirmComponent },
