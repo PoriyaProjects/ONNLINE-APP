@@ -137,6 +137,12 @@ export interface CountByDeptRow {
 
 }
 
+export interface MonthlyCountRow {
+  Year: number;
+  Month: number; // 1–12
+  Count: number;
+}
+
 interface EmployeeInfo {
   userName: string;
   gender: string;
@@ -189,6 +195,9 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy {
     // Aggregated counts by department from new API
     countByDeptData: CountByDeptRow[] = [];
 
+    // Aggregated counts by month from new API
+    monthlyCountsData: MonthlyCountRow[] = [];
+
     // Chart data - with numbers in millions
     // Chart data - with numbers in millions
     // Chart data - with numbers in millions
@@ -203,11 +212,12 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy {
 
     /** נתוני הטבלה המייצגת את נתוני הגרף (כמו הגרף אבל בטבלה) */
     chartTableRows: {
-        label: string;                              // שם ישות השורה (מחלקה / אתר / משמרת / סוג מימון / סה"כ)
+        label: string;                              // שם ישות השורה (מחלקה / אתר / משמרת / סוג מימון / סה"כ / חודש)
         total: number;                              // סה"כ לכל השנים
         perYear: { [year: number]: number };        // כמות לכל שנה
         diff?: number;                              // הפרש בין השנה האחרונה לקודמת
         pct?: string;                               // אחוז שינוי בין השנה האחרונה לקודמת
+        isFuture?: boolean;                         // לחודשים שטרם התרחשו בשנה הנוכחית – אין להציג הפרש/אחוז
     }[] = [];
 
     chartOptions: any = {
@@ -336,7 +346,8 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy {
     // 'site'        – total per year split by אתר
     // 'shift'       – total per year split by משמרת
     // 'department'  – multi‑year per מחלקה (existing behaviour)
-    chartViewMode: "year-total" | "fund" | "site" | "shift" | "department" = "year-total";
+    // 'month'       – ניתוחים לפי חודשים (5 שנים אחרונות)
+    chartViewMode: "year-total" | "fund" | "site" | "shift" | "department" | "month" = "year-total";
 
     // When true, the משמרת filter dropdown in the sidebar is visually disabled
     // because the main chart itself is grouped by משמרת.
@@ -691,6 +702,44 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy {
                 (error) => {
                     console.error("Error loading GetCountByDept data:", error);
                     this.countByDeptData = [];
+                    this.isChartLoading = false;
+                    this.cdr.detectChanges();
+                }
+            );
+    }
+
+    /**
+     * Load 5‑year aggregated counts by month from new API GetMonthlyCounts
+     */
+    private loadMonthlyCounts(): void {
+        const baseYear = this.currentYear;
+        this.isChartLoading = true;
+
+        const kpiParams = this.buildKpiFilterParams();
+
+        this.http
+            .get<MonthlyCountRow[]>(environment.url + "GetMonthlyCounts_surgeries_dashborad", {
+                params: {
+                    baseYear: baseYear.toString(),
+                    surgeryType: kpiParams.surgeryType,
+                    shift: kpiParams.shift,
+                    site: kpiParams.site,
+                    weekend: kpiParams.weekend,
+                    department: kpiParams.department,
+                },
+            })
+            .subscribe(
+                (rows) => {
+                    if (Array.isArray(rows)) {
+                        this.monthlyCountsData = rows;
+                    } else {
+                        this.monthlyCountsData = [];
+                    }
+                    this.updateChartData();
+                },
+                (error) => {
+                    console.error("Error loading GetMonthlyCounts data:", error);
+                    this.monthlyCountsData = [];
                     this.isChartLoading = false;
                     this.cdr.detectChanges();
                 }
@@ -1413,6 +1462,155 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy {
         // 2) נתוני ניתוחים גולמיים – משמשים:
         //    א. כ‑fallback כללי כאשר אין נתוני CountByDept
         //    ב. לתצוגת קרן/מדינה (chartViewMode === 'fund')
+        // 2) במצב "חודשים" נעדיף תמיד את ה‑API החדש GetMonthlyCounts_surgeries_dashborad
+        if (this.chartViewMode === "month") {
+            if (!this.monthlyCountsData || this.monthlyCountsData.length === 0) {
+                // אם משום מה אין נתונים טעונים (למשל שינוי פילטרים), נטען אותם מחדש
+                this.loadMonthlyCounts();
+                return;
+            }
+
+            // שנים רלוונטיות וחודשים 1–12
+            const years = Array.from(
+                new Set(this.monthlyCountsData.map((r) => r.Year))
+            ).sort((a, b) => a - b);
+            const months = Array.from({ length: 12 }, (_, idx) => idx + 1);
+
+            const monthNames = [
+                "ינואר",
+                "פברואר",
+                "מרץ",
+                "אפריל",
+                "מאי",
+                "יוני",
+                "יולי",
+                "אוגוסט",
+                "ספטמבר",
+                "אוקטובר",
+                "נובמבר",
+                "דצמבר",
+            ];
+
+            // מיפוי חודש -> שנה -> כמות ניתוחים
+            const byMonthYear = new Map<number, Map<number, number>>();
+            this.monthlyCountsData.forEach((row) => {
+                if (!years.includes(row.Year)) {
+                    return;
+                }
+                if (!byMonthYear.has(row.Month)) {
+                    byMonthYear.set(row.Month, new Map<number, number>());
+                }
+                const inner = byMonthYear.get(row.Month)!;
+                inner.set(row.Year, (inner.get(row.Year) || 0) + (row.Count || 0));
+            });
+
+            // עמודות: חודש + עבור כל שנה ערך + אנוטציה
+            const cols: any[] = ["חודש"];
+            years.forEach((y) => {
+                cols.push({ type: "number", label: y.toString() });
+                cols.push({ type: "string", role: "annotation" });
+            });
+            this.chartColumns = cols;
+
+            const today = new Date();
+            const currentYear = today.getFullYear();
+            const currentMonthIdx = today.getMonth(); // 0‑based
+
+            this.chartData = months.map((m) => {
+                const label = monthNames[m - 1];
+                const row: any[] = [label];
+                const monthMap = byMonthYear.get(m) || new Map<number, number>();
+
+                // ממוצע היסטורי לחודש זה (ללא השנה הנוכחית)
+                const prevYears = years.filter((y) => y !== currentYear);
+                let histSum = 0;
+                let histCount = 0;
+                prevYears.forEach((y) => {
+                    const v = monthMap.get(y) || 0;
+                    if (v > 0) {
+                        histSum += v;
+                        histCount++;
+                    }
+                });
+                const histAvg = histCount > 0 ? histSum / histCount : 0;
+
+                years.forEach((y) => {
+                    let val = monthMap.get(y) || 0;
+                    let annotation = "";
+
+                    const isFutureMonthOfCurrentYear =
+                        y === currentYear && m - 1 > currentMonthIdx;
+
+                    if (isFutureMonthOfCurrentYear) {
+                        // לא מציגים ערך בפועל, רק ממוצע היסטורי כאנוטציה
+                        val = 0;
+                        if (histAvg > 0) {
+                            annotation = `≈ ${this.formatNumber(Math.round(histAvg))}`;
+                        }
+                    } else if (val > 0) {
+                        annotation = this.formatNumber(val);
+                    }
+
+                    row.push(val, annotation);
+                });
+
+                return row;
+            });
+
+            // טבלה: שורות לפי חודש, עמודות שנים והפרש / אחוז שינוי
+            const tableRows: {
+                label: string;
+                perYear: { [year: number]: number };
+                total: number;
+                diff: number;
+                pct: string;
+                isFuture?: boolean;
+            }[] = [];
+
+            months.forEach((m) => {
+                const label = monthNames[m - 1];
+                const monthMap = byMonthYear.get(m) || new Map<number, number>();
+                const perYear: { [year: number]: number } = {};
+                let total = 0;
+                years.forEach((y) => {
+                    const v = monthMap.get(y) || 0;
+                    perYear[y] = v;
+                    total += v;
+                });
+                    const { diff, pct } = this.computeDiffAndPct(perYear, years);
+
+                    const isFuture =
+                        years.includes(currentYear) && m - 1 > currentMonthIdx;
+
+                    tableRows.push({
+                        label,
+                        perYear,
+                        total,
+                        diff: isFuture ? 0 : diff,
+                        pct: isFuture ? "" : pct,
+                        isFuture,
+                    });
+            });
+
+            this.chartTableRows = tableRows;
+            this.updateColorsForYears(years);
+            this.stackedCategoryLegend = [];
+            this.chartOptions.title = "ניתוחים לפי חודשים (5 שנים אחרונות)";
+            this.chartOptions.hAxis = {
+                ...(this.chartOptions.hAxis || {}),
+                title: "חודש",
+            };
+            this.chartOptions.vAxis = {
+                ...(this.chartOptions.vAxis || {}),
+                title: "מספר ניתוחים",
+            };
+            this.chartOptions.isStacked = false;
+
+            this.isChartLoading = false;
+            this.cdr.detectChanges();
+            return;
+        }
+
         if (this.surgeryData.length > 0) {
             const list = this.dataSource.data as SurgeryRow[];
 
@@ -1787,7 +1985,7 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy {
     /**
      * שינוי מצב תצוגת הגרף הראשי (סה"כ / קרן‑מדינה / אתר / משמרת / מחלקה)
      */
-    setChartViewMode(mode: "year-total" | "fund" | "site" | "shift" | "department"): void {
+    setChartViewMode(mode: "year-total" | "fund" | "site" | "shift" | "department" | "month"): void {
         if (this.chartViewMode === mode) {
             return;
         }
@@ -1800,7 +1998,13 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy {
             this.chartType = "ColumnChart";
         }
         this.updateChartOptionsForType();
-        this.updateChartData();
+
+        // מצב חודשים תלוי ב‑API ייעודי – טוענים אותו לפני עיבוד נתונים
+        if (this.chartViewMode === "month") {
+            this.loadMonthlyCounts();
+        } else {
+            this.updateChartData();
+        }
         this.cdr.detectChanges();
 
         // כפיית רענון / ריסייז של הגרף מיד אחרי החלפת מצב,
@@ -1830,6 +2034,8 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy {
                 return "סה\"כ ניתוחים לפי משמרת";
             case "fund":
                 return "סה\"כ ניתוחים לפי סוג מימון";
+            case "month":
+                return "ניתוחים לפי חודשים (5 שנים אחרונות)";
             default:
                 return "סה\"כ ניתוחים";
         }
@@ -1838,7 +2044,7 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy {
     /**
      * טקסט טולטיפ קצר וברור לכל כפתור מצב תצוגה
      */
-    getChartViewTooltip(mode: "year-total" | "fund" | "site" | "shift" | "department"): string {
+    getChartViewTooltip(mode: "year-total" | "fund" | "site" | "shift" | "department" | "month"): string {
         switch (mode) {
             case "year-total":
                 return "כמות ניתוחים לכל שנה";
@@ -1850,6 +2056,8 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy {
                 return "פיזור ניתוחים לפי משמרת";
             case "fund":
                 return "פיזור ניתוחים לפי סוג מימון";
+            case "month":
+                return "השוואת ניתוחים לפי חודשים ולפי שנה";
             default:
                 return "";
         }
@@ -2414,6 +2622,11 @@ updateChartColumns(): void {
     getActiveFiltersSummary(): string {
         const parts: string[] = [];
 
+        // אגף / אתר נבחר (לא ברירת מחדל "כל האתרים")
+        if (this.selectedDiagnosis && this.selectedDiagnosis !== "כל האתרים") {
+            parts.push(`אגף / אתר: ${this.selectedDiagnosis}`);
+        }
+
         if (this.selectedSurgeryTypes && this.selectedSurgeryTypes.length > 0) {
             parts.push(`סוג ניתוח: ${this.selectedSurgeryTypes.join(", ")}`);
         }
@@ -2441,7 +2654,7 @@ updateChartColumns(): void {
         return parts.join(" · ");
     }
 
-    // תצוגת טקסט לכל פילטר (כולל "הכל" וקומה)
+    // תצוגת טקסט לכל פילטר (כולל "הכל" וקומה) – בשורה קצרה שלא פורצת את העיצוב
     getSurgeryTypeDisplay(): string {
         if (!this.selectedSurgeryTypes || this.selectedSurgeryTypes.length === 0) {
             return "סוג ניתוח: הכל";
@@ -2449,7 +2662,10 @@ updateChartColumns(): void {
         if (this.selectedSurgeryTypes.length === 1) {
             return `סוג ניתוח: ${this.selectedSurgeryTypes[0]}`;
         }
-        return `סוג ניתוח: ${this.selectedSurgeryTypes.join(", ")}`;
+        const first = this.selectedSurgeryTypes[0];
+        const restCount = this.selectedSurgeryTypes.length - 1;
+        // מציגים ערך ראשון + כמות נוספת, הפירוט המלא כבר מופיע בתקציר התחתון
+        return `סוג ניתוח: ${first} ועוד ${restCount}`;
     }
 
     getShiftDisplay(): string {

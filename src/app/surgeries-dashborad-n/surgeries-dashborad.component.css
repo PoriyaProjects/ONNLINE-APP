@@ -130,11 +130,21 @@
   max-width: -webkit-fill-available;
   height: 40px;
   padding: 4px 10px;
+  font-size: 11px;
+  line-height: 1.2;
 }
 
 .top-departments-sidebar .filters-column .custom-dropdown .selected-text {
   flex: 1;
   min-width: 0;
+  font-size: 11px;
+}
+
+.top-departments-sidebar .filters-column .dropdown-icon,
+.top-departments-sidebar .filters-column .arrow-icon {
+  font-size: 16px;
+  width: 16px;
+  height: 16px;
 }
 
 /* כפתור איפוס סינון */
@@ -343,6 +353,7 @@
   cursor: pointer;
   transition: all .2s;
   box-sizing: border-box;
+  position: relative;
 }
 
 .dropdown-panel {
@@ -384,6 +395,34 @@
   text-align: right;
   &:hover { background: rgba(15,23,42,.05); }
   &.selected { background: rgba(37,99,235,.1); color: #2563eb; font-weight: 600; }
+}
+
+/* תפריט הבחירות בסיידבר – טקסט קטן ואחיד */
+.top-departments-sidebar .dropdown-panel .option-item {
+  font-size: 11px;
+  padding: 6px 8px;
+}
+
+/* אינדיקציה ברורה כשפילטר בסיידבר פעיל (יש ערך נבחר) */
+.filter-dropdown.has-value .dropdown-trigger {
+  border-color: rgba(37, 99, 235, 0.85);
+  box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.35);
+}
+
+.filter-dropdown.has-value .selected-text {
+  font-weight: 600;
+}
+
+.filter-dropdown.has-value .dropdown-trigger::before {
+  content: "";
+  position: absolute;
+  inset-inline-start: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: #22c55e;
 }
 
 .dash.dark .dropdown-trigger,
@@ -2141,6 +2180,8 @@ table.table {
 }
 .option-item {
   padding: 8px 10px;
+  width: 100%;
+  box-sizing: border-box;
   border-radius: 8px;
   cursor: pointer;
   font-size: 13px;
@@ -2193,7 +2234,7 @@ table.table {
 /* dropdowns in sidebar are full-width of the column */
 .top-departments-sidebar .custom-dropdown {
   width: 100%;
-  max-width: 70%;
+  max-width: 100%;
   box-sizing: border-box;
 }
 
