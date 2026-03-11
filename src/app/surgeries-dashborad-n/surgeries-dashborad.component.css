@@ -109,6 +109,69 @@
   width: 100%;
 }
 
+/* טקסט הפילטרים לא ישבור את הלייאאוט – חתוך עם אליפסיס */
+.filters-column .custom-dropdown .selected-text,
+.filters-column .more-filters-btn {
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* בתוך הסיידבר – מבטיח שהטקסט לא ימתח את השורה */
+.top-departments-sidebar .filters-column .custom-dropdown .dropdown-trigger {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  box-sizing: border-box;
+  max-width: -webkit-fill-available;
+  height: 40px;
+  padding: 4px 10px;
+}
+
+.top-departments-sidebar .filters-column .custom-dropdown .selected-text {
+  flex: 1;
+  min-width: 0;
+}
+
+/* כפתור איפוס סינון */
+.reset-filters-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-bottom: 6px;
+  border-radius: 999px;
+  padding-inline: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  border-color: rgba(59, 130, 246, 0.5);
+  color: #1d4ed8;
+}
+
+.reset-filters-btn mat-icon {
+  font-size: 18px;
+  height: 18px;
+  width: 18px;
+}
+
+.reset-filters-btn:hover {
+  border-color: rgba(37, 99, 235, 0.9);
+  background: rgba(219, 234, 254, 0.6);
+}
+
+.dash.dark .reset-filters-btn {
+  border-color: rgba(129, 140, 248, 0.8);
+  color: #e5e7eb;
+}
+
+.dash.dark .reset-filters-btn:hover {
+  background: rgba(30, 64, 175, 0.7);
+}
+
 .wing-dropdown-wrap {
   display: flex;
   align-items: center;
@@ -263,8 +326,8 @@
   position: relative;
   width: 100%;
   max-width: 320px;
-  /* זינדקס גבוה כדי שהפאנל תמיד יהיה מעל הגרפים/טבלאות */
-  z-index: 3000;
+  /* זינדקס מספיק גבוה מעל גרפים/טבלאות אך נמוך ממודלים */
+  z-index: 200;
 }
 
 .dropdown-trigger {
@@ -296,7 +359,9 @@
   padding: 8px;
   animation: fadeIn .2s ease;
   /* מעט מעל הטריגר עצמו */
-  z-index: 3001;
+  z-index: 201;
+  direction: rtl;
+  text-align: right;
 }
 
 .dropdown-overlay {
@@ -305,8 +370,8 @@
   left: 0;
   width: 100vw;
   height: 100vh;
-  /* מעט מתחת לפאנל אבל מעל שאר התוכן */
-  z-index: 2999;
+  /* מעט מתחת לפאנל אבל מעל שאר התוכן הרגיל (מודלים עדיין מעליו) */
+  z-index: 199;
 }
 
 .selected-text { flex: 1; font-size: 14px; font-weight: 500; color: #1e293b; text-align: right; }
@@ -315,6 +380,8 @@
 .option-item {
   padding: 10px 16px; border-radius: 12px;
   font-size: 14px; color: #1e293b; cursor: pointer; transition: background .2s;
+  direction: rtl;
+  text-align: right;
   &:hover { background: rgba(15,23,42,.05); }
   &.selected { background: rgba(37,99,235,.1); color: #2563eb; font-weight: 600; }
 }
@@ -333,6 +400,13 @@
   box-shadow: var(--shadow);
   padding: clamp(4px, .6vw, 10px) clamp(6px, 1vw, 12px);
   margin-bottom: clamp(4px, .5vw, 8px);
+}
+
+/* חיתוך טקסט בתוך הסיידבר גם אחרי הגדרת .selected-text הגלובלית */
+.top-departments-sidebar .selected-text {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .panel-title {
@@ -669,7 +743,21 @@
   transition: transform 140ms, box-shadow 140ms, background 140ms, border-color 140ms;
   cursor: pointer;
 
-  &:hover { transform: translateY(-1px); box-shadow: 0 4px 8px rgba(15,23,42,.12); }
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(15,23,42,.18);
+    border-color: rgba(37,99,235,.65);
+  }
+
+  &:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(15,23,42,.18);
+  }
+
+  &:focus-visible {
+    outline: 2px solid #2563eb;
+    outline-offset: 2px;
+  }
 
   mat-icon { font-size: 18px; width: 18px; height: 18px; line-height: 18px; }
   &:disabled mat-icon { opacity: .4; }
@@ -683,8 +771,32 @@
 
 .dash:not(.dark) .icon-btn.ghost {
   background: rgba(15,23,42,.04);
-  border-color: rgba(15,23,42,.10);
+  border-color: rgba(15,23,42,.16);
   mat-icon { color: rgba(15,23,42,.85); }
+}
+
+/* מצב יום – טקסט/אייקון של כפתור אייקון תמיד כהים וברורים */
+.dash:not(.dark) .icon-btn,
+.dash:not(.dark) .icon-btn mat-icon {
+  color: rgba(15,23,42,.9) !important;
+}
+
+/* אינדיקציה ויזואלית שכבר יש פילטרים פעילים */
+.icon-btn.filter-active {
+  background: rgba(37,99,235,.12);
+  border-color: rgba(37,99,235,.85);
+  box-shadow: 0 0 0 1px rgba(37,99,235,.35);
+}
+
+.icon-btn.filter-active::after {
+  content: "";
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: #22c55e;
 }
 
 /* ── Main content layout ────────────────────────────────── */
@@ -707,6 +819,84 @@
   min-height: 0;
   min-width: 0;
   overflow: hidden;
+}
+
+/* טבלת הגרף המצטבר – עיצוב שורות מודגש / מפוספס */
+.aggregated-chart-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.aggregated-chart-table thead th {
+  position: sticky;
+  top: 0;
+  background: rgba(248, 250, 252, 0.98);
+  z-index: 1;
+  text-align: right;
+  padding: 6px 8px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.6);
+}
+
+.dash.dark .aggregated-chart-table thead th {
+  background: rgba(15, 23, 42, 0.98);
+  border-bottom-color: rgba(51, 65, 85, 0.9);
+}
+
+.aggregated-chart-table tbody tr:nth-child(odd) {
+  background-color: rgba(241, 245, 249, 0.8);
+}
+
+.dash.dark .aggregated-chart-table tbody tr:nth-child(odd) {
+  background-color: rgba(30, 41, 59, 0.85);
+}
+
+.aggregated-chart-table tbody tr:hover {
+  background-color: rgba(191, 219, 254, 0.6);
+}
+
+.dash.dark .aggregated-chart-table tbody tr:hover {
+  background-color: rgba(30, 64, 175, 0.7);
+}
+
+.aggregated-chart-table td {
+  padding: 4px 8px;
+  border-bottom: 1px solid rgba(226, 232, 240, 0.7);
+  text-align: right;
+  white-space: nowrap;
+}
+
+.dash.dark .aggregated-chart-table td {
+  border-bottom-color: rgba(30, 41, 59, 0.9);
+}
+
+/* צביעה הירוק/אדום לתא ההפרש/אחוז בטבלת הסיכום */
+.aggregated-chart-table td.agg-positive {
+  color: #166534;
+  font-weight: 600;
+}
+
+.aggregated-chart-table td.agg-negative {
+  color: #b91c1c;
+  font-weight: 600;
+}
+
+.dash.dark .aggregated-chart-table td.agg-positive {
+  color: #4ade80;
+}
+
+.dash.dark .aggregated-chart-table td.agg-negative {
+  color: #fca5a5;
+}
+
+.aggregated-chart-table td.agg-positive .percentage-badge {
+  background: rgba(22, 163, 74, 0.08);
+  color: #166534;
+}
+
+.aggregated-chart-table td.agg-negative .percentage-badge {
+  background: rgba(220, 38, 38, 0.08);
+  color: #b91c1c;
 }
 
 .panel-graph, .panel-table {
@@ -853,6 +1043,90 @@
   &:not(.active):hover { background: var(--btnBgHover) !important; transform: translateY(-1px); }
 }
 
+/* מצב תצוגת הגרף הראשי – כפתורי מצב מתחת לגרף */
+.chart-mode-row {
+  margin-top: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+.chart-mode-description {
+  margin-top: 4px;
+  font-size: 11px;
+  color: var(--muted);
+  direction: rtl;
+  text-align: right;
+}
+
+.mode-toggle-btn {
+  min-width: 90px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  border: 1px solid var(--btnBorder);
+  background: var(--btnBg);
+  color: var(--btnText);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition:
+    background-color 0.18s ease,
+    color 0.18s ease,
+    box-shadow 0.18s ease,
+    transform 0.18s ease,
+    border-color 0.18s ease;
+}
+
+.mode-toggle-btn:hover {
+  background: var(--btnBgHover);
+  border-color: var(--btnText);
+  transform: translateY(-1px);
+  box-shadow: 0 3px 8px rgba(15,23,42,.18);
+}
+
+.mode-toggle-btn.active {
+  background: var(--accent, #2563eb);
+  color: #fff;
+  border-color: var(--accent, #2563eb);
+  box-shadow: 0 4px 12px rgba(37,99,235,.45);
+  transform: translateY(-1px);
+}
+
+.dash.dark .mode-toggle-btn {
+  border-color: rgba(148,163,184,.55);
+  background: rgba(15,23,42,.9);
+  color: #e5e7eb;
+}
+
+.dash.dark .mode-toggle-btn:hover {
+  background: rgba(30,64,175,.7);
+  border-color: rgba(129,140,248,.9);
+  box-shadow: 0 4px 14px rgba(15,23,42,.9);
+}
+
+.dash.dark .mode-toggle-btn.active {
+  background: linear-gradient(135deg, #4f46e5, #22c55e);
+  border-color: rgba(129,140,248,.9);
+  color: #f9fafb;
+  box-shadow: 0 6px 18px rgba(15,23,42,1);
+}
+
+@media (max-width: 768px) {
+  .chart-mode-row {
+    justify-content: center;
+  }
+
+  .mode-toggle-btn {
+    flex: 1 1 calc(50% - 6px);
+    min-width: 0;
+    text-align: center;
+  }
+}
+
 /* ── Chart overlays ─────────────────────────────────────── */
 .chart-loading-overlay {
   position: absolute; inset: 0;
@@ -963,26 +1237,6 @@ table.table {
   .mat-mdc-input-element, input.mat-mdc-input-element { color: rgba(255,255,255,.92) !important; caret-color: rgba(255,255,255,.92) !important; }
   .mat-mdc-select-value, .mat-mdc-select-placeholder, .mat-mdc-select-arrow,
   .mat-datepicker-toggle-default-icon, .mat-mdc-form-field-icon-suffix mat-icon { color: rgba(255,255,255,.86) !important; }
-}
-
-/* ── Modals shared base (plain CSS helpers) ──────────────── */
-.overlay-base {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  backdrop-filter: blur(4px);
-}
-
-.modal-base {
-  border-radius: 16px;
-  background: #ffffff;
-  box-shadow: var(--shadow2);
-  border: 1px solid var(--border);
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
 }
 
 /* ── Department graph modal ─────────────────────────────── */
@@ -1300,14 +1554,16 @@ table.table {
 }
 
 .kpi-modal {
-  width: min(90vw, 720px);
-  max-height: 80vh;
+  width: 80vw;
+  height: 80vh;
   border-radius: 16px;
   background: var(--panel);
   border: 1px solid var(--border);
   box-shadow: var(--shadow2);
   padding: 16px 20px 20px;
-  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 .kpi-overlay.dark .kpi-modal {
@@ -1337,6 +1593,8 @@ table.table {
   display: flex;
   flex-direction: column;
   gap: 12px;
+  flex: 1 1 auto;
+  overflow: hidden;
 }
 
 .kpi-intro {
@@ -1344,6 +1602,7 @@ table.table {
   font-size: 13px;
   color: var(--muted);
   line-height: 1.6;
+  display: flex;
 }
 
 .kpi-loading {
@@ -1401,6 +1660,14 @@ table.table {
   background: var(--btnBgHover);
 }
 
+.kpi-chart-caption {
+  margin-top: 6px;
+  font-size: 11px;
+  color: var(--muted);
+  direction: rtl;
+  text-align: right;
+}
+
 /* ── Loading overlays ───────────────────────────────────── */
 .loading-overlay {
   position: fixed; inset: 0;
@@ -1455,7 +1722,7 @@ table.table {
   align-items: center;
   justify-content: center;
   backdrop-filter: blur(4px);
-  z-index: 1001;
+  z-index: 4000;
 }
 
 .guide-avatar-modal {
@@ -1521,7 +1788,7 @@ table.table {
   align-items: center;
   justify-content: center;
   backdrop-filter: blur(4px);
-  z-index: 1002;
+  z-index: 4001;
 }
 
 .article-showcase-modal {
@@ -1916,7 +2183,7 @@ table.table {
 /* dropdowns in sidebar are full-width of the column */
 .top-departments-sidebar .custom-dropdown {
   width: 100%;
-  max-width: 100%;
+  max-width: 70%;
   box-sizing: border-box;
 }
 

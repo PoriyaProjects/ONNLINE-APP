@@ -1,11 +1,10 @@
-import { Component, OnInit, OnDestroy, ViewChild } from '@angular/core';
+import { animate, style, transition, trigger } from '@angular/animations';
 import { HttpClient } from '@angular/common/http';
-import { MatSnackBar } from '@angular/material/snack-bar';
-import { MatTableDataSource } from '@angular/material/table';
+import { ChangeDetectorRef, Component, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatSort, Sort } from '@angular/material/sort';
-import { ChangeDetectorRef } from '@angular/core';
-import { trigger, transition, style, animate } from '@angular/animations';
+import { MatTableDataSource } from '@angular/material/table';
 import { Router } from '@angular/router';
 import { environment } from "src/environments/environment";
 import { MenuPerm } from "../menu-perm";
@@ -134,6 +133,8 @@ export interface CountByDeptRow {
   Shift?: string;
   SurgeryRoom?: string;
   WeekPart?: string;
+  FundType?: string; // ← חדש
+
 }
 
 interface EmployeeInfo {
@@ -199,6 +200,15 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy {
         { type: "number", label: "" }, // Will be updated dynamically
         { type: "string", role: "annotation" },
     ];
+
+    /** נתוני הטבלה המייצגת את נתוני הגרף (כמו הגרף אבל בטבלה) */
+    chartTableRows: {
+        label: string;                              // שם ישות השורה (מחלקה / אתר / משמרת / סוג מימון / סה"כ)
+        total: number;                              // סה"כ לכל השנים
+        perYear: { [year: number]: number };        // כמות לכל שנה
+        diff?: number;                              // הפרש בין השנה האחרונה לקודמת
+        pct?: string;                               // אחוז שינוי בין השנה האחרונה לקודמת
+    }[] = [];
 
     chartOptions: any = {
         title: "מעקב ניתוחים לפי חדר",
@@ -293,6 +303,7 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy {
     yearsForChart: number[] = [];
     yearlySurgeryTotals: { [year: number]: number } = {};
     yearColorMap: { year: number; color: string }[] = [];
+    stackedCategoryLegend: { label: string; color: string }[] = [];
 
     private readonly orderedWings: string[] = [
         "א.א.ג.",
@@ -318,6 +329,18 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy {
         "#fbbf24", // צהוב זהב
         "#a855f7", // סגול רך
     ];
+
+    // Chart main view mode:
+    // 'year-total'  – total surgeries per year (default)
+    // 'fund'        – total per year split by קרן/מדינה
+    // 'site'        – total per year split by אתר
+    // 'shift'       – total per year split by משמרת
+    // 'department'  – multi‑year per מחלקה (existing behaviour)
+    chartViewMode: "year-total" | "fund" | "site" | "shift" | "department" = "year-total";
+
+    // When true, the משמרת filter dropdown in the sidebar is visually disabled
+    // because the main chart itself is grouped by משמרת.
+    isShiftGroupedView: boolean = false;
 
     // Boss Dashboard
     showBossDashboard = false;
@@ -370,7 +393,8 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy {
     departmentOptions: string[] = [];
     selectedDepartments: string[] = []; // ריק = הכל
 
-    weekdayOptions: string[] = ["אמצע שבוע", "סוף שבוע"];
+    // שים לב: השרת מחזיר WeekPart כ"סופ״ש" (גרשיים עבריים U+05F4), לכן משתמשים באותה מחרוזת כאן
+    weekdayOptions: string[] = ["אמצע שבוע", "סופ״ש"];
     selectedWeekdays: string[] = []; // ריק = הכל
 
     showMoreFilters: boolean = false;
@@ -902,6 +926,16 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy {
             this.chartOptions.pointSize = 6;
             this.chartOptions.lineWidth = 3;
             this.chartOptions.curveType = "function";
+        } else if (this.chartType === "BarChart") {
+            // Horizontal stacked columns
+            this.chartOptions.bars = "horizontal";
+            this.chartOptions.isStacked = true;
+            this.chartOptions.bar = {
+                groupWidth: "75%",
+            };
+            this.chartOptions.pointSize = undefined;
+            this.chartOptions.lineWidth = undefined;
+            this.chartOptions.curveType = undefined;
         } else {
             // Column chart specific options
             this.chartOptions.bars = "vertical";
@@ -925,27 +959,24 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy {
         this.yearsForChart = [];
         this.yearlySurgeryTotals = {};
         this.yearColorMap = [];
+        this.chartTableRows = [];
 
         // 1) מקור ראשי לגרף: GetCountByDept (5 שנים אחרונות לפי מחלקה)
-        //    שים לב: אנחנו משתמשים ב-API המצטבר רק כאשר *אין* פילטרים פעילים.
-        //    אם יש פילטרים (למשל "ססיה", משמרת, חדר וכו'), נבנה את הגרף
-        //    מתוך רשימת הניתוחים המסוננת (branch 2 למטה), כדי שהגרף יתאים לטבלה.
+        //    מכאן נגזרים כל מצבי התצוגה שמבוססים על ספירות (שנה, מחלקה, אתר, משמרת).
         if (this.countByDeptData && this.countByDeptData.length > 0) {
-            // בסיס הנתונים לגרף – נתוני האגרגציה לפי מחלקה ושנה
             let source: CountByDeptRow[] = this.countByDeptData;
 
-            // אם יש פילטרים פעילים – נסנן גם את המקור האגרגטיבי לפי השדות החדשים
+            // פילטרים כלליים: סוג ניתוח, חדר, מחלקה, יום בשבוע
             if (this.selectedSurgeryTypes && this.selectedSurgeryTypes.length > 0) {
                 source = source.filter((r) => {
                     let unified = (r.UnifiedSurgeryType || "").trim();
-                    if (!unified) {
-                        unified = "אלקטיבי";
-                    }
+                    if (!unified) unified = "אלקטיבי";
                     return this.selectedSurgeryTypes.includes(unified);
                 });
             }
 
-            if (this.selectedShifts && this.selectedShifts.length > 0) {
+            // במשמרת – לא מפלטרים כאשר הגרף עצמו מוצג לפי משמרת
+            if (!this.isShiftGroupedView && this.selectedShifts && this.selectedShifts.length > 0) {
                 source = source.filter(
                     (r) =>
                         !!r.Shift &&
@@ -962,8 +993,6 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy {
             }
 
             if (this.selectedDepartments && this.selectedDepartments.length > 0) {
-                // בדשבורד ניתוחים אנחנו מציגים לפי אגף מאוגד (Wing),
-                // ולכן נסנן לפי ערך זה.
                 source = source.filter(
                     (r) =>
                         !!r.Wing &&
@@ -979,38 +1008,96 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy {
                 );
             }
 
-            // אם אחרי פילטרים לא נותרו נתונים – ננקה את הגרף
             if (!source || source.length === 0) {
                 this.chartData = [];
+                this.chartTableRows = [];
                 this.isChartLoading = false;
                 this.cdr.detectChanges();
                 return;
             }
 
             // זיהוי שנים ייחודיות מתוך הנתונים, ממוינות מהישן לחדש
-            const years = Array.from(
-                new Set(source.map((r) => r.Year))
-            ).sort((a, b) => a - b);
-            this.yearsForChart = years;
+            const years = Array.from(new Set(source.map((r) => r.Year))).sort(
+                (a, b) => a - b
+            );
 
             if (years.length === 0) {
                 this.chartData = [];
+                this.chartTableRows = [];
                 this.isChartLoading = false;
                 this.cdr.detectChanges();
                 return;
             }
 
-            // מיפוי מחלקה מנתחת מאוגד (Wing) -> שנה -> כמות
+            // חישוב סה"כ לפי שנה (בשימוש גם לכרטיסי הסיכום מעל הגרף)
+            years.forEach((y) => {
+                const sum = source
+                    .filter((r) => r.Year === y)
+                    .reduce((acc, r) => acc + (r.Count || 0), 0);
+                this.yearlySurgeryTotals[y] = sum;
+            });
+            this.yearsForChart = years;
+
+            // === מצב 1: סה"כ ניתוחים לפי שנה (ברירת מחדל) ===
+            if (this.chartViewMode === "year-total") {
+                // גרף: שנה × סה"כ
+                this.chartColumns = [
+                    "שנה",
+                    { type: "number", label: "סה\"כ ניתוחים" },
+                    { type: "string", role: "annotation" },
+                ];
+                this.chartData = years.map((y) => {
+                    const val = this.yearlySurgeryTotals[y] || 0;
+                    return [
+                        y.toString(),
+                        val,
+                        val > 0 ? this.formatNumber(val) : "",
+                    ];
+                });
+
+                this.yearColorMap = []; // אין מקרא צבעים לפי שנה במצב זה
+                this.stackedCategoryLegend = [];
+
+                // טבלה: שורה אחת "סה\"כ", עמודות שנים + סה"כ + הפרש / אחוז
+                const perYear: { [year: number]: number } = {};
+                let grandTotal = 0;
+                years.forEach((y) => {
+                    const v = this.yearlySurgeryTotals[y] || 0;
+                    perYear[y] = v;
+                    grandTotal += v;
+                });
+
+                const { diff, pct } = this.computeDiffAndPct(perYear, years);
+                this.chartTableRows = [
+                    {
+                        label: "סה\"כ",
+                        perYear,
+                        total: grandTotal,
+                        diff,
+                        pct,
+                    },
+                ];
+
+                this.chartOptions.title = "סה\"כ ניתוחים לפי שנה";
+                this.chartOptions.hAxis = {
+                    ...(this.chartOptions.hAxis || {}),
+                    title: "שנה",
+                };
+                this.chartOptions.vAxis = {
+                    ...(this.chartOptions.vAxis || {}),
+                    title: "מספר ניתוחים",
+                };
+                this.chartOptions.isStacked = false;
+
+                this.isChartLoading = false;
+                this.cdr.detectChanges();
+                return;
+            }
+
+            // מיפוי מחלקה מנתחת מאוגד (Wing) -> שנה -> כמות (בשימוש במצב 'department')
             const byWingYear = new Map<string, Map<number, number>>();
-
             source.forEach((row) => {
-                // מחלקה מנתחת מאוגד: Wing (או Department אם חסר)
                 const wing = (row.Wing || row.Department || "לא צוין").trim();
-
-                // סכום שנתי לכל שנה (לכרטיסים מעל הגרף)
-                this.yearlySurgeryTotals[row.Year] =
-                    (this.yearlySurgeryTotals[row.Year] || 0) + (row.Count || 0);
-
                 if (!byWingYear.has(wing)) {
                     byWingYear.set(wing, new Map<number, number>());
                 }
@@ -1018,70 +1105,314 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy {
                 inner.set(row.Year, (inner.get(row.Year) || 0) + (row.Count || 0));
             });
 
-            // עמודות: מחלקה מנתחת מאוגד + שנה1 (ערך+אנוטציה) + שנה2 ...
-            const dynamicColumns: any[] = ["מחלקה"];
-            years.forEach((y) => {
-                dynamicColumns.push({ type: "number", label: y.toString() });
-                dynamicColumns.push({ type: "string", role: "annotation" });
-            });
-            this.chartColumns = dynamicColumns;
+            // === מצב 2: סה"כ לפי מחלקה (הגרף הקיים, ממוין מהגדול לקטן) ===
+            const yearsForDept = years;
+            if (this.chartViewMode === "department") {
+                const dynamicColumns: any[] = ["מחלקה"];
+                yearsForDept.forEach((y) => {
+                    dynamicColumns.push({ type: "number", label: y.toString() });
+                    dynamicColumns.push({ type: "string", role: "annotation" });
+                });
+                this.chartColumns = dynamicColumns;
 
-            // שורות לגרף לפי מחלקה מנתחת מאוגד, בסדר קבוע לפי הרשימה המוגדרת
-            const rows: any[] = [];
-            const usedWings = new Set<string>();
+                const rows: { label: string; total: number; row: any[]; perYear: { [year: number]: number } }[] = [];
 
-            // קודם כל לפי סדר רשימת מחלקה מנתחת מאוגד
-            this.orderedWings.forEach((wing) => {
-                const yearMap = byWingYear.get(wing);
-                const row: any[] = [wing];
-                let total = 0;
-
-                years.forEach((y) => {
-                    const cnt = yearMap ? yearMap.get(y) || 0 : 0;
-                    total += cnt;
-                    row.push(cnt, cnt > 0 ? String(cnt) : "");
+                byWingYear.forEach((yearMap, wing) => {
+                    const row: any[] = [wing];
+                    let total = 0;
+                    const perYear: { [year: number]: number } = {};
+                    yearsForDept.forEach((y) => {
+                        const cnt = yearMap.get(y) || 0;
+                        total += cnt;
+                        perYear[y] = cnt;
+                        row.push(cnt, cnt > 0 ? String(cnt) : "");
+                    });
+                    rows.push({ label: wing, total, row, perYear });
                 });
 
-                rows.push({ wing, total, row });
-                usedWings.add(wing);
-            });
+                // מיון מהגדול לקטן לפי סה"כ ניתוחים
+                rows.sort((a, b) => b.total - a.total);
 
-            // אחר כך כל יתר המחלקות שלא הוגדרו ברשימה, לפי א"ב
-            const extraWings: { wing: string; total: number; row: any[] }[] = [];
-            byWingYear.forEach((yearMap, wing) => {
-                if (usedWings.has(wing)) {
+                this.chartData = rows.map((r) => r.row);
+
+                // טבלה: אותה ישות כמו בגרף, עם הפרש / אחוז בין שתי השנים האחרונות
+                this.chartTableRows = rows.map((r) => {
+                    const { diff, pct } = this.computeDiffAndPct(r.perYear, yearsForDept);
+                    return {
+                        label: r.label,
+                        total: r.total,
+                        perYear: r.perYear,
+                        diff,
+                        pct,
+                    };
+                });
+
+                this.updateColorsForYears(yearsForDept);
+                this.stackedCategoryLegend = [];
+                const firstYear = yearsForDept[0];
+                const lastYear = yearsForDept[yearsForDept.length - 1];
+                this.chartOptions.title = `מספר ניתוחים לפי מחלקה מנתחת מאוגד ל-${lastYear - firstYear + 1} השנים האחרונות (${firstYear}-${lastYear})`;
+                this.chartOptions.hAxis = {
+                    ...(this.chartOptions.hAxis || {}),
+                    title: "מחלקה מנתחת מאוגד",
+                };
+                this.chartOptions.isStacked = false;
+
+                this.isChartLoading = false;
+                this.cdr.detectChanges();
+                return;
+            }
+
+            // === מצב 3: לפי אתר – שנה מול אתרים (stacked אופקי עם מקרא מותאם) ===
+            if (this.chartViewMode === "site") {
+                const sites = Array.from(
+                    new Set(
+                        source
+                            .map((r) => (r.Site || "").trim())
+                            .filter((s) => !!s)
+                    )
+                );
+
+                if (sites.length === 0) {
+                    this.chartData = [];
+                    this.isChartLoading = false;
+                    this.cdr.detectChanges();
                     return;
                 }
-                const row: any[] = [wing];
-                let total = 0;
-                years.forEach((y) => {
-                    const cnt = yearMap.get(y) || 0;
-                    total += cnt;
-                    row.push(cnt, cnt > 0 ? String(cnt) : "");
+
+                const columns: any[] = ["שנה"];
+                sites.forEach((site) => {
+                    columns.push({ type: "number", label: site });
+                    columns.push({ type: "string", role: "annotation" });
                 });
-                extraWings.push({ wing, total, row });
-            });
+                this.chartColumns = columns;
 
-            extraWings.sort((a, b) => a.wing.localeCompare(b.wing));
-            extraWings.forEach((r) => rows.push(r));
+                // גרף: שנה × אתר
+                this.chartData = years.map((y) => {
+                    const row: any[] = [y.toString()];
+                    sites.forEach((site) => {
+                        const sumForSite = source
+                            .filter((r) => r.Year === y && (r.Site || "").trim() === site)
+                            .reduce((acc, r) => acc + (r.Count || 0), 0);
+                        row.push(sumForSite, sumForSite > 0 ? String(sumForSite) : "");
+                    });
+                    return row;
+                });
 
-            this.chartData = rows.map((r) => r.row);
-            this.updateColorsForYears(years);
+                this.yearColorMap = [];
 
-            const firstYear = years[0];
-            const lastYear = years[years.length - 1];
-            this.chartOptions.title = `מספר ניתוחים לפי מחלקה מנתחת מאוגד ל-${lastYear - firstYear + 1} השנים האחרונות (${firstYear}-${lastYear})`;
-            this.chartOptions.hAxis = {
-                ...(this.chartOptions.hAxis || {}),
-                title: "מחלקה מנתחת מאוגד",
-            };
+                // צבעים קבועים לכל אתר + מקרא קטגוריות
+                const palette = this.yearPalette;
+                const colors: string[] = [];
+                this.stackedCategoryLegend = sites.map((site, idx) => {
+                    const color = palette[idx % palette.length];
+                    colors.push(color);
+                    return { label: site, color };
+                });
+                this.chartOptions.colors = colors;
 
-            this.isChartLoading = false;
-            this.cdr.detectChanges();
-            return;
+                // טבלה: שורות לפי אתרים, עמודות שנים ועמודת הפרש / אחוז שינוי בין השנים האחרונות
+                const bySiteYear = new Map<string, Map<number, number>>();
+                source.forEach((r) => {
+                    const site = (r.Site || "").trim();
+                    if (!site) return;
+                    if (!bySiteYear.has(site)) {
+                        bySiteYear.set(site, new Map<number, number>());
+                    }
+                    const inner = bySiteYear.get(site)!;
+                    inner.set(r.Year, (inner.get(r.Year) || 0) + (r.Count || 0));
+                });
+
+                this.chartTableRows = sites.map((site) => {
+                    const perYear: { [year: number]: number } = {};
+                    let total = 0;
+                    years.forEach((y) => {
+                        const yearMap = bySiteYear.get(site);
+                        const cnt = yearMap ? yearMap.get(y) || 0 : 0;
+                        perYear[y] = cnt;
+                        total += cnt;
+                    });
+                    const { diff, pct } = this.computeDiffAndPct(perYear, years);
+                    return {
+                        label: site,
+                        total,
+                        perYear,
+                        diff,
+                        pct,
+                    };
+                });
+
+                this.chartOptions.title = "סה\"כ ניתוחים לפי שנה ואתר";
+                this.chartOptions.hAxis = {
+                    ...(this.chartOptions.hAxis || {}),
+                    title: "שנה",
+                };
+                this.chartOptions.vAxis = {
+                    ...(this.chartOptions.vAxis || {}),
+                    title: "מספר ניתוחים",
+                };
+                // תצוגה: עמודה אחת לשנה, מחולקת לצבעים לפי אתר (stacked)
+                this.chartOptions.isStacked = true;
+
+                this.isChartLoading = false;
+                this.cdr.detectChanges();
+                return;
+            }
+
+            // === מצב 4: לפי משמרת – שנה מול משמרת (בוקר/ערב/לילה) ===
+            if (this.chartViewMode === "shift") {
+                const shifts = Array.from(
+                    new Set(
+                        source
+                            .map((r) => (r.Shift || "").trim())
+                            .filter((s) => !!s)
+                    )
+                );
+
+                if (shifts.length === 0) {
+                    this.chartData = [];
+                    this.isChartLoading = false;
+                    this.cdr.detectChanges();
+                    return;
+                }
+
+                const columns: any[] = ["שנה"];
+                shifts.forEach((shift) => {
+                    columns.push({ type: "number", label: shift });
+                    columns.push({ type: "string", role: "annotation" });
+                });
+                this.chartColumns = columns;
+
+                // גרף: שנה × משמרת
+                this.chartData = years.map((y) => {
+                    const row: any[] = [y.toString()];
+                    shifts.forEach((shift) => {
+                        const sumForShift = source
+                            .filter((r) => r.Year === y && (r.Shift || "").trim() === shift)
+                            .reduce((acc, r) => acc + (r.Count || 0), 0);
+                        row.push(sumForShift, sumForShift > 0 ? String(sumForShift) : "");
+                    });
+                    return row;
+                });
+
+                this.yearColorMap = [];
+
+                // צבעים קבועים לכל משמרת + מקרא קטגוריות
+                const palette = this.yearPalette;
+                const colors: string[] = [];
+                this.stackedCategoryLegend = shifts.map((shift, idx) => {
+                    const color = palette[idx % palette.length];
+                    colors.push(color);
+                    return { label: shift, color };
+                });
+                this.chartOptions.colors = colors;
+
+                // טבלה: שורות לפי משמרת, עמודות שנים ועמודת הפרש / אחוז
+                const byShiftYear = new Map<string, Map<number, number>>();
+                source.forEach((r) => {
+                    const shift = (r.Shift || "").trim();
+                    if (!shift) return;
+                    if (!byShiftYear.has(shift)) {
+                        byShiftYear.set(shift, new Map<number, number>());
+                    }
+                    const inner = byShiftYear.get(shift)!;
+                    inner.set(r.Year, (inner.get(r.Year) || 0) + (r.Count || 0));
+                });
+
+                this.chartTableRows = shifts.map((shift) => {
+                    const perYear: { [year: number]: number } = {};
+                    let total = 0;
+                    years.forEach((y) => {
+                        const yearMap = byShiftYear.get(shift);
+                        const cnt = yearMap ? yearMap.get(y) || 0 : 0;
+                        perYear[y] = cnt;
+                        total += cnt;
+                    });
+                    const { diff, pct } = this.computeDiffAndPct(perYear, years);
+                    return {
+                        label: shift,
+                        total,
+                        perYear,
+                        diff,
+                        pct,
+                    };
+                });
+                this.chartOptions.title = "סה\"כ ניתוחים לפי שנה ומשמרת";
+                this.chartOptions.hAxis = {
+                    ...(this.chartOptions.hAxis || {}),
+                    title: "שנה",
+                };
+                this.chartOptions.vAxis = {
+                    ...(this.chartOptions.vAxis || {}),
+                    title: "מספר ניתוחים",
+                };
+                // תצוגה: עמודה אחת לשנה, מחולקת לצבעים לפי משמרת (stacked)
+                this.chartOptions.isStacked = true;
+
+                this.isChartLoading = false;
+                this.cdr.detectChanges();
+                return;
+            }
+            if (this.chartViewMode === 'fund') {
+                const fundTypesSet = new Set<string>();
+                const byFundYear = new Map<string, Map<number, number>>();
+              
+                source.forEach(r => {
+                  const fund = (r.FundType || 'אחר').trim() || 'אחר';
+                  fundTypesSet.add(fund);
+                  if (!byFundYear.has(fund)) byFundYear.set(fund, new Map());
+                  const m = byFundYear.get(fund)!;
+                  m.set(r.Year, (m.get(r.Year) || 0) + (r.Count || 0));
+                });
+              
+                const fundTypes = Array.from(fundTypesSet).sort();
+                const columns: any[] = ['שנה'];
+                fundTypes.forEach(ft => {
+                    columns.push({ type: 'number', label: ft });
+                    columns.push({ type: 'string', role: 'annotation' });
+                });
+                this.chartColumns = columns;
+                this.chartData = years.map(y => {
+                  const row: any[] = [y.toString()];
+                  fundTypes.forEach(ft => {
+                    const val = byFundYear.get(ft)?.get(y) || 0;
+                    row.push(val, val > 0 ? String(val) : '');
+                  });
+                  return row;
+                });
+              
+                this.chartTableRows = fundTypes.map(fund => {
+                  const perYear: { [y: number]: number } = {};
+                  let total = 0;
+                  years.forEach(y => { const v = byFundYear.get(fund)?.get(y) || 0; perYear[y] = v; total += v; });
+                  const { diff, pct } = this.computeDiffAndPct(perYear, years);
+                  return { label: fund, total, perYear, diff, pct };
+                });
+              
+                this.chartOptions.title = 'סה"כ ניתוחים לפי שנה וסוג מימון (קרן / מדינה)';
+
+                // צבעים קבועים לכל סוג מימון + מקרא קטגוריות
+                const palette = this.yearPalette;
+                const colors: string[] = [];
+                this.stackedCategoryLegend = fundTypes.map((fund, idx) => {
+                    const color = palette[idx % palette.length];
+                    colors.push(color);
+                    return { label: fund, color };
+                });
+                this.chartOptions.colors = colors;
+                this.chartOptions.isStacked = true;
+
+                this.isChartLoading = false;
+                this.cdr.detectChanges();
+                return;
+              }
+            // === מצב 5: קרן/מדינה – ייבנה מתוך רשימת ניתוחים גולמיים (אם קיימת) ===
+            // כאן לא משתמשים ב‑CountByDept, ולכן אם הגענו לכאן, נעבור לענף הבא.
         }
 
-        // 2) נתוני ניתוחים גולמיים (כולל במצב שיש פילטרים פעילים)
+        // 2) נתוני ניתוחים גולמיים – משמשים:
+        //    א. כ‑fallback כללי כאשר אין נתוני CountByDept
+        //    ב. לתצוגת קרן/מדינה (chartViewMode === 'fund')
         if (this.surgeryData.length > 0) {
             const list = this.dataSource.data as SurgeryRow[];
 
@@ -1127,6 +1458,108 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy {
                 inner.set(year, (inner.get(year) || 0) + 1);
             });
 
+            // אם מצב התצוגה הוא "קרן/מדינה" – נבנה את הגרף לפי שנה מול סוג מימון.
+            if (this.chartViewMode === "fund") {
+                // נניח שקיים שדה "קרן/מדינה" או FundType כלשהו במבנה הדינמי של הנתונים.
+                // אם לא קיים – פשוט לא יוצג גרף (ללא שבירה).
+                const fundByYear = new Map<number, Map<string, number>>();
+                const fundTypesSet = new Set<string>();
+
+                list.forEach((s) => {
+                    const parts = this.parseDateParts(s.date);
+                    if (!parts) return;
+                    const year = parts.year;
+
+                    // נסיון לקרוא סוג מימון ממפתחות אפשריים, ואם לא – "אחר"
+                    const raw: any = s as any;
+                    const fundRaw =
+                        raw["קרן/מדינה"] ??
+                        raw["FundType"] ??
+                        raw["Fund"] ??
+                        raw["FundingType"];
+                    const fund: string = (fundRaw || "אחר").toString().trim() || "אחר";
+
+                    if (!fundByYear.has(year)) {
+                        fundByYear.set(year, new Map<string, number>());
+                    }
+                    const inner = fundByYear.get(year)!;
+                    inner.set(fund, (inner.get(fund) || 0) + 1);
+                    fundTypesSet.add(fund);
+                });
+
+                const yearsArr = Array.from(fundByYear.keys()).sort((a, b) => a - b);
+                const fundTypes = Array.from(fundTypesSet.values()).sort();
+
+                if (yearsArr.length === 0 || fundTypes.length === 0) {
+                    this.chartData = [];
+                    this.isChartLoading = false;
+                    this.cdr.detectChanges();
+                    return;
+                }
+
+                this.yearsForChart = yearsArr;
+                this.chartColumns = ["שנה", ...fundTypes];
+
+                // גרף: שנה × סוג מימון (קרן / מדינה / אחר)
+                this.chartData = yearsArr.map((y) => {
+                    const row: any[] = [y.toString()];
+                    const inner = fundByYear.get(y)!;
+                    fundTypes.forEach((ft) => {
+                        row.push(inner.get(ft) || 0);
+                    });
+                    return row;
+                });
+
+                this.yearColorMap = [];
+
+                // טבלה: שורות לפי סוגי מימון, עמודות שנים ועמודת הפרש / אחוז
+                const byFundYear = new Map<string, Map<number, number>>();
+                fundByYear.forEach((inner, year) => {
+                    inner.forEach((cnt, fund) => {
+                        if (!byFundYear.has(fund)) {
+                            byFundYear.set(fund, new Map<number, number>());
+                        }
+                        const m = byFundYear.get(fund)!;
+                        m.set(year, (m.get(year) || 0) + cnt);
+                    });
+                });
+
+                this.chartTableRows = fundTypes.map((fund) => {
+                    const perYear: { [year: number]: number } = {};
+                    let total = 0;
+                    yearsArr.forEach((y) => {
+                        const yearMap = byFundYear.get(fund);
+                        const cnt = yearMap ? yearMap.get(y) || 0 : 0;
+                        perYear[y] = cnt;
+                        total += cnt;
+                    });
+                    const { diff, pct } = this.computeDiffAndPct(perYear, yearsArr);
+                    return {
+                        label: fund,
+                        total,
+                        perYear,
+                        diff,
+                        pct,
+                    };
+                });
+                this.chartOptions.title = "סה\"כ ניתוחים לפי שנה וסוג מימון (קרן / מדינה)";
+                this.chartOptions.hAxis = {
+                    ...(this.chartOptions.hAxis || {}),
+                    title: "שנה",
+                };
+                this.chartOptions.vAxis = {
+                    ...(this.chartOptions.vAxis || {}),
+                    title: "מספר ניתוחים",
+                };
+                // תצוגה: עמודה אחת לשנה, מחולקת לצבעים לפי סוג מימון (stacked)
+                this.chartOptions.isStacked = true;
+
+                this.isChartLoading = false;
+                this.cdr.detectChanges();
+                return;
+            }
+
+            // Fallback כללי – התנהגות קודמת: מחלקות לאורך הציר, ממוין מהגדול לקטן
             const dynamicColumns: any[] = ["מחלקה"];
             years.forEach((y) => {
                 dynamicColumns.push({ type: "number", label: y.toString() });
@@ -1134,22 +1567,38 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy {
             });
             this.chartColumns = dynamicColumns;
 
-            const rows: any[] = [];
+            const rows: { label: string; total: number; row: any[]; perYear: { [year: number]: number } }[] = [];
+
             byDeptYear.forEach((yearMap, dept) => {
                 const row: any[] = [dept];
                 let total = 0;
+                const perYear: { [year: number]: number } = {};
+
                 years.forEach((y) => {
                     const cnt = yearMap.get(y) || 0;
                     total += cnt;
+                    perYear[y] = cnt;
                     row.push(cnt, cnt > 0 ? String(cnt) : "");
                 });
-                rows.push({ dept, total, row });
+
+                rows.push({ label: dept, total, row, perYear });
             });
 
             rows.sort((a, b) => b.total - a.total);
             this.chartData = rows.map((r) => r.row);
             this.yearsForChart = years;
             this.updateColorsForYears(years);
+
+            this.chartTableRows = rows.map((r) => {
+                const { diff, pct } = this.computeDiffAndPct(r.perYear, years);
+                return {
+                    label: r.label,
+                    total: r.total,
+                    perYear: r.perYear,
+                    diff,
+                    pct,
+                };
+            });
 
             const firstYear = years[0];
             const lastYear = years[years.length - 1];
@@ -1219,7 +1668,7 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy {
      * בודק אם יש פילטרים פעילים בדשבורד הניתוחים
      * (סוג ניתוח / משמרת / חדר / מחלקה / יום)
      */
-    private hasActiveSurgeryFilters(): boolean {
+    hasActiveSurgeryFilters(): boolean {
         return (
             (this.selectedSurgeryTypes && this.selectedSurgeryTypes.length > 0) ||
             (this.selectedShifts && this.selectedShifts.length > 0) ||
@@ -1244,6 +1693,31 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy {
         });
         this.chartOptions.colors = colors;
         this.yearColorMap = map;
+    }
+
+    /**
+     * מחשב הפרש ואחוז שינוי בין השנה האחרונה לשנה הקודמת עבור שורת טבלה נתונה.
+     */
+    private computeDiffAndPct(
+        perYear: { [year: number]: number },
+        years: number[]
+    ): { diff: number; pct: string } {
+        if (!years || years.length < 2) {
+            return { diff: 0, pct: "0%" };
+        }
+        const sorted = [...years].sort((a, b) => a - b);
+        const latestYear = sorted[sorted.length - 1];
+        const olderYear = sorted[sorted.length - 2];
+
+        const newerVal = perYear[latestYear] || 0;
+        const olderVal = perYear[olderYear] || 0;
+        const diff = newerVal - olderVal;
+
+        if (!olderVal) {
+            return { diff, pct: newerVal ? "∞%" : "0%" };
+        }
+        const pct = ((diff / olderVal) * 100).toFixed(1) + "%";
+        return { diff, pct };
     }
 
   private applyEmployeeDepartmentFilter(): void {
@@ -1308,6 +1782,37 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy {
             this.topDepartments.sort((a, b) => b.difference - a.difference);
         }
         this.cdr.detectChanges();
+    }
+
+    /**
+     * שינוי מצב תצוגת הגרף הראשי (סה"כ / קרן‑מדינה / אתר / משמרת / מחלקה)
+     */
+    setChartViewMode(mode: "year-total" | "fund" | "site" | "shift" | "department"): void {
+        if (this.chartViewMode === mode) {
+            return;
+        }
+        this.chartViewMode = mode;
+        this.isShiftGroupedView = mode === "shift";
+
+        // כל המצבים יוצגו כתרשים עמודות אנכי (ColumnChart),
+        // כאשר במצבי fund/site/shift ההגדרה isStacked תישלט דרך updateChartData.
+        if (this.chartType !== "LineChart") {
+            this.chartType = "ColumnChart";
+        }
+        this.updateChartOptionsForType();
+        this.updateChartData();
+        this.cdr.detectChanges();
+
+        // כפיית רענון / ריסייז של הגרף מיד אחרי החלפת מצב,
+        // כדי שלא יהיה צורך בלחיצה נוספת (כפתור סיידבר וכד').
+        setTimeout(() => {
+            try {
+                window.dispatchEvent(new Event("resize"));
+            } catch {
+                // ignore if window is not available
+            }
+            this.chartOptions = { ...this.chartOptions };
+        }, 0);
     }
 
     /**
@@ -1843,6 +2348,15 @@ updateChartColumns(): void {
         this.applyAllSurgeryFilters();
     }
 
+    resetSurgeryFilters(): void {
+        this.selectedSurgeryTypes = [];
+        this.selectedShifts = [];
+        this.selectedRooms = [];
+        this.selectedDepartments = [];
+        this.selectedWeekdays = [];
+        this.applyAllSurgeryFilters();
+    }
+
     private applyAllSurgeryFilters(): void {
         // טבלת הניתוחים מפולטרת רק אם יש לנו נתוני ניתוחים גולמיים
         if (this.surgeryData.length > 0) {
@@ -2175,12 +2689,12 @@ private buildKpiFilterParams(): { [key: string]: string } {
         : "",
   };
 
-  // weekend – אם סונן ל"אמצע שבוע" / "סופ\"ש" נדרוס את ברירת המחדל הריקה
+  // weekend – אם סונן ל"אמצע שבוע" / "סופ״ש" נדרוס את ברירת המחדל הריקה
   if (this.selectedWeekdays && this.selectedWeekdays.length === 1) {
     const only = this.selectedWeekdays[0];
     if (only === 'אמצע שבוע') {
       params.weekend = "false";
-    } else if (only === 'סופ\"ש') {
+    } else if (only === 'סופ״ש') {
       params.weekend = "true";
     }
   }
@@ -2240,10 +2754,15 @@ private loadAvgFirstMorningEntry(): void {
       (rows) => {
         const list = Array.isArray(rows) ? rows : [];
         const filtered = this.filterBySelectedDiagnosis(list);
+
+        // טבלה – תצוגה טקסטואלית (נשמרת למקרה שימוש עתידי, גם אם כרגע לא מוצגת ב-UI)
         this.firstStartTimeData = filtered.map(r => ({
-          departmentName: r.Department || r.Wing || "לא צוין",
+          departmentName: r.Wing || r.Department || "לא צוין",
           valueDisplay: r.AvgEntryTime || (r.AvgEntryMinutes != null ? this.minutesToTime(r.AvgEntryMinutes) : "-"),
         }));
+
+        // גרף רב-שנתי לפי מחלקה (עד 5 שנים אחרונות)
+        this.buildFirstStartTimeChart(filtered);
         this.isFirstStartTimeLoading = false;
         this.cdr.detectChanges();
       },
@@ -2255,6 +2774,120 @@ private loadAvgFirstMorningEntry(): void {
       }
     );
 }
+
+  // נתונים לגרף עמודות רב-שנתי של זמן כניסה ראשון
+  firstStartTimeChartColumns: any[] = [];
+  firstStartTimeChartData: any[] = [];
+  private firstStartTimeYears: number[] = [];
+
+  firstStartTimeChartOptions: any = {
+    title: "",
+    legend: { position: "top", alignment: "end", textStyle: { fontSize: 11 } },
+    hAxis: { textStyle: { fontSize: 10 }, slantedText: true, slantedTextAngle: 25 },
+    vAxis: { title: "זמן כניסה ממוצע (HH:MM)", textStyle: { fontSize: 10 } },
+    bar: { groupWidth: "60%" },
+    chartArea: { width: "90%", height: "80%", left: 40, top: 4 },
+    animation: { startup: true, duration: 800, easing: "out" },
+    annotations: {
+      alwaysOutside: true,
+      textStyle: {
+        fontSize: 10,
+        auraColor: "none",
+        color: "#111827",
+      },
+    },
+  };
+
+  private buildFirstStartTimeChart(rows: AvgFirstEntryRow[]): void {
+    if (!rows || rows.length === 0) {
+      this.firstStartTimeChartColumns = [];
+      this.firstStartTimeChartData = [];
+      this.firstStartTimeYears = [];
+      return;
+    }
+
+    // לוקחים עד 5 שנים אחרונות
+    const allYears = Array.from(
+      new Set(rows.map(r => r.Year).filter(y => y != null))
+    ).sort((a, b) => a - b);
+    const years = allYears.slice(-5);
+    this.firstStartTimeYears = years;
+
+    // עמודה ראשונה = מחלקה, אח"כ עבור כל שנה:
+    // עמודת ערך + עמודת אנוטציה (טקסט מעל העמודה)
+    const firstStartColumns: any[] = ["מחלקה"];
+    years.forEach(y => {
+      firstStartColumns.push(
+        { type: "number", label: y.toString() },
+        { type: "string", role: "annotation", label: y.toString() },
+      );
+    });
+    this.firstStartTimeChartColumns = firstStartColumns;
+
+    // ממוצע משוקלל לפי Count עבור כל מחלקה ושנה
+    const deptYearMap = new Map<string, Map<number, { sumMinutes: number; sumCount: number }>>();
+
+    for (const r of rows) {
+      if (r.AvgEntryMinutes == null || r.Count == null || r.Count <= 0) {
+        continue;
+      }
+      const dept = (r.Wing || r.Department || "לא צוין").trim();
+      const year = r.Year;
+      if (!years.includes(year)) {
+        continue;
+      }
+
+      if (!deptYearMap.has(dept)) {
+        deptYearMap.set(dept, new Map());
+      }
+      const yearMap = deptYearMap.get(dept)!;
+      const prev = yearMap.get(year) || { sumMinutes: 0, sumCount: 0 };
+      prev.sumMinutes += r.AvgEntryMinutes * r.Count;
+      prev.sumCount += r.Count;
+      yearMap.set(year, prev);
+    }
+
+    const departments = Array.from(deptYearMap.keys()).sort((a, b) => {
+      const yearA = this.firstStartTimeYears[this.firstStartTimeYears.length - 1];
+      const yearB = yearA;
+      const infoA = deptYearMap.get(a)?.get(yearA);
+      const infoB = deptYearMap.get(b)?.get(yearB);
+      const avgA = infoA && infoA.sumCount > 0 ? infoA.sumMinutes / infoA.sumCount : -Infinity;
+      const avgB = infoB && infoB.sumCount > 0 ? infoB.sumMinutes / infoB.sumCount : -Infinity;
+      return avgB - avgA; // מגדול לקטן
+    });
+
+    this.firstStartTimeChartData = departments.map(dept => {
+      const yearMap = deptYearMap.get(dept)!;
+      const series: any[] = [];
+
+      for (const year of years) {
+        const info = yearMap.get(year);
+        if (!info || info.sumCount === 0) {
+          series.push(null, null);
+          continue;
+        }
+        const avgMinutes = info.sumMinutes / info.sumCount;
+        const formatted = this.minutesToTime(avgMinutes);
+        series.push(
+          { v: avgMinutes, f: formatted },
+          formatted,
+        );
+      }
+
+      return [dept, ...series];
+    });
+  }
+
+  // נתונים לגרף עמודות רב-שנתי של זמן סיום ניתוח אחרון
+  lastEndTimeChartColumns: any[] = [];
+  lastEndTimeChartData: any[] = [];
+  private lastEndTimeYears: number[] = [];
+
+  // נתונים לגרף עמודות רב-שנתי של זמן SETUP ממוצע
+  avgSetupChartColumns: any[] = [];
+  avgSetupChartData: any[] = [];
+  private avgSetupYears: number[] = [];
 
 private loadAvgLastMorningEnd(): void {
   const baseYear = this.currentYear;
@@ -2270,9 +2903,13 @@ private loadAvgLastMorningEnd(): void {
         const list = Array.isArray(rows) ? rows : [];
         const filtered = this.filterBySelectedDiagnosis(list);
         this.lastEndTimeData = filtered.map(r => ({
-          departmentName: r.Department || r.Wing || "לא צוין",
+          departmentName: r.Wing || r.Department || "לא צוין",
           valueDisplay: r.AvgEndTime || (r.AvgEndMinutes != null ? this.minutesToTime(r.AvgEndMinutes) : "-"),
         }));
+
+        // בניית גרף רב-שנתי לפי מחלקה
+        this.buildLastEndTimeChart(filtered);
+
         this.isLastEndTimeLoading = false;
         this.cdr.detectChanges();
       },
@@ -2284,6 +2921,85 @@ private loadAvgLastMorningEnd(): void {
       }
     );
 }
+
+  private buildLastEndTimeChart(rows: AvgLastEndRow[]): void {
+    if (!rows || rows.length === 0) {
+      this.lastEndTimeChartColumns = [];
+      this.lastEndTimeChartData = [];
+      this.lastEndTimeYears = [];
+      return;
+    }
+
+    // לוקחים עד 5 שנים אחרונות
+    const allYears = Array.from(
+      new Set(rows.map(r => r.Year).filter(y => y != null))
+    ).sort((a, b) => a - b);
+    const years = allYears.slice(-5);
+    this.lastEndTimeYears = years;
+
+    const lastEndColumns: any[] = ["מחלקה"];
+    years.forEach(y => {
+      lastEndColumns.push(
+        { type: "number", label: y.toString() },
+        { type: "string", role: "annotation", label: y.toString() },
+      );
+    });
+    this.lastEndTimeChartColumns = lastEndColumns;
+
+    // ממוצע משוקלל לפי Count עבור כל מחלקה ושנה
+    const deptYearMap = new Map<string, Map<number, { sumMinutes: number; sumCount: number }>>();
+
+    for (const r of rows) {
+      if (r.AvgEndMinutes == null || r.Count == null || r.Count <= 0) {
+        continue;
+      }
+      const dept = (r.Wing || r.Department || "לא צוין").trim();
+      const year = r.Year;
+      if (!years.includes(year)) {
+        continue;
+      }
+
+      if (!deptYearMap.has(dept)) {
+        deptYearMap.set(dept, new Map());
+      }
+      const yearMap = deptYearMap.get(dept)!;
+      const prev = yearMap.get(year) || { sumMinutes: 0, sumCount: 0 };
+      prev.sumMinutes += r.AvgEndMinutes * r.Count;
+      prev.sumCount += r.Count;
+      yearMap.set(year, prev);
+    }
+
+    const departments = Array.from(deptYearMap.keys()).sort((a, b) => {
+      const yearA = this.lastEndTimeYears[this.lastEndTimeYears.length - 1];
+      const yearB = yearA;
+      const infoA = deptYearMap.get(a)?.get(yearA);
+      const infoB = deptYearMap.get(b)?.get(yearB);
+      const avgA = infoA && infoA.sumCount > 0 ? infoA.sumMinutes / infoA.sumCount : -Infinity;
+      const avgB = infoB && infoB.sumCount > 0 ? infoB.sumMinutes / infoB.sumCount : -Infinity;
+      return avgB - avgA;
+    });
+
+    this.lastEndTimeChartData = departments.map(dept => {
+      const yearMap = deptYearMap.get(dept)!;
+      const series: any[] = [];
+
+      for (const year of years) {
+        const info = yearMap.get(year);
+        if (!info || info.sumCount === 0) {
+          series.push(null, null);
+          continue;
+        }
+        const avgMinutes = info.sumMinutes / info.sumCount;
+        const formatted = this.minutesToTime(avgMinutes);
+        series.push(
+          { v: avgMinutes, f: formatted },
+          formatted,
+        );
+      }
+
+      return [dept, ...series];
+    });
+  }
 
 private loadAvgSetup(): void {
   const baseYear = this.currentYear;
@@ -2299,9 +3015,13 @@ private loadAvgSetup(): void {
         const list = Array.isArray(rows) ? rows : [];
         const filtered = this.filterBySelectedDiagnosis(list);
         this.avgSetupData = filtered.map(r => ({
-          departmentName: r.Department || r.Wing || "לא צוין",
+          departmentName: r.Wing || r.Department || "לא צוין",
           valueDisplay: r.AvgSetupMin != null ? r.AvgSetupMin.toFixed(1) : "-",
         }));
+
+        // בניית גרף רב-שנתי לפי מחלקה
+        this.buildAvgSetupChart(filtered);
+
         this.isAvgSetupLoading = false;
         this.cdr.detectChanges();
       },
@@ -2313,6 +3033,85 @@ private loadAvgSetup(): void {
       }
     );
 }
+
+  private buildAvgSetupChart(rows: AvgSetupRow[]): void {
+    if (!rows || rows.length === 0) {
+      this.avgSetupChartColumns = [];
+      this.avgSetupChartData = [];
+      this.avgSetupYears = [];
+      return;
+    }
+
+    // לוקחים עד 5 שנים אחרונות
+    const allYears = Array.from(
+      new Set(rows.map(r => r.Year).filter(y => y != null))
+    ).sort((a, b) => a - b);
+    const years = allYears.slice(-5);
+    this.avgSetupYears = years;
+
+    const avgSetupColumns: any[] = ["מחלקה"];
+    years.forEach(y => {
+      avgSetupColumns.push(
+        { type: "number", label: y.toString() },
+        { type: "string", role: "annotation", label: y.toString() },
+      );
+    });
+    this.avgSetupChartColumns = avgSetupColumns;
+
+    // ממוצע משוקלל לפי Count עבור כל מחלקה ושנה
+    const deptYearMap = new Map<string, Map<number, { sumSetup: number; sumCount: number }>>();
+
+    for (const r of rows) {
+      if (r.AvgSetupMin == null || r.Count == null || r.Count <= 0) {
+        continue;
+      }
+      const dept = (r.Wing || r.Department || "לא צוין").trim();
+      const year = r.Year;
+      if (!years.includes(year)) {
+        continue;
+      }
+
+      if (!deptYearMap.has(dept)) {
+        deptYearMap.set(dept, new Map());
+      }
+      const yearMap = deptYearMap.get(dept)!;
+      const prev = yearMap.get(year) || { sumSetup: 0, sumCount: 0 };
+      prev.sumSetup += r.AvgSetupMin * r.Count;
+      prev.sumCount += r.Count;
+      yearMap.set(year, prev);
+    }
+
+    const departments = Array.from(deptYearMap.keys()).sort((a, b) => {
+      const yearA = this.avgSetupYears[this.avgSetupYears.length - 1];
+      const yearB = yearA;
+      const infoA = deptYearMap.get(a)?.get(yearA);
+      const infoB = deptYearMap.get(b)?.get(yearB);
+      const avgA = infoA && infoA.sumCount > 0 ? infoA.sumSetup / infoA.sumCount : -Infinity;
+      const avgB = infoB && infoB.sumCount > 0 ? infoB.sumSetup / infoB.sumCount : -Infinity;
+      return avgB - avgA;
+    });
+
+    this.avgSetupChartData = departments.map(dept => {
+      const yearMap = deptYearMap.get(dept)!;
+      const series: any[] = [];
+
+      for (const year of years) {
+        const info = yearMap.get(year);
+        if (!info || info.sumCount === 0) {
+          series.push(null, null);
+          continue;
+        }
+        const avg = info.sumSetup / info.sumCount;
+        const formatted = `${avg.toFixed(1)} דק'`;
+        series.push(
+          { v: avg, f: avg.toFixed(1) },
+          formatted,
+        );
+      }
+
+      return [dept, ...series];
+    });
+  }
 
 private minutesToTime(totalMinutes: number): string {
   if (totalMinutes == null || isNaN(totalMinutes)) {
