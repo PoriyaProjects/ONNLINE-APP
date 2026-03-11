@@ -57,3 +57,11 @@ src/app/onn-line/list-item/list-item.component.ts
 src/app/onn-line/list-item/list-item.css
 src/app/onn-line/list-item/list-item.html
 src/app/onn-line/models/item.ts
+
+
+
+
+
+.cursorrules
+.cursor/
+.cursorignore

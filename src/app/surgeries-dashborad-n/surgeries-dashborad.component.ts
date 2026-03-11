@@ -1816,6 +1816,46 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy {
     }
 
     /**
+     * כותרת דינמית מעל הגרף הראשי לפי מצב התצוגה הנוכחי
+     */
+    getChartViewTitle(): string {
+        switch (this.chartViewMode) {
+            case "year-total":
+                return "סה\"כ ניתוחים לפי שנה";
+            case "department":
+                return "סה\"כ ניתוחים לפי מחלקה";
+            case "site":
+                return "סה\"כ ניתוחים לפי אתר";
+            case "shift":
+                return "סה\"כ ניתוחים לפי משמרת";
+            case "fund":
+                return "סה\"כ ניתוחים לפי סוג מימון";
+            default:
+                return "סה\"כ ניתוחים";
+        }
+    }
+
+    /**
+     * טקסט טולטיפ קצר וברור לכל כפתור מצב תצוגה
+     */
+    getChartViewTooltip(mode: "year-total" | "fund" | "site" | "shift" | "department"): string {
+        switch (mode) {
+            case "year-total":
+                return "כמות ניתוחים לכל שנה";
+            case "department":
+                return "השוואת מחלקות מהגבוה לנמוך";
+            case "site":
+                return "פיזור ניתוחים לפי אתר";
+            case "shift":
+                return "פיזור ניתוחים לפי משמרת";
+            case "fund":
+                return "פיזור ניתוחים לפי סוג מימון";
+            default:
+                return "";
+        }
+    }
+
+    /**
      * Load yearly totals silently for chart year detection
      */
     loadYearlyTotalsForChart(): void {

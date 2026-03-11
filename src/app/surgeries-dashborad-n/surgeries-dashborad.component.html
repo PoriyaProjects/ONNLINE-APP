@@ -165,6 +165,10 @@
             <mat-spinner diameter="50"></mat-spinner>
             <div class="chart-loading-text">טוען גרף...</div>
           </div>
+          <div class="chart-mode-heading"
+               *ngIf="!isChartLoading && !isMainDataLoading && chartData && chartData.length > 0">
+            {{ getChartViewTitle() }}
+          </div>
           <div class="year-summary-row" *ngIf="yearsForChart?.length">
             <div class="year-summary-card" *ngFor="let y of yearsForChart">
               <div class="year-label">{{ y }}</div>
@@ -181,25 +185,28 @@
           <div class="chart-mode-row"
             *ngIf="!isChartLoading && !isMainDataLoading && chartData && chartData.length > 0">
             <button class="icon-btn ghost mode-toggle-btn" [class.active]="chartViewMode === 'year-total'"
-              matTooltip="סה&quot;כ ניתוחים לפי שנה" matTooltipPosition="top" (click)="setChartViewMode('year-total')">
+              [matTooltip]="getChartViewTooltip('year-total')" matTooltipPosition="top"
+              (click)="setChartViewMode('year-total')">
               סה"כ לשנה
             </button>
             <button class="icon-btn ghost mode-toggle-btn" [class.active]="chartViewMode === 'fund'"
-              matTooltip="תצוגה לפי קרן / מדינה" matTooltipPosition="top" (click)="setChartViewMode('fund')">
+              [matTooltip]="getChartViewTooltip('fund')" matTooltipPosition="top"
+              (click)="setChartViewMode('fund')">
               קרן/מדינה
             </button>
             <button class="icon-btn ghost mode-toggle-btn" [class.active]="chartViewMode === 'site'"
-              matTooltip="תצוגה לפי אתר" matTooltipPosition="top" (click)="setChartViewMode('site')">
+              [matTooltip]="getChartViewTooltip('site')" matTooltipPosition="top"
+              (click)="setChartViewMode('site')">
               אתר
             </button>
             <button class="icon-btn ghost mode-toggle-btn" [class.active]="chartViewMode === 'shift'"
               [class.disabled-filter]="isShiftGroupedView && chartViewMode !== 'shift'"
-              matTooltip="תצוגה לפי משמרת (מבטל פילטר משמרת)" matTooltipPosition="top"
+              [matTooltip]="getChartViewTooltip('shift')" matTooltipPosition="top"
               (click)="setChartViewMode('shift')">
               משמרת
             </button>
             <button class="icon-btn ghost mode-toggle-btn" [class.active]="chartViewMode === 'department'"
-              matTooltip="סה&quot;כ לפי מחלקה מגדול לקטן" matTooltipPosition="top"
+              [matTooltip]="getChartViewTooltip('department')" matTooltipPosition="top"
               (click)="setChartViewMode('department')">
               סה"כ לפי מחלקה
             </button>
