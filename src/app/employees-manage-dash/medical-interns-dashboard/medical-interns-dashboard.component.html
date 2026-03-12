@@ -25,12 +25,17 @@
         <mat-spinner *ngIf="allDepartmentsLoading" diameter="24" class="d-inline-block"></mat-spinner>
         <div class="departments-selection-list" *ngIf="!allDepartmentsLoading && filteredDepartments.length">
           <div class="department-row" *ngFor="let dept of filteredDepartments">
-            <span class="department-name">{{ dept.DepartDesc || dept.DepartnentDescripton || dept.DepartmentDescription }}</span>
+            <span class="department-name">{{ dept.DepartDesc || dept.DepartnentDescripton || dept.DepartmentDescription
+              }}</span>
             <div class="department-checkboxes">
-              <mat-checkbox [checked]="isInFirstList(dept.DepartCode || dept.DepartnentCodeFirst || dept.DepartmentCode)" (change)="toggleFirstList(dept.DepartCode || dept.DepartnentCodeFirst || dept.DepartmentCode)">
+              <mat-checkbox
+                [checked]="isInFirstList(dept.DepartCode || dept.DepartnentCodeFirst || dept.DepartmentCode)"
+                (change)="toggleFirstList(dept.DepartCode || dept.DepartnentCodeFirst || dept.DepartmentCode)">
                 מחלקה ראשונה
               </mat-checkbox>
-              <mat-checkbox [checked]="isInSecondList(dept.DepartCode || dept.DepartnentCodeFirst || dept.DepartmentCode)" (change)="toggleSecondList(dept.DepartCode || dept.DepartnentCodeFirst || dept.DepartmentCode)">
+              <mat-checkbox
+                [checked]="isInSecondList(dept.DepartCode || dept.DepartnentCodeFirst || dept.DepartmentCode)"
+                (change)="toggleSecondList(dept.DepartCode || dept.DepartnentCodeFirst || dept.DepartmentCode)">
                 מחלקה שנייה
               </mat-checkbox>
             </div>
@@ -40,7 +45,8 @@
           {{ departmentsFilter ? 'אין מחלקות התואמות את החיפוש' : 'אין מחלקות' }}
         </p>
         <div class="mt-3">
-          <button mat-raised-button color="primary" [disabled]="displayDepartmentsSaving || allDepartmentsLoading" (click)="saveDisplayDepartments()">
+          <button mat-raised-button color="primary" [disabled]="displayDepartmentsSaving || allDepartmentsLoading"
+            (click)="saveDisplayDepartments()">
             <mat-spinner *ngIf="displayDepartmentsSaving" diameter="20" class="d-inline-block mr-1"></mat-spinner>
             <span *ngIf="!displayDepartmentsSaving">שמור הגדרות</span>
             <span *ngIf="displayDepartmentsSaving">שומר...</span>
@@ -55,15 +61,11 @@
         <mat-icon>restart_alt</mat-icon>
         איפוס חיפוש
       </button>
-      <!-- <button mat-flat-button color="primary" type="button" (click)="addUpdateIntern(null)" class="header-btn">
-        <mat-icon>person_add</mat-icon>
-        סטאג'ר חדש
-      </button> -->
     </div>
   </header>
 
   <!-- KPI CARDS -->
-  <section class="kpi-section" *ngIf="loaded">
+  <section class="kpi-section" *ngIf="loaded && viewMode === 'interns'">
     <div class="kpi-card">
       <div class="kpi-icon bg-blue"><mat-icon>groups</mat-icon></div>
       <div class="kpi-meta">
@@ -97,7 +99,7 @@
     </div>
   </section>
 
-  <section class="search-section">
+  <section class="search-section" *ngIf="viewMode === 'interns'">
     <div class="search-card">
       <div class="section-title">
         <div class="section-title-main">
@@ -145,7 +147,7 @@
             <mat-icon matPrefix>apartment</mat-icon>
             <mat-select formControlName="Department">
               <mat-option [value]="''">הכל</mat-option>
-              <mat-option *ngFor="let dept of DepartmentsList" [value]="dept.DepartnentCode">
+              <mat-option *ngFor="let dept of DepartmentsList" [value]="dept.DepartnentCodeFirst">
                 {{dept.DepartnentDescripton}}
               </mat-option>
             </mat-select>
@@ -181,35 +183,56 @@
       </form>
     </div>
 
-    <mat-progress-bar mode="indeterminate" *ngIf="!loaded" class="loading-bar"></mat-progress-bar>
+    <mat-progress-bar mode="indeterminate" *ngIf="isLoading" class="loading-bar">
+    </mat-progress-bar>
   </section>
 
   <section class="table-section">
     <div class="table-toolbar">
+      <div class="view-segmented-control" role="tablist">
+        <button type="button" class="segment-btn" [class.active]="viewMode === 'interns'"
+          (click)="setViewMode('interns')" role="tab" matTooltip="טבלת סטאג'רים">
+          <mat-icon class="segment-icon">groups</mat-icon>
+          <span class="segment-label">סטאג'רים</span>
+        </button>
+        <button type="button" class="segment-btn" [class.active]="viewMode === 'departments'"
+          (click)="setViewMode('departments')" role="tab" matTooltip="טבלת מחלקות">
+          <mat-icon class="segment-icon">apartment</mat-icon>
+          <span class="segment-label">מחלקות</span>
+        </button>
+        <button type="button" class="segment-btn" [class.active]="viewMode === 'serverData'"
+          (click)="setViewMode('serverData')" role="tab" matTooltip="טבלת שיוך סטאג'רים למחלקות">
+          <mat-icon class="segment-icon">account_tree</mat-icon>
+          <span class="segment-label">שיוך למחלקות</span>
+        </button>
+        <button type="button" class="segment-btn" [class.active]="viewMode === 'feedback'"
+          (click)="setViewMode('feedback')" role="tab" matTooltip="משוב סטאג'רים">
+          <mat-icon class="segment-icon">feedback</mat-icon>
+          <span class="segment-label">משוב</span>
+        </button>
+      </div>
+
       <mat-form-field appearance="outline" class="filter-field">
         <mat-label>סינון טבלה</mat-label>
         <mat-icon matPrefix>filter_list</mat-icon>
         <input matInput (keyup)="applyFilter($event)" placeholder="הקלד לחיפוש..." #input>
-        <button mat-icon-button matSuffix type="button" *ngIf="input.value" (click)="clearTableFilter(input)">
+        <button mat-icon-button matSuffix type="button" *ngIf="input.value" (click)="clearActiveTableFilter(input)">
           <mat-icon>close</mat-icon>
         </button>
       </mat-form-field>
 
       <div class="toolbar-actions">
-        <button type="button" mat-flat-button color="primary" (click)="exportToExcel()" class="toolbar-btn">
+        <button type="button" mat-flat-button color="primary" (click)="exportToExcel()" class="toolbar-btn"
+          *ngIf="viewMode === 'interns'">
           <mat-icon>file_download</mat-icon>
           ייצוא
         </button>
-
-        <!-- <button type="button" mat-fab color="primary" matTooltip="הוספת סטאג'ר חדש" (click)="addUpdateIntern(null)"
-          class="add-fab">
-          <mat-icon>add</mat-icon>
-        </button> -->
       </div>
     </div>
 
     <div class="table-wrapper">
-      <table mat-table *ngIf="loaded" [dataSource]="dataSource" matSort class="interns-table">
+      <!-- Interns table -->
+      <table mat-table *ngIf="viewMode === 'interns' && loaded" [dataSource]="dataSource" matSort class="interns-table">
 
         <ng-container matColumnDef="Image">
           <th mat-header-cell *matHeaderCellDef mat-sort-header sticky>תמונת פרופיל</th>
@@ -235,13 +258,6 @@
           <td mat-cell *matCellDef="let element" class="cell-center">{{element.LastName}}</td>
         </ng-container>
 
-        <!-- <ng-container matColumnDef="DepartnentDescripton">
-          <th mat-header-cell *matHeaderCellDef mat-sort-header sticky>מחלקה</th>
-          <td mat-cell *matCellDef="let element" class="cell-center">
-            <span class="dept-pill">{{element.DepartnentDescripton}}</span>
-          </td>
-        </ng-container> -->
-
         <ng-container matColumnDef="CellNumber">
           <th mat-header-cell *matHeaderCellDef mat-sort-header sticky>טלפון נייד</th>
           <td mat-cell *matCellDef="let element" class="cell-center">
@@ -253,6 +269,13 @@
           <th mat-header-cell *matHeaderCellDef mat-sort-header sticky>מייל</th>
           <td mat-cell *matCellDef="let element" class="cell-center">
             <span [class.muted]="!element.Email">{{element.Email || '—'}}</span>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="DepartnentDescripton">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header sticky>מחלקה</th>
+          <td mat-cell *matCellDef="let element" class="cell-center">
+            <span [class.muted]="!element.DepartnentDescripton">{{ element.DepartnentDescripton || '—'}}</span>
           </td>
         </ng-container>
 
@@ -276,16 +299,103 @@
         </tr>
       </table>
 
-      <!-- Empty state -->
+      <!-- Departments table -->
+      <table mat-table *ngIf="viewMode === 'departments' && departmentsLoaded" [dataSource]="departmentsDataSource"
+        class="interns-table departments-table">
+
+        <ng-container *ngFor="let col of departmentsDisplayedColumns" [matColumnDef]="col">
+
+          <th mat-header-cell *matHeaderCellDef>
+            {{ col === 'DepartDesc' ? 'מחלקה' : (monthLabels[col] || col) }}
+          </th>
+
+          <td mat-cell *matCellDef="let element" class="cell-center">
+            {{ col === 'DepartDesc' ? element.DepartDesc : (element[col] || '—') }}
+          </td>
+
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="departmentsDisplayedColumns" class="table-header-row"></tr>
+        <tr mat-row *matRowDef="let row; columns: departmentsDisplayedColumns" class="table-row"></tr>
+
+      </table>
+
+      <!-- Server data table (dynamic columns from SqlDataReader JSON) -->
+      <div class="server-data-table-scroll" *ngIf="viewMode === 'serverData' && serverDataLoaded">
+        <table mat-table [dataSource]="serverDataSource"
+          class="interns-table server-data-table">
+
+          <ng-container *ngFor="let col of serverDataDisplayedColumns" [matColumnDef]="col">
+            <th mat-header-cell *matHeaderCellDef>{{ replaceDash(col) }}</th>
+            <td mat-cell *matCellDef="let element" class="cell-center">{{ replaceDash(element[col]) }}</td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="serverDataDisplayedColumns" class="table-header-row"></tr>
+          <tr mat-row *matRowDef="let row; columns: serverDataDisplayedColumns" class="table-row"></tr>
+        </table>
+      </div>
+
+      <!-- Feedback table (from VW_EP_InternQuestionnaireResaultNumeric) -->
+      <div class="server-data-table-scroll" *ngIf="viewMode === 'feedback' && feedbackLoaded">
+        <table mat-table [dataSource]="feedbackDataSource"
+          class="interns-table feedback-table">
+
+          <ng-container *ngFor="let col of feedbackDisplayedColumns" [matColumnDef]="col">
+            <th mat-header-cell *matHeaderCellDef>{{ getFeedbackColumnLabel(col) }}</th>
+            <td mat-cell *matCellDef="let element" class="cell-center">
+              <ng-container *ngIf="col === 'הערות_סטאזר'">
+                <span [matTooltip]="getFeedbackCellTooltip(element[col], 45)">{{ truncateFeedbackText(element[col], 45) }}</span>
+              </ng-container>
+              <ng-container *ngIf="col !== 'הערות_סטאזר'">{{ element[col] }}</ng-container>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="feedbackDisplayedColumns" class="table-header-row"></tr>
+          <tr mat-row *matRowDef="let row; columns: feedbackDisplayedColumns" class="table-row"></tr>
+        </table>
+      </div>
+
+      <!-- Empty state - interns -->
       <div class="empty-state"
-        *ngIf="loaded && dataSource && dataSource.filteredData && dataSource.filteredData.length === 0">
+        *ngIf="viewMode === 'interns' && loaded && dataSource && dataSource.filteredData && dataSource.filteredData.length === 0">
         <div class="empty-icon"><mat-icon>search_off</mat-icon></div>
         <div class="empty-title">אין תוצאות להצגה</div>
         <div class="empty-subtitle">נסה לשנות פילטרים או לנקות חיפוש</div>
         <button mat-stroked-button color="primary" type="button" (click)="resetSearch()">איפוס מסננים</button>
       </div>
+
+      <!-- Empty state - departments -->
+      <div class="empty-state"
+        *ngIf="viewMode === 'departments' && departmentsLoaded && departmentsDataSource.filteredData.length === 0">
+        <div class="empty-icon"><mat-icon>apartment</mat-icon></div>
+        <div class="empty-title">אין נתוני מחלקות</div>
+        <div class="empty-subtitle">לא נמצאו נתונים להצגה</div>
+      </div>
+
+      <!-- Empty state - server data -->
+      <div class="empty-state"
+        *ngIf="viewMode === 'serverData' && serverDataLoaded && serverDataSource.filteredData.length === 0">
+        <div class="empty-icon"><mat-icon>storage</mat-icon></div>
+        <div class="empty-title">אין נתוני שרת</div>
+        <div class="empty-subtitle">לא נמצאו נתונים להצגה</div>
+      </div>
+
+      <!-- Empty state - feedback -->
+      <div class="empty-state"
+        *ngIf="viewMode === 'feedback' && feedbackLoaded && feedbackDataSource.filteredData.length === 0">
+        <div class="empty-icon"><mat-icon>feedback</mat-icon></div>
+        <div class="empty-title">אין משוב סטאג'רים</div>
+        <div class="empty-subtitle">לא נמצאו נתוני משוב להצגה</div>
+      </div>
     </div>
 
-    <mat-paginator [pageSizeOptions]="[15, 25, 50, 100]" showFirstLastButtons class="table-paginator"></mat-paginator>
+    <mat-paginator #internsPaginator *ngIf="viewMode === 'interns'" [pageSizeOptions]="[15, 25, 50, 100]"
+      showFirstLastButtons class="table-paginator"></mat-paginator>
+    <mat-paginator #departmentsPaginator *ngIf="viewMode === 'departments'" [pageSizeOptions]="[10, 25, 50]"
+      showFirstLastButtons class="table-paginator"></mat-paginator>
+    <mat-paginator #serverDataPaginator *ngIf="viewMode === 'serverData'" [pageSizeOptions]="[25, 50, 100, 200]"
+      showFirstLastButtons class="table-paginator"></mat-paginator>
+    <mat-paginator #feedbackPaginator *ngIf="viewMode === 'feedback'" [pageSizeOptions]="[25, 50, 100, 200]"
+      showFirstLastButtons class="table-paginator"></mat-paginator>
   </section>
 </div>
