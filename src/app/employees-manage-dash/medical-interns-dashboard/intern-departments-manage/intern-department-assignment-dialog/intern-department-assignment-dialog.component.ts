@@ -20,6 +20,7 @@ export class InternDepartmentAssignmentDialogComponent implements OnInit {
   verticalPosition: MatSnackBarVerticalPosition = 'bottom';
   assignmentForm: FormGroup;
   departments: any[] = [];
+  departmentsSecond: any[] = [];
   saveBtnWait = false;
   Api = environment.url;
   monthOptions: { value: string; label: string }[] = [];
@@ -55,7 +56,7 @@ export class InternDepartmentAssignmentDialogComponent implements OnInit {
   }
 
   get departmentsForSecondDropdown(): any[] {
-    return this.filterDepartmentsByCodes(this.departments, this.departmentCodesForSecond);
+    return this.filterDepartmentsByCodes(this.departmentsSecond, this.departmentCodesForSecond);
   }
 
   private filterDepartmentsByCodes(depts: any[], codes: string[]): any[] {
@@ -65,6 +66,7 @@ export class InternDepartmentAssignmentDialogComponent implements OnInit {
 
   ngOnInit(): void {
     this.departments = [];
+    this.departmentsSecond = [];
     const assignment = this.data?.assignment;
     const initialPeriod = assignment?.InternPeriod
       ? this.toPeriodString(new Date(assignment.InternPeriod))
@@ -73,8 +75,8 @@ export class InternDepartmentAssignmentDialogComponent implements OnInit {
     const showSecond = this.showSecondDepartment;
     this.assignmentForm = this.formBuilder.group({
       RowID: new FormControl(assignment?.RowID || '', null),
-      DepartnentCodeFirst: new FormControl(assignment?.DepartnentCodeFirst || '', showFirst ? [Validators.required] : []),
-      DepartnentCodeSecond: new FormControl(assignment?.DepartnentCodeSecond || '', showSecond ? [Validators.required] : []),
+      DepartnentCodeFirst: new FormControl(assignment?.DepartnentCodeFirst || '', showFirst ? null : []),
+      DepartnentCodeSecond: new FormControl(assignment?.DepartnentCodeSecond || '', showSecond ? null : []),
       InternPeriod: new FormControl(initialPeriod || '', [Validators.required]),
     });
     this.buildMonthOptions();
@@ -135,12 +137,12 @@ export class InternDepartmentAssignmentDialogComponent implements OnInit {
   getDepartmentsForPeriodSecond(period: string): void {
     if (!period) return;
     this.departmentsLoading = true;
-    this.departments = [];
+    this.departmentsSecond = [];
     // const periodDate = period + '-01';
     this.http.post(this.Api + 'GetMedicalInternDepartmentsSecond', { _InternPeriod: period }).subscribe(
       (response) => {
         this.departmentsLoading = false;
-        this.departments = response['d'] || [];
+        this.departmentsSecond = response['d'] || [];
       },
       () => {
         this.departmentsLoading = false;
@@ -153,8 +155,10 @@ export class InternDepartmentAssignmentDialogComponent implements OnInit {
     this.assignmentForm.patchValue({ InternPeriod: period });
     if (period) {
       this.getDepartmentsForPeriod(period);
+      this.getDepartmentsForPeriodSecond(period);
     } else {
       this.departments = [];
+      this.departmentsSecond = [];
     }
   }
 

@@ -96,7 +96,7 @@ export class InternDepartmentsManageComponent implements OnInit {
           this.intern = response['d'] || response['d']?.[0] || {};
         },
         () => {
-          this.intern = { FirstName: '', LastName: '', EmployeeID: this.EmployeeID };
+          this.intern = { FirstName: '', LastName: '', EmployeeID: this.EmployeeID, Email: '' };
         }
       );
   }
@@ -202,7 +202,7 @@ export class InternDepartmentsManageComponent implements OnInit {
    * Creates an HTML string with intern details and department assignments table,
    * then sends it as a string to the server (server can convert to PDF).
    */
-  exportAndSendPdf() {
+  exportAndSendPdf(email: string) {
     if (!this.intern || this.assignments.length === 0) {
       this.openSnackBar('אין נתונים לייצוא');
       return;
@@ -214,7 +214,8 @@ export class InternDepartmentsManageComponent implements OnInit {
           this.sendingPdf = true;
           this.http
             .post(this.urlipracticom + 'SaveInternDepartmentsPDF', {
-              pdfString: pdfString
+              pdfString: pdfString,
+              email: email
             })
             .subscribe(
               (response) => {

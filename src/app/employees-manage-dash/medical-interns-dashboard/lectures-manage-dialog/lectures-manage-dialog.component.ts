@@ -11,6 +11,8 @@ import {
 import { DatePipe } from '@angular/common';
 import { ConfirmationDialogService } from 'src/app/confirmation-dialog/confirmation-dialog.service';
 import { environment } from 'src/environments/environment';
+import { Observable } from 'rxjs';
+import { map, startWith } from 'rxjs/operators';
 
 @Component({
   selector: 'app-lectures-manage-dialog',
@@ -27,6 +29,7 @@ export class LecturesManageDialogComponent implements OnInit {
   displayedColumns: string[] = ['LectureDate', 'LectureTime', 'LectureDescription', 'LectureLocationDescription', 'LectureEmployeeID', 'Actions'];
   loaded = false;
   internsList: any[] = [];
+  filteredInterns$: Observable<any[]>;
   lectureForm: FormGroup;
   editingLectureId: number | null = null;
   saveBtnWait = false;
@@ -52,22 +55,86 @@ export class LecturesManageDialogComponent implements OnInit {
   ngOnInit(): void {
     this.loadLectures();
     this.loadInterns();
+    this.setupInternAutocomplete();
   }
 
-  loadInterns(): void {
-    this.http.post(this.url + 'GetMedicalInterns', {
-      _employeeID: '',
-      _firstName: '',
-      _lastName: '',
-      _phoneNumber: '',
-      _department: '',
-      _on: ''
-    }).subscribe(
-      (response) => {
-        this.internsList = response['d'] || [];
-      },
-      () => { this.internsList = []; }
+  private setupInternAutocomplete(): void {
+    this.filteredInterns$ = this.lectureForm.get('LectureEmployeeID').valueChanges.pipe(
+      startWith(''),
+      map((value) => {
+        const filterValue = typeof value === 'string' ? value : (value ? this.getInternDisplay(value) : '');
+        return filterValue ? this.filterInterns(filterValue) : this.internsList.slice();
+      })
     );
+  }
+
+  displayInternFn = (intern: any): string => {
+    return this.getInternDisplay(intern);
+  };
+
+  getInternDisplay(intern: any): string {
+    if (!intern) return '';
+    if (typeof intern === 'string') return intern;
+    return `${intern.FirstName || ''} ${intern.LastName || ''} (${intern.EmployeeID || ''})`.trim();
+  }
+
+  private filterInterns(value: string): any[] {
+    const term = (value || '').toLowerCase();
+    return this.internsList.filter(
+      (i) =>
+        (i.FirstName || '').toLowerCase().includes(term) ||
+        (i.LastName || '').toLowerCase().includes(term) ||
+        (i.EmployeeID || '').toLowerCase().includes(term)
+    );
+  }
+
+  // loadInterns(): void {
+  //   this.http.post(this.url + 'GetMedicalInterns', {
+  //     _employeeID: '',
+  //     _firstName: '',
+  //     _lastName: '',
+  //     _phoneNumber: '',
+  //     _department: '',
+  //     _on: ''
+  //   }).subscribe(
+  //     (response) => {
+  //       this.internsList = response['d'] || [];
+  //       this.setupInternAutocomplete();
+  //     },
+  //     () => { this.internsList = []; }
+  //   );
+  // }
+
+  loadInterns(): void {
+    this.loaded = false;
+    this.http
+      .post(this.url + "GetEmployeesToUpdate", {
+        _empId: '',
+        _empFirstName: '',
+        _empLastName: '',
+        _on: '1',
+        _medGrad: '',
+        _phoneNumber: '',
+        _department: '',
+        _role: '',
+        _managerType: '',
+        _sektor: '',
+        _workPlace: '',
+        _statusRow: '1',
+        _approvedToBlossom: '1',
+        _userName: 'admin',
+        _InGym: ''
+      })
+      .subscribe((Response) => {
+        this.loaded = true;
+        this.internsList = Response["d"] || [];
+        this.setupInternAutocomplete();
+      },
+        () => {
+          this.loaded = true;
+          this.internsList = [];
+          this.setupInternAutocomplete();
+        });
   }
 
   loadLectures(): void {
@@ -111,13 +178,14 @@ export class LecturesManageDialogComponent implements OnInit {
     const dateStr = lecture.LectureDate
       ? this.datePipe.transform(new Date(lecture.LectureDate), 'yyyy-MM-dd')
       : '';
+    const intern = this.internsList.find((i) => i.EmployeeID === lecture.LectureEmployeeID);
     this.lectureForm.patchValue({
       LectureID: lecture.LectureID,
       LectureDate: dateStr,
       LectureTime: lecture.LectureTime || '',
       LectureDescription: lecture.LectureDescription || '',
       LectureLocationDescription: lecture.LectureLocationDescription || '',
-      LectureEmployeeID: lecture.LectureEmployeeID || ''
+      LectureEmployeeID: intern || lecture.LectureEmployeeID || ''
     });
   }
 
@@ -133,8 +201,13 @@ export class LecturesManageDialogComponent implements OnInit {
       return;
     }
     this.saveBtnWait = true;
+    const raw = this.lectureForm.getRawValue();
+    const employeeId = typeof raw.LectureEmployeeID === 'object' && raw.LectureEmployeeID
+      ? raw.LectureEmployeeID.EmployeeID
+      : (raw.LectureEmployeeID || '');
+    const lecture = { ...raw, LectureEmployeeID: employeeId };
     this.http.post(this.url + 'SaveInternLecture', {
-      lecture: this.lectureForm.getRawValue()
+      lecture
     }).subscribe(
       (response) => {
         this.saveBtnWait = false;
