@@ -215,6 +215,11 @@
               (click)="setChartViewMode('department')">
               סה"כ לפי מחלקה
             </button>
+            <button class="icon-btn ghost mode-toggle-btn" [class.active]="chartViewMode === 'yoy-combined'"
+              [matTooltip]="getChartViewTooltip('yoy-combined')" matTooltipPosition="top"
+              (click)="setChartViewMode('yoy-combined')">
+              מדד משולב
+            </button>
           </div>
 
           <!-- טקסט הסבר קצר מה מייצגת כל עמודה/צבע בגרף -->
@@ -239,6 +244,9 @@
               </span>
               <span *ngSwitchCase="'fund'">
                 כל עמודה מייצגת שנה, והערימה הצבעונית בתוך העמודה מייצגת סוגי מימון (קרן / מדינה וכו').
+              </span>
+              <span *ngSwitchCase="'yoy-combined'">
+                אחוז שינוי ביחס לאותה תקופה בשנה שעברה (למשל ינואר–פברואר השנה מול ינואר–פברואר אשתקד): ניתוחים לחדר, זמן ניתוח ממוצע, הכנסה ממוצעת.
               </span>
             </ng-container>
           </div>
@@ -284,8 +292,8 @@
         </div>
 
         <div class="table-body">
-          <!-- טבלה מצטברת: אותם נתונים של הגרף, מוצגים כטבלה -->
-          <div class="table-wrap" *ngIf="chartTableRows?.length && yearsForChart?.length">
+          <!-- טבלה מצטברת: אותם נתונים של הגרף, מוצגים כטבלה (לכל המצבים חוץ ממדד משולב) -->
+          <div class="table-wrap" *ngIf="chartViewMode !== 'yoy-combined' && chartTableRows?.length && yearsForChart?.length">
             <table class="table aggregated-chart-table" dir="rtl">
               <thead>
                 <tr>
@@ -310,7 +318,30 @@
               </tbody>
             </table>
           </div>
-          <div class="empty" *ngIf="dataSource.data.length === 0">
+          <!-- טבלת מדד משולב: אחוזי שינוי לפי מחלקה -->
+          <div class="table-wrap" *ngIf="chartViewMode === 'yoy-combined' && departmentYoyData?.length">
+            <table class="table aggregated-chart-table" dir="rtl">
+              <thead>
+                <tr>
+                  <th>מחלקה</th>
+                  <th>ניתוחים לחדר<br /><small>% שינוי</small></th>
+                  <th>זמן ניתוח ממוצע<br /><small>% שינוי</small></th>
+                  <th>הכנסה ממוצעת<br /><small>% שינוי</small></th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let d of departmentYoyData">
+                  <td>{{ d.Department }}</td>
+                  <td [ngClass]="getPctClass(d.SurgeriesPerRoom_Pct)">{{ formatPctCell(d.SurgeriesPerRoom_Pct) }}</td>
+                  <td [ngClass]="getPctClass(d.AvgSurgeryTime_Pct)">{{ formatPctCell(d.AvgSurgeryTime_Pct) }}</td>
+                  <td [ngClass]="getPctClass(d.AvgRevenue_Pct)">{{ formatPctCell(d.AvgRevenue_Pct) }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="empty"
+            *ngIf="(chartViewMode === 'yoy-combined' && !departmentYoyData?.length) ||
+                   (chartViewMode !== 'yoy-combined' && dataSource.data.length === 0 && !chartTableRows?.length)">
             אין נתונים להצגה
           </div>
         </div>

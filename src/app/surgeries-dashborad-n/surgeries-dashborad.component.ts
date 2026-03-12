@@ -120,6 +120,20 @@ export interface TopDepartmentDto {
   managerName?: string;
 }
 
+/** השוואה YoY לפי מחלקה – ניתוחים לחדר, זמן ניתוח, הכנסה (ואחוזי שינוי) */
+export interface DepartmentYoyDto {
+  Department: string;
+  SurgeriesPerRoom_Current: number;
+  AvgSurgeryTime_Current: number;
+  AvgRevenue_Current: number;
+  SurgeriesPerRoom_Prev: number;
+  AvgSurgeryTime_Prev: number;
+  AvgRevenue_Prev: number;
+  SurgeriesPerRoom_Pct?: number | null;
+  AvgSurgeryTime_Pct?: number | null;
+  AvgRevenue_Pct?: number | null;
+}
+
 // === New APIs – typed rows ===
 export interface CountByDeptRow {
   Year: number;
@@ -197,6 +211,9 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy {
 
     // Aggregated counts by month from new API
     monthlyCountsData: MonthlyCountRow[] = [];
+
+    /** נתוני השוואה YoY לפי מחלקה (מדד משולב) */
+    departmentYoyData: DepartmentYoyDto[] = [];
 
     // Chart data - with numbers in millions
     // Chart data - with numbers in millions
@@ -347,7 +364,7 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy {
     // 'shift'       – total per year split by משמרת
     // 'department'  – multi‑year per מחלקה (existing behaviour)
     // 'month'       – ניתוחים לפי חודשים (5 שנים אחרונות)
-    chartViewMode: "year-total" | "fund" | "site" | "shift" | "department" | "month" = "year-total";
+    chartViewMode: "year-total" | "fund" | "site" | "shift" | "department" | "month" | "yoy-combined" = "year-total";
 
     // When true, the משמרת filter dropdown in the sidebar is visually disabled
     // because the main chart itself is grouped by משמרת.
@@ -746,6 +763,40 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy {
             );
     }
 
+    /**
+     * טוען נתוני השוואה YoY לפי מחלקה (מדד משולב) – ניתוחים לחדר, זמן ניתוח, הכנסה
+     */
+    private loadDepartmentYoY(): void {
+        this.isChartLoading = true;
+        this.http
+            .get<any>(environment.url + "GetDepartmentYoY_surgeries_dashborad")
+            .subscribe(
+                (response) => {
+                    const raw = response && response.d != null ? response.d : response;
+                    const list = Array.isArray(raw) ? raw : [];
+                    this.departmentYoyData = list.map((r: any) => ({
+                        Department: r.Department ?? r.department ?? "",
+                        SurgeriesPerRoom_Current: Number(r.SurgeriesPerRoom_Current ?? r.surgeriesPerRoom_Current ?? 0),
+                        AvgSurgeryTime_Current: Number(r.AvgSurgeryTime_Current ?? r.avgSurgeryTime_Current ?? 0),
+                        AvgRevenue_Current: Number(r.AvgRevenue_Current ?? r.avgRevenue_Current ?? 0),
+                        SurgeriesPerRoom_Prev: Number(r.SurgeriesPerRoom_Prev ?? r.surgeriesPerRoom_Prev ?? 0),
+                        AvgSurgeryTime_Prev: Number(r.AvgSurgeryTime_Prev ?? r.avgSurgeryTime_Prev ?? 0),
+                        AvgRevenue_Prev: Number(r.AvgRevenue_Prev ?? r.avgRevenue_Prev ?? 0),
+                        SurgeriesPerRoom_Pct: r.SurgeriesPerRoom_Pct != null ? Number(r.SurgeriesPerRoom_Pct) : (r.surgeriesPerRoom_Pct != null ? Number(r.surgeriesPerRoom_Pct) : null),
+                        AvgSurgeryTime_Pct: r.AvgSurgeryTime_Pct != null ? Number(r.AvgSurgeryTime_Pct) : (r.avgSurgeryTime_Pct != null ? Number(r.avgSurgeryTime_Pct) : null),
+                        AvgRevenue_Pct: r.AvgRevenue_Pct != null ? Number(r.AvgRevenue_Pct) : (r.avgRevenue_Pct != null ? Number(r.avgRevenue_Pct) : null),
+                    }));
+                    this.updateChartData();
+                },
+                (error) => {
+                    console.error("Error loading GetDepartmentYoY data:", error);
+                    this.departmentYoyData = [];
+                    this.isChartLoading = false;
+                    this.cdr.detectChanges();
+                }
+            );
+    }
+
     private isSurgeryRow(row: any): boolean {
         if (!row || typeof row !== 'object') return false;
         const r = row as Record<string, any>;
@@ -1009,6 +1060,76 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy {
         this.yearlySurgeryTotals = {};
         this.yearColorMap = [];
         this.chartTableRows = [];
+
+        // מדד משולב – גרף YoY לפי מחלקה (ניתוחים לחדר, זמן ניתוח, הכנסה – % שינוי)
+        if (this.chartViewMode === "yoy-combined") {
+            this.chartColumns = [
+                "מחלקה",
+                { type: "number", label: "ניתוחים לחדר" },
+                { type: "string", role: "annotation" },
+                { type: "number", label: "זמן ניתוח" },
+                { type: "string", role: "annotation" },
+                { type: "number", label: "הכנסה ממוצעת" },
+                { type: "string", role: "annotation" },
+            ];
+            this.chartData = this.departmentYoyData.map((d) => {
+                const s = d.SurgeriesPerRoom_Pct != null ? d.SurgeriesPerRoom_Pct : 0;
+                const t = d.AvgSurgeryTime_Pct != null ? d.AvgSurgeryTime_Pct : 0;
+                const r = d.AvgRevenue_Pct != null ? d.AvgRevenue_Pct : 0;
+                return [
+                    d.Department || "",
+                    s,
+                    this.formatPctShort(d.SurgeriesPerRoom_Pct),
+                    t,
+                    this.formatPctShort(d.AvgSurgeryTime_Pct),
+                    r,
+                    this.formatPctShort(d.AvgRevenue_Pct),
+                ];
+            });
+            this.chartType = "BarChart";
+            this.chartOptions = {
+                ...this.chartOptions,
+                title: "מדד משולב – השוואה לשנה שעברה (%)",
+                bars: "horizontal",
+                isStacked: false,
+                colors: ["#228B22", "#FF8C00", "#008B8B"],
+                hAxis: {
+                    viewWindow: { min: -100, max: 200 },
+                    format: "#\'%\'",
+                    title: "% שינוי",
+                    textStyle: this.chartOptions?.hAxis?.textStyle || {},
+                },
+                vAxis: {
+                    title: "מחלקה",
+                    textStyle: this.chartOptions?.vAxis?.textStyle || {},
+                },
+                legend: {
+                    position: "bottom",
+                    alignment: "center",
+                },
+                chartArea: {
+                    left: 130,
+                    top: 40,
+                    bottom: 80,
+                    width: "60%",
+                    height: "60%",
+                },
+            };
+            this.yearColorMap = [];
+            this.stackedCategoryLegend = [];
+            this.chartTableRows = this.departmentYoyData.map((d) => ({
+                label: d.Department || "",
+                total: 0,
+                perYear: {},
+                pct: [d.SurgeriesPerRoom_Pct, d.AvgSurgeryTime_Pct, d.AvgRevenue_Pct]
+                    .filter((v) => v != null)
+                    .map((v) => v + "%")
+                    .join(" / "),
+            }));
+            this.isChartLoading = false;
+            this.cdr.detectChanges();
+            return;
+        }
 
         // 1) מקור ראשי לגרף: GetCountByDept (5 שנים אחרונות לפי מחלקה)
         //    מכאן נגזרים כל מצבי התצוגה שמבוססים על ספירות (שנה, מחלקה, אתר, משמרת).
@@ -1985,16 +2106,17 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy {
     /**
      * שינוי מצב תצוגת הגרף הראשי (סה"כ / קרן‑מדינה / אתר / משמרת / מחלקה)
      */
-    setChartViewMode(mode: "year-total" | "fund" | "site" | "shift" | "department" | "month"): void {
+    setChartViewMode(mode: "year-total" | "fund" | "site" | "shift" | "department" | "month" | "yoy-combined"): void {
         if (this.chartViewMode === mode) {
             return;
         }
         this.chartViewMode = mode;
         this.isShiftGroupedView = mode === "shift";
 
-        // כל המצבים יוצגו כתרשים עמודות אנכי (ColumnChart),
-        // כאשר במצבי fund/site/shift ההגדרה isStacked תישלט דרך updateChartData.
-        if (this.chartType !== "LineChart") {
+        // מדד משולב = גרף אופקי (BarChart); שאר המצבים = ColumnChart
+        if (mode === "yoy-combined") {
+            this.chartType = "BarChart";
+        } else if (this.chartType !== "LineChart") {
             this.chartType = "ColumnChart";
         }
         this.updateChartOptionsForType();
@@ -2002,6 +2124,8 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy {
         // מצב חודשים תלוי ב‑API ייעודי – טוענים אותו לפני עיבוד נתונים
         if (this.chartViewMode === "month") {
             this.loadMonthlyCounts();
+        } else if (this.chartViewMode === "yoy-combined") {
+            this.loadDepartmentYoY();
         } else {
             this.updateChartData();
         }
@@ -2036,15 +2160,43 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy {
                 return "סה\"כ ניתוחים לפי סוג מימון";
             case "month":
                 return "ניתוחים לפי חודשים (5 שנים אחרונות)";
+            case "yoy-combined":
+                return "מדד משולב – השוואה לשנה שעברה (%)";
             default:
                 return "סה\"כ ניתוחים";
         }
     }
 
+    /** פורמט קצר לאחוזים עבור תווית על עמודת הגרף (למשל +12.3%) */
+    private formatPctShort(v: number | null | undefined): string {
+        if (v == null) {
+            return "";
+        }
+        const sign = v > 0 ? "+" : "";
+        return sign + v.toFixed(1) + "%";
+    }
+
+    /** פורמט לתא בטבלה (מדד משולב) */
+    formatPctCell(v: number | null | undefined): string {
+        if (v == null) {
+            return "-";
+        }
+        const sign = v > 0 ? "+" : "";
+        return sign + v.toFixed(1) + "%";
+    }
+
+    /** מחזיר מחלקת CSS חיובית/שלילית לפי סימן האחוז */
+    getPctClass(v: number | null | undefined): string {
+        if (v == null || v === 0) {
+            return "";
+        }
+        return v > 0 ? "agg-positive" : "agg-negative";
+    }
+
     /**
      * טקסט טולטיפ קצר וברור לכל כפתור מצב תצוגה
      */
-    getChartViewTooltip(mode: "year-total" | "fund" | "site" | "shift" | "department" | "month"): string {
+    getChartViewTooltip(mode: "year-total" | "fund" | "site" | "shift" | "department" | "month" | "yoy-combined"): string {
         switch (mode) {
             case "year-total":
                 return "כמות ניתוחים לכל שנה";
@@ -2058,6 +2210,8 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy {
                 return "פיזור ניתוחים לפי סוג מימון";
             case "month":
                 return "השוואת ניתוחים לפי חודשים ולפי שנה";
+            case "yoy-combined":
+                return "אחוז שינוי לעומת אותה תקופה בשנה שעברה – ניתוחים לחדר, זמן ניתוח, הכנסה ממוצעת";
             default:
                 return "";
         }
