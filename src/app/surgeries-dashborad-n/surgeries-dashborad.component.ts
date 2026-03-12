@@ -197,6 +197,15 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy {
     showArticleShowcase = false;
     currentArticle: string = "";
 
+    /** מאזין רספונסיביות לגרף – טריגר לרינדור מחדש ב־resize */
+    private onWindowResize = () => {
+        try {
+            this.chartOptions = { ...this.chartOptions };
+        } catch {
+            // ignore
+        }
+    };
+
     // Data arrays
     departmentIncomeData: DepartmentComparisonDto[] = [];
     /** רשימת נתוני ניתוחים מהשרת (מבנה כפי שהמשתמש ציין) */
@@ -250,8 +259,8 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy {
                 color: "#64748b",
                 fontSize: 11,
             },
-            slantedText: true,
-            slantedTextAngle: 35,
+            // תוויות בציר X יוצגו אופקית כדי לראות את כל השנים (YYYY)
+            slantedText: false,
         },
         vAxis: {
             title: "מספר ניתוחים",
@@ -280,7 +289,8 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy {
         },
         chartArea: {
             width: "94%",
-            height: "80%",
+            // הגדלת שטח הגרף בכ ~10% לגובה כדי שהעמודות והקוים יהיו גדולים וברורים יותר
+            height: "90%",
             left: 20,
             top: 30,
         },
@@ -564,10 +574,18 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy {
             }
         }, 500);
         this.displayedCatalogColumns = this.cashColumns;
+
+        // רישום מאזין resize כדי שהגרף יתעדכן בכל שינוי גודל מסך
+        if (typeof window !== 'undefined') {
+            window.addEventListener('resize', this.onWindowResize);
+        }
     }
 
     ngOnDestroy(): void {
         document.body.classList.remove('surgeries-dashborad-dark');
+        if (typeof window !== 'undefined') {
+            window.removeEventListener('resize', this.onWindowResize);
+        }
     }
 
     /**
@@ -1029,7 +1047,7 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy {
         } else if (this.chartType === "BarChart") {
             // Horizontal stacked columns
             this.chartOptions.bars = "horizontal";
-            this.chartOptions.isStacked = true;
+            this.chartOptions.isStacked = false;
             this.chartOptions.bar = {
                 groupWidth: "75%",
             };
@@ -1042,6 +1060,7 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy {
             this.chartOptions.bar = {
                 groupWidth: "75%",
             };
+            this.chartOptions.isStacked = false;
             this.chartOptions.pointSize = undefined;
             this.chartOptions.lineWidth = undefined;
             this.chartOptions.curveType = undefined;
@@ -1130,6 +1149,29 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy {
             this.cdr.detectChanges();
             return;
         }
+
+        // לכל שאר המצבים – להחזיר צירים לגרף כמותי רגיל (לא אחוזים)
+        this.chartOptions = {
+            ...this.chartOptions,
+            hAxis: {
+                ...(this.chartOptions.hAxis || {}),
+                viewWindow: undefined,
+                format: undefined,
+                title: this.chartOptions.hAxis?.title || "",
+            },
+            vAxis: {
+                ...(this.chartOptions.vAxis || {}),
+                title: this.chartOptions.vAxis?.title || "",
+            },
+            chartArea: {
+                ...(this.chartOptions.chartArea || {}),
+                left: this.chartOptions.chartArea?.left ?? 60,
+                top: this.chartOptions.chartArea?.top ?? 40,
+                bottom: this.chartOptions.chartArea?.bottom ?? 40,
+                width: this.chartOptions.chartArea?.width ?? "70%",
+                height: this.chartOptions.chartArea?.height ?? "70%",
+            },
+        };
 
         // 1) מקור ראשי לגרף: GetCountByDept (5 שנים אחרונות לפי מחלקה)
         //    מכאן נגזרים כל מצבי התצוגה שמבוססים על ספירות (שנה, מחלקה, אתר, משמרת).

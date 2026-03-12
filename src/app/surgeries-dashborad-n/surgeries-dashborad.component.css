@@ -19,14 +19,16 @@
   --btnBorder: rgba(15,23,42,.28);
   --btnBg: rgba(15,23,42,.04);
   --btnBgHover: rgba(15,23,42,.08);
-  --header-space: 56px;
-  --footer-space: 40px;
 
-  min-height: calc(100vh - var(--header-space) - var(--footer-space));
-  height: auto;
+  /* גובה קבוע כמעט לכל המסך – Zero‑Scroll בדסקטופ 1920x1080 */
+  --header-space: 80px;
+  --footer-space: 0px;
+
+  height: calc(100vh - var(--header-space));
+  min-height: calc(100vh - var(--header-space));
   padding: clamp(4px, 1vw, 12px) clamp(6px, 1.5vw, 16px);
   margin: 0;
-  overflow: auto;
+  overflow: hidden;
   position: relative;
   background: var(--bg);
   color: var(--text);
@@ -943,12 +945,20 @@
 }
 
 .graph-body {
-  flex: 1 1 auto; min-height: 0; position: relative; cursor: pointer;
-  overflow: hidden; border-radius: 8px;
+  flex: 1 1 auto;
+  min-height: 220px;
+  max-height: 55vh;
+  position: relative;
+  cursor: pointer;
+  overflow: hidden;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
   google-chart {
-    width: 100% !important; height: 100% !important; min-height: 0;
+    width: 100% !important;
+    flex: 1 1 auto;
     ::ng-deep svg { cursor: pointer; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-    ::ng-deep rect { cursor: pointer; transition: opacity .2s; &:hover { opacity: .8; } }
+    ::ng-deep rect { cursor: pointer; transition: opacity .2s; height: 250px; &:hover { opacity: .8; } }
     ::ng-deep .google-visualization-tooltip {
       border-radius: 8px !important;
       box-shadow: 0 4px 12px rgba(0,0,0,.25) !important;
@@ -1052,7 +1062,25 @@
   box-shadow: 0 8px 24px rgba(0,0,0,.6) !important;
 }
 
-.table-body { flex: 1 1 auto; min-height: 0; overflow: hidden; }
+@media (max-width: 1024px) {
+  .graph-body {
+    min-height: 220px;
+    max-height: 45vh;
+  }
+}
+
+@media (max-width: 600px) {
+  .graph-body {
+    min-height: 200px;
+    max-height: 45vh;
+  }
+}
+
+.table-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+}
 
 /* ── Title row & badges ─────────────────────────────────── */
 .title-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; flex-wrap: wrap; }
@@ -1109,10 +1137,10 @@
 }
 
 .mode-toggle-btn {
-  min-width: 90px;
-  padding: 6px 14px;
+  min-width: 72px;
+  padding: 4px 10px;
   border-radius: 999px;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
   border: 1px solid var(--btnBorder);
   background: var(--btnBg);
@@ -1170,7 +1198,7 @@
   }
 
   .mode-toggle-btn {
-    flex: 1 1 calc(50% - 6px);
+    flex: 1 1 calc(33.33% - 6px);
     min-width: 0;
     text-align: center;
   }
@@ -1190,8 +1218,12 @@
 
 /* ── Plain HTML table ───────────────────────────────────── */
 .table-wrap {
-  border-radius: 10px; border: 1px solid var(--border);
-  background: var(--panel); height: 100%; overflow: hidden;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--panel);
+  height: auto;
+  max-height: 70vh;
+  overflow: auto;
 }
 
 table.table {

@@ -42,7 +42,7 @@
       <div class="wing-and-theme-row" dir="rtl">
         <div class="custom-dropdown" [class.active]="isDropdownOpen">
 
-          <div class="dropdown-trigger" >
+          <div class="dropdown-trigger">
             <mat-icon class="dropdown-icon">apartment</mat-icon>
             <span class="selected-text">
               {{ selectedDiagnosis || 'בחר אגף / אתר' }} לממש ?
@@ -70,8 +70,8 @@
 
     <div class="top-right">
       <!-- Group‑2 KPIs buttons (icons only, text בטולטיפ) -->
-      <button mat-icon-button class="icon-btn ghost" matTooltip=" משך ניתוח ממוצע לפי מחלקה"
-        matTooltipPosition="below" (click)="openAvgDurationModal()">
+      <button mat-icon-button class="icon-btn ghost" matTooltip=" משך ניתוח ממוצע לפי מחלקה" matTooltipPosition="below"
+        (click)="openAvgDurationModal()">
         <mat-icon>speed</mat-icon>
       </button>
 
@@ -85,8 +85,8 @@
         <mat-icon>stop_circle</mat-icon>
       </button>
 
-      <button mat-icon-button class="icon-btn ghost" matTooltip=" זמן SETUP ממוצע לפי מחלקה"
-        matTooltipPosition="below" (click)="openAvgSetupModal()">
+      <button mat-icon-button class="icon-btn ghost" matTooltip=" זמן SETUP ממוצע לפי מחלקה" matTooltipPosition="below"
+        (click)="openAvgSetupModal()">
         <mat-icon>hourglass_bottom</mat-icon>
       </button>
 
@@ -166,7 +166,7 @@
             <div class="chart-loading-text">טוען גרף...</div>
           </div>
           <div class="chart-mode-heading"
-               *ngIf="!isChartLoading && !isMainDataLoading && chartData && chartData.length > 0">
+            *ngIf="!isChartLoading && !isMainDataLoading && chartData && chartData.length > 0">
             {{ getChartViewTitle() }}
           </div>
           <div class="year-summary-row" *ngIf="yearsForChart?.length">
@@ -177,7 +177,7 @@
             </div>
           </div>
           <google-chart [type]="chartType" [data]="chartData" [columns]="chartColumns" [options]="chartOptions"
-            [width]="'100%'" [height]="'100%'" (select)="onChartClick($event)"
+            [width]="'100%'" (select)="onChartClick($event)"
             *ngIf="!isChartLoading && !isMainDataLoading && chartData && chartData.length > 0">
           </google-chart>
 
@@ -190,24 +190,20 @@
               סה"כ לשנה
             </button>
             <button class="icon-btn ghost mode-toggle-btn" [class.active]="chartViewMode === 'month'"
-              [matTooltip]="getChartViewTooltip('month')" matTooltipPosition="top"
-              (click)="setChartViewMode('month')">
+              [matTooltip]="getChartViewTooltip('month')" matTooltipPosition="top" (click)="setChartViewMode('month')">
               ניתוחים לפי חודשים
             </button>
             <button class="icon-btn ghost mode-toggle-btn" [class.active]="chartViewMode === 'fund'"
-              [matTooltip]="getChartViewTooltip('fund')" matTooltipPosition="top"
-              (click)="setChartViewMode('fund')">
+              [matTooltip]="getChartViewTooltip('fund')" matTooltipPosition="top" (click)="setChartViewMode('fund')">
               קרן/מדינה
             </button>
             <button class="icon-btn ghost mode-toggle-btn" [class.active]="chartViewMode === 'site'"
-              [matTooltip]="getChartViewTooltip('site')" matTooltipPosition="top"
-              (click)="setChartViewMode('site')">
+              [matTooltip]="getChartViewTooltip('site')" matTooltipPosition="top" (click)="setChartViewMode('site')">
               אתר
             </button>
             <button class="icon-btn ghost mode-toggle-btn" [class.active]="chartViewMode === 'shift'"
               [class.disabled-filter]="isShiftGroupedView && chartViewMode !== 'shift'"
-              [matTooltip]="getChartViewTooltip('shift')" matTooltipPosition="top"
-              (click)="setChartViewMode('shift')">
+              [matTooltip]="getChartViewTooltip('shift')" matTooltipPosition="top" (click)="setChartViewMode('shift')">
               משמרת
             </button>
             <button class="icon-btn ghost mode-toggle-btn" [class.active]="chartViewMode === 'department'"
@@ -246,7 +242,8 @@
                 כל עמודה מייצגת שנה, והערימה הצבעונית בתוך העמודה מייצגת סוגי מימון (קרן / מדינה וכו').
               </span>
               <span *ngSwitchCase="'yoy-combined'">
-                אחוז שינוי ביחס לאותה תקופה בשנה שעברה (למשל ינואר–פברואר השנה מול ינואר–פברואר אשתקד): ניתוחים לחדר, זמן ניתוח ממוצע, הכנסה ממוצעת.
+                אחוז שינוי ביחס לאותה תקופה בשנה שעברה (למשל ינואר–פברואר השנה מול ינואר–פברואר אשתקד): ניתוחים לחדר,
+                זמן ניתוח ממוצע, הכנסה ממוצעת.
               </span>
             </ng-container>
           </div>
@@ -293,7 +290,8 @@
 
         <div class="table-body">
           <!-- טבלה מצטברת: אותם נתונים של הגרף, מוצגים כטבלה (לכל המצבים חוץ ממדד משולב) -->
-          <div class="table-wrap" *ngIf="chartViewMode !== 'yoy-combined' && chartTableRows?.length && yearsForChart?.length">
+          <div class="table-wrap"
+            *ngIf="chartViewMode !== 'yoy-combined' && chartTableRows?.length && yearsForChart?.length">
             <table class="table aggregated-chart-table" dir="rtl">
               <thead>
                 <tr>
@@ -339,8 +337,7 @@
               </tbody>
             </table>
           </div>
-          <div class="empty"
-            *ngIf="(chartViewMode === 'yoy-combined' && !departmentYoyData?.length) ||
+          <div class="empty" *ngIf="(chartViewMode === 'yoy-combined' && !departmentYoyData?.length) ||
                    (chartViewMode !== 'yoy-combined' && dataSource.data.length === 0 && !chartTableRows?.length)">
             אין נתונים להצגה
           </div>
@@ -366,11 +363,8 @@
 
 
             <!-- פילטר 2: סוג ניתוח -->
-            <div
-              class="custom-dropdown filter-dropdown"
-              [class.active]="isSurgeryTypeOpen"
-              [class.has-value]="selectedSurgeryTypes?.length"
-            >
+            <div class="custom-dropdown filter-dropdown" [class.active]="isSurgeryTypeOpen"
+              [class.has-value]="selectedSurgeryTypes?.length">
               <div class="dropdown-trigger" (click)="isSurgeryTypeOpen = !isSurgeryTypeOpen">
                 <mat-icon class="dropdown-icon">category</mat-icon>
                 <span class="selected-text" matTooltip="{{ getSurgeryTypeDisplay() }}">
@@ -389,12 +383,8 @@
             </div>
 
             <!-- פילטר 3: משמרת -->
-            <div
-              class="custom-dropdown filter-dropdown"
-              [class.active]="isShiftOpen"
-              [class.disabled-filter]="isShiftGroupedView"
-              [class.has-value]="selectedShifts?.length"
-            >
+            <div class="custom-dropdown filter-dropdown" [class.active]="isShiftOpen"
+              [class.disabled-filter]="isShiftGroupedView" [class.has-value]="selectedShifts?.length">
               <div class="dropdown-trigger" (click)="!isShiftGroupedView && (isShiftOpen = !isShiftOpen)">
                 <mat-icon class="dropdown-icon">schedule</mat-icon>
                 <span class="selected-text" matTooltip="{{ getShiftDisplay() }}">
@@ -413,11 +403,8 @@
             </div>
 
 
-            <div
-              class="custom-dropdown filter-dropdown"
-              [class.active]="isWeekdayOpen"
-              [class.has-value]="selectedWeekdays?.length"
-            >
+            <div class="custom-dropdown filter-dropdown" [class.active]="isWeekdayOpen"
+              [class.has-value]="selectedWeekdays?.length">
               <div class="dropdown-trigger" (click)="isWeekdayOpen = !isWeekdayOpen">
                 <mat-icon class="dropdown-icon">event</mat-icon>
                 <span class="selected-text" matTooltip="{{ getWeekdayDisplay() }}">
@@ -435,11 +422,8 @@
               </div>
             </div>
 
-            <div
-              class="custom-dropdown filter-dropdown"
-              [class.active]="isDropdownOpen"
-              [class.has-value]="selectedDiagnosis && selectedDiagnosis !== 'כל האתרים'"
-            >
+            <div class="custom-dropdown filter-dropdown" [class.active]="isDropdownOpen"
+              [class.has-value]="selectedDiagnosis && selectedDiagnosis !== 'כל האתרים'">
               <div class="dropdown-trigger" (click)="toggleDropdown()">
                 <mat-icon class="dropdown-icon">apartment</mat-icon>
                 <span class="selected-text">
@@ -458,11 +442,8 @@
               </div> -->
             </div>
             <!-- פילטר 4: חדר ניתוח -->
-            <div
-              class="custom-dropdown filter-dropdown"
-              [class.active]="isRoomOpen"
-              [class.has-value]="selectedRooms?.length"
-            >
+            <div class="custom-dropdown filter-dropdown" [class.active]="isRoomOpen"
+              [class.has-value]="selectedRooms?.length">
               <div class="dropdown-trigger" (click)="isRoomOpen = !isRoomOpen">
                 <mat-icon class="dropdown-icon">meeting_room</mat-icon>
                 <span class="selected-text">חדר ניתוח (לביצוע)</span>
@@ -482,11 +463,8 @@
             </div>
 
             <!-- פילטר 5: מחלקה -->
-            <div
-              class="custom-dropdown filter-dropdown"
-              [class.active]="isDeptOpen"
-              [class.has-value]="selectedDepartments?.length"
-            >
+            <div class="custom-dropdown filter-dropdown" [class.active]="isDeptOpen"
+              [class.has-value]="selectedDepartments?.length">
               <div class="dropdown-trigger" (click)="isDeptOpen = !isDeptOpen">
                 <mat-icon class="dropdown-icon">local_hospital</mat-icon>
                 <span class="selected-text">תקינות (לביצוע)</span>
@@ -1066,8 +1044,7 @@
             }
           }" [width]="'100%'" [height]="'100%'">
         </google-chart>
-        <div *ngIf="!isAvgSetupLoading && avgSetupChartData && avgSetupChartData.length > 0"
-          class="kpi-chart-caption">
+        <div *ngIf="!isAvgSetupLoading && avgSetupChartData && avgSetupChartData.length > 0" class="kpi-chart-caption">
           כל עמודת צבע מייצגת שנה, והסדרה עבור כל אגף (Wing) מציגה את זמן ה‑SETUP הממוצע (בדקות) בין ניתוחים.
         </div>
       </div>
