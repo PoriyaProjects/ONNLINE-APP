@@ -946,8 +946,8 @@
 
 .graph-body {
   flex: 1 1 auto;
-  min-height: 220px;
-  max-height: 55vh;
+  min-height: 320px;
+  max-height: 65vh;
   position: relative;
   cursor: pointer;
   overflow: hidden;
@@ -956,9 +956,10 @@
   flex-direction: column;
   google-chart {
     width: 100% !important;
+    height: 100% !important;
     flex: 1 1 auto;
     ::ng-deep svg { cursor: pointer; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-    ::ng-deep rect { cursor: pointer; transition: opacity .2s; height: 250px; &:hover { opacity: .8; } }
+    ::ng-deep rect { cursor: pointer; transition: opacity .2s; &:hover { opacity: .8; } }
     ::ng-deep .google-visualization-tooltip {
       border-radius: 8px !important;
       box-shadow: 0 4px 12px rgba(0,0,0,.25) !important;
