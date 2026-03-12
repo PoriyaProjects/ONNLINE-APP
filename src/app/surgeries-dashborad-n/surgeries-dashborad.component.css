@@ -1648,11 +1648,22 @@ table.table {
   overflow: hidden;
 }
 
+/* Full‑screen style for YoY combined main chart */
+.yoy-combined-modal {
+  width: 85vw;
+  height: 85vh;
+}
+
 .kpi-overlay.dark .kpi-modal {
   background: #020617;
   border-color: rgba(148,163,184,.6);
   box-shadow: 0 20px 40px rgba(0,0,0,.6);
   color: #e5e7eb;
+}
+
+/* Dark-mode background for KPI Google Charts */
+.kpi-overlay.dark google-chart ::ng-deep svg rect[x="0"][y="0"] {
+  fill: #020617 !important;
 }
 
 .kpi-header {

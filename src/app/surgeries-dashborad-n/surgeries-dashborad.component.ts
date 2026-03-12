@@ -1,11 +1,12 @@
 import { animate, style, transition, trigger } from '@angular/animations';
 import { HttpClient } from '@angular/common/http';
-import { ChangeDetectorRef, Component, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import { ChangeDetectorRef, Component, DoCheck, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatSort, Sort } from '@angular/material/sort';
 import { MatTableDataSource } from '@angular/material/table';
 import { Router } from '@angular/router';
+import { Chart } from 'chart.js';
 import { environment } from "src/environments/environment";
 import { MenuPerm } from "../menu-perm";
 
@@ -188,8 +189,11 @@ interface EmployeeInfo {
         ]),
     ],
 })
-export class SurgeriesDashboradComponent implements OnInit, OnDestroy {
+export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck {
     @ViewChild(MatSort) sort!: MatSort;
+    @ViewChild('yoyCombinedChart') yoyCombinedChartRef!: ElementRef<HTMLCanvasElement>;
+
+    private yoyCombinedChart: Chart | null = null;
 
     // Guide Avatar
     showGuideAvatar = true;
@@ -415,6 +419,10 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy {
     isMainDataLoading = false; // Loading for main data table
     isDiagnosesLoading = false; // Loading for diagnoses list
     isChartLoading = false; // Loading for chart data
+  // Fake global loader progress (0‑100%) for user feedback
+  loadingProgress = 0;
+  private loadingProgressTimer: any = null;
+  private anyLoadingPrev = false;
     selectedViewType: string = "cash";
     chartType: string = "ColumnChart"; // 'ColumnChart' or 'LineChart'
 
@@ -504,6 +512,9 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy {
   showLastEndTimeModal = false;          // 2.3 זמן סיום ניתוח אחרון לפי מחלקה
   showAvgSetupModal = false;             // 2.4 SETUP ממוצע לפי מחלקה
 
+  // Full‑screen view for YoY combined metric chart
+  showYoyCombinedFullModal = false;
+
   isAvgDurationLoading = false;
   isFirstStartTimeLoading = false;
   isLastEndTimeLoading = false;
@@ -535,6 +546,222 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy {
                 this.router.navigate(["login"]);
             }
         }, 2000);
+    }
+
+    /**
+     * מעקב כללי אחרי מצב טעינה כדי לעדכן את ה‑progress המדומה בלודר העליון
+     */
+    ngDoCheck(): void {
+        const anyLoading =
+            this.isLoading ||
+            this.isMainDataLoading ||
+            this.isDiagnosesLoading ||
+            this.catalogLoading ||
+            this.isChartLoading;
+
+        if (anyLoading !== this.anyLoadingPrev) {
+            this.anyLoadingPrev = anyLoading;
+            this.handleGlobalLoadingStateChange(anyLoading);
+        }
+    }
+
+    private handleGlobalLoadingStateChange(isLoading: boolean): void {
+        if (isLoading) {
+            // התחלת מחזור טעינה חדש – אפס אחוזים והפעל טיימר
+            this.loadingProgress = 0;
+            if (this.loadingProgressTimer) {
+                clearInterval(this.loadingProgressTimer);
+            }
+            this.loadingProgressTimer = setInterval(() => {
+                // אם בינתיים אין טעינה – נעצור
+                if (!this.anyLoadingPrev) {
+                    return;
+                }
+                // מתקדמים יחסית לאט עד 90%, ואז קצת יותר לאט עד 97%
+                if (this.loadingProgress < 90) {
+                    this.loadingProgress += 1;
+                } else if (this.loadingProgress < 97) {
+                    this.loadingProgress += 0.5;
+                } else {
+                    // לא לעבור את 97% לפני שהטעינה באמת מסתיימת
+                    this.loadingProgress = 97;
+                }
+            }, 120);
+        } else {
+            // הטעינה הסתיימה – קפיצה ל‑100% ואז איפוס קצר
+            this.loadingProgress = 100;
+            if (this.loadingProgressTimer) {
+                clearInterval(this.loadingProgressTimer);
+                this.loadingProgressTimer = null;
+            }
+            setTimeout(() => {
+                this.loadingProgress = 0;
+            }, 400);
+        }
+    }
+
+    /**
+     * בונה את גרף ה‑"מדד משולב" במודל המסך הגדול באמצעות Chart.js
+     * עם תוויות אחוזים בקצה העמודות: ימינה לחיובי, שמאלה לשלילי.
+     */
+    private buildYoyCombinedChart(): void {
+        if (!this.yoyCombinedChartRef) {
+            return;
+        }
+        const canvas = this.yoyCombinedChartRef.nativeElement;
+        const ctx = canvas.getContext('2d');
+        if (!ctx || !this.departmentYoyData || this.departmentYoyData.length === 0) {
+            return;
+        }
+
+        // השמדת גרף קודם (אם קיים)
+        if (this.yoyCombinedChart) {
+            this.yoyCombinedChart.destroy();
+            this.yoyCombinedChart = null;
+        }
+
+        const labels = this.departmentYoyData.map(d => d.Department || '');
+        const surgeries = this.departmentYoyData.map(d => d.SurgeriesPerRoom_Pct ?? 0);
+        const times = this.departmentYoyData.map(d => d.AvgSurgeryTime_Pct ?? 0);
+        const revenues = this.departmentYoyData.map(d => d.AvgRevenue_Pct ?? 0);
+
+        const isDark = this.isDark;
+        const textColor = isDark ? '#e5e7eb' : '#0f172a';
+
+        this.yoyCombinedChart = new Chart(ctx, {
+            type: 'horizontalBar',
+            data: {
+                labels,
+                datasets: [
+                    {
+                        label: 'ניתוחים לחדר (% שינוי)',
+                        data: surgeries,
+                        backgroundColor: '#22c55e',
+                    },
+                    {
+                        label: 'זמן ניתוח ממוצע (% שינוי)',
+                        data: times,
+                        backgroundColor: '#f97316',
+                    },
+                    {
+                        label: 'הכנסה ממוצעת (% שינוי)',
+                        data: revenues,
+                        backgroundColor: '#0ea5e9',
+                    },
+                ],
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        fontColor: textColor,
+                        fontSize: 11,
+                    },
+                },
+                scales: {
+                    xAxes: [{
+                        ticks: {
+                            fontColor: textColor,
+                            callback: (v: any) => v + '%',
+                        },
+                        scaleLabel: {
+                            display: true,
+                            labelString: '% שינוי',
+                            fontColor: textColor,
+                        },
+                        gridLines: {
+                            color: isDark ? 'rgba(148,163,184,.3)' : 'rgba(148,163,184,.4)',
+                        },
+                    }],
+                    yAxes: [{
+                        ticks: {
+                            fontColor: textColor,
+                            mirror: false,
+                        },
+                        gridLines: {
+                            display: false,
+                        },
+                    }],
+                },
+                layout: {
+                    padding: {
+                        left: 40,
+                        right: 40,
+                        top: 10,
+                        bottom: 10,
+                    },
+                },
+                tooltips: {
+                    callbacks: {
+                        label: (tooltipItem: any, data: any) => {
+                            const ds = data.datasets[tooltipItem.datasetIndex];
+                            const val = tooltipItem.xLabel as number;
+                            const sign = val > 0 ? '+' : '';
+                            return `${ds.label}: ${sign}${val.toFixed(1)}%`;
+                        },
+                    },
+                },
+            },
+            plugins: [{
+                // קווי "רשת" דקים לכל מחלקה + תוויות אחוזים בקצה כל עמודה
+                beforeDatasetsDraw: (chart: any) => {
+                    const ctx2 = chart.ctx;
+                    const chartArea = chart.chartArea;
+                    const firstDatasetMeta = chart.getDatasetMeta(0);
+                    if (!firstDatasetMeta || !firstDatasetMeta.data) {
+                        return;
+                    }
+
+                    ctx2.save();
+                    ctx2.strokeStyle = isDark ? 'rgba(148,163,184,.35)' : 'rgba(148,163,184,.35)';
+                    ctx2.lineWidth = 0.5;
+
+                    // לכל עמודה (מחלקה) מציירים קו עדין לרוחב הגרף
+                    firstDatasetMeta.data.forEach((bar: any) => {
+                        const y = bar._model.y;
+                        ctx2.beginPath();
+                        ctx2.moveTo(chartArea.left, y);
+                        ctx2.lineTo(chartArea.right, y);
+                        ctx2.stroke();
+                    });
+
+                    ctx2.restore();
+                },
+                afterDatasetsDraw: (chart: any) => {
+                    const ctx2 = chart.ctx;
+                    ctx2.save();
+                    ctx2.font = Chart.helpers.fontString(11, 'normal', Chart.defaults.global.defaultFontFamily);
+                    ctx2.fillStyle = textColor;
+
+                    chart.data.datasets.forEach((dataset: any, dsIndex: number) => {
+                        const meta = chart.getDatasetMeta(dsIndex);
+                        meta.data.forEach((bar: any, index: number) => {
+                            const raw = dataset.data[index];
+                            if (raw == null) {
+                                return;
+                            }
+                            const value = Number(raw);
+                            const sign = value > 0 ? '+' : '';
+                            const label = `${sign}${value.toFixed(1)}%`;
+                            const padding = 4;
+
+                            const x = value >= 0
+                                ? bar._model.x + padding
+                                : bar._model.x - padding;
+                            const y = bar._model.y + 4; // תיקון קטן לגובה
+
+                            ctx2.textAlign = value >= 0 ? 'left' : 'right';
+                            ctx2.textBaseline = 'middle';
+                            ctx2.fillText(label, x, y);
+                        });
+                    });
+
+                    ctx2.restore();
+                },
+            }],
+        } as any);
     }
 
 
@@ -585,6 +812,10 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy {
         document.body.classList.remove('surgeries-dashborad-dark');
         if (typeof window !== 'undefined') {
             window.removeEventListener('resize', this.onWindowResize);
+        }
+        if (this.loadingProgressTimer) {
+            clearInterval(this.loadingProgressTimer);
+            this.loadingProgressTimer = null;
         }
     }
 
@@ -805,6 +1036,10 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy {
                         AvgRevenue_Pct: r.AvgRevenue_Pct != null ? Number(r.AvgRevenue_Pct) : (r.avgRevenue_Pct != null ? Number(r.avgRevenue_Pct) : null),
                     }));
                     this.updateChartData();
+                    // במידה והמודל הגדול של מדד משולב פתוח – בונה גם את גרף Chart.js
+                    if (this.showYoyCombinedFullModal) {
+                        setTimeout(() => this.buildYoyCombinedChart(), 0);
+                    }
                 },
                 (error) => {
                     console.error("Error loading GetDepartmentYoY data:", error);
@@ -1112,6 +1347,14 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy {
                 bars: "horizontal",
                 isStacked: false,
                 colors: ["#228B22", "#FF8C00", "#008B8B"],
+                // תוויות אחוזים בקצה כל עמודה – ימינה לחיובי, שמאלה לשלילי
+                annotations: {
+                    alwaysOutside: true,
+                    highContrast: false,
+                    textStyle: {
+                        fontSize: 11,
+                    },
+                },
                 hAxis: {
                     viewWindow: { min: -100, max: 200 },
                     format: "#\'%\'",
@@ -2149,7 +2392,8 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy {
      * שינוי מצב תצוגת הגרף הראשי (סה"כ / קרן‑מדינה / אתר / משמרת / מחלקה)
      */
     setChartViewMode(mode: "year-total" | "fund" | "site" | "shift" | "department" | "month" | "yoy-combined"): void {
-        if (this.chartViewMode === mode) {
+        if (this.chartViewMode === mode && mode !== "yoy-combined") {
+            // עבור רוב המצבים, אם כבר במצב הזה – אין מה לעשות
             return;
         }
         this.chartViewMode = mode;
@@ -2173,7 +2417,7 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy {
         }
         this.cdr.detectChanges();
 
-        // כפיית רענון / ריסייז של הגרף מיד אחרי החלפת מצב,
+        // כפיית רענון / ריסייז של הגף מיד אחרי החלפת מצב,
         // כדי שלא יהיה צורך בלחיצה נוספת (כפתור סיידבר וכד').
         setTimeout(() => {
             try {
@@ -2183,6 +2427,30 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy {
             }
             this.chartOptions = { ...this.chartOptions };
         }, 0);
+    }
+
+    /**
+     * לחיצה על "מדד משולב" – גם מחליפה מצב תצוגה וגם פותחת פופ‑אפ גדול
+     */
+    onYoyCombinedClick(): void {
+        this.setChartViewMode("yoy-combined");
+        this.showYoyCombinedFullModal = true;
+        // נותן לאנגולר לצייר את ה-canvas ואז בונה את הגרף
+        setTimeout(() => this.buildYoyCombinedChart(), 0);
+    }
+
+    closeYoyCombinedFullModal(): void {
+        this.showYoyCombinedFullModal = false;
+        if (this.yoyCombinedChart) {
+            this.yoyCombinedChart.destroy();
+            this.yoyCombinedChart = null;
+        }
+        // טריגר ריסייז קטן כדי שהגרף הרגיל יחזור להתאים את עצמו
+        try {
+            window.dispatchEvent(new Event("resize"));
+        } catch {
+            // ignore
+        }
     }
 
     /**

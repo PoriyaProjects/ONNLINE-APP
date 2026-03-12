@@ -2004,6 +2004,10 @@ footer {
     padding-bottom: 90px;
 }
 
+body.bg-blue-light1 {
+    padding-top: 45px;
+}
+
 input::-webkit-outer-spin-button,
 input::-webkit-inner-spin-button {
     -webkit-appearance: none;
