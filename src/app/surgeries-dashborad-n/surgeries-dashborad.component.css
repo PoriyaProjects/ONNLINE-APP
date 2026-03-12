@@ -970,6 +970,13 @@
   }
 }
 
+.main-chart-full-modal {
+  width: 95vw;
+  height: 95vh;
+  max-width: none;
+  max-height: none;
+}
+
 .year-summary-row {
   display: flex;
   flex-wrap: wrap;
@@ -1138,10 +1145,10 @@
 }
 
 .mode-toggle-btn {
-  min-width: 72px;
-  padding: 4px 10px;
+  min-width: 88px;
+  padding: 6px 14px;
   border-radius: 999px;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
   border: 1px solid var(--btnBorder);
   background: var(--btnBg);

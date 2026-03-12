@@ -18,6 +18,33 @@
     </div>
   </div>
 
+  <!-- Full‑screen modal for main chart (כל המצבים) -->
+  <div *ngIf="showMainChartFullModal" class="kpi-overlay" [class.dark]="isDark">
+    <div class="kpi-modal main-chart-full-modal" dir="rtl">
+      <div class="kpi-header">
+        <h2>{{ getChartViewTitle() }}</h2>
+        <button mat-icon-button class="close-btn" (click)="closeMainChartFullModal()">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+      <div class="kpi-body">
+        <div class="graph-body" style="flex: 1 1 auto; max-height: none; min-height: 0;">
+          <google-chart *ngIf="!isChartLoading && !isMainDataLoading && chartData && chartData.length > 0"
+            [type]="chartType"
+            [columns]="chartColumns"
+            [data]="chartData"
+            [options]="chartOptions"
+            [width]="'100%'"
+            [height]="'100%'">
+          </google-chart>
+          <div *ngIf="!isChartLoading && !isMainDataLoading && (!chartData || !chartData.length)" class="chart-no-data">
+            אין נתונים להצגה בגרף
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- ================= TOP BAR ================= -->
   <div class="topbar" dir="rtl">
     <div class="top-left">
@@ -163,7 +190,7 @@
         </div>
 
 
-        <div class="graph-body">
+          <div class="graph-body">
           <div *ngIf="isChartLoading || isMainDataLoading" class="chart-loading-overlay">
             <mat-spinner diameter="50"></mat-spinner>
             <div class="chart-loading-text">טוען גרף...</div>
@@ -179,43 +206,56 @@
               <div class="year-subtitle">מספר ניתוחים בשנה</div>
             </div>
           </div>
-          <google-chart [type]="chartType" [data]="chartData" [columns]="chartColumns" [options]="chartOptions"
-            [width]="'100%'" (select)="onChartClick($event)"
-            *ngIf="!isChartLoading && !isMainDataLoading && chartData && chartData.length > 0">
-          </google-chart>
+          <div (dblclick)="openMainChartFullModal()" matTooltip="לחץ לחיצה כפולה עלי" matTooltipPosition="above">
+            <google-chart [type]="chartType" [data]="chartData" [columns]="chartColumns" [options]="chartOptions"
+              [width]="'100%'" (select)="onChartClick($event)"
+              *ngIf="!isChartLoading && !isMainDataLoading && chartData && chartData.length > 0">
+            </google-chart>
+          </div>
 
           <!-- מצב תצוגה לוגרף הראשי: סה"כ / קרן‑מדינה / אתר / משמרת / מחלקה -->
           <div class="chart-mode-row"
             *ngIf="!isChartLoading && !isMainDataLoading && chartData && chartData.length > 0">
             <button class="icon-btn ghost mode-toggle-btn" [class.active]="chartViewMode === 'year-total'"
-              [matTooltip]="getChartViewTooltip('year-total')" matTooltipPosition="top"
+              [matTooltip]="getChartViewTooltip('year-total') + ' · לחץ לחיצה כפולה עלי'" matTooltipPosition="top"
+              (dblclick)="openMainChartFullModal()"
               (click)="setChartViewMode('year-total')">
               סה"כ לשנה
             </button>
             <button class="icon-btn ghost mode-toggle-btn" [class.active]="chartViewMode === 'month'"
-              [matTooltip]="getChartViewTooltip('month')" matTooltipPosition="top" (click)="setChartViewMode('month')">
+              [matTooltip]="getChartViewTooltip('month') + ' · לחץ לחיצה כפולה עלי'" matTooltipPosition="top"
+              (dblclick)="openMainChartFullModal()"
+              (click)="setChartViewMode('month')">
               ניתוחים לפי חודשים
             </button>
             <button class="icon-btn ghost mode-toggle-btn" [class.active]="chartViewMode === 'fund'"
-              [matTooltip]="getChartViewTooltip('fund')" matTooltipPosition="top" (click)="setChartViewMode('fund')">
+              [matTooltip]="getChartViewTooltip('fund') + ' · לחץ לחיצה כפולה עלי'" matTooltipPosition="top"
+              (dblclick)="openMainChartFullModal()"
+              (click)="setChartViewMode('fund')">
               קרן/מדינה
             </button>
             <button class="icon-btn ghost mode-toggle-btn" [class.active]="chartViewMode === 'site'"
-              [matTooltip]="getChartViewTooltip('site')" matTooltipPosition="top" (click)="setChartViewMode('site')">
+              [matTooltip]="getChartViewTooltip('site') + ' · לחץ לחיצה כפולה עלי'" matTooltipPosition="top"
+              (dblclick)="openMainChartFullModal()"
+              (click)="setChartViewMode('site')">
               אתר
             </button>
             <button class="icon-btn ghost mode-toggle-btn" [class.active]="chartViewMode === 'shift'"
               [class.disabled-filter]="isShiftGroupedView && chartViewMode !== 'shift'"
-              [matTooltip]="getChartViewTooltip('shift')" matTooltipPosition="top" (click)="setChartViewMode('shift')">
+              [matTooltip]="getChartViewTooltip('shift') + ' · לחץ לחיצה כפולה עלי'" matTooltipPosition="top"
+              (dblclick)="openMainChartFullModal()"
+              (click)="setChartViewMode('shift')">
               משמרת
             </button>
             <button class="icon-btn ghost mode-toggle-btn" [class.active]="chartViewMode === 'department'"
-              [matTooltip]="getChartViewTooltip('department')" matTooltipPosition="top"
+              [matTooltip]="getChartViewTooltip('department') + ' · לחץ לחיצה כפולה עלי'" matTooltipPosition="top"
+              (dblclick)="openMainChartFullModal()"
               (click)="setChartViewMode('department')">
               סה"כ לפי מחלקה
             </button>
             <button class="icon-btn ghost mode-toggle-btn" [class.active]="chartViewMode === 'yoy-combined'"
-              [matTooltip]="getChartViewTooltip('yoy-combined')" matTooltipPosition="top"
+              [matTooltip]="getChartViewTooltip('yoy-combined') + ' · לחץ לחיצה כפולה עלי'" matTooltipPosition="top"
+              (dblclick)="openMainChartFullModal()"
               (click)="onYoyCombinedClick()">
               מדד משולב
             </button>
@@ -291,32 +331,37 @@
           <span>טבלת ניתוחים ומחלקות</span>
         </div>
 
-        <div class="table-body">
+          <div class="table-body">
           <!-- טבלה מצטברת: אותם נתונים של הגרף, מוצגים כטבלה (לכל המצבים חוץ ממדד משולב) -->
           <div class="table-wrap"
             *ngIf="chartViewMode !== 'yoy-combined' && chartTableRows?.length && yearsForChart?.length">
             <table class="table aggregated-chart-table" dir="rtl">
-              <thead>
-                <tr>
-                  <th>ישות</th>
-                  <th *ngFor="let y of yearsForChart">{{ y }}</th>
-                  <th>הפרש / % שינוי<br /><small>(שנה נוכחית מול קודמת)</small></th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr *ngFor="let r of chartTableRows">
-                  <td>{{ r.label }}</td>
-                  <td *ngFor="let y of yearsForChart">{{ r.perYear[y] || 0 }}</td>
-                  <td [ngClass]="{ 'agg-positive': (r.diff || 0) > 0, 'agg-negative': (r.diff || 0) < 0 }">
-                    <ng-container *ngIf="!(chartViewMode === 'month' && r.isFuture); else emptyDiffCell">
-                      {{ formatNumber(r.diff || 0) }}
-                      <br />
-                      <span class="percentage-badge">{{ r.pct || '0%' }}</span>
-                    </ng-container>
-                    <ng-template #emptyDiffCell></ng-template>
-                  </td>
-                </tr>
-              </tbody>
+            <thead>
+              <tr>
+                <th>ישות</th>
+                <th *ngFor="let y of yearsForChart; let i = index">
+                  {{ y }}
+                  <br *ngIf="i > 0" />
+                  <small *ngIf="i > 0">שינוי מול {{ yearsForChart[i - 1] }}</small>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let r of chartTableRows">
+                <td>{{ r.label }}</td>
+                <td *ngFor="let y of yearsForChart"
+                  [ngClass]="getYearDiffClass(r, y)">
+                  <ng-container *ngIf="getYearDiff(r, y) as d; else baseValue">
+                    {{ formatNumber(d.diff) }}
+                    <br />
+                    <span class="percentage-badge">{{ d.pct }}</span>
+                  </ng-container>
+                  <ng-template #baseValue>
+                    {{ formatNumber(r.perYear[y] || 0) }}
+                  </ng-template>
+                </td>
+              </tr>
+            </tbody>
             </table>
           </div>
           <!-- טבלת מדד משולב: אחוזי שינוי לפי מחלקה -->

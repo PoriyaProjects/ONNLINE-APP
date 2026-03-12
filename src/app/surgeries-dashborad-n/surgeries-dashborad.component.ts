@@ -308,10 +308,12 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck {
         annotations: {
             alwaysOutside: false,
             textStyle: {
-                fontSize: 10,
+                fontSize: 11,
                 bold: true,
                 color: "#0f172a",
                 fontName: "Segoe UI",
+                auraColor: "#ffffff",
+                opacity: 0.9,
             },
         },
         bar: {
@@ -1708,6 +1710,11 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck {
                 };
                 // תצוגה: עמודה אחת לשנה, מחולקת לצבעים לפי אתר (stacked)
                 this.chartOptions.isStacked = true;
+                // מציבים את הערכים בתוך העמודות ולא מעליהן
+                this.chartOptions.annotations = {
+                    ...(this.chartOptions.annotations || {}),
+                    alwaysOutside: false,
+                };
 
                 this.isChartLoading = false;
                 this.cdr.detectChanges();
@@ -1803,6 +1810,11 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck {
                 };
                 // תצוגה: עמודה אחת לשנה, מחולקת לצבעים לפי משמרת (stacked)
                 this.chartOptions.isStacked = true;
+                // מציבים את הערכים בתוך העמודות ולא מעליהן
+                this.chartOptions.annotations = {
+                    ...(this.chartOptions.annotations || {}),
+                    alwaysOutside: false,
+                };
 
                 this.isChartLoading = false;
                 this.cdr.detectChanges();
@@ -1856,6 +1868,11 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck {
                 });
                 this.chartOptions.colors = colors;
                 this.chartOptions.isStacked = true;
+                // מציבים את הערכים בתוך העמודות ולא מעליהן
+                this.chartOptions.annotations = {
+                    ...(this.chartOptions.annotations || {}),
+                    alwaysOutside: false,
+                };
 
                 this.isChartLoading = false;
                 this.cdr.detectChanges();
@@ -2322,6 +2339,78 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck {
         }
         const pct = ((diff / olderVal) * 100).toFixed(1) + "%";
         return { diff, pct };
+    }
+
+    // מצב תצוגה מלאה לגרף הראשי
+    showMainChartFullModal = false;
+
+    openMainChartFullModal(): void {
+        if (!this.chartData || this.chartData.length === 0) {
+            return;
+        }
+        this.showMainChartFullModal = true;
+    }
+
+    closeMainChartFullModal(): void {
+        this.showMainChartFullModal = false;
+    }
+
+    /**
+     * מחזיר הפרש ואחוז שינוי עבור שנה ספציפית בשורה (מול השנה הקודמת בעמודה).
+     * אם אין שנה קודמת (העמודה הראשונה) או אם מדובר בחודש עתידי בשנה הנוכחית – מחזיר null.
+     */
+    getYearDiff(
+        row: { perYear: { [year: number]: number }; isFuture?: boolean },
+        year: number
+    ): { diff: number; pct: string } | null {
+        if (!this.yearsForChart || this.yearsForChart.length < 2) {
+            return null;
+        }
+
+        const years = this.yearsForChart;
+        const idx = years.indexOf(year);
+        if (idx <= 0) {
+            // אין שנה קודמת להשוואה (עמודה ראשונה)
+            return null;
+        }
+
+        // בחודשים עתידיים בשנה הנוכחית לא מציגים הפרש / אחוז – נשאר עם הערך הבסיסי
+        if (
+            this.chartViewMode === "month" &&
+            row.isFuture &&
+            year === this.currentYear
+        ) {
+            return null;
+        }
+
+        const prevYear = years[idx - 1];
+        const newerVal = row.perYear[year] || 0;
+        const olderVal = row.perYear[prevYear] || 0;
+        const diff = newerVal - olderVal;
+
+        if (!olderVal) {
+            return { diff, pct: newerVal ? "∞%" : "0%" };
+        }
+
+        const pct = ((diff / olderVal) * 100).toFixed(1) + "%";
+        return { diff, pct };
+    }
+
+    /**
+     * קובע את מחלקת הצבע לתא ספציפי בטבלה לפי כיוון השינוי.
+     */
+    getYearDiffClass(
+        row: { perYear: { [year: number]: number }; isFuture?: boolean },
+        year: number
+    ): { [klass: string]: boolean } {
+        const d = this.getYearDiff(row, year);
+        if (!d) {
+            return {};
+        }
+        return {
+            "agg-positive": d.diff > 0,
+            "agg-negative": d.diff < 0,
+        };
     }
 
   private applyEmployeeDepartmentFilter(): void {
@@ -3076,7 +3165,16 @@ updateChartColumns(): void {
         }
 
         // הגרף הראשי תמיד מתעדכן לפי הפילטרים (גם כשאין surgeryData ויש רק CountByDept)
-        this.updateChartData();
+        // במצב "ניתוחים לפי חודשים" צריך לטעון מחדש את ה‑API הייעודי עם הפילטרים
+        if (this.chartViewMode === "month") {
+            this.loadMonthlyCounts();
+        } else if (this.chartViewMode === "yoy-combined") {
+            // כרגע ה‑API של מדד משולב לא מקבל פילטרים, ולכן אין טעם לטעון אותו מחדש
+            // אם בעתיד יתווספו פילטרים ל‑GetDepartmentYoY, נוכל לקרוא כאן ל‑loadDepartmentYoY().
+            this.updateChartData();
+        } else {
+            this.updateChartData();
+        }
         this.cdr.detectChanges();
     }
 
