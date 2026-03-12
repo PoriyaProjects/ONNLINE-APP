@@ -11,6 +11,9 @@
         <span *ngIf="catalogLoading">טוען נתוני ניתוחים למחלקה...</span>
         <span *ngIf="isLoading">טוען דוח ניתוחים למנהל...</span>
         <span *ngIf="isChartLoading && !isMainDataLoading">טוען גרף...</span>
+        <span class="loading-percentage" *ngIf="loadingProgress > 0">
+          {{ loadingProgress | number : '1.0-0' }}%
+        </span>
       </div>
     </div>
   </div>
@@ -213,7 +216,7 @@
             </button>
             <button class="icon-btn ghost mode-toggle-btn" [class.active]="chartViewMode === 'yoy-combined'"
               [matTooltip]="getChartViewTooltip('yoy-combined')" matTooltipPosition="top"
-              (click)="setChartViewMode('yoy-combined')">
+              (click)="onYoyCombinedClick()">
               מדד משולב
             </button>
           </div>
@@ -523,6 +526,32 @@
       </div>
     </div>
 
+  </div>
+
+  <!-- Full‑screen modal for YoY Combined main chart -->
+  <div *ngIf="showYoyCombinedFullModal" class="kpi-overlay" [class.dark]="isDark">
+    <div class="kpi-modal yoy-combined-modal" dir="rtl">
+      <div class="kpi-header">
+        <h2>מדד משולב – תצוגת מסך גדול</h2>
+        <button mat-icon-button class="close-btn" (click)="closeYoyCombinedFullModal()">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+      <div class="kpi-body">
+        <p class="kpi-intro">
+          אחוז שינוי ביחס לאותה תקופה בשנה שעברה (ניתוחים לחדר, זמן ניתוח ממוצע, הכנסה ממוצעת) – גרף מסך מלא לקריאה
+          נוחה.
+        </p>
+        <div class="graph-body" style="flex: 1 1 auto; max-height: none; min-height: 0;">
+          <canvas #yoyCombinedChart *ngIf="!isChartLoading && !isMainDataLoading && departmentYoyData?.length"
+            style="width: 100%; height: 100%;"></canvas>
+          <div *ngIf="!isChartLoading && !isMainDataLoading && (!departmentYoyData || !departmentYoyData.length)"
+            class="chart-no-data">
+            אין נתונים להצגה בגרף
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- Guide Avatar Modal -->
