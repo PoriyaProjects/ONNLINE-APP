@@ -15,7 +15,8 @@
           <span class="material-icons">add</span>
           הוסף הקצאה למחלקה
         </button>
-        <button mat-raised-button color="accent" (click)="exportAndSendPdf()" [disabled]="!intern || assignments.length === 0 || sendingPdf">
+        <button mat-raised-button color="accent" (click)="exportAndSendPdf(intern.Email)"
+          [disabled]="!intern || assignments.length === 0 || sendingPdf || intern.Email == ''">
           <span class="material-icons">{{ sendingPdf ? 'hourglass_empty' : 'picture_as_pdf' }}</span>
           {{ sendingPdf ? 'שולח...' : 'יצירת PDF ושליחה לסטאזר' }}
         </button>
@@ -34,10 +35,6 @@
         <th mat-header-cell *matHeaderCellDef>תאריך סיום תקופת הסטאג'ר</th>
         <td mat-cell *matCellDef="let element">{{ formatDate(element.InternPeriodEnd) }}</td>
       </ng-container>
-      <!-- <ng-container matColumnDef="AvailabilityStatus">
-        <th mat-header-cell *matHeaderCellDef>סטטוס זמינות</th>
-        <td mat-cell *matCellDef="let element">{{ element.AvailabilityStatus || '-' }}</td>
-      </ng-container> -->
       <ng-container matColumnDef="Actions">
         <th mat-header-cell *matHeaderCellDef>פעולות</th>
         <td mat-cell *matCellDef="let element">

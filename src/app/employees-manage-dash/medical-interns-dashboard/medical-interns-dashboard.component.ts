@@ -24,6 +24,9 @@ import { saveAs } from 'file-saver';
 })
 export class MedicalInternsDashboardComponent implements OnInit {
 
+  /** Toggle between interns table, departments table, server data table, and feedback table */
+  viewMode: 'interns' | 'departments' | 'serverData' | 'feedback' = 'interns';
+
   stats = {
     total: 0,
     withEmail: 0,
@@ -33,10 +36,10 @@ export class MedicalInternsDashboardComponent implements OnInit {
 
   TABLE_DATA: any[] = [];
   displayedColumns: string[] = [
-    'Image', 'EmployeeID', 'FirstName', 'LastName', 'CellNumber', 'Email', 'Actions'
+    'Image', 'EmployeeID', 'FirstName', 'LastName', 'CellNumber', 'Email', 'DepartnentDescripton', 'Actions'
   ];
   dataSource = new MatTableDataSource(this.TABLE_DATA);
-  @ViewChild(MatPaginator) paginator: MatPaginator;
+  @ViewChild('internsPaginator') paginator: MatPaginator;
   @ViewChild(MatSort) sort: MatSort;
   searchInternsGroup: FormGroup;
   DepartmentsList: any[] = [];
@@ -57,6 +60,59 @@ export class MedicalInternsDashboardComponent implements OnInit {
   displayDepartmentsSaving = false;
   /** Filter for departments visibility panel */
   departmentsFilter = '';
+
+  /** Departments pivot table (monthly intern counts per department) */
+  departmentsTableData: any[] = [];
+  departmentsDataSource = new MatTableDataSource<any>([]);
+  departmentsDisplayedColumns: string[] = ['DepartDesc', 'jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
+  /** Hebrew labels for month columns */
+  monthLabels: Record<string, string> = {
+    jan: 'ינואר', feb: 'פברואר', mar: 'מרץ', apr: 'אפריל', may: 'מאי', jun: 'יוני',
+    jul: 'יולי', aug: 'אוגוסט', sep: 'ספטמבר', oct: 'אוקטובר', nov: 'נובמבר', dec: 'דצמבר'
+  };
+  departmentsLoaded = false;
+  @ViewChild('departmentsPaginator') departmentsPaginator: MatPaginator;
+
+  /** Server data table (dynamic columns from SqlDataReader JSON) */
+  serverDataTableData: Record<string, any>[] = [];
+  serverDataSource = new MatTableDataSource<Record<string, any>>([]);
+  serverDataDisplayedColumns: string[] = [];
+  serverDataLoaded = false;
+  @ViewChild('serverDataPaginator') serverDataPaginator: MatPaginator;
+
+  /** Interns feedback table (from VW_EP_InternQuestionnaireResaultNumeric) */
+  feedbackTableData: Record<string, any>[] = [];
+  feedbackDataSource = new MatTableDataSource<Record<string, any>>([]);
+  feedbackDisplayedColumns: string[] = [];
+  feedbackLoaded = false;
+  @ViewChild('feedbackPaginator') feedbackPaginator: MatPaginator;
+  /** Hebrew labels for feedback columns */
+  feedbackColumnLabels: Record<string, string> = {
+    מחלקה: 'מחלקה',
+    סבב: 'סבב',
+    רבעון: 'רבעון',
+    תהליך_הקבלה: 'תהליך הקבלה',
+    יחס_לסטאזרים: 'יחס לסטאזרים',
+    עומס_עבודה: 'עומס עבודה',
+    הדרכה_קבלה_מעקב_שחרור: 'הדרכה קבלה מעקב שחרור',
+    מעקב_אחר_קבלה_מעקב_שחרור: 'מעקב אחר קבלה מעקב שחרור',
+    חלוקת_תורנויות: 'חלוקת תורנויות',
+    לימוד_אקדמיה: 'לימוד אקדמיה',
+    בטחון_ומסוגלות: 'בטחון ומסוגלות',
+    השתתפות_בהרצאות_מחוץ_למחלקה: 'השתתפות בהרצאות מחוץ למחלקה',
+    ימי_ספריה_החזר: 'ימי ספריה החזר',
+    שביעות_רצון_כללית: 'שביעות רצון כללית',
+    מעורבות_המנטור: 'מעורבות המנטור',
+    יש_מנטור: 'יש מנטור',
+    אין_מנטור: 'אין מנטור',
+    יש_קושי_בתקשורת_שפה: 'יש קושי בתקשורת שפה',
+    אין_קושי_בתקשורת_שפה: 'אין קושי בתקשורת שפה',
+    יש_מקום_לינה: 'יש מקום לינה',
+    אין_מקום_לינה: 'אין מקום לינה',
+    יש_המלצה_לאלקטיב: 'יש המלצה לאלקטיב',
+    אין_המלצה_לאלקטיב: 'אין המלצה לאלקטיב',
+    הערות_סטאזר: 'הערות סטאזר'
+  };
 
   constructor(
     public dialog: MatDialog,
@@ -79,6 +135,7 @@ export class MedicalInternsDashboardComponent implements OnInit {
     this.getMedicalInterns();
     this.getDepartmentList();
     this.loadAllDepartments();
+    this.loadDepartmentsData();
   }
 
   get filteredDepartments(): any[] {
@@ -146,6 +203,7 @@ export class MedicalInternsDashboardComponent implements OnInit {
         if (response['d']) {
           this.openSnackBar('נשמר בהצלחה');
           this.loadAllDepartments();
+          this.loadDepartmentsData();
         } else {
           this.openSnackBar('משהו השתבש, לא נשמר');
         }
@@ -218,6 +276,174 @@ export class MedicalInternsDashboardComponent implements OnInit {
     this.http.post(this.url + 'GetMedicalInternDepartments', { _InternPeriod: null }).subscribe((response) => {
       this.DepartmentsList = response['d'] || [];
     });
+  }
+
+  /** Load departments pivot data (intern counts per department per month) */
+  loadDepartmentsData() {
+    this.departmentsLoaded = false;
+    this.http.post(this.url + 'GetInternDepartmentMonthPeriodTable', {}).subscribe(
+      (response) => {
+        this.departmentsLoaded = true;
+        const data = response['d'] || [];
+        this.departmentsTableData = data;
+        this.departmentsDataSource = new MatTableDataSource<any>(data);
+        setTimeout(() => {
+          this.departmentsDataSource.paginator = this.departmentsPaginator;
+        }, 0);
+        this.departmentsDataSource.filterPredicate = (row, filter) => {
+          const term = filter.toLowerCase();
+          return (row.DepartDesc || '').toLowerCase().includes(term) ||
+            this.departmentsDisplayedColumns.some((col) => col !== 'DepartDesc' && String(row[col] || '').includes(term));
+        };
+      },
+      () => {
+        this.departmentsLoaded = true;
+        this.departmentsTableData = [];
+        this.departmentsDataSource = new MatTableDataSource<any>([]);
+        this.openSnackBar('שגיאה בטעינת נתוני המחלקות');
+      }
+    );
+  }
+
+  setViewMode(mode: 'interns' | 'departments' | 'serverData' | 'feedback') {
+    this.viewMode = mode;
+    if (mode === 'departments') {
+      this.loadDepartmentsData();
+    } else if (mode === 'serverData') {
+      this.loadServerData();
+    } else if (mode === 'feedback') {
+      this.loadFeedbackData();
+    }
+  }
+
+  /**
+   * Loads data from server that returns JSON in format:
+   * [{ column1: value1, column2: value2, ... }, ...]
+   * (from C# SqlDataReader serialized with JsonConvert.SerializeObject(rows))
+   */
+  loadServerData(): void {
+    this.serverDataLoaded = false;
+    this.http.post(this.url + 'GetInternRotationMatrix', {}).subscribe(
+      (response) => {
+        this.serverDataLoaded = true;
+        let raw = response['d'];
+        if (typeof raw === 'string') {
+          try {
+            raw = JSON.parse(raw);
+          } catch {
+            raw = [];
+          }
+        }
+        const rows: Record<string, any>[] = Array.isArray(raw) ? raw : [];
+        this.serverDataTableData = rows;
+        this.serverDataSource = new MatTableDataSource<Record<string, any>>(rows);
+        this.serverDataDisplayedColumns = this.getServerDataColumns(rows);
+        setTimeout(() => {
+          this.serverDataSource.paginator = this.serverDataPaginator;
+        }, 0);
+        this.serverDataSource.filterPredicate = (row, filter) => {
+          const term = filter.toLowerCase();
+          return this.serverDataDisplayedColumns.some(
+            (col) => String(row[col] ?? '').toLowerCase().includes(term)
+          );
+        };
+      },
+      () => {
+        this.serverDataLoaded = true;
+        this.serverDataTableData = [];
+        this.serverDataSource = new MatTableDataSource<Record<string, any>>([]);
+        this.serverDataDisplayedColumns = [];
+        this.openSnackBar('שגיאה בטעינת נתוני השרת');
+      }
+    );
+  }
+
+  private getServerDataColumns(rows: Record<string, any>[]): string[] {
+    const cols = new Set<string>();
+    rows.forEach((row) => Object.keys(row).forEach((k) => cols.add(k)));
+    return Array.from(cols);
+  }
+
+  /**
+   * Loads interns feedback data from VW_EP_InternQuestionnaireResaultNumeric.
+   * Backend endpoint should return JSON array of objects with columns matching the view.
+   */
+  loadFeedbackData(): void {
+    this.feedbackLoaded = false;
+    this.http.post(this.url + 'GetInternDepartmentsFeedbackMatrix', {}).subscribe(
+      (response) => {
+        this.feedbackLoaded = true;
+        let raw = response['d'];
+        if (typeof raw === 'string') {
+          try {
+            raw = JSON.parse(raw);
+          } catch {
+            raw = [];
+          }
+        }
+        const rows: Record<string, any>[] = Array.isArray(raw) ? raw : [];
+        this.feedbackTableData = rows;
+        this.feedbackDataSource = new MatTableDataSource<Record<string, any>>(rows);
+        this.feedbackDisplayedColumns = this.getFeedbackColumns(rows);
+        setTimeout(() => {
+          this.feedbackDataSource.paginator = this.feedbackPaginator;
+        }, 0);
+        this.feedbackDataSource.filterPredicate = (row, filter) => {
+          const term = filter.toLowerCase();
+          return this.feedbackDisplayedColumns.some(
+            (col) => String(row[col] ?? '').toLowerCase().includes(term)
+          );
+        };
+      },
+      () => {
+        this.feedbackLoaded = true;
+        this.feedbackTableData = [];
+        this.feedbackDataSource = new MatTableDataSource<Record<string, any>>([]);
+        this.feedbackDisplayedColumns = [];
+        this.openSnackBar('שגיאה בטעינת משוב סטאג\'רים');
+      }
+    );
+  }
+
+  private getFeedbackColumns(rows: Record<string, any>[]): string[] {
+    const cols = new Set<string>();
+
+    rows.forEach((row) => {
+        Object.keys(row).forEach((k) => {
+            if (k !== '__type') { // Check specifically for the key you want to exclude
+                cols.add(k);
+            }
+        });
+    });
+
+    return Array.from(cols);
+}
+
+  getFeedbackColumnLabel(col: string): string {
+    return this.feedbackColumnLabels[col] || col;
+  }
+
+  /** Truncates feedback text for display; full text goes in tooltip */
+  truncateFeedbackText(val: any, maxLen: number = 45): string {
+    if (val == null || val === undefined) return '—';
+    const s = String(val);
+    if (s.length <= maxLen) return s;
+    return s.substring(0, maxLen) + '...';
+  }
+
+  getFeedbackCellTooltip(val: any, maxLen: number = 45): string {
+    if (val == null || val === undefined) return '';
+    const s = String(val);
+    return s.length > maxLen ? s : '';
+  }
+
+  /** Replaces "-" with "\\" for display in server data table */
+  replaceDash(val: any): string {
+    if(val === 'EmployeeID') return 'מזהה סטאגר';
+    if(val === 'FirstName') return 'שם פרטי';
+    if(val === 'LastName') return 'שם משפחה';
+    if (val == null || val === undefined) return '';
+    return String(val).replace(/-/g, '\\');
   }
 
   getMedicalInterns() {
@@ -298,14 +524,39 @@ export class MedicalInternsDashboardComponent implements OnInit {
     });
   }
 
-  clearTableFilter(input: HTMLInputElement): void {
-    input.value = '';
-    this.dataSource.filter = '';
+  get isLoading(): boolean {
+    return (this.viewMode === 'interns' && !this.loaded) ||
+      (this.viewMode === 'departments' && !this.departmentsLoaded) ||
+      (this.viewMode === 'serverData' && !this.serverDataLoaded) ||
+      (this.viewMode === 'feedback' && !this.feedbackLoaded);
   }
+
 
   applyFilter(event: Event) {
     const filterValue = (event.target as HTMLInputElement).value;
-    this.dataSource.filter = filterValue.trim().toLowerCase();
+    const val = filterValue.trim().toLowerCase();
+    if (this.viewMode === 'interns') {
+      this.dataSource.filter = val;
+    } else if (this.viewMode === 'departments') {
+      this.departmentsDataSource.filter = val;
+    } else if (this.viewMode === 'feedback') {
+      this.feedbackDataSource.filter = val;
+    } else {
+      this.serverDataSource.filter = val;
+    }
+  }
+
+  clearActiveTableFilter(input: HTMLInputElement) {
+    input.value = '';
+    if (this.viewMode === 'interns') {
+      this.dataSource.filter = '';
+    } else if (this.viewMode === 'departments') {
+      this.departmentsDataSource.filter = '';
+    } else if (this.viewMode === 'feedback') {
+      this.feedbackDataSource.filter = '';
+    } else {
+      this.serverDataSource.filter = '';
+    }
   }
 
   addUpdateIntern(intern: any) {
@@ -346,7 +597,7 @@ export class MedicalInternsDashboardComponent implements OnInit {
       תז: x.EmployeeID,
       שם_פרטי: x.FirstName,
       שם_משפחה: x.LastName,
-      // מחלקה: x.DepartnentDescripton,
+      מחלקה: x.DepartnentDescripton,
       טלפון: x.CellNumber,
       מייל: x.Email
     }));

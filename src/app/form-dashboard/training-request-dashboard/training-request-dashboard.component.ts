@@ -461,8 +461,8 @@ export class TrainingRequestDashboardComponent implements OnInit {
         <p style="margin: 5px 0;">${data['G'].Function_Department}</p>
         <p style="margin: 5px 0;">ת.ז: ${data['A'].Passport_ID}</p>
       <br>
-        <p style="font-size: 18px;font-weight: bold;margin-bottom: 5px;margin: 5px 0;">הנדון: בקשתך להשתלמות נדונה בתאריך ${this.datePipe.transform(data['H'].Plan_Date, 'dd-MM-yyyy')}</p>
-        <p style="margin: 5px 0;">לקורס: <span style="font-weight: bold;color: black;;padding: 2px 5px;
+        <p style="font-size: 18px;font-weight: bold;margin-bottom: 5px;margin: 5px 0;">הנדון: בקשתך להשתלמות נדונה בתאריך ${this.datePipe.transform(data['H'].Opinion_Date, 'dd-MM-yyyy')}</p>
+        <p style="margin: 5px 0;">ל ${data['H'].Training_Type == '' ? `` : `קורס: `}<span style="font-weight: bold;color: black;;padding: 2px 5px;
         border-radius: 5px;margin: 5px 0;">${data['B'].Request_Name}</span> 
         בין התאריכים <span style="font-weight: bold;color: black;padding: 2px 5px;
         border-radius: 5px;">${this.datePipe.transform(data['B'].Date_Start, 'dd-MM-yyyy')} - ${this.datePipe.transform(data['B'].Date_End, 'dd-MM-yyyy')}</span> 
