@@ -254,14 +254,20 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck {
         title: "מעקב ניתוחים לפי חדר",
         titleTextStyle: {
             color: "#0f172a",
-            fontSize: 16,
+            fontSize: 18,
             bold: true,
         },
         hAxis: {
             title: "",
             textStyle: {
                 color: "#64748b",
-                fontSize: 11,
+                fontSize: 13,
+                bold: true,
+            },
+            titleTextStyle: {
+                color: "#0f172a",
+                fontSize: 14,
+                bold: true,
             },
             // תוויות בציר X יוצגו אופקית כדי לראות את כל השנים (YYYY)
             slantedText: false,
@@ -274,11 +280,12 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck {
             },
             textStyle: {
                 color: "#64748b",
-                fontSize: 11,
+                fontSize: 13,
+                bold: true,
             },
             titleTextStyle: {
                 color: "#0f172a",
-                fontSize: 12,
+                fontSize: 14,
                 bold: true,
             },
         },
@@ -288,7 +295,8 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck {
             alignment: "end",
             textStyle: {
                 color: "#64748b",
-                fontSize: 11,
+                fontSize: 13,
+                bold: true,
             },
         },
         chartArea: {
@@ -306,14 +314,14 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck {
         },
         dataOpacity: 0.95,
         annotations: {
-            alwaysOutside: false,
+            alwaysOutside: true,
             textStyle: {
-                fontSize: 11,
+                fontSize: 12,
                 bold: true,
                 color: "#0f172a",
                 fontName: "Segoe UI",
                 auraColor: "#ffffff",
-                opacity: 0.9,
+                opacity: 0.95,
             },
         },
         bar: {
@@ -441,6 +449,10 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck {
     departmentOptions: string[] = [];
     selectedDepartments: string[] = []; // ריק = הכל
 
+    /** פילטר מחלקה לאזור הגרף והטבלה – null = הכל */
+    chartDepartmentFilter: string | null = null;
+    isChartDeptDropdownOpen = false;
+
     // שים לב: השרת מחזיר WeekPart כ"סופ״ש" (גרשיים עבריים U+05F4), לכן משתמשים באותה מחרוזת כאן
     weekdayOptions: string[] = ["אמצע שבוע", "סופ״ש"];
     selectedWeekdays: string[] = []; // ריק = הכל
@@ -513,6 +525,7 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck {
   showFirstStartTimeModal = false;       // 2.2 זמן כניסה ממוצע ניתוח ראשון בבוקר לפי מחלקה
   showLastEndTimeModal = false;          // 2.3 זמן סיום ניתוח אחרון לפי מחלקה
   showAvgSetupModal = false;             // 2.4 SETUP ממוצע לפי מחלקה
+  showSurgeriesPerDayModal = false;     // ניתוחים ליום בחדר לפי מחלקה – ממוצע 5 שנים (API טרם קיים)
 
   // Full‑screen view for YoY combined metric chart
   showYoyCombinedFullModal = false;
@@ -1319,6 +1332,12 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck {
 
         // מדד משולב – גרף YoY לפי מחלקה (ניתוחים לחדר, זמן ניתוח, הכנסה – % שינוי)
         if (this.chartViewMode === "yoy-combined") {
+            let yoySource = this.departmentYoyData;
+            if (this.chartDepartmentFilter) {
+                yoySource = yoySource.filter(
+                    (d) => (d.Department || "").trim() === this.chartDepartmentFilter
+                );
+            }
             this.chartColumns = [
                 "מחלקה",
                 { type: "number", label: "ניתוחים לחדר" },
@@ -1328,7 +1347,7 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck {
                 { type: "number", label: "הכנסה ממוצעת" },
                 { type: "string", role: "annotation" },
             ];
-            this.chartData = this.departmentYoyData.map((d) => {
+            this.chartData = yoySource.map((d) => {
                 const s = d.SurgeriesPerRoom_Pct != null ? d.SurgeriesPerRoom_Pct : 0;
                 const t = d.AvgSurgeryTime_Pct != null ? d.AvgSurgeryTime_Pct : 0;
                 const r = d.AvgRevenue_Pct != null ? d.AvgRevenue_Pct : 0;
@@ -1381,7 +1400,7 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck {
             };
             this.yearColorMap = [];
             this.stackedCategoryLegend = [];
-            this.chartTableRows = this.departmentYoyData.map((d) => ({
+            this.chartTableRows = yoySource.map((d) => ({
                 label: d.Department || "",
                 total: 0,
                 perYear: {},
@@ -1449,7 +1468,12 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck {
                 );
             }
 
-            if (this.selectedDepartments && this.selectedDepartments.length > 0) {
+            // פילטר מחלקה לאזור הגרף: קודם פילטר ייעודי לגרף, אחרת פילטר מהסיידבר
+            if (this.chartDepartmentFilter) {
+                source = source.filter(
+                    (r) => (r.Wing || "").trim() === this.chartDepartmentFilter
+                );
+            } else if (this.selectedDepartments && this.selectedDepartments.length > 0) {
                 source = source.filter(
                     (r) =>
                         !!r.Wing &&
@@ -1622,13 +1646,23 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck {
 
             // === מצב 3: לפי אתר – שנה מול אתרים (stacked אופקי עם מקרא מותאם) ===
             if (this.chartViewMode === "site") {
-                const sites = Array.from(
-                    new Set(
-                        source
-                            .map((r) => (r.Site || "").trim())
-                            .filter((s) => !!s)
-                    )
-                );
+                const bySiteYear = new Map<string, Map<number, number>>();
+                source.forEach((r) => {
+                    const site = (r.Site || "").trim();
+                    if (!site) return;
+                    if (!bySiteYear.has(site)) {
+                        bySiteYear.set(site, new Map<number, number>());
+                    }
+                    const inner = bySiteYear.get(site)!;
+                    inner.set(r.Year, (inner.get(r.Year) || 0) + (r.Count || 0));
+                });
+
+                const sitesUnsorted = Array.from(bySiteYear.keys());
+                const sites = sitesUnsorted.slice().sort((a, b) => {
+                    const totalA = years.reduce((sum, y) => sum + (bySiteYear.get(a)?.get(y) || 0), 0);
+                    const totalB = years.reduce((sum, y) => sum + (bySiteYear.get(b)?.get(y) || 0), 0);
+                    return totalB - totalA;
+                });
 
                 if (sites.length === 0) {
                     this.chartData = [];
@@ -1644,13 +1678,11 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck {
                 });
                 this.chartColumns = columns;
 
-                // גרף: שנה × אתר
+                // גרף: שנה × אתר (גדול למטה – הסדר ממוין לפי סה"כ יורד)
                 this.chartData = years.map((y) => {
                     const row: any[] = [y.toString()];
                     sites.forEach((site) => {
-                        const sumForSite = source
-                            .filter((r) => r.Year === y && (r.Site || "").trim() === site)
-                            .reduce((acc, r) => acc + (r.Count || 0), 0);
+                        const sumForSite = bySiteYear.get(site)?.get(y) || 0;
                         row.push(sumForSite, sumForSite > 0 ? String(sumForSite) : "");
                     });
                     return row;
@@ -1669,17 +1701,6 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck {
                 this.chartOptions.colors = colors;
 
                 // טבלה: שורות לפי אתרים, עמודות שנים ועמודת הפרש / אחוז שינוי בין השנים האחרונות
-                const bySiteYear = new Map<string, Map<number, number>>();
-                source.forEach((r) => {
-                    const site = (r.Site || "").trim();
-                    if (!site) return;
-                    if (!bySiteYear.has(site)) {
-                        bySiteYear.set(site, new Map<number, number>());
-                    }
-                    const inner = bySiteYear.get(site)!;
-                    inner.set(r.Year, (inner.get(r.Year) || 0) + (r.Count || 0));
-                });
-
                 this.chartTableRows = sites.map((site) => {
                     const perYear: { [year: number]: number } = {};
                     let total = 0;
@@ -1723,13 +1744,23 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck {
 
             // === מצב 4: לפי משמרת – שנה מול משמרת (בוקר/ערב/לילה) ===
             if (this.chartViewMode === "shift") {
-                const shifts = Array.from(
-                    new Set(
-                        source
-                            .map((r) => (r.Shift || "").trim())
-                            .filter((s) => !!s)
-                    )
-                );
+                const byShiftYear = new Map<string, Map<number, number>>();
+                source.forEach((r) => {
+                    const shift = (r.Shift || "").trim();
+                    if (!shift) return;
+                    if (!byShiftYear.has(shift)) {
+                        byShiftYear.set(shift, new Map<number, number>());
+                    }
+                    const inner = byShiftYear.get(shift)!;
+                    inner.set(r.Year, (inner.get(r.Year) || 0) + (r.Count || 0));
+                });
+
+                const shiftsUnsorted = Array.from(byShiftYear.keys());
+                const shifts = shiftsUnsorted.slice().sort((a, b) => {
+                    const totalA = years.reduce((sum, y) => sum + (byShiftYear.get(a)?.get(y) || 0), 0);
+                    const totalB = years.reduce((sum, y) => sum + (byShiftYear.get(b)?.get(y) || 0), 0);
+                    return totalB - totalA;
+                });
 
                 if (shifts.length === 0) {
                     this.chartData = [];
@@ -1745,13 +1776,11 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck {
                 });
                 this.chartColumns = columns;
 
-                // גרף: שנה × משמרת
+                // גרף: שנה × משמרת (גדול למטה – הסדר ממוין לפי סה"כ יורד)
                 this.chartData = years.map((y) => {
                     const row: any[] = [y.toString()];
                     shifts.forEach((shift) => {
-                        const sumForShift = source
-                            .filter((r) => r.Year === y && (r.Shift || "").trim() === shift)
-                            .reduce((acc, r) => acc + (r.Count || 0), 0);
+                        const sumForShift = byShiftYear.get(shift)?.get(y) || 0;
                         row.push(sumForShift, sumForShift > 0 ? String(sumForShift) : "");
                     });
                     return row;
@@ -1770,17 +1799,6 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck {
                 this.chartOptions.colors = colors;
 
                 // טבלה: שורות לפי משמרת, עמודות שנים ועמודת הפרש / אחוז
-                const byShiftYear = new Map<string, Map<number, number>>();
-                source.forEach((r) => {
-                    const shift = (r.Shift || "").trim();
-                    if (!shift) return;
-                    if (!byShiftYear.has(shift)) {
-                        byShiftYear.set(shift, new Map<number, number>());
-                    }
-                    const inner = byShiftYear.get(shift)!;
-                    inner.set(r.Year, (inner.get(r.Year) || 0) + (r.Count || 0));
-                });
-
                 this.chartTableRows = shifts.map((shift) => {
                     const perYear: { [year: number]: number } = {};
                     let total = 0;
@@ -1821,18 +1839,21 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck {
                 return;
             }
             if (this.chartViewMode === 'fund') {
-                const fundTypesSet = new Set<string>();
                 const byFundYear = new Map<string, Map<number, number>>();
               
                 source.forEach(r => {
                   const fund = (r.FundType || 'אחר').trim() || 'אחר';
-                  fundTypesSet.add(fund);
                   if (!byFundYear.has(fund)) byFundYear.set(fund, new Map());
                   const m = byFundYear.get(fund)!;
                   m.set(r.Year, (m.get(r.Year) || 0) + (r.Count || 0));
                 });
               
-                const fundTypes = Array.from(fundTypesSet).sort();
+                const fundTypesUnsorted = Array.from(byFundYear.keys());
+                const fundTypes = fundTypesUnsorted.slice().sort((a, b) => {
+                    const totalA = years.reduce((sum, y) => sum + (byFundYear.get(a)?.get(y) || 0), 0);
+                    const totalB = years.reduce((sum, y) => sum + (byFundYear.get(b)?.get(y) || 0), 0);
+                    return totalB - totalA;
+                });
                 const columns: any[] = ['שנה'];
                 fundTypes.forEach(ft => {
                     columns.push({ type: 'number', label: ft });
@@ -2616,6 +2637,39 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck {
         }
     }
 
+    /** רשימת מחלקות (Wing) לפילטר הגרף – ייחודי מ־countByDeptData, ממוין */
+    getChartDepartmentOptions(): string[] {
+        if (!this.countByDeptData || this.countByDeptData.length === 0) {
+            return [];
+        }
+        const set = new Set<string>();
+        this.countByDeptData.forEach((r) => {
+            const w = (r.Wing || "").trim();
+            if (w) set.add(w);
+        });
+        return Array.from(set).sort((a, b) => a.localeCompare(b, "he"));
+    }
+
+    setChartDepartmentFilter(dept: string | null): void {
+        this.chartDepartmentFilter = dept;
+        this.isChartDeptDropdownOpen = false;
+        this.updateChartData();
+        this.cdr.detectChanges();
+    }
+
+    /** נתוני YoY מסוננים לפי פילטר המחלקה של הגרף (לשימוש בטבלה ובתצוגות) */
+    getFilteredDepartmentYoyData(): DepartmentYoyDto[] {
+        if (!this.departmentYoyData || !this.departmentYoyData.length) {
+            return [];
+        }
+        if (!this.chartDepartmentFilter) {
+            return this.departmentYoyData;
+        }
+        return this.departmentYoyData.filter(
+            (d) => (d.Department || "").trim() === this.chartDepartmentFilter
+        );
+    }
+
     /**
      * Load yearly totals silently for chart year detection
      */
@@ -3304,11 +3358,11 @@ updateChartColumns(): void {
                 ...(this.chartOptions.hAxis || {}),
                 textStyle: {
                     color: "#f9fafb",
-                    fontSize: this.chartOptions.hAxis?.textStyle?.fontSize ?? 11,
+                    fontSize: this.chartOptions.hAxis?.textStyle?.fontSize ?? 13,
                 },
                 titleTextStyle: {
                     color: "#f9fafb",
-                    fontSize: this.chartOptions.hAxis?.titleTextStyle?.fontSize ?? 11,
+                    fontSize: this.chartOptions.hAxis?.titleTextStyle?.fontSize ?? 14,
                     bold: true,
                 },
             };
@@ -3316,11 +3370,11 @@ updateChartColumns(): void {
                 ...(this.chartOptions.vAxis || {}),
                 textStyle: {
                     color: "#f9fafb",
-                    fontSize: this.chartOptions.vAxis?.textStyle?.fontSize ?? 11,
+                    fontSize: this.chartOptions.vAxis?.textStyle?.fontSize ?? 13,
                 },
                 titleTextStyle: {
                     color: "#f9fafb",
-                    fontSize: this.chartOptions.vAxis?.titleTextStyle?.fontSize ?? 12,
+                    fontSize: this.chartOptions.vAxis?.titleTextStyle?.fontSize ?? 14,
                     bold: true,
                 },
                 gridlines: {
@@ -3331,14 +3385,14 @@ updateChartColumns(): void {
                 ...(this.chartOptions.legend || {}),
                 textStyle: {
                     color: "#e5e7eb",
-                    fontSize: this.chartOptions.legend?.textStyle?.fontSize ?? 11,
+                    fontSize: this.chartOptions.legend?.textStyle?.fontSize ?? 13,
                 },
             };
             this.chartOptions.annotations = {
                 ...(this.chartOptions.annotations || {}),
                 textStyle: {
                     color: "#f9fafb",
-                    fontSize: this.chartOptions.annotations?.textStyle?.fontSize ?? 10,
+                    fontSize: this.chartOptions.annotations?.textStyle?.fontSize ?? 12,
                     bold: true,
                 },
             };
@@ -3475,6 +3529,14 @@ closeLastEndTimeModal(): void {
 
 closeAvgSetupModal(): void {
   this.showAvgSetupModal = false;
+}
+
+openSurgeriesPerDayModal(): void {
+  this.showSurgeriesPerDayModal = true;
+}
+
+closeSurgeriesPerDayModal(): void {
+  this.showSurgeriesPerDayModal = false;
 }
 
 /**
