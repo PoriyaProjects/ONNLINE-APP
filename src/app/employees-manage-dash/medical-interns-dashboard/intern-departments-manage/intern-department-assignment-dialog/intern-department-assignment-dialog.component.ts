@@ -8,6 +8,7 @@ import {
   MatSnackBarVerticalPosition,
 } from '@angular/material/snack-bar';
 import { environment } from 'src/environments/environment';
+import { DatePipe } from '@angular/common';
 
 @Component({
   selector: 'app-intern-department-assignment-dialog',
@@ -26,14 +27,17 @@ export class InternDepartmentAssignmentDialogComponent implements OnInit {
   monthOptions: { value: string; label: string }[] = [];
   departmentsLoading = false;
   private readonly hebrewMonthFormatter = new Intl.DateTimeFormat('he-IL', { month: 'long', year: 'numeric' });
+  date_now = new Date();
 
   constructor(
     public dialogRef: MatDialogRef<InternDepartmentAssignmentDialogComponent>,
     @Inject(MAT_DIALOG_DATA) public data: any,
     private formBuilder: FormBuilder,
     private http: HttpClient,
-    private _snackBar: MatSnackBar
-  ) { }
+    private _snackBar: MatSnackBar,
+    private datePipe: DatePipe
+  ) {
+  }
 
   get departmentCodesForFirst(): string[] {
     return this.data?.departmentCodesForFirst ?? [];
@@ -68,7 +72,7 @@ export class InternDepartmentAssignmentDialogComponent implements OnInit {
     this.departments = [];
     this.departmentsSecond = [];
     const assignment = this.data?.assignment;
-    const initialPeriod = assignment?.InternPeriod
+    let initialPeriod = assignment?.InternPeriod
       ? this.toPeriodString(new Date(assignment.InternPeriod))
       : null;
     const showFirst = this.showFirstDepartment;
@@ -80,9 +84,16 @@ export class InternDepartmentAssignmentDialogComponent implements OnInit {
       InternPeriod: new FormControl(initialPeriod || '', [Validators.required]),
     });
     this.buildMonthOptions();
-    if (initialPeriod) {
-      this.getDepartmentsForPeriod(initialPeriod);
+    if (initialPeriod == null) {
+      const currentMonth = this.datePipe.transform(this.date_now, 'yyyy-MM');
+      const usedPeriods: string[] = this.data?.usedPeriods ?? [];
+      initialPeriod = (usedPeriods.includes(currentMonth) && this.monthOptions.length > 0)
+        ? this.monthOptions[0].value
+        : currentMonth;
+      this.assignmentForm.patchValue({ InternPeriod: initialPeriod });
     }
+    this.getDepartmentsForPeriod(initialPeriod);
+    this.getDepartmentsForPeriodSecond(initialPeriod);
     // this.assignmentForm.get('InternPeriod')?.valueChanges.pipe(skip(1)).subscribe((period) => {
     //   this.assignmentForm.patchValue({ DepartnentCodeFirst: '' }, { emitEvent: false });
     //   if (period) this.getDepartmentsForPeriod(period);
@@ -97,6 +108,7 @@ export class InternDepartmentAssignmentDialogComponent implements OnInit {
   }
 
   private buildMonthOptions(): void {
+    const usedPeriods: string[] = this.data?.usedPeriods ?? [];
     const options: { value: string; label: string }[] = [];
 
     const now = new Date();
@@ -114,7 +126,7 @@ export class InternDepartmentAssignmentDialogComponent implements OnInit {
       });
     }
 
-    this.monthOptions = options;
+    this.monthOptions = options.filter((o) => !usedPeriods.includes(o.value));
   }
 
   getDepartmentsForPeriod(period: string): void {

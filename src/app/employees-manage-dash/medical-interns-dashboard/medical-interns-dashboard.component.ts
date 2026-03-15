@@ -64,7 +64,12 @@ export class MedicalInternsDashboardComponent implements OnInit {
   /** Departments pivot table (monthly intern counts per department) */
   departmentsTableData: any[] = [];
   departmentsDataSource = new MatTableDataSource<any>([]);
+  departmentsYear: number = new Date().getFullYear();
   departmentsDisplayedColumns: string[] = ['DepartDesc', 'jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
+  /** Month-Year options for search filter (YYYY-MM format) */
+  monthYearOptions: { value: string; label: string }[] = [];
+  private readonly hebrewMonthFormatter = new Intl.DateTimeFormat('he-IL', { month: 'long', year: 'numeric' });
+
   /** Hebrew labels for month columns */
   monthLabels: Record<string, string> = {
     jan: 'ינואר', feb: 'פברואר', mar: 'מרץ', apr: 'אפריל', may: 'מאי', jun: 'יוני',
@@ -131,11 +136,12 @@ export class MedicalInternsDashboardComponent implements OnInit {
       PhoneNumber: new FormControl('', null),
       Department: new FormControl('', null),
       On: new FormControl('', null),
+      MonthYear: new FormControl('', null),
     });
+    this.buildMonthYearOptions();
     this.getMedicalInterns();
     this.getDepartmentList();
     this.loadAllDepartments();
-    this.loadDepartmentsData();
   }
 
   get filteredDepartments(): any[] {
@@ -272,16 +278,46 @@ export class MedicalInternsDashboardComponent implements OnInit {
   }
 
 
+  private toPeriodString(d: Date): string {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    return `${y}-${m}`;
+  }
+
+  private buildMonthYearOptions(): void {
+    const options: { value: string; label: string }[] = [];
+    const now = new Date();
+    for (let i = -6; i <= 18; i++) {
+      const d = new Date(now.getFullYear(), now.getMonth() + i, 1);
+      options.push({
+        value: this.toPeriodString(d),
+        label: this.hebrewMonthFormatter.format(d)
+      });
+    }
+    this.monthYearOptions = options;
+  }
+
   getDepartmentList() {
-    this.http.post(this.url + 'GetMedicalInternDepartments', { _InternPeriod: null }).subscribe((response) => {
+    const monthYear = this.searchInternsGroup?.get('MonthYear')?.value || null;
+    this.http.post(this.url + 'GetMedicalInternDepartments', { _InternPeriod: monthYear || null }).subscribe((response) => {
       this.DepartmentsList = response['d'] || [];
     });
+  }
+
+  previousDepartmentsYear(): void {
+    this.departmentsYear--;
+    this.loadDepartmentsData();
+  }
+
+  nextDepartmentsYear(): void {
+    this.departmentsYear++;
+    this.loadDepartmentsData();
   }
 
   /** Load departments pivot data (intern counts per department per month) */
   loadDepartmentsData() {
     this.departmentsLoaded = false;
-    this.http.post(this.url + 'GetInternDepartmentMonthPeriodTable', {}).subscribe(
+    this.http.post(this.url + 'GetInternDepartmentMonthPeriodTable', { year: this.departmentsYear }).subscribe(
       (response) => {
         this.departmentsLoaded = true;
         const data = response['d'] || [];
@@ -316,6 +352,10 @@ export class MedicalInternsDashboardComponent implements OnInit {
     }
   }
 
+  onServerDataMonthYearChange(): void {
+    this.loadServerData();
+  }
+
   /**
    * Loads data from server that returns JSON in format:
    * [{ column1: value1, column2: value2, ... }, ...]
@@ -323,7 +363,8 @@ export class MedicalInternsDashboardComponent implements OnInit {
    */
   loadServerData(): void {
     this.serverDataLoaded = false;
-    this.http.post(this.url + 'GetInternRotationMatrix', {}).subscribe(
+    const monthYear = this.searchInternsGroup?.get('MonthYear')?.value || '';
+    this.http.post(this.url + 'GetInternRotationMatrix', { _monthYear: monthYear }).subscribe(
       (response) => {
         this.serverDataLoaded = true;
         let raw = response['d'];
@@ -448,12 +489,14 @@ export class MedicalInternsDashboardComponent implements OnInit {
 
   getMedicalInterns() {
     this.loaded = false;
+    this.getDepartmentList();
     const EmployeeID = this.searchInternsGroup?.controls['EmployeeID']?.value || '';
     const firstName = this.searchInternsGroup?.controls['FirstName']?.value || '';
     const lastName = this.searchInternsGroup?.controls['LastName']?.value || '';
     const phoneNumber = this.searchInternsGroup?.controls['PhoneNumber']?.value || '';
     const department = this.searchInternsGroup?.controls['Department']?.value || '';
     const onValue = this.searchInternsGroup?.controls['On']?.value || '';
+    const monthYear = this.searchInternsGroup?.controls['MonthYear']?.value || '';
     this.http
       .post(this.url + 'GetMedicalInterns', {
         _employeeID: EmployeeID,
@@ -462,6 +505,7 @@ export class MedicalInternsDashboardComponent implements OnInit {
         _phoneNumber: phoneNumber,
         _department: department,
         _on: onValue,
+        _monthYear: monthYear,
       })
       .subscribe(
         (response) => {
@@ -507,7 +551,8 @@ export class MedicalInternsDashboardComponent implements OnInit {
       LastName: '',
       PhoneNumber: '',
       Department: '',
-      On: ''
+      On: '',
+      MonthYear: ''
     });
 
     this.getMedicalInterns();
@@ -520,7 +565,8 @@ export class MedicalInternsDashboardComponent implements OnInit {
       LastName: '',
       PhoneNumber: '',
       Department: '',
-      On: ''
+      On: '',
+      MonthYear: ''
     });
   }
 
@@ -597,7 +643,7 @@ export class MedicalInternsDashboardComponent implements OnInit {
       תז: x.EmployeeID,
       שם_פרטי: x.FirstName,
       שם_משפחה: x.LastName,
-      מחלקה: x.DepartnentDescripton,
+      מחלקה: x.DepartnentDescripton + ' ' + (x.FunctionID == '39' ? 'סטאזר/ית באלקטיב' : '') ,
       טלפון: x.CellNumber,
       מייל: x.Email
     }));
@@ -618,6 +664,33 @@ export class MedicalInternsDashboardComponent implements OnInit {
     });
 
     saveAs(blob, 'Medical_Interns.xlsx');
+  }
+
+  exportFeedbackToExcel(): void {
+    const rows = this.feedbackDataSource.filteredData || [];
+    if (rows.length === 0) {
+      this.openSnackBar('אין נתונים לייצוא');
+      return;
+    }
+    const headers = this.feedbackDisplayedColumns.map(col => this.getFeedbackColumnLabel(col));
+    const exportData = rows.map(row => {
+      const obj: Record<string, any> = {};
+      this.feedbackDisplayedColumns.forEach((col, i) => {
+        obj[headers[i]] = row[col] ?? '';
+      });
+      return obj;
+    });
+    const worksheet: XLSX.WorkSheet = XLSX.utils.json_to_sheet(exportData);
+    const workbook: XLSX.WorkBook = {
+      Sheets: { 'משוב': worksheet },
+      SheetNames: ['משוב']
+    };
+    const excelBuffer: any = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+    const blob = new Blob([excelBuffer], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    });
+    saveAs(blob, 'Feedback_Export.xlsx');
+    this.openSnackBar('הייצוא הושלם בהצלחה');
   }
 
 }
