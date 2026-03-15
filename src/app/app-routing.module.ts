@@ -162,6 +162,8 @@ import { WindowsUserActionsComponent } from "./dashboard/windows-user-actions/wi
 import { AiLettersDashboardComponent } from "./ai-letters-dashboard/ai-letters-dashboard.component";
 import { MriScheduleComponent } from "./mri-schedule/mri-schedule.component";
 import { InfectionControlComponent } from "./infection-control/infection-control.component";
+import { EmergencyRoomReportComponent } from "./emergency-room-report/emergency-room-report.component";
+import { HitoFormsDashboardComponent } from "./hito-forms-dashboard/hito-forms-dashboard.component";
 
 
 
@@ -358,6 +360,8 @@ const routes: Routes = [
     { path: "ai-letters-dashboard", component: AiLettersDashboardComponent },
     { path: "mri-schedule", component: MriScheduleComponent },
     { path: "InfectionControl", component: InfectionControlComponent },
+    { path: "EmergencyRoomReport", component: EmergencyRoomReportComponent },
+    { path: "hito-forms-dashboard", component: HitoFormsDashboardComponent },
 ];
 
 

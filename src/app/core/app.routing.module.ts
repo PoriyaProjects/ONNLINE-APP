@@ -101,6 +101,8 @@ import { HrDashboardComponent } from '../hr-dashboard/hr-dashboard.component';
 import { DepartmentIncomeDashboardComponent } from "../incomeImporter/department-income-dashboard.component";
 import { InfectionDrugsComponent } from '../infection-drugs/infection-drugs.component';
 import { InfectionReportComponent } from "../infection-report/infection-report.component";
+import { EmergencyRoomReportComponent } from "../emergency-room-report/emergency-room-report.component";
+import { HitoFormsDashboardComponent } from "../hito-forms-dashboard/hito-forms-dashboard.component";
 import { InjuryReportComponent } from '../injury-report/injury-report.component';
 import { IpPointsComponent } from '../ip-points/ip-points.component';
 import { LabTestsComponent } from '../lab-tests/lab-tests.component';
@@ -262,6 +264,8 @@ const routes: Routes = [
   { path: "EshpozModalComponent", component: EshpozModalComponent },
   { path: "InfectionDrugs", component: InfectionDrugsComponent },
   { path: "InfectionReport", component: InfectionReportComponent },
+  { path: "EmergencyRoomReport", component: EmergencyRoomReportComponent },
+  { path: "hito-forms-dashboard", component: HitoFormsDashboardComponent },
   { path: "newborn", component: NewBornComponent },
   { path: "MaternityParticipants", component: MaternityParticipantsComponent },
   { path: "CprForm", component: CprFormComponent },
