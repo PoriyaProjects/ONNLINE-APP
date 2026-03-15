@@ -3691,7 +3691,9 @@ private loadSurgeriesPerDay(): void {
           animation: { startup: true, duration: 800, easing: "out" },
           annotations: {
             alwaysOutside: true,
-            textStyle: { fontSize: 9, auraColor: "none", color: "#111827" },
+            textStyle: { fontSize: 9, auraColor: "none", 
+                // color: "#111827" 
+            },
           },
         };
         this.isSurgeriesPerDayLoading = false;
@@ -3845,7 +3847,9 @@ private loadAvgDuration(): void {
           animation: { startup: true, duration: 800, easing: "out" },
           annotations: {
             alwaysOutside: true,
-            textStyle: { fontSize: 9, auraColor: "none", color: "#111827" },
+            textStyle: { fontSize: 9, auraColor: "none",
+                 // color: "#111827" 
+                },
           },
         };
         this.isAvgDurationLoading = false;
@@ -3968,7 +3972,9 @@ private loadAvgFirstMorningEntry(): void {
     animation: { startup: true, duration: 800, easing: "out" },
     annotations: {
       alwaysOutside: true,
-      textStyle: { fontSize: 9, auraColor: "none", color: "#111827" },
+      textStyle: { fontSize: 9, auraColor: "none", 
+        // color: "#111827" 
+      },
     },
   };
 
