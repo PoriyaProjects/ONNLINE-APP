@@ -2370,6 +2370,11 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck {
             return;
         }
         this.showMainChartFullModal = true;
+        this.cdr.detectChanges();
+        setTimeout(() => {
+            this.updateChartData();
+            this.cdr.detectChanges();
+        }, 150);
     }
 
     closeMainChartFullModal(): void {
