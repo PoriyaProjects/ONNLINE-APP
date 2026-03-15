@@ -2077,19 +2077,19 @@ table.table {
   font-weight: 500;
 }
 
-/* צבע אנוטציה (טקסט + רקע) כמו צבע העמודה – תואם למקרא השנים */
-/* מקרה 1: ילדים ישירים = סדרות (5 קבוצות), כל קבוצה מכילה את כל העמודות של שנה */
-.kpi-overlay .kpi-body google-chart ::ng-deep svg g g g > g:nth-child(1) text,
-.kpi-overlay .kpi-body google-chart ::ng-deep svg g g g > g:nth-child(1) rect[fill-opacity="0"] { fill: #3366cc !important; }
-.kpi-overlay .kpi-body google-chart ::ng-deep svg g g g > g:nth-child(2) text,
-.kpi-overlay .kpi-body google-chart ::ng-deep svg g g g > g:nth-child(2) rect[fill-opacity="0"] { fill: #dc3912 !important; }
-.kpi-overlay .kpi-body google-chart ::ng-deep svg g g g > g:nth-child(3) text,
-.kpi-overlay .kpi-body google-chart ::ng-deep svg g g g > g:nth-child(3) rect[fill-opacity="0"] { fill: #ff9900 !important; }
-.kpi-overlay .kpi-body google-chart ::ng-deep svg g g g > g:nth-child(4) text,
-.kpi-overlay .kpi-body google-chart ::ng-deep svg g g g > g:nth-child(4) rect[fill-opacity="0"] { fill: #109618 !important; }
-.kpi-overlay .kpi-body google-chart ::ng-deep svg g g g > g:nth-child(5) text,
-.kpi-overlay .kpi-body google-chart ::ng-deep svg g g g > g:nth-child(5) rect[fill-opacity="0"] { fill: #990099 !important; }
-/* מקרה 2: הרבה ילדים – כל 5 קבוצות = מחלקה (שנה 1..5), צבע לפי מקום בחמישייה */
+/* צבע אנוטציה (טקסט + רקע) כמו צבע העמודה – שכבת האנוטציות ב־g[3] = הילד הרביעי של svg > g */
+.kpi-overlay .kpi-body google-chart ::ng-deep svg > g > g:nth-child(4) > g:nth-child(5n+1) text,
+.kpi-overlay .kpi-body google-chart ::ng-deep svg > g > g:nth-child(4) > g:nth-child(5n+1) rect { fill: #3366cc !important; }
+.kpi-overlay .kpi-body google-chart ::ng-deep svg > g > g:nth-child(4) > g:nth-child(5n+2) text,
+.kpi-overlay .kpi-body google-chart ::ng-deep svg > g > g:nth-child(4) > g:nth-child(5n+2) rect { fill: #dc3912 !important; }
+.kpi-overlay .kpi-body google-chart ::ng-deep svg > g > g:nth-child(4) > g:nth-child(5n+3) text,
+.kpi-overlay .kpi-body google-chart ::ng-deep svg > g > g:nth-child(4) > g:nth-child(5n+3) rect { fill: #ff9900 !important; }
+.kpi-overlay .kpi-body google-chart ::ng-deep svg > g > g:nth-child(4) > g:nth-child(5n+4) text,
+.kpi-overlay .kpi-body google-chart ::ng-deep svg > g > g:nth-child(4) > g:nth-child(5n+4) rect { fill: #109618 !important; }
+.kpi-overlay .kpi-body google-chart ::ng-deep svg > g > g:nth-child(4) > g:nth-child(5n+5) text,
+.kpi-overlay .kpi-body google-chart ::ng-deep svg > g > g:nth-child(4) > g:nth-child(5n+5) rect { fill: #990099 !important; }
+
+/* גרפים שבהם שכבת האנוטציות בילד אחר – fallback לפי סדר כללי */
 .kpi-overlay .kpi-body google-chart ::ng-deep svg g g g > g:nth-child(5n+1) text,
 .kpi-overlay .kpi-body google-chart ::ng-deep svg g g g > g:nth-child(5n+1) rect[fill-opacity="0"] { fill: #3366cc !important; }
 .kpi-overlay .kpi-body google-chart ::ng-deep svg g g g > g:nth-child(5n+2) text,
@@ -2101,7 +2101,13 @@ table.table {
 .kpi-overlay .kpi-body google-chart ::ng-deep svg g g g > g:nth-child(5n+5) text,
 .kpi-overlay .kpi-body google-chart ::ng-deep svg g g g > g:nth-child(5n+5) rect[fill-opacity="0"] { fill: #990099 !important; }
 
-/* הזזת אנוטציות בגרפי KPI – עמודה אחת גבוהה ואחת נמוכה כדי שלא ידרסו */
+/* הזזת אנוטציות – עמודה אחת גבוהה ואחת נמוכה */
+.kpi-overlay .kpi-body google-chart ::ng-deep svg > g > g:nth-child(4) > g:nth-child(odd) text {
+  transform: translateY(-5px);
+}
+.kpi-overlay .kpi-body google-chart ::ng-deep svg > g > g:nth-child(4) > g:nth-child(even) text {
+  transform: translateY(5px);
+}
 .kpi-overlay .kpi-body google-chart ::ng-deep svg g g g > g:nth-child(odd) text {
   transform: translateY(-5px);
 }
