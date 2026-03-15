@@ -1,0 +1,707 @@
+/* ============================================================
+   EMERGENCY ROOM DASHBOARD — Big-Screen Display
+   CSS Grid table for pixel-perfect column alignment
+   ============================================================ */
+
+   @import url('https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700;800&family=Noto+Sans+Hebrew:wght@400;500;600;700;800&display=swap');
+
+   /* Host element: flush against parent with no gaps */
+   :host {
+     display: block;
+     margin: 0;
+     padding: 0;
+     width: 100%;
+     overflow: hidden;
+     margin-top: -16px;
+   }
+   
+   /* ---- Variables ---- */
+   .er-report {
+     --er-bg: #0f1a29;
+     --er-bg-secondary: #0f1a35;
+     --er-card-bg: #2566b5;
+     --er-border: rgba(255, 255, 255, 0.12);
+     --er-border-bright: rgba(255, 255, 255, 0.25);
+     --er-primary: #38bdf8;
+     --er-primary-dim: rgba(56, 189, 248, 0.15);
+     --er-primary-glow: rgba(56, 189, 248, 0.35);
+     --er-accent-green: #34d399;
+     --er-accent-green-dim: rgba(52, 211, 153, 0.15);
+     --er-accent-red: #f87171;
+     --er-accent-red-dim: rgba(248, 113, 113, 0.12);
+     --er-accent-amber: #fbbf24;
+     --er-accent-amber-dim: rgba(251, 191, 36, 0.12);
+     --er-text: #f1f5f9;
+     --er-text-secondary: #94a3b8;
+     --er-text-muted: #64748b;
+     --er-font: 'Rubik', 'Noto Sans Hebrew', 'Segoe UI', sans-serif;
+     --er-transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+   
+     /* 8 columns RTL order: id | elapsed | decision | consult | imaging | blood | nurse | doctor */
+     --er-grid: 8% 12% 10% 14% 19% 19% 9% 9%;
+   }
+   
+   /* ---- Base ---- */
+   .er-report {
+     padding: 0;
+     margin: 0;
+     width: 100%;
+     min-height: calc(100vh - 80px);
+     overflow: hidden;
+     box-sizing: border-box;
+     background: var(--er-bg);
+     font-family: var(--er-font);
+     color: var(--er-text);
+     display: flex;
+     flex-direction: column;
+     position: relative;
+   }
+   
+   .er-report *,
+   .er-report *::before,
+   .er-report *::after {
+     box-sizing: border-box;
+   }
+   
+   /* ============================================================
+      TOP BAR
+      ============================================================ */
+   .top-bar {
+     position: relative;
+     z-index: 10;
+     display: flex;
+     align-items: center;
+     justify-content: space-between;
+     padding: 0.65rem 2.5rem;
+     background: var(--er-bg-secondary);
+     border-bottom: none;
+     flex-shrink: 0;
+     min-height: 56px;
+   }
+   
+   .top-bar-right,
+   .top-bar-left {
+     display: flex;
+     align-items: center;
+     gap: 1rem;
+     flex: 1;
+   }
+   
+   .top-bar-right {
+     justify-content: flex-start;
+   }
+   
+   .top-bar-left {
+     justify-content: flex-end;
+   }
+   
+   .top-bar-center {
+     display: flex;
+     align-items: center;
+     justify-content: center;
+     gap: 1rem;
+     flex-shrink: 0;
+   }
+   
+   .page-title {
+     margin: 0;
+     font-size: 1.75rem;
+     font-weight: 800;
+     color: var(--er-text);
+     letter-spacing: -0.03em;
+     line-height: 1;
+     display: flex;
+     align-items: center;
+     gap: 0.75rem;
+   }
+   
+   .title-icon {
+     display: flex;
+     align-items: center;
+     justify-content: center;
+     width: 42px;
+     height: 42px;
+     background: var(--er-primary-dim);
+     border: 1px solid var(--er-border-bright);
+     border-radius: 10px;
+     font-size: 1.3rem;
+   }
+   
+   .live-badge {
+     display: inline-flex;
+     align-items: center;
+     gap: 0.4rem;
+     font-size: 0.8rem;
+     font-weight: 600;
+     color: var(--er-accent-green);
+     background: var(--er-accent-green-dim);
+     padding: 0.3rem 0.85rem;
+     border-radius: 20px;
+     border: 1px solid rgba(52, 211, 153, 0.25);
+     text-transform: uppercase;
+     letter-spacing: 0.06em;
+   }
+   
+   .live-dot {
+     width: 7px;
+     height: 7px;
+     background: var(--er-accent-green);
+     border-radius: 50%;
+     animation: livePulse 1.5s ease-in-out infinite;
+   }
+   
+   @keyframes livePulse {
+     0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.5); }
+     50% { opacity: 0.6; box-shadow: 0 0 8px 3px rgba(52, 211, 153, 0.3); }
+   }
+   
+   .clock-display {
+     font-size: 1.5rem;
+     font-weight: 700;
+     font-variant-numeric: tabular-nums;
+     color: var(--er-text);
+     letter-spacing: 0.02em;
+   }
+   
+   .patient-count {
+     font-size: 0.85rem;
+     color: var(--er-text-secondary);
+     font-weight: 500;
+   }
+   
+   .patient-count strong {
+     color: var(--er-primary);
+     font-weight: 700;
+     font-size: 1.1rem;
+   }
+   
+   .refresh-btn {
+     display: flex;
+     align-items: center;
+     justify-content: center;
+     width: 38px;
+     height: 38px;
+     background: var(--er-card-bg);
+     border: 1px solid var(--er-border);
+     border-radius: 8px;
+     color: var(--er-text-secondary);
+     cursor: pointer;
+     transition: var(--er-transition);
+   }
+   
+   .refresh-btn:hover {
+     color: var(--er-primary);
+     border-color: var(--er-border-bright);
+     background: var(--er-primary-dim);
+   }
+   
+   .refresh-btn mat-icon {
+     font-size: 20px;
+     width: 20px;
+     height: 20px;
+   }
+   
+   .updating-badge {
+     font-size: 0.7rem;
+     color: var(--er-primary);
+     padding: 0.2rem 0.55rem;
+     background: var(--er-primary-dim);
+     border-radius: 6px;
+     animation: pulse 1.2s ease-in-out infinite;
+     font-weight: 600;
+   }
+   
+   @keyframes pulse {
+     0%, 100% { opacity: 1; }
+     50% { opacity: 0.5; }
+   }
+   
+   /* ============================================================
+      DEPARTMENT TABS
+      ============================================================ */
+   .dept-tabs {
+     position: relative;
+     z-index: 10;
+     display: flex;
+     align-items: stretch;
+     justify-content: flex-start;
+     background: var(--er-bg-secondary);
+     border-bottom: 2px solid var(--er-border);
+     padding: 0 2.5rem;
+     flex-shrink: 0;
+   }
+   
+   .dept-tab {
+     position: relative;
+     padding: 0.85rem 2.5rem;
+     background: transparent;
+     border: none;
+     border-bottom: 3px solid transparent;
+     color: var(--er-text-muted);
+     font-family: var(--er-font);
+     font-size: 1.05rem;
+     font-weight: 600;
+     cursor: pointer;
+     transition: var(--er-transition);
+     margin-bottom: -2px;
+     letter-spacing: 0.01em;
+   }
+   
+   .dept-tab:hover {
+     color: var(--er-text);
+     background: rgba(255, 255, 255, 0.05);
+   }
+   
+   .dept-tab.active {
+     color: #fff;
+     border-bottom-color: #fff;
+     background: rgba(255, 255, 255, 0.08);
+   }
+   
+   .dept-tab.active::after {
+     content: '';
+     position: absolute;
+     bottom: -2px;
+     left: 0;
+     right: 0;
+     height: 3px;
+     background: #fff;
+     border-radius: 3px 3px 0 0;
+     box-shadow: 0 0 12px rgba(255, 255, 255, 0.3);
+   }
+   
+   /* ============================================================
+      LOADING / ERROR / EMPTY / PROMPT
+      ============================================================ */
+   .loading-state {
+     flex: 1;
+     display: flex;
+     flex-direction: column;
+     align-items: center;
+     justify-content: center;
+     gap: 1.5rem;
+   }
+   
+   .loading-state p {
+     color: var(--er-text-secondary);
+     font-size: 1.1rem;
+   }
+   
+   .error-state {
+     flex: 1;
+     display: flex;
+     flex-direction: column;
+     align-items: center;
+     justify-content: center;
+     gap: 1rem;
+   }
+   
+   .error-state .error-message {
+     color: var(--er-accent-red);
+     font-size: 1rem;
+   }
+   
+   .select-prompt {
+     flex: 1;
+     display: flex;
+     flex-direction: column;
+     align-items: center;
+     justify-content: center;
+     gap: 1rem;
+     color: var(--er-text-muted);
+   }
+   
+   .select-prompt-icon {
+     font-size: 3rem;
+     opacity: 0.4;
+   }
+   
+   .select-prompt p {
+     font-size: 1.2rem;
+     font-weight: 500;
+     margin: 0;
+   }
+   
+   .empty-state {
+     flex: 1;
+     display: flex;
+     flex-direction: column;
+     align-items: center;
+     justify-content: center;
+     gap: 0.75rem;
+     color: var(--er-text-muted);
+     padding: 3rem;
+   }
+   
+   .empty-state-icon {
+     font-size: 2.5rem;
+     opacity: 0.3;
+   }
+   
+   .empty-state p {
+     font-size: 1.1rem;
+     margin: 0;
+   }
+   
+   /* ============================================================
+      TABLE — CSS GRID
+      ============================================================ */
+   .table-area {
+     position: relative;
+     z-index: 5;
+     flex: 1;
+     overflow: hidden;
+     display: flex;
+     flex-direction: column;
+   }
+   
+   /* Shared grid row — used by BOTH header and body rows */
+   .grid-row {
+     display: grid;
+     grid-template-columns: var(--er-grid);
+     align-items: center;
+     padding: 0 2.5rem;
+   }
+   
+   /* ---- Header ---- */
+   .table-header-wrap {
+     flex-shrink: 0;
+     background: var(--er-bg-secondary);
+     border-bottom: 2px solid rgba(148, 163, 184, 0.18);
+   }
+   
+   .grid-row.header-row {
+     min-height: 52px;
+   }
+   
+   .th-cell {
+     padding: 0.75rem 0.75rem;
+     font-size: 0.78rem;
+     font-weight: 700;
+     text-transform: uppercase;
+     letter-spacing: 0.08em;
+     color: var(--er-text-muted);
+     white-space: nowrap;
+     text-align: right;
+   }
+   
+   /* ---- Body scroll wrapper ---- */
+   .table-body-wrap {
+     flex: 1;
+     overflow: hidden;
+     position: relative;
+   }
+   
+   .table-body-scroll {
+     display: flex;
+     flex-direction: column;
+   }
+   
+   .table-body-scroll.scrolling {
+     animation: marqueeScroll var(--scroll-duration, 30s) linear infinite;
+   }
+   
+   .table-body-scroll.scrolling:hover {
+     animation-play-state: paused;
+   }
+   
+   @keyframes marqueeScroll {
+     0% { transform: translateY(0); }
+     100% { transform: translateY(-50%); }
+   }
+   
+   /* ---- Patient Row ---- */
+   .grid-row.patient-row {
+     min-height: 68px;
+     border-bottom: 1px solid var(--er-border);
+     transition: background var(--er-transition);
+   }
+   
+   .grid-row.patient-row:nth-child(odd) {
+     background: rgba(255, 255, 255, 0.04);
+   }
+   
+   .grid-row.patient-row:hover {
+     background: rgba(255, 255, 255, 0.08);
+   }
+   
+   /* ---- Cell base ---- */
+   .td-cell {
+     padding: 0.65rem 0.75rem;
+     font-size: 0.95rem;
+     color: var(--er-text);
+     text-align: right;
+     overflow: hidden;
+   }
+   
+   /* ============================================================
+      CELL CONTENT STYLES
+      ============================================================ */
+   
+   /* ID Number */
+   .id-number {
+     font-weight: 700;
+     font-variant-numeric: tabular-nums;
+     font-size: 1.2rem;
+     color: #fff;
+     letter-spacing: 0.05em;
+   }
+   
+   /* Elapsed time */
+   .elapsed-time {
+     font-variant-numeric: tabular-nums;
+     font-weight: 600;
+     font-size: 0.95rem;
+     color: var(--er-text);
+   }
+   
+   .elapsed-time.warning {
+     color: var(--er-accent-amber);
+   }
+   
+   .elapsed-time.critical {
+     color: var(--er-accent-red);
+     animation: criticalBlink 2s ease-in-out infinite;
+   }
+   
+   @keyframes criticalBlink {
+     0%, 100% { opacity: 1; }
+     50% { opacity: 0.6; }
+   }
+   
+   /* Decision badge */
+   .decision-badge {
+     display: inline-flex;
+     align-items: center;
+     padding: 0.3rem 0.75rem;
+     border-radius: 6px;
+     font-size: 0.85rem;
+     font-weight: 600;
+     background: var(--er-card-bg);
+     border: 1px solid var(--er-border);
+     color: var(--er-text-secondary);
+     white-space: nowrap;
+   }
+   
+   .decision-badge.hospitalize {
+     background: var(--er-accent-amber-dim);
+     border-color: rgba(251, 191, 36, 0.3);
+     color: var(--er-accent-amber);
+   }
+   
+   .decision-badge.release {
+     background: var(--er-accent-green-dim);
+     border-color: rgba(52, 211, 153, 0.3);
+     color: var(--er-accent-green);
+   }
+   
+   /* Consult text */
+   .consult-text {
+     white-space: normal;
+     word-break: break-word;
+     line-height: 1.45;
+     font-size: 0.9rem;
+   }
+   
+   /* ============================================================
+      IMAGING & BLOOD — Chip style
+      ============================================================ */
+   .chips-wrap {
+     display: flex;
+     flex-direction: column;
+     gap: 4px;
+     padding: 2px 0;
+   }
+   
+   /* Single chip */
+   .chip {
+     display: inline-flex;
+     align-items: center;
+     gap: 0.35rem;
+     padding: 0.2rem 0.55rem;
+     border-radius: 6px;
+     font-size: 0.8rem;
+     line-height: 1.35;
+     white-space: nowrap;
+     background: rgba(255, 255, 255, 0.06);
+     border: 1px solid rgba(255, 255, 255, 0.1);
+   }
+   
+   /* --- Imaging chip --- */
+   .chip.img-chip {
+     background: rgba(255, 255, 255, 0.08);
+     border: 1px solid rgba(255, 255, 255, 0.15);
+   }
+   
+   .chip .chip-name {
+     color: var(--er-text-secondary);
+     font-weight: 500;
+     max-width: 85px;
+     overflow: hidden;
+     text-overflow: ellipsis;
+   }
+   
+   .chip .chip-time {
+     font-variant-numeric: tabular-nums;
+     font-weight: 700;
+     color: var(--er-primary);
+   }
+   
+   /* Pending imaging: amber/waiting style */
+   .chip.img-pending {
+     background: var(--er-accent-amber-dim);
+     border-color: rgba(251, 191, 36, 0.25);
+   }
+   
+   .chip .chip-elapsed {
+     font-variant-numeric: tabular-nums;
+     font-weight: 700;
+     color: var(--er-accent-amber);
+     animation: pendingPulse 2s ease-in-out infinite;
+   }
+   
+   @keyframes pendingPulse {
+     0%, 100% { opacity: 1; }
+     50% { opacity: 0.6; }
+   }
+   
+   /* --- Blood chip --- */
+   .chip.blood-chip {
+     background: var(--er-accent-red-dim);
+     border: 1px solid rgba(248, 113, 113, 0.15);
+   }
+   
+   .chip.blood-chip.done {
+     background: var(--er-accent-green-dim);
+     border-color: rgba(52, 211, 153, 0.2);
+   }
+   
+   /* Status icon circle */
+   .chip .chip-icon {
+     display: inline-flex;
+     align-items: center;
+     justify-content: center;
+     width: 16px;
+     height: 16px;
+     border-radius: 50%;
+     font-size: 0.6rem;
+     font-weight: 800;
+     flex-shrink: 0;
+   }
+   
+   .chip .chip-icon.icon-check {
+     background: var(--er-accent-green);
+     color: #fff;
+   }
+   
+   .chip .chip-icon.icon-x {
+     background: rgba(248, 113, 113, 0.3);
+     color: var(--er-accent-red);
+   }
+   
+   .chip .chip-arrive {
+     font-variant-numeric: tabular-nums;
+     font-weight: 500;
+     color: var(--er-text-secondary);
+   }
+   
+   .chip .chip-arrow {
+     color: var(--er-text-muted);
+     font-size: 0.65rem;
+   }
+   
+   .chip .chip-result {
+     font-variant-numeric: tabular-nums;
+     font-weight: 700;
+   }
+   
+   .chip .chip-result.has-result {
+     color: var(--er-accent-green);
+   }
+   
+   .chip .chip-result.no-result {
+     color: var(--er-accent-red);
+     font-weight: 500;
+   }
+   
+   /* No data dash */
+   .no-data {
+     color: var(--er-text-muted);
+     font-size: 0.9rem;
+   }
+   
+   /* Staff names */
+   .staff-name {
+     font-weight: 500;
+     color: var(--er-text);
+     font-size: 0.95rem;
+   }
+   
+   .staff-name.empty {
+     color: var(--er-text-muted);
+   }
+   
+   /* ---- Scroll gradient overlays ---- */
+   .scroll-fade-top,
+   .scroll-fade-bottom {
+     position: absolute;
+     left: 0;
+     right: 0;
+     height: 40px;
+     pointer-events: none;
+     z-index: 6;
+   }
+   
+   .scroll-fade-top {
+     top: 0;
+     background: linear-gradient(to bottom, var(--er-bg) 0%, transparent 100%);
+   }
+   
+   .scroll-fade-bottom {
+     bottom: 0;
+     background: linear-gradient(to top, var(--er-bg) 0%, transparent 100%);
+   }
+   
+   /* ---- Responsive ---- */
+   @media (max-width: 1200px) {
+     .top-bar,
+     .dept-tabs,
+     .grid-row {
+       padding-left: 1.5rem;
+       padding-right: 1.5rem;
+     }
+   
+     .page-title {
+       font-size: 1.4rem;
+     }
+   }
+   
+   @media (max-width: 768px) {
+     .top-bar {
+       flex-direction: column;
+       gap: 0.5rem;
+       padding: 0.75rem 1rem;
+       min-height: auto;
+     }
+   
+     .dept-tabs {
+       padding: 0 1rem;
+       overflow-x: auto;
+     }
+   
+     .dept-tab {
+       padding: 0.65rem 1.5rem;
+       font-size: 0.95rem;
+     }
+   
+     .grid-row {
+       padding-left: 1rem;
+       padding-right: 1rem;
+     }
+   
+     .td-cell,
+     .th-cell {
+       font-size: 0.8rem;
+       padding: 0.5rem 0.4rem;
+     }
+   }

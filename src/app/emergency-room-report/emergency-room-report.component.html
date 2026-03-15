@@ -1,0 +1,188 @@
+<div class="er-report" dir="rtl" lang="he">
+
+  <!-- ===== TOP BAR ===== -->
+  <div class="top-bar">
+    <div class="top-bar-right">
+      <span class="live-badge">
+        <span class="live-dot"></span>
+        LIVE
+      </span>
+      <span *ngIf="backgroundRefreshing" class="updating-badge">מתעדכן...</span>
+    </div>
+    <div class="top-bar-center">
+      <button class="refresh-btn" (click)="refresh()" [disabled]="loading" aria-label="רענן" matTooltip="רענן">
+        <mat-icon>refresh</mat-icon>
+      </button>
+      <span class="clock-display">{{ currentTime | date:'HH:mm:ss' }}</span>
+      <span class="patient-count" *ngIf="selectedDepartment">
+        <strong>{{ mergedRows.length }}</strong> מטופלים
+      </span>
+    </div>
+    <div class="top-bar-left"></div>
+  </div>
+
+  <!-- ===== DEPARTMENT TABS ===== -->
+  <nav class="dept-tabs" aria-label="בחירת אגף">
+    <button
+      *ngFor="let dept of departments"
+      type="button"
+      class="dept-tab"
+      [class.active]="selectedDepartment === dept.id"
+      (click)="selectDepartment(dept.id)"
+    >
+      {{ dept.label }}
+    </button>
+  </nav>
+
+  <!-- ===== LOADING ===== -->
+  <div *ngIf="loading && mergedRows.length === 0" class="loading-state">
+    <mat-spinner diameter="48"></mat-spinner>
+    <p>טוען נתונים...</p>
+  </div>
+
+  <!-- ===== ERROR ===== -->
+  <div *ngIf="error && !loading" class="error-state">
+    <p class="error-message">{{ error }}</p>
+    <button mat-raised-button color="warn" (click)="retry()">נסה שוב</button>
+  </div>
+
+  <!-- ===== NO DEPARTMENT SELECTED ===== -->
+  <div *ngIf="!error && !loading && !selectedDepartment" class="select-prompt">
+    <div class="select-prompt-icon">☝</div>
+    <p>בחר אגף להצגת מטופלים</p>
+  </div>
+
+  <!-- ===== TABLE ===== -->
+  <ng-container *ngIf="!error && selectedDepartment">
+    <div class="table-area" *ngIf="mergedRows.length > 0; else emptyBlock">
+
+      <!-- HEADER (grid-row) -->
+      <div class="table-header-wrap">
+        <div class="grid-row header-row">
+          <div class="th-cell">ת.ז</div>
+          <div class="th-cell">זמן שהייה</div>
+          <div class="th-cell">החלטה</div>
+          <div class="th-cell">ייעוצים</div>
+          <div class="th-cell">צילומים</div>
+          <div class="th-cell">בדיקת דם</div>
+          <div class="th-cell">אחות</div>
+          <div class="th-cell">רופא</div>
+        </div>
+      </div>
+
+      <!-- BODY (scrolling) -->
+      <div class="table-body-wrap">
+        <div class="scroll-fade-top" *ngIf="shouldScroll"></div>
+        <div
+          class="table-body-scroll"
+          [class.scrolling]="shouldScroll"
+          [style.--scroll-duration]="scrollDuration"
+        >
+          <!-- Original rows -->
+          <div class="grid-row patient-row" *ngFor="let row of mergedRows; trackBy: trackByIdNum">
+            <ng-container *ngTemplateOutlet="rowTpl; context: { $implicit: row }"></ng-container>
+          </div>
+          <!-- Duplicated for seamless marquee loop -->
+          <ng-container *ngIf="shouldScroll">
+            <div class="grid-row patient-row" *ngFor="let row of mergedRows; trackBy: trackByIdNum">
+              <ng-container *ngTemplateOutlet="rowTpl; context: { $implicit: row }"></ng-container>
+            </div>
+          </ng-container>
+        </div>
+        <div class="scroll-fade-bottom" *ngIf="shouldScroll"></div>
+      </div>
+
+    </div>
+
+    <ng-template #emptyBlock>
+      <div class="empty-state">
+        <div class="empty-state-icon">📋</div>
+        <p>אין מטופלים באגף זה</p>
+      </div>
+    </ng-template>
+  </ng-container>
+
+  <!-- ===== ROW TEMPLATE ===== -->
+  <ng-template #rowTpl let-row>
+
+    <!-- ID -->
+    <div class="td-cell">
+      <span class="id-number">{{ getLast4Digits(row.Id_Num) }}</span>
+    </div>
+
+    <!-- Elapsed -->
+    <div class="td-cell">
+      <span class="elapsed-time" [ngClass]="getElapsedClass(row.Entry_Date)">
+        {{ getElapsedFromEntry(row.Entry_Date) }}
+      </span>
+    </div>
+
+    <!-- Decision -->
+    <div class="td-cell">
+      <span class="decision-badge" [ngClass]="getDecisionClass(row.Decision_Description)">
+        {{ row.Decision_Description }}
+      </span>
+    </div>
+
+    <!-- Consult -->
+    <div class="td-cell">
+      <span class="consult-text" [class.no-data]="row.Consulted_Unit === '—'">{{ row.Consulted_Unit }}</span>
+    </div>
+
+    <!-- Imaging — chip style -->
+    <div class="td-cell">
+      <ng-container *ngIf="row.ImagingList && row.ImagingList.length > 0; else noImg">
+        <div class="chips-wrap">
+          <div *ngFor="let img of row.ImagingList"
+               class="chip img-chip"
+               [class.img-pending]="!img.hasResult">
+            <span class="chip-name">{{ img.name }}</span>
+            <ng-container *ngIf="img.hasResult; else imgPending">
+              <span class="chip-arrow">←</span>
+              <span class="chip-time">{{ img.time }}</span>
+              <span class="chip-icon icon-check">✓</span>
+            </ng-container>
+            <ng-template #imgPending>
+              <span class="chip-arrow">|</span>
+              <span class="chip-elapsed">{{ getImagingElapsed(img.sendTime) }}</span>
+            </ng-template>
+          </div>
+        </div>
+      </ng-container>
+      <ng-template #noImg><span class="no-data">—</span></ng-template>
+    </div>
+
+    <!-- Blood Tests — chip style -->
+    <div class="td-cell">
+      <ng-container *ngIf="row.BloodTestsList && row.BloodTestsList.length > 0; else noBlood">
+        <div class="chips-wrap">
+          <div *ngFor="let b of row.BloodTestsList"
+               class="chip blood-chip"
+               [class.done]="b.hasResult">
+            <span class="chip-icon" [ngClass]="b.hasResult ? 'icon-check' : 'icon-x'">
+              {{ b.hasResult ? '✓' : '✗' }}
+            </span>
+            <span class="chip-arrive">{{ b.arriveTime }}</span>
+            <span class="chip-arrow">←</span>
+            <span class="chip-result" [class.has-result]="b.hasResult" [class.no-result]="!b.hasResult">
+              {{ b.distributionTime != null ? b.distributionTime : '—' }}
+            </span>
+          </div>
+        </div>
+      </ng-container>
+      <ng-template #noBlood><span class="no-data">—</span></ng-template>
+    </div>
+
+    <!-- Nurse -->
+    <div class="td-cell">
+      <span class="staff-name" [class.empty]="row.Nurse_Name === '—'">{{ row.Nurse_Name }}</span>
+    </div>
+
+    <!-- Doctor -->
+    <div class="td-cell">
+      <span class="staff-name" [class.empty]="row.Doctor_Name === '—'">{{ row.Doctor_Name }}</span>
+    </div>
+
+  </ng-template>
+
+</div>

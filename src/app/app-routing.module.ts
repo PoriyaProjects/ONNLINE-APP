@@ -162,6 +162,8 @@ import { WindowsUserActionsComponent } from "./dashboard/windows-user-actions/wi
 import { AiLettersDashboardComponent } from "./ai-letters-dashboard/ai-letters-dashboard.component";
 import { MriScheduleComponent } from "./mri-schedule/mri-schedule.component";
 import { InfectionControlComponent } from "./infection-control/infection-control.component";
+import { EmergencyRoomReportComponent } from "./emergency-room-report/emergency-room-report.component";
+import { HitoFormsDashboardComponent } from "./hito-forms-dashboard/hito-forms-dashboard.component";
 import { MedicalInternsDashboardComponent } from "./employees-manage-dash/medical-interns-dashboard/medical-interns-dashboard.component";
 import { MedicalInternAddUpdateComponent } from "./employees-manage-dash/medical-interns-dashboard/medical-intern-add-update/medical-intern-add-update.component";
 import { InternDepartmentsManageComponent } from "./employees-manage-dash/medical-interns-dashboard/intern-departments-manage/intern-departments-manage.component";
@@ -365,6 +367,8 @@ const routes: Routes = [
     { path: "ai-letters-dashboard", component: AiLettersDashboardComponent },
     { path: "mri-schedule", component: MriScheduleComponent },
     { path: "InfectionControl", component: InfectionControlComponent },
+    { path: "EmergencyRoomReport", component: EmergencyRoomReportComponent },
+    { path: "hito-forms-dashboard", component: HitoFormsDashboardComponent },
     { path: "medical-interns-dashboard", component: MedicalInternsDashboardComponent },
     { path: "medical-intern-add-update", component: MedicalInternAddUpdateComponent },
     { path: "intern-departments-manage/:EmployeeID", component: InternDepartmentsManageComponent },
