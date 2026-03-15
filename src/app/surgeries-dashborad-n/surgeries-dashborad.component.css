@@ -1016,7 +1016,20 @@
     width: 100% !important;
     height: 100% !important;
     flex: 1 1 auto;
-    ::ng-deep svg { cursor: pointer; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+    ::ng-deep svg {
+      cursor: pointer;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      direction: rtl;
+    }
+    /* אזור כותרת הגרף (g[0]) – צמוד לימין, צל, יישור טקסט (SVG לא תומך ב-flex) */
+    ::ng-deep svg > g:first-child text {
+      text-anchor: end;
+      text-align: right;
+      dominant-baseline: middle;
+    }
+    ::ng-deep svg > g:first-child rect {
+      filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.15));
+    }
     ::ng-deep rect { cursor: pointer; transition: opacity .2s; &:hover { opacity: .8; } }
     ::ng-deep .google-visualization-tooltip {
       border-radius: 8px !important;
@@ -1266,9 +1279,13 @@
   direction: rtl;
   text-align: right;
   width: 100%;
-  display: block;
-  padding-inline-end: 0;
-  padding-inline-start: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 6px 10px;
+  box-shadow: 0 4px 12px 0 rgba(0, 0, 0, 0.15);
+  border-radius: 4px;
+  background: var(--surface, #fff);
 }
 
 .chart-mode-description {

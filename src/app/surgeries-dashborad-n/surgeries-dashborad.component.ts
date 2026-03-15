@@ -251,7 +251,7 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck {
     }[] = [];
 
     chartOptions: any = {
-        title: "מעקב ניתוחים לפי חדר",
+        title: "", // הכותרת מוצגת ב-.chart-mode-heading בלבד (getChartViewTitle())
         titleTextStyle: {
             color: "#0f172a",
             fontSize: 18,
@@ -929,7 +929,7 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck {
                             this.diagnosesList = this.getUniqueSites();
                             this.calculateTopDepartmentsFromSurgeries();
                             this.chartColumns = ["חדר ניתוח", "מספר ניתוחים", { type: "string", role: "annotation" }];
-                            this.chartOptions.title = "מעקב ניתוחים לפי חדר";
+                            this.chartOptions.title = "";
                             this.updateChartTheme();
                             this.updateChartData();
                         } else {
@@ -1559,7 +1559,7 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck {
                     },
                 ];
 
-                this.chartOptions.title = "סה\"כ ניתוחים לפי שנה";
+                this.chartOptions.title = "";
                 this.chartOptions.hAxis = {
                     ...(this.chartOptions.hAxis || {}),
                     title: "שנה",
@@ -1632,7 +1632,7 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck {
                 this.stackedCategoryLegend = [];
                 const firstYear = yearsForDept[0];
                 const lastYear = yearsForDept[yearsForDept.length - 1];
-                this.chartOptions.title = `מספר ניתוחים לפי מחלקה מנתחת מאוגד ל-${lastYear - firstYear + 1} השנים האחרונות (${firstYear}-${lastYear})`;
+                this.chartOptions.title = "";
                 this.chartOptions.hAxis = {
                     ...(this.chartOptions.hAxis || {}),
                     title: "מחלקה מנתחת מאוגד",
@@ -1720,7 +1720,7 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck {
                     };
                 });
 
-                this.chartOptions.title = "סה\"כ ניתוחים לפי שנה ואתר";
+                this.chartOptions.title = "";
                 this.chartOptions.hAxis = {
                     ...(this.chartOptions.hAxis || {}),
                     title: "שנה",
@@ -1817,7 +1817,7 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck {
                         pct,
                     };
                 });
-                this.chartOptions.title = "סה\"כ ניתוחים לפי שנה ומשמרת";
+                this.chartOptions.title = "";
                 this.chartOptions.hAxis = {
                     ...(this.chartOptions.hAxis || {}),
                     title: "שנה",
@@ -1877,7 +1877,7 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck {
                   return { label: fund, total, perYear, diff, pct };
                 });
               
-                this.chartOptions.title = 'סה"כ ניתוחים לפי שנה וסוג מימון (קרן / מדינה)';
+                this.chartOptions.title = "";
 
                 // צבעים קבועים לכל סוג מימון + מקרא קטגוריות
                 const palette = this.yearPalette;
@@ -2039,7 +2039,7 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck {
             this.chartTableRows = tableRows;
             this.updateColorsForYears(years);
             this.stackedCategoryLegend = [];
-            this.chartOptions.title = "ניתוחים לפי חודשים (5 שנים אחרונות)";
+            this.chartOptions.title = "";
             this.chartOptions.hAxis = {
                 ...(this.chartOptions.hAxis || {}),
                 title: "חודש",
@@ -2184,7 +2184,7 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck {
                         pct,
                     };
                 });
-                this.chartOptions.title = "סה\"כ ניתוחים לפי שנה וסוג מימון (קרן / מדינה)";
+                this.chartOptions.title = "";
                 this.chartOptions.hAxis = {
                     ...(this.chartOptions.hAxis || {}),
                     title: "שנה",
@@ -2244,7 +2244,7 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck {
 
             const firstYear = years[0];
             const lastYear = years[years.length - 1];
-            this.chartOptions.title = `מספר ניתוחים לפי מחלקה ל-${lastYear - firstYear + 1} השנים האחרונות (${firstYear}-${lastYear})`;
+            this.chartOptions.title = "";
 
             this.isChartLoading = false;
             this.cdr.detectChanges();
@@ -2962,7 +2962,7 @@ updateChartColumns(): void {
     
     // Update chart options title without creating new object (to preserve Google Charts reference)
     if (this.chartOptions) {
-        this.chartOptions.title = `השוואת פעילות ניתוחית בין מחלקות - ${olderYear} מול ${latestYear}`;
+        this.chartOptions.title = "";
     }
 }
    
@@ -3209,6 +3209,8 @@ updateChartColumns(): void {
         this.selectedRooms = [];
         this.selectedDepartments = [];
         this.selectedWeekdays = [];
+        this.chartDepartmentFilter = null;
+        this.isChartDeptDropdownOpen = false;
         this.applyAllSurgeryFilters();
     }
 
@@ -3479,6 +3481,7 @@ updateChartColumns(): void {
             console.error("Error handling chart click:", error);
         }
     }
+
     isDropdownOpen = false;
 
 toggleDropdown() {
