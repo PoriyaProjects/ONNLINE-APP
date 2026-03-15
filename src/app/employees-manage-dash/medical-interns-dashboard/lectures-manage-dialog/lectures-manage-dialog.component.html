@@ -30,7 +30,13 @@
         <div class="form-row">
           <mat-form-field appearance="outline" class="form-field full-width">
             <mat-label>מיקום</mat-label>
-            <input matInput formControlName="LectureLocationDescription" />
+            <mat-select formControlName="LectureLocationDescription">
+              <mat-option value="">בחר מיקום</mat-option>
+              <mat-option value="אודיטוריום">אודיטוריום</mat-option>
+              <mat-option value="אולם כנסים">אולם כנסים</mat-option>
+              <mat-option value="מקלט">מקלט</mat-option>
+              <mat-option value="סימינריון הנהלה">סימינריון הנהלה</mat-option>
+            </mat-select>
           </mat-form-field>
         </div>
         <div class="form-row">
@@ -58,6 +64,23 @@
 
     <div class="lectures-table-section" *ngIf="loaded">
       <h3 class="section-title text-center">רשימת הרצאות</h3>
+      <div class="lectures-filters-row">
+        <form [formGroup]="dateRangeForm" class="date-range-form">
+          <mat-form-field appearance="outline" class="form-field">
+            <mat-label>תאריך התחלה</mat-label>
+            <input matInput type="date" formControlName="startDate" />
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="form-field">
+            <mat-label>תאריך סיום</mat-label>
+            <input matInput type="date" formControlName="endDate" />
+          </mat-form-field>
+        </form>
+        <button mat-stroked-button color="primary" type="button" (click)="exportLecturesToPdf()" [disabled]="creating_pdf">
+          <mat-icon>picture_as_pdf</mat-icon>
+          <span *ngIf="!creating_pdf">ייצוא ל-PDF</span>
+          <span *ngIf="creating_pdf">מייצר קובץ...</span>
+        </button>
+      </div>
       <table mat-table [dataSource]="dataSource" class="lectures-table">
         <ng-container matColumnDef="LectureDate">
           <th mat-header-cell *matHeaderCellDef>תאריך</th>
@@ -101,4 +124,30 @@
   <mat-dialog-actions align="end">
     <button mat-button (click)="close()">סגור</button>
   </mat-dialog-actions>
+</div>
+
+<!-- Hidden PDF content for html2canvas export -->
+<div *ngIf="creating_pdf" #pdfContent class="pdf-container" dir="rtl"
+  style="position: absolute; top: -10000px; right: 0; width: 1120px;">
+  <h2 style="text-align:center; margin-bottom:20px">רשימת הרצאות סטאג'רים</h2>
+  <table class="pdf-table">
+    <thead>
+      <tr>
+        <th>תאריך</th>
+        <th>שעה</th>
+        <th>תיאור</th>
+        <th>מיקום</th>
+        <th>מרצה</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let row of dataSource.filteredData">
+        <td>{{ row.LectureDate || '-' }}</td>
+        <td>{{ row.LectureTime || '-' }}</td>
+        <td>{{ row.LectureDescription || '-' }}</td>
+        <td>{{ row.LectureLocationDescription || '-' }}</td>
+        <td>{{ row.LectureFullName || row.LectureEmployeeID || '-' }}</td>
+      </tr>
+    </tbody>
+  </table>
 </div>
