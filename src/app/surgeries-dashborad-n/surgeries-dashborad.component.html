@@ -495,7 +495,7 @@
               <div class="dropdown-trigger" (click)="toggleDropdown()">
                 <mat-icon class="dropdown-icon">apartment</mat-icon>
                 <span class="selected-text">
-                  אגף / אתר (לביצוע)
+                  מחלקה/ אתר (לביצוע)
                 </span>
                 <mat-icon class="arrow-icon">{{ isDropdownOpen ? 'expand_less' : 'expand_more' }}</mat-icon>
               </div>
@@ -726,7 +726,7 @@
               <div class="structure-number">1</div>
               <div class="structure-content" dir="rtl">
                 <h4>בסרגל העליון</h4>
-                <p>בחר אגף / אתר ניתוחים וסנן לפי אתר, משמרת, סוג ניתוח, מחלקה ויום בשבוע כדי להתמקד בפעילות הרלוונטית.
+                <p>בחר מחלקה/ אתר ניתוחים וסנן לפי אתר, משמרת, סוג ניתוח, מחלקה ויום בשבוע כדי להתמקד בפעילות הרלוונטית.
                 </p>
               </div>
             </div>
@@ -737,7 +737,7 @@
                 <ul dir="rtl">
                   <li>✨ גרפים של כמות ניתוחים לפי אתר, משמרת, סוג ניתוח ומחלקה–אתר להשוואת 5 שנים.</li>
                   <li>📊 גרפים של מדדי זמן (משך, כניסה ראשונה, סיום אחרון, SETUP) לפי מחלקה.</li>
-                  <li>📅 אפשרות לזהות מגמות וצווארי בקבוק ברמת אגף / מחלקה / חדר ניתוח.</li>
+                  <li>📅 אפשרות לזהות מגמות וצווארי בקבוק ברמת מחלקה/ מחלקה / חדר ניתוח.</li>
                 </ul>
               </div>
             </div>
@@ -998,34 +998,33 @@
       </div>
       <div class="kpi-body">
         <p class="kpi-intro">
-          כאן יוצגו משכי ניתוח ממוצעים בדקות לכל מחלקה ניתוחית. נתונים אלו ייטענו מה‑API שתספק.
+          משך ניתוח ממוצע בדקות לפי מחלקה מאוגדת (Wing). ציר X: מחלקות. עמודה לכל שנה.
         </p>
         <div *ngIf="isAvgDurationLoading" class="kpi-loading">
           <mat-spinner diameter="40"></mat-spinner>
           <div class="kpi-loading-text">טוען נתונים...</div>
         </div>
-        <div *ngIf="!isAvgDurationLoading && (!avgDurationData || avgDurationData.length === 0)" class="kpi-no-data">
-          אין נתונים להצגה כרגע. חבר את ה‑API כדי לאכלס את הטבלה.
+        <div *ngIf="!isAvgDurationLoading && (!avgDurationChartData || avgDurationChartData.length === 0)" class="kpi-no-data">
+          אין נתונים להצגה כרגע. חבר את ה‑API כדי לאכלס את הגרף.
         </div>
-        <table *ngIf="!isAvgDurationLoading && avgDurationData && avgDurationData.length > 0" class="kpi-table">
-          <thead>
-            <tr>
-              <th>מחלקה</th>
-              <th>משך ניתוח ממוצע (דק')</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let r of avgDurationData">
-              <td>{{ r.departmentName }}</td>
-              <td>{{ r.valueDisplay }}</td>
-            </tr>
-          </tbody>
-        </table>
+        <google-chart *ngIf="!isAvgDurationLoading && avgDurationChartData && avgDurationChartData.length > 0"
+          [type]="'ColumnChart'" [columns]="avgDurationChartColumns" [data]="avgDurationChartData"
+          [options]="avgDurationChartOptions" [width]="'100%'" [height]="'360px'">
+        </google-chart>
+        <div *ngIf="!isAvgDurationLoading && avgDurationChartData && avgDurationChartData.length > 0" class="kpi-chart-caption">
+          כל עמודת צבע מייצגת שנה, והסדרה עבור כל מחלקה (Wing) מציגה את משך הניתוח הממוצע (בדקות).
+        </div>
+        <div *ngIf="!isAvgDurationLoading && avgDurationChartData && avgDurationChartData.length > 0 && avgDurationChartYears?.length" class="kpi-chart-legend">
+          <span *ngFor="let y of avgDurationChartYears; let i = index" class="kpi-legend-item">
+            <span class="kpi-legend-color" [style.background-color]="kpiChartYearColors[i % kpiChartYearColors.length]"></span>
+            <span class="kpi-legend-label">{{ y }}</span>
+          </span>
+        </div>
       </div>
     </div>
   </div>
 
-  <!-- ניתוחים ליום בחדר לפי מחלקה – ממוצע 5 שנים (API עדיין לא קיים) -->
+  <!-- ניתוחים ליום בחדר לפי מחלקה – ממוצע 5 שנים -->
   <div *ngIf="showSurgeriesPerDayModal" class="kpi-overlay" [class.dark]="isDark">
     <div class="kpi-modal" dir="rtl">
       <div class="kpi-header">
@@ -1036,11 +1035,27 @@
       </div>
       <div class="kpi-body">
         <p class="kpi-intro">
-          תצוגה זו תציג כמה ניתוחים נעשו בממוצע ליום בחדר לפי מחלקה – ממוצע על פני 5 שנים.
+          ממוצע ניתוחים ליום בחדר לפי מחלקה מאוגדת (Wing). ציר X: מחלקות. עמודה לכל שנה.
         </p>
-        <div class="kpi-no-data">
-          <mat-icon class="kpi-placeholder-icon">build_circle</mat-icon>
-          <p>ה‑API לנתון זה טרם זמין. לאחר חיבור ה‑API כאן תוצג טבלה: מחלקה | ניתוחים ליום בחדר (ממוצע 5 שנים).</p>
+        <div *ngIf="isSurgeriesPerDayLoading" class="kpi-loading">
+          <mat-spinner diameter="40"></mat-spinner>
+          <div class="kpi-loading-text">טוען נתונים...</div>
+        </div>
+        <div *ngIf="!isSurgeriesPerDayLoading && (!surgeriesPerDayChartData || surgeriesPerDayChartData.length === 0)" class="kpi-no-data">
+          אין נתונים להצגה כרגע. חבר את ה‑API כדי לאכלס את הגרף.
+        </div>
+        <google-chart *ngIf="!isSurgeriesPerDayLoading && surgeriesPerDayChartData && surgeriesPerDayChartData.length > 0"
+          [type]="'ColumnChart'" [columns]="surgeriesPerDayChartColumns" [data]="surgeriesPerDayChartData"
+          [options]="surgeriesPerDayChartOptions" [width]="'100%'" [height]="'360px'">
+        </google-chart>
+        <div *ngIf="!isSurgeriesPerDayLoading && surgeriesPerDayChartData && surgeriesPerDayChartData.length > 0" class="kpi-chart-caption">
+          כל עמודת צבע מייצגת שנה, והסדרה עבור כל מחלקה (Wing) מציגה את ממוצע ניתוחים ליום בחדר.
+        </div>
+        <div *ngIf="!isSurgeriesPerDayLoading && surgeriesPerDayChartData && surgeriesPerDayChartData.length > 0 && surgeriesPerDayChartYears?.length" class="kpi-chart-legend">
+          <span *ngFor="let y of surgeriesPerDayChartYears; let i = index" class="kpi-legend-item">
+            <span class="kpi-legend-color" [style.background-color]="kpiChartYearColors[i % kpiChartYearColors.length]"></span>
+            <span class="kpi-legend-label">{{ y }}</span>
+          </span>
         </div>
       </div>
     </div>
@@ -1074,7 +1089,13 @@
         </google-chart>
         <div *ngIf="!isFirstStartTimeLoading && firstStartTimeChartData && firstStartTimeChartData.length > 0"
           class="kpi-chart-caption">
-          כל עמודה מציגה זמן כניסה ממוצע של הניתוח הראשון בבוקר לכל אגף (Wing), בחמש השנים האחרונות.
+          כל עמודה מציגה זמן כניסה ממוצע של הניתוח הראשון בבוקר לכל מחלקה(Wing), בחמש השנים האחרונות.
+        </div>
+        <div *ngIf="!isFirstStartTimeLoading && firstStartTimeChartData && firstStartTimeChartData.length > 0 && firstStartTimeChartYears?.length" class="kpi-chart-legend">
+          <span *ngFor="let y of firstStartTimeChartYears; let i = index" class="kpi-legend-item">
+            <span class="kpi-legend-color" [style.background-color]="kpiChartYearColors[i % kpiChartYearColors.length]"></span>
+            <span class="kpi-legend-label">{{ y }}</span>
+          </span>
         </div>
       </div>
     </div>
@@ -1092,6 +1113,17 @@
         <p class="kpi-intro">
           כאן יוצג זמן הסיום הממוצע של הניתוח האחרון בכל יום, לפי מחלקה.
         </p>
+        <div class="kpi-filter-row" *ngIf="!isLastEndTimeLoading">
+          <button mat-stroked-button type="button" class="overflow-toggle-btn"
+            [class.active]="lastEndTimeExcludeOverflowDays"
+            (click)="toggleLastEndTimeExcludeOverflow()">
+            <mat-icon>{{ lastEndTimeExcludeOverflowDays ? 'filter_alt' : 'filter_alt_off' }}</mat-icon>
+            <span>{{ lastEndTimeExcludeOverflowDays ? 'ממוצע ללא ימי גלישה' : 'נטרל ימים עם גלישה מהממוצע' }}</span>
+          </button>
+        </div>
+        <p *ngIf="lastEndTimeExcludeNoData" class="kpi-intro kpi-exclude-fallback">
+          אין ימים ללא גלישה בנתונים – מוצג ממוצע לכל הימים.
+        </p>
         <div *ngIf="isLastEndTimeLoading" class="kpi-loading">
           <mat-spinner diameter="40"></mat-spinner>
           <div class="kpi-loading-text">טוען נתונים...</div>
@@ -1107,17 +1139,20 @@
             hAxis: { textStyle: { fontSize: 10 }, slantedText: true, slantedTextAngle: 25 },
             vAxis: { title: 'זמן סיום ממוצע (HH:MM)', textStyle: { fontSize: 10 } },
             bar: { groupWidth: '60%' },
-            chartArea: { width: '90%', height: '80%', left: 40, top: 4 },
+            chartArea: { width: '90%', height: '78%', left: 40, top: 12 },
             animation: { startup: true, duration: 800, easing: 'out' },
-            annotations: {
-              alwaysOutside: true,
-              textStyle: { fontSize: 10 }
-            }
+            annotations: { alwaysOutside: true, textStyle: { fontSize: 9 } }
           }" [width]="'100%'" [height]="'100%'">
         </google-chart>
         <div *ngIf="!isLastEndTimeLoading && lastEndTimeChartData && lastEndTimeChartData.length > 0"
           class="kpi-chart-caption">
-          כל עמודת צבע מייצגת שנה, והסדרה עבור כל אגף (Wing) מציגה את זמן הסיום הממוצע של הניתוח האחרון.
+          כל עמודת צבע מייצגת שנה, והסדרה עבור כל מחלקה(Wing) מציגה את זמן הסיום הממוצע של הניתוח האחרון.
+        </div>
+        <div *ngIf="!isLastEndTimeLoading && lastEndTimeChartData && lastEndTimeChartData.length > 0 && lastEndTimeChartYears?.length" class="kpi-chart-legend">
+          <span *ngFor="let y of lastEndTimeChartYears; let i = index" class="kpi-legend-item">
+            <span class="kpi-legend-color" [style.background-color]="kpiChartYearColors[i % kpiChartYearColors.length]"></span>
+            <span class="kpi-legend-label">{{ y }}</span>
+          </span>
         </div>
       </div>
     </div>
@@ -1151,16 +1186,19 @@
             hAxis: { textStyle: { fontSize: 10 }, slantedText: true, slantedTextAngle: 25 },
             vAxis: { title: 'SETUP ממוצע (דקות)', textStyle: { fontSize: 10 } },
             bar: { groupWidth: '60%' },
-            chartArea: { width: '90%', height: '80%', left: 40, top: 4 },
+            chartArea: { width: '90%', height: '78%', left: 40, top: 12 },
             animation: { startup: true, duration: 800, easing: 'out' },
-            annotations: {
-              alwaysOutside: true,
-              textStyle: { fontSize: 10 }
-            }
+            annotations: { alwaysOutside: true, textStyle: { fontSize: 9 } }
           }" [width]="'100%'" [height]="'100%'">
         </google-chart>
         <div *ngIf="!isAvgSetupLoading && avgSetupChartData && avgSetupChartData.length > 0" class="kpi-chart-caption">
-          כל עמודת צבע מייצגת שנה, והסדרה עבור כל אגף (Wing) מציגה את זמן ה‑SETUP הממוצע (בדקות) בין ניתוחים.
+          כל עמודת צבע מייצגת שנה, והסדרה עבור כל מחלקה(Wing) מציגה את זמן ה‑SETUP הממוצע (בדקות) בין ניתוחים.
+        </div>
+        <div *ngIf="!isAvgSetupLoading && avgSetupChartData && avgSetupChartData.length > 0 && avgSetupChartYears?.length" class="kpi-chart-legend">
+          <span *ngFor="let y of avgSetupChartYears; let i = index" class="kpi-legend-item">
+            <span class="kpi-legend-color" [style.background-color]="kpiChartYearColors[i % kpiChartYearColors.length]"></span>
+            <span class="kpi-legend-label">{{ y }}</span>
+          </span>
         </div>
       </div>
     </div>

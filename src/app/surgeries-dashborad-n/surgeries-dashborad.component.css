@@ -1897,6 +1897,85 @@ table.table {
   display: flex;
 }
 
+.kpi-exclude-fallback {
+  margin: 4px 0 8px;
+  font-size: 12px;
+  color: var(--accent, #2563eb);
+  font-style: italic;
+}
+
+.kpi-filter-row {
+  margin-bottom: 10px;
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* כפתור נטרול ימי גלישה – בהתאם לעיצוב הכללי (reset-filters-btn) */
+.overflow-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-bottom: 0;
+  border-radius: 999px;
+  padding-inline: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  border: 1px solid rgba(59, 130, 246, 0.5);
+  color: #1d4ed8;
+  background: transparent;
+  transition: border-color 0.2s, background 0.2s, color 0.2s;
+}
+
+.overflow-toggle-btn mat-icon {
+  font-size: 18px;
+  height: 18px;
+  width: 18px;
+}
+
+.overflow-toggle-btn:hover {
+  border-color: rgba(37, 99, 235, 0.9);
+  background: rgba(219, 234, 254, 0.6);
+}
+
+.overflow-toggle-btn.active {
+  background: rgba(37, 99, 235, 0.12);
+  border-color: var(--accent, #2563eb);
+  color: var(--accent, #2563eb);
+}
+
+.overflow-toggle-btn.active:hover {
+  background: rgba(37, 99, 235, 0.2);
+  border-color: rgba(37, 99, 235, 0.9);
+}
+
+.dash.dark .overflow-toggle-btn {
+  border-color: rgba(129, 140, 248, 0.8);
+  color: #e5e7eb;
+}
+
+.dash.dark .overflow-toggle-btn:hover {
+  background: rgba(30, 64, 175, 0.4);
+}
+
+.dash.dark .overflow-toggle-btn.active,
+.kpi-overlay.dark .overflow-toggle-btn.active {
+  background: rgba(129, 140, 248, 0.2);
+  border-color: rgba(129, 140, 248, 0.9);
+  color: #c7d2fe;
+}
+
+.kpi-overlay.dark .overflow-toggle-btn {
+  border-color: rgba(129, 140, 248, 0.8);
+  color: #e5e7eb;
+}
+
+.kpi-overlay.dark .overflow-toggle-btn:hover {
+  background: rgba(30, 64, 175, 0.4);
+}
+
 .kpi-loading {
   display: flex;
   flex-direction: column;
@@ -1967,6 +2046,67 @@ table.table {
   color: var(--muted);
   direction: rtl;
   text-align: right;
+}
+
+/* מקרא צבעים לפי שנה – מתחת לגרפי KPI */
+.kpi-chart-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 20px;
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border, rgba(0,0,0,.08));
+  direction: rtl;
+  justify-content: flex-end;
+}
+.kpi-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text, #111827);
+}
+.kpi-legend-color {
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  flex-shrink: 0;
+  border: 1px solid rgba(0,0,0,.15);
+}
+.kpi-legend-label {
+  font-weight: 500;
+}
+
+/* צבע אנוטציה (טקסט + רקע) כמו צבע העמודה – תואם למקרא השנים */
+/* מקרה 1: ילדים ישירים = סדרות (5 קבוצות), כל קבוצה מכילה את כל העמודות של שנה */
+.kpi-overlay .kpi-body google-chart ::ng-deep svg g g g > g:nth-child(1) text,
+.kpi-overlay .kpi-body google-chart ::ng-deep svg g g g > g:nth-child(1) rect[fill-opacity="0"] { fill: #3366cc !important; }
+.kpi-overlay .kpi-body google-chart ::ng-deep svg g g g > g:nth-child(2) text,
+.kpi-overlay .kpi-body google-chart ::ng-deep svg g g g > g:nth-child(2) rect[fill-opacity="0"] { fill: #dc3912 !important; }
+.kpi-overlay .kpi-body google-chart ::ng-deep svg g g g > g:nth-child(3) text,
+.kpi-overlay .kpi-body google-chart ::ng-deep svg g g g > g:nth-child(3) rect[fill-opacity="0"] { fill: #ff9900 !important; }
+.kpi-overlay .kpi-body google-chart ::ng-deep svg g g g > g:nth-child(4) text,
+.kpi-overlay .kpi-body google-chart ::ng-deep svg g g g > g:nth-child(4) rect[fill-opacity="0"] { fill: #109618 !important; }
+.kpi-overlay .kpi-body google-chart ::ng-deep svg g g g > g:nth-child(5) text,
+.kpi-overlay .kpi-body google-chart ::ng-deep svg g g g > g:nth-child(5) rect[fill-opacity="0"] { fill: #990099 !important; }
+/* מקרה 2: הרבה ילדים – כל 5 קבוצות = מחלקה (שנה 1..5), צבע לפי מקום בחמישייה */
+.kpi-overlay .kpi-body google-chart ::ng-deep svg g g g > g:nth-child(5n+1) text,
+.kpi-overlay .kpi-body google-chart ::ng-deep svg g g g > g:nth-child(5n+1) rect[fill-opacity="0"] { fill: #3366cc !important; }
+.kpi-overlay .kpi-body google-chart ::ng-deep svg g g g > g:nth-child(5n+2) text,
+.kpi-overlay .kpi-body google-chart ::ng-deep svg g g g > g:nth-child(5n+2) rect[fill-opacity="0"] { fill: #dc3912 !important; }
+.kpi-overlay .kpi-body google-chart ::ng-deep svg g g g > g:nth-child(5n+3) text,
+.kpi-overlay .kpi-body google-chart ::ng-deep svg g g g > g:nth-child(5n+3) rect[fill-opacity="0"] { fill: #ff9900 !important; }
+.kpi-overlay .kpi-body google-chart ::ng-deep svg g g g > g:nth-child(5n+4) text,
+.kpi-overlay .kpi-body google-chart ::ng-deep svg g g g > g:nth-child(5n+4) rect[fill-opacity="0"] { fill: #109618 !important; }
+.kpi-overlay .kpi-body google-chart ::ng-deep svg g g g > g:nth-child(5n+5) text,
+.kpi-overlay .kpi-body google-chart ::ng-deep svg g g g > g:nth-child(5n+5) rect[fill-opacity="0"] { fill: #990099 !important; }
+
+/* הזזת אנוטציות בגרפי KPI – עמודה אחת גבוהה ואחת נמוכה כדי שלא ידרסו */
+.kpi-overlay .kpi-body google-chart ::ng-deep svg g g g > g:nth-child(odd) text {
+  transform: translateY(-5px);
+}
+.kpi-overlay .kpi-body google-chart ::ng-deep svg g g g > g:nth-child(even) text {
+  transform: translateY(5px);
 }
 
 /* ── Loading overlays ───────────────────────────────────── */
