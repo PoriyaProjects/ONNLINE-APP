@@ -1,0 +1,69 @@
+<div class="sms-page" dir="rtl">
+  <header class="sms-header">
+    <button mat-stroked-button (click)="backToDashboard()" class="back-btn">
+      <span class="material-icons">arrow_forward</span>
+      חזרה לדשבורד
+    </button>
+    <div class="sms-title-block">
+      <h1 class="page-title text-center">שליחת SMS לסטאג'רים</h1>
+      <p class="page-subtitle text-center">בחר סטאג'רים והקלד את תוכן ההודעה</p>
+    </div>
+  </header>
+
+  <div class="sms-content">
+    <section class="sms-card selection-card">
+      <div class="card-header">
+        <span class="material-icons card-icon">people</span>
+        <h2 class="card-title">בחירת סטאג'רים</h2>
+      </div>
+      <div class="card-body">
+        <div class="select-actions">
+          <button mat-stroked-button (click)="selectAll()">בחר הכל</button>
+          <button mat-stroked-button (click)="clearSelection()">נקה בחירה</button>
+        </div>
+        <div class="interns-list" *ngIf="loaded">
+          <div *ngFor="let intern of internsList" class="intern-item">
+            <mat-checkbox [checked]="isSelected(intern)" (change)="toggleIntern(intern)" color="primary">
+              <span class="intern-label">{{ intern.FirstName }} {{ intern.LastName }} · {{ intern.CellNumber }}</span>
+            </mat-checkbox>
+          </div>
+          <p class="empty-state" *ngIf="internsList.length === 0">אין סטאג'רים במערכת</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="sms-card message-card">
+      <div class="card-header">
+        <span class="material-icons card-icon">message</span>
+        <h2 class="card-title">הודעה</h2>
+      </div>
+      <div class="card-body">
+        <form class="sms-form" [formGroup]="sendSmsForm">
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>תוכן הודעה</mat-label>
+            <textarea matInput rows="6" formControlName="smsText" placeholder="הקלד את תוכן ההודעה"></textarea>
+            <mat-error *ngIf="sendSmsForm.get('smsText')?.hasError('required')">שדה חובה</mat-error>
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>מס' טלפון (מופרדים בשורה או פסיק)</mat-label>
+            <textarea matInput rows="4" formControlName="smsNumbers"
+              placeholder="הדבק מספרים או בחר סטאג'רים משמאל"></textarea>
+            <mat-error *ngIf="sendSmsForm.get('smsNumbers')?.hasError('required')">שדה חובה</mat-error>
+          </mat-form-field>
+          <!-- <div class="survey-section">
+            <label class="survey-label">סקר</label>
+            <mat-radio-group formControlName="surveyNumber" class="survey-options">
+              <mat-radio-button [value]="'0'">ללא</mat-radio-button>
+              <mat-radio-button [value]="'1'">דלית - ראשון</mat-radio-button>
+              <mat-radio-button [value]="'2'">דלית - שני</mat-radio-button>
+            </mat-radio-group>
+          </div> -->
+          <button mat-flat-button color="primary" type="button" (click)="sendSms()" class="send-btn">
+            <span class="material-icons">send</span>
+            שלח הודעה
+          </button>
+        </form>
+      </div>
+    </section>
+  </div>
+</div>

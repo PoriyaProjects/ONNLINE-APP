@@ -1,0 +1,1081 @@
+<div class="dash" [class.dark]="isDark" dir="rtl">
+
+  <!-- Loading Spinner -->
+  <div *ngIf="isLoading || isMainDataLoading || isDiagnosesLoading || catalogLoading || isChartLoading"
+    class="loading-overlay">
+    <div class="loading-container">
+      <mat-spinner diameter="60"></mat-spinner>
+      <div class="loading-text">
+        <span *ngIf="isMainDataLoading">טוען נתונים...</span>
+        <span *ngIf="isDiagnosesLoading">טוען רשימת אגפים...</span>
+        <span *ngIf="catalogLoading">טוען נתוני ניתוחים למחלקה...</span>
+        <span *ngIf="isLoading">טוען דוח ניתוחים למנהל...</span>
+        <span *ngIf="isChartLoading && !isMainDataLoading">טוען גרף...</span>
+        <span class="loading-percentage" *ngIf="loadingProgress > 0">
+          {{ loadingProgress | number : '1.0-0' }}%
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= TOP BAR ================= -->
+  <div class="topbar" dir="rtl">
+    <div class="top-left">
+      <div class="user-card" *ngIf="employeeUserName">
+        <div class="user-avatar-wrapper">
+          <img class="user-avatar" [src]="employeeInfo?.profilePicture || 'http://srv-apps-prod/Images/default.jpg'"
+            alt="avatar" />
+        </div>
+        <div class="user-meta">
+          <div class="user-name">
+            {{ employeeFirstName || '' }} {{ employeeLastName || '' }}
+          </div>
+          <div class="user-sub">
+            <span *ngIf="employeeFunctionDescription">
+              {{ employeeFunctionDescription }}
+            </span>
+            <span *ngIf="employeeLocalDepartment">
+              · {{ employeeLocalDepartment }}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Diagnosis Selector – עיצוב ייחודי -->
+      <div class="wing-and-theme-row" dir="rtl">
+        <div class="custom-dropdown" [class.active]="isDropdownOpen">
+
+          <div class="dropdown-trigger">
+            <mat-icon class="dropdown-icon">apartment</mat-icon>
+            <span class="selected-text">
+              {{ selectedDiagnosis || 'בחר אגף / אתר' }} לממש ?
+            </span>
+            <mat-icon class="arrow-icon">{{ isDropdownOpen ? 'expand_less' : 'expand_more' }}</mat-icon>
+          </div>
+
+          <!-- <div class="dropdown-panel" *ngIf="isDropdownOpen">
+            <div class="loading-state" *ngIf="isDiagnosesLoading">טוען...</div>
+
+            <div class="options-list" *ngIf="!isDiagnosesLoading">
+              <div class="option-item" *ngFor="let diagnosis of diagnosesList" (click)="selectOption(diagnosis)"
+                [class.selected]="diagnosis === selectedDiagnosis">
+                {{ diagnosis }}
+              </div>
+            </div>
+          </div> -->
+
+        </div>
+      </div>
+
+      <div class="dropdown-overlay" *ngIf="isDropdownOpen" (click)="isDropdownOpen = false"></div>
+      <!-- </div> -->
+    </div>
+
+    <div class="top-right">
+      <!-- Group‑2 KPIs buttons (icons only, text בטולטיפ) -->
+      <button mat-icon-button class="icon-btn ghost" matTooltip=" משך ניתוח ממוצע לפי מחלקה" matTooltipPosition="below"
+        (click)="openAvgDurationModal()">
+        <mat-icon>speed</mat-icon>
+      </button>
+
+      <button mat-icon-button class="icon-btn ghost" matTooltip=" זמן כניסה ממוצע ניתוח ראשון בבוקר לפי מחלקה"
+        matTooltipPosition="below" (click)="openFirstStartTimeModal()">
+        <mat-icon>play_circle</mat-icon>
+      </button>
+
+      <button mat-icon-button class="icon-btn ghost" matTooltip="זמן סיום ניתוח אחרון לפי מחלקה"
+        matTooltipPosition="below" (click)="openLastEndTimeModal()">
+        <mat-icon>stop_circle</mat-icon>
+      </button>
+
+      <button mat-icon-button class="icon-btn ghost" matTooltip=" זמן SETUP ממוצע לפי מחלקה" matTooltipPosition="below"
+        (click)="openAvgSetupModal()">
+        <mat-icon>hourglass_bottom</mat-icon>
+      </button>
+
+      <div class="icon-divider"></div>
+
+      <button mat-icon-button class="icon-btn ghost theme-toggle-in-row"
+        matTooltip="{{ isDark ? 'מצב בהיר' : 'מצב כהה' }}" matTooltipPosition="below" (click)="toggleTheme()">
+        <mat-icon>{{ isDark ? 'light_mode' : 'dark_mode' }}</mat-icon>
+      </button>
+      <!-- Guide Icons -->
+      <button mat-icon-button class="icon-btn ghost" matTooltip="מדריך דשבורד הניתוחים" matTooltipPosition="below"
+        (click)="showGuideAvatar = !showGuideAvatar">
+        <mat-icon>help</mat-icon>
+      </button>
+
+      <button mat-icon-button class="icon-btn ghost" [class.filter-active]="hasActiveSurgeryFilters()"
+        matTooltip="{{ hasActiveSurgeryFilters() ? 'פילטרים פעילים – לחץ לעריכת סינון' : 'סינון מתקדם לדשבורד הניתוחים' }}"
+        matTooltipPosition="below" (click)="toggleTopDepartmentsSidebar()">
+        <mat-icon>{{ hasActiveSurgeryFilters() ? 'filter_alt' : 'tune' }}</mat-icon>
+      </button>
+
+
+      <div class="icon-divider"></div>
+
+      <button mat-icon-button class="icon-btn ghost" matTooltip="הורדה לאקסל" matTooltipPosition="below"
+        (click)="exportToCSV()" [disabled]="departmentIncomeData.length === 0 && surgeryData.length === 0">
+        <mat-icon>download</mat-icon>
+      </button>
+
+      <button mat-icon-button class="icon-btn ghost" matTooltip="רענון נתוני ניתוחים" matTooltipPosition="below"
+        (click)="loadDepartmentIncomeData()">
+        <mat-icon>refresh</mat-icon>
+      </button>
+    </div>
+  </div>
+
+
+  <!-- ================= MAIN CONTENT: GRAPH + TABLE ================= -->
+  <div class="main-content" [class.with-top-sidebar]="showTopDepartmentsSidebar"
+    *ngIf="isDataLoaded && !isMainDataLoading">
+
+    <!-- ===== GRAPH SECTION (2/3) ===== -->
+    <div class="graph-section">
+      <div class="panel panel-graph">
+        <div class="panel-title">
+          <mat-icon>{{ chartType === 'ColumnChart' ? 'bar_chart' : 'show_chart' }}</mat-icon>
+          <span class="title-row">
+            <span>מדדי ניתוחים (כמות וזמן) – השוואת 5 שנים</span>
+            <div class="chart-controls">
+              <!-- <button mat-stroked-button 
+                      [class.active]="chartType === 'ColumnChart'"
+                      (click)="setChartType('ColumnChart')"
+                      class="chart-type-btn"
+                      matTooltip="גרף עמודות"
+                      matTooltipPosition="below">
+                <mat-icon>bar_chart</mat-icon>
+              </button>
+              <button mat-stroked-button 
+                      [class.active]="chartType === 'LineChart'"
+                      (click)="setChartType('LineChart')"
+                      class="chart-type-btn"
+                      matTooltip="גרף קווי"
+                      matTooltipPosition="below">
+                <mat-icon>show_chart</mat-icon>
+              </button> -->
+              <!-- <span class="title-total total-badge" [matTooltip]="'לחץ על עמודה/נקודה בגרף כדי לראות פרטי המחלקה'" matTooltipPosition="below">
+                לחץ לפרטים
+              </span> -->
+            </div>
+          </span>
+        </div>
+
+
+        <div class="graph-body">
+          <div *ngIf="isChartLoading || isMainDataLoading" class="chart-loading-overlay">
+            <mat-spinner diameter="50"></mat-spinner>
+            <div class="chart-loading-text">טוען גרף...</div>
+          </div>
+          <div class="chart-mode-heading"
+            *ngIf="!isChartLoading && !isMainDataLoading && chartData && chartData.length > 0">
+            {{ getChartViewTitle() }}
+          </div>
+          <div class="year-summary-row" *ngIf="yearsForChart?.length">
+            <div class="year-summary-card" *ngFor="let y of yearsForChart">
+              <div class="year-label">{{ y }}</div>
+              <div class="year-count">{{ formatNumber(yearlySurgeryTotals[y] || 0) }}</div>
+              <div class="year-subtitle">מספר ניתוחים בשנה</div>
+            </div>
+          </div>
+          <google-chart [type]="chartType" [data]="chartData" [columns]="chartColumns" [options]="chartOptions"
+            [width]="'100%'" (select)="onChartClick($event)"
+            *ngIf="!isChartLoading && !isMainDataLoading && chartData && chartData.length > 0">
+          </google-chart>
+
+          <!-- מצב תצוגה לוגרף הראשי: סה"כ / קרן‑מדינה / אתר / משמרת / מחלקה -->
+          <div class="chart-mode-row"
+            *ngIf="!isChartLoading && !isMainDataLoading && chartData && chartData.length > 0">
+            <button class="icon-btn ghost mode-toggle-btn" [class.active]="chartViewMode === 'year-total'"
+              [matTooltip]="getChartViewTooltip('year-total')" matTooltipPosition="top"
+              (click)="setChartViewMode('year-total')">
+              סה"כ לשנה
+            </button>
+            <button class="icon-btn ghost mode-toggle-btn" [class.active]="chartViewMode === 'month'"
+              [matTooltip]="getChartViewTooltip('month')" matTooltipPosition="top" (click)="setChartViewMode('month')">
+              ניתוחים לפי חודשים
+            </button>
+            <button class="icon-btn ghost mode-toggle-btn" [class.active]="chartViewMode === 'fund'"
+              [matTooltip]="getChartViewTooltip('fund')" matTooltipPosition="top" (click)="setChartViewMode('fund')">
+              קרן/מדינה
+            </button>
+            <button class="icon-btn ghost mode-toggle-btn" [class.active]="chartViewMode === 'site'"
+              [matTooltip]="getChartViewTooltip('site')" matTooltipPosition="top" (click)="setChartViewMode('site')">
+              אתר
+            </button>
+            <button class="icon-btn ghost mode-toggle-btn" [class.active]="chartViewMode === 'shift'"
+              [class.disabled-filter]="isShiftGroupedView && chartViewMode !== 'shift'"
+              [matTooltip]="getChartViewTooltip('shift')" matTooltipPosition="top" (click)="setChartViewMode('shift')">
+              משמרת
+            </button>
+            <button class="icon-btn ghost mode-toggle-btn" [class.active]="chartViewMode === 'department'"
+              [matTooltip]="getChartViewTooltip('department')" matTooltipPosition="top"
+              (click)="setChartViewMode('department')">
+              סה"כ לפי מחלקה
+            </button>
+            <button class="icon-btn ghost mode-toggle-btn" [class.active]="chartViewMode === 'yoy-combined'"
+              [matTooltip]="getChartViewTooltip('yoy-combined')" matTooltipPosition="top"
+              (click)="onYoyCombinedClick()">
+              מדד משולב
+            </button>
+          </div>
+
+          <!-- טקסט הסבר קצר מה מייצגת כל עמודה/צבע בגרף -->
+          <div class="chart-mode-description"
+            *ngIf="!isChartLoading && !isMainDataLoading && chartData && chartData.length > 0">
+            <ng-container [ngSwitch]="chartViewMode">
+              <span *ngSwitchCase="'year-total'">
+                כל עמודה מייצגת את מספר הניתוחים הכולל באותה שנה.
+              </span>
+              <span *ngSwitchCase="'month'">
+                ציר X מייצג חודשים, וכל צבע/עמודה מקבילים לשנה אחרת (5 שנים אחרונות).
+                בחודשים שטרם הגיעו בשנה הנוכחית מוצג ממוצע היסטורי של אותן תקופות.
+              </span>
+              <span *ngSwitchCase="'department'">
+                כל עמודה מייצגת מחלקה מנתחת, והצבעים בתוך העמודה מייצגים שנים שונות.
+              </span>
+              <span *ngSwitchCase="'site'">
+                כל עמודה מייצגת שנה, והערימה הצבעונית בתוך העמודה מייצגת אתרים שונים.
+              </span>
+              <span *ngSwitchCase="'shift'">
+                כל עמודה מייצגת שנה, והערימה הצבעונית בתוך העמודה מייצגת משמרות (בוקר / ערב / לילה).
+              </span>
+              <span *ngSwitchCase="'fund'">
+                כל עמודה מייצגת שנה, והערימה הצבעונית בתוך העמודה מייצגת סוגי מימון (קרן / מדינה וכו').
+              </span>
+              <span *ngSwitchCase="'yoy-combined'">
+                אחוז שינוי ביחס לאותה תקופה בשנה שעברה (למשל ינואר–פברואר השנה מול ינואר–פברואר אשתקד): ניתוחים לחדר,
+                זמן ניתוח ממוצע, הכנסה ממוצעת.
+              </span>
+            </ng-container>
+          </div>
+
+          <div *ngIf="!isChartLoading && !isMainDataLoading && (!chartData || chartData.length === 0)"
+            class="chart-no-data">
+            אין נתונים להצגה בגרף
+          </div>
+          <div class="year-legend" *ngIf="yearColorMap?.length">
+            <div class="year-legend-title">מקרא שנים</div>
+            <div class="year-legend-items">
+              <div class="year-legend-item" *ngFor="let yc of yearColorMap">
+                <span class="year-legend-color" [ngStyle]="{ 'background-color': yc.color }"></span>
+                <span class="year-legend-text">{{ yc.year }}</span>
+              </div>
+            </div>
+          </div>
+          <div class="year-legend"
+            *ngIf="stackedCategoryLegend?.length && (chartViewMode === 'shift' || chartViewMode === 'site' || chartViewMode === 'fund')">
+            <div class="year-legend-title">
+              מקרא קטגוריות:
+              <span *ngIf="chartViewMode === 'shift'">משמרות</span>
+              <span *ngIf="chartViewMode === 'site'">אתרים</span>
+              <span *ngIf="chartViewMode === 'fund'">סוגי מימון</span>
+            </div>
+            <div class="year-legend-items">
+              <div class="year-legend-item" *ngFor="let c of stackedCategoryLegend">
+                <span class="year-legend-color" [ngStyle]="{ 'background-color': c.color }"></span>
+                <span class="year-legend-text">{{ c.label }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== TABLE SECTION (1/3) ===== -->
+    <div class="table-section">
+      <div class="panel panel-table">
+        <div class="panel-title">
+          <mat-icon>table_chart</mat-icon>
+          <span>טבלת ניתוחים ומחלקות</span>
+        </div>
+
+        <div class="table-body">
+          <!-- טבלה מצטברת: אותם נתונים של הגרף, מוצגים כטבלה (לכל המצבים חוץ ממדד משולב) -->
+          <div class="table-wrap"
+            *ngIf="chartViewMode !== 'yoy-combined' && chartTableRows?.length && yearsForChart?.length">
+            <table class="table aggregated-chart-table" dir="rtl">
+              <thead>
+                <tr>
+                  <th>ישות</th>
+                  <th *ngFor="let y of yearsForChart">{{ y }}</th>
+                  <th>הפרש / % שינוי<br /><small>(שנה נוכחית מול קודמת)</small></th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let r of chartTableRows">
+                  <td>{{ r.label }}</td>
+                  <td *ngFor="let y of yearsForChart">{{ r.perYear[y] || 0 }}</td>
+                  <td [ngClass]="{ 'agg-positive': (r.diff || 0) > 0, 'agg-negative': (r.diff || 0) < 0 }">
+                    <ng-container *ngIf="!(chartViewMode === 'month' && r.isFuture); else emptyDiffCell">
+                      {{ formatNumber(r.diff || 0) }}
+                      <br />
+                      <span class="percentage-badge">{{ r.pct || '0%' }}</span>
+                    </ng-container>
+                    <ng-template #emptyDiffCell></ng-template>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <!-- טבלת מדד משולב: אחוזי שינוי לפי מחלקה -->
+          <div class="table-wrap" *ngIf="chartViewMode === 'yoy-combined' && departmentYoyData?.length">
+            <table class="table aggregated-chart-table" dir="rtl">
+              <thead>
+                <tr>
+                  <th>מחלקה</th>
+                  <th>ניתוחים לחדר<br /><small>% שינוי</small></th>
+                  <th>זמן ניתוח ממוצע<br /><small>% שינוי</small></th>
+                  <th>הכנסה ממוצעת<br /><small>% שינוי</small></th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let d of departmentYoyData">
+                  <td>{{ d.Department }}</td>
+                  <td [ngClass]="getPctClass(d.SurgeriesPerRoom_Pct)">{{ formatPctCell(d.SurgeriesPerRoom_Pct) }}</td>
+                  <td [ngClass]="getPctClass(d.AvgSurgeryTime_Pct)">{{ formatPctCell(d.AvgSurgeryTime_Pct) }}</td>
+                  <td [ngClass]="getPctClass(d.AvgRevenue_Pct)">{{ formatPctCell(d.AvgRevenue_Pct) }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="empty" *ngIf="(chartViewMode === 'yoy-combined' && !departmentYoyData?.length) ||
+                   (chartViewMode !== 'yoy-combined' && dataSource.data.length === 0 && !chartTableRows?.length)">
+            אין נתונים להצגה
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== TOP DEPARTMENTS SIDEBAR ===== -->
+    <div class="top-departments-sidebar" *ngIf="showTopDepartmentsSidebar">
+      <div class="top-departments-section-compact">
+        <div class="top-departments-header-compact">
+          <div class="title-with-icon">
+          </div>
+
+          <!-- שורת פילטרים ראשית (5 פילטרים) – מוצגים אנכית אחד מתחת לשני -->
+          <div class="wing-and-theme-row filters-row filters-column" dir="rtl">
+            <!-- כפתור איפוס סינון -->
+            <button mat-stroked-button class="reset-filters-btn" (click)="resetSurgeryFilters()">
+              <mat-icon>restart_alt</mat-icon>
+              <span>איפוס סינון</span>
+            </button>
+            <!-- פילטר 1: אגף / אתר (קיים) -->
+
+
+            <!-- פילטר 2: סוג ניתוח -->
+            <div class="custom-dropdown filter-dropdown" [class.active]="isSurgeryTypeOpen"
+              [class.has-value]="selectedSurgeryTypes?.length">
+              <div class="dropdown-trigger" (click)="isSurgeryTypeOpen = !isSurgeryTypeOpen">
+                <mat-icon class="dropdown-icon">category</mat-icon>
+                <span class="selected-text" matTooltip="{{ getSurgeryTypeDisplay() }}">
+                  {{ getSurgeryTypeDisplay() }}
+                </span>
+                <mat-icon class="arrow-icon">{{ isSurgeryTypeOpen ? 'expand_less' : 'expand_more' }}</mat-icon>
+              </div>
+              <div class="dropdown-panel" *ngIf="isSurgeryTypeOpen">
+                <div class="options-list">
+                  <div class="option-item" *ngFor="let opt of surgeryTypeOptions" (click)="setSurgeryTypeFilter(opt)"
+                    [class.selected]="selectedSurgeryTypes?.includes(opt)">
+                    {{ opt }}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- פילטר 3: משמרת -->
+            <div class="custom-dropdown filter-dropdown" [class.active]="isShiftOpen"
+              [class.disabled-filter]="isShiftGroupedView" [class.has-value]="selectedShifts?.length">
+              <div class="dropdown-trigger" (click)="!isShiftGroupedView && (isShiftOpen = !isShiftOpen)">
+                <mat-icon class="dropdown-icon">schedule</mat-icon>
+                <span class="selected-text" matTooltip="{{ getShiftDisplay() }}">
+                  {{ getShiftDisplay() }}
+                </span>
+                <mat-icon class="arrow-icon">{{ isShiftOpen ? 'expand_less' : 'expand_more' }}</mat-icon>
+              </div>
+              <div class="dropdown-panel" *ngIf="isShiftOpen">
+                <div class="options-list">
+                  <div class="option-item" *ngFor="let opt of shiftOptions" (click)="setShiftFilter(opt)"
+                    [class.selected]="selectedShifts?.includes(opt)">
+                    {{ opt }}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+
+            <div class="custom-dropdown filter-dropdown" [class.active]="isWeekdayOpen"
+              [class.has-value]="selectedWeekdays?.length">
+              <div class="dropdown-trigger" (click)="isWeekdayOpen = !isWeekdayOpen">
+                <mat-icon class="dropdown-icon">event</mat-icon>
+                <span class="selected-text" matTooltip="{{ getWeekdayDisplay() }}">
+                  {{ getWeekdayDisplay() }}
+                </span>
+                <mat-icon class="arrow-icon">{{ isWeekdayOpen ? 'expand_less' : 'expand_more' }}</mat-icon>
+              </div>
+              <div class="dropdown-panel" *ngIf="isWeekdayOpen">
+                <div class="options-list">
+                  <div class="option-item" *ngFor="let opt of weekdayOptions" (click)="setWeekdayFilter(opt)"
+                    [class.selected]="selectedWeekdays?.includes(opt)">
+                    {{ opt }}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="custom-dropdown filter-dropdown" [class.active]="isDropdownOpen"
+              [class.has-value]="selectedDiagnosis && selectedDiagnosis !== 'כל האתרים'">
+              <div class="dropdown-trigger" (click)="toggleDropdown()">
+                <mat-icon class="dropdown-icon">apartment</mat-icon>
+                <span class="selected-text">
+                  אגף / אתר (לביצוע)
+                </span>
+                <mat-icon class="arrow-icon">{{ isDropdownOpen ? 'expand_less' : 'expand_more' }}</mat-icon>
+              </div>
+              <!-- <div class="dropdown-panel" *ngIf="isDropdownOpen">
+                <div class="loading-state" *ngIf="isDiagnosesLoading">טוען...</div>
+                <div class="options-list" *ngIf="!isDiagnosesLoading">
+                  <div class="option-item" *ngFor="let diagnosis of diagnosesList" (click)="selectOption(diagnosis)"
+                    [class.selected]="diagnosis === selectedDiagnosis">
+                    {{ diagnosis }}
+                  </div>
+                </div>
+              </div> -->
+            </div>
+            <!-- פילטר 4: חדר ניתוח -->
+            <div class="custom-dropdown filter-dropdown" [class.active]="isRoomOpen"
+              [class.has-value]="selectedRooms?.length">
+              <div class="dropdown-trigger" (click)="isRoomOpen = !isRoomOpen">
+                <mat-icon class="dropdown-icon">meeting_room</mat-icon>
+                <span class="selected-text">חדר ניתוח (לביצוע)</span>
+                <!-- <span class="selected-text" matTooltip="{{ getRoomDisplay() }}">
+                  {{ getRoomDisplay() }}
+                </span> -->
+                <mat-icon class="arrow-icon">{{ isRoomOpen ? 'expand_less' : 'expand_more' }}</mat-icon>
+              </div>
+              <!-- <div class="dropdown-panel" *ngIf="isRoomOpen">
+                <div class="options-list">
+                  <div class="option-item" *ngFor="let opt of roomOptions" (click)="setRoomFilter(opt)"
+                    [class.selected]="selectedRooms?.includes(opt)">
+                    {{ opt }}
+                  </div>
+                </div>
+              </div> -->
+            </div>
+
+            <!-- פילטר 5: מחלקה -->
+            <div class="custom-dropdown filter-dropdown" [class.active]="isDeptOpen"
+              [class.has-value]="selectedDepartments?.length">
+              <div class="dropdown-trigger" (click)="isDeptOpen = !isDeptOpen">
+                <mat-icon class="dropdown-icon">local_hospital</mat-icon>
+                <span class="selected-text">תקינות (לביצוע)</span>
+                <!-- <mat-icon class="arrow-icon">{{ isDeptOpen ? 'expand_less' : 'expand_more' }}</mat-icon> -->
+              </div>
+
+            </div>
+            <!-- שורת פילטרים נוספת (5 נוספים) – גם כאן אנכית -->
+            <div class="wing-and-theme-row filters-row filters-column" dir="rtl" *ngIf="showMoreFilters">
+              <!-- דוגמה לפילטרים נוספים – ניתן להרחיב לפי הצורך -->
+
+
+              <!-- שאר הפילטרים הנוספים – placeholders לעתיד -->
+              <div class="custom-dropdown filter-dropdown disabled-filter">
+                <div class="dropdown-trigger">
+                  <mat-icon class="dropdown-icon">check_circle</mat-icon>
+                  <span class="selected-text">תקינות (לביצוע)</span>
+                </div>
+              </div>
+              <div class="custom-dropdown filter-dropdown disabled-filter">
+                <div class="dropdown-trigger">
+                  <mat-icon class="dropdown-icon">holiday_village</mat-icon>
+                  <span class="selected-text">חג / יום רגיל (לביצוע)</span>
+                </div>
+              </div>
+              <div class="custom-dropdown filter-dropdown disabled-filter">
+                <div class="dropdown-trigger">
+                  <mat-icon class="dropdown-icon">trending_up</mat-icon>
+                  <span class="selected-text">גלישה (לביצוע)</span>
+                </div>
+              </div>
+              <div class="custom-dropdown filter-dropdown disabled-filter">
+                <div class="dropdown-trigger">
+                  <mat-icon class="dropdown-icon">account_balance</mat-icon>
+                  <span class="selected-text">גורם משלם (לביצוע)</span>
+                </div>
+              </div>
+            </div>
+            <!-- כפתור עוד אפשרויות סינון / מצב פתוח מציג תקציר פילטרים -->
+            <button mat-stroked-button class="more-filters-btn" (click)="toggleMoreFilters()">
+              <ng-container *ngIf="!showMoreFilters">
+                עוד אפשרויות סינון
+              </ng-container>
+              <!-- <ng-container *ngIf="showMoreFilters">
+                {{ getActiveFiltersSummary() }}
+              </ng-container> -->
+            </button>
+          </div>
+
+
+        </div>
+
+        <div class="top-departments-footer-compact">
+          פילטרים פועלים {{ getActiveFiltersSummary() }}
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Full‑screen modal for YoY Combined main chart -->
+  <div *ngIf="showYoyCombinedFullModal" class="kpi-overlay" [class.dark]="isDark">
+    <div class="kpi-modal yoy-combined-modal" dir="rtl">
+      <div class="kpi-header">
+        <h2>מדד משולב – תצוגת מסך גדול</h2>
+        <button mat-icon-button class="close-btn" (click)="closeYoyCombinedFullModal()">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+      <div class="kpi-body">
+        <p class="kpi-intro">
+          אחוז שינוי ביחס לאותה תקופה בשנה שעברה (ניתוחים לחדר, זמן ניתוח ממוצע, הכנסה ממוצעת) – גרף מסך מלא לקריאה
+          נוחה.
+        </p>
+        <div class="graph-body" style="flex: 1 1 auto; max-height: none; min-height: 0;">
+          <canvas #yoyCombinedChart *ngIf="!isChartLoading && !isMainDataLoading && departmentYoyData?.length"
+            style="width: 100%; height: 100%;"></canvas>
+          <div *ngIf="!isChartLoading && !isMainDataLoading && (!departmentYoyData || !departmentYoyData.length)"
+            class="chart-no-data">
+            אין נתונים להצגה בגרף
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Guide Avatar Modal -->
+  <div class="guide-avatar-overlay" *ngIf="showGuideAvatar" @fadeInOut (click)="dismissGuideAvatar()">
+    <div class="guide-avatar-modal" dir="rtl" (click)="$event.stopPropagation()">
+      <div class="guide-avatar-header">
+        <div class="character-info" dir="rtl">
+          <div class="character-name" dir="rtl">🔍 מדריך דשבורד הניתוחים</div>
+          <div class="character-subtitle" dir="rtl">לחץ על סעיף כדי להרחיב</div>
+        </div>
+        <button class="avatar-close-btn" (click)="dismissGuideAvatar()" aria-label="Close guide" mat-icon-button>
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+
+      <div class="guide-sections">
+        <button class="guide-section-btn" (click)="openArticleShowcase('purpose')" class="section-1">
+          <span class="section-icon">📋</span>
+          <span class="section-text">מטרת דשבורד הניתוחים</span>
+        </button>
+
+        <button class="guide-section-btn" (click)="openArticleShowcase('notes')" class="section-2">
+          <span class="section-icon">⚠️</span>
+          <span class="section-text">הערות חשובות</span>
+        </button>
+
+        <button class="guide-section-btn" (click)="openArticleShowcase('structure')" class="section-3">
+          <span class="section-icon">🗂️</span>
+          <span class="section-text">מבנה הדשבורד</span>
+        </button>
+      </div>
+
+      <div class="guide-dont-show-row">
+        <mat-checkbox [(ngModel)]="dontShowGuideAgain" color="primary">
+          אל תציג שוב בכניסה לעמוד
+        </mat-checkbox>
+      </div>
+    </div>
+  </div>
+
+  <!-- Article Showcase Modal -->
+  <div class="article-showcase-overlay" *ngIf="showArticleShowcase" @fadeInOut (click)="closeArticleShowcase()">
+    <div class="article-showcase-modal" dir="rtl" (click)="$event.stopPropagation()">
+      <div class="showcase-header">
+        <div class="showcase-title">
+          <span class="showcase-icon">{{ getArticleIcon() }}</span>
+          {{ getArticleTitle() }}
+        </div>
+        <button class="showcase-close-btn" (click)="closeArticleShowcase()" mat-icon-button aria-label="Close article">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+
+      <div class="showcase-content" dir="rtl">
+        <!-- Purpose Section -->
+        <div *ngIf="currentArticle === 'purpose'" class="article-section-display" @fadeInOut dir="rtl">
+          <!-- <h2>📋 מטרת הדוח</h2> -->
+          <p class="intro-text">לשקף את פעילות הניתוחים במרכז הרפואי לאורך חמש השנים האחרונות, ברמת אתר, משמרת ומחלקה.
+          </p>
+          <p class="explanation-note">
+            דשבורד זה עונה על השאלות העיקריות בניהול חדרי ניתוח:
+          </p>
+          <ul class="explanation-note">
+            <li>כמות ניתוחים לפי אתר, לפי משמרת, לפי סוג ניתוח ("אלקטיבי", "דחוף", "ססיה") ולפי מחלקה מול אתר (זיהוי
+              פערים בין רישומי מחלקות).</li>
+            <li>מדדי זמן לפי מחלקה: משך ניתוח ממוצע, זמן כניסה ממוצע של ניתוח ראשון בבוקר, זמן סיום ממוצע של ניתוח
+              אחרון, וזמן SETUP ממוצע בין ניתוחים.</li>
+            <li>השוואת חמש שנות פעילות (שנת בסיס ועוד ארבע שנים אחורה) כדי לזהות מגמות צמיחה, עומסים וחוסר יעילות.</li>
+          </ul>
+        </div>
+
+        <!-- Notes Section -->
+        <div *ngIf="currentArticle === 'notes'" class="article-section-display" @fadeInOut dir="rtl">
+          <!-- <h2>⚠️ הערות חשובות</h2> -->
+          <div class="notes-list" dir="rtl">
+            <div class="note-item" dir="rtl">
+              <span class="note-number">1</span>
+              <p><strong>"מנתחת"</strong> בדשבורד זה מייצגת מחלקה ניתוחית, ו<strong>"מנתחת מאוגד"</strong> מייצגת אגף.
+              </p>
+            </div>
+            <div class="note-item" dir="rtl">
+              <span class="note-number">2</span>
+              <p>כל המדדים מחושבים על פני חמש שנים אחורה (שנת בסיס ועוד ארבע שנים קודמות).</p>
+            </div>
+            <div class="note-item" dir="rtl">
+              <span class="note-number">3</span>
+              <p>מדדי הזמנים (קבוצה 2) מתייחסים לניתוחים בחדר ניתוח כללי, במשמרת בוקר ובימי אמצע שבוע בלבד, לאחר סינון
+                רשומות לא תקינות.</p>
+            </div>
+            <div class="note-item" dir="rtl">
+              <span class="note-number">4</span>
+              <p>במדד SETUP נכללים רק מעברים עם זמן חיובי ובטווח המוגדר (0–120 דקות).</p>
+            </div>
+            <div class="note-item highlight" dir="rtl">
+              <span class="note-number">⚡</span>
+              <p><strong>כל הנתונים מודדים את אותה התקופה לכל שנה.</strong> לדוגמה: אם שנת הבסיס כוללת 9 חודשים, גם
+                השנים הקודמות יכללו 9 חודשים מקבילים.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Structure Section -->
+        <div *ngIf="currentArticle === 'structure'" class="article-section-display" @fadeInOut dir="rtl">
+          <!-- <h2>🗂️ מבנה הדוח</h2> -->
+          <div class="structure-list" dir="rtl">
+            <div class="structure-item" dir="rtl">
+              <div class="structure-number">1</div>
+              <div class="structure-content" dir="rtl">
+                <h4>בסרגל העליון</h4>
+                <p>בחר אגף / אתר ניתוחים וסנן לפי אתר, משמרת, סוג ניתוח, מחלקה ויום בשבוע כדי להתמקד בפעילות הרלוונטית.
+                </p>
+              </div>
+            </div>
+            <div class="structure-item" dir="rtl">
+              <div class="structure-number">2</div>
+              <div class="structure-content" dir="rtl">
+                <h4>אזור הגרף המרכזי</h4>
+                <ul dir="rtl">
+                  <li>✨ גרפים של כמות ניתוחים לפי אתר, משמרת, סוג ניתוח ומחלקה–אתר להשוואת 5 שנים.</li>
+                  <li>📊 גרפים של מדדי זמן (משך, כניסה ראשונה, סיום אחרון, SETUP) לפי מחלקה.</li>
+                  <li>📅 אפשרות לזהות מגמות וצווארי בקבוק ברמת אגף / מחלקה / חדר ניתוח.</li>
+                </ul>
+              </div>
+            </div>
+            <div class="structure-item" dir="rtl">
+              <div class="structure-number">3</div>
+              <div class="structure-content" dir="rtl">
+                <h4>טבלאות והעמקה</h4>
+                <p>בטבלה התחתונה תוכל לראות רשימת ניתוחים מפורטת או מחלקות. לחיצה על ניתוח פותחת פרטי מקרה, ולחיצה על
+                  מחלקה פותחת פירוט פעילויות ופרוצדורות ניתוחיות לפי שנה.</p>
+              </div>
+            </div>
+            <div class="structure-item" dir="rtl">
+              <div class="structure-number">4</div>
+              <div class="structure-content" dir="rtl">
+                <h4>מיון נתונים</h4>
+                <p>ניתן למיין את כל הטבלאות לפי כל עמודה באמצעות החיצים בכותרת הטבלה.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="showcase-footer">
+        <p class="info-text">💡 טיפ: תוכל לסגור חלון זה בכל עת על ידי לחיצה על X או בכל מקום מחוץ לתיבה</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= DEPARTMENT DETAILS MODAL ================= -->
+  <div *ngIf="isDepartmentGraphOpen && (selectedDepartment || selectedSurgery)" class="department-graph-overlay"
+    [class.dark]="isDark">
+    <div class="department-graph-modal">
+      <div dir="rtl" class="graph-header">
+        <h2>{{ departmentGraphTitle }}</h2>
+        <button mat-icon-button (click)="closeDepartmentGraph()" class="close-btn">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+
+      <!-- פרטי ניתוח בודד -->
+      <div *ngIf="selectedSurgery" dir="rtl" class="summary-section">
+        <mat-card class="summary-card">
+          <mat-card-content>
+            <div class="card-label">תאריך</div>
+            <div class="card-value">{{ selectedSurgery.date }}</div>
+          </mat-card-content>
+        </mat-card>
+        <mat-card class="summary-card">
+          <mat-card-content>
+            <div class="card-label">מספר מקרה / ניתוח</div>
+            <div class="card-value">{{ selectedSurgery.caseNumber }} / {{ selectedSurgery.surgeryNumber }}</div>
+          </mat-card-content>
+        </mat-card>
+        <mat-card class="summary-card">
+          <mat-card-content>
+            <div class="card-label">חדר ניתוח</div>
+            <div class="card-value">{{ selectedSurgery.surgeryRoom }}</div>
+          </mat-card-content>
+        </mat-card>
+        <mat-card class="summary-card">
+          <mat-card-content>
+            <div class="card-label">זמן ניתוח (דק')</div>
+            <div class="card-value">{{ selectedSurgery.surgeryDurationMinutes }}</div>
+          </mat-card-content>
+        </mat-card>
+        <mat-card class="summary-card">
+          <mat-card-content>
+            <div class="card-label">פרוצדורה</div>
+            <div class="card-value">{{ selectedSurgery.procedure }}</div>
+          </mat-card-content>
+        </mat-card>
+        <mat-card class="summary-card">
+          <mat-card-content>
+            <div class="card-label">סכום כולל</div>
+            <div class="card-value">{{ selectedSurgery.totalAmount | number }} ₪</div>
+          </mat-card-content>
+        </mat-card>
+      </div>
+
+      <!-- Summary Cards (מחלקה) -->
+      <div *ngIf="selectedDepartment && !selectedSurgery" dir="rtl" class="summary-section">
+        <mat-card class="summary-card">
+          <mat-card-content>
+            <div class="card-label">ערך פעילות ניתוחית {{ getOlderYearFromDeptData() }}</div>
+            <div class="card-value">{{ formatNumber(selectedDepartment.Income2024) }} ₪</div>
+          </mat-card-content>
+        </mat-card>
+
+        <mat-card class="summary-card">
+          <mat-card-content>
+            <div class="card-label">ערך פעילות ניתוחית {{ getLatestYearFromDeptData() }}</div>
+            <div class="card-value">{{ formatNumber(selectedDepartment.Income2025) }} ₪</div>
+          </mat-card-content>
+        </mat-card>
+
+        <mat-card class="summary-card" [class.positive]="calculateDifference(selectedDepartment) >= 0"
+          [class.negative]="calculateDifference(selectedDepartment) < 0">
+          <mat-card-content>
+            <div class="card-label">שינוי בערך הפעילות</div>
+            <div class="card-value">{{ formatNumber(calculateDifference(selectedDepartment)) }} ₪</div>
+            <div class="card-percentage">{{ calculatePercentageChange(selectedDepartment) }}</div>
+          </mat-card-content>
+        </mat-card>
+      </div>
+
+      <!-- Catalog Table Section (רק כשנבחרה מחלקה) -->
+      <div *ngIf="selectedDepartment && !selectedSurgery" dir="rtl" class="catalog-table-section">
+        <div class="catalog-header">
+          <h3 class="catalog-title">📊 טבלת פרוצדורות / שירותים ניתוחיים לפי שנה</h3>
+
+          <div class="sort-controls">
+            <span class="sort-label">סדר מיון:</span>
+            <button mat-stroked-button (click)="onDetailedTableSort({active: 'Cash2025', direction: 'desc'})"
+              color="primary" class="sort-btn">
+              ⬇️ מהגבוה לנמוך
+            </button>
+            <button mat-stroked-button (click)="onDetailedTableSort({active: 'Cash2025', direction: 'asc'})"
+              color="primary" class="sort-btn">
+              ⬆️ מהנמוך לגבוה
+            </button>
+          </div>
+
+          <div class="view-type-selector">
+            <button mat-stroked-button [class.active]="selectedViewType === 'cash'" (click)="onViewTypeChange('cash')"
+              color="primary">
+              💰 עלות
+            </button>
+            <button mat-stroked-button [class.active]="selectedViewType === 'units'" (click)="onViewTypeChange('units')"
+              color="primary">
+              📊 יחידות
+            </button>
+            <button mat-stroked-button [class.active]="selectedViewType === 'both'" (click)="onViewTypeChange('both')"
+              color="primary">
+              📋 שניהם
+            </button>
+          </div>
+        </div>
+
+        <div *ngIf="catalogLoading" class="catalog-loading-container">
+          <mat-spinner diameter="50"></mat-spinner>
+          <div class="catalog-loading-text">טוען נתוני ניתוחים למחלקה...</div>
+        </div>
+
+        <div class="table-wrapper"
+          *ngIf="!catalogLoading && detailedDataSource.data && detailedDataSource.data.length > 0">
+          <table mat-table [dataSource]="detailedDataSource" class="catalog-mat-table">
+
+            <ng-container matColumnDef="CatalogName2">
+              <th mat-header-cell *matHeaderCellDef style="font-weight:bold;text-align:right;">שירות</th>
+              <td mat-cell *matCellDef="let element" #cell [matTooltip]="element.CatalogName2"
+                [matTooltipDisabled]="cell.scrollWidth <= cell.clientWidth" matTooltipClass="subtle-tooltip"
+                style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+                {{ element.CatalogName2 }}
+              </td>
+            </ng-container>
+
+            <!-- CASH COLUMNS -->
+            <ng-container matColumnDef="Cash2021">
+              <th mat-header-cell *matHeaderCellDef style="font-weight: bold; cursor: pointer;"
+                (click)="onDetailedTableSort({active: 'Cash2021', direction: 'desc'})">{{getFullYear(4)}}</th>
+              <td mat-cell *matCellDef="let element">{{ formatNumber(element.Cash2021) }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="Cash2022">
+              <th mat-header-cell *matHeaderCellDef style="font-weight: bold; cursor: pointer;"
+                (click)="onDetailedTableSort({active: 'Cash2022', direction: 'desc'})">{{getFullYear(3)}}</th>
+              <td mat-cell *matCellDef="let element">{{ formatNumber(element.Cash2022) }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="Cash2023">
+              <th mat-header-cell *matHeaderCellDef style="font-weight: bold; cursor: pointer;"
+                (click)="onDetailedTableSort({active: 'Cash2023', direction: 'desc'})">{{getFullYear(2)}} </th>
+              <td mat-cell *matCellDef="let element">{{ formatNumber(element.Cash2023) }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="Cash2024">
+              <th mat-header-cell *matHeaderCellDef style="font-weight: bold; cursor: pointer;"
+                (click)="onDetailedTableSort({active: 'Cash2024', direction: 'desc'})">{{getFullYear(1)}}</th>
+              <td mat-cell *matCellDef="let element">{{ formatNumber(element.Cash2024) }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="Cash2025">
+              <th mat-header-cell *matHeaderCellDef class="year-2025-header"
+                (click)="onDetailedTableSort({active: 'Cash2025', direction: 'desc'})">{{getFullYear(0)}} 🔝</th>
+              <td mat-cell *matCellDef="let element" class="year-2025-cell">
+                {{ formatNumber(element.Cash2025) }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="CashDiff">
+              <th mat-header-cell *matHeaderCellDef [matTooltip]="diffTooltip" matTooltipPosition="above"
+                matTooltipClass="diff-tooltip" style="font-weight:600; text-align:right;">
+                <span class="diff-header">
+                  הפרש / % שינוי
+                  <mat-icon class="info-icon">info_outline</mat-icon>
+                </span>
+              </th>
+              <td mat-cell *matCellDef="let element" [class.positive-change]="cashDiff(element) >= 0"
+                [class.negative-change]="cashDiff(element) < 0">
+                {{ formatNumber(cashDiff(element)) }} ₪
+                <div class="percentage-badge">{{ cashPct(element) }}</div>
+              </td>
+            </ng-container>
+
+            <!-- UNITS COLUMNS -->
+            <ng-container matColumnDef="Units2021">
+              <th mat-header-cell *matHeaderCellDef style="font-weight: bold; cursor: pointer;"
+                (click)="onDetailedTableSort({active: 'Units2021', direction: 'desc'})">{{getFullYear(4)}}</th>
+              <td mat-cell *matCellDef="let element">{{ formatNumber(element.Units2021) }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="Units2022">
+              <th mat-header-cell *matHeaderCellDef style="font-weight: bold; cursor: pointer;"
+                (click)="onDetailedTableSort({active: 'Units2022', direction: 'desc'})">{{getFullYear(3)}}</th>
+              <td mat-cell *matCellDef="let element">{{ formatNumber(element.Units2022) }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="Units2023">
+              <th mat-header-cell *matHeaderCellDef style="font-weight: bold; cursor: pointer;"
+                (click)="onDetailedTableSort({active: 'Units2023', direction: 'desc'})">{{getFullYear(2)}}</th>
+              <td mat-cell *matCellDef="let element">{{ formatNumber(element.Units2023) }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="Units2024">
+              <th mat-header-cell *matHeaderCellDef style="font-weight: bold; cursor: pointer;"
+                (click)="onDetailedTableSort({active: 'Units2024', direction: 'desc'})">{{getFullYear(1)}}</th>
+              <td mat-cell *matCellDef="let element">{{ formatNumber(element.Units2024) }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="Units2025">
+              <th mat-header-cell *matHeaderCellDef class="year-2025-header"
+                (click)="onDetailedTableSort({active: 'Units2025', direction: 'desc'})">{{getFullYear(0)}} 🔝</th>
+              <td mat-cell *matCellDef="let element" class="year-2025-cell">
+                {{ formatNumber(element.Units2025) }}</td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="displayedCatalogColumns; sticky: true" class="catalog-header-row"></tr>
+            <tr mat-row *matRowDef="let row; columns: displayedCatalogColumns;"></tr>
+          </table>
+        </div>
+
+        <div *ngIf="!catalogLoading && (!detailedDataSource.data || detailedDataSource.data.length === 0)"
+          class="no-data-message">
+          אין נתונים זמינים
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Group‑2 KPIs Modals -->
+
+  <div *ngIf="showAvgDurationModal" class="kpi-overlay" [class.dark]="isDark">
+    <div class="kpi-modal" dir="rtl">
+      <div class="kpi-header">
+        <h2> משך ניתוח ממוצע לפי מחלקה</h2>
+        <button mat-icon-button class="close-btn" (click)="closeAvgDurationModal()">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+      <div class="kpi-body">
+        <p class="kpi-intro">
+          כאן יוצגו משכי ניתוח ממוצעים בדקות לכל מחלקה ניתוחית. נתונים אלו ייטענו מה‑API שתספק.
+        </p>
+        <div *ngIf="isAvgDurationLoading" class="kpi-loading">
+          <mat-spinner diameter="40"></mat-spinner>
+          <div class="kpi-loading-text">טוען נתונים...</div>
+        </div>
+        <div *ngIf="!isAvgDurationLoading && (!avgDurationData || avgDurationData.length === 0)" class="kpi-no-data">
+          אין נתונים להצגה כרגע. חבר את ה‑API כדי לאכלס את הטבלה.
+        </div>
+        <table *ngIf="!isAvgDurationLoading && avgDurationData && avgDurationData.length > 0" class="kpi-table">
+          <thead>
+            <tr>
+              <th>מחלקה</th>
+              <th>משך ניתוח ממוצע (דק')</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let r of avgDurationData">
+              <td>{{ r.departmentName }}</td>
+              <td>{{ r.valueDisplay }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div *ngIf="showFirstStartTimeModal" class="kpi-overlay" [class.dark]="isDark">
+    <div class="kpi-modal" dir="rtl">
+      <div class="kpi-header">
+        <h2> זמן כניסה ממוצע ניתוח ראשון בבוקר לפי מחלקה</h2>
+        <button mat-icon-button class="close-btn" (click)="closeFirstStartTimeModal()">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+      <div class="kpi-body">
+        <p class="kpi-intro">
+          כאן יוצג שעת הכניסה הממוצעת לחדר ניתוח עבור הניתוח הראשון בבוקר, לפי מחלקה.
+        </p>
+        <div *ngIf="isFirstStartTimeLoading" class="kpi-loading">
+          <mat-spinner diameter="40"></mat-spinner>
+          <div class="kpi-loading-text">טוען נתונים...</div>
+        </div>
+        <div *ngIf="!isFirstStartTimeLoading && (!firstStartTimeData || firstStartTimeData.length === 0)"
+          class="kpi-no-data">
+          אין נתונים להצגה כרגע. חבר את ה‑API כדי לאכלס את הטבלה.
+        </div>
+
+        <!-- גרף עמודות רב-שנתי של זמני כניסה ממוצעים לפי מחלקה -->
+        <google-chart *ngIf="!isFirstStartTimeLoading && firstStartTimeChartData && firstStartTimeChartData.length > 0"
+          [type]="'ColumnChart'" [columns]="firstStartTimeChartColumns" [data]="firstStartTimeChartData"
+          [options]="firstStartTimeChartOptions" [width]="'100%'" [height]="'320px'">
+        </google-chart>
+        <div *ngIf="!isFirstStartTimeLoading && firstStartTimeChartData && firstStartTimeChartData.length > 0"
+          class="kpi-chart-caption">
+          כל עמודה מציגה זמן כניסה ממוצע של הניתוח הראשון בבוקר לכל אגף (Wing), בחמש השנים האחרונות.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div *ngIf="showLastEndTimeModal" class="kpi-overlay" [class.dark]="isDark">
+    <div class="kpi-modal" dir="rtl">
+      <div class="kpi-header">
+        <h2>זמן סיום ניתוח אחרון לפי מחלקה</h2>
+        <button mat-icon-button class="close-btn" (click)="closeLastEndTimeModal()">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+      <div class="kpi-body">
+        <p class="kpi-intro">
+          כאן יוצג זמן הסיום הממוצע של הניתוח האחרון בכל יום, לפי מחלקה.
+        </p>
+        <div *ngIf="isLastEndTimeLoading" class="kpi-loading">
+          <mat-spinner diameter="40"></mat-spinner>
+          <div class="kpi-loading-text">טוען נתונים...</div>
+        </div>
+        <div *ngIf="!isLastEndTimeLoading && (!lastEndTimeData || lastEndTimeData.length === 0)" class="kpi-no-data">
+          אין נתונים להצגה כרגע. חבר את ה‑API כדי לאכלס את הטבלה.
+        </div>
+        <!-- גרף עמודות רב-שנתי: ציר X = מחלקות, עמודות = 5 השנים האחרונות -->
+        <google-chart *ngIf="!isLastEndTimeLoading && lastEndTimeChartData && lastEndTimeChartData.length > 0"
+          [type]="'ColumnChart'" [columns]="lastEndTimeChartColumns" [data]="lastEndTimeChartData" [options]="{
+            title: '',
+            legend: { position: 'top', alignment: 'end', textStyle: { fontSize: 11 } },
+            hAxis: { textStyle: { fontSize: 10 }, slantedText: true, slantedTextAngle: 25 },
+            vAxis: { title: 'זמן סיום ממוצע (HH:MM)', textStyle: { fontSize: 10 } },
+            bar: { groupWidth: '60%' },
+            chartArea: { width: '90%', height: '80%', left: 40, top: 4 },
+            animation: { startup: true, duration: 800, easing: 'out' },
+            annotations: {
+              alwaysOutside: true,
+              textStyle: { fontSize: 10 }
+            }
+          }" [width]="'100%'" [height]="'100%'">
+        </google-chart>
+        <div *ngIf="!isLastEndTimeLoading && lastEndTimeChartData && lastEndTimeChartData.length > 0"
+          class="kpi-chart-caption">
+          כל עמודת צבע מייצגת שנה, והסדרה עבור כל אגף (Wing) מציגה את זמן הסיום הממוצע של הניתוח האחרון.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div *ngIf="showAvgSetupModal" class="kpi-overlay" [class.dark]="isDark">
+    <div class="kpi-modal" dir="rtl">
+      <div class="kpi-header">
+        <h2>זמן SETUP ממוצע לפי מחלקה</h2>
+        <button mat-icon-button class="close-btn" (click)="closeAvgSetupModal()">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+      <div class="kpi-body">
+        <p class="kpi-intro">
+          כאן יוצג זמן ה‑SETUP הממוצע (הפסקה בין ניתוחים) בדקות, לפי מחלקה.
+        </p>
+
+        <div *ngIf="isAvgSetupLoading" class="kpi-loading">
+          <mat-spinner diameter="40"></mat-spinner>
+          <div class="kpi-loading-text">טוען נתונים...</div>
+        </div>
+        <div *ngIf="!isAvgSetupLoading && (!avgSetupData || avgSetupData.length === 0)" class="kpi-no-data">
+          אין נתונים להצגה כרגע. חבר את ה‑API כדי לאכלס את הטבלה.
+        </div>
+        <!-- גרף עמודות רב-שנתי: ציר X = מחלקות, עמודות = 5 השנים האחרונות -->
+        <google-chart *ngIf="!isAvgSetupLoading && avgSetupChartData && avgSetupChartData.length > 0"
+          [type]="'ColumnChart'" [columns]="avgSetupChartColumns" [data]="avgSetupChartData" [options]="{
+            title: '',
+            legend: { position: 'top', alignment: 'end', textStyle: { fontSize: 11 } },
+            hAxis: { textStyle: { fontSize: 10 }, slantedText: true, slantedTextAngle: 25 },
+            vAxis: { title: 'SETUP ממוצע (דקות)', textStyle: { fontSize: 10 } },
+            bar: { groupWidth: '60%' },
+            chartArea: { width: '90%', height: '80%', left: 40, top: 4 },
+            animation: { startup: true, duration: 800, easing: 'out' },
+            annotations: {
+              alwaysOutside: true,
+              textStyle: { fontSize: 10 }
+            }
+          }" [width]="'100%'" [height]="'100%'">
+        </google-chart>
+        <div *ngIf="!isAvgSetupLoading && avgSetupChartData && avgSetupChartData.length > 0" class="kpi-chart-caption">
+          כל עמודת צבע מייצגת שנה, והסדרה עבור כל אגף (Wing) מציגה את זמן ה‑SETUP הממוצע (בדקות) בין ניתוחים.
+        </div>
+      </div>
+    </div>
+  </div>

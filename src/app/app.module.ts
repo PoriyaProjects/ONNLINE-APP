@@ -248,13 +248,22 @@ import { WorkerCasesComponent } from './worker-cases/worker-cases.component';
 registerLocaleData(localeHe);
 
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { AiLettersDashboardComponent } from './ai-letters-dashboard/ai-letters-dashboard.component';
+import { AutomationProcessDashboardComponent } from "./automationprocessdashboard/automation-process-dashboard.component";
 import { CldashboardModule } from './cldashboard/cldashboard.module';
 import { FolderDialogComponent } from './dashboard/folders-management/folder-dialog/folder-dialog.component';
 import { FoldersManagementComponent } from './dashboard/folders-management/folders-management.component';
+import { WindowsUserActionsComponent } from './dashboard/windows-user-actions/windows-user-actions.component';
 import { DialogDoingComponent } from './dimot-activity-dashboard/dialog-doing/dialog-doing.component';
 import { DimotActivityDashboardComponent } from './dimot-activity-dashboard/dimot-activity-dashboard.component';
 import { ServiceUnitEmailListDialogComponent } from './emailsdashboard/service-unit-email-list/service-unit-email-list-dialog/service-unit-email-list-dialog.component';
 import { ServiceUnitEmailListComponent } from './emailsdashboard/service-unit-email-list/service-unit-email-list.component';
+import { InternDepartmentAssignmentDialogComponent } from './employees-manage-dash/medical-interns-dashboard/intern-departments-manage/intern-department-assignment-dialog/intern-department-assignment-dialog.component';
+import { InternDepartmentsManageComponent } from './employees-manage-dash/medical-interns-dashboard/intern-departments-manage/intern-departments-manage.component';
+import { LecturesManageDialogComponent } from './employees-manage-dash/medical-interns-dashboard/lectures-manage-dialog/lectures-manage-dialog.component';
+import { MedicalInternAddUpdateComponent } from './employees-manage-dash/medical-interns-dashboard/medical-intern-add-update/medical-intern-add-update.component';
+import { MedicalInternsDashboardComponent } from './employees-manage-dash/medical-interns-dashboard/medical-interns-dashboard.component';
+import { MedicalInternsSmsComponent } from './employees-manage-dash/medical-interns-dashboard/medical-interns-sms/medical-interns-sms.component';
 import { CommercialSupportFormDashboardComponent, DialogExampleComponent } from './form-dashboard/commercial-support-form-dashboard/commercial-support-form-dashboard.component';
 import { CommercialSupportFormDialogComponent } from './form-dashboard/commercial-support-form-dashboard/commercial-support-form-dialog/commercial-support-form-dialog.component';
 import { CommercialSupportGatheringComponent } from './form-dashboard/commercial-support-form-dashboard/commercial-support-gathering/commercial-support-gathering.component';
@@ -264,25 +273,23 @@ import { CprNewbordDashboradComponent } from './form-dashboard/cpr-newbord-dashb
 import { CprNewbornFormComponent } from './form-dashboard/cpr-newbord-dashborad/cpr-newborn-form/cpr-newborn-form.component';
 import { PeopleListDialogComponent } from './form-dashboard/training-request-dashboard/training-request-dashboard.component';
 import { HearingSurveyComponent } from './hearing-survey/hearing-survey/hearing-survey.component';
+import { AppointsDashbModule } from './hospital-appoints-dashb/hospital-appoints-dashb.module';
+import { HospitalCathDashbModule } from './hospital-cath-dashb/hospital-cath-dashb.module';
 import { HospitalIncomeDashbComponent } from './hospital-income-dashb/hospital-income-dashb.component';
 import { HospitalIncomeNBDashbComponent } from './hospital-incomenb-dashb/hospital-incomenb-dashb.component';
-import { FilterDepartsPipe } from './pipe/filter-departs.pipe';
-import { SharedModule } from './shared/shared.module';
-import { WhatsappCategoriesPermissionsComponent } from './whatsapp-messages-dashboard/whatsapp-categories-permissions/whatsapp-categories-permissions.component';
-import { HospitalCathDashbModule } from './hospital-cath-dashb/hospital-cath-dashb.module';
 import { HospitalRoomTimeDashbModule } from './hospital-roomtime-dashb/hospital-roomtime-dashb.module';
 import { HospitalRoomTimeNDashbModule } from './hospital-roomtimen-dashb/hospital-roomtimen-dashb.module';
 import { HospitalRoomTimeRTDashbModule } from './hospital-roomtimert-dashb/hospital-roomtimert-dashb.module';
 import { HospitalRoomTimeRTmDashbModule } from './hospital-roomtimert-mdashb/hospital-roomtimert-mdashb.module';
-import { AppointsDashbModule } from './hospital-appoints-dashb/hospital-appoints-dashb.module';
-import { AiLettersDashboardComponent } from './ai-letters-dashboard/ai-letters-dashboard.component';
-import { AutomationProcessDashboardComponent } from "./automationprocessdashboard/automation-process-dashboard.component";
-import { WindowsUserActionsComponent } from './dashboard/windows-user-actions/windows-user-actions.component';
-import { MriScheduleComponent } from './mri-schedule';
 import { InfectionControlModule } from './infection-control/infection-control.module';
+import { MriScheduleComponent } from './mri-schedule';
 import { DepartmentalTextureReportComponent } from './nutrition-system/departmental-texture-report/departmental-texture-report.component';
 import { EmergencyRoomReportComponent } from './emergency-room-report/emergency-room-report.component';
 import { HitoFormsDashboardComponent } from './hito-forms-dashboard/hito-forms-dashboard.component';
+import { FilterDepartsPipe } from './pipe/filter-departs.pipe';
+import { SharedModule } from './shared/shared.module';
+import { SurgeriesDashboradComponent } from './surgeries-dashborad-n/surgeries-dashborad.component';
+import { WhatsappCategoriesPermissionsComponent } from './whatsapp-messages-dashboard/whatsapp-categories-permissions/whatsapp-categories-permissions.component';
 
 
 
@@ -511,6 +518,7 @@ const maskConfig: Partial<IConfig> = {
     FoldersManagementComponent,
     FolderDialogComponent,
     DimotActivityDashboardComponent,
+    SurgeriesDashboradComponent,
     DialogDoingComponent,
     HearingSurveyComponent,
     DepartmentalTextureReportComponent,
@@ -519,6 +527,12 @@ const maskConfig: Partial<IConfig> = {
     MriScheduleComponent,
     EmergencyRoomReportComponent,
     HitoFormsDashboardComponent,
+    MedicalInternsDashboardComponent,
+    MedicalInternAddUpdateComponent,
+    InternDepartmentsManageComponent,
+    InternDepartmentAssignmentDialogComponent,
+    LecturesManageDialogComponent,
+    MedicalInternsSmsComponent,
     //HospitalIncomeDashbComponent,
   ],
   imports: [

@@ -1,0 +1,11 @@
+.intern-header {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+.intern-header h3 {
+  margin: 0;
+}
+table {
+  width: 100%;
+}

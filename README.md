@@ -37,3 +37,8 @@ NODE_OPTIONS=--openssl-legacy-provider node --max_old_space_size=8192 ./node_mod
 $env:NODE_OPTIONS="--openssl-legacy-provider"
  npx ng serve --source-map=false
                                                                                            
+
+
+
+
+                                                                                           
