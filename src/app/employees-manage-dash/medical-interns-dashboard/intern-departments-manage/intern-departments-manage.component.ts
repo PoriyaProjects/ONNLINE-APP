@@ -29,7 +29,7 @@ export class InternDepartmentsManageComponent implements OnInit {
   intern: any;
   assignments: any[] = [];
   dataSource = new MatTableDataSource<any>([]);
-  displayedColumns: string[] = ['DepartnentDescripton', 'InternPeriod', 'InternPeriodEnd', 'Actions'];
+  displayedColumns: string[] = ['DepartnentDescriptonFirst', 'DepartnentDescriptonSecond', 'InternPeriod', 'InternPeriodEnd', 'Actions'];
   DepartmentsList: any[] = [];
   loaded = false;
   sendingPdf = false;
