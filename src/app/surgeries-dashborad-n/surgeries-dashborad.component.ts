@@ -629,6 +629,7 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck {
   surgeriesPerDayChartData: any[] = [];
   surgeriesPerDayChartOptions: any = {};
   avgSetupChartOptions: any = {};
+  lastEndTimeChartOptions: any = {};
   /** צבעים למקרא שנים (תואם לסדר העמודות ב-Google ColumnChart) */
   readonly kpiChartYearColors: string[] = ['#3366cc', '#dc3912', '#ff9900', '#109618', '#990099'];
   firstStartTimeChartYears: number[] = [];
@@ -5307,8 +5308,8 @@ private buildLossByWingChart(rows: LossByWingYearDto[]): void {
     return;
   }
 
-  // כל השנים בדיוק כפי שהשרת החזיר
-  const years = Array.from(new Set(rows.map(r => r.Year))).sort((a, b) => a - b);
+  // כל השנים בדיוק כפי שהשרת החזיר – מומרים למספרים
+  const years = Array.from(new Set(rows.map(r => Number(r.Year)))).sort((a, b) => a - b);
   this.lossByWingChartYears = years;
 
   // מחלקות (Wing) ממוינות לפי סדר ידוע אם קיים
@@ -5334,11 +5335,16 @@ private buildLossByWingChart(rows: LossByWingYearDto[]): void {
   const byWingYear = new Map<string, Map<number, number>>();
   rows.forEach(r => {
     const wing = (r.Wing || "לא צוין").trim();
-    const year = r.Year;
-    let val = r.Loss ?? r.AvgLossTime;
+    const year = Number(r.Year);
+    // אם השנה אינה מספר תקין – נדלג
+    if (isNaN(year)) {
+      return;
+    }
+
+    let val: number | null = r.Loss ?? null;
 
     // אם Loss ריק אבל קיבלנו AvgLossTime כטקסט "HH:mm" – נמיר לדקות
-    if ((val == null || isNaN(val as any)) && r.AvgLossTime) {
+    if ((val == null || isNaN(val)) && r.AvgLossTime) {
       const parts = r.AvgLossTime.split(":");
       if (parts.length === 2) {
         const h = parseInt(parts[0], 10);
@@ -5353,7 +5359,7 @@ private buildLossByWingChart(rows: LossByWingYearDto[]): void {
       byWingYear.set(wing, new Map<number, number>());
     }
     // אם עדיין אין לנו ערך תקין – נדלג על הרשומה
-    if (val == null || isNaN(val as any)) {
+    if (val == null || isNaN(val)) {
       return;
     }
 
