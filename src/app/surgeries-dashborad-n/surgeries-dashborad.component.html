@@ -198,7 +198,7 @@
               <div class="year-subtitle">מספר ניתוחים בשנה</div>
             </div>
           </div>
-          <div class="chart-with-expand">
+          <div class="chart-with-expand" *ngIf="mainMetricMode !== 'room-times'">
             <button type="button" class="chart-expand-btn" (click)="openMainChartFullModal()"
               *ngIf="!isChartLoading && !isMainDataLoading && chartData && chartData.length > 0" matTooltip="הרחב מסך"
               matTooltipPosition="below">
@@ -210,9 +210,87 @@
             </google-chart>
           </div>
 
+          <!-- תצוגת זמני חדר (Room Times) בתוך הפאנל הראשי -->
+          <div class="chart-with-expand" *ngIf="mainMetricMode === 'room-times'">
+            <!-- כפתור תצוגה מוגדלת לכל גרפי זמני החדר -->
+            <button type="button" class="chart-expand-btn"
+                    (click)="showTimesModal = true"
+                    *ngIf="!isAvgDurationLoading && avgDurationChartData && avgDurationChartData.length > 0"
+                    matTooltip="הצג את כל מדדי זמני החדר במסך מלא"
+                    matTooltipPosition="below">
+              <mat-icon>fullscreen</mat-icon>
+            </button>
+
+            <!-- הגרף העיקרי לפי roomTimesView -->
+            <google-chart
+              *ngIf="!isAvgDurationLoading && roomTimesView === 'avgDuration' && avgDurationChartData && avgDurationChartData.length > 0"
+              [type]="'ColumnChart'"
+              [columns]="avgDurationChartColumns"
+              [data]="avgDurationChartData"
+              [options]="avgDurationChartOptions"
+              [width]="'100%'"
+              [height]="'360px'">
+            </google-chart>
+
+            <google-chart
+              *ngIf="roomTimesView === 'perDay' && surgeriesPerDayChartData && surgeriesPerDayChartData.length > 0"
+              [type]="'ColumnChart'"
+              [columns]="surgeriesPerDayChartColumns"
+              [data]="surgeriesPerDayChartData"
+              [options]="surgeriesPerDayChartOptions"
+              [width]="'100%'"
+              [height]="'360px'">
+            </google-chart>
+
+            <google-chart
+              *ngIf="roomTimesView === 'firstStart' && firstStartTimeChartData && firstStartTimeChartData.length > 0"
+              [type]="'ColumnChart'"
+              [columns]="firstStartTimeChartColumns"
+              [data]="firstStartTimeChartData"
+              [options]="firstStartTimeChartOptions"
+              [width]="'100%'"
+              [height]="'360px'">
+            </google-chart>
+
+            <google-chart
+              *ngIf="roomTimesView === 'lastEnd' && lastEndTimeChartData && lastEndTimeChartData.length > 0"
+              [type]="'ColumnChart'"
+              [columns]="lastEndTimeChartColumns"
+              [data]="lastEndTimeChartData"
+              [options]="lastEndTimeChartOptions"
+              [width]="'100%'"
+              [height]="'360px'">
+            </google-chart>
+
+            <google-chart
+              *ngIf="roomTimesView === 'avgSetup' && avgSetupChartData && avgSetupChartData.length > 0"
+              [type]="'ColumnChart'"
+              [columns]="avgSetupChartColumns"
+              [data]="avgSetupChartData"
+              [options]="avgSetupChartOptions"
+              [width]="'100%'"
+              [height]="'360px'">
+            </google-chart>
+
+            <google-chart
+              *ngIf="roomTimesView === 'lossPerDay' && lossByWingChartData && lossByWingChartData.length > 0"
+              [type]="'ColumnChart'"
+              [columns]="lossByWingChartColumns"
+              [data]="lossByWingChartData"
+              [options]="lossByWingChartOptions"
+              [width]="'100%'"
+              [height]="'360px'">
+            </google-chart>
+
+            <div *ngIf="isAvgDurationLoading" class="chart-loading-overlay">
+              <mat-spinner diameter="40"></mat-spinner>
+              <div class="chart-loading-text">טוען נתוני זמני חדר...</div>
+            </div>
+          </div>
+
           <!-- מצב תצוגה לוגרף הראשי: סה"כ / קרן‑מדינה / אתר / משמרת / מחלקה -->
           <div class="chart-mode-row"
-            *ngIf="!isChartLoading && !isMainDataLoading && chartData && chartData.length > 0 && !isRoomUtilizationMode()">
+            *ngIf="!isChartLoading && !isMainDataLoading && chartData && chartData.length > 0 && !isRoomUtilizationMode() && mainMetricMode !== 'room-times'">
             <button class="icon-btn ghost mode-toggle-btn" [class.active]="chartViewMode === 'year-total'"
               [matTooltip]="getChartViewTooltip('year-total')" matTooltipPosition="top"
               (click)="setChartViewMode('year-total')">
@@ -247,29 +325,82 @@
             </button>
           </div>
 
-          <!-- כפתורי מדדי חדרים לפי מחלקה – מוצגים רק במצב ניצולת חדר ניתוח -->
+          <!-- כפתורי מדדי זמני חדר – מתחת לגרף הראשי, במצב room-times -->
           <div class="chart-mode-row"
-            *ngIf="!isChartLoading && !isMainDataLoading && chartData && chartData.length > 0 && isRoomUtilizationMode()">
-            <span class="chart-mode-label">
-              חדרים לפי מחלקה:
-            </span>
-            <button class="icon-btn ghost mode-toggle-btn" [class.active]="roomStatsMetric === 'total'"
-              (click)="setRoomStatsMetric('total')">
-              סה"כ חדרים
-            </button>
-            <button class="icon-btn ghost mode-toggle-btn" [class.active]="roomStatsMetric === 'open'"
-              (click)="setRoomStatsMetric('open')">
-              חדרים פותחים
-            </button>
-            <button class="icon-btn ghost mode-toggle-btn" [class.active]="roomStatsMetric === 'close'"
-              (click)="setRoomStatsMetric('close')">
-              חדרים סוגרים
-            </button>
-            <button class="icon-btn ghost mode-toggle-btn" [class.active]="roomStatsMetric === 'fullDays'"
-              (click)="setRoomStatsMetric('fullDays')">
-              ימים מלאים (ללא פיצול)
-            </button>
+               *ngIf="mainMetricMode === 'room-times'">
+            <mat-button-toggle-group
+              name="roomTimesView"
+              aria-label="Room times view"
+              class="mat-button-toggle-group custom-toggle-group"
+              [value]="roomTimesView"
+              (change)="setRoomTimesView($event.value)">
+              <mat-button-toggle value="avgDuration">
+                <mat-icon>speed</mat-icon>
+                <span>משך ניתוח ממוצע</span>
+              </mat-button-toggle>
+              <mat-button-toggle value="firstStart">
+                <mat-icon>play_circle</mat-icon>
+                <span>כניסה ניתוח ראשון</span>
+              </mat-button-toggle>
+              <mat-button-toggle value="lastEnd">
+                <mat-icon>stop_circle</mat-icon>
+                <span>סיום ניתוח אחרון</span>
+              </mat-button-toggle>
+              <mat-button-toggle value="avgSetup">
+                <mat-icon>hourglass_bottom</mat-icon>
+                <span>SETUP ממוצע</span>
+              </mat-button-toggle>
+              <mat-button-toggle value="perDay">
+                <mat-icon>calendar_view_day</mat-icon>
+                <span>ניתוחים ליום</span>
+              </mat-button-toggle>
+              <mat-button-toggle value="lossPerDay">
+                <mat-icon>timer_off</mat-icon>
+                <span>זמן אבוד ליום</span>
+              </mat-button-toggle>
+            </mat-button-toggle-group>
           </div>
+
+          <!-- כפתורי מדדי חדרים לפי מחלקה – מוצגים רק במצב ניצולת חדר ניתוח -->
+          <!-- כפתורי מדדי חדרים – מוצגים רק במצב ניצולת חדר ניתוח -->
+<div class="chart-mode-row"
+*ngIf="!isChartLoading && !isMainDataLoading && chartData && chartData.length > 0 && isRoomUtilizationMode()">
+<span class="chart-mode-label">
+  חדרים לפי מחלקה:
+</span>
+
+<!-- כפתור חדש: סה"כ חדרים לשנה -->
+<button class="icon-btn ghost mode-toggle-btn"
+        [class.active]="roomStatsViewMode === 'yearTotal'"
+        (click)="setRoomStatsViewMode('yearTotal')">
+  סה"כ חדרים לשנה
+</button>
+
+<!-- כפתורים קיימים – תמיד מעבירים למצב "לפי מחלקה" -->
+<button class="icon-btn ghost mode-toggle-btn"
+        [class.active]="roomStatsViewMode === 'byWing' && roomStatsMetric === 'total'"
+        (click)="setRoomStatsMetric('total')">
+  סה"כ חדרים לפי מחלקה
+</button>
+
+<button class="icon-btn ghost mode-toggle-btn"
+        [class.active]="roomStatsViewMode === 'byWing' && roomStatsMetric === 'open'"
+        (click)="setRoomStatsMetric('open')">
+  חדרים פותחים
+</button>
+
+<button class="icon-btn ghost mode-toggle-btn"
+        [class.active]="roomStatsViewMode === 'byWing' && roomStatsMetric === 'close'"
+        (click)="setRoomStatsMetric('close')">
+  חדרים סוגרים
+</button>
+
+<button class="icon-btn ghost mode-toggle-btn"
+        [class.active]="roomStatsViewMode === 'byWing' && roomStatsMetric === 'fullDays'"
+        (click)="setRoomStatsMetric('fullDays')">
+  ימים מלאים (ללא פיצול)
+</button>
+</div>
 
           <!-- טקסט הסבר קצר מה מייצגת כל עמודה/צבע בגרף -->
           <div class="chart-mode-description"
@@ -595,21 +726,47 @@
               </div>
             </div>
 
-            <!-- פילטר חדר ניתוח לביצוע (סינון לפי SurgeryRoom) -->
+            <!-- פילטר אתר (Site) – משפיע על כל הגרפים (מדדי ניתוחים, זמני חדר, ניצולת חדר) -->
             <div class="custom-dropdown filter-dropdown" [class.active]="isRoomOpen"
-              [class.has-value]="selectedRooms?.length">
+              [class.has-value]="selectedSites?.length">
               <div class="dropdown-trigger" (click)="isRoomOpen = !isRoomOpen">
                 <mat-icon class="dropdown-icon">meeting_room</mat-icon>
-                <span class="selected-text" matTooltip="{{ getRoomDisplay() }}">
-                  {{ getRoomDisplay() }}
+                <span class="selected-text">
+                  אתר: {{ selectedSites?.length ? selectedSites.join(', ') : 'הכל' }}
                 </span>
                 <mat-icon class="arrow-icon">{{ isRoomOpen ? 'expand_less' : 'expand_more' }}</mat-icon>
               </div>
               <div class="dropdown-panel" *ngIf="isRoomOpen">
                 <div class="options-list">
-                  <div class="option-item" *ngFor="let opt of roomOptions" (click)="setRoomFilter(opt)"
-                    [class.selected]="selectedRooms?.includes(opt)">
-                    {{ opt }}
+                  <div class="option-item"
+                       (click)="selectedSites = []; applyAllSurgeryFilters()"
+                       [class.selected]="!selectedSites || selectedSites.length === 0">
+                    כל האתרים
+                  </div>
+                  <div class="option-item"
+                       (click)="setSiteFilter('חנ-כללי')"
+                       [class.selected]="selectedSites?.includes('חנ-כללי')">
+                    חדר ניתוח כללי
+                  </div>
+                  <div class="option-item"
+                       (click)="setSiteFilter('חנ-אמבול')"
+                       [class.selected]="selectedSites?.includes('חנ-אמבול')">
+                    אמבולטורי
+                  </div>
+                  <div class="option-item"
+                       (click)="setSiteFilter('חנ-יולד')"
+                       [class.selected]="selectedSites?.includes('חנ-יולד')">
+                    יולדות
+                  </div>
+                  <div class="option-item"
+                       (click)="setSiteFilter('חנ-מחלקה')"
+                       [class.selected]="selectedSites?.includes('חנ-מחלקה')">
+                    חדר מחלקה
+                  </div>
+                  <div class="option-item"
+                       (click)="setSiteFilter('חנ-פהלסת')"
+                       [class.selected]="selectedSites?.includes('חנ-פהלסת')">
+                    פה ולסת
                   </div>
                 </div>
               </div>
@@ -1087,6 +1244,39 @@
           <p class="kpi-intro">
             משך ניתוח ממוצע בדקות לפי מחלקה מאוגדת (Wing). ציר X: מחלקות. עמודה לכל שנה.
           </p>
+          <div class="kpi-filter-row">
+            <span class="kpi-filter-label">חדרי ניתוח לפי אתר:</span>
+            <button mat-stroked-button type="button"
+                    [class.active]="avgDurationSiteFilter === 'ALL'"
+                    (click)="avgDurationSiteFilter = 'ALL'; loadAvgDuration();">
+              כל האתרים
+            </button>
+            <button mat-stroked-button type="button"
+                    [class.active]="avgDurationSiteFilter === 'חנ-כללי'"
+                    (click)="avgDurationSiteFilter = 'חנ-כללי'; loadAvgDuration();">
+              חדר ניתוח כללי
+            </button>
+            <button mat-stroked-button type="button"
+                    [class.active]="avgDurationSiteFilter === 'חנ-אמבול'"
+                    (click)="avgDurationSiteFilter = 'חנ-אמבול'; loadAvgDuration();">
+              אמבולטורי
+            </button>
+            <button mat-stroked-button type="button"
+                    [class.active]="avgDurationSiteFilter === 'חנ-יולד'"
+                    (click)="avgDurationSiteFilter = 'חנ-יולד'; loadAvgDuration();">
+              יולדות
+            </button>
+            <button mat-stroked-button type="button"
+                    [class.active]="avgDurationSiteFilter === 'חנ-מחלקה'"
+                    (click)="avgDurationSiteFilter = 'חנ-מחלקה'; loadAvgDuration();">
+              חדר מחלקה
+            </button>
+            <button mat-stroked-button type="button"
+                    [class.active]="avgDurationSiteFilter === 'חנ-פהלסת'"
+                    (click)="avgDurationSiteFilter = 'חנ-פהלסת'; loadAvgDuration();">
+              פה ולסת
+            </button>
+          </div>
           <div *ngIf="isAvgDurationLoading" class="kpi-loading">
             <mat-spinner diameter="40"></mat-spinner>
             <div class="kpi-loading-text">טוען נתונים...</div>
