@@ -1705,6 +1705,15 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck {
                 );
             }
 
+            // פילטר אתר (Site) – מולטי
+            if (this.selectedSites && this.selectedSites.length > 0) {
+                source = source.filter(
+                    (r) =>
+                        !!r.Site &&
+                        this.selectedSites.includes(r.Site.trim())
+                );
+            }
+
             if (this.selectedWeekdays && this.selectedWeekdays.length > 0) {
                 source = source.filter(
                     (r) =>
@@ -3757,7 +3766,7 @@ updateChartColumns(): void {
         this.applyAllSurgeryFilters();
     }
 
-    private applyAllSurgeryFilters(): void {
+    applyAllSurgeryFilters(): void {
         // טבלת הניתוחים מפולטרת רק אם יש לנו נתוני ניתוחים גולמיים
         if (this.surgeryData.length > 0) {
             this.dataSource.data = this.applySurgeryFilter(this.surgeryData);
