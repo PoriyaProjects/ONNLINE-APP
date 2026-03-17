@@ -1301,10 +1301,11 @@
 .chart-mode-row {
   margin-top: 8px;
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   flex-direction: row;
   gap: 6px;
-  justify-content: flex-end;
+  justify-content: flex-start;
+  align-items: flex-end;
   min-width: 0;
   row-gap: 8px;
 }

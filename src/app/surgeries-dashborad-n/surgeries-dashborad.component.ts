@@ -139,12 +139,16 @@ export interface AvgDurationFiveYearsDto {
   AvgDurationHHMM: string;
 }
 
+type AvgDurationSiteFilter = "ALL" | "חנ-כללי" | "חנ-אמבול" | "חנ-יולד" | "חנ-מחלקה" | "חנ-פהלסת";
+
 /** ממוצע ניתוחים ליום בחדר (לפי שנה) לפי מחלקה – GetAvgSurgeriesPerDayPerRoomFiveYears */
 export interface AvgSurgeriesPerDayPerRoomDto {
   Year: number;
   Site: string;
   Department: string;
   Wing: string;
+  /** ממוצע ניתוחים ליום בחדר עבור המחלקה/המחלקה המאוגדת */
+  AvgSurgeries: number;
   /** מספר חדרים שונים שהוקצו במהלך התקופה */
   RoomsTotal: number;
   /** מספר הימים שבהם החדר היה פתוח (ראשון בוקר) */
@@ -417,6 +421,9 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck {
     /** מדד מוצג לגרף חדרים לפי מחלקה: total / open / close / fullDays */
     roomStatsMetric: "total" | "open" | "close" | "fullDays" = "total";
 
+    /** מצב תצוגה לגרף חדרים: לפי מחלקה (ברירת מחדל) או סה"כ חדרים לשנה */
+    roomStatsViewMode: "byWing" | "yearTotal" = "byWing";
+
     private readonly orderedWings: string[] = [
         "א.א.ג.",
         "כירורגיה לב",
@@ -449,8 +456,8 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck {
     // 'month'       – ניתוחים לפי חודשים (5 שנים אחרונות)
     chartViewMode: "year-total" | "fund" | "site" | "shift" | "department" | "month" | "yoy-combined" = "year-total";
 
-    /** מצב מדד ראשי: ניתוחים (כמות) או ניצולת חדר ניתוח (ניתוחים ליום בחדר) */
-    mainMetricMode: "surgery-volume" | "room-utilization" = "surgery-volume";
+    /** מצב מדד ראשי: ניתוחים (כמות), זמני חדר, או ניצולת חדר ניתוח (ניתוחים ליום בחדר) */
+    mainMetricMode: "surgery-volume" | "room-times" | "room-utilization" = "surgery-volume";
 
     // When true, the משמרת filter dropdown in the sidebar is visually disabled
     // because the main chart itself is grouped by משמרת.
@@ -622,6 +629,8 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck {
   lastEndTimeData: DeptTimeMetricRow[] = [];
   avgSetupData: DeptTimeMetricRow[] = [];
   surgeriesPerDayData: DeptTimeMetricRow[] = [];
+  /** סינון לפי אתר עבור גרף משך ניתוח ממוצע – ALL = כל האתרים */
+  avgDurationSiteFilter: AvgDurationSiteFilter = "ALL";
   avgDurationChartColumns: any[] = [];
   avgDurationChartData: any[] = [];
   avgDurationChartOptions: any = {};
@@ -644,6 +653,8 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck {
   /** מונע שליחת קריאות כפולות ל-GetMonthlyCounts כל עוד יש בקשה בתהליך */
   private monthlyCountsRequestInFlight = false;
   private lastSurgeriesPerDayYear: string | null = null;
+  /** שמירת הנתונים הגולמיים לניתוחים ליום בחדר (ללא שימוש ב-Map) */
+  private surgeriesPerDayRaw: AvgSurgeriesPerDayPerRoomDto[] = [];
   private lastAvgDurationYear: string | null = null;
   /** מפתח פרמטרים אחרון (לפי buildKpiFilterParams) – למודלים שמשתמשים בפילטרים */
   private lastAvgFirstMorningEntryParams: string | null = null;
@@ -1783,7 +1794,6 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck {
                     title: "מספר ניתוחים",
                 };
                 this.chartOptions.isStacked = false;
-
                 this.isChartLoading = false;
                 this.cdr.detectChanges();
                 return;
@@ -2998,6 +3008,24 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck {
         if (this.mainMetricMode === "room-utilization") {
             return "ניצולת חדר ניתוח – ניתוחים ליום בחדר לפי מחלקה מאוגדת (Wing)";
         }
+        if (this.mainMetricMode === "room-times") {
+            switch (this.roomTimesView) {
+                case "avgDuration":
+                    return "משך ניתוח ממוצע לפי מחלקה מאוגדת (Wing)";
+                case "firstStart":
+                    return "זמן כניסה ממוצע של ניתוח ראשון בבוקר לפי מחלקה";
+                case "lastEnd":
+                    return "זמן סיום ממוצע של הניתוח האחרון לפי מחלקה";
+                case "avgSetup":
+                    return "זמן SETUP ממוצע לפי מחלקה";
+                case "perDay":
+                    return "ממוצע ניתוחים ליום בחדר לפי מחלקה";
+                case "lossPerDay":
+                    return "זמן אבוד ליום לפי מחלקה";
+                default:
+                    return "זמני חדר ניתוח לפי מחלקה";
+            }
+        }
         switch (this.chartViewMode) {
             case "year-total":
                 return "סה\"כ ניתוחים לפי שנה";
@@ -3078,15 +3106,28 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck {
     if (value === "utilization") {
       this.mainMetricMode = "room-utilization";
       this.updateChartData();
+    } else if (value === "duration") {
+      this.mainMetricMode = "room-times";
+      // טוען נתוני זמני ניתוח (משך) אם טרם נטענו או אם הפילטרים השתנו
+      this.loadAvgDuration();
     } else if (value === "count") {
       this.mainMetricMode = "surgery-volume";
       this.updateChartData();
     }
   }
 
-  /** שינוי מדד החדרים לגרף ניצולת (סה"כ / פתוחות / סוגרות / ימים מלאים) */
+  /** שינוי מדד החדרים לגרף ניצולת (סה"כ / פתוחות / סוגרות / ימים מלאים) – תמיד במצב לפי מחלקה */
   setRoomStatsMetric(metric: "total" | "open" | "close" | "fullDays"): void {
     this.roomStatsMetric = metric;
+    this.roomStatsViewMode = "byWing";
+    if (this.isRoomUtilizationMode()) {
+      this.updateChartData();
+    }
+  }
+
+  /** שינוי מצב תצוגת גרף החדרים: לפי מחלקה / סה"כ חדרים לשנה */
+  setRoomStatsViewMode(mode: "byWing" | "yearTotal"): void {
+    this.roomStatsViewMode = mode;
     if (this.isRoomUtilizationMode()) {
       this.updateChartData();
     }
@@ -4167,11 +4208,22 @@ closeSurgeriesPerDayModal(): void {
 
 private loadSurgeriesPerDay(): void {
   const baseYear = this.getLatestYearFromDeptData() || this.currentYear.toString();
+  // אם כבר יש לנו נתונים גולמיים לאותה שנה – נבנה רק את הגרף מחדש בלי קריאת API
+  if (this.surgeriesPerDayRaw.length > 0 && this.lastSurgeriesPerDayYear === baseYear) {
+    const filteredCached = this.filterBySelectedDiagnosis(this.surgeriesPerDayRaw);
+    this.buildSurgeriesPerDayChart(filteredCached);
+    this.isSurgeriesPerDayLoading = false;
+    this.cdr.detectChanges();
+    return;
+  }
+
+  // מניעה בסיסית נוספת: אם הגרף עצמו כבר בנוי לאותה שנה ואין צורך ברענון
   if (this.surgeriesPerDayChartData.length > 0 && this.lastSurgeriesPerDayYear === baseYear) {
     this.isSurgeriesPerDayLoading = false;
     this.cdr.detectChanges();
     return;
   }
+
   this.isSurgeriesPerDayLoading = true;
   this.surgeriesPerDayData = [];
   this.surgeriesPerDayChartColumns = [];
@@ -4184,6 +4236,8 @@ private loadSurgeriesPerDay(): void {
     .subscribe(
       (rows) => {
         const list = Array.isArray(rows) ? rows : [];
+        // שומרים את המערך הגולמי לטעינות חוזרות ללא API
+        this.surgeriesPerDayRaw = list;
         const filtered = this.filterBySelectedDiagnosis(list);
         this.buildSurgeriesPerDayChart(filtered);
         this.surgeriesPerDayChartOptions = {
@@ -4268,57 +4322,51 @@ private buildSurgeriesPerDayChart(rows: AvgSurgeriesPerDayPerRoomDto[]): void {
     );
   });
 
-  // אגרגציה מחדש לפי מחלקה מאוגדת ושנה: חדרים פתוחים וימי פעילות מלאים
-  const wingYearMap = new Map<string, Map<number, { roomsTotal: number; roomsOpen: number; roomsClose: number; fullDays: number }>>();
-  for (const r of rows) {
-    const wing = (r.Wing || "לא צוין").trim();
-    const year = r.Year;
-    if (!years.includes(year)) continue;
-    const roomsTotal = r.RoomsTotal ?? 0;
-    const openRooms = r.RoomsOpen ?? 0;
-    const closeRooms = r.RoomsClose ?? 0;
-    const fullDays = r.FullDays ?? 0;
-    if (!wingYearMap.has(wing)) wingYearMap.set(wing, new Map());
-    const yearMap = wingYearMap.get(wing)!;
-    const prev = yearMap.get(year) || { roomsTotal: 0, roomsOpen: 0, roomsClose: 0, fullDays: 0 };
-    prev.roomsTotal += roomsTotal;
-    prev.roomsOpen += openRooms;
-    prev.roomsClose += closeRooms;
-    prev.fullDays += fullDays;
-    yearMap.set(year, prev);
-  }
+  // בניית שורות הגרף לפי מחלקה מאוגדת (Wing) ושנה, ללא סיכום כפול – שימוש בערך הממוצע מה-API
+  const dataMap = new Map<string, any[]>();
 
-  const wings = Array.from(wingYearMap.keys())
+  rows.forEach(r => {
+    const wing = (r.Wing || "לא צוין").trim();
+
+    if (!dataMap.has(wing)) {
+      const newRow: any[] = [wing];
+      years.forEach(() => newRow.push(null, null));
+      dataMap.set(wing, newRow);
+    }
+
+    const yearIndex = years.indexOf(r.Year);
+    if (yearIndex === -1) {
+      return;
+    }
+
+    const avgValue = r.AvgSurgeries ?? null;
+    if (avgValue == null) {
+      return;
+    }
+
+    const rounded = Math.round(avgValue * 100) / 100;
+    const formatted = rounded.toFixed(2);
+
+    const row = dataMap.get(wing)!;
+    const valueColIndex = 1 + (yearIndex * 2);
+    const annotationColIndex = valueColIndex + 1;
+
+    row[valueColIndex] = { v: rounded, f: formatted };
+    row[annotationColIndex] = formatted;
+  });
+
+  const wings = Array.from(dataMap.keys())
     .filter(w => w !== "אחר" && w !== "קרדיולוגיה")
     .sort((a, b) => {
-    const ia = this.orderedWings.indexOf(a);
-    const ib = this.orderedWings.indexOf(b);
-    if (ia !== -1 && ib !== -1) return ia - ib;
-    if (ia !== -1) return -1;
-    if (ib !== -1) return 1;
-    return a.localeCompare(b, "he");
-  });
+      const ia = this.orderedWings.indexOf(a);
+      const ib = this.orderedWings.indexOf(b);
+      if (ia !== -1 && ib !== -1) return ia - ib;
+      if (ia !== -1) return -1;
+      if (ib !== -1) return 1;
+      return a.localeCompare(b, "he");
+    });
 
-  this.surgeriesPerDayChartData = wings.map(wing => {
-    const yearMap = wingYearMap.get(wing)!;
-    const series: any[] = [];
-    for (const year of years) {
-      const info = yearMap.get(year);
-      if (!info) {
-        series.push(null, null);
-        continue;
-      }
-      const value = this.getRoomStatsMetricValue(info);
-      if (value == null) {
-        series.push(null, null);
-        continue;
-      }
-      const rounded = Math.round(value * 100) / 100;
-      const formatted = rounded.toFixed(2);
-      series.push({ v: rounded, f: formatted }, formatted);
-    }
-    return [wing, ...series];
-  });
+  this.surgeriesPerDayChartData = wings.map(wing => dataMap.get(wing)!);
 }
 
 /** טעינת גרף ניצולת חדר ניתוח (ניתוחים ליום בחדר) לפאנל הראשי */
@@ -4330,6 +4378,15 @@ private loadRoomUtilizationMainChart(): void {
 
   const baseYear = this.getLatestYearFromDeptData() || this.currentYear.toString();
 
+  // אם כבר טענו את הנתונים לשנת בסיס זו – נשתמש במטמון בלבד בלי קריאת API
+  if (this.surgeriesPerDayRaw.length > 0 && this.lastSurgeriesPerDayYear === baseYear.toString()) {
+    const cachedFiltered = this.filterBySelectedDiagnosis(this.surgeriesPerDayRaw);
+    this.buildRoomUtilizationMainChartFromRows(cachedFiltered);
+    this.isChartLoading = false;
+    this.cdr.detectChanges();
+    return;
+  }
+
   this.http
     .get<AvgSurgeriesPerDayPerRoomDto[]>(environment.url + "GetAvgSurgeriesPerDayPerRoomFiveYears_surgeries_dashborad", {
       params: { baseYear: baseYear.toString() },
@@ -4337,127 +4394,12 @@ private loadRoomUtilizationMainChart(): void {
     .subscribe(
       (rows) => {
         const list = Array.isArray(rows) ? rows : [];
+        // שמירת הנתונים במטמון עבור שימוש חוזר (כולל כפתורי מצבי החדרים)
+        this.surgeriesPerDayRaw = list;
+        this.lastSurgeriesPerDayYear = baseYear.toString();
+
         const filtered = this.filterBySelectedDiagnosis(list);
-
-        if (!filtered || filtered.length === 0) {
-          this.chartData = [];
-          this.chartColumns = [];
-          this.chartTableRows = [];
-          this.isChartLoading = false;
-          this.cdr.detectChanges();
-          return;
-        }
-
-        const allYears = Array.from(new Set(filtered.map(r => r.Year).filter(y => y != null))).sort((a, b) => a - b);
-        const years = allYears.slice(-5);
-        this.yearsForChart = years;
-        this.updateColorsForYears(years);
-
-        const columns: any[] = ["מחלקה מאוגדת (Wing)"];
-        years.forEach(y => {
-          columns.push(
-            { type: "number", label: y.toString() },
-            { type: "string", role: "annotation", label: y.toString() }
-          );
-        });
-        this.chartColumns = columns;
-
-        // אגרגציה מחדש לפי מחלקה מאוגדת ושנה: חדרים, חדרים פתוחים/סוגרים וימים מלאים
-        const wingYearMap = new Map<string, Map<number, { roomsTotal: number; roomsOpen: number; roomsClose: number; fullDays: number }>>();
-        for (const r of filtered) {
-          const wing = (r.Wing || "לא צוין").trim();
-          const year = r.Year;
-          if (!years.includes(year)) continue;
-          const roomsTotal = r.RoomsTotal ?? 0;
-          const openRooms = r.RoomsOpen ?? 0;
-          const closeRooms = r.RoomsClose ?? 0;
-          const fullDays = r.FullDays ?? 0;
-          if (!wingYearMap.has(wing)) wingYearMap.set(wing, new Map());
-          const yearMap = wingYearMap.get(wing)!;
-          const prev = yearMap.get(year) || { roomsTotal: 0, roomsOpen: 0, roomsClose: 0, fullDays: 0 };
-          prev.roomsTotal += roomsTotal;
-          prev.roomsOpen += openRooms;
-          prev.roomsClose += closeRooms;
-          prev.fullDays += fullDays;
-          yearMap.set(year, prev);
-        }
-
-        const wings = Array.from(wingYearMap.keys())
-          .filter(w => w !== "אחר" && w !== "קרדיולוגיה")
-          .sort((a, b) => {
-          const ia = this.orderedWings.indexOf(a);
-          const ib = this.orderedWings.indexOf(b);
-          if (ia !== -1 && ib !== -1) return ia - ib;
-          if (ia !== -1) return -1;
-          if (ib !== -1) return 1;
-          return a.localeCompare(b, "he");
-        });
-
-        const rowsForTable: {
-          label: string;
-          total: number;
-          perYear: { [year: number]: number };
-        }[] = [];
-
-        this.chartData = wings.map(wing => {
-          const yearMap = wingYearMap.get(wing)!;
-          const series: any[] = [];
-          const perYear: { [year: number]: number } = {};
-          let total = 0;
-
-          for (const year of years) {
-            const info = yearMap.get(year);
-            if (!info) {
-              series.push(null, null);
-              perYear[year] = 0;
-              continue;
-            }
-            const value = this.getRoomStatsMetricValue(info);
-            if (value == null) {
-              series.push(null, null);
-              perYear[year] = 0;
-              continue;
-            }
-            const rounded = Math.round(value * 100) / 100;
-            const formatted = rounded.toFixed(2);
-            series.push({ v: rounded, f: formatted }, formatted);
-            perYear[year] = rounded;
-            total += rounded;
-          }
-
-          rowsForTable.push({ label: wing, total, perYear });
-          return [wing, ...series];
-        });
-
-        this.chartTableRows = rowsForTable.map(r => {
-          const { diff, pct } = this.computeDiffAndPct(r.perYear, years);
-          return {
-            label: r.label,
-            total: r.total,
-            perYear: r.perYear,
-            diff,
-            pct,
-          };
-        });
-
-        this.chartType = "ColumnChart";
-        this.chartOptions = {
-          ...this.chartOptions,
-          title: "",
-          vAxis: {
-            ...(this.chartOptions.vAxis || {}),
-            title: "ניתוחים ליום בחדר",
-          },
-          hAxis: {
-            ...(this.chartOptions.hAxis || {}),
-            title: "מחלקה מאוגדת (Wing)",
-          },
-          isStacked: false,
-          bar: {
-            ...(this.chartOptions.bar || {}),
-            groupWidth: "60%",
-          },
-        };
+        this.buildRoomUtilizationMainChartFromRows(filtered);
 
         this.isChartLoading = false;
         this.cdr.detectChanges();
@@ -4469,6 +4411,210 @@ private loadRoomUtilizationMainChart(): void {
         this.snackBar.open("❌ שגיאה בטעינת ניצולת חדר ניתוח", "סגור", { duration: 3000 });
       }
     );
+}
+
+/** בניית גרף ניצולת חדר ניתוח (פאנל ראשי) מתוך רשומות שכבר נטענו – ללא קריאת API */
+private buildRoomUtilizationMainChartFromRows(filtered: AvgSurgeriesPerDayPerRoomDto[]): void {
+  if (!filtered || filtered.length === 0) {
+    this.chartData = [];
+    this.chartColumns = [];
+    this.chartTableRows = [];
+    return;
+  }
+
+  const allYears = Array.from(
+    new Set(filtered.map((r) => r.Year).filter((y) => y != null))
+  ).sort((a, b) => a - b);
+  const years = allYears.slice(-5);
+  this.yearsForChart = years;
+  this.updateColorsForYears(years);
+
+  // מצב 1: סה"כ חדרים לשנה – ציר X שנים, ערך = סך החדרים הפתוחים (RoomsOpen) בשנה
+  if (this.roomStatsViewMode === "yearTotal") {
+    const totalsByYear = new Map<number, number>();
+
+    for (const r of filtered) {
+      const year = r.Year;
+      if (!years.includes(year)) continue;
+      const openRooms = r.RoomsOpen ?? 0;
+      totalsByYear.set(year, (totalsByYear.get(year) || 0) + openRooms);
+    }
+
+    this.chartColumns = [
+      "שנה",
+      { type: "number", label: "סה\"כ חדרים לשנה" },
+      { type: "string", role: "annotation" },
+    ];
+
+    this.chartData = years.map((year) => {
+      const value = totalsByYear.get(year) || 0;
+      const rounded = Math.round(value * 100) / 100;
+      const formatted = rounded.toFixed(2);
+      return [year.toString(), { v: rounded, f: formatted }, formatted];
+    });
+
+    // טבלה: שורה אחת "סה\"כ חדרים לשנה" עם ערכים לכל שנה + שינוי ביחס לשנה הקודמת
+    const perYear: { [year: number]: number } = {};
+    let grandTotal = 0;
+    years.forEach((y) => {
+      const v = (totalsByYear.get(y) || 0);
+      perYear[y] = v;
+      grandTotal += v;
+    });
+
+    const { diff, pct } = this.computeDiffAndPct(perYear, years);
+    this.chartTableRows = [
+      {
+        label: "סה\"כ חדרים לשנה",
+        total: grandTotal,
+        perYear,
+        diff,
+        pct,
+      },
+    ];
+
+    this.chartType = "ColumnChart";
+    this.chartOptions = {
+      ...this.chartOptions,
+      title: "",
+      vAxis: {
+        ...(this.chartOptions.vAxis || {}),
+        title: "סה\"כ חדרים לשנה",
+      },
+      hAxis: {
+        ...(this.chartOptions.hAxis || {}),
+        title: "שנה",
+      },
+      isStacked: false,
+      bar: {
+        ...(this.chartOptions.bar || {}),
+        groupWidth: "60%",
+      },
+    };
+
+    return;
+  }
+
+  // מצב 2 (קיים): חדרים לפי מחלקה מאוגדת (Wing) ושנה
+  const columns: any[] = ["מחלקה מאוגדת (Wing)"];
+  years.forEach((y) => {
+    columns.push(
+      { type: "number", label: y.toString() },
+      { type: "string", role: "annotation", label: y.toString() }
+    );
+  });
+  this.chartColumns = columns;
+
+  // אגרגציה מחדש לפי מחלקה מאוגדת ושנה: חדרים, חדרים פתוחים/סוגרים וימים מלאים
+  const wingYearMap = new Map<
+    string,
+    Map<number, { roomsTotal: number; roomsOpen: number; roomsClose: number; fullDays: number }>
+  >();
+
+  for (const r of filtered) {
+    const wing = (r.Wing || "לא צוין").trim();
+    const year = r.Year;
+    if (!years.includes(year)) continue;
+
+    const roomsTotal = r.RoomsTotal ?? 0;
+    const openRooms = r.RoomsOpen ?? 0;
+    const closeRooms = r.RoomsClose ?? 0;
+    const fullDays = r.FullDays ?? 0;
+
+    if (!wingYearMap.has(wing)) wingYearMap.set(wing, new Map());
+    const yearMap = wingYearMap.get(wing)!;
+    const prev =
+      yearMap.get(year) || {
+        roomsTotal: 0,
+        roomsOpen: 0,
+        roomsClose: 0,
+        fullDays: 0,
+      };
+
+    prev.roomsTotal += roomsTotal;
+    prev.roomsOpen += openRooms;
+    prev.roomsClose += closeRooms;
+    prev.fullDays += fullDays;
+
+    yearMap.set(year, prev);
+  }
+
+  const wings = Array.from(wingYearMap.keys())
+    .filter((w) => w !== "אחר" && w !== "קרדיולוגיה")
+    .sort((a, b) => {
+      const ia = this.orderedWings.indexOf(a);
+      const ib = this.orderedWings.indexOf(b);
+      if (ia !== -1 && ib !== -1) return ia - ib;
+      if (ia !== -1) return -1;
+      if (ib !== -1) return 1;
+      return a.localeCompare(b, "he");
+    });
+
+  const rowsForTable: {
+    label: string;
+    total: number;
+    perYear: { [year: number]: number };
+  }[] = [];
+
+  this.chartData = wings.map((wing) => {
+    const yearMap = wingYearMap.get(wing)!;
+    const series: any[] = [];
+    const perYear: { [year: number]: number } = {};
+    let total = 0;
+
+    for (const year of years) {
+      const info = yearMap.get(year);
+      if (!info) {
+        series.push(null, null);
+        perYear[year] = 0;
+        continue;
+      }
+      const value = this.getRoomStatsMetricValue(info);
+      if (value == null) {
+        series.push(null, null);
+        perYear[year] = 0;
+        continue;
+      }
+      const rounded = Math.round(value * 100) / 100;
+      const formatted = rounded.toFixed(2);
+      series.push({ v: rounded, f: formatted }, formatted);
+      perYear[year] = rounded;
+      total += rounded;
+    }
+
+    rowsForTable.push({ label: wing, total, perYear });
+    return [wing, ...series];
+  });
+
+  this.chartTableRows = rowsForTable.map((r) => {
+    const { diff, pct } = this.computeDiffAndPct(r.perYear, years);
+    return {
+      label: r.label,
+      total: r.total,
+      perYear: r.perYear,
+      diff,
+      pct,
+    };
+  });
+
+  this.chartType = "ColumnChart";
+  this.chartOptions = {
+    ...this.chartOptions,
+    title: "",
+    vAxis: {
+      ...(this.chartOptions.vAxis || {}),
+      title: "ניתוחים ליום בחדר",
+    },
+    hAxis: {
+      ...(this.chartOptions.hAxis || {}),
+      title: "מחלקה מאוגדת (Wing)",
+    },
+    isStacked: false,
+    bar: {
+      ...(this.chartOptions.bar || {}),
+      groupWidth: "60%",
+    },
+  };
 }
 
 /**
@@ -4545,7 +4691,7 @@ private filterBySelectedDiagnosis<T extends { Site?: string; Wing?: string }>(ro
   return rows;
 }
 
-private loadAvgDuration(): void {
+loadAvgDuration(): void {
   const baseYear = this.getLatestYearFromDeptData() || this.currentYear.toString();
   if (this.avgDurationChartData.length > 0 && this.lastAvgDurationYear === baseYear) {
     this.isAvgDurationLoading = false;
@@ -4648,7 +4794,13 @@ private buildAvgDurationFiveYearsChart(rows: AvgDurationFiveYearsDto[]): void {
     this.avgDurationChartYears = [];
     return;
   }
-  const allYears = Array.from(new Set(rows.map(r => r.Year).filter(y => y != null))).sort((a, b) => a - b);
+  // סינון לפי אתר במידת הצורך (ALL = כל האתרים)
+  const filteredRows =
+    this.avgDurationSiteFilter === "ALL"
+      ? rows
+      : rows.filter(r => r.Site === this.avgDurationSiteFilter);
+
+  const allYears = Array.from(new Set(filteredRows.map(r => r.Year).filter(y => y != null))).sort((a, b) => a - b);
   const years = allYears.slice(-5);
   this.avgDurationChartYears = years;
 
@@ -4660,17 +4812,18 @@ private buildAvgDurationFiveYearsChart(rows: AvgDurationFiveYearsDto[]): void {
     );
   });
 
+  // אגרגציה מחדש ברמת Wing+Year: ממוצע משוקלל לפי Count מכל האתרים/מקורות
   const wingYearMap = new Map<string, Map<number, { sumMin: number; sumCount: number }>>();
-  for (const r of rows) {
+  for (const r of filteredRows) {
     const wing = (r.Wing || "לא צוין").trim();
     const year = r.Year;
     if (!years.includes(year)) continue;
     const cnt = r.Count ?? 0;
-    const min = r.AvgDurationMin ?? 0;
+    const avgMin = r.AvgDurationMin ?? 0;
     if (!wingYearMap.has(wing)) wingYearMap.set(wing, new Map());
     const yearMap = wingYearMap.get(wing)!;
     const prev = yearMap.get(year) || { sumMin: 0, sumCount: 0 };
-    prev.sumMin += min * cnt;
+    prev.sumMin += avgMin * cnt;
     prev.sumCount += cnt;
     yearMap.set(year, prev);
   }
@@ -4684,28 +4837,24 @@ private buildAvgDurationFiveYearsChart(rows: AvgDurationFiveYearsDto[]): void {
     return a.localeCompare(b, "he");
   });
 
-
-// 2. המימוש בתוך הלוגיקה של המפת (map)
-this.avgDurationChartData = wings.map(wing => {
+  const dataMap = new Map<string, any[]>();
+  wings.forEach(wing => {
     const yearMap = wingYearMap.get(wing)!;
-    const series: any[] = [];
-    
-    for (const year of years) {
+    const row: any[] = [wing];
+    years.forEach(year => {
       const info = yearMap.get(year);
       if (!info || info.sumCount === 0) {
-        // חובה לדחוף null עבור הערך וגם עבור ה-annotation כדי לשמור על מבנה הטורים
-        series.push(null, null); 
-        continue;
+        row.push(null, null);
+        return;
       }
-      
-      const avg = info.sumMin / info.sumCount;
-      const timeFormatted = this.formatMinutesToHM(avg); // המרה ל-HH:MM
-      
-      // דחיפת הערך המספרי (לגובה העמודה) והפורמט (לטקסט למעלה)
-      series.push(avg, timeFormatted);
-    }
-    return [wing, ...series];
+      const avgMinutes = info.sumMin / info.sumCount;
+      const label = this.formatMinutesToHM(avgMinutes);
+      row.push({ v: avgMinutes, f: label }, label);
+    });
+    dataMap.set(wing, row);
   });
+
+  this.avgDurationChartData = wings.map(wing => dataMap.get(wing)!);
 }
 
 private loadAvgFirstMorningEntry(): void {
@@ -4939,7 +5088,15 @@ private loadAvgFirstMorningEntry(): void {
       textStyle: {
         fontSize: 14,
         bold: true,
-      }
+        rotation: -90,
+        // make sure text is readable on the bar colors
+        color: "#000000",
+        auraColor: "none",
+      },
+      stem: {
+        length: 25,
+        color: "#cbd5e1",
+      },
     },
   };
   isLossByWingLoading = false;
