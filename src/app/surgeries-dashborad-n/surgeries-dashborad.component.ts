@@ -4179,6 +4179,17 @@ closeRoomTimesModal(): void {
 
 setRoomTimesView(view: 'avgDuration' | 'firstStart' | 'lastEnd' | 'avgSetup' | 'perDay' | 'lossPerDay'): void {
   this.roomTimesView = view;
+
+  // If a filter becomes irrelevant for the selected room-times view,
+  // close its dropdown immediately to prevent "open but disabled" UI states.
+  if (this.isFilterDisabled("chartDepartment")) this.isChartDeptDropdownOpen = false;
+  if (this.isFilterDisabled("surgeryType")) this.isSurgeryTypeOpen = false;
+  if (this.isFilterDisabled("shift")) this.isShiftOpen = false;
+  if (this.isFilterDisabled("weekPart")) this.isWeekdayOpen = false;
+  if (this.isFilterDisabled("morningWork")) this.isMorningWorkOpen = false;
+  if (this.isFilterDisabled("site")) this.isSiteOpen = false;
+  if (this.isFilterDisabled("room")) this.isRoomOpen = false;
+
   switch (view) {
     case 'avgDuration':
       this.loadAvgDuration();
@@ -4874,14 +4885,28 @@ isFilterDisabled(
   }
 
   // In room-times KPI charts, we currently support: site, surgeryType (single), shift (single),
-  // weekPart (אמצע שבוע/סופ״ש), and chartDepartment (wing).
+  // weekPart (אמצע שבוע/סופ״ש), chartDepartment (wing) and sometimes morningWork (depending on sub-view).
   if (this.mainMetricMode === "room-times") {
-    if (filterKey === "morningWork") {
-      return true; // not supported by backend for GetAvgDurationFiveYears / GetLossByWingYear
-    }
     if (filterKey === "room") {
       return true; // UI "room" filter is marked "(לביצוע)"
     }
+
+    // "ניתוחים ליום" (perDay) is based on GetAvgSurgeriesPerDayPerRoomFiveYears and we currently only
+    // apply site filtering client-side. Other filters are misleading here → disable them.
+    if (this.roomTimesView === "perDay") {
+      return filterKey !== "site";
+    }
+
+    // Morning work is relevant only for the KPIs that use buildKpiFilterParams() (group‑2 APIs).
+    // Avg duration + loss per day are filtered locally from raw caches and do NOT support morningWork.
+    if (filterKey === "morningWork") {
+      return !(
+        this.roomTimesView === "firstStart" ||
+        this.roomTimesView === "lastEnd" ||
+        this.roomTimesView === "avgSetup"
+      );
+    }
+
     return false;
   }
 

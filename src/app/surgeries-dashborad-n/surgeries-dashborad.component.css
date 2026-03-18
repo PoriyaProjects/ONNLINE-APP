@@ -36,7 +36,8 @@
   display: flex;
   flex-direction: column;
   font-family: "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
-  font-size: clamp(12px, 1vw, 16px);
+  /* Slightly larger baseline across the dashboard (responsive, stays within containers) */
+  font-size: clamp(13px, 1.05vw, 18px);
 }
 
 .dash.dark {
@@ -135,14 +136,14 @@
   max-width: -webkit-fill-available;
   height: 40px;
   padding: 4px 10px;
-  font-size: 11px;
+  font-size: 12px;
   line-height: 1.2;
 }
 
 .top-departments-sidebar .filters-column .custom-dropdown .selected-text {
   flex: 1;
   min-width: 0;
-  font-size: 11px;
+  font-size: 12px;
 }
 
 .top-departments-sidebar .filters-column .dropdown-icon,
@@ -456,7 +457,7 @@
 .panel-title {
   display: flex; align-items: center; gap: 8px;
   font-weight: 1000; margin-bottom: 4px; color: var(--text);
-  font-size: clamp(11px, .9vw, 14px);
+  font-size: clamp(12px, 1vw, 16px);
   direction: rtl;
   text-align: right;
   justify-content: flex-start; /* ב-RTL: ימין */
@@ -1035,10 +1036,26 @@
     width: 100% !important;
     height: 100% !important;
     flex: 1 1 auto;
+    min-width: 0;
+    min-height: 0;
+    display: block;
+    /* angular-google-charts renders an inner wrapper div; keep it 100% so SVG recalculations have a stable box */
+    ::ng-deep > div {
+      width: 100% !important;
+      height: 100% !important;
+      max-width: 100% !important;
+    }
     ::ng-deep svg {
       cursor: pointer;
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       direction: rtl;
+      width: 100% !important;
+      height: 100% !important;
+      max-width: 100% !important;
+    }
+    /* Increase in-chart typography while keeping it responsive and inside its parent */
+    ::ng-deep svg text {
+      font-size: clamp(12px, 1vw, 16px) !important;
     }
     /* אזור כותרת הגרף (g[0]) – צמוד לימין, צל, יישור טקסט (SVG לא תומך ב-flex) */
     ::ng-deep svg > g:first-child text {
@@ -1060,6 +1077,20 @@
   }
 }
 
+/* Make in-chart text slightly larger on big screens (plasma / meeting rooms) */
+@media (min-width: 1920px) {
+  .graph-body google-chart ::ng-deep svg text {
+    font-size: clamp(14px, 1vw, 18px) !important;
+  }
+}
+
+/* Keep charts readable on small screens without overflow */
+@media (max-width: 600px) {
+  .graph-body google-chart ::ng-deep svg text {
+    font-size: 12px !important;
+  }
+}
+
 .chart-with-expand {
   position: relative;
   flex: 1 1 auto;
@@ -1068,6 +1099,11 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
+}
+
+/* Room-times mode inside main chart panel: give the chart a responsive, predictable height */
+.graph-body .chart-with-expand google-chart {
+  min-height: clamp(240px, 32vh, 420px);
 }
 
 .chart-expand-btn {
@@ -1442,11 +1478,13 @@
   height: auto;
   max-height: 70vh;
   overflow: auto;
+  max-width: 100%;
+  -webkit-overflow-scrolling: touch;
 }
 
 table.table {
   width: 100%; background: transparent; border-collapse: collapse;
-  font-size: clamp(12px, 1vw, 15px);
+  font-size: clamp(13px, 1.05vw, 16px);
 
   th {
     font-weight: 1000; color: var(--muted); text-align: right;
@@ -2750,9 +2788,10 @@ table.table {
   display: flex;
   gap: 12px;
   align-items: flex-start;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
   width: 100%;
   box-sizing: border-box;
+  min-width: 0;
 }
 
 /* badge & typography sizing tweaks */

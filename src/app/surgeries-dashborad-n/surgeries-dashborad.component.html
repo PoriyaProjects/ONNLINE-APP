@@ -223,35 +223,35 @@
             <google-chart
               *ngIf="!isAvgDurationLoading && roomTimesView === 'avgDuration' && avgDurationChartData && avgDurationChartData.length > 0"
               [type]="'ColumnChart'" [columns]="avgDurationChartColumns" [data]="avgDurationChartData"
-              [options]="avgDurationChartOptions" [width]="'100%'" [height]="'360px'">
+              [options]="avgDurationChartOptions" [width]="'100%'" [height]="'100%'">
             </google-chart>
 
             <google-chart
               *ngIf="roomTimesView === 'perDay' && surgeriesPerDayChartData && surgeriesPerDayChartData.length > 0"
               [type]="'ColumnChart'" [columns]="surgeriesPerDayChartColumns" [data]="surgeriesPerDayChartData"
-              [options]="surgeriesPerDayChartOptions" [width]="'100%'" [height]="'360px'">
+              [options]="surgeriesPerDayChartOptions" [width]="'100%'" [height]="'100%'">
             </google-chart>
 
             <google-chart
               *ngIf="roomTimesView === 'firstStart' && firstStartTimeChartData && firstStartTimeChartData.length > 0"
               [type]="'ColumnChart'" [columns]="firstStartTimeChartColumns" [data]="firstStartTimeChartData"
-              [options]="firstStartTimeChartOptions" [width]="'100%'" [height]="'360px'">
+              [options]="firstStartTimeChartOptions" [width]="'100%'" [height]="'100%'">
             </google-chart>
 
             <google-chart *ngIf="roomTimesView === 'lastEnd' && lastEndTimeChartData && lastEndTimeChartData.length > 0"
               [type]="'ColumnChart'" [columns]="lastEndTimeChartColumns" [data]="lastEndTimeChartData"
-              [options]="lastEndTimeChartOptions" [width]="'100%'" [height]="'360px'">
+              [options]="lastEndTimeChartOptions" [width]="'100%'" [height]="'100%'">
             </google-chart>
 
             <google-chart *ngIf="roomTimesView === 'avgSetup' && avgSetupChartData && avgSetupChartData.length > 0"
               [type]="'ColumnChart'" [columns]="avgSetupChartColumns" [data]="avgSetupChartData"
-              [options]="avgSetupChartOptions" [width]="'100%'" [height]="'360px'">
+              [options]="avgSetupChartOptions" [width]="'100%'" [height]="'100%'">
             </google-chart>
 
             <google-chart
               *ngIf="roomTimesView === 'lossPerDay' && lossByWingChartData && lossByWingChartData.length > 0"
               [type]="'ColumnChart'" [columns]="lossByWingChartColumns" [data]="lossByWingChartData"
-              [options]="lossByWingChartOptions" [width]="'100%'" [height]="'360px'">
+              [options]="lossByWingChartOptions" [width]="'100%'" [height]="'100%'">
             </google-chart>
 
             <div *ngIf="isAvgDurationLoading" class="chart-loading-overlay">
@@ -630,8 +630,8 @@
               </div>
               <!-- פילטר 4: חדר ניתוח -->
               <div class="custom-dropdown filter-dropdown" [class.active]="isRoomOpen"
-                [class.has-value]="selectedRooms?.length">
-                <div class="dropdown-trigger" (click)="isRoomOpen = !isRoomOpen">
+                [class.has-value]="selectedRooms?.length" [class.disabled-filter]="isFilterDisabled('room')">
+                <div class="dropdown-trigger" (click)="!isFilterDisabled('room') && (isRoomOpen = !isRoomOpen)">
                   <mat-icon class="dropdown-icon">meeting_room</mat-icon>
                   <span class="selected-text">חדר ניתוח (לביצוע)</span>
                   <!-- <span class="selected-text" matTooltip="{{ getRoomDisplay() }}">
@@ -1203,7 +1203,7 @@
           <p class="kpi-intro">
             משך ניתוח ממוצע בדקות לפי מחלקה מאוגדת (Wing). ציר X: מחלקות. עמודה לכל שנה.
           </p>
-          <div class="kpi-filter-row">
+          <!-- <div class="kpi-filter-row">
             <span class="kpi-filter-label">חדרי ניתוח לפי אתר:</span>
             <button mat-stroked-button type="button" [class.active]="avgDurationSiteFilter === 'ALL'"
               (click)="avgDurationSiteFilter = 'ALL'; loadAvgDuration();">
@@ -1229,7 +1229,7 @@
               (click)="avgDurationSiteFilter = 'חנ-פהלסת'; loadAvgDuration();">
               פה ולסת
             </button>
-          </div>
+          </div> -->
           <div *ngIf="isAvgDurationLoading" class="kpi-loading">
             <mat-spinner diameter="40"></mat-spinner>
             <div class="kpi-loading-text">טוען נתונים...</div>
