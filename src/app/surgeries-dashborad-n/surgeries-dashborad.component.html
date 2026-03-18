@@ -263,21 +263,11 @@
           <!-- מצב תצוגה לוגרף הראשי: סה"כ / קרן‑מדינה / אתר / משמרת / מחלקה -->
           <div class="chart-mode-row"
             *ngIf="!isChartLoading && !isMainDataLoading && chartData && chartData.length > 0 && !isRoomUtilizationMode() && mainMetricMode !== 'room-times'">
-<<<<<<< HEAD
             <mat-button-toggle-group name="chartViewMode" aria-label="Chart view mode"
               class="mat-button-toggle-group custom-toggle-group" [value]="chartViewMode"
               (change)="setChartViewMode($event.value)">
               <mat-button-toggle value="year-total" [matTooltip]="getChartViewTooltip('year-total')"
                 matTooltipPosition="top">
-=======
-            <mat-button-toggle-group
-              name="chartViewMode"
-              aria-label="Chart view mode"
-              class="mat-button-toggle-group custom-toggle-group"
-              [value]="chartViewMode"
-              (change)="setChartViewMode($event.value)">
-              <mat-button-toggle value="year-total" [matTooltip]="getChartViewTooltip('year-total')" matTooltipPosition="top">
->>>>>>> d82346aa (	modified:   src/app/surgeries-dashborad-n/surgeries-dashborad.component.css)
                 סה"כ לשנה
               </mat-button-toggle>
               <mat-button-toggle value="month" [matTooltip]="getChartViewTooltip('month')" matTooltipPosition="top">
@@ -289,7 +279,6 @@
               <mat-button-toggle value="site" [matTooltip]="getChartViewTooltip('site')" matTooltipPosition="top">
                 אתר
               </mat-button-toggle>
-<<<<<<< HEAD
               <mat-button-toggle value="shift" [disabled]="isShiftGroupedView && chartViewMode !== 'shift'"
                 [matTooltip]="getChartViewTooltip('shift')" matTooltipPosition="top">
                 משמרת
@@ -300,18 +289,6 @@
               </mat-button-toggle>
               <mat-button-toggle value="yoy-combined" [matTooltip]="getChartViewTooltip('yoy-combined')"
                 matTooltipPosition="top" (click)="onYoyCombinedClick()">
-=======
-              <mat-button-toggle value="shift"
-                                 [disabled]="isShiftGroupedView && chartViewMode !== 'shift'"
-                                 [matTooltip]="getChartViewTooltip('shift')" matTooltipPosition="top">
-                משמרת
-              </mat-button-toggle>
-              <mat-button-toggle value="department" [matTooltip]="getChartViewTooltip('department')" matTooltipPosition="top">
-                סה"כ לפי מחלקה
-              </mat-button-toggle>
-              <mat-button-toggle value="yoy-combined" [matTooltip]="getChartViewTooltip('yoy-combined')" matTooltipPosition="top"
-                                 (click)="onYoyCombinedClick()">
->>>>>>> d82346aa (	modified:   src/app/surgeries-dashborad-n/surgeries-dashborad.component.css)
                 מדד משולב
               </mat-button-toggle>
             </mat-button-toggle-group>
@@ -351,7 +328,6 @@
 
           <!-- כפתורי מדדי חדרים לפי מחלקה – מוצגים רק במצב ניצולת חדר ניתוח -->
           <!-- כפתורי מדדי חדרים – מוצגים רק במצב ניצולת חדר ניתוח -->
-<<<<<<< HEAD
           <div class="chart-mode-row"
             *ngIf="!isChartLoading && !isMainDataLoading && chartData && chartData.length > 0 && isRoomUtilizationMode()">
             <span class="chart-mode-label">
@@ -379,37 +355,6 @@
               </mat-button-toggle>
             </mat-button-toggle-group>
           </div>
-=======
-<div class="chart-mode-row"
-*ngIf="!isChartLoading && !isMainDataLoading && chartData && chartData.length > 0 && isRoomUtilizationMode()">
-  <span class="chart-mode-label">
-    חדרים לפי מחלקה:
-  </span>
-
-  <mat-button-toggle-group
-    name="roomStatsMode"
-    aria-label="Room stats mode"
-    class="mat-button-toggle-group custom-toggle-group"
-    [value]="roomStatsViewMode === 'yearTotal' ? 'yearTotal' : roomStatsMetric"
-    (change)="onRoomStatsModeChange($event.value)">
-    <mat-button-toggle value="yearTotal">
-      סה"כ חדרים לשנה
-    </mat-button-toggle>
-    <mat-button-toggle value="total">
-      סה"כ חדרים לפי מחלקה
-    </mat-button-toggle>
-    <mat-button-toggle value="open">
-      חדרים פותחים
-    </mat-button-toggle>
-    <mat-button-toggle value="close">
-      חדרים סוגרים
-    </mat-button-toggle>
-    <mat-button-toggle value="fullDays">
-      ימים מלאים (ללא פיצול)
-    </mat-button-toggle>
-  </mat-button-toggle-group>
-</div>
->>>>>>> d82346aa (	modified:   src/app/surgeries-dashborad-n/surgeries-dashborad.component.css)
 
           <!-- טקסט הסבר קצר מה מייצגת כל עמודה/צבע בגרף -->
           <div class="chart-mode-description"
