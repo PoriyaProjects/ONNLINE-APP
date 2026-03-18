@@ -42,6 +42,105 @@
     </div>
   </div>
 
+  <!-- Full‑screen modal for Avg Duration comparison -->
+  <div *ngIf="showAvgDurationCompareModal" class="kpi-overlay" [class.dark]="isDark">
+    <div class="kpi-modal compare-full-modal" dir="rtl" (click)="$event.stopPropagation()">
+      <div class="kpi-header">
+        <div class="kpi-header-titles">
+          <div class="kpi-header-main-title">השוואה</div>
+          <h2>משך ניתוח ממוצע – מקורי מול השוואה</h2>
+        </div>
+        <div class="kpi-header-actions">
+          <button mat-stroked-button type="button" class="overflow-toggle-btn"
+            (click)="avgDurationCompareEnabled = !avgDurationCompareEnabled; onAvgDurationCompareSettingsChanged()">
+            <mat-icon>{{ avgDurationCompareEnabled ? 'toggle_on' : 'toggle_off' }}</mat-icon>
+            <span>{{ avgDurationCompareEnabled ? 'השוואה פעילה' : 'הפעל השוואה' }}</span>
+          </button>
+          <button mat-icon-button class="close-btn" (click)="closeAvgDurationCompareModal()">
+            <mat-icon>close</mat-icon>
+          </button>
+        </div>
+      </div>
+
+      <div class="kpi-body compare-modal-body">
+        <p class="kpi-intro">
+          מה מוצג כאן?
+          הגרפים מחשבים <strong>משך ניתוח ממוצע</strong> (בדקות) עבור <strong>Wing אחד</strong> שבחרת, בחמש השנים
+          האחרונות.
+          לכל שנה מחושב ממוצע משוקלל: Σ(AvgDurationMin × Count) ÷ Σ(Count).
+          המספרים מעל העמודות הם אותו ערך בפורמט <strong>שעות:דקות</strong>.
+        </p>
+
+        <div class="compare-controls compare-controls-3" *ngIf="avgDurationCompareEnabled">
+          <mat-form-field appearance="outline" class="compare-field">
+            <mat-label>מחלקה מאוגדת (Wing) – חובה</mat-label>
+            <mat-select [(ngModel)]="avgDurationCompareWing" (selectionChange)="onAvgDurationCompareSettingsChanged()">
+              <mat-option *ngFor="let w of getAvgDurationCompareWingOptions()" [value]="w">
+                {{ w }}
+              </mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="compare-field">
+            <mat-label>השווה לפי</mat-label>
+            <mat-select [(ngModel)]="avgDurationCompareDimension"
+              (selectionChange)="onAvgDurationCompareSettingsChanged()">
+              <mat-option [value]="'SurgeryType'">סוג ניתוח</mat-option>
+              <mat-option [value]="'Shift'">משמרת</mat-option>
+              <mat-option [value]="'Room'">חדר ניתוח</mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="compare-field">
+            <mat-label>ימין (מקור)</mat-label>
+            <mat-select [(ngModel)]="avgDurationCompareRightValue"
+              (selectionChange)="onAvgDurationCompareSettingsChanged()">
+              <mat-option *ngFor="let v of getAvgDurationCompareValueOptions()" [value]="v">
+                {{ v }}
+              </mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="compare-field">
+            <mat-label>שמאל (השוואה)</mat-label>
+            <mat-select [(ngModel)]="avgDurationCompareLeftValue"
+              (selectionChange)="onAvgDurationCompareSettingsChanged()">
+              <mat-option *ngFor="let v of getAvgDurationCompareValueOptions()" [value]="v">
+                {{ v }}
+              </mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
+
+        <div class="compare-wing-hint" *ngIf="avgDurationCompareEnabled && !avgDurationCompareWing">
+          כדי שהגרף יהיה קריא חובה לבחור Wing אחד להצגה.
+        </div>
+
+        <div class="compare-charts" *ngIf="avgDurationCompareEnabled">
+          <div class="compare-chart-card">
+            <google-chart *ngIf="avgDurationCompareRightChartData?.length" [type]="'ColumnChart'"
+              [columns]="avgDurationCompareRightChartColumns" [data]="avgDurationCompareRightChartData"
+              [options]="avgDurationCompareRightChartOptions" [width]="'100%'" [height]="'460px'">
+            </google-chart>
+            <div class="chart-no-data" *ngIf="!avgDurationCompareRightChartData?.length">
+              אין נתונים להצגה (ימין)
+            </div>
+          </div>
+
+          <div class="compare-chart-card">
+            <google-chart *ngIf="avgDurationCompareLeftChartData?.length" [type]="'ColumnChart'"
+              [columns]="avgDurationCompareLeftChartColumns" [data]="avgDurationCompareLeftChartData"
+              [options]="avgDurationCompareLeftChartOptions" [width]="'100%'" [height]="'460px'">
+            </google-chart>
+            <div class="chart-no-data" *ngIf="!avgDurationCompareLeftChartData?.length">
+              אין נתונים להצגה (שמאל)
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- ================= TOP BAR ================= -->
   <div class="topbar" dir="rtl">
     <div class="top-left">
@@ -465,6 +564,113 @@
               </tbody>
             </table>
           </div>
+
+          <!-- השוואה: משך ניתוח ממוצע לפי Wing – פתיחה במודאל (95% מסך) -->
+          <div class="compare-panel" *ngIf="mainMetricMode === 'room-times' && roomTimesView === 'avgDuration'">
+            <div class="compare-header">
+              <div class="compare-title">
+                <mat-icon>compare_arrows</mat-icon>
+                <span>השוואה – משך ניתוח ממוצע</span>
+              </div>
+              <div class="compare-actions">
+                <button mat-stroked-button type="button" class="overflow-toggle-btn"
+                  (click)="openAvgDurationCompareInline()" *ngIf="!avgDurationCompareInlineOpen">
+                  <mat-icon>expand_more</mat-icon>
+                  <span>פתח השוואה</span>
+                </button>
+                <button mat-stroked-button type="button" class="overflow-toggle-btn"
+                  (click)="closeAvgDurationCompareInline()" *ngIf="avgDurationCompareInlineOpen">
+                  <mat-icon>expand_less</mat-icon>
+                  <span>סגור</span>
+                </button>
+                <button mat-stroked-button type="button" class="overflow-toggle-btn"
+                  (click)="openAvgDurationCompareModal()">
+                  <mat-icon>open_in_full</mat-icon>
+                  <span>פתח בחלון נפרד</span>
+                </button>
+              </div>
+            </div>
+            <div class="compare-help">
+              בחר Wing אחד (חובה), ואז השווה בין שני ערכים (ימין/שמאל) לפי סוג ניתוח / משמרת / חדר.
+            </div>
+
+            <!-- Inline compact view (inside table-body) -->
+            <div class="compare-inline" *ngIf="avgDurationCompareInlineOpen">
+              <div class="compare-controls compare-controls-3">
+                <mat-form-field appearance="outline" class="compare-field">
+                  <mat-label>מחלקה מאוגדת (Wing) – חובה</mat-label>
+                  <mat-select [(ngModel)]="avgDurationCompareWing"
+                    (selectionChange)="avgDurationCompareEnabled = true; onAvgDurationCompareSettingsChanged()">
+                    <mat-option *ngFor="let w of getAvgDurationCompareWingOptions()" [value]="w">
+                      {{ w }}
+                    </mat-option>
+                  </mat-select>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline" class="compare-field">
+                  <mat-label>השווה לפי</mat-label>
+                  <mat-select [(ngModel)]="avgDurationCompareDimension"
+                    (selectionChange)="avgDurationCompareEnabled = true; onAvgDurationCompareSettingsChanged()">
+                    <mat-option [value]="'SurgeryType'">סוג ניתוח</mat-option>
+                    <mat-option [value]="'Shift'">משמרת</mat-option>
+                    <mat-option [value]="'Room'">חדר ניתוח</mat-option>
+                  </mat-select>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline" class="compare-field">
+                  <mat-label>ימין (מקור)</mat-label>
+                  <mat-select [(ngModel)]="avgDurationCompareRightValue"
+                    (selectionChange)="avgDurationCompareEnabled = true; onAvgDurationCompareSettingsChanged()">
+                    <mat-option *ngFor="let v of getAvgDurationCompareValueOptions()" [value]="v">
+                      {{ v }}
+                    </mat-option>
+                  </mat-select>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline" class="compare-field">
+                  <mat-label>שמאל (השוואה)</mat-label>
+                  <mat-select [(ngModel)]="avgDurationCompareLeftValue"
+                    (selectionChange)="avgDurationCompareEnabled = true; onAvgDurationCompareSettingsChanged()">
+                    <mat-option *ngFor="let v of getAvgDurationCompareValueOptions()" [value]="v">
+                      {{ v }}
+                    </mat-option>
+                  </mat-select>
+                </mat-form-field>
+              </div>
+
+              <div class="compare-help compare-help-tight">
+                חישוב: ממוצע משוקלל לפי Count לכל שנה בתוך אותו Wing.
+                המספרים מעל העמודות הם שעות:דקות (HH:MM), וציר Y בדקות.
+              </div>
+
+              <div class="compare-wing-hint" *ngIf="!avgDurationCompareWing">
+                כדי שהגרף יהיה קריא חובה לבחור Wing אחד להצגה.
+              </div>
+
+              <div class="compare-charts" *ngIf="avgDurationCompareWing">
+                <div class="compare-chart-card">
+                  <google-chart *ngIf="avgDurationCompareRightChartData?.length" [type]="'ColumnChart'"
+                    [columns]="avgDurationCompareRightChartColumns" [data]="avgDurationCompareRightChartData"
+                    [options]="avgDurationCompareRightChartOptions" [width]="'100%'" [height]="'260px'">
+                  </google-chart>
+                  <div class="chart-no-data" *ngIf="!avgDurationCompareRightChartData?.length">
+                    אין נתונים להצגה (ימין)
+                  </div>
+                </div>
+
+                <div class="compare-chart-card">
+                  <google-chart *ngIf="avgDurationCompareLeftChartData?.length" [type]="'ColumnChart'"
+                    [columns]="avgDurationCompareLeftChartColumns" [data]="avgDurationCompareLeftChartData"
+                    [options]="avgDurationCompareLeftChartOptions" [width]="'100%'" [height]="'260px'">
+                  </google-chart>
+                  <div class="chart-no-data" *ngIf="!avgDurationCompareLeftChartData?.length">
+                    אין נתונים להצגה (שמאל)
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <div class="empty" *ngIf="(chartViewMode === 'yoy-combined' && !getFilteredDepartmentYoyData()?.length) ||
                    (chartViewMode !== 'yoy-combined' && dataSource.data.length === 0 && !chartTableRows?.length)">
             אין נתונים להצגה
@@ -513,7 +719,8 @@
 
             <!-- פילטר סוג ניתוח -->
             <div class="custom-dropdown filter-dropdown" [class.active]="isSurgeryTypeOpen"
-              [class.has-value]="selectedSurgeryTypes?.length" [class.disabled-filter]="isFilterDisabled('surgeryType')">
+              [class.has-value]="selectedSurgeryTypes?.length"
+              [class.disabled-filter]="isFilterDisabled('surgeryType')">
               <div class="dropdown-trigger"
                 (click)="!isFilterDisabled('surgeryType') && (isSurgeryTypeOpen = !isSurgeryTypeOpen)">
                 <mat-icon class="dropdown-icon">category</mat-icon>

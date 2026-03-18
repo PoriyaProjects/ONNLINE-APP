@@ -2977,3 +2977,19 @@ table.table {
   background: rgba(255, 255, 255, 0.03);
   color: #f1f5f9;
 }
+
+
+
+
+/* סיבוב אך ורק של המספרים שמעל העמודות */
+::ng-deep google-chart svg g g g > g > g text {
+  transform: rotate(-90deg) !important;
+  transform-box: fill-box !important;
+  transform-origin: center !important;
+  font-size: 12px !important; /* אפשר להקטין מעט כדי שלא יצופפו */
+}
+
+/* מוודא שהטקסט לא נחתך בקצוות */
+::ng-deep google-chart svg {
+  overflow: visible !important;
+}
