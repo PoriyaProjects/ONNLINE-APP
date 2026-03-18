@@ -338,7 +338,7 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck {
                 italic: false,
             },
             // תוויות בציר X יוצגו אופקית כדי לראות את כל השנים (YYYY)
-            slantedText: false,
+            // slantedText: false,
         },
         vAxis: {
             title: "מספר ניתוחים",
@@ -661,6 +661,243 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck {
   avgSetupChartYears: number[] = [];
   avgDurationChartYears: number[] = [];
   surgeriesPerDayChartYears: number[] = [];
+
+  // ================= Comparison mode (Avg Duration) =================
+  avgDurationCompareEnabled = false;
+  avgDurationCompareDimension: 'SurgeryType' | 'Shift' | 'Room' = 'SurgeryType';
+  /** צד ימין (מקור) – יכול להיות 'הכל' או ערך ספציפי */
+  avgDurationCompareRightValue: string | null = 'הכל';
+  /** צד שמאל (השוואה) – יכול להיות 'הכל' או ערך ספציפי */
+  avgDurationCompareLeftValue: string | null = null;
+  showAvgDurationCompareModal = false;
+  /** בוחר Wing אחד להצגה בהשוואה (חובה כדי שהגרף יהיה קריא) */
+  avgDurationCompareWing: string | null = null;
+  /** תצוגה מוטמעת (קטנה) בתחתית הטבלה */
+  avgDurationCompareInlineOpen = false;
+
+  avgDurationCompareRightChartColumns: any[] = [];
+  avgDurationCompareRightChartData: any[] = [];
+  avgDurationCompareRightChartOptions: any = {};
+
+  avgDurationCompareLeftChartColumns: any[] = [];
+  avgDurationCompareLeftChartData: any[] = [];
+  avgDurationCompareLeftChartOptions: any = {};
+
+  /** גרף השוואה מאוחד (קו): X=שנה, סדרות=ימין/שמאל */
+  avgDurationCompareCombinedChartColumns: any[] = [];
+  avgDurationCompareCombinedChartData: any[] = [];
+  avgDurationCompareCombinedChartOptions: any = {};
+  avgDurationCompareYears: number[] = [];
+
+  openAvgDurationCompareModal(): void {
+    this.avgDurationCompareEnabled = true;
+    this.showAvgDurationCompareModal = true;
+    this.onAvgDurationCompareSettingsChanged();
+  }
+
+  closeAvgDurationCompareModal(): void {
+    this.showAvgDurationCompareModal = false;
+  }
+
+  openAvgDurationCompareInline(): void {
+    this.avgDurationCompareEnabled = true;
+    this.avgDurationCompareInlineOpen = true;
+    this.onAvgDurationCompareSettingsChanged();
+  }
+
+  closeAvgDurationCompareInline(): void {
+    this.avgDurationCompareInlineOpen = false;
+  }
+
+  getAvgDurationCompareWingOptions(): string[] {
+    const baseYear = this.getBaseYearForRoomTimes?.() ?? '';
+    const raw = baseYear ? (this.avgDurationFiveYearsRawByBaseYear.get(baseYear) || []) : [];
+    const filtered = raw
+      .filter(r => this.matchesRoomTimesFilters?.(r as any) ?? true)
+      .filter(r => !this.avgDurationSiteFilter || this.avgDurationSiteFilter === "ALL" || r.Site === this.avgDurationSiteFilter);
+
+    const wings = Array.from(new Set(filtered.map(r => (r.Wing || '').trim()).filter(Boolean)));
+    const list = wings.length ? wings : (this.orderedWings || []);
+    return Array.from(new Set(list.map((x: string) => (x || '').trim()).filter(Boolean)));
+  }
+
+  getAvgDurationCompareValueOptions(): string[] {
+    const baseYear = this.getBaseYearForRoomTimes?.() ?? '';
+    const raw = baseYear ? (this.avgDurationFiveYearsRawByBaseYear.get(baseYear) || []) : [];
+    const filtered = raw
+      .filter(r => this.matchesRoomTimesFilters?.(r as any) ?? true)
+      .filter(r => !this.avgDurationSiteFilter || this.avgDurationSiteFilter === "ALL" || r.Site === this.avgDurationSiteFilter)
+      .filter(r => !this.avgDurationCompareWing || (r.Wing || '').trim() === (this.avgDurationCompareWing || '').trim());
+
+    const field = this.avgDurationCompareDimension;
+    const values = filtered
+      .map(r => {
+        if (field === 'Room') return (r.Room || '').trim();
+        if (field === 'Shift') return (r.Shift || '').trim();
+        return (r.SurgeryType || '').trim();
+      })
+      .filter(v => v.length > 0);
+
+    const uniq = Array.from(new Set(values)).sort((a, b) => a.localeCompare(b, 'he'));
+    return ['הכל', ...uniq];
+  }
+
+  onAvgDurationCompareSettingsChanged(): void {
+    if (!this.avgDurationCompareEnabled || !this.avgDurationCompareWing) {
+      this.avgDurationCompareRightChartColumns = [];
+      this.avgDurationCompareRightChartData = [];
+      this.avgDurationCompareLeftChartColumns = [];
+      this.avgDurationCompareLeftChartData = [];
+      this.avgDurationCompareCombinedChartColumns = [];
+      this.avgDurationCompareCombinedChartData = [];
+      this.avgDurationCompareYears = [];
+      return;
+    }
+
+    const baseYear = this.getBaseYearForRoomTimes?.() ?? '';
+    const raw = baseYear ? (this.avgDurationFiveYearsRawByBaseYear.get(baseYear) || []) : [];
+
+    const byWing = raw
+      .filter(r => this.matchesRoomTimesFilters?.(r as any) ?? true)
+      .filter(r => !this.avgDurationSiteFilter || this.avgDurationSiteFilter === "ALL" || r.Site === this.avgDurationSiteFilter)
+      .filter(r => (r.Wing || '').trim() === (this.avgDurationCompareWing || '').trim());
+
+    const field = this.avgDurationCompareDimension;
+    const matchValue = (r: AvgDurationFiveYearsDto, v: string | null): boolean => {
+      const vv = (v || '').trim();
+      if (!vv || vv === 'הכל') return true;
+      if (field === 'Room') return (r.Room || '').trim() === vv;
+      if (field === 'Shift') return (r.Shift || '').trim() === vv;
+      return (r.SurgeryType || '').trim() === vv;
+    };
+
+    const rightRows = byWing.filter(r => matchValue(r, this.avgDurationCompareRightValue));
+    const leftRows = byWing.filter(r => matchValue(r, this.avgDurationCompareLeftValue));
+
+    const rightModel = this.buildAvgDurationFiveYearsChartModel(rightRows);
+    const leftModel = this.buildAvgDurationFiveYearsChartModel(leftRows);
+
+    this.avgDurationCompareRightChartColumns = rightModel.columns;
+    this.avgDurationCompareRightChartData = rightModel.data;
+    this.avgDurationCompareLeftChartColumns = leftModel.columns;
+    this.avgDurationCompareLeftChartData = leftModel.data;
+
+    // ===== Combined LINE chart (Year x Right/Left) =====
+    const toWeightedAvgByYear = (rows: AvgDurationFiveYearsDto[]): Map<number, number> => {
+      const map = new Map<number, { sumMin: number; sumCount: number }>();
+      for (const r of rows || []) {
+        const y = r.Year;
+        if (y == null) continue;
+        const cnt = r.Count ?? 0;
+        const avgMin = r.AvgDurationMin ?? 0;
+        const prev = map.get(y) || { sumMin: 0, sumCount: 0 };
+        prev.sumMin += avgMin * cnt;
+        prev.sumCount += cnt;
+        map.set(y, prev);
+      }
+      const out = new Map<number, number>();
+      for (const [y, v] of map.entries()) {
+        out.set(y, v.sumCount ? (v.sumMin / v.sumCount) : 0);
+      }
+      return out;
+    };
+
+    const allYears = Array.from(
+      new Set<number>([
+        ...rightRows.map(r => r.Year).filter((y): y is number => y != null),
+        ...leftRows.map(r => r.Year).filter((y): y is number => y != null),
+      ])
+    ).sort((a, b) => a - b);
+    const years = allYears.slice(-5);
+    this.avgDurationCompareYears = years;
+
+    const rightByYear = toWeightedAvgByYear(rightRows);
+    const leftByYear = toWeightedAvgByYear(leftRows);
+
+    const rightLabel = `: ${(this.avgDurationCompareRightValue || 'הכל').trim() || 'הכל'}`;
+    const leftLabel = `: ${(this.avgDurationCompareLeftValue || 'הכל').trim() || 'הכל'}`;
+
+    this.avgDurationCompareCombinedChartColumns = [
+      { type: 'string', label: 'שנה' },
+      { type: 'number', label: rightLabel },
+      { type: 'string', role: 'annotation' },
+      { type: 'number', label: leftLabel },
+      { type: 'string', role: 'annotation' },
+    ];
+
+    this.avgDurationCompareCombinedChartData = years.map(y => {
+      const rv = rightByYear.get(y);
+      const lv = leftByYear.get(y);
+      const rLabel = rv != null && rv > 0 ? this.formatMinutesToHM(rv) : '';
+      const lLabel = lv != null && lv > 0 ? this.formatMinutesToHM(lv) : '';
+      return [
+        y.toString(),
+        rv != null && rv > 0 ? { v: rv, f: rLabel } : null,
+        rLabel || null,
+        lv != null && lv > 0 ? { v: lv, f: lLabel } : null,
+        lLabel || null,
+      ];
+    });
+
+    const axisTextColor = this.isDark ? '#e5e7eb' : '#334155';
+    const gridColor = this.isDark ? 'rgba(255,255,255,.14)' : 'rgba(15,23,42,.10)';
+
+    this.avgDurationCompareCombinedChartOptions = {
+      title: '',
+      backgroundColor: 'transparent',
+      legend: { position: 'top', alignment: 'end', textStyle: { fontSize: 12, bold: true, color: axisTextColor } },
+      chartArea: { width: '86%', height: '62%', left: 44, top: 46 },
+      pointSize: 5,
+      lineWidth: 3,
+      interpolateNulls: true,
+      vAxis: {
+        title: "משך ניתוח ממוצע (דק')",
+        textStyle: { fontSize: 11, bold: true, color: axisTextColor },
+        titleTextStyle: { fontSize: 11, bold: true, color: axisTextColor },
+        gridlines: { color: gridColor },
+        minorGridlines: { color: 'transparent' },
+      },
+      hAxis: {
+        title: 'שנה',
+        textStyle: { fontSize: 11, bold: true, color: axisTextColor },
+        titleTextStyle: { fontSize: 11, bold: true, color: axisTextColor },
+      },
+      annotations: {
+        textStyle: { fontSize: 10, bold: true, color: axisTextColor },
+        stem: { color: gridColor, length: 3 },
+      },
+      series: {
+        0: { color: this.isDark ? '#60a5fa' : '#2563eb' },
+        1: { color: this.isDark ? '#4ade80' : '#16a34a' },
+      },
+    };
+
+    // Use same look & feel as avgDuration, but keep labels vertical for readability
+    const baseOpts = this.avgDurationChartOptions && Object.keys(this.avgDurationChartOptions).length
+      ? this.avgDurationChartOptions
+      : {
+          title: "",
+          legend: { position: "top", alignment: "end", textStyle: { fontSize: 14, bold: true } },
+          chartArea: { width: '90%', height: '60%', left: 50, top: 100 },
+          vAxis: { title: "משך ניתוח ממוצע (דק')", textStyle: { fontSize: 14, bold: true } },
+        };
+
+    const axis = {
+      ...(baseOpts.hAxis || {}),
+      slantedText: true,
+      slantedTextAngle: 90,
+      textStyle: { ...(baseOpts.hAxis?.textStyle || {}), fontSize: 14, bold: true, color: "#334155" },
+    };
+
+    this.avgDurationCompareRightChartOptions = {
+      ...baseOpts,
+      hAxis: axis,
+    };
+    this.avgDurationCompareLeftChartOptions = {
+      ...baseOpts,
+      hAxis: axis,
+    };
+  }
 
   /** מניעת טעינה כפולה: קוראים לשרת רק כשאין עדיין נתונים או כשהפרמטרים השתנו */
   private lastCountByDeptYear: number | null = null;
@@ -4331,7 +4568,7 @@ private loadSurgeriesPerDay(): void {
             textStyle: { fontSize: 14, bold: true }
           },
           hAxis: {
-            textStyle: { fontSize: 14, bold: true, color: "#334155" },
+            textStyle: { fontSize: 16, bold: true,},
             slantedText: true,
             slantedTextAngle: 25,
             titleTextStyle: {
@@ -4361,7 +4598,7 @@ private loadSurgeriesPerDay(): void {
             alwaysOutside: true,
             textStyle: {
               fontSize: 16,
-              rotation: -90, 
+            //   rotation: -90, 
               bold: true,
             //   color: "#000000",
             //   auraColor: "none",
@@ -4986,7 +5223,9 @@ loadAvgDuration(): void {
           },
           hAxis: {
             textStyle: { fontSize: 14, bold: true, color: "#334155" },
-            slantedText: false, // ביטלתי את השיפוע למטה כדי שלא יתערבב לך
+
+            slantedText: true, // ביטלתי את השיפוע למטה כדי שלא יתערבב לך
+            slantedTextAngle: 25,
             titleTextStyle: { fontSize: 16, bold: true, italic: false },
           },
           vAxis: {
@@ -5011,7 +5250,7 @@ loadAvgDuration(): void {
               fontSize: 14,
               bold: true,
             //   color: "#000000",
-              rotation: -90 // עכשיו זה יעבוד
+            //   rotation: -90 // עכשיו זה יעבוד
             },
             // ה-stem חייב להיות כאן בפנים!
             stem: {
@@ -5038,6 +5277,72 @@ private formatMinutesToHM(totalMinutes: number): string {
     const hours = Math.floor(totalMinutes / 60);
     const minutes = Math.round(totalMinutes % 60);
     return `${hours}:${minutes < 10 ? '0' : ''}${minutes}`;
+  }
+
+  private buildAvgDurationFiveYearsChartModel(
+    rows: AvgDurationFiveYearsDto[]
+  ): { columns: any[]; data: any[]; years: number[] } {
+    if (!rows || rows.length === 0) {
+      return { columns: [], data: [], years: [] };
+    }
+
+    const filteredRows =
+      this.avgDurationSiteFilter === "ALL"
+        ? rows
+        : rows.filter(r => r.Site === this.avgDurationSiteFilter);
+
+    const allYears = Array.from(new Set(filteredRows.map(r => r.Year).filter(y => y != null))).sort((a, b) => a - b);
+    const years = allYears.slice(-5);
+
+    const columns: any[] = ["מחלקה מאוגדת (Wing)"];
+    years.forEach(y => {
+      columns.push(
+        { type: "number", label: y.toString() },
+        { type: "string", role: "annotation", label: y.toString() },
+      );
+    });
+
+    const wingYearMap = new Map<string, Map<number, { sumMin: number; sumCount: number }>>();
+    for (const r of filteredRows) {
+      const wing = (r.Wing || "לא צוין").trim();
+      const year = r.Year;
+      if (!years.includes(year)) continue;
+      const cnt = r.Count ?? 0;
+      const avgMin = r.AvgDurationMin ?? 0;
+      if (!wingYearMap.has(wing)) wingYearMap.set(wing, new Map());
+      const yearMap = wingYearMap.get(wing)!;
+      const prev = yearMap.get(year) || { sumMin: 0, sumCount: 0 };
+      prev.sumMin += avgMin * cnt;
+      prev.sumCount += cnt;
+      yearMap.set(year, prev);
+    }
+
+    const wings = Array.from(wingYearMap.keys()).sort((a, b) => {
+      const ia = this.orderedWings.indexOf(a);
+      const ib = this.orderedWings.indexOf(b);
+      if (ia !== -1 && ib !== -1) return ia - ib;
+      if (ia !== -1) return -1;
+      if (ib !== -1) return 1;
+      return a.localeCompare(b, "he");
+    });
+
+    const data = wings.map(wing => {
+      const yearMap = wingYearMap.get(wing)!;
+      const row: any[] = [wing];
+      years.forEach(year => {
+        const info = yearMap.get(year);
+        if (!info || info.sumCount === 0) {
+          row.push(null, null);
+          return;
+        }
+        const avgMinutes = info.sumMin / info.sumCount;
+        const label = this.formatMinutesToHM(avgMinutes);
+        row.push({ v: avgMinutes, f: label }, label);
+      });
+      return row;
+    });
+
+    return { columns, data, years };
   }
   
 private buildAvgDurationFiveYearsChart(rows: AvgDurationFiveYearsDto[]): void {
@@ -5341,9 +5646,9 @@ private loadAvgFirstMorningEntry(): void {
       textStyle: {
         fontSize: 14,
         bold: true,
-        rotation: -90,
+        // rotation: -90,
         // make sure text is readable on the bar colors
-        color: "#000000",
+        // color: "#000000",
         auraColor: "none",
       },
       stem: {
@@ -5487,6 +5792,12 @@ private loadAvgLastMorningEnd(): void {
 
       return [dept, ...series];
     });
+
+    // Move legend (מקרא) to the top for this chart only.
+    // Keep the rest as Google Charts defaults to avoid side effects.
+    this.lastEndTimeChartOptions = {
+      legend: { position: "top", alignment: "end" },
+    };
   }
 
 private loadAvgSetup(): void {
@@ -5650,18 +5961,19 @@ private loadAvgSetup(): void {
         const series: any[] = [];
 
         years.forEach(y => {
-          const val = yearMap.get(y);
-          if (val == null) {
-            // חובה לשמור על זוגות [value, annotation]
-            series.push(null, null);
-          } else {
-            const formatted = `${val.toFixed(1)} דק'`;
-            series.push(
-              { v: val, f: val.toFixed(1) },
-              formatted,
-            );
-          }
-        });
+            const val = yearMap.get(y);
+            if (val == null) {
+              // חובה לשמור על זוגות [value, annotation]
+              series.push(null, null);
+            } else {
+              const formatted = `${Math.trunc(val)} `;
+              series.push(
+                { v: val, f: Math.trunc(val).toString() },
+                formatted,
+              );
+            }
+          });
+          
 
         // קו יעד קבוע – 20 דקות SETUP, בלי טקסט שחוזר בכל מחלקה
         series.push(
@@ -5805,9 +6117,10 @@ private buildLossByWingChart(rows: LossByWingYearDto[]): void {
       if (val == null || isNaN(val)) {
         series.push(null, null);
       } else {
-        const formatted = `${val.toFixed(1)} דק'`;
+        const intVal = Math.round(val);
+        const formatted = intVal.toString();
         series.push(
-          { v: val, f: val.toFixed(1) },
+          { v: intVal, f: formatted },
           formatted,
         );
       }
