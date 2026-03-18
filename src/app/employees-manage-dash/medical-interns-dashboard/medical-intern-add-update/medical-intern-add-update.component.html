@@ -15,7 +15,7 @@
         <span class="intern-id">{{ internForm.controls['EmployeeID'].value ? 'ת.ז ' +
           internForm.controls['EmployeeID'].value : '' }}</span>
       </div>
-      <div class="header-actions">
+      <!-- <div class="header-actions">
         <button mat-flat-button color="primary" matTooltip="שמירה" [disabled]="internForm.invalid || saveBtnWait"
           (click)="saveIntern()" type="button" class="action-btn">
           <span *ngIf="!saveBtnWait" class="material-icons">save</span>
@@ -25,11 +25,11 @@
           נשמר בהצלחה ✓
         </div>
 
-        <!-- <button mat-stroked-button color="warn" matTooltip="מחיקה" *ngIf="internForm.controls['RowID'].value"
+        <button mat-stroked-button color="warn" matTooltip="מחיקה" *ngIf="internForm.controls['RowID'].value"
           (click)="deleteIntern()" [disabled]="saveBtnWait" type="button" class="action-btn">
           <span class="material-icons">delete</span>
-        </button> -->
-      </div>
+        </button>
+      </div> -->
     </div>
   </div>
 
