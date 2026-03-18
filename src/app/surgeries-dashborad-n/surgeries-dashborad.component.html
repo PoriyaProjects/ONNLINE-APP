@@ -116,24 +116,24 @@
           כדי שהגרף יהיה קריא חובה לבחור Wing אחד להצגה.
         </div>
 
-        <div class="compare-charts" *ngIf="avgDurationCompareEnabled">
+        <div class="compare-charts compare-charts-single" *ngIf="avgDurationCompareEnabled">
           <div class="compare-chart-card">
-            <google-chart *ngIf="avgDurationCompareRightChartData?.length" [type]="'ColumnChart'"
-              [columns]="avgDurationCompareRightChartColumns" [data]="avgDurationCompareRightChartData"
-              [options]="avgDurationCompareRightChartOptions" [width]="'100%'" [height]="'460px'">
+            <google-chart *ngIf="avgDurationCompareCombinedChartData?.length" [type]="'LineChart'"
+              [columns]="avgDurationCompareCombinedChartColumns" [data]="avgDurationCompareCombinedChartData"
+              [options]="avgDurationCompareCombinedChartOptions" [width]="'100%'" [height]="'220px'">
             </google-chart>
-            <div class="chart-no-data" *ngIf="!avgDurationCompareRightChartData?.length">
-              אין נתונים להצגה (ימין)
+            <div class="chart-no-data" *ngIf="!avgDurationCompareCombinedChartData?.length">
+              אין נתונים להצגה להשוואה
             </div>
-          </div>
-
-          <div class="compare-chart-card">
-            <google-chart *ngIf="avgDurationCompareLeftChartData?.length" [type]="'ColumnChart'"
-              [columns]="avgDurationCompareLeftChartColumns" [data]="avgDurationCompareLeftChartData"
-              [options]="avgDurationCompareLeftChartOptions" [width]="'100%'" [height]="'460px'">
-            </google-chart>
-            <div class="chart-no-data" *ngIf="!avgDurationCompareLeftChartData?.length">
-              אין נתונים להצגה (שמאל)
+            <div class="compare-year-legend" *ngIf="avgDurationCompareYears?.length">
+              <div class="compare-year-legend-title">מה המשמעות של כל שנה?</div>
+              <div class="compare-year-chips">
+                <span class="compare-year-chip" *ngFor="let y of avgDurationCompareYears">{{ y }}</span>
+              </div>
+              <div class="compare-year-legend-text">
+                כל נקודה היא <strong>ממוצע משוקלל</strong> של משך הניתוח (בדקות) בתוך אותו Wing עבור אותה שנה:
+                Σ(AvgDurationMin×Count)÷Σ(Count). התווית מעל הנקודה מוצגת בפורמט <strong>HH:MM</strong>.
+              </div>
             </div>
           </div>
         </div>
@@ -618,7 +618,7 @@
                 </mat-form-field>
 
                 <mat-form-field appearance="outline" class="compare-field">
-                  <mat-label>ימין (מקור)</mat-label>
+                  <mat-label>ירוק  (מקור)</mat-label>
                   <mat-select [(ngModel)]="avgDurationCompareRightValue"
                     (selectionChange)="avgDurationCompareEnabled = true; onAvgDurationCompareSettingsChanged()">
                     <mat-option *ngFor="let v of getAvgDurationCompareValueOptions()" [value]="v">
@@ -628,7 +628,7 @@
                 </mat-form-field>
 
                 <mat-form-field appearance="outline" class="compare-field">
-                  <mat-label>שמאל (השוואה)</mat-label>
+                  <mat-label>כחול (השוואה)</mat-label>
                   <mat-select [(ngModel)]="avgDurationCompareLeftValue"
                     (selectionChange)="avgDurationCompareEnabled = true; onAvgDurationCompareSettingsChanged()">
                     <mat-option *ngFor="let v of getAvgDurationCompareValueOptions()" [value]="v">
@@ -638,33 +638,32 @@
                 </mat-form-field>
               </div>
 
-              <div class="compare-help compare-help-tight">
+              <!-- <div class="compare-help compare-help-tight">
                 חישוב: ממוצע משוקלל לפי Count לכל שנה בתוך אותו Wing.
                 המספרים מעל העמודות הם שעות:דקות (HH:MM), וציר Y בדקות.
               </div>
 
               <div class="compare-wing-hint" *ngIf="!avgDurationCompareWing">
                 כדי שהגרף יהיה קריא חובה לבחור Wing אחד להצגה.
-              </div>
+              </div> -->
 
-              <div class="compare-charts" *ngIf="avgDurationCompareWing">
+              <div class="compare-charts compare-charts-single" *ngIf="avgDurationCompareWing">
                 <div class="compare-chart-card">
-                  <google-chart *ngIf="avgDurationCompareRightChartData?.length" [type]="'ColumnChart'"
-                    [columns]="avgDurationCompareRightChartColumns" [data]="avgDurationCompareRightChartData"
-                    [options]="avgDurationCompareRightChartOptions" [width]="'100%'" [height]="'260px'">
+                  <google-chart *ngIf="avgDurationCompareCombinedChartData?.length" [type]="'LineChart'"
+                    [columns]="avgDurationCompareCombinedChartColumns" [data]="avgDurationCompareCombinedChartData"
+                    [options]="avgDurationCompareCombinedChartOptions" [width]="'100%'" [height]="'190px'">
                   </google-chart>
-                  <div class="chart-no-data" *ngIf="!avgDurationCompareRightChartData?.length">
-                    אין נתונים להצגה (ימין)
+                  <div class="chart-no-data" *ngIf="!avgDurationCompareCombinedChartData?.length">
+                    אין נתונים להצגה להשוואה
                   </div>
-                </div>
-
-                <div class="compare-chart-card">
-                  <google-chart *ngIf="avgDurationCompareLeftChartData?.length" [type]="'ColumnChart'"
-                    [columns]="avgDurationCompareLeftChartColumns" [data]="avgDurationCompareLeftChartData"
-                    [options]="avgDurationCompareLeftChartOptions" [width]="'100%'" [height]="'260px'">
-                  </google-chart>
-                  <div class="chart-no-data" *ngIf="!avgDurationCompareLeftChartData?.length">
-                    אין נתונים להצגה (שמאל)
+                  <div class="compare-year-legend compare-year-legend-compact" *ngIf="avgDurationCompareYears?.length">
+                    <div class="compare-year-legend-title">שנים מוצגות</div>
+                    <div class="compare-year-chips">
+                      <span class="compare-year-chip" *ngFor="let y of avgDurationCompareYears">{{ y }}</span>
+                    </div>
+                    <!-- <div class="compare-year-legend-text">
+                      נקודה = ממוצע משוקלל בדקות (HH:MM מעל הנקודה).
+                    </div> -->
                   </div>
                 </div>
               </div>
@@ -922,6 +921,10 @@
                     [class.selected]="selectedSites?.includes('חנ-אמבול')">
                     אמבולטורי
                   </div>
+                  <div class="option-item" (click)="setSiteFilter('חנ-פהלסת')"
+                    [class.selected]="selectedSites?.includes('חנ-פהלסת')">
+                    פה ולסת
+                  </div>
                   <div class="option-item" (click)="setSiteFilter('חנ-יולד')"
                     [class.selected]="selectedSites?.includes('חנ-יולד')">
                     יולדות
@@ -929,10 +932,6 @@
                   <div class="option-item" (click)="setSiteFilter('חנ-מחלקה')"
                     [class.selected]="selectedSites?.includes('חנ-מחלקה')">
                     חדר מחלקה
-                  </div>
-                  <div class="option-item" (click)="setSiteFilter('חנ-פהלסת')"
-                    [class.selected]="selectedSites?.includes('חנ-פהלסת')">
-                    פה ולסת
                   </div>
                 </div>
               </div>

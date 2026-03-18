@@ -683,6 +683,12 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck {
   avgDurationCompareLeftChartData: any[] = [];
   avgDurationCompareLeftChartOptions: any = {};
 
+  /** גרף השוואה מאוחד (קו): X=שנה, סדרות=ימין/שמאל */
+  avgDurationCompareCombinedChartColumns: any[] = [];
+  avgDurationCompareCombinedChartData: any[] = [];
+  avgDurationCompareCombinedChartOptions: any = {};
+  avgDurationCompareYears: number[] = [];
+
   openAvgDurationCompareModal(): void {
     this.avgDurationCompareEnabled = true;
     this.showAvgDurationCompareModal = true;
@@ -742,6 +748,9 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck {
       this.avgDurationCompareRightChartData = [];
       this.avgDurationCompareLeftChartColumns = [];
       this.avgDurationCompareLeftChartData = [];
+      this.avgDurationCompareCombinedChartColumns = [];
+      this.avgDurationCompareCombinedChartData = [];
+      this.avgDurationCompareYears = [];
       return;
     }
 
@@ -772,6 +781,96 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck {
     this.avgDurationCompareRightChartData = rightModel.data;
     this.avgDurationCompareLeftChartColumns = leftModel.columns;
     this.avgDurationCompareLeftChartData = leftModel.data;
+
+    // ===== Combined LINE chart (Year x Right/Left) =====
+    const toWeightedAvgByYear = (rows: AvgDurationFiveYearsDto[]): Map<number, number> => {
+      const map = new Map<number, { sumMin: number; sumCount: number }>();
+      for (const r of rows || []) {
+        const y = r.Year;
+        if (y == null) continue;
+        const cnt = r.Count ?? 0;
+        const avgMin = r.AvgDurationMin ?? 0;
+        const prev = map.get(y) || { sumMin: 0, sumCount: 0 };
+        prev.sumMin += avgMin * cnt;
+        prev.sumCount += cnt;
+        map.set(y, prev);
+      }
+      const out = new Map<number, number>();
+      for (const [y, v] of map.entries()) {
+        out.set(y, v.sumCount ? (v.sumMin / v.sumCount) : 0);
+      }
+      return out;
+    };
+
+    const allYears = Array.from(
+      new Set<number>([
+        ...rightRows.map(r => r.Year).filter((y): y is number => y != null),
+        ...leftRows.map(r => r.Year).filter((y): y is number => y != null),
+      ])
+    ).sort((a, b) => a - b);
+    const years = allYears.slice(-5);
+    this.avgDurationCompareYears = years;
+
+    const rightByYear = toWeightedAvgByYear(rightRows);
+    const leftByYear = toWeightedAvgByYear(leftRows);
+
+    const rightLabel = `: ${(this.avgDurationCompareRightValue || 'הכל').trim() || 'הכל'}`;
+    const leftLabel = `: ${(this.avgDurationCompareLeftValue || 'הכל').trim() || 'הכל'}`;
+
+    this.avgDurationCompareCombinedChartColumns = [
+      { type: 'string', label: 'שנה' },
+      { type: 'number', label: rightLabel },
+      { type: 'string', role: 'annotation' },
+      { type: 'number', label: leftLabel },
+      { type: 'string', role: 'annotation' },
+    ];
+
+    this.avgDurationCompareCombinedChartData = years.map(y => {
+      const rv = rightByYear.get(y);
+      const lv = leftByYear.get(y);
+      const rLabel = rv != null && rv > 0 ? this.formatMinutesToHM(rv) : '';
+      const lLabel = lv != null && lv > 0 ? this.formatMinutesToHM(lv) : '';
+      return [
+        y.toString(),
+        rv != null && rv > 0 ? { v: rv, f: rLabel } : null,
+        rLabel || null,
+        lv != null && lv > 0 ? { v: lv, f: lLabel } : null,
+        lLabel || null,
+      ];
+    });
+
+    const axisTextColor = this.isDark ? '#e5e7eb' : '#334155';
+    const gridColor = this.isDark ? 'rgba(255,255,255,.14)' : 'rgba(15,23,42,.10)';
+
+    this.avgDurationCompareCombinedChartOptions = {
+      title: '',
+      backgroundColor: 'transparent',
+      legend: { position: 'top', alignment: 'end', textStyle: { fontSize: 12, bold: true, color: axisTextColor } },
+      chartArea: { width: '86%', height: '62%', left: 44, top: 46 },
+      pointSize: 5,
+      lineWidth: 3,
+      interpolateNulls: true,
+      vAxis: {
+        title: "משך ניתוח ממוצע (דק')",
+        textStyle: { fontSize: 11, bold: true, color: axisTextColor },
+        titleTextStyle: { fontSize: 11, bold: true, color: axisTextColor },
+        gridlines: { color: gridColor },
+        minorGridlines: { color: 'transparent' },
+      },
+      hAxis: {
+        title: 'שנה',
+        textStyle: { fontSize: 11, bold: true, color: axisTextColor },
+        titleTextStyle: { fontSize: 11, bold: true, color: axisTextColor },
+      },
+      annotations: {
+        textStyle: { fontSize: 10, bold: true, color: axisTextColor },
+        stem: { color: gridColor, length: 3 },
+      },
+      series: {
+        0: { color: this.isDark ? '#60a5fa' : '#2563eb' },
+        1: { color: this.isDark ? '#4ade80' : '#16a34a' },
+      },
+    };
 
     // Use same look & feel as avgDuration, but keep labels vertical for readability
     const baseOpts = this.avgDurationChartOptions && Object.keys(this.avgDurationChartOptions).length
@@ -5862,18 +5961,19 @@ private loadAvgSetup(): void {
         const series: any[] = [];
 
         years.forEach(y => {
-          const val = yearMap.get(y);
-          if (val == null) {
-            // חובה לשמור על זוגות [value, annotation]
-            series.push(null, null);
-          } else {
-            const formatted = `${val.toFixed(1)} '`;
-            series.push(
-              { v: val, f: val.toFixed(1) },
-              formatted,
-            );
-          }
-        });
+            const val = yearMap.get(y);
+            if (val == null) {
+              // חובה לשמור על זוגות [value, annotation]
+              series.push(null, null);
+            } else {
+              const formatted = `${Math.trunc(val)} `;
+              series.push(
+                { v: val, f: Math.trunc(val).toString() },
+                formatted,
+              );
+            }
+          });
+          
 
         // קו יעד קבוע – 20 דקות SETUP, בלי טקסט שחוזר בכל מחלקה
         series.push(
