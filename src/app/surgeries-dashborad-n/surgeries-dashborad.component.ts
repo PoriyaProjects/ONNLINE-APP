@@ -5693,6 +5693,12 @@ private loadAvgLastMorningEnd(): void {
 
       return [dept, ...series];
     });
+
+    // Move legend (מקרא) to the top for this chart only.
+    // Keep the rest as Google Charts defaults to avoid side effects.
+    this.lastEndTimeChartOptions = {
+      legend: { position: "top", alignment: "end" },
+    };
   }
 
 private loadAvgSetup(): void {
@@ -5861,7 +5867,7 @@ private loadAvgSetup(): void {
             // חובה לשמור על זוגות [value, annotation]
             series.push(null, null);
           } else {
-            const formatted = `${val.toFixed(1)} דק'`;
+            const formatted = `${val.toFixed(1)} '`;
             series.push(
               { v: val, f: val.toFixed(1) },
               formatted,
