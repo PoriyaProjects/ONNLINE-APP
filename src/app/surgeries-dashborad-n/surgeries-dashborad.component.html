@@ -213,73 +213,45 @@
           <!-- תצוגת זמני חדר (Room Times) בתוך הפאנל הראשי -->
           <div class="chart-with-expand" *ngIf="mainMetricMode === 'room-times'">
             <!-- כפתור תצוגה מוגדלת לכל גרפי זמני החדר -->
-            <button type="button" class="chart-expand-btn"
-                    (click)="showTimesModal = true"
-                    *ngIf="!isAvgDurationLoading && avgDurationChartData && avgDurationChartData.length > 0"
-                    matTooltip="הצג את כל מדדי זמני החדר במסך מלא"
-                    matTooltipPosition="below">
+            <button type="button" class="chart-expand-btn" (click)="showTimesModal = true"
+              *ngIf="!isAvgDurationLoading && avgDurationChartData && avgDurationChartData.length > 0"
+              matTooltip="הצג את כל מדדי זמני החדר במסך מלא" matTooltipPosition="below">
               <mat-icon>fullscreen</mat-icon>
             </button>
 
             <!-- הגרף העיקרי לפי roomTimesView -->
             <google-chart
               *ngIf="!isAvgDurationLoading && roomTimesView === 'avgDuration' && avgDurationChartData && avgDurationChartData.length > 0"
-              [type]="'ColumnChart'"
-              [columns]="avgDurationChartColumns"
-              [data]="avgDurationChartData"
-              [options]="avgDurationChartOptions"
-              [width]="'100%'"
-              [height]="'360px'">
+              [type]="'ColumnChart'" [columns]="avgDurationChartColumns" [data]="avgDurationChartData"
+              [options]="avgDurationChartOptions" [width]="'100%'" [height]="'360px'">
             </google-chart>
 
             <google-chart
               *ngIf="roomTimesView === 'perDay' && surgeriesPerDayChartData && surgeriesPerDayChartData.length > 0"
-              [type]="'ColumnChart'"
-              [columns]="surgeriesPerDayChartColumns"
-              [data]="surgeriesPerDayChartData"
-              [options]="surgeriesPerDayChartOptions"
-              [width]="'100%'"
-              [height]="'360px'">
+              [type]="'ColumnChart'" [columns]="surgeriesPerDayChartColumns" [data]="surgeriesPerDayChartData"
+              [options]="surgeriesPerDayChartOptions" [width]="'100%'" [height]="'360px'">
             </google-chart>
 
             <google-chart
               *ngIf="roomTimesView === 'firstStart' && firstStartTimeChartData && firstStartTimeChartData.length > 0"
-              [type]="'ColumnChart'"
-              [columns]="firstStartTimeChartColumns"
-              [data]="firstStartTimeChartData"
-              [options]="firstStartTimeChartOptions"
-              [width]="'100%'"
-              [height]="'360px'">
+              [type]="'ColumnChart'" [columns]="firstStartTimeChartColumns" [data]="firstStartTimeChartData"
+              [options]="firstStartTimeChartOptions" [width]="'100%'" [height]="'360px'">
             </google-chart>
 
-            <google-chart
-              *ngIf="roomTimesView === 'lastEnd' && lastEndTimeChartData && lastEndTimeChartData.length > 0"
-              [type]="'ColumnChart'"
-              [columns]="lastEndTimeChartColumns"
-              [data]="lastEndTimeChartData"
-              [options]="lastEndTimeChartOptions"
-              [width]="'100%'"
-              [height]="'360px'">
+            <google-chart *ngIf="roomTimesView === 'lastEnd' && lastEndTimeChartData && lastEndTimeChartData.length > 0"
+              [type]="'ColumnChart'" [columns]="lastEndTimeChartColumns" [data]="lastEndTimeChartData"
+              [options]="lastEndTimeChartOptions" [width]="'100%'" [height]="'360px'">
             </google-chart>
 
-            <google-chart
-              *ngIf="roomTimesView === 'avgSetup' && avgSetupChartData && avgSetupChartData.length > 0"
-              [type]="'ColumnChart'"
-              [columns]="avgSetupChartColumns"
-              [data]="avgSetupChartData"
-              [options]="avgSetupChartOptions"
-              [width]="'100%'"
-              [height]="'360px'">
+            <google-chart *ngIf="roomTimesView === 'avgSetup' && avgSetupChartData && avgSetupChartData.length > 0"
+              [type]="'ColumnChart'" [columns]="avgSetupChartColumns" [data]="avgSetupChartData"
+              [options]="avgSetupChartOptions" [width]="'100%'" [height]="'360px'">
             </google-chart>
 
             <google-chart
               *ngIf="roomTimesView === 'lossPerDay' && lossByWingChartData && lossByWingChartData.length > 0"
-              [type]="'ColumnChart'"
-              [columns]="lossByWingChartColumns"
-              [data]="lossByWingChartData"
-              [options]="lossByWingChartOptions"
-              [width]="'100%'"
-              [height]="'360px'">
+              [type]="'ColumnChart'" [columns]="lossByWingChartColumns" [data]="lossByWingChartData"
+              [options]="lossByWingChartOptions" [width]="'100%'" [height]="'360px'">
             </google-chart>
 
             <div *ngIf="isAvgDurationLoading" class="chart-loading-overlay">
@@ -291,13 +263,11 @@
           <!-- מצב תצוגה לוגרף הראשי: סה"כ / קרן‑מדינה / אתר / משמרת / מחלקה -->
           <div class="chart-mode-row"
             *ngIf="!isChartLoading && !isMainDataLoading && chartData && chartData.length > 0 && !isRoomUtilizationMode() && mainMetricMode !== 'room-times'">
-            <mat-button-toggle-group
-              name="chartViewMode"
-              aria-label="Chart view mode"
-              class="mat-button-toggle-group custom-toggle-group"
-              [value]="chartViewMode"
+            <mat-button-toggle-group name="chartViewMode" aria-label="Chart view mode"
+              class="mat-button-toggle-group custom-toggle-group" [value]="chartViewMode"
               (change)="setChartViewMode($event.value)">
-              <mat-button-toggle value="year-total" [matTooltip]="getChartViewTooltip('year-total')" matTooltipPosition="top">
+              <mat-button-toggle value="year-total" [matTooltip]="getChartViewTooltip('year-total')"
+                matTooltipPosition="top">
                 סה"כ לשנה
               </mat-button-toggle>
               <mat-button-toggle value="month" [matTooltip]="getChartViewTooltip('month')" matTooltipPosition="top">
@@ -309,29 +279,25 @@
               <mat-button-toggle value="site" [matTooltip]="getChartViewTooltip('site')" matTooltipPosition="top">
                 אתר
               </mat-button-toggle>
-              <mat-button-toggle value="shift"
-                                 [disabled]="isShiftGroupedView && chartViewMode !== 'shift'"
-                                 [matTooltip]="getChartViewTooltip('shift')" matTooltipPosition="top">
+              <mat-button-toggle value="shift" [disabled]="isShiftGroupedView && chartViewMode !== 'shift'"
+                [matTooltip]="getChartViewTooltip('shift')" matTooltipPosition="top">
                 משמרת
               </mat-button-toggle>
-              <mat-button-toggle value="department" [matTooltip]="getChartViewTooltip('department')" matTooltipPosition="top">
+              <mat-button-toggle value="department" [matTooltip]="getChartViewTooltip('department')"
+                matTooltipPosition="top">
                 סה"כ לפי מחלקה
               </mat-button-toggle>
-              <mat-button-toggle value="yoy-combined" [matTooltip]="getChartViewTooltip('yoy-combined')" matTooltipPosition="top"
-                                 (click)="onYoyCombinedClick()">
+              <mat-button-toggle value="yoy-combined" [matTooltip]="getChartViewTooltip('yoy-combined')"
+                matTooltipPosition="top" (click)="onYoyCombinedClick()">
                 מדד משולב
               </mat-button-toggle>
             </mat-button-toggle-group>
           </div>
 
           <!-- כפתורי מדדי זמני חדר – מתחת לגרף הראשי, במצב room-times -->
-          <div class="chart-mode-row"
-               *ngIf="mainMetricMode === 'room-times'">
-            <mat-button-toggle-group
-              name="roomTimesView"
-              aria-label="Room times view"
-              class="mat-button-toggle-group custom-toggle-group"
-              [value]="roomTimesView"
+          <div class="chart-mode-row" *ngIf="mainMetricMode === 'room-times'">
+            <mat-button-toggle-group name="roomTimesView" aria-label="Room times view"
+              class="mat-button-toggle-group custom-toggle-group" [value]="roomTimesView"
               (change)="setRoomTimesView($event.value)">
               <mat-button-toggle value="avgDuration">
                 <mat-icon>speed</mat-icon>
@@ -362,35 +328,33 @@
 
           <!-- כפתורי מדדי חדרים לפי מחלקה – מוצגים רק במצב ניצולת חדר ניתוח -->
           <!-- כפתורי מדדי חדרים – מוצגים רק במצב ניצולת חדר ניתוח -->
-<div class="chart-mode-row"
-*ngIf="!isChartLoading && !isMainDataLoading && chartData && chartData.length > 0 && isRoomUtilizationMode()">
-  <span class="chart-mode-label">
-    חדרים לפי מחלקה:
-  </span>
+          <div class="chart-mode-row"
+            *ngIf="!isChartLoading && !isMainDataLoading && chartData && chartData.length > 0 && isRoomUtilizationMode()">
+            <span class="chart-mode-label">
+              חדרים לפי מחלקה:
+            </span>
 
-  <mat-button-toggle-group
-    name="roomStatsMode"
-    aria-label="Room stats mode"
-    class="mat-button-toggle-group custom-toggle-group"
-    [value]="roomStatsViewMode === 'yearTotal' ? 'yearTotal' : roomStatsMetric"
-    (change)="onRoomStatsModeChange($event.value)">
-    <mat-button-toggle value="yearTotal">
-      סה"כ חדרים לשנה
-    </mat-button-toggle>
-    <mat-button-toggle value="total">
-      סה"כ חדרים לפי מחלקה
-    </mat-button-toggle>
-    <mat-button-toggle value="open">
-      חדרים פותחים
-    </mat-button-toggle>
-    <mat-button-toggle value="close">
-      חדרים סוגרים
-    </mat-button-toggle>
-    <mat-button-toggle value="fullDays">
-      ימים מלאים (ללא פיצול)
-    </mat-button-toggle>
-  </mat-button-toggle-group>
-</div>
+            <mat-button-toggle-group name="roomStatsMode" aria-label="Room stats mode"
+              class="mat-button-toggle-group custom-toggle-group"
+              [value]="roomStatsViewMode === 'yearTotal' ? 'yearTotal' : roomStatsMetric"
+              (change)="onRoomStatsModeChange($event.value)">
+              <mat-button-toggle value="yearTotal">
+                סה"כ חדרים לשנה
+              </mat-button-toggle>
+              <mat-button-toggle value="total">
+                סה"כ חדרים לפי מחלקה
+              </mat-button-toggle>
+              <mat-button-toggle value="open">
+                חדרים פותחים
+              </mat-button-toggle>
+              <mat-button-toggle value="close">
+                חדרים סוגרים
+              </mat-button-toggle>
+              <mat-button-toggle value="fullDays">
+                ימים מלאים (ללא פיצול)
+              </mat-button-toggle>
+            </mat-button-toggle-group>
+          </div>
 
           <!-- טקסט הסבר קצר מה מייצגת כל עמודה/צבע בגרף -->
           <div class="chart-mode-description"
@@ -526,8 +490,10 @@
 
             <!-- פילטר מחלקה לגרף והטבלה -->
             <div class="custom-dropdown filter-dropdown chart-dept-dropdown" [class.active]="isChartDeptDropdownOpen"
-              [class.has-value]="chartDepartmentFilter" *ngIf="getChartDepartmentOptions()?.length > 0">
-              <div class="dropdown-trigger" (click)="isChartDeptDropdownOpen = !isChartDeptDropdownOpen">
+              [class.has-value]="chartDepartmentFilter" [class.disabled-filter]="isFilterDisabled('chartDepartment')"
+              *ngIf="getChartDepartmentOptions()?.length > 0">
+              <div class="dropdown-trigger"
+                (click)="!isFilterDisabled('chartDepartment') && (isChartDeptDropdownOpen = !isChartDeptDropdownOpen)">
                 <mat-icon class="dropdown-icon">local_hospital</mat-icon>
                 <span class="selected-text">מחלקה: {{ chartDepartmentFilter || 'הכל' }}</span>
                 <mat-icon class="arrow-icon">{{ isChartDeptDropdownOpen ? 'expand_less' : 'expand_more' }}</mat-icon>
@@ -547,8 +513,9 @@
 
             <!-- פילטר סוג ניתוח -->
             <div class="custom-dropdown filter-dropdown" [class.active]="isSurgeryTypeOpen"
-              [class.has-value]="selectedSurgeryTypes?.length">
-              <div class="dropdown-trigger" (click)="isSurgeryTypeOpen = !isSurgeryTypeOpen">
+              [class.has-value]="selectedSurgeryTypes?.length" [class.disabled-filter]="isFilterDisabled('surgeryType')">
+              <div class="dropdown-trigger"
+                (click)="!isFilterDisabled('surgeryType') && (isSurgeryTypeOpen = !isSurgeryTypeOpen)">
                 <mat-icon class="dropdown-icon">category</mat-icon>
                 <span class="selected-text" matTooltip="{{ getSurgeryTypeDisplay() }}">
                   {{ getSurgeryTypeDisplay() }}
@@ -567,8 +534,10 @@
 
             <!-- פילטר 3: משמרת -->
             <div class="custom-dropdown filter-dropdown" [class.active]="isShiftOpen"
-              [class.disabled-filter]="isShiftGroupedView" [class.has-value]="selectedShifts?.length">
-              <div class="dropdown-trigger" (click)="!isShiftGroupedView && (isShiftOpen = !isShiftOpen)">
+              [class.disabled-filter]="isShiftGroupedView || isFilterDisabled('shift')"
+              [class.has-value]="selectedShifts?.length">
+              <div class="dropdown-trigger"
+                (click)="!isShiftGroupedView && !isFilterDisabled('shift') && (isShiftOpen = !isShiftOpen)">
                 <mat-icon class="dropdown-icon">schedule</mat-icon>
                 <span class="selected-text" matTooltip="{{ getShiftDisplay() }}">
                   {{ getShiftDisplay() }}
@@ -586,8 +555,8 @@
             </div>
 
             <div class="custom-dropdown filter-dropdown" [class.active]="isWeekdayOpen"
-              [class.has-value]="selectedWeekdays?.length">
-              <div class="dropdown-trigger" (click)="isWeekdayOpen = !isWeekdayOpen">
+              [class.has-value]="selectedWeekdays?.length" [class.disabled-filter]="isFilterDisabled('weekPart')">
+              <div class="dropdown-trigger" (click)="!isFilterDisabled('weekPart') && (isWeekdayOpen = !isWeekdayOpen)">
                 <mat-icon class="dropdown-icon">event</mat-icon>
                 <span class="selected-text" matTooltip="{{ getWeekdayDisplay() }}">
                   {{ getWeekdayDisplay() }}
@@ -606,8 +575,9 @@
 
             <!-- פילטר עבודת בוקר (כן/לא) -->
             <div class="custom-dropdown filter-dropdown" [class.active]="isMorningWorkOpen"
-              [class.has-value]="morningWorkFilter !== 'all'">
-              <div class="dropdown-trigger" (click)="isMorningWorkOpen = !isMorningWorkOpen">
+              [class.has-value]="morningWorkFilter !== 'all'" [class.disabled-filter]="isFilterDisabled('morningWork')">
+              <div class="dropdown-trigger"
+                (click)="!isFilterDisabled('morningWork') && (isMorningWorkOpen = !isMorningWorkOpen)">
                 <mat-icon class="dropdown-icon">wb_sunny</mat-icon>
                 <span class="selected-text">
                   {{ getMorningWorkDisplay() }}
@@ -630,6 +600,11 @@
                   </div>
                 </div>
               </div>
+            </div>
+
+            <!-- משוב למשתמש: הפילטרים העליונים מכובים במצב ניצולת חדר -->
+            <div class="filters-disabled-hint" *ngIf="isRoomUtilizationMode()">
+              חלק מפילטרי הסינון מושבתים כעת במצב ניצולת חדר. לפילטר לפי אתר השתמש ב"שדה אתר" למטה.
             </div>
 
             <div class="wing-and-theme-row filters-row filters-column" dir="rtl" *ngIf="showMoreFilters">
@@ -717,45 +692,39 @@
             </div>
 
             <!-- פילטר אתר (Site) – משפיע על כל הגרפים (מדדי ניתוחים, זמני חדר, ניצולת חדר) -->
-            <div class="custom-dropdown filter-dropdown" [class.active]="isRoomOpen"
-              [class.has-value]="selectedSites?.length">
-              <div class="dropdown-trigger" (click)="isRoomOpen = !isRoomOpen">
+            <div class="custom-dropdown filter-dropdown" [class.active]="isSiteOpen"
+              [class.has-value]="selectedSites?.length" [class.disabled-filter]="isFilterDisabled('site')">
+              <div class="dropdown-trigger" (click)="!isFilterDisabled('site') && (isSiteOpen = !isSiteOpen)">
                 <mat-icon class="dropdown-icon">meeting_room</mat-icon>
                 <span class="selected-text">
                   אתר: {{ selectedSites?.length ? selectedSites.join(', ') : 'הכל' }}
                 </span>
-                <mat-icon class="arrow-icon">{{ isRoomOpen ? 'expand_less' : 'expand_more' }}</mat-icon>
+                <mat-icon class="arrow-icon">{{ isSiteOpen ? 'expand_less' : 'expand_more' }}</mat-icon>
               </div>
-              <div class="dropdown-panel" *ngIf="isRoomOpen">
+              <div class="dropdown-panel" *ngIf="isSiteOpen">
                 <div class="options-list">
-                  <div class="option-item"
-                       (click)="selectedSites = []; applyAllSurgeryFilters()"
-                       [class.selected]="!selectedSites || selectedSites.length === 0">
+                  <div class="option-item" (click)="selectedSites = []; applyAllSurgeryFilters()"
+                    [class.selected]="!selectedSites || selectedSites.length === 0">
                     כל האתרים
                   </div>
-                  <div class="option-item"
-                       (click)="setSiteFilter('חנ-כללי')"
-                       [class.selected]="selectedSites?.includes('חנ-כללי')">
+                  <div class="option-item" (click)="setSiteFilter('חנ-כללי')"
+                    [class.selected]="selectedSites?.includes('חנ-כללי')">
                     חדר ניתוח כללי
                   </div>
-                  <div class="option-item"
-                       (click)="setSiteFilter('חנ-אמבול')"
-                       [class.selected]="selectedSites?.includes('חנ-אמבול')">
+                  <div class="option-item" (click)="setSiteFilter('חנ-אמבול')"
+                    [class.selected]="selectedSites?.includes('חנ-אמבול')">
                     אמבולטורי
                   </div>
-                  <div class="option-item"
-                       (click)="setSiteFilter('חנ-יולד')"
-                       [class.selected]="selectedSites?.includes('חנ-יולד')">
+                  <div class="option-item" (click)="setSiteFilter('חנ-יולד')"
+                    [class.selected]="selectedSites?.includes('חנ-יולד')">
                     יולדות
                   </div>
-                  <div class="option-item"
-                       (click)="setSiteFilter('חנ-מחלקה')"
-                       [class.selected]="selectedSites?.includes('חנ-מחלקה')">
+                  <div class="option-item" (click)="setSiteFilter('חנ-מחלקה')"
+                    [class.selected]="selectedSites?.includes('חנ-מחלקה')">
                     חדר מחלקה
                   </div>
-                  <div class="option-item"
-                       (click)="setSiteFilter('חנ-פהלסת')"
-                       [class.selected]="selectedSites?.includes('חנ-פהלסת')">
+                  <div class="option-item" (click)="setSiteFilter('חנ-פהלסת')"
+                    [class.selected]="selectedSites?.includes('חנ-פהלסת')">
                     פה ולסת
                   </div>
                 </div>
@@ -1236,34 +1205,28 @@
           </p>
           <div class="kpi-filter-row">
             <span class="kpi-filter-label">חדרי ניתוח לפי אתר:</span>
-            <button mat-stroked-button type="button"
-                    [class.active]="avgDurationSiteFilter === 'ALL'"
-                    (click)="avgDurationSiteFilter = 'ALL'; loadAvgDuration();">
+            <button mat-stroked-button type="button" [class.active]="avgDurationSiteFilter === 'ALL'"
+              (click)="avgDurationSiteFilter = 'ALL'; loadAvgDuration();">
               כל האתרים
             </button>
-            <button mat-stroked-button type="button"
-                    [class.active]="avgDurationSiteFilter === 'חנ-כללי'"
-                    (click)="avgDurationSiteFilter = 'חנ-כללי'; loadAvgDuration();">
+            <button mat-stroked-button type="button" [class.active]="avgDurationSiteFilter === 'חנ-כללי'"
+              (click)="avgDurationSiteFilter = 'חנ-כללי'; loadAvgDuration();">
               חדר ניתוח כללי
             </button>
-            <button mat-stroked-button type="button"
-                    [class.active]="avgDurationSiteFilter === 'חנ-אמבול'"
-                    (click)="avgDurationSiteFilter = 'חנ-אמבול'; loadAvgDuration();">
+            <button mat-stroked-button type="button" [class.active]="avgDurationSiteFilter === 'חנ-אמבול'"
+              (click)="avgDurationSiteFilter = 'חנ-אמבול'; loadAvgDuration();">
               אמבולטורי
             </button>
-            <button mat-stroked-button type="button"
-                    [class.active]="avgDurationSiteFilter === 'חנ-יולד'"
-                    (click)="avgDurationSiteFilter = 'חנ-יולד'; loadAvgDuration();">
+            <button mat-stroked-button type="button" [class.active]="avgDurationSiteFilter === 'חנ-יולד'"
+              (click)="avgDurationSiteFilter = 'חנ-יולד'; loadAvgDuration();">
               יולדות
             </button>
-            <button mat-stroked-button type="button"
-                    [class.active]="avgDurationSiteFilter === 'חנ-מחלקה'"
-                    (click)="avgDurationSiteFilter = 'חנ-מחלקה'; loadAvgDuration();">
+            <button mat-stroked-button type="button" [class.active]="avgDurationSiteFilter === 'חנ-מחלקה'"
+              (click)="avgDurationSiteFilter = 'חנ-מחלקה'; loadAvgDuration();">
               חדר מחלקה
             </button>
-            <button mat-stroked-button type="button"
-                    [class.active]="avgDurationSiteFilter === 'חנ-פהלסת'"
-                    (click)="avgDurationSiteFilter = 'חנ-פהלסת'; loadAvgDuration();">
+            <button mat-stroked-button type="button" [class.active]="avgDurationSiteFilter === 'חנ-פהלסת'"
+              (click)="avgDurationSiteFilter = 'חנ-פהלסת'; loadAvgDuration();">
               פה ולסת
             </button>
           </div>

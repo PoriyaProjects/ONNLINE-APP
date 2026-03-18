@@ -796,6 +796,25 @@
   .progress-bar-compact  { background: linear-gradient(90deg, #22c55e, #4ade80); }
 }
 
+/* ── Disabled filters state (sidebar) ────────────────────── */
+.custom-dropdown.filter-dropdown.disabled-filter {
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+.filters-disabled-hint {
+  margin-top: 8px;
+  font-size: 11px;
+  color: var(--muted);
+  display: grid;
+  flex-wrap: wrap;
+  text-align: right;
+}
+
+.dash.dark .filters-disabled-hint {
+  color: #9ca3af;
+}
+
 /* ── Icon buttons ───────────────────────────────────────── */
 .icon-btn {
   width: clamp(28px, 2.5vw, 36px); height: clamp(28px, 2.5vw, 36px);
