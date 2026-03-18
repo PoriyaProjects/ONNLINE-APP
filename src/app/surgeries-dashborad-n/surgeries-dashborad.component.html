@@ -291,38 +291,37 @@
           <!-- מצב תצוגה לוגרף הראשי: סה"כ / קרן‑מדינה / אתר / משמרת / מחלקה -->
           <div class="chart-mode-row"
             *ngIf="!isChartLoading && !isMainDataLoading && chartData && chartData.length > 0 && !isRoomUtilizationMode() && mainMetricMode !== 'room-times'">
-            <button class="icon-btn ghost mode-toggle-btn" [class.active]="chartViewMode === 'year-total'"
-              [matTooltip]="getChartViewTooltip('year-total')" matTooltipPosition="top"
-              (click)="setChartViewMode('year-total')">
-              סה"כ לשנה
-            </button>
-            <button class="icon-btn ghost mode-toggle-btn" [class.active]="chartViewMode === 'month'"
-              [matTooltip]="getChartViewTooltip('month')" matTooltipPosition="top" (click)="setChartViewMode('month')">
-              ניתוחים לפי חודשים
-            </button>
-            <button class="icon-btn ghost mode-toggle-btn" [class.active]="chartViewMode === 'fund'"
-              [matTooltip]="getChartViewTooltip('fund')" matTooltipPosition="top" (click)="setChartViewMode('fund')">
-              קרן/מדינה
-            </button>
-            <button class="icon-btn ghost mode-toggle-btn" [class.active]="chartViewMode === 'site'"
-              [matTooltip]="getChartViewTooltip('site')" matTooltipPosition="top" (click)="setChartViewMode('site')">
-              אתר
-            </button>
-            <button class="icon-btn ghost mode-toggle-btn" [class.active]="chartViewMode === 'shift'"
-              [class.disabled-filter]="isShiftGroupedView && chartViewMode !== 'shift'"
-              [matTooltip]="getChartViewTooltip('shift')" matTooltipPosition="top" (click)="setChartViewMode('shift')">
-              משמרת
-            </button>
-            <button class="icon-btn ghost mode-toggle-btn" [class.active]="chartViewMode === 'department'"
-              [matTooltip]="getChartViewTooltip('department')" matTooltipPosition="top"
-              (click)="setChartViewMode('department')">
-              סה"כ לפי מחלקה
-            </button>
-            <button class="icon-btn ghost mode-toggle-btn" [class.active]="chartViewMode === 'yoy-combined'"
-              [matTooltip]="getChartViewTooltip('yoy-combined')" matTooltipPosition="top"
-              (click)="onYoyCombinedClick()">
-              מדד משולב
-            </button>
+            <mat-button-toggle-group
+              name="chartViewMode"
+              aria-label="Chart view mode"
+              class="mat-button-toggle-group custom-toggle-group"
+              [value]="chartViewMode"
+              (change)="setChartViewMode($event.value)">
+              <mat-button-toggle value="year-total" [matTooltip]="getChartViewTooltip('year-total')" matTooltipPosition="top">
+                סה"כ לשנה
+              </mat-button-toggle>
+              <mat-button-toggle value="month" [matTooltip]="getChartViewTooltip('month')" matTooltipPosition="top">
+                ניתוחים לפי חודשים
+              </mat-button-toggle>
+              <mat-button-toggle value="fund" [matTooltip]="getChartViewTooltip('fund')" matTooltipPosition="top">
+                קרן/מדינה
+              </mat-button-toggle>
+              <mat-button-toggle value="site" [matTooltip]="getChartViewTooltip('site')" matTooltipPosition="top">
+                אתר
+              </mat-button-toggle>
+              <mat-button-toggle value="shift"
+                                 [disabled]="isShiftGroupedView && chartViewMode !== 'shift'"
+                                 [matTooltip]="getChartViewTooltip('shift')" matTooltipPosition="top">
+                משמרת
+              </mat-button-toggle>
+              <mat-button-toggle value="department" [matTooltip]="getChartViewTooltip('department')" matTooltipPosition="top">
+                סה"כ לפי מחלקה
+              </mat-button-toggle>
+              <mat-button-toggle value="yoy-combined" [matTooltip]="getChartViewTooltip('yoy-combined')" matTooltipPosition="top"
+                                 (click)="onYoyCombinedClick()">
+                מדד משולב
+              </mat-button-toggle>
+            </mat-button-toggle-group>
           </div>
 
           <!-- כפתורי מדדי זמני חדר – מתחת לגרף הראשי, במצב room-times -->
@@ -365,41 +364,32 @@
           <!-- כפתורי מדדי חדרים – מוצגים רק במצב ניצולת חדר ניתוח -->
 <div class="chart-mode-row"
 *ngIf="!isChartLoading && !isMainDataLoading && chartData && chartData.length > 0 && isRoomUtilizationMode()">
-<span class="chart-mode-label">
-  חדרים לפי מחלקה:
-</span>
+  <span class="chart-mode-label">
+    חדרים לפי מחלקה:
+  </span>
 
-<!-- כפתור חדש: סה"כ חדרים לשנה -->
-<button class="icon-btn ghost mode-toggle-btn"
-        [class.active]="roomStatsViewMode === 'yearTotal'"
-        (click)="setRoomStatsViewMode('yearTotal')">
-  סה"כ חדרים לשנה
-</button>
-
-<!-- כפתורים קיימים – תמיד מעבירים למצב "לפי מחלקה" -->
-<button class="icon-btn ghost mode-toggle-btn"
-        [class.active]="roomStatsViewMode === 'byWing' && roomStatsMetric === 'total'"
-        (click)="setRoomStatsMetric('total')">
-  סה"כ חדרים לפי מחלקה
-</button>
-
-<button class="icon-btn ghost mode-toggle-btn"
-        [class.active]="roomStatsViewMode === 'byWing' && roomStatsMetric === 'open'"
-        (click)="setRoomStatsMetric('open')">
-  חדרים פותחים
-</button>
-
-<button class="icon-btn ghost mode-toggle-btn"
-        [class.active]="roomStatsViewMode === 'byWing' && roomStatsMetric === 'close'"
-        (click)="setRoomStatsMetric('close')">
-  חדרים סוגרים
-</button>
-
-<button class="icon-btn ghost mode-toggle-btn"
-        [class.active]="roomStatsViewMode === 'byWing' && roomStatsMetric === 'fullDays'"
-        (click)="setRoomStatsMetric('fullDays')">
-  ימים מלאים (ללא פיצול)
-</button>
+  <mat-button-toggle-group
+    name="roomStatsMode"
+    aria-label="Room stats mode"
+    class="mat-button-toggle-group custom-toggle-group"
+    [value]="roomStatsViewMode === 'yearTotal' ? 'yearTotal' : roomStatsMetric"
+    (change)="onRoomStatsModeChange($event.value)">
+    <mat-button-toggle value="yearTotal">
+      סה"כ חדרים לשנה
+    </mat-button-toggle>
+    <mat-button-toggle value="total">
+      סה"כ חדרים לפי מחלקה
+    </mat-button-toggle>
+    <mat-button-toggle value="open">
+      חדרים פותחים
+    </mat-button-toggle>
+    <mat-button-toggle value="close">
+      חדרים סוגרים
+    </mat-button-toggle>
+    <mat-button-toggle value="fullDays">
+      ימים מלאים (ללא פיצול)
+    </mat-button-toggle>
+  </mat-button-toggle-group>
 </div>
 
           <!-- טקסט הסבר קצר מה מייצגת כל עמודה/צבע בגרף -->

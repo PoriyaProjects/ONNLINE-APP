@@ -3142,6 +3142,16 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck {
     }
   }
 
+  /** החלפת מצב כפתורי ניצולת חדר לפי ערך הטוגל המאוחד ב-UI */
+  onRoomStatsModeChange(value: "yearTotal" | "total" | "open" | "close" | "fullDays"): void {
+    if (value === "yearTotal") {
+      this.setRoomStatsViewMode("yearTotal");
+    } else {
+      this.setRoomStatsViewMode("byWing");
+      this.setRoomStatsMetric(value);
+    }
+  }
+
   /** חישוב ערך המדד הנוכחי עבור רשומת חדרים */
   private getRoomStatsMetricValue(info: { roomsTotal: number; roomsOpen: number; roomsClose: number; fullDays: number }): number | null {
     switch (this.roomStatsMetric) {
