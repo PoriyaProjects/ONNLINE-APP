@@ -607,7 +607,6 @@ export class MedicalInternsDashboardComponent implements OnInit {
 
   addUpdateIntern(intern: any) {
     const dialogRef = this.dialog.open(MedicalInternAddUpdateComponent, {
-      disableClose: true,
       width: '680px',
       maxWidth: '95vw',
     });
