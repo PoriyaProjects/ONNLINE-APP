@@ -4469,7 +4469,7 @@ private loadSurgeriesPerDay(): void {
             textStyle: { fontSize: 14, bold: true }
           },
           hAxis: {
-            textStyle: { fontSize: 14, bold: true, color: "#334155" },
+            textStyle: { fontSize: 16, bold: true,},
             slantedText: true,
             slantedTextAngle: 25,
             titleTextStyle: {
@@ -4499,7 +4499,7 @@ private loadSurgeriesPerDay(): void {
             alwaysOutside: true,
             textStyle: {
               fontSize: 16,
-              rotation: -90, 
+            //   rotation: -90, 
               bold: true,
             //   color: "#000000",
             //   auraColor: "none",
@@ -5124,7 +5124,9 @@ loadAvgDuration(): void {
           },
           hAxis: {
             textStyle: { fontSize: 14, bold: true, color: "#334155" },
-            slantedText: false, // ביטלתי את השיפוע למטה כדי שלא יתערבב לך
+
+            slantedText: true, // ביטלתי את השיפוע למטה כדי שלא יתערבב לך
+            slantedTextAngle: 25,
             titleTextStyle: { fontSize: 16, bold: true, italic: false },
           },
           vAxis: {
@@ -5149,7 +5151,7 @@ loadAvgDuration(): void {
               fontSize: 14,
               bold: true,
             //   color: "#000000",
-              rotation: -90 // עכשיו זה יעבוד
+            //   rotation: -90 // עכשיו זה יעבוד
             },
             // ה-stem חייב להיות כאן בפנים!
             stem: {
@@ -6009,9 +6011,10 @@ private buildLossByWingChart(rows: LossByWingYearDto[]): void {
       if (val == null || isNaN(val)) {
         series.push(null, null);
       } else {
-        const formatted = `${val.toFixed(1)} דק'`;
+        const intVal = Math.round(val);
+        const formatted = intVal.toString();
         series.push(
-          { v: val, f: val.toFixed(1) },
+          { v: intVal, f: formatted },
           formatted,
         );
       }
