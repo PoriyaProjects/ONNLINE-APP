@@ -243,6 +243,21 @@
 }
 
 .filter-field { flex: 1; max-width: 360px; }
+.filter-field-wrapper { display: flex; flex: 1; max-width: 360px; }
+
+.departments-year-nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  padding: 8px 0;
+}
+.departments-year-nav .year-display {
+  font-weight: 600;
+  font-size: 16px;
+  min-width: 60px;
+  text-align: center;
+}
 
 .toolbar-actions {
   display: flex;
