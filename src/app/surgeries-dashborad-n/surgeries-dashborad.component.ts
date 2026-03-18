@@ -137,6 +137,11 @@ export interface AvgDurationFiveYearsDto {
   Count: number;
   AvgDurationMin: number;
   AvgDurationHHMM: string;
+  // Server may already return additional fields; keep optional for client-side filtering without breaking typing.
+  Room?: string;
+  SurgeryType?: string;
+  Shift?: string;
+  WeekendType?: string;
 }
 
 type AvgDurationSiteFilter = "ALL" | "חנ-כללי" | "חנ-אמבול" | "חנ-יולד" | "חנ-מחלקה" | "חנ-פהלסת";
@@ -167,6 +172,12 @@ export interface LossByWingYearDto {
   Loss: number | null;
   /** זמן אבוד ליום בפורמט HH:mm – במידה והשרת לא מחזיר Loss מספרי */
   AvgLossTime?: string | null;
+  // Optional fields for client-side filtering
+  Site?: string;
+  Room?: string;
+  SurgeryType?: string;
+  Shift?: string;
+  WeekendType?: string;
 }
 
 export interface TopDepartmentDto {
@@ -554,6 +565,10 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck {
         "Cash2025",
         "CashDiff",
     ];
+
+    // Raw "one call per baseYear" caches – filter in client without additional API calls.
+    private avgDurationFiveYearsRawByBaseYear = new Map<string, AvgDurationFiveYearsDto[]>();
+    private lossByWingYearRawByBaseYear = new Map<string, LossByWingYearDto[]>();
 
     bothColumns: string[] = [
         "CatalogName2",
@@ -3142,6 +3157,16 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck {
     }
   }
 
+  /** החלפת מצב כפתורי ניצולת חדר לפי ערך הטוגל המאוחד ב-UI */
+  onRoomStatsModeChange(value: "yearTotal" | "total" | "open" | "close" | "fullDays"): void {
+    if (value === "yearTotal") {
+      this.setRoomStatsViewMode("yearTotal");
+    } else {
+      this.setRoomStatsViewMode("byWing");
+      this.setRoomStatsMetric(value);
+    }
+  }
+
   /** חישוב ערך המדד הנוכחי עבור רשומת חדרים */
   private getRoomStatsMetricValue(info: { roomsTotal: number; roomsOpen: number; roomsClose: number; fullDays: number }): number | null {
     switch (this.roomStatsMetric) {
@@ -3783,7 +3808,40 @@ updateChartColumns(): void {
         } else {
             this.updateChartData();
         }
+
+        // במצב "זמני חדר" – צריך לטעון מחדש את ה‑KPI הנוכחי לפי הפילטרים
+        if (this.mainMetricMode === "room-times") {
+            this.reloadRoomTimesViewIfActive();
+        }
         this.cdr.detectChanges();
+    }
+
+    private reloadRoomTimesViewIfActive(): void {
+        // הגנה מפני רינדור לפני שהקומפוננטה מוכנה
+        if (!this.roomTimesView) {
+            return;
+        }
+
+        switch (this.roomTimesView) {
+            case "avgDuration":
+                this.loadAvgDuration();
+                break;
+            case "firstStart":
+                this.loadAvgFirstMorningEntry();
+                break;
+            case "lastEnd":
+                this.loadAvgLastMorningEnd();
+                break;
+            case "avgSetup":
+                this.loadAvgSetup();
+                break;
+            case "perDay":
+                this.loadSurgeriesPerDay();
+                break;
+            case "lossPerDay":
+                this.loadLossByWingPerDay();
+                break;
+        }
     }
 
     /**
@@ -4121,6 +4179,17 @@ closeRoomTimesModal(): void {
 
 setRoomTimesView(view: 'avgDuration' | 'firstStart' | 'lastEnd' | 'avgSetup' | 'perDay' | 'lossPerDay'): void {
   this.roomTimesView = view;
+
+  // If a filter becomes irrelevant for the selected room-times view,
+  // close its dropdown immediately to prevent "open but disabled" UI states.
+  if (this.isFilterDisabled("chartDepartment")) this.isChartDeptDropdownOpen = false;
+  if (this.isFilterDisabled("surgeryType")) this.isSurgeryTypeOpen = false;
+  if (this.isFilterDisabled("shift")) this.isShiftOpen = false;
+  if (this.isFilterDisabled("weekPart")) this.isWeekdayOpen = false;
+  if (this.isFilterDisabled("morningWork")) this.isMorningWorkOpen = false;
+  if (this.isFilterDisabled("site")) this.isSiteOpen = false;
+  if (this.isFilterDisabled("room")) this.isRoomOpen = false;
+
   switch (view) {
     case 'avgDuration':
       this.loadAvgDuration();
@@ -4690,23 +4759,194 @@ private buildKpiFilterParams(): { [key: string]: string } {
   return params;
 }
 
+/**
+ * Build query parameters for GetAvgDurationFiveYears_surgeries_dashborad (room-times KPI)
+ * based on dashboard filters. Backend expects single values; when multi-selected we skip that filter.
+ */
+private buildAvgDurationFiveYearsParams(): { [key: string]: string } {
+  const baseYearForKpi =
+    this.getLatestYearFromDeptData() || this.currentYear.toString();
+
+  const params: { [key: string]: string } = {
+    baseYear: baseYearForKpi,
+  };
+
+  if (this.selectedSites && this.selectedSites.length === 1) {
+    params.site = this.selectedSites[0];
+  }
+
+  if (this.selectedRooms && this.selectedRooms.length === 1) {
+    params.room = this.selectedRooms[0];
+  }
+
+  if (this.selectedSurgeryTypes && this.selectedSurgeryTypes.length === 1) {
+    params.surgeryType = this.selectedSurgeryTypes[0];
+  }
+
+  if (this.selectedShifts && this.selectedShifts.length === 1) {
+    params.shift = this.selectedShifts[0];
+  }
+
+  if (this.chartDepartmentFilter) {
+    // backend DTO uses Wing, and this filter UI is "מחלקה" == Wing
+    params.wing = this.chartDepartmentFilter;
+  }
+
+  // day filter in this dashboard is "אמצע שבוע" / "סופ״ש". Backend returns WeekendType with those labels.
+  // To maximize compatibility, we send both weekendType (string label) and weekend (true/false) when possible.
+  if (this.selectedWeekdays && this.selectedWeekdays.length === 1) {
+    const only = this.selectedWeekdays[0];
+    if (only === "אמצע שבוע" || only === "סופ״ש") {
+      params.weekendType = only;
+      params.weekend = only === "סופ״ש" ? "true" : "false";
+    }
+  }
+
+  // morningWork – "כן/לא" as boolean string (if backend supports it)
+  if (this.morningWorkFilter === "yes") {
+    params.morningWork = "true";
+  } else if (this.morningWorkFilter === "no") {
+    params.morningWork = "false";
+  }
+
+  return params;
+}
+
+private getBaseYearForRoomTimes(): string {
+  return (this.getLatestYearFromDeptData() || this.currentYear.toString()).toString();
+}
+
+private matchesRoomTimesFilters(row: {
+  Site?: string | null;
+  Wing?: string | null;
+  Room?: string | null;
+  SurgeryType?: string | null;
+  Shift?: string | null;
+  WeekendType?: string | null;
+}): boolean {
+  // Site
+  if (this.selectedSites && this.selectedSites.length > 0) {
+    const s = (row.Site || "").trim();
+    if (!this.selectedSites.includes(s)) return false;
+  }
+
+  // Wing (chartDepartmentFilter == Wing)
+  if (this.chartDepartmentFilter) {
+    const w = (row.Wing || "").trim();
+    if (w !== this.chartDepartmentFilter.trim()) return false;
+  }
+
+  // SurgeryType (multi-select allowed)
+  if (this.selectedSurgeryTypes && this.selectedSurgeryTypes.length > 0) {
+    const t = (row.SurgeryType || "").trim();
+    if (!this.selectedSurgeryTypes.includes(t)) return false;
+  }
+
+  // Shift (multi-select allowed)
+  if (this.selectedShifts && this.selectedShifts.length > 0) {
+    const sh = (row.Shift || "").trim();
+    if (!this.selectedShifts.includes(sh)) return false;
+  }
+
+  // WeekendType (אמצע שבוע / סופ״ש)
+  if (this.selectedWeekdays && this.selectedWeekdays.length > 0) {
+    const wd = (row.WeekendType || "").trim();
+    if (!this.selectedWeekdays.includes(wd)) return false;
+  }
+
+  // Room (currently UI is "(לביצוע)", but if present we still support it)
+  if (this.selectedRooms && this.selectedRooms.length > 0) {
+    const r = (row.Room || "").trim();
+    if (!this.selectedRooms.includes(r)) return false;
+  }
+
+  return true;
+}
+
+/**
+ * UI-level enable/disable per filter based on current dashboard mode.
+ * "Disabled" means: visually disabled + click ignored, to avoid confusing users.
+ */
+isFilterDisabled(
+  filterKey:
+    | "chartDepartment"
+    | "surgeryType"
+    | "shift"
+    | "weekPart"
+    | "morningWork"
+    | "site"
+    | "room"
+): boolean {
+  // Existing behavior: in room utilization mode, most filters are disabled (handled earlier),
+  // but we also keep it consistent here for any new uses.
+  if (this.isRoomUtilizationMode()) {
+    // Keep "site" enabled (there is a note telling user to use it for room-utilization).
+    return filterKey !== "site";
+  }
+
+  // In room-times KPI charts, we currently support: site, surgeryType (single), shift (single),
+  // weekPart (אמצע שבוע/סופ״ש), chartDepartment (wing) and sometimes morningWork (depending on sub-view).
+  if (this.mainMetricMode === "room-times") {
+    if (filterKey === "room") {
+      return true; // UI "room" filter is marked "(לביצוע)"
+    }
+
+    // "ניתוחים ליום" (perDay) is based on GetAvgSurgeriesPerDayPerRoomFiveYears and we currently only
+    // apply site filtering client-side. Other filters are misleading here → disable them.
+    if (this.roomTimesView === "perDay") {
+      return filterKey !== "site";
+    }
+
+    // Morning work is relevant only for the KPIs that use buildKpiFilterParams() (group‑2 APIs).
+    // Avg duration + loss per day are filtered locally from raw caches and do NOT support morningWork.
+    if (filterKey === "morningWork") {
+      return !(
+        this.roomTimesView === "firstStart" ||
+        this.roomTimesView === "lastEnd" ||
+        this.roomTimesView === "avgSetup"
+      );
+    }
+
+    return false;
+  }
+
+  // Default (main surgeries metrics) – all current filters are enabled.
+  return false;
+}
+
 private filterBySelectedDiagnosis<T extends { Site?: string; Wing?: string }>(rows: T[]): T[] {
+  let result = rows;
+
+  // סינון לפי אתר (Site) מתוך הסיידבר – רלוונטי במיוחד ל‑GetAvgSurgeriesPerDayPerRoomFiveYears_surgeries_dashborad
+  if (this.selectedSites && this.selectedSites.length > 0) {
+    result = result.filter(r => r.Site && this.selectedSites.includes(r.Site.trim()));
+  }
+
   if (!this.selectedDiagnosis || this.selectedDiagnosis === 'כל האתרים') {
-    return rows;
+    return result;
   }
   // ה‑API כבר מקבל את הפרמטר site (אגף / אתר) דרך buildKpiFilterParams,
-  // לכן אין צורך לבצע סינון נוסף בצד הקליינט – אחרת אנו עלולים להעלים שורות תקינות.
-  // מחזירים את כל השורות כפי שהשרת החזיר אותן.
-  return rows;
+  // לכן אין צורך לבצע סינון נוסף בצד הקליינט לפי selectedDiagnosis – אחרת אנו עלולים להעלים שורות תקינות.
+  return result;
 }
 
 loadAvgDuration(): void {
-  const baseYear = this.getLatestYearFromDeptData() || this.currentYear.toString();
-  if (this.avgDurationChartData.length > 0 && this.lastAvgDurationYear === baseYear) {
+  const baseYear = this.getBaseYearForRoomTimes();
+
+  // If we already loaded the full dataset for this baseYear, filter locally and rebuild chart.
+  const raw = this.avgDurationFiveYearsRawByBaseYear.get(baseYear);
+  if (raw && raw.length > 0) {
+    const filtered = raw
+      .filter(r => this.matchesRoomTimesFilters(r))
+      .filter(r => !this.avgDurationSiteFilter || this.avgDurationSiteFilter === "ALL" || r.Site === this.avgDurationSiteFilter);
+
+    this.buildAvgDurationFiveYearsChart(filtered);
     this.isAvgDurationLoading = false;
     this.cdr.detectChanges();
     return;
   }
+
+  // Only one API call per baseYear. Everything else happens in client.
   this.isAvgDurationLoading = true;
   this.avgDurationData = [];
   this.avgDurationChartColumns = [];
@@ -4714,12 +4954,17 @@ loadAvgDuration(): void {
 
   this.http
     .get<AvgDurationFiveYearsDto[]>(environment.url + "GetAvgDurationFiveYears_surgeries_dashborad", {
-      params: { baseYear: baseYear.toString() },
+      params: { baseYear },
     })
     .subscribe(
       (rows) => {
         const list = Array.isArray(rows) ? rows : [];
-        const filtered = this.filterBySelectedDiagnosis(list);
+        this.avgDurationFiveYearsRawByBaseYear.set(baseYear, list);
+
+        const filtered = list
+          .filter(r => this.matchesRoomTimesFilters(r))
+          .filter(r => !this.avgDurationSiteFilter || this.avgDurationSiteFilter === "ALL" || r.Site === this.avgDurationSiteFilter);
+
         this.buildAvgDurationFiveYearsChart(filtered);
         this.avgDurationChartOptions = {
           title: "",
@@ -4777,7 +5022,6 @@ loadAvgDuration(): void {
     
           
         };
-        this.lastAvgDurationYear = baseYear;
         this.isAvgDurationLoading = false;
         this.cdr.detectChanges();
       },
@@ -5430,10 +5674,21 @@ private loadAvgSetup(): void {
   }
 
 private loadLossByWingPerDay(): void {
-  const baseYear = this.getLatestYearFromDeptData() || this.currentYear.toString();
+  const baseYear = this.getBaseYearForRoomTimes();
 
-  // אם כבר טענו עבור שנת בסיס זו – נשתמש במטמון
-  if (this.lossByWingChartData.length > 0 && this.lastLossByWingBaseYear === baseYear) {
+  const raw = this.lossByWingYearRawByBaseYear.get(baseYear);
+  if (raw && raw.length > 0) {
+    const filtered = raw.filter(r => this.matchesRoomTimesFilters({
+      Site: r.Site,
+      Wing: r.Wing,
+      Room: r.Room,
+      SurgeryType: r.SurgeryType,
+      Shift: r.Shift,
+      WeekendType: r.WeekendType,
+    }));
+
+    this.lossByWingRowsCache = filtered;
+    this.buildLossByWingChart(filtered);
     this.isLossByWingLoading = false;
     this.cdr.detectChanges();
     return;
@@ -5441,19 +5696,27 @@ private loadLossByWingPerDay(): void {
 
   this.isLossByWingLoading = true;
 
+  // Only one API call per baseYear; filter locally afterwards.
   this.http
     .get<LossByWingYearDto[]>(environment.url + "GetLossByWingYear_surgeries_dashborad", {
-      params: { baseYear: baseYear.toString() },
+      params: { baseYear },
     })
     .subscribe(
       (rows) => {
         const list = Array.isArray(rows) ? rows : [];
-        this.lossByWingRowsCache = list;
+        this.lossByWingYearRawByBaseYear.set(baseYear, list);
 
-        // בניית גרף: זמן אבוד ליום לפי מחלקה ושנה, ללא חישוב נוסף בצד הקליינט
-        this.buildLossByWingChart(list);
+        const filtered = list.filter(r => this.matchesRoomTimesFilters({
+          Site: r.Site,
+          Wing: r.Wing,
+          Room: r.Room,
+          SurgeryType: r.SurgeryType,
+          Shift: r.Shift,
+          WeekendType: r.WeekendType,
+        }));
 
-        this.lastLossByWingBaseYear = baseYear;
+        this.lossByWingRowsCache = filtered;
+        this.buildLossByWingChart(filtered);
         this.isLossByWingLoading = false;
         this.cdr.detectChanges();
       },
