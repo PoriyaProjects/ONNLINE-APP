@@ -401,6 +401,8 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
             textStyle: {
                 fontSize: 16, // פונט גדול וברור על העמודות
                 bold: true,
+
+                // rotation: -90, // <--- להוסיף כאן
                 // color: "#000000",
                 // auraColor: "none",
             },
@@ -2705,11 +2707,12 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
                 });
               
                 const fundTypesUnsorted = Array.from(byFundYear.keys());
-                const fundTypes = fundTypesUnsorted.slice().sort((a, b) => {
-                    const totalA = years.reduce((sum, y) => sum + (byFundYear.get(a)?.get(y) || 0), 0);
-                    const totalB = years.reduce((sum, y) => sum + (byFundYear.get(b)?.get(y) || 0), 0);
-                    return totalB - totalA;
-                });
+                const preferredFundOrder: string[] = ['ביה\"ח', 'קרן', 'לא ידוע'];
+                const remainingFundTypes = fundTypesUnsorted.filter(ft => !preferredFundOrder.includes(ft));
+                const fundTypes: string[] = [
+                    ...preferredFundOrder.filter(ft => fundTypesUnsorted.includes(ft)),
+                    ...remainingFundTypes,
+                ];
                 const columns: any[] = ['שנה'];
                 fundTypes.forEach(ft => {
                     columns.push({ type: 'number', label: ft });
@@ -3054,7 +3057,13 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
                 });
 
                 const yearsArr = Array.from(fundByYear.keys()).sort((a, b) => a - b);
-                const fundTypes = Array.from(fundTypesSet.values()).sort();
+                const fundTypesUnsorted = Array.from(fundTypesSet.values());
+                const preferredFundOrder: string[] = ['ביה\"ח', 'קרן', 'לא ידוע'];
+                const remainingFundTypes = fundTypesUnsorted.filter(ft => !preferredFundOrder.includes(ft)).sort();
+                const fundTypes: string[] = [
+                    ...preferredFundOrder.filter(ft => fundTypesUnsorted.includes(ft)),
+                    ...remainingFundTypes,
+                ];
 
                 if (yearsArr.length === 0 || fundTypes.length === 0) {
                     this.chartData = [];
@@ -6021,7 +6030,7 @@ private loadAvgFirstMorningEntry(): void {
     annotations: {
       alwaysOutside: true,
       textStyle: {
-        fontSize: 14,
+        fontSize: 13.5,
         bold: true,
         // rotation: -90,
         // make sure text is readable on the bar colors
@@ -6084,8 +6093,8 @@ private loadAvgFirstMorningEntry(): void {
     annotations: {
       alwaysOutside: true,
       textStyle: {
-        fontSize: 14,
-        bold: true,
+        fontSize: 13.5,
+                bold: true,
         auraColor: "none",
       },
       stem: {
@@ -6229,9 +6238,69 @@ private loadAvgLastMorningEnd(): void {
 
     // Move legend (מקרא) to the top for this chart only.
     // Keep the rest as Google Charts defaults to avoid side effects.
+    // this.lastEndTimeChartOptions = {
+    //   legend: { position: "top", alignment: "end" },
+    // };
     this.lastEndTimeChartOptions = {
-      legend: { position: "top", alignment: "end" },
-    };
+        title: "",
+        titleTextStyle: {
+          fontSize: 18,
+          bold: true,
+          color: "#1e293b",
+        },
+        legend: {
+          position: "top",
+          alignment: "end",
+          textStyle: { fontSize: 14, bold: true }
+        },
+        hAxis: {
+          textStyle: { fontSize: 14, bold: true, color: "#334155" },
+          slantedText: true,
+          slantedTextAngle: 25,
+          titleTextStyle: {
+            fontSize: 16,
+            bold: true,
+            italic: false,
+          },
+        },
+        vAxis: {
+          title: "ממוצע זמן סיום ניתוח אחרון (שעה)",
+          textStyle: { fontSize: 14, bold: true },
+          titleTextStyle: {
+            fontSize: 16,
+            bold: true,
+            italic: false,
+          },
+          // טווח טיפוסי ל‑SETUP (0–120) + טיק מודגש ב‑20 דקות
+        //   ticks: [0, 20, 40, 60, 80, 100, 120],
+        },
+        bar: { groupWidth: "60%" },
+        chartArea: {
+          width: '90%',
+          height: '60%',
+          left: 40,
+          top: 50
+        },
+        animation: { startup: true, duration: 800, easing: "out" },
+        annotations: {
+          alwaysOutside: true,
+          textStyle: {
+            fontSize: 14,
+            rotation: -90,
+            bold: true,
+          }
+        },
+        // series: {
+        //   [thresholdSeriesIndex]: {
+        //     type: "line",
+        //     color: "#ff0000",
+        //     lineWidth: 2,
+        //     // קו מקוקו כדי שיבדל מהעמודות
+        //     lineDashStyle: [6, 4],
+        //     visibleInLegend: true
+        //   }
+        // }
+      };
   }
 
 private loadAvgSetup(): void {
@@ -6507,7 +6576,7 @@ private buildLossByWingChart(rows: LossByWingYearDto[]): void {
   });
   this.lossByWingChartColumns = cols;
 
-  const byWingYear = new Map<string, Map<number, number>>();
+  const byWingYear = new Map<string, Map<number, { min: number; label: string }>>();
   rows.forEach(r => {
     const wing = (r.Wing || "לא צוין").trim();
     const year = Number(r.Year);
@@ -6530,34 +6599,40 @@ private buildLossByWingChart(rows: LossByWingYearDto[]): void {
       }
     }
 
-    if (!byWingYear.has(wing)) {
-      byWingYear.set(wing, new Map<number, number>());
-    }
-    // אם עדיין אין לנו ערך תקין – נדלג על הרשומה
     if (val == null || isNaN(val)) {
       return;
     }
 
+    if (!byWingYear.has(wing)) {
+      byWingYear.set(wing, new Map<number, { min: number; label: string }>());
+    }
+
+    const label =
+      (r.AvgLossTime && r.AvgLossTime.trim()) ||
+      this.minutesToTime(val);
+
     // אם יש כמה רשומות לאותה מחלקה/שנה – האחרונה גוברת; לא עושים ממוצע מחדש
-    byWingYear.get(wing)!.set(year, val);
+    byWingYear.get(wing)!.set(year, { min: val, label });
   });
 
   this.lossByWingChartData = wings.map(wing => {
-    const yearMap = byWingYear.get(wing) || new Map<number, number>();
+    const yearMap = byWingYear.get(wing) || new Map<number, { min: number; label: string }>();
     const series: any[] = [];
 
     years.forEach(y => {
-      const val = yearMap.get(y);
-      if (val == null || isNaN(val)) {
+      const entry = yearMap.get(y);
+      if (!entry || entry.min == null || isNaN(entry.min)) {
         series.push(null, null);
-      } else {
-        const intVal = Math.round(val);
-        const formatted = intVal.toString();
-        series.push(
-          { v: intVal, f: formatted },
-          formatted,
-        );
+        return;
       }
+
+      const intVal = Math.round(entry.min);
+      const label = entry.label || this.minutesToTime(intVal);
+
+      series.push(
+        { v: intVal, f: label },
+        label,
+      );
     });
 
     return [wing, ...series];

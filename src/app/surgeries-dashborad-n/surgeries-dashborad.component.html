@@ -1652,10 +1652,16 @@
             כאן יוצג זמן הסיום הממוצע של הניתוח האחרון בכל יום, לפי מחלקה.
           </p>
           <div class="kpi-filter-row" *ngIf="!isLastEndTimeLoading">
-            <button mat-stroked-button type="button" class="overflow-toggle-btn"
-              [class.active]="lastEndTimeExcludeOverflowDays" (click)="toggleLastEndTimeExcludeOverflow()">
-              <mat-icon>{{ lastEndTimeExcludeOverflowDays ? 'filter_alt' : 'filter_alt_off' }}</mat-icon>
-              <span>{{ lastEndTimeExcludeOverflowDays ? 'ממוצע ללא ימי גלישה' : 'נטרל ימים עם גלישה מהממוצע' }}</span>
+            <button
+              mat-stroked-button
+              type="button"
+              class="overflow-toggle-btn"
+              matTooltip="ממוצע &quot;אמיתי&quot; של זמן סיום הניתוח האחרון – בלי ימים שגלשו מעבר לשעת היעד. בכיבוי, הממוצע מחושב על כל הימים כולל ימי גלישה."
+              matTooltipPosition="above"
+              [class.active]="lastEndTimeExcludeOverflowDays"
+              (click)="toggleLastEndTimeExcludeOverflow()">
+              <mat-icon>{{ lastEndTimeExcludeOverflowDays ? 'toggle_on' : 'toggle_off' }}</mat-icon>
+              <span>{{ lastEndTimeExcludeOverflowDays ? 'להציג ללא ימי גלישה' : 'להכליל ימי גלישה בממוצע' }}</span>
             </button>
           </div>
           <p *ngIf="lastEndTimeExcludeNoData" class="kpi-intro kpi-exclude-fallback">
@@ -1668,10 +1674,16 @@
           <div *ngIf="!isLastEndTimeLoading && (!lastEndTimeData || lastEndTimeData.length === 0)" class="kpi-no-data">
             אין נתונים להצגה כרגע. חבר את ה‑API כדי לאכלס את הטבלה.
           </div>
+          <!-- <google-chart *ngIf="!isLastEndTimeLoading && lastEndTimeChartData && lastEndTimeChartData.length > 0"
+            [type]="'ColumnChart'" [columns]="lastEndTimeChartColumns" [data]="lastEndTimeChartData"
+            [options]="lastEndTimeChartOptions" [width]="'100%'" [height]="'100%'">
+          </google-chart> -->
+
           <google-chart *ngIf="!isLastEndTimeLoading && lastEndTimeChartData && lastEndTimeChartData.length > 0"
             [type]="'ColumnChart'" [columns]="lastEndTimeChartColumns" [data]="lastEndTimeChartData"
             [options]="lastEndTimeChartOptions" [width]="'100%'" [height]="'100%'">
           </google-chart>
+
           <div *ngIf="!isLastEndTimeLoading && lastEndTimeChartData && lastEndTimeChartData.length > 0"
             class="kpi-chart-caption">
             כל עמודת צבע מייצגת שנה, והסדרה עבור כל מחלקה(Wing) מציגה את זמן הסיום הממוצע של הניתוח האחרון.
