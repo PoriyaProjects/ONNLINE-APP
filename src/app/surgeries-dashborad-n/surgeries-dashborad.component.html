@@ -1623,15 +1623,6 @@
             class="kpi-chart-caption">
             כל עמודת צבע מייצגת שנה, והסדרה עבור כל מחלקה (Wing) מציגה את ממוצע ניתוחים ליום בחדר.
           </div>
-          <div
-            *ngIf="!isSurgeriesPerDayLoading && surgeriesPerDayChartData && surgeriesPerDayChartData.length > 0 && surgeriesPerDayChartYears?.length"
-            class="kpi-chart-legend">
-            <span *ngFor="let y of surgeriesPerDayChartYears; let i = index" class="kpi-legend-item">
-              <span class="kpi-legend-color"
-                [style.background-color]="kpiChartYearColors[i % kpiChartYearColors.length]"></span>
-              <span class="kpi-legend-label">{{ y }}</span>
-            </span>
-          </div>
         </ng-container>
 
         <!-- FIRST START VIEW -->
@@ -1656,15 +1647,6 @@
           <div *ngIf="!isFirstStartTimeLoading && firstStartTimeChartData && firstStartTimeChartData.length > 0"
             class="kpi-chart-caption">
             כל עמודה מציגה זמן כניסה ממוצע של הניתוח הראשון בבוקר לכל מחלקה(Wing), בחמש השנים האחרונות.
-          </div>
-          <div
-            *ngIf="!isFirstStartTimeLoading && firstStartTimeChartData && firstStartTimeChartData.length > 0 && firstStartTimeChartYears?.length"
-            class="kpi-chart-legend">
-            <span *ngFor="let y of firstStartTimeChartYears; let i = index" class="kpi-legend-item">
-              <span class="kpi-legend-color"
-                [style.background-color]="kpiChartYearColors[i % kpiChartYearColors.length]"></span>
-              <span class="kpi-legend-label">{{ y }}</span>
-            </span>
           </div>
         </ng-container>
 
@@ -1710,15 +1692,6 @@
             class="kpi-chart-caption">
             כל עמודת צבע מייצגת שנה, והסדרה עבור כל מחלקה(Wing) מציגה את זמן הסיום הממוצע של הניתוח האחרון.
           </div>
-          <div
-            *ngIf="!isLastEndTimeLoading && lastEndTimeChartData && lastEndTimeChartData.length > 0 && lastEndTimeChartYears?.length"
-            class="kpi-chart-legend">
-            <span *ngFor="let y of lastEndTimeChartYears; let i = index" class="kpi-legend-item">
-              <span class="kpi-legend-color"
-                [style.background-color]="kpiChartYearColors[i % kpiChartYearColors.length]"></span>
-              <span class="kpi-legend-label">{{ y }}</span>
-            </span>
-          </div>
         </ng-container>
 
         <!-- AVG SETUP VIEW -->
@@ -1742,15 +1715,6 @@
             class="kpi-chart-caption">
             כל עמודת צבע מייצגת שנה, והסדרה עבור כל מחלקה(Wing) מציגה את זמן ה‑SETUP הממוצע (בדקות) בין ניתוחים.
           </div>
-          <div
-            *ngIf="!isAvgSetupLoading && avgSetupChartData && avgSetupChartData.length > 0 && avgSetupChartYears?.length"
-            class="kpi-chart-legend">
-            <span *ngFor="let y of avgSetupChartYears; let i = index" class="kpi-legend-item">
-              <span class="kpi-legend-color"
-                [style.background-color]="kpiChartYearColors[i % kpiChartYearColors.length]"></span>
-              <span class="kpi-legend-label">{{ y }}</span>
-            </span>
-          </div>
         </ng-container>
 
         <!-- LOST TIME PER DAY VIEW -->
@@ -1773,15 +1737,6 @@
           <div *ngIf="!isLossByWingLoading && lossByWingChartData && lossByWingChartData.length > 0"
             class="kpi-chart-caption">
             כל עמודת צבע מייצגת שנה, והסדרה עבור כל מחלקה (Wing) מציגה את הזמן האבוד ליום (בדקות).
-          </div>
-          <div
-            *ngIf="!isLossByWingLoading && lossByWingChartData && lossByWingChartData.length > 0 && lossByWingChartYears?.length"
-            class="kpi-chart-legend">
-            <span *ngFor="let y of lossByWingChartYears; let i = index" class="kpi-legend-item">
-              <span class="kpi-legend-color"
-                [style.background-color]="kpiChartYearColors[i % kpiChartYearColors.length]"></span>
-              <span class="kpi-legend-label">{{ y }}</span>
-            </span>
           </div>
         </ng-container>
 
@@ -1808,15 +1763,6 @@
             *ngIf="!isApprovedUtilizationLoading && approvedUtilizationChartData && approvedUtilizationChartData.length > 0"
             class="kpi-chart-caption">
             כל עמודת צבע מייצגת שנה, והסדרה עבור כל מחלקה (Wing) מציגה את הזמן המנוצל ליום (בדקות).
-          </div>
-          <div
-            *ngIf="!isApprovedUtilizationLoading && approvedUtilizationChartData && approvedUtilizationChartData.length > 0 && approvedUtilizationChartYears?.length"
-            class="kpi-chart-legend">
-            <span *ngFor="let y of approvedUtilizationChartYears; let i = index" class="kpi-legend-item">
-              <span class="kpi-legend-color"
-                [style.background-color]="kpiChartYearColors[i % kpiChartYearColors.length]"></span>
-              <span class="kpi-legend-label">{{ y }}</span>
-            </span>
           </div>
         </ng-container>
       </div>
