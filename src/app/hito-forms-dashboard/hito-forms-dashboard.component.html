@@ -2,10 +2,7 @@
 
   <!-- ══ HEADER — always visible ══ -->
   <div class="hd-header">
-    <h1 class="hd-title">תמונת מצב שנתית שאלונים למחלקה</h1>
-    <div class="hd-year-badge" *ngIf="selectedYears.length > 0">
-      <span class="hd-dot"></span> {{ selectedYears.join(', ') }}
-    </div>
+    <!-- <h1 class="hd-title">תמונת מצב שנתית שאלונים למחלקה</h1> -->
   </div>
 
   <!-- ══ CHART — fixed 420px height ══ -->
@@ -38,6 +35,18 @@
 
   <!-- ══ BOTTOM — fills remaining space to footer ══ -->
   <div class="hd-bottom-wrap">
+    <!-- Top bar: Year + Mode + Refresh -->
+    <div class="hd-bottom-topbar">
+      <div class="hd-year-badge" *ngIf="selectedYears.length > 0">
+        <span class="hd-dot"></span> {{ selectedYears.join(', ') }}
+      </div>
+      <div class="hd-mode">
+        <button class="hd-mode-btn" [class.hd-mode-btn--on]="viewMode==='forms'" (click)="setViewMode('forms')">טפסים</button>
+        <button class="hd-mode-btn" [class.hd-mode-btn--on]="viewMode==='questions'" (click)="setViewMode('questions')">שאלות</button>
+      </div>
+      <button class="hd-refresh" (click)="refreshData()" title="רענון">רענון</button>
+    </div>
+
     <div class="hd-bottom">
 
       <div *ngIf="loadingOptions" class="hd-center-msg" style="grid-column:1/-1;">
@@ -51,7 +60,7 @@
       <ng-container *ngIf="!loadingOptions && !optionsLoadError">
 
         <!-- COL 1: שם שאלון -->
-        <div class="hd-filt">
+        <div class="hd-filt" *ngIf="viewMode==='forms'">
           <div class="hd-filt-head">שם שאלון</div>
           <div class="hd-search-wrap">
             <input type="text" [(ngModel)]="formSearch" placeholder="🔍 חיפוש..." class="hd-search" />
@@ -64,6 +73,33 @@
             <label class="hd-cb" *ngFor="let f of filteredForms">
               <input type="checkbox" [checked]="isIn(selectedForms, f)" (change)="toggle(selectedForms, f)"/>
               <span>{{ f }}</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- COL 1 ALT: Questions mode form + questions -->
+        <div class="hd-filt" *ngIf="viewMode==='questions'">
+          <div class="hd-filt-head">בחר טופס</div>
+          <div class="hd-search-wrap">
+            <select class="hd-select" [ngModel]="selectedQuestionForm" (ngModelChange)="onQuestionFormChange($event)">
+              <option [ngValue]="null">—</option>
+              <option *ngFor="let f of allForms" [ngValue]="f">{{ f }}</option>
+            </select>
+          </div>
+          <div class="hd-filt-head" style="margin-top:0.5rem;">בחר שאלות</div>
+          <div class="hd-search-wrap">
+            <input type="text" [(ngModel)]="questionSearch" placeholder="🔍 חיפוש שאלה..." class="hd-search" />
+          </div>
+          <div class="hd-center-msg" *ngIf="questionsLoading" style="min-height:60px;">
+            <mat-spinner diameter="22"></mat-spinner>
+          </div>
+          <div class="hd-center-msg hd-center-msg--err" *ngIf="questionsError" style="min-height:60px;">
+            {{ questionsError }}
+          </div>
+          <div class="hd-cbl" *ngIf="!questionsLoading && !questionsError">
+            <label class="hd-cb" *ngFor="let q of filteredQuestions">
+              <input type="checkbox" [checked]="isQuestionSelected(q.itemId)" (change)="toggleQuestion(q.itemId)"/>
+              <span>{{ q.itemText }}</span>
             </label>
           </div>
         </div>
@@ -117,7 +153,7 @@
         </div>
 
         <!-- COL 4: Stats — stretches to fill height -->
-        <div class="hd-stats" [class.hd-dim]="loading && stats">
+        <div class="hd-stats" [class.hd-dim]="loading && stats" *ngIf="viewMode==='forms'">
 
           <div *ngIf="loading && !stats" class="hd-center-msg"><mat-spinner diameter="22"></mat-spinner></div>
           <div *ngIf="(error || optionsLoadError) && !stats" class="hd-center-msg hd-center-msg--err">{{ error }}</div>

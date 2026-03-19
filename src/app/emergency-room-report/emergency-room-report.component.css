@@ -46,6 +46,8 @@
      padding: 0;
      margin: 0;
      width: 100%;
+     height: calc(100vh - 80px);
+     max-height: calc(100vh - 80px);
      min-height: calc(100vh - 80px);
      overflow: hidden;
      box-sizing: border-box;
@@ -225,6 +227,7 @@
      display: flex;
      align-items: stretch;
      justify-content: flex-start;
+     flex-shrink: 0;
      background: var(--er-bg-secondary);
      border-bottom: 2px solid var(--er-border);
      padding: 0 2.5rem;
@@ -350,6 +353,7 @@
      position: relative;
      z-index: 5;
      flex: 1;
+     min-height: 0;
      overflow: hidden;
      display: flex;
      flex-direction: column;
@@ -388,8 +392,16 @@
    /* ---- Body scroll wrapper ---- */
    .table-body-wrap {
      flex: 1;
-     overflow: hidden;
+     min-height: 0;
+     overflow-x: hidden;
+     overflow-y: auto;
      position: relative;
+   }
+
+   /* Marquee mode: clip overflow; animation handles movement */
+   .table-body-wrap.marquee-active {
+     overflow-y: hidden;
+     overflow: hidden;
    }
    
    .table-body-scroll {
@@ -495,12 +507,103 @@
      color: var(--er-accent-green);
    }
    
-   /* Consult text */
+   /* Consult text (fallback when no chips) */
    .consult-text {
      white-space: normal;
      word-break: break-word;
      line-height: 1.45;
      font-size: 0.9rem;
+   }
+
+   .td-cell-consult {
+     overflow: visible;
+     align-self: start;
+   }
+
+   /* Consult chips: department name on first line, time/counter below */
+   .chip.consult-chip {
+     display: inline-flex;
+     flex-direction: column;
+     align-items: stretch;
+     align-self: flex-start;
+     max-width: 100%;
+     gap: 0.2rem;
+     padding: 0.35rem 0.55rem;
+     border-radius: 6px;
+     font-size: 0.85rem;
+     background: var(--er-card-bg);
+     border: 1px solid var(--er-border);
+     color: var(--er-text-secondary);
+     white-space: normal;
+   }
+
+   .consult-chip-stack {
+     display: flex;
+     flex-direction: column;
+     align-items: stretch;
+     gap: 0.25rem;
+     width: 100%;
+   }
+
+   .consult-chip-name {
+     display: block;
+     white-space: normal;
+     word-break: break-word;
+     line-height: 1.35;
+     font-weight: 600;
+     max-width: 100%;
+   }
+
+   .consult-chip-meta {
+     display: flex;
+     flex-wrap: wrap;
+     align-items: center;
+     gap: 0.35rem;
+   }
+
+   .chip.consult-chip .chip-time,
+   .chip.consult-chip .chip-counter {
+     font-variant-numeric: tabular-nums;
+   }
+
+   /* Answer 1 + Answer_Date: green + done + time */
+   .chip.consult-chip.consult-done {
+     border-color: rgba(52, 211, 153, 0.35);
+     background: var(--er-accent-green-dim);
+     color: var(--er-accent-green);
+   }
+
+   .chip.consult-chip.consult-done .consult-chip-name,
+   .chip.consult-chip.consult-done .chip-time,
+   .chip.consult-chip.consult-done .chip-icon.icon-check {
+     color: var(--er-accent-green);
+   }
+
+   /* No answer: red + counter */
+   .chip.consult-chip.consult-pending {
+     border-color: rgba(248, 113, 113, 0.4);
+     background: rgba(248, 113, 113, 0.12);
+     color: var(--er-accent-red);
+   }
+
+   .chip.consult-chip.consult-pending .chip-counter {
+     color: var(--er-accent-red);
+   }
+
+   /* Answer 2: yellow + time */
+   .chip.consult-chip.consult-not-final {
+     border-color: rgba(251, 191, 36, 0.5);
+     background: var(--er-accent-amber-dim);
+     color: var(--er-accent-amber);
+   }
+
+   .chip.consult-chip.consult-not-final .consult-chip-name,
+   .chip.consult-chip.consult-not-final .chip-time {
+     color: var(--er-accent-amber);
+   }
+
+   .chip.consult-chip.consult-pending .consult-chip-name {
+     color: var(--er-accent-red);
    }
    
    /* ============================================================
@@ -531,6 +634,19 @@
    .chip.img-chip {
      background: rgba(255, 255, 255, 0.08);
      border: 1px solid rgba(255, 255, 255, 0.15);
+   }
+
+   /* Imaging done: same green as blood-chip.done */
+   .chip.img-chip.img-done {
+     background: var(--er-accent-green-dim);
+     border-color: rgba(52, 211, 153, 0.2);
+     color: var(--er-accent-green);
+   }
+
+   .chip.img-chip.img-done .chip-name,
+   .chip.img-chip.img-done .chip-time,
+   .chip.img-chip.img-done .chip-icon.icon-check {
+     color: var(--er-accent-green);
    }
    
    .chip .chip-name {

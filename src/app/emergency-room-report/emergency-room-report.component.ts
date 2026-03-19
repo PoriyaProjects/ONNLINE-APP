@@ -18,6 +18,12 @@ export interface EmergencyRoomPatient {
   Decision_Description?: string;
   Consulted_Unit?: string;
   Entry_Date?: string | null;
+  /** Consilium answer date; ISO 8601. Backend may send Answer_Date or answer_Date */
+  answer_Date?: string | null;
+  /** Consilium final answer text. Backend may send Final_Answer or final_Answer */
+  final_Answer?: string | null;
+  /** 1 = final answer (green), 2 = not final. Backend may send Answer_Type or answer_Type. If missing, derived from answer_Date + final_Answer */
+  answer_Type?: number | string | null;
 }
 
 export interface EmergencyRoomLabTest {
@@ -48,12 +54,27 @@ export interface ImagingItem {
   hasResult: boolean;
 }
 
+/** Consilium answer display: 1 = final (green), 2 = not final (warning), null = no answer */
+export type ConsiliumAnswerStatus = 1 | 2 | null;
+
+export type ConsultChipVariant = 'done' | 'not_final' | 'pending';
+
+/** One chip in the ייעוצים column: green only if answer 1 + Answer_Date; yellow if no date or type 2; red counter if waiting */
+export interface ConsultedChipItem {
+  unitName: string;
+  chipVariant: ConsultChipVariant;
+  time: string;
+  entryDate: string | null;
+}
+
 export interface EmergencyRoomReportRow {
   Id_Num: string;
   Accept_Time: string;
   Entry_Date: string | null;
   Decision_Description: string;
   Consulted_Unit: string;
+  /** Chips for ייעוצים column: time, name, ✓ when done (like צילומים) */
+  ConsultedChips: ConsultedChipItem[];
   ImagingList: ImagingItem[];
   BloodTestsList: BloodTestItem[];
   hasAnyBloodResult: boolean;
@@ -68,10 +89,10 @@ export const ER_DEPARTMENTS = [
   { id: 'מהלכים', label: 'מהלכים' },
 ] as const;
 
-/** How many visible rows fit before we start scrolling */
-const VISIBLE_ROW_COUNT = 8;
-/** Seconds per row for scroll speed */
+/** Seconds per row for marquee speed (big-screen ER display: always auto-scroll, no manual scroll) */
 const SECONDS_PER_ROW = 4;
+/** Minimum marquee duration so short lists stay readable */
+const MIN_SCROLL_SECONDS = 28;
 
 @Component({
   selector: 'app-emergency-room-report',
@@ -198,9 +219,9 @@ export class EmergencyRoomReportComponent implements OnInit, OnDestroy {
 
   private updateScrollState(): void {
     const count = this.mergedRows.length;
-    if (count > VISIBLE_ROW_COUNT) {
+    if (count > 0) {
       this.shouldScroll = true;
-      const totalSeconds = count * SECONDS_PER_ROW;
+      const totalSeconds = Math.max(count * SECONDS_PER_ROW, MIN_SCROLL_SECONDS);
       this.scrollDuration = totalSeconds + 's';
     } else {
       this.shouldScroll = false;
@@ -221,11 +242,11 @@ export class EmergencyRoomReportComponent implements OnInit, OnDestroy {
       var group = entry[1];
       var first = group[0];
 
-      // Build imaging list — deduplicate by ERBOE name
+      // Build imaging list — deduplicate by ERBOE name (any non-empty ERBOE, e.g. דימ-*, מע-*, מעאנדר)
       var imagingMap = new Map<string, ImagingItem>();
       for (var pat of group) {
         var erboe = (pat.ERBOE || '').trim();
-        if (!erboe || erboe.indexOf('דימ-') === -1) continue;
+        if (!erboe) continue;
         // Skip if we already have this ERBOE name
         if (imagingMap.has(erboe)) continue;
 
@@ -267,12 +288,14 @@ export class EmergencyRoomReportComponent implements OnInit, OnDestroy {
       var hasAnyBloodResult = bloodTestsList.some(function(b) { return b.hasResult; });
 
       var entryDate = this.getEntryDateFromGroup(group);
+      var consultedChips = this.buildConsultedChips(group);
       rows.push({
         Id_Num: idNum,
         Accept_Time: (first.Accept_Time || '').trim() || '—',
         Entry_Date: entryDate,
         Decision_Description: (first.Decision_Description || '').trim() || '—',
         Consulted_Unit: this.buildConsultedUnitText(group),
+        ConsultedChips: consultedChips,
         ImagingList: imagingList,
         BloodTestsList: bloodTestsList,
         hasAnyBloodResult: hasAnyBloodResult,
@@ -282,6 +305,51 @@ export class EmergencyRoomReportComponent implements OnInit, OnDestroy {
       });
     }
     return rows;
+  }
+
+  /** Build consultation chips. Green only if Answer_Date + answer_Type 1. Yellow if no Answer_Date or type 2 / final "2". Red counter if still waiting. */
+  private buildConsultedChips(group: EmergencyRoomPatient[]): ConsultedChipItem[] {
+    var seen = new Set<string>();
+    var chips: ConsultedChipItem[] = [];
+    for (var p of group) {
+      var unit = (p.Consulted_Unit || '').trim();
+      if (!unit || seen.has(unit)) continue;
+      seen.add(unit);
+      var raw = p as Record<string, unknown>;
+      var entryRaw = raw['Entry_Date'] ?? raw['entry_Date'] ?? raw['EntryDate'] ?? p.Entry_Date ?? p.Admission_Date;
+      var entryDate = entryRaw != null && String(entryRaw).trim() !== '' ? String(entryRaw).trim() : null;
+      var ad = raw['answer_Date'] ?? raw['Answer_Date'] ?? p.answer_Date;
+      var fa = raw['final_Answer'] ?? raw['Final_Answer'] ?? p.final_Answer;
+      var at = raw['answer_Type'] ?? raw['Answer_Type'] ?? p.answer_Type;
+      var answerDate = ad != null && String(ad).trim() !== '' ? String(ad).trim() : null;
+      var finalAnswer = fa != null && String(fa).trim() !== '' ? String(fa).trim() : null;
+      var finalAnswerIsTwo = finalAnswer != null && (finalAnswer === '2' || finalAnswer.trim() === '2');
+      var answerType: ConsiliumAnswerStatus = null;
+      if (at !== undefined && at !== null && at !== '') {
+        var n = typeof at === 'number' ? at : parseInt(String(at), 10);
+        if (n === 1) answerType = 1;
+        else if (n === 2) answerType = 2;
+      }
+      var hasAnswerDate = answerDate != null;
+      var chipVariant: ConsultChipVariant;
+      if (answerType === null && !hasAnswerDate && !finalAnswer) {
+        chipVariant = 'pending';
+      } else if (answerType === 2 || finalAnswerIsTwo || !hasAnswerDate) {
+        chipVariant = 'not_final';
+      } else if (answerType === 1 && hasAnswerDate && !finalAnswerIsTwo) {
+        chipVariant = 'done';
+      } else {
+        chipVariant = 'not_final';
+      }
+      var time = this.formatEntryToAnswerTime(entryDate, answerDate);
+      chips.push({
+        unitName: unit,
+        chipVariant: chipVariant,
+        time: time,
+        entryDate: entryDate
+      });
+    }
+    return chips;
   }
 
   /** Combine all unique Consulted_Unit values for a patient group */
@@ -403,6 +471,17 @@ export class EmergencyRoomReportComponent implements OnInit, OnDestroy {
     if (decision.indexOf('אשפוז') !== -1 || decision.indexOf('חדר') !== -1) return 'hospitalize';
     if (decision.indexOf('שחרור') !== -1) return 'release';
     return '';
+  }
+
+  /** Format Entry_Date → Answer_Date for consilium time range (e.g. "10:18 → 14:30"). Returns "—" if either missing. */
+  formatEntryToAnswerTime(entryDate: string | null | undefined, answerDate: string | null | undefined): string {
+    if (!entryDate || !String(entryDate).trim() || !answerDate || !String(answerDate).trim()) return '—';
+    var e = new Date(entryDate);
+    var a = new Date(answerDate);
+    if (isNaN(e.getTime()) || isNaN(a.getTime())) return '—';
+    var eStr = this.datePipe.transform(e, 'HH:mm') || '—';
+    var aStr = this.datePipe.transform(a, 'HH:mm') || '—';
+    return eStr + ' → ' + aStr;
   }
 
   private startElapsedTimer(): void {
