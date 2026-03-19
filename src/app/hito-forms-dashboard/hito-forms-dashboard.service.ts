@@ -25,6 +25,20 @@ export interface HitoFormsChartItem {
   Value: number;
 }
 
+export interface HitoFormQuestionItem {
+  itemId: number;
+  itemText: string;
+}
+
+export interface HitoQuestionScoreRow {
+  formName_Name: string;
+  itemId: number;
+  itemText: string;
+  totalAnswers: number;
+  positiveAnswers: number;
+  percentPositive: number; // 0..100
+}
+
 function unwrapD<T>(res: T | { d: T }): T {
   if (res != null && typeof res === 'object' && 'd' in res) {
     const d = (res as { d: T }).d;
@@ -125,6 +139,47 @@ export class HitoFormsDashboardService {
       map(res => {
         const arr = unwrapD(res);
         return Array.isArray(arr) ? arr : [];
+      }),
+      catchError(() => of([]))
+    );
+  }
+
+  /** Questions-mode: list of questions (items) for a given form. Backend needs to implement. */
+  getQuestionsByForm(params: { formName_Name: string }): Observable<HitoFormQuestionItem[]> {
+    const url = BASE + 'GetHitoQuestionsByForm';
+    const body = { formName_Name: (params.formName_Name || '').trim() };
+    return this.http.post<unknown>(url, body, { headers: JSON_HEADERS }).pipe(
+      map(res => {
+        const arr = unwrapD(res);
+        return Array.isArray(arr) ? (arr as HitoFormQuestionItem[]) : [];
+      }),
+      catchError(() => of([]))
+    );
+  }
+
+  /**
+   * Questions-mode: aggregated % by question (Score=1 vs all answers) for a given form.
+   * Backend needs to implement.
+   */
+  getQuestionScores(params: {
+    year?: string;
+    quarter?: string;
+    formName_Name: string;
+    itemIdsCsv?: string; // optional comma list
+    departmentFilter?: string;
+  }): Observable<HitoQuestionScoreRow[]> {
+    const url = BASE + 'GetHitoQuestionScores';
+    const body = {
+      year: params.year || '',
+      quarter: params.quarter || '',
+      formName_Name: (params.formName_Name || '').trim(),
+      itemIdsCsv: (params.itemIdsCsv || '').trim(),
+      departmentFilter: (params.departmentFilter || '').trim()
+    };
+    return this.http.post<unknown>(url, body, { headers: JSON_HEADERS }).pipe(
+      map(res => {
+        const arr = unwrapD(res);
+        return Array.isArray(arr) ? (arr as HitoQuestionScoreRow[]) : [];
       }),
       catchError(() => of([]))
     );

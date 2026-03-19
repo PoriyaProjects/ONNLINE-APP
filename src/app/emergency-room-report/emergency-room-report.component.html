@@ -70,8 +70,8 @@
         </div>
       </div>
 
-      <!-- BODY (scrolling) -->
-      <div class="table-body-wrap">
+      <!-- BODY (scrolling) — marquee clips; otherwise native scroll inside viewport -->
+      <div class="table-body-wrap" [class.marquee-active]="shouldScroll">
         <div class="scroll-fade-top" *ngIf="shouldScroll"></div>
         <div
           class="table-body-scroll"
@@ -124,9 +124,36 @@
       </span>
     </div>
 
-    <!-- Consult -->
-    <div class="td-cell">
-      <span class="consult-text" [class.no-data]="row.Consulted_Unit === '—'">{{ row.Consulted_Unit }}</span>
+    <!-- Consult — department name on first line, time/counter below; green only done+date, yellow if no date or type 2 -->
+    <div class="td-cell td-cell-consult">
+      <ng-container *ngIf="row.ConsultedChips && row.ConsultedChips.length > 0; else noConsult">
+        <div class="chips-wrap">
+          <div *ngFor="let c of row.ConsultedChips"
+               class="chip consult-chip"
+               [class.consult-done]="c.chipVariant === 'done'"
+               [class.consult-pending]="c.chipVariant === 'pending'"
+               [class.consult-not-final]="c.chipVariant === 'not_final'">
+            <div class="consult-chip-stack">
+              <span class="chip-name consult-chip-name">{{ c.unitName }}</span>
+              <div class="consult-chip-meta">
+                <ng-container *ngIf="c.chipVariant === 'done'">
+                  <span class="chip-time">{{ c.time }}</span>
+                  <span class="chip-icon icon-check">✓</span>
+                </ng-container>
+                <ng-container *ngIf="c.chipVariant === 'pending'">
+                  <span class="chip-counter">{{ getElapsedFromEntry(c.entryDate) }}</span>
+                </ng-container>
+                <ng-container *ngIf="c.chipVariant === 'not_final'">
+                  <span class="chip-time">{{ c.time }}</span>
+                </ng-container>
+              </div>
+            </div>
+          </div>
+        </div>
+      </ng-container>
+      <ng-template #noConsult>
+        <span class="no-data" [class.consult-text]="row.Consulted_Unit !== '—'">{{ row.Consulted_Unit || '—' }}</span>
+      </ng-template>
     </div>
 
     <!-- Imaging — chip style -->
@@ -135,7 +162,8 @@
         <div class="chips-wrap">
           <div *ngFor="let img of row.ImagingList"
                class="chip img-chip"
-               [class.img-pending]="!img.hasResult">
+               [class.img-pending]="!img.hasResult"
+               [class.img-done]="img.hasResult">
             <span class="chip-name">{{ img.name }}</span>
             <ng-container *ngIf="img.hasResult; else imgPending">
               <span class="chip-arrow">←</span>
