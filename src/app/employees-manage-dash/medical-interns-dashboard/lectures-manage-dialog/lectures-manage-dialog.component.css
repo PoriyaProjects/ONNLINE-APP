@@ -49,6 +49,21 @@
   margin-top: 16px;
 }
 
+.lectures-filters-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.lectures-filters-row .date-range-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: center;
+}
+
 .lectures-table {
   width: 100%;
 }
@@ -56,4 +71,30 @@
 .lectures-table th {
   font-weight: 600;
   background: #f8fafc;
+}
+
+/* PDF export container (hidden, positioned off-screen) */
+.pdf-container {
+  font-family: Arial, sans-serif;
+  background: white;
+  padding: 20px;
+}
+
+.pdf-table {
+  width: 100%;
+  border-collapse: collapse;
+  direction: rtl;
+}
+
+.pdf-table th,
+.pdf-table td {
+  border: 1px solid #444;
+  padding: 6px;
+  font-size: 12px;
+  text-align: right;
+}
+
+.pdf-table th {
+  background: #f0f0f0;
+  font-weight: bold;
 }

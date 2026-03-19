@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
 import { MatDialogRef } from '@angular/material/dialog';
 import { HttpClient } from '@angular/common/http';
@@ -11,18 +11,23 @@ import {
 import { DatePipe } from '@angular/common';
 import { ConfirmationDialogService } from 'src/app/confirmation-dialog/confirmation-dialog.service';
 import { environment } from 'src/environments/environment';
-import { Observable } from 'rxjs';
-import { map, startWith } from 'rxjs/operators';
+import { Observable, Subject } from 'rxjs';
+import { map, startWith, takeUntil } from 'rxjs/operators';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
 @Component({
   selector: 'app-lectures-manage-dialog',
   templateUrl: './lectures-manage-dialog.component.html',
   styleUrls: ['./lectures-manage-dialog.component.css']
 })
-export class LecturesManageDialogComponent implements OnInit {
+export class LecturesManageDialogComponent implements OnInit, OnDestroy {
+
+  @ViewChild('pdfContent', { static: false }) pdfContent!: ElementRef;
 
   horizontalPosition: MatSnackBarHorizontalPosition = 'start';
   verticalPosition: MatSnackBarVerticalPosition = 'bottom';
+  creating_pdf = false;
   url = environment.url;
   lectures: any[] = [];
   dataSource = new MatTableDataSource<any>([]);
@@ -31,8 +36,10 @@ export class LecturesManageDialogComponent implements OnInit {
   internsList: any[] = [];
   filteredInterns$: Observable<any[]>;
   lectureForm: FormGroup;
+  dateRangeForm: FormGroup;
   editingLectureId: number | null = null;
   saveBtnWait = false;
+  private destroy$ = new Subject<void>();
 
   constructor(
     public dialogRef: MatDialogRef<LecturesManageDialogComponent>,
@@ -50,12 +57,49 @@ export class LecturesManageDialogComponent implements OnInit {
       LectureLocationDescription: new FormControl('', null),
       LectureEmployeeID: new FormControl('', null)
     });
+    this.dateRangeForm = this.formBuilder.group({
+      startDate: new FormControl('', null),
+      endDate: new FormControl('', null)
+    });
   }
 
   ngOnInit(): void {
     this.loadLectures();
     this.loadInterns();
     this.setupInternAutocomplete();
+    this.setupDateRangeFilter();
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
+  private setupDateRangeFilter(): void {
+    this.dateRangeForm.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(() => {
+      this.applyDateRangeFilter();
+    });
+  }
+
+  private applyDateRangeFilter(): void {
+    this.dataSource.filterPredicate = (row: any, filterStr: string) => {
+      let start: string, end: string;
+      try {
+        const f = JSON.parse(filterStr || '{}');
+        start = f.startDate || '';
+        end = f.endDate || '';
+      } catch {
+        return true;
+      }
+      if (!start && !end) return true;
+      const rowDate = row.LectureDate ? new Date(row.LectureDate).getTime() : 0;
+      if (start && rowDate < new Date(start).getTime()) return false;
+      if (end && rowDate > new Date(end + 'T23:59:59').getTime()) return false;
+      return true;
+    };
+    const start = this.dateRangeForm.get('startDate')?.value || '';
+    const end = this.dateRangeForm.get('endDate')?.value || '';
+    this.dataSource.filter = JSON.stringify({ startDate: start, endDate: end });
   }
 
   private setupInternAutocomplete(): void {
@@ -144,12 +188,14 @@ export class LecturesManageDialogComponent implements OnInit {
         this.loaded = true;
         this.lectures = response['d'] || [];
         this.dataSource = new MatTableDataSource<any>(this.lectures);
+        this.applyDateRangeFilter();
         this.addLecture();
       },
       () => {
         this.loaded = true;
         this.lectures = [];
         this.dataSource = new MatTableDataSource<any>([]);
+        this.applyDateRangeFilter();
         this.addLecture();
         this.openSnackBar('שגיאה בטעינת ההרצאות');
       }
@@ -250,6 +296,64 @@ export class LecturesManageDialogComponent implements OnInit {
   //   const intern = this.internsList.find((i) => i.EmployeeID === employeeId);
   //   return intern ? `${intern.FirstName || ''} ${intern.LastName || ''}`.trim() : employeeId || '-';
   // }
+
+  exportLecturesToPdf(): void {
+    const rows = this.dataSource.filteredData || [];
+    if (rows.length === 0) {
+      this.openSnackBar('אין הרצאות לייצוא');
+      return;
+    }
+    this.creating_pdf = true;
+
+    setTimeout(() => {
+      const element = this.pdfContent?.nativeElement;
+      if (!element) {
+        this.creating_pdf = false;
+        this.openSnackBar('שגיאה בייצוא קובץ PDF');
+        return;
+      }
+
+      html2canvas(element, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: '#ffffff'
+      }).then(canvas => {
+        const imgData = canvas.toDataURL('image/png');
+
+        const pdf = new jsPDF({
+          orientation: 'landscape',
+          unit: 'mm',
+          format: 'a4'
+        });
+
+        const pageWidth = pdf.internal.pageSize.getWidth();
+        const pageHeight = pdf.internal.pageSize.getHeight();
+
+        const imgWidth = pageWidth;
+        const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+        let heightLeft = imgHeight;
+        let position = 0;
+
+        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+
+        while (heightLeft > 0) {
+          position = heightLeft - imgHeight;
+          pdf.addPage();
+          pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+          heightLeft -= pageHeight;
+        }
+
+        pdf.save('רשימת_הרצאות_סטאגרים.pdf');
+        this.openSnackBar('הייצוא הושלם בהצלחה');
+        this.creating_pdf = false;
+      }).catch(() => {
+        this.creating_pdf = false;
+        this.openSnackBar('שגיאה בייצוא קובץ PDF');
+      });
+    }, 0);
+  }
 
   openSnackBar(message: string): void {
     this._snackBar.open(message, 'X', {

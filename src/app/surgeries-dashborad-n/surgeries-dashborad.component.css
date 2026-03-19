@@ -36,7 +36,8 @@
   display: flex;
   flex-direction: column;
   font-family: "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
-  font-size: clamp(12px, 1vw, 16px);
+  /* Slightly larger baseline across the dashboard (responsive, stays within containers) */
+  font-size: clamp(13px, 1.05vw, 18px);
 }
 
 .dash.dark {
@@ -68,12 +69,15 @@
   flex: 0 0 auto;
   padding: 2px 0;
   flex-wrap: wrap;
+  min-width: 0;
 }
 
 .top-left {
   display: flex;
   align-items: center;
   gap: clamp(8px, 1vw, 14px);
+  min-width: 0;
+  flex: 1 1 auto;
 }
 
 .top-right {
@@ -132,14 +136,14 @@
   max-width: -webkit-fill-available;
   height: 40px;
   padding: 4px 10px;
-  font-size: 11px;
+  font-size: 12px;
   line-height: 1.2;
 }
 
 .top-departments-sidebar .filters-column .custom-dropdown .selected-text {
   flex: 1;
   min-width: 0;
-  font-size: 11px;
+  font-size: 12px;
 }
 
 .top-departments-sidebar .filters-column .dropdown-icon,
@@ -387,12 +391,12 @@
   z-index: 199;
 }
 
-.selected-text { flex: 1; font-size: 14px; font-weight: 500; color: #1e293b; text-align: right; }
+.selected-text { flex: 1; font-size: 15px; font-weight: 500; color: #1e293b; text-align: right; }
 .arrow-icon    { color: #94a3b8; }
 
 .option-item {
   padding: 10px 16px; border-radius: 12px;
-  font-size: 14px; color: #1e293b; cursor: pointer; transition: background .2s;
+  font-size: 15px; color: #1e293b; cursor: pointer; transition: background .2s;
   direction: rtl;
   text-align: right;
   &:hover { background: rgba(15,23,42,.05); }
@@ -451,10 +455,24 @@
 }
 
 .panel-title {
-  display: flex; align-items: center; gap: 4px;
+  display: flex; align-items: center; gap: 8px;
   font-weight: 1000; margin-bottom: 4px; color: var(--text);
-  font-size: clamp(11px, .9vw, 14px);
-  mat-icon { font-size: 16px; width: 16px; height: 16px; }
+  font-size: clamp(12px, 1vw, 16px);
+  direction: rtl;
+  text-align: right;
+  justify-content: flex-start; /* ב-RTL: ימין */
+  width: 100%;
+  min-width: 0;
+  mat-icon { font-size: 16px; width: 16px; height: 16px; flex-shrink: 0; }
+}
+.panel-title .title-row {
+  flex: 1;
+  min-width: 0;
+  justify-content: flex-start;
+  text-align: right;
+}
+.panel-title .title-row > span:first-child {
+  text-align: right;
 }
 
 .empty { padding: 8px 10px; color: var(--muted); text-align: center; }
@@ -495,8 +513,11 @@
 .top-departments-sidebar {
   display: flex;
   flex-direction: column;
-  min-width: 260px;
-  max-width: 300px;
+  min-width: clamp(200px, 22vw, 260px);
+  max-width: clamp(240px, 28vw, 320px);
+  width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
 .top-departments-sidebar .top-departments-section-compact {
@@ -776,6 +797,25 @@
   .progress-bar-compact  { background: linear-gradient(90deg, #22c55e, #4ade80); }
 }
 
+/* ── Disabled filters state (sidebar) ────────────────────── */
+.custom-dropdown.filter-dropdown.disabled-filter {
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+.filters-disabled-hint {
+  margin-top: 8px;
+  font-size: 11px;
+  color: var(--muted);
+  display: grid;
+  flex-wrap: wrap;
+  text-align: right;
+}
+
+.dash.dark .filters-disabled-hint {
+  color: #9ca3af;
+}
+
 /* ── Icon buttons ───────────────────────────────────────── */
 .icon-btn {
   width: clamp(28px, 2.5vw, 36px); height: clamp(28px, 2.5vw, 36px);
@@ -843,15 +883,48 @@
 /* ── Main content layout ────────────────────────────────── */
 .main-content {
   display: grid;
-  grid-template-columns: 2fr 1fr;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
   gap: clamp(4px, .8vw, 10px);
   flex: 1 1 auto;
   min-height: 0;
+  min-width: 0;
   overflow: hidden;
 }
 
 .main-content.with-top-sidebar {
-  grid-template-columns: 2fr 1fr minmax(230px, 260px);
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(min(180px, 100%), 280px);
+}
+@media (max-width: 1099px) {
+  .main-content.with-top-sidebar {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr auto;
+  }
+  .main-content.with-top-sidebar .top-departments-sidebar {
+    grid-row: 1;
+    max-height: 50vh;
+    overflow-y: auto;
+    min-width: 100%;
+    max-width: 100%;
+  }
+  .main-content.with-top-sidebar .graph-section {
+    grid-row: 2;
+  }
+.main-content.with-top-sidebar .table-section {
+  grid-row: 3;
+  }
+}
+
+/* מניעת חפיפה ויציבות ב־100% זום – כל גודל מסך */
+@media (max-width: 1400px) {
+  .main-content { gap: 6px; }
+  .panel { padding: clamp(6px, 1vw, 10px) clamp(8px, 1.2vw, 14px); }
+  .mode-toggle-btn { min-width: 72px; padding: 5px 8px; font-size: 11px; }
+}
+@media (max-width: 1200px) {
+  .main-content { gap: 4px; }
+  .main-content.with-top-sidebar { grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr) minmax(160px, 220px); }
+  .chart-mode-row { gap: 4px; }
+  .mode-toggle-btn { min-width: 68px; padding: 4px 6px; font-size: 10px; }
 }
 
 .graph-section, .table-section {
@@ -861,12 +934,17 @@
   min-width: 0;
   overflow: hidden;
 }
+.graph-section .panel,
+.table-section .panel {
+  min-width: 0;
+  overflow: hidden;
+}
 
 /* טבלת הגרף המצטבר – עיצוב שורות מודגש / מפוספס */
 .aggregated-chart-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 12px;
+  font-size: 15px;
 }
 
 .aggregated-chart-table thead th {
@@ -946,8 +1024,8 @@
 
 .graph-body {
   flex: 1 1 auto;
-  min-height: 320px;
-  max-height: 65vh;
+  min-height: min(260px, 35vh);
+  max-height: 100%;
   position: relative;
   cursor: pointer;
   overflow: hidden;
@@ -958,7 +1036,36 @@
     width: 100% !important;
     height: 100% !important;
     flex: 1 1 auto;
-    ::ng-deep svg { cursor: pointer; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+    min-width: 0;
+    min-height: 0;
+    display: block;
+    /* angular-google-charts renders an inner wrapper div; keep it 100% so SVG recalculations have a stable box */
+    ::ng-deep > div {
+      width: 100% !important;
+      height: 100% !important;
+      max-width: 100% !important;
+    }
+    ::ng-deep svg {
+      cursor: pointer;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      direction: rtl;
+      width: 100% !important;
+      height: 100% !important;
+      max-width: 100% !important;
+    }
+    /* Increase in-chart typography while keeping it responsive and inside its parent */
+    ::ng-deep svg text {
+      font-size: clamp(12px, 1vw, 16px) !important;
+    }
+    /* אזור כותרת הגרף (g[0]) – צמוד לימין, צל, יישור טקסט (SVG לא תומך ב-flex) */
+    ::ng-deep svg > g:first-child text {
+      text-anchor: end;
+      text-align: right;
+      dominant-baseline: middle;
+    }
+    ::ng-deep svg > g:first-child rect {
+      filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.15));
+    }
     ::ng-deep rect { cursor: pointer; transition: opacity .2s; &:hover { opacity: .8; } }
     ::ng-deep .google-visualization-tooltip {
       border-radius: 8px !important;
@@ -970,12 +1077,125 @@
   }
 }
 
+/* Make in-chart text slightly larger on big screens (plasma / meeting rooms) */
+@media (min-width: 1920px) {
+  .graph-body google-chart ::ng-deep svg text {
+    font-size: clamp(14px, 1vw, 18px) !important;
+  }
+}
+
+/* Keep charts readable on small screens without overflow */
+@media (max-width: 600px) {
+  .graph-body google-chart ::ng-deep svg text {
+    font-size: 12px !important;
+  }
+}
+
+.chart-with-expand {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Room-times mode inside main chart panel: give the chart a responsive, predictable height */
+.graph-body .chart-with-expand google-chart {
+  min-height: clamp(240px, 32vh, 420px);
+}
+
+.chart-expand-btn {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  z-index: 5;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid var(--btnBorder, #e2e8f0);
+  border-radius: 6px;
+  background: var(--btnBg, #fff);
+  color: var(--btnText, #475569);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
+}
+.chart-expand-btn:hover {
+  background: var(--btnBgHover, #f1f5f9);
+  color: var(--accent, #2563eb);
+  border-color: var(--accent, #2563eb);
+}
+.chart-expand-btn mat-icon {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+}
+.dash.dark .chart-expand-btn {
+  background: rgba(15,23,42,.9);
+  border-color: rgba(148,163,184,.55);
+  color: #e5e7eb;
+}
+.dash.dark .chart-expand-btn:hover {
+  background: rgba(30,64,175,.7);
+  border-color: rgba(129,140,248,.9);
+  color: #f9fafb;
+}
+
+.main-chart-full-modal {
+  width: 95vw;
+  height: 95vh;
+  max-width: none;
+  max-height: none;
+}
+
+/* תצוגת גרף במסך מלא – רספונסיבי, ממלא את השטח, בלי שטח ריק */
+.main-chart-full-modal .kpi-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.main-chart-full-modal .graph-body {
+  flex: 1 1 auto;
+  min-height: min(400px, 70vh);
+  max-height: none;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  direction: rtl;
+}
+
+.main-chart-full-modal .graph-body google-chart {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: min(400px, 70vh);
+  width: 100% !important;
+  display: block;
+}
+
+.main-chart-full-modal .graph-body google-chart ::ng-deep > div {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.main-chart-full-modal .graph-body google-chart ::ng-deep svg {
+  max-width: 100%;
+  direction: rtl;
+}
+
 .year-summary-row {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
   margin-bottom: 6px;
   direction: rtl;
+  min-width: 0;
 }
 
 .year-summary-card {
@@ -1081,10 +1301,326 @@
   flex: 1 1 auto;
   min-height: 0;
   overflow: auto;
+  padding: 2px;
+}
+
+/* ── Compare panel (inside table-body + full modal) ───────── */
+.compare-panel,
+.compare-modal-body {
+  direction: rtl;
+  text-align: right;
+}
+
+.compare-panel {
+  margin-top: 10px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  /* match the "top-departments-section-compact" attractive card feel */
+  background:
+    radial-gradient(circle at 0% 0%, rgba(56,189,248,.14), transparent 55%),
+    radial-gradient(circle at 100% 100%, rgba(74,222,128,.18), transparent 55%),
+    var(--panel-strong);
+  box-shadow: 0 10px 24px rgba(15,23,42,.18);
+}
+
+.dash.dark .compare-panel {
+  background:
+    radial-gradient(circle at 0% 0%, rgba(59,130,246,.22), transparent 58%),
+    radial-gradient(circle at 100% 100%, rgba(34,197,94,.18), transparent 60%),
+    rgba(255,255,255,.06);
+  box-shadow: 0 14px 30px rgba(0,0,0,.4);
+}
+
+.compare-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.compare-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: clamp(13px, 1.05vw, 16px);
+  font-weight: 900;
+  color: var(--text);
+  min-width: 0;
+}
+
+.compare-title mat-icon {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+  color: var(--muted);
+  flex-shrink: 0;
+}
+
+.dash.dark .compare-title mat-icon {
+  color: rgba(229, 231, 235, 0.75);
+}
+
+.compare-title span {
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.compare-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+}
+
+.compare-actions .overflow-toggle-btn {
+  min-height: 34px;
+  padding-inline: 10px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.1px;
+}
+
+.compare-actions .overflow-toggle-btn mat-icon {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+}
+
+.compare-help,
+.compare-wing-hint {
+  margin-top: 6px;
+  padding: 4px 6px;
+  border-radius: 10px;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  background: rgba(255, 255, 255, 0.7);
+  color: var(--muted);
+  font-size: 10.5px;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.dash.dark .compare-help,
+.dash.dark .compare-wing-hint {
+  background: rgba(15, 23, 42, 0.7);
+  border-color: rgba(255, 255, 255, 0.12);
+  color: rgba(229, 231, 235, 0.78);
+}
+
+.compare-help-tight {
+  font-size: 10px;
+  font-weight: 650;
+  opacity: 0.95;
+}
+
+.compare-wing-hint {
+  border-color: rgba(245, 158, 11, 0.45);
+  background: rgba(245, 158, 11, 0.08);
+  color: rgba(124, 45, 18, 0.95);
+}
+
+.dash.dark .compare-wing-hint {
+  border-color: rgba(245, 158, 11, 0.55);
+  background: rgba(245, 158, 11, 0.14);
+  color: rgba(253, 230, 138, 0.92);
+}
+
+.compare-inline {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.compare-controls {
+  display: grid;
+  gap: 6px;
+  align-items: end;
+}
+
+.compare-controls-3 {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+@media (max-width: 1100px) {
+  .compare-controls-3 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 520px) {
+  .compare-controls-3 {
+    grid-template-columns: 1fr;
+  }
+}
+
+.compare-field {
+  min-width: 0;
+}
+
+/* Material field tuning inside compare controls */
+.compare-controls ::ng-deep .mat-mdc-form-field-wrapper {
+  padding-bottom: 0;
+}
+.compare-controls ::ng-deep .mat-mdc-form-field-subscript-wrapper {
+  display: none;
+}
+.compare-controls ::ng-deep .mat-mdc-text-field-wrapper {
+  background: rgba(255, 255, 255, 0.7) !important;
+  border-radius: 12px !important;
+}
+.dash.dark .compare-controls ::ng-deep .mat-mdc-text-field-wrapper {
+  background: rgba(15, 23, 42, 0.65) !important;
+}
+.compare-controls ::ng-deep .mat-mdc-form-field-infix {
+  padding-top: 6px !important;
+  padding-bottom: 6px !important;
+  min-height: 34px;
+}
+.compare-controls ::ng-deep .mat-mdc-floating-label,
+.compare-controls ::ng-deep .mdc-floating-label {
+  font-weight: 800 !important;
+  color: var(--muted) !important;
+  font-size: 10px !important;
+}
+.compare-controls ::ng-deep .mat-mdc-select-value-text {
+  font-weight: 800 !important;
+  color: var(--text) !important;
+  font-size: 11px !important;
+}
+.compare-controls ::ng-deep .mat-mdc-select-arrow {
+  color: var(--muted) !important;
+}
+
+.compare-charts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  align-items: stretch;
+}
+
+.compare-charts-single {
+  grid-template-columns: 1fr;
+}
+
+@media (max-width: 900px) {
+  .compare-charts {
+    grid-template-columns: 1fr;
+  }
+}
+
+.compare-chart-card {
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--panel);
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
+  overflow: hidden;
+  min-width: 0;
+}
+
+.compare-chart-card google-chart {
+  display: block;
+  height: 190px !important; /* shrink footprint to avoid scroll */
+}
+
+.compare-chart-card google-chart ::ng-deep > div,
+.compare-chart-card google-chart ::ng-deep svg {
+  height: 190px !important;
+}
+
+.dash.dark .compare-chart-card {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.12);
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.35);
+}
+
+/* Ensure Google Charts canvas matches theme inside compare cards */
+.dash.dark .compare-chart-card google-chart ::ng-deep svg rect[x="0"][y="0"] {
+  fill: rgba(2, 6, 23, 0.92) !important;
+}
+
+.compare-chart-card .chart-no-data {
+  min-height: 140px;
+}
+
+.compare-year-legend {
+  padding: 8px 10px;
+  border-top: 1px solid rgba(148, 163, 184, 0.28);
+  background: rgba(255, 255, 255, 0.55);
+  color: var(--text);
+}
+
+.dash.dark .compare-year-legend {
+  border-top-color: rgba(255, 255, 255, 0.12);
+  background: rgba(15, 23, 42, 0.55);
+  color: rgba(229, 231, 235, 0.9);
+}
+
+.compare-year-legend-title {
+  font-size: 11px;
+  font-weight: 900;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+
+.dash.dark .compare-year-legend-title {
+  color: rgba(229, 231, 235, 0.95);
+}
+
+.compare-year-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: flex-start;
+  margin-bottom: 6px;
+}
+
+.compare-year-chip {
+  font-size: 10px;
+  font-weight: 900;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.45);
+  background: rgba(241, 245, 249, 0.75);
+  color: rgba(15, 23, 42, 0.88);
+}
+
+.dash.dark .compare-year-chip {
+  border-color: rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(229, 231, 235, 0.9);
+}
+
+.compare-year-legend-text {
+  font-size: 11px;
+  line-height: 1.45;
+  color: var(--muted);
+  font-weight: 650;
+}
+
+.dash.dark .compare-year-legend-text {
+  color: rgba(229, 231, 235, 0.72);
+}
+
+.compare-year-legend-compact {
+  padding: 6px 8px;
 }
 
 /* ── Title row & badges ─────────────────────────────────── */
-.title-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; flex-wrap: wrap; }
+.title-row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  width: 100%;
+  flex-wrap: wrap;
+  direction: rtl;
+  text-align: right;
+}
 
 .title-total.total-badge {
   --a: var(--accent, #3b82f6);
@@ -1111,13 +1647,29 @@
   &:not(.active):hover { background: var(--btnBgHover) !important; transform: translateY(-1px); }
 }
 
+/* פילטר מחלקה (לגרף) – בתוך הסיידבר */
+.top-departments-sidebar .chart-dept-dropdown.has-value .dropdown-trigger {
+  border-color: var(--accent, #2563eb);
+  background: rgba(37, 99, 235, 0.08);
+  color: var(--accent, #2563eb);
+}
+.dash.dark .top-departments-sidebar .chart-dept-dropdown.has-value .dropdown-trigger {
+  border-color: rgba(129,140,248,.9);
+  background: rgba(79,70,229,.25);
+  color: #c7d2fe;
+}
+
 /* מצב תצוגת הגרף הראשי – כפתורי מצב מתחת לגרף */
 .chart-mode-row {
   margin-top: 8px;
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  flex-direction: row;
   gap: 6px;
-  justify-content: flex-end;
+  justify-content: flex-start;
+  align-items: flex-end;
+  min-width: 0;
+  row-gap: 8px;
 }
 
 .chart-mode-heading {
@@ -1127,6 +1679,14 @@
   color: var(--text);
   direction: rtl;
   text-align: right;
+  width: 100%;
+  display: grid;
+  flex-direction: column;
+  align-items: flex-end;
+  padding: 6px 10px;
+  box-shadow: 0 4px 12px 0 rgba(0, 0, 0, 0.15);
+  border-radius: 4px;
+  background: var(--surface, #fff);
 }
 
 .chart-mode-description {
@@ -1138,10 +1698,10 @@
 }
 
 .mode-toggle-btn {
-  min-width: 72px;
-  padding: 4px 10px;
+  min-width: min(88px, 20vw);
+  padding: 6px 10px;
   border-radius: 999px;
-  font-size: 11px;
+  font-size: clamp(10px, 1.1vw, 12px);
   font-weight: 600;
   border: 1px solid var(--btnBorder);
   background: var(--btnBg);
@@ -1225,11 +1785,13 @@
   height: auto;
   max-height: 70vh;
   overflow: auto;
+  max-width: 100%;
+  -webkit-overflow-scrolling: touch;
 }
 
 table.table {
   width: 100%; background: transparent; border-collapse: collapse;
-  font-size: clamp(10px, .85vw, 13px);
+  font-size: clamp(13px, 1.05vw, 16px);
 
   th {
     font-weight: 1000; color: var(--muted); text-align: right;
@@ -1251,7 +1813,12 @@ table.table {
 .negative-change { color: #c62828; font-weight: 600; }
 
 .percentage-badge {
-  display: inline-block; font-size: 10px; padding: 1px 4px; border-radius: 8px; background: #eee; margin-top: 2px;
+  display: inline-block;
+  font-size: 12px;
+  padding: 2px 6px;
+  border-radius: 8px;
+  background: #eee;
+  margin-top: 2px;
 }
 .positive-change .percentage-badge { background: rgba(76,175,80,.08); color: #2e7d32; }
 .negative-change .percentage-badge { background: rgba(198,40,40,.08); color: #c62828; }
@@ -1670,9 +2237,26 @@ table.table {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 12px;
-  padding-bottom: 10px;
+  margin-bottom: 8px;
+  padding: 4px 0 8px;
   border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--panel);
+}
+
+.kpi-header-titles {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  align-items: flex-start;
+}
+
+.kpi-header-main-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
 }
 
 .kpi-header h2 {
@@ -1680,6 +2264,9 @@ table.table {
   font-size: clamp(16px, 1.4vw, 22px);
   font-weight: 700;
   color: var(--text);
+  direction: rtl;
+  text-align: right;
+  flex: 1;
 }
 
 .kpi-body {
@@ -1690,12 +2277,97 @@ table.table {
   overflow: hidden;
 }
 
+.kpi-header-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
 .kpi-intro {
   margin: 0 0 4px;
   font-size: 13px;
   color: var(--muted);
   line-height: 1.6;
   display: flex;
+}
+
+.kpi-exclude-fallback {
+  margin: 4px 0 8px;
+  font-size: 12px;
+  color: var(--accent, #2563eb);
+  font-style: italic;
+}
+
+.kpi-filter-row {
+  margin-bottom: 10px;
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* כפתור נטרול ימי גלישה – בהתאם לעיצוב הכללי (reset-filters-btn) */
+.overflow-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-bottom: 0;
+  border-radius: 999px;
+  padding-inline: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  border: 1px solid rgba(59, 130, 246, 0.5);
+  color: #1d4ed8;
+  background: transparent;
+  transition: border-color 0.2s, background 0.2s, color 0.2s;
+}
+
+.overflow-toggle-btn mat-icon {
+  font-size: 18px;
+  height: 18px;
+  width: 18px;
+}
+
+.overflow-toggle-btn:hover {
+  border-color: rgba(37, 99, 235, 0.9);
+  background: rgba(219, 234, 254, 0.6);
+}
+
+.overflow-toggle-btn.active {
+  background: rgba(37, 99, 235, 0.12);
+  border-color: var(--accent, #2563eb);
+  color: var(--accent, #2563eb);
+}
+
+.overflow-toggle-btn.active:hover {
+  background: rgba(37, 99, 235, 0.2);
+  border-color: rgba(37, 99, 235, 0.9);
+}
+
+.dash.dark .overflow-toggle-btn {
+  border-color: rgba(129, 140, 248, 0.8);
+  color: #e5e7eb;
+}
+
+.dash.dark .overflow-toggle-btn:hover {
+  background: rgba(30, 64, 175, 0.4);
+}
+
+.dash.dark .overflow-toggle-btn.active,
+.kpi-overlay.dark .overflow-toggle-btn.active {
+  background: rgba(129, 140, 248, 0.2);
+  border-color: rgba(129, 140, 248, 0.9);
+  color: #c7d2fe;
+}
+
+.kpi-overlay.dark .overflow-toggle-btn {
+  border-color: rgba(129, 140, 248, 0.8);
+  color: #e5e7eb;
+}
+
+.kpi-overlay.dark .overflow-toggle-btn:hover {
+  background: rgba(30, 64, 175, 0.4);
 }
 
 .kpi-loading {
@@ -1723,11 +2395,20 @@ table.table {
   color: var(--muted);
   background: rgba(148,163,184,.06);
 }
+.kpi-no-data .kpi-placeholder-icon {
+  display: block;
+  margin: 0 auto 10px;
+  font-size: 48px;
+  width: 48px;
+  height: 48px;
+  opacity: 0.6;
+}
+.kpi-no-data p { margin: 0; direction: rtl; text-align: center; }
 
 .kpi-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 13px;
+  font-size: 14px;
   direction: rtl;
 }
 
@@ -1761,26 +2442,110 @@ table.table {
   text-align: right;
 }
 
+/* מקרא צבעים לפי שנה – מתחת לגרפי KPI */
+.kpi-chart-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 20px;
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border, rgba(0,0,0,.08));
+  direction: rtl;
+  justify-content: flex-end;
+}
+.kpi-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text, #111827);
+}
+.kpi-legend-color {
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  flex-shrink: 0;
+  border: 1px solid rgba(0,0,0,.15);
+}
+.kpi-legend-label {
+  font-weight: 500;
+}
+
+/* צבע טקסט ורקע אנוטציה כמו צבע העמודה – מבנה 1: שכבת אנוטציות = ילד 4 של svg>g (גרף SETUP וכו') */
+.kpi-overlay .kpi-body google-chart ::ng-deep svg > g > g:nth-child(4) > g:nth-child(5n+1) text,
+.kpi-overlay .kpi-body google-chart ::ng-deep svg > g > g:nth-child(4) > g:nth-child(5n+1) rect {
+  fill: #3366cc !important;
+}
+.kpi-overlay .kpi-body google-chart ::ng-deep svg > g > g:nth-child(4) > g:nth-child(5n+2) text,
+.kpi-overlay .kpi-body google-chart ::ng-deep svg > g > g:nth-child(4) > g:nth-child(5n+2) rect {
+  fill: #dc3912 !important;
+}
+.kpi-overlay .kpi-body google-chart ::ng-deep svg > g > g:nth-child(4) > g:nth-child(5n+3) text,
+.kpi-overlay .kpi-body google-chart ::ng-deep svg > g > g:nth-child(4) > g:nth-child(5n+3) rect {
+  fill: #ff9900 !important;
+}
+.kpi-overlay .kpi-body google-chart ::ng-deep svg > g > g:nth-child(4) > g:nth-child(5n+4) text,
+.kpi-overlay .kpi-body google-chart ::ng-deep svg > g > g:nth-child(4) > g:nth-child(5n+4) rect {
+  fill: #109618 !important;
+}
+.kpi-overlay .kpi-body google-chart ::ng-deep svg > g > g:nth-child(4) > g:nth-child(5n+5) text,
+.kpi-overlay .kpi-body google-chart ::ng-deep svg > g > g:nth-child(4) > g:nth-child(5n+5) rect {
+  fill: #990099 !important;
+}
+
+/* מבנה 2: אנוטציות ב־g[0]>g[3] (ילד 3 בתוך הקבוצה הראשונה – משך ניתוח, ניתוחים ליום וכו') */
+.kpi-overlay .kpi-body google-chart ::ng-deep svg > g > g > g:nth-child(1) > g:nth-child(3) > g:nth-child(5n+1) text,
+.kpi-overlay .kpi-body google-chart ::ng-deep svg > g > g > g:nth-child(1) > g:nth-child(3) > g:nth-child(5n+1) rect {
+  fill: #3366cc !important;
+}
+.kpi-overlay .kpi-body google-chart ::ng-deep svg > g > g > g:nth-child(1) > g:nth-child(3) > g:nth-child(5n+2) text,
+.kpi-overlay .kpi-body google-chart ::ng-deep svg > g > g > g:nth-child(1) > g:nth-child(3) > g:nth-child(5n+2) rect {
+  fill: #dc3912 !important;
+}
+.kpi-overlay .kpi-body google-chart ::ng-deep svg > g > g > g:nth-child(1) > g:nth-child(3) > g:nth-child(5n+3) text,
+.kpi-overlay .kpi-body google-chart ::ng-deep svg > g > g > g:nth-child(1) > g:nth-child(3) > g:nth-child(5n+3) rect {
+  fill: #ff9900 !important;
+}
+.kpi-overlay .kpi-body google-chart ::ng-deep svg > g > g > g:nth-child(1) > g:nth-child(3) > g:nth-child(5n+4) text,
+.kpi-overlay .kpi-body google-chart ::ng-deep svg > g > g > g:nth-child(1) > g:nth-child(3) > g:nth-child(5n+4) rect {
+  fill: #109618 !important;
+}
+.kpi-overlay .kpi-body google-chart ::ng-deep svg > g > g > g:nth-child(1) > g:nth-child(3) > g:nth-child(5n+5) text,
+.kpi-overlay .kpi-body google-chart ::ng-deep svg > g > g > g:nth-child(1) > g:nth-child(3) > g:nth-child(5n+5) rect {
+  fill: #990099 !important;
+}
+
+/* הזזת אנוטציות בגרפי KPI – עמודה אחת גבוהה ואחת נמוכה כדי שלא ידרסו */
+.kpi-overlay .kpi-body google-chart ::ng-deep svg g g g > g:nth-child(odd) text {
+  transform: translateY(-5px);
+}
+.kpi-overlay .kpi-body google-chart ::ng-deep svg g g g > g:nth-child(even) text {
+  transform: translateY(5px);
+}
+
 /* ── Loading overlays ───────────────────────────────────── */
 .loading-overlay {
   position: fixed; inset: 0;
-  background: rgba(255,255,255,.95); backdrop-filter: blur(4px);
+  background: rgba(255,255,255,.25); backdrop-filter: blur(6px);
   z-index: 9999; display: flex; align-items: center; justify-content: center;
   animation: fadeIn .3s ease-in;
 }
-.dash.dark .loading-overlay { background: rgba(11,18,32,.95); }
+.dash.dark .loading-overlay { background: rgba(11,18,32,.3); }
 
 .loading-container {
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px;
   padding: 40px; border-radius: 16px;
-  background: linear-gradient(135deg, #2563eb, #10b981);
-  box-shadow: 0 8px 32px rgba(0,0,0,.2); min-width: 200px;
+  background: rgba(255,255,255,.85);
+  box-shadow: 0 8px 32px rgba(0,0,0,.12); min-width: 200px;
+  border: 1px solid rgba(0,0,0,.06);
   mat-spinner { margin: 0 auto; }
 }
 .dash.dark .loading-container {
-  background: linear-gradient(135deg, rgba(37,99,235,.9), rgba(16,185,129,.9));
+  background: rgba(15,23,42,.9);
+  border-color: rgba(255,255,255,.08);
 }
-.loading-text { color: #fff; font-size: 18px; font-weight: 600; text-align: center; direction: rtl; animation: pulse 1.5s ease-in-out infinite; }
+.loading-text { color: #0f172a; font-size: 18px; font-weight: 600; text-align: center; direction: rtl; animation: pulse 1.5s ease-in-out infinite; }
+.dash.dark .loading-text { color: #e2e8f0; }
 
 .catalog-loading-container {
   display: flex; flex-direction: column; align-items: center; justify-content: center;
@@ -2012,7 +2777,7 @@ table.table {
 /* ── Full HD + (1920–2559px) — conference / plasma ──────── */
 @media (min-width: 1920px) {
   .dash {
-    font-size: 15px;
+    font-size: 17px;
     padding: 0px 24px;
     --header-space: 72px;
     --footer-space: 48px;
@@ -2039,7 +2804,7 @@ table.table {
   .growth-value-compact    { font-size: 13px; }
   .rank-progress-compact   { height: 6px; }
 
-  table.table th, table.table td { padding: 5px 10px; font-size: 13px; }
+  table.table th, table.table td { padding: 5px 10px; font-size: 15px; }
 
   .card-value      { font-size: 28px; }
   .card-label      { font-size: 14px; }
@@ -2108,12 +2873,35 @@ table.table {
 
 /* ===== compact dropdown / layout improvements (no color changes) ===== */
 
-/* container breathing & responsive */
+/* container breathing & responsive – עובד בכל גודל מסך */
 .top-departments-sidebar {
   min-width: 240px;
   max-width: 340px;
-  padding: 8px;
+  padding: clamp(6px, 1vw, 12px);
   box-sizing: border-box;
+}
+@media (max-width: 767px) {
+  .top-departments-sidebar {
+    min-width: 100%;
+    max-width: 100%;
+    padding: 10px;
+  }
+  .top-departments-header-compact {
+    flex-wrap: wrap;
+  }
+  .top-departments-sidebar .filters-column .dropdown-trigger {
+    min-height: 44px;
+    padding: 10px 12px;
+  }
+  .top-departments-sidebar .filters-column .selected-text {
+    font-size: 12px;
+  }
+}
+@media (min-width: 768px) and (max-width: 1099px) {
+  .top-departments-sidebar {
+    min-width: 280px;
+    max-width: 360px;
+  }
 }
 
 /* allow wrapping on small widths but keep vertical column as requested */
@@ -2307,9 +3095,10 @@ table.table {
   display: flex;
   gap: 12px;
   align-items: flex-start;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
   width: 100%;
   box-sizing: border-box;
+  min-width: 0;
 }
 
 /* badge & typography sizing tweaks */
@@ -2322,4 +3111,215 @@ table.table {
   .custom-dropdown { width: 100%; max-width: 100%; }
   .dropdown-panel { right: 0; left: 0; min-width: auto; max-width: calc(100vw - 24px); }
   .dropdown-trigger { padding: 10px; }
+}
+
+
+
+
+/* קונטיינר ראשי */
+.metrics-container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  align-items: flex-start;
+}
+
+.title {
+  font-weight: bold;
+  font-size: 16px;
+  color: #1e293b;
+}
+/* קונטיינר גמיש ורספונסיבי */
+.metrics-container {
+  display: flex;
+  justify-content: flex-start;
+  direction: rtl;
+  padding: 8px;
+}
+
+.custom-toggle-group {
+  display: flex;
+  align-items: stretch;
+  flex-wrap: wrap;
+  width: 100%;
+  border: none !important; /* מבטלים בורדר דיפולטיבי של אנגולר */
+  border-radius: 12px !important; /* מראה מודרני פחות "נקניקייתי" */
+  background: rgba(241, 245, 249, 0.6);
+  backdrop-filter: blur(8px);
+  /* keep the overall bar height stable while strengthening typography */
+  height: 42px;
+  padding: 3px;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* מצב כהה - Glassmorphism עמוק */
+.dash.dark .custom-toggle-group {
+  background: rgba(30, 41, 59, 0.7);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+/* אייקון הקידומת */
+.toggle-icon-prefix {
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  color: #64748b;
+  border-left: 1px solid rgba(203, 213, 225, 0.5);
+  margin-left: 4px;
+}
+
+.dash.dark .toggle-icon-prefix {
+  color: #94a3b8;
+  border-left-color: rgba(71, 85, 105, 0.5);
+}
+
+/* עיצוב הכפתורים */
+.custom-toggle-group mat-button-toggle {
+  flex: 1 1 auto;
+  border: none !important;
+  background: transparent;
+  color: rgba(15, 23, 42, 0.88);
+  border-radius: 8px;
+  min-height: 32px;
+  transition: all 0.2s ease;
+}
+
+.custom-toggle-group ::ng-deep .mat-button-toggle-label-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 32px !important;
+  padding: 0 10px !important;
+  font-size: clamp(13px, 0.95vw, 15px);
+  font-weight: 800;
+  letter-spacing: 0.15px;
+  white-space: nowrap;
+}
+
+.custom-toggle-group ::ng-deep .mat-button-toggle-label-content mat-icon {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+  line-height: 18px;
+  margin-inline-end: 6px;
+  opacity: 0.95;
+}
+
+.custom-toggle-group mat-button-toggle:focus-visible {
+  outline: 2px solid rgba(37, 99, 235, 0.75);
+  outline-offset: 2px;
+}
+
+.dash.dark .custom-toggle-group mat-button-toggle:focus-visible {
+  outline-color: rgba(129, 140, 248, 0.95);
+}
+
+/* הכפתור הנבחר - אפקט "צף" */
+.custom-toggle-group .mat-button-toggle-checked {
+  background: #ffffff !important;
+  color: #2563eb !important;
+  border-radius: 8px !important; /* עיגול פנימי יוצר מראה של כרטיס צף */
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  transform: translateY(-1px);
+  transition: transform 0.25s ease, box-shadow 0.25s ease, background-color 0.25s ease, color 0.25s ease;
+}
+
+/* מצב כהה לכפתור נבחר */
+.dash.dark .custom-toggle-group .mat-button-toggle-checked {
+  background: #3b82f6 !important; /* כחול ויביד למצב לילה */
+  color: #ffffff !important;
+  box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
+}
+
+/* רספונסיביות למובייל */
+@media (max-width: 600px) {
+  .custom-toggle-group {
+    width: 100%;
+    max-width: none;
+  }
+  
+  .custom-toggle-group ::ng-deep .mat-button-toggle-label-content {
+    font-size: 11px;
+    padding: 0 8px !important;
+  }
+  
+  .toggle-icon-prefix {
+    padding: 0 6px;
+  }
+}
+
+/* הובר עדין */
+.custom-toggle-group mat-button-toggle:not(.mat-button-toggle-checked):hover {
+  background: rgba(255, 255, 255, 0.4);
+  color: #1e293b;
+}
+
+.dash.dark .custom-toggle-group mat-button-toggle:not(.mat-button-toggle-checked):hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: #f1f5f9;
+}
+
+
+
+
+/* --- מצב לילה (Dark Mode) משודרג --- */
+
+.dash.dark .custom-toggle-group {
+  /* רקע כהה עם שקיפות וטשטוש (Glassmorphism) */
+  background: rgba(15, 23, 42, 0.6) !important;
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  box-shadow: 
+    inset 0 1px 1px rgba(255, 255, 255, 0.05),
+    0 10px 25px -5px rgba(0, 0, 0, 0.4);
+}
+
+.dash.dark .toggle-icon-prefix {
+  color: #94a3b8; /* צבע Slate בהיר לאייקון */
+  border-left-color: rgba(255, 255, 255, 0.1);
+}
+
+.dash.dark .custom-toggle-group mat-button-toggle {
+  color: #94a3b8; /* טקסט לא נבחר */
+}
+
+/* הכפתור הנבחר במצב לילה - אפקט Glow */
+.dash.dark .custom-toggle-group .mat-button-toggle-checked {
+  /* גרדיאנט מודרני: סגול-כחול או כחול-עמוק */
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%) !important;
+  color: #ffffff !important;
+  
+  /* צל זוהר (Glow) עדין סביב הכפתור הנבחר */
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35);
+  border-radius: 8px !important;
+}
+
+/* טקסט בתוך הכפתור הנבחר */
+.dash.dark .custom-toggle-group .mat-button-toggle-checked ::ng-deep .mat-button-toggle-label-content {
+  font-weight: 600;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+/* אפקט Hover לכפתורים שלא נבחרו */
+.dash.dark .custom-toggle-group mat-button-toggle:not(.mat-button-toggle-checked):hover {
+  background: rgba(255, 255, 255, 0.03);
+  color: #f1f5f9;
+}
+
+
+
+
+/* סיבוב אך ורק של המספרים שמעל העמודות */
+::ng-deep google-chart svg g g g > g > g text {
+  transform: rotate(-90deg) !important;
+  transform-box: fill-box !important;
+  transform-origin: center !important;
+  font-size: 12px !important; /* אפשר להקטין מעט כדי שלא יצופפו */
+}
+
+/* מוודא שהטקסט לא נחתך בקצוות */
+::ng-deep google-chart svg {
+  overflow: visible !important;
 }

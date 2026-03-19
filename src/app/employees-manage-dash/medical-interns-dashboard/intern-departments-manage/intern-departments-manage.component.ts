@@ -29,7 +29,7 @@ export class InternDepartmentsManageComponent implements OnInit {
   intern: any;
   assignments: any[] = [];
   dataSource = new MatTableDataSource<any>([]);
-  displayedColumns: string[] = ['DepartnentDescripton', 'InternPeriod', 'InternPeriodEnd', 'Actions'];
+  displayedColumns: string[] = ['DepartnentDescriptonFirst', 'DepartnentDescriptonSecond', 'InternPeriod', 'InternPeriodEnd', 'Actions'];
   DepartmentsList: any[] = [];
   loaded = false;
   sendingPdf = false;
@@ -125,15 +125,36 @@ export class InternDepartmentsManageComponent implements OnInit {
     return this.allDepartments.map((d) => d.DepartCode || d.DepartnentCodeFirst || d.DepartmentCode).filter(Boolean);
   }
 
+  private getUsedPeriodsFromData(): string[] {
+    const periods: string[] = [];
+    const data = this.dataSource?.data || this.assignments || [];
+    data.forEach((a: any) => {
+      const p = this.periodFromAssignment(a);
+      if (p) periods.push(p);
+    });
+    return periods;
+  }
+
+  private periodFromAssignment(a: any): string | null {
+    const d = a?.InternPeriod;
+    if (!d) return null;
+    const date = typeof d === 'string' ? new Date(d) : d;
+    if (isNaN(date.getTime())) return null;
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    return `${y}-${m}`;
+  }
+
   addAssignment() {
+    const usedPeriods = this.getUsedPeriodsFromData();
     const dialogRef = this.dialog.open(InternDepartmentAssignmentDialogComponent, {
-      disableClose: true,
       data: {
         employeeID: this.EmployeeID,
         departments: this.DepartmentsList,
         assignment: null,
         departmentCodesForFirst: this.getDepartmentCodesForDialog(this.departmentCodesForFirst),
-        departmentCodesForSecond: this.getDepartmentCodesForDialog(this.departmentCodesForSecond)
+        departmentCodesForSecond: this.getDepartmentCodesForDialog(this.departmentCodesForSecond),
+        usedPeriods
       }
     });
     dialogRef.afterClosed().subscribe((result) => {
@@ -143,7 +164,6 @@ export class InternDepartmentsManageComponent implements OnInit {
 
   editAssignment(assignment: any) {
     const dialogRef = this.dialog.open(InternDepartmentAssignmentDialogComponent, {
-      disableClose: true,
       data: {
         employeeID: this.EmployeeID,
         departments: this.DepartmentsList,

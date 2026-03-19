@@ -1,7 +1,7 @@
 <div class="interns-dashboard" dir="rtl">
   <header class="dashboard-header">
     <div class="header-left">
-      <h1 class="page-title text-center">ניהול סטאג'רים רפואיים</h1>
+      <h1 class="page-title text-center">מערכת ניהול סטאזרים</h1>
       <p class="page-subtitle">חיפוש, עריכה וניהול פרטי סטאג'רים רפואיים</p>
     </div>
 
@@ -143,6 +143,16 @@
 
         <div class="search-row search-row-actions">
           <mat-form-field appearance="outline" class="search-field dept-field">
+            <mat-label>חודש-שנה</mat-label>
+            <mat-icon matPrefix>calendar_month</mat-icon>
+            <mat-select formControlName="MonthYear">
+              <mat-option [value]="''">הכל</mat-option>
+              <mat-option *ngFor="let opt of monthYearOptions" [value]="opt.value">
+                {{ opt.label }}
+              </mat-option>
+            </mat-select>
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="search-field dept-field">
             <mat-label>מחלקה</mat-label>
             <mat-icon matPrefix>apartment</mat-icon>
             <mat-select formControlName="Department">
@@ -212,6 +222,18 @@
         </button>
       </div>
 
+      <div *ngIf="viewMode === 'serverData'" [formGroup]="searchInternsGroup" class="filter-field-wrapper">
+        <mat-form-field appearance="outline" class="filter-field">
+          <mat-label>חודש-שנה</mat-label>
+          <mat-icon matPrefix>calendar_month</mat-icon>
+          <mat-select formControlName="MonthYear" (selectionChange)="onServerDataMonthYearChange()">
+            <mat-option [value]="''">הכל</mat-option>
+            <mat-option *ngFor="let opt of monthYearOptions" [value]="opt.value">
+              {{ opt.label }}
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+      </div>
       <mat-form-field appearance="outline" class="filter-field">
         <mat-label>סינון טבלה</mat-label>
         <mat-icon matPrefix>filter_list</mat-icon>
@@ -227,7 +249,22 @@
           <mat-icon>file_download</mat-icon>
           ייצוא
         </button>
+        <button type="button" mat-flat-button color="primary" (click)="exportFeedbackToExcel()" class="toolbar-btn"
+          *ngIf="viewMode === 'feedback'">
+          <mat-icon>file_download</mat-icon>
+          ייצוא לאקסל
+        </button>
       </div>
+    </div>
+
+    <div class="departments-year-nav" *ngIf="viewMode === 'departments'">
+      <button mat-icon-button type="button" (click)="previousDepartmentsYear()" matTooltip="שנה קודמת">
+        <mat-icon>chevron_right</mat-icon>
+      </button>
+      <span class="year-display">{{ departmentsYear }}</span>
+      <button mat-icon-button type="button" (click)="nextDepartmentsYear()" matTooltip="שנה הבאה">
+        <mat-icon>chevron_left</mat-icon>
+      </button>
     </div>
 
     <div class="table-wrapper">
@@ -275,7 +312,8 @@
         <ng-container matColumnDef="DepartnentDescripton">
           <th mat-header-cell *matHeaderCellDef mat-sort-header sticky>מחלקה</th>
           <td mat-cell *matCellDef="let element" class="cell-center">
-            <span [class.muted]="!element.DepartnentDescripton">{{ element.DepartnentDescripton || '—'}}</span>
+            <span [class.muted]="!element.DepartnentDescripton">{{ element.DepartnentDescripton}} <span
+                *ngIf="element.FunctionID == '39'"> סטאז'ר/ית באלקטיב</span></span>
           </td>
         </ng-container>
 
@@ -310,7 +348,11 @@
           </th>
 
           <td mat-cell *matCellDef="let element" class="cell-center">
-            {{ col === 'DepartDesc' ? element.DepartDesc : (element[col] || '—') }}
+            <ng-container *ngIf="col === 'DepartDesc'">
+              {{ element.DepartDesc }}{{ (element.DepartType || element.DepartmentType || element.Type) ? ' (' +
+              (element.DepartType || element.DepartmentType || element.Type) + ')' : '' }}
+            </ng-container>
+            <ng-container *ngIf="col !== 'DepartDesc'">{{ element[col] || '—' }}</ng-container>
           </td>
 
         </ng-container>
@@ -322,8 +364,7 @@
 
       <!-- Server data table (dynamic columns from SqlDataReader JSON) -->
       <div class="server-data-table-scroll" *ngIf="viewMode === 'serverData' && serverDataLoaded">
-        <table mat-table [dataSource]="serverDataSource"
-          class="interns-table server-data-table">
+        <table mat-table [dataSource]="serverDataSource" class="interns-table server-data-table">
 
           <ng-container *ngFor="let col of serverDataDisplayedColumns" [matColumnDef]="col">
             <th mat-header-cell *matHeaderCellDef>{{ replaceDash(col) }}</th>
@@ -337,14 +378,14 @@
 
       <!-- Feedback table (from VW_EP_InternQuestionnaireResaultNumeric) -->
       <div class="server-data-table-scroll" *ngIf="viewMode === 'feedback' && feedbackLoaded">
-        <table mat-table [dataSource]="feedbackDataSource"
-          class="interns-table feedback-table">
+        <table mat-table [dataSource]="feedbackDataSource" class="interns-table feedback-table">
 
           <ng-container *ngFor="let col of feedbackDisplayedColumns" [matColumnDef]="col">
             <th mat-header-cell *matHeaderCellDef>{{ getFeedbackColumnLabel(col) }}</th>
             <td mat-cell *matCellDef="let element" class="cell-center">
               <ng-container *ngIf="col === 'הערות_סטאזר'">
-                <span [matTooltip]="getFeedbackCellTooltip(element[col], 45)">{{ truncateFeedbackText(element[col], 45) }}</span>
+                <span [matTooltip]="getFeedbackCellTooltip(element[col], 45)">{{ truncateFeedbackText(element[col], 45)
+                  }}</span>
               </ng-container>
               <ng-container *ngIf="col !== 'הערות_סטאזר'">{{ element[col] }}</ng-container>
             </td>
