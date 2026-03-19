@@ -1100,7 +1100,7 @@
 /* Keep charts readable on small screens without overflow */
 @media (max-width: 600px) {
   .graph-body google-chart ::ng-deep svg text {
-    font-size: 12px !important;
+    font-size: 18px !important;
   }
 }
 
@@ -3457,7 +3457,7 @@ table.table {
   transform: rotate(-90deg) !important;
   transform-box: fill-box !important;
   transform-origin: center !important;
-  font-size: 12px !important; /* אפשר להקטין מעט כדי שלא יצופפו */
+  font-size: 18px !important; /* אפשר להקטין מעט כדי שלא יצופפו */
 }
 
 /* מוודא שהטקסט לא נחתך בקצוות */

@@ -4948,7 +4948,7 @@ private loadSurgeriesPerDay(): void {
             textStyle: { fontSize: 14, bold: true }
           },
           hAxis: {
-            textStyle: { fontSize: 16, bold: true,},
+            textStyle: { fontSize: 18, bold: true },
             slantedText: true,
             slantedTextAngle: 25,
             titleTextStyle: {
@@ -4959,12 +4959,13 @@ private loadSurgeriesPerDay(): void {
           },
           vAxis: {
             title: "ניתוחים ליום בחדר",
-            textStyle: { fontSize: 14, bold: true },
+            textStyle: { fontSize: 16, bold: true },
             titleTextStyle: {
               fontSize: 16,
               bold: true,
               italic: false,
             },
+            viewWindowMode: "maximized",
           },
           bar: { groupWidth: "60%" },
           chartArea: {
@@ -5608,7 +5609,7 @@ loadAvgDuration(): void {
             textStyle: { fontSize: 14, bold: true }
           },
           hAxis: {
-            textStyle: { fontSize: 14, bold: true, color: "#334155" },
+            textStyle: { fontSize: 18, bold: true, color: "#334155" },
 
             slantedText: true, // ביטלתי את השיפוע למטה כדי שלא יתערבב לך
             slantedTextAngle: 25,
@@ -5616,12 +5617,13 @@ loadAvgDuration(): void {
           },
           vAxis: {
             title: "משך ניתוח ממוצע (דק')",
-            textStyle: { fontSize: 14, bold: true },
+            textStyle: { fontSize: 16, bold: true },
             titleTextStyle: {
               fontSize: 16,
               bold: true,
               italic: false,
             },
+            viewWindowMode: "maximized",
           },
           bar: { groupWidth: "75%" }  ,        //   chartArea: {
         //     width: '90%',
@@ -5859,7 +5861,7 @@ private loadAvgFirstMorningEntry(): void {
       textStyle: { fontSize: 14, bold: true }
     },
     hAxis: {
-      textStyle: { fontSize: 14, bold: true, color: "#334155" },
+      textStyle: { fontSize: 18, bold: true, color: "#334155" },
       slantedText: true,
       slantedTextAngle: 25,
       titleTextStyle: {
@@ -5870,12 +5872,13 @@ private loadAvgFirstMorningEntry(): void {
     },
     vAxis: {
       title: "זמן כניסה ממוצע (HH:MM)",
-      textStyle: { fontSize: 14, bold: true },
+      textStyle: { fontSize: 16, bold: true },
       titleTextStyle: {
         fontSize: 16,
         bold: true,
         italic: false,
       },
+      viewWindowMode: "maximized",
     },
     bar: { groupWidth: "60%" },
     chartArea: {
@@ -6001,7 +6004,7 @@ private loadAvgFirstMorningEntry(): void {
       textStyle: { fontSize: 14, bold: true }
     },
     hAxis: {
-      textStyle: { fontSize: 14, bold: true, color: "#334155" },
+      textStyle: { fontSize: 18, bold: true, color: "#334155" },
       slantedText: true,
       slantedTextAngle: 25,
       titleTextStyle: {
@@ -6012,12 +6015,13 @@ private loadAvgFirstMorningEntry(): void {
     },
     vAxis: {
       title: "זמן אבוד ליום (דקות)",
-      textStyle: { fontSize: 14, bold: true },
+      textStyle: { fontSize: 16, bold: true },
       titleTextStyle: {
         fontSize: 16,
         bold: true,
         italic: false,
       },
+      viewWindowMode: "maximized",
     },
     bar: { groupWidth: "60%" },
     chartArea: {
@@ -6064,7 +6068,7 @@ private loadAvgFirstMorningEntry(): void {
       textStyle: { fontSize: 14, bold: true },
     },
     hAxis: {
-      textStyle: { fontSize: 14, bold: true, color: "#334155" },
+      textStyle: { fontSize: 18, bold: true, color: "#334155" },
       slantedText: true,
       slantedTextAngle: 25,
       titleTextStyle: {
@@ -6075,12 +6079,13 @@ private loadAvgFirstMorningEntry(): void {
     },
     vAxis: {
       title: "זמן מנוצל ליום (דקות)",
-      textStyle: { fontSize: 14, bold: true },
+      textStyle: { fontSize: 16, bold: true },
       titleTextStyle: {
         fontSize: 16,
         bold: true,
         italic: false,
       },
+      viewWindowMode: "maximized",
     },
     bar: { groupWidth: "60%" },
     chartArea: {
@@ -6254,7 +6259,7 @@ private loadAvgLastMorningEnd(): void {
           textStyle: { fontSize: 14, bold: true }
         },
         hAxis: {
-          textStyle: { fontSize: 14, bold: true, color: "#334155" },
+          textStyle: { fontSize: 28, bold: true, color: "#334155" },
           slantedText: true,
           slantedTextAngle: 25,
           titleTextStyle: {
@@ -6265,12 +6270,13 @@ private loadAvgLastMorningEnd(): void {
         },
         vAxis: {
           title: "ממוצע זמן סיום ניתוח אחרון (שעה)",
-          textStyle: { fontSize: 14, bold: true },
+          textStyle: { fontSize: 16, bold: true },
           titleTextStyle: {
             fontSize: 16,
             bold: true,
             italic: false,
           },
+          viewWindowMode: "maximized",
           // טווח טיפוסי ל‑SETUP (0–120) + טיק מודגש ב‑20 דקות
         //   ticks: [0, 20, 40, 60, 80, 100, 120],
         },
@@ -6346,7 +6352,7 @@ private loadAvgSetup(): void {
             textStyle: { fontSize: 14, bold: true }
           },
           hAxis: {
-            textStyle: { fontSize: 14, bold: true, color: "#334155" },
+            textStyle: { fontSize: 18, bold: true, color: "#334155" },
             slantedText: true,
             slantedTextAngle: 25,
             titleTextStyle: {
@@ -6357,14 +6363,13 @@ private loadAvgSetup(): void {
           },
           vAxis: {
             title: "זמן SETUP ממוצע (דק')",
-            textStyle: { fontSize: 14, bold: true },
+            textStyle: { fontSize: 16, bold: true },
             titleTextStyle: {
               fontSize: 16,
               bold: true,
               italic: false,
             },
-            // טווח טיפוסי ל‑SETUP (0–120) + טיק מודגש ב‑20 דקות
-            ticks: [0, 20, 40, 60, 80, 100, 120],
+            viewWindowMode: "maximized",
           },
           bar: { groupWidth: "60%" },
           chartArea: {
