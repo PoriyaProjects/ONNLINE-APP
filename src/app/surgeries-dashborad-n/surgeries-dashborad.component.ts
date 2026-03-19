@@ -1,6 +1,6 @@
 import { animate, style, transition, trigger } from '@angular/animations';
 import { HttpClient } from '@angular/common/http';
-import { ChangeDetectorRef, Component, DoCheck, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import { AfterViewInit, ChangeDetectorRef, Component, DoCheck, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatSort, Sort } from '@angular/material/sort';
@@ -146,6 +146,15 @@ export interface AvgDurationFiveYearsDto {
 
 type AvgDurationSiteFilter = "ALL" | "חנ-כללי" | "חנ-אמבול" | "חנ-יולד" | "חנ-מחלקה" | "חנ-פהלסת";
 
+/** זמן מנוצל/מאושר ממוצע (לפי שנה) לפי מחלקה – GetApprovedUtilization_surgeries_dashborad */
+export interface ApprovedUtilizationDto {
+  Year: number;
+  Wing: string;
+  Site: string;
+  AvgApprovedMin: number;
+  AvgApprovedHHMM: string;
+}
+
 /** ממוצע ניתוחים ליום בחדר (לפי שנה) לפי מחלקה – GetAvgSurgeriesPerDayPerRoomFiveYears */
 export interface AvgSurgeriesPerDayPerRoomDto {
   Year: number;
@@ -257,11 +266,16 @@ interface EmployeeInfo {
         ]),
     ],
 })
-export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck {
+export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, AfterViewInit {
     @ViewChild(MatSort) sort!: MatSort;
     @ViewChild('yoyCombinedChart') yoyCombinedChartRef!: ElementRef<HTMLCanvasElement>;
+    @ViewChild('yoyCombinedChartInline') yoyCombinedChartInlineRef?: ElementRef<HTMLCanvasElement>;
+    @ViewChild('tableBodyEl') tableBodyEl?: ElementRef<HTMLDivElement>;
+
+    showTableExtra = false;
 
     private yoyCombinedChart: Chart | null = null;
+    private yoyCombinedInlineChart: Chart | null = null;
 
     // Guide Avatar
     showGuideAvatar = true;
@@ -273,6 +287,8 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck {
     private onWindowResize = () => {
         try {
             this.chartOptions = { ...this.chartOptions };
+            this.scheduleTableExtraCheck();
+            this.scheduleYoyCombinedInlineBuild();
         } catch {
             // ignore
         }
@@ -569,6 +585,7 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck {
     // Raw "one call per baseYear" caches – filter in client without additional API calls.
     private avgDurationFiveYearsRawByBaseYear = new Map<string, AvgDurationFiveYearsDto[]>();
     private lossByWingYearRawByBaseYear = new Map<string, LossByWingYearDto[]>();
+    private approvedUtilizationRawByBaseYear = new Map<string, ApprovedUtilizationDto[]>();
 
     bothColumns: string[] = [
         "CatalogName2",
@@ -616,7 +633,7 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck {
   // Modals for group‑2 KPIs (זמני ניתוח לפי מחלקה)
   /** מודל אחד מאוחד של "זמני חדר ניתוח" עם מבטים שונים לפי כפתור */
   showRoomTimesModal = false;
-  roomTimesView: 'avgDuration' | 'firstStart' | 'lastEnd' | 'avgSetup' | 'perDay' | 'lossPerDay' = 'avgDuration';
+  roomTimesView: 'avgDuration' | 'firstStart' | 'lastEnd' | 'avgSetup' | 'perDay' | 'lossPerDay' | 'approvedPerDay' = 'avgDuration';
   // שמירה על flags ישנים לטובת הקוד הקיים (פתיחה/סגירה לפי מודלים נפרדים)
   showAvgDurationModal = false;
   showTimesModal = false;
@@ -638,6 +655,7 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck {
   isLastEndTimeLoading = false;
   isAvgSetupLoading = false;
   isSurgeriesPerDayLoading = false;
+  isApprovedUtilizationLoading = false;
 
   avgDurationData: DeptTimeMetricRow[] = [];
   firstStartTimeData: DeptTimeMetricRow[] = [];
@@ -664,7 +682,7 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck {
 
   // ================= Comparison mode (Avg Duration) =================
   avgDurationCompareEnabled = false;
-  avgDurationCompareDimension: 'SurgeryType' | 'Shift' | 'Room' = 'SurgeryType';
+  avgDurationCompareDimension: 'SurgeryType' | 'Shift' | 'Site' = 'SurgeryType';
   /** צד ימין (מקור) – יכול להיות 'הכל' או ערך ספציפי */
   avgDurationCompareRightValue: string | null = 'הכל';
   /** צד שמאל (השוואה) – יכול להיות 'הכל' או ערך ספציפי */
@@ -722,7 +740,7 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck {
 
   getAvgDurationCompareDimensionLabel(): string {
     if (this.avgDurationCompareDimension === 'Shift') return 'משמרת';
-    if (this.avgDurationCompareDimension === 'Room') return 'חדר ניתוח';
+    if (this.avgDurationCompareDimension === 'Site') return 'אתר';
     return 'סוג ניתוח';
   }
 
@@ -733,7 +751,7 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck {
     this.onAvgDurationCompareSettingsChanged();
   }
 
-  setAvgDurationCompareDimension(v: 'SurgeryType' | 'Shift' | 'Room'): void {
+  setAvgDurationCompareDimension(v: 'SurgeryType' | 'Shift' | 'Site'): void {
     this.avgDurationCompareDimension = v;
     this.avgDurationCompareEnabled = true;
     this.closeAvgDurationCompareDropdowns();
@@ -789,15 +807,17 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck {
   getAvgDurationCompareValueOptions(): string[] {
     const baseYear = this.getBaseYearForRoomTimes?.() ?? '';
     const raw = baseYear ? (this.avgDurationFiveYearsRawByBaseYear.get(baseYear) || []) : [];
+    const field = this.avgDurationCompareDimension;
     const filtered = raw
       .filter(r => this.matchesRoomTimesFilters?.(r as any) ?? true)
-      .filter(r => !this.avgDurationSiteFilter || this.avgDurationSiteFilter === "ALL" || r.Site === this.avgDurationSiteFilter)
+      // If comparison is "by site", do NOT pre-filter by the global site filter,
+      // otherwise you can't compare between sites.
+      .filter(r => field === 'Site' || !this.avgDurationSiteFilter || this.avgDurationSiteFilter === "ALL" || r.Site === this.avgDurationSiteFilter)
       .filter(r => !this.avgDurationCompareWing || (r.Wing || '').trim() === (this.avgDurationCompareWing || '').trim());
 
-    const field = this.avgDurationCompareDimension;
     const values = filtered
       .map(r => {
-        if (field === 'Room') return (r.Room || '').trim();
+        if (field === 'Site') return (r.Site || '').trim();
         if (field === 'Shift') return (r.Shift || '').trim();
         return (r.SurgeryType || '').trim();
       })
@@ -822,16 +842,15 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck {
     const baseYear = this.getBaseYearForRoomTimes?.() ?? '';
     const raw = baseYear ? (this.avgDurationFiveYearsRawByBaseYear.get(baseYear) || []) : [];
 
+    const field = this.avgDurationCompareDimension;
     const byWing = raw
       .filter(r => this.matchesRoomTimesFilters?.(r as any) ?? true)
-      .filter(r => !this.avgDurationSiteFilter || this.avgDurationSiteFilter === "ALL" || r.Site === this.avgDurationSiteFilter)
+      .filter(r => field === 'Site' || !this.avgDurationSiteFilter || this.avgDurationSiteFilter === "ALL" || r.Site === this.avgDurationSiteFilter)
       .filter(r => (r.Wing || '').trim() === (this.avgDurationCompareWing || '').trim());
-
-    const field = this.avgDurationCompareDimension;
     const matchValue = (r: AvgDurationFiveYearsDto, v: string | null): boolean => {
       const vv = (v || '').trim();
       if (!vv || vv === 'הכל') return true;
-      if (field === 'Room') return (r.Room || '').trim() === vv;
+      if (field === 'Site') return (r.Site || '').trim() === vv;
       if (field === 'Shift') return (r.Shift || '').trim() === vv;
       return (r.SurgeryType || '').trim() === vv;
     };
@@ -1018,6 +1037,11 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck {
         }
     }
 
+    ngAfterViewInit(): void {
+        this.scheduleTableExtraCheck();
+        this.scheduleYoyCombinedInlineBuild();
+    }
+
     private handleGlobalLoadingStateChange(isLoading: boolean): void {
         if (isLoading) {
             // התחלת מחזור טעינה חדש – אפס אחוזים והפעל טיימר
@@ -1050,6 +1074,28 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck {
             setTimeout(() => {
                 this.loadingProgress = 0;
             }, 400);
+            this.scheduleTableExtraCheck();
+        }
+    }
+
+    private scheduleTableExtraCheck(): void {
+        // keep it cheap; avoid doing DOM measurement in tight loops
+        requestAnimationFrame(() => this.updateTableExtraVisibility());
+    }
+
+    private updateTableExtraVisibility(): void {
+        const el = this.tableBodyEl?.nativeElement;
+        if (!el) {
+            this.showTableExtra = false;
+            return;
+        }
+
+        // "empty space" means no vertical scroll inside table-body
+        const sparePx = el.clientHeight - el.scrollHeight;
+        const next = sparePx > 12; // tolerance for borders/padding
+        if (next !== this.showTableExtra) {
+            this.showTableExtra = next;
+            this.cdr.detectChanges();
         }
     }
 
@@ -1215,6 +1261,123 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck {
                 },
             }],
         } as any);
+    }
+
+    private buildYoyCombinedInlineChart(): void {
+        const ref = this.yoyCombinedChartInlineRef;
+        if (!ref) {
+            return;
+        }
+        const canvas = ref.nativeElement;
+        const ctx = canvas.getContext('2d');
+        if (!ctx || !this.departmentYoyData || this.departmentYoyData.length === 0) {
+            return;
+        }
+
+        if (this.yoyCombinedInlineChart) {
+            this.yoyCombinedInlineChart.destroy();
+            this.yoyCombinedInlineChart = null;
+        }
+
+        const labels = this.departmentYoyData.map(d => d.Department || '');
+        const surgeries = this.departmentYoyData.map(d => d.SurgeriesPerRoom_Pct ?? 0);
+        const times = this.departmentYoyData.map(d => d.AvgSurgeryTime_Pct ?? 0);
+        const revenues = this.departmentYoyData.map(d => d.AvgRevenue_Pct ?? 0);
+
+        const isDark = this.isDark;
+        const textColor = isDark ? '#e5e7eb' : '#0f172a';
+
+        this.yoyCombinedInlineChart = new Chart(ctx, {
+            type: 'horizontalBar',
+            data: {
+                labels,
+                datasets: [
+                    { label: 'ניתוחים לחדר (% שינוי)', data: surgeries, backgroundColor: '#22c55e' },
+                    { label: 'זמן ניתוח ממוצע (% שינוי)', data: times, backgroundColor: '#f97316' },
+                    { label: 'הכנסה ממוצעת (% שינוי)', data: revenues, backgroundColor: '#0ea5e9' },
+                ],
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                legend: {
+                    position: 'bottom',
+                    labels: { fontColor: textColor, fontSize: 11 },
+                },
+                scales: {
+                    xAxes: [{
+                        ticks: { fontColor: textColor, callback: (v: any) => v + '%' },
+                        scaleLabel: { display: true, labelString: '% שינוי', fontColor: textColor },
+                        gridLines: { color: isDark ? 'rgba(148,163,184,.3)' : 'rgba(148,163,184,.4)' },
+                    }],
+                    yAxes: [{
+                        ticks: { fontColor: textColor, mirror: false },
+                        gridLines: { display: false },
+                    }],
+                },
+                layout: { padding: { left: 40, right: 40, top: 10, bottom: 10 } },
+                tooltips: {
+                    callbacks: {
+                        label: (tooltipItem: any, data: any) => {
+                            const ds = data.datasets[tooltipItem.datasetIndex];
+                            const val = tooltipItem.xLabel as number;
+                            const sign = val > 0 ? '+' : '';
+                            return `${ds.label}: ${sign}${val.toFixed(1)}%`;
+                        },
+                    },
+                },
+            },
+            plugins: [{
+                beforeDatasetsDraw: (chart: any) => {
+                    const ctx2 = chart.ctx;
+                    const chartArea = chart.chartArea;
+                    const firstDatasetMeta = chart.getDatasetMeta(0);
+                    if (!firstDatasetMeta || !firstDatasetMeta.data) return;
+                    ctx2.save();
+                    ctx2.strokeStyle = isDark ? 'rgba(148,163,184,.35)' : 'rgba(148,163,184,.35)';
+                    ctx2.lineWidth = 0.5;
+                    firstDatasetMeta.data.forEach((bar: any) => {
+                        const y = bar._model.y;
+                        ctx2.beginPath();
+                        ctx2.moveTo(chartArea.left, y);
+                        ctx2.lineTo(chartArea.right, y);
+                        ctx2.stroke();
+                    });
+                    ctx2.restore();
+                },
+                afterDatasetsDraw: (chart: any) => {
+                    const ctx2 = chart.ctx;
+                    ctx2.save();
+                    ctx2.font = Chart.helpers.fontString(11, 'normal', Chart.defaults.global.defaultFontFamily);
+                    ctx2.fillStyle = textColor;
+                    chart.data.datasets.forEach((dataset: any, dsIndex: number) => {
+                        const meta = chart.getDatasetMeta(dsIndex);
+                        meta.data.forEach((bar: any, index: number) => {
+                            const raw = dataset.data[index];
+                            if (raw == null) return;
+                            const value = Number(raw);
+                            const sign = value > 0 ? '+' : '';
+                            const label = `${sign}${value.toFixed(1)}%`;
+                            const padding = 4;
+                            const x = value >= 0 ? bar._model.x + padding : bar._model.x - padding;
+                            const y = bar._model.y + 4;
+                            ctx2.textAlign = value >= 0 ? 'left' : 'right';
+                            ctx2.textBaseline = 'middle';
+                            ctx2.fillText(label, x, y);
+                        });
+                    });
+                    ctx2.restore();
+                },
+            }],
+        } as any);
+    }
+
+    private scheduleYoyCombinedInlineBuild(): void {
+        if (this.chartViewMode !== 'yoy-combined') {
+            return;
+        }
+        // wait for DOM to render the canvas
+        setTimeout(() => this.buildYoyCombinedInlineChart(), 0);
     }
 
 
@@ -1506,6 +1669,7 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck {
             if (this.showYoyCombinedFullModal) {
                 setTimeout(() => this.buildYoyCombinedChart(), 0);
             }
+            this.scheduleYoyCombinedInlineBuild();
             return;
         }
         this.isChartLoading = true;
@@ -1532,6 +1696,7 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck {
                     if (this.showYoyCombinedFullModal) {
                         setTimeout(() => this.buildYoyCombinedChart(), 0);
                     }
+                    this.scheduleYoyCombinedInlineBuild();
                 },
                 (error) => {
                     console.error("Error loading GetDepartmentYoY data:", error);
@@ -1931,6 +2096,8 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck {
                     .map((v) => v + "%")
                     .join(" / "),
             }));
+            // Note: in the main panel, YoY-combined is rendered with Chart.js (canvas),
+            // so Google-chart tooltips are not relevant here.
             this.isChartLoading = false;
             this.cdr.detectChanges();
             return;
@@ -3059,8 +3226,126 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck {
         if (this.chartData.length > 0) {
             // console.log("First chart row:", this.chartData[0]);
         }
+        // Enhance Google-chart hover: show "what it means" + numeric value (avoid annotation noise)
+        this.applyClearTooltipsToGoogleChart();
+
         this.isChartLoading = false;
         this.cdr.detectChanges();
+    }
+
+    private applyClearTooltipsToGoogleChart(): void {
+        // Respect places where tooltip is explicitly disabled
+        if ((this.chartOptions as any)?.tooltip === "none" || (this.chartOptions as any)?.tooltip?.trigger === "none") {
+            return;
+        }
+        if (!this.chartColumns || !this.chartData || this.chartData.length === 0) {
+            return;
+        }
+
+        const columns = Array.isArray(this.chartColumns) ? [...this.chartColumns] : this.chartColumns;
+        const rows = Array.isArray(this.chartData) ? [...this.chartData] : this.chartData;
+        if (!Array.isArray(columns) || !Array.isArray(rows)) {
+            return;
+        }
+
+        const isPctChart = this.chartViewMode === "yoy-combined" ||
+            (typeof (this.chartOptions as any)?.hAxis?.format === "string" && (this.chartOptions as any).hAxis.format.includes("%"));
+
+        // Insert a tooltip column after each numeric series column (before its annotation, if exists).
+        // This guarantees hover shows only: category + series label + value.
+        const tooltipCol = { type: "string", role: "tooltip", p: { html: true } };
+
+        // Build list of numeric series column indices in the *current* columns array.
+        // We skip role-columns like annotations/tooltip.
+        const numericSeries: { colIndex: number; label: string }[] = [];
+        for (let i = 1; i < columns.length; i++) {
+            const c = columns[i] as any;
+            const isNumberCol = (typeof c === "object" && c?.type === "number") || c === "number";
+            const isRole = typeof c === "object" && !!c?.role;
+            if (isNumberCol && !isRole) {
+                numericSeries.push({ colIndex: i, label: (typeof c === "object" && c?.label) ? String(c.label) : `Series ${i}` });
+            }
+        }
+        if (numericSeries.length === 0) {
+            return;
+        }
+
+        // Apply insertions from right to left to keep indices stable
+        const insertAt: number[] = [];
+        for (let k = 0; k < numericSeries.length; k++) {
+            const idx = numericSeries[k].colIndex;
+            const next = columns[idx + 1] as any;
+            const nextIsTooltip = typeof next === "object" && next?.role === "tooltip";
+            if (!nextIsTooltip) {
+                insertAt.push(idx + 1);
+            }
+        }
+        if (insertAt.length === 0) {
+            return;
+        }
+
+        // Create a map from original numeric column index -> series label (before insertions)
+        const labelByColIndex = new Map<number, string>();
+        for (const s of numericSeries) {
+            labelByColIndex.set(s.colIndex, s.label);
+        }
+
+        // Insert tooltip columns (right to left)
+        insertAt.sort((a, b) => b - a).forEach((pos) => columns.splice(pos, 0, tooltipCol));
+
+        // Update each row: insert tooltip strings at the same positions.
+        const style = [
+            "direction:rtl",
+            "text-align:right",
+            "padding:8px 10px",
+            "font-weight:700",
+            "font-size:13px",
+        ].join(";");
+        const subStyle = [
+            "margin-top:4px",
+            "font-weight:800",
+            "font-size:12px",
+            `color:${this.isDark ? "#e5e7eb" : "#0f172a"}`,
+        ].join(";");
+
+        const formatVal = (v: any) => {
+            const n = Number(v);
+            if (!Number.isFinite(n)) return String(v ?? "");
+            if (isPctChart) {
+                const sign = n > 0 ? "+" : "";
+                return `${sign}${n.toFixed(1)}%`;
+            }
+            return this.formatNumber(n);
+        };
+
+        this.chartData = rows.map((r: any[]) => {
+            if (!Array.isArray(r)) return r;
+            const nextRow = [...r];
+            // category label is always column 0
+            const category = String(nextRow[0] ?? "");
+
+            // Because we inserted columns, we need to insert tooltip values at the same positions (right->left).
+            // For each insertion position, the "value column" is pos-1 (numeric series).
+            insertAt.sort((a, b) => b - a).forEach((pos) => {
+                const valueColIdx = pos - 1;
+                const seriesLabel = labelByColIndex.get(valueColIdx) ?? "ערך";
+                const value = nextRow[valueColIdx];
+                const html = `<div style="${style}"><div><b>${category}</b></div><div style="${subStyle}">${seriesLabel}: ${formatVal(value)}</div></div>`;
+                nextRow.splice(pos, 0, html);
+            });
+            return nextRow;
+        });
+
+        this.chartColumns = columns;
+        this.chartOptions = {
+            ...this.chartOptions,
+            tooltip: {
+                ...(this.chartOptions?.tooltip || {}),
+                isHtml: true,
+                trigger: "focus",
+                showColorCode: true,
+            },
+        };
     }
 
     /**
@@ -3270,6 +3555,14 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck {
             // עבור רוב המצבים, אם כבר במצב הזה – אין מה לעשות
             return;
         }
+
+        // leaving YoY combined: cleanup inline chart instance
+        if (this.chartViewMode === "yoy-combined" && mode !== "yoy-combined") {
+            if (this.yoyCombinedInlineChart) {
+                this.yoyCombinedInlineChart.destroy();
+                this.yoyCombinedInlineChart = null;
+            }
+        }
         this.chartViewMode = mode;
         this.isShiftGroupedView = mode === "shift";
 
@@ -3290,6 +3583,7 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck {
             this.updateChartData();
         }
         this.cdr.detectChanges();
+        this.scheduleYoyCombinedInlineBuild();
 
         // כפיית רענון / ריסייז של הגף מיד אחרי החלפת מצב,
         // כדי שלא יהיה צורך בלחיצה נוספת (כפתור סיידבר וכד').
@@ -3308,6 +3602,10 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck {
      */
     onYoyCombinedClick(): void {
         this.setChartViewMode("yoy-combined");
+        this.openYoyCombinedFullModal();
+    }
+
+    openYoyCombinedFullModal(): void {
         this.showYoyCombinedFullModal = true;
         // נותן לאנגולר לצייר את ה-canvas ואז בונה את הגרף
         setTimeout(() => this.buildYoyCombinedChart(), 0);
@@ -3348,6 +3646,8 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck {
                     return "ממוצע ניתוחים ליום בחדר לפי מחלקה";
                 case "lossPerDay":
                     return "זמן אבוד ליום לפי מחלקה";
+                case "approvedPerDay":
+                    return "זמן מנוצל ליום לפי מחלקה";
                 default:
                     return "זמני חדר ניתוח לפי מחלקה";
             }
@@ -4143,6 +4443,9 @@ updateChartColumns(): void {
             case "lossPerDay":
                 this.loadLossByWingPerDay();
                 break;
+            case "approvedPerDay":
+                this.loadApprovedUtilizationPerDay();
+                break;
         }
     }
 
@@ -4469,7 +4772,7 @@ closeLastEndTimeModal(): void {
 }
 
 // Unified "זמני חדר ניתוח" modal that מחזיק את כל תתי‑הגרפים תחת אותה כותרת
-openRoomTimesModal(initialView: 'avgDuration' | 'firstStart' | 'lastEnd' | 'avgSetup' | 'perDay' = 'avgDuration'): void {
+openRoomTimesModal(initialView: 'avgDuration' | 'firstStart' | 'lastEnd' | 'avgSetup' | 'perDay' | 'lossPerDay' | 'approvedPerDay' = 'avgDuration'): void {
   this.showRoomTimesModal = true;
   this.setRoomTimesView(initialView);
 }
@@ -4479,7 +4782,7 @@ closeRoomTimesModal(): void {
   this.showTimesModal = false;
 }
 
-setRoomTimesView(view: 'avgDuration' | 'firstStart' | 'lastEnd' | 'avgSetup' | 'perDay' | 'lossPerDay'): void {
+setRoomTimesView(view: 'avgDuration' | 'firstStart' | 'lastEnd' | 'avgSetup' | 'perDay' | 'lossPerDay' | 'approvedPerDay'): void {
   this.roomTimesView = view;
 
   // If a filter becomes irrelevant for the selected room-times view,
@@ -4510,6 +4813,9 @@ setRoomTimesView(view: 'avgDuration' | 'firstStart' | 'lastEnd' | 'avgSetup' | '
       break;
     case 'lossPerDay':
       this.loadLossByWingPerDay();
+      break;
+    case 'approvedPerDay':
+      this.loadApprovedUtilizationPerDay();
       break;
   }
 }
@@ -5199,6 +5505,12 @@ isFilterDisabled(
       return filterKey !== "site";
     }
 
+    // "זמן מנוצל ליום" (approvedPerDay) is based on GetApprovedUtilization_surgeries_dashborad (baseYear only)
+    // and we currently only apply site filtering client-side.
+    if (this.roomTimesView === "approvedPerDay") {
+      return filterKey !== "site";
+    }
+
     // Morning work is relevant only for the KPIs that use buildKpiFilterParams() (group‑2 APIs).
     // Avg duration + loss per day are filtered locally from raw caches and do NOT support morningWork.
     if (filterKey === "morningWork") {
@@ -5726,6 +6038,63 @@ private loadAvgFirstMorningEntry(): void {
   private lastLossByWingBaseYear: string | null = null;
   private lossByWingRowsCache: LossByWingYearDto[] = [];
 
+  // זמן מנוצל/מאושר ליום לפי מחלקה – נתונים ו־options
+  approvedUtilizationChartColumns: any[] = [];
+  approvedUtilizationChartData: any[] = [];
+  approvedUtilizationChartYears: number[] = [];
+  approvedUtilizationChartOptions: any = {
+    title: "",
+    titleTextStyle: {
+      fontSize: 18,
+      bold: true,
+      color: "#1e293b",
+    },
+    legend: {
+      position: "top",
+      alignment: "end",
+      textStyle: { fontSize: 14, bold: true },
+    },
+    hAxis: {
+      textStyle: { fontSize: 14, bold: true, color: "#334155" },
+      slantedText: true,
+      slantedTextAngle: 25,
+      titleTextStyle: {
+        fontSize: 16,
+        bold: true,
+        italic: false,
+      },
+    },
+    vAxis: {
+      title: "זמן מנוצל ליום (דקות)",
+      textStyle: { fontSize: 14, bold: true },
+      titleTextStyle: {
+        fontSize: 16,
+        bold: true,
+        italic: false,
+      },
+    },
+    bar: { groupWidth: "60%" },
+    chartArea: {
+      width: "90%",
+      height: "60%",
+      left: 40,
+      top: 50,
+    },
+    animation: { startup: true, duration: 800, easing: "out" },
+    annotations: {
+      alwaysOutside: true,
+      textStyle: {
+        fontSize: 14,
+        bold: true,
+        auraColor: "none",
+      },
+      stem: {
+        length: 25,
+        color: "#cbd5e1",
+      },
+    },
+  };
+
 private loadAvgLastMorningEnd(): void {
   const kpi = this.buildKpiFilterParams();
   const paramsKey = `${kpi.baseYear}|${kpi.surgeryType}|${kpi.shift}|${kpi.site}|${kpi.weekend}|${kpi.department}`;
@@ -6189,6 +6558,116 @@ private buildLossByWingChart(rows: LossByWingYearDto[]): void {
           formatted,
         );
       }
+    });
+
+    return [wing, ...series];
+  });
+}
+
+private loadApprovedUtilizationPerDay(): void {
+  const baseYear = this.getBaseYearForRoomTimes();
+
+  const raw = this.approvedUtilizationRawByBaseYear.get(baseYear);
+  if (raw && raw.length > 0) {
+    const filtered = raw.filter(r => this.matchesRoomTimesFilters({
+      Site: r.Site,
+      Wing: r.Wing,
+    }));
+    const filteredBySite = this.filterBySelectedDiagnosis(filtered);
+    this.buildApprovedUtilizationChart(filteredBySite);
+    this.isApprovedUtilizationLoading = false;
+    this.cdr.detectChanges();
+    return;
+  }
+
+  this.isApprovedUtilizationLoading = true;
+  this.approvedUtilizationChartColumns = [];
+  this.approvedUtilizationChartData = [];
+  this.approvedUtilizationChartYears = [];
+
+  this.http
+    .get<ApprovedUtilizationDto[]>(environment.url + "GetApprovedUtilization_surgeries_dashborad", {
+      params: { baseYear },
+    })
+    .subscribe(
+      (rows) => {
+        const list = Array.isArray(rows) ? rows : [];
+        this.approvedUtilizationRawByBaseYear.set(baseYear, list);
+
+        const filtered = list.filter(r => this.matchesRoomTimesFilters({
+          Site: r.Site,
+          Wing: r.Wing,
+        }));
+        const filteredBySite = this.filterBySelectedDiagnosis(filtered);
+
+        this.buildApprovedUtilizationChart(filteredBySite);
+        this.isApprovedUtilizationLoading = false;
+        this.cdr.detectChanges();
+      },
+      (error) => {
+        console.error("Error loading GetApprovedUtilization_surgeries_dashborad:", error);
+        this.isApprovedUtilizationLoading = false;
+        this.cdr.detectChanges();
+        this.snackBar.open("❌ שגיאה בטעינת זמן מנוצל ליום", "סגור", { duration: 3000 });
+      }
+    );
+}
+
+private buildApprovedUtilizationChart(rows: ApprovedUtilizationDto[]): void {
+  if (!rows || rows.length === 0) {
+    this.approvedUtilizationChartColumns = [];
+    this.approvedUtilizationChartData = [];
+    this.approvedUtilizationChartYears = [];
+    return;
+  }
+
+  const allYears = Array.from(new Set(rows.map(r => Number(r.Year)).filter(y => !isNaN(y)))).sort((a, b) => a - b);
+  const years = allYears.slice(-5);
+  this.approvedUtilizationChartYears = years;
+
+  const cols: any[] = ["מחלקה"];
+  years.forEach(y => {
+    cols.push(
+      { type: "number", label: y.toString() },
+      { type: "string", role: "annotation", label: y.toString() },
+    );
+  });
+  this.approvedUtilizationChartColumns = cols;
+
+  const byWingYear = new Map<string, Map<number, { min: number; label: string }>>();
+  for (const r of rows) {
+    const wing = (r.Wing || "לא צוין").trim();
+    const year = Number(r.Year);
+    if (!years.includes(year)) continue;
+    const min = r.AvgApprovedMin;
+    if (min == null || !Number.isFinite(min)) continue;
+    const label = r.AvgApprovedHHMM ? r.AvgApprovedHHMM : this.formatMinutesToHM(min);
+    if (!byWingYear.has(wing)) byWingYear.set(wing, new Map());
+    byWingYear.get(wing)!.set(year, { min, label });
+  }
+
+  const wings = Array.from(byWingYear.keys())
+    .filter(w => w !== "אחר" && w !== "קרדיולוגיה")
+    .sort((a, b) => {
+      const ia = this.orderedWings.indexOf(a);
+      const ib = this.orderedWings.indexOf(b);
+      if (ia !== -1 && ib !== -1) return ia - ib;
+      if (ia !== -1) return -1;
+      if (ib !== -1) return 1;
+      return a.localeCompare(b, "he");
+    });
+
+  this.approvedUtilizationChartData = wings.map(wing => {
+    const yearMap = byWingYear.get(wing) || new Map<number, { min: number; label: string }>();
+    const series: any[] = [];
+
+    years.forEach(y => {
+      const v = yearMap.get(y);
+      if (!v) {
+        series.push(null, null);
+        return;
+      }
+      series.push({ v: v.min, f: v.label }, v.label);
     });
 
     return [wing, ...series];

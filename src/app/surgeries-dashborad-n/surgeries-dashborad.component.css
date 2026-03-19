@@ -1077,6 +1077,19 @@
   }
 }
 
+.yoy-combined-inline {
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+  position: relative;
+}
+
+.yoy-combined-inline canvas {
+  width: 100% !important;
+  height: 100% !important;
+  display: block;
+}
+
 /* Make in-chart text slightly larger on big screens (plasma / meeting rooms) */
 @media (min-width: 1920px) {
   .graph-body google-chart ::ng-deep svg text {
@@ -1302,6 +1315,30 @@
   min-height: 0;
   overflow: auto;
   padding: 2px;
+  display: flex;
+  flex-direction: column;
+}
+
+.table-extra {
+  margin-top: auto;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px dashed var(--border);
+  background: var(--panel);
+}
+
+.table-extra-title {
+  font-weight: 900;
+  color: var(--text);
+  font-size: 13px;
+  margin-bottom: 4px;
+}
+
+.table-extra-body {
+  color: var(--muted);
+  font-weight: 600;
+  font-size: 12px;
+  line-height: 1.35;
 }
 
 /* ── Compare panel (inside table-body + full modal) ───────── */
@@ -2345,6 +2382,27 @@ table.table {
   display: inline-flex;
   align-items: center;
   gap: 4px;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.kpi-header-actions .custom-toggle-group,
+.chart-mode-row .custom-toggle-group {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-gutter: stable both-edges;
+}
+
+.kpi-header-actions .custom-toggle-group mat-button-toggle,
+.chart-mode-row .custom-toggle-group mat-button-toggle {
+  flex: 0 0 auto;
+}
+
+.kpi-header-actions .custom-toggle-group ::ng-deep .mat-button-toggle-label-content,
+.chart-mode-row .custom-toggle-group ::ng-deep .mat-button-toggle-label-content {
+  white-space: nowrap;
 }
 
 .kpi-intro {
@@ -3485,4 +3543,27 @@ table.table {
     margin-inline-end: 0;
     margin-bottom: 4px;
   }
+}
+
+
+
+
+/* אנימציית מעבר חלקה */
+.custom-toggle-group mat-button-toggle {
+  /* מעבר חלק על כל התכונות: רקע, צבע, צל */
+  transition: 
+    background-color 0.4s cubic-bezier(0.25, 0.8, 0.25, 1),
+    color 0.3s ease,
+    transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275),
+    box-shadow 0.4s ease !important;
+}
+
+/* אפקט "לחיצה" קטן כשלוחצים */
+.custom-toggle-group mat-button-toggle:active {
+  transform: scale(0.95);
+}
+
+/* ביטול ה-Ripple הדיפולטיבי של Material אם הוא מפריע לעיצוב הנקי */
+.custom-toggle-group ::ng-deep .mat-ripple {
+  display: none !important;
 }

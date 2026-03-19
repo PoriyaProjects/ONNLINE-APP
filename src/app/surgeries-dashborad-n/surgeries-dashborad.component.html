@@ -103,8 +103,8 @@
                   [class.selected]="avgDurationCompareDimension === 'SurgeryType'">סוג ניתוח</div>
                 <div class="option-item" (click)="setAvgDurationCompareDimension('Shift')"
                   [class.selected]="avgDurationCompareDimension === 'Shift'">משמרת</div>
-                <div class="option-item" (click)="setAvgDurationCompareDimension('Room')"
-                  [class.selected]="avgDurationCompareDimension === 'Room'">חדר ניתוח</div>
+                <div class="option-item" (click)="setAvgDurationCompareDimension('Site')"
+                  [class.selected]="avgDurationCompareDimension === 'Site'">אתר</div>
               </div>
             </div>
           </div>
@@ -330,14 +330,33 @@
             </div>
           </div>
           <div class="chart-with-expand" *ngIf="mainMetricMode !== 'room-times'">
+            <!-- Expand: regular main chart -->
             <button type="button" class="chart-expand-btn" (click)="openMainChartFullModal()"
-              *ngIf="!isChartLoading && !isMainDataLoading && chartData && chartData.length > 0" matTooltip="הרחב מסך"
-              matTooltipPosition="below">
+              *ngIf="chartViewMode !== 'yoy-combined' && !isChartLoading && !isMainDataLoading && chartData && chartData.length > 0"
+              matTooltip="הרחב מסך" matTooltipPosition="below">
               <mat-icon>fullscreen</mat-icon>
             </button>
+
+            <!-- Expand: YoY combined modal -->
+            <button type="button" class="chart-expand-btn" (click)="openYoyCombinedFullModal()"
+              *ngIf="chartViewMode === 'yoy-combined' && !isChartLoading && !isMainDataLoading && departmentYoyData?.length"
+              matTooltip="הרחב מסך" matTooltipPosition="below">
+              <mat-icon>fullscreen</mat-icon>
+            </button>
+
+            <!-- YoY combined inline chart (Chart.js) -->
+            <div class="yoy-combined-inline"
+              *ngIf="chartViewMode === 'yoy-combined' && !isChartLoading && !isMainDataLoading">
+              <canvas #yoyCombinedChartInline *ngIf="departmentYoyData?.length"></canvas>
+              <div *ngIf="!departmentYoyData?.length" class="chart-no-data">
+                אין נתונים להצגה בגרף
+              </div>
+            </div>
+
+            <!-- All other modes (Google chart) -->
             <google-chart [type]="chartType" [data]="chartData" [columns]="chartColumns" [options]="chartOptions"
               [width]="'100%'" (select)="onChartClick($event)"
-              *ngIf="!isChartLoading && !isMainDataLoading && chartData && chartData.length > 0">
+              *ngIf="chartViewMode !== 'yoy-combined' && !isChartLoading && !isMainDataLoading && chartData && chartData.length > 0">
             </google-chart>
           </div>
 
@@ -385,7 +404,15 @@
               [options]="lossByWingChartOptions" [width]="'100%'" [height]="'100%'">
             </google-chart>
 
-            <div *ngIf="isAvgDurationLoading" class="chart-loading-overlay">
+            <google-chart
+              *ngIf="roomTimesView === 'approvedPerDay' && approvedUtilizationChartData && approvedUtilizationChartData.length > 0"
+              [type]="'ColumnChart'" [columns]="approvedUtilizationChartColumns" [data]="approvedUtilizationChartData"
+              [options]="approvedUtilizationChartOptions" [width]="'100%'" [height]="'100%'">
+            </google-chart>
+
+            <div
+              *ngIf="isAvgDurationLoading || isFirstStartTimeLoading || isLastEndTimeLoading || isAvgSetupLoading || isSurgeriesPerDayLoading || isLossByWingLoading || isApprovedUtilizationLoading"
+              class="chart-loading-overlay">
               <mat-spinner diameter="40"></mat-spinner>
               <div class="chart-loading-text">טוען נתוני זמני חדר...</div>
             </div>
@@ -457,6 +484,10 @@
               <mat-button-toggle value="lossPerDay">
                 <mat-icon>timer_off</mat-icon>
                 <span>זמן אבוד ליום</span>
+              </mat-button-toggle>
+              <mat-button-toggle value="approvedPerDay">
+                <mat-icon>schedule</mat-icon>
+                <span>זמן מנוצל ליום</span>
               </mat-button-toggle>
             </mat-button-toggle-group>
           </div>
@@ -547,7 +578,7 @@
           <span>טבלת ניתוחים ומחלקות</span>
         </div>
 
-        <div class="table-body">
+        <div class="table-body" #tableBodyEl>
           <!-- טבלה מצטברת: אותם נתונים של הגרף, מוצגים כטבלה (לכל המצבים חוץ ממדד משולב) -->
           <div class="table-wrap"
             *ngIf="chartViewMode !== 'yoy-combined' && chartTableRows?.length && yearsForChart?.length">
@@ -664,9 +695,9 @@
                         [class.selected]="avgDurationCompareDimension === 'SurgeryType'">סוג ניתוח</div>
                       <div class="option-item" (click)="setAvgDurationCompareDimension('Shift')"
                         [class.selected]="avgDurationCompareDimension === 'Shift'">משמרת</div>
-                      <div class="option-item" (click)="setAvgDurationCompareDimension('Room')"
-                        [class.selected]="avgDurationCompareDimension === 'Room'">חדר ניתוח</div>
-                    </div>
+                      <div class="option-item" (click)="setAvgDurationCompareDimension('Site')"
+                        [class.selected]="avgDurationCompareDimension === 'Site'">אתר</div>
+                     </div>
                   </div>
                 </div>
 
@@ -740,6 +771,14 @@
           <div class="empty" *ngIf="(chartViewMode === 'yoy-combined' && !getFilteredDepartmentYoyData()?.length) ||
                    (chartViewMode !== 'yoy-combined' && dataSource.data.length === 0 && !chartTableRows?.length)">
             אין נתונים להצגה
+          </div>
+
+          <!-- shows only when there's spare space (no scroll) -->
+          <div class="table-extra" *ngIf="showTableExtra">
+            <div class="table-extra-title">מידע נוסף</div>
+            <div class="table-extra-body">
+              כאן אפשר להציג תוכן נוסף כשיש מקום ריק מתחת לטבלה.
+            </div>
           </div>
         </div>
       </div>
@@ -1448,6 +1487,7 @@
               <span *ngSwitchCase="'avgSetup'">זמן SETUP ממוצע לפי מחלקה</span>
               <span *ngSwitchCase="'perDay'">ניתוחים ליום בחדר לפי מחלקה</span>
               <span *ngSwitchCase="'lossPerDay'">זמן אבוד ליום לפי מחלקה</span>
+              <span *ngSwitchCase="'approvedPerDay'">זמן מנוצל ליום לפי מחלקה</span>
             </ng-container>
           </h2>
         </div>
@@ -1477,6 +1517,10 @@
             <mat-button-toggle value="lossPerDay">
               <mat-icon>timer_off</mat-icon>
               <span>זמן אבוד ליום</span>
+            </mat-button-toggle>
+            <mat-button-toggle value="approvedPerDay">
+              <mat-icon>schedule</mat-icon>
+              <span>זמן מנוצל ליום</span>
             </mat-button-toggle>
           </mat-button-toggle-group>
           <button mat-icon-button class="close-btn" (click)="closeRoomTimesModal()">
@@ -1700,6 +1744,41 @@
             *ngIf="!isLossByWingLoading && lossByWingChartData && lossByWingChartData.length > 0 && lossByWingChartYears?.length"
             class="kpi-chart-legend">
             <span *ngFor="let y of lossByWingChartYears; let i = index" class="kpi-legend-item">
+              <span class="kpi-legend-color"
+                [style.background-color]="kpiChartYearColors[i % kpiChartYearColors.length]"></span>
+              <span class="kpi-legend-label">{{ y }}</span>
+            </span>
+          </div>
+        </ng-container>
+
+        <!-- APPROVED UTILIZATION PER DAY VIEW -->
+        <ng-container *ngIf="roomTimesView === 'approvedPerDay'">
+          <p class="kpi-intro">
+            זמן מנוצל ליום (בדקות) לפי מחלקה מאוגדת (Wing). ציר X: מחלקות. עמודה לכל שנה.
+          </p>
+          <div *ngIf="isApprovedUtilizationLoading" class="kpi-loading">
+            <mat-spinner diameter="40"></mat-spinner>
+            <div class="kpi-loading-text">טוען נתונים...</div>
+          </div>
+          <div
+            *ngIf="!isApprovedUtilizationLoading && (!approvedUtilizationChartData || approvedUtilizationChartData.length === 0)"
+            class="kpi-no-data">
+            אין נתונים להצגה כרגע.
+          </div>
+          <google-chart
+            *ngIf="!isApprovedUtilizationLoading && approvedUtilizationChartData && approvedUtilizationChartData.length > 0"
+            [type]="'ColumnChart'" [columns]="approvedUtilizationChartColumns" [data]="approvedUtilizationChartData"
+            [options]="approvedUtilizationChartOptions" [width]="'100%'" [height]="'360px'">
+          </google-chart>
+          <div
+            *ngIf="!isApprovedUtilizationLoading && approvedUtilizationChartData && approvedUtilizationChartData.length > 0"
+            class="kpi-chart-caption">
+            כל עמודת צבע מייצגת שנה, והסדרה עבור כל מחלקה (Wing) מציגה את הזמן המנוצל ליום (בדקות).
+          </div>
+          <div
+            *ngIf="!isApprovedUtilizationLoading && approvedUtilizationChartData && approvedUtilizationChartData.length > 0 && approvedUtilizationChartYears?.length"
+            class="kpi-chart-legend">
+            <span *ngFor="let y of approvedUtilizationChartYears; let i = index" class="kpi-legend-item">
               <span class="kpi-legend-color"
                 [style.background-color]="kpiChartYearColors[i % kpiChartYearColors.length]"></span>
               <span class="kpi-legend-label">{{ y }}</span>
