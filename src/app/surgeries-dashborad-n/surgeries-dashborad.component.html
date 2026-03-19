@@ -1,22 +1,80 @@
 <div class="dash" [class.dark]="isDark" dir="rtl">
 
-  <!-- Loading Spinner -->
-  <div *ngIf="isLoading || isMainDataLoading || isDiagnosesLoading || catalogLoading || isChartLoading"
-    class="loading-overlay">
-    <div class="loading-container">
-      <mat-spinner diameter="60"></mat-spinner>
+  <!-- Skeleton Loader – full dashboard shell
+       מוצג רק בטעינה גלובלית אמיתית (isLoading),
+       שאר המצבים מציגים לודרים מקומיים מבלי לחסום את כל ה‑UI. -->
+  <div *ngIf="isLoading" class="loading-overlay">
+    <div class="loading-container" dir="rtl">
+      <div class="skeleton-dashboard">
+        <!-- Top bar skeleton -->
+        <div class="skeleton-topbar">
+          <div class="skeleton-topbar-left">
+            <div class="skeleton-avatar skeleton-shimmer"></div>
+            <div class="skeleton-lines">
+              <div class="skeleton-line skeleton-line-lg skeleton-shimmer"></div>
+              <div class="skeleton-line skeleton-line-sm skeleton-shimmer"></div>
+            </div>
+          </div>
+          <div class="skeleton-topbar-right">
+            <div class="skeleton-icon skeleton-shimmer"></div>
+            <div class="skeleton-icon skeleton-shimmer"></div>
+            <div class="skeleton-icon skeleton-shimmer"></div>
+          </div>
+        </div>
+
+        <!-- Main layout skeleton: graph + table + sidebar -->
+        <div class="skeleton-main">
+          <div class="skeleton-graph panel-skeleton">
+            <div class="skeleton-panel-header">
+              <div class="skeleton-line skeleton-line-md skeleton-shimmer"></div>
+              <div class="skeleton-chip-row">
+                <div class="skeleton-chip skeleton-shimmer"></div>
+                <div class="skeleton-chip skeleton-shimmer"></div>
+                <div class="skeleton-chip skeleton-shimmer"></div>
+              </div>
+            </div>
+            <div class="skeleton-panel-body">
+              <div class="skeleton-chart-area skeleton-shimmer"></div>
+            </div>
+          </div>
+
+          <div class="skeleton-table panel-skeleton">
+            <div class="skeleton-panel-header">
+              <div class="skeleton-line skeleton-line-md skeleton-shimmer"></div>
+            </div>
+            <div class="skeleton-table-rows">
+              <div class="skeleton-table-row" *ngFor="let _ of [1,2,3,4,5]">
+                <div class="skeleton-line skeleton-line-sm skeleton-shimmer"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="skeleton-sidebar panel-skeleton">
+            <div class="skeleton-panel-header">
+              <div class="skeleton-line skeleton-line-md skeleton-shimmer"></div>
+            </div>
+            <div class="skeleton-filter-list">
+              <div class="skeleton-filter" *ngFor="let _ of [1,2,3,4]">
+                <div class="skeleton-line skeleton-line-sm skeleton-shimmer"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div class="loading-text">
-        <span *ngIf="isMainDataLoading">טוען נתונים...</span>
-        <span *ngIf="isDiagnosesLoading">טוען רשימת אגפים...</span>
-        <span *ngIf="catalogLoading">טוען נתוני ניתוחים למחלקה...</span>
-        <span *ngIf="isLoading">טוען דוח ניתוחים למנהל...</span>
-        <span *ngIf="isChartLoading && !isMainDataLoading">טוען גרף...</span>
-        <span class="loading-percentage" *ngIf="loadingProgress > 0">
+        <div class="loading-headline">
+          מכין עבורך את דשבורד הניתוחים...
+        </div>
+        <div class="loading-subtext">
+          טעינה ראשונית לוקחת קצת יותר זמן כי המערכת טוענת וממיינת את כל נתוני חמש השנים האחרונות ושומרת אותם בזיכרון,
+          כדי שפתיחות הבאות יהיו כמעט מיידיות.
+        </div>
+        <div class="loading-percentage" *ngIf="loadingProgress > 0">
           {{ loadingProgress | number : '1.0-0' }}%
-        </span>
+        </div>
       </div>
     </div>
-
   </div>
 
   <!-- Full‑screen modal for main chart (כל המצבים) -->
@@ -72,44 +130,77 @@
         </p>
 
         <div class="compare-controls compare-controls-3" *ngIf="avgDurationCompareEnabled">
-          <mat-form-field appearance="outline" class="compare-field">
-            <mat-label>מחלקה מאוגדת (Wing) – חובה</mat-label>
-            <mat-select [(ngModel)]="avgDurationCompareWing" (selectionChange)="onAvgDurationCompareSettingsChanged()">
-              <mat-option *ngFor="let w of getAvgDurationCompareWingOptions()" [value]="w">
-                {{ w }}
-              </mat-option>
-            </mat-select>
-          </mat-form-field>
+          <div class="custom-dropdown compare-dropdown" [class.active]="isAvgDurationCompareWingOpen"
+            [class.has-value]="avgDurationCompareWing">
+            <div class="dropdown-trigger" (click)="toggleAvgDurationCompareDropdown('wing')">
+              <mat-icon class="dropdown-icon">local_hospital</mat-icon>
+              <span class="selected-text">Wing: {{ avgDurationCompareWing || 'בחר...' }}</span>
+              <mat-icon class="arrow-icon">{{ isAvgDurationCompareWingOpen ? 'expand_less' : 'expand_more' }}</mat-icon>
+            </div>
+            <div class="dropdown-panel" *ngIf="isAvgDurationCompareWingOpen">
+              <div class="options-list">
+                <div class="option-item" *ngFor="let w of getAvgDurationCompareWingOptions()"
+                  (click)="setAvgDurationCompareWing(w)" [class.selected]="avgDurationCompareWing === w">
+                  {{ w }}
+                </div>
+              </div>
+            </div>
+          </div>
 
-          <mat-form-field appearance="outline" class="compare-field">
-            <mat-label>השווה לפי</mat-label>
-            <mat-select [(ngModel)]="avgDurationCompareDimension"
-              (selectionChange)="onAvgDurationCompareSettingsChanged()">
-              <mat-option [value]="'SurgeryType'">סוג ניתוח</mat-option>
-              <mat-option [value]="'Shift'">משמרת</mat-option>
-              <mat-option [value]="'Room'">חדר ניתוח</mat-option>
-            </mat-select>
-          </mat-form-field>
+          <div class="custom-dropdown compare-dropdown" [class.active]="isAvgDurationCompareDimensionOpen"
+            [class.has-value]="avgDurationCompareDimension">
+            <div class="dropdown-trigger" (click)="toggleAvgDurationCompareDropdown('dimension')">
+              <mat-icon class="dropdown-icon">tune</mat-icon>
+              <span class="selected-text">השווה לפי: {{ getAvgDurationCompareDimensionLabel() }}</span>
+              <mat-icon class="arrow-icon">{{ isAvgDurationCompareDimensionOpen ? 'expand_less' : 'expand_more'
+                }}</mat-icon>
+            </div>
+            <div class="dropdown-panel" *ngIf="isAvgDurationCompareDimensionOpen">
+              <div class="options-list">
+                <div class="option-item" (click)="setAvgDurationCompareDimension('SurgeryType')"
+                  [class.selected]="avgDurationCompareDimension === 'SurgeryType'">סוג ניתוח</div>
+                <div class="option-item" (click)="setAvgDurationCompareDimension('Shift')"
+                  [class.selected]="avgDurationCompareDimension === 'Shift'">משמרת</div>
+                <div class="option-item" (click)="setAvgDurationCompareDimension('Site')"
+                  [class.selected]="avgDurationCompareDimension === 'Site'">אתר</div>
+              </div>
+            </div>
+          </div>
 
-          <mat-form-field appearance="outline" class="compare-field">
-            <mat-label>ימין (מקור)</mat-label>
-            <mat-select [(ngModel)]="avgDurationCompareRightValue"
-              (selectionChange)="onAvgDurationCompareSettingsChanged()">
-              <mat-option *ngFor="let v of getAvgDurationCompareValueOptions()" [value]="v">
-                {{ v }}
-              </mat-option>
-            </mat-select>
-          </mat-form-field>
+          <div class="custom-dropdown compare-dropdown" [class.active]="isAvgDurationCompareRightOpen"
+            [class.has-value]="avgDurationCompareRightValue">
+            <div class="dropdown-trigger" (click)="toggleAvgDurationCompareDropdown('right')">
+              <mat-icon class="dropdown-icon">check_circle</mat-icon>
+              <span class="selected-text">ימין (מקור): {{ avgDurationCompareRightValue || 'הכל' }}</span>
+              <mat-icon class="arrow-icon">{{ isAvgDurationCompareRightOpen ? 'expand_less' : 'expand_more'
+                }}</mat-icon>
+            </div>
+            <div class="dropdown-panel" *ngIf="isAvgDurationCompareRightOpen">
+              <div class="options-list">
+                <div class="option-item" *ngFor="let v of getAvgDurationCompareValueOptions()"
+                  (click)="setAvgDurationCompareRightValue(v)" [class.selected]="avgDurationCompareRightValue === v">
+                  {{ v }}
+                </div>
+              </div>
+            </div>
+          </div>
 
-          <mat-form-field appearance="outline" class="compare-field">
-            <mat-label>שמאל (השוואה)</mat-label>
-            <mat-select [(ngModel)]="avgDurationCompareLeftValue"
-              (selectionChange)="onAvgDurationCompareSettingsChanged()">
-              <mat-option *ngFor="let v of getAvgDurationCompareValueOptions()" [value]="v">
-                {{ v }}
-              </mat-option>
-            </mat-select>
-          </mat-form-field>
+          <div class="custom-dropdown compare-dropdown" [class.active]="isAvgDurationCompareLeftOpen"
+            [class.has-value]="avgDurationCompareLeftValue">
+            <div class="dropdown-trigger" (click)="toggleAvgDurationCompareDropdown('left')">
+              <mat-icon class="dropdown-icon">compare_arrows</mat-icon>
+              <span class="selected-text">שמאל (השוואה): {{ avgDurationCompareLeftValue || 'הכל' }}</span>
+              <mat-icon class="arrow-icon">{{ isAvgDurationCompareLeftOpen ? 'expand_less' : 'expand_more' }}</mat-icon>
+            </div>
+            <div class="dropdown-panel" *ngIf="isAvgDurationCompareLeftOpen">
+              <div class="options-list">
+                <div class="option-item" *ngFor="let v of getAvgDurationCompareValueOptions()"
+                  (click)="setAvgDurationCompareLeftValue(v)" [class.selected]="avgDurationCompareLeftValue === v">
+                  {{ v }}
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
         <div class="compare-wing-hint" *ngIf="avgDurationCompareEnabled && !avgDurationCompareWing">
@@ -248,9 +339,29 @@
                   <mat-icon>{{ chartType === 'ColumnChart' ? 'bar_chart' : 'show_chart' }}</mat-icon>
                 </div>
 
-                <mat-button-toggle value="count" checked>מדדי ניתוחים</mat-button-toggle>
-                <mat-button-toggle value="duration" (change)="openTimesModal()">זמני חדר</mat-button-toggle>
-                <mat-button-toggle value="utilization">ניצולת חדר</mat-button-toggle>
+                <mat-button-toggle value="count" checked
+                  matTooltip="מדדי נפח פעילות: כמות ניתוחים/חדר/מחלקה על פני שנים" matTooltipPosition="below">
+                  מדדי ניתוחים
+                </mat-button-toggle>
+
+                <mat-button-toggle value="duration" (change)="openTimesModal()"
+                  matTooltip="מדדי זמני חדר: משכי ניתוח, כניסה ראשונה, סיום אחרון, SETUP ועוד"
+                  matTooltipPosition="below">
+                  זמני חדר
+                </mat-button-toggle>
+
+                <mat-button-toggle value="utilization"
+                  matTooltip="ניצולת חדרי ניתוח: כמה חדרים פתוחים/סוגרים, ימים מלאים וניצול ליום"
+                  matTooltipPosition="below">
+                  ניצולת חדר
+                </mat-button-toggle>
+
+                <mat-button-toggle value="compare-departments"
+                  (change)="openCompareDepartmentsModal()"
+                  matTooltip="השוואת ביצועי מחלקות – כמות ניתוחים מול כמות חדרים וזמני חדר"
+                  matTooltipPosition="below">
+                  השוואה ביצועי מחלקות
+                </mat-button-toggle>
 
               </mat-button-toggle-group>
             </div>
@@ -281,7 +392,7 @@
         </div>
 
 
-        <div class="graph-body">
+        <div class="graph-body" [attr.data-main-mode]="mainMetricMode">
           <div *ngIf="isChartLoading || isMainDataLoading" class="chart-loading-overlay">
             <mat-spinner diameter="50"></mat-spinner>
             <div class="chart-loading-text">טוען גרף...</div>
@@ -298,14 +409,33 @@
             </div>
           </div>
           <div class="chart-with-expand" *ngIf="mainMetricMode !== 'room-times'">
+            <!-- Expand: regular main chart -->
             <button type="button" class="chart-expand-btn" (click)="openMainChartFullModal()"
-              *ngIf="!isChartLoading && !isMainDataLoading && chartData && chartData.length > 0" matTooltip="הרחב מסך"
-              matTooltipPosition="below">
+              *ngIf="chartViewMode !== 'yoy-combined' && !isChartLoading && !isMainDataLoading && chartData && chartData.length > 0"
+              matTooltip="הרחב מסך" matTooltipPosition="below">
               <mat-icon>fullscreen</mat-icon>
             </button>
+
+            <!-- Expand: YoY combined modal -->
+            <button type="button" class="chart-expand-btn" (click)="openYoyCombinedFullModal()"
+              *ngIf="chartViewMode === 'yoy-combined' && !isChartLoading && !isMainDataLoading && departmentYoyData?.length"
+              matTooltip="הרחב מסך" matTooltipPosition="below">
+              <mat-icon>fullscreen</mat-icon>
+            </button>
+
+            <!-- YoY combined inline chart (Chart.js) -->
+            <div class="yoy-combined-inline"
+              *ngIf="chartViewMode === 'yoy-combined' && !isChartLoading && !isMainDataLoading">
+              <canvas #yoyCombinedChartInline *ngIf="departmentYoyData?.length"></canvas>
+              <div *ngIf="!departmentYoyData?.length" class="chart-no-data">
+                אין נתונים להצגה בגרף
+              </div>
+            </div>
+
+            <!-- All other modes (Google chart) -->
             <google-chart [type]="chartType" [data]="chartData" [columns]="chartColumns" [options]="chartOptions"
               [width]="'100%'" (select)="onChartClick($event)"
-              *ngIf="!isChartLoading && !isMainDataLoading && chartData && chartData.length > 0">
+              *ngIf="chartViewMode !== 'yoy-combined' && !isChartLoading && !isMainDataLoading && chartData && chartData.length > 0">
             </google-chart>
           </div>
 
@@ -353,7 +483,15 @@
               [options]="lossByWingChartOptions" [width]="'100%'" [height]="'100%'">
             </google-chart>
 
-            <div *ngIf="isAvgDurationLoading" class="chart-loading-overlay">
+            <google-chart
+              *ngIf="roomTimesView === 'approvedPerDay' && approvedUtilizationChartData && approvedUtilizationChartData.length > 0"
+              [type]="'ColumnChart'" [columns]="approvedUtilizationChartColumns" [data]="approvedUtilizationChartData"
+              [options]="approvedUtilizationChartOptions" [width]="'100%'" [height]="'100%'">
+            </google-chart>
+
+            <div
+              *ngIf="isAvgDurationLoading || isFirstStartTimeLoading || isLastEndTimeLoading || isAvgSetupLoading || isSurgeriesPerDayLoading || isLossByWingLoading || isApprovedUtilizationLoading"
+              class="chart-loading-overlay">
               <mat-spinner diameter="40"></mat-spinner>
               <div class="chart-loading-text">טוען נתוני זמני חדר...</div>
             </div>
@@ -421,6 +559,10 @@
               <mat-button-toggle value="lossPerDay">
                 <mat-icon>timer_off</mat-icon>
                 <span>זמן אבוד ליום</span>
+              </mat-button-toggle>
+              <mat-button-toggle value="approvedPerDay">
+                <mat-icon>schedule</mat-icon>
+                <span>זמן מנוצל ליום</span>
               </mat-button-toggle>
             </mat-button-toggle-group>
           </div>
@@ -511,7 +653,7 @@
           <span>טבלת ניתוחים ומחלקות</span>
         </div>
 
-        <div class="table-body">
+        <div class="table-body" #tableBodyEl>
           <!-- טבלה מצטברת: אותם נתונים של הגרף, מוצגים כטבלה (לכל המצבים חוץ ממדד משולב) -->
           <div class="table-wrap"
             *ngIf="chartViewMode !== 'yoy-combined' && chartTableRows?.length && yearsForChart?.length">
@@ -597,45 +739,81 @@
             <!-- Inline compact view (inside table-body) -->
             <div class="compare-inline" *ngIf="avgDurationCompareInlineOpen">
               <div class="compare-controls compare-controls-3">
-                <mat-form-field appearance="outline" class="compare-field">
-                  <mat-label>מחלקה מאוגדת (Wing) – חובה</mat-label>
-                  <mat-select [(ngModel)]="avgDurationCompareWing"
-                    (selectionChange)="avgDurationCompareEnabled = true; onAvgDurationCompareSettingsChanged()">
-                    <mat-option *ngFor="let w of getAvgDurationCompareWingOptions()" [value]="w">
-                      {{ w }}
-                    </mat-option>
-                  </mat-select>
-                </mat-form-field>
+                <div class="custom-dropdown compare-dropdown" [class.active]="isAvgDurationCompareWingOpen"
+                  [class.has-value]="avgDurationCompareWing">
+                  <div class="dropdown-trigger" (click)="toggleAvgDurationCompareDropdown('wing')">
+                    <mat-icon class="dropdown-icon">local_hospital</mat-icon>
+                    <span class="selected-text">Wing: {{ avgDurationCompareWing || 'בחר...' }}</span>
+                    <mat-icon class="arrow-icon">{{ isAvgDurationCompareWingOpen ? 'expand_less' : 'expand_more'
+                      }}</mat-icon>
+                  </div>
+                  <div class="dropdown-panel" *ngIf="isAvgDurationCompareWingOpen">
+                    <div class="options-list">
+                      <div class="option-item" *ngFor="let w of getAvgDurationCompareWingOptions()"
+                        (click)="setAvgDurationCompareWing(w)" [class.selected]="avgDurationCompareWing === w">
+                        {{ w }}
+                      </div>
+                    </div>
+                  </div>
+                </div>
 
-                <mat-form-field appearance="outline" class="compare-field">
-                  <mat-label>השווה לפי</mat-label>
-                  <mat-select [(ngModel)]="avgDurationCompareDimension"
-                    (selectionChange)="avgDurationCompareEnabled = true; onAvgDurationCompareSettingsChanged()">
-                    <mat-option [value]="'SurgeryType'">סוג ניתוח</mat-option>
-                    <mat-option [value]="'Shift'">משמרת</mat-option>
-                    <mat-option [value]="'Room'">חדר ניתוח</mat-option>
-                  </mat-select>
-                </mat-form-field>
+                <div class="custom-dropdown compare-dropdown" [class.active]="isAvgDurationCompareDimensionOpen"
+                  [class.has-value]="avgDurationCompareDimension">
+                  <div class="dropdown-trigger" (click)="toggleAvgDurationCompareDropdown('dimension')">
+                    <mat-icon class="dropdown-icon">tune</mat-icon>
+                    <span class="selected-text">השווה לפי: {{ getAvgDurationCompareDimensionLabel() }}</span>
+                    <mat-icon class="arrow-icon">{{ isAvgDurationCompareDimensionOpen ? 'expand_less' : 'expand_more'
+                      }}</mat-icon>
+                  </div>
+                  <div class="dropdown-panel" *ngIf="isAvgDurationCompareDimensionOpen">
+                    <div class="options-list">
+                      <div class="option-item" (click)="setAvgDurationCompareDimension('SurgeryType')"
+                        [class.selected]="avgDurationCompareDimension === 'SurgeryType'">סוג ניתוח</div>
+                      <div class="option-item" (click)="setAvgDurationCompareDimension('Shift')"
+                        [class.selected]="avgDurationCompareDimension === 'Shift'">משמרת</div>
+                      <div class="option-item" (click)="setAvgDurationCompareDimension('Site')"
+                        [class.selected]="avgDurationCompareDimension === 'Site'">אתר</div>
+                    </div>
+                  </div>
+                </div>
 
-                <mat-form-field appearance="outline" class="compare-field">
-                  <mat-label>ירוק  (מקור)</mat-label>
-                  <mat-select [(ngModel)]="avgDurationCompareRightValue"
-                    (selectionChange)="avgDurationCompareEnabled = true; onAvgDurationCompareSettingsChanged()">
-                    <mat-option *ngFor="let v of getAvgDurationCompareValueOptions()" [value]="v">
-                      {{ v }}
-                    </mat-option>
-                  </mat-select>
-                </mat-form-field>
+                <div class="custom-dropdown compare-dropdown" [class.active]="isAvgDurationCompareRightOpen"
+                  [class.has-value]="avgDurationCompareRightValue">
+                  <div class="dropdown-trigger" (click)="toggleAvgDurationCompareDropdown('right')">
+                    <mat-icon class="dropdown-icon">check_circle</mat-icon>
+                    <span class="selected-text">ירוק (מקור): {{ avgDurationCompareRightValue || 'הכל' }}</span>
+                    <mat-icon class="arrow-icon">{{ isAvgDurationCompareRightOpen ? 'expand_less' : 'expand_more'
+                      }}</mat-icon>
+                  </div>
+                  <div class="dropdown-panel" *ngIf="isAvgDurationCompareRightOpen">
+                    <div class="options-list">
+                      <div class="option-item" *ngFor="let v of getAvgDurationCompareValueOptions()"
+                        (click)="setAvgDurationCompareRightValue(v)"
+                        [class.selected]="avgDurationCompareRightValue === v">
+                        {{ v }}
+                      </div>
+                    </div>
+                  </div>
+                </div>
 
-                <mat-form-field appearance="outline" class="compare-field">
-                  <mat-label>כחול (השוואה)</mat-label>
-                  <mat-select [(ngModel)]="avgDurationCompareLeftValue"
-                    (selectionChange)="avgDurationCompareEnabled = true; onAvgDurationCompareSettingsChanged()">
-                    <mat-option *ngFor="let v of getAvgDurationCompareValueOptions()" [value]="v">
-                      {{ v }}
-                    </mat-option>
-                  </mat-select>
-                </mat-form-field>
+                <div class="custom-dropdown compare-dropdown" [class.active]="isAvgDurationCompareLeftOpen"
+                  [class.has-value]="avgDurationCompareLeftValue">
+                  <div class="dropdown-trigger" (click)="toggleAvgDurationCompareDropdown('left')">
+                    <mat-icon class="dropdown-icon">compare_arrows</mat-icon>
+                    <span class="selected-text">כחול (השוואה): {{ avgDurationCompareLeftValue || 'הכל' }}</span>
+                    <mat-icon class="arrow-icon">{{ isAvgDurationCompareLeftOpen ? 'expand_less' : 'expand_more'
+                      }}</mat-icon>
+                  </div>
+                  <div class="dropdown-panel" *ngIf="isAvgDurationCompareLeftOpen">
+                    <div class="options-list">
+                      <div class="option-item" *ngFor="let v of getAvgDurationCompareValueOptions()"
+                        (click)="setAvgDurationCompareLeftValue(v)"
+                        [class.selected]="avgDurationCompareLeftValue === v">
+                        {{ v }}
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
 
               <!-- <div class="compare-help compare-help-tight">
@@ -673,6 +851,55 @@
           <div class="empty" *ngIf="(chartViewMode === 'yoy-combined' && !getFilteredDepartmentYoyData()?.length) ||
                    (chartViewMode !== 'yoy-combined' && dataSource.data.length === 0 && !chartTableRows?.length)">
             אין נתונים להצגה
+          </div>
+
+          <!-- אזור תובנות מתחת לטבלה – מוצג כשיש תובנות לחישוב -->
+          <div class="table-extra" *ngIf="tableExtraInsights?.length">
+            <div class="table-extra-title">תובנות מהירות לתצוגה הנוכחית</div>
+
+            <!-- KPIs summary (שנת בסיס מול השנה האחרונה + ישות מובילה) -->
+            <div class="table-extra-kpis" dir="rtl"
+              *ngIf="kpiBaseYear !== null && kpiLastYear !== null && kpiBaseTotal !== null && kpiLastTotal !== null">
+              <div class="table-extra-kpi">
+                <div class="table-extra-kpi-label">סה&quot;כ ניתוחים בשנה האחרונה</div>
+                <div class="table-extra-kpi-value">
+                  {{ kpiLastTotal | number:'1.0-0' }}
+                </div>
+                <div class="table-extra-kpi-sub">
+                  {{ kpiBaseYear }} → {{ kpiLastYear }}
+                </div>
+              </div>
+
+              <div class="table-extra-kpi" *ngIf="kpiLastDiffPct !== null">
+                <div class="table-extra-kpi-label">שינוי מול שנת בסיס</div>
+                <div class="table-extra-kpi-value"
+                  [ngClass]="{ 'kpi-positive': kpiLastDiffPct >= 0, 'kpi-negative': kpiLastDiffPct < 0 }">
+                  {{ kpiLastDiffPct | number:'1.1-1' }}%
+                </div>
+                <div class="table-extra-kpi-sub" *ngIf="kpiLastDiff !== null">
+                  {{ kpiLastDiff | number:'1.0-0' }} ניתוחים
+                </div>
+              </div>
+
+              <div class="table-extra-kpi" *ngIf="kpiTopEntityLabel">
+                <div class="table-extra-kpi-label">ישות מובילה בניתוחים</div>
+                <div class="table-extra-kpi-value">
+                  {{ kpiTopEntityLabel }}
+                </div>
+                <div class="table-extra-kpi-sub" *ngIf="kpiTopEntityTotal !== null">
+                  {{ kpiTopEntityTotal | number:'1.0-0' }} ניתוחים
+                </div>
+              </div>
+            </div>
+
+            <!-- Textual insights list -->
+            <div class="table-extra-body" *ngIf="tableExtraInsights?.length">
+              <ul class="table-extra-list">
+                <li *ngFor="let insight of tableExtraInsights">
+                  {{ insight }}
+                </li>
+              </ul>
+            </div>
           </div>
         </div>
       </div>
@@ -1039,17 +1266,31 @@
         <!-- Purpose Section -->
         <div *ngIf="currentArticle === 'purpose'" class="article-section-display" @fadeInOut dir="rtl">
           <!-- <h2>📋 מטרת הדוח</h2> -->
-          <p class="intro-text">לשקף את פעילות הניתוחים במרכז הרפואי לאורך חמש השנים האחרונות, ברמת אתר, משמרת ומחלקה.
+          <p class="intro-text">
+            לשקף את פעילות הניתוחים במרכז הרפואי לאורך חמש השנים האחרונות, ברמת אתר, משמרת ומחלקה, וסוג ניתוח.
+
           </p>
           <p class="explanation-note">
             דשבורד זה עונה על השאלות העיקריות בניהול חדרי ניתוח:
           </p>
           <ul class="explanation-note">
-            <li>כמות ניתוחים לפי אתר, לפי משמרת, לפי סוג ניתוח ("אלקטיבי", "דחוף", "ססיה") ולפי מחלקה מול אתר (זיהוי
-              פערים בין רישומי מחלקות).</li>
-            <li>מדדי זמן לפי מחלקה: משך ניתוח ממוצע, זמן כניסה ממוצע של ניתוח ראשון בבוקר, זמן סיום ממוצע של ניתוח
-              אחרון, וזמן SETUP ממוצע בין ניתוחים.</li>
-            <li>השוואת חמש שנות פעילות (שנת בסיס ועוד ארבע שנים אחורה) כדי לזהות מגמות צמיחה, עומסים וחוסר יעילות.</li>
+            <li>כמות ניתוחים לפי אתר, לפי משמרת, לפי סוג ניתוח ("אלקטיבי", "דחוף", "ססיה") ולפי מחלקה מול אתר
+
+
+              .</li>
+            <li>
+
+              מדדי זמן לפי מחלקה: משך ניתוח ממוצע,
+              ממוצע זמן כניסה של ניתוח ראשון בבוקר,
+              ממוצע זמן סיום של ניתוח
+              אחרון,
+              וזמן SETUP וממוצע זמן בין ניתוחים.
+
+            </li>
+            <li>
+              השוואת פעילות חמש שנות אחרונות (שנת בסיס ועוד ארבע שנים אחורה) כדי לזהות מגמות צמיחה, עומסים וחוסר יעילות.
+
+            </li>
           </ul>
         </div>
 
@@ -1059,7 +1300,8 @@
           <div class="notes-list" dir="rtl">
             <div class="note-item" dir="rtl">
               <span class="note-number">1</span>
-              <p><strong>"מנתחת"</strong> בדשבורד זה מייצגת מחלקה ניתוחית, ו<strong>"מנתחת מאוגד"</strong> מייצגת אגף.
+              <p><strong>"מנתחת"</strong> בדשבורד זה מייצגת מחלקה מנתחת כפי שנרשם בדו"ח ניתוח, ו<strong>"מנתחת
+                  מאוגד"</strong> מייצגת אגף.
               </p>
             </div>
             <div class="note-item" dir="rtl">
@@ -1073,7 +1315,7 @@
             </div>
             <div class="note-item" dir="rtl">
               <span class="note-number">4</span>
-              <p>במדד SETUP נכללים רק מעברים עם זמן חיובי ובטווח המוגדר (0–120 דקות).</p>
+              <p>במדד SETUP נכללים רק מעברים עם זמן חיובי .</p>
             </div>
             <div class="note-item highlight" dir="rtl">
               <span class="note-number">⚡</span>
@@ -1100,7 +1342,7 @@
               <div class="structure-content" dir="rtl">
                 <h4>אזור הגרף המרכזי</h4>
                 <ul dir="rtl">
-                  <li>✨ גרפים של כמות ניתוחים לפי אתר, משמרת, סוג ניתוח ומחלקה–אתר להשוואת 5 שנים.</li>
+                  <li>✨ גרפים של כמות ניתוחים לפי אתר, משמרת, סוג ניתוח ומחלקה .</li>
                   <li>📊 גרפים של מדדי זמן (משך, כניסה ראשונה, סיום אחרון, SETUP) לפי מחלקה.</li>
                   <li>📅 אפשרות לזהות מגמות וצווארי בקבוק ברמת מחלקה/ מחלקה / חדר ניתוח.</li>
                 </ul>
@@ -1110,7 +1352,7 @@
               <div class="structure-number">3</div>
               <div class="structure-content" dir="rtl">
                 <h4>טבלאות והעמקה</h4>
-                <p>בטבלה התחתונה תוכל לראות רשימת ניתוחים מפורטת או מחלקות. לחיצה על ניתוח פותחת פרטי מקרה, ולחיצה על
+                <p>בטבלה התחתונה ניתן לראות רשימת ניתוחים מפורטת או מחלקות. לחיצה על ניתוח פותחת פרטי מקרה, ולחיצה על
                   מחלקה פותחת פירוט פעילויות ופרוצדורות ניתוחיות לפי שנה.</p>
               </div>
             </div>
@@ -1352,6 +1594,95 @@
     </div>
   </div>
 
+  <!-- השוואת מחלקות – ניתוחים ליום בחדר מול כמות חדרים (פופ‑אפ ייעודי מהטוגל העליון) -->
+  <div *ngIf="showCompareDepartmentsModal" class="kpi-overlay" [class.dark]="isDark">
+    <div class="kpi-modal compare-departments-modal" dir="rtl">
+      <div class="kpi-header">
+        <div class="kpi-header-titles">
+          <h2>השוואת מחלקות – ניתוחים ליום בחדר</h2>
+          <div class="kpi-subtitle">
+            כמות ניתוחים ליום בחדר מול כמות חדרים פעילים לכל מחלקה מאוגדת (Wing), לפי שנים.
+          </div>
+        </div>
+        <button mat-icon-button class="close-btn" (click)="closeCompareDepartmentsModal()">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+      <div class="kpi-body">
+        <div class="compare-dept-summary" *ngIf="compareDepartmentSelected && compareSummaryLine">
+          {{ compareSummaryLine }}
+        </div>
+
+        <div class="compare-dept-controls">
+          <div class="compare-dept-control">
+            <label>בחירת מחלקה</label>
+            <select
+              [ngModel]="compareDepartmentSelected"
+              (ngModelChange)="onCompareDepartmentChanged($event)">
+              <option [ngValue]="null">-- יש לבחור מחלקה --</option>
+              <option *ngFor="let d of getCompareDepartmentOptions()" [ngValue]="d">{{ d }}</option>
+            </select>
+          </div>
+
+          <div class="compare-dept-control compare-dept-control-types"
+            *ngIf="compareShowTypeCountPerYear || compareShowTypeAvgDurationPerYear">
+            <label>סוג ניתוח להשוואה</label>
+            <select
+              [disabled]="!compareDepartmentSelected"
+              [ngModel]="compareSurgeryTypeSelected"
+              (ngModelChange)="onCompareSurgeryTypeChanged($event)">
+              <option [ngValue]="null">-- יש לבחור סוג ניתוח --</option>
+              <option *ngFor="let t of getCompareSurgeryTypeOptions()" [ngValue]="t">{{ t }}</option>
+            </select>
+          </div>
+
+          <div class="compare-dept-control compare-metrics-dropdown-wrap">
+            <label>בחירת מדדי השוואה</label>
+            <button type="button" class="compare-metrics-trigger"
+              [disabled]="!compareDepartmentSelected"
+              (click)="toggleCompareMetricsDropdown()">
+              <span>{{ getCompareMetricsDropdownText() }}</span>
+              <mat-icon>{{ isCompareMetricsDropdownOpen ? 'expand_less' : 'expand_more' }}</mat-icon>
+            </button>
+
+            <div class="compare-metrics-panel" *ngIf="isCompareMetricsDropdownOpen">
+              <label class="compare-metrics-item" *ngFor="let opt of compareMetricOptions">
+                <input type="checkbox"
+                  [checked]="isCompareMetricSelected(opt.key)"
+                  (change)="setCompareMetricSelected(opt.key, $event.target.checked)">
+                <span>{{ opt.label }}</span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div *ngIf="!compareDepartmentSelected" class="compare-dept-required-message">
+          כדי להתחיל השוואה יש לבחור מחלקה מהרשימה למעלה.
+        </div>
+
+        <div *ngIf="isSurgeriesPerDayLoading || isAvgDurationLoading" class="kpi-loading">
+          <mat-spinner diameter="40"></mat-spinner>
+        </div>
+        <div
+          *ngIf="compareDepartmentSelected && !isSurgeriesPerDayLoading && !isAvgDurationLoading &&
+                 (!compareDepartmentsLineChartData || compareDepartmentsLineChartData.length === 0)"
+          class="kpi-no-data">
+          אין מספיק נתונים להצגת השוואה במחלקה שנבחרה.
+        </div>
+        <google-chart
+          *ngIf="compareDepartmentSelected && !isSurgeriesPerDayLoading && !isAvgDurationLoading &&
+                 compareDepartmentsLineChartData && compareDepartmentsLineChartData.length > 0"
+          [type]="'LineChart'"
+          [columns]="compareDepartmentsLineChartColumns"
+          [data]="compareDepartmentsLineChartData"
+          [options]="compareDepartmentsLineChartOptions"
+          [width]="'100%'"
+          [height]="'100%'">
+        </google-chart>
+      </div>
+    </div>
+  </div>
+
   <!-- Group‑2 KPIs Modals -->
 
   <div *ngIf="showTimesModal" class="kpi-overlay" [class.dark]="isDark">
@@ -1367,6 +1698,7 @@
               <span *ngSwitchCase="'avgSetup'">זמן SETUP ממוצע לפי מחלקה</span>
               <span *ngSwitchCase="'perDay'">ניתוחים ליום בחדר לפי מחלקה</span>
               <span *ngSwitchCase="'lossPerDay'">זמן אבוד ליום לפי מחלקה</span>
+              <span *ngSwitchCase="'approvedPerDay'">זמן מנוצל ליום לפי מחלקה</span>
             </ng-container>
           </h2>
         </div>
@@ -1396,6 +1728,10 @@
             <mat-button-toggle value="lossPerDay">
               <mat-icon>timer_off</mat-icon>
               <span>זמן אבוד ליום</span>
+            </mat-button-toggle>
+            <mat-button-toggle value="approvedPerDay">
+              <mat-icon>schedule</mat-icon>
+              <span>זמן מנוצל ליום</span>
             </mat-button-toggle>
           </mat-button-toggle-group>
           <button mat-icon-button class="close-btn" (click)="closeRoomTimesModal()">
@@ -1436,9 +1772,23 @@
               פה ולסת
             </button>
           </div> -->
-          <div *ngIf="isAvgDurationLoading" class="kpi-loading">
-            <mat-spinner diameter="40"></mat-spinner>
-            <div class="kpi-loading-text">טוען נתונים...</div>
+          <div *ngIf="isAvgDurationLoading" class="kpi-skeleton-wrapper">
+            <div class="panel-skeleton kpi-skeleton">
+              <div class="skeleton-panel-header">
+                <div class="skeleton-line skeleton-line-md skeleton-shimmer"></div>
+                <div class="skeleton-chip-row">
+                  <div class="skeleton-chip skeleton-shimmer"></div>
+                  <div class="skeleton-chip skeleton-shimmer"></div>
+                </div>
+              </div>
+              <div class="kpi-skeleton-body">
+                <div class="kpi-skeleton-bars">
+                  <div class="kpi-skeleton-bar" *ngFor="let _ of [1,2,3,4,5,6]">
+                    <div class="kpi-skeleton-bar-col skeleton-shimmer"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
           <div *ngIf="!isAvgDurationLoading && (!avgDurationChartData || avgDurationChartData.length === 0)"
             class="kpi-no-data">
@@ -1459,9 +1809,19 @@
           <p class="kpi-intro">
             ממוצע ניתוחים ליום בחדר לפי מחלקה מאוגדת (Wing). ציר X: מחלקות. עמודה לכל שנה.
           </p>
-          <div *ngIf="isSurgeriesPerDayLoading" class="kpi-loading">
-            <mat-spinner diameter="40"></mat-spinner>
-            <div class="kpi-loading-text">טוען נתונים...</div>
+          <div *ngIf="isSurgeriesPerDayLoading" class="kpi-skeleton-wrapper">
+            <div class="panel-skeleton kpi-skeleton">
+              <div class="skeleton-panel-header">
+                <div class="skeleton-line skeleton-line-md skeleton-shimmer"></div>
+              </div>
+              <div class="kpi-skeleton-body">
+                <div class="kpi-skeleton-bars">
+                  <div class="kpi-skeleton-bar" *ngFor="let _ of [1,2,3,4,5,6]">
+                    <div class="kpi-skeleton-bar-col skeleton-shimmer"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
           <div *ngIf="!isSurgeriesPerDayLoading && (!surgeriesPerDayChartData || surgeriesPerDayChartData.length === 0)"
             class="kpi-no-data">
@@ -1476,15 +1836,6 @@
             class="kpi-chart-caption">
             כל עמודת צבע מייצגת שנה, והסדרה עבור כל מחלקה (Wing) מציגה את ממוצע ניתוחים ליום בחדר.
           </div>
-          <div
-            *ngIf="!isSurgeriesPerDayLoading && surgeriesPerDayChartData && surgeriesPerDayChartData.length > 0 && surgeriesPerDayChartYears?.length"
-            class="kpi-chart-legend">
-            <span *ngFor="let y of surgeriesPerDayChartYears; let i = index" class="kpi-legend-item">
-              <span class="kpi-legend-color"
-                [style.background-color]="kpiChartYearColors[i % kpiChartYearColors.length]"></span>
-              <span class="kpi-legend-label">{{ y }}</span>
-            </span>
-          </div>
         </ng-container>
 
         <!-- FIRST START VIEW -->
@@ -1492,9 +1843,19 @@
           <p class="kpi-intro">
             כאן יוצג שעת הכניסה הממוצעת לחדר ניתוח עבור הניתוח הראשון בבוקר, לפי מחלקה.
           </p>
-          <div *ngIf="isFirstStartTimeLoading" class="kpi-loading">
-            <mat-spinner diameter="40"></mat-spinner>
-            <div class="kpi-loading-text">טוען נתונים...</div>
+          <div *ngIf="isFirstStartTimeLoading" class="kpi-skeleton-wrapper">
+            <div class="panel-skeleton kpi-skeleton">
+              <div class="skeleton-panel-header">
+                <div class="skeleton-line skeleton-line-md skeleton-shimmer"></div>
+              </div>
+              <div class="kpi-skeleton-body">
+                <div class="kpi-skeleton-bars">
+                  <div class="kpi-skeleton-bar" *ngFor="let _ of [1,2,3,4,5,6]">
+                    <div class="kpi-skeleton-bar-col skeleton-shimmer"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
           <div *ngIf="!isFirstStartTimeLoading && (!firstStartTimeData || firstStartTimeData.length === 0)"
             class="kpi-no-data">
@@ -1510,15 +1871,6 @@
             class="kpi-chart-caption">
             כל עמודה מציגה זמן כניסה ממוצע של הניתוח הראשון בבוקר לכל מחלקה(Wing), בחמש השנים האחרונות.
           </div>
-          <div
-            *ngIf="!isFirstStartTimeLoading && firstStartTimeChartData && firstStartTimeChartData.length > 0 && firstStartTimeChartYears?.length"
-            class="kpi-chart-legend">
-            <span *ngFor="let y of firstStartTimeChartYears; let i = index" class="kpi-legend-item">
-              <span class="kpi-legend-color"
-                [style.background-color]="kpiChartYearColors[i % kpiChartYearColors.length]"></span>
-              <span class="kpi-legend-label">{{ y }}</span>
-            </span>
-          </div>
         </ng-container>
 
         <!-- LAST END VIEW -->
@@ -1528,37 +1880,46 @@
           </p>
           <div class="kpi-filter-row" *ngIf="!isLastEndTimeLoading">
             <button mat-stroked-button type="button" class="overflow-toggle-btn"
-              [class.active]="lastEndTimeExcludeOverflowDays" (click)="toggleLastEndTimeExcludeOverflow()">
-              <mat-icon>{{ lastEndTimeExcludeOverflowDays ? 'filter_alt' : 'filter_alt_off' }}</mat-icon>
-              <span>{{ lastEndTimeExcludeOverflowDays ? 'ממוצע ללא ימי גלישה' : 'נטרל ימים עם גלישה מהממוצע' }}</span>
+              matTooltip="ממוצע &quot;אמיתי&quot; של זמן סיום הניתוח האחרון – בלי ימים שגלשו מעבר לשעת היעד. בכיבוי, הממוצע מחושב על כל הימים כולל ימי גלישה."
+              matTooltipPosition="above" [class.active]="lastEndTimeExcludeOverflowDays"
+              (click)="toggleLastEndTimeExcludeOverflow()">
+              <mat-icon>{{ lastEndTimeExcludeOverflowDays ? 'toggle_on' : 'toggle_off' }}</mat-icon>
+              <span>{{ lastEndTimeExcludeOverflowDays ? 'להציג ללא ימי גלישה' : 'להכליל ימי גלישה בממוצע' }}</span>
             </button>
           </div>
           <p *ngIf="lastEndTimeExcludeNoData" class="kpi-intro kpi-exclude-fallback">
             אין ימים ללא גלישה בנתונים – מוצג ממוצע לכל הימים.
           </p>
-          <div *ngIf="isLastEndTimeLoading" class="kpi-loading">
-            <mat-spinner diameter="40"></mat-spinner>
-            <div class="kpi-loading-text">טוען נתונים...</div>
+          <div *ngIf="isLastEndTimeLoading" class="kpi-skeleton-wrapper">
+            <div class="panel-skeleton kpi-skeleton">
+              <div class="skeleton-panel-header">
+                <div class="skeleton-line skeleton-line-md skeleton-shimmer"></div>
+              </div>
+              <div class="kpi-skeleton-body">
+                <div class="kpi-skeleton-bars">
+                  <div class="kpi-skeleton-bar" *ngFor="let _ of [1,2,3,4,5,6]">
+                    <div class="kpi-skeleton-bar-col skeleton-shimmer"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
           <div *ngIf="!isLastEndTimeLoading && (!lastEndTimeData || lastEndTimeData.length === 0)" class="kpi-no-data">
             אין נתונים להצגה כרגע. חבר את ה‑API כדי לאכלס את הטבלה.
           </div>
+          <!-- <google-chart *ngIf="!isLastEndTimeLoading && lastEndTimeChartData && lastEndTimeChartData.length > 0"
+            [type]="'ColumnChart'" [columns]="lastEndTimeChartColumns" [data]="lastEndTimeChartData"
+            [options]="lastEndTimeChartOptions" [width]="'100%'" [height]="'100%'">
+          </google-chart> -->
+
           <google-chart *ngIf="!isLastEndTimeLoading && lastEndTimeChartData && lastEndTimeChartData.length > 0"
             [type]="'ColumnChart'" [columns]="lastEndTimeChartColumns" [data]="lastEndTimeChartData"
             [options]="lastEndTimeChartOptions" [width]="'100%'" [height]="'100%'">
           </google-chart>
+
           <div *ngIf="!isLastEndTimeLoading && lastEndTimeChartData && lastEndTimeChartData.length > 0"
             class="kpi-chart-caption">
             כל עמודת צבע מייצגת שנה, והסדרה עבור כל מחלקה(Wing) מציגה את זמן הסיום הממוצע של הניתוח האחרון.
-          </div>
-          <div
-            *ngIf="!isLastEndTimeLoading && lastEndTimeChartData && lastEndTimeChartData.length > 0 && lastEndTimeChartYears?.length"
-            class="kpi-chart-legend">
-            <span *ngFor="let y of lastEndTimeChartYears; let i = index" class="kpi-legend-item">
-              <span class="kpi-legend-color"
-                [style.background-color]="kpiChartYearColors[i % kpiChartYearColors.length]"></span>
-              <span class="kpi-legend-label">{{ y }}</span>
-            </span>
           </div>
         </ng-container>
 
@@ -1568,9 +1929,19 @@
             כאן יוצג זמן ה‑SETUP הממוצע (הפסקה בין ניתוחים) בדקות, לפי מחלקה.
           </p>
 
-          <div *ngIf="isAvgSetupLoading" class="kpi-loading">
-            <mat-spinner diameter="40"></mat-spinner>
-            <div class="kpi-loading-text">טוען נתונים...</div>
+          <div *ngIf="isAvgSetupLoading" class="kpi-skeleton-wrapper">
+            <div class="panel-skeleton kpi-skeleton">
+              <div class="skeleton-panel-header">
+                <div class="skeleton-line skeleton-line-md skeleton-shimmer"></div>
+              </div>
+              <div class="kpi-skeleton-body">
+                <div class="kpi-skeleton-bars">
+                  <div class="kpi-skeleton-bar" *ngFor="let _ of [1,2,3,4,5,6]">
+                    <div class="kpi-skeleton-bar-col skeleton-shimmer"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
           <div *ngIf="!isAvgSetupLoading && (!avgSetupData || avgSetupData.length === 0)" class="kpi-no-data">
             אין נתונים להצגה כרגע. חבר את ה‑API כדי לאכלס את הטבלה.
@@ -1583,15 +1954,6 @@
             class="kpi-chart-caption">
             כל עמודת צבע מייצגת שנה, והסדרה עבור כל מחלקה(Wing) מציגה את זמן ה‑SETUP הממוצע (בדקות) בין ניתוחים.
           </div>
-          <div
-            *ngIf="!isAvgSetupLoading && avgSetupChartData && avgSetupChartData.length > 0 && avgSetupChartYears?.length"
-            class="kpi-chart-legend">
-            <span *ngFor="let y of avgSetupChartYears; let i = index" class="kpi-legend-item">
-              <span class="kpi-legend-color"
-                [style.background-color]="kpiChartYearColors[i % kpiChartYearColors.length]"></span>
-              <span class="kpi-legend-label">{{ y }}</span>
-            </span>
-          </div>
         </ng-container>
 
         <!-- LOST TIME PER DAY VIEW -->
@@ -1599,9 +1961,19 @@
           <p class="kpi-intro">
             זמן אבוד ליום (בדקות) לפי מחלקה מאוגדת (Wing). ציר X: מחלקות. עמודה לכל שנה.
           </p>
-          <div *ngIf="isLossByWingLoading" class="kpi-loading">
-            <mat-spinner diameter="40"></mat-spinner>
-            <div class="kpi-loading-text">טוען נתונים...</div>
+          <div *ngIf="isLossByWingLoading" class="kpi-skeleton-wrapper">
+            <div class="panel-skeleton kpi-skeleton">
+              <div class="skeleton-panel-header">
+                <div class="skeleton-line skeleton-line-md skeleton-shimmer"></div>
+              </div>
+              <div class="kpi-skeleton-body">
+                <div class="kpi-skeleton-bars">
+                  <div class="kpi-skeleton-bar" *ngFor="let _ of [1,2,3,4,5,6]">
+                    <div class="kpi-skeleton-bar-col skeleton-shimmer"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
           <div *ngIf="!isLossByWingLoading && (!lossByWingChartData || lossByWingChartData.length === 0)"
             class="kpi-no-data">
@@ -1615,14 +1987,41 @@
             class="kpi-chart-caption">
             כל עמודת צבע מייצגת שנה, והסדרה עבור כל מחלקה (Wing) מציגה את הזמן האבוד ליום (בדקות).
           </div>
+        </ng-container>
+
+        <!-- APPROVED UTILIZATION PER DAY VIEW -->
+        <ng-container *ngIf="roomTimesView === 'approvedPerDay'">
+          <p class="kpi-intro">
+            זמן מנוצל ליום (בדקות) לפי מחלקה מאוגדת (Wing). ציר X: מחלקות. עמודה לכל שנה.
+          </p>
+          <div *ngIf="isApprovedUtilizationLoading" class="kpi-skeleton-wrapper">
+            <div class="panel-skeleton kpi-skeleton">
+              <div class="skeleton-panel-header">
+                <div class="skeleton-line skeleton-line-md skeleton-shimmer"></div>
+              </div>
+              <div class="kpi-skeleton-body">
+                <div class="kpi-skeleton-bars">
+                  <div class="kpi-skeleton-bar" *ngFor="let _ of [1,2,3,4,5,6]">
+                    <div class="kpi-skeleton-bar-col skeleton-shimmer"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
           <div
-            *ngIf="!isLossByWingLoading && lossByWingChartData && lossByWingChartData.length > 0 && lossByWingChartYears?.length"
-            class="kpi-chart-legend">
-            <span *ngFor="let y of lossByWingChartYears; let i = index" class="kpi-legend-item">
-              <span class="kpi-legend-color"
-                [style.background-color]="kpiChartYearColors[i % kpiChartYearColors.length]"></span>
-              <span class="kpi-legend-label">{{ y }}</span>
-            </span>
+            *ngIf="!isApprovedUtilizationLoading && (!approvedUtilizationChartData || approvedUtilizationChartData.length === 0)"
+            class="kpi-no-data">
+            אין נתונים להצגה כרגע.
+          </div>
+          <google-chart
+            *ngIf="!isApprovedUtilizationLoading && approvedUtilizationChartData && approvedUtilizationChartData.length > 0"
+            [type]="'ColumnChart'" [columns]="approvedUtilizationChartColumns" [data]="approvedUtilizationChartData"
+            [options]="approvedUtilizationChartOptions" [width]="'100%'" [height]="'360px'">
+          </google-chart>
+          <div
+            *ngIf="!isApprovedUtilizationLoading && approvedUtilizationChartData && approvedUtilizationChartData.length > 0"
+            class="kpi-chart-caption">
+            כל עמודת צבע מייצגת שנה, והסדרה עבור כל מחלקה (Wing) מציגה את הזמן המנוצל ליום (בדקות).
           </div>
         </ng-container>
       </div>
