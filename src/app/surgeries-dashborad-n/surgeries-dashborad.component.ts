@@ -632,6 +632,8 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
 
     // UI State
     isDataLoaded = false;
+    /** האם גרף הראשי מוכן להצגה (אחרי שכל הנתונים והצבעים חושבו) */
+    isChartViewReady = false;
   
     selectedDepartment: DepartmentComparisonDto | null = null;
     selectedDiagnosis: string = "אגף כירורגי";
@@ -1771,6 +1773,7 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
                     console.error("Error loading GetMonthlyCounts data:", err);
                     this.monthlyCountsData = [];
                     this.isChartLoading = false;
+                    this.isChartViewReady = true;
                     this.cdr.detectChanges();
                 },
             });
@@ -1819,6 +1822,7 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
                     console.error("Error loading GetDepartmentYoY data:", error);
                     this.departmentYoyData = [];
                     this.isChartLoading = false;
+                    this.isChartViewReady = true;
                     this.cdr.detectChanges();
                 }
             );
@@ -2128,7 +2132,9 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
             return;
         }
 
+        // מתחילים מחזור חישוב חדש לגרף הראשי
         this.isChartLoading = true;
+        this.isChartViewReady = false;
         this.yearsForChart = [];
         this.yearlySurgeryTotals = {};
         this.yearColorMap = [];
@@ -2327,6 +2333,7 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
                 this.chartData = [];
                 this.chartTableRows = [];
                 this.isChartLoading = false;
+                this.isChartViewReady = true;
                 this.cdr.detectChanges();
                 return;
             }
@@ -2405,6 +2412,7 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
                 };
                 this.chartOptions.isStacked = false;
                 this.isChartLoading = false;
+                this.isChartViewReady = true;
                 this.cdr.detectChanges();
                 return;
             }
@@ -3093,6 +3101,7 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
             this.chartOptions.isStacked = false;
 
             this.isChartLoading = false;
+            this.isChartViewReady = true;
             this.cdr.detectChanges();
             return;
         }
@@ -3295,6 +3304,7 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
             this.chartOptions.title = "";
 
             this.isChartLoading = false;
+            this.isChartViewReady = true;
             this.cdr.detectChanges();
             return;
         }
@@ -3302,6 +3312,7 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
         if (!this.departmentIncomeData || this.departmentIncomeData.length === 0) {
             this.chartData = [];
             this.isChartLoading = false;
+            this.isChartViewReady = true;
             return;
         }
 
