@@ -72,44 +72,76 @@
         </p>
 
         <div class="compare-controls compare-controls-3" *ngIf="avgDurationCompareEnabled">
-          <mat-form-field appearance="outline" class="compare-field">
-            <mat-label>מחלקה מאוגדת (Wing) – חובה</mat-label>
-            <mat-select [(ngModel)]="avgDurationCompareWing" (selectionChange)="onAvgDurationCompareSettingsChanged()">
-              <mat-option *ngFor="let w of getAvgDurationCompareWingOptions()" [value]="w">
-                {{ w }}
-              </mat-option>
-            </mat-select>
-          </mat-form-field>
+          <div class="custom-dropdown compare-dropdown" [class.active]="isAvgDurationCompareWingOpen"
+            [class.has-value]="avgDurationCompareWing">
+            <div class="dropdown-trigger" (click)="toggleAvgDurationCompareDropdown('wing')">
+              <mat-icon class="dropdown-icon">local_hospital</mat-icon>
+              <span class="selected-text">Wing: {{ avgDurationCompareWing || 'בחר...' }}</span>
+              <mat-icon class="arrow-icon">{{ isAvgDurationCompareWingOpen ? 'expand_less' : 'expand_more' }}</mat-icon>
+            </div>
+            <div class="dropdown-panel" *ngIf="isAvgDurationCompareWingOpen">
+              <div class="options-list">
+                <div class="option-item" *ngFor="let w of getAvgDurationCompareWingOptions()"
+                  (click)="setAvgDurationCompareWing(w)" [class.selected]="avgDurationCompareWing === w">
+                  {{ w }}
+                </div>
+              </div>
+            </div>
+          </div>
 
-          <mat-form-field appearance="outline" class="compare-field">
-            <mat-label>השווה לפי</mat-label>
-            <mat-select [(ngModel)]="avgDurationCompareDimension"
-              (selectionChange)="onAvgDurationCompareSettingsChanged()">
-              <mat-option [value]="'SurgeryType'">סוג ניתוח</mat-option>
-              <mat-option [value]="'Shift'">משמרת</mat-option>
-              <mat-option [value]="'Room'">חדר ניתוח</mat-option>
-            </mat-select>
-          </mat-form-field>
+          <div class="custom-dropdown compare-dropdown" [class.active]="isAvgDurationCompareDimensionOpen"
+            [class.has-value]="avgDurationCompareDimension">
+            <div class="dropdown-trigger"
+              (click)="toggleAvgDurationCompareDropdown('dimension')">
+              <mat-icon class="dropdown-icon">tune</mat-icon>
+              <span class="selected-text">השווה לפי: {{ getAvgDurationCompareDimensionLabel() }}</span>
+              <mat-icon class="arrow-icon">{{ isAvgDurationCompareDimensionOpen ? 'expand_less' : 'expand_more' }}</mat-icon>
+            </div>
+            <div class="dropdown-panel" *ngIf="isAvgDurationCompareDimensionOpen">
+              <div class="options-list">
+                <div class="option-item" (click)="setAvgDurationCompareDimension('SurgeryType')"
+                  [class.selected]="avgDurationCompareDimension === 'SurgeryType'">סוג ניתוח</div>
+                <div class="option-item" (click)="setAvgDurationCompareDimension('Shift')"
+                  [class.selected]="avgDurationCompareDimension === 'Shift'">משמרת</div>
+                <div class="option-item" (click)="setAvgDurationCompareDimension('Room')"
+                  [class.selected]="avgDurationCompareDimension === 'Room'">חדר ניתוח</div>
+              </div>
+            </div>
+          </div>
 
-          <mat-form-field appearance="outline" class="compare-field">
-            <mat-label>ימין (מקור)</mat-label>
-            <mat-select [(ngModel)]="avgDurationCompareRightValue"
-              (selectionChange)="onAvgDurationCompareSettingsChanged()">
-              <mat-option *ngFor="let v of getAvgDurationCompareValueOptions()" [value]="v">
-                {{ v }}
-              </mat-option>
-            </mat-select>
-          </mat-form-field>
+          <div class="custom-dropdown compare-dropdown" [class.active]="isAvgDurationCompareRightOpen"
+            [class.has-value]="avgDurationCompareRightValue">
+            <div class="dropdown-trigger" (click)="toggleAvgDurationCompareDropdown('right')">
+              <mat-icon class="dropdown-icon">check_circle</mat-icon>
+              <span class="selected-text">ימין (מקור): {{ avgDurationCompareRightValue || 'הכל' }}</span>
+              <mat-icon class="arrow-icon">{{ isAvgDurationCompareRightOpen ? 'expand_less' : 'expand_more' }}</mat-icon>
+            </div>
+            <div class="dropdown-panel" *ngIf="isAvgDurationCompareRightOpen">
+              <div class="options-list">
+                <div class="option-item" *ngFor="let v of getAvgDurationCompareValueOptions()"
+                  (click)="setAvgDurationCompareRightValue(v)" [class.selected]="avgDurationCompareRightValue === v">
+                  {{ v }}
+                </div>
+              </div>
+            </div>
+          </div>
 
-          <mat-form-field appearance="outline" class="compare-field">
-            <mat-label>שמאל (השוואה)</mat-label>
-            <mat-select [(ngModel)]="avgDurationCompareLeftValue"
-              (selectionChange)="onAvgDurationCompareSettingsChanged()">
-              <mat-option *ngFor="let v of getAvgDurationCompareValueOptions()" [value]="v">
-                {{ v }}
-              </mat-option>
-            </mat-select>
-          </mat-form-field>
+          <div class="custom-dropdown compare-dropdown" [class.active]="isAvgDurationCompareLeftOpen"
+            [class.has-value]="avgDurationCompareLeftValue">
+            <div class="dropdown-trigger" (click)="toggleAvgDurationCompareDropdown('left')">
+              <mat-icon class="dropdown-icon">compare_arrows</mat-icon>
+              <span class="selected-text">שמאל (השוואה): {{ avgDurationCompareLeftValue || 'הכל' }}</span>
+              <mat-icon class="arrow-icon">{{ isAvgDurationCompareLeftOpen ? 'expand_less' : 'expand_more' }}</mat-icon>
+            </div>
+            <div class="dropdown-panel" *ngIf="isAvgDurationCompareLeftOpen">
+              <div class="options-list">
+                <div class="option-item" *ngFor="let v of getAvgDurationCompareValueOptions()"
+                  (click)="setAvgDurationCompareLeftValue(v)" [class.selected]="avgDurationCompareLeftValue === v">
+                  {{ v }}
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
         <div class="compare-wing-hint" *ngIf="avgDurationCompareEnabled && !avgDurationCompareWing">
@@ -395,9 +427,13 @@
 
           <!-- כפתורי מדדי זמני חדר – מתחת לגרף הראשי, במצב room-times -->
           <div class="chart-mode-row" *ngIf="mainMetricMode === 'room-times'">
-            <mat-button-toggle-group name="roomTimesView" aria-label="Room times view"
-              class="mat-button-toggle-group custom-toggle-group" [value]="roomTimesView"
-              (change)="setRoomTimesView($event.value)">
+            <mat-button-toggle-group
+              name="roomTimesView"
+              aria-label="Room times view"
+              class="mat-button-toggle-group custom-toggle-group"
+              [value]="roomTimesView"
+              (change)="setRoomTimesView($event.value)"
+            >
               <mat-button-toggle value="avgDuration">
                 <mat-icon>speed</mat-icon>
                 <span>משך ניתוח ממוצע</span>
@@ -597,45 +633,76 @@
             <!-- Inline compact view (inside table-body) -->
             <div class="compare-inline" *ngIf="avgDurationCompareInlineOpen">
               <div class="compare-controls compare-controls-3">
-                <mat-form-field appearance="outline" class="compare-field">
-                  <mat-label>מחלקה מאוגדת (Wing) – חובה</mat-label>
-                  <mat-select [(ngModel)]="avgDurationCompareWing"
-                    (selectionChange)="avgDurationCompareEnabled = true; onAvgDurationCompareSettingsChanged()">
-                    <mat-option *ngFor="let w of getAvgDurationCompareWingOptions()" [value]="w">
-                      {{ w }}
-                    </mat-option>
-                  </mat-select>
-                </mat-form-field>
+                <div class="custom-dropdown compare-dropdown" [class.active]="isAvgDurationCompareWingOpen"
+                  [class.has-value]="avgDurationCompareWing">
+                  <div class="dropdown-trigger" (click)="toggleAvgDurationCompareDropdown('wing')">
+                    <mat-icon class="dropdown-icon">local_hospital</mat-icon>
+                    <span class="selected-text">Wing: {{ avgDurationCompareWing || 'בחר...' }}</span>
+                    <mat-icon class="arrow-icon">{{ isAvgDurationCompareWingOpen ? 'expand_less' : 'expand_more' }}</mat-icon>
+                  </div>
+                  <div class="dropdown-panel" *ngIf="isAvgDurationCompareWingOpen">
+                    <div class="options-list">
+                      <div class="option-item" *ngFor="let w of getAvgDurationCompareWingOptions()"
+                        (click)="setAvgDurationCompareWing(w)" [class.selected]="avgDurationCompareWing === w">
+                        {{ w }}
+                      </div>
+                    </div>
+                  </div>
+                </div>
 
-                <mat-form-field appearance="outline" class="compare-field">
-                  <mat-label>השווה לפי</mat-label>
-                  <mat-select [(ngModel)]="avgDurationCompareDimension"
-                    (selectionChange)="avgDurationCompareEnabled = true; onAvgDurationCompareSettingsChanged()">
-                    <mat-option [value]="'SurgeryType'">סוג ניתוח</mat-option>
-                    <mat-option [value]="'Shift'">משמרת</mat-option>
-                    <mat-option [value]="'Room'">חדר ניתוח</mat-option>
-                  </mat-select>
-                </mat-form-field>
+                <div class="custom-dropdown compare-dropdown" [class.active]="isAvgDurationCompareDimensionOpen"
+                  [class.has-value]="avgDurationCompareDimension">
+                  <div class="dropdown-trigger"
+                    (click)="toggleAvgDurationCompareDropdown('dimension')">
+                    <mat-icon class="dropdown-icon">tune</mat-icon>
+                    <span class="selected-text">השווה לפי: {{ getAvgDurationCompareDimensionLabel() }}</span>
+                    <mat-icon class="arrow-icon">{{ isAvgDurationCompareDimensionOpen ? 'expand_less' : 'expand_more' }}</mat-icon>
+                  </div>
+                  <div class="dropdown-panel" *ngIf="isAvgDurationCompareDimensionOpen">
+                    <div class="options-list">
+                      <div class="option-item" (click)="setAvgDurationCompareDimension('SurgeryType')"
+                        [class.selected]="avgDurationCompareDimension === 'SurgeryType'">סוג ניתוח</div>
+                      <div class="option-item" (click)="setAvgDurationCompareDimension('Shift')"
+                        [class.selected]="avgDurationCompareDimension === 'Shift'">משמרת</div>
+                      <div class="option-item" (click)="setAvgDurationCompareDimension('Room')"
+                        [class.selected]="avgDurationCompareDimension === 'Room'">חדר ניתוח</div>
+                    </div>
+                  </div>
+                </div>
 
-                <mat-form-field appearance="outline" class="compare-field">
-                  <mat-label>ירוק  (מקור)</mat-label>
-                  <mat-select [(ngModel)]="avgDurationCompareRightValue"
-                    (selectionChange)="avgDurationCompareEnabled = true; onAvgDurationCompareSettingsChanged()">
-                    <mat-option *ngFor="let v of getAvgDurationCompareValueOptions()" [value]="v">
-                      {{ v }}
-                    </mat-option>
-                  </mat-select>
-                </mat-form-field>
+                <div class="custom-dropdown compare-dropdown" [class.active]="isAvgDurationCompareRightOpen"
+                  [class.has-value]="avgDurationCompareRightValue">
+                  <div class="dropdown-trigger" (click)="toggleAvgDurationCompareDropdown('right')">
+                    <mat-icon class="dropdown-icon">check_circle</mat-icon>
+                    <span class="selected-text">ירוק (מקור): {{ avgDurationCompareRightValue || 'הכל' }}</span>
+                    <mat-icon class="arrow-icon">{{ isAvgDurationCompareRightOpen ? 'expand_less' : 'expand_more' }}</mat-icon>
+                  </div>
+                  <div class="dropdown-panel" *ngIf="isAvgDurationCompareRightOpen">
+                    <div class="options-list">
+                      <div class="option-item" *ngFor="let v of getAvgDurationCompareValueOptions()"
+                        (click)="setAvgDurationCompareRightValue(v)" [class.selected]="avgDurationCompareRightValue === v">
+                        {{ v }}
+                      </div>
+                    </div>
+                  </div>
+                </div>
 
-                <mat-form-field appearance="outline" class="compare-field">
-                  <mat-label>כחול (השוואה)</mat-label>
-                  <mat-select [(ngModel)]="avgDurationCompareLeftValue"
-                    (selectionChange)="avgDurationCompareEnabled = true; onAvgDurationCompareSettingsChanged()">
-                    <mat-option *ngFor="let v of getAvgDurationCompareValueOptions()" [value]="v">
-                      {{ v }}
-                    </mat-option>
-                  </mat-select>
-                </mat-form-field>
+                <div class="custom-dropdown compare-dropdown" [class.active]="isAvgDurationCompareLeftOpen"
+                  [class.has-value]="avgDurationCompareLeftValue">
+                  <div class="dropdown-trigger" (click)="toggleAvgDurationCompareDropdown('left')">
+                    <mat-icon class="dropdown-icon">compare_arrows</mat-icon>
+                    <span class="selected-text">כחול (השוואה): {{ avgDurationCompareLeftValue || 'הכל' }}</span>
+                    <mat-icon class="arrow-icon">{{ isAvgDurationCompareLeftOpen ? 'expand_less' : 'expand_more' }}</mat-icon>
+                  </div>
+                  <div class="dropdown-panel" *ngIf="isAvgDurationCompareLeftOpen">
+                    <div class="options-list">
+                      <div class="option-item" *ngFor="let v of getAvgDurationCompareValueOptions()"
+                        (click)="setAvgDurationCompareLeftValue(v)" [class.selected]="avgDurationCompareLeftValue === v">
+                        {{ v }}
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
 
               <!-- <div class="compare-help compare-help-tight">
@@ -1039,17 +1106,31 @@
         <!-- Purpose Section -->
         <div *ngIf="currentArticle === 'purpose'" class="article-section-display" @fadeInOut dir="rtl">
           <!-- <h2>📋 מטרת הדוח</h2> -->
-          <p class="intro-text">לשקף את פעילות הניתוחים במרכז הרפואי לאורך חמש השנים האחרונות, ברמת אתר, משמרת ומחלקה.
+          <p class="intro-text">
+            לשקף את פעילות הניתוחים במרכז הרפואי לאורך חמש השנים האחרונות, ברמת אתר, משמרת ומחלקה, וסוג ניתוח.
+       
           </p>
           <p class="explanation-note">
             דשבורד זה עונה על השאלות העיקריות בניהול חדרי ניתוח:
           </p>
           <ul class="explanation-note">
-            <li>כמות ניתוחים לפי אתר, לפי משמרת, לפי סוג ניתוח ("אלקטיבי", "דחוף", "ססיה") ולפי מחלקה מול אתר (זיהוי
-              פערים בין רישומי מחלקות).</li>
-            <li>מדדי זמן לפי מחלקה: משך ניתוח ממוצע, זמן כניסה ממוצע של ניתוח ראשון בבוקר, זמן סיום ממוצע של ניתוח
-              אחרון, וזמן SETUP ממוצע בין ניתוחים.</li>
-            <li>השוואת חמש שנות פעילות (שנת בסיס ועוד ארבע שנים אחורה) כדי לזהות מגמות צמיחה, עומסים וחוסר יעילות.</li>
+            <li>כמות ניתוחים לפי אתר, לפי משמרת, לפי סוג ניתוח ("אלקטיבי", "דחוף", "ססיה") ולפי מחלקה מול אתר
+             
+              
+              .</li>
+            <li>
+              
+              מדדי זמן לפי מחלקה: משך ניתוח ממוצע, 
+              ממוצע זמן  כניסה  של ניתוח ראשון בבוקר,
+              ממוצע זמן  סיום  של ניתוח
+              אחרון, 
+              וזמן SETUP וממוצע זמן  בין ניתוחים.
+            
+            </li>
+            <li>
+              השוואת פעילות חמש שנות אחרונות (שנת בסיס ועוד ארבע שנים אחורה) כדי לזהות מגמות צמיחה, עומסים וחוסר יעילות.
+              
+            </li>
           </ul>
         </div>
 
@@ -1059,7 +1140,7 @@
           <div class="notes-list" dir="rtl">
             <div class="note-item" dir="rtl">
               <span class="note-number">1</span>
-              <p><strong>"מנתחת"</strong> בדשבורד זה מייצגת מחלקה ניתוחית, ו<strong>"מנתחת מאוגד"</strong> מייצגת אגף.
+              <p><strong>"מנתחת"</strong> בדשבורד זה מייצגת מחלקה מנתחת כפי שנרשם בדו"ח ניתוח, ו<strong>"מנתחת מאוגד"</strong> מייצגת אגף.
               </p>
             </div>
             <div class="note-item" dir="rtl">
@@ -1073,7 +1154,7 @@
             </div>
             <div class="note-item" dir="rtl">
               <span class="note-number">4</span>
-              <p>במדד SETUP נכללים רק מעברים עם זמן חיובי ובטווח המוגדר (0–120 דקות).</p>
+              <p>במדד SETUP נכללים רק מעברים עם זמן חיובי   .</p>
             </div>
             <div class="note-item highlight" dir="rtl">
               <span class="note-number">⚡</span>
@@ -1100,7 +1181,7 @@
               <div class="structure-content" dir="rtl">
                 <h4>אזור הגרף המרכזי</h4>
                 <ul dir="rtl">
-                  <li>✨ גרפים של כמות ניתוחים לפי אתר, משמרת, סוג ניתוח ומחלקה–אתר להשוואת 5 שנים.</li>
+                  <li>✨ גרפים של כמות ניתוחים לפי אתר, משמרת, סוג ניתוח ומחלקה .</li>
                   <li>📊 גרפים של מדדי זמן (משך, כניסה ראשונה, סיום אחרון, SETUP) לפי מחלקה.</li>
                   <li>📅 אפשרות לזהות מגמות וצווארי בקבוק ברמת מחלקה/ מחלקה / חדר ניתוח.</li>
                 </ul>
@@ -1110,7 +1191,7 @@
               <div class="structure-number">3</div>
               <div class="structure-content" dir="rtl">
                 <h4>טבלאות והעמקה</h4>
-                <p>בטבלה התחתונה תוכל לראות רשימת ניתוחים מפורטת או מחלקות. לחיצה על ניתוח פותחת פרטי מקרה, ולחיצה על
+                <p>בטבלה התחתונה ניתן  לראות רשימת ניתוחים מפורטת או מחלקות. לחיצה על ניתוח פותחת פרטי מקרה, ולחיצה על
                   מחלקה פותחת פירוט פעילויות ופרוצדורות ניתוחיות לפי שנה.</p>
               </div>
             </div>

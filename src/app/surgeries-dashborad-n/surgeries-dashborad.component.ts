@@ -689,6 +689,71 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck {
   avgDurationCompareCombinedChartOptions: any = {};
   avgDurationCompareYears: number[] = [];
 
+  // Dropdown UI state for compare controls (reuse custom-dropdown look)
+  isAvgDurationCompareWingOpen = false;
+  isAvgDurationCompareDimensionOpen = false;
+  isAvgDurationCompareRightOpen = false;
+  isAvgDurationCompareLeftOpen = false;
+
+  private closeAvgDurationCompareDropdowns(): void {
+    this.isAvgDurationCompareWingOpen = false;
+    this.isAvgDurationCompareDimensionOpen = false;
+    this.isAvgDurationCompareRightOpen = false;
+    this.isAvgDurationCompareLeftOpen = false;
+  }
+
+  toggleAvgDurationCompareDropdown(
+    which: 'wing' | 'dimension' | 'right' | 'left'
+  ): void {
+    const next =
+      (which === 'wing' && !this.isAvgDurationCompareWingOpen) ||
+      (which === 'dimension' && !this.isAvgDurationCompareDimensionOpen) ||
+      (which === 'right' && !this.isAvgDurationCompareRightOpen) ||
+      (which === 'left' && !this.isAvgDurationCompareLeftOpen);
+
+    this.closeAvgDurationCompareDropdowns();
+    if (!next) return;
+
+    if (which === 'wing') this.isAvgDurationCompareWingOpen = true;
+    if (which === 'dimension') this.isAvgDurationCompareDimensionOpen = true;
+    if (which === 'right') this.isAvgDurationCompareRightOpen = true;
+    if (which === 'left') this.isAvgDurationCompareLeftOpen = true;
+  }
+
+  getAvgDurationCompareDimensionLabel(): string {
+    if (this.avgDurationCompareDimension === 'Shift') return 'משמרת';
+    if (this.avgDurationCompareDimension === 'Room') return 'חדר ניתוח';
+    return 'סוג ניתוח';
+  }
+
+  setAvgDurationCompareWing(v: string | null): void {
+    this.avgDurationCompareWing = v;
+    this.avgDurationCompareEnabled = true;
+    this.closeAvgDurationCompareDropdowns();
+    this.onAvgDurationCompareSettingsChanged();
+  }
+
+  setAvgDurationCompareDimension(v: 'SurgeryType' | 'Shift' | 'Room'): void {
+    this.avgDurationCompareDimension = v;
+    this.avgDurationCompareEnabled = true;
+    this.closeAvgDurationCompareDropdowns();
+    this.onAvgDurationCompareSettingsChanged();
+  }
+
+  setAvgDurationCompareRightValue(v: string | null): void {
+    this.avgDurationCompareRightValue = v;
+    this.avgDurationCompareEnabled = true;
+    this.closeAvgDurationCompareDropdowns();
+    this.onAvgDurationCompareSettingsChanged();
+  }
+
+  setAvgDurationCompareLeftValue(v: string | null): void {
+    this.avgDurationCompareLeftValue = v;
+    this.avgDurationCompareEnabled = true;
+    this.closeAvgDurationCompareDropdowns();
+    this.onAvgDurationCompareSettingsChanged();
+  }
+
   openAvgDurationCompareModal(): void {
     this.avgDurationCompareEnabled = true;
     this.showAvgDurationCompareModal = true;
