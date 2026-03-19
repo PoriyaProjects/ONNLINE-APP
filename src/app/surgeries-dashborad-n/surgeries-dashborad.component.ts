@@ -768,6 +768,32 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
 
   // Full‑screen view for YoY combined metric chart
   showYoyCombinedFullModal = false;
+  showCompareDepartmentsModal = false;
+
+  // Comparison modal (department focus)
+  compareDepartmentSelected: string | null = null;
+  compareSurgeryTypeSelected: string | null = null;
+  /** צ'קבוקסים – כל דגל מוסיף קו נוסף לגרף ההשוואה */
+  compareShowRoomsPerYear = true;
+  compareShowSurgeriesPerYear = true;
+  compareShowAvgDurationPerYear = false;
+  compareShowSurgeriesPerRoom = true;
+  compareShowTypeCountPerYear = false;
+  compareShowTypeAvgDurationPerYear = false;
+  isCompareMetricsDropdownOpen = false;
+  compareSummaryLine: string | null = null;
+  compareDepartmentsLineChartColumns: any[] = [];
+  compareDepartmentsLineChartData: any[] = [];
+  compareDepartmentsLineChartOptions: any = {};
+
+  readonly compareMetricOptions: { key: string; label: string }[] = [
+    { key: 'rooms', label: 'כמות חדרים למחלקה לשנה' },
+    { key: 'surgeries', label: 'כמות ניתוחים למחלקה לשנה' },
+    { key: 'avgDuration', label: 'זמן ניתוח ממוצע (דקות) לשנה' },
+    { key: 'surgeriesPerRoom', label: 'ניתוחים לחדר (ניתוחים / חדרים)' },
+    { key: 'typeCount', label: 'כמות ניתוחים מסוג נבחר לשנה' },
+    { key: 'typeAvgDuration', label: 'זמן ניתוח ממוצע לסוג נבחר לשנה' },
+  ];
 
   isAvgDurationLoading = false;
   isFirstStartTimeLoading = false;
@@ -1718,6 +1744,8 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
                     // עדכון אופציות פילטרים (כולל חדרי ניתוח) גם כשעובדים רק עם CountByDept
                     this.computeFilterOptions();
                     this.updateChartData();
+                    this.initializeCompareDepartmentDefaults();
+                    this.refreshCompareDepartmentsLineChart();
                     this.cdr.detectChanges();
                 },
                 (error) => {
@@ -3874,7 +3902,372 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
     } else if (value === "count") {
       this.mainMetricMode = "surgery-volume";
       this.updateChartData();
+    } else if (value === "compare-departments") {
+      // כפתור ייעודי לפתיחת פופ‑אפ השוואת מחלקות
+      this.openCompareDepartmentsModal();
     }
+  }
+
+  openCompareDepartmentsModal(): void {
+    this.showCompareDepartmentsModal = true;
+    // מבטיח שהתצוגה תתבסס על "ניתוחים ליום בחדר" לפי מחלקה
+    this.roomTimesView = "perDay";
+    // חובה לבחור מחלקה בכל פתיחת מודל לפני הצגת השוואות
+    this.compareDepartmentSelected = null;
+    this.compareSurgeryTypeSelected = null;
+    this.loadSurgeriesPerDay();
+    this.loadAvgDuration();
+    if (!this.countByDeptData || this.countByDeptData.length === 0) {
+      this.loadCountByDept();
+    }
+    this.initializeCompareDepartmentDefaults();
+    this.refreshCompareDepartmentsLineChart();
+  }
+
+  closeCompareDepartmentsModal(): void {
+    this.showCompareDepartmentsModal = false;
+  }
+
+  getCompareDepartmentOptions(): string[] {
+    const fromPerDay = (this.surgeriesPerDayRaw || [])
+      .map((r) => (r.Wing || "").trim())
+      .filter(Boolean);
+    const fromCount = (this.countByDeptData || [])
+      .map((r) => (r.Wing || "").trim())
+      .filter(Boolean);
+    const all = Array.from(new Set([...fromPerDay, ...fromCount]))
+      .filter((w) => w !== "אחר" && w !== "קרדיולוגיה");
+    if (!all.length) {
+      return [...this.orderedWings];
+    }
+    return all.sort((a, b) => {
+      const ia = this.orderedWings.indexOf(a);
+      const ib = this.orderedWings.indexOf(b);
+      if (ia !== -1 && ib !== -1) return ia - ib;
+      if (ia !== -1) return -1;
+      if (ib !== -1) return 1;
+      return a.localeCompare(b, "he");
+    });
+  }
+
+  getCompareSurgeryTypeOptions(): string[] {
+    if (!this.compareDepartmentSelected) {
+      return [];
+    }
+    const dep = (this.compareDepartmentSelected || "").trim();
+    const set = new Set<string>();
+    (this.countByDeptData || []).forEach((r) => {
+      if ((r.Wing || "").trim() !== dep) return;
+      const t = (r.UnifiedSurgeryType || "").trim();
+      if (t) set.add(t);
+    });
+    return Array.from(set).sort((a, b) => a.localeCompare(b, "he"));
+  }
+
+  onCompareDepartmentChanged(value: string | null): void {
+    this.compareDepartmentSelected = value;
+    const typeOptions = this.getCompareSurgeryTypeOptions();
+    if (typeOptions.length === 0) {
+      this.compareSurgeryTypeSelected = null;
+    } else if (!this.compareSurgeryTypeSelected || !typeOptions.includes(this.compareSurgeryTypeSelected)) {
+      this.compareSurgeryTypeSelected = typeOptions[0];
+    }
+    this.refreshCompareDepartmentsLineChart();
+  }
+
+  onCompareSurgeryTypeChanged(value: string | null): void {
+    this.compareSurgeryTypeSelected = value;
+    this.refreshCompareDepartmentsLineChart();
+  }
+
+  toggleCompareMetricsDropdown(): void {
+    if (!this.compareDepartmentSelected) {
+      return;
+    }
+    this.isCompareMetricsDropdownOpen = !this.isCompareMetricsDropdownOpen;
+  }
+
+  closeCompareMetricsDropdown(): void {
+    this.isCompareMetricsDropdownOpen = false;
+  }
+
+  isCompareMetricSelected(key: string): boolean {
+    if (key === 'rooms') return this.compareShowRoomsPerYear;
+    if (key === 'surgeries') return this.compareShowSurgeriesPerYear;
+    if (key === 'avgDuration') return this.compareShowAvgDurationPerYear;
+    if (key === 'surgeriesPerRoom') return this.compareShowSurgeriesPerRoom;
+    if (key === 'typeCount') return this.compareShowTypeCountPerYear;
+    if (key === 'typeAvgDuration') return this.compareShowTypeAvgDurationPerYear;
+    return false;
+  }
+
+  setCompareMetricSelected(key: string, checked: boolean): void {
+    if (key === 'rooms') this.compareShowRoomsPerYear = checked;
+    if (key === 'surgeries') this.compareShowSurgeriesPerYear = checked;
+    if (key === 'avgDuration') this.compareShowAvgDurationPerYear = checked;
+    if (key === 'surgeriesPerRoom') this.compareShowSurgeriesPerRoom = checked;
+    if (key === 'typeCount') this.compareShowTypeCountPerYear = checked;
+    if (key === 'typeAvgDuration') this.compareShowTypeAvgDurationPerYear = checked;
+    this.refreshCompareDepartmentsLineChart();
+  }
+
+  getCompareMetricsDropdownText(): string {
+    const selected = this.compareMetricOptions
+      .filter((o) => this.isCompareMetricSelected(o.key))
+      .map((o) => o.label);
+    if (!selected.length) return 'בחר מדדים להשוואה';
+    if (selected.length <= 2) return selected.join(' | ');
+    return `${selected.length} מדדים נבחרו`;
+  }
+
+  private initializeCompareDepartmentDefaults(): void {
+    const deptOptions = this.getCompareDepartmentOptions();
+    if (this.compareDepartmentSelected && !deptOptions.includes(this.compareDepartmentSelected)) {
+      this.compareDepartmentSelected = null;
+    }
+    const typeOptions = this.getCompareSurgeryTypeOptions();
+    if (this.compareSurgeryTypeSelected && !typeOptions.includes(this.compareSurgeryTypeSelected)) {
+      this.compareSurgeryTypeSelected = null;
+    }
+  }
+
+  private refreshCompareDepartmentsLineChart(): void {
+    if (!this.showCompareDepartmentsModal) {
+      return;
+    }
+    const dep = (this.compareDepartmentSelected || "").trim();
+    if (!dep) {
+      this.compareDepartmentsLineChartColumns = [];
+      this.compareDepartmentsLineChartData = [];
+      this.compareSummaryLine = null;
+      return;
+    }
+
+    const baseYear = this.getBaseYearForRoomTimes();
+    const avgDurationRaw = this.avgDurationFiveYearsRawByBaseYear.get(baseYear) || [];
+
+    const perDayRows = this.filterBySelectedDiagnosis(this.surgeriesPerDayRaw || []).filter(
+      (r) => (r.Wing || "").trim() === dep
+    );
+    const countRows = (this.countByDeptData || []).filter((r) => (r.Wing || "").trim() === dep);
+    const avgDurationRows = avgDurationRaw
+      .filter((r) => this.matchesRoomTimesFilters(r))
+      .filter((r) => this.avgDurationSiteFilter === "ALL" || r.Site === this.avgDurationSiteFilter)
+      .filter((r) => (r.Wing || "").trim() === dep);
+
+    const roomsByYear = new Map<number, number>();
+    const surgeriesByYear = new Map<number, number>();
+    const avgDurationByYear = new Map<number, number>();
+    const surgeryTypeCountByYear = new Map<number, number>();
+    const surgeryTypeAvgDurationByYear = new Map<number, number>();
+
+    for (const r of perDayRows) {
+      const y = r.Year;
+      roomsByYear.set(y, (roomsByYear.get(y) || 0) + (r.RoomsTotal ?? 0));
+    }
+    for (const r of countRows) {
+      const y = r.Year;
+      surgeriesByYear.set(y, (surgeriesByYear.get(y) || 0) + (r.Count ?? 0));
+    }
+    const avgAcc = new Map<number, { sumMin: number; sumCount: number }>();
+    for (const r of avgDurationRows) {
+      const y = r.Year;
+      const prev = avgAcc.get(y) || { sumMin: 0, sumCount: 0 };
+      const cnt = r.Count ?? 0;
+      prev.sumMin += (r.AvgDurationMin ?? 0) * cnt;
+      prev.sumCount += cnt;
+      avgAcc.set(y, prev);
+    }
+    avgAcc.forEach((v, y) => {
+      if (v.sumCount > 0) avgDurationByYear.set(y, v.sumMin / v.sumCount);
+    });
+
+    const selectedType = (this.compareSurgeryTypeSelected || "").trim();
+    if (selectedType) {
+      countRows
+        .filter((r) => (r.UnifiedSurgeryType || "").trim() === selectedType)
+        .forEach((r) => {
+          surgeryTypeCountByYear.set(r.Year, (surgeryTypeCountByYear.get(r.Year) || 0) + (r.Count ?? 0));
+        });
+
+      const typeAcc = new Map<number, { sum: number; count: number }>();
+      (this.surgeryData || [])
+        .filter((s) => ((s.departmentMapped || s.department || "").trim() === dep))
+        .filter((s) => ((s.unifiedSurgeryType || s.surgeryType || "").trim() === selectedType))
+        .forEach((s) => {
+          const dateParts = this.parseDateParts(s.date);
+          if (!dateParts || s.surgeryDurationMinutes == null) return;
+          const y = dateParts.year;
+          const prev = typeAcc.get(y) || { sum: 0, count: 0 };
+          prev.sum += Number(s.surgeryDurationMinutes);
+          prev.count += 1;
+          typeAcc.set(y, prev);
+        });
+      typeAcc.forEach((v, y) => {
+        if (v.count > 0) surgeryTypeAvgDurationByYear.set(y, v.sum / v.count);
+      });
+    }
+
+    const years = Array.from(
+      new Set([
+        ...Array.from(roomsByYear.keys()),
+        ...Array.from(surgeriesByYear.keys()),
+        ...Array.from(avgDurationByYear.keys()),
+        ...Array.from(surgeryTypeCountByYear.keys()),
+        ...Array.from(surgeryTypeAvgDurationByYear.keys()),
+      ])
+    ).sort((a, b) => a - b).slice(-5);
+
+    if (!years.length) {
+      this.compareDepartmentsLineChartColumns = [];
+      this.compareDepartmentsLineChartData = [];
+      this.compareSummaryLine = null;
+      return;
+    }
+
+    // ניתוחים לחדר לכל שנה – KPI ישיר על ניצול חדרים
+    const surgeriesPerRoomByYear = new Map<number, number>();
+    years.forEach((y) => {
+      const rooms = roomsByYear.get(y) ?? 0;
+      const surgs = surgeriesByYear.get(y) ?? 0;
+      if (rooms > 0 && surgs > 0) {
+        surgeriesPerRoomByYear.set(y, surgs / rooms);
+      }
+    });
+
+    const columns: any[] = ["שנה"];
+    const seriesMeta: { axis: 0 | 1 }[] = [];
+    const addSeries = (label: string, axis: 0 | 1): void => {
+      columns.push({ type: "number", label });
+      seriesMeta.push({ axis });
+    };
+
+    // כל דגל מוסיף קו אחד ברור
+    if (this.compareShowRoomsPerYear) {
+      addSeries("כמות חדרים למחלקה לשנה", 0);
+    }
+    if (this.compareShowSurgeriesPerYear) {
+      addSeries("כמות ניתוחים למחלקה לשנה", 0);
+    }
+    if (this.compareShowAvgDurationPerYear) {
+      addSeries("זמן ניתוח ממוצע (דק')", 1);
+    }
+    if (this.compareShowSurgeriesPerRoom) {
+      addSeries("ניתוחים לחדר", 0);
+    }
+    if (this.compareShowTypeCountPerYear && selectedType) {
+      addSeries(`כמות "${selectedType}" לשנה`, 0);
+    }
+    if (this.compareShowTypeAvgDurationPerYear && selectedType) {
+      addSeries(`זמן ממוצע "${selectedType}" (דק')`, 1);
+    }
+
+    const rows = years.map((year) => {
+      const row: any[] = [year.toString()];
+      if (this.compareShowRoomsPerYear) {
+        row.push(roomsByYear.get(year) ?? null);
+      }
+      if (this.compareShowSurgeriesPerYear) {
+        row.push(surgeriesByYear.get(year) ?? null);
+      }
+      if (this.compareShowAvgDurationPerYear) {
+        row.push(avgDurationByYear.get(year) ?? null);
+      }
+      if (this.compareShowSurgeriesPerRoom) {
+        row.push(surgeriesPerRoomByYear.get(year) ?? null);
+      }
+      if (this.compareShowTypeCountPerYear && selectedType) {
+        row.push(surgeryTypeCountByYear.get(year) ?? null);
+      }
+      if (this.compareShowTypeAvgDurationPerYear && selectedType) {
+        row.push(surgeryTypeAvgDurationByYear.get(year) ?? null);
+      }
+      return row;
+    });
+
+    this.compareDepartmentsLineChartColumns = columns;
+    this.compareDepartmentsLineChartData = rows;
+
+    const series: any = {};
+    seriesMeta.forEach((s, i) => {
+      series[i] = { targetAxisIndex: s.axis, lineWidth: 3, pointSize: 6 };
+    });
+
+    this.compareDepartmentsLineChartOptions = {
+      title: "",
+      chartArea: { width: "82%", height: "64%", left: 60, top: 56 },
+      curveType: "function",
+      legend: { position: "top", alignment: "end" },
+      hAxis: { title: "שנה", textStyle: { fontSize: 12 } },
+      vAxes: {
+        0: { title: "כמות", minValue: 0 },
+        1: { title: "זמן ממוצע (דקות)", minValue: 0 },
+      },
+      series,
+      explorer: { actions: ["dragToZoom", "rightClickToReset"], axis: "horizontal" },
+      animation: { startup: true, duration: 500, easing: "out" },
+      backgroundColor: "transparent",
+    };
+
+    // === שורת סיכום מעל הקונטרולים: מדגישה אם חדרים עלו בלי ניתוחים בהתאם ===
+    const latestYear = years[years.length - 1];
+    const prevYear = years.length > 1 ? years[years.length - 2] : null;
+    if (!prevYear) {
+      this.compareSummaryLine = null;
+      return;
+    }
+
+    const roomsCurr = roomsByYear.get(latestYear) ?? 0;
+    const roomsPrev = roomsByYear.get(prevYear) ?? 0;
+    const surgCurr = surgeriesByYear.get(latestYear) ?? 0;
+    const surgPrev = surgeriesByYear.get(prevYear) ?? 0;
+    const sprCurr = surgeriesPerRoomByYear.get(latestYear) ?? null;
+    const sprPrev = surgeriesPerRoomByYear.get(prevYear) ?? null;
+
+    const pct = (curr: number, prev: number): number | null => {
+      if (!prev || prev === 0) return null;
+      return ((curr - prev) / prev) * 100;
+    };
+
+    const fmtArrow = (value: number | null | undefined): string => {
+      if (value == null || isNaN(value)) return "";
+      if (value > 2) return "↑";
+      if (value < -2) return "↓";
+      return "→";
+    };
+
+    const fmtPct = (value: number | null): string => {
+      if (value == null || isNaN(value)) return "";
+      const rounded = Math.round(value);
+      if (rounded > 0) return `+${rounded}%`;
+      return `${rounded}%`;
+    };
+
+    const roomsPct = pct(roomsCurr, roomsPrev);
+    const surgPct = pct(surgCurr, surgPrev);
+    const sprPct =
+      sprCurr != null && sprPrev != null ? pct(sprCurr, sprPrev) : null;
+
+    const parts: string[] = [];
+    parts.push(
+      `חדרים ${fmtArrow(roomsPct)} ${roomsCurr} (${fmtPct(roomsPct) || "ללא שינוי"})`
+    );
+    parts.push(
+      `ניתוחים ${fmtArrow(surgPct)} ${surgCurr} (${fmtPct(surgPct) || "ללא שינוי"})`
+    );
+    if (sprCurr != null) {
+      const sprLabel = `${sprCurr.toFixed(1)}`;
+      const sprPctLabel = fmtPct(sprPct);
+      parts.push(
+        `ניתוחים לחדר ${fmtArrow(sprPct)} ${sprLabel}${
+          sprPctLabel ? ` (${sprPctLabel})` : ""
+        }`
+      );
+    }
+
+    this.compareSummaryLine = `השוואה בין ${prevYear} ל‑${latestYear} במחלקה ${dep}: ${parts.join(
+      " | "
+    )}`;
   }
 
   /** שינוי מדד החדרים לגרף ניצולת (סה"כ / פתוחות / סוגרות / ימים מלאים) – תמיד במצב לפי מחלקה */
@@ -5034,6 +5427,8 @@ private loadSurgeriesPerDay(): void {
     const filteredCached = this.filterBySelectedDiagnosis(this.surgeriesPerDayRaw);
     this.buildSurgeriesPerDayChart(filteredCached);
     this.isSurgeriesPerDayLoading = false;
+    this.initializeCompareDepartmentDefaults();
+    this.refreshCompareDepartmentsLineChart();
     this.cdr.detectChanges();
     return;
   }
@@ -5114,6 +5509,8 @@ private loadSurgeriesPerDay(): void {
         };
         this.lastSurgeriesPerDayYear = baseYear;
         this.isSurgeriesPerDayLoading = false;
+        this.initializeCompareDepartmentDefaults();
+        this.refreshCompareDepartmentsLineChart();
         this.cdr.detectChanges();
       },
       (error) => {
@@ -5692,6 +6089,7 @@ loadAvgDuration(): void {
 
     this.buildAvgDurationFiveYearsChart(filtered);
     this.isAvgDurationLoading = false;
+    this.refreshCompareDepartmentsLineChart();
     this.cdr.detectChanges();
     return;
   }
@@ -5776,6 +6174,7 @@ loadAvgDuration(): void {
           
         };
         this.isAvgDurationLoading = false;
+        this.refreshCompareDepartmentsLineChart();
         this.cdr.detectChanges();
       },
       (error) => {

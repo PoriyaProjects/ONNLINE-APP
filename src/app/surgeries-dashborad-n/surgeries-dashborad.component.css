@@ -2377,6 +2377,210 @@ table.table {
   height: 85vh;
 }
 
+/* השוואת מחלקות – מסך כמעט מלא (כ‑95%) */
+.compare-departments-modal {
+  width: 95vw;
+  height: 95vh;
+}
+
+.compare-departments-modal .kpi-body {
+  gap: 12px;
+  border-radius: 14px;
+  padding: 10px 12px 14px;
+  border: 1px solid rgba(148,163,184,.35);
+  background:
+    radial-gradient(circle at 0% 0%, rgba(56,189,248,.14), transparent 55%),
+    radial-gradient(circle at 100% 100%, rgba(74,222,128,.18), transparent 55%),
+    var(--panel-strong);
+}
+
+.compare-dept-summary {
+  margin: 0 4px 4px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: radial-gradient(circle at 0% 0%, rgba(56,189,248,.12), transparent 55%),
+              radial-gradient(circle at 100% 100%, rgba(34,197,94,.14), transparent 55%),
+              rgba(255,255,255,.9);
+  border: 1px solid rgba(148,163,184,.55);
+  font-size: 13px;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.compare-dept-controls {
+  display: grid;
+  grid-template-columns: minmax(220px, 260px) minmax(220px, 260px) minmax(280px, 1fr);
+  gap: 12px;
+  align-items: start;
+  padding: 8px;
+  border: 1px solid rgba(148,163,184,.35);
+  border-radius: 12px;
+  background: rgba(255,255,255,.68);
+  backdrop-filter: blur(3px);
+  min-height: 86px;
+  position: sticky;
+  top: 0;
+  z-index: 3;
+}
+
+.compare-dept-control {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.compare-dept-control label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.compare-dept-control select {
+  height: 36px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,.92);
+  color: var(--text);
+  padding: 0 10px;
+}
+
+.compare-dept-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 14px;
+  padding: 6px 8px;
+  border: 1px dashed var(--border);
+  border-radius: 10px;
+  background: rgba(255,255,255,.66);
+}
+
+.compare-metrics-dropdown-wrap {
+  position: relative;
+}
+
+.compare-metrics-trigger {
+  height: 36px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,.92);
+  color: var(--text);
+  padding: 0 10px;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.compare-metrics-trigger span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+}
+
+.compare-metrics-panel {
+  position: absolute;
+  inset-inline-start: 0;
+  inset-inline-end: 0;
+  top: calc(100% + 6px);
+  max-height: 240px;
+  overflow: auto;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,.98);
+  box-shadow: 0 10px 30px rgba(2,6,23,.18);
+  padding: 8px;
+  z-index: 5;
+}
+
+.compare-metrics-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 4px;
+  font-size: 13px;
+  color: var(--text);
+}
+
+.compare-metrics-item input[type="checkbox"] {
+  accent-color: #7c3aed;
+}
+
+.compare-dept-options label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--text);
+}
+
+.compare-dept-options input[type="checkbox"] {
+  accent-color: #7c3aed;
+}
+
+.compare-dept-options.is-disabled {
+  opacity: .6;
+}
+
+.compare-dept-required-message {
+  margin: 2px 2px 4px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px dashed rgba(245,158,11,.65);
+  background: rgba(254,243,199,.7);
+  color: #92400e;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+@media (max-width: 1280px) {
+  .compare-dept-controls {
+    grid-template-columns: 1fr;
+    align-items: stretch;
+    min-height: auto;
+  }
+
+  .compare-dept-options {
+    flex-direction: column;
+    gap: 8px;
+  }
+}
+
+.kpi-overlay.dark .compare-departments-modal .kpi-body {
+  border-color: rgba(129,140,248,.45);
+  background:
+    radial-gradient(circle at 0% 0%, rgba(59,130,246,.22), transparent 58%),
+    radial-gradient(circle at 100% 100%, rgba(34,197,94,.18), transparent 60%),
+    rgba(15,23,42,.76);
+}
+
+.kpi-overlay.dark .compare-dept-controls,
+.kpi-overlay.dark .compare-dept-options {
+  background: rgba(15,23,42,.64);
+  border-color: rgba(129,140,248,.5);
+}
+
+.kpi-overlay.dark .compare-dept-control select {
+  background: rgba(15,23,42,.9);
+  border-color: rgba(129,140,248,.6);
+  color: #e5e7eb;
+}
+
+.kpi-overlay.dark .compare-metrics-trigger,
+.kpi-overlay.dark .compare-metrics-panel {
+  background: rgba(15,23,42,.92);
+  border-color: rgba(129,140,248,.6);
+  color: #e5e7eb;
+}
+
+.kpi-overlay.dark .compare-dept-required-message {
+  background: rgba(120,53,15,.35);
+  border-color: rgba(251,191,36,.65);
+  color: #fde68a;
+}
+
 .kpi-overlay.dark .kpi-modal {
   background: #020617;
   border-color: rgba(148,163,184,.6);

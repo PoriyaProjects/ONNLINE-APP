@@ -356,6 +356,13 @@
                   ניצולת חדר
                 </mat-button-toggle>
 
+                <mat-button-toggle value="compare-departments"
+                  (change)="openCompareDepartmentsModal()"
+                  matTooltip="השוואת ביצועי מחלקות – כמות ניתוחים מול כמות חדרים וזמני חדר"
+                  matTooltipPosition="below">
+                  השוואה ביצועי מחלקות
+                </mat-button-toggle>
+
               </mat-button-toggle-group>
             </div>
 
@@ -1583,6 +1590,95 @@
           class="no-data-message">
           אין נתונים זמינים
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- השוואת מחלקות – ניתוחים ליום בחדר מול כמות חדרים (פופ‑אפ ייעודי מהטוגל העליון) -->
+  <div *ngIf="showCompareDepartmentsModal" class="kpi-overlay" [class.dark]="isDark">
+    <div class="kpi-modal compare-departments-modal" dir="rtl">
+      <div class="kpi-header">
+        <div class="kpi-header-titles">
+          <h2>השוואת מחלקות – ניתוחים ליום בחדר</h2>
+          <div class="kpi-subtitle">
+            כמות ניתוחים ליום בחדר מול כמות חדרים פעילים לכל מחלקה מאוגדת (Wing), לפי שנים.
+          </div>
+        </div>
+        <button mat-icon-button class="close-btn" (click)="closeCompareDepartmentsModal()">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+      <div class="kpi-body">
+        <div class="compare-dept-summary" *ngIf="compareDepartmentSelected && compareSummaryLine">
+          {{ compareSummaryLine }}
+        </div>
+
+        <div class="compare-dept-controls">
+          <div class="compare-dept-control">
+            <label>בחירת מחלקה</label>
+            <select
+              [ngModel]="compareDepartmentSelected"
+              (ngModelChange)="onCompareDepartmentChanged($event)">
+              <option [ngValue]="null">-- יש לבחור מחלקה --</option>
+              <option *ngFor="let d of getCompareDepartmentOptions()" [ngValue]="d">{{ d }}</option>
+            </select>
+          </div>
+
+          <div class="compare-dept-control compare-dept-control-types"
+            *ngIf="compareShowTypeCountPerYear || compareShowTypeAvgDurationPerYear">
+            <label>סוג ניתוח להשוואה</label>
+            <select
+              [disabled]="!compareDepartmentSelected"
+              [ngModel]="compareSurgeryTypeSelected"
+              (ngModelChange)="onCompareSurgeryTypeChanged($event)">
+              <option [ngValue]="null">-- יש לבחור סוג ניתוח --</option>
+              <option *ngFor="let t of getCompareSurgeryTypeOptions()" [ngValue]="t">{{ t }}</option>
+            </select>
+          </div>
+
+          <div class="compare-dept-control compare-metrics-dropdown-wrap">
+            <label>בחירת מדדי השוואה</label>
+            <button type="button" class="compare-metrics-trigger"
+              [disabled]="!compareDepartmentSelected"
+              (click)="toggleCompareMetricsDropdown()">
+              <span>{{ getCompareMetricsDropdownText() }}</span>
+              <mat-icon>{{ isCompareMetricsDropdownOpen ? 'expand_less' : 'expand_more' }}</mat-icon>
+            </button>
+
+            <div class="compare-metrics-panel" *ngIf="isCompareMetricsDropdownOpen">
+              <label class="compare-metrics-item" *ngFor="let opt of compareMetricOptions">
+                <input type="checkbox"
+                  [checked]="isCompareMetricSelected(opt.key)"
+                  (change)="setCompareMetricSelected(opt.key, $event.target.checked)">
+                <span>{{ opt.label }}</span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div *ngIf="!compareDepartmentSelected" class="compare-dept-required-message">
+          כדי להתחיל השוואה יש לבחור מחלקה מהרשימה למעלה.
+        </div>
+
+        <div *ngIf="isSurgeriesPerDayLoading || isAvgDurationLoading" class="kpi-loading">
+          <mat-spinner diameter="40"></mat-spinner>
+        </div>
+        <div
+          *ngIf="compareDepartmentSelected && !isSurgeriesPerDayLoading && !isAvgDurationLoading &&
+                 (!compareDepartmentsLineChartData || compareDepartmentsLineChartData.length === 0)"
+          class="kpi-no-data">
+          אין מספיק נתונים להצגת השוואה במחלקה שנבחרה.
+        </div>
+        <google-chart
+          *ngIf="compareDepartmentSelected && !isSurgeriesPerDayLoading && !isAvgDurationLoading &&
+                 compareDepartmentsLineChartData && compareDepartmentsLineChartData.length > 0"
+          [type]="'LineChart'"
+          [columns]="compareDepartmentsLineChartColumns"
+          [data]="compareDepartmentsLineChartData"
+          [options]="compareDepartmentsLineChartOptions"
+          [width]="'100%'"
+          [height]="'100%'">
+        </google-chart>
       </div>
     </div>
   </div>
