@@ -280,9 +280,31 @@
                   <mat-icon>{{ chartType === 'ColumnChart' ? 'bar_chart' : 'show_chart' }}</mat-icon>
                 </div>
 
-                <mat-button-toggle value="count" checked>מדדי ניתוחים</mat-button-toggle>
-                <mat-button-toggle value="duration" (change)="openTimesModal()">זמני חדר</mat-button-toggle>
-                <mat-button-toggle value="utilization">ניצולת חדר</mat-button-toggle>
+                <mat-button-toggle
+                  value="count"
+                  checked
+                  matTooltip="מדדי נפח פעילות: כמות ניתוחים/חדר/מחלקה על פני שנים"
+                  matTooltipPosition="below"
+                >
+                  מדדי ניתוחים
+                </mat-button-toggle>
+
+                <mat-button-toggle
+                  value="duration"
+                  (change)="openTimesModal()"
+                  matTooltip="מדדי זמני חדר: משכי ניתוח, כניסה ראשונה, סיום אחרון, SETUP ועוד"
+                  matTooltipPosition="below"
+                >
+                  זמני חדר
+                </mat-button-toggle>
+
+                <mat-button-toggle
+                  value="utilization"
+                  matTooltip="ניצולת חדרי ניתוח: כמה חדרים פתוחים/סוגרים, ימים מלאים וניצול ליום"
+                  matTooltipPosition="below"
+                >
+                  ניצולת חדר
+                </mat-button-toggle>
 
               </mat-button-toggle-group>
             </div>
@@ -313,7 +335,7 @@
         </div>
 
 
-        <div class="graph-body">
+        <div class="graph-body" [attr.data-main-mode]="mainMetricMode">
           <div *ngIf="isChartLoading || isMainDataLoading" class="chart-loading-overlay">
             <mat-spinner diameter="50"></mat-spinner>
             <div class="chart-loading-text">טוען גרף...</div>

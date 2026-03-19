@@ -2360,6 +2360,15 @@ table.table {
   color: var(--muted);
 }
 
+/* פס צבעוני מעל כותרת המודל – תואם "זמני חדר" (סגול כמו בגרף הראשי) */
+.kpi-modal .kpi-header-titles {
+  border-top: 3px solid #7c3aed;
+  padding-top: 6px;
+}
+.dash.dark .kpi-modal .kpi-header-titles {
+  border-top-color: #a855f7;
+}
+
 .kpi-header h2 {
   margin: 0;
   font-size: clamp(16px, 1.4vw, 22px);
@@ -3548,13 +3557,230 @@ table.table {
   color: #f8fafc;
 }
 
-/* מסגרת ברורה יותר לכפתור הנבחר – light & dark */
-.custom-toggle-group .mat-button-toggle-checked {
-  border-color: #2563eb !important;
+/* --- Hover בצבע תואם מצב ראשי – כפתורי chartView (למעלה) --- */
+.metrics-container .custom-toggle-group mat-button-toggle[ng-reflect-value="count"]:not(.mat-button-toggle-checked):hover {
+  background: rgba(219, 234, 254, 0.85);
+  color: #1d4ed8;
+}
+.dash.dark .metrics-container .custom-toggle-group mat-button-toggle[ng-reflect-value="count"]:not(.mat-button-toggle-checked):hover {
+  background: rgba(37, 99, 235, 0.25);
+  color: #e0f2fe;
 }
 
-.dash.dark .custom-toggle-group .mat-button-toggle-checked {
+.metrics-container .custom-toggle-group mat-button-toggle[ng-reflect-value="duration"]:not(.mat-button-toggle-checked):hover {
+  background: rgba(233, 213, 255, 0.9);
+  color: #6d28d9;
+}
+.dash.dark .metrics-container .custom-toggle-group mat-button-toggle[ng-reflect-value="duration"]:not(.mat-button-toggle-checked):hover {
+  background: rgba(124, 58, 237, 0.28);
+  color: #f5f3ff;
+}
+
+.metrics-container .custom-toggle-group mat-button-toggle[ng-reflect-value="utilization"]:not(.mat-button-toggle-checked):hover {
+  background: rgba(204, 251, 241, 0.9);
+  color: #0f766e;
+}
+.dash.dark .metrics-container .custom-toggle-group mat-button-toggle[ng-reflect-value="utilization"]:not(.mat-button-toggle-checked):hover {
+  background: rgba(20, 184, 166, 0.3);
+  color: #ecfeff;
+}
+
+/* --- Hover צבעוני גם לכפתורי roomTimesView (למטה) --- */
+.chart-mode-row .custom-toggle-group mat-button-toggle[ng-reflect-value="avgDuration"]:not(.mat-button-toggle-checked):hover {
+  background: rgba(233, 213, 255, 0.9);
+  color: #6d28d9;
+}
+.dash.dark .chart-mode-row .custom-toggle-group mat-button-toggle[ng-reflect-value="avgDuration"]:not(.mat-button-toggle-checked):hover {
+  background: rgba(124, 58, 237, 0.28);
+  color: #f5f3ff;
+}
+
+.chart-mode-row .custom-toggle-group mat-button-toggle[ng-reflect-value="firstStart"]:not(.mat-button-toggle-checked):hover {
+  background: rgba(191, 219, 254, 0.9);
+  color: #1d4ed8;
+}
+.dash.dark .chart-mode-row .custom-toggle-group mat-button-toggle[ng-reflect-value="firstStart"]:not(.mat-button-toggle-checked):hover {
+  background: rgba(37, 99, 235, 0.3);
+  color: #e0f2fe;
+}
+
+.chart-mode-row .custom-toggle-group mat-button-toggle[ng-reflect-value="lastEnd"]:not(.mat-button-toggle-checked):hover {
+  background: rgba(254, 243, 199, 0.9);
+  color: #b45309;
+}
+.dash.dark .chart-mode-row .custom-toggle-group mat-button-toggle[ng-reflect-value="lastEnd"]:not(.mat-button-toggle-checked):hover {
+  background: rgba(245, 158, 11, 0.32);
+  color: #fffbeb;
+}
+
+.chart-mode-row .custom-toggle-group mat-button-toggle[ng-reflect-value="avgSetup"]:not(.mat-button-toggle-checked):hover {
+  background: rgba(204, 251, 241, 0.9);
+  color: #0f766e;
+}
+.dash.dark .chart-mode-row .custom-toggle-group mat-button-toggle[ng-reflect-value="avgSetup"]:not(.mat-button-toggle-checked):hover {
+  background: rgba(20, 184, 166, 0.3);
+  color: #ecfeff;
+}
+
+.chart-mode-row .custom-toggle-group mat-button-toggle[ng-reflect-value="perDay"]:not(.mat-button-toggle-checked):hover {
+  background: rgba(219, 234, 254, 0.9);
+  color: #1d4ed8;
+}
+.dash.dark .chart-mode-row .custom-toggle-group mat-button-toggle[ng-reflect-value="perDay"]:not(.mat-button-toggle-checked):hover {
+  background: rgba(59, 130, 246, 0.32);
+  color: #dbeafe;
+}
+
+.chart-mode-row .custom-toggle-group mat-button-toggle[ng-reflect-value="lossPerDay"]:not(.mat-button-toggle-checked):hover {
+  background: rgba(254, 226, 226, 0.95);
+  color: #b91c1c;
+}
+.dash.dark .chart-mode-row .custom-toggle-group mat-button-toggle[ng-reflect-value="lossPerDay"]:not(.mat-button-toggle-checked):hover {
+  background: rgba(248, 113, 113, 0.32);
+  color: #fee2e2;
+}
+
+.chart-mode-row .custom-toggle-group mat-button-toggle[ng-reflect-value="approvedPerDay"]:not(.mat-button-toggle-checked):hover {
+  background: rgba(220, 252, 231, 0.9);
+  color: #15803d;
+}
+.dash.dark .chart-mode-row .custom-toggle-group mat-button-toggle[ng-reflect-value="approvedPerDay"]:not(.mat-button-toggle-checked):hover {
+  background: rgba(34, 197, 94, 0.3);
+  color: #dcfce7;
+}
+
+/* --- התאמת כל כפתורי ה‑roomTimesView לצבע "המגזר" העליון --- */
+/* כשנמצאים במצב מדדי ניתוחים – כל הכפתורים למטה יהיו בכחול בריחוף */
+.graph-body[data-main-mode="surgery-volume"] .chart-mode-row .custom-toggle-group mat-button-toggle:not(.mat-button-toggle-checked):hover {
+  background: rgba(219, 234, 254, 0.9);
+  color: #1d4ed8;
+}
+.dash.dark .graph-body[data-main-mode="surgery-volume"] .chart-mode-row .custom-toggle-group mat-button-toggle:not(.mat-button-toggle-checked):hover {
+  background: rgba(37, 99, 235, 0.3);
+  color: #e0f2fe;
+}
+
+/* כשנמצאים במצב זמני חדר (סקטור סגול) – כל הכפתורים למטה סגולים בריחוף */
+.graph-body[data-main-mode="room-times"] .chart-mode-row .custom-toggle-group mat-button-toggle:not(.mat-button-toggle-checked):hover {
+  background: rgba(233, 213, 255, 0.95);
+  color: #6d28d9;
+}
+.dash.dark .graph-body[data-main-mode="room-times"] .chart-mode-row .custom-toggle-group mat-button-toggle:not(.mat-button-toggle-checked):hover {
+  background: rgba(124, 58, 237, 0.32);
+  color: #f5f3ff;
+}
+
+/* כשנמצאים במצב ניצולת חדר – כל הכפתורים למטה טורקיז/ירוק בריחוף */
+.graph-body[data-main-mode="room-utilization"] .chart-mode-row .custom-toggle-group mat-button-toggle:not(.mat-button-toggle-checked):hover {
+  background: rgba(204, 251, 241, 0.95);
+  color: #0f766e;
+}
+.dash.dark .graph-body[data-main-mode="room-utilization"] .chart-mode-row .custom-toggle-group mat-button-toggle:not(.mat-button-toggle-checked):hover {
+  background: rgba(20, 184, 166, 0.32);
+  color: #ecfeff;
+}
+
+/* --- צבע לחוץ (checked) של כפתורי החלק התחתון לפי הסקטור העליון --- */
+/* מדדי ניתוחים – כחול, תואם ל-count למעלה */
+.graph-body[data-main-mode="surgery-volume"] .chart-mode-row .custom-toggle-group .mat-button-toggle-checked {
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%) !important;
+  color: #1d4ed8 !important;
+  border-color: #2563eb !important;
+}
+.dash.dark .graph-body[data-main-mode="surgery-volume"] .chart-mode-row .custom-toggle-group .mat-button-toggle-checked {
+  background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%) !important;
   border-color: rgba(191, 219, 254, 0.95) !important;
+}
+
+/* זמני חדר – סגול, תואם ל-duration למעלה */
+.graph-body[data-main-mode="room-times"] .chart-mode-row .custom-toggle-group .mat-button-toggle-checked {
+  background: linear-gradient(135deg, #f5f3ff 0%, #e9d5ff 100%) !important;
+  color: #6d28d9 !important;
+  border-color: #7c3aed !important;
+}
+.dash.dark .graph-body[data-main-mode="room-times"] .chart-mode-row .custom-toggle-group .mat-button-toggle-checked {
+  background: linear-gradient(135deg, #6d28d9 0%, #4c1d95 100%) !important;
+  border-color: rgba(233, 213, 255, 0.95) !important;
+}
+
+/* ניצולת חדר – טורקיז/ירוק, תואם ל-utilization למעלה */
+.graph-body[data-main-mode="room-utilization"] .chart-mode-row .custom-toggle-group .mat-button-toggle-checked {
+  background: linear-gradient(135deg, #ecfeff 0%, #ccfbf1 100%) !important;
+  color: #0f766e !important;
+  border-color: #14b8a6 !important;
+}
+.dash.dark .graph-body[data-main-mode="room-utilization"] .chart-mode-row .custom-toggle-group .mat-button-toggle-checked {
+  background: linear-gradient(135deg, #0f766e 0%, #115e59 100%) !important;
+  border-color: rgba(167, 243, 208, 0.95) !important;
+}
+
+/* === Zimmer-times full-screen modal – adopt the same purple scheme === */
+/* כפתור נבחר במודהל זמני חדר – סגול כמו duration */
+.kpi-modal .kpi-header-actions .custom-toggle-group .mat-button-toggle-checked {
+  background: linear-gradient(135deg, #f5f3ff 0%, #e9d5ff 100%) !important;
+  color: #6d28d9 !important;
+  border-color: #7c3aed !important;
+  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.25);
+}
+.dash.dark .kpi-modal .kpi-header-actions .custom-toggle-group .mat-button-toggle-checked {
+  background: linear-gradient(135deg, #6d28d9 0%, #4c1d95 100%) !important;
+  color: #ffffff !important;
+  border-color: rgba(233, 213, 255, 0.95) !important;
+  box-shadow: 0 0 18px rgba(124, 58, 237, 0.45);
+}
+
+/* Hover לכל הכפתורים במודהל – גם הם סקטור סגול */
+.kpi-modal .kpi-header-actions .custom-toggle-group mat-button-toggle:not(.mat-button-toggle-checked):hover {
+  background: rgba(233, 213, 255, 0.9);
+  color: #6d28d9;
+}
+.dash.dark .kpi-modal .kpi-header-actions .custom-toggle-group mat-button-toggle:not(.mat-button-toggle-checked):hover {
+  background: rgba(124, 58, 237, 0.32);
+  color: #f5f3ff;
+}
+/* --- מצב צבע שונה לכל מצב ראשי (גרף עליון) --- */
+/* מדדי ניתוחים (count) – כחול */
+.metrics-container .custom-toggle-group mat-button-toggle[ng-reflect-value="count"].mat-button-toggle-checked {
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%) !important;
+  color: #1d4ed8 !important;
+  border-color: #2563eb !important;
+}
+.dash.dark .metrics-container .custom-toggle-group mat-button-toggle[ng-reflect-value="count"].mat-button-toggle-checked {
+  background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%) !important;
+  border-color: rgba(191, 219, 254, 0.95) !important;
+}
+
+/* זמני חדר (duration) – סגול רך */
+.metrics-container .custom-toggle-group mat-button-toggle[ng-reflect-value="duration"].mat-button-toggle-checked {
+  background: linear-gradient(135deg, #f5f3ff 0%, #e9d5ff 100%) !important;
+  color: #6d28d9 !important;
+  border-color: #7c3aed !important;
+}
+.dash.dark .metrics-container .custom-toggle-group mat-button-toggle[ng-reflect-value="duration"].mat-button-toggle-checked {
+  background: linear-gradient(135deg, #6d28d9 0%, #4c1d95 100%) !important;
+  border-color: rgba(233, 213, 255, 0.95) !important;
+}
+
+/* ניצולת חדר (utilization) – טורקיז/ירוק */
+.metrics-container .custom-toggle-group mat-button-toggle[ng-reflect-value="utilization"].mat-button-toggle-checked {
+  background: linear-gradient(135deg, #ecfeff 0%, #ccfbf1 100%) !important;
+  color: #0f766e !important;
+  border-color: #14b8a6 !important;
+}
+.dash.dark .metrics-container .custom-toggle-group mat-button-toggle[ng-reflect-value="utilization"].mat-button-toggle-checked {
+  background: linear-gradient(135deg, #0f766e 0%, #115e59 100%) !important;
+  border-color: rgba(167, 243, 208, 0.95) !important;
+}
+
+/* קישור ויזואלי לגרף עצמו – פס צבע בכותרת הגרף לפי מצב ראשי */
+.graph-body[data-main-mode="surgery-volume"] .chart-mode-heading {
+  border-top: 3px solid #2563eb;
+}
+.graph-body[data-main-mode="room-times"] .chart-mode-heading {
+  border-top: 3px solid #7c3aed;
+}
+.graph-body[data-main-mode="room-utilization"] .chart-mode-heading {
+  border-top: 3px solid #14b8a6;
 }
 
 /* רספונסיביות */
