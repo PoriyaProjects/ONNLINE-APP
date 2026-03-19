@@ -442,6 +442,121 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
         return this.chartTableRows.reduce((sum, row) => sum + (row.total || 0), 0);
     }
 
+    /** שנת בסיס (הראשונה בציר השנים של הגרף / הטבלה) */
+    get kpiBaseYear(): number | null {
+        return this.yearsForChart && this.yearsForChart.length
+            ? this.yearsForChart[0]
+            : null;
+    }
+
+    /** השנה האחרונה המוצגת בגרף / בטבלה */
+    get kpiLastYear(): number | null {
+        return this.yearsForChart && this.yearsForChart.length
+            ? this.yearsForChart[this.yearsForChart.length - 1]
+            : null;
+    }
+
+    private getYearTotalSafe(year: number | null): number | null {
+        if (year == null) {
+            return null;
+        }
+        const totals = this.yearlySurgeryTotals || {};
+        const value = totals[year];
+        return typeof value === "number" ? value : null;
+    }
+
+    /** סה"כ ניתוחים בשנת הבסיס */
+    get kpiBaseTotal(): number | null {
+        return this.getYearTotalSafe(this.kpiBaseYear);
+    }
+
+    /** סה"כ ניתוחים בשנה האחרונה */
+    get kpiLastTotal(): number | null {
+        return this.getYearTotalSafe(this.kpiLastYear);
+    }
+
+    /** הפרש כמותי בין השנה האחרונה לשנת הבסיס */
+    get kpiLastDiff(): number | null {
+        const base = this.kpiBaseTotal;
+        const last = this.kpiLastTotal;
+        if (base == null || last == null) {
+            return null;
+        }
+        return last - base;
+    }
+
+    /** אחוז שינוי בין השנה האחרונה לשנת הבסיס */
+    get kpiLastDiffPct(): number | null {
+        const base = this.kpiBaseTotal;
+        const diff = this.kpiLastDiff;
+        if (base == null || base === 0 || diff == null) {
+            return null;
+        }
+        return (diff / base) * 100;
+    }
+
+    /** ישות מובילה בכמות ניתוחים בטבלה המצטברת (ללא חודשים עתידיים) */
+    get kpiTopEntityLabel(): string | null {
+        if (!this.chartTableRows || !this.chartTableRows.length) {
+            return null;
+        }
+        const rows = this.chartTableRows
+            .filter(r => !r.isFuture)
+            .sort((a, b) => (b.total || 0) - (a.total || 0));
+        return rows.length ? rows[0].label : null;
+    }
+
+    get kpiTopEntityTotal(): number | null {
+        if (!this.chartTableRows || !this.chartTableRows.length) {
+            return null;
+        }
+        const rows = this.chartTableRows
+            .filter(r => !r.isFuture)
+            .sort((a, b) => (b.total || 0) - (a.total || 0));
+        return rows.length ? rows[0].total || 0 : null;
+    }
+
+    /** תובנות טקסטואליות לתצוגת ה‑table-extra מתחת לטבלה */
+    get tableExtraInsights(): string[] {
+        const insights: string[] = [];
+
+        const baseYear = this.kpiBaseYear;
+        const lastYear = this.kpiLastYear;
+        const baseTotal = this.kpiBaseTotal;
+        const lastTotal = this.kpiLastTotal;
+        const pct = this.kpiLastDiffPct;
+
+        if (
+            baseYear != null &&
+            lastYear != null &&
+            baseTotal != null &&
+            lastTotal != null &&
+            pct != null
+        ) {
+            const direction = pct >= 0 ? "עלייה" : "ירידה";
+            insights.push(
+                `סה\"כ ניתוחים עלו מ־${baseTotal.toLocaleString("he-IL")} בשנת ${baseYear} ל־${lastTotal.toLocaleString("he-IL")} בשנת ${lastYear} (${direction} של ${pct.toFixed(1)}%).`
+            );
+        }
+
+        const label = this.kpiTopEntityLabel;
+        const total = this.kpiTopEntityTotal;
+        if (label && total != null) {
+            // When the "total" row is the top value, avoid calling it an "entity"
+            if (label === 'סה"כ') {
+                insights.push(
+                    `סה\"כ הניתוחים בתצוגה הנוכחית הוא ${total.toLocaleString("he-IL")} ניתוחים בסך הכול.`
+                );
+            } else {
+                insights.push(
+                    `הישות המובילה בניתוחים בתצוגה הנוכחית היא \"${label}\" עם ${total.toLocaleString("he-IL")} ניתוחים בסך הכול.`
+                );
+            }
+        }
+
+        return insights;
+    }
+
     yearsForChart: number[] = [];
     yearlySurgeryTotals: { [year: number]: number } = {};
     yearColorMap: { year: number; color: string }[] = [];
