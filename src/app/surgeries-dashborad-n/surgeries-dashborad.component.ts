@@ -773,13 +773,15 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
   // Comparison modal (department focus)
   compareDepartmentSelected: string | null = null;
   compareSurgeryTypeSelected: string | null = null;
-  /** צ'קבוקסים – כל דגל מוסיף קו נוסף לגרף ההשוואה */
-  compareShowRoomsPerYear = true;
-  compareShowSurgeriesPerYear = true;
+  /** צ'קבוקסים – כל דגל מוסיף קו נוסף לגרף ההשוואה (ברירת מחדל: ללא קווים – המשתמש בוחר מדד אחר מדד) */
+  compareShowRoomsPerYear = false;
+  compareShowSurgeriesPerYear = false;
   compareShowAvgDurationPerYear = false;
-  compareShowSurgeriesPerRoom = true;
+  compareShowSurgeriesPerRoom = false;
   compareShowTypeCountPerYear = false;
   compareShowTypeAvgDurationPerYear = false;
+  /** מחלקה נבחרה ויש שנים בנתונים, אך עדיין לא סומן אף מדד לגרף */
+  compareDepartmentsAwaitingMetricSelection = false;
   isCompareMetricsDropdownOpen = false;
   compareSummaryLine: string | null = null;
   compareDepartmentsLineChartColumns: any[] = [];
@@ -4040,6 +4042,7 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
       this.compareDepartmentsLineChartColumns = [];
       this.compareDepartmentsLineChartData = [];
       this.compareSummaryLine = null;
+      this.compareDepartmentsAwaitingMetricSelection = false;
       return;
     }
 
@@ -4122,8 +4125,28 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
       this.compareDepartmentsLineChartColumns = [];
       this.compareDepartmentsLineChartData = [];
       this.compareSummaryLine = null;
+      this.compareDepartmentsAwaitingMetricSelection = false;
       return;
     }
+
+    const hasTypeSeries =
+      !!selectedType &&
+      (this.compareShowTypeCountPerYear || this.compareShowTypeAvgDurationPerYear);
+    const hasAnyCompareSeries =
+      this.compareShowRoomsPerYear ||
+      this.compareShowSurgeriesPerYear ||
+      this.compareShowAvgDurationPerYear ||
+      this.compareShowSurgeriesPerRoom ||
+      hasTypeSeries;
+
+    if (!hasAnyCompareSeries) {
+      this.compareDepartmentsLineChartColumns = [];
+      this.compareDepartmentsLineChartData = [];
+      this.compareSummaryLine = null;
+      this.compareDepartmentsAwaitingMetricSelection = true;
+      return;
+    }
+    this.compareDepartmentsAwaitingMetricSelection = false;
 
     // ניתוחים לחדר לכל שנה – KPI ישיר על ניצול חדרים
     const surgeriesPerRoomByYear = new Map<number, number>();

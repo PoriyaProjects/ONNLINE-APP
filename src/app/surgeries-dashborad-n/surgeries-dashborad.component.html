@@ -1665,12 +1665,20 @@
         </div>
         <div
           *ngIf="compareDepartmentSelected && !isSurgeriesPerDayLoading && !isAvgDurationLoading &&
+                 compareDepartmentsAwaitingMetricSelection"
+          class="kpi-no-data compare-dept-pick-metrics">
+          סמן מדד אחד או יותר ברשימת מדדי ההשוואה כדי להוסיף קווים לגרף (אפשר להפעיל קו אחר קו).
+        </div>
+        <div
+          *ngIf="compareDepartmentSelected && !isSurgeriesPerDayLoading && !isAvgDurationLoading &&
+                 !compareDepartmentsAwaitingMetricSelection &&
                  (!compareDepartmentsLineChartData || compareDepartmentsLineChartData.length === 0)"
           class="kpi-no-data">
           אין מספיק נתונים להצגת השוואה במחלקה שנבחרה.
         </div>
         <google-chart
           *ngIf="compareDepartmentSelected && !isSurgeriesPerDayLoading && !isAvgDurationLoading &&
+                 !compareDepartmentsAwaitingMetricSelection &&
                  compareDepartmentsLineChartData && compareDepartmentsLineChartData.length > 0"
           [type]="'LineChart'"
           [columns]="compareDepartmentsLineChartColumns"
