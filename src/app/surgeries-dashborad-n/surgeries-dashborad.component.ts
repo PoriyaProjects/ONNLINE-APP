@@ -33,6 +33,18 @@ export interface SurgeryRow {
   [key: string]: any;
 }
 
+export type CompareDeptInsightTrend = "up" | "down" | "flat" | "neutral" | "partial";
+
+/** שורה בטבלת מסקנות השוואת מחלקות */
+export interface CompareDeptInsightTableRow {
+  label: string;
+  latestVal: string;
+  prevVal?: string;
+  delta?: string;
+  pct?: string;
+  trend: CompareDeptInsightTrend;
+}
+
 export interface DepartmentComparisonDto {
   DepartmentName: string;
   Income2024: number;
@@ -140,6 +152,8 @@ export interface AvgDurationFiveYearsDto {
   // Server may already return additional fields; keep optional for client-side filtering without breaking typing.
   Room?: string;
   SurgeryType?: string;
+  /** כשהשרת מחזיר פירוט לפי סוג מאוחד (כמו CountByDept) */
+  UnifiedSurgeryType?: string;
   Shift?: string;
   WeekendType?: string;
 }
@@ -155,7 +169,14 @@ export interface ApprovedUtilizationDto {
   AvgApprovedHHMM: string;
 }
 
-/** ממוצע ניתוחים ליום בחדר (לפי שנה) לפי מחלקה – GetAvgSurgeriesPerDayPerRoomFiveYears */
+/**
+ * ממוצע ניתוחים ליום בחדר (לפי שנה) לפי מחלקה – GetAvgSurgeriesPerDayPerRoomFiveYears_surgeries_dashborad.
+ *
+ * ימים «מלאים» (FullDays): ימים שבהם נרשמו גם פתיחת חדר (ראשון בוקר) וגם סגירת חדר (אחרון בוקר).
+ * מספר החדרים שבאותו יום נספרים בו־זמנית כפתוחים וכסגורים אינו יכול לעלות על min(RoomsOpen, RoomsClose)
+ * (למשל RoomsOpen=2 ו־RoomsClose=4 ⇒ לכל היותר 2 התאמות כאלה).
+ * השרת מחזיר את FullDays ואת AvgSurgeries בהתאם ללוגיקה הזו.
+ */
 export interface AvgSurgeriesPerDayPerRoomDto {
   Year: number;
   Site: string;
@@ -165,11 +186,11 @@ export interface AvgSurgeriesPerDayPerRoomDto {
   AvgSurgeries: number;
   /** מספר חדרים שונים שהוקצו במהלך התקופה */
   RoomsTotal: number;
-  /** מספר הימים שבהם החדר היה פתוח (ראשון בוקר) */
+  /** סה״כ ימים שבהם נרשמה פתיחת חדר (ראשון בוקר) */
   RoomsOpen: number;
-  /** מספר הימים שבהם החדר נסגר (אחרון בוקר) */
+  /** סה״כ ימים שבהם נרשמה סגירת חדר (אחרון בוקר) */
   RoomsClose: number;
-  /** מספר הימים המלאים (ללא פיצול) */
+  /** ימים «מלאים»: ימים שבהם נרשמו גם פתיחה וגם סגירה; קשור ל־min(פתיחות, סגירות) ברמת היום */
   FullDays: number;
 }
 
@@ -773,26 +794,34 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
   // Comparison modal (department focus)
   compareDepartmentSelected: string | null = null;
   compareSurgeryTypeSelected: string | null = null;
-  /** צ'קבוקסים – כל דגל מוסיף קו נוסף לגרף ההשוואה */
-  compareShowRoomsPerYear = true;
-  compareShowSurgeriesPerYear = true;
+  /** צ'קבוקסים – כל דגל מוסיף קו נוסף לגרף ההשוואה (ברירת מחדל: ללא קווים – המשתמש בוחר מדד אחר מדד) */
+  compareShowRoomsPerYear = false;
+  compareShowSurgeriesPerYear = false;
   compareShowAvgDurationPerYear = false;
-  compareShowSurgeriesPerRoom = true;
+  compareShowSurgeriesPerRoom = false;
   compareShowTypeCountPerYear = false;
   compareShowTypeAvgDurationPerYear = false;
+  /** מחלקה נבחרה ויש שנים בנתונים, אך עדיין לא סומן אף מדד לגרף */
+  compareDepartmentsAwaitingMetricSelection = false;
   isCompareMetricsDropdownOpen = false;
-  compareSummaryLine: string | null = null;
   compareDepartmentsLineChartColumns: any[] = [];
   compareDepartmentsLineChartData: any[] = [];
   compareDepartmentsLineChartOptions: any = {};
+  /** טקסט מסכמים לפי שני השנים האחרונות בגרף השוואת מחלקות */
+  compareDepartmentsGraphInsightBlock: {
+    mode: "twoYears" | "singleYear";
+    yearPrev: number | null;
+    yearLatest: number;
+    rows: CompareDeptInsightTableRow[];
+  } | null = null;
 
   readonly compareMetricOptions: { key: string; label: string }[] = [
-    { key: 'rooms', label: 'כמות חדרים למחלקה לשנה' },
-    { key: 'surgeries', label: 'כמות ניתוחים למחלקה לשנה' },
-    { key: 'avgDuration', label: 'זמן ניתוח ממוצע (דקות) לשנה' },
+    { key: 'rooms', label: 'כמות חדרים למחלקה ' },
+    { key: 'surgeries', label: 'כמות ניתוחים למחלקה ' },
+    { key: 'avgDuration', label: 'זמן ניתוח ממוצע (דקות) ' },
     { key: 'surgeriesPerRoom', label: 'ניתוחים לחדר (ניתוחים / חדרים)' },
-    { key: 'typeCount', label: 'כמות ניתוחים מסוג נבחר לשנה' },
-    { key: 'typeAvgDuration', label: 'זמן ניתוח ממוצע לסוג נבחר לשנה' },
+    { key: 'typeCount', label: 'כמות ניתוחים מסוג נבחר ' },
+    { key: 'typeAvgDuration', label: 'זמן ניתוח ממוצע לסוג נבחר ' },
   ];
 
   isAvgDurationLoading = false;
@@ -4031,6 +4060,23 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
     }
   }
 
+  /** השוואת מחלקות נשענת על Wing; שורות ניתוח בודדות לעיתים תואמות MappedDept / Department בלבד */
+  private surgeryRowMatchesCompareWing(s: SurgeryRow, wing: string): boolean {
+    const w = (wing || "").trim();
+    if (!w) {
+      return false;
+    }
+    const candidates = [
+      s.Wing,
+      s.wing,
+      s.departmentMapped,
+      s.department,
+      (s as Record<string, unknown>)["MappedDept"],
+      (s as Record<string, unknown>)["S_DEPARTMENT"],
+    ];
+    return candidates.some((c) => c != null && String(c).trim() === w);
+  }
+
   private refreshCompareDepartmentsLineChart(): void {
     if (!this.showCompareDepartmentsModal) {
       return;
@@ -4039,7 +4085,8 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
     if (!dep) {
       this.compareDepartmentsLineChartColumns = [];
       this.compareDepartmentsLineChartData = [];
-      this.compareSummaryLine = null;
+      this.compareDepartmentsGraphInsightBlock = null;
+      this.compareDepartmentsAwaitingMetricSelection = false;
       return;
     }
 
@@ -4090,22 +4137,52 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
           surgeryTypeCountByYear.set(r.Year, (surgeryTypeCountByYear.get(r.Year) || 0) + (r.Count ?? 0));
         });
 
-      const typeAcc = new Map<number, { sum: number; count: number }>();
-      (this.surgeryData || [])
-        .filter((s) => ((s.departmentMapped || s.department || "").trim() === dep))
-        .filter((s) => ((s.unifiedSurgeryType || s.surgeryType || "").trim() === selectedType))
-        .forEach((s) => {
-          const dateParts = this.parseDateParts(s.date);
-          if (!dateParts || s.surgeryDurationMinutes == null) return;
-          const y = dateParts.year;
-          const prev = typeAcc.get(y) || { sum: 0, count: 0 };
-          prev.sum += Number(s.surgeryDurationMinutes);
-          prev.count += 1;
-          typeAcc.set(y, prev);
-        });
-      typeAcc.forEach((v, y) => {
-        if (v.count > 0) surgeryTypeAvgDurationByYear.set(y, v.sum / v.count);
+      // ממוצע לפי סוג: עדיפות לנתוני GetAvgDurationFiveYears כשיש פירוט לפי סוג (משוקלל לפי Count כמו המדד הכללי)
+      const typeDurAcc = new Map<number, { sumMin: number; sumCount: number }>();
+      for (const r of avgDurationRows) {
+        const rowType = (
+          (r.SurgeryType || "").trim() ||
+          (r.UnifiedSurgeryType || "").trim()
+        ).trim();
+        if (!rowType || rowType !== selectedType) {
+          continue;
+        }
+        const y = r.Year;
+        const prev = typeDurAcc.get(y) || { sumMin: 0, sumCount: 0 };
+        const cnt = r.Count ?? 0;
+        prev.sumMin += (r.AvgDurationMin ?? 0) * cnt;
+        prev.sumCount += cnt;
+        typeDurAcc.set(y, prev);
+      }
+      typeDurAcc.forEach((v, y) => {
+        if (v.sumCount > 0) {
+          surgeryTypeAvgDurationByYear.set(y, v.sumMin / v.sumCount);
+        }
       });
+
+      // גיבוי: ניתוחים בודדים — סינון לפי Wing (ותואמים) ולא רק departmentMapped
+      if (surgeryTypeAvgDurationByYear.size === 0) {
+        const typeAcc = new Map<number, { sum: number; count: number }>();
+        (this.surgeryData || [])
+          .filter((s) => this.surgeryRowMatchesCompareWing(s, dep))
+          .filter((s) => ((s.unifiedSurgeryType || s.surgeryType || "").trim() === selectedType))
+          .forEach((s) => {
+            const dateParts = this.parseDateParts(s.date);
+            if (!dateParts || s.surgeryDurationMinutes == null) {
+              return;
+            }
+            const y = dateParts.year;
+            const prev = typeAcc.get(y) || { sum: 0, count: 0 };
+            prev.sum += Number(s.surgeryDurationMinutes);
+            prev.count += 1;
+            typeAcc.set(y, prev);
+          });
+        typeAcc.forEach((v, y) => {
+          if (v.count > 0) {
+            surgeryTypeAvgDurationByYear.set(y, v.sum / v.count);
+          }
+        });
+      }
     }
 
     const years = Array.from(
@@ -4121,9 +4198,29 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
     if (!years.length) {
       this.compareDepartmentsLineChartColumns = [];
       this.compareDepartmentsLineChartData = [];
-      this.compareSummaryLine = null;
+      this.compareDepartmentsGraphInsightBlock = null;
+      this.compareDepartmentsAwaitingMetricSelection = false;
       return;
     }
+
+    const hasTypeSeries =
+      !!selectedType &&
+      (this.compareShowTypeCountPerYear || this.compareShowTypeAvgDurationPerYear);
+    const hasAnyCompareSeries =
+      this.compareShowRoomsPerYear ||
+      this.compareShowSurgeriesPerYear ||
+      this.compareShowAvgDurationPerYear ||
+      this.compareShowSurgeriesPerRoom ||
+      hasTypeSeries;
+
+    if (!hasAnyCompareSeries) {
+      this.compareDepartmentsLineChartColumns = [];
+      this.compareDepartmentsLineChartData = [];
+      this.compareDepartmentsGraphInsightBlock = null;
+      this.compareDepartmentsAwaitingMetricSelection = true;
+      return;
+    }
+    this.compareDepartmentsAwaitingMetricSelection = false;
 
     // ניתוחים לחדר לכל שנה – KPI ישיר על ניצול חדרים
     const surgeriesPerRoomByYear = new Map<number, number>();
@@ -4142,7 +4239,7 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
       seriesMeta.push({ axis });
     };
 
-    // כל דגל מוסיף קו אחד ברור
+    // כל דגל מוסיף סדרת עמודות אחת
     if (this.compareShowRoomsPerYear) {
       addSeries("כמות חדרים למחלקה לשנה", 0);
     }
@@ -4190,13 +4287,12 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
 
     const series: any = {};
     seriesMeta.forEach((s, i) => {
-      series[i] = { targetAxisIndex: s.axis, lineWidth: 3, pointSize: 6 };
+      series[i] = { targetAxisIndex: s.axis };
     });
 
     this.compareDepartmentsLineChartOptions = {
       title: "",
       chartArea: { width: "82%", height: "64%", left: 60, top: 56 },
-      curveType: "function",
       legend: { position: "top", alignment: "end" },
       hAxis: { title: "שנה", textStyle: { fontSize: 12 } },
       vAxes: {
@@ -4208,66 +4304,186 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
       animation: { startup: true, duration: 500, easing: "out" },
       backgroundColor: "transparent",
     };
+    this.recomputeCompareDepartmentsGraphInsights();
+  }
 
-    // === שורת סיכום מעל הקונטרולים: מדגישה אם חדרים עלו בלי ניתוחים בהתאם ===
-    const latestYear = years[years.length - 1];
-    const prevYear = years.length > 1 ? years[years.length - 2] : null;
-    if (!prevYear) {
-      this.compareSummaryLine = null;
+  private formatCompareDeptSeriesValue(seriesLabel: string, v: number): string {
+    if (!Number.isFinite(v)) {
+      return "—";
+    }
+    if (/דק/.test(seriesLabel)) {
+      return `${v.toFixed(1)} דק'`;
+    }
+    if (seriesLabel.includes("ניתוחים לחדר")) {
+      return v.toFixed(2);
+    }
+    return Math.round(v).toLocaleString("he-IL");
+  }
+
+  private formatCompareDeptSeriesDelta(seriesLabel: string, delta: number): string {
+    const sign = delta > 0 ? "+" : "";
+    if (/דק/.test(seriesLabel)) {
+      return `${sign}${delta.toFixed(1)} דק'`;
+    }
+    if (seriesLabel.includes("ניתוחים לחדר")) {
+      return `${sign}${delta.toFixed(2)}`;
+    }
+    return `${sign}${Math.round(delta).toLocaleString("he-IL")}`;
+  }
+
+  private formatCompareDeptPercent(pct: number): string {
+    const rounded = Math.abs(pct) >= 10 ? pct.toFixed(0) : pct.toFixed(1);
+    return `${pct >= 0 ? "+" : ""}${rounded}%`;
+  }
+
+  private recomputeCompareDepartmentsGraphInsights(): void {
+    const columns = this.compareDepartmentsLineChartColumns;
+    const data = this.compareDepartmentsLineChartData;
+    if (!columns?.length || columns.length < 2 || !data?.length) {
+      this.compareDepartmentsGraphInsightBlock = null;
       return;
     }
 
-    const roomsCurr = roomsByYear.get(latestYear) ?? 0;
-    const roomsPrev = roomsByYear.get(prevYear) ?? 0;
-    const surgCurr = surgeriesByYear.get(latestYear) ?? 0;
-    const surgPrev = surgeriesByYear.get(prevYear) ?? 0;
-    const sprCurr = surgeriesPerRoomByYear.get(latestYear) ?? null;
-    const sprPrev = surgeriesPerRoomByYear.get(prevYear) ?? null;
-
-    const pct = (curr: number, prev: number): number | null => {
-      if (!prev || prev === 0) return null;
-      return ((curr - prev) / prev) * 100;
-    };
-
-    const fmtArrow = (value: number | null | undefined): string => {
-      if (value == null || isNaN(value)) return "";
-      if (value > 2) return "↑";
-      if (value < -2) return "↓";
-      return "→";
-    };
-
-    const fmtPct = (value: number | null): string => {
-      if (value == null || isNaN(value)) return "";
-      const rounded = Math.round(value);
-      if (rounded > 0) return `+${rounded}%`;
-      return `${rounded}%`;
-    };
-
-    const roomsPct = pct(roomsCurr, roomsPrev);
-    const surgPct = pct(surgCurr, surgPrev);
-    const sprPct =
-      sprCurr != null && sprPrev != null ? pct(sprCurr, sprPrev) : null;
-
-    const parts: string[] = [];
-    parts.push(
-      `חדרים ${fmtArrow(roomsPct)} ${roomsCurr} (${fmtPct(roomsPct) || "ללא שינוי"})`
-    );
-    parts.push(
-      `ניתוחים ${fmtArrow(surgPct)} ${surgCurr} (${fmtPct(surgPct) || "ללא שינוי"})`
-    );
-    if (sprCurr != null) {
-      const sprLabel = `${sprCurr.toFixed(1)}`;
-      const sprPctLabel = fmtPct(sprPct);
-      parts.push(
-        `ניתוחים לחדר ${fmtArrow(sprPct)} ${sprLabel}${
-          sprPctLabel ? ` (${sprPctLabel})` : ""
-        }`
-      );
+    const seriesLabels: string[] = [];
+    for (let i = 1; i < columns.length; i++) {
+      const c = columns[i];
+      const lab =
+        typeof c === "string"
+          ? c
+          : c && typeof c === "object" && "label" in c && (c as { label?: string }).label
+            ? String((c as { label: string }).label)
+            : `מדד ${i}`;
+      seriesLabels.push(lab);
     }
 
-    this.compareSummaryLine = `השוואה בין ${prevYear} ל‑${latestYear} במחלקה ${dep}: ${parts.join(
-      " | "
-    )}`;
+    type RowParsed = { year: number; vals: (number | null)[] };
+    const parsed: RowParsed[] = [];
+    for (const row of data) {
+      if (!row || row.length < 2) {
+        continue;
+      }
+      const y = parseInt(String(row[0]), 10);
+      if (!Number.isFinite(y)) {
+        continue;
+      }
+      const vals = seriesLabels.map((_, idx) => {
+        const raw = row[idx + 1];
+        if (raw === null || raw === undefined || raw === "") {
+          return null;
+        }
+        const n = Number(raw);
+        return Number.isFinite(n) ? n : null;
+      });
+      parsed.push({ year: y, vals });
+    }
+    parsed.sort((a, b) => a.year - b.year);
+    if (!parsed.length) {
+      this.compareDepartmentsGraphInsightBlock = null;
+      return;
+    }
+
+    const em = "—";
+    const rows: CompareDeptInsightTableRow[] = [];
+
+    if (parsed.length === 1) {
+      const row0 = parsed[0];
+      for (let si = 0; si < seriesLabels.length; si++) {
+        const v = row0.vals[si];
+        if (v === null) {
+          continue;
+        }
+        const lab = seriesLabels[si];
+        rows.push({
+          label: lab,
+          latestVal: this.formatCompareDeptSeriesValue(lab, v),
+          trend: "neutral",
+        });
+      }
+      this.compareDepartmentsGraphInsightBlock = rows.length
+        ? { mode: "singleYear", yearPrev: null, yearLatest: row0.year, rows }
+        : null;
+      return;
+    }
+
+    const prev = parsed[parsed.length - 2];
+    const latest = parsed[parsed.length - 1];
+
+    for (let si = 0; si < seriesLabels.length; si++) {
+      const v0 = prev.vals[si];
+      const v1 = latest.vals[si];
+      const label = seriesLabels[si];
+      if (v1 === null && v0 === null) {
+        continue;
+      }
+      if (v0 === null && v1 !== null) {
+        rows.push({
+          label,
+          prevVal: em,
+          latestVal: this.formatCompareDeptSeriesValue(label, v1),
+          delta: em,
+          pct: em,
+          trend: "partial",
+        });
+        continue;
+      }
+      if (v0 !== null && v1 === null) {
+        rows.push({
+          label,
+          prevVal: this.formatCompareDeptSeriesValue(label, v0),
+          latestVal: em,
+          delta: em,
+          pct: em,
+          trend: "partial",
+        });
+        continue;
+      }
+      const v0n = v0 as number;
+      const v1n = v1 as number;
+      const delta = v1n - v0n;
+      const val0s = this.formatCompareDeptSeriesValue(label, v0n);
+      const val1s = this.formatCompareDeptSeriesValue(label, v1n);
+      if (Math.abs(delta) < 1e-9) {
+        rows.push({
+          label,
+          prevVal: val0s,
+          latestVal: val1s,
+          delta: "0",
+          pct: "0%",
+          trend: "flat",
+        });
+        continue;
+      }
+      const absFmt = this.formatCompareDeptSeriesDelta(label, delta);
+      if (Math.abs(v0n) < 1e-9) {
+        rows.push({
+          label,
+          prevVal: val0s,
+          latestVal: val1s,
+          delta: absFmt,
+          pct: em,
+          trend: delta > 0 ? "up" : "down",
+        });
+        continue;
+      }
+      const pct = (delta / v0n) * 100;
+      rows.push({
+        label,
+        prevVal: val0s,
+        latestVal: val1s,
+        delta: absFmt,
+        pct: this.formatCompareDeptPercent(pct),
+        trend: delta > 0 ? "up" : "down",
+      });
+    }
+
+    this.compareDepartmentsGraphInsightBlock = rows.length
+      ? {
+          mode: "twoYears",
+          yearPrev: prev.year,
+          yearLatest: latest.year,
+          rows,
+        }
+      : null;
   }
 
   /** שינוי מדד החדרים לגרף ניצולת (סה"כ / פתוחות / סוגרות / ימים מלאים) – תמיד במצב לפי מחלקה */
