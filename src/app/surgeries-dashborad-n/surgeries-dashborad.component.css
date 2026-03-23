@@ -1077,6 +1077,19 @@
   }
 }
 
+.yoy-combined-inline {
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+  position: relative;
+}
+
+.yoy-combined-inline canvas {
+  width: 100% !important;
+  height: 100% !important;
+  display: block;
+}
+
 /* Make in-chart text slightly larger on big screens (plasma / meeting rooms) */
 @media (min-width: 1920px) {
   .graph-body google-chart ::ng-deep svg text {
@@ -1087,7 +1100,7 @@
 /* Keep charts readable on small screens without overflow */
 @media (max-width: 600px) {
   .graph-body google-chart ::ng-deep svg text {
-    font-size: 12px !important;
+    font-size: 18px !important;
   }
 }
 
@@ -1302,6 +1315,85 @@
   min-height: 0;
   overflow: auto;
   padding: 2px;
+  display: flex;
+  flex-direction: column;
+}
+
+.table-extra {
+  margin-top: auto;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px dashed var(--border);
+  background: var(--panel);
+}
+
+.table-extra-title {
+  font-weight: 900;
+  color: var(--text);
+  font-size: 13px;
+  margin-bottom: 4px;
+  text-align: right;
+}
+
+.table-extra-body {
+  color: var(--muted);
+  font-weight: 600;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.table-extra-kpis {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.table-extra-kpi {
+  flex: 1 1 120px;
+  min-width: 0;
+  padding: 6px 8px;
+  border-radius: 8px;
+  background: rgba(148, 163, 184, 0.08);
+  display: flex;
+  flex-direction: column;
+  text-align: right;
+}
+
+.table-extra-kpi-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+  margin-bottom: 2px;
+}
+
+.table-extra-kpi-value {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.table-extra-kpi-sub {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.table-extra-list {
+  margin: 0;
+  padding-inline-start: 1.1rem;
+  text-align: right;
+}
+
+.table-extra-list li {
+  margin-bottom: 2px;
+}
+
+.kpi-positive {
+  color: #16a34a;
+}
+
+.kpi-negative {
+  color: #dc2626;
 }
 
 /* ── Compare panel (inside table-body + full modal) ───────── */
@@ -1443,12 +1535,13 @@
 }
 
 .compare-controls-3 {
+  /* keep all 4 dropdowns on one row (shrink with ellipsis) */
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
 @media (max-width: 1100px) {
   .compare-controls-3 {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }
 
@@ -1460,6 +1553,69 @@
 
 .compare-field {
   min-width: 0;
+}
+
+/* Use the project's custom-dropdown look in compare controls (compact) */
+.compare-dropdown {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.compare-controls .custom-dropdown.compare-dropdown {
+  /* override global custom-dropdown min-width rules */
+  min-width: 0 !important;
+  max-width: 100% !important;
+  width: 100% !important;
+}
+
+.compare-dropdown .dropdown-trigger {
+  min-height: 30px;
+  height: 30px;
+  padding: 4px 8px;
+  border-radius: 999px;
+}
+
+.compare-dropdown .dropdown-icon {
+  font-size: 16px;
+  width: 16px;
+  height: 16px;
+}
+
+.compare-dropdown .arrow-icon {
+  font-size: 16px;
+  width: 16px;
+  height: 16px;
+}
+
+.compare-dropdown .selected-text {
+  font-size: 10px;
+  font-weight: 900;
+  max-width: 100%;
+}
+
+.compare-dropdown .dropdown-panel {
+  max-height: 220px;
+  border-radius: 14px;
+}
+
+.compare-dropdown .option-item {
+  font-size: 11px;
+  padding: 7px 10px;
+}
+
+/* In compare area: open panels should NOT move layout (overlay) */
+.compare-controls .compare-dropdown {
+  position: relative;
+}
+
+.compare-controls .compare-dropdown .dropdown-panel {
+  position: absolute;
+  top: calc(100% + 6px);
+  inset-inline-start: 0;
+  inset-inline-end: 0;
+  width: max(220px, 100%);
+  z-index: 2600;
 }
 
 /* Material field tuning inside compare controls */
@@ -2221,6 +2377,744 @@ table.table {
   height: 85vh;
 }
 
+/* השוואת מחלקות – מסך כמעט מלא (כ‑95%) */
+.compare-departments-modal {
+  width: 95vw;
+  height: 95vh;
+}
+
+.compare-departments-modal .kpi-body {
+  gap: 12px;
+  border-radius: 14px;
+  padding: 10px 12px 14px;
+  border: 1px solid rgba(148,163,184,.35);
+  background:
+    radial-gradient(circle at 0% 0%, rgba(56,189,248,.14), transparent 55%),
+    radial-gradient(circle at 100% 100%, rgba(74,222,128,.18), transparent 55%),
+    var(--panel-strong);
+  min-height: 0;
+}
+
+/* בקרות, כרטיס הסבר וגרף — כיוון RTL מפורש (תוויות, רשימות, טבלאות) */
+.compare-departments-modal .compare-dept-controls {
+  direction: rtl;
+}
+
+.compare-departments-modal .compare-dept-control label {
+  text-align: right;
+  width: 100%;
+}
+
+.compare-departments-modal .compare-dept-control select {
+  direction: rtl;
+  text-align: right;
+}
+
+.compare-departments-modal .compare-metrics-trigger {
+  direction: rtl;
+}
+
+.compare-departments-modal .compare-metrics-trigger span {
+  text-align: right;
+}
+
+.compare-departments-modal .compare-metrics-panel {
+  direction: rtl;
+  text-align: right;
+}
+
+.compare-departments-modal .compare-dept-legend-card {
+  direction: rtl;
+  text-align: right;
+}
+
+.compare-departments-modal .compare-dept-legend-title {
+  text-align: right;
+}
+
+.compare-departments-modal .compare-dept-insights-table {
+  direction: rtl;
+}
+
+/* Google Chart לעיתים מגדיר dir=ltr פנימית — יישור כותרות צירים וטקסט ב־SVG */
+.compare-dept-chart-pane ::ng-deep google-chart > div {
+  direction: rtl !important;
+}
+
+.compare-dept-chart-pane ::ng-deep google-chart svg {
+  direction: rtl;
+}
+
+/* גרף + קוביית הסבר: ב‑RTL הפריט הראשון ב‑flex (הכרטיס) נשבץ מימין לגרף */
+.compare-dept-chart-row {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: stretch;
+  gap: 16px;
+  flex: 1 1 auto;
+  min-height: 0;
+  min-width: 0;
+}
+
+.compare-departments-modal .compare-dept-chart-row {
+  min-height: 320px;
+}
+
+.compare-dept-chart-pane {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 280px;
+  display: flex;
+  flex-direction: column;
+}
+
+.compare-departments-modal .compare-dept-chart-pane {
+  min-height: 320px;
+}
+
+.compare-dept-chart-pane google-chart {
+  flex: 1 1 auto;
+  min-height: 280px;
+  width: 100%;
+}
+
+.compare-departments-modal .compare-dept-chart-pane google-chart {
+  min-height: 340px;
+}
+
+.compare-dept-legend-card {
+  box-sizing: border-box;
+  flex: 0 0 440px;
+  width: 460px;
+  max-width: 460px;
+  min-width: 460px;
+  margin: 0;
+  padding: 14px;
+  border-radius: 12px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px rgba(15,23,42,.06);
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 12px;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  align-self: stretch;
+  position: relative;
+  z-index: 0;
+}
+
+/* מקטעים ברורים — כל אחד flex: none, בלי כיווץ שיוצר חפיפה */
+.compare-dept-legend-section {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  flex: 0 0 auto;
+  margin: 0;
+}
+
+.compare-dept-legend-section--metrics {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  text-align: right;
+}
+
+.compare-dept-legend-section--insights {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px;
+  border-radius: 8px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  text-align: right;
+}
+
+.compare-dept-legend-section--api-note {
+  padding: 10px 10px 11px;
+  border-radius: 8px;
+  background: #f1f5f9;
+  border: 1px dashed #94a3b8;
+}
+
+.compare-dept-legend-section--foot {
+  padding: 0 2px;
+}
+
+.compare-dept-legend-card-head {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  flex-shrink: 0;
+}
+
+.compare-dept-legend-icon-wrap {
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #eef2ff;
+  border: 1px solid #e0e7ff;
+  color: #4f46e5;
+}
+
+.compare-dept-legend-icon-wrap mat-icon {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+  line-height: 18px;
+}
+
+.compare-dept-legend-head-text {
+  min-width: 0;
+  flex: 1;
+}
+
+.compare-dept-legend-title {
+  margin: 0 0 3px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #334155;
+}
+
+.compare-dept-legend-lead {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 400;
+  line-height: 1.45;
+  color: #64748b;
+  text-align: right;
+}
+
+.compare-dept-legend-metrics-label {
+  display: block;
+  font-size: 10px;
+  font-weight: 600;
+  color: #94a3b8;
+  margin-bottom: 4px;
+}
+
+.compare-dept-metrics-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  font-weight: 600;
+  color: #334155;
+}
+
+.compare-dept-metrics-table td {
+  padding: 6px 4px;
+  border-bottom: 1px solid #f1f5f9;
+  line-height: 1.4;
+  vertical-align: top;
+}
+
+.compare-dept-metrics-table tr:last-child td {
+  border-bottom: none;
+}
+
+.compare-dept-legend-insights-label {
+  font-size: 14px;
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 2px;
+}
+
+.compare-dept-legend-insights-hint {
+  margin: 0 0 8px;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.4;
+  color: #64748b;
+}
+
+.compare-dept-insights-table-wrap {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: visible;
+  -webkit-overflow-scrolling: touch;
+}
+
+.compare-dept-insights-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  font-weight: 600;
+  color: #1e293b;
+  table-layout: auto;
+}
+
+.compare-dept-insights-table th,
+.compare-dept-insights-table td {
+  padding: 8px 8px;
+  border: 1px solid #e2e8f0;
+  line-height: 1.45;
+  vertical-align: middle;
+  word-wrap: break-word;
+}
+
+.compare-dept-insights-table thead th {
+  background: #e2e8f0;
+  font-weight: 800;
+  font-size: 11px;
+  color: #0f172a;
+  letter-spacing: 0.01em;
+}
+
+.compare-dept-insights-table tbody tr:nth-child(even) {
+  background: #fafbfc;
+}
+
+.compare-dept-insights-metric {
+  font-weight: 800;
+  font-size: 12px;
+  color: #0f172a;
+  min-width: 8.5rem;
+}
+
+.compare-dept-insights-val {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  color: #1e293b;
+}
+
+.compare-dept-insights-num {
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  font-size: 12px;
+}
+
+.compare-dept-insight-trend-up td.compare-dept-insights-num {
+  color: #166534;
+}
+
+.compare-dept-insight-trend-down td.compare-dept-insights-num {
+  color: #c2410c;
+}
+
+.compare-dept-insight-trend-flat td.compare-dept-insights-num,
+.compare-dept-insight-trend-partial td.compare-dept-insights-num {
+  color: #475569;
+}
+
+.compare-dept-insights-table--single .compare-dept-insights-metric {
+  width: 62%;
+}
+
+.compare-dept-legend-api-note {
+  margin: 0;
+  font-size: 10px;
+  font-weight: 400;
+  line-height: 1.5;
+  color: #475569;
+  padding: 0;
+  border: none;
+  text-align: right;
+}
+
+.compare-dept-controls {
+  display: grid;
+  grid-template-columns: minmax(220px, 260px) minmax(220px, 260px) minmax(280px, 1fr);
+  gap: 12px;
+  align-items: start;
+  padding: 8px;
+  border: 1px solid rgba(148,163,184,.35);
+  border-radius: 12px;
+  background: rgba(255,255,255,.68);
+  backdrop-filter: blur(3px);
+  min-height: 86px;
+  position: sticky;
+  top: 0;
+  z-index: 3;
+}
+
+.compare-dept-control {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.compare-dept-control label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.compare-dept-control select {
+  height: 36px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,.92);
+  color: var(--text);
+  padding: 0 10px;
+}
+
+.compare-dept-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 14px;
+  padding: 6px 8px;
+  border: 1px dashed var(--border);
+  border-radius: 10px;
+  background: rgba(255,255,255,.66);
+}
+
+.compare-metrics-dropdown-wrap {
+  position: relative;
+  z-index: 1;
+}
+
+.compare-metrics-dropdown-wrap:has(.compare-metrics-panel) {
+  z-index: 12;
+}
+
+.compare-metrics-trigger {
+  height: 40px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,.94);
+  color: var(--text);
+  padding: 0 12px;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  cursor: pointer;
+  font: inherit;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+
+.compare-metrics-trigger:hover:not(:disabled) {
+  border-color: rgba(124, 58, 237, 0.45);
+  background: #fff;
+  box-shadow: 0 1px 0 rgba(124, 58, 237, 0.08);
+}
+
+.compare-metrics-trigger:focus-visible {
+  outline: 2px solid rgba(124, 58, 237, 0.55);
+  outline-offset: 2px;
+}
+
+.compare-metrics-trigger:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.compare-metrics-trigger--open:not(:disabled) {
+  border-color: rgba(124, 58, 237, 0.5);
+  box-shadow: 0 0 0 1px rgba(124, 58, 237, 0.12);
+}
+
+.compare-metrics-trigger span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+  text-align: start;
+  flex: 1;
+  min-width: 0;
+}
+
+.compare-metrics-chevron {
+  flex-shrink: 0;
+  font-size: 22px;
+  width: 22px;
+  height: 22px;
+  color: var(--muted);
+}
+
+.compare-metrics-panel {
+  position: absolute;
+  inset-inline-start: 0;
+  inset-inline-end: 0;
+  top: calc(100% + 8px);
+  max-height: min(280px, 55vh);
+  overflow: auto;
+  border-radius: 12px;
+  border: 1px solid rgba(148, 163, 184, 0.55);
+  background: rgba(255, 255, 255, 0.99);
+  box-shadow:
+    0 4px 6px -1px rgba(2, 6, 23, 0.08),
+    0 18px 40px -12px rgba(2, 6, 23, 0.22);
+  padding: 6px;
+  z-index: 50;
+}
+
+.compare-metrics-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  margin: 2px 0;
+  font-size: 13px;
+  color: var(--text);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.12s ease;
+}
+
+.compare-metrics-item:hover {
+  background: rgba(124, 58, 237, 0.07);
+}
+
+.compare-metrics-item input[type="checkbox"] {
+  accent-color: #7c3aed;
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+}
+
+.compare-dept-options label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--text);
+}
+
+.compare-dept-options input[type="checkbox"] {
+  accent-color: #7c3aed;
+}
+
+.compare-dept-options.is-disabled {
+  opacity: .6;
+}
+
+.compare-dept-awaiting-chart {
+  min-height: 88px;
+  border-radius: 12px;
+  border: 1px dashed var(--border);
+  background: rgba(148, 163, 184, 0.08);
+  margin-top: 8px;
+}
+
+.compare-dept-awaiting-icon {
+  font-size: 44px;
+  width: 44px;
+  height: 44px;
+  opacity: 0.72;
+  color: var(--muted);
+}
+
+.compare-dept-awaiting-title {
+  margin: 0;
+  font-size: 15px;
+}
+
+.compare-dept-awaiting-hint {
+  margin: 0;
+  max-width: 440px;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.45;
+  color: var(--muted);
+}
+
+.kpi-overlay.dark .compare-dept-awaiting-chart {
+  background: rgba(148, 163, 184, 0.1);
+  border-color: rgba(148, 163, 184, 0.35);
+}
+
+.kpi-overlay.dark .compare-dept-awaiting-hint {
+  color: #94a3b8;
+}
+
+@media (max-width: 1280px) {
+  .compare-dept-chart-row {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .compare-dept-chart-pane {
+    order: -1;
+    min-height: 260px;
+  }
+
+  .compare-dept-legend-card {
+    flex: 0 0 auto;
+    width: 100%;
+    max-width: none;
+    min-width: 0;
+    max-height: none;
+    overflow-y: visible;
+    border-inline-end: 1px solid rgba(51,65,85,.6);
+    border-block-end: 1px solid rgba(51,65,85,.6);
+  }
+
+  .compare-dept-controls {
+    grid-template-columns: 1fr;
+    align-items: stretch;
+    min-height: auto;
+  }
+
+  .compare-dept-options {
+    flex-direction: column;
+    gap: 8px;
+  }
+}
+
+.kpi-overlay.dark .compare-departments-modal .kpi-body {
+  border-color: rgba(129,140,248,.45);
+  background:
+    radial-gradient(circle at 0% 0%, rgba(59,130,246,.22), transparent 58%),
+    radial-gradient(circle at 100% 100%, rgba(34,197,94,.18), transparent 60%),
+    rgba(15,23,42,.76);
+}
+
+.kpi-overlay.dark .compare-dept-controls,
+.kpi-overlay.dark .compare-dept-options {
+  background: rgba(15,23,42,.64);
+  border-color: rgba(129,140,248,.5);
+}
+
+.kpi-overlay.dark .compare-dept-control select {
+  background: rgba(15,23,42,.9);
+  border-color: rgba(129,140,248,.6);
+  color: #e5e7eb;
+}
+
+.kpi-overlay.dark .compare-metrics-trigger,
+.kpi-overlay.dark .compare-metrics-panel {
+  background: rgba(15,23,42,.92);
+  border-color: rgba(129,140,248,.6);
+  color: #e5e7eb;
+}
+
+.kpi-overlay.dark .compare-metrics-trigger:hover:not(:disabled) {
+  background: rgba(30, 41, 59, 0.95);
+  border-color: rgba(167, 139, 250, 0.55);
+}
+
+.kpi-overlay.dark .compare-metrics-trigger--open:not(:disabled) {
+  border-color: rgba(167, 139, 250, 0.65);
+  box-shadow: 0 0 0 1px rgba(129, 140, 248, 0.2);
+}
+
+.kpi-overlay.dark .compare-metrics-chevron {
+  color: #94a3b8;
+}
+
+.kpi-overlay.dark .compare-metrics-panel {
+  box-shadow:
+    0 4px 6px -1px rgba(0, 0, 0, 0.35),
+    0 18px 40px -12px rgba(0, 0, 0, 0.5);
+}
+
+.kpi-overlay.dark .compare-metrics-item:hover {
+  background: rgba(129, 140, 248, 0.12);
+}
+
+.kpi-overlay.dark .compare-dept-legend-card {
+  background: #0f172a;
+  border-color: #334155;
+  border-inline-end-color: #334155;
+  box-shadow: 0 1px 3px rgba(0,0,0,.35);
+}
+
+.kpi-overlay.dark .compare-dept-legend-icon-wrap {
+  background: rgba(30,41,59,.9);
+  border-color: #475569;
+  color: #a5b4fc;
+}
+
+.kpi-overlay.dark .compare-dept-legend-title {
+  color: #e2e8f0;
+}
+
+.kpi-overlay.dark .compare-dept-legend-lead {
+  color: #94a3b8;
+}
+
+.kpi-overlay.dark .compare-dept-legend-section--metrics {
+  background: #1e293b;
+  border-color: #475569;
+}
+
+.kpi-overlay.dark .compare-dept-legend-metrics-label {
+  color: #94a3b8;
+}
+
+.kpi-overlay.dark .compare-dept-metrics-table td {
+  color: #cbd5e1;
+  border-bottom-color: #334155;
+}
+
+.kpi-overlay.dark .compare-dept-legend-section--insights {
+  background: #1e293b;
+  border-color: #475569;
+}
+
+.kpi-overlay.dark .compare-dept-legend-section--api-note {
+  background: rgba(15,23,42,.65);
+  border-color: #64748b;
+}
+
+.kpi-overlay.dark .compare-dept-legend-insights-label {
+  color: #e2e8f0;
+}
+
+.kpi-overlay.dark .compare-dept-legend-insights-hint {
+  color: #94a3b8;
+}
+
+.kpi-overlay.dark .compare-dept-insights-table th,
+.kpi-overlay.dark .compare-dept-insights-table td {
+  border-color: #334155;
+  color: #e2e8f0;
+}
+
+.kpi-overlay.dark .compare-dept-insights-table thead th {
+  background: #334155;
+  color: #f8fafc;
+}
+
+.kpi-overlay.dark .compare-dept-insights-table tbody tr:nth-child(even) {
+  background: rgba(15,23,42,.5);
+}
+
+.kpi-overlay.dark .compare-dept-insights-metric {
+  color: #f8fafc;
+}
+
+.kpi-overlay.dark .compare-dept-insights-val {
+  color: #f1f5f9;
+}
+
+.kpi-overlay.dark .compare-dept-insight-trend-up td.compare-dept-insights-num {
+  color: #86efac;
+}
+
+.kpi-overlay.dark .compare-dept-insight-trend-down td.compare-dept-insights-num {
+  color: #fcd34d;
+}
+
+.kpi-overlay.dark .compare-dept-insight-trend-flat td.compare-dept-insights-num,
+.kpi-overlay.dark .compare-dept-insight-trend-partial td.compare-dept-insights-num {
+  color: #94a3b8;
+}
+
+.kpi-overlay.dark .compare-dept-legend-api-note {
+  color: #cbd5e1;
+}
+
 .kpi-overlay.dark .kpi-modal {
   background: #020617;
   border-color: rgba(148,163,184,.6);
@@ -2259,6 +3153,15 @@ table.table {
   color: var(--muted);
 }
 
+/* פס צבעוני מעל כותרת המודל – תואם "זמני חדר" (סגול כמו בגרף הראשי) */
+.kpi-modal .kpi-header-titles {
+  border-top: 3px solid #7c3aed;
+  padding-top: 6px;
+}
+.dash.dark .kpi-modal .kpi-header-titles {
+  border-top-color: #a855f7;
+}
+
 .kpi-header h2 {
   margin: 0;
   font-size: clamp(16px, 1.4vw, 22px);
@@ -2281,6 +3184,27 @@ table.table {
   display: inline-flex;
   align-items: center;
   gap: 4px;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.kpi-header-actions .custom-toggle-group,
+.chart-mode-row .custom-toggle-group {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-gutter: stable both-edges;
+}
+
+.kpi-header-actions .custom-toggle-group mat-button-toggle,
+.chart-mode-row .custom-toggle-group mat-button-toggle {
+  flex: 0 0 auto;
+}
+
+.kpi-header-actions .custom-toggle-group ::ng-deep .mat-button-toggle-label-content,
+.chart-mode-row .custom-toggle-group ::ng-deep .mat-button-toggle-label-content {
+  white-space: nowrap;
 }
 
 .kpi-intro {
@@ -2533,19 +3457,254 @@ table.table {
 .dash.dark .loading-overlay { background: rgba(11,18,32,.3); }
 
 .loading-container {
-  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px;
-  padding: 40px; border-radius: 16px;
-  background: rgba(255,255,255,.85);
-  box-shadow: 0 8px 32px rgba(0,0,0,.12); min-width: 200px;
-  border: 1px solid rgba(0,0,0,.06);
-  mat-spinner { margin: 0 auto; }
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: center;
+  gap: 24px;
+  width: 100%;
+  max-width: 1200px;
+  padding: 16px 24px 24px;
+  border-radius: 16px;
+  background: transparent;
 }
 .dash.dark .loading-container {
-  background: rgba(15,23,42,.9);
-  border-color: rgba(255,255,255,.08);
+  background: transparent;
 }
-.loading-text { color: #0f172a; font-size: 18px; font-weight: 600; text-align: center; direction: rtl; animation: pulse 1.5s ease-in-out infinite; }
+.loading-text {
+  color: #0f172a;
+  text-align: center;
+  direction: rtl;
+}
 .dash.dark .loading-text { color: #e2e8f0; }
+
+.loading-headline {
+  font-size: 18px;
+  font-weight: 700;
+  margin-block-end: 4px;
+}
+
+.loading-subtext {
+  font-size: 13px;
+  font-weight: 400;
+  color: #4b5563;
+  max-width: 520px;
+  margin: 0 auto;
+}
+.dash.dark .loading-subtext {
+  color: #9ca3af;
+}
+
+.loading-percentage {
+  margin-top: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: .08em;
+}
+
+/* Skeleton dashboard layout */
+.skeleton-dashboard {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 100%;
+}
+
+.skeleton-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-radius: 14px;
+  background: rgba(255,255,255,.9);
+  box-shadow: 0 12px 30px rgba(15,23,42,.14);
+}
+.dash.dark .skeleton-topbar {
+  background: rgba(15,23,42,.96);
+}
+
+.skeleton-topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.skeleton-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+}
+
+.skeleton-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.skeleton-topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.skeleton-icon {
+  width: 30px;
+  height: 30px;
+  border-radius: 999px;
+}
+
+.skeleton-main {
+  display: grid;
+  grid-template-columns: minmax(0, 2.2fr) minmax(0, 1.4fr) minmax(260px, 0.9fr);
+  gap: 16px;
+  align-items: stretch;
+}
+
+@media (max-width: 1200px) {
+  .skeleton-main {
+    grid-template-columns: minmax(0, 2fr) minmax(0, 1.5fr);
+    grid-auto-rows: auto;
+  }
+  .skeleton-sidebar {
+    grid-column: 1 / -1;
+  }
+}
+
+.panel-skeleton {
+  border-radius: 16px;
+  padding: 14px 16px;
+  background: rgba(255,255,255,.92);
+  box-shadow: 0 18px 40px rgba(15,23,42,.16);
+}
+.dash.dark .panel-skeleton {
+  background: rgba(15,23,42,.98);
+}
+
+.skeleton-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-block-end: 12px;
+}
+
+.skeleton-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.skeleton-chip {
+  height: 22px;
+  min-width: 56px;
+  border-radius: 999px;
+}
+
+.skeleton-panel-body {
+  margin-top: 4px;
+}
+
+.skeleton-chart-area {
+  height: 180px;
+  border-radius: 12px;
+}
+
+.skeleton-table-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.skeleton-table-row {
+  height: 16px;
+}
+
+.skeleton-filter-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.skeleton-filter {
+  height: 18px;
+  border-radius: 999px;
+}
+
+.skeleton-line {
+  border-radius: 999px;
+  height: 10px;
+}
+
+.skeleton-line-lg {
+  width: 140px;
+}
+
+.skeleton-line-md {
+  width: 110px;
+}
+
+.skeleton-line-sm {
+  width: 80px;
+}
+
+/* Shimmer effect */
+.skeleton-shimmer {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(90deg, rgba(229,231,235,0.95) 0%, rgba(243,244,246,0.95) 40%, rgba(229,231,235,0.95) 80%);
+}
+.dash.dark .skeleton-shimmer {
+  background: linear-gradient(90deg, rgba(30,64,175,0.55) 0%, rgba(15,23,42,0.9) 50%, rgba(30,64,175,0.55) 100%);
+}
+
+.skeleton-shimmer::after {
+  content: "";
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: -40%;
+  width: 40%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.5), transparent);
+  animation: skeleton-shimmer 1.2s ease-in-out infinite;
+}
+
+@keyframes skeleton-shimmer {
+  0%   { inset-inline-start: -40%; }
+  100% { inset-inline-start: 110%; }
+}
+
+/* KPI modal skeletons (room-times overlay) */
+.kpi-skeleton-wrapper {
+  margin-top: 4px;
+}
+
+.kpi-skeleton {
+  box-shadow: 0 10px 28px rgba(15,23,42,.14);
+}
+
+.kpi-skeleton-body {
+  margin-top: 4px;
+}
+
+.kpi-skeleton-bars {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 6px;
+  height: 180px;
+}
+
+.kpi-skeleton-bar {
+  flex: 1 1 0;
+  display: flex;
+  align-items: flex-end;
+}
+
+.kpi-skeleton-bar-col {
+  width: 100%;
+  height: 40%;
+  border-radius: 10px 10px 4px 4px;
+}
 
 .catalog-loading-container {
   display: flex; flex-direction: column; align-items: center; justify-content: center;
@@ -3138,26 +4297,36 @@ table.table {
   padding: 8px;
 }
 
-.custom-toggle-group {
+/* === Main graph toggles & mode toggles – make them feel like a "feature strip" === */
+.metrics-container .custom-toggle-group,
+.graph-body .chart-mode-row .custom-toggle-group {
   display: flex;
-  align-items: stretch;
-  flex-wrap: wrap;
+  align-items: center;
+  flex-wrap: nowrap;
   width: 100%;
-  border: none !important; /* מבטלים בורדר דיפולטיבי של אנגולר */
-  border-radius: 12px !important; /* מראה מודרני פחות "נקניקייתי" */
-  background: rgba(241, 245, 249, 0.6);
-  backdrop-filter: blur(8px);
-  /* keep the overall bar height stable while strengthening typography */
-  height: 42px;
-  padding: 3px;
-  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 18px !important;
+  border: 1px solid var(--border);
+  /* match the attractive sidebar card look */
+  background:
+    radial-gradient(circle at 0% 0%, rgba(56,189,248,.16), transparent 55%),
+    radial-gradient(circle at 100% 100%, rgba(74,222,128,.20), transparent 55%),
+    var(--panel-strong);
+  backdrop-filter: blur(12px);
+  height: 52px;
+  padding: 4px 6px;
+  gap: 4px;
+  box-shadow: 0 10px 24px rgba(15,23,42,.22);
+  transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* מצב כהה - Glassmorphism עמוק */
-.dash.dark .custom-toggle-group {
-  background: rgba(30, 41, 59, 0.7);
-  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
+.dash.dark .metrics-container .custom-toggle-group,
+.dash.dark .graph-body .chart-mode-row .custom-toggle-group {
+  border-color: rgba(148, 163, 184, 0.45);
+  background:
+    radial-gradient(circle at 0% 0%, rgba(56,189,248,.18), transparent 55%),
+    radial-gradient(circle at 100% 100%, rgba(59,130,246,.24), transparent 55%),
+    rgba(15, 23, 42, 0.92);
+  box-shadow: 0 14px 30px rgba(15,23,42,0.72);
 }
 
 /* אייקון הקידומת */
@@ -3322,4 +4491,362 @@ table.table {
 /* מוודא שהטקסט לא נחתך בקצוות */
 ::ng-deep google-chart svg {
   overflow: visible !important;
+}
+
+
+/* מסובב רק את הטקסט שקיבל פונט 13.5 */
+::ng-deep google-chart svg text[font-size="13.5"] {
+  transform: rotate(-90deg) !important;
+  transform-box: fill-box !important;
+  transform-origin: center !important;
+}
+
+/* מוודא שהטקסט לא נחתך בקצוות */
+::ng-deep google-chart svg {
+  overflow: visible !important;
+}
+
+/* קונטיינר ראשי - מראה צף ונקי */
+.custom-toggle-group {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  border: none !important;
+  border-radius: 14px !important;
+  background: rgba(248, 250, 252, 0.8);
+  backdrop-filter: blur(12px);
+  height: 48px; /* הגבהה קלה לנוכחות */
+  padding: 4px;
+  gap: 4px; /* רווח פנימי בין הכפתורים יוצר מראה מודרני */
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* מצב כהה - עומק ויוקרה */
+.dash.dark .custom-toggle-group {
+  background: rgba(30, 41, 59, 0.5) !important;
+  border: 1px solid rgba(255, 255, 255, 0.05) !important;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+}
+
+/* עיצוב הכפתורים הכללי */
+.custom-toggle-group mat-button-toggle {
+  flex: 1;
+  border: 1px solid rgba(148, 163, 184, 0.55) !important; /* מסגרת דקה שמבהירה שזה לחיץ */
+  background: transparent;
+  border-radius: 10px !important; /* עיגול פנימי תואם */
+  color: #64748b;
+  transition: all 0.25s ease;
+}
+
+/* תוכן הכפתור */
+.custom-toggle-group ::ng-deep .mat-button-toggle-label-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700; /* טקסט עבה יותר לנוכחות */
+  font-size: 14px;
+  letter-spacing: 0.3px;
+  padding: 0 12px !important;
+}
+
+/* אייקונים */
+.custom-toggle-group mat-icon {
+  margin-inline-end: 8px;
+  font-size: 20px;
+  width: 20px;
+  height: 20px;
+}
+
+/* --- הכפתור הנבחר: אפקט ה-"High-End" --- */
+.custom-toggle-group .mat-button-toggle-checked {
+  background: #ffffff !important;
+  color: #2563eb !important;
+  transform: scale(1.02); /* הגדלה קלה מאוד להדגשה */
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.15);
+}
+
+/* נבחר במצב כהה - Vivid Blue Glow */
+.dash.dark .custom-toggle-group .mat-button-toggle-checked {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%) !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 20px rgba(59, 130, 246, 0.4);
+  transform: translateY(-1px);
+}
+
+/* אפקט הובר לכפתורים פנויים */
+.custom-toggle-group mat-button-toggle:not(.mat-button-toggle-checked):hover {
+  background: rgba(255, 255, 255, 0.6);
+  color: #1e293b;
+}
+
+.dash.dark .custom-toggle-group mat-button-toggle:not(.mat-button-toggle-checked):hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #f8fafc;
+}
+
+/* --- Hover בצבע תואם מצב ראשי – כפתורי chartView (למעלה) --- */
+.metrics-container .custom-toggle-group mat-button-toggle[ng-reflect-value="count"]:not(.mat-button-toggle-checked):hover {
+  background: rgba(219, 234, 254, 0.85);
+  color: #1d4ed8;
+}
+.dash.dark .metrics-container .custom-toggle-group mat-button-toggle[ng-reflect-value="count"]:not(.mat-button-toggle-checked):hover {
+  background: rgba(37, 99, 235, 0.25);
+  color: #e0f2fe;
+}
+
+.metrics-container .custom-toggle-group mat-button-toggle[ng-reflect-value="duration"]:not(.mat-button-toggle-checked):hover {
+  background: rgba(233, 213, 255, 0.9);
+  color: #6d28d9;
+}
+.dash.dark .metrics-container .custom-toggle-group mat-button-toggle[ng-reflect-value="duration"]:not(.mat-button-toggle-checked):hover {
+  background: rgba(124, 58, 237, 0.28);
+  color: #f5f3ff;
+}
+
+.metrics-container .custom-toggle-group mat-button-toggle[ng-reflect-value="utilization"]:not(.mat-button-toggle-checked):hover {
+  background: rgba(204, 251, 241, 0.9);
+  color: #0f766e;
+}
+.dash.dark .metrics-container .custom-toggle-group mat-button-toggle[ng-reflect-value="utilization"]:not(.mat-button-toggle-checked):hover {
+  background: rgba(20, 184, 166, 0.3);
+  color: #ecfeff;
+}
+
+/* --- Hover צבעוני גם לכפתורי roomTimesView (למטה) --- */
+.chart-mode-row .custom-toggle-group mat-button-toggle[ng-reflect-value="avgDuration"]:not(.mat-button-toggle-checked):hover {
+  background: rgba(233, 213, 255, 0.9);
+  color: #6d28d9;
+}
+.dash.dark .chart-mode-row .custom-toggle-group mat-button-toggle[ng-reflect-value="avgDuration"]:not(.mat-button-toggle-checked):hover {
+  background: rgba(124, 58, 237, 0.28);
+  color: #f5f3ff;
+}
+
+.chart-mode-row .custom-toggle-group mat-button-toggle[ng-reflect-value="firstStart"]:not(.mat-button-toggle-checked):hover {
+  background: rgba(191, 219, 254, 0.9);
+  color: #1d4ed8;
+}
+.dash.dark .chart-mode-row .custom-toggle-group mat-button-toggle[ng-reflect-value="firstStart"]:not(.mat-button-toggle-checked):hover {
+  background: rgba(37, 99, 235, 0.3);
+  color: #e0f2fe;
+}
+
+.chart-mode-row .custom-toggle-group mat-button-toggle[ng-reflect-value="lastEnd"]:not(.mat-button-toggle-checked):hover {
+  background: rgba(254, 243, 199, 0.9);
+  color: #b45309;
+}
+.dash.dark .chart-mode-row .custom-toggle-group mat-button-toggle[ng-reflect-value="lastEnd"]:not(.mat-button-toggle-checked):hover {
+  background: rgba(245, 158, 11, 0.32);
+  color: #fffbeb;
+}
+
+.chart-mode-row .custom-toggle-group mat-button-toggle[ng-reflect-value="avgSetup"]:not(.mat-button-toggle-checked):hover {
+  background: rgba(204, 251, 241, 0.9);
+  color: #0f766e;
+}
+.dash.dark .chart-mode-row .custom-toggle-group mat-button-toggle[ng-reflect-value="avgSetup"]:not(.mat-button-toggle-checked):hover {
+  background: rgba(20, 184, 166, 0.3);
+  color: #ecfeff;
+}
+
+.chart-mode-row .custom-toggle-group mat-button-toggle[ng-reflect-value="perDay"]:not(.mat-button-toggle-checked):hover {
+  background: rgba(219, 234, 254, 0.9);
+  color: #1d4ed8;
+}
+.dash.dark .chart-mode-row .custom-toggle-group mat-button-toggle[ng-reflect-value="perDay"]:not(.mat-button-toggle-checked):hover {
+  background: rgba(59, 130, 246, 0.32);
+  color: #dbeafe;
+}
+
+.chart-mode-row .custom-toggle-group mat-button-toggle[ng-reflect-value="lossPerDay"]:not(.mat-button-toggle-checked):hover {
+  background: rgba(254, 226, 226, 0.95);
+  color: #b91c1c;
+}
+.dash.dark .chart-mode-row .custom-toggle-group mat-button-toggle[ng-reflect-value="lossPerDay"]:not(.mat-button-toggle-checked):hover {
+  background: rgba(248, 113, 113, 0.32);
+  color: #fee2e2;
+}
+
+.chart-mode-row .custom-toggle-group mat-button-toggle[ng-reflect-value="approvedPerDay"]:not(.mat-button-toggle-checked):hover {
+  background: rgba(220, 252, 231, 0.9);
+  color: #15803d;
+}
+.dash.dark .chart-mode-row .custom-toggle-group mat-button-toggle[ng-reflect-value="approvedPerDay"]:not(.mat-button-toggle-checked):hover {
+  background: rgba(34, 197, 94, 0.3);
+  color: #dcfce7;
+}
+
+/* --- התאמת כל כפתורי ה‑roomTimesView לצבע "המגזר" העליון --- */
+/* כשנמצאים במצב מדדי ניתוחים – כל הכפתורים למטה יהיו בכחול בריחוף */
+.graph-body[data-main-mode="surgery-volume"] .chart-mode-row .custom-toggle-group mat-button-toggle:not(.mat-button-toggle-checked):hover {
+  background: rgba(219, 234, 254, 0.9);
+  color: #1d4ed8;
+}
+.dash.dark .graph-body[data-main-mode="surgery-volume"] .chart-mode-row .custom-toggle-group mat-button-toggle:not(.mat-button-toggle-checked):hover {
+  background: rgba(37, 99, 235, 0.3);
+  color: #e0f2fe;
+}
+
+/* כשנמצאים במצב זמני חדר (סקטור סגול) – כל הכפתורים למטה סגולים בריחוף */
+.graph-body[data-main-mode="room-times"] .chart-mode-row .custom-toggle-group mat-button-toggle:not(.mat-button-toggle-checked):hover {
+  background: rgba(233, 213, 255, 0.95);
+  color: #6d28d9;
+}
+.dash.dark .graph-body[data-main-mode="room-times"] .chart-mode-row .custom-toggle-group mat-button-toggle:not(.mat-button-toggle-checked):hover {
+  background: rgba(124, 58, 237, 0.32);
+  color: #f5f3ff;
+}
+
+/* כשנמצאים במצב ניצולת חדר – כל הכפתורים למטה טורקיז/ירוק בריחוף */
+.graph-body[data-main-mode="room-utilization"] .chart-mode-row .custom-toggle-group mat-button-toggle:not(.mat-button-toggle-checked):hover {
+  background: rgba(204, 251, 241, 0.95);
+  color: #0f766e;
+}
+.dash.dark .graph-body[data-main-mode="room-utilization"] .chart-mode-row .custom-toggle-group mat-button-toggle:not(.mat-button-toggle-checked):hover {
+  background: rgba(20, 184, 166, 0.32);
+  color: #ecfeff;
+}
+
+/* --- צבע לחוץ (checked) של כפתורי החלק התחתון לפי הסקטור העליון --- */
+/* מדדי ניתוחים – כחול, תואם ל-count למעלה */
+.graph-body[data-main-mode="surgery-volume"] .chart-mode-row .custom-toggle-group .mat-button-toggle-checked {
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%) !important;
+  color: #1d4ed8 !important;
+  border-color: #2563eb !important;
+}
+.dash.dark .graph-body[data-main-mode="surgery-volume"] .chart-mode-row .custom-toggle-group .mat-button-toggle-checked {
+  background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%) !important;
+  border-color: rgba(191, 219, 254, 0.95) !important;
+}
+
+/* זמני חדר – סגול, תואם ל-duration למעלה */
+.graph-body[data-main-mode="room-times"] .chart-mode-row .custom-toggle-group .mat-button-toggle-checked {
+  background: linear-gradient(135deg, #f5f3ff 0%, #e9d5ff 100%) !important;
+  color: #6d28d9 !important;
+  border-color: #7c3aed !important;
+}
+.dash.dark .graph-body[data-main-mode="room-times"] .chart-mode-row .custom-toggle-group .mat-button-toggle-checked {
+  background: linear-gradient(135deg, #6d28d9 0%, #4c1d95 100%) !important;
+  border-color: rgba(233, 213, 255, 0.95) !important;
+}
+
+/* ניצולת חדר – טורקיז/ירוק, תואם ל-utilization למעלה */
+.graph-body[data-main-mode="room-utilization"] .chart-mode-row .custom-toggle-group .mat-button-toggle-checked {
+  background: linear-gradient(135deg, #ecfeff 0%, #ccfbf1 100%) !important;
+  color: #0f766e !important;
+  border-color: #14b8a6 !important;
+}
+.dash.dark .graph-body[data-main-mode="room-utilization"] .chart-mode-row .custom-toggle-group .mat-button-toggle-checked {
+  background: linear-gradient(135deg, #0f766e 0%, #115e59 100%) !important;
+  border-color: rgba(167, 243, 208, 0.95) !important;
+}
+
+/* === Zimmer-times full-screen modal – adopt the same purple scheme === */
+/* כפתור נבחר במודהל זמני חדר – סגול כמו duration */
+.kpi-modal .kpi-header-actions .custom-toggle-group .mat-button-toggle-checked {
+  background: linear-gradient(135deg, #f5f3ff 0%, #e9d5ff 100%) !important;
+  color: #6d28d9 !important;
+  border-color: #7c3aed !important;
+  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.25);
+}
+.dash.dark .kpi-modal .kpi-header-actions .custom-toggle-group .mat-button-toggle-checked {
+  background: linear-gradient(135deg, #6d28d9 0%, #4c1d95 100%) !important;
+  color: #ffffff !important;
+  border-color: rgba(233, 213, 255, 0.95) !important;
+  box-shadow: 0 0 18px rgba(124, 58, 237, 0.45);
+}
+
+/* Hover לכל הכפתורים במודהל – גם הם סקטור סגול */
+.kpi-modal .kpi-header-actions .custom-toggle-group mat-button-toggle:not(.mat-button-toggle-checked):hover {
+  background: rgba(233, 213, 255, 0.9);
+  color: #6d28d9;
+}
+.dash.dark .kpi-modal .kpi-header-actions .custom-toggle-group mat-button-toggle:not(.mat-button-toggle-checked):hover {
+  background: rgba(124, 58, 237, 0.32);
+  color: #f5f3ff;
+}
+/* --- מצב צבע שונה לכל מצב ראשי (גרף עליון) --- */
+/* מדדי ניתוחים (count) – כחול */
+.metrics-container .custom-toggle-group mat-button-toggle[ng-reflect-value="count"].mat-button-toggle-checked {
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%) !important;
+  color: #1d4ed8 !important;
+  border-color: #2563eb !important;
+}
+.dash.dark .metrics-container .custom-toggle-group mat-button-toggle[ng-reflect-value="count"].mat-button-toggle-checked {
+  background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%) !important;
+  border-color: rgba(191, 219, 254, 0.95) !important;
+}
+
+/* זמני חדר (duration) – סגול רך */
+.metrics-container .custom-toggle-group mat-button-toggle[ng-reflect-value="duration"].mat-button-toggle-checked {
+  background: linear-gradient(135deg, #f5f3ff 0%, #e9d5ff 100%) !important;
+  color: #6d28d9 !important;
+  border-color: #7c3aed !important;
+}
+.dash.dark .metrics-container .custom-toggle-group mat-button-toggle[ng-reflect-value="duration"].mat-button-toggle-checked {
+  background: linear-gradient(135deg, #6d28d9 0%, #4c1d95 100%) !important;
+  border-color: rgba(233, 213, 255, 0.95) !important;
+}
+
+/* ניצולת חדר (utilization) – טורקיז/ירוק */
+.metrics-container .custom-toggle-group mat-button-toggle[ng-reflect-value="utilization"].mat-button-toggle-checked {
+  background: linear-gradient(135deg, #ecfeff 0%, #ccfbf1 100%) !important;
+  color: #0f766e !important;
+  border-color: #14b8a6 !important;
+}
+.dash.dark .metrics-container .custom-toggle-group mat-button-toggle[ng-reflect-value="utilization"].mat-button-toggle-checked {
+  background: linear-gradient(135deg, #0f766e 0%, #115e59 100%) !important;
+  border-color: rgba(167, 243, 208, 0.95) !important;
+}
+
+/* קישור ויזואלי לגרף עצמו – פס צבע בכותרת הגרף לפי מצב ראשי */
+.graph-body[data-main-mode="surgery-volume"] .chart-mode-heading {
+  border-top: 3px solid #2563eb;
+}
+.graph-body[data-main-mode="room-times"] .chart-mode-heading {
+  border-top: 3px solid #7c3aed;
+}
+.graph-body[data-main-mode="room-utilization"] .chart-mode-heading {
+  border-top: 3px solid #14b8a6;
+}
+
+/* רספונסיביות */
+@media (max-width: 768px) {
+  .custom-toggle-group {
+    height: auto;
+    padding: 6px;
+  }
+  .custom-toggle-group ::ng-deep .mat-button-toggle-label-content {
+    flex-direction: column; /* אייקון מעל טקסט במובייל */
+    padding: 8px 4px !important;
+    font-size: 11px;
+  }
+  .custom-toggle-group mat-icon {
+    margin-inline-end: 0;
+    margin-bottom: 4px;
+  }
+}
+
+
+
+
+/* אנימציית מעבר חלקה */
+.custom-toggle-group mat-button-toggle {
+  /* מעבר חלק על כל התכונות: רקע, צבע, צל */
+  transition: 
+    background-color 0.4s cubic-bezier(0.25, 0.8, 0.25, 1),
+    color 0.3s ease,
+    transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275),
+    box-shadow 0.4s ease !important;
+}
+
+/* אפקט "לחיצה" קטן כשלוחצים */
+.custom-toggle-group mat-button-toggle:active {
+  transform: scale(0.95);
+}
+
+/* ביטול ה-Ripple הדיפולטיבי של Material אם הוא מפריע לעיצוב הנקי */
+.custom-toggle-group ::ng-deep .mat-ripple {
+  display: none !important;
 }
