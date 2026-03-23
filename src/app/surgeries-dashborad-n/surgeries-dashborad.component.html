@@ -1621,29 +1621,47 @@
             </select>
           </div>
 
-          <div class="compare-dept-control compare-dept-control-types"
+          <div class="compare-dept-control compare-dept-control-types compare-metrics-dropdown-wrap"
+            #compareSurgeryTypesDropdownWrap
             *ngIf="compareShowTypeCountPerYear || compareShowTypeAvgDurationPerYear">
-            <label>סוג ניתוח להשוואה</label>
-            <select
+            <label>סוגי ניתוח להשוואה</label>
+            <button type="button" class="compare-metrics-trigger"
               [disabled]="!compareDepartmentSelected"
-              [ngModel]="compareSurgeryTypeSelected"
-              (ngModelChange)="onCompareSurgeryTypeChanged($event)">
-              <option [ngValue]="null">-- יש לבחור סוג ניתוח --</option>
-              <option *ngFor="let t of getCompareSurgeryTypeOptions()" [ngValue]="t">{{ t }}</option>
-            </select>
+              [attr.aria-expanded]="isCompareSurgeryTypesDropdownOpen"
+              [class.compare-metrics-trigger--open]="isCompareSurgeryTypesDropdownOpen"
+              (click)="toggleCompareSurgeryTypesDropdown()">
+              <span>{{ getCompareSurgeryTypesDropdownText() }}</span>
+              <mat-icon class="compare-metrics-chevron" aria-hidden="true">
+                {{ isCompareSurgeryTypesDropdownOpen ? 'expand_less' : 'expand_more' }}
+              </mat-icon>
+            </button>
+            <div class="compare-metrics-panel" *ngIf="isCompareSurgeryTypesDropdownOpen" role="listbox"
+              aria-label="סוגי ניתוח">
+              <label class="compare-metrics-item" *ngFor="let t of getCompareSurgeryTypeOptions()" role="option">
+                <input type="checkbox"
+                  [checked]="isCompareSurgeryTypePicked(t)"
+                  (change)="setCompareSurgeryTypePicked(t, $event.target.checked)">
+                <span>{{ t }}</span>
+              </label>
+            </div>
           </div>
 
-          <div class="compare-dept-control compare-metrics-dropdown-wrap">
+          <div class="compare-dept-control compare-metrics-dropdown-wrap" #compareMetricsDropdownWrap>
             <label>בחירת מדדי השוואה</label>
             <button type="button" class="compare-metrics-trigger"
               [disabled]="!compareDepartmentSelected"
+              [attr.aria-expanded]="isCompareMetricsDropdownOpen"
+              [class.compare-metrics-trigger--open]="isCompareMetricsDropdownOpen"
               (click)="toggleCompareMetricsDropdown()">
               <span>{{ getCompareMetricsDropdownText() }}</span>
-              <mat-icon>{{ isCompareMetricsDropdownOpen ? 'expand_less' : 'expand_more' }}</mat-icon>
+              <mat-icon class="compare-metrics-chevron" aria-hidden="true">
+                {{ isCompareMetricsDropdownOpen ? 'expand_less' : 'expand_more' }}
+              </mat-icon>
             </button>
 
-            <div class="compare-metrics-panel" *ngIf="isCompareMetricsDropdownOpen">
-              <label class="compare-metrics-item" *ngFor="let opt of compareMetricOptions">
+            <div class="compare-metrics-panel" *ngIf="isCompareMetricsDropdownOpen" role="listbox"
+              aria-label="מדדי השוואה">
+              <label class="compare-metrics-item" *ngFor="let opt of compareMetricOptions" role="option">
                 <input type="checkbox"
                   [checked]="isCompareMetricSelected(opt.key)"
                   (change)="setCompareMetricSelected(opt.key, $event.target.checked)">
@@ -1653,12 +1671,19 @@
           </div>
         </div>
 
-        <div *ngIf="!compareDepartmentSelected" class="compare-dept-required-message">
-          כדי להתחיל השוואה יש לבחור מחלקה מהרשימה למעלה.
+        <div *ngIf="!compareDepartmentSelected" class="kpi-loading compare-dept-awaiting-chart" role="status">
+          <mat-icon class="compare-dept-awaiting-icon" aria-hidden="true">touch_app</mat-icon>
+          <p class="kpi-loading-text compare-dept-awaiting-title">המערכת מחכה שתבחרו מחלקה</p>
+          <p class="compare-dept-awaiting-hint">
+            בחרו מחלקה מאוגדת מהרשימה למעלה. אחרי הבחירה ייטענו הנתונים ויוצג הגרף.
+          </p>
         </div>
 
-        <div *ngIf="isSurgeriesPerDayLoading || isAvgDurationLoading" class="kpi-loading">
+        <div
+          *ngIf="compareDepartmentSelected && (isSurgeriesPerDayLoading || isAvgDurationLoading)"
+          class="kpi-loading">
           <mat-spinner diameter="40"></mat-spinner>
+          <span class="kpi-loading-text">טוען נתונים למחלקה שנבחרה…</span>
         </div>
         <div
           *ngIf="compareDepartmentSelected && !isSurgeriesPerDayLoading && !isAvgDurationLoading &&
@@ -1710,7 +1735,10 @@
               *ngIf="compareDepartmentsGraphInsightBlock as insight"
               aria-label="מסקנות מהגרף">
               <div class="compare-dept-legend-insights-label">מסקנות מהגרף</div>
-              <p class="compare-dept-legend-insights-hint">השוואה בין שתי השנים האחרונות בגרף.</p>
+              <p class="compare-dept-legend-insights-hint">
+                השוואה בין שתי השנים האחרונות בגרף. משכי זמן (מדדי דקות) מוצגים כ־שעות:דקות כשהמספר גדול משעה,
+                או כ־דקות:שניות מתחת לשעה.
+              </p>
               <div class="compare-dept-insights-table-wrap">
                 <table class="compare-dept-insights-table" *ngIf="insight.mode === 'twoYears'">
                   <thead>
@@ -1761,14 +1789,10 @@
               </p>
             </section>
 
-            <section class="compare-dept-legend-section compare-dept-legend-section--foot">
-              <p class="compare-dept-legend-foot">
-                ציר אופקי: שנים · ציר אנכי: ערך המדד (כמות או דקות, לפי המדד)
-              </p>
-            </section>
           </aside>
-          <div class="compare-dept-chart-pane">
+          <div class="compare-dept-chart-pane" dir="rtl">
             <google-chart
+              class="compare-dept-google-chart"
               [type]="'ColumnChart'"
               [columns]="compareDepartmentsLineChartColumns"
               [data]="compareDepartmentsLineChartData"

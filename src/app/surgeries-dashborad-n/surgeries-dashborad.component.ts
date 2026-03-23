@@ -1,6 +1,6 @@
 import { animate, style, transition, trigger } from '@angular/animations';
 import { HttpClient } from '@angular/common/http';
-import { AfterViewInit, ChangeDetectorRef, Component, DoCheck, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import { AfterViewInit, ChangeDetectorRef, Component, DoCheck, ElementRef, HostListener, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatSort, Sort } from '@angular/material/sort';
@@ -292,6 +292,8 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
     @ViewChild('yoyCombinedChart') yoyCombinedChartRef!: ElementRef<HTMLCanvasElement>;
     @ViewChild('yoyCombinedChartInline') yoyCombinedChartInlineRef?: ElementRef<HTMLCanvasElement>;
     @ViewChild('tableBodyEl') tableBodyEl?: ElementRef<HTMLDivElement>;
+    @ViewChild('compareMetricsDropdownWrap') compareMetricsDropdownWrap?: ElementRef<HTMLElement>;
+    @ViewChild('compareSurgeryTypesDropdownWrap') compareSurgeryTypesDropdownWrap?: ElementRef<HTMLElement>;
 
     showTableExtra = false;
 
@@ -793,7 +795,8 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
 
   // Comparison modal (department focus)
   compareDepartmentSelected: string | null = null;
-  compareSurgeryTypeSelected: string | null = null;
+  /** סוגי ניתוח לבחירה מרובה (מדדי סוג מסומנים בגרף ההשוואה) */
+  compareSurgeryTypesSelected: string[] = [];
   /** צ'קבוקסים – כל דגל מוסיף קו נוסף לגרף ההשוואה (ברירת מחדל: ללא קווים – המשתמש בוחר מדד אחר מדד) */
   compareShowRoomsPerYear = false;
   compareShowSurgeriesPerYear = false;
@@ -804,6 +807,7 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
   /** מחלקה נבחרה ויש שנים בנתונים, אך עדיין לא סומן אף מדד לגרף */
   compareDepartmentsAwaitingMetricSelection = false;
   isCompareMetricsDropdownOpen = false;
+  isCompareSurgeryTypesDropdownOpen = false;
   compareDepartmentsLineChartColumns: any[] = [];
   compareDepartmentsLineChartData: any[] = [];
   compareDepartmentsLineChartOptions: any = {};
@@ -816,8 +820,10 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
   } | null = null;
 
   readonly compareMetricOptions: { key: string; label: string }[] = [
-    { key: 'rooms', label: 'כמות חדרים למחלקה ' },
-    { key: 'surgeries', label: 'כמות ניתוחים למחלקה ' },
+    /** מוצג: ימי פתיחת חדר (מדד פתיחות) למחלקה — נתוני API מסוננים למשמרת בוקר ולאמצע שבוע בלבד */
+    { key: 'rooms', label: 'חדרים — בוקר, אמצע שבוע; ימי פתיחה למחלקה (לא סה״כ חדרים)' },
+    /** מוצג: סה״כ ניתוחים למחלקה מ־GetCountByDept — סיכום כל שורות הספירה: כל ימי השבוע וכל המשמרות */
+    { key: 'surgeries', label: 'ניתוחים למחלקה — כל ימי השבוע וכל המשמרות (סה״כ שבוצעו)' },
     { key: 'avgDuration', label: 'זמן ניתוח ממוצע (דקות) ' },
     { key: 'surgeriesPerRoom', label: 'ניתוחים לחדר (ניתוחים / חדרים)' },
     { key: 'typeCount', label: 'כמות ניתוחים מסוג נבחר ' },
@@ -1155,6 +1161,37 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
       ...baseOpts,
       hAxis: axis,
     };
+
+    const wingYearTip = { multiYearValueSuffix: "", multiYearShowTotal: false as boolean };
+    const pr = this.patchGoogleChartHtmlTooltips(
+      this.avgDurationCompareRightChartColumns,
+      this.avgDurationCompareRightChartData,
+      this.avgDurationCompareRightChartOptions,
+      wingYearTip,
+    );
+    this.avgDurationCompareRightChartColumns = pr.columns;
+    this.avgDurationCompareRightChartData = pr.data;
+    this.avgDurationCompareRightChartOptions = pr.options;
+
+    const pl = this.patchGoogleChartHtmlTooltips(
+      this.avgDurationCompareLeftChartColumns,
+      this.avgDurationCompareLeftChartData,
+      this.avgDurationCompareLeftChartOptions,
+      wingYearTip,
+    );
+    this.avgDurationCompareLeftChartColumns = pl.columns;
+    this.avgDurationCompareLeftChartData = pl.data;
+    this.avgDurationCompareLeftChartOptions = pl.options;
+
+    const pc = this.patchGoogleChartHtmlTooltips(
+      this.avgDurationCompareCombinedChartColumns,
+      this.avgDurationCompareCombinedChartData,
+      this.avgDurationCompareCombinedChartOptions,
+      wingYearTip,
+    );
+    this.avgDurationCompareCombinedChartColumns = pc.columns;
+    this.avgDurationCompareCombinedChartData = pc.data;
+    this.avgDurationCompareCombinedChartOptions = pc.options;
   }
 
   /** מניעת טעינה כפולה: קוראים לשרת רק כשאין עדיין נתונים או כשהפרמטרים השתנו */
@@ -2284,8 +2321,10 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
         }
 
         // לכל שאר המצבים – להחזיר צירים לגרף כמותי רגיל (לא אחוזים)
+        // ברירת מחדל: focus על קטגוריה. כשנוסיף עמודות tooltip מותאמות (HTML) – נעבור ל-'datum' ב-applyClearTooltipsToGoogleChart
         this.chartOptions = {
             ...this.chartOptions,
+            focusTarget: "category",
             hAxis: {
                 ...(this.chartOptions.hAxis || {}),
                 viewWindow: undefined,
@@ -2468,16 +2507,17 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
                     title: "מספר ניתוחים",
                 };
                 this.chartOptions.isStacked = false;
+                this.applyClearTooltipsToGoogleChart();
                 this.isChartLoading = false;
                 this.isChartViewReady = true;
                 this.cdr.detectChanges();
                 return;
             }
 
-            // מיפוי מחלקה מנתחת מאוגד (Wing) -> שנה -> כמות (בשימוש במצב 'department')
+            // מיפוי Wing בלבד -> שנה -> כמות (בשימוש במצב 'department'; ללא גיבוי ל-Department)
             const byWingYear = new Map<string, Map<number, number>>();
             source.forEach((row) => {
-                const wing = (row.Wing || row.Department || "לא צוין").trim();
+                const wing = (row.Wing || "").trim() || "לא צוין";
                 if (!byWingYear.has(wing)) {
                     byWingYear.set(wing, new Map<number, number>());
                 }
@@ -2539,6 +2579,7 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
                 };
                 this.chartOptions.isStacked = false;
 
+                this.applyClearTooltipsToGoogleChart();
                 this.isChartLoading = false;
                 this.cdr.detectChanges();
                 return;
@@ -2709,6 +2750,7 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
                     ...siteSeries,
                 };
 
+                this.applyClearTooltipsToGoogleChart();
                 this.isChartLoading = false;
                 this.cdr.detectChanges();
                 return;
@@ -2872,6 +2914,7 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
                     ...shiftSeries,
                 };
 
+                this.applyClearTooltipsToGoogleChart();
                 this.isChartLoading = false;
                 this.cdr.detectChanges();
                 return;
@@ -3001,6 +3044,7 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
                     ...fundSeries,
                 };
 
+                this.applyClearTooltipsToGoogleChart();
                 this.isChartLoading = false;
                 this.cdr.detectChanges();
                 return;
@@ -3157,6 +3201,7 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
             };
             this.chartOptions.isStacked = false;
 
+            this.applyClearTooltipsToGoogleChart();
             this.isChartLoading = false;
             this.isChartViewReady = true;
             this.cdr.detectChanges();
@@ -3310,6 +3355,7 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
                 // תצוגה: עמודה אחת לשנה, מחולקת לצבעים לפי סוג מימון (stacked)
                 this.chartOptions.isStacked = true;
 
+                this.applyClearTooltipsToGoogleChart();
                 this.isChartLoading = false;
                 this.cdr.detectChanges();
                 return;
@@ -3360,6 +3406,12 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
             const lastYear = years[years.length - 1];
             this.chartOptions.title = "";
 
+            this.applyClearTooltipsToGoogleChart({
+                wingTooltipSubtitle: "מספר ניתוחים לפי שנה (מחלקה – נתונים מרשימת הניתוחים)",
+                wingTotalCaption: "סה״כ ניתוחים בכל השנים במחלקה זו",
+                multiYearValueSuffix: "ניתוחים",
+                multiYearShowTotal: true,
+            });
             this.isChartLoading = false;
             this.isChartViewReady = true;
             this.cdr.detectChanges();
@@ -3419,73 +3471,318 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
             // console.log("First chart row:", this.chartData[0]);
         }
         // Enhance Google-chart hover: show "what it means" + numeric value (avoid annotation noise)
-        this.applyClearTooltipsToGoogleChart();
+        this.applyClearTooltipsToGoogleChart({
+            multiYearValueSuffix: "מיליון ₪ (בקירוב)",
+            wingTooltipSubtitle: "ערך פעילות לפי שנה (מיליון ש״ח, בקירוב)",
+            wingTotalCaption: "סה״כ פעילות בשנים המוצגות",
+        });
 
         this.isChartLoading = false;
         this.cdr.detectChanges();
     }
 
-    private applyClearTooltipsToGoogleChart(): void {
-        // Respect places where tooltip is explicitly disabled
-        if ((this.chartOptions as any)?.tooltip === "none" || (this.chartOptions as any)?.tooltip?.trigger === "none") {
-            return;
+    private escapeHtmlForChartTooltip(text: string): string {
+        return String(text ?? "")
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;");
+    }
+
+    private getDataTableCategoryHeader(columns: any[]): string | null {
+        const c0 = columns[0];
+        if (typeof c0 === "string") {
+            return c0;
         }
-        if (!this.chartColumns || !this.chartData || this.chartData.length === 0) {
-            return;
+        if (c0 && typeof c0 === "object" && c0.label != null) {
+            return String(c0.label);
+        }
+        return null;
+    }
+
+    private formatTooltipCellValue(v: any, isPctChart: boolean): string {
+        if (v == null || v === "") {
+            return "—";
+        }
+        if (typeof v === "object" && v !== null && "f" in v && (v as any).f != null && String((v as any).f).trim() !== "") {
+            return String((v as any).f);
+        }
+        if (typeof v === "object" && v !== null && "v" in v) {
+            const n = Number((v as any).v);
+            if (!Number.isFinite(n)) {
+                return "—";
+            }
+            if (isPctChart) {
+                const sign = n > 0 ? "+" : "";
+                return `${sign}${n.toFixed(1)}%`;
+            }
+            return this.formatNumber(n);
+        }
+        const n = Number(v);
+        if (!Number.isFinite(n)) {
+            return String(v ?? "");
+        }
+        if (isPctChart) {
+            const sign = n > 0 ? "+" : "";
+            return `${sign}${n.toFixed(1)}%`;
+        }
+        return this.formatNumber(n);
+    }
+
+    private tooltipNumericMagnitude(v: any): number | null {
+        if (v == null || v === "") {
+            return null;
+        }
+        if (typeof v === "object" && v !== null && "v" in v) {
+            const n = Number((v as any).v);
+            return Number.isFinite(n) ? n : null;
+        }
+        const n = Number(v);
+        return Number.isFinite(n) ? n : null;
+    }
+
+    /** ציר קטגוריה (לא "שנה") וכל סדרות המספרים מתויגות כ־YYYY */
+    private isWingStyleMultiYearTooltip(columns: any[], numericSeries: { colIndex: number; label: string }[]): boolean {
+        const h = this.getDataTableCategoryHeader(columns);
+        if (!h || h === "שנה") {
+            return false;
+        }
+        return (
+            numericSeries.length > 0 &&
+            numericSeries.every((s) => /^\d{4}$/.test(String(s.label).trim()))
+        );
+    }
+
+    /** ציר קטגוריה "שנה" ומספר סדרות מספריות (מדדים) – פתק משולב לכל שנה */
+    private isYearAxisMultiSeriesTooltip(columns: any[], numericSeries: { colIndex: number; label: string }[]): boolean {
+        const h = this.getDataTableCategoryHeader(columns);
+        return h === "שנה" && numericSeries.length > 0;
+    }
+
+    private buildMultiYearCategoryTooltipHtml(
+        category: string,
+        dataRow: any[],
+        numericSeries: { colIndex: number; label: string }[],
+        formatVal: (v: any) => string,
+        valueSuffixPlain: string,
+        showTotalRow: boolean,
+        copy?: { subtitle?: string; totalCaption?: string }
+    ): string {
+        const currentYear = new Date().getFullYear();
+        const muted = this.isDark ? "#94a3b8" : "#64748b";
+        const border = this.isDark ? "#475569" : "#e2e8f0";
+        const lineColor = this.isDark ? "#e5e7eb" : "#0f172a";
+        const suffixEsc = valueSuffixPlain ? ` ${this.escapeHtmlForChartTooltip(valueSuffixPlain.trim())}` : "";
+        const subtitle =
+            copy?.subtitle != null && String(copy.subtitle).trim() !== ""
+                ? this.escapeHtmlForChartTooltip(String(copy.subtitle))
+                : "סדר: מהחדשה (למעלה) לישנה (למטה)";
+        const totalCaption =
+            copy?.totalCaption != null && String(copy.totalCaption).trim() !== ""
+                ? this.escapeHtmlForChartTooltip(String(copy.totalCaption))
+                : "סה״כ בכל השנים בשורה זו";
+
+        const entries = numericSeries
+            .map((s) => ({
+                year: parseInt(String(s.label).trim(), 10),
+                value: dataRow[s.colIndex],
+            }))
+            .filter((e) => !isNaN(e.year));
+        entries.sort((a, b) => b.year - a.year);
+
+        let rowSum = 0;
+        for (const e of entries) {
+            const mag = this.tooltipNumericMagnitude(e.value);
+            if (mag != null) {
+                rowSum += mag;
+            }
         }
 
-        const columns = Array.isArray(this.chartColumns) ? [...this.chartColumns] : this.chartColumns;
-        const rows = Array.isArray(this.chartData) ? [...this.chartData] : this.chartData;
-        if (!Array.isArray(columns) || !Array.isArray(rows)) {
-            return;
+        const title = this.escapeHtmlForChartTooltip(category);
+        const yearBlocks = entries
+            .map((e) => {
+                const isCurrent = e.year === currentYear;
+                const badge = isCurrent
+                    ? `<span style="font-size:11px;font-weight:600;color:${muted}"> (שנת נוכחית)</span>`
+                    : "";
+                return `<div style="margin-top:6px;display:flex;justify-content:space-between;align-items:baseline;gap:14px;font-size:13px;color:${lineColor}">
+                    <span>שנה <b>${e.year}</b>${badge}</span>
+                    <span style="white-space:nowrap"><b>${formatVal(e.value)}</b>${suffixEsc}</span>
+                </div>`;
+            })
+            .join("");
+
+        const wrap = [
+            "direction:rtl",
+            "text-align:right",
+            "padding:10px 12px",
+            "min-width:200px",
+            "max-width:320px",
+            `color:${lineColor}`,
+        ].join(";");
+
+        const totalBlock =
+            showTotalRow && entries.length > 0
+                ? `<div style="font-size:12px;margin-bottom:8px">
+                ${totalCaption}: <b>${formatVal(rowSum)}</b>${suffixEsc}
+            </div>`
+                : "";
+
+        return `<div style="${wrap}">
+            <div style="font-size:15px;font-weight:800;margin-bottom:2px">${title}</div>
+            <div style="font-size:11px;color:${muted};padding-bottom:6px;margin-bottom:6px;border-bottom:1px solid ${border}">
+                ${subtitle}
+            </div>
+            ${totalBlock}
+            ${yearBlocks}
+        </div>`;
+    }
+
+    private buildYearAxisMultiSeriesTooltipHtml(
+        yearLabel: string,
+        dataRow: any[],
+        numericSeries: { colIndex: number; label: string }[],
+        formatDatum: (v: any, seriesLabel: string) => string,
+        copy?: { subtitle?: string; titlePrefix?: string }
+    ): string {
+        const muted = this.isDark ? "#94a3b8" : "#64748b";
+        const border = this.isDark ? "#475569" : "#e2e8f0";
+        const lineColor = this.isDark ? "#e5e7eb" : "#0f172a";
+        const title = this.escapeHtmlForChartTooltip(yearLabel);
+        const titlePrefix =
+            copy?.titlePrefix != null && String(copy.titlePrefix).trim() !== ""
+                ? this.escapeHtmlForChartTooltip(String(copy.titlePrefix).trim())
+                : "שנה";
+        const subtitle =
+            copy?.subtitle != null && String(copy.subtitle).trim() !== ""
+                ? this.escapeHtmlForChartTooltip(String(copy.subtitle))
+                : "כל המדדים לשנה זו";
+
+        const lines = numericSeries
+            .map((s) => {
+                const lab = this.escapeHtmlForChartTooltip(s.label);
+                const val = dataRow[s.colIndex];
+                return `<div style="margin-top:6px;display:flex;justify-content:space-between;align-items:baseline;gap:14px;font-size:13px;color:${lineColor}">
+                    <span><b>${lab}</b></span>
+                    <span style="white-space:nowrap"><b>${formatDatum(val, s.label)}</b></span>
+                </div>`;
+            })
+            .join("");
+
+        const wrap = [
+            "direction:rtl",
+            "text-align:right",
+            "padding:10px 12px",
+            "min-width:220px",
+            "max-width:360px",
+            `color:${lineColor}`,
+        ].join(";");
+
+        return `<div style="${wrap}">
+            <div style="font-size:15px;font-weight:800;margin-bottom:2px">${titlePrefix} ${title}</div>
+            <div style="font-size:11px;color:${muted};padding-bottom:6px;margin-bottom:6px;border-bottom:1px solid ${border}">
+                ${subtitle}
+            </div>
+            ${lines}
+        </div>`;
+    }
+
+    /**
+     * מוסיף עמודות tooltip (HTML) ל־Google Chart ומחזיר עותקים + מיזוג לאפשרויות (focusTarget וכו').
+     */
+    private patchGoogleChartHtmlTooltips(
+        columnsIn: any[] | null | undefined,
+        dataIn: any[] | null | undefined,
+        chartOptionsIn: any,
+        ctx: {
+            isPctChart?: boolean;
+            /** סיומת טקסט אחרי ערך בגרף "ישות × שנים" (למשל "ניתוחים") */
+            multiYearValueSuffix?: string;
+            multiYearShowTotal?: boolean;
+            wingTooltipSubtitle?: string;
+            wingTotalCaption?: string;
+            yearAxisSubtitle?: string;
+            yearAxisTitlePrefix?: string;
+            /** לגרף שבו ציר הקטגוריה הוא שנה (מדדי השוואת מחלקות) */
+            formatCell?: (value: any, seriesLabel: string) => string;
+        } = {}
+    ): { columns: any[]; data: any[]; options: any } {
+        const baseOpts = chartOptionsIn && typeof chartOptionsIn === "object" ? chartOptionsIn : {};
+        if (baseOpts.tooltip === "none" || baseOpts.tooltip?.trigger === "none") {
+            return {
+                columns: Array.isArray(columnsIn) ? [...columnsIn] : columnsIn || [],
+                data: Array.isArray(dataIn) ? dataIn.map((r) => (Array.isArray(r) ? [...r] : r)) : dataIn || [],
+                options: { ...baseOpts },
+            };
+        }
+        if (!columnsIn?.length || !dataIn?.length) {
+            return {
+                columns: columnsIn || [],
+                data: dataIn || [],
+                options: { ...baseOpts },
+            };
         }
 
-        const isPctChart = this.chartViewMode === "yoy-combined" ||
-            (typeof (this.chartOptions as any)?.hAxis?.format === "string" && (this.chartOptions as any).hAxis.format.includes("%"));
+        const columns = [...columnsIn];
+        const rows = Array.isArray(dataIn) ? [...dataIn] : [];
+        if (!Array.isArray(rows)) {
+            return { columns: columnsIn, data: dataIn || [], options: { ...baseOpts } };
+        }
 
-        // Insert a tooltip column after each numeric series column (before its annotation, if exists).
-        // This guarantees hover shows only: category + series label + value.
+        const isPctChart = !!ctx.isPctChart;
         const tooltipCol = { type: "string", role: "tooltip", p: { html: true } };
 
-        // Build list of numeric series column indices in the *current* columns array.
-        // We skip role-columns like annotations/tooltip.
         const numericSeries: { colIndex: number; label: string }[] = [];
         for (let i = 1; i < columns.length; i++) {
             const c = columns[i] as any;
             const isNumberCol = (typeof c === "object" && c?.type === "number") || c === "number";
             const isRole = typeof c === "object" && !!c?.role;
             if (isNumberCol && !isRole) {
-                numericSeries.push({ colIndex: i, label: (typeof c === "object" && c?.label) ? String(c.label) : `Series ${i}` });
+                numericSeries.push({
+                    colIndex: i,
+                    label: typeof c === "object" && c?.label ? String(c.label) : `Series ${i}`,
+                });
             }
         }
         if (numericSeries.length === 0) {
-            return;
+            return { columns: columnsIn, data: dataIn || [], options: { ...baseOpts } };
         }
 
-        // Apply insertions from right to left to keep indices stable
-        const insertAt: number[] = [];
+        const useWingMultiYear = !isPctChart && this.isWingStyleMultiYearTooltip(columns, numericSeries);
+        const useYearAxisCombined =
+            !isPctChart && !useWingMultiYear && this.isYearAxisMultiSeriesTooltip(columns, numericSeries);
+
+        /** אחרי עמודת ערך ייתכן עמודת annotation; ה-tooltip תמיד מיד אחריה */
+        const tooltipInsertions: { insertPos: number; valueColIdx: number }[] = [];
         for (let k = 0; k < numericSeries.length; k++) {
             const idx = numericSeries[k].colIndex;
-            const next = columns[idx + 1] as any;
+            let insertPos = idx + 1;
+            if (
+                insertPos < columns.length &&
+                typeof columns[insertPos] === "object" &&
+                (columns[insertPos] as any).role === "annotation"
+            ) {
+                insertPos++;
+            }
+            const next = columns[insertPos] as any;
             const nextIsTooltip = typeof next === "object" && next?.role === "tooltip";
             if (!nextIsTooltip) {
-                insertAt.push(idx + 1);
+                tooltipInsertions.push({ insertPos, valueColIdx: idx });
             }
         }
-        if (insertAt.length === 0) {
-            return;
+        if (tooltipInsertions.length === 0) {
+            return { columns: columnsIn, data: dataIn || [], options: { ...baseOpts } };
         }
 
-        // Create a map from original numeric column index -> series label (before insertions)
         const labelByColIndex = new Map<number, string>();
         for (const s of numericSeries) {
             labelByColIndex.set(s.colIndex, s.label);
         }
 
-        // Insert tooltip columns (right to left)
-        insertAt.sort((a, b) => b - a).forEach((pos) => columns.splice(pos, 0, tooltipCol));
+        tooltipInsertions
+            .sort((a, b) => b.insertPos - a.insertPos)
+            .forEach(({ insertPos }) => columns.splice(insertPos, 0, tooltipCol));
 
-        // Update each row: insert tooltip strings at the same positions.
         const style = [
             "direction:rtl",
             "text-align:right",
@@ -3500,44 +3797,222 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
             `color:${this.isDark ? "#e5e7eb" : "#0f172a"}`,
         ].join(";");
 
-        const formatVal = (v: any) => {
-            const n = Number(v);
-            if (!Number.isFinite(n)) return String(v ?? "");
-            if (isPctChart) {
-                const sign = n > 0 ? "+" : "";
-                return `${sign}${n.toFixed(1)}%`;
-            }
-            return this.formatNumber(n);
+        const suffixPlain =
+            ctx.multiYearValueSuffix !== undefined && ctx.multiYearValueSuffix !== null
+                ? String(ctx.multiYearValueSuffix).trim()
+                : "ניתוחים";
+        const showTotal = ctx.multiYearShowTotal !== false;
+        const wingCopy = {
+            subtitle: ctx.wingTooltipSubtitle,
+            totalCaption: ctx.wingTotalCaption,
+        };
+        const yearAxisCopy = {
+            subtitle: ctx.yearAxisSubtitle,
+            titlePrefix: ctx.yearAxisTitlePrefix,
         };
 
-        this.chartData = rows.map((r: any[]) => {
-            if (!Array.isArray(r)) return r;
+        const formatDefault = (v: any) => this.formatTooltipCellValue(v, isPctChart);
+
+        const formatDatum = (v: any, seriesLabel: string) => {
+            if (ctx.formatCell && useYearAxisCombined) {
+                return ctx.formatCell(v, seriesLabel);
+            }
+            return formatDefault(v);
+        };
+
+        const dataOut = rows.map((r: any[]) => {
+            if (!Array.isArray(r)) {
+                return r;
+            }
             const nextRow = [...r];
-            // category label is always column 0
             const category = String(nextRow[0] ?? "");
 
-            // Because we inserted columns, we need to insert tooltip values at the same positions (right->left).
-            // For each insertion position, the "value column" is pos-1 (numeric series).
-            insertAt.sort((a, b) => b - a).forEach((pos) => {
-                const valueColIdx = pos - 1;
-                const seriesLabel = labelByColIndex.get(valueColIdx) ?? "ערך";
-                const value = nextRow[valueColIdx];
-                const html = `<div style="${style}"><div><b>${category}</b></div><div style="${subStyle}">${seriesLabel}: ${formatVal(value)}</div></div>`;
-                nextRow.splice(pos, 0, html);
-            });
+            let combinedHtml: string | null = null;
+            if (useWingMultiYear) {
+                combinedHtml = this.buildMultiYearCategoryTooltipHtml(
+                    category,
+                    nextRow,
+                    numericSeries,
+                    formatDefault,
+                    suffixPlain,
+                    showTotal,
+                    wingCopy
+                );
+            } else if (useYearAxisCombined) {
+                combinedHtml = this.buildYearAxisMultiSeriesTooltipHtml(
+                    category,
+                    nextRow,
+                    numericSeries,
+                    formatDatum,
+                    yearAxisCopy
+                );
+            }
+
+            tooltipInsertions
+                .sort((a, b) => b.insertPos - a.insertPos)
+                .forEach(({ insertPos, valueColIdx }) => {
+                    const seriesLabel = labelByColIndex.get(valueColIdx) ?? "ערך";
+                    const value = nextRow[valueColIdx];
+                    const html =
+                        combinedHtml ??
+                        `<div style="${style}"><div><b>${this.escapeHtmlForChartTooltip(category)}</b></div><div style="${subStyle}">${this.escapeHtmlForChartTooltip(seriesLabel)}: ${formatDatum(value, seriesLabel)}</div></div>`;
+                    nextRow.splice(insertPos, 0, html);
+                });
             return nextRow;
         });
 
-        this.chartColumns = columns;
-        this.chartOptions = {
-            ...this.chartOptions,
-            tooltip: {
-                ...(this.chartOptions?.tooltip || {}),
-                isHtml: true,
-                trigger: "focus",
-                showColorCode: true,
+        const useWideCombined = useWingMultiYear || useYearAxisCombined;
+        return {
+            columns,
+            data: dataOut,
+            options: {
+                ...baseOpts,
+                focusTarget: "datum",
+                tooltip: {
+                    ...(baseOpts.tooltip || {}),
+                    isHtml: true,
+                    trigger: "focus",
+                    showColorCode: !useWideCombined,
+                },
             },
         };
+    }
+
+    /** טקסטים לפי מצב הטוגל של הגרף הראשי (כמות ניתוחים) */
+    private getMainChartTooltipPatchContext(): {
+        isPctChart: boolean;
+        multiYearValueSuffix: string;
+        multiYearShowTotal: boolean;
+        wingTooltipSubtitle?: string;
+        wingTotalCaption?: string;
+        yearAxisSubtitle?: string;
+        yearAxisTitlePrefix?: string;
+    } {
+        const isPctChart =
+            this.chartViewMode === "yoy-combined" ||
+            (typeof (this.chartOptions as any)?.hAxis?.format === "string" &&
+                (this.chartOptions as any).hAxis.format.includes("%"));
+
+        if (isPctChart) {
+            return {
+                isPctChart: true,
+                multiYearValueSuffix: "",
+                multiYearShowTotal: false,
+            };
+        }
+
+        switch (this.chartViewMode) {
+            case "department":
+                return {
+                    isPctChart: false,
+                    multiYearValueSuffix: "ניתוחים",
+                    multiYearShowTotal: true,
+                    wingTooltipSubtitle: "מספר ניתוחים לפי שנה במחלקה המאוגדת",
+                    wingTotalCaption: "סה״כ ניתוחים בכל השנים במחלקה זו",
+                };
+            case "year-total":
+                return {
+                    isPctChart: false,
+                    multiYearValueSuffix: "ניתוחים",
+                    multiYearShowTotal: false,
+                    yearAxisSubtitle: "סה״כ ניתוחים בשנה זו",
+                };
+            case "site":
+                return {
+                    isPctChart: false,
+                    multiYearValueSuffix: "ניתוחים",
+                    multiYearShowTotal: false,
+                    yearAxisSubtitle: "ניתוחים לפי אתר בשנה זו (מוערם בגרף)",
+                };
+            case "shift":
+                return {
+                    isPctChart: false,
+                    multiYearValueSuffix: "ניתוחים",
+                    multiYearShowTotal: false,
+                    yearAxisSubtitle: "ניתוחים לפי משמרת בשנה זו (מוערם בגרף)",
+                };
+            case "fund":
+                return {
+                    isPctChart: false,
+                    multiYearValueSuffix: "ניתוחים",
+                    multiYearShowTotal: false,
+                    yearAxisSubtitle: "ניתוחים לפי סוג מימון בשנה זו (מוערם בגרף או עמודות לפי סדרה)",
+                };
+            case "month":
+                return {
+                    isPctChart: false,
+                    multiYearValueSuffix: "ניתוחים",
+                    multiYearShowTotal: true,
+                    wingTooltipSubtitle: "ניתוחים לפי שנה בחודש זה (חודשי עתיד בשנה הנוכחית מוסתרים)",
+                    wingTotalCaption: "סה״כ ניתוחים בכל השנים בחודש זה",
+                };
+            default:
+                return {
+                    isPctChart: false,
+                    multiYearValueSuffix: "ניתוחים",
+                    multiYearShowTotal: true,
+                };
+        }
+    }
+
+    /** כיתובי tooltip לגרף ניצול חדרים (פאנל ראשי) לפי טוגל המדד והתצוגה */
+    private getRoomUtilizationTooltipPatchContext(): {
+        multiYearValueSuffix: string;
+        multiYearShowTotal: boolean;
+        wingTooltipSubtitle?: string;
+        wingTotalCaption?: string;
+        yearAxisSubtitle?: string;
+    } {
+        const metricPhrase =
+            this.roomStatsMetric === "open"
+                ? "חדרים פתוחים"
+                : this.roomStatsMetric === "close"
+                  ? "חדרים סוגרים"
+                  : this.roomStatsMetric === "fullDays"
+                    ? "ימים מלאים (ללא פיצול)"
+                    : "סה״כ חדרים (מצטבר)";
+        if (this.roomStatsViewMode === "yearTotal") {
+            return {
+                multiYearValueSuffix: "",
+                multiYearShowTotal: false,
+                yearAxisSubtitle: `${metricPhrase} – ערך לשנה (ניצול חדר ניתוח)`,
+            };
+        }
+        return {
+            multiYearValueSuffix: "",
+            multiYearShowTotal: true,
+            wingTooltipSubtitle: `${metricPhrase} לפי שנה (מחלקה מאוגדת)`,
+            wingTotalCaption: `סה״כ ${metricPhrase} בכל השנים בשורה זו`,
+        };
+    }
+
+    private applyClearTooltipsToGoogleChart(
+        override?: Partial<{
+            isPctChart: boolean;
+            multiYearValueSuffix: string;
+            multiYearShowTotal: boolean;
+            wingTooltipSubtitle: string;
+            wingTotalCaption: string;
+            yearAxisSubtitle: string;
+            yearAxisTitlePrefix: string;
+            formatCell: (value: any, seriesLabel: string) => string;
+        }>
+    ): void {
+        if ((this.chartOptions as any)?.tooltip === "none" || (this.chartOptions as any)?.tooltip?.trigger === "none") {
+            return;
+        }
+        if (!this.chartColumns || !this.chartData || this.chartData.length === 0) {
+            return;
+        }
+
+        const base = this.getMainChartTooltipPatchContext();
+        const p = this.patchGoogleChartHtmlTooltips(this.chartColumns, this.chartData, this.chartOptions, {
+            ...base,
+            ...override,
+        });
+        this.chartColumns = p.columns;
+        this.chartData = p.data;
+        this.chartOptions = p.options;
     }
 
     /**
@@ -3943,7 +4418,7 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
     this.roomTimesView = "perDay";
     // חובה לבחור מחלקה בכל פתיחת מודל לפני הצגת השוואות
     this.compareDepartmentSelected = null;
-    this.compareSurgeryTypeSelected = null;
+    this.compareSurgeryTypesSelected = [];
     this.loadSurgeriesPerDay();
     this.loadAvgDuration();
     if (!this.countByDeptData || this.countByDeptData.length === 0) {
@@ -3955,6 +4430,8 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
 
   closeCompareDepartmentsModal(): void {
     this.showCompareDepartmentsModal = false;
+    this.closeCompareMetricsDropdown();
+    this.closeCompareSurgeryTypesDropdown();
   }
 
   getCompareDepartmentOptions(): string[] {
@@ -3997,16 +4474,53 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
     this.compareDepartmentSelected = value;
     const typeOptions = this.getCompareSurgeryTypeOptions();
     if (typeOptions.length === 0) {
-      this.compareSurgeryTypeSelected = null;
-    } else if (!this.compareSurgeryTypeSelected || !typeOptions.includes(this.compareSurgeryTypeSelected)) {
-      this.compareSurgeryTypeSelected = typeOptions[0];
+      this.compareSurgeryTypesSelected = [];
+    } else {
+      const allowed = new Set(typeOptions);
+      this.compareSurgeryTypesSelected = this.compareSurgeryTypesSelected.filter((t) => allowed.has(t));
     }
     this.refreshCompareDepartmentsLineChart();
   }
 
-  onCompareSurgeryTypeChanged(value: string | null): void {
-    this.compareSurgeryTypeSelected = value;
+  toggleCompareSurgeryTypesDropdown(): void {
+    if (!this.compareDepartmentSelected) {
+      return;
+    }
+    this.isCompareSurgeryTypesDropdownOpen = !this.isCompareSurgeryTypesDropdownOpen;
+  }
+
+  closeCompareSurgeryTypesDropdown(): void {
+    this.isCompareSurgeryTypesDropdownOpen = false;
+  }
+
+  isCompareSurgeryTypePicked(type: string): boolean {
+    return this.compareSurgeryTypesSelected.includes(type);
+  }
+
+  setCompareSurgeryTypePicked(type: string, checked: boolean): void {
+    const t = (type || "").trim();
+    if (!t) {
+      return;
+    }
+    if (checked) {
+      if (!this.compareSurgeryTypesSelected.includes(t)) {
+        this.compareSurgeryTypesSelected = [...this.compareSurgeryTypesSelected, t];
+      }
+    } else {
+      this.compareSurgeryTypesSelected = this.compareSurgeryTypesSelected.filter((x) => x !== t);
+    }
     this.refreshCompareDepartmentsLineChart();
+  }
+
+  getCompareSurgeryTypesDropdownText(): string {
+    const sel = this.compareSurgeryTypesSelected;
+    if (!sel.length) {
+      return "בחר סוגי ניתוח (אחד או יותר)";
+    }
+    if (sel.length <= 2) {
+      return sel.join(" | ");
+    }
+    return `${sel.length} סוגי ניתוח נבחרו`;
   }
 
   toggleCompareMetricsDropdown(): void {
@@ -4018,6 +4532,26 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
 
   closeCompareMetricsDropdown(): void {
     this.isCompareMetricsDropdownOpen = false;
+  }
+
+  @HostListener('document:click', ['$event'])
+  onDocumentClickCloseCompareMetricsDropdown(ev: MouseEvent): void {
+    const t = ev.target;
+    if (!(t instanceof Node)) {
+      return;
+    }
+    if (this.isCompareMetricsDropdownOpen) {
+      const rootM = this.compareMetricsDropdownWrap?.nativeElement;
+      if (!rootM || !rootM.contains(t)) {
+        this.closeCompareMetricsDropdown();
+      }
+    }
+    if (this.isCompareSurgeryTypesDropdownOpen) {
+      const rootT = this.compareSurgeryTypesDropdownWrap?.nativeElement;
+      if (!rootT || !rootT.contains(t)) {
+        this.closeCompareSurgeryTypesDropdown();
+      }
+    }
   }
 
   isCompareMetricSelected(key: string): boolean {
@@ -4055,9 +4589,8 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
       this.compareDepartmentSelected = null;
     }
     const typeOptions = this.getCompareSurgeryTypeOptions();
-    if (this.compareSurgeryTypeSelected && !typeOptions.includes(this.compareSurgeryTypeSelected)) {
-      this.compareSurgeryTypeSelected = null;
-    }
+    const allowed = new Set(typeOptions);
+    this.compareSurgeryTypesSelected = this.compareSurgeryTypesSelected.filter((x) => allowed.has(x));
   }
 
   /** השוואת מחלקות נשענת על Wing; שורות ניתוח בודדות לעיתים תואמות MappedDept / Department בלבד */
@@ -4105,13 +4638,15 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
     const roomsByYear = new Map<number, number>();
     const surgeriesByYear = new Map<number, number>();
     const avgDurationByYear = new Map<number, number>();
-    const surgeryTypeCountByYear = new Map<number, number>();
-    const surgeryTypeAvgDurationByYear = new Map<number, number>();
+    const surgeryTypeCountByTypeYear = new Map<string, Map<number, number>>();
+    const surgeryTypeAvgDurationByTypeYear = new Map<string, Map<number, number>>();
 
+    // מדד חדרים: RoomsOpen (ימים עם פתיחת חדר למחלקה), לא RoomsTotal — תואם «מחלקה פותחת» / פתיחות בוקר
     for (const r of perDayRows) {
       const y = r.Year;
-      roomsByYear.set(y, (roomsByYear.get(y) || 0) + (r.RoomsTotal ?? 0));
+      roomsByYear.set(y, (roomsByYear.get(y) || 0) + (r.RoomsOpen ?? 0));
     }
+    // ניתוחים: כל שורות Count למחלקה — אגרגציה על כל WeekPart וכל Shift (לא מסננים כמו בגרף הראשי)
     for (const r of countRows) {
       const y = r.Year;
       surgeriesByYear.set(y, (surgeriesByYear.get(y) || 0) + (r.Count ?? 0));
@@ -4129,22 +4664,29 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
       if (v.sumCount > 0) avgDurationByYear.set(y, v.sumMin / v.sumCount);
     });
 
-    const selectedType = (this.compareSurgeryTypeSelected || "").trim();
-    if (selectedType) {
-      countRows
-        .filter((r) => (r.UnifiedSurgeryType || "").trim() === selectedType)
-        .forEach((r) => {
-          surgeryTypeCountByYear.set(r.Year, (surgeryTypeCountByYear.get(r.Year) || 0) + (r.Count ?? 0));
-        });
+    const typeOptionsForCompare = this.getCompareSurgeryTypeOptions();
+    const allowedTypes = new Set(typeOptionsForCompare);
+    const selectedTypesList = this.compareSurgeryTypesSelected
+      .map((t) => t.trim())
+      .filter((t) => t && allowedTypes.has(t))
+      .filter((t, i, arr) => arr.indexOf(t) === i);
 
-      // ממוצע לפי סוג: עדיפות לנתוני GetAvgDurationFiveYears כשיש פירוט לפי סוג (משוקלל לפי Count כמו המדד הכללי)
+    for (const st of selectedTypesList) {
+      const cntMap = new Map<number, number>();
+      countRows
+        .filter((r) => (r.UnifiedSurgeryType || "").trim() === st)
+        .forEach((r) => {
+          cntMap.set(r.Year, (cntMap.get(r.Year) || 0) + (r.Count ?? 0));
+        });
+      surgeryTypeCountByTypeYear.set(st, cntMap);
+
       const typeDurAcc = new Map<number, { sumMin: number; sumCount: number }>();
       for (const r of avgDurationRows) {
         const rowType = (
           (r.SurgeryType || "").trim() ||
           (r.UnifiedSurgeryType || "").trim()
         ).trim();
-        if (!rowType || rowType !== selectedType) {
+        if (!rowType || rowType !== st) {
           continue;
         }
         const y = r.Year;
@@ -4154,18 +4696,18 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
         prev.sumCount += cnt;
         typeDurAcc.set(y, prev);
       }
+      const durMap = new Map<number, number>();
       typeDurAcc.forEach((v, y) => {
         if (v.sumCount > 0) {
-          surgeryTypeAvgDurationByYear.set(y, v.sumMin / v.sumCount);
+          durMap.set(y, v.sumMin / v.sumCount);
         }
       });
 
-      // גיבוי: ניתוחים בודדים — סינון לפי Wing (ותואמים) ולא רק departmentMapped
-      if (surgeryTypeAvgDurationByYear.size === 0) {
+      if (durMap.size === 0) {
         const typeAcc = new Map<number, { sum: number; count: number }>();
         (this.surgeryData || [])
           .filter((s) => this.surgeryRowMatchesCompareWing(s, dep))
-          .filter((s) => ((s.unifiedSurgeryType || s.surgeryType || "").trim() === selectedType))
+          .filter((s) => (s.unifiedSurgeryType || s.surgeryType || "").trim() === st)
           .forEach((s) => {
             const dateParts = this.parseDateParts(s.date);
             if (!dateParts || s.surgeryDurationMinutes == null) {
@@ -4179,10 +4721,11 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
           });
         typeAcc.forEach((v, y) => {
           if (v.count > 0) {
-            surgeryTypeAvgDurationByYear.set(y, v.sum / v.count);
+            durMap.set(y, v.sum / v.count);
           }
         });
       }
+      surgeryTypeAvgDurationByTypeYear.set(st, durMap);
     }
 
     const years = Array.from(
@@ -4190,8 +4733,14 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
         ...Array.from(roomsByYear.keys()),
         ...Array.from(surgeriesByYear.keys()),
         ...Array.from(avgDurationByYear.keys()),
-        ...Array.from(surgeryTypeCountByYear.keys()),
-        ...Array.from(surgeryTypeAvgDurationByYear.keys()),
+        ...Array.from(surgeryTypeCountByTypeYear.values()).reduce<number[]>(
+          (acc, m) => acc.concat(Array.from(m.keys())),
+          [],
+        ),
+        ...Array.from(surgeryTypeAvgDurationByTypeYear.values()).reduce<number[]>(
+          (acc, m) => acc.concat(Array.from(m.keys())),
+          [],
+        ),
       ])
     ).sort((a, b) => a - b).slice(-5);
 
@@ -4204,7 +4753,7 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
     }
 
     const hasTypeSeries =
-      !!selectedType &&
+      selectedTypesList.length > 0 &&
       (this.compareShowTypeCountPerYear || this.compareShowTypeAvgDurationPerYear);
     const hasAnyCompareSeries =
       this.compareShowRoomsPerYear ||
@@ -4241,10 +4790,10 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
 
     // כל דגל מוסיף סדרת עמודות אחת
     if (this.compareShowRoomsPerYear) {
-      addSeries("כמות חדרים למחלקה לשנה", 0);
+      addSeries("חדרים — בוקר, אמצע שבוע; ימי פתיחה למחלקה", 0);
     }
     if (this.compareShowSurgeriesPerYear) {
-      addSeries("כמות ניתוחים למחלקה לשנה", 0);
+      addSeries("ניתוחים — כל הימים וכל המשמרות (לשנה)", 0);
     }
     if (this.compareShowAvgDurationPerYear) {
       addSeries("זמן ניתוח ממוצע (דק')", 1);
@@ -4252,11 +4801,15 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
     if (this.compareShowSurgeriesPerRoom) {
       addSeries("ניתוחים לחדר", 0);
     }
-    if (this.compareShowTypeCountPerYear && selectedType) {
-      addSeries(`כמות "${selectedType}" לשנה`, 0);
+    if (this.compareShowTypeCountPerYear) {
+      for (const st of selectedTypesList) {
+        addSeries(`כמות "${st}" לשנה`, 0);
+      }
     }
-    if (this.compareShowTypeAvgDurationPerYear && selectedType) {
-      addSeries(`זמן ממוצע "${selectedType}" (דק')`, 1);
+    if (this.compareShowTypeAvgDurationPerYear) {
+      for (const st of selectedTypesList) {
+        addSeries(`זמן ממוצע "${st}" (דק')`, 1);
+      }
     }
 
     const rows = years.map((year) => {
@@ -4273,11 +4826,15 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
       if (this.compareShowSurgeriesPerRoom) {
         row.push(surgeriesPerRoomByYear.get(year) ?? null);
       }
-      if (this.compareShowTypeCountPerYear && selectedType) {
-        row.push(surgeryTypeCountByYear.get(year) ?? null);
+      if (this.compareShowTypeCountPerYear) {
+        for (const st of selectedTypesList) {
+          row.push(surgeryTypeCountByTypeYear.get(st)?.get(year) ?? null);
+        }
       }
-      if (this.compareShowTypeAvgDurationPerYear && selectedType) {
-        row.push(surgeryTypeAvgDurationByYear.get(year) ?? null);
+      if (this.compareShowTypeAvgDurationPerYear) {
+        for (const st of selectedTypesList) {
+          row.push(surgeryTypeAvgDurationByTypeYear.get(st)?.get(year) ?? null);
+        }
       }
       return row;
     });
@@ -4292,19 +4849,139 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
 
     this.compareDepartmentsLineChartOptions = {
       title: "",
-      chartArea: { width: "82%", height: "64%", left: 60, top: 56 },
-      legend: { position: "top", alignment: "end" },
-      hAxis: { title: "שנה", textStyle: { fontSize: 12 } },
+      /*
+       * עיצוב תוויות כמו הגרף הראשי (בתוך העמודה, לבן, dataOpacity).
+       * בלי colors / bar ברמת הגרף — ב-ColumnChart עם vAxes כפול ומספר סדרות זה שובר הצגה של חלק מהן.
+       */
+      chartArea: { width: "88%", height: "58%", left: "8%", top: 48 },
+      legend: { position: "none" },
+      axisTitlesPosition: "none",
+      hAxis: {
+        textStyle: { fontSize: 13, bold: true, color: this.isDark ? "#e5e7eb" : "#334155" },
+      },
       vAxes: {
-        0: { title: "כמות", minValue: 0 },
-        1: { title: "זמן ממוצע (דקות)", minValue: 0 },
+        0: { minValue: 0, viewWindowMode: "pretty" },
+        1: { minValue: 0, viewWindowMode: "pretty" },
       },
       series,
+      dataOpacity: 0.95,
+      annotations: {
+        alwaysOutside: false,
+        textStyle: {
+          fontSize: 16,
+          bold: true,
+          /* טקסט כהה — קריא על עמודות צבעוניות ורקע בהיר */
+          color: "#0f172a",
+        },
+      },
       explorer: { actions: ["dragToZoom", "rightClickToReset"], axis: "horizontal" },
       animation: { startup: true, duration: 500, easing: "out" },
       backgroundColor: "transparent",
     };
     this.recomputeCompareDepartmentsGraphInsights();
+    const withBarLabels = this.injectCompareDeptColumnAnnotations(
+      this.compareDepartmentsLineChartColumns,
+      this.compareDepartmentsLineChartData,
+    );
+    const cPatch = this.patchGoogleChartHtmlTooltips(
+      withBarLabels.columns,
+      withBarLabels.data,
+      this.compareDepartmentsLineChartOptions,
+      {
+        multiYearShowTotal: false,
+        multiYearValueSuffix: "",
+        formatCell: (v, seriesLabel) => {
+          const n = Number(v);
+          if (!Number.isFinite(n)) {
+            return "—";
+          }
+          return this.formatCompareDeptSeriesValue(seriesLabel, n);
+        },
+      },
+    );
+    this.compareDepartmentsLineChartColumns = cPatch.columns;
+    this.compareDepartmentsLineChartData = cPatch.data;
+    this.compareDepartmentsLineChartOptions = cPatch.options;
+  }
+
+  /**
+   * עמודת annotation אחרי כל סדרת מספרים — תווית מעל העמודה (אותו עיצוב כמו בטבלת המסקנות).
+   * נקרא לפני patchGoogleChartHtmlTooltips; recomputeCompareDepartmentsGraphInsights רץ לפני זה על טבלה ללא annotation.
+   */
+  private injectCompareDeptColumnAnnotations(
+    columnsIn: any[],
+    rowsIn: any[][],
+  ): { columns: any[]; data: any[][] } {
+    const columns = [...columnsIn];
+    const data = rowsIn.map((r) => (Array.isArray(r) ? [...r] : r));
+    const numericIndices: number[] = [];
+    for (let i = 1; i < columns.length; i++) {
+      const c = columns[i] as any;
+      const isNumberCol = (typeof c === "object" && c?.type === "number") || c === "number";
+      const isRole = typeof c === "object" && !!c?.role;
+      if (isNumberCol && !isRole) {
+        numericIndices.push(i);
+      }
+    }
+    for (let j = numericIndices.length - 1; j >= 0; j--) {
+      const i = numericIndices[j];
+      const c = columns[i] as any;
+      const label = typeof c === "object" && c?.label ? String(c.label) : "";
+      columns.splice(i + 1, 0, { type: "string", role: "annotation" });
+      for (const row of data) {
+        const text = this.formatCompareDeptBarAnnotationText(label, row[i]);
+        row.splice(i + 1, 0, text);
+      }
+    }
+    return { columns, data };
+  }
+
+  /** תווית קומפקטית מעל עמודה — קצרה יותר מהטולטיפ כדי להישאר בתוך רוחב הקבוצה */
+  private formatCompareDeptBarAnnotationText(seriesLabel: string, v: any): string {
+    if (v === null || v === undefined || v === "") {
+      return "";
+    }
+    const n = Number(v);
+    if (!Number.isFinite(n)) {
+      return "";
+    }
+    if (/דק/.test(seriesLabel)) {
+      return this.formatDecimalMinutesAsHhMmOrMmSs(n);
+    }
+    if (seriesLabel.includes("ניתוחים לחדר")) {
+      return n.toFixed(1);
+    }
+    return Math.round(n).toLocaleString("he-IL");
+  }
+
+  /**
+   * דקות עשרוניות → מעל 60 דק׳ מוצג כ־H:MM או H:MM:SS (שעות:דקות),
+   * מתחת ל־60 דק׳ כ־MM:SS (דקות:שניות) כדי שיהיה ברור מה המספר מייצג.
+   */
+  private formatDecimalMinutesAsHhMmOrMmSs(minutes: number): string {
+    if (!Number.isFinite(minutes)) {
+      return "—";
+    }
+    if (Math.abs(minutes) < 1e-9) {
+      return "0:00";
+    }
+    const sign = minutes < 0 ? "-" : "";
+    const absMin = Math.abs(minutes);
+    const totalSec = Math.round(absMin * 60);
+    if (absMin >= 60 - 1e-9) {
+      const h = Math.floor(totalSec / 3600);
+      const rem = totalSec % 3600;
+      const m = Math.floor(rem / 60);
+      const s = rem % 60;
+      const mm = String(m).padStart(2, "0");
+      if (s > 0) {
+        return `${sign}${h}:${mm}:${String(s).padStart(2, "0")}`;
+      }
+      return `${sign}${h}:${mm}`;
+    }
+    const m = Math.floor(totalSec / 60);
+    const s = totalSec % 60;
+    return `${sign}${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
   }
 
   private formatCompareDeptSeriesValue(seriesLabel: string, v: number): string {
@@ -4312,7 +4989,7 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
       return "—";
     }
     if (/דק/.test(seriesLabel)) {
-      return `${v.toFixed(1)} דק'`;
+      return this.formatDecimalMinutesAsHhMmOrMmSs(v);
     }
     if (seriesLabel.includes("ניתוחים לחדר")) {
       return v.toFixed(2);
@@ -4323,7 +5000,11 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
   private formatCompareDeptSeriesDelta(seriesLabel: string, delta: number): string {
     const sign = delta > 0 ? "+" : "";
     if (/דק/.test(seriesLabel)) {
-      return `${sign}${delta.toFixed(1)} דק'`;
+      if (Math.abs(delta) < 1e-9) {
+        return this.formatDecimalMinutesAsHhMmOrMmSs(0);
+      }
+      const body = this.formatDecimalMinutesAsHhMmOrMmSs(delta);
+      return delta > 0 ? `+${body}` : body;
     }
     if (seriesLabel.includes("ניתוחים לחדר")) {
       return `${sign}${delta.toFixed(2)}`;
@@ -4447,7 +5128,7 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
           label,
           prevVal: val0s,
           latestVal: val1s,
-          delta: "0",
+          delta: this.formatCompareDeptSeriesDelta(label, 0),
           pct: "0%",
           trend: "flat",
         });
@@ -5614,7 +6295,7 @@ applyLastEndTimeDisplay(): void {
       valueDisplay = r.AvgEndTime ?? (r.AvgEndMinutes != null ? this.minutesToTime(r.AvgEndMinutes) : "-");
     }
     return {
-      departmentName: r.Wing || r.Department || "לא צוין",
+      departmentName: (r.Wing || "").trim() || "לא צוין",
       valueDisplay,
     };
   });
@@ -5642,6 +6323,15 @@ private loadSurgeriesPerDay(): void {
   if (this.surgeriesPerDayRaw.length > 0 && this.lastSurgeriesPerDayYear === baseYear) {
     const filteredCached = this.filterBySelectedDiagnosis(this.surgeriesPerDayRaw);
     this.buildSurgeriesPerDayChart(filteredCached);
+    const spdCached = this.patchGoogleChartHtmlTooltips(
+      this.surgeriesPerDayChartColumns,
+      this.surgeriesPerDayChartData,
+      this.surgeriesPerDayChartOptions,
+      { multiYearValueSuffix: "ממוצע ליום בחדר", multiYearShowTotal: false },
+    );
+    this.surgeriesPerDayChartColumns = spdCached.columns;
+    this.surgeriesPerDayChartData = spdCached.data;
+    this.surgeriesPerDayChartOptions = spdCached.options;
     this.isSurgeriesPerDayLoading = false;
     this.initializeCompareDepartmentDefaults();
     this.refreshCompareDepartmentsLineChart();
@@ -5663,7 +6353,7 @@ private loadSurgeriesPerDay(): void {
 
   this.http
     .get<AvgSurgeriesPerDayPerRoomDto[]>(environment.url + "GetAvgSurgeriesPerDayPerRoomFiveYears_surgeries_dashborad", {
-      params: { baseYear: baseYear.toString() },
+      params: this.buildSurgeriesPerDayFiveYearsParams(baseYear.toString()),
     })
     .subscribe(
       (rows) => {
@@ -5723,6 +6413,15 @@ private loadSurgeriesPerDay(): void {
             }
           },
         };
+        const spdTip = this.patchGoogleChartHtmlTooltips(
+          this.surgeriesPerDayChartColumns,
+          this.surgeriesPerDayChartData,
+          this.surgeriesPerDayChartOptions,
+          { multiYearValueSuffix: "ממוצע ליום בחדר", multiYearShowTotal: false },
+        );
+        this.surgeriesPerDayChartColumns = spdTip.columns;
+        this.surgeriesPerDayChartData = spdTip.data;
+        this.surgeriesPerDayChartOptions = spdTip.options;
         this.lastSurgeriesPerDayYear = baseYear;
         this.isSurgeriesPerDayLoading = false;
         this.initializeCompareDepartmentDefaults();
@@ -5824,7 +6523,7 @@ private loadRoomUtilizationMainChart(): void {
 
   this.http
     .get<AvgSurgeriesPerDayPerRoomDto[]>(environment.url + "GetAvgSurgeriesPerDayPerRoomFiveYears_surgeries_dashborad", {
-      params: { baseYear: baseYear.toString() },
+      params: this.buildSurgeriesPerDayFiveYearsParams(baseYear.toString()),
     })
     .subscribe(
       (rows) => {
@@ -5926,6 +6625,16 @@ private buildRoomUtilizationMainChartFromRows(filtered: AvgSurgeriesPerDayPerRoo
         groupWidth: "60%",
       },
     };
+
+    const ruYearTip = this.patchGoogleChartHtmlTooltips(
+      this.chartColumns,
+      this.chartData,
+      this.chartOptions,
+      this.getRoomUtilizationTooltipPatchContext(),
+    );
+    this.chartColumns = ruYearTip.columns;
+    this.chartData = ruYearTip.data;
+    this.chartOptions = ruYearTip.options;
 
     return;
   }
@@ -6050,6 +6759,16 @@ private buildRoomUtilizationMainChartFromRows(filtered: AvgSurgeriesPerDayPerRoo
       groupWidth: "60%",
     },
   };
+
+  const ruWingTip = this.patchGoogleChartHtmlTooltips(
+    this.chartColumns,
+    this.chartData,
+    this.chartOptions,
+    this.getRoomUtilizationTooltipPatchContext(),
+  );
+  this.chartColumns = ruWingTip.columns;
+  this.chartData = ruWingTip.data;
+  this.chartOptions = ruWingTip.options;
 }
 
 /**
@@ -6113,6 +6832,25 @@ private buildKpiFilterParams(): { [key: string]: string } {
     params.site = "";
   }
 
+  return params;
+}
+
+/**
+ * פרמטרים ל־GetAvgSurgeriesPerDayPerRoomFiveYears: בוקר + אמצע שבוע + עבודת בוקר (כמו מדדי זמן בקבוצה 2).
+ * אם השרת מתעלם מפרמטרים — הסינון נשאר בצד הלקוח ע״י שימוש ב־RoomsOpen ובתווית המדד.
+ */
+private buildSurgeriesPerDayFiveYearsParams(baseYear: string): { [key: string]: string } {
+  const params: { [key: string]: string } = {
+    baseYear: baseYear.toString(),
+    weekend: "false",
+    morningWork: "true",
+    shift: "בוקר",
+  };
+  if (this.selectedSites && this.selectedSites.length > 0) {
+    params.site = this.selectedSites.join(",");
+  } else if (this.selectedDiagnosis && this.selectedDiagnosis !== "כל האתרים") {
+    params.site = this.selectedDiagnosis;
+  }
   return params;
 }
 
@@ -6248,8 +6986,8 @@ isFilterDisabled(
       return true; // UI "room" filter is marked "(לביצוע)"
     }
 
-    // "ניתוחים ליום" (perDay) is based on GetAvgSurgeriesPerDayPerRoomFiveYears and we currently only
-    // apply site filtering client-side. Other filters are misleading here → disable them.
+    // "ניתוחים ליום" (perDay) — GetAvgSurgeriesPerDayPerRoomFiveYears: נשלחים בוקר/אמצע שבוע/עבודת בוקר בפרמטרים;
+    // סינון אתר נשאר גם בצד הלקוח. שאר פילטרי הסיידבר עדיין לא בתוך ה־DTO → מושבתים כאן.
     if (this.roomTimesView === "perDay") {
       return filterKey !== "site";
     }
@@ -6304,6 +7042,15 @@ loadAvgDuration(): void {
       .filter(r => !this.avgDurationSiteFilter || this.avgDurationSiteFilter === "ALL" || r.Site === this.avgDurationSiteFilter);
 
     this.buildAvgDurationFiveYearsChart(filtered);
+    const avgDurCachedTip = this.patchGoogleChartHtmlTooltips(
+      this.avgDurationChartColumns,
+      this.avgDurationChartData,
+      this.avgDurationChartOptions,
+      { multiYearValueSuffix: "", multiYearShowTotal: false },
+    );
+    this.avgDurationChartColumns = avgDurCachedTip.columns;
+    this.avgDurationChartData = avgDurCachedTip.data;
+    this.avgDurationChartOptions = avgDurCachedTip.options;
     this.isAvgDurationLoading = false;
     this.refreshCompareDepartmentsLineChart();
     this.cdr.detectChanges();
@@ -6389,6 +7136,15 @@ loadAvgDuration(): void {
     
           
         };
+        const avgDurTip = this.patchGoogleChartHtmlTooltips(
+          this.avgDurationChartColumns,
+          this.avgDurationChartData,
+          this.avgDurationChartOptions,
+          { multiYearValueSuffix: "", multiYearShowTotal: false },
+        );
+        this.avgDurationChartColumns = avgDurTip.columns;
+        this.avgDurationChartData = avgDurTip.data;
+        this.avgDurationChartOptions = avgDurTip.options;
         this.isAvgDurationLoading = false;
         this.refreshCompareDepartmentsLineChart();
         this.cdr.detectChanges();
@@ -6566,7 +7322,7 @@ private loadAvgFirstMorningEntry(): void {
 
         // טבלה – תצוגה טקסטואלית (נשמרת למקרה שימוש עתידי, גם אם כרגע לא מוצגת ב-UI)
         this.firstStartTimeData = filtered.map(r => ({
-          departmentName: r.Wing || r.Department || "לא צוין",
+          departmentName: (r.Wing || "").trim() || "לא צוין",
           valueDisplay: r.AvgEntryTime || (r.AvgEntryMinutes != null ? this.minutesToTime(r.AvgEntryMinutes) : "-"),
         }));
 
@@ -6673,7 +7429,7 @@ private loadAvgFirstMorningEntry(): void {
       if (r.AvgEntryMinutes == null || r.Count == null || r.Count <= 0) {
         continue;
       }
-      const dept = (r.Wing || r.Department || "לא צוין").trim();
+      const dept = (r.Wing || "").trim() || "לא צוין";
       const year = r.Year;
       if (!years.includes(year)) {
         continue;
@@ -6718,6 +7474,16 @@ private loadAvgFirstMorningEntry(): void {
 
       return [dept, ...series];
     });
+
+    const fst = this.patchGoogleChartHtmlTooltips(
+      this.firstStartTimeChartColumns,
+      this.firstStartTimeChartData,
+      this.firstStartTimeChartOptions,
+      { multiYearValueSuffix: "", multiYearShowTotal: false },
+    );
+    this.firstStartTimeChartColumns = fst.columns;
+    this.firstStartTimeChartData = fst.data;
+    this.firstStartTimeChartOptions = fst.options;
   }
 
   // נתונים לגרף עמודות רב-שנתי של זמן סיום ניתוח אחרון
@@ -6929,7 +7695,7 @@ private loadAvgLastMorningEnd(): void {
       if (minutes == null || count <= 0) {
         continue;
       }
-      const dept = (r.Wing || r.Department || "לא צוין").trim();
+      const dept = (r.Wing || "").trim() || "לא צוין";
       const year = r.Year;
       if (!years.includes(year)) {
         continue;
@@ -7048,6 +7814,15 @@ private loadAvgLastMorningEnd(): void {
         //   }
         // }
       };
+    const letip = this.patchGoogleChartHtmlTooltips(
+      this.lastEndTimeChartColumns,
+      this.lastEndTimeChartData,
+      this.lastEndTimeChartOptions,
+      { multiYearValueSuffix: "", multiYearShowTotal: false },
+    );
+    this.lastEndTimeChartColumns = letip.columns;
+    this.lastEndTimeChartData = letip.data;
+    this.lastEndTimeChartOptions = letip.options;
   }
 
 private loadAvgSetup(): void {
@@ -7070,7 +7845,7 @@ private loadAvgSetup(): void {
         const list = Array.isArray(rows) ? rows : [];
         const filtered = this.filterBySelectedDiagnosis(list);
         this.avgSetupData = filtered.map(r => ({
-          departmentName: r.Wing || r.Department || "לא צוין",
+          departmentName: (r.Wing || "").trim() || "לא צוין",
           valueDisplay: r.AvgSetupMin != null ? r.AvgSetupMin.toFixed(1) : "-",
         }));
 
@@ -7140,6 +7915,16 @@ private loadAvgSetup(): void {
           }
         };
 
+        const ast = this.patchGoogleChartHtmlTooltips(
+          this.avgSetupChartColumns,
+          this.avgSetupChartData,
+          this.avgSetupChartOptions,
+          { multiYearValueSuffix: "", multiYearShowTotal: false },
+        );
+        this.avgSetupChartColumns = ast.columns;
+        this.avgSetupChartData = ast.data;
+        this.avgSetupChartOptions = ast.options;
+
         this.isAvgSetupLoading = false;
         this.cdr.detectChanges();
       },
@@ -7168,7 +7953,7 @@ private loadAvgSetup(): void {
     const deptMap = new Map<string, Map<number, number | null>>();
 
     rows.forEach(r => {
-      const dept = (r.Wing || r.Department || "לא צוין").trim();
+      const dept = (r.Wing || "").trim() || "לא צוין";
       const year = r.Year;
       const val = r.AvgSetupMin ?? null;
 
@@ -7324,7 +8109,7 @@ private buildLossByWingChart(rows: LossByWingYearDto[]): void {
 
   const byWingYear = new Map<string, Map<number, { min: number; label: string }>>();
   rows.forEach(r => {
-    const wing = (r.Wing || "לא צוין").trim();
+    const wing = (r.Wing || "").trim() || "לא צוין";
     const year = Number(r.Year);
     // אם השנה אינה מספר תקין – נדלג
     if (isNaN(year)) {
@@ -7383,6 +8168,16 @@ private buildLossByWingChart(rows: LossByWingYearDto[]): void {
 
     return [wing, ...series];
   });
+
+  const lbw = this.patchGoogleChartHtmlTooltips(
+    this.lossByWingChartColumns,
+    this.lossByWingChartData,
+    this.lossByWingChartOptions,
+    { multiYearValueSuffix: "דקות", multiYearShowTotal: false },
+  );
+  this.lossByWingChartColumns = lbw.columns;
+  this.lossByWingChartData = lbw.data;
+  this.lossByWingChartOptions = lbw.options;
 }
 
 private loadApprovedUtilizationPerDay(): void {
@@ -7457,7 +8252,7 @@ private buildApprovedUtilizationChart(rows: ApprovedUtilizationDto[]): void {
 
   const byWingYear = new Map<string, Map<number, { min: number; label: string }>>();
   for (const r of rows) {
-    const wing = (r.Wing || "לא צוין").trim();
+    const wing = (r.Wing || "").trim() || "לא צוין";
     const year = Number(r.Year);
     if (!years.includes(year)) continue;
     const min = r.AvgApprovedMin;
@@ -7493,6 +8288,16 @@ private buildApprovedUtilizationChart(rows: ApprovedUtilizationDto[]): void {
 
     return [wing, ...series];
   });
+
+  const appr = this.patchGoogleChartHtmlTooltips(
+    this.approvedUtilizationChartColumns,
+    this.approvedUtilizationChartData,
+    this.approvedUtilizationChartOptions,
+    { multiYearValueSuffix: "", multiYearShowTotal: false },
+  );
+  this.approvedUtilizationChartColumns = appr.columns;
+  this.approvedUtilizationChartData = appr.data;
+  this.approvedUtilizationChartOptions = appr.options;
 }
 
 private minutesToTime(totalMinutes: number): string {
