@@ -820,8 +820,10 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
   } | null = null;
 
   readonly compareMetricOptions: { key: string; label: string }[] = [
-    { key: 'rooms', label: 'כמות חדרים למחלקה ' },
-    { key: 'surgeries', label: 'כמות ניתוחים למחלקה ' },
+    /** מוצג: ימי פתיחת חדר (מדד פתיחות) למחלקה — נתוני API מסוננים למשמרת בוקר ולאמצע שבוע בלבד */
+    { key: 'rooms', label: 'חדרים — בוקר, אמצע שבוע; ימי פתיחה למחלקה (לא סה״כ חדרים)' },
+    /** מוצג: סה״כ ניתוחים למחלקה מ־GetCountByDept — סיכום כל שורות הספירה: כל ימי השבוע וכל המשמרות */
+    { key: 'surgeries', label: 'ניתוחים למחלקה — כל ימי השבוע וכל המשמרות (סה״כ שבוצעו)' },
     { key: 'avgDuration', label: 'זמן ניתוח ממוצע (דקות) ' },
     { key: 'surgeriesPerRoom', label: 'ניתוחים לחדר (ניתוחים / חדרים)' },
     { key: 'typeCount', label: 'כמות ניתוחים מסוג נבחר ' },
@@ -4639,10 +4641,12 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
     const surgeryTypeCountByTypeYear = new Map<string, Map<number, number>>();
     const surgeryTypeAvgDurationByTypeYear = new Map<string, Map<number, number>>();
 
+    // מדד חדרים: RoomsOpen (ימים עם פתיחת חדר למחלקה), לא RoomsTotal — תואם «מחלקה פותחת» / פתיחות בוקר
     for (const r of perDayRows) {
       const y = r.Year;
-      roomsByYear.set(y, (roomsByYear.get(y) || 0) + (r.RoomsTotal ?? 0));
+      roomsByYear.set(y, (roomsByYear.get(y) || 0) + (r.RoomsOpen ?? 0));
     }
+    // ניתוחים: כל שורות Count למחלקה — אגרגציה על כל WeekPart וכל Shift (לא מסננים כמו בגרף הראשי)
     for (const r of countRows) {
       const y = r.Year;
       surgeriesByYear.set(y, (surgeriesByYear.get(y) || 0) + (r.Count ?? 0));
@@ -4786,10 +4790,10 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
 
     // כל דגל מוסיף סדרת עמודות אחת
     if (this.compareShowRoomsPerYear) {
-      addSeries("כמות חדרים למחלקה לשנה", 0);
+      addSeries("חדרים — בוקר, אמצע שבוע; ימי פתיחה למחלקה", 0);
     }
     if (this.compareShowSurgeriesPerYear) {
-      addSeries("כמות ניתוחים למחלקה לשנה", 0);
+      addSeries("ניתוחים — כל הימים וכל המשמרות (לשנה)", 0);
     }
     if (this.compareShowAvgDurationPerYear) {
       addSeries("זמן ניתוח ממוצע (דק')", 1);
@@ -6349,7 +6353,7 @@ private loadSurgeriesPerDay(): void {
 
   this.http
     .get<AvgSurgeriesPerDayPerRoomDto[]>(environment.url + "GetAvgSurgeriesPerDayPerRoomFiveYears_surgeries_dashborad", {
-      params: { baseYear: baseYear.toString() },
+      params: this.buildSurgeriesPerDayFiveYearsParams(baseYear.toString()),
     })
     .subscribe(
       (rows) => {
@@ -6519,7 +6523,7 @@ private loadRoomUtilizationMainChart(): void {
 
   this.http
     .get<AvgSurgeriesPerDayPerRoomDto[]>(environment.url + "GetAvgSurgeriesPerDayPerRoomFiveYears_surgeries_dashborad", {
-      params: { baseYear: baseYear.toString() },
+      params: this.buildSurgeriesPerDayFiveYearsParams(baseYear.toString()),
     })
     .subscribe(
       (rows) => {
@@ -6832,6 +6836,25 @@ private buildKpiFilterParams(): { [key: string]: string } {
 }
 
 /**
+ * פרמטרים ל־GetAvgSurgeriesPerDayPerRoomFiveYears: בוקר + אמצע שבוע + עבודת בוקר (כמו מדדי זמן בקבוצה 2).
+ * אם השרת מתעלם מפרמטרים — הסינון נשאר בצד הלקוח ע״י שימוש ב־RoomsOpen ובתווית המדד.
+ */
+private buildSurgeriesPerDayFiveYearsParams(baseYear: string): { [key: string]: string } {
+  const params: { [key: string]: string } = {
+    baseYear: baseYear.toString(),
+    weekend: "false",
+    morningWork: "true",
+    shift: "בוקר",
+  };
+  if (this.selectedSites && this.selectedSites.length > 0) {
+    params.site = this.selectedSites.join(",");
+  } else if (this.selectedDiagnosis && this.selectedDiagnosis !== "כל האתרים") {
+    params.site = this.selectedDiagnosis;
+  }
+  return params;
+}
+
+/**
  * Build query parameters for GetAvgDurationFiveYears_surgeries_dashborad (room-times KPI)
  * based on dashboard filters. Backend expects single values; when multi-selected we skip that filter.
  */
@@ -6963,8 +6986,8 @@ isFilterDisabled(
       return true; // UI "room" filter is marked "(לביצוע)"
     }
 
-    // "ניתוחים ליום" (perDay) is based on GetAvgSurgeriesPerDayPerRoomFiveYears and we currently only
-    // apply site filtering client-side. Other filters are misleading here → disable them.
+    // "ניתוחים ליום" (perDay) — GetAvgSurgeriesPerDayPerRoomFiveYears: נשלחים בוקר/אמצע שבוע/עבודת בוקר בפרמטרים;
+    // סינון אתר נשאר גם בצד הלקוח. שאר פילטרי הסיידבר עדיין לא בתוך ה־DTO → מושבתים כאן.
     if (this.roomTimesView === "perDay") {
       return filterKey !== "site";
     }
