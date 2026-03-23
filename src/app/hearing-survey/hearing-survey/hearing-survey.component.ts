@@ -98,7 +98,11 @@ export class HearingSurveyComponent implements OnInit {
     private hearingDetailsApi: HearingDetailsApiService,
     private dialog: MatDialog
   ) {
-    this.detailsApiBase = resolveHearingDetailsApiBase(environment.url, environment.hearingDetailsApiBase);
+    this.detailsApiBase = resolveHearingDetailsApiBase(
+      environment.url,
+      environment.hearingDetailsApiBase,
+      environment.AuthUrl
+    );
   }
 
   ngOnInit(): void {

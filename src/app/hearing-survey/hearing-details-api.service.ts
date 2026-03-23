@@ -13,12 +13,34 @@ export interface HearingDetailsResponse {
   columnOrder: string[];
 }
 
-/** Empty `explicit` → derive site root from legacy WebService.asmx URL. */
-export function resolveHearingDetailsApiBase(webServiceUrl: string, explicit?: string): string {
+/**
+ * Base URL for `{base}/api/hearing/details` (no trailing slash).
+ * 1. `explicit` (environment.hearingDetailsApiBase) if set
+ * 2. Else `authApiUrl` origin when it looks like a modern API root (`.../api/...`) and not ASMX
+ * 3. Else folder next to legacy WebService.asmx (localhost / single-host setups)
+ */
+export function resolveHearingDetailsApiBase(
+  webServiceUrl: string,
+  explicit?: string,
+  authApiUrl?: string
+): string {
   const trimmed = (explicit || '').trim();
   if (trimmed) {
     return trimmed.replace(/\/$/, '');
   }
+
+  const auth = (authApiUrl || '').trim();
+  if (auth && !/WebService\.asmx/i.test(auth)) {
+    try {
+      const u = new URL(auth);
+      if (/\/api(\/|$)/i.test(u.pathname)) {
+        return u.origin;
+      }
+    } catch {
+      /* fall through */
+    }
+  }
+
   try {
     const u = new URL(webServiceUrl);
     const path = u.pathname.replace(/\/?WebService\.asmx\/?$/i, '').replace(/\/$/, '');
