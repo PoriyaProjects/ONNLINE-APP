@@ -2395,6 +2395,56 @@ table.table {
   min-height: 0;
 }
 
+/* בקרות, כרטיס הסבר וגרף — כיוון RTL מפורש (תוויות, רשימות, טבלאות) */
+.compare-departments-modal .compare-dept-controls {
+  direction: rtl;
+}
+
+.compare-departments-modal .compare-dept-control label {
+  text-align: right;
+  width: 100%;
+}
+
+.compare-departments-modal .compare-dept-control select {
+  direction: rtl;
+  text-align: right;
+}
+
+.compare-departments-modal .compare-metrics-trigger {
+  direction: rtl;
+}
+
+.compare-departments-modal .compare-metrics-trigger span {
+  text-align: right;
+}
+
+.compare-departments-modal .compare-metrics-panel {
+  direction: rtl;
+  text-align: right;
+}
+
+.compare-departments-modal .compare-dept-legend-card {
+  direction: rtl;
+  text-align: right;
+}
+
+.compare-departments-modal .compare-dept-legend-title {
+  text-align: right;
+}
+
+.compare-departments-modal .compare-dept-insights-table {
+  direction: rtl;
+}
+
+/* Google Chart לעיתים מגדיר dir=ltr פנימית — יישור כותרות צירים וטקסט ב־SVG */
+.compare-dept-chart-pane ::ng-deep google-chart > div {
+  direction: rtl !important;
+}
+
+.compare-dept-chart-pane ::ng-deep google-chart svg {
+  direction: rtl;
+}
+
 /* גרף + קוביית הסבר: ב‑RTL הפריט הראשון ב‑flex (הכרטיס) נשבץ מימין לגרף */
 .compare-dept-chart-row {
   display: flex;
@@ -2407,6 +2457,10 @@ table.table {
   min-width: 0;
 }
 
+.compare-departments-modal .compare-dept-chart-row {
+  min-height: 320px;
+}
+
 .compare-dept-chart-pane {
   flex: 1 1 auto;
   min-width: 0;
@@ -2415,10 +2469,18 @@ table.table {
   flex-direction: column;
 }
 
+.compare-departments-modal .compare-dept-chart-pane {
+  min-height: 320px;
+}
+
 .compare-dept-chart-pane google-chart {
   flex: 1 1 auto;
-  min-height: 260px;
+  min-height: 280px;
   width: 100%;
+}
+
+.compare-departments-modal .compare-dept-chart-pane google-chart {
+  min-height: 340px;
 }
 
 .compare-dept-legend-card {
@@ -2666,17 +2728,6 @@ table.table {
   text-align: right;
 }
 
-.compare-dept-legend-foot {
-  margin: 0;
-  font-size: 10px;
-  font-weight: 400;
-  color: #94a3b8;
-  line-height: 1.45;
-  padding: 0;
-  border: none;
-  text-align: right;
-}
-
 .compare-dept-controls {
   display: grid;
   grid-template-columns: minmax(220px, 260px) minmax(220px, 260px) minmax(280px, 1fr);
@@ -2726,21 +2777,49 @@ table.table {
 
 .compare-metrics-dropdown-wrap {
   position: relative;
+  z-index: 1;
+}
+
+.compare-metrics-dropdown-wrap:has(.compare-metrics-panel) {
+  z-index: 12;
 }
 
 .compare-metrics-trigger {
-  height: 36px;
-  border-radius: 10px;
+  height: 40px;
+  border-radius: 12px;
   border: 1px solid var(--border);
-  background: rgba(255,255,255,.92);
+  background: rgba(255,255,255,.94);
   color: var(--text);
-  padding: 0 10px;
+  padding: 0 12px;
   width: 100%;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
+  gap: 10px;
   cursor: pointer;
+  font: inherit;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+
+.compare-metrics-trigger:hover:not(:disabled) {
+  border-color: rgba(124, 58, 237, 0.45);
+  background: #fff;
+  box-shadow: 0 1px 0 rgba(124, 58, 237, 0.08);
+}
+
+.compare-metrics-trigger:focus-visible {
+  outline: 2px solid rgba(124, 58, 237, 0.55);
+  outline-offset: 2px;
+}
+
+.compare-metrics-trigger:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.compare-metrics-trigger--open:not(:disabled) {
+  border-color: rgba(124, 58, 237, 0.5);
+  box-shadow: 0 0 0 1px rgba(124, 58, 237, 0.12);
 }
 
 .compare-metrics-trigger span {
@@ -2748,34 +2827,58 @@ table.table {
   text-overflow: ellipsis;
   white-space: nowrap;
   font-size: 13px;
+  text-align: start;
+  flex: 1;
+  min-width: 0;
+}
+
+.compare-metrics-chevron {
+  flex-shrink: 0;
+  font-size: 22px;
+  width: 22px;
+  height: 22px;
+  color: var(--muted);
 }
 
 .compare-metrics-panel {
   position: absolute;
   inset-inline-start: 0;
   inset-inline-end: 0;
-  top: calc(100% + 6px);
-  max-height: 240px;
+  top: calc(100% + 8px);
+  max-height: min(280px, 55vh);
   overflow: auto;
-  border-radius: 10px;
-  border: 1px solid var(--border);
-  background: rgba(255,255,255,.98);
-  box-shadow: 0 10px 30px rgba(2,6,23,.18);
-  padding: 8px;
-  z-index: 5;
+  border-radius: 12px;
+  border: 1px solid rgba(148, 163, 184, 0.55);
+  background: rgba(255, 255, 255, 0.99);
+  box-shadow:
+    0 4px 6px -1px rgba(2, 6, 23, 0.08),
+    0 18px 40px -12px rgba(2, 6, 23, 0.22);
+  padding: 6px;
+  z-index: 50;
 }
 
 .compare-metrics-item {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 6px 4px;
+  gap: 10px;
+  padding: 8px 10px;
+  margin: 2px 0;
   font-size: 13px;
   color: var(--text);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.12s ease;
+}
+
+.compare-metrics-item:hover {
+  background: rgba(124, 58, 237, 0.07);
 }
 
 .compare-metrics-item input[type="checkbox"] {
   accent-color: #7c3aed;
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
 }
 
 .compare-dept-options label {
@@ -2794,15 +2897,44 @@ table.table {
   opacity: .6;
 }
 
-.compare-dept-required-message {
-  margin: 2px 2px 4px;
-  padding: 10px 12px;
-  border-radius: 10px;
-  border: 1px dashed rgba(245,158,11,.65);
-  background: rgba(254,243,199,.7);
-  color: #92400e;
+.compare-dept-awaiting-chart {
+  min-height: 88px;
+  border-radius: 12px;
+  border: 1px dashed var(--border);
+  background: rgba(148, 163, 184, 0.08);
+  margin-top: 8px;
+}
+
+.compare-dept-awaiting-icon {
+  font-size: 44px;
+  width: 44px;
+  height: 44px;
+  opacity: 0.72;
+  color: var(--muted);
+}
+
+.compare-dept-awaiting-title {
+  margin: 0;
+  font-size: 15px;
+}
+
+.compare-dept-awaiting-hint {
+  margin: 0;
+  max-width: 440px;
+  text-align: center;
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 500;
+  line-height: 1.45;
+  color: var(--muted);
+}
+
+.kpi-overlay.dark .compare-dept-awaiting-chart {
+  background: rgba(148, 163, 184, 0.1);
+  border-color: rgba(148, 163, 184, 0.35);
+}
+
+.kpi-overlay.dark .compare-dept-awaiting-hint {
+  color: #94a3b8;
 }
 
 @media (max-width: 1280px) {
@@ -2866,10 +2998,28 @@ table.table {
   color: #e5e7eb;
 }
 
-.kpi-overlay.dark .compare-dept-required-message {
-  background: rgba(120,53,15,.35);
-  border-color: rgba(251,191,36,.65);
-  color: #fde68a;
+.kpi-overlay.dark .compare-metrics-trigger:hover:not(:disabled) {
+  background: rgba(30, 41, 59, 0.95);
+  border-color: rgba(167, 139, 250, 0.55);
+}
+
+.kpi-overlay.dark .compare-metrics-trigger--open:not(:disabled) {
+  border-color: rgba(167, 139, 250, 0.65);
+  box-shadow: 0 0 0 1px rgba(129, 140, 248, 0.2);
+}
+
+.kpi-overlay.dark .compare-metrics-chevron {
+  color: #94a3b8;
+}
+
+.kpi-overlay.dark .compare-metrics-panel {
+  box-shadow:
+    0 4px 6px -1px rgba(0, 0, 0, 0.35),
+    0 18px 40px -12px rgba(0, 0, 0, 0.5);
+}
+
+.kpi-overlay.dark .compare-metrics-item:hover {
+  background: rgba(129, 140, 248, 0.12);
 }
 
 .kpi-overlay.dark .compare-dept-legend-card {
@@ -2963,11 +3113,6 @@ table.table {
 
 .kpi-overlay.dark .compare-dept-legend-api-note {
   color: #cbd5e1;
-}
-
-.kpi-overlay.dark .compare-dept-legend-foot {
-  color: #64748b;
-  border-top-color: #334155;
 }
 
 .kpi-overlay.dark .kpi-modal {
