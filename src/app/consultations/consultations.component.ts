@@ -29,7 +29,6 @@ import {
     Validators,
 } from "@angular/forms";
 import { MatRadioChange } from "@angular/material/radio";
-import { data } from "jquery";
 import { MenuPerm } from "../menu-perm";
 import * as XLSX from 'xlsx';
 import { environment } from "src/environments/environment";
