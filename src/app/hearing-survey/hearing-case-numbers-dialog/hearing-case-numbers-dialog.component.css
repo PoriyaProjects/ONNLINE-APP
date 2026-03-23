@@ -1,0 +1,41 @@
+.dialog-body {
+  min-width: min(92vw, 420px);
+  max-width: 520px;
+  padding-top: 8px;
+}
+
+.search-field {
+  width: 100%;
+  margin-bottom: 8px;
+}
+
+.list-wrap {
+  max-height: min(60vh, 420px);
+  overflow: auto;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  background: #fafafa;
+}
+
+.case-list {
+  list-style: none;
+  margin: 0;
+  padding: 8px 12px;
+}
+
+.case-list li {
+  padding: 6px 4px;
+  border-bottom: 1px solid #eee;
+  font-family: Tahoma, Arial, sans-serif;
+  font-size: 14px;
+}
+
+.case-list li:last-child {
+  border-bottom: none;
+}
+
+.empty-hint {
+  padding: 24px;
+  text-align: center;
+  color: #757575;
+}

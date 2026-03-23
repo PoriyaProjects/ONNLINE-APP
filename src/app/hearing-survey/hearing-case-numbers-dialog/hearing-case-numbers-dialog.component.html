@@ -1,0 +1,20 @@
+<h2 mat-dialog-title>סוג {{ data.type }} — מספרי תיק ({{ filtered.length }})</h2>
+
+<mat-dialog-content class="dialog-body">
+  <mat-form-field appearance="outline" class="search-field">
+    <mat-label>חיפוש מזהה</mat-label>
+    <input matInput [(ngModel)]="searchInput" (ngModelChange)="onSearchChange($event)" autocomplete="off">
+    <mat-icon matSuffix>search</mat-icon>
+  </mat-form-field>
+
+  <div class="list-wrap">
+    <ul class="case-list">
+      <li *ngFor="let id of filtered">{{ id }}</li>
+    </ul>
+    <div *ngIf="!filtered.length" class="empty-hint">אין תוצאות</div>
+  </div>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button type="button" (click)="close()">סגור</button>
+</mat-dialog-actions>
