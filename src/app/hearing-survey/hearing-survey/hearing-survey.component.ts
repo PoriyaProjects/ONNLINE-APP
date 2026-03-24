@@ -1,6 +1,9 @@
 import { Component, OnInit } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
+import { MatDialog } from '@angular/material/dialog';
 import { environment } from '../../../environments/environment';
+import { HearingCaseNumbersDialogComponent } from '../hearing-case-numbers-dialog/hearing-case-numbers-dialog.component';
+import { HearingDetailsApiService, HearingDetailsResponse, resolveHearingDetailsApiBase } from '../hearing-details-api.service';
 
 function getMonthStartEnd(): { start: string, end: string } {
   const now = new Date();
@@ -36,6 +39,9 @@ export class HearingSurveyComponent implements OnInit {
   loading = false;
   error: string | null = null;
   counts: HearingCounts | null = null;
+  details: HearingDetailsResponse | null = null;
+  detailsError: string | null = null;
+  private readonly detailsApiBase: string;
 
   readonly tableRows: TableRow[] = [
     {
@@ -87,7 +93,17 @@ export class HearingSurveyComponent implements OnInit {
 
   readonly splitColumnKeys = ['D', 'E', 'F', 'K', 'L', 'M', 'O', 'P', 'Q'] as const;
 
-  constructor(private http: HttpClient) { }
+  constructor(
+    private http: HttpClient,
+    private hearingDetailsApi: HearingDetailsApiService,
+    private dialog: MatDialog
+  ) {
+    this.detailsApiBase = resolveHearingDetailsApiBase(
+      environment.url,
+      environment.hearingDetailsApiBase,
+      environment.AuthUrl
+    );
+  }
 
   ngOnInit(): void {
     // Do not set default dates or run the report automatically
@@ -100,17 +116,59 @@ export class HearingSurveyComponent implements OnInit {
     }
     this.loading = true;
     this.error = null;
+    this.detailsError = null;
     this.counts = null;
+    this.details = null;
+
+    let pending = 2;
+    const finishOne = () => {
+      pending--;
+      if (pending <= 0) {
+        this.loading = false;
+      }
+    };
+
     this.getCounts(this.startDate, this.endDate).then(
       data => {
         this.counts = data;
-        this.loading = false;
+        finishOne();
       },
       err => {
         this.error = typeof err === 'string' ? err : (err?.message || 'Unknown error');
-        this.loading = false;
+        finishOne();
       }
     );
+
+    this.hearingDetailsApi.getDetails(this.detailsApiBase, this.startDate, this.endDate).subscribe(
+      data => {
+        this.details = data;
+        finishOne();
+      },
+      err => {
+        this.detailsError = typeof err === 'string' ? err : 'שגיאה בטעינת פירוט מקרים';
+        finishOne();
+      }
+    );
+  }
+
+  countForType(letter: string): number {
+    const rows = this.details?.byType?.[letter];
+    return rows ? rows.length : 0;
+  }
+
+  openTypeDetails(letter: string): void {
+    if (!this.details) {
+      return;
+    }
+    const rows = this.details.byType[letter] || [];
+    const caseNumbers = rows.map(r => r.caseNumber);
+    this.dialog.open(HearingCaseNumbersDialogComponent, {
+      width: '520px',
+      maxWidth: '95vw',
+      maxHeight: '90vh',
+      panelClass: 'hearing-case-numbers-dialog-panel',
+      data: { type: letter, caseNumbers }
+    });
   }
 
   getCounts(dateIn: string, dateOut: string): Promise<HearingCounts> {
