@@ -1661,7 +1661,12 @@
 
             <div class="compare-metrics-panel" *ngIf="isCompareMetricsDropdownOpen" role="listbox"
               aria-label="מדדי השוואה">
-              <label class="compare-metrics-item" *ngFor="let opt of compareMetricOptions" role="option">
+              <label class="compare-metrics-item" *ngFor="let opt of compareMetricOptions" role="option"
+                [matTooltip]="opt.tooltip || ''"
+                [matTooltipDisabled]="!opt.tooltip"
+                matTooltipPosition="before"
+                matTooltipShowDelay="200"
+                matTooltipClass="compare-metric-long-tooltip">
                 <input type="checkbox"
                   [checked]="isCompareMetricSelected(opt.key)"
                   (change)="setCompareMetricSelected(opt.key, $event.target.checked)">
@@ -1680,26 +1685,26 @@
         </div>
 
         <div
-          *ngIf="compareDepartmentSelected && (isSurgeriesPerDayLoading || isAvgDurationLoading)"
+          *ngIf="compareDepartmentSelected && compareDepartmentsModalChartLoading()"
           class="kpi-loading">
           <mat-spinner diameter="40"></mat-spinner>
           <span class="kpi-loading-text">טוען נתונים למחלקה שנבחרה…</span>
         </div>
         <div
-          *ngIf="compareDepartmentSelected && !isSurgeriesPerDayLoading && !isAvgDurationLoading &&
+          *ngIf="compareDepartmentSelected && !compareDepartmentsModalChartLoading() &&
                  compareDepartmentsAwaitingMetricSelection"
           class="kpi-no-data compare-dept-pick-metrics">
           סמן מדד אחד או יותר ברשימת מדדי ההשוואה כדי להוסיף עמודות לגרף (אפשר להפעיל מדד אחר מדד).
         </div>
         <div
-          *ngIf="compareDepartmentSelected && !isSurgeriesPerDayLoading && !isAvgDurationLoading &&
+          *ngIf="compareDepartmentSelected && !compareDepartmentsModalChartLoading() &&
                  !compareDepartmentsAwaitingMetricSelection &&
                  (!compareDepartmentsLineChartData || compareDepartmentsLineChartData.length === 0)"
           class="kpi-no-data">
           אין מספיק נתונים להצגת השוואה במחלקה שנבחרה.
         </div>
         <div
-          *ngIf="compareDepartmentSelected && !isSurgeriesPerDayLoading && !isAvgDurationLoading &&
+          *ngIf="compareDepartmentSelected && !compareDepartmentsModalChartLoading() &&
                  !compareDepartmentsAwaitingMetricSelection &&
                  compareDepartmentsLineChartData && compareDepartmentsLineChartData.length > 0"
           class="compare-dept-chart-row">

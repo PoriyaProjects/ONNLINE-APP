@@ -140,7 +140,15 @@ export interface AvgSetupRow {
   AvgSetupMin: number;
 }
 
-/** ממוצע משך ניתוח (לפי שנה) לפי מחלקה – GetAvgDurationFiveYears */
+/**
+ * ממוצע משך ניתוח (לפי שנה) לפי מחלקה – GetAvgDurationFiveYears.
+ *
+ * מדד רשמי (Average Surgery Duration): ממוצע זמן ניתוח בדקות על כל הניתוחים,
+ * כל הימים והמשמרות, למחלקה — ללא קשר לחדר כמימד המדד.
+ * אם השרת מחזיר גם שורות סה״כ וגם פירוט (חדר / משמרת / סופ״ש / סוג), אסור לסכום
+ * משוקלל על הכול בלי בחירת שכבה אחת — ראה `filterAvgDurationRowsNoApiDoubleCount`.
+ * לטווח ארוך מומלץ לחשב AVG(משך ניתוח) ב-SQL בלבד ולהחזיר שורה אחת לכל (Wing, שנה).
+ */
 export interface AvgDurationFiveYearsDto {
   Year: number;
   Site: string;
@@ -156,6 +164,20 @@ export interface AvgDurationFiveYearsDto {
   UnifiedSurgeryType?: string;
   Shift?: string;
   WeekendType?: string;
+}
+
+/**
+ * פלט GetAvgDurationYearlyFiveYears_surgeries_dashborad — ממוצע SQL לפי שנה/אתר/Wing/סוג ניתוח מאוחד
+ * (למודאל השוואת מחלקות בלבד, סדרת «זמן ניתוח ממוצע — כל המשמרות והימים»).
+ */
+export interface AvgDurationYearlyDto {
+  Year: number;
+  Site: string;
+  Wing: string;
+  SurgeryType: string;
+  Count: number;
+  AvgMinutes: number;
+  AvgHHMM: string;
 }
 
 type AvgDurationSiteFilter = "ALL" | "חנ-כללי" | "חנ-אמבול" | "חנ-יולד" | "חנ-מחלקה" | "חנ-פהלסת";
@@ -192,6 +214,28 @@ export interface AvgSurgeriesPerDayPerRoomDto {
   RoomsClose: number;
   /** ימים «מלאים»: ימים שבהם נרשמו גם פתיחה וגם סגירה; קשור ל־min(פתיחות, סגירות) ברמת היום */
   FullDays: number;
+}
+
+/**
+ * GetDepRoomFiveYears_surgeries_dashborad — YTD; ניתוחים ליום חדר רק בימים ללא פיצול (מודאל השוואת מחלקות).
+ * שמות שדות תואמים JSON מ־ASP.NET; ייתכנו גם גרסאות camelCase.
+ */
+export interface RoomsStatsDepRoomDto {
+  Year: number;
+  Site: string;
+  Department: string;
+  Wing: string;
+  WorkDays?: number;
+  /** ימים ללא יום פיצול — משמשים לבסיס הממוצע כשאין פירוט נפרד */
+  FullDays?: number;
+  /** ניתוחים בימים ללא פיצול בלבד */
+  Surgeries?: number;
+  /** ממוצע ניתוחים ליום חדר מלא (ללא פיצול) */
+  AvgSurgeries?: number;
+  /** ממוצע ניתוחים ליום פתיחת חדר — רק ימים ללא פיצול; המדד לעמודת ההשוואה */
+  AvgSurgeriesPerOpenRoomDay?: number;
+  /** ימי פתיחת חדר (ללא פיצול) — לאגרגציה */
+  RoomsOpenDays?: number;
 }
 
 /** זמן אבוד ליום לפי מחלקה ושנה – GetLossByWingYear_surgeries_dashborad */
@@ -726,6 +770,12 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
 
     // Raw "one call per baseYear" caches – filter in client without additional API calls.
     private avgDurationFiveYearsRawByBaseYear = new Map<string, AvgDurationFiveYearsDto[]>();
+    /** ממוצע משך ניתוח שנתי (SQL) — רק למודאל השוואת מחלקות; טעינה חד-פעמית לכל baseYear */
+    private compareAvgDurationYearlyRawByBaseYear = new Map<string, AvgDurationYearlyDto[]>();
+    private compareAvgDurationYearlyFetchInFlight = false;
+    /** GetDepRoomFiveYears — רק לסדרת «ניתוחים לחדר» במודאל השוואה */
+    private compareDepRoomRawByBaseYear = new Map<string, RoomsStatsDepRoomDto[]>();
+    private compareDepRoomFetchInFlight = false;
     private lossByWingYearRawByBaseYear = new Map<string, LossByWingYearDto[]>();
     private approvedUtilizationRawByBaseYear = new Map<string, ApprovedUtilizationDto[]>();
 
@@ -819,18 +869,35 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
     rows: CompareDeptInsightTableRow[];
   } | null = null;
 
-  readonly compareMetricOptions: { key: string; label: string }[] = [
+  readonly compareMetricOptions: { key: string; label: string; tooltip?: string }[] = [
     /** מוצג: ימי פתיחת חדר (מדד פתיחות) למחלקה — נתוני API מסוננים למשמרת בוקר ולאמצע שבוע בלבד */
     { key: 'rooms', label: 'חדרים — בוקר, אמצע שבוע; ימי פתיחה למחלקה (לא סה״כ חדרים)' },
     /** מוצג: סה״כ ניתוחים למחלקה מ־GetCountByDept — סיכום כל שורות הספירה: כל ימי השבוע וכל המשמרות */
     { key: 'surgeries', label: 'ניתוחים למחלקה — כל ימי השבוע וכל המשמרות (סה״כ שבוצעו)' },
-    { key: 'avgDuration', label: 'זמן ניתוח ממוצע (דקות) ' },
-    { key: 'surgeriesPerRoom', label: 'ניתוחים לחדר (ניתוחים / חדרים)' },
+    { key: 'avgDuration', label: 'זמן ניתוח ממוצע (דקות) — כל המשמרות והימים' },
+    {
+      key: 'surgeriesPerRoom',
+      label: 'ניתוחים ליום חדר — ללא פיצול (YTD)',
+      tooltip:
+        '\u200Fמדד מ־GetDepRoomFiveYears: ניתוחים ליום חדר רק בימים ללא פיצול — יום שבו מסומן פיצול מוחרג מהמונה ומהמכנה.\n\n' +
+        '\u200Fממוצע ניתוחים ליום פתיחת חדר בימים «מלאים» ללא פיצול, עד חודש נוכחי בשנה (YTD).\n\n' +
+        '\u200Fאגרגציה על כמה אתרים: יחס סכום ניתוחים לסכום ימי פתיחה (ללא פיצול), או ממוצע משוקלל לפי השדות מהשרת.',
+    },
     { key: 'typeCount', label: 'כמות ניתוחים מסוג נבחר ' },
-    { key: 'typeAvgDuration', label: 'זמן ניתוח ממוצע לסוג נבחר ' },
+    {
+      key: 'typeAvgDuration',
+      label: 'זמן ניתוח ממוצע לסוג נבחר',
+      tooltip:
+        '\u200Fחישוב זמן ניתוח ממוצע לפי סוג הניתוח שנבחר:\n\n' +
+        '\u200Fדחוף או אלקטיבי — נכללים רק ניתוחים במשמרת בוקר, באמצע שבוע, וללא ניתוחים גולשים.\n\n' +
+        '\u200Fססיה — נכללים כל הניתוחים של הסוג (כל המשמרות והימים) לחישוב הממוצע.',
+    },
   ];
 
   isAvgDurationLoading = false;
+  /** טעינת GetAvgDurationYearlyFiveYears עבור סדרת ממוצע משך במודאל השוואת מחלקות */
+  isCompareAvgDurationYearlyLoading = false;
+  isCompareDepRoomLoading = false;
   isFirstStartTimeLoading = false;
   isLastEndTimeLoading = false;
   isAvgSetupLoading = false;
@@ -1038,8 +1105,9 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
     const rightRows = byWing.filter(r => matchValue(r, this.avgDurationCompareRightValue));
     const leftRows = byWing.filter(r => matchValue(r, this.avgDurationCompareLeftValue));
 
-    const rightModel = this.buildAvgDurationFiveYearsChartModel(rightRows);
-    const leftModel = this.buildAvgDurationFiveYearsChartModel(leftRows);
+    const dedupeCtx = this.getAvgDurationCompareDedupeCtx();
+    const rightModel = this.buildAvgDurationFiveYearsChartModel(rightRows, dedupeCtx);
+    const leftModel = this.buildAvgDurationFiveYearsChartModel(leftRows, dedupeCtx);
 
     this.avgDurationCompareRightChartColumns = rightModel.columns;
     this.avgDurationCompareRightChartData = rightModel.data;
@@ -1066,17 +1134,30 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
       return out;
     };
 
+    const yearSiteKey = (r: AvgDurationFiveYearsDto) =>
+      `${r.Year}|${(r.Site || "").trim()}`;
+    const rightDeduped = this.filterAvgDurationRowsNoApiDoubleCount(
+      rightRows,
+      yearSiteKey,
+      (r) => this.isAvgDurationCoarseRow(r, dedupeCtx),
+    );
+    const leftDeduped = this.filterAvgDurationRowsNoApiDoubleCount(
+      leftRows,
+      yearSiteKey,
+      (r) => this.isAvgDurationCoarseRow(r, dedupeCtx),
+    );
+
     const allYears = Array.from(
       new Set<number>([
-        ...rightRows.map(r => r.Year).filter((y): y is number => y != null),
-        ...leftRows.map(r => r.Year).filter((y): y is number => y != null),
+        ...rightDeduped.map(r => r.Year).filter((y): y is number => y != null),
+        ...leftDeduped.map(r => r.Year).filter((y): y is number => y != null),
       ])
     ).sort((a, b) => a - b);
     const years = allYears.slice(-5);
     this.avgDurationCompareYears = years;
 
-    const rightByYear = toWeightedAvgByYear(rightRows);
-    const leftByYear = toWeightedAvgByYear(leftRows);
+    const rightByYear = toWeightedAvgByYear(rightDeduped);
+    const leftByYear = toWeightedAvgByYear(leftDeduped);
 
     const rightLabel = `: ${(this.avgDurationCompareRightValue || 'הכל').trim() || 'הכל'}`;
     const leftLabel = `: ${(this.avgDurationCompareLeftValue || 'הכל').trim() || 'הכל'}`;
@@ -4434,6 +4515,329 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
     this.closeCompareSurgeryTypesDropdown();
   }
 
+  /**
+   * ספינר מודאל השוואת מחלקות: ניתוחים ליום בחדר, ממוצע שנתי, ו-GetDepRoomFiveYears כשמסומן «ניתוחים לחדר».
+   */
+  compareDepartmentsModalChartLoading(): boolean {
+    if (!this.showCompareDepartmentsModal || !this.compareDepartmentSelected) {
+      return false;
+    }
+    if (this.isSurgeriesPerDayLoading) {
+      return true;
+    }
+    const baseY = this.getBaseYearForRoomTimes();
+    const needsYearly =
+      this.compareShowAvgDurationPerYear ||
+      (this.compareShowTypeAvgDurationPerYear && this.compareSurgeryTypesSelected.length > 0);
+    if (
+      needsYearly &&
+      !this.compareAvgDurationYearlyRawByBaseYear.has(baseY) &&
+      this.isCompareAvgDurationYearlyLoading
+    ) {
+      return true;
+    }
+    if (
+      this.compareShowSurgeriesPerRoom &&
+      !this.compareDepRoomRawByBaseYear.has(baseY) &&
+      this.isCompareDepRoomLoading
+    ) {
+      return true;
+    }
+    return false;
+  }
+
+  /**
+   * טוען פעם אחת לכל baseYear את GetAvgDurationYearlyFiveYears_surgeries_dashborad (מטמון מקומי).
+   */
+  private ensureCompareAvgDurationYearlyLoaded(): void {
+    const baseYear = this.getBaseYearForRoomTimes();
+    if (this.compareAvgDurationYearlyRawByBaseYear.has(baseYear)) {
+      return;
+    }
+    if (this.compareAvgDurationYearlyFetchInFlight) {
+      return;
+    }
+    this.compareAvgDurationYearlyFetchInFlight = true;
+    this.isCompareAvgDurationYearlyLoading = true;
+    this.cdr.detectChanges();
+
+    this.http
+      .get<AvgDurationYearlyDto[]>(environment.url + "GetAvgDurationYearlyFiveYears_surgeries_dashborad", {
+        params: { baseYear },
+      })
+      .subscribe(
+        (rows) => {
+          const list = Array.isArray(rows) ? rows : [];
+          this.compareAvgDurationYearlyRawByBaseYear.set(baseYear, list);
+          this.compareAvgDurationYearlyFetchInFlight = false;
+          this.isCompareAvgDurationYearlyLoading = false;
+          this.refreshCompareDepartmentsLineChart();
+          this.cdr.detectChanges();
+        },
+        (err) => {
+          console.error("GetAvgDurationYearlyFiveYears_surgeries_dashborad:", err);
+          this.compareAvgDurationYearlyRawByBaseYear.set(baseYear, []);
+          this.compareAvgDurationYearlyFetchInFlight = false;
+          this.isCompareAvgDurationYearlyLoading = false;
+          this.snackBar.open("❌ שגיאה בטעינת ממוצע משך ניתוח (מודאל השוואה)", "סגור", { duration: 4000 });
+          this.refreshCompareDepartmentsLineChart();
+          this.cdr.detectChanges();
+        },
+      );
+  }
+
+  /**
+   * טוען פעם אחת לכל baseYear את GetDepRoomFiveYears_surgeries_dashborad (מטמון — סדרת ניתוחים לחדר במודאל השוואה).
+   */
+  private ensureCompareDepRoomLoaded(): void {
+    const baseYear = this.getBaseYearForRoomTimes();
+    if (this.compareDepRoomRawByBaseYear.has(baseYear)) {
+      return;
+    }
+    if (this.compareDepRoomFetchInFlight) {
+      return;
+    }
+    this.compareDepRoomFetchInFlight = true;
+    this.isCompareDepRoomLoading = true;
+    this.cdr.detectChanges();
+
+    this.http
+      .get<RoomsStatsDepRoomDto[]>(environment.url + "GetDepRoomFiveYears_surgeries_dashborad", {
+        params: { baseYear },
+      })
+      .subscribe(
+        (rows) => {
+          const list = Array.isArray(rows) ? rows : [];
+          this.compareDepRoomRawByBaseYear.set(baseYear, list);
+          this.compareDepRoomFetchInFlight = false;
+          this.isCompareDepRoomLoading = false;
+          this.refreshCompareDepartmentsLineChart();
+          this.cdr.detectChanges();
+        },
+        (err) => {
+          console.error("GetDepRoomFiveYears_surgeries_dashborad:", err);
+          this.compareDepRoomRawByBaseYear.set(baseYear, []);
+          this.compareDepRoomFetchInFlight = false;
+          this.isCompareDepRoomLoading = false;
+          this.snackBar.open("❌ שגיאה בטעינת ניתוחים לחדר (מודאל השוואה)", "סגור", { duration: 4000 });
+          this.refreshCompareDepartmentsLineChart();
+          this.cdr.detectChanges();
+        },
+      );
+  }
+
+  private readDepRoomNumber(row: Record<string, unknown>, ...keys: string[]): number | null {
+    for (const k of keys) {
+      const v = row[k];
+      if (v == null || v === "") {
+        continue;
+      }
+      const n = Number(v);
+      if (Number.isFinite(n)) {
+        return n;
+      }
+    }
+    return null;
+  }
+
+  /**
+   * ניתוחים ליום פתיחת חדר לפי שנה — רק ימים ללא פיצול (GetDepRoomFiveYears); אגרגציה על אתרים.
+   */
+  private buildCompareSurgeriesPerRoomByYearFromDepRoom(dep: string, baseYearKey: string): Map<number, number> {
+    const list = this.compareDepRoomRawByBaseYear.get(baseYearKey) || [];
+    let rows = list.filter((r) => (r.Wing || "").trim() === (dep || "").trim());
+    if (this.avgDurationSiteFilter !== "ALL") {
+      rows = rows.filter((r) => (r.Site || "").trim() === this.avgDurationSiteFilter);
+    }
+
+    type Acc = {
+      sumSurg: number;
+      sumOpen: number;
+      sumWeightedAvg: number;
+      weight: number;
+      avgOnlySum: number;
+      avgOnlyN: number;
+    };
+    const acc = new Map<number, Acc>();
+
+    for (const r of rows) {
+      const raw = r as unknown as Record<string, unknown>;
+      const yRaw = raw["Year"] ?? raw["year"];
+      const y = Number(yRaw);
+      if (!Number.isFinite(y)) {
+        continue;
+      }
+
+      const surg = this.readDepRoomNumber(raw, "Surgeries", "surgeries") ?? 0;
+      const open =
+        this.readDepRoomNumber(raw, "RoomsOpenDays", "roomsOpenDays") ??
+        this.readDepRoomNumber(raw, "WorkDays", "workDays", "work_days") ??
+        0;
+      const avgPod = this.readDepRoomNumber(
+        raw,
+        "AvgSurgeriesPerOpenRoomDay",
+        "avgSurgeriesPerOpenRoomDay",
+      );
+
+      const p = acc.get(y) || {
+        sumSurg: 0,
+        sumOpen: 0,
+        sumWeightedAvg: 0,
+        weight: 0,
+        avgOnlySum: 0,
+        avgOnlyN: 0,
+      };
+      p.sumSurg += surg;
+      p.sumOpen += open;
+      if (open > 0 && avgPod != null) {
+        p.sumWeightedAvg += avgPod * open;
+        p.weight += open;
+      }
+      if (avgPod != null) {
+        p.avgOnlySum += avgPod;
+        p.avgOnlyN += 1;
+      }
+      acc.set(y, p);
+    }
+
+    const out = new Map<number, number>();
+    acc.forEach((p, y) => {
+      let v: number | null = null;
+      if (p.sumOpen > 0) {
+        v = p.sumSurg / p.sumOpen;
+      } else if (p.weight > 0) {
+        v = p.sumWeightedAvg / p.weight;
+      } else if (p.avgOnlyN > 0) {
+        v = p.avgOnlySum / p.avgOnlyN;
+      }
+      if (v != null && Number.isFinite(v)) {
+        out.set(y, v);
+      }
+    });
+    return out;
+  }
+
+  /**
+   * ממוצע משך לפי שנה מה-API השנתי — כל הסוגים (ללא unifiedSurgeryType) או סוג מאוחד בודד.
+   */
+  private buildCompareAvgDurationByYearFromYearlyApi(
+    dep: string,
+    baseYearKey: string,
+    unifiedSurgeryType?: string | null,
+  ): Map<number, number> {
+    const list = this.compareAvgDurationYearlyRawByBaseYear.get(baseYearKey) || [];
+    const w = (dep || "").trim();
+    let rows = list.filter((r) => (r.Wing || "").trim() === w);
+    if (this.avgDurationSiteFilter !== "ALL") {
+      rows = rows.filter((r) => (r.Site || "").trim() === this.avgDurationSiteFilter);
+    }
+    const typeTrim = (unifiedSurgeryType || "").trim();
+    if (typeTrim) {
+      rows = rows.filter((r) => (r.SurgeryType || "").trim() === typeTrim);
+    }
+    const acc = new Map<number, { sum: number; cnt: number }>();
+    for (const r of rows) {
+      const y = r.Year;
+      if (y == null) {
+        continue;
+      }
+      const c = r.Count ?? 0;
+      const avg = Number(r.AvgMinutes);
+      if (!Number.isFinite(avg) || c <= 0) {
+        continue;
+      }
+      const p = acc.get(y) || { sum: 0, cnt: 0 };
+      p.sum += avg * c;
+      p.cnt += c;
+      acc.set(y, p);
+    }
+    const out = new Map<number, number>();
+    acc.forEach((v, y) => {
+      if (v.cnt > 0) {
+        out.set(y, v.sum / v.cnt);
+      }
+    });
+    return out;
+  }
+
+  private fillCompareAvgDurationByYearFromLegacyDeduped(
+    target: Map<number, number>,
+    dedupedRows: AvgDurationFiveYearsDto[],
+  ): void {
+    const avgAcc = new Map<number, { sumMin: number; sumCount: number }>();
+    for (const r of dedupedRows) {
+      const y = r.Year;
+      const prev = avgAcc.get(y) || { sumMin: 0, sumCount: 0 };
+      const cnt = r.Count ?? 0;
+      prev.sumMin += (r.AvgDurationMin ?? 0) * cnt;
+      prev.sumCount += cnt;
+      avgAcc.set(y, prev);
+    }
+    avgAcc.forEach((v, y) => {
+      if (v.sumCount > 0) {
+        target.set(y, v.sumMin / v.sumCount);
+      }
+    });
+  }
+
+  /** נפילה למודאל השוואה: ממוצע משך לפי סוג מ-GetAvgDurationFiveYears / שורות ניתוח */
+  private buildCompareTypeAvgDurationMapLegacy(
+    st: string,
+    dep: string,
+    avgDurationRows: AvgDurationFiveYearsDto[],
+  ): Map<number, number> {
+    const rowsForType = avgDurationRows.filter((r) => {
+      const rowType = (
+        (r.SurgeryType || "").trim() ||
+        (r.UnifiedSurgeryType || "").trim()
+      ).trim();
+      return !!rowType && rowType === st;
+    });
+    const typeRowsDeduped = this.filterAvgDurationRowsNoApiDoubleCount(
+      rowsForType,
+      (r) => String(r.Year),
+      (r) => this.isAvgDurationCoarseRow(r, { treatSurgeryTypeAsLocked: true }),
+    );
+    const typeDurAcc = new Map<number, { sumMin: number; sumCount: number }>();
+    for (const r of typeRowsDeduped) {
+      const y = r.Year;
+      const prev = typeDurAcc.get(y) || { sumMin: 0, sumCount: 0 };
+      const cnt = r.Count ?? 0;
+      prev.sumMin += (r.AvgDurationMin ?? 0) * cnt;
+      prev.sumCount += cnt;
+      typeDurAcc.set(y, prev);
+    }
+    const durMap = new Map<number, number>();
+    typeDurAcc.forEach((v, y) => {
+      if (v.sumCount > 0) {
+        durMap.set(y, v.sumMin / v.sumCount);
+      }
+    });
+    if (durMap.size === 0) {
+      const typeAcc = new Map<number, { sum: number; count: number }>();
+      (this.surgeryData || [])
+        .filter((s) => this.surgeryRowMatchesCompareWing(s, dep))
+        .filter((s) => (s.unifiedSurgeryType || s.surgeryType || "").trim() === st)
+        .forEach((s) => {
+          const dateParts = this.parseDateParts(s.date);
+          if (!dateParts || s.surgeryDurationMinutes == null) {
+            return;
+          }
+          const y = dateParts.year;
+          const prev = typeAcc.get(y) || { sum: 0, count: 0 };
+          prev.sum += Number(s.surgeryDurationMinutes);
+          prev.count += 1;
+          typeAcc.set(y, prev);
+        });
+      typeAcc.forEach((v, y) => {
+        if (v.count > 0) {
+          durMap.set(y, v.sum / v.count);
+        }
+      });
+    }
+    return durMap;
+  }
+
   getCompareDepartmentOptions(): string[] {
     const fromPerDay = (this.surgeriesPerDayRaw || [])
       .map((r) => (r.Wing || "").trim())
@@ -4624,16 +5028,31 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
     }
 
     const baseYear = this.getBaseYearForRoomTimes();
+    if (
+      this.compareShowAvgDurationPerYear ||
+      (this.compareShowTypeAvgDurationPerYear && this.compareSurgeryTypesSelected.length > 0)
+    ) {
+      this.ensureCompareAvgDurationYearlyLoaded();
+    }
+    if (this.compareShowSurgeriesPerRoom) {
+      this.ensureCompareDepRoomLoaded();
+    }
     const avgDurationRaw = this.avgDurationFiveYearsRawByBaseYear.get(baseYear) || [];
 
     const perDayRows = this.filterBySelectedDiagnosis(this.surgeriesPerDayRaw || []).filter(
       (r) => (r.Wing || "").trim() === dep
     );
     const countRows = (this.countByDeptData || []).filter((r) => (r.Wing || "").trim() === dep);
+    // ממוצע משך ניתוח במודאל השוואה: כל הניתוחים, כל המשמרות, כל הימים כולל סופ״ש — בלי פילטרי הסיידבר
+    // (סוג משמרת / חלק שבוע / סוג ניתוח / מחלקה בגרף הראשי), תואם לאגרגציה של Count לשנה.
     const avgDurationRows = avgDurationRaw
-      .filter((r) => this.matchesRoomTimesFilters(r))
       .filter((r) => this.avgDurationSiteFilter === "ALL" || r.Site === this.avgDurationSiteFilter)
       .filter((r) => (r.Wing || "").trim() === dep);
+    const avgDurationRowsDeduped = this.filterAvgDurationRowsNoApiDoubleCount(
+      avgDurationRows,
+      (r) => String(r.Year),
+      (r) => this.isAvgDurationCoarseRow(r),
+    );
 
     const roomsByYear = new Map<number, number>();
     const surgeriesByYear = new Map<number, number>();
@@ -4651,18 +5070,17 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
       const y = r.Year;
       surgeriesByYear.set(y, (surgeriesByYear.get(y) || 0) + (r.Count ?? 0));
     }
-    const avgAcc = new Map<number, { sumMin: number; sumCount: number }>();
-    for (const r of avgDurationRows) {
-      const y = r.Year;
-      const prev = avgAcc.get(y) || { sumMin: 0, sumCount: 0 };
-      const cnt = r.Count ?? 0;
-      prev.sumMin += (r.AvgDurationMin ?? 0) * cnt;
-      prev.sumCount += cnt;
-      avgAcc.set(y, prev);
+    // סדרת «זמן ניתוח ממוצע — כל המשמרות והימים»: רק GetAvgDurationYearlyFiveYears (מטמון); אם אין נתונים — נפילה ל-API הישן
+    if (this.compareShowAvgDurationPerYear) {
+      if (this.compareAvgDurationYearlyRawByBaseYear.has(baseYear)) {
+        const fromYearly = this.buildCompareAvgDurationByYearFromYearlyApi(dep, baseYear);
+        if (fromYearly.size > 0) {
+          fromYearly.forEach((v, y) => avgDurationByYear.set(y, v));
+        } else {
+          this.fillCompareAvgDurationByYearFromLegacyDeduped(avgDurationByYear, avgDurationRowsDeduped);
+        }
+      }
     }
-    avgAcc.forEach((v, y) => {
-      if (v.sumCount > 0) avgDurationByYear.set(y, v.sumMin / v.sumCount);
-    });
 
     const typeOptionsForCompare = this.getCompareSurgeryTypeOptions();
     const allowedTypes = new Set(typeOptionsForCompare);
@@ -4680,59 +5098,30 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
         });
       surgeryTypeCountByTypeYear.set(st, cntMap);
 
-      const typeDurAcc = new Map<number, { sumMin: number; sumCount: number }>();
-      for (const r of avgDurationRows) {
-        const rowType = (
-          (r.SurgeryType || "").trim() ||
-          (r.UnifiedSurgeryType || "").trim()
-        ).trim();
-        if (!rowType || rowType !== st) {
-          continue;
+      let durMap = new Map<number, number>();
+      if (this.compareShowTypeAvgDurationPerYear) {
+        if (this.compareAvgDurationYearlyRawByBaseYear.has(baseYear)) {
+          const fromYearly = this.buildCompareAvgDurationByYearFromYearlyApi(dep, baseYear, st);
+          durMap =
+            fromYearly.size > 0
+              ? fromYearly
+              : this.buildCompareTypeAvgDurationMapLegacy(st, dep, avgDurationRows);
         }
-        const y = r.Year;
-        const prev = typeDurAcc.get(y) || { sumMin: 0, sumCount: 0 };
-        const cnt = r.Count ?? 0;
-        prev.sumMin += (r.AvgDurationMin ?? 0) * cnt;
-        prev.sumCount += cnt;
-        typeDurAcc.set(y, prev);
-      }
-      const durMap = new Map<number, number>();
-      typeDurAcc.forEach((v, y) => {
-        if (v.sumCount > 0) {
-          durMap.set(y, v.sumMin / v.sumCount);
-        }
-      });
-
-      if (durMap.size === 0) {
-        const typeAcc = new Map<number, { sum: number; count: number }>();
-        (this.surgeryData || [])
-          .filter((s) => this.surgeryRowMatchesCompareWing(s, dep))
-          .filter((s) => (s.unifiedSurgeryType || s.surgeryType || "").trim() === st)
-          .forEach((s) => {
-            const dateParts = this.parseDateParts(s.date);
-            if (!dateParts || s.surgeryDurationMinutes == null) {
-              return;
-            }
-            const y = dateParts.year;
-            const prev = typeAcc.get(y) || { sum: 0, count: 0 };
-            prev.sum += Number(s.surgeryDurationMinutes);
-            prev.count += 1;
-            typeAcc.set(y, prev);
-          });
-        typeAcc.forEach((v, y) => {
-          if (v.count > 0) {
-            durMap.set(y, v.sum / v.count);
-          }
-        });
       }
       surgeryTypeAvgDurationByTypeYear.set(st, durMap);
     }
+
+    const compareDepRoomSprByYear =
+      this.compareShowSurgeriesPerRoom && this.compareDepRoomRawByBaseYear.has(baseYear)
+        ? this.buildCompareSurgeriesPerRoomByYearFromDepRoom(dep, baseYear)
+        : new Map<number, number>();
 
     const years = Array.from(
       new Set([
         ...Array.from(roomsByYear.keys()),
         ...Array.from(surgeriesByYear.keys()),
         ...Array.from(avgDurationByYear.keys()),
+        ...Array.from(compareDepRoomSprByYear.keys()),
         ...Array.from(surgeryTypeCountByTypeYear.values()).reduce<number[]>(
           (acc, m) => acc.concat(Array.from(m.keys())),
           [],
@@ -4771,9 +5160,13 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
     }
     this.compareDepartmentsAwaitingMetricSelection = false;
 
-    // ניתוחים לחדר לכל שנה – KPI ישיר על ניצול חדרים
+    // ניתוחים ליום חדר ללא פיצול: עדיפות ל-GetDepRoomFiveYears; אחרת נסיגה לניתוחים÷RoomsOpen מהנתונים הישנים
     const surgeriesPerRoomByYear = new Map<number, number>();
     years.forEach((y) => {
+      if (compareDepRoomSprByYear.has(y)) {
+        surgeriesPerRoomByYear.set(y, compareDepRoomSprByYear.get(y)!);
+        return;
+      }
       const rooms = roomsByYear.get(y) ?? 0;
       const surgs = surgeriesByYear.get(y) ?? 0;
       if (rooms > 0 && surgs > 0) {
@@ -4796,10 +5189,10 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
       addSeries("ניתוחים — כל הימים וכל המשמרות (לשנה)", 0);
     }
     if (this.compareShowAvgDurationPerYear) {
-      addSeries("זמן ניתוח ממוצע (דק')", 1);
+      addSeries("זמן ניתוח ממוצע — כל המשמרות והימים (דק')", 1);
     }
     if (this.compareShowSurgeriesPerRoom) {
-      addSeries("ניתוחים לחדר", 0);
+      addSeries("ניתוחים ליום חדר — ללא פיצול", 0);
     }
     if (this.compareShowTypeCountPerYear) {
       for (const st of selectedTypesList) {
@@ -4948,10 +5341,18 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
     if (/דק/.test(seriesLabel)) {
       return this.formatDecimalMinutesAsHhMmOrMmSs(n);
     }
-    if (seriesLabel.includes("ניתוחים לחדר")) {
+    if (this.isCompareDeptSurgeriesPerRoomSeriesLabel(seriesLabel)) {
       return n.toFixed(1);
     }
     return Math.round(n).toLocaleString("he-IL");
+  }
+
+  /** סדרת «ניתוחים ליום חדר» / «ניתוחים לחדר» במודאל השוואה — ערך עשרוני */
+  private isCompareDeptSurgeriesPerRoomSeriesLabel(seriesLabel: string): boolean {
+    return (
+      seriesLabel.includes("ניתוחים ליום חדר") ||
+      seriesLabel.includes("ניתוחים לחדר")
+    );
   }
 
   /**
@@ -4991,7 +5392,7 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
     if (/דק/.test(seriesLabel)) {
       return this.formatDecimalMinutesAsHhMmOrMmSs(v);
     }
-    if (seriesLabel.includes("ניתוחים לחדר")) {
+    if (this.isCompareDeptSurgeriesPerRoomSeriesLabel(seriesLabel)) {
       return v.toFixed(2);
     }
     return Math.round(v).toLocaleString("he-IL");
@@ -5006,7 +5407,7 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
       const body = this.formatDecimalMinutesAsHhMmOrMmSs(delta);
       return delta > 0 ? `+${body}` : body;
     }
-    if (seriesLabel.includes("ניתוחים לחדר")) {
+    if (this.isCompareDeptSurgeriesPerRoomSeriesLabel(seriesLabel)) {
       return `${sign}${delta.toFixed(2)}`;
     }
     return `${sign}${Math.round(delta).toLocaleString("he-IL")}`;
@@ -6911,6 +7312,74 @@ private getBaseYearForRoomTimes(): string {
   return (this.getLatestYearFromDeptData() || this.currentYear.toString()).toString();
 }
 
+/**
+ * שורה "גסה" = ללא פירוט שמייצר כפילות מול שורת סה״כ (חדר / משמרת / סופ״ש / סוג ניתוח).
+ * כשמשווים לפי משמרת או סוג — המימד הזה כבר חלק מהסלייס ולא נחשב כפירוט.
+ */
+private isAvgDurationCoarseRow(
+  r: AvgDurationFiveYearsDto,
+  ctx?: {
+    treatShiftAsLocked?: boolean;
+    treatWeekendAsLocked?: boolean;
+    treatSurgeryTypeAsLocked?: boolean;
+  },
+): boolean {
+  const c = ctx || {};
+  if ((r.Room ?? "").trim()) {
+    return false;
+  }
+  if (!(c.treatShiftAsLocked ?? false) && (r.Shift ?? "").trim()) {
+    return false;
+  }
+  if (!(c.treatWeekendAsLocked ?? false) && (r.WeekendType ?? "").trim()) {
+    return false;
+  }
+  if (!(c.treatSurgeryTypeAsLocked ?? false)) {
+    const st = (r.SurgeryType ?? "").trim() || (r.UnifiedSurgeryType ?? "").trim();
+    if (st) {
+      return false;
+    }
+  }
+  return true;
+}
+
+/**
+ * לכל מקבץ (מפתח), אם יש שורות גסות — משתמשים רק בהן; אחרת מניחים שהפירוט מחלק את הניתוחים בלי כפל.
+ */
+private filterAvgDurationRowsNoApiDoubleCount(
+  rows: AvgDurationFiveYearsDto[],
+  groupKey: (r: AvgDurationFiveYearsDto) => string,
+  isCoarse: (r: AvgDurationFiveYearsDto) => boolean,
+): AvgDurationFiveYearsDto[] {
+  const groups = new Map<string, AvgDurationFiveYearsDto[]>();
+  for (const r of rows) {
+    const k = groupKey(r);
+    if (!groups.has(k)) {
+      groups.set(k, []);
+    }
+    groups.get(k)!.push(r);
+  }
+  const out: AvgDurationFiveYearsDto[] = [];
+  for (const list of groups.values()) {
+    const coarseList = list.filter(isCoarse);
+    out.push(...(coarseList.length > 0 ? coarseList : list));
+  }
+  return out;
+}
+
+private getAvgDurationCompareDedupeCtx():
+  | { treatShiftAsLocked?: boolean; treatSurgeryTypeAsLocked?: boolean }
+  | undefined {
+  const f = this.avgDurationCompareDimension;
+  if (f === "Shift") {
+    return { treatShiftAsLocked: true };
+  }
+  if (f === "SurgeryType") {
+    return { treatSurgeryTypeAsLocked: true };
+  }
+  return undefined;
+}
+
 private matchesRoomTimesFilters(row: {
   Site?: string | null;
   Wing?: string | null;
@@ -7165,7 +7634,12 @@ private formatMinutesToHM(totalMinutes: number): string {
   }
 
   private buildAvgDurationFiveYearsChartModel(
-    rows: AvgDurationFiveYearsDto[]
+    rows: AvgDurationFiveYearsDto[],
+    dedupeCtx?: {
+      treatShiftAsLocked?: boolean;
+      treatWeekendAsLocked?: boolean;
+      treatSurgeryTypeAsLocked?: boolean;
+    },
   ): { columns: any[]; data: any[]; years: number[] } {
     if (!rows || rows.length === 0) {
       return { columns: [], data: [], years: [] };
@@ -7176,7 +7650,13 @@ private formatMinutesToHM(totalMinutes: number): string {
         ? rows
         : rows.filter(r => r.Site === this.avgDurationSiteFilter);
 
-    const allYears = Array.from(new Set(filteredRows.map(r => r.Year).filter(y => y != null))).sort((a, b) => a - b);
+    const dedupedRows = this.filterAvgDurationRowsNoApiDoubleCount(
+      filteredRows,
+      (r) => `${(r.Wing || "").trim()}|${r.Year}|${(r.Site || "").trim()}`,
+      (r) => this.isAvgDurationCoarseRow(r, dedupeCtx),
+    );
+
+    const allYears = Array.from(new Set(dedupedRows.map(r => r.Year).filter(y => y != null))).sort((a, b) => a - b);
     const years = allYears.slice(-5);
 
     const columns: any[] = ["מחלקה מאוגדת (Wing)"];
@@ -7188,7 +7668,7 @@ private formatMinutesToHM(totalMinutes: number): string {
     });
 
     const wingYearMap = new Map<string, Map<number, { sumMin: number; sumCount: number }>>();
-    for (const r of filteredRows) {
+    for (const r of dedupedRows) {
       const wing = (r.Wing || "לא צוין").trim();
       const year = r.Year;
       if (!years.includes(year)) continue;
@@ -7243,7 +7723,13 @@ private buildAvgDurationFiveYearsChart(rows: AvgDurationFiveYearsDto[]): void {
       ? rows
       : rows.filter(r => r.Site === this.avgDurationSiteFilter);
 
-  const allYears = Array.from(new Set(filteredRows.map(r => r.Year).filter(y => y != null))).sort((a, b) => a - b);
+  const dedupedForAvg = this.filterAvgDurationRowsNoApiDoubleCount(
+    filteredRows,
+    (r) => `${(r.Wing || "").trim()}|${r.Year}|${(r.Site || "").trim()}`,
+    (r) => this.isAvgDurationCoarseRow(r),
+  );
+
+  const allYears = Array.from(new Set(dedupedForAvg.map(r => r.Year).filter(y => y != null))).sort((a, b) => a - b);
   const years = allYears.slice(-5);
   this.avgDurationChartYears = years;
 
@@ -7257,7 +7743,7 @@ private buildAvgDurationFiveYearsChart(rows: AvgDurationFiveYearsDto[]): void {
 
   // אגרגציה מחדש ברמת Wing+Year: ממוצע משוקלל לפי Count מכל האתרים/מקורות
   const wingYearMap = new Map<string, Map<number, { sumMin: number; sumCount: number }>>();
-  for (const r of filteredRows) {
+  for (const r of dedupedForAvg) {
     const wing = (r.Wing || "לא צוין").trim();
     const year = r.Year;
     if (!years.includes(year)) continue;

@@ -3212,7 +3212,8 @@ table.table {
   font-size: 13px;
   color: var(--muted);
   line-height: 1.6;
-  display: flex;
+  display: grid;
+  text-align: right;
 }
 
 .kpi-exclude-fallback {
@@ -3876,6 +3877,24 @@ table.table {
 .diff-header     { display: inline-flex; align-items: center; gap: 6px; direction: rtl; }
 .info-icon       { font-size: 16px; opacity: .6; }
 .diff-tooltip    { font-size: 12px; padding: 6px 10px; line-height: 1.4; direction: rtl; text-align: right; max-width: 260px; }
+/* Tooltip מודאל השוואה — RTL (ה-overlay של CDK מחוץ לקומפוננטה; הכיתה מוחלת על פאנל ה-tooltip) */
+.compare-metric-long-tooltip {
+  direction: rtl;
+  unicode-bidi: isolate;
+  text-align: right;
+  white-space: pre-line;
+  max-width: min(340px, 92vw);
+  font-size: 13px;
+  line-height: 1.55;
+  padding: 12px 16px;
+  border-radius: 10px;
+  letter-spacing: 0.01em;
+  box-shadow: 0 4px 20px rgba(15, 23, 42, 0.12);
+}
+
+body.department-dashboard-dark .compare-metric-long-tooltip {
+  box-shadow: 0 6px 28px rgba(0, 0, 0, 0.4);
+}
 
 /* ── Keyframes ──────────────────────────────────────────── */
 @keyframes spin    { to { transform: rotate(360deg); } }
