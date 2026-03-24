@@ -5,11 +5,11 @@
   <mat-horizontal-stepper #stepper *ngIf="SupportRequestDto">
     <mat-step [stepControl]="SupportRequestDto">
       <form [formGroup]="SupportRequestDto">
-        <ng-template matStepLabel>פרטי בקשה</ng-template>
+        <ng-template matStepLabel>פרטי הכנס</ng-template>
 
         <mat-card class="form-card">
           <mat-card-title class="text-center">
-            בקשה לאישור תמיכת גוף מסחרי - כנס/השתלמות
+            בקשה לאישור תמיכת גוף מסחרי ליציאה לכנס/השתלמות
           </mat-card-title>
           <mat-card-content>
             <p><b>דגשים:</b><br>
@@ -87,6 +87,22 @@
                 <mat-label>תפקיד של המשתתף</mat-label>
                 <input matInput formControlName="Position">
               </mat-form-field>
+
+              <mat-form-field appearance="outline" *ngIf="SupportRequestDto.get('Requester')?.value != null">
+                <mat-label>אופי ההשתתפות</mat-label>
+                <mat-select formControlName="ParticipationType">
+                  <mat-option value="lecturer">מרצה</mat-option>
+                  <mat-option value="poster_presenter">מציג פוסטר</mat-option>
+                  <mat-option value="chairman">יו"ר/מנחה מושב</mat-option>
+                  <mat-option value="participant">משתתף בלבד</mat-option>
+                  <mat-option value="other">אחר</mat-option>
+                </mat-select>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" *ngIf="SupportRequestDto.get('Requester')?.value != null && SupportRequestDto.get('ParticipationType')?.value === 'other'">
+                <mat-label>פירוט (אחר)</mat-label>
+                <input matInput formControlName="ParticipationTypeNote">
+              </mat-form-field>
             </div>
 
           </mat-card-content>
@@ -97,7 +113,7 @@
     </mat-step>
     <mat-step [stepControl]="SupportActivityDto" *ngIf="SupportRequestDto.get('Requester')?.value != null">
       <form [formGroup]="SupportRequestDto">
-        <ng-template matStepLabel>פרטי בקשה</ng-template>
+        <ng-template matStepLabel>פרטי התמיכה</ng-template>
 
         <mat-card class="form-card">
           <mat-card-title class="text-center">
@@ -194,7 +210,7 @@
     </mat-step>
     <mat-step [stepControl]="SupportActivityDto" *ngIf="SupportRequestDto.get('Requester')?.value != null">
       <form [formGroup]="SupportRequestDto">
-        <ng-template matStepLabel>פרטי בקשה</ng-template>
+        <ng-template matStepLabel>העלאת מסמכים</ng-template>
 
         <mat-card class="form-card">
           <mat-card-content>
@@ -295,7 +311,7 @@
         </mat-card>
       </form>
     </mat-step>
-    <mat-step [stepControl]="SupportRequestDto" label="ועדת החלטה" *ngIf="decision_making">
+    <mat-step [stepControl]="SupportRequestDto" label="החלטת וועדה" *ngIf="decision_making">
 
       <form [formGroup]="SupportRequestDto" dir="rtl" class="decision-step">
 

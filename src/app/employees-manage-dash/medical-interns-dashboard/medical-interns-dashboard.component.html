@@ -234,6 +234,16 @@
           </mat-select>
         </mat-form-field>
       </div>
+      <div *ngIf="viewMode === 'feedback' && feedbackDepartmentColumn" class="filter-field-wrapper">
+        <mat-form-field appearance="outline" class="filter-field">
+          <mat-label>מחלקה</mat-label>
+          <mat-icon matPrefix>apartment</mat-icon>
+          <mat-select [(ngModel)]="feedbackDepartmentFilter" (selectionChange)="onFeedbackDepartmentChange()">
+            <mat-option [value]="''">הכל</mat-option>
+            <mat-option *ngFor="let dept of feedbackDepartmentsList" [value]="dept">{{ dept }}</mat-option>
+          </mat-select>
+        </mat-form-field>
+      </div>
       <mat-form-field appearance="outline" class="filter-field">
         <mat-label>סינון טבלה</mat-label>
         <mat-icon matPrefix>filter_list</mat-icon>
@@ -263,6 +273,16 @@
       </button>
       <span class="year-display">{{ departmentsYear }}</span>
       <button mat-icon-button type="button" (click)="nextDepartmentsYear()" matTooltip="שנה הבאה">
+        <mat-icon>chevron_left</mat-icon>
+      </button>
+    </div>
+
+    <div class="departments-year-nav" *ngIf="viewMode === 'feedback'">
+      <button mat-icon-button type="button" (click)="previousFeedbackYear()" matTooltip="שנה קודמת">
+        <mat-icon>chevron_right</mat-icon>
+      </button>
+      <span class="year-display">{{ feedbackYear }}</span>
+      <button mat-icon-button type="button" (click)="nextFeedbackYear()" matTooltip="שנה הבאה">
         <mat-icon>chevron_left</mat-icon>
       </button>
     </div>
@@ -436,7 +456,7 @@
       showFirstLastButtons class="table-paginator"></mat-paginator>
     <mat-paginator #serverDataPaginator *ngIf="viewMode === 'serverData'" [pageSizeOptions]="[25, 50, 100, 200]"
       showFirstLastButtons class="table-paginator"></mat-paginator>
-    <mat-paginator #feedbackPaginator *ngIf="viewMode === 'feedback'" [pageSizeOptions]="[25, 50, 100, 200]"
-      showFirstLastButtons class="table-paginator"></mat-paginator>
+    <!-- <mat-paginator #feedbackPaginator *ngIf="viewMode === 'feedback'" [pageSizeOptions]="[25, 50, 100, 200]"
+      showFirstLastButtons class="table-paginator"></mat-paginator> -->
   </section>
 </div>
