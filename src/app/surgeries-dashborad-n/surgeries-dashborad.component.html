@@ -81,18 +81,35 @@
   <div *ngIf="showMainChartFullModal" class="kpi-overlay" [class.dark]="isDark">
     <div class="kpi-modal main-chart-full-modal" dir="rtl">
       <div class="kpi-header">
-        <h2>{{ getChartViewTitle() }}</h2>
+        <div class="main-chart-modal-heading">
+          <h2 class="main-chart-modal-heading__title">{{ getChartViewTitle() }}</h2>
+          <p class="main-chart-modal-heading__hint">{{ getChartViewShortDescription() }}</p>
+          <p class="main-chart-modal-heading__filters">{{ getChartViewFilterParametersLine() }}</p>
+        </div>
         <button mat-icon-button class="close-btn" (click)="closeMainChartFullModal()">
           <mat-icon>close</mat-icon>
         </button>
       </div>
       <div class="kpi-body">
         <div class="graph-body" style="flex: 1 1 auto; max-height: none; min-height: 0;">
-          <google-chart *ngIf="!isChartLoading && !isMainDataLoading && chartData && chartData.length > 0"
+          <google-chart
+            *ngIf="mainMetricMode === 'room-utilization' && roomUtilizationSubChart === 'surgeriesPerDay' && !isSurgeriesPerDayLoading && surgeriesPerDayChartData && surgeriesPerDayChartData.length > 0"
+            [type]="'ColumnChart'" [columns]="surgeriesPerDayChartColumns" [data]="surgeriesPerDayChartData"
+            [options]="surgeriesPerDayChartOptions" [width]="'100%'" [height]="'100%'">
+          </google-chart>
+          <google-chart
+            *ngIf="!(mainMetricMode === 'room-utilization' && roomUtilizationSubChart === 'surgeriesPerDay') && !isChartLoading && !isMainDataLoading && chartData && chartData.length > 0"
             [type]="chartType" [columns]="chartColumns" [data]="chartData" [options]="chartOptions" [width]="'100%'"
             [height]="'100%'">
           </google-chart>
-          <div *ngIf="!isChartLoading && !isMainDataLoading && (!chartData || !chartData.length)" class="chart-no-data">
+          <div
+            *ngIf="!(mainMetricMode === 'room-utilization' && roomUtilizationSubChart === 'surgeriesPerDay') && !isChartLoading && !isMainDataLoading && (!chartData || !chartData.length)"
+            class="chart-no-data">
+            אין נתונים להצגה בגרף
+          </div>
+          <div
+            *ngIf="mainMetricMode === 'room-utilization' && roomUtilizationSubChart === 'surgeriesPerDay' && !isSurgeriesPerDayLoading && (!surgeriesPerDayChartData || surgeriesPerDayChartData.length === 0)"
+            class="chart-no-data">
             אין נתונים להצגה בגרף
           </div>
         </div>
@@ -393,13 +410,15 @@
 
 
         <div class="graph-body" [attr.data-main-mode]="mainMetricMode">
-          <div *ngIf="isChartLoading || isMainDataLoading" class="chart-loading-overlay">
+          <div *ngIf="isChartLoading || isMainDataLoading || (isRoomUtilizationMode() && roomUtilizationSubChart === 'surgeriesPerDay' && isSurgeriesPerDayLoading)"
+            class="chart-loading-overlay">
             <mat-spinner diameter="50"></mat-spinner>
             <div class="chart-loading-text">טוען גרף...</div>
           </div>
-          <div class="chart-mode-heading"
-            *ngIf="!isChartLoading && !isMainDataLoading && chartData && chartData.length > 0">
-            {{ getChartViewTitle() }}
+          <div class="chart-mode-heading" *ngIf="shouldShowChartModeHeading()">
+            <span class="chart-mode-heading__title">{{ getChartViewTitle() }}</span>
+            <span class="chart-mode-heading__hint">{{ getChartViewShortDescription() }}</span>
+            <span class="chart-mode-heading__filters">{{ getChartViewFilterParametersLine() }}</span>
           </div>
           <div class="year-summary-row" *ngIf="yearsForChart?.length && !isRoomUtilizationMode()">
             <div class="year-summary-card" *ngFor="let y of yearsForChart">
@@ -409,9 +428,18 @@
             </div>
           </div>
           <div class="chart-with-expand" *ngIf="mainMetricMode !== 'room-times'">
+            <google-chart
+              *ngIf="isRoomUtilizationMode() && roomUtilizationSubChart === 'surgeriesPerDay' && !isSurgeriesPerDayLoading && surgeriesPerDayChartData && surgeriesPerDayChartData.length > 0"
+              [type]="'ColumnChart'" [columns]="surgeriesPerDayChartColumns" [data]="surgeriesPerDayChartData"
+              [options]="surgeriesPerDayChartOptions" [width]="'100%'" [height]="'100%'">
+            </google-chart>
+
             <!-- Expand: regular main chart -->
             <button type="button" class="chart-expand-btn" (click)="openMainChartFullModal()"
-              *ngIf="chartViewMode !== 'yoy-combined' && !isChartLoading && !isMainDataLoading && chartData && chartData.length > 0"
+              *ngIf="chartViewMode !== 'yoy-combined' && !isMainDataLoading && (
+                (isRoomUtilizationMode() && roomUtilizationSubChart === 'surgeriesPerDay' && !isSurgeriesPerDayLoading && surgeriesPerDayChartData && surgeriesPerDayChartData.length > 0)
+                || (!(isRoomUtilizationMode() && roomUtilizationSubChart === 'surgeriesPerDay') && !isChartLoading && chartData && chartData.length > 0)
+              )"
               matTooltip="הרחב מסך" matTooltipPosition="below">
               <mat-icon>fullscreen</mat-icon>
             </button>
@@ -435,7 +463,7 @@
             <!-- All other modes (Google chart) -->
             <google-chart [type]="chartType" [data]="chartData" [columns]="chartColumns" [options]="chartOptions"
               [width]="'100%'" (select)="onChartClick($event)"
-              *ngIf="chartViewMode !== 'yoy-combined' && !isChartLoading && !isMainDataLoading && chartData && chartData.length > 0">
+              *ngIf="chartViewMode !== 'yoy-combined' && !isChartLoading && !isMainDataLoading && chartData && chartData.length > 0 && !(isRoomUtilizationMode() && roomUtilizationSubChart === 'surgeriesPerDay')">
             </google-chart>
           </div>
 
@@ -552,10 +580,6 @@
                 <mat-icon>hourglass_bottom</mat-icon>
                 <span>SETUP ממוצע</span>
               </mat-button-toggle>
-              <mat-button-toggle value="perDay">
-                <mat-icon>calendar_view_day</mat-icon>
-                <span>ניתוחים ליום</span>
-              </mat-button-toggle>
               <mat-button-toggle value="lossPerDay">
                 <mat-icon>timer_off</mat-icon>
                 <span>זמן אבוד ליום</span>
@@ -570,14 +594,14 @@
           <!-- כפתורי מדדי חדרים לפי מחלקה – מוצגים רק במצב ניצולת חדר ניתוח -->
           <!-- כפתורי מדדי חדרים – מוצגים רק במצב ניצולת חדר ניתוח -->
           <div class="chart-mode-row"
-            *ngIf="!isChartLoading && !isMainDataLoading && chartData && chartData.length > 0 && isRoomUtilizationMode()">
+            *ngIf="isRoomUtilizationMode() && !isMainDataLoading && ((!isChartLoading && chartData && chartData.length > 0) || roomUtilizationSubChart === 'surgeriesPerDay')">
             <span class="chart-mode-label">
               חדרים לפי מחלקה:
             </span>
 
             <mat-button-toggle-group name="roomStatsMode" aria-label="Room stats mode"
               class="mat-button-toggle-group custom-toggle-group"
-              [value]="roomStatsViewMode === 'yearTotal' ? 'yearTotal' : roomStatsMetric"
+              [value]="getRoomStatsToggleValue()"
               (change)="onRoomStatsModeChange($event.value)">
               <mat-button-toggle value="yearTotal">
                 סה"כ חדרים לשנה
@@ -593,6 +617,12 @@
               </mat-button-toggle>
               <mat-button-toggle value="fullDays">
                 ימים מלאים (ללא פיצול)
+              </mat-button-toggle>
+              <mat-button-toggle value="surgeriesPerDay"
+                matTooltip="ממוצע ניתוחים ליום בחדר לפי מחלקה מאוגדת (Wing) – אותו גרף כמו בזמני חדר"
+                matTooltipPosition="top">
+                <mat-icon>calendar_view_day</mat-icon>
+                <span>ניתוחים ליום</span>
               </mat-button-toggle>
             </mat-button-toggle-group>
           </div>
@@ -627,11 +657,18 @@
             </ng-container>
           </div>
 
-          <div *ngIf="!isChartLoading && !isMainDataLoading && (!chartData || chartData.length === 0)"
+          <div
+            *ngIf="!isChartLoading && !isMainDataLoading && !(isRoomUtilizationMode() && roomUtilizationSubChart === 'surgeriesPerDay') && (!chartData || chartData.length === 0)"
             class="chart-no-data">
             אין נתונים להצגה בגרף
           </div>
-          <div class="year-legend" *ngIf="yearColorMap?.length">
+          <div
+            *ngIf="isRoomUtilizationMode() && roomUtilizationSubChart === 'surgeriesPerDay' && !isSurgeriesPerDayLoading && (!surgeriesPerDayChartData || surgeriesPerDayChartData.length === 0)"
+            class="chart-no-data">
+            אין נתונים להצגה בגרף
+          </div>
+          <div class="year-legend"
+            *ngIf="yearColorMap?.length && !(isRoomUtilizationMode() && roomUtilizationSubChart === 'surgeriesPerDay')">
             <div class="year-legend-title">מקרא שנים</div>
             <div class="year-legend-items">
               <div class="year-legend-item" *ngFor="let yc of yearColorMap">
@@ -1637,9 +1674,12 @@
             </button>
             <div class="compare-metrics-panel" *ngIf="isCompareSurgeryTypesDropdownOpen" role="listbox"
               aria-label="סוגי ניתוח">
-              <label class="compare-metrics-item" *ngFor="let t of getCompareSurgeryTypeOptions()" role="option">
+              <label class="compare-metrics-item" *ngFor="let t of getCompareSurgeryTypeOptions()" role="option"
+                [class.compare-metrics-item--selected]="isCompareSurgeryTypePicked(t)"
+                [ngStyle]="getCompareSurgeryTypesItemNgStyle(t)">
                 <input type="checkbox"
                   [checked]="isCompareSurgeryTypePicked(t)"
+                  [style.accent-color]="isCompareSurgeryTypePicked(t) ? (getCompareSurgeryTypeCountChartHex(t) || getCompareSurgeryTypeAvgChartHex(t)) : null"
                   (change)="setCompareSurgeryTypePicked(t, $event.target.checked)">
                 <span>{{ t }}</span>
               </label>
@@ -1662,6 +1702,8 @@
             <div class="compare-metrics-panel" *ngIf="isCompareMetricsDropdownOpen" role="listbox"
               aria-label="מדדי השוואה">
               <label class="compare-metrics-item" *ngFor="let opt of compareMetricOptions" role="option"
+                [class.compare-metrics-item--selected]="isCompareMetricSelected(opt.key)"
+                [ngStyle]="getCompareMetricsItemNgStyle(opt.key)"
                 [matTooltip]="opt.tooltip || ''"
                 [matTooltipDisabled]="!opt.tooltip"
                 matTooltipPosition="before"
@@ -1669,6 +1711,7 @@
                 matTooltipClass="compare-metric-long-tooltip">
                 <input type="checkbox"
                   [checked]="isCompareMetricSelected(opt.key)"
+                  [style.accent-color]="isCompareMetricSelected(opt.key) ? getCompareMetricChartColorHex(opt.key) : null"
                   (change)="setCompareMetricSelected(opt.key, $event.target.checked)">
                 <span>{{ opt.label }}</span>
               </label>

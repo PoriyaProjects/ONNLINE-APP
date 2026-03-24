@@ -1165,6 +1165,43 @@
   max-height: none;
 }
 
+/* כותרת + שורת הסבר (חצי גודל) במודאל גרף מלא */
+.main-chart-modal-heading {
+  flex: 1;
+  min-width: 0;
+  font-size: clamp(16px, 1.4vw, 22px);
+  direction: rtl;
+  text-align: right;
+}
+
+.main-chart-full-modal .kpi-header .main-chart-modal-heading__title {
+  margin: 0;
+  font-size: 1em;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.25;
+  flex: none;
+}
+
+.main-chart-modal-heading__hint {
+  margin: 0.35em 0 0;
+  font-size: 0.5em;
+  font-weight: 400;
+  line-height: 1.35;
+  color: var(--muted);
+}
+
+.main-chart-modal-heading__filters {
+  margin: 0.3em 0 0;
+  font-size: 0.5em;
+  font-weight: 400;
+  line-height: 1.4;
+  color: var(--muted);
+  max-width: 100%;
+  white-space: normal;
+  word-wrap: break-word;
+}
+
 /* תצוגת גרף במסך מלא – רספונסיבי, ממלא את השטח, בלי שטח ריק */
 .main-chart-full-modal .kpi-body {
   flex: 1 1 auto;
@@ -1831,18 +1868,45 @@
 .chart-mode-heading {
   margin-bottom: 4px;
   font-size: 13px;
-  font-weight: 700;
   color: var(--text);
   direction: rtl;
   text-align: right;
   width: 100%;
-  display: grid;
+  display: flex;
   flex-direction: column;
   align-items: flex-end;
+  gap: 0.25em;
   padding: 6px 10px;
   box-shadow: 0 4px 12px 0 rgba(0, 0, 0, 0.15);
   border-radius: 4px;
   background: var(--surface, #fff);
+}
+
+.chart-mode-heading__title {
+  display: block;
+  font-size: 1em;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.chart-mode-heading__hint {
+  display: block;
+  font-size: 0.55em;
+  font-weight: 400;
+  line-height: 1.35;
+  color: var(--muted);
+}
+
+.chart-mode-heading__filters {
+  display: block;
+  font-size: 0.5em;
+  font-weight: 400;
+  line-height: 1.4;
+  color: var(--muted);
+  margin-top: 0.2em;
+  max-width: 100%;
+  white-space: normal;
+  word-wrap: break-word;
 }
 
 .chart-mode-description {
@@ -2867,7 +2931,13 @@ table.table {
   color: var(--text);
   border-radius: 8px;
   cursor: pointer;
-  transition: background 0.12s ease;
+  transition: background 0.12s ease, border-color 0.12s ease;
+  border-inline-start: 3px solid transparent;
+  box-sizing: border-box;
+}
+
+.compare-metrics-item--selected {
+  font-weight: 600;
 }
 
 .compare-metrics-item:hover {
@@ -3020,6 +3090,10 @@ table.table {
 
 .kpi-overlay.dark .compare-metrics-item:hover {
   background: rgba(129, 140, 248, 0.12);
+}
+
+.kpi-overlay.dark .compare-metrics-item--selected:hover {
+  filter: brightness(1.06);
 }
 
 .kpi-overlay.dark .compare-dept-legend-card {
