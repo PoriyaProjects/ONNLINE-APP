@@ -1165,6 +1165,43 @@
   max-height: none;
 }
 
+/* כותרת + שורת הסבר (חצי גודל) במודאל גרף מלא */
+.main-chart-modal-heading {
+  flex: 1;
+  min-width: 0;
+  font-size: clamp(16px, 1.4vw, 22px);
+  direction: rtl;
+  text-align: right;
+}
+
+.main-chart-full-modal .kpi-header .main-chart-modal-heading__title {
+  margin: 0;
+  font-size: 1em;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.25;
+  flex: none;
+}
+
+.main-chart-modal-heading__hint {
+  margin: 0.35em 0 0;
+  font-size: 0.5em;
+  font-weight: 400;
+  line-height: 1.35;
+  color: var(--muted);
+}
+
+.main-chart-modal-heading__filters {
+  margin: 0.3em 0 0;
+  font-size: 0.5em;
+  font-weight: 400;
+  line-height: 1.4;
+  color: var(--muted);
+  max-width: 100%;
+  white-space: normal;
+  word-wrap: break-word;
+}
+
 /* תצוגת גרף במסך מלא – רספונסיבי, ממלא את השטח, בלי שטח ריק */
 .main-chart-full-modal .kpi-body {
   flex: 1 1 auto;
@@ -1317,6 +1354,18 @@
   padding: 2px;
   display: flex;
   flex-direction: column;
+}
+
+/* במצב השוואת מחלקות: אין טבלת סיכום רגילה — רק מקרא בפאנל; לא לתפוס גובה ב-flex */
+.table-body.table-body--hidden-in-compare {
+  flex: 0 0 0;
+  min-height: 0;
+  max-height: 0;
+  overflow: hidden;
+  padding: 0;
+  margin: 0;
+  visibility: hidden;
+  pointer-events: none;
 }
 
 .table-extra {
@@ -1831,18 +1880,45 @@
 .chart-mode-heading {
   margin-bottom: 4px;
   font-size: 13px;
-  font-weight: 700;
   color: var(--text);
   direction: rtl;
   text-align: right;
   width: 100%;
   display: grid;
-  flex-direction: column;
   align-items: flex-end;
+  gap: 0.25em;
   padding: 6px 10px;
   box-shadow: 0 4px 12px 0 rgba(0, 0, 0, 0.15);
   border-radius: 4px;
   background: var(--surface, #fff);
+}
+
+.chart-mode-heading__title {
+  display: block;
+  font-size: 1em;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.chart-mode-heading__hint {
+  display: block;
+  font-size: 0.9em;
+  font-weight: 400;
+  line-height: 1.45;
+  color: var(--muted);
+  max-width: 100%;
+}
+
+.chart-mode-heading__filters {
+  display: block;
+  font-size: 0.86em;
+  font-weight: 400;
+  line-height: 1.45;
+  color: var(--muted);
+  margin-top: 0.15em;
+  max-width: 100%;
+  white-space: normal;
+  word-wrap: break-word;
 }
 
 .chart-mode-description {
@@ -1932,6 +2008,40 @@
 
 .chart-loading-text { color: var(--text); font-size: 14px; font-weight: 600; direction: rtl; }
 .chart-no-data      { display: flex; align-items: center; justify-content: center; height: 100%; color: var(--muted); font-size: 14px; direction: rtl; }
+
+.revenue-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  min-height: 280px;
+  padding: 32px 20px;
+  color: var(--muted);
+  text-align: center;
+  direction: rtl;
+}
+.revenue-empty-icon {
+  font-size: 48px;
+  width: 48px;
+  height: 48px;
+  color: #ca8a04;
+}
+.dash.dark .revenue-empty-icon {
+  color: #fbbf24;
+}
+.revenue-empty-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text);
+}
+.revenue-empty-hint {
+  margin: 0;
+  font-size: 14px;
+  max-width: 360px;
+  line-height: 1.45;
+}
 
 /* ── Plain HTML table ───────────────────────────────────── */
 .table-wrap {
@@ -2457,6 +2567,54 @@ table.table {
   min-width: 0;
 }
 
+/* תצוגה מוטמעת: המקרא עבר לפאנל הטבלה — כאן רק הגרף */
+.compare-dept-chart-row--solo {
+  flex-direction: column;
+}
+
+.compare-dept-chart-row--solo .compare-dept-chart-pane {
+  flex: 1 1 auto;
+  min-height: 220px;
+  width: 100%;
+}
+
+/* מקרא/מסקנות השוואה — מתחת לכותרת «טבלת ניתוחים» במצב השוואה מוטמע */
+.compare-dept-legend-in-table {
+  flex: 0 0 auto;
+  padding: 4px 6px 12px;
+  margin-bottom: 2px;
+  max-height: min(42vh, 420px);
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  border-bottom: 1px solid var(--border, #e2e8f0);
+  direction: rtl;
+  text-align: right;
+}
+
+/* מילוי גובה העמודה בפאנל הטבלה (כותרת למעלה, טבלה מוסתרת) */
+.main-content--compare-dept-layout .compare-dept-legend-in-table {
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: none;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  margin-bottom: 0;
+}
+
+.main-content--compare-dept-layout .compare-dept-legend-in-table .compare-dept-legend-card {
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+  max-width: none;
+  min-width: 0;
+}
+
+.dash.dark .compare-dept-legend-in-table {
+  border-bottom-color: rgba(148, 163, 184, 0.35);
+}
+
 .compare-departments-modal .compare-dept-chart-row {
   min-height: 320px;
 }
@@ -2742,6 +2900,7 @@ table.table {
   position: sticky;
   top: 0;
   z-index: 3;
+  direction: rtl;
 }
 
 .compare-dept-control {
@@ -2754,6 +2913,8 @@ table.table {
   font-size: 12px;
   font-weight: 700;
   color: var(--muted);
+  text-align: right;
+  width: 100%;
 }
 
 .compare-dept-control select {
@@ -2763,6 +2924,8 @@ table.table {
   background: rgba(255,255,255,.92);
   color: var(--text);
   padding: 0 10px;
+  direction: rtl;
+  text-align: right;
 }
 
 .compare-dept-options {
@@ -2799,6 +2962,7 @@ table.table {
   cursor: pointer;
   font: inherit;
   transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+  direction: rtl;
 }
 
 .compare-metrics-trigger:hover:not(:disabled) {
@@ -2827,7 +2991,7 @@ table.table {
   text-overflow: ellipsis;
   white-space: nowrap;
   font-size: 13px;
-  text-align: start;
+  text-align: right;
   flex: 1;
   min-width: 0;
 }
@@ -2855,6 +3019,8 @@ table.table {
     0 18px 40px -12px rgba(2, 6, 23, 0.22);
   padding: 6px;
   z-index: 50;
+  direction: rtl;
+  text-align: right;
 }
 
 .compare-metrics-item {
@@ -2867,7 +3033,21 @@ table.table {
   color: var(--text);
   border-radius: 8px;
   cursor: pointer;
-  transition: background 0.12s ease;
+  transition: background 0.12s ease, border-color 0.12s ease;
+  border-inline-start: 3px solid transparent;
+  box-sizing: border-box;
+  direction: rtl;
+  text-align: right;
+}
+
+.compare-metrics-item span {
+  flex: 1 1 auto;
+  min-width: 0;
+  text-align: right;
+}
+
+.compare-metrics-item--selected {
+  font-weight: 600;
 }
 
 .compare-metrics-item:hover {
@@ -3020,6 +3200,10 @@ table.table {
 
 .kpi-overlay.dark .compare-metrics-item:hover {
   background: rgba(129, 140, 248, 0.12);
+}
+
+.kpi-overlay.dark .compare-metrics-item--selected:hover {
+  filter: brightness(1.06);
 }
 
 .kpi-overlay.dark .compare-dept-legend-card {
@@ -3212,7 +3396,8 @@ table.table {
   font-size: 13px;
   color: var(--muted);
   line-height: 1.6;
-  display: flex;
+  display: grid;
+  text-align: right;
 }
 
 .kpi-exclude-fallback {
@@ -3493,13 +3678,6 @@ table.table {
 }
 .dash.dark .loading-subtext {
   color: #9ca3af;
-}
-
-.loading-percentage {
-  margin-top: 8px;
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: .08em;
 }
 
 /* Skeleton dashboard layout */
@@ -3876,6 +4054,24 @@ table.table {
 .diff-header     { display: inline-flex; align-items: center; gap: 6px; direction: rtl; }
 .info-icon       { font-size: 16px; opacity: .6; }
 .diff-tooltip    { font-size: 12px; padding: 6px 10px; line-height: 1.4; direction: rtl; text-align: right; max-width: 260px; }
+/* Tooltip מודאל השוואה — RTL (ה-overlay של CDK מחוץ לקומפוננטה; הכיתה מוחלת על פאנל ה-tooltip) */
+.compare-metric-long-tooltip {
+  direction: rtl;
+  unicode-bidi: isolate;
+  text-align: right;
+  white-space: pre-line;
+  max-width: min(340px, 92vw);
+  font-size: 13px;
+  line-height: 1.55;
+  padding: 12px 16px;
+  border-radius: 10px;
+  letter-spacing: 0.01em;
+  box-shadow: 0 4px 20px rgba(15, 23, 42, 0.12);
+}
+
+body.department-dashboard-dark .compare-metric-long-tooltip {
+  box-shadow: 0 6px 28px rgba(0, 0, 0, 0.4);
+}
 
 /* ── Keyframes ──────────────────────────────────────────── */
 @keyframes spin    { to { transform: rotate(360deg); } }
@@ -4613,6 +4809,15 @@ table.table {
   color: #ecfeff;
 }
 
+.metrics-container .custom-toggle-group mat-button-toggle[ng-reflect-value="revenue"]:not(.mat-button-toggle-checked):hover {
+  background: rgba(254, 243, 199, 0.95);
+  color: #a16207;
+}
+.dash.dark .metrics-container .custom-toggle-group mat-button-toggle[ng-reflect-value="revenue"]:not(.mat-button-toggle-checked):hover {
+  background: rgba(245, 158, 11, 0.28);
+  color: #fef3c7;
+}
+
 /* --- Hover צבעוני גם לכפתורי roomTimesView (למטה) --- */
 .chart-mode-row .custom-toggle-group mat-button-toggle[ng-reflect-value="avgDuration"]:not(.mat-button-toggle-checked):hover {
   background: rgba(233, 213, 255, 0.9);
@@ -4800,6 +5005,17 @@ table.table {
   border-color: rgba(167, 243, 208, 0.95) !important;
 }
 
+/* הכנסות (revenue) – ענבר/זהב */
+.metrics-container .custom-toggle-group mat-button-toggle[ng-reflect-value="revenue"].mat-button-toggle-checked {
+  background: linear-gradient(135deg, #fffbeb 0%, #fde68a 100%) !important;
+  color: #a16207 !important;
+  border-color: #d97706 !important;
+}
+.dash.dark .metrics-container .custom-toggle-group mat-button-toggle[ng-reflect-value="revenue"].mat-button-toggle-checked {
+  background: linear-gradient(135deg, #b45309 0%, #92400e 100%) !important;
+  border-color: rgba(253, 230, 138, 0.95) !important;
+}
+
 /* קישור ויזואלי לגרף עצמו – פס צבע בכותרת הגרף לפי מצב ראשי */
 .graph-body[data-main-mode="surgery-volume"] .chart-mode-heading {
   border-top: 3px solid #2563eb;
@@ -4809,6 +5025,9 @@ table.table {
 }
 .graph-body[data-main-mode="room-utilization"] .chart-mode-heading {
   border-top: 3px solid #14b8a6;
+}
+.graph-body[data-main-mode="revenue"] .chart-mode-heading {
+  border-top: 3px solid #d97706;
 }
 
 /* רספונסיביות */
