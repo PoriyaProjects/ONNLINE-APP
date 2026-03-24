@@ -672,8 +672,8 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
     // 'month'       – ניתוחים לפי חודשים (5 שנים אחרונות)
     chartViewMode: "year-total" | "fund" | "site" | "shift" | "department" | "month" | "yoy-combined" = "year-total";
 
-    /** מצב מדד ראשי: ניתוחים (כמות), זמני חדר, או ניצולת חדר ניתוח (ניתוחים ליום בחדר) */
-    mainMetricMode: "surgery-volume" | "room-times" | "room-utilization" = "surgery-volume";
+    /** מצב מדד ראשי: ניתוחים (כמות), זמני חדר, ניצולת חדר, או תצוגת הכנסות (placeholder) */
+    mainMetricMode: "surgery-volume" | "room-times" | "room-utilization" | "revenue" = "surgery-volume";
 
     // When true, the משמרת filter dropdown in the sidebar is visually disabled
     // because the main chart itself is grouped by משמרת.
@@ -716,10 +716,7 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
     isMainDataLoading = false; // Loading for main data table
     isDiagnosesLoading = false; // Loading for diagnoses list
     isChartLoading = false; // Loading for chart data
-  // Fake global loader progress (0‑100%) for user feedback
-  loadingProgress = 0;
-  private loadingProgressTimer: any = null;
-  private anyLoadingPrev = false;
+    private anyLoadingPrev = false;
     selectedViewType: string = "cash";
     chartType: string = "ColumnChart"; // 'ColumnChart' or 'LineChart'
 
@@ -1352,7 +1349,7 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
     }
 
     /**
-     * מעקב כללי אחרי מצב טעינה כדי לעדכן את ה‑progress המדומה בלודר העליון
+     * כשמצב טעינה גלובלי נסגר – מרענן תצוגת טבלה (ריווח/גלילה).
      */
     ngDoCheck(): void {
         const anyLoading =
@@ -1364,49 +1361,15 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
 
         if (anyLoading !== this.anyLoadingPrev) {
             this.anyLoadingPrev = anyLoading;
-            this.handleGlobalLoadingStateChange(anyLoading);
+            if (!anyLoading) {
+                this.scheduleTableExtraCheck();
+            }
         }
     }
 
     ngAfterViewInit(): void {
         this.scheduleTableExtraCheck();
         this.scheduleYoyCombinedInlineBuild();
-    }
-
-    private handleGlobalLoadingStateChange(isLoading: boolean): void {
-        if (isLoading) {
-            // התחלת מחזור טעינה חדש – אפס אחוזים והפעל טיימר
-            this.loadingProgress = 0;
-            if (this.loadingProgressTimer) {
-                clearInterval(this.loadingProgressTimer);
-            }
-            this.loadingProgressTimer = setInterval(() => {
-                // אם בינתיים אין טעינה – נעצור
-                if (!this.anyLoadingPrev) {
-                    return;
-                }
-                // מתקדמים יחסית לאט עד 90%, ואז קצת יותר לאט עד 97%
-                if (this.loadingProgress < 90) {
-                    this.loadingProgress += 1;
-                } else if (this.loadingProgress < 97) {
-                    this.loadingProgress += 0.5;
-                } else {
-                    // לא לעבור את 97% לפני שהטעינה באמת מסתיימת
-                    this.loadingProgress = 97;
-                }
-            }, 120);
-        } else {
-            // הטעינה הסתיימה – קפיצה ל‑100% ואז איפוס קצר
-            this.loadingProgress = 100;
-            if (this.loadingProgressTimer) {
-                clearInterval(this.loadingProgressTimer);
-                this.loadingProgressTimer = null;
-            }
-            setTimeout(() => {
-                this.loadingProgress = 0;
-            }, 400);
-            this.scheduleTableExtraCheck();
-        }
     }
 
     private scheduleTableExtraCheck(): void {
@@ -1759,10 +1722,6 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
         document.body.classList.remove('surgeries-dashborad-dark');
         if (typeof window !== 'undefined') {
             window.removeEventListener('resize', this.onWindowResize);
-        }
-        if (this.loadingProgressTimer) {
-            clearInterval(this.loadingProgressTimer);
-            this.loadingProgressTimer = null;
         }
     }
 
@@ -4431,6 +4390,9 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
      * כותרת דינמית מעל הגרף הראשי לפי מצב התצוגה הנוכחי
      */
     getChartViewTitle(): string {
+        if (this.mainMetricMode === "revenue") {
+            return "הכנסות";
+        }
         if (this.mainMetricMode === "room-utilization") {
             if (this.roomUtilizationSubChart === "surgeriesPerDay") {
                 return "ממוצע ניתוחים ליום בחדר לפי מחלקה";
@@ -4495,6 +4457,9 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
      * מוצג מתחת לכותרת בגודל ~חצי מגודל הכותרת.
      */
     getChartViewShortDescription(): string {
+        if (this.mainMetricMode === "revenue") {
+            return "אזור ייעודי למדדי הכנסות – יתווסף תוכן בגרסה הבאה.";
+        }
         if (this.mainMetricMode === "room-utilization") {
             if (this.roomUtilizationSubChart === "surgeriesPerDay") {
                 return "ממוצע ניתוחים ליום לחדר; לפי אתר, משמרת, יום בשבוע ובוקר.";
@@ -4559,6 +4524,9 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
         if (this.isMainDataLoading) {
             return false;
         }
+        if (this.mainMetricMode === "revenue") {
+            return true;
+        }
         if (this.mainMetricMode === "room-times") {
             return this.isRoomTimesChartLoading() || this.hasRoomTimesChartData();
         }
@@ -4622,6 +4590,9 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
      * פירוט פרמטרים וסינונים בפועל — כדי שהמשתמש יבין מה נכנס לגרף בלי לשאול את המתכנת.
      */
     getChartViewFilterParametersLine(): string {
+        if (this.mainMetricMode === "revenue") {
+            return "כרגע אין שאילתת נתונים להכנסות; פילטרי הסיידבר יחולו כשיתווסף חיבור לשרת.";
+        }
         if (this.mainMetricMode === "room-utilization") {
             if (this.roomUtilizationSubChart === "surgeriesPerDay") {
                 return (
@@ -4761,6 +4732,21 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
         return this.mainMetricMode === "room-utilization";
     }
 
+    /** ערך הטוגל העליון (מתאים ל־mat-button-toggle-group) */
+    mainMetricToggleGroupValue(): string {
+        switch (this.mainMetricMode) {
+            case "room-utilization":
+                return "utilization";
+            case "room-times":
+                return "duration";
+            case "revenue":
+                return "revenue";
+            case "surgery-volume":
+            default:
+                return "count";
+        }
+    }
+
   /** החלפת מצב המדד הראשי לפי כפתורי הטוגל מעל הגרף */
   onMainMetricToggle(value: string): void {
     if (value === "utilization") {
@@ -4774,6 +4760,8 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
     } else if (value === "count") {
       this.mainMetricMode = "surgery-volume";
       this.updateChartData();
+    } else if (value === "revenue") {
+      this.mainMetricMode = "revenue";
     } else if (value === "compare-departments") {
       // כפתור ייעודי לפתיחת פופ‑אפ השוואת מחלקות
       this.openCompareDepartmentsModal();

@@ -1872,8 +1872,7 @@
   direction: rtl;
   text-align: right;
   width: 100%;
-  display: flex;
-  flex-direction: column;
+  display: grid;
   align-items: flex-end;
   gap: 0.25em;
   padding: 6px 10px;
@@ -1891,19 +1890,20 @@
 
 .chart-mode-heading__hint {
   display: block;
-  font-size: 0.55em;
+  font-size: 0.9em;
   font-weight: 400;
-  line-height: 1.35;
+  line-height: 1.45;
   color: var(--muted);
+  max-width: 100%;
 }
 
 .chart-mode-heading__filters {
   display: block;
-  font-size: 0.5em;
+  font-size: 0.86em;
   font-weight: 400;
-  line-height: 1.4;
+  line-height: 1.45;
   color: var(--muted);
-  margin-top: 0.2em;
+  margin-top: 0.15em;
   max-width: 100%;
   white-space: normal;
   word-wrap: break-word;
@@ -1996,6 +1996,40 @@
 
 .chart-loading-text { color: var(--text); font-size: 14px; font-weight: 600; direction: rtl; }
 .chart-no-data      { display: flex; align-items: center; justify-content: center; height: 100%; color: var(--muted); font-size: 14px; direction: rtl; }
+
+.revenue-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  min-height: 280px;
+  padding: 32px 20px;
+  color: var(--muted);
+  text-align: center;
+  direction: rtl;
+}
+.revenue-empty-icon {
+  font-size: 48px;
+  width: 48px;
+  height: 48px;
+  color: #ca8a04;
+}
+.dash.dark .revenue-empty-icon {
+  color: #fbbf24;
+}
+.revenue-empty-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text);
+}
+.revenue-empty-hint {
+  margin: 0;
+  font-size: 14px;
+  max-width: 360px;
+  line-height: 1.45;
+}
 
 /* ── Plain HTML table ───────────────────────────────────── */
 .table-wrap {
@@ -3570,13 +3604,6 @@ table.table {
   color: #9ca3af;
 }
 
-.loading-percentage {
-  margin-top: 8px;
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: .08em;
-}
-
 /* Skeleton dashboard layout */
 .skeleton-dashboard {
   display: flex;
@@ -4706,6 +4733,15 @@ body.department-dashboard-dark .compare-metric-long-tooltip {
   color: #ecfeff;
 }
 
+.metrics-container .custom-toggle-group mat-button-toggle[ng-reflect-value="revenue"]:not(.mat-button-toggle-checked):hover {
+  background: rgba(254, 243, 199, 0.95);
+  color: #a16207;
+}
+.dash.dark .metrics-container .custom-toggle-group mat-button-toggle[ng-reflect-value="revenue"]:not(.mat-button-toggle-checked):hover {
+  background: rgba(245, 158, 11, 0.28);
+  color: #fef3c7;
+}
+
 /* --- Hover צבעוני גם לכפתורי roomTimesView (למטה) --- */
 .chart-mode-row .custom-toggle-group mat-button-toggle[ng-reflect-value="avgDuration"]:not(.mat-button-toggle-checked):hover {
   background: rgba(233, 213, 255, 0.9);
@@ -4893,6 +4929,17 @@ body.department-dashboard-dark .compare-metric-long-tooltip {
   border-color: rgba(167, 243, 208, 0.95) !important;
 }
 
+/* הכנסות (revenue) – ענבר/זהב */
+.metrics-container .custom-toggle-group mat-button-toggle[ng-reflect-value="revenue"].mat-button-toggle-checked {
+  background: linear-gradient(135deg, #fffbeb 0%, #fde68a 100%) !important;
+  color: #a16207 !important;
+  border-color: #d97706 !important;
+}
+.dash.dark .metrics-container .custom-toggle-group mat-button-toggle[ng-reflect-value="revenue"].mat-button-toggle-checked {
+  background: linear-gradient(135deg, #b45309 0%, #92400e 100%) !important;
+  border-color: rgba(253, 230, 138, 0.95) !important;
+}
+
 /* קישור ויזואלי לגרף עצמו – פס צבע בכותרת הגרף לפי מצב ראשי */
 .graph-body[data-main-mode="surgery-volume"] .chart-mode-heading {
   border-top: 3px solid #2563eb;
@@ -4902,6 +4949,9 @@ body.department-dashboard-dark .compare-metric-long-tooltip {
 }
 .graph-body[data-main-mode="room-utilization"] .chart-mode-heading {
   border-top: 3px solid #14b8a6;
+}
+.graph-body[data-main-mode="revenue"] .chart-mode-heading {
+  border-top: 3px solid #d97706;
 }
 
 /* רספונסיביות */

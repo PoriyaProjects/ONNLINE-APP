@@ -70,9 +70,6 @@
           טעינה ראשונית לוקחת קצת יותר זמן כי המערכת טוענת וממיינת את כל נתוני חמש השנים האחרונות ושומרת אותם בזיכרון,
           כדי שפתיחות הבאות יהיו כמעט מיידיות.
         </div>
-        <div class="loading-percentage" *ngIf="loadingProgress > 0">
-          {{ loadingProgress | number : '1.0-0' }}%
-        </div>
       </div>
     </div>
   </div>
@@ -350,13 +347,14 @@
 
             <div class="metrics-container">
               <mat-button-toggle-group name="chartView" aria-label="Chart View" class="custom-toggle-group"
+                [value]="mainMetricToggleGroupValue()"
                 (change)="onMainMetricToggle($event.value)">
 
                 <div class="toggle-icon-prefix">
                   <mat-icon>{{ chartType === 'ColumnChart' ? 'bar_chart' : 'show_chart' }}</mat-icon>
                 </div>
 
-                <mat-button-toggle value="count" checked
+                <mat-button-toggle value="count"
                   matTooltip="מדדי נפח פעילות: כמות ניתוחים/חדר/מחלקה על פני שנים" matTooltipPosition="below">
                   מדדי ניתוחים
                 </mat-button-toggle>
@@ -371,6 +369,13 @@
                   matTooltip="ניצולת חדרי ניתוח: כמה חדרים פתוחים/סוגרים, ימים מלאים וניצול ליום"
                   matTooltipPosition="below">
                   ניצולת חדר
+                </mat-button-toggle>
+
+                <mat-button-toggle value="revenue"
+                  matTooltip="מדדי ותצוגות הכנסות (בשלב זה אזור ריק – יתמלא בהמשך)"
+                  matTooltipPosition="below">
+                  <mat-icon>payments</mat-icon>
+                  <span>הכנסות</span>
                 </mat-button-toggle>
 
                 <mat-button-toggle value="compare-departments"
@@ -410,6 +415,20 @@
 
 
         <div class="graph-body" [attr.data-main-mode]="mainMetricMode">
+          <ng-container *ngIf="mainMetricMode === 'revenue'">
+            <div class="chart-mode-heading" *ngIf="shouldShowChartModeHeading()">
+              <span class="chart-mode-heading__title">{{ getChartViewTitle() }}</span>
+              <span class="chart-mode-heading__hint">{{ getChartViewShortDescription() }}</span>
+              <span class="chart-mode-heading__filters">{{ getChartViewFilterParametersLine() }}</span>
+            </div>
+            <div class="revenue-empty">
+              <mat-icon class="revenue-empty-icon" aria-hidden="true">payments</mat-icon>
+              <p class="revenue-empty-title">אין נתוני הכנסות להצגה כרגע</p>
+              <p class="revenue-empty-hint">התצוגה תתמלא בגרפים ובמדדים בשלב הבא.</p>
+            </div>
+          </ng-container>
+
+          <ng-container *ngIf="mainMetricMode !== 'revenue'">
           <div *ngIf="isChartLoading || isMainDataLoading || (isRoomUtilizationMode() && roomUtilizationSubChart === 'surgeriesPerDay' && isSurgeriesPerDayLoading)"
             class="chart-loading-overlay">
             <mat-spinner diameter="50"></mat-spinner>
@@ -678,6 +697,7 @@
             </div>
           </div>
           <!-- מקרא קטגוריות (משמרות / אתרים / סוגי מימון) הוסר לפי בקשת משתמש -->
+          </ng-container>
         </div>
       </div>
     </div>
