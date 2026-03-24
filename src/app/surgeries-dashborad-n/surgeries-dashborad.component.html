@@ -336,6 +336,7 @@
 
   <!-- ================= MAIN CONTENT: GRAPH + TABLE ================= -->
   <div class="main-content" [class.with-top-sidebar]="showTopDepartmentsSidebar"
+    [class.main-content--compare-dept-layout]="mainMetricMode === 'compare-departments'"
     *ngIf="isDataLoaded && !isMainDataLoading">
 
     <!-- ===== GRAPH SECTION (2/3) ===== -->
@@ -379,7 +380,6 @@
                 </mat-button-toggle>
 
                 <mat-button-toggle value="compare-departments"
-                  (change)="openCompareDepartmentsModal()"
                   matTooltip="השוואת ביצועי מחלקות – כמות ניתוחים מול כמות חדרים וזמני חדר"
                   matTooltipPosition="below">
                   השוואה ביצועי מחלקות
@@ -428,7 +428,25 @@
             </div>
           </ng-container>
 
-          <ng-container *ngIf="mainMetricMode !== 'revenue'">
+          <ng-container *ngIf="mainMetricMode === 'compare-departments'">
+            <div class="chart-mode-heading" *ngIf="shouldShowChartModeHeading() && !showCompareDepartmentsModal">
+              <span class="chart-mode-heading__title">{{ getChartViewTitle() }}</span>
+              <span class="chart-mode-heading__hint">{{ getChartViewShortDescription() }}</span>
+              <span class="chart-mode-heading__filters">{{ getChartViewFilterParametersLine() }}</span>
+            </div>
+            <div class="chart-with-expand compare-dept-inline-wrap" *ngIf="!showCompareDepartmentsModal">
+              <button type="button" class="chart-expand-btn" (click)="openCompareDepartmentsFullscreen()"
+                *ngIf="compareDepartmentSelected && !compareDepartmentsModalChartLoading() && compareDepartmentsLineChartData && compareDepartmentsLineChartData.length > 0"
+                matTooltip="הרחב מסך" matTooltipPosition="below">
+                <mat-icon>fullscreen</mat-icon>
+              </button>
+              <div class="kpi-body compare-dept-panel-body compare-dept-panel-body--inline">
+                <ng-container *ngTemplateOutlet="compareDepartmentsPanelBody"></ng-container>
+              </div>
+            </div>
+          </ng-container>
+
+          <ng-container *ngIf="mainMetricMode !== 'revenue' && mainMetricMode !== 'compare-departments'">
           <div *ngIf="isChartLoading || isMainDataLoading || (isRoomUtilizationMode() && roomUtilizationSubChart === 'surgeriesPerDay' && isSurgeriesPerDayLoading)"
             class="chart-loading-overlay">
             <mat-spinner diameter="50"></mat-spinner>
@@ -710,7 +728,14 @@
           <span>טבלת ניתוחים ומחלקות</span>
         </div>
 
-        <div class="table-body" #tableBodyEl>
+        <div class="compare-dept-legend-in-table"
+          *ngIf="mainMetricMode === 'compare-departments' && !showCompareDepartmentsModal && showCompareDepartmentsChartRow()">
+          <ng-container *ngTemplateOutlet="compareDepartmentsLegendAside"></ng-container>
+        </div>
+
+        <div class="table-body" #tableBodyEl
+          [class.table-body--hidden-in-compare]="mainMetricMode === 'compare-departments'">
+          <ng-container *ngIf="mainMetricMode !== 'compare-departments'">
           <!-- טבלה מצטברת: אותם נתונים של הגרף, מוצגים כטבלה (לכל המצבים חוץ ממדד משולב) -->
           <div class="table-wrap"
             *ngIf="chartViewMode !== 'yoy-combined' && chartTableRows?.length && yearsForChart?.length">
@@ -958,6 +983,7 @@
               </ul>
             </div>
           </div>
+          </ng-container>
         </div>
       </div>
     </div>
@@ -1651,22 +1677,85 @@
     </div>
   </div>
 
-  <!-- השוואת מחלקות – ניתוחים ליום בחדר מול כמות חדרים (פופ‑אפ ייעודי מהטוגל העליון) -->
-  <div *ngIf="showCompareDepartmentsModal" class="kpi-overlay" [class.dark]="isDark">
-    <div class="kpi-modal compare-departments-modal" dir="rtl">
-      <div class="kpi-header">
-        <div class="kpi-header-titles">
-          <h2>השוואת מחלקות – ניתוחים ליום בחדר</h2>
-          <div class="kpi-subtitle">
-            כמות ניתוחים ליום בחדר מול כמות חדרים פעילים לכל מחלקה מאוגדת (Wing), לפי שנים.
-            מדדי חדרים וניתוחים ליום מבוססים על ימים «מלאים» (גם פתיחה וגם סגירה של חדר).
+  <!-- כרטיס מקרא/מסקנות — במודאל מלא ליד הגרף; בתצוגה מוטמעת מוצג בפאנל הטבלה -->
+  <ng-template #compareDepartmentsLegendAside>
+    <aside class="compare-dept-legend-card" aria-label="הסבר על הגרף">
+      <section class="compare-dept-legend-section compare-dept-legend-section--intro">
+        <div class="compare-dept-legend-card-head">
+          <div class="compare-dept-legend-icon-wrap" aria-hidden="true">
+            <mat-icon>stacked_bar_chart</mat-icon>
+          </div>
+          <div class="compare-dept-legend-head-text">
+            <h3 class="compare-dept-legend-title">מה הגרף מציג</h3>
+            <p class="compare-dept-legend-lead">
+              גרף עמודות לפי שנה; לכל שנה קבוצת עמודות לפי המדדים שבחרת ב"בחירת מדדי השוואה".
+            </p>
           </div>
         </div>
-        <button mat-icon-button class="close-btn" (click)="closeCompareDepartmentsModal()">
-          <mat-icon>close</mat-icon>
-        </button>
-      </div>
-      <div class="kpi-body">
+      </section>
+
+      <section class="compare-dept-legend-section compare-dept-legend-section--insights"
+        *ngIf="compareDepartmentsGraphInsightBlock as insight"
+        aria-label="מסקנות מהגרף">
+        <div class="compare-dept-legend-insights-label">מסקנות מהגרף</div>
+        <p class="compare-dept-legend-insights-hint">
+          השוואה בין שתי השנים האחרונות בגרף. משכי זמן (מדדי דקות) מוצגים כ־שעות:דקות כשהמספר גדול משעה,
+          או כ־דקות:שניות מתחת לשעה.
+        </p>
+        <div class="compare-dept-insights-table-wrap">
+          <table class="compare-dept-insights-table" *ngIf="insight.mode === 'twoYears'">
+            <thead>
+              <tr>
+                <th scope="col">מדד</th>
+                <th scope="col">{{ insight.yearPrev }}</th>
+                <th scope="col">{{ insight.yearLatest }}</th>
+                <th scope="col">הפרש</th>
+                <th scope="col">%</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let r of insight.rows"
+                [class.compare-dept-insight-trend-up]="r.trend === 'up'"
+                [class.compare-dept-insight-trend-down]="r.trend === 'down'"
+                [class.compare-dept-insight-trend-flat]="r.trend === 'flat' || r.trend === 'neutral'"
+                [class.compare-dept-insight-trend-partial]="r.trend === 'partial'">
+                <td class="compare-dept-insights-metric">{{ r.label }}</td>
+                <td class="compare-dept-insights-val">{{ r.prevVal }}</td>
+                <td class="compare-dept-insights-val">{{ r.latestVal }}</td>
+                <td class="compare-dept-insights-num">{{ r.delta }}</td>
+                <td class="compare-dept-insights-num">{{ r.pct }}</td>
+              </tr>
+            </tbody>
+          </table>
+          <table class="compare-dept-insights-table compare-dept-insights-table--single" *ngIf="insight.mode === 'singleYear'">
+            <thead>
+              <tr>
+                <th scope="col">מדד</th>
+                <th scope="col">{{ insight.yearLatest }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let r of insight.rows">
+                <td class="compare-dept-insights-metric">{{ r.label }}</td>
+                <td class="compare-dept-insights-num">{{ r.latestVal }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="compare-dept-legend-section compare-dept-legend-section--api-note" aria-label="הערה על מקור הנתונים">
+        <p class="compare-dept-legend-api-note">
+          נתוני חדרים וניתוחים ליום בחדר מגיעים מממוצע ניתוחים ליום בחדר (חמש שנים).
+          החישוב מתייחס לימים «מלאים» — ימים שבהם נרשמו גם פתיחת חדר וגם סגירה.
+          בכל יום.
+        </p>
+      </section>
+    </aside>
+  </ng-template>
+
+  <!-- גוף משותף: פאנל גרף (קטן) + מודאל מוגדל -->
+  <ng-template #compareDepartmentsPanelBody>
         <div class="compare-dept-controls">
           <div class="compare-dept-control">
             <label>בחירת מחלקה</label>
@@ -1766,98 +1855,11 @@
           class="kpi-no-data">
           אין מספיק נתונים להצגת השוואה במחלקה שנבחרה.
         </div>
-        <div
-          *ngIf="compareDepartmentSelected && !compareDepartmentsModalChartLoading() &&
-                 !compareDepartmentsAwaitingMetricSelection &&
-                 compareDepartmentsLineChartData && compareDepartmentsLineChartData.length > 0"
-          class="compare-dept-chart-row">
-          <aside class="compare-dept-legend-card" aria-label="הסבר על הגרף">
-            <section class="compare-dept-legend-section compare-dept-legend-section--intro">
-              <div class="compare-dept-legend-card-head">
-                <div class="compare-dept-legend-icon-wrap" aria-hidden="true">
-                  <mat-icon>stacked_bar_chart</mat-icon>
-                </div>
-                <div class="compare-dept-legend-head-text">
-                  <h3 class="compare-dept-legend-title">מה הגרף מציג</h3>
-                  <p class="compare-dept-legend-lead">
-                    גרף עמודות לפי שנה; לכל שנה קבוצת עמודות לפי המדדים שבחרת ב"בחירת מדדי השוואה".
-                  </p>
-                </div>
-              </div>
-            </section>
-
-            <!-- <section class="compare-dept-legend-section compare-dept-legend-section--metrics" aria-label="מדדים פעילים">
-              <div class="compare-dept-legend-metrics-label">מדדים פעילים</div>
-              <table class="compare-dept-metrics-table">
-                <tbody>
-                  <ng-container *ngFor="let opt of compareMetricOptions">
-                    <tr *ngIf="isCompareMetricSelected(opt.key)">
-                      <td class="compare-dept-metrics-cell">{{ opt.label }}</td>
-                    </tr>
-                  </ng-container>
-                </tbody>
-              </table>
-            </section> -->
-
-            <section class="compare-dept-legend-section compare-dept-legend-section--insights"
-              *ngIf="compareDepartmentsGraphInsightBlock as insight"
-              aria-label="מסקנות מהגרף">
-              <div class="compare-dept-legend-insights-label">מסקנות מהגרף</div>
-              <p class="compare-dept-legend-insights-hint">
-                השוואה בין שתי השנים האחרונות בגרף. משכי זמן (מדדי דקות) מוצגים כ־שעות:דקות כשהמספר גדול משעה,
-                או כ־דקות:שניות מתחת לשעה.
-              </p>
-              <div class="compare-dept-insights-table-wrap">
-                <table class="compare-dept-insights-table" *ngIf="insight.mode === 'twoYears'">
-                  <thead>
-                    <tr>
-                      <th scope="col">מדד</th>
-                      <th scope="col">{{ insight.yearPrev }}</th>
-                      <th scope="col">{{ insight.yearLatest }}</th>
-                      <th scope="col">הפרש</th>
-                      <th scope="col">%</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr *ngFor="let r of insight.rows"
-                      [class.compare-dept-insight-trend-up]="r.trend === 'up'"
-                      [class.compare-dept-insight-trend-down]="r.trend === 'down'"
-                      [class.compare-dept-insight-trend-flat]="r.trend === 'flat' || r.trend === 'neutral'"
-                      [class.compare-dept-insight-trend-partial]="r.trend === 'partial'">
-                      <td class="compare-dept-insights-metric">{{ r.label }}</td>
-                      <td class="compare-dept-insights-val">{{ r.prevVal }}</td>
-                      <td class="compare-dept-insights-val">{{ r.latestVal }}</td>
-                      <td class="compare-dept-insights-num">{{ r.delta }}</td>
-                      <td class="compare-dept-insights-num">{{ r.pct }}</td>
-                    </tr>
-                  </tbody>
-                </table>
-                <table class="compare-dept-insights-table compare-dept-insights-table--single" *ngIf="insight.mode === 'singleYear'">
-                  <thead>
-                    <tr>
-                      <th scope="col">מדד</th>
-                      <th scope="col">{{ insight.yearLatest }}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr *ngFor="let r of insight.rows">
-                      <td class="compare-dept-insights-metric">{{ r.label }}</td>
-                      <td class="compare-dept-insights-num">{{ r.latestVal }}</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </section>
-
-            <section class="compare-dept-legend-section compare-dept-legend-section--api-note" aria-label="הערה על מקור הנתונים">
-              <p class="compare-dept-legend-api-note">
-                נתוני חדרים וניתוחים ליום בחדר מגיעים מממוצע ניתוחים ליום בחדר (חמש שנים).
-                החישוב מתייחס לימים «מלאים» — ימים שבהם נרשמו גם פתיחת חדר וגם סגירה.
-                בכל יום.
-              </p>
-            </section>
-
-          </aside>
+        <div *ngIf="showCompareDepartmentsChartRow()" class="compare-dept-chart-row"
+          [class.compare-dept-chart-row--solo]="!showCompareDepartmentsModal">
+          <ng-container *ngIf="showCompareDepartmentsModal">
+            <ng-container *ngTemplateOutlet="compareDepartmentsLegendAside"></ng-container>
+          </ng-container>
           <div class="compare-dept-chart-pane" dir="rtl">
             <google-chart
               class="compare-dept-google-chart"
@@ -1870,6 +1872,25 @@
             </google-chart>
           </div>
         </div>
+  </ng-template>
+
+  <!-- השוואת מחלקות – מודאל מוגדל (אותו תוכן כמו בפאנל) -->
+  <div *ngIf="showCompareDepartmentsModal" class="kpi-overlay" [class.dark]="isDark">
+    <div class="kpi-modal compare-departments-modal" dir="rtl">
+      <div class="kpi-header">
+        <div class="kpi-header-titles">
+          <h2>השוואת מחלקות – ניתוחים ליום בחדר</h2>
+          <div class="kpi-subtitle">
+            כמות ניתוחים ליום בחדר מול כמות חדרים פעילים לכל מחלקה מאוגדת (Wing), לפי שנים.
+            מדדי חדרים וניתוחים ליום מבוססים על ימים «מלאים» (גם פתיחה וגם סגירה של חדר).
+          </div>
+        </div>
+        <button mat-icon-button class="close-btn" (click)="closeCompareDepartmentsModal()">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+      <div class="kpi-body compare-dept-panel-body">
+        <ng-container *ngTemplateOutlet="compareDepartmentsPanelBody"></ng-container>
       </div>
     </div>
   </div>

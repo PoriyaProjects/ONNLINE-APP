@@ -1356,6 +1356,18 @@
   flex-direction: column;
 }
 
+/* במצב השוואת מחלקות: אין טבלת סיכום רגילה — רק מקרא בפאנל; לא לתפוס גובה ב-flex */
+.table-body.table-body--hidden-in-compare {
+  flex: 0 0 0;
+  min-height: 0;
+  max-height: 0;
+  overflow: hidden;
+  padding: 0;
+  margin: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
 .table-extra {
   margin-top: auto;
   padding: 10px 12px;
@@ -2555,6 +2567,54 @@ table.table {
   min-width: 0;
 }
 
+/* תצוגה מוטמעת: המקרא עבר לפאנל הטבלה — כאן רק הגרף */
+.compare-dept-chart-row--solo {
+  flex-direction: column;
+}
+
+.compare-dept-chart-row--solo .compare-dept-chart-pane {
+  flex: 1 1 auto;
+  min-height: 220px;
+  width: 100%;
+}
+
+/* מקרא/מסקנות השוואה — מתחת לכותרת «טבלת ניתוחים» במצב השוואה מוטמע */
+.compare-dept-legend-in-table {
+  flex: 0 0 auto;
+  padding: 4px 6px 12px;
+  margin-bottom: 2px;
+  max-height: min(42vh, 420px);
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  border-bottom: 1px solid var(--border, #e2e8f0);
+  direction: rtl;
+  text-align: right;
+}
+
+/* מילוי גובה העמודה בפאנל הטבלה (כותרת למעלה, טבלה מוסתרת) */
+.main-content--compare-dept-layout .compare-dept-legend-in-table {
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: none;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  margin-bottom: 0;
+}
+
+.main-content--compare-dept-layout .compare-dept-legend-in-table .compare-dept-legend-card {
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+  max-width: none;
+  min-width: 0;
+}
+
+.dash.dark .compare-dept-legend-in-table {
+  border-bottom-color: rgba(148, 163, 184, 0.35);
+}
+
 .compare-departments-modal .compare-dept-chart-row {
   min-height: 320px;
 }
@@ -2840,6 +2900,7 @@ table.table {
   position: sticky;
   top: 0;
   z-index: 3;
+  direction: rtl;
 }
 
 .compare-dept-control {
@@ -2852,6 +2913,8 @@ table.table {
   font-size: 12px;
   font-weight: 700;
   color: var(--muted);
+  text-align: right;
+  width: 100%;
 }
 
 .compare-dept-control select {
@@ -2861,6 +2924,8 @@ table.table {
   background: rgba(255,255,255,.92);
   color: var(--text);
   padding: 0 10px;
+  direction: rtl;
+  text-align: right;
 }
 
 .compare-dept-options {
@@ -2897,6 +2962,7 @@ table.table {
   cursor: pointer;
   font: inherit;
   transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+  direction: rtl;
 }
 
 .compare-metrics-trigger:hover:not(:disabled) {
@@ -2925,7 +2991,7 @@ table.table {
   text-overflow: ellipsis;
   white-space: nowrap;
   font-size: 13px;
-  text-align: start;
+  text-align: right;
   flex: 1;
   min-width: 0;
 }
@@ -2953,6 +3019,8 @@ table.table {
     0 18px 40px -12px rgba(2, 6, 23, 0.22);
   padding: 6px;
   z-index: 50;
+  direction: rtl;
+  text-align: right;
 }
 
 .compare-metrics-item {
@@ -2968,6 +3036,14 @@ table.table {
   transition: background 0.12s ease, border-color 0.12s ease;
   border-inline-start: 3px solid transparent;
   box-sizing: border-box;
+  direction: rtl;
+  text-align: right;
+}
+
+.compare-metrics-item span {
+  flex: 1 1 auto;
+  min-width: 0;
+  text-align: right;
 }
 
 .compare-metrics-item--selected {

@@ -673,7 +673,12 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
     chartViewMode: "year-total" | "fund" | "site" | "shift" | "department" | "month" | "yoy-combined" = "year-total";
 
     /** מצב מדד ראשי: ניתוחים (כמות), זמני חדר, ניצולת חדר, או תצוגת הכנסות (placeholder) */
-    mainMetricMode: "surgery-volume" | "room-times" | "room-utilization" | "revenue" = "surgery-volume";
+    mainMetricMode:
+        | "surgery-volume"
+        | "room-times"
+        | "room-utilization"
+        | "revenue"
+        | "compare-departments" = "surgery-volume";
 
     // When true, the משמרת filter dropdown in the sidebar is visually disabled
     // because the main chart itself is grouped by משמרת.
@@ -4390,6 +4395,9 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
      * כותרת דינמית מעל הגרף הראשי לפי מצב התצוגה הנוכחי
      */
     getChartViewTitle(): string {
+        if (this.mainMetricMode === "compare-departments") {
+            return "השוואת מחלקות – ניתוחים ליום בחדר";
+        }
         if (this.mainMetricMode === "revenue") {
             return "הכנסות";
         }
@@ -4457,6 +4465,9 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
      * מוצג מתחת לכותרת בגודל ~חצי מגודל הכותרת.
      */
     getChartViewShortDescription(): string {
+        if (this.mainMetricMode === "compare-departments") {
+            return "ניתוחים ליום בחדר מול חדרים פעילים ומדדים נוספים לפי שנה, לפי מחלקה מאוגדת (Wing).";
+        }
         if (this.mainMetricMode === "revenue") {
             return "אזור ייעודי למדדי הכנסות – יתווסף תוכן בגרסה הבאה.";
         }
@@ -4524,6 +4535,9 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
         if (this.isMainDataLoading) {
             return false;
         }
+        if (this.mainMetricMode === "compare-departments") {
+            return true;
+        }
         if (this.mainMetricMode === "revenue") {
             return true;
         }
@@ -4590,6 +4604,12 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
      * פירוט פרמטרים וסינונים בפועל — כדי שהמשתמש יבין מה נכנס לגרף בלי לשאול את המתכנת.
      */
     getChartViewFilterParametersLine(): string {
+        if (this.mainMetricMode === "compare-departments") {
+            return (
+                "בחירת מחלקה ומדדים לגרף; מדדי חדרים וניתוחים ליום מבוססים על ימים «מלאים». " +
+                this.getSiteChartContextLine()
+            );
+        }
         if (this.mainMetricMode === "revenue") {
             return "כרגע אין שאילתת נתונים להכנסות; פילטרי הסיידבר יחולו כשיתווסף חיבור לשרת.";
         }
@@ -4741,6 +4761,8 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
                 return "duration";
             case "revenue":
                 return "revenue";
+            case "compare-departments":
+                return "compare-departments";
             case "surgery-volume":
             default:
                 return "count";
@@ -4749,6 +4771,9 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
 
   /** החלפת מצב המדד הראשי לפי כפתורי הטוגל מעל הגרף */
   onMainMetricToggle(value: string): void {
+    if (value !== "compare-departments") {
+      this.showCompareDepartmentsModal = false;
+    }
     if (value === "utilization") {
       this.mainMetricMode = "room-utilization";
       this.roomUtilizationSubChart = "roomStats";
@@ -4763,16 +4788,17 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
     } else if (value === "revenue") {
       this.mainMetricMode = "revenue";
     } else if (value === "compare-departments") {
-      // כפתור ייעודי לפתיחת פופ‑אפ השוואת מחלקות
-      this.openCompareDepartmentsModal();
+      this.enterCompareDepartmentsPanel();
     }
   }
 
-  openCompareDepartmentsModal(): void {
-    this.showCompareDepartmentsModal = true;
-    // מבטיח שהתצוגה תתבסס על "ניתוחים ליום בחדר" לפי מחלקה
+  /** מסך השוואת מחלקות פעיל — בתוך הפאנל הראשי או במודאל מוגדל */
+  isCompareDepartmentsViewActive(): boolean {
+    return this.mainMetricMode === "compare-departments" || this.showCompareDepartmentsModal;
+  }
+
+  private initializeCompareDepartmentsSession(): void {
     this.roomTimesView = "perDay";
-    // חובה לבחור מחלקה בכל פתיחת מודל לפני הצגת השוואות
     this.compareDepartmentSelected = null;
     this.compareSurgeryTypesSelected = [];
     this.loadSurgeriesPerDay();
@@ -4784,6 +4810,23 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
     this.refreshCompareDepartmentsLineChart();
   }
 
+  /**
+   * כניסה למצב השוואת מחלקות: קודם נפתח המודאל הגדול;
+   * אחרי שסוגרים אותו נשארת התצוגה הקטנה בפאנל הגרף.
+   */
+  enterCompareDepartmentsPanel(): void {
+    this.mainMetricMode = "compare-departments";
+    this.showCompareDepartmentsModal = true;
+    this.initializeCompareDepartmentsSession();
+  }
+
+  /** מודאל מלא מעל אותו תוכן (כמו «הרחב מסך» בגרפים אחרים) */
+  openCompareDepartmentsFullscreen(): void {
+    this.showCompareDepartmentsModal = true;
+    this.cdr.detectChanges();
+    setTimeout(() => this.cdr.detectChanges(), 150);
+  }
+
   closeCompareDepartmentsModal(): void {
     this.showCompareDepartmentsModal = false;
     this.closeCompareMetricsDropdown();
@@ -4793,8 +4836,24 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
   /**
    * ספינר מודאל השוואת מחלקות: ניתוחים ליום בחדר, ממוצע שנתי, ו-GetDepRoomFiveYears כשמסומן «ניתוחים לחדר».
    */
+  /** שורת הגרף בהשוואת מחלקות (מדדים נבחרו ויש נתונים) — לתבנית ולפאנל טבלה */
+  showCompareDepartmentsChartRow(): boolean {
+    const dep = (this.compareDepartmentSelected || "").trim();
+    if (!dep) {
+      return false;
+    }
+    if (this.compareDepartmentsModalChartLoading()) {
+      return false;
+    }
+    if (this.compareDepartmentsAwaitingMetricSelection) {
+      return false;
+    }
+    const data = this.compareDepartmentsLineChartData;
+    return !!(data && data.length > 0);
+  }
+
   compareDepartmentsModalChartLoading(): boolean {
-    if (!this.showCompareDepartmentsModal || !this.compareDepartmentSelected) {
+    if (!this.isCompareDepartmentsViewActive() || !this.compareDepartmentSelected) {
       return false;
     }
     if (this.isSurgeriesPerDayLoading) {
@@ -5444,7 +5503,7 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
   }
 
   private refreshCompareDepartmentsLineChart(): void {
-    if (!this.showCompareDepartmentsModal) {
+    if (!this.isCompareDepartmentsViewActive()) {
       return;
     }
     const dep = (this.compareDepartmentSelected || "").trim();
