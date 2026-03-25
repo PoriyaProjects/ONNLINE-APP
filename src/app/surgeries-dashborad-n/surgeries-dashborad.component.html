@@ -1,3 +1,30 @@
+<div class="surgeries-dashborad-root">
+
+  <div
+    *ngIf="showFloatingBetaBanner && !isLoading"
+    class="beta-banner beta-banner--floating"
+    role="status"
+    aria-live="polite"
+  >
+    <button
+      type="button"
+      mat-icon-button
+      class="beta-banner__close"
+      (click)="dismissFloatingBetaBanner()"
+      matTooltip="סגור הודעה"
+      matTooltipPosition="below"
+      aria-label="סגור הודעת גרסת בטא"
+    >
+      <mat-icon>close</mat-icon>
+    </button>
+    <mat-icon class="beta-banner__icon" aria-hidden="true">science</mat-icon>
+    <div class="beta-banner__body">
+      <span class="beta-banner__title">גרסת בטא</span>
+      <span class="beta-banner__hint">הדשבורד בפיתוח פעיל — ייתכנו באגים, חוסר יציבות או שינויים בלי הודעה מוקדמת.</span>
+      <span class="beta-banner__feedback">אשמח לקבל פידבק.</span>
+    </div>
+  </div>
+
 <div class="dash" [class.dark]="isDark" dir="rtl">
 
   <!-- Skeleton Loader – full dashboard shell
@@ -62,6 +89,12 @@
         </div>
       </div>
 
+      <!-- Global loading spinner (כולל אחוזים מדומים) -->
+      <div class="global-loading-spinner spinner-with-percent">
+        <mat-spinner diameter="60"></mat-spinner>
+        <div class="spinner-percent">{{ globalLoadingPercent }}%</div>
+      </div>
+
       <div class="loading-text">
         <div class="loading-headline">
           מכין עבורך את דשבורד הניתוחים...
@@ -89,6 +122,17 @@
       </div>
       <div class="kpi-body">
         <div class="graph-body" style="flex: 1 1 auto; max-height: none; min-height: 0;">
+          <!-- Main chart loading overlay (כולל אחוזים מדומים) -->
+          <div
+            *ngIf="isChartLoading || isMainDataLoading || (mainMetricMode === 'room-utilization' && roomUtilizationSubChart === 'surgeriesPerDay' && isSurgeriesPerDayLoading)"
+            class="chart-loading-overlay"
+          >
+            <div class="spinner-with-percent">
+              <mat-spinner diameter="50"></mat-spinner>
+              <div class="spinner-percent">{{ getMainChartLoadingPercent() }}%</div>
+            </div>
+            <div class="chart-loading-text">טוען גרף...</div>
+          </div>
           <google-chart
             *ngIf="mainMetricMode === 'room-utilization' && roomUtilizationSubChart === 'surgeriesPerDay' && !isSurgeriesPerDayLoading && surgeriesPerDayChartData && surgeriesPerDayChartData.length > 0"
             [type]="'ColumnChart'" [columns]="surgeriesPerDayChartColumns" [data]="surgeriesPerDayChartData"
@@ -282,7 +326,12 @@
           </div> -->
 
       <!-- <div class="dropdown-panel" *ngIf="isDropdownOpen">
-            <div class="loading-state" *ngIf="isDiagnosesLoading">טוען...</div>
+            <div class="loading-state" *ngIf="isDiagnosesLoading">
+              <div class="spinner-with-percent">
+                <mat-spinner diameter="32"></mat-spinner>
+                <div class="spinner-percent">{{ diagnosesLoadingPercent }}%</div>
+              </div>
+            </div>
 
             <div class="options-list" *ngIf="!isDiagnosesLoading">
               <div class="option-item" *ngFor="let diagnosis of diagnosesList" (click)="selectOption(diagnosis)"
@@ -453,7 +502,10 @@
           <ng-container *ngIf="mainMetricMode !== 'revenue' && mainMetricMode !== 'compare-departments'">
           <div *ngIf="isChartLoading || isMainDataLoading || (isRoomUtilizationMode() && roomUtilizationSubChart === 'surgeriesPerDay' && isSurgeriesPerDayLoading)"
             class="chart-loading-overlay">
-            <mat-spinner diameter="50"></mat-spinner>
+            <div class="spinner-with-percent">
+              <mat-spinner diameter="50"></mat-spinner>
+              <div class="spinner-percent">{{ getMainChartLoadingPercent() }}%</div>
+            </div>
             <div class="chart-loading-text">טוען גרף...</div>
           </div>
           <div class="chart-mode-heading" *ngIf="shouldShowChartModeHeading()">
@@ -561,25 +613,33 @@
             <div
               *ngIf="isAvgDurationLoading || isFirstStartTimeLoading || isLastEndTimeLoading || isAvgSetupLoading || isSurgeriesPerDayLoading || isLossByWingLoading || isApprovedUtilizationLoading"
               class="chart-loading-overlay">
-              <mat-spinner diameter="40"></mat-spinner>
+              <div class="spinner-with-percent">
+                <mat-spinner diameter="40"></mat-spinner>
+                <div class="spinner-percent">{{ getRoomTimesLoadingPercent() }}%</div>
+              </div>
               <div class="chart-loading-text">טוען נתוני זמני חדר...</div>
             </div>
           </div>
-
+          
           <!-- מצב תצוגה לוגרף הראשי: סה"כ / קרן‑מדינה / אתר / משמרת / מחלקה -->
           <div class="chart-mode-row"
-            *ngIf="!isChartLoading && !isMainDataLoading && chartData && chartData.length > 0 && !isRoomUtilizationMode() && mainMetricMode !== 'room-times'">
-            <mat-button-toggle-group name="chartViewMode" aria-label="Chart view mode"
+          *ngIf="!isChartLoading && !isMainDataLoading && chartData && chartData.length > 0 && !isRoomUtilizationMode() && mainMetricMode !== 'room-times'">
+          <mat-button-toggle-group name="chartViewMode" aria-label="Chart view mode"
               class="mat-button-toggle-group custom-toggle-group" [value]="chartViewMode"
               (change)="setChartViewMode($event.value)">
               <mat-button-toggle value="year-total" [matTooltip]="getChartViewTooltip('year-total')"
-                matTooltipPosition="top">
-                <mat-icon aria-hidden="true">date_range</mat-icon>
-                <span>סה"כ לשנה</span>
-              </mat-button-toggle>
+              matTooltipPosition="top">
+              <mat-icon aria-hidden="true">date_range</mat-icon>
+              <span>סה"כ לשנה</span>
+            </mat-button-toggle>
               <mat-button-toggle value="month" [matTooltip]="getChartViewTooltip('month')" matTooltipPosition="top">
                 <mat-icon aria-hidden="true">calendar_month</mat-icon>
                 <span>ניתוחים לפי חודשים</span>
+              </mat-button-toggle>
+              <mat-button-toggle value="department" [matTooltip]="getChartViewTooltip('department')"
+                matTooltipPosition="top">
+                <mat-icon aria-hidden="true">domain</mat-icon>
+                <span>סה"כ לפי מחלקה</span>
               </mat-button-toggle>
               <mat-button-toggle value="fund" [matTooltip]="getChartViewTooltip('fund')" matTooltipPosition="top">
                 <mat-icon aria-hidden="true">savings</mat-icon>
@@ -593,11 +653,6 @@
                 [matTooltip]="getChartViewTooltip('shift')" matTooltipPosition="top">
                 <mat-icon aria-hidden="true">watch_later</mat-icon>
                 <span>משמרת</span>
-              </mat-button-toggle>
-              <mat-button-toggle value="department" [matTooltip]="getChartViewTooltip('department')"
-                matTooltipPosition="top">
-                <mat-icon aria-hidden="true">domain</mat-icon>
-                <span>סה"כ לפי מחלקה</span>
               </mat-button-toggle>
               <mat-button-toggle value="yoy-combined" [matTooltip]="getChartViewTooltip('yoy-combined')"
                 matTooltipPosition="top" (click)="onYoyCombinedClick()">
@@ -1146,7 +1201,12 @@
                   <mat-icon class="arrow-icon">{{ isDropdownOpen ? 'expand_less' : 'expand_more' }}</mat-icon>
                 </div>
                 <!-- <div class="dropdown-panel" *ngIf="isDropdownOpen">
-                <div class="loading-state" *ngIf="isDiagnosesLoading">טוען...</div>
+                <div class="loading-state" *ngIf="isDiagnosesLoading">
+                  <div class="spinner-with-percent">
+                    <mat-spinner diameter="32"></mat-spinner>
+                    <div class="spinner-percent">{{ diagnosesLoadingPercent }}%</div>
+                  </div>
+                </div>
                 <div class="options-list" *ngIf="!isDiagnosesLoading">
                   <div class="option-item" *ngFor="let diagnosis of diagnosesList" (click)="selectOption(diagnosis)"
                     [class.selected]="diagnosis === selectedDiagnosis">
@@ -1579,7 +1639,10 @@
         </div>
 
         <div *ngIf="catalogLoading" class="catalog-loading-container">
-          <mat-spinner diameter="50"></mat-spinner>
+          <div class="spinner-with-percent">
+            <mat-spinner diameter="50"></mat-spinner>
+            <div class="spinner-percent">{{ catalogLoadingPercent }}%</div>
+          </div>
           <div class="catalog-loading-text">טוען נתוני ניתוחים למחלקה...</div>
         </div>
 
@@ -1850,7 +1913,10 @@
         <div
           *ngIf="compareDepartmentSelected && compareDepartmentsModalChartLoading()"
           class="kpi-loading">
-          <mat-spinner diameter="40"></mat-spinner>
+          <div class="spinner-with-percent">
+            <mat-spinner diameter="40"></mat-spinner>
+            <div class="spinner-percent">{{ getCompareDepartmentsModalLoadingPercent() }}%</div>
+          </div>
           <span class="kpi-loading-text">טוען נתונים למחלקה שנבחרה…</span>
         </div>
         <div
@@ -1996,6 +2062,13 @@
             </button>
           </div> -->
           <div *ngIf="isAvgDurationLoading" class="kpi-skeleton-wrapper">
+            <div class="kpi-skeleton-spinner-overlay">
+              <div class="spinner-with-percent">
+                <mat-spinner diameter="40"></mat-spinner>
+                <div class="spinner-percent">{{ avgDurationLoadingPercent }}%</div>
+              </div>
+              <span class="kpi-loading-text">טוען נתוני משך ניתוח...</span>
+            </div>
             <div class="panel-skeleton kpi-skeleton">
               <div class="skeleton-panel-header">
                 <div class="skeleton-line skeleton-line-md skeleton-shimmer"></div>
@@ -2035,6 +2108,13 @@
             בכל יום, מספר החדרים שגם נפתחו וגם נסגרו מוגבל ל־min(פתיחות, סגירות) (למשל 2 פתיחות ו־4 סגירות ⇒ 2).
           </p>
           <div *ngIf="isSurgeriesPerDayLoading" class="kpi-skeleton-wrapper">
+            <div class="kpi-skeleton-spinner-overlay">
+              <div class="spinner-with-percent">
+                <mat-spinner diameter="40"></mat-spinner>
+                <div class="spinner-percent">{{ surgeriesPerDayLoadingPercent }}%</div>
+              </div>
+              <span class="kpi-loading-text">טוען נתוני ניתוחים ליום בחדר...</span>
+            </div>
             <div class="panel-skeleton kpi-skeleton">
               <div class="skeleton-panel-header">
                 <div class="skeleton-line skeleton-line-md skeleton-shimmer"></div>
@@ -2070,6 +2150,13 @@
             כאן יוצג שעת הכניסה הממוצעת לחדר ניתוח עבור הניתוח הראשון בבוקר, לפי מחלקה.
           </p>
           <div *ngIf="isFirstStartTimeLoading" class="kpi-skeleton-wrapper">
+            <div class="kpi-skeleton-spinner-overlay">
+              <div class="spinner-with-percent">
+                <mat-spinner diameter="40"></mat-spinner>
+                <div class="spinner-percent">{{ firstStartTimeLoadingPercent }}%</div>
+              </div>
+              <span class="kpi-loading-text">טוען זמן כניסה ממוצע...</span>
+            </div>
             <div class="panel-skeleton kpi-skeleton">
               <div class="skeleton-panel-header">
                 <div class="skeleton-line skeleton-line-md skeleton-shimmer"></div>
@@ -2117,6 +2204,13 @@
             אין ימים ללא גלישה בנתונים – מוצג ממוצע לכל הימים.
           </p>
           <div *ngIf="isLastEndTimeLoading" class="kpi-skeleton-wrapper">
+            <div class="kpi-skeleton-spinner-overlay">
+              <div class="spinner-with-percent">
+                <mat-spinner diameter="40"></mat-spinner>
+                <div class="spinner-percent">{{ lastEndTimeLoadingPercent }}%</div>
+              </div>
+              <span class="kpi-loading-text">טוען זמן סיום ממוצע...</span>
+            </div>
             <div class="panel-skeleton kpi-skeleton">
               <div class="skeleton-panel-header">
                 <div class="skeleton-line skeleton-line-md skeleton-shimmer"></div>
@@ -2156,6 +2250,13 @@
           </p>
 
           <div *ngIf="isAvgSetupLoading" class="kpi-skeleton-wrapper">
+            <div class="kpi-skeleton-spinner-overlay">
+              <div class="spinner-with-percent">
+                <mat-spinner diameter="40"></mat-spinner>
+                <div class="spinner-percent">{{ avgSetupLoadingPercent }}%</div>
+              </div>
+              <span class="kpi-loading-text">טוען זמן SETUP ממוצע...</span>
+            </div>
             <div class="panel-skeleton kpi-skeleton">
               <div class="skeleton-panel-header">
                 <div class="skeleton-line skeleton-line-md skeleton-shimmer"></div>
@@ -2188,6 +2289,13 @@
             זמן אבוד ליום (בדקות) לפי מחלקה מאוגדת (Wing). ציר X: מחלקות. עמודה לכל שנה.
           </p>
           <div *ngIf="isLossByWingLoading" class="kpi-skeleton-wrapper">
+            <div class="kpi-skeleton-spinner-overlay">
+              <div class="spinner-with-percent">
+                <mat-spinner diameter="40"></mat-spinner>
+                <div class="spinner-percent">{{ lossByWingLoadingPercent }}%</div>
+              </div>
+              <span class="kpi-loading-text">טוען זמן אבוד...</span>
+            </div>
             <div class="panel-skeleton kpi-skeleton">
               <div class="skeleton-panel-header">
                 <div class="skeleton-line skeleton-line-md skeleton-shimmer"></div>
@@ -2221,6 +2329,13 @@
             זמן מנוצל ליום (בדקות) לפי מחלקה מאוגדת (Wing). ציר X: מחלקות. עמודה לכל שנה.
           </p>
           <div *ngIf="isApprovedUtilizationLoading" class="kpi-skeleton-wrapper">
+            <div class="kpi-skeleton-spinner-overlay">
+              <div class="spinner-with-percent">
+                <mat-spinner diameter="40"></mat-spinner>
+                <div class="spinner-percent">{{ approvedUtilizationLoadingPercent }}%</div>
+              </div>
+              <span class="kpi-loading-text">טוען זמן מנוצל...</span>
+            </div>
             <div class="panel-skeleton kpi-skeleton">
               <div class="skeleton-panel-header">
                 <div class="skeleton-line skeleton-line-md skeleton-shimmer"></div>
@@ -2253,3 +2368,5 @@
       </div>
     </div>
   </div>
+
+</div>
