@@ -1025,6 +1025,8 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
   // שמירה על flags ישנים לטובת הקוד הקיים (פתיחה/סגירה לפי מודלים נפרדים)
   showAvgDurationModal = false;
   showTimesModal = false;
+  /** מיזוג אופציות למודאל זמני חדר — מטמון לפי אובייקט options (מניעת אובייקט חדש בכל CD) */
+  private roomTimesModalChartOptionsMemo = new WeakMap<object, any>();
   showFirstStartTimeModal = false;
   showLastEndTimeModal = false;
   showAvgSetupModal = false;
@@ -7395,6 +7397,64 @@ closeLastEndTimeModal(): void {
   this.showLastEndTimeModal = false;
 }
 
+/**
+ * מודאל «זמני חדר ניתוח»: chartArea מאוזן — מקום לציר X משופע, לכותרת ציר Y ולקו סף (SETUP),
+ * בלי לשנות את אובייקטי ה־options בגרף הראשי.
+ */
+roomTimesModalChartOptions(base: any): any {
+  if (!base || typeof base !== "object") {
+    return base;
+  }
+  const cached = this.roomTimesModalChartOptionsMemo.get(base);
+  if (cached) {
+    return cached;
+  }
+  const prev = base.chartArea && typeof base.chartArea === "object" ? base.chartArea : {};
+  const merged: any = {
+    ...base,
+    chartArea: {
+      ...prev,
+      left: 52,
+      top: 52,
+      width: "86%",
+      height: "56%",
+    },
+  };
+
+  const hasThresholdLine =
+    merged.series &&
+    typeof merged.series === "object" &&
+    Object.values(merged.series).some(
+      (s: any) => s && Array.isArray(s.lineDashStyle),
+    );
+  if (hasThresholdLine) {
+    const v0 = merged.vAxis || {};
+    merged.vAxis = {
+      ...v0,
+      viewWindow: {
+        ...(v0.viewWindow || {}),
+        min: 0,
+      },
+    };
+    const series = { ...(merged.series || {}) };
+    for (const key of Object.keys(series)) {
+      const s = series[key];
+      if (s && Array.isArray(s.lineDashStyle)) {
+        series[key] = {
+          ...s,
+          lineWidth: 3,
+          pointSize: 4,
+          visibleInLegend: true,
+        };
+      }
+    }
+    merged.series = series;
+  }
+
+  this.roomTimesModalChartOptionsMemo.set(base, merged);
+  return merged;
+}
+
 // Unified "זמני חדר ניתוח" modal that מחזיק את כל תתי‑הגרפים תחת אותה כותרת
 openRoomTimesModal(initialView: 'avgDuration' | 'firstStart' | 'lastEnd' | 'avgSetup' | 'perDay' | 'lossPerDay' | 'approvedPerDay' = 'avgDuration'): void {
   this.showRoomTimesModal = true;
@@ -9239,14 +9299,15 @@ private loadAvgSetup(): void {
               bold: true,
               italic: false,
             },
-            viewWindowMode: "maximized",
+            // בלי maximized — אחרת ציר Y מתמקד בעמודות בלבד וקו הסף ב־20 דקות נעלם כשכל הערכים גבוהים מ־20
+            viewWindow: { min: 0 },
           },
           bar: { groupWidth: "60%" },
           chartArea: {
-            width: '90%',
-            height: '60%',
-            left: 40,
-            top: 50
+            width: "88%",
+            height: "68%",
+            left: 44,
+            top: 48,
           },
           animation: { startup: true, duration: 800, easing: "out" },
           annotations: {
@@ -9260,13 +9321,14 @@ private loadAvgSetup(): void {
           series: {
             [thresholdSeriesIndex]: {
               type: "line",
-              color: "#ff0000",
-              lineWidth: 2,
+              color: "#dc2626",
+              lineWidth: 3,
               // קו מקוקו כדי שיבדל מהעמודות
-              lineDashStyle: [6, 4],
-              visibleInLegend: true
-            }
-          }
+              lineDashStyle: [8, 5],
+              visibleInLegend: true,
+              pointSize: 4,
+            },
+          },
         };
 
         const ast = this.patchGoogleChartHtmlTooltips(
