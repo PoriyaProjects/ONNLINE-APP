@@ -1975,7 +1975,7 @@
   <!-- Group‑2 KPIs Modals -->
 
   <div *ngIf="showTimesModal" class="kpi-overlay" [class.dark]="isDark">
-    <div class="kpi-modal" dir="rtl">
+    <div class="kpi-modal room-times-kpi-modal" dir="rtl">
       <div class="kpi-header">
         <div class="kpi-header-titles">
           <div class="kpi-header-main-title">זמני חדר ניתוח</div>
@@ -1992,43 +1992,13 @@
           </h2>
         </div>
         <div class="kpi-header-actions">
-          <mat-button-toggle-group name="roomTimesView" aria-label="Room times view" class="custom-toggle-group"
-            (change)="setRoomTimesView($event.value)">
-            <mat-button-toggle value="avgDuration">
-              <mat-icon>speed</mat-icon>
-              <span>משך ניתוח ממוצע</span>
-            </mat-button-toggle>
-            <mat-button-toggle value="firstStart">
-              <mat-icon>play_circle</mat-icon>
-              <span>כניסה ניתוח ראשון</span>
-            </mat-button-toggle>
-            <mat-button-toggle value="lastEnd">
-              <mat-icon>stop_circle</mat-icon>
-              <span>סיום ניתוח אחרון</span>
-            </mat-button-toggle>
-            <mat-button-toggle value="avgSetup">
-              <mat-icon>hourglass_bottom</mat-icon>
-              <span>SETUP ממוצע</span>
-            </mat-button-toggle>
-            <mat-button-toggle value="perDay">
-              <mat-icon>calendar_view_day</mat-icon>
-              <span>ניתוחים ליום</span>
-            </mat-button-toggle>
-            <mat-button-toggle value="lossPerDay">
-              <mat-icon>timer_off</mat-icon>
-              <span>זמן אבוד ליום</span>
-            </mat-button-toggle>
-            <mat-button-toggle value="approvedPerDay">
-              <mat-icon>schedule</mat-icon>
-              <span>זמן מנוצל ליום</span>
-            </mat-button-toggle>
-          </mat-button-toggle-group>
           <button mat-icon-button class="close-btn" (click)="closeRoomTimesModal()">
             <mat-icon>close</mat-icon>
           </button>
         </div>
       </div>
       <div class="kpi-body">
+        <div class="room-times-modal-body-scroll">
         <!-- AVG DURATION VIEW -->
         <ng-container *ngIf="roomTimesView === 'avgDuration'">
           <p class="kpi-intro">
@@ -2061,39 +2031,41 @@
               פה ולסת
             </button>
           </div> -->
-          <div *ngIf="isAvgDurationLoading" class="kpi-skeleton-wrapper">
-            <div class="kpi-skeleton-spinner-overlay">
-              <div class="spinner-with-percent">
-                <mat-spinner diameter="40"></mat-spinner>
-                <div class="spinner-percent">{{ avgDurationLoadingPercent }}%</div>
-              </div>
-              <span class="kpi-loading-text">טוען נתוני משך ניתוח...</span>
-            </div>
-            <div class="panel-skeleton kpi-skeleton">
-              <div class="skeleton-panel-header">
-                <div class="skeleton-line skeleton-line-md skeleton-shimmer"></div>
-                <div class="skeleton-chip-row">
-                  <div class="skeleton-chip skeleton-shimmer"></div>
-                  <div class="skeleton-chip skeleton-shimmer"></div>
+          <div class="room-times-modal-chart-slot">
+            <div *ngIf="isAvgDurationLoading" class="kpi-skeleton-wrapper">
+              <div class="kpi-skeleton-spinner-overlay">
+                <div class="spinner-with-percent">
+                  <mat-spinner diameter="40"></mat-spinner>
+                  <div class="spinner-percent">{{ avgDurationLoadingPercent }}%</div>
                 </div>
+                <span class="kpi-loading-text">טוען נתוני משך ניתוח...</span>
               </div>
-              <div class="kpi-skeleton-body">
-                <div class="kpi-skeleton-bars">
-                  <div class="kpi-skeleton-bar" *ngFor="let _ of [1,2,3,4,5,6]">
-                    <div class="kpi-skeleton-bar-col skeleton-shimmer"></div>
+              <div class="panel-skeleton kpi-skeleton">
+                <div class="skeleton-panel-header">
+                  <div class="skeleton-line skeleton-line-md skeleton-shimmer"></div>
+                  <div class="skeleton-chip-row">
+                    <div class="skeleton-chip skeleton-shimmer"></div>
+                    <div class="skeleton-chip skeleton-shimmer"></div>
+                  </div>
+                </div>
+                <div class="kpi-skeleton-body">
+                  <div class="kpi-skeleton-bars">
+                    <div class="kpi-skeleton-bar" *ngFor="let _ of [1,2,3,4,5,6]">
+                      <div class="kpi-skeleton-bar-col skeleton-shimmer"></div>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
+            <div *ngIf="!isAvgDurationLoading && (!avgDurationChartData || avgDurationChartData.length === 0)"
+              class="kpi-no-data">
+              אין נתונים להצגה כרגע. חבר את ה‑API כדי לאכלס את הגרף.
+            </div>
+            <google-chart *ngIf="!isAvgDurationLoading && avgDurationChartData && avgDurationChartData.length > 0"
+              [type]="'ColumnChart'" [columns]="avgDurationChartColumns" [data]="avgDurationChartData"
+              [options]="avgDurationChartOptions" [width]="'100%'" [height]="'420px'">
+            </google-chart>
           </div>
-          <div *ngIf="!isAvgDurationLoading && (!avgDurationChartData || avgDurationChartData.length === 0)"
-            class="kpi-no-data">
-            אין נתונים להצגה כרגע. חבר את ה‑API כדי לאכלס את הגרף.
-          </div>
-          <google-chart *ngIf="!isAvgDurationLoading && avgDurationChartData && avgDurationChartData.length > 0"
-            [type]="'ColumnChart'" [columns]="avgDurationChartColumns" [data]="avgDurationChartData"
-            [options]="avgDurationChartOptions" [width]="'100%'" [height]="'360px'">
-          </google-chart>
           <div *ngIf="!isAvgDurationLoading && avgDurationChartData && avgDurationChartData.length > 0"
             class="kpi-chart-caption">
             כל עמודת צבע מייצגת שנה, והסדרה עבור כל מחלקה (Wing) מציגה את משך הניתוח הממוצע (בדקות).
@@ -2107,36 +2079,38 @@
             הממוצע מבוסס על ימים «מלאים» — ימים שבהם נרשמו גם פתיחה וגם סגירה של חדר;
             בכל יום, מספר החדרים שגם נפתחו וגם נסגרו מוגבל ל־min(פתיחות, סגירות) (למשל 2 פתיחות ו־4 סגירות ⇒ 2).
           </p>
-          <div *ngIf="isSurgeriesPerDayLoading" class="kpi-skeleton-wrapper">
-            <div class="kpi-skeleton-spinner-overlay">
-              <div class="spinner-with-percent">
-                <mat-spinner diameter="40"></mat-spinner>
-                <div class="spinner-percent">{{ surgeriesPerDayLoadingPercent }}%</div>
+          <div class="room-times-modal-chart-slot">
+            <div *ngIf="isSurgeriesPerDayLoading" class="kpi-skeleton-wrapper">
+              <div class="kpi-skeleton-spinner-overlay">
+                <div class="spinner-with-percent">
+                  <mat-spinner diameter="40"></mat-spinner>
+                  <div class="spinner-percent">{{ surgeriesPerDayLoadingPercent }}%</div>
+                </div>
+                <span class="kpi-loading-text">טוען נתוני ניתוחים ליום בחדר...</span>
               </div>
-              <span class="kpi-loading-text">טוען נתוני ניתוחים ליום בחדר...</span>
-            </div>
-            <div class="panel-skeleton kpi-skeleton">
-              <div class="skeleton-panel-header">
-                <div class="skeleton-line skeleton-line-md skeleton-shimmer"></div>
-              </div>
-              <div class="kpi-skeleton-body">
-                <div class="kpi-skeleton-bars">
-                  <div class="kpi-skeleton-bar" *ngFor="let _ of [1,2,3,4,5,6]">
-                    <div class="kpi-skeleton-bar-col skeleton-shimmer"></div>
+              <div class="panel-skeleton kpi-skeleton">
+                <div class="skeleton-panel-header">
+                  <div class="skeleton-line skeleton-line-md skeleton-shimmer"></div>
+                </div>
+                <div class="kpi-skeleton-body">
+                  <div class="kpi-skeleton-bars">
+                    <div class="kpi-skeleton-bar" *ngFor="let _ of [1,2,3,4,5,6]">
+                      <div class="kpi-skeleton-bar-col skeleton-shimmer"></div>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
+            <div *ngIf="!isSurgeriesPerDayLoading && (!surgeriesPerDayChartData || surgeriesPerDayChartData.length === 0)"
+              class="kpi-no-data">
+              אין נתונים להצגה כרגע. חבר את ה‑API כדי לאכלס את הגרף.
+            </div>
+            <google-chart
+              *ngIf="!isSurgeriesPerDayLoading && surgeriesPerDayChartData && surgeriesPerDayChartData.length > 0"
+              [type]="'ColumnChart'" [columns]="surgeriesPerDayChartColumns" [data]="surgeriesPerDayChartData"
+              [options]="surgeriesPerDayChartOptions" [width]="'100%'" [height]="'420px'">
+            </google-chart>
           </div>
-          <div *ngIf="!isSurgeriesPerDayLoading && (!surgeriesPerDayChartData || surgeriesPerDayChartData.length === 0)"
-            class="kpi-no-data">
-            אין נתונים להצגה כרגע. חבר את ה‑API כדי לאכלס את הגרף.
-          </div>
-          <google-chart
-            *ngIf="!isSurgeriesPerDayLoading && surgeriesPerDayChartData && surgeriesPerDayChartData.length > 0"
-            [type]="'ColumnChart'" [columns]="surgeriesPerDayChartColumns" [data]="surgeriesPerDayChartData"
-            [options]="surgeriesPerDayChartOptions" [width]="'100%'" [height]="'360px'">
-          </google-chart>
           <div *ngIf="!isSurgeriesPerDayLoading && surgeriesPerDayChartData && surgeriesPerDayChartData.length > 0"
             class="kpi-chart-caption">
             כל עמודת צבע מייצגת שנה, והסדרה עבור כל מחלקה (Wing) מציגה את ממוצע ניתוחים ליום בחדר.
@@ -2149,37 +2123,39 @@
           <p class="kpi-intro">
             כאן יוצג שעת הכניסה הממוצעת לחדר ניתוח עבור הניתוח הראשון בבוקר, לפי מחלקה.
           </p>
-          <div *ngIf="isFirstStartTimeLoading" class="kpi-skeleton-wrapper">
-            <div class="kpi-skeleton-spinner-overlay">
-              <div class="spinner-with-percent">
-                <mat-spinner diameter="40"></mat-spinner>
-                <div class="spinner-percent">{{ firstStartTimeLoadingPercent }}%</div>
+          <div class="room-times-modal-chart-slot">
+            <div *ngIf="isFirstStartTimeLoading" class="kpi-skeleton-wrapper">
+              <div class="kpi-skeleton-spinner-overlay">
+                <div class="spinner-with-percent">
+                  <mat-spinner diameter="40"></mat-spinner>
+                  <div class="spinner-percent">{{ firstStartTimeLoadingPercent }}%</div>
+                </div>
+                <span class="kpi-loading-text">טוען זמן כניסה ממוצע...</span>
               </div>
-              <span class="kpi-loading-text">טוען זמן כניסה ממוצע...</span>
-            </div>
-            <div class="panel-skeleton kpi-skeleton">
-              <div class="skeleton-panel-header">
-                <div class="skeleton-line skeleton-line-md skeleton-shimmer"></div>
-              </div>
-              <div class="kpi-skeleton-body">
-                <div class="kpi-skeleton-bars">
-                  <div class="kpi-skeleton-bar" *ngFor="let _ of [1,2,3,4,5,6]">
-                    <div class="kpi-skeleton-bar-col skeleton-shimmer"></div>
+              <div class="panel-skeleton kpi-skeleton">
+                <div class="skeleton-panel-header">
+                  <div class="skeleton-line skeleton-line-md skeleton-shimmer"></div>
+                </div>
+                <div class="kpi-skeleton-body">
+                  <div class="kpi-skeleton-bars">
+                    <div class="kpi-skeleton-bar" *ngFor="let _ of [1,2,3,4,5,6]">
+                      <div class="kpi-skeleton-bar-col skeleton-shimmer"></div>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
-          <div *ngIf="!isFirstStartTimeLoading && (!firstStartTimeData || firstStartTimeData.length === 0)"
-            class="kpi-no-data">
-            אין נתונים להצגה כרגע. חבר את ה‑API כדי לאכלס את הטבלה.
-          </div>
+            <div *ngIf="!isFirstStartTimeLoading && (!firstStartTimeData || firstStartTimeData.length === 0)"
+              class="kpi-no-data">
+              אין נתונים להצגה כרגע. חבר את ה‑API כדי לאכלס את הטבלה.
+            </div>
 
-          <google-chart
-            *ngIf="!isFirstStartTimeLoading && firstStartTimeChartData && firstStartTimeChartData.length > 0"
-            [type]="'ColumnChart'" [columns]="firstStartTimeChartColumns" [data]="firstStartTimeChartData"
-            [options]="firstStartTimeChartOptions" [width]="'100%'" [height]="'320px'">
-          </google-chart>
+            <google-chart
+              *ngIf="!isFirstStartTimeLoading && firstStartTimeChartData && firstStartTimeChartData.length > 0"
+              [type]="'ColumnChart'" [columns]="firstStartTimeChartColumns" [data]="firstStartTimeChartData"
+              [options]="firstStartTimeChartOptions" [width]="'100%'" [height]="'420px'">
+            </google-chart>
+          </div>
           <div *ngIf="!isFirstStartTimeLoading && firstStartTimeChartData && firstStartTimeChartData.length > 0"
             class="kpi-chart-caption">
             כל עמודה מציגה זמן כניסה ממוצע של הניתוח הראשון בבוקר לכל מחלקה(Wing), בחמש השנים האחרונות.
@@ -2203,39 +2179,41 @@
           <p *ngIf="lastEndTimeExcludeNoData" class="kpi-intro kpi-exclude-fallback">
             אין ימים ללא גלישה בנתונים – מוצג ממוצע לכל הימים.
           </p>
-          <div *ngIf="isLastEndTimeLoading" class="kpi-skeleton-wrapper">
-            <div class="kpi-skeleton-spinner-overlay">
-              <div class="spinner-with-percent">
-                <mat-spinner diameter="40"></mat-spinner>
-                <div class="spinner-percent">{{ lastEndTimeLoadingPercent }}%</div>
+          <div class="room-times-modal-chart-slot">
+            <div *ngIf="isLastEndTimeLoading" class="kpi-skeleton-wrapper">
+              <div class="kpi-skeleton-spinner-overlay">
+                <div class="spinner-with-percent">
+                  <mat-spinner diameter="40"></mat-spinner>
+                  <div class="spinner-percent">{{ lastEndTimeLoadingPercent }}%</div>
+                </div>
+                <span class="kpi-loading-text">טוען זמן סיום ממוצע...</span>
               </div>
-              <span class="kpi-loading-text">טוען זמן סיום ממוצע...</span>
-            </div>
-            <div class="panel-skeleton kpi-skeleton">
-              <div class="skeleton-panel-header">
-                <div class="skeleton-line skeleton-line-md skeleton-shimmer"></div>
-              </div>
-              <div class="kpi-skeleton-body">
-                <div class="kpi-skeleton-bars">
-                  <div class="kpi-skeleton-bar" *ngFor="let _ of [1,2,3,4,5,6]">
-                    <div class="kpi-skeleton-bar-col skeleton-shimmer"></div>
+              <div class="panel-skeleton kpi-skeleton">
+                <div class="skeleton-panel-header">
+                  <div class="skeleton-line skeleton-line-md skeleton-shimmer"></div>
+                </div>
+                <div class="kpi-skeleton-body">
+                  <div class="kpi-skeleton-bars">
+                    <div class="kpi-skeleton-bar" *ngFor="let _ of [1,2,3,4,5,6]">
+                      <div class="kpi-skeleton-bar-col skeleton-shimmer"></div>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
-          <div *ngIf="!isLastEndTimeLoading && (!lastEndTimeData || lastEndTimeData.length === 0)" class="kpi-no-data">
-            אין נתונים להצגה כרגע. חבר את ה‑API כדי לאכלס את הטבלה.
-          </div>
-          <!-- <google-chart *ngIf="!isLastEndTimeLoading && lastEndTimeChartData && lastEndTimeChartData.length > 0"
+            <div *ngIf="!isLastEndTimeLoading && (!lastEndTimeData || lastEndTimeData.length === 0)" class="kpi-no-data">
+              אין נתונים להצגה כרגע. חבר את ה‑API כדי לאכלס את הטבלה.
+            </div>
+            <!-- <google-chart *ngIf="!isLastEndTimeLoading && lastEndTimeChartData && lastEndTimeChartData.length > 0"
             [type]="'ColumnChart'" [columns]="lastEndTimeChartColumns" [data]="lastEndTimeChartData"
             [options]="lastEndTimeChartOptions" [width]="'100%'" [height]="'100%'">
           </google-chart> -->
 
-          <google-chart *ngIf="!isLastEndTimeLoading && lastEndTimeChartData && lastEndTimeChartData.length > 0"
-            [type]="'ColumnChart'" [columns]="lastEndTimeChartColumns" [data]="lastEndTimeChartData"
-            [options]="lastEndTimeChartOptions" [width]="'100%'" [height]="'100%'">
-          </google-chart>
+            <google-chart *ngIf="!isLastEndTimeLoading && lastEndTimeChartData && lastEndTimeChartData.length > 0"
+              [type]="'ColumnChart'" [columns]="lastEndTimeChartColumns" [data]="lastEndTimeChartData"
+              [options]="lastEndTimeChartOptions" [width]="'100%'" [height]="'420px'">
+            </google-chart>
+          </div>
 
           <div *ngIf="!isLastEndTimeLoading && lastEndTimeChartData && lastEndTimeChartData.length > 0"
             class="kpi-chart-caption">
@@ -2249,34 +2227,36 @@
             כאן יוצג זמן ה‑SETUP הממוצע (הפסקה בין ניתוחים) בדקות, לפי מחלקה.
           </p>
 
-          <div *ngIf="isAvgSetupLoading" class="kpi-skeleton-wrapper">
-            <div class="kpi-skeleton-spinner-overlay">
-              <div class="spinner-with-percent">
-                <mat-spinner diameter="40"></mat-spinner>
-                <div class="spinner-percent">{{ avgSetupLoadingPercent }}%</div>
+          <div class="room-times-modal-chart-slot">
+            <div *ngIf="isAvgSetupLoading" class="kpi-skeleton-wrapper">
+              <div class="kpi-skeleton-spinner-overlay">
+                <div class="spinner-with-percent">
+                  <mat-spinner diameter="40"></mat-spinner>
+                  <div class="spinner-percent">{{ avgSetupLoadingPercent }}%</div>
+                </div>
+                <span class="kpi-loading-text">טוען זמן SETUP ממוצע...</span>
               </div>
-              <span class="kpi-loading-text">טוען זמן SETUP ממוצע...</span>
-            </div>
-            <div class="panel-skeleton kpi-skeleton">
-              <div class="skeleton-panel-header">
-                <div class="skeleton-line skeleton-line-md skeleton-shimmer"></div>
-              </div>
-              <div class="kpi-skeleton-body">
-                <div class="kpi-skeleton-bars">
-                  <div class="kpi-skeleton-bar" *ngFor="let _ of [1,2,3,4,5,6]">
-                    <div class="kpi-skeleton-bar-col skeleton-shimmer"></div>
+              <div class="panel-skeleton kpi-skeleton">
+                <div class="skeleton-panel-header">
+                  <div class="skeleton-line skeleton-line-md skeleton-shimmer"></div>
+                </div>
+                <div class="kpi-skeleton-body">
+                  <div class="kpi-skeleton-bars">
+                    <div class="kpi-skeleton-bar" *ngFor="let _ of [1,2,3,4,5,6]">
+                      <div class="kpi-skeleton-bar-col skeleton-shimmer"></div>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
+            <div *ngIf="!isAvgSetupLoading && (!avgSetupData || avgSetupData.length === 0)" class="kpi-no-data">
+              אין נתונים להצגה כרגע. חבר את ה‑API כדי לאכלס את הטבלה.
+            </div>
+            <google-chart *ngIf="!isAvgSetupLoading && avgSetupChartData && avgSetupChartData.length > 0"
+              [type]="'ColumnChart'" [columns]="avgSetupChartColumns" [data]="avgSetupChartData"
+              [options]="avgSetupChartOptions" [width]="'100%'" [height]="'420px'">
+            </google-chart>
           </div>
-          <div *ngIf="!isAvgSetupLoading && (!avgSetupData || avgSetupData.length === 0)" class="kpi-no-data">
-            אין נתונים להצגה כרגע. חבר את ה‑API כדי לאכלס את הטבלה.
-          </div>
-          <google-chart *ngIf="!isAvgSetupLoading && avgSetupChartData && avgSetupChartData.length > 0"
-            [type]="'ColumnChart'" [columns]="avgSetupChartColumns" [data]="avgSetupChartData"
-            [options]="avgSetupChartOptions" [width]="'100%'" [height]="'100%'">
-          </google-chart>
           <div *ngIf="!isAvgSetupLoading && avgSetupChartData && avgSetupChartData.length > 0"
             class="kpi-chart-caption">
             כל עמודת צבע מייצגת שנה, והסדרה עבור כל מחלקה(Wing) מציגה את זמן ה‑SETUP הממוצע (בדקות) בין ניתוחים.
@@ -2288,35 +2268,37 @@
           <p class="kpi-intro">
             זמן אבוד ליום (בדקות) לפי מחלקה מאוגדת (Wing). ציר X: מחלקות. עמודה לכל שנה.
           </p>
-          <div *ngIf="isLossByWingLoading" class="kpi-skeleton-wrapper">
-            <div class="kpi-skeleton-spinner-overlay">
-              <div class="spinner-with-percent">
-                <mat-spinner diameter="40"></mat-spinner>
-                <div class="spinner-percent">{{ lossByWingLoadingPercent }}%</div>
+          <div class="room-times-modal-chart-slot">
+            <div *ngIf="isLossByWingLoading" class="kpi-skeleton-wrapper">
+              <div class="kpi-skeleton-spinner-overlay">
+                <div class="spinner-with-percent">
+                  <mat-spinner diameter="40"></mat-spinner>
+                  <div class="spinner-percent">{{ lossByWingLoadingPercent }}%</div>
+                </div>
+                <span class="kpi-loading-text">טוען זמן אבוד...</span>
               </div>
-              <span class="kpi-loading-text">טוען זמן אבוד...</span>
-            </div>
-            <div class="panel-skeleton kpi-skeleton">
-              <div class="skeleton-panel-header">
-                <div class="skeleton-line skeleton-line-md skeleton-shimmer"></div>
-              </div>
-              <div class="kpi-skeleton-body">
-                <div class="kpi-skeleton-bars">
-                  <div class="kpi-skeleton-bar" *ngFor="let _ of [1,2,3,4,5,6]">
-                    <div class="kpi-skeleton-bar-col skeleton-shimmer"></div>
+              <div class="panel-skeleton kpi-skeleton">
+                <div class="skeleton-panel-header">
+                  <div class="skeleton-line skeleton-line-md skeleton-shimmer"></div>
+                </div>
+                <div class="kpi-skeleton-body">
+                  <div class="kpi-skeleton-bars">
+                    <div class="kpi-skeleton-bar" *ngFor="let _ of [1,2,3,4,5,6]">
+                      <div class="kpi-skeleton-bar-col skeleton-shimmer"></div>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
+            <div *ngIf="!isLossByWingLoading && (!lossByWingChartData || lossByWingChartData.length === 0)"
+              class="kpi-no-data">
+              אין נתונים להצגה כרגע. חבר את ה‑API כדי לאכלס את הגרף.
+            </div>
+            <google-chart *ngIf="!isLossByWingLoading && lossByWingChartData && lossByWingChartData.length > 0"
+              [type]="'ColumnChart'" [columns]="lossByWingChartColumns" [data]="lossByWingChartData"
+              [options]="lossByWingChartOptions" [width]="'100%'" [height]="'420px'">
+            </google-chart>
           </div>
-          <div *ngIf="!isLossByWingLoading && (!lossByWingChartData || lossByWingChartData.length === 0)"
-            class="kpi-no-data">
-            אין נתונים להצגה כרגע. חבר את ה‑API כדי לאכלס את הגרף.
-          </div>
-          <google-chart *ngIf="!isLossByWingLoading && lossByWingChartData && lossByWingChartData.length > 0"
-            [type]="'ColumnChart'" [columns]="lossByWingChartColumns" [data]="lossByWingChartData"
-            [options]="lossByWingChartOptions" [width]="'100%'" [height]="'360px'">
-          </google-chart>
           <div *ngIf="!isLossByWingLoading && lossByWingChartData && lossByWingChartData.length > 0"
             class="kpi-chart-caption">
             כל עמודת צבע מייצגת שנה, והסדרה עבור כל מחלקה (Wing) מציגה את הזמן האבוד ליום (בדקות).
@@ -2328,43 +2310,81 @@
           <p class="kpi-intro">
             זמן מנוצל ליום (בדקות) לפי מחלקה מאוגדת (Wing). ציר X: מחלקות. עמודה לכל שנה.
           </p>
-          <div *ngIf="isApprovedUtilizationLoading" class="kpi-skeleton-wrapper">
-            <div class="kpi-skeleton-spinner-overlay">
-              <div class="spinner-with-percent">
-                <mat-spinner diameter="40"></mat-spinner>
-                <div class="spinner-percent">{{ approvedUtilizationLoadingPercent }}%</div>
+          <div class="room-times-modal-chart-slot">
+            <div *ngIf="isApprovedUtilizationLoading" class="kpi-skeleton-wrapper">
+              <div class="kpi-skeleton-spinner-overlay">
+                <div class="spinner-with-percent">
+                  <mat-spinner diameter="40"></mat-spinner>
+                  <div class="spinner-percent">{{ approvedUtilizationLoadingPercent }}%</div>
+                </div>
+                <span class="kpi-loading-text">טוען זמן מנוצל...</span>
               </div>
-              <span class="kpi-loading-text">טוען זמן מנוצל...</span>
-            </div>
-            <div class="panel-skeleton kpi-skeleton">
-              <div class="skeleton-panel-header">
-                <div class="skeleton-line skeleton-line-md skeleton-shimmer"></div>
-              </div>
-              <div class="kpi-skeleton-body">
-                <div class="kpi-skeleton-bars">
-                  <div class="kpi-skeleton-bar" *ngFor="let _ of [1,2,3,4,5,6]">
-                    <div class="kpi-skeleton-bar-col skeleton-shimmer"></div>
+              <div class="panel-skeleton kpi-skeleton">
+                <div class="skeleton-panel-header">
+                  <div class="skeleton-line skeleton-line-md skeleton-shimmer"></div>
+                </div>
+                <div class="kpi-skeleton-body">
+                  <div class="kpi-skeleton-bars">
+                    <div class="kpi-skeleton-bar" *ngFor="let _ of [1,2,3,4,5,6]">
+                      <div class="kpi-skeleton-bar-col skeleton-shimmer"></div>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
+            <div
+              *ngIf="!isApprovedUtilizationLoading && (!approvedUtilizationChartData || approvedUtilizationChartData.length === 0)"
+              class="kpi-no-data">
+              אין נתונים להצגה כרגע.
+            </div>
+            <google-chart
+              *ngIf="!isApprovedUtilizationLoading && approvedUtilizationChartData && approvedUtilizationChartData.length > 0"
+              [type]="'ColumnChart'" [columns]="approvedUtilizationChartColumns" [data]="approvedUtilizationChartData"
+              [options]="approvedUtilizationChartOptions" [width]="'100%'" [height]="'420px'">
+            </google-chart>
           </div>
-          <div
-            *ngIf="!isApprovedUtilizationLoading && (!approvedUtilizationChartData || approvedUtilizationChartData.length === 0)"
-            class="kpi-no-data">
-            אין נתונים להצגה כרגע.
-          </div>
-          <google-chart
-            *ngIf="!isApprovedUtilizationLoading && approvedUtilizationChartData && approvedUtilizationChartData.length > 0"
-            [type]="'ColumnChart'" [columns]="approvedUtilizationChartColumns" [data]="approvedUtilizationChartData"
-            [options]="approvedUtilizationChartOptions" [width]="'100%'" [height]="'360px'">
-          </google-chart>
           <div
             *ngIf="!isApprovedUtilizationLoading && approvedUtilizationChartData && approvedUtilizationChartData.length > 0"
             class="kpi-chart-caption">
             כל עמודת צבע מייצגת שנה, והסדרה עבור כל מחלקה (Wing) מציגה את הזמן המנוצל ליום (בדקות).
           </div>
         </ng-container>
+        </div>
+
+        <div class="chart-mode-row room-times-modal-toggle-row">
+          <mat-button-toggle-group name="roomTimesView" aria-label="Room times view"
+            class="mat-button-toggle-group custom-toggle-group" [value]="roomTimesView"
+            (change)="setRoomTimesView($event.value)">
+            <mat-button-toggle value="avgDuration">
+              <mat-icon>speed</mat-icon>
+              <span>משך ניתוח ממוצע</span>
+            </mat-button-toggle>
+            <mat-button-toggle value="firstStart">
+              <mat-icon>play_circle</mat-icon>
+              <span>כניסה ניתוח ראשון</span>
+            </mat-button-toggle>
+            <mat-button-toggle value="lastEnd">
+              <mat-icon>stop_circle</mat-icon>
+              <span>סיום ניתוח אחרון</span>
+            </mat-button-toggle>
+            <mat-button-toggle value="avgSetup">
+              <mat-icon>hourglass_bottom</mat-icon>
+              <span>SETUP ממוצע</span>
+            </mat-button-toggle>
+            <mat-button-toggle value="perDay">
+              <mat-icon>calendar_view_day</mat-icon>
+              <span>ניתוחים ליום</span>
+            </mat-button-toggle>
+            <mat-button-toggle value="lossPerDay">
+              <mat-icon>timer_off</mat-icon>
+              <span>זמן אבוד ליום</span>
+            </mat-button-toggle>
+            <mat-button-toggle value="approvedPerDay">
+              <mat-icon>schedule</mat-icon>
+              <span>זמן מנוצל ליום</span>
+            </mat-button-toggle>
+          </mat-button-toggle-group>
+        </div>
       </div>
     </div>
   </div>
