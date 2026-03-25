@@ -272,8 +272,7 @@ import { CommercialSupportResearchDialogComponent } from './form-dashboard/comme
 import { CprNewbordDashboradComponent } from './form-dashboard/cpr-newbord-dashborad/cpr-newbord-dashborad.component';
 import { CprNewbornFormComponent } from './form-dashboard/cpr-newbord-dashborad/cpr-newborn-form/cpr-newborn-form.component';
 import { PeopleListDialogComponent } from './form-dashboard/training-request-dashboard/training-request-dashboard.component';
-import { HearingCaseNumbersDialogComponent } from './hearing-survey/hearing-case-numbers-dialog/hearing-case-numbers-dialog.component';
-import { HearingSurveyComponent } from './hearing-survey/hearing-survey/hearing-survey.component';
+import { HearingCaseNumbersDialogComponent, HearingSurveyComponent } from './hearing-survey/hearing-survey.component';
 import { AppointsDashbModule } from './hospital-appoints-dashb/hospital-appoints-dashb.module';
 import { HospitalCathDashbModule } from './hospital-cath-dashb/hospital-cath-dashb.module';
 import { HospitalIncomeDashbComponent } from './hospital-income-dashb/hospital-income-dashb.component';
