@@ -90,6 +90,8 @@ export class MedicalInternsDashboardComponent implements OnInit {
   feedbackDataSource = new MatTableDataSource<Record<string, any>>([]);
   feedbackDisplayedColumns: string[] = [];
   feedbackLoaded = false;
+  feedbackYear: number = new Date().getFullYear();
+  feedbackDepartmentFilter = '';
   @ViewChild('feedbackPaginator') feedbackPaginator: MatPaginator;
   /** Hebrew labels for feedback columns */
   feedbackColumnLabels: Record<string, string> = {
@@ -356,6 +358,16 @@ export class MedicalInternsDashboardComponent implements OnInit {
     this.loadServerData();
   }
 
+  previousFeedbackYear(): void {
+    this.feedbackYear--;
+    this.loadFeedbackData();
+  }
+
+  nextFeedbackYear(): void {
+    this.feedbackYear++;
+    this.loadFeedbackData();
+  }
+
   /**
    * Loads data from server that returns JSON in format:
    * [{ column1: value1, column2: value2, ... }, ...]
@@ -411,7 +423,7 @@ export class MedicalInternsDashboardComponent implements OnInit {
    */
   loadFeedbackData(): void {
     this.feedbackLoaded = false;
-    this.http.post(this.url + 'GetInternDepartmentsFeedbackMatrix', {}).subscribe(
+    this.http.post(this.url + 'GetInternDepartmentsFeedbackMatrix', { year: this.feedbackYear }).subscribe(
       (response) => {
         this.feedbackLoaded = true;
         let raw = response['d'];
@@ -426,11 +438,17 @@ export class MedicalInternsDashboardComponent implements OnInit {
         this.feedbackTableData = rows;
         this.feedbackDataSource = new MatTableDataSource<Record<string, any>>(rows);
         this.feedbackDisplayedColumns = this.getFeedbackColumns(rows);
+        this.feedbackDepartmentFilter = '';
         setTimeout(() => {
           this.feedbackDataSource.paginator = this.feedbackPaginator;
         }, 0);
         this.feedbackDataSource.filterPredicate = (row, filter) => {
-          const term = filter.toLowerCase();
+          const deptCol = this.feedbackDepartmentColumn;
+          if (this.feedbackDepartmentFilter && deptCol && String(row[deptCol] ?? '') !== this.feedbackDepartmentFilter) {
+            return false;
+          }
+          const term = (filter || '').trim().toLowerCase();
+          if (!term) return true;
           return this.feedbackDisplayedColumns.some(
             (col) => String(row[col] ?? '').toLowerCase().includes(term)
           );
@@ -462,6 +480,28 @@ export class MedicalInternsDashboardComponent implements OnInit {
 
   getFeedbackColumnLabel(col: string): string {
     return this.feedbackColumnLabels[col] || col;
+  }
+
+  /** Column name that holds department in feedback data */
+  get feedbackDepartmentColumn(): string | null {
+    const candidates = ['מחלקה', 'DepartDesc', 'Department', 'DepartnentDescripton'];
+    return candidates.find((c) => this.feedbackDisplayedColumns.includes(c)) ?? null;
+  }
+
+  /** Unique department values from feedback table for the dropdown */
+  get feedbackDepartmentsList(): string[] {
+    const col = this.feedbackDepartmentColumn;
+    if (!col || !this.feedbackTableData?.length) return [];
+    const set = new Set<string>();
+    this.feedbackTableData.forEach((row) => {
+      const v = String(row[col] ?? '').trim();
+      if (v) set.add(v);
+    });
+    return Array.from(set).sort();
+  }
+
+  onFeedbackDepartmentChange(): void {
+    this.feedbackDataSource.filter = (this.feedbackDataSource.filter || '').trim() + ' ';
   }
 
   /** Truncates feedback text for display; full text goes in tooltip */

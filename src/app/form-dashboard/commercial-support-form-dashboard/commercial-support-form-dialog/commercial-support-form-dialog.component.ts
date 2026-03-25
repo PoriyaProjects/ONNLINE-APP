@@ -244,6 +244,8 @@ export class CommercialSupportFormDialogComponent {
       Location: new FormControl(data?.Location, null),
       JoinPerson: new FormControl(data?.JoinPerson, null),
       Position: new FormControl(data?.Position, null),
+      ParticipationType: new FormControl(data?.ParticipationType, null),
+      ParticipationTypeNote: new FormControl(data?.ParticipationTypeNote ?? '', null),
       Currency: new FormControl(data?.Currency, null),
       SupportAmount: new FormControl(data?.SupportAmount, null),
       SupportAmountOther: new FormControl(data?.SupportAmountOther, null),
@@ -271,12 +273,13 @@ export class CommercialSupportFormDialogComponent {
       DecisionDate: new FormControl(data?.DecisionDate, null),
       Note: new FormControl(data?.Note, null)
     });
-    // מוסיף לכל פעילות שדות דינמיים בטופס
     this.SupportActivityDto.forEach((activity, index) => {
-      this.SupportRequestDto.addControl(activity.controlName + '_directService', new FormControl(''));
-      this.SupportRequestDto.addControl(activity.controlName + '_indirectHealth', new FormControl(''));
-      this.SupportRequestDto.addControl(activity.controlName + '_extraOptions', new FormControl(''));
-      this.onIndirectHealthChange(this.SupportRequestDto.value[activity.controlName + '_indirectHealth'], index);
+      this.setupActivityDirectVsIndirectMutualExclusion(activity.controlName, index);
+    });
+    this.SupportRequestDto.get('ParticipationType')?.valueChanges.subscribe((v) => {
+      if (v !== 'other') {
+        this.SupportRequestDto.get('ParticipationTypeNote')?.setValue('', { emitEvent: false });
+      }
     });
     this.SupportRequestDto.get('CompanySupport').valueChanges.subscribe(value => {
       this.filteredCompanies = this._filterCompanies(value || '');
@@ -336,10 +339,54 @@ export class CommercialSupportFormDialogComponent {
   }
 
   onIndirectHealthChange(value: string, index: number) {
-    this.selectedIndirectHealth[index] = value;
-    if (value == "no") {
+    if (value === 'yes') {
+      this.selectedIndirectHealth[index] = 'yes';
+    } else {
+      delete this.selectedIndirectHealth[index];
+    }
+    if (value == 'no') {
       this.SupportRequestDto.controls[this.SupportActivityDto[index].controlName + '_extraOptions'].setValue(value);
     }
+  }
+
+  private setupActivityDirectVsIndirectMutualExclusion(controlName: string, index: number): void {
+    const directCtrl = this.SupportRequestDto.get(controlName + '_directService')!;
+    const indirectCtrl = this.SupportRequestDto.get(controlName + '_indirectHealth')!;
+    const extraCtrl = this.SupportRequestDto.get(controlName + '_extraOptions')!;
+
+    const sync = () => {
+      let d = directCtrl.value;
+      let i = indirectCtrl.value;
+      if (d === 'yes' && i === 'yes') {
+        indirectCtrl.setValue(null, { emitEvent: false });
+        extraCtrl.setValue(null, { emitEvent: false });
+        i = null;
+      }
+      if (d === 'yes') {
+        directCtrl.enable({ emitEvent: false });
+        indirectCtrl.disable({ emitEvent: false });
+        if (i != null) {
+          indirectCtrl.setValue(null, { emitEvent: false });
+          extraCtrl.setValue(null, { emitEvent: false });
+        }
+        this.onIndirectHealthChange(indirectCtrl.value, index);
+      } else if (i === 'yes') {
+        indirectCtrl.enable({ emitEvent: false });
+        directCtrl.disable({ emitEvent: false });
+        if (d != null) {
+          directCtrl.setValue(null, { emitEvent: false });
+        }
+        this.onIndirectHealthChange(i, index);
+      } else {
+        directCtrl.enable({ emitEvent: false });
+        indirectCtrl.enable({ emitEvent: false });
+        this.onIndirectHealthChange(indirectCtrl.value, index);
+      }
+    };
+
+    directCtrl.valueChanges.subscribe(() => sync());
+    indirectCtrl.valueChanges.subscribe(() => sync());
+    sync();
   }
 
   getSupportRequestsByID() {
