@@ -117,6 +117,17 @@
     </div>
   </div>
 
+  <!-- חודש יחוס / עדכניות דוח הכנסות -->
+  <div
+    class="report-as-of-strip"
+    *ngIf="showIncomeReportAsOfStrip"
+    dir="rtl"
+    role="status"
+    [attr.aria-label]="reportAsOfBannerText">
+    <mat-icon class="report-as-of-icon" aria-hidden="true">event_available</mat-icon>
+    <span class="report-as-of-text">{{ reportAsOfBannerText }}</span>
+  </div>
+
 
   <!-- ================= MAIN CONTENT: GRAPH + TABLE ================= -->
   <div class="main-content"
