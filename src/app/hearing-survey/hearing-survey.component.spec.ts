@@ -1,6 +1,9 @@
+import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { async, ComponentFixture, TestBed } from '@angular/core/testing';
+import { NO_ERRORS_SCHEMA } from '@angular/core';
+import { MatDialogModule } from '@angular/material/dialog';
 
-import { HearingSurveyComponent } from './hearing-survey.component';
+import { HearingSurveyComponent, HearingCaseNumbersDialogComponent } from './hearing-survey.component';
 
 describe('HearingSurveyComponent', () => {
   let component: HearingSurveyComponent;
@@ -8,7 +11,9 @@ describe('HearingSurveyComponent', () => {
 
   beforeEach(async(() => {
     TestBed.configureTestingModule({
-      declarations: [ HearingSurveyComponent ]
+      imports: [HttpClientTestingModule, MatDialogModule],
+      declarations: [HearingSurveyComponent, HearingCaseNumbersDialogComponent],
+      schemas: [NO_ERRORS_SCHEMA]
     })
     .compileComponents();
   }));

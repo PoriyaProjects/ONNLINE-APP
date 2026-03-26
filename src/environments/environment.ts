@@ -6,11 +6,8 @@ export const environment = {
   url: 'http://localhost:64964/WebService.asmx/',
   urlipracticom: 'http://localhost:64964/WebService.asmx/',
   AuthUrl: 'http://localhost:64964/WebService.asmx/',
-  /**
-   * Override host for GET `{base}/api/hearing/details`.
-   * Empty: use `AuthUrl` if it is an `/api/` host; otherwise same origin as `url` (WebService folder stripped).
-   */
-  hearingDetailsApiBase: '',
+  /** Optional full WebService base for GetHearingDetails / GetHearingCounts when SPA origin ≠ API (CORS). Empty = `url`. */
+  hearingDetailsAsmxBase: '',
   production: false
 };
 
