@@ -12,6 +12,31 @@ export interface DoctorDto { Name: string; Department: string; Q: number; AvgDay
 export interface HmpcDataPoint { label: string; value: number; color?: string; tooltip?: string; }
 export interface HmpcRow { category: string; periods: HmpcDataPoint[]; }
 
+/** נגזר מסיכומי מחלקות/רופאים אחרי טעינת GetAppointments (ללא שאילתת SQL נפרדת) */
+export interface AppointmentDashboardKpis {
+  totalSlots: number;
+  avgWaitDays: number;
+  minWaitDays: number | null;
+}
+
+/**
+ * הסבר אחיד על טווח הזמן של המדדים (GetAppointments — סנאפשוט אחד לכל הדשבורד).
+ * מוצג בטקסטים, טולטיפים וכותרות כדי שלא יפרשו הנתונים כמגמה היסטורית.
+ */
+export const APPOINTMENTS_DATA_SCOPE = {
+  /** שורה קצרה — «מתי» הנתונים */
+  shortLine:
+    'מתי הנתונים: סנאפשוט אחד מהשרת (בטעינת הדף או ברענון). תורים פנויים — לשבוע הקרוב; ממוצע ימי המתנה עד תור זמין — מאותו עדכון (לא מגמה היסטורית).',
+  /** ל־title / טולטיפ ארוך */
+  detailTitle:
+    'תורים פנויים (Q): מספר התורים הזמינים לשבוע הקרוב לכל מחלקה/רופא. ממוצע ימי המתנה: ממוצע ימים עד תור זמין כפי שהמערכת מחשבת באותה קריאת נתונים — לא ממוצע על פני חודשים. בטבלה: אורך הפס בעמודת ימי המתנה הוא השוואה בין השורות המוצגות בלבד; הערך הגבוה ביותר בטווח הנוכחי מקבל פס מלא.',
+  /** משפט קצר לצירוף לטולטיפים */
+  tooltipTail:
+    'תורים פנויים לשבוע הקרוב; ממוצע ימים — מאותו סנאפשוט מהשרת.',
+  barRelativeNote:
+    'רוחב הפס יחסי לשורות המוצגות כעת: הערך הגבוה ביותר בטווח הנוכחי מקבל פס מלא.',
+} as const;
+
 @Injectable({ providedIn: 'root' })
 export class GoogleChartsService {
   // ---------------- Loader ----------------
@@ -107,6 +132,41 @@ export class GoogleChartsService {
       }
     })();
     return this.dataPromise;
+  }
+
+  /**
+   * KPIs למסך הראשי: סה״כ תורים, ממוצע משוקלל ימים (לפי כמות תורים במחלקה),
+   * והמינימום מבין רופאים עם תורים (או מחלקות אם אין רופאים).
+   */
+  getAppointmentKpis(): AppointmentDashboardKpis {
+    const deptRows = this.buildDepartmentRows();
+    let totalSlots = 0;
+    let weighted = 0;
+    for (const [, q, avg] of deptRows) {
+      const qn = Number(q) || 0;
+      const av = Number(avg) || 0;
+      totalSlots += qn;
+      weighted += av * qn;
+    }
+    const avgWaitDays = totalSlots > 0 ? Math.round(weighted / totalSlots) : 0;
+
+    let minWaitDays: number | null = null;
+    for (const [, , q, avg] of this.buildDoctorRows()) {
+      const qn = Number(q) || 0;
+      if (qn <= 0) continue;
+      const av = Number(avg) || 0;
+      minWaitDays = minWaitDays === null ? av : Math.min(minWaitDays, av);
+    }
+    if (minWaitDays === null) {
+      for (const [, q, avg] of deptRows) {
+        const qn = Number(q) || 0;
+        if (qn <= 0) continue;
+        const av = Number(avg) || 0;
+        minWaitDays = minWaitDays === null ? av : Math.min(minWaitDays, av);
+      }
+    }
+
+    return { totalSlots, avgWaitDays, minWaitDays };
   }
 
   // ---------------- Sanitization ----------------
@@ -342,6 +402,44 @@ private makeDoctorLabel(name: string, q: number, avg: number): string {
   return `${name} · ימים:${avg} · תורים:${q}`;
 }
 
+/** מפרק תווית אריח כמו «שם · ימים:34 · תורים:10» */
+private parseTreemapTileLabel(label: string): { title: string; days: number | null; q: number | null } {
+  const raw = String(label || '').trim();
+  const m = raw.match(/^(.+?)\s*·\s*ימים:\s*(\d+)\s*·\s*תורים:\s*(\d+)\s*$/);
+  if (!m) return { title: raw, days: null, q: null };
+  return { title: m[1].trim(), days: Number(m[2]) || null, q: Number(m[3]) || null };
+}
+
+private treemapTooltipHtml(dt: any, row: number, mode: 'rootGrid' | 'deptDrill'): string {
+  const label = String(dt.getValue(row, 0) ?? '');
+  const parent = dt.getValue(row, 1);
+  const colorN = Number(dt.getValue(row, 3)) || 0;
+  const esc = (s: string) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
+  const parsed = this.parseTreemapTileLabel(label);
+
+  if (parent == null) {
+    const hint =
+      mode === 'rootGrid'
+        ? 'שורש המפה. מתחתיו מחלקות — לחיצה על מחלקה פותחת רופאים.'
+        : 'שורש הקבוצה — המחלקה שנבחרה. האריחים בתוכה הם רופאים.';
+    return `<div dir="rtl" style="padding:10px;font-size:12px;max-width:320px;text-align:right;line-height:1.45">
+      <b>${esc(label)}</b><br/>${hint}<div style="margin-top:8px;font-size:11px;color:#555;border-top:1px solid #eee;padding-top:6px">${esc(APPOINTMENTS_DATA_SCOPE.tooltipTail)}</div></div>`;
+  }
+  const daysShow = parsed.days != null ? parsed.days : colorN;
+  const qShow = parsed.q;
+  const qLine =
+    qShow != null
+      ? `<div style="margin-top:6px"><strong>מספר תורים פנויים לשבוע הקרוב (במפה):</strong> <b>${qShow}</b></div>`
+      : `<div style="margin-top:6px"><strong>תורים פנויים:</strong> מספר מתוך הנתון על האריח (אם מוצג בתווית).</div>`;
+  return `<div dir="rtl" style="padding:10px;font-size:12px;max-width:380px;text-align:right;line-height:1.45">
+    <div style="font-weight:700;margin-bottom:6px">${esc(parsed.title || label)}</div>
+    <div><strong>ממוצע המתנה (ימים):</strong> <b>${daysShow}</b> — מהערך הזה נגזרים <em>גודל</em> האריח ו־<em>גוון הצבע</em> (מעבר ירוק→צהוב→אדום, רציף; לא ארבעה מדרגים כמו בטבלה).</div>
+    ${qLine}
+    <div style="margin-top:8px;font-size:11px;color:#555"><strong>גודל האריח:</strong> משקף עוצמת הערך (ימי המתנה) במודל TreeMap. <strong>צבע:</strong> ככל שהממוצע גבוה יותר — גוון אדום יותר; נמוך יותר — ירוק יותר.</div>
+    <div style="margin-top:8px;font-size:11px;color:#555;border-top:1px solid #eee;padding-top:6px">${esc(APPOINTMENTS_DATA_SCOPE.tooltipTail)}</div>
+  </div>`;
+}
+
 /* ---------- Treemap draw (departments root) ---------- */
 private async drawTreemapAll(el: HTMLElement) {
   const g = (window as any).google;
@@ -376,8 +474,11 @@ private async drawTreemapAll(el: HTMLElement) {
     maxColor: '#e53935',
     showScale: true,
     useWeightedAverageForAggregation: false,
-    // Tooltip optional; titles already show values
-    generateTooltip: () => ''
+    generateTooltip: (...args: any[]) => {
+      const row = typeof args[0] === 'number' ? args[0] : Number(args[0]);
+      if (!Number.isFinite(row) || row < 0 || row >= dt.getNumberOfRows()) return '';
+      return this.treemapTooltipHtml(dt, row, 'rootGrid');
+    }
   };
 
   const chart = new g.visualization.TreeMap(el);
@@ -430,7 +531,11 @@ private async drawTreemapDept(el: HTMLElement, deptName: string) {
     maxColor: '#e53935',
     showScale: true,
     useWeightedAverageForAggregation: false,
-    generateTooltip: () => '' // titles already have the data
+    generateTooltip: (...args: any[]) => {
+      const row = typeof args[0] === 'number' ? args[0] : Number(args[0]);
+      if (!Number.isFinite(row) || row < 0 || row >= dt.getNumberOfRows()) return '';
+      return this.treemapTooltipHtml(dt, row, 'deptDrill');
+    }
   };
 
   const chart = new g.visualization.TreeMap(el);
@@ -453,6 +558,7 @@ private mountBackButton(container: HTMLElement, onClick: () => void) {
   const btn = document.createElement('button');
   btn.className = 'treemap-back';
   btn.textContent = '⬅︎ חזרה';
+  btn.title = 'חזרה לתצוגת כל המחלקות במפת העומסים';
   Object.assign(btn.style, {
     position: 'absolute', top: '8px', right: '8px', padding: '4px 8px',
     direction: 'rtl', fontSize: '12px', border: '1px solid #bbb',
@@ -491,6 +597,15 @@ private hexToRgba(hex: string, alpha: number): string {
   const b = parseInt(m[3], 16);
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
+
+  /** צבע פס ימי המתנה בטבלה — תואם מקרא קבוע (ימים) */
+  private waitDaysBarColor(avg: number): string {
+    const a = Math.max(0, Number(avg) || 0);
+    if (a <= 14) return '#43a047';
+    if (a <= 30) return '#fdd835';
+    if (a <= 60) return '#fb8c00';
+    return '#e53935';
+  }
 
 // private mountGroupToggleButton(el: HTMLElement, onToggle: () => void) {
 //   Array.from(el.querySelectorAll('.group-toggle')).forEach(n => n.remove());
@@ -543,14 +658,15 @@ public async drawLeaderboardDoctors(containerId: string, dir: 'asc' | 'desc' = '
   const rowDept: string[] = [];
   for (const r of rows) {
     const display = `${r.name} – ${r.dept}`;
-    const ann     = `ימים ${r.avg} | תורים ${r.q}`;
-    const annText = `תור זמין: ${r.avg} · תורים: ${r.q}`;
+    const ann     = `ממוצע המתנה ${r.avg} ימים | תורים פנויים לשבוע הקרוב ${r.q}`;
+    const annText = `ממוצע המתנה: ${r.avg} ימים · תורים פנויים: ${r.q}`;
     const tooltip =
-      `<div style="direction:rtl;padding:6px 8px;font-size:12px">
+      `<div style="direction:rtl;padding:8px 10px;font-size:12px;line-height:1.45;max-width:280px;text-align:right">
          <div><b>${r.name}</b></div>
          <div>מחלקה: ${r.dept}</div>
-         <div>תור זמין: <b>${r.avg}</b></div>
-         <div>תורים: <b>${r.q}</b></div>
+         <div style="margin-top:6px"><strong>ממוצע המתנה:</strong> <b>${r.avg}</b> ימים עד תור זמין (סנאפשוט מהשרת).</div>
+         <div><strong>תורים פנויים לשבוע הקרוב:</strong> <b>${r.q}</b>.</div>
+         <div style="margin-top:8px;font-size:11px;color:#555;border-top:1px solid #eee;padding-top:6px">${APPOINTMENTS_DATA_SCOPE.tooltipTail}</div>
        </div>`;
     dt.addRow([display, r.avg, ann, annText, tooltip]);
     rowDept.push(r.dept);
@@ -570,15 +686,19 @@ public async drawLeaderboardDoctors(containerId: string, dir: 'asc' | 'desc' = '
   const chartAreaLeft  = this.groupDoctorsByDept ? 220 : 140;
   const chartAreaRight = this.groupDoctorsByDept ? 110 : 24;
 
+  const axisText = { color: '#212121', fontSize: 11 };
   const opts: any = {
     title,
+    titleTextStyle: { color: '#212121', fontSize: 14, bold: true },
+    backgroundColor: '#ffffff',
     legend: 'none',
     chartArea: { left: chartAreaLeft, right: chartAreaRight, top: 40, bottom: 20 },
-    hAxis: { minValue: 0 },
+    hAxis: { minValue: 0, textStyle: axisText, gridlines: { color: '#e0e0e0' }, baselineColor: '#9e9e9e' },
+    vAxis: { textStyle: axisText, gridlines: { color: 'transparent' } },
     height,
     bar: { groupWidth: '90%' },
     tooltip: { isHtml: true },
-    annotations: { alwaysOutside: false, highContrast: true, textStyle: { fontSize: 11, auraColor: 'none', color: '#000' } }
+    annotations: { alwaysOutside: false, highContrast: true, textStyle: { fontSize: 11, auraColor: 'none', color: '#000000' } }
   };
 
   const chart = new google.visualization.BarChart(el);
@@ -625,6 +745,7 @@ public async drawLeaderboardDoctors(containerId: string, dir: 'asc' | 'desc' = '
         background: bandColor,
         pointerEvents: 'none', zIndex: '1'
       } as any);
+      band.title = `רקע מודגש: כל השורות ברצועה זו הן רופאים במחלקה «${g.dept}»`;
       el.appendChild(band);
 
       // subtle separator line between groups
@@ -637,6 +758,7 @@ public async drawLeaderboardDoctors(containerId: string, dir: 'asc' | 'desc' = '
           background: 'rgba(0,0,0,0.12)',
           pointerEvents: 'none', zIndex: '1'
         } as any);
+        sep.title = 'קו הפרדה דק בין שתי קבוצות מחלקות שונות ברשימת הרופאים';
         el.appendChild(sep);
       }
 
@@ -644,6 +766,7 @@ public async drawLeaderboardDoctors(containerId: string, dir: 'asc' | 'desc' = '
       const rot = document.createElement('div');
       rot.className = 'dept-label-rot';
       rot.textContent = g.dept;
+      rot.title = `תווית צד לקבוצת מחלקה: ${g.dept}`;
       const centerY = top + h / 2;
       Object.assign(rot.style, {
         position: 'absolute', left: `${labelX}px`, top: `${centerY}px`,
@@ -683,13 +806,14 @@ public async drawLeaderboardDepartments(containerId: string, dir: 'asc' | 'desc'
   dt.addColumn({ type: 'string', role: 'tooltip', p: { html: true } });
 
   rows.forEach(r => {
-    const ann     = `ימים ${r.avg} | תורים ${r.q}`;
-    const annText = `תור זמין: ${r.avg} · תורים: ${r.q}`;
+    const ann     = `ממוצע המתנה ${r.avg} ימים | תורים פנויים לשבוע הקרוב ${r.q}`;
+    const annText = `ממוצע המתנה: ${r.avg} ימים · תורים פנויים: ${r.q}`;
     const tooltip =
-      `<div style="direction:rtl;padding:6px 8px;font-size:12px">
-         <div><b>${r.name}</b></div>
-         <div>תור זמין: <b>${r.avg}</b></div>
-         <div>תורים: <b>${r.q}</b></div>
+      `<div style="direction:rtl;padding:8px 10px;font-size:12px;line-height:1.45;max-width:260px;text-align:right">
+         <div><b>${r.name}</b> <span style="color:#666">(מחלקה)</span></div>
+         <div style="margin-top:6px"><strong>ממוצע המתנה:</strong> <b>${r.avg}</b> ימים עד תור זמין (סנאפשוט מהשרת).</div>
+         <div><strong>תורים פנויים לשבוע הקרוב:</strong> <b>${r.q}</b>.</div>
+         <div style="margin-top:8px;font-size:11px;color:#555;border-top:1px solid #eee;padding-top:6px">${APPOINTMENTS_DATA_SCOPE.tooltipTail}</div>
        </div>`;
     dt.addRow([r.name, r.avg, ann, annText, tooltip]);
   });
@@ -702,15 +826,19 @@ public async drawLeaderboardDepartments(containerId: string, dir: 'asc' | 'desc'
 
   const title = dir === 'desc' ? 'כל המחלקות — ארוכים ← קצרים' : 'כל המחלקות — קצרים ← ארוכים';
 
+  const axisTextDep = { color: '#212121', fontSize: 11 };
   const opts: any = {
     title,
+    titleTextStyle: { color: '#212121', fontSize: 14, bold: true },
+    backgroundColor: '#ffffff',
     legend: 'none',
     chartArea: { left: 140, right: 24, top: 40, bottom: 20 },
-    hAxis: { minValue: 0 },
+    hAxis: { minValue: 0, textStyle: axisTextDep, gridlines: { color: '#e0e0e0' }, baselineColor: '#9e9e9e' },
+    vAxis: { textStyle: axisTextDep, gridlines: { color: 'transparent' } },
     height,
     bar: { groupWidth: '90%' },
     tooltip: { isHtml: true },
-    annotations: { alwaysOutside: false, highContrast: true, textStyle: { fontSize: 11, auraColor: 'none', color: '#000' } }
+    annotations: { alwaysOutside: false, highContrast: true, textStyle: { fontSize: 11, auraColor: 'none', color: '#000000' } }
   };
 
   const chart = new (window as any).google.visualization.BarChart(el);
@@ -819,6 +947,7 @@ public async drawLeaderboardDepartments(containerId: string, dir: 'asc' | 'desc'
     const searchInput = document.createElement('input');
     searchInput.type = 'search';
     searchInput.placeholder = 'חיפוש: מחלקה / רופא / תורים / ימים';
+    searchInput.title = 'סינון הטבלה: הקלד חלק משם מחלקה, שם רופא, מספר תורים או מספר ימים — יוצגו רק שורות שמתאימות. קבוצת מחלקה נשארת אם נמצאה התאמה בשורת סיכום או באחד הרופאים.';
     Object.assign(searchInput.style, {
       width: '280px', padding: '6px 10px', border: '1px solid #cfd8dc', borderRadius: '6px',
       fontSize: '13px', outline: 'none', background: '#fff'
@@ -832,6 +961,7 @@ public async drawLeaderboardDepartments(containerId: string, dir: 'asc' | 'desc'
     const colorBtn = document.createElement('button');
     colorBtn.type = 'button';
     colorBtn.textContent = colorsEnabled ? 'כבה צבעי מחלקות' : 'הפעל צבעי מחלקות';
+    colorBtn.title = 'רקע פסטלי לפי שם מחלקה (שורות הרופאים מתחת לשורת הסיכום). שורת הסיכום נשארת אפורה. ההגדרה נשמרת בדפדפן.';
     Object.assign(colorBtn.style, {
       position: 'absolute', top: '8px', left: '8px',
       padding: '6px 10px', border: '1px solid #cfd8dc', borderRadius: '6px',
@@ -843,6 +973,7 @@ public async drawLeaderboardDepartments(containerId: string, dir: 'asc' | 'desc'
     const resetBtn = document.createElement('button');
     resetBtn.type = 'button';
     resetBtn.textContent = 'איפוס';
+    resetBtn.title = 'מנקה חיפוש, מחזיר מיון ברירת מחדל (ימי המתנה יורד), ומפעיל מחדש צבעי מחלקות.';
     Object.assign(resetBtn.style, {
       position: 'absolute', top: '8px', left: '148px',
       padding: '6px 10px', border: '1px solid #cfd8dc', borderRadius: '6px',
@@ -859,6 +990,16 @@ public async drawLeaderboardDepartments(containerId: string, dir: 'asc' | 'desc'
     tableHost.style.padding = '8px';
     el.appendChild(tableHost);
   
+    const escAttr = (s: string) =>
+      String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+
+    const headerTips: string[] = [
+      'עמודת מחלקה: שם התחום הארגוני. השורה האפורה בתחילת כל קבוצה היא סיכום המחלקה (סה״כ תורים לשבוע הקרוב וממוצע ימים לסנאפשוט).',
+      'עמודת רופא: בשורות רופאים — שם הרופא שאליו משויכים התורים; בשורת סיכום מחלקה — מוצג שוב שם המחלקה. הנתונים באותו עדכון מהשרת.',
+      `עמודת תורים: מספר תורים פנויים לשבוע הקרוב (Q). ${APPOINTMENTS_DATA_SCOPE.tooltipTail} האייקונים — סולם יחסי מול סה״כ המחלקה; מקרא ב«מדריך עמודות».`,
+      `עמודת ימי המתנה: ממוצע ימים עד תור זמין לפי סנאפשוט (לא מגמה היסטורית). ${APPOINTMENTS_DATA_SCOPE.barRelativeNote} צבע הפס לפי מקרא זמן המתנה (למעלה).`
+    ];
+
     // ---------- HELPERS ----------
     const applyDynamicWidths = (hostId: string, fixedCols = 3) => {
       const tbl = document.querySelector<HTMLTableElement>(`#${hostId} table`); if (!tbl) return;
@@ -945,6 +1086,12 @@ public async drawLeaderboardDepartments(containerId: string, dir: 'asc' | 'desc'
         up.style.color = GREY; dn.style.color = GREY;
         if (i === sortCol) (sortDir === 'asc' ? up : dn).style.color = BLACK;
   
+        th.title = (headerTips[i] || '') +
+          ' — לחיצה על שם העמודה: החלפת כיוון (עולה ↔ יורד). חץ ▲ = מיון מהקטן לגדול; חץ ▼ = מהגדול לקטן. ניתן להשתמש בחצים כדי לבחור כיוון מיון מדויק בלי לעבור דרך «הפוכים».';
+        up.title = 'מיון עולה (▲): ערכים מהנמוך לגבוה — למשל פחות ימי המתנה מופיעים למעלה בעמודת «ימי המתנה».';
+        dn.title = 'מיון יורד (▼): ערכים מהגבוה לנמוך — ברירת מחדל נוחה לראות עומס (הרבה ימים קודם).';
+        arrows.title = 'מחוון מיון: לחץ ▲ לעולה או ▼ ליורד לפי עמודה זו; לחיצה על שאר הכותרת מחליפה כיוון.';
+
         // click handlers set (col,dir) and redraw
         const toAsc  = (ev: Event) => { ev.stopPropagation(); if (sortCol !== i || sortDir !== 'asc') { sortCol = i as 0|1|2|3; sortDir = 'asc'; onSortChanged(); } };
         const toDesc = (ev: Event) => { ev.stopPropagation(); if (sortCol !== i || sortDir !== 'desc') { sortCol = i as 0|1|2|3; sortDir = 'desc'; onSortChanged(); } };
@@ -969,35 +1116,81 @@ public async drawLeaderboardDepartments(containerId: string, dir: 'asc' | 'desc'
       const deptTotalQ = new Map<string, number>();
       ui.forEach(r => { if (r.isHeader) deptTotalQ.set(r.dept, r.q); });
   
+      /** inline — צבעי איקון מונוכרום כמו במקור (שחור/אפור), לא תלוי ב־CSS על תוכן Google */
+      const ratingIconBase = 'font-size:18px;line-height:18px;';
+      const ratingIconStyleFull = `${ratingIconBase}color:#212121;`;
+      const ratingIconStyleHalf = `${ratingIconBase}color:#424242;`;
+      const ratingIconStyleEmpty = `${ratingIconBase}color:#757575;`;
+
+      const tipIconFull =
+        'person מלא (שחור): צעד שלם בסולם 1–5 — חלק גדול יותר מסה״כ התורים הפנויים במחלקה. לא דירוג איכות.';
+      const tipIconHalf =
+        'person_outline אפור בינוני: כ‑½ צעד בסולם — נתח בינוני ביחס למחלקה.';
+      const tipIconEmpty =
+        'person_outline אפור בהיר: מדרגה ״ריקה״ — נתח קטן מאוד מהמחלקה.';
+  
       const ratingHtml = (dept: string, q: number) => {
         const total = Math.max(1, deptTotalQ.get(dept) || q);
         const scale = 5, val = Math.min(scale, (q / total) * scale);
         let full = Math.floor(val), half = (val - full) >= 0.5 ? 1 : 0;
         if (q > 0 && full + half === 0) half = 1;
         const empty = Math.max(0, scale - full - half);
-        const icon = (n: string, style = '') => `<span class="material-icons" style="${style}">${n}</span>`;
+        const mkIcon = (name: string, style: string, tip: string) =>
+          `<span class="material-icons" style="${style}" title="${escAttr(tip)}">${name}</span>`;
+        const blockTip =
+          `תורים פנויים לשבוע הקרוב לרופא בשורה: ${q}. סה״כ במחלקה ${dept} לחישוב היחס: ${total}. חמש דמויות = סולם יחסי בלבד; המספר למטה הוא הכמות המדויקת. (${APPOINTMENTS_DATA_SCOPE.tooltipTail})`;
+        const qCapTip = `מספר התורים הפנויים לשבוע הקרוב (Q) לרופא זה בשורה: ${q}.`;
         return `
-          <div class="rating">
-            ${icon('person').repeat(full)}
-            ${half ? icon('person_outline','color:#9e9e9e;') : ''}
-            ${icon('person_outline','color:#efefef;').repeat(empty)}
-            <span class="q-num" style="line-height:0.34em;vertical-align:text-top;">${q}</span>
+          <div class="rating-block" title="${escAttr(blockTip)}">
+            <div class="rating" title="${escAttr('סיכום ויזואלי של ' + q + ' תורים מול ' + total + ' במחלקה (יחס, לא מספר מדויק לכל דמות).')}">
+              ${mkIcon('person', ratingIconStyleFull, tipIconFull).repeat(full)}
+              ${half ? mkIcon('person_outline', ratingIconStyleHalf, tipIconHalf) : ''}
+              ${mkIcon('person_outline', ratingIconStyleEmpty, tipIconEmpty).repeat(empty)}
+            </div>
+            <div class="q-caption" title="${escAttr(qCapTip)}"><b>${q}</b> תורים פנויים</div>
           </div>`;
       };
   
-      const totalBadge = (q: number) => `<span class="q-total-badge" title="סה״כ תורים במחלקה">סה״כ תורים במחלקה ${q}</span>`;
+      const totalBadge = (deptName: string, q: number) =>
+        `<span class="q-total-badge" title="${escAttr(
+          `שורת סיכום מחלקה «${deptName}»: סה״כ ${q} תורים פנויים לשבוע הקרוב לכל הרופאים במחלקה יחד (אותו בסיס ליחס האייקונים). ${APPOINTMENTS_DATA_SCOPE.tooltipTail}`
+        )}">${q} תורים פנויים (סה״כ במחלקה)</span>`;
+  
+      const avgBarBucketLabel = (a: number) => {
+        if (a <= 14) return 'לפי מקרא: עד 14 ימים (ירוק)';
+        if (a <= 30) return 'לפי מקרא: 15–30 ימים (צהוב)';
+        if (a <= 60) return 'לפי מקרא: 31–60 ימים (כתום)';
+        return 'לפי מקרא: מעל 60 ימים (אדום)';
+      };
   
       const maxAvg = Math.max(1, ...ui.map(r => r.avg));
       const avgBar = (avg: number) => {
-        const p = Math.round((avg / maxAvg) * 100);
-        const h = Math.round((1 - p / 100) * 120);
-        return `<div class="avgbar"><div class="bar" style="width:${p}%;background:hsl(${h},65%,55%)"><span class="val">${avg}</span></div></div>`;
+        const p = Math.max(12, Math.round((avg / maxAvg) * 100));
+        const bg = this.waitDaysBarColor(avg);
+        const a = Number(avg) || 0;
+        const fg = (a > 14 && a <= 60) ? '#212121' : '#fff';
+        const tipTrack =
+          `מסילת פס אפורה: רוחב מלא לבסיס השוואה. האורך הצבוע (${p}%) — חלק יחסי מהערך הגבוה בשורות המוצגות כעת (המקסימום להשוואה הוא ${maxAvg} ימים ממוצע). ${APPOINTMENTS_DATA_SCOPE.barRelativeNote}`;
+        const tipBar =
+          `ממוצע זמן המתנה לתור: ${avg} ימים (סנאפשוט מהשרת). ${avgBarBucketLabel(a)}. הצבע תואם את מקרא הטווחים ב«מקרא צבעים». ${APPOINTMENTS_DATA_SCOPE.tooltipTail}`;
+        const tipVal = `ממוצע ימים עד תור זמין באותו עדכון נתונים: ${avg}. לא ממוצע היסטורי.`;
+        return `<div class="avgbar" title="${escAttr(tipTrack)}"><div class="bar" style="width:${p}%;background:${bg};color:${fg}" title="${escAttr(tipBar)}"><span class="val" title="${escAttr(tipVal)}">${avg} ימים</span></div></div>`;
       };
   
       ui.forEach(r => {
-        const deptCellHtml = r.isHeader ? `<span class="dept-bold">${r.dept}</span>` : `<span class="cell-muted">${r.dept}</span>`;
-        const docCellHtml  = r.isHeader ? `<span class="dept-bold">${r.doctor}</span>` : r.doctor;
-        const qCellHtml    = r.isHeader ? totalBadge(r.q) : ratingHtml(r.dept, r.q);
+        const deptTip = r.isHeader
+          ? `שורת סיכום קבוצה: מחלקה «${r.dept}» — כאן מפורטים סה״כ התורים והזמן הממוצע לכל המחלקה.`
+          : `מחלקה «${r.dept}» — שיוך הרופא בשורה זו לסיכום שמעליה.`;
+        const deptCellHtml = r.isHeader
+          ? `<span class="dept-bold" title="${escAttr(deptTip)}">${r.dept}</span>`
+          : `<span class="cell-muted" title="${escAttr(deptTip)}">${r.dept}</span>`;
+        const docTip = r.isHeader
+          ? `בשורת סיכום מחלקה: בעמודה זו מופיע שוב «${r.doctor}» כדי לזהות את קבוצת הסיכום (שם המחלקה).`
+          : `רופא: ${r.doctor} — הנתונים בשורה (תורים וימי המתנה) שייכים לרופא זה.`;
+        const docCellHtml = r.isHeader
+          ? `<span class="dept-bold" title="${escAttr(docTip)}">${r.doctor}</span>`
+          : `<span title="${escAttr(docTip)}">${r.doctor}</span>`;
+        const qCellHtml = r.isHeader ? totalBadge(r.dept, r.q) : ratingHtml(r.dept, r.q);
         dt.addRow([
           { v: r.dept,   f: `<span class="cell-wrap">${deptCellHtml}</span>` } as any,
           { v: r.doctor, f: `<span class="cell-wrap">${docCellHtml}</span>` } as any,
@@ -1097,6 +1290,7 @@ public async drawLeaderboardDepartments(containerId: string, dir: 'asc' | 'desc'
     colorBtn.addEventListener('click', () => {
       colorsEnabled = !colorsEnabled;
       localStorage.setItem(LS_KEY_COLOR, colorsEnabled ? '1' : '0');
+      colorBtn.textContent = colorsEnabled ? 'כבה צבעי מחלקות' : 'הפעל צבעי מחלקות';
       applySearch();
     });
   

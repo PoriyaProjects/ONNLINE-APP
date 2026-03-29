@@ -4,6 +4,22 @@
    - Fully responsive: mobile → tablet → desktop → 4K plasma
    ========================================================== */
 
+:host {
+  display: block;
+  overflow: visible;
+  --header-space: 80px;
+}
+
+/* עוטף את הדשבורד + באנר בטא (בחוץ מ-.dash כדי שלא ייחתך ע״י overflow:hidden) */
+.surgeries-dashborad-root {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - var(--header-space));
+  min-height: calc(100vh - var(--header-space));
+  overflow: visible;
+  box-sizing: border-box;
+}
+
 /* ── Theme tokens ───────────────────────────────────────── */
 .dash {
   /* light */
@@ -24,8 +40,8 @@
   --header-space: 80px;
   --footer-space: 0px;
 
-  height: calc(100vh - var(--header-space));
-  min-height: calc(100vh - var(--header-space));
+  flex: 1 1 auto;
+  min-height: 0;
   padding: clamp(4px, 1vw, 12px) clamp(6px, 1.5vw, 16px);
   margin: 0;
   overflow: hidden;
@@ -57,6 +73,97 @@
     radial-gradient(900px 400px at 20% 0%, rgba(37,99,235,.20), transparent),
     radial-gradient(900px 500px at 80% 0%, rgba(34,197,94,.14), transparent),
     var(--bg);
+}
+
+/* ── Beta notice ─────────────────────────────────────────── */
+.beta-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px 10px 8px 6px;
+  border-radius: 10px;
+  border: 1px solid rgba(234, 179, 8, 0.45);
+  background: linear-gradient(135deg, rgba(250, 204, 21, 0.22), rgba(234, 179, 8, 0.1));
+  direction: rtl;
+  text-align: right;
+  line-height: 1.4;
+  box-sizing: border-box;
+}
+/* צף מעל התוכן אחרי סיום טעינה ראשונית (ב-HTML מוצג רק כש־!isLoading) */
+@keyframes beta-banner-slide-down {
+  from {
+    opacity: 0;
+    transform: translate3d(0, -80px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+.beta-banner--floating {
+  position: fixed;
+  z-index: 1500;
+  left: clamp(8px, 1.2vw, 16px);
+  right: clamp(8px, 1.2vw, 16px);
+  top: 57px;
+  margin: 0;
+  box-shadow: var(--shadow2);
+  backdrop-filter: blur(10px) saturate(160%);
+  -webkit-backdrop-filter: blur(10px) saturate(160%);
+  pointer-events: auto;
+  animation: beta-banner-slide-down 1.25s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+@media (prefers-reduced-motion: reduce) {
+  .beta-banner--floating {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+}
+.dash.dark .beta-banner {
+  border-color: rgba(250, 204, 21, 0.35);
+  background: linear-gradient(135deg, rgba(250, 204, 21, 0.18), rgba(15, 23, 42, 0.72));
+}
+.beta-banner__close {
+  flex-shrink: 0;
+  margin: -6px -2px -6px -4px;
+  color: var(--muted);
+}
+.beta-banner__close:hover {
+  color: var(--text);
+}
+.beta-banner__icon {
+  flex-shrink: 0;
+  margin-top: 1px;
+  font-size: 22px;
+  width: 22px;
+  height: 22px;
+  color: #ca8a04;
+}
+.dash.dark .beta-banner__icon {
+  color: #fbbf24;
+}
+.beta-banner__body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+.beta-banner__title {
+  font-weight: 800;
+  font-size: clamp(13px, 1vw, 15px);
+  color: var(--text);
+}
+.beta-banner__hint {
+  font-size: clamp(12px, 0.95vw, 14px);
+  font-weight: 500;
+  color: var(--muted);
+}
+.beta-banner__feedback {
+  font-size: clamp(12px, 0.95vw, 14px);
+  font-weight: 600;
+  color: var(--text);
 }
 
 /* ── Topbar ─────────────────────────────────────────────── */
@@ -2007,6 +2114,42 @@
 .dash.dark .chart-loading-overlay { background: rgba(11,18,32,.95); }
 
 .chart-loading-text { color: var(--text); font-size: 14px; font-weight: 600; direction: rtl; }
+.spinner-with-percent {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.spinner-percent {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--text);
+  direction: ltr;
+  unicode-bidi: bidi-override;
+  text-align: center;
+  pointer-events: none;
+}
+.kpi-skeleton-wrapper {
+  position: relative;
+}
+.kpi-skeleton-spinner-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  z-index: 2;
+  padding: 12px;
+}
+.global-loading-spinner {
+  margin: 0 auto;
+}
 .chart-no-data      { display: flex; align-items: center; justify-content: center; height: 100%; color: var(--muted); font-size: 14px; direction: rtl; }
 
 .revenue-empty {
@@ -4131,6 +4274,10 @@ body.department-dashboard-dark .compare-metric-long-tooltip {
 
 /* ── Full HD + (1920–2559px) — conference / plasma ──────── */
 @media (min-width: 1920px) {
+  :host {
+    --header-space: 72px;
+  }
+
   .dash {
     font-size: 17px;
     padding: 0px 24px;
@@ -4173,6 +4320,10 @@ body.department-dashboard-dark .compare-metric-long-tooltip {
 
 /* ── 4K UHD (2560–3839px) — large plasma boards ─────────── */
 @media (min-width: 2560px) {
+  :host {
+    --header-space: 88px;
+  }
+
   .dash {
     font-size: 18px;
     padding: 18px 36px;
@@ -4947,15 +5098,97 @@ body.department-dashboard-dark .compare-metric-long-tooltip {
   border-color: rgba(167, 243, 208, 0.95) !important;
 }
 
+/* מודאל זמני חדר: גוף גלילה + שורת כפתורים קבועה בתחתית המודאל */
+.kpi-modal.room-times-kpi-modal {
+  min-height: 0;
+}
+
+.kpi-modal.room-times-kpi-modal .kpi-header {
+  flex-shrink: 0;
+}
+
+.kpi-modal.room-times-kpi-modal .kpi-body {
+  min-height: 0;
+  gap: 0;
+}
+
+.room-times-modal-body-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-bottom: 4px;
+}
+
+/* שורת מדדי זמני חדר במודאל מסך מלא – תמיד בתחתית המודאל */
+.room-times-modal-toggle-row {
+  margin-top: 0;
+  flex-shrink: 0;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+  background: var(--panel);
+}
+
+/* מודאל זמני חדר: גובה קבוע + overflow גלוי — תוויות ציר X וקו סף לא נחתכים */
+.room-times-modal-chart-slot {
+  height: 480px;
+  min-height: 480px;
+  max-height: 480px;
+  width: 100%;
+  flex-shrink: 0;
+  box-sizing: border-box;
+  overflow: visible;
+  padding-bottom: 4px;
+}
+
+.room-times-modal-chart-slot .kpi-skeleton-wrapper {
+  min-height: 480px;
+}
+
+.room-times-modal-chart-slot .kpi-skeleton-bars {
+  height: 320px;
+}
+
+.room-times-modal-chart-slot .kpi-no-data {
+  min-height: 480px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+}
+
+.kpi-overlay .kpi-modal .room-times-modal-chart-slot google-chart {
+  display: block;
+  width: 100%;
+  height: 480px;
+  min-height: 480px;
+  overflow: visible;
+}
+
+.kpi-overlay .kpi-modal .room-times-modal-chart-slot google-chart ::ng-deep > div {
+  min-height: 480px !important;
+  height: 480px !important;
+  overflow: visible !important;
+}
+
+.kpi-overlay .kpi-modal .room-times-modal-chart-slot google-chart ::ng-deep svg {
+  width: 100% !important;
+  height: 480px !important;
+  overflow: visible;
+}
+
 /* === Zimmer-times full-screen modal – adopt the same purple scheme === */
 /* כפתור נבחר במודהל זמני חדר – סגול כמו duration */
-.kpi-modal .kpi-header-actions .custom-toggle-group .mat-button-toggle-checked {
+.kpi-modal .custom-toggle-group .mat-button-toggle-checked {
   background: linear-gradient(135deg, #f5f3ff 0%, #e9d5ff 100%) !important;
   color: #6d28d9 !important;
   border-color: #7c3aed !important;
   box-shadow: 0 4px 12px rgba(124, 58, 237, 0.25);
 }
-.dash.dark .kpi-modal .kpi-header-actions .custom-toggle-group .mat-button-toggle-checked {
+.dash.dark .kpi-modal .custom-toggle-group .mat-button-toggle-checked {
   background: linear-gradient(135deg, #6d28d9 0%, #4c1d95 100%) !important;
   color: #ffffff !important;
   border-color: rgba(233, 213, 255, 0.95) !important;
@@ -4963,11 +5196,11 @@ body.department-dashboard-dark .compare-metric-long-tooltip {
 }
 
 /* Hover לכל הכפתורים במודהל – גם הם סקטור סגול */
-.kpi-modal .kpi-header-actions .custom-toggle-group mat-button-toggle:not(.mat-button-toggle-checked):hover {
+.kpi-modal .custom-toggle-group mat-button-toggle:not(.mat-button-toggle-checked):hover {
   background: rgba(233, 213, 255, 0.9);
   color: #6d28d9;
 }
-.dash.dark .kpi-modal .kpi-header-actions .custom-toggle-group mat-button-toggle:not(.mat-button-toggle-checked):hover {
+.dash.dark .kpi-modal .custom-toggle-group mat-button-toggle:not(.mat-button-toggle-checked):hover {
   background: rgba(124, 58, 237, 0.32);
   color: #f5f3ff;
 }

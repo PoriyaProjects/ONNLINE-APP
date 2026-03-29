@@ -110,7 +110,7 @@
   .app-table .rating .material-icons {
     font-size: 18px;
     line-height: 18px;
-    color: #ffb300;
+    color: #212121;
   }
 
   .app-table .rating .q-num {
@@ -121,8 +121,9 @@
 
   .app-table .avgbar {
     position: relative;
-    width: 160px;
-    height: 18px;
+    min-width: 180px;
+    width: 200px;
+    height: 22px;
     background: #f5f7fa;
     border-radius: 6px;
     overflow: hidden;
@@ -174,7 +175,7 @@
   <div class="row" style="text-align: center;">
     <!-- <div class="mdc-layout-grid__cell col-md-12"> -->
     <h1 class="page-title text-center" style="text-align: center;">
-      זמינות תורים (7 ימים אחרונים)
+      זמינות תורים עתידיים לפי זמן המתנה
     </h1>
     <!-- </div> -->
 
@@ -190,17 +191,186 @@
         <div *ngIf="!loading && error" style="padding:24px; color:#b71c1c">{{ error }}</div>
 
         <ng-container *ngIf="!loading && !error">
-          <!-- Tabs -->
-          <div class="row" style="width:100%">
-            <div class="tabs" style="text-align:right; margin: 12px 0;">
-              <button (click)="onApptTabChange('treemap')" [class.active]="activeApptTab==='treemap'">מפת
-                עומסים</button>
+          <!-- לשוניות תצוגה + סיכום / מקרא / מדריך (אותם כפתורים בכל הגרף) -->
+          <div class="row appt-tabs-toolbar" style="width:100%;">
+            <div class="tabs appt-main-tabs">
+              <button type="button" (click)="onApptTabChange('treemap')" [class.active]="activeApptTab==='treemap'"
+                [attr.title]="'מפת TreeMap: גודל וצבע אריח = ימי המתנה ממוצע; לחיצה פותחת רופאים. ' + scope.detailTitle">מפת עומסים</button>
 
-              <button (click)="onApptTabChange('leaders')" [class.active]="activeApptTab==='leaders'">ליגת
-                רופאים</button>
+              <button type="button" (click)="onApptTabChange('leaders')" [class.active]="activeApptTab==='leaders'"
+                [attr.title]="'תרשים: ממוצע ימים ותורים פנויים לשבוע הקרוב. ' + scope.detailTitle">ליגת רופאים</button>
 
-              <button (click)="onApptTabChange('table')" [class.active]="activeApptTab==='table'">טבלת זמינות</button>
+              <button type="button" (click)="onApptTabChange('table')" [class.active]="activeApptTab==='table'"
+                [attr.title]="'טבלה לפי מחלקה ורופא. ' + scope.detailTitle">טבלת זמינות</button>
+            </div>
+            <div class="appt-help-btns">
+              <button type="button" class="appt-help-btn" (click)="openHelp('summary')"
+                [class.appt-help-btn--on]="helpPopup === 'summary'"
+                [attr.title]="'סיכום הדשבורד, המדדים וטווח הזמן. ' + scope.detailTitle">סיכום</button>
+              <button type="button" class="appt-help-btn" (click)="openHelp('legend')"
+                [class.appt-help-btn--on]="helpPopup === 'legend'"
+                [attr.title]="'מקרא צבעי ימי המתנה. ' + scope.shortLine">מקרא צבעים</button>
+              <button type="button" class="appt-help-btn" (click)="openHelp('columns')"
+                [class.appt-help-btn--on]="helpPopup === 'columns'"
+                [attr.title]="'מדריך עמודות הטבלה והאייקונים. ' + scope.detailTitle">מדריך</button>
+            </div>
+          </div>
 
+          <!-- פופאפ עזרה — יורד מלמעלה; סגירה: ×, רקע, Escape, לחיצה חוזרת על אותו כפתור -->
+          <div class="appt-help-layer" *ngIf="helpPopup">
+            <div class="appt-help-backdrop" (click)="closeHelp()" aria-hidden="true"></div>
+            <div class="appt-help-panel" role="dialog" aria-modal="true" [attr.aria-label]="helpPopup === 'summary' ? 'סיכום' : (helpPopup === 'legend' ? 'מקרא צבעים' : 'מדריך')">
+              <button type="button" class="appt-help-close" (click)="closeHelp()" title="סגור חלון עזרה"
+                aria-label="סגור">×</button>
+
+              <ng-container *ngIf="helpPopup === 'summary'">
+                <div class="appt-dashboard-context appt-dashboard-context--popup" dir="rtl">
+                  <h2 class="appt-popup-heading">סיכום</h2>
+                  <p class="appt-dashboard-intro lead">
+                    הגרף והטבלה מציגים <strong>זמן המתנה ממוצע לתור</strong> ואת <strong>מספר התורים הפנויים לשבוע הקרוב</strong> בכל מחלקה ורופא.
+                    <strong>הצבע</strong> בפס ובמפת העומסים משקף כמה ימים בממוצע עד תור זמין; <strong>אורך הפס</strong> בטבלה משווה בין השורות המוצגות (הערך הגבוה ביותר בטווח הנוכחי = פס מלא).
+                  </p>
+                  <p class="appt-dashboard-scope">{{ scope.shortLine }}</p>
+
+                  <h3 class="appt-help-section-title">מפת עומסים</h3>
+                  <p class="appt-popup-sub">גודל האריח וצבעו משקפים <strong>ימי המתנה ממוצע</strong>; על האריח גם <strong>תורים פנויים לשבוע הקרוב</strong>. לחיצה על מחלקה פותחת רופאים. במפה צבע רציף (שונה מארבעת המדרגים בטבלה).</p>
+                  <ul class="appt-explainer-list appt-explainer-list--compact">
+                    <li><strong>שורש אפור</strong> — כותרת; מתחתיה מחלקות.</li>
+                    <li><strong>לחיצה / חזרה</strong> — פירוט רופאים או חזרה לכל המחלקות.</li>
+                    <li><strong>ריחוף</strong> — טולטיפ על האריח.</li>
+                  </ul>
+
+                  <h3 class="appt-help-section-title">ליגת רופאים</h3>
+                  <p class="appt-popup-sub">אורך העמודה — <strong>ממוצע ימים</strong> עד תור זמין; הכיתוב על הבר — ממוצע ותורים לשבוע הקרוב. ריחוף על הבר — טולטיפ מלא.</p>
+
+                  <h3 class="appt-help-section-title">טבלת זמינות</h3>
+                  <p class="appt-popup-sub">למבנה העמודות ואייקוני «תורים» השתמשו בכפתור <strong>מדריך</strong> בשורת הלשוניות.</p>
+
+                  <div class="appt-kpi-row" *ngIf="appointmentKpis as k">
+                    <div class="appt-kpi-card">
+                      <div class="appt-kpi-label">סה״כ תורים פנויים</div>
+                      <div class="appt-kpi-value">{{ k.totalSlots | number }}</div>
+                      <div class="appt-kpi-hint">לשבוע הקרוב — סיכום מחלקות</div>
+                    </div>
+                    <div class="appt-kpi-card">
+                      <div class="appt-kpi-label">זמן המתנה ממוצע (ימים)</div>
+                      <div class="appt-kpi-value">{{ k.avgWaitDays }}<span class="appt-kpi-unit"> ימים</span></div>
+                      <div class="appt-kpi-hint">ממוצע משוקלל — סנאפשוט</div>
+                    </div>
+                    <div class="appt-kpi-card">
+                      <div class="appt-kpi-label">הזמן הקצר ביותר</div>
+                      <div class="appt-kpi-value">
+                        <ng-container *ngIf="k.minWaitDays != null">{{ k.minWaitDays }}<span class="appt-kpi-unit"> ימים</span></ng-container>
+                        <ng-container *ngIf="k.minWaitDays == null">—</ng-container>
+                      </div>
+                      <div class="appt-kpi-hint">מבין רופאים עם תורים פנויים</div>
+                    </div>
+                  </div>
+                </div>
+              </ng-container>
+
+              <ng-container *ngIf="helpPopup === 'legend'">
+                <div class="appt-legend-box appt-legend-box--popup" dir="rtl">
+                  <h2 class="appt-popup-heading">מקרא צבעים</h2>
+                  <p class="appt-popup-sub">הצבעים בפס ׳ימי המתנה׳ בטבלה; במפת העומסים — מעבר רציף דומה. הכל לפי <strong>ממוצע ימים עד תור זמין</strong> (עדכון מהשרת, לא מגמה היסטורית).</p>
+                  <p class="appt-popup-sub appt-popup-sub--dense">{{ scope.shortLine }}</p>
+                  <table class="appt-legend-table">
+                    <thead>
+                      <tr>
+                        <th scope="col">צבע</th>
+                        <th scope="col">משמעות</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td><span class="appt-swatch" style="background:#43a047"></span></td>
+                        <td>עד 14 ימים</td>
+                      </tr>
+                      <tr>
+                        <td><span class="appt-swatch" style="background:#fdd835"></span></td>
+                        <td>15–30 ימים</td>
+                      </tr>
+                      <tr>
+                        <td><span class="appt-swatch" style="background:#fb8c00"></span></td>
+                        <td>31–60 ימים</td>
+                      </tr>
+                      <tr>
+                        <td><span class="appt-swatch" style="background:#e53935"></span></td>
+                        <td>מעל 60 ימים</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </ng-container>
+
+              <ng-container *ngIf="helpPopup === 'columns'">
+                <div class="appt-col-guide appt-col-guide--popup" dir="rtl">
+                  <h2 class="appt-popup-heading">מדריך</h2>
+                  <p class="appt-popup-sub">העמודות תואמות לטבלת הזמינות. {{ scope.shortLine }}</p>
+
+                  <h3 class="appt-icon-guide-heading">מקרא אייקונים — «תורים»</h3>
+                  <p class="appt-popup-sub appt-icon-guide-intro">עד חמש דמויות: יחס <strong>מול סה״כ התורים לשבוע הקרוב במחלקה</strong>. המספר לידן הוא הנתון המדויק; האייקונים אינם דירוג איכות.</p>
+                  <ul class="appt-icon-guide-list">
+                    <li class="appt-icon-guide-item">
+                      <div class="appt-ig-table-preview" aria-hidden="true">
+                        <div class="app-table">
+                          <div class="rating">
+                            <span class="material-icons" style="font-size:18px;line-height:18px;color:#212121;">person</span>
+                          </div>
+                        </div>
+                      </div>
+                      <span class="appt-ig-text"><strong>person</strong> (מלא) — חלק <strong>גדול</strong> מסה״כ המחלקה.</span>
+                    </li>
+                    <li class="appt-icon-guide-item">
+                      <div class="appt-ig-table-preview" aria-hidden="true">
+                        <div class="app-table">
+                          <div class="rating">
+                            <span class="material-icons" style="font-size:18px;line-height:18px;color:#424242;">person_outline</span>
+                          </div>
+                        </div>
+                      </div>
+                      <span class="appt-ig-text"><strong>person_outline</strong> (אפור בינוני) — חלק <strong>בינוני</strong>.</span>
+                    </li>
+                    <li class="appt-icon-guide-item">
+                      <div class="appt-ig-table-preview" aria-hidden="true">
+                        <div class="app-table">
+                          <div class="rating">
+                            <span class="material-icons" style="font-size:18px;line-height:18px;color:#757575;">person_outline</span>
+                          </div>
+                        </div>
+                      </div>
+                      <span class="appt-ig-text"><strong>person_outline</strong> (אפור בהיר) — חלק <strong>קטן מאוד</strong>.</span>
+                    </li>
+                  </ul>
+
+                  <table class="appt-legend-table appt-col-guide-table">
+                    <thead>
+                      <tr>
+                        <th scope="col">עמודה</th>
+                        <th scope="col">הסבר</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td>מחלקה</td>
+                        <td>תחום או יחידה — שורת אפור כהה היא סיכום למחלקה.</td>
+                      </tr>
+                      <tr>
+                        <td>רופא</td>
+                        <td>שיוך התורים בשורה; בשורת סיכום — שם המחלקה.</td>
+                      </tr>
+                      <tr>
+                        <td>תורים</td>
+                        <td>מספר תורים <strong>לשבוע הקרוב</strong> ויחס ויזואלי למחלקה (אייקונים בשחור/אפור).</td>
+                      </tr>
+                      <tr>
+                        <td>ימי המתנה</td>
+                        <td>ממוצע ימים עד תור זמין; צבע לפי <strong>מקרא צבעים</strong>; רוחב הפס — יחסי לשורות המוצגות.</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </ng-container>
             </div>
           </div>
           <!-- Treemap -->
@@ -208,18 +378,6 @@
             <div class="mdc-layout-grid__cell col-md-12">
               <div class="card text-center" style="margin: 10px 0 24px; direction: rtl;">
                 <div id="apptTreemap" style="width: 100%; height: 600px;">טוען...</div>
-
-                <!-- Optional custom-SVG SLA legend -->
-                <svg width="210" height="60"
-                  style="position:absolute; top:8px; left:8px; background:white; border:1px solid #ccc; border-radius:4px; text-align: right;">
-                  <text x="200" y="16" font-size="12">זמני המתנה (ימים):</text>
-                  <rect x="12" y="28" width="54" height="16" fill="#e8f5e9"></rect><text x="58" y="40"
-                    font-size="11">≤14 ימים</text>
-                  <rect x="72" y="28" width="64" height="16" fill="#fff9c4"></rect><text x="130" y="40"
-                    font-size="11">15–30 ימים</text>
-                  <rect x="146" y="28" width="54" height="16" fill="#ffebee"></rect><text x="190" y="40"
-                    font-size="11">>30 ימים</text>
-                </svg>
               </div>
             </div>
           </div>
@@ -234,14 +392,12 @@
               <div class="card text-center" style="margin: 10px 0 24px; direction: rtl;">
                 <div class="row" style="margin: 20px 40px 0px;">
                   <div class="subtabs">
-                    <button class="subtab-btn" [class.active]="leaderSubTab === 'doctors'"
-                      (click)="onLeaderSubTabChange('doctors')">
-                      רופאים
-                    </button>
-                    <button class="subtab-btn" [class.active]="leaderSubTab === 'departments'"
-                      (click)="onLeaderSubTabChange('departments')">
-                      מחלקות
-                    </button>
+                    <button type="button" class="subtab-btn" [class.active]="leaderSubTab === 'doctors'"
+                      (click)="onLeaderSubTabChange('doctors')"
+                      [attr.title]="'כל שורה = רופא. ממוצע ימים + תורים לשבוע הקרוב. ' + scope.shortLine">רופאים</button>
+                    <button type="button" class="subtab-btn" [class.active]="leaderSubTab === 'departments'"
+                      (click)="onLeaderSubTabChange('departments')"
+                      [attr.title]="'שורה לכל מחלקה. ' + scope.shortLine">מחלקות</button>
                   </div>
                 </div>
 

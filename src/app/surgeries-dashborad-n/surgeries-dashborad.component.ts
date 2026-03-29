@@ -5,7 +5,9 @@ import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatSort, Sort } from '@angular/material/sort';
 import { MatTableDataSource } from '@angular/material/table';
-import { Router } from '@angular/router';
+import { NavigationEnd, Router } from '@angular/router';
+import { Subscription } from 'rxjs';
+import { filter } from 'rxjs/operators';
 import { Chart } from 'chart.js';
 import { environment } from "src/environments/environment";
 import { MenuPerm } from "../menu-perm";
@@ -716,12 +718,199 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
     selectedDiagnosis: string = "אגף כירורגי";
     isDepartmentGraphOpen = false;
     departmentGraphTitle = "";
-    isLoading = false;
-    catalogLoading = false;
+    // Fake loading percents (מדומים) שמוצגים ליד/בתוך `<mat-spinner>`
+    globalLoadingPercent = 0;
+    mainChartLoadingPercent = 0;
+    diagnosesLoadingPercent = 0;
+    catalogLoadingPercent = 0;
+
+    avgDurationLoadingPercent = 0;
+    surgeriesPerDayLoadingPercent = 0;
+    firstStartTimeLoadingPercent = 0;
+    lastEndTimeLoadingPercent = 0;
+    avgSetupLoadingPercent = 0;
+    lossByWingLoadingPercent = 0;
+    approvedUtilizationLoadingPercent = 0;
+
+    compareAvgDurationYearlyLoadingPercent = 0;
+    compareDepRoomLoadingPercent = 0;
+
+    private fakeProgressIntervals: Record<string, any> = {};
+    private fakeProgressTokens: Record<string, number> = {};
+
+    private _isLoading = false;
+    get isLoading(): boolean {
+        return this._isLoading;
+    }
+    set isLoading(v: boolean) {
+        if (this._isLoading === v) return;
+        this._isLoading = v;
+        if (v) this.startFakeProgress("global");
+        else this.stopFakeProgress("global");
+    }
+
+    private _catalogLoading = false;
+    get catalogLoading(): boolean {
+        return this._catalogLoading;
+    }
+    set catalogLoading(v: boolean) {
+        if (this._catalogLoading === v) return;
+        this._catalogLoading = v;
+        if (v) this.startFakeProgress("catalog");
+        else this.stopFakeProgress("catalog");
+    }
+
     isMainDataLoading = false; // Loading for main data table
-    isDiagnosesLoading = false; // Loading for diagnoses list
-    isChartLoading = false; // Loading for chart data
+
+    private _isDiagnosesLoading = false;
+    get isDiagnosesLoading(): boolean {
+        return this._isDiagnosesLoading;
+    }
+    set isDiagnosesLoading(v: boolean) {
+        if (this._isDiagnosesLoading === v) return;
+        this._isDiagnosesLoading = v;
+        if (v) this.startFakeProgress("diagnoses");
+        else this.stopFakeProgress("diagnoses");
+    }
+
+    private _isChartLoading = false;
+    get isChartLoading(): boolean {
+        return this._isChartLoading;
+    }
+    set isChartLoading(v: boolean) {
+        if (this._isChartLoading === v) return;
+        this._isChartLoading = v;
+        if (v) this.startFakeProgress("mainChart");
+        else this.stopFakeProgress("mainChart");
+    }
+
     private anyLoadingPrev = false;
+
+    /** באנר בטא צף — מוצג מחדש בכל טעינת רכיב / כניסה מחדש לדשבורד (ניווט SPA); X מסתיר עד יציאה וחזרה */
+    showFloatingBetaBanner = true;
+
+    private betaBannerNavSub?: Subscription;
+
+    dismissFloatingBetaBanner(): void {
+        this.showFloatingBetaBanner = false;
+        this.cdr.detectChanges();
+    }
+
+    /**
+     * Returns the correct percent for the main chart overlay spinner.
+     * (בחר מהטעינות שרלוונטיות לתנאי ה-`*ngIf` ב-HTML)
+     */
+    getMainChartLoadingPercent(): number {
+        // room-utilization: surgeries per day uses the dedicated loader percent
+        if (
+            this.isSurgeriesPerDayLoading &&
+            this.mainMetricMode === "room-utilization" &&
+            this.roomUtilizationSubChart === "surgeriesPerDay"
+        ) {
+            return this.surgeriesPerDayLoadingPercent;
+        }
+        if (this.isChartLoading) return this.mainChartLoadingPercent;
+        if (this.isLoading || this.isMainDataLoading) return this.globalLoadingPercent;
+        return this.mainChartLoadingPercent;
+    }
+
+    /** Returns the correct percent for the room-times overlay spinner */
+    getRoomTimesLoadingPercent(): number {
+        const candidates: number[] = [];
+        if (this.isAvgDurationLoading) candidates.push(this.avgDurationLoadingPercent);
+        if (this.isSurgeriesPerDayLoading) candidates.push(this.surgeriesPerDayLoadingPercent);
+        if (this.isFirstStartTimeLoading) candidates.push(this.firstStartTimeLoadingPercent);
+        if (this.isLastEndTimeLoading) candidates.push(this.lastEndTimeLoadingPercent);
+        if (this.isAvgSetupLoading) candidates.push(this.avgSetupLoadingPercent);
+        if (this.isLossByWingLoading) candidates.push(this.lossByWingLoadingPercent);
+        if (this.isApprovedUtilizationLoading) candidates.push(this.approvedUtilizationLoadingPercent);
+        return candidates.length ? Math.max(...candidates) : 0;
+    }
+
+    /** Returns the correct percent for the compare departments spinner */
+    getCompareDepartmentsModalLoadingPercent(): number {
+        const candidates: number[] = [];
+        if (this.isSurgeriesPerDayLoading) candidates.push(this.surgeriesPerDayLoadingPercent);
+        if (this.isCompareAvgDurationYearlyLoading) candidates.push(this.compareAvgDurationYearlyLoadingPercent);
+        if (this.isCompareDepRoomLoading) candidates.push(this.compareDepRoomLoadingPercent);
+        return candidates.length ? Math.max(...candidates) : 0;
+    }
+
+    private setLoadingPercentByKey(key: string, value: number): void {
+        switch (key) {
+            case "global":
+                this.globalLoadingPercent = value;
+                break;
+            case "mainChart":
+                this.mainChartLoadingPercent = value;
+                break;
+            case "diagnoses":
+                this.diagnosesLoadingPercent = value;
+                break;
+            case "catalog":
+                this.catalogLoadingPercent = value;
+                break;
+
+            case "avgDuration":
+                this.avgDurationLoadingPercent = value;
+                break;
+            case "surgeriesPerDay":
+                this.surgeriesPerDayLoadingPercent = value;
+                break;
+            case "firstStartTime":
+                this.firstStartTimeLoadingPercent = value;
+                break;
+            case "lastEndTime":
+                this.lastEndTimeLoadingPercent = value;
+                break;
+            case "avgSetup":
+                this.avgSetupLoadingPercent = value;
+                break;
+            case "lossByWing":
+                this.lossByWingLoadingPercent = value;
+                break;
+            case "approvedUtilization":
+                this.approvedUtilizationLoadingPercent = value;
+                break;
+
+            case "compareAvgDurationYearly":
+                this.compareAvgDurationYearlyLoadingPercent = value;
+                break;
+            case "compareDepRoom":
+                this.compareDepRoomLoadingPercent = value;
+                break;
+        }
+    }
+
+    private startFakeProgress(key: string): void {
+        // Restart timer from 0 on each new start.
+        this.stopFakeProgress(key);
+        const token = (this.fakeProgressTokens[key] ?? 0) + 1;
+        this.fakeProgressTokens[key] = token;
+        let current = 0;
+        this.setLoadingPercentByKey(key, 0);
+
+        const interval = setInterval(() => {
+            if (this.fakeProgressTokens[key] !== token) return;
+            // Keep it "fake": accelerate early, slow down near the end.
+            const delta = 2 + Math.random() * 5;
+            current = Math.min(92, current + delta);
+            this.setLoadingPercentByKey(key, Math.floor(current));
+            this.cdr.detectChanges();
+        }, 90);
+
+        this.fakeProgressIntervals[key] = interval;
+    }
+
+    private stopFakeProgress(key: string): void {
+        const interval = this.fakeProgressIntervals[key];
+        if (interval) {
+            clearInterval(interval);
+            delete this.fakeProgressIntervals[key];
+        }
+        this.setLoadingPercentByKey(key, 100);
+        this.cdr.detectChanges();
+    }
     selectedViewType: string = "cash";
     chartType: string = "ColumnChart"; // 'ColumnChart' or 'LineChart'
 
@@ -836,6 +1025,8 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
   // שמירה על flags ישנים לטובת הקוד הקיים (פתיחה/סגירה לפי מודלים נפרדים)
   showAvgDurationModal = false;
   showTimesModal = false;
+  /** מיזוג אופציות למודאל זמני חדר — מטמון לפי אובייקט options (מניעת אובייקט חדש בכל CD) */
+  private roomTimesModalChartOptionsMemo = new WeakMap<object, any>();
   showFirstStartTimeModal = false;
   showLastEndTimeModal = false;
   showAvgSetupModal = false;
@@ -935,15 +1126,94 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
     "#457B9D",
   ];
 
-  isAvgDurationLoading = false;
+  private _isAvgDurationLoading = false;
+  get isAvgDurationLoading(): boolean {
+    return this._isAvgDurationLoading;
+  }
+  set isAvgDurationLoading(v: boolean) {
+    if (this._isAvgDurationLoading === v) return;
+    this._isAvgDurationLoading = v;
+    if (v) this.startFakeProgress("avgDuration");
+    else this.stopFakeProgress("avgDuration");
+  }
+
   /** טעינת GetAvgDurationYearlyFiveYears עבור סדרת ממוצע משך במודאל השוואת מחלקות */
-  isCompareAvgDurationYearlyLoading = false;
-  isCompareDepRoomLoading = false;
-  isFirstStartTimeLoading = false;
-  isLastEndTimeLoading = false;
-  isAvgSetupLoading = false;
-  isSurgeriesPerDayLoading = false;
-  isApprovedUtilizationLoading = false;
+  private _isCompareAvgDurationYearlyLoading = false;
+  get isCompareAvgDurationYearlyLoading(): boolean {
+    return this._isCompareAvgDurationYearlyLoading;
+  }
+  set isCompareAvgDurationYearlyLoading(v: boolean) {
+    if (this._isCompareAvgDurationYearlyLoading === v) return;
+    this._isCompareAvgDurationYearlyLoading = v;
+    if (v) this.startFakeProgress("compareAvgDurationYearly");
+    else this.stopFakeProgress("compareAvgDurationYearly");
+  }
+
+  private _isCompareDepRoomLoading = false;
+  get isCompareDepRoomLoading(): boolean {
+    return this._isCompareDepRoomLoading;
+  }
+  set isCompareDepRoomLoading(v: boolean) {
+    if (this._isCompareDepRoomLoading === v) return;
+    this._isCompareDepRoomLoading = v;
+    if (v) this.startFakeProgress("compareDepRoom");
+    else this.stopFakeProgress("compareDepRoom");
+  }
+
+  private _isFirstStartTimeLoading = false;
+  get isFirstStartTimeLoading(): boolean {
+    return this._isFirstStartTimeLoading;
+  }
+  set isFirstStartTimeLoading(v: boolean) {
+    if (this._isFirstStartTimeLoading === v) return;
+    this._isFirstStartTimeLoading = v;
+    if (v) this.startFakeProgress("firstStartTime");
+    else this.stopFakeProgress("firstStartTime");
+  }
+
+  private _isLastEndTimeLoading = false;
+  get isLastEndTimeLoading(): boolean {
+    return this._isLastEndTimeLoading;
+  }
+  set isLastEndTimeLoading(v: boolean) {
+    if (this._isLastEndTimeLoading === v) return;
+    this._isLastEndTimeLoading = v;
+    if (v) this.startFakeProgress("lastEndTime");
+    else this.stopFakeProgress("lastEndTime");
+  }
+
+  private _isAvgSetupLoading = false;
+  get isAvgSetupLoading(): boolean {
+    return this._isAvgSetupLoading;
+  }
+  set isAvgSetupLoading(v: boolean) {
+    if (this._isAvgSetupLoading === v) return;
+    this._isAvgSetupLoading = v;
+    if (v) this.startFakeProgress("avgSetup");
+    else this.stopFakeProgress("avgSetup");
+  }
+
+  private _isSurgeriesPerDayLoading = false;
+  get isSurgeriesPerDayLoading(): boolean {
+    return this._isSurgeriesPerDayLoading;
+  }
+  set isSurgeriesPerDayLoading(v: boolean) {
+    if (this._isSurgeriesPerDayLoading === v) return;
+    this._isSurgeriesPerDayLoading = v;
+    if (v) this.startFakeProgress("surgeriesPerDay");
+    else this.stopFakeProgress("surgeriesPerDay");
+  }
+
+  private _isApprovedUtilizationLoading = false;
+  get isApprovedUtilizationLoading(): boolean {
+    return this._isApprovedUtilizationLoading;
+  }
+  set isApprovedUtilizationLoading(v: boolean) {
+    if (this._isApprovedUtilizationLoading === v) return;
+    this._isApprovedUtilizationLoading = v;
+    if (v) this.startFakeProgress("approvedUtilization");
+    else this.stopFakeProgress("approvedUtilization");
+  }
 
   avgDurationData: DeptTimeMetricRow[] = [];
   firstStartTimeData: DeptTimeMetricRow[] = [];
@@ -1721,9 +1991,25 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
         if (typeof window !== 'undefined') {
             window.addEventListener('resize', this.onWindowResize);
         }
+
+        // באנר בטא: בכל כניסה לדשבורד (אחרי יציאה לנתיב אחר) — גם אם הרכיב לא נהרס
+        let wasOnSurgeriesDashboard = this.router.url.includes('surgeriesDashboard');
+        this.betaBannerNavSub = this.router.events
+            .pipe(filter((e): e is NavigationEnd => e instanceof NavigationEnd))
+            .subscribe((e) => {
+                const url = e.urlAfterRedirects || e.url;
+                const on = url.includes('surgeriesDashboard');
+                if (on && !wasOnSurgeriesDashboard) {
+                    this.showFloatingBetaBanner = true;
+                    this.cdr.detectChanges();
+                }
+                wasOnSurgeriesDashboard = on;
+            });
     }
 
     ngOnDestroy(): void {
+        this.betaBannerNavSub?.unsubscribe();
+        this.betaBannerNavSub = undefined;
         document.body.classList.remove('surgeries-dashborad-dark');
         if (typeof window !== 'undefined') {
             window.removeEventListener('resize', this.onWindowResize);
@@ -1819,6 +2105,7 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
         }
         this.isDataLoaded = false;
         this.isMainDataLoading = true;
+        this.isLoading = true;
 
         this.http
             .post(environment.url + "GetSurgeriesDashborad", {})
@@ -1852,15 +2139,18 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
                         }
                         this.isDataLoaded = true;
                         this.isMainDataLoading = false;
+                        this.isLoading = false;
                         this.cdr.detectChanges();
                         this.snackBar.open("✓ נתונים נטענו בהצלחה", "סגור", { duration: 3000 });
                     } else {
                         this.isMainDataLoading = false;
+                        this.isLoading = false;
                     }
                 },
                 (error) => {
                     console.error("Error loading surgeries dashboard data:", error);
                     this.isMainDataLoading = false;
+                    this.isLoading = false;
                     this.cdr.detectChanges();
                     this.snackBar.open("❌ שגיאה בטעינת הנתונים", "סגור", { duration: 3000 });
                 }
@@ -2175,6 +2465,7 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
         // console.log("Event:", event);
         // Show loading indicator when switching departments
         this.isMainDataLoading = true;
+        this.isLoading = true;
         this.isDataLoaded = false;
         this.loadDepartmentIncomeByDiagnosis();
     }
@@ -2183,6 +2474,9 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
         if (this.surgeryData.length > 0) {
             this.dataSource.data = this.applySurgeryFilter(this.surgeryData);
             this.updateChartData();
+            this.isDataLoaded = true;
+            this.isMainDataLoading = false;
+            this.isLoading = false;
             this.cdr.detectChanges();
             this.snackBar.open("✓ נתונים עודכנו", "סגור", { duration: 2000 });
             return;
@@ -2190,6 +2484,7 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
         // מצב ללא נתוני ניתוחים מפורטים – אין קריאה יותר ל־API של הכנסות
         this.isDataLoaded = true;
         this.isMainDataLoading = false;
+        this.isLoading = false;
     }
 
     /**
@@ -4273,7 +4568,8 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
       }
 
       this.selectedDiagnosis = targetDept;
-      this.isMainDataLoading = true;
+        this.isMainDataLoading = true;
+        this.isLoading = true;
       this.isDataLoaded = false;
       this.loadDepartmentIncomeByDiagnosis();
   }
@@ -7101,6 +7397,64 @@ closeLastEndTimeModal(): void {
   this.showLastEndTimeModal = false;
 }
 
+/**
+ * מודאל «זמני חדר ניתוח»: chartArea מאוזן — מקום לציר X משופע, לכותרת ציר Y ולקו סף (SETUP),
+ * בלי לשנות את אובייקטי ה־options בגרף הראשי.
+ */
+roomTimesModalChartOptions(base: any): any {
+  if (!base || typeof base !== "object") {
+    return base;
+  }
+  const cached = this.roomTimesModalChartOptionsMemo.get(base);
+  if (cached) {
+    return cached;
+  }
+  const prev = base.chartArea && typeof base.chartArea === "object" ? base.chartArea : {};
+  const merged: any = {
+    ...base,
+    chartArea: {
+      ...prev,
+      left: 52,
+      top: 52,
+      width: "86%",
+      height: "56%",
+    },
+  };
+
+  const hasThresholdLine =
+    merged.series &&
+    typeof merged.series === "object" &&
+    Object.values(merged.series).some(
+      (s: any) => s && Array.isArray(s.lineDashStyle),
+    );
+  if (hasThresholdLine) {
+    const v0 = merged.vAxis || {};
+    merged.vAxis = {
+      ...v0,
+      viewWindow: {
+        ...(v0.viewWindow || {}),
+        min: 0,
+      },
+    };
+    const series = { ...(merged.series || {}) };
+    for (const key of Object.keys(series)) {
+      const s = series[key];
+      if (s && Array.isArray(s.lineDashStyle)) {
+        series[key] = {
+          ...s,
+          lineWidth: 3,
+          pointSize: 4,
+          visibleInLegend: true,
+        };
+      }
+    }
+    merged.series = series;
+  }
+
+  this.roomTimesModalChartOptionsMemo.set(base, merged);
+  return merged;
+}
+
 // Unified "זמני חדר ניתוח" modal that מחזיק את כל תתי‑הגרפים תחת אותה כותרת
 openRoomTimesModal(initialView: 'avgDuration' | 'firstStart' | 'lastEnd' | 'avgSetup' | 'perDay' | 'lossPerDay' | 'approvedPerDay' = 'avgDuration'): void {
   this.showRoomTimesModal = true;
@@ -8605,7 +8959,16 @@ private loadAvgFirstMorningEntry(): void {
       },
     },
   };
-  isLossByWingLoading = false;
+  private _isLossByWingLoading = false;
+  get isLossByWingLoading(): boolean {
+    return this._isLossByWingLoading;
+  }
+  set isLossByWingLoading(v: boolean) {
+    if (this._isLossByWingLoading === v) return;
+    this._isLossByWingLoading = v;
+    if (v) this.startFakeProgress("lossByWing");
+    else this.stopFakeProgress("lossByWing");
+  }
   private lastLossByWingBaseYear: string | null = null;
   private lossByWingRowsCache: LossByWingYearDto[] = [];
 
@@ -8936,14 +9299,15 @@ private loadAvgSetup(): void {
               bold: true,
               italic: false,
             },
-            viewWindowMode: "maximized",
+            // בלי maximized — אחרת ציר Y מתמקד בעמודות בלבד וקו הסף ב־20 דקות נעלם כשכל הערכים גבוהים מ־20
+            viewWindow: { min: 0 },
           },
           bar: { groupWidth: "60%" },
           chartArea: {
-            width: '90%',
-            height: '60%',
-            left: 40,
-            top: 50
+            width: "88%",
+            height: "68%",
+            left: 44,
+            top: 48,
           },
           animation: { startup: true, duration: 800, easing: "out" },
           annotations: {
@@ -8957,13 +9321,14 @@ private loadAvgSetup(): void {
           series: {
             [thresholdSeriesIndex]: {
               type: "line",
-              color: "#ff0000",
-              lineWidth: 2,
+              color: "#dc2626",
+              lineWidth: 3,
               // קו מקוקו כדי שיבדל מהעמודות
-              lineDashStyle: [6, 4],
-              visibleInLegend: true
-            }
-          }
+              lineDashStyle: [8, 5],
+              visibleInLegend: true,
+              pointSize: 4,
+            },
+          },
         };
 
         const ast = this.patchGoogleChartHtmlTooltips(
