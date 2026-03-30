@@ -421,8 +421,10 @@
   <!-- ================= MAIN CONTENT: GRAPH + TABLE ================= -->
   <div class="main-content"
     [class.main-content--compare-dept-layout]="mainMetricMode === 'compare-departments'"
+    [class.with-top-sidebar]="showTopDepartmentsSidebar"
     *ngIf="isDataLoaded">
 
+    <div class="main-content-chart-table">
     <!-- ===== GRAPH SECTION (2/3) ===== -->
     <div class="graph-section">
       <div class="panel panel-graph">
@@ -1122,11 +1124,26 @@
       </div>
     </div>
 
-    <aside *ngIf="showTopDepartmentsSidebar" class="top-departments-sidebar" dir="rtl"
+    </div>
+
+    <aside *ngIf="showTopDepartmentsSidebar" class="top-departments-sidebar top-departments-sidebar--filters" dir="rtl"
       aria-label="סינון מתקדם לדשבורד הניתוחים">
       <div class="top-departments-section-compact top-departments-section-compact--filters">
-        <div class="top-departments-header-compact">
-          <div class="title-with-icon">
+        <div class="top-departments-header-compact top-departments-header-compact--filters-heading">
+          <div class="title-with-icon filter-sidebar-heading filter-sidebar-heading--inline">
+            <div class="filter-sidebar-heading__accent" aria-hidden="true"></div>
+            <div class="filter-sidebar-heading__icon-wrap">
+              <mat-icon aria-hidden="true">tune</mat-icon>
+            </div>
+            <div class="filter-sidebar-heading__text">
+              <span class="filter-sidebar-heading__title">סינון מתקדם</span>
+              <span class="filter-sidebar-heading__hint">מסננים משותפים לגרף ולטבלה</span>
+            </div>
+            <button type="button" mat-icon-button class="filter-sidebar-inline-close icon-btn ghost"
+              (click)="toggleTopDepartmentsSidebar()"
+              matTooltip="סגור" matTooltipPosition="below" aria-label="סגור פאנל סינון">
+              <mat-icon>close</mat-icon>
+            </button>
           </div>
 
           <!-- שורת פילטרים ראשית – מוצגים אנכית אחד מתחת לשני -->
@@ -1401,7 +1418,6 @@
               </ng-container> -->
             </button>
           </div>
-
 
         </div>
 
