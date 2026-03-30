@@ -1039,10 +1039,10 @@
   overflow: hidden;
 }
 
-/* גרף + טבלה ביחס כמו קודם (2:1 / 3:2 לפי מסך) */
+/* גרף + טבלה: גרף ~5% יותר רחב מ־2:1 (= 70% / 30%, סדר DOM: גרף | טבלה; RTL הופך ויזואלית) */
 .main-content-chart-table {
   display: grid;
-  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 7fr) minmax(0, 3fr);
   gap: clamp(4px, .8vw, 10px);
   min-height: 0;
   min-width: 0;
@@ -1054,6 +1054,9 @@
 .main-content.with-top-sidebar {
   direction: ltr;
   grid-template-columns: minmax(184px, min(19vw, 252px)) minmax(0, 1fr);
+  /* תפריטי פילטר יורדים מתחת לכרטיס — hidden כאן חותך אותם */
+  overflow-x: hidden;
+  overflow-y: visible;
 }
 
 .main-content.with-top-sidebar > .top-departments-sidebar.top-departments-sidebar--filters {
@@ -1062,6 +1065,9 @@
   direction: rtl;
   min-width: 0;
   align-self: start;
+  /* מעל אזור הגרף/טבלה — מונע חסימת קליקים ושכבות SVG */
+  position: relative;
+  z-index: 50;
 }
 
 .main-content.with-top-sidebar > .main-content-chart-table {
@@ -1173,10 +1179,11 @@
     0 10px 28px rgba(15, 23, 42, 0.22),
     0 4px 14px -4px rgba(15, 23, 42, 0.12),
     inset 0 1px 0 rgba(255, 255, 255, 0.55);
-  overflow: hidden;
+  /* גלילה כשעוברים max-height; דרופדאונים absolute מעל פילטרים אחרים */
+  overflow-x: hidden;
+  overflow-y: auto;
   transition: box-shadow 0.35s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.25s ease;
   transform-origin: left center;
-  will-change: transform, opacity;
   animation: filterSidebarPanelRevealX 0.78s cubic-bezier(0.16, 1, 0.32, 1) both;
   --fs-accent: #2563eb;
   --fs-radius: 12px;
@@ -1388,7 +1395,7 @@
   gap: 0;
   flex: 1 1 auto;
   min-height: 0;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .dash.dark .top-departments-sidebar.top-departments-sidebar--filters .top-departments-section-compact.top-departments-section-compact--filters {
@@ -1401,15 +1408,22 @@
   flex-direction: column;
   align-items: stretch;
   gap: 0;
-  overflow-y: auto;
+  /* auto כאן חותך את .dropdown-panel (position:absolute) — הפילטרים נראים "מתים" */
+  overflow: visible;
 }
 
 .top-departments-sidebar.top-departments-sidebar--filters .wing-and-theme-row.filters-column {
   gap: 0;
+  min-width: 0;
+  position: relative;
+  overflow: visible;
 }
 
 .top-departments-sidebar.top-departments-sidebar--filters .custom-dropdown.filter-dropdown {
+  position: relative;
+  z-index: 1;
   max-width: 100%;
+  width: 100%;
   margin-bottom: 8px;
   border-radius: 11px;
   border: 1px solid #f1f5f9;
@@ -1437,6 +1451,9 @@
   border-color: #3b82f6;
   background: #fff;
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  /* מעל כל שאר הפילטרים — בלי לדחוף את הפריסה לצדדים */
+  z-index: 5000;
+  isolation: isolate;
 }
 
 .dash.dark .top-departments-sidebar.top-departments-sidebar--filters .custom-dropdown.filter-dropdown.active {
@@ -1453,6 +1470,8 @@
   background: transparent;
   color: inherit;
   transition: none;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .top-departments-sidebar.top-departments-sidebar--filters .filters-column .custom-dropdown.filter-dropdown:hover .dropdown-trigger {
@@ -1574,22 +1593,28 @@
   color: #fbbf24;
 }
 
+/* תפריט צף מעל הפילטרים שמתחת — בלי שינוי רוחב/דחיפת פריסה; עיגון תקין ל־RTL */
 .top-departments-sidebar.top-departments-sidebar--filters .dropdown-panel {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  width: 100%;
+  margin: 0;
   background: #fff;
   border: 1px solid #e2e8f0;
-  border-radius: 12px;
-  margin-top: 4px;
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-  max-height: 250px;
+  border-radius: 10px;
+  box-shadow:
+    0 12px 28px -8px rgba(15, 23, 42, 0.28),
+    0 4px 12px rgba(15, 23, 42, 0.12);
+  max-height: 260px;
   overflow-y: auto;
-  z-index: 20;
-  top: auto;
-  right: auto;
-  left: auto;
+  z-index: 5010;
   min-width: 0;
   max-width: none;
-  width: 100%;
   box-sizing: border-box;
+  padding: 6px;
+  animation: fadeIn 0.18s ease;
 }
 
 .dash.dark .top-departments-sidebar.top-departments-sidebar--filters .dropdown-panel {
@@ -5119,12 +5144,13 @@ body.department-dashboard-dark .compare-metric-long-tooltip {
 
 /* ── Small desktop (1100–1449px) ────────────────────────── */
 @media (min-width: 1100px) and (max-width: 1449px) {
-  .main-content-chart-table { grid-template-columns: 3fr 2fr; }
+  /* היה 3:2 (60% גרף); ~+5% לגרף → 63%:37% */
+  .main-content-chart-table { grid-template-columns: minmax(0, 63fr) minmax(0, 37fr); }
 }
 
 /* ── Desktop (1450–1919px) ──────────────────────────────── */
 @media (min-width: 1450px) and (max-width: 1919px) {
-  .main-content-chart-table { grid-template-columns: 2fr 1fr; }
+  .main-content-chart-table { grid-template-columns: minmax(0, 7fr) minmax(0, 3fr); }
 }
 
 /* ── Full HD + (1920–2559px) — conference / plasma ──────── */
