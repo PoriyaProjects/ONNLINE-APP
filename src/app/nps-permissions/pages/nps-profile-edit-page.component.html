@@ -1,0 +1,32 @@
+<h1>{{ isNew ? 'פרופיל חדש' : 'עריכת פרופיל' }}</h1>
+<mat-card *ngIf="profile">
+  <mat-card-content>
+    <mat-form-field appearance="outline">
+      <mat-label>שם הפרופיל</mat-label>
+      <input matInput [(ngModel)]="profile.ProfileName" />
+    </mat-form-field>
+    <mat-form-field appearance="outline">
+      <mat-label>קוד הפרופיל</mat-label>
+      <input matInput [(ngModel)]="profile.ProfileCode" />
+    </mat-form-field>
+    <mat-form-field appearance="outline" class="wide">
+      <mat-label>תיאור הפרופיל</mat-label>
+      <input matInput [(ngModel)]="profile.Description" />
+    </mat-form-field>
+    <mat-checkbox [(ngModel)]="profile.IsActive">פעיל</mat-checkbox>
+    <div class="actions">
+      <button mat-raised-button color="primary" (click)="saveMeta()">שמור פרטים</button>
+    </div>
+  </mat-card-content>
+</mat-card>
+<ng-container *ngIf="showPermissionSection">
+<ng-container *ngIf="showPermissionSection">
+  <h2>מטריצת הרשאות</h2>
+  <app-nps-permission-matrix
+    [permissions]="perms"
+    [profilePermissions]="pp"
+    (matrixChange)="onMatrix($event)"
+  ></app-nps-permission-matrix>
+  <button mat-raised-button color="accent" (click)="savePerms()">שמור הרשאות</button>
+</ng-container>
+</ng-container>

@@ -240,6 +240,7 @@ const routes: Routes = [
   { path: "drugsnic", component: DrugsnicComponent },
   { path: "manageclinicprice", component: ManageClinicPriceComponent },
   { path: "nursesmanagedashboard", component: NursesManageDashboardComponent },
+  { path: "nurse-permissions-manage", redirectTo: "nps-permissions", pathMatch: "full" },
   { path: "nursesdepartmentmanage", component: NursesDepartmentManageComponent },
   { path: "checkpatientinsmartcloset", component: CheckpatientinsmartclosetComponent },
   { path: "drugsnic", component: DrugsnicComponent },
@@ -405,6 +406,11 @@ const routes: Routes = [
   { path: "intern-department-assignment-dialog", component: InternDepartmentAssignmentDialogComponent },
   { path: "medical-interns-sms", component: MedicalInternsSmsComponent },
   { path: "lectures-manage-dialog", component: LecturesManageDialogComponent },
+  {
+    path: "nps-permissions",
+    loadChildren: () =>
+      import("../nps-permissions/nps-permissions.module").then((m) => m.NpsPermissionsModule),
+  },
 ];
 
 @NgModule({
