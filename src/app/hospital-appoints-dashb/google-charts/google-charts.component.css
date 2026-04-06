@@ -125,3 +125,537 @@ h2 {
   }
   
   .ctrl-placeholder{height:32px; display: block;}
+
+/* שורת לשוניות + סיכום / מקרא / מדריך */
+.appt-tabs-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 8px 0 12px;
+  text-align: right;
+}
+
+.appt-main-tabs.tabs {
+  margin-bottom: 0;
+  flex: 1 1 auto;
+}
+
+.appt-help-btns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.appt-help-section-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #37474f;
+  margin: 16px 0 8px;
+  text-align: right;
+}
+
+.appt-explainer-list--compact {
+  margin-bottom: 4px;
+}
+
+.appt-explainer-list--compact li {
+  margin-bottom: 4px;
+}
+
+.appt-help-btn {
+  padding: 8px 14px;
+  border: 1px solid #90a4ae;
+  background: #fff;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  color: #37474f;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.appt-help-btn:hover {
+  background: #eceff1;
+}
+
+.appt-help-btn.appt-help-btn--on {
+  background: #e3f2fd;
+  border-color: #64b5f6;
+  color: #0d47a1;
+}
+
+/* פופאפ עזרה — יורד מלמעלה */
+.appt-help-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 0;
+  pointer-events: none;
+}
+
+.appt-help-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(33, 33, 33, 0.48);
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+.appt-help-panel {
+  position: relative;
+  z-index: 1;
+  pointer-events: auto;
+  width: min(720px, calc(100vw - 24px));
+  max-height: min(88vh, 920px);
+  overflow: auto;
+  margin: 0;
+  background: #fff;
+  border-radius: 0 0 14px 14px;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.25);
+  padding: 44px 20px 22px;
+  direction: rtl;
+  text-align: right;
+  animation: apptHelpSlideDown 0.3s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes apptHelpSlideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-100%);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.appt-help-close {
+  position: absolute;
+  top: 6px;
+  left: 10px;
+  width: 42px;
+  height: 42px;
+  border: none;
+  background: transparent;
+  font-size: 32px;
+  line-height: 1;
+  cursor: pointer;
+  color: #546e7a;
+  border-radius: 8px;
+  z-index: 2;
+}
+
+.appt-help-close:hover {
+  background: #ffebee;
+  color: #c62828;
+}
+
+.appt-popup-heading {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #263238;
+  margin: 0 0 10px;
+  padding-top: 0;
+}
+
+.appt-popup-sub {
+  font-size: 0.88rem;
+  color: #607d8b;
+  margin: -4px 0 14px;
+  line-height: 1.45;
+}
+
+.appt-popup-sub--dense {
+  margin-top: 4px;
+  margin-bottom: 10px;
+  font-size: 0.82rem;
+  color: #455a64;
+}
+
+/* כפתורי גילוי (הסברים נפתחים בלחיצה) */
+.appt-disclosure {
+  margin-bottom: 10px;
+}
+
+.appt-disclosure--page,
+.appt-disclosure--card {
+  max-width: 900px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.appt-disclosure--in-panel {
+  margin-bottom: 12px;
+}
+
+.appt-disclosure-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: row;
+  width: 100%;
+  max-width: 520px;
+  margin: 0 auto;
+  padding: 10px 16px;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #1565c0;
+  background: #e3f2fd;
+  border: 1px solid #90caf9;
+  border-radius: 8px;
+  cursor: pointer;
+  text-align: center;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.appt-disclosure--card .appt-disclosure-trigger {
+  max-width: none;
+}
+
+.appt-disclosure--in-panel .appt-disclosure-trigger {
+  max-width: none;
+  justify-content: flex-start;
+  text-align: right;
+  background: #f5f9ff;
+}
+
+.appt-disclosure-trigger:hover {
+  background: #bbdefb;
+  border-color: #64b5f6;
+}
+
+.appt-disclosure-trigger:focus {
+  outline: 2px solid #1976d2;
+  outline-offset: 2px;
+}
+
+.appt-disclosure-chevron {
+  display: inline-block;
+  margin-inline-end: 8px;
+  font-size: 0.75rem;
+  line-height: 1;
+  transition: transform 0.18s ease;
+  color: #0d47a1;
+}
+
+.appt-disclosure-chevron--open {
+  transform: rotate(-90deg);
+}
+
+.appt-disclosure-panel {
+  margin-top: 10px;
+  animation: appt-disclosure-in 0.15s ease;
+}
+
+@keyframes appt-disclosure-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* באנר טווח זמן — בתוך פאנל שנפתח */
+.appt-scope-banner {
+  font-size: 0.86rem;
+  line-height: 1.5;
+  color: #455a64;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 10px 14px;
+  text-align: center;
+  background: #f5f5f5;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+}
+
+.appt-dashboard-scope {
+  font-size: 0.88rem;
+  color: #455a64;
+  margin: 0 auto 16px;
+  padding: 10px 14px;
+  line-height: 1.5;
+  background: #fafafa;
+  border-radius: 8px;
+  border-right: 4px solid #90caf9;
+  max-width: 640px;
+  text-align: right;
+}
+
+.appt-dashboard-context--popup,
+.appt-legend-box--popup,
+.appt-col-guide--popup {
+  margin: 0;
+  max-width: none;
+  border: none;
+  padding: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.appt-table-page-hint {
+  font-size: 0.88rem;
+  color: #546e7a;
+  margin: 6px auto 4px;
+  padding: 0 12px;
+  text-align: center;
+  max-width: 560px;
+}
+
+/* הסבר ארוך מעל מפת עומסים / ליגה */
+.appt-chart-explainer {
+  text-align: right;
+  margin: 12px 16px 16px;
+  padding: 14px 16px;
+  background: #f8fafc;
+  border: 1px solid #e3e8ef;
+  border-radius: 10px;
+  max-width: 1100px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.appt-explainer-title {
+  font-size: 0.98rem;
+  font-weight: 800;
+  color: #263238;
+  margin: 0 0 10px;
+}
+
+.appt-explainer-list {
+  margin: 0;
+  padding: 0 18px 0 0;
+  font-size: 0.86rem;
+  line-height: 1.55;
+  color: #37474f;
+}
+
+.appt-explainer-list li {
+  margin-bottom: 8px;
+}
+
+.appt-explainer-list li:last-child {
+  margin-bottom: 0;
+}
+
+/* מקרא אייקונים בפופאפ מדריך עמודות */
+.appt-icon-guide-heading {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #37474f;
+  margin: 18px 0 6px;
+}
+
+.appt-icon-guide-intro {
+  margin-bottom: 10px !important;
+}
+
+.appt-icon-guide-list {
+  list-style: none;
+  margin: 0 0 20px;
+  padding: 0;
+  border: 1px solid #eceff1;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.appt-icon-guide-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-bottom: 1px solid #eceff1;
+  background: #fafafa;
+}
+
+.appt-icon-guide-item:last-child {
+  border-bottom: none;
+}
+
+/* תצוגת מקרא זהה לטבלה: מבנה app-table > rating כמו בתא Google, אותם גופן וצבעים כמו ב־drawAppointmentsTable */
+.appt-ig-table-preview {
+  flex-shrink: 0;
+  background: #fff;
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid #eceff1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.appt-ig-table-preview .app-table .rating {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  vertical-align: middle;
+}
+
+/* צבע וגודל אייקון במדריך: מוגדרים inline בתבנית (זהים ל־drawAppointmentsTable) */
+
+.appt-ig-text {
+  font-size: 0.88rem;
+  line-height: 1.45;
+  color: #455a64;
+  text-align: right;
+}
+
+/* —— דשבורד זמינות תורים: הקשר, KPI, מקרא —— */
+.appt-dashboard-context {
+  max-width: 960px;
+  margin: 0 auto 20px;
+  text-align: right;
+}
+
+.appt-dashboard-intro {
+  font-size: 1.05rem;
+  line-height: 1.55;
+  color: #37474f;
+  margin: 0 auto 20px;
+  padding: 14px 18px;
+  background: #f5f9ff;
+  border: 1px solid #bbdefb;
+  border-radius: 8px;
+}
+
+.appt-kpi-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  justify-content: center;
+  margin-bottom: 18px;
+}
+
+.appt-kpi-card {
+  flex: 1 1 200px;
+  max-width: 280px;
+  padding: 14px 16px;
+  background: #fff;
+  border: 1px solid #cfd8dc;
+  border-radius: 8px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .06);
+  text-align: right;
+}
+
+.appt-kpi-label {
+  font-size: 0.82rem;
+  color: #546e7a;
+  margin-bottom: 6px;
+  font-weight: 600;
+}
+
+.appt-kpi-value {
+  font-size: 1.65rem;
+  font-weight: 800;
+  color: #0d47a1;
+  line-height: 1.2;
+}
+
+.appt-kpi-unit {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #37474f;
+}
+
+.appt-kpi-hint {
+  font-size: 0.75rem;
+  color: #78909c;
+  margin-top: 8px;
+  line-height: 1.35;
+}
+
+.appt-legend-box,
+.appt-col-guide {
+  margin: 16px auto 8px;
+  padding: 14px 18px;
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  max-width: 520px;
+}
+
+.appt-col-guide {
+  max-width: 720px;
+  margin-bottom: 12px;
+}
+
+.appt-legend-title {
+  font-weight: 700;
+  font-size: 0.95rem;
+  margin-bottom: 10px;
+  color: #263238;
+}
+
+.appt-legend-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+}
+
+.appt-legend-table th,
+.appt-legend-table td {
+  border: 1px solid #eceff1;
+  padding: 8px 10px;
+  text-align: right;
+  vertical-align: middle;
+}
+
+.appt-legend-table thead th {
+  background: #eceff1;
+  color: #37474f;
+  font-weight: 700;
+}
+
+.appt-swatch {
+  display: inline-block;
+  width: 36px;
+  height: 18px;
+  border-radius: 4px;
+  border: 1px solid rgba(0, 0, 0, .12);
+  vertical-align: middle;
+}
+
+.appt-tab-hint {
+  font-size: 0.9rem;
+  color: #455a64;
+  text-align: right;
+  margin: 0 16px 12px;
+  line-height: 1.45;
+}
+
+/* טבלת Google — בלוק תורים עם כיתוב */
+.app-table .rating-block {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  vertical-align: middle;
+}
+
+.app-table .rating-block .rating {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.app-table .q-caption {
+  font-size: 12px;
+  color: #455a64;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.app-table .avgbar {
+  min-width: 180px;
+  width: 200px;
+  height: 22px;
+}

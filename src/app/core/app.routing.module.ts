@@ -87,7 +87,7 @@ import { TumorBoardComponent } from "../form-dashboard/tumor-board/tumor-board.c
 import { FormsansweredComponent } from '../formsanswered/formsanswered.component';
 import { GalitPointsReportComponent } from "../galit-points-report/galit-points-report.component";
 import { GlucoseComponent } from '../glucose/glucose.component';
-import { HearingSurveyComponent } from '../hearing-survey/hearing-survey/hearing-survey.component';
+import { HearingSurveyComponent } from '../hearing-survey/hearing-survey.component';
 import { HearingComponent } from '../hearing/hearing.component';
 import { AppointsDashboardComponent } from '../hospital-appoints-dashb/google-charts/google-charts.component';
 import { AppointsCLDashboardComponent } from '../hospital-appointscl-dashb/google-charts/google-charts.component';

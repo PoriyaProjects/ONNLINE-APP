@@ -2,7 +2,12 @@ import {
   AfterViewInit, Component, HostListener, OnDestroy,
   ElementRef, ViewChild, NgZone
 } from '@angular/core';
-import { GoogleChartsService, HmpcRow } from '../services/google-charts.service';
+import {
+  GoogleChartsService,
+  HmpcRow,
+  AppointmentDashboardKpis,
+  APPOINTMENTS_DATA_SCOPE
+} from '../services/google-charts.service';
 
 type Tab = 'treemap' | 'combo' | 'leaders' | 'multi' | 'table';
 type LeaderSubTab = 'doctors' | 'departments';
@@ -20,6 +25,8 @@ export class AppointsDashboardComponent implements AfterViewInit, OnDestroy {
   loading = true;
   error: string | null = null;
 
+  appointmentKpis: AppointmentDashboardKpis | null = null;
+
   hmpcMode: HmpcMode = 'kpi';
   hmpcRows: HmpcRow[] = [];
 
@@ -32,11 +39,26 @@ export class AppointsDashboardComponent implements AfterViewInit, OnDestroy {
   dirDoctors: 'asc'|'desc' = 'desc';
   dirDepts:   'asc'|'desc' = 'desc';
 
+  /** פופאפ עזרה: סיכום | מקרא צבעים | מדריך — בכל לשונית */
+  helpPopup: 'summary' | 'legend' | 'columns' | null = null;
+
+  /** טקסטים אחידים על טווח זמן / סנאפשוט — לתבנית */
+  readonly scope = APPOINTMENTS_DATA_SCOPE;
+
   constructor(private charts: GoogleChartsService, private zone: NgZone) {}
+
+  openHelp(kind: 'summary' | 'legend' | 'columns'): void {
+    this.helpPopup = this.helpPopup === kind ? null : kind;
+  }
+
+  closeHelp(): void {
+    this.helpPopup = null;
+  }
 
   async ngAfterViewInit(): Promise<void> {
     try {
       await this.charts.loadData();
+      this.appointmentKpis = this.charts.getAppointmentKpis();
       await (this.charts as any)['loadGoogleCharts']?.();
       this.loading = false;
       await this.drawCurrentTab();
@@ -58,6 +80,7 @@ export class AppointsDashboardComponent implements AfterViewInit, OnDestroy {
     if (this.activeApptTab === 'treemap') this.charts.teardownTreemapOverlays('apptTreemap');
     if (this.activeApptTab === tab) return;
     this.activeApptTab = tab;
+    this.closeHelp();
     this.redraw();
   }
 
@@ -72,6 +95,7 @@ export class AppointsDashboardComponent implements AfterViewInit, OnDestroy {
       this.loading = true; this.error = null;
       await this.charts.loadData();
       if (this.destroyed) return;
+      this.appointmentKpis = this.charts.getAppointmentKpis();
       this.loading = false;
       this.redraw();
     } catch {
@@ -135,4 +159,11 @@ export class AppointsDashboardComponent implements AfterViewInit, OnDestroy {
 
   @HostListener('window:resize')
   onResize() { this.redraw(); }
+
+  @HostListener('document:keydown', ['$event'])
+  onDocumentKeydown(ev: KeyboardEvent): void {
+    if (ev.key === 'Escape' && this.helpPopup) {
+      this.helpPopup = null;
+    }
+  }
 }

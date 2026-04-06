@@ -6,15 +6,8 @@ export const environment = {
   url: 'http://localhost:64964/WebService.asmx/',
   urlipracticom: 'http://localhost:64964/WebService.asmx/',
   AuthUrl: 'http://localhost:64964/WebService.asmx/',
-  /** When set (e.g. https://host/api/nurse-permissions/), REST endpoints are used instead of ASMX method names. */
-  nursePermissionsApiBase: '',
-  /**
-   * Override host for GET `{base}/api/hearing/details`.
-   * Empty: use `AuthUrl` if it is an `/api/` host; otherwise same origin as `url` (WebService folder stripped).
-   */
-  hearingDetailsApiBase: '',
-  /** EP EmployeeID (string) sent as user_id on every NPS WebService.asmx/Nps* call. */
-  npsUserId: '',
+  /** Optional full WebService base for GetHearingDetails / GetHearingCounts when SPA origin ≠ API (CORS). Empty = `url`. */
+  hearingDetailsAsmxBase: '',
   production: false
 };
 
