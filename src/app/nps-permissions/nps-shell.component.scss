@@ -1,0 +1,21 @@
+:host {
+  display: block;
+  direction: rtl;
+}
+
+.nps-shell {
+  height: calc(100vh - 0px);
+  direction: rtl;
+}
+.nps-nav {
+  width: 220px;
+}
+.nps-content {
+  padding: 16px;
+}
+.spacer {
+  flex: 1;
+}
+a.active {
+  font-weight: bold;
+}

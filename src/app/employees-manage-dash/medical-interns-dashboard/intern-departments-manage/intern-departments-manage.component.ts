@@ -222,20 +222,21 @@ export class InternDepartmentsManageComponent implements OnInit {
    * Creates an HTML string with intern details and department assignments table,
    * then sends it as a string to the server (server can convert to PDF).
    */
-  exportAndSendPdf(email: string) {
+  exportAndSendPdf(email: string, personalEmail: string) {
     if (!this.intern || this.assignments.length === 0) {
       this.openSnackBar('אין נתונים לייצוא');
       return;
     }
     const pdfString = this.buildPdfHtmlString();
     this.confirmationDialogService.confirm('שליחת PDF', 'האם אתה בטוח שברצונך לשלוח את ה-PDF לסטאזר?', 'כן', 'לא')
-    .then((confirmed) => {
-      if (confirmed) {
+      .then((confirmed) => {
+        if (confirmed) {
           this.sendingPdf = true;
           this.http
             .post(this.urlipracticom + 'SaveInternDepartmentsPDF', {
               pdfString: pdfString,
-              email: email
+              email: email,
+              personalEmail: personalEmail
             })
             .subscribe(
               (response) => {
@@ -250,7 +251,7 @@ export class InternDepartmentsManageComponent implements OnInit {
                 this.sendingPdf = false;
                 this.openSnackBar('שגיאה בשליחת ה-PDF לשרת');
               }
-            );  
+            );
         }
       })
       .catch(() => { this.sendingPdf = false; });
@@ -283,8 +284,8 @@ export class InternDepartmentsManageComponent implements OnInit {
 <body>
   <h1 class="text-center">ניהול מחלקות סטאג'ר</h1>
   <p><strong>שלום ${internName}, ${this.intern.EmployeeID || '-'}</strong></p>
-  <p>בתאריך 1.3.2026 תתחילי את תקופת הסטאז' במרכז רפואי צפון.  
-תכנית הסטאז' להלן נבנתה לפי הנחיות ועדת הסטאז' הארצית, דרישות המרכז הרפואי תוך התחשבות בבקשותיך.
+  <p>בתאריך ${this.formatDate(new Date(this.assignments[0].InternPeriod))} תתחיל/י את תקופת הסטאז' במרכז רפואי צפון.  
+תכנית הסטאז' להלן נבנתה לפי הנחיות ועדת הסטאז' הארצית, דרישות המרכז הרפואי תוך התחשבות בבקשותך.
 התכנית עשויה להשתנות בהתאם לצרכי המרכז ולבקשתך.
 </p>
   <table>
@@ -302,7 +303,7 @@ export class InternDepartmentsManageComponent implements OnInit {
   </p>
   <p>ניתן ליצור עימי קשר במייל: dporat@tzmc.gov.il</p>
   <p>או בווטסאפ: 052-3488228</p>
-  <p>בהצלחה בהמשך הדרך, דלית</p>
+  <p>בהצלחה בהמשך הדרך,ד"ר דלית</p>
 </body>
 </html>`;
   }

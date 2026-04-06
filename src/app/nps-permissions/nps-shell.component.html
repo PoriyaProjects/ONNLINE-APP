@@ -1,0 +1,23 @@
+<mat-sidenav-container class="nps-shell" dir="rtl" lang="he">
+  <mat-sidenav mode="side" opened class="nps-nav">
+    <mat-toolbar color="primary">NPS הרשאות</mat-toolbar>
+    <mat-nav-list>
+      <a mat-list-item routerLink="/nps-permissions/dashboard" routerLinkActive="active">לוח בקרה</a>
+      <a mat-list-item routerLink="/nps-permissions/employees" routerLinkActive="active">עובדים</a>
+      <a mat-list-item routerLink="/nps-permissions/profiles" routerLinkActive="active">פרופילים</a>
+      <a mat-list-item routerLink="/nps-permissions/profile-rules" routerLinkActive="active">כללי פרופיל</a>
+      <a mat-list-item routerLink="/nps-permissions/requests" routerLinkActive="active">בקשות</a>
+      <a mat-list-item routerLink="/nps-permissions/my-approvals" routerLinkActive="active">אישורים שלי</a>
+      <a mat-list-item routerLink="/nps-permissions/my-requests" routerLinkActive="active">הבקשות שלי</a>
+      <a mat-list-item routerLink="/nps-permissions/audit" routerLinkActive="active">יומן ביקורת</a>
+    </mat-nav-list>
+  </mat-sidenav>
+  <mat-sidenav-content>
+    <mat-toolbar color="accent">
+      <span class="spacer">הרשאות אחיות (NPS)</span>
+    </mat-toolbar>
+    <div class="nps-content">
+      <router-outlet></router-outlet>
+    </div>
+  </mat-sidenav-content>
+</mat-sidenav-container>

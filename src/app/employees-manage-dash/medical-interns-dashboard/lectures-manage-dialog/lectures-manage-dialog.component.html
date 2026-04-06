@@ -6,7 +6,7 @@
   <mat-dialog-content>
     <mat-progress-bar mode="indeterminate" *ngIf="!loaded"></mat-progress-bar>
 
-    <div class="lecture-form-section" *ngIf="loaded">
+    <div class="lecture-form-section" *ngIf="loaded" #pageTop>
       <h3 class="section-title text-center">{{ editingLectureId ? 'עריכת הרצאה' : 'הוספת הרצאה' }}</h3>
       <form [formGroup]="lectureForm">
         <div class="form-row">
@@ -62,7 +62,7 @@
       </form>
     </div>
 
-    <div class="lectures-table-section" *ngIf="loaded">
+    <div class="lectures-table-section" *ngIf="loaded" #pageTop>
       <h3 class="section-title text-center">רשימת הרצאות</h3>
       <div class="lectures-filters-row">
         <form [formGroup]="dateRangeForm" class="date-range-form">

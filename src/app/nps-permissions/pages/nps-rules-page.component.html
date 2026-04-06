@@ -1,0 +1,66 @@
+<h1>כללי פרופיל</h1>
+<table mat-table [dataSource]="rules" class="mat-elevation-z2 full">
+  <ng-container matColumnDef="rid">
+    <th mat-header-cell *matHeaderCellDef>#</th>
+    <td mat-cell *matCellDef="let r">{{ r.RuleID }}</td>
+  </ng-container>
+  <ng-container matColumnDef="pid">
+    <th mat-header-cell *matHeaderCellDef>פרופיל</th>
+    <td mat-cell *matCellDef="let r">{{ profileName(r.ProfileID) }}</td>
+  </ng-container>
+  <ng-container matColumnDef="dept">
+    <th mat-header-cell *matHeaderCellDef>מחלקה</th>
+    <td mat-cell *matCellDef="let r">{{ deptLabel(r) }}</td>
+  </ng-container>
+  <ng-container matColumnDef="edu">
+    <th mat-header-cell *matHeaderCellDef>השכלה</th>
+    <td mat-cell *matCellDef="let r">{{ educationLabel(r.EducationID) }}</td>
+  </ng-container>
+  <ng-container matColumnDef="spec">
+    <th mat-header-cell *matHeaderCellDef>התמחות</th>
+    <td mat-cell *matCellDef="let r">{{ specialtyLabel(ruleSpecialtyId(r)) }}</td>
+  </ng-container>
+  <ng-container matColumnDef="del">
+    <th mat-header-cell *matHeaderCellDef></th>
+    <td mat-cell *matCellDef="let r">
+      <button mat-icon-button (click)="remove(r.RuleID)"><mat-icon>delete</mat-icon></button>
+    </td>
+  </ng-container>
+  <tr mat-header-row *matHeaderRowDef="cols"></tr>
+  <tr mat-row *matRowDef="let row; columns: cols"></tr>
+</table>
+<mat-card class="form-card">
+  <mat-card-title>כלל חדש</mat-card-title>
+  <mat-card-content>
+    <mat-form-field appearance="outline">
+      <mat-label>פרופיל</mat-label>
+      <mat-select [(ngModel)]="newRule.ProfileID">
+        <mat-option *ngFor="let p of profiles" [value]="p.ProfileID">{{ p.ProfileName }}</mat-option>
+      </mat-select>
+    </mat-form-field>
+    <mat-form-field appearance="outline">
+      <mat-label>מחלקה</mat-label>
+      <mat-select [(ngModel)]="newRule.DepartnentCode">
+        <mat-option *ngFor="let d of departments" [value]="d.DepartnentCode">{{ d.DepartnentDescripton }}</mat-option>
+      </mat-select>
+    </mat-form-field>
+    <mat-form-field appearance="outline">
+      <mat-label>השכלה</mat-label>
+      <mat-select [(ngModel)]="newRule.EducationID" (selectionChange)="onEducationChange()">
+        <mat-option [value]="null">(כללי)</mat-option>
+        <mat-option *ngFor="let e of educations" [value]="e.EducationID">{{ e.Name }}</mat-option>
+      </mat-select>
+    </mat-form-field>
+    <mat-form-field appearance="outline">
+      <mat-label>התמחות</mat-label>
+      <mat-select [(ngModel)]="newRule.SpecialtyID">
+        <mat-option [value]="null">(כללי)</mat-option>
+        <mat-option *ngFor="let s of filteredSpecialties" [value]="s.SpecialtyId">{{ s.Name }}</mat-option>
+      </mat-select>
+    </mat-form-field>
+    <mat-checkbox [(ngModel)]="newRule.IsActive">פעיל</mat-checkbox>
+    <div>
+      <button mat-raised-button color="primary" (click)="add()">הוסף</button>
+    </div>
+  </mat-card-content>
+</mat-card>

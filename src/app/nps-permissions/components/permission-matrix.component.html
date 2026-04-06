@@ -1,0 +1,17 @@
+<table mat-table [dataSource]="permissions || []" class="mat-elevation-z1 full-width">
+  <ng-container matColumnDef="name">
+    <th mat-header-cell *matHeaderCellDef>הרשאה</th>
+    <td mat-cell *matCellDef="let row">{{ row.PermissionName }} ({{ row.PermissionKey }})</td>
+  </ng-container>
+  <ng-container matColumnDef="grant">
+    <th mat-header-cell *matHeaderCellDef>מורשה</th>
+    <td mat-cell *matCellDef="let row">
+      <mat-checkbox
+        [checked]="isGranted(row.PermissionID)"
+        (change)="toggle(row.PermissionID, $event.checked)"
+      ></mat-checkbox>
+    </td>
+  </ng-container>
+  <tr mat-header-row *matHeaderRowDef="cols"></tr>
+  <tr mat-row *matRowDef="let row; columns: cols"></tr>
+</table>

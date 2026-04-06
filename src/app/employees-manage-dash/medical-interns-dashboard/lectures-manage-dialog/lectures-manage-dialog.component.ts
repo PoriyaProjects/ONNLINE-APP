@@ -24,7 +24,7 @@ import html2canvas from 'html2canvas';
 export class LecturesManageDialogComponent implements OnInit, OnDestroy {
 
   @ViewChild('pdfContent', { static: false }) pdfContent!: ElementRef;
-
+  @ViewChild('pageTop', { static: false }) pageTop!: ElementRef;
   horizontalPosition: MatSnackBarHorizontalPosition = 'start';
   verticalPosition: MatSnackBarVerticalPosition = 'bottom';
   creating_pdf = false;
@@ -233,6 +233,8 @@ export class LecturesManageDialogComponent implements OnInit, OnDestroy {
       LectureLocationDescription: lecture.LectureLocationDescription || '',
       LectureEmployeeID: intern || lecture.LectureEmployeeID || ''
     });
+    // scroll to top
+    this.pageTop.nativeElement.scrollIntoView({ behavior: 'smooth' });
   }
 
   cancelEdit(): void {

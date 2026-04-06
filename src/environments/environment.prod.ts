@@ -4,6 +4,8 @@ export const environment = {
   AuthUrl: 'http://srv-apps-prod:47001/api/',
   /** Set only if hearing API is not on the same origin as AuthUrl (default: empty → http://srv-apps-prod:47001). */
   hearingDetailsApiBase: '',
+  nursePermissionsApiBase: '',
+  npsUserId: '',
   production: true
 };
 /*
