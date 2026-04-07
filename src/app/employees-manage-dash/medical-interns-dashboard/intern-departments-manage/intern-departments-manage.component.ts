@@ -93,6 +93,7 @@ export class InternDepartmentsManageComponent implements OnInit {
       .post(this.url + 'GetMedicalInternByID', { _employeeID: this.EmployeeID })
       .subscribe(
         (response) => {
+          console.log(response);
           this.intern = response['d'] || response['d']?.[0] || {};
         },
         () => {
