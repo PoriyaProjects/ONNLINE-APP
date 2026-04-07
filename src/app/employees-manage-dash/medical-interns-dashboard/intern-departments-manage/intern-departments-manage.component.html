@@ -16,7 +16,7 @@
           הוסף הקצאה למחלקה
         </button>
         <button mat-raised-button color="accent" (click)="exportAndSendPdf(intern.Email, intern.PersonalEmail)"
-          [disabled]="!intern || assignments.length === 0 || sendingPdf || intern.Email == '' || intern.PersonalEmail == '' || intern.PersonalEmail == null || intern.Email == null">
+          [disabled]="!intern || assignments.length === 0 || sendingPdf || (intern.Email == '' && intern.PersonalEmail == '') || (intern.PersonalEmail == null && intern.Email == null)">
           <span class="material-icons">{{ sendingPdf ? 'hourglass_empty' : 'picture_as_pdf' }}</span>
           {{ sendingPdf ? 'שולח...' : 'יצירת PDF ושליחה לסטאזר' }}
         </button>

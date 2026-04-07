@@ -1,5 +1,11 @@
 <h1>כללי פרופיל</h1>
-<table mat-table [dataSource]="rules" class="mat-elevation-z2 full">
+
+<div *ngIf="rules.length === 0" class="empty-banner" role="status">
+  <mat-icon>info</mat-icon>
+  <span>אין כללים מוגדרים. הוסיפו כלל חדש באמצעות הטופס למטה.</span>
+</div>
+
+<table *ngIf="rules.length > 0" mat-table [dataSource]="rules" class="mat-elevation-z2 full">
   <ng-container matColumnDef="rid">
     <th mat-header-cell *matHeaderCellDef>#</th>
     <td mat-cell *matCellDef="let r">{{ r.RuleID }}</td>
@@ -29,34 +35,81 @@
   <tr mat-header-row *matHeaderRowDef="cols"></tr>
   <tr mat-row *matRowDef="let row; columns: cols"></tr>
 </table>
+
 <mat-card class="form-card">
   <mat-card-title>כלל חדש</mat-card-title>
   <mat-card-content>
     <mat-form-field appearance="outline">
       <mat-label>פרופיל</mat-label>
-      <mat-select [(ngModel)]="newRule.ProfileID">
-        <mat-option *ngFor="let p of profiles" [value]="p.ProfileID">{{ p.ProfileName }}</mat-option>
-      </mat-select>
+      <input
+        matInput
+        [(ngModel)]="profileInput"
+        (ngModelChange)="onProfileInput()"
+        [matAutocomplete]="profileAuto"
+        placeholder="הקלד לחיפוש…"
+      />
+      <mat-autocomplete
+        #profileAuto="matAutocomplete"
+        autoActiveFirstOption
+        (optionSelected)="selectProfile($event.option.value)"
+      >
+        <mat-option *ngFor="let p of filteredProfiles" [value]="p.ProfileID">{{ p.ProfileName }}</mat-option>
+      </mat-autocomplete>
     </mat-form-field>
     <mat-form-field appearance="outline">
       <mat-label>מחלקה</mat-label>
-      <mat-select [(ngModel)]="newRule.DepartnentCode">
-        <mat-option *ngFor="let d of departments" [value]="d.DepartnentCode">{{ d.DepartnentDescripton }}</mat-option>
-      </mat-select>
+      <input
+        matInput
+        [(ngModel)]="deptInput"
+        (ngModelChange)="onDeptInput()"
+        [matAutocomplete]="deptAuto"
+        placeholder="הקלד לחיפוש…"
+      />
+      <mat-autocomplete
+        #deptAuto="matAutocomplete"
+        autoActiveFirstOption
+        (optionSelected)="selectDepartment($event.option.value)"
+      >
+        <mat-option *ngFor="let d of filteredDepartments" [value]="d.DepartnentCode">
+          {{ d.DepartnentDescripton }} ({{ d.DepartnentCode }})
+        </mat-option>
+      </mat-autocomplete>
     </mat-form-field>
     <mat-form-field appearance="outline">
       <mat-label>השכלה</mat-label>
-      <mat-select [(ngModel)]="newRule.EducationID" (selectionChange)="onEducationChange()">
-        <mat-option [value]="null">(כללי)</mat-option>
-        <mat-option *ngFor="let e of educations" [value]="e.EducationID">{{ e.Name }}</mat-option>
-      </mat-select>
+      <input
+        matInput
+        [(ngModel)]="eduInput"
+        (ngModelChange)="onEduInput()"
+        [matAutocomplete]="eduAuto"
+        placeholder="הקלד לחיפוש…"
+      />
+      <mat-autocomplete
+        #eduAuto="matAutocomplete"
+        autoActiveFirstOption
+        (optionSelected)="selectEducation($event.option.value)"
+      >
+        <mat-option [value]="generalToken">(כללי)</mat-option>
+        <mat-option *ngFor="let e of filteredEducations" [value]="e.EducationID">{{ e.Name }}</mat-option>
+      </mat-autocomplete>
     </mat-form-field>
     <mat-form-field appearance="outline">
       <mat-label>התמחות</mat-label>
-      <mat-select [(ngModel)]="newRule.SpecialtyID">
-        <mat-option [value]="null">(כללי)</mat-option>
-        <mat-option *ngFor="let s of filteredSpecialties" [value]="s.SpecialtyId">{{ s.Name }}</mat-option>
-      </mat-select>
+      <input
+        matInput
+        [(ngModel)]="specInput"
+        (ngModelChange)="onSpecInput()"
+        [matAutocomplete]="specAuto"
+        placeholder="הקלד לחיפוש…"
+      />
+      <mat-autocomplete
+        #specAuto="matAutocomplete"
+        autoActiveFirstOption
+        (optionSelected)="selectSpecialty($event.option.value)"
+      >
+        <mat-option [value]="generalToken">(כללי)</mat-option>
+        <mat-option *ngFor="let s of filteredSpecialtiesForAutocomplete" [value]="s.SpecialtyId">{{ s.Name }}</mat-option>
+      </mat-autocomplete>
     </mat-form-field>
     <mat-checkbox [(ngModel)]="newRule.IsActive">פעיל</mat-checkbox>
     <div>
