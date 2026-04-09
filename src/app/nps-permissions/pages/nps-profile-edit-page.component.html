@@ -1,5 +1,5 @@
 <h1>{{ isNew ? 'פרופיל חדש' : 'עריכת פרופיל' }}</h1>
-<mat-card *ngIf="profile">
+<mat-card *ngIf="profile" class="meta-card">
   <mat-card-content>
     <mat-form-field appearance="outline">
       <mat-label>שם הפרופיל</mat-label>
@@ -20,13 +20,13 @@
   </mat-card-content>
 </mat-card>
 <ng-container *ngIf="showPermissionSection">
-<ng-container *ngIf="showPermissionSection">
   <h2>מטריצת הרשאות</h2>
   <app-nps-permission-matrix
     [permissions]="perms"
     [profilePermissions]="pp"
     (matrixChange)="onMatrix($event)"
   ></app-nps-permission-matrix>
-  <button mat-raised-button color="accent" (click)="savePerms()">שמור הרשאות</button>
-</ng-container>
+  <div class="actions">
+    <button mat-raised-button color="accent" (click)="savePerms()">שמור הרשאות</button>
+  </div>
 </ng-container>

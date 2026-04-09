@@ -1,5 +1,15 @@
+h1 {
+  margin: 0 0 14px;
+  font-size: 28px;
+  color: var(--nps-text);
+}
+
 .full {
   width: 100%;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid var(--nps-border);
+  box-shadow: var(--nps-shadow-soft);
 }
 
 .empty-banner {
@@ -22,4 +32,7 @@
 .form-card {
   margin-top: 24px;
   max-width: 640px;
+  border: 1px solid var(--nps-border);
+  border-radius: 12px;
+  box-shadow: var(--nps-shadow-soft);
 }

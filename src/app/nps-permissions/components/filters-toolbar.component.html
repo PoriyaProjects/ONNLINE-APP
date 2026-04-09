@@ -1,4 +1,4 @@
-<mat-toolbar class="nps-filters" color="primary">
+<mat-toolbar class="nps-filters">
   <mat-form-field appearance="outline" class="grow">
     <mat-label>חיפוש</mat-label>
     <input matInput [(ngModel)]="searchText" (keyup.enter)="emit()" />
@@ -12,5 +12,5 @@
       </mat-option>
     </mat-select>
   </mat-form-field>
-  <button mat-stroked-button type="button" (click)="emit()">החל</button>
+  <button mat-flat-button color="primary" type="button" (click)="emit()">החל</button>
 </mat-toolbar>

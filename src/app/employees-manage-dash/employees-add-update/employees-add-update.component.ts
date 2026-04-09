@@ -42,10 +42,12 @@ export class EmployeesAddUpdateComponent implements OnInit {
   employeeWorkDetails: FormGroup;
   gymDetails: FormGroup;
   trainingsDetails: FormGroup;
+  educationsDetails: FormGroup;
   RanksList = [];
   SektorsList = [];
   FunctionsList = [];
   EmployeeBlossomSektors = [];
+  SpecialitiesList = [];
   DepartmentsList = [];
   end_work_reasons = [];
   WorkPlacesList = [];
@@ -126,6 +128,7 @@ export class EmployeesAddUpdateComponent implements OnInit {
   ];
   @ViewChild('modalEmployeeHistory', { static: true }) modalEmployeeHistory: TemplateRef<any>;
   dataSource: MatTableDataSource<any>;
+  dataSourceEducation: MatTableDataSource<any>;
 
   constructor(private _snackBar: MatSnackBar,
     public dialog: MatDialogRef<EmployeesAddUpdateComponent>,
@@ -157,6 +160,14 @@ export class EmployeesAddUpdateComponent implements OnInit {
         startWith(''),
         map(value => this._filter2(value))
       );
+    this.getSpecialitiesList();
+  }
+
+  getSpecialitiesList() {
+    this.http.post(this.Api + "GetEmployeeSpecialitiesList", {}).subscribe((Response) => {
+      this.SpecialitiesList = Response["d"];
+      console.log(this.SpecialitiesList);
+    });
   }
 
   private _filter1(value: any): string[] {
@@ -252,6 +263,9 @@ export class EmployeesAddUpdateComponent implements OnInit {
         this.trainingsDetails = this.formBuilder.group({
           trainings: this.formBuilder.array([])
         });
+        this.educationsDetails = this.formBuilder.group({
+          educations: this.formBuilder.array([])
+        });
         this.employeeWorkDetails = this.formBuilder.group({
           RowID: new FormControl(this.employee.RowID, null),
           EmployeeIndex: new FormControl('', null),
@@ -298,7 +312,9 @@ export class EmployeesAddUpdateComponent implements OnInit {
         this.sektorSelection(this.employee.EmployeeSektorID);
         this.getUserName(this.employee.Email);
         this.dataSource = new MatTableDataSource();
+        this.dataSourceEducation = new MatTableDataSource();
         this.createTrainingGroup(this.employee.EmployeeTrainings)
+        this.createEducationGroup(this.employee.EmployeeEducations)
       });
   }
 
@@ -326,6 +342,46 @@ export class EmployeesAddUpdateComponent implements OnInit {
     this.dataSource.data = this.trainings.controls;
   }
 
+  createEducationGroup(arr) {
+    let temp = this.formBuilder.group({
+      Row_ID: [null, null],
+      EducationSubject: [null, null],
+      Speciality: [null, null],
+      EducationDate: [null, null],
+      Note: [null, null]
+    });
+    if (arr != null) {
+      arr.forEach(element => {
+        temp = this.formBuilder.group({
+          Row_ID: [element.Row_ID, null],
+          EducationSubject: [element.EducationSubject, null],
+          Speciality: [element.Speciality, null],
+          EducationDate: [element.EducationDate, null],
+          Note: [element.Note, null]
+        });
+        this.educations.push(temp);
+      });
+    } else this.educations.push(temp);
+
+    this.dataSourceEducation.data = this.educations.controls;
+  }
+
+  get educations(): FormArray {
+    return this.educationsDetails.get('educations') as FormArray;
+  }
+
+  removeEducationRow(index: number) {
+    this.educations.removeAt(index);
+    this.dataSourceEducation.data = this.educations.controls; // Refresh table after removal
+  }
+
+  onEducationDateInput(event: MatDatepickerInputEvent<Date>, rowIndex: number): void {
+    let pipe = new DatePipe('en-US');
+    const selectedDate = event.value;
+    const currentRow = this.educations.at(rowIndex) as FormGroup;
+    currentRow.get('EducationDate')?.setValue(pipe.transform(selectedDate, 'yyyy-MM-dd'));
+  }
+
   get trainings(): FormArray {
     return this.trainingsDetails.get('trainings') as FormArray;
   }
@@ -334,7 +390,7 @@ export class EmployeesAddUpdateComponent implements OnInit {
     this.trainings.removeAt(index);
     this.dataSource.data = this.trainings.controls; // Refresh table after removal
   }
-
+  
   onStartDateInput(event: MatDatepickerInputEvent<Date>, rowIndex: number): void {
     let pipe = new DatePipe('en-US');
     const selectedDate = event.value;
@@ -708,6 +764,7 @@ export class EmployeesAddUpdateComponent implements OnInit {
           _workDetails: this.employeeWorkDetails.getRawValue(),
           _gymDetails: this.gymDetails.getRawValue(),
           _trainingsDetails: this.trainingsDetails.value.trainings,
+          _educationsDetails: this.educationsDetails.value.educations,
           _userName: this.UserName,
         })
         .subscribe((Response) => {

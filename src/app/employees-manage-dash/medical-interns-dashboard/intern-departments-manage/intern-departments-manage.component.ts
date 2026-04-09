@@ -242,6 +242,7 @@ export class InternDepartmentsManageComponent implements OnInit {
             .subscribe(
               (response) => {
                 this.sendingPdf = false;
+                console.log(response);
                 if (response['d']) {
                   this.openSnackBar('ה-PDF נשלח לשרת בהצלחה');
                 } else {
@@ -265,7 +266,8 @@ export class InternDepartmentsManageComponent implements OnInit {
         (a) =>
           `<tr>
             <td>${(a.DepartnentDescripton || '-')}</td>
-            <td>${this.formatDate(a.InternPeriod) || '-'}</td>
+            <td>${(a.DepartnentDescriptonSecond || '-')}</td>
+            <td>${this.formatDate(a.InternPeriod || '-')}</td>
             <td>${this.formatDate(a.InternPeriodEnd) || '-'}</td>
           </tr>`
       )
@@ -293,6 +295,7 @@ export class InternDepartmentsManageComponent implements OnInit {
     <thead>
       <tr>
         <th>מחלקה</th>
+        <th>מחלקה שנייה</th>
         <th>תאריך התחלה</th>
         <th>תאריך סיום</th>
       </tr>
@@ -304,7 +307,7 @@ export class InternDepartmentsManageComponent implements OnInit {
   </p>
   <p>ניתן ליצור עימי קשר במייל: dporat@tzmc.gov.il</p>
   <p>או בווטסאפ: 052-3488228</p>
-  <p>בהצלחה בהמשך הדרך,ד"ר דלית</p>
+  <p>בהצלחה בהמשך הדרך, ד"ר דלית פורת בן עמי</p>
 </body>
 </html>`;
   }
