@@ -1,0 +1,25 @@
+.nps-status-chip {
+  font-weight: 600;
+  border-radius: 999px;
+  padding-inline: 8px;
+}
+
+.status-approved {
+  background: var(--nps-success-bg) !important;
+  color: var(--nps-success-text) !important;
+}
+
+.status-rejected {
+  background: var(--nps-danger-bg) !important;
+  color: var(--nps-danger-text) !important;
+}
+
+.status-pending {
+  background: var(--nps-warning-bg) !important;
+  color: var(--nps-warning-text) !important;
+}
+
+.status-default {
+  background: var(--nps-surface-soft) !important;
+  color: var(--nps-text) !important;
+}

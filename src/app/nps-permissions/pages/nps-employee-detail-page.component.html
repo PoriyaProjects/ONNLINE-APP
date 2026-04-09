@@ -1,7 +1,7 @@
 <app-nps-employee-header-card [employee]="employee"></app-nps-employee-header-card>
 <mat-tab-group *ngIf="employee">
   <mat-tab label="השכלה">
-    <table mat-table [dataSource]="educations" class="mat-elevation-z1 full">
+    <table mat-table [dataSource]="educations" class="mat-elevation-z1 full nps-table">
       <ng-container matColumnDef="edu">
         <th mat-header-cell *matHeaderCellDef>השכלה</th>
         <td mat-cell *matCellDef="let r">{{ r.educationName }}</td>
@@ -20,11 +20,13 @@
   </mat-tab>
   <mat-tab label="פרופיל">
     <pre class="block">{{ currentProfile | json }}</pre>
-    <button mat-stroked-button (click)="resolve()">חשב פרופיל מחדש</button>
-    <button mat-raised-button color="primary" (click)="createReq()">צור בקשה</button>
+    <div class="actions-row">
+      <button mat-stroked-button (click)="resolve()">חשב פרופיל מחדש</button>
+      <button mat-raised-button color="primary" (click)="createReq()">צור בקשה</button>
+    </div>
   </mat-tab>
   <mat-tab label="בקשות">
-    <table mat-table [dataSource]="requests" class="mat-elevation-z1 full">
+    <table mat-table [dataSource]="requests" class="mat-elevation-z1 full nps-table">
       <ng-container matColumnDef="rid">
         <th mat-header-cell *matHeaderCellDef>#</th>
         <td mat-cell *matCellDef="let r">{{ r.requestId }}</td>
@@ -42,7 +44,7 @@
     </table>
   </mat-tab>
   <mat-tab label="הקצאות">
-    <table mat-table [dataSource]="assignments" class="mat-elevation-z1 full">
+    <table mat-table [dataSource]="assignments" class="mat-elevation-z1 full nps-table">
       <ng-container matColumnDef="pid">
         <th mat-header-cell *matHeaderCellDef>פרופיל</th>
         <td mat-cell *matCellDef="let r">{{ r.profileName }} ({{ r.profileId }})</td>

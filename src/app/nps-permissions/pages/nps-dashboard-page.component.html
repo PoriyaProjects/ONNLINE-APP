@@ -1,9 +1,11 @@
 <h1>לוח בקרה</h1>
 <div class="grid" *ngIf="summary">
-  <mat-card><mat-card-title>תור מחלקות</mat-card-title><mat-card-content>{{ summary.pendingQueueCount }}</mat-card-content></mat-card>
-  <mat-card><mat-card-title>בקשות ממתינות</mat-card-title><mat-card-content>{{ summary.pendingRequestsCount }}</mat-card-content></mat-card>
-  <mat-card><mat-card-title>אישורים שלי</mat-card-title><mat-card-content>{{ summary.myPendingApprovalsCount }}</mat-card-content></mat-card>
-  <mat-card><mat-card-title>הבקשות שלי</mat-card-title><mat-card-content>{{ summary.myPendingRequestsCount }}</mat-card-content></mat-card>
+  <mat-card class="kpi-card"><mat-card-title>תור מחלקות</mat-card-title><mat-card-content>{{ summary.pendingQueueCount }}</mat-card-content></mat-card>
+  <mat-card class="kpi-card"><mat-card-title>בקשות ממתינות</mat-card-title><mat-card-content>{{ summary.pendingRequestsCount }}</mat-card-content></mat-card>
+  <mat-card class="kpi-card"><mat-card-title>אישורים שלי</mat-card-title><mat-card-content>{{ summary.myPendingApprovalsCount }}</mat-card-content></mat-card>
+  <mat-card class="kpi-card"><mat-card-title>הבקשות שלי</mat-card-title><mat-card-content>{{ summary.myPendingRequestsCount }}</mat-card-content></mat-card>
 </div>
-<button mat-raised-button color="primary" (click)="runQueue()" [disabled]="busy">עיבוד תור</button>
-<p *ngIf="queueMsg">{{ queueMsg }}</p>
+<div class="actions">
+  <button mat-raised-button color="primary" (click)="runQueue()" [disabled]="busy">עיבוד תור</button>
+</div>
+<p *ngIf="queueMsg" class="queue-msg">{{ queueMsg }}</p>

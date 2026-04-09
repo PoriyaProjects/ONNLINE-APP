@@ -1,9 +1,9 @@
-<mat-card *ngIf="employee">
+<mat-card *ngIf="employee" class="employee-card">
   <mat-card-title>{{ employee.FirstName }} {{ employee.LastName }}</mat-card-title>
   <mat-card-subtitle>
     מספר עובד: {{ employee.EmployeeID }} · {{ employee.DepartnentCode || '—' }}
   </mat-card-subtitle>
-  <mat-card-content>
+  <mat-card-content class="employee-grid">
     <p><strong>מנהל ישיר:</strong> {{ employee.ManagerName1 || '—' }}</p>
     <p><strong>מנהל עקיף:</strong> {{ employee.ManagerName2 || '—' }}</p>
     <p><strong>דוא"ל:</strong> {{ employee.Email || '—' }}</p>

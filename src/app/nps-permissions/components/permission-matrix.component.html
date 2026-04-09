@@ -1,3 +1,4 @@
+<div class="matrix-wrap">
 <table mat-table [dataSource]="permissions || []" class="mat-elevation-z1 full-width">
   <ng-container matColumnDef="name">
     <th mat-header-cell *matHeaderCellDef>הרשאה</th>
@@ -15,3 +16,4 @@
   <tr mat-header-row *matHeaderRowDef="cols"></tr>
   <tr mat-row *matRowDef="let row; columns: cols"></tr>
 </table>
+</div>
