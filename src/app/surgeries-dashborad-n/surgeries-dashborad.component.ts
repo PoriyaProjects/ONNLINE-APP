@@ -340,6 +340,7 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
     @ViewChild('tableBodyEl') tableBodyEl?: ElementRef<HTMLDivElement>;
     @ViewChild('compareMetricsDropdownWrap') compareMetricsDropdownWrap?: ElementRef<HTMLElement>;
     @ViewChild('compareSurgeryTypesDropdownWrap') compareSurgeryTypesDropdownWrap?: ElementRef<HTMLElement>;
+    @ViewChild('filterSidebarRoot') filterSidebarRoot?: ElementRef<HTMLElement>;
 
     showTableExtra = false;
 
@@ -511,11 +512,19 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
         return this.chartTableRows.reduce((sum, row) => sum + (row.total || 0), 0);
     }
 
-    /** שנת בסיס (הראשונה בציר השנים של הגרף / הטבלה) */
+    /** השנה המוקדמת ביותר בטווח השנים המוצג (הראשונה במערך — מהישן לחדש) */
     get kpiBaseYear(): number | null {
         return this.yearsForChart && this.yearsForChart.length
             ? this.yearsForChart[0]
             : null;
+    }
+
+    /** השנה שמיד לפני השנה האחרונה בטווח (להשוואה שנה-מול-שנה שעברה) */
+    get kpiPriorYear(): number | null {
+        if (!this.yearsForChart || this.yearsForChart.length < 2) {
+            return null;
+        }
+        return this.yearsForChart[this.yearsForChart.length - 2];
     }
 
     /** השנה האחרונה המוצגת בגרף / בטבלה */
@@ -523,6 +532,14 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
         return this.yearsForChart && this.yearsForChart.length
             ? this.yearsForChart[this.yearsForChart.length - 1]
             : null;
+    }
+
+    /** כרטיסי סיכום שנה: חדשה משמאל, ישנה מימין */
+    get yearsForChartNewestFirst(): number[] {
+        if (!this.yearsForChart?.length) {
+            return [];
+        }
+        return [...this.yearsForChart].reverse();
     }
 
     private getYearTotalSafe(year: number | null): number | null {
@@ -534,9 +551,14 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
         return typeof value === "number" ? value : null;
     }
 
-    /** סה"כ ניתוחים בשנת הבסיס */
+    /** סה"כ ניתוחים בשנת הבסיס (המוקדמת בטווח) */
     get kpiBaseTotal(): number | null {
         return this.getYearTotalSafe(this.kpiBaseYear);
+    }
+
+    /** סה"כ ניתוחים בשנה שעברה ביחס לשנה האחרונה מוצגת (שנה לפני האחרונה) */
+    get kpiPriorYearTotal(): number | null {
+        return this.getYearTotalSafe(this.kpiPriorYear);
     }
 
     /** סה"כ ניתוחים בשנה האחרונה */
@@ -544,24 +566,24 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
         return this.getYearTotalSafe(this.kpiLastYear);
     }
 
-    /** הפרש כמותי בין השנה האחרונה לשנת הבסיס */
+    /** הפרש כמותי בין השנה האחרונה לשנה שעברה המוצגת */
     get kpiLastDiff(): number | null {
-        const base = this.kpiBaseTotal;
+        const prior = this.kpiPriorYearTotal;
         const last = this.kpiLastTotal;
-        if (base == null || last == null) {
+        if (prior == null || last == null) {
             return null;
         }
-        return last - base;
+        return last - prior;
     }
 
-    /** אחוז שינוי בין השנה האחרונה לשנת הבסיס */
+    /** אחוז שינוי מול השנה שעברה (בסיס: סה"כ שנת השוואה) */
     get kpiLastDiffPct(): number | null {
-        const base = this.kpiBaseTotal;
+        const prior = this.kpiPriorYearTotal;
         const diff = this.kpiLastDiff;
-        if (base == null || base === 0 || diff == null) {
+        if (prior == null || prior === 0 || diff == null) {
             return null;
         }
-        return (diff / base) * 100;
+        return (diff / prior) * 100;
     }
 
     /** ישות מובילה בכמות ניתוחים בטבלה המצטברת (ללא חודשים עתידיים) */
@@ -589,22 +611,31 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
     get tableExtraInsights(): string[] {
         const insights: string[] = [];
 
-        const baseYear = this.kpiBaseYear;
+        const priorYear = this.kpiPriorYear;
         const lastYear = this.kpiLastYear;
-        const baseTotal = this.kpiBaseTotal;
+        const priorTotal = this.kpiPriorYearTotal;
         const lastTotal = this.kpiLastTotal;
         const pct = this.kpiLastDiffPct;
 
         if (
-            baseYear != null &&
+            priorYear != null &&
             lastYear != null &&
-            baseTotal != null &&
+            priorTotal != null &&
             lastTotal != null &&
             pct != null
         ) {
-            const direction = pct >= 0 ? "עלייה" : "ירידה";
+            const trend =
+                pct > 0
+                    ? `עלייה של ${Math.abs(pct).toFixed(1)}%`
+                    : pct < 0
+                      ? `ירידה של ${Math.abs(pct).toFixed(1)}%`
+                      : "ללא שינוי מול השנה שעברה";
             insights.push(
-                `סה\"כ ניתוחים עלו מ־${baseTotal.toLocaleString("he-IL")} בשנת ${baseYear} ל־${lastTotal.toLocaleString("he-IL")} בשנת ${lastYear} (${direction} של ${pct.toFixed(1)}%).`
+                `ב־${lastYear} נרשמו ${lastTotal.toLocaleString("he-IL")} ניתוחים, לעומת ${priorTotal.toLocaleString("he-IL")} ב־${priorYear} (${trend}).`
+            );
+        } else if (lastYear != null && lastTotal != null) {
+            insights.push(
+                `ב־${lastYear} נרשמו ${lastTotal.toLocaleString("he-IL")} ניתוחים. אין בטווח המוצג שנה נוספת להשוואה שנה-מול-שנה.`
             );
         }
 
@@ -614,11 +645,11 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
             // When the "total" row is the top value, avoid calling it an "entity"
             if (label === 'סה"כ') {
                 insights.push(
-                    `סה\"כ הניתוחים בתצוגה הנוכחית הוא ${total.toLocaleString("he-IL")} ניתוחים בסך הכול.`
+                    `בסיכום לכל השנים והמסננים בתצוגה הנוכחית: ${total.toLocaleString("he-IL")} ניתוחים.`
                 );
             } else {
                 insights.push(
-                    `הישות המובילה בניתוחים בתצוגה הנוכחית היא \"${label}\" עם ${total.toLocaleString("he-IL")} ניתוחים בסך הכול.`
+                    `לפי התצוגה הנוכחית, הרשומה עם הנפח הגבוה ביותר היא \"${label}\" (${total.toLocaleString("he-IL")} ניתוחים).`
                 );
             }
         }
@@ -2763,6 +2794,14 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
         this.chartOptions = {
             ...this.chartOptions,
             focusTarget: "category",
+            legend: {
+                position: "top",
+                alignment: "end",
+                textStyle: {
+                    fontSize: 14,
+                    bold: true,
+                },
+            },
             hAxis: {
                 ...(this.chartOptions.hAxis || {}),
                 viewWindow: undefined,
@@ -2775,11 +2814,11 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
             },
             chartArea: {
                 ...(this.chartOptions.chartArea || {}),
-                left: this.chartOptions.chartArea?.left ?? 60,
-                top: this.chartOptions.chartArea?.top ?? 40,
+                left: this.chartOptions.chartArea?.left ?? 40,
+                top: this.chartOptions.chartArea?.top ?? 50,
                 bottom: this.chartOptions.chartArea?.bottom ?? 40,
-                width: this.chartOptions.chartArea?.width ?? "70%",
-                height: this.chartOptions.chartArea?.height ?? "70%",
+                width: this.chartOptions.chartArea?.width ?? "90%",
+                height: this.chartOptions.chartArea?.height ?? "60%",
             },
         };
 
@@ -2945,6 +2984,13 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
                     title: "מספר ניתוחים",
                 };
                 this.chartOptions.isStacked = false;
+                /* סדרה בודדת — אין צורך במקרא; מסיר את רצועת ה־rect הריקה מעל הגרף */
+                this.chartOptions.legend = { position: "none" };
+                this.chartOptions.chartArea = {
+                    ...(this.chartOptions.chartArea || {}),
+                    top: 16,
+                    height: "74%",
+                };
                 this.applyClearTooltipsToGoogleChart();
                 this.isChartLoading = false;
                 this.isChartViewReady = true;
@@ -5956,6 +6002,20 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
         this.closeCompareSurgeryTypesDropdown();
       }
     }
+    if (this.isAnySidebarFilterDropdownOpen()) {
+      const sidebarEl = this.filterSidebarRoot?.nativeElement;
+      if (!sidebarEl || !sidebarEl.contains(t)) {
+        this.closeSidebarFilterDropdowns();
+      } else {
+        const hostEl = t instanceof Element ? t : (t.parentElement ?? null);
+        const clickedDropdown = hostEl?.closest(
+          ".top-departments-sidebar--filters .custom-dropdown.filter-dropdown"
+        );
+        if (!clickedDropdown || !sidebarEl.contains(clickedDropdown)) {
+          this.closeSidebarFilterDropdowns();
+        }
+      }
+    }
   }
 
   isCompareMetricSelected(key: string): boolean {
@@ -6793,7 +6853,7 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
 
     setChartDepartmentFilter(dept: string | null): void {
         this.chartDepartmentFilter = dept;
-        this.isChartDeptDropdownOpen = false;
+        this.closeSidebarFilterDropdowns();
         // במצב "ניתוחים לפי חודשים" הנתונים מגיעים מה-API – צריך לטעון מחדש עם פרמטר department
         if (this.chartViewMode === "month") {
             this.loadMonthlyCounts();
@@ -7341,16 +7401,19 @@ updateChartColumns(): void {
 
     setSurgeryTypeFilter(value: string): void {
         this.selectedSurgeryTypes = this.toggleFromMulti(this.selectedSurgeryTypes, value);
+        this.closeSidebarFilterDropdowns();
         this.applyAllSurgeryFilters();
     }
 
     setShiftFilter(value: string): void {
         this.selectedShifts = this.toggleFromMulti(this.selectedShifts, value);
+        this.closeSidebarFilterDropdowns();
         this.applyAllSurgeryFilters();
     }
 
     setMorningWorkFilter(value: "all" | "yes" | "no"): void {
         this.morningWorkFilter = value;
+        this.closeSidebarFilterDropdowns();
         this.applyAllSurgeryFilters();
     }
 
@@ -7366,12 +7429,46 @@ updateChartColumns(): void {
 
     setWeekdayFilter(value: string): void {
         this.selectedWeekdays = this.toggleFromMulti(this.selectedWeekdays, value);
+        this.closeSidebarFilterDropdowns();
         this.applyAllSurgeryFilters();
     }
 
     setSiteFilter(value: string): void {
         this.selectedSites = this.toggleFromMulti(this.selectedSites, value);
+        this.closeSidebarFilterDropdowns();
         this.applyAllSurgeryFilters();
+    }
+
+    /** איפוס בחירת אתרים מפאנל הסינון + סגירת הדרופדאון */
+    clearSiteFilter(): void {
+        this.selectedSites = [];
+        this.closeSidebarFilterDropdowns();
+        this.applyAllSurgeryFilters();
+    }
+
+    /** סוגר את כל הדרופדאונים בפאנל הסינון הצדדי (לא כולל מודלים / השוואות אחרות) */
+    private closeSidebarFilterDropdowns(): void {
+        this.isChartDeptDropdownOpen = false;
+        this.isSurgeryTypeOpen = false;
+        this.isShiftOpen = false;
+        this.isWeekdayOpen = false;
+        this.isMorningWorkOpen = false;
+        this.isSiteOpen = false;
+        this.isRoomOpen = false;
+        this.isDeptOpen = false;
+    }
+
+    private isAnySidebarFilterDropdownOpen(): boolean {
+        return (
+            this.isChartDeptDropdownOpen ||
+            this.isSurgeryTypeOpen ||
+            this.isShiftOpen ||
+            this.isWeekdayOpen ||
+            this.isMorningWorkOpen ||
+            this.isSiteOpen ||
+            this.isRoomOpen ||
+            this.isDeptOpen
+        );
     }
 
     resetSurgeryFilters(): void {
@@ -7383,7 +7480,7 @@ updateChartColumns(): void {
         this.selectedDepartments = [];
         this.selectedWeekdays = [];
         this.chartDepartmentFilter = null;
-        this.isChartDeptDropdownOpen = false;
+        this.closeSidebarFilterDropdowns();
         this.applyAllSurgeryFilters();
     }
 

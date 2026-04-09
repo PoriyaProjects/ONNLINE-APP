@@ -584,7 +584,7 @@
             </div>
             </div>
           <div class="year-summary-row" *ngIf="yearsForChart?.length && !isRoomUtilizationMode()">
-            <div class="year-summary-card" *ngFor="let y of yearsForChart">
+            <div class="year-summary-card" *ngFor="let y of yearsForChartNewestFirst.slice().reverse()">
               <div class="year-label">{{ y }}</div>
               <div class="year-count">{{ formatNumber(yearlySurgeryTotals[y] || 0) }}</div>
               <div class="year-subtitle">מספר ניתוחים בשנה</div>
@@ -1077,30 +1077,30 @@
 
             <!-- KPIs summary (שנת בסיס מול השנה האחרונה + ישות מובילה) -->
             <div class="table-extra-kpis" dir="rtl"
-              *ngIf="kpiBaseYear !== null && kpiLastYear !== null && kpiBaseTotal !== null && kpiLastTotal !== null">
+              *ngIf="kpiLastYear !== null && kpiLastTotal !== null">
               <div class="table-extra-kpi">
                 <div class="table-extra-kpi-label">סה&quot;כ ניתוחים בשנה האחרונה</div>
                 <div class="table-extra-kpi-value">
                   {{ kpiLastTotal | number:'1.0-0' }}
                 </div>
                 <div class="table-extra-kpi-sub">
-                  {{ kpiBaseYear }} → {{ kpiLastYear }}
+                  שנת {{ kpiLastYear }}
                 </div>
               </div>
 
-              <div class="table-extra-kpi" *ngIf="kpiLastDiffPct !== null">
-                <div class="table-extra-kpi-label">שינוי מול שנת בסיס</div>
+              <div class="table-extra-kpi" *ngIf="kpiPriorYear !== null && kpiLastDiffPct !== null">
+                <div class="table-extra-kpi-label">שינוי מול השנה שעברה</div>
                 <div class="table-extra-kpi-value"
                   [ngClass]="{ 'kpi-positive': kpiLastDiffPct >= 0, 'kpi-negative': kpiLastDiffPct < 0 }">
                   {{ kpiLastDiffPct | number:'1.1-1' }}%
                 </div>
                 <div class="table-extra-kpi-sub" *ngIf="kpiLastDiff !== null">
-                  {{ kpiLastDiff | number:'1.0-0' }} ניתוחים
+                  {{ kpiLastDiff | number:'1.0-0' }} ניתוחים לעומת {{ kpiPriorYear }}
                 </div>
               </div>
 
               <div class="table-extra-kpi" *ngIf="kpiTopEntityLabel">
-                <div class="table-extra-kpi-label">ישות מובילה בניתוחים</div>
+                <div class="table-extra-kpi-label">הרשומה המובילה בנפח הניתוחים</div>
                 <div class="table-extra-kpi-value">
                   {{ kpiTopEntityLabel }}
                 </div>
@@ -1126,7 +1126,7 @@
 
     </div>
 
-    <aside *ngIf="showTopDepartmentsSidebar" class="top-departments-sidebar top-departments-sidebar--filters" dir="rtl"
+    <aside #filterSidebarRoot *ngIf="showTopDepartmentsSidebar" class="top-departments-sidebar top-departments-sidebar--filters" dir="rtl"
       aria-label="סינון מתקדם לדשבורד הניתוחים">
       <div class="top-departments-section-compact top-departments-section-compact--filters">
         <div class="top-departments-header-compact top-departments-header-compact--filters-heading">
@@ -1381,7 +1381,7 @@
               </div>
               <div class="dropdown-panel" *ngIf="isSiteOpen">
                 <div class="options-list">
-                  <div class="option-item" (click)="selectedSites = []; applyAllSurgeryFilters()"
+                  <div class="option-item" (click)="clearSiteFilter()"
                     [class.selected]="!selectedSites || selectedSites.length === 0">
                     כל האתרים
                   </div>
@@ -1409,14 +1409,14 @@
               </div>
             </div>
             <!-- כפתור עוד אפשרויות סינון / מצב פתוח מציג תקציר פילטרים -->
-            <button mat-stroked-button class="more-filters-btn more-filters-btn--in-sidebar" (click)="toggleMoreFilters()">
+            <!-- <button mat-stroked-button class="more-filters-btn more-filters-btn--in-sidebar" (click)="toggleMoreFilters()">
               <ng-container *ngIf="!showMoreFilters">
                 עוד אפשרויות סינון
-              </ng-container>
+              </ng-container> -->
               <!-- <ng-container *ngIf="showMoreFilters">
                 {{ getActiveFiltersSummary() }}
               </ng-container> -->
-            </button>
+            <!-- </button> -->
           </div>
 
         </div>
