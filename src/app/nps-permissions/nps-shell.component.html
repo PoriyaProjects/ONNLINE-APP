@@ -1,21 +1,39 @@
 <mat-sidenav-container class="nps-shell" dir="rtl" lang="he">
-  <mat-sidenav mode="side" opened class="nps-nav">
-    <mat-toolbar color="primary">NPS הרשאות</mat-toolbar>
+  <mat-sidenav mode="side" opened class="nps-nav" disableClose>
+    <div class="nps-nav-header">
+      <div class="nps-nav-icon-wrap">
+        <mat-icon>verified_user</mat-icon>
+      </div>
+      <div>
+        <h2>הרשאות NPS</h2>
+        <p>מערכת ניהול הרשאות אחיות</p>
+      </div>
+    </div>
+
     <mat-nav-list>
-      <a mat-list-item routerLink="/nps-permissions/dashboard" routerLinkActive="active">לוח בקרה</a>
-      <a mat-list-item routerLink="/nps-permissions/employees" routerLinkActive="active">עובדים</a>
-      <a mat-list-item routerLink="/nps-permissions/profiles" routerLinkActive="active">פרופילים</a>
-      <a mat-list-item routerLink="/nps-permissions/profile-rules" routerLinkActive="active">כללי פרופיל</a>
-      <a mat-list-item routerLink="/nps-permissions/requests" routerLinkActive="active">בקשות</a>
-      <a mat-list-item routerLink="/nps-permissions/my-approvals" routerLinkActive="active">אישורים שלי</a>
-      <a mat-list-item routerLink="/nps-permissions/my-requests" routerLinkActive="active">הבקשות שלי</a>
-      <a mat-list-item routerLink="/nps-permissions/audit" routerLinkActive="active">יומן ביקורת</a>
+      <a
+        *ngFor="let item of navItems"
+        mat-list-item
+        [routerLink]="item.path"
+        routerLinkActive="active"
+        [routerLinkActiveOptions]="{ exact: !!item.exact }"
+      >
+        <mat-icon matListItemIcon>{{ item.icon }}</mat-icon>
+        <span matListItemTitle>{{ item.label }}</span>
+      </a>
     </mat-nav-list>
   </mat-sidenav>
+
   <mat-sidenav-content>
-    <mat-toolbar color="accent">
-      <span class="spacer">הרשאות אחיות (NPS)</span>
+    <mat-toolbar class="nps-topbar">
+      <div class="nps-topbar-title-block">
+        <span class="nps-topbar-title">{{ currentPageLabel }}</span>
+        <span class="nps-topbar-subtitle">Nursing Permission System</span>
+      </div>
+      <span class="spacer"></span>
+      <span class="nps-topbar-chip">NPS</span>
     </mat-toolbar>
+
     <div class="nps-content">
       <router-outlet></router-outlet>
     </div>

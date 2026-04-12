@@ -454,12 +454,95 @@
                     </div>
                 </form>
             </mat-step>
+            <mat-step [stepControl]="educationsDetails">
+                <form [formGroup]="educationsDetails" dir="rtl" autocomplete="off">
+                    <ng-template matStepLabel>השכלה</ng-template>
+
+                    <table mat-table [dataSource]="dataSourceEducation" class="mat-elevation-z2 w-full" formArrayName="educations"
+                        *ngIf="dataSourceEducation &&dataSourceEducation.filteredData.length > 0">
+                        <!-- EducationSubject -->
+                        <ng-container matColumnDef="EducationSubject">
+                            <th mat-header-cell *matHeaderCellDef>שם השכלה</th>
+                            <td mat-cell *matCellDef="let row; let i = index" [formGroupName]="i">
+                                <mat-form-field appearance="outline" class="w-full">
+                                    <input matInput placeholder="שם השכלה" formControlName="EducationSubject" />
+                                </mat-form-field>
+                            </td>
+                        </ng-container>
+
+                        
+                        <!-- Speciality -->
+                        <ng-container matColumnDef="Speciality">
+                            <th mat-header-cell *matHeaderCellDef>מקצוע</th>
+                            <td mat-cell *matCellDef="let row; let i = index" [formGroupName]="i">
+                                <mat-form-field appearance="outline" class="w-full">
+                                    <input matInput placeholder="שם השכלה" formControlName="Speciality" />
+                                    <mat-select formControlName="Speciality" aria-placeholder="מקצוע">
+                                        <mat-option *ngFor="let speciality of SpecialitiesList" [value]="speciality.SpecialityID">
+                                            {{speciality.SpecialityDescription}} </mat-option>
+                                    </mat-select>
+                                </mat-form-field>
+                            </td>
+                        </ng-container>
+
+                        <!-- EducationStartDate -->
+                        <ng-container matColumnDef="EducationDate">
+                            <th mat-header-cell *matHeaderCellDef>תאריך ביצוע</th>
+                            <td mat-cell *matCellDef="let row; let i = index" [formGroupName]="i">
+                                <mat-form-field appearance="outline" class="w-full">
+                                    <input matInput [matDatepicker]="picker1" formControlName="EducationDate"
+                                        (dateInput)="onEducationDateInput($event, i)" />
+                                    <mat-datepicker-toggle matSuffix [for]="picker1"></mat-datepicker-toggle>
+                                    <mat-datepicker #picker1></mat-datepicker>
+                                </mat-form-field>
+                            </td>
+                        </ng-container>
+
+                        <!-- Note -->
+                        <ng-container matColumnDef="Note">
+                            <th mat-header-cell *matHeaderCellDef>הערה</th>
+                            <td mat-cell *matCellDef="let row; let i = index" [formGroupName]="i">
+                                <mat-form-field appearance="outline" class="w-full">
+                                    <textarea matInput placeholder="הערה" cols="3" formControlName="Note"></textarea>
+                                </mat-form-field>
+                            </td>
+                        </ng-container>
+
+                        <ng-container matColumnDef="Actions">
+                            <th mat-header-cell *matHeaderCellDef></th>
+                            <td mat-cell *matCellDef="let row; let i = index">
+                                <button mat-icon-button color="warn" (click)="removeEducationRow(i)">
+                                    <mat-icon>delete</mat-icon>
+                                </button>
+                            </td>
+                        </ng-container>
+
+                        <!-- Header & Row Definitions -->
+                        <tr mat-header-row *matHeaderRowDef="['EducationSubject', 'Speciality', 'EducationDate', 'Note', 'Actions']">
+                        </tr>
+                        <tr mat-row *matRowDef="let row; columns: ['EducationSubject', 'Speciality', 'EducationDate', 'Note', 'Actions'];">
+                        </tr>
+                    </table>
+
+                    <!-- Add Button -->
+                    <div class="mt-4 text-right">
+                        <button mat-raised-button (click)="createEducationGroup(null)"
+                            style="background-color: #1976d2;color: #fff">
+                            הוסף השכלה
+                            <mat-icon>add</mat-icon>
+                        </button>
+                    </div>
+                    <div>
+                        <button mat-raised-button class="btn btn-primary btn-raised" matStepperNext>הבא</button>
+                    </div>
+                </form>
+            </mat-step>
             <mat-step [stepControl]="trainingsDetails">
                 <form [formGroup]="trainingsDetails" dir="rtl" autocomplete="off">
                     <ng-template matStepLabel>הכשרות</ng-template>
 
                     <table mat-table [dataSource]="dataSource" class="mat-elevation-z2 w-full" formArrayName="trainings"
-                        *ngIf="dataSource.filteredData.length > 0">
+                        *ngIf="dataSource && dataSource.filteredData.length > 0">
                         <!-- TrainingSubject -->
                         <ng-container matColumnDef="TrainingSubject">
                             <th mat-header-cell *matHeaderCellDef>שם הכשרה</th>
