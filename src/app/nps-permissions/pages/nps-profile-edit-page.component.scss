@@ -26,3 +26,15 @@ mat-form-field {
 .actions {
   margin-top: 12px;
 }
+
+.perms-hint {
+  margin-top: 16px;
+  max-width: 520px;
+  font-size: 14px;
+  color: var(--nps-text-muted, #666);
+  line-height: 1.5;
+
+  a {
+    color: var(--nps-accent, #1565c0);
+  }
+}

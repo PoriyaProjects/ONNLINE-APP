@@ -16,7 +16,6 @@ interface NpsNavItem {
 export class NpsShellComponent {
   readonly navItems: NpsNavItem[] = [
     { path: '/nps-permissions/dashboard', label: 'לוח בקרה', icon: 'space_dashboard', exact: true },
-    { path: '/nps-permissions/employees', label: 'עובדים', icon: 'groups' },
     { path: '/nps-permissions/profiles', label: 'פרופילים', icon: 'badge' },
     { path: '/nps-permissions/profile-rules', label: 'כללי פרופיל', icon: 'rule' },
     { path: '/nps-permissions/requests', label: 'בקשות', icon: 'assignment' },

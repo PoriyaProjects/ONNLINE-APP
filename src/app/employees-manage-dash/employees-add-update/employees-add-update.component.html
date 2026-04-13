@@ -458,28 +458,34 @@
                 <form [formGroup]="educationsDetails" dir="rtl" autocomplete="off">
                     <ng-template matStepLabel>השכלה</ng-template>
 
-                    <table mat-table [dataSource]="dataSourceEducation" class="mat-elevation-z2 w-full" formArrayName="educations"
+                    <table mat-table [dataSource]="dataSourceEducation" class="mat-elevation-z2 w-full"
+                        formArrayName="educations"
                         *ngIf="dataSourceEducation &&dataSourceEducation.filteredData.length > 0">
                         <!-- EducationSubject -->
                         <ng-container matColumnDef="EducationSubject">
                             <th mat-header-cell *matHeaderCellDef>שם השכלה</th>
                             <td mat-cell *matCellDef="let row; let i = index" [formGroupName]="i">
                                 <mat-form-field appearance="outline" class="w-full">
-                                    <input matInput placeholder="שם השכלה" formControlName="EducationSubject" />
+                                    <!-- <input matInput placeholder="שם השכלה" formControlName="EducationSubject" /> -->
+                                    <mat-select formControlName="EducationSubject" aria-placeholder="התמחות"
+                                        (selectionChange)="onEducationSubjectChange(i, $event.value)">
+                                        <mat-option *ngFor="let education of EducationsList" [value]="education">
+                                            {{education}} </mat-option>
+                                    </mat-select>
                                 </mat-form-field>
                             </td>
                         </ng-container>
 
-                        
+
                         <!-- Speciality -->
                         <ng-container matColumnDef="Speciality">
-                            <th mat-header-cell *matHeaderCellDef>מקצוע</th>
+                            <th mat-header-cell *matHeaderCellDef>התמחות</th>
                             <td mat-cell *matCellDef="let row; let i = index" [formGroupName]="i">
                                 <mat-form-field appearance="outline" class="w-full">
-                                    <input matInput placeholder="שם השכלה" formControlName="Speciality" />
-                                    <mat-select formControlName="Speciality" aria-placeholder="מקצוע">
-                                        <mat-option *ngFor="let speciality of SpecialitiesList" [value]="speciality.SpecialityID">
-                                            {{speciality.SpecialityDescription}} </mat-option>
+                                    <!-- <input matInput placeholder="שם התמחות" formControlName="Speciality" /> -->
+                                    <mat-select formControlName="Speciality" aria-placeholder="התמחות">
+                                        <mat-option *ngFor="let speciality of getSpecialitiesForRow(i)" [value]="speciality">
+                                            {{speciality}} </mat-option>
                                     </mat-select>
                                 </mat-form-field>
                             </td>
@@ -518,9 +524,11 @@
                         </ng-container>
 
                         <!-- Header & Row Definitions -->
-                        <tr mat-header-row *matHeaderRowDef="['EducationSubject', 'Speciality', 'EducationDate', 'Note', 'Actions']">
+                        <tr mat-header-row
+                            *matHeaderRowDef="['EducationSubject', 'Speciality', 'EducationDate', 'Note', 'Actions']">
                         </tr>
-                        <tr mat-row *matRowDef="let row; columns: ['EducationSubject', 'Speciality', 'EducationDate', 'Note', 'Actions'];">
+                        <tr mat-row
+                            *matRowDef="let row; columns: ['EducationSubject', 'Speciality', 'EducationDate', 'Note', 'Actions'];">
                         </tr>
                     </table>
 
@@ -599,9 +607,11 @@
                         </ng-container>
 
                         <!-- Header & Row Definitions -->
-                        <tr mat-header-row *matHeaderRowDef="['TrainingSubject', 'StartDate', 'EndDate', 'Note', 'Actions']">
+                        <tr mat-header-row
+                            *matHeaderRowDef="['TrainingSubject', 'StartDate', 'EndDate', 'Note', 'Actions']">
                         </tr>
-                        <tr mat-row *matRowDef="let row; columns: ['TrainingSubject', 'StartDate', 'EndDate', 'Note', 'Actions'];">
+                        <tr mat-row
+                            *matRowDef="let row; columns: ['TrainingSubject', 'StartDate', 'EndDate', 'Note', 'Actions'];">
                         </tr>
                     </table>
 
