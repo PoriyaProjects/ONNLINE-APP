@@ -58,17 +58,17 @@ export interface NpsProfileWriteBody {
 
 /** Catalog row from `NpsGetEducations` (normalized). */
 export interface NpsEducationCatalog {
-  EducationID: number;
-  Name: string;
-  Code?: string;
-  IsActive: boolean;
+  EducationID: string;
+  EducationSubject: string;
+  // Code?: string;
+  // IsActive: boolean;
 }
 
 /** Catalog row from `NpsGetSpecialties` (normalized). */
 export interface NpsSpecialtyCatalog {
-  SpecialtyId: number;
-  EducationID?: number | null;
-  Name: string;
+  SpecialtyID: string;
+  EducationID?: string | null;
+  Speciality: string;
   SpecialtyCode?: string;
   IsActive: boolean;
 }

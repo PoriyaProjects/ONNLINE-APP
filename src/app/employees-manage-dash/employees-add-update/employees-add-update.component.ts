@@ -43,11 +43,13 @@ export class EmployeesAddUpdateComponent implements OnInit {
   gymDetails: FormGroup;
   trainingsDetails: FormGroup;
   educationsDetails: FormGroup;
+  EducationsList = [];
   RanksList = [];
   SektorsList = [];
   FunctionsList = [];
   EmployeeBlossomSektors = [];
-  SpecialitiesList = [];
+  /** One specialties array per education row index (aligned with `educations` FormArray). */
+  educationSpecialitiesLists: any[][] = [];
   DepartmentsList = [];
   end_work_reasons = [];
   WorkPlacesList = [];
@@ -160,13 +162,44 @@ export class EmployeesAddUpdateComponent implements OnInit {
         startWith(''),
         map(value => this._filter2(value))
       );
-    this.getSpecialitiesList();
+    this.getEducationsList();
   }
 
-  getSpecialitiesList() {
-    this.http.post(this.Api + "GetEmployeeSpecialitiesList", {}).subscribe((Response) => {
-      this.SpecialitiesList = Response["d"];
-      console.log(this.SpecialitiesList);
+  getSpecialitiesForRow(rowIndex: number): any[] {
+    return this.educationSpecialitiesLists[rowIndex] ?? [];
+  }
+
+  loadSpecialitiesForRow(rowIndex: number, educationID: any): void {
+    if (educationID == null || educationID === '') {
+      if (this.educationSpecialitiesLists[rowIndex]) {
+        this.educationSpecialitiesLists[rowIndex] = [];
+      }
+      return;
+    }
+    this.http.post(this.Api + "GetEmployeeSpecialitiesList", {
+      _educationID: educationID
+    }).subscribe((Response) => {
+      const list = Response["d"] ?? [];
+      while (this.educationSpecialitiesLists.length <= rowIndex) {
+        this.educationSpecialitiesLists.push([]);
+      }
+      this.educationSpecialitiesLists[rowIndex] = list;
+    });
+  }
+
+  onEducationSubjectChange(rowIndex: number, educationID: any): void {
+    const row = this.educations.at(rowIndex) as FormGroup;
+    row.get('Speciality')?.setValue(null);
+    while (this.educationSpecialitiesLists.length <= rowIndex) {
+      this.educationSpecialitiesLists.push([]);
+    }
+    this.educationSpecialitiesLists[rowIndex] = [];
+    this.loadSpecialitiesForRow(rowIndex, educationID);
+  }
+
+  getEducationsList() {
+    this.http.post(this.Api + "GetEmployeeEducationsList", {}).subscribe((Response) => {
+      this.EducationsList = Response["d"];
     });
   }
 
@@ -314,6 +347,7 @@ export class EmployeesAddUpdateComponent implements OnInit {
         this.dataSource = new MatTableDataSource();
         this.dataSourceEducation = new MatTableDataSource();
         this.createTrainingGroup(this.employee.EmployeeTrainings)
+        this.educationSpecialitiesLists = [];
         this.createEducationGroup(this.employee.EmployeeEducations)
       });
   }
@@ -360,8 +394,16 @@ export class EmployeesAddUpdateComponent implements OnInit {
           Note: [element.Note, null]
         });
         this.educations.push(temp);
+        const rowIndex = this.educations.length - 1;
+        this.educationSpecialitiesLists.push([]);
+        if (element.EducationSubject) {
+          this.loadSpecialitiesForRow(rowIndex, element.EducationSubject);
+        }
       });
-    } else this.educations.push(temp);
+    } else {
+      this.educations.push(temp);
+      this.educationSpecialitiesLists.push([]);
+    }
 
     this.dataSourceEducation.data = this.educations.controls;
   }
@@ -372,6 +414,7 @@ export class EmployeesAddUpdateComponent implements OnInit {
 
   removeEducationRow(index: number) {
     this.educations.removeAt(index);
+    this.educationSpecialitiesLists.splice(index, 1);
     this.dataSourceEducation.data = this.educations.controls; // Refresh table after removal
   }
 
@@ -390,7 +433,7 @@ export class EmployeesAddUpdateComponent implements OnInit {
     this.trainings.removeAt(index);
     this.dataSource.data = this.trainings.controls; // Refresh table after removal
   }
-  
+
   onStartDateInput(event: MatDatepickerInputEvent<Date>, rowIndex: number): void {
     let pipe = new DatePipe('en-US');
     const selectedDate = event.value;

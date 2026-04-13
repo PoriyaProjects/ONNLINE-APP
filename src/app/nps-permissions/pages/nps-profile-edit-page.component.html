@@ -19,14 +19,8 @@
     </div>
   </mat-card-content>
 </mat-card>
-<ng-container *ngIf="showPermissionSection">
-  <h2>מטריצת הרשאות</h2>
-  <app-nps-permission-matrix
-    [permissions]="perms"
-    [profilePermissions]="pp"
-    (matrixChange)="onMatrix($event)"
-  ></app-nps-permission-matrix>
-  <div class="actions">
-    <button mat-raised-button color="accent" (click)="savePerms()">שמור הרשאות</button>
-  </div>
-</ng-container>
+<p *ngIf="profile && !isNew" class="perms-hint">
+  לעריכת מטריצת ההרשאות עבור פרופיל זה, עברו ל־
+  <a routerLink="/nps-permissions/profile-rules">כללי פרופיל</a>
+  ובחרו את הפרופיל תחת &quot;מטריצת הרשאות לפרופיל&quot;.
+</p>
