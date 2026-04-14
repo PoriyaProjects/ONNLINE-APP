@@ -18,16 +18,12 @@ import { MatTableModule } from '@angular/material/table';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { NpsApprovalTimelineComponent } from './components/approval-timeline.component';
-import { NpsEmployeeHeaderCardComponent } from './components/employee-header-card.component';
-import { NpsFiltersToolbarComponent } from './components/filters-toolbar.component';
 import { NpsPermissionMatrixComponent } from './components/permission-matrix.component';
 import { NpsRequestStatusBadgeComponent } from './components/request-status-badge.component';
 import { NpsPermissionsRoutingModule } from './nps-permissions-routing.module';
 import { NpsShellComponent } from './nps-shell.component';
 import { NpsAuditPageComponent } from './pages/nps-audit-page.component';
 import { NpsDashboardPageComponent } from './pages/nps-dashboard-page.component';
-import { NpsEmployeeDetailPageComponent } from './pages/nps-employee-detail-page.component';
-import { NpsEmployeesPageComponent } from './pages/nps-employees-page.component';
 import { NpsMyApprovalsPageComponent } from './pages/nps-my-approvals-page.component';
 import { NpsMyRequestsPageComponent } from './pages/nps-my-requests-page.component';
 import { NpsProfileEditPageComponent } from './pages/nps-profile-edit-page.component';
@@ -40,8 +36,6 @@ import { NpsRulesPageComponent } from './pages/nps-rules-page.component';
   declarations: [
     NpsShellComponent,
     NpsDashboardPageComponent,
-    NpsEmployeesPageComponent,
-    NpsEmployeeDetailPageComponent,
     NpsProfilesPageComponent,
     NpsProfileEditPageComponent,
     NpsRulesPageComponent,
@@ -51,8 +45,6 @@ import { NpsRulesPageComponent } from './pages/nps-rules-page.component';
     NpsMyRequestsPageComponent,
     NpsAuditPageComponent,
     NpsRequestStatusBadgeComponent,
-    NpsFiltersToolbarComponent,
-    NpsEmployeeHeaderCardComponent,
     NpsApprovalTimelineComponent,
     NpsPermissionMatrixComponent,
   ],

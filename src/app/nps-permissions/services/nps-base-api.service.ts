@@ -70,22 +70,20 @@ export class NpsBaseApiService {
   }
 
   private normalizeEducationRow(raw: Record<string, unknown>): NpsEducationCatalog {
-    const id = (raw.EducationID ?? raw.educationID) as number;
+    const id = (raw.EducationID ?? raw.educationID) as string;
     return {
       EducationID: id,
-      Name: String(raw.Name ?? raw.name ?? ''),
-      Code: (raw.Code ?? raw.code) as string | undefined,
-      IsActive: (raw.IsActive ?? raw.isActive ?? true) as boolean,
+      EducationSubject: String(raw.EducationSubject ?? raw.educationSubject ?? ''),
     };
   }
 
   private normalizeSpecialtyRow(raw: Record<string, unknown>): NpsSpecialtyCatalog {
-    const sid = (raw.SpecialtyId ?? raw.specialtyId) as number;
+    const sid = (raw.SpecialtyID ?? raw.specialtyID) as number;
     const eid = raw.EducationID ?? raw.educationID;
     return {
-      SpecialtyId: sid,
-      EducationID: eid === undefined || eid === null ? null : (eid as number),
-      Name: String(raw.Name ?? raw.name ?? ''),
+      SpecialtyID: String(sid),
+      EducationID: eid === undefined || eid === null ? null : (eid as string),
+      Speciality: String(raw.Speciality ?? raw.speciality ?? ''),
       SpecialtyCode: (raw.SpecialtyCode ?? raw.specialtyCode) as string | undefined,
       IsActive: (raw.IsActive ?? raw.isActive ?? true) as boolean,
     };
@@ -144,23 +142,11 @@ export class NpsBaseApiService {
   }
 
   getEducations(user_id: string): Observable<NpsEducationCatalog[]> {
-    return this.post<Record<string, unknown>[]>('NpsGetEducations', { user_id: user_id || '' }).pipe(
-      map((rows) =>
-        (rows || [])
-          .map((r) => this.normalizeEducationRow(r))
-          .filter((e) => e.EducationID != null && !Number.isNaN(Number(e.EducationID)) && e.IsActive !== false)
-      )
-    );
+    return this.post<NpsEducationCatalog[]>('NpsGetEducations', { user_id: user_id || '' });
   }
 
-  getSpecialties(user_id: string): Observable<NpsSpecialtyCatalog[]> {
-    return this.post<Record<string, unknown>[]>('NpsGetSpecialties', { user_id: user_id || '' }).pipe(
-      map((rows) =>
-        (rows || [])
-          .map((r) => this.normalizeSpecialtyRow(r))
-          .filter((s) => s.SpecialtyId != null && !Number.isNaN(Number(s.SpecialtyId)) && s.IsActive !== false)
-      )
-    );
+  getSpecialties(user_id: string, educationId?: string): Observable<NpsSpecialtyCatalog[]> {
+    return this.post<NpsSpecialtyCatalog[]>('NpsGetSpecialties', { user_id: user_id || '', educationId: educationId || '' });
   }
 
   getPermissions(user_id: string): Observable<NpsPermission[]> {
@@ -267,7 +253,7 @@ export class NpsBaseApiService {
       ProfileID: number;
       departmentCode: string;
       EducationID: number | null;
-      specialtyId: number | null;
+      SpecialtyID: number | null;
       isActive: boolean;
     }
   ): Observable<{ RuleID?: number; ruleId?: number }> {
@@ -275,7 +261,7 @@ export class NpsBaseApiService {
       ProfileID: body.ProfileID,
       departmentCode: body.departmentCode,
       EducationID: body.EducationID,
-      specialtyId: body.specialtyId,
+      SpecialtyID: body.SpecialtyID,
       isActive: body.isActive,
     };
     return this.post<{ RuleID?: number; ruleId?: number }>('NpsPostProfileRule', { user_id: user_id || '', body: dto });
