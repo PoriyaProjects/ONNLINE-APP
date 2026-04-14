@@ -583,7 +583,7 @@
               <span class="chart-mode-heading__filter-badge">[ סינון פעיל ]</span>
             </div>
             </div>
-          <div class="year-summary-row" *ngIf="yearsForChart?.length && !isRoomUtilizationMode()">
+          <div class="year-summary-row" *ngIf="yearsForChart?.length && !isRoomUtilizationMode() && mainMetricMode !== 'room-times'">
             <div class="year-summary-card" *ngFor="let y of yearsForChartNewestFirst.slice().reverse()">
               <div class="year-label">{{ y }}</div>
               <div class="year-count">{{ formatNumber(yearlySurgeryTotals[y] || 0) }}</div>
@@ -625,7 +625,7 @@
 
             <!-- All other modes (Google chart) -->
             <google-chart [type]="chartType" [data]="chartData" [columns]="chartColumns" [options]="chartOptions"
-              [width]="'100%'" (select)="onChartClick($event)"
+              [width]="'100%'" [dynamicResize]="true" (select)="onChartClick($event)"
               *ngIf="chartViewMode !== 'yoy-combined' && !isChartLoading && !isMainDataLoading && chartData && chartData.length > 0 && !(isRoomUtilizationMode() && roomUtilizationSubChart === 'surgeriesPerDay')">
             </google-chart>
           </div>
@@ -891,12 +891,12 @@
                   <td>{{ r.label }}</td>
                   <td *ngFor="let y of yearsForChart" [ngClass]="getYearDiffClass(r, y)">
                     <ng-container *ngIf="getYearDiff(r, y) as d; else baseValue">
-                      {{ formatNumber(d.diff) }}
+                      {{ formatAggregatedSideTableValue(d.diff) }}
                       <br />
                       <span class="percentage-badge">{{ d.pct }}</span>
                     </ng-container>
                     <ng-template #baseValue>
-                      {{ formatNumber(r.perYear[y] || 0) }}
+                      {{ formatAggregatedSideTableValue(r.perYear[y] || 0) }}
                     </ng-template>
                   </td>
                 </tr>
@@ -925,187 +925,46 @@
             </table>
           </div>
 
-          <!-- השוואה: משך ניתוח ממוצע לפי Wing – פתיחה במודאל (95% מסך) -->
-          <div class="compare-panel" *ngIf="mainMetricMode === 'room-times' && roomTimesView === 'avgDuration'">
-            <div class="compare-header">
-              <div class="compare-title">
-                <mat-icon>compare_arrows</mat-icon>
-                <span>השוואה – משך ניתוח ממוצע</span>
-              </div>
-              <div class="compare-actions">
-                <button mat-stroked-button type="button" class="overflow-toggle-btn"
-                  (click)="openAvgDurationCompareInline()" *ngIf="!avgDurationCompareInlineOpen">
-                  <mat-icon>expand_more</mat-icon>
-                  <span>פתח השוואה</span>
-                </button>
-                <button mat-stroked-button type="button" class="overflow-toggle-btn"
-                  (click)="closeAvgDurationCompareInline()" *ngIf="avgDurationCompareInlineOpen">
-                  <mat-icon>expand_less</mat-icon>
-                  <span>סגור</span>
-                </button>
-                <button mat-stroked-button type="button" class="overflow-toggle-btn"
-                  (click)="openAvgDurationCompareModal()">
-                  <mat-icon>open_in_full</mat-icon>
-                  <span>פתח בחלון נפרד</span>
-                </button>
-              </div>
-            </div>
-            <div class="compare-help">
-              בחר Wing אחד (חובה), ואז השווה בין שני ערכים (ימין/שמאל) לפי סוג ניתוח / משמרת / חדר.
-            </div>
-
-            <!-- Inline compact view (inside table-body) -->
-            <div class="compare-inline" *ngIf="avgDurationCompareInlineOpen">
-              <div class="compare-controls compare-controls-3">
-                <div class="custom-dropdown compare-dropdown" [class.active]="isAvgDurationCompareWingOpen"
-                  [class.has-value]="avgDurationCompareWing">
-                  <div class="dropdown-trigger" (click)="toggleAvgDurationCompareDropdown('wing')">
-                    <mat-icon class="dropdown-icon">local_hospital</mat-icon>
-                    <span class="selected-text">Wing: {{ avgDurationCompareWing || 'בחר...' }}</span>
-                    <mat-icon class="arrow-icon">{{ isAvgDurationCompareWingOpen ? 'expand_less' : 'expand_more'
-                      }}</mat-icon>
-                  </div>
-                  <div class="dropdown-panel" *ngIf="isAvgDurationCompareWingOpen">
-                    <div class="options-list">
-                      <div class="option-item" *ngFor="let w of getAvgDurationCompareWingOptions()"
-                        (click)="setAvgDurationCompareWing(w)" [class.selected]="avgDurationCompareWing === w">
-                        {{ w }}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div class="custom-dropdown compare-dropdown" [class.active]="isAvgDurationCompareDimensionOpen"
-                  [class.has-value]="avgDurationCompareDimension">
-                  <div class="dropdown-trigger" (click)="toggleAvgDurationCompareDropdown('dimension')">
-                    <mat-icon class="dropdown-icon">tune</mat-icon>
-                    <span class="selected-text">השווה לפי: {{ getAvgDurationCompareDimensionLabel() }}</span>
-                    <mat-icon class="arrow-icon">{{ isAvgDurationCompareDimensionOpen ? 'expand_less' : 'expand_more'
-                      }}</mat-icon>
-                  </div>
-                  <div class="dropdown-panel" *ngIf="isAvgDurationCompareDimensionOpen">
-                    <div class="options-list">
-                      <div class="option-item" (click)="setAvgDurationCompareDimension('SurgeryType')"
-                        [class.selected]="avgDurationCompareDimension === 'SurgeryType'">סוג ניתוח</div>
-                      <div class="option-item" (click)="setAvgDurationCompareDimension('Shift')"
-                        [class.selected]="avgDurationCompareDimension === 'Shift'">משמרת</div>
-                      <div class="option-item" (click)="setAvgDurationCompareDimension('Site')"
-                        [class.selected]="avgDurationCompareDimension === 'Site'">אתר</div>
-                    </div>
-                  </div>
-                </div>
-
-                <div class="custom-dropdown compare-dropdown" [class.active]="isAvgDurationCompareRightOpen"
-                  [class.has-value]="avgDurationCompareRightValue">
-                  <div class="dropdown-trigger" (click)="toggleAvgDurationCompareDropdown('right')">
-                    <mat-icon class="dropdown-icon">check_circle</mat-icon>
-                    <span class="selected-text">ירוק (מקור): {{ avgDurationCompareRightValue || 'הכל' }}</span>
-                    <mat-icon class="arrow-icon">{{ isAvgDurationCompareRightOpen ? 'expand_less' : 'expand_more'
-                      }}</mat-icon>
-                  </div>
-                  <div class="dropdown-panel" *ngIf="isAvgDurationCompareRightOpen">
-                    <div class="options-list">
-                      <div class="option-item" *ngFor="let v of getAvgDurationCompareValueOptions()"
-                        (click)="setAvgDurationCompareRightValue(v)"
-                        [class.selected]="avgDurationCompareRightValue === v">
-                        {{ v }}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div class="custom-dropdown compare-dropdown" [class.active]="isAvgDurationCompareLeftOpen"
-                  [class.has-value]="avgDurationCompareLeftValue">
-                  <div class="dropdown-trigger" (click)="toggleAvgDurationCompareDropdown('left')">
-                    <mat-icon class="dropdown-icon">compare_arrows</mat-icon>
-                    <span class="selected-text">כחול (השוואה): {{ avgDurationCompareLeftValue || 'הכל' }}</span>
-                    <mat-icon class="arrow-icon">{{ isAvgDurationCompareLeftOpen ? 'expand_less' : 'expand_more'
-                      }}</mat-icon>
-                  </div>
-                  <div class="dropdown-panel" *ngIf="isAvgDurationCompareLeftOpen">
-                    <div class="options-list">
-                      <div class="option-item" *ngFor="let v of getAvgDurationCompareValueOptions()"
-                        (click)="setAvgDurationCompareLeftValue(v)"
-                        [class.selected]="avgDurationCompareLeftValue === v">
-                        {{ v }}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- <div class="compare-help compare-help-tight">
-                חישוב: ממוצע משוקלל לפי Count לכל שנה בתוך אותו Wing.
-                המספרים מעל העמודות הם שעות:דקות (HH:MM), וציר Y בדקות.
-              </div>
-
-              <div class="compare-wing-hint" *ngIf="!avgDurationCompareWing">
-                כדי שהגרף יהיה קריא חובה לבחור Wing אחד להצגה.
-              </div> -->
-
-              <div class="compare-charts compare-charts-single" *ngIf="avgDurationCompareWing">
-                <div class="compare-chart-card">
-                  <google-chart *ngIf="avgDurationCompareCombinedChartData?.length" [type]="'LineChart'"
-                    [columns]="avgDurationCompareCombinedChartColumns" [data]="avgDurationCompareCombinedChartData"
-                    [options]="avgDurationCompareCombinedChartOptions" [width]="'100%'" [height]="'190px'">
-                  </google-chart>
-                  <div class="chart-no-data" *ngIf="!avgDurationCompareCombinedChartData?.length">
-                    אין נתונים להצגה להשוואה
-                  </div>
-                  <div class="compare-year-legend compare-year-legend-compact" *ngIf="avgDurationCompareYears?.length">
-                    <div class="compare-year-legend-title">שנים מוצגות</div>
-                    <div class="compare-year-chips">
-                      <span class="compare-year-chip" *ngFor="let y of avgDurationCompareYears">{{ y }}</span>
-                    </div>
-                    <!-- <div class="compare-year-legend-text">
-                      נקודה = ממוצע משוקלל בדקות (HH:MM מעל הנקודה).
-                    </div> -->
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
           <div class="empty" *ngIf="(chartViewMode === 'yoy-combined' && !getFilteredDepartmentYoyData()?.length) ||
                    (chartViewMode !== 'yoy-combined' && dataSource.data.length === 0 && !chartTableRows?.length)">
             אין נתונים להצגה
           </div>
 
           <!-- אזור תובנות מתחת לטבלה – מוצג כשיש תובנות לחישוב -->
-          <div class="table-extra" *ngIf="tableExtraInsights?.length">
-            <div class="table-extra-title">תובנות מהירות לתצוגה הנוכחית</div>
+          <div class="table-extra" *ngIf="tableExtraInsights?.length || showTableExtraKpiStrip()">
+            <div class="table-extra-title">תובנות מהירות — {{ getTableExtraContextTitle() }}</div>
 
-            <!-- KPIs summary (שנת בסיס מול השנה האחרונה + ישות מובילה) -->
+            <!-- KPIs summary (מתעדכן לפי הגרף והטבלה המוצגים) -->
             <div class="table-extra-kpis" dir="rtl"
-              *ngIf="kpiLastYear !== null && kpiLastTotal !== null">
+              *ngIf="showTableExtraKpiStrip()">
               <div class="table-extra-kpi">
-                <div class="table-extra-kpi-label">סה&quot;כ ניתוחים בשנה האחרונה</div>
+                <div class="table-extra-kpi-label">{{ getTableExtraKpiPrimaryLabel() }}</div>
                 <div class="table-extra-kpi-value">
-                  {{ kpiLastTotal | number:'1.0-0' }}
+                  {{ getTableExtraKpiPrimaryDisplay() }}
                 </div>
                 <div class="table-extra-kpi-sub">
-                  שנת {{ kpiLastYear }}
+                  {{ getTableExtraKpiPrimarySub() }}
                 </div>
               </div>
 
               <div class="table-extra-kpi" *ngIf="kpiPriorYear !== null && kpiLastDiffPct !== null">
-                <div class="table-extra-kpi-label">שינוי מול השנה שעברה</div>
+                <div class="table-extra-kpi-label">{{ getTableExtraKpiChangeLabel() }}</div>
                 <div class="table-extra-kpi-value"
                   [ngClass]="{ 'kpi-positive': kpiLastDiffPct >= 0, 'kpi-negative': kpiLastDiffPct < 0 }">
                   {{ kpiLastDiffPct | number:'1.1-1' }}%
                 </div>
                 <div class="table-extra-kpi-sub" *ngIf="kpiLastDiff !== null">
-                  {{ kpiLastDiff | number:'1.0-0' }} ניתוחים לעומת {{ kpiPriorYear }}
+                  {{ formatAggregatedSideTableValue(kpiLastDiff) }} {{ getTableExtraKpiChangeUnitPhrase() }} {{ kpiPriorYear }}
                 </div>
               </div>
 
               <div class="table-extra-kpi" *ngIf="kpiTopEntityLabel">
-                <div class="table-extra-kpi-label">הרשומה המובילה בנפח הניתוחים</div>
+                <div class="table-extra-kpi-label">{{ getTableExtraTopEntityLabel() }}</div>
                 <div class="table-extra-kpi-value">
                   {{ kpiTopEntityLabel }}
                 </div>
                 <div class="table-extra-kpi-sub" *ngIf="kpiTopEntityTotal !== null">
-                  {{ kpiTopEntityTotal | number:'1.0-0' }} ניתוחים
+                  {{ formatAggregatedSideTableValue(kpiTopEntityTotal) }} {{ getTableExtraTopEntityUnit() }}
                 </div>
               </div>
             </div>
@@ -2056,7 +1915,8 @@
               [data]="compareDepartmentsLineChartData"
               [options]="compareDepartmentsLineChartOptions"
               [width]="'100%'"
-              [height]="'100%'">
+              [height]="'100%'"
+              [dynamicResize]="true">
             </google-chart>
             <div class="compare-dept-color-legend" *ngIf="compareDepartmentsColorLegend.length"
               aria-label="מקרא צבעי הגרף">
