@@ -8,7 +8,7 @@ import { MatTableDataSource } from '@angular/material/table';
 import { NavigationEnd, Router } from '@angular/router';
 import { Chart } from 'chart.js';
 import { Subscription } from 'rxjs';
-import { filter, finalize } from 'rxjs/operators';
+import { filter } from 'rxjs/operators';
 import { environment } from "src/environments/environment";
 import { MenuPerm } from "../menu-perm";
 
@@ -2028,9 +2028,6 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
   private lastAvgFirstMorningEntryParams: string | null = null;
   private lastAvgLastMorningEndParams: string | null = null;
   private lastAvgSetupParams: string | null = null;
-  /** מונע POST כפול ל-GetSurgeriesDashborad (לעיתים גורם 500 ב-ASMX תחת עומס) */
-  private surgeriesDashboradPostInFlight = false;
-
     constructor(
         private http: HttpClient,
         private snackBar: MatSnackBar,
@@ -2516,8 +2513,9 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
     }
 
     /**
-     * Load department income comparison data / נתוני ניתוחים
-     * קורא לשרת רק אם עדיין אין נתונים (מניעת טעינה כפולה), אלא אם נדרש רענון מלא.
+     * Legacy hook: previously POSTed GetSurgeriesDashborad (surgery rows or department income).
+     * That ASMX method is unused; charts/table rely on GetCountByDept and other endpoints.
+     * Call sites unchanged — no HTTP; clears cached rows on forceRefresh.
      */
     loadDepartmentIncomeData(
         forceRefresh = false,
@@ -2537,96 +2535,23 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
             this.cdr.detectChanges();
             return;
         }
-        // טעינה ראשונה: אפשר להשאיר את ה־dashboard גלוי (גרפים מ־CountByDept וכו׳) בזמן ה־POST — בלי isDataLoaded=false של חוסם הכול
+        if (forceRefresh) {
+            this.surgeryData = [];
+            this.departmentIncomeData = [];
+        }
         if (!forceRefresh && !keepDv) {
             this.isDataLoaded = false;
             this.isLoading = true;
         }
         this.isMainDataLoading = true;
 
-        if (this.surgeriesDashboradPostInFlight) {
-            this.isMainDataLoading = false;
-            if (!forceRefresh && !keepDv) {
-                this.isLoading = false;
-            }
-            this.cdr.detectChanges();
-            return;
-        }
-        this.surgeriesDashboradPostInFlight = true;
-
-        this.http
-            .post(environment.url + "GetSurgeriesDashborad", {})
-            .pipe(
-                finalize(() => {
-                    this.surgeriesDashboradPostInFlight = false;
-                })
-            )
-            .subscribe(
-                (response: any) => {
-                    if (response && response.d) {
-                        const raw = response.d;
-                        const isSurgeryRows = Array.isArray(raw) && raw.length > 0 && this.isSurgeryRow(raw[0]);
-
-                        if (isSurgeryRows) {
-                            this.surgeryData = raw.map((r: any) => this.normalizeSurgeryRow(r));
-                            if (!this.selectedDiagnosis || this.selectedDiagnosis === 'אגף כירורגי') this.selectedDiagnosis = 'כל האתרים';
-                            this.computeFilterOptions();
-                            this.dataSource.data = this.applySurgeryFilter(this.surgeryData);
-                            this.diagnosesList = this.getUniqueSites();
-                            this.calculateTopDepartmentsFromSurgeries();
-                            this.chartColumns = ["חדר ניתוח", "מספר ניתוחים", { type: "string", role: "annotation" }];
-                            this.chartOptions.title = "";
-                            this.updateChartTheme();
-                            this.updateChartData();
-                        } else {
-                            this.departmentIncomeData = raw;
-                            this.displayedColumns = ['DepartmentName', 'Income2024', 'Income2025', 'Difference'];
-                            this.departmentIncomeData.sort((a, b) => b.Income2025 - a.Income2025);
-                            this.dataSource.data = this.departmentIncomeData;
-                            this.calculateTopDepartments();
-                            this.updateChartColumns();
-                            this.updateChartTheme();
-                            this.updateChartData();
-                            this.loadYearlyTotalsForChart();
-                        }
-                        this.isDataLoaded = true;
-                        this.isMainDataLoading = false;
-                        this.isLoading = false;
-                        this.cdr.detectChanges();
-                        this.snackBar.open(
-                            forceRefresh ? "✓ הנתונים עודכנו מהשרת" : "✓ נתונים נטענו בהצלחה",
-                            "סגור",
-                            { duration: 3000 }
-                        );
-                    } else {
-                        this.isMainDataLoading = false;
-                        this.isLoading = false;
-                        if (!forceRefresh && !keepDv) {
-                            this.isDataLoaded = false;
-                        } else if (keepDv) {
-                            this.isDataLoaded = true;
-                        }
-                        this.cdr.detectChanges();
-                    }
-                },
-                (error) => {
-                    const status = error?.status != null ? ` (${error.status})` : "";
-                    console.error("Error loading surgeries dashboard data:", error);
-                    this.isMainDataLoading = false;
-                    this.isLoading = false;
-                    if (!forceRefresh && !keepDv) {
-                        this.isDataLoaded = false;
-                    } else if (keepDv) {
-                        this.isDataLoaded = true;
-                    }
-                    this.cdr.detectChanges();
-                    this.snackBar.open(
-                        `❌ שגיאה בטעינת הנתונים מהשרת${status}`,
-                        "סגור",
-                        { duration: 5000 }
-                    );
-                }
-            );
+        this.isMainDataLoading = false;
+        this.isLoading = false;
+        this.isDataLoaded = true;
+        this.dataSource.data = [];
+        this.computeFilterOptions();
+        this.updateChartData();
+        this.cdr.detectChanges();
     }
 
     /**
@@ -2954,8 +2879,8 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
             return;
         }
         /**
-         * בכניסה ראשונה יש תמיד selectedDiagnosis (ברירת מחדל) — ללא מאגר ניתוחים בזיכרון חייבים
-         * לטעון מ-GetSurgeriesDashborad; אחרת רענון ופעולות אחרות ינסו POST על מאגר «ריק» ויקבלו שגיאות.
+         * בכניסה ראשונה: אם אין נתוני הכנסה/ניתוחים בזיכרון — `loadDepartmentIncomeData` רק מסנכרן מצב מקומי
+         * (אין POST ל-ASMX); הגרפים והאגרגציה מגיעים מ-GetCountByDept ושאר ה-APIs.
          */
         if (this.departmentIncomeData.length > 0) {
             this.dataSource.data = this.departmentIncomeData;
@@ -5001,8 +4926,8 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
         const hasMainDataset =
             this.surgeryData.length > 0 || this.departmentIncomeData.length > 0;
         /**
-         * קריאה חוזרת ל-GetSurgeriesDashborad במקביל לעומס שאר ה-APIs עלולה להחזיר 500 ב-ASMX.
-         * כשכבר יש רשומות בזיכרון — מרעננים רק מדדים נלווים ומסנכרנים טבלה/גרף מהמאגר הקיים.
+         * `loadDepartmentIncomeData` לא קורא לשרת; אם יש מאגר ניתוחים/הכנסה בזיכרון — נשארים עליו,
+         * אחרת מנקים ומסנכרנים לטבלה ריקה. שאר הרענון — GetCountByDept ו-APIs נלווים.
          */
         if (hasMainDataset) {
             this.loadDepartmentIncomeData(false);
@@ -7692,7 +7617,7 @@ updateChartColumns(): void {
 
     /**
      * Export to CSV for Excel:
-     * 1) One row per surgery when surgeryData is loaded (GetSurgeriesDashborad).
+     * 1) One row per surgery when surgeryData is populated (legacy / future source).
      * 2) Else department income summary when departmentIncomeData exists.
      * 3) Else one row per GetCountByDept row (aggregate dimensions, not each surgery).
      */
