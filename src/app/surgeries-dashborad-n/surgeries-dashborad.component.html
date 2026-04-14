@@ -951,7 +951,7 @@
                 <div class="table-extra-kpi-label">{{ getTableExtraKpiChangeLabel() }}</div>
                 <div class="table-extra-kpi-value"
                   [ngClass]="{ 'kpi-positive': kpiLastDiffPct >= 0, 'kpi-negative': kpiLastDiffPct < 0 }">
-                  {{ kpiLastDiffPct | number:'1.1-1' }}%
+                  {{ kpiLastDiffPct | number:'1.0-0' }}%
                 </div>
                 <div class="table-extra-kpi-sub" *ngIf="kpiLastDiff !== null">
                   {{ formatAggregatedSideTableValue(kpiLastDiff) }} {{ getTableExtraKpiChangeUnitPhrase() }} {{ kpiPriorYear }}
