@@ -7681,37 +7681,100 @@ updateChartColumns(): void {
         this.dataSource.filter = filterValue.trim().toLowerCase();
     }
 
+    /** CSV cell quoting for Excel (UTF-8). */
+    private csvCell(v: unknown): string {
+        if (v == null || v === "") {
+            return '""';
+        }
+        const str = String(v);
+        return `"${str.replace(/"/g, '""')}"`;
+    }
+
     /**
-     * Export data to CSV
+     * Export to CSV for Excel:
+     * 1) One row per surgery when surgeryData is loaded (GetSurgeriesDashborad).
+     * 2) Else department income summary when departmentIncomeData exists.
+     * 3) Else one row per GetCountByDept row (aggregate dimensions, not each surgery).
      */
     exportToCSV(): void {
-        let csvContent = "data:text/csv;charset=utf-8,";
+        const bom = "\uFEFF";
+        let body = "";
+        let fileName = "dashboard_export.csv";
+        let snack = "\u2713 \u05d4\u05d3\u05d5\u05d7 \u05d9\u05d5\u05e6\u05d0 \u05d1\u05d4\u05e6\u05dc\u05d7\u05d4";
+
         if (this.surgeryData.length > 0) {
             const list = this.dataSource.data as SurgeryRow[];
-            csvContent += "תאריך,מספר מקרה,חדר ניתוח,זמן ניתוח (דק'),סוג ניתוח,מנתחת,פרוצדורה,סכום כולל\n";
-            list.forEach((s) => {
-                csvContent += `"${s.date ?? ''}","${s.caseNumber ?? ''}","${s.surgeryRoom ?? ''}",${s.surgeryDurationMinutes ?? ''},"${s.surgeryType ?? ''}","${s.surgeon ?? ''}","${s.procedure ?? ''}",${s.totalAmount ?? ''}\n`;
+            body =
+                "\u05ea\u05d0\u05e8\u05d9\u05da,\u05de\u05e1\u05e4\u05e8 \u05de\u05e7\u05e8\u05d4,\u05d7\u05d3\u05e8 \u05e0\u05d9\u05ea\u05d5\u05d7,\u05d6\u05de\u05df \u05e0\u05d9\u05ea\u05d5\u05d7 (\u05d3\u05e7'),\u05e1\u05d5\u05d2 \u05e0\u05d9\u05ea\u05d5\u05d7,\u05de\u05e0\u05ea\u05d7\u05ea,\u05e4\u05e8\u05d5\u05e6\u05d3\u05d5\u05e8\u05d4,\u05e1\u05db\u05d5\u05dd \u05db\u05d5\u05dc\u05dc\n";
+            list.forEach((row) => {
+                body +=
+                    [
+                        this.csvCell(row.date),
+                        this.csvCell(row.caseNumber),
+                        this.csvCell(row.surgeryRoom),
+                        this.csvCell(row.surgeryDurationMinutes),
+                        this.csvCell(row.surgeryType),
+                        this.csvCell(row.surgeon),
+                        this.csvCell(row.procedure),
+                        this.csvCell(row.totalAmount),
+                    ].join(",") + "\n";
             });
-        } else {
+            fileName = "surgeries_report.csv";
+            snack += " (\u05e0\u05d9\u05ea\u05d5\u05d7\u05d9\u05dd \u05e9\u05d5\u05e8\u05d4-\u05e9\u05d5\u05e8\u05d4)";
+        } else if (this.departmentIncomeData.length > 0) {
             const olderYear = this.getOlderYearFromDeptData();
             const latestYear = this.getLatestYearFromDeptData();
-            csvContent += `מחלקה,ערך פעילות ${olderYear},ערך פעילות ${latestYear},שינוי,אחוז שינוי\n`;
+            body = `\u05de\u05d7\u05dc\u05e7\u05d4,\u05e2\u05e8\u05da \u05e4\u05e2\u05d9\u05dc\u05d5\u05ea ${olderYear},\u05e2\u05e8\u05da \u05e4\u05e2\u05d9\u05dc\u05d5\u05ea ${latestYear},\u05e9\u05d9\u05e0\u05d5\u05d9,\u05d0\u05d7\u05d5\u05d6 \u05e9\u05d9\u05e0\u05d5\u05d9\n`;
             this.departmentIncomeData.forEach((item) => {
                 const difference = this.calculateDifference(item);
                 const percentage = this.calculatePercentageChange(item);
-                csvContent += `"${item.DepartmentName}",${item.Income2024},${item.Income2025},${difference},${percentage}\n`;
+                body +=
+                    [
+                        this.csvCell(item.DepartmentName),
+                        this.csvCell(item.Income2024),
+                        this.csvCell(item.Income2025),
+                        this.csvCell(difference),
+                        this.csvCell(percentage),
+                    ].join(",") + "\n";
             });
+            fileName = "surgery_activity_by_department.csv";
+            snack += " (\u05e1\u05d9\u05db\u05d5\u05dd \u05d4\u05db\u05e0\u05e1\u05d5\u05ea)";
+        } else if (this.countByDeptData.length > 0) {
+            body =
+                "\u05e9\u05e0\u05d4,\u05d0\u05ea\u05e8,\u05de\u05d7\u05dc\u05e7\u05d4,Wing,\u05db\u05de\u05d5\u05ea,\u05d4\u05ea\u05d0\u05de\u05d5\u05ea,\u05d0\u05d9-\u05d4\u05ea\u05d0\u05de\u05d5\u05ea,\u05e1\u05d5\u05d2 \u05e0\u05d9\u05ea\u05d5\u05d7 \u05de\u05d0\u05d5\u05d7\u05d3,\u05de\u05e9\u05de\u05e8\u05ea,\u05d7\u05d3\u05e8 \u05e0\u05d9\u05ea\u05d5\u05d7,\u05d7\u05dc\u05e7 \u05e9\u05d1\u05d5\u05e2,\u05e1\u05d5\u05d2 \u05de\u05d9\u05de\u05d5\u05df\n";
+            this.countByDeptData.forEach((r) => {
+                body +=
+                    [
+                        this.csvCell(r.Year),
+                        this.csvCell(r.Site),
+                        this.csvCell(r.Department),
+                        this.csvCell(r.Wing),
+                        this.csvCell(r.Count),
+                        this.csvCell(r.MatchCount),
+                        this.csvCell(r.MismatchCount),
+                        this.csvCell(r.UnifiedSurgeryType),
+                        this.csvCell(r.Shift),
+                        this.csvCell(r.SurgeryRoom),
+                        this.csvCell(r.WeekPart),
+                        this.csvCell(r.FundType),
+                    ].join(",") + "\n";
+            });
+            fileName = "surgery_counts_by_dept_rows.csv";
+            snack += " (\u05e9\u05d5\u05e8\u05d5\u05ea GetCountByDept)";
+        } else {
+            this.snackBar.open("\u05d0\u05d9\u05df \u05e0\u05ea\u05d5\u05e0\u05d9\u05dd \u05dc\u05d9\u05d9\u05e6\u05d5\u05d0", "\u05e1\u05d2\u05d5\u05e8", { duration: 2000 });
+            return;
         }
-        const encodedUri = encodeURI(csvContent);
+
+        const href = "data:text/csv;charset=utf-8," + encodeURIComponent(bom + body);
         const link = document.createElement("a");
-        link.setAttribute("href", encodedUri);
-        link.setAttribute("download", this.surgeryData.length > 0 ? "surgeries_report.csv" : "surgery_activity_by_department.csv");
+        link.setAttribute("href", href);
+        link.setAttribute("download", fileName);
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
-        this.snackBar.open("✓ הדוח יוצא בהצלחה (נתוני ניתוחים)", "סגור", { duration: 2000 });
+        this.snackBar.open(snack, "\u05e1\u05d2\u05d5\u05e8", { duration: 2500 });
     }
-
     /**
      * Dismiss the guide avatar. If "don't show again" is checked, remember for next visits.
      */

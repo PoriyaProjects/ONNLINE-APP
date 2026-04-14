@@ -404,7 +404,8 @@
       <div class="icon-divider"></div>
 
       <button mat-icon-button class="icon-btn ghost" matTooltip="הורדה לאקסל" matTooltipPosition="below"
-        (click)="exportToCSV()" [disabled]="departmentIncomeData.length === 0 && surgeryData.length === 0">
+        (click)="exportToCSV()"
+        [disabled]="departmentIncomeData.length === 0 && surgeryData.length === 0 && countByDeptData.length === 0">
         <mat-icon>download</mat-icon>
       </button>
 
