@@ -469,7 +469,7 @@
                 </mat-button-toggle>
 
                 <mat-button-toggle value="compare-departments"
-                  matTooltip="השוואת ביצועי מחלקות – כמות ניתוחים מול כמות חדרים וזמני חדר"
+                  matTooltip="השוואת ביצועי מחלקה – כמות ניתוחים מול כמות חדרים וזמני חדר"
                   matTooltipPosition="below">
                   <mat-icon aria-hidden="true">compare_arrows</mat-icon>
                   <span>השוואה ביצועי מחלקות</span>
@@ -1137,7 +1137,11 @@
             </div>
             <div class="filter-sidebar-heading__text">
               <span class="filter-sidebar-heading__title">סינון מתקדם</span>
-              <span class="filter-sidebar-heading__hint">מסננים משותפים לגרף ולטבלה</span>
+              <span class="filter-sidebar-heading__hint">{{
+                sidebarFiltersNonApplicableForRoomCharts()
+                  ? 'במצב זה הפילטרים כבויים — החישוב לפי בוקר, אמצע שבוע וחדר ניתוח כללי בלבד.'
+                  : 'מסננים משותפים לגרף ולטבלה'
+              }}</span>
             </div>
             <button type="button" mat-icon-button class="filter-sidebar-inline-close icon-btn ghost"
               (click)="toggleTopDepartmentsSidebar()"
@@ -1150,7 +1154,8 @@
           <div class="wing-and-theme-row filters-row filters-column" dir="rtl">
             <!-- כפתור איפוס סינון -->
             <button mat-stroked-button class="reset-filters-btn reset-filters-btn--in-sidebar" (click)="resetSurgeryFilters()"
-              matTooltip="איפוס כל הפילטרים"
+              [disabled]="sidebarFiltersNonApplicableForRoomCharts()"
+              [matTooltip]="sidebarFiltersNonApplicableForRoomCharts() ? 'אין פילטרי סיידבר פעילים במצב זה' : 'איפוס כל הפילטרים'"
               matTooltipPosition="below">
               <mat-icon>restart_alt</mat-icon>
               <span>איפוס סינון</span>
@@ -1274,14 +1279,9 @@
               </div>
             </div>
 
-            <!-- מצבים שבהם רק סינון אתר זמין מהסיידבר -->
-            <div class="filters-disabled-hint"
-              *ngIf="mainMetricMode === 'room-times' && (roomTimesView === 'perDay' || roomTimesView === 'approvedPerDay')">
-              במצב תצוגה זה ניתן לסנן לפי אתר בלבד.
-            </div>
-            <!-- במצב ניצולת חדר מוצגים רק פילטרים רלוונטיים (אתר); רמז קצר -->
-            <div class="filters-disabled-hint" *ngIf="isRoomUtilizationMode()">
-              במצב ניצולת חדר ניתן לסנן לפי אתר בלבד.
+            <div class="filters-disabled-hint" *ngIf="sidebarFiltersNonApplicableForRoomCharts()" role="note">
+              פילטרי הסיידבר אינם רלוונטיים לגרפי «זמני חדר» ו«ניצולת חדר»: כל המדדים מחושבים בשרת עבור משמרת בוקר,
+              ימי אמצע שבוע וחדר ניתוח כללי בלבד, ולא ניתן לצמצם או לשנות את ההיקף דרך הסיידבר.
             </div>
 
             <div class="wing-and-theme-row filters-row filters-column" dir="rtl" *ngIf="showMoreFilters">
@@ -2073,7 +2073,7 @@
         </mat-menu>
         <div class="kpi-header-titles">
           <div class="kpi-header-title-with-help">
-            <h2>השוואת מחלקות – ניתוחים ליום בחדר</h2>
+            <h2>השוואת מחלקה – ניתוחים ליום בחדר</h2>
             <button type="button" class="chart-mode-heading__help-btn" mat-icon-button
               [matMenuTriggerFor]="compareDeptModalHelpMenu" matTooltip="מה הגרף מציג ואיך מחושב?"
               matTooltipPosition="below" aria-label="הסבר על הגרף">
@@ -2506,10 +2506,10 @@
               <mat-icon>hourglass_bottom</mat-icon>
               <span>SETUP ממוצע</span>
             </mat-button-toggle>
-            <mat-button-toggle value="perDay">
+            <!-- <mat-button-toggle value="perDay">
               <mat-icon>calendar_view_day</mat-icon>
               <span>ניתוחים ליום</span>
-            </mat-button-toggle>
+            </mat-button-toggle> -->
             <mat-button-toggle value="lossPerDay">
               <mat-icon>timer_off</mat-icon>
               <span>זמן אבוד ליום</span>
