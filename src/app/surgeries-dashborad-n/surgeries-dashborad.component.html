@@ -2058,6 +2058,19 @@
               [width]="'100%'"
               [height]="'100%'">
             </google-chart>
+            <div class="compare-dept-color-legend" *ngIf="compareDepartmentsColorLegend.length"
+              aria-label="מקרא צבעי הגרף">
+              <div class="compare-dept-color-legend-title">מקרא צבעים</div>
+              <ul class="compare-dept-color-legend-list">
+                <li class="compare-dept-color-legend-item" *ngFor="let leg of compareDepartmentsColorLegend">
+                  <span class="compare-dept-color-swatch" [style.background-color]="leg.color" aria-hidden="true"></span>
+                  <span class="compare-dept-color-text">
+                    <span class="compare-dept-color-label">{{ leg.label }}</span>
+                    <span class="compare-dept-color-axis">({{ leg.axisHint }})</span>
+                  </span>
+                </li>
+              </ul>
+            </div>
           </div>
         </div>
   </ng-template>

@@ -1107,6 +1107,8 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
   compareDepartmentsLineChartColumns: any[] = [];
   compareDepartmentsLineChartData: any[] = [];
   compareDepartmentsLineChartOptions: any = {};
+  /** מקרא צבעים מתחת לגרף השוואת מחלקות (תואם ל-options.colors) */
+  compareDepartmentsColorLegend: { label: string; color: string; axisHint: string }[] = [];
   /** טקסט מסכמים לפי שני השנים האחרונות בגרף השוואת מחלקות */
   compareDepartmentsGraphInsightBlock: {
     mode: "twoYears" | "singleYear";
@@ -6230,6 +6232,7 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
     if (!dep) {
       this.compareDepartmentsLineChartColumns = [];
       this.compareDepartmentsLineChartData = [];
+      this.compareDepartmentsColorLegend = [];
       this.compareDepartmentsGraphInsightBlock = null;
       this.compareDepartmentsAwaitingMetricSelection = false;
       return;
@@ -6339,6 +6342,7 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
     if (!years.length) {
       this.compareDepartmentsLineChartColumns = [];
       this.compareDepartmentsLineChartData = [];
+      this.compareDepartmentsColorLegend = [];
       this.compareDepartmentsGraphInsightBlock = null;
       this.compareDepartmentsAwaitingMetricSelection = false;
       return;
@@ -6357,6 +6361,7 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
     if (!hasAnyCompareSeries) {
       this.compareDepartmentsLineChartColumns = [];
       this.compareDepartmentsLineChartData = [];
+      this.compareDepartmentsColorLegend = [];
       this.compareDepartmentsGraphInsightBlock = null;
       this.compareDepartmentsAwaitingMetricSelection = true;
       return;
@@ -6444,6 +6449,17 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
     });
 
     const seriesColors = this.buildCompareDepartmentsSeriesColors(selectedTypesList);
+
+    const colorLegend: { label: string; color: string; axisHint: string }[] = [];
+    for (let si = 0; si < seriesMeta.length; si++) {
+      const col = columns[si + 1] as { label?: string } | string | undefined;
+      const label =
+        col != null && typeof col === "object" && "label" in col ? String(col.label || "") : "";
+      const color = seriesColors[si] || "#64748b";
+      const axisHint = seriesMeta[si].axis === 1 ? "ציר דקות" : "ציר כמויות";
+      colorLegend.push({ label, color, axisHint });
+    }
+    this.compareDepartmentsColorLegend = colorLegend;
 
     this.compareDepartmentsLineChartOptions = {
       title: "",
