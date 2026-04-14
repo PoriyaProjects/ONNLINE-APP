@@ -904,6 +904,10 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
         }
     }
 
+    /**
+     * מחלץ Wing × שנים מגרף עמודות (עמודת קטגוריה + זוגות ערך/אנוטציה, ואופציונלית עמודת tooltip אחרי כל זוג).
+     * לפני התיקון היה מניח רק [מספר, אנוטציה] ברצף; אחרי patchGoogleChartHtmlTooltips נשבר אחרי שנה אחת.
+     */
     private parseWingMultiYearGridFromChart(
         columns: any[],
         data: any[][],
@@ -917,35 +921,36 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
             pct?: string;
         }[];
     } | null {
-        if (!columns?.length || !data?.length || columns.length < 3) {
+        if (!columns?.length || !data?.length || columns.length < 2) {
             return null;
         }
-        const years: number[] = [];
-        for (let i = 1; i < columns.length - 1; i += 2) {
-            const numCol = columns[i];
-            if (!numCol || numCol.type !== "number") {
-                break;
+        const yearCols: { year: number; colIndex: number }[] = [];
+        for (let i = 1; i < columns.length; i++) {
+            const c = columns[i] as any;
+            if (!c || typeof c !== "object" || c.type !== "number" || c.role) {
+                continue;
             }
-            const y = parseInt(String(numCol.label ?? ""), 10);
+            const y = parseInt(String(c.label ?? ""), 10);
             if (!Number.isFinite(y) || y < 1900 || y > 2100) {
-                break;
+                continue;
             }
-            years.push(y);
+            yearCols.push({ year: y, colIndex: i });
         }
-        if (!years.length) {
+        if (!yearCols.length) {
             return null;
         }
+        const years = yearCols.map((x) => x.year);
         const rows = data.map((row) => {
             const label = String(row[0] ?? "");
             const perYear: { [year: number]: number } = {};
             let total = 0;
-            years.forEach((y, yi) => {
-                const cell = row[1 + yi * 2];
+            for (const { year, colIndex } of yearCols) {
+                const cell = row[colIndex];
                 const mag = this.tooltipNumericMagnitude(cell);
                 const num = mag != null && Number.isFinite(mag) ? mag : 0;
-                perYear[y] = num;
+                perYear[year] = num;
                 total += num;
-            });
+            }
             const { diff, pct } = this.computeDiffAndPct(perYear, years);
             return { label, total, perYear, diff, pct };
         });
@@ -8371,10 +8376,10 @@ roomTimesModalChartOptions(base: any): any {
     ...base,
     chartArea: {
       ...prev,
-      left: 52,
-      top: 52,
-      width: "86%",
-      height: "56%",
+      left: 48,
+      top: 44,
+      width: "92%",
+      height: "72%",
     },
   };
 
