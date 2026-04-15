@@ -8,7 +8,7 @@ import { MatTableDataSource } from '@angular/material/table';
 import { NavigationEnd, Router } from '@angular/router';
 import { Chart } from 'chart.js';
 import { Subscription } from 'rxjs';
-import { filter, finalize } from 'rxjs/operators';
+import { filter } from 'rxjs/operators';
 import { environment } from "src/environments/environment";
 import { MenuPerm } from "../menu-perm";
 
@@ -2028,9 +2028,6 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
   private lastAvgFirstMorningEntryParams: string | null = null;
   private lastAvgLastMorningEndParams: string | null = null;
   private lastAvgSetupParams: string | null = null;
-  /** מונע POST כפול ל-GetSurgeriesDashborad (לעיתים גורם 500 ב-ASMX תחת עומס) */
-  private surgeriesDashboradPostInFlight = false;
-
     constructor(
         private http: HttpClient,
         private snackBar: MatSnackBar,
@@ -2516,8 +2513,9 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
     }
 
     /**
-     * Load department income comparison data / נתוני ניתוחים
-     * קורא לשרת רק אם עדיין אין נתונים (מניעת טעינה כפולה), אלא אם נדרש רענון מלא.
+     * Legacy hook: previously POSTed GetSurgeriesDashborad (surgery rows or department income).
+     * That ASMX method is unused; charts/table rely on GetCountByDept and other endpoints.
+     * Call sites unchanged — no HTTP; clears cached rows on forceRefresh.
      */
     loadDepartmentIncomeData(
         forceRefresh = false,
@@ -2537,96 +2535,23 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
             this.cdr.detectChanges();
             return;
         }
-        // טעינה ראשונה: אפשר להשאיר את ה־dashboard גלוי (גרפים מ־CountByDept וכו׳) בזמן ה־POST — בלי isDataLoaded=false של חוסם הכול
+        if (forceRefresh) {
+            this.surgeryData = [];
+            this.departmentIncomeData = [];
+        }
         if (!forceRefresh && !keepDv) {
             this.isDataLoaded = false;
             this.isLoading = true;
         }
         this.isMainDataLoading = true;
 
-        if (this.surgeriesDashboradPostInFlight) {
-            this.isMainDataLoading = false;
-            if (!forceRefresh && !keepDv) {
-                this.isLoading = false;
-            }
-            this.cdr.detectChanges();
-            return;
-        }
-        this.surgeriesDashboradPostInFlight = true;
-
-        this.http
-            .post(environment.url + "GetSurgeriesDashborad", {})
-            .pipe(
-                finalize(() => {
-                    this.surgeriesDashboradPostInFlight = false;
-                })
-            )
-            .subscribe(
-                (response: any) => {
-                    if (response && response.d) {
-                        const raw = response.d;
-                        const isSurgeryRows = Array.isArray(raw) && raw.length > 0 && this.isSurgeryRow(raw[0]);
-
-                        if (isSurgeryRows) {
-                            this.surgeryData = raw.map((r: any) => this.normalizeSurgeryRow(r));
-                            if (!this.selectedDiagnosis || this.selectedDiagnosis === 'אגף כירורגי') this.selectedDiagnosis = 'כל האתרים';
-                            this.computeFilterOptions();
-                            this.dataSource.data = this.applySurgeryFilter(this.surgeryData);
-                            this.diagnosesList = this.getUniqueSites();
-                            this.calculateTopDepartmentsFromSurgeries();
-                            this.chartColumns = ["חדר ניתוח", "מספר ניתוחים", { type: "string", role: "annotation" }];
-                            this.chartOptions.title = "";
-                            this.updateChartTheme();
-                            this.updateChartData();
-                        } else {
-                            this.departmentIncomeData = raw;
-                            this.displayedColumns = ['DepartmentName', 'Income2024', 'Income2025', 'Difference'];
-                            this.departmentIncomeData.sort((a, b) => b.Income2025 - a.Income2025);
-                            this.dataSource.data = this.departmentIncomeData;
-                            this.calculateTopDepartments();
-                            this.updateChartColumns();
-                            this.updateChartTheme();
-                            this.updateChartData();
-                            this.loadYearlyTotalsForChart();
-                        }
-                        this.isDataLoaded = true;
-                        this.isMainDataLoading = false;
-                        this.isLoading = false;
-                        this.cdr.detectChanges();
-                        this.snackBar.open(
-                            forceRefresh ? "✓ הנתונים עודכנו מהשרת" : "✓ נתונים נטענו בהצלחה",
-                            "סגור",
-                            { duration: 3000 }
-                        );
-                    } else {
-                        this.isMainDataLoading = false;
-                        this.isLoading = false;
-                        if (!forceRefresh && !keepDv) {
-                            this.isDataLoaded = false;
-                        } else if (keepDv) {
-                            this.isDataLoaded = true;
-                        }
-                        this.cdr.detectChanges();
-                    }
-                },
-                (error) => {
-                    const status = error?.status != null ? ` (${error.status})` : "";
-                    console.error("Error loading surgeries dashboard data:", error);
-                    this.isMainDataLoading = false;
-                    this.isLoading = false;
-                    if (!forceRefresh && !keepDv) {
-                        this.isDataLoaded = false;
-                    } else if (keepDv) {
-                        this.isDataLoaded = true;
-                    }
-                    this.cdr.detectChanges();
-                    this.snackBar.open(
-                        `❌ שגיאה בטעינת הנתונים מהשרת${status}`,
-                        "סגור",
-                        { duration: 5000 }
-                    );
-                }
-            );
+        this.isMainDataLoading = false;
+        this.isLoading = false;
+        this.isDataLoaded = true;
+        this.dataSource.data = [];
+        this.computeFilterOptions();
+        this.updateChartData();
+        this.cdr.detectChanges();
     }
 
     /**
@@ -2671,13 +2596,20 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
 
     /**
      * Load 5‑year aggregated counts by month from new API GetMonthlyCounts.
-     * שולח את פרמטר department (מהדרופדאון "מחלקה" או מהסיידבר) – השרת מסנן לפי מחלקה.
-     * קורא לשרת רק אם עדיין אין נתונים או שפרמטרי הפילטר השתנו.
+     * ללא פרמטרי סינון מהסיידבר — תצוגת חודשים מציגה היקף מלא; פילטרי הסיידבר מושבתים ב-UI.
+     * קורא לשרת רק אם אין עדיין נתונים במטמון לשנת הבסיס הנוכחית.
      */
     private loadMonthlyCounts(): void {
         const baseYear = this.currentYear;
-        const kpiParams = this.buildKpiFilterParams();
-        const paramsKey = `${baseYear}|${kpiParams.surgeryType}|${kpiParams.shift}|${kpiParams.site}|${kpiParams.weekend}|${kpiParams.department}`;
+        // תצוגת חודשים: ללא פרמטרי סינון — הגרף מציג היקף מלא; פילטרי הסיידבר אינם רלוונטיים.
+        const kpiParams = {
+            surgeryType: "",
+            shift: "",
+            site: "",
+            weekend: "",
+            department: "",
+        };
+        const paramsKey = `${baseYear}|month-full`;
         if (this.monthlyCountsData.length > 0 && this.lastMonthlyCountsParams === paramsKey) {
             this.updateChartData();
             return;
@@ -2954,8 +2886,8 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
             return;
         }
         /**
-         * בכניסה ראשונה יש תמיד selectedDiagnosis (ברירת מחדל) — ללא מאגר ניתוחים בזיכרון חייבים
-         * לטעון מ-GetSurgeriesDashborad; אחרת רענון ופעולות אחרות ינסו POST על מאגר «ריק» ויקבלו שגיאות.
+         * בכניסה ראשונה: אם אין נתוני הכנסה/ניתוחים בזיכרון — `loadDepartmentIncomeData` רק מסנכרן מצב מקומי
+         * (אין POST ל-ASMX); הגרפים והאגרגציה מגיעים מ-GetCountByDept ושאר ה-APIs.
          */
         if (this.departmentIncomeData.length > 0) {
             this.dataSource.data = this.departmentIncomeData;
@@ -4950,6 +4882,12 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
      * (סוג ניתוח / משמרת / חדר / מחלקה / יום)
      */
     hasActiveSurgeryFilters(): boolean {
+        if (this.mainMetricMode === "compare-departments") {
+            return false;
+        }
+        if (this.isSurgeryVolumeMonthlyChartView()) {
+            return false;
+        }
         return (
             (this.selectedDiagnosis &&
                 this.selectedDiagnosis !== "כל האתרים" &&
@@ -5001,8 +4939,8 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
         const hasMainDataset =
             this.surgeryData.length > 0 || this.departmentIncomeData.length > 0;
         /**
-         * קריאה חוזרת ל-GetSurgeriesDashborad במקביל לעומס שאר ה-APIs עלולה להחזיר 500 ב-ASMX.
-         * כשכבר יש רשומות בזיכרון — מרעננים רק מדדים נלווים ומסנכרנים טבלה/גרף מהמאגר הקיים.
+         * `loadDepartmentIncomeData` לא קורא לשרת; אם יש מאגר ניתוחים/הכנסה בזיכרון — נשארים עליו,
+         * אחרת מנקים ומסנכרנים לטבלה ריקה. שאר הרענון — GetCountByDept ו-APIs נלווים.
          */
         if (hasMainDataset) {
             this.loadDepartmentIncomeData(false);
@@ -5261,6 +5199,7 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
         }
         this.chartViewMode = mode;
         this.isShiftGroupedView = mode === "shift";
+        this.syncSidebarFilterDropdownOpenState();
 
         // מדד משולב = גרף אופקי (BarChart); שאר המצבים = ColumnChart
         if (mode === "yoy-combined") {
@@ -5779,8 +5718,8 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
     getChartViewFilterParametersLine(): string {
         if (this.mainMetricMode === "compare-departments") {
             return (
-                "בחירת מחלקה ומדדים לגרף; מדדי חדרים וניתוחים ליום מבוססים על ימים «מלאים». " +
-                this.getSiteChartContextLine()
+                "בחירת מחלקה ומדדים בפאנל הגרף בלבד. פילטרי הסיידבר אינם משפיעים על גרף ההשוואה — אגרגציה מלאה לפי מחלקה; " +
+                "מדדי חדרים וניתוחים ליום מבוססים על ימים «מלאים»."
             );
         }
         if (this.mainMetricMode === "revenue") {
@@ -5801,6 +5740,9 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
 
         if (this.chartViewMode === "yoy-combined") {
             return "המדד המשולב נטען מהשרת ללא פרמטרי הסיידבר; הצגה לפי מחלקה.";
+        }
+        if (this.chartViewMode === "month") {
+            return "ניתוחים לפי חודשים: נטען מהשרת ללא סינון מתקדם מהסיידבר (היקף מלא).";
         }
 
         const parts: string[] = [
@@ -5881,6 +5823,20 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
         return this.mainMetricMode === "room-utilization" || this.mainMetricMode === "room-times";
     }
 
+    /** מדדי ניתוחים — תצוגת «ניתוחים לפי חודשים»: פילטרי הסיידבר אינם משפיעים על הגרף */
+    isSurgeryVolumeMonthlyChartView(): boolean {
+        return this.mainMetricMode === "surgery-volume" && this.chartViewMode === "month";
+    }
+
+    /** פילטרי הסיידבר מושבתים ב-UI (זמני/ניצולת חדר, גרף חודשים, או השוואת מחלקות — שם הגרף לא מסונן מהסיידבר) */
+    sidebarAdvancedFiltersDisabledForCurrentChart(): boolean {
+        return (
+            this.sidebarFiltersNonApplicableForRoomCharts() ||
+            this.isSurgeryVolumeMonthlyChartView() ||
+            this.mainMetricMode === "compare-departments"
+        );
+    }
+
     /** ערך הטוגל העליון (מתאים ל־mat-button-toggle-group) */
     mainMetricToggleGroupValue(): string {
         switch (this.mainMetricMode) {
@@ -5919,6 +5875,7 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
     } else if (value === "compare-departments") {
       this.enterCompareDepartmentsPanel();
     }
+    this.syncSidebarFilterDropdownOpenState();
   }
 
   /** מסך השוואת מחלקות פעיל — בתוך הפאנל הראשי או במודאל מוגדל */
@@ -7341,7 +7298,7 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
     setChartDepartmentFilter(dept: string | null): void {
         this.chartDepartmentFilter = dept;
         this.closeSidebarFilterDropdowns();
-        // במצב "ניתוחים לפי חודשים" הנתונים מגיעים מה-API – צריך לטעון מחדש עם פרמטר department
+        // במצב חודשים הגרף נטען מה-API ללא פרמטרי סינון; קריאה לרענון נשארת לעקביות
         if (this.chartViewMode === "month") {
             this.loadMonthlyCounts();
         } else {
@@ -7681,37 +7638,139 @@ updateChartColumns(): void {
         this.dataSource.filter = filterValue.trim().toLowerCase();
     }
 
+    /** CSV cell quoting for Excel (UTF-8). */
+    private csvCell(v: unknown): string {
+        if (v == null || v === "") {
+            return '""';
+        }
+        const str = String(v);
+        return `"${str.replace(/"/g, '""')}"`;
+    }
+
     /**
-     * Export data to CSV
+     * Export to CSV for Excel:
+     * 1) One row per surgery when surgeryData is populated (legacy / future source).
+     * 2) Else department income summary when departmentIncomeData exists.
+     * 3) Else one row per GetCountByDept row (aggregate dimensions, not each surgery).
      */
     exportToCSV(): void {
-        let csvContent = "data:text/csv;charset=utf-8,";
+        const bom = "\uFEFF";
+        let body = "";
+        let fileName = "dashboard_export.csv";
+        let snack = "✓ הדוח יוצא בהצלחה";
+
         if (this.surgeryData.length > 0) {
             const list = this.dataSource.data as SurgeryRow[];
-            csvContent += "תאריך,מספר מקרה,חדר ניתוח,זמן ניתוח (דק'),סוג ניתוח,מנתחת,פרוצדורה,סכום כולל\n";
-            list.forEach((s) => {
-                csvContent += `"${s.date ?? ''}","${s.caseNumber ?? ''}","${s.surgeryRoom ?? ''}",${s.surgeryDurationMinutes ?? ''},"${s.surgeryType ?? ''}","${s.surgeon ?? ''}","${s.procedure ?? ''}",${s.totalAmount ?? ''}\n`;
+            body =
+                [
+                    this.csvCell("תאריך הניתוח"),
+                    this.csvCell("מספר מקרה"),
+                    this.csvCell("חדר ניתוח"),
+                    this.csvCell("משך הניתוח בדקות"),
+                    this.csvCell("סוג ניתוח"),
+                    this.csvCell("מנתח"),
+                    this.csvCell("פרוצדורה / תיאור"),
+                    this.csvCell("סכום כולל (אם קיים בנתונים)"),
+                ].join(",") + "\n";
+            list.forEach((row) => {
+                body +=
+                    [
+                        this.csvCell(row.date),
+                        this.csvCell(row.caseNumber),
+                        this.csvCell(row.surgeryRoom),
+                        this.csvCell(row.surgeryDurationMinutes),
+                        this.csvCell(row.surgeryType),
+                        this.csvCell(row.surgeon),
+                        this.csvCell(row.procedure),
+                        this.csvCell(row.totalAmount),
+                    ].join(",") + "\n";
             });
-        } else {
+            fileName = "surgeries_report.csv";
+            snack += " (ניתוחים שורה-שורה)";
+        } else if (this.departmentIncomeData.length > 0) {
             const olderYear = this.getOlderYearFromDeptData();
             const latestYear = this.getLatestYearFromDeptData();
-            csvContent += `מחלקה,ערך פעילות ${olderYear},ערך פעילות ${latestYear},שינוי,אחוז שינוי\n`;
+            body =
+                [
+                    this.csvCell("שם מחלקה"),
+                    this.csvCell(`סך פעילות / הכנסה בשנת ${olderYear}`),
+                    this.csvCell(`סך פעילות / הכנסה בשנת ${latestYear}`),
+                    this.csvCell(`הפרש בין ${latestYear} ל-${olderYear} (מספר)`),
+                    this.csvCell(`אחוז שינוי בין השנים (%)`),
+                ].join(",") + "\n";
             this.departmentIncomeData.forEach((item) => {
                 const difference = this.calculateDifference(item);
                 const percentage = this.calculatePercentageChange(item);
-                csvContent += `"${item.DepartmentName}",${item.Income2024},${item.Income2025},${difference},${percentage}\n`;
+                body +=
+                    [
+                        this.csvCell(item.DepartmentName),
+                        this.csvCell(item.Income2024),
+                        this.csvCell(item.Income2025),
+                        this.csvCell(difference),
+                        this.csvCell(percentage),
+                    ].join(",") + "\n";
             });
+            fileName = "surgery_activity_by_department.csv";
+            snack += " (סיכום הכנסות)";
+        } else if (this.countByDeptData.length > 0) {
+            body =
+                [
+                    this.csvCell(
+                        "שנה (לפי תאריך הניתוח בטבלת המקור)",
+                    ),
+                    this.csvCell("אתר"),
+                    this.csvCell(
+                        'מחלקה (שדה "מנתחת" במקור)',
+                    ),
+                    this.csvCell(
+                        'אגף מאוגד (שדה "מנתחת מאוגד")',
+                    ),
+                    this.csvCell(
+                        "מספר ניתוחים בקבוצה (ספירה באגרגציה)",
+                    ),
+                    this.csvCell(
+                        'סוג ניתוח מאוחד (שדה "סוג ניתוח ")',
+                    ),
+                    this.csvCell("משמרת"),
+                    this.csvCell("חדר ניתוח"),
+                    this.csvCell(
+                        'אמצע/סוף שבוע (שדה "אמצע/סוף שבוע")',
+                    ),
+                    this.csvCell(
+                        "\u05e7\u05e8\u05df / \u05d1\u05d9\u05d4\u0022\u05d7 (\u05e9\u05d3\u05d4 \u05e7\u05e8\u05df/\u05d1\u05d9\u05d4\u0022\u05d7 \u05d1\u05de\u05e1\u05d3 \u05d4\u05e0\u05ea\u05d5\u05e0\u05d9\u05dd)",
+                    ),
+                ].join(",") + "\n";
+            this.countByDeptData.forEach((r) => {
+                body +=
+                    [
+                        this.csvCell(r.Year),
+                        this.csvCell(r.Site),
+                        this.csvCell(r.Department),
+                        this.csvCell(r.Wing),
+                        this.csvCell(r.Count),
+                        this.csvCell(r.UnifiedSurgeryType),
+                        this.csvCell(r.Shift),
+                        this.csvCell(r.SurgeryRoom),
+                        this.csvCell(r.WeekPart),
+                        this.csvCell(r.FundType),
+                    ].join(",") + "\n";
+            });
+            fileName = "surgery_counts_by_dept_rows.csv";
+            snack += " (שורות GetCountByDept)";
+        } else {
+            this.snackBar.open("אין נתונים לייצוא", "סגור", { duration: 2000 });
+            return;
         }
-        const encodedUri = encodeURI(csvContent);
+
+        const href = "data:text/csv;charset=utf-8," + encodeURIComponent(bom + body);
         const link = document.createElement("a");
-        link.setAttribute("href", encodedUri);
-        link.setAttribute("download", this.surgeryData.length > 0 ? "surgeries_report.csv" : "surgery_activity_by_department.csv");
+        link.setAttribute("href", href);
+        link.setAttribute("download", fileName);
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
-        this.snackBar.open("✓ הדוח יוצא בהצלחה (נתוני ניתוחים)", "סגור", { duration: 2000 });
+        this.snackBar.open(snack, "סגור", { duration: 2500 });
     }
-
     /**
      * Dismiss the guide avatar. If "don't show again" is checked, remember for next visits.
      */
@@ -7978,7 +8037,7 @@ updateChartColumns(): void {
         }
 
         // הגרף הראשי תמיד מתעדכן לפי הפילטרים (גם כשאין surgeryData ויש רק CountByDept)
-        // במצב "ניתוחים לפי חודשים" – טוען מחדש מה-API עם סוג ניתוח, משמרת, יום (אמצע שבוע/סופ״ש), אתר, מחלקה
+        // במצב "ניתוחים לפי חודשים" – רענון מה-API ללא פרמטרי סינון (היקף מלא)
         if (this.chartViewMode === "month") {
             this.loadMonthlyCounts();
         } else if (this.chartViewMode === "yoy-combined") {
@@ -8036,6 +8095,12 @@ updateChartColumns(): void {
     getActiveFiltersSummary(): string {
         if (this.sidebarFiltersNonApplicableForRoomCharts()) {
             return "פילטרי הסיידבר אינם רלוונטיים — הנתונים לפי בוקר, אמצע שבוע וחדר ניתוח כללי.";
+        }
+        if (this.isSurgeryVolumeMonthlyChartView()) {
+            return "בתצוגת ניתוחים לפי חודשים אין שימוש בפילטרי הסיידבר; הגרף מציג היקף מלא.";
+        }
+        if (this.mainMetricMode === "compare-departments") {
+            return "במצב השוואת מחלקות פילטרי הסיידבר אינם משפיעים על גרף ההשוואה; בוחרים מחלקה ומדדים בפאנל הגרף.";
         }
         const parts: string[] = [];
 
@@ -8428,11 +8493,7 @@ closeRoomTimesModal(): void {
   this.showTimesModal = false;
 }
 
-setRoomTimesView(view: 'avgDuration' | 'firstStart' | 'lastEnd' | 'avgSetup' | 'perDay' | 'lossPerDay' | 'approvedPerDay'): void {
-  this.roomTimesView = view;
-
-  // If a filter becomes irrelevant for the selected room-times view,
-  // close its dropdown immediately to prevent "open but disabled" UI states.
+private syncSidebarFilterDropdownOpenState(): void {
   if (this.isFilterDisabled("chartDepartment")) this.isChartDeptDropdownOpen = false;
   if (this.isFilterDisabled("surgeryType")) this.isSurgeryTypeOpen = false;
   if (this.isFilterDisabled("shift")) this.isShiftOpen = false;
@@ -8440,6 +8501,12 @@ setRoomTimesView(view: 'avgDuration' | 'firstStart' | 'lastEnd' | 'avgSetup' | '
   if (this.isFilterDisabled("morningWork")) this.isMorningWorkOpen = false;
   if (this.isFilterDisabled("site")) this.isSiteOpen = false;
   if (this.isFilterDisabled("room")) this.isRoomOpen = false;
+}
+
+setRoomTimesView(view: 'avgDuration' | 'firstStart' | 'lastEnd' | 'avgSetup' | 'perDay' | 'lossPerDay' | 'approvedPerDay'): void {
+  this.roomTimesView = view;
+
+  this.syncSidebarFilterDropdownOpenState();
 
   switch (view) {
     case 'avgDuration':
@@ -9550,7 +9617,7 @@ isFilterDisabled(
     | "site"
     | "room"
 ): boolean {
-  if (this.sidebarFiltersNonApplicableForRoomCharts()) {
+  if (this.sidebarAdvancedFiltersDisabledForCurrentChart()) {
     return true;
   }
 
