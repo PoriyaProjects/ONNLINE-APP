@@ -53,6 +53,7 @@ export class CommercialSupportResearchDialogComponent implements OnInit {
     let budgetProposalFile = toSingle(data?.BudgetProposal) ?? null;
     let economicAppendixFile = toSingle(data?.EconomicAppendix) ?? null;
     let form6File = toSingle(data?.Form6) ?? null;
+    let paymentsExcelFile = toSingle(data?.PaymentsExcel) ?? null;
 
     if (data?.ResearchFiles && Array.isArray(data.ResearchFiles)) {
       data.ResearchFiles.forEach((file: any) => {
@@ -65,6 +66,9 @@ export class CommercialSupportResearchDialogComponent implements OnInit {
             break;
           case 'Form6':
             form6File = file;
+            break;
+          case 'PaymentsExcel':
+            paymentsExcelFile = file;
             break;
         }
       });
@@ -81,6 +85,7 @@ export class CommercialSupportResearchDialogComponent implements OnInit {
       BudgetProposal: new FormControl(budgetProposalFile, Validators.required),
       EconomicAppendix: new FormControl(economicAppendixFile, null),
       Form6: new FormControl(form6File, null),
+      PaymentsExcel: new FormControl(paymentsExcelFile, null),
       Approved: new FormControl(data?.Approved, null),
       DecisionDate: new FormControl(data?.DecisionDate, null),
       Note: new FormControl(data?.Note, null)
@@ -131,7 +136,7 @@ export class CommercialSupportResearchDialogComponent implements OnInit {
     formData.set('DecisionDate', decisionDate || '');
     formData.set('Draft', type.toString());
 
-    const fileFields = ['BudgetProposal', 'EconomicAppendix', 'Form6'];
+    const fileFields = ['BudgetProposal', 'EconomicAppendix', 'Form6', 'PaymentsExcel'];
     const excludeKeys = ['DecisionDate', ...fileFields];
 
     Object.keys(raw).forEach(key => {

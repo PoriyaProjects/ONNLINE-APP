@@ -1,4 +1,5 @@
 <div dir="rtl" class="hearing-survey-root">
+ 
   <form class="survey-form" (ngSubmit)="runSurvey()">
     <mat-form-field appearance="fill">
       <mat-label>תאריך התחלה</mat-label>
@@ -20,6 +21,37 @@
     <mat-icon color="warn">error</mat-icon>
     <span>{{ error }}</span>
   </div>
+
+  <div *ngIf="detailsError" class="error-area details-warning">
+    <mat-icon color="warn">warning</mat-icon>
+    <span>{{ detailsError }}</span>
+  </div>
+
+  <section *ngIf="details && details.columnOrder && details.columnOrder.length" class="details-dashboard" aria-label="ספירות לפי סוג">
+    <h3 class="details-dashboard-title">פירוט מקרים לפי סוג (לחץ על תא לרשימת מספרי תיק)</h3>
+    <div class="details-dashboard-scroll">
+      <table class="details-counts-table">
+        <thead>
+          <tr>
+            <th *ngFor="let col of details.columnOrder" class="letter-head">{{ col }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td *ngFor="let col of details.columnOrder"
+                class="count-cell"
+                (click)="openTypeDetails(col)"
+                (keyup.enter)="openTypeDetails(col)"
+                [attr.tabindex]="0"
+                [attr.role]="'button'"
+                [attr.aria-label]="'סוג ' + col + ', ' + countForType(col) + ' מקרים'">
+              {{ countForType(col) }}
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
 
   <table *ngIf="counts" class="counts-table" dir="rtl">
     <thead>

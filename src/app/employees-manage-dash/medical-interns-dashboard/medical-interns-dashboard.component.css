@@ -180,7 +180,84 @@
   margin-bottom: 14px;
 }
 
+/* Modern segmented control for view switching */
+.view-segmented-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 4px;
+  background: #f1f5f9;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+.segment-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+  background: transparent;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.segment-btn:hover {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.7);
+}
+
+.segment-btn.active {
+  color: var(--primary);
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
+}
+
+.segment-icon {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+  opacity: 0.9;
+}
+
+.segment-btn.active .segment-icon {
+  color: var(--primary);
+}
+
+@media (max-width: 900px) {
+  .view-segmented-control {
+    flex-wrap: wrap;
+  }
+  .segment-btn .segment-label {
+    display: none;
+  }
+  .segment-btn {
+    padding: 10px 12px;
+  }
+}
+
 .filter-field { flex: 1; max-width: 360px; }
+.filter-field-wrapper { display: flex; flex: 1; max-width: 360px; }
+
+.departments-year-nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  padding: 8px 0;
+}
+.departments-year-nav .year-display {
+  font-weight: 600;
+  font-size: 16px;
+  min-width: 60px;
+  text-align: center;
+}
 
 .toolbar-actions {
   display: flex;
@@ -240,6 +317,13 @@
 .interns-table .table-row:nth-child(even) { background-color: #fcfcfd; }
 .interns-table .table-row:nth-child(odd) { background-color: #ffffff; }
 
+.departments-table .table-row {
+  cursor: default;
+}
+.departments-table .table-row:hover {
+  background-color: #fcfcfd !important;
+}
+
 .cell-center { text-align: center; justify-content: center; }
 
 .avatar-img {
@@ -279,6 +363,11 @@
   background: transparent;
 }
 
+.server-data-table-scroll {
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
 /* Empty state */
 .empty-state {
   padding: 40px 16px;
@@ -307,6 +396,51 @@
   font-size: 13px;
   color: var(--muted);
   margin-bottom: 14px;
+}
+
+/* Departments visibility panel */
+.departments-visibility-panel {
+  max-width: 500px;
+  background-color: #f1f2f6;
+  text-align: right;
+}
+
+.departments-filter-field {
+  width: 100%;
+  margin-bottom: 8px;
+}
+
+.departments-selection-list {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.department-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  gap: 16px;
+}
+
+.department-row:last-child {
+  border-bottom: none;
+}
+
+.department-name {
+  flex: 1;
+  min-width: 0;
+}
+
+.department-checkboxes {
+  display: flex;
+  gap: 16px;
+  flex-shrink: 0;
+}
+
+.departments-visibility-panel .mr-1 {
+  margin-left: 8px;
 }
 
 /* Responsive */

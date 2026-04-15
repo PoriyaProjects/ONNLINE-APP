@@ -9,18 +9,27 @@
   </div>
   <mat-progress-bar mode="buffer" *ngIf="!loaded"></mat-progress-bar>
   <div class="assignments-section" *ngIf="loaded">
-    <div class="row mb-2">
+    <div class="row mb-2 align-items-center">
       <div class="col">
         <button mat-raised-button color="primary" (click)="addAssignment()">
           <span class="material-icons">add</span>
           הוסף הקצאה למחלקה
         </button>
+        <button mat-raised-button color="accent" (click)="exportAndSendPdf(intern.Email, intern.PersonalEmail)"
+          [disabled]="!intern || assignments.length === 0 || sendingPdf || (intern.Email == '' && intern.PersonalEmail == '') || (intern.PersonalEmail == null && intern.Email == null)">
+          <span class="material-icons">{{ sendingPdf ? 'hourglass_empty' : 'picture_as_pdf' }}</span>
+          {{ sendingPdf ? 'שולח...' : 'יצירת PDF ושליחה לסטאזר' }}
+        </button>
       </div>
     </div>
     <table mat-table [dataSource]="dataSource" class="mat-elevation-z8">
-      <ng-container matColumnDef="DepartnentDescripton">
-        <th mat-header-cell *matHeaderCellDef>מחלקה</th>
+      <ng-container matColumnDef="DepartnentDescriptonFirst">
+        <th mat-header-cell *matHeaderCellDef>מחלקה ראשונה</th>
         <td mat-cell *matCellDef="let element">{{ element.DepartnentDescripton }}</td>
+      </ng-container>
+      <ng-container matColumnDef="DepartnentDescriptonSecond">
+        <th mat-header-cell *matHeaderCellDef>מחלקה שנייה</th>
+        <td mat-cell *matCellDef="let element">{{ element.DepartnentDescriptonSecond }}</td>
       </ng-container>
       <ng-container matColumnDef="InternPeriod">
         <th mat-header-cell *matHeaderCellDef>תאריך התחלה תקופת הסטאג'ר</th>
@@ -30,10 +39,6 @@
         <th mat-header-cell *matHeaderCellDef>תאריך סיום תקופת הסטאג'ר</th>
         <td mat-cell *matCellDef="let element">{{ formatDate(element.InternPeriodEnd) }}</td>
       </ng-container>
-      <!-- <ng-container matColumnDef="AvailabilityStatus">
-        <th mat-header-cell *matHeaderCellDef>סטטוס זמינות</th>
-        <td mat-cell *matCellDef="let element">{{ element.AvailabilityStatus || '-' }}</td>
-      </ng-container> -->
       <ng-container matColumnDef="Actions">
         <th mat-header-cell *matHeaderCellDef>פעולות</th>
         <td mat-cell *matCellDef="let element">

@@ -42,7 +42,7 @@ export class MedicalInternAddUpdateComponent implements OnInit {
       LastName: new FormControl(this.intern?.LastName || '', [Validators.required]),
       CellNumber: new FormControl(this.intern?.CellNumber || '', [Validators.required, Validators.pattern('[0-9 ]{10}')]),
       Email: new FormControl(this.intern?.Email || '', null),
-      DepartnentCode: new FormControl(this.intern?.DepartnentCode || '', null),
+      DepartnentCode: new FormControl({value: this.intern?.DepartnentCode || '', disabled: true}, null),
       ProfilePicture: new FormControl(this.intern?.ProfilePicture || 'http://srv-apps-prod/Images/' + this.intern?.EmployeeID + '.jpg' || 'http://srv-apps-prod/Images/default.jpg', null),
     });
     this.getDepartmentList();

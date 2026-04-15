@@ -461,8 +461,8 @@ export class TrainingRequestDashboardComponent implements OnInit {
         <p style="margin: 5px 0;">${data['G'].Function_Department}</p>
         <p style="margin: 5px 0;">ת.ז: ${data['A'].Passport_ID}</p>
       <br>
-        <p style="font-size: 18px;font-weight: bold;margin-bottom: 5px;margin: 5px 0;">הנדון: בקשתך להשתלמות נדונה בתאריך ${this.datePipe.transform(data['H'].Plan_Date, 'dd-MM-yyyy')}</p>
-        <p style="margin: 5px 0;">לקורס: <span style="font-weight: bold;color: black;;padding: 2px 5px;
+        <p style="font-size: 18px;font-weight: bold;margin-bottom: 5px;margin: 5px 0;">הנדון: בקשתך להשתלמות נדונה בתאריך ${this.datePipe.transform(data['H'].Opinion_Date, 'dd-MM-yyyy')}</p>
+        <p style="margin: 5px 0;">ל ${data['H'].Training_Type == '' ? `` : `קורס: `}<span style="font-weight: bold;color: black;;padding: 2px 5px;
         border-radius: 5px;margin: 5px 0;">${data['B'].Request_Name}</span> 
         בין התאריכים <span style="font-weight: bold;color: black;padding: 2px 5px;
         border-radius: 5px;">${this.datePipe.transform(data['B'].Date_Start, 'dd-MM-yyyy')} - ${this.datePipe.transform(data['B'].Date_End, 'dd-MM-yyyy')}</span> 
@@ -575,7 +575,7 @@ export class TrainingRequestDashboardComponent implements OnInit {
             ${req['B'].Request_Name}<br />
             ${req['B'].Date_Start} - ${req['B'].Date_End}<br />
             ${req['B'].Request_Location}<br />
-            ${req['H'].Approved == '' ? '<strong>הבקשה נדחתה</strong>' : `<strong>הבקשה אושרה, להלן פירוט האישור</strong>:
+            ${req['H'].Approved == '' || req['H'].Approved == 'לא מאושר' ? '<strong>הבקשה נדחתה</strong>' : `<strong>הבקשה אושרה, להלן פירוט האישור</strong>:
                 הימים שאושרו: ${req['H'].Approved_Absence_Time} , שעות שאושרו: 0 , בחינות: 0 , אש"ל: נדחה , נסיעות: ${req['H'].Transportaion == 'True' ? '100%' : '0%'} , שכר לימוד שאושר: ${(parseInt(req['H'].Approved_Percent) *
             parseInt(req['H'].Approved_Percent_Out_Of)) / 100
           }, קוד אישור: ${req['H'].Code_Type}.<br /> הערות:${req['H'].Recommendations == null ? '' : req['H'].Recommendations} ${req['D'].Training_Fund_Answer == '' ? '' : ' , ' + req['D'].Training_Fund_Answer}${req['D'].Galilean_Partnership_Description == null ? '' : ' , ' + req['D'].Galilean_Partnership_Description}`}<br />

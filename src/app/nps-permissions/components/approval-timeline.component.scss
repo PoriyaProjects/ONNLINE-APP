@@ -1,0 +1,15 @@
+.timeline-wrap {
+  border: 1px solid var(--nps-border);
+  border-radius: 12px;
+  padding: 10px;
+  background: var(--nps-surface);
+  box-shadow: var(--nps-shadow-soft);
+}
+
+.timeline-empty {
+  border: 1px dashed var(--nps-border);
+  border-radius: 12px;
+  padding: 16px;
+  background: var(--nps-surface-soft);
+  color: var(--nps-muted);
+}

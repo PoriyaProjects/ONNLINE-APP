@@ -285,6 +285,20 @@ export class DepartmentIncomeDashboardComponent implements OnInit, OnDestroy {
   employeeFunctionDescription: string | null = null;
   employeeLocalDepartment: string | null = null;
 
+    /** משפט מוכן להצגה: חודש היחוס העדכני בדוח ההכנסות (מפורטי מחלקה בדגימה) */
+    incomeReportAsOfLabel: string | null = null;
+
+    /** נקבע אחרי ניסיון טעינת פירוט לדוגמה (כדי להבדיל «טוען» מ«אין חודש בנתונים») */
+    incomeReportAsOfFetchDone = false;
+
+    /** נקבע כאשר חודש היחוס מגיע מ־GetYearlyTotalIncome (referenceYear/referenceMonth) */
+    referencePeriodFromYearlyIncome = false;
+
+    private static readonly INCOME_REPORT_HEBREW_MONTHS: readonly string[] = [
+        "ינואר", "פברואר", "מרץ", "אפריל", "מאי", "יוני",
+        "יולי", "אוגוסט", "ספטמבר", "אוקטובר", "נובמבר", "דצמבר",
+    ];
+
     constructor(
         private http: HttpClient,
         private snackBar: MatSnackBar,
@@ -293,7 +307,7 @@ export class DepartmentIncomeDashboardComponent implements OnInit, OnDestroy {
     ) {}
 
     ngOnInit(): void {
-        console.log("gOnInit called");
+        // console.log("gOnInit called");
         // Open guide on every visit unless user checked "אל תציג יותר"
         const dontShowAgain = localStorage.getItem("dashboardGuideDontShowAgain");
         if (dontShowAgain === "true") {
@@ -336,11 +350,14 @@ export class DepartmentIncomeDashboardComponent implements OnInit, OnDestroy {
      * Load department income comparison data
      */
     loadDepartmentIncomeData(): void {
-        console.log("loadDepartmentIncomeData called");
-        console.log("loadDepartmentIncomeData called");
+        // console.log("loadDepartmentIncomeData called");
+        // console.log("loadDepartmentIncomeData called");
 
         this.isDataLoaded = false;
         this.isMainDataLoading = true;
+        this.incomeReportAsOfLabel = null;
+        this.incomeReportAsOfFetchDone = false;
+        this.referencePeriodFromYearlyIncome = false;
 
         this.http
             .post(environment.url + "GetDepartmentIncomeComparison", {})
@@ -364,6 +381,7 @@ export class DepartmentIncomeDashboardComponent implements OnInit, OnDestroy {
                         this.loadYearlyTotalsForChart();
                         this.isDataLoaded = true;
                         this.isMainDataLoading = false;
+                        this.loadIncomeReportReferenceFromSampleDepartment();
                         this.cdr.detectChanges();
                         this.snackBar.open("✓ נתונים נטענו בהצלחה", "סגור", {
                             duration: 3000,
@@ -377,6 +395,8 @@ export class DepartmentIncomeDashboardComponent implements OnInit, OnDestroy {
                         "Error loading department income data:",
                         error
                     );
+                    this.incomeReportAsOfLabel = null;
+                    this.incomeReportAsOfFetchDone = false;
                     this.isMainDataLoading = false;
                     this.cdr.detectChanges();
                     this.snackBar.open("❌ שגיאה בטעינת הנתונים", "סגור", {
@@ -391,8 +411,8 @@ export class DepartmentIncomeDashboardComponent implements OnInit, OnDestroy {
      */
 
     onDiagnosisChange(event: any): void {
-        console.log("Selection changed to:", this.selectedDiagnosis);
-        console.log("Event:", event);
+        // console.log("Selection changed to:", this.selectedDiagnosis);
+        // console.log("Event:", event);
         // Show loading indicator when switching departments
         this.isMainDataLoading = true;
         this.isDataLoaded = false;
@@ -400,12 +420,15 @@ export class DepartmentIncomeDashboardComponent implements OnInit, OnDestroy {
     }
 
     loadDepartmentIncomeByDiagnosis(): void {
-        console.log(
-            "loadDepartmentIncomeByDiagnosis called with:",
-            this.selectedDiagnosis
-        );
+        // console.log(
+        //     "loadDepartmentIncomeByDiagnosis called with:",
+        //     this.selectedDiagnosis
+        // );
         this.isDataLoaded = false;
         this.isMainDataLoading = true;
+        this.incomeReportAsOfLabel = null;
+        this.incomeReportAsOfFetchDone = false;
+        this.referencePeriodFromYearlyIncome = false;
 
         this.http
             .post(environment.url + "GetDepartmentIncomeByDiagnosis", {
@@ -420,8 +443,8 @@ export class DepartmentIncomeDashboardComponent implements OnInit, OnDestroy {
                             data = JSON.parse(data);
                         }
 
-                        console.log("Raw data from GetDepartmentIncomeByDiagnosis:", data);
-                        console.log("Data length:", Array.isArray(data) ? data.length : "Not an array");
+                        // console.log("Raw data from GetDepartmentIncomeByDiagnosis:", data);
+                        // console.log("Data length:", Array.isArray(data) ? data.length : "Not an array");
 
                         const uniqueDepts = [];
                         const seen = new Set();
@@ -432,20 +455,20 @@ export class DepartmentIncomeDashboardComponent implements OnInit, OnDestroy {
                                     seen.add(item.DepartmentName);
                                     uniqueDepts.push(item);
                                     // Log first few items to see the structure
-                                    if (uniqueDepts.length <= 3) {
-                                        console.log("Sample item:", {
-                                            DepartmentName: item.DepartmentName,
-                                            Income2024: item.Income2024,
-                                            Income2025: item.Income2025
-                                        });
-                                    }
+                                    // if (uniqueDepts.length <= 3) {
+                                    //     console.log("Sample item:", {
+                                    //         DepartmentName: item.DepartmentName,
+                                    //         Income2024: item.Income2024,
+                                    //         Income2025: item.Income2025
+                                    //     });
+                                    // }
                                 }
                             }
                         }
 
                         this.departmentIncomeData = uniqueDepts;
-                        console.log("After deduplication, departmentIncomeData length:", this.departmentIncomeData.length);
-                        console.log("Sample Income2025 values:", this.departmentIncomeData.slice(0, 3).map(d => d.Income2025));
+                        // console.log("After deduplication, departmentIncomeData length:", this.departmentIncomeData.length);
+                        // console.log("Sample Income2025 values:", this.departmentIncomeData.slice(0, 3).map(d => d.Income2025));
                         
                         this.departmentIncomeData.sort(
                             (a, b) => b.Income2025 - a.Income2025
@@ -463,6 +486,7 @@ export class DepartmentIncomeDashboardComponent implements OnInit, OnDestroy {
                         this.loadYearlyTotalsForChart();
                         this.isDataLoaded = true;
                         this.isMainDataLoading = false;
+                        this.loadIncomeReportReferenceFromSampleDepartment();
                         this.cdr.detectChanges();
 
                         this.snackBar.open("✓ נתונים עודכנו", "סגור", {
@@ -475,6 +499,8 @@ export class DepartmentIncomeDashboardComponent implements OnInit, OnDestroy {
                 },
                 (error) => {
                     console.error("Error:", error);
+                    this.incomeReportAsOfLabel = null;
+                    this.incomeReportAsOfFetchDone = false;
                     this.isMainDataLoading = false;
                     this.cdr.detectChanges();
                     this.snackBar.open("❌ שגיאה", "סגור", { duration: 3000 });
@@ -579,8 +605,8 @@ export class DepartmentIncomeDashboardComponent implements OnInit, OnDestroy {
      * Update chart data with numbers formatted in millions with 1 decimal place
      */
     updateChartData(): void {
-        console.log("updateChartData called");
-        console.log("departmentIncomeData:", this.departmentIncomeData);
+        // console.log("updateChartData called");
+        // console.log("departmentIncomeData:", this.departmentIncomeData);
 
         this.isChartLoading = true;
 
@@ -595,11 +621,11 @@ export class DepartmentIncomeDashboardComponent implements OnInit, OnDestroy {
         }
 
         // Log income values for debugging
-        console.log("Income values sample:", this.departmentIncomeData.slice(0, 3).map(d => ({
-            name: d.DepartmentName,
-            Income2024: d.Income2024,
-            Income2025: d.Income2025
-        })));
+        // console.log("Income values sample:", this.departmentIncomeData.slice(0, 3).map(d => ({
+        //     name: d.DepartmentName,
+        //     Income2024: d.Income2024,
+        //     Income2025: d.Income2025
+        // })));
 
         // Filter: include departments that have at least one year with positive income
         // This prevents the chart from disappearing when some departments have zero values
@@ -609,12 +635,12 @@ export class DepartmentIncomeDashboardComponent implements OnInit, OnDestroy {
             return has2024 || has2025; // Show if at least one year has data
         });
         
-        console.log("Filtered departments count:", filtered.length);
-        console.log("Filtered sample:", filtered.slice(0, 3).map(d => ({
-            name: d.DepartmentName,
-            Income2024: d.Income2024,
-            Income2025: d.Income2025
-        })));
+        // console.log("Filtered departments count:", filtered.length);
+        // console.log("Filtered sample:", filtered.slice(0, 3).map(d => ({
+        //     name: d.DepartmentName,
+        //     Income2024: d.Income2024,
+        //     Income2025: d.Income2025
+        // })));
 
         this.chartData = filtered.map((item) => {
             const safe2024 =
@@ -641,10 +667,10 @@ export class DepartmentIncomeDashboardComponent implements OnInit, OnDestroy {
             ];
         });
 
-        console.log("Final chartData:", this.chartData);
-        console.log("Chart data length:", this.chartData.length);
+        // console.log("Final chartData:", this.chartData);
+        // console.log("Chart data length:", this.chartData.length);
         if (this.chartData.length > 0) {
-            console.log("First chart row:", this.chartData[0]);
+            // console.log("First chart row:", this.chartData[0]);
         }
         this.isChartLoading = false;
         this.cdr.detectChanges();
@@ -715,32 +741,101 @@ export class DepartmentIncomeDashboardComponent implements OnInit, OnDestroy {
     }
 
     /**
+     * עיבוד מעטפת JSON מ־GetYearlyTotalIncome: מערך שנים + שדות referenceYear/referenceMonth (אם קיימים).
+     */
+    private parseGetYearlyTotalIncomePayload(response: any): {
+        rows: YearlyIncomeDto[];
+        envelope: Record<string, unknown> | null;
+    } {
+        if (!response?.d) {
+            return { rows: [], envelope: null };
+        }
+        let root: any = response.d;
+        if (typeof root === "string") {
+            try {
+                root = JSON.parse(root);
+            } catch {
+                return { rows: [], envelope: null };
+            }
+        }
+        if (Array.isArray(root)) {
+            return { rows: root as YearlyIncomeDto[], envelope: null };
+        }
+        if (root && typeof root === "object") {
+            if ("error" in root && !Array.isArray(root.d)) {
+                return { rows: [], envelope: null };
+            }
+            const arr = root.d;
+            const rows = Array.isArray(arr) ? (arr as YearlyIncomeDto[]) : [];
+            return { rows, envelope: root as Record<string, unknown> };
+        }
+        return { rows: [], envelope: null };
+    }
+
+    /**
+     * בונה את פס חודש היחוס מנתוני השירות השנתי (Excel_QuarterlyIncome).
+     */
+    private tryApplyBannerFromYearlyIncomeEnvelope(
+        envelope: Record<string, unknown> | null
+    ): boolean {
+        if (!envelope) {
+            return false;
+        }
+        const yRaw = envelope["referenceYear"] ?? envelope["ReferenceYear"];
+        const mRaw = envelope["referenceMonth"] ?? envelope["ReferenceMonth"];
+        if (yRaw == null || mRaw == null) {
+            return false;
+        }
+        const yearStr = String(yRaw).trim();
+        const monthIdx = this.parseIncomeReportMonthIndex(
+            mRaw as string | number
+        );
+        if (!yearStr || monthIdx == null) {
+            return false;
+        }
+        const yNum = parseInt(yearStr, 10);
+        if (Number.isNaN(yNum) || yNum < 1900 || yNum > 2100) {
+            return false;
+        }
+        const monthName =
+            DepartmentIncomeDashboardComponent.INCOME_REPORT_HEBREW_MONTHS[
+                monthIdx - 1
+            ] || String(monthIdx);
+        const older = this.getOlderYearFromDeptData();
+        const latest = this.getLatestYearFromDeptData();
+        this.incomeReportAsOfLabel =
+            older && latest && older !== latest
+                ? `נתוני הדוח מעודכנים עד חודש ${monthName} ${yearStr} כולל — השוואת הכנסות ${latest} מול ${older} לאותה תקופת יחוס`
+                : `נתוני הדוח מעודכנים עד חודש ${monthName} ${yearStr} כולל`;
+        this.referencePeriodFromYearlyIncome = true;
+        return true;
+    }
+
+    /**
      * Load yearly totals silently for chart year detection
      */
     loadYearlyTotalsForChart(): void {
         this.http.post(environment.url + "GetYearlyTotalIncome", {}).subscribe(
             (response: any) => {
-                if (response && response.d) {
-                    let data = response.d;
-                    if (typeof data === "string") {
-                        data = JSON.parse(data);
-                        data = data.d;
+                const { rows, envelope } =
+                    this.parseGetYearlyTotalIncomePayload(response);
+                if (rows.length) {
+                    this.yearlyTotalData = rows;
+                    if (this.tryApplyBannerFromYearlyIncomeEnvelope(envelope)) {
+                        this.incomeReportAsOfFetchDone = true;
                     }
-
-                    if (Array.isArray(data)) {
-                        this.yearlyTotalData = data;
-                        // Only update chart if we have department data loaded
-                        if (this.departmentIncomeData && this.departmentIncomeData.length > 0) {
-                            // Use setTimeout to ensure chart is ready before updating
-                            setTimeout(() => {
-                                this.updateChartColumns(); // Update chart columns with dynamic years
-                                this.updateChartTheme(); // Update chart theme
-                                this.updateChartData(); // Refresh chart with new columns
-                                this.cdr.detectChanges();
-                            }, 100);
-                        }
+                    // Only update chart if we have department data loaded
+                    if (this.departmentIncomeData && this.departmentIncomeData.length > 0) {
+                        // Use setTimeout to ensure chart is ready before updating
+                        setTimeout(() => {
+                            this.updateChartColumns(); // Update chart columns with dynamic years
+                            this.updateChartTheme(); // Update chart theme
+                            this.updateChartData(); // Refresh chart with new columns
+                            this.cdr.detectChanges();
+                        }, 100);
                     }
                 }
+                this.cdr.detectChanges();
             },
             (error) => {
                 console.error("Error loading yearly totals for chart:", error);
@@ -759,20 +854,16 @@ export class DepartmentIncomeDashboardComponent implements OnInit, OnDestroy {
 
         this.http.post(environment.url + "GetYearlyTotalIncome", {}).subscribe(
             (response: any) => {
-                console.log("Response:", response);
+                // console.log("Response:", response);
 
                 if (response && response.d) {
-                    let data = response.d;
-                    if (typeof data === "string") {
-                        data = JSON.parse(data);
-                        data = data.d;
-                    }
+                    const { rows, envelope } =
+                        this.parseGetYearlyTotalIncomePayload(response);
 
-                    console.log("Parsed data:", data);
+                    if (rows.length) {
+                        this.yearlyTotalData = rows;
+                        this.tryApplyBannerFromYearlyIncomeEnvelope(envelope);
 
-                    if (Array.isArray(data)) {
-                        this.yearlyTotalData = data;
-                        
                         // Update chart columns if department data is already loaded
                         // Use setTimeout to avoid interfering with chart rendering
                         if (this.departmentIncomeData && this.departmentIncomeData.length > 0) {
@@ -785,11 +876,11 @@ export class DepartmentIncomeDashboardComponent implements OnInit, OnDestroy {
                         }
                         
                         // Debug: Log the data for troubleshooting
-                        console.log("Yearly Total Data:", this.yearlyTotalData);
-                        console.log("Older Year:", this.getOlderYear(), "Total:", this.getOlderYearTotal());
-                        console.log("Latest Year:", this.getLatestYear(), "Total:", this.getLatestYearTotal());
-                        console.log("Difference:", this.getTotalDifference());
-                        console.log("Percentage Change:", this.calculateYearlyPercentageChange());
+                        // console.log("Yearly Total Data:", this.yearlyTotalData);
+                        // console.log("Older Year:", this.getOlderYear(), "Total:", this.getOlderYearTotal());
+                        // console.log("Latest Year:", this.getLatestYear(), "Total:", this.getLatestYearTotal());
+                        // console.log("Difference:", this.getTotalDifference());
+                        // console.log("Percentage Change:", this.calculateYearlyPercentageChange());
 
                         this.isLoading = false;
                         this.cdr.detectChanges();
@@ -797,7 +888,7 @@ export class DepartmentIncomeDashboardComponent implements OnInit, OnDestroy {
                             duration: 2000,
                         });
                     } else {
-                        console.error("Data is not an array:", data);
+                        console.error("Data is not an array:", rows);
                         this.isLoading = false;
                     }
                 }
@@ -849,8 +940,19 @@ export class DepartmentIncomeDashboardComponent implements OnInit, OnDestroy {
             .subscribe(
                 (response: any) => {
                     if (response && response.d) {
-                        // Set data source
-                        this.detailedDataSource.data = response.d;
+                        const parsed = this.parseDetailedIncomePayload(
+                            response.d
+                        );
+                        const rows =
+                            parsed?.rows ??
+                            (Array.isArray(response.d) ? response.d : []);
+                        this.detailedDataSource.data = rows;
+                        if (rows.length) {
+                            this.applyIncomeReportAsOfFromDetailed(
+                                rows,
+                                parsed?.meta ?? null
+                            );
+                        }
 
                         // Set default view to cash and sort by 2025 (descending)
                         this.selectedViewType = "cash";
@@ -938,6 +1040,609 @@ export class DepartmentIncomeDashboardComponent implements OnInit, OnDestroy {
         }
 
         this.cdr.detectChanges();
+    }
+
+    /**
+     * טוען דגימת פירוט מחלקה אחת כדי לחשב את חודש היחוס המקסימלי בדוח (תאריך עדכון הדוח).
+     */
+    private loadIncomeReportReferenceFromSampleDepartment(): void {
+        if (!this.departmentIncomeData?.length) {
+            this.incomeReportAsOfLabel = null;
+            this.incomeReportAsOfFetchDone = true;
+            return;
+        }
+        const firstRow = this.departmentIncomeData[0] as any;
+        const sampleDept =
+            String(
+                firstRow?.DepartmentName ??
+                    firstRow?.departmentName ??
+                    firstRow?.Department ??
+                    ""
+            ).trim();
+        if (!sampleDept) {
+            this.incomeReportAsOfLabel = null;
+            this.incomeReportAsOfFetchDone = true;
+            return;
+        }
+        this.http
+            .post(environment.url + "GetDepartmentDetailedData", {
+                departmentName: sampleDept,
+            })
+            .subscribe({
+                next: (response: any) => {
+                    const parsed = this.parseDetailedIncomePayload(response?.d);
+                    if (parsed?.rows?.length) {
+                        this.applyIncomeReportAsOfFromDetailed(
+                            parsed.rows,
+                            parsed.meta
+                        );
+                    }
+                    this.incomeReportAsOfFetchDone = true;
+                    this.cdr.detectChanges();
+                },
+                error: () => {
+                    this.incomeReportAsOfFetchDone = true;
+                    this.cdr.detectChanges();
+                },
+            });
+    }
+
+    /**
+     * פענוח תשובת GetDepartmentDetailedData: מערך, מחרוזת JSON, אובייקט עם rows/Data,
+     * ומטא־דאטה לצד השורות (חודש יחוס וכו').
+     */
+    private parseDetailedIncomePayload(raw: any): {
+        rows: DepartmentDetailedDataDto[];
+        meta: Record<string, any> | null;
+    } | null {
+        if (raw == null) {
+            return null;
+        }
+        if (typeof raw === "string") {
+            const t = raw.trim();
+            if (!t) {
+                return null;
+            }
+            try {
+                return this.parseDetailedIncomePayload(JSON.parse(t));
+            } catch {
+                return null;
+            }
+        }
+        if (Array.isArray(raw)) {
+            return { rows: raw as DepartmentDetailedDataDto[], meta: null };
+        }
+        if (typeof raw !== "object") {
+            return null;
+        }
+        const arrayKeys = [
+            "rows",
+            "Rows",
+            "items",
+            "Items",
+            "Data",
+            "data",
+            "Table",
+            "Result",
+            "list",
+            "List",
+            "d",
+        ];
+        for (const k of arrayKeys) {
+            if (Array.isArray((raw as any)[k])) {
+                const meta = { ...(raw as any) };
+                delete (meta as any)[k];
+                const keys = Object.keys(meta);
+                return {
+                    rows: (raw as any)[k] as DepartmentDetailedDataDto[],
+                    meta: keys.length ? meta : null,
+                };
+            }
+        }
+        if ((raw as any).d != null) {
+            const inner = this.parseDetailedIncomePayload((raw as any).d);
+            if (inner) {
+                const outer = { ...(raw as any) };
+                delete (outer as any).d;
+                const merged = { ...outer, ...(inner.meta || {}) };
+                const mk = Object.keys(merged);
+                return {
+                    rows: inner.rows,
+                    meta: mk.length ? merged : inner.meta,
+                };
+            }
+        }
+        const deepRows = this.findFirstObjectArrayInValue(raw);
+        if (deepRows?.length) {
+            return {
+                rows: deepRows as DepartmentDetailedDataDto[],
+                meta: raw as Record<string, any>,
+            };
+        }
+        return null;
+    }
+
+    /**
+     * חיפוש מערך אובייקטים (שורות דוח) בתוך מבנה JSON שרירותי מהשרת.
+     */
+    private findFirstObjectArrayInValue(
+        raw: any,
+        depth = 0
+    ): any[] | null {
+        if (raw == null || depth > 12) {
+            return null;
+        }
+        if (typeof raw === "string") {
+            const t = raw.trim();
+            if (!t || (!t.startsWith("[") && !t.startsWith("{"))) {
+                return null;
+            }
+            try {
+                return this.findFirstObjectArrayInValue(
+                    JSON.parse(t),
+                    depth + 1
+                );
+            } catch {
+                return null;
+            }
+        }
+        if (Array.isArray(raw)) {
+            return raw.length > 0 && typeof raw[0] === "object" && raw[0] != null
+                ? raw
+                : null;
+        }
+        if (typeof raw !== "object") {
+            return null;
+        }
+        let best: any[] | null = null;
+        let bestScore = -1;
+        for (const v of Object.values(raw)) {
+            if (
+                Array.isArray(v) &&
+                v.length > 0 &&
+                typeof v[0] === "object" &&
+                v[0] != null
+            ) {
+                const sc = this.scoreIncomeDetailRowArray(v);
+                if (sc > bestScore) {
+                    bestScore = sc;
+                    best = v;
+                }
+            }
+        }
+        if (best) {
+            return best;
+        }
+        for (const v of Object.values(raw)) {
+            if (v && typeof v === "object" && !Array.isArray(v)) {
+                const inner = this.findFirstObjectArrayInValue(v, depth + 1);
+                if (inner?.length) {
+                    return inner;
+                }
+            }
+        }
+        return null;
+    }
+
+    private scoreIncomeDetailRowArray(arr: any[]): number {
+        const s = arr[0] || {};
+        const keys = Object.keys(s);
+        let score = 0;
+        for (const k of keys) {
+            const lk = k.toLowerCase();
+            if (lk.includes("catalog")) {
+                score += 3;
+            }
+            if (/^cash\d+$/i.test(k) || /^units\d+$/i.test(k)) {
+                score += 2;
+            }
+            if (lk === "month" || lk === "year" || lk.includes("yearmonth")) {
+                score += 4;
+            }
+        }
+        return score;
+    }
+
+    private applyIncomeReportAsOfFromDetailed(
+        rows: any[],
+        meta: Record<string, any> | null
+    ): void {
+        if (this.referencePeriodFromYearlyIncome) {
+            return;
+        }
+        if (!rows?.length) {
+            return;
+        }
+        const fallbackLatest = parseInt(this.getLatestYearFromDeptData(), 10);
+        const fy =
+            !Number.isNaN(fallbackLatest) && fallbackLatest > 0
+                ? fallbackLatest
+                : null;
+
+        let best = this.computeMaxYearMonthFromDetailedRows(rows, fy);
+        best = this.pickBetterYearMonth(
+            best,
+            this.extractYearMonthFromLooseMeta(meta, fy)
+        );
+        best = this.pickBetterYearMonth(
+            best,
+            this.scanObjectsForLooseDates(meta ? [meta] : [], true)
+        );
+        best = this.pickBetterYearMonth(
+            best,
+            this.scanObjectsForLooseDates(rows, false)
+        );
+        best = this.pickBetterYearMonth(
+            best,
+            this.scanRowStringsForYearMonthGlobally(rows)
+        );
+
+        if (!best || best.y < 1900 || best.m < 1 || best.m > 12) {
+            return;
+        }
+        const monthName =
+            DepartmentIncomeDashboardComponent.INCOME_REPORT_HEBREW_MONTHS[
+                best.m - 1
+            ] || String(best.m);
+        const older = this.getOlderYearFromDeptData();
+        const latest = this.getLatestYearFromDeptData();
+        this.incomeReportAsOfLabel =
+            older && latest && older !== latest
+                ? `נתוני הדוח מעודכנים עד חודש ${monthName} ${best.y} כולל — השוואת הכנסות ${latest} מול ${older} לאותה תקופת יחוס`
+                : `נתוני הדוח מעודכנים עד חודש ${monthName} ${best.y} כולל`;
+    }
+
+    /** מציג את פס היחוס לאחר שהדף נטען (גם כשאין חודש מפורש מהשרת) */
+    get showIncomeReportAsOfStrip(): boolean {
+        return this.isDataLoaded && !this.isMainDataLoading;
+    }
+
+    /**
+     * טקסט הפס: עדכון מדויק מפירוט מחלקה, או מצב טעינה, או הסבר עם שנות ההשוואה.
+     */
+    get reportAsOfBannerText(): string {
+        if (!this.showIncomeReportAsOfStrip) {
+            return "";
+        }
+        if (this.incomeReportAsOfLabel) {
+            return this.incomeReportAsOfLabel;
+        }
+        if (!this.incomeReportAsOfFetchDone) {
+            return "טוען חודש יחוס אחרון מנתוני הפירוט…";
+        }
+        const older = this.getOlderYearFromDeptData();
+        const latest = this.getLatestYearFromDeptData();
+        if (older && latest) {
+            return `הדוח משווה הכנסות ${latest} מול ${older}. חודש היחוס האחרון לא הופיע בנתוני הפירוט מהשרת — לחצו על שם מחלקה בטבלה (פירוט מלא) כדי לעדכן, או הוסיפו בשירות שדות תאריך/חודש.`;
+        }
+        return "דוח הכנסות מחלקות";
+    }
+
+    private pickBetterYearMonth(
+        a: { y: number; m: number } | null,
+        b: { y: number; m: number } | null
+    ): { y: number; m: number } | null {
+        if (!a) {
+            return b;
+        }
+        if (!b) {
+            return a;
+        }
+        if (a.y !== b.y) {
+            return a.y > b.y ? a : b;
+        }
+        return a.m >= b.m ? a : b;
+    }
+
+    private computeMaxYearMonthFromDetailedRows(
+        rows: any[],
+        fallbackLatestYear: number | null
+    ): { y: number; m: number } | null {
+        let best: { y: number; m: number } | null = null;
+        const yearKeys = [
+            "Year",
+            "year",
+            "ReportYear",
+            "reportYear",
+            "DataYear",
+            "dataYear",
+            "FiscalYear",
+            "ReferenceYear",
+        ];
+        const monthKeys = [
+            "Month",
+            "month",
+            "ReportMonth",
+            "reportMonth",
+            "DataMonth",
+            "dataMonth",
+            "PeriodMonth",
+            "CalendarMonth",
+        ];
+        for (const r of rows) {
+            if (!r || typeof r !== "object") {
+                continue;
+            }
+            let y = -1;
+            for (const k of yearKeys) {
+                const p = parseInt(String((r as any)[k]), 10);
+                if (!Number.isNaN(p) && p > 1900 && p < 2100) {
+                    y = p;
+                    break;
+                }
+            }
+            if (y < 0 && fallbackLatestYear) {
+                y = fallbackLatestYear;
+            }
+            let mi: number | null = null;
+            for (const k of monthKeys) {
+                mi = this.parseIncomeReportMonthIndex((r as any)[k]);
+                if (mi != null) {
+                    break;
+                }
+            }
+            if (y > 0 && mi != null) {
+                best = this.pickBetterYearMonth(best, { y, m: mi });
+            }
+            for (const rk of [
+                "YearMonth",
+                "yearMonth",
+                "year_month",
+                "PeriodYm",
+                "periodYm",
+            ]) {
+                const compact = this.tryParseYearMonthCompact((r as any)[rk]);
+                if (compact) {
+                    best = this.pickBetterYearMonth(best, compact);
+                }
+            }
+        }
+        return best;
+    }
+
+    private extractYearMonthFromLooseMeta(
+        meta: Record<string, any> | null,
+        fallbackLatestYear: number | null
+    ): { y: number; m: number } | null {
+        if (!meta) {
+            return null;
+        }
+        let best: { y: number; m: number } | null = null;
+        for (const [key, val] of Object.entries(meta)) {
+            const d = this.tryParseAnyDateToYearMonth(val);
+            if (d) {
+                best = this.pickBetterYearMonth(best, d);
+            }
+            const ym = this.tryParseYearMonthCompact(val);
+            if (ym) {
+                best = this.pickBetterYearMonth(best, ym);
+            }
+            const lk = key.toLowerCase();
+            if (!lk.includes("month") || lk.includes("yearmonth")) {
+                continue;
+            }
+            const m = this.parseIncomeReportMonthIndex(val);
+            if (m == null) {
+                continue;
+            }
+            let y = fallbackLatestYear ?? -1;
+            const yRaw =
+                meta.ReportYear ??
+                meta.Year ??
+                meta.year ??
+                meta.DataYear ??
+                meta.ReferenceYear;
+            const yp = parseInt(String(yRaw), 10);
+            if (!Number.isNaN(yp) && yp > 1900) {
+                y = yp;
+            }
+            if (y > 1900) {
+                best = this.pickBetterYearMonth(best, { y, m });
+            }
+        }
+        return best;
+    }
+
+    private scanObjectsForLooseDates(
+        objects: any[],
+        scanAllKeys: boolean
+    ): { y: number; m: number } | null {
+        let best: { y: number; m: number } | null = null;
+        const keyPattern =
+            /date|time|period|asof|through|thru|end|month|year|reference|report|data|updated|עד|תאריך/i;
+        for (const obj of objects) {
+            if (!obj || typeof obj !== "object") {
+                continue;
+            }
+            for (const [key, val] of Object.entries(obj)) {
+                if (!scanAllKeys && !keyPattern.test(key)) {
+                    continue;
+                }
+                const d = this.tryParseAnyDateToYearMonth(val);
+                if (d) {
+                    best = this.pickBetterYearMonth(best, d);
+                }
+                if (typeof val === "string" || typeof val === "number") {
+                    const ym = this.tryParseYearMonthCompact(val);
+                    if (ym) {
+                        best = this.pickBetterYearMonth(best, ym);
+                    }
+                }
+            }
+        }
+        return best;
+    }
+
+    /** חילוץ yyyy-mm / טקסט עם תאריך מתוך כל תכני המחרוזת בשורות הפירוט */
+    private scanRowStringsForYearMonthGlobally(
+        rows: any[]
+    ): { y: number; m: number } | null {
+        let best: { y: number; m: number } | null = null;
+        for (const r of rows) {
+            if (!r || typeof r !== "object") {
+                continue;
+            }
+            for (const val of Object.values(r)) {
+                if (typeof val !== "string") {
+                    continue;
+                }
+                const t = val.trim();
+                if (t.length < 4) {
+                    continue;
+                }
+                const d = this.tryParseAnyDateToYearMonth(t);
+                if (d) {
+                    best = this.pickBetterYearMonth(best, d);
+                }
+                const yfm = t.match(/(\d{4})[./\s-](\d{1,2})(?!\d)/);
+                if (yfm) {
+                    const y = parseInt(yfm[1], 10);
+                    const m = parseInt(yfm[2], 10);
+                    if (y > 1900 && m >= 1 && m <= 12) {
+                        best = this.pickBetterYearMonth(best, { y, m });
+                    }
+                }
+                const mfy = t.match(/\b(\d{1,2})[./\s-](\d{4})\b/);
+                if (mfy) {
+                    const mo = parseInt(mfy[1], 10);
+                    const y = parseInt(mfy[2], 10);
+                    if (mo >= 1 && mo <= 12 && y > 1900) {
+                        best = this.pickBetterYearMonth(best, { y, m: mo });
+                    }
+                }
+            }
+        }
+        return best;
+    }
+
+    private tryParseYearMonthCompact(
+        val: string | number | null | undefined
+    ): { y: number; m: number } | null {
+        if (val === null || val === undefined) {
+            return null;
+        }
+        if (typeof val === "number" && Number.isFinite(val)) {
+            const n = Math.trunc(val);
+            if (n >= 190001 && n <= 210012) {
+                const y = Math.floor(n / 100);
+                const m = n % 100;
+                if (m >= 1 && m <= 12) {
+                    return { y, m };
+                }
+            }
+            return null;
+        }
+        const digits = String(val).replace(/\D/g, "");
+        if (digits.length === 6) {
+            return this.tryParseYearMonthCompact(parseInt(digits, 10));
+        }
+        return null;
+    }
+
+    private tryParseAnyDateToYearMonth(
+        val: unknown
+    ): { y: number; m: number } | null {
+        if (val == null) {
+            return null;
+        }
+        if (val instanceof Date && !Number.isNaN(val.getTime())) {
+            return { y: val.getFullYear(), m: val.getMonth() + 1 };
+        }
+        if (typeof val === "number" && Number.isFinite(val)) {
+            const compact = this.tryParseYearMonthCompact(val);
+            if (compact) {
+                return compact;
+            }
+            const isEpochMs = val > 1_000_000_000_000;
+            const isEpochSec =
+                val > 1_000_000_000 && val < 100_000_000_000;
+            if (isEpochMs || isEpochSec) {
+                const ms = isEpochMs ? val : val * 1000;
+                const d = new Date(ms);
+                if (!Number.isNaN(d.getTime())) {
+                    return { y: d.getFullYear(), m: d.getMonth() + 1 };
+                }
+            }
+        }
+        const s = String(val).trim();
+        if (!s) {
+            return null;
+        }
+        const iso = Date.parse(s);
+        if (!Number.isNaN(iso)) {
+            const d = new Date(iso);
+            return { y: d.getFullYear(), m: d.getMonth() + 1 };
+        }
+        const ymd = s.match(
+            /^(\d{4})-(\d{1,2})(?:-(\d{1,2}))?(?:[T\s].*)?$/
+        );
+        if (ymd) {
+            const y = parseInt(ymd[1], 10);
+            const m = parseInt(ymd[2], 10);
+            if (m >= 1 && m <= 12) {
+                return { y, m };
+            }
+        }
+        const dmy = s.match(/^(\d{1,2})[./-](\d{1,2})[./-](\d{4})$/);
+        if (dmy) {
+            const day = parseInt(dmy[1], 10);
+            const month = parseInt(dmy[2], 10);
+            const y = parseInt(dmy[3], 10);
+            if (
+                month >= 1 &&
+                month <= 12 &&
+                day >= 1 &&
+                day <= 31 &&
+                y > 1900 &&
+                y < 2100
+            ) {
+                return { y, m: month };
+            }
+        }
+        return null;
+    }
+
+    private parseIncomeReportMonthIndex(month: string | number | null | undefined): number | null {
+        if (month === null || month === undefined) {
+            return null;
+        }
+        const t = String(month).trim();
+        if (!t) {
+            return null;
+        }
+        const n = parseInt(t, 10);
+        if (!Number.isNaN(n) && n >= 1 && n <= 12) {
+            return n;
+        }
+        const lower = t.toLowerCase();
+        const fromHebrew =
+            DepartmentIncomeDashboardComponent.INCOME_REPORT_HEBREW_MONTHS.findIndex(
+                (name) => t.includes(name) || name.includes(t)
+            );
+        if (fromHebrew >= 0) {
+            return fromHebrew + 1;
+        }
+        const english: Record<string, number> = {
+            jan: 1,
+            feb: 2,
+            mar: 3,
+            apr: 4,
+            may: 5,
+            jun: 6,
+            jul: 7,
+            aug: 8,
+            sep: 9,
+            sept: 9,
+            oct: 10,
+            nov: 11,
+            dec: 12,
+        };
+        for (const [key, val] of Object.entries(english)) {
+            if (lower.startsWith(key)) {
+                return val;
+            }
+        }
+        return null;
     }
 
     /**
@@ -1410,7 +2115,7 @@ updateChartColumns(): void {
      */
     onChartClick(event: any): void {
         try {
-            console.log("Chart select event:", event);
+            // console.log("Chart select event:", event);
             
             // angular-google-charts select event structure: { selection: [{ row: number, column: number }] }
             let selectedRow: number | null = null;
@@ -1427,11 +2132,11 @@ updateChartColumns(): void {
             }
             
             if (selectedRow !== null && selectedRow !== undefined) {
-                console.log("Selected row:", selectedRow);
+                // console.log("Selected row:", selectedRow);
                 
                 if (this.chartData && this.chartData.length > selectedRow) {
                     const departmentName = this.chartData[selectedRow][0]; // First column is department name
-                    console.log("Department name:", departmentName);
+                    // console.log("Department name:", departmentName);
                     
                     if (departmentName) {
                         this.loadDepartmentSpecificGraph(departmentName);

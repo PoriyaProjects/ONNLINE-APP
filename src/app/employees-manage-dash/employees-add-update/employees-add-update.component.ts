@@ -42,10 +42,14 @@ export class EmployeesAddUpdateComponent implements OnInit {
   employeeWorkDetails: FormGroup;
   gymDetails: FormGroup;
   trainingsDetails: FormGroup;
+  educationsDetails: FormGroup;
+  EducationsList = [];
   RanksList = [];
   SektorsList = [];
   FunctionsList = [];
   EmployeeBlossomSektors = [];
+  /** One specialties array per education row index (aligned with `educations` FormArray). */
+  educationSpecialitiesLists: any[][] = [];
   DepartmentsList = [];
   end_work_reasons = [];
   WorkPlacesList = [];
@@ -126,6 +130,7 @@ export class EmployeesAddUpdateComponent implements OnInit {
   ];
   @ViewChild('modalEmployeeHistory', { static: true }) modalEmployeeHistory: TemplateRef<any>;
   dataSource: MatTableDataSource<any>;
+  dataSourceEducation: MatTableDataSource<any>;
 
   constructor(private _snackBar: MatSnackBar,
     public dialog: MatDialogRef<EmployeesAddUpdateComponent>,
@@ -157,6 +162,45 @@ export class EmployeesAddUpdateComponent implements OnInit {
         startWith(''),
         map(value => this._filter2(value))
       );
+    this.getEducationsList();
+  }
+
+  getSpecialitiesForRow(rowIndex: number): any[] {
+    return this.educationSpecialitiesLists[rowIndex] ?? [];
+  }
+
+  loadSpecialitiesForRow(rowIndex: number, educationID: any): void {
+    if (educationID == null || educationID === '') {
+      if (this.educationSpecialitiesLists[rowIndex]) {
+        this.educationSpecialitiesLists[rowIndex] = [];
+      }
+      return;
+    }
+    this.http.post(this.Api + "GetEmployeeSpecialitiesList", {
+      _educationID: educationID
+    }).subscribe((Response) => {
+      const list = Response["d"] ?? [];
+      while (this.educationSpecialitiesLists.length <= rowIndex) {
+        this.educationSpecialitiesLists.push([]);
+      }
+      this.educationSpecialitiesLists[rowIndex] = list;
+    });
+  }
+
+  onEducationSubjectChange(rowIndex: number, educationID: any): void {
+    const row = this.educations.at(rowIndex) as FormGroup;
+    row.get('Speciality')?.setValue(null);
+    while (this.educationSpecialitiesLists.length <= rowIndex) {
+      this.educationSpecialitiesLists.push([]);
+    }
+    this.educationSpecialitiesLists[rowIndex] = [];
+    this.loadSpecialitiesForRow(rowIndex, educationID);
+  }
+
+  getEducationsList() {
+    this.http.post(this.Api + "GetEmployeeEducationsList", {}).subscribe((Response) => {
+      this.EducationsList = Response["d"];
+    });
   }
 
   private _filter1(value: any): string[] {
@@ -252,6 +296,9 @@ export class EmployeesAddUpdateComponent implements OnInit {
         this.trainingsDetails = this.formBuilder.group({
           trainings: this.formBuilder.array([])
         });
+        this.educationsDetails = this.formBuilder.group({
+          educations: this.formBuilder.array([])
+        });
         this.employeeWorkDetails = this.formBuilder.group({
           RowID: new FormControl(this.employee.RowID, null),
           EmployeeIndex: new FormControl('', null),
@@ -298,7 +345,10 @@ export class EmployeesAddUpdateComponent implements OnInit {
         this.sektorSelection(this.employee.EmployeeSektorID);
         this.getUserName(this.employee.Email);
         this.dataSource = new MatTableDataSource();
+        this.dataSourceEducation = new MatTableDataSource();
         this.createTrainingGroup(this.employee.EmployeeTrainings)
+        this.educationSpecialitiesLists = [];
+        this.createEducationGroup(this.employee.EmployeeEducations)
       });
   }
 
@@ -324,6 +374,55 @@ export class EmployeesAddUpdateComponent implements OnInit {
     } else this.trainings.push(temp);
 
     this.dataSource.data = this.trainings.controls;
+  }
+
+  createEducationGroup(arr) {
+    let temp = this.formBuilder.group({
+      Row_ID: [null, null],
+      EducationSubject: [null, null],
+      Speciality: [null, null],
+      EducationDate: [null, null],
+      Note: [null, null]
+    });
+    if (arr != null) {
+      arr.forEach(element => {
+        temp = this.formBuilder.group({
+          Row_ID: [element.Row_ID, null],
+          EducationSubject: [element.EducationSubject, null],
+          Speciality: [element.Speciality, null],
+          EducationDate: [element.EducationDate, null],
+          Note: [element.Note, null]
+        });
+        this.educations.push(temp);
+        const rowIndex = this.educations.length - 1;
+        this.educationSpecialitiesLists.push([]);
+        if (element.EducationSubject) {
+          this.loadSpecialitiesForRow(rowIndex, element.EducationSubject);
+        }
+      });
+    } else {
+      this.educations.push(temp);
+      this.educationSpecialitiesLists.push([]);
+    }
+
+    this.dataSourceEducation.data = this.educations.controls;
+  }
+
+  get educations(): FormArray {
+    return this.educationsDetails.get('educations') as FormArray;
+  }
+
+  removeEducationRow(index: number) {
+    this.educations.removeAt(index);
+    this.educationSpecialitiesLists.splice(index, 1);
+    this.dataSourceEducation.data = this.educations.controls; // Refresh table after removal
+  }
+
+  onEducationDateInput(event: MatDatepickerInputEvent<Date>, rowIndex: number): void {
+    let pipe = new DatePipe('en-US');
+    const selectedDate = event.value;
+    const currentRow = this.educations.at(rowIndex) as FormGroup;
+    currentRow.get('EducationDate')?.setValue(pipe.transform(selectedDate, 'yyyy-MM-dd'));
   }
 
   get trainings(): FormArray {
@@ -708,6 +807,7 @@ export class EmployeesAddUpdateComponent implements OnInit {
           _workDetails: this.employeeWorkDetails.getRawValue(),
           _gymDetails: this.gymDetails.getRawValue(),
           _trainingsDetails: this.trainingsDetails.value.trainings,
+          _educationsDetails: this.educationsDetails.value.educations,
           _userName: this.UserName,
         })
         .subscribe((Response) => {

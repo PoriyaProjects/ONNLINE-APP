@@ -92,6 +92,24 @@
                                         <mat-icon>delete</mat-icon>
                                     </button>
                                 </div><br>
+                                
+                                <!-- File Input 4 -->
+                                <div style="text-align: right;">
+                                    <label>אקסל תשלומים</label><br>
+                                    <input #paymentsExcelInput type="file" (change)="onFileChange($event, 'PaymentsExcel')"
+                                        accept=".xls,.xlsx">
+                                    <button mat-raised-button class="fileOpenBtn" color="primary"
+                                        (click)="viewResearchFile('PaymentsExcel')"
+                                        *ngIf="ResearchRequestDto.get('PaymentsExcel').value != undefined && ResearchRequestDto.get('PaymentsExcel').value != ''">
+                                        צפייה במסמך
+                                        <span class="material-icons"> zoom_in </span>
+                                    </button>
+                                    <button mat-icon-button color="warn" type="button" matTooltip="הסרת קובץ"
+                                        (click)="removeFile('PaymentsExcel', paymentsExcelInput)"
+                                        *ngIf="ResearchRequestDto.get('PaymentsExcel').value != undefined && ResearchRequestDto.get('PaymentsExcel').value != ''">
+                                        <mat-icon>delete</mat-icon>
+                                    </button>
+                                </div><br>
 
                                 <!-- File Input 3 -->
                                 <div style="text-align: right;">
