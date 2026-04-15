@@ -2596,13 +2596,20 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
 
     /**
      * Load 5‑year aggregated counts by month from new API GetMonthlyCounts.
-     * שולח את פרמטר department (מהדרופדאון "מחלקה" או מהסיידבר) – השרת מסנן לפי מחלקה.
-     * קורא לשרת רק אם עדיין אין נתונים או שפרמטרי הפילטר השתנו.
+     * ללא פרמטרי סינון מהסיידבר — תצוגת חודשים מציגה היקף מלא; פילטרי הסיידבר מושבתים ב-UI.
+     * קורא לשרת רק אם אין עדיין נתונים במטמון לשנת הבסיס הנוכחית.
      */
     private loadMonthlyCounts(): void {
         const baseYear = this.currentYear;
-        const kpiParams = this.buildKpiFilterParams();
-        const paramsKey = `${baseYear}|${kpiParams.surgeryType}|${kpiParams.shift}|${kpiParams.site}|${kpiParams.weekend}|${kpiParams.department}`;
+        // תצוגת חודשים: ללא פרמטרי סינון — הגרף מציג היקף מלא; פילטרי הסיידבר אינם רלוונטיים.
+        const kpiParams = {
+            surgeryType: "",
+            shift: "",
+            site: "",
+            weekend: "",
+            department: "",
+        };
+        const paramsKey = `${baseYear}|month-full`;
         if (this.monthlyCountsData.length > 0 && this.lastMonthlyCountsParams === paramsKey) {
             this.updateChartData();
             return;
@@ -4875,6 +4882,12 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
      * (סוג ניתוח / משמרת / חדר / מחלקה / יום)
      */
     hasActiveSurgeryFilters(): boolean {
+        if (this.mainMetricMode === "compare-departments") {
+            return false;
+        }
+        if (this.isSurgeryVolumeMonthlyChartView()) {
+            return false;
+        }
         return (
             (this.selectedDiagnosis &&
                 this.selectedDiagnosis !== "כל האתרים" &&
@@ -5186,6 +5199,7 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
         }
         this.chartViewMode = mode;
         this.isShiftGroupedView = mode === "shift";
+        this.syncSidebarFilterDropdownOpenState();
 
         // מדד משולב = גרף אופקי (BarChart); שאר המצבים = ColumnChart
         if (mode === "yoy-combined") {
@@ -5704,8 +5718,8 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
     getChartViewFilterParametersLine(): string {
         if (this.mainMetricMode === "compare-departments") {
             return (
-                "בחירת מחלקה ומדדים לגרף; מדדי חדרים וניתוחים ליום מבוססים על ימים «מלאים». " +
-                this.getSiteChartContextLine()
+                "בחירת מחלקה ומדדים בפאנל הגרף בלבד. פילטרי הסיידבר אינם משפיעים על גרף ההשוואה — אגרגציה מלאה לפי מחלקה; " +
+                "מדדי חדרים וניתוחים ליום מבוססים על ימים «מלאים»."
             );
         }
         if (this.mainMetricMode === "revenue") {
@@ -5726,6 +5740,9 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
 
         if (this.chartViewMode === "yoy-combined") {
             return "המדד המשולב נטען מהשרת ללא פרמטרי הסיידבר; הצגה לפי מחלקה.";
+        }
+        if (this.chartViewMode === "month") {
+            return "ניתוחים לפי חודשים: נטען מהשרת ללא סינון מתקדם מהסיידבר (היקף מלא).";
         }
 
         const parts: string[] = [
@@ -5806,6 +5823,20 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
         return this.mainMetricMode === "room-utilization" || this.mainMetricMode === "room-times";
     }
 
+    /** מדדי ניתוחים — תצוגת «ניתוחים לפי חודשים»: פילטרי הסיידבר אינם משפיעים על הגרף */
+    isSurgeryVolumeMonthlyChartView(): boolean {
+        return this.mainMetricMode === "surgery-volume" && this.chartViewMode === "month";
+    }
+
+    /** פילטרי הסיידבר מושבתים ב-UI (זמני/ניצולת חדר, גרף חודשים, או השוואת מחלקות — שם הגרף לא מסונן מהסיידבר) */
+    sidebarAdvancedFiltersDisabledForCurrentChart(): boolean {
+        return (
+            this.sidebarFiltersNonApplicableForRoomCharts() ||
+            this.isSurgeryVolumeMonthlyChartView() ||
+            this.mainMetricMode === "compare-departments"
+        );
+    }
+
     /** ערך הטוגל העליון (מתאים ל־mat-button-toggle-group) */
     mainMetricToggleGroupValue(): string {
         switch (this.mainMetricMode) {
@@ -5844,6 +5875,7 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
     } else if (value === "compare-departments") {
       this.enterCompareDepartmentsPanel();
     }
+    this.syncSidebarFilterDropdownOpenState();
   }
 
   /** מסך השוואת מחלקות פעיל — בתוך הפאנל הראשי או במודאל מוגדל */
@@ -7266,7 +7298,7 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
     setChartDepartmentFilter(dept: string | null): void {
         this.chartDepartmentFilter = dept;
         this.closeSidebarFilterDropdowns();
-        // במצב "ניתוחים לפי חודשים" הנתונים מגיעים מה-API – צריך לטעון מחדש עם פרמטר department
+        // במצב חודשים הגרף נטען מה-API ללא פרמטרי סינון; קריאה לרענון נשארת לעקביות
         if (this.chartViewMode === "month") {
             this.loadMonthlyCounts();
         } else {
@@ -7966,7 +7998,7 @@ updateChartColumns(): void {
         }
 
         // הגרף הראשי תמיד מתעדכן לפי הפילטרים (גם כשאין surgeryData ויש רק CountByDept)
-        // במצב "ניתוחים לפי חודשים" – טוען מחדש מה-API עם סוג ניתוח, משמרת, יום (אמצע שבוע/סופ״ש), אתר, מחלקה
+        // במצב "ניתוחים לפי חודשים" – רענון מה-API ללא פרמטרי סינון (היקף מלא)
         if (this.chartViewMode === "month") {
             this.loadMonthlyCounts();
         } else if (this.chartViewMode === "yoy-combined") {
@@ -8024,6 +8056,12 @@ updateChartColumns(): void {
     getActiveFiltersSummary(): string {
         if (this.sidebarFiltersNonApplicableForRoomCharts()) {
             return "פילטרי הסיידבר אינם רלוונטיים — הנתונים לפי בוקר, אמצע שבוע וחדר ניתוח כללי.";
+        }
+        if (this.isSurgeryVolumeMonthlyChartView()) {
+            return "בתצוגת ניתוחים לפי חודשים אין שימוש בפילטרי הסיידבר; הגרף מציג היקף מלא.";
+        }
+        if (this.mainMetricMode === "compare-departments") {
+            return "במצב השוואת מחלקות פילטרי הסיידבר אינם משפיעים על גרף ההשוואה; בוחרים מחלקה ומדדים בפאנל הגרף.";
         }
         const parts: string[] = [];
 
@@ -8416,11 +8454,7 @@ closeRoomTimesModal(): void {
   this.showTimesModal = false;
 }
 
-setRoomTimesView(view: 'avgDuration' | 'firstStart' | 'lastEnd' | 'avgSetup' | 'perDay' | 'lossPerDay' | 'approvedPerDay'): void {
-  this.roomTimesView = view;
-
-  // If a filter becomes irrelevant for the selected room-times view,
-  // close its dropdown immediately to prevent "open but disabled" UI states.
+private syncSidebarFilterDropdownOpenState(): void {
   if (this.isFilterDisabled("chartDepartment")) this.isChartDeptDropdownOpen = false;
   if (this.isFilterDisabled("surgeryType")) this.isSurgeryTypeOpen = false;
   if (this.isFilterDisabled("shift")) this.isShiftOpen = false;
@@ -8428,6 +8462,12 @@ setRoomTimesView(view: 'avgDuration' | 'firstStart' | 'lastEnd' | 'avgSetup' | '
   if (this.isFilterDisabled("morningWork")) this.isMorningWorkOpen = false;
   if (this.isFilterDisabled("site")) this.isSiteOpen = false;
   if (this.isFilterDisabled("room")) this.isRoomOpen = false;
+}
+
+setRoomTimesView(view: 'avgDuration' | 'firstStart' | 'lastEnd' | 'avgSetup' | 'perDay' | 'lossPerDay' | 'approvedPerDay'): void {
+  this.roomTimesView = view;
+
+  this.syncSidebarFilterDropdownOpenState();
 
   switch (view) {
     case 'avgDuration':
@@ -9538,7 +9578,7 @@ isFilterDisabled(
     | "site"
     | "room"
 ): boolean {
-  if (this.sidebarFiltersNonApplicableForRoomCharts()) {
+  if (this.sidebarAdvancedFiltersDisabledForCurrentChart()) {
     return true;
   }
 
