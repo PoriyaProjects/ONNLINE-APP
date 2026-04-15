@@ -365,28 +365,48 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
   plannedFromDrorSystem() {
     this.loader = true;
     if (this.IfPlannedSurgeries == "original" || this.IfPlannedSurgeries == "planned") {
+      // Check if viewDate is today or in the past
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const viewDateOnly = new Date(this.viewDate);
+      viewDateOnly.setHours(0, 0, 0, 0);
+      const isCurrentOrPastDate = viewDateOnly <= today;
+
       this.filteredSpecificRooms.forEach((room, index1) => {
         if (room.Surgeries != undefined) {
           let temp = room.Surgeries.filter(x => x.SurgeryStatus != 'Canceled');
           temp.forEach((surgery, index2) => {
-            // ADDING SETUPTIME TO EACH SURGERY
-            let setuptime = {
-              title: `Setup Time: <b>20min</b>`,
-              start: new Date(surgery.start.getTime() - 1200000),
-              end: surgery.start
+            // For current/past dates with status != 'Planned', don't add setup time
+            const useRealTimes = isCurrentOrPastDate && surgery.SurgeryStatus !== 'Planned';
+
+            // Only add setup time for future dates or Planned status
+            if (!useRealTimes) {
+              // ADDING SETUPTIME TO EACH SURGERY
+              let setuptime = {
+                title: `Setup Time: <b>20min</b>`,
+                start: new Date(surgery.start.getTime() - 1200000),
+                end: surgery.start
+              }
+              this.filteredSpecificRooms[index1].Surgeries.splice(index2, 0, setuptime);
             }
-            this.filteredSpecificRooms[index1].Surgeries.splice(index2, 0, setuptime);
+
             let next = temp[index2 + 1];
             temp[index2].start = new Date(surgery.start.getTime());
             // check if the next surgery isn't defined
             if (next != undefined && next.SurgeryStatus != 'Canceled') {
-              let estimated = next.end - next.start;
-              if (surgery.SurgeriesCalendar_Susgeries.length > 0) surgery.end = new Date(surgery.start.getTime() + (parseInt(surgery.SurgeriesCalendar_Susgeries[0].Duration) * 60000));
-              let current_end_time = surgery.end;
-              // change the start time of the next surgery to begin after the end of the current surgery
-              next.start = new Date(current_end_time.getTime() + 1200000);
-              // change the end time of the next surgery to suit the new start time of the next surgery
-              next.end = new Date(next.start.getTime() + estimated);
+              const nextUseRealTimes = isCurrentOrPastDate && next.SurgeryStatus !== 'Planned';
+
+              if (nextUseRealTimes) {
+                // Keep original server times for next surgery - no modifications needed
+              } else {
+                let estimated = next.end - next.start;
+                if (surgery.SurgeriesCalendar_Susgeries.length > 0) surgery.end = new Date(surgery.start.getTime() + (parseInt(surgery.SurgeriesCalendar_Susgeries[0].Duration) * 60000));
+                let current_end_time = surgery.end;
+                // change the start time of the next surgery to begin after the end of the current surgery
+                next.start = new Date(current_end_time.getTime() + 1200000);
+                // change the end time of the next surgery to suit the new start time of the next surgery
+                next.end = new Date(next.start.getTime() + estimated);
+              }
             }
           });
         }
@@ -401,65 +421,109 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
     this.loader = true;
     //////debugger
     if (this.IfPlannedSurgeries == "original" || this.IfPlannedSurgeries == "dror") {
+      // Check if viewDate is today or in the past
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const viewDateOnly = new Date(this.viewDate);
+      viewDateOnly.setHours(0, 0, 0, 0);
+      const isCurrentOrPastDate = viewDateOnly <= today;
+
       this.filteredSpecificRooms.forEach((room, index1) => {
         if (room.Surgeries != undefined) {
           let temp = room.Surgeries.filter(x => x.SurgeryStatus != 'Canceled');
           temp.forEach((surgery, index2) => {
-            debugger
-            if (index2 == 0) {
-              let mDate = new Date(temp[index2].start.getTime());
-              temp[index2].start = new Date(this.datePipe.transform(mDate, 'yyyy-MM-dd 07:30'));
-              /*
-              20*60
-              */
-              const firstDurationMinutes = this.getPlannedDurationMinutes(temp[index2]);
-              temp[index2].end = new Date(this.datePipe.transform(
-                temp[index2].start.getTime() + firstDurationMinutes * 60 * 1000,
-                'yyyy-MM-dd HH:mm'
-              ));
-              //  / ////debugger
-              temp[index2].ArrivalDate = this.datePipe.transform(temp[index2].start, 'yyyy-MM-dd HH:mm');
-              temp[index2].ArrivalTime = this.datePipe.transform(temp[index2].start, 'HH:mm');
-              temp[index2].EndDate = this.datePipe.transform(temp[index2].end, 'yyyy-MM-dd HH:mm');
-              temp[index2].EndTime = this.datePipe.transform(temp[index2].end, 'HH:mm');
-              temp[index2].title = ` 
-                מחלקה: <b>${temp[index2].SurgeryRequestDepartments.S_DEPARTMENT}</b><br>
-                שם: <b>${temp[index2].SurgeryPatientDetails.PM_FIRST_NAME} ${temp[index2].SurgeryPatientDetails.PM_LAST_NAME}</b><b> -- ${temp[index2].SurgeryPatientDetails.PM_CASE_NUMBER}</b> <br>
-                דחיפות: <b>${temp[index2].Urgency}</b><br>
-                S:<b>${temp[index2].ArrivalDate.split(' ')[1]}</b> - E:<b>${temp[index2].EndDate.split(' ')[1]}</b>`;
+            // For current/past dates with status != 'Planned', use real times from server
+            // Skip setup time and 07:30 AM forced start time
+            const useRealTimes = isCurrentOrPastDate && surgery.SurgeryStatus !== 'Planned';
 
+            if (index2 == 0) {
+              if (useRealTimes) {
+                // Keep the original server times - don't modify start/end times
+                // Just update the title to reflect the existing times
+                temp[index2].ArrivalDate = this.datePipe.transform(temp[index2].start, 'yyyy-MM-dd HH:mm');
+                temp[index2].ArrivalTime = this.datePipe.transform(temp[index2].start, 'HH:mm');
+                temp[index2].EndDate = this.datePipe.transform(temp[index2].end, 'yyyy-MM-dd HH:mm');
+                temp[index2].EndTime = this.datePipe.transform(temp[index2].end, 'HH:mm');
+                temp[index2].title = ` 
+                  מחלקה: <b>${temp[index2].SurgeryRequestDepartments.S_DEPARTMENT}</b><br>
+                  שם: <b>${temp[index2].SurgeryPatientDetails.PM_FIRST_NAME} ${temp[index2].SurgeryPatientDetails.PM_LAST_NAME}</b><b> -- ${temp[index2].SurgeryPatientDetails.PM_CASE_NUMBER}</b> <br>
+                  דחיפות: <b>${temp[index2].Urgency}</b><br>
+                  S:<b>${temp[index2].ArrivalDate.split(' ')[1]}</b> - E:<b>${temp[index2].EndDate.split(' ')[1]}</b>`;
+              } else {
+                // Original behavior for future dates or Planned status: start at 07:30
+                let mDate = new Date(temp[index2].start.getTime());
+                temp[index2].start = new Date(this.datePipe.transform(mDate, 'yyyy-MM-dd 07:30'));
+                /*
+                20*60
+                */
+                const firstDurationMinutes = this.getPlannedDurationMinutes(temp[index2]);
+                temp[index2].end = new Date(this.datePipe.transform(
+                  temp[index2].start.getTime() + firstDurationMinutes * 60 * 1000,
+                  'yyyy-MM-dd HH:mm'
+                ));
+                //  / ////debugger
+                temp[index2].ArrivalDate = this.datePipe.transform(temp[index2].start, 'yyyy-MM-dd HH:mm');
+                temp[index2].ArrivalTime = this.datePipe.transform(temp[index2].start, 'HH:mm');
+                temp[index2].EndDate = this.datePipe.transform(temp[index2].end, 'yyyy-MM-dd HH:mm');
+                temp[index2].EndTime = this.datePipe.transform(temp[index2].end, 'HH:mm');
+                temp[index2].title = ` 
+                  מחלקה: <b>${temp[index2].SurgeryRequestDepartments.S_DEPARTMENT}</b><br>
+                  שם: <b>${temp[index2].SurgeryPatientDetails.PM_FIRST_NAME} ${temp[index2].SurgeryPatientDetails.PM_LAST_NAME}</b><b> -- ${temp[index2].SurgeryPatientDetails.PM_CASE_NUMBER}</b> <br>
+                  דחיפות: <b>${temp[index2].Urgency}</b><br>
+                  S:<b>${temp[index2].ArrivalDate.split(' ')[1]}</b> - E:<b>${temp[index2].EndDate.split(' ')[1]}</b>`;
+              }
             }
-            // ADDING SETUPTIME TO EACH SURGERY
-            let setuptime = {
-              title: `Setup Time: <b>20min</b>`,
-              start: new Date(surgery.start.getTime() - 1200000),
-              end: surgery.start
+
+            // Only add setup time for future dates or Planned status
+            if (!useRealTimes) {
+              // ADDING SETUPTIME TO EACH SURGERY
+              let setuptime = {
+                title: `Setup Time: <b>20min</b>`,
+                start: new Date(surgery.start.getTime() - 1200000),
+                end: surgery.start
+              }
+              this.filteredSpecificRooms[index1].Surgeries.splice(index2, 0, setuptime);
             }
-            this.filteredSpecificRooms[index1].Surgeries.splice(index2, 0, setuptime);
+
             let next = temp[index2 + 1];
             temp[index2].start = new Date(surgery.start.getTime());
             // check if the next surgery isn't defined
             if (next != undefined && next.SurgeryStatus != 'Canceled') {
-              let estimated = next.end - next.start;
-              let current_end_time = surgery.end;
-              // change the start time of the next surgery to begin after the end of the current surgery
-              next.start = new Date(current_end_time.getTime() + 1200000);
-              // change the end time of the next surgery to suit the new start time of the next surgery
-              const nextDurationMinutes = this.getPlannedDurationMinutes(next);
-              next.end = new Date(next.start.getTime() + nextDurationMinutes * 60 * 1000);
-              /*
-              next.EndDate  = next.EndTime = 
-              next.ArrivalDate = next.ArrivalTime = 
-              */
-              next.ArrivalDate = this.datePipe.transform(next.start, 'yyyy-MM-dd HH:mm');
-              next.ArrivalTime = this.datePipe.transform(next.start, 'HH:mm');
-              next.EndDate = this.datePipe.transform(next.end, 'yyyy-MM-dd HH:mm');
-              next.EndTime = this.datePipe.transform(next.end, 'HH:mm');
-              next.title = ` 
-                מחלקה: <b>${next.SurgeryRequestDepartments.S_DEPARTMENT}</b><br>
-                שם: <b>${next.SurgeryPatientDetails.PM_FIRST_NAME} ${next.SurgeryPatientDetails.PM_LAST_NAME}</b><b> -- ${next.SurgeryPatientDetails.PM_CASE_NUMBER}</b> <br>
-                דחיפות: <b>${next.Urgency}</b><br>
-                S:<b>${next.ArrivalDate.split(' ')[1]}</b> - E:<b>${next.EndDate.split(' ')[1]}</b>`;
+              const nextUseRealTimes = isCurrentOrPastDate && next.SurgeryStatus !== 'Planned';
+
+              if (nextUseRealTimes) {
+                // Keep original server times for next surgery
+                next.ArrivalDate = this.datePipe.transform(next.start, 'yyyy-MM-dd HH:mm');
+                next.ArrivalTime = this.datePipe.transform(next.start, 'HH:mm');
+                next.EndDate = this.datePipe.transform(next.end, 'yyyy-MM-dd HH:mm');
+                next.EndTime = this.datePipe.transform(next.end, 'HH:mm');
+                next.title = ` 
+                  מחלקה: <b>${next.SurgeryRequestDepartments.S_DEPARTMENT}</b><br>
+                  שם: <b>${next.SurgeryPatientDetails.PM_FIRST_NAME} ${next.SurgeryPatientDetails.PM_LAST_NAME}</b><b> -- ${next.SurgeryPatientDetails.PM_CASE_NUMBER}</b> <br>
+                  דחיפות: <b>${next.Urgency}</b><br>
+                  S:<b>${next.ArrivalDate.split(' ')[1]}</b> - E:<b>${next.EndDate.split(' ')[1]}</b>`;
+              } else {
+                // Original behavior: calculate next start time based on current end time + setup time
+                let current_end_time = surgery.end;
+                // change the start time of the next surgery to begin after the end of the current surgery
+                next.start = new Date(current_end_time.getTime() + 1200000);
+                // change the end time of the next surgery to suit the new start time of the next surgery
+                const nextDurationMinutes = this.getPlannedDurationMinutes(next);
+                next.end = new Date(next.start.getTime() + nextDurationMinutes * 60 * 1000);
+                /*
+                next.EndDate  = next.EndTime = 
+                next.ArrivalDate = next.ArrivalTime = 
+                */
+                next.ArrivalDate = this.datePipe.transform(next.start, 'yyyy-MM-dd HH:mm');
+                next.ArrivalTime = this.datePipe.transform(next.start, 'HH:mm');
+                next.EndDate = this.datePipe.transform(next.end, 'yyyy-MM-dd HH:mm');
+                next.EndTime = this.datePipe.transform(next.end, 'HH:mm');
+                next.title = ` 
+                  מחלקה: <b>${next.SurgeryRequestDepartments.S_DEPARTMENT}</b><br>
+                  שם: <b>${next.SurgeryPatientDetails.PM_FIRST_NAME} ${next.SurgeryPatientDetails.PM_LAST_NAME}</b><b> -- ${next.SurgeryPatientDetails.PM_CASE_NUMBER}</b> <br>
+                  דחיפות: <b>${next.Urgency}</b><br>
+                  S:<b>${next.ArrivalDate.split(' ')[1]}</b> - E:<b>${next.EndDate.split(' ')[1]}</b>`;
+              }
               //////debugger
             }
           });
