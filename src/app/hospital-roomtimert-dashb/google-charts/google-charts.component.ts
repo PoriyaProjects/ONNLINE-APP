@@ -1,4 +1,4 @@
-import { Component, AfterViewInit, OnInit, HostListener } from '@angular/core';
+import { Component, AfterViewInit, OnInit, OnDestroy, HostListener } from '@angular/core';
 import { trigger, state, style, transition, animate } from '@angular/animations';
 import { GoogleChartsService } from '../services/google-charts.service';
 import { environment } from 'src/environments/environment';
@@ -64,10 +64,9 @@ export interface RoomData {
     ])
   ]
 })
-export class RoomTimeRTDashboardComponent implements OnInit, AfterViewInit {
+export class RoomTimeRTDashboardComponent implements OnInit, AfterViewInit, OnDestroy {
 
   private destroy$ = new Subject<void>();
-private ackedRooms = new Set<string>();
 
   departmentMap = new Map<string, DepartmentData>();
   selectedDepartmentCharts: any[] = [];
@@ -133,7 +132,6 @@ private ackedRooms = new Set<string>();
 
 refreshInterval: any;
 countdownInterval: any;
-private intervalId: any;
 nextRefreshIn: number = 300; 
 autoRefreshPaused = false;
 lastLoaded: Date | null = null;
@@ -148,18 +146,6 @@ ngOnInit(): void {
   this.loadRoomsData();
   this.startAutoRefresh();
 
-
-  this.refreshInterval = setInterval(() => {
-    this.loadRoomsData();
-    this.nextRefreshIn = 300; 
-  }, 5 * 60 * 1000);
-
-
-  this.countdownInterval = setInterval(() => {
-    if (this.nextRefreshIn > 0) {
-      this.nextRefreshIn--;
-    }
-  }, 1000);
   const saved = localStorage.getItem('rooms_allExpanded');
   if (saved === 'true') this.allExpanded = true;
   if (saved === 'false') this.allExpanded = false;
@@ -171,7 +157,9 @@ ngOnInit(): void {
 }
 
 ngAfterViewInit(): void {
-  this.googleChartsService.chartsReady$.subscribe(() => this.loadCharts());
+  this.googleChartsService.chartsReady$
+    .pipe(takeUntil(this.destroy$))
+    .subscribe(() => this.loadCharts());
 
   this.googleChartsService.drawSummarizedMultiPeriodChart(
     'multiPeriodSummary',
@@ -198,12 +186,13 @@ ngAfterViewInit(): void {
 }
 
 ngOnDestroy(): void {
-    if (this.intervalId) {
-      clearInterval(this.intervalId);
-    }
-     this.destroy$.next();
-  this.destroy$.complete();
+  this.clearIntervals();
+  if (this.resizeTimeout) {
+    clearTimeout(this.resizeTimeout);
   }
+  this.destroy$.next();
+  this.destroy$.complete();
+}
 
   @HostListener('window:resize')
   onResize() {
@@ -1322,7 +1311,10 @@ formatCountdown(sec: number): string {
 
 manualRefresh(): void {
   this.loadRoomsData();
-  this.nextRefreshIn = 300; 
+  this.nextRefreshIn = 300;
+  if (!this.autoRefreshPaused) {
+    this.startAutoRefresh();
+  }
 }
 
 toggleAutoRefresh(): void {
@@ -1357,14 +1349,12 @@ private clearIntervals(): void {
   if (this.countdownInterval) clearInterval(this.countdownInterval);
 }
 
-onDateChange(): void {  
-  if (!this.autoRefreshPaused) {
-    this.autoRefreshPaused = true;
-    this.clearIntervals();
-  }
-
-  
+onDateChange(): void {
   this.loadRoomsData();
+  this.nextRefreshIn = 300;
+  if (!this.autoRefreshPaused) {
+    this.startAutoRefresh();
+  }
 }
 
 
@@ -1442,9 +1432,13 @@ private refreshAckCache(): void {
 
 private markAllRoomsAcknowledged(): void {
   for (const r of this.roomsData ?? []) {
-    if (r?.roomId) this.ackedRooms.add(r.roomId);
+    if (!r?.roomId) continue;
+    const key = this.lastEventKeyForRoom(r.roomId);
+    const storeKey = this.ackStorageKey(r.roomId);
+    this.lsSet(storeKey, key);
+    this.lsRemove(this.legacyAckStorageKey(r.roomId));
+    this.ackCache.set(r.roomId, key);
   }
-
   this.roomsData = [...(this.roomsData ?? [])];
 }
 
