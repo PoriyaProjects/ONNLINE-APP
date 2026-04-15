@@ -7657,12 +7657,21 @@ updateChartColumns(): void {
         const bom = "\uFEFF";
         let body = "";
         let fileName = "dashboard_export.csv";
-        let snack = "\u2713 \u05d4\u05d3\u05d5\u05d7 \u05d9\u05d5\u05e6\u05d0 \u05d1\u05d4\u05e6\u05dc\u05d7\u05d4";
+        let snack = "✓ הדוח יוצא בהצלחה";
 
         if (this.surgeryData.length > 0) {
             const list = this.dataSource.data as SurgeryRow[];
             body =
-                "\u05ea\u05d0\u05e8\u05d9\u05da,\u05de\u05e1\u05e4\u05e8 \u05de\u05e7\u05e8\u05d4,\u05d7\u05d3\u05e8 \u05e0\u05d9\u05ea\u05d5\u05d7,\u05d6\u05de\u05df \u05e0\u05d9\u05ea\u05d5\u05d7 (\u05d3\u05e7'),\u05e1\u05d5\u05d2 \u05e0\u05d9\u05ea\u05d5\u05d7,\u05de\u05e0\u05ea\u05d7\u05ea,\u05e4\u05e8\u05d5\u05e6\u05d3\u05d5\u05e8\u05d4,\u05e1\u05db\u05d5\u05dd \u05db\u05d5\u05dc\u05dc\n";
+                [
+                    this.csvCell("תאריך הניתוח"),
+                    this.csvCell("מספר מקרה"),
+                    this.csvCell("חדר ניתוח"),
+                    this.csvCell("משך הניתוח בדקות"),
+                    this.csvCell("סוג ניתוח"),
+                    this.csvCell("מנתח"),
+                    this.csvCell("פרוצדורה / תיאור"),
+                    this.csvCell("סכום כולל (אם קיים בנתונים)"),
+                ].join(",") + "\n";
             list.forEach((row) => {
                 body +=
                     [
@@ -7677,11 +7686,18 @@ updateChartColumns(): void {
                     ].join(",") + "\n";
             });
             fileName = "surgeries_report.csv";
-            snack += " (\u05e0\u05d9\u05ea\u05d5\u05d7\u05d9\u05dd \u05e9\u05d5\u05e8\u05d4-\u05e9\u05d5\u05e8\u05d4)";
+            snack += " (ניתוחים שורה-שורה)";
         } else if (this.departmentIncomeData.length > 0) {
             const olderYear = this.getOlderYearFromDeptData();
             const latestYear = this.getLatestYearFromDeptData();
-            body = `\u05de\u05d7\u05dc\u05e7\u05d4,\u05e2\u05e8\u05da \u05e4\u05e2\u05d9\u05dc\u05d5\u05ea ${olderYear},\u05e2\u05e8\u05da \u05e4\u05e2\u05d9\u05dc\u05d5\u05ea ${latestYear},\u05e9\u05d9\u05e0\u05d5\u05d9,\u05d0\u05d7\u05d5\u05d6 \u05e9\u05d9\u05e0\u05d5\u05d9\n`;
+            body =
+                [
+                    this.csvCell("שם מחלקה"),
+                    this.csvCell(`סך פעילות / הכנסה בשנת ${olderYear}`),
+                    this.csvCell(`סך פעילות / הכנסה בשנת ${latestYear}`),
+                    this.csvCell(`הפרש בין ${latestYear} ל-${olderYear} (מספר)`),
+                    this.csvCell(`אחוז שינוי בין השנים (%)`),
+                ].join(",") + "\n";
             this.departmentIncomeData.forEach((item) => {
                 const difference = this.calculateDifference(item);
                 const percentage = this.calculatePercentageChange(item);
@@ -7695,10 +7711,35 @@ updateChartColumns(): void {
                     ].join(",") + "\n";
             });
             fileName = "surgery_activity_by_department.csv";
-            snack += " (\u05e1\u05d9\u05db\u05d5\u05dd \u05d4\u05db\u05e0\u05e1\u05d5\u05ea)";
+            snack += " (סיכום הכנסות)";
         } else if (this.countByDeptData.length > 0) {
             body =
-                "\u05e9\u05e0\u05d4,\u05d0\u05ea\u05e8,\u05de\u05d7\u05dc\u05e7\u05d4,Wing,\u05db\u05de\u05d5\u05ea,\u05d4\u05ea\u05d0\u05de\u05d5\u05ea,\u05d0\u05d9-\u05d4\u05ea\u05d0\u05de\u05d5\u05ea,\u05e1\u05d5\u05d2 \u05e0\u05d9\u05ea\u05d5\u05d7 \u05de\u05d0\u05d5\u05d7\u05d3,\u05de\u05e9\u05de\u05e8\u05ea,\u05d7\u05d3\u05e8 \u05e0\u05d9\u05ea\u05d5\u05d7,\u05d7\u05dc\u05e7 \u05e9\u05d1\u05d5\u05e2,\u05e1\u05d5\u05d2 \u05de\u05d9\u05de\u05d5\u05df\n";
+                [
+                    this.csvCell(
+                        "שנה (לפי תאריך הניתוח בטבלת המקור)",
+                    ),
+                    this.csvCell("אתר"),
+                    this.csvCell(
+                        'מחלקה (שדה "מנתחת" במקור)',
+                    ),
+                    this.csvCell(
+                        'אגף מאוגד (שדה "מנתחת מאוגד")',
+                    ),
+                    this.csvCell(
+                        "מספר ניתוחים בקבוצה (ספירה באגרגציה)",
+                    ),
+                    this.csvCell(
+                        'סוג ניתוח מאוחד (שדה "סוג ניתוח ")',
+                    ),
+                    this.csvCell("משמרת"),
+                    this.csvCell("חדר ניתוח"),
+                    this.csvCell(
+                        'אמצע/סוף שבוע (שדה "אמצע/סוף שבוע")',
+                    ),
+                    this.csvCell(
+                        "\u05e7\u05e8\u05df / \u05d1\u05d9\u05d4\u0022\u05d7 (\u05e9\u05d3\u05d4 \u05e7\u05e8\u05df/\u05d1\u05d9\u05d4\u0022\u05d7 \u05d1\u05de\u05e1\u05d3 \u05d4\u05e0\u05ea\u05d5\u05e0\u05d9\u05dd)",
+                    ),
+                ].join(",") + "\n";
             this.countByDeptData.forEach((r) => {
                 body +=
                     [
@@ -7707,8 +7748,6 @@ updateChartColumns(): void {
                         this.csvCell(r.Department),
                         this.csvCell(r.Wing),
                         this.csvCell(r.Count),
-                        this.csvCell(r.MatchCount),
-                        this.csvCell(r.MismatchCount),
                         this.csvCell(r.UnifiedSurgeryType),
                         this.csvCell(r.Shift),
                         this.csvCell(r.SurgeryRoom),
@@ -7717,9 +7756,9 @@ updateChartColumns(): void {
                     ].join(",") + "\n";
             });
             fileName = "surgery_counts_by_dept_rows.csv";
-            snack += " (\u05e9\u05d5\u05e8\u05d5\u05ea GetCountByDept)";
+            snack += " (שורות GetCountByDept)";
         } else {
-            this.snackBar.open("\u05d0\u05d9\u05df \u05e0\u05ea\u05d5\u05e0\u05d9\u05dd \u05dc\u05d9\u05d9\u05e6\u05d5\u05d0", "\u05e1\u05d2\u05d5\u05e8", { duration: 2000 });
+            this.snackBar.open("אין נתונים לייצוא", "סגור", { duration: 2000 });
             return;
         }
 
@@ -7730,7 +7769,7 @@ updateChartColumns(): void {
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
-        this.snackBar.open(snack, "\u05e1\u05d2\u05d5\u05e8", { duration: 2500 });
+        this.snackBar.open(snack, "סגור", { duration: 2500 });
     }
     /**
      * Dismiss the guide avatar. If "don't show again" is checked, remember for next visits.
