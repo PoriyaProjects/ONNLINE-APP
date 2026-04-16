@@ -7,7 +7,7 @@
         <h3>
             <b> עריכת פרטי ניתוח </b>
         </h3>
-        <h6> פתיחת מסך ראשי: {{ dashboard_date | date: 'HH:mm:ss' }} - פתיחת כרטיסיית מטופל: {{ card_date | date:
+        <h6> פתיחת כרטיסיית מטופל: {{ card_date | date:
             'HH:mm:ss'
             }} - זמן נוכחי: {{ current_date | date: 'HH:mm:ss' }} </h6>
     </div>
@@ -102,13 +102,16 @@
                     <div class="col-2" formGroupName="AdditionalDetails">
                         <mat-form-field class="example-full-width" appearance="fill">
                             <mat-label>מנות דם</mat-label>
-                            <input matInput formControlName="BLOOD_BANK">
+                            <mat-select formControlName="BLOOD_BANK">
+                                <mat-option value="0"> לא </mat-option>
+                                <mat-option value="1"> כן </mat-option>
+                            </mat-select>
                         </mat-form-field>
                     </div>
                     <div class="col-2">
                         <mat-label>זמן משך ניתוח (דקות)</mat-label>
                         <p>
-                            {{ SurgeryFormGroup.get('Duration').value }}
+                            {{ SurgeryFormGroup.get('AvgDauration').value }}
                         </p>
                     </div>
                 </div>

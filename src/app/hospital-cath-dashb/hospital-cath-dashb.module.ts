@@ -7,16 +7,41 @@ import { MatCardModule } from '@angular/material/card';
 import { MatGridListModule } from '@angular/material/grid-list';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { FormsModule } from '@angular/forms';
-const routes: Routes = [
-  { path: '', component: GoogleChartsComponent }
-];
 
+// Angular Material Modules
+import { MatTableModule } from '@angular/material/table';
+import { MatPaginatorModule } from '@angular/material/paginator';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
+import { TableComponent } from '../shared/dataTable';
+import { MatSortModule } from '@angular/material/sort';
+import { DoctorSummaryComponent  } from './doctor-summary.component';
+import { SurgerySummaryComponent  } from './surgery-summary.component';
+import { RoomSummaryComponent  } from './room-summary.component';
+
+const routes: Routes = [
+  { path: '', component: GoogleChartsComponent },
+  { path: 'data-table', component: TableComponent }
+];
 @NgModule({
+  declarations: [GoogleChartsComponent,TableComponent,DoctorSummaryComponent, SurgerySummaryComponent, RoomSummaryComponent],
   imports: [
-    RouterModule.forChild([
-      { path: '', component: GoogleChartsComponent }
-    ])
-  ],
-  declarations: [GoogleChartsComponent]
+    CommonModule,
+    RouterModule.forChild(routes),
+    HttpClientModule,
+    FormsModule,
+    MatTableModule,
+    MatPaginatorModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatButtonModule,
+    MatIconModule,
+    MatCardModule,
+    MatGridListModule,
+    MatToolbarModule,
+    MatSortModule    
+  ]
 })
-export class HospitalCathDashbModule { }
+export class HospitalCathDashbModule {}

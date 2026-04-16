@@ -1,0 +1,11 @@
+.matrix-wrap {
+  border: 1px solid var(--nps-border);
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--nps-surface);
+  box-shadow: var(--nps-shadow-soft);
+}
+
+.full-width {
+  width: 100%;
+}

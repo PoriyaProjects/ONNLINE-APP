@@ -6,6 +6,9 @@ export const environment = {
   url: 'http://localhost:64964/WebService.asmx/',
   urlipracticom: 'http://localhost:64964/WebService.asmx/',
   AuthUrl: 'http://localhost:64964/WebService.asmx/',
+  /** Optional full WebService base for GetHearingDetails / GetHearingCounts when SPA origin ≠ API (CORS). Empty = `url`. */
+  hearingDetailsAsmxBase: '',
+  npsUserId: localStorage.getItem('ID'),
   production: false
 };
 

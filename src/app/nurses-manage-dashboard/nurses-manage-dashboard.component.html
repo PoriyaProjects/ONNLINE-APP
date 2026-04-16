@@ -196,6 +196,12 @@
                             mat-raised-button type="submit" class="btn btn-raised" (click)="test()">
                             <i class="material-icons">face</i>
                         </button></li> -->
+                    <li *ngIf="nursesUserPermission && rightPC">
+                        <a mat-raised-button matTooltip="ניהול הרשאות אחיות" routerLink="/nps-permissions"
+                            class="btn btn-raised mr-1" style="background-color:#3f51b5;color:#fff;">
+                            <i class="material-icons">admin_panel_settings</i>
+                        </a>
+                    </li>
                 </ul>
             </div>
             <div class="col-4 text-center">

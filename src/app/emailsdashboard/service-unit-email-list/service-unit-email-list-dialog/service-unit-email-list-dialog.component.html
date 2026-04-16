@@ -1,0 +1,55 @@
+<h2 mat-dialog-title class="dialog-title" *ngIf="form != undefined">
+  {{ form.get('DepartmentHebFullDesc').value ? 'עדכון' : 'הוספה' }} רשומה
+</h2>
+
+<mat-dialog-content *ngIf="form != undefined" [formGroup]="form" class="dialog-content" dir="rtl">
+  <div class="form-fields">
+    <mat-form-field appearance="outline" class="form-field w-full mb-3">
+      <mat-label>מחלקה</mat-label>
+      <input matInput formControlName="DepartmentHebFullDesc">
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="form-field w-full mb-3">
+      <mat-label>שם מתנדב</mat-label>
+      <input matInput formControlName="VolunteerName">
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="form-field w-full mb-4">
+      <mat-label>מספר טלפון מתנדב</mat-label>
+      <input matInput formControlName="VolunteerCellNumber">
+    </mat-form-field>
+  </div>
+
+  <div class="form-fields">
+    <div *ngFor="let listField of listFields" class="form-field w-full mb-4">
+      <mat-form-field appearance="outline" class="chip-field w-full">
+        <mat-label>{{ listField.desc }}</mat-label>
+
+        <!-- Bind formControl to the chip list -->
+        <mat-chip-list #chipList [formControl]="form.get(listField.value)" aria-label="רשימת בחירה">
+          <mat-chip *ngFor="let item of form.get(listField.value).value" [selectable]="true" [removable]="true"
+            (removed)="removeChip(listField.value, item)">
+            {{ getDisplayName(item, listField.value) }}
+            <mat-icon matChipRemove>cancel</mat-icon>
+          </mat-chip>
+
+          <!-- Input used for autocomplete + adding chips -->
+          <input [matChipInputFor]="chipList" [matAutocomplete]="auto" [formControl]="autoControl[listField.value]"
+            (matChipInputTokenEnd)="addChip(listField.value, $event)" [attr.name]="listField.value"
+            placeholder="הוסף..." />
+        </mat-chip-list>
+
+        <mat-autocomplete #auto="matAutocomplete" (optionSelected)="selected(listField.value, $event)">
+          <mat-option *ngFor="let option of filteredOptions[listField.value]" [value]="option">
+            {{ option.firstname }} {{ option.lastname }} - {{ option.derug }}
+          </mat-option>
+        </mat-autocomplete>
+      </mat-form-field>
+    </div>
+  </div>
+</mat-dialog-content>
+
+<mat-dialog-actions align="start" class="dialog-actions" dir="rtl">
+  <button mat-stroked-button (click)="onCancel()">ביטול</button>
+  <button mat-raised-button color="primary" (click)="onSave()">שמירה</button>
+</mat-dialog-actions>

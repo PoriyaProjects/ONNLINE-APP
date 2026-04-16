@@ -34,6 +34,7 @@ table {
 
 .container {
     padding-bottom: 100px;
+    max-width: 70%;
 }
 
 ::ng-deep .mat-progress-bar-fill::after {
@@ -67,12 +68,26 @@ table {
     padding: 10px 20px;
     text-align: center;
     transition: background-color 0.2s ease-in-out;
-  }
-  
-  .file-upload-button:hover {
+}
+
+.file-upload-button:hover {
     background-color: #cccccc;
-  }
-  
-  .file-upload-button:active {
+}
+
+.file-upload-button:active {
     background-color: #dddddd;
-  }
+}
+
+.emergency-card {
+    text-align: center;
+    width: 20%;
+    height: 70px;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    border-radius: 16px;
+}
+
+.emergency-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+}

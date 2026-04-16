@@ -1,4 +1,11 @@
-<form [formGroup]="resuscitationForm" dir="rtl" *ngIf="resuscitationForm != undefined">
+<div class="row" style="justify-content: right;">
+    <button mat-raised-button color="warn" type="button" class="closeBtn" (click)="onClose()">
+        X
+    </button>
+</div>
+<hr>
+<mat-progress-bar mode="buffer" *ngIf="resuscitationForm == undefined"></mat-progress-bar>
+<form [formGroup]="resuscitationForm" dir="rtl" *ngIf="resuscitationForm != undefined" #printSection>
     <mat-horizontal-stepper>
         <!-- Step 1: פרטי הילוד -->
         <mat-step [stepControl]="resuscitationForm.get('motherInfo')">
@@ -7,16 +14,32 @@
                 <mat-card>
                     <mat-card-content>
                         <mat-form-field appearance="outline" style="width: 50%;">
-                            <mat-label>שם הילוד</mat-label>
-                            <input matInput formControlName="babyName">
+                            <mat-label>תעודת זהות היולדת</mat-label>
+                            <input matInput formControlName="motherId" (blur)="getPersonDetails()"
+                                (keydown.enter)="getPersonDetails()">
                         </mat-form-field>
 
                         <mat-form-field appearance="outline" style="width: 50%;">
+                            <mat-label>שם היולדת</mat-label>
+                            <input matInput formControlName="motherName">
+                        </mat-form-field>
+
+                        <mat-form-field appearance="outline" style="width: 33.333%;">
                             <mat-label>תעודת זהות הילוד</mat-label>
                             <input matInput formControlName="babyId">
                         </mat-form-field>
 
-                        <mat-form-field appearance="outline" style="width: 50%;">
+                        <mat-form-field appearance="outline" style="width: 33.333%;">
+                            <mat-label>מספר מקרה הילוד</mat-label>
+                            <input matInput formControlName="babyCasenumber">
+                        </mat-form-field>
+
+                        <mat-form-field appearance="outline" style="width: 33.333%;">
+                            <mat-label>שם היילוד</mat-label>
+                            <input matInput formControlName="babyName">
+                        </mat-form-field>
+
+                        <mat-form-field appearance="outline" style="width: 33.333%;">
                             <mat-label>החייאה בוצעה בתאריך</mat-label>
                             <input matInput [matDatepicker]="resuscitationDatepicker"
                                 formControlName="resuscitationDate"
@@ -25,8 +48,8 @@
                             <mat-datepicker #resuscitationDatepicker></mat-datepicker>
                         </mat-form-field>
 
-                        <mat-form-field appearance="outline" style="width: 50%;">
-                            <mat-label>בשעה</mat-label>
+                        <mat-form-field appearance="outline" style="width: 33.333%;">
+                            <mat-label>מועד תחילת ההחייאה</mat-label>
                             <input matInput type="time" formControlName="resuscitationTime">
                         </mat-form-field>
 
@@ -37,16 +60,22 @@
                                 <mat-radio-button value="חדר ניתוח">חדר ניתוח</mat-radio-button>
                                 <mat-radio-button value="מקום אחר">מקום אחר</mat-radio-button>
                             </mat-radio-group>
+                            <mat-form-field appearance="outline"
+                                *ngIf="resuscitationForm.get('motherInfo').get('location')?.value == 'מקום אחר'">
+                                <mat-label>אחר</mat-label>
+                                <input matInput type="text" formControlName="otherLocation">
+                            </mat-form-field>
                         </div>
+
+
+                        <mat-form-field appearance="outline" style="width: 50%;">
+                            <mat-label>שעת הלידה</mat-label>
+                            <input matInput type="time" formControlName="deliveryTime">
+                        </mat-form-field>
 
                         <mat-form-field appearance="outline" style="width: 50%;">
                             <mat-label>שעת קריאת רופא ילודים</mat-label>
                             <input matInput type="time" formControlName="pediatricianCalledTime">
-                        </mat-form-field>
-
-                        <mat-form-field appearance="outline" style="width: 50%;">
-                            <mat-label>מועד תחילת החייאה</mat-label>
-                            <input matInput type="time" formControlName="resuscitationStartTime">
                         </mat-form-field>
 
                         <div fxFlex="100%" style="margin-top: 8px;margin-bottom: 40px;text-align: right;">
@@ -65,11 +94,19 @@
                         <mat-form-field appearance="outline" style="width: 33.333%;">
                             <mat-label>משקל הילוד</mat-label>
                             <input matInput type="number" formControlName="babyWeight">
+                            <span matSuffix>גרם</span>
                         </mat-form-field>
 
                         <mat-form-field appearance="outline" style="width: 33.333%;">
                             <mat-label>צורת הלידה</mat-label>
-                            <input matInput formControlName="deliveryMethod">
+                            <input matInput type="text" formControlName="deliveryMethod">
+                            <!-- <mat-select formControlName="deliveryMethod">
+                                <mat-option value="וגינלית">וגינלית</mat-option>
+                                <mat-option value="קיסרי">קיסרי</mat-option>
+                                <mat-option value="שולפן ריק">שולפן ריק</mat-option>
+                                <mat-option value="מכשירנית">מכשירנית</mat-option>
+                                <mat-option value="אחר">אחר</mat-option>
+                            </mat-select> -->
                         </mat-form-field>
                     </mat-card-content>
                     <mat-card-actions fxLayout="row-reverse">
@@ -84,18 +121,43 @@
             <ng-template matStepLabel>אנשי צוות</ng-template>
             <div formArrayName="teamMembers">
                 <div *ngFor="let member of resuscitationForm.get('teamMembers')['controls']; let i = index"
-                    [formGroupName]="i">
+                    [formGroupName]="i" class="text-right">
                     <!-- {{member | json}} -->
-                    <mat-form-field appearance="outline" style="width: 50%;">
+                    <!-- <mat-form-field appearance="outline" style="width: 33.333%;">
                         <mat-label>שם</mat-label>
                         <input matInput formControlName="name" placeholder="הכנס שם">
+                    </mat-form-field> -->
+                    <mat-form-field appearance="outline" style="width: 33.333%;">
+                        <mat-label>שם</mat-label>
+                        <input matInput formControlName="name" [matAutocomplete]="auto" placeholder="הכנס שם">
+                        <mat-autocomplete #auto="matAutocomplete">
+                            <mat-option *ngFor="let option of filteredNameOptions[i] | async"
+                                [value]="option.firstname + ' ' + option.lastname">
+                                {{ option.firstname }} {{ option.lastname }} - {{ option.derug }}
+                            </mat-option>
+                        </mat-autocomplete>
                     </mat-form-field>
-                    <mat-form-field appearance="outline" style="width: 50%;">
+                    <mat-form-field appearance="outline" style="width: 33.333%;">
                         <mat-label>תפקיד</mat-label>
-                        <input matInput formControlName="role" placeholder="הכנס תפקיד">
+                        <mat-select formControlName="role">
+                            <mat-option value="רופא">רופא</mat-option>
+                            <mat-option value="רופא בכיר">רופא בכיר</mat-option>
+                            <mat-option value="רופא תורן">רופא תורן</mat-option>
+                            <mat-option value="אחות פגייה">אחות פגייה</mat-option>
+                            <mat-option value="אחות ילודים">אחות ילודים</mat-option>
+                            <mat-option value="מיילדת">מיילדת</mat-option>
+                            <mat-option value="רופא נשים">רופא נשים</mat-option>
+                            <mat-option value="מרדים">מרדים</mat-option>
+                            <mat-option value="אחר">אחר</mat-option>
+                        </mat-select>
+                    </mat-form-field>
+                    <!-- Show custom input if role is "אחר" -->
+                    <mat-form-field *ngIf="member.get('role')?.value === 'אחר'" appearance="outline"
+                        style="width: 33.333%;">
+                        <mat-label>תפקיד אחר</mat-label>
+                        <input matInput formControlName="otherRole" placeholder="הכנס תפקיד ידני">
                     </mat-form-field>
                 </div>
-                <!-- <button color="primary" mat-raised-button (click)="addTeamMember()"><mat-icon>add</mat-icon></button> -->
             </div>
             <mat-card-actions fxLayout="row-reverse">
                 <button mat-button matStepperPrevious>חזור</button>
@@ -107,6 +169,17 @@
         <mat-step [stepControl]="resuscitationForm.get('pregnancyDeliveryInfo')">
             <ng-template matStepLabel>מהלך ההריון והלידה</ng-template>
             <div formGroupName="pregnancyDeliveryInfo">
+                <!-- Predefined Messages -->
+                <mat-form-field appearance="outline" style="width: 100%;">
+                    <mat-label>בחר סיכום מהיר</mat-label>
+                    <mat-select (selectionChange)="appendPregnancyDeliveryDetail($event.value)">
+                        <mat-option *ngFor="let detail of predefinedPregnancyDetails" [value]="detail">
+                            {{ detail }}
+                        </mat-option>
+                    </mat-select>
+                </mat-form-field>
+
+                <!-- Textarea -->
                 <mat-form-field appearance="outline" style="width: 100%;">
                     <mat-label>מידע על מהלך ההריון והלידה</mat-label>
                     <textarea matInput formControlName="pregnancyDeliveryDetails" rows="5"></textarea>
@@ -127,7 +200,7 @@
                         <mat-radio-button value="0">לא</mat-radio-button>
                     </mat-radio-group>
                     <mat-form-field appearance="outline" style="width: 50%;"
-                        *ngIf="resuscitationForm.get('pregnancyDeliveryInfo').get('pediatricianPresent').value == 'true'">
+                        *ngIf="resuscitationForm.get('pregnancyDeliveryInfo').get('pediatricianPresent').value == '1'">
                         <mat-label>רופא ילודים הגיע בשעה:</mat-label>
                         <input matInput type="time" formControlName="pediatricianArrivalTime">
                     </mat-form-field>
@@ -142,46 +215,48 @@
         <!-- Step 4: מעקב אחר מדדים -->
         <mat-step [stepControl]="resuscitationForm.get('vitalSigns')">
             <ng-template matStepLabel>מעקב מדדים</ng-template>
-            <table mat-table [dataSource]="resuscitationForm.get('vitalSigns')['controls']">
-                <ng-container matColumnDef="time">
-                    <th mat-header-cell *matHeaderCellDef>שעה</th>
-                    <td mat-cell *matCellDef="let row">
-                        <mat-form-field appearance="outline">
-                            <input matInput type="time" [formControl]="row.get('time')">
-                        </mat-form-field>
-                    </td>
-                </ng-container>
+            <div style="overflow-x: auto;height: 600px;">
+                <table mat-table [dataSource]="resuscitationForm.get('vitalSigns')['controls']">
+                    <ng-container matColumnDef="time">
+                        <th mat-header-cell *matHeaderCellDef>שעה</th>
+                        <td mat-cell *matCellDef="let row">
+                            <mat-form-field appearance="outline">
+                                <input matInput type="time" [formControl]="row.get('time')">
+                            </mat-form-field>
+                        </td>
+                    </ng-container>
 
-                <ng-container matColumnDef="pulse">
-                    <th mat-header-cell *matHeaderCellDef>דופק</th>
-                    <td mat-cell *matCellDef="let row">
-                        <mat-form-field appearance="outline">
-                            <input matInput type="number" [formControl]="row.get('pulse')">
-                        </mat-form-field>
-                    </td>
-                </ng-container>
+                    <ng-container matColumnDef="pulse">
+                        <th mat-header-cell *matHeaderCellDef>דופק</th>
+                        <td mat-cell *matCellDef="let row">
+                            <mat-form-field appearance="outline">
+                                <input matInput type="number" [formControl]="row.get('pulse')">
+                            </mat-form-field>
+                        </td>
+                    </ng-container>
 
-                <ng-container matColumnDef="o2Sat">
-                    <th mat-header-cell *matHeaderCellDef>O2Sat</th>
-                    <td mat-cell *matCellDef="let row">
-                        <mat-form-field appearance="outline">
-                            <input matInput type="number" [formControl]="row.get('o2Sat')">
-                        </mat-form-field>
-                    </td>
-                </ng-container>
+                    <ng-container matColumnDef="o2Sat">
+                        <th mat-header-cell *matHeaderCellDef>O2Sat</th>
+                        <td mat-cell *matCellDef="let row">
+                            <mat-form-field appearance="outline">
+                                <input matInput type="number" [formControl]="row.get('o2Sat')">
+                            </mat-form-field>
+                        </td>
+                    </ng-container>
 
-                <ng-container matColumnDef="other">
-                    <th mat-header-cell *matHeaderCellDef>אחר</th>
-                    <td mat-cell *matCellDef="let row" style="padding: 0px !important;">
-                        <mat-form-field appearance="outline">
-                            <input matInput type="text" [formControl]="row.get('other')">
-                        </mat-form-field>
-                    </td>
-                </ng-container>
+                    <ng-container matColumnDef="other">
+                        <th mat-header-cell *matHeaderCellDef>אחר</th>
+                        <td mat-cell *matCellDef="let row" style="padding: 0px !important;">
+                            <mat-form-field appearance="outline">
+                                <input matInput type="text" [formControl]="row.get('other')">
+                            </mat-form-field>
+                        </td>
+                    </ng-container>
 
-                <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-                <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
-            </table>
+                    <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+                    <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+                </table>
+            </div>
             <mat-card-actions fxLayout="row-reverse">
                 <button mat-button matStepperPrevious>חזור</button>
                 <button mat-button matStepperNext>המשך</button>
@@ -191,7 +266,7 @@
         <!-- Step 5: הפעולות שבוצעו במהלך ההחייאה -->
         <mat-step [stepControl]="resuscitationForm.get('resuscitationActions')">
             <ng-template matStepLabel>הפעולות שבוצעו במהלך ההחייאה</ng-template>
-            <div style="overflow-x: auto;">
+            <div style="overflow-x: auto;height: 600px;">
                 <table mat-table [dataSource]="resuscitationForm.get('resuscitationActions')['controls']"
                     style="width: 100%;">
 
@@ -312,7 +387,15 @@
                             <th mat-header-cell *matHeaderCellDef>דרך המתן</th>
                             <td mat-cell *matCellDef="let row">
                                 <mat-form-field appearance="outline" style="width: 100%;">
-                                    <input matInput type="text" [formControl]="row.get('route')">
+                                    <mat-label>נתיב</mat-label> <mat-select [formControl]="row.get('route')"
+                                        placeholder="בחר נתיב">
+                                        <mat-option value="">&nbsp;</mat-option>
+                                        <mat-option value="ET">ET</mat-option>
+                                        <mat-option value="IV">IV</mat-option>
+                                        <mat-option value="UVC">UVC</mat-option>
+                                        <mat-option value="IO">IO</mat-option>
+                                        <mat-option value="אחר">אחר</mat-option>
+                                    </mat-select>
                                 </mat-form-field>
                             </td>
                         </ng-container>
@@ -360,7 +443,7 @@
                 </div>
             </mat-card>
 
-            <mat-card
+            <!-- <mat-card
                 style="margin-top: 24px; padding: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border-radius: 12px;">
                 <mat-card-title style="margin-bottom: 16px; font-size: 20px; text-align: right;">
                     IV NaBic
@@ -387,7 +470,7 @@
                         <tr mat-row *matRowDef="let row; columns: nabicDisplayedColumns;"></tr>
                     </table>
                 </div>
-            </mat-card>
+            </mat-card> -->
 
             <mat-card
                 style="margin-top: 24px; padding: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border-radius: 12px;">
@@ -496,10 +579,32 @@
                         <!-- Dynamically create columns for each time -->
                         <ng-container *ngFor="let time of times" [matColumnDef]="time.key">
                             <th mat-header-cell *matHeaderCellDef>{{ time.label }}</th>
-                            <td mat-cell *matCellDef="let param; let i = index">
+                            <td mat-cell *matCellDef="let param; let i = index; let last = last">
                                 <div [formGroupName]="i">
-                                    <mat-form-field appearance="outline" class="apgar-input">
-                                        <input matInput type="number" min="0" max="2" [formControlName]="time.key">
+                                    <mat-form-field appearance="outline" class="apgar-input" style="width: 100%;">
+
+                                        <ng-container *ngIf="i === 0">
+                                            <!-- <mat-label>שדה קלט</mat-label> -->
+                                            <input matInput type="text" [formControlName]="time.key">
+                                        </ng-container>
+
+                                        <ng-container *ngIf="last && i !== 0">
+                                            <!-- <mat-label>ציון סופי</mat-label> -->
+                                            <mat-select [formControlName]="time.key" placeholder="בחר ציון (0-10)">
+                                                <mat-option *ngFor="let num of [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]"
+                                                    [value]="num">{{ num }}</mat-option>
+                                            </mat-select>
+                                        </ng-container>
+
+                                        <ng-container *ngIf="!last && i !== 0">
+                                            <!-- <mat-label>ציון קריטריון</mat-label> -->
+                                            <mat-select [formControlName]="time.key" placeholder="בחר ציון (0-2)"
+                                                (selectionChange)="calculateApgarGrades(time.key)">
+                                                <mat-option *ngFor="let num of [0, 1, 2]" [value]="num">{{ num
+                                                    }}</mat-option>
+                                            </mat-select>
+                                        </ng-container>
+
                                     </mat-form-field>
                                 </div>
                             </td>
@@ -510,9 +615,13 @@
                     </table>
                 </div>
             </mat-card>
+            <mat-card-actions fxLayout="row-reverse">
+                <button mat-button matStepperPrevious>חזור</button>
+                <button mat-button matStepperNext>המשך</button>
+            </mat-card-actions>
         </mat-step>
 
-        <!-- Step 7: בדיקות מעבדה -->
+        <!-- Step 8: בדיקות מעבדה -->
         <mat-step>
             <ng-template matStepLabel>בדיקות מעבדה</ng-template>
             <mat-card
@@ -535,7 +644,25 @@
                             <td mat-cell *matCellDef="let param; let i = index">
                                 <div [formGroupName]="i">
                                     <mat-form-field appearance="outline" class="apgar-input" style="width: 100%;">
-                                        <input matInput [formControlName]="time.key" type="text">
+
+                                        <ng-container *ngIf="i === 0">
+                                            <!-- <mat-label>נתיב דגימה</mat-label>  -->
+                                            <mat-select [formControlName]="time.key" placeholder="בחר נתיב">
+                                                <mat-option value="טבורי">טבורי</mat-option>
+                                                <mat-option value="ורידי">ורידי</mat-option>
+                                                <mat-option value="עורקי">עורקי</mat-option>
+                                                <mat-option value="UV">UV</mat-option>
+                                                <mat-option value="UA">UA</mat-option>
+                                                <mat-option value="קפילרי">קפילרי</mat-option>
+                                                <mat-option value="אחר">אחר</mat-option>
+                                            </mat-select>
+                                        </ng-container>
+
+                                        <ng-container *ngIf="i !== 0">
+                                            <!-- <mat-label>ערך</mat-label>  -->
+                                            <input matInput [formControlName]="time.key" type="text">
+                                        </ng-container>
+
                                     </mat-form-field>
                                 </div>
                             </td>
@@ -567,7 +694,25 @@
                             <td mat-cell *matCellDef="let param; let i = index">
                                 <div [formGroupName]="i">
                                     <mat-form-field appearance="outline" class="apgar-input" style="width: 100%;">
-                                        <input matInput [formControlName]="time.key" type="text">
+
+                                        <ng-container *ngIf="i === 0">
+                                            <!-- <mat-label>נתיב דגימה</mat-label>  -->
+                                            <mat-select [formControlName]="time.key" placeholder="בחר נתיב">
+                                                <mat-option value="טבורי">טבורי</mat-option>
+                                                <mat-option value="ורידי">ורידי</mat-option>
+                                                <mat-option value="עורקי">עורקי</mat-option>
+                                                <mat-option value="UV">UV</mat-option>
+                                                <mat-option value="UA">UA</mat-option>
+                                                <mat-option value="קפילרי">קפילרי</mat-option>
+                                                <mat-option value="אחר">אחר</mat-option>
+                                            </mat-select>
+                                        </ng-container>
+
+                                        <ng-container *ngIf="i !== 0">
+                                            <!-- <mat-label>ערך</mat-label>  -->
+                                            <input matInput [formControlName]="time.key" type="text">
+                                        </ng-container>
+
                                     </mat-form-field>
                                 </div>
                             </td>
@@ -578,9 +723,13 @@
                     </table>
                 </div>
             </mat-card>
+            <mat-card-actions fxLayout="row-reverse">
+                <button mat-button matStepperPrevious>חזור</button>
+                <button mat-button matStepperNext>המשך</button>
+            </mat-card-actions>
         </mat-step>
 
-        <!-- Step 7: סיכום החייאה -->
+        <!-- Step 9: סיכום החייאה -->
         <mat-step>
             <ng-template matStepLabel>סיכום החייאה</ng-template>
             <mat-card
@@ -590,6 +739,17 @@
                         <h3>סיכום החייאה</h3>
 
                         <div style="display: flex; flex-wrap: wrap;">
+                            <!-- Predefined Summary Selection -->
+                            <mat-form-field appearance="outline" style="width: 100%;">
+                                <mat-label>בחר סיכום מהיר</mat-label>
+                                <mat-select (selectionChange)="appendPredefinedSummary($event.value)">
+                                    <mat-option *ngFor="let summary of predefinedSummaries" [value]="summary">
+                                        {{ summary }}
+                                    </mat-option>
+                                </mat-select>
+                            </mat-form-field>
+
+                            <!-- Summary Textarea -->
                             <mat-form-field appearance="outline" style="width: 100%;">
                                 <mat-label>סיכום</mat-label>
                                 <textarea matInput rows="3" formControlName="summary"></textarea>
@@ -653,12 +813,28 @@
 
                             <mat-form-field appearance="outline" style="width: 50%;">
                                 <mat-label>תפקיד</mat-label>
-                                <input matInput formControlName="role">
+                                <mat-select formControlName="role">
+                                    <mat-option value="רופא">רופא</mat-option>
+                                    <mat-option value="רופא בכיר">רופא בכיר</mat-option>
+                                    <mat-option value="רופא תורן">רופא תורן</mat-option>
+                                    <mat-option value="אחות פגייה">אחות פגייה</mat-option>
+                                    <mat-option value="אחות ילודים">אחות ילודים</mat-option>
+                                    <mat-option value="מיילדת">מיילדת</mat-option>
+                                    <mat-option value="רופא נשים">רופא נשים</mat-option>
+                                    <mat-option value="מרדים">מרדים</mat-option>
+                                    <mat-option value="אחר">אחר</mat-option>
+                                </mat-select>
                             </mat-form-field>
 
                             <mat-form-field appearance="outline" style="width: 50%;">
                                 <mat-label>מידע נמסר ל</mat-label>
-                                <input matInput formControlName="infoTo">
+                                <mat-select formControlName="infoTo">
+                                    <mat-option value="יולדת">יולדת</mat-option>
+                                    <mat-option value="אבא">אבא</mat-option>
+                                    <mat-option value="הורים">הורים</mat-option>
+                                    <mat-option value="משפחה קרובה">משפחה קרובה</mat-option>
+                                    <mat-option value="אחר">אחר</mat-option>
+                                </mat-select>
                             </mat-form-field>
 
                             <mat-form-field appearance="outline" style="width: 50%;">
@@ -668,10 +844,6 @@
                                 <mat-datepicker-toggle matSuffix [for]="picker2"></mat-datepicker-toggle>
                                 <mat-datepicker #picker2></mat-datepicker>
                             </mat-form-field>
-                            <!-- <mat-form-field appearance="outline" style="width: 50%;">
-                                <mat-label>תאריך</mat-label>
-                                <input matInput formControlName="acceptanceDate" type="date">
-                            </mat-form-field> -->
 
                             <mat-form-field appearance="outline" style="width: 50%;">
                                 <mat-label>שעה</mat-label>
@@ -688,9 +860,20 @@
                                 <input matInput formControlName="receivedBy">
                             </mat-form-field>
 
+                            <!-- Predefined Message Selection -->
+                            <mat-form-field appearance="outline" style="width: 100%;">
+                                <mat-label>בחר הודעה מהירה</mat-label>
+                                <mat-select (selectionChange)="appendPredefinedNote($event.value)">
+                                    <mat-option *ngFor="let message of predefinedNotes" [value]="message">
+                                        {{ message }}
+                                    </mat-option>
+                                </mat-select>
+                            </mat-form-field>
+
+                            <!-- Notes Textarea -->
                             <mat-form-field appearance="outline" style="width: 100%;">
                                 <mat-label>תוכן המידע שנמסר</mat-label>
-                                <textarea matInput rows="3" formControlName="notes"></textarea>
+                                <textarea matInput rows="4" formControlName="notes"></textarea>
                             </mat-form-field>
                         </div>
 
@@ -704,28 +887,35 @@
                                     <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
                                     <mat-datepicker #picker></mat-datepicker>
                                 </mat-form-field>
-                                <!-- <mat-form-field appearance="outline" style="width: 50%;">
-                                    <mat-label>תאריך</mat-label>
-                                    <input matInput formControlName="signatureDate" type="date">
-                                </mat-form-field> -->
                                 <mat-form-field appearance="outline" style="width: 50%;">
                                     <mat-label>שעה</mat-label>
                                     <input matInput formControlName="signatureTime" type="time">
                                 </mat-form-field>
-                                <mat-form-field appearance="outline" style="width: 50%;">
-                                    <mat-label>חתימה וחותמת הרופא האחראי על ההחייאה</mat-label>
-                                    <input matInput formControlName="nameAndRole">
-                                </mat-form-field>
+                                <div class="col-lg-2 col-md-4 col-sm-6">
+                                    <button mat-raised-button class="signBtn" color="warn" (click)="signForm()">
+                                        <span
+                                            *ngIf="resuscitationForm.get('doctorSignature').get('nameAndRole').value == undefined">לחתום</span>
+                                        <span
+                                            *ngIf="resuscitationForm.get('doctorSignature').get('nameAndRole').value != undefined">נחתם
+                                        </span>
+                                    </button>
+                                    <img *ngIf="resuscitationForm.get('doctorSignature').get('nameAndRole').value != undefined"
+                                        [src]="resuscitationForm.get('doctorSignature').get('nameAndRole').value"
+                                        width="200" />
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
                 <hr>
                 <button class="full-width mb-5" style="font-weight: bold;font-size: 20px;color: white;" color="primary"
-                    type="submit" mat-raised-button (click)="onSubmit()">
+                    type="submit" [disabled]="saving" mat-raised-button (click)="onSubmit()">
                     <span>שמירת טופס</span>
                 </button>
             </mat-card>
+            <mat-card-actions fxLayout="row-reverse">
+                <button mat-button matStepperPrevious>חזור</button>
+            </mat-card-actions>
         </mat-step>
     </mat-horizontal-stepper>
 </form>

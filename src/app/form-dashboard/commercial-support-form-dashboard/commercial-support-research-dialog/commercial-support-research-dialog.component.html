@@ -1,0 +1,191 @@
+<div dir="rtl" class="form-page-container">
+    <button mat-raised-button color="warn" type="button" class="closeBtn" (click)="onClose()">
+        X
+    </button>
+    <mat-horizontal-stepper #stepper *ngIf="ResearchRequestDto">
+        <mat-step [stepControl]="ResearchRequestDto" label="פרטי בקשה">
+            <form [formGroup]="ResearchRequestDto" *ngIf="ResearchRequestDto">
+                <mat-card class="form-card">
+                    <mat-card-title class="text-center">
+                        בקשה לאישור תמיכת גוף מסחרי במחקר קליני
+                    </mat-card-title>
+                    <mat-card-content>
+                        <div fxLayout="column" fxLayoutGap="20px" style="text-align: right;">
+                            <mat-form-field appearance="outline">
+                                <mat-label>תעודת זהות מגיש הבקשה - החוקר הראשי</mat-label>
+                                <input matInput formControlName="RequesterID" (blur)="getEmployeeDetails()"
+                                    (keydown.enter)="getEmployeeDetails()" required>
+                            </mat-form-field>
+
+                            <mat-form-field appearance="outline"
+                                *ngIf="ResearchRequestDto.get('Requester')?.value != null">
+                                <mat-label>מגיש הבקשה - החוקר הראשי</mat-label>
+                                <input matInput formControlName="Requester">
+                            </mat-form-field>
+
+                            <mat-form-field appearance="outline"
+                                *ngIf="ResearchRequestDto.get('Requester')?.value != null">
+                                <mat-label>תפקיד - מחלקה</mat-label>
+                                <input matInput formControlName="RequesterDetails">
+                            </mat-form-field>
+
+                            <mat-form-field appearance="outline"
+                                *ngIf="ResearchRequestDto.get('Requester')?.value != null">
+                                <mat-label>מספר המחקר*</mat-label>
+                                <input matInput formControlName="ResearchNumber">
+                            </mat-form-field>
+
+                            <mat-form-field appearance="outline"
+                                *ngIf="ResearchRequestDto.get('Requester')?.value != null">
+                                <mat-label>שם החברה*</mat-label>
+                                <input type="text" matInput [matAutocomplete]="companyAuto"
+                                    [formControl]="ResearchRequestDto.get('CompanyName')" />
+                                <mat-autocomplete #companyAuto="matAutocomplete"
+                                    (optionSelected)="onCompanySelected($event.option.value)">
+                                    <mat-option *ngFor="let company of filteredCompanies" [value]="company">
+                                        {{ company }}
+                                    </mat-option>
+                                </mat-autocomplete>
+                            </mat-form-field>
+
+                            <mat-form-field appearance="outline"
+                                *ngIf="ResearchRequestDto.get('Requester')?.value != null" style="width: 100%;">
+                                <mat-label>שם המחקר*</mat-label>
+                                <textarea matInput formControlName="ResearchName" rows="3"></textarea>
+                            </mat-form-field>
+
+                            <div fxLayout="column" fxLayoutGap="20px" style="margin-top: 16px;"
+                                *ngIf="ResearchRequestDto.get('Requester')?.value != null">
+
+                                <!-- File Input 1 -->
+                                <div style="text-align: right;">
+                                    <label>הצעת תקציב*</label><br>
+                                    <input #budgetProposalInput type="file" (change)="onFileChange($event, 'BudgetProposal')"
+                                        accept=".doc,.docx,.xls,.xlsx,.pdf,image/*" required>
+                                    <button mat-raised-button class="fileOpenBtn" color="primary"
+                                        (click)="viewResearchFile('BudgetProposal')"
+                                        *ngIf="ResearchRequestDto.get('BudgetProposal').value != undefined && ResearchRequestDto.get('BudgetProposal').value != ''">
+                                        צפייה במסמך
+                                        <span class="material-icons"> zoom_in </span>
+                                    </button>
+                                    <button mat-icon-button color="warn" type="button" matTooltip="הסרת קובץ"
+                                        (click)="removeFile('BudgetProposal', budgetProposalInput)"
+                                        *ngIf="ResearchRequestDto.get('BudgetProposal').value != undefined && ResearchRequestDto.get('BudgetProposal').value != ''">
+                                        <mat-icon>delete</mat-icon>
+                                    </button>
+                                </div><br>
+
+                                <!-- File Input 2 -->
+                                <div style="text-align: right;">
+                                    <label>נספח כלכלי</label><br>
+                                    <input #economicAppendixInput type="file" (change)="onFileChange($event, 'EconomicAppendix')"
+                                        accept=".doc,.docx,.xls,.xlsx,.pdf,image/*">
+                                    <button mat-raised-button class="fileOpenBtn" color="primary"
+                                        (click)="viewResearchFile('EconomicAppendix')"
+                                        *ngIf="ResearchRequestDto.get('EconomicAppendix').value != undefined && ResearchRequestDto.get('EconomicAppendix').value != ''">
+                                        צפייה במסמך
+                                        <span class="material-icons"> zoom_in </span>
+                                    </button>
+                                    <button mat-icon-button color="warn" type="button" matTooltip="הסרת קובץ"
+                                        (click)="removeFile('EconomicAppendix', economicAppendixInput)"
+                                        *ngIf="ResearchRequestDto.get('EconomicAppendix').value != undefined && ResearchRequestDto.get('EconomicAppendix').value != ''">
+                                        <mat-icon>delete</mat-icon>
+                                    </button>
+                                </div><br>
+                                
+                                <!-- File Input 4 -->
+                                <div style="text-align: right;">
+                                    <label>אקסל תשלומים</label><br>
+                                    <input #paymentsExcelInput type="file" (change)="onFileChange($event, 'PaymentsExcel')"
+                                        accept=".xls,.xlsx">
+                                    <button mat-raised-button class="fileOpenBtn" color="primary"
+                                        (click)="viewResearchFile('PaymentsExcel')"
+                                        *ngIf="ResearchRequestDto.get('PaymentsExcel').value != undefined && ResearchRequestDto.get('PaymentsExcel').value != ''">
+                                        צפייה במסמך
+                                        <span class="material-icons"> zoom_in </span>
+                                    </button>
+                                    <button mat-icon-button color="warn" type="button" matTooltip="הסרת קובץ"
+                                        (click)="removeFile('PaymentsExcel', paymentsExcelInput)"
+                                        *ngIf="ResearchRequestDto.get('PaymentsExcel').value != undefined && ResearchRequestDto.get('PaymentsExcel').value != ''">
+                                        <mat-icon>delete</mat-icon>
+                                    </button>
+                                </div><br>
+
+                                <!-- File Input 3 -->
+                                <div style="text-align: right;">
+                                    <label>טופס 6</label><br>
+                                    <input #form6Input type="file" (change)="onFileChange($event, 'Form6')"
+                                        accept=".doc,.docx,.xls,.xlsx,.pdf,image/*">
+                                    <button mat-raised-button class="fileOpenBtn" color="primary"
+                                        (click)="viewResearchFile('Form6')"
+                                        *ngIf="ResearchRequestDto.get('Form6').value != undefined && ResearchRequestDto.get('Form6').value != ''">
+                                        צפייה במסמך
+                                        <span class="material-icons"> zoom_in </span>
+                                    </button>
+                                    <button mat-icon-button color="warn" type="button" matTooltip="הסרת קובץ"
+                                        (click)="removeFile('Form6', form6Input)"
+                                        *ngIf="ResearchRequestDto.get('Form6').value != undefined && ResearchRequestDto.get('Form6').value != ''">
+                                        <mat-icon>delete</mat-icon>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                    </mat-card-content>
+                    <div class="row" style="justify-content: left;">
+                        <button mat-raised-button class="submitBtn" matTooltip="שמירה כטיוטה"
+                            [disabled]="ResearchRequestDto.get('Requester')?.value == null"
+                            (click)="submitForm(1)">שמירה
+                            כטיוטה</button>
+                        <button mat-raised-button class="submitBtn2" matTooltip="שמירה והגשה"
+                            [disabled]="ResearchRequestDto.get('Requester')?.value == null || ResearchRequestDto.invalid"
+                            (click)="submitForm(0)">שמירה והגשה</button>
+                    </div>
+                </mat-card>
+
+            </form>
+        </mat-step>
+        <mat-step [stepControl]="ResearchRequestDto" label="ועדת החלטה" *ngIf="decision_making">
+
+            <form [formGroup]="ResearchRequestDto" dir="rtl" class="decision-step">
+
+                <!-- Decision Date -->
+                <mat-form-field appearance="outline" class="full-width">
+                    <mat-label>תאריך החלטה</mat-label>
+                    <input matInput [matDatepicker]="picker" formControlName="DecisionDate">
+                    <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+                    <mat-datepicker #picker></mat-datepicker>
+                </mat-form-field>
+
+                <!-- Status -->
+                <mat-form-field appearance="outline" class="full-width">
+                    <mat-label>סטטוס החלטה</mat-label>
+                    <mat-select formControlName="Approved">
+                        <mat-option value="approved">מאושר</mat-option>
+                        <mat-option value="rejected">לא מאושר</mat-option>
+                        <mat-option value="chairman">אושר בדיון יו"ר</mat-option>
+                        <mat-option value="special">אושר בדיון מיוחד</mat-option>
+                        <mat-option value="other">אחר</mat-option>
+                    </mat-select>
+                </mat-form-field>
+
+                <!-- Note -->
+                <mat-form-field appearance="outline" class="full-width">
+                    <mat-label>הערה</mat-label>
+                    <textarea matInput rows="4" formControlName="Note" placeholder="הכנס הערה להחלטת הוועדה...">
+      </textarea>
+                </mat-form-field>
+
+                <!-- Save -->
+                <div class="step-actions">
+                    <button mat-raised-button class="submitBtn" matTooltip="שמירה כטיוטה" (click)="submitForm(1)">שמירה
+                        כטיוטה</button>
+                    <button mat-raised-button class="submitBtn2" matTooltip="שמירה והגשה"
+                        [disabled]="ResearchRequestDto.invalid" (click)="submitForm(0)">שמירה והגשה</button>
+                </div>
+
+            </form>
+
+        </mat-step>
+    </mat-horizontal-stepper>
+</div>`

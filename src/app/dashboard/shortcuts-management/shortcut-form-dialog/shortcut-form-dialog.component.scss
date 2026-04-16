@@ -4,6 +4,8 @@
 }
 
 .mat-dialog-content {
+  text-align: right;
+
   form {
     display: flex;
     flex-direction: column;
@@ -21,10 +23,14 @@
 
 .mat-dialog-actions {
   display: flex;
-  justify-content: flex-end;
+  // justify-content: flex-end;
   margin-top: 10px;
 
   button {
     margin-left: 10px;
   }
+}
+
+h1 {
+  text-align: center;
 }

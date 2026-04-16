@@ -1,0 +1,16 @@
+
+
+<div class="button-container">
+    <button
+      *ngFor="let btn of departmentButtons"
+      class="department-button"
+      [style.background-color]="btn.color"      
+      (click)="onDepartmentClick(btn.department)">
+      {{ btn.department }}
+    </button>
+  </div>
+  
+
+  
+  <div id="deptChart" style="width: 100%; height: 400px; margin-top: 20px;"></div>
+  

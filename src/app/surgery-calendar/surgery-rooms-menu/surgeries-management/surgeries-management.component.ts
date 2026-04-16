@@ -35,6 +35,9 @@ import * as XLSX from 'xlsx';
 import { map, startWith } from 'rxjs/operators';
 import { MatChipInputEvent } from '@angular/material/chips';
 import { MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
+import * as ExcelJS from 'exceljs';
+import * as FileSaver from 'file-saver';
+import { de } from 'date-fns/locale';
 
 const colors: any = {
   red: '#ad2121',
@@ -54,7 +57,7 @@ registerLocaleData(localeHe);
   styleUrls: ['./surgeries-management.component.css']
 })
 export class SurgeriesManagementComponent implements OnInit, OnDestroy {
-
+  tempArrOfSurgeryRooms: any = []
   pdfString: string;
   selectable = true;
   removable = true;
@@ -88,6 +91,7 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
   surgerySurf: boolean = false;
   loadingDataServer: boolean;
   IfPlannedSurgeries: string = "original"
+  isPhysicalRoom: boolean = false;
   private intervalId: any;
 
 
@@ -105,14 +109,16 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     if (this.UserName != null) {
-      this.viewDate = this.data.room.start;
+      ////debugger
+      this.viewDate = this.data.room.Start;
+      this.isPhysicalRoom = this.data?.room?.type === 'פז';
       // let day = this.datePipe.transform(this.viewDate, 'dd');
-      this.specificRooms = this.data.room.SurgeryRooms.filter(x => x.SurgeryRoom.includes(this.data.room.type));
+      this.specificRooms = this.data.room.Rooms;
       this.getPatientsQueues();
       // Start the interval when the component initializes
-      this.intervalId = setInterval(() => {
-        this.getPatientsQueues();
-      }, 120000); // 60000ms = 1 minute
+      // this.intervalId = setInterval(() => {
+      //   this.getPatientsQueues();
+      // }, 120000); // 60000ms = 1 minute
     }
     this.setView(CalendarView.Day);
   }
@@ -172,6 +178,7 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
       // event['SurgeryRooms'] = this.data.room.SurgeryRoom;
       event['RoomsList'] = this.data.roomsList;
       if (event['ArrivalTime'] != null) {
+        //debugger
         let dialogRef = this.dialog.open(ManageSingleSurgeryComponent, {
           data: {
             event: event,
@@ -211,9 +218,11 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
   }
 
   filterDepartment(departmentName) {
+    //debugger
     this.filteredSpecificRooms = this.deepClone(this.specificRooms);
     if (departmentName != "undo") {
       this.filteredSpecificRooms.forEach((element, index) => {
+        //debugger
         if (element.Surgeries != undefined) {
           let shit = element.Surgeries.filter(x => departmentName == x.SurgeryRequestDepartments.S_DEPARTMENT);
           this.filteredSpecificRooms[index].Surgeries = this.deepClone(shit);
@@ -224,19 +233,23 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
 
   // get the elements to the main calendar page
   getPatientsQueues() {
+    debugger;
     this.refresh = new Subject();
     this.loader = true;
     this.events = [];
     let fullDate = this.datePipe.transform(this.viewDate, 'yyyy-MM-dd');
+    // ה-API הישן GetSurgeriesBySurgeryRoomCode בוטל – כאן לא נקרא יותר לשרת.
+    // TODO: אם נרצה להחזיר את המסך הזה, צריך למפות אותו ל-GetSurgeriesRealTimeRoomsByDate או API אחר.
     this.http
-      .post(environment.url + "GetSurgeriesBySurgeryRoomCode", {
-        _fullDate: fullDate,
-        _surRoomCode: this.data.room.CalendarRoomsArea
-      })
+    .post(environment.url + "GetSurgeriesBySurgeryRoomCode", {
+      _fullDate: fullDate,
+      _surRoomCode: this.data.room.CalendarRoomsArea
+    })
       .subscribe((Response) => {
+        ////debugger
         let tempArr = Response["d"];
         let tempTitle;
-        let tempArrOfSurgeryRooms = [];
+
         let colors = {
           Completed: '#0ef12f',
           InProgress: '#e8abf1',
@@ -245,10 +258,41 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
         }
         // filter the surgery rooms in array
         this.specificRooms.forEach(x => {
-          tempArrOfSurgeryRooms.push(x.SurgeryRoom);
+          //////debugger
+          let ele = {
+            roomName: x,
+            Surgeries: []
+          }
+          if (!x.Surgeries) {
+            this.tempArrOfSurgeryRooms.push(ele);
+          } else {
+            x.Surgeries = []
+          }
+
         });
         this.IfPlannedSurgeries = "original";
         tempArr['SurgeriesCalendarClassList'].forEach(element => {
+          debugger
+          const base = new Date(element.ArrivalDate.split(' ')[0] + 'T' + element.ArrivalTime);
+          if (!element.AvgDauration || element.AvgDauration.trim() === '') {
+            const totalMinutes = Number(element.Duration);
+
+            if (!Number.isFinite(totalMinutes)) {
+              console.error('Invalid Duration:', element.Duration);
+            } else {
+              const hours = Math.floor(totalMinutes / 60);
+              const minutes = totalMinutes % 60;
+
+              element.AvgDauration =
+                String(hours).padStart(2, '0') + ':' +
+                String(minutes).padStart(2, '0');
+            }
+          }
+          const [h, m] = element.AvgDauration.split(':').map(Number);
+          base.setMinutes(base.getMinutes() + h * 60 + m);
+          console.log(base)
+          element.EndTime = base.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' });
+          //debugger
           // set the title of the surgeries tabs in the dashboard
           if (element.SurgeryPatientDetails == null) {
             tempTitle = `<h6 class="text-center"><b>זמן הכנה משעה: </b>${element.ArrivalDate.split(' ')[1]}</h6>`;
@@ -259,15 +303,17 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
             מחלקה: <b>${element.SurgeryRequestDepartments.S_DEPARTMENT}</b><br>
             שם: <b>${element.SurgeryPatientDetails.PM_FIRST_NAME} ${element.SurgeryPatientDetails.PM_LAST_NAME}</b><b> -- ${element.SurgeryPatientDetails.PM_CASE_NUMBER}</b> <br>
             דחיפות: <b>${element.Urgency}</b><br>
-            S:<b>${element.ArrivalDate.split(' ')[1]}</b> - E:<b>${element.EndDate.split(' ')[1]}</b>`;
+            S:<b>${element.ArrivalDate.split(' ')[1]}</b> - E:<b>${element.EndTime}</b>`;
           }
           // set start and end time for surgeries
           element.start = new Date(element.ArrivalDate);
-          element.end = new Date(element.EndDate);
+          element.end = new Date(base);
           element.title = tempTitle;
           element.color = {
             primary: '#000000', secondary: colors[element.SurgeryStatus]
           }
+          element.cssClass = 'event-css-' + element.SurgeryStatus
+          //element.cla
           // set uniqe color to sesia and dhof surgeries
           if (element.Urgency.includes('ססיה')) element.color = { primary: '#000000', secondary: '#FFA100' }
           if (element.Urgency.includes('דחוף')) element.color = { primary: '#000000', secondary: '#F1F305' }
@@ -276,19 +322,23 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
           //   afterEnd: true,
           // }
           element.draggable = true;
-          let index = tempArrOfSurgeryRooms.indexOf(element.SurgeryRoom);
+          let index = this.tempArrOfSurgeryRooms.find((ele) => element.SurgeryRoom == ele.roomName);
+          // ////debugger
           // when there's no room the index is -1, BUG!
-          if (index >= 0) {
+          if (index) {
             // group by the surgeries to the associated room
             if (element.SurgeryRoom != "") {
-              this.specificRooms[index]['Surgeries'] = tempArr['SurgeriesCalendarClassList'].filter(x => x.SurgeryRoom == element.SurgeryRoom);
-              this.specificRooms[index] = this.checkSurfingSurgeryDays(this.specificRooms[index]);
+              index['Surgeries'] = tempArr['SurgeriesCalendarClassList'].filter(x => x.SurgeryRoom == element.SurgeryRoom);
+              index = this.checkSurfingSurgeryDays(index);
               // sort the surgeries in each room from the earlier to the last one
 
             }
           }
           this.events.push(element);
         });
+
+        this.specificRooms = this.tempArrOfSurgeryRooms;
+        //////debugger
         // filter the surgery rooms in array
         this.specificRooms.forEach((x, index) => {
           let tempArrayOfDepartments = [];
@@ -304,6 +354,9 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
           this.specificRooms[index]['uniqueDepartments'] = tempArrayOfDepartments;
         });
         this.filteredSpecificRooms = this.deepClone(this.specificRooms);
+        if (this.isPhysicalRoom) {
+          this.sortSurgeriesOfEachRoomInDay();
+        }
         this.refresh.next();
         this.loader = false;
       });
@@ -312,28 +365,48 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
   plannedFromDrorSystem() {
     this.loader = true;
     if (this.IfPlannedSurgeries == "original" || this.IfPlannedSurgeries == "planned") {
+      // Check if viewDate is today or in the past
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const viewDateOnly = new Date(this.viewDate);
+      viewDateOnly.setHours(0, 0, 0, 0);
+      const isCurrentOrPastDate = viewDateOnly <= today;
+
       this.filteredSpecificRooms.forEach((room, index1) => {
         if (room.Surgeries != undefined) {
           let temp = room.Surgeries.filter(x => x.SurgeryStatus != 'Canceled');
           temp.forEach((surgery, index2) => {
-            // ADDING SETUPTIME TO EACH SURGERY
-            let setuptime = {
-              title: `Setup Time: <b>20min</b>`,
-              start: new Date(surgery.start.getTime() - 1200000),
-              end: surgery.start
+            // For current/past dates with status != 'Planned', don't add setup time
+            const useRealTimes = isCurrentOrPastDate && surgery.SurgeryStatus !== 'Planned';
+
+            // Only add setup time for future dates or Planned status
+            if (!useRealTimes) {
+              // ADDING SETUPTIME TO EACH SURGERY
+              let setuptime = {
+                title: `Setup Time: <b>20min</b>`,
+                start: new Date(surgery.start.getTime() - 1200000),
+                end: surgery.start
+              }
+              this.filteredSpecificRooms[index1].Surgeries.splice(index2, 0, setuptime);
             }
-            this.filteredSpecificRooms[index1].Surgeries.splice(index2, 0, setuptime);
+
             let next = temp[index2 + 1];
             temp[index2].start = new Date(surgery.start.getTime());
             // check if the next surgery isn't defined
             if (next != undefined && next.SurgeryStatus != 'Canceled') {
-              let estimated = next.end - next.start;
-              if (surgery.SurgeriesCalendar_Susgeries.length > 0) surgery.end = new Date(surgery.start.getTime() + (parseInt(surgery.SurgeriesCalendar_Susgeries[0].Duration) * 60000));
-              let current_end_time = surgery.end;
-              // change the start time of the next surgery to begin after the end of the current surgery
-              next.start = new Date(current_end_time.getTime() + 1200000);
-              // change the end time of the next surgery to suit the new start time of the next surgery
-              next.end = new Date(next.start.getTime() + estimated);
+              const nextUseRealTimes = isCurrentOrPastDate && next.SurgeryStatus !== 'Planned';
+
+              if (nextUseRealTimes) {
+                // Keep original server times for next surgery - no modifications needed
+              } else {
+                let estimated = next.end - next.start;
+                if (surgery.SurgeriesCalendar_Susgeries.length > 0) surgery.end = new Date(surgery.start.getTime() + (parseInt(surgery.SurgeriesCalendar_Susgeries[0].Duration) * 60000));
+                let current_end_time = surgery.end;
+                // change the start time of the next surgery to begin after the end of the current surgery
+                next.start = new Date(current_end_time.getTime() + 1200000);
+                // change the end time of the next surgery to suit the new start time of the next surgery
+                next.end = new Date(next.start.getTime() + estimated);
+              }
             }
           });
         }
@@ -346,28 +419,112 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
 
   sortSurgeriesOfEachRoomInDay() {
     this.loader = true;
+    //////debugger
     if (this.IfPlannedSurgeries == "original" || this.IfPlannedSurgeries == "dror") {
+      // Check if viewDate is today or in the past
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const viewDateOnly = new Date(this.viewDate);
+      viewDateOnly.setHours(0, 0, 0, 0);
+      const isCurrentOrPastDate = viewDateOnly <= today;
+
       this.filteredSpecificRooms.forEach((room, index1) => {
         if (room.Surgeries != undefined) {
           let temp = room.Surgeries.filter(x => x.SurgeryStatus != 'Canceled');
           temp.forEach((surgery, index2) => {
-            // ADDING SETUPTIME TO EACH SURGERY
-            let setuptime = {
-              title: `Setup Time: <b>20min</b>`,
-              start: new Date(surgery.start.getTime() - 1200000),
-              end: surgery.start
+            // For current/past dates with status != 'Planned', use real times from server
+            // Skip setup time and 07:30 AM forced start time
+            const useRealTimes = isCurrentOrPastDate && surgery.SurgeryStatus !== 'Planned';
+
+            if (index2 == 0) {
+              if (useRealTimes) {
+                // Keep the original server times - don't modify start/end times
+                // Just update the title to reflect the existing times
+                temp[index2].ArrivalDate = this.datePipe.transform(temp[index2].start, 'yyyy-MM-dd HH:mm');
+                temp[index2].ArrivalTime = this.datePipe.transform(temp[index2].start, 'HH:mm');
+                temp[index2].EndDate = this.datePipe.transform(temp[index2].end, 'yyyy-MM-dd HH:mm');
+                temp[index2].EndTime = this.datePipe.transform(temp[index2].end, 'HH:mm');
+                temp[index2].title = ` 
+                  מחלקה: <b>${temp[index2].SurgeryRequestDepartments.S_DEPARTMENT}</b><br>
+                  שם: <b>${temp[index2].SurgeryPatientDetails.PM_FIRST_NAME} ${temp[index2].SurgeryPatientDetails.PM_LAST_NAME}</b><b> -- ${temp[index2].SurgeryPatientDetails.PM_CASE_NUMBER}</b> <br>
+                  דחיפות: <b>${temp[index2].Urgency}</b><br>
+                  S:<b>${temp[index2].ArrivalDate.split(' ')[1]}</b> - E:<b>${temp[index2].EndDate.split(' ')[1]}</b>`;
+              } else {
+                // Original behavior for future dates or Planned status: start at 07:30
+                let mDate = new Date(temp[index2].start.getTime());
+                temp[index2].start = new Date(this.datePipe.transform(mDate, 'yyyy-MM-dd 07:30'));
+                /*
+                20*60
+                */
+                const firstDurationMinutes = this.getPlannedDurationMinutes(temp[index2]);
+                temp[index2].end = new Date(this.datePipe.transform(
+                  temp[index2].start.getTime() + firstDurationMinutes * 60 * 1000,
+                  'yyyy-MM-dd HH:mm'
+                ));
+                //  / ////debugger
+                temp[index2].ArrivalDate = this.datePipe.transform(temp[index2].start, 'yyyy-MM-dd HH:mm');
+                temp[index2].ArrivalTime = this.datePipe.transform(temp[index2].start, 'HH:mm');
+                temp[index2].EndDate = this.datePipe.transform(temp[index2].end, 'yyyy-MM-dd HH:mm');
+                temp[index2].EndTime = this.datePipe.transform(temp[index2].end, 'HH:mm');
+                temp[index2].title = ` 
+                  מחלקה: <b>${temp[index2].SurgeryRequestDepartments.S_DEPARTMENT}</b><br>
+                  שם: <b>${temp[index2].SurgeryPatientDetails.PM_FIRST_NAME} ${temp[index2].SurgeryPatientDetails.PM_LAST_NAME}</b><b> -- ${temp[index2].SurgeryPatientDetails.PM_CASE_NUMBER}</b> <br>
+                  דחיפות: <b>${temp[index2].Urgency}</b><br>
+                  S:<b>${temp[index2].ArrivalDate.split(' ')[1]}</b> - E:<b>${temp[index2].EndDate.split(' ')[1]}</b>`;
+              }
             }
-            this.filteredSpecificRooms[index1].Surgeries.splice(index2, 0, setuptime);
+
+            // Only add setup time for future dates or Planned status
+            if (!useRealTimes) {
+              // ADDING SETUPTIME TO EACH SURGERY
+              let setuptime = {
+                title: `Setup Time: <b>20min</b>`,
+                start: new Date(surgery.start.getTime() - 1200000),
+                end: surgery.start
+              }
+              this.filteredSpecificRooms[index1].Surgeries.splice(index2, 0, setuptime);
+            }
+
             let next = temp[index2 + 1];
             temp[index2].start = new Date(surgery.start.getTime());
             // check if the next surgery isn't defined
             if (next != undefined && next.SurgeryStatus != 'Canceled') {
-              let estimated = next.end - next.start;
-              let current_end_time = surgery.end;
-              // change the start time of the next surgery to begin after the end of the current surgery
-              next.start = new Date(current_end_time.getTime() + 1200000);
-              // change the end time of the next surgery to suit the new start time of the next surgery
-              next.end = new Date(next.start.getTime() + estimated);
+              const nextUseRealTimes = isCurrentOrPastDate && next.SurgeryStatus !== 'Planned';
+
+              if (nextUseRealTimes) {
+                // Keep original server times for next surgery
+                next.ArrivalDate = this.datePipe.transform(next.start, 'yyyy-MM-dd HH:mm');
+                next.ArrivalTime = this.datePipe.transform(next.start, 'HH:mm');
+                next.EndDate = this.datePipe.transform(next.end, 'yyyy-MM-dd HH:mm');
+                next.EndTime = this.datePipe.transform(next.end, 'HH:mm');
+                next.title = ` 
+                  מחלקה: <b>${next.SurgeryRequestDepartments.S_DEPARTMENT}</b><br>
+                  שם: <b>${next.SurgeryPatientDetails.PM_FIRST_NAME} ${next.SurgeryPatientDetails.PM_LAST_NAME}</b><b> -- ${next.SurgeryPatientDetails.PM_CASE_NUMBER}</b> <br>
+                  דחיפות: <b>${next.Urgency}</b><br>
+                  S:<b>${next.ArrivalDate.split(' ')[1]}</b> - E:<b>${next.EndDate.split(' ')[1]}</b>`;
+              } else {
+                // Original behavior: calculate next start time based on current end time + setup time
+                let current_end_time = surgery.end;
+                // change the start time of the next surgery to begin after the end of the current surgery
+                next.start = new Date(current_end_time.getTime() + 1200000);
+                // change the end time of the next surgery to suit the new start time of the next surgery
+                const nextDurationMinutes = this.getPlannedDurationMinutes(next);
+                next.end = new Date(next.start.getTime() + nextDurationMinutes * 60 * 1000);
+                /*
+                next.EndDate  = next.EndTime = 
+                next.ArrivalDate = next.ArrivalTime = 
+                */
+                next.ArrivalDate = this.datePipe.transform(next.start, 'yyyy-MM-dd HH:mm');
+                next.ArrivalTime = this.datePipe.transform(next.start, 'HH:mm');
+                next.EndDate = this.datePipe.transform(next.end, 'yyyy-MM-dd HH:mm');
+                next.EndTime = this.datePipe.transform(next.end, 'HH:mm');
+                next.title = ` 
+                  מחלקה: <b>${next.SurgeryRequestDepartments.S_DEPARTMENT}</b><br>
+                  שם: <b>${next.SurgeryPatientDetails.PM_FIRST_NAME} ${next.SurgeryPatientDetails.PM_LAST_NAME}</b><b> -- ${next.SurgeryPatientDetails.PM_CASE_NUMBER}</b> <br>
+                  דחיפות: <b>${next.Urgency}</b><br>
+                  S:<b>${next.ArrivalDate.split(' ')[1]}</b> - E:<b>${next.EndDate.split(' ')[1]}</b>`;
+              }
+              //////debugger
             }
           });
         }
@@ -378,7 +535,40 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
     this.loader = false;
   }
 
+  private getPlannedDurationMinutes(surgery: any): number {
+    const avgDurationMinutes = this.parseAvgDurationMinutes(surgery?.AvgDauration);
+    if (avgDurationMinutes !== null) {
+      return avgDurationMinutes;
+    }
+
+    const durationMinutes = Number(surgery?.Duration);
+    if (Number.isFinite(durationMinutes)) {
+      return durationMinutes;
+    }
+
+    return 0;
+  }
+
+  private parseAvgDurationMinutes(avgDuration: any): number | null {
+    if (typeof avgDuration !== 'string') {
+      return null;
+    }
+
+    const trimmed = avgDuration.trim();
+    if (!trimmed) {
+      return null;
+    }
+
+    const parts = trimmed.split(':').map((part) => Number(part));
+    if (parts.length < 2 || parts.some((part) => !Number.isFinite(part))) {
+      return null;
+    }
+
+    return parts[0] * 60 + parts[1];
+  }
+
   checkSurfingSurgeryDays(room) {
+    ////debugger
     if (room.Surgeries != undefined) {
       let deptsNoSisia = room.Surgeries.filter(x => (x.SurgeryType != 'ססיה' && x.SurgeryType != 'דחוף'));
       if (deptsNoSisia.length > 0) {
@@ -439,6 +629,13 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
   }
 
   getPlannedSurgeriesData(department, room) {
+    //debugger
+    if (Array.isArray(department)) {
+      // it's an array
+      department = department.map(x => `'${x}'`).join(',');
+    } else {
+      department = `'${department}'`;
+    }
     let fullDate = this.datePipe.transform(this.viewDate, 'yyyy-MM-dd');
     this.http.post(environment.url + 'GetSurgeriesPlannedExcel', {
       Department: department,
@@ -450,6 +647,14 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
   }
 
   sentDepartmentFinalSurgeryPlan(department, room) {
+    //debugger
+
+    if (Array.isArray(department)) {
+      // it's an array
+      department = department.map(x => `'${x}'`).join(',');
+    } else {
+      department = `'${department}'`;
+    }
     let fullDate = this.datePipe.transform(this.viewDate, 'yyyy-MM-dd');
     this.http.post(environment.url + 'GetSurgeriesPlannedExcel', {
       Department: department,
@@ -458,6 +663,8 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
     }).subscribe(res => {
       if (res['d'].length > 0) {
         let data = res['d'];
+
+        //debugger
         this.pdfString = `
         <!doctype html>
         <html lang="he">
@@ -470,7 +677,7 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
             <div class="d-none-desktop" dir="rtl">
               <div class="card-header border-bottomIn rel" style="text-align: center;">
                   <img class="full-width" style="width: 100%;" src="https://poria.is-great.org/images/covid_2_header.png" />
-                  <h1 class="text-center pos-abs-center"><u>תוכנית ניתוחים סופית ${department}</u></h1>
+                  <h1 class="text-center pos-abs-center"><u>תוכנית ניתוחים סופית ${department} - תאריך ${fullDate} - ${this.data.room.CalendarRoomsArea} -  ${room}</u></h1>
               </div>
               <div class="col-12" style="width: 100%;text-align: center;float: right;">
                 <p>תאריך: ${fullDate}</p>
@@ -531,43 +738,79 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
     });
   }
 
-  fileName = 'תבנית ניתוחים';
-  planningExcelFile(json, department) {
-    let json_to_excel = [];
-    json.forEach(element => {
-      json = {
-        'מספר מקרה': element.casenumber,
-        'חדר': element.room,
-        'שם מלא, ת.ז': element.id,
-        'גיל': element.age,
-        // 'קוד פרוצדורה': element.code,
-        'תיאור פרוצדורה': element.s_name,
-        'תנוחת השכבה': element.position,
-        'בידוד': element.isolation,
-        'בנק הדם': element.blood,
-        'שם מנתח': element.doctor,
-        'הערות': element.note,
-        'מכשירים נוספים': element.tools,
-        'סוג הרדמה': element.anesthesia,
-        'נדרש שיקוף': element.dimot,
-        'מחלקת אשפוז': element.hospitalization,
-        'משך משוער': element.duration,
-      }
-      json_to_excel.push(json);
+  async planningExcelFile(json, department) {
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('תוכנית ניתוחים', {
+      views: [{ rightToLeft: true }]
     });
-    const worksheet: XLSX.WorkSheet = XLSX.utils.json_to_sheet(json_to_excel);
-    /* generate workbook and add the worksheet */
-    const wb: XLSX.WorkBook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, worksheet, 'תוכנית ניתוחים');
 
-    /* save to file */
-    XLSX.writeFile(wb, this.fileName + ' מחלקה ' + department + '.xlsx');
+    // Add merged header row on top
+    const columnCount = 15; // Adjust based on number of columns
+    const titleCellRange = `A1:P1`;
+    worksheet.mergeCells(titleCellRange);
+    worksheet.getCell('A1').value = `תוכנית ניתוחים - מחלקה ${department}`;
+    worksheet.getCell('A1').alignment = { horizontal: 'center', vertical: 'middle' };
+    worksheet.getCell('A1').font = { size: 16, bold: true, name: 'Arial' };
+
+    // Define headers (row 2)
+    worksheet.addRow([
+      'מספר מקרה', 'חדר', 'שם מלא, ת.ז', 'גיל', 'תיאור פרוצדורה',
+      'תנוחת השכבה', 'בידוד', 'בנק הדם', 'שם מנתח', 'הערות',
+      'מכשירים נוספים', 'סוג הרדמה', 'נדרש שיקוף', 'מחלקת אשפוז', 'משך משוער'
+    ]);
+
+    // Style header row (row 2)
+    const headerRow = worksheet.getRow(2);
+    headerRow.font = { bold: true, size: 18 };
+    headerRow.alignment = { horizontal: 'center', vertical: 'middle' };
+    headerRow.eachCell(cell => {
+      cell.border = {
+        top: { style: 'thin' },
+        left: { style: 'thin' },
+        bottom: { style: 'thin' },
+        right: { style: 'thin' }
+      };
+    });
+
+    // Add data rows (starting from row 3)
+    json.forEach(item => {
+      worksheet.addRow([
+        item.casenumber, item.room, item.id, item.age, item.s_name,
+        item.position, item.isolation, item.blood, item.doctor, item.note,
+        item.tools, item.anesthesia, item.dimot, item.hospitalization, item.duration
+      ]);
+    });
+    // Style all data rows
+    worksheet.eachRow((row, rowNumber) => {
+      if (rowNumber <= 2) return; // Skip merged title and header
+      row.eachCell(cell => {
+        cell.font = { size: 16 };
+        cell.alignment = { horizontal: 'center', vertical: 'middle' };
+        cell.border = {
+          top: { style: 'thin' },
+          left: { style: 'thin' },
+          bottom: { style: 'thin' },
+          right: { style: 'thin' }
+        };
+      });
+    });
+
+    // Save the file
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], { type: 'application/octet-stream' });
+    FileSaver.saveAs(blob, `תוכנית ניתוחים מחלקה ${department}.xlsx`);
   }
 
   openShareDialog(pdf, department) {
-    let dialogRef = this.dialog.open(ShareSurgeriesPDFDialog);
+    let dialogRef = this.dialog.open(ShareSurgeriesPDFDialog, {
+      width: '25%',
+      height: '50%',
+    });
+    console.log("this data to check ---> ", this.data)
     dialogRef.componentInstance.reportArray = pdf;
     dialogRef.componentInstance.department = department;
+    dialogRef.componentInstance.arrivalDate = this.datePipe.transform(this.data.room.Start, 'yyyy-MM-dd');
+    dialogRef.componentInstance.calendarRoomsArea = this.data.room.CalendarRoomsArea;
   }
 
 }
@@ -607,17 +850,12 @@ export class ShareSurgeriesPDFDialog {
   all_users_filter = [];
   reportArray: string;
   department: string;
+  calendarRoomsArea: string;
+  arrivalDate: string;
   disableBtn: boolean;
   separatorKeysCodes: number[] = [ENTER, COMMA];
   fruits: any[] = [
-    { FirstName: 'מאיר', LastName: 'רוח', id: '', Email: 'MRuach@tzmc.gov.il' },
-    { FirstName: 'רובא', LastName: 'יוסף', id: '', Email: 'RYousef@tzmc.gov.il' },
-    { FirstName: 'נוי', LastName: 'טובול', id: '', Email: 'NYairtubul@tzmc.gov.il' },
-    { FirstName: 'אילנה', LastName: 'גורודצקי', id: '', Email: 'EGORODETSKY@tzmc.gov.il' },
-    { FirstName: 'עאטף', LastName: 'גאנם', id: '', Email: 'AGANEM@tzmc.gov.il' },
-    { FirstName: 'כנעאן', LastName: 'מנסור', id: '', Email: 'KMANSOUR@tzmc.gov.il' },
-    { FirstName: 'מוניר', LastName: 'נשאשיבי', id: '', Email: 'MNASHASHIB@tzmc.gov.il' },
-    { FirstName: 'מרואן', LastName: 'ארמלי', id: '', Email: 'MARMALY@tzmc.gov.il' },
+    { FirstName: 'תפוצת', LastName: 'חדר ניתוח', id: '', Email: 'DL_SurgeryPlaning@tzmc.gov.il' },
     { FirstName: this.user_name, LastName: '', id: '', Email: this.user_name + '@tzmc.gov.il' },
   ];
   @ViewChild('fruitInput') fruitInput: ElementRef<HTMLInputElement>;
@@ -677,6 +915,7 @@ export class ShareSurgeriesPDFDialog {
   }
 
   shareReportWithOthers() {
+    //debugger
     this.disableBtn = true;
     if (this.fruits.length == 0) {
       this.openSnackBar("נא לבחור אחראי לשליחה");
@@ -685,6 +924,8 @@ export class ShareSurgeriesPDFDialog {
       this.http.post(environment.urlipracticom + 'SentDepartmentFinalSurgeryPlan', {
         department: this.department,
         fileString: this.reportArray,
+        arrivalDate: this.arrivalDate,
+        calendarRoomsArea: this.calendarRoomsArea,
         users: this.fruits, // people list
       }).subscribe(res => {
         if (res['d']) {

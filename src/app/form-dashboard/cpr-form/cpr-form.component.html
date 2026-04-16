@@ -1,77 +1,69 @@
+<h2 class="page-title text-center">טופס החייאה</h2>
 <div id="loader_2" class="d-none">
     <mat-spinner value="50" diameter="30"></mat-spinner>
 </div>
 <div class="firstWrapper">
-    <div class="header">
-        <button mat-raised-button ml-2 type="submit" (click)="returnToSearch()" *ngIf="searching == 'Found'"
-            class="btn btn-primary btn-raised mb-2" style="z-index: 99;float: right;margin-right: 2%;"
-            matTooltip="טופס חדש">
-            <span class="material-icons">
-                autorenew
-            </span>
-        </button>
-        <button mat-raised-button ml-2 type="submit" (click)="displayCprForms()"
-            *ngIf="searching == 'notFound' || searching == 'tryAgain'" class="btn btn-primary btn-raised mb-2"
-            style="z-index: 99;float: right;margin-right: 2%;" matTooltip="הצגת טפסים">
-            <span class="material-icons">
-                list_alt
-            </span>
-        </button>
-        <h2 class="FormHeader"><u>טופס החייאה</u></h2>
-    </div>
     <div class="row" *ngIf="searching == 'notFound' || searching == 'tryAgain'">
-        <div class="col"></div>
-        <div class="col-4">
-            <div dir="rtl" class="card w-85-p">
-                <div dir="rtl" class="card-body">
-                    <form dir="rtl">
-                        <div class="row">
-                            <div class="col-12">
-                                <mat-form-field class="full-width">
-                                    <input [(ngModel)]="CaseNumber" [ngModelOptions]="{standalone: true}" matInput
-                                        placeholder="מספר מקרה">
-                                </mat-form-field>
-                            </div>
-                        </div>
-                        <p *ngIf="searching == 'tryAgain'">מטופל לא נמצא</p>
-                        <button mat-raised-button ml-2 type="submit" (click)="getPatientDetails()"
-                            class="btn btn-primary btn-raised mb-2" matTooltip="חפש">
+        <div class="card-search">
+            <div class="card-body">
+                <form>
+                    <mat-form-field class="full-width">
+                        <input [(ngModel)]="CaseNumber" [ngModelOptions]="{standalone: true}" matInput
+                            placeholder="מספר מקרה">
+                    </mat-form-field>
+                    <p *ngIf="searching == 'tryAgain'">מטופל לא נמצא</p>
+                    <div class="btn-container">
+                        <button mat-raised-button type="submit" (click)="getPatientDetails()"
+                            style="border-radius: 20px;" class="btn btn-primary btn-raised" matTooltip="חפש">
                             <span class="material-icons">
-                                done
+                                search
                             </span>
                         </button>
-                    </form>
-                </div>
-                <mat-progress-bar mode="buffer" *ngIf="buffering"></mat-progress-bar>
+                        <button mat-raised-button type="submit" (click)="displayCprForms()" style="border-radius: 20px;"
+                            class="btn btn-primary btn-raised" matTooltip="הצגת טפסים">
+                            <span class="material-icons">
+                                list_alt
+                            </span>
+                        </button>
+                    </div>
+                </form>
             </div>
+            <mat-progress-bar mode="buffer" *ngIf="buffering"></mat-progress-bar>
         </div>
-        <div class="col"></div>
     </div>
 
 
     <div class="wrapper" *ngIf="searching == 'Found'">
 
         <div class="row" dir="rtl">
-            <div class="col" style="justify-content: center;">
+            <div class="col">
+                <button mat-raised-button type="submit" (click)="returnToSearch()" *ngIf="searching == 'Found'"
+                    class="btn btn-primary btn-raised" matTooltip="טופס חדש">
+                    <span class="material-icons">
+                        home
+                    </span>
+                </button>
+            </div>
+            <div class="col">
                 <p>מספר מקרה: <b>{{PatientRecord.PM_CASE_NUMBER}}</b></p>
             </div>
-            <div class="col" style="justify-content: center;">
+            <div class="col">
                 <p>ת.ז: <b>{{PatientRecord.PM_PATIENT_ID}}</b></p>
             </div>
-            <div class="col" style="justify-content: center;">
+            <div class="col">
                 <p>שם פרטי: <b>{{PatientRecord.PM_FIRST_NAME}}</b></p>
             </div>
-            <div class="col" style="justify-content: center;">
+            <div class="col">
                 <p>שם משפחה: <b>{{PatientRecord.PM_LAST_NAME}}</b></p>
             </div>
-            <div class="col" style="justify-content: center;">
+            <div class="col">
                 <p *ngIf="PatientRecord.PM_PATIENT_GENDER == '1'">מין: <b>זכר</b></p>
                 <p *ngIf="PatientRecord.PM_PATIENT_GENDER != '1'">מין: <b>נקבה</b></p>
             </div>
-            <div class="col" style="justify-content: center;">
+            <div class="col">
                 <p>גיל: <b>{{PatientRecord.PM_DOB | number : '1.1-1'}}</b></p>
             </div>
-            <div class="col" style="justify-content: center;">
+            <div class="col">
                 <p>מחלקה: <b>{{ PatientRecord.Depart_Name }}</b></p>
             </div>
         </div>
@@ -658,6 +650,7 @@
             <mat-label>סינון</mat-label>
             <input matInput (keyup)="applyFilter($event,'')" placeholder="התחל הקלדה ..." #input>
         </mat-form-field>
+        <mat-progress-bar mode="indeterminate" *ngIf="loading_forms"></mat-progress-bar>
         <div class="row mt-5" dir="rtl">
             <table mat-table [dataSource]="dataSource" style="width: 100%;" class="mat-elevation-z8">
                 <ng-container matColumnDef="delete">
@@ -690,6 +683,21 @@
                 <ng-container matColumnDef="patientName">
                     <th mat-header-cell *matHeaderCellDef> שם מטופל </th>
                     <td mat-cell *matCellDef="let element"> {{element.PM_FIRST_NAME}} {{element.PM_LAST_NAME}} </td>
+                </ng-container>
+
+                <ng-container matColumnDef="location">
+                    <th mat-header-cell *matHeaderCellDef> מיקום החייאה </th>
+                    <td mat-cell *matCellDef="let element"> {{element.cprPlace}} </td>
+                </ng-container>
+
+                <ng-container matColumnDef="departName">
+                    <th mat-header-cell *matHeaderCellDef> מחלקה </th>
+                    <td mat-cell *matCellDef="let element"> {{element.Depart_Name}} </td>
+                </ng-container>
+
+                <ng-container matColumnDef="nurseName">
+                    <th mat-header-cell *matHeaderCellDef> אחות </th>
+                    <td mat-cell *matCellDef="let element"> {{element.responsNurse}} </td>
                 </ng-container>
 
                 <ng-container matColumnDef="print">

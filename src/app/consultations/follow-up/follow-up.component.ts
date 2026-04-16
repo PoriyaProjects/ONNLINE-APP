@@ -2,8 +2,6 @@ import {
     Component,
     OnInit,
     ViewChild,
-    AfterViewInit,
-    ElementRef,
     Inject,
 } from "@angular/core";
 import { ThemePalette } from "@angular/material/core";
@@ -18,7 +16,6 @@ import { MatTable, MatTableDataSource } from "@angular/material/table";
 import * as XLSX from 'xlsx';
 import {
     NgbModal,
-    ModalDismissReasons,
     NgbModalOptions,
 } from "@ng-bootstrap/ng-bootstrap";
 import * as $ from "jquery";
@@ -27,10 +24,8 @@ import {
     FormControl,
     FormBuilder,
     FormGroup,
-    Validators,
 } from "@angular/forms";
 import { MatRadioChange } from "@angular/material/radio";
-import { data } from "jquery";
 import { MenuPerm } from "../../menu-perm";
 import { environment } from "src/environments/environment";
 
@@ -171,6 +166,7 @@ export class FollowUpComponent implements OnInit {
     public showSeconds = false;
     public touchUi = false;
     public enableMeridian = false;
+    loading: boolean;
     public stepHour = 1;
     public stepMinute = 1;
     public stepSecond = 1;
@@ -180,6 +176,7 @@ export class FollowUpComponent implements OnInit {
     titleDepartsChart: string = "יעוצים לפי מחלקה";
     titleWorkersChart: string = "יעוצים לפי רופא";
     departsList = [];
+    followTypesList = [];
     requestdepartsList = [];
     departsName: string;
     requestdepartsName: string;
@@ -481,11 +478,12 @@ DepartsDataRequestAvgAllNotPara
         });
         this.selectedIndexTab = 0;
         this.getDeparts();
-        // this.getWorkers("");
+        this.getFollowUpTypes();
         this.getRequest();
     }
 
     applyFilter(filterValue: string) {
+        if (filterValue == "") return;
         this.fliterVal = filterValue;
         if (this.startdateVal && this.enddateVal) {
             this.getDataFormServer(
@@ -500,6 +498,28 @@ DepartsDataRequestAvgAllNotPara
             );
         }
         //this.dataSource.filter = filterValue.trim().toLowerCase();
+    }
+    filterByCaseNumber(event: Event): void {
+        const value = (event.target as HTMLInputElement).value
+            .trim()
+            .toLowerCase();
+
+        this.dataSource.filterPredicate = (data: any, filter: string) => {
+            return (data.CaseNumber || '').toLowerCase().includes(filter);
+        };
+
+        this.dataSource.filter = value;
+    }
+    filterByDepartment(event: Event): void {
+        const value = (event.target as HTMLInputElement).value
+            .trim()
+            .toLowerCase();
+
+        this.dataSource.filterPredicate = (data: any, filter: string) => {
+            return (data.FollowUpDepart || '').toLowerCase().includes(filter);
+        };
+
+        this.dataSource.filter = value;
     }
     shuffle(array) {
         var currentIndex = array.length,
@@ -1005,6 +1025,14 @@ DepartsDataRequestAvgAllNotPara
             });
     }
 
+    getFollowUpTypes() {
+        this.http
+            .post(environment.url + "GetFollowUpTypes", {})
+            .subscribe((Response) => {
+                this.followTypesList = Response["d"];
+            });
+    }
+
     // getWorkers(valDepart) {
     //     $("#loader").removeClass("d-none");
     //     this.http
@@ -1062,8 +1090,7 @@ DepartsDataRequestAvgAllNotPara
         _Workers: string,
         _Request: string
     ) {
-        //;
-        //////debugger;
+        this.loading = true;
         $("#loader").removeClass("d-none");
         this.http
             .post(environment.url + "GetFollowUpData", {
@@ -1079,10 +1106,12 @@ DepartsDataRequestAvgAllNotPara
             })
             .subscribe(
                 (Response) => {
+                    this.loading = false;
                     this.dataSource = new MatTableDataSource<any>(
                         Response["d"]
                     );
                     this.dataSource.paginator = this.paginator;
+                    this.dataSource.sort = this.sort;
                     this.resultsLength = this.dataSource.filteredData.length;
                     setTimeout(() => {
                         //this.dataSource.paginator = this.paginator

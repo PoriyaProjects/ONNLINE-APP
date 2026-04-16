@@ -1,7 +1,5 @@
-<!-- <div class="header">{{ sheet_details.SheetName }}</div> -->
 <input type="text" class="title-bar" placeholder="כותרת חדשה" [(ngModel)]="sheet_details.SheetName"
     (blur)="onCellSave(null)" />
-<!--  [showFormulaBar]="false" -->
 <ejs-spreadsheet #spreadsheet (cellSave)="onCellSave($event)" [enableRtl]="true" [showRibbon]="false"
     [allowDataValidation]="true" [allowScrolling]="true">
     <e-sheets>
@@ -10,6 +8,13 @@
                 <e-range [dataSource]='data'></e-range>
             </e-ranges>
             <e-columns>
+                <e-column [width]=120></e-column>
+                <e-column [width]=120></e-column>
+                <e-column [width]=120></e-column>
+                <e-column [width]=120></e-column>
+                <e-column [width]=120></e-column>
+                <e-column [width]=120></e-column>
+                <e-column [width]=120></e-column>
                 <e-column [width]=120></e-column>
                 <e-column [width]=120></e-column>
                 <e-column [width]=120></e-column>

@@ -70,7 +70,6 @@ import { EmployeesManageDashComponent } from "./employees-manage-dash/employees-
 import { EmployeesAddUpdateComponent } from "./employees-manage-dash/employees-add-update/employees-add-update.component";
 import { OrdersToAppointmentsComponent } from "./orders-to-appointments/orders-to-appointments.component";
 import { NursesReinforcementComponent } from "./nurses-manage-dashboard/nurses-reinforcement/nurses-reinforcement.component";
-// import { OnnLineComponent } from './onn-line/onn-line.component';
 import { HospitalBIDashboardComponent } from "./hospital-bi-dashboard/hospital-bi-dashboard.component";
 import { GraphsModalComponent } from "./hospital-bi-dashboard/graphs-modal/graphs-modal.component";
 import { EshpozModalComponent } from "./hospital-bi-dashboard/eshpoz-modal/eshpoz-modal.component";
@@ -129,26 +128,57 @@ import { TrainingRequestDashboardComponent } from "./form-dashboard/training-req
 import { TrainingRequestFormComponent } from "./form-dashboard/training-request-dashboard/training-request-form/training-request-form.component";
 import { TrainingRequestDialogComponent } from "./form-dashboard/training-request-dashboard/training-request-dialog/training-request-dialog.component";
 import { WhatsappLungCancerComponent } from "./whatsapp-messages-dashboard/whatsapp-lung-cancer/whatsapp-lung-cancer.component";
+import { WhatsappCategoriesPermissionsComponent } from "./whatsapp-messages-dashboard/whatsapp-categories-permissions/whatsapp-categories-permissions.component";
 import { ShortcutsManagementComponent } from "./dashboard/shortcuts-management/shortcuts-management.component";
 import { ShortcutFormDialogComponent } from "./dashboard/shortcuts-management/shortcut-form-dialog/shortcut-form-dialog.component";
 import { NamerUserActionsComponent } from "./dashboard/namer-user-actions/namer-user-actions.component";
 import { LearningRequestsDashboardComponent } from "./learning-requests-dashboard/learning-requests-dashboard.component";
 import { CprNewbordDashboradComponent } from "./form-dashboard/cpr-newbord-dashborad/cpr-newbord-dashborad.component";
 import { CprNewbornFormComponent } from "./form-dashboard/cpr-newbord-dashborad/cpr-newborn-form/cpr-newborn-form.component";
-
 import { GoogleChartsComponent } from './hospital-cath-dashb/google-charts/google-charts.component';
-import { HospitalCathDashboardComponent } from './hospital-cath-dashboard/hospital-cath-dashboard.component';
-
-
-import { GraphsModalComponent2 } from "./hospital-cath-dashboard/graphs-modal/graphs-modal.component";
-import { EshpozModalComponent2 } from "./hospital-cath-dashboard/eshpoz-modal/eshpoz-modal.component";
-import { HospitalTonnageComponent2 } from "./hospital-cath-dashboard/hospital-tonnage/hospital-tonnage.component";
-
+import { RoomTimeDashboardComponent } from './hospital-roomtime-dashb/google-charts/google-charts.component';
+import { RoomTimeNDashboardComponent } from './hospital-roomtimen-dashb/google-charts/google-charts.component';
+import { RoomTimeRTDashboardComponent } from './hospital-roomtimert-dashb/google-charts/google-charts.component';
+import { RoomTimeRTmDashboardComponent } from './hospital-roomtimert-mdashb/google-charts/google-charts.component';
 import { CommercialSupportFormDashboardComponent } from "./form-dashboard/commercial-support-form-dashboard/commercial-support-form-dashboard.component";
 import { CommercialSupportFormDialogComponent } from "./form-dashboard/commercial-support-form-dashboard/commercial-support-form-dialog/commercial-support-form-dialog.component";
+import { CommercialSupportResearchDialogComponent } from "./form-dashboard/commercial-support-form-dashboard/commercial-support-research-dialog/commercial-support-research-dialog.component";
+import { CommercialSupportPresentationDialogComponent } from "./form-dashboard/commercial-support-form-dashboard/commercial-support-presentation-dialog/commercial-support-presentation-dialog.component";
+import { CommercialSupportGatheringComponent } from "./form-dashboard/commercial-support-form-dashboard/commercial-support-gathering/commercial-support-gathering.component";
+import { ServiceUnitEmailListComponent } from './emailsdashboard/service-unit-email-list/service-unit-email-list.component';
+import { ServiceUnitEmailListDialogComponent } from './emailsdashboard/service-unit-email-list/service-unit-email-list-dialog/service-unit-email-list-dialog.component';
+import { HospitalIncomeDashbComponent } from './hospital-income-dashb/hospital-income-dashb.component';
+import { GoogleChartsIncomeComponent } from './hospital-income-dashb/google-charts/google-charts.component';
+import { HospitalIncomeNBDashbComponent } from "./hospital-incomenb-dashb/hospital-incomenb-dashb.component";
+import { HospitalRoomTimeRTDashbComponent } from "./hospital-roomtimert-dashb/hospital-roomtimert-dashb.component";
+import { GoogleChartsIncomeNBComponent } from "./hospital-incomenb-dashb/google-charts/google-charts.component";
+import { FoldersManagementComponent } from "./dashboard/folders-management/folders-management.component";
+import { FolderDialogComponent } from "./dashboard/folders-management/folder-dialog/folder-dialog.component";
+import { DimotActivityDashboardComponent } from "./dimot-activity-dashboard/dimot-activity-dashboard.component";
+import { DepartmentIncomeDashboardComponent } from "./incomeImporter/department-income-dashboard.component";
+import { AutomationProcessDashboardComponent } from "./automationprocessdashboard/automation-process-dashboard.component";
+import { DepartmentalTextureReportComponent } from "./nutrition-system/departmental-texture-report/departmental-texture-report.component";
+import { WindowsUserActionsComponent } from "./dashboard/windows-user-actions/windows-user-actions.component";
+import { AiLettersDashboardComponent } from "./ai-letters-dashboard/ai-letters-dashboard.component";
+import { MriScheduleComponent } from "./mri-schedule/mri-schedule.component";
+import { InfectionControlComponent } from "./infection-control/infection-control.component";
+import { EmergencyRoomReportComponent } from "./emergency-room-report/emergency-room-report.component";
+import { HitoFormsDashboardComponent } from "./hito-forms-dashboard/hito-forms-dashboard.component";
+import { MedicalInternsDashboardComponent } from "./employees-manage-dash/medical-interns-dashboard/medical-interns-dashboard.component";
+import { MedicalInternAddUpdateComponent } from "./employees-manage-dash/medical-interns-dashboard/medical-intern-add-update/medical-intern-add-update.component";
+import { InternDepartmentsManageComponent } from "./employees-manage-dash/medical-interns-dashboard/intern-departments-manage/intern-departments-manage.component";
+import { InternDepartmentAssignmentDialogComponent } from "./employees-manage-dash/medical-interns-dashboard/intern-departments-manage/intern-department-assignment-dialog/intern-department-assignment-dialog.component";
+import { MedicalInternsSmsComponent } from "./employees-manage-dash/medical-interns-dashboard/medical-interns-sms/medical-interns-sms.component";
+import { LecturesManageDialogComponent } from "./employees-manage-dash/medical-interns-dashboard/lectures-manage-dialog/lectures-manage-dialog.component";
+import { SurgeriesDashboradComponent } from "./surgeries-dashborad-n/surgeries-dashborad.component";
+
 
 
 const routes: Routes = [
+    { path: "AutomationProcessDashboard", component: AutomationProcessDashboardComponent },
+    { path: "IncomeDashboard", component: DepartmentIncomeDashboardComponent },
+    { path: "surgeriesDashboard", component: SurgeriesDashboradComponent },
+    { path: "dimotactivity", component: DimotActivityDashboardComponent },
     { path: "patientstikers", component: PatientStikersComponent },
     { path: "clinicsrequests", component: ClinicsRequestsComponent },
     { path: 'switches', component: SwitchesComponent },
@@ -272,7 +302,6 @@ const routes: Routes = [
     { path: "whatsapp-dashboard", component: WhatsappMessagesDashboardComponent },
     { path: "nutrition-dashboard", component: NutritionSystemComponent },
     { path: "hr-dashboard", component: HrDashboardComponent },
-    { path: "", component: LoginComponent },
     { path: "Norton", component: NortonEstimateComponent },
     { path: "CAM", component: CAMEstimateComponent },
     { path: "Diaysis", component: DialysisReportComponent },
@@ -300,34 +329,52 @@ const routes: Routes = [
     { path: "training-request-form/:id", component: TrainingRequestFormComponent },
     { path: "training-request-dialog", component: TrainingRequestDialogComponent },
     { path: "whatsapp-lung-cancer", component: WhatsappLungCancerComponent },
+    { path: "whatsapp-categories-permissions", component: WhatsappCategoriesPermissionsComponent },
     { path: "shortcuts-management", component: ShortcutsManagementComponent },
     { path: "shortcut-form-dialog", component: ShortcutFormDialogComponent },
     { path: "namer-user-actions", component: NamerUserActionsComponent },
     { path: "learning-requests-dashboard", component: LearningRequestsDashboardComponent },
-
     { path: "cpr-newbord-dashborad", component: CprNewbordDashboradComponent },
     { path: "cpr-newborn-form", component: CprNewbornFormComponent },
     { path: "LabTests", component: LabTestsComponent },
-
     { path: "cpr-newbord-dashborad", component: CprNewbordDashboradComponent },
     { path: "cpr-newborn-form", component: CprNewbornFormComponent },
     { path: "commercial-support-form-dashboard", component: CommercialSupportFormDashboardComponent },
     { path: "commercial-support-form-dialog", component: CommercialSupportFormDialogComponent },
-
+    { path: "commercial-support-research-dialog", component: CommercialSupportResearchDialogComponent },
+    { path: "commercial-support-presentation-dialog", component: CommercialSupportPresentationDialogComponent },
+    { path: "commercial-support-gathering-dialog", component: CommercialSupportGatheringComponent },
     { path: "LabTests", component: LabTestsComponent },
-
-
-
     { path: "cpr-newbord-dashborad", component: CprNewbordDashboradComponent },
     { path: "cpr-newborn-form", component: CprNewbornFormComponent },
-    { path: "LabTests", component: LabTestsComponent },     
+    { path: "LabTests", component: LabTestsComponent },
     { path: "hospital-cath-dashb", component: GoogleChartsComponent },
-    { path: "hospitalcathdashboard", component: HospitalCathDashboardComponent },
-    { path: "GraphsModalComponent2", component: GraphsModalComponent2 },
-    { path: "EshpozModalComponent2", component: EshpozModalComponent2 },
-    { path: "hospital-tonnage2", component: HospitalTonnageComponent2 },
-  
-
+    { path: "hospital-roomtime-dashb", component: RoomTimeDashboardComponent },
+    { path: "hospital-roomtimen-dashb", component: RoomTimeNDashboardComponent },
+    { path: "hospital-roomtimert-dashb", component: RoomTimeRTDashboardComponent },
+    { path: "hospital-roomtimert-mdashb", component: RoomTimeRTmDashboardComponent },
+    { path: 'service-unit-email-list', component: ServiceUnitEmailListComponent },
+    { path: 'service-unit-email-list-dialog', component: ServiceUnitEmailListDialogComponent },
+    { path: "hospitalincomedashb", component: HospitalIncomeDashbComponent },
+    { path: "hospital-income-dashb", component: GoogleChartsIncomeComponent },
+    { path: "hospitalincomenbdashb", component: HospitalIncomeNBDashbComponent },
+    { path: "hospital-roomtimert-dashb", component: HospitalRoomTimeRTDashbComponent },
+    { path: "hospital-incomenb-dashb", component: GoogleChartsIncomeNBComponent },
+    { path: "folders-management", component: FoldersManagementComponent },
+    { path: "folders-dialog", component: FolderDialogComponent },
+    { path: "departmental-texture-report", component: DepartmentalTextureReportComponent },
+    { path: "windows-user-actions", component: WindowsUserActionsComponent },
+    { path: "ai-letters-dashboard", component: AiLettersDashboardComponent },
+    { path: "mri-schedule", component: MriScheduleComponent },
+    { path: "InfectionControl", component: InfectionControlComponent },
+    { path: "EmergencyRoomReport", component: EmergencyRoomReportComponent },
+    { path: "hito-forms-dashboard", component: HitoFormsDashboardComponent },
+    { path: "medical-interns-dashboard", component: MedicalInternsDashboardComponent },
+    { path: "medical-intern-add-update", component: MedicalInternAddUpdateComponent },
+    { path: "intern-departments-manage/:EmployeeID", component: InternDepartmentsManageComponent },
+    { path: "intern-department-assignment-dialog", component: InternDepartmentAssignmentDialogComponent },
+    { path: "medical-interns-sms", component: MedicalInternsSmsComponent },
+    { path: "lectures-manage-dialog", component: LecturesManageDialogComponent },
 ];
 
 

@@ -1,0 +1,81 @@
+<div class="card-selection-container" dir="rtl" *ngIf="choosen_card == undefined">
+    <div class="row" style="width: 100%;">
+        <button mat-mini-fab color="warn" class="close" matTooltip="סגירה" aria-label="Close" mat-dialog-close>
+            <mat-icon>cancel</mat-icon>
+        </button>
+    </div>
+    <div class="row">
+        <mat-card class="select-card" *ngFor="let em of EmergencyList">
+            <mat-card-title>
+                <!-- {{em.Description}} -->
+                <mat-form-field>
+                    <input matInput type="text" placeholder="{{em.Description}}" [(ngModel)]="em.newCategory"
+                        (blur)="createNewCategory(em)" />
+                </mat-form-field>
+            </mat-card-title>
+            <mat-card-content>
+                <button mat-raised-button class="permission-btn" (click)="selectCard(em, 'permissions')">הרשאות</button>
+                <button mat-raised-button class="category-btn"
+                    (click)="selectCard(em, 'employees')">תפוצה</button>
+            </mat-card-content>
+        </mat-card>
+        <mat-card class="select-card">
+            <mat-card-title>
+                <mat-form-field>
+                    <input matInput type="text" placeholder="קבוצה חדשה" [(ngModel)]="newCategory"
+                        (blur)="createNewCategory(null)" />
+                </mat-form-field>
+            </mat-card-title>
+        </mat-card>
+    </div>
+</div>
+
+<div dir="rtl" class="container text-right" *ngIf="choosen_card != undefined">
+    <div class="row" style="display: block;">
+        <button mat-mini-fab color="warn" class="close" matTooltip="סגירה" aria-label="Close" mat-dialog-close>
+            <mat-icon>cancel</mat-icon>
+        </button>
+        <br><br>
+        <h3 *ngIf="typeOfScreen == 'permissions'">הוספת הרשאות ל{{choosen_card.Description}}</h3>
+        <h3 *ngIf="typeOfScreen == 'employees'">הוספת תפוצה ל{{choosen_card.Description}}</h3>
+    </div>
+    <hr>
+    <div class="row">
+        <!-- Right: Available Users -->
+        <div class="column">
+            <h5 *ngIf="typeOfScreen == 'permissions'">בלי הרשאות - סה"כ {{filteredRightUsers().length}}</h5>
+            <h5 *ngIf="typeOfScreen == 'employees'">לא קיים בתפוצה - סה"כ {{filteredRightUsers().length}}</h5>
+            <button mat-raised-button color="accent" (click)="addSelected()">הוספה</button>
+            <mat-form-field appearance="outline" style="width: 100%;">
+                <mat-label>חיפוש</mat-label>
+                <input matInput [(ngModel)]="rightSearch" placeholder="חפש משתמשים">
+            </mat-form-field>
+            <mat-selection-list [(ngModel)]="selectedRightUsers" class="selection-list">
+                <mat-list-option *ngFor="let user of filteredRightUsers()" [value]="user">
+                    {{ user.Full_Name }} - {{ user.Department }} - {{ user.Function }}
+                </mat-list-option>
+            </mat-selection-list>
+            <button mat-raised-button color="accent" (click)="moveAllRight()">הכל</button>
+        </div>
+
+        <!-- Left: Assigned Users -->
+        <div class="column">
+            <h5 *ngIf="typeOfScreen == 'permissions'">עם הרשאות - סה"כ {{filteredLeftUsers().length}}</h5>
+            <h5 *ngIf="typeOfScreen == 'employees'">קיים בתפוצה - סה"כ {{filteredLeftUsers().length}}</h5>
+            <button mat-raised-button color="primary" (click)="removeSelected()">מחיקה</button>
+            <mat-form-field appearance="outline" style="width: 100%;">
+                <mat-label>חיפוש</mat-label>
+                <input matInput [(ngModel)]="leftSearch" placeholder="חפש משתמשים">
+            </mat-form-field>
+            <mat-selection-list [(ngModel)]="selectedLeftUsers" class="selection-list">
+                <mat-list-option *ngFor="let user of filteredLeftUsers()" [value]="user">
+                    {{ user.Full_Name }} - {{ user.Department }} - {{ user.Function }}
+                </mat-list-option>
+            </mat-selection-list>
+            <button mat-raised-button color="primary" (click)="moveAllLeft()">הכל</button>
+        </div>
+    </div>
+</div>
+<hr>
+<button mat-raised-button class="save-btn" *ngIf="choosen_card != undefined"
+    (click)="saveAllPermissions()">שמירה</button>

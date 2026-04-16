@@ -1,6 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { Component, OnInit, TemplateRef, ViewChild } from '@angular/core';
-import { FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
+import { FormArray, FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
 import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { DatePipe } from '@angular/common';
 import {
@@ -13,7 +13,7 @@ import { FillSurveyComponent } from 'src/app/fill-survey/fill-survey.component';
 import { MatTableDataSource } from '@angular/material/table';
 import { Observable } from 'rxjs';
 import { map, startWith } from 'rxjs/operators';
-import { isNull } from '@angular/compiler/src/output/output_ast';
+import { MatDatepickerInputEvent } from '@angular/material/datepicker';
 
 export interface UsersEmployee {
   id: string;
@@ -41,11 +41,17 @@ export class EmployeesAddUpdateComponent implements OnInit {
   employeePersonalDetails: FormGroup;
   employeeWorkDetails: FormGroup;
   gymDetails: FormGroup;
+  trainingsDetails: FormGroup;
+  educationsDetails: FormGroup;
+  EducationsList = [];
   RanksList = [];
   SektorsList = [];
   FunctionsList = [];
   EmployeeBlossomSektors = [];
+  /** One specialties array per education row index (aligned with `educations` FormArray). */
+  educationSpecialitiesLists: any[][] = [];
   DepartmentsList = [];
+  end_work_reasons = [];
   WorkPlacesList = [];
   actionColumns = [''];
   previewImage: string | null = null;
@@ -60,13 +66,71 @@ export class EmployeesAddUpdateComponent implements OnInit {
   _switchBlossom: any = "0";
   AcceptTerms: any;
   saveBtnWait: boolean = false;
+  print_only_Protocol: boolean = false;
   Api = environment.url;
   filteredOptions: Observable<string[]>;
   manfilter = new FormControl();
   filteredOptions2: Observable<string[]>;
   man2filter = new FormControl();
   employees = [];
+  columnHeaderMap: { [key: string]: string } = {
+    StartWorkDate: 'תאריך תחילת עבודה',
+    EmployeeSektorID: 'סקטור עובד',
+    EmployeeBlossomSektorID: 'סקטור עובד בבלוסום',
+    Title: 'תאור',
+    FunctionID: 'תפקיד',
+    DepartnentCode: 'מחלקה',
+    JobTitleID: 'תאור תפקיד',
+    EmployeeID: 'תעודת זהות',
+    FirstName: 'שם פרטי',
+    StandartJobType: 'חלקיות משרה',
+    LastName: 'שם משפחה',
+    Gender: 'מגדר',
+    RankID: 'דירוג',
+    ADUserName: 'שם משתמש',
+    Email: 'מייל',
+    CellNumber: 'מספר טלפון',
+    WorkPlaceID: 'מיקום עבודה',
+    EndWorkDate: 'תאריך סיום עבודה',
+    CityName: 'עיר',
+    CityCode: 'קוד עיר',
+    DateOfBirth: 'תאריך לידה',
+    Address: 'כתובת',
+    DocLicence: 'מספר רישיון',
+    DocStartExperience: 'תחילת ניסיון ברישיון',
+    InternLearnCountry: 'מיקום לימודים',
+    InternLearnCountryDesc: 'מדינת לימודים',
+    InternUniversity: 'אונברסיטה',
+    UserName: 'שם משתמש',
+    UpdateDate: 'תאריך עדכון',
+    StatusRow: 'מאושר משאבי אנוש',
+    AcceptTerms: 'אישר תקנון',
+    ApprovedToBlossom: 'אישור בלוסום',
+    FirstNameEng: 'שם פרטי באנגלית',
+    LastNameEng: 'שם משפחה באנגלית',
+    CarType: 'סוג רכב',
+    CarNumber: 'מספר רכב',
+    CarType_2: 'סוג רכב נוסף',
+    CarNumber_2: 'מספר רכב נוסף',
+    Toranot: 'מבצע תורנויות',
+    DateToEndWork: 'תאריך לסיום עבודה',
+    EndWorkReason: 'סיבת סיום עבודה',
+    PersonalEmail: 'מייל אישי',
+    SubDepartmentCode: 'תת מחלקה',
+  };
+  notify_arr = [
+    { value: 1, text: 'שמירת הריון' },
+    { value: 1, text: 'מחלה ממושכת' },
+    { value: 2, text: 'חל"ד' },
+    { value: 3, text: 'סיום העסקה בגין התפטרות' },
+    { value: 3, text: 'סיום חוזה במועד' },
+    { value: 3, text: 'סיום התמחות' },
+    { value: 3, text: 'חיצוני סיום העסקה' },
+    { value: 4, text: 'סיום העסקה בגין פרישה' }
+  ];
   @ViewChild('modalEmployeeHistory', { static: true }) modalEmployeeHistory: TemplateRef<any>;
+  dataSource: MatTableDataSource<any>;
+  dataSourceEducation: MatTableDataSource<any>;
 
   constructor(private _snackBar: MatSnackBar,
     public dialog: MatDialogRef<EmployeesAddUpdateComponent>,
@@ -84,7 +148,9 @@ export class EmployeesAddUpdateComponent implements OnInit {
     this.getRanksList();
     this.getWorkPlacesList();
     this.getEmployeesBlossomSektorList();
+    this.getEmployeesEndWorkReasons();
     this.getEmployeeDepartmentList();
+    this.getHRDepartmentEmployees();
 
     this.filteredOptions = this.manfilter.valueChanges
       .pipe(
@@ -96,6 +162,45 @@ export class EmployeesAddUpdateComponent implements OnInit {
         startWith(''),
         map(value => this._filter2(value))
       );
+    this.getEducationsList();
+  }
+
+  getSpecialitiesForRow(rowIndex: number): any[] {
+    return this.educationSpecialitiesLists[rowIndex] ?? [];
+  }
+
+  loadSpecialitiesForRow(rowIndex: number, educationID: any): void {
+    if (educationID == null || educationID === '') {
+      if (this.educationSpecialitiesLists[rowIndex]) {
+        this.educationSpecialitiesLists[rowIndex] = [];
+      }
+      return;
+    }
+    this.http.post(this.Api + "GetEmployeeSpecialitiesList", {
+      _educationID: educationID
+    }).subscribe((Response) => {
+      const list = Response["d"] ?? [];
+      while (this.educationSpecialitiesLists.length <= rowIndex) {
+        this.educationSpecialitiesLists.push([]);
+      }
+      this.educationSpecialitiesLists[rowIndex] = list;
+    });
+  }
+
+  onEducationSubjectChange(rowIndex: number, educationID: any): void {
+    const row = this.educations.at(rowIndex) as FormGroup;
+    row.get('Speciality')?.setValue(null);
+    while (this.educationSpecialitiesLists.length <= rowIndex) {
+      this.educationSpecialitiesLists.push([]);
+    }
+    this.educationSpecialitiesLists[rowIndex] = [];
+    this.loadSpecialitiesForRow(rowIndex, educationID);
+  }
+
+  getEducationsList() {
+    this.http.post(this.Api + "GetEmployeeEducationsList", {}).subscribe((Response) => {
+      this.EducationsList = Response["d"];
+    });
   }
 
   private _filter1(value: any): string[] {
@@ -120,6 +225,20 @@ export class EmployeesAddUpdateComponent implements OnInit {
 
   displayFn2(user: any): string {
     return user && user.firstname ? user.firstname : "";
+  }
+
+  getHRDepartmentEmployees() {
+    this.print_only_Protocol = false;
+    this.http
+      .post(environment.url + "GetHRDepartmentEmployees", {})
+      .subscribe((Response) => {
+        const exists = Response['d'].some(obj =>
+          Object.values(obj).some(val =>
+            typeof val === 'string' && val.toLowerCase().includes(this.UserName)
+          )
+        );
+        if (exists) this.print_only_Protocol = true;
+      });
   }
 
   getEmployeesToUpdateByID() {
@@ -158,7 +277,7 @@ export class EmployeesAddUpdateComponent implements OnInit {
           CityName: new FormControl(this.employee.CityName, null),
           ProfilePicture: new FormControl(this.employee.ProfilePicture, null),
           DateOfBirth: new FormControl(this.employee.DateOfBirth, [Validators.required]),
-          JobTitleID: new FormControl(this.employee.JobTitleID, null),
+          JobTitleID: new FormControl(this.employee.JobTitleID, [Validators.required]),
         });
         this.gymDetails = this.formBuilder.group({
           GymParticipant: new FormControl(this.employee.GymParticipation.Row_ID != null, null),
@@ -173,6 +292,12 @@ export class EmployeesAddUpdateComponent implements OnInit {
           PausePeriodExplain: new FormControl(this.employee.GymParticipation.PausePeriodExplain, null),
           EmployeesID: new FormControl(this.employee.GymParticipation.EmployeesID === null ? this.employee.RowID : null, null),
           Status: new FormControl(this.employee.GymParticipation.Status, null),
+        });
+        this.trainingsDetails = this.formBuilder.group({
+          trainings: this.formBuilder.array([])
+        });
+        this.educationsDetails = this.formBuilder.group({
+          educations: this.formBuilder.array([])
         });
         this.employeeWorkDetails = this.formBuilder.group({
           RowID: new FormControl(this.employee.RowID, null),
@@ -190,11 +315,13 @@ export class EmployeesAddUpdateComponent implements OnInit {
           WorkPlaceID: new FormControl(WorkPlaceID, null),
           EndWorkDate: new FormControl(this.employee.EndWorkDate, null),
           DateToEndWork: new FormControl(this.employee.DateToEndWork, null),
+          EndWorkReason: new FormControl(this.employee.EndWorkReason, null),
           CarType: new FormControl(this.employee.CarType, null),
           CarNumber: new FormControl(this.employee.CarNumber, null),
           CarType2: new FormControl(this.employee.CarType2, null),
           CarNumber2: new FormControl(this.employee.CarNumber2, null),
           Remarks: new FormControl(this.employee.Remarks, null),
+          Notifications: new FormControl(this.employee.Notifications, null),
           DocLicence: new FormControl(this.employee.DocLicence, null),
           DocStartExperience: new FormControl(this.employee.DocStartExperience, null),
           InternLearnCountry: new FormControl(this.employee.InternLearnCountry, null),
@@ -204,10 +331,8 @@ export class EmployeesAddUpdateComponent implements OnInit {
           ApprovedToBlossom: new FormControl(this.employee.ApprovedToBlossom, null),
           AcceptTerms: new FormControl(this.employee.AcceptTerms, null),
           Toranot: new FormControl(this.employee.Toranot, null),
-          ManagerID1: new FormControl({ id: this.employee.ManagerID1.id, firstname: "", lastname: "", ADUserName: "" }, null),
-          ManagerID2: new FormControl({ id: this.employee.ManagerID2.id, firstname: "", lastname: "", ADUserName: "" }, null),
-          JcpFromDate: new FormControl(this.employee.JcpFromDate, null),
-          JcpToDate: new FormControl(this.employee.JcpToDate, null),
+          ManagerID1: new FormControl({ id: this.employee.ManagerID1.id, firstname: "", lastname: "", ADUserName: "" }, Validators.required),
+          ManagerID2: new FormControl({ id: this.employee.ManagerID2.id, firstname: "", lastname: "", ADUserName: "" }, Validators.required),
         });
         if (this.employee.RowID == null || this.employee.StatusRow == "1") {
           this.employeePersonalDetails.controls['FirstNameEng'].setValidators(Validators.required);
@@ -219,8 +344,116 @@ export class EmployeesAddUpdateComponent implements OnInit {
         this.AcceptTerms = this.employee.AcceptTerms;
         this.sektorSelection(this.employee.EmployeeSektorID);
         this.getUserName(this.employee.Email);
+        this.dataSource = new MatTableDataSource();
+        this.dataSourceEducation = new MatTableDataSource();
+        this.createTrainingGroup(this.employee.EmployeeTrainings)
+        this.educationSpecialitiesLists = [];
+        this.createEducationGroup(this.employee.EmployeeEducations)
       });
   }
+
+  createTrainingGroup(arr) {
+    let temp = this.formBuilder.group({
+      Row_ID: [null, null],
+      TrainingSubject: [null, null],
+      StartDate: [null, null],
+      EndDate: [null, null],
+      Note: [null, null]
+    });
+    if (arr != null) {
+      arr.forEach(element => {
+        temp = this.formBuilder.group({
+          Row_ID: [element.Row_ID, null],
+          TrainingSubject: [element.TrainingSubject, null],
+          StartDate: [element.StartDate, null],
+          EndDate: [element.EndDate, null],
+          Note: [element.Note, null]
+        });
+        this.trainings.push(temp);
+      });
+    } else this.trainings.push(temp);
+
+    this.dataSource.data = this.trainings.controls;
+  }
+
+  createEducationGroup(arr) {
+    let temp = this.formBuilder.group({
+      Row_ID: [null, null],
+      EducationSubject: [null, null],
+      Speciality: [null, null],
+      EducationDate: [null, null],
+      Note: [null, null]
+    });
+    if (arr != null) {
+      arr.forEach(element => {
+        temp = this.formBuilder.group({
+          Row_ID: [element.Row_ID, null],
+          EducationSubject: [element.EducationSubject, null],
+          Speciality: [element.Speciality, null],
+          EducationDate: [element.EducationDate, null],
+          Note: [element.Note, null]
+        });
+        this.educations.push(temp);
+        const rowIndex = this.educations.length - 1;
+        this.educationSpecialitiesLists.push([]);
+        if (element.EducationSubject) {
+          this.loadSpecialitiesForRow(rowIndex, element.EducationSubject);
+        }
+      });
+    } else {
+      this.educations.push(temp);
+      this.educationSpecialitiesLists.push([]);
+    }
+
+    this.dataSourceEducation.data = this.educations.controls;
+  }
+
+  get educations(): FormArray {
+    return this.educationsDetails.get('educations') as FormArray;
+  }
+
+  removeEducationRow(index: number) {
+    this.educations.removeAt(index);
+    this.educationSpecialitiesLists.splice(index, 1);
+    this.dataSourceEducation.data = this.educations.controls; // Refresh table after removal
+  }
+
+  onEducationDateInput(event: MatDatepickerInputEvent<Date>, rowIndex: number): void {
+    let pipe = new DatePipe('en-US');
+    const selectedDate = event.value;
+    const currentRow = this.educations.at(rowIndex) as FormGroup;
+    currentRow.get('EducationDate')?.setValue(pipe.transform(selectedDate, 'yyyy-MM-dd'));
+  }
+
+  get trainings(): FormArray {
+    return this.trainingsDetails.get('trainings') as FormArray;
+  }
+
+  removeTrainingRow(index: number) {
+    this.trainings.removeAt(index);
+    this.dataSource.data = this.trainings.controls; // Refresh table after removal
+  }
+
+  onStartDateInput(event: MatDatepickerInputEvent<Date>, rowIndex: number): void {
+    let pipe = new DatePipe('en-US');
+    const selectedDate = event.value;
+    const currentRow = this.trainings.at(rowIndex) as FormGroup;
+    currentRow.get('StartDate')?.setValue(pipe.transform(selectedDate, 'yyyy-MM-dd'));
+  }
+
+  onEndDateInput(event: MatDatepickerInputEvent<Date>, rowIndex: number): void {
+    let pipe = new DatePipe('en-US');
+    const selectedDate = event.value;
+    const currentRow = this.trainings.at(rowIndex) as FormGroup;
+    currentRow.get('EndDate')?.setValue(pipe.transform(selectedDate, 'yyyy-MM-dd'));
+  }
+
+  // onStartDateChange(event: MatDatepickerInputEvent<Date>, rowIndex: number): void {
+  //   const selectedDate = event.value;
+  //   const currentRowFormGroup = this.trainings.at(rowIndex) as FormGroup;
+  //   const startDateControlValue = currentRowFormGroup.get('StartDate')?.value;
+  //   console.log(`Form control value for StartDate in row ${rowIndex}:`, startDateControlValue);
+  // }
 
   getEmployeesList() {
     this.http
@@ -331,14 +564,18 @@ export class EmployeesAddUpdateComponent implements OnInit {
       .subscribe((Response) => {
         this.employee_change_history_list = new MatTableDataSource(Response["d"]);
         if (this.employee_change_history_list.filteredData.length > 0) {
-          this.actionColumns = Object.keys(this.employee_change_history_list.filteredData[0]);
+          const dataKeys = Object.keys(this.employee_change_history_list.filteredData[0]);
+
+          // Only columns that exist in columnHeaderMap
+          this.actionColumns = Object.keys(this.columnHeaderMap)
+            .filter(key => dataKeys.includes(key));
         }
-        this.dialog2.open(this.modalEmployeeHistory, { width: '60%', disableClose: false });
+        this.dialog2.open(this.modalEmployeeHistory, { width: '90%', disableClose: false });
       });
   }
 
   closeModal() {
-    this.dialog.close();
+    this.dialog2.closeAll();
   }
 
   getRanksList() {
@@ -396,6 +633,15 @@ export class EmployeesAddUpdateComponent implements OnInit {
       });
   }
 
+  getEmployeesEndWorkReasons() {
+    this.http
+      .post(this.Api + "GetEmployeesEndWorkReasons", {
+      })
+      .subscribe((Response) => {
+        this.end_work_reasons = Response["d"];
+      });
+  }
+
   openSnackBar(message) {
     this._snackBar.open(message, 'X', {
       duration: 5000,
@@ -434,7 +680,7 @@ export class EmployeesAddUpdateComponent implements OnInit {
               CellNumber: new FormControl(this.employee.CellNumber, [Validators.required, Validators.pattern("[0-9 ]{10}")]),
               CityName: new FormControl(this.employee.CityName, null),
               DateOfBirth: new FormControl(this.employee.DateOfBirth, [Validators.required]),
-              JobTitleID: new FormControl(this.employee.JobTitleID, null),
+              JobTitleID: new FormControl(this.employee.JobTitleID, [Validators.required]),
             });
             this.gymDetails = this.formBuilder.group({
               GymParticipant: new FormControl(this.employee.GymParticipation.Row_ID != null, null),
@@ -449,6 +695,9 @@ export class EmployeesAddUpdateComponent implements OnInit {
               PausePeriodExplain: new FormControl(this.employee.GymParticipation.PausePeriodExplain, null),
               EmployeesID: new FormControl(this.employee.GymParticipation.EmployeesID === null ? this.employee.RowID : null, null),
               Status: new FormControl(this.employee.GymParticipation.Status, null),
+            });
+            this.trainingsDetails = this.formBuilder.group({
+              trainings: this.formBuilder.array([])
             });
             this.employeeWorkDetails = this.formBuilder.group({
               RowID: new FormControl(this.employee.RowID, null),
@@ -466,11 +715,13 @@ export class EmployeesAddUpdateComponent implements OnInit {
               WorkPlaceID: new FormControl(WorkPlaceID, null),
               EndWorkDate: new FormControl(this.employee.EndWorkDate, null),
               DateToEndWork: new FormControl(this.employee.DateToEndWork, null),
+              EndWorkReason: new FormControl(this.employee.EndWorkReason, null),
               CarType: new FormControl(this.employee.CarType, null),
               CarNumber: new FormControl(this.employee.CarNumber, null),
               CarType2: new FormControl(this.employee.CarType2, null),
               CarNumber2: new FormControl(this.employee.CarNumber2, null),
               Remarks: new FormControl(this.employee.Remarks, null),
+              Notifications: new FormControl(this.employee.Notifications, null),
               DocLicence: new FormControl(this.employee.DocLicence, null),
               DocStartExperience: new FormControl(this.employee.DocStartExperience, null),
               InternLearnCountry: new FormControl(this.employee.InternLearnCountry, null),
@@ -482,8 +733,6 @@ export class EmployeesAddUpdateComponent implements OnInit {
               Toranot: new FormControl(this.employee.Toranot, null),
               ManagerID1: new FormControl(this.employee.ManagerID1, null),
               ManagerID2: new FormControl(this.employee.ManagerID2, null),
-              JcpFromDate: new FormControl(this.employee.JcpFromDate, null),
-              JcpToDate: new FormControl(this.employee.JcpToDate, null),
             });
             this._switchHTOK = this.employee.StatusRow;
             this._switchBlossom = this.employee.ApprovedToBlossom;
@@ -523,6 +772,15 @@ export class EmployeesAddUpdateComponent implements OnInit {
     this.gymDetails.controls['EndGymDate'].setValue(pipe.transform(this.gymDetails.controls['EndGymDate'].value, 'yyyy-MM-dd'));
   }
 
+  setTrainingEndTime(index) {
+    let pipe = new DatePipe('en-US');
+    let month = new Date(this.trainingsDetails.controls.trainings['controls'][index].controls.StartDate.value);
+    this.trainingsDetails.controls.trainings['controls'][index].controls.EndDate.setValue(new Date());
+    this.trainingsDetails.controls.trainings['controls'][index].controls.EndDate.value.setYear(month.getFullYear() + 2);
+    this.trainingsDetails.controls.trainings['controls'][index].controls.EndDate.value.setDate(month.getDate());
+    this.trainingsDetails.controls.trainings['controls'][index].controls.EndDate.setValue(pipe.transform(this.trainingsDetails.controls.trainings['controls'][index].controls.EndDate.value, 'yyyy-MM-dd'));
+  }
+
   saveEmployee() {
     this.employeeWorkDetails.controls['EmployeeIndex'].setValue(this.getEmployeeIndex());
     let pipe = new DatePipe('en-US');
@@ -533,8 +791,6 @@ export class EmployeesAddUpdateComponent implements OnInit {
     this.employeePersonalDetails.controls['DateOfBirth'].setValue(pipe.transform(this.employeePersonalDetails.controls['DateOfBirth'].value, 'yyyy-MM-dd'));
     this.gymDetails.controls['StartGymDate'].setValue(pipe.transform(this.gymDetails.controls['StartGymDate'].value, 'yyyy-MM-dd'));
     this.gymDetails.controls['PaymentDate'].setValue(pipe.transform(this.gymDetails.controls['PaymentDate'].value, 'yyyy-MM-dd'));
-    this.employeeWorkDetails.controls['JcpFromDate'].setValue(pipe.transform(this.employeeWorkDetails.controls['JcpFromDate'].value, 'yyyy-MM-dd'));
-    this.employeeWorkDetails.controls['JcpToDate'].setValue(pipe.transform(this.employeeWorkDetails.controls['JcpToDate'].value, 'yyyy-MM-dd'));
     if (this.employeeWorkDetails.controls['StatusRow'].value == null || this.employeeWorkDetails.controls['StatusRow'].value == "0") {
       this.employeeWorkDetails.controls['StatusRow'].setValue('0');
       this.employeePersonalDetails.controls['FirstNameEng'].setValidators(null);
@@ -550,6 +806,8 @@ export class EmployeesAddUpdateComponent implements OnInit {
           _personalDetails: this.employeePersonalDetails.getRawValue(),
           _workDetails: this.employeeWorkDetails.getRawValue(),
           _gymDetails: this.gymDetails.getRawValue(),
+          _trainingsDetails: this.trainingsDetails.value.trainings,
+          _educationsDetails: this.educationsDetails.value.educations,
           _userName: this.UserName,
         })
         .subscribe((Response) => {

@@ -15,27 +15,37 @@
                         כבר קיים במערכת - ליצור קשר
                         עם מערכות מידע</label>
                 </div>
-                <div class="col-2">
+                <div class="col-1">
                     <img [src]="employeePersonalDetails.controls['ProfilePicture'].value" width="100" alt="תמונת עובד"
                         (click)="togglePreview()" style="cursor: pointer;border-radius: 40%" height="100" />
                     <div *ngIf="previewImage" class="image-preview-overlay" (click)="closePreview()">
                         <img [src]="previewImage" alt="Full Image" class="full-image" />
                     </div>
                 </div>
-                <div class="col-2">
-                    <button class="submitBtn" (click)="duplicateToNewEmployee()" matTooltip="שכפול" color="primary"
-                        type="submit" mat-fab>
+                <div class="col-3">
+                    <!-- <button class="submitBtn copy" (click)="duplicateToNewEmployee()" matTooltip="שכפול" type="submit"
+                        mat-fab>
                         <span class="material-icons">
                             file_copy
                         </span>
                     </button>
-                    &nbsp;&nbsp;
-                    <button class="submitBtn"
+                    &nbsp;&nbsp; -->
+                    <button class="submitBtn history"
                         (click)="EmployeeChangeHistory(employeePersonalDetails.controls['EmployeeID'].value)"
-                        matTooltip="היסטוריית שינויים" color="primary" type="submit" mat-fab>
+                        matTooltip="היסטוריית שינויים" type="submit" mat-fab>
                         <span class="material-icons">
                             history
                         </span>
+                    </button>
+                    &nbsp;&nbsp;
+                    <button class="submitBtn save" matTooltip="שמירה" [disabled]="employeePersonalDetails.invalid"
+                        (click)="saveEmployee()" [disabled]="saveBtnWait"
+                        *ngIf="print_only_Protocol || UserName == 'adahabre' || UserName == 'malkobi' || UserName == 'orkatz' || UserName == 'dgolani' || UserName == 'ashoshany' || UserName == 'owertheim' || UserName == 'eofir' || UserName == 'msuliman' || UserName == 'amarom'"
+                        type="submit" mat-fab>
+                        <span *ngIf="!saveBtnWait" class="material-icons">
+                            save
+                        </span>
+                        <p *ngIf="saveBtnWait" style="font-size: 16px;">המתן..</p>
                     </button>
                 </div>
             </div>
@@ -53,22 +63,6 @@
                                     <input (focusout)="checkIfExists()" placeholder="ת.ז" matInput
                                         formControlName="EmployeeID">
                                 </mat-form-field></div>
-                            <div class="col-3"><mat-form-field class="example-full-width">
-                                    <mat-label>שם פרטי (עברית)</mat-label>
-                                    <input matInput placeholder="שם פרטי (עברית)" formControlName="FirstName">
-                                </mat-form-field></div>
-                            <div class="col-3"><mat-form-field class="example-full-width">
-                                    <mat-label>שם פרטי (אנגלית)</mat-label>
-                                    <input matInput placeholder="שם פרטי (אנגלית)" formControlName="FirstNameEng">
-                                </mat-form-field></div>
-                            <div class="col-3"><mat-form-field class="example-full-width">
-                                    <mat-label>שם משפחה (עברית)</mat-label>
-                                    <input matInput placeholder="שם משפחה (עברית)" formControlName="LastName">
-                                </mat-form-field></div>
-                            <div class="col-3"><mat-form-field class="example-full-width">
-                                    <mat-label>שם משפחה (אנגלית)</mat-label>
-                                    <input matInput placeholder="שם משפחה (אנגלית)" formControlName="LastNameEng">
-                                </mat-form-field></div>
                             <div class="col-1">
                                 <mat-form-field>
                                     <mat-label>תואר</mat-label>
@@ -81,7 +75,23 @@
                                     </mat-select>
                                 </mat-form-field>
                             </div>
-                            <div class="col-2">
+                            <div class="col-2"><mat-form-field class="example-full-width">
+                                    <mat-label>שם פרטי (עברית)</mat-label>
+                                    <input matInput placeholder="שם פרטי (עברית)" formControlName="FirstName">
+                                </mat-form-field></div>
+                            <div class="col-2"><mat-form-field class="example-full-width">
+                                    <mat-label>שם פרטי (אנגלית)</mat-label>
+                                    <input matInput placeholder="שם פרטי (אנגלית)" formControlName="FirstNameEng">
+                                </mat-form-field></div>
+                            <div class="col-2"><mat-form-field class="example-full-width">
+                                    <mat-label>שם משפחה (עברית)</mat-label>
+                                    <input matInput placeholder="שם משפחה (עברית)" formControlName="LastName">
+                                </mat-form-field></div>
+                            <div class="col-2"><mat-form-field class="example-full-width">
+                                    <mat-label>שם משפחה (אנגלית)</mat-label>
+                                    <input matInput placeholder="שם משפחה (אנגלית)" formControlName="LastNameEng">
+                                </mat-form-field></div>
+                            <div class="col-1">
                                 <mat-form-field>
                                     <mat-label>מגדר</mat-label>
                                     <mat-select formControlName="Gender" aria-placeholder="מגדר">
@@ -99,7 +109,7 @@
                                     <mat-label>מייל פרטי</mat-label>
                                     <input matInput matInput placeholder="מייל פרטי" formControlName="PersonalEmail">
                                 </mat-form-field></div>
-                            <div class="col-3"><mat-form-field class="example-full-width">
+                            <div class="col-2"><mat-form-field class="example-full-width">
                                     <mat-label>מס' טלפון</mat-label>
                                     <input matInput matInput placeholder="מס' טלפון" formControlName="CellNumber">
                                 </mat-form-field></div>
@@ -171,6 +181,16 @@
                             </div>
                             <div class="col-3">
                                 <mat-form-field>
+                                    <mat-label>סיבת סיום עבודה</mat-label>
+                                    <mat-select formControlName="EndWorkReason" aria-placeholder="סיבת סיום עבודה">
+                                        <mat-option value=""> </mat-option>
+                                        <mat-option *ngFor="let reason of end_work_reasons" [value]="reason.Row_ID">
+                                            {{reason.Description}} </mat-option>
+                                    </mat-select>
+                                </mat-form-field>
+                            </div>
+                            <div class="col-3">
+                                <mat-form-field>
                                     <mat-label>סקטור</mat-label>
                                     <mat-select formControlName="EmployeeSektorID"
                                         (selectionChange)="sektorSelection($event.value)" aria-placeholder="סקטור">
@@ -204,7 +224,8 @@
                                     <mat-label>מיקום לימודים</mat-label>
                                     <mat-select formControlName="InternLearnCountry"
                                         (selectionChange)="setLearnCountry($event)" aria-placeholder="מיקום לימודים">
-                                        <mat-option value="חו'ל"> חו'ל </mat-option>
+                                        <mat-option value="חו'ל"> חו'ל יציב </mat-option>
+                                        <mat-option value="חו'ל לא יציב"> חו'ל לא יציב </mat-option>
                                         <mat-option value="ארץ"> ארץ </mat-option>
                                     </mat-select>
                                 </mat-form-field>
@@ -297,6 +318,7 @@
                                 <mat-form-field>
                                     <mat-label>תת מחלקה</mat-label>
                                     <mat-select formControlName="SubDepartmentCode" aria-placeholder="מחלקה">
+                                        <mat-option value=""> </mat-option>
                                         <mat-option *ngFor="let dept of DepartmentsList" [value]="dept.DepartnentCode">
                                             {{dept.DepartnentDescripton}} </mat-option>
                                     </mat-select>
@@ -335,6 +357,16 @@
                             <div class="col-3">
                                 <mat-form-field>
                                     <input matInput placeholder="הערות" formControlName="Remarks">
+                                </mat-form-field>
+                            </div>
+                            <div class="col-3">
+                                <mat-form-field>
+                                    <mat-label>התראות</mat-label>
+                                    <mat-select formControlName="Notifications" aria-placeholder="התראות">
+                                        <mat-option value=""> </mat-option>
+                                        <mat-option *ngFor="let not of notify_arr" [value]="not.value">
+                                            {{not.text}} </mat-option>
+                                    </mat-select>
                                 </mat-form-field>
                             </div>
                         </div>
@@ -422,6 +454,180 @@
                     </div>
                 </form>
             </mat-step>
+            <mat-step [stepControl]="educationsDetails">
+                <form [formGroup]="educationsDetails" dir="rtl" autocomplete="off">
+                    <ng-template matStepLabel>השכלה</ng-template>
+
+                    <table mat-table [dataSource]="dataSourceEducation" class="mat-elevation-z2 w-full"
+                        formArrayName="educations"
+                        *ngIf="dataSourceEducation &&dataSourceEducation.filteredData.length > 0">
+                        <!-- EducationSubject -->
+                        <ng-container matColumnDef="EducationSubject">
+                            <th mat-header-cell *matHeaderCellDef>שם השכלה</th>
+                            <td mat-cell *matCellDef="let row; let i = index" [formGroupName]="i">
+                                <mat-form-field appearance="outline" class="w-full">
+                                    <!-- <input matInput placeholder="שם השכלה" formControlName="EducationSubject" /> -->
+                                    <mat-select formControlName="EducationSubject" aria-placeholder="התמחות"
+                                        (selectionChange)="onEducationSubjectChange(i, $event.value)">
+                                        <mat-option *ngFor="let education of EducationsList" [value]="education">
+                                            {{education}} </mat-option>
+                                    </mat-select>
+                                </mat-form-field>
+                            </td>
+                        </ng-container>
+
+
+                        <!-- Speciality -->
+                        <ng-container matColumnDef="Speciality">
+                            <th mat-header-cell *matHeaderCellDef>התמחות</th>
+                            <td mat-cell *matCellDef="let row; let i = index" [formGroupName]="i">
+                                <mat-form-field appearance="outline" class="w-full">
+                                    <!-- <input matInput placeholder="שם התמחות" formControlName="Speciality" /> -->
+                                    <mat-select formControlName="Speciality" aria-placeholder="התמחות">
+                                        <mat-option *ngFor="let speciality of getSpecialitiesForRow(i)" [value]="speciality">
+                                            {{speciality}} </mat-option>
+                                    </mat-select>
+                                </mat-form-field>
+                            </td>
+                        </ng-container>
+
+                        <!-- EducationStartDate -->
+                        <ng-container matColumnDef="EducationDate">
+                            <th mat-header-cell *matHeaderCellDef>תאריך ביצוע</th>
+                            <td mat-cell *matCellDef="let row; let i = index" [formGroupName]="i">
+                                <mat-form-field appearance="outline" class="w-full">
+                                    <input matInput [matDatepicker]="picker1" formControlName="EducationDate"
+                                        (dateInput)="onEducationDateInput($event, i)" />
+                                    <mat-datepicker-toggle matSuffix [for]="picker1"></mat-datepicker-toggle>
+                                    <mat-datepicker #picker1></mat-datepicker>
+                                </mat-form-field>
+                            </td>
+                        </ng-container>
+
+                        <!-- Note -->
+                        <ng-container matColumnDef="Note">
+                            <th mat-header-cell *matHeaderCellDef>הערה</th>
+                            <td mat-cell *matCellDef="let row; let i = index" [formGroupName]="i">
+                                <mat-form-field appearance="outline" class="w-full">
+                                    <textarea matInput placeholder="הערה" cols="3" formControlName="Note"></textarea>
+                                </mat-form-field>
+                            </td>
+                        </ng-container>
+
+                        <ng-container matColumnDef="Actions">
+                            <th mat-header-cell *matHeaderCellDef></th>
+                            <td mat-cell *matCellDef="let row; let i = index">
+                                <button mat-icon-button color="warn" (click)="removeEducationRow(i)">
+                                    <mat-icon>delete</mat-icon>
+                                </button>
+                            </td>
+                        </ng-container>
+
+                        <!-- Header & Row Definitions -->
+                        <tr mat-header-row
+                            *matHeaderRowDef="['EducationSubject', 'Speciality', 'EducationDate', 'Note', 'Actions']">
+                        </tr>
+                        <tr mat-row
+                            *matRowDef="let row; columns: ['EducationSubject', 'Speciality', 'EducationDate', 'Note', 'Actions'];">
+                        </tr>
+                    </table>
+
+                    <!-- Add Button -->
+                    <div class="mt-4 text-right">
+                        <button mat-raised-button (click)="createEducationGroup(null)"
+                            style="background-color: #1976d2;color: #fff">
+                            הוסף השכלה
+                            <mat-icon>add</mat-icon>
+                        </button>
+                    </div>
+                    <div>
+                        <button mat-raised-button class="btn btn-primary btn-raised" matStepperNext>הבא</button>
+                    </div>
+                </form>
+            </mat-step>
+            <mat-step [stepControl]="trainingsDetails">
+                <form [formGroup]="trainingsDetails" dir="rtl" autocomplete="off">
+                    <ng-template matStepLabel>הכשרות</ng-template>
+
+                    <table mat-table [dataSource]="dataSource" class="mat-elevation-z2 w-full" formArrayName="trainings"
+                        *ngIf="dataSource && dataSource.filteredData.length > 0">
+                        <!-- TrainingSubject -->
+                        <ng-container matColumnDef="TrainingSubject">
+                            <th mat-header-cell *matHeaderCellDef>שם הכשרה</th>
+                            <td mat-cell *matCellDef="let row; let i = index" [formGroupName]="i">
+                                <mat-form-field appearance="outline" class="w-full">
+                                    <input matInput placeholder="שם הכשרה" formControlName="TrainingSubject" />
+                                </mat-form-field>
+                            </td>
+                        </ng-container>
+
+                        <!-- StartDate -->
+                        <ng-container matColumnDef="StartDate">
+                            <th mat-header-cell *matHeaderCellDef>תאריך ביצוע</th>
+                            <td mat-cell *matCellDef="let row; let i = index" [formGroupName]="i">
+                                <mat-form-field appearance="outline" class="w-full">
+                                    <input matInput [matDatepicker]="picker1" formControlName="StartDate"
+                                        (dateInput)="onStartDateInput($event, i)" />
+                                    <mat-datepicker-toggle matSuffix [for]="picker1"></mat-datepicker-toggle>
+                                    <mat-datepicker #picker1 (closed)="setTrainingEndTime(i)"></mat-datepicker>
+                                </mat-form-field>
+                            </td>
+                        </ng-container>
+
+                        <!-- EndDate -->
+                        <ng-container matColumnDef="EndDate">
+                            <th mat-header-cell *matHeaderCellDef>תאריך פג תוקף</th>
+                            <td mat-cell *matCellDef="let row; let i = index" [formGroupName]="i">
+                                <mat-form-field appearance="outline" class="w-full">
+                                    <input matInput [matDatepicker]="picker2" formControlName="EndDate"
+                                        (dateInput)="onEndDateInput($event, i)" />
+                                    <mat-datepicker-toggle matSuffix [for]="picker2"></mat-datepicker-toggle>
+                                    <mat-datepicker #picker2></mat-datepicker>
+                                </mat-form-field>
+                            </td>
+                        </ng-container>
+
+                        <!-- Note -->
+                        <ng-container matColumnDef="Note">
+                            <th mat-header-cell *matHeaderCellDef>הערה</th>
+                            <td mat-cell *matCellDef="let row; let i = index" [formGroupName]="i">
+                                <mat-form-field appearance="outline" class="w-full">
+                                    <textarea matInput placeholder="הערה" cols="3" formControlName="Note"></textarea>
+                                </mat-form-field>
+                            </td>
+                        </ng-container>
+
+                        <ng-container matColumnDef="Actions">
+                            <th mat-header-cell *matHeaderCellDef></th>
+                            <td mat-cell *matCellDef="let row; let i = index">
+                                <button mat-icon-button color="warn" (click)="removeTrainingRow(i)">
+                                    <mat-icon>delete</mat-icon>
+                                </button>
+                            </td>
+                        </ng-container>
+
+                        <!-- Header & Row Definitions -->
+                        <tr mat-header-row
+                            *matHeaderRowDef="['TrainingSubject', 'StartDate', 'EndDate', 'Note', 'Actions']">
+                        </tr>
+                        <tr mat-row
+                            *matRowDef="let row; columns: ['TrainingSubject', 'StartDate', 'EndDate', 'Note', 'Actions'];">
+                        </tr>
+                    </table>
+
+                    <!-- Add Button -->
+                    <div class="mt-4 text-right">
+                        <button mat-raised-button (click)="createTrainingGroup(null)"
+                            style="background-color: #1976d2;color: #fff">
+                            הוסף הכשרה
+                            <mat-icon>add</mat-icon>
+                        </button>
+                    </div>
+                    <div>
+                        <button mat-raised-button class="btn btn-primary btn-raised" matStepperNext>הבא</button>
+                    </div>
+                </form>
+            </mat-step>
             <mat-step [stepControl]="employeeWorkDetails">
                 <form dir="rtl" [formGroup]="employeeWorkDetails" autocomplete="off">
                     <ng-template matStepLabel>שונות</ng-template>
@@ -476,30 +682,10 @@
                                     <span *ngIf="AcceptTerms == '0'">לא חתם על טופס סודיות</span>
                                 </div>
                             </div>
-                            <div class="col-3">
-                                <mat-form-field appearance="fill" class="example-full-width">
-                                    <span matPrefix>GCP מתאריך &nbsp;</span>
-                                    <input matInput formControlName="JcpFromDate" placeholder="מתאריך"
-                                        [matDatepicker]="picker7" (focus)="picker7.open()">
-                                    <mat-datepicker-toggle matSuffix [for]="picker7">
-                                    </mat-datepicker-toggle>
-                                    <mat-datepicker #picker7></mat-datepicker>
-                                </mat-form-field>
-                            </div>
-                            <div class="col-3">
-                                <mat-form-field appearance="fill" class="example-full-width">
-                                    <span matPrefix>GCP עד תאריך &nbsp;</span>
-                                    <input matInput formControlName="JcpToDate" placeholder="עד תאריך"
-                                        [matDatepicker]="picker8" (focus)="picker8.open()">
-                                    <mat-datepicker-toggle matSuffix [for]="picker8">
-                                    </mat-datepicker-toggle>
-                                    <mat-datepicker #picker8></mat-datepicker>
-                                </mat-form-field>
-                            </div>
                         </div>
                     </ol>
                 </form>
-                <div class="button-row">
+                <!-- <div class="button-row">
                     <button class="submitBtn mb-2 mt-3" matTooltip="שמירה" [disabled]="employeePersonalDetails.invalid"
                         (click)="saveEmployee()" [disabled]="saveBtnWait" color="primary" type="submit" mat-fab>
                         <span *ngIf="!saveBtnWait" class="material-icons">
@@ -507,8 +693,27 @@
                         </span>
                         <p *ngIf="saveBtnWait" style="font-size: 16px;">המתן..</p>
                     </button>
-                </div>
+                </div> -->
             </mat-step>
         </mat-vertical-stepper>
     </div>
 </form>
+
+<ng-template #modalEmployeeHistory let-close="close" dir="rtl">
+    <button type="button" class="close" matTooltip="סגירה" aria-label="Close" (click)="closeModal()">
+        <span aria-hidden="true">&times;</span>
+    </button>
+
+    <mat-table mat-table [dataSource]="employee_change_history_list" class="table-history" dir="rtl">
+
+        <!-- Dynamically created columns -->
+        <ng-container *ngFor="let column of actionColumns" [matColumnDef]="column">
+            <th mat-header-cell *matHeaderCellDef>{{ columnHeaderMap[column] || column }}</th>
+            <td mat-cell *matCellDef="let element">{{ element[column] }}</td>
+        </ng-container>
+
+        <!-- Header row and row rendering -->
+        <tr mat-header-row *matHeaderRowDef="actionColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: actionColumns;"></tr>
+    </mat-table>
+</ng-template>

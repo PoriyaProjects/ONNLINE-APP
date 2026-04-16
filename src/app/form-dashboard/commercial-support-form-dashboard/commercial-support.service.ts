@@ -2,6 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from 'src/environments/environment';
+import { environment as environmentprod } from 'src/environments/environment.prod';
 
 @Injectable({
   providedIn: 'root'
@@ -9,11 +10,14 @@ import { environment } from 'src/environments/environment';
 export class SupportRequestService {
 
   private apiUrl = environment.url; // שים לב לשנות ל-API שלך בפועל
+  private apiUrlipracticom = environmentprod.urlipracticom; // שים לב לשנות ל-API שלך בפועל
 
   constructor(private http: HttpClient) { }
 
-  getAllSupportRequests(): Observable<any[]> {
-    return this.http.post<any[]>(`${this.apiUrl}GetAllSupportRequests`, {});
+  getAllSupportRequests(UserName: string): Observable<any[]> {
+    return this.http.post<any[]>(`${this.apiUrl}GetAllSupportRequests`, {
+      user_name: UserName
+    });
   }
 
   deleteSupportRequest(id: any): Observable<void> {
@@ -22,13 +26,76 @@ export class SupportRequestService {
     });
   }
 
-  getSupportRequestsByRequesterName(name: string): Observable<any[]> {
-    return this.http.get<any[]>(`${this.apiUrl}search?name=${encodeURIComponent(name)}`);
+  getSupportRequestsByID(id: string): Observable<any[]> {
+    return this.http.post<any[]>(`${this.apiUrl}GetSupportRequestById`, {
+      id: id
+    });
   }
 
-  saveSupportRequest(request: any): Observable<any> {
+  getPresentationRequestById(id: string): Observable<any[]> {
+    return this.http.post<any[]>(`${this.apiUrl}GetPresentationRequestById`, {
+      id: id
+    });
+  }
+
+  getResearchRequestById(id: string): Observable<any[]> {
+    return this.http.post<any[]>(`${this.apiUrl}GetResearchRequestById`, {
+      id: id
+    });
+  }
+
+  getGatheringRequestById(id: string): Observable<any[]> {
+    return this.http.post<any[]>(`${this.apiUrl}GetGatheringRequestById`, {
+      id: id
+    });
+  }
+
+  getSupportDecissionRequestById(id: string): Observable<any[]> {
+    return this.http.post<any[]>(`${this.apiUrl}GetSupportDecissionRequestById`, {
+      id: id,
+      form_char: 'D'
+    });
+  }
+
+  saveSupportRequest(request: any, type: any): Observable<any> {
     return this.http.post(`${this.apiUrl}SaveSupportRequest`, {
-      request: request
+      request: request,
+      type: type,
+    });
+  }
+
+  saveSupportRequestFormData(formData: FormData): Observable<any> {
+    return this.http.post(`${this.apiUrl}SaveSupportRequest`,
+      formData,
+      { responseType: 'text' }
+    );
+  }
+
+  savePresentationRequestFormData(formData: FormData): Observable<any> {
+    return this.http.post(`${this.apiUrlipracticom}SavePresentationRequest`, 
+      formData,
+      { responseType: 'text' }
+    );
+  }
+
+  saveResearchRequestFormData(formData: FormData): Observable<any> {
+    return this.http.post(`${this.apiUrlipracticom}SaveResearchRequest`, 
+      formData,
+      { responseType: 'text' }
+    );
+  }
+
+  saveGatheringRequest(formData: FormData): Observable<string> {
+    return this.http.post(
+      `${this.apiUrlipracticom}SaveGatheringRequest`,
+      formData,
+      { responseType: 'text' } // 👈 critical
+    );
+  }
+
+  getEmployeeDetails(id: any): Observable<any> {
+    return this.http.post(`${this.apiUrl}GetEmployeesToUpdateByID`, {
+      _empId: id
     });
   }
 }

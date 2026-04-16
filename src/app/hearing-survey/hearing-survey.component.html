@@ -1,0 +1,118 @@
+<div dir="rtl" class="hearing-survey-root">
+ 
+  <form class="survey-form" (ngSubmit)="runSurvey()">
+    <mat-form-field appearance="fill">
+      <mat-label>תאריך התחלה</mat-label>
+      <input matInput type="date" [(ngModel)]="startDate" name="startDate" required>
+    </mat-form-field>
+    <mat-form-field appearance="fill">
+      <mat-label>תאריך סיום</mat-label>
+      <input matInput type="date" [(ngModel)]="endDate" name="endDate" required>
+    </mat-form-field>
+    <button mat-raised-button color="primary" type="submit" [disabled]="loading">הרץ דו"ח</button>
+  </form>
+
+  <div *ngIf="loading" class="loading-area">
+    <mat-spinner diameter="30"></mat-spinner>
+    <span>טוען...</span>
+  </div>
+
+  <div *ngIf="error" class="error-area">
+    <mat-icon color="warn">error</mat-icon>
+    <span>{{ error }}</span>
+  </div>
+
+  <div *ngIf="detailsError" class="error-area details-warning">
+    <mat-icon color="warn">warning</mat-icon>
+    <span>{{ detailsError }}</span>
+  </div>
+
+  <section *ngIf="details && details.columnOrder && details.columnOrder.length" class="details-dashboard" aria-label="ספירות לפי סוג">
+    <h3 class="details-dashboard-title">פירוט מקרים לפי סוג (לחץ על תא לרשימת מספרי תיק)</h3>
+    <div class="details-dashboard-scroll">
+      <table class="details-counts-table">
+        <thead>
+          <tr>
+            <th *ngFor="let col of details.columnOrder" class="letter-head">{{ col }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td *ngFor="let col of details.columnOrder"
+                class="count-cell"
+                (click)="openTypeDetails(col)"
+                (keyup.enter)="openTypeDetails(col)"
+                [attr.tabindex]="0"
+                [attr.role]="'button'"
+                [attr.aria-label]="'סוג ' + col + ', ' + countForType(col) + ' מקרים'">
+              {{ countForType(col) }}
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <table *ngIf="counts" class="counts-table" dir="rtl">
+    <thead>
+      <tr>
+        <th></th>
+        <th>הפריט לדווח</th>
+        <th>מספר</th>
+        <th>בדיקה תקינה</th>
+        <th>נכשלו באוזן אחת</th>
+        <th>נכשלו בשתי אוזניים</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="num-col"></td>
+        <td class="desc-col">A</td>
+        <td class="total-col">{{ counts['A'] || 0 }}</td>
+        <td class="split-col"></td>
+        <td class="split-col"></td>
+        <td class="split-col"></td>
+      </tr>
+      <tr>
+        <td class="num-col"></td>
+        <td class="desc-col">C, D, E, F</td>
+        <td class="total-col">{{ counts['C'] || 0 }}</td>
+        <td class="split-col">{{ counts['D'] || 0 }}</td>
+        <td class="split-col">{{ counts['E'] || 0 }}</td>
+        <td class="split-col">{{ counts['F'] || 0 }}</td>
+      </tr>
+      <tr>
+        <td class="num-col"></td>
+        <td class="desc-col">G</td>
+        <td class="total-col">{{ counts['G'] || 0 }}</td>
+        <td class="split-col"></td>
+        <td class="split-col"></td>
+        <td class="split-col"></td>
+      </tr>
+      <tr>
+        <td class="num-col"></td>
+        <td class="desc-col">H</td>
+        <td class="total-col">{{ counts['H'] || 0 }}</td>
+        <td class="split-col"></td>
+        <td class="split-col"></td>
+        <td class="split-col"></td>
+      </tr>
+      <tr>
+        <td class="num-col"></td>
+        <td class="desc-col">I, K, L, M</td>
+        <td class="total-col">{{ counts['I'] || 0 }}</td>
+        <td class="split-col">{{ counts['K'] || 0 }}</td>
+        <td class="split-col">{{ counts['L'] || 0 }}</td>
+        <td class="split-col">{{ counts['M'] || 0 }}</td>
+      </tr>
+      <tr>
+        <td class="num-col"></td>
+        <td class="desc-col">J, O, P, Q</td>
+        <td class="total-col">{{ counts['J'] || 0 }}</td>
+        <td class="split-col">{{ counts['O'] || 0 }}</td>
+        <td class="split-col">{{ counts['P'] || 0 }}</td>
+        <td class="split-col">{{ counts['Q'] || 0 }}</td>
+      </tr>
+    </tbody>
+  </table>
+</div>

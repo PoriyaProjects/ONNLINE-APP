@@ -1,0 +1,60 @@
+<div class="container" dir="rtl">
+  <h1 class="page-title text-center">ניהול מחלקות סטאג'ר</h1>
+  <div class="intern-header mb-3">
+    <button mat-raised-button (click)="backToDashboard()">
+      <span class="material-icons">arrow_back</span>
+      חזרה לדשבורד
+    </button>
+    <h3 *ngIf="intern">{{ intern.FirstName }} {{ intern.LastName }} ({{ intern.EmployeeID }})</h3>
+  </div>
+  <mat-progress-bar mode="buffer" *ngIf="!loaded"></mat-progress-bar>
+  <div class="assignments-section" *ngIf="loaded">
+    <div class="row mb-2 align-items-center">
+      <div class="col">
+        <button mat-raised-button color="primary" (click)="addAssignment()">
+          <span class="material-icons">add</span>
+          הוסף הקצאה למחלקה
+        </button>
+        <button mat-raised-button color="accent" (click)="exportAndSendPdf(intern.Email, intern.PersonalEmail)"
+          [disabled]="!intern || assignments.length === 0 || sendingPdf || (intern.Email == '' && intern.PersonalEmail == '') || (intern.PersonalEmail == null && intern.Email == null)">
+          <span class="material-icons">{{ sendingPdf ? 'hourglass_empty' : 'picture_as_pdf' }}</span>
+          {{ sendingPdf ? 'שולח...' : 'יצירת PDF ושליחה לסטאזר' }}
+        </button>
+      </div>
+    </div>
+    <table mat-table [dataSource]="dataSource" class="mat-elevation-z8">
+      <ng-container matColumnDef="DepartnentDescriptonFirst">
+        <th mat-header-cell *matHeaderCellDef>מחלקה ראשונה</th>
+        <td mat-cell *matCellDef="let element">{{ element.DepartnentDescripton }}</td>
+      </ng-container>
+      <ng-container matColumnDef="DepartnentDescriptonSecond">
+        <th mat-header-cell *matHeaderCellDef>מחלקה שנייה</th>
+        <td mat-cell *matCellDef="let element">{{ element.DepartnentDescriptonSecond }}</td>
+      </ng-container>
+      <ng-container matColumnDef="InternPeriod">
+        <th mat-header-cell *matHeaderCellDef>תאריך התחלה תקופת הסטאג'ר</th>
+        <td mat-cell *matCellDef="let element">{{ formatDate(element.InternPeriod) }}</td>
+      </ng-container>
+      <ng-container matColumnDef="InternPeriodEnd">
+        <th mat-header-cell *matHeaderCellDef>תאריך סיום תקופת הסטאג'ר</th>
+        <td mat-cell *matCellDef="let element">{{ formatDate(element.InternPeriodEnd) }}</td>
+      </ng-container>
+      <ng-container matColumnDef="Actions">
+        <th mat-header-cell *matHeaderCellDef>פעולות</th>
+        <td mat-cell *matCellDef="let element">
+          <button mat-icon-button matTooltip="עריכה" (click)="editAssignment(element)">
+            <span class="material-icons">edit</span>
+          </button>
+          <button mat-icon-button matTooltip="מחיקה" color="warn" (click)="deleteAssignment(element)">
+            <span class="material-icons">delete</span>
+          </button>
+        </td>
+      </ng-container>
+      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+      <tr class="mat-row" *matNoDataRow>
+        <td class="mat-cell" [attr.colspan]="displayedColumns.length">אין הקצאות</td>
+      </tr>
+    </table>
+  </div>
+</div>

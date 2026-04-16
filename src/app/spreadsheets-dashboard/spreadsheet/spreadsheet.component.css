@@ -18,3 +18,16 @@
   border: 1px solid #ccc;
   border-radius: 5px;
 }
+/* ::ng-deep .e-column-header {
+  position: sticky !important;
+  top: 0;
+  z-index: 10;
+  background: white;
+}
+
+::ng-deep .e-row-header {
+  position: sticky !important;
+  left: 0;
+  z-index: 10;
+  background: white;
+} */

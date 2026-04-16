@@ -1,0 +1,17 @@
+<h2 mat-dialog-title class="dialog-title">תשובת ועדת התקשרויות - {{data.RequestType}}</h2>
+<h5 mat-dialog-title class="dialog-sub-title">{{data.Requester}}</h5>
+
+<mat-dialog-content dir="rtl" class="dialog-content">
+  <div class="text-right">
+    <p>תאריך ועדה: </p>
+
+    <p>החלטת ועדה: <u><b>{{decission_results.Approved}}</b></u></p>
+
+    <p>הערות: <u><b>{{decission_results.Note}}</b></u></p>
+
+  </div>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end" class="dialog-actions">
+  <button mat-stroked-button color="warn" (click)="onCancel()">סגור</button>
+</mat-dialog-actions>

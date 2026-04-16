@@ -115,15 +115,15 @@
                 <mat-header-cell *matHeaderCellDef mat-sort-header>רגישויות בעבר</mat-header-cell>
                 <mat-cell *matCellDef="let row">{{ row.OldAllergy }}</mat-cell>
             </ng-container>
-            <ng-container matColumnDef="Liquid_Type">
+            <ng-container matColumnDef="LiquidCertification">
                 <mat-header-cell *matHeaderCellDef mat-sort-header>הסמכת נוזלים לשתייה</mat-header-cell>
                 <mat-cell *matCellDef="let row">{{ row.Liquid_Type }}</mat-cell>
             </ng-container>
-            <ng-container matColumnDef="Food_Anamnesis">
+            <ng-container matColumnDef="NutritionAnamnezes">
                 <mat-header-cell *matHeaderCellDef mat-sort-header>אנמנזה תזונתית</mat-header-cell>
                 <mat-cell *matCellDef="let row">{{ row.Food_Anamnesis }}</mat-cell>
             </ng-container>
-            <ng-container matColumnDef="Food_Orders">
+            <ng-container matColumnDef="EatingNotes">
                 <mat-header-cell *matHeaderCellDef mat-sort-header>הנחיות אכילה</mat-header-cell>
                 <mat-cell *matCellDef="let row">{{ row.Food_Orders }}</mat-cell>
             </ng-container>
@@ -153,6 +153,9 @@
             <th>סוג מרקם</th>
             <th>רגישויות אשפוז נוכחי</th>
             <th>רגישויות בעבר</th>
+            <th>הסמכת נוזלים לשתייה</th>
+            <th>אנמנזה תזונתית</th>
+            <th>הנחיות אכילה</th>
 
         </tr>
         <tr *ngFor="let nut of dataSourceHos.filteredData">
@@ -170,6 +173,9 @@
             <td> {{nut.FoodTexture}} </td>
             <td> {{nut.CurrentAllergy}} </td>
             <td> {{nut.OldAllergy}} </td>
+            <td> {{nut.Liquid_Type}} </td>
+            <td> {{nut.Food_Anamnesis}} </td>
+            <td> {{nut.Food_Orders}} </td>
         </tr>
     </table>
     <!-- <mat-form-field>

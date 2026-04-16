@@ -1,12 +1,40 @@
 <!-- app.component.html -->
 <h3 class="page-title text-center" dir="rtl">וואטסאפ המרכז הרפואי - שם משתמש: {{user_name}}</h3>
 <mat-sidenav-container dir="rtl">
-    <mat-sidenav-content class="sidenav-content">
-        <mat-toolbar color="primary">
-            <span>{{ currentContact?.FirstName }} {{ currentContact?.FatherName }} {{ currentContact?.LastName }} - {{
-                currentContact?.CellNumber }} - {{
-                currentContact?.Message_Time }}{{
-                currentContact?.Visit_Date }}</span>
+    <div dir="rtl" *ngIf="employee_service_action == undefined" class="service-selection-container">
+        <h2 mat-dialog-title>בחר סוג שירות</h2>
+
+        <mat-dialog-content>
+            <div class="cube-options">
+                <button mat-raised-button class="cube" *ngFor="let ser of services" (click)="chooseService(ser)">
+                    <div class="service-name">{{ ser.Service_Name }}</div>
+                    <div class="action-name">{{ ser.Action_Name }}</div>
+                </button>
+            </div>
+        </mat-dialog-content>
+    </div>
+    <mat-sidenav-content class="sidenav-content" *ngIf="employee_service_action != undefined">
+        <mat-toolbar>
+            <div class="row" style="width: 100%;">
+                <div class="col-4 col-btns">
+                    <button mat-raised-button (click)="returnToHome()" style="background-color: #e9e311;"
+                        matTooltip="חזרה לדף הבית">
+                        <mat-icon>home</mat-icon>
+                    </button>
+                    <button mat-raised-button style="background-color: #fff;" (click)="openFixedMessagesDialog()"
+                        matTooltip="הודעות קבועות">
+                        <mat-icon>list</mat-icon>
+                    </button>
+                </div>
+                <div class="col-4 text-center">
+                    <span>{{ currentContact?.FirstName }} {{ currentContact?.FatherName }} {{ currentContact?.LastName
+                        }} - {{
+                        currentContact?.CellNumber }} - {{
+                        currentContact?.Message_Time }}{{
+                        currentContact?.Visit_Date }}</span>
+                </div>
+                <div class="col-4"></div>
+            </div>
         </mat-toolbar>
         <!-- Your chat area goes here -->
         <div class="row">
@@ -19,13 +47,13 @@
                 <div class="row">
                     <div class="col-10">
                         <mat-form-field>
-                            <mat-label>חיפוש</mat-label>
+                            <mat-label>חיפוש לפי ת.ז</mat-label>
                             <input matInput [(ngModel)]="_searchNewPatient" placeholder="תעודת זהות.." #input>
                         </mat-form-field>
                     </div>
                     <div class="col-2">
-                        <button matTooltip="חיפוש" mat-raised-button type="submit" class="btn btn-primary btn-raised"
-                            (click)="searchNewPatient()">
+                        <button matTooltip="חיפוש" mat-raised-button class="btn btn-raised"
+                            style="background-color: #00a884;" (click)="searchNewPatient()">
                             <span class="material-icons">
                                 search
                             </span>
@@ -33,54 +61,50 @@
                     </div>
                 </div>
                 <mat-form-field class="col-12">
-                    <mat-label>סינון</mat-label>
+                    <mat-label>סינון מהרשימה</mat-label>
                     <input matInput (keyup)="applyFilter2($event.target.value)" placeholder="הקלד.." #input>
                 </mat-form-field>
-                <!-- <mat-form-field class="col-5">
-                    <mat-label>תקופה בימים</mat-label>
-                    <input matInput value="1" type="number" (keyup)="getPatientsForWhatsapp($event.target.value)"
-                        placeholder="הקלד.." #input2>
-                </mat-form-field> -->
                 <mat-list role="list" class="list-of-contact">
-                    <mat-spinner *ngIf="contacts.length == 0"></mat-spinner>
+                    <div class="row text-center">
+                        <span *ngIf="contacts.length == 0">טוען...</span>
+                    </div>
                     <mat-list-item role="listitem" class="list-item" *ngFor="let contact of contacts_filter"
                         (click)="openChat(contact)">
                         <mat-icon mat-list-icon
                             [ngStyle]="{'background-color': contact.Active == 1 ? 'cornflowerblue' : 'orangered'}">account_circle</mat-icon>
-                        <span mat-line
-                            matTooltip="תאריך: {{contact.Visit_Date}}&#13; גיל: {{contact.Age}}&#13; סוג: {{contact.Type}}">{{
+                        <span mat-line matTooltip="תאריך: {{contact.Visit_Date}}&#13; גיל: {{contact.Age}}">{{
                             contact.FirstName }} {{ contact.FatherName
                             }} {{ contact.LastName }} -
-                            {{contact.CellNumber}}</span>
+                            {{contact.CellNumber}} - {{contact.Type}}</span>
                     </mat-list-item>
                 </mat-list>
             </div>
-            <div class="col-6" [formGroup]="newMessage">
+            <div class="col-6" [formGroup]="newMessage"
+                [ngStyle]="currentContact !== undefined ? { 'background-color': '#efeae2', 'border-radius': '15px' } : { 'background-color': '#f0f2f5' }">
                 <!-- Your input area goes here -->
                 <div class="input-container"
-                    *ngIf="currentContact !== undefined && currentContact.maxRow !== '' && currentContact.maxRow !== undefined">
+                    *ngIf="currentContact !== undefined && currentContact?.maxRow !== '' && currentContact?.maxRow !== undefined">
                     <form #fileForm="ngForm">
                         <input type="file" (change)="onFileSelected($event)" />
                     </form>
                     <mat-form-field class="message-input" *ngIf="!selectedFile">
                         <mat-label>שליחת הודעה בתוך שיחה</mat-label>
-                        <input matInput placeholder="הודעה חדשה" formControlName="Message_Text"
-                            (keydown.enter)="sendMessage()">
+                        <textarea matInput placeholder="הודעה חדשה" formControlName="Message_Text" rows="3"></textarea>
                     </mat-form-field>
                     <button mat-icon-button type="submit" class="send-btn" (click)="sendMessage()" matTooltip="שליחה">
+                        <!--  [disabled]="newMessage.get('Message_Text').value == ''" -->
                         <mat-icon>send</mat-icon>
                     </button>
                 </div>
                 <!-- send one way message -->
                 <div class="input-container"
-                    *ngIf="currentContact !== undefined && (currentContact.maxRow === '' || currentContact.maxRow === undefined)">
+                    *ngIf="currentContact !== undefined && (currentContact?.maxRow === '' || currentContact?.maxRow === undefined)">
                     <form #fileForm="ngForm">
                         <input type="file" (change)="onFileSelected($event)" />
                     </form>
                     <mat-form-field class="message-input" *ngIf="!selectedFile">
                         <mat-label>שליחת הודעה רגילה</mat-label>
-                        <input matInput placeholder="הודעה חדשה" formControlName="Message_Text"
-                            (keydown.enter)="sendOneWayMessage()">
+                        <textarea matInput placeholder="הודעה חדשה" formControlName="Message_Text" rows="3"></textarea>
                     </mat-form-field>
                     <button mat-icon-button type="submit" class="send-btn" (click)="sendOneWayMessage()"
                         matTooltip="שליחה">
@@ -90,15 +114,21 @@
                 </div>
                 <div class="chat-container" #scrollTarget *ngIf="currentContact !== undefined">
                     <mat-spinner *ngIf="loadChat"></mat-spinner>
-                    <div class="row chat" *ngFor="let message of currentContact.WhatsApp_Bot_Convesations"
+                    <div class="row chat" *ngFor="let message of currentContact?.WhatsApp_Bot_Convesations"
                         [ngStyle]="{'border-top': message.Step === '5' ? '2px dotted black' : '', 'margin-top': message.Step === '5' ? '25px' : '0px'}">
                         <div
                             [ngClass]="{'message-sent': message.From_ServiceEmployee == 'True', 'message-received': message.From_ServiceEmployee == 'False'}">
                             <div *ngIf="message.IfFileMessage == 'True'">
-                                <img src="{{message.Message_Text}}" width="200" />
+                                <img src="{{message.Message_Text}}" width="200" *ngIf="message.FileType == 'image'" />
+                                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/87/PDF_file_icon.svg/267px-PDF_file_icon.svg.png"
+                                    width="50" *ngIf="message.FileType == 'pdf'" />
+                                <mat-icon mat-list-icon
+                                    style="color: rgb(58, 127, 230);float: left;cursor: pointer;margin-right: 5px;"
+                                    matTooltip="שמירה בנמר/קמיליון"
+                                    (click)="displayAllCasesByPhoneNumber(message.Message_Text)">share</mat-icon>
                                 <mat-icon mat-list-icon style="color: yellowgreen;float: left;cursor: pointer;"
                                     matTooltip="הורדת קובץ"
-                                    (click)="downloadPDF(message.Message_Text)">cloud_download</mat-icon>
+                                    (click)="downloadPDF(message.Message_Text, message)">cloud_download</mat-icon>
                             </div>
                             <span *ngIf="message.IfFileMessage == 'False'"
                                 style="color: #333;font-size: 18px;line-height: 2;">{{ message.Message_Text
@@ -107,12 +137,12 @@
                                 <span *ngIf="message.Employee_Name === '' && message.From_ServiceEmployee == 'True'">-
                                     מערכת</span>
                                 <span *ngIf="message.Employee_Name !== ''">- {{ message.Employee_Name }}</span>
-                                <span *ngIf="message.From_ServiceEmployee === 'False'">- {{ currentContact.FirstName }}
-                                    {{ currentContact.LastName }}</span><span> -
+                                <span *ngIf="message.From_ServiceEmployee === 'False'">- {{ currentContact?.FirstName }}
+                                    {{ currentContact?.LastName }}</span><span> -
                                     פניה ל{{ message.Service_Name }}: {{ message.Action_Name }}</span>
                             </span>
                             <p
-                                *ngIf="(message.Message_Time === '' || currentContact.Message_Time === '') && message.From_ServiceEmployee == 'True'">
+                                *ngIf="(message.Message_Time === '' || currentContact?.Message_Time === '') && message.From_ServiceEmployee == 'True'">
                                 שולח</p>
                         </div>
                     </div>
@@ -121,11 +151,12 @@
             <div class="col-3">
                 <mat-card-header>
                     <div class="mat-card-header-text">
-                        <mat-card-title>שיחות וואטסאפ</mat-card-title>
+                        <mat-card-title>שיחות וואטסאפ</mat-card-title><br>
+                        <mat-card-content>{{loading_message}}</mat-card-content>
                     </div>
                 </mat-card-header>
                 <mat-form-field>
-                    <mat-label>סינון</mat-label>
+                    <mat-label>סינון מהרשימה</mat-label>
                     <input matInput (keyup)="applyFilter($event.target.value)" placeholder="הקלד.." #input>
                 </mat-form-field>
                 <mat-list role="list" class="list-of-contact">
@@ -133,7 +164,7 @@
                         *ngFor="let uncontact of unAnsweredConversations_filter" (click)="openChat(uncontact)">
                         <mat-icon mat-list-icon
                             [ngStyle]="{'background-color': uncontact.maxRow == '' ? '' : uncontact.LateSessions == 'Late' ? 'orangered' : 'limegreen'}">account_circle</mat-icon>
-                        <span mat-line>{{ uncontact.FirstName }} {{ uncontact.LastName }}
+                        <span mat-line>{{ uncontact.FirstName }} {{ uncontact.LastName }} - {{ uncontact.CellNumber }}
                             - <span *ngIf="uncontact.Service_Name != ''">
                                 {{uncontact.Service_Name}}:
                                 {{uncontact.Action_Name}}
@@ -148,7 +179,95 @@
                             matTooltip="סיום שיחה" (click)="endConversation(uncontact)">cancel_presentation</mat-icon>
                     </mat-list-item>
                 </mat-list>
+                <div class="paging-controls text-center" style="margin-top: 8px;margin-bottom: 8px;">
+                    <button mat-mini-fab color="primary" (click)="prevUnAnsweredPage()"
+                        [disabled]="unAnsweredPage === 1">
+                        <mat-icon>chevron_right</mat-icon>
+                    </button>
+                    <span style="margin: 0 12px; font-size: 15px;">עמוד {{unAnsweredPage}} מתוך
+                        {{calculateAllUnAnswered() || 1}}</span>
+                    <button mat-mini-fab color="primary" (click)="nextUnAnsweredPage()">
+                        <!-- [disabled]="unAnsweredPage * unAnsweredPageSize > unAnsweredTotal" -->
+                        <mat-icon>chevron_left</mat-icon>
+                    </button>
+                </div>
             </div>
         </div>
     </mat-sidenav-content>
 </mat-sidenav-container>
+
+<ng-template #modalContent let-close="close">
+    <div style="direction: rtl;text-align: right;">
+        <h2 mat-dialog-title>בחר מקרה</h2>
+        <hr>
+        <mat-dialog-content>
+            <mat-selection-list (selectionChange)="onSelectionChange($event)" [multiple]="false">
+                <mat-list-option>
+                    <div class="row">
+                        <div class="col">שם פרטי</div>
+                        <div class="col">תעודת זהות</div>
+                        <div class="col">מספר מקרה</div>
+                        <div class="col">תאריך רישום</div>
+                    </div>
+                </mat-list-option>
+                <hr>
+                <mat-list-option *ngFor="let item of current_contact_cases" [value]="item"
+                    [selected]="selectedId === item">
+                    <div class="row">
+                        <div class="col">{{ item.name }}</div>
+                        <div class="col">{{ item.id }}</div>
+                        <div class="col">{{ item.casenumber }}</div>
+                        <div class="col">{{ item.movedate }}</div>
+                    </div>
+                </mat-list-option>
+            </mat-selection-list>
+        </mat-dialog-content>
+
+        <mat-dialog-actions align="end" class="mt-5">
+            <button mat-button (click)="cancel()">ביטול</button>
+            <button mat-raised-button color="primary" (click)="approveSelection()" [disabled]="selectedId === null">
+                אישור
+            </button>
+        </mat-dialog-actions>
+    </div>
+
+</ng-template>
+
+<ng-template #fixedMessagesDialog let-dialogRef="dialogRef" dir="rtl">
+    <div class="dialog-header"
+        style="display: flex; justify-content: space-between; align-items: center; padding: 16px; position: relative;">
+        <div style="flex: 1;"></div>
+        <h2 mat-dialog-title class="text-center" style="margin: 0; flex: 1;">הודעות קבועות</h2>
+        <button mat-icon-button (click)="dialogRef.close()"
+            style="color: red; flex: 1; display: flex; justify-content: flex-end;">
+            <mat-icon style="color: red;">close</mat-icon>
+        </button>
+    </div>
+    <hr>
+    <mat-dialog-content>
+        <mat-list class="message-list" dir="rtl">
+            <mat-divider></mat-divider>
+
+            <mat-list-item *ngFor="let msg of fixed_messages_list" class="message-item">
+                <div class="message-content" (click)="selectFixedMessage(msg, dialogRef)">
+                    {{ msg.Message_Text }}
+                </div>
+
+                <div class="message-actions">
+                    <button mat-icon-button color="primary" (click)="editFixedMessage(msg)" matTooltip="עריכה">
+                        <mat-icon>edit</mat-icon>
+                    </button>
+                    <button mat-icon-button color="warn" (click)="removeFixedMessage(msg)" matTooltip="מחיקה">
+                        <mat-icon>delete</mat-icon>
+                    </button>
+                </div>
+            </mat-list-item>
+
+            <mat-divider *ngIf="!fixed_messages_list.length"></mat-divider>
+            <p *ngIf="!fixed_messages_list.length" class="no-messages">אין הודעות להצגה</p>
+        </mat-list>
+    </mat-dialog-content>
+
+    <hr>
+    <button mat-raised-button color="primary" (click)="addFixedMessage()">הוסף הודעה</button>
+</ng-template>

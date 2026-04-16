@@ -1,0 +1,22 @@
+<div class="controls-bar">
+  <mat-form-field>
+    <mat-label>Department</mat-label>
+    <mat-select [(value)]="selectedDept">
+      <mat-option *ngFor="let dept of departments" [value]="dept.code">
+        {{ dept.name }}
+      </mat-option>
+    </mat-select>
+  </mat-form-field>
+
+
+  <mat-form-field>
+    <mat-label>Date Range</mat-label>
+    <mat-select [(value)]="selectedTimePeriod">
+      <mat-option *ngFor="let period of timePeriods" [value]="period.code">
+        {{ period.name }}
+      </mat-option>
+    </mat-select>
+  </mat-form-field>
+ 
+  <button mat-raised-button color="primary" (click)="applyFilters()">Apply</button>
+</div>

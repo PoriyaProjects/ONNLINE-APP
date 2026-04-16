@@ -1,0 +1,40 @@
+h1 {
+  margin: 0 0 14px;
+  font-size: 28px;
+  color: var(--nps-text);
+}
+
+h2 {
+  margin: 20px 0 12px;
+  color: var(--nps-text);
+}
+
+.meta-card {
+  border: 1px solid var(--nps-border);
+  border-radius: 12px;
+  box-shadow: var(--nps-shadow-soft);
+}
+
+mat-form-field {
+  margin-inline-end: 12px;
+}
+
+.wide {
+  min-width: 280px;
+}
+
+.actions {
+  margin-top: 12px;
+}
+
+.perms-hint {
+  margin-top: 16px;
+  max-width: 520px;
+  font-size: 14px;
+  color: var(--nps-text-muted, #666);
+  line-height: 1.5;
+
+  a {
+    color: var(--nps-accent, #1565c0);
+  }
+}

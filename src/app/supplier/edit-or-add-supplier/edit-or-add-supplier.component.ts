@@ -9,6 +9,19 @@ import { MatTableDataSource } from "@angular/material/table";
 import { Router } from "@angular/router";
 import { NgbActiveModal, NgbModal } from "@ng-bootstrap/ng-bootstrap";
 import { environment } from "src/environments/environment";
+import {
+  ABCList,
+  ConnectionEssenceList,
+  ConnectionMethodList,
+  ConnectionTypeList,
+  DNAList,
+  IdentificationFormList,
+  OperationTypeList,
+  SecurityMeasuresList,
+  SignedSecrecyAgreementList,
+  StatusList,
+  YesNoList
+} from "src/app/core/lookup-lists";
 export interface Supplier {
   RowID: string;
   SupplierName: string;
@@ -31,6 +44,9 @@ export interface Supplier {
   CorporateNDA: string;
   ISOCer: string;
   RowStatus: string;
+  OperationType: string;
+  SignedSecrecyAgreement: string;
+  Comments: string;
   InsertDateTime: string;
   InsertUser: string;
   UpdateUser: string;
@@ -47,61 +63,18 @@ export interface DialogData {
   templateUrl: './edit-or-add-supplier.component.html',
   styleUrls: ['./edit-or-add-supplier.component.css']
 })
-export class EditOrAddSupplierComponent implements OnInit {
-  ConnectionEssenceList: any = [
-    {id: "-1", value: 'ללא'},
-    {id: "1", value: 'תמיכה'},
-    {id: "2", value: 'פיתוח'},
-    {id: "3", value: 'שירותי ענן'},
-    {id: "4", value: 'תחזוקה'},
-    {id: "5", value: 'הטמעה'},
-    {id: "6", value: 'פרוייקט'},
-    {id: "7", value: 'ניטור'}
-  ]
-  IdentificationFormList: any = [
-    {id: "-1", value: 'ללא'},
-    {id: "1", value: 'שם משתמש וסיסמא'},
-    {id: "2", value: 'שם משתמש וסיסמא + OTP'},
-    {id: "3", value: 'שם משתמש וסיסמא + MFA'},
-    {id: "4", value: 'כרטיס חכם'},
-    {id: "5", value: 'TOKEN'},
-    {id: "6", value: 'ללא גישה מרחוק (פנימית בלבד)'},
-    {id: "7", value: 'ללא גישה כלל'}
-  ]
-  SecurityMeasuresList: any = [
-    {id: "-1", value: 'ללא'},
-    {id: "1", value: 'SSL'},
-    {id: "2", value: 'SSL VPN'},
-    {id: "3", value: 'ניטור'},
-    {id: "4", value: 'SSL + ניטור'},
-    {id: "5", value: 'SSL VPN + ניטור'},
-    {id: "6", value: 'HTTPS'},
-    {id: "7", value: 'HTTPS + ניטור'}
-  ]
-  ConnectionTypeList: any = [
-    {id: "1", value: 'קבוע'},
-    {id: "2", value: 'זמני'}
-  ]
-  ConnectionMethodList : any =  [
-    {id: "1", value: 'מקומי'},
-    {id: "2", value: 'מרחוק'}
-  ]
-  YesNoList  : any =  
-  [
-    {id: "0", value: 'לא'},
-    {id: "1", value: 'כן'}
-  ]
-  StatusList  : any =  
-  [
-    {id: "0", value: 'לא פעיל'},
-    {id: "1", value: 'פעיל'}
-  ]
-  ABCList : any = 
-  [
-    {id: "A", value: 'A'},
-    {id: "B", value: 'B'},
-    {id: "C", value: 'C'}
-  ]
+export class EditOrAddSupplierComponent implements OnInit {    
+  SignedSecrecyAgreementList = SignedSecrecyAgreementList;
+  ConnectionEssenceList = ConnectionEssenceList;
+  ConnectionTypeList = ConnectionTypeList;
+  ConnectionMethodList = ConnectionMethodList;
+  IdentificationFormList = IdentificationFormList;
+  SecurityMeasuresList = SecurityMeasuresList;
+  YesNoList = YesNoList;
+  DNAList = DNAList;
+  StatusList = StatusList;
+  OperationTypeList = OperationTypeList;
+  ABCList = ABCList;
   serverForm: FormGroup;
   loading: boolean = false;
   constructor(
@@ -128,7 +101,7 @@ export class EditOrAddSupplierComponent implements OnInit {
       SupplierName: [this.data.element.SupplierName, Validators.required],
       ServerDescription: [this.data.element.ServerDescription, null],
       ContactName: [this.data.element.ContactName, null],
-      ContactEmail: [this.data.element.ContactEmail,  Validators.required],
+      ContactEmail: [this.data.element.ContactEmail, Validators.required],
       ContactTell: [this.data.element.ContactTell, null],
       ConnectionEssence: [this.data.element.ConnectionEssence, null],
       ConnectionType: [this.data.element.ConnectionType, null],
@@ -145,6 +118,9 @@ export class EditOrAddSupplierComponent implements OnInit {
       TestAM: [this.data.element.TestAM, null],
       ISOCer: [this.data.element.ISOCer, null],
       RowStatus: [this.data.element.RowStatus, null],
+      OperationType: [this.data.element.OperationType, null],
+      SignedSecrecyAgreement: [this.data.element.SignedSecrecyAgreement, null],
+      Comments: [this.data.element.Comments, null],
       InsertDateTime: [this.data.element.InsertDateTime, null],
       UpdateDateTime: [this.data.element.UpdateDateTime, null],
       UpdateUser: [localStorage.getItem("loginUserName"), null],

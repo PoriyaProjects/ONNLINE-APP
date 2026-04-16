@@ -1,0 +1,57 @@
+.mat-form-field {
+  width: 50%;
+  padding: 5px;
+}
+
+.signBtn {
+  height: 38px;
+  font-weight: bold;
+  font-size: 16px;
+  color: white;
+  width: 100%;
+}
+
+.submitBtn {
+  width: 50%;
+  margin-top: 50px;
+  font-weight: bold;
+  background-color: #9ad310;
+  color: #fff;
+}
+
+.submitBtn2 {
+  width: 50%;
+  margin-top: 50px;
+  font-weight: bold;
+  background-color: #1976d2;
+  color: #fff;
+}
+
+.closeBtn {
+  float: right;
+  margin-bottom: 20px;
+}
+
+.text-center {
+  text-align: center;
+  margin-bottom: 20px;
+  font-size: 24px;
+  font-weight: bold;
+}
+
+
+.decision-step {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.full-width {
+  width: 100%;
+}
+
+.step-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 10px;
+}

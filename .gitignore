@@ -1,7 +1,8 @@
 # See http://help.github.com/ignore-files/ for more about ignoring files.
 
 # compiled output
-/dist
+# /dist
+/main
 /tmp
 /out-tsc
 # Only exists if Bazel was run
@@ -56,3 +57,11 @@ src/app/onn-line/list-item/list-item.component.ts
 src/app/onn-line/list-item/list-item.css
 src/app/onn-line/list-item/list-item.html
 src/app/onn-line/models/item.ts
+
+
+
+
+
+.cursorrules
+.cursor/
+.cursorignore

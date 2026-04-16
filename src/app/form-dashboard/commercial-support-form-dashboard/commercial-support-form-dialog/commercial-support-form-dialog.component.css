@@ -44,6 +44,7 @@
 
 .mat-form-field {
   width: 50%;
+  padding: 5px;
 }
 
 h3 {
@@ -64,7 +65,7 @@ p {
 }
 
 .table-container {
-  display: flex;
+  text-align: center;
   justify-content: center;
   padding: 20px;
   background-color: #f5f5f5;
@@ -99,4 +100,72 @@ mat-form-field {
 mat-header-row,
 mat-row {
   height: 60px;
+}
+
+input[type="file"] {
+  display: block;
+  margin-top: 4px;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.continue-btn {
+  margin-top: 10px;
+  background-color: #c7e5e2;
+}
+
+.submitBtn {
+  width: 50%;
+  margin-top: 50px;
+  font-weight: bold;
+  background-color: #9ad310;
+  color: #fff;
+}
+
+.submitBtn2 {
+  width: 50%;
+  margin-top: 50px;
+  font-weight: bold;
+  background-color: #1976d2;
+  color: #fff;
+}
+
+.closeBtn {
+  float: right;
+  margin-bottom: 20px;
+}
+
+
+.decision-step {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.full-width {
+  width: 100%;
+}
+
+.step-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 10px;
+}
+
+.table table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+/* Body cells */
+table td.mat-cell {
+  border: 1px solid #d0d0d0;
+  text-align: center;
+  vertical-align: middle;
+}
+
+/* Optional: row hover */
+table tr.mat-row:hover {
+  background-color: #fafafa;
 }

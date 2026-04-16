@@ -1,0 +1,79 @@
+<form dir="rtl" autocomplete="off" [formGroup]="internForm" class="intern-form">
+  <div class="dialog-header">
+    <button mat-icon-button class="close-btn" matTooltip="סגירה" (click)="close()">
+      <span class="material-icons">close</span>
+    </button>
+    <div class="header-content">
+      <div class="avatar-wrap">
+        <img [src]="internForm.controls['ProfilePicture'].value" alt="תמונת סטאג'ר" class="avatar" />
+      </div>
+      <div class="header-info">
+        <h2 class="intern-name">
+          {{ (internForm.controls['FirstName'].value && internForm.controls['LastName'].value) ?
+          (internForm.controls['FirstName'].value + ' ' + internForm.controls['LastName'].value) : "סטאג'ר חדש" }}
+        </h2>
+        <span class="intern-id">{{ internForm.controls['EmployeeID'].value ? 'ת.ז ' +
+          internForm.controls['EmployeeID'].value : '' }}</span>
+      </div>
+      <!-- <div class="header-actions">
+        <button mat-flat-button color="primary" matTooltip="שמירה" [disabled]="internForm.invalid || saveBtnWait"
+          (click)="saveIntern()" type="button" class="action-btn">
+          <span *ngIf="!saveBtnWait" class="material-icons">save</span>
+          <span *ngIf="saveBtnWait" class="loading-text">המתן...</span>
+        </button>
+        <div class="save-success" *ngIf="saveSuccess">
+          נשמר בהצלחה ✓
+        </div>
+
+        <button mat-stroked-button color="warn" matTooltip="מחיקה" *ngIf="internForm.controls['RowID'].value"
+          (click)="deleteIntern()" [disabled]="saveBtnWait" type="button" class="action-btn">
+          <span class="material-icons">delete</span>
+        </button>
+      </div> -->
+    </div>
+  </div>
+
+  <div class="form-section">
+    <div class="section-header">
+      <span class="material-icons section-icon">person</span>
+      <h3 class="section-title">פרטי סטאג'ר</h3>
+    </div>
+    <div class="form-grid">
+      <mat-form-field appearance="outline" class="form-field">
+        <mat-label>ת.ז</mat-label>
+        <input matInput formControlName="EmployeeID" placeholder="תעודת זהות">
+        <mat-error *ngIf="internForm.get('EmployeeID')?.hasError('required')">שדה חובה</mat-error>
+        <mat-error *ngIf="internForm.get('EmployeeID')?.hasError('pattern')">תעודת זהות לא תקינה</mat-error>
+      </mat-form-field>
+      <mat-form-field appearance="outline" class="form-field">
+        <mat-label>שם פרטי</mat-label>
+        <input matInput formControlName="FirstName" placeholder="שם פרטי">
+        <mat-error *ngIf="internForm.get('FirstName')?.hasError('required')">שדה חובה</mat-error>
+      </mat-form-field>
+      <mat-form-field appearance="outline" class="form-field">
+        <mat-label>שם משפחה</mat-label>
+        <input matInput formControlName="LastName" placeholder="שם משפחה">
+        <mat-error *ngIf="internForm.get('LastName')?.hasError('required')">שדה חובה</mat-error>
+      </mat-form-field>
+      <mat-form-field appearance="outline" class="form-field">
+        <mat-label>מספר טלפון</mat-label>
+        <input type="tel" matInput formControlName="CellNumber" placeholder="מספר טלפון">
+        <mat-error *ngIf="internForm.get('CellNumber')?.hasError('required')">שדה חובה</mat-error>
+        <mat-error *ngIf="internForm.get('CellNumber')?.hasError('pattern')">מספר טלפון לא תקין</mat-error>
+      </mat-form-field>
+      <mat-form-field appearance="outline" class="form-field">
+        <mat-label>מייל</mat-label>
+        <input type="email" matInput formControlName="Email" placeholder="מייל">
+      </mat-form-field>
+      <mat-form-field appearance="outline" class="form-field">
+        <mat-label>מחלקה</mat-label>
+        <mat-select formControlName="DepartnentCode">
+          <mat-option [value]="''">בחר מחלקה</mat-option>
+          <mat-option *ngFor="let dept of DepartmentsList" [value]="dept.DepartnentCode">
+            {{ dept.DepartnentDescripton }}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+    </div>
+  </div>
+</form>

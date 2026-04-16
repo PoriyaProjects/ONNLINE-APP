@@ -1,0 +1,38 @@
+h1 {
+  margin: 0 0 14px;
+  font-size: 28px;
+  color: var(--nps-text);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.kpi-card {
+  border: 1px solid var(--nps-border);
+  border-radius: 12px;
+  box-shadow: var(--nps-shadow-soft);
+
+  mat-card-title {
+    color: var(--nps-muted);
+    font-size: 14px;
+  }
+
+  mat-card-content {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--nps-text);
+  }
+}
+
+.actions {
+  margin-top: 8px;
+}
+
+.queue-msg {
+  margin-top: 10px;
+  color: var(--nps-muted);
+}

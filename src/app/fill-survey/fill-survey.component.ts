@@ -72,6 +72,7 @@ export class Table {
     templateUrl: "signature-dialog.html",
 })
 export class DialogContentExampleDialog {
+    initCanvaValue: any;
     // digital sign source : https://gist.github.com/anupkrbid/6447d97df6be6761d394f18895bc680d
     canvasEl: HTMLCanvasElement;
     @Input() width = 512;
@@ -86,6 +87,8 @@ export class DialogContentExampleDialog {
 
     ngAfterViewInit() {
         this.canvasEl = this.canvasinside.nativeElement;
+        this.initCanvaValue = this.canvasEl.toDataURL();
+
         this.cx = this.canvasEl.getContext("2d");
 
         this.canvasEl.width = this.width;
@@ -174,15 +177,42 @@ export class DialogContentExampleDialog {
     }
 
     ngOnDestroy() {
-        this.data.sign = this.canvasEl.toDataURL();
+        if (this.initCanvaValue !== this.canvasEl.toDataURL() && !this.isCanvasBlankOrWhite(this.canvasEl)) {
+            this.data.sign = this.canvasEl.toDataURL();
+        }
         this.drawingSubscription.unsubscribe();
         this.dialog.close(this.data);
     }
 
     sendToForm() {
-        this.data.sign = this.canvasEl.toDataURL();
+        if (this.initCanvaValue !== this.canvasEl.toDataURL() && !this.isCanvasBlankOrWhite(this.canvasEl)) {
+            this.data.sign = this.canvasEl.toDataURL();
+        }
         this.dialog.close(this.data);
-        // console.log(this.canvasEl);
+    }
+
+    isCanvasBlankOrWhite(canvas) {
+        const ctx = canvas.getContext("2d");
+        const { width, height } = canvas;
+        const pixels = ctx.getImageData(0, 0, width, height).data;
+
+        for (let i = 0; i < pixels.length; i += 4) {
+            const [r, g, b, a] = [
+                pixels[i],     // Red
+                pixels[i + 1], // Green
+                pixels[i + 2], // Blue
+                pixels[i + 3]  // Alpha
+            ];
+
+            // Transparent pixel
+            if (a === 0) continue;
+
+            // Non-white pixel (not #ffffff)
+            if (!(r === 255 && g === 255 && b === 255)) {
+                return false; // canvas is NOT blank or all-white
+            }
+        }
+        return true; // all pixels are white or transparent
     }
 }
 @Component({
@@ -195,7 +225,7 @@ export class FillSurveyComponent implements OnInit {
     displayedColumns: string[] = [];
     TABLE_DATA: Table[] = [];
     dataSource = new MatTableDataSource(this.TABLE_DATA);
-
+    isSign: boolean = true;
     availableDevices: MediaDeviceInfo[];
     deviceCurrent: MediaDeviceInfo;
     deviceSelected: string;
@@ -452,8 +482,7 @@ export class FillSurveyComponent implements OnInit {
         this.date = this.datePipe.transform(now, "yyyy-MM-dd");
         this.time = this.datePipe.transform(now, "HH:mm:ss");
         this.signatureArr = [];
-        this.sign =
-            "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAGiCAYAAACRRH6CAAARv0lEQVR4Xu3WQQEAAAgCMelf2iA3GzB8sHMECBAgQIBATmC5xAITIECAAAECZwB4AgIECBAgEBQwAIKli0yAAAECBAwAP0CAAAECBIICBkCwdJEJECBAgIAB4AcIECBAgEBQwAAIli4yAQIECBAwAPwAAQIECBAIChgAwdJFJkCAAAECBoAfIECAAAECQQEDIFi6yAQIECBAwADwAwQIECBAIChgAARLF5kAAQIECBgAfoAAAQIECAQFDIBg6SITIECAAAEDwA8QIECAAIGggAEQLF1kAgQIECBgAPgBAgQIECAQFDAAgqWLTIAAAQIEDAA/QIAAAQIEggIGQLB0kQkQIECAgAHgBwgQIECAQFDAAAiWLjIBAgQIEDAA/AABAgQIEAgKGADB0kUmQIAAAQIGgB8gQIAAAQJBAQMgWLrIBAgQIEDAAPADBAgQIEAgKGAABEsXmQABAgQIGAB+gAABAgQIBAUMgGDpIhMgQIAAAQPADxAgQIAAgaCAARAsXWQCBAgQIGAA+AECBAgQIBAUMACCpYtMgAABAgQMAD9AgAABAgSCAgZAsHSRCRAgQICAAeAHCBAgQIBAUMAACJYuMgECBAgQMAD8AAECBAgQCAoYAMHSRSZAgAABAgaAHyBAgAABAkEBAyBYusgECBAgQMAA8AMECBAgQCAoYAAESxeZAAECBAgYAH6AAAECBAgEBQyAYOkiEyBAgAABA8APECBAgACBoIABECxdZAIECBAgYAD4AQIECBAgEBQwAIKli0yAAAECBAwAP0CAAAECBIICBkCwdJEJECBAgIAB4AcIECBAgEBQwAAIli4yAQIECBAwAPwAAQIECBAIChgAwdJFJkCAAAECBoAfIECAAAECQQEDIFi6yAQIECBAwADwAwQIECBAIChgAARLF5kAAQIECBgAfoAAAQIECAQFDIBg6SITIECAAAEDwA8QIECAAIGggAEQLF1kAgQIECBgAPgBAgQIECAQFDAAgqWLTIAAAQIEDAA/QIAAAQIEggIGQLB0kQkQIECAgAHgBwgQIECAQFDAAAiWLjIBAgQIEDAA/AABAgQIEAgKGADB0kUmQIAAAQIGgB8gQIAAAQJBAQMgWLrIBAgQIEDAAPADBAgQIEAgKGAABEsXmQABAgQIGAB+gAABAgQIBAUMgGDpIhMgQIAAAQPADxAgQIAAgaCAARAsXWQCBAgQIGAA+AECBAgQIBAUMACCpYtMgAABAgQMAD9AgAABAgSCAgZAsHSRCRAgQICAAeAHCBAgQIBAUMAACJYuMgECBAgQMAD8AAECBAgQCAoYAMHSRSZAgAABAgaAHyBAgAABAkEBAyBYusgECBAgQMAA8AMECBAgQCAoYAAESxeZAAECBAgYAH6AAAECBAgEBQyAYOkiEyBAgAABA8APECBAgACBoIABECxdZAIECBAgYAD4AQIECBAgEBQwAIKli0yAAAECBAwAP0CAAAECBIICBkCwdJEJECBAgIAB4AcIECBAgEBQwAAIli4yAQIECBAwAPwAAQIECBAIChgAwdJFJkCAAAECBoAfIECAAAECQQEDIFi6yAQIECBAwADwAwQIECBAIChgAARLF5kAAQIECBgAfoAAAQIECAQFDIBg6SITIECAAAEDwA8QIECAAIGggAEQLF1kAgQIECBgAPgBAgQIECAQFDAAgqWLTIAAAQIEDAA/QIAAAQIEggIGQLB0kQkQIECAgAHgBwgQIECAQFDAAAiWLjIBAgQIEDAA/AABAgQIEAgKGADB0kUmQIAAAQIGgB8gQIAAAQJBAQMgWLrIBAgQIEDAAPADBAgQIEAgKGAABEsXmQABAgQIGAB+gAABAgQIBAUMgGDpIhMgQIAAAQPADxAgQIAAgaCAARAsXWQCBAgQIGAA+AECBAgQIBAUMACCpYtMgAABAgQMAD9AgAABAgSCAgZAsHSRCRAgQICAAeAHCBAgQIBAUMAACJYuMgECBAgQMAD8AAECBAgQCAoYAMHSRSZAgAABAgaAHyBAgAABAkEBAyBYusgECBAgQMAA8AMECBAgQCAoYAAESxeZAAECBAgYAH6AAAECBAgEBQyAYOkiEyBAgAABA8APECBAgACBoIABECxdZAIECBAgYAD4AQIECBAgEBQwAIKli0yAAAECBAwAP0CAAAECBIICBkCwdJEJECBAgIAB4AcIECBAgEBQwAAIli4yAQIECBAwAPwAAQIECBAIChgAwdJFJkCAAAECBoAfIECAAAECQQEDIFi6yAQIECBAwADwAwQIECBAIChgAARLF5kAAQIECBgAfoAAAQIECAQFDIBg6SITIECAAAEDwA8QIECAAIGg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";
+        this.sign = "";
     }
 
     myModel(e: any, id: string, questionIndex: number) {
@@ -503,6 +532,7 @@ export class FillSurveyComponent implements OnInit {
                 this.sign = this._sanitizer.bypassSecurityTrustResourceUrl(
                     data.sign
                 );
+                this.isSign = true;
                 this.signatureArr.push(data);
             });
     }
@@ -550,6 +580,7 @@ export class FillSurveyComponent implements OnInit {
                         answer.answerContent = this.signatureArr[d].sign;
                         d++;
                     }
+                    this.isSign = true;
                 }
             }
 
@@ -726,6 +757,7 @@ export class FillSurveyComponent implements OnInit {
                 element[0].NursesTable.forEach(e => {
                     tableArr.push(e);
                 });
+                debugger
                 let pdf = this.makePdfString(element[0], tableArr)
                 this.http
                     .post(environment.urlipracticom + "createPdfOnServer", {
@@ -915,12 +947,12 @@ export class FillSurveyComponent implements OnInit {
                             <p class="fix-mb-5">
                                 <span>
                                     <span><b>${item.questionValue}</b>:&nbsp;&nbsp;</span>`;
-                                    if(item.AnswerType != 'Signature'){
-                                        pdf += `<span>${item.AnswerValue}</span>`;
-                                    }else{
-                                        pdf += `<img width="100" height="100" [src]="${item.AnswerValue}">`;
-                                    }
-                                    pdf += `
+            if (item.AnswerType != 'Signature') {
+                pdf += `<span>${item.AnswerValue}</span>`;
+            } else {
+                pdf += `<img width="100" height="100" [src]="${item.AnswerValue}">`;
+            }
+            pdf += `
                                 </span>
                             </p>
                         </div>
@@ -1071,9 +1103,9 @@ export class FillSurveyComponent implements OnInit {
         } else {
             this.http
                 .post(
-                    environment.url + "GetPersonalDetails",
+                    environment.url + "GetPatientDetailsByCaseNumber",
                     {
-                        CaseNumber: this.CaseNumber,
+                        _caseNumber: this.CaseNumber,
                     }
                 )
                 .subscribe((Response) => {
@@ -1098,6 +1130,25 @@ export class FillSurveyComponent implements OnInit {
                             passPatient[0].PatientGender;
                     } else {
                         this.mPersonalDetails = Response["d"];
+                        if (this.mPersonalDetails != undefined) {
+                            this.mPersonalDetails.Address =
+                                Response["d"].PM_CITY;
+                            this.mPersonalDetails.DOB = Response["d"].PM_DOB;
+                            this.mPersonalDetails.Email =
+                                Response["d"].PatientEmail;
+                            this.mPersonalDetails.FirstName =
+                                Response["d"].PM_FIRST_NAME;
+                            this.mPersonalDetails.FatherName =
+                                Response["d"].PM_FATHER_NAME;
+                            this.mPersonalDetails.LastName =
+                                Response["d"].PM_LAST_NAME;
+                            this.mPersonalDetails.PersonID =
+                                Response["d"].PM_PATIENT_ID;
+                            this.mPersonalDetails.PhoneNumber =
+                                Response["d"].PM_PATIENT_PHONE_NUMBER_1;
+                            this.mPersonalDetails.Gender =
+                                Response["d"].PM_PATIENT_GENDER;
+                        }
                     }
                     this.getForm(this.urlID, this.ifContinueForm, this.NurseID);
                     this.selectedSubCheckbox = new Array<any>();

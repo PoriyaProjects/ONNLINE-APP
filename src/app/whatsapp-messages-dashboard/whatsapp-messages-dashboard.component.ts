@@ -1,11 +1,14 @@
 import { DatePipe } from '@angular/common';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Component, OnInit, ChangeDetectorRef, OnDestroy } from '@angular/core';
-import { FormArray, FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
+import { AbstractControl, FormArray, FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
+import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar, MatSnackBarHorizontalPosition, MatSnackBarVerticalPosition } from '@angular/material/snack-bar';
 import { MatTableDataSource } from '@angular/material/table';
 import { Observable } from 'rxjs';
 import { environment } from 'src/environments/environment';
+import { ConfirmationDialogService } from '../confirmation-dialog/confirmation-dialog.service';
+import { WhatsappCategoriesPermissionsComponent } from './whatsapp-categories-permissions/whatsapp-categories-permissions.component';
 
 @Component({
   selector: 'app-whatsapp-messages-dashboard',
@@ -24,9 +27,11 @@ export class WhatsappMessagesDashboardComponent implements OnInit, OnDestroy {
   customInputs: any[] = [];
   customForm: FormGroup;
   manyContacts: FormGroup;
-  typeOfScreen: boolean;
+  typeOfScreen: boolean = false;
   searchEmployeesGroup: FormGroup;
   WorkPlacesList = [];
+  EmergencyList = [];
+  EmergencyEmployeesList = [];
   selectedFile: File | null = null;
   base64String: string | ArrayBuffer | null = '';
   DepartmentsList = [];
@@ -35,7 +40,8 @@ export class WhatsappMessagesDashboardComponent implements OnInit, OnDestroy {
   screenTitle = 'אישי';
   searchProgress: boolean = false;
   sending: boolean = false;
-  username = localStorage.getItem('loginUserName');
+  send_emergency: boolean = false;
+  username = localStorage.getItem('loginUserName').toLowerCase();
   selectedFiles: FileList | null;
   fixed_text: string = "";
   media_file: string = "";
@@ -45,16 +51,14 @@ export class WhatsappMessagesDashboardComponent implements OnInit, OnDestroy {
   constructor(
     private http: HttpClient,
     private fb: FormBuilder,
+    private dialog: MatDialog,
     private _snackBar: MatSnackBar,
     private _datePipe: DatePipe,
-    private cd: ChangeDetectorRef
+    private cd: ChangeDetectorRef,
+    private confirmationDialogService: ConfirmationDialogService
   ) { }
 
   ngOnInit() {
-    // if (this.username == 'kmassalha' || this.username == 'emansour') {
-    //   this.fixed_text = "הקובץ המצורף מכיל מידע חשוב על החייאה, כולל החייאת ילדים. חשוב לשמור את הקובץ במסך הבית של הטלפון הנייד שלכם כדי שתמיד יהיה לכם בהישג יד במקרה הצורך";
-    //   this.media_file = "./files/ACLS.pdf";
-    // }
     this.searchEmployeesGroup = this.fb.group({
       EmpID: new FormControl('', null),
       EmpFirstName: new FormControl('', null),
@@ -75,12 +79,13 @@ export class WhatsappMessagesDashboardComponent implements OnInit, OnDestroy {
       SenderIDFK: new FormControl('1', Validators.required),
       File_Path: new FormControl(this.media_file, null)
     });
-    // this.getWhatsAppMessagesFromServer();
     this.getWhatsAppSendersFromServer();
     this.getEmployeeDepartmentList();
     this.getEmployeesFunctionsList();
     this.getSektorsList();
     this.getWorkPlacesList();
+    this.getEmergencyContactCategories();
+    this.sendEmergencyPermission();
   }
 
   ngOnDestroy(): void {
@@ -96,13 +101,13 @@ export class WhatsappMessagesDashboardComponent implements OnInit, OnDestroy {
     this.customFormArray.removeAt(index);
   }
 
-  addInput(phone, fullName) {
+  addInput(phone, fullName, sender, fixed_message = '') {
     const contact = new FormGroup({
-      Recipient_Type: new FormControl('0', Validators.required),
+      Recipient_Type: new FormControl(false, Validators.required),
       Phone_Number: new FormControl(phone, Validators.required),
       Recipient: new FormControl(fullName, null),
-      Message_Content: new FormControl('', Validators.required),
-      SenderIDFK: new FormControl('', Validators.required),
+      Message_Content: new FormControl(fixed_message, Validators.required),
+      SenderIDFK: new FormControl(sender, Validators.required),
       Message_Timing: new FormControl(null, null),
       Message_Timing_Time: new FormControl(null, null),
       File_Path: new FormControl(null, null)
@@ -123,12 +128,12 @@ export class WhatsappMessagesDashboardComponent implements OnInit, OnDestroy {
     this.total_number_of_reciepents = 0;
   }
 
-  test() {
+  setSenderIDFK() {
     this.customForm.controls['customInputs'].value.forEach((element, index) => {
       this.customForm.controls['customInputs']['controls'][index].controls.SenderIDFK.setValue(this.customForm.controls['customInputs'].value[0].SenderIDFK);
     });
   }
-  
+
   onFileSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
     if (input.files && input.files.length > 0) {
@@ -162,10 +167,6 @@ export class WhatsappMessagesDashboardComponent implements OnInit, OnDestroy {
     let formatedTime = this.customForm.controls['customInputs']['controls'][index].controls.Message_Timing_Time.value;
     this.customForm.controls['customInputs']['controls'][index].controls.Message_Timing.setValue(formatedDate + ' ' + formatedTime + ':00');
   }
-
-  // messagesSendingControl(){
-  //   if(this.selectedFiles)
-  // }
 
   sendMessages() {
     if (!this.typeOfScreen) {
@@ -227,7 +228,6 @@ export class WhatsappMessagesDashboardComponent implements OnInit, OnDestroy {
       const formData = new FormData();
       formData.append('files', this.selectedFiles[0]);
       this.http.post(environment.url + 'whatsappRecieveFile', formData, { responseType: 'text' }).subscribe((response: string) => {
-        // this.http.post('http://srv-ipracticom:8080/WebService.asmx/WhatsappRecieveFile', formData, { responseType: 'text' }).subscribe((response: string) => {
         // Parse the XML response to extract the text content
         const parser = new DOMParser();
         const xmlDoc = parser.parseFromString(response, 'text/xml');
@@ -236,7 +236,20 @@ export class WhatsappMessagesDashboardComponent implements OnInit, OnDestroy {
       });
     }
     else {
-      this.sendMessages();
+      this.confirmationDialogService
+        .confirm("נא לאשר..", "לשוח ל " + this.total_number_of_reciepents + " נמענים, אתה בטוח?")
+        .then((confirmed) => {
+          console.log("User confirmed:", confirmed);
+          if (confirmed) {
+            this.sendMessages();
+          } else {
+          }
+        })
+        .catch(() =>
+          console.log(
+            "User dismissed the dialog (e.g., by using ESC, clicking the cross icon, or clicking outside the dialog)"
+          )
+        );
     }
   }
 
@@ -258,6 +271,15 @@ export class WhatsappMessagesDashboardComponent implements OnInit, OnDestroy {
           this.dataSource = new MatTableDataSource<any>(Response["d"]);
         });
     }
+  }
+
+  openPermissionsManager() {
+    this.dialog.open(WhatsappCategoriesPermissionsComponent, {
+      disableClose: true,
+      width: '70%'
+    }).afterClosed().subscribe(() => {
+      this.getEmergencyContactCategories();
+    });
   }
 
   applyFilter(event: Event) {
@@ -321,13 +343,14 @@ export class WhatsappMessagesDashboardComponent implements OnInit, OnDestroy {
         this.searchProgress = false;
         let t = Response["d"];
         this.total_number_of_reciepents = t.length;
+        // this.customForm.controls['customInputs'] = this.fb.array([]);
         for (let i = 0; i < t.length; i++) {
-          this.addInput(t[i].CellNumber, t[i].FirstName + ' ' + t[i].LastName);
+          this.addInput(t[i].CellNumber, t[i].FirstName + ' ' + t[i].LastName, '');
         }
       });
   }
 
-  fillAllMessageContentFields(id) {
+  fillAllMessageContentFields(id: number): void {
     let messageContent = this.customForm.controls['customInputs'].value[0].Message_Content;
     let firstNewlineIndex = messageContent.indexOf('\n');
 
@@ -338,6 +361,18 @@ export class WhatsappMessagesDashboardComponent implements OnInit, OnDestroy {
         this.customForm.controls['customInputs']['controls'][index].controls.Message_Content.setValue(message);
       });
     }
+    // const customInputs = this.customForm.get('customInputs') as FormArray;
+
+    // // Get the full original content (not cutting the first line)
+    // const fullMessageContent: string = customInputs.at(0).get('Message_Content')?.value || '';
+
+    // if (id === 0) {
+    //   customInputs.controls.forEach((group: AbstractControl) => {
+    //     const recipient = group.get('Recipient')?.value || '';
+    //     const fullMessage = this.setMessageWithFixedHead(recipient, fullMessageContent);
+    //     group.get('Message_Content')?.setValue(fullMessageContent);
+    //   });
+    // }
   }
 
   setMessageWithFixedHead(fullName, content) {
@@ -383,6 +418,45 @@ export class WhatsappMessagesDashboardComponent implements OnInit, OnDestroy {
       })
       .subscribe((Response) => {
         this.WorkPlacesList = Response["d"];
+      });
+  }
+
+  getEmergencyContactCategories() {
+    this.http
+      .post(environment.url + "GetEmergencyContactCategories", {
+        user_name: this.username
+      })
+      .subscribe((Response) => {
+        this.EmergencyList = Response["d"];
+      });
+  }
+
+  onEmergencyClick(category) {
+    this.http
+      .post(environment.url + "GetEmergencyContactCategoriesEmployees", {
+        category: category
+      })
+      .subscribe((Response) => {
+        let t = Response["d"];
+        this.total_number_of_reciepents = t.length;
+        this.customForm = this.fb.group({
+          customInputs: this.fb.array([])
+        });
+        for (let i = 0; i < t.length; i++) {
+          if (category == '1') this.addInput(t[i].Phone_Number, t[i].Employee_Name, '1', `התקבלה התראת אש !\n אם הנך במרכז הרפואי, נא להגיע בהקדם ל : `);
+          else this.addInput(t[i].Phone_Number, t[i].Employee_Name, '1');
+        }
+      });
+  }
+
+  sendEmergencyPermission() {
+    this.http
+      .post(environment.url + "SendEmergencyPermission", {
+        user_name: this.username
+      })
+      .subscribe((Response) => {
+        if (Response['d']) this.send_emergency = true;
+        else this.send_emergency = false;
       });
   }
 

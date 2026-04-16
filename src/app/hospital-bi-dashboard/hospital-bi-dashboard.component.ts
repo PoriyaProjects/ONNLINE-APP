@@ -54,6 +54,7 @@ export class HospitalBIDashboardComponent implements OnInit {
     { DIMDataTypeID: "12", DIMDataTypeDesc: "אקו" }
   ];
 
+  
   sheet_data_1 = [];
   sheet_data_2 = [];
   sheet_data_3 = [];

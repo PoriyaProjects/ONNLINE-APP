@@ -1,0 +1,10 @@
+.kpi-value {
+  font-size: 1.8rem;
+  font-weight: bold;
+}
+mat-card.positive {
+  border-left: 5px solid green;
+}
+mat-card.negative {
+  border-left: 5px solid red;
+}

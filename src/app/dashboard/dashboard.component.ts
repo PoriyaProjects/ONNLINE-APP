@@ -48,6 +48,10 @@ export class DashboardComponent implements OnInit {
     requestid = 0;
     responseid = 0;
     feedbacksubmited: boolean;
+    searchTerm = '';
+    Links: any[] = [];
+    filteredList: any[] = [...this.Links];
+    private geminiChats: Map<string, any> = new Map();
 
     // Track selected tab index
     selectedTabIndex: number | null = 0;
@@ -72,6 +76,7 @@ export class DashboardComponent implements OnInit {
             .attr('y', 150)
             .attr('fill', '#938F8F');
 
+        this.getMenuLinks();
         this.getLoginUserDetails();
         this.getBirthDayPeople();
         this.getShortCutsLinks();
@@ -82,6 +87,50 @@ export class DashboardComponent implements OnInit {
     // Method to select a tab
     selectTab(index: number): void {
         this.selectedTabIndex = index;
+    }
+
+    filterOptions() {
+        const val = this.searchTerm.toLowerCase();
+        this.filteredList = this.Links.filter(option =>
+            option.LinkDescription.toLowerCase().includes(val)
+        );
+    }
+
+    clearSearch() {
+        this.searchTerm = '';
+        this.filteredList = [...this.Links];
+    }
+
+    onOptionSelected(url: string) {
+        
+        //if(url.indexOf("onnlinereorts") > 0){
+            let t = url.split('/')[url.split('/').length - 1]
+           // debugger
+            this.http.post(
+                environment.url + "LinksLog",
+                {
+                    usaerName: localStorage.getItem("loginUserName"),
+                    linkId: t ,
+                }
+            )
+            .subscribe((Response) => { });
+        //}
+        this.clearSearch();
+        window.open(url, '_blank');
+        // window.location.href = url;
+    }
+
+    getMenuLinks() {
+        this.http
+            .post(
+                environment.url + "GetOnnLineLinksToSearch",
+                {
+                    user: localStorage.getItem("loginUserName"),
+                }
+            )
+            .subscribe((Response) => {
+                this.Links = Response["d"];
+            });
     }
 
     openModal(): void {
@@ -118,26 +167,42 @@ export class DashboardComponent implements OnInit {
             this.answer = 'לצורך קבלת מענה, יש להזין את השאלה בשדה המיועד לכך למעלה.';
             return;
         }
-        if (this.claude_version.model_identify == 'Gemeni') this.askGemini(this.claude_version);
-        else if (this.claude_version.model_identify == 'Claude') await this.askClaude(this.claude_version);
+        if (this.userName === 'nibrahem') return;
+
+        if (this.claude_version.model_identify === 'Gemeni') {
+            await this.askGemini(this.claude_version);
+        } else if (this.claude_version.model_identify === 'Claude') {
+            await this.askClaude(this.claude_version);
+        }
     }
 
     async askGemini(model) {
         this.thinking = true;
         this.answer = '';
-        let resp = await this.runChat(model, this.question);
+
+        const resp = await this.runChat(model, this.userName, this.question);
         this.answer = resp.text();
         this.AskAIRequestData(this.userName, resp.modelVersion, this.question);
+
         this.thinking = false;
     }
 
-    async runChat(model, question) {
+    async runChat(model, username: string, question: string) {
         const genAI = new GoogleGenerativeAI(model.aws_secret_access_key);
         const gen_model = genAI.getGenerativeModel({ model: model.modelId });
-        const result = await gen_model.generateContent(question);
 
-        const response = result.response;
-        return response;
+        // Check if user already has a chat session
+        if (!this.geminiChats.has(username)) {
+            const chatSession = gen_model.startChat({
+                history: [], // fresh chat
+            });
+            this.geminiChats.set(username, chatSession);
+        }
+
+        const chat = this.geminiChats.get(username);
+        const result = await chat.sendMessage(question);
+
+        return result.response;
     }
 
     async askClaude(model: any) {
@@ -370,6 +435,18 @@ export class DashboardComponent implements OnInit {
     openWithEdge2(link: string) {
         window.open("microsoft-edge:" + link);
     }
+
+  ifnotebooklm(link: string, event?: Event) {
+    if (link == 'notebooklm') {
+        event?.preventDefault(); // Prevent link from opening
+        
+        this.http
+            .post(environment.url + "OpenLM", {})
+            .subscribe((Response) => {
+                console.log(Response);
+            });
+    }
+}
 
     getLoginUserDetails() {
         this.http

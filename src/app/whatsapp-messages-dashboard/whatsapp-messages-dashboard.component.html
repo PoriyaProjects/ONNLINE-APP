@@ -10,6 +10,12 @@
                     history
                 </span>
             </button>
+            <button matTooltip="ניהול הרשאות" mat-raised-button type="submit" *ngIf="send_emergency"
+                (click)="openPermissionsManager()" class="btn btn-primary btn-raised mr-3">
+                <span class="material-icons">
+                    settings
+                </span>
+            </button>
         </div>
     </mat-toolbar>
     <div *ngIf="dataSource.filteredData.length > 0">
@@ -166,6 +172,15 @@
                         </form>
                     </div>
                 </div>
+                <div class="row"
+                    style="display: flex; flex-wrap: wrap; gap: 16px;margin-top: 10px;height: 150px;overflow-y: scroll;"
+                    *ngIf="send_emergency">
+                    <mat-card *ngFor="let em of EmergencyList" class="emergency-card"
+                        (click)="onEmergencyClick(em.Row_ID)">
+                        <mat-card-title>{{ em.Description }}</mat-card-title>
+                        <!-- <mat-card-content></mat-card-content> -->
+                    </mat-card>
+                </div>
             </div>
         </div>
     </div>
@@ -173,11 +188,12 @@
     <hr>
     <div class="block">
         <div class="row mb-3" style="display: block;">
-            <h3 class="text-center" *ngIf="!typeOfScreen">כמות אנשים: {{total_number_of_reciepents}}</h3>
+            <h3 class="text-center" *ngIf="!typeOfScreen">סה"כ נמענים: {{total_number_of_reciepents}}</h3>
             <h5 class="text-center" *ngIf="total_number_of_reciepents > 50">מוצגים רק ה 10 הראשונים</h5>
             <mat-slide-toggle (click)="changeScreens()" *ngIf="username == 'adahabre'"
                 style="float: right;">{{screenTitle}}</mat-slide-toggle>
-            <button mat-icon-button *ngIf="!typeOfScreen" color="warn" matTooltip="ניקוי הכל" (click)="deleteAllRow()">
+            <button mat-icon-button *ngIf="!typeOfScreen && total_number_of_reciepents > 0" color="warn"
+                matTooltip="ניקוי הכל" (click)="deleteAllRow()">
                 <mat-icon>clear</mat-icon>
             </button>
         </div>
@@ -221,7 +237,7 @@
                         <mat-label class="contacts-numbers">{{i+1}}-</mat-label>
                         <mat-form-field>
                             <mat-label>מספר שולח*</mat-label>
-                            <mat-select formControlName="SenderIDFK" (selectionChange)="test()">
+                            <mat-select formControlName="SenderIDFK" (selectionChange)="setSenderIDFK()">
                                 <mat-option *ngFor="let phone of sendersList" [value]="phone.Row_ID">
                                     <b>{{phone.Row_ID}}.</b> {{phone.Description}}
                                 </mat-option>
@@ -246,7 +262,7 @@
                         </mat-form-field>
                         <mat-form-field>
                             <textarea matInput placeholder="תוכן ההודעה*" formControlName="Message_Content"
-                                (keyup)="fillAllMessageContentFields(i)"></textarea>
+                                (keyup)="fillAllMessageContentFields(i)" rows="5"></textarea>
                         </mat-form-field>
                         <mat-form-field *ngIf="contact.controls['Message_Timing'].value != null">
                             <mat-label>תזמון הודעה</mat-label>
@@ -321,7 +337,8 @@
             <hr>
             <button mat-raised-button
                 style="background-color: #00a884;color: whitesmoke;margin-top: 20px;transform: rotate(180deg);"
-                matTooltip="שליחה" [disabled]="sending" (click)="uploadFiles()"><mat-icon>send</mat-icon></button>
+                *ngIf="total_number_of_reciepents > 0" matTooltip="שליחה" [disabled]="sending"
+                (click)="uploadFiles()"><mat-icon>send</mat-icon></button>
         </div>
     </div>
 </div>

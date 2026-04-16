@@ -1,0 +1,42 @@
+/* RTL Direction */
+.modern-container {
+  direction: rtl;
+  text-align: right;
+}
+
+/* Table Styling */
+.table-container {
+  overflow: auto;
+  margin-top: 16px;
+  border-radius: 8px;
+}
+
+th {
+  justify-items: center;
+}
+
+.modern-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+/* Center text in header and cells */
+.mat-header-cell, .mat-cell {
+  text-align: center;
+}
+
+/* Search Field Alignment */
+.search-field {
+  width: 100%;
+  margin-bottom: 16px;
+  margin-top: 16px;
+  direction: rtl;
+}
+
+/* Action Button Styling */
+.action-button {
+  margin: 20px;
+  text-align: left;
+  /* display: flex;
+  justify-content: flex-start; */
+}

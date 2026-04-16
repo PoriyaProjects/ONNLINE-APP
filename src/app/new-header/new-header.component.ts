@@ -38,8 +38,20 @@ export class NewHeaderComponent implements OnInit {
                 console.error('IP fetch failed', error);
             }
         );
+        let that = this;
         $(document).on("click", "[routerlink], .nav-link", function () {
-            // ////debugger;
+            if(this.href.indexOf("onnlinereorts") > 0){
+                let t = this.href.split('/')[this.href.split('/').length - 1]
+               // debugger
+                that.http.post(
+                    environment.url + "LinksLog",
+                    {
+                        usaerName: localStorage.getItem("loginUserName"),
+                        linkId: this.href.split('/')[this.href.split('/').length - 1],
+                    }
+                )
+                .subscribe((Response) => { });
+            }
             localStorage.setItem("ReseachRowId", "0");
             $("#app-menu").removeClass("show");
             $("#menu-btn").removeClass("show");

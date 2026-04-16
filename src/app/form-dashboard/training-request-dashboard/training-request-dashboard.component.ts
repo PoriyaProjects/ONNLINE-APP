@@ -1,6 +1,6 @@
-import { Component, OnInit, ViewChild } from '@angular/core';
+import { Component, Inject, OnInit, ViewChild } from '@angular/core';
 import { HttpClient } from "@angular/common/http";
-import { MatDialog } from '@angular/material/dialog';
+import { MatDialog, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { environment } from 'src/environments/environment';
 import { TrainingRequestFormComponent } from './training-request-form/training-request-form.component';
 import { MatTableDataSource } from '@angular/material/table';
@@ -10,28 +10,98 @@ import { MatSnackBar, MatSnackBarHorizontalPosition, MatSnackBarVerticalPosition
 import { ConfirmationDialogService } from 'src/app/confirmation-dialog/confirmation-dialog.service';
 import { TrainingRequestDialogComponent } from './training-request-dialog/training-request-dialog.component';
 import { DatePipe } from '@angular/common';
+import { of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
+
+@Component({
+  selector: 'app-people-list-dialog',
+  templateUrl: './people-list-dialog.component.html',
+  styleUrls: ['./people-list-dialog.component.scss']
+})
+export class PeopleListDialogComponent {
+  selectedPeople: any[] = [];
+  constructor(
+    public dialogRef: MatDialogRef<PeopleListDialogComponent>,
+    @Inject(MAT_DIALOG_DATA) public data: any[]
+  ) { }
+
+  close(): void {
+    this.dialogRef.close(this.selectedPeople);
+  }
+}
 
 @Component({
   selector: 'app-training-request-dashboard',
   templateUrl: './training-request-dashboard.component.html',
-  styleUrls: ['./training-request-dashboard.component.css']
+  styleUrls: ['./training-request-dashboard.component.scss']
 })
 export class TrainingRequestDashboardComponent implements OnInit {
 
   trainingRequests = new MatTableDataSource();
   displayedColumns: string[] = [
-    'Row_ID', 'Form_Fill_Date', 'First_Name', 'Passport_ID', 'Function_Department', 'Name_Location', 'Date', 'EApproved', 'FApproved', 'Training_Fund_Answer', 'HApproved', 'Actions'
+    'Row_ID', 'Form_Fill_Date', 'First_Name', 'Passport_ID', 'Function_Department', 'Name_Location', 'Date', 'EApproved', 'FApproved', 'HApproved', 'Training_Fund_Answer', 'Galilean_Partnership_Description', 'Actions'
+  ];
+  peopleList = [
+    { Full_Name: 'שמעון סבח', Role: 'יו"ר הועדה' },
+    { Full_Name: 'יוסר מסאלחה', Role: 'אחראית הדרכה ופיתוח צוות בסיעוד' },
+    { Full_Name: 'שרון מנחם', Role: 'מנהל משאבי אנוש' },
+    { Full_Name: 'ד"ר מיכאל זרדב', Role: 'מנהל מחלקת רנטגן' },
+    { Full_Name: 'לילך גסטר', Role: 'מנהלת כספים' },
+    { Full_Name: 'תגל צרפתי', Role: 'מרכזת ועדה' },
   ];
   @ViewChild(MatPaginator) paginator: MatPaginator;
   @ViewChild(MatSort) sort: MatSort;
   UserName = localStorage.getItem('loginUserName').toLowerCase();
+  FullName = localStorage.getItem('FirstName').toLowerCase() + ' ' + localStorage.getItem('LastName').toLowerCase();
   ID = localStorage.getItem('ID').toLowerCase();
   horizontalPosition: MatSnackBarHorizontalPosition = "start";
   verticalPosition: MatSnackBarVerticalPosition = "bottom";
   trainingPlans: any[] = []; // Replace with a real data source
   date_now: any = Date.now();
   Plan_Date: any;
+  Health_Plan_Date: any;
   loading: boolean;
+  print_only_Protocol: boolean;
+  change_plan_date: boolean;
+  health_change_plan_date: boolean;
+  decissions_list = [];
+  filter_types: any = "";
+  filter_plans: any = "";
+  fundingOptions = [
+    {
+      key: 'Registration_Funding',
+      label: 'מימון רישום',
+      options: [
+        { key: 'approved', label: 'מאושר' },
+        { key: 'partial', label: 'מאושר בגובה תמיכה' },
+        { key: 'notApproved', label: 'לא מאושר' },
+        { key: 'other', label: 'אחר' }
+      ],
+      answer: 'Registration_Funding_Answer'
+    },
+    {
+      key: 'Flight_Funding',
+      label: 'מימון טיסה',
+      options: [
+        { key: 'approved', label: 'מאושר' },
+        { key: 'partial', label: 'מאושר בגובה תמיכה' },
+        { key: 'notApproved', label: 'לא מאושר' },
+        { key: 'other', label: 'אחר' }
+      ],
+      answer: 'Flight_Funding_Answer'
+    },
+    {
+      key: 'Lodging_Funding',
+      label: 'מימון לינה',
+      options: [
+        { key: 'approved', label: 'מאושר' },
+        { key: 'partial', label: 'מאושר בגובה תמיכה' },
+        { key: 'notApproved', label: 'לא מאושר' },
+        { key: 'other', label: 'אחר' }
+      ],
+      answer: 'Lodging_Funding_Answer'
+    }
+  ];
 
   constructor(
     public dialog: MatDialog,
@@ -43,19 +113,67 @@ export class TrainingRequestDashboardComponent implements OnInit {
 
   ngOnInit(): void {
     this.date_now = this.datePipe.transform(this.date_now, 'dd-MM-yyyy');
-    this.getAllTrainingRequestFormsList("");
+    this.getAllTrainingRequestFormsList();
     this.changeTrainingPlanDate();
+    this.changeHealthTrainingPlanDate();
+    this.getHRDepartmentEmployees();
+    this.getTrainingRequestPlansList();
+    // this.getHealthTrainingRequestPlansList();
   }
 
-  changeTrainingPlanDate() {
-    if (this.UserName == "ttsrefati") this.Plan_Date = "";
-    if (this.Plan_Date != "") this.Plan_Date = this.datePipe.transform(this.Plan_Date, 'dd-MM-yyyy')
-    this.http
-      .post(environment.url + "ChangeTrainingPlanDate", {
-        plan_date: this.Plan_Date
-      })
-      .subscribe((Response) => {
-        this.Plan_Date = Response['d'];
+  changeTrainingPlanDate(): void {
+    const resetUsers = ['ttsrefati', 'tkoren', 'adahabre'];
+
+    if (!resetUsers.includes(this.UserName)) {
+      this.Plan_Date = '';
+      this.change_plan_date = false;
+    } else {
+      this.change_plan_date = true;
+    }
+
+    const formattedDate = this.Plan_Date
+      ? this.datePipe.transform(this.Plan_Date, 'yyyy-MM-dd')
+      : '';
+
+    this.http.post<{ d: string }>(`${environment.url}ChangeTrainingPlanDate`, {
+      plan_date: formattedDate
+    })
+      .pipe(
+        catchError((error) => {
+          console.error('Error changing training plan date', error);
+          return of({ d: this.Plan_Date });
+        })
+      )
+      .subscribe((response) => {
+        this.Plan_Date = response.d;
+      });
+  }
+
+  changeHealthTrainingPlanDate(): void {
+    const resetUsers = ['ttsrefati', 'tkoren', 'adahabre', 'dnudelman', 'lnachmani'];
+
+    if (!resetUsers.includes(this.UserName)) {
+      this.Health_Plan_Date = '';
+      this.health_change_plan_date = false;
+    } else {
+      this.health_change_plan_date = true;
+    }
+
+    const formattedDate = this.Health_Plan_Date
+      ? this.datePipe.transform(this.Health_Plan_Date, 'yyyy-MM-dd')
+      : '';
+
+    this.http.post<{ d: string }>(`${environment.url}ChangeHealthTrainingPlanDate`, {
+      plan_date: formattedDate
+    })
+      .pipe(
+        catchError((error) => {
+          console.error('Error changing training plan date', error);
+          return of({ d: this.Health_Plan_Date });
+        })
+      )
+      .subscribe((response) => {
+        this.Health_Plan_Date = response.d;
       });
   }
 
@@ -84,6 +202,22 @@ export class TrainingRequestDashboardComponent implements OnInit {
     });
   }
 
+  getTrainingRequestPlansList() {
+    this.http
+      .post(environment.url + "GetMedinaTrainingRequestPlansList", {})
+      .subscribe((Response) => {
+        this.decissions_list = Response["d"];
+      });
+  }
+
+  getHealthTrainingRequestPlansList() {
+    this.http
+      .post(environment.url + "GetHealthTrainingRequestPlansList", {})
+      .subscribe((Response) => {
+        this.decissions_list = Response["d"];
+      });
+  }
+
   handleAction(rowId: string, action: string): void {
     // Add action handling logic here
     if (action == 'view') {
@@ -93,10 +227,9 @@ export class TrainingRequestDashboardComponent implements OnInit {
         width: '90%',
         height: '90%'
       }).afterClosed().subscribe(res => {
-        if (res != null) {
-          this.TrainingRequestSendLastAnswer(res);
-        }
-        this.getAllTrainingRequestFormsList("");
+        if (res === undefined) return;
+        else if (res === null) this.getAllTrainingRequestFormsList();
+        else this.TrainingRequestSendLastAnswer(res);
       });
     } else if (action == 'new') {
       this.dialog.open(TrainingRequestFormComponent, {
@@ -105,13 +238,13 @@ export class TrainingRequestDashboardComponent implements OnInit {
         width: '90%',
         height: '90%'
       }).afterClosed().subscribe(res => {
-        this.getAllTrainingRequestFormsList("");
+        this.getAllTrainingRequestFormsList();
       });
     }
   }
 
   async print(rowId: number) {
-    const printWindow = window.open('', '_blank', 'width=800,height=800');
+    const printWindow = window.open('', '_blank', 'width=1000,height=1000');
     if (!printWindow) {
       alert('לא ניתן לפתוח חלון הדפסה');
       return;
@@ -152,6 +285,19 @@ export class TrainingRequestDashboardComponent implements OnInit {
     });
   }
 
+  getDataToProtocolPDF(): Promise<any> {
+    return new Promise((resolve, reject) => {
+      this.http
+        .post(environment.url + "GetTrainingRequestProtocolList", {
+          filter_plans: this.filter_plans
+        })
+        .subscribe({
+          next: (response) => resolve(response['d']),
+          error: (err) => reject(err)
+        });
+    });
+  }
+
 
   async TrainingRequestSendLastAnswer(rowId) {
     let data = await this.getDataToPDF(rowId);
@@ -183,6 +329,120 @@ export class TrainingRequestDashboardComponent implements OnInit {
       );
   }
 
+  async printProtocol() {
+    const printWindow = window.open('', '_blank', 'width=1500,height=1000');
+    if (!printWindow) {
+      alert('לא ניתן לפתוח חלון הדפסה');
+      return;
+    }
+
+    try {
+      let data = await this.getDataToProtocolPDF();
+      // data[]
+      const pdfContent = this.createProtocolPdf(data);
+
+      printWindow.document.open();
+      printWindow.document.write(pdfContent);
+      printWindow.document.close();
+
+      // Give the browser a moment to render before triggering print
+      setTimeout(() => {
+        printWindow.print();
+      }, 300); // Adjust the timeout if needed
+    } catch (error) {
+      console.error('שגיאה בהכנת או הדפסת PDF:', error);
+      if (printWindow) {
+        printWindow.document.open();
+        printWindow.document.write('<h1>שגיאה בהכנת הדפסה</h1><p>אירעה שגיאה בעת יצירת תוכן ההדפסה.</p>');
+        printWindow.document.close();
+      } else {
+        alert('אירעה שגיאה בהכנת הדפסה.');
+      }
+    }
+  }
+
+  // create a pritable page with the provided data from trainingRequests dataSource
+  // data = your trainingRequests dataSource (array of objects)
+  printDataTable() {
+    let data = this.trainingRequests.filteredData;
+    if (!data || data.length === 0) {
+      alert("No data to print");
+      return;
+    }
+
+    // ✅ Define which columns to print (keys from your data objects)
+    const columnTitles = ['מס בקשה', 'תאריך יצירה', 'שם מלא', 'מספר זהות', 'תפקיד/מחלקה', 'שם ההשתלמות', 'מיקום', 'תאריך התחלה', 'תאריך סיום']; // adjust as needed
+    const selectedColumns = ['Row_ID', 'Form_Fill_Date', 'First_Name', 'Passport_ID', 'Function_Department', 'Request_Name', 'Request_Location', 'Date_Start', 'Date_End']; // adjust as needed
+
+    // Build table headers
+    let tableHeader = `<tr>`;
+    for (let col of columnTitles) {
+      tableHeader += `<th style="padding:8px; border:1px solid #ccc; background:#f5f5f5;">${col}</th>`;
+    }
+    tableHeader += `</tr>`;
+
+    // Build table rows
+    let tableRows = data.map(row => {
+      let rowHtml = `<tr>`;
+      for (let col of selectedColumns) {
+        rowHtml += `<td style="padding:8px; border:1px solid #ccc;">${row[col] ?? ''}</td>`;
+      }
+      rowHtml += `</tr>`;
+      return rowHtml;
+    }).join('');
+
+    // Full HTML with RTL + landscape
+    const printContent = `
+    <html dir="rtl" lang="he">
+      <head>
+        <title>בקשות השתלמות</title>
+        <style>
+          @page { size: landscape; }
+          body { 
+            font-family: Arial, sans-serif; 
+            margin: 20px; 
+            direction: rtl;
+            text-align: right;
+          }
+          h2 {
+            text-align: center;
+            margin-bottom: 20px;
+          }
+          table { 
+            width: 100%; 
+            border-collapse: collapse; 
+          }
+          th, td { 
+            padding: 8px; 
+            border: 1px solid #ccc; 
+          }
+          th { 
+            background: #f5f5f5; 
+            font-weight: bold; 
+          }
+          tr:nth-child(even) {
+            background-color: #fafafa;
+          }
+        </style>
+      </head>
+      <body>
+        <h2>בקשות השתלמות</h2>
+        <table>
+          ${tableHeader}
+          ${tableRows}
+        </table>
+      </body>
+    </html>
+  `;
+
+    // Open new window and print
+    const popupWin = window.open('', '_blank', 'width=1200,height=900');
+    popupWin!.document.open();
+    popupWin!.document.write(printContent);
+    popupWin!.document.close();
+    popupWin!.print();
+  }
+
   createThePdfFile(data) {
     return `<!DOCTYPE html>
     <html lang="he" dir="rtl">
@@ -201,8 +461,8 @@ export class TrainingRequestDashboardComponent implements OnInit {
         <p style="margin: 5px 0;">${data['G'].Function_Department}</p>
         <p style="margin: 5px 0;">ת.ז: ${data['A'].Passport_ID}</p>
       <br>
-        <p style="font-size: 18px;font-weight: bold;margin-bottom: 5px;margin: 5px 0;">הנדון: בקשתך להשתלמות נדונה בתאריך ${this.datePipe.transform(data['H'].Plan_Date, 'dd-MM-yyyy')}</p>
-        <p style="margin: 5px 0;">לקורס: <span style="font-weight: bold;color: black;;padding: 2px 5px;
+        <p style="font-size: 18px;font-weight: bold;margin-bottom: 5px;margin: 5px 0;">הנדון: בקשתך להשתלמות נדונה בתאריך ${this.datePipe.transform(data['H'].Opinion_Date, 'dd-MM-yyyy')}</p>
+        <p style="margin: 5px 0;">ל ${data['H'].Training_Type == '' ? `` : `קורס: `}<span style="font-weight: bold;color: black;;padding: 2px 5px;
         border-radius: 5px;margin: 5px 0;">${data['B'].Request_Name}</span> 
         בין התאריכים <span style="font-weight: bold;color: black;padding: 2px 5px;
         border-radius: 5px;">${this.datePipe.transform(data['B'].Date_Start, 'dd-MM-yyyy')} - ${this.datePipe.transform(data['B'].Date_End, 'dd-MM-yyyy')}</span> 
@@ -213,14 +473,19 @@ export class TrainingRequestDashboardComponent implements OnInit {
             ${data['H'].Approved == "מאושר" || data['H'].Approved == "מאושר התחייבות חשב" ? `
             <p style="margin: 5px 0;">הריני להודיעך כי הועדה החליטה, לאשר את הבקשה בכפוף לתנאים הבאים:</p>
             <ul style="margin-right: 20px;padding-right: 20px;list-style-type: disc;">
-                ${data['H'].Transportaion === "True" ? `<li style="margin-bottom: 5px;">החזר נסיעות בגובה 100% לפי רפורמת דרך שווה.</li>
-                <li style="margin-bottom: 5px;">מספר ימי העדרות שאושרו: ${data['H'].Approved_Absence_Time}, קוד רישום: ${data['H'].Code_Type}</li>
-                <p>יש להגיש קבלה מקורית למדור שכר עד חודשיים מיום ההנפקה</p>` : ``}
+            <li style="margin-bottom: 5px;">מספר ימי העדרות שאושרו: ${data['H'].Approved_Absence_Time}, קוד רישום: ${data['H'].Code_Type}</li>
+            ${data['H'].Approved_Percent != '' ? `<li>שכ"ל מאושר: ${(parseInt(data['H'].Approved_Percent) * parseInt(data['H'].Approved_Percent_Out_Of)) / 100}</li>` : ``}
+                ${data['H'].Transportaion === "True" ? `<li style="margin-bottom: 5px;">החזר נסיעות בגובה 100% לפי רפורמת דרך שווה.</li>` : ``}
+                ${data['H'].Approved == "מאושר" && data['H'].Approved_Percent != '' ? `<p>יש להגיש קבלה מקורית למדור שכר עד חודשיים מיום ההנפקה</p>` : ``}
+                ${data['H'].Approved == "מאושר התחייבות חשב" ? `<p>שכ"ל דרך התחייבות חשב</p>` : ``}
             </ul>` : `
             <p style="margin: 5px 0;">הריני להודיעך כי הועדה החליטה, לא לאשר את הבקשה.</p>`
       }
             <p style="margin: 5px 0;">הערות ועדה: ${data['H'].Recommendations}</p>
             ${data['D'].Training_Fund_Answer == "" ? `` : `<p style="margin: 5px 0;">תשובת התאגיד: ${data['D'].Training_Fund_Answer}</p>`}
+            ${data['D'].Registration_Funding == "" ? `` : `<p style="margin: 5px 0;">מימון רישום: ${this.getOptionLabel('Registration_Funding', data['D'].Registration_Funding)}</p> ${data['D'].Registration_Funding_Answer == '' ? `` : `<p style="margin: 5px 0;">הערה: ${data['D'].Registration_Funding_Answer}</p>`}`}
+            ${data['D'].Lodging_Funding == "" ? `` : `<p style="margin: 5px 0;">מימון לינה: ${this.getOptionLabel('Flight_Funding', data['D'].Lodging_Funding)}</p> ${data['D'].Lodging_Funding_Answer == '' ? `` : `<p style="margin: 5px 0;">הערה: ${data['D'].Lodging_Funding_Answer}</p>`}`}
+            ${data['D'].Flight_Funding == "" ? `` : `<p style="margin: 5px 0;">מימון טיסה: ${this.getOptionLabel('Lodging_Funding', data['D'].Flight_Funding)}</p> ${data['D'].Flight_Funding_Answer == '' ? `` : `<p style="margin: 5px 0;">הערה: ${data['D'].Flight_Funding_Answer}</p>`}`}
             <p style="margin: 5px 0;">${data['B'].Training_Out == "True" && data['H'].Approved === "מאושר" ? `נא לפנות לקב"ט לקבלת תדרוך לפני נסיעה לחו"ל, ללא קבלת התדרוך לפני הנסיעה לא תאושר הבקשה.` : ``}</p>
         </div>
         <br>
@@ -232,8 +497,8 @@ export class TrainingRequestDashboardComponent implements OnInit {
         </div><br><br><br><br><br><br>
         <div>
         	<p style="margin: 0px">העתקים:</p>
-        	<p style="margin: 0px">הנהלת המרכז הרפואי</p>
-        	<p style="margin: 0px">הממונה הישיר</p>
+        	<p style="margin: 0px">${data['F'].Supervisor_Name.lastname} - מנהל עקיף</p>
+        	<p style="margin: 0px">${data['E'].Supervisor_Name.lastname} - מנהל ישיר</p>
         	<p style="margin: 0px">מחלקת משאבי אנוש</p>
         </div>
     </body>
@@ -241,35 +506,106 @@ export class TrainingRequestDashboardComponent implements OnInit {
     `;
   }
 
-  // trainingRequestApprovedOrNot(rowId, approved) {
-  //   this.confirmationDialogService
-  //     .confirm("נא לאשר..", "האם אתה בטוח ...? ")
-  //     .then((confirmed) => {
-  //       console.log("User confirmed:", confirmed);
-  //       if (confirmed) {
-  //         this.http
-  //           .post(environment.url + "TrainingRequestApprovedOrNot", {
-  //             id: rowId,
-  //             approved: approved
-  //           })
-  //           .subscribe((Response) => {
-  //             if (Response['d']) {
-  //               this.getAllTrainingRequestFormsList("");
-  //               this.openSnackBar("נשמר בהצלחה");
-  //             } else {
-  //               this.getAllTrainingRequestFormsList("");
-  //               this.openSnackBar("תקלה! לא נשמר");
-  //             }
-  //           });
-  //       } else {
-  //       }
-  //     })
-  //     .catch(() =>
-  //       console.log(
-  //         "User dismissed the dialog (e.g., by using ESC, clicking the cross icon, or clicking outside the dialog)"
-  //       )
-  //     );
-  // }
+  getOptionLabel(sectionKey: string, selectedKey: string): string {
+    if (!selectedKey) return '';
+
+    const section = this.fundingOptions.find(f => f.key === sectionKey);
+    if (!section) return '';
+
+    const option = section.options.find(o => o.key === selectedKey);
+    return option?.label || '';
+  }
+
+  createProtocolPdf(data) {
+    const unselectedPeople = this.peopleList.filter(person =>
+      !data[0].people_attendance.some(selected => selected.Full_Name === person.Full_Name)
+    );
+    let print_content = `
+    <!DOCTYPE html>
+    <html lang="he" dir="rtl">
+    <head>
+        <meta charset="UTF-8">
+        <title>בקשתך למענק השתלמות</title>
+        <style>
+        margin: 0.5,
+        filename: 'meeting-summary.pdf',
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2 },
+        jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
+        </style>
+    </head>
+    <body style="font-family: Arial, sans-serif;direction: rtl;text-align: right;padding: 50px;
+    margin: 0;width: 640px;">
+    <img style="width: 640px;" src='http://srv-apps-prod/assets/covid_2_header.png' />
+    <br>
+    <br>
+    <div #pdfContent>
+  <!-- Replace below with your dynamic printable HTML content -->
+  <div style="font-family: Arial; direction: rtl; padding: 20px;">
+    <div style="text-align: left;">${this.date_now}</div>
+    <div style="text-align: right;">סיכום ישיבת ועדת הדרכה מיום: ${data[0]['H'].Plan_Date}</div>
+    <br /><br />
+    <div style="text-align: right;">
+      <strong>נוכחים:</strong><br />`
+    for (const people of data[0].people_attendance) {
+      print_content += `
+      ${people.Full_Name}, ${people.Role}<br />
+      `}
+    print_content += `
+      <br />
+      <strong>נעדרים:</strong><br />`
+    for (const people of unselectedPeople) {
+      print_content += `
+      ${people.Full_Name}, ${people.Role}<br />
+      `}
+    print_content += `
+      <br />
+    </div>
+    <br />
+    <div style="border-top: 1px solid #000; padding-top: 10px;">
+      <strong>הבקשות שנדונו:</strong>
+      <!-- Repeat the following block per request -->
+      `
+    for (const req of data) {
+      print_content += `
+          <div style="margin-top: 20px; padding: 10px 0; border-bottom: 1px dashed #aaa;">
+            <strong>${req['A'].Family_Name} ${req['A'].First_Name}</strong><br />
+            ${req['G'].Function_Department}<br />
+            ${req['G'].Standart_Level}<br />
+            ${req['B'].Request_Name}<br />
+            ${req['B'].Date_Start} - ${req['B'].Date_End}<br />
+            ${req['B'].Request_Location}<br />
+            ${req['H'].Approved == '' || req['H'].Approved == 'לא מאושר' ? '<strong>הבקשה נדחתה</strong>' : `<strong>הבקשה אושרה, להלן פירוט האישור</strong>:
+                הימים שאושרו: ${req['H'].Approved_Absence_Time} , שעות שאושרו: 0 , בחינות: 0 , אש"ל: נדחה , נסיעות: ${req['H'].Transportaion == 'True' ? '100%' : '0%'} , שכר לימוד שאושר: ${(parseInt(req['H'].Approved_Percent) *
+            parseInt(req['H'].Approved_Percent_Out_Of)) / 100
+          }, קוד אישור: ${req['H'].Code_Type}.<br /> הערות:${req['H'].Recommendations == null ? '' : req['H'].Recommendations} ${req['D'].Training_Fund_Answer == '' ? '' : ' , ' + req['D'].Training_Fund_Answer}${req['D'].Galilean_Partnership_Description == null ? '' : ' , ' + req['D'].Galilean_Partnership_Description}`}<br />
+          </div>
+        `;
+    }
+    print_content += `
+    
+    <div><br /><br />
+    רשם:<br />
+    תגל צרפתי - מנהלת הדרכה
+    </div>
+    <br />
+    <br />
+    <div>
+    העתק:<br />
+    ד"ר נועם יהודאי, מנהל המרכז הרפואי<br />
+    מר שמעון סבח, מנהל אדמניסטרטיבי<br />
+    גב' מלכה אמר מדמון, מנהלת הסיעוד<br />
+    ועדת הדרכה<br />
+    משאבי אנוש ושכר
+    </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>
+    `
+    return print_content;
+  }
 
   openSnackBar(message) {
     this._snackBar.open(message, "X", {
@@ -290,7 +626,7 @@ export class TrainingRequestDashboardComponent implements OnInit {
               id: id,
             })
             .subscribe((Response) => {
-              this.getAllTrainingRequestFormsList("");
+              this.getAllTrainingRequestFormsList();
             });
         } else {
         }
@@ -302,12 +638,13 @@ export class TrainingRequestDashboardComponent implements OnInit {
       );
   }
 
-  getAllTrainingRequestFormsList(approved) {
+  getAllTrainingRequestFormsList() {
     this.loading = true;
     this.http
       .post(environment.url + "GetAllTrainingRequestFormsList", {
         _id: this.ID,
-        _approved: approved
+        _approved: this.filter_types,
+        _decission_date: this.filter_plans
       })
       .subscribe((Response) => {
         this.trainingRequests = new MatTableDataSource<any>(Response["d"]);
@@ -315,6 +652,50 @@ export class TrainingRequestDashboardComponent implements OnInit {
         this.trainingRequests.sort = this.sort;
         this.loading = false;
       });
+  }
+
+  getHRDepartmentEmployees() {
+    this.print_only_Protocol = false;
+    this.http
+      .post(environment.url + "GetHRDepartmentEmployees", {})
+      .subscribe((Response) => {
+        const exists = Response['d'].some(obj =>
+          Object.values(obj).some(val =>
+            typeof val === 'string' && val.toLowerCase().includes(this.UserName)
+          )
+        );
+        if (exists) this.print_only_Protocol = true;
+      });
+  }
+
+  saveProtocolPeopleAttendance(res) {
+    this.http
+      .post(environment.url + "SaveProtocolPeopleAttendance", {
+        data: res
+      })
+      .subscribe((Response) => {
+        if (Response['d']) this.printProtocol();
+        else this.openSnackBar("שגיאה בשמירת צוות");
+      });
+  }
+
+  openPeopleDialog(): void {
+    if (new Date(this.filter_plans) > new Date()) {
+      this.openSnackBar("אין פרוטוקול לתאריך ועדה עתידי!");
+      return;
+    } else if (this.filter_plans == '') {
+      this.openSnackBar("יש לבחור תאריך ועדה!");
+      return;
+    }
+    this.dialog.open(PeopleListDialogComponent, {
+      width: '500px',
+      data: this.peopleList,
+      direction: 'rtl'
+    }).afterClosed().subscribe(res => {
+      if (res != '') {
+        this.saveProtocolPeopleAttendance(res);
+      }
+    });
   }
 }
 

@@ -1,0 +1,157 @@
+div[id$='_chart'] {
+    margin-bottom: 30px;
+}
+
+/* * {
+    font-family: 'Open Sans', sans-serif!important;
+    font-optical-sizing: auto;
+    font-weight: 500;
+    font-style: normal;
+} */
+
+*:not(.material-icons, .klubmed) {
+    font-family: 'Open Sans', sans-serif !important;
+    font-optical-sizing: auto;
+    font-weight: 500;
+    font-style: normal;
+}
+body {
+    background: #F1F2F6;
+}
+
+
+:root {
+    --mdc-theme-primary: #2790b0;
+    /* Purple */
+    --mdc-theme-secondary: #76ff03;
+    /* Neon Green */
+    --mdc-theme-background: #fff;
+    --mdc-theme-surface: #fff;
+    --mdc-theme-on-primary: white;
+    --mdc-theme-on-secondary: black;
+}
+
+.mdc-top-app-bar {
+    background: #1976d2 !important;
+}
+
+h2 {
+    margin: 60px auto 40px;
+}
+
+/* Gauge */
+#gauge_chart {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 40vh;
+}
+
+#gauge_chart svg>g>g:last-child path,
+#gauge_chart svg>g>g:last-child circle {
+    display: none;
+}
+
+#gauge_chart svg>g>g:last-child path,
+#gauge_chart svg>g>g:last-child circle {
+    display: none !important;
+}
+
+#gauge_chart svg>g>g:last-child>* {
+    position: relative;
+    top: 20px;
+}
+
+#gauge_chart g>* {
+    stroke: none;
+}
+
+#gauge_chart g>g>text {
+    margin-top: -60px;
+}
+
+.card-title-custom {
+    text-align: center;
+    margin: 20px auto;
+}
+
+.app-bar__logo {
+    height: 60px;
+    width: auto;
+    border-radius: 20%;
+}
+
+
+#bar_chart2 div svg g>g>g>g>g>* {
+    transform: rotate(90deg) !important;
+    transform-origin: left top;
+}
+
+#bar_chart2 g>g>g>g>g>* {
+    transform: rotate(90deg) !important;
+    transform-origin: left top;
+}
+
+#bar_chart2 g g g g g {
+    transform: rotate(90deg) !important;
+    transform-origin: left top;
+}
+
+#bar_chart2 g g g g g g {
+    transform: rotate(90deg) !important;
+    transform-origin: left top;
+}
+
+#bar_chart2 g>g>text {
+    transform: rotate(90deg) !important;
+    transform-origin: left top;
+}
+
+#bar_chart2 g g text {
+    transform: rotate(90deg) !important;
+    transform-origin: left top;
+}
+
+#bar_chart2 div * {
+    background: #34495e !important;
+}
+
+#procedureCheckboxes{text-align: right;}
+#procedureCheckboxes label:not(:first-child){margin-right: 20px;}
+#gauge_chart g text {
+    font-size: 16px!important;
+    font-weight: bold;
+  }
+  
+  .ctrl-placeholder{height:32px; display: block;}
+
+  #deptgroups button, .department-button, .dept-button{border-radius: 10%; padding:10px 20px; border-color: #34495e;}
+  .dept-button{border-radius: 10%; padding:10px 20px; border-color: #34495e; border:none;}
+  
+
+
+
+
+  #deptgroups {
+    display: flex;
+    flex-wrap: nowrap;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .dept-button {
+    font-size: 14px;
+    color: white;
+    font-weight: 500;
+    border: none;
+    border-radius: 8px;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    box-sizing: border-box;
+    cursor: pointer;
+  }
+  
+
+  h2{margin:40px 0 20px;}
