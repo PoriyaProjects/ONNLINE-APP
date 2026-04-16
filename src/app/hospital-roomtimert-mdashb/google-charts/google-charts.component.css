@@ -1,13 +1,46 @@
+/* ========== Design tokens – זמן אמת / מסך גדול (קריא מרחוק) ========== */
+:host {
+  display: block;
+  --dash-ink: #0f172a;
+  --dash-muted: #475569;
+  --dash-accent: #0ea5e9;
+  --dash-accent-deep: #0284c7;
+  --dash-glow-cyan: rgba(14, 165, 233, 0.12);
+  --dash-glow-teal: rgba(20, 184, 166, 0.1);
+  --dash-card-bg: #f8fafc;
+  --dash-card-border: rgba(148, 163, 184, 0.35);
+  --dash-radius-lg: 18px;
+  --dash-radius-md: 14px;
+  --dash-shadow-soft: 0 12px 40px rgba(15, 23, 42, 0.18);
+  --dash-shadow-card: 0 8px 32px rgba(15, 23, 42, 0.12), 0 1px 0 rgba(255, 255, 255, 0.9) inset;
+  --dash-border: rgba(56, 189, 248, 0.35);
+  font-size: clamp(15px, 0.45vw + 14px, 18px);
+}
+
 /* ========== GRID & RTL ========== */
 #surgeriesrts { 
   direction: rtl; 
   text-align: right; 
   display: flex; 
   flex-direction: column; 
-  gap: 10px; 
+  gap: clamp(14px, 1.8vw, 24px); 
   box-sizing: border-box;
-  padding: 8px;
+  padding: clamp(12px, 1.4vw, 22px);
   width: 100%;
+  min-height: 100%;
+  color: #e2e8f0;
+  background:
+    radial-gradient(ellipse 100% 80% at 50% -20%, var(--dash-glow-cyan) 0%, transparent 55%),
+    radial-gradient(ellipse 80% 50% at 100% 100%, var(--dash-glow-teal) 0%, transparent 45%),
+    linear-gradient(168deg, #0f172a 0%, #1e293b 42%, #172554 100%);
+  border-radius: var(--dash-radius-lg);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+#surgeriesrts.dashboard.background-mode {
+  background:
+    radial-gradient(ellipse 90% 60% at 50% 0%, rgba(30, 41, 59, 0.9) 0%, transparent 50%),
+    linear-gradient(180deg, #1e293b 0%, #0f172a 55%, #020617 100%);
 }
 
 /* ========== REGULAR ROOMS SECTION ========== */
@@ -46,10 +79,6 @@
   justify-content: center;
 }
 
-.ambulatory-section .room-wrapper {
-  width: 100%;
-  display: flex;
-}
 
 .regular-section .room-wrapper {
   width: 100%;
@@ -157,12 +186,12 @@ h4.text-center { margin: 0 0 4px 0; min-height: 2.2rem; }
 
 /* ========== ROOM CARD BASE ========== */
 .room-widget { min-width: 200px; transition: filter 0.25s ease, opacity 0.25s ease, box-shadow 0.25s ease; }
-.room-widget.card { max-height: 700px; overflow-y: auto; height: fit-content; display: flex; flex-direction: column; border-radius: 10px; background: #fff !important; color: #111; border: 3px solid rgba(0,0,0,0.15); box-shadow: 0 2px 10px rgba(0,0,0,0.06); scrollbar-width: thin; scrollbar-color: rgba(0,0,0,0.1) transparent; min-width: stretch; }
+.room-widget.card { max-height: 700px; overflow-y: auto; height: fit-content; display: flex; flex-direction: column; border-radius: 14px; background: var(--dash-card-bg, #f8fafc) !important; color: #0f172a; border: 3px solid rgba(71, 85, 105, 0.22); box-shadow: var(--dash-shadow-card, 0 8px 28px rgba(15,23,42,0.1)); scrollbar-width: thin; scrollbar-color: rgba(0,0,0,0.15) transparent; min-width: stretch; }
 .room-widget.card::-webkit-scrollbar { width: 4px; }
 .room-widget.card::-webkit-scrollbar-track { background: transparent; }
 .room-widget.card::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); border-radius: 10px; }
 .room-widget.card::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.2); }
-.room-widget.card .room-header { position: sticky; position: -webkit-sticky; top: 0; z-index: 5; background: #fff !important; padding: 10px 12px; border-bottom: 1px solid rgba(0,0,0,0.08); box-shadow: 0 1px 0 rgba(0,0,0,0.06); cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 4px; direction: rtl; text-align: center; }
+.room-widget.card .room-header { position: sticky; position: -webkit-sticky; top: 0; z-index: 5; background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%) !important; padding: 10px 12px; border-bottom: 1px solid rgba(148, 163, 184, 0.35); box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04); cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 6px; direction: rtl; text-align: center; }
 .room-widget.card .room-body { padding: 10px 12px; direction: rtl; text-align: right; }
 .room-widget.blurred { filter: blur(1px); opacity: 0.6; }
 .room-widget.active { filter: none; opacity: 1; }
@@ -199,7 +228,7 @@ h4.text-center { margin: 0 0 4px 0; min-height: 2.2rem; }
 
 /* ========== STATUS & INFO BLOCKS ========== */
 .room-status-info, .room-duration-info, .room-progress-info { margin: 6px 0 4px; text-align: center; }
-.status-display { display: inline-block; padding: 4px 12px; border-radius: 8px; font-weight: 700; font-size: 0.9em; min-width: 140px; }
+.status-display { display: inline-block; padding: 6px 14px; border-radius: 10px; font-weight: 800; font-size: clamp(0.88rem, 0.55vw + 0.8rem, 1.12rem); min-width: 140px; letter-spacing: 0.02em; }
 .status-display.status-active { background: #ffebee; color: #c62828; animation: status-pulse 2s infinite; }
 .status-display.status-completed { background: #e8f5e9; color: #2e7d32; }
 .status-display.status-free { background: #e3f2fd; color: #1976d2; }
@@ -207,12 +236,12 @@ h4.text-center { margin: 0 0 4px 0; min-height: 2.2rem; }
 @keyframes status-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
 
 /* ========== DURATION & PROGRESS ========== */
-.duration-display { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 8px; background: rgba(0,0,0,0.03); font-size: 0.85em; }
+.duration-display { display: inline-flex; align-items: center; gap: 8px; padding: 5px 12px; border-radius: 10px; background: rgba(15, 23, 42, 0.06); font-size: clamp(0.85rem, 0.5vw + 0.78rem, 1.05rem); font-weight: 700; }
 .duration-icon { font-size: 1.1em; }
 .duration-text { font-weight: 600; color: #444; }
-.progress-display { display: inline-flex; align-items: baseline; gap: 8px; padding: 4px 12px; border-radius: 8px; background: rgba(76,175,80,0.08); border: 1px solid rgba(76,175,80,0.25); }
-.progress-counter { font-weight: 800; font-size: 1.1em; color: #2e7d32; }
-.progress-label { font-size: 0.85em; color: #558b2f; font-weight: 600; }
+.progress-display { display: inline-flex; align-items: baseline; gap: 10px; padding: 6px 14px; border-radius: 10px; background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(5, 150, 105, 0.35); }
+.progress-counter { font-weight: 900; font-size: clamp(1rem, 0.6vw + 0.9rem, 1.35rem); color: #047857; }
+.progress-label { font-size: clamp(0.82rem, 0.45vw + 0.76rem, 1rem); color: #065f46; font-weight: 700; }
 
 /* ========== EXTRA PANEL ========== */
 .room-extra-panel { direction: rtl; text-align: right; }
@@ -225,7 +254,7 @@ h4.text-center { margin: 0 0 4px 0; min-height: 2.2rem; }
 .surgery-card { margin: 4px 0; padding: 6px 2px; border: 1px solid rgba(0,0,0,0.12); border-radius: 8px; background: #fff; line-height: 1.2; }
 .surgery-card.planned { background: #fafafa; border-style: dashed; }
 .surgery-top { display: flex; flex-direction: row-reverse; justify-content: space-between; gap: 8px; align-items: center; }
-.times { direction: ltr; font-weight: 700; font-size: 0.9em; color: #1f2937; unicode-bidi: embed; }
+.times { direction: ltr; font-weight: 800; font-size: clamp(0.88rem, 0.5vw + 0.8rem, 1.08rem); color: #0f172a; unicode-bidi: embed; }
 .dept { text-align: right; font-size: 0.85em; color: #444; font-weight: 600; background: #f7f9fc; border: 1px solid #e2e6ea; padding: 6px 10px; border-radius: 6px; display: inline-block; 
     /* max-width: 77px;  */
 }
@@ -328,23 +357,85 @@ h4.text-center { margin: 0 0 4px 0; min-height: 2.2rem; }
 
 /* ========== DASHBOARD HEADER ========== */
 .dashboard-header { padding: 40px 0 20px; background: linear-gradient(to left, #1976d2, #2196f3); border-radius: 12px; margin-bottom: 25px;display: none; }
-.page-title {  z-index: 20;
-  padding-top: 35px; padding-bottom: 6px; font-size: 1.4rem; font-weight: 700; margin: 0; letter-spacing: 1px; text-shadow: 0 2px 4px rgba(0,0,0,0.25); color: black; }
+.page-title {
+  z-index: 20;
+  padding: clamp(12px, 2vw, 24px) clamp(8px, 2vw, 20px) clamp(8px, 1.5vw, 16px);
+  margin: 0 auto;
+  max-width: 56rem;
+  font-size: clamp(1.25rem, 2.5vw, 2rem);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: #f1f5f9;
+  line-height: 1.35;
+  background: linear-gradient(90deg, transparent, rgba(30, 41, 59, 0.85) 15%, rgba(30, 41, 59, 0.85) 85%, transparent);
+  border-radius: var(--dash-radius-md);
+  box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.2), 0 8px 32px rgba(0, 0, 0, 0.25);
+}
 
 /* ========== BOTTOM SUMMARY BAR ========== */
-.floating-summary-btn { position: fixed; bottom: 55px; padding-bottom:80px; left: 20px; z-index: 1000; background: #2c3e50; color: white; border: none; padding: 12px 20px; border-radius: 30px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); cursor: pointer; font-weight: bold; }
-.bottom-summary-bar { position: fixed; bottom: 0; left: 0; right: 0; height: 30vh; background: #ffffff; border-top: 4px solid #3498db; box-shadow: 0 -5px 25px rgba(0,0,0,0.15); z-index: 1001; display: flex; flex-direction: column; padding: 15px 25px; animation: slideUp 0.4s ease-out; }
+.floating-summary-btn {
+  position: fixed;
+  bottom: 55px;
+  padding-bottom: 80px;
+  left: 20px;
+  z-index: 1000;
+  background: linear-gradient(145deg, #0e7490, #155e75);
+  color: #ecfeff;
+  border: 2px solid rgba(34, 211, 238, 0.45);
+  padding: clamp(12px, 1vw, 16px) clamp(18px, 1.5vw, 26px);
+  border-radius: 999px;
+  box-shadow: 0 8px 32px rgba(8, 145, 178, 0.45), 0 0 24px rgba(34, 211, 238, 0.15);
+  cursor: pointer;
+  font-weight: 800;
+  font-size: clamp(0.95rem, 0.5vw + 0.88rem, 1.15rem);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.floating-summary-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 40px rgba(8, 145, 178, 0.5);
+}
+.bottom-summary-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 30vh;
+  min-height: 200px;
+  background: linear-gradient(180deg, #f8fafc 0%, #e2e8f0 100%);
+  border-top: 4px solid #0ea5e9;
+  box-shadow: 0 -12px 48px rgba(15, 23, 42, 0.2);
+  z-index: 1001;
+  display: flex;
+  flex-direction: column;
+  padding: clamp(16px, 1.5vw, 22px) clamp(20px, 2vw, 32px);
+  animation: slideUp 0.4s ease-out;
+}
 @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
-.close-bar-btn { position: absolute; top: 10px; left: 15px; background: #eee; border: none; border-radius: 50%; width: 25px; height: 25px; cursor: pointer; }
+.close-bar-btn {
+  position: absolute;
+  top: 10px;
+  left: 15px;
+  background: rgba(241, 245, 249, 0.95);
+  border: 1px solid rgba(203, 213, 225, 0.8);
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  cursor: pointer;
+  line-height: 1;
+  transition: background 0.15s ease;
+}
+.close-bar-btn:hover {
+  background: #e2e8f0;
+}
 .bar-content { display: flex; gap: 30px; height: 100%; align-items: center; }
 .bar-header { border-left: 2px solid #eee; padding-left: 20px; min-width: 150px; }
-.header-main { font-size: 1.4rem; font-weight: 800; color: #2c3e50; }
-.header-sub { color: #7f8c8d; }
+.header-main { font-size: clamp(1.35rem, 1.5vw, 1.85rem); font-weight: 800; color: #0f172a; }
+.header-sub { color: #475569; font-size: clamp(0.9rem, 0.8vw, 1.05rem); font-weight: 600; }
 .bar-grid { display: flex; flex: 1; justify-content: space-around; align-items: center; gap: 20px; }
 .bar-item { text-align: center; }
-.bar-label { font-size: 0.85rem; color: #7f8c8d; margin-bottom: 5px; }
-.bar-value { font-size: 2.5rem; font-weight: 900; line-height: 1; color: #2980b9; }
-.bar-value-mid { font-size: 1.8rem; font-weight: 700; color: #34495e; }
+.bar-label { font-size: clamp(0.85rem, 0.7vw, 1rem); color: #64748b; margin-bottom: 6px; font-weight: 700; }
+.bar-value { font-size: clamp(2rem, 3vw, 3.25rem); font-weight: 900; line-height: 1; color: #0369a1; }
+.bar-value-mid { font-size: clamp(1.5rem, 2vw, 2.2rem); font-weight: 800; color: #1e293b; }
 .bar-sub-row { display: flex; gap: 5px; margin-top: 5px; justify-content: center; }
 .tag { font-size: 0.75rem; padding: 2px 8px; border-radius: 10px; background: #f0f3f5; }
 .tag.ok { color: #27ae60; background: #eafaf1; }
@@ -369,10 +460,62 @@ h4.text-center { margin: 0 0 4px 0; min-height: 2.2rem; }
 .drill-item { padding: 8px; border-bottom: 1px solid #eee; font-size: 0.9rem; }
 
 /* ========== RESPONSIVE ========== */
-@media (min-width: 1800px) { #surgeriesrts { grid-template-columns: repeat(7, minmax(250px, 1fr)); } }
-@media (max-width: 900px) { #surgeriesrts { grid-template-columns: repeat(4, minmax(250px, 1fr)); } }
-@media (max-width: 600px) { #surgeriesrts { grid-template-columns: 1fr; } }
-@media (max-width: 768px) { .status-display, .progress-display, .duration-display { font-size: 0.8em; padding: 3px 8px; } .room-dept-badge { display: none; } }
+.regular-section .rooms-grid,
+.ambulatory-section .rooms-grid {
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+}
+
+@media (max-width: 1600px) {
+  .regular-section .rooms-grid,
+  .ambulatory-section .rooms-grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 1200px) {
+  .regular-section .rooms-grid,
+  .ambulatory-section .rooms-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 900px) {
+  .regular-section .rooms-grid,
+  .ambulatory-section .rooms-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .regular-section .rooms-grid,
+  .ambulatory-section .rooms-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 420px) {
+  .regular-section .rooms-grid,
+  .ambulatory-section .rooms-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .status-display, .progress-display, .duration-display { font-size: 0.8em; padding: 3px 8px; }
+  .room-dept-badge { display: none; }
+  .floating-summary-btn {
+    left: 12px;
+    bottom: 48px;
+    padding: 10px 16px;
+    font-size: 0.9rem;
+  }
+  .bottom-summary-bar {
+    height: min(45vh, 420px);
+    padding: 12px 14px;
+  }
+  .bar-content { flex-direction: column; align-items: stretch; gap: 16px; overflow-y: auto; }
+  .bar-grid { flex-wrap: wrap; justify-content: center; }
+}
 
 /* ========== MATERIAL DATE INPUT ========== */
 .date-compact.mat-form-field { width: 120px; }
@@ -398,18 +541,20 @@ h4.text-center { margin: 0 0 4px 0; min-height: 2.2rem; }
   flex-direction: column;
 }
 
-/* Header sizing */
+/* Header sizing – קריא ממרחק */
 .room-header h4 {
-  font-size: 1.1rem;
-  line-height: 1.3;
-  margin-bottom: 6px;
+  font-size: clamp(1.05rem, 0.8vw + 0.85rem, 1.45rem);
+  line-height: 1.35;
+  margin-bottom: 8px;
+  font-weight: 800;
+  color: #0f172a;
 }
 
 /* Compact chips / info */
 .room-duration-info,
 .room-progress-info,
 .room-extra-panel {
-  font-size: 0.9rem;
+  font-size: clamp(0.9rem, 0.5vw + 0.82rem, 1.05rem);
 }
 
 /* Body scroll consistency */
@@ -426,108 +571,144 @@ h4.text-center { margin: 0 0 4px 0; min-height: 2.2rem; }
 
 /* Hospital-style clean look */
 .room-widget.card {
-  border-radius: 10px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+  border-radius: 14px;
+  box-shadow: var(--dash-shadow-card);
+  background: var(--dash-card-bg) !important;
+  border-color: var(--dash-card-border) !important;
 }
 
 
 
-/* ===== REGULAR ROOMS – PRIMARY ===== */
+/* ===== REGULAR ROOMS – מסך קיר / זמן אמת ===== */
 .regular-section {
-  padding: 8px;
-  border-radius: 14px;
-  background: linear-gradient(180deg, #f5f9ff 0%, #ffffff 100%);
-  border: 2px solid #1e88e5;
-  box-shadow: 0 6px 18px rgba(30,136,229,0.25);
+  padding: clamp(14px, 1.6vw, 22px);
+  border-radius: var(--dash-radius-lg);
+  background:
+    linear-gradient(180deg, rgba(248, 250, 252, 0.97) 0%, rgba(241, 245, 249, 0.98) 100%);
+  border: 1px solid rgba(56, 189, 248, 0.28);
+  box-shadow: var(--dash-shadow-soft), 0 0 0 1px rgba(255, 255, 255, 0.08) inset;
   overflow-y: auto;
   max-height: 86vh;
 }
 
 .regular-section .section-header {
-  font-size: 1.1rem;
-  font-weight: 800;
-  background: linear-gradient(90deg, #1e88e5, #42a5f5);
+  font-size: clamp(1.05rem, 1.2vw, 1.35rem);
+  font-weight: 700;
+  background: linear-gradient(105deg, #0369a1 0%, #0ea5e9 45%, #38bdf8 100%);
   color: #fff;
-  border-radius: 10px;
-  padding: 4px 10px;
-  margin-bottom: 6px;
+  border-radius: var(--dash-radius-md);
+  padding: clamp(10px, 1.1vw, 14px) clamp(14px, 1.5vw, 20px);
+  margin-bottom: 10px;
+  border: none;
+  box-shadow: 0 4px 24px rgba(14, 165, 233, 0.35), 0 1px 0 rgba(255, 255, 255, 0.25) inset;
+}
+
+.regular-section .section-header .header-title {
+  color: #fff;
+  font-size: clamp(1.15rem, 1.5vw + 0.5rem, 1.75rem) !important;
+  padding: 0 !important;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 }
 
 .regular-section .rooms-grid {
   display: grid;
-  grid-template-columns: repeat(7, minmax(0, 1fr));
-  gap: 12px;
-  justify-items: center;
+  gap: clamp(12px, 1.4vw, 20px);
+  justify-items: stretch;
   justify-content: center;
 }
 
 .regular-section .room-widget.card {
   border-width: 3px;
-  box-shadow: 0 4px 14px rgba(0,0,0,0.15);
-  transform: scale(1.02);
+  box-shadow: var(--dash-shadow-card);
 }
-/* ===== AMBULATORY – SECONDARY ===== */
+
+/* ===== AMBULATORY – אזור משני בולט מרחוק ===== */
 .ambulatory-section {
-  margin-top: 8px;
-  padding: 8px;
-  background: #f6fbf7;
-  border: 1px dashed #a5d6a7;
-  box-shadow: none;
+  margin-top: clamp(10px, 1.3vw, 18px);
+  padding: clamp(14px, 1.6vw, 22px);
+  background:
+    linear-gradient(165deg, rgba(204, 251, 241, 0.22) 0%, rgba(240, 253, 250, 0.94) 45%, rgba(255, 255, 255, 0.96) 100%);
+  border: 1px solid rgba(45, 212, 191, 0.45);
+  border-radius: var(--dash-radius-lg);
+  box-shadow: 0 12px 36px rgba(15, 118, 110, 0.12), 0 0 0 1px rgba(255, 255, 255, 0.5) inset;
 }
 
 .ambulatory-section .section-header {
-  font-size: 1.1rem;
+  font-size: clamp(1rem, 1.1vw, 1.25rem);
   font-weight: 600;
-  background: #e8f5e9;
-  color: #2e7d32;
-  border-radius: 8px;
-  padding: 6px 12px;
-  margin-bottom: 8px;
+  background: linear-gradient(90deg, #0f766e 0%, #14b8a6 50%, #2dd4bf 100%);
+  color: #ecfdf5;
+  border-radius: var(--dash-radius-md);
+  padding: clamp(8px, 1vw, 12px) clamp(12px, 1.3vw, 18px);
+  margin-bottom: 10px;
+  border: 1px solid rgba(45, 212, 191, 0.4);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
 }
 
 .ambulatory-section .rooms-grid {
   display: grid;
-  grid-template-columns: repeat(7, minmax(0, 1fr));
-  gap: 16px;
-  width: fit-content;
+  gap: clamp(10px, 1.2vw, 16px);
+  width: 100%;
   max-width: 100%;
   justify-content: center;
-  justify-items: center;
+  justify-items: stretch;
   margin: 0 auto;
 }
 
 .ambulatory-section .room-widget.card {
   border-width: 1px;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
-  transform: none;
+  box-shadow: var(--dash-shadow-card);
 }
+
+/* Ambulatory room list (flex layout from template) */
+.ambulatory-rooms {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: flex-start;
+  gap: clamp(14px, 2.2vw, 24px);
+  margin-top: clamp(14px, 2vw, 22px);
+}
+
+.ambulatory-rooms .room-wrapper {
+  flex: 1 1 280px;
+  max-width: 420px;
+  min-width: 240px;
+}
+
+.ambulatory-box {
+  margin-top: 8px;
+  padding: 10px 12px;
+  border-radius: var(--dash-radius-md);
+  background: rgba(204, 251, 241, 0.45);
+  border: 1px solid rgba(13, 148, 136, 0.25);
+}
+
 /* ===== ONE-SCREEN MODE ===== */
 .room-widget.card {
   max-height: 520px;
-  font-size: 0.9rem;
+  font-size: clamp(0.92rem, 0.45vw + 0.85rem, 1.05rem);
 }
 
 .room-header {
-  padding: 6px 8px;
+  padding: clamp(8px, 0.8vw, 12px) clamp(10px, 1vw, 14px);
 }
 
 .room-body {
-  padding: 6px 8px;
+  padding: clamp(8px, 0.8vw, 12px) clamp(10px, 1vw, 14px);
 }
 
 .section-title {
-  font-size: 0.85rem;
-  margin: 2px 0 4px;
+  font-size: clamp(0.88rem, 0.5vw + 0.8rem, 1.08rem);
+  margin: 4px 0 6px;
+  font-weight: 800;
+  color: #1e293b;
 }
 
 .surgery-card {
-  padding: 4px 2px;
-  margin: 2px 0;
-}
-
-.dashboard-header {
-  /* padding: 20px 0 10px; */
-  
+  padding: 6px 4px;
+  margin: 4px 0;
+  border-radius: 10px;
 }
 
 .panel {
@@ -536,11 +717,15 @@ h4.text-center { margin: 0 0 4px 0; min-height: 2.2rem; }
 /* Header with toolbar */
 .header-with-toolbar {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 4px 10px;
-  margin-bottom: 6px;
+  padding: 8px 14px;
+  margin-bottom: 10px;
+  background: rgba(255, 255, 255, 0.14);
+  border-radius: var(--dash-radius-md);
+  border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 
@@ -548,36 +733,42 @@ h4.text-center { margin: 0 0 4px 0; min-height: 2.2rem; }
 /* Toolbar inside header */
 .header-toolbar {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 6px;
-  background: rgba(255,255,255,0.85);
-  padding: 3px 6px;
-  border-radius: 6px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.12);
-  font-size: 0.7rem;
+  gap: 10px;
+  background: rgba(248, 250, 252, 0.98);
+  padding: 8px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.08);
+  font-size: clamp(0.82rem, 0.4vw + 0.75rem, 0.95rem);
 }
 
 .header-toolbar .last-updated {
-  color: #555;
+  color: #334155;
   white-space: nowrap;
+  font-weight: 600;
 }
 
 .header-toolbar .pause-btn {
-  border: 1px solid #bbb;
-  border-radius: 6px;
-  /* padding: 4px 8px; */
+  border: 1px solid #94a3b8;
+  border-radius: 10px;
   background: #fff;
   cursor: pointer;
-  font-size: 0.85rem;
+  font-size: clamp(0.85rem, 0.45vw + 0.78rem, 1rem);
+  padding: 6px 12px;
+  font-weight: 600;
 }
 
 .header-toolbar .refresh-box {
-  background: #1e88e5;
+  background: linear-gradient(180deg, #0284c7, #0369a1);
   color: #fff;
-  /* padding: 4px 8px; */
-  border-radius: 6px;
+  border-radius: 10px;
   cursor: pointer;
   font-weight: 700;
+  padding: 6px 14px;
+  font-size: clamp(0.85rem, 0.45vw + 0.78rem, 1rem);
+  box-shadow: 0 4px 14px rgba(14, 165, 233, 0.35);
 }
 
 /* ===== HARD FIX: DASHBOARD HEADER HIDDEN BY MDC ===== */
@@ -589,9 +780,36 @@ h4.text-center { margin: 0 0 4px 0; min-height: 2.2rem; }
   margin-top: 64px;
 }
 
-.ambulatory-section .room-wrapper {
-  width: 15%;            /* 15% מרוחב האבא כפי שביקשת */
-  min-width: 180px;      /* כדאי להוסיף כדי שהכרטיס לא יתכווץ מדי במסכים קטנים */
-  display: flex;
-  flex-direction: column;
+/* ========== מסכים גדולים / 4K – הידוק טיפוגרפיה ========== */
+@media (min-width: 1600px) {
+  :host {
+    font-size: clamp(15px, 0.35vw + 14px, 19px);
+  }
+
+  .room-widget.card {
+    max-height: min(580px, 72vh);
+  }
+}
+
+@media (min-width: 1920px) {
+  :host {
+    font-size: clamp(16px, 0.28vw + 15px, 20px);
+  }
+
+  #surgeriesrts {
+    padding: clamp(16px, 1.2vw, 28px);
+    gap: clamp(18px, 1.5vw, 28px);
+  }
+
+  .regular-section .rooms-grid,
+  .ambulatory-section .rooms-grid,
+  .ambulatory-rooms {
+    gap: clamp(16px, 1.5vw, 24px);
+  }
+}
+
+@media (min-width: 2560px) {
+  :host {
+    font-size: clamp(17px, 0.22vw + 16px, 22px);
+  }
 }

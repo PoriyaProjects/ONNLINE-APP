@@ -13,11 +13,6 @@
           </div>
         </div>
 
-        <div class="mdc-layout-grid__cell col-md-12 text-center">
-          <h1 class="page-title">
-            דאשבורד זמני ניתוח – זמן אמת (מחלקות)
-          </h1>
-        </div>
         <!-- חדרי ניתוח כללי -->
         <div *ngIf="regularRooms.length > 0" class="rooms-section regular-section">
           <!-- <h2 class="section-header">חדרי ניתוח כללי</h2> -->
@@ -314,6 +309,51 @@
 
 
             </div>
+
+            <div
+              *ngIf="ambulatoryRooms.length > 0"
+              class="rooms-grid ambulatory-rooms"
+            >
+              <ng-container
+                *ngFor="let room of ambulatoryRooms; trackBy: trackByRoomId"
+              >
+                <div
+                  class="room-wrapper"
+                  *ngIf="ambulatorySurgeries(room).length > 0"
+                >
+                  <div class="room-widget card room-white" style="min-width: 260px; max-width: 360px;">
+                    <div class="room-header" style="text-align:center;">
+                      <div class="room-title">
+                        <span class="room-name">{{ translateRoomId(room.roomId) }}</span>
+                      </div>
+                    </div>
+
+                    <div class="room-body" style="max-height: 360px; overflow: auto;">
+                      <h5 class="section-title" style="text-align:center;">ניתוחים אמבולטוריים</h5>
+
+                      <div class="ambulatory-list">
+                        <div
+                          *ngFor="let s of ambulatorySurgeries(room); trackBy: trackBySurgeryId"
+                          class="surgery-card ambulatory"
+                        >
+                          <div class="surgery-top">
+                            <span class="times" *ngIf="settings.showTimes" [innerHTML]="formatSurgeryTimes(s)"></span>
+                            <span class="dept" *ngIf="s.department?.trim()">{{ s.department }}</span>
+                          </div>
+                          <span *ngIf="settings.showStatus" class="status-wrap" [ngClass]="(s.status || s.SurgeryStatus)">
+                            <span class="status-dot"></span>
+                            <span class="status-text">
+                              {{ statusHebrew[(s.status || s.SurgeryStatus)] }}
+                            </span>
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </ng-container>
+            </div>
+
             <div style="height:10px;"></div>
           </div>
 
@@ -709,53 +749,6 @@
 ></ng-container> -->
 
 
-
-          <!-- חדר ניתוח אמבולטורי -->
-          <!-- כרטיסים לחדרים אמבולטוריים עצמם -->
-          <div
-            *ngIf="ambulatoryRooms.length > 0"
-            class="rooms-grid ambulatory-rooms"
-            style="display: flex; flex-wrap: wrap; justify-content: center; gap: 16px; margin-top: 16px;"
-          >
-            <ng-container
-              *ngFor="let room of ambulatoryRooms; trackBy: trackByRoomId"
-            >
-            <div
-              class="room-wrapper"
-              *ngIf="ambulatorySurgeries(room).length > 0"
-            >
-              <div class="room-widget card room-white" style="min-width: 260px; max-width: 360px;">
-                <div class="room-header" style="text-align:center;">
-                  <div class="room-title">
-                    <span class="room-name">{{ translateRoomId(room.roomId) }}</span>
-                  </div>
-                </div>
-
-                <div class="room-body" style="max-height: 360px; overflow: auto;">
-                  <h5 class="section-title" style="text-align:center;">ניתוחים אמבולטוריים</h5>
-
-                  <div class="ambulatory-list">
-                    <div
-                      *ngFor="let s of ambulatorySurgeries(room); trackBy: trackBySurgeryId"
-                      class="surgery-card ambulatory"
-                    >
-                      <div class="surgery-top">
-                        <span class="times" *ngIf="settings.showTimes" [innerHTML]="formatSurgeryTimes(s)"></span>
-                        <span class="dept" *ngIf="s.department?.trim()">{{ s.department }}</span>
-                      </div>
-                      <span *ngIf="settings.showStatus" class="status-wrap" [ngClass]="s.status">
-                        <span class="status-dot"></span>
-                        <span class="status-text">
-                          {{ statusHebrew[s.status] }}
-                        </span>
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            </ng-container>
-          </div>
 
           <!-- חדר ניתוח אמבולטורי – קוד ישן (מוחבא) -->
           <!-- <h2 class="section-header">חדר ניתוח אמבולטורי</h2> -->

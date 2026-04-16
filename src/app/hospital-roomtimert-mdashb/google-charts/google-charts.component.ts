@@ -1475,6 +1475,22 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
         d.setHours(15, 0, 0, 0); // 15:00
         return d;
     }
+
+    /** 07:00 ביום הנבחר – תצוגת "חדר פנוי" / משך פנאי לא סופרים זמן לפני השעה הזו */
+    private idleMetricsDayStart(baseDate: string | Date): Date {
+        const d = new Date(baseDate);
+        d.setHours(7, 0, 0, 0);
+        return d;
+    }
+
+    private clampToIdleMetricsDayStart(
+        dt: Date,
+        baseDate: string | Date
+    ): Date {
+        const start = this.idleMetricsDayStart(baseDate);
+        return dt.getTime() < start.getTime() ? start : dt;
+    }
+
     private clampToWindow(d: Date, start: Date, end: Date): Date {
         return new Date(
             Math.min(end.getTime(), Math.max(start.getTime(), d.getTime()))
@@ -1913,8 +1929,6 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
     activeSurgeries(room: RoomData): Surgery[] {
         if (!room?.surgeries?.length) return [];
 
-        const roomIsAmb = this.isAmbulatoryRoom(room);
-
         return room.surgeries.filter((s) => {
             const status = String(s.status ?? s.SurgeryStatus ?? "").toLowerCase();
             const isPlanned = status === "planned";
@@ -1922,13 +1936,7 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
             // ניתוחים מתוכננים יוצגו ברשימת "ניתוחים מתוכננים" – לא כאן
             if (isPlanned) return false;
 
-            // זיהוי אם הניתוח אמבולטורי – לפי CalendarRoomsArea או לפי החדר עצמו
-            const sArea = s.CalendarRoomsArea ?? null;
-            const isAmbSurgery =
-                sArea === "חדר ניתוח אמבולטורי" ||
-                (!sArea && roomIsAmb);
-
-            if (isAmbSurgery) return false;
+            if (this.surgeryIsAmbulatoryForDisplay(s, room)) return false;
 
             return true;
         });
@@ -1942,8 +1950,6 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
       plannedSurgeries(room: RoomData): Surgery[] {
         if (!room?.surgeries?.length) return [];
 
-        const roomIsAmb = this.isAmbulatoryRoom(room);
-
         return room.surgeries.filter((s) => {
             // בדיקת סטטוס – מנרמלים ומשווים ל-"planned" (case-insensitive)
             const statusRaw = s.status ?? s.SurgeryStatus ?? "";
@@ -1952,14 +1958,7 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
             
             if (!isPlanned) return false;
 
-            // זיהוי אם הניתוח אמבולטורי – לפי CalendarRoomsArea או לפי החדר עצמו
-            const sArea = s.CalendarRoomsArea ?? null;
-            const isAmbSurgery =
-                sArea === "חדר ניתוח אמבולטורי" ||
-                (!sArea && roomIsAmb);
-
-            // מתוכננים אמבולטוריים – לא נכנסים לרשימה הרגילה (יוצגו בקופסת אמבולטורי)
-            if (isAmbSurgery) return false;
+            if (this.surgeryIsAmbulatoryForDisplay(s, room)) return false;
 
             return true;
         });
@@ -2181,27 +2180,61 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
     }
 
     /**
+     * זיהוי טקסט אזור חדר מהלוח/שרת כאמבולטורי (גמיש לוויריאציות API)
+     */
+    private isAmbulatoryCalendarArea(area: string | null | undefined): boolean {
+        if (area == null) return false;
+        const t = String(area).trim();
+        if (t === "" || t === "null") return false;
+        if (t === "חדר ניתוח אמבולטורי") return true;
+        if (/אמבולטורי/i.test(t)) return true;
+        if (/ambulatory/i.test(t.toLowerCase())) return true;
+        return false;
+    }
+
+    /**
+     * האם ניתוח נספר כאמבולטורי להצגה (כרטיסים / קופסאות) – כולל מיפוי חדר וחדר שאינו 1–7
+     */
+    surgeryIsAmbulatoryForDisplay(s: Surgery, room: RoomData): boolean {
+        if (this.isAmbulatoryCalendarArea(s.CalendarRoomsArea)) return true;
+        const roomName = s.SurgeryRoomName;
+        if (roomName) {
+            const rn = String(roomName);
+            if (rn.includes("חדר ניתוח אמבולטורי")) return true;
+            if (/אמבולטורי/i.test(rn)) return true;
+        }
+        const mapped = this.roomCalendarAreaMap.get(room.roomId);
+        if (this.isAmbulatoryCalendarArea(mapped)) return true;
+        // חדר שאינו 1–7: כל הניתוחים בכרטיסי אמבולטורי (בלי לבחון כל ניתוח)
+        if (!this.isRegularOperatingRoom(room.roomId)) return true;
+        return false;
+    }
+
+    /**
      * בדיקה אם החדר הוא חדר ניתוח אמבולטורי
      * כל חדר שאינו 1-7 נחשב כאמבולטורי
      * חדרים 1-7 לעולם לא נחשבים אמבולטוריים, גם אם יש להם SurgeryType: "אמבולטורי"
      */
     isAmbulatoryRoom(room: RoomData): boolean {
         if (!room?.roomId) return false;
-        
-        // 1. בדיקה ראשונה: האם החדר מוגדר כאמבולטורי במיפוי החדרים
+
         const roomCalendarArea = this.roomCalendarAreaMap.get(room.roomId);
-        if (roomCalendarArea === "חדר ניתוח אמבולטורי") {
+        if (this.isAmbulatoryCalendarArea(roomCalendarArea)) {
             return true;
         }
-        
-        // 2. בדיקה שנייה: האם יש ניתוח עם CalendarRoomsArea === "חדר ניתוח אמבולטורי"
+
         if (room?.surgeries?.length) {
-            if (room.surgeries.some(s => s.CalendarRoomsArea === "חדר ניתוח אמבולטורי")) return true;
+            if (
+                room.surgeries.some((s) =>
+                    this.isAmbulatoryCalendarArea(s.CalendarRoomsArea)
+                )
+            ) {
+                return true;
+            }
         }
-        
-        // 3. fallback: חדר שלא ברשימת 1–7 (פז01-201 עד פז01-207) נחשב אמבולטורי
+
         if (!this.isRegularOperatingRoom(room.roomId)) return true;
-        
+
         return false;
     }
       
@@ -2314,8 +2347,7 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
         return null;
     }
     isAmbulatory(s: Surgery | Partial<Surgery>): boolean {
-        // תנאי פשוט: CalendarRoomsArea === "חדר ניתוח אמבולטורי"
-        return s.CalendarRoomsArea === "חדר ניתוח אמבולטורי";
+        return this.isAmbulatoryCalendarArea(s.CalendarRoomsArea);
       }
       
       
@@ -2329,25 +2361,19 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
           return [];
         }
 
-        return room.surgeries.filter(s => {
-          // בדיקה לפי CalendarRoomsArea (מהלוח)
-          const sArea = s.CalendarRoomsArea ?? null;
-          if (sArea === "חדר ניתוח אמבולטורי") return true;
-          
-          // בדיקה לפי SurgeryRoomName (מה-RealTime API)
-          const roomName = s.SurgeryRoomName ?? null;
-          if (roomName && String(roomName).includes("חדר ניתוח אמבולטורי")) return true;
-          
-          return false;
-        });
+        return room.surgeries.filter((s) =>
+            this.surgeryIsAmbulatoryForDisplay(s, room)
+        );
       }
       
       
    
       
       regularSurgeries(room: RoomData) {
-        // תנאי פשוט: לא CalendarRoomsArea === "חדר ניתוח אמבולטורי"
-        return room.surgeries.filter(s => s.CalendarRoomsArea !== "חדר ניתוח אמבולטורי");
+        if (!room.surgeries?.length) return [];
+        return room.surgeries.filter(
+            (s) => !this.surgeryIsAmbulatoryForDisplay(s, room)
+        );
       }
       
     /**
@@ -3732,8 +3758,7 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
         const roomId = (s?.SurgeryRoom ?? (s as Record<string, unknown>).roomId ?? (s as Record<string, unknown>).surgeryRoom ?? (s as Record<string, unknown>).room ?? '') as string;
         const isRegularRoom = roomId && this.isStandardOperatingRoom(roomId);
         
-        // תנאי פשוט: CalendarRoomsArea === "חדר ניתוח אמבולטורי"
-        if (s.CalendarRoomsArea === "חדר ניתוח אמבולטורי") {
+        if (this.isAmbulatoryCalendarArea(s.CalendarRoomsArea)) {
             if (isRegularRoom) return "unknown";
             return "ambulatory";
         }
@@ -3909,7 +3934,9 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
 
         // 1. חישוב בסיסי: סכום של (ממוצע + 20) לכל ניתוח מתוכנן
         const plannedSurgeries = room.surgeries.filter(
-            (s) => s.SurgeryStatus === "Planned" && s.CalendarRoomsArea !== "חדר ניתוח אמבולטורי"
+            (s) =>
+                s.SurgeryStatus === "Planned" &&
+                !this.surgeryIsAmbulatoryForDisplay(s, room)
         );
         let plannedTotalMin = 0;
         for (const s of plannedSurgeries) {
@@ -4151,6 +4178,14 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
             overrunText = "--:--";
         }
 
+        if (freeFromDate) {
+            freeFromDate = this.clampToIdleMetricsDayStart(
+                freeFromDate,
+                baseDate
+            );
+            freeFromText = this._formatClock(freeFromDate);
+        }
+
         return {
             freeFromDate,
             freeFromText,
@@ -4190,10 +4225,14 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
                 const dayEnd = this.workingEnd(room.date);
                 const nowClamped = now < dayEnd ? now : dayEnd;
 
+                const idleStart = this.clampToIdleMetricsDayStart(
+                    lastEndTime,
+                    room.date
+                );
                 const elapsedMin = Math.max(
                     0,
                     Math.floor(
-                        (nowClamped.getTime() - lastEndTime.getTime()) / 60000
+                        (nowClamped.getTime() - idleStart.getTime()) / 60000
                     )
                 );
 
@@ -4831,10 +4870,15 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
             return null;
         }
 
-        // ✅ חישוב זמן פנאי מסיום הניתוח
+        const idleStart = this.clampToIdleMetricsDayStart(
+            lastEndTime,
+            room.date
+        );
+
+        // ✅ חישוב זמן פנאי מסיום הניתוח (לא לפני 07:00 ביום הנבחר)
         const idleMin = Math.max(
             0,
-            Math.floor((nowClamped.getTime() - lastEndTime.getTime()) / 60000)
+            Math.floor((nowClamped.getTime() - idleStart.getTime()) / 60000)
         );
 
         // אם חלפו פחות מ-1 דקה, לא הצג (החדר זה עתה שוחרר)
@@ -4842,9 +4886,6 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
 
         const hm = this.formatHM(idleMin);
         const isOverdue = idleMin > 20;
-
-        // ✅ הצג שעה שהחדר החל להיות פנוי
-        const idleStartTime = this._formatClock(lastEndTime);
 
         return {
             icon: isOverdue ? "⚠️" : "😴",
