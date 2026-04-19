@@ -28,6 +28,12 @@ h2.matrix-section-title {
   box-shadow: var(--nps-shadow-soft);
 }
 
+.rules-table-wrap {
+  max-height: 400px;
+  overflow: auto;
+  margin-bottom: 8px;
+}
+
 .empty-banner {
   display: flex;
   align-items: flex-start;
@@ -79,18 +85,6 @@ h2.matrix-section-title {
   border-top: 1px solid var(--nps-border);
 }
 
-.attach-row {
-  margin: 12px 0 16px;
-
-  button mat-icon {
-    margin-inline-end: 6px;
-    vertical-align: middle;
-    font-size: 20px;
-    width: 20px;
-    height: 20px;
-  }
-}
-
 .rule-context-summary {
   margin-bottom: 16px;
   padding: 12px 16px;
@@ -125,6 +119,10 @@ h2.matrix-section-title {
   align-items: center;
   gap: 12px;
   margin-top: 12px;
+}
+
+.matrix-actions-top {
+  margin-bottom: 12px;
 }
 
 mat-form-field.wide {
