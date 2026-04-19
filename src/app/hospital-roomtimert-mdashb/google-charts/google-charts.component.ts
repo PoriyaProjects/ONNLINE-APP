@@ -4027,6 +4027,124 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
         };
     }
 
+    private sortSurgeriesForTimeline(room: RoomData): Surgery[] {
+        const arr = [...(room.surgeries ?? [])].filter((s) => {
+            const st = String(s.status ?? s.SurgeryStatus ?? "").toLowerCase();
+            return st !== "cancelled" && st !== "canceled";
+        });
+        arr.sort((a, b) => {
+            const am = a._displayStartMs;
+            const bm = b._displayStartMs;
+            if (am != null && bm != null && am !== bm) return am - bm;
+            if (am != null && bm == null) return -1;
+            if (am == null && bm != null) return 1;
+            const ask = a.sortKey;
+            const bsk = b.sortKey;
+            if (ask != null && bsk != null && ask !== bsk) return ask - bsk;
+            if (a._displayStart && b._displayStart) {
+                return a._displayStart.getTime() - b._displayStart.getTime();
+            }
+            return 0;
+        });
+        return arr;
+    }
+
+    /**
+     * זמן חדר "מבוזבז" משעת סיום הניתוח האחרון (משוער) עד 15:00
+     */
+    private computeLostRoomTimeFreeFromText(room: RoomData): string {
+        const baseDate = room.date || this.selectedDate;
+        const workdayEnd = this.workingEnd(baseDate);
+        const day0730 = this.parseClockWithDate("07:30", baseDate);
+        if (!day0730) return "--:--";
+
+        const TURNOVER = 20;
+        const list = this.sortSurgeriesForTimeline(room);
+
+        if (!list.length) {
+            const lostMin = Math.max(
+                0,
+                Math.floor(
+                    (workdayEnd.getTime() - day0730.getTime()) / 60000
+                )
+            );
+            return this.formatHM(lostMin);
+        }
+
+        let prevEnd: Date | null = null;
+        let maxEnd: Date | null = null;
+
+        for (const s of list) {
+            const entRtm = s.TimeEntranceToTheOperatingRoom;
+            const extRtm = s.TimeExitingTheOperatingRoom;
+            const hasEnt =
+                entRtm != null &&
+                String(entRtm).trim() !== "" &&
+                !this.isZeroTime(String(entRtm));
+            const hasExt =
+                extRtm != null &&
+                String(extRtm).trim() !== "" &&
+                !this.isZeroTime(String(extRtm));
+            const durMin = Math.max(0, this.getExpectedDuration(s) || 0);
+
+            let start: Date;
+            let end: Date;
+
+            if (hasEnt && hasExt) {
+                const s1 = this.parseClockWithDate(String(entRtm), baseDate);
+                const e1 = this.parseClockWithDate(String(extRtm), baseDate);
+                if (!s1 || !e1) {
+                    start =
+                        prevEnd === null
+                            ? day0730
+                            : new Date(prevEnd.getTime() + TURNOVER * 60000);
+                    end = new Date(start.getTime() + durMin * 60000);
+                } else {
+                    start = s1;
+                    end = e1;
+                    if (end.getTime() < start.getTime()) {
+                        end = new Date(end.getTime() + 24 * 60 * 60 * 1000);
+                    }
+                }
+            } else if (hasEnt) {
+                const s1 = this.parseClockWithDate(String(entRtm), baseDate);
+                if (!s1) {
+                    start =
+                        prevEnd === null
+                            ? day0730
+                            : new Date(prevEnd.getTime() + TURNOVER * 60000);
+                    end = new Date(start.getTime() + durMin * 60000);
+                } else {
+                    start = s1;
+                    end = new Date(start.getTime() + durMin * 60000);
+                }
+            } else {
+                start =
+                    prevEnd === null
+                        ? day0730
+                        : new Date(prevEnd.getTime() + TURNOVER * 60000);
+                end = new Date(start.getTime() + durMin * 60000);
+            }
+
+            prevEnd = end;
+            if (!maxEnd || end.getTime() > maxEnd.getTime()) {
+                maxEnd = end;
+            }
+        }
+
+        if (!maxEnd) return "--:--";
+
+        if (maxEnd.getTime() >= workdayEnd.getTime()) {
+            return "--:--";
+        }
+
+        const lostMinutes = Math.max(
+            0,
+            Math.floor((workdayEnd.getTime() - maxEnd.getTime()) / 60000)
+        );
+        return this.formatHM(lostMinutes);
+    }
+
     getRoomDetailsPanel(room: RoomData): {
         totalDelayHMM: string; // משך עיכובים מצטבר מתחילת יום (7:30)
         overrunText: string; // משך גלישה צפוי
@@ -4040,7 +4158,7 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
 
         // 2) חישוב חדר פנוי/גלישה בהתאם לדרישות
         const calc = this.calculateFreeTimeAndOverrun(room);
-        const freeFromText = calc.freeFromText;
+        const freeFromText = this.computeLostRoomTimeFreeFromText(room);
         const overrunText = calc.overrunText;
         const freeFromDate = calc.freeFromDate;
 
