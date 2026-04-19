@@ -4484,12 +4484,19 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
             }
         }
 
-        const last = timeline[timeline.length - 1];
+        let last: { start: Date; end: Date } | undefined;
+        for (let i = timeline.length - 1; i >= 0; i--) {
+            if (timeline[i].end.getTime() <= now.getTime()) {
+                last = timeline[i];
+                break;
+            }
+        }
 
-        if (now.getTime() > last.end.getTime()) {
-            total += Math.floor(
+        if (last && now.getTime() > last.end.getTime()) {
+            const idleNow = Math.floor(
                 (now.getTime() - last.end.getTime()) / 60000
             );
+            total += idleNow;
         }
 
         return Math.max(0, total);
