@@ -5268,6 +5268,7 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
 
     /**
      * שורת לו"ז משוער לניתוח מתוכנן ללא RTM וללא זמני כניסה/יציאה ממוזגים
+     * — מקושר לניתוח הקודם בחדר (כולל InProgress: סיום משוער מול עכשיו + 20 דק׳)
      */
     private getPlannedScheduleRow(surgery: Surgery): {
         start: Date;
@@ -5276,38 +5277,72 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
     } | null {
         const room = this.findRoomForSurgery(surgery);
         if (!room) return null;
-        const list = this.orderedPlannedSurgeries(room);
-        const idx = list.findIndex((x) => this.isSameSurgeryInRoom(x, surgery));
-        if (idx < 0) return null;
-        const baseDate = room.date || this.selectedDate;
+
+        const list = this.sortSurgeriesForTimeline(room);
+        const idx = list.findIndex((s) => this.isSameSurgeryInRoom(s, surgery));
+        if (idx === -1) return null;
+
+        const baseDate =
+            surgery.SurgeryDate || room.date || this.selectedDate;
         const dayStart = this.parseClockWithDate("07:30", baseDate);
         if (!dayStart) return null;
-        let prevEnd: Date | null = null;
-        for (let i = 0; i <= idx; i++) {
-            const s = list[i];
-            const durMin = this.getAvgDurationMinutesForSchedule(s);
-            let start: Date;
-            if (i === 0) {
-                start = dayStart;
-            } else {
-                start = prevEnd
-                    ? new Date(prevEnd.getTime() + this.PLANNED_PREP_MS)
-                    : dayStart;
+
+        const prev = idx > 0 ? list[idx - 1] : null;
+
+        let start: Date;
+
+        if (!prev) {
+            start = dayStart;
+        } else {
+            const prevEntrance = this.getEntranceTime(prev);
+            const prevExit = this.getExitTime(prev);
+
+            let prevEnd: Date | null = null;
+
+            if (prevExit && !this.isZeroTime(prevExit)) {
+                prevEnd = this.parseClockWithDate(prevExit, baseDate);
+                const entForCross =
+                    prevEntrance && !this.isZeroTime(prevEntrance)
+                        ? this.parseClockWithDate(prevEntrance, baseDate)
+                        : null;
+                if (
+                    prevEnd &&
+                    entForCross &&
+                    prevEnd.getTime() < entForCross.getTime()
+                ) {
+                    prevEnd = new Date(
+                        prevEnd.getTime() + 24 * 60 * 60 * 1000
+                    );
+                }
+            } else if (prevEntrance && !this.isZeroTime(prevEntrance)) {
+                const ent = this.parseClockWithDate(prevEntrance, baseDate);
+                const dur = this.getExpectedDuration(prev);
+
+                if (ent && dur > 0) {
+                    const estimatedEnd = new Date(ent.getTime() + dur * 60000);
+                    const now = new Date();
+                    prevEnd = now > estimatedEnd ? now : estimatedEnd;
+                }
             }
-            const end =
-                durMin != null && durMin > 0
-                    ? new Date(start.getTime() + durMin * 60000)
-                    : null;
-            if (i === idx) {
-                return {
-                    start,
-                    end,
-                    durationLabel: this.plannedScheduleDurationLabel(surgery),
-                };
+
+            if (!prevEnd) {
+                prevEnd = dayStart;
             }
-            prevEnd = end;
+
+            start = new Date(prevEnd.getTime() + 20 * 60000);
         }
-        return null;
+
+        const durMin = this.getExpectedDuration(surgery);
+        const end =
+            durMin > 0
+                ? new Date(start.getTime() + durMin * 60000)
+                : null;
+
+        return {
+            start,
+            end,
+            durationLabel: this.getExpectedDurationDisplay(surgery),
+        };
     }
 
     isFirstPlannedSurgery(surgery: Surgery): boolean {
