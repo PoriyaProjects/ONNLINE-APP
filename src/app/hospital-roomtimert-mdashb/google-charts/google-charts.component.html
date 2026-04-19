@@ -6,10 +6,17 @@
 
       <div id="surgeriesrts" class="dashboard" *ngIf="$any(settings)?.showSurgeriesRts !== false"
         [class.background-mode]="settings.backgroundMode === true">
-        <div *ngIf="isLoading" class="loader-overlay">
-          <div class="loader-content">
-            <div class="spinner"></div>
-            <div class="loader-text">טוען...</div>
+        <div *ngIf="isLoading" class="loader-overlay" aria-busy="true" aria-live="polite">
+          <div class="loader-panel">
+            <div class="loader-panel-header">
+              <span class="loader-panel-title">טוען לוח חדרים</span>
+              <span class="loader-panel-percent">{{ loadProgressPercent }}%</span>
+            </div>
+            <div class="loader-progress-track" dir="ltr" role="progressbar"
+              [attr.aria-valuenow]="loadProgressPercent" aria-valuemin="0" aria-valuemax="100">
+              <div class="loader-progress-fill" [style.width.%]="loadProgressPercent"></div>
+            </div>
+            <p class="loader-panel-hint">מסנכרן נתוני ניתוחים וחדרים…</p>
           </div>
         </div>
 
@@ -117,7 +124,7 @@
                   </div>
                   <div class="room-extra-panel">
                     <ng-container *ngIf="getRoomDetailsPanel(room) as d">
-                      <div class="extra-row" *ngIf="d.totalDelayHMM !== '--:--'">
+                      <div class="extra-row" *ngIf="d.totalDelayHMM && d.totalDelayHMM !== '--:--'">
                         <span class="k rtl-start">
                           עיכוב מצטבר מתחילת יום
                           <span class="tip" title="מ07:30"></span>
@@ -217,6 +224,10 @@
         </div>
 
         <div *ngIf="ambulatoryRooms.length > 0" class="rooms-section ambulatory-section">
+            <div class="section-header ambulatory-section-header">
+              <h2 class="header-title">חדר ניתוח אמבולטורי</h2>
+            </div>
+
             <div class="row card" style="margin-top: 20px;">
 
               <button class="floating-summary-btn" *ngIf="!showSummary" (click)="showSummary = true">
@@ -279,6 +290,19 @@
                       <div class="bar-value-mid">{{ translateRoomId(r.room) }}</div>
                       <div class="bar-sub">{{ r.totalHMM }} ({{ r.cases }} מקרים)</div>
                     </div>
+
+                    <ng-container *ngIf="getRegularRoomsOverrunEarlySummary() as roomRisk">
+                      <div class="bar-item">
+                        <div class="bar-label">חדרים צפויים לגלוש</div>
+                        <div class="bar-value-mid">{{ roomRisk.overrun }}/{{ roomRisk.total }}</div>
+                        <div class="bar-sub">מתוך חדרי ניתוח כלליים</div>
+                      </div>
+                      <div class="bar-item">
+                        <div class="bar-label">חדרים צפויים לסיים מוקדם (זמן אבוד)</div>
+                        <div class="bar-value-mid">{{ roomRisk.early }}/{{ roomRisk.total }}</div>
+                        <div class="bar-sub">מתוך חדרי ניתוח כלליים</div>
+                      </div>
+                    </ng-container>
                   </div>
                 </div>
 
@@ -318,8 +342,6 @@
                     </div>
 
                     <div class="room-body" style="max-height: 360px; overflow: auto;">
-                      <h5 class="section-title" style="text-align:center;">ניתוחים אמבולטוריים</h5>
-
                       <div class="ambulatory-list">
                         <div
                           *ngFor="let s of ambulatorySurgeries(room); trackBy: trackBySurgeryId"

@@ -450,6 +450,11 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
         if (this.intervalId) {
             clearInterval(this.intervalId);
         }
+        this.stopLoadProgressAnimation();
+        if (this.loadOverlayHideTimer) {
+            clearTimeout(this.loadOverlayHideTimer);
+            this.loadOverlayHideTimer = null;
+        }
         this.destroy$.next();
         this.destroy$.complete();
     }
@@ -460,6 +465,68 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
     }
 
     isLoading = false;
+    /** 0–100: התקדמות ויזואלית על פני 5 שניות בזמן טעינה */
+    loadProgressPercent = 0;
+    private loadProgressRafId: number | null = null;
+    private loadOverlayHideTimer: ReturnType<typeof setTimeout> | null = null;
+    private readonly LOAD_PROGRESS_DURATION_MS = 5000;
+
+    private startLoadProgressAnimation(): void {
+        this.stopLoadProgressAnimation();
+        if (this.loadOverlayHideTimer) {
+            clearTimeout(this.loadOverlayHideTimer);
+            this.loadOverlayHideTimer = null;
+        }
+        this.loadProgressPercent = 0;
+        const start = performance.now();
+        let lastPct = -1;
+        const tick = (now: number) => {
+            if (!this.isLoading) {
+                return;
+            }
+            const t = Math.min(
+                1,
+                (now - start) / this.LOAD_PROGRESS_DURATION_MS
+            );
+            const pct = Math.round(t * 100);
+            if (pct !== lastPct) {
+                lastPct = pct;
+                this.loadProgressPercent = pct;
+                this.cdr.markForCheck();
+            }
+            if (t < 1 && this.isLoading) {
+                this.loadProgressRafId = requestAnimationFrame(tick);
+            } else {
+                this.loadProgressRafId = null;
+            }
+        };
+        this.loadProgressRafId = requestAnimationFrame(tick);
+    }
+
+    private stopLoadProgressAnimation(): void {
+        if (this.loadProgressRafId != null) {
+            cancelAnimationFrame(this.loadProgressRafId);
+            this.loadProgressRafId = null;
+        }
+    }
+
+    /** סיום טעינה: ממלא ל־100%, עיכוב קצר להצגת השלמה, ואז מסתיר */
+    private endLoading(): void {
+        this.stopLoadProgressAnimation();
+        if (this.loadOverlayHideTimer) {
+            clearTimeout(this.loadOverlayHideTimer);
+            this.loadOverlayHideTimer = null;
+        }
+        this.loadProgressPercent = 100;
+        this.cdr.markForCheck();
+        this.loadOverlayHideTimer = setTimeout(() => {
+            this.loadOverlayHideTimer = null;
+            this.isLoading = false;
+            this.loadProgressPercent = 0;
+            this.cdr.markForCheck();
+        }, 240);
+    }
+
     allExpanded = false;
     openRooms = new Set<string>();
 
@@ -569,6 +636,7 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
     loadRoomsData(): void {
         this.lastLoaded = new Date();
         this.isLoading = true;
+        this.startLoadProgressAnimation();
         // לפני טעינה מחדש – עד שהעשרת הלוח תסתיים, לא נציג ניתוחים מתוכננים כדי למנוע "קפיצות" מידע
         this.calendarEnriched = false;
 
@@ -806,7 +874,7 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
                     return { roomId, surgeries: sorted, date: roomDate };
                 });
 
-                this.isLoading = false;
+                this.endLoading();
                 this.cdr.detectChanges();
 
                 // שלב 2 הישן השתמש ב-GetSurgeriesBySurgeryRoomCode – עכשיו נבטל את הקריאה ונחזיר רשימות ריקות
@@ -1061,7 +1129,14 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
                             if (calendarArea === "חדר ניתוח כללי") {
                                 targetRoom = this.roomsData.find(r => this.isRegularOperatingRoom(r.roomId)) || null;
                             } else {
-                                targetRoom = this.roomsData.find(r => this.isAmbulatoryRoom(r)) || null;
+                                targetRoom =
+                                    this.roomsData.find((r) =>
+                                        r.surgeries?.some((s) =>
+                                            this.isAmbulatoryBySurgeryRoomName(
+                                                s.SurgeryRoomName
+                                            )
+                                        )
+                                    ) || null;
                             }
                         }
                         
@@ -1278,7 +1353,7 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
                 });
             },
             (_) => {
-                this.isLoading = false;
+                this.endLoading();
             }
         );
     }
@@ -2047,6 +2122,13 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
         if (hit) return hit;
 
         const norm = String(id).trim();
+        /** שם חדר אמבולטורי מהשרת — מוצג כמו שהוא, בלי לפרש מספר כמו בחדרים 1–7 */
+        if (norm.includes("חדר ניתוח אמבולטורי")) {
+            return norm;
+        }
+        if (norm.includes("פה ולסת")) {
+            return norm;
+        }
         const firstSeg = norm.split(/[-–—]/)[0];
         let numStr: string | null = null;
 
@@ -2077,62 +2159,41 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
     }
 
     /**
-     * זיהוי טקסט אזור חדר מהלוח/שרת כאמבולטורי (גמיש לוויריאציות API)
+     * אמבולטורי — רק לפי SurgeryRoomName מהשרת (למשל "חדר ניתוח אמבולטורי - 1")
      */
-    private isAmbulatoryCalendarArea(area: string | null | undefined): boolean {
-        if (area == null) return false;
-        const t = String(area).trim();
-        if (t === "" || t === "null") return false;
-        if (t === "חדר ניתוח אמבולטורי") return true;
-        if (/אמבולטורי/i.test(t)) return true;
-        if (/ambulatory/i.test(t.toLowerCase())) return true;
-        return false;
+    private isAmbulatoryBySurgeryRoomName(
+        name: string | null | undefined
+    ): boolean {
+        const t = String(name ?? "").trim();
+        if (!t) return false;
+        return t.includes("חדר ניתוח אמבולטורי");
+    }
+
+    /** פה ולסת — לפי SurgeryRoomName בלבד (למשל "פה ולסת - 1") */
+    private isOralMaxillofacialBySurgeryRoomName(
+        name: string | null | undefined
+    ): boolean {
+        const t = String(name ?? "").trim();
+        if (!t) return false;
+        return t.includes("פה ולסת");
     }
 
     /**
-     * האם ניתוח נספר כאמבולטורי להצגה (כרטיסים / קופסאות) – כולל מיפוי חדר וחדר שאינו 1–7
+     * האם ניתוח מוצג באזור אמבולטורי — לפי SurgeryRoomName בלבד
      */
-    surgeryIsAmbulatoryForDisplay(s: Surgery, room: RoomData): boolean {
-        if (this.isAmbulatoryCalendarArea(s.CalendarRoomsArea)) return true;
-        const roomName = s.SurgeryRoomName;
-        if (roomName) {
-            const rn = String(roomName);
-            if (rn.includes("חדר ניתוח אמבולטורי")) return true;
-            if (/אמבולטורי/i.test(rn)) return true;
-        }
-        const mapped = this.roomCalendarAreaMap.get(room.roomId);
-        if (this.isAmbulatoryCalendarArea(mapped)) return true;
-        // חדר שאינו 1–7: כל הניתוחים בכרטיסי אמבולטורי (בלי לבחון כל ניתוח)
-        if (!this.isRegularOperatingRoom(room.roomId)) return true;
-        return false;
+    surgeryIsAmbulatoryForDisplay(s: Surgery, _room: RoomData): boolean {
+        return this.isAmbulatoryBySurgeryRoomName(s.SurgeryRoomName);
     }
 
     /**
-     * בדיקה אם החדר הוא חדר ניתוח אמבולטורי
-     * כל חדר שאינו 1-7 נחשב כאמבולטורי
-     * חדרים 1-7 לעולם לא נחשבים אמבולטוריים, גם אם יש להם SurgeryType: "אמבולטורי"
+     * כרטיס חדר בגריד הכללי: "חדר אמבולטורי" לצורכי UI (הסתרת סטטוס מעל הכרטיס)
+     * רק כשכל הניתוחים בקובץ מסומנים כאמבולטוריים לפי SurgeryRoomName
      */
     isAmbulatoryRoom(room: RoomData): boolean {
-        if (!room?.roomId) return false;
-
-        const roomCalendarArea = this.roomCalendarAreaMap.get(room.roomId);
-        if (this.isAmbulatoryCalendarArea(roomCalendarArea)) {
-            return true;
-        }
-
-        if (room?.surgeries?.length) {
-            if (
-                room.surgeries.some((s) =>
-                    this.isAmbulatoryCalendarArea(s.CalendarRoomsArea)
-                )
-            ) {
-                return true;
-            }
-        }
-
-        if (!this.isRegularOperatingRoom(room.roomId)) return true;
-
-        return false;
+        if (!room?.surgeries?.length) return false;
+        return room.surgeries.every((s) =>
+            this.isAmbulatoryBySurgeryRoomName(s.SurgeryRoomName)
+        );
     }
 
     /**
@@ -2179,14 +2240,12 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
         return null;
     }
     isAmbulatory(s: Surgery | Partial<Surgery>): boolean {
-        return this.isAmbulatoryCalendarArea(s.CalendarRoomsArea);
-      }
+        return this.isAmbulatoryBySurgeryRoomName(s.SurgeryRoomName);
+    }
       
       
       /**
-       * ניתוחים אמבולטוריים להצגה
-       * - ניתוחים שמסומנים כאמבולטוריים ב-CalendarRoomsArea === "חדר ניתוח אמבולטורי"
-       * - או ניתוחים עם SurgeryRoomName שמכיל "חדר ניתוח אמבולטורי" (מהשרת RealTime)
+       * ניתוחים אמבולטוריים להצגה — לפי SurgeryRoomName בלבד
        */
       ambulatorySurgeries(room: RoomData) {
         if (!room.surgeries || room.surgeries.length === 0) {
@@ -2209,13 +2268,89 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
       }
       
     /**
-     * קבלת חדרים אמבולטוריים
+     * מפתח איחוד לניתוח (מניעת כפילויות כשאותו ניתוח מגיע תחת מזהי חדר שונים)
+     */
+    private surgeryMergeKeyAmbulatory(s: Surgery): string {
+        const norm = (v: unknown) =>
+            v != null && v !== ""
+                ? String(v).replace(/^0+/, "") || String(v)
+                : "";
+        const sid = norm((s as unknown as Record<string, unknown>).SurgeryID) || norm(s.surgeryId);
+        const cn = norm(s.CaseNumber);
+        const admRaw = (s as unknown as Record<string, unknown>).AdmissionNo;
+        const adm =
+            admRaw != null
+                ? norm(
+                      String(admRaw).length < 10
+                          ? String(admRaw).padStart(10, "0")
+                          : String(admRaw)
+                  )
+                : "";
+        const key = sid || cn || adm;
+        if (key) return key;
+        return `${s.surgeryName ?? ""}|${s.timeEntrance ?? ""}|${s.department ?? ""}`;
+    }
+
+    /**
+     * חדרים אמבולטוריים להצגה — קיבוץ לפי ערך SurgeryRoomName (כמה שמות = כמה כרטיסים)
      */
     get ambulatoryRooms(): RoomData[] {
-        return this.uniqueByRoomId(
-          this.roomsData.filter(r => this.isAmbulatoryRoom(r))
-        );
-      }
+        const byName = new Map<string, Surgery[]>();
+        const fallbackDate =
+            this.selectedDate || new Date().toISOString().split("T")[0];
+
+        for (const r of this.roomsData) {
+            for (const s of r.surgeries || []) {
+                if (!this.isAmbulatoryBySurgeryRoomName(s.SurgeryRoomName)) {
+                    continue;
+                }
+                const key = String(s.SurgeryRoomName).trim();
+                if (!byName.has(key)) {
+                    byName.set(key, []);
+                }
+                byName.get(key)!.push(s);
+            }
+        }
+
+        const out: RoomData[] = [];
+        for (const [name, surgeries] of byName) {
+            const dedup = new Map<string, Surgery>();
+            for (const s of surgeries) {
+                const k = this.surgeryMergeKeyAmbulatory(s);
+                const existing = dedup.get(k);
+                if (!existing) {
+                    dedup.set(k, s);
+                } else if (existing.fromCalendarOnly && !s.fromCalendarOnly) {
+                    dedup.set(k, s);
+                }
+            }
+            const list = Array.from(dedup.values());
+            const roomDate =
+                list.find((x) => x.surgeryDate)?.surgeryDate || fallbackDate;
+            list.sort((a, b) => {
+                const am =
+                    a._displayStartMs ??
+                    this.entranceMillisForSortSafe(a, roomDate);
+                const bm =
+                    b._displayStartMs ??
+                    this.entranceMillisForSortSafe(b, roomDate);
+                if (am !== bm) {
+                    return am - bm;
+                }
+                return String(a.surgeryId ?? "").localeCompare(
+                    String(b.surgeryId ?? "")
+                );
+            });
+            out.push({
+                roomId: name,
+                surgeries: list,
+                date: roomDate,
+            });
+        }
+
+        out.sort((a, b) => a.roomId.localeCompare(b.roomId, "he"));
+        return out;
+    }
       
 
     hasActionAfterWorkingStart(room: RoomData): boolean {
@@ -3352,6 +3487,7 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
             sessionInpatient: "ססיה - אשפוז",
             elective: "אלקטיב",
             ambulatory: "אמבולטורי",
+            oralMaxillofacial: "פה ולסת",
             noPriority: "ללא עדיפות",
             unknown: "דחיפות לא מוגדרת",
         };
@@ -3360,6 +3496,7 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
             sessionInpatient: "🏥",
             elective: "📖",
             ambulatory: "🚶",
+            oralMaxillofacial: "🦷",
             noPriority: "⬇️",
             unknown: "❔",
         };
@@ -3369,6 +3506,7 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
             sessionInpatient: 0,
             elective: 0,
             ambulatory: 0,
+            oralMaxillofacial: 0,
             noPriority: 0,
             unknown: 0,
         };
@@ -3377,6 +3515,7 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
             sessionInpatient: [] as Surgery[],
             elective: [] as Surgery[],
             ambulatory: [] as Surgery[],
+            oralMaxillofacial: [] as Surgery[],
             noPriority: [] as Surgery[],
             unknown: [] as Surgery[],
         };
@@ -3442,6 +3581,7 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
             "sessionInpatient",
             "elective",
             "ambulatory",
+            "oralMaxillofacial",
             "noPriority",
             "unknown",
         ];
@@ -3574,6 +3714,7 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
         | "sessionInpatient"
         | "elective"
         | "ambulatory"
+        | "oralMaxillofacial"
         | "noPriority"
         | "unknown"
         | null = null;
@@ -3585,16 +3726,17 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
         | "sessionInpatient"
         | "elective"
         | "ambulatory"
+        | "oralMaxillofacial"
         | "noPriority"
         | "unknown" {
-        const roomId = (s?.SurgeryRoom ?? (s as Record<string, unknown>).roomId ?? (s as Record<string, unknown>).surgeryRoom ?? (s as Record<string, unknown>).room ?? '') as string;
-        const isRegularRoom = roomId && this.isStandardOperatingRoom(roomId);
-        
-        if (this.isAmbulatoryCalendarArea(s.CalendarRoomsArea)) {
-            if (isRegularRoom) return "unknown";
+        /** סיכום יומי: דחיפות לפי SurgeryRoomName — אמבולטורי / פה ולסת, ואז שדות Urgency */
+        if (this.isAmbulatoryBySurgeryRoomName(s.SurgeryRoomName)) {
             return "ambulatory";
         }
-        
+        if (this.isOralMaxillofacialBySurgeryRoomName(s.SurgeryRoomName)) {
+            return "oralMaxillofacial";
+        }
+
         // ניתוחים בחדר כללי – מסווגים לפי Urgency/SurgeryType. "אמבולטורי" בחדר כללי נספר כאלקטיב (לא כאמבולטורי)
         const rawUrgency = (s as Record<string, unknown>).Urgency ?? s?.Urgency ?? s?.urgency ?? (s as Record<string, unknown>).Priority ?? s?.Priority ?? s?.priority ?? (s as Record<string, unknown>).Triage ?? s?.Triage ?? s?.triage ?? "";
         const rawType = (s as Record<string, unknown>).SurgeryType ?? s?.SurgeryType ?? "";
@@ -3614,6 +3756,7 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
         | "sessionInpatient"
         | "elective"
         | "ambulatory"
+        | "oralMaxillofacial"
         | "noPriority"
         | "unknown" {
         const s = (u ?? "").toString().trim().toLowerCase();
@@ -4050,27 +4193,16 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
     }
 
     /**
-     * זמן חדר "מבוזבז" משעת סיום הניתוח האחרון (משוער) עד 15:00
+     * סיום ניתוח אחרון בציר זמן משוער (אותה לוגיקה כמו חישוב זמן אבוד)
      */
-    private computeLostRoomTimeFreeFromText(room: RoomData): string {
-        const baseDate = room.date || this.selectedDate;
-        const workdayEnd = this.workingEnd(baseDate);
+    private computeTimelineMaxEndForSortedList(
+        list: Surgery[],
+        baseDate: string
+    ): Date | null {
         const day0730 = this.parseClockWithDate("07:30", baseDate);
-        if (!day0730) return "--:--";
+        if (!day0730 || !list.length) return null;
 
         const TURNOVER = 20;
-        const list = this.sortSurgeriesForTimeline(room);
-
-        if (!list.length) {
-            const lostMin = Math.max(
-                0,
-                Math.floor(
-                    (workdayEnd.getTime() - day0730.getTime()) / 60000
-                )
-            );
-            return this.formatHM(lostMin);
-        }
-
         let prevEnd: Date | null = null;
         let maxEnd: Date | null = null;
 
@@ -4132,6 +4264,31 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
             }
         }
 
+        return maxEnd;
+    }
+
+    /**
+     * זמן חדר "מבוזבז" משעת סיום הניתוח האחרון (משוער) עד 15:00
+     */
+    private computeLostRoomTimeFreeFromText(room: RoomData): string {
+        const baseDate = room.date || this.selectedDate;
+        const workdayEnd = this.workingEnd(baseDate);
+        const day0730 = this.parseClockWithDate("07:30", baseDate);
+        if (!day0730) return "--:--";
+
+        const list = this.sortSurgeriesForTimeline(room);
+
+        if (!list.length) {
+            const lostMin = Math.max(
+                0,
+                Math.floor(
+                    (workdayEnd.getTime() - day0730.getTime()) / 60000
+                )
+            );
+            return this.formatHM(lostMin);
+        }
+
+        const maxEnd = this.computeTimelineMaxEndForSortedList(list, baseDate);
         if (!maxEnd) return "--:--";
 
         if (maxEnd.getTime() >= workdayEnd.getTime()) {
@@ -4145,6 +4302,148 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
         return this.formatHM(lostMinutes);
     }
 
+    /**
+     * חדרי ניתוח כלליים (1–7): כמה צפויים לגלוש / לסיים לפני 15:00 מתוך הסה״כ
+     */
+    getRegularRoomsOverrunEarlySummary(): {
+        overrun: number;
+        early: number;
+        total: number;
+    } {
+        const rooms = this.regularRooms;
+        const wd = this.workingEnd(this.selectedDate);
+        let overrun = 0;
+        let early = 0;
+
+        for (const room of rooms) {
+            const list = this.sortSurgeriesForTimeline(room);
+            if (!list.length) {
+                early++;
+                continue;
+            }
+            const maxEnd = this.computeTimelineMaxEndForSortedList(
+                list,
+                room.date || this.selectedDate
+            );
+            if (!maxEnd) continue;
+            if (maxEnd.getTime() > wd.getTime()) {
+                overrun++;
+            } else if (maxEnd.getTime() < wd.getTime()) {
+                early++;
+            }
+        }
+
+        return { overrun, early, total: rooms.length };
+    }
+
+    /**
+     * עיכוב מצטבר מ־07:30: (1) פער עד ניתוח ראשון במלואו, (2) בין ניתוחים — רק מה שמעל 20 דק׳ הכנה.
+     * ללא ניתוחים — כל החלון 07:30–15:00. זמני RTM תקינים; אחרת משוער כמו בציר הזמן.
+     */
+    private computeTotalDelayMinutesFromDayStart(room: RoomData): number {
+        const baseDate = room.date || this.selectedDate;
+        const dayStart = this.workingStart(baseDate);
+        const dayEnd = this.workingEnd(baseDate);
+        const now = new Date();
+        const nowClamped = now.getTime() < dayEnd.getTime() ? now : dayEnd;
+        const TURNOVER = 20;
+        const list = this.sortSurgeriesForTimeline(room);
+
+        if (!list.length) {
+            return Math.max(
+                0,
+                Math.floor((dayEnd.getTime() - dayStart.getTime()) / 60000)
+            );
+        }
+
+        let totalDelayMin = 0;
+        let prevEnd: Date | null = null;
+
+        for (let i = 0; i < list.length; i++) {
+            const s = list[i];
+            const startStr = this.getEntranceTime(s);
+            const exitStr = this.getExitTime(s);
+            const hasEnt = !!(startStr && !this.isZeroTime(startStr));
+            const hasExt = !!(exitStr && !this.isZeroTime(exitStr));
+            let durMin = Math.max(0, this.getExpectedDuration(s) || 0);
+            if (durMin === 0) {
+                durMin = 60;
+            }
+
+            const st = String(s.status ?? s.SurgeryStatus ?? "").toLowerCase();
+            const inProg = this.isInProgressStatus(st);
+
+            let start: Date;
+            let end: Date;
+
+            if (hasEnt && hasExt) {
+                const s1 = this.parseClockWithDate(String(startStr), baseDate);
+                const e1 = this.parseClockWithDate(String(exitStr), baseDate);
+                if (!s1 || !e1) {
+                    start =
+                        prevEnd === null
+                            ? dayStart
+                            : new Date(prevEnd.getTime() + TURNOVER * 60000);
+                    end = new Date(start.getTime() + durMin * 60000);
+                } else {
+                    start = s1;
+                    end = e1;
+                    if (end.getTime() < start.getTime()) {
+                        end = new Date(end.getTime() + 24 * 60 * 60 * 1000);
+                    }
+                }
+            } else if (hasEnt) {
+                const s1 = this.parseClockWithDate(String(startStr), baseDate);
+                if (!s1) {
+                    start =
+                        prevEnd === null
+                            ? dayStart
+                            : new Date(prevEnd.getTime() + TURNOVER * 60000);
+                    end = new Date(start.getTime() + durMin * 60000);
+                } else {
+                    start = s1;
+                    if (inProg && !hasExt) {
+                        end = new Date(nowClamped);
+                    } else {
+                        end = new Date(start.getTime() + durMin * 60000);
+                    }
+                }
+            } else {
+                start =
+                    prevEnd === null
+                        ? dayStart
+                        : new Date(prevEnd.getTime() + TURNOVER * 60000);
+                end = new Date(start.getTime() + durMin * 60000);
+            }
+
+            if (start.getTime() < dayStart.getTime()) {
+                start = new Date(dayStart);
+            }
+
+            if (i === 0) {
+                if (start.getTime() > dayStart.getTime()) {
+                    totalDelayMin += Math.floor(
+                        (start.getTime() - dayStart.getTime()) / 60000
+                    );
+                }
+            } else if (prevEnd !== null) {
+                const gapMin = Math.floor(
+                    (start.getTime() - prevEnd.getTime()) / 60000
+                );
+                if (gapMin > TURNOVER) {
+                    totalDelayMin += gapMin - TURNOVER;
+                }
+            }
+
+            prevEnd = end;
+        }
+
+        if (!Number.isFinite(totalDelayMin) || totalDelayMin < 0) {
+            return 0;
+        }
+        return Math.round(totalDelayMin);
+    }
+
     getRoomDetailsPanel(room: RoomData): {
         totalDelayHMM: string; // משך עיכובים מצטבר מתחילת יום (7:30)
         overrunText: string; // משך גלישה צפוי
@@ -4152,9 +4451,9 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
         idleTimeText: string; // זמן שעבר מסיום הניתוח הקודם
         freeFromDate?: Date | null; // תאריך/שעה שהחדר פנוי
     } {
-        // 1) עיכובים מצטבר = זמן הכנת חדר מעבר ל-20 דק' + גלישות
-        const turnoverSummary = this.getTurnoverSummary(room);
-        const totalDelayHMM = turnoverSummary && turnoverSummary.trim() !== "" ? turnoverSummary : "--:--";
+        const totalDelayMin = this.computeTotalDelayMinutesFromDayStart(room);
+        const totalDelayHMM =
+            totalDelayMin === 0 ? "--:--" : this.formatHM(totalDelayMin);
 
         // 2) חישוב חדר פנוי/גלישה בהתאם לדרישות
         const calc = this.calculateFreeTimeAndOverrun(room);
