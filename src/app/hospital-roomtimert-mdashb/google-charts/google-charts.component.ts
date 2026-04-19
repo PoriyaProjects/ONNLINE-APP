@@ -4114,6 +4114,29 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
             if (ambulatoryOnlyRoom) return true;
             return !this.surgeryIsAmbulatoryForDisplay(s, room);
         });
+
+        const plannedForOverrunChain = room.surgeries
+            .filter((s) => {
+                const st = String(s.status ?? s.SurgeryStatus ?? "")
+                    .toLowerCase()
+                    .replace(/\s+/g, "");
+                return st === "planned";
+            })
+            .sort((a, b) => {
+                const aEnt = this.parseClockWithDate(
+                    this.getEntranceTime(a) || "",
+                    baseDate
+                );
+                const bEnt = this.parseClockWithDate(
+                    this.getEntranceTime(b) || "",
+                    baseDate
+                );
+                const am = aEnt?.getTime() ?? a.sortKey ?? 0;
+                const bm = bEnt?.getTime() ?? b.sortKey ?? 0;
+                if (am !== bm) return am - bm;
+                return (a.sortKey ?? 0) - (b.sortKey ?? 0);
+            });
+
         let plannedTotalMin = 0;
         for (const s of plannedSurgeries) {
             const expectedMin = this.getExpectedDuration(s);
@@ -4121,11 +4144,12 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
         }
 
         // 2. חישוב בפועל: סכום של (משך בפועל + SETUP בפועל) לכל ניתוח שבוצע/בתהליך
-        const completedAndInProgress = room.surgeries.filter(
-            (s) =>
-                s.SurgeryStatus === "Completed" ||
-                s.SurgeryStatus === "InProgress"
-        );
+        const completedAndInProgress = room.surgeries.filter((s) => {
+            const st = String(s.status ?? s.SurgeryStatus ?? "")
+                .toLowerCase()
+                .replace(/\s+/g, "");
+            return st === "completed" || st === "inprogress";
+        });
 
         // מיון לפי זמן כניסה
         const sorted = [...completedAndInProgress].sort((a, b) => {
@@ -4148,7 +4172,10 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
         for (const s of sorted) {
             const entStr = this.getEntranceTime(s);
             const exitStr = this.getExitTime(s);
-            const status = s.SurgeryStatus;
+            const statusNorm = String(s.status ?? s.SurgeryStatus ?? "")
+                .toLowerCase()
+                .replace(/\s+/g, "");
+            const isCompleted = statusNorm === "completed";
 
             if (!entStr || this.isZeroTime(entStr)) continue;
 
@@ -4164,7 +4191,7 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
             let actualSetupMin = 0;
             let surgeryEnd: Date;
 
-            if (exitStr && !this.isZeroTime(exitStr) && status === "Completed") {
+            if (exitStr && !this.isZeroTime(exitStr) && isCompleted) {
                 // ניתוח שהסתיים - יש זמן יציאה
                 const exit = this.parseClockWithDate(exitStr, baseDate);
                 if (exit) {
@@ -4221,6 +4248,32 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
             cursor = new Date(surgeryEnd.getTime() + SETUP_TIME * 60000);
         }
 
+        const inProg = room.surgeries.find((s) => {
+            const st = String(s.status ?? s.SurgeryStatus ?? "")
+                .toLowerCase()
+                .replace(/\s+/g, "");
+            return st === "inprogress";
+        });
+
+        const inProgIsLastInChain =
+            !!inProg &&
+            sorted.length > 0 &&
+            this.isSameSurgeryInRoom(inProg, sorted[sorted.length - 1]);
+
+        if (inProgIsLastInChain) {
+            const entStr = this.getEntranceTime(inProg!);
+            if (entStr && !this.isZeroTime(entStr)) {
+                const entrance = this.parseClockWithDate(entStr, baseDate);
+                if (entrance) {
+                    const expectedMin = this.getExpectedDuration(inProg!);
+                    const end = new Date(
+                        entrance.getTime() + expectedMin * 60000
+                    );
+                    cursor = new Date(end.getTime() + SETUP_TIME * 60000);
+                }
+            }
+        }
+
         // 3. חישוב זמן פנוי/גלישה סופי
         let freeFromText = "--:--";
         let overrunText = "--:--";
@@ -4229,64 +4282,50 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
             room
         );
 
-        // חישוב גלישה: זמן סיום צפוי של כל הניתוחים (בוצעו + בתהליך + מתוכננים) - 15:00
-        // 1. חישוב זמן סיום צפוי של כל הניתוחים
-        let predictedEndTime: Date | null = null;
+        let currentTime: Date = cursor ?? dayStart;
 
-        // אם יש ניתוחים שבוצעו/בתהליך, מתחילים מה-cursor
-        // אחרת מתחילים מ-dayStart
-        let currentTime: Date = cursor && cursor.getTime() > dayStart.getTime() 
-            ? cursor 
-            : dayStart;
+        let lastPredictedSurgeryEnd: Date | null = null;
 
-        // הוספת כל הניתוחים המתוכננים
-        for (const s of plannedSurgeries) {
+        for (const s of plannedForOverrunChain) {
             const expectedMin = this.getExpectedDuration(s);
-            const entStr = this.getEntranceTime(s);
-            let startTime: Date;
-
-            if (entStr && !this.isZeroTime(entStr)) {
-                const entrance = this.parseClockWithDate(entStr, baseDate);
-                if (entrance) {
-                    startTime = entrance.getTime() > currentTime.getTime()
-                        ? entrance
-                        : currentTime;
-                } else {
-                    startTime = currentTime;
-                }
-            } else {
-                startTime = currentTime;
-            }
-
-            // סיום הניתוח המתוכנן
-            const surgeryEnd = new Date(startTime.getTime() + expectedMin * 60000);
-            // זמן פנוי אחרי הניתוח (לניתוח הבא)
+            const startTime = currentTime;
+            const surgeryEnd = new Date(
+                startTime.getTime() + expectedMin * 60000
+            );
+            lastPredictedSurgeryEnd = surgeryEnd;
             currentTime = new Date(surgeryEnd.getTime() + SETUP_TIME * 60000);
         }
 
-        // ה-cursor כבר מכיל את זמן הסיום של הניתוח האחרון שבוצע/בתהליך + SETUP
-        // אז אם יש ניתוחים מתוכננים, הם כבר נוספו בלולאה למעלה
-        // אם אין ניתוחים מתוכננים, ה-cursor הוא זמן הסיום הצפוי
-        predictedEndTime = currentTime;
+        let predictedEndTime: Date | null = lastPredictedSurgeryEnd;
 
-        // 2. חישוב גלישה: רק אם זמן סיום צפוי של כל הניתוחים > 15:00
-        if (predictedEndTime && predictedEndTime.getTime() > dayEnd.getTime()) {
-            // גלישה בסיסית = זמן סיום צפוי - 15:00
-            let baseOverrunMin = Math.floor(
+        if (!predictedEndTime && inProg) {
+            const entStr = this.getEntranceTime(inProg);
+            if (entStr && !this.isZeroTime(entStr)) {
+                const entrance = this.parseClockWithDate(entStr, baseDate);
+                if (entrance) {
+                    const expectedMin = this.getExpectedDuration(inProg);
+                    predictedEndTime = new Date(
+                        entrance.getTime() + expectedMin * 60000
+                    );
+                }
+            }
+        }
+
+        if (!predictedEndTime && sorted.length > 0 && cursor) {
+            predictedEndTime = new Date(
+                cursor.getTime() - SETUP_TIME * 60000
+            );
+        }
+
+        if (
+            predictedEndTime &&
+            predictedEndTime.getTime() > dayEnd.getTime()
+        ) {
+            const overrunMin = Math.floor(
                 (predictedEndTime.getTime() - dayEnd.getTime()) / 60000
             );
-
-            // הוספת עיכובים מצטברים (מגדילים גלישה)
-            baseOverrunMin += totalDelaysMin;
-
-            // הפחתת חסכונות מצטברים (מקטינים גלישה)
-            const finalOverrunMin = Math.max(0, baseOverrunMin - totalSavingsMin);
-
-            if (finalOverrunMin > 0) {
-                overrunText = this._formatHMM_fromMinutes(finalOverrunMin);
-            }
+            overrunText = this.formatHM(overrunMin);
         } else {
-            // אם זמן הסיום הצפוי לא עובר את 15:00, אין גלישה
             overrunText = "--:--";
         }
 
