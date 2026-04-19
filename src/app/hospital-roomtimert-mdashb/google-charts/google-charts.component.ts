@@ -4454,8 +4454,11 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
         if (!dayStart) return 0;
 
         const timeline = this.buildTimeline(room);
+        const data = timeline.filter(
+            (t) => t.start.getTime() <= now.getTime()
+        );
 
-        if (!timeline.length) {
+        if (!data.length) {
             return Math.max(
                 0,
                 Math.floor((now.getTime() - dayStart.getTime()) / 60000)
@@ -4464,16 +4467,16 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
 
         let total = 0;
 
-        const first = timeline[0];
+        const first = data[0];
         if (first.start.getTime() > dayStart.getTime()) {
             total += Math.floor(
                 (first.start.getTime() - dayStart.getTime()) / 60000
             );
         }
 
-        for (let i = 1; i < timeline.length; i++) {
-            const prev = timeline[i - 1];
-            const curr = timeline[i];
+        for (let i = 1; i < data.length; i++) {
+            const prev = data[i - 1];
+            const curr = data[i];
 
             const gap = Math.floor(
                 (curr.start.getTime() - prev.end.getTime()) / 60000
@@ -4484,19 +4487,12 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
             }
         }
 
-        let last: { start: Date; end: Date } | undefined;
-        for (let i = timeline.length - 1; i >= 0; i--) {
-            if (timeline[i].end.getTime() <= now.getTime()) {
-                last = timeline[i];
-                break;
-            }
-        }
+        const last = data[data.length - 1];
 
-        if (last && now.getTime() > last.end.getTime()) {
-            const idleNow = Math.floor(
+        if (now.getTime() > last.end.getTime()) {
+            total += Math.floor(
                 (now.getTime() - last.end.getTime()) / 60000
             );
-            total += idleNow;
         }
 
         return Math.max(0, total);
@@ -5319,6 +5315,10 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
         return null;
     }
 
+    private getRoomOfSurgery(surgery: Surgery): RoomData | null {
+        return this.findRoomForSurgery(surgery);
+    }
+
     /** מתוכננים בלבד, בסדר רשימת החדר */
     private orderedPlannedSurgeries(room: RoomData): Surgery[] {
         return (room.surgeries ?? []).filter((s) => {
@@ -5352,7 +5352,7 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
 
     private readonly PLANNED_PREP_MS = 20 * 60 * 1000;
 
-    /** סדר אחיד: הושלמו (לפי יציאה) → בתהליך → מתוכננים */
+    /** סדר אחיד: הושלמו (לפי כניסה → יציאה) → בתהליך → מתוכננים (לפי כניסה) */
     private buildRoomTimeline(room: RoomData): Surgery[] {
         const roomDate = room.date || this.selectedDate;
         const surgeries = (room.surgeries || []).filter((s) => {
@@ -5368,6 +5368,14 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
                 return st === "completed";
             })
             .sort((a, b) => {
+                const aEnt = this.parseClockWithDate(
+                    this.getEntranceTime(a) || "",
+                    roomDate
+                );
+                const bEnt = this.parseClockWithDate(
+                    this.getEntranceTime(b) || "",
+                    roomDate
+                );
                 const aExit = this.parseClockWithDate(
                     this.getExitTime(a) || "",
                     roomDate
@@ -5376,20 +5384,50 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
                     this.getExitTime(b) || "",
                     roomDate
                 );
-                return (aExit?.getTime() || 0) - (bExit?.getTime() || 0);
+                const am = aEnt?.getTime() ?? aExit?.getTime() ?? 0;
+                const bm = bEnt?.getTime() ?? bExit?.getTime() ?? 0;
+                if (am !== bm) return am - bm;
+                return (aExit?.getTime() ?? 0) - (bExit?.getTime() ?? 0);
             });
 
-        const inProgress = surgeries.filter((s) => {
-            const st = String(s.status ?? s.SurgeryStatus ?? "").toLowerCase();
-            return st.includes("progress");
-        });
+        const inProgress = surgeries
+            .filter((s) => {
+                const st = String(s.status ?? s.SurgeryStatus ?? "").toLowerCase();
+                return st.includes("progress");
+            })
+            .sort((a, b) => {
+                const aEnt = this.parseClockWithDate(
+                    this.getEntranceTime(a) || "",
+                    roomDate
+                );
+                const bEnt = this.parseClockWithDate(
+                    this.getEntranceTime(b) || "",
+                    roomDate
+                );
+                return (aEnt?.getTime() ?? 0) - (bEnt?.getTime() ?? 0);
+            });
 
-        const planned = surgeries.filter((s) => {
-            const st = String(s.status ?? s.SurgeryStatus ?? "")
-                .toLowerCase()
-                .replace(/\s+/g, "");
-            return st === "planned";
-        });
+        const planned = surgeries
+            .filter((s) => {
+                const st = String(s.status ?? s.SurgeryStatus ?? "")
+                    .toLowerCase()
+                    .replace(/\s+/g, "");
+                return st === "planned";
+            })
+            .sort((a, b) => {
+                const aEnt = this.parseClockWithDate(
+                    this.getEntranceTime(a) || "",
+                    roomDate
+                );
+                const bEnt = this.parseClockWithDate(
+                    this.getEntranceTime(b) || "",
+                    roomDate
+                );
+                const am = aEnt?.getTime() ?? a.sortKey ?? 0;
+                const bm = bEnt?.getTime() ?? b.sortKey ?? 0;
+                if (am !== bm) return am - bm;
+                return (a.sortKey ?? 0) - (b.sortKey ?? 0);
+            });
 
         return [...completed, ...inProgress, ...planned];
     }
@@ -5403,7 +5441,7 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
         end: Date | null;
         durationLabel: string;
     } | null {
-        const room = this.findRoomForSurgery(surgery);
+        const room = this.getRoomOfSurgery(surgery);
         if (!room) return null;
 
         const list = this.buildRoomTimeline(room);
@@ -5412,8 +5450,6 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
 
         const baseDate =
             surgery.SurgeryDate || room.date || this.selectedDate;
-        const dayStart = this.parseClockWithDate("07:30", baseDate);
-        if (!dayStart) return null;
 
         const prev = idx > 0 ? list[idx - 1] : null;
 
@@ -5421,15 +5457,17 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
 
         if (prev) {
             const status = String(
-                prev.status ?? prev.SurgeryStatus ?? ""
+                prev.SurgeryStatus || prev.status || ""
             ).toLowerCase();
 
             const entStr = this.getEntranceTime(prev);
             const exitStr = this.getExitTime(prev);
+
             const ent =
                 entStr && !this.isZeroTime(entStr)
                     ? this.parseClockWithDate(entStr, baseDate)
                     : null;
+
             const exit =
                 exitStr && !this.isZeroTime(exitStr)
                     ? this.parseClockWithDate(exitStr, baseDate)
@@ -5444,20 +5482,19 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
                 }
             } else if (status.includes("progress") && ent) {
                 const dur = this.getExpectedDuration(prev);
-                if (dur > 0) {
-                    const estimatedEnd = new Date(
-                        ent.getTime() + dur * 60000
-                    );
-                    const now = new Date();
-                    prevEnd = now > estimatedEnd ? now : estimatedEnd;
-                }
+                const estimatedEnd = new Date(ent.getTime() + dur * 60000);
+                const now = new Date();
+                prevEnd = now > estimatedEnd ? now : estimatedEnd;
             } else {
                 const prevRow = this.getPlannedScheduleRow(prev);
-                prevEnd = prevRow?.end ?? null;
+                prevEnd = prevRow?.end || null;
             }
         }
 
         let start: Date;
+        const dayStart = this.parseClockWithDate("07:30", baseDate);
+        if (!dayStart) return null;
+
         if (!prevEnd) {
             start = dayStart;
         } else {
