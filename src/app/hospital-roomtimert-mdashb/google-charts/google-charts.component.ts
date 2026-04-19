@@ -4337,111 +4337,83 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
     }
 
     /**
-     * עיכוב מצטבר מ־07:30: (1) פער עד ניתוח ראשון במלואו, (2) בין ניתוחים — רק מה שמעל 20 דק׳ הכנה.
-     * ללא ניתוחים — כל החלון 07:30–15:00. זמני RTM תקינים; אחרת משוער כמו בציר הזמן.
+     * עיכוב מצטבר מ־07:30: פער עד ניתוח ראשון בפועל, פערים בין ניתוחים מעל 20 דק׳,
+     * או כל הזמן מ־07:30 עד עכשיו אם אין כניסה תקפה לאף ניתוח.
      */
     private computeTotalDelayMinutesFromDayStart(room: RoomData): number {
+        const SETUP = 20;
+
         const baseDate = room.date || this.selectedDate;
-        const dayStart = this.workingStart(baseDate);
-        const dayEnd = this.workingEnd(baseDate);
+        const dayStart = this.parseClockWithDate("07:30", baseDate);
         const now = new Date();
-        const nowClamped = now.getTime() < dayEnd.getTime() ? now : dayEnd;
-        const TURNOVER = 20;
-        const list = this.sortSurgeriesForTimeline(room);
 
-        if (!list.length) {
-            return Math.max(
-                0,
-                Math.floor((dayEnd.getTime() - dayStart.getTime()) / 60000)
-            );
-        }
+        if (!dayStart) return 0;
 
-        let totalDelayMin = 0;
-        let prevEnd: Date | null = null;
+        const surgeries = room.surgeries || [];
 
-        for (let i = 0; i < list.length; i++) {
-            const s = list[i];
-            const startStr = this.getEntranceTime(s);
-            const exitStr = this.getExitTime(s);
-            const hasEnt = !!(startStr && !this.isZeroTime(startStr));
-            const hasExt = !!(exitStr && !this.isZeroTime(exitStr));
-            let durMin = Math.max(0, this.getExpectedDuration(s) || 0);
-            if (durMin === 0) {
-                durMin = 60;
-            }
+        type Interval = { start: Date; end: Date };
+        const valid: Interval[] = surgeries
+            .map((s): Interval | null => {
+                const entStr = this.getEntranceTime(s);
+                if (!entStr || this.isZeroTime(entStr)) return null;
 
-            const st = String(s.status ?? s.SurgeryStatus ?? "").toLowerCase();
-            const inProg = this.isInProgressStatus(st);
+                const ent = this.parseClockWithDate(entStr, baseDate);
+                if (!ent) return null;
 
-            let start: Date;
-            let end: Date;
+                let end: Date | null = null;
 
-            if (hasEnt && hasExt) {
-                const s1 = this.parseClockWithDate(String(startStr), baseDate);
-                const e1 = this.parseClockWithDate(String(exitStr), baseDate);
-                if (!s1 || !e1) {
-                    start =
-                        prevEnd === null
-                            ? dayStart
-                            : new Date(prevEnd.getTime() + TURNOVER * 60000);
-                    end = new Date(start.getTime() + durMin * 60000);
-                } else {
-                    start = s1;
-                    end = e1;
-                    if (end.getTime() < start.getTime()) {
+                const exitStr = this.getExitTime(s);
+                if (exitStr && !this.isZeroTime(exitStr)) {
+                    end = this.parseClockWithDate(exitStr, baseDate);
+                    if (end && end.getTime() < ent.getTime()) {
                         end = new Date(end.getTime() + 24 * 60 * 60 * 1000);
                     }
                 }
-            } else if (hasEnt) {
-                const s1 = this.parseClockWithDate(String(startStr), baseDate);
-                if (!s1) {
-                    start =
-                        prevEnd === null
-                            ? dayStart
-                            : new Date(prevEnd.getTime() + TURNOVER * 60000);
-                    end = new Date(start.getTime() + durMin * 60000);
-                } else {
-                    start = s1;
-                    if (inProg && !hasExt) {
-                        end = new Date(nowClamped);
-                    } else {
-                        end = new Date(start.getTime() + durMin * 60000);
+
+                if (!end) {
+                    const dur = this.getExpectedDuration(s);
+                    if (dur > 0) {
+                        end = new Date(ent.getTime() + dur * 60000);
                     }
                 }
-            } else {
-                start =
-                    prevEnd === null
-                        ? dayStart
-                        : new Date(prevEnd.getTime() + TURNOVER * 60000);
-                end = new Date(start.getTime() + durMin * 60000);
-            }
 
-            if (start.getTime() < dayStart.getTime()) {
-                start = new Date(dayStart);
-            }
+                if (!end) return null;
 
-            if (i === 0) {
-                if (start.getTime() > dayStart.getTime()) {
-                    totalDelayMin += Math.floor(
-                        (start.getTime() - dayStart.getTime()) / 60000
-                    );
-                }
-            } else if (prevEnd !== null) {
-                const gapMin = Math.floor(
-                    (start.getTime() - prevEnd.getTime()) / 60000
-                );
-                if (gapMin > TURNOVER) {
-                    totalDelayMin += gapMin - TURNOVER;
-                }
-            }
+                return { start: ent, end };
+            })
+            .filter((x): x is Interval => x !== null)
+            .sort((a, b) => a.start.getTime() - b.start.getTime());
 
-            prevEnd = end;
+        if (valid.length === 0) {
+            return Math.max(
+                0,
+                Math.floor((now.getTime() - dayStart.getTime()) / 60000)
+            );
         }
 
-        if (!Number.isFinite(totalDelayMin) || totalDelayMin < 0) {
-            return 0;
+        let totalDelay = 0;
+
+        const first = valid[0];
+        if (first.start.getTime() > dayStart.getTime()) {
+            totalDelay += Math.floor(
+                (first.start.getTime() - dayStart.getTime()) / 60000
+            );
         }
-        return Math.round(totalDelayMin);
+
+        for (let i = 1; i < valid.length; i++) {
+            const prev = valid[i - 1];
+            const curr = valid[i];
+
+            const gap = Math.floor(
+                (curr.start.getTime() - prev.end.getTime()) / 60000
+            );
+
+            if (gap > SETUP) {
+                totalDelay += gap - SETUP;
+            }
+        }
+
+        return Math.max(0, totalDelay);
     }
 
     getRoomDetailsPanel(room: RoomData): {

@@ -12,8 +12,8 @@
               <span class="loader-panel-title">טוען לוח חדרים</span>
               <span class="loader-panel-percent">{{ loadProgressPercent }}%</span>
             </div>
-            <div class="loader-progress-track" dir="ltr" role="progressbar"
-              [attr.aria-valuenow]="loadProgressPercent" aria-valuemin="0" aria-valuemax="100">
+            <div class="loader-progress-track" dir="ltr" role="progressbar" [attr.aria-valuenow]="loadProgressPercent"
+              aria-valuemin="0" aria-valuemax="100">
               <div class="loader-progress-fill" [style.width.%]="loadProgressPercent"></div>
             </div>
             <p class="loader-panel-hint">מסנכרן נתוני ניתוחים וחדרים…</p>
@@ -224,152 +224,144 @@
         </div>
 
         <div *ngIf="ambulatoryRooms.length > 0" class="rooms-section ambulatory-section">
-            <div class="section-header ambulatory-section-header">
-              <h2 class="header-title">חדר ניתוח אמבולטורי</h2>
-            </div>
+          <div class="section-header ambulatory-section-header">
+            <h2 class="header-title">חדר ניתוח אמבולטורי</h2>
+          </div>
 
-            <div class="row card" style="margin-top: 20px;">
+          <div class="row card" style="margin-top: 20px;">
 
-              <button class="floating-summary-btn" *ngIf="!showSummary" (click)="showSummary = true">
-                📊 הצג סיכום יום
-              </button>
+            <button class="floating-summary-btn" *ngIf="!showSummary" (click)="showSummary = true">
+              📊 הצג סיכום יום
+            </button>
 
-              <div class="bottom-summary-bar" *ngIf="showSummary && getSummaryForToday() as s" dir="rtl">
-                <button class="close-bar-btn" (click)="showSummary = false">✕</button>
+            <div class="bottom-summary-bar" *ngIf="showSummary && getSummaryForToday() as s" dir="rtl">
+              <button class="close-bar-btn" (click)="showSummary = false">✕</button>
 
-                <div class="bar-content">
-                  <div class="bar-header">
-                    <div class="header-main">🗓️ סיכום יומי</div>
-                    <div class="header-sub">{{ s.dateISO }}</div>
-                  </div>
-
-                  <div class="bar-grid">
-                    <div class="bar-item">
-                      <div class="bar-label">סה״כ ניתוחים</div>
-                      <div class="bar-value">{{ s.totals.surgeries }}</div>
-                      <div class="bar-sub-row">
-                        <span class="tag ok">✔ {{ s.totals.completed }}</span>
-                        <span class="tag run">⏳ {{ s.totals.inProgress }}</span>
-                        <span class="tag plan">📋 {{ s.totals.planned }}</span>
-                      </div>
-                    </div>
-
-                    <div class="bar-item">
-                      <div class="bar-label">פילוח לפי דחיפות (לחץ לפירוט)</div>
-                      <div class="urgency-row">
-                        <button *ngFor="let key of getUrgencyKeys(s.urgency)" class="bar-urge-btn"
-                          [class.active]="summaryDrilldownUrgency === key" [attr.title]="s.urgency.labels[key]"
-                          (click)="summaryDrilldownUrgency = summaryDrilldownUrgency === key ? null : key">
-
-                          <div class="btn-top">
-                            <span class="btn-icon">{{ s.urgency.icons[key] }}</span>
-                            <strong class="btn-count">{{ s.urgency.counts[key] }}</strong>
-                          </div>
-
-                          <span class="btn-text">{{ s.urgency.labels[key] }}</span>
-
-                          <div class="active-indicator" *ngIf="summaryDrilldownUrgency === key"></div>
-                        </button>
-                      </div>
-                    </div>
-
-                    <div class="bar-item">
-                      <div class="bar-label">סטטוס חדרים</div>
-                      <div class="bar-value-mid">{{ s.rooms.active }} / {{ s.rooms.total }}</div>
-                      <div class="bar-sub">פעילים כעת</div>
-                    </div>
-
-                    <div class="bar-item">
-                      <div class="bar-label">זמן פעילות</div>
-                      <div class="bar-value-mid">{{ s.time.totalHMM }}</div>
-                      <div class="bar-sub">ממוצע: {{ s.time.avgHMM }}</div>
-                    </div>
-
-                    <div class="bar-item highlight" *ngFor="let r of busiestRooms | slice:0:1">
-                      <div class="bar-label">החדר העמוס</div>
-                      <div class="bar-value-mid">{{ translateRoomId(r.room) }}</div>
-                      <div class="bar-sub">{{ r.totalHMM }} ({{ r.cases }} מקרים)</div>
-                    </div>
-
-                    <ng-container *ngIf="getRegularRoomsOverrunEarlySummary() as roomRisk">
-                      <div class="bar-item">
-                        <div class="bar-label">חדרים צפויים לגלוש</div>
-                        <div class="bar-value-mid">{{ roomRisk.overrun }}/{{ roomRisk.total }}</div>
-                        <div class="bar-sub">מתוך חדרי ניתוח כלליים</div>
-                      </div>
-                      <div class="bar-item">
-                        <div class="bar-label">חדרים צפויים לסיים מוקדם (זמן אבוד)</div>
-                        <div class="bar-value-mid">{{ roomRisk.early }}/{{ roomRisk.total }}</div>
-                        <div class="bar-sub">מתוך חדרי ניתוח כלליים</div>
-                      </div>
-                    </ng-container>
-                  </div>
+              <div class="bar-content">
+                <div class="bar-header">
+                  <div class="header-main">🗓️ סיכום יומי</div>
+                  <div class="header-sub">{{ s.dateISO }}</div>
                 </div>
 
-                <div class="bar-drilldown" *ngIf="summaryDrilldownUrgency as uKey">
-                  <div class="drill-header">
-                    פירוט: {{ s.urgency.labels[uKey] }}
-                    <button (click)="summaryDrilldownUrgency = null">✕</button>
+                <div class="bar-grid">
+                  <div class="bar-item">
+                    <div class="bar-label">סה״כ ניתוחים</div>
+                    <div class="bar-value">{{ s.totals.surgeries }}</div>
+                    <div class="bar-sub-row">
+                      <span class="tag ok">✔ {{ s.totals.completed }}</span>
+                      <span class="tag run">⏳ {{ s.totals.inProgress }}</span>
+                      <span class="tag plan">📋 {{ s.totals.planned }}</span>
+                    </div>
                   </div>
-                  <div class="drill-scroll">
-                    <div *ngFor="let it of s.urgency.lists[uKey]" class="drill-item">
-                      <b>{{ translateRoomId(it.room) }}</b> | {{ it.surgeryName || it.original?.SurgeryName ||
-                      it.original?.surgeryName || '—' }}
-                      <span *ngIf="it.department" class="muted">({{ it.department }})</span>
-                      | {{ it.timeEntrance || '—' }}
+
+                  <div class="bar-item">
+                    <div class="bar-label">פילוח לפי דחיפות (לחץ לפירוט)</div>
+                    <div class="urgency-row">
+                      <button *ngFor="let key of getUrgencyKeys(s.urgency)" class="bar-urge-btn"
+                        [class.active]="summaryDrilldownUrgency === key" [attr.title]="s.urgency.labels[key]"
+                        (click)="summaryDrilldownUrgency = summaryDrilldownUrgency === key ? null : key">
+
+                        <div class="btn-top">
+                          <span class="btn-icon">{{ s.urgency.icons[key] }}</span>
+                          <strong class="btn-count">{{ s.urgency.counts[key] }}</strong>
+                        </div>
+
+                        <span class="btn-text">{{ s.urgency.labels[key] }}</span>
+
+                        <div class="active-indicator" *ngIf="summaryDrilldownUrgency === key"></div>
+                      </button>
+                    </div>
+                  </div>
+
+                  <div class="bar-item">
+                    <div class="bar-label">סטטוס חדרים</div>
+                    <div class="bar-value-mid">{{ s.rooms.active }} / {{ s.rooms.total }}</div>
+                    <div class="bar-sub">פעילים כעת</div>
+                  </div>
+
+                  <div class="bar-item">
+                    <div class="bar-label">זמן פעילות</div>
+                    <div class="bar-value-mid">{{ s.time.totalHMM }}</div>
+                    <div class="bar-sub">ממוצע: {{ s.time.avgHMM }}</div>
+                  </div>
+
+                  <div class="bar-item highlight" *ngFor="let r of busiestRooms | slice:0:1">
+                    <div class="bar-label">החדר העמוס</div>
+                    <div class="bar-value-mid">{{ translateRoomId(r.room) }}</div>
+                    <div class="bar-sub">{{ r.totalHMM }} ({{ r.cases }} מקרים)</div>
+                  </div>
+
+                  <ng-container *ngIf="getRegularRoomsOverrunEarlySummary() as roomRisk">
+                    <div class="bar-item">
+                      <div class="bar-label">חדרים צפויים לגלוש</div>
+                      <div class="bar-value-mid">{{ roomRisk.overrun }}/{{ roomRisk.total }}</div>
+                      <div class="bar-sub">מתוך חדרי ניתוח כלליים</div>
+                    </div>
+                    <div class="bar-item">
+                      <div class="bar-label">חדרים צפויים לסיים מוקדם (זמן אבוד)</div>
+                      <div class="bar-value-mid">{{ roomRisk.early }}/{{ roomRisk.total }}</div>
+                      <div class="bar-sub">מתוך חדרי ניתוח כלליים</div>
+                    </div>
+                  </ng-container>
+                </div>
+              </div>
+
+              <div class="bar-drilldown" *ngIf="summaryDrilldownUrgency as uKey">
+                <div class="drill-header">
+                  פירוט: {{ s.urgency.labels[uKey] }}
+                  <button (click)="summaryDrilldownUrgency = null">✕</button>
+                </div>
+                <div class="drill-scroll">
+                  <div *ngFor="let it of s.urgency.lists[uKey]" class="drill-item">
+                    <b>{{ translateRoomId(it.room) }}</b> | {{ it.surgeryName || it.original?.SurgeryName ||
+                    it.original?.surgeryName || '—' }}
+                    <span *ngIf="it.department" class="muted">({{ it.department }})</span>
+                    | {{ it.timeEntrance || '—' }}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+
+
+          </div>
+
+          <div class="rooms-grid ambulatory-rooms">
+            <ng-container *ngFor="let room of ambulatoryRooms; trackBy: trackByRoomId">
+              <div class="room-wrapper" *ngIf="ambulatorySurgeries(room).length > 0">
+                <div class="room-widget card room-white" style="min-width: 260px; max-width: 360px;">
+                  <div class="room-header" style="text-align:center;">
+                    <div class="room-title">
+                      <span class="room-name">{{ translateRoomId(room.roomId) }}</span>
+                    </div>
+                  </div>
+
+                  <div class="room-body" style="max-height: 360px; overflow: auto;">
+                    <div class="ambulatory-list">
+                      <div *ngFor="let s of ambulatorySurgeries(room); trackBy: trackBySurgeryId"
+                        class="surgery-card ambulatory">
+                        <div class="surgery-top">
+                          <span class="times" *ngIf="settings.showTimes" [innerHTML]="formatSurgeryTimes(s)"></span>
+                          <span class="dept" *ngIf="s.department?.trim()">{{ s.department }}</span>
+                        </div>
+                        <span *ngIf="settings.showStatus" class="status-wrap" [ngClass]="(s.status || s.SurgeryStatus)">
+                          <span class="status-dot"></span>
+                          <span class="status-text">
+                            {{ statusHebrew[(s.status || s.SurgeryStatus)] }}
+                          </span>
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
+            </ng-container>
+          </div>
 
-
-
-            </div>
-
-            <div class="rooms-grid ambulatory-rooms">
-              <ng-container
-                *ngFor="let room of ambulatoryRooms; trackBy: trackByRoomId"
-              >
-                <div
-                  class="room-wrapper"
-                  *ngIf="ambulatorySurgeries(room).length > 0"
-                >
-                  <div class="room-widget card room-white" style="min-width: 260px; max-width: 360px;">
-                    <div class="room-header" style="text-align:center;">
-                      <div class="room-title">
-                        <span class="room-name">{{ translateRoomId(room.roomId) }}</span>
-                      </div>
-                    </div>
-
-                    <div class="room-body" style="max-height: 360px; overflow: auto;">
-                      <div class="ambulatory-list">
-                        <div
-                          *ngFor="let s of ambulatorySurgeries(room); trackBy: trackBySurgeryId"
-                          class="surgery-card ambulatory"
-                        >
-                          <div class="surgery-top">
-                            <span class="times" *ngIf="settings.showTimes" [innerHTML]="formatSurgeryTimes(s)"></span>
-                            <span class="dept" *ngIf="s.department?.trim()">{{ s.department }}</span>
-                          </div>
-                          <span *ngIf="settings.showStatus" class="status-wrap" [ngClass]="(s.status || s.SurgeryStatus)">
-                            <span class="status-dot"></span>
-                            <span class="status-text">
-                              {{ statusHebrew[(s.status || s.SurgeryStatus)] }}
-                            </span>
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </ng-container>
-            </div>
-
-            <div style="height:10px;"></div>
+          <div style="height:10px;"></div>
         </div>
 
       </div>
     </main>
   </div>
 </div>
-
