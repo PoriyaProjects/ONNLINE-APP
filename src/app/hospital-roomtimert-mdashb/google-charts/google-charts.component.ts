@@ -2256,6 +2256,38 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
             this.surgeryIsAmbulatoryForDisplay(s, room)
         );
       }
+
+      /** ניתוחים אמבולטוריים בפועל (לא מתוכננים) — מקביל ל־activeSurgeries */
+      ambulatoryActiveSurgeries(room: RoomData): Surgery[] {
+          return this.ambulatorySurgeries(room).filter((s) => {
+              const st = String(s.status ?? s.SurgeryStatus ?? "")
+                  .toLowerCase()
+                  .replace(/\s+/g, "");
+              if (st === "cancelled" || st === "canceled") return false;
+              return st !== "planned";
+          });
+      }
+
+      /** ניתוחים אמבולטוריים מתוכננים — מקביל ל־plannedSurgeries */
+      ambulatoryPlannedSurgeries(room: RoomData): Surgery[] {
+          return this.ambulatorySurgeries(room).filter((s) => {
+              const st = String(s.status ?? s.SurgeryStatus ?? "")
+                  .toLowerCase()
+                  .replace(/\s+/g, "");
+              return st === "planned";
+          });
+      }
+
+      /** פאנלים לתצוגת חדר אמבולטורי (בפועל / מתוכננים) — קריאה אחת לתבנית */
+      ambulatoryRoomPanels(room: RoomData): {
+          active: Surgery[];
+          planned: Surgery[];
+      } {
+          return {
+              active: this.ambulatoryActiveSurgeries(room),
+              planned: this.ambulatoryPlannedSurgeries(room),
+          };
+      }
       
       
    
@@ -3908,11 +3940,19 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
         let lastSurgeryEnd: Date | null = null;
 
         // 1. חישוב בסיסי: סכום של (ממוצע + 20) לכל ניתוח מתוכנן
-        const plannedSurgeries = room.surgeries.filter(
-            (s) =>
-                s.SurgeryStatus === "Planned" &&
-                !this.surgeryIsAmbulatoryForDisplay(s, room)
-        );
+        const ambulatoryOnlyRoom =
+            (room.surgeries?.length ?? 0) > 0 &&
+            room.surgeries!.every((s) =>
+                this.surgeryIsAmbulatoryForDisplay(s, room)
+            );
+        const plannedSurgeries = room.surgeries.filter((s) => {
+            const st = String(s.status ?? s.SurgeryStatus ?? "")
+                .toLowerCase()
+                .replace(/\s+/g, "");
+            if (st !== "planned") return false;
+            if (ambulatoryOnlyRoom) return true;
+            return !this.surgeryIsAmbulatoryForDisplay(s, room);
+        });
         let plannedTotalMin = 0;
         for (const s of plannedSurgeries) {
             const expectedMin = this.getExpectedDuration(s);
@@ -5504,6 +5544,17 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
             : "--:--";
         return `${entranceDisplay} → ${estimatedExitDisplay}<br>(משוער, ${durationDisplay})`;
     }
+
+    /** זמני ניתוח בשורה אחת (לטבלה), בלי תגי HTML */
+    formatSurgeryTimesOneLine(surgery: Surgery): string {
+        const raw = this.formatSurgeryTimes(surgery);
+        return raw
+            .replace(/<br\s*\/?>/gi, " · ")
+            .replace(/<[^>]+>/g, "")
+            .replace(/\s+/g, " ")
+            .trim();
+    }
+
     // private formatTimeForDisplay(time: string | null): string {
     //     if (!time || this.isZeroTime(time)) {
     //         return "טרם הוזן";

@@ -1,4 +1,4 @@
-﻿<div class="row">
+<div class="row">
   <div class="mdc-layout-grid__cell col-md-12">
     <main class="mdc-top-app-bar--fixed-adjust">
 
@@ -67,7 +67,10 @@
           getIdleBorderClass(room)
           ]">
 
-                <div class="room-header" (click)="toggleRoom(room.roomId)">
+                <div class="room-header" (click)="toggleRoom(room.roomId)" title="לחץ להרחבה או כיווץ"
+                  role="button" tabindex="0" [attr.aria-expanded]="isRoomExpanded(room.roomId)"
+                  (keydown.enter)="toggleRoom(room.roomId)"
+                  (keydown.space)="$event.preventDefault(); toggleRoom(room.roomId)">
                   <!-- Status dot -->
                   <!-- <div class="status-circle" *ngIf="settings.showStatusDot !== false" [ngClass]="getRoomStatusClassWithSettings(room)">
           </div> -->
@@ -329,27 +332,143 @@
           <div class="rooms-grid ambulatory-rooms">
             <ng-container *ngFor="let room of ambulatoryRooms; trackBy: trackByRoomId">
               <div class="room-wrapper" *ngIf="ambulatorySurgeries(room).length > 0">
-                <div class="room-widget card room-white" style="min-width: 260px; max-width: 360px;">
-                  <div class="room-header" style="text-align:center;">
-                    <div class="room-title">
-                      <span class="room-name">{{ translateRoomId(room.roomId) }}</span>
+                <ng-container *ngIf="getRoomStatusInfo(room) as ambStatusInfo">
+                  <div class="room-status-title ambulatory-room-status-title">
+                    <div class="status-display" [ngClass]="ambStatusInfo.cssClass">
+                      {{ ambStatusInfo.label }}
+                      <small *ngIf="isAllSurgeriesCompleted(room)" class="all-done-text">
+                        תמו הניתוחים להיום
+                      </small>
                     </div>
                   </div>
+                </ng-container>
 
-                  <div class="room-body" style="max-height: 360px; overflow: auto;">
-                    <div class="ambulatory-list">
-                      <div *ngFor="let s of ambulatorySurgeries(room); trackBy: trackBySurgeryId"
-                        class="surgery-card ambulatory">
-                        <div class="surgery-top">
-                          <span class="times" *ngIf="settings.showTimes" [innerHTML]="formatSurgeryTimes(s)"></span>
-                          <span class="dept" *ngIf="s.department?.trim()">{{ s.department }}</span>
+                <div class="room-widget card room-white ambulatory-room-card" [ngClass]="[
+                    (settings.colorize && !isRoomClosedForColoring(room)) ? ('border-' + getRoomStatusClassWithSettings(room)) : '',
+                    isRoomPastDay(room) ? 'past-day' : '',
+                    isIdleOver40(room) && !isAllSurgeriesCompleted(room) ? 'idle-alert' : '',
+                    isAllSurgeriesCompleted(room) ? 'all-done' : '',
+                    isTurnoverLong(room) && !hasInProgress(room) ? 'turnover-warning' : '',
+                    getIdleBorderClass(room)
+                  ]">
+
+                  <div class="room-body ambulatory-room-body ambulatory-room-body--no-header" *ngIf="ambulatoryRoomPanels(room) as amb">
+                    <div class="ambulatory-room-split"
+                      [class.single-panel]="settings.showPlannedSection === false">
+                      <div class="ambulatory-split-panel ambulatory-actual">
+                        <h5 class="section-title ambulatory-split-title">בפועל</h5>
+                        <div class="ambulatory-actual-inner">
+                          <div class="ambulatory-metrics-embedded">
+                            <ng-container *ngIf="nextPlannedSurgery(room) as nps">
+                              <div *ngIf="nps.NextPatientReadyGreen" class="next-ready-chip ready">
+                                🟢 המטופל הבא מוכן לניתוח
+                              </div>
+                              <div *ngIf="!nps.NextPatientReadyGreen && nps.MissingSignaturesText"
+                                class="next-ready-chip warn" [attr.title]="nps.MissingSignaturesText">
+                                ⚠️ חסרה חתימה: {{ nps.MissingSignaturesText }}
+                              </div>
+                            </ng-container>
+
+                            <div class="ambulatory-embedded-title">
+                              <span class="room-name">{{ translateRoomId(room.roomId) }}</span>
+                              <ng-container *ngIf="getRoomDepartment(room) as ambDept">
+                                <br />
+                                <span class="room-dept-badge">{{ ambDept }}</span>
+                              </ng-container>
+                            </div>
+
+                            <div class="room-duration-info" *ngIf="getRoomDurationInfo(room) as ambDurationInfo">
+                              <div class="duration-display">
+                                <span class="duration-icon">{{ ambDurationInfo.icon }}</span>
+                                <span class="duration-text">{{ ambDurationInfo.text }}</span>
+                              </div>
+                            </div>
+
+                            <div class="room-progress-info" *ngIf="getRoomProgressInfo(room) as ambProgressInfo">
+                              <div class="progress-display">
+                                <span class="progress-counter">{{ ambProgressInfo.completed }}/{{ ambProgressInfo.total }}</span>
+                                <span class="progress-label">בוצעו</span>
+                              </div>
+                            </div>
+
+                            <div class="room-extra-panel ambulatory-room-extra-panel ambulatory-room-extra-panel--embedded">
+                              <ng-container *ngIf="getRoomDetailsPanel(room) as ambD">
+                                <div class="extra-row" *ngIf="ambD.totalDelayHMM && ambD.totalDelayHMM !== '--:--'">
+                                  <span class="k rtl-start">
+                                    עיכוב מצטבר מתחילת יום
+                                    <span class="tip" title="מ07:30"></span>
+                                  </span>
+                                  <span class="v">{{ ambD.totalDelayHMM }}</span>
+                                </div>
+                                <div class="extra-row" *ngIf="ambD.overrunText !== '--:--'">
+                                  <span class="k">משך גלישה צפוי:</span>
+                                  <span class="v">{{ ambD.overrunText }}</span>
+                                </div>
+                                <div class="extra-row" *ngIf="ambD.freeFromText && ambD.freeFromText !== '--:--'">
+                                  <span class="k">זמן אבוד לחדר:</span>
+                                  <span class="v">{{ ambD.freeFromText }}</span>
+                                </div>
+                                <div class="extra-row" *ngIf="ambD.idleTimeText && ambD.idleTimeText !== '--:--'">
+                                  <span class="k">זמן מסיום ניתוח קודם:</span>
+                                  <span class="v">{{ ambD.idleTimeText }}</span>
+                                </div>
+                              </ng-container>
+                            </div>
+                          </div>
+
+                          <div *ngFor="let s of amb.active; trackBy: trackBySurgeryId"
+                            class="surgery-card ambulatory ambulatory-actual-card">
+                            <div class="surgery-top">
+                              <span class="times" *ngIf="settings.showTimes" [innerHTML]="formatSurgeryTimes(s)"></span>
+                              <span class="dept" *ngIf="s.department?.trim()">{{ s.department }}</span>
+                            </div>
+                            <span *ngIf="settings.showStatus" class="status-wrap" [ngClass]="(s.status || s.SurgeryStatus)">
+                              <span class="status-dot"></span>
+                              <span class="status-text">
+                                {{ statusHebrew[(s.status || s.SurgeryStatus)] }}
+                              </span>
+                            </span>
+                          </div>
+                          <p *ngIf="amb.active.length === 0" class="ambulatory-panel-empty">
+                            אין ניתוחים בפועל
+                          </p>
                         </div>
-                        <span *ngIf="settings.showStatus" class="status-wrap" [ngClass]="(s.status || s.SurgeryStatus)">
-                          <span class="status-dot"></span>
-                          <span class="status-text">
-                            {{ statusHebrew[(s.status || s.SurgeryStatus)] }}
-                          </span>
-                        </span>
+                      </div>
+
+                      <div class="ambulatory-split-panel ambulatory-planned ambulatory-planned--as-table"
+                        *ngIf="settings.showPlannedSection !== false">
+                        <h5 class="section-title ambulatory-split-title">ניתוחים מתוכננים</h5>
+                        <div class="ambulatory-table-wrap" *ngIf="amb.planned.length > 0">
+                          <table class="ambulatory-planned-table" dir="rtl">
+                            <thead>
+                              <tr>
+                                <th scope="col" class="ambulatory-col-idx">#</th>
+                                <th scope="col" class="ambulatory-col-time">זמן</th>
+                                <th scope="col" class="ambulatory-col-dept">מחלקה</th>
+                                <th scope="col" class="ambulatory-col-st">סטטוס</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              <tr *ngFor="let s of amb.planned; trackBy: trackBySurgeryId; let i = index">
+                                <td class="ambulatory-col-idx">{{ i + 1 }}</td>
+                                <td class="ambulatory-col-time">
+                                  <span class="ambulatory-time-cell" *ngIf="settings.showTimes">{{ formatSurgeryTimesOneLine(s) }}</span>
+                                </td>
+                                <td class="ambulatory-col-dept">{{ s.department?.trim() || '—' }}</td>
+                                <td class="ambulatory-col-st">
+                                  <span *ngIf="settings.showStatus" class="status-wrap status-wrap--compact"
+                                    [ngClass]="(s.status || s.SurgeryStatus)">
+                                    <span class="status-dot"></span>
+                                    <span class="status-text">{{ statusHebrew[(s.status || s.SurgeryStatus)] }}</span>
+                                  </span>
+                                </td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        </div>
+                        <p *ngIf="amb.planned.length === 0" class="ambulatory-panel-empty">
+                          אין ניתוחים מתוכננים
+                        </p>
                       </div>
                     </div>
                   </div>
