@@ -169,7 +169,7 @@ export class EmployeesAddUpdateComponent implements OnInit {
     return this.educationSpecialitiesLists[rowIndex] ?? [];
   }
 
-  loadSpecialitiesForRow(rowIndex: number, educationID: any, legacySpecialityLabel?: string | null): void {
+  loadSpecialitiesForRow(rowIndex: number, educationID: any): void {
     if (educationID == null || educationID === '') {
       if (this.educationSpecialitiesLists[rowIndex]) {
         this.educationSpecialitiesLists[rowIndex] = [];
@@ -177,38 +177,19 @@ export class EmployeesAddUpdateComponent implements OnInit {
       return;
     }
     this.http.post(this.Api + "GetEmployeeSpecialitiesList", {
-      _educationID: String(educationID)
+      _educationID: educationID
     }).subscribe((Response) => {
-      const raw = Response["d"] ?? [];
-      const list = raw.map((s: any) => ({
-        SpecialtyID: s.SpecialtyID ?? s.specialtyID,
-        Speciality: s.Speciality ?? s.speciality,
-      }));
+      const list = Response["d"] ?? [];
       while (this.educationSpecialitiesLists.length <= rowIndex) {
         this.educationSpecialitiesLists.push([]);
       }
       this.educationSpecialitiesLists[rowIndex] = list;
-      if (legacySpecialityLabel && list.length) {
-        const grp = this.educations.at(rowIndex) as FormGroup;
-        const match = list.find((s: any) => s.Speciality === legacySpecialityLabel);
-        if (match) {
-          grp.get('SpecialtyID')?.setValue(String(match.SpecialtyID), { emitEvent: false });
-          grp.get('Speciality')?.setValue(match.Speciality, { emitEvent: false });
-        }
-      }
     });
   }
 
-  onEducationIdChange(rowIndex: number, educationID: any): void {
+  onEducationSubjectChange(rowIndex: number, educationID: any): void {
     const row = this.educations.at(rowIndex) as FormGroup;
-    row.get('SpecialtyID')?.setValue(null);
     row.get('Speciality')?.setValue(null);
-    const edu = (this.EducationsList || []).find(
-      (x: any) => String(x.EducationID ?? x.educationID) === String(educationID)
-    );
-    if (edu) {
-      row.get('EducationSubject')?.setValue(edu.EducationSubject ?? edu.educationSubject, { emitEvent: false });
-    }
     while (this.educationSpecialitiesLists.length <= rowIndex) {
       this.educationSpecialitiesLists.push([]);
     }
@@ -216,52 +197,9 @@ export class EmployeesAddUpdateComponent implements OnInit {
     this.loadSpecialitiesForRow(rowIndex, educationID);
   }
 
-  onSpecialtyIdChange(rowIndex: number, specialtyID: any): void {
-    const row = this.educations.at(rowIndex) as FormGroup;
-    const list = this.getSpecialitiesForRow(rowIndex);
-    const sp = list.find((x: any) => String(x.SpecialtyID ?? x.specialtyID) === String(specialtyID));
-    if (sp) {
-      row.get('Speciality')?.setValue(sp.Speciality ?? sp.speciality, { emitEvent: false });
-    }
-  }
-
-  /** mat-select compareWith for ID-bound options (string/number safe). */
-  compareByIdString = (a: any, b: any): boolean =>
-    a == null && b == null ? true : String(a) === String(b);
-
   getEducationsList() {
     this.http.post(this.Api + "GetEmployeeEducationsList", {}).subscribe((Response) => {
-      const raw = Response["d"] || [];
-      this.EducationsList = raw.map((x: any) => ({
-        EducationID: x.EducationID ?? x.educationID,
-        EducationSubject: x.EducationSubject ?? x.educationSubject,
-      }));
-      this.patchEducationRowsFromCatalog();
-    });
-  }
-
-  /** When catalog loads after employee rows exist, map legacy text-only rows to EducationID / SpecialtyID. */
-  private patchEducationRowsFromCatalog(): void {
-    if (!this.EducationsList?.length || !this.educations?.length) {
-      return;
-    }
-    this.educations.controls.forEach((ctrl, idx) => {
-      const g = ctrl as FormGroup;
-      const id = g.get('EducationID')?.value;
-      if (id != null && id !== '') {
-        return;
-      }
-      const subj = g.get('EducationSubject')?.value;
-      if (!subj) {
-        return;
-      }
-      const edu = this.EducationsList.find(
-        (x: any) => (x.EducationSubject ?? x.educationSubject) === subj
-      );
-      if (edu) {
-        g.get('EducationID')?.setValue(String(edu.EducationID), { emitEvent: false });
-        this.loadSpecialitiesForRow(idx, edu.EducationID, g.get('Speciality')?.value || null);
-      }
+      this.EducationsList = Response["d"];
     });
   }
 
@@ -410,8 +348,7 @@ export class EmployeesAddUpdateComponent implements OnInit {
         this.dataSourceEducation = new MatTableDataSource();
         this.createTrainingGroup(this.employee.EmployeeTrainings)
         this.educationSpecialitiesLists = [];
-        this.createEducationGroup(this.employee.EmployeeEducations);
-        this.patchEducationRowsFromCatalog();
+        this.createEducationGroup(this.employee.EmployeeEducations)
       });
   }
 
@@ -442,8 +379,6 @@ export class EmployeesAddUpdateComponent implements OnInit {
   createEducationGroup(arr) {
     let temp = this.formBuilder.group({
       Row_ID: [null, null],
-      EducationID: [null, null],
-      SpecialtyID: [null, null],
       EducationSubject: [null, null],
       Speciality: [null, null],
       EducationDate: [null, null],
@@ -453,8 +388,6 @@ export class EmployeesAddUpdateComponent implements OnInit {
       arr.forEach(element => {
         temp = this.formBuilder.group({
           Row_ID: [element.Row_ID, null],
-          EducationID: [element.EducationID != null && element.EducationID !== '' ? String(element.EducationID) : null, null],
-          SpecialtyID: [element.SpecialtyID != null && element.SpecialtyID !== '' ? String(element.SpecialtyID) : null, null],
           EducationSubject: [element.EducationSubject, null],
           Speciality: [element.Speciality, null],
           EducationDate: [element.EducationDate, null],
@@ -463,9 +396,8 @@ export class EmployeesAddUpdateComponent implements OnInit {
         this.educations.push(temp);
         const rowIndex = this.educations.length - 1;
         this.educationSpecialitiesLists.push([]);
-        const eduId = element.EducationID != null && element.EducationID !== '' ? element.EducationID : null;
-        if (eduId != null) {
-          this.loadSpecialitiesForRow(rowIndex, eduId, element.SpecialtyID ? null : element.Speciality);
+        if (element.EducationSubject) {
+          this.loadSpecialitiesForRow(rowIndex, element.EducationSubject);
         }
       });
     } else {

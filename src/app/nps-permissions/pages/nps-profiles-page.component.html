@@ -7,6 +7,10 @@
     <th mat-header-cell *matHeaderCellDef>#</th>
     <td mat-cell *matCellDef="let r">{{ r.ProfileID }}</td>
   </ng-container>
+  <ng-container matColumnDef="ProfileCode">
+    <th mat-header-cell *matHeaderCellDef>קוד</th>
+    <td mat-cell *matCellDef="let r">{{ r.ProfileCode }}</td>
+  </ng-container>
   <ng-container matColumnDef="ProfileName">
     <th mat-header-cell *matHeaderCellDef>שם</th>
     <td mat-cell *matCellDef="let r">{{ r.ProfileName }}</td>
@@ -14,18 +18,6 @@
   <ng-container matColumnDef="Description">
     <th mat-header-cell *matHeaderCellDef>תיאור</th>
     <td mat-cell *matCellDef="let r">{{ r.Description }}</td>
-  </ng-container>
-  <ng-container matColumnDef="DepartnentCode">
-    <th mat-header-cell *matHeaderCellDef>מחלקה</th>
-    <td mat-cell *matCellDef="let r">{{ deptLabel(r.DepartnentCode) }}</td>
-  </ng-container>
-  <ng-container matColumnDef="EducationID">
-    <th mat-header-cell *matHeaderCellDef>השכלה</th>
-    <td mat-cell *matCellDef="let r">{{ educationLabel(r.EducationID) }}</td>
-  </ng-container>
-  <ng-container matColumnDef="SpecialityID">
-    <th mat-header-cell *matHeaderCellDef>התמחות</th>
-    <td mat-cell *matCellDef="let r">{{ specialtyLabel(r.SpecialityID) }}</td>
   </ng-container>
   <ng-container matColumnDef="Actions">
     <th mat-header-cell *matHeaderCellDef>פעולות</th>

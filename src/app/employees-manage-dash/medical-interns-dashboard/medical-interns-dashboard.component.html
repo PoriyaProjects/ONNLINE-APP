@@ -289,8 +289,7 @@
 
     <div class="table-wrapper">
       <!-- Interns table -->
-      <table mat-table *ngIf="viewMode === 'interns' && loaded" [dataSource]="dataSource" matSort
-        #internsSort="matSort" class="interns-table">
+      <table mat-table *ngIf="viewMode === 'interns' && loaded" [dataSource]="dataSource" matSort class="interns-table">
 
         <ng-container matColumnDef="Image">
           <th mat-header-cell *matHeaderCellDef mat-sort-header sticky>תמונת פרופיל</th>

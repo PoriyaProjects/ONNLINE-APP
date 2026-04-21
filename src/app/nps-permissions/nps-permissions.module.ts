@@ -5,7 +5,6 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatChipsModule } from '@angular/material/chips';
-import { MatExpansionModule } from '@angular/material/expansion';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
@@ -24,12 +23,9 @@ import { NpsRequestStatusBadgeComponent } from './components/request-status-badg
 import { NpsPermissionsRoutingModule } from './nps-permissions-routing.module';
 import { NpsShellComponent } from './nps-shell.component';
 import { NpsAuditPageComponent } from './pages/nps-audit-page.component';
-import { NpsActionsPageComponent } from './pages/nps-actions-page.component';
 import { NpsDashboardPageComponent } from './pages/nps-dashboard-page.component';
-import { NpsEmployeeAssignmentsPageComponent } from './pages/nps-employee-assignments-page.component';
 import { NpsMyApprovalsPageComponent } from './pages/nps-my-approvals-page.component';
 import { NpsMyRequestsPageComponent } from './pages/nps-my-requests-page.component';
-import { NpsPermissionsAdminPageComponent } from './pages/nps-permissions-admin-page.component';
 import { NpsProfileEditPageComponent } from './pages/nps-profile-edit-page.component';
 import { NpsProfilesPageComponent } from './pages/nps-profiles-page.component';
 import { NpsRequestDetailPageComponent } from './pages/nps-request-detail-page.component';
@@ -43,9 +39,6 @@ import { NpsRulesPageComponent } from './pages/nps-rules-page.component';
     NpsProfilesPageComponent,
     NpsProfileEditPageComponent,
     NpsRulesPageComponent,
-    NpsEmployeeAssignmentsPageComponent,
-    NpsActionsPageComponent,
-    NpsPermissionsAdminPageComponent,
     NpsRequestsPageComponent,
     NpsRequestDetailPageComponent,
     NpsMyApprovalsPageComponent,
@@ -75,7 +68,6 @@ import { NpsRulesPageComponent } from './pages/nps-rules-page.component';
     MatStepperModule,
     MatSnackBarModule,
     MatIconModule,
-    MatExpansionModule,
   ],
 })
 export class NpsPermissionsModule {}
