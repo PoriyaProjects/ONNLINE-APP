@@ -58,9 +58,6 @@
                 <div class="room-status-title" *ngIf="!isAmbulatoryRoom(room)">
                   <div class="status-display" [ngClass]="statusInfo.cssClass">
                     {{ statusInfo.label }}
-                    <small *ngIf="isAllSurgeriesCompleted(room)" class="all-done-text">
-                      תמו הניתוחים להיום
-                    </small>
                   </div>
                 </div>
               </ng-container>
@@ -76,31 +73,30 @@
           getIdleBorderClass(room)
           ]">
 
-                <div class="room-header" (click)="toggleRoom(room.roomId)" title="לחץ להרחבה או כיווץ"
-                  role="button" tabindex="0" [attr.aria-expanded]="isRoomExpanded(room.roomId)"
-                  (keydown.enter)="toggleRoom(room.roomId)"
+                <div class="room-header room-header--dept-first" (click)="toggleRoom(room.roomId)"
+                  title="לחץ להרחבה או כיווץ" role="button" tabindex="0"
+                  [attr.aria-expanded]="isRoomExpanded(room.roomId)" (keydown.enter)="toggleRoom(room.roomId)"
                   (keydown.space)="$event.preventDefault(); toggleRoom(room.roomId)">
-                  <!-- Status dot -->
-                  <!-- <div class="status-circle" *ngIf="settings.showStatusDot !== false" [ngClass]="getRoomStatusClassWithSettings(room)">
-          </div> -->
-                  <!-- 🔐 Indication: Next patient readiness -->
+                  <!-- סטטוס מטופל / חתימות — מעל שם המחלקה; באנר חתימות: רקע שקוף גולש + סגירה ב-X -->
                   <ng-container *ngIf="nextPlannedSurgery(room) as s">
 
-                    <!-- 🟢 Ready -->
                     <div *ngIf="s.NextPatientReadyGreen" class="next-ready-chip ready">
                       🟢 המטופל הבא מוכן לניתוח
                     </div>
 
-                    <!-- ⚠️ Missing signatures -->
-                    <div *ngIf="!s.NextPatientReadyGreen && s.MissingSignaturesText" class="next-ready-chip warn"
-                      [attr.title]="s.MissingSignaturesText">
-                      ⚠️ חסרה חתימה: {{ s.MissingSignaturesText }}
+                    <div
+                      *ngIf="!s.NextPatientReadyGreen && s.MissingSignaturesText && !isSignatureBannerDismissed(room.roomId)"
+                      class="signature-banner-float" [attr.title]="s.MissingSignaturesText">
+                      <button type="button" class="signature-banner-close"
+                        (click)="dismissSignatureBanner(room.roomId, $event)"
+                        aria-label="סגור התראת חתימות">✕</button>
+                      <span class="signature-banner-text">⚠️ חסרה חתימה: {{ s.MissingSignaturesText }}</span>
                     </div>
 
                   </ng-container>
 
-                  <!-- מחלקה בלבד — שם החדר מוצג בשורת הכותרות הדביקה מעל הגריד -->
-                  <h4 class="text-center" *ngIf="getRoomDepartment(room) as dept">
+                  <!-- מחלקה צמודה לראש הכרטיס — שם החדר בשורת הכותרות הדביקה מעל הגריד -->
+                  <h4 class="text-center room-dept-heading" *ngIf="getRoomDepartment(room) as dept">
                     <span class="room-dept-badge">{{ dept }}</span>
                   </h4>
 
@@ -335,9 +331,6 @@
                   <div class="room-status-title ambulatory-room-status-title">
                     <div class="status-display" [ngClass]="ambStatusInfo.cssClass">
                       {{ ambStatusInfo.label }}
-                      <small *ngIf="isAllSurgeriesCompleted(room)" class="all-done-text">
-                        תמו הניתוחים להיום
-                      </small>
                     </div>
                   </div>
                 </ng-container>

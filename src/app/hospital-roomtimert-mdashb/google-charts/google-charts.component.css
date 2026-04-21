@@ -958,12 +958,25 @@
 }
 
 .status-display {
-  display: inline-block;
-  padding: 6px 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  box-sizing: border-box;
+  padding: 8px 12px;
   border-radius: var(--radius-sm);
   font-weight: 700;
   font-size: clamp(0.85rem, 0.45vw + 0.78rem, 1.05rem);
-  min-width: 120px;
+  line-height: 1.25;
+  min-width: 168px;
+  min-height: 44px;
+  max-width: 200px;
+}
+
+.status-display.status-all-done {
+  background: rgba(74, 144, 226, 0.16);
+  color: #1a5490;
+  border: 1px solid rgba(74, 144, 226, 0.28);
 }
 
 .status-display.status-active {
@@ -1307,11 +1320,6 @@
   outline-offset: -2px;
   box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.12);
 }
-.all-done-text {
-  color: var(--primary);
-  font-size: 12px;
-  font-weight: 600;
-}
 
 .next-ready-chip {
   margin-top: 6px;
@@ -1330,6 +1338,90 @@
   background: rgba(242, 201, 76, 0.22);
   color: #9a6700;
   border: 1px solid rgba(242, 201, 76, 0.55);
+}
+
+/* באנר חתימות — מעל שם המחלקה, רקע שקוף גולש, סגירה ב-X */
+@keyframes signatureBannerSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.signature-banner-float {
+  position: relative;
+  width: 100%;
+  box-sizing: border-box;
+  margin: 0 0 6px !important;
+  padding: 10px 34px 10px 10px;
+  text-align: center;
+  border-radius: 0 0 12px 12px;
+  border: 1px solid rgba(217, 119, 6, 0.28);
+  border-top: none;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 248, 230, 0.92) 0%,
+    rgba(255, 252, 245, 0.5) 52%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  animation: signatureBannerSlideIn 0.42s ease-out;
+  color: #7c5a00;
+  font-size: clamp(0.78rem, 0.38vw + 0.72rem, 0.92rem);
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.signature-banner-text {
+  display: block;
+}
+
+.signature-banner-close {
+  position: absolute;
+  top: 5px;
+  inset-inline-end: 5px;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: none;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.06);
+  color: var(--text-main);
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s ease;
+}
+
+.signature-banner-close:hover {
+  background: rgba(0, 0, 0, 0.11);
+}
+
+.signature-banner-close:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.room-widget.card .room-header.room-header--dept-first {
+  align-items: stretch;
+  padding-top: 8px;
+  gap: 4px;
+}
+
+.room-header--dept-first > :first-child {
+  margin-top: 0 !important;
+}
+
+.room-widget.card .room-header.room-header--dept-first .room-dept-heading {
+  margin: 0;
+  padding: 0;
+  width: 100%;
 }
 
 .container {
