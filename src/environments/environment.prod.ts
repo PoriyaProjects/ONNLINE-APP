@@ -3,6 +3,7 @@ export const environment = {
   urlipracticom: 'http://srv-ipracticom:8080/WebService.asmx/',
   AuthUrl: 'http://srv-apps-prod:47001/api/',
   hearingDetailsAsmxBase: '',
+  npsUserId: localStorage.getItem('ID'),
   production: true
 };
 /*
