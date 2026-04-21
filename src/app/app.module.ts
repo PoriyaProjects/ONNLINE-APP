@@ -195,6 +195,7 @@ import { PatientStikersComponent } from './patient-stikers/patient-stikers.compo
 import { PatientsSystemConflictsComponent } from './patients-system-conflicts/patients-system-conflicts.component';
 import { AddPollComponent } from './polls/add-poll/add-poll.component';
 import { PollsComponent } from './polls/polls.component';
+import { ProfileDeptAssociationComponent } from './profile-dept-association/profile-dept-association.component';
 import { PoriadepartsComponent } from './poriadeparts/poriadeparts.component';
 import { QualityMeasuresDashboardComponent } from './quality-measures-dashboard/quality-measures-dashboard.component';
 import { ReHospComponent } from './re-hosp/re-hosp.component';
@@ -460,6 +461,7 @@ const maskConfig: Partial<IConfig> = {
     CreatePatientComponent,
     WhatsappDepartmentsDashboardComponent,
     PollsComponent,
+    ProfileDeptAssociationComponent,
     AddPollComponent,
     CathReportComponent,
     DepartmentIncomeDashboardComponent,

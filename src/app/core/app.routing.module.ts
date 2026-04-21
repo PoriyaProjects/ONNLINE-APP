@@ -141,6 +141,7 @@ import { OnlineAppointmentsComponent } from "../online-appointments/online-appoi
 import { OrdersToAppointmentsComponent } from '../orders-to-appointments/orders-to-appointments.component';
 import { PatientStikersComponent } from '../patient-stikers/patient-stikers.component';
 import { PatientsSystemConflictsComponent } from '../patients-system-conflicts/patients-system-conflicts.component';
+import { ProfileDeptAssociationComponent } from '../profile-dept-association/profile-dept-association.component';
 import { PoriadepartsComponent } from '../poriadeparts/poriadeparts.component';
 import { QualityMeasuresDashboardComponent } from '../quality-measures-dashboard/quality-measures-dashboard.component';
 import { ReHospComponent } from '../re-hosp/re-hosp.component';
@@ -186,6 +187,7 @@ const routes: Routes = [
   { path: "", component: LoginComponent },
   { path: 'clinicsrequests', component: ClinicsRequestsComponent },
   { path: "patientstikers", component: PatientStikersComponent },
+  { path: 'profile-dept-association', component: ProfileDeptAssociationComponent },
   { path: 'dashboard', component: DashboardComponent },
   { path: 'covid19report', component: Covid19reportComponent },
   { path: 'login', component: LoginComponent },

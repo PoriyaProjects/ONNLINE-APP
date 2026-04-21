@@ -103,6 +103,7 @@ import { WagonComponent } from "./wagon/wagon.component";
 import { SwitchesComponent } from "./switches/switches.component";
 import { HrDashboardComponent } from "./hr-dashboard/hr-dashboard.component";
 import { PatientStikersComponent } from "./patient-stikers/patient-stikers.component";
+import { ProfileDeptAssociationComponent } from "./profile-dept-association/profile-dept-association.component";
 import { NortonEstimateComponent } from './norton-estimate/norton-estimate.component';
 import { CAMEstimateComponent } from './cam-estimate/cam-estimate.component';
 import { DialysisReportComponent } from './dialysis-report/dialysis-report.component';
@@ -180,6 +181,7 @@ const routes: Routes = [
     { path: "surgeriesDashboard", component: SurgeriesDashboradComponent },
     { path: "dimotactivity", component: DimotActivityDashboardComponent },
     { path: "patientstikers", component: PatientStikersComponent },
+    { path: "profile-dept-association", component: ProfileDeptAssociationComponent },
     { path: "clinicsrequests", component: ClinicsRequestsComponent },
     { path: 'switches', component: SwitchesComponent },
     { path: "dashboard", component: DashboardComponent },
