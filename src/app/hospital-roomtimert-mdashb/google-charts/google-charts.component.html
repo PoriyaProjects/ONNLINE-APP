@@ -41,6 +41,15 @@
             </div>
           </div>
 
+          <div class="regular-rooms-sticky-head" role="presentation" aria-label="שמות חדרי ניתוח כללי">
+            <div
+              class="regular-room-head-cell"
+              *ngFor="let rid of standardRegularRoomSlotIds; trackBy: trackByRoomSlotId"
+              role="columnheader">
+              {{ translateRoomId(rid) }}
+            </div>
+          </div>
+
           <div class="rooms-grid">
             <div class="room-wrapper" *ngFor="let room of regularRooms; trackBy: trackByRoomId">
 
@@ -90,19 +99,9 @@
 
                   </ng-container>
 
-                  <!-- Title + Department -->
-                  <h4 class="text-center">
-                    {{ translateRoomId(room.roomId) }}
-
-                    <!-- Department name if available -->
-                    <br />
-                    <ng-container *ngIf="getRoomDepartment(room) as dept">
-                      <span class="room-dept-badge">{{ dept }}</span>
-                    </ng-container>
-
-                    <!-- <ng-container *ngIf="settings.showLateChip !== false"> -->
-                    <!-- existing late chip logic -->
-                    <!-- </ng-container> -->
+                  <!-- מחלקה בלבד — שם החדר מוצג בשורת הכותרות הדביקה מעל הגריד -->
+                  <h4 class="text-center" *ngIf="getRoomDepartment(room) as dept">
+                    <span class="room-dept-badge">{{ dept }}</span>
                   </h4>
 
 

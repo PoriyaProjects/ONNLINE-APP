@@ -693,8 +693,9 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
                         IsWaitingForSurgery: row.IsWaitingForSurgery,
                         NextPatientReadyGreen: row.NextPatientReadyGreen,
                         MissingSignaturesText: row.MissingSignaturesText,
-                        // הממוצע יכול להגיע בשם AvgDauration (ישן) או AvgDuration (חדש)
-                        AvgDauration: (row as any).AvgDauration ?? (row as any).AvgDuration ?? null,
+                        // הממוצע יכול להגיע בשם AvgDauration (ישן) או AvgDuration (חדש) — חייבים לשמור גם AvgDuration ל-parseAvgDurationFieldToMinutes
+                        AvgDuration: rowAny.AvgDuration ?? null,
+                        AvgDauration: rowAny.AvgDauration ?? rowAny.AvgDuration ?? null,
                         DoctorSurgeon: row.DoctorSurgeon ?? null,
                         SurgeryType: row.SurgeryType ?? null,
                         CalendarRoomsArea: row.CalendarRoomsArea ?? null,
@@ -2114,6 +2115,19 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
         "פז01-206": "חדר ניתוח 6",
         "פז01-207": "חדר ניתוח 7",
     };
+
+    /** סדר קבוע של 7 חדרי ניתוח כללי — כותרת דביקה מעל הגריד */
+    readonly standardRegularRoomSlotIds: readonly string[] = [
+        "פז01-201",
+        "פז01-202",
+        "פז01-203",
+        "פז01-204",
+        "פז01-205",
+        "פז01-206",
+        "פז01-207",
+    ];
+
+    trackByRoomSlotId = (_index: number, id: string) => id;
 
     translateRoomId(id?: string): string {
         if (!id) return "";
@@ -4209,8 +4223,17 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
                     actualSurgeryMin = expectedMin;
                 }
             } else {
-                // ניתוח בתהליך - משתמשים בזמן נוכחי
-                surgeryEnd = nowClamped;
+                // ניתוח בתהליך — לצורך תור הניתוחים הבאים: סיום צפוי = max(עכשיו, משוער),
+                // כמו ב-getPlannedScheduleRow (אחרת גלישה צפויה לא מוצגת כשעוברים את המשוער)
+                const estimatedEnd = new Date(
+                    entrance.getTime() + expectedMin * 60000
+                );
+                surgeryEnd = new Date(
+                    Math.max(
+                        nowClamped.getTime(),
+                        estimatedEnd.getTime()
+                    )
+                );
                 actualSurgeryMin = Math.max(
                     0,
                     Math.floor(
@@ -4248,32 +4271,6 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
             cursor = new Date(surgeryEnd.getTime() + SETUP_TIME * 60000);
         }
 
-        const inProg = room.surgeries.find((s) => {
-            const st = String(s.status ?? s.SurgeryStatus ?? "")
-                .toLowerCase()
-                .replace(/\s+/g, "");
-            return st === "inprogress";
-        });
-
-        const inProgIsLastInChain =
-            !!inProg &&
-            sorted.length > 0 &&
-            this.isSameSurgeryInRoom(inProg, sorted[sorted.length - 1]);
-
-        if (inProgIsLastInChain) {
-            const entStr = this.getEntranceTime(inProg!);
-            if (entStr && !this.isZeroTime(entStr)) {
-                const entrance = this.parseClockWithDate(entStr, baseDate);
-                if (entrance) {
-                    const expectedMin = this.getExpectedDuration(inProg!);
-                    const end = new Date(
-                        entrance.getTime() + expectedMin * 60000
-                    );
-                    cursor = new Date(end.getTime() + SETUP_TIME * 60000);
-                }
-            }
-        }
-
         // 3. חישוב זמן פנוי/גלישה סופי
         let freeFromText = "--:--";
         let overrunText = "--:--";
@@ -4298,14 +4295,27 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
 
         let predictedEndTime: Date | null = lastPredictedSurgeryEnd;
 
+        const inProg = room.surgeries.find((s) => {
+            const st = String(s.status ?? s.SurgeryStatus ?? "")
+                .toLowerCase()
+                .replace(/\s+/g, "");
+            return st === "inprogress";
+        });
+
         if (!predictedEndTime && inProg) {
             const entStr = this.getEntranceTime(inProg);
             if (entStr && !this.isZeroTime(entStr)) {
                 const entrance = this.parseClockWithDate(entStr, baseDate);
                 if (entrance) {
                     const expectedMin = this.getExpectedDuration(inProg);
-                    predictedEndTime = new Date(
+                    const estimatedEnd = new Date(
                         entrance.getTime() + expectedMin * 60000
+                    );
+                    predictedEndTime = new Date(
+                        Math.max(
+                            nowClamped.getTime(),
+                            estimatedEnd.getTime()
+                        )
                     );
                 }
             }
@@ -4971,42 +4981,51 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
     }
 
     /**
-     * קבל את משך הניתוח החזוי
-     * 1. קודם ממוצע מהשרת (AvgDauration/DrorDuration)
-     * 2. אם אין - זמן הדרור (TimeSurgeryToDo/Duration)
-     * כאשר timeNotEntered – מחזיר 0 (תצוגה: "לא הוזן" דרך getExpectedDurationDisplay)
+     * משך ממוצע בדקות: קודם AvgDuration מהשרת, אחרת AvgDauration (אותו מידע במיפוי הישן).
+     * רק אם שניהם ריקים — getExpectedDuration יורד ל-TimeSurgeryToDo.
      */
-    private getExpectedDuration(surgery: Surgery, room?: RoomData): number {
-        if ((surgery as Surgery).timeNotEntered) return 0;
-        // 1️⃣ ממוצע מהשרת – עדיפות ל-AvgDuration (HH:mm או דקות), אם אין נשתמש ב-AvgDauration/DrorDuration
-        let avgDurationRaw: string | number | null =
-            (surgery as any).AvgDuration ?? surgery.AvgDauration ?? (surgery as any).DrorDuration ?? null;
-
-        // אם הפורמט הוא "HH:mm" → ממירים לדקות
-        let avgDuration: number | null = null;
-        if (avgDurationRaw != null) {
-            if (typeof avgDurationRaw === "string" && avgDurationRaw.includes(":")) {
-                const [h, m] = avgDurationRaw.split(":");
-                const hNum = parseInt(h, 10);
-                const mNum = parseInt(m, 10);
-                if (!Number.isNaN(hNum) && !Number.isNaN(mNum)) {
-                    avgDuration = hNum * 60 + mNum;
-                }
-            } else if (!Number.isNaN(+avgDurationRaw)) {
-                avgDuration = +avgDurationRaw;
-            }
+    private parseAvgDurationFieldToMinutes(surgery: Surgery): number | null {
+        const avgDurationRaw: string | number | null =
+            (surgery as any).AvgDuration ?? (surgery as any).AvgDauration ?? null;
+        if (avgDurationRaw == null || String(avgDurationRaw).trim() === "") {
+            return null;
         }
-
+        let avgDuration: number | null = null;
+        if (typeof avgDurationRaw === "string" && avgDurationRaw.includes(":")) {
+            const [h, m] = avgDurationRaw.split(":");
+            const hNum = parseInt(h, 10);
+            const mNum = parseInt(m, 10);
+            if (!Number.isNaN(hNum) && !Number.isNaN(mNum)) {
+                avgDuration = hNum * 60 + mNum;
+            }
+        } else if (!Number.isNaN(+avgDurationRaw)) {
+            avgDuration = +avgDurationRaw;
+        }
         if (avgDuration != null && !Number.isNaN(+avgDuration)) {
             const val = Math.max(0, Math.round(+avgDuration));
             if (val >= 5 && val <= 480) return val;
         }
+        return null;
+    }
 
-        // 2️⃣ זמן הדרור (Duration מהשרת)
+    /**
+     * קבל את משך הניתוח החזוי
+     * 1. קודם AvgDuration (משך ממוצע מהשרת)
+     * 2. אם אין מידע — TimeSurgeryToDo (זמן מתכונן בדקות)
+     * 3. אחרת חישוב מזמני כניסה/יציאה בפועל
+     * כאשר timeNotEntered – מחזיר 0 (תצוגה: "לא הוזן" דרך getExpectedDurationDisplay)
+     */
+    private getExpectedDuration(surgery: Surgery, room?: RoomData): number {
+        if ((surgery as Surgery).timeNotEntered) return 0;
+        // 1️⃣ רק שדה AvgDuration
+        const fromAvg = this.parseAvgDurationFieldToMinutes(surgery);
+        if (fromAvg != null) return fromAvg;
+
+        // 2️⃣ זמן מתכונן (דקות)
         const drorTime = surgery?.TimeSurgeryToDo;
         if (drorTime != null && !Number.isNaN(+drorTime)) {
             const val = Math.max(0, Math.round(+drorTime));
-                if (val >= 5 && val <= 480) return val;
+            if (val >= 5 && val <= 480) return val;
         }
 
         // 3️⃣ חישוב ממשי רק אם שני הזמנים תקינים (לא 00:00 / לא null)
@@ -5368,20 +5387,16 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
         });
     }
 
-    /** דקות מ־AvgDuration (מחרוזת HH:mm) או AvgDauration (מספר) בלבד */
+    /** דקות ללו״ז: קודם AvgDuration; אם אין — TimeSurgeryToDo */
     private getAvgDurationMinutesForSchedule(s: Surgery): number | null {
-        const raw = (s as any).AvgDuration ?? s.AvgDauration ?? null;
-        if (raw == null || raw === "") return null;
-        if (typeof raw === "string" && raw.includes(":")) {
-            const [hs, ms] = raw.split(":");
-            const h = parseInt(hs, 10);
-            const m = parseInt(ms ?? "0", 10);
-            if (!Number.isFinite(h) || !Number.isFinite(m)) return null;
-            const mins = h * 60 + m;
-            return mins > 0 ? mins : null;
+        const fromAvg = this.parseAvgDurationFieldToMinutes(s);
+        if (fromAvg != null) return fromAvg;
+        const drorTime = s?.TimeSurgeryToDo;
+        if (drorTime != null && !Number.isNaN(+drorTime)) {
+            const val = Math.max(0, Math.round(+drorTime));
+            if (val >= 5 && val <= 480) return val;
         }
-        const n = typeof raw === "number" ? raw : parseInt(String(raw), 10);
-        return Number.isFinite(n) && n > 0 ? Math.round(n) : null;
+        return null;
     }
 
     private plannedScheduleDurationLabel(s: Surgery): string {
@@ -5591,7 +5606,65 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
         return prevEnd;
     }
 
+    /**
+     * זמן סיום משמש לחישוב גלישה מעל 15:00 — אותה לוגיקה של סיום כמו ב־formatSurgeryTimes.
+     */
+    private getSurgeryDisplayEndDate(surgery: Surgery): Date | null {
+        const entrance = this.getEntranceTime(surgery);
+        const exit = this.getExitTime(surgery);
+        const hasEntrance = !!entrance && !this.isZeroTime(entrance);
+        const hasExit = !!exit && !this.isZeroTime(exit);
+        const baseDate = surgery.SurgeryDate || this.selectedDate;
+
+        const status = (surgery.status ?? surgery.SurgeryStatus ?? "").toLowerCase();
+        const isPlanned =
+            String(surgery.status ?? surgery.SurgeryStatus ?? "")
+                .toLowerCase()
+                .replace(/\s+/g, "") === "planned";
+
+        if (
+            isPlanned &&
+            this.hasNoRtmEntranceExit(surgery) &&
+            !hasEntrance &&
+            !hasExit
+        ) {
+            const row = this.getPlannedScheduleRow(surgery);
+            return row?.end ?? null;
+        }
+
+        if (hasExit) {
+            return this.parseClockWithDate(exit!, baseDate);
+        }
+
+        if (!hasEntrance) {
+            return null;
+        }
+
+        const expectedMin = this.getExpectedDuration(surgery);
+        if (!Number.isFinite(expectedMin) || expectedMin <= 0) return null;
+        return this.calculateEstimatedEndTime(entrance!, expectedMin);
+    }
+
+    /** תוספת HTML לשורת גלישה אחרי 15:00 (יום עבודה), או מחרוזת ריקה */
+    private formatSurgeryOverrunSuffixHtml(surgery: Surgery): string {
+        const end = this.getSurgeryDisplayEndDate(surgery);
+        if (!end) return "";
+        const baseDate = surgery.SurgeryDate || this.selectedDate;
+        const dayEnd = this.workingEnd(baseDate);
+        if (end.getTime() <= dayEnd.getTime()) return "";
+        const min = Math.floor((end.getTime() - dayEnd.getTime()) / 60000);
+        if (min <= 0) return "";
+        return `<br><span class="surgery-overrun">גלישה ${this.formatHM(min)}</span>`;
+    }
+
     formatSurgeryTimes(surgery: Surgery): string {
+        return (
+            this._formatSurgeryTimesCore(surgery) +
+            this.formatSurgeryOverrunSuffixHtml(surgery)
+        );
+    }
+
+    private _formatSurgeryTimesCore(surgery: Surgery): string {
         const entrance = this.getEntranceTime(surgery);
         const exit = this.getExitTime(surgery);
 

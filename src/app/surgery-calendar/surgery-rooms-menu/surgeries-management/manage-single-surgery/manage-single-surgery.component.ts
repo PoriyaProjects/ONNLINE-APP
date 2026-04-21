@@ -137,6 +137,46 @@ export class ManageSingleSurgeryComponent implements OnInit, OnDestroy {
     return parts[0] * 60 + parts[1];
   }
 
+  /** Display span between ArrivalTime and EndTime (same as shown above); EndTime is disabled — use getRawValue. */
+  formatDurationBetweenStartAndEnd(): string {
+    if (!this.SurgeryFormGroup) {
+      return '';
+    }
+    const raw = this.SurgeryFormGroup.getRawValue();
+    const startMin = this.parseClockToMinutes(raw?.ArrivalTime);
+    const endMin = this.parseClockToMinutes(raw?.EndTime);
+    if (startMin === null || endMin === null) {
+      return '';
+    }
+    let diff = endMin - startMin;
+    if (diff < 0) {
+      diff += 24 * 60;
+    }
+    const h = Math.floor(diff / 60);
+    const m = diff % 60;
+    return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+  }
+
+  private parseClockToMinutes(value: any): number | null {
+    if (value == null) {
+      return null;
+    }
+    const s = String(value).trim();
+    if (!s || s === '00:00') {
+      return null;
+    }
+    const match = s.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?$/);
+    if (!match) {
+      return null;
+    }
+    const hh = Number(match[1]);
+    const mm = Number(match[2]);
+    if (!Number.isFinite(hh) || !Number.isFinite(mm)) {
+      return null;
+    }
+    return hh * 60 + mm;
+  }
+
   displayFnSurgery(surgery: any): string {
     delete surgery.__type;
     return surgery && surgery.S_SERVICE_VAL ? surgery.S_SERVICE_VAL : '';
