@@ -710,7 +710,7 @@ th.mat-header-cell {
 }
 
 [dir="rtl"] th.mat-header-cell {
-    text-align: right;
+    text-align: center;
     padding: 15px 20px;
     border: 1px solid #d3d3d3;
 }
