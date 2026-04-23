@@ -204,32 +204,52 @@
                           {{ isCompletedSurgeriesListOpen(room.roomId) ? '⮝' : '⮟' }}
                         </span>
                       </h5>
-
-                      <div
-                        *ngIf="isCompletedSurgeriesListOpen(room.roomId)"
-                        class="completed-surgeries-panel"
-                        [attr.id]="'completed-surgeries-' + room.roomId"
-                        role="region"
-                        [attr.aria-labelledby]="'completed-surgeries-trigger-' + room.roomId">
-                        <div *ngFor="let s of active; trackBy: trackBySurgeryId" class="surgery-card">
-                          <div class="surgery-top">
-                            <span class="times" *ngIf="settings.showTimes" [innerHTML]="formatSurgeryTimes(s)">
-                            </span>
-                            <span class="dept" *ngIf="settings.showDepartment">{{ s.department }}</span>
-                          </div>
-
-                          <span *ngIf="settings.showStatus" class="status-wrap" [ngClass]="(s.status || s.SurgeryStatus)">
-                            <span class="status-dot"></span>
-                            <span class="status-text">
-                              {{ statusHebrew[(s.status || s.SurgeryStatus)] }}
-                            </span>
-                          </span>
-                        </div>
-                      </div>
                     </ng-container>
                   </ng-container>
 
                 </div>
+
+                <ng-container *ngIf="isRoomExpanded(room.roomId) && isCompletedSurgeriesListOpen(room.roomId)">
+                  <ng-container *ngIf="activeSurgeries(room) as ovActive">
+                    <div *ngIf="ovActive.length" class="completed-surgeries-overlay" (click)="$event.stopPropagation()">
+                      <div class="completed-surgeries-overlay__backdrop"
+                        (click)="toggleCompletedSurgeriesList(room.roomId, $event)"></div>
+                      <div class="completed-surgeries-overlay__panel"
+                        [attr.id]="'completed-surgeries-' + room.roomId"
+                        role="dialog"
+                        aria-modal="true"
+                        [attr.aria-labelledby]="'completed-surgeries-trigger-' + room.roomId"
+                        (click)="$event.stopPropagation()">
+                        <div class="completed-surgeries-overlay__header">
+                          <div class="completed-surgeries-overlay__headline">
+                            <span class="completed-surgeries-overlay__title">ניתוחים שבוצעו</span>
+                            <span class="completed-surgeries-overlay__count">{{ ovActive.length }}</span>
+                          </div>
+                          <button type="button" class="completed-surgeries-overlay__close"
+                            (click)="toggleCompletedSurgeriesList(room.roomId, $event)"
+                            aria-label="סגור רשימה">✕</button>
+                        </div>
+                        <div class="completed-surgeries-overlay__scroll">
+                          <div *ngFor="let s of ovActive; trackBy: trackBySurgeryId"
+                            class="surgery-card completed-surgeries-overlay__card">
+                            <div class="surgery-top">
+                              <span class="times" *ngIf="settings.showTimes" [innerHTML]="formatSurgeryTimes(s)">
+                              </span>
+                              <span class="dept" *ngIf="settings.showDepartment">{{ s.department }}</span>
+                            </div>
+                            <span *ngIf="settings.showStatus" class="status-wrap"
+                              [ngClass]="displaySurgeryStatusKey(s, room)">
+                              <span class="status-dot"></span>
+                              <span class="status-text">
+                                {{ statusHebrew[displaySurgeryStatusKey(s, room)] }}
+                              </span>
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </ng-container>
+                </ng-container>
 
                 <!-- Planned surgeries -->
                 <!-- ח״נ אמבולטורי -->

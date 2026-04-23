@@ -2864,7 +2864,10 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
     hasInProgress(room: RoomData): boolean {
         if (!room?.surgeries?.length) return false;
         return room.surgeries.some(
-            (s) => s && this.isInProgressStatus(s.status)
+            (s) =>
+                s &&
+                this.isInProgressStatus(s.status ?? s.SurgeryStatus) &&
+                !this.isInProgressStaleByEstimatedEnd(s, room)
         );
     }
 
@@ -2876,7 +2879,13 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
         const base = room.date || this.selectedDate;
         const matches = room.surgeries.filter((s) => {
             if (!s || this.surgeryIsAmbulatoryForDisplay(s, room)) return false;
-            return this.isInProgressStatus(s.status ?? s.SurgeryStatus);
+            if (!this.isInProgressStatus(s.status ?? s.SurgeryStatus)) {
+                return false;
+            }
+            if (this.isInProgressStaleByEstimatedEnd(s, room)) {
+                return false;
+            }
+            return true;
         });
         if (!matches.length) return null;
         return matches
@@ -5283,6 +5292,54 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
         }
 
         return 60;
+    }
+
+    /**
+     * ה-API משאיר InProgress אך שעת סיום משוערת או שעת יציאה בפועל כבר עברו — לא נחשב «בביצוע» בתצוגה.
+     */
+    private isInProgressStaleByEstimatedEnd(s: Surgery, room: RoomData): boolean {
+        if (!this.isInProgressStatus(s.status ?? s.SurgeryStatus)) {
+            return false;
+        }
+        const base = room.date || this.selectedDate;
+        if (!base) {
+            return false;
+        }
+        const now = new Date();
+
+        const exitStr = this.getExitTime(s);
+        if (exitStr && !this.isZeroTime(exitStr)) {
+            const exitAt = this.parseClockWithDate(exitStr, base);
+            if (exitAt && now.getTime() >= exitAt.getTime()) {
+                return true;
+            }
+        }
+
+        const entStr = this.getEntranceTime(s);
+        if (!entStr || this.isZeroTime(entStr)) {
+            return false;
+        }
+        const entrance = this.parseClockWithDate(entStr, base);
+        if (!entrance) {
+            return false;
+        }
+
+        const durMin = this.getExpectedDuration(s, room);
+        if (durMin <= 0) {
+            return false;
+        }
+        const expectedEnd = new Date(entrance.getTime() + durMin * 60000);
+        const GRACE_MS = 8 * 60000;
+        return now.getTime() > expectedEnd.getTime() + GRACE_MS;
+    }
+
+    /** מפתח סטטוס לתצוגה (מתקן InProgress מיושן ל-Completed) */
+    displaySurgeryStatusKey(s: Surgery, room: RoomData): string {
+        const raw = String(s.status ?? s.SurgeryStatus ?? "Planned").trim();
+        if (this.isInProgressStaleByEstimatedEnd(s, room)) {
+            return "Completed";
+        }
+        return raw;
     }
 
     /**
