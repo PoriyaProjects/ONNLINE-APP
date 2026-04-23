@@ -20,8 +20,8 @@
           </div>
         </div>
 
-        <!-- חדרי ניתוח כללי -->
-        <div *ngIf="regularRooms.length > 0" class="rooms-section regular-section">
+        <!-- חדרי ניתוח כללי — תמיד 7 כרטיסים אחרי הטעינה (גם בלי ניתוחים) -->
+        <div *ngIf="!isLoading" class="rooms-section regular-section">
           <!-- <h2 class="section-header">חדרי ניתוח כללי</h2> -->
           <div class="section-header header-with-toolbar">
             <h2 class="header-title">חדרי ניתוח כללי</h2>
@@ -51,7 +51,10 @@
           </div>
 
           <div class="rooms-grid">
-            <div class="room-wrapper" *ngFor="let room of regularRooms; trackBy: trackByRoomId">
+            <div
+              class="room-wrapper"
+              *ngFor="let room of regularRooms; trackBy: trackByRoomId"
+              [class.room-wrapper--no-surgeries]="!room.surgeries?.length">
 
               <!-- Status ABOVE the card -->
               <ng-container *ngIf="getRoomStatusInfo(room) as statusInfo">
@@ -62,8 +65,24 @@
                 </div>
               </ng-container>
 
-              <!-- The card itself -->
-              <div class="room-widget card room-white" [ngClass]="[
+              <!-- ערימה: התראות צפות מעל הכרטיס (לא דוחפות למטה), z-index קבוע -->
+              <div class="room-stack">
+                <div class="room-float-alerts" *ngIf="nextPlannedSurgery(room) as s">
+                  <div
+                    *ngIf="!s.NextPatientReadyGreen && s.MissingSignaturesText && !isSignatureBannerDismissed(room.roomId)"
+                    class="signature-banner-float signature-banner--preface signature-banner--preface-note signature-banner--popup"
+                    [attr.title]="s.MissingSignaturesText">
+                    <button type="button" class="signature-banner-close"
+                      (click)="dismissSignatureBanner(room.roomId, $event)"
+                      aria-label="סגור התראת חתימות">✕</button>
+                    <span class="signature-banner-text">⚠️ חסרה חתימה: {{ s.MissingSignaturesText }}</span>
+                  </div>
+                  <div *ngIf="s.NextPatientReadyGreen" class="next-ready-chip ready room-float-alert-chip">
+                    🟢 המטופל הבא מוכן לניתוח
+                  </div>
+                </div>
+
+                <div class="room-widget card room-white" [ngClass]="[
           (settings.colorize && !isRoomClosedForColoring(room)) ? ('border-' + getRoomStatusClassWithSettings(room)) : '',
           isRoomPastDay(room) ? 'past-day' : '',
           isRoomExpanded(room.roomId) ? 'active' : '',
@@ -77,30 +96,20 @@
                   title="לחץ להרחבה או כיווץ" role="button" tabindex="0"
                   [attr.aria-expanded]="isRoomExpanded(room.roomId)" (keydown.enter)="toggleRoom(room.roomId)"
                   (keydown.space)="$event.preventDefault(); toggleRoom(room.roomId)">
-                  <!-- סטטוס מטופל / חתימות — מעל שם המחלקה; באנר חתימות: רקע שקוף גולש + סגירה ב-X -->
-                  <ng-container *ngIf="nextPlannedSurgery(room) as s">
-
-                    <div *ngIf="s.NextPatientReadyGreen" class="next-ready-chip ready">
-                      🟢 המטופל הבא מוכן לניתוח
-                    </div>
-
-                    <div
-                      *ngIf="!s.NextPatientReadyGreen && s.MissingSignaturesText && !isSignatureBannerDismissed(room.roomId)"
-                      class="signature-banner-float" [attr.title]="s.MissingSignaturesText">
-                      <button type="button" class="signature-banner-close"
-                        (click)="dismissSignatureBanner(room.roomId, $event)"
-                        aria-label="סגור התראת חתימות">✕</button>
-                      <span class="signature-banner-text">⚠️ חסרה חתימה: {{ s.MissingSignaturesText }}</span>
-                    </div>
-
-                  </ng-container>
 
                   <!-- מחלקה צמודה לראש הכרטיס — שם החדר בשורת הכותרות הדביקה מעל הגריד -->
                   <h4 class="text-center room-dept-heading" *ngIf="getRoomDepartment(room) as dept">
                     <span class="room-dept-badge">{{ dept }}</span>
                   </h4>
 
-
+                  <div
+                    *ngIf="!room.surgeries?.length && showEmptyRoomEarlyBand"
+                    class="room-empty-band"
+                    title="יום עבודה: החל מ-07:30"
+                    [attr.aria-label]="'יום עבודה, החל מ-07:30'">
+                    <span class="room-empty-pulse" aria-hidden="true"></span>
+                    <span class="room-empty-time" aria-hidden="true">07:30</span>
+                  </div>
 
                   <!-- Duration row: Time active or idle -->
                   <div class="room-duration-info" *ngIf="getRoomDurationInfo(room) as durationInfo">
@@ -120,6 +129,7 @@
                       <span class="progress-label">בוצעו</span>
                     </div>
                   </div>
+
                   <div class="room-extra-panel">
                     <ng-container *ngIf="getRoomDetailsPanel(room) as d">
                       <div class="extra-row" *ngIf="d.totalDelayHMM && d.totalDelayHMM !== '--:--'">
@@ -150,72 +160,113 @@
                     {{ isRoomExpanded(room.roomId) ? '⮝' : '⮟' }}
                   </div>
 
-                  <div class="room-body" *ngIf="isRoomExpanded(room.roomId)" smartAutoScroll [runOnce]="false"
-                    style="max-height:460px; overflow:auto;">
+                </div>
 
-                    <ng-container *ngIf="activeSurgeries(room) as active">
-                      <h5 class="section-title">ניתוחים שבוצעו</h5>
+                <!-- ניתוח נוכחי — מתחת לכותרת הכרטיס, בתוך המסגרת הלבנה (בלי מחלקה / בלי תג סטטוס) -->
+                <div class="current-surgery-chip current-surgery-chip--below-header"
+                  *ngIf="!isRoomExpanded(room.roomId) && getCurrentInRoomInProgressSurgery(room) as curSurg"
+                  role="button" tabindex="0" [attr.aria-label]="'ניתוח נוכחי, לחץ להרחבת הכרטיס'"
+                  (click)="toggleRoom(room.roomId)"
+                  (keydown.enter)="toggleRoom(room.roomId)"
+                  (keydown.space)="$event.preventDefault(); toggleRoom(room.roomId)">
+                  <div class="current-surgery-chip__label">ניתוח נוכחי</div>
+                  <div class="current-surgery-chip__body" *ngIf="settings.showTimes">
+                    <span class="current-surgery-chip__times" [innerHTML]="formatSurgeryTimes(curSurg)"></span>
+                  </div>
+                </div>
 
-                      <div *ngFor="let s of active; trackBy: trackBySurgeryId" class="surgery-card">
-                        <div class="surgery-top">
-                          <span class="times" *ngIf="settings.showTimes" [innerHTML]="formatSurgeryTimes(s)">
-                          </span>
-                          <span class="dept" *ngIf="settings.showDepartment">{{ s.department }}</span>
-                        </div>
+                <div class="room-body" *ngIf="isRoomExpanded(room.roomId)" smartAutoScroll [runOnce]="false"
+                  style="max-height:460px; overflow:auto;">
 
-                        <span *ngIf="settings.showStatus" class="status-wrap" [ngClass]="(s.status || s.SurgeryStatus)">
-                          <span class="status-dot"></span>
-                          <span class="status-text">
-                            {{ statusHebrew[(s.status || s.SurgeryStatus)] }}
-                          </span>
+                  <ng-container *ngIf="activeSurgeries(room) as active">
+                    <ng-container *ngIf="active.length">
+                      <h5
+                        class="section-title section-title--dropdown"
+                        role="button"
+                        tabindex="0"
+                        [attr.id]="'completed-surgeries-trigger-' + room.roomId"
+                        [attr.aria-expanded]="isCompletedSurgeriesListOpen(room.roomId)"
+                        [attr.aria-controls]="'completed-surgeries-' + room.roomId"
+                        (click)="toggleCompletedSurgeriesList(room.roomId, $event)"
+                        (keydown.enter)="toggleCompletedSurgeriesList(room.roomId, $event)"
+                        (keydown.space)="$event.preventDefault(); toggleCompletedSurgeriesList(room.roomId, $event)">
+                        <span class="section-title__label">
+                          ניתוחים שבוצעו
+                          <span class="section-title__count">({{ active.length }})</span>
                         </span>
+                        <span class="section-title__chevron" aria-hidden="true">
+                          {{ isCompletedSurgeriesListOpen(room.roomId) ? '⮝' : '⮟' }}
+                        </span>
+                      </h5>
+
+                      <div
+                        *ngIf="isCompletedSurgeriesListOpen(room.roomId)"
+                        class="completed-surgeries-panel"
+                        [attr.id]="'completed-surgeries-' + room.roomId"
+                        role="region"
+                        [attr.aria-labelledby]="'completed-surgeries-trigger-' + room.roomId">
+                        <div *ngFor="let s of active; trackBy: trackBySurgeryId" class="surgery-card">
+                          <div class="surgery-top">
+                            <span class="times" *ngIf="settings.showTimes" [innerHTML]="formatSurgeryTimes(s)">
+                            </span>
+                            <span class="dept" *ngIf="settings.showDepartment">{{ s.department }}</span>
+                          </div>
+
+                          <span *ngIf="settings.showStatus" class="status-wrap" [ngClass]="(s.status || s.SurgeryStatus)">
+                            <span class="status-dot"></span>
+                            <span class="status-text">
+                              {{ statusHebrew[(s.status || s.SurgeryStatus)] }}
+                            </span>
+                          </span>
+                        </div>
                       </div>
                     </ng-container>
-
-                  </div>
-
-                  <!-- Planned surgeries -->
-                  <!-- ח״נ אמבולטורי -->
-                  <div *ngIf="ambulatorySurgeries(room).length" class="ambulatory-box">
-                    <h5 class="section-title">ח״נ אמבולטורי</h5>
-
-                    <div *ngFor="let s of ambulatorySurgeries(room); trackBy: trackBySurgeryId"
-                      class="surgery-card ambulatory">
-                      <div class="surgery-top">
-                        <span class="times" *ngIf="settings.showTimes" [innerHTML]="formatSurgeryTimes(s)">
-                        </span>
-                        <span class="dept" *ngIf="s.department">{{ s.department }}</span>
-                        <span class="status-text" *ngIf="settings.showStatus">
-                          {{ statusHebrew[(s.status || s.SurgeryStatus) || 'Planned'] }}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <ng-container
-                    *ngIf="settings.showPlannedSection && isRoomExpanded(room.roomId) && plannedSurgeries(room) as planned">
-                    <div *ngIf="planned.length">
-                      <hr />
-                      <h5 class="section-title">ניתוחים מתוכננים</h5>
-
-                      <div *ngFor="let s of planned; trackBy: trackBySurgeryId" class="surgery-card planned">
-                        <div class="surgery-top">
-                          <span class="times" *ngIf="settings.showTimes" [innerHTML]="formatSurgeryTimes(s)"></span>
-
-                          <span class="dept" *ngIf="s.department?.trim()">{{ s.department }}</span>
-                        </div>
-
-                        <span *ngIf="settings.showStatus" class="status-wrap" [ngClass]="(s.status || s.SurgeryStatus)">
-                          <span class="status-dot"></span>
-                          <span class="status-text">
-                            {{ statusHebrew[(s.status || s.SurgeryStatus)] }}
-                          </span>
-                        </span>
-                      </div>
-                    </div>
                   </ng-container>
 
                 </div>
+
+                <!-- Planned surgeries -->
+                <!-- ח״נ אמבולטורי -->
+                <div *ngIf="ambulatorySurgeries(room).length" class="ambulatory-box">
+                  <h5 class="section-title">ח״נ אמבולטורי</h5>
+
+                  <div *ngFor="let s of ambulatorySurgeries(room); trackBy: trackBySurgeryId"
+                    class="surgery-card ambulatory">
+                    <div class="surgery-top">
+                      <span class="times" *ngIf="settings.showTimes" [innerHTML]="formatSurgeryTimes(s)">
+                      </span>
+                      <span class="dept" *ngIf="s.department">{{ s.department }}</span>
+                      <span class="status-text" *ngIf="settings.showStatus">
+                        {{ statusHebrew[(s.status || s.SurgeryStatus) || 'Planned'] }}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <ng-container
+                  *ngIf="settings.showPlannedSection && isRoomExpanded(room.roomId) && plannedSurgeries(room) as planned">
+                  <div *ngIf="planned.length">
+                    <hr />
+                    <h5 class="section-title">ניתוחים מתוכננים</h5>
+
+                    <div *ngFor="let s of planned; trackBy: trackBySurgeryId" class="surgery-card planned">
+                      <div class="surgery-top">
+                        <span class="times" *ngIf="settings.showTimes" [innerHTML]="formatSurgeryTimes(s)"></span>
+
+                        <span class="dept" *ngIf="s.department?.trim()">{{ s.department }}</span>
+                      </div>
+
+                      <span *ngIf="settings.showStatus" class="status-wrap" [ngClass]="(s.status || s.SurgeryStatus)">
+                        <span class="status-dot"></span>
+                        <span class="status-text">
+                          {{ statusHebrew[(s.status || s.SurgeryStatus)] }}
+                        </span>
+                      </span>
+                    </div>
+                  </div>
+                </ng-container>
+
+              </div>
               </div>
             </div>
           </div>

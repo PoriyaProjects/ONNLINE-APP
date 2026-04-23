@@ -532,6 +532,8 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
 
     allExpanded = false;
     openRooms = new Set<string>();
+    /** רשימת "ניתוחים שבוצעו" פתוחה (לפי חדר) — כפתור דרופ־דאון בתוך room-body */
+    completedSurgeriesListOpenByRoom = new Set<string>();
 
     toggleAll(): void {
         this.allExpanded = !this.allExpanded;
@@ -566,6 +568,7 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
 
         if (this.openRooms.has(roomId)) {
             this.openRooms.delete(roomId);
+            this.completedSurgeriesListOpenByRoom.delete(roomId);
         } else {
             this.openRooms.add(roomId);
             this.acknowledgeRoomEvent(roomId);
@@ -574,6 +577,27 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
         this.persistOpenRooms();
         // טריגר ל-Angular שיעדכן *ngIf / classes
         this.openRooms = new Set(this.openRooms);
+        this.completedSurgeriesListOpenByRoom = new Set(
+            this.completedSurgeriesListOpenByRoom
+        );
+    }
+
+    isCompletedSurgeriesListOpen(roomId: string): boolean {
+        return this.completedSurgeriesListOpenByRoom.has(roomId);
+    }
+
+    toggleCompletedSurgeriesList(roomId: string, event?: Event): void {
+        if (event) {
+            event.stopPropagation();
+        }
+        if (this.completedSurgeriesListOpenByRoom.has(roomId)) {
+            this.completedSurgeriesListOpenByRoom.delete(roomId);
+        } else {
+            this.completedSurgeriesListOpenByRoom.add(roomId);
+        }
+        this.completedSurgeriesListOpenByRoom = new Set(
+            this.completedSurgeriesListOpenByRoom
+        );
     }
 
     trackByRoomId(index: number, room: RoomData) {
@@ -874,6 +898,7 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
                     const roomDate = list.length
                         ? list[0].surgeryDate || this.selectedDate
                         : this.selectedDate;
+                    this.enforceSingleInProgressPerRoomSurgeries(list, roomDate);
                     const sorted = sortByPredicted(list, roomDate);
                     return { roomId, surgeries: sorted, date: roomDate };
                 });
@@ -1349,7 +1374,12 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
                         }
 
                         const roomDate = room.date || this.selectedDate;
-                        room.surgeries = sortByPredicted(Array.from(byKey.values()), roomDate);
+                        const merged = Array.from(byKey.values());
+                        this.enforceSingleInProgressPerRoomSurgeries(
+                            merged,
+                            roomDate
+                        );
+                        room.surgeries = sortByPredicted(merged, roomDate);
                     }
                     // העשרת הלוח הושלמה – עכשיו אפשר להציג את הניתוחים המתוכננים/המשוערים
                     this.calendarEnriched = true;
@@ -2244,14 +2274,57 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
       }
       
       
-    get regularRooms(): RoomData[] {
+    /**
+     * חדרי ניתוח 1–7 כפי שהתקבלו מהשרת (ללא שורות placeholder).
+     * לשימוש בסיכומי סטטיסטיקה — לא לרנדר מסך מלא.
+     */
+    private get regularRoomsFromData(): RoomData[] {
         return this.uniqueByRoomId(
-          this.roomsData.filter(r => this.isRegularOperatingRoom(r.roomId))
-        ).sort((a, b) =>
-          this.getRoomNumberFromId(a.roomId)! - this.getRoomNumberFromId(b.roomId)!
+            this.roomsData.filter((r) => this.isRegularOperatingRoom(r.roomId))
+        ).sort(
+            (a, b) =>
+                this.getRoomNumberFromId(a.roomId)! -
+                this.getRoomNumberFromId(b.roomId)!
         );
-      }
-      
+    }
+
+    /**
+     * תמיד 7 כרטיסי חדר (פז01-201…207) — חדר עם נתונים או placeholder ריק,
+     * כדי שלא יופיע מסך ריק כשאין ניתוחים.
+     */
+    get regularRooms(): RoomData[] {
+        const byId = new Map(
+            this.regularRoomsFromData.map((r) => [r.roomId, r] as const)
+        );
+        const date =
+            this.selectedDate || new Date().toISOString().split("T")[0];
+        return this.standardRegularRoomSlotIds.map((roomId) => {
+            const existing = byId.get(roomId);
+            if (existing) {
+                return existing;
+            }
+            return { roomId, date, surgeries: [] };
+        });
+    }
+
+    /**
+     * פס 07:30 בחדר ריק — רק ביום המסך=היום, לפני תחילת יום עבודה (07:30); אחרי זה מיותר.
+     */
+    get showEmptyRoomEarlyBand(): boolean {
+        const sel = (this.selectedDate || "").trim();
+        if (!sel) {
+            return false;
+        }
+        const now = new Date();
+        const y = now.getFullYear();
+        const m = String(now.getMonth() + 1).padStart(2, "0");
+        const d = String(now.getDate()).padStart(2, "0");
+        if (sel !== `${y}-${m}-${d}`) {
+            return false;
+        }
+        return now.getTime() < this.workingStart(sel).getTime();
+    }
+
     /**
      * חילוץ מספר החדר מ-roomId (רק לחדרים 1-7)
      */
@@ -2747,6 +2820,26 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
         return room.surgeries.some(
             (s) => s && this.isInProgressStatus(s.status)
         );
+    }
+
+    /**
+     * ניתוח בביצוע בחדר (כמו ב-activeSurgeries: לא אמבולטורי) — לשבב בכרטיס מכווץ.
+     */
+    getCurrentInRoomInProgressSurgery(room: RoomData): Surgery | null {
+        if (!room?.surgeries?.length) return null;
+        const base = room.date || this.selectedDate;
+        const matches = room.surgeries.filter((s) => {
+            if (!s || this.surgeryIsAmbulatoryForDisplay(s, room)) return false;
+            return this.isInProgressStatus(s.status ?? s.SurgeryStatus);
+        });
+        if (!matches.length) return null;
+        return matches
+            .slice()
+            .sort(
+                (a, b) =>
+                    this.entranceMillisForSortSafe(b, base) -
+                    this.entranceMillisForSortSafe(a, base)
+            )[0];
     }
 
     getUrgencyTextFromSurgery(s: Surgery | Partial<Surgery>): string {
@@ -3873,7 +3966,7 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
     } | null {
         if (!room?.surgeries?.length) {
             return {
-                label: "🟢 חדר פנוי",
+                label: "פנוי",
                 cssClass: "status-free",
             };
         }
@@ -4484,7 +4577,7 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
         early: number;
         total: number;
     } {
-        const rooms = this.regularRooms;
+        const rooms = this.regularRoomsFromData;
         const wd = this.workingEnd(this.selectedDate);
         let overrun = 0;
         let early = 0;
@@ -4688,6 +4781,77 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
     private isInProgressStatus(status: string | null | undefined): boolean {
         const s = (status ?? "").toString().toLowerCase().trim();
         return s === "inprogress" || s === "in progress" || s.includes("בתהל");
+    }
+
+    /**
+     * בחדר ניתוח אחד לא יכולים להיות שני ניתוחים במצב "בביצוע" בו־זמנית.
+     * כשה-API מחזיר יותר מרשומת InProgress אחת, משאירים את הניתוח שכניסתו הקרובה ביותר ל"עכשיו"
+     * (בין אלה שכבר התחילו), ומתקנים את השאר — כדי שלא יוצגו שני "בביצוע" באותו כרטיס חדר.
+     */
+    private enforceSingleInProgressPerRoomSurgeries(
+        surgeries: Surgery[],
+        baseDate: string | null | undefined
+    ): void {
+        if (!surgeries?.length || !baseDate) return;
+
+        const now = new Date();
+        const inProg: Surgery[] = [];
+        for (const s of surgeries) {
+            if (this.isInProgressStatus(s.status ?? s.SurgeryStatus)) {
+                inProg.push(s);
+            }
+        }
+        if (inProg.length <= 1) return;
+
+        const scored = inProg.map((s) => {
+            const entStr = this.getEntranceTime(s);
+            const ent =
+                entStr && !this.isZeroTime(entStr)
+                    ? this.parseClockWithDate(entStr, baseDate)
+                    : null;
+            return {
+                s,
+                entMs: ent ? ent.getTime() : Number.NEGATIVE_INFINITY,
+            };
+        });
+
+        const startedNotAfterNow = scored.filter(
+            (x) =>
+                x.entMs !== Number.NEGATIVE_INFINITY &&
+                x.entMs <= now.getTime()
+        );
+
+        if (!startedNotAfterNow.length) {
+            for (const x of scored) {
+                x.s.status = "Planned";
+                x.s.SurgeryStatus = "Planned";
+            }
+            return;
+        }
+
+        const winner = startedNotAfterNow.reduce((a, b) =>
+            a.entMs >= b.entMs ? a : b
+        );
+        const winnerSurgery = winner.s;
+
+        for (const x of scored) {
+            if (x.s === winnerSurgery) continue;
+            const s = x.s;
+            const exitStr = this.getExitTime(s);
+            if (exitStr && !this.isZeroTime(exitStr)) {
+                s.status = "Completed";
+                s.SurgeryStatus = "Completed";
+            } else if (
+                x.entMs !== Number.NEGATIVE_INFINITY &&
+                x.entMs < winner.entMs
+            ) {
+                s.status = "Completed";
+                s.SurgeryStatus = "Completed";
+            } else {
+                s.status = "Planned";
+                s.SurgeryStatus = "Planned";
+            }
+        }
     }
 
     /**
