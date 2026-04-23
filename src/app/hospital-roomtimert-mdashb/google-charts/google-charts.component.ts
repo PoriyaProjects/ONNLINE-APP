@@ -308,6 +308,9 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
     /** true אחרי שהסתיים שלב 2 (לוח הניתוחים) – כדי להציג ניתוחים מתוכננים רק כשהמידע הסופי מוכן */
     calendarEnriched = false;
 
+    /** חדרים שבהם באנר «חסרה חתימה» נסגר ב-X (עד רענון מלא של הדף) */
+    private signatureBannerDismissedRoomIds = new Set<string>();
+
     constructor(
         public googleChartsService: GoogleChartsService,
         private deptColors: DepartmentColorService,
@@ -1948,6 +1951,17 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
         this.loadRoomsData();
         this.nextRefreshIn = 300;
         this.lastLoaded = new Date();
+    }
+
+    isSignatureBannerDismissed(roomId: string): boolean {
+        return this.signatureBannerDismissedRoomIds.has(roomId);
+    }
+
+    dismissSignatureBanner(roomId: string, event: Event): void {
+        event.stopPropagation();
+        event.preventDefault();
+        this.signatureBannerDismissedRoomIds.add(roomId);
+        this.cdr.markForCheck();
     }
 
     toggleAutoRefresh(): void {
@@ -3861,6 +3875,13 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
             return {
                 label: "🟢 חדר פנוי",
                 cssClass: "status-free",
+            };
+        }
+
+        if (this.isAllSurgeriesCompleted(room)) {
+            return {
+                label: "תמו הניתוחים להיום",
+                cssClass: "status-all-done",
             };
         }
 
@@ -6067,9 +6088,10 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
 
     isAllSurgeriesCompleted(room: RoomData): boolean {
         if (!room?.surgeries?.length) return false;
-        return room.surgeries.every(
-            (s) => (s?.status ?? s?.SurgeryStatus) === "Completed"
-        );
+        return room.surgeries.every((s) => {
+            const st = String(s?.status ?? s?.SurgeryStatus ?? "").toLowerCase();
+            return st === "completed";
+        });
     }
     nextPlannedSurgery(room: RoomData) {
         return room.surgeries?.find((s) => s.IsWaitingForSurgery);
