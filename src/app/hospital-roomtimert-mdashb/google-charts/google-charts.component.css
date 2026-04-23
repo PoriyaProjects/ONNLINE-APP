@@ -274,11 +274,29 @@
   pointer-events: auto;
 }
 
-.regular-section .room-float-alerts .room-float-alert-chip {
-  margin: 0;
+/* פופאפ «מוכן לניתוח» — רקע שקוף, יורד מלמעלה, סגירה ב-X */
+.regular-section .room-float-alerts .next-ready-banner-float.next-ready-banner--popup {
+  position: relative;
   width: 100%;
   box-sizing: border-box;
+  margin: 0 !important;
+  padding: 10px 30px 10px 10px;
   text-align: center;
+  border-radius: 12px;
+  border: 1px dashed rgba(46, 139, 87, 0.42);
+  background: rgba(111, 207, 151, 0.16);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  color: #146c43;
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.12), 0 2px 8px rgba(46, 139, 87, 0.12);
+  animation: signatureNoteDescend 1.35s cubic-bezier(0.22, 0.9, 0.28, 1) forwards;
+  font-size: clamp(0.78rem, 0.38vw + 0.72rem, 0.92rem);
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.regular-section .room-float-alerts .next-ready-banner-text {
+  display: block;
 }
 
 /* פופאפ חתימות: יורד לאט מלמעלה */
@@ -333,7 +351,8 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .regular-section .room-float-alerts .signature-banner--popup {
+  .regular-section .room-float-alerts .signature-banner--popup,
+  .regular-section .room-float-alerts .next-ready-banner--popup {
     animation: none !important;
     opacity: 1;
     transform: none;

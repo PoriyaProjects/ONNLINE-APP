@@ -77,8 +77,14 @@
                       aria-label="סגור התראת חתימות">✕</button>
                     <span class="signature-banner-text">⚠️ חסרה חתימה: {{ s.MissingSignaturesText }}</span>
                   </div>
-                  <div *ngIf="s.NextPatientReadyGreen" class="next-ready-chip ready room-float-alert-chip">
-                    🟢 המטופל הבא מוכן לניתוח
+                  <div
+                    *ngIf="s.NextPatientReadyGreen && !isNextReadyBannerDismissed(room.roomId)"
+                    class="next-ready-banner-float next-ready-banner--popup ready"
+                    title="המטופל הבא מוכן לניתוח">
+                    <button type="button" class="signature-banner-close"
+                      (click)="dismissNextReadyBanner(room.roomId, $event)"
+                      aria-label="סגור הודעת מוכן לניתוח">✕</button>
+                    <span class="next-ready-banner-text">🟢 המטופל הבא מוכן לניתוח</span>
                   </div>
                 </div>
 

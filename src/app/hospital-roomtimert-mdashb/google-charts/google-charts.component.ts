@@ -310,6 +310,8 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
 
     /** חדרים שבהם באנר «חסרה חתימה» נסגר ב-X (עד רענון מלא של הדף) */
     private signatureBannerDismissedRoomIds = new Set<string>();
+    /** חדרים שבהם פופאפ «המטופל הבא מוכן» נסגר ב-X (עד רענון מלא של הדף) */
+    private nextReadyBannerDismissedRoomIds = new Set<string>();
 
     constructor(
         public googleChartsService: GoogleChartsService,
@@ -1488,6 +1490,32 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
         return d;
     }
 
+    /**
+     * ניתוח שהושלם ושעת יציאה בפועל לפני תחילת יום העבודה (07:30) — לא רלוונטי למסך המשמרת.
+     */
+    private isCompletedWithExitBeforeShiftStart(
+        s: Surgery,
+        room: RoomData
+    ): boolean {
+        if (!this.isCompletedStatus(s.status ?? s.SurgeryStatus)) {
+            return false;
+        }
+        const exitStr = this.getExitTime(s);
+        if (!exitStr || this.isZeroTime(exitStr)) {
+            return false;
+        }
+        const base = room.date || this.selectedDate;
+        if (!base) {
+            return false;
+        }
+        const exitAt = this.parseClockWithDate(exitStr, base);
+        if (!exitAt) {
+            return false;
+        }
+        const shiftStart = this.workingStart(base);
+        return exitAt.getTime() < shiftStart.getTime();
+    }
+
     /** 07:00 ביום הנבחר – תצוגת "חדר פנוי" / משך פנאי לא סופרים זמן לפני השעה הזו */
     private idleMetricsDayStart(baseDate: string | Date): Date {
         const d = new Date(baseDate);
@@ -1946,6 +1974,8 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
 
             if (this.surgeryIsAmbulatoryForDisplay(s, room)) return false;
 
+            if (this.isCompletedWithExitBeforeShiftStart(s, room)) return false;
+
             return true;
         });
     }
@@ -1991,6 +2021,20 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
         event.stopPropagation();
         event.preventDefault();
         this.signatureBannerDismissedRoomIds.add(roomId);
+        this.cdr.markForCheck();
+    }
+
+    isNextReadyBannerDismissed(roomId: string): boolean {
+        return this.nextReadyBannerDismissedRoomIds.has(roomId);
+    }
+
+    dismissNextReadyBanner(roomId: string, event: Event): void {
+        event.stopPropagation();
+        event.preventDefault();
+        this.nextReadyBannerDismissedRoomIds.add(roomId);
+        this.nextReadyBannerDismissedRoomIds = new Set(
+            this.nextReadyBannerDismissedRoomIds
+        );
         this.cdr.markForCheck();
     }
 
@@ -2365,7 +2409,9 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
                   .toLowerCase()
                   .replace(/\s+/g, "");
               if (st === "cancelled" || st === "canceled") return false;
-              return st !== "planned";
+              if (st === "planned") return false;
+              if (this.isCompletedWithExitBeforeShiftStart(s, room)) return false;
+              return true;
           });
       }
 
@@ -4018,7 +4064,9 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
             const status = String(
                 s.status ?? s.SurgeryStatus ?? ""
             ).toLowerCase();
-            return status !== "canceled" && status !== "cancelled";
+            if (status === "canceled" || status === "cancelled") return false;
+            if (this.isCompletedWithExitBeforeShiftStart(s, room)) return false;
+            return true;
         });
 
         if (!relevant.length) {
