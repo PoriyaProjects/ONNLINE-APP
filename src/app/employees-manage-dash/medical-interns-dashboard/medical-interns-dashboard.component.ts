@@ -43,6 +43,7 @@ export class MedicalInternsDashboardComponent implements OnInit {
   @ViewChild(MatSort) sort: MatSort;
   searchInternsGroup: FormGroup;
   DepartmentsList: any[] = [];
+  DepartmentsListSecond: any[] = [];
   loaded = false;
   url = environment.url;
   emptyIntern: any;
@@ -137,6 +138,7 @@ export class MedicalInternsDashboardComponent implements OnInit {
       LastName: new FormControl('', null),
       PhoneNumber: new FormControl('', null),
       Department: new FormControl('', null),
+      DepartmentSecond: new FormControl('', null),
       On: new FormControl('', null),
       MonthYear: new FormControl('', null),
     });
@@ -303,6 +305,13 @@ export class MedicalInternsDashboardComponent implements OnInit {
     const monthYear = this.searchInternsGroup?.get('MonthYear')?.value || null;
     this.http.post(this.url + 'GetMedicalInternDepartments', { _InternPeriod: monthYear || null }).subscribe((response) => {
       this.DepartmentsList = response['d'] || [];
+    });
+  }
+  
+  getDepartmentListSecond() {
+    const monthYear = this.searchInternsGroup?.get('MonthYear')?.value || null;
+    this.http.post(this.url + 'GetMedicalInternDepartmentsSecond', { _InternPeriod: monthYear || null }).subscribe((response) => {
+      this.DepartmentsListSecond = response['d'] || [];
     });
   }
 
@@ -530,11 +539,13 @@ export class MedicalInternsDashboardComponent implements OnInit {
   getMedicalInterns() {
     this.loaded = false;
     this.getDepartmentList();
+    this.getDepartmentListSecond();
     const EmployeeID = this.searchInternsGroup?.controls['EmployeeID']?.value || '';
     const firstName = this.searchInternsGroup?.controls['FirstName']?.value || '';
     const lastName = this.searchInternsGroup?.controls['LastName']?.value || '';
     const phoneNumber = this.searchInternsGroup?.controls['PhoneNumber']?.value || '';
     const department = this.searchInternsGroup?.controls['Department']?.value || '';
+    const departmentSecond = this.searchInternsGroup?.controls['DepartmentSecond']?.value || '';
     const onValue = this.searchInternsGroup?.controls['On']?.value || '';
     const monthYear = this.searchInternsGroup?.controls['MonthYear']?.value || '';
     this.http
@@ -544,6 +555,7 @@ export class MedicalInternsDashboardComponent implements OnInit {
         _lastName: lastName,
         _phoneNumber: phoneNumber,
         _department: department,
+        _departmentSecond: departmentSecond,
         _on: onValue,
         _monthYear: monthYear,
       })
@@ -591,6 +603,7 @@ export class MedicalInternsDashboardComponent implements OnInit {
       LastName: '',
       PhoneNumber: '',
       Department: '',
+      DepartmentSecond: '',
       On: '',
       MonthYear: ''
     });
@@ -605,6 +618,7 @@ export class MedicalInternsDashboardComponent implements OnInit {
       LastName: '',
       PhoneNumber: '',
       Department: '',
+      DepartmentSecond: '',
       On: '',
       MonthYear: ''
     });
