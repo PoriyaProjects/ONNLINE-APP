@@ -26,6 +26,43 @@ export interface NpsEmployeeProfileAssignmentRow {
   assignmentStatus?: string | null;
 }
 
+export interface NpsPermissionApprovalGridRow {
+  RequestID: number;
+  EmployeeID: number;
+  FullName: string;
+  RuleID?: number | null;
+  ProfileID: number;
+  ItemID: number;
+  PermissionID: number;
+  PermissionName: string;
+  PermissionIsActive: boolean;
+  RequestStatus: string;
+  Manager1Approved: boolean;
+  Manager2Approved: boolean;
+  EmployeeApproved: boolean;
+  Manager1ApproverID?: number | null;
+  Manager2ApproverID?: number | null;
+  EmployeeApproverID?: number | null;
+  LastUpdateDate?: string | null;
+}
+
+export interface NpsCreatePermissionRequestFromRuleBody {
+  employeeId: number;
+  ruleId: number;
+  notes?: string;
+}
+
+export interface NpsPermissionApprovalUpdateBody {
+  itemId: number;
+  stepNo: number;
+  approved: boolean;
+  comments?: string;
+}
+
+export interface NpsPermissionApprovalBatchBody {
+  approvals: NpsPermissionApprovalUpdateBody[];
+}
+
 export interface NpsEmployeeDetail {
   EmployeeID: number;
   FirstName: string;

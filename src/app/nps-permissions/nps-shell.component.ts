@@ -20,11 +20,9 @@ export class NpsShellComponent {
     { path: '/nps-permissions/actions', label: 'קבוצות', icon: 'widgets' },
     { path: '/nps-permissions/permissions', label: 'פעולות', icon: 'lock' },
     { path: '/nps-permissions/profile-rules', label: 'כללי פרופיל', icon: 'rule' },
-    { path: '/nps-permissions/employee-assignments', label: 'שיוכי עובדים', icon: 'assignment_ind' },
-    { path: '/nps-permissions/requests', label: 'בקשות', icon: 'assignment' },
-    { path: '/nps-permissions/my-approvals', label: 'אישורים שלי', icon: 'how_to_reg' },
-    { path: '/nps-permissions/my-requests', label: 'הבקשות שלי', icon: 'fact_check' },
-    { path: '/nps-permissions/audit', label: 'יומן ביקורת', icon: 'history' },
+    // { path: '/nps-permissions/employee-assignments', label: 'שיוכי עובדים', icon: 'assignment_ind' },
+    { path: '/nps-permissions/my-requests', label: 'אישורי הרשאות', icon: 'fact_check' },
+    // { path: '/nps-permissions/audit', label: 'יומן ביקורת', icon: 'history' },
   ];
 
   constructor(private router: Router) {}

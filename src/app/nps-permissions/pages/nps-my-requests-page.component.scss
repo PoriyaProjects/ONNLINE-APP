@@ -4,6 +4,17 @@ h1 {
   color: var(--nps-text);
 }
 
+.filters-card {
+  margin-bottom: 12px;
+
+  mat-card-content {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+}
+
 .full {
   width: 100%;
   border-radius: 12px;
@@ -13,4 +24,51 @@ h1 {
 .nps-table {
   border: 1px solid var(--nps-border);
   box-shadow: var(--nps-shadow-soft);
+  margin-bottom: 18px;
+}
+
+.table-scroll-wrap {
+  max-height: 520px;
+  overflow: auto;
+  border-radius: 12px;
+  border: 1px solid var(--nps-border);
+  background: #fff;
+}
+
+.step-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.state-msg {
+  margin: 8px 0 12px;
+  color: var(--nps-text-muted, #666);
+}
+
+.state-msg.error {
+  color: #b00020;
+}
+
+.create-card {
+  max-width: 760px;
+}
+
+.wide {
+  width: 100%;
+  max-width: 420px;
+}
+
+
+.step-cell {
+  display: flex;
+  flex-direction: column; /* Stacks "מנהל ישיר" above the checkbox */
+  align-items: center;
+  gap: 4px;
+}
+
+/* If you want the checkbox and "Select All" on the same line */
+mat-checkbox {
+  font-size: 12px; 
+  white-space: nowrap;
 }

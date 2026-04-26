@@ -15,7 +15,11 @@ import {
   NpsEmployeeDetail,
   NpsEmployeeListRow,
   NpsEmployeeProfileAssignmentRow,
+  NpsCreatePermissionRequestFromRuleBody,
   NpsPermission,
+  NpsPermissionApprovalGridRow,
+  NpsPermissionApprovalBatchBody,
+  NpsPermissionApprovalUpdateBody,
   NpsPermissionCard,
   NpsProfile,
   NpsProfilePermission,
@@ -248,6 +252,69 @@ export class NpsBaseApiService {
 
   getMyRequests(user_id: string): Observable<NpsRequestSummary[]> {
     return this.post<NpsRequestSummary[]>('NpsGetMyRequests', { user_id: user_id || '' });
+  }
+
+  getPermissionApprovalGrid(
+    user_id: string,
+    options?: { employeeId?: number | null; status?: string; mineOnly?: boolean; skip?: number; take?: number }
+  ): Observable<NpsPermissionApprovalGridRow[]> {
+    return this.post<NpsPermissionApprovalGridRow[]>('NpsGetPermissionApprovalGrid', {
+      user_id: user_id || '',
+      employeeId: options?.employeeId != null ? String(options.employeeId) : '',
+      status: options?.status || '',
+      mineOnly: options?.mineOnly === true,
+      skip: options?.skip ?? 0,
+      take: options?.take ?? 200,
+    });
+  }
+
+  createPermissionRequestFromRule(
+    user_id: string,
+    body: NpsCreatePermissionRequestFromRuleBody
+  ): Observable<{ requestId: number; itemCount: number; success: boolean }> {
+    return this.post<{ requestId: number; itemCount: number; success: boolean }>('NpsCreatePermissionRequestFromRule', {
+      user_id: user_id || '',
+      body: {
+        employeeId: body.employeeId,
+        ruleId: body.ruleId,
+        notes: body.notes || '',
+      },
+    });
+  }
+
+  setPermissionItemApproval(
+    user_id: string,
+    body: NpsPermissionApprovalUpdateBody
+  ): Observable<{ success: boolean; requestId: number; requestStatus: string }> {
+    return this.post<{ success: boolean; requestId: number; requestStatus: string }>('NpsSetPermissionItemApproval', {
+      user_id: user_id || '',
+      body: {
+        itemId: body.itemId,
+        stepNo: body.stepNo,
+        approved: body.approved,
+        comments: body.comments || '',
+      },
+    });
+  }
+
+  setPermissionItemsApproval(
+    user_id: string,
+    body: NpsPermissionApprovalBatchBody
+  ): Observable<{ success: boolean; count: number; results: Array<{ requestId: number; requestStatus: string }> }> {
+    return this.post<{ success: boolean; count: number; results: Array<{ requestId: number; requestStatus: string }> }>(
+      'NpsSetPermissionItemsApproval',
+      {
+        user_id: user_id || '',
+        body: {
+          approvals: (body.approvals || []).map((x) => ({
+            itemId: x.itemId,
+            stepNo: x.stepNo,
+            approved: x.approved,
+            comments: x.comments || '',
+          })),
+        },
+      }
+    );
   }
 
   approveRequest(user_id: string, id: number, comments?: string): Observable<any> {
