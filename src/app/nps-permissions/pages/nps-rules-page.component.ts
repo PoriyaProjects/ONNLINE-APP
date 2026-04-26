@@ -1,16 +1,13 @@
 import { Component, OnInit } from '@angular/core';
-import { forkJoin, Observable } from 'rxjs';
-import { map, switchMap } from 'rxjs/operators';
+import { forkJoin } from 'rxjs';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import {
   NpsDepartment,
   NpsEducationCatalog,
   NpsPermission,
-  NpsPermissionCard,
   NpsProfile,
   NpsProfilePermission,
   NpsProfileRule,
-  NpsProfileRuleTableRow,
   NpsSpecialtyCatalog,
 } from '../models/nps.models';
 import { NpsBaseApiService } from '../services/nps-base-api.service';
@@ -26,7 +23,7 @@ const NPS_GENERAL = '__nps_general__';
 export class NpsRulesPageComponent implements OnInit {
   readonly generalToken = NPS_GENERAL;
 
-  rules: NpsProfileRuleTableRow[] = [];
+  rules: NpsProfileRule[] = [];
   profiles: NpsProfile[] = [];
   departments: NpsDepartment[] = [];
   educations: NpsEducationCatalog[] = [];
@@ -34,12 +31,12 @@ export class NpsRulesPageComponent implements OnInit {
   specialtyLookup: NpsSpecialtyCatalog[] = [];
   /** Specialties for the “new rule” form; loaded from the server when an education is chosen. */
   formSpecialties: NpsSpecialtyCatalog[] = [];
-  cols = ['profileName', 'actionSubject', 'grantedCount', 'edit', 'del'];
+  cols = ['rid', 'pid', 'dept', 'edu', 'spec', 'edit', 'del'];
   newRule = {
     ProfileID: null as number | null,
     DepartnentCode: '',
-    EducationID: '',
-    SpecialtyID: '',
+    EducationID: null as number | null,
+    SpecialtyID: null as number | null,
     IsActive: true,
   };
   /** Bound to autocomplete inputs (display / filter text). */
@@ -50,20 +47,18 @@ export class NpsRulesPageComponent implements OnInit {
 
   /** Permission matrix: shown only after “attach”, scoped visually to full rule context (saved per profile on server). */
   perms: NpsPermission[] = [];
-  matrixCards: NpsPermissionCard[] = [];
   pp: NpsProfilePermission[] = [];
   matrixAttached = false;
   /** Snapshot when user attached; if rule fields diverge, matrix is cleared. */
   private attachedContext: {
     profileId: number;
     departmentCode: string;
-    educationId: string | null;
-    specialtyId: string | null;
+    educationId: number | null;
+    specialtyId: number | null;
   } | null = null;
   private matrix: { PermissionID: number; IsGranted: boolean }[] = [];
   /** Table row edit: separate state from new-rule attach flow. */
   editingRule: NpsProfileRule | null = null;
-  editMatrixCards: NpsPermissionCard[] = [];
   editPp: NpsProfilePermission[] = [];
   private editMatrix: { PermissionID: number; IsGranted: boolean }[] = [];
   /** Ignores stale responses when education changes quickly. */
@@ -99,7 +94,8 @@ export class NpsRulesPageComponent implements OnInit {
     return this.profiles.filter(
       (p) =>
         p.ProfileName.toLowerCase().includes(q) ||
-        String(p.ProfileID).includes(q)
+        String(p.ProfileID).includes(q) ||
+        (p.ProfileCode && p.ProfileCode.toLowerCase().includes(q))
     );
   }
 
@@ -180,12 +176,9 @@ export class NpsRulesPageComponent implements OnInit {
     return eduOk && specOk;
   }
 
-  /** Loads the matrix when the rule context is complete. Pass `true` to show validation snack (e.g. legacy manual trigger). */
-  attachPermissionMatrix(showValidationSnack = false): void {
+  attachPermissionMatrix(): void {
     if (!this.canAttachPermissionMatrix()) {
-      if (showValidationSnack) {
-        this.snack.open('מלאו פרופיל, מחלקה, השכלה והתמחות (או כללי) ואז צרפו את המטריצה', 'סגור', { duration: 3500 });
-      }
+      this.snack.open('מלאו פרופיל, מחלקה, השכלה והתמחות (או כללי) ואז צרפו את המטריצה', 'סגור', { duration: 3500 });
       return;
     }
     const pid = this.newRule.ProfileID;
@@ -196,29 +189,7 @@ export class NpsRulesPageComponent implements OnInit {
     this.matrixAttached = true;
     this.attachedContext = this.captureRuleContext();
     this.matrix = [];
-    this.api
-      .getProfilePermissionsByRuleContext(this.employee_id, {
-        ProfileID: pid,
-        departmentCode: String(this.newRule.DepartnentCode || ''),
-        EducationID: this.newRule.EducationID ?? null,
-        SpecialtyID: this.newRule.SpecialtyID ?? null,
-      })
-      .subscribe((x) => {
-        this.matrixCards = x || [];
-        this.pp = this.flattenCardsToProfilePermissions(this.matrixCards, pid);
-      });
-  }
-
-  /** Opens the matrix as soon as all required fields are set; skips redundant refetch for the same context. */
-  private tryAutoAttachPermissionMatrix(): void {
-    if (!this.canAttachPermissionMatrix() || this.editingRule != null) {
-      return;
-    }
-    const cur = this.captureRuleContext();
-    if (this.matrixAttached && this.attachedContext && this.contextsEqual(this.attachedContext, cur)) {
-      return;
-    }
-    this.attachPermissionMatrix(false);
+    this.api.getProfilePermissions(this.employee_id, pid).subscribe((x) => (this.pp = x));
   }
 
   cancelMatrixAttachment(): void {
@@ -235,8 +206,8 @@ export class NpsRulesPageComponent implements OnInit {
   }
 
   private contextsEqual(
-    a: { profileId: number; departmentCode: string; educationId: string | null; specialtyId: string | null },
-    b: { profileId: number; departmentCode: string; educationId: string | null; specialtyId: string | null }
+    a: { profileId: number; departmentCode: string; educationId: number | null; specialtyId: number | null },
+    b: { profileId: number; departmentCode: string; educationId: number | null; specialtyId: number | null }
   ): boolean {
     return (
       a.profileId === b.profileId &&
@@ -253,46 +224,15 @@ export class NpsRulesPageComponent implements OnInit {
     const cur = this.captureRuleContext();
     if (!this.contextsEqual(this.attachedContext, cur)) {
       this.clearMatrixAttachment();
-      this.snack.open('שיניתם את הקשר — מטריצת ההרשאות מתעדכנת', 'סגור', { duration: 3000 });
+      this.snack.open('שיניתם את הקשר — צרפו שוב את מטריצת ההרשאות', 'סגור', { duration: 3000 });
     }
   }
 
   private clearMatrixAttachment(): void {
     this.matrixAttached = false;
     this.attachedContext = null;
-    this.matrixCards = [];
     this.pp = [];
     this.matrix = [];
-  }
-
-  private flattenCardsToProfilePermissions(cards: NpsPermissionCard[], profileId: number): NpsProfilePermission[] {
-    const list: NpsProfilePermission[] = [];
-    (cards || []).forEach((card) => {
-      (card.Permissions || []).forEach((perm) => {
-        list.push({
-          ProfileID: profileId,
-          PermissionID: perm.PermissionID,
-          IsGranted: !!perm.IsGranted,
-        });
-      });
-    });
-    return list;
-  }
-
-  private ensureRuleForContext(
-    profileID: number,
-    departmentCode: string,
-    educationID: string | null,
-    specialtyID: string | null,
-    isActive = true
-  ): Observable<void> {
-    return this.api.postProfileRule(this.employee_id, {
-      ProfileID: profileID,
-      departmentCode: String(departmentCode || ''),
-      EducationID: educationID,
-      SpecialtyID: specialtyID,
-      isActive,
-    }).pipe(map(() => void 0));
   }
 
   onMatrix(v: { PermissionID: number; IsGranted: boolean }[]): void {
@@ -306,17 +246,8 @@ export class NpsRulesPageComponent implements OnInit {
   startEditRule(r: NpsProfileRule): void {
     this.clearMatrixAttachment();
     this.editingRule = r;
-    this.editMatrixCards = [];
     this.editMatrix = [];
-    this.api.getProfilePermissionsByRuleContext(this.employee_id, {
-      ProfileID: r.ProfileID,
-      departmentCode: String(r.DepartnentCode || r.DepartmentCode || ''),
-      EducationID: String(r.EducationID),
-      SpecialtyID: String(this.ruleSpecialtyId(r)),
-    }).subscribe((cards) => {
-      this.editMatrixCards = cards || [];
-      this.editPp = this.flattenCardsToProfilePermissions(this.editMatrixCards, r.ProfileID);
-    });
+    this.api.getProfilePermissions(this.employee_id, r.ProfileID).subscribe((x) => (this.editPp = x));
   }
 
   cancelEditRule(): void {
@@ -325,7 +256,6 @@ export class NpsRulesPageComponent implements OnInit {
 
   private clearEditRule(): void {
     this.editingRule = null;
-    this.editMatrixCards = [];
     this.editPp = [];
     this.editMatrix = [];
   }
@@ -334,23 +264,11 @@ export class NpsRulesPageComponent implements OnInit {
     if (this.editingRule == null) {
       return;
     }
-    const rule = this.editingRule;
-    const pid = rule.ProfileID;
-    const fallback = this.editMatrixCards.length
-      ? this.flattenCardsToProfilePermissions(this.editMatrixCards, pid)
-      : this.editPp;
+    const pid = this.editingRule.ProfileID;
     const body = this.editMatrix.length
       ? this.editMatrix
-      : fallback.map((x) => ({ PermissionID: x.PermissionID, IsGranted: x.IsGranted }));
-    this.ensureRuleForContext(
-      pid,
-      String(rule.DepartnentCode || rule.DepartmentCode || ''),
-      String(rule.EducationID),
-      String(this.ruleSpecialtyId(rule)),
-      true
-    ).pipe(
-      switchMap(() => this.api.putProfilePermissions(this.employee_id, pid, body))
-    ).subscribe(() =>
+      : this.editPp.map((x) => ({ PermissionID: x.PermissionID, IsGranted: x.IsGranted }));
+    this.api.putProfilePermissions(this.employee_id, pid, body).subscribe(() =>
       this.snack.open('הרשאות נשמרו', 'סגור', { duration: 2000 })
     );
   }
@@ -359,25 +277,12 @@ export class NpsRulesPageComponent implements OnInit {
     if (!this.matrixAttached || this.newRule.ProfileID == null) {
       return;
     }
-    const pid = this.newRule.ProfileID;
     const body = this.matrix.length
       ? this.matrix
-      : this.flattenCardsToProfilePermissions(this.matrixCards, pid).map((x) => ({ PermissionID: x.PermissionID, IsGranted: x.IsGranted }));
-    this.ensureRuleForContext(
-      pid,
-      this.newRule.DepartnentCode,
-      this.newRule.EducationID,
-      this.newRule.SpecialtyID,
-      this.newRule.IsActive
-    ).pipe(
-      switchMap(() => this.api.putProfilePermissions(this.employee_id, pid, body))
-    ).subscribe(() => {
-      this.snack.open('הרשאות נשמרו', 'סגור', { duration: 2000 });
-      this.reload();
-      this.clearMatrixAttachment();
-    }, error => {
-      this.snack.open('אירעה שגיאה בשמירת הרשאות', 'סגור', { duration: 2000 });
-    });
+      : this.pp.map((x) => ({ PermissionID: x.PermissionID, IsGranted: x.IsGranted }));
+    this.api.putProfilePermissions(this.employee_id, this.newRule.ProfileID, body).subscribe(() =>
+      this.snack.open('הרשאות נשמרו', 'סגור', { duration: 2000 })
+    );
   }
 
   onProfileInput(): void {
@@ -385,7 +290,6 @@ export class NpsRulesPageComponent implements OnInit {
       this.newRule.ProfileID = null;
     }
     this.maybeInvalidateMatrixAttachment();
-    this.tryAutoAttachPermissionMatrix();
   }
 
   onDeptInput(): void {
@@ -393,7 +297,6 @@ export class NpsRulesPageComponent implements OnInit {
       this.newRule.DepartnentCode = '';
     }
     this.maybeInvalidateMatrixAttachment();
-    this.tryAutoAttachPermissionMatrix();
   }
 
   onEduInput(): void {
@@ -402,7 +305,6 @@ export class NpsRulesPageComponent implements OnInit {
       this.loadFormSpecialties();
     }
     this.maybeInvalidateMatrixAttachment();
-    this.tryAutoAttachPermissionMatrix();
   }
 
   onSpecInput(): void {
@@ -410,23 +312,15 @@ export class NpsRulesPageComponent implements OnInit {
       this.newRule.SpecialtyID = null;
     }
     this.maybeInvalidateMatrixAttachment();
-    this.tryAutoAttachPermissionMatrix();
   }
 
   selectProfile(id: number): void {
     const p = this.profiles.find((x) => x.ProfileID === id);
     if (p) {
       this.newRule.ProfileID = id;
-      this.newRule.DepartnentCode = p.DepartnentCode;
-      this.newRule.EducationID = p.EducationID;
-      this.newRule.SpecialtyID = p.SpecialityID;
       this.profileInput = p.ProfileName;
-      this.selectDepartment(p.DepartnentCode);
-      this.selectEducation(p.EducationID);
-      this.selectSpecialty(p.SpecialityID);
     }
     this.maybeInvalidateMatrixAttachment();
-    this.tryAutoAttachPermissionMatrix();
   }
 
   selectDepartment(code: string): void {
@@ -436,7 +330,6 @@ export class NpsRulesPageComponent implements OnInit {
       this.deptInput = d.DepartnentDescripton;
     }
     this.maybeInvalidateMatrixAttachment();
-    this.tryAutoAttachPermissionMatrix();
   }
 
   selectEducation(value: number | string): void {
@@ -446,13 +339,12 @@ export class NpsRulesPageComponent implements OnInit {
     } else {
       const idStr = String(value);
       const n = Number(idStr);
-      this.newRule.EducationID = String(Number.isFinite(n) ? n : null);
+      this.newRule.EducationID = Number.isFinite(n) ? n : null;
       const e = this.educations.find((x) => x.EducationID === idStr);
       this.eduInput = e ? e.EducationSubject : '';
     }
     this.loadFormSpecialties();
     this.maybeInvalidateMatrixAttachment();
-    this.tryAutoAttachPermissionMatrix();
   }
 
   selectSpecialty(value: number | string): void {
@@ -462,12 +354,11 @@ export class NpsRulesPageComponent implements OnInit {
     } else {
       const idStr = String(value);
       const n = Number(idStr);
-      this.newRule.SpecialtyID = String(Number.isFinite(n) ? n : null);
+      this.newRule.SpecialtyID = Number.isFinite(n) ? n : null;
       const s = this.formSpecialties.find((x) => x.SpecialtyID == idStr);
       this.specInput = s ? s.Speciality : '';
     }
     this.maybeInvalidateMatrixAttachment();
-    this.tryAutoAttachPermissionMatrix();
   }
 
   reload(): void {
@@ -505,53 +396,6 @@ export class NpsRulesPageComponent implements OnInit {
     return s ? s.Speciality : String(id);
   }
 
-  private toNullableNumber(value: unknown): number | null {
-    if (value == null || value === '') {
-      return null;
-    }
-    const n = Number(value);
-    return Number.isFinite(n) ? n : null;
-  }
-
-  private summaryToRule(row: NpsProfileRuleTableRow): NpsProfileRule | null {
-    const ruleId = this.toNullableNumber(row.RuleID);
-    const profileId = this.toNullableNumber(row.ProfileID);
-    if (ruleId == null || profileId == null) {
-      return null;
-    }
-    const educationId = this.toNullableNumber(row.EducationID);
-    const specialtyId = this.toNullableNumber(row.SpecialtyID);
-    return {
-      RuleID: ruleId,
-      ProfileID: profileId,
-      DepartnentCode: row.DepartnentCode || '',
-      EducationID: educationId == null ? undefined : educationId,
-      SpecialtyID: specialtyId == null ? undefined : specialtyId,
-      IsActive: true,
-      EffectiveFrom: '',
-      EffectiveTo: '',
-      RuleDescription: '',
-    };
-  }
-
-  editSummaryRule(row: NpsProfileRuleTableRow): void {
-    const fullRule = this.summaryToRule(row);
-    if (!fullRule) {
-      this.snack.open('אין מזהה כלל לשורת הסיכום הזו', 'סגור', { duration: 2500 });
-      return;
-    }
-    this.startEditRule(fullRule);
-  }
-
-  removeSummaryRule(row: NpsProfileRuleTableRow): void {
-    const ruleId = this.toNullableNumber(row.RuleID);
-    if (ruleId == null) {
-      this.snack.open('אין מזהה כלל לשורת הסיכום הזו', 'סגור', { duration: 2500 });
-      return;
-    }
-    this.remove(ruleId);
-  }
-
   add(): void {
     if (this.newRule.ProfileID == null || !String(this.newRule.DepartnentCode || '').trim()) {
       this.snack.open('בחרו פרופיל ומחלקה', 'סגור', { duration: 2500 });
@@ -561,8 +405,8 @@ export class NpsRulesPageComponent implements OnInit {
       .postProfileRule(this.employee_id, {
         ProfileID: this.newRule.ProfileID,
         departmentCode: this.newRule.DepartnentCode,
-        EducationID: this.newRule.EducationID,
-        SpecialtyID: this.newRule.SpecialtyID,
+        EducationID: this.newRule.EducationID ?? null,
+        SpecialtyID: this.newRule.SpecialtyID ?? null,
         isActive: this.newRule.IsActive,
       })
       .subscribe(() => {

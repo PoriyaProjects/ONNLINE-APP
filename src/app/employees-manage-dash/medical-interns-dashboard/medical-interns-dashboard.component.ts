@@ -40,8 +40,7 @@ export class MedicalInternsDashboardComponent implements OnInit {
   ];
   dataSource = new MatTableDataSource(this.TABLE_DATA);
   @ViewChild('internsPaginator') paginator: MatPaginator;
-  /** Must match #internsSort on the interns table — re-attached after *ngIf renders the table */
-  @ViewChild('internsSort') sort: MatSort;
+  @ViewChild(MatSort) sort: MatSort;
   searchInternsGroup: FormGroup;
   DepartmentsList: any[] = [];
   DepartmentsListSecond: any[] = [];
@@ -361,26 +360,7 @@ export class MedicalInternsDashboardComponent implements OnInit {
       this.loadServerData();
     } else if (mode === 'feedback') {
       this.loadFeedbackData();
-    } else if (mode === 'interns') {
-      this.connectInternsTableSortAndPaginator();
     }
-  }
-
-  /**
-   * MatSort/MatPaginator are on a table inside *ngIf — they are undefined until the view exists.
-   * Assigning in the HTTP callback runs before CD, so sort stays undefined unless we defer.
-   * Switching view modes destroys/recreates the table; we must re-attach after it renders.
-   */
-  private connectInternsTableSortAndPaginator(): void {
-    setTimeout(() => {
-      if (!this.dataSource) return;
-      if (this.paginator) {
-        this.dataSource.paginator = this.paginator;
-      }
-      if (this.sort) {
-        this.dataSource.sort = this.sort;
-      }
-    });
   }
 
   onServerDataMonthYearChange(): void {
@@ -586,14 +566,16 @@ export class MedicalInternsDashboardComponent implements OnInit {
 
           this.TABLE_DATA = data;
           this.dataSource = new MatTableDataSource<any>(data);
-          this.connectInternsTableSortAndPaginator();
+          this.dataSource.paginator = this.paginator;
+          this.dataSource.sort = this.sort;
 
           this.calculateStats(data);
         },
         () => {
           this.loaded = true;
           this.dataSource = new MatTableDataSource<any>([]);
-          this.connectInternsTableSortAndPaginator();
+          this.dataSource.paginator = this.paginator;
+          this.dataSource.sort = this.sort;
         }
       );
   }

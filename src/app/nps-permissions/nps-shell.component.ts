@@ -17,12 +17,17 @@ export class NpsShellComponent {
   readonly navItems: NpsNavItem[] = [
     { path: '/nps-permissions/dashboard', label: 'לוח בקרה', icon: 'space_dashboard', exact: true },
     { path: '/nps-permissions/profiles', label: 'פרופילים', icon: 'badge' },
-    { path: '/nps-permissions/actions', label: 'קבוצות', icon: 'widgets' },
-    { path: '/nps-permissions/permissions', label: 'פעולות', icon: 'lock' },
     { path: '/nps-permissions/profile-rules', label: 'כללי פרופיל', icon: 'rule' },
+<<<<<<< HEAD
     // { path: '/nps-permissions/employee-assignments', label: 'שיוכי עובדים', icon: 'assignment_ind' },
     { path: '/nps-permissions/my-requests', label: 'אישורי הרשאות', icon: 'fact_check' },
     // { path: '/nps-permissions/audit', label: 'יומן ביקורת', icon: 'history' },
+=======
+    { path: '/nps-permissions/requests', label: 'בקשות', icon: 'assignment' },
+    { path: '/nps-permissions/my-approvals', label: 'אישורים שלי', icon: 'how_to_reg' },
+    { path: '/nps-permissions/my-requests', label: 'הבקשות שלי', icon: 'fact_check' },
+    { path: '/nps-permissions/audit', label: 'יומן ביקורת', icon: 'history' },
+>>>>>>> origin/main
   ];
 
   constructor(private router: Router) {}

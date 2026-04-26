@@ -467,12 +467,10 @@
                             <td mat-cell *matCellDef="let row; let i = index" [formGroupName]="i">
                                 <mat-form-field appearance="outline" class="w-full">
                                     <!-- <input matInput placeholder="שם השכלה" formControlName="EducationSubject" /> -->
-                                    <mat-select formControlName="EducationID" aria-placeholder="השכלה"
-                                        [compareWith]="compareByIdString"
-                                        (selectionChange)="onEducationIdChange(i, $event.value)">
-                                        <mat-option *ngFor="let education of EducationsList" [value]="education.EducationID">
-                                            {{ education.EducationSubject }}
-                                        </mat-option>
+                                    <mat-select formControlName="EducationSubject" aria-placeholder="התמחות"
+                                        (selectionChange)="onEducationSubjectChange(i, $event.value)">
+                                        <mat-option *ngFor="let education of EducationsList" [value]="education">
+                                            {{education}} </mat-option>
                                     </mat-select>
                                 </mat-form-field>
                             </td>
@@ -485,12 +483,9 @@
                             <td mat-cell *matCellDef="let row; let i = index" [formGroupName]="i">
                                 <mat-form-field appearance="outline" class="w-full">
                                     <!-- <input matInput placeholder="שם התמחות" formControlName="Speciality" /> -->
-                                    <mat-select formControlName="SpecialtyID" aria-placeholder="התמחות"
-                                        [compareWith]="compareByIdString"
-                                        (selectionChange)="onSpecialtyIdChange(i, $event.value)">
-                                        <mat-option *ngFor="let speciality of getSpecialitiesForRow(i)" [value]="speciality.SpecialtyID">
-                                            {{ speciality.Speciality }}
-                                        </mat-option>
+                                    <mat-select formControlName="Speciality" aria-placeholder="התמחות">
+                                        <mat-option *ngFor="let speciality of getSpecialitiesForRow(i)" [value]="speciality">
+                                            {{speciality}} </mat-option>
                                     </mat-select>
                                 </mat-form-field>
                             </td>
