@@ -273,7 +273,7 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
         this.IfPlannedSurgeries = "original";
         tempArr['SurgeriesCalendarClassList'].forEach(element => {
           debugger
-          const datePart = element.ArrivalDate.split(' ')[0];
+          const base = new Date(element.ArrivalDate.split(' ')[0] + 'T' + element.ArrivalTime);
           if (!element.AvgDauration || element.AvgDauration.trim() === '') {
             const totalMinutes = Number(element.Duration);
 
@@ -288,27 +288,10 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
                 String(minutes).padStart(2, '0');
             }
           }
-
-          let endDate: Date;
-          const serverEnd = element.EndTime;
-          const endStr = serverEnd != null ? String(serverEnd).trim() : '';
-          const useServerEnd = endStr !== '' && endStr !== '00:00';
-          if (useServerEnd) {
-            endDate = new Date(`${datePart}T${endStr}`);
-            if (!Number.isNaN(endDate.getTime())) {
-              element.EndTime = this.datePipe.transform(endDate, 'HH:mm');
-            } else {
-              endDate = undefined as unknown as Date;
-            }
-          }
-          if (!endDate || Number.isNaN(endDate.getTime())) {
-            const base = new Date(datePart + 'T' + element.ArrivalTime);
-            const [h, m] = element.AvgDauration.split(':').map(Number);
-            base.setMinutes(base.getMinutes() + h * 60 + m);
-            console.log(base);
-            endDate = base;
-            element.EndTime = base.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' });
-          }
+          const [h, m] = element.AvgDauration.split(':').map(Number);
+          base.setMinutes(base.getMinutes() + h * 60 + m);
+          console.log(base)
+          element.EndTime = base.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' });
           //debugger
           // set the title of the surgeries tabs in the dashboard
           if (element.SurgeryPatientDetails == null) {
@@ -324,7 +307,7 @@ export class SurgeriesManagementComponent implements OnInit, OnDestroy {
           }
           // set start and end time for surgeries
           element.start = new Date(element.ArrivalDate);
-          element.end = endDate;
+          element.end = new Date(base);
           element.title = tempTitle;
           element.color = {
             primary: '#000000', secondary: colors[element.SurgeryStatus]
