@@ -1,7 +1,7 @@
 import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { of } from 'rxjs';
+import { forkJoin, Observable, of } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 import { environment } from 'src/environments/environment';
 
@@ -25,6 +25,12 @@ type PickerRow = {
   Profile_Name?: string;
 };
 
+type ExistingSelection = {
+  rowKeys: Set<string>;
+  profileCodes: Set<string>;
+  unitCodes: Set<string>;
+};
+
 @Component({
   selector: 'app-profile-dept-association',
   templateUrl: './profile-dept-association.component.html',
@@ -36,8 +42,10 @@ export class ProfileDeptAssociationComponent implements OnInit {
   private readonly urlSystemUnitNames = 'GetChameleonSystemUnitNames';
   private readonly urlFunctionDescriptions = 'GetOnlineProfileFunctionDescriptions';
   private readonly urlProfileNames = 'GetChameleonProfileNames';
-  private readonly urlSaveDeptMappings = 'SaveOnlineDeptToChamMappings';
+  private readonly urlSaveDeptMappings = 'SaveDepartmentUnitMappings';
   private readonly urlSaveProfileMappings = 'SaveProfileMappings';
+  private readonly urlGetDeptMappings = 'GetDepartmentUnitMappings';
+  private readonly urlGetProfileMappings = 'GetProfileMappings';
 
   mode: ScreenMode = 'departments';
 
@@ -62,6 +70,16 @@ export class ProfileDeptAssociationComponent implements OnInit {
   private pickerKeyField: 'Name' | 'Profile_Name' = 'Name';
   private selectedDepartment: DepartmentRow | null = null;
   private selectedFunction: FunctionRow | null = null;
+
+  /** Matches backend audit field on SaveDepartmentUnitMappings / optional on other saves */
+  private updatedBy(): string {
+    return String(localStorage.getItem('ID') ?? '').trim();
+  }
+
+  /** Unit id used for API + checkbox matching (GetDepartmentUnitMappings / SaveDepartmentUnitMappings). */
+  private pickerRowUnitCode(row: PickerRow): string {
+    return String(row.DepartmentCode || row.Unit || '').trim();
+  }
 
   constructor(
     private http: HttpClient,
@@ -187,21 +205,27 @@ export class ProfileDeptAssociationComponent implements OnInit {
         ? this.urlSystemUnitNames
         : this.urlProfileNames;
 
-    this.http
-      .post(environment.url + url, {})
-      .pipe(
-        map((r) => this.unwrapPickerRows(r)),
-        catchError((e) => {
-          console.error(e);
-          this.snackBar.open('שגיאה בטעינת הרשימה', 'סגור', { duration: 4000 });
-          return of([] as PickerRow[]);
-        })
-      )
-      .subscribe((rows) => {
-        this.pickerRows = rows;
-        this.pickerLoading = false;
-        this.cdr.markForCheck();
-      });
+    const rows$ = this.http.post(environment.url + url, {}).pipe(
+      map((r) => this.unwrapPickerRows(r)),
+      catchError((e) => {
+        console.error(e);
+        this.snackBar.open('שגיאה בטעינת הרשימה', 'סגור', { duration: 4000 });
+        return of([] as PickerRow[]);
+      })
+    );
+
+    forkJoin({
+      rows: rows$,
+      existingSelection: this.loadExistingSelection()
+    }).subscribe(({ rows, existingSelection }) => {
+      this.pickerRows = rows;
+      this.pickerSelection = this.mergeExistingSelectionWithRows(
+        existingSelection,
+        rows
+      );
+      this.pickerLoading = false;
+      this.cdr.markForCheck();
+    });
   }
 
   private unwrapPickerRows(response: any): PickerRow[] {
@@ -238,6 +262,125 @@ export class ProfileDeptAssociationComponent implements OnInit {
       Profile_Code: row.Profile_Code != null ? String(row.Profile_Code) : '',
       Profile_Name: row.Profile_Name != null ? String(row.Profile_Name) : ''
     }));
+  }
+
+  private loadExistingSelection(): Observable<ExistingSelection> {
+    if (this.pickerKind === 'unitNames' && this.selectedDepartment) {
+      const payload = {
+        departnentCode: String(this.selectedDepartment.DepartnentCode || '').trim()
+      };
+      return this.http.post(environment.url + this.urlGetDeptMappings, payload).pipe(
+        map((r) => this.unwrapServiceResponse(r)),
+        map((data) => this.parseExistingSelection(data)),
+        catchError((e) => {
+          console.warn('Could not load existing department mappings', e);
+          return of(this.createEmptySelection());
+        })
+      );
+    }
+
+    if (this.pickerKind === 'profileNames' && this.selectedFunction) {
+      const payload = {
+        functionId: this.selectedFunction.FunctionID
+      };
+      return this.http.post(environment.url + this.urlGetProfileMappings, payload).pipe(
+        map((r) => this.unwrapServiceResponse(r)),
+        map((data) => this.parseExistingSelection(data)),
+        catchError((e) => {
+          console.warn('Could not load existing profile mappings', e);
+          return of(this.createEmptySelection());
+        })
+      );
+    }
+
+    return of(this.createEmptySelection());
+  }
+
+  private parseExistingSelection(raw: any): ExistingSelection {
+    const selection = this.createEmptySelection();
+    const rows = Array.isArray(raw) ? raw : [];
+    rows.forEach((row: any) => {
+      if (this.pickerKind === 'unitNames') {
+        const name = this.pickFirstNonEmpty(
+          row?.Name,
+          row?.ChameleonDepartment,
+          row?.DepartmentName
+        );
+        const code = this.pickFirstNonEmpty(row?.DepartmentCode, row?.Unit);
+        if (code) {
+          selection.unitCodes.add(code);
+        }
+        if (name && code) {
+          selection.rowKeys.add(`${name}||${code}`);
+        }
+        return;
+      }
+
+      const profileCode = this.pickFirstNonEmpty(
+        row?.Profile_Code,
+        row?.ProfileCode,
+        row?.profileCode
+      );
+      if (profileCode) {
+        selection.profileCodes.add(profileCode);
+      }
+
+      const profileName = this.pickFirstNonEmpty(
+        row?.Profile_Name,
+        row?.ProfileName,
+        row?.profileName
+      );
+      if (profileCode && profileName) {
+        selection.rowKeys.add(`${profileCode}||${profileName}`);
+      }
+    });
+
+    return selection;
+  }
+
+  private mergeExistingSelectionWithRows(
+    existing: ExistingSelection,
+    rows: PickerRow[]
+  ): Set<string> {
+    const merged = new Set<string>(existing.rowKeys);
+
+    if (this.pickerKind === 'unitNames' && existing.unitCodes.size > 0) {
+      rows.forEach((row) => {
+        const code = this.pickerRowUnitCode(row);
+        if (code && existing.unitCodes.has(code)) {
+          merged.add(this.rowValue(row));
+        }
+      });
+    }
+
+    if (this.pickerKind === 'profileNames' && existing.profileCodes.size > 0) {
+      rows.forEach((row) => {
+        const code = String(row.Profile_Code || '').trim();
+        if (code && existing.profileCodes.has(code)) {
+          merged.add(this.rowValue(row));
+        }
+      });
+    }
+
+    return merged;
+  }
+
+  private createEmptySelection(): ExistingSelection {
+    return {
+      rowKeys: new Set<string>(),
+      profileCodes: new Set<string>(),
+      unitCodes: new Set<string>()
+    };
+  }
+
+  private pickFirstNonEmpty(...values: any[]): string {
+    for (const value of values) {
+      const normalized = value != null ? String(value).trim() : '';
+      if (normalized) {
+        return normalized;
+      }
+    }
+    return '';
   }
 
   get filteredDepartmentRows(): DepartmentRow[] {
@@ -277,7 +420,7 @@ export class ProfileDeptAssociationComponent implements OnInit {
   rowValue(row: PickerRow): string {
     if (this.pickerKeyField === 'Name') {
       const name = String(row.Name || '');
-      const code = String(row.DepartmentCode || row.Unit || '');
+      const code = this.pickerRowUnitCode(row);
       return `${name}||${code}`;
     }
     const profileCode = String(row.Profile_Code || '');
@@ -334,11 +477,6 @@ export class ProfileDeptAssociationComponent implements OnInit {
         )
       );
 
-      if (!profileCodes.length) {
-        this.snackBar.open('לא נבחרו Profile_Code תקינים לשמירה', 'סגור', { duration: 3000 });
-        return;
-      }
-
       const payload = {
         functionId: this.selectedFunction.FunctionID,
         profileCodes
@@ -390,27 +528,16 @@ export class ProfileDeptAssociationComponent implements OnInit {
     const selectedRows = this.pickerRows.filter((row) =>
       this.pickerSelection.has(this.rowValue(row))
     );
-    const mappings = selectedRows
-      .map((row) => ({
-        ChameleonDepartment: String(row.Name || '').trim(),
-        DepartmentCode: String(row.DepartmentCode || row.Unit || '').trim()
-      }))
-      .filter(
-        (row) => row.ChameleonDepartment.length > 0 && row.DepartmentCode.length > 0
-      );
-
-    if (!mappings.length) {
-      this.snackBar.open('לא נבחרו פריטים תקינים לשמירה', 'סגור', { duration: 3000 });
-      return;
-    }
+    const units = Array.from(
+      new Set(
+        selectedRows.map((row) => this.pickerRowUnitCode(row)).filter((unit) => unit.length > 0)
+      )
+    );
 
     const payload = {
-      _department: {
-        DepartnentCode: this.selectedDepartment.DepartnentCode,
-        DepartnentDescripton: this.selectedDepartment.DepartnentDescripton
-      },
-      _mappings: mappings,
-      _updatedBy: ''
+      departnentCode: String(this.selectedDepartment.DepartnentCode || '').trim(),
+      units,
+      updatedBy: this.updatedBy()
     };
 
     this.savingPicker = true;
@@ -424,12 +551,22 @@ export class ProfileDeptAssociationComponent implements OnInit {
           return of(null);
         })
       )
-      .subscribe((res) => {
+      .subscribe((res: any) => {
         this.savingPicker = false;
         if (res == null) {
           return;
         }
-        this.snackBar.open('השיוך נשמר בהצלחה', 'סגור', { duration: 3000 });
+        const insertedRaw = res.inserted ?? res.count;
+        const deletedRaw = res.deleted;
+        const skippedRaw = res.skipped ?? res.unchanged;
+        const hasStats =
+          insertedRaw !== undefined ||
+          deletedRaw !== undefined ||
+          skippedRaw !== undefined;
+        const msg = hasStats
+          ? `נשמר בהצלחה. נוספו: ${Number(insertedRaw ?? 0)}, הוסרו: ${Number(deletedRaw ?? 0)}, ללא שינוי: ${Number(skippedRaw ?? 0)}`
+          : 'השיוך נשמר בהצלחה';
+        this.snackBar.open(msg, 'סגור', { duration: hasStats ? 4000 : 3000 });
         this.closePicker();
       });
 

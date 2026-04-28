@@ -230,6 +230,7 @@ import { SurgeryControlMainComponent } from './surgery-control-main/surgery-cont
 import { SurgeriesUnclosedReportsComponent } from './surgery-reports/surgeries-unclosed-reports/surgeries-unclosed-reports.component';
 import { SurgeryReportsComponent } from './surgery-reports/surgery-reports.component';
 import { SurgeryComponent } from './surgery/surgery.component';
+import { TodayDashboardComponent } from './TodayDashboardComponent/today-dashboard.component';
 import { AddOrEditSwitchesComponent } from './switches/add-or-edit-switches/add-or-edit-switches.component';
 import { SwitchesComponent } from './switches/switches.component';
 import { UpdateformComponent } from './updateform/updateform.component';
@@ -355,6 +356,7 @@ const maskConfig: Partial<IConfig> = {
     FormDashboardComponent,
     UpdateformComponent,
     UpdatesingleformComponent,
+    TodayDashboardComponent,
     FormsansweredComponent,
     EventsscheduleComponent,
     BugReportComponent,

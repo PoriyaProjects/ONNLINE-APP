@@ -27,7 +27,6 @@ export interface NpsEmployeeListRow {
   DepartnentCode: string;
 }
 
-<<<<<<< HEAD
 /** Row from `NpsGetAssignments` / `NpsGetEmployeeAssignments` (enriched with ruleId). */
 export interface NpsEmployeeProfileAssignmentRow {
   assignmentId: number;
@@ -87,8 +86,6 @@ export interface NpsPermissionApprovalBatchBody {
   approvals: NpsPermissionApprovalUpdateBody[];
 }
 
-=======
->>>>>>> origin/main
 export interface NpsEmployeeDetail {
   EmployeeID: number;
   FirstName: string;
@@ -179,6 +176,11 @@ export interface NpsProfileRule {
   RuleDescription: string;
   CreatedAt?: string;
   UpdatedAt?: string;
+}
+
+/** UI table row for profile rules (`NpsGetProfileRules` + optional display fields). */
+export interface NpsProfileRuleTableRow extends NpsProfileRule {
+  ProfileName?: string | null;
 }
 
 export interface NpsRequestSummary {
