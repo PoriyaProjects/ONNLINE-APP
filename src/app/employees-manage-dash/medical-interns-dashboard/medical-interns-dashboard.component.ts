@@ -40,10 +40,10 @@ export class MedicalInternsDashboardComponent implements OnInit {
   ];
   dataSource = new MatTableDataSource(this.TABLE_DATA);
   @ViewChild('internsPaginator') paginator: MatPaginator;
-  /** Must match #internsSort on the interns table — re-attached after *ngIf renders the table */
-  @ViewChild('internsSort') sort: MatSort;
+  @ViewChild(MatSort) sort: MatSort;
   searchInternsGroup: FormGroup;
   DepartmentsList: any[] = [];
+  DepartmentsListSecond: any[] = [];
   loaded = false;
   url = environment.url;
   emptyIntern: any;
@@ -138,6 +138,7 @@ export class MedicalInternsDashboardComponent implements OnInit {
       LastName: new FormControl('', null),
       PhoneNumber: new FormControl('', null),
       Department: new FormControl('', null),
+      DepartmentSecond: new FormControl('', null),
       On: new FormControl('', null),
       MonthYear: new FormControl('', null),
     });
@@ -306,6 +307,13 @@ export class MedicalInternsDashboardComponent implements OnInit {
       this.DepartmentsList = response['d'] || [];
     });
   }
+  
+  getDepartmentListSecond() {
+    const monthYear = this.searchInternsGroup?.get('MonthYear')?.value || null;
+    this.http.post(this.url + 'GetMedicalInternDepartmentsSecond', { _InternPeriod: monthYear || null }).subscribe((response) => {
+      this.DepartmentsListSecond = response['d'] || [];
+    });
+  }
 
   previousDepartmentsYear(): void {
     this.departmentsYear--;
@@ -352,26 +360,7 @@ export class MedicalInternsDashboardComponent implements OnInit {
       this.loadServerData();
     } else if (mode === 'feedback') {
       this.loadFeedbackData();
-    } else if (mode === 'interns') {
-      this.connectInternsTableSortAndPaginator();
     }
-  }
-
-  /**
-   * MatSort/MatPaginator are on a table inside *ngIf — they are undefined until the view exists.
-   * Assigning in the HTTP callback runs before CD, so sort stays undefined unless we defer.
-   * Switching view modes destroys/recreates the table; we must re-attach after it renders.
-   */
-  private connectInternsTableSortAndPaginator(): void {
-    setTimeout(() => {
-      if (!this.dataSource) return;
-      if (this.paginator) {
-        this.dataSource.paginator = this.paginator;
-      }
-      if (this.sort) {
-        this.dataSource.sort = this.sort;
-      }
-    });
   }
 
   onServerDataMonthYearChange(): void {
@@ -550,11 +539,13 @@ export class MedicalInternsDashboardComponent implements OnInit {
   getMedicalInterns() {
     this.loaded = false;
     this.getDepartmentList();
+    this.getDepartmentListSecond();
     const EmployeeID = this.searchInternsGroup?.controls['EmployeeID']?.value || '';
     const firstName = this.searchInternsGroup?.controls['FirstName']?.value || '';
     const lastName = this.searchInternsGroup?.controls['LastName']?.value || '';
     const phoneNumber = this.searchInternsGroup?.controls['PhoneNumber']?.value || '';
     const department = this.searchInternsGroup?.controls['Department']?.value || '';
+    const departmentSecond = this.searchInternsGroup?.controls['DepartmentSecond']?.value || '';
     const onValue = this.searchInternsGroup?.controls['On']?.value || '';
     const monthYear = this.searchInternsGroup?.controls['MonthYear']?.value || '';
     this.http
@@ -564,6 +555,7 @@ export class MedicalInternsDashboardComponent implements OnInit {
         _lastName: lastName,
         _phoneNumber: phoneNumber,
         _department: department,
+        _departmentSecond: departmentSecond,
         _on: onValue,
         _monthYear: monthYear,
       })
@@ -574,14 +566,16 @@ export class MedicalInternsDashboardComponent implements OnInit {
 
           this.TABLE_DATA = data;
           this.dataSource = new MatTableDataSource<any>(data);
-          this.connectInternsTableSortAndPaginator();
+          this.dataSource.paginator = this.paginator;
+          this.dataSource.sort = this.sort;
 
           this.calculateStats(data);
         },
         () => {
           this.loaded = true;
           this.dataSource = new MatTableDataSource<any>([]);
-          this.connectInternsTableSortAndPaginator();
+          this.dataSource.paginator = this.paginator;
+          this.dataSource.sort = this.sort;
         }
       );
   }
@@ -609,6 +603,7 @@ export class MedicalInternsDashboardComponent implements OnInit {
       LastName: '',
       PhoneNumber: '',
       Department: '',
+      DepartmentSecond: '',
       On: '',
       MonthYear: ''
     });
@@ -623,6 +618,7 @@ export class MedicalInternsDashboardComponent implements OnInit {
       LastName: '',
       PhoneNumber: '',
       Department: '',
+      DepartmentSecond: '',
       On: '',
       MonthYear: ''
     });

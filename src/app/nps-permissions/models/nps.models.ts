@@ -12,6 +12,7 @@ export interface NpsEmployeeListRow {
   DepartnentCode: string;
 }
 
+<<<<<<< HEAD
 /** Row from `NpsGetAssignments` / `NpsGetEmployeeAssignments` (enriched with ruleId). */
 export interface NpsEmployeeProfileAssignmentRow {
   assignmentId: number;
@@ -26,6 +27,45 @@ export interface NpsEmployeeProfileAssignmentRow {
   assignmentStatus?: string | null;
 }
 
+export interface NpsPermissionApprovalGridRow {
+  RequestID: number;
+  EmployeeID: number;
+  FullName: string;
+  RuleID?: number | null;
+  ProfileID: number;
+  ItemID: number;
+  PermissionID: number;
+  PermissionName: string;
+  PermissionIsActive: boolean;
+  RequestStatus: string;
+  Manager1Approved: boolean;
+  Manager2Approved: boolean;
+  EmployeeApproved: boolean;
+  Manager1ApproverID?: number | null;
+  Manager2ApproverID?: number | null;
+  EmployeeApproverID?: number | null;
+  LastUpdateDate?: string | null;
+}
+
+export interface NpsCreatePermissionRequestFromRuleBody {
+  employeeId: number;
+  ruleId: number;
+  notes?: string;
+}
+
+export interface NpsPermissionApprovalUpdateBody {
+  itemId: number;
+  stepNo: number;
+  approved: boolean;
+  comments?: string;
+}
+
+export interface NpsPermissionApprovalBatchBody {
+  approvals: NpsPermissionApprovalUpdateBody[];
+}
+
+=======
+>>>>>>> origin/main
 export interface NpsEmployeeDetail {
   EmployeeID: number;
   FirstName: string;
@@ -51,15 +91,12 @@ export interface NpsEducationRow {
 
 export interface NpsProfile {
   ProfileID: number;
+  ProfileCode: string;
   ProfileName: string;
   Description: string;
   IsActive: boolean;
   /** Optional; used when sending profile writes (server DTO). */
   Priority?: number;
-  /** Optional; matches `EP_NursePermissionProfiles` / server `NpsProfileRow`. */
-  DepartnentCode?: string | null;
-  EducationID?: string | null;
-  SpecialityID?: string | null;
   CreatedAt?: string;
   UpdatedAt?: string;
 }
@@ -67,12 +104,10 @@ export interface NpsProfile {
 /** Server `NpsProfileBodyDto` — camelCase JSON. */
 export interface NpsProfileWriteBody {
   name: string;
+  profileCode?: string;
   description: string;
   isActive: boolean;
   priority: number;
-  departnentCode?: string | null;
-  educationID?: string | null;
-  specialityID?: string | null;
 }
 
 /** Catalog row from `NpsGetEducations` (normalized). */
@@ -94,30 +129,9 @@ export interface NpsSpecialtyCatalog {
 
 export interface NpsPermission {
   PermissionID: number;
+  PermissionKey: string;
   PermissionName: string;
-  PermissionDescription?: string;
-  Description?: string;
-  IsActive: boolean;
-  ActionIDFK?: string | null;
-}
-
-export interface NpsAction {
-  ActionID: number;
-  ActionSubject: string;
-  IsActive: boolean;
-  Sort: number;
-}
-
-export interface NpsActionWriteBody {
-  ActionSubject: string;
-  IsActive: boolean;
-  Sort: number;
-}
-
-export interface NpsDepartmentActionRow {
-  Row_ID: number;
-  DepartnentCodeIDFK: string;
-  ActionIDFK: number;
+  PermissionDescription: string;
   IsActive: boolean;
 }
 
@@ -125,21 +139,6 @@ export interface NpsProfilePermission {
   ProfileID: number;
   PermissionID: number;
   IsGranted: boolean;
-}
-
-export interface NpsPermissionCardItem {
-  PermissionID: number;
-  PermissionName: string;
-  Description?: string;
-  IsActive: boolean;
-  IsGranted: boolean;
-}
-
-export interface NpsPermissionCard {
-  ActionID: number;
-  ActionSubject: string;
-  IsActive: boolean;
-  Permissions: NpsPermissionCardItem[];
 }
 
 export interface NpsProfileRule {
@@ -157,17 +156,6 @@ export interface NpsProfileRule {
   RuleDescription: string;
   CreatedAt?: string;
   UpdatedAt?: string;
-}
-
-export interface NpsProfileRuleTableRow {
-  RuleID?: number;
-  ProfileID?: number;
-  DepartnentCode?: string;
-  EducationID?: number;
-  SpecialtyID?: number;
-  ProfileName: string;
-  ActionSubject: string;
-  GrantedPermissionsCount: number;
 }
 
 export interface NpsRequestSummary {

@@ -153,11 +153,21 @@
             </mat-select>
           </mat-form-field>
           <mat-form-field appearance="outline" class="search-field dept-field">
-            <mat-label>מחלקה</mat-label>
+            <mat-label>מחלקה ראשונה</mat-label>
             <mat-icon matPrefix>apartment</mat-icon>
             <mat-select formControlName="Department">
               <mat-option [value]="''">הכל</mat-option>
               <mat-option *ngFor="let dept of DepartmentsList" [value]="dept.DepartnentCodeFirst">
+                {{dept.DepartnentDescripton}}
+              </mat-option>
+            </mat-select>
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="search-field dept-field">
+            <mat-label>מחלקה שניה</mat-label>
+            <mat-icon matPrefix>apartment</mat-icon>
+            <mat-select formControlName="DepartmentSecond">
+              <mat-option [value]="''">הכל</mat-option>
+              <mat-option *ngFor="let dept of DepartmentsListSecond" [value]="dept.DepartnentCodeFirst">
                 {{dept.DepartnentDescripton}}
               </mat-option>
             </mat-select>
@@ -289,8 +299,7 @@
 
     <div class="table-wrapper">
       <!-- Interns table -->
-      <table mat-table *ngIf="viewMode === 'interns' && loaded" [dataSource]="dataSource" matSort
-        #internsSort="matSort" class="interns-table">
+      <table mat-table *ngIf="viewMode === 'interns' && loaded" [dataSource]="dataSource" matSort class="interns-table">
 
         <ng-container matColumnDef="Image">
           <th mat-header-cell *matHeaderCellDef mat-sort-header sticky>תמונת פרופיל</th>

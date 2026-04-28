@@ -1,19 +1,159 @@
-<h1>הבקשות שלי</h1>
+<h1>אישורי הרשאות פר-הרשאה</h1>
+
+<p *ngIf="busy" class="state-msg">טוען נתונים...</p>
+<p *ngIf="!busy && loadError" class="state-msg error">לא ניתן לטעון טבלה. בדקו הרשאות או זמינות שירות.</p>
+
+<mat-card class="filters-card">
+  <mat-card-content>
+    <mat-checkbox [(ngModel)]="mineOnly" (change)="reload()">רק פריטים שמחכים לאישור שלי</mat-checkbox>
+    <mat-form-field appearance="outline">
+      <mat-label>סטטוס</mat-label>
+      <mat-select [(ngModel)]="statusFilter" (selectionChange)="reload()">
+        <mat-option value="">הכל</mat-option>
+        <mat-option value="Pending">Pending</mat-option>
+        <mat-option value="Approved">Approved</mat-option>
+        <mat-option value="Rejected">Rejected</mat-option>
+      </mat-select>
+    </mat-form-field>
+    <button mat-stroked-button type="button" (click)="reload()" [disabled]="busy">
+      <mat-icon>refresh</mat-icon>
+      רענון
+    </button>
+    <button mat-raised-button color="primary" type="button" (click)="saveAllSelections()" [disabled]="busy || !hasPendingSelections()">
+      שמור אישורים
+    </button>
+  </mat-card-content>
+</mat-card>
+
+<div class="table-scroll-wrap">
 <table mat-table [dataSource]="rows" class="mat-elevation-z2 full nps-table">
-  <ng-container matColumnDef="RequestID">
-    <th mat-header-cell *matHeaderCellDef>#</th>
-    <td mat-cell *matCellDef="let r">{{ r.RequestID }}</td>
+  <ng-container matColumnDef="EmployeeID">
+    <th mat-header-cell *matHeaderCellDef>ת.ז</th>
+    <td mat-cell *matCellDef="let r">{{ r.EmployeeID }}</td>
   </ng-container>
-  <ng-container matColumnDef="Status">
-    <th mat-header-cell *matHeaderCellDef>סטטוס</th>
-    <td mat-cell *matCellDef="let r"><app-nps-request-status-badge [status]="r.Status"></app-nps-request-status-badge></td>
+  <ng-container matColumnDef="FullName">
+    <th mat-header-cell *matHeaderCellDef>שם מלא</th>
+    <td mat-cell *matCellDef="let r">{{ r.FullName }}</td>
   </ng-container>
-  <ng-container matColumnDef="Actions">
-    <th mat-header-cell *matHeaderCellDef>פעולות</th>
+  <ng-container matColumnDef="PermissionName">
+    <th mat-header-cell *matHeaderCellDef>שם הרשאה</th>
+    <td mat-cell *matCellDef="let r">{{ r.PermissionName }}</td>
+  </ng-container>
+  <ng-container matColumnDef="Manager1Approved">
+    <th mat-header-cell *matHeaderCellDef>
+      <div class="step-cell">
+        <span>מנהל ישיר</span>
+        <mat-checkbox
+          [checked]="isColumnAllSelected(1)"
+          [indeterminate]="isColumnPartiallySelected(1)"
+          [disabled]="!hasSelectableRows(1)"
+          (change)="toggleSelectAll(1, $event.checked)"
+        ></mat-checkbox>
+      </div>
+    </th>
     <td mat-cell *matCellDef="let r">
-      <button mat-icon-button color="primary" (click)="go(r.RequestID)"><mat-icon>visibility</mat-icon></button>
+      <div class="step-cell">
+        <mat-checkbox
+          [checked]="isStepChecked(r, 1)"
+          [disabled]="!canApprove(r, 1)"
+          (change)="onStepCheckboxChange(r, 1, $event.checked)"
+        ></mat-checkbox>
+      </div>
     </td>
+  </ng-container>
+  <ng-container matColumnDef="Manager2Approved">
+    <th mat-header-cell *matHeaderCellDef>
+      <div class="step-cell">
+        <span>מנהל עקיף</span>
+        <mat-checkbox
+          [checked]="isColumnAllSelected(2)"
+          [indeterminate]="isColumnPartiallySelected(2)"
+          [disabled]="!hasSelectableRows(2)"
+          (change)="toggleSelectAll(2, $event.checked)"
+        ></mat-checkbox>
+      </div>
+    </th>
+    <td mat-cell *matCellDef="let r">
+      <div class="step-cell">
+        <mat-checkbox
+          [checked]="isStepChecked(r, 2)"
+          [disabled]="!canApprove(r, 2)"
+          (change)="onStepCheckboxChange(r, 2, $event.checked)"
+        ></mat-checkbox>
+      </div>
+    </td>
+  </ng-container>
+  <ng-container matColumnDef="EmployeeApproved">
+    <th mat-header-cell *matHeaderCellDef>
+      <div class="step-cell">
+        <span>עובד</span>
+        <mat-checkbox
+          [checked]="isColumnAllSelected(3)"
+          [indeterminate]="isColumnPartiallySelected(3)"
+          [disabled]="!hasSelectableRows(3)"
+          (change)="toggleSelectAll(3, $event.checked)"
+        ></mat-checkbox>
+      </div>
+    </th>
+    <td mat-cell *matCellDef="let r">
+      <div class="step-cell">
+        <mat-checkbox
+          [checked]="isStepChecked(r, 3)"
+          [disabled]="!canApprove(r, 3)"
+          (change)="onStepCheckboxChange(r, 3, $event.checked)"
+        ></mat-checkbox>
+      </div>
+    </td>
+  </ng-container>
+  <ng-container matColumnDef="LastUpdateDate">
+    <th mat-header-cell *matHeaderCellDef>תאריך עדכון אחרון</th>
+    <td mat-cell *matCellDef="let r">
+      {{
+      toDate(r.LastUpdateDate)
+      ? (toDate(r.LastUpdateDate) | date:'dd-MM-yyyy HH:mm')
+      : '—'
+      }}
+    </td>
+  </ng-container>
+  <ng-container matColumnDef="PermissionIsActive">
+    <th mat-header-cell *matHeaderCellDef>פעיל</th>
+    <td mat-cell *matCellDef="let r">{{ r.PermissionIsActive ? 'פעיל' : 'לא פעיל' }}</td>
   </ng-container>
   <tr mat-header-row *matHeaderRowDef="cols"></tr>
   <tr mat-row *matRowDef="let row; columns: cols"></tr>
 </table>
+</div>
+
+<p *ngIf="!busy && !loadError && rows.length === 0" class="state-msg">אין נתונים להצגה עבור הסינון הנוכחי.</p>
+
+<mat-card class="create-card">
+  <mat-card-title>יצירת בקשה חדשה לפי כלל</mat-card-title>
+  <mat-card-content>
+    <mat-form-field appearance="outline" class="wide">
+      <mat-label>עובד</mat-label>
+      <input matInput [(ngModel)]="formEmployeeInput" (ngModelChange)="onEmployeeInput()" [matAutocomplete]="empAuto"
+        placeholder="שם/מזהה" />
+      <mat-autocomplete #empAuto="matAutocomplete" (optionSelected)="selectEmployee($event.option.value)">
+        <mat-option *ngFor="let e of employeeSearchRows" [value]="e">
+          {{ e.FirstName }} {{ e.LastName }} ({{ e.EmployeeID }})
+        </mat-option>
+      </mat-autocomplete>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="wide">
+      <mat-label>כלל</mat-label>
+      <mat-select [(ngModel)]="formRuleId">
+        <mat-option *ngFor="let r of uniqueRuleRows()" [value]="r.RuleID">{{ ruleLabel(r) }}</mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="wide">
+      <mat-label>הערה (אופציונלי)</mat-label>
+      <input matInput [(ngModel)]="formNotes" />
+    </mat-form-field>
+
+    <div>
+      <button mat-raised-button color="primary" type="button" (click)="createFromRule()">צור בקשה</button>
+    </div>
+  </mat-card-content>
+</mat-card>

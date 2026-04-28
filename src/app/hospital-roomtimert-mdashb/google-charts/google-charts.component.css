@@ -67,6 +67,8 @@
   background: var(--bg);
   border-radius: var(--radius);
   box-shadow: none;
+  /* שכבת התראות צפה מעל כרטיסי חדר — z-index קבוע */
+  --room-float-alerts-z: 520;
 }
 
 #surgeriesrts.dashboard.background-mode {
@@ -174,6 +176,52 @@
   transform: translateY(-1px);
 }
 
+/* ========== כותרות דביקות — 7 חדרי ניתוח כללי (מיושר לגריד) ========== */
+.regular-rooms-sticky-head {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: var(--gap);
+  align-items: stretch;
+  position: sticky;
+  top: 0;
+  z-index: 25;
+  margin: 0 0 10px 0;
+  padding: 10px 8px;
+  background: linear-gradient(180deg, #f0f6fc 0%, var(--card) 45%, #e8eef5 100%);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.1);
+}
+
+.regular-room-head-cell {
+  text-align: center;
+  font-weight: 800;
+  font-size: clamp(0.78rem, 0.42vw + 0.72rem, 0.98rem);
+  color: var(--text-main);
+  padding: 8px 4px;
+  border-radius: 8px;
+  background: rgba(74, 144, 226, 0.1);
+  border: 1px solid rgba(74, 144, 226, 0.28);
+  line-height: 1.3;
+}
+
+@media (max-width: 700px) {
+  .regular-rooms-sticky-head {
+    grid-template-columns: repeat(7, minmax(4.25rem, 1fr));
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x proximity;
+    padding-bottom: 8px;
+    margin-bottom: 8px;
+  }
+
+  .regular-room-head-cell {
+    scroll-snap-align: start;
+    flex-shrink: 0;
+  }
+}
+
 /* ========== Room grids (responsive) ========== */
 /* חדרי ניתוח כללי: 7 חדרים תמיד בשורה אחת במסך קיר / רחב */
 .regular-section .rooms-grid {
@@ -196,6 +244,114 @@
   min-height: 0;
   display: flex;
   flex-direction: column;
+}
+
+/* ערימה: כרטיס בזרימה רגילה; התראות מוחלטות מעליו */
+.regular-section .room-stack {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.regular-section .room-float-alerts {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 100%;
+  z-index: var(--room-float-alerts-z);
+  margin-bottom: 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+  pointer-events: none;
+}
+
+.regular-section .room-float-alerts > * {
+  pointer-events: auto;
+}
+
+.regular-section .room-float-alerts .room-float-alert-chip {
+  margin: 0;
+  width: 100%;
+  box-sizing: border-box;
+  text-align: center;
+}
+
+/* פופאפ חתימות: יורד לאט מלמעלה */
+@keyframes signatureNoteDescend {
+  0% {
+    opacity: 0;
+    transform: translateY(calc(-100% - 20px));
+  }
+  55% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.regular-section
+  .room-float-alerts
+  .signature-banner-float.signature-banner--preface.signature-banner--preface-note.signature-banner--popup {
+  position: relative;
+  width: 100%;
+  box-sizing: border-box;
+  margin: 0 !important;
+  padding: 10px 30px 10px 10px;
+  max-height: 6.5rem;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  border-radius: 12px;
+  border: 1px dashed rgba(217, 119, 6, 0.38);
+  background: rgba(255, 248, 230, 0.22);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  color: rgba(90, 66, 0, 0.95);
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.16), 0 2px 8px rgba(217, 119, 6, 0.12);
+  animation: signatureNoteDescend 1.35s cubic-bezier(0.22, 0.9, 0.28, 1) forwards;
+}
+
+.regular-section .room-float-alerts .signature-banner--preface-note .signature-banner-hint {
+  display: block;
+  font-size: clamp(0.68rem, 0.3vw + 0.62rem, 0.78rem);
+  font-weight: 700;
+  color: rgba(107, 78, 0, 0.82);
+  margin: 0 0 4px;
+  line-height: 1.3;
+  text-align: center;
+}
+
+.regular-section .room-float-alerts .signature-banner--preface-note .signature-banner-text {
+  font-size: clamp(0.74rem, 0.34vw + 0.68rem, 0.88rem);
+  font-weight: 600;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .regular-section .room-float-alerts .signature-banner--popup {
+    animation: none !important;
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* שבב ניתוח נוכחי — מתחת ל-room-header, עדיין בתוך המסגרת */
+.regular-section .room-widget.card .current-surgery-chip--below-header {
+  flex-shrink: 0;
+  margin: 0;
+  border-radius: 0;
+  border-top: 1px solid rgba(242, 201, 76, 0.38);
+  cursor: pointer;
+}
+
+.regular-section .room-widget.card .current-surgery-chip--below-header:focus-visible {
+  outline: 2px solid rgba(74, 144, 226, 0.45);
+  outline-offset: -2px;
 }
 
 .regular-section .rooms-grid:has(.room-widget.card.active) > .room-wrapper {
@@ -903,6 +1059,69 @@
   border: 1px solid var(--border);
 }
 
+/* כרטיס ללא ניתוחים: פס מינימלי, בלי פסקאות ארוכות */
+.regular-section .room-wrapper--no-surgeries .status-display.status-free {
+  min-width: 0;
+  min-height: 36px;
+  max-width: 160px;
+  padding: 6px 14px;
+  font-size: clamp(0.8rem, 0.3vw + 0.75rem, 0.95rem);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.regular-section .room-empty-band {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin: 6px 12px 8px;
+  padding: 7px 12px;
+  border-radius: 12px;
+  background: linear-gradient(
+    145deg,
+    rgba(74, 144, 226, 0.07) 0%,
+    rgba(111, 207, 151, 0.09) 100%
+  );
+  border: 1px solid rgba(74, 144, 226, 0.14);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45);
+}
+
+.regular-section .room-empty-pulse {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: radial-gradient(
+    circle at 30% 30%,
+    #8fd9a8,
+    #3ba97a
+  );
+  box-shadow: 0 0 0 3px rgba(59, 169, 122, 0.2);
+  animation: room-empty-breathe 2.4s ease-in-out infinite;
+}
+
+.regular-section .room-empty-time {
+  font-size: 0.82rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.06em;
+  color: var(--text-sub);
+  opacity: 0.9;
+}
+
+@keyframes room-empty-breathe {
+  0%,
+  100% {
+    box-shadow: 0 0 0 3px rgba(59, 169, 122, 0.2);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 0 5px rgba(59, 169, 122, 0.12);
+    transform: scale(1.04);
+  }
+}
+
 /* ========== Status strip ========== */
 .room-status-info,
 .room-duration-info,
@@ -912,12 +1131,25 @@
 }
 
 .status-display {
-  display: inline-block;
-  padding: 6px 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  box-sizing: border-box;
+  padding: 8px 12px;
   border-radius: var(--radius-sm);
   font-weight: 700;
   font-size: clamp(0.85rem, 0.45vw + 0.78rem, 1.05rem);
-  min-width: 120px;
+  line-height: 1.25;
+  min-width: 168px;
+  min-height: 44px;
+  max-width: 200px;
+}
+
+.status-display.status-all-done {
+  background: rgba(74, 144, 226, 0.16);
+  color: #1a5490;
+  border: 1px solid rgba(74, 144, 226, 0.28);
 }
 
 .status-display.status-active {
@@ -1018,6 +1250,52 @@
   color: var(--text-main);
 }
 
+/* כותרת "ניתוחים שבוצעו" ככפתור דרופ־דאון */
+.section-title.section-title--dropdown {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 6px 0 8px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm, 8px);
+  background: var(--card, #fff);
+  cursor: pointer;
+  user-select: none;
+  text-align: right;
+  direction: rtl;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+.section-title.section-title--dropdown:hover {
+  background: var(--bg, #f6f8fb);
+  border-color: rgba(74, 144, 226, 0.35);
+}
+.section-title.section-title--dropdown:focus-visible {
+  outline: 2px solid var(--primary, #4a90e2);
+  outline-offset: 2px;
+}
+.section-title--dropdown .section-title__label {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.section-title--dropdown .section-title__count {
+  font-weight: 700;
+  opacity: 0.85;
+  font-size: 0.92em;
+}
+.section-title--dropdown .section-title__chevron {
+  flex-shrink: 0;
+  font-size: 1rem;
+  line-height: 1;
+  opacity: 0.75;
+}
+
+.completed-surgeries-panel {
+  margin: 0 0 8px;
+}
+
 .surgery-card {
   margin: 6px 0;
   padding: 8px 10px 8px 8px;
@@ -1052,6 +1330,14 @@
   font-size: clamp(0.85rem, 0.42vw + 0.78rem, 1.02rem);
   color: var(--text-main);
   unicode-bidi: embed;
+}
+
+.times .surgery-overrun {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.82em;
+  font-weight: 700;
+  color: #b45309;
 }
 
 .dept {
@@ -1253,11 +1539,6 @@
   outline-offset: -2px;
   box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.12);
 }
-.all-done-text {
-  color: var(--primary);
-  font-size: 12px;
-  font-weight: 600;
-}
 
 .next-ready-chip {
   margin-top: 6px;
@@ -1276,6 +1557,122 @@
   background: rgba(242, 201, 76, 0.22);
   color: #9a6700;
   border: 1px solid rgba(242, 201, 76, 0.55);
+}
+
+/* שבב "ניתוח נוכחי" בכרטיס מכווץ */
+.current-surgery-chip {
+  margin: 6px 0 4px;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm, 8px);
+  border: 1px solid rgba(242, 201, 76, 0.45);
+  border-inline-start: 4px solid var(--warning, #f2c94c);
+  background: rgba(242, 201, 76, 0.12);
+  text-align: center;
+}
+.current-surgery-chip__label {
+  font-size: clamp(0.72rem, 0.32vw + 0.66rem, 0.82rem);
+  font-weight: 700;
+  color: var(--text-sub, #5c5c5c);
+  margin-bottom: 4px;
+  letter-spacing: 0.02em;
+}
+.current-surgery-chip__body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+.current-surgery-chip__times {
+  direction: ltr;
+  unicode-bidi: embed;
+  font-weight: 700;
+  font-size: clamp(0.84rem, 0.4vw + 0.76rem, 0.98rem);
+  color: var(--text-main, #1a1a1a);
+  line-height: 1.3;
+}
+
+/* באנר חתימות — מעל שם המחלקה, רקע שקוף גולש, סגירה ב-X */
+@keyframes signatureBannerSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.signature-banner-float {
+  position: relative;
+  width: 100%;
+  box-sizing: border-box;
+  margin: 0 0 6px !important;
+  padding: 10px 34px 10px 10px;
+  text-align: center;
+  border-radius: 0 0 12px 12px;
+  border: 1px solid rgba(217, 119, 6, 0.28);
+  border-top: none;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 248, 230, 0.92) 0%,
+    rgba(255, 252, 245, 0.5) 52%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  animation: signatureBannerSlideIn 0.42s ease-out;
+  color: #7c5a00;
+  font-size: clamp(0.78rem, 0.38vw + 0.72rem, 0.92rem);
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.signature-banner-text {
+  display: block;
+}
+
+.signature-banner-close {
+  position: absolute;
+  top: 5px;
+  inset-inline-end: 5px;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: none;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.06);
+  color: var(--text-main);
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s ease;
+}
+
+.signature-banner-close:hover {
+  background: rgba(0, 0, 0, 0.11);
+}
+
+.signature-banner-close:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.room-widget.card .room-header.room-header--dept-first {
+  align-items: stretch;
+  padding-top: 8px;
+  gap: 4px;
+}
+
+.room-header--dept-first > :first-child {
+  margin-top: 0 !important;
+}
+
+.room-widget.card .room-header.room-header--dept-first .room-dept-heading {
+  margin: 0;
+  padding: 0;
+  width: 100%;
 }
 
 .container {
