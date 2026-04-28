@@ -1,9 +1,3 @@
-h1 {
-  margin: 0 0 14px;
-  font-size: 28px;
-  color: var(--nps-text);
-}
-
 h2.matrix-section-title {
   margin: 32px 0 8px;
   font-size: 20px;
@@ -28,10 +22,8 @@ h2.matrix-section-title {
   box-shadow: var(--nps-shadow-soft);
 }
 
-.rules-table-wrap {
+.rules-table-scroll-inner {
   max-height: 400px;
-  overflow: auto;
-  margin-bottom: 8px;
 }
 
 .empty-banner {

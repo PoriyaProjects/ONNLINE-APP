@@ -1,8 +1,23 @@
 export interface NpsDashboardSummary {
-  pendingQueueCount: number;
   pendingRequestsCount: number;
   myPendingApprovalsCount: number;
   myPendingRequestsCount: number;
+  /** Rows in `EP_Departnents`. */
+  totalDepartmentsCount: number;
+  /** Rows in `EP_NursePermissionActions`. */
+  totalActionsCount: number;
+  /** Rows in `EP_NursePermissionPermissions`. */
+  totalPermissionsCount: number;
+}
+
+/** From `NpsGetAccessContext` / `GetAccessContext` (catalog vs employee-only NPS UI). */
+export interface NpsAccessContext {
+  currentEmployeeId: number;
+  isGlobalAdmin: boolean;
+  isManager1OfAnyEmployee: boolean;
+  isManager2OfAnyEmployee: boolean;
+  /** True when user may open profiles, rules, actions, permissions, audit, etc. */
+  canAccessNpsConfiguration: boolean;
 }
 
 export interface NpsEmployeeListRow {
@@ -44,6 +59,14 @@ export interface NpsPermissionApprovalGridRow {
   Manager2ApproverID?: number | null;
   EmployeeApproverID?: number | null;
   LastUpdateDate?: string | null;
+}
+
+export interface NpsManagerApprovalSummaryRow {
+  EmployeeID: number;
+  FullName: string;
+  NotApprovedCount: number;
+  LastUpdateDate?: string | null;
+  Done: boolean;
 }
 
 export interface NpsCreatePermissionRequestFromRuleBody {
