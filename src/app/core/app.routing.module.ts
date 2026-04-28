@@ -168,6 +168,7 @@ import { SurgeryControlMainComponent } from '../surgery-control-main/surgery-con
 import { SurgeriesUnclosedReportsComponent } from '../surgery-reports/surgeries-unclosed-reports/surgeries-unclosed-reports.component';
 import { SurgeryReportsComponent } from '../surgery-reports/surgery-reports.component';
 import { SurgeryComponent } from '../surgery/surgery.component';
+import { TodayDashboardComponent } from '../TodayDashboardComponent/today-dashboard.component';
 import { SwitchesComponent } from '../switches/switches.component';
 import { UpdateformComponent } from '../updateform/updateform.component';
 import { UpdatesingleformComponent } from '../updatesingleform/updatesingleform.component';
@@ -189,6 +190,7 @@ const routes: Routes = [
   { path: "patientstikers", component: PatientStikersComponent },
   { path: 'profile-dept-association', component: ProfileDeptAssociationComponent },
   { path: 'dashboard', component: DashboardComponent },
+  { path: 'today-dashboard', component: TodayDashboardComponent },
   { path: 'covid19report', component: Covid19reportComponent },
   { path: 'login', component: LoginComponent },
   { path: 'chads', component: ChadsComponent },

@@ -2006,6 +2006,7 @@ footer {
 
 body.bg-blue-light1 {
     padding-top: 45px;
+    text-align: right;
 }
 
 input::-webkit-outer-spin-button,

@@ -307,6 +307,10 @@
      overflow: hidden;
      align-items: stretch;
    }
+
+   .hd-bottom--questions {
+     grid-template-columns: 1.6fr 0.9fr;
+   }
    
    .hd-bottom > * {
      min-height: 0;
@@ -410,6 +414,31 @@
    }
    
    .hd-search::placeholder { color: #A0AEC0; }
+
+  .hd-load-btn {
+    width: 100%;
+    border: 1px solid rgba(102,126,234,0.45);
+    background: linear-gradient(135deg, rgba(102,126,234,0.2), rgba(118,75,162,0.2));
+    color: #1A202C;
+    padding: 0.46rem 0.7rem;
+    border-radius: 999px;
+    font: inherit;
+    font-size: 0.84rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .hd-load-btn:hover:not(:disabled) {
+    transform: translateY(-1px);
+    background: linear-gradient(135deg, rgba(102,126,234,0.28), rgba(118,75,162,0.28));
+    border-color: rgba(102,126,234,0.7);
+  }
+
+  .hd-load-btn:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
    
    /* Checkbox list — fills remaining space in its column */
    .hd-cbl {

@@ -1,0 +1,292 @@
+<div dir="rtl" class="dashboard-shell">
+
+  <!-- ── Top bar ── -->
+  <div class="top-bar">
+    <div class="top-bar-side"></div>
+    <div class="top-bar-center">
+      <span class="page-title">לוח בקרה יומי</span>
+      <span class="date-badge">{{ summary.date }}</span>
+    </div>
+    <div class="refresh-pill">
+      <span class="pulse-dot" [class.loading]="loading"></span>
+      <span *ngIf="!loading">רענון אחרון: {{ lastRefresh | date:'HH:mm:ss' }}</span>
+      <span *ngIf="loading">טוען...</span>
+    </div>
+  </div>
+
+  <!-- ── KPI cards ── -->
+  <div class="kpi-row" *ngIf="!loading">
+    <div class="kpi-card kpi-total">
+      <span class="kpi-label">סה"כ תורים היום</span>
+      <span class="kpi-value">{{ summary.totalAppointments }}</span>
+    </div>
+    <div class="kpi-card kpi-arrived">
+      <span class="kpi-label">הגיעו</span>
+      <span class="kpi-value">{{ summary.arrived }}</span>
+      <span class="kpi-sub">{{ arrivedPercent }}%</span>
+    </div>
+    <div class="kpi-card kpi-not-arrived">
+      <span class="kpi-label">טרם הגיעו</span>
+      <span class="kpi-value">{{ summary.notArrived }}</span>
+      <span class="kpi-sub">{{ 100 - arrivedPercent }}%</span>
+    </div>
+
+    <!-- progress bar -->
+    <div class="kpi-card kpi-progress">
+      <span class="kpi-label">אחוז נוכחות</span>
+      <div class="progress-track">
+        <div class="progress-fill" [style.width.%]="arrivedPercent"></div>
+      </div>
+      <span class="kpi-sub progress-num">{{ arrivedPercent }}% הגיעו</span>
+    </div>
+  </div>
+
+  <!-- skeleton while loading -->
+  <div class="kpi-row" *ngIf="loading">
+    <div class="kpi-card skeleton" *ngFor="let x of [1,2,3,4]"></div>
+  </div>
+
+  <!-- ── Department cards ── -->
+  <div class="section-title">מחלקות</div>
+  <div class="dept-search-row" *ngIf="!loading">
+    <input
+      [(ngModel)]="deptSearchQuery"
+      type="search"
+      placeholder="חיפוש מחלקה (שם, מזהה, חדר, מרפאה)..."
+      class="search-input dept-search-input"
+      dir="rtl"
+      autocomplete="off"
+    />
+  </div>
+  <div class="dept-grid" *ngIf="!loading && filteredDepartmentGroups.length > 0">
+    <div
+      class="dept-card"
+      *ngFor="let dep of filteredDepartmentGroups"
+      [class.dept-selected]="selectedDepart === dep.depart_ID"
+      (click)="selectDepart(dep)"
+    >
+      <div class="dept-header">
+        <span class="dept-name">{{ dep.depart }}</span>
+        <span class="dept-room" *ngIf="dep.splits.length === 1">חדר {{ dep.splits[0].roomNumber }}</span>
+        <span class="dept-room" *ngIf="dep.splits.length > 1">{{ dep.splits.length }} פיצולים</span>
+      </div>
+      <div class="dept-times">
+        {{ formatTime(dep.startTime) }} – {{ formatTime(dep.endTime) }}
+      </div>
+      <div class="dept-split-note" *ngIf="dep.splits.length > 1">
+        לחץ לצפייה בפירוט המרפאות
+      </div>
+      <div class="dept-stats">
+        <div class="stat-block stat-arrived">
+          <span class="stat-num">{{ dep.arrived }}</span>
+          <span class="stat-lbl">הגיעו</span>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat-block stat-waiting">
+          <span class="stat-num">{{ dep.notArrived }}</span>
+          <span class="stat-lbl">ממתינים</span>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat-block">
+          <span class="stat-num">{{ dep.total }}</span>
+          <span class="stat-lbl">סה"כ</span>
+        </div>
+      </div>
+      <!-- mini progress -->
+      <div class="mini-bar">
+        <div
+          class="mini-fill"
+          [style.width.%]="dep.total > 0 ? (dep.arrived / dep.total) * 100 : 0"
+        ></div>
+      </div>
+    </div>
+  </div>
+  <div class="dept-grid-empty" *ngIf="deptSectionEmptyMessage">
+    {{ deptSectionEmptyMessage }}
+  </div>
+  <div class="dept-grid" *ngIf="loading">
+    <div class="dept-card skeleton" *ngFor="let x of [1,2,3,4,5,6]" style="height:140px"></div>
+  </div>
+
+  <div class="depart-modal-backdrop" *ngIf="showDepartModal" (click)="closeDepartModal()"></div>
+  <div class="depart-modal" *ngIf="showDepartModal && selectedDepartGroup">
+    <div class="depart-modal-header">
+      <div>
+        <div class="depart-modal-title">{{ selectedDepartGroup.depart }}</div>
+        <div class="depart-modal-subtitle">
+          סה"כ {{ selectedDepartGroup.total }} | הגיעו {{ selectedDepartGroup.arrived }} | טרם הגיעו {{ selectedDepartGroup.notArrived }}
+        </div>
+      </div>
+      <button class="depart-close-btn" type="button" (click)="closeDepartModal()">×</button>
+    </div>
+
+    <div class="depart-modal-table-wrap">
+      <table class="depart-modal-table">
+        <thead>
+          <tr>
+            <th>שם מרפאה</th>
+            <th>חדר</th>
+            <th>שעות</th>
+            <th>סה"כ</th>
+            <th>הגיעו</th>
+            <th>טרם הגיעו</th>
+            <th>פעולה</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of selectedDepartGroup.splits">
+            <td>{{ item.clinicName || item.depart || '—' }}</td>
+            <td>{{ item.roomNumber }}</td>
+            <td class="time-range">{{ formatTime(item.startTime) }} - {{ formatTime(item.endTime) }}</td>
+            <td>{{ item.total }}</td>
+            <td>{{ item.arrived }}</td>
+            <td>{{ item.notArrived }}</td>
+            <td>
+              <button
+                type="button"
+                class="split-patients-btn"
+                [class.split-patients-btn-active]="selectedSplit?.roomNumber === item.roomNumber"
+                (click)="selectSplit(item)"
+              >
+                הצג מטופלים
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="modal-patients-wrap" *ngIf="selectedSplit">
+      <div class="modal-patients-title">
+        מטופלים עבור {{ selectedSplit.clinicName || selectedSplit.depart || '—' }} (חדר {{ selectedSplit.roomNumber }})
+      </div>
+
+      <div class="modal-patients-loading" *ngIf="modalPatientsLoading">טוען מטופלים...</div>
+
+      <table class="modal-patients-table" *ngIf="!modalPatientsLoading && modalPatients.length > 0">
+        <thead>
+          <tr>
+            <th>סטטוס</th>
+            <th>שעה</th>
+            <th>שם פרטי</th>
+            <th>שם משפחה</th>
+            <th>ת.ז</th>
+            <th>שירות</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let p of modalPatients" [class.modal-row-arrived]="p.arrived" [class.modal-row-waiting]="!p.arrived">
+            <td>
+              <span class="status-chip" [class.chip-arrived]="p.arrived" [class.chip-waiting]="!p.arrived">
+                {{ p.arrived ? '✓ הגיע' : '⏳ ממתין' }}
+              </span>
+            </td>
+            <td class="mono">{{ formatTime(p.appointmentTime) }}</td>
+            <td>{{ p.patientFirstName }}</td>
+            <td>{{ p.patientLastName }}</td>
+            <td class="mono">{{ p.patientId }}</td>
+            <td>{{ p.serviceDescription }}</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="modal-patients-empty" *ngIf="!modalPatientsLoading && modalPatients.length === 0">
+        אין מטופלים עבור הפיצול שנבחר
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Patient table ── -->
+  <div class="section-title">
+    רשימת מטופלים
+    <span *ngIf="selectedDepart" class="filter-badge" (click)="selectDepart(null)">
+      מסנן לפי מחלקה &times;
+    </span>
+  </div>
+
+  <!-- Filter bar -->
+  <div class="filter-bar">
+    <input
+      matInput
+      [(ngModel)]="searchQuery"
+      (ngModelChange)="onSearch()"
+      placeholder="חפש שם / ת.ז..."
+      class="search-input"
+      dir="rtl"
+    />
+    <div class="status-tabs">
+      <button class="tab-btn" [class.active]="filterStatus==='all'" (click)="setFilter('all')">הכל</button>
+      <button class="tab-btn tab-arrived" [class.active]="filterStatus==='arrived'" (click)="setFilter('arrived')">הגיעו</button>
+      <button class="tab-btn tab-waiting" [class.active]="filterStatus==='notArrived'" (click)="setFilter('notArrived')">טרם הגיעו</button>
+    </div>
+  </div>
+
+  <div class="table-wrap">
+    <table mat-table [dataSource]="dataSource" class="patient-table" dir="rtl">
+
+      <!-- Status -->
+      <ng-container matColumnDef="status">
+        <th mat-header-cell *matHeaderCellDef>סטטוס</th>
+        <td mat-cell *matCellDef="let p">
+          <span class="status-chip" [class.chip-arrived]="p.arrived" [class.chip-waiting]="!p.arrived">
+            {{ p.arrived ? '✓ הגיע' : '⏳ ממתין' }}
+          </span>
+        </td>
+      </ng-container>
+
+      <!-- Time -->
+      <ng-container matColumnDef="appointmentTime">
+        <th mat-header-cell *matHeaderCellDef>שעה</th>
+        <td mat-cell *matCellDef="let p" class="mono">{{ formatTime(p.appointmentTime) }}</td>
+      </ng-container>
+
+      <!-- First name -->
+      <ng-container matColumnDef="patientFirstName">
+        <th mat-header-cell *matHeaderCellDef>שם פרטי</th>
+        <td mat-cell *matCellDef="let p">{{ p.patientFirstName }}</td>
+      </ng-container>
+
+      <!-- Last name -->
+      <ng-container matColumnDef="patientLastName">
+        <th mat-header-cell *matHeaderCellDef>שם משפחה</th>
+        <td mat-cell *matCellDef="let p">{{ p.patientLastName }}</td>
+      </ng-container>
+
+      <!-- ID -->
+      <ng-container matColumnDef="patientId">
+        <th mat-header-cell *matHeaderCellDef>ת.ז</th>
+        <td mat-cell *matCellDef="let p" class="mono">{{ p.patientId }}</td>
+      </ng-container>
+
+      <!-- Service -->
+      <ng-container matColumnDef="serviceDescription">
+        <th mat-header-cell *matHeaderCellDef>שירות</th>
+        <td mat-cell *matCellDef="let p">{{ p.serviceDescription }}</td>
+      </ng-container>
+
+      <!-- ClinicName from API; Depart legacy fallback -->
+      <ng-container matColumnDef="depart">
+        <th mat-header-cell *matHeaderCellDef>מחלקה</th>
+        <td mat-cell *matCellDef="let p">{{ p.clinicName || p.depart }}</td>
+      </ng-container>
+
+      <!-- Room -->
+      <ng-container matColumnDef="roomNumber">
+        <th mat-header-cell *matHeaderCellDef>חדר</th>
+        <td mat-cell *matCellDef="let p">{{ p.roomNumber }}</td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></tr>
+      <tr
+        mat-row
+        *matRowDef="let row; columns: displayedColumns"
+        [class.row-arrived]="row.arrived"
+        [class.row-waiting]="!row.arrived"
+      ></tr>
+    </table>
+
+    <div class="empty-state" *ngIf="filteredPatients.length === 0 && !loading">
+      <span>אין תוצאות</span>
+    </div>
+  </div>
+</div>
