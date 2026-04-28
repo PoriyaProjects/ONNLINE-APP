@@ -11,17 +11,11 @@ import {
   NpsEducationRow,
   NpsEmployeeDetail,
   NpsEmployeeListRow,
-<<<<<<< HEAD
-  NpsEmployeeProfileAssignmentRow,
   NpsCreatePermissionRequestFromRuleBody,
   NpsPermission,
   NpsPermissionApprovalGridRow,
   NpsPermissionApprovalBatchBody,
   NpsPermissionApprovalUpdateBody,
-  NpsPermissionCard,
-=======
-  NpsPermission,
->>>>>>> origin/main
   NpsProfile,
   NpsProfilePermission,
   NpsProfileRule,
