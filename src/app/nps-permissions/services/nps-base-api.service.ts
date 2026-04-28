@@ -1,10 +1,11 @@
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { map, shareReplay } from 'rxjs/operators';
 import { environment } from 'src/environments/environment';
 import {
   NpsAuditRow,
+  NpsAccessContext,
   NpsDashboardSummary,
   NpsDepartment,
   NpsEducationCatalog,
@@ -16,6 +17,7 @@ import {
   NpsCreatePermissionRequestFromRuleBody,
   NpsPermission,
   NpsPermissionApprovalGridRow,
+  NpsManagerApprovalSummaryRow,
   NpsPermissionApprovalBatchBody,
   NpsPermissionApprovalUpdateBody,
   NpsPermissionCard,
@@ -37,6 +39,9 @@ import {
  */
 @Injectable({ providedIn: 'root' })
 export class NpsBaseApiService {
+  private accessContextCacheKey: string | null = null;
+  private accessContext$: Observable<NpsAccessContext> | null = null;
+
   constructor(private http: HttpClient) {}
 
   private jsonHeaders(): { headers: HttpHeaders } {
@@ -59,6 +64,15 @@ export class NpsBaseApiService {
     return environment.npsUserId != null && String(environment.npsUserId).length > 0
       ? String(environment.npsUserId)
       : '';
+  }
+
+  /** EP Employee ID for `user_id`: explicit override, else `environment.npsUserId`. */
+  effectiveUserId(override?: string | null): string {
+    const o = override != null ? String(override).trim() : '';
+    if (o !== '') {
+      return o;
+    }
+    return this.userId();
   }
 
   /** Unwraps ASP.NET ScriptService `{ d: T }` when present. */
@@ -109,8 +123,81 @@ export class NpsBaseApiService {
     };
   }
 
-  getDashboardSummary(employee_id: string): Observable<NpsDashboardSummary> {
-    return this.post<NpsDashboardSummary>('NpsGetDashboardSummary', { user_id:  employee_id || '' });
+  getDashboardSummary(employee_id?: string | null): Observable<NpsDashboardSummary> {
+    const uid = this.effectiveUserId(employee_id);
+    return this.post<NpsDashboardSummary>('NpsGetDashboardSummary', { user_id: uid }).pipe(
+      map((raw) => this.normalizeDashboardSummary(raw)),
+    );
+  }
+
+  private normalizeDashboardSummary(raw: unknown): NpsDashboardSummary {
+    const r = (raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>;
+    const n = (pascal: string, camel: string): number => {
+      const v = r[pascal] ?? r[camel];
+      if (typeof v === 'number' && Number.isFinite(v)) {
+        return v;
+      }
+      const x = Number(v);
+      return Number.isFinite(x) ? x : 0;
+    };
+    return {
+      pendingRequestsCount: n('PendingRequestsCount', 'pendingRequestsCount'),
+      myPendingApprovalsCount: n('MyPendingApprovalsCount', 'myPendingApprovalsCount'),
+      myPendingRequestsCount: n('MyPendingRequestsCount', 'myPendingRequestsCount'),
+      totalDepartmentsCount: n('TotalDepartmentsCount', 'totalDepartmentsCount'),
+      totalActionsCount: n('TotalActionsCount', 'totalActionsCount'),
+      totalPermissionsCount: n('TotalPermissionsCount', 'totalPermissionsCount'),
+    };
+  }
+
+  getAccessContext(employee_id?: string | null, force = false): Observable<NpsAccessContext> {
+    const uid = this.effectiveUserId(employee_id);
+    if (!force && this.accessContext$ != null && this.accessContextCacheKey === uid) {
+      return this.accessContext$;
+    }
+    this.accessContextCacheKey = uid;
+    this.accessContext$ = this.post<NpsAccessContext>('NpsGetAccessContext', { user_id: uid }).pipe(
+      map((raw) => this.normalizeAccessContext(raw)),
+      shareReplay(1),
+    );
+    return this.accessContext$;
+  }
+
+  clearAccessContextCache(): void {
+    this.accessContext$ = null;
+    this.accessContextCacheKey = null;
+  }
+
+  private normalizeAccessContext(raw: unknown): NpsAccessContext {
+    const r = (raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>;
+    const n = (pascal: string, camel: string): number => {
+      const v = r[pascal] ?? r[camel];
+      if (typeof v === 'number' && Number.isFinite(v)) {
+        return v;
+      }
+      const x = Number(v);
+      return Number.isFinite(x) ? x : 0;
+    };
+    const b = (pascal: string, camel: string): boolean => {
+      const v = r[pascal] ?? r[camel];
+      if (v === true || v === 'true') {
+        return true;
+      }
+      if (v === false || v === 'false') {
+        return false;
+      }
+      if (typeof v === 'number') {
+        return v !== 0;
+      }
+      return false;
+    };
+    return {
+      currentEmployeeId: n('CurrentEmployeeId', 'currentEmployeeId'),
+      isGlobalAdmin: b('IsGlobalAdmin', 'isGlobalAdmin'),
+      isManager1OfAnyEmployee: b('IsManager1OfAnyEmployee', 'isManager1OfAnyEmployee'),
+      isManager2OfAnyEmployee: b('IsManager2OfAnyEmployee', 'isManager2OfAnyEmployee'),
+      canAccessNpsConfiguration: b('CanAccessNpsConfiguration', 'canAccessNpsConfiguration'),
+    };
   }
 
   getEmployees(user_id: string, q?: string, DepartnentCode?: string, skip = 0, take = 50): Observable<NpsEmployeeListRow[]> {
@@ -208,6 +295,18 @@ export class NpsBaseApiService {
       employeeId: options?.employeeId != null ? String(options.employeeId) : '',
       status: options?.status || '',
       mineOnly: options?.mineOnly === true,
+      skip: options?.skip ?? 0,
+      take: options?.take ?? 200,
+    });
+  }
+
+  getManagerApprovalSummary(
+    user_id: string,
+    options?: { status?: string; skip?: number; take?: number }
+  ): Observable<NpsManagerApprovalSummaryRow[]> {
+    return this.post<NpsManagerApprovalSummaryRow[]>('NpsGetManagerApprovalSummary', {
+      user_id: user_id || '',
+      status: options?.status || '',
       skip: options?.skip ?? 0,
       take: options?.take ?? 200,
     });

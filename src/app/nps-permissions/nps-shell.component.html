@@ -35,6 +35,45 @@
     </mat-toolbar> -->
 
     <div class="nps-content">
+      <div class="nps-global-kpis nps-kpi-grid" *ngIf="summary">
+        <div class="nps-kpi-card">
+          <div class="nps-kpi-meta">
+            <div class="nps-kpi-label">סה״כ מחלקות שלי</div>
+            <div class="nps-kpi-value">{{ summary.totalDepartmentsCount }}</div>
+          </div>
+        </div>
+        <div class="nps-kpi-card">
+          <div class="nps-kpi-meta">
+            <div class="nps-kpi-label">סה״כ קבוצות פעולה במחלקתי</div>
+            <div class="nps-kpi-value">{{ summary.totalActionsCount }}</div>
+          </div>
+        </div>
+        <div class="nps-kpi-card">
+          <div class="nps-kpi-meta">
+            <div class="nps-kpi-label">סה״כ הרשאות במחלקתי</div>
+            <div class="nps-kpi-value">{{ summary.totalPermissionsCount }}</div>
+          </div>
+        </div>
+        <div class="nps-kpi-card">
+          <div class="nps-kpi-meta">
+            <div class="nps-kpi-label">בקשות ממתינות אישור שלי</div>
+            <div class="nps-kpi-value">{{ summary.pendingRequestsCount }}</div>
+          </div>
+        </div>
+        <div class="nps-kpi-card">
+          <div class="nps-kpi-meta">
+            <div class="nps-kpi-label">אישורים שלי</div>
+            <div class="nps-kpi-value">{{ summary.myPendingApprovalsCount }}</div>
+          </div>
+        </div>
+        <div class="nps-kpi-card">
+          <div class="nps-kpi-meta">
+            <div class="nps-kpi-label">הבקשות שלי</div>
+            <div class="nps-kpi-value">{{ summary.myPendingRequestsCount }}</div>
+          </div>
+        </div>
+      </div>
+
       <router-outlet></router-outlet>
     </div>
   </mat-sidenav-content>

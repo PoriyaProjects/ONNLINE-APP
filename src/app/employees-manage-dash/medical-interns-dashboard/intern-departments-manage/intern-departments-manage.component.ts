@@ -276,7 +276,7 @@ export class InternDepartmentsManageComponent implements OnInit {
 <html lang="he" dir="rtl">
 <head>
   <meta charset="UTF-8">
-  <title>ניהול מחלקות סטאג'ר</title>
+  <title>מערכת ניהול סטאז'רים</title>
   <style>
     body { font-family: Arial, sans-serif; direction: rtl; text-align: right; padding: 20px; }
     table { width: 100%; border-collapse: collapse; margin-top: 15px; }

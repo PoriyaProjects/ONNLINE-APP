@@ -119,7 +119,6 @@ export class TrainingRequestFormComponent implements OnInit {
   employees = [];
   intity_list = [];
   CitiesArray: any[] = [];
-  CountriesArray: any[] = [];
   educationList = ["תיכונית", "מקצועית", "תואר ראשון", "תואר שני", "תואר שלישי", "אחר"];
   requested: boolean = false;
   wantsPoster: boolean = false;
@@ -136,6 +135,8 @@ export class TrainingRequestFormComponent implements OnInit {
   Supervisor_Name3 = new FormControl();
   cityOptions: Observable<string[]>;
   cityControl = new FormControl("", Validators.required);
+  citySelectionStrictError = false;
+  private isFinalSubmitInProgress = false;
   date_now: any = Date.now();
   keren_dept_checkbox: any;
   number_checkbox: any;
@@ -170,6 +171,11 @@ export class TrainingRequestFormComponent implements OnInit {
     this.getPlanningIntityList();
     this.getEmployeesList();
     this.getCityCodes();
+    this.cityControl.valueChanges.subscribe((value) => {
+      if (typeof value === "string") {
+        this.citySelectionStrictError = false;
+      }
+    });
     this.filteredOptions = this.Supervisor_Name1.valueChanges
       .pipe(
         startWith(''),
@@ -226,6 +232,25 @@ export class TrainingRequestFormComponent implements OnInit {
 
   changeCity(event) {
     this.Training_Request_Forms_B.controls["Request_Location"].setValue(event);
+    this.citySelectionStrictError = false;
+    this.cityControl.setErrors(null);
+  }
+
+  validateCitySelection(markTouched: boolean = false): boolean {
+    const value = (this.cityControl.value || "").toString().trim();
+    const isValid = !!value && (this.CitiesArray.some((option) => option.cityName === value));
+    if (!isValid) {
+      if (markTouched) {
+        this.cityControl.markAsTouched();
+      }
+      this.citySelectionStrictError = true;
+      this.cityControl.setErrors({ invalidCitySelection: true });
+      this.Training_Request_Forms_B.controls["Request_Location"].setValue("");
+      return false;
+    }
+    this.citySelectionStrictError = false;
+    this.changeCity(value);
+    return true;
   }
 
   IfPosterAttached() {
@@ -455,9 +480,22 @@ export class TrainingRequestFormComponent implements OnInit {
             Validators.max(100)            // Maximum value is 100
           ]),
           Approved_Percent_Out_Of: new FormControl(Training_Request_Forms_B?.Education_Fee == '' ? Training_Request_Forms_H?.Approved_Percent_Out_Of : Training_Request_Forms_B?.Education_Fee, null),
+          Approved_Total: new FormControl(this.calculateApprovedTotalSeed(Training_Request_Forms_H), [Validators.pattern(/^\d+(\.\d{1,2})?$/)]),
           Approved_Absence_Time: new FormControl(Training_Request_Forms_H?.Approved_Absence_Time, null),
           Code_Type: new FormControl(Training_Request_Forms_H?.Code_Type, null),
-          Recommendations: new FormControl(Training_Request_Forms_H?.Recommendations, null)
+          Recommendations: new FormControl(Training_Request_Forms_H?.Recommendations, null),
+          Cancel_Request: new FormControl(false, null),
+          Cancel_Reason: new FormControl('', null)
+        });
+        this.Training_Request_Forms_H.get("Cancel_Request")?.valueChanges.subscribe((isCancelled) => {
+          const reasonControl = this.Training_Request_Forms_H.get("Cancel_Reason");
+          if (isCancelled) {
+            reasonControl?.setValidators([Validators.required, Validators.maxLength(300)]);
+          } else {
+            reasonControl?.setValidators(null);
+            reasonControl?.setValue("");
+          }
+          reasonControl?.updateValueAndValidity();
         });
         this.Training_Request_Forms_G = this.fb.group({
           Standart_Level: new FormControl(Training_Request_Forms_G?.Standart_Level, null),
@@ -472,7 +510,7 @@ export class TrainingRequestFormComponent implements OnInit {
         if (this.passport == Training_Request_Forms_A?.Passport_ID && this.passport != '025447285' && this.passport != '055382618' && this.passport != '056045834') this.requested = true;
         this.check_if_fund_or_health();
         this.cityControl.setValue(Training_Request_Forms_B?.Request_Location);
-        this.Training_Out_Check();
+        this.Training_Out_Check(false);
         if (Training_Request_Forms_B?.Poster_Attached != undefined && Training_Request_Forms_B?.Poster_Attached != "") this.wantsPoster = true;
         else this.wantsPoster = false;
         this.calculateDateEndMinimum();
@@ -485,7 +523,47 @@ export class TrainingRequestFormComponent implements OnInit {
         // this.Training_Request_Forms_B.get('Date_Start').valueChanges.subscribe(() => {
         //   this.calculateRequestDuration();
         // });
+        this.watchApprovedPercentInputs();
       });
+  }
+
+  private calculateApprovedTotalSeed(formH: any): number {
+    const percent = Number(formH?.Approved_Percent);
+    const outOf = Number(formH?.Approved_Percent_Out_Of);
+    if (!isFinite(percent) || !isFinite(outOf) || outOf <= 0 || percent < 0) {
+      return 0;
+    }
+    return Number(((percent * outOf) / 100).toFixed(2));
+  }
+
+  private watchApprovedPercentInputs(): void {
+    this.Training_Request_Forms_H.get("Approved_Total")?.valueChanges.subscribe(() => {
+      this.recalculateApprovedPercent();
+    });
+    this.Training_Request_Forms_H.get("Approved_Percent_Out_Of")?.valueChanges.subscribe(() => {
+      this.recalculateApprovedPercent();
+    });
+  }
+
+  private recalculateApprovedPercent(): void {
+    const total = Number(this.Training_Request_Forms_H.get("Approved_Total")?.value);
+    const outOf = Number(this.Training_Request_Forms_H.get("Approved_Percent_Out_Of")?.value);
+    if (!isFinite(total) || !isFinite(outOf) || outOf <= 0 || total < 0) {
+      this.Training_Request_Forms_H.get("Approved_Percent")?.setValue(0, { emitEvent: false });
+      return;
+    }
+    const nextValue = Math.min(100, Math.max(0, Number(((total / outOf) * 100).toFixed(2))));
+    this.Training_Request_Forms_H.get("Approved_Percent")?.setValue(nextValue, { emitEvent: false });
+  }
+
+  private ensureOpinionDateDefault(): void {
+    const currentValue = this.Training_Request_Forms_H.get("Opinion_Date")?.value;
+    if (!currentValue) {
+      this.Training_Request_Forms_H.get("Opinion_Date")?.setValue(this.date_now);
+    }
+    this.Training_Request_Forms_H.controls["Opinion_Date"].setValue(
+      this.datePipe.transform(this.Training_Request_Forms_H.controls["Opinion_Date"].value, "yyyy-MM-dd")
+    );
   }
 
   createFileAttachmentGroup(fileData: any) {
@@ -692,6 +770,7 @@ export class TrainingRequestFormComponent implements OnInit {
   changeToAccountantApprove() {
     if (this.Training_Request_Forms_H.controls['Approved'].value == 'מאושר התחייבות חשב') {
       this.Training_Request_Forms_H.controls['Approved_Percent'].setValue('100');
+      this.Training_Request_Forms_H.controls['Approved_Total'].setValue(this.Training_Request_Forms_H.controls['Approved_Percent_Out_Of'].value || 0);
     } else {
       this.Training_Request_Forms_H.controls['Approved_Percent'].setValue('');
     }
@@ -760,9 +839,14 @@ export class TrainingRequestFormComponent implements OnInit {
     }
   }
 
-  Training_Out_Check() {
+  Training_Out_Check(clearSelection: boolean = true) {
     if (this.Training_Request_Forms_B.controls['Training_Out'].value) {
       this.getCountryCodes();
+      if (clearSelection) {
+        this.cityControl.setValue("");
+        this.Training_Request_Forms_B.controls["Request_Location"].setValue("");
+        this.citySelectionStrictError = false;
+      }
 
       this.Training_Request_Forms_B.controls['Education_Fee'].setValue(0);
       // this.cityOptions = this.cityControl.valueChanges.pipe(
@@ -776,6 +860,11 @@ export class TrainingRequestFormComponent implements OnInit {
     else {
       this.Training_Request_Forms_B.controls['Education_Fee'].enable();
       this.getCityCodes();
+      if (clearSelection) {
+        this.cityControl.setValue("");
+        this.Training_Request_Forms_B.controls["Request_Location"].setValue("");
+        this.citySelectionStrictError = false;
+      }
     }
   }
 
@@ -1016,12 +1105,34 @@ export class TrainingRequestFormComponent implements OnInit {
       });
   }
 
-  onSubmit(final) {
+  onSubmit(final, skipFinalConfirm: boolean = false) {
+    if (final == 1 && !skipFinalConfirm) {
+      if (this.isFinalSubmitInProgress) {
+        return;
+      }
+      this.confirmationDialogService
+        .confirm("נא לאשר..", "לשמור ולשלוח ...? ")
+        .then((confirmed) => {
+          if (confirmed) {
+            this.isFinalSubmitInProgress = true;
+            this.onSubmit(1, true);
+          }
+        })
+        .catch(() => null);
+      return;
+    }
+
     if (this.Training_Request_Forms_A.valid && this.Training_Request_Forms_B.valid && this.Training_Request_Forms_C.valid
       && this.Training_Request_Forms_D.valid && this.Training_Request_Forms_E.valid && this.Training_Request_Forms_F.valid
       && this.Training_Request_Forms_G.valid && this.Training_Request_Forms_H.valid) {
+      if (!this.validateCitySelection(true)) {
+        this.openSnackBar('יש לבחור עיר/מדינה מהרשימה בלבד');
+        this.isFinalSubmitInProgress = false;
+        return;
+      }
       if (this.Supervisor_Name1.value == undefined) {
         this.openSnackBar('חסר מנהל ישיר, נא ליצור קשר עם משאבי אנוש');
+        this.isFinalSubmitInProgress = false;
         return;
       }
       this.Training_Request_Forms_B.controls['Date_Start'].setValue(this.datePipe.transform(this.Training_Request_Forms_B.value.Date_Start, 'yyyy-MM-dd'));
@@ -1030,6 +1141,7 @@ export class TrainingRequestFormComponent implements OnInit {
       this.Training_Request_Forms_E.controls['Opinion_Date'].setValue(this.datePipe.transform(this.Training_Request_Forms_E.controls['Opinion_Date'].value, 'yyyy-MM-dd'));
       this.Training_Request_Forms_I.controls['Opinion_Date'].setValue(this.datePipe.transform(this.Training_Request_Forms_I.controls['Opinion_Date'].value, 'yyyy-MM-dd'));
       this.Training_Request_Forms_F.controls['Opinion_Date'].setValue(this.datePipe.transform(this.Training_Request_Forms_F.controls['Opinion_Date'].value, 'yyyy-MM-dd'));
+      this.ensureOpinionDateDefault();
       this.Training_Request_Forms_G.controls['Work_Start_Date'].setValue(this.datePipe.transform(this.Training_Request_Forms_G.value.Work_Start_Date, 'yyyy-MM-dd'));
       // const base64Data = this.Training_Request_Forms_B.controls['Program_Attached'].value;
       const base64Data2 = this.Training_Request_Forms_D.controls['OutSource_Company_Plan'].value;
@@ -1055,16 +1167,18 @@ export class TrainingRequestFormComponent implements OnInit {
           Send_Response: final,
         })
         .subscribe((Response) => {
+          this.isFinalSubmitInProgress = false;
           if (Response["d"] != 0) {
             this.openSnackBar('נשמר בהצלחה');
             this.submitAttachedFiles(Response["d"]);
-            if (final == 1) this.askBeforeSaving(Response["d"]);
+            if (final == 1) this.dialogRef.close(Response["d"]);
             else this.dialogRef.close(null);
           } else {
             this.openSnackBar('תקלה! לא נשמר');
           }
         });
     } else {
+      this.isFinalSubmitInProgress = false;
       this.openSnackBar('שדה/ות לא תקינים/חסרים');
     }
   }
@@ -1093,24 +1207,6 @@ export class TrainingRequestFormComponent implements OnInit {
           }
         });
     }
-  }
-
-  askBeforeSaving(rowId) {
-    this.confirmationDialogService
-      .confirm("נא לאשר..", "לשמור ולשלוח ...? ")
-      .then((confirmed) => {
-        console.log("User confirmed:", confirmed);
-        if (confirmed) {
-          // this.checkPlanAvailability();
-          this.dialogRef.close(rowId);
-        } else {
-        }
-      })
-      .catch(() =>
-        console.log(
-          "User dismissed the dialog (e.g., by using ESC, clicking the cross icon, or clicking outside the dialog)"
-        )
-      );
   }
 
   markFormGroupTouched(formGroup: FormGroup) {
