@@ -1,5 +1,5 @@
-import { Component, OnInit } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { Component } from '@angular/core';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { ChangeDetectorRef } from '@angular/core';
 import { environment } from "src/environments/environment";
@@ -72,13 +72,22 @@ export interface ItemProtocolDto {
   IsRequireSleep: boolean;
 }
 
+/** Workflow segment timing between automation states (MRI process). */
+export interface AutomationWorkflowTransitionDto {
+  ItemID: number;
+  FromStateID: number;
+  ToStateID: number;
+  StateStartDate: string | null;
+  StateEndDate: string | null;
+  DurationMinutes: number | null;
+}
 
 @Component({
   selector: 'app-automation-process-dashboard',
   templateUrl: './automation-process-dashboard.component.html',
   styleUrls: ['./automation-process-dashboard.component.css']
 })
-export class AutomationProcessDashboardComponent implements OnInit {
+export class AutomationProcessDashboardComponent {
 
   departments: DepartmentDto[] = [
     { id: 1, name: 'CT', icon: '🩺' },
@@ -86,6 +95,36 @@ export class AutomationProcessDashboardComponent implements OnInit {
     { id: 2, name: 'GASTRO', icon: '🔍' },
     { id: 0, name: 'NLP', icon: '🤖' }
   ];
+
+  /** Same unit process as MRI department card (`departments` MRI id). */
+  readonly mriUnitProcessID = 3;
+
+  workflowTransitionsRaw: AutomationWorkflowTransitionDto[] = [];
+  /** After user clicks Apply Filters at least once (even if API returns []). Used for empty-state copy. */
+  workflowTransitionsFetchedOnce = false;
+  workflowTransitionLoading = false;
+
+  /** Form values before user clicks Apply Filters. */
+  workflowTransitionFilterDraft: {
+    transitionKey: string;
+    dateFrom: string | null;
+    dateTo: string | null;
+  } = {
+    transitionKey: '',
+    dateFrom: null,
+    dateTo: null
+  };
+
+  /** Values used to filter table and chart (updated on Apply Filters). */
+  workflowTransitionFilterApplied: {
+    transitionKey: string;
+    dateFrom: string | null;
+    dateTo: string | null;
+  } = {
+    transitionKey: '',
+    dateFrom: null,
+    dateTo: null
+  };
 
   nlpMetrics: NlpMetricsDto | null = null;
   selectedDepartment: DepartmentDto | null = null;
@@ -161,9 +200,6 @@ clearModifierFilters(): void {
     private snackBar: MatSnackBar,
     private cdr: ChangeDetectorRef
   ) {}
-
-  ngOnInit(): void {
-  }
 
   selectDepartment(dept: DepartmentDto): void {
     this.selectedDepartment = dept;
@@ -410,6 +446,210 @@ clearProtocolFilters(unitProcessID: number): void {
     this.itemStates = [];
     this.isDataLoaded = false;
     this.itemProtocols = [];
+    this.workflowTransitionsRaw = [];
+    this.workflowTransitionsFetchedOnce = false;
+    const cleared = {
+      transitionKey: '',
+      dateFrom: null as string | null,
+      dateTo: null as string | null
+    };
+    this.workflowTransitionFilterDraft = { ...cleared };
+    this.workflowTransitionFilterApplied = { ...cleared };
+  }
+
+  /**
+   * Same pattern as GetAutomationItemProtocols / GetAutomationProtocolModifiers: POST JSON body, response `{ "d": "<json-array-string>" }`.
+   */
+  loadWorkflowTransitionDurations(
+    unitProcessID: number,
+    filters?: {
+      transitionKey: string;
+      dateFrom: string | null;
+      dateTo: string | null;
+    }
+  ): void {
+    this.workflowTransitionLoading = true;
+    const f = filters ?? {
+      transitionKey: '',
+      dateFrom: null,
+      dateTo: null
+    };
+    const params: Record<string, string | number> = {
+      unitProcessID
+    };
+    if (f.dateFrom) {
+      params.fromDate = f.dateFrom;
+    }
+    if (f.dateTo) {
+      params.ToDate = f.dateTo;
+    }
+    if (f.transitionKey) {
+      const parts = f.transitionKey.split('-');
+      const fromSt = parseInt(parts[0], 10);
+      const toSt = parseInt(parts[1], 10);
+      if (!Number.isNaN(fromSt)) {
+        params.FromStateID = fromSt;
+      }
+      if (!Number.isNaN(toSt)) {
+        params.ToStateID = toSt;
+      }
+    }
+
+    const jsonHeaders = new HttpHeaders({
+      'Content-Type': 'application/json; charset=utf-8'
+    });
+
+    this.http
+      .post(environment.url + 'GetAutomationWorkflowTransitionDurations', params, {
+        headers: jsonHeaders
+      })
+      .subscribe({
+      next: (response: any) => {
+        let data = response.d ?? response;
+        if (typeof data === 'string') {
+          try {
+            data = JSON.parse(data);
+          } catch (e) {
+            console.error('Failed to parse workflow transitions:', e);
+            data = [];
+          }
+        }
+        this.workflowTransitionsRaw = Array.isArray(data) ? data : [];
+        this.workflowTransitionsFetchedOnce = true;
+        this.workflowTransitionLoading = false;
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('GetAutomationWorkflowTransitionDurations', err);
+        this.workflowTransitionsRaw = [];
+        this.workflowTransitionsFetchedOnce = true;
+        this.workflowTransitionLoading = false;
+        this.snackBar.open('✗ Could not load workflow transitions', 'Close', {
+          duration: 4000
+        });
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  get filteredWorkflowTransitions(): AutomationWorkflowTransitionDto[] {
+    let rows = [...this.workflowTransitionsRaw];
+    const fk = this.workflowTransitionFilterApplied.transitionKey;
+    if (fk) {
+      const [from, to] = fk.split('-').map((x) => parseInt(x, 10));
+      rows = rows.filter((r) => r.FromStateID === from && r.ToStateID === to);
+    }
+    const fromD = this.workflowTransitionFilterApplied.dateFrom;
+    const toD = this.workflowTransitionFilterApplied.dateTo;
+    if (fromD || toD) {
+      rows = rows.filter((r) => {
+        const sd = this.parseIsoDate(r.StateStartDate);
+        if (!sd) {
+          return false;
+        }
+        const day = sd.toISOString().split('T')[0];
+        if (fromD && day < fromD) {
+          return false;
+        }
+        if (toD && day > toD) {
+          return false;
+        }
+        return true;
+      });
+    }
+    return rows;
+  }
+
+  transitionLabel(row: AutomationWorkflowTransitionDto): string {
+    return `${row.FromStateID}→${row.ToStateID}`;
+  }
+
+  /** Hebrew labels for known transitions (matches filter dropdown). */
+  transitionDisplayLabel(row: AutomationWorkflowTransitionDto): string {
+    const key = `${row.FromStateID}-${row.ToStateID}`;
+    const map: Record<string, string> = {
+      '5-61': 'דימותנים',
+      '61-9': 'קביעת תור',
+      '9-19': 'המתנה לקבלה במשרד'
+    };
+    return map[key] ?? this.transitionLabel(row);
+  }
+
+  formatNullableIsoDate(value: string | null): string {
+    if (value == null || String(value).trim() === '') {
+      return '—';
+    }
+    const d = this.parseIsoDate(value);
+    return d ? d.toLocaleString() : '—';
+  }
+
+  formatDurationHuman(minutes: number | null): string {
+    if (minutes == null || !Number.isFinite(Number(minutes))) {
+      return '—';
+    }
+    let total = Math.round(Number(minutes));
+    if (total <= 0) {
+      return '—';
+    }
+    if (total < 60) {
+      return `${total} min`;
+    }
+
+    const hoursTotal = Math.floor(total / 60);
+    const minsRem = total % 60;
+
+    if (hoursTotal < 48) {
+      if (minsRem === 0) {
+        return hoursTotal === 1 ? '1 hour' : `${hoursTotal} hours`;
+      }
+      return `${hoursTotal}h ${minsRem}m`;
+    }
+
+    const days = Math.floor(total / (60 * 24));
+    const afterDays = total % (60 * 24);
+    const h = Math.floor(afterDays / 60);
+    const mm = afterDays % 60;
+    const parts: string[] = [];
+    if (days > 0) {
+      parts.push(days === 1 ? '1 day' : `${days} days`);
+    }
+    if (h > 0) {
+      parts.push(h === 1 ? '1 hour' : `${h} hours`);
+    }
+    if (mm > 0) {
+      parts.push(`${mm} min`);
+    }
+    return parts.join(' ');
+  }
+
+  applyWorkflowTransitionFilters(): void {
+    this.workflowTransitionFilterApplied = {
+      transitionKey: this.workflowTransitionFilterDraft.transitionKey,
+      dateFrom: this.workflowTransitionFilterDraft.dateFrom,
+      dateTo: this.workflowTransitionFilterDraft.dateTo
+    };
+    this.loadWorkflowTransitionDurations(this.mriUnitProcessID, this.workflowTransitionFilterApplied);
+  }
+
+  clearWorkflowTransitionFilters(): void {
+    const cleared = {
+      transitionKey: '',
+      dateFrom: null as string | null,
+      dateTo: null as string | null
+    };
+    this.workflowTransitionFilterDraft = { ...cleared };
+    this.workflowTransitionFilterApplied = { ...cleared };
+    this.workflowTransitionsRaw = [];
+    this.workflowTransitionsFetchedOnce = false;
+    this.cdr.detectChanges();
+  }
+
+  private parseIsoDate(value: string | null): Date | null {
+    if (value == null || String(value).trim() === '') {
+      return null;
+    }
+    const d = new Date(value);
+    return Number.isNaN(d.getTime()) ? null : d;
   }
 
   getStatusName(status: number): string {
