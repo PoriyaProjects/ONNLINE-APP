@@ -87,6 +87,15 @@
       </button>
 
       <button mat-icon-button class="icon-btn ghost"
+              [class.active]="showIncomeFiltersSidebar"
+              matTooltip="{{ showIncomeFiltersSidebar ? 'הסתר סינון מתקדם' : 'סינון מתקדם לדשבורד ההכנסות' }}"
+              matTooltipPosition="below"
+              (click)="toggleIncomeFiltersSidebar()">
+        <mat-icon>tune</mat-icon>
+      </button>
+
+      <button mat-icon-button class="icon-btn ghost"
+              [class.active]="showTopDepartmentsSidebar"
               matTooltip="{{ showTopDepartmentsSidebar ? 'הסתר מובילי צמיחה' : 'הצג מובילי צמיחה' }}"
               matTooltipPosition="below"
               (click)="toggleTopDepartmentsSidebar()">
@@ -132,6 +141,8 @@
   <!-- ================= MAIN CONTENT: GRAPH + TABLE ================= -->
   <div class="main-content"
        [class.with-top-sidebar]="showTopDepartmentsSidebar"
+       [class.with-filter-sidebar]="showIncomeFiltersSidebar"
+       [class.with-two-sidebars]="showIncomeFiltersSidebar && showTopDepartmentsSidebar"
        *ngIf="isDataLoaded && !isMainDataLoading">
     
     <!-- ===== GRAPH SECTION (2/3) ===== -->
@@ -242,9 +253,132 @@
       </div>
     </div>
 
+    <!-- ===== INCOME FILTERS SIDEBAR ===== -->
+    <aside class="top-departments-sidebar top-departments-sidebar--filters income-filters-sidebar"
+           dir="rtl"
+           aria-label="סינון מתקדם לדשבורד ההכנסות"
+           *ngIf="showIncomeFiltersSidebar">
+      <div class="top-departments-section-compact top-departments-section-compact--filters">
+        <div class="top-departments-header-compact top-departments-header-compact--filters-heading">
+          <div class="title-with-icon filter-sidebar-heading filter-sidebar-heading--inline">
+            <span class="filter-sidebar-heading__accent" aria-hidden="true"></span>
+            <span class="filter-sidebar-heading__icon-wrap" aria-hidden="true">
+              <mat-icon>tune</mat-icon>
+            </span>
+            <div class="filter-sidebar-heading__text">
+              <span class="filter-sidebar-heading__title">סינון מתקדם</span>
+              <span class="filter-sidebar-heading__hint">מסננים משותפים לגרף ולטבלה</span>
+            </div>
+            <button type="button"
+                    mat-icon-button
+                    class="filter-sidebar-inline-close"
+                    matTooltip="סגור סינון"
+                    matTooltipPosition="below"
+                    (click)="toggleIncomeFiltersSidebar()"
+                    aria-label="סגור סינון מתקדם">
+              <mat-icon>close</mat-icon>
+            </button>
+          </div>
+
+          <div class="wing-and-theme-row filters-row filters-column" dir="rtl">
+            <button mat-stroked-button
+                    type="button"
+                    class="reset-filters-btn reset-filters-btn--in-sidebar"
+                    matTooltip="איפוס כל הפילטרים"
+                    matTooltipPosition="below"
+                    [disabled]="!hasActiveIncomeFilters()"
+                    (click)="resetIncomeFilters()">
+              <mat-icon>restart_alt</mat-icon>
+              איפוס סינון
+            </button>
+
+            <div class="custom-dropdown filter-dropdown"
+            [class.active]="isUnifiedCategoryOpen"
+            [class.has-value]="selectedUnifiedCategory !== incomeFilterAllValue">
+         <div class="dropdown-trigger"
+              matTooltip="{{ getUnifiedCategoryDisplay() }}"
+              matTooltipPosition="below"
+              (click)="toggleIncomeFilterDropdown('unifiedCategory')">
+           <mat-icon class="dropdown-icon">account_tree</mat-icon>
+           <span class="selected-text">סיווג הכנסה מאוחד :  {{ getUnifiedCategoryDisplay() }}</span>
+           <mat-icon class="arrow-icon">{{ isUnifiedCategoryOpen ? 'expand_less' : 'expand_more' }}</mat-icon>
+         </div>
+         <div class="dropdown-panel" *ngIf="isUnifiedCategoryOpen">
+           <div class="options-list">
+             <div class="option-item"
+                  *ngFor="let option of unifiedCategoryOptions"
+                  [class.selected]="selectedUnifiedCategory === option"
+                  (click)="setUnifiedCategoryFilter(option)">
+               {{ option }}
+             </div>
+           </div>
+         </div>
+       </div>
+
+          
+            <div class="custom-dropdown filter-dropdown"
+                 [class.active]="isOrganizationOpen"
+                 [class.has-value]="selectedOrganization !== incomeFilterAllValue">
+              <div class="dropdown-trigger"
+                   matTooltip="{{ getOrganizationDisplay() }}"
+                   matTooltipPosition="below"
+                   (click)="toggleIncomeFilterDropdown('organization')">
+                <mat-icon class="dropdown-icon">business</mat-icon>
+                <span class="selected-text">קרן / מדינה: {{ getOrganizationDisplay() }}</span>
+                <mat-icon class="arrow-icon">{{ isOrganizationOpen ? 'expand_less' : 'expand_more' }}</mat-icon>
+              </div>
+              <div class="dropdown-panel" *ngIf="isOrganizationOpen">
+                <div class="options-list">
+                  <div class="option-item"
+                       *ngFor="let option of organizationOptions"
+                       [class.selected]="selectedOrganization === option"
+                       (click)="setOrganizationFilter(option)">
+                    {{ option }}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="custom-dropdown filter-dropdown"
+            [class.active]="isIncomeClassificationOpen"
+            [class.has-value]="selectedIncomeClassification !== incomeFilterAllValue">
+         <div class="dropdown-trigger"
+              matTooltip="{{ getIncomeClassificationDisplay() }}"
+              matTooltipPosition="below"
+              (click)="toggleIncomeFilterDropdown('classification')">
+           <mat-icon class="dropdown-icon">category</mat-icon>
+           <span class="selected-text">סיווג הכנסה: {{ getIncomeClassificationDisplay() }}</span>
+           <mat-icon class="arrow-icon">{{ isIncomeClassificationOpen ? 'expand_less' : 'expand_more' }}</mat-icon>
+         </div>
+         <div class="dropdown-panel" *ngIf="isIncomeClassificationOpen">
+           <div class="options-list">
+             <div class="option-item"
+                  *ngFor="let option of incomeClassificationOptions"
+                  [class.selected]="selectedIncomeClassification === option"
+                  (click)="setIncomeClassificationFilter(option)">
+               {{ option }}
+             </div>
+           </div>
+         </div>
+       </div>
+
+
+
+
+       
+          </div>
+        </div>
+
+        <div class="top-departments-footer-compact top-departments-footer-compact--filters" role="status">
+          <mat-icon class="top-departments-footer-compact__icon" aria-hidden="true">info_outline</mat-icon>
+          <span class="top-departments-footer-compact__value">{{ getIncomeFiltersSummary() }}</span>
+        </div>
+      </div>
+    </aside>
+
     <!-- ===== TOP DEPARTMENTS SIDEBAR ===== -->
     <div class="top-departments-sidebar"
-         *ngIf="showTopDepartmentsSidebar && topDepartments?.length > 0">
+         *ngIf="showTopDepartmentsSidebar">
       <div class="top-departments-section-compact">
         <div class="top-departments-header-compact">
           <div class="title-with-icon">
@@ -264,7 +398,7 @@
           </mat-button-toggle-group>
         </div>
 
-        <div class="top-departments-list-compact">
+        <div class="top-departments-list-compact" *ngIf="topDepartments?.length > 0">
           <div *ngFor="let dept of topDepartments; let i = index"
                class="rank-item-compact"
                [ngClass]="'rank-' + (i + 1)"
@@ -323,7 +457,12 @@
           </div>
         </div>
 
-        <div class="top-departments-footer-compact">
+        <div class="top-departments-empty" *ngIf="!topDepartments || topDepartments.length === 0">
+          <mat-icon aria-hidden="true">info_outline</mat-icon>
+          <span>החודש אין מחלקות בצמיחה חיובית להצגה.</span>
+        </div>
+
+        <div class="top-departments-footer-compact" *ngIf="topDepartments?.length > 0">
           אורך הפס והעוצמה הירוקה מייצגים את עוצמת הצמיחה במחלקה ביחס למקום הראשון.
         </div>
       </div>
@@ -553,10 +692,10 @@
 
           <ng-container matColumnDef="CatalogName2">
             <th mat-header-cell *matHeaderCellDef style="font-weight:bold;text-align:right;">שירות</th>
-            <td mat-cell *matCellDef="let element" #cell [matTooltip]="element.CatalogName2"
+            <td mat-cell *matCellDef="let element" #cell [matTooltip]="getCatalogServiceName(element)"
               [matTooltipDisabled]="cell.scrollWidth <= cell.clientWidth" matTooltipClass="subtle-tooltip"
               style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
-              {{ element.CatalogName2 }}
+              {{ getCatalogServiceName(element) }}
             </td>
           </ng-container>
 
