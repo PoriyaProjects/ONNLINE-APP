@@ -1,0 +1,124 @@
+<div class="nps-page">
+  <header class="nps-page-header">
+    <div class="nps-page-header-main">
+      <h1 class="nps-page-title">קבוצות</h1>
+      <p class="nps-page-subtitle">ניהול קבוצות הרשאה ושיוך קבוצות למחלקות</p>
+    </div>
+  </header>
+
+  <section class="nps-section">
+    <div class="nps-section-title">
+      <div class="nps-section-title-main">
+        <mat-icon>widgets</mat-icon>
+        טופס קבוצה
+      </div>
+    </div>
+
+    <mat-card class="nps-card form-card">
+      <mat-card-title>{{ form.ActionID == null ? 'קבוצה חדשה' : 'עריכת קבוצה' }}</mat-card-title>
+      <mat-card-content>
+        <div class="form-row">
+          <mat-form-field appearance="outline">
+            <mat-label>שם קבוצה</mat-label>
+            <input matInput [(ngModel)]="form.ActionSubject" />
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>מיון</mat-label>
+            <input matInput type="number" [(ngModel)]="form.Sort" />
+          </mat-form-field>
+          <mat-checkbox [(ngModel)]="form.IsActive">פעיל</mat-checkbox>
+        </div>
+        <div class="actions">
+          <button mat-raised-button color="primary" (click)="saveAction()">
+            {{ form.ActionID == null ? 'הוסף קבוצה' : 'שמור קבוצה' }}
+          </button>
+          <button mat-button type="button" (click)="resetForm()">נקה</button>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </section>
+
+  <section class="nps-section">
+    <div class="nps-section-title">
+      <div class="nps-section-title-main">
+        <mat-icon>account_tree</mat-icon>
+        שיוך למחלקה
+      </div>
+    </div>
+
+    <mat-card class="nps-card form-card">
+      <mat-card-title>שיוך קבוצות למחלקה</mat-card-title>
+      <mat-card-content>
+        <div class="form-row">
+          <mat-form-field appearance="outline" class="dept-select">
+            <mat-label>מחלקה</mat-label>
+            <mat-select [(ngModel)]="selectedDepartmentCode" (selectionChange)="onDepartmentChange()">
+              <mat-option [value]="''">בחרו מחלקה</mat-option>
+              <mat-option *ngFor="let d of departments" [value]="d.DepartnentCode">
+                {{ d.DepartnentDescripton }} ({{ d.DepartnentCode }})
+              </mat-option>
+            </mat-select>
+          </mat-form-field>
+          <button mat-raised-button color="accent" type="button" (click)="saveDepartmentAttachments()">שמור שיוכים</button>
+        </div>
+        <p *ngIf="selectedDepartmentCode" class="attach-hint">
+          שיוך נוכחי למחלקה: {{ departmentLabel(selectedDepartmentCode) }}
+        </p>
+      </mat-card-content>
+    </mat-card>
+  </section>
+
+  <section class="nps-section">
+    <div class="nps-section-title">
+      <div class="nps-section-title-main">
+        <mat-icon>table_chart</mat-icon>
+        רשימת קבוצות
+      </div>
+    </div>
+
+    <div class="nps-table-wrap">
+      <div class="nps-table-scroll">
+        <table mat-table [dataSource]="actions" class="full nps-table">
+  <ng-container matColumnDef="ActionID">
+    <th mat-header-cell *matHeaderCellDef>#</th>
+    <td mat-cell *matCellDef="let r">{{ r.ActionID }}</td>
+  </ng-container>
+  <ng-container matColumnDef="ActionSubject">
+    <th mat-header-cell *matHeaderCellDef>קבוצה</th>
+    <td mat-cell *matCellDef="let r">{{ r.ActionSubject }}</td>
+  </ng-container>
+  <ng-container matColumnDef="Sort">
+    <th mat-header-cell *matHeaderCellDef>מיון</th>
+    <td mat-cell *matCellDef="let r">{{ r.Sort }}</td>
+  </ng-container>
+  <ng-container matColumnDef="IsActive">
+    <th mat-header-cell *matHeaderCellDef>פעיל</th>
+    <td mat-cell *matCellDef="let r">
+      <mat-icon color="primary">{{ r.IsActive ? 'check_circle' : 'cancel' }}</mat-icon>
+    </td>
+  </ng-container>
+  <ng-container matColumnDef="Attach">
+    <th mat-header-cell *matHeaderCellDef>שיוך למחלקה</th>
+    <td mat-cell *matCellDef="let r">
+      <mat-checkbox
+        [disabled]="!selectedDepartmentCode"
+        [checked]="isAttached(r.ActionID)"
+        (change)="toggleAttached(r.ActionID, $event.checked)"
+      ></mat-checkbox>
+    </td>
+  </ng-container>
+  <ng-container matColumnDef="Actions">
+    <th mat-header-cell *matHeaderCellDef>פעולות</th>
+    <td mat-cell *matCellDef="let r">
+      <button mat-icon-button color="primary" (click)="editAction(r)">
+        <mat-icon>edit</mat-icon>
+      </button>
+    </td>
+  </ng-container>
+  <tr mat-header-row *matHeaderRowDef="cols"></tr>
+  <tr mat-row *matRowDef="let row; columns: cols"></tr>
+        </table>
+      </div>
+    </div>
+  </section>
+</div>

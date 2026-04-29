@@ -47,7 +47,7 @@
       <button class="hd-refresh" (click)="refreshData()" title="רענון">רענון</button>
     </div>
 
-    <div class="hd-bottom">
+    <div class="hd-bottom" [class.hd-bottom--questions]="viewMode==='questions'">
 
       <div *ngIf="loadingOptions" class="hd-center-msg" style="grid-column:1/-1;">
         <mat-spinner diameter="24"></mat-spinner> <span>טוען רשימות...</span>
@@ -82,13 +82,21 @@
           <div class="hd-filt-head">בחר טופס</div>
           <div class="hd-search-wrap">
             <select class="hd-select" [ngModel]="selectedQuestionForm" (ngModelChange)="onQuestionFormChange($event)">
-              <option [ngValue]="null">—</option>
+              <option value=""></option>
               <option *ngFor="let f of allForms" [ngValue]="f">{{ f }}</option>
             </select>
           </div>
           <div class="hd-filt-head" style="margin-top:0.5rem;">בחר שאלות</div>
           <div class="hd-search-wrap">
             <input type="text" [(ngModel)]="questionSearch" placeholder="🔍 חיפוש שאלה..." class="hd-search" />
+          </div>
+          <div class="hd-search-wrap">
+            <button class="hd-load-btn" (click)="loadQuestionChart()" [disabled]="loading || questionsLoading">
+              טען גרף
+            </button>
+          </div>
+          <div class="hd-center-msg hd-center-msg--muted" *ngIf="questionFiltersDirty && !loading" style="min-height:0;padding:0.2rem 0 0.5rem;">
+            בחר מסננים/שאלות ואז לחץ על "טען גרף"
           </div>
           <div class="hd-center-msg" *ngIf="questionsLoading" style="min-height:60px;">
             <mat-spinner diameter="22"></mat-spinner>
@@ -119,7 +127,7 @@
               </label>
             </div>
           </div>
-          <div class="hd-filt-sub">
+          <div class="hd-filt-sub" *ngIf="viewMode==='forms'">
             <div class="hd-filt-head">רבעון</div>
             <div class="hd-cbl hd-cbl--short">
               <label class="hd-cb">
@@ -135,7 +143,7 @@
         </div>
 
         <!-- COL 3: מחלקה -->
-        <div class="hd-filt">
+        <div class="hd-filt" *ngIf="viewMode==='forms'">
           <div class="hd-filt-head">מחלקה</div>
           <div class="hd-search-wrap">
             <input type="text" [(ngModel)]="departmentSearch" placeholder="🔍 חיפוש..." class="hd-search" />

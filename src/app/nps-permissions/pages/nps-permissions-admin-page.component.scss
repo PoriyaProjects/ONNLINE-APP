@@ -1,0 +1,27 @@
+.form-card {
+  margin-bottom: 12px;
+}
+
+.form-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+.wide {
+  min-width: 280px;
+}
+
+.actions {
+  margin-top: 8px;
+}
+
+.full {
+  width: 100%;
+}
+
+.nps-table {
+  border: 0;
+  box-shadow: none;
+}

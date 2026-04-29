@@ -1,8 +1,23 @@
 export interface NpsDashboardSummary {
-  pendingQueueCount: number;
   pendingRequestsCount: number;
   myPendingApprovalsCount: number;
   myPendingRequestsCount: number;
+  /** Rows in `EP_Departnents`. */
+  totalDepartmentsCount: number;
+  /** Rows in `EP_NursePermissionActions`. */
+  totalActionsCount: number;
+  /** Rows in `EP_NursePermissionPermissions`. */
+  totalPermissionsCount: number;
+}
+
+/** From `NpsGetAccessContext` / `GetAccessContext` (catalog vs employee-only NPS UI). */
+export interface NpsAccessContext {
+  currentEmployeeId: number;
+  isGlobalAdmin: boolean;
+  isManager1OfAnyEmployee: boolean;
+  isManager2OfAnyEmployee: boolean;
+  /** True when user may open profiles, rules, actions, permissions, audit, etc. */
+  canAccessNpsConfiguration: boolean;
 }
 
 export interface NpsEmployeeListRow {
@@ -12,7 +27,6 @@ export interface NpsEmployeeListRow {
   DepartnentCode: string;
 }
 
-<<<<<<< HEAD
 /** Row from `NpsGetAssignments` / `NpsGetEmployeeAssignments` (enriched with ruleId). */
 export interface NpsEmployeeProfileAssignmentRow {
   assignmentId: number;
@@ -47,6 +61,14 @@ export interface NpsPermissionApprovalGridRow {
   LastUpdateDate?: string | null;
 }
 
+export interface NpsManagerApprovalSummaryRow {
+  EmployeeID: number;
+  FullName: string;
+  NotApprovedCount: number;
+  LastUpdateDate?: string | null;
+  Done: boolean;
+}
+
 export interface NpsCreatePermissionRequestFromRuleBody {
   employeeId: number;
   ruleId: number;
@@ -64,8 +86,6 @@ export interface NpsPermissionApprovalBatchBody {
   approvals: NpsPermissionApprovalUpdateBody[];
 }
 
-=======
->>>>>>> origin/main
 export interface NpsEmployeeDetail {
   EmployeeID: number;
   FirstName: string;
@@ -156,6 +176,11 @@ export interface NpsProfileRule {
   RuleDescription: string;
   CreatedAt?: string;
   UpdatedAt?: string;
+}
+
+/** UI table row for profile rules (`NpsGetProfileRules` + optional display fields). */
+export interface NpsProfileRuleTableRow extends NpsProfileRule {
+  ProfileName?: string | null;
 }
 
 export interface NpsRequestSummary {
