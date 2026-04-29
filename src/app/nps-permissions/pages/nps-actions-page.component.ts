@@ -3,7 +3,7 @@ import { forkJoin } from 'rxjs';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { NpsAction, NpsDepartment } from '../models/nps.models';
 import { NpsBaseApiService } from '../services/nps-base-api.service';
-
+ 
 @Component({
   selector: 'app-nps-actions-page',
   templateUrl: './nps-actions-page.component.html',
