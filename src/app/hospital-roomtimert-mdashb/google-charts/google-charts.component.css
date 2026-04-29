@@ -236,9 +236,9 @@
   grid-auto-rows: auto;
 }
 
-/* כשלפחות כרטיס אחד פתוח — אל תמתח את כל השורה לגובה הכרטיס הפתוח */
+/* כרטיס פתוח נשאר באותו גובה כמו שאר הכרטיסים בשורה */
 .regular-section .rooms-grid:has(.room-widget.card.active) {
-  align-items: start;
+  align-items: stretch;
 }
 
 /* שורת חדרים כלליים: אותו גובה + כרטיס שנראה לחיץ (מסך קיר / פלזמה) */
@@ -282,7 +282,7 @@
   width: 100%;
   box-sizing: border-box;
   margin: 0 !important;
-  padding: 10px 30px 10px 10px;
+  padding: 10px 34px 10px 10px;
   text-align: center;
   border-radius: 12px;
   border: 1px dashed rgba(46, 139, 87, 0.42);
@@ -323,7 +323,7 @@
   width: 100%;
   box-sizing: border-box;
   margin: 0 !important;
-  padding: 10px 30px 10px 10px;
+  padding: 10px 34px 10px 10px;
   max-height: 6.5rem;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
@@ -367,12 +367,7 @@
   margin: 0;
   border-radius: 0;
   border-top: 1px solid rgba(242, 201, 76, 0.38);
-  cursor: pointer;
-}
-
-.regular-section .room-widget.card .current-surgery-chip--below-header:focus-visible {
-  outline: 2px solid rgba(74, 144, 226, 0.45);
-  outline-offset: -2px;
+  cursor: default;
 }
 
 .regular-section .rooms-grid:has(.room-widget.card.active) > .room-wrapper {
@@ -388,7 +383,7 @@
   height: 100%;
   min-height: clamp(268px, 24vh, 380px);
   max-height: min(580px, 80vh);
-  cursor: pointer;
+  cursor: default;
   transition: box-shadow 0.22s ease, transform 0.2s ease, border-color 0.2s ease,
     filter 0.2s ease;
 }
@@ -431,26 +426,14 @@
   min-height: 0;
 }
 
-.regular-section .room-widget.card:not(.active) .expand_btn {
-  margin-top: auto;
-  padding-top: 10px;
-  border-top: 1px solid rgba(224, 230, 237, 0.9);
-}
-
 .regular-section .room-widget.card.active {
-  height: auto;
-  align-self: start;
+  height: 100%;
+  align-self: stretch;
   max-height: min(580px, 80vh);
 }
 
 .regular-section .room-widget.card.active .room-header {
   flex: 0 0 auto;
-}
-
-.regular-section .room-widget.card.active .expand_btn {
-  margin-top: 0;
-  padding-top: 4px;
-  border-top: none;
 }
 
 .ambulatory-section .rooms-grid {
@@ -939,7 +922,7 @@
   padding: 12px 14px;
   border-bottom: 1px solid var(--border);
   box-shadow: 0 1px 0 rgba(255, 255, 255, 0.8);
-  cursor: pointer;
+  cursor: default;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -954,6 +937,85 @@
   text-align: right;
   flex: 1;
   overflow-y: auto;
+}
+
+.regular-section .room-widget.card .room-body--actions {
+  flex: 0 0 auto;
+  overflow: visible;
+  margin-top: auto;
+  padding: 10px 12px 8px;
+  border-top: 1px solid rgba(224, 230, 237, 0.9);
+  background: linear-gradient(180deg, rgba(248, 251, 255, 0.72) 0%, #fff 100%);
+}
+
+.regular-section .room-list-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.regular-section .room-list-action-btn {
+  width: 100%;
+  min-height: 54px;
+  border: 1px solid rgba(74, 144, 226, 0.3);
+  border-radius: 12px;
+  background: rgba(74, 144, 226, 0.08);
+  color: var(--text-main);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 8px 10px;
+  font-weight: 800;
+  line-height: 1.2;
+  text-align: right;
+  transition: background 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+}
+
+.regular-section .room-list-action-btn:hover:not(:disabled),
+.regular-section .room-list-action-btn.is-open {
+  background: rgba(74, 144, 226, 0.14);
+  border-color: rgba(74, 144, 226, 0.55);
+  transform: translateY(-1px);
+}
+
+.regular-section .room-list-action-btn:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.regular-section .room-list-action-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.regular-section .room-list-action-btn strong {
+  min-width: 30px;
+  padding: 2px 9px;
+  border-radius: 999px;
+  background: #fff;
+  color: #1e5a96;
+  font-size: 0.95rem;
+  text-align: center;
+  box-shadow: inset 0 0 0 1px rgba(74, 144, 226, 0.18);
+}
+
+.regular-section .room-list-action-btn--completed {
+  border-color: rgba(111, 207, 151, 0.38);
+  background: rgba(111, 207, 151, 0.12);
+}
+
+.regular-section .room-list-action-btn--completed:hover:not(:disabled),
+.regular-section .room-list-action-btn--completed.is-open {
+  background: rgba(111, 207, 151, 0.2);
+  border-color: rgba(111, 207, 151, 0.65);
+}
+
+.regular-section .room-list-action-btn--completed strong {
+  color: #1e8449;
+  box-shadow: inset 0 0 0 1px rgba(111, 207, 151, 0.28);
 }
 
 .room-widget.blurred {
@@ -1416,6 +1478,7 @@
 }
 
 .regular-section .completed-surgeries-overlay__close {
+  order: -1;
   flex-shrink: 0;
   width: 30px;
   height: 30px;
@@ -1451,6 +1514,20 @@
   border-inline-start-color: rgba(74, 144, 226, 0.55);
   background: rgba(255, 255, 255, 0.72);
   box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
+}
+
+.regular-section .planned-surgeries-overlay .completed-surgeries-overlay__panel {
+  border-color: rgba(74, 144, 226, 0.42);
+}
+
+.regular-section .planned-surgeries-overlay .completed-surgeries-overlay__count {
+  color: #2a6ebd;
+  background: rgba(74, 144, 226, 0.16);
+}
+
+.regular-section .planned-surgeries-overlay .completed-surgeries-overlay__card {
+  border-inline-start-color: var(--primary);
+  background: rgba(74, 144, 226, 0.07);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1754,6 +1831,12 @@
   line-height: 1.3;
 }
 
+.current-surgery-chip--empty {
+  background: rgba(45, 52, 54, 0.05);
+  border-color: rgba(224, 230, 237, 0.95);
+  border-inline-start-color: rgba(178, 190, 195, 0.9);
+}
+
 /* באנר חתימות — מעל שם המחלקה, רקע שקוף גולש, סגירה ב-X */
 @keyframes signatureBannerSlideIn {
   from {
@@ -1796,7 +1879,8 @@
 .signature-banner-close {
   position: absolute;
   top: 5px;
-  inset-inline-end: 5px;
+  inset-inline-start: 5px;
+  inset-inline-end: auto;
   width: 26px;
   height: 26px;
   padding: 0;

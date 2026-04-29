@@ -536,6 +536,8 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
     openRooms = new Set<string>();
     /** רשימת "ניתוחים שבוצעו" פתוחה (לפי חדר) — כפתור דרופ־דאון בתוך room-body */
     completedSurgeriesListOpenByRoom = new Set<string>();
+    /** רשימת "ניתוחים מתוכננים" פתוחה (לפי חדר) — כפתור פופאפ בתוך room-body */
+    plannedSurgeriesListOpenByRoom = new Set<string>();
 
     toggleAll(): void {
         this.allExpanded = !this.allExpanded;
@@ -571,6 +573,7 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
         if (this.openRooms.has(roomId)) {
             this.openRooms.delete(roomId);
             this.completedSurgeriesListOpenByRoom.delete(roomId);
+            this.plannedSurgeriesListOpenByRoom.delete(roomId);
         } else {
             this.openRooms.add(roomId);
             this.acknowledgeRoomEvent(roomId);
@@ -581,6 +584,9 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
         this.openRooms = new Set(this.openRooms);
         this.completedSurgeriesListOpenByRoom = new Set(
             this.completedSurgeriesListOpenByRoom
+        );
+        this.plannedSurgeriesListOpenByRoom = new Set(
+            this.plannedSurgeriesListOpenByRoom
         );
     }
 
@@ -595,10 +601,36 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
         if (this.completedSurgeriesListOpenByRoom.has(roomId)) {
             this.completedSurgeriesListOpenByRoom.delete(roomId);
         } else {
+            this.plannedSurgeriesListOpenByRoom.delete(roomId);
             this.completedSurgeriesListOpenByRoom.add(roomId);
         }
         this.completedSurgeriesListOpenByRoom = new Set(
             this.completedSurgeriesListOpenByRoom
+        );
+        this.plannedSurgeriesListOpenByRoom = new Set(
+            this.plannedSurgeriesListOpenByRoom
+        );
+    }
+
+    isPlannedSurgeriesListOpen(roomId: string): boolean {
+        return this.plannedSurgeriesListOpenByRoom.has(roomId);
+    }
+
+    togglePlannedSurgeriesList(roomId: string, event?: Event): void {
+        if (event) {
+            event.stopPropagation();
+        }
+        if (this.plannedSurgeriesListOpenByRoom.has(roomId)) {
+            this.plannedSurgeriesListOpenByRoom.delete(roomId);
+        } else {
+            this.completedSurgeriesListOpenByRoom.delete(roomId);
+            this.plannedSurgeriesListOpenByRoom.add(roomId);
+        }
+        this.completedSurgeriesListOpenByRoom = new Set(
+            this.completedSurgeriesListOpenByRoom
+        );
+        this.plannedSurgeriesListOpenByRoom = new Set(
+            this.plannedSurgeriesListOpenByRoom
         );
     }
 
