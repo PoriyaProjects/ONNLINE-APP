@@ -111,12 +111,15 @@ export interface NpsEducationRow {
 
 export interface NpsProfile {
   ProfileID: number;
-  ProfileCode: string;
   ProfileName: string;
   Description: string;
   IsActive: boolean;
   /** Optional; used when sending profile writes (server DTO). */
   Priority?: number;
+  /** Optional; matches `EP_NursePermissionProfiles` / server `NpsProfileRow`. */
+  DepartnentCode?: string | null;
+  EducationID?: string | null;
+  SpecialityID?: string | null;
   CreatedAt?: string;
   UpdatedAt?: string;
 }
@@ -124,10 +127,12 @@ export interface NpsProfile {
 /** Server `NpsProfileBodyDto` — camelCase JSON. */
 export interface NpsProfileWriteBody {
   name: string;
-  profileCode?: string;
   description: string;
   isActive: boolean;
   priority: number;
+  departnentCode?: string | null;
+  educationID?: string | null;
+  specialityID?: string | null;
 }
 
 /** Catalog row from `NpsGetEducations` (normalized). */
@@ -149,9 +154,30 @@ export interface NpsSpecialtyCatalog {
 
 export interface NpsPermission {
   PermissionID: number;
-  PermissionKey: string;
   PermissionName: string;
-  PermissionDescription: string;
+  PermissionDescription?: string;
+  Description?: string;
+  IsActive: boolean;
+  ActionIDFK?: string | null;
+}
+
+export interface NpsAction {
+  ActionID: number;
+  ActionSubject: string;
+  IsActive: boolean;
+  Sort: number;
+}
+
+export interface NpsActionWriteBody {
+  ActionSubject: string;
+  IsActive: boolean;
+  Sort: number;
+}
+
+export interface NpsDepartmentActionRow {
+  Row_ID: number;
+  DepartnentCodeIDFK: string;
+  ActionIDFK: number;
   IsActive: boolean;
 }
 
@@ -159,6 +185,21 @@ export interface NpsProfilePermission {
   ProfileID: number;
   PermissionID: number;
   IsGranted: boolean;
+}
+
+export interface NpsPermissionCardItem {
+  PermissionID: number;
+  PermissionName: string;
+  Description?: string;
+  IsActive: boolean;
+  IsGranted: boolean;
+}
+
+export interface NpsPermissionCard {
+  ActionID: number;
+  ActionSubject: string;
+  IsActive: boolean;
+  Permissions: NpsPermissionCardItem[];
 }
 
 export interface NpsProfileRule {
@@ -178,9 +219,15 @@ export interface NpsProfileRule {
   UpdatedAt?: string;
 }
 
-/** UI table row for profile rules (`NpsGetProfileRules` + optional display fields). */
-export interface NpsProfileRuleTableRow extends NpsProfileRule {
-  ProfileName?: string | null;
+export interface NpsProfileRuleTableRow {
+  RuleID?: number;
+  ProfileID?: number;
+  DepartnentCode?: string;
+  EducationID?: number;
+  SpecialtyID?: number;
+  ProfileName: string;
+  ActionSubject: string;
+  GrantedPermissionsCount: number;
 }
 
 export interface NpsRequestSummary {
