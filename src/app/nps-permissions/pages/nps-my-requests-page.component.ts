@@ -1,7 +1,9 @@
 import { Component, OnInit } from '@angular/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { forkJoin } from 'rxjs';
 import {
   NpsEmployeeListRow,
+  NpsManagerApprovalSummaryRow,
   NpsPermissionApprovalGridRow,
   NpsProfileRuleTableRow,
 } from '../models/nps.models';
@@ -14,6 +16,9 @@ import { NpsBaseApiService } from '../services/nps-base-api.service';
 })
 export class NpsMyRequestsPageComponent implements OnInit {
   rows: NpsPermissionApprovalGridRow[] = [];
+  summaryRows: NpsManagerApprovalSummaryRow[] = [];
+  selectedEmployeeId: number | null = null;
+  managerCols = ['FullName', 'NotApprovedCount', 'LastUpdateDate', 'Done'];
   cols = [
     'EmployeeID',
     'FullName',
@@ -41,7 +46,7 @@ export class NpsMyRequestsPageComponent implements OnInit {
   private employee_id: string = localStorage.getItem('ID') || '';
   private currentEmployeeId: number = Number(localStorage.getItem('ID') || 0);
 
-  constructor(private api: NpsBaseApiService, private snack: MatSnackBar) {}
+  constructor(private api: NpsBaseApiService, private snack: MatSnackBar) { }
 
   toDate(value: string | null | undefined): Date | null {
     if (!value) {
@@ -64,21 +69,32 @@ export class NpsMyRequestsPageComponent implements OnInit {
   reload(): void {
     this.busy = true;
     this.loadError = false;
-    this.api
-      .getPermissionApprovalGrid(this.employee_id || '', {
+    forkJoin({
+      summaryRows: this.api.getManagerApprovalSummary(this.employee_id || '', {
+        status: this.statusFilter || '',
+        skip: 0,
+        take: 200,
+      }),
+      rows: this.api.getPermissionApprovalGrid(this.employee_id || '', {
         mineOnly: this.mineOnly,
         status: this.statusFilter || '',
         skip: 0,
         take: 400,
-      })
+      }),
+    })
       .subscribe(
-        (rows) => {
+        ({ summaryRows, rows }) => {
+          this.summaryRows = summaryRows || [];
           this.rows = rows || [];
+          if (this.selectedEmployeeId != null && !this.summaryRows.some((x) => x.EmployeeID === this.selectedEmployeeId)) {
+            this.selectedEmployeeId = null;
+          }
           this.pendingApprovals = {};
           this.busy = false;
           this.loadError = false;
         },
         () => {
+          this.summaryRows = [];
           this.rows = [];
           this.busy = false;
           this.loadError = true;
@@ -87,8 +103,31 @@ export class NpsMyRequestsPageComponent implements OnInit {
       );
   }
 
+  get detailRows(): NpsPermissionApprovalGridRow[] {
+    const baseRows =
+      this.selectedEmployeeId == null
+        ? this.rows
+        : this.rows.filter((x) => x.EmployeeID === this.selectedEmployeeId);
+
+    return baseRows.filter((row) => {
+      return true;
+    });
+  }
+
+  selectSummaryRow(row: NpsManagerApprovalSummaryRow): void {
+    this.selectedEmployeeId = row.EmployeeID;
+  }
+
+  clearSelectedEmployee(): void {
+    this.selectedEmployeeId = null;
+  }
+
   canApprove(row: NpsPermissionApprovalGridRow, stepNo: number): boolean {
     if (row.RequestStatus !== 'Pending') {
+      return false;
+    }
+    // Manager2/employee cannot approve until manager1 approves this permission.
+    if (stepNo > 1 && !row.Manager1Approved) {
       return false;
     }
     if (stepNo === 1) {
@@ -139,11 +178,11 @@ export class NpsMyRequestsPageComponent implements OnInit {
   }
 
   hasSelectableRows(stepNo: number): boolean {
-    return this.rows.some((row) => this.canSelectInColumn(row, stepNo));
+    return this.detailRows.some((row) => this.canSelectInColumn(row, stepNo));
   }
 
   isColumnAllSelected(stepNo: number): boolean {
-    const targets = this.rows.filter((row) => this.canSelectInColumn(row, stepNo));
+    const targets = this.detailRows.filter((row) => this.canSelectInColumn(row, stepNo));
     if (targets.length === 0) {
       return false;
     }
@@ -151,7 +190,7 @@ export class NpsMyRequestsPageComponent implements OnInit {
   }
 
   isColumnPartiallySelected(stepNo: number): boolean {
-    const targets = this.rows.filter((row) => this.canSelectInColumn(row, stepNo));
+    const targets = this.detailRows.filter((row) => this.canSelectInColumn(row, stepNo));
     if (targets.length === 0) {
       return false;
     }
@@ -160,7 +199,7 @@ export class NpsMyRequestsPageComponent implements OnInit {
   }
 
   toggleSelectAll(stepNo: number, checked: boolean): void {
-    for (const row of this.rows) {
+    for (const row of this.detailRows) {
       if (!this.canSelectInColumn(row, stepNo)) {
         continue;
       }
@@ -193,15 +232,15 @@ export class NpsMyRequestsPageComponent implements OnInit {
     this.api
       .setPermissionItemsApproval(this.employee_id || '', { approvals })
       .subscribe(
-      () => {
-        this.snack.open('האישורים נשמרו', 'סגור', { duration: 2200 });
-        this.reload();
-      },
-      () => {
-        this.busy = false;
-        this.snack.open('שמירת האישורים נכשלה', 'סגור', { duration: 3000 });
-      }
-    );
+        () => {
+          this.snack.open('האישורים נשמרו', 'סגור', { duration: 2200 });
+          this.reload();
+        },
+        () => {
+          this.busy = false;
+          this.snack.open('שמירת האישורים נכשלה', 'סגור', { duration: 3000 });
+        }
+      );
   }
 
   onEmployeeInput(): void {

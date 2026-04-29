@@ -187,7 +187,7 @@
               </div>
               <div class="col-lg-2 col-md-4 col-sm-6">
                 <section class="example-section">
-                  <p><mat-checkbox formControlName="Training_Out" (change)="Training_Out_Check()"><span
+                  <p><mat-checkbox formControlName="Training_Out" (change)="Training_Out_Check(true)"><span
                         class="checkbox-label">השתלמות
                         בחו"ל</span></mat-checkbox>
                   </p>
@@ -196,7 +196,8 @@
               <div class="col-lg-2 col-md-4 col-sm-6">
                 <mat-form-field>
                   <mat-label>מקום ההשתלמות*</mat-label>
-                  <input type="text" aria-label="city" matInput [formControl]="cityControl" [matAutocomplete]="auto">
+                  <input type="text" aria-label="city" matInput [formControl]="cityControl" [matAutocomplete]="auto"
+                    (blur)="validateCitySelection(true)">
                   <mat-autocomplete #auto="matAutocomplete" (optionSelected)="changeCity($event.option.value)">
                     <mat-option *ngFor="let City of cityOptions | async" [value]="City.cityName">
                       {{City.cityName}}
@@ -205,7 +206,13 @@
                   <mat-error *ngIf="cityControl.hasError('required') && cityControl.touched">
                     שדה חובה
                   </mat-error>
+                  <mat-error *ngIf="citySelectionStrictError">
+                    יש לבחור עיר/מדינה מהרשימה בלבד
+                  </mat-error>
                 </mat-form-field>
+                <p style="margin: 0;color: #3f51b5;font-size: 12px;" *ngIf="Training_Request_Forms_B.get('Training_Out').value">
+                  עבור השתלמויות בחו"ל, שמות המדינות מוצגים באנגלית.
+                </p>
               </div>
               <div class="col-lg-2 col-md-4 col-sm-6">
                 <mat-label>המוסד המארגן</mat-label>
@@ -1208,7 +1215,7 @@
             <div class="col-lg-2 col-md-4 col-sm-6">
               <mat-form-field>
                 <mat-label>מענק מאושר באחוזים</mat-label>
-                <input matInput formControlName="Approved_Percent" type="number" max="100" />
+                <input matInput formControlName="Approved_Percent" type="number" max="100" readonly />
                 <mat-error
                   *ngIf="Training_Request_Forms_H.get('Approved_Percent').hasError('pattern') && Training_Request_Forms_H.get('Approved_Percent').touched">
                   הזן מספרים בלבד.
@@ -1230,10 +1237,10 @@
               </mat-form-field>
             </div>
             <div class="col-lg-1 col-md-4 col-sm-6">
-              <p style="margin-bottom: 0;">סה"כ</p>
-              <p style="text-align: center;font-weight: bold;">{{
-                (Training_Request_Forms_H.get('Approved_Percent').value *
-                Training_Request_Forms_H.get('Approved_Percent_Out_Of').value) / 100}} </p>
+              <mat-form-field>
+                <mat-label>סה"כ</mat-label>
+                <input matInput formControlName="Approved_Total" type="number" />
+              </mat-form-field>
             </div>
             <div class="col-lg-2 col-md-4 col-sm-12">
               <mat-form-field>
@@ -1268,6 +1275,17 @@
               <mat-form-field>
                 <mat-label>הערות</mat-label>
                 <textarea matInput formControlName="Recommendations" rows="2"></textarea>
+              </mat-form-field>
+            </div>
+            <div class="col-lg-2 col-md-4 col-sm-12">
+              <section class="example-section">
+                <p><mat-checkbox formControlName="Cancel_Request">ביטול בקשה</mat-checkbox></p>
+              </section>
+            </div>
+            <div class="col-lg-6 col-md-6 col-sm-12" *ngIf="Training_Request_Forms_H.get('Cancel_Request').value">
+              <mat-form-field>
+                <mat-label>סיבת ביטול</mat-label>
+                <textarea matInput formControlName="Cancel_Reason" rows="2"></textarea>
               </mat-form-field>
             </div>
           </div>

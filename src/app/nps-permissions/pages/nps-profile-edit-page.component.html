@@ -5,14 +5,40 @@
       <mat-label>שם הפרופיל</mat-label>
       <input matInput [(ngModel)]="profile.ProfileName" />
     </mat-form-field>
-    <mat-form-field appearance="outline">
-      <mat-label>קוד הפרופיל</mat-label>
-      <input matInput [(ngModel)]="profile.ProfileCode" />
-    </mat-form-field>
     <mat-form-field appearance="outline" class="wide">
       <mat-label>תיאור הפרופיל</mat-label>
       <input matInput [(ngModel)]="profile.Description" />
     </mat-form-field>
+    <div class="context-row">
+      <mat-form-field appearance="outline">
+        <mat-label>מחלקה (אופציונלי)</mat-label>
+        <mat-select [(ngModel)]="profile.DepartnentCode" name="profileDept">
+          <mat-option [value]="''">(כללי — ללא מחלקה)</mat-option>
+          <mat-option *ngFor="let d of departments" [value]="d.DepartnentCode">
+            {{ d.DepartnentDescripton }} ({{ d.DepartnentCode }})
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>השכלה (אופציונלי)</mat-label>
+        <mat-select
+          [(ngModel)]="profile.EducationID"
+          name="profileEdu"
+          (ngModelChange)="onProfileEducationChange()"
+        >
+          <mat-option [value]="''">(כללי)</mat-option>
+          <mat-option *ngFor="let e of educations" [value]="e.EducationID">{{ e.EducationSubject }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>התמחות (אופציונלי)</mat-label>
+        <mat-select [(ngModel)]="profile.SpecialityID" name="profileSpec">
+          <mat-option [value]="''">(כללי)</mat-option>
+          <mat-option *ngFor="let s of profileSpecialties" [value]="s.SpecialtyID">{{ s.Speciality }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+    </div>
+    <p class="context-hint">שדות הקשר משמשים לסינון והתאמת פרופיל; השארו &quot;כללי&quot; לפרופיל כללי.</p>
     <mat-checkbox [(ngModel)]="profile.IsActive">פעיל</mat-checkbox>
     <div class="actions">
       <button mat-raised-button color="primary" (click)="saveMeta()">שמור פרטים</button>

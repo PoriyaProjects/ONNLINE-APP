@@ -1,0 +1,53 @@
+h1 {
+  margin: 0 0 10px;
+  font-size: 26px;
+  color: var(--nps-text);
+}
+
+.page-intro {
+  margin: 0 0 16px;
+  max-width: 900px;
+  font-size: 14px;
+  color: var(--nps-text-muted, #555);
+  line-height: 1.5;
+}
+
+.toolbar-card {
+  margin-bottom: 16px;
+  max-width: 960px;
+}
+
+.toolbar-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.full-table {
+  width: 100%;
+  max-width: 1200px;
+  margin-bottom: 24px;
+}
+
+.loading-hint,
+.empty-hint {
+  margin: 12px 0;
+  color: var(--nps-text-muted, #666);
+}
+
+.form-card {
+  max-width: 720px;
+  margin-top: 8px;
+}
+
+.form-hint {
+  margin: 0 0 16px;
+  font-size: 14px;
+  color: var(--nps-text-muted, #666);
+}
+
+mat-form-field.wide {
+  display: block;
+  max-width: 420px;
+}

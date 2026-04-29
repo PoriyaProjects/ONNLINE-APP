@@ -23,6 +23,22 @@ mat-form-field {
   min-width: 280px;
 }
 
+.context-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 0 12px;
+  margin-top: 4px;
+}
+
+.context-hint {
+  margin: 0 0 12px;
+  max-width: 640px;
+  font-size: 13px;
+  color: var(--nps-text-muted, #666);
+  line-height: 1.45;
+}
+
 .actions {
   margin-top: 12px;
 }

@@ -272,6 +272,22 @@ export class DepartmentIncomeDashboardComponent implements OnInit, OnDestroy {
   topDepartmentsViewType: string = "difference"; // 'difference' or 'percentage'
   showTopDepartmentsSidebar: boolean = false;
 
+  // Income filters sidebar
+  readonly incomeFilterAllValue = "הכל";
+  showIncomeFiltersSidebar: boolean = false;
+  isIncomeSourceOpen: boolean = false;
+  isIncomeClassificationOpen: boolean = false;
+  isOrganizationOpen: boolean = false;
+  isUnifiedCategoryOpen: boolean = false;
+  selectedIncomeSource: string = this.incomeFilterAllValue;
+  selectedIncomeClassification: string = this.incomeFilterAllValue;
+  selectedOrganization: string = this.incomeFilterAllValue;
+  selectedUnifiedCategory: string = this.incomeFilterAllValue;
+  incomeSourceOptions: string[] = [this.incomeFilterAllValue, "מדינה", "קרן"];
+  incomeClassificationOptions: string[] = [this.incomeFilterAllValue];
+  organizationOptions: string[] = [this.incomeFilterAllValue];
+  unifiedCategoryOptions: string[] = [this.incomeFilterAllValue];
+
     // Theme
     isDark: boolean = false;
 
@@ -330,6 +346,7 @@ export class DepartmentIncomeDashboardComponent implements OnInit, OnDestroy {
         this.updateChartTheme();
         this.syncBodyDarkClass();
         this.updateChartOptionsForType();
+        this.loadIncomeFilterOptions();
         this.loadDiagnosesList();
         // Load data after diagnoses list is loaded
         setTimeout(() => {
@@ -360,7 +377,10 @@ export class DepartmentIncomeDashboardComponent implements OnInit, OnDestroy {
         this.referencePeriodFromYearlyIncome = false;
 
         this.http
-            .post(environment.url + "GetDepartmentIncomeComparison", {})
+            .post(
+                environment.url + "GetDepartmentIncomeComparison",
+                this.buildIncomeFilterRequest()
+            )
             .subscribe(
                 (response: any) => {
                     if (response && response.d) {
@@ -433,6 +453,7 @@ export class DepartmentIncomeDashboardComponent implements OnInit, OnDestroy {
         this.http
             .post(environment.url + "GetDepartmentIncomeByDiagnosis", {
                 diagnosis: this.selectedDiagnosis,
+                ...this.buildIncomeFilterRequest(),
             })
             .subscribe(
                 (response: any) => {
@@ -936,6 +957,7 @@ export class DepartmentIncomeDashboardComponent implements OnInit, OnDestroy {
         this.http
             .post(environment.url + "GetDepartmentDetailedData", {
                 departmentName: departmentName,
+                ...this.buildIncomeFilterRequest(),
             })
             .subscribe(
                 (response: any) => {
@@ -1929,6 +1951,19 @@ updateChartColumns(): void {
         if (!b) return a ? "∞" : "0%";
         return `${(((a - b) / b) * 100).toFixed(1)}%`;
     }
+
+    getCatalogServiceName(row: any): string {
+        return String(
+            row?.CatalogName2 ??
+                row?.CatalogName ??
+                row?.catalogName2 ??
+                row?.catalogName ??
+                row?.ServiceName ??
+                row?.serviceName ??
+                ""
+        ).trim();
+    }
+
     get currentYear() {
         return new Date().getFullYear();
     }
@@ -1987,6 +2022,261 @@ updateChartColumns(): void {
             }
         }, 0);
     }
+
+    toggleIncomeFiltersSidebar(): void {
+        this.showIncomeFiltersSidebar = !this.showIncomeFiltersSidebar;
+        if (!this.showIncomeFiltersSidebar) {
+            this.closeIncomeFilterDropdowns();
+        }
+        this.scheduleChartResize();
+    }
+
+    toggleIncomeFilterDropdown(
+        type: "source" | "classification" | "organization" | "unifiedCategory"
+    ): void {
+        const nextSource = type === "source" ? !this.isIncomeSourceOpen : false;
+        const nextClassification =
+            type === "classification" ? !this.isIncomeClassificationOpen : false;
+        const nextOrganization =
+            type === "organization" ? !this.isOrganizationOpen : false;
+        const nextUnifiedCategory =
+            type === "unifiedCategory" ? !this.isUnifiedCategoryOpen : false;
+        this.isIncomeSourceOpen = nextSource;
+        this.isIncomeClassificationOpen = nextClassification;
+        this.isOrganizationOpen = nextOrganization;
+        this.isUnifiedCategoryOpen = nextUnifiedCategory;
+    }
+
+    setIncomeSourceFilter(option: string): void {
+        this.selectedIncomeSource = option || this.incomeFilterAllValue;
+        this.closeIncomeFilterDropdowns();
+        this.reloadDepartmentIncomeWithFilters();
+    }
+
+    setIncomeClassificationFilter(option: string): void {
+        this.selectedIncomeClassification = option || this.incomeFilterAllValue;
+        this.closeIncomeFilterDropdowns();
+        this.reloadDepartmentIncomeWithFilters();
+    }
+
+    setOrganizationFilter(option: string): void {
+        this.selectedOrganization = option || this.incomeFilterAllValue;
+        this.closeIncomeFilterDropdowns();
+        this.reloadDepartmentIncomeWithFilters();
+    }
+
+    setUnifiedCategoryFilter(option: string): void {
+        this.selectedUnifiedCategory = option || this.incomeFilterAllValue;
+        this.closeIncomeFilterDropdowns();
+        this.reloadDepartmentIncomeWithFilters();
+    }
+
+    resetIncomeFilters(): void {
+        if (!this.hasActiveIncomeFilters()) {
+            return;
+        }
+        this.selectedIncomeSource = this.incomeFilterAllValue;
+        this.selectedIncomeClassification = this.incomeFilterAllValue;
+        this.selectedOrganization = this.incomeFilterAllValue;
+        this.selectedUnifiedCategory = this.incomeFilterAllValue;
+        this.closeIncomeFilterDropdowns();
+        this.reloadDepartmentIncomeWithFilters();
+    }
+
+    hasActiveIncomeFilters(): boolean {
+        return (
+            this.selectedIncomeSource !== this.incomeFilterAllValue ||
+            this.selectedIncomeClassification !== this.incomeFilterAllValue ||
+            this.selectedOrganization !== this.incomeFilterAllValue ||
+            this.selectedUnifiedCategory !== this.incomeFilterAllValue
+        );
+    }
+
+    getIncomeSourceDisplay(): string {
+        return this.selectedIncomeSource || this.incomeFilterAllValue;
+    }
+
+    getIncomeClassificationDisplay(): string {
+        return this.selectedIncomeClassification || this.incomeFilterAllValue;
+    }
+
+    getOrganizationDisplay(): string {
+        return this.selectedOrganization || this.incomeFilterAllValue;
+    }
+
+    getUnifiedCategoryDisplay(): string {
+        return this.selectedUnifiedCategory || this.incomeFilterAllValue;
+    }
+
+    getIncomeFiltersSummary(): string {
+        if (!this.hasActiveIncomeFilters()) {
+            return "מוצגים כל מקורות המימון, הארגונים, הקטגוריות וסיווגי ההכנסה.";
+        }
+        const parts = [
+            `קרן / מדינה: ${this.getIncomeSourceDisplay()}`,
+            `סיווג הכנסה: ${this.getIncomeClassificationDisplay()}`,
+            `ארגון: ${this.getOrganizationDisplay()}`,
+            `קטגוריה אחודה: ${this.getUnifiedCategoryDisplay()}`,
+        ];
+        return parts.join(" · ");
+    }
+
+    private closeIncomeFilterDropdowns(): void {
+        this.isIncomeSourceOpen = false;
+        this.isIncomeClassificationOpen = false;
+        this.isOrganizationOpen = false;
+        this.isUnifiedCategoryOpen = false;
+    }
+
+    private reloadDepartmentIncomeWithFilters(): void {
+        if (this.selectedDiagnosis) {
+            this.loadDepartmentIncomeByDiagnosis();
+        } else {
+            this.loadDepartmentIncomeData();
+        }
+    }
+
+    private buildIncomeFilterRequest(): {
+        medicalUnitIncome: string | null;
+        incomeCategory: string | null;
+        organization: string | null;
+        unifiedCategory: string | null;
+    } {
+        return {
+            medicalUnitIncome:
+                this.selectedIncomeSource !== this.incomeFilterAllValue
+                    ? this.selectedIncomeSource
+                    : null,
+            incomeCategory:
+                this.selectedIncomeClassification !== this.incomeFilterAllValue
+                    ? this.selectedIncomeClassification
+                    : null,
+            organization:
+                this.selectedOrganization !== this.incomeFilterAllValue
+                    ? this.selectedOrganization
+                    : null,
+            unifiedCategory:
+                this.selectedUnifiedCategory !== this.incomeFilterAllValue
+                    ? this.selectedUnifiedCategory
+                    : null,
+        };
+    }
+
+    private loadIncomeFilterOptions(): void {
+        this.http.post(environment.url + "GetDepartmentIncomeFilterOptions", {}).subscribe({
+            next: (response: any) => {
+                const payload = this.parseIncomeFilterOptionsPayload(response?.d ?? response);
+                if (payload.medicalUnitIncome.length) {
+                    this.incomeSourceOptions = [
+                        this.incomeFilterAllValue,
+                        ...payload.medicalUnitIncome,
+                    ];
+                }
+                if (payload.incomeCategory.length) {
+                    this.incomeClassificationOptions = [
+                        this.incomeFilterAllValue,
+                        ...payload.incomeCategory,
+                    ];
+                }
+                if (payload.organization.length) {
+                    this.organizationOptions = [
+                        this.incomeFilterAllValue,
+                        ...payload.organization,
+                    ];
+                }
+                if (payload.unifiedCategory.length) {
+                    this.unifiedCategoryOptions = [
+                        this.incomeFilterAllValue,
+                        ...payload.unifiedCategory,
+                    ];
+                }
+                this.cdr.detectChanges();
+            },
+            error: () => {
+                // Server endpoint is optional until the backend filter contract is deployed.
+            },
+        });
+    }
+
+    private parseIncomeFilterOptionsPayload(raw: any): {
+        medicalUnitIncome: string[];
+        incomeCategory: string[];
+        organization: string[];
+        unifiedCategory: string[];
+    } {
+        if (typeof raw === "string") {
+            try {
+                return this.parseIncomeFilterOptionsPayload(JSON.parse(raw));
+            } catch {
+                return {
+                    medicalUnitIncome: [],
+                    incomeCategory: [],
+                    organization: [],
+                    unifiedCategory: [],
+                };
+            }
+        }
+        const source =
+            raw?.medicalUnitIncome ??
+            raw?.MedicalUnitIncome ??
+            raw?.medicalUnit_Income ??
+            raw?.MedicalUnit_Income ??
+            raw?.funds ??
+            raw?.Funds ??
+            [];
+        const category =
+            raw?.incomeCategory ??
+            raw?.IncomeCategory ??
+            raw?.classifications ??
+            raw?.Classifications ??
+            [];
+        const organization =
+            raw?.organization ??
+            raw?.Organization ??
+            raw?.organizations ??
+            raw?.Organizations ??
+            [];
+        const unifiedCategory =
+            raw?.unifiedCategory ??
+            raw?.UnifiedCategory ??
+            raw?.unifiedCategories ??
+            raw?.UnifiedCategories ??
+            [];
+        return {
+            medicalUnitIncome: this.normalizeIncomeFilterOptions(source),
+            incomeCategory: this.normalizeIncomeFilterOptions(category),
+            organization: this.normalizeIncomeFilterOptions(organization),
+            unifiedCategory: this.normalizeIncomeFilterOptions(unifiedCategory),
+        };
+    }
+
+    private normalizeIncomeFilterOptions(raw: any): string[] {
+        if (!Array.isArray(raw)) {
+            return [];
+        }
+        return Array.from(
+            new Set(
+                raw
+                    .map((item) => String(item ?? "").trim())
+                    .filter((item) => item && item !== this.incomeFilterAllValue)
+            )
+        );
+    }
+
+    private scheduleChartResize(): void {
+        setTimeout(() => {
+            try {
+                window.dispatchEvent(new Event("resize"));
+            } catch {
+                // ignore if window is not available (SSR safeguard)
+            }
+            this.chartOptions = { ...this.chartOptions };
+            if (this.chartData && this.chartData.length > 0) {
+                this.updateChartData();
+            }
+        }, 0);
+    }
+
     /**
      * מחזיר את שנת הלוח לפי "כמה שנים לאחור" מהשנה הנוכחית.
      * @param yearsAgo 0 = השנה הנוכחית, 1 = שנה שעברה, 2 = לפני שנתיים וכו'
