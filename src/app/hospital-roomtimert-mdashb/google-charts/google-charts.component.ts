@@ -310,6 +310,8 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
 
     /** חדרים שבהם באנר «חסרה חתימה» נסגר ב-X (עד רענון מלא של הדף) */
     private signatureBannerDismissedRoomIds = new Set<string>();
+    /** חדרים שבהם פופאפ «המטופל הבא מוכן» נסגר ב-X (עד רענון מלא של הדף) */
+    private nextReadyBannerDismissedRoomIds = new Set<string>();
 
     constructor(
         public googleChartsService: GoogleChartsService,
@@ -534,6 +536,8 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
     openRooms = new Set<string>();
     /** רשימת "ניתוחים שבוצעו" פתוחה (לפי חדר) — כפתור דרופ־דאון בתוך room-body */
     completedSurgeriesListOpenByRoom = new Set<string>();
+    /** רשימת "ניתוחים מתוכננים" פתוחה (לפי חדר) — כפתור פופאפ בתוך room-body */
+    plannedSurgeriesListOpenByRoom = new Set<string>();
 
     toggleAll(): void {
         this.allExpanded = !this.allExpanded;
@@ -569,6 +573,7 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
         if (this.openRooms.has(roomId)) {
             this.openRooms.delete(roomId);
             this.completedSurgeriesListOpenByRoom.delete(roomId);
+            this.plannedSurgeriesListOpenByRoom.delete(roomId);
         } else {
             this.openRooms.add(roomId);
             this.acknowledgeRoomEvent(roomId);
@@ -579,6 +584,9 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
         this.openRooms = new Set(this.openRooms);
         this.completedSurgeriesListOpenByRoom = new Set(
             this.completedSurgeriesListOpenByRoom
+        );
+        this.plannedSurgeriesListOpenByRoom = new Set(
+            this.plannedSurgeriesListOpenByRoom
         );
     }
 
@@ -593,10 +601,36 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
         if (this.completedSurgeriesListOpenByRoom.has(roomId)) {
             this.completedSurgeriesListOpenByRoom.delete(roomId);
         } else {
+            this.plannedSurgeriesListOpenByRoom.delete(roomId);
             this.completedSurgeriesListOpenByRoom.add(roomId);
         }
         this.completedSurgeriesListOpenByRoom = new Set(
             this.completedSurgeriesListOpenByRoom
+        );
+        this.plannedSurgeriesListOpenByRoom = new Set(
+            this.plannedSurgeriesListOpenByRoom
+        );
+    }
+
+    isPlannedSurgeriesListOpen(roomId: string): boolean {
+        return this.plannedSurgeriesListOpenByRoom.has(roomId);
+    }
+
+    togglePlannedSurgeriesList(roomId: string, event?: Event): void {
+        if (event) {
+            event.stopPropagation();
+        }
+        if (this.plannedSurgeriesListOpenByRoom.has(roomId)) {
+            this.plannedSurgeriesListOpenByRoom.delete(roomId);
+        } else {
+            this.completedSurgeriesListOpenByRoom.delete(roomId);
+            this.plannedSurgeriesListOpenByRoom.add(roomId);
+        }
+        this.completedSurgeriesListOpenByRoom = new Set(
+            this.completedSurgeriesListOpenByRoom
+        );
+        this.plannedSurgeriesListOpenByRoom = new Set(
+            this.plannedSurgeriesListOpenByRoom
         );
     }
 
@@ -1488,6 +1522,32 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
         return d;
     }
 
+    /**
+     * ניתוח שהושלם ושעת יציאה בפועל לפני תחילת יום העבודה (07:30) — לא רלוונטי למסך המשמרת.
+     */
+    private isCompletedWithExitBeforeShiftStart(
+        s: Surgery,
+        room: RoomData
+    ): boolean {
+        if (!this.isCompletedStatus(s.status ?? s.SurgeryStatus)) {
+            return false;
+        }
+        const exitStr = this.getExitTime(s);
+        if (!exitStr || this.isZeroTime(exitStr)) {
+            return false;
+        }
+        const base = room.date || this.selectedDate;
+        if (!base) {
+            return false;
+        }
+        const exitAt = this.parseClockWithDate(exitStr, base);
+        if (!exitAt) {
+            return false;
+        }
+        const shiftStart = this.workingStart(base);
+        return exitAt.getTime() < shiftStart.getTime();
+    }
+
     /** 07:00 ביום הנבחר – תצוגת "חדר פנוי" / משך פנאי לא סופרים זמן לפני השעה הזו */
     private idleMetricsDayStart(baseDate: string | Date): Date {
         const d = new Date(baseDate);
@@ -1946,6 +2006,8 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
 
             if (this.surgeryIsAmbulatoryForDisplay(s, room)) return false;
 
+            if (this.isCompletedWithExitBeforeShiftStart(s, room)) return false;
+
             return true;
         });
     }
@@ -1991,6 +2053,20 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
         event.stopPropagation();
         event.preventDefault();
         this.signatureBannerDismissedRoomIds.add(roomId);
+        this.cdr.markForCheck();
+    }
+
+    isNextReadyBannerDismissed(roomId: string): boolean {
+        return this.nextReadyBannerDismissedRoomIds.has(roomId);
+    }
+
+    dismissNextReadyBanner(roomId: string, event: Event): void {
+        event.stopPropagation();
+        event.preventDefault();
+        this.nextReadyBannerDismissedRoomIds.add(roomId);
+        this.nextReadyBannerDismissedRoomIds = new Set(
+            this.nextReadyBannerDismissedRoomIds
+        );
         this.cdr.markForCheck();
     }
 
@@ -2365,7 +2441,9 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
                   .toLowerCase()
                   .replace(/\s+/g, "");
               if (st === "cancelled" || st === "canceled") return false;
-              return st !== "planned";
+              if (st === "planned") return false;
+              if (this.isCompletedWithExitBeforeShiftStart(s, room)) return false;
+              return true;
           });
       }
 
@@ -2818,7 +2896,10 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
     hasInProgress(room: RoomData): boolean {
         if (!room?.surgeries?.length) return false;
         return room.surgeries.some(
-            (s) => s && this.isInProgressStatus(s.status)
+            (s) =>
+                s &&
+                this.isInProgressStatus(s.status ?? s.SurgeryStatus) &&
+                !this.isInProgressStaleByEstimatedEnd(s, room)
         );
     }
 
@@ -2830,7 +2911,13 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
         const base = room.date || this.selectedDate;
         const matches = room.surgeries.filter((s) => {
             if (!s || this.surgeryIsAmbulatoryForDisplay(s, room)) return false;
-            return this.isInProgressStatus(s.status ?? s.SurgeryStatus);
+            if (!this.isInProgressStatus(s.status ?? s.SurgeryStatus)) {
+                return false;
+            }
+            if (this.isInProgressStaleByEstimatedEnd(s, room)) {
+                return false;
+            }
+            return true;
         });
         if (!matches.length) return null;
         return matches
@@ -4018,7 +4105,9 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
             const status = String(
                 s.status ?? s.SurgeryStatus ?? ""
             ).toLowerCase();
-            return status !== "canceled" && status !== "cancelled";
+            if (status === "canceled" || status === "cancelled") return false;
+            if (this.isCompletedWithExitBeforeShiftStart(s, room)) return false;
+            return true;
         });
 
         if (!relevant.length) {
@@ -5235,6 +5324,54 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
         }
 
         return 60;
+    }
+
+    /**
+     * ה-API משאיר InProgress אך שעת סיום משוערת או שעת יציאה בפועל כבר עברו — לא נחשב «בביצוע» בתצוגה.
+     */
+    private isInProgressStaleByEstimatedEnd(s: Surgery, room: RoomData): boolean {
+        if (!this.isInProgressStatus(s.status ?? s.SurgeryStatus)) {
+            return false;
+        }
+        const base = room.date || this.selectedDate;
+        if (!base) {
+            return false;
+        }
+        const now = new Date();
+
+        const exitStr = this.getExitTime(s);
+        if (exitStr && !this.isZeroTime(exitStr)) {
+            const exitAt = this.parseClockWithDate(exitStr, base);
+            if (exitAt && now.getTime() >= exitAt.getTime()) {
+                return true;
+            }
+        }
+
+        const entStr = this.getEntranceTime(s);
+        if (!entStr || this.isZeroTime(entStr)) {
+            return false;
+        }
+        const entrance = this.parseClockWithDate(entStr, base);
+        if (!entrance) {
+            return false;
+        }
+
+        const durMin = this.getExpectedDuration(s, room);
+        if (durMin <= 0) {
+            return false;
+        }
+        const expectedEnd = new Date(entrance.getTime() + durMin * 60000);
+        const GRACE_MS = 8 * 60000;
+        return now.getTime() > expectedEnd.getTime() + GRACE_MS;
+    }
+
+    /** מפתח סטטוס לתצוגה (מתקן InProgress מיושן ל-Completed) */
+    displaySurgeryStatusKey(s: Surgery, room: RoomData): string {
+        const raw = String(s.status ?? s.SurgeryStatus ?? "Planned").trim();
+        if (this.isInProgressStaleByEstimatedEnd(s, room)) {
+            return "Completed";
+        }
+        return raw;
     }
 
     /**
