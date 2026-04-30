@@ -1,8 +1,9 @@
-<div class="container" dir="rtl">
+<div class="container training-dialog" dir="rtl">
     <h2 mat-dialog-title>רשימת השתלמויות</h2>
     <hr>
-    <button mat-raised-button color="primary" (click)="addRow()">הוסף השתלמות</button>
-    <table mat-table [dataSource]="plansList" matSort class="mat-elevation-z8" style="width: 100%; margin-top: 30px;">
+    <button mat-raised-button color="primary" (click)="addRow()" class="add-btn">הוסף השתלמות</button>
+    <div class="table-wrap">
+    <table mat-table [dataSource]="plansList" matSort class="mat-elevation-z8 dialog-table">
 
         <!-- Row ID Column -->
         <ng-container matColumnDef="Row_ID">
@@ -52,4 +53,5 @@
         <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
         <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
     </table>
+    </div>
 </div>

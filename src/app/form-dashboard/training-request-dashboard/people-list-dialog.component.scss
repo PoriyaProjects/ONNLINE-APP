@@ -1,6 +1,20 @@
+.people-dialog {
+  border-radius: 14px;
+  background: #f8fbff;
+  padding: 8px;
+
+  h2 {
+    color: #0f172a;
+    font-weight: 750;
+  }
+}
+
 .dialog-content {
   max-height: 400px;
   overflow: auto;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: #fff;
 
   .person-details {
     display: flex;
@@ -17,4 +31,18 @@
       color: #777;
     }
   }
+}
+
+.actions-row {
+  margin-top: 8px;
+}
+
+.btn-primary,
+.btn-secondary {
+  border-radius: 10px;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  color: #fff;
 }

@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild } from '@angular/core';
+import { AfterViewInit, Component, OnInit, ViewChild } from '@angular/core';
 import { FormBuilder, FormControl, FormGroup } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { MatDialog } from '@angular/material/dialog';
@@ -22,7 +22,7 @@ import { saveAs } from 'file-saver';
   templateUrl: './medical-interns-dashboard.component.html',
   styleUrls: ['./medical-interns-dashboard.component.css']
 })
-export class MedicalInternsDashboardComponent implements OnInit {
+export class MedicalInternsDashboardComponent implements OnInit, AfterViewInit {
 
   /** Toggle between interns table, departments table, server data table, and feedback table */
   viewMode: 'interns' | 'departments' | 'serverData' | 'feedback' = 'interns';
@@ -39,8 +39,24 @@ export class MedicalInternsDashboardComponent implements OnInit {
     'Image', 'EmployeeID', 'FirstName', 'LastName', 'CellNumber', 'Email', 'DepartnentDescripton', 'Actions'
   ];
   dataSource = new MatTableDataSource(this.TABLE_DATA);
-  @ViewChild('internsPaginator') paginator: MatPaginator;
-  @ViewChild(MatSort) sort: MatSort;
+  private _paginator: MatPaginator;
+  private _sort: MatSort;
+  @ViewChild('internsPaginator')
+  set paginator(value: MatPaginator) {
+    this._paginator = value;
+    this.bindInternsTableControls();
+  }
+  get paginator(): MatPaginator {
+    return this._paginator;
+  }
+  @ViewChild(MatSort)
+  set sort(value: MatSort) {
+    this._sort = value;
+    this.bindInternsTableControls();
+  }
+  get sort(): MatSort {
+    return this._sort;
+  }
   searchInternsGroup: FormGroup;
   DepartmentsList: any[] = [];
   DepartmentsListSecond: any[] = [];
@@ -146,6 +162,20 @@ export class MedicalInternsDashboardComponent implements OnInit {
     this.getMedicalInterns();
     this.getDepartmentList();
     this.loadAllDepartments();
+  }
+
+  ngAfterViewInit(): void {
+    this.bindInternsTableControls();
+  }
+
+  private bindInternsTableControls(): void {
+    if (!this.dataSource) return;
+    if (this._paginator) {
+      this.dataSource.paginator = this._paginator;
+    }
+    if (this._sort) {
+      this.dataSource.sort = this._sort;
+    }
   }
 
   get filteredDepartments(): any[] {
@@ -566,16 +596,14 @@ export class MedicalInternsDashboardComponent implements OnInit {
 
           this.TABLE_DATA = data;
           this.dataSource = new MatTableDataSource<any>(data);
-          this.dataSource.paginator = this.paginator;
-          this.dataSource.sort = this.sort;
+          this.bindInternsTableControls();
 
           this.calculateStats(data);
         },
         () => {
           this.loaded = true;
           this.dataSource = new MatTableDataSource<any>([]);
-          this.dataSource.paginator = this.paginator;
-          this.dataSource.sort = this.sort;
+          this.bindInternsTableControls();
         }
       );
   }

@@ -15,13 +15,13 @@
                 <mat-form-field appearance="outline" class="form-field">
                     <mat-label>סינון</mat-label>
                     <mat-select [(ngModel)]="filter_types" (selectionChange)="getAllTrainingRequestFormsList()">
-                        <mat-option value="1"><span style="color: #b887f9;">1. אושרו בוועדה</span></mat-option>
-                        <mat-option value="0"><span style="color: #ff655a;">2. סורבו בוועדה</span></mat-option>
-                        <mat-option value="null"><span style="color: #11110f;">3. בהמתנה</span></mat-option>
-                        <mat-option value="2"><span style="color: #f3d45d;">4. בוטלו</span></mat-option>
-                        <mat-option value="3"><span style="color: #6eff88;">5. מוכנים
+                        <mat-option value="1"><span class="filter-state state-approved">1. אושרו בוועדה</span></mat-option>
+                        <mat-option value="0"><span class="filter-state state-rejected">2. סורבו בוועדה</span></mat-option>
+                        <mat-option value="null"><span class="filter-state state-pending">3. בהמתנה</span></mat-option>
+                        <mat-option value="2"><span class="filter-state state-canceled">4. בוטלו</span></mat-option>
+                        <mat-option value="3"><span class="filter-state state-ready">5. מוכנים
                                 לוועדה</span></mat-option>
-                        <mat-option value=""><span style="color: #b887f9;">6. הכל</span></mat-option>
+                        <mat-option value=""><span class="filter-state state-all">6. הכל</span></mat-option>
                     </mat-select>
                 </mat-form-field>
 
@@ -39,19 +39,19 @@
             <div class="toolbar-row align-left">
                 <!-- Print Buttons -->
                 <button mat-raised-button (click)="openPeopleDialog()" matTooltip="הדפסת פרוטוקול"
-                    style="background-color: #3a55b7;color: #ffffff"
+                    class="toolbar-btn btn-primary"
                     *ngIf="UserName == 'adahabre' || UserName == 'ttsrefati'">
                     <mat-icon>line_style</mat-icon>
                     הדפסת פרוטוקול
                 </button>
                 <button mat-raised-button (click)="printProtocol()" matTooltip="הדפסת פרוטוקול"
-                    style="background-color: #3a55b7;color: #ffffff;"
+                    class="toolbar-btn btn-primary"
                     *ngIf="print_only_Protocol && UserName == 'lnachmani'">
                     <mat-icon>line_style</mat-icon>
                     הדפסת פרוטוקול
                 </button>
                 <button mat-raised-button (click)="printDataTable()" matTooltip="הדפסת דף"
-                    *ngIf="UserName == 'adahabre' || UserName == 'ttsrefati'" style="background-color: #80e4e9;">
+                    *ngIf="UserName == 'adahabre' || UserName == 'ttsrefati'" class="toolbar-btn btn-accent">
                     <mat-icon>print</mat-icon>
                     הדפסת דף
                 </button>
@@ -87,8 +87,8 @@
         </div>
 
         <mat-progress-bar mode="indeterminate" color="accent" *ngIf="loading"></mat-progress-bar>
-        <table mat-table [dataSource]="trainingRequests" matSort class="mat-elevation-z8"
-            style="width: 100%;margin-top: 30px;">
+        <div class="table-wrap">
+        <table mat-table [dataSource]="trainingRequests" matSort class="mat-elevation-z8 request-table-modern">
 
             <ng-container matColumnDef="Row_ID">
                 <th mat-header-cell *matHeaderCellDef mat-sort-header> מס' בקשה </th>
@@ -167,17 +167,17 @@
             <ng-container matColumnDef="Actions">
                 <th mat-header-cell *matHeaderCellDef> עריכה - הצגה </th>
                 <td mat-cell *matCellDef="let element">
-                    <button mat-mini-fab style="background-color: #ffd740;margin: 5px;"
+                    <button mat-mini-fab class="action-fab action-edit"
                         (click)="handleAction(element.Row_ID, 'view')" matTooltip="הצג">
                         <mat-icon>edit</mat-icon>
                     </button>
-                    <button mat-mini-fab style="background-color: #ce3723;margin: 5px;"
+                    <button mat-mini-fab class="action-fab action-cancel"
                         (click)="cancelTrainingRequest(element.Row_ID)" matTooltip="ביטול"
                         *ngIf="UserName == 'ttsrefati'">
                         <mat-icon *ngIf="element.Canceled == 'False'">close</mat-icon>
                         <mat-icon *ngIf="element.Canceled == 'True'">check</mat-icon>
                     </button>
-                    <button mat-mini-fab style="background-color: #b1b0ae;margin: 5px;" (click)="print(element.Row_ID)"
+                    <button mat-mini-fab class="action-fab action-print" (click)="print(element.Row_ID)"
                         *ngIf="element.HApproved == 'מאושר' || element.HApproved == 'מאושר התחייבות חשב'"
                         matTooltip="הדפס">
                         <mat-icon>print</mat-icon>
@@ -189,10 +189,11 @@
             <tr mat-row *matRowDef="let row; columns: displayedColumns;">
             </tr>
         </table>
+        </div>
         <mat-paginator [pageSizeOptions]="[20,35,50,100,200]" showFirstLastButtons></mat-paginator>
     </div>
     <button mat-fab aria-label="Example icon button with add icon" (click)="handleAction('', 'new')"
-        matTooltip="בקשה חדשה" style="margin-top: 10px;">
+        matTooltip="בקשה חדשה" class="new-request-fab">
         <mat-icon>add</mat-icon>
     </button>
 </div>

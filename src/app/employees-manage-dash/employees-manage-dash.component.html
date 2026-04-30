@@ -1,20 +1,22 @@
-<div *ngIf="managerType == 'unknown'">
-    <mat-card class="card" style="box-shadow: 2px 2px 4px 1px;" (click)="chooseManagerTypeForMultiple('stager')">
+<div class="employees-dashboard dashboard-mode-select" *ngIf="managerType == 'unknown'" dir="rtl">
+    <mat-card class="card mode-card" (click)="chooseManagerTypeForMultiple('stager')">
         <mat-card-content>ניהול סטאג'רים/רופאים</mat-card-content>
     </mat-card>
-    <mat-card class="card" style="box-shadow: 2px 2px 4px 1px;" (click)="chooseManagerTypeForMultiple('hr')">
+    <mat-card class="card mode-card" (click)="chooseManagerTypeForMultiple('hr')">
         <mat-card-content>ניהול כח אדם</mat-card-content>
     </mat-card>
 </div>
-<div class="container" *ngIf="managerType != 'unknown'">
-    <h1 class="page-title text-center" *ngIf="managerType == 'research'">ניהול עובדי קרן מחקרים</h1>
-    <h1 class="page-title text-center" *ngIf="managerType == 'hr' || managerType == 'admin'">ניהול עובדים</h1>
-    <h1 class="page-title text-center" *ngIf="managerType == 'stager'">ניהול סטאג'רים/רופאים</h1>
-    <div class="container-fluid mb-2">
+<div class="employees-dashboard container" *ngIf="managerType != 'unknown'" dir="rtl">
+    <header class="dashboard-header">
+        <h1 class="page-title text-center" *ngIf="managerType == 'research'">ניהול עובדי קרן מחקרים</h1>
+        <h1 class="page-title text-center" *ngIf="managerType == 'hr' || managerType == 'admin'">ניהול עובדים</h1>
+        <h1 class="page-title text-center" *ngIf="managerType == 'stager'">ניהול סטאג'רים/רופאים</h1>
+    </header>
+    <section class="search-section container-fluid mb-2">
         <div class="row search-cont">
             <div class="col">
-                <div dir="rtl" class="card">
-                    <div dir="rtl" class="card-body">
+                <div class="card search-card">
+                    <div class="card-body">
                         <form class="form" [formGroup]="searchEmployeesGroup">
                             <div class="row">
                                 <div class="col-3">
@@ -135,13 +137,17 @@
                                     <div class="form-group lh-37">
                                         <mat-form-field>
                                             <mat-label>מחלקה</mat-label>
-                                            <mat-select formControlName="Department" aria-placeholder="מחלקה">
-                                                <mat-option [value]="''">
-                                                    הכל </mat-option>
-                                                <mat-option *ngFor="let dept of DepartmentsList"
-                                                    [value]="dept.DepartnentCode">
-                                                    {{dept.DepartnentDescripton}} </mat-option>
-                                            </mat-select>
+                                            <input matInput [formControl]="departmentAutocomplete"
+                                                [matAutocomplete]="departmentAuto" aria-placeholder="מחלקה">
+                                            <mat-autocomplete #departmentAuto="matAutocomplete"
+                                                [displayWith]="displayDepartment"
+                                                (optionSelected)="onDepartmentSelected($event.option.value)">
+                                                <mat-option [value]="''">הכל</mat-option>
+                                                <mat-option *ngFor="let dept of filteredDepartments | async"
+                                                    [value]="dept">
+                                                    {{dept.DepartnentDescripton}}
+                                                </mat-option>
+                                            </mat-autocomplete>
                                         </mat-form-field>
                                     </div>
                                 </div>
@@ -149,13 +155,15 @@
                                     <div class="form-group lh-37">
                                         <mat-form-field>
                                             <mat-label>תפקיד</mat-label>
-                                            <mat-select formControlName="Role" aria-placeholder="תיאור תפקיד">
-                                                <mat-option [value]="''">
-                                                    הכל </mat-option>
-                                                <mat-option *ngFor="let func of FunctionsList"
-                                                    [value]="func.FunctionID">
-                                                    {{func.FunctionDescription}} </mat-option>
-                                            </mat-select>
+                                            <input matInput [formControl]="roleAutocomplete"
+                                                [matAutocomplete]="roleAuto" aria-placeholder="תיאור תפקיד">
+                                            <mat-autocomplete #roleAuto="matAutocomplete" [displayWith]="displayRole"
+                                                (optionSelected)="onRoleSelected($event.option.value)">
+                                                <mat-option [value]="''">הכל</mat-option>
+                                                <mat-option *ngFor="let func of filteredRoles | async" [value]="func">
+                                                    {{func.FunctionDescription}}
+                                                </mat-option>
+                                            </mat-autocomplete>
                                         </mat-form-field>
                                     </div>
                                 </div>
@@ -190,13 +198,13 @@
                             </div>
                             <button matTooltip="מנהלים" mat-raised-button
                                 *ngIf="UserName === 'adahabre' || UserName === 'smenahem' || UserName === 'tkoren' || UserName === 'owertheim'"
-                                class="btn btn-primary btn-raised" style="float: right;" (click)="openManagersDialog()">
+                                class="btn btn-primary btn-raised action-btn secondary" (click)="openManagersDialog()">
                                 <span class="material-icons">
                                     person
                                 </span>
                             </button>
                             <button matTooltip="חיפוש" mat-raised-button type="submit"
-                                class="btn btn-primary btn-raised" (click)="GetEmployeesToUpdate(managerType,false)">
+                                class="btn btn-primary btn-raised action-btn primary" (click)="GetEmployeesToUpdate(managerType,false)">
                                 <span class="material-icons">
                                     search
                                 </span>
@@ -207,12 +215,12 @@
                 </div>
             </div>
         </div>
-        <mat-progress-bar mode="buffer" id="buffer" *ngIf="!loaded"></mat-progress-bar>
-    </div>
-    <div dir="rtl" style="padding-bottom: 10%;">
-        <div class="row" style="margin-right: 10px;width: 95%;margin-bottom: -8px;">
+        <mat-progress-bar mode="buffer" id="buffer" *ngIf="!loaded" class="loading-bar"></mat-progress-bar>
+    </section>
+    <section class="table-section">
+        <div class="row table-toolbar">
             <div class="col-10">
-                <mat-form-field appearance="standard" style="padding-right: 10px;">
+                <mat-form-field appearance="outline" class="table-filter-field">
                     <mat-label class="filterClass">מסנן</mat-label>
                     <input matInput (keyup)="applyFilter($event)" placeholder="הקלד מסנן" #input>
                 </mat-form-field>
@@ -235,7 +243,8 @@
             </div>
         </div>
         <!-- <mat-spinner class="spinner" *ngIf="!loaded"></mat-spinner> -->
-        <table mat-table *ngIf="loaded" [dataSource]="dataSource" matSort class="mat-elevation-z8">
+        <div class="table-wrapper">
+        <table mat-table *ngIf="loaded" [dataSource]="dataSource" matSort class="mat-elevation-z8 employees-table">
 
             <ng-container matColumnDef="Image">
                 <th mat-header-cell *matHeaderCellDef mat-sort-header> תמונת פרופיל
@@ -304,18 +313,19 @@
                 <td mat-cell *matCellDef="let element" style="justify-content: center;"> {{element.Email}}</td>
             </ng-container>
 
-            <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-            <tr mat-row *matRowDef="let row; let even=even; columns: displayedColumns;"
+            <tr mat-header-row *matHeaderRowDef="displayedColumns" class="table-header-row"></tr>
+            <tr mat-row *matRowDef="let row; let even=even; columns: displayedColumns;" class="table-row"
                 (click)="addUpdateEmployee(row)">
             </tr>
         </table>
+        </div>
         <!-- <button type="button" id="rolesDetailsBtn" mat-fab color="primary" matTooltip="הוספת עובד חדש"
             (click)="addUpdateEmployee(employee)"><i class="material-icons">add</i></button> -->
-        <div class="text-right" style="padding-bottom: 8%;">
-            <mat-paginator style="float: right;" [pageSizeOptions]="[15,25,50,100]" showFirstLastButtons>
+        <div class="text-right paginator-wrap">
+            <mat-paginator [pageSizeOptions]="[15,25,50,100]" showFirstLastButtons class="table-paginator">
             </mat-paginator>
         </div>
-    </div>
+    </section>
     <table id="training-excel-table" dir="rtl" style="display: none;">
         <tr>
             <th>מזהה</th>
