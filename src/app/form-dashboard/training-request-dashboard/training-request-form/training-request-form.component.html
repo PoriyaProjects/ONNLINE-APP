@@ -11,7 +11,7 @@
       <form [formGroup]="Training_Request_Forms_A">
         <ng-template matStepLabel>פרטים אישים</ng-template>
         <mat-card>
-          <p style="color: #ee4e38;"><strong>* יש למלא ת.ז בת 9 ספרות ולשים לב לשדות חובה</strong></p>
+          <p class="form-alert"><strong>* יש למלא ת.ז בת 9 ספרות ולשים לב לשדות חובה</strong></p>
           <mat-card-content>
             <div class="row">
               <div class="col-lg-2 col-md-4 col-sm-6">
@@ -163,7 +163,7 @@
         </mat-card>
       </form>
       <div>
-        <button mat-button matStepperNext class="stepBtn" style="background-color: #84a8eb;"
+        <button mat-button matStepperNext class="stepBtn stepBtnPrimary"
           (click)="markFormGroupTouched(Training_Request_Forms_A)">הבא</button>
       </div>
     </mat-step>
@@ -210,7 +210,7 @@
                     יש לבחור עיר/מדינה מהרשימה בלבד
                   </mat-error>
                 </mat-form-field>
-                <p style="margin: 0;color: #3f51b5;font-size: 12px;" *ngIf="Training_Request_Forms_B.get('Training_Out').value">
+                <p class="country-note" *ngIf="Training_Request_Forms_B.get('Training_Out').value">
                   עבור השתלמויות בחו"ל, שמות המדינות מוצגים באנגלית.
                 </p>
               </div>
@@ -367,7 +367,7 @@
               </div>
               <div class="col-lg-3 col-md-4 col-sm-6">
                 <!-- Toggle to choose if poster is needed -->
-                <mat-slide-toggle color="primary" [(ngModel)]="wantsPoster" style="margin-bottom: 10px;"
+                <mat-slide-toggle color="primary" [(ngModel)]="wantsPoster" class="poster-toggle"
                   [ngModelOptions]="{standalone: true}" (change)="IfPosterAttached()">
                   פוסטר/הצגת הרצאה נדרש?
                 </mat-slide-toggle>
@@ -420,14 +420,14 @@
               </div>
             </div>
           </mat-card-content>
-          <p style="color: #ee4e38;" *ngIf="Training_Request_Forms_B.get('Training_Out').value"><strong>* הערה: ימי
+          <p class="form-alert" *ngIf="Training_Request_Forms_B.get('Training_Out').value"><strong>* הערה: ימי
               הטיסות
               יחושבו בועדה</strong></p>
         </mat-card>
       </form>
       <div>
         <button mat-button matStepperPrevious class="stepBtn">חזרה</button>
-        <button mat-button matStepperNext class="stepBtn" style="background-color: #84a8eb;"
+        <button mat-button matStepperNext class="stepBtn stepBtnPrimary"
           (click)="markFormGroupTouched(Training_Request_Forms_B)">הבא</button>
       </div>
     </mat-step>
@@ -705,7 +705,7 @@
       </form>
       <div>
         <button mat-button matStepperPrevious class="stepBtn">חזרה</button>
-        <button mat-button matStepperNext class="stepBtn" style="background-color: #84a8eb;"
+        <button mat-button matStepperNext class="stepBtn stepBtnPrimary"
           (click)="markFormGroupTouched(Training_Request_Forms_D)">הבא</button>
       </div>
     </mat-step>
@@ -838,7 +838,7 @@
       </form>
       <div>
         <button mat-button matStepperPrevious class="stepBtn">חזרה</button>
-        <button mat-button matStepperNext class="stepBtn" style="background-color: #84a8eb;"
+        <button mat-button matStepperNext class="stepBtn stepBtnPrimary"
           (click)="markFormGroupTouched(Training_Request_Forms_C)" *ngIf="!requested">הבא</button>
       </div>
     </mat-step>
@@ -849,7 +849,7 @@
         <mat-card-content>
           <div class="row">
             <div class="col-lg-2 col-md-4 col-sm-6" dir="ltr">
-              <mat-form-field appearance="outline" style="width: 100%;">
+              <mat-form-field appearance="outline" class="full-width-field">
                 <mat-label class="label-select">סטטוס</mat-label>
                 <mat-select formControlName="Approved" (selectionChange)="ApprovedStatusChanged(0)">
                   <mat-option value="מאושר">מאושר</mat-option>
@@ -863,7 +863,7 @@
               </mat-form-field>
             </div>
             <div class="col-lg-2 col-md-4 col-sm-6" dir="ltr">
-              <mat-form-field appearance="outline" style="width: 100%;">
+              <mat-form-field appearance="outline" class="full-width-field">
                 <mat-label class="label-select">חשיבות</mat-label>
                 <mat-select formControlName="Training_Importantce">
                   <mat-option value="חיונית ביותר">חיונית ביותר</mat-option>
@@ -939,7 +939,7 @@
       </form>
       <div>
         <button mat-button matStepperPrevious class="stepBtn">חזרה</button>
-        <button mat-button matStepperNext class="stepBtn" style="background-color: #84a8eb;"
+        <button mat-button matStepperNext class="stepBtn stepBtnPrimary"
           (click)="markFormGroupTouched(Training_Request_Forms_E)">הבא</button>
       </div>
     </mat-step>
@@ -949,7 +949,7 @@
         <mat-card-content>
           <div class="row">
             <div class="col-lg-2 col-md-4 col-sm-6" dir="ltr">
-              <mat-form-field appearance="outline" style="width: 100%;">
+              <mat-form-field appearance="outline" class="full-width-field">
                 <mat-label class="label-select">סטטוס</mat-label>
                 <mat-select formControlName="Approved" (selectionChange)="ApprovedStatusChanged(0)">
                   <mat-option value="מאושר">מאושר</mat-option>
@@ -963,7 +963,7 @@
               </mat-form-field>
             </div>
             <div class="col-lg-2 col-md-4 col-sm-6" dir="ltr">
-              <mat-form-field appearance="outline" style="width: 100%;">
+              <mat-form-field appearance="outline" class="full-width-field">
                 <mat-label class="label-select">חשיבות</mat-label>
                 <mat-select formControlName="Training_Importantce">
                   <mat-option value="חיונית ביותר">חיונית ביותר</mat-option>
@@ -1042,7 +1042,7 @@
         <mat-card-content>
           <div class="row">
             <div class="col-lg-2 col-md-4 col-sm-6" dir="ltr">
-              <mat-form-field appearance="outline" style="width: 100%;">
+              <mat-form-field appearance="outline" class="full-width-field">
                 <mat-label class="label-select">סטטוס</mat-label>
                 <mat-select formControlName="Approved" (selectionChange)="ApprovedStatusChanged(1)">
                   <mat-option value="מאושר">מאושר</mat-option>
@@ -1056,7 +1056,7 @@
               </mat-form-field>
             </div>
             <div class="col-lg-2 col-md-4 col-sm-6" dir="ltr">
-              <mat-form-field appearance="outline" style="width: 100%;">
+              <mat-form-field appearance="outline" class="full-width-field">
                 <mat-label class="label-select">חשיבות</mat-label>
                 <mat-select formControlName="Training_Importantce">
                   <mat-option value="חיונית ביותר">חיונית ביותר</mat-option>
@@ -1132,7 +1132,7 @@
       </form>
       <div>
         <button mat-button matStepperPrevious class="stepBtn">חזרה</button>
-        <button mat-button matStepperNext class="stepBtn" style="background-color: #84a8eb;"
+        <button mat-button matStepperNext class="stepBtn stepBtnPrimary"
           (click)="markFormGroupTouched(Training_Request_Forms_F)">הבא</button>
       </div>
     </mat-step>

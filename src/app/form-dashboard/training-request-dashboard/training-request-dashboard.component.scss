@@ -1,122 +1,44 @@
 .dashboard-container {
-  font-family: 'Roboto', sans-serif;
-  background-color: #f5f7fa;
-  padding: 30px;
-  color: #333;
+  --bg: #f6f8fc;
+  --card: #ffffff;
+  --text: #0f172a;
+  --muted: #64748b;
+  --border: #e2e8f0;
+  --shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+  --primary: #2563eb;
+  background-color: var(--bg);
+  padding: 24px;
+  color: var(--text);
   min-height: 100vh;
   direction: rtl;
   padding-bottom: 70px;
 }
 
-h1 {
-  text-align: center;
-  margin-bottom: 20px;
-  color: #4a4a4a;
-  font-size: 2.5rem;
-}
-
-th.mat-header-cell {
-  justify-items: center;
-  font-weight: bold;
+.page-title {
+  margin-bottom: 16px;
+  color: #ffffff;
+  font-weight: 750;
 }
 
 .card-table {
-  background: #fff;
-  border-radius: 10px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  background: var(--card);
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
   overflow: hidden;
 }
 
-.request-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.request-table th,
-.request-table td {
-  padding: 15px;
-  text-align: center;
-  border-bottom: 1px solid #eaeaea;
-}
-
-.request-table th {
-  background-color: #f9fafc;
-  font-weight: 600;
-  text-align: center;
-}
-
-.request-table tr:hover {
-  background-color: #f1f5f9;
-}
-
-.status {
-  padding: 5px 10px;
-  border-radius: 5px;
-  font-weight: bold;
-  text-transform: capitalize;
-}
-
-.status.pending {
-  background-color: #ffe4b3;
-  color: #d48806;
-}
-
-.status.approved {
-  background-color: #b7eb8f;
-  color: #389e0d;
-}
-
-.status.rejected {
-  background-color: #ffa39e;
-  color: #cf1322;
-}
-
-.btn {
-  padding: 8px 15px;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-  font-size: 0.9rem;
-  transition: all 0.3s ease;
-}
-
-.btn.view {
-  background-color: #1890ff;
-  color: white;
-}
-
-.btn.approve {
-  background-color: #52c41a;
-  color: white;
-}
-
-.btn.reject {
-  background-color: #f5222d;
-  color: white;
-}
-
-.btn:hover {
-  opacity: 0.9;
-}
-
-mat-option {
-  text-align: right;
-  font-weight: bold;
-}
-
 .card-header-modern {
-  padding: 16px 24px;
-  background-color: #f5f5f5;
-  border-radius: 8px;
-  margin-bottom: 16px;
-  font-family: 'Arial', sans-serif;
+  padding: 16px 20px;
+  background: #f8fbff;
+  border-bottom: 1px solid var(--border);
 }
 
 .toolbar-row {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 16px;
+  gap: 12px;
   margin-bottom: 12px;
 }
 
@@ -125,7 +47,7 @@ mat-option {
 }
 
 .form-field {
-  min-width: 200px;
+  min-width: 190px;
   max-width: 280px;
   flex-shrink: 0;
 }
@@ -134,40 +56,115 @@ mat-option {
   flex-grow: 1;
 }
 
+.filter-state {
+  font-weight: 700;
+}
+
+.state-approved,
+.state-all {
+  color: #7c3aed;
+}
+
+.state-rejected {
+  color: #ef4444;
+}
+
+.state-pending {
+  color: #111827;
+}
+
+.state-canceled {
+  color: #eab308;
+}
+
+.state-ready {
+  color: #22c55e;
+}
+
+.toolbar-btn {
+  border-radius: 12px;
+  color: #fff;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+}
+
+.btn-accent {
+  background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
+}
+
 .next-meeting {
   margin: 0;
   padding: 0 8px;
   font-size: 14px;
-  color: #333;
+  color: #334155;
   display: flex;
   align-items: center;
 }
 
+.table-wrap {
+  margin-top: 18px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: auto;
+}
+
+.request-table-modern {
+  width: 100%;
+  background: #fff;
+}
+
+.request-table-modern th.mat-header-cell {
+  background-color: #f1f5ff;
+  color: #1e3a8a;
+  font-weight: 700;
+  text-align: center;
+}
+
+.request-table-modern td.mat-cell {
+  text-align: center;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.request-table-modern tr.mat-row:hover {
+  background-color: #f3f6ff;
+}
+
 .check-icon {
-  color: #389e0d;
+  color: #16a34a;
 }
 
 .cancel-icon {
-  color: #cf1322;
+  color: #dc2626;
 }
 
 td.truncate {
-  max-width: 150px;
-  /* Adjust as needed */
+  max-width: 170px;
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
 }
 
-td.truncate a {
-  display: inline-block;
-  max-width: 100%;
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-  vertical-align: middle;
+.action-fab {
+  margin: 5px;
+  transform: scale(0.9);
 }
 
-th {
-  justify-items: center;
+.action-edit {
+  background-color: #facc15;
+}
+
+.action-cancel {
+  background-color: #dc2626;
+}
+
+.action-print {
+  background-color: #94a3b8;
+}
+
+.new-request-fab {
+  margin-top: 12px;
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  color: #fff;
 }

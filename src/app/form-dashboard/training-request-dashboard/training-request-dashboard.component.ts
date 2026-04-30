@@ -1,4 +1,4 @@
-import { Component, Inject, OnInit, ViewChild } from '@angular/core';
+import { AfterViewInit, Component, Inject, OnInit, ViewChild } from '@angular/core';
 import { HttpClient } from "@angular/common/http";
 import { MatDialog, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { environment } from 'src/environments/environment';
@@ -35,7 +35,7 @@ export class PeopleListDialogComponent {
   templateUrl: './training-request-dashboard.component.html',
   styleUrls: ['./training-request-dashboard.component.scss']
 })
-export class TrainingRequestDashboardComponent implements OnInit {
+export class TrainingRequestDashboardComponent implements OnInit, AfterViewInit {
 
   trainingRequests = new MatTableDataSource();
   displayedColumns: string[] = [
@@ -119,6 +119,20 @@ export class TrainingRequestDashboardComponent implements OnInit {
     this.getHRDepartmentEmployees();
     this.getTrainingRequestPlansList();
     // this.getHealthTrainingRequestPlansList();
+  }
+
+  ngAfterViewInit(): void {
+    this.bindTableControls();
+  }
+
+  private bindTableControls(): void {
+    if (!this.trainingRequests) return;
+    if (this.paginator) {
+      this.trainingRequests.paginator = this.paginator;
+    }
+    if (this.sort) {
+      this.trainingRequests.sort = this.sort;
+    }
   }
 
   changeTrainingPlanDate(): void {
@@ -648,8 +662,7 @@ export class TrainingRequestDashboardComponent implements OnInit {
       })
       .subscribe((Response) => {
         this.trainingRequests = new MatTableDataSource<any>(Response["d"]);
-        this.trainingRequests.paginator = this.paginator;
-        this.trainingRequests.sort = this.sort;
+        this.bindTableControls();
         this.loading = false;
       });
   }
