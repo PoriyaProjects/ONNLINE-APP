@@ -17,6 +17,9 @@
               <div class="loader-progress-fill" [style.width.%]="loadProgressPercent"></div>
             </div>
             <p class="loader-panel-hint">מסנכרן נתוני ניתוחים וחדרים…</p>
+            <p *ngIf="nextRefreshAt && !autoRefreshPaused" class="loader-panel-schedule">
+              רענון אוטומטי כל 10 דקות עגולות | הבא בשעה {{ nextRefreshAt | date:'HH:mm' }}
+            </p>
           </div>
         </div>
 
@@ -35,8 +38,12 @@
                 {{ autoRefreshPaused ? '▶️ הפעל' : '⏸ השהה' }}
               </button>
 
-              <span class="refresh-box" (click)="manualRefresh()" title="רענן עכשיו">
+              <span class="refresh-box" (click)="manualRefresh()"
+                [title]="nextRefreshAt ? ('רענון הבא בשעה ' + (nextRefreshAt | date:'HH:mm')) : 'רענן עכשיו'">
                 ⟳ {{ formatCountdown(nextRefreshIn) }}
+                <span *ngIf="nextRefreshAt && !autoRefreshPaused" class="refresh-next-time">
+                  | {{ nextRefreshAt | date:'HH:mm' }}
+                </span>
               </span>
             </div>
           </div>

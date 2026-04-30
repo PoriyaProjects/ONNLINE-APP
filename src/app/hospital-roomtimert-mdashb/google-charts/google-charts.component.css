@@ -832,6 +832,15 @@
   line-height: 1.4;
 }
 
+.loader-panel-schedule {
+  margin: 6px 0 0;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--primary);
+  text-align: center;
+  line-height: 1.4;
+}
+
 .refresh-toolbar {
   display: flex;
   justify-content: center;
@@ -854,6 +863,12 @@
 
 .refresh-box:hover {
   filter: brightness(1.06);
+}
+
+.refresh-next-time {
+  font-size: 0.78rem;
+  font-weight: 700;
+  opacity: 0.9;
 }
 
 .pause-btn {
