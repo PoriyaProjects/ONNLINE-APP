@@ -1282,6 +1282,19 @@
                 <p><mat-checkbox formControlName="Cancel_Request">ביטול בקשה</mat-checkbox></p>
               </section>
             </div>
+            <div class="col-lg-2 col-md-4 col-sm-6" *ngIf="Training_Request_Forms_H.get('Cancel_Request').value">
+              <mat-form-field>
+                <mat-label>תאריך ביטול</mat-label>
+                <input matInput [matDatepicker]="Cancel_DatePicker" formControlName="Cancel_Date">
+                <mat-hint>DD/MM/YYYY</mat-hint>
+                <mat-datepicker-toggle matIconSuffix [for]="Cancel_DatePicker"></mat-datepicker-toggle>
+                <mat-datepicker #Cancel_DatePicker></mat-datepicker>
+                <mat-error
+                  *ngIf="Training_Request_Forms_H.get('Cancel_Date').hasError('required') && Training_Request_Forms_H.get('Cancel_Date').touched">
+                  שדה חובה
+                </mat-error>
+              </mat-form-field>
+            </div>
             <div class="col-lg-6 col-md-6 col-sm-12" *ngIf="Training_Request_Forms_H.get('Cancel_Request').value">
               <mat-form-field>
                 <mat-label>סיבת ביטול</mat-label>

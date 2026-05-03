@@ -40,7 +40,7 @@
                     &nbsp;&nbsp;
                     <button class="submitBtn save action-fab" matTooltip="שמירה" [disabled]="employeePersonalDetails.invalid"
                         (click)="saveEmployee()" [disabled]="saveBtnWait"
-                        *ngIf="print_only_Protocol || UserName == 'adahabre' || UserName == 'malkobi' || UserName == 'orkatz' || UserName == 'dgolani' || UserName == 'ashoshany' || UserName == 'owertheim' || UserName == 'eofir' || UserName == 'msuliman' || UserName == 'amarom'"
+                        *ngIf="print_only_Protocol || UserName == 'adahabre' || UserName == 'malkobi' || UserName == 'orkatz' || UserName == 'dgolani' || UserName == 'ashoshany' || UserName == 'owertheim' || UserName == 'eofir' || UserName == 'msuliman' || UserName == 'amarom' || UserName == 'lnachmani'"
                         type="submit" mat-fab>
                         <span *ngIf="!saveBtnWait" class="material-icons">
                             save
@@ -197,9 +197,9 @@
                             </div>
                             <div class="col-3">
                                 <mat-form-field>
-                                    <mat-label>סקטור</mat-label>
+                                    <mat-label>הרשאות בלוסום</mat-label>
                                     <input type="text" matInput [formControl]="sektorAutocomplete"
-                                        [matAutocomplete]="sektorAuto" aria-placeholder="סקטור">
+                                        [matAutocomplete]="sektorAuto" aria-placeholder="הרשאות בלוסום">
                                     <mat-autocomplete #sektorAuto="matAutocomplete" [displayWith]="displaySektor"
                                         (optionSelected)="onSektorSelected($event.option.value)">
                                         <mat-option *ngFor="let sektor of filteredSektors | async" [value]="sektor">
@@ -280,9 +280,9 @@
                             </div>
                             <div class="col-3" *ngIf="managerType != 'stager'">
                                 <mat-form-field>
-                                    <mat-label>סקטור בבלוסום</mat-label>
+                                    <mat-label>סקטור</mat-label>
                                     <mat-select formControlName="EmployeeBlossomSektorID"
-                                        aria-placeholder="סקטור בבלוסום">
+                                        aria-placeholder="סקטור">
                                         <mat-option *ngFor="let blo of EmployeeBlossomSektors"
                                             [value]="blo.EmployeeBlossomSektorID">
                                             {{blo.EmployeeSektorBlossomDescription}} </mat-option>
@@ -558,7 +558,12 @@
                             <th mat-header-cell *matHeaderCellDef>שם הכשרה</th>
                             <td mat-cell *matCellDef="let row; let i = index" [formGroupName]="i">
                                 <mat-form-field appearance="outline" class="w-full">
-                                    <input matInput placeholder="שם הכשרה" formControlName="TrainingSubject" />
+                                    <!-- <input matInput placeholder="שם הכשרה" formControlName="TrainingSubject" /> -->
+                                    <mat-select formControlName="TrainingSubject" aria-placeholder="שם הכשרה"
+                                        (selectionChange)="onTrainingSubjectChange(i, $event.value)">
+                                        <mat-option *ngFor="let training of TrainingsList" [value]="training.TrainingSubject">
+                                            {{training.TrainingSubject}} </mat-option>
+                                    </mat-select>
                                 </mat-form-field>
                             </td>
                         </ng-container>
