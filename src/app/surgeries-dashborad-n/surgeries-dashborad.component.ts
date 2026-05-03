@@ -7994,6 +7994,7 @@ updateChartColumns(): void {
 
     /** סוגר את כל הדרופדאונים בפאנל הסינון הצדדי (לא כולל מודלים / השוואות אחרות) */
     private closeSidebarFilterDropdowns(): void {
+        this.isDropdownOpen = false;
         this.isChartDeptDropdownOpen = false;
         this.isSurgeryTypeOpen = false;
         this.isShiftOpen = false;
@@ -8004,8 +8005,40 @@ updateChartColumns(): void {
         this.isDeptOpen = false;
     }
 
+    toggleSidebarFilterDropdown(
+        which: "chartDepartment" | "surgeryType" | "shift" | "weekPart" | "morningWork" | "site" | "diagnosis" | "room" | "department"
+    ): void {
+        const shouldOpen =
+            (which === "chartDepartment" && !this.isChartDeptDropdownOpen) ||
+            (which === "surgeryType" && !this.isSurgeryTypeOpen) ||
+            (which === "shift" && !this.isShiftOpen) ||
+            (which === "weekPart" && !this.isWeekdayOpen) ||
+            (which === "morningWork" && !this.isMorningWorkOpen) ||
+            (which === "site" && !this.isSiteOpen) ||
+            (which === "diagnosis" && !this.isDropdownOpen) ||
+            (which === "room" && !this.isRoomOpen) ||
+            (which === "department" && !this.isDeptOpen);
+
+        this.closeSidebarFilterDropdowns();
+
+        if (!shouldOpen) {
+            return;
+        }
+
+        if (which === "chartDepartment") this.isChartDeptDropdownOpen = true;
+        if (which === "surgeryType") this.isSurgeryTypeOpen = true;
+        if (which === "shift") this.isShiftOpen = true;
+        if (which === "weekPart") this.isWeekdayOpen = true;
+        if (which === "morningWork") this.isMorningWorkOpen = true;
+        if (which === "site") this.isSiteOpen = true;
+        if (which === "diagnosis") this.isDropdownOpen = true;
+        if (which === "room") this.isRoomOpen = true;
+        if (which === "department") this.isDeptOpen = true;
+    }
+
     private isAnySidebarFilterDropdownOpen(): boolean {
         return (
+            this.isDropdownOpen ||
             this.isChartDeptDropdownOpen ||
             this.isSurgeryTypeOpen ||
             this.isShiftOpen ||
@@ -8151,15 +8184,15 @@ updateChartColumns(): void {
     // תצוגת טקסט לכל פילטר (כולל "הכל" וקומה) – בשורה קצרה שלא פורצת את העיצוב
     getSurgeryTypeDisplay(): string {
         if (!this.selectedSurgeryTypes || this.selectedSurgeryTypes.length === 0) {
-            return "סוג ניתוח: הכל";
+            return "קטגורית ניתוח: הכל";
         }
         if (this.selectedSurgeryTypes.length === 1) {
-            return `סוג ניתוח: ${this.selectedSurgeryTypes[0]}`;
+            return `קטגורית ניתוח: ${this.selectedSurgeryTypes[0]}`;
         }
         const first = this.selectedSurgeryTypes[0];
         const restCount = this.selectedSurgeryTypes.length - 1;
         // מציגים ערך ראשון + כמות נוספת, הפירוט המלא כבר מופיע בתקציר התחתון
-        return `סוג ניתוח: ${first} ועוד ${restCount}`;
+        return `קטגורית ניתוח: ${first} ועוד ${restCount}`;
     }
 
     getShiftDisplay(): string {
@@ -8376,7 +8409,7 @@ updateChartColumns(): void {
 
 toggleDropdown() {
   if (!this.isDiagnosesLoading && this.diagnosesList.length > 0) {
-    this.isDropdownOpen = !this.isDropdownOpen;
+    this.toggleSidebarFilterDropdown("diagnosis");
   }
 }
 
