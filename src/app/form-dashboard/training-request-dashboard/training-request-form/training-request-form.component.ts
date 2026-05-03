@@ -475,17 +475,19 @@ export class TrainingRequestFormComponent implements OnInit {
           Training_Type: new FormControl(Training_Request_Forms_H?.Training_Type, null),
           Approved: new FormControl(Training_Request_Forms_H?.Approved, null),
           Transportaion: new FormControl(Training_Request_Forms_H?.Transportaion == 'True' ? true : false, null),
-          Approved_Percent: new FormControl(Training_Request_Forms_H?.Approved_Percent, [
-            Validators.pattern(/^[0-9]*$/), // Only numbers allowed
-            Validators.max(100)            // Maximum value is 100
-          ]),
+          Approved_Percent: new FormControl(Training_Request_Forms_H?.Approved_Percent,
+            [
+              Validators.pattern(/^\d+(\.\d+)?$/),
+              Validators.max(100)
+            ]
+          ),
           Approved_Percent_Out_Of: new FormControl(Training_Request_Forms_B?.Education_Fee == '' ? Training_Request_Forms_H?.Approved_Percent_Out_Of : Training_Request_Forms_B?.Education_Fee, null),
           Approved_Total: new FormControl(this.calculateApprovedTotalSeed(Training_Request_Forms_H), [Validators.pattern(/^\d+(\.\d{1,2})?$/)]),
           Approved_Absence_Time: new FormControl(Training_Request_Forms_H?.Approved_Absence_Time, null),
           Code_Type: new FormControl(Training_Request_Forms_H?.Code_Type, null),
           Recommendations: new FormControl(Training_Request_Forms_H?.Recommendations, null),
-          Cancel_Request: new FormControl(false, null),
-          Cancel_Reason: new FormControl('', null)
+          Cancel_Request: new FormControl(Training_Request_Forms_H?.Cancel_Request, null),
+          Cancel_Reason: new FormControl(Training_Request_Forms_H?.Cancel_Reason, null)
         });
         this.Training_Request_Forms_H.get("Cancel_Request")?.valueChanges.subscribe((isCancelled) => {
           const reasonControl = this.Training_Request_Forms_H.get("Cancel_Reason");

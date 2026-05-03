@@ -9,6 +9,8 @@ import { MatSort } from '@angular/material/sort';
 import * as XLSX from 'xlsx';
 import { environment } from 'src/environments/environment';
 import { EmployeesUpdateManagersComponent } from './employees-update-managers/employees-update-managers.component';
+import { Observable } from 'rxjs';
+import { map, startWith } from 'rxjs/operators';
 
 @Component({
   selector: 'app-employees-manage-dash',
@@ -34,6 +36,10 @@ export class EmployeesManageDashComponent implements OnInit, OnDestroy {
   FunctionsList = [];
   SektorsList = [];
   WorkPlacesList = [];
+  departmentAutocomplete = new FormControl('');
+  roleAutocomplete = new FormControl('');
+  filteredDepartments: Observable<any[]> = new Observable<any[]>();
+  filteredRoles: Observable<any[]> = new Observable<any[]>();
   loaded: boolean = false;
   url = environment.url;
   employee: any;
@@ -66,8 +72,60 @@ export class EmployeesManageDashComponent implements OnInit, OnDestroy {
         ApprovedToBlossom: new FormControl('2', null),
         InGym: new FormControl('', null),
       });
+      this.initSearchAutocompletes();
 
     }
+  }
+
+  private initSearchAutocompletes(): void {
+    this.filteredDepartments = this.departmentAutocomplete.valueChanges.pipe(
+      startWith(''),
+      map((value) => this.filterDepartments(value))
+    );
+    this.filteredRoles = this.roleAutocomplete.valueChanges.pipe(
+      startWith(''),
+      map((value) => this.filterRoles(value))
+    );
+    this.departmentAutocomplete.valueChanges.subscribe((value) => {
+      if (typeof value === 'string') {
+        this.searchEmployeesGroup.controls['Department'].setValue('');
+      }
+    });
+    this.roleAutocomplete.valueChanges.subscribe((value) => {
+      if (typeof value === 'string') {
+        this.searchEmployeesGroup.controls['Role'].setValue('');
+      }
+    });
+  }
+
+  private filterDepartments(value: any): any[] {
+    const text = (typeof value === 'string' ? value : value?.DepartnentDescripton || '').toLowerCase();
+    return this.DepartmentsList.filter((dept) =>
+      (dept.DepartnentDescripton || '').toLowerCase().includes(text)
+    );
+  }
+
+  private filterRoles(value: any): any[] {
+    const text = (typeof value === 'string' ? value : value?.FunctionDescription || '').toLowerCase();
+    return this.FunctionsList.filter((func) =>
+      (func.FunctionDescription || '').toLowerCase().includes(text)
+    );
+  }
+
+  displayDepartment(dept: any): string {
+    return dept?.DepartnentDescripton || '';
+  }
+
+  displayRole(func: any): string {
+    return func?.FunctionDescription || '';
+  }
+
+  onDepartmentSelected(dept: any): void {
+    this.searchEmployeesGroup.controls['Department'].setValue(dept?.DepartnentCode || '');
+  }
+
+  onRoleSelected(func: any): void {
+    this.searchEmployeesGroup.controls['Role'].setValue(func?.FunctionID || '');
   }
 
   ngOnDestroy(): void {
@@ -201,6 +259,11 @@ export class EmployeesManageDashComponent implements OnInit, OnDestroy {
       })
       .subscribe((Response) => {
         this.DepartmentsList = Response["d"];
+        const selectedCode = this.searchEmployeesGroup?.controls['Department']?.value;
+        const selectedDept = this.DepartmentsList.find((d) => d.DepartnentCode == selectedCode);
+        if (selectedDept) {
+          this.departmentAutocomplete.setValue(selectedDept, { emitEvent: false });
+        }
       });
   }
 
@@ -211,6 +274,11 @@ export class EmployeesManageDashComponent implements OnInit, OnDestroy {
       })
       .subscribe((Response) => {
         this.FunctionsList = Response["d"];
+        const selectedId = this.searchEmployeesGroup?.controls['Role']?.value;
+        const selectedRole = this.FunctionsList.find((f) => f.FunctionID == selectedId);
+        if (selectedRole) {
+          this.roleAutocomplete.setValue(selectedRole, { emitEvent: false });
+        }
       });
   }
 

@@ -1,20 +1,37 @@
 .training-request-form {
+  --bg: #f6f8fc;
+  --card: #ffffff;
+  --text: #0f172a;
+  --muted: #64748b;
+  --border: #e2e8f0;
+  --shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+  --shadow-sm: 0 6px 16px rgba(15, 23, 42, 0.06);
+  --primary: #2563eb;
   display: flex;
   flex-direction: column;
   gap: 20px;
   direction: rtl;
+  background: var(--bg);
+  padding: 16px;
+  border-radius: 16px;
 
   h3 {
     margin: auto;
-    font-family: serif;
-    font-size: 35px;
+    font-size: 26px;
+    font-weight: 750;
+    color: var(--text);
   }
 
   .dialog-actions {
     display: flex;
     justify-content: right;
     gap: 10px;
-    margin-top: 20px;
+    margin-top: 6px;
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 10px 12px;
+    box-shadow: var(--shadow-sm);
 
     .closeBtn {
       border-radius: 50%;
@@ -66,9 +83,10 @@
 
   .signBtn {
     font-weight: bold;
-    font-size: 20px;
+    font-size: 16px;
     color: white;
     width: 100%;
+    border-radius: 12px;
   }
 
   img {
@@ -92,15 +110,20 @@
 
   .submitBtn {
     width: 100%;
-    margin-top: 50px;
+    margin-top: 20px;
     font-weight: bold;
-    background-color: #10508e;
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+    color: #fff;
+    border-radius: 12px;
   }
 
   mat-card {
-    padding: 50px;
+    padding: 24px;
     text-align: right;
-    border-style: groove;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    box-shadow: var(--shadow);
+    background: var(--card);
 
     .section {
       width: 50%;
@@ -134,11 +157,40 @@
 
   .stepBtn {
     margin-top: 20px;
+    border-radius: 10px;
+  }
+
+  .stepBtnPrimary {
+    background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%);
+    color: #fff;
+  }
+
+  .full-width-field {
+    width: 100%;
+  }
+
+  .form-alert {
+    color: #dc2626;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: 10px;
+    padding: 8px 10px;
+    margin-bottom: 10px;
+  }
+
+  .country-note {
+    margin: 0;
+    color: #1d4ed8;
+    font-size: 12px;
+  }
+
+  .poster-toggle {
+    margin-bottom: 10px;
   }
 }
 
 .mat-card-content {
-  margin-top: 40px;
+  margin-top: 16px;
 }
 
 mat-select {
@@ -147,4 +199,15 @@ mat-select {
 
 .label-select {
   float: right;
+}
+
+::ng-deep .training-request-form .mat-horizontal-stepper-header-container {
+  background: #eef4ff;
+  border: 1px solid #dbe7ff;
+  border-radius: 12px;
+  margin-bottom: 12px;
+}
+
+::ng-deep .training-request-form .mat-step-header:hover {
+  background: #e0ecff;
 }
