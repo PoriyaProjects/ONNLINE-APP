@@ -487,18 +487,36 @@ export class TrainingRequestFormComponent implements OnInit {
           Code_Type: new FormControl(Training_Request_Forms_H?.Code_Type, null),
           Recommendations: new FormControl(Training_Request_Forms_H?.Recommendations, null),
           Cancel_Request: new FormControl(Training_Request_Forms_H?.Cancel_Request, null),
-          Cancel_Reason: new FormControl(Training_Request_Forms_H?.Cancel_Reason, null)
+          Cancel_Reason: new FormControl(Training_Request_Forms_H?.Cancel_Reason, null),
+          Cancel_Date: new FormControl(
+            Training_Request_Forms_H?.Cancel_Date == null || Training_Request_Forms_H?.Cancel_Date === '' ? null : Training_Request_Forms_H?.Cancel_Date,
+            null
+          )
         });
         this.Training_Request_Forms_H.get("Cancel_Request")?.valueChanges.subscribe((isCancelled) => {
           const reasonControl = this.Training_Request_Forms_H.get("Cancel_Reason");
+          const dateControl = this.Training_Request_Forms_H.get("Cancel_Date");
           if (isCancelled) {
             reasonControl?.setValidators([Validators.required, Validators.maxLength(300)]);
+            dateControl?.setValidators([Validators.required]);
           } else {
             reasonControl?.setValidators(null);
             reasonControl?.setValue("");
+            dateControl?.setValidators(null);
+            dateControl?.setValue(null);
           }
           reasonControl?.updateValueAndValidity();
+          dateControl?.updateValueAndValidity();
         });
+        {
+          const initCancel = this.Training_Request_Forms_H.get("Cancel_Request")?.value;
+          if (initCancel) {
+            this.Training_Request_Forms_H.get("Cancel_Reason")?.setValidators([Validators.required, Validators.maxLength(300)]);
+            this.Training_Request_Forms_H.get("Cancel_Date")?.setValidators([Validators.required]);
+            this.Training_Request_Forms_H.get("Cancel_Reason")?.updateValueAndValidity({ emitEvent: false });
+            this.Training_Request_Forms_H.get("Cancel_Date")?.updateValueAndValidity({ emitEvent: false });
+          }
+        }
         this.Training_Request_Forms_G = this.fb.group({
           Standart_Level: new FormControl(Training_Request_Forms_G?.Standart_Level, null),
           Function_Department: new FormControl(Training_Request_Forms_G?.Function_Department, null),
@@ -1144,6 +1162,10 @@ export class TrainingRequestFormComponent implements OnInit {
       this.Training_Request_Forms_I.controls['Opinion_Date'].setValue(this.datePipe.transform(this.Training_Request_Forms_I.controls['Opinion_Date'].value, 'yyyy-MM-dd'));
       this.Training_Request_Forms_F.controls['Opinion_Date'].setValue(this.datePipe.transform(this.Training_Request_Forms_F.controls['Opinion_Date'].value, 'yyyy-MM-dd'));
       this.ensureOpinionDateDefault();
+      const cancelDateVal = this.Training_Request_Forms_H.controls['Cancel_Date'].value;
+      this.Training_Request_Forms_H.controls['Cancel_Date'].setValue(
+        cancelDateVal ? this.datePipe.transform(cancelDateVal, 'yyyy-MM-dd') : null
+      );
       this.Training_Request_Forms_G.controls['Work_Start_Date'].setValue(this.datePipe.transform(this.Training_Request_Forms_G.value.Work_Start_Date, 'yyyy-MM-dd'));
       // const base64Data = this.Training_Request_Forms_B.controls['Program_Attached'].value;
       const base64Data2 = this.Training_Request_Forms_D.controls['OutSource_Company_Plan'].value;

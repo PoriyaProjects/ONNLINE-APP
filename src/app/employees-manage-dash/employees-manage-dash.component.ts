@@ -27,6 +27,7 @@ export class EmployeesManageDashComponent implements OnInit, OnDestroy {
   dataSource = new MatTableDataSource(this.TABLE_DATA);
   dataSourceExcel = new MatTableDataSource(this.TABLE_DATAExcel);
   trainingdataSourceExcel = new MatTableDataSource();
+  educationdataSourceExcel = new MatTableDataSource();
   @ViewChild(MatPaginator) paginator: MatPaginator;
   @ViewChild(MatSort) sort: MatSort;
   UserName = localStorage.getItem("loginUserName").toLowerCase();
@@ -343,9 +344,36 @@ export class EmployeesManageDashComponent implements OnInit, OnDestroy {
         this.dataSource.paginator = this.paginator;
         this.dataSource.sort = this.sort;
       });
-    if (toExcel == 'tra') {
+      if (toExcel == 'tra') {
+        this.http
+          .post(this.url + "EmployeesTrainingsExcelExport", {
+            _empId: empId,
+            _empFirstName: empFirstName,
+            _empLastName: empLastName,
+            _on: on,
+            _medGrad: medGrad,
+            _phoneNumber: phoneNumber,
+            _department: department,
+            _role: role,
+            _managerType: managerType,
+            _sektor: sektor,
+            _workPlace: workPlace,
+            _statusRow: StatusRow,
+            _approvedToBlossom: ApprovedToBlossom,
+            _userName: this.UserName,
+            _InGym: InGym
+          })
+          .subscribe((Response) => {
+            this.trainingdataSourceExcel = new MatTableDataSource<any>(Response["d"]);
+            let that = this;
+            setTimeout(() => {
+              that.trainingexportexcel();
+            }, 1500);
+          });
+      }
+    if (toExcel == 'edu') {
       this.http
-        .post(this.url + "EmployeesTrainingsExcelExport", {
+        .post(this.url + "EmployeesEducationsExcelExport", {
           _empId: empId,
           _empFirstName: empFirstName,
           _empLastName: empLastName,
@@ -363,10 +391,10 @@ export class EmployeesManageDashComponent implements OnInit, OnDestroy {
           _InGym: InGym
         })
         .subscribe((Response) => {
-          this.trainingdataSourceExcel = new MatTableDataSource<any>(Response["d"]);
+          this.educationdataSourceExcel = new MatTableDataSource<any>(Response["d"]);
           let that = this;
           setTimeout(() => {
-            that.trainingexportexcel();
+            that.educationexportexcel();
           }, 1500);
         });
     } else if (toExcel) {
@@ -410,7 +438,6 @@ export class EmployeesManageDashComponent implements OnInit, OnDestroy {
 
     /* save to file */
     XLSX.writeFile(wb, this.fileName);
-
   }
 
   trainingfileName = 'רשימת הכשרות.xlsx';
@@ -424,9 +451,23 @@ export class EmployeesManageDashComponent implements OnInit, OnDestroy {
     XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
 
     /* save to file */
-    XLSX.writeFile(wb, this.fileName);
-
+    XLSX.writeFile(wb, this.trainingfileName);
   }
+  
+  educationfileName = 'רשימת השכלות.xlsx';
+  educationexportexcel(): void {
+    /* table id is passed over here */
+    let element = document.getElementById('education-excel-table');
+    const ws: XLSX.WorkSheet = XLSX.utils.table_to_sheet(element);
+
+    /* generate workbook and add the worksheet */
+    const wb: XLSX.WorkBook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
+
+    /* save to file */
+    XLSX.writeFile(wb, this.educationfileName);
+  }
+
   addUpdateEmployee(employee) {
     let dialogRef = this.dialog.open(EmployeesAddUpdateComponent, { disableClose: true });
     dialogRef.componentInstance.employee = employee;
