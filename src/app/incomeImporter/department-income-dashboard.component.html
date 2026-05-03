@@ -1,15 +1,37 @@
 <div class="dash" [class.dark]="isDark" dir="rtl">
   
-  <!-- Loading Spinner -->
-  <div *ngIf="isLoading || isMainDataLoading || isDiagnosesLoading || catalogLoading || isChartLoading" class="loading-overlay">
+  <!-- Loading Overlay -->
+  <div *ngIf="isDashboardLoading()" class="loading-overlay" dir="rtl" role="status" aria-live="polite">
     <div class="loading-container">
-      <mat-spinner diameter="60"></mat-spinner>
-      <div class="loading-text">
-        <span *ngIf="isMainDataLoading">טוען נתונים...</span>
-        <span *ngIf="isDiagnosesLoading">טוען רשימת אגפים...</span>
-        <span *ngIf="catalogLoading">טוען פרטי מחלקה...</span>
-        <span *ngIf="isLoading">טוען דוח למנהל...</span>
-        <span *ngIf="isChartLoading && !isMainDataLoading">טוען גרף...</span>
+      <div class="loading-ring" [style.background]="getLoadingRingBackground()">
+        <div class="loading-ring-inner">
+          <strong>{{ getLoadingProgress() }}%</strong>
+          <span>הושלם</span>
+        </div>
+      </div>
+
+      <div class="loading-copy">
+        <div class="loading-title">{{ getLoadingTitle() }}</div>
+        <div class="loading-text">{{ getLoadingSubtitle() }}</div>
+      </div>
+
+      <div class="loading-progress-track" aria-hidden="true">
+        <div class="loading-progress-fill" [style.width.%]="getLoadingProgress()"></div>
+      </div>
+
+      <div class="loading-mini-chart" aria-hidden="true">
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+      </div>
+
+      <div class="loading-steps" aria-hidden="true">
+        <span [class.done]="getLoadingProgress() >= 25">איסוף נתונים</span>
+        <span [class.done]="getLoadingProgress() >= 50">עיבוד</span>
+        <span [class.done]="getLoadingProgress() >= 75">בניית תצוגה</span>
+        <span [class.done]="getLoadingProgress() >= 95">כמעט מוכן</span>
       </div>
     </div>
   </div>

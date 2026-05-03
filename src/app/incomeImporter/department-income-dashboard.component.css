@@ -1525,11 +1525,18 @@ table.table {
   border-radius: 14px;
   background: var(--btnBg);
   direction: rtl;
+  position: relative;
+  z-index: 280;
 }
 
 .modal-filters-panel .custom-dropdown {
   max-width: none;
-  z-index: 20;
+  position: relative;
+  z-index: 290;
+}
+
+.modal-filters-panel .custom-dropdown.active {
+  z-index: 240;
 }
 
 .modal-filters-panel .dropdown-trigger {
@@ -1541,6 +1548,10 @@ table.table {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.modal-filters-panel .dropdown-panel {
+  z-index: 9999;
 }
 
 .modal-reset-filters-btn {
@@ -1763,23 +1774,179 @@ table.table {
 /* ── Loading overlays ───────────────────────────────────── */
 .loading-overlay {
   position: fixed; inset: 0;
-  background: rgba(255,255,255,.95); backdrop-filter: blur(4px);
+  background:
+    radial-gradient(circle at 50% 18%, rgba(59,130,246,.14), transparent 34%),
+    rgba(248,250,252,.58);
+  backdrop-filter: blur(8px) saturate(140%);
+  -webkit-backdrop-filter: blur(8px) saturate(140%);
   z-index: 9999; display: flex; align-items: center; justify-content: center;
+  padding: 18px;
   animation: fadeIn .3s ease-in;
 }
-.dash.dark .loading-overlay { background: rgba(11,18,32,.95); }
+.dash.dark .loading-overlay {
+  background:
+    radial-gradient(circle at 50% 18%, rgba(96,165,250,.20), transparent 34%),
+    rgba(2,6,23,.62);
+}
 
 .loading-container {
-  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px;
-  padding: 40px; border-radius: 16px;
-  background: linear-gradient(135deg, #2563eb, #10b981);
-  box-shadow: 0 8px 32px rgba(0,0,0,.2); min-width: 200px;
-  mat-spinner { margin: 0 auto; }
+  width: min(92vw, 430px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  padding: clamp(22px, 3vw, 34px);
+  border-radius: 24px;
+  border: 1px solid rgba(148,163,184,.34);
+  background:
+    linear-gradient(145deg, rgba(255,255,255,.86), rgba(255,255,255,.66)),
+    radial-gradient(circle at 100% 0%, rgba(59,130,246,.18), transparent 44%),
+    radial-gradient(circle at 0% 100%, rgba(16,185,129,.16), transparent 46%);
+  box-shadow: 0 22px 58px rgba(15,23,42,.18);
+  direction: rtl;
+  text-align: center;
 }
 .dash.dark .loading-container {
-  background: linear-gradient(135deg, rgba(37,99,235,.9), rgba(16,185,129,.9));
+  border-color: rgba(148,163,184,.28);
+  background:
+    linear-gradient(145deg, rgba(15,23,42,.88), rgba(15,23,42,.68)),
+    radial-gradient(circle at 100% 0%, rgba(96,165,250,.20), transparent 44%),
+    radial-gradient(circle at 0% 100%, rgba(45,212,191,.16), transparent 46%);
+  box-shadow: 0 24px 70px rgba(0,0,0,.45);
 }
-.loading-text { color: #fff; font-size: 18px; font-weight: 600; text-align: center; direction: rtl; animation: pulse 1.5s ease-in-out infinite; }
+
+.loading-ring {
+  width: 116px;
+  height: 116px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.55), 0 14px 28px rgba(37,99,235,.18);
+  animation: loadingFloat 2.6s ease-in-out infinite;
+}
+
+.loading-ring-inner {
+  width: 86px;
+  height: 86px;
+  border-radius: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255,255,255,.94);
+  border: 1px solid rgba(148,163,184,.18);
+}
+
+.dash.dark .loading-ring-inner {
+  background: rgba(15,23,42,.96);
+  border-color: rgba(148,163,184,.28);
+}
+
+.loading-ring-inner strong {
+  color: #1d4ed8;
+  font-size: 28px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.dash.dark .loading-ring-inner strong {
+  color: #93c5fd;
+}
+
+.loading-ring-inner span {
+  margin-top: 5px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.loading-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.loading-title {
+  color: var(--text);
+  font-size: clamp(18px, 1.7vw, 22px);
+  font-weight: 900;
+}
+
+.loading-text {
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.5;
+  max-width: 340px;
+}
+
+.loading-progress-track {
+  width: 100%;
+  height: 10px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(148,163,184,.22);
+  direction: rtl;
+}
+
+.loading-progress-fill {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #10b981, #3b82f6, #6366f1);
+  box-shadow: 0 0 18px rgba(59,130,246,.35);
+  transition: width .35s ease;
+}
+
+.loading-mini-chart {
+  height: 42px;
+  display: flex;
+  align-items: end;
+  justify-content: center;
+  gap: 7px;
+  direction: ltr;
+}
+
+.loading-mini-chart span {
+  width: 10px;
+  border-radius: 999px 999px 3px 3px;
+  background: linear-gradient(180deg, #60a5fa, #10b981);
+  opacity: .9;
+  animation: loadingBars 1.2s ease-in-out infinite;
+}
+
+.loading-mini-chart span:nth-child(1) { height: 18px; animation-delay: 0s; }
+.loading-mini-chart span:nth-child(2) { height: 28px; animation-delay: .12s; }
+.loading-mini-chart span:nth-child(3) { height: 38px; animation-delay: .24s; }
+.loading-mini-chart span:nth-child(4) { height: 25px; animation-delay: .36s; }
+.loading-mini-chart span:nth-child(5) { height: 32px; animation-delay: .48s; }
+
+.loading-steps {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.loading-steps span {
+  padding: 6px 8px;
+  border-radius: 999px;
+  background: rgba(148,163,184,.14);
+  white-space: nowrap;
+}
+
+.loading-steps span.done {
+  color: #1d4ed8;
+  background: rgba(59,130,246,.12);
+}
+
+.dash.dark .loading-steps span.done {
+  color: #bfdbfe;
+  background: rgba(96,165,250,.16);
+}
 
 .catalog-loading-container {
   display: flex; flex-direction: column; align-items: center; justify-content: center;
@@ -1956,6 +2123,8 @@ table.table {
 @keyframes spin    { to { transform: rotate(360deg); } }
 @keyframes pulse   { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: .7; transform: scale(1.05); } }
 @keyframes fadeIn  { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes loadingFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
+@keyframes loadingBars  { 0%, 100% { transform: scaleY(.72); opacity: .64; } 50% { transform: scaleY(1.08); opacity: 1; } }
 
 /* ══════════════════════════════════════════════════════════
    RESPONSIVE — mobile → tablet → desktop → 4K plasma

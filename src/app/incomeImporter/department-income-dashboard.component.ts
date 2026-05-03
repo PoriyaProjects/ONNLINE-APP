@@ -1118,6 +1118,78 @@ export class DepartmentIncomeDashboardComponent implements OnInit, OnDestroy {
         this.cdr.detectChanges();
     }
 
+    isDashboardLoading(): boolean {
+        return (
+            this.isLoading ||
+            this.isMainDataLoading ||
+            this.isDiagnosesLoading ||
+            this.catalogLoading ||
+            this.isChartLoading
+        );
+    }
+
+    getLoadingProgress(): number {
+        if (this.catalogLoading) {
+            return 72;
+        }
+        if (this.isChartLoading && !this.isMainDataLoading) {
+            return 88;
+        }
+        if (this.isMainDataLoading) {
+            return 58;
+        }
+        if (this.isLoading) {
+            return 64;
+        }
+        if (this.isDiagnosesLoading) {
+            return 28;
+        }
+        return 100;
+    }
+
+    getLoadingTitle(): string {
+        if (this.catalogLoading) {
+            return "טוען פרטי מחלקה";
+        }
+        if (this.isChartLoading && !this.isMainDataLoading) {
+            return "בונה גרף הכנסות";
+        }
+        if (this.isMainDataLoading) {
+            return "מעדכן נתוני הכנסות";
+        }
+        if (this.isLoading) {
+            return "מכין דוח למנהל";
+        }
+        if (this.isDiagnosesLoading) {
+            return "טוען רשימת אגפים";
+        }
+        return "מסיים טעינה";
+    }
+
+    getLoadingSubtitle(): string {
+        if (this.catalogLoading) {
+            return "מחשב שירותים, יחידות ומחירון למחלקה שנבחרה.";
+        }
+        if (this.isChartLoading && !this.isMainDataLoading) {
+            return "מסדר את הנתונים לתצוגה גרפית ברורה.";
+        }
+        if (this.isMainDataLoading) {
+            return "מקבל נתונים מהשרת ומפעיל את הפילטרים שנבחרו.";
+        }
+        if (this.isLoading) {
+            return "מרכז סיכומים, מגמות והשוואות מנהלים.";
+        }
+        if (this.isDiagnosesLoading) {
+            return "מכין את רשימת המחלקות והאגפים לבחירה.";
+        }
+        return "עוד רגע הדשבורד מוכן.";
+    }
+
+    getLoadingRingBackground(): string {
+        const progress = this.getLoadingProgress();
+        return `conic-gradient(#3b82f6 0 ${progress}%, rgba(148, 163, 184, 0.22) ${progress}% 100%)`;
+    }
+
     private updateDisplayedCatalogColumns(): void {
         let columns: string[];
         if (this.selectedViewType === "units") {
