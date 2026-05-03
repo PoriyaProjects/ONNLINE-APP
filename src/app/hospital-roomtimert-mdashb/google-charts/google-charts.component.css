@@ -23,7 +23,7 @@
   --shadow-lg: 0 12px 28px rgba(15, 23, 42, 0.08);
   --radius: 14px;
   --radius-sm: 10px;
-  --gap: 12px;
+  --gap: 8px;
   --space: 8px;
 
   /* —— Legacy aliases (existing templates) —— */
@@ -58,11 +58,11 @@
   text-align: right;
   display: flex;
   flex-direction: column;
-  gap: var(--gap);
+  gap: 6px;
   width: 100%;
   min-height: 100%;
   max-width: 100%;
-  padding: clamp(10px, 1.2vw, 20px);
+  padding: 4px 6px;
   color: var(--text-main);
   background: var(--bg);
   border-radius: var(--radius);
@@ -81,7 +81,7 @@
 .regular-section {
   width: 100%;
   margin: 0;
-  padding: clamp(12px, 1.4vw, 18px);
+  padding: 6px 8px;
   border: 1px solid var(--border);
   border-radius: var(--radius);
   background: var(--card);
@@ -178,17 +178,46 @@
   transform: translateY(-1px);
 }
 
+/* כותרת קומפקטית למסך פלזמה: מפנה גובה בלי לשנות את גריד חדרי הניתוח */
+.regular-section > .header-with-toolbar {
+  flex-wrap: nowrap;
+  gap: 6px;
+  min-height: 0;
+  padding: 4px 10px;
+  margin-bottom: 4px;
+}
+
+.regular-section > .header-with-toolbar .header-title {
+  font-size: clamp(0.95rem, 0.75vw + 0.35rem, 1.12rem) !important;
+  line-height: 1.1;
+  white-space: nowrap;
+}
+
+.regular-section > .header-with-toolbar .header-toolbar {
+  flex-wrap: nowrap;
+  gap: 6px;
+  padding: 4px 9px;
+  font-size: clamp(0.72rem, 0.25vw + 0.68rem, 0.84rem);
+}
+
+.regular-section > .header-with-toolbar .pause-btn,
+.regular-section > .header-with-toolbar .refresh-box {
+  padding: 3px 8px;
+  font-size: inherit;
+  line-height: 1.15;
+}
+
 /* ========== כותרות דביקות — 7 חדרי ניתוח כללי (מיושר לגריד) ========== */
 .regular-rooms-sticky-head {
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
-  gap: var(--gap);
+  gap: 6px;
   align-items: stretch;
   position: sticky;
   top: 0;
   z-index: 25;
-  margin: 0 0 10px 0;
-  padding: 10px 8px;
+  margin: 0 0 5px 0;
+  padding: 5px 6px;
   background: linear-gradient(180deg, #f0f6fc 0%, var(--card) 45%, #e8eef5 100%);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
@@ -200,7 +229,7 @@
   font-weight: 800;
   font-size: clamp(0.78rem, 0.42vw + 0.72rem, 0.98rem);
   color: var(--text-main);
-  padding: 8px 4px;
+  padding: 4px 4px;
   border-radius: 8px;
   background: rgba(74, 144, 226, 0.1);
   border: 1px solid rgba(74, 144, 226, 0.28);
@@ -464,8 +493,8 @@
 /* ========== Ambulatory section ========== */
 .ambulatory-section {
   width: 100%;
-  margin-top: 10px;
-  padding: clamp(12px, 1.4vw, 18px);
+  margin-top: 2px;
+  padding: 4px 6px;
   border: 1px solid rgba(111, 207, 151, 0.45);
   border-radius: var(--radius);
   background: linear-gradient(165deg, rgba(111, 207, 151, 0.12) 0%, var(--card) 50%, var(--bg) 100%);
@@ -475,8 +504,8 @@
 .ambulatory-section .ambulatory-section-header {
   direction: rtl;
   text-align: center;
-  padding: clamp(10px, 1.1vw, 14px) clamp(14px, 1.5vw, 20px);
-  margin: 0 0 12px 0;
+  padding: 3px 10px;
+  margin: 0 0 4px 0;
   background: linear-gradient(135deg, #4daf6e 0%, var(--success) 48%, #8fdfaa 100%);
   color: #fff;
   border-radius: var(--radius-sm);
@@ -488,12 +517,14 @@
 .ambulatory-section .ambulatory-section-header .header-title {
   margin: 0;
   padding: 0 !important;
-  font-size: clamp(1.05rem, 1.2vw + 0.4rem, 1.35rem) !important;
+  font-size: clamp(0.95rem, 0.75vw + 0.35rem, 1.12rem) !important;
+  line-height: 1.1;
   font-weight: 700;
   color: #fff;
 }
 
 .ambulatory-section .row.card {
+  display: none;
   background: transparent;
   border: none;
   box-shadow: none;
@@ -505,7 +536,7 @@
   justify-content: stretch;
   align-items: stretch;
   gap: var(--gap);
-  margin-top: clamp(10px, 1.5vw, 18px);
+  margin-top: 4px;
   width: 100%;
 }
 
@@ -513,6 +544,73 @@
   flex: 1 1 100%;
   max-width: 100%;
   min-width: min(100%, 280px);
+}
+
+.ambulatory-empty-wrapper {
+  width: 100%;
+}
+
+.ambulatory-room-card--empty {
+  border-style: dashed;
+  border-color: rgba(111, 207, 151, 0.55);
+  box-shadow: none;
+}
+
+.ambulatory-room-card--empty .ambulatory-room-body {
+  padding: 4px 6px;
+}
+
+.ambulatory-room-card--empty .ambulatory-room-split {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.ambulatory-room-card--empty .ambulatory-split-panel {
+  min-width: 0;
+  min-height: 0;
+  padding: 5px 8px;
+  overflow: hidden;
+}
+
+.ambulatory-room-card--empty .ambulatory-split-title {
+  margin-bottom: 4px;
+  padding-bottom: 2px;
+  font-size: 0.82rem;
+}
+
+.ambulatory-room-card--empty .ambulatory-actual-inner {
+  gap: 4px;
+}
+
+.ambulatory-room-card--empty .ambulatory-metrics-embedded {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) minmax(0, 0.8fr);
+  gap: 6px;
+  align-items: center;
+  margin: 0;
+  padding: 0;
+  border-bottom: none;
+}
+
+.ambulatory-room-card--empty .ambulatory-embedded-title,
+.ambulatory-room-card--empty .ambulatory-metrics-embedded .room-duration-info,
+.ambulatory-room-card--empty .ambulatory-metrics-embedded .room-progress-info {
+  margin: 0;
+}
+
+.ambulatory-room-card--empty .duration-display,
+.ambulatory-room-card--empty .progress-display {
+  min-height: 0;
+  padding: 4px 6px;
+  font-size: 0.78rem;
+}
+
+.ambulatory-room-card--empty .ambulatory-panel-empty {
+  width: 100%;
+  margin-top: 0;
+  padding: 6px 8px;
+  font-size: 0.78rem;
+  overflow-wrap: anywhere;
 }
 
 /* כרטיס חדר אמבולטורי: בפועל | טבלת מתוכננים */
@@ -527,13 +625,13 @@
 
 .ambulatory-room-status-title {
   width: 100%;
-  margin-bottom: 8px;
+  margin-bottom: 4px;
 }
 
 /* מדדים מוטמעים בתוך עמודת «בפועל» */
 .ambulatory-metrics-embedded {
-  margin-bottom: 12px;
-  padding-bottom: 12px;
+  margin-bottom: 8px;
+  padding-bottom: 8px;
   border-bottom: 1px solid rgba(111, 207, 151, 0.38);
 }
 
@@ -557,28 +655,28 @@
 }
 
 .ambulatory-room-extra-panel--embedded {
-  margin-top: 10px;
-  padding-top: 8px;
+  margin-top: 6px;
+  padding-top: 6px;
   border-top: 1px solid rgba(111, 207, 151, 0.22);
 }
 
 .ambulatory-room-body {
   flex: 1;
-  min-height: 200px;
-  max-height: min(70vh, 560px);
-  overflow: auto;
-  padding: 12px 14px 14px;
+  min-height: 0;
+  max-height: none;
+  overflow: visible;
+  padding: 8px 10px 10px;
 }
 
 .ambulatory-room-body--no-header {
-  padding-top: 14px;
+  padding-top: 8px;
   border-radius: var(--radius) var(--radius) 0 0;
 }
 
 .ambulatory-room-split {
   display: grid;
   grid-template-columns: minmax(260px, 34%) minmax(320px, 66%);
-  gap: clamp(14px, 2vw, 22px);
+  gap: 10px;
   align-items: stretch;
 }
 
@@ -594,7 +692,7 @@
 
 .ambulatory-split-panel {
   min-height: 100px;
-  padding: 12px 14px 14px;
+  padding: 8px 10px 10px;
   border-radius: var(--radius-sm);
   background: rgba(255, 255, 255, 0.65);
   border: 1px solid rgba(111, 207, 151, 0.42);
@@ -603,8 +701,8 @@
 }
 
 .ambulatory-split-title {
-  margin: 0 0 10px;
-  padding-bottom: 6px;
+  margin: 0 0 6px;
+  padding-bottom: 4px;
   border-bottom: 1px solid rgba(0, 0, 0, 0.06);
   font-size: clamp(0.88rem, 0.45vw + 0.8rem, 1.02rem);
   font-weight: 700;
@@ -640,7 +738,7 @@
 .ambulatory-table-wrap {
   flex: 1;
   width: 100%;
-  overflow-x: auto;
+  overflow: visible;
   border-radius: var(--radius-sm);
   border: 1px solid rgba(74, 144, 226, 0.28);
   background: var(--card);
@@ -648,9 +746,10 @@
 
 .ambulatory-planned-table {
   width: 100%;
+  table-layout: fixed;
   border-collapse: collapse;
-  font-size: clamp(0.8rem, 0.35vw + 0.75rem, 0.95rem);
-  line-height: 1.4;
+  font-size: clamp(0.74rem, 0.28vw + 0.7rem, 0.88rem);
+  line-height: 1.25;
 }
 
 .ambulatory-planned-table thead {
@@ -662,7 +761,7 @@
 }
 
 .ambulatory-planned-table th {
-  padding: 10px 10px;
+  padding: 6px 8px;
   font-weight: 700;
   text-align: right;
   color: var(--text-main);
@@ -670,7 +769,7 @@
 }
 
 .ambulatory-planned-table td {
-  padding: 10px 10px;
+  padding: 6px 8px;
   text-align: right;
   vertical-align: middle;
   border-bottom: 1px solid var(--border);
@@ -692,7 +791,7 @@
 }
 
 .ambulatory-col-time {
-  min-width: 11rem;
+  width: 9.5rem;
 }
 
 .ambulatory-time-cell {
@@ -832,6 +931,15 @@
   line-height: 1.4;
 }
 
+.loader-panel-schedule {
+  margin: 6px 0 0;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--primary);
+  text-align: center;
+  line-height: 1.4;
+}
+
 .refresh-toolbar {
   display: flex;
   justify-content: center;
@@ -854,6 +962,12 @@
 
 .refresh-box:hover {
   filter: brightness(1.06);
+}
+
+.refresh-next-time {
+  font-size: 0.78rem;
+  font-weight: 700;
+  opacity: 0.9;
 }
 
 .pause-btn {
@@ -937,6 +1051,16 @@
   text-align: right;
   flex: 1;
   overflow-y: auto;
+}
+
+.ambulatory-section .room-widget.card.ambulatory-room-card {
+  height: auto;
+  max-height: none;
+  overflow: visible;
+}
+
+.ambulatory-section .room-widget.card.ambulatory-room-card .room-body {
+  overflow: visible;
 }
 
 .regular-section .room-widget.card .room-body--actions {
