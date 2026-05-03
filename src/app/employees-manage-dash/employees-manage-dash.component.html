@@ -204,7 +204,8 @@
                                 </span>
                             </button>
                             <button matTooltip="חיפוש" mat-raised-button type="submit"
-                                class="btn btn-primary btn-raised action-btn primary" (click)="GetEmployeesToUpdate(managerType,false)">
+                                class="btn btn-primary btn-raised action-btn primary"
+                                (click)="GetEmployeesToUpdate(managerType,false)">
                                 <span class="material-icons">
                                     search
                                 </span>
@@ -219,7 +220,7 @@
     </section>
     <section class="table-section">
         <div class="row table-toolbar">
-            <div class="col-10">
+            <div class="col-9">
                 <mat-form-field appearance="outline" class="table-filter-field">
                     <mat-label class="filterClass">מסנן</mat-label>
                     <input matInput (keyup)="applyFilter($event)" placeholder="הקלד מסנן" #input>
@@ -241,83 +242,93 @@
                     </a>
                 </div>
             </div>
+            <!-- <div class="col-1">
+                <div class="example-button-container">
+                    <mat-label>השכלות</mat-label>
+                    <a (click)="GetEmployeesToUpdate(managerType, 'edu')" matTooltip="ייצוא השכלות לאקסל">
+                        <img src="../../assets/images/excel.png" width="50px" alt="Excel File">
+                    </a>
+                </div>
+            </div> -->
         </div>
         <!-- <mat-spinner class="spinner" *ngIf="!loaded"></mat-spinner> -->
         <div class="table-wrapper">
-        <table mat-table *ngIf="loaded" [dataSource]="dataSource" matSort class="mat-elevation-z8 employees-table">
+            <table mat-table *ngIf="loaded" [dataSource]="dataSource" matSort class="mat-elevation-z8 employees-table">
 
-            <ng-container matColumnDef="Image">
-                <th mat-header-cell *matHeaderCellDef mat-sort-header> תמונת פרופיל
-                </th>
-                <td mat-cell *matCellDef="let element" style="justify-content: center;">
-                    <img [src]="element.ProfilePicture" width="60" alt="תמונת עובד"
-                        style="cursor: pointer;border-radius: 50%;" height="60" />
-                    <!-- <img
+                <ng-container matColumnDef="Image">
+                    <th mat-header-cell *matHeaderCellDef mat-sort-header> תמונת פרופיל
+                    </th>
+                    <td mat-cell *matCellDef="let element" style="justify-content: center;">
+                        <img [src]="element.ProfilePicture" width="60" alt="תמונת עובד"
+                            style="cursor: pointer;border-radius: 50%;" height="60" />
+                        <!-- <img
                         [src]="getEmployeeImage(element.EmployeeID) | async"
                         (error)="onImageError($event, element.EmployeeID)" width="60" alt="תמונת עובד"
                         style="cursor: pointer;border-radius: 50%;" height="60" />  -->
-                </td>
-            </ng-container>
+                    </td>
+                </ng-container>
 
-            <ng-container matColumnDef="EmployeeID">
-                <th mat-header-cell *matHeaderCellDef mat-sort-header> תעודת זהות
-                </th>
-                <td mat-cell *matCellDef="let element" style="justify-content: center;"> {{element.EmployeeID}} </td>
-            </ng-container>
+                <ng-container matColumnDef="EmployeeID">
+                    <th mat-header-cell *matHeaderCellDef mat-sort-header> תעודת זהות
+                    </th>
+                    <td mat-cell *matCellDef="let element" style="justify-content: center;"> {{element.EmployeeID}}
+                    </td>
+                </ng-container>
 
-            <ng-container matColumnDef="FirstName">
-                <th mat-header-cell *matHeaderCellDef mat-sort-header> שם פרטי
-                </th>
-                <td mat-cell *matCellDef="let element" style="justify-content: center;"> {{element.FirstName}} </td>
-            </ng-container>
+                <ng-container matColumnDef="FirstName">
+                    <th mat-header-cell *matHeaderCellDef mat-sort-header> שם פרטי
+                    </th>
+                    <td mat-cell *matCellDef="let element" style="justify-content: center;"> {{element.FirstName}} </td>
+                </ng-container>
 
-            <ng-container matColumnDef="LastName">
-                <th mat-header-cell *matHeaderCellDef mat-sort-header> שם משפחה
-                </th>
-                <td mat-cell *matCellDef="let element" style="justify-content: center;"> {{element.LastName}}
-                </td>
-            </ng-container>
+                <ng-container matColumnDef="LastName">
+                    <th mat-header-cell *matHeaderCellDef mat-sort-header> שם משפחה
+                    </th>
+                    <td mat-cell *matCellDef="let element" style="justify-content: center;"> {{element.LastName}}
+                    </td>
+                </ng-container>
 
-            <ng-container matColumnDef="DepartnentDescripton">
-                <th mat-header-cell *matHeaderCellDef mat-sort-header> מחלקה
-                </th>
-                <td mat-cell *matCellDef="let element" style="justify-content: center;">
-                    {{element.DepartnentDescripton}}
-                </td>
-            </ng-container>
+                <ng-container matColumnDef="DepartnentDescripton">
+                    <th mat-header-cell *matHeaderCellDef mat-sort-header> מחלקה
+                    </th>
+                    <td mat-cell *matCellDef="let element" style="justify-content: center;">
+                        {{element.DepartnentDescripton}}
+                    </td>
+                </ng-container>
 
-            <ng-container matColumnDef="SubDepartment">
-                <th mat-header-cell *matHeaderCellDef mat-sort-header> תת מחלקה
-                </th>
-                <td mat-cell *matCellDef="let element" style="justify-content: center;">
-                    {{element.SubDepartment}}
-                </td>
-            </ng-container>
+                <ng-container matColumnDef="SubDepartment">
+                    <th mat-header-cell *matHeaderCellDef mat-sort-header> תת מחלקה
+                    </th>
+                    <td mat-cell *matCellDef="let element" style="justify-content: center;">
+                        {{element.SubDepartment}}
+                    </td>
+                </ng-container>
 
-            <ng-container matColumnDef="FunctionDescription">
-                <th mat-header-cell *matHeaderCellDef mat-sort-header> תפקיד
-                </th>
-                <td mat-cell *matCellDef="let element" style="justify-content: center;"> {{element.FunctionDescription}}
-                </td>
-            </ng-container>
+                <ng-container matColumnDef="FunctionDescription">
+                    <th mat-header-cell *matHeaderCellDef mat-sort-header> תפקיד
+                    </th>
+                    <td mat-cell *matCellDef="let element" style="justify-content: center;">
+                        {{element.FunctionDescription}}
+                    </td>
+                </ng-container>
 
-            <ng-container matColumnDef="CellNumber">
-                <th mat-header-cell *matHeaderCellDef mat-sort-header> טלפון נייד
-                </th>
-                <td mat-cell *matCellDef="let element" style="justify-content: center;"> {{element.CellNumber}}</td>
-            </ng-container>
+                <ng-container matColumnDef="CellNumber">
+                    <th mat-header-cell *matHeaderCellDef mat-sort-header> טלפון נייד
+                    </th>
+                    <td mat-cell *matCellDef="let element" style="justify-content: center;"> {{element.CellNumber}}</td>
+                </ng-container>
 
-            <ng-container matColumnDef="Email">
-                <th mat-header-cell *matHeaderCellDef mat-sort-header> מייל
-                </th>
-                <td mat-cell *matCellDef="let element" style="justify-content: center;"> {{element.Email}}</td>
-            </ng-container>
+                <ng-container matColumnDef="Email">
+                    <th mat-header-cell *matHeaderCellDef mat-sort-header> מייל
+                    </th>
+                    <td mat-cell *matCellDef="let element" style="justify-content: center;"> {{element.Email}}</td>
+                </ng-container>
 
-            <tr mat-header-row *matHeaderRowDef="displayedColumns" class="table-header-row"></tr>
-            <tr mat-row *matRowDef="let row; let even=even; columns: displayedColumns;" class="table-row"
-                (click)="addUpdateEmployee(row)">
-            </tr>
-        </table>
+                <tr mat-header-row *matHeaderRowDef="displayedColumns" class="table-header-row"></tr>
+                <tr mat-row *matRowDef="let row; let even=even; columns: displayedColumns;" class="table-row"
+                    (click)="addUpdateEmployee(row)">
+                </tr>
+            </table>
         </div>
         <!-- <button type="button" id="rolesDetailsBtn" mat-fab color="primary" matTooltip="הוספת עובד חדש"
             (click)="addUpdateEmployee(employee)"><i class="material-icons">add</i></button> -->
@@ -444,6 +455,22 @@
             <td> {{emp.StatusRow}} </td>
             <td> {{emp.ApprovedToBlossom}} </td>
             <td> {{emp.AcceptTerms}} </td>
+        </tr>
+    </table>
+    <table id="education-excel-table" dir="rtl" style="display: none;">
+        <tr>
+            <th>מזהה</th>
+            <th>תעודת זהות</th>
+            <th>שם פרטי</th>
+            <th>שם משפחה</th>
+            <th>השכלה</th>
+        </tr>
+        <tr *ngFor="let emp of educationdataSourceExcel.filteredData">
+            <td> {{emp.Employee.RowID}} </td>
+            <td> {{emp.Employee.EmployeeID}} </td>
+            <td> {{emp.Employee.FirstName}} </td>
+            <td> {{emp.Employee.LastName}} </td>
+            <td> {{emp.Educations.EducationDescription}} </td>
         </tr>
     </table>
 </div>

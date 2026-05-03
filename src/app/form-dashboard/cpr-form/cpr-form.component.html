@@ -328,6 +328,42 @@
             </div>
             <div class="row clearfix">
                 <div class="col-md-12 column">
+                    <p class="text-center"><b>רשום את מינון התרופה והשעה מדויקת של מתן התרופה!</b></p>
+                    <table class="table table-bordered table-hover" id="tab_logic">
+                        <thead>
+                            <tr>
+                                <th class="text-center">
+                                    התרופה (מינון)
+                                </th>
+                                <th class="text-center" *ngFor="let time of secondTablecolumns">
+                                    {{time}}
+                                    <!-- <input type="time" name='time2[]' placeholder='שעה' class="form-control" /> -->
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody formArrayName="thirdTableArray">
+                            <tr *ngFor="let action of secondTableMeds; let i = index" class="text-center"
+                                [formGroupName]="i">
+                                <!-- <td *ngIf="action != ''">{{action}}</td> -->
+                                <td><input type="text" formControlName="title" style="font-size: 12px;"
+                                        value="{{action}}" class="form-control" />
+                                </td>
+                                <td *ngFor="let time of secondTablecolumns; let j = index" formArrayName="subArray">
+                                    <div class="row" [formGroupName]="j">
+                                        <input type="text" formControlName="textMed" style="width: 50%;"
+                                            class="form-control" />
+                                        <input formControlName="timeMed" jpTimeMask [useUtc]="true" dir="ltr"
+                                            style="align-self: center;text-align: center;width: 50%;"
+                                            class="form-control" />
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="row clearfix">
+                <div class="col-md-12 column">
                     <table class="table table-bordered table-hover" id="tab_logic" formArrayName="actionsTableArray">
                         <thead>
                             <tr>
@@ -375,42 +411,6 @@
                                     <input formControlName="actiontime" jpTimeMask [useUtc]="true" dir="ltr"
                                         style="align-self: center;text-align: center;width: 50%;"
                                         class="form-control" />
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-            <div class="row clearfix">
-                <div class="col-md-12 column">
-                    <p class="text-center"><b>רשום את מינון התרופה והשעה מדויקת של מתן התרופה!</b></p>
-                    <table class="table table-bordered table-hover" id="tab_logic">
-                        <thead>
-                            <tr>
-                                <th class="text-center">
-                                    התרופה (מינון)
-                                </th>
-                                <th class="text-center" *ngFor="let time of secondTablecolumns">
-                                    {{time}}
-                                    <!-- <input type="time" name='time2[]' placeholder='שעה' class="form-control" /> -->
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody formArrayName="thirdTableArray">
-                            <tr *ngFor="let action of secondTableMeds; let i = index" class="text-center"
-                                [formGroupName]="i">
-                                <!-- <td *ngIf="action != ''">{{action}}</td> -->
-                                <td><input type="text" formControlName="title" style="font-size: 12px;"
-                                        value="{{action}}" class="form-control" />
-                                </td>
-                                <td *ngFor="let time of secondTablecolumns; let j = index" formArrayName="subArray">
-                                    <div class="row" [formGroupName]="j">
-                                        <input type="text" formControlName="textMed" style="width: 50%;"
-                                            class="form-control" />
-                                        <input formControlName="timeMed" jpTimeMask [useUtc]="true" dir="ltr"
-                                            style="align-self: center;text-align: center;width: 50%;"
-                                            class="form-control" />
-                                    </div>
                                 </td>
                             </tr>
                         </tbody>

@@ -44,6 +44,7 @@ export class EmployeesAddUpdateComponent implements OnInit {
   trainingsDetails: FormGroup;
   educationsDetails: FormGroup;
   EducationsList = [];
+  TrainingsList = [];
   RanksList = [];
   SektorsList = [];
   FunctionsList = [];
@@ -174,6 +175,7 @@ export class EmployeesAddUpdateComponent implements OnInit {
         map(value => this._filter2(value))
       );
     this.getEducationsList();
+    this.getTrainingsList();
   }
 
   private initWorkAutocompletes(): void {
@@ -346,9 +348,20 @@ export class EmployeesAddUpdateComponent implements OnInit {
     this.loadSpecialitiesForRow(rowIndex, educationID);
   }
 
+  onTrainingSubjectChange(rowIndex: number, trainingID: any): void {
+    const row = this.trainings.at(rowIndex) as FormGroup;
+    row.get('TrainingSubject')?.setValue(null);
+  }
+
   getEducationsList() {
     this.http.post(this.Api + "GetEmployeeEducationsList", {}).subscribe((Response) => {
       this.EducationsList = Response["d"];
+    });
+  }
+
+  getTrainingsList() {
+    this.http.post(this.Api + "GetEmployeeTrainingsList", {}).subscribe((Response) => {
+      this.TrainingsList = Response["d"];
     });
   }
 
