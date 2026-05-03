@@ -612,8 +612,8 @@
 </div>
 
 <!-- ================= DEPARTMENT DETAILS MODAL ================= -->
-<div *ngIf="isDepartmentGraphOpen && selectedDepartment" class="department-graph-overlay" [class.dark]="isDark">
-  <div class="department-graph-modal">
+<div *ngIf="isDepartmentGraphOpen && selectedDepartment" class="department-graph-overlay" [class.dark]="isDark" dir="rtl">
+  <div class="department-graph-modal" dir="rtl">
     <div dir="rtl" class="graph-header">
       <h2>{{ departmentGraphTitle }}</h2>
       <button mat-icon-button (click)="closeDepartmentGraph()" class="close-btn">
@@ -626,26 +626,31 @@
       <mat-card class="summary-card">
         <mat-card-content>
           <div class="card-label">הכנסות {{ getOlderYearFromDeptData() }}</div>
-          <div class="card-value">{{ formatNumber(selectedDepartment.Income2024) }} ₪</div>
+          <div class="card-value">{{ formatNumber(getModalOlderIncome()) }} ₪</div>
         </mat-card-content>
       </mat-card>
 
       <mat-card class="summary-card">
         <mat-card-content>
           <div class="card-label">הכנסות {{ getLatestYearFromDeptData() }}</div>
-          <div class="card-value">{{ formatNumber(selectedDepartment.Income2025) }} ₪</div>
+          <div class="card-value">{{ formatNumber(getModalLatestIncome()) }} ₪</div>
         </mat-card-content>
       </mat-card>
 
       <mat-card class="summary-card" 
-                [class.positive]="calculateDifference(selectedDepartment) >= 0"
-                [class.negative]="calculateDifference(selectedDepartment) < 0">
+                [class.positive]="getModalDifference() >= 0"
+                [class.negative]="getModalDifference() < 0">
         <mat-card-content>
           <div class="card-label">הפרש</div>
-          <div class="card-value">{{ formatNumber(calculateDifference(selectedDepartment)) }} ₪</div>
-          <div class="card-percentage">{{ calculatePercentageChange(selectedDepartment) }}</div>
+          <div class="card-value">{{ formatNumber(getModalDifference()) }} ₪</div>
+          <div class="card-percentage">{{ getModalPercentageChange() }}</div>
         </mat-card-content>
       </mat-card>
+    </div>
+
+    <div dir="rtl" class="modal-filter-summary" *ngIf="hasActiveIncomeFilters()">
+      <mat-icon aria-hidden="true">filter_alt</mat-icon>
+      <span>{{ getIncomeFiltersSummary() }}</span>
     </div>
 
     <!-- Catalog Table Section -->
@@ -678,6 +683,95 @@
             color="primary">
             📋 שניהם
           </button>
+          <button mat-stroked-button [class.active]="showCatalogPriceColumn" (click)="toggleCatalogPriceColumn()"
+            color="primary">
+            🧾 מחירון
+          </button>
+          <button mat-stroked-button [class.active]="showModalIncomeFilters" (click)="toggleModalIncomeFilters()"
+            color="primary">
+            <mat-icon>filter_alt</mat-icon>
+            פילטרים
+          </button>
+        </div>
+      </div>
+
+      <div class="modal-filters-panel" *ngIf="showModalIncomeFilters" dir="rtl">
+        <button mat-stroked-button
+                type="button"
+                class="reset-filters-btn modal-reset-filters-btn"
+                [disabled]="!hasActiveIncomeFilters()"
+                (click)="resetIncomeFilters()">
+          <mat-icon>restart_alt</mat-icon>
+          איפוס סינון
+        </button>
+
+        <div class="custom-dropdown filter-dropdown"
+             [class.active]="isUnifiedCategoryOpen"
+             [class.has-value]="selectedUnifiedCategory !== incomeFilterAllValue">
+          <div class="dropdown-trigger"
+               matTooltip="{{ getUnifiedCategoryDisplay() }}"
+               matTooltipPosition="below"
+               (click)="toggleIncomeFilterDropdown('unifiedCategory')">
+            <mat-icon class="dropdown-icon">account_tree</mat-icon>
+            <span class="selected-text">סיווג הכנסה מאוחד : {{ getUnifiedCategoryDisplay() }}</span>
+            <mat-icon class="arrow-icon">{{ isUnifiedCategoryOpen ? 'expand_less' : 'expand_more' }}</mat-icon>
+          </div>
+          <div class="dropdown-panel" *ngIf="isUnifiedCategoryOpen">
+            <div class="options-list">
+              <div class="option-item"
+                   *ngFor="let option of unifiedCategoryOptions"
+                   [class.selected]="selectedUnifiedCategory === option"
+                   (click)="setUnifiedCategoryFilter(option)">
+                {{ option }}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="custom-dropdown filter-dropdown"
+             [class.active]="isOrganizationOpen"
+             [class.has-value]="selectedOrganization !== incomeFilterAllValue">
+          <div class="dropdown-trigger"
+               matTooltip="{{ getOrganizationDisplay() }}"
+               matTooltipPosition="below"
+               (click)="toggleIncomeFilterDropdown('organization')">
+            <mat-icon class="dropdown-icon">business</mat-icon>
+            <span class="selected-text">קרן / מדינה: {{ getOrganizationDisplay() }}</span>
+            <mat-icon class="arrow-icon">{{ isOrganizationOpen ? 'expand_less' : 'expand_more' }}</mat-icon>
+          </div>
+          <div class="dropdown-panel" *ngIf="isOrganizationOpen">
+            <div class="options-list">
+              <div class="option-item"
+                   *ngFor="let option of organizationOptions"
+                   [class.selected]="selectedOrganization === option"
+                   (click)="setOrganizationFilter(option)">
+                {{ option }}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="custom-dropdown filter-dropdown"
+             [class.active]="isIncomeClassificationOpen"
+             [class.has-value]="selectedIncomeClassification !== incomeFilterAllValue">
+          <div class="dropdown-trigger"
+               matTooltip="{{ getIncomeClassificationDisplay() }}"
+               matTooltipPosition="below"
+               (click)="toggleIncomeFilterDropdown('classification')">
+            <mat-icon class="dropdown-icon">category</mat-icon>
+            <span class="selected-text">סיווג הכנסה: {{ getIncomeClassificationDisplay() }}</span>
+            <mat-icon class="arrow-icon">{{ isIncomeClassificationOpen ? 'expand_less' : 'expand_more' }}</mat-icon>
+          </div>
+          <div class="dropdown-panel" *ngIf="isIncomeClassificationOpen">
+            <div class="options-list">
+              <div class="option-item"
+                   *ngFor="let option of incomeClassificationOptions"
+                   [class.selected]="selectedIncomeClassification === option"
+                   (click)="setIncomeClassificationFilter(option)">
+                {{ option }}
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -686,9 +780,9 @@
         <div class="catalog-loading-text">טוען פרטי מחלקה...</div>
       </div>
 
-      <div class="table-wrapper"
+      <div class="table-wrapper" dir="rtl"
         *ngIf="!catalogLoading && detailedDataSource.data && detailedDataSource.data.length > 0">
-        <table mat-table [dataSource]="detailedDataSource" class="catalog-mat-table">
+        <table mat-table [dataSource]="detailedDataSource" class="catalog-mat-table" dir="rtl">
 
           <ng-container matColumnDef="CatalogName2">
             <th mat-header-cell *matHeaderCellDef style="font-weight:bold;text-align:right;">שירות</th>
@@ -778,14 +872,28 @@
               {{ formatNumber(element.Units2025) }}</td>
           </ng-container>
 
+          <ng-container matColumnDef="CatalogUnitPrice">
+            <th mat-header-cell *matHeaderCellDef class="catalog-price-header"
+              (click)="onDetailedTableSort({active: 'CatalogUnitPrice', direction: 'desc'})"
+              matTooltip="מחירון {{ getFullYear(0) }}: עלות {{ getFullYear(0) }} חלקי יחידות {{ getFullYear(0) }}">
+              מחירון
+            </th>
+            <td mat-cell *matCellDef="let element" class="catalog-price-cell">
+              {{ formatCatalogUnitPrice(element) }}
+            </td>
+          </ng-container>
+
           <tr mat-header-row *matHeaderRowDef="displayedCatalogColumns; sticky: true" class="catalog-header-row"></tr>
           <tr mat-row *matRowDef="let row; columns: displayedCatalogColumns;"></tr>
         </table>
       </div>
 
-      <div *ngIf="!catalogLoading && (!detailedDataSource.data || detailedDataSource.data.length === 0)"
-        class="no-data-message">
-        אין נתונים זמינים
+      <div dir="rtl" *ngIf="!catalogLoading && (!detailedDataSource.data || detailedDataSource.data.length === 0)"
+        class="no-data-message catalog-no-data-state">
+        <mat-icon aria-hidden="true">info_outline</mat-icon>
+        <strong>אין נתונים זמינים להצגה</strong>
+        <span *ngIf="hasActiveIncomeFilters()">לא נמצאו שירותים למחלקה לפי הפילטרים שנבחרו.</span>
+        <span *ngIf="!hasActiveIncomeFilters()">לא התקבלו נתוני שירותים למחלקה הזו.</span>
       </div>
     </div>
   </div>
