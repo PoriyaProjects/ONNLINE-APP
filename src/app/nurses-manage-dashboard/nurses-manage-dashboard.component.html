@@ -1,166 +1,165 @@
 <!-- <mat-spinner style="left: 50%;top: 50%;" *ngIf="!nursesUserPermission && !rightPC"></mat-spinner> -->
 <img class="spinning-image" *ngIf="!nursesUserPermission && !rightPC" src="assets/images/infinity.png" />
-<mat-card dir="rtl" *ngIf="nursesUserPermission && rightPC" id="page-toshow"
-    style="background-color: aliceblue;padding-top: 0px;">
-    <h1 class="page-title text-center">מערכת דיווח סיעודית - שם משתמש: {{UserName}}</h1>
-    <div class="container-fluid">
+<mat-card dir="rtl" *ngIf="nursesUserPermission && rightPC" id="page-toshow" class="nmd-page">
+    <header class="nmd-hero">
+        <div class="nmd-hero__glow" aria-hidden="true"></div>
+        <div class="nmd-hero__content">
+            <p class="nmd-hero__eyebrow">מערכת דיווח סיעודית</p>
+            <h1 class="nmd-hero__title page-title text-center">לוח בקרה</h1>
+            <p class="nmd-hero__user">שם משתמש: <strong>{{UserName}}</strong></p>
+        </div>
+    </header>
+
+    <div class="container-fluid nmd-container">
         <div class="row">
             <div class="col-12">
-                <div dir="rtl" class="card w-85-p">
-                    <div dir="rtl" class="card-body">
+                <div dir="rtl" class="card w-85-p nmd-overview">
+                    <div dir="rtl" class="card-body nmd-overview__body">
                         <form class="form">
-                            <div class="row">
-                                <div class="col-3 text-center colForDash">
+                            <div class="row nmd-overview__row">
+                                <div class="col-3 text-center colForDash nmd-stat-panel">
                                     <div class="row text-center">
                                         <div class="col-12 text-center">
-                                            <h3><b>תפוסת</b><br><b>בית החולים</b></h3>
-                                            <h3 style="font-size: 20px;">{{ dateToDisplayString | date: "dd.MM.yyyy"}}
-                                            </h3>
-                                            <hr>
+                                            <h3 class="nmd-stat-panel__title">תפוסת<br>בית החולים</h3>
+                                            <p class="nmd-date-chip">{{ dateToDisplayString | date: "dd.MM.yyyy"}}</p>
+                                            <div class="nmd-rule"></div>
                                         </div>
                                     </div>
-                                    <div class="row">
+                                    <div class="row nmd-metric-head">
                                         <div class="col-4">
-                                            <h5>תפוסה</h5>
+                                            <span class="nmd-metric-label">תפוסה</span>
                                         </div>
                                         <div class="col-4">
-                                            <h5>אחוז</h5>
+                                            <span class="nmd-metric-label">אחוז</span>
                                         </div>
                                         <div class="col-4">
-                                            <h5>מונשמים</h5>
+                                            <span class="nmd-metric-label">מונשמים</span>
                                         </div>
                                     </div>
-                                    <div class="row">
+                                    <div class="row nmd-metric-values">
                                         <div class="col-4 text-center colForDash">
-                                            <h5>{{hospitalBedsInUse}}</h5>
+                                            <span class="nmd-metric-num">{{hospitalBedsInUse}}</span>
                                         </div>
                                         <div class="col-4 text-center colForDash">
-                                            <h5>{{Departmints.total}}%</h5>
+                                            <span class="nmd-metric-num">{{Departmints.total}}%</span>
                                         </div>
                                         <div class="col-4 text-center colForDash">
-                                            <h5>{{resparotriesCount}}</h5>
+                                            <span class="nmd-metric-num">{{resparotriesCount}}</span>
                                         </div>
                                     </div>
                                 </div>
-                                <div class="col-3 text-center colForDash">
-                                    <div class="row">
+                                <div class="col-3 text-center colForDash nmd-stat-panel">
+                                    <div class="row nmd-er-nav">
                                         <div class="col-2 text-center">
-                                            <span class="material-icons" (click)="getEROccupancy('next','er')"
-                                                matTooltip="יום אחרי">
-                                                navigate_next
-                                            </span>
+                                            <button type="button" class="nmd-icon-btn" (click)="getEROccupancy('next','er')"
+                                                matTooltip="יום אחרי" aria-label="יום אחרי">
+                                                <span class="material-icons">navigate_next</span>
+                                            </button>
                                         </div>
                                         <div class="col-8 text-center">
-                                            <h3><b>קבלות מלר"ד</b></h3>
-                                            <h3 style="font-size: 20px;"> סה"כ {{allErOccupancy}} &nbsp;&nbsp; {{newDate
-                                                | date: "dd.MM.yyyy"}}</h3>
-                                            <h3 style="font-size: 20px;"></h3>
+                                            <h3 class="nmd-stat-panel__title">קבלות מלר"ד</h3>
+                                            <p class="nmd-stat-panel__sub">סה"כ {{allErOccupancy}} · {{newDate | date: "dd.MM.yyyy"}}</p>
                                         </div>
                                         <div class="col-2 text-center">
-                                            <span class="material-icons" (click)="getEROccupancy('before','er')"
-                                                matTooltip="יום לפני">
-                                                navigate_before
-                                            </span>
+                                            <button type="button" class="nmd-icon-btn" (click)="getEROccupancy('before','er')"
+                                                matTooltip="יום לפני" aria-label="יום לפני">
+                                                <span class="material-icons">navigate_before</span>
+                                            </button>
                                         </div>
                                     </div>
-                                    <hr>
-                                    <div class="row">
+                                    <div class="nmd-rule"></div>
+                                    <div class="row nmd-metric-head">
                                         <div class="col-4">
-                                            <h5>לילה</h5>
+                                            <span class="nmd-metric-label">לילה</span>
                                         </div>
                                         <div class="col-4">
-                                            <h5>בוקר</h5>
+                                            <span class="nmd-metric-label">בוקר</span>
                                         </div>
                                         <div class="col-4">
-                                            <h5>ערב</h5>
+                                            <span class="nmd-metric-label">ערב</span>
                                         </div>
                                     </div>
-                                    <div class="row">
+                                    <div class="row nmd-metric-values">
                                         <div class="col-4 text-center colForDash" *ngFor="let occ of ER_Occupancy">
-                                            <mat-spinner class="occLoaders" [diameter]="50" style="margin: auto;"
+                                            <mat-spinner class="occLoaders nmd-inline-spinner" [diameter]="44"
                                                 *ngIf="!occLoaded"></mat-spinner>
-                                            <h5 *ngIf="occLoaded">{{occ}}</h5>
+                                            <span class="nmd-metric-num" *ngIf="occLoaded">{{occ}}</span>
                                         </div>
                                     </div>
                                 </div>
-                                <div class="col-3 text-center colForDash">
-                                    <div class="row">
+                                <div class="col-3 text-center colForDash nmd-stat-panel">
+                                    <div class="row nmd-er-nav">
                                         <div class="col-2 text-center">
-                                            <span class="material-icons" (click)="getDeliveryEROccupancy('next')"
-                                                matTooltip="יום אחרי">
-                                                navigate_next
-                                            </span>
+                                            <button type="button" class="nmd-icon-btn" (click)="getDeliveryEROccupancy('next')"
+                                                matTooltip="יום אחרי" aria-label="יום אחרי">
+                                                <span class="material-icons">navigate_next</span>
+                                            </button>
                                         </div>
                                         <div class="col-8 text-center">
-                                            <h3><b>קבלות מ.יולדות</b></h3>
-                                            <h3 style="font-size: 20px;"> סה"כ {{allDeliveryErOccupancy}} &nbsp;&nbsp;
-                                                {{newDate2
-                                                | date: "dd.MM.yyyy"}}</h3>
-                                            <h3 style="font-size: 20px;"></h3>
+                                            <h3 class="nmd-stat-panel__title">קבלות מ.יולדות</h3>
+                                            <p class="nmd-stat-panel__sub">סה"כ {{allDeliveryErOccupancy}} · {{newDate2 | date: "dd.MM.yyyy"}}</p>
                                         </div>
                                         <div class="col-2 text-center">
-                                            <span class="material-icons" (click)="getDeliveryEROccupancy('before')"
-                                                matTooltip="יום לפני">
-                                                navigate_before
-                                            </span>
+                                            <button type="button" class="nmd-icon-btn" (click)="getDeliveryEROccupancy('before')"
+                                                matTooltip="יום לפני" aria-label="יום לפני">
+                                                <span class="material-icons">navigate_before</span>
+                                            </button>
                                         </div>
                                     </div>
-                                    <hr>
-                                    <div class="row">
+                                    <div class="nmd-rule"></div>
+                                    <div class="row nmd-metric-head">
                                         <div class="col-4">
-                                            <h5>לילה</h5>
+                                            <span class="nmd-metric-label">לילה</span>
                                         </div>
                                         <div class="col-4">
-                                            <h5>בוקר</h5>
+                                            <span class="nmd-metric-label">בוקר</span>
                                         </div>
                                         <div class="col-4">
-                                            <h5>ערב</h5>
+                                            <span class="nmd-metric-label">ערב</span>
                                         </div>
                                     </div>
-                                    <div class="row">
+                                    <div class="row nmd-metric-values">
                                         <div class="col-4 text-center colForDash"
                                             *ngFor="let occ of Delivery_ER_Occupancy">
-                                            <mat-spinner class="occLoaders" [diameter]="50" style="margin: auto;"
+                                            <mat-spinner class="occLoaders nmd-inline-spinner" [diameter]="44"
                                                 *ngIf="!deliveryOccLoaded"></mat-spinner>
-                                            <h5 *ngIf="deliveryOccLoaded">{{occ}}</h5>
+                                            <span class="nmd-metric-num" *ngIf="deliveryOccLoaded">{{occ}}</span>
                                         </div>
                                     </div>
                                 </div>
-                                <div class="col-3 text-center colForDash">
+                                <div class="col-3 text-center colForDash nmd-stat-panel nmd-stat-panel--special">
                                     <div class="row text-center">
                                         <div class="col-12 text-center">
-                                            <h3><b>סטטוס מחלקות מיוחדות</b></h3>
-                                            <hr>
+                                            <h3 class="nmd-stat-panel__title">סטטוס מחלקות מיוחדות</h3>
+                                            <div class="nmd-rule"></div>
                                         </div>
-
                                     </div>
-                                    <div class="row mb-1">
+                                    <div class="row mb-1 nmd-special-grid">
                                         <div class="col-6">
-                                            <mat-card class="other-cards pb-4"
+                                            <mat-card class="other-cards nmd-sdept-tile"
                                                 (click)="!onlyDisplay && getOtherDepartmentDetails('DeliveryRoom')">
-                                                <h5 style="margin: -12px;">לאחר לידה</h5>
+                                                <span class="nmd-sdept-tile__label">לאחר לידה</span>
                                             </mat-card>
                                         </div>
                                         <div class="col-6">
-                                            <mat-card class="other-cards pb-4"
+                                            <mat-card class="other-cards nmd-sdept-tile"
                                                 (click)="!onlyDisplay && getOtherDepartmentDetails('SurgeryRoom')">
-                                                <h5 style="margin: -12px;">חדר ניתוח</h5>
+                                                <span class="nmd-sdept-tile__label">חדר ניתוח</span>
                                             </mat-card>
                                         </div>
                                     </div>
-                                    <div class="row">
+                                    <div class="row nmd-special-grid">
                                         <div class="col-6">
-                                            <mat-card class="other-cards pb-4"
+                                            <mat-card class="other-cards nmd-sdept-tile"
                                                 (click)="!onlyDisplay && getOtherDepartmentDetails('ICUDepart')">
-                                                <h5 style="margin: -12px;">מחלקה לרפואה דחופה</h5>
+                                                <span class="nmd-sdept-tile__label">מחלקה לרפואה דחופה</span>
                                             </mat-card>
                                         </div>
                                         <div class="col-6">
-                                            <mat-card class="other-cards pb-4"
+                                            <mat-card class="other-cards nmd-sdept-tile"
+                                                [class.nmd-sdept-tile--alert]="Aran_Color"
                                                 (click)="!onlyDisplay && getOtherDepartmentDetails('Aran')">
-                                                <h5 style="margin: -12px;" *ngIf="!Aran_Color">אר"ן</h5>
-                                                <h5 style="margin: -12px;background-color: red;" *ngIf="Aran_Color">אר"ן
-                                                </h5>
+                                                <span class="nmd-sdept-tile__label">אר"ן</span>
                                             </mat-card>
                                         </div>
                                     </div>
@@ -170,90 +169,90 @@
                     </div>
                 </div>
             </div>
-
-
         </div>
-        <div class="row">
-            <div class="col-4">
-                <ul style="display: flex;margin-bottom: 0px;">
-                    <li><button matTooltip="דווח ניהולי" id="EventBtndisplay" mat-raised-button type="button"
-                            class="btn btn-primary btn-raised" (click)="openReportDialog('administrative')">
+
+        <div class="row align-items-center nmd-toolbar">
+            <div class="col-12 col-lg-4 nmd-toolbar__actions-wrap">
+                <ul class="nmd-action-bar">
+                    <li>
+                        <button matTooltip="דווח ניהולי" id="EventBtndisplay" mat-raised-button type="button"
+                            class="nmd-fab nmd-fab--primary" (click)="openReportDialog('administrative')">
                             <i class="material-icons">assignment_ind</i>
-                        </button></li>
-                    <li><button matTooltipPosition="left" matTooltip="תקלות ותוכנית שוש'ים" id="EventBtndisplay"
-                            mat-raised-button type="button" class="btn btn-raised mr-1" style="background-color: grey;"
+                        </button>
+                    </li>
+                    <li>
+                        <button matTooltipPosition="left" matTooltip="תקלות ותוכנית שוש'ים"
+                            mat-raised-button type="button" class="nmd-fab nmd-fab--muted"
                             (click)="!onlyDisplay && bugReport()">
                             <i class="material-icons">info</i>
-                        </button></li>
-                    <li><button matTooltipPosition="left" matTooltip="יישומים" id="EventBtndisplay" mat-raised-button
-                            type="button" class="btn btn-raised mr-1" style="background-color: goldenrod;"
-                            (click)="otherApps()">
-                            <span class="material-icons">
-                                apps
-                            </span>
-                        </button></li>
-                    <!-- <li><button matTooltip="החלפה לאחות מחלקה" id="EventBtndisplay" *ngIf="UserName == 'jubartal'"
-                            mat-raised-button type="submit" class="btn btn-raised" (click)="test()">
-                            <i class="material-icons">face</i>
-                        </button></li> -->
+                        </button>
+                    </li>
+                    <li>
+                        <button matTooltipPosition="left" matTooltip="יישומים" mat-raised-button
+                            type="button" class="nmd-fab nmd-fab--accent" (click)="otherApps()">
+                            <span class="material-icons">apps</span>
+                        </button>
+                    </li>
                     <li *ngIf="nursesUserPermission && rightPC">
                         <a mat-raised-button matTooltip="ניהול הרשאות אחיות" routerLink="/nps-permissions"
-                            class="btn btn-raised mr-1" style="background-color:#3f51b5;color:#fff;">
+                            class="nmd-fab nmd-fab--indigo">
                             <i class="material-icons">admin_panel_settings</i>
                         </a>
                     </li>
                 </ul>
             </div>
-            <div class="col-4 text-center">
-                <h3 class="labelName" style="margin-top: 5px;">תפוסה סיעודית</h3>
+            <div class="col-12 col-lg-4 text-center nmd-toolbar__title-wrap">
+                <h2 class="nmd-section-title labelName">תפוסה סיעודית</h2>
+                <p class="nmd-section-sub">בחירת מחלקה לדיווח</p>
             </div>
-            <div class="col-4 text-center">
-                <h6 style="font-size: 15px;margin-top: 20px;"> נתונים מעודכנים ל: {{ updateDate | date:
-                    "dd.MM.yyyy"}} -
-                    {{ updateDate | date: "HH:mm"}}</h6>
+            <div class="col-12 col-lg-4 text-center nmd-toolbar__meta-wrap">
+                <div class="nmd-meta-pill">
+                    <span class="material-icons nmd-meta-pill__icon">schedule</span>
+                    <span>נתונים מעודכנים ל: {{ updateDate | date: "dd.MM.yyyy"}} · {{ updateDate | date: "HH:mm"}}</span>
+                </div>
             </div>
         </div>
     </div>
-    <hr id="dashLine">
 
-    <mat-spinner class="loader" *ngIf="!loaded"></mat-spinner>
-    <div class="survey-options">
+    <div class="nmd-section-divider" id="dashLine" role="presentation"></div>
+
+    <mat-spinner class="loader nmd-main-loader" *ngIf="!loaded"></mat-spinner>
+    <div class="survey-options nmd-dept-section">
         <div class="poll-options">
-            <div class="row nurses" style="margin-bottom: 10px;display: flex;">
-                <div class="col-4" *ngFor="let item of all_nursing_departments_array"
-                    style="margin-bottom: 5px;height: 75px;">
+            <div class="row nurses nmd-dept-grid">
+                <div class="col-12 col-sm-6 col-lg-4 nmd-dept-col" *ngFor="let item of all_nursing_departments_array">
                     <mat-card *ngIf="item.Dept_Name"
                         (click)="!onlyDisplay && openDialogToFill(item.Dept_Number,item.Dept_Name,'1')"
-                        style="height: 100%;" class="card dash-cards m-2 p-2 text-center">
-                        <div class="list-style text-center" style="font-size: 23px;color: darkblue;">
-                            <span class="coronaNumber"
-                                *ngIf="item.NumberOfRespirations !== '0' && item.NumberOfRespirations !== null"
-                                style="color: blue;">
-                                מונשמים:
-                                {{item.NumberOfRespirations}}
-                            </span>
-                            <span *ngIf="item.Dept_Name == 'מיון יולדות (חדר לידה)'">מיון יולדות</span><span
-                                *ngIf="item.Dept_Name == 'טפול נמרץ פגים ובילוד בחולה'">טיפול נמרץ פגים</span>
-                            <span
-                                *ngIf="item.Dept_Name != 'מיון יולדות (חדר לידה)' && item.Dept_Name != 'טפול נמרץ פגים ובילוד בחולה'">{{item.Dept_Name}}</span>
-                        </div>
-                        <div class="list-style text-center" style="font-size: 18px;" *ngIf="item.Dept_Name">
-                            <span class="coronaNumber" *ngIf="item.CoronaNumber !== '0'" style="color: red;">מטופלי
-                                קורונה:
-                                {{item.CoronaNumber}}
-                            </span>
-                            סה"כ: {{item.OccupancyPerDepart}}
-                            <span *ngIf="item.Dept_Name != 'מיון יולדות (חדר לידה)'">תפוסה:
-                                {{item.PercentOccupancy}}%
-                            </span>
-                            <span *ngIf="item.Dept_Name != 'מיון יולדות (חדר לידה)'">מיטות:
-                                {{item.DepartmentNumberOfBeds}}
-                            </span>
+                        class="card dash-cards nmd-dept-card text-center">
+                        <div class="nmd-dept-card__accent" aria-hidden="true"></div>
+                        <div class="nmd-dept-card__body">
+                            <div class="nmd-dept-card__name-row">
+                                <span class="nmd-badge nmd-badge--resp"
+                                    *ngIf="item.NumberOfRespirations !== '0' && item.NumberOfRespirations !== null">
+                                    מונשמים {{item.NumberOfRespirations}}
+                                </span>
+                                <span class="nmd-dept-name" *ngIf="item.Dept_Name == 'מיון יולדות (חדר לידה)'">מיון יולדות</span>
+                                <span class="nmd-dept-name" *ngIf="item.Dept_Name == 'טפול נמרץ פגים ובילוד בחולה'">טיפול נמרץ פגים</span>
+                                <span class="nmd-dept-name"
+                                    *ngIf="item.Dept_Name != 'מיון יולדות (חדר לידה)' && item.Dept_Name != 'טפול נמרץ פגים ובילוד בחולה'">{{item.Dept_Name}}</span>
+                            </div>
+                            <div class="nmd-dept-card__stats" *ngIf="item.Dept_Name">
+                                <span class="nmd-badge nmd-badge--covid" *ngIf="item.CoronaNumber !== '0'">
+                                    קורונה {{item.CoronaNumber}}
+                                </span>
+                                <span class="nmd-stat-line">סה"כ <strong>{{item.OccupancyPerDepart}}</strong></span>
+                                <span class="nmd-stat-line" *ngIf="item.Dept_Name != 'מיון יולדות (חדר לידה)'">
+                                    תפוסה <strong>{{item.PercentOccupancy}}%</strong>
+                                </span>
+                                <span class="nmd-stat-line" *ngIf="item.Dept_Name != 'מיון יולדות (חדר לידה)'">
+                                    מיטות <strong>{{item.DepartmentNumberOfBeds}}</strong>
+                                </span>
+                            </div>
                         </div>
                     </mat-card>
                 </div>
             </div>
-            <div class="row" style="justify-content: center;border-style: double;">
+            <!-- <div class="row" style="justify-content: center;border-style: double;">
                 <h3 class="labelName">תפוסה רפואית</h3>
             </div>
             <div class="row medics">
@@ -393,7 +392,8 @@
                         </mat-card>
                     </div>
                 </div>
-            </div>
+            </div> -->
+
             <!-- <div class="row medics">
                 <div class="col-2 mt-2" *ngFor="let item of all_medical_departments_array">
                     <mat-card style="height: 90%;" class="card-med dash-cards text-center">
