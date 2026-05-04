@@ -493,30 +493,30 @@ export class TrainingRequestFormComponent implements OnInit {
             null
           )
         });
-        this.Training_Request_Forms_H.get("Cancel_Request")?.valueChanges.subscribe((isCancelled) => {
-          const reasonControl = this.Training_Request_Forms_H.get("Cancel_Reason");
-          const dateControl = this.Training_Request_Forms_H.get("Cancel_Date");
-          if (isCancelled) {
-            reasonControl?.setValidators([Validators.required, Validators.maxLength(300)]);
-            dateControl?.setValidators([Validators.required]);
-          } else {
-            reasonControl?.setValidators(null);
-            reasonControl?.setValue("");
-            dateControl?.setValidators(null);
-            dateControl?.setValue(null);
-          }
-          reasonControl?.updateValueAndValidity();
-          dateControl?.updateValueAndValidity();
-        });
-        {
-          const initCancel = this.Training_Request_Forms_H.get("Cancel_Request")?.value;
-          if (initCancel) {
-            this.Training_Request_Forms_H.get("Cancel_Reason")?.setValidators([Validators.required, Validators.maxLength(300)]);
-            this.Training_Request_Forms_H.get("Cancel_Date")?.setValidators([Validators.required]);
-            this.Training_Request_Forms_H.get("Cancel_Reason")?.updateValueAndValidity({ emitEvent: false });
-            this.Training_Request_Forms_H.get("Cancel_Date")?.updateValueAndValidity({ emitEvent: false });
-          }
-        }
+        // this.Training_Request_Forms_H.get("Cancel_Request")?.valueChanges.subscribe((isCancelled) => {
+        //   const reasonControl = this.Training_Request_Forms_H.get("Cancel_Reason");
+        //   const dateControl = this.Training_Request_Forms_H.get("Cancel_Date");
+        //   if (isCancelled) {
+        //     reasonControl?.setValidators([Validators.required, Validators.maxLength(300)]);
+        //     dateControl?.setValidators([Validators.required]);
+        //   } else {
+        //     reasonControl?.setValidators(null);
+        //     reasonControl?.setValue("");
+        //     dateControl?.setValidators(null);
+        //     dateControl?.setValue(null);
+        //   }
+        //   reasonControl?.updateValueAndValidity();
+        //   dateControl?.updateValueAndValidity();
+        // });
+        // {
+        //   const initCancel = this.Training_Request_Forms_H.get("Cancel_Request")?.value;
+        //   if (initCancel) {
+        //     this.Training_Request_Forms_H.get("Cancel_Reason")?.setValidators([Validators.required, Validators.maxLength(300)]);
+        //     this.Training_Request_Forms_H.get("Cancel_Date")?.setValidators([Validators.required]);
+        //     this.Training_Request_Forms_H.get("Cancel_Reason")?.updateValueAndValidity({ emitEvent: false });
+        //     this.Training_Request_Forms_H.get("Cancel_Date")?.updateValueAndValidity({ emitEvent: false });
+        //   }
+        // }
         this.Training_Request_Forms_G = this.fb.group({
           Standart_Level: new FormControl(Training_Request_Forms_G?.Standart_Level, null),
           Function_Department: new FormControl(Training_Request_Forms_G?.Function_Department, null),
