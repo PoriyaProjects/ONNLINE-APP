@@ -228,6 +228,9 @@ export class DepartmentIncomeDashboardComponent implements OnInit, OnDestroy {
     isMainDataLoading = false; // Loading for main data table
     isDiagnosesLoading = false; // Loading for diagnoses list
     isChartLoading = false; // Loading for chart data
+    private readonly loaderSpinDurationMs = 1000;
+    private loadingProgressStartedAt: Record<string, number> = {};
+    private loadingProgressRefreshId: ReturnType<typeof setInterval> | null = null;
     selectedViewType: string = "cash";
     showCatalogPriceColumn: boolean = false;
     showModalIncomeFilters: boolean = false;
@@ -363,6 +366,7 @@ export class DepartmentIncomeDashboardComponent implements OnInit, OnDestroy {
 
     ngOnDestroy(): void {
         document.body.classList.remove('department-dashboard-dark');
+        this.stopLoadingProgressTicker();
     }
 
     /**
@@ -374,6 +378,7 @@ export class DepartmentIncomeDashboardComponent implements OnInit, OnDestroy {
 
         this.isDataLoaded = false;
         this.isMainDataLoading = true;
+        this.startLoadingProgress("main");
         this.incomeReportAsOfLabel = null;
         this.incomeReportAsOfFetchDone = false;
         this.referencePeriodFromYearlyIncome = false;
@@ -438,6 +443,7 @@ export class DepartmentIncomeDashboardComponent implements OnInit, OnDestroy {
         // console.log("Event:", event);
         // Show loading indicator when switching departments
         this.isMainDataLoading = true;
+        this.startLoadingProgress("main");
         this.isDataLoaded = false;
         this.loadDepartmentIncomeByDiagnosis();
     }
@@ -449,6 +455,7 @@ export class DepartmentIncomeDashboardComponent implements OnInit, OnDestroy {
         // );
         this.isDataLoaded = false;
         this.isMainDataLoading = true;
+        this.startLoadingProgress("main");
         this.incomeReportAsOfLabel = null;
         this.incomeReportAsOfFetchDone = false;
         this.referencePeriodFromYearlyIncome = false;
@@ -538,6 +545,7 @@ export class DepartmentIncomeDashboardComponent implements OnInit, OnDestroy {
      */
     loadDiagnosesList(): void {
         this.isDiagnosesLoading = true;
+        this.startLoadingProgress("diagnoses");
         this.http.post(environment.url + "GetUniqueDiagnoses", {}).subscribe(
             (response: any) => {
                 if (response && response.d) {
@@ -634,6 +642,7 @@ export class DepartmentIncomeDashboardComponent implements OnInit, OnDestroy {
         // console.log("departmentIncomeData:", this.departmentIncomeData);
 
         this.isChartLoading = true;
+        this.startLoadingProgress("chart");
 
         if (
             !this.departmentIncomeData ||
@@ -726,6 +735,7 @@ export class DepartmentIncomeDashboardComponent implements OnInit, OnDestroy {
 
       this.selectedDiagnosis = targetDept;
       this.isMainDataLoading = true;
+      this.startLoadingProgress("main");
       this.isDataLoaded = false;
       this.loadDepartmentIncomeByDiagnosis();
   }
@@ -875,6 +885,7 @@ export class DepartmentIncomeDashboardComponent implements OnInit, OnDestroy {
      */
     loadBossDashboard(): void {
         this.isLoading = true;
+        this.startLoadingProgress("boss");
         this.showBossDashboard = true;
 
         this.http.post(environment.url + "GetYearlyTotalIncome", {}).subscribe(
@@ -977,6 +988,7 @@ export class DepartmentIncomeDashboardComponent implements OnInit, OnDestroy {
      */
     loadDetailedDepartmentData(departmentName: string, resetView: boolean = true): void {
         this.catalogLoading = true;
+        this.startLoadingProgress("catalog");
         this.http
             .post(environment.url + "GetDepartmentDetailedData", {
                 departmentName: departmentName,
@@ -1118,7 +1130,72 @@ export class DepartmentIncomeDashboardComponent implements OnInit, OnDestroy {
         this.cdr.detectChanges();
     }
 
-    isDashboardLoading(): boolean {
+    getMainDataLoadingProgress(): number {
+        return this.getAnimatedLoadingProgress("main");
+    }
+
+    getChartLoadingProgress(): number {
+        return this.isMainDataLoading
+            ? this.getMainDataLoadingProgress()
+            : this.getAnimatedLoadingProgress("chart");
+    }
+
+    getCatalogLoadingProgress(): number {
+        return this.getAnimatedLoadingProgress("catalog");
+    }
+
+    getBossLoadingProgress(): number {
+        return this.getAnimatedLoadingProgress("boss");
+    }
+
+    getDiagnosesLoadingProgress(): number {
+        return this.getAnimatedLoadingProgress("diagnoses");
+    }
+
+    getLoadingRingBackground(progress: number): string {
+        return `conic-gradient(from -90deg, #2563eb 0 ${progress}%, rgba(148, 163, 184, 0.24) ${progress}% 100%)`;
+    }
+
+    private startLoadingProgress(key: string): void {
+        this.loadingProgressStartedAt[key] = Date.now();
+        this.ensureLoadingProgressTicker();
+    }
+
+    private getAnimatedLoadingProgress(key: string): number {
+        if (!this.loadingProgressStartedAt[key]) {
+            this.startLoadingProgress(key);
+        }
+
+        const elapsed = Date.now() - this.loadingProgressStartedAt[key];
+        return Math.min(99, Math.floor((elapsed / this.loaderSpinDurationMs) * 100));
+    }
+
+    private ensureLoadingProgressTicker(): void {
+        if (this.loadingProgressRefreshId) {
+            return;
+        }
+
+        this.loadingProgressRefreshId = setInterval(() => {
+            if (this.hasActiveLoadingIndicator()) {
+                this.cdr.detectChanges();
+                return;
+            }
+
+            this.loadingProgressStartedAt = {};
+            this.stopLoadingProgressTicker();
+        }, 80);
+    }
+
+    private stopLoadingProgressTicker(): void {
+        if (!this.loadingProgressRefreshId) {
+            return;
+        }
+
+        clearInterval(this.loadingProgressRefreshId);
+        this.loadingProgressRefreshId = null;
+    }
+
+    private hasActiveLoadingIndicator(): boolean {
         return (
             this.isLoading ||
             this.isMainDataLoading ||
@@ -1126,68 +1203,6 @@ export class DepartmentIncomeDashboardComponent implements OnInit, OnDestroy {
             this.catalogLoading ||
             this.isChartLoading
         );
-    }
-
-    getLoadingProgress(): number {
-        if (this.catalogLoading) {
-            return 72;
-        }
-        if (this.isChartLoading && !this.isMainDataLoading) {
-            return 88;
-        }
-        if (this.isMainDataLoading) {
-            return 58;
-        }
-        if (this.isLoading) {
-            return 64;
-        }
-        if (this.isDiagnosesLoading) {
-            return 28;
-        }
-        return 100;
-    }
-
-    getLoadingTitle(): string {
-        if (this.catalogLoading) {
-            return "טוען פרטי מחלקה";
-        }
-        if (this.isChartLoading && !this.isMainDataLoading) {
-            return "בונה גרף הכנסות";
-        }
-        if (this.isMainDataLoading) {
-            return "מעדכן נתוני הכנסות";
-        }
-        if (this.isLoading) {
-            return "מכין דוח למנהל";
-        }
-        if (this.isDiagnosesLoading) {
-            return "טוען רשימת אגפים";
-        }
-        return "מסיים טעינה";
-    }
-
-    getLoadingSubtitle(): string {
-        if (this.catalogLoading) {
-            return "מחשב שירותים, יחידות ומחירון למחלקה שנבחרה.";
-        }
-        if (this.isChartLoading && !this.isMainDataLoading) {
-            return "מסדר את הנתונים לתצוגה גרפית ברורה.";
-        }
-        if (this.isMainDataLoading) {
-            return "מקבל נתונים מהשרת ומפעיל את הפילטרים שנבחרו.";
-        }
-        if (this.isLoading) {
-            return "מרכז סיכומים, מגמות והשוואות מנהלים.";
-        }
-        if (this.isDiagnosesLoading) {
-            return "מכין את רשימת המחלקות והאגפים לבחירה.";
-        }
-        return "עוד רגע הדשבורד מוכן.";
-    }
-
-    getLoadingRingBackground(): string {
-        const progress = this.getLoadingProgress();
-        return `conic-gradient(#3b82f6 0 ${progress}%, rgba(148, 163, 184, 0.22) ${progress}% 100%)`;
     }
 
     private updateDisplayedCatalogColumns(): void {
