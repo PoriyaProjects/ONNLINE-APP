@@ -93,7 +93,7 @@
                     <button type="button" class="signature-banner-close"
                       (click)="dismissNextReadyBanner(room.roomId, $event)"
                       aria-label="סגור הודעת מוכן לניתוח">✕</button>
-                    <span class="next-ready-banner-text">🟢 המטופל הבא מוכן לניתוח</span>
+                    <!-- <span class="next-ready-banner-text">🟢 המטופל הבא מוכן לניתוח</span> -->
                   </div>
                 </div>
 
@@ -465,9 +465,9 @@
                         <div class="ambulatory-actual-inner">
                           <div class="ambulatory-metrics-embedded">
                             <ng-container *ngIf="nextPlannedSurgery(room) as nps">
-                              <div *ngIf="nps.NextPatientReadyGreen" class="next-ready-chip ready">
+                              <!-- <div *ngIf="nps.NextPatientReadyGreen" class="next-ready-chip ready">
                                 🟢 המטופל הבא מוכן לניתוח
-                              </div>
+                              </div> -->
                               <div *ngIf="!nps.NextPatientReadyGreen && nps.MissingSignaturesText"
                                 class="next-ready-chip warn" [attr.title]="nps.MissingSignaturesText">
                                 ⚠️ חסרה חתימה: {{ nps.MissingSignaturesText }}
