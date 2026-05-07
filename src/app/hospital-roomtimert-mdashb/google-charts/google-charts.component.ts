@@ -234,6 +234,7 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
         : null;
 
     roomsData: RoomData[] = [];
+    private pendingRoomsData: RoomData[] | null = null;
     openRoom: string | null = null;
     
     // מיפוי של חדרים לפי CalendarRoomsArea - נשמר ממידע על החדרים עצמם
@@ -296,6 +297,61 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
         return result;
     }
 
+    private roomsDataCacheKey(): string {
+        const dateKey = this.selectedDate || new Date().toISOString().split("T")[0];
+        return `${this.ROOMS_DATA_CACHE_KEY_PREFIX}:${dateKey}`;
+    }
+
+    private hasRoomsData(rooms: RoomData[] | null | undefined): boolean {
+        return Array.isArray(rooms) && rooms.some((room) => room.surgeries?.length);
+    }
+
+    private reviveCachedRoomsData(rawRooms: unknown): RoomData[] {
+        if (!Array.isArray(rawRooms)) return [];
+        return rawRooms.map((room: any) => ({
+            ...room,
+            surgeries: Array.isArray(room?.surgeries)
+                ? room.surgeries.map((s: any) => ({
+                      ...s,
+                      _displayStart: s?._displayStart ? new Date(s._displayStart) : undefined,
+                      _displayEnd: s?._displayEnd ? new Date(s._displayEnd) : undefined,
+                  }))
+                : [],
+        }));
+    }
+
+    private restoreRoomsDataFromLocalState(): boolean {
+        try {
+            const raw = localStorage.getItem(this.roomsDataCacheKey());
+            if (!raw) return false;
+            const parsed = JSON.parse(raw);
+            const rooms = this.reviveCachedRoomsData(parsed?.roomsData);
+            if (!this.hasRoomsData(rooms)) return false;
+
+            this.roomsData = rooms;
+            this.calendarEnriched = true;
+            const loadedAt = parsed?.loadedAt ? new Date(parsed.loadedAt) : null;
+            this.lastLoaded =
+                loadedAt && !Number.isNaN(loadedAt.getTime()) ? loadedAt : this.lastLoaded;
+            return true;
+        } catch {
+            return false;
+        }
+    }
+
+    private saveRoomsDataToLocalState(rooms: RoomData[], loadedAt: Date): void {
+        if (!this.hasRoomsData(rooms)) return;
+        try {
+            localStorage.setItem(
+                this.roomsDataCacheKey(),
+                JSON.stringify({
+                    loadedAt: loadedAt.toISOString(),
+                    roomsData: rooms,
+                })
+            );
+        } catch {}
+    }
+
     displayPreset: DisplayPreset = "default";
     settings: DisplaySettings = { ...DEFAULT_SETTINGS };
     showDisplayPanel = false;
@@ -307,6 +363,7 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
     autoRefreshPaused = false;
     lastLoaded: Date | null = null;
     private readonly AUTO_REFRESH_INTERVAL_MINUTES = 10;
+    private readonly ROOMS_DATA_CACHE_KEY_PREFIX = "rtmdashb.roomsData";
     /** true אחרי שהסתיים שלב 2 (לוח הניתוחים) – כדי להציג ניתוחים מתוכננים רק כשהמידע הסופי מוכן */
     calendarEnriched = false;
 
@@ -427,7 +484,7 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
     ngOnInit(): void {
         this.userId = (localStorage.getItem("ID") || "").trim() || null;
         this.initDisplaySettings();
-        this.lastLoaded = new Date();
+        this.restoreRoomsDataFromLocalState();
         this.legendMinimized =
             localStorage.getItem("legendMinimized") === "true";
         this.deptColors.setPalette(
@@ -698,11 +755,11 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
     }
 
     loadRoomsData(): void {
-        this.lastLoaded = new Date();
+        if (!this.hasRoomsData(this.roomsData)) {
+            this.restoreRoomsDataFromLocalState();
+        }
         this.isLoading = true;
         this.startLoadProgressAnimation();
-        // לפני טעינה מחדש – עד שהעשרת הלוח תסתיים, לא נציג ניתוחים מתוכננים כדי למנוע "קפיצות" מידע
-        this.calendarEnriched = false;
 
         // שלב 1: טעינת ניתוחים ומיפוי חדרים בלבד (בלי לוח) – כדי שלא ייכשל ויישארו סטטוס + אמבולטורי
         forkJoin({
@@ -930,7 +987,7 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
                     return list;
                 }
 
-                this.roomsData = Object.keys(grouped).map((roomId) => {
+                const nextRoomsData = Object.keys(grouped).map((roomId) => {
                     const list = grouped[roomId];
                     const roomDate = list.length
                         ? list[0].surgeryDate || this.selectedDate
@@ -939,9 +996,46 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
                     const sorted = sortByPredicted(list, roomDate);
                     return { roomId, surgeries: sorted, date: roomDate };
                 });
+                this.pendingRoomsData = nextRoomsData;
 
-                this.endLoading();
-                this.cdr.detectChanges();
+                const publishNextRoomsData = () => {
+                    const hasDisplayedData = this.roomsData.some(
+                        (room) => room.surgeries?.length
+                    );
+                    const hasFreshData = this.pendingRoomsData?.some(
+                        (room) => room.surgeries?.length
+                    ) === true;
+
+                    if (!hasFreshData && hasDisplayedData) {
+                        this.pendingRoomsData = null;
+                        this.endLoading();
+                        this.cdr.detectChanges();
+                        return;
+                    }
+
+                    this.stopLoadProgressAnimation();
+                    if (this.loadOverlayHideTimer) {
+                        clearTimeout(this.loadOverlayHideTimer);
+                        this.loadOverlayHideTimer = null;
+                    }
+                    this.loadProgressPercent = 100;
+                    this.cdr.markForCheck();
+                    this.loadOverlayHideTimer = setTimeout(() => {
+                        this.loadOverlayHideTimer = null;
+                        const next = this.pendingRoomsData;
+                        this.pendingRoomsData = null;
+                        if (next) {
+                            this.roomsData = next;
+                        }
+                        this.calendarEnriched = true;
+                        const loadedAt = new Date();
+                        this.lastLoaded = loadedAt;
+                        this.saveRoomsDataToLocalState(this.roomsData, loadedAt);
+                        this.isLoading = false;
+                        this.loadProgressPercent = 0;
+                        this.cdr.detectChanges();
+                    }, 240);
+                };
 
                 // שלב 2 הישן השתמש ב-GetSurgeriesBySurgeryRoomCode – עכשיו נבטל את הקריאה ונחזיר רשימות ריקות
                 const dateForCalendar = this.selectedDate || new Date().toISOString().split("T")[0];
@@ -994,13 +1088,14 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
 
                     const keyCount = Object.keys(calendarByKey).length;
                     if (keyCount === 0) {
+                        publishNextRoomsData();
                         return;
                     }
 
                     const normId = (id: string | number | null | undefined) => (id != null && id !== "" ? String(id).replace(/^0+/, "") || String(id) : "");
                     // יצירת סט של כל המפתחות שכבר נמצאו ב-roomsData
                     const foundKeys = new Set<string>();
-                    for (const room of this.roomsData) {
+                    for (const room of nextRoomsData) {
                         for (const s of room.surgeries) {
                             const sAny = s as any;
                             const sid = String(s.SurgeryID ?? sAny.surgeryID ?? "").trim();
@@ -1149,7 +1244,7 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
                         // 1) נסה לשבץ לפי החדר המדויק מהלוח (SurgeryRoom)
                         let targetRoom: RoomData | null =
                             roomIdFromCalendar
-                                ? this.roomsData.find((r) => r.roomId === roomIdFromCalendar) || null
+                                ? nextRoomsData.find((r) => r.roomId === roomIdFromCalendar) || null
                                 : null;
                         
                         // אם החדר לא קיים עדיין ב-roomsData אבל מוכר לנו מהמיפוי (GetSurgeryRooms),
@@ -1162,7 +1257,7 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
                                 date: roomDate,
                                 surgeries: [],
                             };
-                            this.roomsData.push(targetRoom);
+                            nextRoomsData.push(targetRoom);
                             // לעדכון עתידי – נשמור גם את ה-CalendarRoomsArea אם עדיין לא נשמר
                             if (!this.roomCalendarAreaMap.has(roomIdFromCalendar)) {
                                 this.roomCalendarAreaMap.set(roomIdFromCalendar, mappedArea);
@@ -1171,7 +1266,7 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
                         
                         // 2) אם אין SurgeryRoom, ננסה לפי CalendarRoomsArea (fallback)
                         if (!targetRoom) {
-                            for (const room of this.roomsData) {
+                            for (const room of nextRoomsData) {
                                 const roomArea = this.roomCalendarAreaMap.get(room.roomId);
                                 if (roomArea === calendarArea) {
                                     targetRoom = room;
@@ -1182,7 +1277,7 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
                         
                         // 3) אם עדיין לא נמצא – ננסה לפי RequestedDepartment (עוד fallback)
                         if (!targetRoom && requestedDept) {
-                            for (const room of this.roomsData) {
+                            for (const room of nextRoomsData) {
                                 if (room.surgeries.some(s => s.DepartName === requestedDept || s.department === requestedDept)) {
                                     targetRoom = room;
                                     break;
@@ -1193,10 +1288,10 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
                         // 4) ואם גם זה לא עבד – fallback גס לפי סוג חדר (לא אידיאלי, אבל עדיף מכלום)
                         if (!targetRoom) {
                             if (calendarArea === "חדר ניתוח כללי") {
-                                targetRoom = this.roomsData.find(r => this.isRegularOperatingRoom(r.roomId)) || null;
+                                targetRoom = nextRoomsData.find(r => this.isRegularOperatingRoom(r.roomId)) || null;
                             } else {
                                 targetRoom =
-                                    this.roomsData.find((r) =>
+                                    nextRoomsData.find((r) =>
                                         r.surgeries?.some((s) =>
                                             this.isAmbulatoryBySurgeryRoomName(
                                                 s.SurgeryRoomName
@@ -1375,7 +1470,7 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
                     }
                     
                     // דה-דופליקציה של ניתוחים בכל חדר (במקרה שנכנסה גם רשומת RealTime וגם רשומת לוח)
-                    for (const room of this.roomsData) {
+                    for (const room of nextRoomsData) {
                         if (!room.surgeries?.length) continue;
                         const byKey = new Map<string, Surgery>();
                         const normId = (v: any) =>
@@ -1418,12 +1513,14 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
                         );
                         room.surgeries = sortByPredicted(merged, roomDate);
                     }
-                    // העשרת הלוח הושלמה – עכשיו אפשר להציג את הניתוחים המתוכננים/המשוערים
-                    this.calendarEnriched = true;
-                    this.cdr.detectChanges();
+                    // העשרת הלוח הושלמה – מחליפים את הלוח הקיים בפעימה אחת בלבד
+                    publishNextRoomsData();
+                }, (_) => {
+                    publishNextRoomsData();
                 });
             },
             (_) => {
+                this.pendingRoomsData = null;
                 this.endLoading();
             }
         );
@@ -2047,7 +2144,6 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
         if (!this.autoRefreshPaused) {
             this.scheduleNextRoundedRefresh();
         }
-        this.lastLoaded = new Date();
     }
 
     isSignatureBannerDismissed(roomId: string): boolean {
@@ -2159,6 +2255,7 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
             this.clearIntervals();
         }
 
+        this.restoreRoomsDataFromLocalState();
         this.loadRoomsData();
     }
 
