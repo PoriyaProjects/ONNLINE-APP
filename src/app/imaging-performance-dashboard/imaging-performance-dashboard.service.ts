@@ -114,7 +114,7 @@ function extractDetailRawRows(raw: unknown): Record<string, unknown>[] {
     .filter((item): item is Record<string, unknown> =>
       item != null && typeof item === 'object' && !Array.isArray(item))
     .map(item => ({ ...item }));
-}
+} 
 
 function strVal(v: unknown): string | undefined {
   if (v == null) {
