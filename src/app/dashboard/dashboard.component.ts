@@ -56,6 +56,21 @@ export class DashboardComponent implements OnInit {
     // Track selected tab index
     selectedTabIndex: number | null = 0;
 
+    /** Inline shortcuts next to "פרופיל" (hash URLs match HashLocationStrategy). */
+    profileShortcuts: { href: string; image: string; label: string }[] = [
+        {
+            href: "#/namer-user-actions",
+            image:
+                "https://www.shutterstock.com/image-vector/3d-password-reset-illustration-update-260nw-2352584217.jpg",
+            label: "איפוס ססימה לנמר",
+        },
+        {
+            href: "#/windows-user-actions",
+            image:
+                "https://www.reneelab.com/uploadimg/en/2023/7/2023-07-27-16_29_57_2471f443225b429390ed5c8e96b116e5.png",
+            label: "איפוס סיסמה לוינדוס",
+        },
+    ];
 
     constructor(
         private router: Router,

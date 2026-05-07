@@ -1,5 +1,5 @@
 import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { forkJoin, Observable, of } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
@@ -31,6 +31,20 @@ type ExistingSelection = {
   unitCodes: Set<string>;
 };
 
+export type DepartmentMappingOverviewRow = {
+  DepartnentCode: string;
+  DepartnentDescripton: string;
+  Unit: string;
+  UnitName: string;
+};
+
+export type ProfileMappingOverviewRow = {
+  FunctionID: string;
+  FunctionDescription: string;
+  Profile_Code: string;
+  Profile_Name: string;
+};
+
 @Component({
   selector: 'app-profile-dept-association',
   templateUrl: './profile-dept-association.component.html',
@@ -46,6 +60,11 @@ export class ProfileDeptAssociationComponent implements OnInit {
   private readonly urlSaveProfileMappings = 'SaveProfileMappings';
   private readonly urlGetDeptMappings = 'GetDepartmentUnitMappings';
   private readonly urlGetProfileMappings = 'GetProfileMappings';
+  private readonly urlGetMappingsOverview = 'GetMappingsOverview';
+
+  private static readonly jsonUtf8Headers = new HttpHeaders({
+    'Content-Type': 'application/json; charset=utf-8'
+  });
 
   mode: ScreenMode = 'departments';
 
@@ -70,6 +89,13 @@ export class ProfileDeptAssociationComponent implements OnInit {
   private pickerKeyField: 'Name' | 'Profile_Name' = 'Name';
   private selectedDepartment: DepartmentRow | null = null;
   private selectedFunction: FunctionRow | null = null;
+
+  overviewOpen = false;
+  overviewLoading = false;
+  overviewError: string | null = null;
+  overviewSearch = '';
+  overviewDepartmentMappings: DepartmentMappingOverviewRow[] = [];
+  overviewProfileMappings: ProfileMappingOverviewRow[] = [];
 
   /** Matches backend audit field on SaveDepartmentUnitMappings / optional on other saves */
   private updatedBy(): string {
@@ -96,9 +122,146 @@ export class ProfileDeptAssociationComponent implements OnInit {
       return;
     }
     this.closePicker();
+    this.closeOverviewMappings();
     this.mode = next;
     this.mainError = null;
     this.loadMainList();
+  }
+
+  openOverviewMappings(): void {
+    this.closePicker();
+    this.overviewOpen = true;
+    this.overviewError = null;
+    this.overviewSearch = '';
+    this.overviewDepartmentMappings = [];
+    this.overviewProfileMappings = [];
+    this.loadOverviewMappings();
+  }
+
+  closeOverviewMappings(): void {
+    this.overviewOpen = false;
+    this.overviewLoading = false;
+    this.overviewError = null;
+    this.overviewSearch = '';
+    this.overviewDepartmentMappings = [];
+    this.overviewProfileMappings = [];
+  }
+
+  private loadOverviewMappings(): void {
+    this.overviewLoading = true;
+    this.cdr.markForCheck();
+    this.http
+      .post(
+        environment.url + this.urlGetMappingsOverview,
+        {},
+        { headers: ProfileDeptAssociationComponent.jsonUtf8Headers }
+      )
+      .pipe(
+        map((r) => this.unwrapServiceResponse(r)),
+        catchError((e) => {
+          console.error(e);
+          this.overviewError = 'שגיאה בטעינת סיכום השיוכים';
+          return of(null);
+        })
+      )
+      .subscribe((data) => {
+        this.overviewLoading = false;
+        if (data == null) {
+          this.cdr.markForCheck();
+          return;
+        }
+        const parsed = this.parseMappingsOverview(data);
+        this.overviewDepartmentMappings = parsed.departmentMappings;
+        this.overviewProfileMappings = parsed.profileMappings;
+        this.cdr.markForCheck();
+      });
+  }
+
+  private parseMappingsOverview(raw: any): {
+    departmentMappings: DepartmentMappingOverviewRow[];
+    profileMappings: ProfileMappingOverviewRow[];
+  } {
+    let base = raw;
+    if (typeof base === 'string') {
+      try {
+        base = JSON.parse(base);
+      } catch {
+        return { departmentMappings: [], profileMappings: [] };
+      }
+    }
+    const obj =
+      base && typeof base === 'object' && !Array.isArray(base)
+        ? base
+        : {};
+    const deptSrc =
+      obj.DepartmentMappings ?? obj.departmentMappings ?? [];
+    const profSrc = obj.ProfileMappings ?? obj.profileMappings ?? [];
+
+    const departmentMappings = Array.isArray(deptSrc)
+      ? deptSrc.map((r: any) => ({
+          DepartnentCode: String(
+            r?.DepartnentCode ?? r?.departnentCode ?? ''
+          ),
+          DepartnentDescripton: String(
+            r?.DepartnentDescripton ?? r?.departnentDescripton ?? ''
+          ),
+          Unit: String(r?.Unit ?? r?.unit ?? ''),
+          UnitName: String(r?.UnitName ?? r?.unitName ?? '')
+        }))
+      : [];
+
+    const profileMappings = Array.isArray(profSrc)
+      ? profSrc.map((r: any) => ({
+          FunctionID: String(r?.FunctionID ?? r?.functionId ?? ''),
+          FunctionDescription: String(
+            r?.FunctionDescription ?? r?.functionDescription ?? ''
+          ),
+          Profile_Code: String(
+            r?.Profile_Code ?? r?.profile_Code ?? r?.ProfileCode ?? ''
+          ),
+          Profile_Name: String(
+            r?.Profile_Name ?? r?.profile_Name ?? r?.ProfileName ?? ''
+          )
+        }))
+      : [];
+
+    return { departmentMappings, profileMappings };
+  }
+
+  get filteredOverviewDepartmentRows(): DepartmentMappingOverviewRow[] {
+    const q = (this.overviewSearch || '').trim().toLowerCase();
+    if (!q) {
+      return this.overviewDepartmentMappings;
+    }
+    return this.overviewDepartmentMappings.filter((row) => {
+      const hay = [
+        row.DepartnentCode,
+        row.DepartnentDescripton,
+        row.Unit,
+        row.UnitName
+      ]
+        .join(' ')
+        .toLowerCase();
+      return hay.includes(q);
+    });
+  }
+
+  get filteredOverviewProfileRows(): ProfileMappingOverviewRow[] {
+    const q = (this.overviewSearch || '').trim().toLowerCase();
+    if (!q) {
+      return this.overviewProfileMappings;
+    }
+    return this.overviewProfileMappings.filter((row) => {
+      const hay = [
+        row.FunctionID,
+        row.FunctionDescription,
+        row.Profile_Code,
+        row.Profile_Name
+      ]
+        .join(' ')
+        .toLowerCase();
+      return hay.includes(q);
+    });
   }
 
   loadMainList(): void {
@@ -460,9 +623,13 @@ export class ProfileDeptAssociationComponent implements OnInit {
         return;
       }
       if (!String(this.selectedFunction.FunctionID || '').trim()) {
-        this.snackBar.open('חסר FunctionID. יש לעדכן את GetEpFunctionsForProfileMapping', 'סגור', {
-          duration: 4500
-        });
+        this.snackBar.open(
+          'חסר מזהה פונקציה. יש לעדכן את השירות כך שיחזיר מזהה לכל פונקציה.',
+          'סגור',
+          {
+            duration: 4500
+          }
+        );
         return;
       }
 
@@ -518,7 +685,7 @@ export class ProfileDeptAssociationComponent implements OnInit {
     }
     if (!String(this.selectedDepartment.DepartnentCode || '').trim()) {
       this.snackBar.open(
-        'חסר DepartnentCode. יש לעדכן את GetEpDepartnentDescriptions להחזיר קוד מחלקה',
+        'חסר קוד מחלקה. יש לעדכן את השירות כך שיחזיר קוד מחלקה לכל שורה.',
         'סגור',
         { duration: 4500 }
       );

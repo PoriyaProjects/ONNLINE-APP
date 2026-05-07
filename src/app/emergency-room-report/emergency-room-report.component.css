@@ -16,23 +16,24 @@
    }
    
    /* ---- Variables ---- */
+   /* Light palette — readable for patients on a big screen */
    .er-report {
-     --er-bg: #0f1a29;
-     --er-bg-secondary: #0f1a35;
-     --er-card-bg: #2566b5;
-     --er-border: rgba(255, 255, 255, 0.12);
-     --er-border-bright: rgba(255, 255, 255, 0.25);
-     --er-primary: #38bdf8;
-     --er-primary-dim: rgba(56, 189, 248, 0.15);
-     --er-primary-glow: rgba(56, 189, 248, 0.35);
-     --er-accent-green: #34d399;
-     --er-accent-green-dim: rgba(52, 211, 153, 0.15);
-     --er-accent-red: #f87171;
-     --er-accent-red-dim: rgba(248, 113, 113, 0.12);
-     --er-accent-amber: #fbbf24;
-     --er-accent-amber-dim: rgba(251, 191, 36, 0.12);
-     --er-text: #f1f5f9;
-     --er-text-secondary: #94a3b8;
+     --er-bg: #f5f9ff;
+     --er-bg-secondary: #e8f1fc;
+     --er-card-bg: #dbeafe;
+     --er-border: rgba(15, 23, 42, 0.1);
+     --er-border-bright: rgba(37, 99, 235, 0.28);
+     --er-primary: #2563eb;
+     --er-primary-dim: rgba(37, 99, 235, 0.12);
+     --er-primary-glow: rgba(37, 99, 235, 0.22);
+     --er-accent-green: #059669;
+     --er-accent-green-dim: rgba(5, 150, 105, 0.14);
+     --er-accent-red: #dc2626;
+     --er-accent-red-dim: rgba(220, 38, 38, 0.1);
+     --er-accent-amber: #b45309;
+     --er-accent-amber-dim: rgba(180, 83, 9, 0.14);
+     --er-text: #0f172a;
+     --er-text-secondary: #475569;
      --er-text-muted: #64748b;
      --er-font: 'Rubik', 'Noto Sans Hebrew', 'Segoe UI', sans-serif;
      --er-transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -252,13 +253,13 @@
    
    .dept-tab:hover {
      color: var(--er-text);
-     background: rgba(255, 255, 255, 0.05);
+     background: rgba(37, 99, 235, 0.06);
    }
    
    .dept-tab.active {
-     color: #fff;
-     border-bottom-color: #fff;
-     background: rgba(255, 255, 255, 0.08);
+     color: var(--er-primary);
+     border-bottom-color: var(--er-primary);
+     background: rgba(37, 99, 235, 0.08);
    }
    
    .dept-tab.active::after {
@@ -268,9 +269,9 @@
      left: 0;
      right: 0;
      height: 3px;
-     background: #fff;
+     background: var(--er-primary);
      border-radius: 3px 3px 0 0;
-     box-shadow: 0 0 12px rgba(255, 255, 255, 0.3);
+     box-shadow: 0 0 10px var(--er-primary-dim);
    }
    
    /* ============================================================
@@ -371,7 +372,7 @@
    .table-header-wrap {
      flex-shrink: 0;
      background: var(--er-bg-secondary);
-     border-bottom: 2px solid rgba(148, 163, 184, 0.18);
+     border-bottom: 2px solid var(--er-border-bright);
    }
    
    .grid-row.header-row {
@@ -430,11 +431,11 @@
    }
    
    .grid-row.patient-row:nth-child(odd) {
-     background: rgba(255, 255, 255, 0.04);
+     background: rgba(255, 255, 255, 0.65);
    }
    
    .grid-row.patient-row:hover {
-     background: rgba(255, 255, 255, 0.08);
+     background: rgba(37, 99, 235, 0.07);
    }
    
    /* ---- Cell base ---- */
@@ -455,7 +456,7 @@
      font-weight: 700;
      font-variant-numeric: tabular-nums;
      font-size: 1.2rem;
-     color: #fff;
+     color: var(--er-text);
      letter-spacing: 0.05em;
    }
    
@@ -561,12 +562,25 @@
      gap: 0.35rem;
    }
 
+   .consult-chip .consult-status {
+     display: inline-flex;
+     align-items: center;
+     min-height: 1.1rem;
+   }
+
+   .consult-chip .consult-status-pending,
+   .consult-chip .consult-status-partial {
+     font-weight: 800;
+     font-size: 0.95rem;
+     letter-spacing: 0.02em;
+   }
+
    .chip.consult-chip .chip-time,
    .chip.consult-chip .chip-counter {
      font-variant-numeric: tabular-nums;
    }
 
-   /* Answer 1 + Answer_Date: green + done + time */
+   /* Answer 1 + Answer_Date: green + ✓ */
    .chip.consult-chip.consult-done {
      border-color: rgba(52, 211, 153, 0.35);
      background: var(--er-accent-green-dim);
@@ -574,36 +588,33 @@
    }
 
    .chip.consult-chip.consult-done .consult-chip-name,
-   .chip.consult-chip.consult-done .chip-time,
+   .chip.consult-chip.consult-done .consult-answer-mark,
    .chip.consult-chip.consult-done .chip-icon.icon-check {
      color: var(--er-accent-green);
    }
 
-   /* No answer: red + counter */
+   /* Waiting — same amber as pending imaging (no red) */
    .chip.consult-chip.consult-pending {
-     border-color: rgba(248, 113, 113, 0.4);
-     background: rgba(248, 113, 113, 0.12);
-     color: var(--er-accent-red);
+     border-color: rgba(180, 83, 9, 0.42);
+     background: var(--er-accent-amber-dim);
+     color: var(--er-accent-amber);
    }
 
-   .chip.consult-chip.consult-pending .chip-counter {
-     color: var(--er-accent-red);
+   .chip.consult-chip.consult-pending .consult-chip-name,
+   .chip.consult-chip.consult-pending .consult-status-pending {
+     color: var(--er-accent-amber);
    }
 
-   /* Answer 2: yellow + time */
+   /* Answer 2 / non-final — amber + ⋯ */
    .chip.consult-chip.consult-not-final {
-     border-color: rgba(251, 191, 36, 0.5);
+     border-color: rgba(180, 83, 9, 0.45);
      background: var(--er-accent-amber-dim);
      color: var(--er-accent-amber);
    }
 
    .chip.consult-chip.consult-not-final .consult-chip-name,
-   .chip.consult-chip.consult-not-final .chip-time {
+   .chip.consult-chip.consult-not-final .consult-status-partial {
      color: var(--er-accent-amber);
-   }
-
-   .chip.consult-chip.consult-pending .consult-chip-name {
-     color: var(--er-accent-red);
    }
    
    /* ============================================================
@@ -626,27 +637,36 @@
      font-size: 0.8rem;
      line-height: 1.35;
      white-space: nowrap;
-     background: rgba(255, 255, 255, 0.06);
-     border: 1px solid rgba(255, 255, 255, 0.1);
+     background: rgba(255, 255, 255, 0.75);
+     border: 1px solid var(--er-border);
    }
    
-   /* --- Imaging chip --- */
+   /* --- Imaging chip (answer yes/no only; green / yellow) --- */
    .chip.img-chip {
-     background: rgba(255, 255, 255, 0.08);
-     border: 1px solid rgba(255, 255, 255, 0.15);
+     background: rgba(255, 255, 255, 0.85);
+     border: 1px solid var(--er-border);
    }
 
-   /* Imaging done: same green as blood-chip.done */
    .chip.img-chip.img-done {
      background: var(--er-accent-green-dim);
-     border-color: rgba(52, 211, 153, 0.2);
+     border-color: rgba(5, 150, 105, 0.35);
      color: var(--er-accent-green);
    }
 
    .chip.img-chip.img-done .chip-name,
-   .chip.img-chip.img-done .chip-time,
-   .chip.img-chip.img-done .chip-icon.icon-check {
+   .chip.img-chip.img-done .chip-icon.img-answer-badge {
      color: var(--er-accent-green);
+   }
+
+   .chip.img-chip .img-no-answer {
+     font-variant-numeric: tabular-nums;
+     font-weight: 700;
+     font-size: 0.95rem;
+     color: var(--er-accent-amber);
+   }
+
+   .chip.img-chip.img-pending .chip-name {
+     color: var(--er-text-secondary);
    }
    
    .chip .chip-name {
@@ -663,36 +683,41 @@
      color: var(--er-primary);
    }
    
-   /* Pending imaging: amber/waiting style */
-   .chip.img-pending {
+   .chip.img-chip.img-pending {
      background: var(--er-accent-amber-dim);
-     border-color: rgba(251, 191, 36, 0.25);
+     border-color: rgba(180, 83, 9, 0.35);
    }
    
-   .chip .chip-elapsed {
-     font-variant-numeric: tabular-nums;
-     font-weight: 700;
-     color: var(--er-accent-amber);
-     animation: pendingPulse 2s ease-in-out infinite;
-   }
-   
-   @keyframes pendingPulse {
-     0%, 100% { opacity: 1; }
-     50% { opacity: 0.6; }
-   }
-   
-   /* --- Blood chip --- */
+   /* --- Blood chip — ✓ ירוק / — צהוב, ללא אדום --- */
    .chip.blood-chip {
-     background: var(--er-accent-red-dim);
-     border: 1px solid rgba(248, 113, 113, 0.15);
+     background: rgba(255, 255, 255, 0.85);
+     border: 1px solid var(--er-border);
+     justify-content: center;
+     min-width: 2rem;
+     padding: 0.28rem 0.5rem;
    }
-   
-   .chip.blood-chip.done {
+
+   .chip.blood-chip.blood-done {
      background: var(--er-accent-green-dim);
-     border-color: rgba(52, 211, 153, 0.2);
+     border-color: rgba(5, 150, 105, 0.35);
    }
-   
-   /* Status icon circle */
+
+   .chip.blood-chip.blood-pending {
+     background: var(--er-accent-amber-dim);
+     border-color: rgba(180, 83, 9, 0.35);
+   }
+
+   .chip.blood-chip .blood-answer-mark {
+     flex-shrink: 0;
+   }
+
+   .chip.blood-chip .blood-no-result-mark {
+     font-weight: 800;
+     font-size: 0.95rem;
+     color: var(--er-accent-amber);
+   }
+
+   /* Status icon circle — blood uses same ✓ capsule as imaging where applicable */
    .chip .chip-icon {
      display: inline-flex;
      align-items: center;
@@ -711,7 +736,7 @@
    }
    
    .chip .chip-icon.icon-x {
-     background: rgba(248, 113, 113, 0.3);
+     background: rgba(220, 38, 38, 0.2);
      color: var(--er-accent-red);
    }
    

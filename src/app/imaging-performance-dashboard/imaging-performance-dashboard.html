@@ -1,0 +1,252 @@
+<div class="ipd" dir="rtl" lang="he">
+
+  <!-- ══ HEADER ══ -->
+  <header class="ipd-header">
+    <div class="ipd-header-left">
+      <span class="ipd-header-icon">🏥</span>
+      <div>
+        <h1 class="ipd-title">לוח ביצועי הדמיה</h1>
+        <p class="ipd-subtitle">זמן קריאה, נפח רופאים ומגמות יומיות</p>
+      </div>
+    </div>
+  </header>
+
+  <!-- ══ FILTER BAR ══ -->
+  <div class="ipd-filters">
+
+    <!-- Source type -->
+    <div class="ipd-filter-group">
+      <label class="ipd-filter-lbl">סוג מקור</label>
+      <div class="ipd-seg">
+        <button
+          *ngFor="let opt of sourceOptions"
+          class="ipd-seg-btn"
+          [class.ipd-seg-btn--active]="sourceType === opt.value"
+          (click)="sourceType = opt.value">
+          {{ opt.label }}
+        </button>
+      </div>
+    </div>
+
+    <!-- Date from -->
+    <div class="ipd-filter-group">
+      <label class="ipd-filter-lbl">מתאריך</label>
+      <input type="date" class="ipd-date-input" [(ngModel)]="fromDate" />
+    </div>
+
+    <!-- Date to -->
+    <div class="ipd-filter-group">
+      <label class="ipd-filter-lbl">עד תאריך</label>
+      <input type="date" class="ipd-date-input" [(ngModel)]="toDate" />
+    </div>
+
+    <button mat-raised-button color="primary" class="ipd-apply-btn"
+      (click)="loadData()" [disabled]="loading">
+      {{ loading ? 'טוען...' : 'הצג נתונים' }}
+    </button>
+  </div>
+
+  <!-- Stub message (OutpatientClinics not yet implemented) -->
+  <div *ngIf="result?.Message" class="ipd-msg-banner">
+    <span>ℹ️</span> {{ result!.Message }}
+  </div>
+
+  <!-- Error -->
+  <div *ngIf="error && !loading" class="ipd-error-banner">
+    ⚠️ {{ error }}
+  </div>
+
+  <!-- ══ SKELETON while loading ══ -->
+  <div *ngIf="loading && !result" class="ipd-skeleton-wrap">
+    <div class="ipd-skeleton ipd-skeleton--card"></div>
+    <div class="ipd-skeleton ipd-skeleton--card"></div>
+    <div class="ipd-skeleton ipd-skeleton--card"></div>
+    <div class="ipd-skeleton ipd-skeleton--wide"></div>
+  </div>
+
+  <ng-container *ngIf="result && !loading">
+
+    <!-- ══ KPI CARDS ══ -->
+    <div class="ipd-kpi-row">
+
+      <div
+        class="ipd-kpi-card ipd-kpi-card--blue ipd-kpi-card--clickable"
+        role="button"
+        tabindex="0"
+        (click)="openCasesDialog()"
+        (keydown.enter)="openCasesDialog()"
+        (keydown.space)="$event.preventDefault(); openCasesDialog()">
+        <div class="ipd-kpi-icon">🧍</div>
+        <div class="ipd-kpi-body">
+          <span class="ipd-kpi-val">{{ kpiImagingCaseCount | number }}</span>
+          <span class="ipd-kpi-lbl">מטופלים עם הדמיה</span>
+          <span class="ipd-kpi-hint">לחיצה לצפייה ברשימה המלאה</span>
+        </div>
+      </div>
+
+      <div class="ipd-kpi-card ipd-kpi-card--amber">
+        <div class="ipd-kpi-icon">⏱️</div>
+        <div class="ipd-kpi-body">
+          <span class="ipd-kpi-val">{{ fmtMins(result.AvgMinutesToDecision) }}</span>
+          <span class="ipd-kpi-lbl">ממוצע זמן לקריאה</span>
+        </div>
+      </div>
+
+      <div class="ipd-kpi-card ipd-kpi-card--purple">
+        <div class="ipd-kpi-icon">👨‍⚕️</div>
+        <div class="ipd-kpi-body">
+          <span class="ipd-kpi-val">{{ doctors.length }}</span>
+          <span class="ipd-kpi-lbl">רופאים פעילים</span>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ══ MAIN CONTENT: Chart + Table ══ -->
+    <div class="ipd-main">
+
+      <!-- ── Line chart: daily trend ── -->
+      <div class="ipd-panel ipd-panel--chart" #chartPanel>
+        <div class="ipd-panel-header">
+          <h2>מגמת זמן קריאה יומית</h2>
+          <span class="ipd-badge">{{ trend.length }} ימים</span>
+        </div>
+
+        <div *ngIf="trend.length === 0" class="ipd-empty">
+          <span>📈</span>
+          <p>אין נתוני מגמה לתצוגה</p>
+        </div>
+
+        <div *ngIf="trend.length > 0" class="ipd-chart-scroll">
+          <div class="ipd-chart-track">
+            <google-chart
+              [type]="chartType"
+              [columns]="chartColumns"
+              [data]="chartRows"
+              [options]="chartOptions"
+              [width]="chartWidth"
+              [height]="chartHeight">
+            </google-chart>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Doctor ranking table ── -->
+      <div class="ipd-panel ipd-panel--table">
+        <div class="ipd-panel-header">
+          <h2>דירוג רופאים</h2>
+          <span class="ipd-badge">{{ doctors.length }} רופאים</span>
+        </div>
+
+        <div *ngIf="doctors.length === 0" class="ipd-empty">
+          <span>👨‍⚕️</span>
+          <p>אין נתוני רופאים לתצוגה</p>
+        </div>
+
+        <div *ngIf="doctors.length > 0" class="ipd-table-wrap">
+          <table class="ipd-table">
+            <thead>
+              <tr>
+                <th class="ipd-th ipd-th--rank">#</th>
+                <th class="ipd-th ipd-th--sortable" (click)="setSort('DocName')">
+                  שם רופא <span class="sort-icon">{{ sortIcon('DocName') }}</span>
+                </th>
+                <th class="ipd-th ipd-th--sortable" (click)="setSort('CaseCount')">
+                  נפח מקרים <span class="sort-icon">{{ sortIcon('CaseCount') }}</span>
+                </th>
+                <th class="ipd-th ipd-th--sortable" (click)="setSort('AvgMinutesToDecision')">
+                  ממוצע זמן קריאה <span class="sort-icon">{{ sortIcon('AvgMinutesToDecision') }}</span>
+                </th>
+                <th class="ipd-th">סטטוס</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let doc of sortedDoctors; let i = index" class="ipd-tr">
+                <td class="ipd-td ipd-td--rank">
+                  <span class="rank-badge"
+                    [class.rank-badge--gold]="i===0"
+                    [class.rank-badge--silver]="i===1"
+                    [class.rank-badge--bronze]="i===2">
+                    {{ i + 1 }}
+                  </span>
+                </td>
+                <td class="ipd-td ipd-td--name">{{ doc.DocName }}</td>
+                <td class="ipd-td ipd-td--num">
+                  <div class="volume-bar-wrap">
+                    <span class="volume-num">{{ doc.CaseCount }}</span>
+                    <div class="volume-bar">
+                      <div class="volume-bar-fill"
+                        [style.width.%]="(doc.CaseCount / (sortedDoctors[0]?.CaseCount || 1)) * 100">
+                      </div>
+                    </div>
+                  </div>
+                </td>
+                <td class="ipd-td ipd-td--num">{{ fmtMins(doc.AvgMinutesToDecision) }}</td>
+                <td class="ipd-td">
+                  <span [class]="timeClass(doc.AvgMinutesToDecision)">
+                    {{ doc.AvgMinutesToDecision <= 30 ? 'מעולה' :
+                       doc.AvgMinutesToDecision <= 60 ? 'טוב' :
+                       doc.AvgMinutesToDecision <= 120 ? 'סביר' : 'ארוך' }}
+                  </span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+
+  </ng-container>
+
+  <!-- Drill-down: full case list (מילוי מ־Details בשרת) -->
+  <div
+    *ngIf="casesDialogOpen"
+    class="ipd-backdrop"
+    (click)="closeCasesDialog()">
+    <div class="ipd-modal ipd-modal--detail" (click)="$event.stopPropagation()" dir="rtl" lang="he">
+      <div class="ipd-modal-header">
+        <h2 class="ipd-modal-title">רשימת מקרים עם הדמיה</h2>
+        <button type="button" class="ipd-modal-close" (click)="closeCasesDialog()" aria-label="סגור">×</button>
+      </div>
+      <div class="ipd-modal-body">
+        <p *ngIf="!hasModalDetailTable" class="ipd-modal-empty">
+          אין רשימת מקרים להצגה.
+        </p>
+        <div *ngIf="useRawDetailTable" class="ipd-modal-table-outer">
+          <div class="ipd-modal-table-wrap">
+            <table class="ipd-modal-table">
+              <thead>
+                <tr>
+                  <th *ngFor="let key of modalDetailKeys">{{ hebrewDetailLabel(key) }}</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let row of detailRawRows">
+                  <td *ngFor="let key of modalDetailKeys">{{ formatRawDetailCell(row[key]) }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div *ngIf="!useRawDetailTable && caseDetails.length" class="ipd-modal-table-outer">
+          <div class="ipd-modal-table-wrap">
+            <table class="ipd-modal-table">
+              <thead>
+                <tr>
+                  <th *ngFor="let col of visibleCaseColumns">{{ col.label }}</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let row of caseDetails">
+                  <td *ngFor="let col of visibleCaseColumns">{{ caseCell(row, col.field) }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>

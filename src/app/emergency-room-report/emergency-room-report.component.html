@@ -70,8 +70,8 @@
         </div>
       </div>
 
-      <!-- BODY (scrolling) — marquee clips; otherwise native scroll inside viewport -->
-      <div class="table-body-wrap" [class.marquee-active]="shouldScroll">
+      <!-- BODY (scrolling) — marquee only when list overflows viewport (small lists stay static; no duplicated rows visible) -->
+      <div class="table-body-wrap" #tableBodyWrap [class.marquee-active]="shouldScroll">
         <div class="scroll-fade-top" *ngIf="shouldScroll"></div>
         <div
           class="table-body-scroll"
@@ -120,11 +120,11 @@
     <!-- Decision -->
     <div class="td-cell">
       <span class="decision-badge" [ngClass]="getDecisionClass(row.Decision_Description)">
-        {{ row.Decision_Description }}
+        {{ getDecisionDisplayText(row.Decision_Description) }}
       </span>
     </div>
 
-    <!-- Consult — department name on first line, time/counter below; green only done+date, yellow if no date or type 2 -->
+    <!-- Consult — unit name + answer status only (✓ סופי / — ממתין / … לא סופי); green / amber, no clocks -->
     <div class="td-cell td-cell-consult">
       <ng-container *ngIf="row.ConsultedChips && row.ConsultedChips.length > 0; else noConsult">
         <div class="chips-wrap">
@@ -136,16 +136,11 @@
             <div class="consult-chip-stack">
               <span class="chip-name consult-chip-name">{{ c.unitName }}</span>
               <div class="consult-chip-meta">
-                <ng-container *ngIf="c.chipVariant === 'done'">
-                  <span class="chip-time">{{ c.time }}</span>
-                  <span class="chip-icon icon-check">✓</span>
-                </ng-container>
-                <ng-container *ngIf="c.chipVariant === 'pending'">
-                  <span class="chip-counter">{{ getElapsedFromEntry(c.entryDate) }}</span>
-                </ng-container>
-                <ng-container *ngIf="c.chipVariant === 'not_final'">
-                  <span class="chip-time">{{ c.time }}</span>
-                </ng-container>
+                <span *ngIf="c.chipVariant === 'done'" class="consult-status consult-status-done" [attr.title]="getConsultStatusTitle(c.chipVariant)">
+                  <span class="chip-icon icon-check consult-answer-mark">✓</span>
+                </span>
+                <span *ngIf="c.chipVariant === 'pending'" class="consult-status consult-status-pending" [attr.title]="getConsultStatusTitle(c.chipVariant)">—</span>
+                <span *ngIf="c.chipVariant === 'not_final'" class="consult-status consult-status-partial" [attr.title]="getConsultStatusTitle(c.chipVariant)">⋯</span>
               </div>
             </div>
           </div>
@@ -166,13 +161,10 @@
                [class.img-done]="img.hasResult">
             <span class="chip-name">{{ img.name }}</span>
             <ng-container *ngIf="img.hasResult; else imgPending">
-              <span class="chip-arrow">←</span>
-              <span class="chip-time">{{ img.time }}</span>
-              <span class="chip-icon icon-check">✓</span>
+              <span class="chip-icon icon-check img-answer-badge" aria-hidden="true">✓</span>
             </ng-container>
             <ng-template #imgPending>
-              <span class="chip-arrow">|</span>
-              <span class="chip-elapsed">{{ getImagingElapsed(img.sendTime) }}</span>
+              <span class="img-no-answer" title="טרם התקבלה תוצאה">—</span>
             </ng-template>
           </div>
         </div>
@@ -180,21 +172,20 @@
       <ng-template #noImg><span class="no-data">—</span></ng-template>
     </div>
 
-    <!-- Blood Tests — chip style -->
+    <!-- Blood Tests — תוצאה בלבד: ✓ / — (ירוק וצהוב, ללא זמנים) -->
     <div class="td-cell">
       <ng-container *ngIf="row.BloodTestsList && row.BloodTestsList.length > 0; else noBlood">
         <div class="chips-wrap">
           <div *ngFor="let b of row.BloodTestsList"
                class="chip blood-chip"
-               [class.done]="b.hasResult">
-            <span class="chip-icon" [ngClass]="b.hasResult ? 'icon-check' : 'icon-x'">
-              {{ b.hasResult ? '✓' : '✗' }}
-            </span>
-            <span class="chip-arrive">{{ b.arriveTime }}</span>
-            <span class="chip-arrow">←</span>
-            <span class="chip-result" [class.has-result]="b.hasResult" [class.no-result]="!b.hasResult">
-              {{ b.distributionTime != null ? b.distributionTime : '—' }}
-            </span>
+               [class.blood-done]="b.hasResult"
+               [class.blood-pending]="!b.hasResult">
+            <ng-container *ngIf="b.hasResult; else bloodNoResult">
+              <span class="chip-icon icon-check blood-answer-mark" [attr.title]="'התקבלה תוצאה'">✓</span>
+            </ng-container>
+            <ng-template #bloodNoResult>
+              <span class="blood-no-result-mark" [attr.title]="'טרם התקבלה תוצאה'">—</span>
+            </ng-template>
           </div>
         </div>
       </ng-container>

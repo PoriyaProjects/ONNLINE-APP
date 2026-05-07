@@ -158,6 +158,7 @@ export class NpsBaseApiService {
       totalDepartmentsCount: n('TotalDepartmentsCount', 'totalDepartmentsCount'),
       totalActionsCount: n('TotalActionsCount', 'totalActionsCount'),
       totalPermissionsCount: n('TotalPermissionsCount', 'totalPermissionsCount'),
+      totalNursesCount: n('TotalNursesCount', 'totalNursesCount'),
     };
   }
 

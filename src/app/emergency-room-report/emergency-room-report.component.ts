@@ -1,9 +1,15 @@
-import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, AfterViewInit, ChangeDetectorRef, ElementRef, ViewChild } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { DatePipe } from '@angular/common';
 import { forkJoin, of } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
+
+type ErResizeObserver = {
+  disconnect(): void;
+  observe(target: Element): void;
+  unobserve(target: Element): void;
+};
+type ErResizeObserverCtor = new (callback: () => void) => ErResizeObserver;
 
 export interface EmergencyRoomPatient {
   Id_Num?: string;
@@ -59,7 +65,7 @@ export type ConsiliumAnswerStatus = 1 | 2 | null;
 
 export type ConsultChipVariant = 'done' | 'not_final' | 'pending';
 
-/** One chip in the ייעוצים column: green only if answer 1 + Answer_Date; yellow if no date or type 2; red counter if waiting */
+/** One chip in the ייעוצים column — unit + answer status indicator (see template) */
 export interface ConsultedChipItem {
   unitName: string;
   chipVariant: ConsultChipVariant;
@@ -73,9 +79,8 @@ export interface EmergencyRoomReportRow {
   Entry_Date: string | null;
   Decision_Description: string;
   Consulted_Unit: string;
-  /** Chips for ייעוצים column: time, name, ✓ when done (like צילומים) */
-  ConsultedChips: ConsultedChipItem[];
-  ImagingList: ImagingItem[];
+  /** Chips for ייעוצים column — unit names + ✓ / — / ⋯ */
+  ConsultedChips: ConsultedChipItem[];  ImagingList: ImagingItem[];
   BloodTestsList: BloodTestItem[];
   hasAnyBloodResult: boolean;
   Nurse_Name: string;
@@ -89,18 +94,18 @@ export const ER_DEPARTMENTS = [
   { id: 'מהלכים', label: 'מהלכים' },
 ] as const;
 
-/** Seconds per row for marquee speed (big-screen ER display: always auto-scroll, no manual scroll) */
+/** Seconds per row when marquee is active (only if list overflows the viewport) */
 const SECONDS_PER_ROW = 4;
-/** Minimum marquee duration so short lists stay readable */
+/** Minimum marquee duration when the list is tall enough to scroll */
 const MIN_SCROLL_SECONDS = 28;
 
 @Component({
   selector: 'app-emergency-room-report',
   templateUrl: './emergency-room-report.component.html',
   styleUrls: ['./emergency-room-report.component.css'],
-  providers: [DatePipe]
+  providers: []
 })
-export class EmergencyRoomReportComponent implements OnInit, OnDestroy {
+export class EmergencyRoomReportComponent implements OnInit, AfterViewInit, OnDestroy {
 
   rawPatients: EmergencyRoomPatient[] = [];
   labTests: EmergencyRoomLabTest[] = [];
@@ -118,14 +123,22 @@ export class EmergencyRoomReportComponent implements OnInit, OnDestroy {
   private isFirstLoad = true;
   currentTime = new Date();
 
-  /** Whether the patient list should auto-scroll (marquee style) */
+  @ViewChild('tableBodyWrap', { read: ElementRef }) tableBodyWrap?: ElementRef<HTMLElement>;
+
+  /** ResizeObserver watches the clip area; clears when component is destroyed */
+  private marqueeResizeObserver: ErResizeObserver | null = null;
+  private marqueeMeasureTimer: ReturnType<typeof setTimeout> | null = null;
+  private marqueeObservedWrap: HTMLElement | null = null;
+  /** Avoid endless timers if the table viewport is briefly missing */
+  private marqueeStaleWrapRetries = 0;
+
+  /** True when list overflows the table body and seamless scroll is running */
   shouldScroll = false;
   /** CSS duration string for the scroll animation */
   scrollDuration = '30s';
 
   constructor(
     private http: HttpClient,
-    private datePipe: DatePipe,
     private cdr: ChangeDetectorRef
   ) {}
 
@@ -138,6 +151,26 @@ export class EmergencyRoomReportComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.stopAutoRefresh();
     this.stopElapsedTimer();
+    if (this.marqueeMeasureTimer != null) {
+      clearTimeout(this.marqueeMeasureTimer);
+      this.marqueeMeasureTimer = null;
+    }
+    if (this.marqueeResizeObserver != null) {
+      this.marqueeResizeObserver.disconnect();
+      this.marqueeResizeObserver = null;
+    }
+    this.marqueeObservedWrap = null;
+  }
+
+  ngAfterViewInit(): void {
+    var g = globalThis as unknown as { ResizeObserver?: ErResizeObserverCtor };
+    var RO = g.ResizeObserver;
+    if (typeof RO !== 'undefined') {
+      var self = this;
+      this.marqueeResizeObserver = new RO(function() {
+        self.scheduleMarqueeOverflowCheck();
+      });
+    }
   }
 
   selectDepartment(dept: string): void {
@@ -210,21 +243,131 @@ export class EmergencyRoomReportComponent implements OnInit, OnDestroy {
     if (this.selectedDepartment == null || this.selectedDepartment === '') {
       this.mergedRows = [];
       this.shouldScroll = false;
+      this.scheduleMarqueeOverflowCheck();
       return;
     }
     const list = this.rawPatients.filter(p => (p.Room_Name || '').trim() === this.selectedDepartment);
+    this.marqueeStaleWrapRetries = 0;
     this.mergedRows = this.buildMergedRows(list);
     this.updateScrollState();
+    this.scheduleMarqueeOverflowCheck();
   }
 
   private updateScrollState(): void {
     const count = this.mergedRows.length;
-    if (count > 0) {
-      this.shouldScroll = true;
-      const totalSeconds = Math.max(count * SECONDS_PER_ROW, MIN_SCROLL_SECONDS);
-      this.scrollDuration = totalSeconds + 's';
-    } else {
+    if (count === 0) {
       this.shouldScroll = false;
+      return;
+    }
+    var totalSeconds = Math.max(count * SECONDS_PER_ROW, MIN_SCROLL_SECONDS);
+    this.scrollDuration = totalSeconds + 's';
+  }
+
+  /** Run after layout: enable marquee only when the primary row block is taller than the viewport. */
+  private scheduleMarqueeOverflowCheck(): void {
+    var self = this;
+    if (this.marqueeMeasureTimer != null) {
+      clearTimeout(this.marqueeMeasureTimer);
+    }
+    this.marqueeMeasureTimer = setTimeout(function() {
+      self.marqueeMeasureTimer = null;
+      self.applyMarqueeOverflowCheck();
+    }, 0);
+  }
+
+  private observeTableBodyWrap(): void {
+    var ro = this.marqueeResizeObserver;
+    if (ro == null) {
+      return;
+    }
+    var el = this.tableBodyWrap?.nativeElement ?? null;
+    if (this.marqueeObservedWrap !== null && this.marqueeObservedWrap !== el) {
+      try {
+        ro.unobserve(this.marqueeObservedWrap);
+      } catch {
+        /* noop */
+      }
+      this.marqueeObservedWrap = null;
+    }
+    if (el != null) {
+      if (this.marqueeObservedWrap !== el) {
+        try {
+          ro.observe(el);
+          this.marqueeObservedWrap = el;
+        } catch {
+          /* noop */
+        }
+      }
+    } else if (this.marqueeObservedWrap !== null) {
+      try {
+        ro.unobserve(this.marqueeObservedWrap);
+      } catch {
+        /* noop */
+      }
+      this.marqueeObservedWrap = null;
+    }
+  }
+
+  /**
+   * Uses the height of the first N patient rows (primary list) so we do not treat
+   * the duplicated marquee block as mandatory overflow.
+   */
+  private applyMarqueeOverflowCheck(): void {
+    var count = this.mergedRows.length;
+
+    if (count === 0) {
+      this.observeTableBodyWrap();
+      var was = this.shouldScroll;
+      this.shouldScroll = false;
+      if (was !== this.shouldScroll) {
+        this.cdr.markForCheck();
+      }
+      return;
+    }
+
+    var wrap = this.tableBodyWrap?.nativeElement ?? null;
+    if (wrap == null) {
+      if (count > 0) {
+        this.marqueeStaleWrapRetries++;
+        this.observeTableBodyWrap();
+        if (this.marqueeStaleWrapRetries < 24) {
+          this.scheduleMarqueeOverflowCheck();
+        }
+      } else {
+        this.marqueeStaleWrapRetries = 0;
+      }
+      return;
+    }
+    this.marqueeStaleWrapRetries = 0;
+
+    this.observeTableBodyWrap();
+
+    var inner = wrap.querySelector('.table-body-scroll') as HTMLElement | null;
+    if (inner == null) {
+      this.shouldScroll = false;
+      return;
+    }
+
+    var rowEls = inner.querySelectorAll(':scope > .grid-row.patient-row');
+    var max = Math.min(count, rowEls.length);
+    var blockHeight = 0;
+    for (var i = 0; i < max; i++) {
+      var r = rowEls.item(i) as HTMLElement;
+      blockHeight += r.getBoundingClientRect().height;
+    }
+    if (blockHeight === 0) {
+      blockHeight = inner.scrollHeight;
+    }
+
+    var viewport = wrap.clientHeight;
+    var needsMarquee = viewport > 0 && blockHeight > viewport + 2;
+    if (needsMarquee !== this.shouldScroll) {
+      this.shouldScroll = needsMarquee;
+      this.cdr.markForCheck();
+      var self = this;
+      setTimeout(function() {
+        self.applyMarqueeOverflowCheck();
+      }, 0);
     }
   }
 
@@ -307,8 +450,7 @@ export class EmergencyRoomReportComponent implements OnInit, OnDestroy {
     return rows;
   }
 
-  /** Build consultation chips. Green only if Answer_Date + answer_Type 1. Yellow if no Answer_Date or type 2 / final "2". Red counter if still waiting. */
-  private buildConsultedChips(group: EmergencyRoomPatient[]): ConsultedChipItem[] {
+  /** Build consultation chips. Green final answer + date; amber for waiting or non-final answers. Times are not shown. */  private buildConsultedChips(group: EmergencyRoomPatient[]): ConsultedChipItem[] {
     var seen = new Set<string>();
     var chips: ConsultedChipItem[] = [];
     for (var p of group) {
@@ -341,14 +483,12 @@ export class EmergencyRoomReportComponent implements OnInit, OnDestroy {
       } else {
         chipVariant = 'not_final';
       }
-      var time = this.formatEntryToAnswerTime(entryDate, answerDate);
       chips.push({
         unitName: unit,
         chipVariant: chipVariant,
-        time: time,
+        time: '',
         entryDate: entryDate
-      });
-    }
+      });    }
     return chips;
   }
 
@@ -399,29 +539,6 @@ export class EmergencyRoomReportComponent implements OnInit, OnDestroy {
     return s.slice(-4);
   }
 
-  /** Elapsed time from imaging send time (HH:MM today) to now. Ticks every second via currentTime. */
-  getImagingElapsed(sendTime: string | null): string {
-    if (!sendTime) return '—';
-    var parts = sendTime.split(':');
-    if (parts.length < 2) return '—';
-    var h = parseInt(parts[0], 10);
-    var m = parseInt(parts[1], 10);
-    if (isNaN(h) || isNaN(m)) return '—';
-
-    var now = this.currentTime;
-    var sendDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), h, m, 0);
-    var diffMs = now.getTime() - sendDate.getTime();
-    if (diffMs < 0) return '—';
-
-    var diffMins = Math.floor(diffMs / 60000);
-    var diffHours = Math.floor(diffMins / 60);
-    var mins = diffMins % 60;
-    if (diffHours > 0) {
-      return diffHours + ':' + this.padStart(String(mins), 2, '0');
-    }
-    return diffMins <= 0 ? '0 דק׳' : diffMins + ' דק׳';
-  }
-
   private getEntryDateFromGroup(group: EmergencyRoomPatient[]): string | null {
     for (var p of group) {
       var raw = p as Record<string, unknown>;
@@ -464,24 +581,34 @@ export class EmergencyRoomReportComponent implements OnInit, OnDestroy {
     return '';
   }
 
+  getConsultStatusTitle(variant: ConsultChipVariant): string {
+    switch (variant) {
+      case 'done':
+        return 'התקבלה תשובה סופית';
+      case 'pending':
+        return 'טרם נענה בקשת הייעוץ';
+      default:
+        return 'תשובה זמנית או שעדיין לא הוחלטה סופית';
+    }
+  }
+
   /** Returns CSS class for decision badge styling */
   getDecisionClass(decision: string): string {
     if (!decision || decision === '—') return '';
+    var d = (decision + '').trim();
+    if (d === 'לא ידוע') return '';
     // אשפוז = hospitalize, שחרור = release
     if (decision.indexOf('אשפוז') !== -1 || decision.indexOf('חדר') !== -1) return 'hospitalize';
     if (decision.indexOf('שחרור') !== -1) return 'release';
     return '';
   }
 
-  /** Format Entry_Date → Answer_Date for consilium time range (e.g. "10:18 → 14:30"). Returns "—" if either missing. */
-  formatEntryToAnswerTime(entryDate: string | null | undefined, answerDate: string | null | undefined): string {
-    if (!entryDate || !String(entryDate).trim() || !answerDate || !String(answerDate).trim()) return '—';
-    var e = new Date(entryDate);
-    var a = new Date(answerDate);
-    if (isNaN(e.getTime()) || isNaN(a.getTime())) return '—';
-    var eStr = this.datePipe.transform(e, 'HH:mm') || '—';
-    var aStr = this.datePipe.transform(a, 'HH:mm') || '—';
-    return eStr + ' → ' + aStr;
+  /** Patient-facing label: map backend "לא ידוע" to "טרם הוחלט" */
+  getDecisionDisplayText(decision: string | null | undefined): string {
+    var d = (decision || '').trim();
+    if (d === '' || d === '—') return '—';
+    if (d === 'לא ידוע') return 'טרם הוחלט';
+    return d;
   }
 
   private startElapsedTimer(): void {

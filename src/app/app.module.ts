@@ -287,6 +287,7 @@ import { InfectionControlModule } from './infection-control/infection-control.mo
 import { MriScheduleComponent } from './mri-schedule';
 import { DepartmentalTextureReportComponent } from './nutrition-system/departmental-texture-report/departmental-texture-report.component';
 import { EmergencyRoomReportComponent } from './emergency-room-report/emergency-room-report.component';
+import { ImagingPerformanceDashboardComponent } from './imaging-performance-dashboard/imaging-performance-dashboard.component';
 import { HitoFormsDashboardComponent } from './hito-forms-dashboard/hito-forms-dashboard.component';
 import { FilterDepartsPipe } from './pipe/filter-departs.pipe';
 import { SharedModule } from './shared/shared.module';
@@ -531,6 +532,7 @@ const maskConfig: Partial<IConfig> = {
     AiLettersDashboardComponent,
     MriScheduleComponent,
     EmergencyRoomReportComponent,
+    ImagingPerformanceDashboardComponent,
     HitoFormsDashboardComponent,
     MedicalInternsDashboardComponent,
     MedicalInternAddUpdateComponent,

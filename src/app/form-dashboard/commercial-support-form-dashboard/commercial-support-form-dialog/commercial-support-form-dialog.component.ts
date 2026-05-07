@@ -34,7 +34,8 @@ export class CommercialSupportFormDialogComponent {
   SupportActivityDto = [
     { ActivityName: 'רישום', controlName: 'register' },
     { ActivityName: 'לינה', controlName: 'stay' },
-    { ActivityName: 'טיסה', controlName: 'flight' }
+    { ActivityName: 'טיסה', controlName: 'flight' },
+    { ActivityName: 'העברות מ/אל שדה התעופה', controlName: 'transfer' }
   ];
   supportTypes = [
     { Id: null, Description: 'רישום' },
@@ -258,6 +259,9 @@ export class CommercialSupportFormDialogComponent {
       stay_directService: new FormControl(data?.stay_directService, null),
       stay_extraOptions: new FormControl(data?.stay_extraOptions, null),
       stay_indirectHealth: new FormControl(data?.stay_indirectHealth, null),
+      transfer_directService: new FormControl(data?.transfer_directService, null),
+      transfer_extraOptions: new FormControl(data?.transfer_extraOptions, null),
+      transfer_indirectHealth: new FormControl(data?.transfer_indirectHealth, null),
       // File fields (single file per control, like gathering component)
       SupportLetter: new FormControl(supportLetterFile, Validators.required),
       SupportLetter2: new FormControl(supportLetter2File, null),

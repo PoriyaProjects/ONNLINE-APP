@@ -59,6 +59,16 @@ export class CommercialSupportFormDashboardComponent {
     this.loadRequests();
   }
 
+  get draftRequestsCount(): number {
+    if (!this.supportRequests?.data) {
+      return 0;
+    }
+  
+    return this.supportRequests.data.filter((x: any) =>
+      x.Draft === true || x.Draft === 'True' || x.Draft === 'true'
+    ).length;
+  }
+
   loadRequests(): void {
     this.supportRequestService.getAllSupportRequests(this.UserName).subscribe(requests => {
       this.supportRequests = new MatTableDataSource<any>(requests['d']);
