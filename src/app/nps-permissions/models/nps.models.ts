@@ -8,6 +8,8 @@ export interface NpsDashboardSummary {
   totalActionsCount: number;
   /** Rows in `EP_NursePermissionPermissions`. */
   totalPermissionsCount: number;
+  /** Rows in `EP_NursePermissionNurses`. */
+  totalNursesCount: number;
 }
 
 /** From `NpsGetAccessContext` / `GetAccessContext` (catalog vs employee-only NPS UI). */

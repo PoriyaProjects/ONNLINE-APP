@@ -7,6 +7,8 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatSort } from '@angular/material/sort';
 import { MatTableDataSource } from '@angular/material/table';
 import { environment } from 'src/environments/environment';
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
 import * as XLSX from 'xlsx';
 
 @Component({
@@ -31,9 +33,8 @@ export class NutritionSystemComponent implements OnInit {
   numberOfDepartments: number;
   numberOfClinics: number;
 
-  displayedColumns: string[] = ['CaseNumber', 'IDNumber', 'FirstName', 'LastName', 'FatherName', 'Age', 'DepartName'
-    , 'RoomNumber', 'HospitalizationDate', 'HospitalizationDuration', 'FoodType', 'FoodTexture', 'CurrentAllergy'
-    , 'OldAllergy', 'LiquidCertification', 'NutritionAnamnezes', 'EatingNotes'];
+  displayedColumns: string[] = ['IDNumber', 'FirstName', 'FatherName', 'DepartName', 'RoomNumber', 'CurrentAllergy'
+    , 'OldAllergy', 'FoodType', 'NutritionAnamnezes', 'FoodTexture', 'LiquidCertification', 'EatingNotes'];
 
   applyFilter(event) {
     let filterValue;
@@ -128,11 +129,45 @@ export class NutritionSystemComponent implements OnInit {
   }
 
   fileName = 'דוח הזנה.xlsx';
+
+  private styleExcelWorksheet(ws: XLSX.WorkSheet): void {
+    const ref = ws['!ref'];
+    if (!ref) {
+      return;
+    }
+
+    const range = XLSX.utils.decode_range(ref);
+    for (let row = range.s.r; row <= range.e.r; row++) {
+      for (let col = range.s.c; col <= range.e.c; col++) {
+        const addr = XLSX.utils.encode_cell({ r: row, c: col });
+        const cell: any = ws[addr];
+        if (!cell) {
+          continue;
+        }
+
+        cell.s = {
+          ...(cell.s || {}),
+          border: {
+            top: { style: 'thin', color: { rgb: '000000' } },
+            bottom: { style: 'thin', color: { rgb: '000000' } },
+            left: { style: 'thin', color: { rgb: '000000' } },
+            right: { style: 'thin', color: { rgb: '000000' } }
+          },
+          font: {
+            ...((cell.s && cell.s.font) || {}),
+            bold: row === range.s.r
+          }
+        };
+      }
+    }
+  }
+
   // export the table to excel file
   exportToExcel() {
     /* table id is passed over here */
     let element = document.getElementById('excel-table');
     const ws: XLSX.WorkSheet = XLSX.utils.table_to_sheet(element);
+    this.styleExcelWorksheet(ws);
 
     /* generate workbook and add the worksheet */
     const wb: XLSX.WorkBook = XLSX.utils.book_new();
@@ -140,6 +175,69 @@ export class NutritionSystemComponent implements OnInit {
 
     /* save to file */
     XLSX.writeFile(wb, this.fileName);
+  }
+
+  exportToPdf() {
+    const sourceTable = document.getElementById('excel-table') as HTMLTableElement;
+    if (!sourceTable) {
+      return;
+    }
+
+    const tableClone = sourceTable.cloneNode(true) as HTMLTableElement;
+    tableClone.style.display = 'table';
+    tableClone.style.borderCollapse = 'collapse';
+    tableClone.style.border = '1px solid #000';
+    tableClone.style.backgroundColor = '#ffffff';
+    tableClone.style.direction = 'rtl';
+    tableClone.style.fontSize = '11px';
+    tableClone.style.fontFamily = 'Arial, sans-serif';
+    tableClone.style.margin = '0';
+
+    const wrapper = document.createElement('div');
+    wrapper.style.position = 'fixed';
+    wrapper.style.left = '-10000px';
+    wrapper.style.top = '0';
+    wrapper.style.padding = '12px';
+    wrapper.style.backgroundColor = '#ffffff';
+    wrapper.appendChild(tableClone);
+    document.body.appendChild(wrapper);
+
+    html2canvas(wrapper, {
+      scale: 2,
+      useCORS: true,
+      backgroundColor: '#ffffff'
+    }).then((canvas) => {
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF({
+        orientation: 'landscape',
+        unit: 'mm',
+        format: 'a4'
+      });
+
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const margin = 6;
+      const imgWidth = pageWidth - (margin * 2);
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+      let heightLeft = imgHeight;
+      let position = margin;
+
+      pdf.addImage(imgData, 'PNG', margin, position, imgWidth, imgHeight);
+      heightLeft -= (pageHeight - margin * 2);
+
+      while (heightLeft > 0) {
+        position = heightLeft - imgHeight + margin;
+        pdf.addPage();
+        pdf.addImage(imgData, 'PNG', margin, position, imgWidth, imgHeight);
+        heightLeft -= (pageHeight - margin * 2);
+      }
+
+      pdf.save(this.fileName.replace('.xlsx', '.pdf'));
+      document.body.removeChild(wrapper);
+    }).catch(() => {
+      document.body.removeChild(wrapper);
+    });
   }
 
   // filter the table where is not null or empty by the type recieved
@@ -158,6 +256,8 @@ export class NutritionSystemComponent implements OnInit {
 
   resetData() {
     this.dataSourceHos.data = this.nutritionHosData;
+    this.dataSourceCli.data = this.nutritionCliData;    
+    this.dataSourceHos = new MatTableDataSource([...this.nutritionHosData, ...this.nutritionCliData]);
   }
 
 }

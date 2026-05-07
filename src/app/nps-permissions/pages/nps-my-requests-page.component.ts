@@ -1,6 +1,5 @@
 import { Component, OnInit } from '@angular/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { forkJoin } from 'rxjs';
 import {
   NpsEmployeeListRow,
   NpsManagerApprovalSummaryRow,
@@ -15,10 +14,10 @@ import { NpsBaseApiService } from '../services/nps-base-api.service';
   styleUrls: ['./nps-my-requests-page.component.scss'],
 })
 export class NpsMyRequestsPageComponent implements OnInit {
-  rows: NpsPermissionApprovalGridRow[] = [];
   summaryRows: NpsManagerApprovalSummaryRow[] = [];
+  detailRows: NpsPermissionApprovalGridRow[] = [];
   selectedEmployeeId: number | null = null;
-  managerCols = ['FullName', 'NotApprovedCount', 'LastUpdateDate', 'Done'];
+  managerCols = ['EmployeeID', 'FullName', 'NotApprovedCount', 'LastUpdateDate', 'Done'];
   cols = [
     'EmployeeID',
     'FullName',
@@ -32,7 +31,10 @@ export class NpsMyRequestsPageComponent implements OnInit {
   mineOnly = true;
   statusFilter = '';
   busy = false;
+  /** Loaded when a summary row is selected (per-employee grid). */
+  detailBusy = false;
   loadError = false;
+  detailLoadError = false;
 
   // Create-request panel
   formEmployeeId: number | null = null;
@@ -69,33 +71,28 @@ export class NpsMyRequestsPageComponent implements OnInit {
   reload(): void {
     this.busy = true;
     this.loadError = false;
-    forkJoin({
-      summaryRows: this.api.getManagerApprovalSummary(this.employee_id || '', {
+    this.api
+      .getManagerApprovalSummary(this.employee_id || '', {
         status: this.statusFilter || '',
         skip: 0,
         take: 200,
-      }),
-      rows: this.api.getPermissionApprovalGrid(this.employee_id || '', {
-        mineOnly: this.mineOnly,
-        status: this.statusFilter || '',
-        skip: 0,
-        take: 400,
-      }),
-    })
+      })
       .subscribe(
-        ({ summaryRows, rows }) => {
+        (summaryRows) => {
           this.summaryRows = summaryRows || [];
-          this.rows = rows || [];
           if (this.selectedEmployeeId != null && !this.summaryRows.some((x) => x.EmployeeID === this.selectedEmployeeId)) {
-            this.selectedEmployeeId = null;
+            this.clearSelectedEmployee();
+          } else if (this.selectedEmployeeId != null) {
+            this.loadEmployeeDetail(this.selectedEmployeeId);
+          } else {
+            this.detailRows = [];
           }
-          this.pendingApprovals = {};
           this.busy = false;
           this.loadError = false;
         },
         () => {
           this.summaryRows = [];
-          this.rows = [];
+          this.detailRows = [];
           this.busy = false;
           this.loadError = true;
           this.snack.open('לא ניתן לטעון נתונים', 'סגור', { duration: 3000 });
@@ -103,33 +100,47 @@ export class NpsMyRequestsPageComponent implements OnInit {
       );
   }
 
-  get detailRows(): NpsPermissionApprovalGridRow[] {
-    const baseRows =
-      this.selectedEmployeeId == null
-        ? this.rows
-        : this.rows.filter((x) => x.EmployeeID === this.selectedEmployeeId);
-
-    return baseRows.filter((row) => {
-      return true;
-    });
+  private loadEmployeeDetail(employeeId: number): void {
+    this.detailBusy = true;
+    this.detailLoadError = false;
+    this.api
+      .getPermissionApprovalGrid(this.employee_id || '', {
+        employeeId,
+        mineOnly: this.mineOnly,
+        status: this.statusFilter || '',
+        skip: 0,
+        take: 400,
+      })
+      .subscribe(
+        (rows) => {
+          this.detailRows = rows || [];
+          this.pendingApprovals = {};
+          this.detailBusy = false;
+          this.detailLoadError = false;
+        },
+        () => {
+          this.detailRows = [];
+          this.detailBusy = false;
+          this.detailLoadError = true;
+          this.snack.open('לא ניתן לטעון פירוט העובד', 'סגור', { duration: 3000 });
+        }
+      );
   }
 
   selectSummaryRow(row: NpsManagerApprovalSummaryRow): void {
     this.selectedEmployeeId = row.EmployeeID;
+    this.loadEmployeeDetail(row.EmployeeID);
   }
 
   clearSelectedEmployee(): void {
     this.selectedEmployeeId = null;
+    this.detailRows = [];
+    this.pendingApprovals = {};
+    this.detailBusy = false;
+    this.detailLoadError = false;
   }
 
   canApprove(row: NpsPermissionApprovalGridRow, stepNo: number): boolean {
-    if (row.RequestStatus !== 'Pending') {
-      return false;
-    }
-    // Manager2/employee cannot approve until manager1 approves this permission.
-    if (stepNo > 1 && !row.Manager1Approved) {
-      return false;
-    }
     if (stepNo === 1) {
       return row.Manager1ApproverID === this.currentEmployeeId;
     }
@@ -143,11 +154,7 @@ export class NpsMyRequestsPageComponent implements OnInit {
     return `${itemId}_${stepNo}`;
   }
 
-  isStepChecked(row: NpsPermissionApprovalGridRow, stepNo: number): boolean {
-    const key = this.approvalKey(row.ItemID, stepNo);
-    if (Object.prototype.hasOwnProperty.call(this.pendingApprovals, key)) {
-      return !!this.pendingApprovals[key];
-    }
+  private originalStepApproved(row: NpsPermissionApprovalGridRow, stepNo: number): boolean {
     if (stepNo === 1) {
       return !!row.Manager1Approved;
     }
@@ -157,20 +164,26 @@ export class NpsMyRequestsPageComponent implements OnInit {
     return !!row.EmployeeApproved;
   }
 
-  onStepCheckboxChange(row: NpsPermissionApprovalGridRow, stepNo: number, checked: boolean): void {
-    if (!this.canApprove(row, stepNo)) {
-      return;
-    }
+  isStepChecked(row: NpsPermissionApprovalGridRow, stepNo: number): boolean {
     const key = this.approvalKey(row.ItemID, stepNo);
-    if (checked) {
-      this.pendingApprovals[key] = true;
-    } else {
+    if (Object.prototype.hasOwnProperty.call(this.pendingApprovals, key)) {
+      return !!this.pendingApprovals[key];
+    }
+    return this.originalStepApproved(row, stepNo);
+  }
+
+  onStepCheckboxChange(row: NpsPermissionApprovalGridRow, stepNo: number, checked: boolean): void {
+    const key = this.approvalKey(row.ItemID, stepNo);
+    const original = this.originalStepApproved(row, stepNo);
+    if (checked === original) {
       delete this.pendingApprovals[key];
+    } else {
+      this.pendingApprovals[key] = checked;
     }
   }
 
   hasPendingSelections(): boolean {
-    return Object.keys(this.pendingApprovals).some((k) => this.pendingApprovals[k] === true);
+    return Object.keys(this.pendingApprovals).length > 0;
   }
 
   private canSelectInColumn(row: NpsPermissionApprovalGridRow, stepNo: number): boolean {
@@ -204,24 +217,22 @@ export class NpsMyRequestsPageComponent implements OnInit {
         continue;
       }
       const key = this.approvalKey(row.ItemID, stepNo);
-      if (checked) {
-        if (!this.isStepChecked(row, stepNo)) {
-          this.pendingApprovals[key] = true;
-        }
-      } else {
+      const original = this.originalStepApproved(row, stepNo);
+      if (checked === original) {
         delete this.pendingApprovals[key];
+      } else {
+        this.pendingApprovals[key] = checked;
       }
     }
   }
 
   saveAllSelections(): void {
     const approvals = Object.keys(this.pendingApprovals)
-      .filter((k) => this.pendingApprovals[k] === true)
       .map((k) => {
         const parts = k.split('_');
         const itemId = Number(parts[0]);
         const stepNo = Number(parts[1]);
-        return { itemId, stepNo, approved: true, comments: '' };
+        return { itemId, stepNo, approved: !!this.pendingApprovals[k], comments: '' };
       });
 
     if (approvals.length === 0) {
