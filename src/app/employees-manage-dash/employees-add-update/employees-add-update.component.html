@@ -1,23 +1,23 @@
-<form dir="rtl" autocomplete="off" *ngIf="employeePersonalDetails != undefined">
+<form dir="rtl" autocomplete="off" *ngIf="employeePersonalDetails != undefined" class="employees-add-update modern-dialog">
     <div class="row">
-        <mat-card class="text-center">
+        <mat-card class="text-center header-card">
             <button mat-mini-fab color="warn" class="close" matTooltip="סגירה" aria-label="Close" mat-dialog-close>
                 <mat-icon>cancel</mat-icon>
             </button>
             <div class="row">
                 <div class="col-8">
-                    <label style="font-size: 35px;"
+                    <label class="employee-title"
                         *ngIf="!EmployeeExists && managerType != 'stager'">{{employeePersonalDetails.controls['FirstName'].value}}
                         {{employeePersonalDetails.controls['LastName'].value}} -
                         {{employeeWorkDetails.controls['ADUserName'].value}} -
                         {{employeePersonalDetails.controls['EmployeeID'].value}}</label>
-                    <label style="font-size: 40px;color: red;" *ngIf="EmployeeExists">העובד
+                    <label class="employee-error-title" *ngIf="EmployeeExists">העובד
                         כבר קיים במערכת - ליצור קשר
                         עם מערכות מידע</label>
                 </div>
                 <div class="col-1">
                     <img [src]="employeePersonalDetails.controls['ProfilePicture'].value" width="100" alt="תמונת עובד"
-                        (click)="togglePreview()" style="cursor: pointer;border-radius: 40%" height="100" />
+                        (click)="togglePreview()" class="profile-image" height="100" />
                     <div *ngIf="previewImage" class="image-preview-overlay" (click)="closePreview()">
                         <img [src]="previewImage" alt="Full Image" class="full-image" />
                     </div>
@@ -30,7 +30,7 @@
                         </span>
                     </button>
                     &nbsp;&nbsp; -->
-                    <button class="submitBtn history"
+                    <button class="submitBtn history action-fab"
                         (click)="EmployeeChangeHistory(employeePersonalDetails.controls['EmployeeID'].value)"
                         matTooltip="היסטוריית שינויים" type="submit" mat-fab>
                         <span class="material-icons">
@@ -38,9 +38,9 @@
                         </span>
                     </button>
                     &nbsp;&nbsp;
-                    <button class="submitBtn save" matTooltip="שמירה" [disabled]="employeePersonalDetails.invalid"
+                    <button class="submitBtn save action-fab" matTooltip="שמירה" [disabled]="employeePersonalDetails.invalid"
                         (click)="saveEmployee()" [disabled]="saveBtnWait"
-                        *ngIf="print_only_Protocol || UserName == 'adahabre' || UserName == 'malkobi' || UserName == 'orkatz' || UserName == 'dgolani' || UserName == 'ashoshany' || UserName == 'owertheim' || UserName == 'eofir' || UserName == 'msuliman' || UserName == 'amarom'"
+                        *ngIf="print_only_Protocol || UserName == 'adahabre' || UserName == 'malkobi' || UserName == 'orkatz' || UserName == 'dgolani' || UserName == 'ashoshany' || UserName == 'owertheim' || UserName == 'eofir' || UserName == 'msuliman' || UserName == 'amarom' || UserName == 'lnachmani'"
                         type="submit" mat-fab>
                         <span *ngIf="!saveBtnWait" class="material-icons">
                             save
@@ -52,7 +52,7 @@
         </mat-card>
     </div>
     <div class="row float-right mt-3">
-        <mat-vertical-stepper>
+        <mat-vertical-stepper class="modern-stepper">
             <mat-step [stepControl]="employeePersonalDetails">
                 <form dir="rtl" [formGroup]="employeePersonalDetails" autocomplete="off">
                     <ng-template matStepLabel>פרטים אישיים</ng-template>
@@ -182,41 +182,30 @@
                             <div class="col-3">
                                 <mat-form-field>
                                     <mat-label>סיבת סיום עבודה</mat-label>
-                                    <mat-select formControlName="EndWorkReason" aria-placeholder="סיבת סיום עבודה">
-                                        <mat-option value=""> </mat-option>
-                                        <mat-option *ngFor="let reason of end_work_reasons" [value]="reason.Row_ID">
-                                            {{reason.Description}} </mat-option>
-                                    </mat-select>
+                                    <input type="text" matInput [formControl]="endWorkReasonAutocomplete"
+                                        [matAutocomplete]="endWorkReasonAuto" aria-placeholder="סיבת סיום עבודה">
+                                    <mat-autocomplete #endWorkReasonAuto="matAutocomplete"
+                                        [displayWith]="displayEndWorkReason"
+                                        (optionSelected)="onEndWorkReasonSelected($event.option.value)">
+                                        <mat-option [value]="''"></mat-option>
+                                        <mat-option *ngFor="let reason of filteredEndWorkReasons | async"
+                                            [value]="reason">
+                                            {{reason.Description}}
+                                        </mat-option>
+                                    </mat-autocomplete>
                                 </mat-form-field>
                             </div>
                             <div class="col-3">
                                 <mat-form-field>
-                                    <mat-label>סקטור</mat-label>
-                                    <mat-select formControlName="EmployeeSektorID"
-                                        (selectionChange)="sektorSelection($event.value)" aria-placeholder="סקטור">
-                                        <div *ngIf="managerType == 'stager'">
-                                            <mat-option value="899">
-                                                סקטור סטאזרים לרפואה
-                                            </mat-option>
-                                            <mat-option value="999">
-                                                סקטור רופאים
-                                            </mat-option>
-                                        </div>
-                                        <div *ngIf="managerType == 'research' || managerType == 'hr'">
-                                            <div *ngFor="let sektor of SektorsList">
-                                                <mat-option [value]="sektor.EmployeeSektorID"
-                                                    *ngIf="sektor.EmployeeSektorID != '899'">
-                                                    {{sektor.EmployeeSektorDescription}}
-                                                </mat-option>
-                                            </div>
-                                        </div>
-                                        <div *ngIf="managerType == 'admin'">
-                                            <mat-option *ngFor="let sektor of SektorsList"
-                                                [value]="sektor.EmployeeSektorID">
-                                                {{sektor.EmployeeSektorDescription}}
-                                            </mat-option>
-                                        </div>
-                                    </mat-select>
+                                    <mat-label>הרשאות בלוסום</mat-label>
+                                    <input type="text" matInput [formControl]="sektorAutocomplete"
+                                        [matAutocomplete]="sektorAuto" aria-placeholder="הרשאות בלוסום">
+                                    <mat-autocomplete #sektorAuto="matAutocomplete" [displayWith]="displaySektor"
+                                        (optionSelected)="onSektorSelected($event.option.value)">
+                                        <mat-option *ngFor="let sektor of filteredSektors | async" [value]="sektor">
+                                            {{sektor.EmployeeSektorDescription}}
+                                        </mat-option>
+                                    </mat-autocomplete>
                                 </mat-form-field>
                             </div>
                             <div class="col-3">
@@ -270,10 +259,14 @@
                             <div class="col-3">
                                 <mat-form-field>
                                     <mat-label>תיאור תפקיד</mat-label>
-                                    <mat-select formControlName="FunctionID" aria-placeholder="תיאור תפקיד">
-                                        <mat-option *ngFor="let func of FunctionsList" [value]="func.FunctionID">
-                                            {{func.FunctionDescription}} </mat-option>
-                                    </mat-select>
+                                    <input type="text" matInput [formControl]="functionAutocomplete"
+                                        [matAutocomplete]="functionAuto" aria-placeholder="תיאור תפקיד">
+                                    <mat-autocomplete #functionAuto="matAutocomplete" [displayWith]="displayFunction"
+                                        (optionSelected)="onFunctionSelected($event.option.value)">
+                                        <mat-option *ngFor="let func of filteredFunctions | async" [value]="func">
+                                            {{func.FunctionDescription}}
+                                        </mat-option>
+                                    </mat-autocomplete>
                                 </mat-form-field>
                             </div>
                             <div class="col-3">
@@ -287,9 +280,9 @@
                             </div>
                             <div class="col-3" *ngIf="managerType != 'stager'">
                                 <mat-form-field>
-                                    <mat-label>סקטור בבלוסום</mat-label>
+                                    <mat-label>סקטור</mat-label>
                                     <mat-select formControlName="EmployeeBlossomSektorID"
-                                        aria-placeholder="סקטור בבלוסום">
+                                        aria-placeholder="סקטור">
                                         <mat-option *ngFor="let blo of EmployeeBlossomSektors"
                                             [value]="blo.EmployeeBlossomSektorID">
                                             {{blo.EmployeeSektorBlossomDescription}} </mat-option>
@@ -308,20 +301,31 @@
                             <div class="col-3">
                                 <mat-form-field>
                                     <mat-label>מחלקה</mat-label>
-                                    <mat-select formControlName="DepartnentCode" aria-placeholder="מחלקה">
-                                        <mat-option *ngFor="let dept of DepartmentsList" [value]="dept.DepartnentCode">
-                                            {{dept.DepartnentDescripton}} </mat-option>
-                                    </mat-select>
+                                    <input type="text" matInput [formControl]="departmentAutocomplete"
+                                        [matAutocomplete]="departmentAuto" aria-placeholder="מחלקה">
+                                    <mat-autocomplete #departmentAuto="matAutocomplete"
+                                        [displayWith]="displayDepartment"
+                                        (optionSelected)="onDepartmentSelected($event.option.value)">
+                                        <mat-option *ngFor="let dept of filteredDepartments | async" [value]="dept">
+                                            {{dept.DepartnentDescripton}}
+                                        </mat-option>
+                                    </mat-autocomplete>
                                 </mat-form-field>
                             </div>
                             <div class="col-3">
                                 <mat-form-field>
                                     <mat-label>תת מחלקה</mat-label>
-                                    <mat-select formControlName="SubDepartmentCode" aria-placeholder="מחלקה">
-                                        <mat-option value=""> </mat-option>
-                                        <mat-option *ngFor="let dept of DepartmentsList" [value]="dept.DepartnentCode">
-                                            {{dept.DepartnentDescripton}} </mat-option>
-                                    </mat-select>
+                                    <input type="text" matInput [formControl]="subDepartmentAutocomplete"
+                                        [matAutocomplete]="subDepartmentAuto" aria-placeholder="מחלקה">
+                                    <mat-autocomplete #subDepartmentAuto="matAutocomplete"
+                                        [displayWith]="displayDepartment"
+                                        (optionSelected)="onSubDepartmentSelected($event.option.value)">
+                                        <mat-option [value]="''"></mat-option>
+                                        <mat-option *ngFor="let dept of filteredSubDepartments | async"
+                                            [value]="dept">
+                                            {{dept.DepartnentDescripton}}
+                                        </mat-option>
+                                    </mat-autocomplete>
                                 </mat-form-field>
                             </div>
                             <div class="col-3">
@@ -466,11 +470,10 @@
                             <th mat-header-cell *matHeaderCellDef>שם השכלה</th>
                             <td mat-cell *matCellDef="let row; let i = index" [formGroupName]="i">
                                 <mat-form-field appearance="outline" class="w-full">
-                                    <!-- <input matInput placeholder="שם השכלה" formControlName="EducationSubject" /> -->
-                                    <mat-select formControlName="EducationSubject" aria-placeholder="התמחות"
+                                    <mat-select formControlName="EducationSubject" aria-placeholder="השכלה"
                                         (selectionChange)="onEducationSubjectChange(i, $event.value)">
-                                        <mat-option *ngFor="let education of EducationsList" [value]="education">
-                                            {{education}} </mat-option>
+                                        <mat-option *ngFor="let education of EducationsList" [value]="education.EducationID">
+                                            {{education.EducationSubject}} </mat-option>
                                     </mat-select>
                                 </mat-form-field>
                             </td>
@@ -482,10 +485,9 @@
                             <th mat-header-cell *matHeaderCellDef>התמחות</th>
                             <td mat-cell *matCellDef="let row; let i = index" [formGroupName]="i">
                                 <mat-form-field appearance="outline" class="w-full">
-                                    <!-- <input matInput placeholder="שם התמחות" formControlName="Speciality" /> -->
                                     <mat-select formControlName="Speciality" aria-placeholder="התמחות">
-                                        <mat-option *ngFor="let speciality of getSpecialitiesForRow(i)" [value]="speciality">
-                                            {{speciality}} </mat-option>
+                                        <mat-option *ngFor="let speciality of getSpecialitiesForRow(i)" [value]="speciality.SpecialtyID">
+                                            {{speciality.Speciality}} </mat-option>
                                     </mat-select>
                                 </mat-form-field>
                             </td>
@@ -556,7 +558,12 @@
                             <th mat-header-cell *matHeaderCellDef>שם הכשרה</th>
                             <td mat-cell *matCellDef="let row; let i = index" [formGroupName]="i">
                                 <mat-form-field appearance="outline" class="w-full">
-                                    <input matInput placeholder="שם הכשרה" formControlName="TrainingSubject" />
+                                    <!-- <input matInput placeholder="שם הכשרה" formControlName="TrainingSubject" /> -->
+                                    <mat-select formControlName="TrainingSubject" aria-placeholder="שם הכשרה"
+                                        (selectionChange)="onTrainingSubjectChange(i, $event.value)">
+                                        <mat-option *ngFor="let training of TrainingsList" [value]="training.TrainingSubject">
+                                            {{training.TrainingSubject}} </mat-option>
+                                    </mat-select>
                                 </mat-form-field>
                             </td>
                         </ng-container>

@@ -545,8 +545,27 @@
   font-size: 15px; color: #1e293b; cursor: pointer; transition: background .2s;
   direction: rtl;
   text-align: right;
+  display: flex;
+  align-items: center;
+  gap: 8px;
   &:hover { background: rgba(15,23,42,.05); }
   &.selected { background: rgba(37,99,235,.1); color: #2563eb; font-weight: 600; }
+}
+
+.option-item::before {
+  content: "✓";
+  width: 16px;
+  min-width: 16px;
+  color: #22c55e;
+  font-size: 14px;
+  font-weight: 900;
+  line-height: 1;
+  text-align: center;
+  opacity: 0;
+}
+
+.option-item.selected::before {
+  opacity: 1;
 }
 
 /* תפריט הבחירות בסיידבר – טקסט קטן ואחיד */

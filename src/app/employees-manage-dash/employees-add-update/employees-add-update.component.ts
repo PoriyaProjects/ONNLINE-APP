@@ -44,6 +44,7 @@ export class EmployeesAddUpdateComponent implements OnInit {
   trainingsDetails: FormGroup;
   educationsDetails: FormGroup;
   EducationsList = [];
+  TrainingsList = [];
   RanksList = [];
   SektorsList = [];
   FunctionsList = [];
@@ -72,6 +73,16 @@ export class EmployeesAddUpdateComponent implements OnInit {
   manfilter = new FormControl();
   filteredOptions2: Observable<string[]>;
   man2filter = new FormControl();
+  sektorAutocomplete = new FormControl('');
+  functionAutocomplete = new FormControl('');
+  departmentAutocomplete = new FormControl('');
+  subDepartmentAutocomplete = new FormControl('');
+  endWorkReasonAutocomplete = new FormControl('');
+  filteredSektors: Observable<any[]> = new Observable<any[]>();
+  filteredFunctions: Observable<any[]> = new Observable<any[]>();
+  filteredDepartments: Observable<any[]> = new Observable<any[]>();
+  filteredSubDepartments: Observable<any[]> = new Observable<any[]>();
+  filteredEndWorkReasons: Observable<any[]> = new Observable<any[]>();
   employees = [];
   columnHeaderMap: { [key: string]: string } = {
     StartWorkDate: 'תאריך תחילת עבודה',
@@ -151,6 +162,7 @@ export class EmployeesAddUpdateComponent implements OnInit {
     this.getEmployeesEndWorkReasons();
     this.getEmployeeDepartmentList();
     this.getHRDepartmentEmployees();
+    this.initWorkAutocompletes();
 
     this.filteredOptions = this.manfilter.valueChanges
       .pipe(
@@ -163,6 +175,145 @@ export class EmployeesAddUpdateComponent implements OnInit {
         map(value => this._filter2(value))
       );
     this.getEducationsList();
+    this.getTrainingsList();
+  }
+
+  private initWorkAutocompletes(): void {
+    this.filteredSektors = this.sektorAutocomplete.valueChanges.pipe(
+      startWith(''),
+      map((value) => this.filterSektors(value))
+    );
+    this.filteredFunctions = this.functionAutocomplete.valueChanges.pipe(
+      startWith(''),
+      map((value) => this.filterFunctions(value))
+    );
+    this.filteredDepartments = this.departmentAutocomplete.valueChanges.pipe(
+      startWith(''),
+      map((value) => this.filterDepartments(value))
+    );
+    this.filteredSubDepartments = this.subDepartmentAutocomplete.valueChanges.pipe(
+      startWith(''),
+      map((value) => this.filterDepartments(value))
+    );
+    this.filteredEndWorkReasons = this.endWorkReasonAutocomplete.valueChanges.pipe(
+      startWith(''),
+      map((value) => this.filterEndWorkReasons(value))
+    );
+    this.sektorAutocomplete.valueChanges.subscribe((value) => {
+      if (typeof value === 'string' && this.employeeWorkDetails) {
+        this.employeeWorkDetails.controls['EmployeeSektorID'].setValue('');
+      }
+    });
+    this.functionAutocomplete.valueChanges.subscribe((value) => {
+      if (typeof value === 'string' && this.employeeWorkDetails) {
+        this.employeeWorkDetails.controls['FunctionID'].setValue('');
+      }
+    });
+    this.departmentAutocomplete.valueChanges.subscribe((value) => {
+      if (typeof value === 'string' && this.employeeWorkDetails) {
+        this.employeeWorkDetails.controls['DepartnentCode'].setValue('');
+      }
+    });
+    this.subDepartmentAutocomplete.valueChanges.subscribe((value) => {
+      if (typeof value === 'string' && this.employeeWorkDetails) {
+        this.employeeWorkDetails.controls['SubDepartmentCode'].setValue('');
+      }
+    });
+    this.endWorkReasonAutocomplete.valueChanges.subscribe((value) => {
+      if (typeof value === 'string' && this.employeeWorkDetails) {
+        this.employeeWorkDetails.controls['EndWorkReason'].setValue('');
+      }
+    });
+  }
+
+  private filterSektors(value: any): any[] {
+    const text = (typeof value === 'string' ? value : value?.EmployeeSektorDescription || '').toLowerCase();
+    return this.getAvailableSektors().filter((sektor) =>
+      (sektor.EmployeeSektorDescription || '').toLowerCase().includes(text)
+    );
+  }
+
+  private filterFunctions(value: any): any[] {
+    const text = (typeof value === 'string' ? value : value?.FunctionDescription || '').toLowerCase();
+    return this.FunctionsList.filter((func) =>
+      (func.FunctionDescription || '').toLowerCase().includes(text)
+    );
+  }
+
+  private filterDepartments(value: any): any[] {
+    const text = (typeof value === 'string' ? value : value?.DepartnentDescripton || '').toLowerCase();
+    return this.DepartmentsList.filter((dept) =>
+      (dept.DepartnentDescripton || '').toLowerCase().includes(text)
+    );
+  }
+
+  private filterEndWorkReasons(value: any): any[] {
+    const text = (typeof value === 'string' ? value : value?.Description || '').toLowerCase();
+    return this.end_work_reasons.filter((reason) =>
+      (reason.Description || '').toLowerCase().includes(text)
+    );
+  }
+
+  getAvailableSektors(): any[] {
+    if (this.managerType == 'stager') {
+      return this.SektorsList.filter((sektor) => sektor.EmployeeSektorID == '899' || sektor.EmployeeSektorID == '999');
+    }
+    if (this.managerType == 'research' || this.managerType == 'hr') {
+      return this.SektorsList.filter((sektor) => sektor.EmployeeSektorID != '899');
+    }
+    return this.SektorsList;
+  }
+
+  displaySektor(sektor: any): string {
+    return sektor?.EmployeeSektorDescription || '';
+  }
+
+  displayFunction(func: any): string {
+    return func?.FunctionDescription || '';
+  }
+
+  displayDepartment(dept: any): string {
+    return dept?.DepartnentDescripton || '';
+  }
+
+  displayEndWorkReason(reason: any): string {
+    return reason?.Description || '';
+  }
+
+  onSektorSelected(sektor: any): void {
+    const id = sektor?.EmployeeSektorID || '';
+    this.employeeWorkDetails.controls['EmployeeSektorID'].setValue(id);
+    this.sektorSelection(id);
+  }
+
+  onFunctionSelected(func: any): void {
+    this.employeeWorkDetails.controls['FunctionID'].setValue(func?.FunctionID || '');
+  }
+
+  onDepartmentSelected(dept: any): void {
+    this.employeeWorkDetails.controls['DepartnentCode'].setValue(dept?.DepartnentCode || '');
+  }
+
+  onSubDepartmentSelected(dept: any): void {
+    this.employeeWorkDetails.controls['SubDepartmentCode'].setValue(dept?.DepartnentCode || '');
+  }
+
+  onEndWorkReasonSelected(reason: any): void {
+    this.employeeWorkDetails.controls['EndWorkReason'].setValue(reason?.Row_ID || '');
+  }
+
+  private syncWorkAutocompleteValues(): void {
+    if (!this.employeeWorkDetails) return;
+    const sektor = this.getAvailableSektors().find((s) => s.EmployeeSektorID == this.employeeWorkDetails.controls['EmployeeSektorID'].value);
+    const func = this.FunctionsList.find((f) => f.FunctionID == this.employeeWorkDetails.controls['FunctionID'].value);
+    const dept = this.DepartmentsList.find((d) => d.DepartnentCode == this.employeeWorkDetails.controls['DepartnentCode'].value);
+    const subDept = this.DepartmentsList.find((d) => d.DepartnentCode == this.employeeWorkDetails.controls['SubDepartmentCode'].value);
+    const reason = this.end_work_reasons.find((r) => r.Row_ID == this.employeeWorkDetails.controls['EndWorkReason'].value);
+    this.sektorAutocomplete.setValue(sektor || '', { emitEvent: false });
+    this.functionAutocomplete.setValue(func || '', { emitEvent: false });
+    this.departmentAutocomplete.setValue(dept || '', { emitEvent: false });
+    this.subDepartmentAutocomplete.setValue(subDept || '', { emitEvent: false });
+    this.endWorkReasonAutocomplete.setValue(reason || '', { emitEvent: false });
   }
 
   getSpecialitiesForRow(rowIndex: number): any[] {
@@ -197,9 +348,20 @@ export class EmployeesAddUpdateComponent implements OnInit {
     this.loadSpecialitiesForRow(rowIndex, educationID);
   }
 
+  onTrainingSubjectChange(rowIndex: number, trainingID: any): void {
+    const row = this.trainings.at(rowIndex) as FormGroup;
+    row.get('TrainingSubject')?.setValue(null);
+  }
+
   getEducationsList() {
     this.http.post(this.Api + "GetEmployeeEducationsList", {}).subscribe((Response) => {
       this.EducationsList = Response["d"];
+    });
+  }
+
+  getTrainingsList() {
+    this.http.post(this.Api + "GetEmployeeTrainingsList", {}).subscribe((Response) => {
+      this.TrainingsList = Response["d"];
     });
   }
 
@@ -349,6 +511,7 @@ export class EmployeesAddUpdateComponent implements OnInit {
         this.createTrainingGroup(this.employee.EmployeeTrainings)
         this.educationSpecialitiesLists = [];
         this.createEducationGroup(this.employee.EmployeeEducations)
+        this.syncWorkAutocompleteValues();
       });
   }
 
@@ -386,18 +549,20 @@ export class EmployeesAddUpdateComponent implements OnInit {
     });
     if (arr != null) {
       arr.forEach(element => {
+        const educationValue = element.EducationID ?? element.EducationSubject ?? null;
+        const specialityValue = element.SpecialtyID ?? element.Speciality ?? null;
         temp = this.formBuilder.group({
           Row_ID: [element.Row_ID, null],
-          EducationSubject: [element.EducationSubject, null],
-          Speciality: [element.Speciality, null],
+          EducationSubject: [educationValue, null],
+          Speciality: [specialityValue, null],
           EducationDate: [element.EducationDate, null],
           Note: [element.Note, null]
         });
         this.educations.push(temp);
         const rowIndex = this.educations.length - 1;
         this.educationSpecialitiesLists.push([]);
-        if (element.EducationSubject) {
-          this.loadSpecialitiesForRow(rowIndex, element.EducationSubject);
+        if (educationValue) {
+          this.loadSpecialitiesForRow(rowIndex, educationValue);
         }
       });
     } else {
@@ -602,6 +767,7 @@ export class EmployeesAddUpdateComponent implements OnInit {
       })
       .subscribe((Response) => {
         this.DepartmentsList = Response["d"];
+        this.syncWorkAutocompleteValues();
       });
   }
 
@@ -611,6 +777,7 @@ export class EmployeesAddUpdateComponent implements OnInit {
       })
       .subscribe((Response) => {
         this.SektorsList = Response["d"];
+        this.syncWorkAutocompleteValues();
       });
   }
 
@@ -621,6 +788,7 @@ export class EmployeesAddUpdateComponent implements OnInit {
       })
       .subscribe((Response) => {
         this.FunctionsList = Response["d"];
+        this.syncWorkAutocompleteValues();
       });
   }
 
@@ -639,6 +807,7 @@ export class EmployeesAddUpdateComponent implements OnInit {
       })
       .subscribe((Response) => {
         this.end_work_reasons = Response["d"];
+        this.syncWorkAutocompleteValues();
       });
   }
 
@@ -737,6 +906,7 @@ export class EmployeesAddUpdateComponent implements OnInit {
             this._switchHTOK = this.employee.StatusRow;
             this._switchBlossom = this.employee.ApprovedToBlossom;
             this.AcceptTerms = this.employee.AcceptTerms;
+            this.syncWorkAutocompleteValues();
           } else {
             this.employeePersonalDetails.disable();
             this.employeeWorkDetails.disable();

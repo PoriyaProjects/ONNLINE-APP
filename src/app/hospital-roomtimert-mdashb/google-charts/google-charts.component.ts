@@ -302,9 +302,11 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
     refreshInterval: ReturnType<typeof setInterval> | null = null;
     countdownInterval: ReturnType<typeof setInterval> | null = null;
     private intervalId: ReturnType<typeof setInterval> | null = null;
-    nextRefreshIn: number = 300;
+    nextRefreshIn: number = 0;
+    nextRefreshAt: Date | null = null;
     autoRefreshPaused = false;
     lastLoaded: Date | null = null;
+    private readonly AUTO_REFRESH_INTERVAL_MINUTES = 10;
     /** true אחרי שהסתיים שלב 2 (לוח הניתוחים) – כדי להציג ניתוחים מתוכננים רק כשהמידע הסופי מוכן */
     calendarEnriched = false;
 
@@ -455,6 +457,7 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
         if (this.intervalId) {
             clearInterval(this.intervalId);
         }
+        this.clearIntervals();
         this.stopLoadProgressAnimation();
         if (this.loadOverlayHideTimer) {
             clearTimeout(this.loadOverlayHideTimer);
@@ -2041,7 +2044,9 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
 
     manualRefresh(): void {
         this.loadRoomsData();
-        this.nextRefreshIn = 300;
+        if (!this.autoRefreshPaused) {
+            this.scheduleNextRoundedRefresh();
+        }
         this.lastLoaded = new Date();
     }
 
@@ -2081,25 +2086,71 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
 
     private startAutoRefresh(): void {
         this.clearIntervals();
-        this.nextRefreshIn = 300;
-
-        this.refreshInterval = setInterval(() => {
-            if (!this.autoRefreshPaused) {
-                this.loadRoomsData();
-                this.nextRefreshIn = 300;
-            }
-        }, 5 * 60 * 1000);
+        this.scheduleNextRoundedRefresh();
 
         this.countdownInterval = setInterval(() => {
-            if (!this.autoRefreshPaused && this.nextRefreshIn > 0) {
-                this.nextRefreshIn--;
+            if (!this.autoRefreshPaused) {
+                this.updateNextRefreshCountdown();
             }
         }, 1000);
     }
 
     private clearIntervals(): void {
-        if (this.refreshInterval) clearInterval(this.refreshInterval);
-        if (this.countdownInterval) clearInterval(this.countdownInterval);
+        if (this.refreshInterval) {
+            clearTimeout(this.refreshInterval);
+            this.refreshInterval = null;
+        }
+        if (this.countdownInterval) {
+            clearInterval(this.countdownInterval);
+            this.countdownInterval = null;
+        }
+    }
+
+    private scheduleNextRoundedRefresh(from: Date = new Date()): void {
+        if (this.refreshInterval) {
+            clearTimeout(this.refreshInterval);
+            this.refreshInterval = null;
+        }
+
+        this.nextRefreshAt = this.getNextRoundedRefreshTime(from);
+        this.updateNextRefreshCountdown();
+
+        const delayMs = Math.max(
+            0,
+            this.nextRefreshAt.getTime() - new Date().getTime()
+        );
+
+        this.refreshInterval = setTimeout(() => {
+            if (this.autoRefreshPaused) return;
+
+            this.loadRoomsData();
+            this.scheduleNextRoundedRefresh(new Date());
+        }, delayMs);
+    }
+
+    private getNextRoundedRefreshTime(from: Date): Date {
+        const next = new Date(from);
+        const minutes = next.getMinutes();
+        const remainder = minutes % this.AUTO_REFRESH_INTERVAL_MINUTES;
+        const minutesToAdd =
+            remainder === 0
+                ? this.AUTO_REFRESH_INTERVAL_MINUTES
+                : this.AUTO_REFRESH_INTERVAL_MINUTES - remainder;
+
+        next.setMinutes(minutes + minutesToAdd, 0, 0);
+        return next;
+    }
+
+    private updateNextRefreshCountdown(): void {
+        if (!this.nextRefreshAt) {
+            this.nextRefreshAt = this.getNextRoundedRefreshTime(new Date());
+        }
+
+        this.nextRefreshIn = Math.max(
+            0,
+            Math.ceil((this.nextRefreshAt.getTime() - new Date().getTime()) / 1000)
+        );
+        this.cdr.markForCheck();
     }
 
     onDateChange(): void {

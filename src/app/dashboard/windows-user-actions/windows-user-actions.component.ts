@@ -48,7 +48,7 @@ export class WindowsUserActionsComponent implements OnInit {
       })
       .subscribe((Response) => {
         try {
-          if (Response['d']) this.messageToUser = "קוד אימות נשלח לטלפון שלך, זה עשוי לקחת כמה שניות נא להמתין";
+          if (Response['d']) this.messageToUser = "קוד אימות נשלח לטלפון שלך, זה עשוי לקחת דקה נא להמתין";
           this.sendingBtn = false;
           this.disableSendBtn();
         } catch (error) {
@@ -67,7 +67,7 @@ export class WindowsUserActionsComponent implements OnInit {
       .subscribe((Response) => {
         try {
           this.loading = true;
-          alert(Response['d']);
+          alert("‎"+Response['d']+"‎");
           window.location.reload();
         } catch (error) {
           console.log("error in sending notification!");

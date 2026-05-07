@@ -229,6 +229,8 @@ export class DepartmentIncomeDashboardComponent implements OnInit, OnDestroy {
     isDiagnosesLoading = false; // Loading for diagnoses list
     isChartLoading = false; // Loading for chart data
     selectedViewType: string = "cash";
+    showCatalogPriceColumn: boolean = false;
+    showModalIncomeFilters: boolean = false;
     chartType: string = "ColumnChart"; // 'ColumnChart' or 'LineChart'
 
     // Catalog columns - updated for sorting
@@ -402,6 +404,7 @@ export class DepartmentIncomeDashboardComponent implements OnInit, OnDestroy {
                         this.isDataLoaded = true;
                         this.isMainDataLoading = false;
                         this.loadIncomeReportReferenceFromSampleDepartment();
+                        this.refreshOpenDepartmentPopupAfterFilterReload();
                         this.cdr.detectChanges();
                         this.snackBar.open("✓ נתונים נטענו בהצלחה", "סגור", {
                             duration: 3000,
@@ -508,6 +511,7 @@ export class DepartmentIncomeDashboardComponent implements OnInit, OnDestroy {
                         this.isDataLoaded = true;
                         this.isMainDataLoading = false;
                         this.loadIncomeReportReferenceFromSampleDepartment();
+                        this.refreshOpenDepartmentPopupAfterFilterReload();
                         this.cdr.detectChanges();
 
                         this.snackBar.open("✓ נתונים עודכנו", "סגור", {
@@ -949,10 +953,29 @@ export class DepartmentIncomeDashboardComponent implements OnInit, OnDestroy {
         this.loadDetailedDepartmentData(departmentName);
     }
 
+    private refreshOpenDepartmentPopupAfterFilterReload(): void {
+        if (!this.isDepartmentGraphOpen || !this.selectedDepartment) {
+            return;
+        }
+        const departmentName = this.selectedDepartment.DepartmentName;
+        const updatedDepartment =
+            this.departmentIncomeData.find(
+                (d) => d.DepartmentName === departmentName
+            ) || null;
+        if (!updatedDepartment) {
+            this.detailedDataSource.data = [];
+            this.catalogLoading = false;
+            this.cdr.detectChanges();
+            return;
+        }
+        this.selectedDepartment = updatedDepartment;
+        this.loadDetailedDepartmentData(departmentName, false);
+    }
+
     /**
      * Load detailed department data
      */
-    loadDetailedDepartmentData(departmentName: string): void {
+    loadDetailedDepartmentData(departmentName: string, resetView: boolean = true): void {
         this.catalogLoading = true;
         this.http
             .post(environment.url + "GetDepartmentDetailedData", {
@@ -968,7 +991,8 @@ export class DepartmentIncomeDashboardComponent implements OnInit, OnDestroy {
                         const rows =
                             parsed?.rows ??
                             (Array.isArray(response.d) ? response.d : []);
-                        this.detailedDataSource.data = rows;
+                        this.detailedDataSource.data =
+                            this.applyIncomeFiltersToDetailedRows(rows);
                         if (rows.length) {
                             this.applyIncomeReportAsOfFromDetailed(
                                 rows,
@@ -976,13 +1000,25 @@ export class DepartmentIncomeDashboardComponent implements OnInit, OnDestroy {
                             );
                         }
 
-                        // Set default view to cash and sort by 2025 (descending)
-                        this.selectedViewType = "cash";
-                        this.displayedCatalogColumns = this.cashColumns;
+                        if (resetView) {
+                            this.selectedViewType = "cash";
+                            this.showCatalogPriceColumn = false;
+                        }
+                        this.updateDisplayedCatalogColumns();
 
                         // Sort by Cash2025 descending (highest to lowest)
                         this.sortDetailedDataByCash2025Descending();
 
+                        this.catalogLoading = false;
+                        this.isDepartmentGraphOpen = true;
+                        this.cdr.detectChanges();
+                    } else {
+                        this.detailedDataSource.data = [];
+                        if (resetView) {
+                            this.selectedViewType = "cash";
+                            this.showCatalogPriceColumn = false;
+                        }
+                        this.updateDisplayedCatalogColumns();
                         this.catalogLoading = false;
                         this.isDepartmentGraphOpen = true;
                         this.cdr.detectChanges();
@@ -1002,9 +1038,11 @@ export class DepartmentIncomeDashboardComponent implements OnInit, OnDestroy {
      * Sort detailed data by Cash2025 descending (default view)
      */
     sortDetailedDataByCash2025Descending(): void {
-        if (this.detailedDataSource.data) {
+        if (this.detailedDataSource.data?.length) {
             this.detailedDataSource.data.sort(
-                (a, b) => (b.Cash2025 || 0) - (a.Cash2025 || 0)
+                (a, b) =>
+                    this.toNumber((b as any)?.Cash2025) -
+                    this.toNumber((a as any)?.Cash2025)
             );
         }
     }
@@ -1018,15 +1056,22 @@ export class DepartmentIncomeDashboardComponent implements OnInit, OnDestroy {
             return;
         }
 
-        const data = this.detailedDataSource.data.slice();
+        const data = (this.detailedDataSource.data || []).slice();
+        if (data.length === 0) {
+            return;
+        }
         data.sort((a: any, b: any) => {
-            const aVal = a[event.active];
-            const bVal = b[event.active];
+            const aVal =
+                event.active === "CatalogUnitPrice"
+                    ? this.getCatalogUnitPrice(a)
+                    : a[event.active];
+            const bVal =
+                event.active === "CatalogUnitPrice"
+                    ? this.getCatalogUnitPrice(b)
+                    : b[event.active];
 
-            const aNum =
-                typeof aVal === "number" ? aVal : parseFloat(aVal) || 0;
-            const bNum =
-                typeof bVal === "number" ? bVal : parseFloat(bVal) || 0;
+            const aNum = this.toNumber(aVal);
+            const bNum = this.toNumber(bVal);
 
             return event.direction === "asc" ? aNum - bNum : bNum - aNum;
         });
@@ -1043,7 +1088,10 @@ export class DepartmentIncomeDashboardComponent implements OnInit, OnDestroy {
         this.selectedDepartment = null;
         this.detailedDataSource.data = [];
         this.selectedViewType = "cash";
-        this.displayedCatalogColumns = this.cashColumns;
+        this.showCatalogPriceColumn = false;
+        this.showModalIncomeFilters = false;
+        this.closeIncomeFilterDropdowns();
+        this.updateDisplayedCatalogColumns();
         this.cdr.detectChanges();
     }
 
@@ -1052,16 +1100,108 @@ export class DepartmentIncomeDashboardComponent implements OnInit, OnDestroy {
      */
     onViewTypeChange(viewType: string): void {
         this.selectedViewType = viewType;
-
-        if (viewType === "cash") {
-            this.displayedCatalogColumns = this.cashColumns;
-        } else if (viewType === "units") {
-            this.displayedCatalogColumns = this.unitsColumns;
-        } else if (viewType === "both") {
-            this.displayedCatalogColumns = this.bothColumns;
-        }
-
+        this.updateDisplayedCatalogColumns();
         this.cdr.detectChanges();
+    }
+
+    toggleCatalogPriceColumn(): void {
+        this.showCatalogPriceColumn = !this.showCatalogPriceColumn;
+        this.updateDisplayedCatalogColumns();
+        this.cdr.detectChanges();
+    }
+
+    toggleModalIncomeFilters(): void {
+        this.showModalIncomeFilters = !this.showModalIncomeFilters;
+        if (!this.showModalIncomeFilters) {
+            this.closeIncomeFilterDropdowns();
+        }
+        this.cdr.detectChanges();
+    }
+
+    isDashboardLoading(): boolean {
+        return (
+            this.isLoading ||
+            this.isMainDataLoading ||
+            this.isDiagnosesLoading ||
+            this.catalogLoading ||
+            this.isChartLoading
+        );
+    }
+
+    getLoadingProgress(): number {
+        if (this.catalogLoading) {
+            return 72;
+        }
+        if (this.isChartLoading && !this.isMainDataLoading) {
+            return 88;
+        }
+        if (this.isMainDataLoading) {
+            return 58;
+        }
+        if (this.isLoading) {
+            return 64;
+        }
+        if (this.isDiagnosesLoading) {
+            return 28;
+        }
+        return 100;
+    }
+
+    getLoadingTitle(): string {
+        if (this.catalogLoading) {
+            return "טוען פרטי מחלקה";
+        }
+        if (this.isChartLoading && !this.isMainDataLoading) {
+            return "בונה גרף הכנסות";
+        }
+        if (this.isMainDataLoading) {
+            return "מעדכן נתוני הכנסות";
+        }
+        if (this.isLoading) {
+            return "מכין דוח למנהל";
+        }
+        if (this.isDiagnosesLoading) {
+            return "טוען רשימת אגפים";
+        }
+        return "מסיים טעינה";
+    }
+
+    getLoadingSubtitle(): string {
+        if (this.catalogLoading) {
+            return "מחשב שירותים, יחידות ומחירון למחלקה שנבחרה.";
+        }
+        if (this.isChartLoading && !this.isMainDataLoading) {
+            return "מסדר את הנתונים לתצוגה גרפית ברורה.";
+        }
+        if (this.isMainDataLoading) {
+            return "מקבל נתונים מהשרת ומפעיל את הפילטרים שנבחרו.";
+        }
+        if (this.isLoading) {
+            return "מרכז סיכומים, מגמות והשוואות מנהלים.";
+        }
+        if (this.isDiagnosesLoading) {
+            return "מכין את רשימת המחלקות והאגפים לבחירה.";
+        }
+        return "עוד רגע הדשבורד מוכן.";
+    }
+
+    getLoadingRingBackground(): string {
+        const progress = this.getLoadingProgress();
+        return `conic-gradient(#3b82f6 0 ${progress}%, rgba(148, 163, 184, 0.22) ${progress}% 100%)`;
+    }
+
+    private updateDisplayedCatalogColumns(): void {
+        let columns: string[];
+        if (this.selectedViewType === "units") {
+            columns = this.unitsColumns;
+        } else if (this.selectedViewType === "both") {
+            columns = this.bothColumns;
+        } else {
+            columns = this.cashColumns;
+        }
+        this.displayedCatalogColumns = this.showCatalogPriceColumn
+            ? [...columns, "CatalogUnitPrice"]
+            : columns;
     }
 
     /**
@@ -1940,16 +2080,55 @@ updateChartColumns(): void {
         }
     }
     cashDiff(e: any): number {
-        const a = Number(e?.Cash2025 ?? 0);
-        const b = Number(e?.Cash2024 ?? 0);
+        const a = this.toNumber(e?.Cash2025);
+        const b = this.toNumber(e?.Cash2024);
         return a - b;
     }
 
     cashPct(e: any): string {
-        const a = Number(e?.Cash2025 ?? 0);
-        const b = Number(e?.Cash2024 ?? 0);
+        const a = this.toNumber(e?.Cash2025);
+        const b = this.toNumber(e?.Cash2024);
         if (!b) return a ? "∞" : "0%";
         return `${(((a - b) / b) * 100).toFixed(1)}%`;
+    }
+
+    getModalOlderIncome(): number {
+        return this.getModalCashTotal(
+            "Cash2024",
+            this.selectedDepartment?.Income2024 ?? 0
+        );
+    }
+
+    getModalLatestIncome(): number {
+        return this.getModalCashTotal(
+            "Cash2025",
+            this.selectedDepartment?.Income2025 ?? 0
+        );
+    }
+
+    getModalDifference(): number {
+        return this.getModalLatestIncome() - this.getModalOlderIncome();
+    }
+
+    getModalPercentageChange(): string {
+        const olderIncome = this.getModalOlderIncome();
+        const latestIncome = this.getModalLatestIncome();
+        if (!olderIncome) {
+            return latestIncome ? "∞" : "0%";
+        }
+        return `${(((latestIncome - olderIncome) / olderIncome) * 100).toFixed(
+            2
+        )}%`;
+    }
+
+    private getModalCashTotal(field: string, fallback: number): number {
+        const rows = this.detailedDataSource.data || [];
+        if (this.catalogLoading && rows.length === 0) {
+            return fallback;
+        }
+        return rows.reduce((total, row: any) => {
+            return total + this.toNumber(row?.[field]);
+        }, 0);
     }
 
     getCatalogServiceName(row: any): string {
@@ -1962,6 +2141,93 @@ updateChartColumns(): void {
                 row?.serviceName ??
                 ""
         ).trim();
+    }
+
+    getCatalogUnitPrice(row: any): number | null {
+        const latestYearCash = this.toNumber(row?.Cash2025);
+        const latestYearUnits = this.toNumber(row?.Units2025);
+        return latestYearUnits > 0 ? latestYearCash / latestYearUnits : null;
+    }
+
+    formatCatalogUnitPrice(row: any): string {
+        const price = this.getCatalogUnitPrice(row);
+        return price == null ? "-" : `${this.formatNumber(Math.round(price))} ₪`;
+    }
+
+    private sumNumericFields(row: any, fields: string[]): number {
+        return fields.reduce((total, field) => {
+            return total + this.toNumber(row?.[field]);
+        }, 0);
+    }
+
+    private toNumber(value: any): number {
+        if (typeof value === "number") {
+            return Number.isFinite(value) ? value : 0;
+        }
+        const parsed = Number(
+            String(value ?? "")
+                .replace(/[^\d.-]/g, "")
+                .trim()
+        );
+        return Number.isFinite(parsed) ? parsed : 0;
+    }
+
+    private applyIncomeFiltersToDetailedRows(
+        rows: DepartmentDetailedDataDto[]
+    ): DepartmentDetailedDataDto[] {
+        if (!Array.isArray(rows) || !this.hasActiveIncomeFilters()) {
+            return rows || [];
+        }
+        return rows.filter((row: any) => {
+            return (
+                this.matchesIncomeFilter(row, this.selectedIncomeSource, [
+                    "MedicalUnitIncome",
+                    "medicalUnitIncome",
+                    "MedicalUnit_Income",
+                    "medicalUnit_Income",
+                ]) &&
+                this.matchesIncomeFilter(row, this.selectedIncomeClassification, [
+                    "IncomeCategory",
+                    "incomeCategory",
+                    "IncomeClassification",
+                    "incomeClassification",
+                ]) &&
+                this.matchesIncomeFilter(row, this.selectedOrganization, [
+                    "Organization",
+                    "organization",
+                    "FundCountry",
+                    "fundCountry",
+                ]) &&
+                this.matchesIncomeFilter(row, this.selectedUnifiedCategory, [
+                    "UnifiedDiagnosis",
+                    "unifiedDiagnosis",
+                    "UnifiedCategory",
+                    "unifiedCategory",
+                ])
+            );
+        });
+    }
+
+    private matchesIncomeFilter(
+        row: any,
+        selectedValue: string,
+        candidateFields: string[]
+    ): boolean {
+        if (!selectedValue || selectedValue === this.incomeFilterAllValue) {
+            return true;
+        }
+        const rowValue = this.getFirstNonEmptyString(row, candidateFields);
+        return !rowValue || rowValue === selectedValue;
+    }
+
+    private getFirstNonEmptyString(row: any, candidateFields: string[]): string {
+        for (const field of candidateFields) {
+            const value = String(row?.[field] ?? "").trim();
+            if (value) {
+                return value;
+            }
+        }
+        return "";
     }
 
     get currentYear() {

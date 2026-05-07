@@ -17,6 +17,9 @@
               <div class="loader-progress-fill" [style.width.%]="loadProgressPercent"></div>
             </div>
             <p class="loader-panel-hint">מסנכרן נתוני ניתוחים וחדרים…</p>
+            <p *ngIf="nextRefreshAt && !autoRefreshPaused" class="loader-panel-schedule">
+              רענון אוטומטי כל 10 דקות עגולות | הבא בשעה {{ nextRefreshAt | date:'HH:mm' }}
+            </p>
           </div>
         </div>
 
@@ -35,8 +38,12 @@
                 {{ autoRefreshPaused ? '▶️ הפעל' : '⏸ השהה' }}
               </button>
 
-              <span class="refresh-box" (click)="manualRefresh()" title="רענן עכשיו">
+              <span class="refresh-box" (click)="manualRefresh()"
+                [title]="nextRefreshAt ? ('רענון הבא בשעה ' + (nextRefreshAt | date:'HH:mm')) : 'רענן עכשיו'">
                 ⟳ {{ formatCountdown(nextRefreshIn) }}
+                <span *ngIf="nextRefreshAt && !autoRefreshPaused" class="refresh-next-time">
+                  | {{ nextRefreshAt | date:'HH:mm' }}
+                </span>
               </span>
             </div>
           </div>
@@ -294,7 +301,7 @@
           </div>
         </div>
 
-        <div *ngIf="ambulatoryRooms.length > 0" class="rooms-section ambulatory-section">
+        <div class="rooms-section ambulatory-section">
           <div class="section-header ambulatory-section-header">
             <h2 class="header-title">חדר ניתוח אמבולטורי</h2>
           </div>
@@ -398,6 +405,48 @@
           </div>
 
           <div class="rooms-grid ambulatory-rooms">
+            <div *ngIf="ambulatoryRooms.length === 0" class="room-wrapper ambulatory-empty-wrapper">
+              <div class="room-widget card room-white ambulatory-room-card ambulatory-room-card--empty">
+                <div class="room-body ambulatory-room-body ambulatory-room-body--no-header">
+                  <div class="ambulatory-room-split">
+                    <div class="ambulatory-split-panel ambulatory-actual">
+                      <h5 class="section-title ambulatory-split-title">בפועל</h5>
+                      <div class="ambulatory-actual-inner">
+                        <div class="ambulatory-metrics-embedded">
+                          <div class="ambulatory-embedded-title">
+                            <span class="room-name">חדר ניתוח אמבולטורי</span>
+                          </div>
+                          <div class="room-duration-info">
+                            <div class="duration-display">
+                              <span class="duration-icon">⏱️</span>
+                              <span class="duration-text">אין פעילות</span>
+                            </div>
+                          </div>
+                          <div class="room-progress-info">
+                            <div class="progress-display">
+                              <span class="progress-counter">0/0</span>
+                              <span class="progress-label">בוצעו</span>
+                            </div>
+                          </div>
+                        </div>
+                        <p class="ambulatory-panel-empty">
+                          אין ניתוחים בפועל
+                        </p>
+                      </div>
+                    </div>
+
+                    <div class="ambulatory-split-panel ambulatory-planned ambulatory-planned--as-table"
+                      *ngIf="settings.showPlannedSection !== false">
+                      <h5 class="section-title ambulatory-split-title">ניתוחים מתוכננים</h5>
+                      <p class="ambulatory-panel-empty">
+                        אין ניתוחים מתוכננים
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             <ng-container *ngFor="let room of ambulatoryRooms; trackBy: trackByRoomId">
               <div class="room-wrapper" *ngIf="ambulatorySurgeries(room).length > 0">
                 <ng-container *ngIf="getRoomStatusInfo(room) as ambStatusInfo">

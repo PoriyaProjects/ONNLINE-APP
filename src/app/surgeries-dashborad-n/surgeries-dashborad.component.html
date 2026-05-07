@@ -1019,19 +1019,19 @@
 
               <!-- פילטר מחלקה לגרף והטבלה — מוצג רק כשהמצב הנוכחי תומך בו -->
               <div class="custom-dropdown filter-dropdown chart-dept-dropdown"
-                [class.disabled-filter]="isFilterDisabled('chartDepartment')"
-                [class.active]="isChartDeptDropdownOpen"
+                [class.disabled-filter]="isFilterDisabled('chartDepartment')" [class.active]="isChartDeptDropdownOpen"
                 [class.has-value]="chartDepartmentFilter"
                 *ngIf="!sidebarFiltersNonApplicableForRoomCharts() && getChartDepartmentOptions()?.length > 0">
                 <div class="dropdown-trigger"
-                  (click)="!isFilterDisabled('chartDepartment') && (isChartDeptDropdownOpen = !isChartDeptDropdownOpen)">
+                  (click)="!isFilterDisabled('chartDepartment') && toggleSidebarFilterDropdown('chartDepartment')">
                   <mat-icon class="dropdown-icon">local_hospital</mat-icon>
                   <span class="selected-text">מחלקה: {{ chartDepartmentFilter || 'הכל' }}</span>
                   <mat-icon class="arrow-icon">{{ isChartDeptDropdownOpen ? 'expand_less' : 'expand_more' }}</mat-icon>
                 </div>
                 <div class="dropdown-panel" *ngIf="isChartDeptDropdownOpen">
                   <div class="options-list">
-                    <div class="option-item" (click)="setChartDepartmentFilter(null)">
+                    <div class="option-item" (click)="setChartDepartmentFilter(null)"
+                      [class.selected]="!chartDepartmentFilter">
                       מחלקה: הכל
                     </div>
                     <div class="option-item" *ngFor="let opt of getChartDepartmentOptions()"
@@ -1044,10 +1044,10 @@
 
               <!-- פילטר סוג ניתוח -->
               <div class="custom-dropdown filter-dropdown" [class.disabled-filter]="isFilterDisabled('surgeryType')"
-                [class.active]="isSurgeryTypeOpen"
-                [class.has-value]="selectedSurgeryTypes?.length" *ngIf="!sidebarFiltersNonApplicableForRoomCharts()">
+                [class.active]="isSurgeryTypeOpen" [class.has-value]="selectedSurgeryTypes?.length"
+                *ngIf="!sidebarFiltersNonApplicableForRoomCharts()">
                 <div class="dropdown-trigger"
-                  (click)="!isFilterDisabled('surgeryType') && (isSurgeryTypeOpen = !isSurgeryTypeOpen)">
+                  (click)="!isFilterDisabled('surgeryType') && toggleSidebarFilterDropdown('surgeryType')">
                   <mat-icon class="dropdown-icon">category</mat-icon>
                   <span class="selected-text" matTooltip="{{ getSurgeryTypeDisplay() }}" matTooltipPosition="below">
                     {{ getSurgeryTypeDisplay() }}
@@ -1066,11 +1066,9 @@
 
               <!-- פילטר 3: משמרת -->
               <div class="custom-dropdown filter-dropdown" [class.disabled-filter]="isFilterDisabled('shift')"
-                [class.active]="isShiftOpen"
-                [class.has-value]="selectedShifts?.length"
+                [class.active]="isShiftOpen" [class.has-value]="selectedShifts?.length"
                 *ngIf="!sidebarFiltersNonApplicableForRoomCharts() && !isShiftGroupedView">
-                <div class="dropdown-trigger"
-                  (click)="!isFilterDisabled('shift') && (isShiftOpen = !isShiftOpen)">
+                <div class="dropdown-trigger" (click)="!isFilterDisabled('shift') && toggleSidebarFilterDropdown('shift')">
                   <mat-icon class="dropdown-icon">schedule</mat-icon>
                   <span class="selected-text" matTooltip="{{ getShiftDisplay() }}" matTooltipPosition="below">
                     {{ getShiftDisplay() }}
@@ -1088,10 +1086,10 @@
               </div>
 
               <div class="custom-dropdown filter-dropdown" [class.disabled-filter]="isFilterDisabled('weekPart')"
-                [class.active]="isWeekdayOpen"
-                [class.has-value]="selectedWeekdays?.length" *ngIf="!sidebarFiltersNonApplicableForRoomCharts()">
+                [class.active]="isWeekdayOpen" [class.has-value]="selectedWeekdays?.length"
+                *ngIf="!sidebarFiltersNonApplicableForRoomCharts()">
                 <div class="dropdown-trigger"
-                  (click)="!isFilterDisabled('weekPart') && (isWeekdayOpen = !isWeekdayOpen)">
+                  (click)="!isFilterDisabled('weekPart') && toggleSidebarFilterDropdown('weekPart')">
                   <mat-icon class="dropdown-icon">event</mat-icon>
                   <span class="selected-text" matTooltip="{{ getWeekdayDisplay() }}" matTooltipPosition="below">
                     {{ getWeekdayDisplay() }}
@@ -1110,10 +1108,10 @@
 
               <!-- פילטר עבודת בוקר (כן/לא) -->
               <div class="custom-dropdown filter-dropdown" [class.disabled-filter]="isFilterDisabled('morningWork')"
-                [class.active]="isMorningWorkOpen"
-                [class.has-value]="morningWorkFilter !== 'all'" *ngIf="!sidebarFiltersNonApplicableForRoomCharts()">
+                [class.active]="isMorningWorkOpen" [class.has-value]="morningWorkFilter !== 'all'"
+                *ngIf="!sidebarFiltersNonApplicableForRoomCharts()">
                 <div class="dropdown-trigger"
-                  (click)="!isFilterDisabled('morningWork') && (isMorningWorkOpen = !isMorningWorkOpen)">
+                  (click)="!isFilterDisabled('morningWork') && toggleSidebarFilterDropdown('morningWork')">
                   <mat-icon class="dropdown-icon">wb_sunny</mat-icon>
                   <span class="selected-text" matTooltip="{{ getMorningWorkDisplay() }}" matTooltipPosition="below">
                     {{ getMorningWorkDisplay() }}
@@ -1179,7 +1177,7 @@
                 <!-- פילטר 4: חדר ניתוח -->
                 <div class="custom-dropdown filter-dropdown" [class.active]="isRoomOpen"
                   [class.has-value]="selectedRooms?.length" [class.disabled-filter]="isFilterDisabled('room')">
-                  <div class="dropdown-trigger" (click)="!isFilterDisabled('room') && (isRoomOpen = !isRoomOpen)">
+                  <div class="dropdown-trigger" (click)="!isFilterDisabled('room') && toggleSidebarFilterDropdown('room')">
                     <mat-icon class="dropdown-icon">meeting_room</mat-icon>
                     <span class="selected-text">חדר ניתוח (לביצוע)</span>
                     <!-- <span class="selected-text" matTooltip="{{ getRoomDisplay() }}">
@@ -1200,7 +1198,7 @@
                 <!-- פילטר 5: מחלקה -->
                 <div class="custom-dropdown filter-dropdown" [class.active]="isDeptOpen"
                   [class.has-value]="selectedDepartments?.length">
-                  <div class="dropdown-trigger" (click)="isDeptOpen = !isDeptOpen">
+                  <div class="dropdown-trigger" (click)="toggleSidebarFilterDropdown('department')">
                     <mat-icon class="dropdown-icon">local_hospital</mat-icon>
                     <span class="selected-text">תקינות (לביצוע)</span>
                     <!-- <mat-icon class="arrow-icon">{{ isDeptOpen ? 'expand_less' : 'expand_more' }}</mat-icon> -->
@@ -1241,12 +1239,11 @@
 
               <!-- פילטר אתר (Site) – משפיע על כל הגרפים (מדדי ניתוחים, זמני חדר, ניצולת חדר) -->
               <div class="custom-dropdown filter-dropdown" [class.disabled-filter]="isFilterDisabled('site')"
-                [class.active]="isSiteOpen"
-                [class.has-value]="selectedSites?.length" *ngIf="!sidebarFiltersNonApplicableForRoomCharts()">
+                [class.active]="isSiteOpen" [class.has-value]="selectedSites?.length"
+                *ngIf="!sidebarFiltersNonApplicableForRoomCharts()">
                 <div class="dropdown-trigger"
                   matTooltip="{{ selectedSites?.length ? selectedSites.join(', ') : 'כל האתרים' }}"
-                  matTooltipPosition="below"
-                  (click)="!isFilterDisabled('site') && (isSiteOpen = !isSiteOpen)">
+                  matTooltipPosition="below" (click)="!isFilterDisabled('site') && toggleSidebarFilterDropdown('site')">
                   <mat-icon class="dropdown-icon">meeting_room</mat-icon>
                   <span class="selected-text">
                     אתר: {{ selectedSites?.length ? selectedSites.join(', ') : 'הכל' }}
@@ -1341,13 +1338,13 @@
         </div>
       </div>
     </div>
-
+   
     <!-- Guide Avatar Modal -->
     <div class="guide-avatar-overlay" *ngIf="showGuideAvatar" @fadeInOut (click)="dismissGuideAvatar()">
       <div class="guide-avatar-modal" dir="rtl" (click)="$event.stopPropagation()">
         <div class="guide-avatar-header">
           <div class="character-info" dir="rtl">
-            <div class="character-name" dir="rtl">🔍 מדריך דשבורד הניתוחים</div>
+            <div class="character-name" dir="rtl">מדריך</div>
             <div class="character-subtitle" dir="rtl">לחץ על סעיף כדי להרחיב</div>
           </div>
           <button class="avatar-close-btn" (click)="dismissGuideAvatar()" aria-label="Close guide" mat-icon-button>

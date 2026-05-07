@@ -28,14 +28,6 @@
             <mat-option value="Rejected">Rejected</mat-option>
           </mat-select>
         </mat-form-field>
-        <span class="spacer"></span>
-        <button mat-stroked-button type="button" class="nps-btn-rounded" (click)="reload()" [disabled]="busy">
-          <mat-icon>refresh</mat-icon>
-          רענון
-        </button>
-        <button mat-raised-button color="primary" type="button" class="nps-btn-rounded" (click)="saveAllSelections()" [disabled]="busy || !hasPendingSelections()">
-          שמור אישורים
-        </button>
       </div>
     </div>
   </section>
@@ -53,6 +45,10 @@
     <div class="nps-table-wrap">
       <div class="nps-table-scroll">
         <table mat-table [dataSource]="summaryRows" class="full summary-table">
+          <ng-container matColumnDef="EmployeeID">
+            <th mat-header-cell *matHeaderCellDef>ת.ז</th>
+            <td mat-cell *matCellDef="let r">{{ r.EmployeeID }}</td>
+          </ng-container>
           <ng-container matColumnDef="FullName">
             <th mat-header-cell *matHeaderCellDef>שם עובד</th>
             <td mat-cell *matCellDef="let r">{{ r.FullName }}</td>
@@ -84,14 +80,30 @@
     </div>
   </section>
 
-  <section class="nps-section">
+  <section class="nps-section" *ngIf="selectedEmployeeId">
     <div class="nps-section-title">
       <div class="nps-section-title-main">
         <mat-icon>rule_folder</mat-icon>
         פירוט הרשאות
       </div>
     </div>
-    <div class="nps-table-wrap">
+    <p *ngIf="detailBusy" class="nps-state-msg">טוען פירוט עובד...</p>
+    <p *ngIf="!detailBusy && detailLoadError" class="nps-state-msg nps-state-msg--error">לא ניתן לטעון את פירוט ההרשאות לעובד זה.</p>
+    <p
+      *ngIf="selectedEmployeeId && !detailBusy && !detailLoadError && detailRows.length === 0"
+      class="nps-state-msg"
+    >
+      אין שורות פירוט לעובד זה עבור הסינון הנוכחי.
+    </p>
+    <div class="nps-table-wrap" *ngIf="!detailBusy && !detailLoadError && detailRows.length > 0">
+      <span class="spacer"></span>
+      <button mat-stroked-button type="button" class="nps-btn-rounded" (click)="reload()" [disabled]="busy">
+        <mat-icon>refresh</mat-icon>
+        רענון
+      </button>
+      <button mat-raised-button color="primary" type="button" class="nps-btn-rounded" (click)="saveAllSelections()" [disabled]="busy || !hasPendingSelections()">
+        שמור אישורים
+      </button>
       <div class="nps-table-scroll">
         <table mat-table [dataSource]="detailRows" class="full nps-table">
           <ng-container matColumnDef="EmployeeID">
@@ -193,7 +205,7 @@
     </div>
   </section>
 
-  <p *ngIf="!busy && !loadError && rows.length === 0" class="nps-state-msg">אין נתונים להצגה עבור הסינון הנוכחי.</p>
+  <p *ngIf="!busy && !loadError && summaryRows.length === 0" class="nps-state-msg">אין נתונים להצגה עבור הסינון הנוכחי.</p>
 
   <section class="nps-section">
     <div class="nps-section-title">
