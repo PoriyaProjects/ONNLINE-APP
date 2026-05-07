@@ -348,9 +348,8 @@ export class EmployeesAddUpdateComponent implements OnInit {
     this.loadSpecialitiesForRow(rowIndex, educationID);
   }
 
-  onTrainingSubjectChange(rowIndex: number, trainingID: any): void {
-    const row = this.trainings.at(rowIndex) as FormGroup;
-    row.get('TrainingSubject')?.setValue(null);
+  onTrainingSubjectChange(_rowIndex: number, _trainingID: any): void {
+    // keep selected value as-is; no dependent reset is needed here
   }
 
   getEducationsList() {

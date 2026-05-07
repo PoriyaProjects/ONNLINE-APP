@@ -486,7 +486,7 @@ export class TrainingRequestFormComponent implements OnInit {
           Approved_Absence_Time: new FormControl(Training_Request_Forms_H?.Approved_Absence_Time, null),
           Code_Type: new FormControl(Training_Request_Forms_H?.Code_Type, null),
           Recommendations: new FormControl(Training_Request_Forms_H?.Recommendations, null),
-          Cancel_Request: new FormControl(Training_Request_Forms_H?.Cancel_Request, null),
+          Cancel_Request: new FormControl(Training_Request_Forms_H?.Cancel_Request == 'True' ? true : false, null),
           Cancel_Reason: new FormControl(Training_Request_Forms_H?.Cancel_Reason, null),
           Cancel_Date: new FormControl(
             Training_Request_Forms_H?.Cancel_Date == null || Training_Request_Forms_H?.Cancel_Date === '' ? null : Training_Request_Forms_H?.Cancel_Date,
@@ -560,9 +560,23 @@ export class TrainingRequestFormComponent implements OnInit {
     this.Training_Request_Forms_H.get("Approved_Total")?.valueChanges.subscribe(() => {
       this.recalculateApprovedPercent();
     });
-    this.Training_Request_Forms_H.get("Approved_Percent_Out_Of")?.valueChanges.subscribe(() => {
-      this.recalculateApprovedPercent();
+    this.Training_Request_Forms_H.get("Approved_Percent")?.valueChanges.subscribe(() => {
+      this.recalculateApprovedTotal();
     });
+    this.Training_Request_Forms_H.get("Approved_Percent_Out_Of")?.valueChanges.subscribe(() => {
+      this.recalculateApprovedTotal();
+    });
+  }
+
+  private recalculateApprovedTotal(): void {
+    const percent = Number(this.Training_Request_Forms_H.get("Approved_Percent")?.value);
+    const outOf = Number(this.Training_Request_Forms_H.get("Approved_Percent_Out_Of")?.value);
+    if (!isFinite(percent) || !isFinite(outOf) || outOf <= 0 || percent < 0) {
+      this.Training_Request_Forms_H.get("Approved_Total")?.setValue(0, { emitEvent: false });
+      return;
+    }
+    const nextValue = Number(((percent * outOf) / 100).toFixed(2));
+    this.Training_Request_Forms_H.get("Approved_Total")?.setValue(nextValue, { emitEvent: false });
   }
 
   private recalculateApprovedPercent(): void {
