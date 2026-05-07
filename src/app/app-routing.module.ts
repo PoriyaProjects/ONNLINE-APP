@@ -164,6 +164,7 @@ import { AiLettersDashboardComponent } from "./ai-letters-dashboard/ai-letters-d
 import { MriScheduleComponent } from "./mri-schedule/mri-schedule.component";
 import { InfectionControlComponent } from "./infection-control/infection-control.component";
 import { EmergencyRoomReportComponent } from "./emergency-room-report/emergency-room-report.component";
+import { ImagingPerformanceDashboardComponent } from "./imaging-performance-dashboard/imaging-performance-dashboard.component";
 import { HitoFormsDashboardComponent } from "./hito-forms-dashboard/hito-forms-dashboard.component";
 import { MedicalInternsDashboardComponent } from "./employees-manage-dash/medical-interns-dashboard/medical-interns-dashboard.component";
 import { MedicalInternAddUpdateComponent } from "./employees-manage-dash/medical-interns-dashboard/medical-intern-add-update/medical-intern-add-update.component";
@@ -370,6 +371,7 @@ const routes: Routes = [
     { path: "mri-schedule", component: MriScheduleComponent },
     { path: "InfectionControl", component: InfectionControlComponent },
     { path: "EmergencyRoomReport", component: EmergencyRoomReportComponent },
+    { path: "ImagingPerformanceDashboard", component: ImagingPerformanceDashboardComponent },
     { path: "hito-forms-dashboard", component: HitoFormsDashboardComponent },
     { path: "medical-interns-dashboard", component: MedicalInternsDashboardComponent },
     { path: "medical-intern-add-update", component: MedicalInternAddUpdateComponent },
