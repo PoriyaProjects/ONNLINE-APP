@@ -1215,7 +1215,7 @@
             <div class="col-lg-2 col-md-4 col-sm-6">
               <mat-form-field>
                 <mat-label>מענק מאושר באחוזים</mat-label>
-                <input matInput formControlName="Approved_Percent" type="number" max="100" readonly />
+                <input matInput formControlName="Approved_Percent" type="number" max="100" />
                 <mat-error
                   *ngIf="Training_Request_Forms_H.get('Approved_Percent').hasError('pattern') && Training_Request_Forms_H.get('Approved_Percent').touched">
                   הזן מספרים בלבד.
