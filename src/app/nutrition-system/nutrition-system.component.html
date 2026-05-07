@@ -1,87 +1,89 @@
-<div class="search-bar mt-4" dir="rtl">
-    <div class="row">
-        <div class="col-6" [formGroup]="searchGroup" style="display: grid;">
-            <!-- Right Side: Dropdowns with Multiple Select -->
-            <mat-form-field class="dropdown">
-                <mat-label>מחלקות</mat-label>
-                <mat-select multiple formControlName="Departments">
-                    <mat-option (click)="selectAllDepartments()" value="">הכל</mat-option>
-                    <mat-option [value]="dept" *ngFor="let dept of departmentsData"
-                        (click)="deselectAllDepartments()">{{dept}}</mat-option>
-                </mat-select>
-                <!-- <mat-select multiple formControlName="Departments">
-                    <mat-option [value]="''">הכל</mat-option>
-                    <mat-option [value]="dept" *ngFor="let dept of departmentsData">{{dept}}</mat-option>
-                </mat-select> -->
-            </mat-form-field>
-            <mat-form-field class="dropdown">
-                <mat-label>מכונים</mat-label>
-                <mat-select multiple formControlName="Clinics">
-                    <mat-option (click)="selectAllClinics()" value="">הכל</mat-option>
-                    <mat-option [value]="clin" *ngFor="let clin of clinicsData"
-                        (click)="deselectAllClinics()">{{clin}}</mat-option>
-                </mat-select>
-                <!-- <mat-select multiple formControlName="Clinics">
-                    <mat-option [value]="''">הכל</mat-option>
-                    <mat-option [value]="clin" *ngFor="let clin of clinicsData">{{clin}}</mat-option>
-                </mat-select> -->
-            </mat-form-field>
-            <button mat-raised-button class="button" color="primary" (click)="searchPatients()">חיפוש</button>
-        </div>
-        <div class="col-6">
-            <!-- Left Side: Excel Import Button -->
-            <!-- <button mat-icon-button>
-                <mat-icon>file_upload</mat-icon>
-            </button> -->
-            <a (click)="exportToExcel()">
-                <img src="../../assets/images/excel.png" width="50px" alt="Image description">
-            </a>
-        </div>
-    </div>
+<div class="nutri-page" dir="rtl">
+    <header class="nutri-toolbar" [formGroup]="searchGroup">
+        <div class="nutri-toolbar__bg" aria-hidden="true"></div>
+        <div class="nutri-toolbar__row">
+            <div class="nutri-toolbar__export">
+                <button type="button" class="nutri-export-btn" (click)="exportToExcel()" matTooltip="ייצוא לאקסל"
+                    aria-label="ייצוא לאקסל">
+                    <img src="../../assets/images/excel.png" width="28" height="28" alt="Excel" />
+                </button>
+                <button type="button" class="nutri-export-btn nutri-export-btn--pdf" (click)="exportToPdf()"
+                    matTooltip="ייצוא ל-PDF" aria-label="ייצוא ל-PDF">
+                    <img src="https://i0.wp.com/bma.org.il/wp-content/uploads/2022/11/unnamed-1.png?fit=512%2C512&ssl=1" width="28" height="28" alt="PDF" />
+                </button>
+            </div>
 
-    <div class="row" style="justify-content: center;">
-        <!-- Buttons in the Second Row -->
-        <button mat-raised-button class="button" (click)="resetData()">הכל</button>
-        <button mat-raised-button class="button" (click)="filterTypes(1)">סוג כלכלה</button>
-        <button mat-raised-button class="button" (click)="filterTypes(2)">סוג מרקם</button>
-        <button mat-raised-button class="button" (click)="filterTypes(3)">רגישויות אשפוז
-            נוכחי</button>
-        <button mat-raised-button class="button" (click)="filterTypes(4)">רגישויות בעבר</button>
-    </div>
-</div>
-<hr>
-<div class="table" dir="rtl">
-    <!-- Filter Input for Each Column -->
-    <mat-form-field style="text-align: center;">
-        <input matInput (keyup)="applyFilter($event.target.value)" placeholder="סינון">
-    </mat-form-field>
-    <div style="padding-bottom: 60px;">
-        <!-- Table with Sorting and Filtering -->
-        <table mat-table [dataSource]="dataSourceHos" matSort>
-            <!-- Column Definitions -->
-            <ng-container matColumnDef="CaseNumber">
-                <mat-header-cell mat-header-cell *matHeaderCellDef mat-sort-header>מספר מקרה</mat-header-cell>
-                <mat-cell *matCellDef="let row">{{ row.CaseNumber }}</mat-cell>
-            </ng-container>
+            <div class="nutri-toolbar__filters">
+                <mat-form-field class="dropdown nutri-field" appearance="outline">
+                    <mat-label>מחלקות</mat-label>
+                    <mat-select multiple formControlName="Departments">
+                        <mat-option (click)="selectAllDepartments()" value="">הכל</mat-option>
+                        <mat-option [value]="dept" *ngFor="let dept of departmentsData"
+                            (click)="deselectAllDepartments()">{{dept}}</mat-option>
+                    </mat-select>
+                </mat-form-field>
+
+                <mat-form-field class="dropdown nutri-field" appearance="outline">
+                    <mat-label>מכונים</mat-label>
+                    <mat-select multiple formControlName="Clinics">
+                        <mat-option (click)="selectAllClinics()" value="">הכל</mat-option>
+                        <mat-option [value]="clin" *ngFor="let clin of clinicsData"
+                            (click)="deselectAllClinics()">{{clin}}</mat-option>
+                    </mat-select>
+                </mat-form-field>
+            </div>
+
+            <div class="nutri-toolbar__cta">
+                <button mat-raised-button class="nutri-primary-btn" (click)="searchPatients()">חיפוש</button>
+            </div>
+        </div>
+
+        <div class="nutri-toolbar__meta">
+            <div class="nutri-meta-pill">
+                <span class="nutri-meta-pill__label">תוצאות</span>
+                <span class="nutri-meta-pill__value">{{ dataSourceHos?.filteredData?.length || 0 }}</span>
+            </div>
+
+            <div class="nutri-meta-chips">
+                <span class="nutri-chip" *ngIf="(searchGroup?.controls?.Departments?.value?.length || 0) > 0">
+                    מחלקות: {{ searchGroup?.controls?.Departments?.value?.length || 0 }}
+                </span>
+                <span class="nutri-chip" *ngIf="(searchGroup?.controls?.Clinics?.value?.length || 0) > 0">
+                    מכונים: {{ searchGroup?.controls?.Clinics?.value?.length || 0 }}
+                </span>
+            </div>
+        </div>
+    </header>
+
+    <section class="nutri-segments" aria-label="סינון מהיר">
+        <button mat-raised-button class="nutri-segment" (click)="resetData()">הכל</button>
+        <button mat-raised-button class="nutri-segment" (click)="filterTypes(1)">סוג תזונה</button>
+        <button mat-raised-button class="nutri-segment" (click)="filterTypes(2)">מרקם למזון</button>
+        <button mat-raised-button class="nutri-segment" (click)="filterTypes(3)">רגישויות אשפוז נוכחי</button>
+        <button mat-raised-button class="nutri-segment" (click)="filterTypes(4)">רגישויות בעבר</button>
+    </section>
+
+    <section class="nutri-table-card">
+        <div class="nutri-table-topbar">
+            <mat-form-field class="nutri-filter-field" appearance="outline">
+                <mat-icon matPrefix>filter_list</mat-icon>
+                <input matInput (keyup)="applyFilter($event.target.value)" placeholder="סינון מהיר בטבלה">
+            </mat-form-field>
+        </div>
+
+        <div class="nutri-table-scroll">
+            <table mat-table [dataSource]="dataSourceHos" matSort class="nutri-mat-table">
             <ng-container matColumnDef="IDNumber">
                 <mat-header-cell *matHeaderCellDef mat-sort-header>ת.ז</mat-header-cell>
                 <mat-cell *matCellDef="let row">{{ row.IDNumber }}</mat-cell>
             </ng-container>
             <ng-container matColumnDef="FirstName">
-                <mat-header-cell *matHeaderCellDef mat-sort-header>שם פרטי</mat-header-cell>
-                <mat-cell *matCellDef="let row">{{ row.FirstName }}</mat-cell>
-            </ng-container>
-            <ng-container matColumnDef="LastName">
-                <mat-header-cell *matHeaderCellDef mat-sort-header>שם משפחה</mat-header-cell>
-                <mat-cell *matCellDef="let row">{{ row.LastName }}</mat-cell>
+                <mat-header-cell *matHeaderCellDef mat-sort-header>שם פרטי ומשפחה</mat-header-cell>
+                <mat-cell *matCellDef="let row">{{ row.FirstName }} {{ row.LastName }}</mat-cell>
             </ng-container>
             <ng-container matColumnDef="FatherName">
                 <mat-header-cell *matHeaderCellDef mat-sort-header>שם האב</mat-header-cell>
                 <mat-cell *matCellDef="let row">{{ row.FatherName }}</mat-cell>
-            </ng-container>
-            <ng-container matColumnDef="Age">
-                <mat-header-cell *matHeaderCellDef mat-sort-header>גיל</mat-header-cell>
-                <mat-cell *matCellDef="let row">{{ row.Age }}</mat-cell>
             </ng-container>
             <ng-container matColumnDef="DepartName">
                 <mat-header-cell *matHeaderCellDef mat-sort-header>מחלקה</mat-header-cell>
@@ -91,22 +93,6 @@
                 <mat-header-cell *matHeaderCellDef mat-sort-header>מספר חדר</mat-header-cell>
                 <mat-cell *matCellDef="let row">{{ row.RoomNumber }}</mat-cell>
             </ng-container>
-            <ng-container matColumnDef="HospitalizationDate">
-                <mat-header-cell *matHeaderCellDef mat-sort-header>תאריך אשפוז</mat-header-cell>
-                <mat-cell *matCellDef="let row">{{ row.HospitalizationDate }}</mat-cell>
-            </ng-container>
-            <ng-container matColumnDef="HospitalizationDuration">
-                <mat-header-cell *matHeaderCellDef mat-sort-header>מספר ימי אשפוז</mat-header-cell>
-                <mat-cell *matCellDef="let row">{{ row.HospitalizationDuration }}</mat-cell>
-            </ng-container>
-            <ng-container matColumnDef="FoodType">
-                <mat-header-cell *matHeaderCellDef mat-sort-header>סוג תזונה</mat-header-cell>
-                <mat-cell *matCellDef="let row">{{ row.FoodType }}</mat-cell>
-            </ng-container>
-            <ng-container matColumnDef="FoodTexture">
-                <mat-header-cell *matHeaderCellDef mat-sort-header>מרקם למזון</mat-header-cell>
-                <mat-cell *matCellDef="let row">{{ row.FoodTexture }}</mat-cell>
-            </ng-container>
             <ng-container matColumnDef="CurrentAllergy">
                 <mat-header-cell *matHeaderCellDef mat-sort-header>רגישויות אשפוז נוכחי</mat-header-cell>
                 <mat-cell *matCellDef="let row">{{ row.CurrentAllergy }}</mat-cell>
@@ -115,13 +101,21 @@
                 <mat-header-cell *matHeaderCellDef mat-sort-header>רגישויות בעבר</mat-header-cell>
                 <mat-cell *matCellDef="let row">{{ row.OldAllergy }}</mat-cell>
             </ng-container>
+            <ng-container matColumnDef="FoodType">
+                <mat-header-cell *matHeaderCellDef mat-sort-header>סוג תזונה</mat-header-cell>
+                <mat-cell *matCellDef="let row">{{ row.FoodType }}</mat-cell>
+            </ng-container>
+            <ng-container matColumnDef="NutritionAnamnezes">
+                <mat-header-cell *matHeaderCellDef mat-sort-header>העשרה תזונתית</mat-header-cell>
+                <mat-cell *matCellDef="let row">{{ row.Food_Anamnesis }}</mat-cell>
+            </ng-container>
+            <ng-container matColumnDef="FoodTexture">
+                <mat-header-cell *matHeaderCellDef mat-sort-header>מרקם למזון</mat-header-cell>
+                <mat-cell *matCellDef="let row">{{ row.FoodTexture }}</mat-cell>
+            </ng-container>
             <ng-container matColumnDef="LiquidCertification">
                 <mat-header-cell *matHeaderCellDef mat-sort-header>הסמכת נוזלים לשתייה</mat-header-cell>
                 <mat-cell *matCellDef="let row">{{ row.Liquid_Type }}</mat-cell>
-            </ng-container>
-            <ng-container matColumnDef="NutritionAnamnezes">
-                <mat-header-cell *matHeaderCellDef mat-sort-header>אנמנזה תזונתית</mat-header-cell>
-                <mat-cell *matCellDef="let row">{{ row.Food_Anamnesis }}</mat-cell>
             </ng-container>
             <ng-container matColumnDef="EatingNotes">
                 <mat-header-cell *matHeaderCellDef mat-sort-header>הנחיות אכילה</mat-header-cell>
@@ -131,56 +125,43 @@
             <!-- Add more columns as needed -->
 
             <!-- Table Rows -->
-            <mat-header-row *matHeaderRowDef="displayedColumns"></mat-header-row>
+            <mat-header-row *matHeaderRowDef="displayedColumns" style="font-weight: 800;"></mat-header-row>
             <mat-row *matRowDef="let row; columns: displayedColumns"></mat-row>
         </table>
-        <mat-paginator [pageSizeOptions]="[10, 25, 100, 200]" aria-label="בחר מספר דף">
-        </mat-paginator>
-    </div>
-    <table id="excel-table" dir="rtl" style="display: none;">
+        </div>
+
+        <mat-paginator [pageSizeOptions]="[20, 50, 100, 200]" aria-label="בחר מספר דף"></mat-paginator>
+    </section>
+
+    <table id="excel-table" dir="rtl" style="display: none; border-collapse: collapse; border: 1px solid #000;">
         <tr>
-            <th>מספר מקרה</th>
-            <th>תעודת זהות</th>
-            <th>שם פרטי</th>
-            <th>שם משפחה</th>
-            <th>שם האב</th>
-            <th>גיל</th>
-            <th>מחלקה</th>
-            <th>מספר חדר</th>
-            <th>תאריך אשפוז</th>
-            <th>מספר ימי אשפוז</th>
-            <th>סוג כלכלה</th>
-            <th>סוג מרקם</th>
-            <th>רגישויות אשפוז נוכחי</th>
-            <th>רגישויות בעבר</th>
-            <th>הסמכת נוזלים לשתייה</th>
-            <th>אנמנזה תזונתית</th>
-            <th>הנחיות אכילה</th>
+            <th style="border: 1px solid #000; font-weight: 800;">תעודת זהות</th>
+            <th style="border: 1px solid #000; font-weight: 800;">שם פרטי ומשפחה</th>
+            <th style="border: 1px solid #000; font-weight: 800;">שם האב</th>
+            <th style="border: 1px solid #000; font-weight: 800;">מחלקה</th>
+            <th style="border: 1px solid #000; font-weight: 800;">מספר חדר</th>
+            <th style="border: 1px solid #000; font-weight: 800;">סוג תזונה</th>
+            <th style="border: 1px solid #000; font-weight: 800;">העשרה תזונתית</th>
+            <th style="border: 1px solid #000; font-weight: 800;">מרקם למזון</th>
+            <th style="border: 1px solid #000; font-weight: 800;">רגישויות אשפוז נוכחי</th>
+            <th style="border: 1px solid #000; font-weight: 800;">רגישויות בעבר</th>
+            <th style="border: 1px solid #000; font-weight: 800;">הסמכת נוזלים לשתייה</th>
+            <th style="border: 1px solid #000; font-weight: 800;">הנחיות אכילה</th>
 
         </tr>
         <tr *ngFor="let nut of dataSourceHos.filteredData">
-            <td> {{nut.CaseNumber}} </td>
-            <td> {{nut.IDNumber}} </td>
-            <td> {{nut.FirstName}} </td>
-            <td> {{nut.LastName}} </td>
-            <td> {{nut.FatherName}} </td>
-            <td> {{nut.Age}} </td>
-            <td> {{nut.DepartName}} </td>
-            <td> {{nut.RoomNumber}} </td>
-            <td> {{nut.HospitalizationDate}} </td>
-            <td> {{nut.HospitalizationDuration}} </td>
-            <td> {{nut.FoodType}} </td>
-            <td> {{nut.FoodTexture}} </td>
-            <td> {{nut.CurrentAllergy}} </td>
-            <td> {{nut.OldAllergy}} </td>
-            <td> {{nut.Liquid_Type}} </td>
-            <td> {{nut.Food_Anamnesis}} </td>
-            <td> {{nut.Food_Orders}} </td>
+            <td style="border: 1px solid #000;"> {{nut.IDNumber}} </td>
+            <td style="border: 1px solid #000;"> {{nut.FirstName}} {{nut.LastName}} </td>
+            <td style="border: 1px solid #000;"> {{nut.FatherName}} </td>
+            <td style="border: 1px solid #000;"> {{nut.DepartName}} </td>
+            <td style="border: 1px solid #000;"> {{nut.RoomNumber}} </td>
+            <td style="border: 1px solid #000;"> {{nut.FoodType}} </td>
+            <td style="border: 1px solid #000;"> {{nut.Food_Anamnesis}} </td>
+            <td style="border: 1px solid #000;"> {{nut.FoodTexture}} </td>
+            <td style="border: 1px solid #000;"> {{nut.CurrentAllergy}} </td>
+            <td style="border: 1px solid #000;"> {{nut.OldAllergy}} </td>
+            <td style="border: 1px solid #000;"> {{nut.Liquid_Type}} </td>
+            <td style="border: 1px solid #000;"> {{nut.Food_Orders}} </td>
         </tr>
     </table>
-    <!-- <mat-form-field>
-        <input matInput (keyup)="applyFilter($event.target.value)" placeholder="Filter Calories">
-    </mat-form-field> -->
-
-    <!-- Add more filter inputs for additional columns as needed -->
 </div>
