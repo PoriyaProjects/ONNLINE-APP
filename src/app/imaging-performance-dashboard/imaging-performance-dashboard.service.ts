@@ -103,7 +103,7 @@ function asArray<T>(raw: unknown): T[] {
     return raw as T[];
   }
   if (typeof raw === 'object') {
-    return [raw as T];
+    return [raw as unknown as T];
   }
   return [];
 }
