@@ -1,128 +1,289 @@
-<h2 class="page-title text-center">{{UserName}} - דאשבורד בקשות ועדת התקשרויות </h2>
-<div dir="rtl" class="dashboard-container">
-  <!-- <mat-toolbar color="primary" class="toolbar">
-    <span>ניהול בקשות תמיכת גוף מסחרי</span>
-  </mat-toolbar> -->
+<div dir="rtl" class="commercial-dashboard">
 
-  <div class="dashboard-content">
+  <section class="hero-card">
+    <div class="hero-bg hero-bg-one"></div>
+    <div class="hero-bg hero-bg-two"></div>
 
-    <div class="row" style="justify-content: center;">
-      <!-- Search / Filters -->
-      <mat-form-field appearance="outline" class="search-field">
-        <mat-label>חיפוש לפי שם מגיש הבקשה/סוג הבקשה</mat-label>
-        <input matInput (input)="applyFilter($event)" placeholder="הקלד שם...">
-        <button mat-button *ngIf="searchValue" matSuffix mat-icon-button aria-label="Clear" (click)="clearFilter()">
-          <mat-icon>close</mat-icon>
-        </button>
-      </mat-form-field>
+    <div class="hero-content">
+      <div class="hero-icon">
+        <mat-icon>business_center</mat-icon>
+      </div>
 
-      <button mat-raised-button class="custom-button-protocol primary" (click)="printProtocol()">
+      <div>
+        <h1>{{ UserName }} - דאשבורד בקשות ועדת התקשרויות</h1>
+        <p>ניהול, חיפוש, הדפסה ומעקב אחר בקשות תמיכה מגופים מסחריים</p>
+      </div>
+    </div>
+
+    <div class="hero-actions">
+      <button mat-flat-button class="hero-btn primary-gradient" (click)="openDialog()">
+        <mat-icon>add</mat-icon>
+        בקשה חדשה
+      </button>
+
+      <button mat-stroked-button class="hero-btn glass-btn" (click)="printProtocol()">
         <mat-icon>print</mat-icon>
         הדפסת פרוטוקול
       </button>
     </div>
+  </section>
 
-    <!-- Data Table -->
-    <div class="table-container">
-      <table mat-table [dataSource]="supportRequests" matSort class="mat-elevation-z2">
-
-        <!-- Requester Name Column -->
-        <ng-container matColumnDef="id">
-          <th mat-header-cell *matHeaderCellDef mat-sort-header>מספר הבקשה</th>
-          <td mat-cell *matCellDef="let element">{{ element.Id }}-{{element.Roler}}</td>
-        </ng-container>
-
-        <!-- Requester Name Column -->
-        <ng-container matColumnDef="requestType">
-          <th mat-header-cell *matHeaderCellDef mat-sort-header>סוג הבקשה</th>
-          <td mat-cell *matCellDef="let element">{{ element.RequestType }}</td>
-        </ng-container>
-
-        <!-- Requester Name Column -->
-        <ng-container matColumnDef="requester">
-          <th mat-header-cell *matHeaderCellDef mat-sort-header>מגיש הבקשה/עובד משתתף</th>
-          <td mat-cell *matCellDef="let element">{{ element.Requester }}</td>
-        </ng-container>
-
-        <!-- Conference Name Column -->
-        <ng-container matColumnDef="conferenceName">
-          <th mat-header-cell *matHeaderCellDef mat-sort-header>תאור</th>
-          <td mat-cell *matCellDef="let element">{{ element.Name }}</td>
-        </ng-container>
-
-        <!-- Event Date Column -->
-        <ng-container matColumnDef="insertedDate">
-          <th mat-header-cell *matHeaderCellDef mat-sort-header>תאריך הבקשה</th>
-          <td mat-cell *matCellDef="let element">{{ element.InsertedDate | date: 'dd-MM-yyyy' }}</td>
-        </ng-container>
-
-        <!-- Actions Column -->
-        <ng-container matColumnDef="actions">
-          <th mat-header-cell *matHeaderCellDef>פעולות</th>
-          <td mat-cell *matCellDef="let element">
-            <button mat-icon-button color="primary" (click)="editRequest('A', element)" matTooltip="עריכה">
-              <mat-icon>edit</mat-icon>
-            </button>
-            <button mat-icon-button color="warn" (click)="deleteRequest(element)" *ngIf="element.Draft == 'True'"
-              matTooltip="מחיקה">
-              <mat-icon>delete</mat-icon>
-            </button>
-            <button mat-icon-button color="danger" (click)="dialogRequest(element)" matTooltip="ועדת החלטה"
-              *ngIf="UserName == 'adahabre' || UserName == 'okatz'">
-              <mat-icon>description</mat-icon>
-            </button>
-          </td>
-        </ng-container>
-
-        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-        <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
-
-      </table>
+  <section class="stats-grid">
+    <div class="stat-card blue">
+      <div class="stat-icon">
+        <mat-icon>folder_open</mat-icon>
+      </div>
+      <div>
+        <span class="stat-label">סה״כ בקשות</span>
+        <strong>{{ supportRequests?.data?.length || 0 }}</strong>
+      </div>
     </div>
 
-    <!-- No Results -->
-    <div *ngIf="supportRequests.filteredData.length === 0" class="no-results">
-      אין תוצאות להצגה.
+    <div class="stat-card green">
+      <div class="stat-icon">
+        <mat-icon>visibility</mat-icon>
+      </div>
+      <div>
+        <span class="stat-label">מוצגות בטבלה</span>
+        <strong>{{ supportRequests?.filteredData?.length || 0 }}</strong>
+      </div>
     </div>
 
-    <div class="button-container">
-      <button mat-raised-button class="custom-button primary" (click)="openDialog()">
+    <div class="stat-card orange">
+      <div class="stat-icon">
+        <mat-icon>edit_note</mat-icon>
+      </div>
+      <div>
+        <span class="stat-label">טיוטות</span>
+        <strong>{{ draftRequestsCount }}</strong>
+      </div>
+    </div>
+
+    <div class="stat-card purple">
+      <div class="stat-icon">
+        <mat-icon>rule</mat-icon>
+      </div>
+      <div>
+        <span class="stat-label">וועדה</span>
+        <strong>פעיל</strong>
+      </div>
+    </div>
+  </section>
+
+  <section class="dashboard-panel">
+    <div class="panel-header">
+      <div>
+        <h2>רשימת בקשות</h2>
+        <p>חפש לפי מגיש, סוג בקשה, תיאור או מספר בקשה</p>
+      </div>
+
+      <div class="panel-actions">
+        <button mat-stroked-button class="soft-btn" (click)="printTable()">
+          <mat-icon>print</mat-icon>
+          הדפס טבלה
+        </button>
+      </div>
+    </div>
+
+    <div class="filter-bar">
+      <mat-form-field appearance="outline" class="search-field-modern">
+        <mat-label>חיפוש בקשות</mat-label>
+        <mat-icon matPrefix>search</mat-icon>
+
+        <input
+          matInput
+          (input)="applyFilter($event)"
+          placeholder="שם מגיש, סוג בקשה, תיאור..."
+        />
+
+        <button
+          mat-button
+          *ngIf="searchValue"
+          matSuffix
+          mat-icon-button
+          aria-label="Clear"
+          (click)="clearFilter()"
+          type="button">
+          <mat-icon>close</mat-icon>
+        </button>
+      </mat-form-field>
+
+      <button mat-flat-button class="mobile-add-btn" (click)="openDialog()">
         <mat-icon>add</mat-icon>
-        הוספת בקשה חדשה
-      </button>
-
-      <button mat-raised-button color="accent" (click)="printTable()">
-        <mat-icon>print</mat-icon> הדפס טבלה
+        בקשה חדשה
       </button>
     </div>
-  </div>
+
+    <div class="table-card">
+      <div class="table-container">
+        <table mat-table [dataSource]="supportRequests" matSort class="modern-table">
+
+          <ng-container matColumnDef="id">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>מספר הבקשה</th>
+            <td mat-cell *matCellDef="let element">
+              <span class="request-id">#{{ element.Id }}-{{ element.Roler }}</span>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="requestType">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>סוג הבקשה</th>
+            <td mat-cell *matCellDef="let element">
+              <span
+                class="type-badge"
+                [ngClass]="{
+                  'type-a': element.Roler === 'A',
+                  'type-b': element.Roler === 'B',
+                  'type-c': element.Roler === 'C',
+                  'type-d': element.Roler === 'D'
+                }">
+                {{ element.RequestType }}
+              </span>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="requester">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>מגיש הבקשה / עובד משתתף</th>
+            <td mat-cell *matCellDef="let element">
+              <div class="person-cell">
+                <div class="person-avatar">
+                  {{ element.Requester ? element.Requester.charAt(0) : '?' }}
+                </div>
+                <div>
+                  <strong>{{ element.Requester || '—' }}</strong>
+                  <small *ngIf="element.RequesterDetails">{{ element.RequesterDetails }}</small>
+                </div>
+              </div>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="conferenceName">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>תיאור</th>
+            <td mat-cell *matCellDef="let element">
+              <div class="description-cell">
+                {{ element.Name || '—' }}
+              </div>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="insertedDate">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>תאריך הבקשה</th>
+            <td mat-cell *matCellDef="let element">
+              <span class="date-pill">
+                <mat-icon>calendar_today</mat-icon>
+                {{ element.InsertedDate | date: 'dd-MM-yyyy' }}
+              </span>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="actions">
+            <th mat-header-cell *matHeaderCellDef>פעולות</th>
+            <td mat-cell *matCellDef="let element">
+              <div class="row-actions">
+                <button
+                  mat-icon-button
+                  class="action-icon edit"
+                  (click)="editRequest('A', element)"
+                  matTooltip="עריכה">
+                  <mat-icon>edit</mat-icon>
+                </button>
+
+                <button
+                  mat-icon-button
+                  class="action-icon delete"
+                  (click)="deleteRequest(element)"
+                  *ngIf="element.Draft === 'True'"
+                  matTooltip="מחיקה">
+                  <mat-icon>delete</mat-icon>
+                </button>
+
+                <button
+                  mat-icon-button
+                  class="action-icon decision"
+                  (click)="dialogRequest(element)"
+                  matTooltip="ועדת החלטה"
+                  *ngIf="UserName === 'adahabre' || UserName === 'okatz'">
+                  <mat-icon>description</mat-icon>
+                </button>
+              </div>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+
+          <tr
+            mat-row
+            *matRowDef="let row; columns: displayedColumns;"
+            class="animated-row"
+            [class.draft-row]="row.Draft === 'True'">
+          </tr>
+
+        </table>
+      </div>
+
+      <div *ngIf="supportRequests.filteredData.length === 0" class="empty-state">
+        <div class="empty-icon">
+          <mat-icon>search_off</mat-icon>
+        </div>
+        <h3>אין תוצאות להצגה</h3>
+        <p>נסה לשנות את מילת החיפוש או לנקות את הסינון</p>
+        <button mat-stroked-button color="primary" (click)="clearFilter()">
+          ניקוי חיפוש
+        </button>
+      </div>
+    </div>
+  </section>
 </div>
 
 <ng-template #requestDialog>
-  <div dir="rtl">
-    <h2 mat-dialog-title>בחר סוג בקשה</h2>
+  <div dir="rtl" class="request-dialog">
+    <div class="dialog-header-modern">
+      <div class="dialog-icon">
+        <mat-icon>add_task</mat-icon>
+      </div>
+      <div>
+        <h2 mat-dialog-title>בחירת סוג בקשה</h2>
+        <p>בחר את סוג הבקשה שברצונך לפתוח</p>
+      </div>
+    </div>
+
     <mat-dialog-content>
-      <div class="cube-options">
-        <button mat-raised-button class="cube accent" (click)="selectRequest('A')"> A <br>
-          <mat-icon class="cube-icon">event</mat-icon>
-          בקשה לאישור תמיכת גוף מסחרי ליציאה לכנס/השתלמות
+      <div class="request-type-grid">
+
+        <button mat-button class="request-card type-a-card" (click)="selectRequest('A')">
+          <div class="request-letter">A</div>
+          <mat-icon>event</mat-icon>
+          <h3>כנס / השתלמות</h3>
+          <p>בקשה לאישור תמיכת גוף מסחרי ליציאה לכנס או השתלמות</p>
         </button>
-        <button mat-raised-button class="cube primary" (click)="selectRequest('B')"> B <br>
-          <mat-icon class="cube-icon">science</mat-icon>
-          בקשה לאישור תמיכת גוף מסחרי במחקר קליני
+
+        <button mat-button class="request-card type-b-card" (click)="selectRequest('B')">
+          <div class="request-letter">B</div>
+          <mat-icon>science</mat-icon>
+          <h3>מחקר קליני</h3>
+          <p>בקשה לאישור תמיכת גוף מסחרי במחקר קליני</p>
         </button>
-        <button mat-raised-button class="cube warn" (click)="selectRequest('C')"> C <br>
-          <mat-icon class="cube-icon">record_voice_over</mat-icon>
-          בקשה לקיום הרצאה לסגל המרכז הרפואי
+
+        <button mat-button class="request-card type-c-card" (click)="selectRequest('C')">
+          <div class="request-letter">C</div>
+          <mat-icon>record_voice_over</mat-icon>
+          <h3>הרצאה לסגל</h3>
+          <p>בקשה לקיום הרצאה לסגל המרכז הרפואי</p>
         </button>
-        <button mat-raised-button class="cube info" (click)="selectRequest('D')"> D <br>
-          <mat-icon class="cube-icon">event_note</mat-icon>
-          בקשה לקיום יום עיון / כנס במרכז הרפואי צפון
+
+        <button mat-button class="request-card type-d-card" (click)="selectRequest('D')">
+          <div class="request-letter">D</div>
+          <mat-icon>event_note</mat-icon>
+          <h3>יום עיון / כנס</h3>
+          <p>בקשה לקיום יום עיון או כנס במרכז הרפואי צפון</p>
         </button>
+
       </div>
     </mat-dialog-content>
+
     <mat-dialog-actions align="end">
-      <button mat-button mat-dialog-close>ביטול</button>
+      <button mat-stroked-button mat-dialog-close class="cancel-dialog-btn">
+        ביטול
+      </button>
     </mat-dialog-actions>
   </div>
 </ng-template>

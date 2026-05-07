@@ -250,8 +250,43 @@ export class EmployeesManageDashComponent implements OnInit, OnDestroy {
   }
 
   applyFilter(event: Event) {
-    const filterValue = (event.target as HTMLInputElement).value;
+    const filterValue = (event.target as HTMLInputElement).value ?? '';
     this.dataSource.filter = filterValue.trim().toLowerCase();
+  }
+
+  private setupTableFilter(): void {
+    this.dataSource.filterPredicate = (data: any, filter: string): boolean => {
+      const normalizedFilter = (filter || '').trim().toLowerCase();
+      if (!normalizedFilter) {
+        return true;
+      }
+
+      const firstName = (data?.FirstName || '').toString().trim().toLowerCase();
+      const lastName = (data?.LastName || '').toString().trim().toLowerCase();
+      const fullName = `${firstName} ${lastName}`.trim();
+      const reverseFullName = `${lastName} ${firstName}`.trim();
+
+      const searchableText = `${this.flattenObjectValues(data)} ${fullName} ${reverseFullName}`.toLowerCase();
+      const terms = normalizedFilter.split(/\s+/).filter(Boolean);
+
+      return terms.every(term => searchableText.includes(term));
+    };
+  }
+
+  private flattenObjectValues(value: any): string {
+    if (value === null || value === undefined) {
+      return '';
+    }
+
+    if (Array.isArray(value)) {
+      return value.map(item => this.flattenObjectValues(item)).join(' ');
+    }
+
+    if (typeof value === 'object') {
+      return Object.values(value).map(item => this.flattenObjectValues(item)).join(' ');
+    }
+
+    return String(value);
   }
 
   getEmployeeDepartmentList() {
@@ -341,6 +376,7 @@ export class EmployeesManageDashComponent implements OnInit, OnDestroy {
       .subscribe((Response) => {
         this.loaded = true;
         this.dataSource = new MatTableDataSource<any>(Response["d"]);
+        this.setupTableFilter();
         this.dataSource.paginator = this.paginator;
         this.dataSource.sort = this.sort;
       });

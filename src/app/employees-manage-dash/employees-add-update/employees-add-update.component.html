@@ -558,7 +558,6 @@
                             <th mat-header-cell *matHeaderCellDef>שם הכשרה</th>
                             <td mat-cell *matCellDef="let row; let i = index" [formGroupName]="i">
                                 <mat-form-field appearance="outline" class="w-full">
-                                    <!-- <input matInput placeholder="שם הכשרה" formControlName="TrainingSubject" /> -->
                                     <mat-select formControlName="TrainingSubject" aria-placeholder="שם הכשרה"
                                         (selectionChange)="onTrainingSubjectChange(i, $event.value)">
                                         <mat-option *ngFor="let training of TrainingsList" [value]="training.TrainingSubject">
