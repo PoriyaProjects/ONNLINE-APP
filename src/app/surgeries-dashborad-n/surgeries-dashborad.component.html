@@ -992,11 +992,9 @@
                 <span class="filter-sidebar-heading__hint">{{
                   sidebarFiltersNonApplicableForRoomCharts()
                   ? 'במצב זה הפילטרים כבויים — החישוב לפי בוקר, אמצע שבוע וחדר ניתוח כללי בלבד.'
-                  : isSurgeryVolumeMonthlyChartView()
-                  ? 'בתצוגת «ניתוחים לפי חודשים» הפילטרים כבויים — הגרף מציג היקף מלא ללא סינון מהסיידבר.'
                   : mainMetricMode === 'compare-departments'
                   ? 'במצב «השוואת מחלקות» הפילטרים כבויים — גרף ההשוואה נשלט מבחירת מחלקה ומדדים בפאנל הגרף בלבד.'
-                  : 'מסננים משותפים לגרף ולטבלה'
+                  : 'מסננים משותפים לגרף ולטבלה (כולל תצוגת ניתוחים לפי חודשים)'
                   }}</span>
               </div>
               <button type="button" mat-icon-button class="filter-sidebar-inline-close icon-btn ghost"
@@ -1139,9 +1137,6 @@
               <div class="filters-disabled-hint" *ngIf="sidebarFiltersNonApplicableForRoomCharts()" role="note">
                 פילטרי הסיידבר אינם רלוונטיים לגרפי «זמני חדר» ו«ניצולת חדר»: כל המדדים מחושבים בשרת עבור משמרת בוקר,
                 ימי אמצע שבוע וחדר ניתוח כללי בלבד, ולא ניתן לצמצם או לשנות את ההיקף דרך הסיידבר.
-              </div>
-              <div class="filters-disabled-hint" *ngIf="isSurgeryVolumeMonthlyChartView()" role="note">
-                בתצוגת «ניתוחים לפי חודשים» פילטרי הסיידבר אינם משפיעים על הגרף; מוצגים נתוני היקף מלא בלבד.
               </div>
               <div class="filters-disabled-hint" *ngIf="mainMetricMode === 'compare-departments'" role="note">
                 במצב «השוואת מחלקות» גרף ההשוואה נבנה מאגרגציה מלאה לפי מחלקה (ללא סינון מהסיידבר). סוגי ניתוח למדדים
