@@ -554,9 +554,12 @@
                       <span class="chart-mode-heading__title">{{ getChartViewTitle() }}</span>
                       <span class="chart-mode-heading__period-inline" *ngIf="showChartYtdPeriodLine()">
                         <span class="chart-mode-heading__period-lead">ניתוחים לפי חודשים מינואר ועד סוף</span>
-                        <strong class="chart-mode-heading__period-mmyy" dir="ltr">{{ getHelpPeriodCutoffMmYy()
+                        <strong class="chart-mode-heading__period-mmyy" dir="ltr">{{
+                          monthlyCountsLatestPeriod ? getMonthlyCountsPeriodMmYy() : getHelpPeriodCutoffMmYy()
                           }}</strong>
-                        <span class="chart-mode-heading__period-tail">({{ getHelpPeriodCutoffMonthLabel() }}) בכל שנה —
+                        <span class="chart-mode-heading__period-tail">({{
+                          monthlyCountsLatestPeriod ? getMonthlyCountsPeriodMonthLabel() : getHelpPeriodCutoffMonthLabel()
+                          }}) בכל שנה —
                           תקופה מקבילה.</span>
                       </span>
                     </div>

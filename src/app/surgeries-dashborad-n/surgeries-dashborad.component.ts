@@ -383,6 +383,9 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
     // Aggregated counts by month from new API
     monthlyCountsData: MonthlyCountRow[] = [];
 
+    /** חודש ושנה מקסימליים בנתוני GetMonthlyCounts (לכותרת — לא לפי לוח שנה מקומי) */
+    monthlyCountsLatestPeriod: { year: number; month: number } | null = null;
+
     /** נתוני השוואה YoY לפי מחלקה (מדד משולב) */
     departmentYoyData: DepartmentYoyDto[] = [];
 
@@ -2405,6 +2408,8 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
         this.updateChartOptionsForType();
         // Load main 5‑year counts by department from new API
         this.loadCountByDept();
+        // טעינת נתוני חודשים מוקדמת (אותם פרמטרים כמו KPI ברירת מחדל) — לכותרת תקופה ומטמון לפני מעבר לתצוגת חודשים
+        this.loadMonthlyCounts({ prefetchSilent: true });
         this.loadDiagnosesList();
         // Load data after diagnoses list is loaded
         setTimeout(() => {
@@ -2599,19 +2604,24 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
      * Load 5‑year aggregated counts by month from GetMonthlyCounts_surgeries_dashborad.
      * שולח את אותם פרמטרי סינון כמו מדדי KPI (סוג ניתוח, משמרת, אתר, סופ״ש, מחלקה, עבודת בוקר, חדרים).
      */
-    private loadMonthlyCounts(): void {
+    private loadMonthlyCounts(options?: { prefetchSilent?: boolean }): void {
+        const prefetchSilent = options?.prefetchSilent === true;
         const apiParams = this.buildMonthlyCountsApiParams();
         const paramsKey = this.monthlyCountsParamsCacheKey(apiParams);
         // כולל תוצאה ריקה מהשרת — אחרת מתחילים לולאת קריאות (ריק → updateChartData → loadMonthlyCounts שוב)
         if (this.lastMonthlyCountsParams === paramsKey && !this.monthlyCountsRequestInFlight) {
-            this.updateChartData();
+            if (!prefetchSilent) {
+                this.updateChartData();
+            }
             return;
         }
         if (this.monthlyCountsRequestInFlight) {
             return;
         }
         this.monthlyCountsRequestInFlight = true;
-        this.isChartLoading = true;
+        if (!prefetchSilent) {
+            this.isChartLoading = true;
+        }
 
         this.http
             .get<MonthlyCountRow[]>(environment.url + "GetMonthlyCounts_surgeries_dashborad", {
@@ -2624,12 +2634,18 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
                     const rows = Array.isArray(raw) ? raw : [];
                     this.monthlyCountsData = rows;
                     this.lastMonthlyCountsParams = paramsKey;
-                    this.updateChartData();
+                    this.recomputeMonthlyCountsLatestPeriod(rows);
+                    if (!prefetchSilent || this.chartViewMode === "month") {
+                        this.updateChartData();
+                    } else {
+                        this.cdr.detectChanges();
+                    }
                 },
                 error: (err) => {
                     this.monthlyCountsRequestInFlight = false;
                     console.error("Error loading GetMonthlyCounts data:", err);
                     this.monthlyCountsData = [];
+                    this.monthlyCountsLatestPeriod = null;
                     this.isChartLoading = false;
                     this.isChartViewReady = true;
                     const status = err && (err as any).status;
@@ -2648,6 +2664,36 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
                     }
                 },
             });
+    }
+
+    /**
+     * קובע את חודש/שנה המאוחרים ביותר בנתוני GetMonthlyCounts (מעדיף שורות עם Count > 0).
+     */
+    private recomputeMonthlyCountsLatestPeriod(rows: MonthlyCountRow[]): void {
+        if (!rows || rows.length === 0) {
+            this.monthlyCountsLatestPeriod = null;
+            return;
+        }
+        const pickMax = (list: MonthlyCountRow[]) => {
+            let bestY = -1;
+            let bestM = -1;
+            for (const r of list) {
+                const y = Number((r as any).Year ?? (r as any).year);
+                const m = Number((r as any).Month ?? (r as any).month);
+                if (isNaN(y) || isNaN(m) || m < 1 || m > 12) {
+                    continue;
+                }
+                if (y > bestY || (y === bestY && m > bestM)) {
+                    bestY = y;
+                    bestM = m;
+                }
+            }
+            return bestY >= 0 ? { year: bestY, month: bestM } : null;
+        };
+        const withCount = rows.filter(
+            (r) => (Number((r as any).Count ?? (r as any).count) || 0) > 0
+        );
+        this.monthlyCountsLatestPeriod = pickMax(withCount.length > 0 ? withCount : rows);
     }
 
     /**
@@ -4955,6 +5001,7 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
         this.countByDeptData = [];
         this.lastCountByDeptYear = null;
         this.monthlyCountsData = [];
+        this.monthlyCountsLatestPeriod = null;
         this.lastMonthlyCountsParams = null;
         this.surgeriesPerDayDepRoomRaw = [];
         this.roomUtilizationRoomStatsRaw = [];
@@ -5389,6 +5436,41 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
             "דצמבר",
         ];
         return names[limit1] || "";
+    }
+
+    /** MM/YY של סוף התקופה לפי נתוני GetMonthlyCounts (לא לפי תאריך מקומי) */
+    getMonthlyCountsPeriodMmYy(): string {
+        const p = this.monthlyCountsLatestPeriod;
+        if (!p) {
+            return "\u2026";
+        }
+        const mm = String(p.month).padStart(2, "0");
+        const yy = String(p.year % 100).padStart(2, "0");
+        return `${mm}/${yy}`;
+    }
+
+    /** שם חודש עברי לפי `monthlyCountsLatestPeriod` */
+    getMonthlyCountsPeriodMonthLabel(): string {
+        const p = this.monthlyCountsLatestPeriod;
+        const names = [
+            "",
+            "ינואר",
+            "פברואר",
+            "מרץ",
+            "אפריל",
+            "מאי",
+            "יוני",
+            "יולי",
+            "אוגוסט",
+            "ספטמבר",
+            "אוקטובר",
+            "נובמבר",
+            "דצמבר",
+        ];
+        if (!p) {
+            return "\u2026";
+        }
+        return names[p.month] || "\u2026";
     }
 
     /**
