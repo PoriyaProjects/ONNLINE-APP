@@ -448,10 +448,26 @@
     border-radius: 0;
     border-top: 1px solid rgba(242, 201, 76, 0.38);
     cursor: default;
-    height: clamp(70px, 8.6dvh, 94px);
-    min-height: clamp(70px, 8.6dvh, 94px);
-    max-height: clamp(70px, 8.6dvh, 94px);
-    overflow: hidden;
+    height: auto;
+    min-height: clamp(48px, 7cqi + 32px, 78px);
+    max-height: none;
+    overflow: visible;
+    padding: clamp(4px, 0.55cqi + 3px, 10px) clamp(6px, 1cqi + 3px, 10px);
+    box-sizing: border-box;
+}
+
+.regular-section .room-widget.card .current-surgery-chip--below-header .current-surgery-chip__body {
+    overflow: visible;
+}
+
+.regular-section .room-widget.card .current-surgery-chip--below-header .current-surgery-chip__label {
+    font-size: clamp(0.65rem, 0.48rem + 1.6cqi, 0.88rem);
+}
+
+.regular-section .room-widget.card .current-surgery-chip--below-header .current-surgery-chip__body,
+.regular-section .room-widget.card .current-surgery-chip--below-header .current-surgery-chip__times {
+    font-size: clamp(0.68rem, 0.5rem + 2cqi, 0.96rem);
+    line-height: 1.28;
 }
 
 .regular-section .rooms-grid:has(.room-widget.card.active) > .room-wrapper {
@@ -468,6 +484,11 @@
     min-height: clamp(268px, 24vh, 380px);
     max-height: none;
     cursor: default;
+    /* קנה מידה לפי רוחב הכרטיס (עמודות צרות בגריד 7) — לא לפי רוחב המסך */
+    container-type: inline-size;
+    container-name: regular-room;
+    /* ללא גלילה פנימית בכרטיס — מסך קיר: כל התוכן גלוי */
+    overflow: visible;
     transition:
         box-shadow 0.22s ease,
         transform 0.2s ease,
@@ -505,24 +526,35 @@
 .regular-section .room-widget.card:not(.active) {
     display: flex;
     flex-direction: column;
-    overflow: hidden;
+    /* אל תחתוך כותרת / שבבים — הכל חייב להיות גלוי על פלזמה */
+    overflow: visible;
 }
 
 .regular-section .room-widget.card:not(.active) .room-header {
-    flex: 1 1 auto;
+    /* גובה טבעי לפי תוכן — בלי דחיסה ובלי גלילה פנימית */
+    flex: 0 0 auto;
     display: flex;
     flex-direction: column;
-    min-height: 0;
-    justify-content: space-evenly;
-    overflow: hidden;
+    min-height: min-content;
+    justify-content: flex-start;
+    overflow: visible;
+}
+
+/* מונע דחיסת תוכן כותרת מתחת גודל הטקסט — זה גורם לטקסטים «לטפס» אחד על השני */
+.regular-section .room-widget.card:not(.active) .room-header > * {
+    flex-shrink: 0;
+}
+
+.regular-section .room-widget.card.active .room-header > * {
+    flex-shrink: 0;
 }
 
 .regular-section .room-widget.card .room-header {
-    min-height: 0;
+    min-height: min-content;
     width: 100%;
-    padding: clamp(12px, 1.45vh, 18px) clamp(10px, 1.05vw, 18px);
-    gap: clamp(7px, 1vh, 12px);
-    overflow: hidden;
+    padding: clamp(8px, 1vh, 14px) clamp(8px, 0.9vw, 14px);
+    gap: clamp(5px, 0.75vh, 10px);
+    overflow: visible;
 }
 
 .regular-section .room-widget.card .room-header .room-dept-badge {
@@ -530,8 +562,12 @@
     white-space: normal;
     padding: clamp(5px, 0.55vh, 8px) clamp(12px, 0.9vw, 18px);
     border-radius: 12px;
-    line-height: 1.12;
-    font-size: clamp(1.36rem, 0.9vw + 1rem, 1.9rem);
+    line-height: 1.22;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    hyphens: auto;
+    /* לפי רוחב הכרטיס (cqi), לא vw — במסך רחב עם 7 עמודות הטקסט לא יתנפח מעבר לתא */
+    font-size: clamp(0.72rem, 0.48rem + 3.6cqi, 1.06rem);
     font-weight: 900;
     letter-spacing: 0.01em;
     color: var(--text-main);
@@ -546,14 +582,23 @@
 
 .regular-section .room-widget.card .room-header .extra-row {
     min-width: 0;
+    flex-wrap: wrap;
+    align-items: baseline;
+    row-gap: 4px;
+    column-gap: 10px;
     padding: clamp(8px, 0.95vh, 12px) clamp(9px, 0.9vw, 13px);
     line-height: 1.22;
 }
 
 .regular-section .room-widget.card .room-header .extra-row .k,
 .regular-section .room-widget.card .room-header .extra-row .v {
-    font-size: clamp(0.94rem, 0.46vw + 0.74rem, 1.18rem);
-    line-height: 1.2;
+    font-size: clamp(0.72rem, 0.52rem + 2.2cqi, 1.02rem);
+    line-height: 1.25;
+}
+
+.regular-section .room-widget.card .room-header .extra-row .k {
+    overflow-wrap: anywhere;
+    word-break: break-word;
 }
 
 .regular-section .room-widget.card.active {
@@ -1345,8 +1390,9 @@
     flex: 0 0 auto;
     overflow: visible;
     margin-top: auto;
-    min-height: clamp(96px, 11dvh, 128px);
-    padding: clamp(12px, 1.25vh, 16px) clamp(12px, 1vw, 16px);
+    /* קומפקטי למסך קיר — משחרר גובה לכותרת ולניתוח נוכחי */
+    min-height: 0;
+    padding: clamp(6px, 0.7dvh, 10px) clamp(6px, 0.8cqi + 4px, 12px);
     border-top: 1px solid rgba(224, 230, 237, 0.9);
     background: linear-gradient(
         180deg,
@@ -1357,15 +1403,16 @@
 
 .regular-section .room-list-actions {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(78px, 1fr));
-    gap: 10px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: clamp(6px, 1cqi + 2px, 10px);
+    align-items: stretch;
 }
 
 .regular-section .room-list-action-btn {
     width: 100%;
-    min-height: clamp(72px, 8.4dvh, 96px);
+    min-height: clamp(40px, 3.8dvh + 2cqi, 56px);
     border: 1px solid rgba(74, 144, 226, 0.3);
-    border-radius: 12px;
+    border-radius: 10px;
     background: rgba(74, 144, 226, 0.08);
     color: var(--text-main);
     cursor: pointer;
@@ -1373,12 +1420,12 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 6px;
-    padding: 10px 12px;
-    font-size: clamp(1rem, 0.42vw + 0.84rem, 1.22rem);
+    gap: clamp(2px, 0.4cqi, 5px);
+    padding: clamp(4px, 0.5dvh, 8px) clamp(6px, 1cqi + 2px, 10px);
+    font-size: clamp(0.72rem, 0.48rem + 1.8cqi, 0.92rem);
     font-weight: 900;
-    line-height: 1.18;
-    text-align: right;
+    line-height: 1.12;
+    text-align: center;
     transition:
         background 0.15s ease,
         border-color 0.15s ease,
@@ -1408,12 +1455,12 @@
 }
 
 .regular-section .room-list-action-btn strong {
-    min-width: 36px;
-    padding: 4px 12px;
+    min-width: 26px;
+    padding: 2px 8px;
     border-radius: 999px;
     background: #fff;
     color: #1e5a96;
-    font-size: clamp(1.24rem, 0.5vw + 1rem, 1.55rem);
+    font-size: clamp(0.82rem, 0.55rem + 2cqi, 1.05rem);
     font-weight: 900;
     line-height: 1.05;
     text-align: center;
@@ -1995,6 +2042,39 @@
     font-size: clamp(0.96rem, 0.42vw + 0.82rem, 1.16rem);
     color: var(--text-main);
     font-weight: 900;
+}
+
+/* חדרים כלליים: תצוגת משך/התקדמות לפי רוחב הכרטיס + מילוי רוחב התא */
+.regular-section .duration-display,
+.regular-section .progress-display {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+    align-items: center;
+    flex-wrap: wrap;
+    row-gap: 4px;
+    column-gap: 8px;
+    font-size: clamp(0.68rem, 0.52rem + 2.5cqi, 0.96rem);
+    padding: clamp(6px, 0.35rem + 1.8cqi, 10px) clamp(8px, 0.45rem + 2cqi, 14px);
+}
+
+.regular-section .progress-counter {
+    font-size: clamp(0.78rem, 0.58rem + 2.4cqi, 1.02rem);
+    line-height: 1.15;
+}
+
+.regular-section .progress-label {
+    font-size: clamp(0.66rem, 0.52rem + 1.8cqi, 0.9rem);
+    line-height: 1.2;
+}
+
+.regular-section .room-duration-info,
+.regular-section .room-progress-info {
+    width: 100%;
+    max-width: 100%;
+    margin-inline: 0;
+    margin-block: clamp(3px, 0.35rem + 0.45cqi, 7px);
 }
 
 .room-extra-panel {
@@ -2854,6 +2934,11 @@
     padding: 0;
     width: 100%;
     min-height: 0;
+    line-height: 1.28;
+}
+
+.regular-section .room-widget.card .room-header.room-header--dept-first .room-dept-heading {
+    min-height: unset;
 }
 
 .container {
