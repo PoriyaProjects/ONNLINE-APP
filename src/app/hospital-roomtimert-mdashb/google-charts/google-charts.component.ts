@@ -94,6 +94,8 @@ export interface Surgery {
     timeNotEntered?: boolean;
     /** מסומן true כאשר הניתוח הגיע רק מלוח GetSurgeriesBySurgeryRoomCode (בלי רשומת RealTime) */
     fromCalendarOnly?: boolean;
+    NoteType?: string | null;
+    SurgeryReasonNote?: string | null;
 }
 
 export interface RoomData {
@@ -236,6 +238,7 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
     roomsData: RoomData[] = [];
     private pendingRoomsData: RoomData[] | null = null;
     openRoom: string | null = null;
+    private openCanceledReasonSurgeryIds = new Set<string>();
     
     // מיפוי של חדרים לפי CalendarRoomsArea - נשמר ממידע על החדרים עצמם
     private roomCalendarAreaMap = new Map<string, string>(); // roomId -> CalendarRoomsArea
@@ -291,6 +294,8 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
             patientNumber: raw?.patientNumber ?? (raw as Record<string, unknown>)?.PatientNumber ?? "",
             CalendarRoomsArea: raw?.CalendarRoomsArea ?? null,  // "חדר ניתוח אמבולטורי" או "חדר ניתוח כללי"
             SurgeryRoomName: raw?.SurgeryRoomName ?? null,  // "חדר ניתוח אמבולטורי - 1" או "חדר ניתוח כללי - 1"
+            NoteType: raw?.NoteType ?? null,
+            SurgeryReasonNote: raw?.SurgeryReasonNote ?? null,
         } as Surgery;
         
         
@@ -821,6 +826,8 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
                         SurgeryType: row.SurgeryType ?? null,
                         CalendarRoomsArea: row.CalendarRoomsArea ?? null,
                         SurgeryRoomName: (row as any).SurgeryRoomName ?? null,
+                        NoteType: rowAny.NoteType ?? null,
+                        SurgeryReasonNote: rowAny.SurgeryReasonNote ?? null,
                         timeNotEntered: false,
                         AdmissionNo: rowAny.AdmissionNo,
                     });
@@ -5516,10 +5523,57 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
     /** מפתח סטטוס לתצוגה (מתקן InProgress מיושן ל-Completed) */
     displaySurgeryStatusKey(s: Surgery, room: RoomData): string {
         const raw = String(s.status ?? s.SurgeryStatus ?? "Planned").trim();
+        if (this.isSurgeryCanceled(s)) {
+            return "Canceled";
+        }
         if (this.isInProgressStaleByEstimatedEnd(s, room)) {
             return "Completed";
         }
         return raw;
+    }
+
+    isSurgeryCanceled(s: Surgery | null | undefined): boolean {
+        if (!s) return false;
+        const status = String(s.status ?? s.SurgeryStatus ?? "").toLowerCase().trim();
+        const noteType = String(s.NoteType ?? "").toLowerCase().trim();
+        return (
+            status === "canceled" ||
+            status === "cancelled" ||
+            noteType === "canceled" ||
+            noteType === "cancelled"
+        );
+    }
+
+    getSurgeryCancelReason(s: Surgery | null | undefined): string | null {
+        if (!s) return null;
+        const reason = String(s.SurgeryReasonNote ?? "").trim();
+        return reason.length ? reason : null;
+    }
+
+    hasCancelReason(s: Surgery | null | undefined): boolean {
+        return !!this.getSurgeryCancelReason(s);
+    }
+
+    isCancelReasonOpen(s: Surgery | null | undefined): boolean {
+        if (!s) return false;
+        const id = String(s.SurgeryID ?? s.surgeryId ?? "");
+        if (!id) return false;
+        return this.openCanceledReasonSurgeryIds.has(id);
+    }
+
+    toggleCancelReason(s: Surgery | null | undefined, event?: Event): void {
+        event?.stopPropagation();
+        event?.preventDefault();
+        if (!s) return;
+        const id = String(s.SurgeryID ?? s.surgeryId ?? "");
+        if (!id) return;
+        if (this.openCanceledReasonSurgeryIds.has(id)) {
+            this.openCanceledReasonSurgeryIds.delete(id);
+        } else {
+            this.openCanceledReasonSurgeryIds.add(id);
+        }
+        this.openCanceledReasonSurgeryIds = new Set(this.openCanceledReasonSurgeryIds);
+        this.cdr.markForCheck();
     }
 
     /**
@@ -6263,6 +6317,7 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
         Completed: "הושלם",
         InProgress: "בביצוע",
         Planned: "מתוכנן",
+        Canceled: "בוטל",
     };
 
     // הוסף בקומפוננטה
@@ -6542,8 +6597,54 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
             return st === "completed";
         });
     }
-    nextPlannedSurgery(room: RoomData) {
-        return room.surgeries?.find((s) => s.IsWaitingForSurgery);
+    private getSurgerySortMinutes(s: Surgery): number {
+        const hm =
+            s?.timeEntrance ??
+            s?.TimeEntranceToTheOperatingRoom ??
+            (s as Record<string, unknown>)?.["ArrivalTime"]?.toString() ??
+            null;
+        const mins = this.hmToMinutes(hm);
+        return mins ?? Number.POSITIVE_INFINITY;
+    }
+
+    isNextSurgeryReady(next: Surgery | null | undefined): boolean {
+        if (!next) return false;
+        if (next.ReadyForSurgery === 1) return true;
+        return next.NextPatientReadyGreen === true;
+    }
+
+    getMissingSignaturesText(next: Surgery | null | undefined): string | null {
+        if (!next) return null;
+        const text = String(
+            next.MissingSignaturesText ?? next.MissingSignatures ?? ""
+        ).trim();
+        return text.length ? text : null;
+    }
+
+    hasMissingSignatures(next: Surgery | null | undefined): boolean {
+        if (!next) return false;
+        if (this.getMissingSignaturesText(next)) return true;
+        return next.ReadyForSurgery === 0;
+    }
+
+    nextPlannedSurgery(room: RoomData): Surgery | undefined {
+        const surgeries = [...(room?.surgeries ?? [])];
+        if (!surgeries.length) return undefined;
+
+        const ordered = surgeries.sort(
+            (a, b) => this.getSurgerySortMinutes(a) - this.getSurgerySortMinutes(b)
+        );
+        const isPlanned = (s: Surgery) =>
+            String(s?.status ?? s?.SurgeryStatus ?? "").toLowerCase().trim() ===
+            "planned";
+
+        const inProgressIdx = ordered.findIndex((s) =>
+            this.isInProgressStatus(s?.status ?? s?.SurgeryStatus)
+        );
+        if (inProgressIdx >= 0) {
+            return ordered.slice(inProgressIdx + 1).find(isPlanned);
+        }
+        return ordered.find(isPlanned);
     }
     showSummary: boolean = false;
 

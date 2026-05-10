@@ -2320,6 +2320,61 @@
     background: rgba(74, 144, 226, 0.07);
 }
 
+.regular-section
+    .planned-surgeries-overlay
+    .completed-surgeries-overlay__card.surgery-card--canceled {
+    border-inline-start-color: var(--danger);
+    border: 1px solid rgba(235, 87, 87, 0.45);
+    background: rgba(235, 87, 87, 0.08);
+}
+
+.surgery-canceled-meta {
+    margin-top: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.surgery-canceled-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    border-radius: 999px;
+    border: 1px solid rgba(235, 87, 87, 0.45);
+    background: rgba(235, 87, 87, 0.14);
+    color: #9f2424;
+    font-weight: 800;
+    font-size: 11px;
+}
+
+.surgery-canceled-details-btn {
+    border: 1px solid rgba(235, 87, 87, 0.45);
+    border-radius: 8px;
+    background: #fff;
+    color: #9f2424;
+    padding: 3px 8px;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.surgery-canceled-details-btn:hover {
+    background: rgba(235, 87, 87, 0.08);
+}
+
+.surgery-canceled-reason {
+    margin-top: 8px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    border: 1px dashed rgba(235, 87, 87, 0.45);
+    background: rgba(255, 255, 255, 0.78);
+    color: #4b1f1f;
+    font-size: 12px;
+    line-height: 1.45;
+    white-space: pre-wrap;
+}
+
 .ambulatory-section .room-widget.card.ambulatory-room-card {
     position: relative;
     isolation: isolate;
@@ -2624,6 +2679,13 @@
 }
 .status-wrap.Planned .status-dot {
     background: var(--primary);
+}
+.status-wrap.Canceled {
+    background: rgba(235, 87, 87, 0.18);
+    color: #9f2424;
+}
+.status-wrap.Canceled .status-dot {
+    background: var(--danger);
 }
 
 /* ========== Summary / misc ========== */

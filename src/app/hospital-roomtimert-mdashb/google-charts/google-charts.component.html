@@ -71,13 +71,13 @@
                   </div>
                   <ng-container *ngIf="nextPlannedSurgery(room) as s">
                     <div
-                      *ngIf="!s.NextPatientReadyGreen && s.MissingSignaturesText && !isSignatureBannerDismissed(room.roomId)"
+                      *ngIf="!isNextSurgeryReady(s) && hasMissingSignatures(s) && !isSignatureBannerDismissed(room.roomId)"
                       class="signature-banner-float signature-banner--preface signature-banner--preface-note signature-banner--status"
-                      [attr.title]="s.MissingSignaturesText">
+                      [attr.title]="getMissingSignaturesText(s)">
                       <button type="button" class="signature-banner-close"
                         (click)="dismissSignatureBanner(room.roomId, $event)"
                         aria-label="סגור התראת חתימות">✕</button>
-                      <span class="signature-banner-text">⚠️ חסרה חתימה: {{ s.MissingSignaturesText }}</span>
+                      <span class="signature-banner-text">⚠️ חסרה חתימה: {{ getMissingSignaturesText(s) }}</span>
                     </div>
                   </ng-container>
                 </div>
@@ -279,17 +279,33 @@
                         </div>
                         <div class="completed-surgeries-overlay__scroll">
                           <div *ngFor="let s of ovPlanned; trackBy: trackBySurgeryId"
-                            class="surgery-card planned completed-surgeries-overlay__card">
+                            class="surgery-card planned completed-surgeries-overlay__card"
+                            [class.surgery-card--canceled]="isSurgeryCanceled(s)">
                             <div class="surgery-top">
                               <span class="times" *ngIf="settings.showTimes" [innerHTML]="formatSurgeryTimes(s)"></span>
                               <span class="dept" *ngIf="s.department?.trim()">{{ s.department }}</span>
                             </div>
-                            <span *ngIf="settings.showStatus" class="status-wrap" [ngClass]="(s.status || s.SurgeryStatus)">
+                            <span *ngIf="settings.showStatus" class="status-wrap" [ngClass]="displaySurgeryStatusKey(s, room)">
                               <span class="status-dot"></span>
                               <span class="status-text">
-                                {{ statusHebrew[(s.status || s.SurgeryStatus)] }}
+                                {{ statusHebrew[displaySurgeryStatusKey(s, room)] }}
                               </span>
                             </span>
+                            <div class="surgery-canceled-meta" *ngIf="isSurgeryCanceled(s)">
+                              <span class="surgery-canceled-badge">בוטל</span>
+                              <button
+                                type="button"
+                                class="surgery-canceled-details-btn"
+                                *ngIf="hasCancelReason(s)"
+                                (click)="toggleCancelReason(s, $event)"
+                                [attr.aria-expanded]="isCancelReasonOpen(s)"
+                                [attr.aria-label]="isCancelReasonOpen(s) ? 'הסתר סיבת ביטול' : 'הצג סיבת ביטול'">
+                                {{ isCancelReasonOpen(s) ? 'הסתר פרטים' : 'פרטים' }}
+                              </button>
+                            </div>
+                            <div class="surgery-canceled-reason" *ngIf="isSurgeryCanceled(s) && isCancelReasonOpen(s)">
+                              {{ getSurgeryCancelReason(s) }}
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -480,9 +496,9 @@
                           <div class="ambulatory-metrics-embedded">
                             <ng-container *ngIf="nextPlannedSurgery(room) as nps">
                               <!-- <div *ngIf="nps.NextPatientReadyGreen" class="next-ready-chip ready">🟢 המטופל הבא מוכן לניתוח</div> -->
-                              <div *ngIf="!nps.NextPatientReadyGreen && nps.MissingSignaturesText"
-                                class="next-ready-chip warn" [attr.title]="nps.MissingSignaturesText">
-                                ⚠️ חסרה חתימה: {{ nps.MissingSignaturesText }}
+                              <div *ngIf="!isNextSurgeryReady(nps) && hasMissingSignatures(nps)"
+                                class="next-ready-chip warn" [attr.title]="getMissingSignaturesText(nps)">
+                                ⚠️ חסרה חתימה: {{ getMissingSignaturesText(nps) }}
                               </div>
                             </ng-container>
 
