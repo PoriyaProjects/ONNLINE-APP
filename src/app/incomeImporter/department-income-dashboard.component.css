@@ -1560,22 +1560,24 @@ table.table {
 .dash.dark table.table tbody tr:hover td     { background: rgba(255,255,255,.05); }
 .dash:not(.dark) table.table tbody tr:hover td { background: rgba(15,23,42,.03); }
 
-/* רמז כניסה: יורד מלמעלה (Angular), צף מעל הטבלה — z-index גבוה + צל חזק */
+/* רמז כניסה: שכבה מוחלטת מעל הטבלה — בלי דחיפת התוכן למטה */
 .table-dept-click-hint {
-  position: sticky;
-  top: 4px;
+  position: absolute;
+  top: 8px;
+  left: 10px;
+  right: 10px;
   z-index: 2600;
   display: flex;
   align-items: center;
   gap: 10px;
-  margin: 2px 3px 14px;
+  margin: 0;
   padding: 11px 14px 11px 10px;
   border-radius: 12px;
   font-size: clamp(12px, 1vw, 13px);
   line-height: 1.35;
   color: var(--text, #0f172a);
-  background: transparent;
-  border: none;
+  background: var(--panel, #ffffff);
+  border: 1px solid var(--border, rgba(15, 23, 42, 0.1));
   outline: none;
   box-shadow:
     0 18px 44px rgba(15, 23, 42, 0.14),
@@ -1624,8 +1626,8 @@ table.table {
 
 .dash.dark .table-dept-click-hint {
   color: var(--text, #e5e7eb);
-  background: transparent;
-  border: none;
+  background: var(--bg, #0b1220);
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.12));
   outline: none;
   box-shadow:
     0 18px 48px rgba(0, 0, 0, 0.45),
