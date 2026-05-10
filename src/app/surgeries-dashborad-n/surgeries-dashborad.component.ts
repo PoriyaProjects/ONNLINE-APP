@@ -2646,7 +2646,20 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
                     this.monthlyCountsData = [];
                     this.isChartLoading = false;
                     this.isChartViewReady = true;
-                    this.cdr.detectChanges();
+                    const status = err && (err as any).status;
+                    this.snackBar.open(
+                        status === 500
+                            ? "❌ השרת החזיר שגיאה (500) בטעינת ניתוחים לפי חודשים. יש לבדוק את GetMonthlyCounts_surgeries_dashborad בצד השרת."
+                            : "❌ שגיאה בטעינת ניתוחים לפי חודשים מהשרת.",
+                        "סגור",
+                        { duration: 6000 }
+                    );
+                    // נשארים בלי נתוני חודש — חוזרים לתצוגת שנה כדי שלא יישאר גרף ריק / לולאת קריאות
+                    if (this.chartViewMode === "month") {
+                        this.setChartViewMode("year-total");
+                    } else {
+                        this.cdr.detectChanges();
+                    }
                 },
             });
     }
