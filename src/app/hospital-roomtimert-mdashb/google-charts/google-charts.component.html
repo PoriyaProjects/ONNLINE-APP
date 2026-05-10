@@ -86,15 +86,15 @@
               <!-- ערימה: התראות צפות מעל הכרטיס (לא דוחפות למטה), z-index קבוע -->
               <div class="room-stack">
                 <div class="room-float-alerts" *ngIf="nextPlannedSurgery(room) as s">
-                  <div
+                  <!-- <div
                     *ngIf="s.NextPatientReadyGreen && !isNextReadyBannerDismissed(room.roomId)"
                     class="next-ready-banner-float next-ready-banner--popup ready"
                     title="המטופל הבא מוכן לניתוח">
                     <button type="button" class="signature-banner-close"
                       (click)="dismissNextReadyBanner(room.roomId, $event)"
                       aria-label="סגור הודעת מוכן לניתוח">✕</button>
-                    <!-- <span class="next-ready-banner-text">🟢 המטופל הבא מוכן לניתוח</span> -->
-                  </div>
+                   <span class="next-ready-banner-text">🟢 המטופל הבא מוכן לניתוח</span> -->
+                  <!-- </div> --> 
                 </div>
 
                 <div class="room-widget card room-white" [ngClass]="[
@@ -436,10 +436,24 @@
 
                     <div class="ambulatory-split-panel ambulatory-planned ambulatory-planned--as-table"
                       *ngIf="settings.showPlannedSection !== false">
-                      <h5 class="section-title ambulatory-split-title">ניתוחים מתוכננים</h5>
-                      <p class="ambulatory-panel-empty">
-                        אין ניתוחים מתוכננים
-                      </p>
+                      <h5 class="section-title ambulatory-split-title">רשימות ניתוחים</h5>
+                      <div class="room-list-actions ambulatory-list-actions ambulatory-list-actions--empty">
+                        <button
+                          type="button"
+                          class="room-list-action-btn room-list-action-btn--completed"
+                          disabled>
+                          <span>בוצעו</span>
+                          <strong>0</strong>
+                        </button>
+
+                        <button
+                          type="button"
+                          class="room-list-action-btn room-list-action-btn--planned"
+                          disabled>
+                          <span>מתוכנן</span>
+                          <strong>0</strong>
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -465,9 +479,7 @@
                         <div class="ambulatory-actual-inner">
                           <div class="ambulatory-metrics-embedded">
                             <ng-container *ngIf="nextPlannedSurgery(room) as nps">
-                              <!-- <div *ngIf="nps.NextPatientReadyGreen" class="next-ready-chip ready">
-                                🟢 המטופל הבא מוכן לניתוח
-                              </div> -->
+                              <!-- <div *ngIf="nps.NextPatientReadyGreen" class="next-ready-chip ready">🟢 המטופל הבא מוכן לניתוח</div> -->
                               <div *ngIf="!nps.NextPatientReadyGreen && nps.MissingSignaturesText"
                                 class="next-ready-chip warn" [attr.title]="nps.MissingSignaturesText">
                                 ⚠️ חסרה חתימה: {{ nps.MissingSignaturesText }}
