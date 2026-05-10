@@ -103,7 +103,7 @@ function asArray<T>(raw: unknown): T[] {
     return raw as T[];
   }
   if (typeof raw === 'object') {
-    return [raw as T];
+    return [raw as unknown as T];
   }
   return [];
 }
@@ -114,7 +114,7 @@ function extractDetailRawRows(raw: unknown): Record<string, unknown>[] {
     .filter((item): item is Record<string, unknown> =>
       item != null && typeof item === 'object' && !Array.isArray(item))
     .map(item => ({ ...item }));
-} 
+}
 
 function strVal(v: unknown): string | undefined {
   if (v == null) {
