@@ -192,7 +192,9 @@
           </div>
         </div>
 
-        <div class="graph-dimension-toolbar" dir="rtl">
+        <div class="graph-dimension-toolbar"
+             dir="rtl"
+             [@graphToolbarMode]="graphToolbarDimensionMode">
           <mat-button-toggle-group
             class="graph-dimension-toggle-group"
             appearance="standard"
@@ -241,8 +243,27 @@
             </div>
             <div class="chart-loading-text">טוען טבלת הכנסות...</div>
           </div>
-          <div class="table-wrap">
-            <table mat-table [dataSource]="dataSource" matSort #mainSort="matSort" class="table" dir="rtl">
+          <div *ngIf="showTableDepartmentClickHint"
+               class="table-dept-click-hint"
+               [@tableDeptHintBanner]
+               role="status"
+               aria-live="polite">
+            <mat-icon class="table-dept-click-hint__icon" aria-hidden="true">touch_app</mat-icon>
+            <span class="table-dept-click-hint__text">שם המחלקה בטבלה <strong>לחיץ</strong> — לחיצה פותחת פירוט וגרף מפורט.</span>
+            <button type="button"
+                    mat-icon-button
+                    class="table-dept-click-hint__close"
+                    (click)="dismissTableDepartmentClickHint()"
+                    aria-label="סגור הודעה">
+              <mat-icon>close</mat-icon>
+            </button>
+          </div>
+          <div class="table-wrap"
+               [class.table-wrap--dept-column-hint]="showTableDepartmentClickHint">
+            <div *ngIf="showTableDepartmentClickHint"
+                 class="table-dept-column-hint-veil"
+                 aria-hidden="true"></div>
+            <table mat-table [dataSource]="dataSource" matSort #mainSort="matSort" class="table table--with-dept-hint-veil" dir="rtl">
 
               <ng-container matColumnDef="DepartmentName">
                 <th mat-header-cell *matHeaderCellDef mat-sort-header>מחלקה</th>
