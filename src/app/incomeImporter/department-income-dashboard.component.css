@@ -790,7 +790,10 @@
   flex: 1 1 auto; min-height: 0; position: relative; cursor: pointer;
   overflow: hidden; border-radius: 8px;
   google-chart {
-    width: 100% !important; height: 100% !important; min-height: 0;
+    width: 100% !important;
+    height: 100% !important;
+    min-height: 280px;
+    flex: 1 1 auto;
     ::ng-deep svg { cursor: pointer; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
     ::ng-deep rect { cursor: pointer; transition: opacity .2s; &:hover { opacity: .8; } }
     ::ng-deep .google-visualization-tooltip {
@@ -801,6 +804,159 @@
       color: #0f172a !important;
     }
   }
+}
+
+.graph-body--breakdown {
+  display: flex;
+  flex-direction: column;
+  cursor: default;
+}
+
+.breakdown-charts-grid {
+  flex: 1 1 auto;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  min-height: 0;
+  align-items: stretch;
+}
+
+.breakdown-chart-cell {
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  border-radius: 8px;
+  overflow: hidden;
+  google-chart {
+    flex: 1 1 auto;
+    min-height: 260px;
+  }
+}
+
+.dimensional-chart-wrap {
+  flex: 1 1 auto;
+  min-height: 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.dimensional-chart-wrap google-chart {
+  flex: 1 1 auto;
+  min-height: 260px;
+}
+
+.breakdown-charts-grid--single {
+  grid-template-columns: 1fr;
+}
+
+@media (max-width: 1180px) {
+  .breakdown-charts-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.graph-dimension-toolbar {
+  flex-shrink: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 10px 12px 8px;
+  margin-top: 4px;
+  border-top: 1px solid var(--border, rgba(148, 163, 184, 0.35));
+}
+
+/* מעבר חלק בין מצבי גרף — mat-button-toggle-group */
+.graph-dimension-toggle-group {
+  display: inline-flex;
+  flex-wrap: wrap;
+  max-width: 100%;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid rgba(148, 163, 184, 0.45);
+  background: rgba(15, 23, 42, 0.04);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+}
+
+.graph-dimension-toggle-group ::ng-deep .mat-button-toggle {
+  border: none;
+  border-radius: 0;
+  transition:
+    background-color 0.28s cubic-bezier(0.4, 0, 0.2, 1),
+    color 0.28s cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 0.28s ease,
+    transform 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.graph-dimension-toggle-group ::ng-deep .mat-button-toggle:not(.mat-button-toggle-checked):hover {
+  background: rgba(59, 130, 246, 0.08);
+  transform: translateY(-0.5px);
+}
+
+.graph-dimension-toggle-group ::ng-deep .mat-button-toggle-checked {
+  background: linear-gradient(180deg, rgba(59, 130, 246, 0.2), rgba(59, 130, 246, 0.12)) !important;
+  color: var(--accent, #1d4ed8) !important;
+  font-weight: 700;
+  box-shadow: inset 0 0 0 1px rgba(59, 130, 246, 0.35);
+}
+
+.graph-dimension-toggle-group ::ng-deep .mat-button-toggle-button {
+  padding: 8px 14px;
+}
+
+.graph-dimension-toggle-group ::ng-deep .mat-button-toggle-label-content {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  line-height: 1.25;
+  padding: 0 2px;
+  font-size: clamp(11px, 0.9vw, 13px);
+}
+
+.graph-dimension-toggle-group mat-icon {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+}
+
+.graph-dimension-toggle-label {
+  white-space: nowrap;
+}
+
+@media (max-width: 720px) {
+  .graph-dimension-toggle-group ::ng-deep .mat-button-toggle-label-content {
+    flex-direction: column;
+    gap: 2px;
+    padding: 4px 6px;
+  }
+  .graph-dimension-toggle-label {
+    white-space: normal;
+    text-align: center;
+    max-width: 92px;
+    font-size: 10px;
+  }
+}
+
+.dash.dark .graph-dimension-toolbar {
+  border-top-color: rgba(148, 163, 184, 0.22);
+}
+
+.dash.dark .graph-dimension-toggle-group {
+  border-color: rgba(148, 163, 184, 0.35);
+  background: rgba(255, 255, 255, 0.06);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+}
+
+.dash.dark .graph-dimension-toggle-group ::ng-deep .mat-button-toggle:not(.mat-button-toggle-checked):hover {
+  background: rgba(96, 165, 250, 0.12);
+}
+
+.dash.dark .graph-dimension-toggle-group ::ng-deep .mat-button-toggle-checked {
+  background: linear-gradient(180deg, rgba(59, 130, 246, 0.35), rgba(59, 130, 246, 0.18)) !important;
+  color: #e2e8ff !important;
+  box-shadow: inset 0 0 0 1px rgba(96, 165, 250, 0.45);
 }
 
 .dash.dark .graph-body { background: #0f172a; }
@@ -1311,7 +1467,53 @@ table.table {
 .dash.dark table.table tbody tr:hover td     { background: rgba(255,255,255,.05); }
 .dash:not(.dark) table.table tbody tr:hover td { background: rgba(15,23,42,.03); }
 
-.clickable-cell { color: #667eea; cursor: pointer; font-weight: 500; transition: color .2s; &:hover { color: #764ba2; text-decoration: underline; } }
+.clickable-cell {
+  color: #667eea;
+  cursor: pointer;
+  font-weight: 500;
+  transition: color .2s, background-color .2s, box-shadow .2s;
+  outline: none;
+  border-radius: 6px;
+  &:hover {
+    color: #764ba2;
+    text-decoration: underline;
+    background: rgba(102, 126, 234, 0.08);
+  }
+  &:focus-visible {
+    box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.45);
+  }
+}
+
+.clickable-cell__inner {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+}
+
+.clickable-cell__text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.clickable-cell__hint {
+  font-size: 16px !important;
+  width: 16px !important;
+  height: 16px !important;
+  flex-shrink: 0;
+  opacity: 0.5;
+  transition: opacity .2s, transform .2s, color .2s;
+}
+
+.clickable-cell:hover .clickable-cell__hint {
+  opacity: 0.95;
+  transform: scale(1.06);
+  color: #764ba2;
+}
+
+.dash.dark .clickable-cell__hint {
+  opacity: 0.6;
+}
 .positive-change { color: #2e7d32; font-weight: 600; }
 .negative-change { color: #c62828; font-weight: 600; }
 
