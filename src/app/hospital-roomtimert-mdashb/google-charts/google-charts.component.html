@@ -504,10 +504,10 @@
                           <div class="ambulatory-metrics-embedded">
                             <ng-container *ngIf="nextPlannedSurgery(room) as nps">
                               <!-- <div *ngIf="nps.NextPatientReadyGreen" class="next-ready-chip ready">🟢 המטופל הבא מוכן לניתוח</div> -->
-                              <div *ngIf="!isNextSurgeryReady(nps) && hasMissingSignatures(nps)"
+                              <!-- <div *ngIf="!isNextSurgeryReady(nps) && hasMissingSignatures(nps)"
                                 class="next-ready-chip warn" [attr.title]="getMissingSignaturesText(nps)">
                                 ⚠️ חסרה חתימה: {{ getMissingSignaturesText(nps) }}
-                              </div>
+                              </div> -->
                             </ng-container>
 
                             <div class="ambulatory-embedded-title">
@@ -555,6 +555,22 @@
                                 </div> -->
                               </ng-container>
                             </div>
+
+                            <!-- ניתוח נוכחי — קוביה באמבולטורי -->
+                            <ng-container *ngIf="getCurrentInRoomInProgressSurgery(room) as curSurg; else noCurrentSurgeryAmb">
+                              <div class="ambulatory-current-surgery-cube">
+                                <div class="current-surgery-chip__label">ניתוח נוכחי</div>
+                                <div class="current-surgery-chip__body" *ngIf="settings.showTimes">
+                                  <span class="current-surgery-chip__times" [innerHTML]="formatSurgeryTimes(curSurg)"></span>
+                                </div>
+                              </div>
+                            </ng-container>
+                            <ng-template #noCurrentSurgeryAmb>
+                              <div class="ambulatory-current-surgery-cube ambulatory-current-surgery-cube--empty">
+                                <div class="current-surgery-chip__label">ניתוח נוכחי</div>
+                                <div class="current-surgery-chip__body">אין ניתוח פעיל</div>
+                              </div>
+                            </ng-template>
                           </div>
 
                         </div>

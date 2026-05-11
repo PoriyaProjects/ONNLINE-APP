@@ -6863,7 +6863,7 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
         if (end.getTime() <= dayEnd.getTime()) return "";
         const min = Math.floor((end.getTime() - dayEnd.getTime()) / 60000);
         if (min <= 0) return "";
-        return `<br><span class="surgery-overrun">גלישה ${this.formatHM(min)}</span>`;
+        return `<div class="times-row times-row-overrun surgery-overrun">גלישה ${this.formatHM(min)}</div>`;
     }
 
     formatSurgeryTimes(surgery: Surgery): string {
@@ -6905,7 +6905,7 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
             if (row) {
                 const startStr = this._formatClock(row.start);
                 const endStr = row.end ? this._formatClock(row.end) : "--:--";
-                return `${startStr} → ${endStr}<br>(משוער, ${row.durationLabel})`;
+                return `<div class="times-row times-row-main">${startStr} → ${endStr}</div><div class="times-row times-row-sub">(משוער, ${row.durationLabel})</div>`;
             }
         }
 
@@ -6915,7 +6915,7 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
                 status === "inprogress" ||
                 status === "in progress"
             ) {
-                return `${entranceDisplay} → ${exitDisplay}<br>(משוער, ${durationDisplay})`;
+                return `<div class="times-row times-row-main">${entranceDisplay} → ${exitDisplay}</div><div class="times-row times-row-sub">(משוער, ${durationDisplay})</div>`;
             }
             if (status === "completed" && hasEntrance) {
                 const entranceDate = this.parseClockWithDate(
@@ -6931,14 +6931,14 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
                         (exitDate.getTime() - entranceDate.getTime()) / 60000,
                     );
                     const actualDuration = this.formatHM(actualMinutes);
-                    return `${entranceDisplay} → ${exitDisplay}<br>(בפועל: ${actualDuration})`;
+                    return `<div class="times-row times-row-main">${entranceDisplay} → ${exitDisplay}</div><div class="times-row times-row-sub">(בפועל: ${actualDuration})</div>`;
                 }
             }
-            return `${entranceDisplay} → ${exitDisplay}`;
+            return `<div class="times-row times-row-main">${entranceDisplay} → ${exitDisplay}</div>`;
         }
 
         if (!hasEntrance) {
-            return `${entranceDisplay} → ${exitDisplay}<br>(משוער, ${durationDisplay})`;
+            return `<div class="times-row times-row-main">${entranceDisplay} → ${exitDisplay}</div><div class="times-row times-row-sub">(משוער, ${durationDisplay})</div>`;
         }
 
         const expectedMin = this.getExpectedDuration(surgery);
@@ -6950,13 +6950,14 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
         const estimatedExitDisplay = estimatedExit
             ? this._formatClock(estimatedExit)
             : "--:--";
-        return `${entranceDisplay} → ${estimatedExitDisplay}<br>(משוער, ${durationDisplay})`;
+        return `<div class="times-row times-row-main">${entranceDisplay} → ${estimatedExitDisplay}</div><div class="times-row times-row-sub">(משוער, ${durationDisplay})</div>`;
     }
 
     /** זמני ניתוח בשורה אחת (לטבלה), בלי תגי HTML */
     formatSurgeryTimesOneLine(surgery: Surgery): string {
         const raw = this.formatSurgeryTimes(surgery);
         return raw
+            .replace(/<\/div>\s*<div[^>]*>/gi, " · ")
             .replace(/<br\s*\/?>/gi, " · ")
             .replace(/<[^>]+>/g, "")
             .replace(/\s+/g, " ")

@@ -466,7 +466,7 @@
 
 .regular-section .room-widget.card .current-surgery-chip--below-header .current-surgery-chip__body,
 .regular-section .room-widget.card .current-surgery-chip--below-header .current-surgery-chip__times {
-    font-size: clamp(0.68rem, 0.5rem + 2cqi, 0.96rem);
+    font-size: 15px;
     line-height: 1.28;
 }
 
@@ -907,10 +907,66 @@
     display: grid;
     grid-template-columns:
         minmax(220px, 1.35fr) minmax(140px, 0.9fr) minmax(120px, 0.75fr)
-        minmax(320px, 2.35fr);
+        minmax(320px, 2.35fr) minmax(160px, 1fr);
     gap: 6px 8px;
     align-items: stretch;
     justify-content: stretch;
+}
+
+.ambulatory-current-surgery-cube {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 4px;
+    height: 100%;
+    padding: 8px 12px;
+    border-radius: 12px;
+    border: 1px solid rgba(242, 201, 76, 0.45);
+    border-inline-start: 4px solid var(--warning, #f2c94c);
+    background: rgba(242, 201, 76, 0.12);
+    box-shadow:
+        0 2px 8px rgba(15, 23, 42, 0.035),
+        inset 0 1px 0 rgba(255, 255, 255, 0.78);
+    text-align: center;
+}
+
+.ambulatory-current-surgery-cube--empty {
+    background: rgba(45, 52, 54, 0.05);
+    border-color: rgba(224, 230, 237, 0.95);
+    border-inline-start-color: rgba(178, 190, 195, 0.9);
+}
+
+.ambulatory-current-surgery-cube .current-surgery-chip__label {
+    font-size: clamp(0.94rem, 0.38vw + 0.8rem, 1.14rem);
+    font-weight: 900;
+    color: var(--text-sub, #5c5c5c);
+    letter-spacing: 0.02em;
+    line-height: 1.16;
+}
+
+.ambulatory-current-surgery-cube .current-surgery-chip__body {
+    font-size: clamp(1rem, 0.42vw + 0.84rem, 1.2rem);
+    font-weight: 900;
+    line-height: 1.18;
+    color: var(--text-main, #1a1a1a);
+}
+
+.ambulatory-current-surgery-cube .current-surgery-chip__times {
+    direction: ltr;
+    unicode-bidi: embed;
+    font-weight: 900;
+    font-size: clamp(1rem, 0.42vw + 0.84rem, 1.2rem);
+    color: var(--text-main, #1a1a1a);
+    line-height: 1.18;
+}
+
+.ambulatory-current-surgery-cube .current-surgery-chip__times .surgery-overrun {
+    display: inline-block;
+    margin-top: 1px;
+    font-size: 0.9em;
+    font-weight: 800;
+    color: #b45309;
 }
 
 .ambulatory-metrics-embedded .next-ready-chip {
@@ -1671,6 +1727,7 @@
 }
 
 .ambulatory-section .ambulatory-room-extra-panel--embedded .extra-row {
+    width: 100%;
     min-width: 0;
     height: 100%;
     justify-content: space-between;
@@ -2639,24 +2696,53 @@
 
 .surgery-top {
     display: flex;
-    flex-direction: row-reverse;
-    justify-content: space-between;
+    flex-direction: column;
     gap: 8px;
     align-items: flex-start;
+    direction: rtl;
+}
+
+.surgery-top .times {
+    width: 100%;
+    min-width: 0;
+}
+
+.surgery-top .dept {
+    order: -1;
 }
 
 .times {
-    direction: ltr;
+    direction: rtl;
     font-weight: 700;
-    font-size: clamp(0.85rem, 0.42vw + 0.78rem, 1.02rem);
     color: var(--text-main);
     unicode-bidi: embed;
+    display: block;
+    text-align: right;
+    container-type: inline-size;
 }
 
-.times .surgery-overrun {
-    display: block;
-    margin-top: 4px;
-    font-size: 0.82em;
+.times .times-row {
+    white-space: nowrap;
+    direction: ltr;
+    unicode-bidi: embed;
+    text-align: right;
+}
+
+.times .times-row-main {
+    font-size: min(15px, 5cqi);
+    line-height: 1.4;
+}
+
+.times .times-row-sub {
+    font-size: min(13px, 4.5cqi);
+    line-height: 1.3;
+    color: var(--text-sub);
+    font-weight: 600;
+}
+
+.times .times-row-overrun {
+    margin-top: 2px;
+    font-size: min(12px, 4cqi);
     font-weight: 700;
     color: #b45309;
 }
@@ -2923,7 +3009,9 @@
     direction: ltr;
     unicode-bidi: embed;
     font-weight: 700;
-    font-size: clamp(0.9rem, 0.32vw + 0.78rem, 1.08rem);
+    font-size: 15px;
+    width: fit-content;
+    height: 33px;
     color: var(--text-main, #1a1a1a);
     line-height: 1.18;
 }
