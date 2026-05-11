@@ -100,12 +100,20 @@
                 <div class="room-widget card room-white" [ngClass]="[
           (settings.colorize && !isRoomClosedForColoring(room)) ? ('border-' + getRoomStatusClassWithSettings(room)) : '',
           isRoomPastDay(room) ? 'past-day' : '',
+          hasCanceledSurgeries(room) ? 'room-has-canceled' : '',
           '',
           isIdleOver40(room) && !isAllSurgeriesCompleted(room) ? 'idle-alert' : '',
           isAllSurgeriesCompleted(room) ? 'all-done' : '',
           isTurnoverLong(room) && !hasInProgress(room) ? 'turnover-warning' : '',
           getIdleBorderClass(room)
           ]">
+
+                <div
+                  class="room-canceled-indicator room-canceled-indicator--card"
+                  *ngIf="hasCanceledSurgeries(room)"
+                  [attr.title]="getCanceledSurgeriesSummary(room)">
+                  <span class="room-canceled-indicator__text">{{ getCanceledSurgeriesSummary(room) }}</span>
+                </div>
 
                 <div class="room-header room-header--dept-first">
 
