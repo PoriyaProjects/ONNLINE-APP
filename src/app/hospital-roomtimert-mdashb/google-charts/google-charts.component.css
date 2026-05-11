@@ -2675,6 +2675,7 @@
 }
 
 .surgery-card {
+    position: relative;
     margin: 6px 0;
     padding: 8px 10px 8px 8px;
     border: 1px solid var(--border);
@@ -2684,10 +2685,35 @@
     border-inline-start: 4px solid var(--border);
 }
 
+.surgery-card > .status-wrap {
+    position: absolute;
+    top: 6px;
+    left: 6px;
+}
+
 .surgery-card.planned {
-    background: rgba(74, 144, 226, 0.06);
     border-inline-start-color: var(--primary);
     border-style: solid;
+}
+
+.surgery-card.card-InProgress {
+    background: rgba(242, 201, 76, 0.18) !important;
+    border-inline-start-color: var(--warning);
+}
+
+.surgery-card.card-Completed {
+    background: rgba(111, 207, 151, 0.18) !important;
+    border-inline-start-color: var(--success);
+}
+
+.surgery-card.card-Planned {
+    background: rgba(74, 144, 226, 0.12) !important;
+    border-inline-start-color: var(--primary);
+}
+
+.surgery-card.card-Canceled {
+    background: rgba(235, 87, 87, 0.12) !important;
+    border-inline-start-color: var(--danger);
 }
 
 .surgery-card.ambulatory {

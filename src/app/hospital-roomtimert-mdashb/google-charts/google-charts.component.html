@@ -245,7 +245,8 @@
                         </div>
                         <div class="completed-surgeries-overlay__scroll">
                           <div *ngFor="let s of ovActive; trackBy: trackBySurgeryId"
-                            class="surgery-card completed-surgeries-overlay__card">
+                            class="surgery-card completed-surgeries-overlay__card"
+                            [ngClass]="'card-' + displaySurgeryStatusKey(s, room)">
                             <div class="surgery-top">
                               <span class="times" *ngIf="settings.showTimes" [innerHTML]="formatSurgeryTimes(s)">
                               </span>
@@ -288,7 +289,8 @@
                         <div class="completed-surgeries-overlay__scroll">
                           <div *ngFor="let s of ovPlanned; trackBy: trackBySurgeryId"
                             class="surgery-card planned completed-surgeries-overlay__card"
-                            [class.surgery-card--canceled]="isSurgeryCanceled(s)">
+                            [class.surgery-card--canceled]="isSurgeryCanceled(s)"
+                            [ngClass]="'card-' + displaySurgeryStatusKey(s, room)">
                             <div class="surgery-top">
                               <span class="times" *ngIf="settings.showTimes" [innerHTML]="formatSurgeryTimes(s)"></span>
                               <span class="dept" *ngIf="s.department?.trim()">{{ s.department }}</span>
@@ -630,7 +632,8 @@
                           </div>
                           <div class="completed-surgeries-overlay__scroll">
                             <div *ngFor="let s of amb.active; trackBy: trackBySurgeryId"
-                              class="surgery-card ambulatory completed-surgeries-overlay__card">
+                              class="surgery-card ambulatory completed-surgeries-overlay__card"
+                              [ngClass]="'card-' + (s.status || s.SurgeryStatus)">
                               <div class="surgery-top">
                                 <span class="times" *ngIf="settings.showTimes" [innerHTML]="formatSurgeryTimes(s)"></span>
                                 <span class="dept" *ngIf="s.department?.trim()">{{ s.department }}</span>
@@ -668,7 +671,8 @@
                           </div>
                           <div class="completed-surgeries-overlay__scroll">
                             <div *ngFor="let s of amb.planned; trackBy: trackBySurgeryId"
-                              class="surgery-card planned completed-surgeries-overlay__card">
+                              class="surgery-card planned completed-surgeries-overlay__card"
+                              [ngClass]="'card-' + (s.status || s.SurgeryStatus)">
                               <div class="surgery-top">
                                 <span class="times" *ngIf="settings.showTimes" [innerHTML]="formatSurgeryTimes(s)"></span>
                                 <span class="dept" *ngIf="s.department?.trim()">{{ s.department }}</span>
