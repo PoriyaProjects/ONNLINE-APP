@@ -1,0 +1,242 @@
+<div dir="rtl" class="form-page-container">
+    <button mat-raised-button color="warn" type="button" class="closeBtn" (click)="onClose()">
+      X
+    </button>
+    <mat-horizontal-stepper #stepper *ngIf="SupportRequestDto">
+      <mat-step [stepControl]="SupportRequestDto">
+        <form [formGroup]="SupportRequestDto">
+          <ng-template matStepLabel>מהות ההתקשרות</ng-template>
+  
+          <mat-card class="form-card">
+            <mat-card-title class="text-center">
+              בקשה לאישור התקשרות עבור פעילות חריגה מרכש שוטף
+            </mat-card-title>
+            <mat-card-content>
+              <div fxLayout="column" fxLayoutGap="20px" style="text-align: right;">
+                <mat-form-field appearance="outline">
+                  <mat-label>תעודת זהות מגיש הבקשה</mat-label>
+                  <input matInput formControlName="RequesterID" (blur)="getEmployeeDetails()"
+                    (keydown.enter)="getEmployeeDetails()">
+                </mat-form-field>
+  
+                <mat-form-field appearance="outline" *ngIf="SupportRequestDto.get('Requester')?.value != ''">
+                  <mat-label>מגיש הבקשה</mat-label>
+                  <input matInput formControlName="Requester">
+                </mat-form-field>
+  
+                <mat-form-field appearance="outline" *ngIf="SupportRequestDto.get('Requester')?.value != ''">
+                  <mat-label>תפקיד - מחלקה</mat-label>
+                  <input matInput formControlName="RequesterDetails">
+                </mat-form-field>
+  
+                <mat-form-field appearance="outline" *ngIf="SupportRequestDto.get('Requester')?.value != ''">
+                  <mat-label>שם החברה/גוף חיצוני*</mat-label>
+                  <input type="text" matInput [matAutocomplete]="companyAuto"
+                    [formControl]="SupportRequestDto.get('CompanySupport')" />
+                  <mat-autocomplete #companyAuto="matAutocomplete"
+                    (optionSelected)="onCompanySelected($event.option.value)">
+                    <mat-option *ngFor="let company of filteredCompanies" [value]="company">
+                      {{ company }}
+                    </mat-option>
+                  </mat-autocomplete>
+                </mat-form-field>
+  
+                <mat-form-field appearance="outline" *ngIf="SupportRequestDto.get('Requester')?.value != ''">
+                  <mat-label>תאריך</mat-label>
+                  <input matInput [matDatepicker]="picker" formControlName="EventDate" [min]="date_now">
+                  <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+                  <mat-datepicker #picker></mat-datepicker>
+                </mat-form-field>
+  
+                <mat-form-field appearance="outline" *ngIf="SupportRequestDto.get('Requester')?.value != ''">
+                  <mat-label>מהות הפעילות</mat-label>
+                  <textarea matInput rows="4" formControlName="ParticipationNote"></textarea>
+                </mat-form-field>
+              </div>
+  
+            </mat-card-content>
+          </mat-card>
+  
+          <button mat-button matStepperNext class="continue-btn">המשך</button>
+        </form>
+      </mat-step>
+      <mat-step [stepControl]="procurementStep2" *ngIf="SupportRequestDto.get('Requester')?.value != ''">
+        <form [formGroup]="SupportRequestDto">
+          <ng-template matStepLabel>אופן ביצוע ההתקשרות והתמורה</ng-template>
+
+          <mat-card class="form-card">
+            <mat-card-content>
+              <div fxLayout="column" fxLayoutGap="20px" style="margin-top: 16px; text-align: right;">
+
+                <h3 class="step-section-title">1. איש קשר שאחראי לביצוע הפעילות מטעם המרכז הרפואי</h3>
+                <p class="step-section-hint">שם פרטי, שם משפחה ותפקיד במרכז הרפואי</p>
+                <div formGroupName="ProcurementStep2" fxLayout="column" fxLayoutGap="12px">
+                  <mat-form-field appearance="outline">
+                    <mat-label>שם פרטי*</mat-label>
+                    <input matInput formControlName="ExecutionContactFirstName">
+                    <mat-error *ngIf="procurementStep2.get('ExecutionContactFirstName')?.hasError('required')">שדה חובה</mat-error>
+                  </mat-form-field>
+                  <mat-form-field appearance="outline">
+                    <mat-label>שם משפחה*</mat-label>
+                    <input matInput formControlName="ExecutionContactLastName">
+                    <mat-error *ngIf="procurementStep2.get('ExecutionContactLastName')?.hasError('required')">שדה חובה</mat-error>
+                  </mat-form-field>
+                  <mat-form-field appearance="outline">
+                    <mat-label>תפקיד במרכז הרפואי*</mat-label>
+                    <input matInput formControlName="ExecutionContactRole">
+                    <mat-error *ngIf="procurementStep2.get('ExecutionContactRole')?.hasError('required')">שדה חובה</mat-error>
+                  </mat-form-field>
+
+                  <h3 class="step-section-title" style="margin-top: 16px;">2. פירוט התמורה</h3>
+                  <p class="step-section-hint">ניתן לסמן יותר מאפשרות אחת</p>
+
+                  <div class="procurement-checkboxes">
+                    <mat-checkbox color="primary" formControlName="ConsiderationCash">תשלום כספי</mat-checkbox>
+                    <mat-checkbox color="primary" formControlName="ConsiderationSupply">אספקת מוצרים / חומרים / ציוד</mat-checkbox>
+                    <mat-checkbox color="primary" formControlName="ConsiderationConsultingHR">מימון יעוץ / כ״א</mat-checkbox>
+                    <mat-checkbox color="primary" formControlName="ConsiderationNoMoneyTransfer">התקשרות ללא העברת כספים או שווי כסף</mat-checkbox>
+                    <mat-checkbox color="primary" formControlName="ConsiderationOther">אחר</mat-checkbox>
+                  </div>
+
+                  <mat-form-field appearance="outline" *ngIf="procurementStep2.get('ConsiderationCash')?.value">
+                    <mat-label>פירוט סכום ומלל חופשי*</mat-label>
+                    <textarea matInput rows="3" formControlName="ConsiderationCashDetail"></textarea>
+                    <mat-hint>חובה כאשר סומנת תיבת «תשלום כספי»</mat-hint>
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline" *ngIf="procurementStep2.get('ConsiderationSupply')?.value">
+                    <mat-label>פירוט מה מקבלים*</mat-label>
+                    <textarea matInput rows="3" formControlName="ConsiderationSupplyDetail"></textarea>
+                    <mat-hint>חובה כאשר סומנת תיבת האספקה</mat-hint>
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline" *ngIf="procurementStep2.get('ConsiderationConsultingHR')?.value">
+                    <mat-label>מידע נוסף (אופציונלי)</mat-label>
+                    <textarea matInput rows="2" formControlName="ConsiderationConsultingNote"></textarea>
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline" *ngIf="procurementStep2.get('ConsiderationOther')?.value">
+                    <mat-label>תיאור*</mat-label>
+                    <textarea matInput rows="3" formControlName="ConsiderationOtherDetail"></textarea>
+                  </mat-form-field>
+
+                  <div *ngIf="procurementStep2.invalid && procurementStep2.touched" class="step2-group-errors" role="alert">
+                    <mat-error *ngIf="procurementStep2.hasError('ConsiderationSelectionRequired')">יש לבחור לפחות סוג תמורה אחת</mat-error>
+                    <mat-error *ngIf="procurementStep2.hasError('ConsiderationCashDetailRequired')">יש למלא פירוט סכום ומלל חופשי עבור תשלום כספי</mat-error>
+                    <mat-error *ngIf="procurementStep2.hasError('ConsiderationSupplyDetailRequired')">יש למלא פירוט עבור אספקת מוצרים / חומרים / ציוד</mat-error>
+                    <mat-error *ngIf="procurementStep2.hasError('ConsiderationOtherDetailRequired')">יש למלא תיאור עבור «אחר»</mat-error>
+                  </div>
+                </div>
+
+                <h3 class="step-section-title" style="margin-top: 16px;">3. צירוף מסמכים</h3>
+                <p class="step-section-hint">מסמך מהחברה / הסכם התקשרות — חובה. ניתן לצרף עד שני מסמכים נוספים (לא חובה).</p>
+
+                <div>
+                  <label>מסמך מהחברה / הסכם התקשרות*</label><br>
+                  <input #companyAgreementInput type="file" (change)="onFileChange($event, 'ConferenceApproval')"
+                    accept=".doc,.docx,.xls,.xlsx,.pdf,image/*">
+                  <button mat-raised-button class="fileOpenBtn" color="primary" type="button"
+                    (click)="viewSupportFile('ConferenceApproval')"
+                    *ngIf="SupportRequestDto.get('ConferenceApproval').value != undefined && SupportRequestDto.get('ConferenceApproval').value != ''">
+                    צפייה במסמך
+                    <span class="material-icons">zoom_in</span>
+                  </button>
+                  <button mat-icon-button color="warn" type="button" matTooltip="הסרת קובץ"
+                    (click)="removeFile('ConferenceApproval', companyAgreementInput)"
+                    *ngIf="SupportRequestDto.get('ConferenceApproval').value != undefined && SupportRequestDto.get('ConferenceApproval').value != ''">
+                    <mat-icon>delete</mat-icon>
+                  </button>
+                </div>
+
+                <div>
+                  <label>מסמך נוסף (אופציונלי)</label><br>
+                  <input #optionalDoc1Input type="file" (change)="onFileChange($event, 'SupportLetter2')"
+                    accept=".doc,.docx,.xls,.xlsx,.pdf,image/*">
+                  <button mat-raised-button class="fileOpenBtn" color="primary" type="button"
+                    (click)="viewSupportFile('SupportLetter2')"
+                    *ngIf="SupportRequestDto.get('SupportLetter2').value != undefined && SupportRequestDto.get('SupportLetter2').value != ''">
+                    צפייה במסמך
+                    <span class="material-icons">zoom_in</span>
+                  </button>
+                  <button mat-icon-button color="warn" type="button" matTooltip="הסרת קובץ"
+                    (click)="removeFile('SupportLetter2', optionalDoc1Input)"
+                    *ngIf="SupportRequestDto.get('SupportLetter2').value != undefined && SupportRequestDto.get('SupportLetter2').value != ''">
+                    <mat-icon>delete</mat-icon>
+                  </button>
+                </div>
+
+                <div>
+                  <label>מסמך נוסף (אופציונלי)</label><br>
+                  <input #optionalDoc2Input type="file" (change)="onFileChange($event, 'AdditionalDocument')"
+                    accept=".doc,.docx,.xls,.xlsx,.pdf,image/*">
+                  <button mat-raised-button class="fileOpenBtn" color="primary" type="button"
+                    (click)="viewSupportFile('AdditionalDocument')"
+                    *ngIf="SupportRequestDto.get('AdditionalDocument').value != undefined && SupportRequestDto.get('AdditionalDocument').value != ''">
+                    צפייה במסמך
+                    <span class="material-icons">zoom_in</span>
+                  </button>
+                  <button mat-icon-button color="warn" type="button" matTooltip="הסרת קובץ"
+                    (click)="removeFile('AdditionalDocument', optionalDoc2Input)"
+                    *ngIf="SupportRequestDto.get('AdditionalDocument').value != undefined && SupportRequestDto.get('AdditionalDocument').value != ''">
+                    <mat-icon>delete</mat-icon>
+                  </button>
+                </div>
+              </div>
+            </mat-card-content>
+            <div class="step2-footer">
+              <button mat-button matStepperPrevious type="button" class="step2-back-btn">חזור</button>
+              <div class="step2-save-buttons">
+                <button mat-raised-button class="submitBtn" matTooltip="שמירה כטיוטה" type="button"
+                  [disabled]="SupportRequestDto.get('Requester')?.value == null || saving" (click)="submitForm(1)">שמירה כטיוטה</button>
+                <button mat-raised-button class="submitBtn2" matTooltip="שמירה והגשה" type="button"
+                  [disabled]="SupportRequestDto.get('Requester')?.value == null || SupportRequestDto.invalid || saving"
+                  (click)="submitForm(0)">שמירה והגשה</button>
+              </div>
+              <button mat-button matStepperNext type="button" class="step2-committee-btn" *ngIf="decision_making">המשך לוועדה</button>
+            </div>
+          </mat-card>
+        </form>
+      </mat-step>
+      <mat-step [stepControl]="SupportRequestDto" label="החלטת וועדה" *ngIf="decision_making">
+  
+        <form [formGroup]="SupportRequestDto" dir="rtl" class="decision-step">
+  
+          <!-- Decision Date -->
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>תאריך החלטה</mat-label>
+            <input matInput [matDatepicker]="picker" formControlName="DecisionDate">
+            <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+            <mat-datepicker #picker></mat-datepicker>
+          </mat-form-field>
+  
+          <!-- Status -->
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>סטטוס החלטה</mat-label>
+            <mat-select formControlName="Approved">
+              <mat-option value="approved">מאושר</mat-option>
+              <mat-option value="rejected">לא מאושר</mat-option>
+              <mat-option value="chairman">אושר בדיון יו"ר</mat-option>
+              <mat-option value="special">אושר בדיון מיוחד</mat-option>
+              <mat-option value="other">אחר</mat-option>
+            </mat-select>
+          </mat-form-field>
+  
+          <!-- Note -->
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>הערה</mat-label>
+            <textarea matInput rows="4" formControlName="Note" placeholder="הכנס הערה להחלטת הוועדה...">
+        </textarea>
+          </mat-form-field>
+  
+          <!-- Save -->
+          <div class="step-actions step2-save-buttons decision-save-row">
+            <button mat-raised-button class="submitBtn" matTooltip="שמירה כטיוטה" type="button" (click)="submitForm(1)">שמירה כטיוטה</button>
+            <button mat-raised-button class="submitBtn2" matTooltip="שמירה והגשה" type="button" [disabled]="SupportRequestDto.invalid"
+              (click)="submitForm(0)">שמירה והגשה</button>
+          </div>
+  
+        </form>
+  
+      </mat-step>
+    </mat-horizontal-stepper>
+  </div>

@@ -18,13 +18,13 @@
 
         <div class="quick-actions">
             <button mat-stroked-button type="button" class="connected-users-btn" (click)="getPcLoggedInUsers()"
-                *ngIf="(passwordResetCompleted && username != '') || admin == 'adahabre'">
+                *ngIf="username != ''">
                 <mat-icon>desktop_windows</mat-icon>
                 רענן רשימת מחשבים
             </button>
         </div>
 
-        <div class="users-panel" *ngIf="(passwordResetCompleted && pcLoggedInUsers?.length) || admin == 'adahabre'">
+        <div class="users-panel" *ngIf="username != ''">
             <div class="users-panel-title">
                 <mat-icon>devices</mat-icon>
                 מחשבים שבהם חשבונך עדיין רשום כמחובר — ניתן להתנתק או להיכנס מחדש עם הסיסמה החדשה
