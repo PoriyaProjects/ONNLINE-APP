@@ -1,0 +1,50 @@
+<div class="matrix-wrap">
+  <ng-container *ngIf="preferCards || permissionCards?.length; else flatPermissionsMatrix">
+    <mat-accordion class="cards-accordion" multi="true">
+      <mat-expansion-panel *ngFor="let card of permissionCards; trackBy: trackCard" class="action-panel">
+        <mat-expansion-panel-header>
+          <mat-panel-title>{{ card.ActionSubject }}</mat-panel-title>
+        </mat-expansion-panel-header>
+        <div class="card-select-all">
+          <mat-checkbox
+            [checked]="isCardAllSelected(card)"
+            [indeterminate]="isCardPartiallySelected(card)"
+            (change)="toggleCard(card, $event.checked)"
+          >
+            בחר הכל
+          </mat-checkbox>
+        </div>
+        <div class="permission-list">
+          <div class="permission-row" *ngFor="let row of card.Permissions">
+            <span>{{ row.PermissionName }}</span>
+            <mat-checkbox
+              [checked]="isGranted(row.PermissionID)"
+              (change)="toggle(row.PermissionID, $event.checked)"
+            ></mat-checkbox>
+          </div>
+        </div>
+      </mat-expansion-panel>
+    </mat-accordion>
+    <div class="cards-empty" *ngIf="!permissionCards?.length">אין הרשאות להצגה עבור ההקשר שנבחר.</div>
+  </ng-container>
+
+  <ng-template #flatPermissionsMatrix>
+    <table mat-table [dataSource]="permissions || []" class="mat-elevation-z1 full-width">
+      <ng-container matColumnDef="name">
+        <th mat-header-cell *matHeaderCellDef>הרשאה</th>
+        <td mat-cell *matCellDef="let row">{{ row.PermissionName }}</td>
+      </ng-container>
+      <ng-container matColumnDef="grant">
+        <th mat-header-cell *matHeaderCellDef>מורשה</th>
+        <td mat-cell *matCellDef="let row">
+          <mat-checkbox
+            [checked]="isGranted(row.PermissionID)"
+            (change)="toggle(row.PermissionID, $event.checked)"
+          ></mat-checkbox>
+        </td>
+      </ng-container>
+      <tr mat-header-row *matHeaderRowDef="cols"></tr>
+      <tr mat-row *matRowDef="let row; columns: cols"></tr>
+    </table>
+  </ng-template>
+</div>
