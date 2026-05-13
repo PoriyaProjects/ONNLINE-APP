@@ -115,8 +115,9 @@ export class WindowsUserActionsComponent implements OnInit {
       .post(environment.url + "GetPcLoggedInUsers", {
         UserName: this.username
       })
-      .subscribe((Response) => {
+      .subscribe((Response: any) => {
         this.pcLoggedInUsers = Response['d'];
+        console.log('pcLoggedInUsers', this.pcLoggedInUsers);
       });
   }
 
