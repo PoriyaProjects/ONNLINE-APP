@@ -301,12 +301,10 @@
                                 {{ statusHebrew[displaySurgeryStatusKey(s, room)] }}
                               </span>
                             </span>
-                            <div class="surgery-canceled-meta" *ngIf="isSurgeryCanceled(s)">
-                              <span class="surgery-canceled-badge">בוטל</span>
+                            <div class="surgery-canceled-meta" *ngIf="isSurgeryCanceled(s) && hasCancelReason(s)">
                               <button
                                 type="button"
                                 class="surgery-canceled-details-btn"
-                                *ngIf="hasCancelReason(s)"
                                 (click)="toggleCancelReason(s, $event)"
                                 [attr.aria-expanded]="isCancelReasonOpen(s)"
                                 [attr.aria-label]="isCancelReasonOpen(s) ? 'הסתר סיבת ביטול' : 'הצג סיבת ביטול'">

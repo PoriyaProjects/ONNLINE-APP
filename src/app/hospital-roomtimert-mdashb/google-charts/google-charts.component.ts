@@ -45,6 +45,8 @@ export interface Surgery {
     SurgeryRoom: string;
     SurgeryDate: string; // 'YYYY-MM-DD'
     TimeEntranceToTheOperatingRoom: string | null; // 'HH:mm' or null
+    /** Alternate entrance time from some API payloads */
+    ArrivalTime?: string | number | null;
     TimeExitingTheOperatingRoom: string | null; // 'HH:mm' or null
     SurgeryStatus: "Completed" | "InProgress" | "Planned" | string;
     TimeSurgeryToDo: string | number | null;
@@ -96,6 +98,11 @@ export interface Surgery {
     fromCalendarOnly?: boolean;
     NoteType?: string | null;
     SurgeryReasonNote?: string | null;
+    /** הערת ביטול בצד הבקשה (לפני חדר ניתוח) – מקביל ל־manage-single-surgery */
+    SurgeryReasonNoteRequest?: string | null;
+    /** קטלוג סיבה מהשרת (לרוב כולל Description) */
+    SurgeryTypeReason?: { Description?: string } | null;
+    SurgeryTypeReasonRequest?: { Description?: string } | null;
 }
 
 export interface RoomData {
@@ -306,6 +313,12 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
             SurgeryRoomName: raw?.SurgeryRoomName ?? null, // "חדר ניתוח אמבולטורי - 1" או "חדר ניתוח כללי - 1"
             NoteType: raw?.NoteType ?? null,
             SurgeryReasonNote: raw?.SurgeryReasonNote ?? null,
+            SurgeryReasonNoteRequest:
+                (raw as Partial<Surgery>)?.SurgeryReasonNoteRequest ?? null,
+            SurgeryTypeReason:
+                (raw as Partial<Surgery>)?.SurgeryTypeReason ?? null,
+            SurgeryTypeReasonRequest:
+                (raw as Partial<Surgery>)?.SurgeryTypeReasonRequest ?? null,
         } as Surgery;
 
         return result;
@@ -868,6 +881,11 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
                                 (row as any).SurgeryRoomName ?? null,
                             NoteType: rowAny.NoteType ?? null,
                             SurgeryReasonNote: rowAny.SurgeryReasonNote ?? null,
+                            SurgeryReasonNoteRequest:
+                                rowAny.SurgeryReasonNoteRequest ?? null,
+                            SurgeryTypeReason: rowAny.SurgeryTypeReason ?? null,
+                            SurgeryTypeReasonRequest:
+                                rowAny.SurgeryTypeReasonRequest ?? null,
                             timeNotEntered: false,
                             AdmissionNo: rowAny.AdmissionNo,
                         });
@@ -1965,14 +1983,28 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
                                 const existing = byKey.get(key);
                                 if (!existing) {
                                     byKey.set(key, s);
-                                } else {
-                                    // אם כבר יש – נעדיף רשומה שאינה fromCalendarOnly (כלומר RealTime)
-                                    if (
-                                        existing.fromCalendarOnly &&
-                                        !s.fromCalendarOnly
-                                    ) {
-                                        byKey.set(key, s);
-                                    }
+                                } else if (
+                                    existing.fromCalendarOnly &&
+                                    !s.fromCalendarOnly
+                                ) {
+                                    byKey.set(
+                                        key,
+                                        this.mergeSurgeryCancelDetails(
+                                            s,
+                                            existing,
+                                        ),
+                                    );
+                                } else if (
+                                    !existing.fromCalendarOnly &&
+                                    s.fromCalendarOnly
+                                ) {
+                                    byKey.set(
+                                        key,
+                                        this.mergeSurgeryCancelDetails(
+                                            existing,
+                                            s,
+                                        ),
+                                    );
                                 }
                             }
 
@@ -3215,7 +3247,15 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
                 if (!existing) {
                     dedup.set(k, s);
                 } else if (existing.fromCalendarOnly && !s.fromCalendarOnly) {
-                    dedup.set(k, s);
+                    dedup.set(
+                        k,
+                        this.mergeSurgeryCancelDetails(s, existing),
+                    );
+                } else if (!existing.fromCalendarOnly && s.fromCalendarOnly) {
+                    dedup.set(
+                        k,
+                        this.mergeSurgeryCancelDetails(existing, s),
+                    );
                 }
             }
             const list = Array.from(dedup.values());
@@ -3614,6 +3654,7 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
             (s) =>
                 s &&
                 this.isInProgressStatus(s.status ?? s.SurgeryStatus) &&
+                !this.lacksRecordedEntrance(s) &&
                 !this.isInProgressStaleByEstimatedEnd(s, room),
         );
     }
@@ -3627,6 +3668,9 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
         const matches = room.surgeries.filter((s) => {
             if (!s || this.surgeryIsAmbulatoryForDisplay(s, room)) return false;
             if (!this.isInProgressStatus(s.status ?? s.SurgeryStatus)) {
+                return false;
+            }
+            if (this.lacksRecordedEntrance(s)) {
                 return false;
             }
             if (this.isInProgressStaleByEstimatedEnd(s, room)) {
@@ -5783,6 +5827,15 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
         );
     }
 
+    /** אין שעת כניסה מוקלטת (ריק / 00:00) — גם אם ה-API מסמן InProgress */
+    private lacksRecordedEntrance(
+        surgery: Surgery | Partial<Surgery> | null | undefined,
+    ): boolean {
+        if (!surgery) return true;
+        const ent = this.getEntranceTime(surgery);
+        return !ent || this.isZeroTime(ent);
+    }
+
     /**
      * בדיקה אם שעה היא ריקה/אפס
      */
@@ -6188,6 +6241,12 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
         if (this.isSurgeryCanceled(s)) {
             return "Canceled";
         }
+        if (
+            this.isInProgressStatus(s.status ?? s.SurgeryStatus) &&
+            this.lacksRecordedEntrance(s)
+        ) {
+            return "Planned";
+        }
         if (this.isInProgressStaleByEstimatedEnd(s, room)) {
             return "Completed";
         }
@@ -6226,10 +6285,52 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
         return `יש ${count} ניתוחים שבוטלו בחדר זה`;
     }
 
+    /** טקסט מתוך אובייקט קטלוג סיבות מהשרת */
+    private cancelReasonCatalogDescription(v: unknown): string {
+        if (v == null || typeof v !== "object") return "";
+        const d = (v as { Description?: unknown }).Description;
+        return String(d ?? "").trim();
+    }
+
+    /**
+     * כשמאחדים לוח + RealTime, רשומת ה־RealTime מנצחת אבל לעיתים רק הלוח נושא הערת ביטול —
+     * מעתיקים שדות סיבה לרשומה שנשמרת כדי שיופיע כפתור "פרטים".
+     */
+    private mergeSurgeryCancelDetails(
+        primary: Surgery,
+        secondary: Surgery,
+    ): Surgery {
+        if (this.getSurgeryCancelReason(primary)) return primary;
+        if (!this.getSurgeryCancelReason(secondary)) return primary;
+        return {
+            ...primary,
+            SurgeryReasonNote:
+                secondary.SurgeryReasonNote ?? primary.SurgeryReasonNote,
+            SurgeryReasonNoteRequest:
+                secondary.SurgeryReasonNoteRequest ??
+                primary.SurgeryReasonNoteRequest,
+            SurgeryTypeReason:
+                secondary.SurgeryTypeReason ?? primary.SurgeryTypeReason,
+            SurgeryTypeReasonRequest:
+                secondary.SurgeryTypeReasonRequest ??
+                primary.SurgeryTypeReasonRequest,
+        };
+    }
+
     getSurgeryCancelReason(s: Surgery | null | undefined): string | null {
         if (!s) return null;
-        const reason = String(s.SurgeryReasonNote ?? "").trim();
-        return reason.length ? reason : null;
+        const chunks: string[] = [];
+        const pushUnique = (t: string) => {
+            const x = t.trim();
+            if (x && !chunks.includes(x)) chunks.push(x);
+        };
+        pushUnique(String(s.SurgeryReasonNote ?? ""));
+        pushUnique(String(s.SurgeryReasonNoteRequest ?? ""));
+        pushUnique(this.cancelReasonCatalogDescription(s.SurgeryTypeReason));
+        pushUnique(
+            this.cancelReasonCatalogDescription(s.SurgeryTypeReasonRequest),
+        );
+        return chunks.length ? chunks.join(" · ") : null;
     }
 
     hasCancelReason(s: Surgery | null | undefined): boolean {
@@ -6529,7 +6630,7 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
             if (!this.isInProgressStatus(s.status ?? s.SurgeryStatus)) continue;
 
             const ent = this.getEntranceTime(s);
-            if (!ent) continue;
+            if (!ent || this.isZeroTime(ent)) continue;
 
             const time = this.parseClockWithDate(ent, room.date);
             if (time && time.getTime() > latestTime) {
@@ -6585,13 +6686,17 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
         return this.findRoomForSurgery(surgery);
     }
 
-    /** מתוכננים בלבד, בסדר רשימת החדר */
+    /** מתוכננים + InProgress בלי שעת כניסה (בתצוגה מתוכנן), בסדר רשימת החדר */
     private orderedPlannedSurgeries(room: RoomData): Surgery[] {
         return (room.surgeries ?? []).filter((s) => {
             const st = String(s.status ?? s.SurgeryStatus ?? "")
                 .toLowerCase()
                 .replace(/\s+/g, "");
-            return st === "planned";
+            return (
+                st === "planned" ||
+                (this.isInProgressStatus(s.status ?? s.SurgeryStatus) &&
+                    this.lacksRecordedEntrance(s))
+            );
         });
     }
 
@@ -6657,7 +6762,9 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
                 const st = String(
                     s.status ?? s.SurgeryStatus ?? "",
                 ).toLowerCase();
-                return st.includes("progress");
+                return (
+                    st.includes("progress") && !this.lacksRecordedEntrance(s)
+                );
             })
             .sort((a, b) => {
                 const aEnt = this.parseClockWithDate(
@@ -6676,7 +6783,11 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
                 const st = String(s.status ?? s.SurgeryStatus ?? "")
                     .toLowerCase()
                     .replace(/\s+/g, "");
-                return st === "planned";
+                return (
+                    st === "planned" ||
+                    (this.isInProgressStatus(s.status ?? s.SurgeryStatus) &&
+                        this.lacksRecordedEntrance(s))
+                );
             })
             .sort((a, b) => {
                 const aEnt = this.parseClockWithDate(
@@ -6894,12 +7005,15 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
             String(surgery.status ?? surgery.SurgeryStatus ?? "")
                 .toLowerCase()
                 .replace(/\s+/g, "") === "planned";
+        const serverInProgress = this.isInProgressStatus(
+            surgery.status ?? surgery.SurgeryStatus,
+        );
 
         if (
-            isPlanned &&
             this.hasNoRtmEntranceExit(surgery) &&
             !hasEntrance &&
-            !hasExit
+            !hasExit &&
+            (isPlanned || serverInProgress)
         ) {
             const row = this.getPlannedScheduleRow(surgery);
             if (row) {
@@ -7304,7 +7418,7 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
         const hm =
             s?.timeEntrance ??
             s?.TimeEntranceToTheOperatingRoom ??
-            (s as Record<string, unknown>)?.["ArrivalTime"]?.toString() ??
+            (s?.ArrivalTime != null ? String(s.ArrivalTime) : null) ??
             null;
         const mins = this.hmToMinutes(hm);
         return mins ?? Number.POSITIVE_INFINITY;
@@ -7341,10 +7455,14 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
         const isPlanned = (s: Surgery) =>
             String(s?.status ?? s?.SurgeryStatus ?? "")
                 .toLowerCase()
-                .trim() === "planned";
+                .replace(/\s+/g, "") === "planned" ||
+            (this.isInProgressStatus(s?.status ?? s?.SurgeryStatus) &&
+                this.lacksRecordedEntrance(s));
 
-        const inProgressIdx = ordered.findIndex((s) =>
-            this.isInProgressStatus(s?.status ?? s?.SurgeryStatus),
+        const inProgressIdx = ordered.findIndex(
+            (s) =>
+                this.isInProgressStatus(s?.status ?? s?.SurgeryStatus) &&
+                !this.lacksRecordedEntrance(s),
         );
         if (inProgressIdx >= 0) {
             return ordered.slice(inProgressIdx + 1).find(isPlanned);
