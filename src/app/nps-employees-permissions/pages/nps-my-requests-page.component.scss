@@ -1,0 +1,55 @@
+.filter-field {
+  min-width: 180px;
+  max-width: 220px;
+}
+
+.summary-table {
+  width: 100%;
+}
+
+.summary-row {
+  cursor: pointer;
+  transition: background-color 120ms ease;
+}
+
+.summary-row:hover {
+  background: rgba(15, 23, 42, 0.04);
+}
+
+.summary-row.active {
+  background: rgba(37, 99, 235, 0.12);
+}
+
+.full {
+  width: 100%;
+}
+
+.step-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.step-cell span {
+  font-size: 12px;
+  color: var(--nps-muted);
+  white-space: nowrap;
+}
+
+mat-checkbox {
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.create-card-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 760px;
+}
+
+.wide {
+  width: 100%;
+  max-width: 420px;
+}

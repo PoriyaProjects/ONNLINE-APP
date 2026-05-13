@@ -1,6 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { environment } from 'src/environments/environment';
 import { environment as environmentprod } from 'src/environments/environment.prod';
 
@@ -30,6 +31,11 @@ export class SupportRequestService {
     return this.http.post<any[]>(`${this.apiUrl}GetSupportRequestById`, {
       id: id
     });
+  }
+
+  /** Procurement (חריגת רכש) — data from ProcurementRequest + ProcurementFiles */
+  getProcurementRequestById(id: string): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}GetProcurementRequestById`, { id: id });
   }
 
   getPresentationRequestById(id: string): Observable<any[]> {
@@ -71,15 +77,53 @@ export class SupportRequestService {
     );
   }
 
+  /**
+   * ASMX [WebMethod] bool returns SOAP/XML, e.g.
+   * `<boolean xmlns="http://tempuri.org/">true</boolean>` — not plain `true`.
+   * This maps the response body to a real boolean for callers.
+   */
+  private parseAsmxBooleanResponseBody(body: string | null | undefined): boolean {
+    if (body == null) {
+      return false;
+    }
+    const s = String(body).trim();
+    if (/^true$/i.test(s)) {
+      return true;
+    }
+    if (/^false$/i.test(s)) {
+      return false;
+    }
+    const m = s.match(/<(?:boolean|string)[^>]*>\s*(true|false)\s*<\/(?:boolean|string)>/i);
+    if (m) {
+      return m[1].toLowerCase() === 'true';
+    }
+    try {
+      const j = JSON.parse(s) as { d?: boolean };
+      if (typeof j?.d === 'boolean') {
+        return j.d;
+      }
+    } catch {
+      /* not JSON */
+    }
+    return false;
+  }
+
+  /** Persists to Forms.dbo.ProcurementRequest + ProcurementFiles */
+  saveProcurementRequestFormData(formData: FormData): Observable<boolean> {
+    return this.http
+      .post(`${this.apiUrl}SaveProcurementRequest`, formData, { responseType: 'text' })
+      .pipe(map((text) => this.parseAsmxBooleanResponseBody(text)));
+  }
+
   savePresentationRequestFormData(formData: FormData): Observable<any> {
-    return this.http.post(`${this.apiUrlipracticom}SavePresentationRequest`, 
+    return this.http.post(`${this.apiUrlipracticom}SavePresentationRequest`,
       formData,
       { responseType: 'text' }
     );
   }
 
   saveResearchRequestFormData(formData: FormData): Observable<any> {
-    return this.http.post(`${this.apiUrlipracticom}SaveResearchRequest`, 
+    return this.http.post(`${this.apiUrlipracticom}SaveResearchRequest`,
       formData,
       { responseType: 'text' }
     );

@@ -1,0 +1,239 @@
+.form-page-container {
+    width: 100%;
+    min-height: 100vh;
+    background-color: #f7f9fc;
+    padding: 40px;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+  }
+  
+  .form-card {
+    width: 100%;
+    max-width: 900px;
+    padding: 20px;
+  }
+  
+  .text-center {
+    text-align: center;
+    margin-bottom: 20px;
+    font-size: 24px;
+    font-weight: bold;
+  }
+  
+  .section-title {
+    margin-top: 30px;
+    font-size: 20px;
+    font-weight: bold;
+  }
+
+  .step-section-title {
+    font-size: 1.05rem;
+    font-weight: 600;
+    margin: 0;
+    color: #1a237e;
+  }
+
+  .step-section-hint {
+    margin: 0 0 8px 0;
+    font-size: 0.9rem;
+    color: #5c6bc0;
+  }
+
+  .step2-group-errors mat-error {
+    display: block;
+    margin-top: 4px;
+  }
+
+  .procurement-checkboxes {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+    margin: 8px 0 12px 0;
+  }
+
+  .procurement-checkboxes .mat-mdc-checkbox,
+  .procurement-checkboxes .mat-checkbox {
+    display: block;
+  }
+
+  .step2-footer {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 16px;
+    padding-top: 12px;
+    border-top: 1px solid #e2e8f0;
+  }
+
+  .step2-save-buttons {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .decision-save-row {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 12px;
+    justify-content: flex-start;
+  }
+
+  .row {
+    display: flex;
+    align-items: center;
+  }
+  
+  .table-section {
+    margin-top: 20px;
+    overflow-x: auto;
+  }
+  
+  .amount-section {
+    margin-top: 20px;
+    text-align: right;
+  }
+  
+  .actions {
+    margin-top: 30px;
+    text-align: center;
+  }
+  
+  .mat-form-field {
+    width: 50%;
+    padding: 5px;
+  }
+  
+  h3 {
+    text-align: right;
+  }
+  
+  .mat-elevation-z2 {
+    width: 100%;
+  }
+  
+  mat-radio-button {
+    padding-left: 18px;
+    padding-right: 8px;
+  }
+  
+  p {
+    text-align: right;
+  }
+  
+  .table-container {
+    text-align: center;
+    justify-content: center;
+    padding: 20px;
+    background-color: #f5f5f5;
+  }
+  
+  table {
+    width: 100%;
+    max-width: 800px;
+    border-collapse: collapse;
+  }
+  
+  th,
+  td {
+    padding: 10px;
+    text-align: center;
+  }
+  
+  mat-form-field {
+    width: 100%;
+  }
+  
+  .mat-header-cell {
+    background-color: #6200ea;
+    color: white;
+    font-weight: bold;
+  }
+  
+  .mat-cell {
+    background-color: #fff;
+  }
+  
+  mat-header-row,
+  mat-row {
+    height: 60px;
+  }
+  
+  input[type="file"] {
+    display: block;
+    margin-top: 4px;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+  }
+  
+  .continue-btn {
+    margin-top: 10px;
+    background-color: #c7e5e2;
+  }
+  
+  .submitBtn {
+    width: 50%;
+    margin-top: 50px;
+    font-weight: bold;
+    background-color: #9ad310;
+    color: #fff;
+  }
+  
+  .submitBtn2 {
+    width: 50%;
+    margin-top: 50px;
+    font-weight: bold;
+    background-color: #1976d2;
+    color: #fff;
+  }
+  
+  .closeBtn {
+    float: right;
+    margin-bottom: 20px;
+  }
+  
+  
+  .decision-step {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  
+  .full-width {
+    width: 100%;
+  }
+  
+  .step-actions {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 12px;
+    margin-top: 10px;
+  }
+  
+  .table table {
+    border-collapse: collapse;
+    width: 100%;
+  }
+  
+  /* Body cells */
+  table td.mat-cell {
+    border: 1px solid #d0d0d0;
+    text-align: center;
+    vertical-align: middle;
+  }
+  
+  /* Optional: row hover */
+  table tr.mat-row:hover {
+    background-color: #fafafa;
+  }

@@ -1,0 +1,14 @@
+<div class="timeline-wrap" *ngIf="steps?.length; else empty">
+  <mat-vertical-stepper [linear]="false">
+    <mat-step *ngFor="let s of steps" [completed]="s.status === 'Approved'" [editable]="false">
+      <ng-template matStepLabel>
+        שלב {{ s.stepOrder }} - {{ s.approverName || s.approverEmployeeId }} ({{ s.status }})
+      </ng-template>
+      <p *ngIf="s.actionUtc">{{ s.actionUtc | date: 'short' }}</p>
+      <p *ngIf="s.comments">{{ s.comments }}</p>
+    </mat-step>
+  </mat-vertical-stepper>
+</div>
+<ng-template #empty>
+  <div class="timeline-empty">אין שלבים</div>
+</ng-template>
