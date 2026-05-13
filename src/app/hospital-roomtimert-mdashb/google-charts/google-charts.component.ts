@@ -312,9 +312,16 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
             CalendarRoomsArea: raw?.CalendarRoomsArea ?? null, // "חדר ניתוח אמבולטורי" או "חדר ניתוח כללי"
             SurgeryRoomName: raw?.SurgeryRoomName ?? null, // "חדר ניתוח אמבולטורי - 1" או "חדר ניתוח כללי - 1"
             NoteType: raw?.NoteType ?? null,
-            SurgeryReasonNote: raw?.SurgeryReasonNote ?? null,
+            SurgeryReasonNote:
+                this.coalesceTrimmedFromUnknown(raw, [
+                    "SurgeryReasonNote",
+                    "surgeryReasonNote",
+                ]) ?? null,
             SurgeryReasonNoteRequest:
-                (raw as Partial<Surgery>)?.SurgeryReasonNoteRequest ?? null,
+                this.coalesceTrimmedFromUnknown(raw, [
+                    "SurgeryReasonNoteRequest",
+                    "surgeryReasonNoteRequest",
+                ]) ?? null,
             SurgeryTypeReason:
                 (raw as Partial<Surgery>)?.SurgeryTypeReason ?? null,
             SurgeryTypeReasonRequest:
@@ -880,9 +887,16 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
                             SurgeryRoomName:
                                 (row as any).SurgeryRoomName ?? null,
                             NoteType: rowAny.NoteType ?? null,
-                            SurgeryReasonNote: rowAny.SurgeryReasonNote ?? null,
+                            SurgeryReasonNote:
+                                this.coalesceTrimmedFromUnknown(rowAny, [
+                                    "SurgeryReasonNote",
+                                    "surgeryReasonNote",
+                                ]) ?? null,
                             SurgeryReasonNoteRequest:
-                                rowAny.SurgeryReasonNoteRequest ?? null,
+                                this.coalesceTrimmedFromUnknown(rowAny, [
+                                    "SurgeryReasonNoteRequest",
+                                    "surgeryReasonNoteRequest",
+                                ]) ?? null,
                             SurgeryTypeReason: rowAny.SurgeryTypeReason ?? null,
                             SurgeryTypeReasonRequest:
                                 rowAny.SurgeryTypeReasonRequest ?? null,
@@ -2662,6 +2676,8 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
         if (!room?.surgeries?.length) return [];
 
         return room.surgeries.filter((s) => {
+            if (this.isSurgeryCanceled(s)) return false;
+
             const status = String(
                 s.status ?? s.SurgeryStatus ?? "",
             ).toLowerCase();
@@ -2681,19 +2697,22 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
     /**
      * ניתוחים מתוכננים להצגה תחת "ניתוחים מתוכננים"
      * - סטטוס Planned (מכל מקור: status או SurgeryStatus)
+     * - ניתוחים שבוטלו (מוצגים כאן ולא ברשימת "שבוצעו")
      * - רק ניתוחים שאינם אמבולטוריים (האמבולטוריים יוצגו בקופסת אמבולטורי / בחדרי אמבולטורי)
      */
     plannedSurgeries(room: RoomData): Surgery[] {
         if (!room?.surgeries?.length) return [];
 
         return room.surgeries.filter((s) => {
+            if (this.surgeryIsAmbulatoryForDisplay(s, room)) return false;
+
+            if (this.isSurgeryCanceled(s)) {
+                return !this.isSurgeryExitBeforeShiftStart(s, room);
+            }
+
             const statusRaw = s.status ?? s.SurgeryStatus ?? "";
             const status = String(statusRaw).toLowerCase().trim();
-            const isPlanned = status === "planned";
-
-            if (!isPlanned) return false;
-
-            if (this.surgeryIsAmbulatoryForDisplay(s, room)) return false;
+            if (status !== "planned") return false;
 
             if (this.isSurgeryExitBeforeShiftStart(s, room)) return false;
 
@@ -3164,6 +3183,9 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
     /** ניתוחים אמבולטוריים מתוכננים — מקביל ל־plannedSurgeries */
     ambulatoryPlannedSurgeries(room: RoomData): Surgery[] {
         return this.ambulatorySurgeries(room).filter((s) => {
+            if (this.isSurgeryCanceled(s)) {
+                return !this.isSurgeryExitBeforeShiftStart(s, room);
+            }
             const st = String(s.status ?? s.SurgeryStatus ?? "")
                 .toLowerCase()
                 .replace(/\s+/g, "");
@@ -3247,15 +3269,9 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
                 if (!existing) {
                     dedup.set(k, s);
                 } else if (existing.fromCalendarOnly && !s.fromCalendarOnly) {
-                    dedup.set(
-                        k,
-                        this.mergeSurgeryCancelDetails(s, existing),
-                    );
+                    dedup.set(k, this.mergeSurgeryCancelDetails(s, existing));
                 } else if (!existing.fromCalendarOnly && s.fromCalendarOnly) {
-                    dedup.set(
-                        k,
-                        this.mergeSurgeryCancelDetails(existing, s),
-                    );
+                    dedup.set(k, this.mergeSurgeryCancelDetails(existing, s));
                 }
             }
             const list = Array.from(dedup.values());
@@ -5845,6 +5861,22 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
         return s === "00:00" || s === "00:00:00" || s === "00:00:00.0000000";
     }
 
+    /** שדה טקסט ראשון לא ריק מתוך אובייקט (ווריאציות שם משדות שרת) */
+    private coalesceTrimmedFromUnknown(
+        obj: unknown,
+        keys: string[],
+    ): string | null {
+        if (obj == null || typeof obj !== "object") return null;
+        const rec = obj as Record<string, unknown>;
+        for (const k of keys) {
+            const v = rec[k];
+            if (v == null) continue;
+            const t = String(v).trim();
+            if (t) return t;
+        }
+        return null;
+    }
+
     // getTurnoverSummary(room: RoomData): string {
     //     if (!room?.surgeries?.length || !room.date) return "";
     //     const overrunAfter1500 = this.calcOverrunAfter1500(room, room.date);
@@ -6302,12 +6334,16 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
     ): Surgery {
         if (this.getSurgeryCancelReason(primary)) return primary;
         if (!this.getSurgeryCancelReason(secondary)) return primary;
+        const subRaw = secondary.raw;
         return {
             ...primary,
             SurgeryReasonNote:
-                secondary.SurgeryReasonNote ?? primary.SurgeryReasonNote,
+                secondary.SurgeryReasonNote ??
+                subRaw?.SurgeryReasonNote ??
+                primary.SurgeryReasonNote,
             SurgeryReasonNoteRequest:
                 secondary.SurgeryReasonNoteRequest ??
+                subRaw?.SurgeryReasonNoteRequest ??
                 primary.SurgeryReasonNoteRequest,
             SurgeryTypeReason:
                 secondary.SurgeryTypeReason ?? primary.SurgeryTypeReason,
@@ -6315,6 +6351,26 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
                 secondary.SurgeryTypeReasonRequest ??
                 primary.SurgeryTypeReasonRequest,
         };
+    }
+
+    /** מזהה יציב לפתיחת סיבת ביטול (לא רק SurgeryID — לעיתים ריק בשרת) */
+    private cancelReasonToggleId(s: Surgery | null | undefined): string {
+        if (!s) return "";
+        const parts: unknown[] = [
+            s.SurgeryID,
+            s.surgeryId,
+            s.CaseNumber,
+            (s as { caseNumber?: string }).caseNumber,
+            s.AdmissionNo != null ? `adm:${s.AdmissionNo}` : "",
+            [s.patientNumber, s.surgeryName, s.SurgeryDate]
+                .filter((x) => x != null && String(x).trim() !== "")
+                .join("|"),
+        ];
+        for (const p of parts) {
+            const t = String(p ?? "").trim();
+            if (t) return t;
+        }
+        return "";
     }
 
     getSurgeryCancelReason(s: Surgery | null | undefined): string | null {
@@ -6326,6 +6382,11 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
         };
         pushUnique(String(s.SurgeryReasonNote ?? ""));
         pushUnique(String(s.SurgeryReasonNoteRequest ?? ""));
+        const raw = s.raw;
+        if (raw) {
+            pushUnique(String(raw.SurgeryReasonNote ?? ""));
+            pushUnique(String(raw.SurgeryReasonNoteRequest ?? ""));
+        }
         pushUnique(this.cancelReasonCatalogDescription(s.SurgeryTypeReason));
         pushUnique(
             this.cancelReasonCatalogDescription(s.SurgeryTypeReasonRequest),
@@ -6339,7 +6400,7 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
 
     isCancelReasonOpen(s: Surgery | null | undefined): boolean {
         if (!s) return false;
-        const id = String(s.SurgeryID ?? s.surgeryId ?? "");
+        const id = this.cancelReasonToggleId(s);
         if (!id) return false;
         return this.openCanceledReasonSurgeryIds.has(id);
     }
@@ -6348,7 +6409,7 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
         event?.stopPropagation();
         event?.preventDefault();
         if (!s) return;
-        const id = String(s.SurgeryID ?? s.surgeryId ?? "");
+        const id = this.cancelReasonToggleId(s);
         if (!id) return;
         if (this.openCanceledReasonSurgeryIds.has(id)) {
             this.openCanceledReasonSurgeryIds.delete(id);
@@ -6569,7 +6630,7 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
      * מציאת הניתוח האחרון שהושלם
      */
     private findLastCompletedSurgery(room: RoomData): Surgery | null {
-        room.surgeries = room.surgeries.map(this.normalizeSurgery);
+        room.surgeries = room.surgeries.map((s) => this.normalizeSurgery(s));
 
         return (
             [...(room.surgeries ?? [])]
@@ -6982,6 +7043,11 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
             this._formatSurgeryTimesCore(surgery) +
             this.formatSurgeryOverrunSuffixHtml(surgery)
         );
+    }
+
+    /** זמנים לשבב "ניתוח נוכחי" — בלי שורת גלישה אחרי סוף יום עבודה */
+    formatSurgeryTimesChip(surgery: Surgery): string {
+        return this._formatSurgeryTimesCore(surgery);
     }
 
     private _formatSurgeryTimesCore(surgery: Surgery): string {
