@@ -169,6 +169,8 @@ export class NutritionSystemComponent implements OnInit {
 
     /* generate workbook and add the worksheet */
     const wb: XLSX.WorkBook = XLSX.utils.book_new();
+    /* Excel sheet view: right-to-left (matches Hebrew UI) */
+    wb.Workbook = { Views: [{ RTL: true }] };
     XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
 
     /* save to file */
