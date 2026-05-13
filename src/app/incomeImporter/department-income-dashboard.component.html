@@ -144,54 +144,83 @@
           <mat-icon>{{ chartType === 'ColumnChart' ? 'bar_chart' : 'show_chart' }}</mat-icon>
           <span class="title-row">
             <span>השוואת הכנסות מחלקות</span>
-            <div class="chart-controls">
-              <!-- <button mat-stroked-button 
-                      [class.active]="chartType === 'ColumnChart'"
-                      (click)="setChartType('ColumnChart')"
-                      class="chart-type-btn"
-                      matTooltip="גרף עמודות"
-                      matTooltipPosition="below">
-                <mat-icon>bar_chart</mat-icon>
-              </button>
-              <button mat-stroked-button 
-                      [class.active]="chartType === 'LineChart'"
-                      (click)="setChartType('LineChart')"
-                      class="chart-type-btn"
-                      matTooltip="גרף קווי"
-                      matTooltipPosition="below">
-                <mat-icon>show_chart</mat-icon>
-              </button> -->
-              <!-- <span class="title-total total-badge" [matTooltip]="'לחץ על עמודה/נקודה בגרף כדי לראות פרטי המחלקה'" matTooltipPosition="below">
-                לחץ לפרטים
-              </span> -->
-            </div>
           </span>
         </div>
 
   
-        <div class="graph-body">
-          <div *ngIf="isChartLoading || isMainDataLoading" class="data-loading-overlay" role="status" aria-live="polite">
+        <div class="graph-body" [class.graph-body--breakdown]="isBreakdownChartViewActive">
+          <div *ngIf="isChartLoading || isMainDataLoading || (isBreakdownChartViewActive && isBreakdownChartsLoading)"
+               class="data-loading-overlay" role="status" aria-live="polite">
             <div class="loading-ring local-loading-ring" [style.background]="getLoadingRingBackground(getChartLoadingProgress())">
               <div class="loading-ring-inner local-loading-ring-inner">
                 <strong>{{ getChartLoadingProgress() }}%</strong>
                 <span>הושלם</span>
               </div>
             </div>
-            <div class="chart-loading-text">טוען גרף...</div>
+            <div class="chart-loading-text">
+              <ng-container *ngIf="isBreakdownChartViewActive && isBreakdownChartsLoading && !isChartLoading && !isMainDataLoading; else defaultChartLoadingMsg">טוען גרפי פילוח...</ng-container>
+              <ng-template #defaultChartLoadingMsg>טוען גרף...</ng-template>
+            </div>
           </div>
-          <google-chart 
-            [type]="chartType" 
-            [data]="chartData" 
-            [columns]="chartColumns" 
-            [options]="chartOptions" 
+          <google-chart
+            [type]="chartType"
+            [data]="chartData"
+            [columns]="chartColumns"
+            [options]="chartOptions"
             [width]="'100%'"
             [height]="'100%'"
             (select)="onChartClick($event)"
-            *ngIf="!isChartLoading && !isMainDataLoading && chartData && chartData.length > 0">
+            *ngIf="!isChartLoading && !isMainDataLoading && !isBreakdownChartViewActive && chartData && chartData.length > 0">
           </google-chart>
-          <div *ngIf="!isChartLoading && !isMainDataLoading && (!chartData || chartData.length === 0)" class="chart-no-data">
+          <div class="dimensional-chart-wrap"
+               *ngIf="isBreakdownChartViewActive && !isBreakdownChartsLoading && hasRenderableDimensionalChart()">
+            <google-chart
+              type="ColumnChart"
+              [data]="dimensionalChartData"
+              [columns]="dimensionalChartColumns"
+              [options]="dimensionalChartOptions"
+              [width]="'100%'"
+              [height]="'100%'"
+              (select)="onDimensionalChartClick($event)">
+            </google-chart>
+          </div>
+          <div *ngIf="!isChartLoading && !isMainDataLoading && !isBreakdownChartViewActive && (!chartData || chartData.length === 0)" class="chart-no-data">
             אין נתונים להצגה בגרף
           </div>
+          <div *ngIf="isBreakdownChartViewActive && !isBreakdownChartsLoading && !hasRenderableDimensionalChart()" class="chart-no-data">
+            אין נתוני פירוט להצגת פילוח
+          </div>
+        </div>
+
+        <div class="graph-dimension-toolbar"
+             dir="rtl"
+             [@graphToolbarMode]="graphToolbarDimensionMode">
+          <mat-button-toggle-group
+            class="graph-dimension-toggle-group"
+            appearance="standard"
+            [value]="graphToolbarDimensionMode"
+            (change)="onGraphToolbarToggleChange($event.value)"
+            aria-label="מצבי תצוגת גרף"
+            role="toolbar">
+            <mat-button-toggle value="total"
+                               matTooltip="השוואת סה״כ הכנסות בין שנים. לחיצה על עמודה פותחת פירוט מחלקה."
+                               matTooltipPosition="above">
+              <mat-icon>leaderboard</mat-icon>
+              <span class="graph-dimension-toggle-label">סה״כ הכנסות למחלקה</span>
+            </mat-button-toggle>
+            <mat-button-toggle value="unifiedCategory"
+                               matTooltip="עמודות לפי «סיווג הכנסה מאוחד» במסנן. מעבר חלק — אותו מטמון נתונים."
+                               matTooltipPosition="above">
+              <mat-icon>account_tree</mat-icon>
+              <span class="graph-dimension-toggle-label">סיווג הכנסה מאוחד</span>
+            </mat-button-toggle>
+            <mat-button-toggle value="organization"
+                               matTooltip="עמודות לפי «קרן / מדינה» במסנן. מעבר חלק — אותו מטמון נתונים."
+                               matTooltipPosition="above">
+              <mat-icon>business</mat-icon>
+              <span class="graph-dimension-toggle-label">קרן / מדינה</span>
+            </mat-button-toggle>
+          </mat-button-toggle-group>
         </div>
       </div>
     </div>
@@ -214,13 +243,44 @@
             </div>
             <div class="chart-loading-text">טוען טבלת הכנסות...</div>
           </div>
-          <div class="table-wrap">
-            <table mat-table [dataSource]="dataSource" matSort #mainSort="matSort" class="table" dir="rtl">
+          <div *ngIf="showTableDepartmentClickHint"
+               class="table-dept-click-hint"
+               [@tableDeptHintBanner]
+               role="status"
+               aria-live="polite">
+            <mat-icon class="table-dept-click-hint__icon" aria-hidden="true">touch_app</mat-icon>
+            <span class="table-dept-click-hint__text">שם המחלקה בטבלה <strong>לחיץ</strong> — לחיצה פותחת פירוט וגרף מפורט.</span>
+            <button type="button"
+                    mat-icon-button
+                    class="table-dept-click-hint__close"
+                    (click)="dismissTableDepartmentClickHint()"
+                    aria-label="סגור הודעה">
+              <mat-icon>close</mat-icon>
+            </button>
+          </div>
+          <div class="table-wrap"
+               [class.table-wrap--dept-column-hint]="showTableDepartmentClickHint">
+            <div *ngIf="showTableDepartmentClickHint"
+                 class="table-dept-column-hint-veil"
+                 aria-hidden="true"></div>
+            <table mat-table [dataSource]="dataSource" matSort #mainSort="matSort" class="table table--with-dept-hint-veil" dir="rtl">
 
               <ng-container matColumnDef="DepartmentName">
                 <th mat-header-cell *matHeaderCellDef mat-sort-header>מחלקה</th>
-                <td mat-cell *matCellDef="let r" (click)="loadDepartmentSpecificGraph(r.DepartmentName)" class="clickable-cell">
-                  {{ r.DepartmentName }}
+                <td mat-cell *matCellDef="let r"
+                    (click)="loadDepartmentSpecificGraph(r.DepartmentName)"
+                    class="clickable-cell"
+                    matTooltip="לחץ לפתיחת פירוט מחלקה וגרף מפורט"
+                    matTooltipPosition="below"
+                    tabindex="0"
+                    role="button"
+                    [attr.aria-label]="'פירוט מחלקה ' + r.DepartmentName"
+                    (keydown.enter)="loadDepartmentSpecificGraph(r.DepartmentName)"
+                    (keydown.space)="$event.preventDefault(); loadDepartmentSpecificGraph(r.DepartmentName)">
+                  <span class="clickable-cell__inner">
+                    <span class="clickable-cell__text">{{ r.DepartmentName }}</span>
+                    <mat-icon class="clickable-cell__hint" aria-hidden="true">touch_app</mat-icon>
+                  </span>
                 </td>
               </ng-container>
 
@@ -767,7 +827,7 @@
           </div>
         </div>
 
-        <div class="custom-dropdown filter-dropdown"
+        <!-- <div class="custom-dropdown filter-dropdown"
              [class.active]="isIncomeClassificationOpen"
              [class.has-value]="selectedIncomeClassification !== incomeFilterAllValue">
           <div class="dropdown-trigger"
@@ -788,7 +848,7 @@
               </div>
             </div>
           </div>
-        </div>
+        </div> -->
       </div>
 
       <div *ngIf="catalogLoading" class="catalog-loading-container" role="status" aria-live="polite">

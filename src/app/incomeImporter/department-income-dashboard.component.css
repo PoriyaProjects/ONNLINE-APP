@@ -790,7 +790,10 @@
   flex: 1 1 auto; min-height: 0; position: relative; cursor: pointer;
   overflow: hidden; border-radius: 8px;
   google-chart {
-    width: 100% !important; height: 100% !important; min-height: 0;
+    width: 100% !important;
+    height: 100% !important;
+    min-height: 280px;
+    flex: 1 1 auto;
     ::ng-deep svg { cursor: pointer; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
     ::ng-deep rect { cursor: pointer; transition: opacity .2s; &:hover { opacity: .8; } }
     ::ng-deep .google-visualization-tooltip {
@@ -801,6 +804,183 @@
       color: #0f172a !important;
     }
   }
+}
+
+.graph-body--breakdown {
+  display: flex;
+  flex-direction: column;
+  cursor: default;
+}
+
+.breakdown-charts-grid {
+  flex: 1 1 auto;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  min-height: 0;
+  align-items: stretch;
+}
+
+.breakdown-chart-cell {
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  border-radius: 8px;
+  overflow: hidden;
+  google-chart {
+    flex: 1 1 auto;
+    min-height: 260px;
+  }
+}
+
+.dimensional-chart-wrap {
+  flex: 1 1 auto;
+  min-height: 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.dimensional-chart-wrap google-chart {
+  flex: 1 1 auto;
+  min-height: 260px;
+}
+
+.breakdown-charts-grid--single {
+  grid-template-columns: 1fr;
+}
+
+@media (max-width: 1180px) {
+  .breakdown-charts-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.graph-dimension-toolbar {
+  flex-shrink: 0;
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: stretch;
+  justify-content: stretch;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px 12px 8px;
+  margin-top: 4px;
+  border-top: 1px solid var(--border, rgba(148, 163, 184, 0.35));
+}
+
+/* מעבר חלק בין מצבי גרף — כפתורים במלא רוחב הסרגל */
+.graph-dimension-toggle-group {
+  display: flex;
+  flex: 1 1 auto;
+  width: 100%;
+  min-width: 0;
+  flex-wrap: nowrap;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid rgba(148, 163, 184, 0.45);
+  background: rgba(15, 23, 42, 0.04);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+  transition:
+    box-shadow 0.4s cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 0.35s ease;
+}
+
+.graph-dimension-toggle-group ::ng-deep .mat-button-toggle {
+  border: none;
+  border-radius: 0;
+  flex: 1 1 0;
+  min-width: 0;
+  transition:
+    background-color 0.38s cubic-bezier(0.22, 1, 0.36, 1),
+    color 0.38s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.38s cubic-bezier(0.22, 1, 0.36, 1),
+    flex-grow 0.45s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.graph-dimension-toggle-group ::ng-deep .mat-button-toggle:not(.mat-button-toggle-checked):hover {
+  background: rgba(59, 130, 246, 0.08);
+  transform: translateY(-1px);
+}
+
+.graph-dimension-toggle-group ::ng-deep .mat-button-toggle-checked {
+  background: linear-gradient(180deg, rgba(59, 130, 246, 0.2), rgba(59, 130, 246, 0.12)) !important;
+  color: var(--accent, #1d4ed8) !important;
+  font-weight: 700;
+  box-shadow: inset 0 0 0 1px rgba(59, 130, 246, 0.35);
+}
+
+.graph-dimension-toggle-group ::ng-deep .mat-button-toggle-button {
+  padding: 10px 10px;
+  width: 100%;
+  justify-content: center;
+}
+
+.graph-dimension-toggle-group ::ng-deep .mat-button-toggle-label-content {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  line-height: 1.25;
+  padding: 0 4px;
+  font-size: clamp(11px, 0.95vw, 13px);
+  max-width: 100%;
+}
+
+.graph-dimension-toggle-group mat-icon {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+}
+
+.graph-dimension-toggle-label {
+  white-space: nowrap;
+}
+
+@media (max-width: 720px) {
+  .graph-dimension-toolbar {
+    flex-wrap: wrap;
+  }
+  .graph-dimension-toggle-group {
+    flex-wrap: wrap;
+  }
+  .graph-dimension-toggle-group ::ng-deep .mat-button-toggle {
+    flex: 1 1 100%;
+    min-height: 44px;
+  }
+  .graph-dimension-toggle-group ::ng-deep .mat-button-toggle-label-content {
+    flex-direction: row;
+    gap: 6px;
+    padding: 4px 8px;
+  }
+  .graph-dimension-toggle-label {
+    white-space: normal;
+    text-align: center;
+    max-width: none;
+    font-size: 11px;
+  }
+}
+
+.dash.dark .graph-dimension-toolbar {
+  border-top-color: rgba(148, 163, 184, 0.22);
+}
+
+.dash.dark .graph-dimension-toggle-group {
+  border-color: rgba(148, 163, 184, 0.35);
+  background: rgba(255, 255, 255, 0.06);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+}
+
+.dash.dark .graph-dimension-toggle-group ::ng-deep .mat-button-toggle:not(.mat-button-toggle-checked):hover {
+  background: rgba(96, 165, 250, 0.12);
+}
+
+.dash.dark .graph-dimension-toggle-group ::ng-deep .mat-button-toggle-checked {
+  background: linear-gradient(180deg, rgba(59, 130, 246, 0.35), rgba(59, 130, 246, 0.18)) !important;
+  color: #e2e8ff !important;
+  box-shadow: inset 0 0 0 1px rgba(96, 165, 250, 0.45);
 }
 
 .dash.dark .graph-body { background: #0f172a; }
@@ -1288,8 +1468,77 @@
 
 /* ── Plain HTML table ───────────────────────────────────── */
 .table-wrap {
+  position: relative;
+  z-index: 0;
   border-radius: 10px; border: 1px solid var(--border);
   background: var(--panel); height: 100%; overflow: hidden;
+}
+
+/* צל צבע יורד על כל עמודת «מחלקה» יחד (RTL: עמודה ראשונה מימין) */
+.table-dept-column-hint-veil {
+  position: absolute;
+  inset-inline-start: 0;
+  top: 0;
+  bottom: 0;
+  width: clamp(100px, 28%, 230px);
+  z-index: 5;
+  pointer-events: none;
+  border-radius: 10px 0 0 10px;
+  background: linear-gradient(
+    to left,
+    rgba(37, 99, 235, 0.2),
+    rgba(99, 102, 241, 0.08),
+    transparent
+  );
+  box-shadow:
+    -6px 0 28px rgba(37, 99, 235, 0.28),
+    -2px 0 14px rgba(59, 130, 246, 0.18);
+  transform-origin: top center;
+  animation: tableDeptColumnVeilDescend 2.6s ease-in-out infinite;
+}
+
+@keyframes tableDeptColumnVeilDescend {
+  0% {
+    clip-path: inset(0 0 100% 0);
+    opacity: 0.35;
+    filter: saturate(1.1);
+  }
+  45% {
+    clip-path: inset(0 0 0 0);
+    opacity: 1;
+    filter: saturate(1.15);
+  }
+  70% {
+    clip-path: inset(0 0 0 0);
+    opacity: 0.92;
+  }
+  100% {
+    clip-path: inset(0 0 100% 0);
+    opacity: 0.35;
+    filter: saturate(1.1);
+  }
+}
+
+.table-wrap--dept-column-hint .table--with-dept-hint-veil thead tr {
+  position: relative;
+  z-index: 8;
+}
+
+.table-wrap--dept-column-hint .table--with-dept-hint-veil tbody .clickable-cell {
+  position: relative;
+  z-index: 7;
+}
+
+.dash.dark .table-dept-column-hint-veil {
+  background: linear-gradient(
+    to left,
+    rgba(96, 165, 250, 0.22),
+    rgba(129, 140, 248, 0.1),
+    transparent
+  );
+  box-shadow:
+    -6px 0 32px rgba(59, 130, 246, 0.35),
+    -2px 0 16px rgba(96, 165, 250, 0.22);
 }
 
 table.table {
@@ -1311,7 +1560,146 @@ table.table {
 .dash.dark table.table tbody tr:hover td     { background: rgba(255,255,255,.05); }
 .dash:not(.dark) table.table tbody tr:hover td { background: rgba(15,23,42,.03); }
 
-.clickable-cell { color: #667eea; cursor: pointer; font-weight: 500; transition: color .2s; &:hover { color: #764ba2; text-decoration: underline; } }
+/* רמז כניסה: שכבה מוחלטת מעל הטבלה — בלי דחיפת התוכן למטה */
+.table-dept-click-hint {
+  position: absolute;
+  top: 8px;
+  left: 10px;
+  right: 10px;
+  z-index: 2600;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  padding: 11px 14px 11px 10px;
+  border-radius: 12px;
+  font-size: clamp(12px, 1vw, 13px);
+  line-height: 1.35;
+  color: var(--text, #0f172a);
+  background: var(--panel, #ffffff);
+  border: 1px solid var(--border, rgba(15, 23, 42, 0.1));
+  outline: none;
+  box-shadow:
+    0 18px 44px rgba(15, 23, 42, 0.14),
+    0 8px 20px rgba(15, 23, 42, 0.1),
+    0 2px 6px rgba(15, 23, 42, 0.06);
+  animation: tableDeptHintShadowFloat 2.4s ease-in-out infinite;
+}
+
+/* רק צל נושם — בלי transform (לא מתנגש עם אנימציית הכניסה של Angular) */
+@keyframes tableDeptHintShadowFloat {
+  0%, 100% {
+    box-shadow:
+      0 14px 36px rgba(15, 23, 42, 0.12),
+      0 6px 16px rgba(15, 23, 42, 0.08),
+      0 2px 5px rgba(15, 23, 42, 0.05);
+  }
+  50% {
+    box-shadow:
+      0 22px 50px rgba(15, 23, 42, 0.16),
+      0 10px 24px rgba(15, 23, 42, 0.11),
+      0 3px 8px rgba(15, 23, 42, 0.07);
+  }
+}
+
+.table-dept-click-hint__icon {
+  flex-shrink: 0;
+  color: var(--muted, #64748b);
+  filter: drop-shadow(0 2px 4px rgba(15, 23, 42, 0.1));
+  font-size: 22px !important;
+  width: 22px !important;
+  height: 22px !important;
+}
+
+.table-dept-click-hint__text {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.table-dept-click-hint__close {
+  flex-shrink: 0;
+  margin-inline-start: auto;
+  opacity: 0.75;
+  transition: opacity .2s;
+  &:hover { opacity: 1; }
+}
+
+.dash.dark .table-dept-click-hint {
+  color: var(--text, #e5e7eb);
+  background: var(--bg, #0b1220);
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.12));
+  outline: none;
+  box-shadow:
+    0 18px 48px rgba(0, 0, 0, 0.45),
+    0 8px 22px rgba(0, 0, 0, 0.35);
+  animation: tableDeptHintShadowFloatDark 2.4s ease-in-out infinite;
+}
+
+.dash.dark .table-dept-click-hint__icon {
+  color: var(--muted, rgba(229, 231, 235, 0.75));
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.45));
+}
+
+@keyframes tableDeptHintShadowFloatDark {
+  0%, 100% {
+    box-shadow:
+      0 14px 40px rgba(0, 0, 0, 0.4),
+      0 6px 18px rgba(0, 0, 0, 0.32);
+  }
+  50% {
+    box-shadow:
+      0 24px 56px rgba(0, 0, 0, 0.52),
+      0 10px 26px rgba(0, 0, 0, 0.38);
+  }
+}
+
+.clickable-cell {
+  color: #667eea;
+  cursor: pointer;
+  font-weight: 500;
+  transition: color .2s, background-color .2s, box-shadow .2s;
+  outline: none;
+  border-radius: 6px;
+  &:hover {
+    color: #764ba2;
+    text-decoration: underline;
+    background: rgba(102, 126, 234, 0.08);
+  }
+  &:focus-visible {
+    box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.45);
+  }
+}
+
+.clickable-cell__inner {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+}
+
+.clickable-cell__text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.clickable-cell__hint {
+  font-size: 16px !important;
+  width: 16px !important;
+  height: 16px !important;
+  flex-shrink: 0;
+  opacity: 0.5;
+  transition: opacity .2s, transform .2s, color .2s;
+}
+
+.clickable-cell:hover .clickable-cell__hint {
+  opacity: 0.95;
+  transform: scale(1.06);
+  color: #764ba2;
+}
+
+.dash.dark .clickable-cell__hint {
+  opacity: 0.6;
+}
 .positive-change { color: #2e7d32; font-weight: 600; }
 .negative-change { color: #c62828; font-weight: 600; }
 

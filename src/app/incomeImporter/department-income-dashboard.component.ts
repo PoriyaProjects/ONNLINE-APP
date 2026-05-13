@@ -7,11 +7,18 @@ import { MatSort, Sort } from '@angular/material/sort';
 import { ChangeDetectorRef } from '@angular/core';
 import { trigger, transition, style, animate } from '@angular/animations';
 import { environment } from "src/environments/environment";
+import { DomSanitizer, SafeStyle } from "@angular/platform-browser";
 
 export interface DepartmentComparisonDto {
   DepartmentName: string;
   Income2024: number;
   Income2025: number;
+  /** שדות פירוט מ־GetDepartmentIncomeByDiagnosis — כמה שורות למחלקה */
+  IncomeCategory?: string;
+  Organization?: string;
+  UnifiedCategory?: string;
+  MedicalUnitIncome?: string;
+  SubMedicalUnitDescription?: string;
 }
 
 export interface DepartmentDetailedDataDto {
@@ -80,10 +87,47 @@ interface EmployeeInfo {
                 ),
             ]),
         ]),
+        trigger("graphToolbarMode", [
+            transition("* => *", [
+                style({ opacity: 0.88, transform: "scale(0.992)" }),
+                animate(
+                    "420ms cubic-bezier(0.22, 1, 0.36, 1)",
+                    style({ opacity: 1, transform: "scale(1)" })
+                ),
+            ]),
+        ]),
+        trigger("tableDeptHintBanner", [
+            transition(":enter", [
+                style({
+                    opacity: 0,
+                    transform: "translateY(calc(-100% - 18px))",
+                }),
+                animate(
+                    "520ms cubic-bezier(0.22, 1, 0.36, 1)",
+                    style({
+                        opacity: 1,
+                        transform: "translateY(0)",
+                    })
+                ),
+            ]),
+            transition(":leave", [
+                animate(
+                    "320ms cubic-bezier(0.4, 0, 1, 1)",
+                    style({
+                        opacity: 0,
+                        transform: "translateY(-28px)",
+                    })
+                ),
+            ]),
+        ]),
     ],
 })
 export class DepartmentIncomeDashboardComponent implements OnInit, OnDestroy {
     @ViewChild(MatSort) sort!: MatSort;
+
+    /** רמז ויזואלי אחרי כל טעינת טבלה: עמודת המחלקה לחיצה לפירוט */
+    showTableDepartmentClickHint = false;
+    private tableDeptClickHintTimer: ReturnType<typeof setTimeout> | null = null;
 
     // Guide Avatar
     showGuideAvatar = true;
@@ -153,9 +197,9 @@ export class DepartmentIncomeDashboardComponent implements OnInit, OnDestroy {
         },
         chartArea: {
             width: "94%",
-            height: "80%",
+            height: "78%",
             left: 20,
-            top: 30,
+            top: 42,
         },
         colors: ["#2563eb", "#10b981"],
         backgroundColor: {
@@ -165,7 +209,8 @@ export class DepartmentIncomeDashboardComponent implements OnInit, OnDestroy {
         },
         dataOpacity: 0.95,
         annotations: {
-            alwaysOutside: false,
+            alwaysOutside: true,
+            stem: { color: "transparent", length: 2 },
             textStyle: {
                 fontSize: 10,
                 bold: true,
@@ -235,6 +280,45 @@ export class DepartmentIncomeDashboardComponent implements OnInit, OnDestroy {
     showCatalogPriceColumn: boolean = false;
     showModalIncomeFilters: boolean = false;
     chartType: string = "ColumnChart"; // 'ColumnChart' or 'LineChart'
+
+    /**
+     * מצב תצוגת גרף: רדיו — כפתור אחד פעיל. מצבי פילוח משתמשים במטמון פירוט (ללא קריאה חוזרת בעת החלפה).
+     */
+    graphToolbarDimensionMode: "total" | "unifiedCategory" | "organization" =
+        "total";
+
+    get isBreakdownChartViewActive(): boolean {
+        return this.graphToolbarDimensionMode !== "total";
+    }
+
+    isBreakdownChartsLoading = false;
+    dimensionalChartColumns: any[] = [];
+    dimensionalChartData: any[] = [];
+    dimensionalChartOptions: any = {};
+
+    /** קבוצות שורות לפי מחלקה לפילוח גרף — נבנה מ־GetDepartmentIncomeByDiagnosis (ללא קריאת GetDepartmentDetailedData) */
+    private breakdownDetailRawResults: Array<{
+        departmentName: string;
+        rows: DepartmentDetailedDataDto[];
+    }> | null = null;
+    private breakdownDetailCacheKey: string | null = null;
+    /** כל השורות מהתשובה האחרונה של GetDepartmentIncomeByDiagnosis (לפני אגרגציה לטבלה) */
+    private diagnosisApiRawRows: DepartmentComparisonDto[] = [];
+    private readonly maxBreakdownDepartments = 35;
+    private readonly breakdownPalette = [
+        "#2563eb",
+        "#10b981",
+        "#f59e0b",
+        "#ef4444",
+        "#8b5cf6",
+        "#ec4899",
+        "#06b6d4",
+        "#84cc16",
+        "#f97316",
+        "#6366f1",
+        "#14b8a6",
+        "#a855f7",
+    ];
 
     // Catalog columns - updated for sorting
     cashColumns: string[] = [
@@ -324,7 +408,8 @@ export class DepartmentIncomeDashboardComponent implements OnInit, OnDestroy {
         private http: HttpClient,
         private snackBar: MatSnackBar,
         public dialog: MatDialog,
-        private cdr: ChangeDetectorRef
+        private cdr: ChangeDetectorRef,
+        private sanitizer: DomSanitizer
     ) {}
 
     ngOnInit(): void {
@@ -367,6 +452,34 @@ export class DepartmentIncomeDashboardComponent implements OnInit, OnDestroy {
     ngOnDestroy(): void {
         document.body.classList.remove('department-dashboard-dark');
         this.stopLoadingProgressTicker();
+        if (this.tableDeptClickHintTimer) {
+            clearTimeout(this.tableDeptClickHintTimer);
+            this.tableDeptClickHintTimer = null;
+        }
+    }
+
+    private maybeShowTableDepartmentClickHint(): void {
+        if (!this.dataSource.data?.length) {
+            return;
+        }
+        this.showTableDepartmentClickHint = true;
+        if (this.tableDeptClickHintTimer) {
+            clearTimeout(this.tableDeptClickHintTimer);
+        }
+        /* ~520ms כניסה מלמעלה, ואז ~3s להצגה לפני סגירה */
+        this.tableDeptClickHintTimer = setTimeout(() => {
+            this.dismissTableDepartmentClickHint();
+        }, 3520);
+        this.cdr.detectChanges();
+    }
+
+    dismissTableDepartmentClickHint(): void {
+        if (this.tableDeptClickHintTimer) {
+            clearTimeout(this.tableDeptClickHintTimer);
+            this.tableDeptClickHintTimer = null;
+        }
+        this.showTableDepartmentClickHint = false;
+        this.cdr.detectChanges();
     }
 
     /**
@@ -391,6 +504,7 @@ export class DepartmentIncomeDashboardComponent implements OnInit, OnDestroy {
             .subscribe(
                 (response: any) => {
                     if (response && response.d) {
+                        this.diagnosisApiRawRows = [];
                         this.departmentIncomeData = response.d;
 
                         // Sort data: Income2025 should be on top (higher values)
@@ -410,6 +524,11 @@ export class DepartmentIncomeDashboardComponent implements OnInit, OnDestroy {
                         this.isMainDataLoading = false;
                         this.loadIncomeReportReferenceFromSampleDepartment();
                         this.refreshOpenDepartmentPopupAfterFilterReload();
+                        this.invalidateBreakdownDetailCache();
+                        if (this.graphToolbarDimensionMode !== "total") {
+                            this.ensureBreakdownDetailCacheLoaded();
+                        }
+                        this.maybeShowTableDepartmentClickHint();
                         this.cdr.detectChanges();
                         this.snackBar.open("✓ נתונים נטענו בהצלחה", "סגור", {
                             duration: 3000,
@@ -474,32 +593,13 @@ export class DepartmentIncomeDashboardComponent implements OnInit, OnDestroy {
                             data = JSON.parse(data);
                         }
 
-                        // console.log("Raw data from GetDepartmentIncomeByDiagnosis:", data);
-                        // console.log("Data length:", Array.isArray(data) ? data.length : "Not an array");
-
-                        const uniqueDepts = [];
-                        const seen = new Set();
-
-                        if (Array.isArray(data)) {
-                            for (let item of data) {
-                                if (!seen.has(item.DepartmentName)) {
-                                    seen.add(item.DepartmentName);
-                                    uniqueDepts.push(item);
-                                    // Log first few items to see the structure
-                                    // if (uniqueDepts.length <= 3) {
-                                    //     console.log("Sample item:", {
-                                    //         DepartmentName: item.DepartmentName,
-                                    //         Income2024: item.Income2024,
-                                    //         Income2025: item.Income2025
-                                    //     });
-                                    // }
-                                }
-                            }
-                        }
-
-                        this.departmentIncomeData = uniqueDepts;
-                        // console.log("After deduplication, departmentIncomeData length:", this.departmentIncomeData.length);
-                        // console.log("Sample Income2025 values:", this.departmentIncomeData.slice(0, 3).map(d => d.Income2025));
+                        const rawList = Array.isArray(data) ? data : [];
+                        this.diagnosisApiRawRows =
+                            this.normalizeDiagnosisComparisonRows(rawList);
+                        this.departmentIncomeData =
+                            this.aggregateDepartmentRowsForTable(
+                                this.diagnosisApiRawRows
+                            );
                         
                         this.departmentIncomeData.sort(
                             (a, b) => b.Income2025 - a.Income2025
@@ -519,6 +619,11 @@ export class DepartmentIncomeDashboardComponent implements OnInit, OnDestroy {
                         this.isMainDataLoading = false;
                         this.loadIncomeReportReferenceFromSampleDepartment();
                         this.refreshOpenDepartmentPopupAfterFilterReload();
+                        this.invalidateBreakdownDetailCache();
+                        if (this.graphToolbarDimensionMode !== "total") {
+                            this.ensureBreakdownDetailCacheLoaded();
+                        }
+                        this.maybeShowTableDepartmentClickHint();
                         this.cdr.detectChanges();
 
                         this.snackBar.open("✓ נתונים עודכנו", "סגור", {
@@ -650,24 +755,15 @@ export class DepartmentIncomeDashboardComponent implements OnInit, OnDestroy {
         ) {
             this.chartData = [];
             this.isChartLoading = false;
-            console.log("No data to chart");
+            this.cdr.detectChanges();
             return;
         }
 
-        // Log income values for debugging
-        // console.log("Income values sample:", this.departmentIncomeData.slice(0, 3).map(d => ({
-        //     name: d.DepartmentName,
-        //     Income2024: d.Income2024,
-        //     Income2025: d.Income2025
-        // })));
-
-        // Filter: include departments that have at least one year with positive income
-        // This prevents the chart from disappearing when some departments have zero values
-        const filtered = this.departmentIncomeData.filter((item) => {
-            const has2024 = item.Income2024 && !isNaN(item.Income2024) && item.Income2024 > 0;
-            const has2025 = item.Income2025 && !isNaN(item.Income2025) && item.Income2025 > 0;
-            return has2024 || has2025; // Show if at least one year has data
-        });
+        // Align with the table: any department row with a name may appear in the chart.
+        // (A strict >0 filter hid all bars when both years were 0 or non-numeric from the API.)
+        const filtered = this.departmentIncomeData.filter((item) =>
+            String(item?.DepartmentName ?? "").trim()
+        );
         
         // console.log("Filtered departments count:", filtered.length);
         // console.log("Filtered sample:", filtered.slice(0, 3).map(d => ({
@@ -677,14 +773,8 @@ export class DepartmentIncomeDashboardComponent implements OnInit, OnDestroy {
         // })));
 
         this.chartData = filtered.map((item) => {
-            const safe2024 =
-                item.Income2024 && !isNaN(item.Income2024)
-                    ? item.Income2024
-                    : 0;
-            const safe2025 =
-                item.Income2025 && !isNaN(item.Income2025)
-                    ? item.Income2025
-                    : 0;
+            const safe2024 = this.toNumber(item.Income2024);
+            const safe2025 = this.toNumber(item.Income2025);
 
             const val2024 = parseFloat((safe2024 / 1000000).toFixed(1));
             const val2025 = parseFloat((safe2025 / 1000000).toFixed(1));
@@ -850,7 +940,11 @@ export class DepartmentIncomeDashboardComponent implements OnInit, OnDestroy {
      * Load yearly totals silently for chart year detection
      */
     loadYearlyTotalsForChart(): void {
-        this.http.post(environment.url + "GetYearlyTotalIncome", {}).subscribe(
+        this.http
+            .post(environment.url + "GetYearlyTotalIncome", {
+                ...this.buildIncomeFilterRequest(),
+            })
+            .subscribe(
             (response: any) => {
                 const { rows, envelope } =
                     this.parseGetYearlyTotalIncomePayload(response);
@@ -888,7 +982,11 @@ export class DepartmentIncomeDashboardComponent implements OnInit, OnDestroy {
         this.startLoadingProgress("boss");
         this.showBossDashboard = true;
 
-        this.http.post(environment.url + "GetYearlyTotalIncome", {}).subscribe(
+        this.http
+            .post(environment.url + "GetYearlyTotalIncome", {
+                ...this.buildIncomeFilterRequest(),
+            })
+            .subscribe(
             (response: any) => {
                 // console.log("Response:", response);
 
@@ -951,6 +1049,9 @@ export class DepartmentIncomeDashboardComponent implements OnInit, OnDestroy {
      * Load department specific graph
      */
     loadDepartmentSpecificGraph(departmentName: string): void {
+        if (this.showTableDepartmentClickHint) {
+            this.dismissTableDepartmentClickHint();
+        }
         this.selectedDepartment =
             this.departmentIncomeData.find(
                 (d) => d.DepartmentName === departmentName
@@ -1152,8 +1253,9 @@ export class DepartmentIncomeDashboardComponent implements OnInit, OnDestroy {
         return this.getAnimatedLoadingProgress("diagnoses");
     }
 
-    getLoadingRingBackground(progress: number): string {
-        return `conic-gradient(from -90deg, #2563eb 0 ${progress}%, rgba(148, 163, 184, 0.24) ${progress}% 100%)`;
+    getLoadingRingBackground(progress: number): SafeStyle {
+        const css = `conic-gradient(from -90deg, #2563eb 0 ${progress}%, rgba(148, 163, 184, 0.24) ${progress}% 100%)`;
+        return this.sanitizer.bypassSecurityTrustStyle(css);
     }
 
     private startLoadingProgress(key: string): void {
@@ -1244,6 +1346,7 @@ export class DepartmentIncomeDashboardComponent implements OnInit, OnDestroy {
         this.http
             .post(environment.url + "GetDepartmentDetailedData", {
                 departmentName: sampleDept,
+                ...this.buildIncomeFilterRequest(),
             })
             .subscribe({
                 next: (response: any) => {
@@ -2223,6 +2326,61 @@ updateChartColumns(): void {
         });
     }
 
+    /**
+     * סינון שורות פירוט כמו בסרגל הפילטרים, עם אפשרות לדלג על ממד הציר (לפילוח עמודות).
+     */
+    private applyIncomeFiltersForPivotRows(
+        rows: DepartmentDetailedDataDto[],
+        skip: {
+            unified?: boolean;
+            organization?: boolean;
+            classification?: boolean;
+            source?: boolean;
+        }
+    ): DepartmentDetailedDataDto[] {
+        if (!Array.isArray(rows)) {
+            return [];
+        }
+        if (!this.hasActiveIncomeFilters()) {
+            return rows;
+        }
+        return rows.filter((row: any) => {
+            const src =
+                skip.source === true ||
+                this.matchesIncomeFilter(row, this.selectedIncomeSource, [
+                    "MedicalUnitIncome",
+                    "medicalUnitIncome",
+                    "MedicalUnit_Income",
+                    "medicalUnit_Income",
+                ]);
+            const cls =
+                skip.classification === true ||
+                this.matchesIncomeFilter(row, this.selectedIncomeClassification, [
+                    "IncomeCategory",
+                    "incomeCategory",
+                    "IncomeClassification",
+                    "incomeClassification",
+                ]);
+            const org =
+                skip.organization === true ||
+                this.matchesIncomeFilter(row, this.selectedOrganization, [
+                    "Organization",
+                    "organization",
+                    "FundCountry",
+                    "fundCountry",
+                ]);
+            const uni =
+                skip.unified === true ||
+                this.matchesIncomeFilter(row, this.selectedUnifiedCategory, [
+                    "UnifiedDiagnosis",
+                    "unifiedDiagnosis",
+                    "UnifiedCategory",
+                    "unifiedCategory",
+                ]);
+            return src && cls && org && uni;
+        });
+    }
+
     private matchesIncomeFilter(
         row: any,
         selectedValue: string,
@@ -2300,6 +2458,9 @@ updateChartColumns(): void {
 
             if (this.chartData && this.chartData.length > 0) {
                 this.updateChartData();
+            }
+            if (this.isBreakdownChartViewActive) {
+                this.syncBreakdownChartTheme();
             }
         }, 0);
     }
@@ -2417,6 +2578,22 @@ updateChartColumns(): void {
         }
     }
 
+    /**
+     * מיפוי ערך מהמסך ל־API: «הכל» / ריק → null (ב־JSON), ערך נבחר → המחרוזת.
+     * בצד השרת: פרמטר NULL ב-SQL = ללא סינון — `(@p IS NULL OR Column = @p)`.
+     * חשוב: לא לשלוח "" — זה גורם ל־`Column = N''` ומסנן שגוי.
+     */
+    private mapIncomeFilterToApiParam(uiValue: string): string | null {
+        const v = String(uiValue ?? "").trim();
+        if (!v || v === this.incomeFilterAllValue) {
+            return null;
+        }
+        return v;
+    }
+
+    /**
+     * גוף בקשה ל־ASMX: ארבעת ממדי הסינון; null = אין סינון (כמו בפילטר בצד).
+     */
     private buildIncomeFilterRequest(): {
         medicalUnitIncome: string | null;
         incomeCategory: string | null;
@@ -2424,22 +2601,18 @@ updateChartColumns(): void {
         unifiedCategory: string | null;
     } {
         return {
-            medicalUnitIncome:
-                this.selectedIncomeSource !== this.incomeFilterAllValue
-                    ? this.selectedIncomeSource
-                    : null,
-            incomeCategory:
-                this.selectedIncomeClassification !== this.incomeFilterAllValue
-                    ? this.selectedIncomeClassification
-                    : null,
-            organization:
-                this.selectedOrganization !== this.incomeFilterAllValue
-                    ? this.selectedOrganization
-                    : null,
-            unifiedCategory:
-                this.selectedUnifiedCategory !== this.incomeFilterAllValue
-                    ? this.selectedUnifiedCategory
-                    : null,
+            medicalUnitIncome: this.mapIncomeFilterToApiParam(
+                this.selectedIncomeSource
+            ),
+            incomeCategory: this.mapIncomeFilterToApiParam(
+                this.selectedIncomeClassification
+            ),
+            organization: this.mapIncomeFilterToApiParam(
+                this.selectedOrganization
+            ),
+            unifiedCategory: this.mapIncomeFilterToApiParam(
+                this.selectedUnifiedCategory
+            ),
         };
     }
 
@@ -2555,7 +2728,652 @@ updateChartColumns(): void {
             if (this.chartData && this.chartData.length > 0) {
                 this.updateChartData();
             }
+            if (this.isBreakdownChartViewActive) {
+                this.syncBreakdownChartTheme();
+            }
         }, 0);
+    }
+
+    onGraphToolbarToggleChange(value: unknown): void {
+        if (
+            value === "total" ||
+            value === "unifiedCategory" ||
+            value === "organization"
+        ) {
+            this.setGraphToolbarMode(value);
+        }
+    }
+
+    setGraphToolbarMode(
+        mode: "total" | "unifiedCategory" | "organization"
+    ): void {
+        if (this.graphToolbarDimensionMode === mode) {
+            return;
+        }
+        this.graphToolbarDimensionMode = mode;
+        if (mode === "total") {
+            this.clearDimensionalChartDisplay();
+            this.isBreakdownChartsLoading = false;
+            this.scheduleChartResize();
+            this.cdr.detectChanges();
+            return;
+        }
+        if (
+            this.breakdownDetailRawResults &&
+            this.breakdownDetailCacheKey === this.computeBreakdownCacheKey()
+        ) {
+            this.applyActiveDimensionChartFromCache();
+            this.syncBreakdownChartTheme();
+            this.scheduleChartResize();
+            this.cdr.detectChanges();
+            return;
+        }
+        this.ensureBreakdownDetailCacheLoaded();
+    }
+
+    private computeBreakdownCacheKey(): string {
+        const names = (this.departmentIncomeData || [])
+            .map((d) => String(d.DepartmentName || "").trim())
+            .filter(Boolean);
+        return JSON.stringify({
+            diagnosis: this.selectedDiagnosis || "",
+            filters: this.buildIncomeFilterRequest(),
+            depts: names,
+        });
+    }
+
+    private invalidateBreakdownDetailCache(): void {
+        this.breakdownDetailRawResults = null;
+        this.breakdownDetailCacheKey = null;
+        if (this.graphToolbarDimensionMode !== "total") {
+            this.clearDimensionalChartDisplay();
+        }
+    }
+
+    private clearDimensionalChartDisplay(): void {
+        this.dimensionalChartColumns = [];
+        this.dimensionalChartData = [];
+        this.dimensionalChartOptions = {};
+    }
+
+    /**
+     * מטמון פילוח גרף — רק מנתוני GetDepartmentIncomeByDiagnosis (אין GetDepartmentDetailedData).
+     * החלפת כפתור מצב גרף לא מפעילה רשת.
+     */
+    private ensureBreakdownDetailCacheLoaded(): void {
+        if (this.graphToolbarDimensionMode === "total") {
+            return;
+        }
+        if (!this.departmentIncomeData?.length) {
+            this.clearDimensionalChartDisplay();
+            this.breakdownDetailRawResults = null;
+            this.breakdownDetailCacheKey = null;
+            this.isBreakdownChartsLoading = false;
+            this.cdr.detectChanges();
+            return;
+        }
+        if (
+            this.breakdownDetailRawResults &&
+            this.breakdownDetailCacheKey === this.computeBreakdownCacheKey()
+        ) {
+            this.applyActiveDimensionChartFromCache();
+            this.syncBreakdownChartTheme();
+            this.isBreakdownChartsLoading = false;
+            this.scheduleChartResize();
+            this.cdr.detectChanges();
+            return;
+        }
+
+        if (!this.diagnosisApiRawRows.length) {
+            this.breakdownDetailRawResults = null;
+            this.breakdownDetailCacheKey = null;
+            this.clearDimensionalChartDisplay();
+            this.isBreakdownChartsLoading = false;
+            this.cdr.detectChanges();
+            return;
+        }
+
+        const ordered = this.departmentIncomeData
+            .map((d) => String(d.DepartmentName || "").trim())
+            .filter(Boolean);
+        const slice = ordered.slice(0, this.maxBreakdownDepartments);
+        if (ordered.length > slice.length) {
+            this.snackBar.open(
+                `במצב פילוח מוצגות ${slice.length} מחלקות ראשונות (סדר הטבלה)`,
+                "סגור",
+                { duration: 4500 }
+            );
+        }
+
+        const byDept = new Map<string, DepartmentComparisonDto[]>();
+        for (const r of this.diagnosisApiRawRows) {
+            const d = String(r.DepartmentName || "").trim();
+            if (!d) {
+                continue;
+            }
+            if (!byDept.has(d)) {
+                byDept.set(d, []);
+            }
+            byDept.get(d)!.push(r);
+        }
+
+        const results = slice.map((departmentName) => ({
+            departmentName,
+            rows: this.comparisonRowsToPivotRows(
+                byDept.get(departmentName) || []
+            ) as DepartmentDetailedDataDto[],
+        }));
+
+        this.breakdownDetailRawResults = results;
+        this.breakdownDetailCacheKey = this.computeBreakdownCacheKey();
+        this.isBreakdownChartsLoading = false;
+        this.applyActiveDimensionChartFromCache();
+        this.syncBreakdownChartTheme();
+        this.scheduleChartResize();
+        this.cdr.detectChanges();
+    }
+
+    private normalizeDiagnosisComparisonRows(
+        raw: any[]
+    ): DepartmentComparisonDto[] {
+        const out: DepartmentComparisonDto[] = [];
+        for (const item of raw) {
+            const DepartmentName = String(
+                item?.DepartmentName ?? ""
+            ).trim();
+            if (!DepartmentName) {
+                continue;
+            }
+            const row: DepartmentComparisonDto = {
+                DepartmentName,
+                Income2024: this.toNumber(item?.Income2024),
+                Income2025: this.toNumber(item?.Income2025),
+            };
+            const ic = item?.IncomeCategory;
+            if (ic != null && String(ic).trim()) {
+                row.IncomeCategory = String(ic).trim();
+            }
+            const org = item?.Organization;
+            if (org != null && String(org).trim()) {
+                row.Organization = String(org).trim();
+            }
+            const uc = item?.UnifiedCategory;
+            if (uc != null && String(uc).trim()) {
+                row.UnifiedCategory = String(uc).trim();
+            }
+            const mu = item?.MedicalUnitIncome;
+            if (mu != null && String(mu).trim()) {
+                row.MedicalUnitIncome = String(mu).trim();
+            }
+            const sub = item?.SubMedicalUnitDescription;
+            if (sub != null && String(sub).trim()) {
+                row.SubMedicalUnitDescription = String(sub).trim();
+            }
+            out.push(row);
+        }
+        return out;
+    }
+
+    /** סכימה לטבלה / גרף סה״כ — שורה אחת למחלקה */
+    private aggregateDepartmentRowsForTable(
+        rows: DepartmentComparisonDto[]
+    ): DepartmentComparisonDto[] {
+        const m = new Map<
+            string,
+            { Income2024: number; Income2025: number }
+        >();
+        for (const r of rows) {
+            const name = String(r.DepartmentName || "").trim();
+            if (!name) {
+                continue;
+            }
+            const prev = m.get(name);
+            if (!prev) {
+                m.set(name, {
+                    Income2024: r.Income2024,
+                    Income2025: r.Income2025,
+                });
+            } else {
+                prev.Income2024 += r.Income2024;
+                prev.Income2025 += r.Income2025;
+            }
+        }
+        return Array.from(m.entries()).map(([DepartmentName, v]) => ({
+            DepartmentName,
+            Income2024: v.Income2024,
+            Income2025: v.Income2025,
+        }));
+    }
+
+    /** המרה לצורת שורת פיבוט ש־applyIncomeFiltersForPivotRows / getDetailedLatestCash מבינים */
+    private comparisonRowsToPivotRows(
+        rows: DepartmentComparisonDto[]
+    ): any[] {
+        return rows.map((r) => {
+            const i24 = this.toNumber(r.Income2024);
+            const i25 = this.toNumber(r.Income2025);
+            const o: any = {
+                DepartmentName: r.DepartmentName,
+                Cash2024: i24,
+                Cash2025: i25,
+            };
+            if (r.UnifiedCategory != null) {
+                o.UnifiedCategory = r.UnifiedCategory;
+                o.unifiedCategory = r.UnifiedCategory;
+                o.UnifiedDiagnosis = r.UnifiedCategory;
+                o.unifiedDiagnosis = r.UnifiedCategory;
+            }
+            if (r.Organization != null) {
+                o.Organization = r.Organization;
+                o.organization = r.Organization;
+                o.FundCountry = r.Organization;
+                o.fundCountry = r.Organization;
+            }
+            if (r.IncomeCategory != null) {
+                o.IncomeCategory = r.IncomeCategory;
+                o.incomeCategory = r.IncomeCategory;
+            }
+            if (r.MedicalUnitIncome != null) {
+                o.MedicalUnitIncome = r.MedicalUnitIncome;
+                o.medicalUnitIncome = r.MedicalUnitIncome;
+                o.MedicalUnit_Income = r.MedicalUnitIncome;
+                o.medicalUnit_Income = r.MedicalUnitIncome;
+            }
+            return o;
+        });
+    }
+
+    /** בונה את הגרף הפעיל מהמטמון — ללא רשת */
+    private applyActiveDimensionChartFromCache(): void {
+        if (
+            !this.breakdownDetailRawResults?.length ||
+            this.graphToolbarDimensionMode === "total"
+        ) {
+            this.clearDimensionalChartDisplay();
+            return;
+        }
+
+        const slice = this.breakdownDetailRawResults.map((r) => r.departmentName);
+        const latestYear = this.getLatestYearFromDeptData() || "";
+
+        if (this.graphToolbarDimensionMode === "unifiedCategory") {
+            const agg = new Map<string, Map<string, number>>();
+            const fields = [
+                "UnifiedDiagnosis",
+                "unifiedDiagnosis",
+                "UnifiedCategory",
+                "unifiedCategory",
+            ];
+            const segments = this.getUnifiedCategoryBreakdownSegments();
+            for (const d of slice) {
+                agg.set(d, new Map());
+            }
+            for (const { departmentName, rows } of this.breakdownDetailRawResults) {
+                const filtered = this.applyIncomeFiltersForPivotRows(rows, {
+                    unified: true,
+                });
+                for (const row of filtered) {
+                    const v = this.getDetailedLatestCash(row as any);
+                    const raw =
+                        this.getFirstNonEmptyString(row as any, fields) || "";
+                    const seg = this.mapRowValueToFilterOption(raw, segments);
+                    if (seg) {
+                        this.addBreakdownSegment(agg, departmentName, seg, v);
+                    }
+                }
+            }
+            const built = this.buildGroupedBreakdownModel(
+                agg,
+                slice,
+                segments,
+                `סיווג הכנסה מאוחד (${latestYear}) — לפי אפשרויות המסנן`
+            );
+            this.dimensionalChartColumns = built.columns;
+            this.dimensionalChartData = built.data;
+            this.dimensionalChartOptions = built.options;
+            return;
+        }
+
+        if (this.graphToolbarDimensionMode === "organization") {
+            const agg = new Map<string, Map<string, number>>();
+            const fields = [
+                "Organization",
+                "organization",
+                "FundCountry",
+                "fundCountry",
+            ];
+            const segments = this.getOrganizationBreakdownSegments();
+            for (const d of slice) {
+                agg.set(d, new Map());
+            }
+            for (const { departmentName, rows } of this.breakdownDetailRawResults) {
+                const filtered = this.applyIncomeFiltersForPivotRows(rows, {
+                    organization: true,
+                });
+                for (const row of filtered) {
+                    const v = this.getDetailedLatestCash(row as any);
+                    const raw =
+                        this.getFirstNonEmptyString(row as any, fields) || "";
+                    const seg = this.mapRowValueToFilterOption(raw, segments);
+                    if (seg) {
+                        this.addBreakdownSegment(agg, departmentName, seg, v);
+                    }
+                }
+            }
+            const built = this.buildGroupedBreakdownModel(
+                agg,
+                slice,
+                segments,
+                `קרן / מדינה (${latestYear}) — לפי אפשרויות המסנן`
+            );
+            this.dimensionalChartColumns = built.columns;
+            this.dimensionalChartData = built.data;
+            this.dimensionalChartOptions = built.options;
+        }
+    }
+
+    hasRenderableDimensionalChart(): boolean {
+        return (
+            this.graphToolbarDimensionMode !== "total" &&
+            (this.dimensionalChartData?.length ?? 0) > 0
+        );
+    }
+
+    private getDetailedLatestCash(row: any): number {
+        const yStr = this.getLatestYearFromDeptData();
+        const y = parseInt(String(yStr || "").trim(), 10);
+        if (Number.isFinite(y) && row != null) {
+            const dyn = row[`Cash${y}`];
+            if (dyn !== undefined && dyn !== null && dyn !== "") {
+                return this.toNumber(dyn);
+            }
+        }
+        return this.toNumber(row?.Cash2025 ?? row?.Cash2024);
+    }
+
+    private addBreakdownSegment(
+        agg: Map<string, Map<string, number>>,
+        dept: string,
+        segment: string,
+        value: number
+    ): void {
+        if (!dept || !Number.isFinite(value) || value === 0) {
+            return;
+        }
+        if (!agg.has(dept)) {
+            agg.set(dept, new Map());
+        }
+        const m = agg.get(dept)!;
+        m.set(segment, (m.get(segment) || 0) + value);
+    }
+
+    /** כמו רשימת «סיווג הכנסה מאוחד» במסנן (ללא «הכל») */
+    private getUnifiedCategoryBreakdownSegments(): string[] {
+        return this.unifiedCategoryOptions.filter(
+            (o) =>
+                o &&
+                String(o).trim() &&
+                o !== this.incomeFilterAllValue
+        );
+    }
+
+    /** כמו רשימת «קרן / מדינה» במסנן (ללא «הכל») */
+    private getOrganizationBreakdownSegments(): string[] {
+        return this.organizationOptions.filter(
+            (o) =>
+                o &&
+                String(o).trim() &&
+                o !== this.incomeFilterAllValue
+        );
+    }
+
+    /**
+     * ממפה ערך שורה לערך מהרשת — התאמה מדויקת או נפילה ל־«אחר» אם קיים ברשת.
+     */
+    private mapRowValueToFilterOption(
+        raw: string,
+        segmentOrder: string[]
+    ): string | null {
+        if (!segmentOrder.length) {
+            return null;
+        }
+        const k = String(raw ?? "").trim();
+        if (k && segmentOrder.includes(k)) {
+            return k;
+        }
+        for (const opt of segmentOrder) {
+            if (
+                opt &&
+                k &&
+                opt.localeCompare(k, "he", { sensitivity: "base" }) === 0
+            ) {
+                return opt;
+            }
+        }
+        if (segmentOrder.includes("אחר")) {
+            return "אחר";
+        }
+        return null;
+    }
+
+    /**
+     * גרף עמודות מקובצות: לכל מחלקה עמודה נפרדת לכל ערך מסנן (לא מוערם).
+     */
+    private buildGroupedBreakdownModel(
+        agg: Map<string, Map<string, number>>,
+        deptOrder: string[],
+        segmentOrder: string[],
+        title: string
+    ): { columns: any[]; data: any[][]; options: any } {
+        if (!segmentOrder.length) {
+            return { columns: [], data: [], options: {} };
+        }
+
+        let anyVal = false;
+        for (const d of deptOrder) {
+            const m = agg.get(d);
+            if (!m) {
+                continue;
+            }
+            for (const v of m.values()) {
+                if (v > 0) {
+                    anyVal = true;
+                    break;
+                }
+            }
+            if (anyVal) {
+                break;
+            }
+        }
+        if (!anyVal) {
+            return { columns: [], data: [], options: {} };
+        }
+
+        const columns: any[] = ["מחלקה"];
+        for (const label of segmentOrder) {
+            columns.push({ type: "number", label });
+            columns.push({ type: "string", role: "annotation" });
+        }
+        const data: any[][] = [];
+
+        for (const dept of deptOrder) {
+            const m = agg.get(dept) || new Map();
+            const row: any[] = [dept];
+            for (const seg of segmentOrder) {
+                const vM = parseFloat(
+                    ((m.get(seg) || 0) / 1_000_000).toFixed(2)
+                );
+                row.push(vM);
+                row.push(this.formatMillionAnnotationLabel(vM));
+            }
+            data.push(row);
+        }
+
+        const n = segmentOrder.length;
+        const options: any = {
+            title,
+            isStacked: false,
+            titleTextStyle: {
+                color: "#0f172a",
+                fontSize: 14,
+                bold: true,
+            },
+            annotations: {
+                alwaysOutside: true,
+                stem: { color: "transparent", length: 3 },
+                textStyle: {
+                    fontSize: 10,
+                    bold: true,
+                    color: "#334155",
+                    fontName: "Segoe UI, sans-serif",
+                },
+            },
+            chartArea: {
+                width: "86%",
+                height: "48%",
+                left: 52,
+                top: 52,
+            },
+            hAxis: {
+                title: "",
+                slantedText: true,
+                slantedTextAngle: 35,
+                textStyle: { color: "#64748b", fontSize: 10 },
+            },
+            vAxis: {
+                title: "הכנסות (מיליוני ₪)",
+                minValue: 0,
+                format: "0.0",
+                textStyle: { color: "#64748b", fontSize: 10 },
+                titleTextStyle: {
+                    color: "#0f172a",
+                    fontSize: 11,
+                    bold: true,
+                },
+            },
+            legend: {
+                position: "bottom",
+                alignment: "center",
+                maxLines: 4,
+                textStyle: { color: "#64748b", fontSize: 10 },
+            },
+            colors: this.breakdownPalette.slice(0, n),
+            backgroundColor: {
+                fill: "transparent",
+                stroke: "transparent",
+                strokeWidth: 0,
+            },
+            tooltip: {
+                isHtml: true,
+                textStyle: { fontSize: 12 },
+                showColorCode: true,
+            },
+            focusTarget: "category",
+            animation: { startup: true, duration: 750, easing: "out" },
+            bar: { groupWidth: n > 3 ? "70%" : "52%" },
+        };
+
+        return { columns, data, options };
+    }
+
+    /** תווית מעל עמודה בגרף (מיליוני ₪) — ריק אם אין ערך להצגה */
+    private formatMillionAnnotationLabel(valueM: number): string {
+        if (!Number.isFinite(valueM) || valueM <= 0) {
+            return "";
+        }
+        return `${parseFloat(valueM.toFixed(2))} מ׳`;
+    }
+
+    private syncBreakdownChartTheme(): void {
+        const patch = (opt: any): any => {
+            if (!opt || typeof opt !== "object") {
+                return opt;
+            }
+            const isDark = this.isDark;
+            const axisText = isDark ? "#e5e7eb" : "#64748b";
+            const titleC = isDark ? "#f9fafb" : "#0f172a";
+            const leg = isDark ? "#e5e7eb" : "#64748b";
+            return {
+                ...opt,
+                titleTextStyle: {
+                    ...(opt.titleTextStyle || {}),
+                    color: titleC,
+                    fontSize: opt.titleTextStyle?.fontSize ?? 14,
+                    bold: true,
+                },
+                hAxis: {
+                    ...(opt.hAxis || {}),
+                    textStyle: {
+                        ...(opt.hAxis?.textStyle || {}),
+                        color: axisText,
+                    },
+                    titleTextStyle: {
+                        ...(opt.hAxis?.titleTextStyle || {}),
+                        color: titleC,
+                    },
+                },
+                vAxis: {
+                    ...(opt.vAxis || {}),
+                    textStyle: {
+                        ...(opt.vAxis?.textStyle || {}),
+                        color: axisText,
+                    },
+                    titleTextStyle: {
+                        ...(opt.vAxis?.titleTextStyle || {}),
+                        color: titleC,
+                    },
+                },
+                legend: {
+                    ...(opt.legend || {}),
+                    position: "bottom",
+                    textStyle: {
+                        ...(opt.legend?.textStyle || {}),
+                        color: leg,
+                    },
+                },
+                backgroundColor: isDark
+                    ? {
+                          fill: "#0f172a",
+                          stroke: "rgba(255, 255, 255, 0.15)",
+                          strokeWidth: 1,
+                      }
+                    : {
+                          fill: "#ffffff",
+                          stroke: "#dddddd",
+                          strokeWidth: 1,
+                      },
+                tooltip: {
+                    ...(opt.tooltip || {}),
+                    textStyle: {
+                        ...(opt.tooltip?.textStyle || {}),
+                        color: isDark ? "#f9fafb" : "#0f172a",
+                    },
+                },
+                annotations: {
+                    ...(opt.annotations || {}),
+                    alwaysOutside:
+                        opt.annotations?.alwaysOutside !== undefined
+                            ? opt.annotations.alwaysOutside
+                            : true,
+                    stem: {
+                        ...(opt.annotations?.stem || {}),
+                        color:
+                            opt.annotations?.stem?.color ?? "transparent",
+                    },
+                    textStyle: {
+                        ...(opt.annotations?.textStyle || {}),
+                        color: isDark ? "#f9fafb" : "#334155",
+                        fontSize:
+                            opt.annotations?.textStyle?.fontSize ?? 10,
+                        bold: opt.annotations?.textStyle?.bold !== false,
+                    },
+                },
+            };
+        };
+
+        if (this.dimensionalChartOptions) {
+            this.dimensionalChartOptions = patch(this.dimensionalChartOptions);
+        }
     }
 
     /**
@@ -2624,6 +3442,7 @@ updateChartColumns(): void {
             };
             this.chartOptions.annotations = {
                 ...(this.chartOptions.annotations || {}),
+                alwaysOutside: true,
                 textStyle: {
                     color: "#f9fafb",
                     fontSize: this.chartOptions.annotations?.textStyle?.fontSize ?? 10,
@@ -2661,6 +3480,7 @@ updateChartColumns(): void {
             };
             this.chartOptions.annotations = {
                 ...this.chartOptions.annotations,
+                alwaysOutside: true,
                 textStyle: { ...this.chartOptions.annotations?.textStyle, color: "#333" },
             };
             this.chartOptions.tooltip = {
@@ -2678,6 +3498,7 @@ updateChartColumns(): void {
         if (this.chartData && this.chartData.length > 0) {
             this.updateChartData();
         }
+        this.syncBreakdownChartTheme();
     }
 
     /**
@@ -2685,32 +3506,38 @@ updateChartColumns(): void {
      * When user clicks on a bar in the chart, show department details
      */
     onChartClick(event: any): void {
+        this.handleDeptRowChartSelection(event, this.chartData);
+    }
+
+    onDimensionalChartClick(event: any): void {
+        this.handleDeptRowChartSelection(event, this.dimensionalChartData);
+    }
+
+    private handleDeptRowChartSelection(
+        event: any,
+        rows: any[][] | null | undefined
+    ): void {
         try {
-            // console.log("Chart select event:", event);
-            
-            // angular-google-charts select event structure: { selection: [{ row: number, column: number }] }
             let selectedRow: number | null = null;
-            
-            if (event && event.selection && Array.isArray(event.selection) && event.selection.length > 0) {
-                // Standard format: { selection: [{ row: number, column: number }] }
+
+            if (
+                event &&
+                event.selection &&
+                Array.isArray(event.selection) &&
+                event.selection.length > 0
+            ) {
                 selectedRow = event.selection[0].row;
             } else if (event && event.row !== undefined) {
-                // Direct format: { row: number, column: number }
                 selectedRow = event.row;
             } else if (Array.isArray(event) && event.length > 0) {
-                // Array format: [{ row: number, column: number }]
                 selectedRow = event[0].row;
             }
-            
-            if (selectedRow !== null && selectedRow !== undefined) {
-                // console.log("Selected row:", selectedRow);
-                
-                if (this.chartData && this.chartData.length > selectedRow) {
-                    const departmentName = this.chartData[selectedRow][0]; // First column is department name
-                    // console.log("Department name:", departmentName);
-                    
+
+            if (selectedRow !== null && selectedRow !== undefined && rows) {
+                if (rows.length > selectedRow) {
+                    const departmentName = rows[selectedRow][0];
                     if (departmentName) {
-                        this.loadDepartmentSpecificGraph(departmentName);
+                        this.loadDepartmentSpecificGraph(String(departmentName));
                     }
                 }
             }

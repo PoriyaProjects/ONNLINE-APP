@@ -71,13 +71,13 @@
                   </div>
                   <ng-container *ngIf="nextPlannedSurgery(room) as s">
                     <div
-                      *ngIf="!s.NextPatientReadyGreen && s.MissingSignaturesText && !isSignatureBannerDismissed(room.roomId)"
+                      *ngIf="!isNextSurgeryReady(s) && hasMissingSignatures(s) && !isSignatureBannerDismissed(room.roomId)"
                       class="signature-banner-float signature-banner--preface signature-banner--preface-note signature-banner--status"
-                      [attr.title]="s.MissingSignaturesText">
+                      [attr.title]="getMissingSignaturesText(s)">
                       <button type="button" class="signature-banner-close"
                         (click)="dismissSignatureBanner(room.roomId, $event)"
                         aria-label="סגור התראת חתימות">✕</button>
-                      <span class="signature-banner-text">⚠️ חסרה חתימה: {{ s.MissingSignaturesText }}</span>
+                      <span class="signature-banner-text">⚠️ חסרה חתימה: {{ getMissingSignaturesText(s) }}</span>
                     </div>
                   </ng-container>
                 </div>
@@ -86,26 +86,34 @@
               <!-- ערימה: התראות צפות מעל הכרטיס (לא דוחפות למטה), z-index קבוע -->
               <div class="room-stack">
                 <div class="room-float-alerts" *ngIf="nextPlannedSurgery(room) as s">
-                  <div
+                  <!-- <div
                     *ngIf="s.NextPatientReadyGreen && !isNextReadyBannerDismissed(room.roomId)"
                     class="next-ready-banner-float next-ready-banner--popup ready"
                     title="המטופל הבא מוכן לניתוח">
                     <button type="button" class="signature-banner-close"
                       (click)="dismissNextReadyBanner(room.roomId, $event)"
                       aria-label="סגור הודעת מוכן לניתוח">✕</button>
-                    <span class="next-ready-banner-text">🟢 המטופל הבא מוכן לניתוח</span>
-                  </div>
+                   <span class="next-ready-banner-text">🟢 המטופל הבא מוכן לניתוח</span> -->
+                  <!-- </div> --> 
                 </div>
 
                 <div class="room-widget card room-white" [ngClass]="[
           (settings.colorize && !isRoomClosedForColoring(room)) ? ('border-' + getRoomStatusClassWithSettings(room)) : '',
           isRoomPastDay(room) ? 'past-day' : '',
+          hasCanceledSurgeries(room) ? 'room-has-canceled' : '',
           '',
           isIdleOver40(room) && !isAllSurgeriesCompleted(room) ? 'idle-alert' : '',
           isAllSurgeriesCompleted(room) ? 'all-done' : '',
           isTurnoverLong(room) && !hasInProgress(room) ? 'turnover-warning' : '',
           getIdleBorderClass(room)
           ]">
+
+                <div
+                  class="room-canceled-indicator room-canceled-indicator--card"
+                  *ngIf="hasCanceledSurgeries(room)"
+                  [attr.title]="getCanceledSurgeriesSummary(room)">
+                  <span class="room-canceled-indicator__text">{{ getCanceledSurgeriesSummary(room) }}</span>
+                </div>
 
                 <div class="room-header room-header--dept-first">
 
@@ -237,7 +245,8 @@
                         </div>
                         <div class="completed-surgeries-overlay__scroll">
                           <div *ngFor="let s of ovActive; trackBy: trackBySurgeryId"
-                            class="surgery-card completed-surgeries-overlay__card">
+                            class="surgery-card completed-surgeries-overlay__card"
+                            [ngClass]="'card-' + displaySurgeryStatusKey(s, room)">
                             <div class="surgery-top">
                               <span class="times" *ngIf="settings.showTimes" [innerHTML]="formatSurgeryTimes(s)">
                               </span>
@@ -279,17 +288,32 @@
                         </div>
                         <div class="completed-surgeries-overlay__scroll">
                           <div *ngFor="let s of ovPlanned; trackBy: trackBySurgeryId"
-                            class="surgery-card planned completed-surgeries-overlay__card">
+                            class="surgery-card planned completed-surgeries-overlay__card"
+                            [class.surgery-card--canceled]="isSurgeryCanceled(s)"
+                            [ngClass]="'card-' + displaySurgeryStatusKey(s, room)">
                             <div class="surgery-top">
                               <span class="times" *ngIf="settings.showTimes" [innerHTML]="formatSurgeryTimes(s)"></span>
                               <span class="dept" *ngIf="s.department?.trim()">{{ s.department }}</span>
                             </div>
-                            <span *ngIf="settings.showStatus" class="status-wrap" [ngClass]="(s.status || s.SurgeryStatus)">
+                            <span *ngIf="settings.showStatus" class="status-wrap" [ngClass]="displaySurgeryStatusKey(s, room)">
                               <span class="status-dot"></span>
                               <span class="status-text">
-                                {{ statusHebrew[(s.status || s.SurgeryStatus)] }}
+                                {{ statusHebrew[displaySurgeryStatusKey(s, room)] }}
                               </span>
                             </span>
+                            <div class="surgery-canceled-meta" *ngIf="isSurgeryCanceled(s) && hasCancelReason(s)">
+                              <button
+                                type="button"
+                                class="surgery-canceled-details-btn"
+                                (click)="toggleCancelReason(s, $event)"
+                                [attr.aria-expanded]="isCancelReasonOpen(s)"
+                                [attr.aria-label]="isCancelReasonOpen(s) ? 'הסתר סיבת ביטול' : 'הצג סיבת ביטול'">
+                                {{ isCancelReasonOpen(s) ? 'הסתר פרטים' : 'פרטים' }}
+                              </button>
+                            </div>
+                            <div class="surgery-canceled-reason" *ngIf="isSurgeryCanceled(s) && isCancelReasonOpen(s)">
+                              {{ getSurgeryCancelReason(s) }}
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -436,10 +460,24 @@
 
                     <div class="ambulatory-split-panel ambulatory-planned ambulatory-planned--as-table"
                       *ngIf="settings.showPlannedSection !== false">
-                      <h5 class="section-title ambulatory-split-title">ניתוחים מתוכננים</h5>
-                      <p class="ambulatory-panel-empty">
-                        אין ניתוחים מתוכננים
-                      </p>
+                      <h5 class="section-title ambulatory-split-title">רשימות ניתוחים</h5>
+                      <div class="room-list-actions ambulatory-list-actions ambulatory-list-actions--empty">
+                        <button
+                          type="button"
+                          class="room-list-action-btn room-list-action-btn--completed"
+                          disabled>
+                          <span>בוצעו</span>
+                          <strong>0</strong>
+                        </button>
+
+                        <button
+                          type="button"
+                          class="room-list-action-btn room-list-action-btn--planned"
+                          disabled>
+                          <span>מתוכנן</span>
+                          <strong>0</strong>
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -465,13 +503,11 @@
                         <div class="ambulatory-actual-inner">
                           <div class="ambulatory-metrics-embedded">
                             <ng-container *ngIf="nextPlannedSurgery(room) as nps">
-                              <div *ngIf="nps.NextPatientReadyGreen" class="next-ready-chip ready">
-                                🟢 המטופל הבא מוכן לניתוח
-                              </div>
-                              <div *ngIf="!nps.NextPatientReadyGreen && nps.MissingSignaturesText"
-                                class="next-ready-chip warn" [attr.title]="nps.MissingSignaturesText">
-                                ⚠️ חסרה חתימה: {{ nps.MissingSignaturesText }}
-                              </div>
+                              <!-- <div *ngIf="nps.NextPatientReadyGreen" class="next-ready-chip ready">🟢 המטופל הבא מוכן לניתוח</div> -->
+                              <!-- <div *ngIf="!isNextSurgeryReady(nps) && hasMissingSignatures(nps)"
+                                class="next-ready-chip warn" [attr.title]="getMissingSignaturesText(nps)">
+                                ⚠️ חסרה חתימה: {{ getMissingSignaturesText(nps) }}
+                              </div> -->
                             </ng-container>
 
                             <div class="ambulatory-embedded-title">
@@ -519,6 +555,22 @@
                                 </div> -->
                               </ng-container>
                             </div>
+
+                            <!-- ניתוח נוכחי — קוביה באמבולטורי -->
+                            <ng-container *ngIf="getCurrentInRoomInProgressSurgery(room) as curSurg; else noCurrentSurgeryAmb">
+                              <div class="ambulatory-current-surgery-cube">
+                                <div class="current-surgery-chip__label">ניתוח נוכחי</div>
+                                <div class="current-surgery-chip__body" *ngIf="settings.showTimes">
+                                  <span class="current-surgery-chip__times" [innerHTML]="formatSurgeryTimes(curSurg)"></span>
+                                </div>
+                              </div>
+                            </ng-container>
+                            <ng-template #noCurrentSurgeryAmb>
+                              <div class="ambulatory-current-surgery-cube ambulatory-current-surgery-cube--empty">
+                                <div class="current-surgery-chip__label">ניתוח נוכחי</div>
+                                <div class="current-surgery-chip__body">אין ניתוח פעיל</div>
+                              </div>
+                            </ng-template>
                           </div>
 
                         </div>
@@ -578,7 +630,8 @@
                           </div>
                           <div class="completed-surgeries-overlay__scroll">
                             <div *ngFor="let s of amb.active; trackBy: trackBySurgeryId"
-                              class="surgery-card ambulatory completed-surgeries-overlay__card">
+                              class="surgery-card ambulatory completed-surgeries-overlay__card"
+                              [ngClass]="'card-' + (s.status || s.SurgeryStatus)">
                               <div class="surgery-top">
                                 <span class="times" *ngIf="settings.showTimes" [innerHTML]="formatSurgeryTimes(s)"></span>
                                 <span class="dept" *ngIf="s.department?.trim()">{{ s.department }}</span>
@@ -616,7 +669,8 @@
                           </div>
                           <div class="completed-surgeries-overlay__scroll">
                             <div *ngFor="let s of amb.planned; trackBy: trackBySurgeryId"
-                              class="surgery-card planned completed-surgeries-overlay__card">
+                              class="surgery-card planned completed-surgeries-overlay__card"
+                              [ngClass]="'card-' + (s.status || s.SurgeryStatus)">
                               <div class="surgery-top">
                                 <span class="times" *ngIf="settings.showTimes" [innerHTML]="formatSurgeryTimes(s)"></span>
                                 <span class="dept" *ngIf="s.department?.trim()">{{ s.department }}</span>
