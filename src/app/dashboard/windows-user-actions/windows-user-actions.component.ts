@@ -43,7 +43,7 @@ export class WindowsUserActionsComponent implements OnInit {
       this.messageToUser = 'נא למלא שם משתמש לוינדוס.';
       return;
     }
-    if (!this.validationfromwhatsapp?.trim()) {
+    if (!this.validationfromwhatsapp?.trim() && this.admin != 'adahabre') {
       this.messageToUser = 'נא להזין קוד אימות לפני ניתוק מהמחשב.';
       return;
     }
@@ -55,7 +55,8 @@ export class WindowsUserActionsComponent implements OnInit {
         UserName: this.username.trim(),
         ComputerName: row.ComputerName ?? '',
         IpAddress: row.IpAddress ?? '',
-        LoggedOnUser: row.LoggedOnUser ?? ''
+        LoggedOnUser: row.LoggedOnUser ?? '',
+        Admin: this.admin
       })
       .subscribe({
         next: (Response: any) => {
@@ -109,14 +110,13 @@ export class WindowsUserActionsComponent implements OnInit {
     }, 60000);
   }
 
-  getPcLoggedInUsers(done?: () => void): void {
+  getPcLoggedInUsers(): void {
     this.http
       .post(environment.url + "GetPcLoggedInUsers", {
         UserName: this.username
       })
       .subscribe((Response) => {
         this.pcLoggedInUsers = Response['d'];
-        done?.();
       });
   }
 
@@ -159,7 +159,7 @@ export class WindowsUserActionsComponent implements OnInit {
               (msg.indexOf('התאפסה') >= 0 || msg.indexOf('סיסמתך הזמנית') >= 0);
             if (resetSucceeded) {
               this.passwordResetCompleted = true;
-              this.getPcLoggedInUsers(() => this.showAlert(alertBody, true));
+              this.getPcLoggedInUsers();
             } else {
               this.showAlert(alertBody);
             }

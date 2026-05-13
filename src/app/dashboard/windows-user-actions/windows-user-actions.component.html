@@ -38,7 +38,7 @@
                     <span class="user-chip__logged">{{ user.LoggedOnUser }}</span>
                     <button mat-stroked-button type="button" class="user-chip__signout" color="warn"
                         (click)="signOutFromPc(user); $event.stopPropagation()"
-                        [disabled]="!validationfromwhatsapp || signOutLoadingKey === signOutRowKey(user)">
+                        [disabled]="signOutLoadingKey === signOutRowKey(user)" *ngIf="admin == 'adahabre'">
                         <mat-icon>logout</mat-icon>
                         ניתוק מהמחשב
                     </button>
