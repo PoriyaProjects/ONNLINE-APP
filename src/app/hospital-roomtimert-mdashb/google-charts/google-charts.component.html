@@ -212,7 +212,7 @@
                   <div class="current-surgery-chip current-surgery-chip--below-header">
                     <div class="current-surgery-chip__label">ניתוח נוכחי</div>
                     <div class="current-surgery-chip__body" *ngIf="settings.showTimes">
-                      <span class="current-surgery-chip__times" [innerHTML]="formatSurgeryTimes(curSurg)"></span>
+                      <span class="current-surgery-chip__times" [innerHTML]="formatSurgeryTimesChip(curSurg)"></span>
                     </div>
                   </div>
                 </ng-container>
@@ -561,7 +561,7 @@
                               <div class="ambulatory-current-surgery-cube">
                                 <div class="current-surgery-chip__label">ניתוח נוכחי</div>
                                 <div class="current-surgery-chip__body" *ngIf="settings.showTimes">
-                                  <span class="current-surgery-chip__times" [innerHTML]="formatSurgeryTimes(curSurg)"></span>
+                                  <span class="current-surgery-chip__times" [innerHTML]="formatSurgeryTimesChip(curSurg)"></span>
                                 </div>
                               </div>
                             </ng-container>
