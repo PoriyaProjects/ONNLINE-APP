@@ -954,7 +954,7 @@
 
 .ambulatory-current-surgery-cube .current-surgery-chip__times {
     direction: ltr;
-    unicode-bidi: embed;
+    unicode-bidi: isolate;
     font-weight: 900;
     font-size: clamp(1rem, 0.42vw + 0.84rem, 1.2rem);
     color: var(--text-main, #1a1a1a);
@@ -2740,8 +2740,8 @@
 .times .times-row {
     white-space: nowrap;
     direction: ltr;
-    unicode-bidi: embed;
-    text-align: right;
+    unicode-bidi: isolate;
+    text-align: start;
 }
 
 .times .times-row-main {
@@ -3023,7 +3023,7 @@
 }
 .current-surgery-chip__times {
     direction: ltr;
-    unicode-bidi: embed;
+    unicode-bidi: isolate;
     font-weight: 700;
     font-size: 15px;
     width: fit-content;
