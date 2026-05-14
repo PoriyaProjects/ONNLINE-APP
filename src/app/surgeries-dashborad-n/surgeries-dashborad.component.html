@@ -1,6 +1,6 @@
 <div class="surgeries-dashborad-root">
 
-  <div *ngIf="showFloatingBetaBanner && !isLoading" class="beta-banner beta-banner--floating" role="status"
+  <!-- <div *ngIf="showFloatingBetaBanner && !isLoading" class="beta-banner beta-banner--floating" role="status"
     aria-live="polite">
     <mat-icon class="beta-banner__icon" aria-hidden="true">science</mat-icon>
     <div class="beta-banner__body">
@@ -20,7 +20,7 @@
       matTooltip="סגור הודעה" matTooltipPosition="below" aria-label="סגור הודעת גרסת בטא">
       <mat-icon>close</mat-icon>
     </button>
-  </div>
+  </div> -->
 
   <div class="dash" [class.dark]="isDark" dir="rtl">
 
@@ -336,17 +336,17 @@
 
         <div class="top-quick-metrics-wrap" *ngIf="employeeUserName">
           <div class="top-quick-metrics-box">
-            <mat-button-toggle-group name="quickMetricsVisual"
-              aria-label="מדדים מהירים — תצוגה בלבד, ללא חיבור לנתונים או לגרף"
-              class="mat-button-toggle-group custom-toggle-group" [value]="quickMetricsVisualToggleValue"
-              (change)="setQuickMetricsVisualOnly(+$event.value)">
-              <mat-button-toggle value="0" matTooltip="תצוגה בלבד — אינו משנה את הדשבורד"
+            <mat-button-toggle-group name="quickMetricsMainSlot"
+              aria-label="בחירת אזור תוכן ראשי"
+              class="mat-button-toggle-group custom-toggle-group" [value]="topQuickMainSlotToggleValue"
+              (change)="onTopQuickMainSlotChange($event.value)">
+              <mat-button-toggle value="wait" matTooltip="זמני המתנה — אזור ייעודי"
                 matTooltipPosition="below">זמני המתנה</mat-button-toggle>
-              <mat-button-toggle value="1" matTooltip="תצוגה בלבד — אינו משנה את הדשבורד"
+              <mat-button-toggle value="performed" matTooltip="דשבורד ניתוחים שבוצעו"
                 matTooltipPosition="below">ניתוחים שבוצעו</mat-button-toggle>
-              <mat-button-toggle value="2" matTooltip="תצוגה בלבד — אינו משנה את הדשבורד"
+              <mat-button-toggle value="revenue" matTooltip="הכנסות — אזור ייעודי"
                 matTooltipPosition="below">הכנסות</mat-button-toggle>
-              <mat-button-toggle value="3" matTooltip="תצוגה בלבד — אינו משנה את הדשבורד"
+              <mat-button-toggle value="cancellations" matTooltip="ביטולים — אזור ייעודי"
                 matTooltipPosition="below">ביטולים</mat-button-toggle>
             </mat-button-toggle-group>
           </div>
@@ -426,8 +426,11 @@
 
     <!-- ================= MAIN CONTENT: GRAPH + TABLE ================= -->
     <div class="main-content" [class.main-content--compare-dept-layout]="mainMetricMode === 'compare-departments'"
-      [class.with-top-sidebar]="showTopDepartmentsSidebar" *ngIf="isDataLoaded">
+      [class.with-top-sidebar]="showTopDepartmentsSidebar && topQuickMainSlot === 'performed'"
+      [class.main-content--quick-subview]="topQuickMainSlot !== 'performed'"
+      *ngIf="isDataLoaded || topQuickMainSlot !== 'performed'">
 
+      <ng-container *ngIf="topQuickMainSlot === 'performed'">
       <div class="main-content-chart-table">
         <!-- ===== GRAPH SECTION (2/3) ===== -->
         <div class="graph-section">
@@ -1339,6 +1342,18 @@
           </div>
         </div>
       </aside>
+
+      </ng-container>
+
+      <div class="main-content-subview main-content-subview--full" *ngIf="topQuickMainSlot === 'wait'">
+        <app-surgeries-wait-times></app-surgeries-wait-times>
+      </div>
+      <div class="main-content-subview main-content-subview--full" *ngIf="topQuickMainSlot === 'revenue'">
+        <app-surgeries-revenue></app-surgeries-revenue>
+      </div>
+      <div class="main-content-subview main-content-subview--full" *ngIf="topQuickMainSlot === 'cancellations'">
+        <app-surgeries-cancellations></app-surgeries-cancellations>
+      </div>
 
     </div>
 

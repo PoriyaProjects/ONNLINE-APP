@@ -1462,6 +1462,29 @@
     overflow: hidden;
 }
 
+/* תצוגת מקטעים מהפס העליון (זמני המתנה / הכנסות / ביטולים) — עמודה אחת, מילוי גובה */
+.main-content.main-content--quick-subview {
+    direction: rtl;
+    overflow: auto;
+}
+
+.main-content.main-content--quick-subview > .main-content-subview--full {
+    grid-column: 1;
+    grid-row: 1;
+    min-height: 0;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+}
+
+.main-content-subview--full app-surgeries-wait-times,
+.main-content-subview--full app-surgeries-revenue,
+.main-content-subview--full app-surgeries-cancellations {
+    flex: 1 1 auto;
+    min-height: 0;
+}
+
 /* גרף + טבלה: גרף ~5% יותר רחב מ־2:1 (= 70% / 30%, סדר DOM: גרף | טבלה; RTL הופך ויזואלית) */
 .main-content-chart-table {
     display: grid;

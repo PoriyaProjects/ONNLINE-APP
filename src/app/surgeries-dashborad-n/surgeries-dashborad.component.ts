@@ -44,6 +44,13 @@ export interface SurgeryRow {
     [key: string]: any;
 }
 
+/** מקטע ראשי מתחת לפס המדדים המהירים */
+export type SurgeriesTopQuickMainSlot =
+    | "wait"
+    | "performed"
+    | "revenue"
+    | "cancellations";
+
 export type CompareDeptInsightTrend =
     | "up"
     | "down"
@@ -1142,13 +1149,11 @@ export class SurgeriesDashboradComponent
         | "cancellations"
         | "compare-departments" = "surgery-volume";
 
-    /** פס מדדים עליון — ויזואלי בלבד (ללא קישור ל־mainMetricMode / API) */
-    quickMetricsVisualIndex = 0;
-    private readonly quickMetricsVisualCount = 4;
+    /** פס מדדים עליון — קובע מה מוצג באזור התוכן הראשי */
+    topQuickMainSlot: SurgeriesTopQuickMainSlot = "performed";
 
-    /** ערך מחרוזת ל־mat-button-toggle-group של המדדים המהירים */
-    get quickMetricsVisualToggleValue(): string {
-        return String(this.quickMetricsVisualIndex);
+    get topQuickMainSlotToggleValue(): SurgeriesTopQuickMainSlot {
+        return this.topQuickMainSlot;
     }
 
     // When true, the משמרת filter dropdown in the sidebar is visually disabled
@@ -1180,13 +1185,17 @@ export class SurgeriesDashboradComponent
     detailedDataSource = new MatTableDataSource<DepartmentDetailedDataDto>([]);
     detailedSort!: MatSort;
 
-    /** בחירת מקטע בפס העליון — אנימציה בלבד, ללא שינוי מדדים בשרת או בגרף */
-    setQuickMetricsVisualOnly(index: number): void {
-        const n = Math.floor(Number(index));
-        if (n < 0 || n >= this.quickMetricsVisualCount) {
+    onTopQuickMainSlotChange(value: SurgeriesTopQuickMainSlot | string): void {
+        const v = value as SurgeriesTopQuickMainSlot;
+        if (
+            v !== "wait" &&
+            v !== "performed" &&
+            v !== "revenue" &&
+            v !== "cancellations"
+        ) {
             return;
         }
-        this.quickMetricsVisualIndex = n;
+        this.topQuickMainSlot = v;
     }
 
     // UI State
