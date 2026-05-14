@@ -1,0 +1,508 @@
+/* Shared mock layout for surgery sub-panels — mirrors main dashboard chrome; uses parent .dash CSS variables */
+
+.surgery-subpanel-dash {
+    --sp-text: var(--text, #0f172a);
+    --sp-muted: var(--muted, #64748b);
+    --sp-panel: var(--panel, #ffffff);
+    --sp-border: var(--border, rgba(148, 163, 184, 0.45));
+    --sp-shadow: var(--shadow, 0 2px 8px rgba(15, 23, 42, 0.08));
+    flex: 1 1 auto;
+    min-height: 0;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    color: var(--sp-text);
+    box-sizing: border-box;
+}
+
+.surgery-subpanel-dash__grid {
+    display: grid;
+    grid-template-columns: minmax(200px, min(22vw, 260px)) minmax(0, 1fr);
+    gap: clamp(4px, 0.8vw, 10px);
+    flex: 1 1 auto;
+    min-height: 0;
+    min-width: 0;
+    direction: rtl;
+}
+
+@media (max-width: 1099px) {
+    .surgery-subpanel-dash__grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.surgery-subpanel-dash__filters {
+    border-radius: 18px;
+    border: 1px solid var(--sp-border);
+    background: var(--sp-panel);
+    box-shadow: var(--sp-shadow);
+    padding: clamp(8px, 1vw, 14px);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-height: 0;
+    max-height: 100%;
+    overflow: auto;
+    align-self: start;
+}
+
+.surgery-subpanel-dash__filter-head {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--sp-border);
+}
+
+.surgery-subpanel-dash__filter-head mat-icon {
+    color: var(--sp-muted);
+}
+
+.surgery-subpanel-dash__filter-title {
+    font-weight: 900;
+    font-size: clamp(13px, 1vw, 16px);
+    flex: 1;
+    min-width: 0;
+}
+
+.surgery-subpanel-dash__filter-hint {
+    font-size: 11px;
+    color: var(--sp-muted);
+    font-weight: 600;
+    line-height: 1.35;
+    margin-top: 2px;
+}
+
+.surgery-subpanel-dash__filter-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.surgery-subpanel-dash__dropdown {
+    border: 1px solid var(--sp-border);
+    border-radius: 10px;
+    padding: 8px 10px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--sp-text);
+    background: rgba(248, 250, 252, 0.6);
+    cursor: default;
+}
+
+:host-context(.dash.dark) .surgery-subpanel-dash__dropdown {
+    background: rgba(30, 41, 59, 0.5);
+}
+
+.surgery-subpanel-dash__dropdown mat-icon {
+    color: var(--sp-muted);
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+}
+
+.surgery-subpanel-dash__main {
+    min-width: 0;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+}
+
+.surgery-subpanel-dash__chart-table {
+    display: grid;
+    grid-template-columns: minmax(0, 7fr) minmax(0, 3fr);
+    gap: clamp(4px, 0.8vw, 10px);
+    flex: 1 1 auto;
+    min-height: 0;
+    min-width: 0;
+}
+
+@media (max-width: 1024px) {
+    .surgery-subpanel-dash__chart-table {
+        grid-template-columns: 1fr;
+    }
+}
+
+.surgery-subpanel-dash .graph-section,
+.surgery-subpanel-dash .table-section {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    min-width: 0;
+    overflow: hidden;
+}
+
+.surgery-subpanel-dash .panel {
+    background: var(--sp-panel);
+    border: 1px solid var(--sp-border);
+    border-radius: 10px;
+    box-shadow: var(--sp-shadow);
+    padding: clamp(4px, 0.6vw, 10px) clamp(6px, 1vw, 12px);
+    margin-bottom: clamp(4px, 0.5vw, 8px);
+}
+
+.surgery-subpanel-dash .panel-graph,
+.surgery-subpanel-dash .panel-table {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    flex: 1 1 auto;
+}
+
+.surgery-subpanel-dash .panel-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 900;
+    margin-bottom: 6px;
+    color: var(--sp-text);
+    font-size: clamp(12px, 1vw, 16px);
+    direction: rtl;
+    text-align: right;
+    justify-content: flex-start;
+    width: 100%;
+    min-width: 0;
+}
+
+.surgery-subpanel-dash .panel-title mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+    color: var(--sp-muted);
+}
+
+.surgery-subpanel-dash .title-row {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
+    min-width: 0;
+}
+
+.surgery-subpanel-dash .metrics-container {
+    width: 100%;
+    min-width: 0;
+}
+
+.surgery-subpanel-dash .graph-body {
+    flex: 1 1 auto;
+    min-height: min(220px, 32vh);
+    position: relative;
+    overflow: hidden;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 4px 2px;
+}
+
+.surgery-subpanel-dash .chart-mode-heading {
+    margin-bottom: 2px;
+    font-size: 13px;
+    color: var(--sp-text);
+    direction: rtl;
+    text-align: right;
+    width: 100%;
+    display: grid;
+    gap: 0.25em;
+    padding: 6px 10px;
+    box-shadow: 0 4px 12px 0 rgba(0, 0, 0, 0.12);
+    border-radius: 4px;
+    background: var(--sp-panel);
+    border: 1px solid var(--sp-border);
+}
+
+.surgery-subpanel-dash .chart-mode-heading__title-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-start;
+    gap: 8px;
+    flex-wrap: nowrap;
+    width: 100%;
+}
+
+.surgery-subpanel-dash .chart-mode-heading__title {
+    display: block;
+    font-size: 1em;
+    font-weight: 800;
+    line-height: 1.35;
+    flex: 1;
+    min-width: 0;
+}
+
+.surgery-subpanel-dash .chart-mode-heading__period-inline {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.35em 0.45em;
+    margin: 0;
+    padding: 8px 12px;
+    border-radius: 10px;
+    background: rgba(37, 99, 235, 0.06);
+    border: 1px solid rgba(148, 163, 184, 0.35);
+    font-size: clamp(12px, 1vw, 14px);
+    font-weight: 700;
+    line-height: 1.45;
+    text-align: right;
+    direction: rtl;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+:host-context(.dash.dark) .surgery-subpanel-dash .chart-mode-heading__period-inline {
+    background: rgba(99, 102, 241, 0.12);
+    border-color: rgba(100, 116, 139, 0.45);
+}
+
+.surgery-subpanel-dash .chart-mode-heading__help-btn {
+    flex: 0 0 auto;
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    color: var(--sp-muted);
+}
+
+.surgery-subpanel-dash .year-summary-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 4px;
+    direction: ltr;
+    justify-content: flex-start;
+    min-width: 0;
+}
+
+.surgery-subpanel-dash .year-summary-card {
+    flex: 1 1 0;
+    min-width: 72px;
+    padding: 6px 8px;
+    border-radius: 8px;
+    border: 1px solid var(--sp-border);
+    background: var(--sp-panel);
+    box-shadow: 0 2px 6px rgba(15, 23, 42, 0.06);
+    text-align: center;
+}
+
+.surgery-subpanel-dash .year-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--sp-muted);
+}
+
+.surgery-subpanel-dash .year-count {
+    font-size: 14px;
+    font-weight: 800;
+    color: var(--sp-muted);
+}
+
+.surgery-subpanel-dash .year-subtitle {
+    font-size: 10px;
+    color: var(--sp-muted);
+}
+
+.surgery-subpanel-dash .chart-placeholder {
+    flex: 1 1 auto;
+    min-height: 160px;
+    border-radius: 8px;
+    border: 1px solid #dddddd;
+    background: #ffffff;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--sp-muted);
+    font-weight: 700;
+    font-size: 13px;
+}
+
+:host-context(.dash.dark) .surgery-subpanel-dash .chart-placeholder {
+    background: #0f172a;
+    border-color: rgba(51, 65, 85, 0.9);
+    color: #94a3b8;
+}
+
+.surgery-subpanel-dash .chart-mode-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 4px;
+}
+
+.surgery-subpanel-dash .table-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: auto;
+    padding: 2px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.surgery-subpanel-dash .table-wrap {
+    border-radius: 10px;
+    border: 1px solid var(--sp-border);
+    background: var(--sp-panel);
+    max-height: 38vh;
+    overflow: auto;
+}
+
+.surgery-subpanel-dash table.table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: clamp(12px, 1vw, 14px);
+}
+
+.surgery-subpanel-dash table.table th {
+    font-weight: 800;
+    color: var(--sp-muted);
+    text-align: right;
+    padding: 6px 8px;
+    border-bottom: 1px solid var(--sp-border);
+    position: sticky;
+    top: 0;
+    background: var(--sp-panel);
+    z-index: 1;
+}
+
+.surgery-subpanel-dash table.table td {
+    color: var(--sp-text);
+    padding: 6px 8px;
+    border-bottom: 1px solid var(--sp-border);
+}
+
+.surgery-subpanel-dash .table-extra {
+    margin-top: auto;
+    padding: 10px 12px;
+    border-radius: 12px;
+    border: 1px dashed var(--sp-border);
+    background: rgba(248, 250, 252, 0.65);
+}
+
+:host-context(.dash.dark) .surgery-subpanel-dash .table-extra {
+    background: rgba(30, 41, 59, 0.55);
+}
+
+.surgery-subpanel-dash .table-extra-title {
+    font-weight: 900;
+    color: var(--sp-text);
+    font-size: 13px;
+    margin-bottom: 6px;
+    text-align: right;
+}
+
+.surgery-subpanel-dash .table-extra-body {
+    color: var(--sp-muted);
+    font-weight: 600;
+    font-size: 12px;
+    line-height: 1.45;
+    text-align: right;
+}
+
+.surgery-subpanel-dash .table-extra-kpis {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 8px;
+}
+
+.surgery-subpanel-dash .table-extra-kpi {
+    flex: 1 1 100px;
+    min-width: 0;
+    padding: 6px 8px;
+    border-radius: 8px;
+    background: rgba(148, 163, 184, 0.12);
+    display: flex;
+    flex-direction: column;
+    text-align: right;
+}
+
+.surgery-subpanel-dash .table-extra-kpi-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--sp-muted);
+}
+
+.surgery-subpanel-dash .table-extra-kpi-value {
+    font-size: 15px;
+    font-weight: 800;
+    color: var(--sp-muted);
+}
+
+/* Toggle group — compact variant aligned with main dashboard */
+.surgery-subpanel-dash .custom-toggle-group {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    border: none !important;
+    border-radius: 14px !important;
+    background: rgba(248, 250, 252, 0.85);
+    backdrop-filter: blur(10px);
+    min-height: 48px;
+    padding: 4px;
+    gap: 4px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+
+:host-context(.dash.dark) .surgery-subpanel-dash .custom-toggle-group {
+    background: rgba(30, 41, 59, 0.55) !important;
+    border: 1px solid rgba(255, 255, 255, 0.06) !important;
+}
+
+.surgery-subpanel-dash .custom-toggle-group mat-button-toggle {
+    flex: 1;
+    border: 1px solid rgba(148, 163, 184, 0.5) !important;
+    background: transparent;
+    border-radius: 10px !important;
+    color: #64748b;
+}
+
+.surgery-subpanel-dash .custom-toggle-group ::ng-deep .mat-button-toggle-label-content {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: clamp(11px, 0.95vw, 13px);
+    padding: 0 8px !important;
+    line-height: 1.2;
+    gap: 4px;
+}
+
+.surgery-subpanel-dash .custom-toggle-group mat-icon {
+    margin-inline-end: 4px;
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+}
+
+.surgery-subpanel-dash .custom-toggle-group .mat-button-toggle-checked {
+    background: #ffffff !important;
+    color: #2563eb !important;
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.12);
+}
+
+:host-context(.dash.dark) .surgery-subpanel-dash .custom-toggle-group .mat-button-toggle-checked {
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%) !important;
+    color: #ffffff !important;
+}
+
+.surgery-subpanel-dash .toggle-icon-prefix {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    padding-inline-start: 4px;
+    padding-inline-end: 4px;
+    color: var(--sp-muted);
+}
+
+.surgery-subpanel-dash .toggle-icon-prefix mat-icon {
+    font-size: 22px;
+    width: 22px;
+    height: 22px;
+}

@@ -294,6 +294,7 @@ import { SharedModule } from './shared/shared.module';
 import { SurgeriesDashboradComponent } from './surgeries-dashborad-n/surgeries-dashborad.component';
 import { SurgeriesCancellationsComponent } from './surgeries-dashborad-n-components/cancellations/surgeries-cancellations.component';
 import { SurgeriesRevenueComponent } from './surgeries-dashborad-n-components/revenue/surgeries-revenue.component';
+import { SurgeriesSubpanelMockLayoutComponent } from './surgeries-dashborad-n-components/surgeries-subpanel-mock-layout.component';
 import { SurgeriesWaitTimesComponent } from './surgeries-dashborad-n-components/wait-times/surgeries-wait-times.component';
 import { WhatsappCategoriesPermissionsComponent } from './whatsapp-messages-dashboard/whatsapp-categories-permissions/whatsapp-categories-permissions.component';
 import { CommercialSupportProcurementDialogComponent } from './form-dashboard/commercial-support-form-dashboard/commercial-support-procurement-dialog/commercial-support-procurement-dialog.component';
@@ -531,6 +532,7 @@ const maskConfig: Partial<IConfig> = {
     SurgeriesWaitTimesComponent,
     SurgeriesCancellationsComponent,
     SurgeriesRevenueComponent,
+    SurgeriesSubpanelMockLayoutComponent,
     DialogDoingComponent,
     HearingSurveyComponent,
     HearingCaseNumbersDialogComponent,

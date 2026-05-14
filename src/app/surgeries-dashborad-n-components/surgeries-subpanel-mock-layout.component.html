@@ -1,0 +1,165 @@
+<div class="surgery-subpanel-dash" dir="rtl">
+  <div class="surgery-subpanel-dash__grid">
+    <aside class="surgery-subpanel-dash__filters" aria-label="סינון לדוגמה">
+      <div class="surgery-subpanel-dash__filter-head">
+        <mat-icon aria-hidden="true">tune</mat-icon>
+        <div>
+          <div class="surgery-subpanel-dash__filter-title">סינון מתקדם (דמה)</div>
+          <div class="surgery-subpanel-dash__filter-hint">{{ scopeHint || 'מבנה בלבד — ללא חיבור לנתונים או לשרת.' }}</div>
+        </div>
+      </div>
+      <div class="surgery-subpanel-dash__filter-actions">
+        <button type="button" mat-stroked-button color="primary">
+          <mat-icon>restart_alt</mat-icon>
+          איפוס סינון
+        </button>
+        <button type="button" mat-stroked-button>
+          <mat-icon>download</mat-icon>
+          ייצוא
+        </button>
+      </div>
+      <div class="surgery-subpanel-dash__dropdown">
+        <span><mat-icon aria-hidden="true">local_hospital</mat-icon> מחלקה: הכל</span>
+        <mat-icon aria-hidden="true">expand_more</mat-icon>
+      </div>
+      <div class="surgery-subpanel-dash__dropdown">
+        <span><mat-icon aria-hidden="true">category</mat-icon> קטגוריה: הכל</span>
+        <mat-icon aria-hidden="true">expand_more</mat-icon>
+      </div>
+      <div class="surgery-subpanel-dash__dropdown">
+        <span><mat-icon aria-hidden="true">schedule</mat-icon> משמרת: הכל</span>
+        <mat-icon aria-hidden="true">expand_more</mat-icon>
+      </div>
+    </aside>
+
+    <div class="surgery-subpanel-dash__main">
+      <div class="surgery-subpanel-dash__chart-table">
+        <div class="graph-section">
+          <div class="panel panel-graph">
+            <div class="panel-title">
+              <mat-icon aria-hidden="true">insert_chart_outlined</mat-icon>
+              <span class="title-row">
+                <span>{{ pageTitle }}</span>
+                <div class="metrics-container">
+                  <mat-button-toggle-group
+                    class="mat-button-toggle-group custom-toggle-group"
+                    [attr.name]="'mockMain_' + formUid"
+                    aria-label="מדדים לדוגמה"
+                    [value]="mainView"
+                    (change)="onMainViewChange($event.value)">
+                    <div class="toggle-icon-prefix" aria-hidden="true">
+                      <mat-icon>{{ chartTypeIcon }}</mat-icon>
+                    </div>
+                    <mat-button-toggle value="count" matTooltip="לחצן לדוגמה" matTooltipPosition="below">
+                      <mat-icon aria-hidden="true">analytics</mat-icon>
+                      <span>מדדי ניתוחים</span>
+                    </mat-button-toggle>
+                    <mat-button-toggle value="duration" matTooltip="לחצן לדוגמה" matTooltipPosition="below">
+                      <mat-icon aria-hidden="true">schedule</mat-icon>
+                      <span>זמני חדר</span>
+                    </mat-button-toggle>
+                    <mat-button-toggle value="util" matTooltip="לחצן לדוגמה" matTooltipPosition="below">
+                      <mat-icon aria-hidden="true">percent</mat-icon>
+                      <span>ניצולת חדר</span>
+                    </mat-button-toggle>
+                  </mat-button-toggle-group>
+                </div>
+              </span>
+            </div>
+
+            <div class="graph-body">
+              <div class="chart-mode-heading">
+                <div class="chart-mode-heading__title-row">
+                  <div class="chart-mode-heading__title-cluster">
+                    <span class="chart-mode-heading__title">{{ chartHeading }}</span>
+                    <p class="chart-mode-heading__period-inline">{{ periodCaption }}</p>
+                  </div>
+                  <button type="button" mat-icon-button class="chart-mode-heading__help-btn"
+                    matTooltip="מקום להסבר על הגרף" matTooltipPosition="below" aria-label="עזרה">
+                    <mat-icon aria-hidden="true">help_outline</mat-icon>
+                  </button>
+                </div>
+              </div>
+
+              <div class="year-summary-row">
+                <div class="year-summary-card" *ngFor="let row of mockYears">
+                  <div class="year-label">{{ row.y }}</div>
+                  <div class="year-count">{{ row.v }}</div>
+                  <div class="year-subtitle">{{ row.sub }}</div>
+                </div>
+              </div>
+
+              <div class="chart-placeholder" aria-hidden="true">
+                אזור גרף (ריק)
+              </div>
+
+              <div class="chart-mode-row">
+                <mat-button-toggle-group
+                  class="mat-button-toggle-group custom-toggle-group"
+                  [attr.name]="'mockPeriod_' + formUid"
+                  aria-label="תצוגת תקופה לדוגמה"
+                  [value]="periodView"
+                  (change)="onPeriodViewChange($event.value)">
+                  <mat-button-toggle value="year" matTooltip="לדוגמה בלבד" matTooltipPosition="below">
+                    <mat-icon aria-hidden="true">stacked_bar_chart</mat-icon>
+                    <span>לפי שנה</span>
+                  </mat-button-toggle>
+                  <mat-button-toggle value="month" matTooltip="לדוגמה בלבד" matTooltipPosition="below">
+                    <mat-icon aria-hidden="true">calendar_month</mat-icon>
+                    <span>ניתוחים לפי חודשים</span>
+                  </mat-button-toggle>
+                </mat-button-toggle-group>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="table-section">
+          <div class="panel panel-table">
+            <div class="panel-title">
+              <mat-icon aria-hidden="true">table_chart</mat-icon>
+              <span>{{ tablePanelTitle }}</span>
+            </div>
+            <div class="table-body">
+              <div class="table-wrap">
+                <table class="table">
+                  <thead>
+                    <tr>
+                      <th scope="col">ישות</th>
+                      <th scope="col">עמודה א׳</th>
+                      <th scope="col">עמודה ב׳</th>
+                      <th scope="col">עמודה ג׳</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let r of demoRows">
+                      <td>{{ r.entity }}</td>
+                      <td>{{ r.c1 }}</td>
+                      <td>{{ r.c2 }}</td>
+                      <td>{{ r.c3 }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="table-extra">
+                <div class="table-extra-title">{{ tableExtraTitle }}</div>
+                <div class="table-extra-kpis">
+                  <div class="table-extra-kpi">
+                    <span class="table-extra-kpi-label">מדד לדוגמה</span>
+                    <span class="table-extra-kpi-value">—</span>
+                  </div>
+                  <div class="table-extra-kpi">
+                    <span class="table-extra-kpi-label">מדד נוסף</span>
+                    <span class="table-extra-kpi-value">—</span>
+                  </div>
+                </div>
+                <div class="table-extra-body">{{ tableExtraBody }}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
