@@ -383,6 +383,9 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
     // Aggregated counts by month from new API
     monthlyCountsData: MonthlyCountRow[] = [];
 
+    /** חודש ושנה מקסימליים בנתוני GetMonthlyCounts (לכותרת — לא לפי לוח שנה מקומי) */
+    monthlyCountsLatestPeriod: { year: number; month: number } | null = null;
+
     /** נתוני השוואה YoY לפי מחלקה (מדד משולב) */
     departmentYoyData: DepartmentYoyDto[] = [];
 
@@ -1123,7 +1126,8 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
     isChartViewReady = false;
   
     selectedDepartment: DepartmentComparisonDto | null = null;
-    selectedDiagnosis: string = "אגף כירורגי";
+    /** ברירת מחדל: ללא סינון אתר (תואם `buildKpiFilterParams` — `site` ריק) */
+    selectedDiagnosis: string = "כל האתרים";
     isDepartmentGraphOpen = false;
     departmentGraphTitle = "";
     // Fake loading percents (מדומים) שמוצגים ליד/בתוך `<mat-spinner>`
@@ -2404,6 +2408,8 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
         this.updateChartOptionsForType();
         // Load main 5‑year counts by department from new API
         this.loadCountByDept();
+        // טעינת נתוני חודשים מוקדמת (אותם פרמטרים כמו KPI ברירת מחדל) — לכותרת תקופה ומטמון לפני מעבר לתצוגת חודשים
+        this.loadMonthlyCounts({ prefetchSilent: true });
         this.loadDiagnosesList();
         // Load data after diagnoses list is loaded
         setTimeout(() => {
@@ -2595,41 +2601,31 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
     }
 
     /**
-     * Load 5‑year aggregated counts by month from new API GetMonthlyCounts.
-     * ללא פרמטרי סינון מהסיידבר — תצוגת חודשים מציגה היקף מלא; פילטרי הסיידבר מושבתים ב-UI.
-     * קורא לשרת רק אם אין עדיין נתונים במטמון לשנת הבסיס הנוכחית.
+     * Load 5‑year aggregated counts by month from GetMonthlyCounts_surgeries_dashborad.
+     * שולח את אותם פרמטרי סינון כמו מדדי KPI (סוג ניתוח, משמרת, אתר, סופ״ש, מחלקה, עבודת בוקר, חדרים).
      */
-    private loadMonthlyCounts(): void {
-        const baseYear = this.currentYear;
-        // תצוגת חודשים: ללא פרמטרי סינון — הגרף מציג היקף מלא; פילטרי הסיידבר אינם רלוונטיים.
-        const kpiParams = {
-            surgeryType: "",
-            shift: "",
-            site: "",
-            weekend: "",
-            department: "",
-        };
-        const paramsKey = `${baseYear}|month-full`;
-        if (this.monthlyCountsData.length > 0 && this.lastMonthlyCountsParams === paramsKey) {
-            this.updateChartData();
+    private loadMonthlyCounts(options?: { prefetchSilent?: boolean }): void {
+        const prefetchSilent = options?.prefetchSilent === true;
+        const apiParams = this.buildMonthlyCountsApiParams();
+        const paramsKey = this.monthlyCountsParamsCacheKey(apiParams);
+        // כולל תוצאה ריקה מהשרת — אחרת מתחילים לולאת קריאות (ריק → updateChartData → loadMonthlyCounts שוב)
+        if (this.lastMonthlyCountsParams === paramsKey && !this.monthlyCountsRequestInFlight) {
+            if (!prefetchSilent) {
+                this.updateChartData();
+            }
             return;
         }
         if (this.monthlyCountsRequestInFlight) {
             return;
         }
         this.monthlyCountsRequestInFlight = true;
-        this.isChartLoading = true;
+        if (!prefetchSilent) {
+            this.isChartLoading = true;
+        }
 
         this.http
             .get<MonthlyCountRow[]>(environment.url + "GetMonthlyCounts_surgeries_dashborad", {
-                params: {
-                    baseYear: baseYear.toString(),
-                    surgeryType: kpiParams.surgeryType,
-                    shift: kpiParams.shift,
-                    site: kpiParams.site,
-                    weekend: kpiParams.weekend,
-                    department: kpiParams.department,
-                },
+                params: apiParams,
             })
             .subscribe({
                 next: (response: any) => {
@@ -2638,17 +2634,66 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
                     const rows = Array.isArray(raw) ? raw : [];
                     this.monthlyCountsData = rows;
                     this.lastMonthlyCountsParams = paramsKey;
-                    this.updateChartData();
+                    this.recomputeMonthlyCountsLatestPeriod(rows);
+                    if (!prefetchSilent || this.chartViewMode === "month") {
+                        this.updateChartData();
+                    } else {
+                        this.cdr.detectChanges();
+                    }
                 },
                 error: (err) => {
                     this.monthlyCountsRequestInFlight = false;
                     console.error("Error loading GetMonthlyCounts data:", err);
                     this.monthlyCountsData = [];
+                    this.monthlyCountsLatestPeriod = null;
                     this.isChartLoading = false;
                     this.isChartViewReady = true;
-                    this.cdr.detectChanges();
+                    const status = err && (err as any).status;
+                    this.snackBar.open(
+                        status === 500
+                            ? "❌ השרת החזיר שגיאה (500) בטעינת ניתוחים לפי חודשים. יש לבדוק את GetMonthlyCounts_surgeries_dashborad בצד השרת."
+                            : "❌ שגיאה בטעינת ניתוחים לפי חודשים מהשרת.",
+                        "סגור",
+                        { duration: 6000 }
+                    );
+                    // נשארים בלי נתוני חודש — חוזרים לתצוגת שנה כדי שלא יישאר גרף ריק / לולאת קריאות
+                    if (this.chartViewMode === "month") {
+                        this.setChartViewMode("year-total");
+                    } else {
+                        this.cdr.detectChanges();
+                    }
                 },
             });
+    }
+
+    /**
+     * קובע את חודש/שנה המאוחרים ביותר בנתוני GetMonthlyCounts (מעדיף שורות עם Count > 0).
+     */
+    private recomputeMonthlyCountsLatestPeriod(rows: MonthlyCountRow[]): void {
+        if (!rows || rows.length === 0) {
+            this.monthlyCountsLatestPeriod = null;
+            return;
+        }
+        const pickMax = (list: MonthlyCountRow[]) => {
+            let bestY = -1;
+            let bestM = -1;
+            for (const r of list) {
+                const y = Number((r as any).Year ?? (r as any).year);
+                const m = Number((r as any).Month ?? (r as any).month);
+                if (isNaN(y) || isNaN(m) || m < 1 || m > 12) {
+                    continue;
+                }
+                if (y > bestY || (y === bestY && m > bestM)) {
+                    bestY = y;
+                    bestM = m;
+                }
+            }
+            return bestY >= 0 ? { year: bestY, month: bestM } : null;
+        };
+        const withCount = rows.filter(
+            (r) => (Number((r as any).Count ?? (r as any).count) || 0) > 0
+        );
+        this.monthlyCountsLatestPeriod = pickMax(withCount.length > 0 ? withCount : rows);
     }
 
     /**
@@ -3259,12 +3304,15 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
             }
 
             if (!source || source.length === 0) {
-                this.chartData = [];
-                this.chartTableRows = [];
-                this.isChartLoading = false;
-                this.isChartViewReady = true;
-                this.cdr.detectChanges();
-                return;
+                // במצב "חודשים" הנתונים לגרף מגיעים מ־GetMonthlyCounts — לא מפילטרים כאן את התצוגה
+                if (this.chartViewMode !== "month") {
+                    this.chartData = [];
+                    this.chartTableRows = [];
+                    this.isChartLoading = false;
+                    this.isChartViewReady = true;
+                    this.cdr.detectChanges();
+                    return;
+                }
             }
 
             // זיהוי שנים ייחודיות מתוך הנתונים, ממוינות מהישן לחדש
@@ -3273,11 +3321,13 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
             );
 
             if (years.length === 0) {
-                this.chartData = [];
-                this.chartTableRows = [];
-                this.isChartLoading = false;
-                this.cdr.detectChanges();
-                return;
+                if (this.chartViewMode !== "month") {
+                    this.chartData = [];
+                    this.chartTableRows = [];
+                    this.isChartLoading = false;
+                    this.cdr.detectChanges();
+                    return;
+                }
             }
 
             // חישוב סה"כ לפי שנה (בשימוש גם לכרטיסי הסיכום מעל הגרף)
@@ -3908,10 +3958,37 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
         //    ב. לתצוגת קרן/מדינה (chartViewMode === 'fund')
         // 2) במצב "חודשים" נעדיף תמיד את ה‑API החדש GetMonthlyCounts_surgeries_dashborad
         if (this.chartViewMode === "month") {
+            const monthlyApiParams = this.buildMonthlyCountsApiParams();
+            const monthlyParamsKey = this.monthlyCountsParamsCacheKey(monthlyApiParams);
+
             if (!this.monthlyCountsData || this.monthlyCountsData.length === 0) {
-                if (!this.monthlyCountsRequestInFlight) {
-                    this.loadMonthlyCounts();
+                if (this.monthlyCountsRequestInFlight) {
+                    return;
                 }
+                // כבר התקבלה תשובה מהשרת למפתח הפרמטרים הנוכחי (כולל מערך ריק) — לא קוראים שוב ל־API
+                if (this.lastMonthlyCountsParams === monthlyParamsKey) {
+                    this.chartColumns = ["חודש"];
+                    this.chartData = [];
+                    this.chartTableRows = [];
+                    this.yearsForChart = [];
+                    this.stackedCategoryLegend = [];
+                    this.chartOptions.title = "";
+                    this.chartOptions.hAxis = {
+                        ...(this.chartOptions.hAxis || {}),
+                        title: "חודש",
+                    };
+                    this.chartOptions.vAxis = {
+                        ...(this.chartOptions.vAxis || {}),
+                        title: "מספר ניתוחים",
+                    };
+                    this.chartOptions.isStacked = false;
+                    this.applyClearTooltipsToGoogleChart();
+                    this.isChartLoading = false;
+                    this.isChartViewReady = true;
+                    this.cdr.detectChanges();
+                    return;
+                }
+                this.loadMonthlyCounts();
                 return;
             }
 
@@ -4885,9 +4962,6 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
         if (this.mainMetricMode === "compare-departments") {
             return false;
         }
-        if (this.isSurgeryVolumeMonthlyChartView()) {
-            return false;
-        }
         return (
             (this.selectedDiagnosis &&
                 this.selectedDiagnosis !== "כל האתרים" &&
@@ -4927,6 +5001,7 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
         this.countByDeptData = [];
         this.lastCountByDeptYear = null;
         this.monthlyCountsData = [];
+        this.monthlyCountsLatestPeriod = null;
         this.lastMonthlyCountsParams = null;
         this.surgeriesPerDayDepRoomRaw = [];
         this.roomUtilizationRoomStatsRaw = [];
@@ -5361,6 +5436,41 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
             "דצמבר",
         ];
         return names[limit1] || "";
+    }
+
+    /** MM/YY של סוף התקופה לפי נתוני GetMonthlyCounts (לא לפי תאריך מקומי) */
+    getMonthlyCountsPeriodMmYy(): string {
+        const p = this.monthlyCountsLatestPeriod;
+        if (!p) {
+            return "\u2026";
+        }
+        const mm = String(p.month).padStart(2, "0");
+        const yy = String(p.year % 100).padStart(2, "0");
+        return `${mm}/${yy}`;
+    }
+
+    /** שם חודש עברי לפי `monthlyCountsLatestPeriod` */
+    getMonthlyCountsPeriodMonthLabel(): string {
+        const p = this.monthlyCountsLatestPeriod;
+        const names = [
+            "",
+            "ינואר",
+            "פברואר",
+            "מרץ",
+            "אפריל",
+            "מאי",
+            "יוני",
+            "יולי",
+            "אוגוסט",
+            "ספטמבר",
+            "אוקטובר",
+            "נובמבר",
+            "דצמבר",
+        ];
+        if (!p) {
+            return "\u2026";
+        }
+        return names[p.month] || "\u2026";
     }
 
     /**
@@ -5824,15 +5934,10 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
     }
 
     /** מדדי ניתוחים — תצוגת «ניתוחים לפי חודשים»: פילטרי הסיידבר אינם משפיעים על הגרף */
-    isSurgeryVolumeMonthlyChartView(): boolean {
-        return this.mainMetricMode === "surgery-volume" && this.chartViewMode === "month";
-    }
-
-    /** פילטרי הסיידבר מושבתים ב-UI (זמני/ניצולת חדר, גרף חודשים, או השוואת מחלקות — שם הגרף לא מסונן מהסיידבר) */
+    /** פילטרי הסיידבר מושבתים ב-UI (זמני/ניצולת חדר, או השוואת מחלקות — שם הגרף לא מסונן מהסיידבר) */
     sidebarAdvancedFiltersDisabledForCurrentChart(): boolean {
         return (
             this.sidebarFiltersNonApplicableForRoomCharts() ||
-            this.isSurgeryVolumeMonthlyChartView() ||
             this.mainMetricMode === "compare-departments"
         );
     }
@@ -7298,7 +7403,6 @@ export class SurgeriesDashboradComponent implements OnInit, OnDestroy, DoCheck, 
     setChartDepartmentFilter(dept: string | null): void {
         this.chartDepartmentFilter = dept;
         this.closeSidebarFilterDropdowns();
-        // במצב חודשים הגרף נטען מה-API ללא פרמטרי סינון; קריאה לרענון נשארת לעקביות
         if (this.chartViewMode === "month") {
             this.loadMonthlyCounts();
         } else {
@@ -8070,7 +8174,7 @@ updateChartColumns(): void {
         }
 
         // הגרף הראשי תמיד מתעדכן לפי הפילטרים (גם כשאין surgeryData ויש רק CountByDept)
-        // במצב "ניתוחים לפי חודשים" – רענון מה-API ללא פרמטרי סינון (היקף מלא)
+        // במצב "ניתוחים לפי חודשים" – רענון מה-API עם אותם פרמטרי סינון כמו שאר המדדים
         if (this.chartViewMode === "month") {
             this.loadMonthlyCounts();
         } else if (this.chartViewMode === "yoy-combined") {
@@ -8128,9 +8232,6 @@ updateChartColumns(): void {
     getActiveFiltersSummary(): string {
         if (this.sidebarFiltersNonApplicableForRoomCharts()) {
             return "פילטרי הסיידבר אינם רלוונטיים — הנתונים לפי בוקר, אמצע שבוע וחדר ניתוח כללי.";
-        }
-        if (this.isSurgeryVolumeMonthlyChartView()) {
-            return "בתצוגת ניתוחים לפי חודשים אין שימוש בפילטרי הסיידבר; הגרף מציג היקף מלא.";
         }
         if (this.mainMetricMode === "compare-departments") {
             return "במצב השוואת מחלקות פילטרי הסיידבר אינם משפיעים על גרף ההשוואה; בוחרים מחלקה ומדדים בפאנל הגרף.";
@@ -9216,6 +9317,29 @@ private buildGroup2KpiParamsForCurrentView(): { [key: string]: string } {
     };
   }
   return this.buildKpiFilterParams();
+}
+
+/**
+ * פרמטרים ל־GetMonthlyCounts_surgeries_dashborad — זהים ללוגיקת buildKpiFilterParams + רשימת חדרים (כמו סינון ב־updateChartData).
+ */
+private buildMonthlyCountsApiParams(): { [key: string]: string } {
+    const kpi = this.buildKpiFilterParams();
+    const rooms =
+        this.selectedRooms && this.selectedRooms.length > 0
+            ? this.selectedRooms.join(",")
+            : "";
+    return {
+        ...kpi,
+        rooms,
+    };
+}
+
+/** מפתח מטמון דטרמיניסטי לקריאות חודשיות (משתנה כשמשנים פילטר / שנת בסיס). */
+private monthlyCountsParamsCacheKey(params: { [key: string]: string }): string {
+    return Object.keys(params)
+        .sort()
+        .map((k) => `${k}=${params[k] ?? ""}`)
+        .join("|");
 }
 
 /**

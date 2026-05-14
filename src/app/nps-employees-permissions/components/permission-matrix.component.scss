@@ -1,0 +1,43 @@
+.matrix-wrap {
+  border: 1px solid var(--nps-border);
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--nps-surface);
+  box-shadow: var(--nps-shadow-soft);
+}
+
+.full-width {
+  width: 100%;
+}
+
+.cards-accordion {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+}
+
+.action-panel {
+  border: 1px solid var(--nps-border);
+  border-radius: 8px;
+  box-shadow: none !important;
+}
+
+.permission-list {
+  display: grid;
+  gap: 8px;
+}
+
+.permission-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border-bottom: 1px solid var(--nps-border-soft, #ececec);
+  padding-bottom: 6px;
+}
+
+.cards-empty {
+  padding: 0 12px 12px;
+  color: var(--nps-text-muted, #666);
+}

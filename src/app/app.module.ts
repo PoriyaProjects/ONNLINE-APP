@@ -293,6 +293,7 @@ import { FilterDepartsPipe } from './pipe/filter-departs.pipe';
 import { SharedModule } from './shared/shared.module';
 import { SurgeriesDashboradComponent } from './surgeries-dashborad-n/surgeries-dashborad.component';
 import { WhatsappCategoriesPermissionsComponent } from './whatsapp-messages-dashboard/whatsapp-categories-permissions/whatsapp-categories-permissions.component';
+import { CommercialSupportProcurementDialogComponent } from './form-dashboard/commercial-support-form-dashboard/commercial-support-procurement-dialog/commercial-support-procurement-dialog.component';
 
 
 
@@ -540,6 +541,7 @@ const maskConfig: Partial<IConfig> = {
     InternDepartmentAssignmentDialogComponent,
     LecturesManageDialogComponent,
     MedicalInternsSmsComponent,
+    CommercialSupportProcurementDialogComponent,
     //HospitalIncomeDashbComponent,
   ],
   imports: [

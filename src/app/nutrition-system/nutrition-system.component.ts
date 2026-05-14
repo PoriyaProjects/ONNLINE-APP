@@ -1,9 +1,7 @@
-import { DatePipe } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
-import { ChangeDetectorRef, Component, OnInit, ViewChild } from '@angular/core';
-import { Form, FormArray, FormBuilder, FormControl, FormGroup } from '@angular/forms';
+import { Component, OnInit, ViewChild } from '@angular/core';
+import { FormBuilder, FormControl, FormGroup } from '@angular/forms';
 import { MatPaginator } from '@angular/material/paginator';
-import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatSort } from '@angular/material/sort';
 import { MatTableDataSource } from '@angular/material/table';
 import { environment } from 'src/environments/environment';
@@ -171,6 +169,8 @@ export class NutritionSystemComponent implements OnInit {
 
     /* generate workbook and add the worksheet */
     const wb: XLSX.WorkBook = XLSX.utils.book_new();
+    /* Excel sheet view: right-to-left (matches Hebrew UI) */
+    wb.Workbook = { Views: [{ RTL: true }] };
     XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
 
     /* save to file */
@@ -256,7 +256,7 @@ export class NutritionSystemComponent implements OnInit {
 
   resetData() {
     this.dataSourceHos.data = this.nutritionHosData;
-    this.dataSourceCli.data = this.nutritionCliData;    
+    this.dataSourceCli.data = this.nutritionCliData;
     this.dataSourceHos = new MatTableDataSource([...this.nutritionHosData, ...this.nutritionCliData]);
   }
 

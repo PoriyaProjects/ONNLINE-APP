@@ -74,6 +74,7 @@ import { CommercialSupportFormDashboardComponent } from '../form-dashboard/comme
 import { CommercialSupportFormDialogComponent } from '../form-dashboard/commercial-support-form-dashboard/commercial-support-form-dialog/commercial-support-form-dialog.component';
 import { CommercialSupportGatheringComponent } from '../form-dashboard/commercial-support-form-dashboard/commercial-support-gathering/commercial-support-gathering.component';
 import { CommercialSupportResearchDialogComponent } from '../form-dashboard/commercial-support-form-dashboard/commercial-support-research-dialog/commercial-support-research-dialog.component';
+import { CommercialSupportProcurementDialogComponent } from '../form-dashboard/commercial-support-form-dashboard/commercial-support-procurement-dialog/commercial-support-procurement-dialog.component';
 import { AdditionalCprTablesComponent } from '../form-dashboard/cpr-form/additional-cpr-tables/additional-cpr-tables.component';
 import { CprFormComponent } from "../form-dashboard/cpr-form/cpr-form.component";
 import { CprNewbordDashboradComponent } from '../form-dashboard/cpr-newbord-dashborad/cpr-newbord-dashborad.component';
@@ -246,6 +247,7 @@ const routes: Routes = [
   { path: "manageclinicprice", component: ManageClinicPriceComponent },
   { path: "nursesmanagedashboard", component: NursesManageDashboardComponent },
   { path: "nurse-permissions-manage", redirectTo: "nps-permissions", pathMatch: "full" },
+  { path: "nurse-employees-permissions-manage", redirectTo: "nps-employees-permissions", pathMatch: "full" },
   { path: "nursesdepartmentmanage", component: NursesDepartmentManageComponent },
   { path: "checkpatientinsmartcloset", component: CheckpatientinsmartclosetComponent },
   { path: "drugsnic", component: DrugsnicComponent },
@@ -369,6 +371,7 @@ const routes: Routes = [
   { path: "commercial-support-form-dashboard", component: CommercialSupportFormDashboardComponent },
   { path: "commercial-support-form-dialog", component: CommercialSupportFormDialogComponent },
   { path: "commercial-support-research-dialog", component: CommercialSupportResearchDialogComponent },
+  { path: "commercial-support-procurement-dialog", component: CommercialSupportProcurementDialogComponent },
   { path: "commercial-support-presentation-dialog", component: CommercialSupportFormDialogComponent },
   { path: "commercial-support-gathering-dialog", component: CommercialSupportGatheringComponent },
   { path: "LabTests", component: LabTestsComponent },
@@ -416,6 +419,11 @@ const routes: Routes = [
     path: "nps-permissions",
     loadChildren: () =>
       import("../nps-permissions/nps-permissions.module").then((m) => m.NpsPermissionsModule),
+  },
+  {
+    path: "nps-employees-permissions",
+    loadChildren: () =>
+      import("../nps-employees-permissions/nps-employees-permissions.module").then((m) => m.NpsEmployeesPermissionsModule),
   },
 ];
 

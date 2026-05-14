@@ -146,6 +146,7 @@ import { CommercialSupportFormDialogComponent } from "./form-dashboard/commercia
 import { CommercialSupportResearchDialogComponent } from "./form-dashboard/commercial-support-form-dashboard/commercial-support-research-dialog/commercial-support-research-dialog.component";
 import { CommercialSupportPresentationDialogComponent } from "./form-dashboard/commercial-support-form-dashboard/commercial-support-presentation-dialog/commercial-support-presentation-dialog.component";
 import { CommercialSupportGatheringComponent } from "./form-dashboard/commercial-support-form-dashboard/commercial-support-gathering/commercial-support-gathering.component";
+import { CommercialSupportProcurementDialogComponent } from "./form-dashboard/commercial-support-form-dashboard/commercial-support-procurement-dialog/commercial-support-procurement-dialog.component";
 import { ServiceUnitEmailListComponent } from './emailsdashboard/service-unit-email-list/service-unit-email-list.component';
 import { ServiceUnitEmailListDialogComponent } from './emailsdashboard/service-unit-email-list/service-unit-email-list-dialog/service-unit-email-list-dialog.component';
 import { HospitalIncomeDashbComponent } from './hospital-income-dashb/hospital-income-dashb.component';
@@ -347,6 +348,7 @@ const routes: Routes = [
     { path: "commercial-support-research-dialog", component: CommercialSupportResearchDialogComponent },
     { path: "commercial-support-presentation-dialog", component: CommercialSupportPresentationDialogComponent },
     { path: "commercial-support-gathering-dialog", component: CommercialSupportGatheringComponent },
+    { path: "commercial-support-procurement-dialog", component: CommercialSupportProcurementDialogComponent },
     { path: "LabTests", component: LabTestsComponent },
     { path: "cpr-newbord-dashborad", component: CprNewbordDashboradComponent },
     { path: "cpr-newborn-form", component: CprNewbornFormComponent },
