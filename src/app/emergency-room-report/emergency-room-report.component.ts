@@ -1,6 +1,6 @@
 import { Component, OnInit, OnDestroy, AfterViewInit, ChangeDetectorRef, ElementRef, ViewChild } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { forkJoin, of } from 'rxjs';
+import { of, Subscription } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 
@@ -24,9 +24,11 @@ export interface EmergencyRoomPatient {
   Decision_Description?: string;
   Consulted_Unit?: string;
   Entry_Date?: string | null;
+  /** First letters of Patient_First_Name + Patient_Last_Name from API (`Initials` in JSON — PascalCase typical from ASMX). */
+  Initials?: string | null;
   /** Consilium answer date; ISO 8601. Backend may send Answer_Date or answer_Date */
   answer_Date?: string | null;
-  /** Consilium final answer text. Backend may send Final_Answer or final_Answer */
+  /** Text value from API: only exactly 1 (number or \"1\") maps to green success in ייעוצים; 2/other/null/0 do not. */
   final_Answer?: string | null;
   /** 1 = final answer (green), 2 = not final. Backend may send Answer_Type or answer_Type. If missing, derived from answer_Date + final_Answer */
   answer_Type?: number | string | null;
@@ -75,6 +77,8 @@ export interface ConsultedChipItem {
 
 export interface EmergencyRoomReportRow {
   Id_Num: string;
+  /** Derived from GET patient row(s); same as EmergencyRoomPatient.Initials. */
+  Initials: string | null;
   Accept_Time: string;
   Entry_Date: string | null;
   Decision_Description: string;
@@ -115,12 +119,19 @@ export class EmergencyRoomReportComponent implements OnInit, AfterViewInit, OnDe
   selectedDepartment: string | null = null;
 
   loading = false;
+  /** Patients are shown but lab GET has not merged yet — blood column fills when false. */
+  labPending = false;
+  /** Lab failures should not hide the patients table. */
+  labError: string | null = null;
   backgroundRefreshing = false;
   error: string | null = null;
   autoRefreshIntervalMinutes = 2;
   private autoRefreshTimer: ReturnType<typeof setInterval> | null = null;
   private elapsedTimer: ReturnType<typeof setInterval> | null = null;
   private isFirstLoad = true;
+  /** Cancels in-flight patient/lab HTTP when a new refresh starts; guards against out-of-order responses. */
+  private reportLoadSubscription = new Subscription();
+  private reportRequestGeneration = 0;
   currentTime = new Date();
 
   @ViewChild('tableBodyWrap', { read: ElementRef }) tableBodyWrap?: ElementRef<HTMLElement>;
@@ -149,6 +160,7 @@ export class EmergencyRoomReportComponent implements OnInit, AfterViewInit, OnDe
   }
 
   ngOnDestroy(): void {
+    this.reportLoadSubscription.unsubscribe();
     this.stopAutoRefresh();
     this.stopElapsedTimer();
     if (this.marqueeMeasureTimer != null) {
@@ -185,12 +197,14 @@ export class EmergencyRoomReportComponent implements OnInit, AfterViewInit, OnDe
   loadReport(isBackgroundRefresh = false): void {
     if (this.isFirstLoad) {
       this.loading = true;
+      this.labPending = false;
       this.isFirstLoad = false;
     } else if (isBackgroundRefresh) {
       this.backgroundRefreshing = true;
     }
     if (!isBackgroundRefresh) {
       this.error = null;
+      this.labError = null;
     }
 
     const baseUrl = (environment.url || '').replace(/\/?$/, '/');
@@ -201,6 +215,7 @@ export class EmergencyRoomReportComponent implements OnInit, AfterViewInit, OnDe
       'Accept': 'application/json; charset=utf-8',
       'Content-Type': 'application/json; charset=utf-8'
     });
+    let labRequestFailed = false;
 
     const patients$ = this.http.get<EmergencyRoomPatient[] | { d: EmergencyRoomPatient[] }>(patientsUrl, {
       headers,
@@ -219,24 +234,63 @@ export class EmergencyRoomReportComponent implements OnInit, AfterViewInit, OnDe
     }).pipe(
       map(res => Array.isArray(res) ? res : (res?.d ?? [])),
       catchError(err => {
-        if (!isBackgroundRefresh) this.error = this.error || (err?.message || 'שגיאה בטעינת בדיקות המעבדה');
+        labRequestFailed = true;
+        this.labError = err?.message || 'שגיאה בטעינת בדיקות המעבדה';
         return of([]);
       })
     );
 
-    forkJoin({ patients: patients$, lab: lab$ }).subscribe({
-      next: ({ patients, lab }) => {
+    this.reportLoadSubscription.unsubscribe();
+    this.reportLoadSubscription = new Subscription();
+
+    const gen = ++this.reportRequestGeneration;
+    let pendingLab: EmergencyRoomLabTest[] | null = null;
+    let patientsReceived = false;
+    let labHttpSettledForGen = false;
+
+    this.reportLoadSubscription.add(
+      patients$.subscribe(patients => {
+        if (gen !== this.reportRequestGeneration) {
+          return;
+        }
+        patientsReceived = true;
         this.rawPatients = patients;
-        this.labTests = lab;
+        if (pendingLab != null && !labRequestFailed) {
+          this.labError = null;
+        }
+        if (pendingLab != null && (!labRequestFailed || this.labTests.length === 0)) {
+          this.labTests = pendingLab;
+        }
+        if (pendingLab != null) {
+          pendingLab = null;
+        }
+        this.labPending = !labHttpSettledForGen;
         this.applyFilterAndMerge();
         this.loading = false;
         this.backgroundRefreshing = false;
-      },
-      error: () => {
-        this.loading = false;
-        this.backgroundRefreshing = false;
-      }
-    });
+      })
+    );
+
+    this.reportLoadSubscription.add(
+      lab$.subscribe(lab => {
+        if (gen !== this.reportRequestGeneration) {
+          return;
+        }
+        labHttpSettledForGen = true;
+        if (patientsReceived) {
+          if (!labRequestFailed) {
+            this.labError = null;
+          }
+          if (!labRequestFailed || this.labTests.length === 0) {
+            this.labTests = lab;
+          }
+          this.labPending = false;
+          this.applyFilterAndMerge();
+        } else {
+          pendingLab = lab;
+        }
+      })
+    );
   }
 
   private applyFilterAndMerge(): void {
@@ -434,6 +488,7 @@ export class EmergencyRoomReportComponent implements OnInit, AfterViewInit, OnDe
       var consultedChips = this.buildConsultedChips(group);
       rows.push({
         Id_Num: idNum,
+        Initials: this.pickInitialsFromGroup(group),
         Accept_Time: (first.Accept_Time || '').trim() || '—',
         Entry_Date: entryDate,
         Decision_Description: (first.Decision_Description || '').trim() || '—',
@@ -450,7 +505,12 @@ export class EmergencyRoomReportComponent implements OnInit, AfterViewInit, OnDe
     return rows;
   }
 
-  /** Build consultation chips. Green final answer + date; amber for waiting or non-final answers. Times are not shown. */  private buildConsultedChips(group: EmergencyRoomPatient[]): ConsultedChipItem[] {
+  /**
+   * Builds consultation chips.
+   * Success (green + ✓) applies only when Final_Answer equals 1 (number or string \"1\").
+   * All other states use the existing pending / not_final (amber) styling.
+   */
+  private buildConsultedChips(group: EmergencyRoomPatient[]): ConsultedChipItem[] {
     var seen = new Set<string>();
     var chips: ConsultedChipItem[] = [];
     for (var p of group) {
@@ -473,13 +533,17 @@ export class EmergencyRoomReportComponent implements OnInit, AfterViewInit, OnDe
         else if (n === 2) answerType = 2;
       }
       var hasAnswerDate = answerDate != null;
+      var finalAnswerIsOne = EmergencyRoomReportComponent.isFinalAnswerOne(fa);
+
       var chipVariant: ConsultChipVariant;
-      if (answerType === null && !hasAnswerDate && !finalAnswer) {
+      if (finalAnswerIsOne) {
+        chipVariant = 'done';
+      } else if (answerType === null && !hasAnswerDate && !finalAnswer) {
         chipVariant = 'pending';
       } else if (answerType === 2 || finalAnswerIsTwo || !hasAnswerDate) {
         chipVariant = 'not_final';
       } else if (answerType === 1 && hasAnswerDate && !finalAnswerIsTwo) {
-        chipVariant = 'done';
+        chipVariant = 'not_final';
       } else {
         chipVariant = 'not_final';
       }
@@ -488,8 +552,24 @@ export class EmergencyRoomReportComponent implements OnInit, AfterViewInit, OnDe
         chipVariant: chipVariant,
         time: '',
         entryDate: entryDate
-      });    }
+      });
+    }
     return chips;
+  }
+
+  /** True only when Final_Answer indicates completed success (exactly 1). */
+  private static isFinalAnswerOne(fa: unknown): boolean {
+    if (fa === null || fa === undefined || fa === '') {
+      return false;
+    }
+    if (typeof fa === 'number') {
+      return fa === 1;
+    }
+    var s = String(fa).trim();
+    if (s === '') {
+      return false;
+    }
+    return s === '1';
   }
 
   /** Combine all unique Consulted_Unit values for a patient group */
@@ -539,6 +619,27 @@ export class EmergencyRoomReportComponent implements OnInit, AfterViewInit, OnDe
     return s.slice(-4);
   }
 
+  /** First non-empty Initials from merged patient rows (JSON may use `Initials` or camelCase `initials`). */
+  private pickInitialsFromGroup(group: EmergencyRoomPatient[]): string | null {
+    for (var i = 0; i < group.length; i++) {
+      var v = EmergencyRoomReportComponent.readInitialsFromPatient(group[i]);
+      if (v) {
+        return v;
+      }
+    }
+    return null;
+  }
+
+  private static readInitialsFromPatient(p: EmergencyRoomPatient): string | null {
+    var r = p as Record<string, unknown>;
+    var raw = r['Initials'] ?? r['initials'] ?? p.Initials;
+    if (raw == null || raw === '') {
+      return null;
+    }
+    var s = String(raw).trim();
+    return s || null;
+  }
+
   private getEntryDateFromGroup(group: EmergencyRoomPatient[]): string | null {
     for (var p of group) {
       var raw = p as Record<string, unknown>;
@@ -566,19 +667,6 @@ export class EmergencyRoomReportComponent implements OnInit, AfterViewInit, OnDe
       return mins > 0 ? diffHours + ' שעות ' + mins + ' דקות' : diffHours + ' שעות';
     }
     return diffMins <= 0 ? 'פחות מדקה' : diffMins + ' דקות';
-  }
-
-  /** Returns CSS class for elapsed time coloring: warning > 2h, critical > 4h */
-  getElapsedClass(entryDate: string | null | undefined): string {
-    if (!entryDate || !String(entryDate).trim()) return '';
-    var date = new Date(entryDate);
-    if (isNaN(date.getTime())) return '';
-    var diffMs = this.currentTime.getTime() - date.getTime();
-    if (diffMs < 0) return '';
-    var diffHours = diffMs / 3600000;
-    if (diffHours >= 4) return 'critical';
-    if (diffHours >= 2) return 'warning';
-    return '';
   }
 
   getConsultStatusTitle(variant: ConsultChipVariant): string {
