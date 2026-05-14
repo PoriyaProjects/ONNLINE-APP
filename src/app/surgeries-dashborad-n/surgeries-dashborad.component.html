@@ -334,6 +334,24 @@
           </div>
         </div>
 
+        <div class="top-quick-metrics-wrap" *ngIf="employeeUserName">
+          <div class="top-quick-metrics-box">
+            <mat-button-toggle-group name="quickMetricsVisual"
+              aria-label="מדדים מהירים — תצוגה בלבד, ללא חיבור לנתונים או לגרף"
+              class="mat-button-toggle-group custom-toggle-group" [value]="quickMetricsVisualToggleValue"
+              (change)="setQuickMetricsVisualOnly(+$event.value)">
+              <mat-button-toggle value="0" matTooltip="תצוגה בלבד — אינו משנה את הדשבורד"
+                matTooltipPosition="below">זמני המתנה</mat-button-toggle>
+              <mat-button-toggle value="1" matTooltip="תצוגה בלבד — אינו משנה את הדשבורד"
+                matTooltipPosition="below">ניתוחים שבוצעו</mat-button-toggle>
+              <mat-button-toggle value="2" matTooltip="תצוגה בלבד — אינו משנה את הדשבורד"
+                matTooltipPosition="below">הכנסות</mat-button-toggle>
+              <mat-button-toggle value="3" matTooltip="תצוגה בלבד — אינו משנה את הדשבורד"
+                matTooltipPosition="below">ביטולים</mat-button-toggle>
+            </mat-button-toggle-group>
+          </div>
+        </div>
+
         <!-- Diagnosis Selector – עיצוב ייחודי -->
         <!-- <div class="wing-and-theme-row" dir="rtl">
         <div class="custom-dropdown" [class.active]="isDropdownOpen">
@@ -514,6 +532,25 @@
                 </div>
               </ng-container>
 
+              <ng-container *ngIf="mainMetricMode === 'cancellations'">
+                <div class="chart-mode-heading" *ngIf="shouldShowChartModeHeading()">
+                  <div class="chart-mode-heading__title-row">
+                    <span class="chart-mode-heading__title">{{ getChartViewTitle() }}</span>
+                    <button type="button" class="chart-mode-heading__help-btn" mat-icon-button
+                      [matMenuTriggerFor]="mainChartHelpMenu" matTooltip="מה הגרף מציג ואיך מחושב?"
+                      matTooltipPosition="below" aria-label="הסבר על הגרף">
+                      <mat-icon aria-hidden="true">help_outline</mat-icon>
+                    </button>
+                  </div>
+                  <span class="chart-mode-heading__filters">{{ getChartViewFilterParametersLine() }}</span>
+                </div>
+                <div class="revenue-empty">
+                  <mat-icon class="revenue-empty-icon" aria-hidden="true">event_busy</mat-icon>
+                  <p class="revenue-empty-title">אין נתוני ביטולים להצגה כרגע</p>
+                  <p class="revenue-empty-hint">התצוגה תחובר למקור נתוני ביטולי ניתוחים בשלב הבא.</p>
+                </div>
+              </ng-container>
+
               <ng-container *ngIf="mainMetricMode === 'compare-departments'">
                 <div class="chart-mode-heading" *ngIf="shouldShowChartModeHeading() && !showCompareDepartmentsModal">
                   <div class="chart-mode-heading__title-row">
@@ -538,7 +575,8 @@
                 </div>
               </ng-container>
 
-              <ng-container *ngIf="mainMetricMode !== 'revenue' && mainMetricMode !== 'compare-departments'">
+              <ng-container
+                *ngIf="mainMetricMode !== 'revenue' && mainMetricMode !== 'compare-departments' && mainMetricMode !== 'cancellations'">
                 <div
                   *ngIf="isChartLoading || isMainDataLoading || (isRoomUtilizationMode() && roomUtilizationSubChart === 'surgeriesPerDay' && isSurgeriesPerDayLoading)"
                   class="chart-loading-overlay">
@@ -558,7 +596,8 @@
                           monthlyCountsLatestPeriod ? getMonthlyCountsPeriodMmYy() : getHelpPeriodCutoffMmYy()
                           }}</strong>
                         <span class="chart-mode-heading__period-tail">({{
-                          monthlyCountsLatestPeriod ? getMonthlyCountsPeriodMonthLabel() : getHelpPeriodCutoffMonthLabel()
+                          monthlyCountsLatestPeriod ? getMonthlyCountsPeriodMonthLabel() :
+                          getHelpPeriodCutoffMonthLabel()
                           }}) בכל שנה —
                           תקופה מקבילה.</span>
                       </span>
@@ -704,11 +743,13 @@
                       <mat-icon aria-hidden="true">domain</mat-icon>
                       <span>סה"כ לפי מחלקה</span>
                     </mat-button-toggle>
-                    <mat-button-toggle value="fund" [matTooltip]="getChartViewTooltip('fund')" matTooltipPosition="above">
+                    <mat-button-toggle value="fund" [matTooltip]="getChartViewTooltip('fund')"
+                      matTooltipPosition="above">
                       <mat-icon aria-hidden="true">savings</mat-icon>
                       <span>קרן/מדינה</span>
                     </mat-button-toggle>
-                    <mat-button-toggle value="site" [matTooltip]="getChartViewTooltip('site')" matTooltipPosition="above">
+                    <mat-button-toggle value="site" [matTooltip]="getChartViewTooltip('site')"
+                      matTooltipPosition="above">
                       <mat-icon aria-hidden="true">place</mat-icon>
                       <span>אתר</span>
                     </mat-button-toggle>
@@ -1069,7 +1110,8 @@
               <div class="custom-dropdown filter-dropdown" [class.disabled-filter]="isFilterDisabled('shift')"
                 [class.active]="isShiftOpen" [class.has-value]="selectedShifts?.length"
                 *ngIf="!sidebarFiltersNonApplicableForRoomCharts() && !isShiftGroupedView">
-                <div class="dropdown-trigger" (click)="!isFilterDisabled('shift') && toggleSidebarFilterDropdown('shift')">
+                <div class="dropdown-trigger"
+                  (click)="!isFilterDisabled('shift') && toggleSidebarFilterDropdown('shift')">
                   <mat-icon class="dropdown-icon">schedule</mat-icon>
                   <span class="selected-text" matTooltip="{{ getShiftDisplay() }}" matTooltipPosition="below">
                     {{ getShiftDisplay() }}
@@ -1175,7 +1217,8 @@
                 <!-- פילטר 4: חדר ניתוח -->
                 <div class="custom-dropdown filter-dropdown" [class.active]="isRoomOpen"
                   [class.has-value]="selectedRooms?.length" [class.disabled-filter]="isFilterDisabled('room')">
-                  <div class="dropdown-trigger" (click)="!isFilterDisabled('room') && toggleSidebarFilterDropdown('room')">
+                  <div class="dropdown-trigger"
+                    (click)="!isFilterDisabled('room') && toggleSidebarFilterDropdown('room')">
                     <mat-icon class="dropdown-icon">meeting_room</mat-icon>
                     <span class="selected-text">חדר ניתוח (לביצוע)</span>
                     <!-- <span class="selected-text" matTooltip="{{ getRoomDisplay() }}">
@@ -1336,7 +1379,7 @@
         </div>
       </div>
     </div>
-   
+
     <!-- Guide Avatar Modal -->
     <div class="guide-avatar-overlay" *ngIf="showGuideAvatar" @fadeInOut (click)="dismissGuideAvatar()">
       <div class="guide-avatar-modal" dir="rtl" (click)="$event.stopPropagation()">
