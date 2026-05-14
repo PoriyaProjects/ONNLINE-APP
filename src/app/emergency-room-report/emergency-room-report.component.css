@@ -38,8 +38,8 @@
      --er-font: 'Rubik', 'Noto Sans Hebrew', 'Segoe UI', sans-serif;
      --er-transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
    
-     /* 8 columns RTL order: id | elapsed | decision | consult | imaging | blood | nurse | doctor */
-     --er-grid: 8% 12% 10% 14% 19% 19% 9% 9%;
+     /* 8 columns RTL: id (+ initials) | elapsed | decision | consult | imaging + blood | nurse | doctor */
+     --er-grid: 9% 12% 10% 13% 19% 19% 9% 9%;
    }
    
    /* ---- Base ---- */
@@ -213,6 +213,21 @@
      animation: pulse 1.2s ease-in-out infinite;
      font-weight: 600;
    }
+
+   .lab-pending-badge {
+     margin-inline-start: 0.5rem;
+     font-size: 0.7rem;
+     color: var(--er-accent-amber);
+     padding: 0.2rem 0.55rem;
+     background: var(--er-accent-amber-dim);
+     border-radius: 6px;
+     font-weight: 600;
+   }
+
+  .lab-error-badge {
+    color: #b91c1c;
+    background: rgba(185, 28, 28, 0.1);
+  }
    
    @keyframes pulse {
      0%, 100% { opacity: 1; }
@@ -376,7 +391,7 @@
    }
    
    .grid-row.header-row {
-     min-height: 52px;
+     min-height: 56px;
    }
    
    .th-cell {
@@ -388,6 +403,41 @@
      color: var(--er-text-muted);
      white-space: nowrap;
      text-align: right;
+   }
+
+   .th-cell.th-cell-id {
+     white-space: normal;
+     display: flex;
+     flex-direction: column;
+     align-items: flex-start;
+     justify-content: center;
+     gap: 0.2rem;
+     line-height: 1.28;
+     padding-top: 0.5rem;
+     padding-bottom: 0.5rem;
+     text-align: right;
+   }
+
+   .th-cell-id-tier {
+     display: block;
+     max-width: 100%;
+     text-align: right;
+   }
+
+   .th-cell-id-tier--accent {
+     font-size: 0.82rem;
+     font-weight: 800;
+     letter-spacing: 0.04em;
+     text-transform: none;
+     color: var(--er-primary);
+   }
+
+   .th-cell-id-tier--muted {
+     font-size: 0.7rem;
+     font-weight: 700;
+     letter-spacing: 0.08em;
+     text-transform: uppercase;
+     color: var(--er-text-muted);
    }
    
    /* ---- Body scroll wrapper ---- */
@@ -428,8 +478,8 @@
      min-height: 68px;
      border-bottom: 1px solid var(--er-border);
      transition: background var(--er-transition);
-   }
-   
+     align-items: start;
+   }   
    .grid-row.patient-row:nth-child(odd) {
      background: rgba(255, 255, 255, 0.65);
    }
@@ -446,6 +496,36 @@
      text-align: right;
      overflow: hidden;
    }
+
+   /* Larger, readable text: elapsed, decision, nurse, doctor */
+   .td-cell.td-patient-font {
+     font-size: 1.12rem;
+     line-height: 1.45;
+   }
+
+   .td-cell.td-patient-font .decision-badge {
+     font-size: 1.05rem;
+   }
+
+   .td-cell.td-patient-font .staff-name {
+     font-size: 1.12rem;
+   }
+
+   /* צילומים + בדיקת דם — מעטפת עמודה וכרטיסים זהים (RTL: flex-start = ימין) */
+   .td-cell.td-col-exam {
+     background: rgba(37, 99, 235, 0.07);
+     border-radius: 8px;
+     box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.12);
+     display: flex;
+     flex-direction: column;
+     align-items: stretch;
+   }
+
+   .chips-wrap-exam {
+     gap: 6px;
+     width: 100%;
+     align-items: stretch;
+   }
    
    /* ============================================================
       CELL CONTENT STYLES
@@ -455,40 +535,58 @@
    .id-number {
      font-weight: 700;
      font-variant-numeric: tabular-nums;
-     font-size: 1.2rem;
+     font-size: 1.32rem;
      color: var(--er-text);
      letter-spacing: 0.05em;
+     display: block;
+     text-align: right;
+     width: 100%;
+   }
+
+   .td-cell.td-cell-id {
+     direction: rtl;
+     text-align: right;
+   }
+
+   .td-cell-id-stack {
+     display: block;
+     width: 100%;
+     text-align: right;
+     line-height: 1.2;
+   }
+
+   .patient-initials {
+     font-size: 1.08rem;
+     font-weight: 800;
+     line-height: 1.25;
+     color: var(--er-primary);
+     letter-spacing: 0.12em;
+     display: block;
+     text-align: right;
+     width: 100%;
+     margin-bottom: 0.2rem;
    }
    
-   /* Elapsed time */
+   /* Elapsed time — אחיד בשחור, ללא אזהרות אדום/כתום */
    .elapsed-time {
      font-variant-numeric: tabular-nums;
      font-weight: 600;
-     font-size: 0.95rem;
-     color: var(--er-text);
+     font-size: 1.12rem;
+     color: #0a0a0a;
    }
-   
-   .elapsed-time.warning {
-     color: var(--er-accent-amber);
-   }
-   
-   .elapsed-time.critical {
-     color: var(--er-accent-red);
-     animation: criticalBlink 2s ease-in-out infinite;
-   }
-   
-   @keyframes criticalBlink {
-     0%, 100% { opacity: 1; }
-     50% { opacity: 0.6; }
+
+   .elapsed-time.elapsed-time-plain,
+   .elapsed-time-plain {
+     color: #0a0a0a;
    }
    
    /* Decision badge */
    .decision-badge {
      display: inline-flex;
      align-items: center;
-     padding: 0.3rem 0.75rem;
+     padding: 0.35rem 0.8rem;
      border-radius: 6px;
-     font-size: 0.85rem;
+     font-size: 1.05rem;
      font-weight: 600;
      background: var(--er-card-bg);
      border: 1px solid var(--er-border);
@@ -580,17 +678,43 @@
      font-variant-numeric: tabular-nums;
    }
 
-   /* Answer 1 + Answer_Date: green + ✓ */
+   .consult-chip-name.consult-name-done {
+     color: #047857;
+     font-weight: 700;
+   }
+
+   .consult-done-pill {
+     display: inline-flex;
+     align-items: center;
+     gap: 0.4rem;
+     flex-wrap: wrap;
+   }
+
+   .consult-done-label {
+     font-size: 0.8rem;
+     font-weight: 800;
+     color: #047857;
+     letter-spacing: 0.02em;
+   }
+
+   /* Answer 1 + Answer_Date: green + ✓ + "הסתיים" */
    .chip.consult-chip.consult-done {
-     border-color: rgba(52, 211, 153, 0.35);
-     background: var(--er-accent-green-dim);
-     color: var(--er-accent-green);
+     border-color: rgba(16, 185, 129, 0.45);
+     background: rgba(16, 185, 129, 0.14);
+     color: #047857;
    }
 
    .chip.consult-chip.consult-done .consult-chip-name,
    .chip.consult-chip.consult-done .consult-answer-mark,
-   .chip.consult-chip.consult-done .chip-icon.icon-check {
-     color: var(--er-accent-green);
+   .chip.consult-chip.consult-done .chip-icon.icon-check,
+   .chip.consult-chip.consult-done .consult-done-label {
+     color: #047857;
+   }
+
+   .chip.consult-chip.consult-done .consult-answer-mark {
+     width: 20px;
+     height: 20px;
+     font-size: 0.68rem;
    }
 
    /* Waiting — same amber as pending imaging (no red) */
@@ -618,7 +742,7 @@
    }
    
    /* ============================================================
-      IMAGING & BLOOD — Chip style
+      צילומים & בדיקת דם — כרטיס משותף (.exam-chip)
       ============================================================ */
    .chips-wrap {
      display: flex;
@@ -641,31 +765,111 @@
      border: 1px solid var(--er-border);
    }
    
-   /* --- Imaging chip (answer yes/no only; green / yellow) --- */
-   .chip.img-chip {
-     background: rgba(255, 255, 255, 0.85);
+   /* --- כרטיס בדיקה משותף (צילום / דם), מיושר ימין מול כיוון העמודה --- */
+   .chip.exam-chip {
+     background: rgba(255, 255, 255, 0.92);
      border: 1px solid var(--er-border);
    }
 
-   .chip.img-chip.img-done {
-     background: var(--er-accent-green-dim);
-     border-color: rgba(5, 150, 105, 0.35);
-     color: var(--er-accent-green);
+   .chip.exam-chip-detailed {
+     flex-direction: column;
+     align-items: stretch;
+     align-self: stretch;
+     white-space: normal;
+     gap: 0.4rem;
+     padding: 0.45rem 0.55rem;
+     min-width: 0;
+     width: 100%;
+     box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
    }
 
-   .chip.img-chip.img-done .chip-name,
-   .chip.img-chip.img-done .chip-icon.img-answer-badge {
-     color: var(--er-accent-green);
+   .exam-chip-head {
+     display: flex;
+     flex-wrap: wrap;
+     align-items: center;
+     gap: 0.35rem;
+     justify-content: flex-start;
+     width: 100%;
    }
 
-   .chip.img-chip .img-no-answer {
-     font-variant-numeric: tabular-nums;
+   .col-kind {
+     flex-shrink: 0;
+     font-size: 0.65rem;
+     font-weight: 800;
+     letter-spacing: 0.06em;
+     color: #1d4ed8;
+     background: rgba(37, 99, 235, 0.18);
+     padding: 0.15rem 0.45rem;
+     border-radius: 4px;
+   }
+
+   .chip.exam-chip-detailed .exam-chip-name {
+     color: var(--er-text);
+     font-weight: 600;
+     max-width: none;
+     flex: 1;
+     min-width: 0;
+     white-space: normal;
+     word-break: break-word;
+   }
+
+   /* סטטוס מפורש — יישור כמו בשורת הכותרת (RTL), אייקון ✓ משותף */
+   .status-explicit {
+     display: flex;
+     align-items: center;
+     justify-content: flex-start;
+     width: 100%;
+     gap: 0.5rem;
+     flex-wrap: wrap;
+     margin-top: 0.05rem;
+   }
+
+   .status-explicit-done .status-explicit-icon {
+     display: inline-flex;
+     align-items: center;
+     justify-content: center;
+     width: 24px;
+     height: 24px;
+     border-radius: 50%;
+     background: #059669;
+     color: #fff;
+     font-size: 0.78rem;
+     font-weight: 900;
+     line-height: 1;
+     flex-shrink: 0;
+     box-shadow: 0 1px 3px rgba(5, 150, 105, 0.4);
+   }
+
+   .status-explicit-text {
+     font-size: 0.88rem;
+     font-weight: 800;
+     color: #047857;
+     letter-spacing: 0.01em;
+   }
+
+   .status-explicit-wait .status-explicit-text {
+     color: #92400e;
      font-weight: 700;
-     font-size: 0.95rem;
-     color: var(--er-accent-amber);
    }
 
-   .chip.img-chip.img-pending .chip-name {
+   .status-explicit-wait-mark {
+     font-weight: 900;
+     font-size: 1.05rem;
+     color: #b45309;
+     line-height: 1;
+   }
+
+   .chip.exam-chip.exam-done {
+     background: rgba(16, 185, 129, 0.12);
+     border-color: rgba(5, 150, 105, 0.4);
+   }
+
+   .chip.exam-chip.exam-pending {
+     background: rgba(251, 191, 36, 0.12);
+     border-color: rgba(180, 83, 9, 0.35);
+   }
+
+   .chip.exam-chip.exam-pending .exam-chip-name {
      color: var(--er-text-secondary);
    }
    
@@ -683,41 +887,6 @@
      color: var(--er-primary);
    }
    
-   .chip.img-chip.img-pending {
-     background: var(--er-accent-amber-dim);
-     border-color: rgba(180, 83, 9, 0.35);
-   }
-   
-   /* --- Blood chip — ✓ ירוק / — צהוב, ללא אדום --- */
-   .chip.blood-chip {
-     background: rgba(255, 255, 255, 0.85);
-     border: 1px solid var(--er-border);
-     justify-content: center;
-     min-width: 2rem;
-     padding: 0.28rem 0.5rem;
-   }
-
-   .chip.blood-chip.blood-done {
-     background: var(--er-accent-green-dim);
-     border-color: rgba(5, 150, 105, 0.35);
-   }
-
-   .chip.blood-chip.blood-pending {
-     background: var(--er-accent-amber-dim);
-     border-color: rgba(180, 83, 9, 0.35);
-   }
-
-   .chip.blood-chip .blood-answer-mark {
-     flex-shrink: 0;
-   }
-
-   .chip.blood-chip .blood-no-result-mark {
-     font-weight: 800;
-     font-size: 0.95rem;
-     color: var(--er-accent-amber);
-   }
-
-   /* Status icon circle — blood uses same ✓ capsule as imaging where applicable */
    .chip .chip-icon {
      display: inline-flex;
      align-items: center;

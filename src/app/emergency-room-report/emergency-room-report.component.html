@@ -8,6 +8,8 @@
         LIVE
       </span>
       <span *ngIf="backgroundRefreshing" class="updating-badge">מתעדכן...</span>
+      <span *ngIf="labPending && mergedRows.length > 0" class="lab-pending-badge" title="נטען אחרי הגעת מטופלי מיון">מעבדה…</span>
+      <span *ngIf="labError && mergedRows.length > 0" class="lab-pending-badge lab-error-badge" title="{{ labError }}">מעבדה לא נטענה</span>
     </div>
     <div class="top-bar-center">
       <button class="refresh-btn" (click)="refresh()" [disabled]="loading" aria-label="רענן" matTooltip="רענן">
@@ -59,7 +61,10 @@
       <!-- HEADER (grid-row) -->
       <div class="table-header-wrap">
         <div class="grid-row header-row">
-          <div class="th-cell">ת.ז</div>
+          <div class="th-cell th-cell-id" aria-label="ראשי תיבות וסיומ תעודת זהות">
+            <span class="th-cell-id-tier th-cell-id-tier--accent">ראשי תיבות</span>
+            <span class="th-cell-id-tier th-cell-id-tier--muted">סיומ ת.ז</span>
+          </div>
           <div class="th-cell">זמן שהייה</div>
           <div class="th-cell">החלטה</div>
           <div class="th-cell">ייעוצים</div>
@@ -105,20 +110,23 @@
   <!-- ===== ROW TEMPLATE ===== -->
   <ng-template #rowTpl let-row>
 
-    <!-- ID -->
-    <div class="td-cell">
-      <span class="id-number">{{ getLast4Digits(row.Id_Num) }}</span>
+    <!-- ID + optional initials (מיושרים לימין, גודל ברור למטופלים) -->
+    <div class="td-cell td-cell-id">
+      <div class="td-cell-id-stack">
+        <span class="patient-initials" *ngIf="row.Initials" [attr.title]="'ראשי תיבות'">{{ row.Initials }}</span>
+        <span class="id-number">{{ getLast4Digits(row.Id_Num) }}</span>
+      </div>
     </div>
 
-    <!-- Elapsed -->
-    <div class="td-cell">
-      <span class="elapsed-time" [ngClass]="getElapsedClass(row.Entry_Date)">
+    <!-- Elapsed — uniform black, no severity coloring -->
+    <div class="td-cell td-patient-font">
+      <span class="elapsed-time elapsed-time-plain">
         {{ getElapsedFromEntry(row.Entry_Date) }}
       </span>
     </div>
 
     <!-- Decision -->
-    <div class="td-cell">
+    <div class="td-cell td-patient-font">
       <span class="decision-badge" [ngClass]="getDecisionClass(row.Decision_Description)">
         {{ getDecisionDisplayText(row.Decision_Description) }}
       </span>
@@ -134,10 +142,13 @@
                [class.consult-pending]="c.chipVariant === 'pending'"
                [class.consult-not-final]="c.chipVariant === 'not_final'">
             <div class="consult-chip-stack">
-              <span class="chip-name consult-chip-name">{{ c.unitName }}</span>
+              <span class="chip-name consult-chip-name" [class.consult-name-done]="c.chipVariant === 'done'">{{ c.unitName }}</span>
               <div class="consult-chip-meta">
                 <span *ngIf="c.chipVariant === 'done'" class="consult-status consult-status-done" [attr.title]="getConsultStatusTitle(c.chipVariant)">
-                  <span class="chip-icon icon-check consult-answer-mark">✓</span>
+                  <span class="consult-done-pill">
+                    <span class="chip-icon icon-check consult-answer-mark">✓</span>
+                    <span class="consult-done-label">הסתיים</span>
+                  </span>
                 </span>
                 <span *ngIf="c.chipVariant === 'pending'" class="consult-status consult-status-pending" [attr.title]="getConsultStatusTitle(c.chipVariant)">—</span>
                 <span *ngIf="c.chipVariant === 'not_final'" class="consult-status consult-status-partial" [attr.title]="getConsultStatusTitle(c.chipVariant)">⋯</span>
@@ -151,41 +162,51 @@
       </ng-template>
     </div>
 
-    <!-- Imaging — chip style -->
-    <div class="td-cell">
+    <!-- Imaging — צילום + שם + סטטוס (עיצוב משותף עם בדיקת דם) -->
+    <div class="td-cell td-col-exam">
       <ng-container *ngIf="row.ImagingList && row.ImagingList.length > 0; else noImg">
-        <div class="chips-wrap">
+        <div class="chips-wrap chips-wrap-exam">
           <div *ngFor="let img of row.ImagingList"
-               class="chip img-chip"
-               [class.img-pending]="!img.hasResult"
-               [class.img-done]="img.hasResult">
-            <span class="chip-name">{{ img.name }}</span>
-            <ng-container *ngIf="img.hasResult; else imgPending">
-              <span class="chip-icon icon-check img-answer-badge" aria-hidden="true">✓</span>
-            </ng-container>
-            <ng-template #imgPending>
-              <span class="img-no-answer" title="טרם התקבלה תוצאה">—</span>
-            </ng-template>
+               class="chip exam-chip exam-chip-detailed"
+               [class.exam-pending]="!img.hasResult"
+               [class.exam-done]="img.hasResult">
+            <div class="exam-chip-head">
+              <span class="col-kind">צילום</span>
+              <span class="chip-name exam-chip-name">{{ img.name }}</span>
+            </div>
+            <div *ngIf="img.hasResult" class="status-explicit status-explicit-done">
+              <span class="status-explicit-icon">✓</span>
+              <span class="status-explicit-text">יש תוצאה</span>
+            </div>
+            <div *ngIf="!img.hasResult" class="status-explicit status-explicit-wait" title="טרם התקבלה תוצאה מצילום">
+              <span class="status-explicit-wait-mark">—</span>
+              <span class="status-explicit-text">אין תוצאה עדיין</span>
+            </div>
           </div>
         </div>
       </ng-container>
       <ng-template #noImg><span class="no-data">—</span></ng-template>
     </div>
 
-    <!-- Blood Tests — תוצאה בלבד: ✓ / — (ירוק וצהוב, ללא זמנים) -->
-    <div class="td-cell">
+    <!-- Blood — אותם כרטיסים וכיתור כמו צילומים -->
+    <div class="td-cell td-col-exam">
       <ng-container *ngIf="row.BloodTestsList && row.BloodTestsList.length > 0; else noBlood">
-        <div class="chips-wrap">
+        <div class="chips-wrap chips-wrap-exam">
           <div *ngFor="let b of row.BloodTestsList"
-               class="chip blood-chip"
-               [class.blood-done]="b.hasResult"
-               [class.blood-pending]="!b.hasResult">
-            <ng-container *ngIf="b.hasResult; else bloodNoResult">
-              <span class="chip-icon icon-check blood-answer-mark" [attr.title]="'התקבלה תוצאה'">✓</span>
-            </ng-container>
-            <ng-template #bloodNoResult>
-              <span class="blood-no-result-mark" [attr.title]="'טרם התקבלה תוצאה'">—</span>
-            </ng-template>
+               class="chip exam-chip exam-chip-detailed"
+               [class.exam-done]="b.hasResult"
+               [class.exam-pending]="!b.hasResult">
+            <div class="exam-chip-head">
+              <span class="col-kind">בדיקת דם</span>
+            </div>
+            <div *ngIf="b.hasResult" class="status-explicit status-explicit-done">
+              <span class="status-explicit-icon">✓</span>
+              <span class="status-explicit-text">יש תוצאה</span>
+            </div>
+            <div *ngIf="!b.hasResult" class="status-explicit status-explicit-wait" title="טרם התקבלה תוצאה מהמעבדה">
+              <span class="status-explicit-wait-mark">—</span>
+              <span class="status-explicit-text">אין תוצאה עדיין</span>
+            </div>
           </div>
         </div>
       </ng-container>
@@ -193,12 +214,12 @@
     </div>
 
     <!-- Nurse -->
-    <div class="td-cell">
+    <div class="td-cell td-patient-font">
       <span class="staff-name" [class.empty]="row.Nurse_Name === '—'">{{ row.Nurse_Name }}</span>
     </div>
 
     <!-- Doctor -->
-    <div class="td-cell">
+    <div class="td-cell td-patient-font">
       <span class="staff-name" [class.empty]="row.Doctor_Name === '—'">{{ row.Doctor_Name }}</span>
     </div>
 
