@@ -417,6 +417,286 @@
         0 3px 10px rgba(0, 0, 0, 0.35) !important;
 }
 
+/* פס מדדים עליון — צבע נבחר לפי מקטע (תואם לטוגלי chartView) */
+/* ניתוחים שבוצעו — כחול (מדדי ניתוחים) */
+.top-quick-metrics-box
+    .custom-toggle-group
+    mat-button-toggle.top-quick-slot--performed.mat-button-toggle-checked,
+.top-quick-metrics-box
+    .custom-toggle-group
+    mat-button-toggle[value="performed"].mat-button-toggle-checked,
+.top-quick-metrics-box
+    .custom-toggle-group
+    mat-button-toggle[ng-reflect-value="performed"].mat-button-toggle-checked {
+    background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%) !important;
+    color: #1d4ed8 !important;
+    border-color: #2563eb !important;
+    box-shadow:
+        0 4px 14px rgba(37, 99, 235, 0.22),
+        0 2px 6px rgba(15, 23, 42, 0.08) !important;
+}
+.dash.dark
+    .top-quick-metrics-box
+    .custom-toggle-group
+    mat-button-toggle.top-quick-slot--performed.mat-button-toggle-checked,
+.dash.dark
+    .top-quick-metrics-box
+    .custom-toggle-group
+    mat-button-toggle[value="performed"].mat-button-toggle-checked,
+.dash.dark
+    .top-quick-metrics-box
+    .custom-toggle-group
+    mat-button-toggle[ng-reflect-value="performed"].mat-button-toggle-checked {
+    background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%) !important;
+    color: #ffffff !important;
+    border-color: rgba(191, 219, 254, 0.95) !important;
+    box-shadow:
+        0 6px 20px rgba(37, 99, 235, 0.45),
+        0 2px 8px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* זמני המתנה — סגול (זמני חדר) */
+.top-quick-metrics-box
+    .custom-toggle-group
+    mat-button-toggle.top-quick-slot--wait.mat-button-toggle-checked,
+.top-quick-metrics-box
+    .custom-toggle-group
+    mat-button-toggle[value="wait"].mat-button-toggle-checked,
+.top-quick-metrics-box
+    .custom-toggle-group
+    mat-button-toggle[ng-reflect-value="wait"].mat-button-toggle-checked {
+    background: linear-gradient(135deg, #f5f3ff 0%, #e9d5ff 100%) !important;
+    color: #6d28d9 !important;
+    border-color: #7c3aed !important;
+    box-shadow:
+        0 4px 14px rgba(124, 58, 237, 0.2),
+        0 2px 6px rgba(15, 23, 42, 0.08) !important;
+}
+.dash.dark
+    .top-quick-metrics-box
+    .custom-toggle-group
+    mat-button-toggle.top-quick-slot--wait.mat-button-toggle-checked,
+.dash.dark
+    .top-quick-metrics-box
+    .custom-toggle-group
+    mat-button-toggle[value="wait"].mat-button-toggle-checked,
+.dash.dark
+    .top-quick-metrics-box
+    .custom-toggle-group
+    mat-button-toggle[ng-reflect-value="wait"].mat-button-toggle-checked {
+    background: linear-gradient(135deg, #6d28d9 0%, #4c1d95 100%) !important;
+    color: #ffffff !important;
+    border-color: rgba(233, 213, 255, 0.95) !important;
+    box-shadow:
+        0 6px 20px rgba(124, 58, 237, 0.42),
+        0 2px 8px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* הכנסות — ענבר / צהוב בהיר */
+.top-quick-metrics-box
+    .custom-toggle-group
+    mat-button-toggle.top-quick-slot--revenue.mat-button-toggle-checked,
+.top-quick-metrics-box
+    .custom-toggle-group
+    mat-button-toggle[value="revenue"].mat-button-toggle-checked,
+.top-quick-metrics-box
+    .custom-toggle-group
+    mat-button-toggle[ng-reflect-value="revenue"].mat-button-toggle-checked {
+    background: linear-gradient(135deg, #fffbeb 0%, #fde68a 100%) !important;
+    color: #a16207 !important;
+    border-color: #d97706 !important;
+    box-shadow:
+        0 4px 14px rgba(217, 119, 6, 0.22),
+        0 2px 6px rgba(15, 23, 42, 0.08) !important;
+}
+.dash.dark
+    .top-quick-metrics-box
+    .custom-toggle-group
+    mat-button-toggle.top-quick-slot--revenue.mat-button-toggle-checked,
+.dash.dark
+    .top-quick-metrics-box
+    .custom-toggle-group
+    mat-button-toggle[value="revenue"].mat-button-toggle-checked,
+.dash.dark
+    .top-quick-metrics-box
+    .custom-toggle-group
+    mat-button-toggle[ng-reflect-value="revenue"].mat-button-toggle-checked {
+    background: linear-gradient(135deg, #b45309 0%, #92400e 100%) !important;
+    color: #ffffff !important;
+    border-color: rgba(253, 230, 138, 0.95) !important;
+    box-shadow:
+        0 6px 20px rgba(245, 158, 11, 0.4),
+        0 2px 8px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* ביטולים — אדום */
+.top-quick-metrics-box
+    .custom-toggle-group
+    mat-button-toggle.top-quick-slot--cancellations.mat-button-toggle-checked,
+.top-quick-metrics-box
+    .custom-toggle-group
+    mat-button-toggle[value="cancellations"].mat-button-toggle-checked,
+.top-quick-metrics-box
+    .custom-toggle-group
+    mat-button-toggle[ng-reflect-value="cancellations"].mat-button-toggle-checked {
+    background: linear-gradient(135deg, #fef2f2 0%, #fecaca 100%) !important;
+    color: #b91c1c !important;
+    border-color: #dc2626 !important;
+    box-shadow:
+        0 4px 14px rgba(220, 38, 38, 0.2),
+        0 2px 6px rgba(15, 23, 42, 0.08) !important;
+}
+.dash.dark
+    .top-quick-metrics-box
+    .custom-toggle-group
+    mat-button-toggle.top-quick-slot--cancellations.mat-button-toggle-checked,
+.dash.dark
+    .top-quick-metrics-box
+    .custom-toggle-group
+    mat-button-toggle[value="cancellations"].mat-button-toggle-checked,
+.dash.dark
+    .top-quick-metrics-box
+    .custom-toggle-group
+    mat-button-toggle[ng-reflect-value="cancellations"].mat-button-toggle-checked {
+    background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%) !important;
+    color: #ffffff !important;
+    border-color: rgba(254, 202, 202, 0.95) !important;
+    box-shadow:
+        0 6px 20px rgba(239, 68, 68, 0.4),
+        0 2px 8px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* Hover לפי מקטע (לא נבחר) */
+.top-quick-metrics-box
+    .custom-toggle-group
+    mat-button-toggle.top-quick-slot--performed:not(.mat-button-toggle-checked):hover,
+.top-quick-metrics-box
+    .custom-toggle-group
+    mat-button-toggle[value="performed"]:not(.mat-button-toggle-checked):hover,
+.top-quick-metrics-box
+    .custom-toggle-group
+    mat-button-toggle[ng-reflect-value="performed"]:not(
+        .mat-button-toggle-checked
+    ):hover {
+    background: rgba(219, 234, 254, 0.85) !important;
+    color: #1d4ed8 !important;
+    border-color: rgba(147, 197, 253, 0.45) !important;
+}
+.top-quick-metrics-box
+    .custom-toggle-group
+    mat-button-toggle.top-quick-slot--wait:not(.mat-button-toggle-checked):hover,
+.top-quick-metrics-box
+    .custom-toggle-group
+    mat-button-toggle[value="wait"]:not(.mat-button-toggle-checked):hover,
+.top-quick-metrics-box
+    .custom-toggle-group
+    mat-button-toggle[ng-reflect-value="wait"]:not(.mat-button-toggle-checked):hover {
+    background: rgba(233, 213, 255, 0.9) !important;
+    color: #6d28d9 !important;
+    border-color: rgba(167, 139, 250, 0.45) !important;
+}
+.top-quick-metrics-box
+    .custom-toggle-group
+    mat-button-toggle.top-quick-slot--revenue:not(.mat-button-toggle-checked):hover,
+.top-quick-metrics-box
+    .custom-toggle-group
+    mat-button-toggle[value="revenue"]:not(.mat-button-toggle-checked):hover,
+.top-quick-metrics-box
+    .custom-toggle-group
+    mat-button-toggle[ng-reflect-value="revenue"]:not(
+        .mat-button-toggle-checked
+    ):hover {
+    background: rgba(254, 243, 199, 0.95) !important;
+    color: #a16207 !important;
+    border-color: rgba(251, 191, 36, 0.5) !important;
+}
+.top-quick-metrics-box
+    .custom-toggle-group
+    mat-button-toggle.top-quick-slot--cancellations:not(.mat-button-toggle-checked):hover,
+.top-quick-metrics-box
+    .custom-toggle-group
+    mat-button-toggle[value="cancellations"]:not(.mat-button-toggle-checked):hover,
+.top-quick-metrics-box
+    .custom-toggle-group
+    mat-button-toggle[ng-reflect-value="cancellations"]:not(
+        .mat-button-toggle-checked
+    ):hover {
+    background: rgba(254, 226, 226, 0.95) !important;
+    color: #b91c1c !important;
+    border-color: rgba(248, 113, 113, 0.45) !important;
+}
+
+.dash.dark
+    .top-quick-metrics-box
+    .custom-toggle-group
+    mat-button-toggle.top-quick-slot--performed:not(.mat-button-toggle-checked):hover,
+.dash.dark
+    .top-quick-metrics-box
+    .custom-toggle-group
+    mat-button-toggle[value="performed"]:not(.mat-button-toggle-checked):hover,
+.dash.dark
+    .top-quick-metrics-box
+    .custom-toggle-group
+    mat-button-toggle[ng-reflect-value="performed"]:not(
+        .mat-button-toggle-checked
+    ):hover {
+    background: rgba(37, 99, 235, 0.25) !important;
+    color: #e0f2fe !important;
+    border-color: rgba(96, 165, 250, 0.35) !important;
+}
+.dash.dark
+    .top-quick-metrics-box
+    .custom-toggle-group
+    mat-button-toggle.top-quick-slot--wait:not(.mat-button-toggle-checked):hover,
+.dash.dark
+    .top-quick-metrics-box
+    .custom-toggle-group
+    mat-button-toggle[value="wait"]:not(.mat-button-toggle-checked):hover,
+.dash.dark
+    .top-quick-metrics-box
+    .custom-toggle-group
+    mat-button-toggle[ng-reflect-value="wait"]:not(.mat-button-toggle-checked):hover {
+    background: rgba(124, 58, 237, 0.28) !important;
+    color: #f5f3ff !important;
+    border-color: rgba(167, 139, 250, 0.35) !important;
+}
+.dash.dark
+    .top-quick-metrics-box
+    .custom-toggle-group
+    mat-button-toggle.top-quick-slot--revenue:not(.mat-button-toggle-checked):hover,
+.dash.dark
+    .top-quick-metrics-box
+    .custom-toggle-group
+    mat-button-toggle[value="revenue"]:not(.mat-button-toggle-checked):hover,
+.dash.dark
+    .top-quick-metrics-box
+    .custom-toggle-group
+    mat-button-toggle[ng-reflect-value="revenue"]:not(
+        .mat-button-toggle-checked
+    ):hover {
+    background: rgba(245, 158, 11, 0.28) !important;
+    color: #fef3c7 !important;
+    border-color: rgba(251, 191, 36, 0.35) !important;
+}
+.dash.dark
+    .top-quick-metrics-box
+    .custom-toggle-group
+    mat-button-toggle.top-quick-slot--cancellations:not(.mat-button-toggle-checked):hover,
+.dash.dark
+    .top-quick-metrics-box
+    .custom-toggle-group
+    mat-button-toggle[value="cancellations"]:not(.mat-button-toggle-checked):hover,
+.dash.dark
+    .top-quick-metrics-box
+    .custom-toggle-group
+    mat-button-toggle[ng-reflect-value="cancellations"]:not(
+        .mat-button-toggle-checked
+    ):hover {
+    background: rgba(220, 38, 38, 0.28) !important;
+    color: #fee2e2 !important;
+    border-color: rgba(248, 113, 113, 0.35) !important;
+}
+
 .icon-divider {
     width: 1px;
     height: 24px;

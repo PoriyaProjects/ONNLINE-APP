@@ -344,7 +344,10 @@ interface EmployeeInfo {
 @Component({
     selector: "app-surgeries-dashborad",
     templateUrl: "./surgeries-dashborad.component.html",
-    styleUrls: ["./surgeries-dashborad.component.css"],
+    styleUrls: [
+        "./surgeries-dashborad.component.css",
+        "./surgeries-subpanel-mock.ngdeep.css",
+    ],
     animations: [
         trigger("fadeInOut", [
             transition(":enter", [
