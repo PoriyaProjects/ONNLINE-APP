@@ -135,33 +135,33 @@
 
     <table id="excel-table" dir="rtl" style="display: none; border-collapse: collapse; border: 1px solid #000;">
         <tr>
-            <th style="border: 1px solid #000; font-weight: 800;">תעודת זהות</th>
-            <th style="border: 1px solid #000; font-weight: 800;">שם פרטי ומשפחה</th>
-            <th style="border: 1px solid #000; font-weight: 800;">שם האב</th>
-            <th style="border: 1px solid #000; font-weight: 800;">מחלקה</th>
-            <th style="border: 1px solid #000; font-weight: 800;">מספר חדר</th>
-            <th style="border: 1px solid #000; font-weight: 800;">סוג תזונה</th>
-            <th style="border: 1px solid #000; font-weight: 800;">העשרה תזונתית</th>
-            <th style="border: 1px solid #000; font-weight: 800;">מרקם למזון</th>
-            <th style="border: 1px solid #000; font-weight: 800;">רגישויות אשפוז נוכחי</th>
-            <th style="border: 1px solid #000; font-weight: 800;">רגישויות בעבר</th>
-            <th style="border: 1px solid #000; font-weight: 800;">הסמכת נוזלים לשתייה</th>
-            <th style="border: 1px solid #000; font-weight: 800;">הנחיות אכילה</th>
+            <th style="border: 1px solid #000; font-weight: 800;text-align: center;">מספר מקרה</th>
+            <th style="border: 1px solid #000; font-weight: 800;text-align: center;">שם מלא</th>
+            <th style="border: 1px solid #000; font-weight: 800;text-align: center;">שם האב</th>
+            <th class="department-col header-cell">מחלקה</th>
+            <th style="border: 1px solid #000; font-weight: 800;text-align: center;">מספר חדר</th>
+            <th style="border: 1px solid #000; font-weight: 800;text-align: center;">רגישויות אשפוז נוכחי</th>
+            <th style="border: 1px solid #000; font-weight: 800;text-align: center;">רגישויות בעבר</th>
+            <th style="border: 1px solid #000; font-weight: 800;text-align: center;">סוג תזונה</th>
+            <th style="border: 1px solid #000; font-weight: 800;text-align: center;">העשרה תזונתית</th>
+            <th style="border: 1px solid #000; font-weight: 800;text-align: center;">מרקם למזון</th>
+            <th style="border: 1px solid #000; font-weight: 800;text-align: center;">מרקם לנוזל</th>
+            <th style="border: 1px solid #000; font-weight: 800;text-align: center;">הנחיות אכילה</th>
 
         </tr>
         <tr *ngFor="let nut of dataSourceHos.filteredData">
-            <td style="border: 1px solid #000;"> {{nut.IDNumber}} </td>
-            <td style="border: 1px solid #000;"> {{nut.FirstName}} {{nut.LastName}} </td>
-            <td style="border: 1px solid #000;"> {{nut.FatherName}} </td>
-            <td style="border: 1px solid #000;"> {{nut.DepartName}} </td>
-            <td style="border: 1px solid #000;"> {{nut.RoomNumber}} </td>
-            <td style="border: 1px solid #000;"> {{nut.FoodType}} </td>
-            <td style="border: 1px solid #000;"> {{nut.Food_Anamnesis}} </td>
-            <td style="border: 1px solid #000;"> {{nut.FoodTexture}} </td>
-            <td style="border: 1px solid #000;"> {{nut.CurrentAllergy}} </td>
-            <td style="border: 1px solid #000;"> {{nut.OldAllergy}} </td>
-            <td style="border: 1px solid #000;"> {{nut.Liquid_Type}} </td>
-            <td style="border: 1px solid #000;"> {{nut.Food_Orders}} </td>
+            <td style="border: 1px solid #000;text-align: center;"> {{nut.CaseNumber}} </td>
+            <td style="border: 1px solid #000;text-align: center;"> {{nut.FirstName}} {{nut.LastName}} </td>
+            <td style="border: 1px solid #000;text-align: center;"> {{nut.FatherName}} </td>
+            <td class="department-col"> {{nut.DepartName}} </td>
+            <td style="border: 1px solid #000;text-align: center;"> {{nut.RoomNumber}} </td>
+            <td style="border: 1px solid #000;text-align: center;"> {{nut.CurrentAllergy}} </td>
+            <td style="border: 1px solid #000;text-align: center;"> {{nut.OldAllergy}} </td>
+            <td style="border: 1px solid #000;text-align: center;"> {{nut.FoodType}} </td>
+            <td style="border: 1px solid #000;text-align: center;"> {{nut.Food_Anamnesis}} </td>
+            <td style="border: 1px solid #000;text-align: center;"> {{nut.FoodTexture}} </td>
+            <td style="border: 1px solid #000;text-align: center;"> {{nut.Liquid_Type}} </td>
+            <td style="border: 1px solid #000;text-align: center;"> {{nut.Food_Orders}} </td>
         </tr>
     </table>
 </div>
