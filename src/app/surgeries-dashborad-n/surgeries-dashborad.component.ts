@@ -1780,6 +1780,23 @@ export class SurgeriesDashboradComponent
     surgeriesPerDayData: DeptTimeMetricRow[] = [];
     /** סינון לפי אתר עבור גרף משך ניתוח ממוצע – ALL = כל האתרים */
     avgDurationSiteFilter: AvgDurationSiteFilter = "ALL";
+    /**
+     * סינון אתר/חדר לגרף «זמן מנוצל ליום» (GetApprovedUtilization).
+     * ברירת מחדל: חדר ניתוח כללי בלבד.
+     */
+    approvedUtilizationSiteFilter: AvgDurationSiteFilter = "חנ-כללי";
+    /** אפשרויות ל־mat-select — ערכי Site כפי שמוחזרים מה־API */
+    readonly approvedUtilizationSiteSelectOptions: {
+        value: AvgDurationSiteFilter;
+        label: string;
+    }[] = [
+        { value: "חנ-כללי", label: "חדר ניתוח כללי" },
+        { value: "חנ-אמבול", label: "אמבולטורי" },
+        { value: "חנ-יולד", label: "יולדות" },
+        { value: "חנ-מחלקה", label: "חדר מחלקה" },
+        { value: "חנ-פהלסת", label: "פה ולסת" },
+        { value: "ALL", label: "כל חדרי הניתוח" },
+    ];
     avgDurationChartColumns: any[] = [];
     avgDurationChartData: any[] = [];
     avgDurationChartOptions: any = {};
@@ -2345,11 +2362,8 @@ export class SurgeriesDashboradComponent
         }
         const canvas = this.yoyCombinedChartRef.nativeElement;
         const ctx = canvas.getContext("2d");
-        if (
-            !ctx ||
-            !this.departmentYoyData ||
-            this.departmentYoyData.length === 0
-        ) {
+        const rows = this.getFilteredDepartmentYoyData();
+        if (!ctx || !rows.length) {
             return;
         }
 
@@ -2359,16 +2373,10 @@ export class SurgeriesDashboradComponent
             this.yoyCombinedChart = null;
         }
 
-        const labels = this.departmentYoyData.map((d) => d.Department || "");
-        const surgeries = this.departmentYoyData.map(
-            (d) => d.SurgeriesPerRoom_Pct ?? 0,
-        );
-        const times = this.departmentYoyData.map(
-            (d) => d.AvgSurgeryTime_Pct ?? 0,
-        );
-        const revenues = this.departmentYoyData.map(
-            (d) => d.AvgRevenue_Pct ?? 0,
-        );
+        const labels = rows.map((d) => d.Department || "");
+        const surgeries = rows.map((d) => d.SurgeriesPerRoom_Pct ?? 0);
+        const times = rows.map((d) => d.AvgSurgeryTime_Pct ?? 0);
+        const revenues = rows.map((d) => d.AvgRevenue_Pct ?? 0);
 
         const isDark = this.isDark;
         const textColor = isDark ? "#e5e7eb" : "#0f172a";
@@ -8375,10 +8383,13 @@ export class SurgeriesDashboradComponent
         if (!this.departmentYoyData || !this.departmentYoyData.length) {
             return [];
         }
+        const withoutCardiology = this.departmentYoyData.filter(
+            (d) => (d.Department || "").trim() !== "קרדיולוגיה",
+        );
         if (!this.chartDepartmentFilter) {
-            return this.departmentYoyData;
+            return withoutCardiology;
         }
-        return this.departmentYoyData.filter(
+        return withoutCardiology.filter(
             (d) => (d.Department || "").trim() === this.chartDepartmentFilter,
         );
     }
@@ -12334,19 +12345,63 @@ export class SurgeriesDashboradComponent
         this.refreshRoomTimesSideTableFromCurrentView();
     }
 
+    private filterApprovedUtilizationBySelectedRoom(
+        rows: ApprovedUtilizationDto[],
+    ): ApprovedUtilizationDto[] {
+        if (
+            !this.approvedUtilizationSiteFilter ||
+            this.approvedUtilizationSiteFilter === "ALL"
+        ) {
+            return rows;
+        }
+        const want = (this.approvedUtilizationSiteFilter as string).trim();
+        return rows.filter((r) => (r.Site || "").trim() === want);
+    }
+
+    /** סינון סיידבר + אבחנה + חדר ניתוח (לגרף מאושר) */
+    private pipelineApprovedUtilizationRows(
+        rows: ApprovedUtilizationDto[],
+    ): ApprovedUtilizationDto[] {
+        const a = rows.filter((r) =>
+            this.matchesRoomTimesFilters({
+                Site: r.Site,
+                Wing: r.Wing,
+            }),
+        );
+        const b = this.filterBySelectedDiagnosis(a);
+        return this.filterApprovedUtilizationBySelectedRoom(b);
+    }
+
+    onApprovedUtilizationSiteFilterChange(value: AvgDurationSiteFilter): void {
+        this.approvedUtilizationSiteFilter = value;
+        this.refreshApprovedUtilizationChartFromCache();
+    }
+
+    /** בונה מחדש מהמטמון; אם אין מטמון — טוען מהשרת */
+    private refreshApprovedUtilizationChartFromCache(): void {
+        if (this.roomTimesView !== "approvedPerDay") {
+            return;
+        }
+        const baseYear = this.getBaseYearForRoomTimes();
+        const raw = this.approvedUtilizationRawByBaseYear.get(baseYear);
+        if (!raw || raw.length === 0) {
+            this.loadApprovedUtilizationPerDay();
+            return;
+        }
+        this.buildApprovedUtilizationChart(
+            this.pipelineApprovedUtilizationRows(raw),
+        );
+        this.cdr.detectChanges();
+    }
+
     private loadApprovedUtilizationPerDay(): void {
         const baseYear = this.getBaseYearForRoomTimes();
 
         const raw = this.approvedUtilizationRawByBaseYear.get(baseYear);
         if (raw && raw.length > 0) {
-            const filtered = raw.filter((r) =>
-                this.matchesRoomTimesFilters({
-                    Site: r.Site,
-                    Wing: r.Wing,
-                }),
+            this.buildApprovedUtilizationChart(
+                this.pipelineApprovedUtilizationRows(raw),
             );
-            const filteredBySite = this.filterBySelectedDiagnosis(filtered);
-            this.buildApprovedUtilizationChart(filteredBySite);
             this.isApprovedUtilizationLoading = false;
             this.cdr.detectChanges();
             return;
@@ -12369,16 +12424,9 @@ export class SurgeriesDashboradComponent
                     const list = Array.isArray(rows) ? rows : [];
                     this.approvedUtilizationRawByBaseYear.set(baseYear, list);
 
-                    const filtered = list.filter((r) =>
-                        this.matchesRoomTimesFilters({
-                            Site: r.Site,
-                            Wing: r.Wing,
-                        }),
+                    this.buildApprovedUtilizationChart(
+                        this.pipelineApprovedUtilizationRows(list),
                     );
-                    const filteredBySite =
-                        this.filterBySelectedDiagnosis(filtered);
-
-                    this.buildApprovedUtilizationChart(filteredBySite);
                     this.isApprovedUtilizationLoading = false;
                     this.cdr.detectChanges();
                 },
@@ -12415,7 +12463,13 @@ export class SurgeriesDashboradComponent
         const years = allYears.slice(-5);
         this.approvedUtilizationChartYears = years;
 
-        const cols: any[] = ["מחלקה"];
+        const siteSet = new Set(
+            rows
+                .map((r) => (r.Site || "").trim())
+                .filter((s) => s.length > 0),
+        );
+        const singleSiteInData = siteSet.size === 1;
+        const cols: any[] = [singleSiteInData ? "מחלקה" : "אתר / מחלקה"];
         years.forEach((y) => {
             cols.push(
                 { type: "number", label: y.toString() },
@@ -12429,7 +12483,9 @@ export class SurgeriesDashboradComponent
             Map<number, { min: number; label: string }>
         >();
         for (const r of rows) {
+            const site = (r.Site || "").trim() || "לא צוין";
             const wing = (r.Wing || "").trim() || "לא צוין";
+            const key = `${site}|${wing}`;
             const year = Number(r.Year);
             if (!years.includes(year)) continue;
             const min = r.AvgApprovedMin;
@@ -12437,24 +12493,44 @@ export class SurgeriesDashboradComponent
             const label = r.AvgApprovedHHMM
                 ? r.AvgApprovedHHMM
                 : this.formatMinutesToHM(min);
-            if (!byWingYear.has(wing)) byWingYear.set(wing, new Map());
-            byWingYear.get(wing)!.set(year, { min, label });
+            if (!byWingYear.has(key)) byWingYear.set(key, new Map());
+            byWingYear.get(key)!.set(year, { min, label });
         }
 
+        const parseSiteWingKey = (
+            k: string,
+        ): { site: string; wing: string } => {
+            const i = k.indexOf("|");
+            if (i === -1) return { site: "", wing: k };
+            return { site: k.slice(0, i), wing: k.slice(i + 1) };
+        };
+
         const wings = Array.from(byWingYear.keys())
-            .filter((w) => w !== "אחר" && w !== "קרדיולוגיה")
+            .filter((k) => {
+                const { wing } = parseSiteWingKey(k);
+                return wing !== "אחר" && wing !== "קרדיולוגיה";
+            })
             .sort((a, b) => {
-                const ia = this.orderedWings.indexOf(a);
-                const ib = this.orderedWings.indexOf(b);
-                if (ia !== -1 && ib !== -1) return ia - ib;
+                const { site: siteA, wing: wingA } = parseSiteWingKey(a);
+                const { site: siteB, wing: wingB } = parseSiteWingKey(b);
+                const ia = this.orderedWings.indexOf(wingA);
+                const ib = this.orderedWings.indexOf(wingB);
+                if (ia !== -1 && ib !== -1) {
+                    if (ia !== ib) return ia - ib;
+                    return siteA.localeCompare(siteB, "he");
+                }
                 if (ia !== -1) return -1;
                 if (ib !== -1) return 1;
-                return a.localeCompare(b, "he");
+                const wcmp = wingA.localeCompare(wingB, "he");
+                if (wcmp !== 0) return wcmp;
+                return siteA.localeCompare(siteB, "he");
             });
 
-        this.approvedUtilizationChartData = wings.map((wing) => {
+        this.approvedUtilizationChartData = wings.map((key) => {
+            const { site, wing } = parseSiteWingKey(key);
+            const rowLabel = singleSiteInData ? wing : `${site} – ${wing}`;
             const yearMap =
-                byWingYear.get(wing) ||
+                byWingYear.get(key) ||
                 new Map<number, { min: number; label: string }>();
             const series: any[] = [];
 
@@ -12467,7 +12543,7 @@ export class SurgeriesDashboradComponent
                 series.push({ v: v.min, f: v.label }, v.label);
             });
 
-            return [wing, ...series];
+            return [rowLabel, ...series];
         });
 
         const appr = this.patchGoogleChartHtmlTooltips(
