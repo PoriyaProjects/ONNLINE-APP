@@ -1352,12 +1352,11 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
                                     String(
                                         s.TimeExitingTheOperatingRoom,
                                     ).replace(/:/g, "") !== "0000";
+                                // מתוכנן: תמיד מלוח. בביצוע/הושלם: רק כשאין זמן אמת ב-RTM (לא לדרוס יציאה/כניסה בפועל)
                                 const useCalendarStart =
-                                    isPlanned ||
-                                    isInProgress ||
-                                    !hasActualStart;
+                                    isPlanned || !hasActualStart;
                                 const useCalendarEnd =
-                                    isPlanned || isInProgress || !hasActualEnd;
+                                    isPlanned || !hasActualEnd;
 
                                 // עדכון שעת כניסה
                                 if (
@@ -1442,7 +1441,8 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
                                 // חישוב שעת סיום: ArrivalTime + AvgDauration (או Duration)
                                 // לניתוח מתוכנן או בביצוע – אם יש שעת התחלה ומשך מתוכנן, מחשבים שעת סיום מתוכננת = ArrivalTime + AvgDauration/Duration
                                 if (
-                                    (isPlanned || isInProgress) &&
+                                    (isPlanned ||
+                                        (isInProgress && !hasActualEnd)) &&
                                     durationMinutes != null &&
                                     durationMinutes > 0
                                 ) {
@@ -1467,9 +1467,8 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
                                             );
                                             const endClock =
                                                 this.toHHmm(endDate);
-                                            s.timeExit =
-                                                s.TimeExitingTheOperatingRoom =
-                                                    endClock;
+                                            // משוער בלבד — לא לכתוב ל-TimeExitingTheOperatingRoom (שדה RTM)
+                                            s.timeExit = endClock;
                                         }
                                     }
                                 } else if (
@@ -1478,9 +1477,8 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
                                     String(cal.EndTime).trim() !== "" &&
                                     cal.EndTime !== "00:00"
                                 ) {
-                                    // אם אין משך, משתמשים ב-EndTime מהלוח
-                                    s.timeExit = s.TimeExitingTheOperatingRoom =
-                                        cal.EndTime;
+                                    // אם אין משך, משתמשים ב-EndTime מהלוח (תצוגה משוערת)
+                                    s.timeExit = cal.EndTime;
                                 }
                             }
                         }
@@ -5821,13 +5819,24 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
         );
     }
 
+    /** שעת יציאה אמיתית מ-RTM בלבד (לא משוערת מהלוח) */
+    private getActualRtmExitTime(
+        surgery: Surgery | Partial<Surgery>,
+    ): string | null {
+        const rtm = surgery?.TimeExitingTheOperatingRoom;
+        if (!rtm || this.isZeroTime(rtm)) return null;
+        return rtm;
+    }
+
     /**
-     * חילוץ שעת סיום ניתוח (תומך בשתי כינויות)
+     * חילוץ שעת סיום ניתוח: קודם RTM, אחר כך timeExit (משוער מהלוח)
      */
     private getExitTime(surgery: Surgery | Partial<Surgery>): string | null {
-        return (
-            surgery?.timeExit ?? surgery?.TimeExitingTheOperatingRoom ?? null
-        );
+        const actual = this.getActualRtmExitTime(surgery);
+        if (actual) return actual;
+        const estimated = surgery?.timeExit;
+        if (!estimated || this.isZeroTime(estimated)) return null;
+        return estimated;
     }
 
     /**
@@ -6246,8 +6255,8 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
         }
         const now = new Date();
 
-        const exitStr = this.getExitTime(s);
-        if (exitStr && !this.isZeroTime(exitStr)) {
+        const exitStr = this.getActualRtmExitTime(s);
+        if (exitStr) {
             const exitAt = this.parseClockWithDate(exitStr, base);
             if (exitAt && now.getTime() >= exitAt.getTime()) {
                 return true;
@@ -7149,6 +7158,7 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
 
     private _formatSurgeryTimesCore(surgery: Surgery): string {
         const entrance = this.getEntranceTime(surgery);
+        const actualExit = this.getActualRtmExitTime(surgery);
         const exit = this.getExitTime(surgery);
 
         const baseDate = surgery.SurgeryDate || this.selectedDate;
@@ -7156,6 +7166,7 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
         const entranceDisplay = this.formatTimeForDisplay(entrance);
 
         const hasEntrance = !!entrance && !this.isZeroTime(entrance);
+        const hasActualExit = !!actualExit;
         const hasExit = !!exit && !this.isZeroTime(exit);
         const durationDisplay = this.getExpectedDurationDisplay(surgery);
 
@@ -7201,19 +7212,36 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
                 exit,
                 baseDate,
             );
-            if (
-                status === "planned" ||
-                status === "inprogress" ||
-                status === "in progress"
-            ) {
-                return `<div class="times-row times-row-main" dir="ltr">${mainPair}</div><div class="times-row times-row-sub" dir="ltr">(משוער, ${durationDisplay})</div>`;
-            }
-            if (status === "completed" && hasEntrance) {
+            if (hasActualExit && hasEntrance) {
                 const entranceDate = this.parseClockWithDate(
                     entrance!,
                     baseDate,
                 );
-                const exitDate = this.parseClockWithDate(exit!, baseDate);
+                const exitDate = this.parseClockWithDate(actualExit!, baseDate);
+                if (entranceDate && exitDate) {
+                    let msE = entranceDate.getTime();
+                    let msX = exitDate.getTime();
+                    const DAY_MS = 24 * 60 * 60 * 1000;
+                    if (msX < msE) msX += DAY_MS;
+                    const actualMinutes = Math.floor((msX - msE) / 60000);
+                    const actualDuration = this.formatHM(actualMinutes);
+                    return `<motion class="times-row times-row-main" dir="ltr">${mainPair}</div><div class="times-row times-row-sub" dir="ltr">(בפועל: ${actualDuration})</div>`;
+                }
+            }
+            if (
+                !hasActualExit &&
+                (status === "planned" ||
+                status === "inprogress" ||
+                status === "in progress")
+            ) {
+                return `<div class="times-row times-row-main" dir="ltr">${mainPair}</div><div class="times-row times-row-sub" dir="ltr">(משוער, ${durationDisplay})</div>`;
+            }
+            if (hasActualExit && hasEntrance) {
+                const entranceDate = this.parseClockWithDate(
+                    entrance!,
+                    baseDate,
+                );
+                const exitDate = this.parseClockWithDate(actualExit!, baseDate);
                 if (entranceDate && exitDate) {
                     let msE = entranceDate.getTime();
                     let msX = exitDate.getTime();
