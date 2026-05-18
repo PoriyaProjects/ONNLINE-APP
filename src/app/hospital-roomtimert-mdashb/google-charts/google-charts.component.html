@@ -18,7 +18,7 @@
             </div>
             <p class="loader-panel-hint">מסנכרן נתונים. הלוח מציג את המידע האחרון עד להשלמת הטעינה…</p>
             <p *ngIf="nextRefreshAt && !autoRefreshPaused" class="loader-panel-schedule">
-              רענון אוטומטי כל 10 דקות עגולות | הבא בשעה {{ nextRefreshAt | date:'HH:mm' }}
+              רענון אוטומטי כל {{ autoRefreshIntervalMinutes }} דקות עגולות | הבא בשעה {{ nextRefreshAt | date:'HH:mm' }}
             </p>
           </div>
         </div>

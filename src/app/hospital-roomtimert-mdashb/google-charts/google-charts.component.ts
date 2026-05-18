@@ -407,7 +407,8 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
     nextRefreshAt: Date | null = null;
     autoRefreshPaused = false;
     lastLoaded: Date | null = null;
-    private readonly AUTO_REFRESH_INTERVAL_MINUTES = 10;
+    /** מרווח רענון אוטומטי (דקות), מיושר לשעון עגול — תואם ל-job בשרת (~כל 3 דקות) */
+    readonly autoRefreshIntervalMinutes = 3;
     private readonly ROOMS_DATA_CACHE_KEY_PREFIX = "rtmdashb.roomsData";
     /** true אחרי שהסתיים שלב 2 (לוח הניתוחים) – כדי להציג ניתוחים מתוכננים רק כשהמידע הסופי מוכן */
     calendarEnriched = false;
@@ -2810,11 +2811,11 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
     private getNextRoundedRefreshTime(from: Date): Date {
         const next = new Date(from);
         const minutes = next.getMinutes();
-        const remainder = minutes % this.AUTO_REFRESH_INTERVAL_MINUTES;
+        const remainder = minutes % this.autoRefreshIntervalMinutes;
         const minutesToAdd =
             remainder === 0
-                ? this.AUTO_REFRESH_INTERVAL_MINUTES
-                : this.AUTO_REFRESH_INTERVAL_MINUTES - remainder;
+                ? this.autoRefreshIntervalMinutes
+                : this.autoRefreshIntervalMinutes - remainder;
 
         next.setMinutes(minutes + minutesToAdd, 0, 0);
         return next;
