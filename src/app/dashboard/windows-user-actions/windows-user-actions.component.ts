@@ -161,6 +161,7 @@ export class WindowsUserActionsComponent implements OnInit {
             if (resetSucceeded) {
               this.passwordResetCompleted = true;
               this.getPcLoggedInUsers();
+              this.showAlert(alertBody);
             } else {
               this.showAlert(alertBody);
             }
