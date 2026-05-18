@@ -51,6 +51,12 @@ export type SurgeriesTopQuickMainSlot =
     | "revenue"
     | "cancellations";
 
+/** משתמשים שרואים את פס המעבר בין אזורי התוכן הראשיים (זמני המתנה / הכנסות / ביטולים) */
+const TOP_QUICK_MAIN_SLOT_SWITCHER_USERS = new Set([
+    "ccymerman",
+    "rbenmoshe",
+]);
+
 export type CompareDeptInsightTrend =
     | "up"
     | "down"
@@ -385,6 +391,10 @@ export class SurgeriesDashboradComponent
 
     private yoyCombinedChart: Chart | null = null;
     private yoyCombinedInlineChart: Chart | null = null;
+    /** שמירת אפשרויות Google Chart לפני מעבר למדד משולב (Chart.js) */
+    private savedGoogleChartOptionsBeforeYoy: any | null = null;
+    /** מאלץ יצירה מחדש של google-chart אחרי יציאה ממדד משולב */
+    showMainGoogleChart = true;
 
     // Guide Avatar
     showGuideAvatar = true;
@@ -1159,6 +1169,12 @@ export class SurgeriesDashboradComponent
         return this.topQuickMainSlot;
     }
 
+    /** פס מעבר בין אזורי תוכן ראשיים — גישה מוגבלת (בטא) */
+    get showTopQuickMainSlotSwitcher(): boolean {
+        const u = (this.employeeUserName || "").trim().toLowerCase();
+        return TOP_QUICK_MAIN_SLOT_SWITCHER_USERS.has(u);
+    }
+
     // When true, the משמרת filter dropdown in the sidebar is visually disabled
     // because the main chart itself is grouped by משמרת.
     isShiftGroupedView: boolean = false;
@@ -1196,6 +1212,9 @@ export class SurgeriesDashboradComponent
             v !== "revenue" &&
             v !== "cancellations"
         ) {
+            return;
+        }
+        if (!this.showTopQuickMainSlotSwitcher && v !== "performed") {
             return;
         }
         this.topQuickMainSlot = v;
@@ -1308,6 +1327,17 @@ export class SurgeriesDashboradComponent
         if (this.isLoading || this.isMainDataLoading)
             return this.globalLoadingPercent;
         return this.mainChartLoadingPercent;
+    }
+
+    /** טעינת אזור הגרף הראשי (Google / מדד משולב) */
+    get isMainPanelChartAreaLoading(): boolean {
+        return (
+            this.isChartLoading ||
+            this.isMainDataLoading ||
+            (this.isRoomUtilizationMode() &&
+                this.roomUtilizationSubChart === "surgeriesPerDay" &&
+                this.isSurgeriesPerDayLoading)
+        );
     }
 
     /** Returns the correct percent for the room-times overlay spinner */
@@ -2542,11 +2572,8 @@ export class SurgeriesDashboradComponent
         }
         const canvas = ref.nativeElement;
         const ctx = canvas.getContext("2d");
-        if (
-            !ctx ||
-            !this.departmentYoyData ||
-            this.departmentYoyData.length === 0
-        ) {
+        const rows = this.getFilteredDepartmentYoyData();
+        if (!ctx || !rows.length) {
             return;
         }
 
@@ -2555,16 +2582,10 @@ export class SurgeriesDashboradComponent
             this.yoyCombinedInlineChart = null;
         }
 
-        const labels = this.departmentYoyData.map((d) => d.Department || "");
-        const surgeries = this.departmentYoyData.map(
-            (d) => d.SurgeriesPerRoom_Pct ?? 0,
-        );
-        const times = this.departmentYoyData.map(
-            (d) => d.AvgSurgeryTime_Pct ?? 0,
-        );
-        const revenues = this.departmentYoyData.map(
-            (d) => d.AvgRevenue_Pct ?? 0,
-        );
+        const labels = rows.map((d) => d.Department || "");
+        const surgeries = rows.map((d) => d.SurgeriesPerRoom_Pct ?? 0);
+        const times = rows.map((d) => d.AvgSurgeryTime_Pct ?? 0);
+        const revenues = rows.map((d) => d.AvgRevenue_Pct ?? 0);
 
         const isDark = this.isDark;
         const textColor = isDark ? "#e5e7eb" : "#0f172a";
@@ -2701,6 +2722,10 @@ export class SurgeriesDashboradComponent
         if (this.chartViewMode !== "yoy-combined") {
             return;
         }
+        if (this.yoyCombinedInlineChart) {
+            this.yoyCombinedInlineChart.destroy();
+            this.yoyCombinedInlineChart = null;
+        }
         // wait for DOM to render the canvas
         setTimeout(() => this.buildYoyCombinedInlineChart(), 0);
     }
@@ -2724,6 +2749,9 @@ export class SurgeriesDashboradComponent
             "FunctionDescription",
         );
         this.employeeLocalDepartment = localStorage.getItem("Depart");
+        if (!this.showTopQuickMainSlotSwitcher) {
+            this.topQuickMainSlot = "performed";
+        }
 
         if (this.employeeUserName) {
             this.loadEmployeeInfo(this.employeeUserName);
@@ -3065,6 +3093,7 @@ export class SurgeriesDashboradComponent
      */
     private loadDepartmentYoY(): void {
         if (this.departmentYoyData.length > 0) {
+            this.purgeExcludedFromDepartmentYoyData();
             this.updateChartData();
             if (this.showYoyCombinedFullModal) {
                 setTimeout(() => this.buildYoyCombinedChart(), 0);
@@ -3124,7 +3153,13 @@ export class SurgeriesDashboradComponent
                                 : r.avgRevenue_Pct != null
                                   ? Number(r.avgRevenue_Pct)
                                   : null,
-                    }));
+                    }))
+                        .filter(
+                            (d) =>
+                                !this.isExcludedSurgeryDepartment(
+                                    d.Department || "",
+                                ),
+                        );
                     this.updateChartData();
                     // במידה והמודל הגדול של מדד משולב פתוח – בונה גם את גרף Chart.js
                     if (this.showYoyCombinedFullModal) {
@@ -3458,10 +3493,54 @@ export class SurgeriesDashboradComponent
         });
     }
 
+    private cloneGoogleChartOptions(opts: any): any {
+        try {
+            return JSON.parse(JSON.stringify(opts ?? {}));
+        } catch {
+            return { ...(opts ?? {}) };
+        }
+    }
+
+    private saveGoogleChartOptionsBeforeYoy(): void {
+        if (!this.savedGoogleChartOptionsBeforeYoy) {
+            this.savedGoogleChartOptionsBeforeYoy = this.cloneGoogleChartOptions(
+                this.chartOptions,
+            );
+        }
+    }
+
+    private restoreGoogleChartOptionsAfterYoy(): void {
+        if (this.savedGoogleChartOptionsBeforeYoy) {
+            this.chartOptions = this.cloneGoogleChartOptions(
+                this.savedGoogleChartOptionsBeforeYoy,
+            );
+            this.savedGoogleChartOptionsBeforeYoy = null;
+        }
+    }
+
+    /** יציאה ממדד משולב — משחזר Google Chart ומאלץ רינדור נקי */
+    private remountMainGoogleChartAfterYoy(): void {
+        this.showMainGoogleChart = false;
+        this.cdr.detectChanges();
+        setTimeout(() => {
+            this.showMainGoogleChart = true;
+            this.cdr.detectChanges();
+            try {
+                window.dispatchEvent(new Event("resize"));
+            } catch {
+                // ignore
+            }
+            this.chartOptions = { ...this.chartOptions };
+        }, 0);
+    }
+
     /**
      * Update chart options based on chart type
      */
     updateChartOptionsForType(): void {
+        if (this.chartViewMode === "yoy-combined") {
+            return;
+        }
         if (this.chartType === "LineChart") {
             // Line chart specific options
             this.chartOptions.bars = undefined;
@@ -3521,14 +3600,7 @@ export class SurgeriesDashboradComponent
 
         // מדד משולב – גרף YoY לפי מחלקה (ניתוחים לחדר, זמן ניתוח, הכנסה – % שינוי)
         if (this.chartViewMode === "yoy-combined") {
-            let yoySource = this.departmentYoyData;
-            if (this.chartDepartmentFilter) {
-                yoySource = yoySource.filter(
-                    (d) =>
-                        (d.Department || "").trim() ===
-                        this.chartDepartmentFilter,
-                );
-            }
+            const yoySource = this.getFilteredDepartmentYoyData();
             this.chartColumns = [
                 "מחלקה",
                 { type: "number", label: "ניתוחים לחדר" },
@@ -3554,45 +3626,7 @@ export class SurgeriesDashboradComponent
                     this.formatPctShort(d.AvgRevenue_Pct),
                 ];
             });
-            this.chartType = "BarChart";
-            const yoyOptBase: any = this.chartOptions || {};
-            const { series: _yoySeries, ...yoyOptRest } = yoyOptBase;
-            this.chartOptions = {
-                ...yoyOptRest,
-                title: "מדד משולב – השוואה לשנה שעברה (%)",
-                bars: "horizontal",
-                isStacked: false,
-                colors: ["#228B22", "#FF8C00", "#008B8B"],
-                // תוויות אחוזים בקצה כל עמודה – ימינה לחיובי, שמאלה לשלילי
-                annotations: {
-                    alwaysOutside: true,
-                    textStyle: {
-                        fontSize: 10,
-                        rotation: -90,
-                        bold: true,
-                    },
-                },
-                hAxis: {
-                    viewWindow: { min: -100, max: 200 },
-                    format: "#\'%\'",
-                    title: "% שינוי",
-                    textStyle: yoyOptBase.hAxis?.textStyle || {},
-                },
-                vAxis: {
-                    title: "מחלקה",
-                    textStyle: yoyOptBase.vAxis?.textStyle || {},
-                },
-                legend: {
-                    position: "bottom",
-                    alignment: "center",
-                },
-                chartArea: {
-                    width: "90%",
-                    height: "60%", // הקטנו מ-78% כדי לתת מקום לטקסט למעלה
-                    left: 40,
-                    top: 50, // הגדלנו מ-12 כדי שהטקסט המסובב לא ייחתך
-                },
-            };
+            // מדד משולב מוצג ב-Chart.js (canvas) — לא משנים chartOptions של Google Chart
             this.yearColorMap = [];
             this.stackedCategoryLegend = [];
             this.chartTableRows = yoySource.map((d) => ({
@@ -5915,21 +5949,28 @@ export class SurgeriesDashboradComponent
             return;
         }
 
-        // leaving YoY combined: cleanup inline chart instance
-        if (this.chartViewMode === "yoy-combined" && mode !== "yoy-combined") {
+        const leavingYoy =
+            this.chartViewMode === "yoy-combined" && mode !== "yoy-combined";
+
+        // leaving YoY combined: cleanup inline chart + שחזור Google Chart
+        if (leavingYoy) {
             if (this.yoyCombinedInlineChart) {
                 this.yoyCombinedInlineChart.destroy();
                 this.yoyCombinedInlineChart = null;
             }
+            this.restoreGoogleChartOptionsAfterYoy();
         }
+
+        if (mode === "yoy-combined") {
+            this.saveGoogleChartOptionsBeforeYoy();
+        }
+
         this.chartViewMode = mode;
         this.isShiftGroupedView = mode === "shift";
         this.syncSidebarFilterDropdownOpenState();
 
-        // מדד משולב = גרף אופקי (BarChart); שאר המצבים = ColumnChart
-        if (mode === "yoy-combined") {
-            this.chartType = "BarChart";
-        } else if (this.chartType !== "LineChart") {
+        // מדד משולב = Chart.js; שאר המצבים = ColumnChart (Google)
+        if (mode !== "yoy-combined" && this.chartType !== "LineChart") {
             this.chartType = "ColumnChart";
         }
         this.updateChartOptionsForType();
@@ -5945,6 +5986,11 @@ export class SurgeriesDashboradComponent
         this.cdr.detectChanges();
         this.scheduleYoyCombinedInlineBuild();
 
+        if (leavingYoy) {
+            this.remountMainGoogleChartAfterYoy();
+            return;
+        }
+
         // כפיית רענון / ריסייז של הגף מיד אחרי החלפת מצב,
         // כדי שלא יהיה צורך בלחיצה נוספת (כפתור סיידבר וכד').
         setTimeout(() => {
@@ -5958,11 +6004,10 @@ export class SurgeriesDashboradComponent
     }
 
     /**
-     * לחיצה על "מדד משולב" – גם מחליפה מצב תצוגה וגם פותחת פופ‑אפ גדול
+     * לחיצה על "מדד משולב" – מצב תצוגה בלבד (הרחבה דרך כפתור fullscreen)
      */
     onYoyCombinedClick(): void {
         this.setChartViewMode("yoy-combined");
-        this.openYoyCombinedFullModal();
     }
 
     openYoyCombinedFullModal(): void {
@@ -6454,7 +6499,7 @@ export class SurgeriesDashboradComponent
         if (this.chartViewMode === "yoy-combined") {
             return (
                 this.isChartLoading ||
-                !!(this.departmentYoyData && this.departmentYoyData.length > 0)
+                this.getFilteredDepartmentYoyData().length > 0
             );
         }
         return (
@@ -8375,7 +8420,34 @@ export class SurgeriesDashboradComponent
         } else {
             this.updateChartData();
         }
+        if (this.chartViewMode === "yoy-combined") {
+            this.scheduleYoyCombinedInlineBuild();
+        }
         this.cdr.detectChanges();
+    }
+
+    /** מחלקות שלא רלוונטיות לדשבורד ניתוחים (למשל קרדיולוגיה) */
+    private isExcludedSurgeryDepartment(name: string): boolean {
+        const n = (name || "").trim().replace(/\s+/g, " ");
+        if (!n) {
+            return false;
+        }
+        const lower = n.toLowerCase();
+        return (
+            n === "קרדיולוגיה" ||
+            n.includes("קרדיולוגיה") ||
+            lower.includes("cardiology") ||
+            lower === "cardio"
+        );
+    }
+
+    private purgeExcludedFromDepartmentYoyData(): void {
+        if (!this.departmentYoyData?.length) {
+            return;
+        }
+        this.departmentYoyData = this.departmentYoyData.filter(
+            (d) => !this.isExcludedSurgeryDepartment(d.Department || ""),
+        );
     }
 
     /** נתוני YoY מסוננים לפי פילטר המחלקה של הגרף (לשימוש בטבלה ובתצוגות) */
@@ -8384,7 +8456,7 @@ export class SurgeriesDashboradComponent
             return [];
         }
         const withoutCardiology = this.departmentYoyData.filter(
-            (d) => (d.Department || "").trim() !== "קרדיולוגיה",
+            (d) => !this.isExcludedSurgeryDepartment(d.Department || ""),
         );
         if (!this.chartDepartmentFilter) {
             return withoutCardiology;
