@@ -334,7 +334,7 @@
           </div>
         </div>
 
-        <div class="top-quick-metrics-wrap" *ngIf="employeeUserName">
+        <div class="top-quick-metrics-wrap" *ngIf="showTopQuickMainSlotSwitcher">
           <div class="top-quick-metrics-box">
             <mat-button-toggle-group name="quickMetricsMainSlot" aria-label="בחירת אזור תוכן ראשי"
               class="mat-button-toggle-group custom-toggle-group" [value]="topQuickMainSlotToggleValue"
@@ -426,8 +426,8 @@
     <!-- ================= MAIN CONTENT: GRAPH + TABLE ================= -->
     <div class="main-content" [class.main-content--compare-dept-layout]="mainMetricMode === 'compare-departments'"
       [class.with-top-sidebar]="showTopDepartmentsSidebar && topQuickMainSlot === 'performed'"
-      [class.main-content--quick-subview]="topQuickMainSlot !== 'performed'"
-      *ngIf="isDataLoaded || topQuickMainSlot !== 'performed'">
+      [class.main-content--quick-subview]="showTopQuickMainSlotSwitcher && topQuickMainSlot !== 'performed'"
+      *ngIf="isDataLoaded || (showTopQuickMainSlotSwitcher && topQuickMainSlot !== 'performed')">
 
       <ng-container *ngIf="topQuickMainSlot === 'performed'">
         <div class="main-content-chart-table">
@@ -579,15 +579,6 @@
 
                 <ng-container
                   *ngIf="mainMetricMode !== 'revenue' && mainMetricMode !== 'compare-departments' && mainMetricMode !== 'cancellations'">
-                  <div
-                    *ngIf="isChartLoading || isMainDataLoading || (isRoomUtilizationMode() && roomUtilizationSubChart === 'surgeriesPerDay' && isSurgeriesPerDayLoading)"
-                    class="chart-loading-overlay">
-                    <div class="spinner-with-percent">
-                      <mat-spinner diameter="50"></mat-spinner>
-                      <div class="spinner-percent">{{ getMainChartLoadingPercent() }}%</div>
-                    </div>
-                    <div class="chart-loading-text">טוען גרף...</div>
-                  </div>
                   <div class="chart-mode-heading" *ngIf="shouldShowChartModeHeading()">
                     <div class="chart-mode-heading__title-row">
                       <div class="chart-mode-heading__title-cluster">
@@ -623,6 +614,15 @@
                     </div>
                   </div>
                   <div class="chart-with-expand" *ngIf="mainMetricMode !== 'room-times'">
+                    <div *ngIf="isMainPanelChartAreaLoading" class="chart-loading-overlay chart-loading-overlay--in-chart"
+                      aria-live="polite" aria-busy="true">
+                      <div class="spinner-with-percent">
+                        <mat-spinner diameter="50"></mat-spinner>
+                        <div class="spinner-percent">{{ getMainChartLoadingPercent() }}%</div>
+                      </div>
+                      <div class="chart-loading-text">טוען גרף...</div>
+                    </div>
+
                     <google-chart
                       *ngIf="isRoomUtilizationMode() && roomUtilizationSubChart === 'surgeriesPerDay' && !isSurgeriesPerDayLoading && surgeriesPerDayChartData && surgeriesPerDayChartData.length > 0"
                       [type]="'ColumnChart'" [columns]="surgeriesPerDayChartColumns" [data]="surgeriesPerDayChartData"
@@ -639,7 +639,7 @@
 
                     <!-- Expand: YoY combined modal -->
                     <button type="button" class="chart-expand-btn" (click)="openYoyCombinedFullModal()"
-                      *ngIf="chartViewMode === 'yoy-combined' && !isChartLoading && !isMainDataLoading && departmentYoyData?.length"
+                      *ngIf="chartViewMode === 'yoy-combined' && !isChartLoading && !isMainDataLoading && getFilteredDepartmentYoyData()?.length"
                       matTooltip="הרחב מסך" matTooltipPosition="below">
                       <mat-icon>fullscreen</mat-icon>
                     </button>
@@ -647,8 +647,8 @@
                     <!-- YoY combined inline chart (Chart.js) -->
                     <div class="yoy-combined-inline"
                       *ngIf="chartViewMode === 'yoy-combined' && !isChartLoading && !isMainDataLoading">
-                      <canvas #yoyCombinedChartInline *ngIf="departmentYoyData?.length"></canvas>
-                      <div *ngIf="!departmentYoyData?.length" class="chart-no-data">
+                      <canvas #yoyCombinedChartInline *ngIf="getFilteredDepartmentYoyData()?.length"></canvas>
+                      <div *ngIf="!getFilteredDepartmentYoyData()?.length" class="chart-no-data">
                         אין נתונים להצגה בגרף
                       </div>
                     </div>
@@ -656,7 +656,7 @@
                     <!-- All other modes (Google chart) -->
                     <google-chart [type]="chartType" [data]="chartData" [columns]="chartColumns"
                       [options]="chartOptions" [width]="'100%'" [dynamicResize]="true" (select)="onChartClick($event)"
-                      *ngIf="chartViewMode !== 'yoy-combined' && !isChartLoading && !isMainDataLoading && chartData && chartData.length > 0 && !(isRoomUtilizationMode() && roomUtilizationSubChart === 'surgeriesPerDay')">
+                      *ngIf="showMainGoogleChart && chartViewMode !== 'yoy-combined' && !isChartLoading && !isMainDataLoading && chartData && chartData.length > 0 && !(isRoomUtilizationMode() && roomUtilizationSubChart === 'surgeriesPerDay')">
                     </google-chart>
                   </div>
 
@@ -705,6 +705,20 @@
                       [type]="'ColumnChart'" [columns]="lossByWingChartColumns" [data]="lossByWingChartData"
                       [options]="lossByWingChartOptions" [width]="'100%'" [height]="'100%'">
                     </google-chart>
+
+                    <div class="kpi-filter-row approved-util-site-filter-row" dir="rtl"
+                      *ngIf="roomTimesView === 'approvedPerDay'">
+                      <mat-form-field appearance="outline" subscriptSizing="dynamic"
+                        class="approved-util-site-field">
+                        <mat-label>חדר ניתוח</mat-label>
+                        <mat-select [value]="approvedUtilizationSiteFilter"
+                          (selectionChange)="onApprovedUtilizationSiteFilterChange($event.value)">
+                          <mat-option *ngFor="let opt of approvedUtilizationSiteSelectOptions" [value]="opt.value">
+                            {{ opt.label }}
+                          </mat-option>
+                        </mat-select>
+                      </mat-form-field>
+                    </div>
 
                     <google-chart
                       *ngIf="roomTimesView === 'approvedPerDay' && approvedUtilizationChartData && approvedUtilizationChartData.length > 0"
@@ -761,7 +775,7 @@
                         <span>משמרת</span>
                       </mat-button-toggle>
                       <mat-button-toggle value="yoy-combined" [matTooltip]="getChartViewTooltip('yoy-combined')"
-                        matTooltipPosition="above" (click)="onYoyCombinedClick()">
+                        matTooltipPosition="above">
                         <mat-icon aria-hidden="true">layers</mat-icon>
                         <span>מדד משולב</span>
                       </mat-button-toggle>
@@ -1348,13 +1362,16 @@
 
       </ng-container>
 
-      <div class="main-content-subview main-content-subview--full" *ngIf="topQuickMainSlot === 'wait'">
+      <div class="main-content-subview main-content-subview--full"
+        *ngIf="showTopQuickMainSlotSwitcher && topQuickMainSlot === 'wait'">
         <app-surgeries-wait-times></app-surgeries-wait-times>
       </div>
-      <div class="main-content-subview main-content-subview--full" *ngIf="topQuickMainSlot === 'revenue'">
+      <div class="main-content-subview main-content-subview--full"
+        *ngIf="showTopQuickMainSlotSwitcher && topQuickMainSlot === 'revenue'">
         <app-surgeries-revenue></app-surgeries-revenue>
       </div>
-      <div class="main-content-subview main-content-subview--full" *ngIf="topQuickMainSlot === 'cancellations'">
+      <div class="main-content-subview main-content-subview--full"
+        *ngIf="showTopQuickMainSlotSwitcher && topQuickMainSlot === 'cancellations'">
         <app-surgeries-cancellations></app-surgeries-cancellations>
       </div>
 
@@ -1387,9 +1404,9 @@
             נוחה.
           </p>
           <div class="graph-body" style="flex: 1 1 auto; max-height: none; min-height: 0;">
-            <canvas #yoyCombinedChart *ngIf="!isChartLoading && !isMainDataLoading && departmentYoyData?.length"
+            <canvas #yoyCombinedChart *ngIf="!isChartLoading && !isMainDataLoading && getFilteredDepartmentYoyData()?.length"
               style="width: 100%; height: 100%;"></canvas>
-            <div *ngIf="!isChartLoading && !isMainDataLoading && (!departmentYoyData || !departmentYoyData.length)"
+            <div *ngIf="!isChartLoading && !isMainDataLoading && !getFilteredDepartmentYoyData()?.length"
               class="chart-no-data">
               אין נתונים להצגה בגרף
             </div>
@@ -2367,8 +2384,21 @@
             <!-- APPROVED UTILIZATION PER DAY VIEW -->
             <ng-container *ngIf="roomTimesView === 'approvedPerDay'">
               <p class="kpi-intro">
-                זמן מנוצל ליום (בדקות) לפי מחלקה מאוגדת (Wing). ציר X: מחלקות. עמודה לכל שנה.
+                זמן מנוצל ליום (בדקות) לפי מחלקה מאוגדת (Wing). בחר חדר ניתוח מהרשימה (ברירת מחדל: חדר ניתוח כללי).
+                ב־«כל חדרי הניתוח» מוצג גם האתר לצד המחלקה כשיש כמה אתרים.
               </p>
+              <div class="kpi-filter-row approved-util-site-filter-row" dir="rtl">
+                <mat-form-field appearance="outline" subscriptSizing="dynamic"
+                  class="approved-util-site-field">
+                  <mat-label>חדר ניתוח</mat-label>
+                  <mat-select [value]="approvedUtilizationSiteFilter"
+                    (selectionChange)="onApprovedUtilizationSiteFilterChange($event.value)">
+                    <mat-option *ngFor="let opt of approvedUtilizationSiteSelectOptions" [value]="opt.value">
+                      {{ opt.label }}
+                    </mat-option>
+                  </mat-select>
+                </mat-form-field>
+              </div>
               <div class="room-times-modal-chart-slot">
                 <div *ngIf="isApprovedUtilizationLoading" class="kpi-skeleton-wrapper">
                   <div class="kpi-skeleton-spinner-overlay">
