@@ -407,7 +407,8 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
     nextRefreshAt: Date | null = null;
     autoRefreshPaused = false;
     lastLoaded: Date | null = null;
-    private readonly AUTO_REFRESH_INTERVAL_MINUTES = 10;
+    /** מרווח רענון אוטומטי (דקות), מיושר לשעון עגול — תואם ל-job בשרת (~כל 3 דקות) */
+    readonly autoRefreshIntervalMinutes = 3;
     private readonly ROOMS_DATA_CACHE_KEY_PREFIX = "rtmdashb.roomsData";
     /** true אחרי שהסתיים שלב 2 (לוח הניתוחים) – כדי להציג ניתוחים מתוכננים רק כשהמידע הסופי מוכן */
     calendarEnriched = false;
@@ -2665,9 +2666,14 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
         return "metric-ok";
     }
 
+    /** ניתוח שבממשק מוצג כ«מתוכנן» (סטטוס Planned, InProgress בלי כניסה, וכו') */
+    private isSurgeryDisplayedAsPlanned(s: Surgery, room: RoomData): boolean {
+        return this.displaySurgeryStatusKey(s, room) === "Planned";
+    }
+
     /**
      * ניתוחים "אקטיביים" להצגה ברשימת "ניתוחים שבוצעו"
-     * - כל מה שאינו Planned
+     * - כל מה שאינו מתוכנן בתצוגה (תואם displaySurgeryStatusKey)
      * - רק ניתוחים שאינם אמבולטוריים (כדי שלא יתערבבו בחדרים האמבולטוריים / בקופסת אמבולטורי)
      */
     activeSurgeries(room: RoomData): Surgery[] {
@@ -2676,13 +2682,8 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
         return room.surgeries.filter((s) => {
             if (this.isSurgeryCanceled(s)) return false;
 
-            const status = String(
-                s.status ?? s.SurgeryStatus ?? "",
-            ).toLowerCase();
-            const isPlanned = status === "planned";
-
             // ניתוחים מתוכננים יוצגו ברשימת "ניתוחים מתוכננים" – לא כאן
-            if (isPlanned) return false;
+            if (this.isSurgeryDisplayedAsPlanned(s, room)) return false;
 
             if (this.surgeryIsAmbulatoryForDisplay(s, room)) return false;
 
@@ -2694,7 +2695,7 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
 
     /**
      * ניתוחים מתוכננים להצגה תחת "ניתוחים מתוכננים"
-     * - סטטוס Planned (מכל מקור: status או SurgeryStatus)
+     * - מתוכנן בתצוגה (תואם displaySurgeryStatusKey)
      * - ניתוחים שבוטלו (מוצגים כאן ולא ברשימת "שבוצעו")
      * - רק ניתוחים שאינם אמבולטוריים (האמבולטוריים יוצגו בקופסת אמבולטורי / בחדרי אמבולטורי)
      */
@@ -2708,9 +2709,7 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
                 return !this.isSurgeryExitBeforeShiftStart(s, room);
             }
 
-            const statusRaw = s.status ?? s.SurgeryStatus ?? "";
-            const status = String(statusRaw).toLowerCase().trim();
-            if (status !== "planned") return false;
+            if (!this.isSurgeryDisplayedAsPlanned(s, room)) return false;
 
             if (this.isSurgeryExitBeforeShiftStart(s, room)) return false;
 
@@ -2812,11 +2811,11 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
     private getNextRoundedRefreshTime(from: Date): Date {
         const next = new Date(from);
         const minutes = next.getMinutes();
-        const remainder = minutes % this.AUTO_REFRESH_INTERVAL_MINUTES;
+        const remainder = minutes % this.autoRefreshIntervalMinutes;
         const minutesToAdd =
             remainder === 0
-                ? this.AUTO_REFRESH_INTERVAL_MINUTES
-                : this.AUTO_REFRESH_INTERVAL_MINUTES - remainder;
+                ? this.autoRefreshIntervalMinutes
+                : this.autoRefreshIntervalMinutes - remainder;
 
         next.setMinutes(minutes + minutesToAdd, 0, 0);
         return next;
@@ -3168,11 +3167,8 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
     /** ניתוחים אמבולטוריים בפועל (לא מתוכננים) — מקביל ל־activeSurgeries */
     ambulatoryActiveSurgeries(room: RoomData): Surgery[] {
         return this.ambulatorySurgeries(room).filter((s) => {
-            const st = String(s.status ?? s.SurgeryStatus ?? "")
-                .toLowerCase()
-                .replace(/\s+/g, "");
-            if (st === "cancelled" || st === "canceled") return false;
-            if (st === "planned") return false;
+            if (this.isSurgeryCanceled(s)) return false;
+            if (this.isSurgeryDisplayedAsPlanned(s, room)) return false;
             if (this.isCompletedWithExitBeforeShiftStart(s, room)) return false;
             return true;
         });
@@ -3184,10 +3180,7 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
             if (this.isSurgeryCanceled(s)) {
                 return !this.isSurgeryExitBeforeShiftStart(s, room);
             }
-            const st = String(s.status ?? s.SurgeryStatus ?? "")
-                .toLowerCase()
-                .replace(/\s+/g, "");
-            if (st !== "planned") return false;
+            if (!this.isSurgeryDisplayedAsPlanned(s, room)) return false;
             if (this.isSurgeryExitBeforeShiftStart(s, room)) return false;
             return true;
         });
