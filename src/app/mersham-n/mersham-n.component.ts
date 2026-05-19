@@ -1202,7 +1202,7 @@ export class MershamNComponent implements OnInit {
         if (!this.rows || !this.rows.at(rowIdx)) {
             return;
         }
-        this.selectedRowForPrint = this.rows.at(rowIdx).getRawValue();
+        this.selectedRowForPrint = (this.rows.at(rowIdx) as FormGroup).getRawValue();
         this.rowLabelSubmitted = false;
         this.rowLabelForm.patchValue({
             preparationTime: this.getCurrentTimeValue(),
