@@ -108,3 +108,16 @@
     left: 4px;
     text-align: left;
 }
+.row-label-form-grid {
+    row-gap: 12px;
+}
+.row-label-summary {
+    border: 1px solid #d3d3d3;
+    border-radius: 4px;
+    padding: 12px;
+    min-height: 100%;
+    background: #fafafa;
+}
+.row-label-summary div + div {
+    margin-top: 8px;
+}
