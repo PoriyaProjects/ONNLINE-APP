@@ -128,6 +128,12 @@ export interface PrescriptionRow {
 export interface Drug {
     DrugName: string;
 }
+export interface EmployeeOption {
+    EmployeeID: string;
+    FirstName: string;
+    LastName: string;
+    FullName: string;
+}
 export interface Protocol {
     ProtocolId: number;
     ProtocolName: string;
@@ -168,6 +174,7 @@ export class MershamNComponent implements OnInit {
         "Way_Of_Providing",
         "Days_Protocol",
         "MedList",
+        "PRINT",
         "DELETE",
     ];
     tableColsPresPrint: string[] = [
@@ -190,6 +197,7 @@ export class MershamNComponent implements OnInit {
     patiant_number_or_id = "";
     mPatientDetails: PatientDetails;
     drugs: Drug[] = [];
+    employees: EmployeeOption[] = [];
     DeleteRowId: string;
     DeleteElement: any;
     DeleteElementRowIndex: number;
@@ -424,6 +432,9 @@ export class MershamNComponent implements OnInit {
         statusRowVal: Boolean;
         statusNotToDo: Boolean;
     };
+    rowLabelForm: FormGroup;
+    selectedRowForPrint: PrescriptionRow;
+    rowLabelSubmitted: boolean;
     ngOnInit(): void {
         this.getAllProtocols();
         this.ROW_ID_PRE = "";
@@ -449,6 +460,13 @@ export class MershamNComponent implements OnInit {
             statusRowVal: false,
             statusNotToDo: false,
         };
+        this.rowLabelForm = this.formBuilder.group({
+            preparationTime: ["", Validators.required],
+            preparerEmployeeId: ["", Validators.required],
+            checkerEmployeeId: ["", Validators.required],
+        });
+        this.rowLabelSubmitted = false;
+        this.selectedRowForPrint = null;
         this.Carboplatin = false;
         this.showDeleteBtn = false;
         this.DeleteRowId = "";
@@ -467,6 +485,7 @@ export class MershamNComponent implements OnInit {
         this.loadModalAfterCopy = false;
         this.loadModalAfterClose = false;
         this.getDropDownFromServer();
+        this.getEmployeesForLabelPrint();
         //this.cdRef.detectChanges();
     }
     onSearchProtocol(event) {
@@ -1179,6 +1198,50 @@ export class MershamNComponent implements OnInit {
             window.print();
         }, 1000);
     }
+    openRowLabelPrint(content, rowIdx) {
+        if (!this.rows || !this.rows.at(rowIdx)) {
+            return;
+        }
+        this.selectedRowForPrint = (this.rows.at(rowIdx) as FormGroup).getRawValue();
+        this.rowLabelSubmitted = false;
+        this.rowLabelForm.patchValue({
+            preparationTime: this.getCurrentTimeValue(),
+            preparerEmployeeId: "",
+            checkerEmployeeId: "",
+        });
+        this.modalService.open(content, {
+            windowClass: "custom-class",
+            backdrop: "static",
+        });
+    }
+    printSelectedRowLabel(modal) {
+        this.rowLabelSubmitted = true;
+        if (
+            !this.rowLabelForm ||
+            this.rowLabelForm.invalid ||
+            !this.selectedRowForPrint
+        ) {
+            return;
+        }
+        const printWindow = window.open(
+            "",
+            "_blank",
+            "noopener,noreferrer,width=480,height=720"
+        );
+        if (!printWindow) {
+            this.openSnackBar("לא ניתן לפתוח חלון הדפסה", "error");
+            return;
+        }
+        printWindow.document.open();
+        printWindow.document.write(this.buildRowLabelHtml());
+        printWindow.document.close();
+        printWindow.focus();
+        setTimeout(() => {
+            printWindow.print();
+            printWindow.close();
+        }, 250);
+        modal.close("print");
+    }
     formatDate(date) {
         var d = date,
             month = "" + (d.getMonth() + 1),
@@ -1189,6 +1252,223 @@ export class MershamNComponent implements OnInit {
         if (day.length < 2) day = "0" + day;
 
         return [day, month, year].join("/");
+    }
+    private getCurrentTimeValue(): string {
+        const now = new Date();
+        const hours =
+            now.getHours() < 10
+                ? "0" + now.getHours().toString()
+                : now.getHours().toString();
+        const minutes =
+            now.getMinutes() < 10
+                ? "0" + now.getMinutes().toString()
+                : now.getMinutes().toString();
+        return hours + ":" + minutes;
+    }
+    private getCurrentPreparationDate(): string {
+        if (!this.PrespictionForm) {
+            return "";
+        }
+        const takeDate = this.PrespictionForm.get("takedateIN")
+            ? this.PrespictionForm.get("takedateIN").value
+            : "";
+        return this.formatLabelDate(takeDate);
+    }
+    private formatLabelDate(value): string {
+        if (!value) {
+            return "";
+        }
+        if (value instanceof Date) {
+            return this.formatDate(value);
+        }
+        const stringValue = String(value).trim();
+        if (stringValue === "") {
+            return "";
+        }
+        if (/^\d{2}[/-]\d{2}[/-]\d{4}$/.test(stringValue)) {
+            return stringValue.replace(/-/g, "/");
+        }
+        const parsedDate = new Date(stringValue);
+        if (isNaN(parsedDate.getTime())) {
+            return stringValue;
+        }
+        return this.formatDate(parsedDate);
+    }
+    private getDoseLabel(row: PrescriptionRow): string {
+        return [row.finalMenonVal, row.Dosage_UnitVal || row.Dosage_Unit_2_Val]
+            .filter(
+                (value) =>
+                    value !== null && value !== undefined && value !== ""
+            )
+            .join(" ");
+    }
+    private getFinalVolumeLabel(row: PrescriptionRow): string {
+        if (
+            !row ||
+            row.Solution_VolumeVal === null ||
+            row.Solution_VolumeVal === undefined ||
+            row.Solution_VolumeVal === ""
+        ) {
+            return "";
+        }
+        return String(row.Solution_VolumeVal) + ' מ"ל';
+    }
+    private getAdministrationRateLabel(row: PrescriptionRow): string {
+        if (!row || !row.Duration_Of_DeliveryVal) {
+            return "";
+        }
+        return String(row.Duration_Of_DeliveryVal) + " דקות";
+    }
+    getPatientFullName(): string {
+        const firstName =
+            this.mPatientDetails && this.mPatientDetails.FIRST_NAME
+                ? this.mPatientDetails.FIRST_NAME
+                : this.FIRST_NAME_In || this.FIRST_NAME || "";
+        const lastName =
+            this.mPatientDetails && this.mPatientDetails.LAST_NAME
+                ? this.mPatientDetails.LAST_NAME
+                : this.LAST_NAME_In || this.LAST_NAME || "";
+        return (
+            String(firstName).trim() + " " + String(lastName).trim()
+        ).trim();
+    }
+    private getPatientIdentifier(): string {
+        const patientId =
+            this.mPatientDetails && this.mPatientDetails.ID
+                ? this.mPatientDetails.ID
+                : this.ID || this.ID_In || this.patiant_number_or_id || "";
+        return String(patientId).trim();
+    }
+    private getEmployeeFullName(employeeId: string): string {
+        const employee = this.employees.find(
+            (item) => String(item.EmployeeID) === String(employeeId)
+        );
+        return employee ? employee.FullName : "";
+    }
+    private getLabelFallbackValue(value: string): string {
+        return value && String(value).trim() !== "" ? value : "לא הוגדר";
+    }
+    private escapeHtml(value): string {
+        return String(value || "")
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#39;");
+    }
+    private buildRowLabelHtml(): string {
+        const row = this.selectedRowForPrint;
+        const formValue = this.rowLabelForm.getRawValue();
+        const labelRows = [
+            {
+                label: "שם מוסד",
+                value: "בית מרקחת מרכז רפואי צפון",
+            },
+            {
+                label: "שם תרופה גנרי",
+                value: this.getLabelFallbackValue(row.MedListVal),
+            },
+            {
+                label: "דרך מתן",
+                value: this.getLabelFallbackValue(row.Way_Of_ProvidingVal),
+            },
+            {
+                label: "מינון",
+                value: this.getLabelFallbackValue(this.getDoseLabel(row)),
+            },
+            {
+                label: "נפח סופי",
+                value: this.getLabelFallbackValue(
+                    this.getFinalVolumeLabel(row)
+                ),
+            },
+            {
+                label: "תמיסת מיהול",
+                value: this.getLabelFallbackValue(row.SolutionVal),
+            },
+            {
+                label: "קצב מתן",
+                value: this.getLabelFallbackValue(
+                    this.getAdministrationRateLabel(row)
+                ),
+            },
+            {
+                label: "תאריך הכנה",
+                value: this.getLabelFallbackValue(
+                    this.getCurrentPreparationDate()
+                ),
+            },
+            {
+                label: "שעת הכנה",
+                value: this.getLabelFallbackValue(formValue.preparationTime),
+            },
+            {
+                label: "תאריך תפוגה",
+                value: "לא הוגדר במסך התרופות",
+            },
+            {
+                label: "מספר אצווה",
+                value: this.getLabelFallbackValue(
+                    String(row.rowIdPreVal || "")
+                ),
+            },
+            {
+                label: "שם מכין ההכנה",
+                value: this.getLabelFallbackValue(
+                    this.getEmployeeFullName(formValue.preparerEmployeeId)
+                ),
+            },
+            {
+                label: "שם בודק ההכנה",
+                value: this.getLabelFallbackValue(
+                    this.getEmployeeFullName(formValue.checkerEmployeeId)
+                ),
+            },
+            {
+                label: "תנאי אחסון",
+                value: "לא הוגדר במסך התרופות",
+            },
+            {
+                label: "שם מטופל",
+                value: this.getLabelFallbackValue(this.getPatientFullName()),
+            },
+            {
+                label: 'ת.ז מטופל',
+                value: this.getLabelFallbackValue(this.getPatientIdentifier()),
+            },
+        ];
+        const labelRowsHtml = labelRows
+            .map((item) => {
+                return (
+                    '<div class="label-row">' +
+                    '<div class="label-title">' +
+                    this.escapeHtml(item.label) +
+                    "</div>" +
+                    '<div class="label-value">' +
+                    this.escapeHtml(item.value) +
+                    "</div>" +
+                    "</div>"
+                );
+            })
+            .join("");
+        return (
+            '<!doctype html><html dir="rtl" lang="he"><head><meta charset="utf-8" />' +
+            "<title>מדבקת הכנה</title>" +
+            "<style>" +
+            "body{font-family:Arial,sans-serif;margin:0;padding:16px;direction:rtl;color:#000;}" +
+            ".label-card{border:1px solid #000;padding:12px;width:100%;box-sizing:border-box;}" +
+            ".label-header{text-align:center;font-weight:700;font-size:20px;margin-bottom:12px;}" +
+            ".label-row{display:flex;gap:8px;align-items:flex-start;border-top:1px solid #d3d3d3;padding:6px 0;}" +
+            ".label-row:first-of-type{border-top:none;padding-top:0;}" +
+            ".label-title{width:38%;font-weight:700;}" +
+            ".label-value{width:62%;word-break:break-word;}" +
+            "@page{size:auto;margin:10mm;}" +
+            "</style></head><body>" +
+            '<div class="label-card">' +
+            '<div class="label-header">מדבקת הכנה</div>' +
+            labelRowsHtml +
+            "</div></body></html>"
+        );
     }
     saveAndClose() {
         this.PrespictionForm.value.statusRowVal = true;
@@ -1990,6 +2270,29 @@ export class MershamNComponent implements OnInit {
                 this.Days_Protocol = JSON.parse(json["Days_Protocol"]);
                 this.Notes = JSON.parse(json["Notes"]);
                 ////////////////////////////debugger
+            });
+    }
+    public getEmployeesForLabelPrint() {
+        this.http
+            .post(environment.url + "GetEmployees", {
+                pageIndex: 0,
+                pageSize: 1000,
+                serachTxt: "",
+            })
+            .subscribe((Response) => {
+                const employees = Array.isArray(Response["d"])
+                    ? Response["d"]
+                    : [];
+                this.employees = employees.map((employee) => {
+                    const firstName = String(employee.FirstName || "").trim();
+                    const lastName = String(employee.LastName || "").trim();
+                    return {
+                        EmployeeID: employee.EmployeeID,
+                        FirstName: employee.FirstName,
+                        LastName: employee.LastName,
+                        FullName: (firstName + " " + lastName).trim(),
+                    };
+                });
             });
     }
 
