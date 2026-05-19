@@ -849,7 +849,7 @@ export class MershamComponent implements OnInit {
             checkerEmployeeId: "",
         });
         this.modalService.open(content, {
-            windowClass: "custom-class",
+            windowClass: "row-label-print-modal",
             backdrop: "static",
         });
     }
@@ -978,6 +978,27 @@ export class MershamComponent implements OnInit {
     private getPatientIdentifier(): string {
         return String(this.ID || this.ID_In || this.patiant_number_or_id || "").trim();
     }
+    getPatientIdentifierDisplay(): string {
+        return this.getPatientIdentifier();
+    }
+    getDoseLabelDisplay(row: PrescriptionRow): string {
+        if (!row) {
+            return "";
+        }
+        return this.getDoseLabel(row);
+    }
+    getFinalVolumeLabelDisplay(row: PrescriptionRow): string {
+        if (!row) {
+            return "";
+        }
+        return this.getFinalVolumeLabel(row);
+    }
+    getAdministrationRateLabelDisplay(row: PrescriptionRow): string {
+        if (!row) {
+            return "";
+        }
+        return this.getAdministrationRateLabel(row);
+    }
     private getEmployeeFullName(employeeId: string): string {
         const employee = this.employees.find(
             (item) => String(item.EmployeeID) === String(employeeId)
@@ -1102,7 +1123,6 @@ export class MershamComponent implements OnInit {
             "@page{size:auto;margin:10mm;}" +
             "</style></head><body>" +
             '<div class="label-card">' +
-            '<div class="label-header">מדבקת הכנה</div>' +
             labelRowsHtml +
             "</div></body></html>"
         );
