@@ -47,7 +47,10 @@ function tooltipNumericMagnitude(v: any): number | null {
     return Number.isFinite(n) ? n : null;
 }
 
-function formatIncomeTooltipValue(host: IncomeChartTooltipHost, v: any): string {
+function formatIncomeTooltipValue(
+    host: IncomeChartTooltipHost,
+    v: any,
+): string {
     const n = tooltipNumericMagnitude(v);
     if (n == null) {
         return "—";
@@ -60,7 +63,7 @@ function formatIncomeTooltipValue(host: IncomeChartTooltipHost, v: any): string 
 
 function isWingStyleMultiYear(
     columns: any[],
-    numericSeries: { colIndex: number; label: string }[]
+    numericSeries: { colIndex: number; label: string }[],
 ): boolean {
     const h = getCategoryHeader(columns);
     if (!h || h === "שנה") {
@@ -79,7 +82,7 @@ function buildMultiYearCategoryTooltipHtml(
     numericSeries: { colIndex: number; label: string }[],
     valueSuffixPlain: string,
     showTotalRow: boolean,
-    copy?: { subtitle?: string; totalCaption?: string }
+    copy?: { subtitle?: string; totalCaption?: string },
 ): string {
     const currentYear = new Date().getFullYear();
     const muted = host.isDark ? "#94a3b8" : "#64748b";
@@ -158,18 +161,17 @@ export function patchIncomeGoogleChartHtmlTooltips(
     columnsIn: any[] | null | undefined,
     dataIn: any[] | null | undefined,
     chartOptionsIn: any,
-    ctx: IncomeChartTooltipPatchCtx = {}
+    ctx: IncomeChartTooltipPatchCtx = {},
 ): { columns: any[]; data: any[]; options: any } {
     const baseOpts =
         chartOptionsIn && typeof chartOptionsIn === "object"
             ? chartOptionsIn
             : {};
-    if (
-        baseOpts.tooltip === "none" ||
-        baseOpts.tooltip?.trigger === "none"
-    ) {
+    if (baseOpts.tooltip === "none" || baseOpts.tooltip?.trigger === "none") {
         return {
-            columns: Array.isArray(columnsIn) ? [...columnsIn] : columnsIn || [],
+            columns: Array.isArray(columnsIn)
+                ? [...columnsIn]
+                : columnsIn || [],
             data: Array.isArray(dataIn)
                 ? dataIn.map((r) => (Array.isArray(r) ? [...r] : r))
                 : dataIn || [],
@@ -217,8 +219,7 @@ export function patchIncomeGoogleChartHtmlTooltips(
     }
 
     const useWingMultiYear = isWingStyleMultiYear(columns, numericSeries);
-    const tooltipInsertions: { insertPos: number; valueColIdx: number }[] =
-        [];
+    const tooltipInsertions: { insertPos: number; valueColIdx: number }[] = [];
     for (const s of numericSeries) {
         const idx = s.colIndex;
         let insertPos = idx + 1;
@@ -290,7 +291,7 @@ export function patchIncomeGoogleChartHtmlTooltips(
                   numericSeries,
                   suffixPlain,
                   showTotal,
-                  wingCopy
+                  wingCopy,
               )
             : null;
 
@@ -324,7 +325,7 @@ export function patchIncomeGoogleChartHtmlTooltips(
 }
 
 export function getIncomeChartTooltipContext(
-    host: IncomeChartTooltipHost
+    host: IncomeChartTooltipHost,
 ): IncomeChartTooltipPatchCtx {
     const isPayer = host.graphPrimaryView === "payer";
     return {

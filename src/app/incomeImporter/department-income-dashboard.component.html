@@ -1,15 +1,12 @@
 <div class="dash" [class.dark]="isDark" dir="rtl">
-  
+
   <!-- ================= TOP BAR ================= -->
   <div class="topbar" dir="rtl">
     <div class="top-left">
       <div class="user-card" *ngIf="employeeUserName">
         <div class="user-avatar-wrapper">
-          <img
-            class="user-avatar"
-            [src]="employeeInfo?.profilePicture || 'http://srv-apps-prod/Images/default.jpg'"
-            alt="avatar"
-          />
+          <img class="user-avatar" [src]="employeeInfo?.profilePicture || 'http://srv-apps-prod/Images/default.jpg'"
+            alt="avatar" />
         </div>
         <div class="user-meta">
           <div class="user-name">
@@ -29,7 +26,7 @@
       <!-- Diagnosis Selector – עיצוב ייחודי -->
       <div class="wing-and-theme-row" dir="rtl">
         <div class="custom-dropdown" [class.active]="isDropdownOpen">
-          
+
           <div class="dropdown-trigger" (click)="toggleDropdown()">
             <mat-icon class="dropdown-icon">apartment</mat-icon>
             <span class="selected-text">
@@ -37,94 +34,79 @@
             </span>
             <mat-icon class="arrow-icon">{{ isDropdownOpen ? 'expand_less' : 'expand_more' }}</mat-icon>
           </div>
-      
+
           <div class="dropdown-panel" *ngIf="isDropdownOpen">
-            <div class="loading-state dropdown-loading-state" *ngIf="isDiagnosesLoading" role="status" aria-live="polite">
-              <div class="loading-ring compact-loading-ring" [style.background]="getLoadingRingBackground(getDiagnosesLoadingProgress())">
+            <div class="loading-state dropdown-loading-state" *ngIf="isDiagnosesLoading" role="status"
+              aria-live="polite">
+              <div class="loading-ring compact-loading-ring"
+                [style.background]="getLoadingRingBackground(getDiagnosesLoadingProgress())">
                 <div class="loading-ring-inner compact-loading-ring-inner">
                   <strong>{{ getDiagnosesLoadingProgress() }}%</strong>
                 </div>
               </div>
               <span>טוען אגפים...</span>
             </div>
-            
+
             <div class="options-list" *ngIf="!isDiagnosesLoading">
-              <div class="option-item" 
-                   *ngFor="let diagnosis of diagnosesList" 
-                   (click)="selectOption(diagnosis)"
-                   [class.selected]="diagnosis === selectedDiagnosis">
+              <div class="option-item" *ngFor="let diagnosis of diagnosesList" (click)="selectOption(diagnosis)"
+                [class.selected]="diagnosis === selectedDiagnosis">
                 {{ diagnosis }}
               </div>
             </div>
           </div>
-      
+
         </div>
       </div>
-      
+
       <div class="dropdown-overlay" *ngIf="isDropdownOpen" (click)="isDropdownOpen = false"></div>
       <!-- </div> -->
     </div>
-    
+
     <div class="top-right">
       <button mat-icon-button class="icon-btn ghost theme-toggle-in-row"
-              matTooltip="{{ isDark ? 'מצב בהיר' : 'מצב כהה' }}"
-              matTooltipPosition="below"
-              (click)="toggleTheme()">
+        matTooltip="{{ isDark ? 'מצב בהיר' : 'מצב כהה' }}" matTooltipPosition="below" (click)="toggleTheme()">
         <mat-icon>{{ isDark ? 'light_mode' : 'dark_mode' }}</mat-icon>
       </button>
       <!-- Guide Icons -->
-      <button mat-icon-button class="icon-btn ghost"
-              matTooltip="מדריך הדוח" matTooltipPosition="below"
-              (click)="showGuideAvatar = !showGuideAvatar">
+      <button mat-icon-button class="icon-btn ghost" matTooltip="מדריך הדוח" matTooltipPosition="below"
+        (click)="showGuideAvatar = !showGuideAvatar">
         <mat-icon>help</mat-icon>
       </button>
 
-      <button mat-icon-button class="icon-btn ghost"
-              [class.active]="showIncomeFiltersSidebar"
-              matTooltip="{{ showIncomeFiltersSidebar ? 'הסתר סינון מתקדם' : 'סינון מתקדם לדשבורד ההכנסות' }}"
-              matTooltipPosition="below"
-              (click)="toggleIncomeFiltersSidebar()">
+      <button mat-icon-button class="icon-btn ghost" [class.active]="showIncomeFiltersSidebar"
+        matTooltip="{{ showIncomeFiltersSidebar ? 'הסתר סינון מתקדם' : 'סינון מתקדם לדשבורד ההכנסות' }}"
+        matTooltipPosition="below" (click)="toggleIncomeFiltersSidebar()">
         <mat-icon>tune</mat-icon>
       </button>
 
-      <button mat-icon-button class="icon-btn ghost"
-              [class.active]="showTopDepartmentsSidebar"
-              matTooltip="{{ showTopDepartmentsSidebar ? 'הסתר מובילי צמיחה' : 'הצג מובילי צמיחה' }}"
-              matTooltipPosition="below"
-              (click)="toggleTopDepartmentsSidebar()">
+      <button mat-icon-button class="icon-btn ghost" [class.active]="showTopDepartmentsSidebar"
+        matTooltip="{{ showTopDepartmentsSidebar ? 'הסתר מובילי צמיחה' : 'הצג מובילי צמיחה' }}"
+        matTooltipPosition="below" (click)="toggleTopDepartmentsSidebar()">
         <mat-icon>emoji_events</mat-icon>
       </button>
 
 
       <div class="icon-divider"></div>
 
-      <button mat-icon-button class="icon-btn ghost"
-              matTooltip="הורדה לאקסל" matTooltipPosition="below"
-              (click)="exportToCSV()"
-              [disabled]="departmentIncomeData.length === 0">
+      <button mat-icon-button class="icon-btn ghost" matTooltip="הורדה לאקסל" matTooltipPosition="below"
+        (click)="exportToCSV()" [disabled]="departmentIncomeData.length === 0">
         <mat-icon>download</mat-icon>
       </button>
 
-      <button mat-icon-button class="icon-btn ghost"
-              matTooltip="רענון" matTooltipPosition="below"
-              (click)="refreshDashboardData()">
+      <button mat-icon-button class="icon-btn ghost" matTooltip="רענון" matTooltipPosition="below"
+        (click)="refreshDashboardData()">
         <mat-icon>refresh</mat-icon>
       </button>
 
-      <button mat-icon-button class="icon-btn ghost"
-              matTooltip="דוח למנהל" matTooltipPosition="below"
-              (click)="loadBossDashboard()">
+      <button mat-icon-button class="icon-btn ghost" matTooltip="דוח למנהל" matTooltipPosition="below"
+        (click)="loadBossDashboard()">
         <mat-icon>admin_panel_settings</mat-icon>
       </button>
     </div>
   </div>
 
   <!-- חודש יחוס / עדכניות דוח הכנסות -->
-  <div
-    class="report-as-of-strip"
-    *ngIf="showIncomeReportAsOfStrip"
-    dir="rtl"
-    role="status"
+  <div class="report-as-of-strip" *ngIf="showIncomeReportAsOfStrip" dir="rtl" role="status"
     [attr.aria-label]="reportAsOfBannerText">
     <mat-icon class="report-as-of-icon" aria-hidden="true">event_available</mat-icon>
     <span class="report-as-of-text">{{ reportAsOfBannerText }}</span>
@@ -132,32 +114,23 @@
 
 
   <!-- ================= MAIN CONTENT: GRAPH + TABLE ================= -->
-  <div class="main-content"
-       [class.with-top-sidebar]="showTopDepartmentsSidebar"
-       [class.with-filter-sidebar]="showIncomeFiltersSidebar"
-       [class.with-two-sidebars]="showIncomeFiltersSidebar && showTopDepartmentsSidebar">
-    
+  <div class="main-content" [class.with-top-sidebar]="showTopDepartmentsSidebar"
+    [class.with-filter-sidebar]="showIncomeFiltersSidebar"
+    [class.with-two-sidebars]="showIncomeFiltersSidebar && showTopDepartmentsSidebar">
+
     <!-- ===== GRAPH SECTION (2/3) ===== -->
     <div class="graph-section">
       <div class="graph-view-switch-panel" dir="rtl">
         <div class="graph-view-segmented-control" role="tablist" aria-label="מצב תצוגת גרף">
-          <button type="button"
-                  class="graph-view-segment-btn"
-                  [class.active]="graphPrimaryView === 'income'"
-                  (click)="setGraphPrimaryView('income')"
-                  role="tab"
-                  [attr.aria-selected]="graphPrimaryView === 'income'"
-                  matTooltip="השוואת הכנסות לפי מחלקות — הדשבורד הנוכחי">
+          <button type="button" class="graph-view-segment-btn" [class.active]="graphPrimaryView === 'income'"
+            (click)="setGraphPrimaryView('income')" role="tab" [attr.aria-selected]="graphPrimaryView === 'income'"
+            matTooltip="השוואת הכנסות לפי מחלקות — הדשבורד הנוכחי">
             <mat-icon class="graph-view-segment-icon">domain</mat-icon>
             <span class="graph-view-segment-label">הכנסות</span>
           </button>
-          <button type="button"
-                  class="graph-view-segment-btn"
-                  [class.active]="graphPrimaryView === 'payer'"
-                  (click)="setGraphPrimaryView('payer')"
-                  role="tab"
-                  [attr.aria-selected]="graphPrimaryView === 'payer'"
-                  matTooltip="השוואת הכנסות לפי גורם משלם">
+          <button type="button" class="graph-view-segment-btn" [class.active]="graphPrimaryView === 'payer'"
+            (click)="setGraphPrimaryView('payer')" role="tab" [attr.aria-selected]="graphPrimaryView === 'payer'"
+            matTooltip="השוואת הכנסות לפי גורם משלם">
             <mat-icon class="graph-view-segment-icon">account_balance_wallet</mat-icon>
             <span class="graph-view-segment-label">גורם משלם</span>
           </button>
@@ -166,86 +139,76 @@
 
       <div class="panel panel-graph">
         <div class="panel-title">
-          <mat-icon>{{ graphPrimaryView === 'payer' ? 'account_balance_wallet' : (chartType === 'ColumnChart' ? 'bar_chart' : 'show_chart') }}</mat-icon>
+          <mat-icon>{{ graphPrimaryView === 'payer' ? 'account_balance_wallet' : (chartType === 'ColumnChart' ?
+            'bar_chart' : 'show_chart') }}</mat-icon>
           <span class="title-row">
             <span>{{ graphPanelTitle }}</span>
           </span>
         </div>
 
-  
+
         <div class="graph-body" [class.graph-body--breakdown]="isBreakdownChartViewActive">
-          <div *ngIf="isChartLoading || isMainDataLoading || isPayerYearlyLoading || (isBreakdownChartViewActive && isBreakdownChartsLoading)"
-               class="data-loading-overlay" role="status" aria-live="polite">
-            <div class="loading-ring local-loading-ring" [style.background]="getLoadingRingBackground(getChartLoadingProgress())">
+          <div
+            *ngIf="isChartLoading || isMainDataLoading || isPayerYearlyLoading || (isBreakdownChartViewActive && isBreakdownChartsLoading)"
+            class="data-loading-overlay" role="status" aria-live="polite">
+            <div class="loading-ring local-loading-ring"
+              [style.background]="getLoadingRingBackground(getChartLoadingProgress())">
               <div class="loading-ring-inner local-loading-ring-inner">
                 <strong>{{ getChartLoadingProgress() }}%</strong>
                 <span>הושלם</span>
               </div>
             </div>
             <div class="chart-loading-text">
-              <ng-container *ngIf="graphPrimaryView === 'payer' && isPayerYearlyLoading; else chartLoadingBranch">טוען גורמי משלם...</ng-container>
+              <ng-container *ngIf="graphPrimaryView === 'payer' && isPayerYearlyLoading; else chartLoadingBranch">טוען
+                גורמי משלם...</ng-container>
               <ng-template #chartLoadingBranch>
-                <ng-container *ngIf="isBreakdownChartViewActive && isBreakdownChartsLoading && !isChartLoading && !isMainDataLoading; else defaultChartLoadingMsg">טוען גרפי פילוח...</ng-container>
+                <ng-container
+                  *ngIf="isBreakdownChartViewActive && isBreakdownChartsLoading && !isChartLoading && !isMainDataLoading; else defaultChartLoadingMsg">טוען
+                  גרפי פילוח...</ng-container>
                 <ng-template #defaultChartLoadingMsg>טוען גרף...</ng-template>
               </ng-template>
             </div>
           </div>
-          <google-chart
-            [type]="chartType"
-            [data]="chartData"
-            [columns]="chartColumns"
-            [options]="chartOptions"
-            [width]="'100%'"
-            [height]="'100%'"
-            (select)="onChartClick($event)"
+          <google-chart [type]="chartType" [data]="chartData" [columns]="chartColumns" [options]="chartOptions"
+            [width]="'100%'" [height]="'100%'" (select)="onChartClick($event)"
             *ngIf="!isChartLoading && !isMainDataLoading && !isPayerYearlyLoading && !isBreakdownChartViewActive && chartData && chartData.length > 0">
           </google-chart>
           <div class="dimensional-chart-wrap"
-               *ngIf="isBreakdownChartViewActive && !isBreakdownChartsLoading && hasRenderableDimensionalChart()">
-            <google-chart
-              type="ColumnChart"
-              [data]="dimensionalChartData"
-              [columns]="dimensionalChartColumns"
-              [options]="dimensionalChartOptions"
-              [width]="'100%'"
-              [height]="'100%'"
+            *ngIf="isBreakdownChartViewActive && !isBreakdownChartsLoading && hasRenderableDimensionalChart()">
+            <google-chart type="ColumnChart" [data]="dimensionalChartData" [columns]="dimensionalChartColumns"
+              [options]="dimensionalChartOptions" [width]="'100%'" [height]="'100%'"
               (select)="onDimensionalChartClick($event)">
             </google-chart>
           </div>
-          <div *ngIf="!isChartLoading && !isMainDataLoading && !isPayerYearlyLoading && !isBreakdownChartViewActive && (!chartData || chartData.length === 0)" class="chart-no-data">
+          <div
+            *ngIf="!isChartLoading && !isMainDataLoading && !isPayerYearlyLoading && !isBreakdownChartViewActive && (!chartData || chartData.length === 0)"
+            class="chart-no-data">
             {{ graphPrimaryView === 'payer' ? 'אין נתוני גורם משלם להצגה' : 'אין נתונים להצגה בגרף' }}
           </div>
-          <div *ngIf="isBreakdownChartViewActive && !isBreakdownChartsLoading && !hasRenderableDimensionalChart()" class="chart-no-data">
+          <div *ngIf="isBreakdownChartViewActive && !isBreakdownChartsLoading && !hasRenderableDimensionalChart()"
+            class="chart-no-data">
             אין נתוני פירוט להצגת פילוח
           </div>
         </div>
 
-        <div class="graph-dimension-toolbar"
-             dir="rtl"
-             *ngIf="graphPrimaryView === 'income'"
-             [@graphToolbarMode]="graphToolbarDimensionMode">
-          <mat-button-toggle-group
-            class="graph-dimension-toggle-group"
-            appearance="standard"
-            [value]="graphToolbarDimensionMode"
-            (change)="onGraphToolbarToggleChange($event.value)"
-            aria-label="מצבי תצוגת גרף"
-            role="toolbar">
-            <mat-button-toggle value="total"
-                               matTooltip="השוואת סה״כ הכנסות בין שנים. לחיצה על עמודה פותחת פירוט מחלקה."
-                               matTooltipPosition="above">
+        <div class="graph-dimension-toolbar" dir="rtl" *ngIf="graphPrimaryView === 'income'"
+          [@graphToolbarMode]="graphToolbarDimensionMode">
+          <mat-button-toggle-group class="graph-dimension-toggle-group" appearance="standard"
+            [value]="graphToolbarDimensionMode" (change)="onGraphToolbarToggleChange($event.value)"
+            aria-label="מצבי תצוגת גרף" role="toolbar">
+            <mat-button-toggle value="total" matTooltip="השוואת סה״כ הכנסות בין שנים. לחיצה על עמודה פותחת פירוט מחלקה."
+              matTooltipPosition="above">
               <mat-icon>leaderboard</mat-icon>
               <span class="graph-dimension-toggle-label">סה״כ הכנסות למחלקה</span>
             </mat-button-toggle>
             <mat-button-toggle value="unifiedCategory"
-                               matTooltip="עמודות לפי «סיווג הכנסה מאוחד» במסנן. מעבר חלק — אותו מטמון נתונים."
-                               matTooltipPosition="above">
+              matTooltip="עמודות לפי «סיווג הכנסה מאוחד» במסנן. מעבר חלק — אותו מטמון נתונים."
+              matTooltipPosition="above">
               <mat-icon>account_tree</mat-icon>
               <span class="graph-dimension-toggle-label">סיווג הכנסה מאוחד</span>
             </mat-button-toggle>
             <mat-button-toggle value="organization"
-                               matTooltip="עמודות לפי «קרן / מדינה» במסנן. מעבר חלק — אותו מטמון נתונים."
-                               matTooltipPosition="above">
+              matTooltip="עמודות לפי «קרן / מדינה» במסנן. מעבר חלק — אותו מטמון נתונים." matTooltipPosition="above">
               <mat-icon>business</mat-icon>
               <span class="graph-dimension-toggle-label">קרן / מדינה</span>
             </mat-button-toggle>
@@ -257,18 +220,42 @@
     <!-- ===== TABLE SECTION (1/3) ===== -->
     <div class="table-section">
       <div class="panel panel-table">
-        <div class="panel-title">
-          <mat-icon>table_chart</mat-icon>
-          <span>{{ tablePanelTitle }}</span>
+        <div class="panel-title panel-title--with-search" dir="rtl">
+          <div class="panel-title__lead">
+            <mat-icon>table_chart</mat-icon>
+            <span>{{ tablePanelTitle }}</span>
+          </div>
+          <label class="panel-title__search" *ngIf="graphPrimaryView === 'income'">
+            <mat-icon class="panel-title__search-icon" aria-hidden="true">search</mat-icon>
+            <input type="search" class="dept-table-search"
+              [(ngModel)]="departmentTableSearch"
+              (ngModelChange)="applyDepartmentTableSearch()"
+              placeholder="חיפוש מחלקה..."
+              aria-label="חיפוש לפי שם מחלקה" />
+            <button *ngIf="departmentTableSearch" type="button" class="dept-table-search-clear"
+              (click)="clearDepartmentTableSearch()" aria-label="נקה חיפוש">
+              <mat-icon>close</mat-icon>
+            </button>
+          </label>
+          <label class="panel-title__search" *ngIf="graphPrimaryView === 'payer'">
+            <mat-icon class="panel-title__search-icon" aria-hidden="true">search</mat-icon>
+            <input type="search" class="dept-table-search"
+              [(ngModel)]="payerTableSearch"
+              (ngModelChange)="applyPayerTableSearch()"
+              placeholder="חיפוש גורם משלם..."
+              aria-label="חיפוש לפי שם גורם משלם" />
+            <button *ngIf="payerTableSearch" type="button" class="dept-table-search-clear"
+              (click)="clearPayerTableSearch()" aria-label="נקה חיפוש">
+              <mat-icon>close</mat-icon>
+            </button>
+          </label>
         </div>
 
         <div class="payer-type-toolbar" *ngIf="graphPrimaryView === 'payer'" dir="rtl">
           <mat-form-field appearance="outline" class="payer-filter-field" subscriptSizing="dynamic">
             <mat-label>מחלקה ({{ selectedDiagnosis || 'אגף' }})</mat-label>
             <mat-icon matPrefix>apartment</mat-icon>
-            <mat-select
-              [value]="selectedPayerDepartment"
-              (selectionChange)="onPayerDepartmentChange($event.value)"
+            <mat-select [value]="selectedPayerDepartment" (selectionChange)="onPayerDepartmentChange($event.value)"
               aria-label="בחירת מחלקה לפי אגף">
               <mat-option *ngFor="let dept of payerDepartmentOptions" [value]="dept">{{ dept }}</mat-option>
             </mat-select>
@@ -276,9 +263,7 @@
           <mat-form-field appearance="outline" class="payer-filter-field" subscriptSizing="dynamic">
             <mat-label>סוג גורם משלם </mat-label>
             <mat-icon matPrefix>filter_alt</mat-icon>
-            <mat-select
-              [value]="selectedPayerType"
-              (selectionChange)="onPayerTypeChange($event.value)"
+            <mat-select [value]="selectedPayerType" (selectionChange)="onPayerTypeChange($event.value)"
               aria-label="בחירת סוג גורם משלם">
               <mat-option *ngFor="let pt of payerTypeOptions" [value]="pt">{{ pt }}</mat-option>
             </mat-select>
@@ -287,8 +272,10 @@
         </div>
 
         <div class="table-body">
-          <div *ngIf="graphPrimaryView === 'income' && isMainDataLoading" class="data-loading-overlay" role="status" aria-live="polite">
-            <div class="loading-ring local-loading-ring" [style.background]="getLoadingRingBackground(getMainDataLoadingProgress())">
+          <div *ngIf="graphPrimaryView === 'income' && isMainDataLoading" class="data-loading-overlay" role="status"
+            aria-live="polite">
+            <div class="loading-ring local-loading-ring"
+              [style.background]="getLoadingRingBackground(getMainDataLoadingProgress())">
               <div class="loading-ring-inner local-loading-ring-inner">
                 <strong>{{ getMainDataLoadingProgress() }}%</strong>
                 <span>הושלם</span>
@@ -296,8 +283,10 @@
             </div>
             <div class="chart-loading-text">טוען טבלת הכנסות...</div>
           </div>
-          <div *ngIf="graphPrimaryView === 'payer' && isPayerYearlyLoading" class="data-loading-overlay" role="status" aria-live="polite">
-            <div class="loading-ring local-loading-ring" [style.background]="getLoadingRingBackground(getChartLoadingProgress())">
+          <div *ngIf="graphPrimaryView === 'payer' && isPayerYearlyLoading" class="data-loading-overlay" role="status"
+            aria-live="polite">
+            <div class="loading-ring local-loading-ring"
+              [style.background]="getLoadingRingBackground(getChartLoadingProgress())">
               <div class="loading-ring-inner local-loading-ring-inner">
                 <strong>{{ getChartLoadingProgress() }}%</strong>
                 <span>הושלם</span>
@@ -307,75 +296,67 @@
           </div>
 
           <ng-container *ngIf="graphPrimaryView === 'income'">
-          <div *ngIf="showTableDepartmentClickHint"
-               class="table-dept-click-hint"
-               [@tableDeptHintBanner]
-               role="status"
-               aria-live="polite">
-            <mat-icon class="table-dept-click-hint__icon" aria-hidden="true">touch_app</mat-icon>
-            <span class="table-dept-click-hint__text">שם המחלקה בטבלה <strong>לחיץ</strong> — לחיצה פותחת פירוט וגרף מפורט.</span>
-            <button type="button"
-                    mat-icon-button
-                    class="table-dept-click-hint__close"
-                    (click)="dismissTableDepartmentClickHint()"
-                    aria-label="סגור הודעה">
-              <mat-icon>close</mat-icon>
-            </button>
-          </div>
-          <div class="table-wrap"
-               [class.table-wrap--dept-column-hint]="showTableDepartmentClickHint">
-            <div *ngIf="showTableDepartmentClickHint"
-                 class="table-dept-column-hint-veil"
-                 aria-hidden="true"></div>
-            <table mat-table [dataSource]="dataSource" matSort #mainSort="matSort" class="table table--with-dept-hint-veil" dir="rtl">
+            <div *ngIf="showTableDepartmentClickHint" class="table-dept-click-hint" [@tableDeptHintBanner] role="status"
+              aria-live="polite">
+              <mat-icon class="table-dept-click-hint__icon" aria-hidden="true">touch_app</mat-icon>
+              <span class="table-dept-click-hint__text">שם המחלקה בטבלה <strong>לחיץ</strong> — לחיצה פותחת פירוט וגרף
+                מפורט.</span>
+              <button type="button" mat-icon-button class="table-dept-click-hint__close"
+                (click)="dismissTableDepartmentClickHint()" aria-label="סגור הודעה">
+                <mat-icon>close</mat-icon>
+              </button>
+            </div>
+            <div class="table-wrap" [class.table-wrap--dept-column-hint]="showTableDepartmentClickHint">
+              <div *ngIf="showTableDepartmentClickHint" class="table-dept-column-hint-veil" aria-hidden="true"></div>
+              <table mat-table [dataSource]="dataSource" matSort #mainSort="matSort"
+                class="table table--with-dept-hint-veil" dir="rtl">
 
-              <ng-container matColumnDef="DepartmentName">
-                <th mat-header-cell *matHeaderCellDef mat-sort-header>מחלקה</th>
-                <td mat-cell *matCellDef="let r"
-                    (click)="loadDepartmentSpecificGraph(r.DepartmentName)"
-                    class="clickable-cell"
-                    matTooltip="לחץ לפתיחת פירוט מחלקה וגרף מפורט"
-                    matTooltipPosition="below"
-                    tabindex="0"
-                    role="button"
-                    [attr.aria-label]="'פירוט מחלקה ' + r.DepartmentName"
+                <ng-container matColumnDef="DepartmentName">
+                  <th mat-header-cell *matHeaderCellDef mat-sort-header="DepartmentName">מחלקה</th>
+                  <td mat-cell *matCellDef="let r" (click)="loadDepartmentSpecificGraph(r.DepartmentName)"
+                    class="clickable-cell" matTooltip="לחץ לפתיחת פירוט מחלקה וגרף מפורט" matTooltipPosition="below"
+                    tabindex="0" role="button" [attr.aria-label]="'פירוט מחלקה ' + r.DepartmentName"
                     (keydown.enter)="loadDepartmentSpecificGraph(r.DepartmentName)"
                     (keydown.space)="$event.preventDefault(); loadDepartmentSpecificGraph(r.DepartmentName)">
-                  <span class="clickable-cell__inner">
-                    <span class="clickable-cell__text">{{ r.DepartmentName }}</span>
-                    <mat-icon class="clickable-cell__hint" aria-hidden="true">touch_app</mat-icon>
-                  </span>
-                </td>
-              </ng-container>
+                    <span class="clickable-cell__inner">
+                      <span class="clickable-cell__text">{{ r.DepartmentName }}</span>
+                      <mat-icon class="clickable-cell__hint" aria-hidden="true">touch_app</mat-icon>
+                    </span>
+                  </td>
+                </ng-container>
 
-              <ng-container *ngFor="let yCol of fiveYearColumnDefs" [matColumnDef]="yCol.id">
-                <th mat-header-cell *matHeaderCellDef mat-sort-header>{{ yCol.label }}</th>
-                <td mat-cell *matCellDef="let r"
-                    [class.income-2025-cell]="yCol.field === 'CurrentYear'">
-                  {{ formatNumber(getRowFiveYearValue(r, yCol.field)) }} ₪
-                </td>
-              </ng-container>
+                <ng-container *ngFor="let yCol of fiveYearColumnDefs" [matColumnDef]="yCol.id">
+                  <th mat-header-cell *matHeaderCellDef [mat-sort-header]="yCol.id">{{ yCol.label }}</th>
+                  <td mat-cell *matCellDef="let r" [class.income-2025-cell]="yCol.field === 'CurrentYear'">
+                    <div class="five-year-income-cell">
+                      <div class="five-year-income-amount">{{ formatNumber(getRowFiveYearValue(r, yCol.field)) }} ₪</div>
+                      <span *ngIf="getFiveYearYoYPercentLabel(r, yCol.field) as yoyPct"
+                            class="five-year-yoy-pct"
+                            [class.positive-change]="getFiveYearYoYIsPositive(r, yCol.field) === true"
+                            [class.negative-change]="getFiveYearYoYIsPositive(r, yCol.field) === false">{{ yoyPct }}</span>
+                    </div>
+                  </td>
+                </ng-container>
 
-              <ng-container matColumnDef="Difference">
-                <th mat-header-cell *matHeaderCellDef mat-sort-header>הפרש / % שינוי</th>
-                <td mat-cell *matCellDef="let r"
-                    [class.positive-change]="getLatestPriorYearDiff(r) >= 0"
+                <ng-container matColumnDef="Difference">
+                  <th mat-header-cell *matHeaderCellDef mat-sort-header="Difference">הפרש / % שינוי</th>
+                  <td mat-cell *matCellDef="let r" [class.positive-change]="getLatestPriorYearDiff(r) >= 0"
                     [class.negative-change]="getLatestPriorYearDiff(r) < 0">
-                  <div class="five-year-diff-cell">
-                    <div class="five-year-diff-amount">{{ formatNumber(getLatestPriorYearDiff(r)) }} ₪</div>
-                    <span class="five-year-diff-pct percentage-badge">{{ getLatestPriorYearPercentLabel(r) }}</span>
-                  </div>
-                </td>
-              </ng-container>
+                    <div class="five-year-diff-cell">
+                      <div class="five-year-diff-amount">{{ formatNumber(getLatestPriorYearDiff(r)) }} ₪</div>
+                      <span class="five-year-diff-pct percentage-badge">{{ getLatestPriorYearPercentLabel(r) }}</span>
+                    </div>
+                  </td>
+                </ng-container>
 
-              <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-              <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
-            </table>
-          </div>
+                <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+                <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+              </table>
+            </div>
 
-          <div class="empty" *ngIf="!isMainDataLoading && dataSource.data.length === 0">
-            אין נתונים להצגה
-          </div>
+            <div class="empty" *ngIf="!isMainDataLoading && dataSource.data.length === 0">
+              אין נתונים להצגה
+            </div>
           </ng-container>
 
           <ng-container *ngIf="graphPrimaryView === 'payer'">
@@ -383,30 +364,29 @@
               <table mat-table [dataSource]="payerDataSource" matSort #payerSort="matSort" class="table" dir="rtl">
 
                 <ng-container matColumnDef="UnifiedPayer">
-                  <th mat-header-cell *matHeaderCellDef mat-sort-header>גורם משלם  </th>
+                  <th mat-header-cell *matHeaderCellDef mat-sort-header="UnifiedPayer">גורם משלם </th>
                   <td mat-cell *matCellDef="let r" class="payer-name-cell">
                     {{ r.UnifiedPayer }}
                   </td>
                 </ng-container>
 
-                <ng-container matColumnDef="Month">
-                  <th mat-header-cell *matHeaderCellDef mat-sort-header>חודש יחוס</th>
-                  <td mat-cell *matCellDef="let r">{{ r.Month || '—' }}</td>
-                </ng-container>
-
                 <ng-container *ngFor="let yCol of fiveYearColumnDefs" [matColumnDef]="yCol.id">
-                  <th mat-header-cell *matHeaderCellDef mat-sort-header>{{ yCol.label }}</th>
-                  <td mat-cell *matCellDef="let r"
-                      [class.income-2025-cell]="yCol.field === 'CurrentYear'">
-                    {{ formatNumber(getRowFiveYearValue(r, yCol.field)) }} ₪
+                  <th mat-header-cell *matHeaderCellDef [mat-sort-header]="yCol.id">{{ yCol.label }}</th>
+                  <td mat-cell *matCellDef="let r" [class.income-2025-cell]="yCol.field === 'CurrentYear'">
+                    <div class="five-year-income-cell">
+                      <div class="five-year-income-amount">{{ formatNumber(getRowFiveYearValue(r, yCol.field)) }} ₪</div>
+                      <span *ngIf="getFiveYearYoYPercentLabel(r, yCol.field) as yoyPct"
+                            class="five-year-yoy-pct"
+                            [class.positive-change]="getFiveYearYoYIsPositive(r, yCol.field) === true"
+                            [class.negative-change]="getFiveYearYoYIsPositive(r, yCol.field) === false">{{ yoyPct }}</span>
+                    </div>
                   </td>
                 </ng-container>
 
                 <ng-container matColumnDef="Difference">
-                  <th mat-header-cell *matHeaderCellDef mat-sort-header>הפרש / % שינוי (YTY)</th>
-                  <td mat-cell *matCellDef="let r"
-                      [class.positive-change]="getPayerYtyDiff(r) >= 0"
-                      [class.negative-change]="getPayerYtyDiff(r) < 0">
+                  <th mat-header-cell *matHeaderCellDef mat-sort-header="Difference">הפרש / % שינוי (YTY)</th>
+                  <td mat-cell *matCellDef="let r" [class.positive-change]="getPayerYtyDiff(r) >= 0"
+                    [class.negative-change]="getPayerYtyDiff(r) < 0">
                     <div class="five-year-diff-cell">
                       <div class="five-year-diff-amount">{{ formatNumber(getPayerYtyDiff(r)) }} ₪</div>
                       <span class="five-year-diff-pct percentage-badge">{{ getPayerYtyPercentLabel(r) }}</span>
@@ -428,10 +408,8 @@
     </div>
 
     <!-- ===== INCOME FILTERS SIDEBAR ===== -->
-    <aside class="top-departments-sidebar top-departments-sidebar--filters income-filters-sidebar"
-           dir="rtl"
-           aria-label="סינון מתקדם לדשבורד ההכנסות"
-           *ngIf="showIncomeFiltersSidebar">
+    <aside class="top-departments-sidebar top-departments-sidebar--filters income-filters-sidebar" dir="rtl"
+      aria-label="סינון מתקדם לדשבורד ההכנסות" *ngIf="showIncomeFiltersSidebar">
       <div class="top-departments-section-compact top-departments-section-compact--filters">
         <div class="top-departments-header-compact top-departments-header-compact--filters-heading">
           <div class="title-with-icon filter-sidebar-heading filter-sidebar-heading--inline">
@@ -443,103 +421,80 @@
               <span class="filter-sidebar-heading__title">סינון מתקדם</span>
               <span class="filter-sidebar-heading__hint">מסננים משותפים לגרף ולטבלה</span>
             </div>
-            <button type="button"
-                    mat-icon-button
-                    class="filter-sidebar-inline-close"
-                    matTooltip="סגור סינון"
-                    matTooltipPosition="below"
-                    (click)="toggleIncomeFiltersSidebar()"
-                    aria-label="סגור סינון מתקדם">
+            <button type="button" mat-icon-button class="filter-sidebar-inline-close" matTooltip="סגור סינון"
+              matTooltipPosition="below" (click)="toggleIncomeFiltersSidebar()" aria-label="סגור סינון מתקדם">
               <mat-icon>close</mat-icon>
             </button>
           </div>
 
           <div class="wing-and-theme-row filters-row filters-column" dir="rtl">
-            <button mat-stroked-button
-                    type="button"
-                    class="reset-filters-btn reset-filters-btn--in-sidebar"
-                    matTooltip="איפוס כל הפילטרים"
-                    matTooltipPosition="below"
-                    [disabled]="!hasActiveIncomeFilters()"
-                    (click)="resetIncomeFilters()">
+            <button mat-stroked-button type="button" class="reset-filters-btn reset-filters-btn--in-sidebar"
+              matTooltip="איפוס כל הפילטרים" matTooltipPosition="below" [disabled]="!hasActiveIncomeFilters()"
+              (click)="resetIncomeFilters()">
               <mat-icon>restart_alt</mat-icon>
               איפוס סינון
             </button>
 
-            <div class="custom-dropdown filter-dropdown"
-            [class.active]="isUnifiedCategoryOpen"
-            [class.has-value]="selectedUnifiedCategory !== incomeFilterAllValue">
-         <div class="dropdown-trigger"
-              matTooltip="{{ getUnifiedCategoryDisplay() }}"
-              matTooltipPosition="below"
-              (click)="toggleIncomeFilterDropdown('unifiedCategory')">
-           <mat-icon class="dropdown-icon">account_tree</mat-icon>
-           <span class="selected-text">סיווג הכנסה מאוחד :  {{ getUnifiedCategoryDisplay() }}</span>
-           <mat-icon class="arrow-icon">{{ isUnifiedCategoryOpen ? 'expand_less' : 'expand_more' }}</mat-icon>
-         </div>
-         <div class="dropdown-panel" *ngIf="isUnifiedCategoryOpen">
-           <div class="options-list">
-             <div class="option-item"
-                  *ngFor="let option of unifiedCategoryOptions"
-                  [class.selected]="selectedUnifiedCategory === option"
-                  (click)="setUnifiedCategoryFilter(option)">
-               {{ option }}
-             </div>
-           </div>
-         </div>
-       </div>
-
-          
-            <div class="custom-dropdown filter-dropdown"
-                 [class.active]="isOrganizationOpen"
-                 [class.has-value]="selectedOrganization !== incomeFilterAllValue">
-              <div class="dropdown-trigger"
-                   matTooltip="{{ getOrganizationDisplay() }}"
-                   matTooltipPosition="below"
-                   (click)="toggleIncomeFilterDropdown('organization')">
-                <mat-icon class="dropdown-icon">business</mat-icon>
-                <span class="selected-text">קרן / מדינה: {{ getOrganizationDisplay() }}</span>
-                <mat-icon class="arrow-icon">{{ isOrganizationOpen ? 'expand_less' : 'expand_more' }}</mat-icon>
+            <div class="custom-dropdown filter-dropdown" [class.active]="isUnifiedCategoryOpen"
+              [class.has-value]="selectedUnifiedCategory !== incomeFilterAllValue">
+              <div class="dropdown-trigger" matTooltip="{{ getUnifiedCategoryDisplay() }}" matTooltipPosition="below"
+                (click)="toggleIncomeFilterDropdown('unifiedCategory')">
+                <mat-icon class="dropdown-icon">account_tree</mat-icon>
+                <span class="selected-text">סיווג הכנסה מאוחד : {{ getUnifiedCategoryDisplay() }}</span>
+                <mat-icon class="arrow-icon">{{ isUnifiedCategoryOpen ? 'expand_less' : 'expand_more' }}</mat-icon>
               </div>
-              <div class="dropdown-panel" *ngIf="isOrganizationOpen">
+              <div class="dropdown-panel" *ngIf="isUnifiedCategoryOpen">
                 <div class="options-list">
-                  <div class="option-item"
-                       *ngFor="let option of organizationOptions"
-                       [class.selected]="selectedOrganization === option"
-                       (click)="setOrganizationFilter(option)">
+                  <div class="option-item" *ngFor="let option of unifiedCategoryOptions"
+                    [class.selected]="selectedUnifiedCategory === option" (click)="setUnifiedCategoryFilter(option)">
                     {{ option }}
                   </div>
                 </div>
               </div>
             </div>
 
-            <div class="custom-dropdown filter-dropdown"
-            [class.active]="isIncomeClassificationOpen"
-            [class.has-value]="selectedIncomeClassification !== incomeFilterAllValue">
-         <div class="dropdown-trigger"
-              matTooltip="{{ getIncomeClassificationDisplay() }}"
-              matTooltipPosition="below"
-              (click)="toggleIncomeFilterDropdown('classification')">
-           <mat-icon class="dropdown-icon">category</mat-icon>
-           <span class="selected-text">סיווג הכנסה: {{ getIncomeClassificationDisplay() }}</span>
-           <mat-icon class="arrow-icon">{{ isIncomeClassificationOpen ? 'expand_less' : 'expand_more' }}</mat-icon>
-         </div>
-         <div class="dropdown-panel" *ngIf="isIncomeClassificationOpen">
-           <div class="options-list">
-             <div class="option-item"
-                  *ngFor="let option of incomeClassificationOptions"
-                  [class.selected]="selectedIncomeClassification === option"
-                  (click)="setIncomeClassificationFilter(option)">
-               {{ option }}
-             </div>
-           </div>
-         </div>
-       </div>
+
+            <div class="custom-dropdown filter-dropdown" [class.active]="isOrganizationOpen"
+              [class.has-value]="selectedOrganization !== incomeFilterAllValue">
+              <div class="dropdown-trigger" matTooltip="{{ getOrganizationDisplay() }}" matTooltipPosition="below"
+                (click)="toggleIncomeFilterDropdown('organization')">
+                <mat-icon class="dropdown-icon">business</mat-icon>
+                <span class="selected-text">קרן / מדינה: {{ getOrganizationDisplay() }}</span>
+                <mat-icon class="arrow-icon">{{ isOrganizationOpen ? 'expand_less' : 'expand_more' }}</mat-icon>
+              </div>
+              <div class="dropdown-panel" *ngIf="isOrganizationOpen">
+                <div class="options-list">
+                  <div class="option-item" *ngFor="let option of organizationOptions"
+                    [class.selected]="selectedOrganization === option" (click)="setOrganizationFilter(option)">
+                    {{ option }}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="custom-dropdown filter-dropdown" [class.active]="isIncomeClassificationOpen"
+              [class.has-value]="selectedIncomeClassification !== incomeFilterAllValue">
+              <div class="dropdown-trigger" matTooltip="{{ getIncomeClassificationDisplay() }}"
+                matTooltipPosition="below" (click)="toggleIncomeFilterDropdown('classification')">
+                <mat-icon class="dropdown-icon">category</mat-icon>
+                <span class="selected-text">סיווג הכנסה: {{ getIncomeClassificationDisplay() }}</span>
+                <mat-icon class="arrow-icon">{{ isIncomeClassificationOpen ? 'expand_less' : 'expand_more' }}</mat-icon>
+              </div>
+              <div class="dropdown-panel" *ngIf="isIncomeClassificationOpen">
+                <div class="options-list">
+                  <div class="option-item" *ngFor="let option of incomeClassificationOptions"
+                    [class.selected]="selectedIncomeClassification === option"
+                    (click)="setIncomeClassificationFilter(option)">
+                    {{ option }}
+                  </div>
+                </div>
+              </div>
+            </div>
 
 
 
 
-       
+
           </div>
         </div>
 
@@ -551,29 +506,26 @@
     </aside>
 
     <!-- ===== TOP DEPARTMENTS SIDEBAR ===== -->
-    <div class="top-departments-sidebar"
-         *ngIf="showTopDepartmentsSidebar">
+    <div class="top-departments-sidebar" *ngIf="showTopDepartmentsSidebar">
       <div class="top-departments-section-compact">
         <div class="top-departments-header-compact">
           <div class="title-with-icon">
             <div class="top-departments-title-row">
               <h3>🏆 מובילי צמיחה</h3>
             </div>
-          
+
           </div>
 
-          <mat-button-toggle-group
-            [(ngModel)]="topDepartmentsViewType"
-            (change)="onTopDepartmentsViewChange($event.value)"
-            class="compact-toggle"
-            appearance="standard">
+          <mat-button-toggle-group [(ngModel)]="topDepartmentsViewType"
+            (change)="onTopDepartmentsViewChange($event.value)" class="compact-toggle" appearance="standard">
             <mat-button-toggle value="difference">₪</mat-button-toggle>
             <mat-button-toggle value="percentage">%</mat-button-toggle>
           </mat-button-toggle-group>
         </div>
 
         <div *ngIf="isMainDataLoading" class="inline-data-loading" role="status" aria-live="polite">
-          <div class="loading-ring local-loading-ring" [style.background]="getLoadingRingBackground(getMainDataLoadingProgress())">
+          <div class="loading-ring local-loading-ring"
+            [style.background]="getLoadingRingBackground(getMainDataLoadingProgress())">
             <div class="loading-ring-inner local-loading-ring-inner">
               <strong>{{ getMainDataLoadingProgress() }}%</strong>
               <span>הושלם</span>
@@ -583,10 +535,8 @@
         </div>
 
         <div class="top-departments-list-compact" *ngIf="!isMainDataLoading && topDepartments?.length > 0">
-          <div *ngFor="let dept of topDepartments; let i = index"
-               class="rank-item-compact"
-               [ngClass]="'rank-' + (i + 1)"
-               matTooltipPosition="left">
+          <div *ngFor="let dept of topDepartments; let i = index" class="rank-item-compact"
+            [ngClass]="'rank-' + (i + 1)" matTooltipPosition="left">
 
             <div class="rank-badge-compact">
               <span *ngIf="i === 0">🥇</span>
@@ -597,10 +547,7 @@
 
             <div class="rank-main-content">
               <div class="dept-header-row">
-                <div
-                  class="department-name-compact"
-                  [matTooltip]="dept.DepartmentName"
-                  matTooltipPosition="left"
+                <div class="department-name-compact" [matTooltip]="dept.DepartmentName" matTooltipPosition="left"
                   matTooltipClass="subtle-tooltip"
                   [matTooltipDisabled]="!dept.DepartmentName || dept.DepartmentName.length <= 18">
                   {{ dept.DepartmentName }}
@@ -623,16 +570,13 @@
                 <span class="rank-meta-period">
                   {{ getOlderYearFromDeptData() }} → {{ getLatestYearFromDeptData() }}
                 </span>
-                <span
-                  class="rank-manager-chip"
-                  *ngIf="dept.managerName">
+                <span class="rank-manager-chip" *ngIf="dept.managerName">
                   מנהל/ת: {{ dept.managerName }}
                 </span>
               </div>
 
               <div class="rank-progress-compact">
-                <div class="progress-bar-compact"
-                     [style.width.%]="topDepartmentsViewType === 'difference'
+                <div class="progress-bar-compact" [style.width.%]="topDepartmentsViewType === 'difference'
                        ? (dept.difference / topDepartments[0].difference * 100)
                        : (dept.percentage / topDepartments[0].percentage * 100)">
                 </div>
@@ -641,7 +585,8 @@
           </div>
         </div>
 
-        <div class="top-departments-empty" *ngIf="!isMainDataLoading && (!topDepartments || topDepartments.length === 0)">
+        <div class="top-departments-empty"
+          *ngIf="!isMainDataLoading && (!topDepartments || topDepartments.length === 0)">
           <mat-icon aria-hidden="true">info_outline</mat-icon>
           <span>החודש אין מחלקות בצמיחה חיובית להצגה.</span>
         </div>
@@ -700,8 +645,7 @@
           <span class="showcase-icon">{{ getArticleIcon() }}</span>
           {{ getArticleTitle() }}
         </div>
-        <button class="showcase-close-btn" (click)="closeArticleShowcase()" mat-icon-button
-          aria-label="Close article">
+        <button class="showcase-close-btn" (click)="closeArticleShowcase()" mat-icon-button aria-label="Close article">
           <mat-icon>close</mat-icon>
         </button>
       </div>
@@ -740,7 +684,8 @@
             </div>
             <div class="note-item highlight" dir="rtl">
               <span class="note-number">⚡</span>
-              <p><strong>כל הנתונים מודדים את אותה התקופה.</strong> לדוגמא: אם נתוני {{ getLatestYearFromDeptData() }} כוללים 9 חודשים, נתוני השנים
+              <p><strong>כל הנתונים מודדים את אותה התקופה.</strong> לדוגמא: אם נתוני {{ getLatestYearFromDeptData() }}
+                כוללים 9 חודשים, נתוני השנים
                 הקודמות יכללו גם הם את נתוני 9 חודשים מקבילים.</p>
             </div>
           </div>
@@ -796,7 +741,8 @@
 </div>
 
 <!-- ================= DEPARTMENT DETAILS MODAL ================= -->
-<div *ngIf="isDepartmentGraphOpen && selectedDepartment" class="department-graph-overlay" [class.dark]="isDark" dir="rtl">
+<div *ngIf="isDepartmentGraphOpen && selectedDepartment" class="department-graph-overlay" [class.dark]="isDark"
+  dir="rtl">
   <div class="department-graph-modal" dir="rtl">
     <div dir="rtl" class="graph-header">
       <h2>{{ departmentGraphTitle }}</h2>
@@ -821,9 +767,8 @@
         </mat-card-content>
       </mat-card>
 
-      <mat-card class="summary-card" 
-                [class.positive]="getModalDifference() >= 0"
-                [class.negative]="getModalDifference() < 0">
+      <mat-card class="summary-card" [class.positive]="getModalDifference() >= 0"
+        [class.negative]="getModalDifference() < 0">
         <mat-card-content>
           <div class="card-label">הפרש</div>
           <div class="card-value">{{ formatNumber(getModalDifference()) }} ₪</div>
@@ -880,55 +825,42 @@
       </div>
 
       <div class="modal-filters-panel" *ngIf="showModalIncomeFilters" dir="rtl">
-        <button mat-stroked-button
-                type="button"
-                class="reset-filters-btn modal-reset-filters-btn"
-                [disabled]="!hasActiveIncomeFilters()"
-                (click)="resetIncomeFilters()">
+        <button mat-stroked-button type="button" class="reset-filters-btn modal-reset-filters-btn"
+          [disabled]="!hasActiveIncomeFilters()" (click)="resetIncomeFilters()">
           <mat-icon>restart_alt</mat-icon>
           איפוס סינון
         </button>
 
-        <div class="custom-dropdown filter-dropdown"
-             [class.active]="isUnifiedCategoryOpen"
-             [class.has-value]="selectedUnifiedCategory !== incomeFilterAllValue">
-          <div class="dropdown-trigger"
-               matTooltip="{{ getUnifiedCategoryDisplay() }}"
-               matTooltipPosition="below"
-               (click)="toggleIncomeFilterDropdown('unifiedCategory')">
+        <div class="custom-dropdown filter-dropdown" [class.active]="isUnifiedCategoryOpen"
+          [class.has-value]="selectedUnifiedCategory !== incomeFilterAllValue">
+          <div class="dropdown-trigger" matTooltip="{{ getUnifiedCategoryDisplay() }}" matTooltipPosition="below"
+            (click)="toggleIncomeFilterDropdown('unifiedCategory')">
             <mat-icon class="dropdown-icon">account_tree</mat-icon>
             <span class="selected-text">סיווג הכנסה מאוחד : {{ getUnifiedCategoryDisplay() }}</span>
             <mat-icon class="arrow-icon">{{ isUnifiedCategoryOpen ? 'expand_less' : 'expand_more' }}</mat-icon>
           </div>
           <div class="dropdown-panel" *ngIf="isUnifiedCategoryOpen">
             <div class="options-list">
-              <div class="option-item"
-                   *ngFor="let option of unifiedCategoryOptions"
-                   [class.selected]="selectedUnifiedCategory === option"
-                   (click)="setUnifiedCategoryFilter(option)">
+              <div class="option-item" *ngFor="let option of unifiedCategoryOptions"
+                [class.selected]="selectedUnifiedCategory === option" (click)="setUnifiedCategoryFilter(option)">
                 {{ option }}
               </div>
             </div>
           </div>
         </div>
 
-        <div class="custom-dropdown filter-dropdown"
-             [class.active]="isOrganizationOpen"
-             [class.has-value]="selectedOrganization !== incomeFilterAllValue">
-          <div class="dropdown-trigger"
-               matTooltip="{{ getOrganizationDisplay() }}"
-               matTooltipPosition="below"
-               (click)="toggleIncomeFilterDropdown('organization')">
+        <div class="custom-dropdown filter-dropdown" [class.active]="isOrganizationOpen"
+          [class.has-value]="selectedOrganization !== incomeFilterAllValue">
+          <div class="dropdown-trigger" matTooltip="{{ getOrganizationDisplay() }}" matTooltipPosition="below"
+            (click)="toggleIncomeFilterDropdown('organization')">
             <mat-icon class="dropdown-icon">business</mat-icon>
             <span class="selected-text">קרן / מדינה: {{ getOrganizationDisplay() }}</span>
             <mat-icon class="arrow-icon">{{ isOrganizationOpen ? 'expand_less' : 'expand_more' }}</mat-icon>
           </div>
           <div class="dropdown-panel" *ngIf="isOrganizationOpen">
             <div class="options-list">
-              <div class="option-item"
-                   *ngFor="let option of organizationOptions"
-                   [class.selected]="selectedOrganization === option"
-                   (click)="setOrganizationFilter(option)">
+              <div class="option-item" *ngFor="let option of organizationOptions"
+                [class.selected]="selectedOrganization === option" (click)="setOrganizationFilter(option)">
                 {{ option }}
               </div>
             </div>
@@ -960,7 +892,8 @@
       </div>
 
       <div *ngIf="catalogLoading" class="catalog-loading-container" role="status" aria-live="polite">
-        <div class="loading-ring local-loading-ring" [style.background]="getLoadingRingBackground(getCatalogLoadingProgress())">
+        <div class="loading-ring local-loading-ring"
+          [style.background]="getLoadingRingBackground(getCatalogLoadingProgress())">
           <div class="loading-ring-inner local-loading-ring-inner">
             <strong>{{ getCatalogLoadingProgress() }}%</strong>
             <span>הושלם</span>
@@ -997,7 +930,7 @@
 
           <ng-container matColumnDef="Cash2023">
             <th mat-header-cell *matHeaderCellDef style="font-weight: bold; cursor: pointer;"
-              (click)="onDetailedTableSort({active: 'Cash2023', direction: 'desc'})">{{getFullYear(2)}}  </th>
+              (click)="onDetailedTableSort({active: 'Cash2023', direction: 'desc'})">{{getFullYear(2)}} </th>
             <td mat-cell *matCellDef="let element">{{ formatNumber(element.Cash2023) }}</td>
           </ng-container>
 
@@ -1112,7 +1045,8 @@
     </div>
 
     <div *ngIf="isLoading" class="boss-loading-container" role="status" aria-live="polite">
-      <div class="loading-ring local-loading-ring" [style.background]="getLoadingRingBackground(getBossLoadingProgress())">
+      <div class="loading-ring local-loading-ring"
+        [style.background]="getLoadingRingBackground(getBossLoadingProgress())">
         <div class="loading-ring-inner local-loading-ring-inner">
           <strong>{{ getBossLoadingProgress() }}%</strong>
           <span>הושלם</span>
