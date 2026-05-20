@@ -1881,7 +1881,7 @@ export class MershamComponent implements OnInit {
     }
     public getEmployeesForLabelPrint() {
         this.http
-            .post(environment.url + "GetEmployees", {
+            .post(environment.url + "GetEmployeesMed", {
                 pageIndex: 0,
                 pageSize: 1000,
                 serachTxt: "",
