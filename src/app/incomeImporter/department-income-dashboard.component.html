@@ -348,26 +348,23 @@
                 </td>
               </ng-container>
 
-              <ng-container matColumnDef="Income2024">
-                <th mat-header-cell *matHeaderCellDef mat-sort-header>הכנסות {{ getOlderYearFromDeptData() }}</th>
-                <td mat-cell *matCellDef="let r">{{ formatNumber(r.Income2024) }} ₪</td>
-              </ng-container>
-
-              <ng-container matColumnDef="Income2025">
-                <th mat-header-cell *matHeaderCellDef mat-sort-header>הכנסות {{ getLatestYearFromDeptData() }}</th>
-                <td mat-cell *matCellDef="let r" class="income-2025-cell">
-                  {{ formatNumber(r.Income2025) }} ₪
+              <ng-container *ngFor="let yCol of fiveYearColumnDefs" [matColumnDef]="yCol.id">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header>{{ yCol.label }}</th>
+                <td mat-cell *matCellDef="let r"
+                    [class.income-2025-cell]="yCol.field === 'CurrentYear'">
+                  {{ formatNumber(getRowFiveYearValue(r, yCol.field)) }} ₪
                 </td>
               </ng-container>
 
               <ng-container matColumnDef="Difference">
                 <th mat-header-cell *matHeaderCellDef mat-sort-header>הפרש / % שינוי</th>
-                <td mat-cell *matCellDef="let r" 
-                    [class.positive-change]="calculateDifference(r) >= 0"
-                    [class.negative-change]="calculateDifference(r) < 0">
-                  {{ formatNumber(calculateDifference(r)) }} ₪
-                  <br />
-                  <span class="percentage-badge">{{ calculatePercentageChange(r) }}</span>
+                <td mat-cell *matCellDef="let r"
+                    [class.positive-change]="getLatestPriorYearDiff(r) >= 0"
+                    [class.negative-change]="getLatestPriorYearDiff(r) < 0">
+                  <div class="five-year-diff-cell">
+                    <div class="five-year-diff-amount">{{ formatNumber(getLatestPriorYearDiff(r)) }} ₪</div>
+                    <span class="five-year-diff-pct percentage-badge">{{ getLatestPriorYearPercentLabel(r) }}</span>
+                  </div>
                 </td>
               </ng-container>
 
@@ -397,15 +394,11 @@
                   <td mat-cell *matCellDef="let r">{{ r.Month || '—' }}</td>
                 </ng-container>
 
-                <ng-container matColumnDef="Income2024">
-                  <th mat-header-cell *matHeaderCellDef mat-sort-header>הכנסות {{ getOlderYearFromDeptData() }}</th>
-                  <td mat-cell *matCellDef="let r">{{ formatNumber(r.Income2024) }} ₪</td>
-                </ng-container>
-
-                <ng-container matColumnDef="Income2025">
-                  <th mat-header-cell *matHeaderCellDef mat-sort-header>הכנסות {{ getLatestYearFromDeptData() }}</th>
-                  <td mat-cell *matCellDef="let r" class="income-2025-cell">
-                    {{ formatNumber(r.Income2025) }} ₪
+                <ng-container *ngFor="let yCol of fiveYearColumnDefs" [matColumnDef]="yCol.id">
+                  <th mat-header-cell *matHeaderCellDef mat-sort-header>{{ yCol.label }}</th>
+                  <td mat-cell *matCellDef="let r"
+                      [class.income-2025-cell]="yCol.field === 'CurrentYear'">
+                    {{ formatNumber(getRowFiveYearValue(r, yCol.field)) }} ₪
                   </td>
                 </ng-container>
 
@@ -414,9 +407,10 @@
                   <td mat-cell *matCellDef="let r"
                       [class.positive-change]="getPayerYtyDiff(r) >= 0"
                       [class.negative-change]="getPayerYtyDiff(r) < 0">
-                    {{ formatNumber(getPayerYtyDiff(r)) }} ₪
-                    <br />
-                    <span class="percentage-badge">{{ getPayerYtyPercentLabel(r) }}</span>
+                    <div class="five-year-diff-cell">
+                      <div class="five-year-diff-amount">{{ formatNumber(getPayerYtyDiff(r)) }} ₪</div>
+                      <span class="five-year-diff-pct percentage-badge">{{ getPayerYtyPercentLabel(r) }}</span>
+                    </div>
                   </td>
                 </ng-container>
 
