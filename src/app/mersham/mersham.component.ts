@@ -56,6 +56,8 @@ export interface DropOption {
     name: string;
     viewValue: string;
     groupID: string;
+    StorageConditions?: string;
+    ExpireTime?: string;
 }
 export interface Prescription {
     PerscriptionID: string;
@@ -112,6 +114,12 @@ export interface PrescriptionRow {
 
 export interface Drug {
     DrugName: string;
+}
+export interface DrugMetadata {
+    MedID?: string;
+    MedName: string;
+    StorageConditions?: string;
+    ExpireTime?: string;
 }
 export interface EmployeeOption {
     EmployeeID: string;
@@ -375,6 +383,7 @@ export class MershamComponent implements OnInit {
     PresRowIdVal: string;
     filterdDataArray: DropOption[];
     MedListConst: DropOption[];
+    drugMetadataList: DrugMetadata[] = [];
     loadModalAfterClose: Boolean;
     printForm: {
         MedicationSensitivityVal: string;
@@ -849,7 +858,7 @@ export class MershamComponent implements OnInit {
             checkerEmployeeId: "",
         });
         this.modalService.open(content, {
-            windowClass: "custom-class",
+            windowClass: "row-label-print-modal",
             backdrop: "static",
         });
     }
@@ -865,7 +874,7 @@ export class MershamComponent implements OnInit {
         const printWindow = window.open(
             "",
             "_blank",
-            "noopener,noreferrer,width=480,height=720"
+            "width=480,height=720"
         );
         if (!printWindow) {
             this.openSnackBar("לא ניתן לפתוח חלון הדפסה", "error");
@@ -951,6 +960,125 @@ export class MershamComponent implements OnInit {
         }
         return this.formatDate(parsedDate);
     }
+    private getCurrentPreparationDateValue(): Date {
+        if (!this.PrespictionForm || !this.PrespictionForm.get("takedateIN")) {
+            return new Date();
+        }
+        const takeDate = this.PrespictionForm.get("takedateIN").value;
+        if (takeDate instanceof Date && !isNaN(takeDate.getTime())) {
+            return new Date(
+                takeDate.getFullYear(),
+                takeDate.getMonth(),
+                takeDate.getDate()
+            );
+        }
+        const stringValue = String(takeDate || "").trim();
+        const dateParts = stringValue.match(/^(\d{2})[/-](\d{2})[/-](\d{4})$/);
+        if (dateParts) {
+            return new Date(
+                parseInt(dateParts[3], 10),
+                parseInt(dateParts[2], 10) - 1,
+                parseInt(dateParts[1], 10)
+            );
+        }
+        const parsedDate = new Date(stringValue);
+        if (!isNaN(parsedDate.getTime())) {
+            return new Date(
+                parsedDate.getFullYear(),
+                parsedDate.getMonth(),
+                parsedDate.getDate()
+            );
+        }
+        return new Date();
+    }
+    private getPreparationDateTime(preparationTime: string): Date {
+        const date = this.getCurrentPreparationDateValue();
+        const timeParts = String(preparationTime || "").split(":");
+        const hours = parseInt(timeParts[0], 10);
+        const minutes = parseInt(timeParts[1], 10);
+        date.setHours(isNaN(hours) ? 0 : hours, isNaN(minutes) ? 0 : minutes, 0, 0);
+        return date;
+    }
+    private formatLabelDateTime(date: Date): string {
+        if (!date || isNaN(date.getTime())) {
+            return "";
+        }
+        const hours =
+            date.getHours() < 10
+                ? "0" + date.getHours().toString()
+                : date.getHours().toString();
+        const minutes =
+            date.getMinutes() < 10
+                ? "0" + date.getMinutes().toString()
+                : date.getMinutes().toString();
+        return this.formatDate(date) + " " + hours + ":" + minutes;
+    }
+    private normalizeDrugName(value): string {
+        return String(value || "")
+            .split("___")[0]
+            .trim()
+            .toLowerCase();
+    }
+    private findDrugMetadataByName(drugName: string): DrugMetadata {
+        const normalizedDrugName = this.normalizeDrugName(drugName);
+        if (!normalizedDrugName || !this.drugMetadataList) {
+            return null;
+        }
+        return this.drugMetadataList.find((item) => {
+            return this.normalizeDrugName(item.MedName) === normalizedDrugName;
+        });
+    }
+    private getDrugMetadata(row: PrescriptionRow): DropOption | DrugMetadata {
+        if (!row || !this.MedList) {
+            return null;
+        }
+        const drugValue = String(row.MedListVal || "").split("___")[0];
+        const drug = this.MedList.find((item) => {
+            return (
+                String(item.value || "") === drugValue ||
+                String(item.viewValue || "") === drugValue ||
+                String(item.name || "") === drugValue
+            );
+        });
+        const metadata =
+            this.findDrugMetadataByName(drugValue) ||
+            (drug
+                ? this.findDrugMetadataByName(
+                      drug.value || drug.viewValue || drug.name
+                  )
+                : null);
+        if (drug && metadata) {
+            drug.StorageConditions = metadata.StorageConditions;
+            drug.ExpireTime = metadata.ExpireTime;
+        }
+        return metadata || drug;
+    }
+    getPreparationDateTimeDisplay(): string {
+        if (!this.rowLabelForm) {
+            return "";
+        }
+        const formValue = this.rowLabelForm.getRawValue();
+        return this.formatLabelDateTime(
+            this.getPreparationDateTime(formValue.preparationTime)
+        );
+    }
+    getExpirationDateTimeDisplay(row: PrescriptionRow): string {
+        const drug = this.getDrugMetadata(row);
+        const expireTime = drug ? parseFloat(String(drug.ExpireTime || "")) : NaN;
+        if (isNaN(expireTime)) {
+            return "";
+        }
+        const formValue = this.rowLabelForm ? this.rowLabelForm.getRawValue() : {};
+        const expirationDate = this.getPreparationDateTime(
+            formValue.preparationTime
+        );
+        expirationDate.setMinutes(expirationDate.getMinutes() + expireTime * 60);
+        return this.formatLabelDateTime(expirationDate);
+    }
+    getStorageConditionsDisplay(row: PrescriptionRow): string {
+        const drug = this.getDrugMetadata(row);
+        return drug ? String(drug.StorageConditions || "").trim() : "";
+    }
     private getDoseLabel(row: PrescriptionRow): string {
         return [row.finalMenonVal, row.Dosage_UnitVal || row.Dosage_Unit_2_Val]
             .filter((value) => value !== null && value !== undefined && value !== "")
@@ -977,6 +1105,27 @@ export class MershamComponent implements OnInit {
     }
     private getPatientIdentifier(): string {
         return String(this.ID || this.ID_In || this.patiant_number_or_id || "").trim();
+    }
+    getPatientIdentifierDisplay(): string {
+        return this.getPatientIdentifier();
+    }
+    getDoseLabelDisplay(row: PrescriptionRow): string {
+        if (!row) {
+            return "";
+        }
+        return this.getDoseLabel(row);
+    }
+    getFinalVolumeLabelDisplay(row: PrescriptionRow): string {
+        if (!row) {
+            return "";
+        }
+        return this.getFinalVolumeLabel(row);
+    }
+    getAdministrationRateLabelDisplay(row: PrescriptionRow): string {
+        if (!row) {
+            return "";
+        }
+        return this.getAdministrationRateLabel(row);
     }
     private getEmployeeFullName(employeeId: string): string {
         const employee = this.employees.find(
@@ -1030,18 +1179,16 @@ export class MershamComponent implements OnInit {
                 ),
             },
             {
-                label: "תאריך הכנה",
+                label: "שעת ותאריך הכנה",
                 value: this.getLabelFallbackValue(
-                    this.getCurrentPreparationDate()
+                    this.getPreparationDateTimeDisplay()
                 ),
             },
             {
-                label: "שעת הכנה",
-                value: this.getLabelFallbackValue(formValue.preparationTime),
-            },
-            {
-                label: "תאריך תפוגה",
-                value: "לא הוגדר במסך התרופות",
+                label: "תאריך ושעת תפוגה",
+                value: this.getLabelFallbackValue(
+                    this.getExpirationDateTimeDisplay(row)
+                ),
             },
             {
                 label: "מספר אצווה",
@@ -1063,7 +1210,9 @@ export class MershamComponent implements OnInit {
             },
             {
                 label: "תנאי אחסון",
-                value: "לא הוגדר במסך התרופות",
+                value: this.getLabelFallbackValue(
+                    this.getStorageConditionsDisplay(row)
+                ),
             },
             {
                 label: "שם מטופל",
@@ -1102,7 +1251,6 @@ export class MershamComponent implements OnInit {
             "@page{size:auto;margin:10mm;}" +
             "</style></head><body>" +
             '<div class="label-card">' +
-            '<div class="label-header">מדבקת הכנה</div>' +
             labelRowsHtml +
             "</div></body></html>"
         );
@@ -1854,14 +2002,54 @@ export class MershamComponent implements OnInit {
                 this.Solution_Volume = JSON.parse(json["Solution_Volume"]);
                 this.Way_Of_Providing = JSON.parse(json["Way_Of_Providing"]);
                 this.MedList = this.MedListConst = JSON.parse(json["MedList"]);
+                this.mergeDrugMetadataIntoMedList();
+                this.getDrugMetadataFromServer();
                 this.Days_Protocol = JSON.parse(json["Days_Protocol"]);
                 this.Notes = JSON.parse(json["Notes"]);
                 ////////////////////////debugger
             });
     }
+    private getDrugMetadataFromServer() {
+        this.http
+            .post(environment.url + "getDrugsTbl", {
+                _pageIndex: 0,
+                _pageSize: 10000,
+                _FreeText: "",
+                _GroupID: "-1",
+            })
+            .subscribe((Response) => {
+                var json = JSON.parse(Response["d"]);
+                json = JSON.parse(json);
+                const drugData = JSON.parse(json["aaData"]);
+                this.drugMetadataList = drugData.map((drug) => {
+                    return {
+                        MedID: drug.MedID,
+                        MedName: drug.MedName,
+                        StorageConditions: drug.StorageConditions,
+                        ExpireTime: drug.ExpireTime,
+                    };
+                });
+                this.mergeDrugMetadataIntoMedList();
+            });
+    }
+    private mergeDrugMetadataIntoMedList() {
+        if (!this.MedList || !this.drugMetadataList) {
+            return;
+        }
+        this.MedList.forEach((drug) => {
+            const metadata =
+                this.findDrugMetadataByName(drug.value) ||
+                this.findDrugMetadataByName(drug.viewValue) ||
+                this.findDrugMetadataByName(drug.name);
+            if (metadata) {
+                drug.StorageConditions = metadata.StorageConditions;
+                drug.ExpireTime = metadata.ExpireTime;
+            }
+        });
+    }
     public getEmployeesForLabelPrint() {
         this.http
-            .post(environment.url + "GetEmployees", {
+            .post(environment.url + "GetEmployeesMed", {
                 pageIndex: 0,
                 pageSize: 1000,
                 serachTxt: "",

@@ -1210,7 +1210,7 @@ export class MershamNComponent implements OnInit {
             checkerEmployeeId: "",
         });
         this.modalService.open(content, {
-            windowClass: "custom-class",
+            windowClass: "row-label-print-modal",
             backdrop: "static",
         });
     }
@@ -1226,7 +1226,7 @@ export class MershamNComponent implements OnInit {
         const printWindow = window.open(
             "",
             "_blank",
-            "noopener,noreferrer,width=480,height=720"
+            "width=480,height=720"
         );
         if (!printWindow) {
             this.openSnackBar("לא ניתן לפתוח חלון הדפסה", "error");
@@ -1338,6 +1338,27 @@ export class MershamNComponent implements OnInit {
                 ? this.mPatientDetails.ID
                 : this.ID || this.ID_In || this.patiant_number_or_id || "";
         return String(patientId).trim();
+    }
+    getPatientIdentifierDisplay(): string {
+        return this.getPatientIdentifier();
+    }
+    getDoseLabelDisplay(row: PrescriptionRow): string {
+        if (!row) {
+            return "";
+        }
+        return this.getDoseLabel(row);
+    }
+    getFinalVolumeLabelDisplay(row: PrescriptionRow): string {
+        if (!row) {
+            return "";
+        }
+        return this.getFinalVolumeLabel(row);
+    }
+    getAdministrationRateLabelDisplay(row: PrescriptionRow): string {
+        if (!row) {
+            return "";
+        }
+        return this.getAdministrationRateLabel(row);
     }
     private getEmployeeFullName(employeeId: string): string {
         const employee = this.employees.find(
@@ -1465,7 +1486,6 @@ export class MershamNComponent implements OnInit {
             "@page{size:auto;margin:10mm;}" +
             "</style></head><body>" +
             '<div class="label-card">' +
-            '<div class="label-header">מדבקת הכנה</div>' +
             labelRowsHtml +
             "</div></body></html>"
         );

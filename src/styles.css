@@ -1346,6 +1346,17 @@ tr.mat-footer-row {
     direction: rtl;
 }
 
+.row-label-print-modal .modal-dialog {
+    min-width: 600px;
+    direction: rtl;
+}
+
+@media (max-width: 600px) {
+    .row-label-print-modal .modal-dialog {
+        min-width: 100%;
+    }
+}
+
 .br-b-2 {
     border-bottom: 2px solid #d3d3d3;
 }

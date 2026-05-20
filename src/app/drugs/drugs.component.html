@@ -87,6 +87,18 @@
                                     {{ element.MedGroupID }}
                                 </td>
                             </ng-container>
+                            <ng-container matColumnDef="StorageConditions">
+                                <th mat-header-cell *matHeaderCellDef>תנאי אחסון</th>
+                                <td mat-cell *matCellDef="let element" class="text-right">
+                                    {{ element.StorageConditions }}
+                                </td>
+                            </ng-container>
+                            <ng-container matColumnDef="ExpireTime">
+                                <th mat-header-cell *matHeaderCellDef>זמן תפוגה לאחר הכנה (בשעות)</th>
+                                <td mat-cell *matCellDef="let element">
+                                    {{ element.ExpireTime }}
+                                </td>
+                            </ng-container>
                             <ng-container matColumnDef="D_CLICK">
                                 <th mat-header-cell *matHeaderCellDef width ="50">עריכה</th>
                                 <td
@@ -208,6 +220,37 @@
                                     type="text"
                                     formControlName="SolutionVol"
                                 />
+                            </mat-form-field>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="form-group">
+                            <mat-form-field>
+                                <input
+                                    matInput
+                                    class="form-control mb-3"
+                                    placeholder="תנאי אחסון"
+                                    type="text"
+                                    formControlName="StorageConditions"
+                                />
+                            </mat-form-field>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="form-group">
+                            <mat-form-field>
+                                <input
+                                    matInput
+                                    class="form-control mb-3"
+                                    placeholder="זמן תפוגה לאחר הכנה (בשעות)"
+                                    type="number"
+                                    min="0"
+                                    step="any"
+                                    formControlName="ExpireTime"
+                                />
+                                <mat-error *ngIf="drugForm.get('ExpireTime')?.hasError('pattern')">
+                                    יש להזין מספר חיובי
+                                </mat-error>
                             </mat-form-field>
                         </div>
                     </div>
