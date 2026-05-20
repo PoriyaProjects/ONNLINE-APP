@@ -629,7 +629,8 @@ export class EmployeesAddUpdateComponent implements OnInit {
           this.employees.push({
             firstname: element.firstname + " " + element.lastname,
             id: element.id,
-            ADUserName: element.ADUserName.toLowerCase()
+            ADUserName: element.ADUserName.toLowerCase(),
+            DepartnentDescripton: element.DepartnentDescripton
           });
         });
         this.manfilter.setValue(this.employees.filter(t => t.id === this.employee.ManagerID1.id)[0]);

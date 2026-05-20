@@ -34,6 +34,7 @@ export class EmployeesManageDashComponent implements OnInit, OnDestroy {
   managerType: string = "";
   all_employees = [];
   DepartmentsList = [];
+  SubDepartmentsList = [];
   FunctionsList = [];
   SektorsList = [];
   WorkPlacesList = [];
@@ -41,6 +42,8 @@ export class EmployeesManageDashComponent implements OnInit, OnDestroy {
   roleAutocomplete = new FormControl('');
   filteredDepartments: Observable<any[]> = new Observable<any[]>();
   filteredRoles: Observable<any[]> = new Observable<any[]>();
+  filteredSubDepartments: Observable<any[]> = new Observable<any[]>();
+  subDepartmentAutocomplete = new FormControl('');
   loaded: boolean = false;
   url = environment.url;
   employee: any;
@@ -65,6 +68,7 @@ export class EmployeesManageDashComponent implements OnInit, OnDestroy {
         MedGrad: new FormControl('0', null),
         PhoneNumber: new FormControl('', null),
         Department: new FormControl('', null),
+        SubDepartment: new FormControl('', null),
         Role: new FormControl('', null),
         Sektor: new FormControl('', null),
         WorkPlace: new FormControl('', null),
@@ -97,6 +101,10 @@ export class EmployeesManageDashComponent implements OnInit, OnDestroy {
         this.searchEmployeesGroup.controls['Role'].setValue('');
       }
     });
+    this.filteredSubDepartments = this.subDepartmentAutocomplete.valueChanges.pipe(
+      startWith(''),
+      map((value) => this.filterSubDepartments(value))
+    );
   }
 
   private filterDepartments(value: any): any[] {
@@ -113,6 +121,14 @@ export class EmployeesManageDashComponent implements OnInit, OnDestroy {
     );
   }
 
+  private filterSubDepartments(value: any): any[] {
+    const text = (typeof value === 'string' ? value : value?.SubDepartmentDescription || '').toLowerCase();
+    return this.SubDepartmentsList.filter((dept) =>
+      (dept.DepartnentDescripton || '').toLowerCase().includes(text) &&
+      (dept.SubDepartmentDescription || '').toLowerCase().includes(text)
+    );
+  }
+
   displayDepartment(dept: any): string {
     return dept?.DepartnentDescripton || '';
   }
@@ -121,12 +137,20 @@ export class EmployeesManageDashComponent implements OnInit, OnDestroy {
     return func?.FunctionDescription || '';
   }
 
+  displaySubDepartment(subDept: any): string {
+    return subDept?.SubDepartmentDescription || '';
+  }
+
   onDepartmentSelected(dept: any): void {
     this.searchEmployeesGroup.controls['Department'].setValue(dept?.DepartnentCode || '');
   }
 
   onRoleSelected(func: any): void {
     this.searchEmployeesGroup.controls['Role'].setValue(func?.FunctionID || '');
+  }
+
+  onSubDepartmentSelected(subDept: any): void {
+    this.searchEmployeesGroup.controls['SubDepartment'].setValue(subDept?.SubDepartmentCode || '');
   }
 
   ngOnDestroy(): void {
@@ -295,6 +319,7 @@ export class EmployeesManageDashComponent implements OnInit, OnDestroy {
       })
       .subscribe((Response) => {
         this.DepartmentsList = Response["d"];
+        this.SubDepartmentsList = this.DepartmentsList.filter((dept) => dept.SubDepartmentDescription != null);
         const selectedCode = this.searchEmployeesGroup?.controls['Department']?.value;
         const selectedDept = this.DepartmentsList.find((d) => d.DepartnentCode == selectedCode);
         if (selectedDept) {

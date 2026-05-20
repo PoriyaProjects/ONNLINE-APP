@@ -335,7 +335,7 @@
                                         [matAutocomplete]="auto">
                                     <mat-autocomplete #auto="matAutocomplete" [displayWith]="displayFn">
                                         <mat-option *ngFor="let man of filteredOptions | async" [value]="man">
-                                            {{man.firstname}}
+                                            <img src="http://srv-apps-prod/Images/{{man.id}}.jpg" alt="user" class="user-icon"> {{man.firstname}} - {{man.DepartnentDescripton}}
                                         </mat-option>
                                     </mat-autocomplete>
                                 </mat-form-field>
@@ -347,7 +347,7 @@
                                         [matAutocomplete]="auto2">
                                     <mat-autocomplete #auto2="matAutocomplete" [displayWith]="displayFn2">
                                         <mat-option *ngFor="let man2 of filteredOptions2 | async" [value]="man2">
-                                            {{man2.firstname}}
+                                            <img src="http://srv-apps-prod/Images/{{man2.id}}.jpg" alt="user" class="user-icon"> {{man2.firstname}} - {{man2.DepartnentDescripton}}
                                         </mat-option>
                                     </mat-autocomplete>
                                 </mat-form-field>
