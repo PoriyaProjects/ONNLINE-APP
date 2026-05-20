@@ -56,6 +56,8 @@ export interface DropOption {
     name: string;
     viewValue: string;
     groupID: string;
+    StorageConditions?: string;
+    ExpireTime?: string;
 }
 export interface Prescription {
     PerscriptionID: string;
@@ -951,6 +953,98 @@ export class MershamComponent implements OnInit {
         }
         return this.formatDate(parsedDate);
     }
+    private getCurrentPreparationDateValue(): Date {
+        if (!this.PrespictionForm || !this.PrespictionForm.get("takedateIN")) {
+            return new Date();
+        }
+        const takeDate = this.PrespictionForm.get("takedateIN").value;
+        if (takeDate instanceof Date && !isNaN(takeDate.getTime())) {
+            return new Date(
+                takeDate.getFullYear(),
+                takeDate.getMonth(),
+                takeDate.getDate()
+            );
+        }
+        const stringValue = String(takeDate || "").trim();
+        const dateParts = stringValue.match(/^(\d{2})[/-](\d{2})[/-](\d{4})$/);
+        if (dateParts) {
+            return new Date(
+                parseInt(dateParts[3], 10),
+                parseInt(dateParts[2], 10) - 1,
+                parseInt(dateParts[1], 10)
+            );
+        }
+        const parsedDate = new Date(stringValue);
+        if (!isNaN(parsedDate.getTime())) {
+            return new Date(
+                parsedDate.getFullYear(),
+                parsedDate.getMonth(),
+                parsedDate.getDate()
+            );
+        }
+        return new Date();
+    }
+    private getPreparationDateTime(preparationTime: string): Date {
+        const date = this.getCurrentPreparationDateValue();
+        const timeParts = String(preparationTime || "").split(":");
+        const hours = parseInt(timeParts[0], 10);
+        const minutes = parseInt(timeParts[1], 10);
+        date.setHours(isNaN(hours) ? 0 : hours, isNaN(minutes) ? 0 : minutes, 0, 0);
+        return date;
+    }
+    private formatLabelDateTime(date: Date): string {
+        if (!date || isNaN(date.getTime())) {
+            return "";
+        }
+        const hours =
+            date.getHours() < 10
+                ? "0" + date.getHours().toString()
+                : date.getHours().toString();
+        const minutes =
+            date.getMinutes() < 10
+                ? "0" + date.getMinutes().toString()
+                : date.getMinutes().toString();
+        return this.formatDate(date) + " " + hours + ":" + minutes;
+    }
+    private getDrugMetadata(row: PrescriptionRow): DropOption {
+        if (!row || !this.MedList) {
+            return null;
+        }
+        const drugValue = String(row.MedListVal || "").split("___")[0];
+        return this.MedList.find((item) => {
+            return (
+                String(item.value || "") === drugValue ||
+                String(item.viewValue || "") === drugValue ||
+                String(item.name || "") === drugValue
+            );
+        });
+    }
+    getPreparationDateTimeDisplay(): string {
+        if (!this.rowLabelForm) {
+            return "";
+        }
+        const formValue = this.rowLabelForm.getRawValue();
+        return this.formatLabelDateTime(
+            this.getPreparationDateTime(formValue.preparationTime)
+        );
+    }
+    getExpirationDateTimeDisplay(row: PrescriptionRow): string {
+        const drug = this.getDrugMetadata(row);
+        const expireTime = drug ? parseFloat(String(drug.ExpireTime || "")) : NaN;
+        if (isNaN(expireTime)) {
+            return "";
+        }
+        const formValue = this.rowLabelForm ? this.rowLabelForm.getRawValue() : {};
+        const expirationDate = this.getPreparationDateTime(
+            formValue.preparationTime
+        );
+        expirationDate.setMinutes(expirationDate.getMinutes() + expireTime * 60);
+        return this.formatLabelDateTime(expirationDate);
+    }
+    getStorageConditionsDisplay(row: PrescriptionRow): string {
+        const drug = this.getDrugMetadata(row);
+        return drug ? String(drug.StorageConditions || "").trim() : "";
+    }
     private getDoseLabel(row: PrescriptionRow): string {
         return [row.finalMenonVal, row.Dosage_UnitVal || row.Dosage_Unit_2_Val]
             .filter((value) => value !== null && value !== undefined && value !== "")
@@ -1051,18 +1145,16 @@ export class MershamComponent implements OnInit {
                 ),
             },
             {
-                label: "תאריך הכנה",
+                label: "שעת ותאריך הכנה",
                 value: this.getLabelFallbackValue(
-                    this.getCurrentPreparationDate()
+                    this.getPreparationDateTimeDisplay()
                 ),
             },
             {
-                label: "שעת הכנה",
-                value: this.getLabelFallbackValue(formValue.preparationTime),
-            },
-            {
-                label: "תאריך תפוגה",
-                value: "לא הוגדר במסך התרופות",
+                label: "תאריך ושעת תפוגה",
+                value: this.getLabelFallbackValue(
+                    this.getExpirationDateTimeDisplay(row)
+                ),
             },
             {
                 label: "מספר אצווה",
@@ -1084,7 +1176,9 @@ export class MershamComponent implements OnInit {
             },
             {
                 label: "תנאי אחסון",
-                value: "לא הוגדר במסך התרופות",
+                value: this.getLabelFallbackValue(
+                    this.getStorageConditionsDisplay(row)
+                ),
             },
             {
                 label: "שם מטופל",

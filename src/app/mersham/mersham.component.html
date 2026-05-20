@@ -2066,6 +2066,22 @@
                         </div>
                     </div>
                 </div>
+                <div class="col-md-6">
+                    <div class="row-label-summary">
+                        <div>
+                            <strong>שעת ותאריך הכנה:</strong>
+                            {{ getPreparationDateTimeDisplay() || "-" }}
+                        </div>
+                        <div>
+                            <strong>תאריך ושעת תפוגה:</strong>
+                            {{ getExpirationDateTimeDisplay(selectedRowForPrint) || "-" }}
+                        </div>
+                        <div>
+                            <strong>תנאי אחסון:</strong>
+                            {{ getStorageConditionsDisplay(selectedRowForPrint) || "-" }}
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
         <div class="modal-footer text-left">
