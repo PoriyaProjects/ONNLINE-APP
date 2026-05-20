@@ -47,6 +47,8 @@ export interface Drug {
     MedStatus: string;
     Solution: string;
     SolutionVol: string;
+    StorageConditions: string;
+    ExpireTime: string;
 }
 export interface MedGroup {
     id: string;
@@ -64,7 +66,7 @@ export class DrugsComponent implements OnInit {
     @ViewChild(MatSort, { static: true }) sort: MatSort;
     horizontalPosition: MatSnackBarHorizontalPosition = "center";
     verticalPosition: MatSnackBarVerticalPosition = "top";
-    displayedColumns: string[] = ["MedID", "MedName", "MedGroup", "D_CLICK"];
+    displayedColumns: string[] = ["MedID", "MedName", "MedGroup", "StorageConditions", "ExpireTime", "D_CLICK"];
 
     MedID: string;
     MedName: string;
@@ -121,6 +123,8 @@ export class DrugsComponent implements OnInit {
         MedStatus: "1",
         Solution: "",
         SolutionVol: "",
+        StorageConditions: "",
+        ExpireTime: "",
     };
     ngOnInit(): void {
         this.MedID = "";
@@ -142,6 +146,8 @@ export class DrugsComponent implements OnInit {
             MedGroup: ["", false],
             MedGroupID: ["", Validators.required],
             MedStatus: ["1", false],
+            StorageConditions: ["", false],
+            ExpireTime: ["", [Validators.pattern("^[0-9]*([.][0-9]+)?$")]],
             NewRow: ["false", false],
         });
 
@@ -265,6 +271,11 @@ export class DrugsComponent implements OnInit {
             MedID: [_element.MedID, false],
             Solution: [_element.Solution, false],
             SolutionVol: [_element.SolutionVol, false],
+            StorageConditions: [_element.StorageConditions || "", false],
+            ExpireTime: [
+                _element.ExpireTime || "",
+                [Validators.pattern("^[0-9]*([.][0-9]+)?$")],
+            ],
             NewRow: ["false", false],
         });
         this.modalService.open(content, this.modalOptions).result.then(
@@ -312,6 +323,8 @@ export class DrugsComponent implements OnInit {
             MedID: ["0", false],
             Solution: ["", false],
             SolutionVol: ["", false],
+            StorageConditions: ["", false],
+            ExpireTime: ["", [Validators.pattern("^[0-9]*([.][0-9]+)?$")]],
             NewRow: ["true", false],
         });
         this.modalService.open(content, this.modalOptions).result.then(
@@ -402,6 +415,8 @@ export class DrugsComponent implements OnInit {
                         MedStatus: drugData[i].MedStatus,
                         Solution: drugData[i].Solution,
                         SolutionVol: drugData[i].SolutionVol,
+                        StorageConditions: drugData[i].StorageConditions,
+                        ExpireTime: drugData[i].ExpireTime,
                     });
                 }
 

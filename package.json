@@ -11,7 +11,7 @@
     "prebuild": "node scripts/verify-node-for-ng9.js",
     "start": "cross-env NODE_OPTIONS=--openssl-legacy-provider ng serve",
     "start:open": "cross-env NODE_OPTIONS=--openssl-legacy-provider ng serve --open",
-    "build": "cross-env NODE_OPTIONS=--openssl-legacy-provider ng build",
+    "build": "cross-env NODE_OPTIONS=\"--openssl-legacy-provider --max-old-space-size=8192\" ng build --configuration=production --aot=true --output-hashing=all",
     "test": "ng test",
     "lint": "ng lint",
     "e2e": "ng e2e",
