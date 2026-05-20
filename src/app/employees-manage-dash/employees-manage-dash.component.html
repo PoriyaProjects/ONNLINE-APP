@@ -133,7 +133,7 @@
                                 </div>
                             </div>
                             <div class="row">
-                                <div class="col-3">
+                                <div class="col-2">
                                     <div class="form-group lh-37">
                                         <mat-form-field>
                                             <mat-label>מחלקה</mat-label>
@@ -146,6 +146,24 @@
                                                 <mat-option *ngFor="let dept of filteredDepartments | async"
                                                     [value]="dept">
                                                     {{dept.DepartnentDescripton}}
+                                                </mat-option>
+                                            </mat-autocomplete>
+                                        </mat-form-field>
+                                    </div>
+                                </div>
+                                <div class="col-2">
+                                    <div class="form-group lh-37">
+                                        <mat-form-field>
+                                            <mat-label>תת מחלקה</mat-label>
+                                            <input matInput [formControl]="subDepartmentAutocomplete"
+                                                [matAutocomplete]="subDepartmentAuto" aria-placeholder="תת מחלקה">
+                                            <mat-autocomplete #subDepartmentAuto="matAutocomplete"
+                                                [displayWith]="displaySubDepartment"
+                                                (optionSelected)="onSubDepartmentSelected($event.option.value)">
+                                                <mat-option [value]="''">הכל</mat-option>
+                                                <mat-option *ngFor="let subDept of filteredSubDepartments | async"
+                                                    [value]="subDept">
+                                                    {{subDept.SubDepartmentDescription}}
                                                 </mat-option>
                                             </mat-autocomplete>
                                         </mat-form-field>
@@ -167,7 +185,7 @@
                                         </mat-form-field>
                                     </div>
                                 </div>
-                                <div class="col-3">
+                                <div class="col-2">
                                     <div class="form-group lh-37">
                                         <mat-form-field>
                                             <mat-label>סקטור בלוסום</mat-label>

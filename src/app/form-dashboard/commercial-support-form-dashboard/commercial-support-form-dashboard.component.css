@@ -598,6 +598,12 @@
   border-color: #ddd6fe !important;
 }
 
+.type-e-card {
+  background: linear-gradient(135deg, #cdcdcd, #ffffff) !important;
+  color: #3c4746  !important;
+  border-color: #6d7575  !important;
+}
+
 .cancel-dialog-btn {
   border-radius: 12px !important;
 }
