@@ -782,8 +782,134 @@
   overflow: hidden;
 }
 
+/* ── Graph view switch (הכנסות / גורם משלם) ───────────────── */
+.graph-view-switch-panel {
+  flex-shrink: 0;
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  padding: 0 2px 8px;
+}
+
+.graph-view-segmented-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 5px;
+  background: linear-gradient(145deg, #f8fafc 0%, #eef2f7 100%);
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.05), 0 6px 18px rgba(15, 23, 42, 0.06);
+}
+
+.graph-view-segment-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  font-size: clamp(12px, 0.85vw, 14px);
+  font-weight: 800;
+  color: var(--muted);
+  background: transparent;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
+  font-family: inherit;
+}
+
+.graph-view-segment-btn:hover {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.75);
+}
+
+.graph-view-segment-btn.active {
+  color: #1d4ed8;
+  background: #fff;
+  box-shadow: 0 3px 12px rgba(37, 99, 235, 0.18);
+  transform: translateY(-1px);
+}
+
+.graph-view-segment-icon {
+  font-size: 20px;
+  width: 20px;
+  height: 20px;
+}
+
+.graph-view-segment-btn.active .graph-view-segment-icon {
+  color: #2563eb;
+}
+
+.dash.dark .graph-view-segmented-control {
+  background: linear-gradient(145deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.98) 100%);
+  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.2), 0 8px 24px rgba(0, 0, 0, 0.25);
+}
+
+.dash.dark .graph-view-segment-btn {
+  color: #94a3b8;
+}
+
+.dash.dark .graph-view-segment-btn:hover {
+  color: #f1f5f9;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.dash.dark .graph-view-segment-btn.active {
+  color: #93c5fd;
+  background: rgba(37, 99, 235, 0.22);
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.25);
+}
+
+@media (max-width: 720px) {
+  .graph-view-segment-label {
+    display: none;
+  }
+  .graph-view-segment-btn {
+    padding: 10px 14px;
+  }
+}
+
 .panel-graph, .panel-table {
   height: 100%; display: flex; flex-direction: column; min-height: 0;
+}
+
+.payer-type-toolbar {
+  flex-shrink: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 14px;
+  padding: 4px 4px 10px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 6px;
+}
+
+.payer-filter-field {
+  min-width: min(100%, 160px);
+  max-width: 240px;
+  flex: 1 1 160px;
+  margin: 0;
+  font-size: 13px;
+}
+
+.payer-filter-field ::ng-deep .mat-mdc-form-field-subscript-wrapper {
+  display: none;
+}
+
+.payer-type-hint {
+  font-size: 11px;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.payer-name-cell {
+  font-weight: 800;
+  color: var(--text);
+}
+
+.dash.dark .payer-type-toolbar {
+  border-bottom-color: rgba(255, 255, 255, 0.1);
 }
 
 .graph-body {

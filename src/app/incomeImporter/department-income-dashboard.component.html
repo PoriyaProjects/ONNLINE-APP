@@ -107,7 +107,7 @@
 
       <button mat-icon-button class="icon-btn ghost"
               matTooltip="רענון" matTooltipPosition="below"
-              (click)="loadDepartmentIncomeData()">
+              (click)="refreshDashboardData()">
         <mat-icon>refresh</mat-icon>
       </button>
 
@@ -139,17 +139,42 @@
     
     <!-- ===== GRAPH SECTION (2/3) ===== -->
     <div class="graph-section">
+      <div class="graph-view-switch-panel" dir="rtl">
+        <div class="graph-view-segmented-control" role="tablist" aria-label="מצב תצוגת גרף">
+          <button type="button"
+                  class="graph-view-segment-btn"
+                  [class.active]="graphPrimaryView === 'income'"
+                  (click)="setGraphPrimaryView('income')"
+                  role="tab"
+                  [attr.aria-selected]="graphPrimaryView === 'income'"
+                  matTooltip="השוואת הכנסות לפי מחלקות — הדשבורד הנוכחי">
+            <mat-icon class="graph-view-segment-icon">domain</mat-icon>
+            <span class="graph-view-segment-label">הכנסות</span>
+          </button>
+          <button type="button"
+                  class="graph-view-segment-btn"
+                  [class.active]="graphPrimaryView === 'payer'"
+                  (click)="setGraphPrimaryView('payer')"
+                  role="tab"
+                  [attr.aria-selected]="graphPrimaryView === 'payer'"
+                  matTooltip="השוואת הכנסות לפי גורם משלם">
+            <mat-icon class="graph-view-segment-icon">account_balance_wallet</mat-icon>
+            <span class="graph-view-segment-label">גורם משלם</span>
+          </button>
+        </div>
+      </div>
+
       <div class="panel panel-graph">
         <div class="panel-title">
-          <mat-icon>{{ chartType === 'ColumnChart' ? 'bar_chart' : 'show_chart' }}</mat-icon>
+          <mat-icon>{{ graphPrimaryView === 'payer' ? 'account_balance_wallet' : (chartType === 'ColumnChart' ? 'bar_chart' : 'show_chart') }}</mat-icon>
           <span class="title-row">
-            <span>השוואת הכנסות מחלקות</span>
+            <span>{{ graphPanelTitle }}</span>
           </span>
         </div>
 
   
         <div class="graph-body" [class.graph-body--breakdown]="isBreakdownChartViewActive">
-          <div *ngIf="isChartLoading || isMainDataLoading || (isBreakdownChartViewActive && isBreakdownChartsLoading)"
+          <div *ngIf="isChartLoading || isMainDataLoading || isPayerYearlyLoading || (isBreakdownChartViewActive && isBreakdownChartsLoading)"
                class="data-loading-overlay" role="status" aria-live="polite">
             <div class="loading-ring local-loading-ring" [style.background]="getLoadingRingBackground(getChartLoadingProgress())">
               <div class="loading-ring-inner local-loading-ring-inner">
@@ -158,8 +183,11 @@
               </div>
             </div>
             <div class="chart-loading-text">
-              <ng-container *ngIf="isBreakdownChartViewActive && isBreakdownChartsLoading && !isChartLoading && !isMainDataLoading; else defaultChartLoadingMsg">טוען גרפי פילוח...</ng-container>
-              <ng-template #defaultChartLoadingMsg>טוען גרף...</ng-template>
+              <ng-container *ngIf="graphPrimaryView === 'payer' && isPayerYearlyLoading; else chartLoadingBranch">טוען גורמי משלם...</ng-container>
+              <ng-template #chartLoadingBranch>
+                <ng-container *ngIf="isBreakdownChartViewActive && isBreakdownChartsLoading && !isChartLoading && !isMainDataLoading; else defaultChartLoadingMsg">טוען גרפי פילוח...</ng-container>
+                <ng-template #defaultChartLoadingMsg>טוען גרף...</ng-template>
+              </ng-template>
             </div>
           </div>
           <google-chart
@@ -170,7 +198,7 @@
             [width]="'100%'"
             [height]="'100%'"
             (select)="onChartClick($event)"
-            *ngIf="!isChartLoading && !isMainDataLoading && !isBreakdownChartViewActive && chartData && chartData.length > 0">
+            *ngIf="!isChartLoading && !isMainDataLoading && !isPayerYearlyLoading && !isBreakdownChartViewActive && chartData && chartData.length > 0">
           </google-chart>
           <div class="dimensional-chart-wrap"
                *ngIf="isBreakdownChartViewActive && !isBreakdownChartsLoading && hasRenderableDimensionalChart()">
@@ -184,8 +212,8 @@
               (select)="onDimensionalChartClick($event)">
             </google-chart>
           </div>
-          <div *ngIf="!isChartLoading && !isMainDataLoading && !isBreakdownChartViewActive && (!chartData || chartData.length === 0)" class="chart-no-data">
-            אין נתונים להצגה בגרף
+          <div *ngIf="!isChartLoading && !isMainDataLoading && !isPayerYearlyLoading && !isBreakdownChartViewActive && (!chartData || chartData.length === 0)" class="chart-no-data">
+            {{ graphPrimaryView === 'payer' ? 'אין נתוני גורם משלם להצגה' : 'אין נתונים להצגה בגרף' }}
           </div>
           <div *ngIf="isBreakdownChartViewActive && !isBreakdownChartsLoading && !hasRenderableDimensionalChart()" class="chart-no-data">
             אין נתוני פירוט להצגת פילוח
@@ -194,6 +222,7 @@
 
         <div class="graph-dimension-toolbar"
              dir="rtl"
+             *ngIf="graphPrimaryView === 'income'"
              [@graphToolbarMode]="graphToolbarDimensionMode">
           <mat-button-toggle-group
             class="graph-dimension-toggle-group"
@@ -230,11 +259,35 @@
       <div class="panel panel-table">
         <div class="panel-title">
           <mat-icon>table_chart</mat-icon>
-          <span>טבלת הכנסות מחלקות</span>
+          <span>{{ tablePanelTitle }}</span>
+        </div>
+
+        <div class="payer-type-toolbar" *ngIf="graphPrimaryView === 'payer'" dir="rtl">
+          <mat-form-field appearance="outline" class="payer-filter-field" subscriptSizing="dynamic">
+            <mat-label>מחלקה ({{ selectedDiagnosis || 'אגף' }})</mat-label>
+            <mat-icon matPrefix>apartment</mat-icon>
+            <mat-select
+              [value]="selectedPayerDepartment"
+              (selectionChange)="onPayerDepartmentChange($event.value)"
+              aria-label="בחירת מחלקה לפי אגף">
+              <mat-option *ngFor="let dept of payerDepartmentOptions" [value]="dept">{{ dept }}</mat-option>
+            </mat-select>
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="payer-filter-field" subscriptSizing="dynamic">
+            <mat-label>סוג גורם משלם </mat-label>
+            <mat-icon matPrefix>filter_alt</mat-icon>
+            <mat-select
+              [value]="selectedPayerType"
+              (selectionChange)="onPayerTypeChange($event.value)"
+              aria-label="בחירת סוג גורם משלם">
+              <mat-option *ngFor="let pt of payerTypeOptions" [value]="pt">{{ pt }}</mat-option>
+            </mat-select>
+          </mat-form-field>
+          <span class="payer-type-hint">מסונכרן עם אגף «{{ selectedDiagnosis }}» — גרף וטבלה</span>
         </div>
 
         <div class="table-body">
-          <div *ngIf="isMainDataLoading" class="data-loading-overlay" role="status" aria-live="polite">
+          <div *ngIf="graphPrimaryView === 'income' && isMainDataLoading" class="data-loading-overlay" role="status" aria-live="polite">
             <div class="loading-ring local-loading-ring" [style.background]="getLoadingRingBackground(getMainDataLoadingProgress())">
               <div class="loading-ring-inner local-loading-ring-inner">
                 <strong>{{ getMainDataLoadingProgress() }}%</strong>
@@ -243,6 +296,17 @@
             </div>
             <div class="chart-loading-text">טוען טבלת הכנסות...</div>
           </div>
+          <div *ngIf="graphPrimaryView === 'payer' && isPayerYearlyLoading" class="data-loading-overlay" role="status" aria-live="polite">
+            <div class="loading-ring local-loading-ring" [style.background]="getLoadingRingBackground(getChartLoadingProgress())">
+              <div class="loading-ring-inner local-loading-ring-inner">
+                <strong>{{ getChartLoadingProgress() }}%</strong>
+                <span>הושלם</span>
+              </div>
+            </div>
+            <div class="chart-loading-text">טוען גורמי משלם...</div>
+          </div>
+
+          <ng-container *ngIf="graphPrimaryView === 'income'">
           <div *ngIf="showTableDepartmentClickHint"
                class="table-dept-click-hint"
                [@tableDeptHintBanner]
@@ -315,6 +379,56 @@
           <div class="empty" *ngIf="!isMainDataLoading && dataSource.data.length === 0">
             אין נתונים להצגה
           </div>
+          </ng-container>
+
+          <ng-container *ngIf="graphPrimaryView === 'payer'">
+            <div class="table-wrap">
+              <table mat-table [dataSource]="payerDataSource" matSort #payerSort="matSort" class="table" dir="rtl">
+
+                <ng-container matColumnDef="UnifiedPayer">
+                  <th mat-header-cell *matHeaderCellDef mat-sort-header>גורם משלם  </th>
+                  <td mat-cell *matCellDef="let r" class="payer-name-cell">
+                    {{ r.UnifiedPayer }}
+                  </td>
+                </ng-container>
+
+                <ng-container matColumnDef="Month">
+                  <th mat-header-cell *matHeaderCellDef mat-sort-header>חודש יחוס</th>
+                  <td mat-cell *matCellDef="let r">{{ r.Month || '—' }}</td>
+                </ng-container>
+
+                <ng-container matColumnDef="Income2024">
+                  <th mat-header-cell *matHeaderCellDef mat-sort-header>הכנסות {{ getOlderYearFromDeptData() }}</th>
+                  <td mat-cell *matCellDef="let r">{{ formatNumber(r.Income2024) }} ₪</td>
+                </ng-container>
+
+                <ng-container matColumnDef="Income2025">
+                  <th mat-header-cell *matHeaderCellDef mat-sort-header>הכנסות {{ getLatestYearFromDeptData() }}</th>
+                  <td mat-cell *matCellDef="let r" class="income-2025-cell">
+                    {{ formatNumber(r.Income2025) }} ₪
+                  </td>
+                </ng-container>
+
+                <ng-container matColumnDef="Difference">
+                  <th mat-header-cell *matHeaderCellDef mat-sort-header>הפרש / % שינוי (YTY)</th>
+                  <td mat-cell *matCellDef="let r"
+                      [class.positive-change]="getPayerYtyDiff(r) >= 0"
+                      [class.negative-change]="getPayerYtyDiff(r) < 0">
+                    {{ formatNumber(getPayerYtyDiff(r)) }} ₪
+                    <br />
+                    <span class="percentage-badge">{{ getPayerYtyPercentLabel(r) }}</span>
+                  </td>
+                </ng-container>
+
+                <tr mat-header-row *matHeaderRowDef="payerDisplayedColumns"></tr>
+                <tr mat-row *matRowDef="let row; columns: payerDisplayedColumns;"></tr>
+              </table>
+            </div>
+
+            <div class="empty" *ngIf="!isPayerYearlyLoading && payerDataSource.data.length === 0">
+              אין נתונים — {{ selectedDiagnosis }} · {{ selectedPayerDepartment }} · {{ selectedPayerType }}
+            </div>
+          </ng-container>
         </div>
       </div>
     </div>
