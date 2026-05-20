@@ -73,10 +73,13 @@
         <mat-icon>help</mat-icon>
       </button>
 
-      <button mat-icon-button class="icon-btn ghost" [class.active]="showIncomeFiltersSidebar"
-        matTooltip="{{ showIncomeFiltersSidebar ? 'הסתר סינון מתקדם' : 'סינון מתקדם לדשבורד ההכנסות' }}"
+      <button mat-icon-button class="icon-btn ghost income-filter-toggle-btn"
+        [class.active]="showIncomeFiltersSidebar"
+        [class.income-filter-toggle-btn--filters-on]="hasActiveIncomeFilters()"
+        [matTooltip]="hasActiveIncomeFilters() ? (activeIncomeFilterNotice + ' — ' + (showIncomeFiltersSidebar ? 'הסתר סינון מתקדם' : 'סינון מתקדם')) : (showIncomeFiltersSidebar ? 'הסתר סינון מתקדם' : 'סינון מתקדם לדשבורד ההכנסות')"
         matTooltipPosition="below" (click)="toggleIncomeFiltersSidebar()">
         <mat-icon>tune</mat-icon>
+        <span *ngIf="hasActiveIncomeFilters()" class="income-filter-toggle-dot" aria-hidden="true"></span>
       </button>
 
       <button mat-icon-button class="icon-btn ghost" [class.active]="showTopDepartmentsSidebar"
@@ -120,7 +123,11 @@
 
     <!-- ===== GRAPH SECTION (2/3) ===== -->
     <div class="graph-section">
-      <div class="graph-view-switch-panel" dir="rtl">
+      <div class="graph-view-switch-panel" dir="rtl" [class.graph-view-switch-panel--filtered]="hasActiveIncomeFilters()">
+        <div *ngIf="hasActiveIncomeFilters()" class="active-income-filter-banner" role="status">
+          <mat-icon aria-hidden="true">filter_alt</mat-icon>
+          <span>{{ activeIncomeFilterNotice }}</span>
+        </div>
         <div class="graph-view-segmented-control" role="tablist" aria-label="מצב תצוגת גרף">
           <button type="button" class="graph-view-segment-btn" [class.active]="graphPrimaryView === 'income'"
             (click)="setGraphPrimaryView('income')" role="tab" [attr.aria-selected]="graphPrimaryView === 'income'"
@@ -137,7 +144,7 @@
         </div>
       </div>
 
-      <div class="panel panel-graph">
+      <div class="panel panel-graph" [class.panel-graph--filtered]="hasActiveIncomeFilters()">
         <div class="panel-title">
           <mat-icon>{{ graphPrimaryView === 'payer' ? 'account_balance_wallet' : (chartType === 'ColumnChart' ?
             'bar_chart' : 'show_chart') }}</mat-icon>
@@ -145,11 +152,14 @@
             <span>{{ graphPanelTitle }}</span>
           </span>
         </div>
-
+        <div *ngIf="hasActiveIncomeFilters()" class="active-income-filter-banner active-income-filter-banner--panel" role="status">
+          <mat-icon aria-hidden="true">info</mat-icon>
+          <span>{{ activeIncomeFilterNotice }} — {{ getIncomeFiltersSummary() }}</span>
+        </div>
 
         <div class="graph-body" [class.graph-body--breakdown]="isBreakdownChartViewActive">
           <div
-            *ngIf="isChartLoading || isMainDataLoading || isPayerYearlyLoading || (isBreakdownChartViewActive && isBreakdownChartsLoading)"
+            *ngIf="isChartLoading || isMainDataLoading || (graphPrimaryView === 'payer' && isPayerYearlyLoading) || (isBreakdownChartViewActive && isBreakdownChartsLoading)"
             class="data-loading-overlay" role="status" aria-live="polite">
             <div class="loading-ring local-loading-ring"
               [style.background]="getLoadingRingBackground(getChartLoadingProgress())">
@@ -171,7 +181,7 @@
           </div>
           <google-chart [type]="chartType" [data]="chartData" [columns]="chartColumns" [options]="chartOptions"
             [width]="'100%'" [height]="'100%'" (select)="onChartClick($event)"
-            *ngIf="!isChartLoading && !isMainDataLoading && !isPayerYearlyLoading && !isBreakdownChartViewActive && chartData && chartData.length > 0">
+            *ngIf="!isChartLoading && !isMainDataLoading && !(graphPrimaryView === 'payer' && isPayerYearlyLoading) && !isBreakdownChartViewActive && chartData && chartData.length > 0">
           </google-chart>
           <div class="dimensional-chart-wrap"
             *ngIf="isBreakdownChartViewActive && !isBreakdownChartsLoading && hasRenderableDimensionalChart()">
@@ -181,7 +191,7 @@
             </google-chart>
           </div>
           <div
-            *ngIf="!isChartLoading && !isMainDataLoading && !isPayerYearlyLoading && !isBreakdownChartViewActive && (!chartData || chartData.length === 0)"
+            *ngIf="!isChartLoading && !isMainDataLoading && !(graphPrimaryView === 'payer' && isPayerYearlyLoading) && !isBreakdownChartViewActive && (!chartData || chartData.length === 0)"
             class="chart-no-data">
             {{ graphPrimaryView === 'payer' ? 'אין נתוני גורם משלם להצגה' : 'אין נתונים להצגה בגרף' }}
           </div>
