@@ -1226,7 +1226,7 @@ export class MershamNComponent implements OnInit {
         const printWindow = window.open(
             "",
             "_blank",
-            "noopener,noreferrer,width=480,height=720"
+            "width=480,height=720"
         );
         if (!printWindow) {
             this.openSnackBar("לא ניתן לפתוח חלון הדפסה", "error");
