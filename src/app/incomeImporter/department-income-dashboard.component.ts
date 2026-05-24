@@ -4,6 +4,8 @@ import {
     AfterViewInit,
     ChangeDetectorRef,
     Component,
+    ElementRef,
+    HostListener,
     OnDestroy,
     OnInit,
     ViewChild,
@@ -199,6 +201,17 @@ export class DepartmentIncomeDashboardComponent
 {
     @ViewChild("mainSort") mainSort?: MatSort;
     @ViewChild("payerSort") payerSort?: MatSort;
+    @ViewChild("graphBody") graphBodyRef?: ElementRef<HTMLElement>;
+
+    private graphBodyLastWidth = 0;
+    private graphLayoutResizeTimer: ReturnType<typeof setTimeout> | null = null;
+    private graphResizeObserver: {
+        disconnect(): void;
+        observe(target: Element): void;
+    } | null = null;
+    private graphLayoutSignature = "";
+    graphChartPixelWidth: number | string = "100%";
+    graphChartPixelHeight = 320;
 
     departmentTableSearch = "";
     payerTableSearch = "";
@@ -450,6 +463,10 @@ export class DepartmentIncomeDashboardComponent
         string,
         { percent: number | null; priorYearLabel: string }
     >();
+    private payerDepartmentYoYStats = new Map<
+        string,
+        { percent: number | null; priorYearLabel: string }
+    >();
 
     get isBreakdownChartViewActive(): boolean {
         return (
@@ -480,6 +497,49 @@ export class DepartmentIncomeDashboardComponent
         return this.graphPrimaryView === "payer"
             ? "טבלת הכנסות לפי גורם משלם"
             : "טבלת הכנסות מחלקות";
+    }
+
+    get graphChartContextText(): string {
+        const labels = this.getFiveYearLabels();
+        const yearSpan =
+            labels.length >= 5
+                ? `${labels[0]}–${labels[4]}`
+                : labels.length >= 2
+                  ? `${labels[0]}–${labels[labels.length - 1]}`
+                  : "";
+        const yearSuffix = yearSpan ? ` (${yearSpan})` : "";
+
+        if (this.graphPrimaryView === "payer") {
+            const wingLabel = this.selectedDiagnosis || "אגף";
+            const deptLabel =
+                this.selectedPayerDepartment === this.payerDepartmentAllValue
+                    ? "כל המחלקות"
+                    : this.selectedPayerDepartment;
+            const payerTypeLabel = this.selectedPayerType || "גורם משלם";
+            const filterHint = this.hasActivePayerIncomeFilters()
+                ? " · מסונן לפי פילטרים"
+                : "";
+            return `אגף «${wingLabel}» · ${deptLabel} · ${payerTypeLabel}${yearSuffix}${filterHint} — גרף וטבלה מסונכרנים`;
+        }
+
+        if (
+            this.isDepartmentMonthlyChartActive &&
+            this.selectedMonthlyDepartment
+        ) {
+            const wingLabel = this.selectedDiagnosis || "אגף";
+            const filterHint = this.hasActiveIncomeFilters()
+                ? " · מסונן לפי פילטרים"
+                : "";
+            return `מחלקה «${this.selectedMonthlyDepartment}» · ${wingLabel}${yearSuffix}${filterHint}`;
+        }
+
+        const wingLabel = this.selectedDiagnosis
+            ? ` · אגף «${this.selectedDiagnosis}»`
+            : "";
+        const filterHint = this.hasActiveIncomeFilters()
+            ? " · מסונן לפי פילטרים"
+            : "";
+        return `השוואת מחלקות${wingLabel}${yearSuffix}${filterHint}`;
     }
 
     get activeIncomeFilterNotice(): string {
@@ -703,6 +763,7 @@ export class DepartmentIncomeDashboardComponent
         this.initMainTableDataSource();
         this.initPayerTableDataSource();
         this.queueTableSortSync();
+        this.initGraphResizeObserver();
     }
 
     ngOnDestroy(): void {
@@ -710,10 +771,26 @@ export class DepartmentIncomeDashboardComponent
         this.stopLoadingProgressTicker();
         this.stopBossLoadingAnimation();
         this.stopAllSimulatedLoadingProgress();
+        this.graphResizeObserver?.disconnect();
+        this.graphResizeObserver = null;
+        if (this.graphLayoutResizeTimer) {
+            clearTimeout(this.graphLayoutResizeTimer);
+            this.graphLayoutResizeTimer = null;
+        }
         if (this.tableDeptClickHintTimer) {
             clearTimeout(this.tableDeptClickHintTimer);
             this.tableDeptClickHintTimer = null;
         }
+    }
+
+    @HostListener("window:resize")
+    onWindowResize(): void {
+        this.graphLayoutSignature = "";
+        this.scheduleResponsiveChartLayout(
+            this.graphBodyLastWidth ||
+                this.graphBodyRef?.nativeElement?.clientWidth ||
+                720,
+        );
     }
 
     private initMainTableDataSource(): void {
@@ -998,6 +1075,8 @@ export class DepartmentIncomeDashboardComponent
             });
         }
         this.queueTableSortSync();
+        this.graphLayoutSignature = "";
+        this.scheduleChartResize();
         this.cdr.detectChanges();
     }
 
@@ -1241,6 +1320,13 @@ export class DepartmentIncomeDashboardComponent
         this.updatePayerChartData();
     }
 
+    onPayerDepartmentSelectOpened(opened: boolean): void {
+        if (opened) {
+            this.refreshPayerDepartmentYoYStats();
+            this.cdr.detectChanges();
+        }
+    }
+
     private isExcludedPayerLabel(value: string | undefined | null): boolean {
         return String(value ?? "").trim() === this.excludedPayerLabel;
     }
@@ -1288,6 +1374,85 @@ export class DepartmentIncomeDashboardComponent
         ) {
             this.selectedPayerDepartment = this.payerDepartmentAllValue;
         }
+        this.refreshPayerDepartmentYoYStats();
+    }
+
+    private refreshPayerDepartmentYoYStats(): void {
+        this.payerDepartmentYoYStats.clear();
+        const labels = this.getFiveYearLabels();
+        const priorYearLabel =
+            labels[3] || this.getOlderYearFromDeptData() || "";
+        const rows = this.getPayerYearlyRowsForDepartmentChart();
+        for (const dept of this.payerDepartmentOptions) {
+            if (dept === this.payerDepartmentAllValue) {
+                continue;
+            }
+            let priorTotal = 0;
+            let currentTotal = 0;
+            for (const row of rows) {
+                if (String(row?.PatientSummary ?? "").trim() !== dept) {
+                    continue;
+                }
+                priorTotal += this.getRowFiveYearValue(row, "Year1");
+                currentTotal += this.getRowFiveYearValue(row, "CurrentYear");
+            }
+            let percent: number | null = null;
+            if (priorTotal === 0 && currentTotal === 0) {
+                percent = null;
+            } else if (priorTotal === 0) {
+                percent = Number.POSITIVE_INFINITY;
+            } else {
+                percent = ((currentTotal - priorTotal) / priorTotal) * 100;
+            }
+            this.payerDepartmentYoYStats.set(dept, {
+                percent,
+                priorYearLabel,
+            });
+        }
+    }
+
+    getPayerDepartmentYoYPercentText(department: string): string | null {
+        return this.formatDepartmentYoYPercentText(
+            this.payerDepartmentYoYStats.get(department),
+        );
+    }
+
+    getPayerDepartmentYoYYearHint(department: string): string | null {
+        const stat = this.payerDepartmentYoYStats.get(department);
+        if (!stat || stat.percent === null || !stat.priorYearLabel) {
+            return null;
+        }
+        return `לעומת ${stat.priorYearLabel}`;
+    }
+
+    isPayerDepartmentYoYPositive(department: string): boolean | null {
+        const stat = this.payerDepartmentYoYStats.get(department);
+        if (!stat || stat.percent === null) {
+            return null;
+        }
+        if (!Number.isFinite(stat.percent)) {
+            return true;
+        }
+        return stat.percent >= 0;
+    }
+
+    private formatDepartmentYoYPercentText(
+        stat: { percent: number | null } | undefined,
+    ): string | null {
+        if (!stat || stat.percent === null) {
+            return null;
+        }
+        if (!Number.isFinite(stat.percent)) {
+            return "∞% עליה";
+        }
+        const absPct = Math.abs(stat.percent).toFixed(1);
+        if (stat.percent > 0.05) {
+            return `${absPct}% עליה`;
+        }
+        if (stat.percent < -0.05) {
+            return `-${absPct}% ירידה`;
+        }
+        return "0% ללא שינוי";
     }
 
     private getPayerYearlyRowsFiltered(): DepartmentIncomeYearlyRow[] {
@@ -1568,29 +1733,15 @@ export class DepartmentIncomeDashboardComponent
             .filter(([, vals]) => this.isChartVisibleFiveYearRow(vals))
             .slice(0, this.maxPayerChartBars);
 
-        const labels = this.getFiveYearLabels();
-        const payerTypeLabel = this.selectedPayerType || "גורם משלם";
-        const wingLabel = this.selectedDiagnosis || "אגף";
-        const deptLabel =
-            this.selectedPayerDepartment === this.payerDepartmentAllValue
-                ? "כל המחלקות"
-                : this.selectedPayerDepartment;
-
         this.chartColumns = this.buildFiveYearChartColumns("גורם משלם");
 
-        if (this.chartOptions) {
-            const filterHint = this.hasActivePayerIncomeFilters()
-                ? " — מסונן"
-                : "";
-            this.chartOptions.title = `השוואת הכנסות — ${wingLabel} · ${deptLabel} · ${payerTypeLabel} (${labels[0]}–${labels[4]})${filterHint}`;
-        }
         this.applyFiveYearChartColors();
 
         this.chartData = top.map(([payer, vals]) =>
             this.buildFiveYearChartDataRow(payer, vals),
         );
         this.applyIncomeChartHtmlTooltips();
-        this.chartOptions = { ...this.chartOptions };
+        this.finalizeChartOptionsRefresh();
 
         this.isChartLoading = false;
         this.applyPayerTableSearch();
@@ -1678,21 +1829,9 @@ export class DepartmentIncomeDashboardComponent
     }
 
     getMonthlyDepartmentYoYPercentText(department: string): string | null {
-        const stat = this.monthlyDepartmentYoYStats.get(department);
-        if (!stat || stat.percent === null) {
-            return null;
-        }
-        if (!Number.isFinite(stat.percent)) {
-            return "∞% עליה";
-        }
-        const absPct = Math.abs(stat.percent).toFixed(1);
-        if (stat.percent > 0.05) {
-            return `${absPct}% עליה`;
-        }
-        if (stat.percent < -0.05) {
-            return `-${absPct}% ירידה`;
-        }
-        return "0% ללא שינוי";
+        return this.formatDepartmentYoYPercentText(
+            this.monthlyDepartmentYoYStats.get(department),
+        );
     }
 
     getMonthlyDepartmentYoYYearHint(department: string): string | null {
@@ -1803,14 +1942,8 @@ export class DepartmentIncomeDashboardComponent
             this.getMonthlyChartRowsForDepartment(dept),
         );
         const months = this.sortHebrewMonths([...byMonth.keys()]);
-        const labels = this.getFiveYearLabels();
-        const wingLabel = this.selectedDiagnosis || "אגף";
-        const filterHint = this.hasActivePayerIncomeFilters() ? " — מסונן" : "";
 
         this.chartColumns = this.buildFiveYearChartColumns("חודש");
-        if (this.chartOptions) {
-            this.chartOptions.title = `הכנסות חודשיות — ${dept} · ${wingLabel} (${labels[0]}–${labels[4]})${filterHint}`;
-        }
         this.applyFiveYearChartColors();
 
         this.chartData = months
@@ -1820,7 +1953,7 @@ export class DepartmentIncomeDashboardComponent
             );
 
         this.applyIncomeChartHtmlTooltips();
-        this.chartOptions = { ...this.chartOptions };
+        this.finalizeChartOptionsRefresh();
         this.isChartLoading = false;
         this.cdr.detectChanges();
     }
@@ -2440,20 +2573,13 @@ export class DepartmentIncomeDashboardComponent
             .filter((item) => this.isChartVisibleFiveYearRow(item));
 
         this.chartColumns = this.buildFiveYearChartColumns("מחלקה");
-        const labels = this.getFiveYearLabels();
-        if (this.chartOptions) {
-            const filterHint = this.hasActivePayerIncomeFilters()
-                ? " — מסונן"
-                : "";
-            this.chartOptions.title = `השוואת הכנסות מחלקות (${labels[0]}–${labels[4]})${filterHint}`;
-        }
         this.applyFiveYearChartColors();
 
         this.chartData = filtered.map((item) =>
             this.buildFiveYearChartDataRow(item.DepartmentName, item),
         );
         this.applyIncomeChartHtmlTooltips();
-        this.chartOptions = { ...this.chartOptions };
+        this.finalizeChartOptionsRefresh();
 
         this.isChartLoading = false;
         this.cdr.detectChanges();
@@ -3668,7 +3794,7 @@ export class DepartmentIncomeDashboardComponent
             columns = this.cashColumns;
         }
         this.displayedCatalogColumns = this.showCatalogPriceColumn
-            ? [...columns, "CatalogUnitPrice"]
+            ? ["CatalogUnitPrice", ...columns]
             : columns;
     }
 
@@ -4424,19 +4550,15 @@ export class DepartmentIncomeDashboardComponent
      */
     updateChartColumns(): void {
         this.refreshFiveYearColumnDefs();
-        const labels = this.getFiveYearLabels();
         const category =
             this.graphPrimaryView === "payer" ? "גורם משלם" : "מחלקה";
         this.chartColumns = this.buildFiveYearChartColumns(category);
 
         if (this.chartOptions) {
-            if (this.graphPrimaryView === "payer") {
-                const payerTypeLabel = this.selectedPayerType || "גורם משלם";
-                this.chartOptions.title = `השוואת הכנסות לפי גורם משלם — ${payerTypeLabel} (${labels[0]}–${labels[4]})`;
-            } else if (this.departmentIncomeData?.length) {
-                this.chartOptions.title = `השוואת הכנסות מחלקות (${labels[0]}–${labels[4]})`;
-            }
+            this.chartOptions.title = "";
+            this.chartOptions = { ...this.chartOptions };
         }
+        this.scheduleResponsiveChartLayout(this.graphBodyLastWidth || 720);
     }
 
     /**
@@ -5275,6 +5397,12 @@ export class DepartmentIncomeDashboardComponent
             } catch {
                 // ignore if window is not available (SSR safeguard)
             }
+            this.graphLayoutSignature = "";
+            this.scheduleResponsiveChartLayout(
+                this.graphBodyLastWidth ||
+                    this.graphBodyRef?.nativeElement?.clientWidth ||
+                    720,
+            );
             this.chartOptions = { ...this.chartOptions };
             if (this.chartData?.length) {
                 this.applyIncomeChartHtmlTooltips();
@@ -6161,6 +6289,172 @@ export class DepartmentIncomeDashboardComponent
             0,
             Math.max(n, 1),
         );
+    }
+
+    private finalizeChartOptionsRefresh(): void {
+        if (this.chartOptions) {
+            this.chartOptions.title = "";
+        }
+        this.chartOptions = { ...this.chartOptions };
+        this.scheduleResponsiveChartLayout(this.graphBodyLastWidth || 720);
+    }
+
+    private initGraphResizeObserver(): void {
+        const el = this.graphBodyRef?.nativeElement;
+        const ResizeObserverCtor = (window as any).ResizeObserver as
+            | (new (
+                  callback: (
+                      entries: Array<{ contentRect: { width: number } }>,
+                  ) => void,
+              ) => { disconnect(): void; observe(target: Element): void })
+            | undefined;
+        if (!el || !ResizeObserverCtor) {
+            this.scheduleResponsiveChartLayout(720);
+            return;
+        }
+        this.graphResizeObserver = new ResizeObserverCtor((entries) => {
+            const width = entries[0]?.contentRect?.width ?? 0;
+            if (width > 0) {
+                this.scheduleResponsiveChartLayout(width);
+            }
+        });
+        this.graphResizeObserver.observe(el);
+        this.scheduleResponsiveChartLayout(el.clientWidth || 720);
+    }
+
+    private scheduleResponsiveChartLayout(width: number): void {
+        this.graphBodyLastWidth = width;
+        if (this.graphLayoutResizeTimer) {
+            clearTimeout(this.graphLayoutResizeTimer);
+        }
+        this.graphLayoutResizeTimer = setTimeout(() => {
+            this.graphLayoutResizeTimer = null;
+            this.applyResponsiveChartLayout(width);
+        }, 120);
+    }
+
+    private applyResponsiveChartLayout(width: number): void {
+        if (!this.chartOptions || width <= 0) {
+            return;
+        }
+
+        const viewportH = window.innerHeight || 800;
+        const compactViewport = viewportH < 760;
+        let axisFontSize = 11;
+        let legendFontSize = 11;
+        let annotationFontSize = 10;
+        let chartAreaLeft = 56;
+        let chartAreaTop = 24;
+        let chartAreaWidth = "90%";
+        let chartAreaHeight = "84%";
+        let slantedTextAngle = 35;
+        let annotationsVisible = true;
+        let legendPosition: "top" | "bottom" = "top";
+        let chartHeight = 320;
+
+        if (width < 420 || (compactViewport && width < 520)) {
+            axisFontSize = 8;
+            legendFontSize = 8;
+            annotationFontSize = 0;
+            chartAreaLeft = 40;
+            chartAreaTop = 8;
+            chartAreaWidth = "84%";
+            chartAreaHeight = "72%";
+            slantedTextAngle = 65;
+            annotationsVisible = false;
+            legendPosition = "bottom";
+            chartHeight = Math.max(180, Math.min(220, Math.round(viewportH * 0.26)));
+        } else if (width < 640 || compactViewport) {
+            axisFontSize = 9;
+            legendFontSize = 9;
+            annotationFontSize = 8;
+            chartAreaLeft = 46;
+            chartAreaTop = 12;
+            chartAreaWidth = "86%";
+            chartAreaHeight = "76%";
+            slantedTextAngle = 52;
+            annotationsVisible = false;
+            legendPosition = "bottom";
+            chartHeight = Math.max(210, Math.min(280, Math.round(viewportH * 0.3)));
+        } else if (width < 900) {
+            axisFontSize = 10;
+            chartAreaLeft = 52;
+            chartAreaTop = 18;
+            chartAreaWidth = "88%";
+            chartAreaHeight = "80%";
+            slantedTextAngle = 42;
+            legendPosition = compactViewport ? "bottom" : "top";
+            chartHeight = Math.max(260, Math.min(340, Math.round(viewportH * 0.34)));
+        } else {
+            chartHeight = Math.max(300, Math.min(520, Math.round(viewportH * 0.38)));
+        }
+
+        this.graphChartPixelWidth = Math.max(Math.round(width), 240);
+        this.graphChartPixelHeight = chartHeight;
+
+        const signature = [
+            width < 420 ? "xs" : width < 640 ? "sm" : width < 900 ? "md" : "lg",
+            compactViewport ? "cv" : "nv",
+            annotationsVisible ? "ann" : "noann",
+            legendPosition,
+            chartHeight,
+        ].join("|");
+        if (signature === this.graphLayoutSignature) {
+            return;
+        }
+        this.graphLayoutSignature = signature;
+
+        this.chartOptions = {
+            ...this.chartOptions,
+            title: "",
+            hAxis: {
+                ...(this.chartOptions.hAxis || {}),
+                slantedText: true,
+                slantedTextAngle,
+                showTextEvery: width < 420 ? 2 : 1,
+                textStyle: {
+                    ...(this.chartOptions.hAxis?.textStyle || {}),
+                    fontSize: axisFontSize,
+                },
+            },
+            vAxis: {
+                ...(this.chartOptions.vAxis || {}),
+                textStyle: {
+                    ...(this.chartOptions.vAxis?.textStyle || {}),
+                    fontSize: axisFontSize,
+                },
+                titleTextStyle: {
+                    ...(this.chartOptions.vAxis?.titleTextStyle || {}),
+                    fontSize: Math.max(axisFontSize, 10),
+                },
+            },
+            legend: {
+                ...(this.chartOptions.legend || {}),
+                position: legendPosition,
+                alignment: legendPosition === "bottom" ? "center" : "end",
+                maxLines: width < 640 ? 3 : 2,
+                textStyle: {
+                    ...(this.chartOptions.legend?.textStyle || {}),
+                    fontSize: legendFontSize,
+                },
+            },
+            chartArea: {
+                ...(this.chartOptions.chartArea || {}),
+                left: chartAreaLeft,
+                top: chartAreaTop,
+                width: chartAreaWidth,
+                height: chartAreaHeight,
+            },
+            annotations: {
+                ...(this.chartOptions.annotations || {}),
+                alwaysOutside: true,
+                textStyle: {
+                    ...(this.chartOptions.annotations?.textStyle || {}),
+                    fontSize: annotationsVisible ? annotationFontSize : 0,
+                },
+            },
+        };
+        this.cdr.markForCheck();
     }
 
     private applyIncomeChartHtmlTooltips(): void {
