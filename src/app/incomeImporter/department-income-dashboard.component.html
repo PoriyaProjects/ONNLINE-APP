@@ -124,11 +124,7 @@
 
     <!-- ===== GRAPH SECTION (2/3) ===== -->
     <div class="graph-section">
-      <div class="graph-view-switch-panel" dir="rtl" [class.graph-view-switch-panel--filtered]="hasActiveIncomeFilters()">
-        <div *ngIf="hasActiveIncomeFilters()" class="active-income-filter-banner" role="status">
-          <mat-icon aria-hidden="true">filter_alt</mat-icon>
-          <span>{{ activeIncomeFilterNotice }}</span>
-        </div>
+      <div class="graph-view-switch-panel" dir="rtl">
         <div class="graph-view-switch-row">
           <div class="graph-view-segmented-control" role="tablist" aria-label="מצב תצוגת גרף">
             <button type="button" class="graph-view-segment-btn" [class.active]="graphPrimaryView === 'income'"
