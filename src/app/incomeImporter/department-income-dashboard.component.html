@@ -429,7 +429,7 @@
             </span>
             <div class="filter-sidebar-heading__text">
               <span class="filter-sidebar-heading__title">סינון מתקדם</span>
-              <span class="filter-sidebar-heading__hint">מסננים משותפים לגרף ולטבלה</span>
+              <span class="filter-sidebar-heading__hint">{{ getIncomeFiltersSidebarHint() }}</span>
             </div>
             <button type="button" mat-icon-button class="filter-sidebar-inline-close" matTooltip="סגור סינון"
               matTooltipPosition="below" (click)="toggleIncomeFiltersSidebar()" aria-label="סגור סינון מתקדם">
@@ -482,15 +482,20 @@
               </div>
             </div>
 
-            <div class="custom-dropdown filter-dropdown" [class.active]="isIncomeClassificationOpen"
-              [class.has-value]="selectedIncomeClassification !== incomeFilterAllValue">
-              <div class="dropdown-trigger" matTooltip="{{ getIncomeClassificationDisplay() }}"
-                matTooltipPosition="below" (click)="toggleIncomeFilterDropdown('classification')">
+            <div class="custom-dropdown filter-dropdown"
+              [class.disabled]="isIncomeClassificationFilterDisabled"
+              [class.active]="isIncomeClassificationOpen && !isIncomeClassificationFilterDisabled"
+              [class.has-value]="selectedIncomeClassification !== incomeFilterAllValue && !isIncomeClassificationFilterDisabled">
+              <div class="dropdown-trigger"
+                [matTooltip]="isIncomeClassificationFilterDisabled ? getIncomeClassificationDisabledTooltip() : getIncomeClassificationDisplay()"
+                matTooltipPosition="below"
+                (click)="toggleIncomeFilterDropdown('classification')">
                 <mat-icon class="dropdown-icon">category</mat-icon>
                 <span class="selected-text">סיווג הכנסה: {{ getIncomeClassificationDisplay() }}</span>
-                <mat-icon class="arrow-icon">{{ isIncomeClassificationOpen ? 'expand_less' : 'expand_more' }}</mat-icon>
+                <mat-icon class="arrow-icon" *ngIf="!isIncomeClassificationFilterDisabled">{{ isIncomeClassificationOpen ? 'expand_less' : 'expand_more' }}</mat-icon>
+                <mat-icon class="dropdown-icon dropdown-icon--muted" *ngIf="isIncomeClassificationFilterDisabled" aria-hidden="true">block</mat-icon>
               </div>
-              <div class="dropdown-panel" *ngIf="isIncomeClassificationOpen">
+              <div class="dropdown-panel" *ngIf="isIncomeClassificationOpen && !isIncomeClassificationFilterDisabled">
                 <div class="options-list">
                   <div class="option-item" *ngFor="let option of incomeClassificationOptions"
                     [class.selected]="selectedIncomeClassification === option"
