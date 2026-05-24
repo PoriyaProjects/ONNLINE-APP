@@ -1260,6 +1260,15 @@
     margin-bottom: 0;
 }
 
+.main-content.main-content--payer-view .table-section {
+    overflow: visible;
+    min-width: 0;
+}
+
+.main-content.main-content--payer-view .table-section .panel-table--payer {
+    overflow: visible;
+}
+
 /* ── Graph view switch (הכנסות / גורם משלם) ───────────────── */
 .graph-view-switch-panel {
     flex-shrink: 0;
@@ -1652,6 +1661,172 @@
     }
 }
 
+.panel-table .panel-title {
+    font-size: clamp(15px, 1.2vw, 18px);
+    margin-bottom: 8px;
+    mat-icon {
+        font-size: 20px;
+        width: 20px;
+        height: 20px;
+    }
+}
+
+.panel-table .panel-title__lead > span {
+    font-size: clamp(15px, 1.15vw, 17px);
+    font-weight: 800;
+    overflow: visible;
+    text-overflow: unset;
+    white-space: normal;
+}
+
+.panel-table .dept-table-search {
+    height: 38px;
+    padding: 6px 32px 6px 28px;
+    font-size: 14px;
+    font-weight: 700;
+    border-radius: 10px;
+}
+
+.panel-table .dept-table-search::placeholder {
+    font-weight: 600;
+}
+
+.panel-table .panel-title__search-icon {
+    font-size: 18px !important;
+    width: 18px !important;
+    height: 18px !important;
+}
+
+.panel-table .table-wrap table.table {
+    font-size: clamp(13px, 1.05vw, 15px);
+}
+
+.panel-table .table-wrap table.table th {
+    font-size: clamp(13px, 1vw, 15px);
+    font-weight: 800;
+    color: var(--text);
+    padding: 10px 8px;
+    min-height: 46px;
+    vertical-align: middle;
+    line-height: 1.3;
+    white-space: normal;
+    word-break: break-word;
+}
+
+.panel-table .table-wrap table.table td {
+    font-size: clamp(13px, 1.05vw, 15px);
+    font-weight: 700;
+    padding: 10px 8px;
+    min-height: 50px;
+    vertical-align: middle;
+    line-height: 1.35;
+}
+
+.panel-table .table-wrap ::ng-deep .mat-sort-header-button {
+    font-size: clamp(13px, 1vw, 15px) !important;
+    font-weight: 800 !important;
+    line-height: 1.3 !important;
+    width: 100%;
+    text-align: right;
+    white-space: normal;
+}
+
+.panel-table .table-wrap ::ng-deep .mat-sort-header-content {
+    font-size: inherit;
+    font-weight: inherit;
+}
+
+.panel-table .clickable-cell {
+    font-weight: 800;
+    font-size: clamp(13px, 1.05vw, 15px);
+}
+
+.panel-table .clickable-cell__inner {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    gap: 6px;
+}
+
+.panel-table .clickable-cell__text {
+    flex: 1 1 auto;
+    min-width: 0;
+    white-space: normal;
+    word-break: break-word;
+    overflow: visible;
+    text-overflow: unset;
+    font-weight: 800;
+    line-height: 1.35;
+}
+
+.panel-table .clickable-cell__hint {
+    font-size: 18px !important;
+    width: 18px !important;
+    height: 18px !important;
+}
+
+.panel-table .payer-name-cell {
+    font-weight: 800;
+    font-size: clamp(13px, 1.05vw, 15px);
+    line-height: 1.35;
+    white-space: normal;
+    word-break: break-word;
+    min-width: 96px;
+}
+
+.panel-table .five-year-income-cell,
+.panel-table .five-year-diff-cell {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 3px;
+    width: 100%;
+    min-height: 100%;
+}
+
+.panel-table .five-year-income-amount,
+.panel-table .five-year-diff-amount {
+    font-size: clamp(13px, 1vw, 15px);
+    font-weight: 800;
+    line-height: 1.25;
+    width: 100%;
+}
+
+.panel-table .five-year-yoy-pct,
+.panel-table .five-year-diff-pct,
+.panel-table .percentage-badge {
+    font-size: clamp(11px, 0.9vw, 13px);
+    font-weight: 800;
+    line-height: 1.2;
+}
+
+.panel-table .mat-column-DepartmentName,
+.panel-table .mat-column-UnifiedPayer,
+.panel-table .cdk-column-DepartmentName,
+.panel-table .cdk-column-UnifiedPayer {
+    min-width: 108px;
+}
+
+.panel-table .table-wrap table.table [class*="incomeYear_"],
+.panel-table .table-wrap table.table [class*="mat-column-incomeYear"],
+.panel-table .table-wrap table.table [class*="cdk-column-incomeYear"] {
+    min-width: 92px;
+}
+
+.panel-table .table-wrap table.table [class*="Difference"],
+.panel-table .table-wrap table.table [class*="mat-column-Difference"] {
+    min-width: 100px;
+}
+
+.panel-table {
+    overflow: visible;
+}
+
+.panel-table--payer {
+    overflow: visible;
+}
+
 .panel-table--payer .panel-title--with-search {
     flex-wrap: wrap;
     row-gap: 6px;
@@ -1671,39 +1846,101 @@
 .panel-table--payer .payer-type-toolbar {
     flex-direction: column;
     align-items: stretch;
+    gap: 6px;
+    overflow: visible;
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+}
+
+.panel-table--payer .payer-filter-row {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
     gap: 8px;
+    width: 100%;
+    min-width: 0;
+    overflow: visible;
 }
 
 .panel-table--payer .payer-filter-field {
+    flex: 1 1 0;
+    min-width: 0;
     max-width: none;
-    flex: 1 1 100%;
     width: 100%;
+    margin: 0;
+    font-size: 14px;
+    display: block;
+    box-sizing: border-box;
+}
+
+.panel-table--payer .payer-filter-field ::ng-deep .mat-form-field-wrapper,
+.panel-table--payer .payer-filter-field ::ng-deep .mat-mdc-text-field-wrapper {
+    width: 100%;
+    margin: 0;
+    padding-bottom: 0;
+}
+
+.panel-table--payer .payer-filter-field ::ng-deep .mat-form-field-flex,
+.panel-table--payer .payer-filter-field ::ng-deep .mat-mdc-form-field-flex {
+    width: 100% !important;
+    max-width: 100%;
+    align-items: center;
+}
+
+.panel-table--payer .payer-filter-field ::ng-deep .mat-form-field-infix,
+.panel-table--payer .payer-filter-field ::ng-deep .mat-mdc-form-field-infix {
+    width: auto !important;
+    min-width: 0 !important;
+    padding-top: 10px;
+    padding-bottom: 10px;
+}
+
+.panel-table--payer .payer-filter-field ::ng-deep .mat-form-field-label,
+.panel-table--payer .payer-filter-field ::ng-deep .mat-mdc-floating-label {
+    font-size: 12px !important;
+    font-weight: 700 !important;
+}
+
+.panel-table--payer .payer-filter-field ::ng-deep .mat-select-value,
+.panel-table--payer .payer-filter-field ::ng-deep .mat-mdc-select-value,
+.panel-table--payer .payer-filter-field ::ng-deep .mat-mdc-select-value-text {
+    font-size: 14px !important;
+    font-weight: 800 !important;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.panel-table--payer .payer-filter-field ::ng-deep .mat-form-field-prefix mat-icon,
+.panel-table--payer .payer-filter-field ::ng-deep .mat-mdc-form-field-icon-prefix mat-icon {
+    font-size: 18px !important;
+    width: 18px !important;
+    height: 18px !important;
+}
+
+.panel-table--payer .payer-filter-field ::ng-deep .mat-form-field-outline,
+.panel-table--payer .payer-filter-field ::ng-deep .mdc-notched-outline {
+    color: var(--border);
 }
 
 .panel-table--payer .payer-type-hint {
-    flex: 1 1 100%;
-    line-height: 1.4;
+    flex: 0 0 auto;
+    line-height: 1.35;
+    font-size: 12px;
+    font-weight: 700;
     word-break: break-word;
+    padding-inline: 2px;
+}
+
+.panel-table--payer .table-body {
+    overflow: hidden;
+    min-height: 0;
 }
 
 .panel-table--payer .table-wrap table.table {
-    min-width: 620px;
-}
-
-.panel-table--payer .table-wrap table.table th,
-.panel-table--payer .table-wrap table.table td {
-    padding: 6px 8px;
-    font-size: clamp(10px, 0.78vw, 12px);
-}
-
-.panel-table--payer .five-year-income-amount,
-.panel-table--payer .five-year-diff-amount {
-    font-size: clamp(10px, 0.78vw, 12px);
-}
-
-.panel-table--payer .five-year-yoy-pct,
-.panel-table--payer .five-year-diff-pct {
-    font-size: 9px;
+    min-width: 760px;
 }
 
 .payer-type-toolbar {
@@ -1711,21 +1948,35 @@
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 10px 14px;
-    padding: 4px 4px 10px;
+    gap: 8px 10px;
+    padding: 4px 2px 8px;
     border-bottom: 1px solid var(--border);
     margin-bottom: 6px;
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+}
+
+.payer-filter-row {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 8px;
+    flex: 1 1 auto;
+    min-width: 0;
+    width: 100%;
 }
 
 .payer-filter-field {
-    min-width: min(100%, 160px);
-    max-width: 240px;
-    flex: 1 1 160px;
+    min-width: 0;
+    max-width: none;
+    flex: 1 1 0;
     margin: 0;
-    font-size: 13px;
+    font-size: 12px;
 }
 
-.payer-filter-field ::ng-deep .mat-mdc-form-field-subscript-wrapper {
+.payer-filter-field ::ng-deep .mat-mdc-form-field-subscript-wrapper,
+.payer-filter-field ::ng-deep .mat-form-field-subscript-wrapper {
     display: none;
 }
 
@@ -1746,14 +1997,15 @@
 }
 
 .payer-type-hint {
-    font-size: 11px;
+    font-size: 12px;
     color: var(--muted);
-    font-weight: 600;
+    font-weight: 700;
 }
 
 .payer-name-cell {
     font-weight: 800;
     color: var(--text);
+    font-size: clamp(13px, 1.05vw, 15px);
 }
 
 .dash.dark .payer-type-toolbar {
@@ -1786,6 +2038,11 @@
             font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
             max-width: 100%;
             height: auto;
+        }
+        ::ng-deep svg text[transform*="rotate"] {
+            font-weight: 700 !important;
+            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif !important;
+            fill: #0f172a !important;
         }
         ::ng-deep rect {
             cursor: pointer;
@@ -1996,6 +2253,10 @@
 
 .dash.dark .graph-body {
     background: #0f172a;
+}
+
+.dash.dark .graph-body google-chart ::ng-deep svg text[transform*="rotate"] {
+    fill: #f9fafb !important;
 }
 
 .dash.dark .graph-body google-chart ::ng-deep .google-visualization-tooltip {
@@ -3573,6 +3834,80 @@ table.table {
     box-shadow: 0 4px 12px rgba(37, 99, 235, 0.28);
 }
 
+.department-graph-modal .catalog-header {
+    gap: 10px 12px;
+    align-items: stretch;
+    padding: 2px 0 6px;
+}
+
+.department-graph-modal .catalog-title {
+    font-size: clamp(17px, 1.5vw, 22px);
+    line-height: 1.3;
+    font-weight: 800;
+    align-self: center;
+}
+
+.department-graph-modal .sort-controls {
+    padding: 8px 12px;
+    gap: 8px;
+    align-items: stretch;
+}
+
+.department-graph-modal .sort-label {
+    font-size: 16px;
+    font-weight: 800;
+    align-self: center;
+    white-space: nowrap;
+}
+
+.department-graph-modal .catalog-header .sort-btn,
+.department-graph-modal .catalog-header .view-type-selector button {
+    --mdc-outlined-button-label-text-size: 16px;
+    min-height: 48px !important;
+    height: auto !important;
+    min-width: 118px !important;
+    padding: 12px 18px !important;
+    font-size: 16px !important;
+    font-weight: 800 !important;
+    line-height: 1.25 !important;
+    border-radius: 10px !important;
+    letter-spacing: 0.01em;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    text-align: center;
+    white-space: nowrap;
+}
+
+.department-graph-modal .catalog-header .sort-btn {
+    min-width: 148px !important;
+}
+
+.department-graph-modal .catalog-header ::ng-deep button.mat-mdc-outlined-button .mdc-button__label,
+.department-graph-modal .catalog-header ::ng-deep button.mat-mdc-stroked-button .mdc-button__label {
+    font-size: 16px !important;
+    font-weight: 800 !important;
+    line-height: 1.25 !important;
+    width: 100%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+
+.department-graph-modal .view-type-selector {
+    gap: 8px;
+    align-items: stretch;
+}
+
+.department-graph-modal .view-type-selector mat-icon {
+    margin-inline-end: 0;
+    font-size: 22px !important;
+    width: 22px !important;
+    height: 22px !important;
+    flex-shrink: 0;
+}
+
 @media (max-width: 900px) {
     .summary-section {
         grid-template-columns: 1fr;
@@ -3598,6 +3933,26 @@ table.table {
     .catalog-header {
         flex-direction: column;
         align-items: stretch;
+    }
+
+    .department-graph-modal .catalog-header .sort-btn,
+    .department-graph-modal .catalog-header .view-type-selector button {
+        min-width: 0 !important;
+        flex: 1 1 calc(50% - 4px);
+        font-size: 15px !important;
+        min-height: 46px !important;
+        padding: 10px 12px !important;
+    }
+
+    .department-graph-modal .catalog-header ::ng-deep button.mat-mdc-outlined-button .mdc-button__label,
+    .department-graph-modal .catalog-header ::ng-deep button.mat-mdc-stroked-button .mdc-button__label {
+        font-size: 15px !important;
+    }
+
+    .department-graph-modal .sort-controls,
+    .department-graph-modal .view-type-selector {
+        width: 100%;
+        flex-wrap: wrap;
     }
 }
 

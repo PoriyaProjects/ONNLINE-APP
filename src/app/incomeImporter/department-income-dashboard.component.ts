@@ -256,8 +256,10 @@ export class DepartmentIncomeDashboardComponent
         hAxis: {
             title: "",
             textStyle: {
-                color: "#64748b",
-                fontSize: 11,
+                color: "#0f172a",
+                fontSize: 14,
+                bold: true,
+                fontName: "Segoe UI",
             },
             slantedText: true,
             slantedTextAngle: 35,
@@ -283,8 +285,10 @@ export class DepartmentIncomeDashboardComponent
             position: "top",
             alignment: "end",
             textStyle: {
-                color: "#64748b",
-                fontSize: 11,
+                color: "#0f172a",
+                fontSize: 13,
+                bold: true,
+                fontName: "Segoe UI",
             },
         },
         chartArea: {
@@ -594,6 +598,8 @@ export class DepartmentIncomeDashboardComponent
     >();
     private yearlyTotalCacheKey: string | null = null;
     private readonly maxBreakdownDepartments = 35;
+    /** מינימום הכנסה (₪) לעמודה בגרפי פילוח — מתחת ל-0.5M רק בטבלה */
+    private readonly breakdownChartMinCash = 500_000;
     private readonly breakdownPalette = [
         "#2563eb",
         "#10b981",
@@ -6042,7 +6048,7 @@ export class DepartmentIncomeDashboardComponent
                 continue;
             }
             for (const v of m.values()) {
-                if (v > 0) {
+                if (v >= this.breakdownChartMinCash) {
                     anyVal = true;
                     break;
                 }
@@ -6065,14 +6071,26 @@ export class DepartmentIncomeDashboardComponent
         for (const dept of deptOrder) {
             const m = agg.get(dept) || new Map();
             const row: any[] = [dept];
+            let rowHasChartValue = false;
             for (const seg of segmentOrder) {
-                const vM = parseFloat(
-                    ((m.get(seg) || 0) / 1_000_000).toFixed(2),
-                );
+                const raw = m.get(seg) || 0;
+                if (raw < this.breakdownChartMinCash) {
+                    row.push(null);
+                    row.push("");
+                    continue;
+                }
+                const vM = parseFloat((raw / 1_000_000).toFixed(2));
                 row.push(vM);
                 row.push(this.formatMillionAnnotationLabel(vM));
+                rowHasChartValue = true;
             }
-            data.push(row);
+            if (rowHasChartValue) {
+                data.push(row);
+            }
+        }
+
+        if (!data.length) {
+            return { columns: [], data: [], options: {} };
         }
 
         const n = segmentOrder.length;
@@ -6341,52 +6359,59 @@ export class DepartmentIncomeDashboardComponent
         const viewportH = window.innerHeight || 800;
         const compactViewport = viewportH < 760;
         let axisFontSize = 11;
-        let legendFontSize = 11;
+        let hAxisFontSize = 15;
+        let legendFontSize = 13;
         let annotationFontSize = 10;
         let chartAreaLeft = 56;
         let chartAreaTop = 24;
         let chartAreaWidth = "90%";
-        let chartAreaHeight = "84%";
+        let chartAreaHeight = "68%";
         let slantedTextAngle = 35;
         let annotationsVisible = true;
         let legendPosition: "top" | "bottom" = "top";
-        let chartHeight = 320;
+        let chartHeight = 360;
 
         if (width < 420 || (compactViewport && width < 520)) {
-            axisFontSize = 8;
-            legendFontSize = 8;
+            axisFontSize = 10;
+            hAxisFontSize = 12;
+            legendFontSize = 12;
             annotationFontSize = 0;
             chartAreaLeft = 40;
             chartAreaTop = 8;
             chartAreaWidth = "84%";
-            chartAreaHeight = "72%";
-            slantedTextAngle = 65;
+            chartAreaHeight = "62%";
+            slantedTextAngle = 55;
             annotationsVisible = false;
             legendPosition = "bottom";
-            chartHeight = Math.max(180, Math.min(220, Math.round(viewportH * 0.26)));
+            chartHeight = Math.max(220, Math.min(260, Math.round(viewportH * 0.3)));
         } else if (width < 640 || compactViewport) {
-            axisFontSize = 9;
-            legendFontSize = 9;
+            axisFontSize = 10;
+            hAxisFontSize = 13;
+            legendFontSize = 13;
             annotationFontSize = 8;
             chartAreaLeft = 46;
             chartAreaTop = 12;
             chartAreaWidth = "86%";
-            chartAreaHeight = "76%";
-            slantedTextAngle = 52;
+            chartAreaHeight = "64%";
+            slantedTextAngle = 45;
             annotationsVisible = false;
             legendPosition = "bottom";
-            chartHeight = Math.max(210, Math.min(280, Math.round(viewportH * 0.3)));
+            chartHeight = Math.max(260, Math.min(320, Math.round(viewportH * 0.34)));
         } else if (width < 900) {
-            axisFontSize = 10;
+            axisFontSize = 11;
+            hAxisFontSize = 14;
+            legendFontSize = 13;
             chartAreaLeft = 52;
             chartAreaTop = 18;
             chartAreaWidth = "88%";
-            chartAreaHeight = "80%";
-            slantedTextAngle = 42;
+            chartAreaHeight = "66%";
+            slantedTextAngle = 38;
             legendPosition = compactViewport ? "bottom" : "top";
-            chartHeight = Math.max(260, Math.min(340, Math.round(viewportH * 0.34)));
+            chartHeight = Math.max(300, Math.min(380, Math.round(viewportH * 0.38)));
         } else {
-            chartHeight = Math.max(300, Math.min(520, Math.round(viewportH * 0.38)));
+            hAxisFontSize = 15;
+            legendFontSize = 14;
+            chartHeight = Math.max(340, Math.min(560, Math.round(viewportH * 0.42)));
         }
 
         this.graphChartPixelWidth = Math.max(Math.round(width), 240);
@@ -6398,6 +6423,7 @@ export class DepartmentIncomeDashboardComponent
             annotationsVisible ? "ann" : "noann",
             legendPosition,
             chartHeight,
+            hAxisFontSize,
         ].join("|");
         if (signature === this.graphLayoutSignature) {
             return;
@@ -6414,7 +6440,10 @@ export class DepartmentIncomeDashboardComponent
                 showTextEvery: width < 420 ? 2 : 1,
                 textStyle: {
                     ...(this.chartOptions.hAxis?.textStyle || {}),
-                    fontSize: axisFontSize,
+                    fontSize: hAxisFontSize,
+                    bold: true,
+                    fontName: "Segoe UI",
+                    color: this.isDark ? "#f9fafb" : "#0f172a",
                 },
             },
             vAxis: {
@@ -6436,6 +6465,9 @@ export class DepartmentIncomeDashboardComponent
                 textStyle: {
                     ...(this.chartOptions.legend?.textStyle || {}),
                     fontSize: legendFontSize,
+                    bold: true,
+                    fontName: "Segoe UI",
+                    color: this.isDark ? "#e5e7eb" : "#0f172a",
                 },
             },
             chartArea: {
@@ -6495,7 +6527,9 @@ export class DepartmentIncomeDashboardComponent
                 textStyle: {
                     color: "#f9fafb",
                     fontSize:
-                        this.chartOptions.hAxis?.textStyle?.fontSize ?? 11,
+                        this.chartOptions.hAxis?.textStyle?.fontSize ?? 14,
+                    bold: true,
+                    fontName: "Segoe UI",
                 },
                 titleTextStyle: {
                     color: "#f9fafb",
@@ -6526,7 +6560,9 @@ export class DepartmentIncomeDashboardComponent
                 textStyle: {
                     color: "#e5e7eb",
                     fontSize:
-                        this.chartOptions.legend?.textStyle?.fontSize ?? 11,
+                        this.chartOptions.legend?.textStyle?.fontSize ?? 13,
+                    bold: true,
+                    fontName: "Segoe UI",
                 },
             };
             this.chartOptions.annotations = {
@@ -6564,7 +6600,9 @@ export class DepartmentIncomeDashboardComponent
                 ...this.chartOptions.hAxis,
                 textStyle: {
                     ...this.chartOptions.hAxis?.textStyle,
-                    color: "#555",
+                    color: "#0f172a",
+                    bold: true,
+                    fontName: "Segoe UI",
                 },
                 titleTextStyle: {
                     ...this.chartOptions.hAxis?.titleTextStyle,
@@ -6586,7 +6624,9 @@ export class DepartmentIncomeDashboardComponent
                 ...this.chartOptions.legend,
                 textStyle: {
                     ...this.chartOptions.legend?.textStyle,
-                    color: "#555",
+                    color: "#0f172a",
+                    bold: true,
+                    fontName: "Segoe UI",
                 },
             };
             this.chartOptions.annotations = {
@@ -6621,6 +6661,12 @@ export class DepartmentIncomeDashboardComponent
             this.applyIncomeChartHtmlTooltips();
         }
         this.syncBreakdownChartTheme();
+        this.graphLayoutSignature = "";
+        this.scheduleResponsiveChartLayout(
+            this.graphBodyLastWidth ||
+                this.graphBodyRef?.nativeElement?.clientWidth ||
+                720,
+        );
         this.cdr.detectChanges();
     }
 

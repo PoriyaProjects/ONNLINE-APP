@@ -310,38 +310,40 @@
         </div>
 
         <div class="payer-type-toolbar" *ngIf="graphPrimaryView === 'payer'" dir="rtl">
-          <mat-form-field appearance="outline" class="payer-filter-field" subscriptSizing="dynamic">
-            <mat-label>מחלקה ({{ selectedDiagnosis || 'אגף' }})</mat-label>
-            <mat-icon matPrefix>apartment</mat-icon>
-            <mat-select [value]="selectedPayerDepartment" (selectionChange)="onPayerDepartmentChange($event.value)"
-              (openedChange)="onPayerDepartmentSelectOpened($event)"
-              panelClass="payer-dept-select-panel"
-              aria-label="בחירת מחלקה לפי אגף">
-              <mat-select-trigger>{{ selectedPayerDepartment }}</mat-select-trigger>
-              <mat-option *ngFor="let dept of payerDepartmentOptions" [value]="dept">
-                <span class="monthly-dept-picker__option payer-dept-select__option">
-                  <span class="monthly-dept-picker__option-name">{{ dept }}</span>
-                  <span class="monthly-dept-picker__option-yoy"
-                    *ngIf="dept !== payerDepartmentAllValue && getPayerDepartmentYoYPercentText(dept) as yoyText"
-                    [class.monthly-dept-picker__option-yoy--up]="isPayerDepartmentYoYPositive(dept) === true"
-                    [class.monthly-dept-picker__option-yoy--down]="isPayerDepartmentYoYPositive(dept) === false">
-                    <span class="monthly-dept-picker__option-yoy-pct">{{ yoyText }}</span>
-                    <span class="monthly-dept-picker__option-yoy-year"
-                      *ngIf="getPayerDepartmentYoYYearHint(dept) as yearHint">{{ yearHint }}</span>
+          <div class="payer-filter-row">
+            <mat-form-field appearance="outline" class="payer-filter-field payer-filter-field--dept" subscriptSizing="dynamic">
+              <mat-label>מחלקה</mat-label>
+              <mat-icon matPrefix>apartment</mat-icon>
+              <mat-select [value]="selectedPayerDepartment" (selectionChange)="onPayerDepartmentChange($event.value)"
+                (openedChange)="onPayerDepartmentSelectOpened($event)"
+                panelClass="payer-dept-select-panel"
+                aria-label="בחירת מחלקה לפי אגף">
+                <mat-select-trigger>{{ selectedPayerDepartment }}</mat-select-trigger>
+                <mat-option *ngFor="let dept of payerDepartmentOptions" [value]="dept">
+                  <span class="monthly-dept-picker__option payer-dept-select__option">
+                    <span class="monthly-dept-picker__option-name">{{ dept }}</span>
+                    <span class="monthly-dept-picker__option-yoy"
+                      *ngIf="dept !== payerDepartmentAllValue && getPayerDepartmentYoYPercentText(dept) as yoyText"
+                      [class.monthly-dept-picker__option-yoy--up]="isPayerDepartmentYoYPositive(dept) === true"
+                      [class.monthly-dept-picker__option-yoy--down]="isPayerDepartmentYoYPositive(dept) === false">
+                      <span class="monthly-dept-picker__option-yoy-pct">{{ yoyText }}</span>
+                      <span class="monthly-dept-picker__option-yoy-year"
+                        *ngIf="getPayerDepartmentYoYYearHint(dept) as yearHint">{{ yearHint }}</span>
+                    </span>
                   </span>
-                </span>
-              </mat-option>
-            </mat-select>
-          </mat-form-field>
-          <mat-form-field appearance="outline" class="payer-filter-field" subscriptSizing="dynamic">
-            <mat-label>סוג גורם משלם </mat-label>
-            <mat-icon matPrefix>filter_alt</mat-icon>
-            <mat-select [value]="selectedPayerType" (selectionChange)="onPayerTypeChange($event.value)"
-              aria-label="בחירת סוג גורם משלם">
-              <mat-option *ngFor="let pt of payerTypeOptions" [value]="pt">{{ pt }}</mat-option>
-            </mat-select>
-          </mat-form-field>
-          <span class="payer-type-hint" [matTooltip]="graphChartContextText" matTooltipPosition="below">מסונכרן עם הגרף</span>
+                </mat-option>
+              </mat-select>
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="payer-filter-field payer-filter-field--type" subscriptSizing="dynamic">
+              <mat-label>סוג גורם משלם</mat-label>
+              <mat-icon matPrefix>filter_alt</mat-icon>
+              <mat-select [value]="selectedPayerType" (selectionChange)="onPayerTypeChange($event.value)"
+                aria-label="בחירת סוג גורם משלם">
+                <mat-option *ngFor="let pt of payerTypeOptions" [value]="pt">{{ pt }}</mat-option>
+              </mat-select>
+            </mat-form-field>
+          </div>
+          <span class="payer-type-hint" [matTooltip]="graphChartContextText" matTooltipPosition="below">מסונכרן עם הגרף · {{ selectedDiagnosis || 'אגף' }}</span>
         </div>
 
         <div class="table-body">
