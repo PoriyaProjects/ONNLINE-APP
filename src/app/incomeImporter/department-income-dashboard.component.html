@@ -128,19 +128,54 @@
           <mat-icon aria-hidden="true">filter_alt</mat-icon>
           <span>{{ activeIncomeFilterNotice }}</span>
         </div>
-        <div class="graph-view-segmented-control" role="tablist" aria-label="מצב תצוגת גרף">
-          <button type="button" class="graph-view-segment-btn" [class.active]="graphPrimaryView === 'income'"
-            (click)="setGraphPrimaryView('income')" role="tab" [attr.aria-selected]="graphPrimaryView === 'income'"
-            matTooltip="השוואת הכנסות לפי מחלקות — הדשבורד הנוכחי">
-            <mat-icon class="graph-view-segment-icon">domain</mat-icon>
-            <span class="graph-view-segment-label">הכנסות</span>
-          </button>
-          <button type="button" class="graph-view-segment-btn" [class.active]="graphPrimaryView === 'payer'"
-            (click)="setGraphPrimaryView('payer')" role="tab" [attr.aria-selected]="graphPrimaryView === 'payer'"
-            matTooltip="השוואת הכנסות לפי גורם משלם">
-            <mat-icon class="graph-view-segment-icon">account_balance_wallet</mat-icon>
-            <span class="graph-view-segment-label">גורם משלם</span>
-          </button>
+        <div class="graph-view-switch-row">
+          <div class="graph-view-segmented-control" role="tablist" aria-label="מצב תצוגת גרף">
+            <button type="button" class="graph-view-segment-btn" [class.active]="graphPrimaryView === 'income'"
+              (click)="setGraphPrimaryView('income')" role="tab" [attr.aria-selected]="graphPrimaryView === 'income'"
+              matTooltip="השוואת הכנסות לפי מחלקות — הדשבורד הנוכחי">
+              <mat-icon class="graph-view-segment-icon">domain</mat-icon>
+              <span class="graph-view-segment-label">הכנסות</span>
+            </button>
+            <button type="button" class="graph-view-segment-btn" [class.active]="graphPrimaryView === 'payer'"
+              (click)="setGraphPrimaryView('payer')" role="tab" [attr.aria-selected]="graphPrimaryView === 'payer'"
+              matTooltip="השוואת הכנסות לפי גורם משלם">
+              <mat-icon class="graph-view-segment-icon">account_balance_wallet</mat-icon>
+              <span class="graph-view-segment-label">גורם משלם</span>
+            </button>
+          </div>
+          <div class="custom-dropdown monthly-dept-picker" dir="rtl"
+            *ngIf="graphPrimaryView === 'income' && isDepartmentMonthlyChartActive"
+            [class.active]="isMonthlyDepartmentOpen"
+            [class.has-value]="!!selectedMonthlyDepartment"
+            [class.disabled]="!monthlyDepartmentOptions.length">
+            <div class="dropdown-trigger monthly-dept-picker__trigger"
+              [matTooltip]="getMonthlyDepartmentDisplay()" matTooltipPosition="below"
+              (click)="toggleMonthlyDepartmentDropdown()">
+              <mat-icon class="dropdown-icon">apartment</mat-icon>
+              <span class="selected-text">
+                <span class="monthly-dept-picker__label">מחלקה ({{ selectedDiagnosis || 'אגף' }})</span>
+                <span class="monthly-dept-picker__value">{{ getMonthlyDepartmentDisplay() }}</span>
+              </span>
+              <mat-icon class="arrow-icon">{{ isMonthlyDepartmentOpen ? 'expand_less' : 'expand_more' }}</mat-icon>
+            </div>
+            <div class="dropdown-panel monthly-dept-picker__panel" dir="rtl" *ngIf="isMonthlyDepartmentOpen">
+              <div class="options-list monthly-dept-picker__options" dir="rtl">
+                <div class="option-item monthly-dept-picker__option" *ngFor="let dept of monthlyDepartmentOptions"
+                  [class.selected]="selectedMonthlyDepartment === dept"
+                  (click)="setMonthlyDepartmentFromPicker(dept)">
+                  <span class="monthly-dept-picker__option-name">{{ dept }}</span>
+                  <span class="monthly-dept-picker__option-yoy"
+                    *ngIf="getMonthlyDepartmentYoYPercentText(dept) as yoyText"
+                    [class.monthly-dept-picker__option-yoy--up]="isMonthlyDepartmentYoYPositive(dept) === true"
+                    [class.monthly-dept-picker__option-yoy--down]="isMonthlyDepartmentYoYPositive(dept) === false">
+                    <span class="monthly-dept-picker__option-yoy-pct">{{ yoyText }}</span>
+                    <span class="monthly-dept-picker__option-yoy-year"
+                      *ngIf="getMonthlyDepartmentYoYYearHint(dept) as yearHint">{{ yearHint }}</span>
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -159,7 +194,7 @@
 
         <div class="graph-body" [class.graph-body--breakdown]="isBreakdownChartViewActive">
           <div
-            *ngIf="isChartLoading || isMainDataLoading || (graphPrimaryView === 'payer' && isPayerYearlyLoading) || (isBreakdownChartViewActive && isBreakdownChartsLoading)"
+            *ngIf="isChartLoading || isMainDataLoading || (graphPrimaryView === 'payer' && isPayerYearlyLoading) || (isDepartmentMonthlyChartActive && isPayerYearlyLoading) || (isBreakdownChartViewActive && isBreakdownChartsLoading)"
             class="data-loading-overlay" role="status" aria-live="polite">
             <div class="loading-ring local-loading-ring"
               [style.background]="getLoadingRingBackground(getChartLoadingProgress())">
@@ -172,16 +207,20 @@
               <ng-container *ngIf="graphPrimaryView === 'payer' && isPayerYearlyLoading; else chartLoadingBranch">טוען
                 גורמי משלם...</ng-container>
               <ng-template #chartLoadingBranch>
+                <ng-container *ngIf="isDepartmentMonthlyChartActive && isPayerYearlyLoading; else chartLoadingBranch2">טוען
+                  נתונים חודשיים...</ng-container>
+                <ng-template #chartLoadingBranch2>
                 <ng-container
                   *ngIf="isBreakdownChartViewActive && isBreakdownChartsLoading && !isChartLoading && !isMainDataLoading; else defaultChartLoadingMsg">טוען
                   גרפי פילוח...</ng-container>
                 <ng-template #defaultChartLoadingMsg>טוען גרף...</ng-template>
+                </ng-template>
               </ng-template>
             </div>
           </div>
           <google-chart [type]="chartType" [data]="chartData" [columns]="chartColumns" [options]="chartOptions"
             [width]="'100%'" [height]="'100%'" (select)="onChartClick($event)"
-            *ngIf="!isChartLoading && !isMainDataLoading && !(graphPrimaryView === 'payer' && isPayerYearlyLoading) && !isBreakdownChartViewActive && chartData && chartData.length > 0">
+            *ngIf="!isChartLoading && !isMainDataLoading && !(graphPrimaryView === 'payer' && isPayerYearlyLoading) && !(isDepartmentMonthlyChartActive && isPayerYearlyLoading) && !isBreakdownChartViewActive && chartData && chartData.length > 0">
           </google-chart>
           <div class="dimensional-chart-wrap"
             *ngIf="isBreakdownChartViewActive && !isBreakdownChartsLoading && hasRenderableDimensionalChart()">
@@ -191,9 +230,9 @@
             </google-chart>
           </div>
           <div
-            *ngIf="!isChartLoading && !isMainDataLoading && !(graphPrimaryView === 'payer' && isPayerYearlyLoading) && !isBreakdownChartViewActive && (!chartData || chartData.length === 0)"
+            *ngIf="!isChartLoading && !isMainDataLoading && !(graphPrimaryView === 'payer' && isPayerYearlyLoading) && !(isDepartmentMonthlyChartActive && isPayerYearlyLoading) && !isBreakdownChartViewActive && (!chartData || chartData.length === 0)"
             class="chart-no-data">
-            {{ graphPrimaryView === 'payer' ? 'אין נתוני גורם משלם להצגה' : 'אין נתונים להצגה בגרף' }}
+            {{ graphPrimaryView === 'payer' ? 'אין נתוני גורם משלם להצגה' : (isDepartmentMonthlyChartActive ? 'אין נתונים חודשיים להצגה — בחר מחלקה' : 'אין נתונים להצגה בגרף') }}
           </div>
           <div *ngIf="isBreakdownChartViewActive && !isBreakdownChartsLoading && !hasRenderableDimensionalChart()"
             class="chart-no-data">
@@ -206,6 +245,12 @@
           <mat-button-toggle-group class="graph-dimension-toggle-group" appearance="standard"
             [value]="graphToolbarDimensionMode" (change)="onGraphToolbarToggleChange($event.value)"
             aria-label="מצבי תצוגת גרף" role="toolbar">
+            <mat-button-toggle value="departmentMonthly"
+              matTooltip="הכנסות חודשיות למחלקה נבחרת — 5 שנים לפי שדה Month מ-GetDepartmentIncomeYearly"
+              matTooltipPosition="above">
+              <mat-icon>calendar_month</mat-icon>
+              <span class="graph-dimension-toggle-label">סה״כ הכנסה למחלקה לפי חודש</span>
+            </mat-button-toggle>
             <mat-button-toggle value="total" matTooltip="השוואת סה״כ הכנסות בין שנים. לחיצה על עמודה פותחת פירוט מחלקה."
               matTooltipPosition="above">
               <mat-icon>leaderboard</mat-icon>
@@ -1039,22 +1084,47 @@
 <!-- Boss Dashboard Modal -->
 <div *ngIf="showBossDashboard" class="boss-dashboard-overlay" [class.dark]="isDark">
   <div class="boss-dashboard-modal dash" [class.dark]="isDark">
-    <div dir="rtl" class="boss-header">
-      <h2>📊 דוח הכנסות כללי</h2>
-      <button mat-icon-button (click)="closeBossDashboard()" class="close-btn">
-        <mat-icon>close</mat-icon>
-      </button>
-    </div>
+    <div dir="rtl" class="boss-header-block">
+      <div class="boss-header">
+        <h2>📊 דוח הכנסות כללי</h2>
+        <button mat-icon-button (click)="closeBossDashboard()" class="close-btn">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
 
-    <div *ngIf="!isLoading && yearlyTotalData && yearlyTotalData.length > 0" dir="rtl" class="boss-info-box">
-      <div class="boss-info-content">
-        <mat-icon class="boss-info-icon">info</mat-icon>
-        <div>
-          <strong class="boss-info-title" *ngIf="isLatestYearCurrentYear()">השוואה YTD (Year To Date):</strong>
-          <strong class="boss-info-title" *ngIf="!isLatestYearCurrentYear()">השוואה בין שנים:</strong>
-          <span class="boss-info-text">
-            {{ getYTDDescription() }}
-          </span>
+      <div *ngIf="!isLoading && yearlyTotalData && yearlyTotalData.length > 0" class="boss-ytd-strip">
+        <div class="boss-card boss-card--inline card-2025">
+          <span class="card-icon" aria-hidden="true">📈</span>
+          <div class="boss-card--inline__body">
+            <span class="card-year">{{ getLatestYear() }}</span>
+            <span class="card-amount">{{ formatNumber(getLatestYearTotal()) }} ₪</span>
+          </div>
+        </div>
+
+        <div class="arrow-container arrow-container--inline">
+          <div class="arrow-icon" [class.positive]="getTotalDifference() >= 0"
+            [class.negative]="getTotalDifference() < 0">
+            <mat-icon *ngIf="getTotalDifference() >= 0">trending_up</mat-icon>
+            <mat-icon *ngIf="getTotalDifference() < 0">trending_down</mat-icon>
+          </div>
+          <div class="arrow-text">
+            <div class="difference-amount" [class.positive]="getTotalDifference() >= 0"
+              [class.negative]="getTotalDifference() < 0">
+              {{ formatNumber(getTotalDifference()) }} ₪
+            </div>
+            <div class="difference-percent" [class.positive]="getTotalDifference() >= 0"
+              [class.negative]="getTotalDifference() < 0">
+              {{ calculateYearlyPercentageChange() }}
+            </div>
+          </div>
+        </div>
+
+        <div class="boss-card boss-card--inline card-2024">
+          <span class="card-icon" aria-hidden="true">💰</span>
+          <div class="boss-card--inline__body">
+            <span class="card-year">{{ getOlderYear() }}</span>
+            <span class="card-amount">{{ formatNumber(getOlderYearTotal()) }} ₪</span>
+          </div>
         </div>
       </div>
     </div>
@@ -1070,65 +1140,114 @@
       <div class="boss-loading-text">טוען דוח למנהל...</div>
     </div>
 
-    <div *ngIf="!isLoading && yearlyTotalData && yearlyTotalData.length > 0" dir="rtl" class="boss-summary-section">
-      <div class="boss-card card-2025">
-        <div class="card-icon">📈</div>
-        <div class="card-year">{{ getLatestYear() }}</div>
-        <div class="card-amount">{{ formatNumber(getLatestYearTotal()) }}</div>
-        <div class="card-currency">₪</div>
+    <div *ngIf="!isLoading && yearlyTotalData && yearlyTotalData.length > 0" dir="rtl" class="boss-body">
+      <div class="boss-executive-summary" role="status">
+        <mat-icon aria-hidden="true">insights</mat-icon>
+        <p>{{ bossExecutiveSummary }}</p>
       </div>
 
-      <div class="arrow-container">
-        <div class="arrow-icon" [class.positive]="getTotalDifference() >= 0"
-          [class.negative]="getTotalDifference() < 0">
-          <mat-icon *ngIf="getTotalDifference() >= 0">trending_up</mat-icon>
-          <mat-icon *ngIf="getTotalDifference() < 0">trending_down</mat-icon>
-        </div>
-        <div class="arrow-text">
-          <div class="difference-amount" [class.positive]="getTotalDifference() >= 0"
-            [class.negative]="getTotalDifference() < 0">
-            {{ formatNumber(getTotalDifference()) }} ₪
-          </div>
-          <div class="difference-percent" [class.positive]="getTotalDifference() >= 0"
-            [class.negative]="getTotalDifference() < 0">
-            {{ calculateYearlyPercentageChange() }}
+      <div class="boss-info-box boss-info-box--compact">
+        <div class="boss-info-content">
+          <mat-icon class="boss-info-icon">info</mat-icon>
+          <div>
+            <strong class="boss-info-title" *ngIf="isLatestYearCurrentYear()">השוואה YTD (Year To Date):</strong>
+            <strong class="boss-info-title" *ngIf="!isLatestYearCurrentYear()">השוואה בין שנים:</strong>
+            <span class="boss-info-text">{{ getYTDDescription() }}</span>
           </div>
         </div>
       </div>
 
-      <div class="boss-card card-2024">
-        <div class="card-icon">💰</div>
-        <div class="card-year">{{ getOlderYear() }}</div>
-        <div class="card-amount">{{ formatNumber(getOlderYearTotal()) }}</div>
-        <div class="card-currency">₪</div>
-      </div>
-    </div>
-
-    <div *ngIf="!isLoading && yearlyTotalData && yearlyTotalData.length > 0" dir="rtl" class="boss-stats-section">
-      <div class="stat-box">
-        <span class="stat-label">סך הכנסות {{ getOlderYear() }} (YTD):</span>
-        <span class="stat-value">{{ formatNumber(getOlderYearTotal()) }} ₪</span>
-        <span class="boss-stat-note">
-          (אותם חודשים כמו {{ getLatestYear() }})
-        </span>
-      </div>
-
-      <div class="stat-box">
-        <span class="stat-label">סך הכנסות {{ getLatestYear() }} (YTD):</span>
-        <span class="stat-value">{{ formatNumber(getLatestYearTotal()) }} ₪</span>
-        <span class="boss-stat-note">
-          (חודשים עד היום)
-        </span>
+      <div class="boss-payer-outliers" *ngIf="bossPayerOutliers.length">
+        <div class="boss-payer-outliers__title">
+          <mat-icon aria-hidden="true">warning_amber</mat-icon>
+          חריגים — ירידה משמעותית YTD
+        </div>
+        <div class="boss-payer-outliers__grid">
+          <div class="boss-payer-outlier-row" *ngFor="let row of bossPayerOutliers">
+            <span class="boss-payer-outlier-row__name">{{ row.payer }}</span>
+            <span class="boss-payer-outlier-row__meta">
+              <span class="boss-payer-outlier-row__pct">{{ formatBossPayerYoYLabel(row) }}</span>
+              <span class="boss-payer-outlier-row__diff">{{ formatNumber(row.diff) }} ₪</span>
+            </span>
+          </div>
+        </div>
       </div>
 
-      <div class="stat-box" [class.positive]="getTotalDifference() >= 0" [class.negative]="getTotalDifference() < 0">
-        <span class="stat-label">הפרש כללי:</span>
-        <span class="stat-value">{{ formatNumber(getTotalDifference()) }} ₪</span>
+      <div class="boss-payer-pie-wrap" *ngIf="showBossPayerPieChart && bossPayerPieData.length">
+        <google-chart type="PieChart" [data]="bossPayerPieData" [columns]="bossPayerPieColumns"
+          [options]="bossPayerPieOptions" dir="rtl">
+        </google-chart>
+        <p class="boss-payer-pie-caption">חלוקת הכנסות YTD {{ getLatestYear() }} לפי גורם משלם ({{ bossPayerInsights.length }} גורמים)</p>
       </div>
 
-      <div class="stat-box" [class.positive]="getTotalDifference() >= 0" [class.negative]="getTotalDifference() < 0">
-        <span class="stat-label">אחוז שינוי:</span>
-        <span class="stat-value">{{ calculateYearlyPercentageChange() }}</span>
+      <section class="boss-payer-table-section" *ngIf="bossPayerInsights.length">
+        <div class="boss-payer-table-head">
+          <div class="boss-payer-table-head__main">
+            <mat-icon aria-hidden="true">table_chart</mat-icon>
+            <div>
+              <h3 class="boss-payer-table-head__title">גורמי משלם — השוואת YTD</h3>
+              <p class="boss-payer-table-head__subtitle">
+                {{ getLatestYear() }} מול {{ getOlderYear() }} · אותם חודשים
+              </p>
+            </div>
+          </div>
+          <button type="button" mat-stroked-button class="boss-payer-pie-toggle"
+            [disabled]="!bossPayerPieData.length" (click)="toggleBossPayerPieChart()">
+            <mat-icon>{{ showBossPayerPieChart ? 'visibility_off' : 'pie_chart' }}</mat-icon>
+            {{ showBossPayerPieChart ? 'הסתר גרף פאי' : 'הצג גרף פאי' }}
+          </button>
+        </div>
+
+        <div class="boss-payer-table-scroll">
+          <table class="boss-payer-table">
+            <thead>
+              <tr>
+                <th scope="col">גורם משלם</th>
+                <th scope="col">{{ getLatestYear() }} YTD</th>
+                <th scope="col">{{ getOlderYear() }} YTD</th>
+                <th scope="col">הפרש</th>
+                <th scope="col">שינוי YTD</th>
+                <th scope="col">נתח מהסך</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let row of bossPayerInsights" [class.boss-payer-table__row--outlier]="row.isOutlier">
+                <td class="boss-payer-table__name">
+                  <span class="boss-payer-table__name-text">{{ row.payer }}</span>
+                  <span class="boss-payer-table__outlier-badge" *ngIf="row.isOutlier">חריג</span>
+                </td>
+                <td class="boss-payer-table__amount">{{ formatNumber(row.currentTotal) }} ₪</td>
+                <td class="boss-payer-table__amount">{{ formatNumber(row.priorTotal) }} ₪</td>
+                <td class="boss-payer-table__diff"
+                  [class.positive]="row.diff > 0"
+                  [class.negative]="row.diff < 0">
+                  {{ formatNumber(row.diff) }} ₪
+                </td>
+                <td class="boss-payer-table__yoy"
+                  [class.positive]="row.percent !== null && row.percent > 0.05"
+                  [class.negative]="row.percent !== null && row.percent < -0.05">
+                  {{ formatBossPayerYoYLabel(row) }}
+                </td>
+                <td class="boss-payer-table__share">{{ formatBossPayerShare(row) }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <div class="boss-payer-empty" *ngIf="!bossPayerInsights.length">
+        <mat-icon aria-hidden="true">info_outline</mat-icon>
+        <span>אין נתוני גורם משלם זמינים לאגף זה.</span>
+      </div>
+
+      <div class="boss-payer-footnote">
+        <mat-icon aria-hidden="true">info</mat-icon>
+        <span>פירוט נוסף, פילוח לפי סוג גורם ומגמות 5 שנים — בלשונית «גורם משלם» בדשבורד הראשי.</span>
+        <button type="button" mat-button color="primary" class="boss-payer-footnote__link"
+          (click)="openPayerViewFromBoss()">
+          עבור לגורם משלם
+          <mat-icon>arrow_back</mat-icon>
+        </button>
       </div>
     </div>
 
