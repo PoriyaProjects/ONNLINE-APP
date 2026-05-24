@@ -85,8 +85,11 @@ export interface BossPayerInsightRow {
     diff: number;
     percent: number | null;
     sharePercent: number;
+    hospitalSharePercent: number;
     isOutlier: boolean;
 }
+
+export type BossViewMode = "table" | "pie";
 
 export interface DepartmentIncomeYearlyRow {
     UnifiedDiagnosis?: string;
@@ -323,7 +326,7 @@ export class DepartmentIncomeDashboardComponent
 
     // Boss Dashboard
     showBossDashboard = false;
-    showBossPayerPieChart = false;
+    bossViewMode: BossViewMode = "table";
     bossExecutiveSummary = "";
     bossPayerInsights: BossPayerInsightRow[] = [];
     bossPayerOutliers: BossPayerInsightRow[] = [];
@@ -334,17 +337,29 @@ export class DepartmentIncomeDashboardComponent
         legend: {
             position: "labeled",
             alignment: "center",
-            textStyle: { fontSize: 14 },
+            textStyle: { fontSize: 28, bold: true },
         },
+        pieSliceTextStyle: { fontSize: 24, bold: true },
         chartArea: { width: "92%", height: "82%" },
-        tooltip: { text: "both", textStyle: { fontSize: 14 } },
+        tooltip: { text: "both", textStyle: { fontSize: 20, bold: true } },
         sliceVisibilityThreshold: 0.015,
         fontName: "Heebo, Arial, sans-serif",
     };
     bossPayerTotalCurrent = 0;
+    bossSelectedWingDeclineDiff = 0;
+    bossWorstDeclineWingName = "";
+    bossLoadingDisplayProgress = 0;
+    bossTablePage = 0;
+    readonly bossTablePageSize = 8;
+    private readonly bossExcludedPayerLabels = ["לא קיים"];
     private readonly bossPayerPieTopSlices = 8;
     private readonly bossPayerOutlierMinPrior = 500_000;
     private readonly bossPayerOutlierPercentThreshold = -8;
+    private bossLoadingProgressInterval: ReturnType<typeof setInterval> | null =
+        null;
+    private bossLoadingFinishing = false;
+    private bossLoadingFinishCallback: (() => void) | null = null;
+    private readonly bossLoaderTickMs = 130;
 
     // Table data
     displayedColumns: string[] = ["DepartmentName", "Difference"];
@@ -380,6 +395,14 @@ export class DepartmentIncomeDashboardComponent
     private loadingProgressStartedAt: Record<string, number> = {};
     private loadingProgressRefreshId: ReturnType<typeof setInterval> | null =
         null;
+    private simulatedLoadingProgress: Record<string, number> = {};
+    private simulatedLoadingFinishing: Record<string, boolean> = {};
+    private simulatedLoadingCallbacks: Record<string, (() => void) | undefined> =
+        {};
+    private simulatedLoadingIntervals: Record<
+        string,
+        ReturnType<typeof setInterval> | null
+    > = {};
     selectedViewType: string = "cash";
     showCatalogPriceColumn: boolean = false;
     showModalIncomeFilters: boolean = false;
@@ -501,7 +524,7 @@ export class DepartmentIncomeDashboardComponent
         DepartmentComparisonDto[]
     >();
 
-    /** מטמון GetDepartmentDetailedData — מפתח: מחלקה + מסננים; קריאת שרת רק כשאין במטמון */
+    /** מטמון GetDepartmentDetailedData — מפתח: שם מחלקה בלבד; סינון מקומי */
     private departmentDetailedDataCache = new Map<
         string,
         {
@@ -685,6 +708,8 @@ export class DepartmentIncomeDashboardComponent
     ngOnDestroy(): void {
         document.body.classList.remove("department-dashboard-dark");
         this.stopLoadingProgressTicker();
+        this.stopBossLoadingAnimation();
+        this.stopAllSimulatedLoadingProgress();
         if (this.tableDeptClickHintTimer) {
             clearTimeout(this.tableDeptClickHintTimer);
             this.tableDeptClickHintTimer = null;
@@ -860,7 +885,7 @@ export class DepartmentIncomeDashboardComponent
 
         this.isDataLoaded = false;
         this.isMainDataLoading = true;
-        this.startLoadingProgress("main");
+        this.startSimulatedLoadingProgress("main");
         this.incomeReportAsOfLabel = null;
         this.incomeReportAsOfFetchDone = false;
         this.referencePeriodFromYearlyIncome = false;
@@ -890,7 +915,7 @@ export class DepartmentIncomeDashboardComponent
                             duration: 3000,
                         });
                     } else {
-                        this.isMainDataLoading = false;
+                        this.completeMainDataLoading(true);
                     }
                 },
                 (error) => {
@@ -900,7 +925,7 @@ export class DepartmentIncomeDashboardComponent
                     );
                     this.incomeReportAsOfLabel = null;
                     this.incomeReportAsOfFetchDone = false;
-                    this.isMainDataLoading = false;
+                    this.completeMainDataLoading(true);
                     this.cdr.detectChanges();
                     this.snackBar.open("❌ שגיאה בטעינת הנתונים", "סגור", {
                         duration: 3000,
@@ -1090,7 +1115,7 @@ export class DepartmentIncomeDashboardComponent
         if (blockChartUi) {
             this.isPayerYearlyLoading = true;
             this.isChartLoading = true;
-            this.startLoadingProgress("chart");
+            this.startSimulatedLoadingProgress("chart");
         }
 
         const queryParams: Record<string, string> = {
@@ -1138,8 +1163,19 @@ export class DepartmentIncomeDashboardComponent
     }
 
     private clearPayerYearlyChartLoadingState(): void {
-        this.isPayerYearlyLoading = false;
-        this.isChartLoading = false;
+        const finish = () => {
+            this.isPayerYearlyLoading = false;
+            this.isChartLoading = false;
+            this.cdr.detectChanges();
+        };
+        if (
+            (this.simulatedLoadingProgress["chart"] ?? 0) > 0 ||
+            this.simulatedLoadingFinishing["chart"]
+        ) {
+            this.finishSimulatedLoadingProgress("chart", finish);
+            return;
+        }
+        finish();
     }
 
     private refreshPayerViewsFromCache(showChartLoading = false): void {
@@ -1170,7 +1206,7 @@ export class DepartmentIncomeDashboardComponent
         }
         if (showChartLoading && this.graphPrimaryView === "payer") {
             this.isChartLoading = true;
-            this.startLoadingProgress("chart");
+            this.startSimulatedLoadingProgress("chart");
         }
         this.loadYearlyTotalsForChart(onReady);
     }
@@ -1515,7 +1551,7 @@ export class DepartmentIncomeDashboardComponent
     private updatePayerChartData(showChartLoading = false): void {
         if (showChartLoading) {
             this.isChartLoading = true;
-            this.startLoadingProgress("chart");
+            this.startSimulatedLoadingProgress("chart");
         }
         this.refreshFiveYearColumnDefs();
 
@@ -1856,7 +1892,7 @@ export class DepartmentIncomeDashboardComponent
 
         this.isDataLoaded = false;
         this.isMainDataLoading = true;
-        this.startLoadingProgress("main");
+        this.startSimulatedLoadingProgress("main");
         this.incomeReportAsOfLabel = null;
         this.incomeReportAsOfFetchDone = false;
         this.referencePeriodFromYearlyIncome = false;
@@ -1900,7 +1936,7 @@ export class DepartmentIncomeDashboardComponent
                         });
                     } else {
                         console.warn("No data in response:", response);
-                        this.isMainDataLoading = false;
+                        this.completeMainDataLoading(true);
                         this.isChartLoading = false;
                         this.chartData = [];
                         this.cdr.detectChanges();
@@ -1910,7 +1946,7 @@ export class DepartmentIncomeDashboardComponent
                     console.error("Error:", error);
                     this.incomeReportAsOfLabel = null;
                     this.incomeReportAsOfFetchDone = false;
-                    this.isMainDataLoading = false;
+                    this.completeMainDataLoading(true);
                     this.isChartLoading = false;
                     this.chartData = [];
                     this.cdr.detectChanges();
@@ -1927,7 +1963,7 @@ export class DepartmentIncomeDashboardComponent
             return;
         }
         this.isDiagnosesLoading = true;
-        this.startLoadingProgress("diagnoses");
+        this.startSimulatedLoadingProgress("diagnoses");
         this.http.post(environment.url + "GetUniqueDiagnoses", {}).subscribe(
             (response: any) => {
                 if (response && response.d) {
@@ -1941,15 +1977,14 @@ export class DepartmentIncomeDashboardComponent
                     }
                     // Try to align with employee department if available
                     this.applyEmployeeDepartmentFilter();
-                    this.isDiagnosesLoading = false;
-                    this.cdr.detectChanges();
+                    this.completeDiagnosesLoading();
                 } else {
-                    this.isDiagnosesLoading = false;
+                    this.completeDiagnosesLoading();
                 }
             },
             (error) => {
                 console.error("Error loading diagnoses list:", error);
-                this.isDiagnosesLoading = false;
+                this.completeDiagnosesLoading();
                 this.cdr.detectChanges();
             },
         );
@@ -2231,6 +2266,19 @@ export class DepartmentIncomeDashboardComponent
     }
 
     private ensurePayerYearlyForFiveYearView(onReady?: () => void): void {
+        const scopeKey = this.getIncomeScopeKey();
+        const cached = this.payerYearlyByScopeCache.get(scopeKey);
+        if (cached?.length) {
+            this.payerYearlyRawRows = cached;
+            if (this.graphPrimaryView === "payer") {
+                this.refreshPayerTypeOptions();
+                this.refreshPayerDepartmentOptions();
+            }
+            this.enrichDepartmentFiveYearsFromYearly();
+            onReady?.();
+            this.cdr.detectChanges();
+            return;
+        }
         this.ensurePayerYearlyRawLoaded(() => {
             if (this.graphPrimaryView === "payer") {
                 this.refreshPayerTypeOptions();
@@ -2362,7 +2410,7 @@ export class DepartmentIncomeDashboardComponent
         if (this.isDepartmentMonthlyChartActive) {
             if (showChartLoading) {
                 this.isChartLoading = true;
-                this.startLoadingProgress("chart");
+                this.startSimulatedLoadingProgress("chart");
             }
             this.ensurePayerYearlyRawLoaded(() => {
                 this.refreshMonthlyDepartmentOptions();
@@ -2373,7 +2421,7 @@ export class DepartmentIncomeDashboardComponent
 
         if (showChartLoading) {
             this.isChartLoading = true;
-            this.startLoadingProgress("chart");
+            this.startSimulatedLoadingProgress("chart");
         }
         this.refreshFiveYearColumnDefs();
 
@@ -2436,7 +2484,7 @@ export class DepartmentIncomeDashboardComponent
 
         this.selectedDiagnosis = targetDept;
         this.isMainDataLoading = true;
-        this.startLoadingProgress("main");
+        this.startSimulatedLoadingProgress("main");
         this.isDataLoaded = false;
         this.loadDepartmentIncomeByDiagnosis();
     }
@@ -2663,13 +2711,25 @@ export class DepartmentIncomeDashboardComponent
      */
     loadBossDashboard(): void {
         this.isLoading = true;
-        this.startLoadingProgress("boss");
+        this.startBossLoadingAnimation();
         this.showBossDashboard = true;
-        this.showBossPayerPieChart = false;
+        this.bossViewMode = "table";
+        this.bossTablePage = 0;
         this.bossExecutiveSummary = "";
         this.bossPayerInsights = [];
         this.bossPayerOutliers = [];
         this.bossPayerPieData = [];
+        this.bossSelectedWingDeclineDiff = 0;
+        this.bossWorstDeclineWingName = "";
+
+        if (
+            this.canReuseYearlyTotalsCache() &&
+            this.yearlyTotalsRaw.length
+        ) {
+            this.yearlyTotalData = this.yearlyTotalsRaw;
+            this.proceedBossDashboardAfterYearlyData(null);
+            return;
+        }
 
         this.http
             .post(environment.url + "GetYearlyTotalIncome", {
@@ -2683,42 +2743,19 @@ export class DepartmentIncomeDashboardComponent
 
                         if (rows.length) {
                             this.yearlyTotalData = rows;
-                            this.tryApplyBannerFromYearlyIncomeEnvelope(
-                                envelope,
-                            );
-
-                            if (
-                                this.departmentIncomeData &&
-                                this.departmentIncomeData.length > 0
-                            ) {
-                                setTimeout(() => {
-                                    this.updateChartColumns();
-                                    this.updateChartTheme();
-                                    this.updateChartData();
-                                    this.cdr.detectChanges();
-                                }, 100);
-                            }
-
-                            this.loadPayerYearlyForBoss().then(() => {
-                                this.refreshBossPayerInsights();
-                                this.isLoading = false;
-                                this.cdr.detectChanges();
-                                this.snackBar.open(
-                                    "✓ דוח למנהל נטען בהצלחה",
-                                    "סגור",
-                                    { duration: 2000 },
-                                );
-                            });
+                            this.proceedBossDashboardAfterYearlyData(envelope);
                             return;
                         }
 
                         console.error("Data is not an array:", rows);
                     }
+                    this.stopBossLoadingAnimation();
                     this.isLoading = false;
                     this.cdr.detectChanges();
                 },
                 (error) => {
                     console.error("Error loading boss dashboard:", error);
+                    this.stopBossLoadingAnimation();
                     this.isLoading = false;
                     this.snackBar.open("❌ שגיאה בטעינת הנתונים", "סגור", {
                         duration: 3000,
@@ -2727,22 +2764,80 @@ export class DepartmentIncomeDashboardComponent
             );
     }
 
+    private canReuseYearlyTotalsCache(): boolean {
+        if (!this.yearlyTotalsFetched) {
+            return false;
+        }
+        const filters = this.buildIncomeFilterRequest();
+        return (
+            !filters.medicalUnitIncome &&
+            !filters.incomeCategory &&
+            !filters.organization &&
+            !filters.unifiedCategory
+        );
+    }
+
+    private proceedBossDashboardAfterYearlyData(
+        envelope: Record<string, unknown> | null,
+    ): void {
+        if (envelope) {
+            this.tryApplyBannerFromYearlyIncomeEnvelope(envelope);
+        }
+
+        if (
+            this.departmentIncomeData &&
+            this.departmentIncomeData.length > 0
+        ) {
+            setTimeout(() => {
+                this.updateChartColumns();
+                this.updateChartTheme();
+                this.updateChartData();
+                this.cdr.detectChanges();
+            }, 100);
+        }
+
+        this.loadPayerYearlyForBoss().then(() => {
+            this.refreshBossPayerInsights();
+            this.finishBossLoadingAnimation(() => {
+                this.isLoading = false;
+                this.cdr.detectChanges();
+                this.snackBar.open("✓ דוח למנהל נטען בהצלחה", "סגור", {
+                    duration: 2000,
+                });
+            });
+        });
+    }
+
     private loadPayerYearlyForBoss(): Promise<void> {
         return new Promise((resolve) => {
             this.ensurePayerYearlyRawLoaded(() => resolve());
         });
     }
 
+    private isBossExcludedPayer(value: string | undefined | null): boolean {
+        const label = String(value ?? "").trim();
+        if (!label || this.isExcludedPayerLabel(label)) {
+            return true;
+        }
+        return this.bossExcludedPayerLabels.some(
+            (excluded) => label === excluded,
+        );
+    }
+
     private refreshBossPayerInsights(): void {
         const rows = this.getPayerYearlyRowsForDepartmentChart();
         const aggregated =
             this.aggregatePayerYearlyByUnifiedPayer(rows);
-        const tableRows = this.buildPayerTableRows(aggregated);
+        const tableRows = this.buildPayerTableRows(aggregated).filter(
+            (row) =>
+                !this.isBossExcludedPayer(String(row.UnifiedPayer ?? "")),
+        );
         const overallPct = this.parsePercentLabel(
             this.calculateYearlyPercentageChange(),
         );
 
         let totalCurrent = 0;
+        const hospitalCurrent = this.getLatestYearTotal();
         const insights: BossPayerInsightRow[] = tableRows.map((row) => {
             const currentTotal = this.getRowFiveYearValue(row, "CurrentYear");
             const priorTotal = this.getRowFiveYearValue(row, "Year1");
@@ -2763,6 +2858,10 @@ export class DepartmentIncomeDashboardComponent
                 diff,
                 percent,
                 sharePercent: 0,
+                hospitalSharePercent:
+                    hospitalCurrent > 0
+                        ? (currentTotal / hospitalCurrent) * 100
+                        : 0,
                 isOutlier: false,
             };
         });
@@ -2778,6 +2877,7 @@ export class DepartmentIncomeDashboardComponent
         insights.sort((a, b) => b.currentTotal - a.currentTotal);
         this.bossPayerInsights = insights;
         this.bossPayerTotalCurrent = totalCurrent;
+        this.refreshBossWingDeclineStats();
         this.bossPayerOutliers = insights
             .filter((row) => row.isOutlier)
             .sort((a, b) => (a.percent ?? 0) - (b.percent ?? 0))
@@ -2785,6 +2885,44 @@ export class DepartmentIncomeDashboardComponent
         this.buildBossPayerPieChart(insights, totalCurrent);
         this.buildBossExecutiveSummary();
         this.updateBossPayerPieTheme();
+    }
+
+    private getBossWingAggregationRows(): DepartmentIncomeYearlyRow[] {
+        let rows = this.payerYearlyRawRows.filter(
+            (row) =>
+                !this.isExcludedPayerLabel(row?.PatientSummary) &&
+                !this.isExcludedPayerLabel(row?.UnifiedPayer),
+        );
+        return this.applyIncomeFiltersToPayerYearlyRows(rows);
+    }
+
+    private refreshBossWingDeclineStats(): void {
+        const wingMap = new Map<string, { current: number; prior: number }>();
+        for (const row of this.getBossWingAggregationRows()) {
+            const wing = String(row?.UnifiedDiagnosis ?? "").trim();
+            if (!wing) {
+                continue;
+            }
+            const entry = wingMap.get(wing) ?? { current: 0, prior: 0 };
+            entry.current += this.getRowFiveYearValue(row, "CurrentYear");
+            entry.prior += this.getRowFiveYearValue(row, "Year1");
+            wingMap.set(wing, entry);
+        }
+
+        const wingStats = [...wingMap.entries()]
+            .map(([wing, totals]) => ({
+                wing,
+                diff: totals.current - totals.prior,
+            }))
+            .sort((a, b) => a.diff - b.diff);
+
+        this.bossWorstDeclineWingName =
+            wingStats.length && wingStats[0].diff < 0 ? wingStats[0].wing : "";
+
+        const selectedWing = String(this.selectedDiagnosis ?? "").trim();
+        const selectedStat = wingStats.find((item) => item.wing === selectedWing);
+        this.bossSelectedWingDeclineDiff =
+            selectedStat?.diff ?? this.getTotalDifference();
     }
 
     private isBossPayerOutlier(
@@ -2823,15 +2961,13 @@ export class DepartmentIncomeDashboardComponent
 
         if (this.bossPayerOutliers.length) {
             const worst = this.bossPayerOutliers[0];
-            summary += ` זוהו ${this.bossPayerOutliers.length} גורמי משלם בחריגה — הירידה החדה ביותר: «${worst.payer}» (${this.formatBossPayerYoYLabel(worst)}).`;
+            summary += ` ${this.bossPayerOutliers.length} חריגים — החריג ביותר: «${worst.payer}» (${this.formatBossPayerYoYLabel(worst)}).`;
         } else if (this.bossPayerInsights.length) {
-            summary += ` ${this.bossPayerInsights.length} גורמי משלם פעילים — ללא חריגות ירידה משמעותיות YTD.`;
+            summary += ` ${this.bossPayerInsights.length} גורמי משלם — ללא חריגות YTD.`;
         } else {
-            summary += " אין נתוני גורם משלם להצגה.";
+            summary += " אין נתוני גורם משלם.";
         }
 
-        summary +=
-            " לפירוט מלא וניתוח מגמות — עבור ל«גורם משלם» בדשבורד.";
         this.bossExecutiveSummary = summary;
     }
 
@@ -2885,16 +3021,112 @@ export class DepartmentIncomeDashboardComponent
         return `${row.sharePercent.toFixed(1)}% מהסך`;
     }
 
-    getBossPayerTopInsights(): BossPayerInsightRow[] {
-        return this.bossPayerInsights.slice(0, 6);
+    formatBossHospitalShare(row: BossPayerInsightRow): string {
+        return `${row.hospitalSharePercent.toFixed(1)}% מכלל ההכנסות בית החולים`;
     }
 
-    toggleBossPayerPieChart(): void {
-        this.showBossPayerPieChart = !this.showBossPayerPieChart;
-        if (this.showBossPayerPieChart) {
+    getBossParallelPeriodLabel(): string {
+        return `תקופה מקבילה ${this.getLatestYear()} מול ${this.getOlderYear()}`;
+    }
+
+    getBossPayerChangeTitle(row: BossPayerInsightRow): string {
+        return `שינוי בהכנסות ${row.payer} (${this.getBossParallelPeriodLabel()}):`;
+    }
+
+    isBossSelectedWingWorstDecline(): boolean {
+        const wing = String(this.selectedDiagnosis ?? "").trim();
+        return !!wing && wing === this.bossWorstDeclineWingName;
+    }
+
+    getBossWingDeclineContextLabel(): string {
+        const wing = this.getBossSummaryWingLabel();
+        if (this.isBossSelectedWingWorstDecline()) {
+            return `מתוך ירידת ${wing} שהוא האגף עם הירידה הגדולה ביותר`;
+        }
+        return `מתוך ירידת ${wing}`;
+    }
+
+    getBossDeclineContributionPercent(row: BossPayerInsightRow): number | null {
+        const wingDiff = this.bossSelectedWingDeclineDiff;
+        if (wingDiff >= 0 || row.diff >= 0) {
+            return null;
+        }
+        const totalDecline = Math.abs(wingDiff);
+        if (totalDecline === 0) {
+            return null;
+        }
+        return (Math.abs(row.diff) / totalDecline) * 100;
+    }
+
+    formatBossDeclineContributionAmount(row: BossPayerInsightRow): string | null {
+        const pct = this.getBossDeclineContributionPercent(row);
+        if (pct === null) {
+            return null;
+        }
+        const totalDecline = Math.abs(this.bossSelectedWingDeclineDiff);
+        return `${this.formatNumber(Math.abs(row.diff))} ₪ מתוך ${this.formatNumber(totalDecline)} ₪`;
+    }
+
+    formatBossDeclineContributionPercentOnly(
+        row: BossPayerInsightRow,
+    ): string | null {
+        const pct = this.getBossDeclineContributionPercent(row);
+        return pct === null ? null : `${pct.toFixed(1)}%`;
+    }
+
+    getBossSummaryWingLabel(): string {
+        return this.selectedDiagnosis || "כל האגף";
+    }
+
+    getBossSummaryTrendWord(): string {
+        return this.getTotalDifference() >= 0 ? "עליה" : "ירידה";
+    }
+
+    setBossViewMode(mode: BossViewMode): void {
+        if (mode === "pie" && !this.bossPayerPieData.length) {
+            return;
+        }
+        this.bossViewMode = mode;
+        if (mode === "table") {
+            this.bossTablePage = 0;
+        }
+        if (mode === "pie") {
             this.updateBossPayerPieTheme();
         }
         this.cdr.detectChanges();
+    }
+
+    getBossPayerTablePageRows(): BossPayerInsightRow[] {
+        const start = this.bossTablePage * this.bossTablePageSize;
+        return this.bossPayerInsights.slice(
+            start,
+            start + this.bossTablePageSize,
+        );
+    }
+
+    getBossTablePageCount(): number {
+        if (!this.bossPayerInsights.length) {
+            return 1;
+        }
+        return Math.ceil(
+            this.bossPayerInsights.length / this.bossTablePageSize,
+        );
+    }
+
+    getBossTablePageLabel(): string {
+        return `${this.bossTablePage + 1} / ${this.getBossTablePageCount()}`;
+    }
+
+    bossTablePrevPage(): void {
+        if (this.bossTablePage > 0) {
+            this.bossTablePage--;
+        }
+    }
+
+    bossTableNextPage(): void {
+        if (this.bossTablePage < this.getBossTablePageCount() - 1) {
+            this.bossTablePage++;
+        }
     }
 
     openPayerViewFromBoss(): void {
@@ -2927,9 +3159,11 @@ export class DepartmentIncomeDashboardComponent
                     textStyle: {
                         ...(this.bossPayerPieOptions.legend?.textStyle || {}),
                         color: "#e2e8f0",
-                        fontSize: 14,
+                        fontSize: 28,
+                        bold: true,
                     },
                 },
+                pieSliceTextStyle: { fontSize: 24, bold: true, color: "#f8fafc" },
                 titleTextStyle: { color: "#e2e8f0" },
                 colors: pieColors,
             };
@@ -2942,9 +3176,11 @@ export class DepartmentIncomeDashboardComponent
                     textStyle: {
                         ...(this.bossPayerPieOptions.legend?.textStyle || {}),
                         color: "#334155",
-                        fontSize: 14,
+                        fontSize: 28,
+                        bold: true,
                     },
                 },
+                pieSliceTextStyle: { fontSize: 24, bold: true, color: "#1e293b" },
                 titleTextStyle: { color: "#1e293b" },
                 colors: pieColors,
             };
@@ -2957,7 +3193,9 @@ export class DepartmentIncomeDashboardComponent
      */
     closeBossDashboard(): void {
         this.showBossDashboard = false;
-        this.showBossPayerPieChart = false;
+        this.bossViewMode = "table";
+        this.bossTablePage = 0;
+        this.stopBossLoadingAnimation();
         this.cdr.detectChanges();
     }
 
@@ -2997,6 +3235,16 @@ export class DepartmentIncomeDashboardComponent
             return;
         }
         this.selectedDepartment = updatedDepartment;
+        const cacheKey = this.buildDepartmentDetailedCacheKey(departmentName);
+        const cached = this.departmentDetailedDataCache.get(cacheKey);
+        if (cached) {
+            this.applyDepartmentDetailedPayload(
+                cached.rows,
+                cached.meta,
+                false,
+            );
+            return;
+        }
         this.loadDetailedDepartmentData(departmentName, false);
     }
 
@@ -3019,11 +3267,11 @@ export class DepartmentIncomeDashboardComponent
         }
 
         this.catalogLoading = true;
-        this.startLoadingProgress("catalog");
+        this.startSimulatedLoadingProgress("catalog");
         this.http
             .post(environment.url + "GetDepartmentDetailedData", {
                 departmentName: departmentName,
-                ...this.buildIncomeFilterRequest(),
+                ...this.buildUnfilteredIncomeFilterPayload(),
             })
             .subscribe(
                 (response: any) => {
@@ -3038,25 +3286,30 @@ export class DepartmentIncomeDashboardComponent
                             rows,
                             meta: parsed?.meta ?? null,
                         });
-                        this.applyDepartmentDetailedPayload(
-                            rows,
-                            parsed?.meta ?? null,
-                            resetView,
-                        );
+                        this.finishSimulatedLoadingProgress("catalog", () => {
+                            this.applyDepartmentDetailedPayload(
+                                rows,
+                                parsed?.meta ?? null,
+                                resetView,
+                            );
+                        });
                     } else {
                         this.departmentDetailedDataCache.set(cacheKey, {
                             rows: [],
                             meta: null,
                         });
-                        this.applyDepartmentDetailedPayload(
-                            [],
-                            null,
-                            resetView,
-                        );
+                        this.finishSimulatedLoadingProgress("catalog", () => {
+                            this.applyDepartmentDetailedPayload(
+                                [],
+                                null,
+                                resetView,
+                            );
+                        });
                     }
                 },
                 (error) => {
                     console.error("Error loading detailed data:", error);
+                    this.stopSimulatedLoadingProgress("catalog");
                     this.catalogLoading = false;
                     this.snackBar.open("❌ שגיאה בטעינת הפרטים", "סגור", {
                         duration: 3000,
@@ -3066,10 +3319,7 @@ export class DepartmentIncomeDashboardComponent
     }
 
     private buildDepartmentDetailedCacheKey(departmentName: string): string {
-        return JSON.stringify({
-            departmentName: String(departmentName ?? "").trim(),
-            filters: this.buildIncomeFilterRequest(),
-        });
+        return String(departmentName ?? "").trim();
     }
 
     private applyDepartmentDetailedPayload(
@@ -3184,25 +3434,170 @@ export class DepartmentIncomeDashboardComponent
     }
 
     getMainDataLoadingProgress(): number {
-        return this.getAnimatedLoadingProgress("main");
+        return this.getSimulatedLoadingProgress("main");
     }
 
     getChartLoadingProgress(): number {
         return this.isMainDataLoading
             ? this.getMainDataLoadingProgress()
-            : this.getAnimatedLoadingProgress("chart");
+            : this.getSimulatedLoadingProgress("chart");
     }
 
     getCatalogLoadingProgress(): number {
-        return this.getAnimatedLoadingProgress("catalog");
+        return this.getSimulatedLoadingProgress("catalog");
     }
 
     getBossLoadingProgress(): number {
-        return this.getAnimatedLoadingProgress("boss");
+        return this.bossLoadingDisplayProgress;
+    }
+
+    private startBossLoadingAnimation(): void {
+        this.stopBossLoadingAnimation();
+        this.bossLoadingDisplayProgress = 0;
+        this.bossLoadingFinishing = false;
+        this.bossLoadingFinishCallback = null;
+        this.bossLoadingProgressInterval = setInterval(() => {
+            this.tickBossLoadingProgress();
+            this.cdr.detectChanges();
+        }, this.bossLoaderTickMs);
+    }
+
+    private tickBossLoadingProgress(): void {
+        if (this.bossLoadingDisplayProgress >= 100) {
+            if (this.bossLoadingFinishCallback) {
+                const callback = this.bossLoadingFinishCallback;
+                this.bossLoadingFinishCallback = null;
+                callback();
+            }
+            this.stopBossLoadingAnimation();
+            return;
+        }
+
+        if (this.bossLoadingFinishing) {
+            this.bossLoadingDisplayProgress = Math.min(
+                100,
+                this.bossLoadingDisplayProgress + 5,
+            );
+            return;
+        }
+
+        const progress = this.bossLoadingDisplayProgress;
+        let step = 1;
+        if (progress < 50 && Math.random() > 0.55) {
+            step = 2;
+        } else if (progress >= 85) {
+            step = 1;
+        }
+
+        this.bossLoadingDisplayProgress = Math.min(98, progress + step);
+    }
+
+    private finishBossLoadingAnimation(onDone: () => void): void {
+        this.bossLoadingFinishing = true;
+        this.bossLoadingFinishCallback = onDone;
+    }
+
+    private stopBossLoadingAnimation(): void {
+        if (this.bossLoadingProgressInterval) {
+            clearInterval(this.bossLoadingProgressInterval);
+            this.bossLoadingProgressInterval = null;
+        }
+        this.bossLoadingFinishing = false;
+        this.bossLoadingFinishCallback = null;
     }
 
     getDiagnosesLoadingProgress(): number {
-        return this.getAnimatedLoadingProgress("diagnoses");
+        return this.getSimulatedLoadingProgress("diagnoses");
+    }
+
+    private completeMainDataLoading(immediate = false): void {
+        if (!this.isMainDataLoading) {
+            return;
+        }
+        if (immediate) {
+            this.stopSimulatedLoadingProgress("main");
+            this.isMainDataLoading = false;
+            this.cdr.detectChanges();
+            return;
+        }
+        this.finishSimulatedLoadingProgress("main", () => {
+            this.isMainDataLoading = false;
+            this.cdr.detectChanges();
+        });
+    }
+
+    private completeDiagnosesLoading(): void {
+        this.finishSimulatedLoadingProgress("diagnoses", () => {
+            this.isDiagnosesLoading = false;
+            this.cdr.detectChanges();
+        });
+    }
+
+    private getSimulatedLoadingProgress(key: string): number {
+        return this.simulatedLoadingProgress[key] ?? 0;
+    }
+
+    private startSimulatedLoadingProgress(key: string): void {
+        this.stopSimulatedLoadingProgress(key);
+        this.simulatedLoadingProgress[key] = 0;
+        this.simulatedLoadingFinishing[key] = false;
+        this.simulatedLoadingCallbacks[key] = undefined;
+        this.simulatedLoadingIntervals[key] = setInterval(() => {
+            this.tickSimulatedLoadingProgress(key);
+            this.cdr.detectChanges();
+        }, 130);
+    }
+
+    private tickSimulatedLoadingProgress(key: string): void {
+        const progress = this.simulatedLoadingProgress[key] ?? 0;
+        if (progress >= 100) {
+            const callback = this.simulatedLoadingCallbacks[key];
+            this.simulatedLoadingCallbacks[key] = undefined;
+            this.stopSimulatedLoadingProgress(key);
+            callback?.();
+            return;
+        }
+
+        if (this.simulatedLoadingFinishing[key]) {
+            this.simulatedLoadingProgress[key] = Math.min(100, progress + 5);
+            return;
+        }
+
+        let step = 1;
+        if (progress < 50 && Math.random() > 0.55) {
+            step = 2;
+        }
+        this.simulatedLoadingProgress[key] = Math.min(98, progress + step);
+    }
+
+    private finishSimulatedLoadingProgress(
+        key: string,
+        onDone?: () => void,
+    ): void {
+        if (onDone) {
+            this.simulatedLoadingCallbacks[key] = onDone;
+        }
+        if ((this.simulatedLoadingProgress[key] ?? 0) <= 0) {
+            onDone?.();
+            return;
+        }
+        this.simulatedLoadingFinishing[key] = true;
+    }
+
+    private stopSimulatedLoadingProgress(key: string): void {
+        if (this.simulatedLoadingIntervals[key]) {
+            clearInterval(this.simulatedLoadingIntervals[key]!);
+            this.simulatedLoadingIntervals[key] = null;
+        }
+        delete this.simulatedLoadingFinishing[key];
+        delete this.simulatedLoadingCallbacks[key];
+        delete this.simulatedLoadingProgress[key];
+    }
+
+    private stopAllSimulatedLoadingProgress(): void {
+        for (const key of Object.keys(this.simulatedLoadingIntervals)) {
+            this.stopSimulatedLoadingProgress(key);
+        }
     }
 
     getLoadingRingBackground(progress: number): SafeStyle {
@@ -3281,6 +3676,12 @@ export class DepartmentIncomeDashboardComponent
      * טוען דגימת פירוט מחלקה אחת כדי לחשב את חודש היחוס המקסימלי בדוח (תאריך עדכון הדוח).
      */
     private loadIncomeReportReferenceFromSampleDepartment(): void {
+        if (
+            this.incomeReportAsOfFetchDone &&
+            (this.incomeReportAsOfLabel || this.referencePeriodFromYearlyIncome)
+        ) {
+            return;
+        }
         if (!this.departmentIncomeData?.length) {
             this.incomeReportAsOfLabel = null;
             this.incomeReportAsOfFetchDone = true;
@@ -3316,7 +3717,7 @@ export class DepartmentIncomeDashboardComponent
         this.http
             .post(environment.url + "GetDepartmentDetailedData", {
                 departmentName: sampleDept,
-                ...this.buildIncomeFilterRequest(),
+                ...this.buildUnfilteredIncomeFilterPayload(),
             })
             .subscribe({
                 next: (response: any) => {
@@ -4389,9 +4790,9 @@ export class DepartmentIncomeDashboardComponent
      */
     getYTDDescription(): string {
         if (this.isLatestYearCurrentYear()) {
-            return `השוואה YTD: החודשים הקיימים ב-${this.getLatestYear()} מול אותם החודשים ב-${this.getOlderYear()}`;
+            return `YTD — אותם חודשים ב-${this.getLatestYear()} מול ${this.getOlderYear()}`;
         }
-        return `השוואה בין שנים שלמות: ${this.getOlderYear()} מול ${this.getLatestYear()}`;
+        return `השוואת שנים שלמות: ${this.getOlderYear()} מול ${this.getLatestYear()}`;
     }
 
     get diffTooltip(): string {
@@ -4656,7 +5057,7 @@ export class DepartmentIncomeDashboardComponent
         );
         this.dataSource.data = [...this.departmentIncomeData];
         this.isDataLoaded = true;
-        this.isMainDataLoading = false;
+        this.completeMainDataLoading();
 
         this.invalidateBreakdownDetailCache();
         this.refreshFiveYearColumnDefs();
@@ -4963,7 +5364,6 @@ export class DepartmentIncomeDashboardComponent
     private invalidateBreakdownDetailCache(): void {
         this.breakdownDetailRawResults = null;
         this.breakdownDetailCacheKey = null;
-        this.invalidateDepartmentDetailedCache();
         if (this.graphToolbarDimensionMode !== "total") {
             this.clearDimensionalChartDisplay();
         }

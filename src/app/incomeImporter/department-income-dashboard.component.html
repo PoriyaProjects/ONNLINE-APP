@@ -964,13 +964,16 @@
 
       <div class="table-wrapper" dir="rtl"
         *ngIf="!catalogLoading && detailedDataSource.data && detailedDataSource.data.length > 0">
-        <table mat-table [dataSource]="detailedDataSource" class="catalog-mat-table" dir="rtl">
+        <table mat-table [dataSource]="detailedDataSource" class="catalog-mat-table"
+          [class.catalog-mat-table--cash]="selectedViewType === 'cash'"
+          [class.catalog-mat-table--units]="selectedViewType === 'units'"
+          [class.catalog-mat-table--both]="selectedViewType === 'both'" dir="rtl">
 
           <ng-container matColumnDef="CatalogName2">
-            <th mat-header-cell *matHeaderCellDef style="font-weight:bold;text-align:right;">שירות</th>
-            <td mat-cell *matCellDef="let element" #cell [matTooltip]="getCatalogServiceName(element)"
-              [matTooltipDisabled]="cell.scrollWidth <= cell.clientWidth" matTooltipClass="subtle-tooltip"
-              style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+            <th mat-header-cell *matHeaderCellDef class="catalog-service-header">שירות</th>
+            <td mat-cell *matCellDef="let element" class="catalog-service-cell" #cell
+              [matTooltip]="getCatalogServiceName(element)"
+              [matTooltipDisabled]="cell.scrollWidth <= cell.clientWidth" matTooltipClass="subtle-tooltip">
               {{ getCatalogServiceName(element) }}
             </td>
           </ng-container>
@@ -1083,47 +1086,78 @@
 
 <!-- Boss Dashboard Modal -->
 <div *ngIf="showBossDashboard" class="boss-dashboard-overlay" [class.dark]="isDark">
-  <div class="boss-dashboard-modal dash" [class.dark]="isDark">
+  <div class="boss-dashboard-modal dash" [class.dark]="isDark" dir="rtl">
     <div dir="rtl" class="boss-header-block">
       <div class="boss-header">
-        <h2>📊 דוח הכנסות כללי</h2>
+        <div class="boss-header__lead">
+          <h2>📊 דוח הכנסות כללי</h2>
+          <p class="boss-ytd-note" *ngIf="!isLoading && yearlyTotalData?.length">
+            * {{ getYTDDescription() }}
+          </p>
+        </div>
         <button mat-icon-button (click)="closeBossDashboard()" class="close-btn">
           <mat-icon>close</mat-icon>
         </button>
       </div>
 
-      <div *ngIf="!isLoading && yearlyTotalData && yearlyTotalData.length > 0" class="boss-ytd-strip">
-        <div class="boss-card boss-card--inline card-2025">
-          <span class="card-icon" aria-hidden="true">📈</span>
-          <div class="boss-card--inline__body">
-            <span class="card-year">{{ getLatestYear() }}</span>
-            <span class="card-amount">{{ formatNumber(getLatestYearTotal()) }} ₪</span>
+      <div *ngIf="!isLoading && yearlyTotalData && yearlyTotalData.length > 0" class="boss-hero-row">
+        <div class="boss-ytd-strip">
+          <div class="boss-card boss-card--inline card-2025">
+            <span class="card-icon" aria-hidden="true">📈</span>
+            <div class="boss-card--inline__body">
+              <span class="card-year">{{ getLatestYear() }}</span>
+              <span class="card-amount">{{ formatNumber(getLatestYearTotal()) }} ₪</span>
+            </div>
+          </div>
+
+          <div class="arrow-container arrow-container--inline">
+            <div class="arrow-icon" [class.positive]="getTotalDifference() >= 0"
+              [class.negative]="getTotalDifference() < 0">
+              <mat-icon *ngIf="getTotalDifference() >= 0">trending_up</mat-icon>
+              <mat-icon *ngIf="getTotalDifference() < 0">trending_down</mat-icon>
+            </div>
+            <div class="arrow-text">
+              <div class="difference-amount" [class.positive]="getTotalDifference() >= 0"
+                [class.negative]="getTotalDifference() < 0">
+                {{ formatNumber(getTotalDifference()) }} ₪
+              </div>
+              <div class="difference-percent" [class.positive]="getTotalDifference() >= 0"
+                [class.negative]="getTotalDifference() < 0">
+                {{ calculateYearlyPercentageChange() }}
+              </div>
+            </div>
+          </div>
+
+          <div class="boss-card boss-card--inline card-2024">
+            <span class="card-icon" aria-hidden="true">💰</span>
+            <div class="boss-card--inline__body">
+              <span class="card-year">{{ getOlderYear() }}</span>
+              <span class="card-amount">{{ formatNumber(getOlderYearTotal()) }} ₪</span>
+            </div>
           </div>
         </div>
 
-        <div class="arrow-container arrow-container--inline">
-          <div class="arrow-icon" [class.positive]="getTotalDifference() >= 0"
-            [class.negative]="getTotalDifference() < 0">
-            <mat-icon *ngIf="getTotalDifference() >= 0">trending_up</mat-icon>
-            <mat-icon *ngIf="getTotalDifference() < 0">trending_down</mat-icon>
+        <div class="boss-executive-summary boss-executive-summary--inline" role="status">
+          <div class="boss-summary-badge"
+            [class.boss-summary-badge--positive]="getTotalDifference() >= 0"
+            [class.boss-summary-badge--negative]="getTotalDifference() < 0">
+            <mat-icon aria-hidden="true">{{ getTotalDifference() >= 0 ? 'trending_up' : 'trending_down' }}</mat-icon>
+            <span>{{ calculateYearlyPercentageChange() }}</span>
           </div>
-          <div class="arrow-text">
-            <div class="difference-amount" [class.positive]="getTotalDifference() >= 0"
-              [class.negative]="getTotalDifference() < 0">
-              {{ formatNumber(getTotalDifference()) }} ₪
-            </div>
-            <div class="difference-percent" [class.positive]="getTotalDifference() >= 0"
-              [class.negative]="getTotalDifference() < 0">
-              {{ calculateYearlyPercentageChange() }}
-            </div>
-          </div>
-        </div>
-
-        <div class="boss-card boss-card--inline card-2024">
-          <span class="card-icon" aria-hidden="true">💰</span>
-          <div class="boss-card--inline__body">
-            <span class="card-year">{{ getOlderYear() }}</span>
-            <span class="card-amount">{{ formatNumber(getOlderYearTotal()) }} ₪</span>
+          <div class="boss-summary-content">
+            <span class="boss-summary-wing">{{ getBossSummaryWingLabel() }}</span>
+            <span class="boss-summary-line">
+              {{ getBossSummaryTrendWord() }} YTD {{ getLatestYear() }} מול {{ getOlderYear() }}
+            </span>
+            <span class="boss-summary-outlier" *ngIf="bossPayerOutliers.length">
+              <mat-icon aria-hidden="true">warning_amber</mat-icon>
+              {{ bossPayerOutliers.length }} חריגים · «{{ bossPayerOutliers[0].payer }}»
+              ({{ formatBossPayerYoYLabel(bossPayerOutliers[0]) }})
+            </span>
+            <span class="boss-summary-outlier boss-summary-outlier--ok" *ngIf="!bossPayerOutliers.length && bossPayerInsights.length">
+              <mat-icon aria-hidden="true">check_circle</mat-icon>
+              ללא חריגות YTD
+            </span>
           </div>
         </div>
       </div>
@@ -1137,90 +1171,70 @@
           <span>הושלם</span>
         </div>
       </div>
-      <div class="boss-loading-text">טוען דוח למנהל...</div>
+      <div class="boss-loading-text">טוען דוח למנהל... {{ getBossLoadingProgress() }}%</div>
     </div>
 
     <div *ngIf="!isLoading && yearlyTotalData && yearlyTotalData.length > 0" dir="rtl" class="boss-body">
-      <div class="boss-executive-summary" role="status">
-        <mat-icon aria-hidden="true">insights</mat-icon>
-        <p>{{ bossExecutiveSummary }}</p>
-      </div>
-
-      <div class="boss-info-box boss-info-box--compact">
-        <div class="boss-info-content">
-          <mat-icon class="boss-info-icon">info</mat-icon>
-          <div>
-            <strong class="boss-info-title" *ngIf="isLatestYearCurrentYear()">השוואה YTD (Year To Date):</strong>
-            <strong class="boss-info-title" *ngIf="!isLatestYearCurrentYear()">השוואה בין שנים:</strong>
-            <span class="boss-info-text">{{ getYTDDescription() }}</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="boss-payer-outliers" *ngIf="bossPayerOutliers.length">
-        <div class="boss-payer-outliers__title">
-          <mat-icon aria-hidden="true">warning_amber</mat-icon>
-          חריגים — ירידה משמעותית YTD
-        </div>
-        <div class="boss-payer-outliers__grid">
-          <div class="boss-payer-outlier-row" *ngFor="let row of bossPayerOutliers">
-            <span class="boss-payer-outlier-row__name">{{ row.payer }}</span>
-            <span class="boss-payer-outlier-row__meta">
-              <span class="boss-payer-outlier-row__pct">{{ formatBossPayerYoYLabel(row) }}</span>
-              <span class="boss-payer-outlier-row__diff">{{ formatNumber(row.diff) }} ₪</span>
-            </span>
-          </div>
-        </div>
-      </div>
-
-      <div class="boss-payer-pie-wrap" *ngIf="showBossPayerPieChart && bossPayerPieData.length">
-        <google-chart type="PieChart" [data]="bossPayerPieData" [columns]="bossPayerPieColumns"
-          [options]="bossPayerPieOptions" dir="rtl">
-        </google-chart>
-        <p class="boss-payer-pie-caption">חלוקת הכנסות YTD {{ getLatestYear() }} לפי גורם משלם ({{ bossPayerInsights.length }} גורמים)</p>
-      </div>
-
-      <section class="boss-payer-table-section" *ngIf="bossPayerInsights.length">
-        <div class="boss-payer-table-head">
-          <div class="boss-payer-table-head__main">
-            <mat-icon aria-hidden="true">table_chart</mat-icon>
-            <div>
-              <h3 class="boss-payer-table-head__title">גורמי משלם — השוואת YTD</h3>
-              <p class="boss-payer-table-head__subtitle">
-                {{ getLatestYear() }} מול {{ getOlderYear() }} · אותם חודשים
-              </p>
-            </div>
-          </div>
-          <button type="button" mat-stroked-button class="boss-payer-pie-toggle"
-            [disabled]="!bossPayerPieData.length" (click)="toggleBossPayerPieChart()">
-            <mat-icon>{{ showBossPayerPieChart ? 'visibility_off' : 'pie_chart' }}</mat-icon>
-            {{ showBossPayerPieChart ? 'הסתר גרף פאי' : 'הצג גרף פאי' }}
+      <div class="boss-view-toolbar" role="tablist" aria-label="מסכי דוח מנהל">
+        <div class="boss-view-segments">
+          <button type="button" class="boss-view-btn" role="tab"
+            [class.active]="bossViewMode === 'table'" (click)="setBossViewMode('table')">
+            <mat-icon>table_chart</mat-icon>
+            טבלת גורמי משלם
+          </button>
+          <button type="button" class="boss-view-btn" role="tab"
+            [class.active]="bossViewMode === 'pie'" [disabled]="!bossPayerPieData.length"
+            (click)="setBossViewMode('pie')">
+            <mat-icon>pie_chart</mat-icon>
+            גרף פאי
           </button>
         </div>
+        <div class="boss-view-toolbar__actions">
+          <div class="boss-table-pager" *ngIf="bossViewMode === 'table' && getBossTablePageCount() > 1">
+            <button type="button" mat-icon-button (click)="bossTablePrevPage()" [disabled]="bossTablePage === 0"
+              aria-label="עמוד קודם">
+              <mat-icon>chevron_right</mat-icon>
+            </button>
+            <span>{{ getBossTablePageLabel() }}</span>
+            <button type="button" mat-icon-button (click)="bossTableNextPage()"
+              [disabled]="bossTablePage >= getBossTablePageCount() - 1" aria-label="עמוד הבא">
+              <mat-icon>chevron_left</mat-icon>
+            </button>
+          </div>
+          <button type="button" mat-stroked-button class="boss-go-payer-btn" (click)="openPayerViewFromBoss()">
+            גורם משלם
+            <mat-icon>arrow_back</mat-icon>
+          </button>
+        </div>
+      </div>
 
-        <div class="boss-payer-table-scroll">
+      <div class="boss-view-panel">
+        <section class="boss-panel boss-panel--table" *ngIf="bossViewMode === 'table' && bossPayerInsights.length">
+          <div class="boss-panel__head">
+            <h3>גורמי משלם — YTD {{ getLatestYear() }} מול {{ getOlderYear() }}</h3>
+          </div>
+
           <table class="boss-payer-table">
             <thead>
               <tr>
                 <th scope="col">גורם משלם</th>
-                <th scope="col">{{ getLatestYear() }} YTD</th>
-                <th scope="col">{{ getOlderYear() }} YTD</th>
+                <th scope="col">{{ getLatestYear() }}</th>
+                <th scope="col">{{ getOlderYear() }}</th>
                 <th scope="col">הפרש</th>
-                <th scope="col">שינוי YTD</th>
-                <th scope="col">נתח מהסך</th>
+                <th scope="col">שינוי</th>
+                <th scope="col">נתח</th>
               </tr>
             </thead>
             <tbody>
-              <tr *ngFor="let row of bossPayerInsights" [class.boss-payer-table__row--outlier]="row.isOutlier">
+              <tr *ngFor="let row of getBossPayerTablePageRows()"
+                [class.boss-payer-table__row--outlier]="row.isOutlier">
                 <td class="boss-payer-table__name">
                   <span class="boss-payer-table__name-text">{{ row.payer }}</span>
                   <span class="boss-payer-table__outlier-badge" *ngIf="row.isOutlier">חריג</span>
                 </td>
                 <td class="boss-payer-table__amount">{{ formatNumber(row.currentTotal) }} ₪</td>
                 <td class="boss-payer-table__amount">{{ formatNumber(row.priorTotal) }} ₪</td>
-                <td class="boss-payer-table__diff"
-                  [class.positive]="row.diff > 0"
-                  [class.negative]="row.diff < 0">
+                <td class="boss-payer-table__diff" [class.positive]="row.diff > 0" [class.negative]="row.diff < 0">
                   {{ formatNumber(row.diff) }} ₪
                 </td>
                 <td class="boss-payer-table__yoy"
@@ -1232,23 +1246,36 @@
               </tr>
             </tbody>
           </table>
+
+          <div class="boss-conclusion-grid boss-conclusion-grid--below-table" *ngIf="bossPayerOutliers.length">
+            <article class="boss-conclusion-card" *ngFor="let row of bossPayerOutliers">
+              <h4 class="boss-conclusion-card__title">{{ getBossPayerChangeTitle(row) }}</h4>
+              <p class="boss-conclusion-card__stat">
+                {{ formatBossPayerYoYLabel(row) }} · {{ formatNumber(row.diff) }} ₪
+              </p>
+              <p class="boss-conclusion-card__share">{{ formatBossHospitalShare(row) }}</p>
+              <p class="boss-conclusion-card__context">{{ getBossWingDeclineContextLabel() }}</p>
+              <p class="boss-conclusion-card__contrib"
+                *ngIf="formatBossDeclineContributionAmount(row) as contribAmount">
+                {{ contribAmount }} · {{ formatBossDeclineContributionPercentOnly(row) }} מהירידה של {{ getBossSummaryWingLabel() }}
+              </p>
+            </article>
+          </div>
+        </section>
+
+        <section class="boss-panel boss-panel--pie" *ngIf="bossViewMode === 'pie' && bossPayerPieData.length">
+          <google-chart type="PieChart" [data]="bossPayerPieData" [columns]="bossPayerPieColumns"
+            [options]="bossPayerPieOptions" dir="rtl">
+          </google-chart>
+        </section>
+
+        <div class="boss-payer-empty" *ngIf="bossViewMode === 'table' && !bossPayerInsights.length">
+          <mat-icon aria-hidden="true">info_outline</mat-icon>
+          <span>אין נתוני גורם משלם זמינים לאגף זה.</span>
         </div>
-      </section>
-
-      <div class="boss-payer-empty" *ngIf="!bossPayerInsights.length">
-        <mat-icon aria-hidden="true">info_outline</mat-icon>
-        <span>אין נתוני גורם משלם זמינים לאגף זה.</span>
       </div>
 
-      <div class="boss-payer-footnote">
-        <mat-icon aria-hidden="true">info</mat-icon>
-        <span>פירוט נוסף, פילוח לפי סוג גורם ומגמות 5 שנים — בלשונית «גורם משלם» בדשבורד הראשי.</span>
-        <button type="button" mat-button color="primary" class="boss-payer-footnote__link"
-          (click)="openPayerViewFromBoss()">
-          עבור לגורם משלם
-          <mat-icon>arrow_back</mat-icon>
-        </button>
-      </div>
+      <p class="boss-ytd-footnote">* {{ getYTDDescription() }} · פירוט מלא ב«גורם משלם»</p>
     </div>
 
     <div *ngIf="!isLoading && (!yearlyTotalData || yearlyTotalData.length === 0)" class="boss-no-data">
