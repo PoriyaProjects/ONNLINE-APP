@@ -1600,7 +1600,7 @@ export class MershamNComponent implements OnInit {
             "<title>מדבקת הכנה</title>" +
             "<style>" +
             "body{font-family:Arial,sans-serif;margin:0;padding:0;direction:rtl;color:#000;}" +
-            ".label-card{border:1px solid #000;padding:0;width:105mm;height:95mm;box-sizing:border-box;overflow:hidden;}" +
+            ".label-card{border:1px solid #000;padding:0;width:81mm;height:69mm;box-sizing:border-box;overflow:hidden;}" +
             ".label-section{display:grid;gap:0;border:1px solid #000;border-bottom:none;}" +
             ".label-section:first-child{height:15mm;max-height:15mm;overflow:hidden;}" +
             ".label-section:last-child{border-bottom:1px solid #000;}" +
@@ -1611,7 +1611,7 @@ export class MershamNComponent implements OnInit {
             ".label-title{font-weight:700;font-size:9px;line-height:1.1;}" +
             ".label-value{font-size:9px;line-height:1.1;word-break:break-word;}" +
             ".barcode{display:block;width:100%;height:28px;margin:0 auto;}" +
-            "@page{size:105mm 95mm;margin:0;}" +
+            "@page{size:85mm 75mm;margin:3mm 2mm;}" +
             "</style></head><body>" +
             '<div class="label-card">' +
             labelSectionsHtml +
