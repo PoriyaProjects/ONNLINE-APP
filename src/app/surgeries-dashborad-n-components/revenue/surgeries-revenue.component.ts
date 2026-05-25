@@ -553,7 +553,7 @@ export class SurgeriesRevenueComponent implements OnInit, OnDestroy {
             }
             switch (this.mainMetric) {
                 case "bySurgeryType":
-                    return "סיכום שנתי — לפי סוג ניתוח";
+                    return "סיכום שנתי — תרומת סוגי ניתוח";
                 default:
                     return "סיכום שנתי — הכל ביחד לפי חודשים";
             }
@@ -578,7 +578,7 @@ export class SurgeriesRevenueComponent implements OnInit, OnDestroy {
             }
             switch (this.mainMetric) {
                 case "bySurgeryType":
-                    return "category";
+                    return "stacked_bar_chart";
                 default:
                     return "calendar_month";
             }
@@ -1468,33 +1468,34 @@ export class SurgeriesRevenueComponent implements OnInit, OnDestroy {
     isYearTotalStackedView(): boolean {
         return (
             this.chartViewMode === "year-total" &&
-            this.mainMetric === "byPayer"
+            (this.mainMetric === "byPayer" ||
+                this.mainMetric === "bySurgeryType")
         );
+    }
+
+    private applyYearTotalStackedChart(rows: RevenueAggRow[]): void {
+        const built = this.buildStackedChartFromAggRows(rows, 14, true);
+        if (!built?.data.length) {
+            this.chartColumns = [
+                "שנה",
+                { type: "number", label: 'סה"כ הכנסות' },
+            ];
+            this.chartData = [];
+            this.chartOptions = {
+                ...this.chartOptions,
+                isStacked: false,
+            };
+            return;
+        }
+        this.chartColumns = built.columns;
+        this.chartData = built.data;
+        this.chartOptions = built.options;
+        this.applyStackedYearTotalTooltips();
     }
 
     private buildYearTotalChart(): void {
         if (this.mainMetric === "byPayer") {
-            const built = this.buildStackedChartFromAggRows(
-                this.payerStackRows,
-                14,
-                true,
-            );
-            if (!built?.data.length) {
-                this.chartColumns = [
-                    "שנה",
-                    { type: "number", label: 'סה"כ הכנסות' },
-                ];
-                this.chartData = [];
-                this.chartOptions = {
-                    ...this.chartOptions,
-                    isStacked: false,
-                };
-                return;
-            }
-            this.chartColumns = built.columns;
-            this.chartData = built.data;
-            this.chartOptions = built.options;
-            this.applyStackedYearTotalTooltips();
+            this.applyYearTotalStackedChart(this.payerStackRows);
             return;
         }
 
@@ -1504,7 +1505,7 @@ export class SurgeriesRevenueComponent implements OnInit, OnDestroy {
         }
 
         if (this.mainMetric === "bySurgeryType") {
-            this.buildGroupedYearChart();
+            this.applyYearTotalStackedChart(this.aggRows);
         }
     }
 
