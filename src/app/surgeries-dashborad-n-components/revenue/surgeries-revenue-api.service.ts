@@ -9,6 +9,7 @@ import {
     RevenueFilterOptionsDto,
     RevenueGroupBy,
     RevenueMonthlyRow,
+    RevenueYtyMetrics,
     SurgeriesRevenueFilterParams,
 } from "./surgeries-revenue.models";
 
@@ -42,6 +43,9 @@ export class SurgeriesRevenueApiService {
             ) &&
             this.aggCache.has(
                 this.cacheKey("agg", { ...params, groupBy: "payer" }),
+            ) &&
+            this.aggCache.has(
+                this.cacheKey("agg", { ...params, groupBy: "site" }),
             ) &&
             this.compositeCache.has(this.cacheKey("composite", params))
         );
@@ -215,51 +219,235 @@ export class SurgeriesRevenueApiService {
         return isNaN(n) ? 0 : n;
     }
 
+    private numOrNull(v: unknown): number | null {
+        if (v == null || v === "") {
+            return null;
+        }
+        const n = Number(v);
+        return Number.isFinite(n) ? n : null;
+    }
+
+    private buildYtyMetrics(
+        currentAmount: number,
+        prevAmount: number,
+    ): RevenueYtyMetrics {
+        const diff = currentAmount - prevAmount;
+        let pct: number | null = null;
+        if (prevAmount !== 0) {
+            pct = (diff / prevAmount) * 100;
+        } else if (currentAmount !== 0) {
+            pct = null;
+        } else {
+            pct = 0;
+        }
+        return {
+            PrevPeriodAmount: prevAmount,
+            YTYDiff: diff,
+            YTYPercent: pct,
+        };
+    }
+
+    private readYtyFromRaw(
+        raw: any,
+        currentAmount: number,
+        prevAmount: number,
+    ): RevenueYtyMetrics {
+        const fromApiPrev = this.numOrNull(
+            raw?.PrevPeriodAmount ??
+                raw?.prevPeriodAmount ??
+                raw?.PrevYearAmount ??
+                raw?.prevYearAmount ??
+                raw?.PreviousAmount ??
+                raw?.previousAmount,
+        );
+        const resolvedPrev = fromApiPrev ?? prevAmount;
+        const fromApiDiff = this.numOrNull(
+            raw?.YTYDiff ?? raw?.ytyDiff ?? raw?.Diff ?? raw?.diff,
+        );
+        const fromApiPct = this.numOrNull(
+            raw?.YTYPercent ??
+                raw?.ytyPercent ??
+                raw?.Pct ??
+                raw?.pct ??
+                raw?.ChangePercent ??
+                raw?.changePercent,
+        );
+
+        if (fromApiDiff != null || fromApiPct != null || fromApiPrev != null) {
+            const diff =
+                fromApiDiff != null
+                    ? fromApiDiff
+                    : currentAmount - resolvedPrev;
+            let pct = fromApiPct;
+            if (pct == null && resolvedPrev !== 0) {
+                pct = (diff / resolvedPrev) * 100;
+            }
+            return {
+                PrevPeriodAmount: resolvedPrev,
+                YTYDiff: diff,
+                YTYPercent: pct,
+            };
+        }
+
+        return this.buildYtyMetrics(currentAmount, prevAmount);
+    }
+
+    private enrichAggRowsWithYty(rows: RevenueAggRow[]): RevenueAggRow[] {
+        const prevByGroupYear = new Map<string, number>();
+        rows.forEach((row) => {
+            prevByGroupYear.set(
+                `${row.GroupKey}|${row.Year}`,
+                row.TotalAmount,
+            );
+        });
+
+        return rows.map((row) => {
+            const prevAmount =
+                prevByGroupYear.get(`${row.GroupKey}|${row.Year - 1}`) ?? 0;
+            const yty = this.buildYtyMetrics(row.TotalAmount, prevAmount);
+            return { ...row, ...yty };
+        });
+    }
+
+    private enrichMonthlyRowsWithYty(
+        rows: RevenueMonthlyRow[],
+    ): RevenueMonthlyRow[] {
+        const prevByMonthYear = new Map<string, number>();
+        rows.forEach((row) => {
+            prevByMonthYear.set(`${row.Month}|${row.Year}`, row.TotalAmount);
+        });
+
+        return rows.map((row) => {
+            const prevAmount =
+                prevByMonthYear.get(`${row.Month}|${row.Year - 1}`) ?? 0;
+            const yty = this.buildYtyMetrics(row.TotalAmount, prevAmount);
+            return { ...row, ...yty };
+        });
+    }
+
+    private compositeStackPeriodKey(
+        row: Pick<
+            RevenueCompositeStackRow,
+            "FundKey" | "PayerKey" | "BillingCategoryKey" | "Year"
+        >,
+    ): string {
+        return `${row.FundKey}|${row.PayerKey}|${row.BillingCategoryKey}|${row.Year}`;
+    }
+
+    private enrichCompositeRowsWithYty(
+        rows: RevenueCompositeStackRow[],
+    ): RevenueCompositeStackRow[] {
+        const prevByKey = new Map<string, number>();
+        rows.forEach((row) => {
+            prevByKey.set(this.compositeStackPeriodKey(row), row.TotalAmount);
+        });
+
+        return rows.map((row) => {
+            const prevKey = this.compositeStackPeriodKey({
+                ...row,
+                Year: row.Year - 1,
+            });
+            const prevAmount = prevByKey.get(prevKey) ?? 0;
+            const yty = this.buildYtyMetrics(row.TotalAmount, prevAmount);
+            return { ...row, ...yty };
+        });
+    }
+
     private str(v: unknown): string {
         return v != null ? String(v).trim() : "";
     }
 
     private normalizeAggRows(raw: unknown): RevenueAggRow[] {
-        return this.unwrapArray(raw).map((r: any) => ({
-            Year: this.num(r.Year ?? r.year),
-            GroupKey: this.str(r.GroupKey ?? r.groupKey ?? r.Wing ?? r.wing),
-            TotalAmount: this.num(r.TotalAmount ?? r.totalAmount),
-            SurgeryCount: this.num(r.SurgeryCount ?? r.surgeryCount),
-            InvoiceCount: this.num(r.InvoiceCount ?? r.invoiceCount),
-            AvgAmount: this.num(r.AvgAmount ?? r.avgAmount),
-        }));
+        const rows = this.unwrapArray(raw).map((r: any) => {
+            const totalAmount = this.num(r.TotalAmount ?? r.totalAmount);
+            const year = this.num(r.Year ?? r.year);
+            const groupKey = this.str(
+                r.GroupKey ??
+                    r.groupKey ??
+                    r.Wing ??
+                    r.wing ??
+                    r.Site ??
+                    r.site,
+            );
+            const prevAmount = this.num(
+                r.PrevPeriodAmount ??
+                    r.prevPeriodAmount ??
+                    r.PrevYearAmount ??
+                    r.prevYearAmount ??
+                    0,
+            );
+            const yty = this.readYtyFromRaw(r, totalAmount, prevAmount);
+            return {
+                Year: year,
+                GroupKey: groupKey,
+                TotalAmount: totalAmount,
+                SurgeryCount: this.num(r.SurgeryCount ?? r.surgeryCount),
+                InvoiceCount: this.num(r.InvoiceCount ?? r.invoiceCount),
+                AvgAmount: this.num(r.AvgAmount ?? r.avgAmount),
+                ...yty,
+            };
+        });
+        return this.enrichAggRowsWithYty(rows);
     }
 
     private normalizeCompositeRows(raw: unknown): RevenueCompositeStackRow[] {
-        return this.unwrapArray(raw).map((r: any) => ({
-            Year: this.num(r.Year ?? r.year),
-            FundKey: this.str(
-                r.FundKey ??
-                    r.fundKey ??
-                    r.HospitalFund ??
-                    r.hospitalFund ??
-                    r.קרן,
-            ),
-            PayerKey: this.str(r.PayerKey ?? r.payerKey ?? r.Payer ?? r.payer),
-            BillingCategoryKey: this.str(
-                r.BillingCategoryKey ??
-                    r.billingCategoryKey ??
-                    r.BillingCategory ??
-                    r.billingCategory ??
-                    r.קטגורית_חיוב,
-            ),
-            TotalAmount: this.num(r.TotalAmount ?? r.totalAmount),
-        }));
+        const rows = this.unwrapArray(raw).map((r: any) => {
+            const totalAmount = this.num(r.TotalAmount ?? r.totalAmount);
+            const prevAmount = this.num(
+                r.PrevPeriodAmount ??
+                    r.prevPeriodAmount ??
+                    r.PrevYearAmount ??
+                    r.prevYearAmount ??
+                    0,
+            );
+            const yty = this.readYtyFromRaw(r, totalAmount, prevAmount);
+            return {
+                Year: this.num(r.Year ?? r.year),
+                FundKey: this.str(
+                    r.FundKey ??
+                        r.fundKey ??
+                        r.HospitalFund ??
+                        r.hospitalFund ??
+                        r.קרן,
+                ),
+                PayerKey: this.str(
+                    r.PayerKey ?? r.payerKey ?? r.Payer ?? r.payer,
+                ),
+                BillingCategoryKey: this.str(
+                    r.BillingCategoryKey ??
+                        r.billingCategoryKey ??
+                        r.BillingCategory ??
+                        r.billingCategory ??
+                        r.קטגורית_חיוב,
+                ),
+                TotalAmount: totalAmount,
+                ...yty,
+            };
+        });
+        return this.enrichCompositeRowsWithYty(rows);
     }
 
     private normalizeMonthlyRows(raw: unknown): RevenueMonthlyRow[] {
-        return this.unwrapArray(raw).map((r: any) => ({
-            Year: this.num(r.Year ?? r.year),
-            Month: this.num(r.Month ?? r.month),
-            TotalAmount: this.num(r.TotalAmount ?? r.totalAmount),
-            SurgeryCount: this.num(r.SurgeryCount ?? r.surgeryCount),
-            AvgAmount: this.num(r.AvgAmount ?? r.avgAmount),
-        }));
+        const rows = this.unwrapArray(raw).map((r: any) => {
+            const totalAmount = this.num(r.TotalAmount ?? r.totalAmount);
+            const prevAmount = this.num(
+                r.PrevPeriodAmount ??
+                    r.prevPeriodAmount ??
+                    r.PrevYearAmount ??
+                    r.prevYearAmount ??
+                    0,
+            );
+            const yty = this.readYtyFromRaw(r, totalAmount, prevAmount);
+            return {
+                Year: this.num(r.Year ?? r.year),
+                Month: this.num(r.Month ?? r.month),
+                TotalAmount: totalAmount,
+                SurgeryCount: this.num(r.SurgeryCount ?? r.surgeryCount),
+                AvgAmount: this.num(r.AvgAmount ?? r.avgAmount),
+                ...yty,
+            };
+        });
+        return this.enrichMonthlyRowsWithYty(rows);
     }
 
     private normalizeFilterOptions(raw: unknown): RevenueFilterOptionsDto {

@@ -238,10 +238,12 @@
               <mat-icon>fullscreen</mat-icon>
             </button>
 
-            <google-chart *ngIf="!isLoading && !isChartLoading && chartData.length"
-              [type]="chartType" [columns]="chartColumns" [data]="chartData"
-              [options]="chartOptions" [width]="'100%'" [height]="'100%'" [dynamicResize]="true">
-            </google-chart>
+            <ng-container *ngFor="let epoch of [chartViewEpoch]; trackBy: trackByChartEpoch">
+              <google-chart *ngIf="!isLoading && !isChartLoading && chartData.length"
+                [type]="chartType" [columns]="chartColumns" [data]="chartData"
+                [options]="chartOptions" [width]="'100%'" [height]="'100%'" [dynamicResize]="true">
+              </google-chart>
+            </ng-container>
 
             <div *ngIf="!isLoading && !isChartLoading && !chartData.length" class="chart-no-data">
               {{ loadError || 'אין נתונים להצגה בגרף' }}

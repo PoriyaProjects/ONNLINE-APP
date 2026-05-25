@@ -11,10 +11,17 @@ export interface SurgeriesRevenueFilterParams {
     payer?: string;
 }
 
-export type RevenueGroupBy = "wing" | "billingDept" | "payer" | "surgeryType";
+export type RevenueGroupBy = "wing" | "billingDept" | "payer" | "surgeryType" | "site";
+
+/** תקופה מול תקופה — שנה קודמת (YTY) */
+export interface RevenueYtyMetrics {
+    PrevPeriodAmount: number;
+    YTYDiff: number;
+    YTYPercent: number | null;
+}
 
 /** Aggregated revenue row — GetRevenueByDeptFiveYears_surgeries_revenue_dashborad */
-export interface RevenueAggRow {
+export interface RevenueAggRow extends RevenueYtyMetrics {
     Year: number;
     GroupKey: string;
     TotalAmount: number;
@@ -24,7 +31,7 @@ export interface RevenueAggRow {
 }
 
 /** Monthly revenue row — GetRevenueByMonth_surgeries_revenue_dashborad */
-export interface RevenueMonthlyRow {
+export interface RevenueMonthlyRow extends RevenueYtyMetrics {
     Year: number;
     Month: number;
     TotalAmount: number;
@@ -56,7 +63,7 @@ export type RevenueMainMetric = "byDept" | "byPayer" | "bySurgeryType";
 export type RevenueChartViewMode = "year-total" | "year-grouped" | "month";
 
 /** שורת ערימה — GetRevenueStackedComposite_surgeries_revenue_dashborad (בקרוב) */
-export interface RevenueCompositeStackRow {
+export interface RevenueCompositeStackRow extends RevenueYtyMetrics {
     Year: number;
     FundKey: string;
     PayerKey: string;
