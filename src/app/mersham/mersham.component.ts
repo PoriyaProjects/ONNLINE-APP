@@ -56,6 +56,8 @@ export interface DropOption {
     name: string;
     viewValue: string;
     groupID: string;
+    StorageConditions?: string;
+    ExpireTime?: string;
 }
 export interface Prescription {
     PerscriptionID: string;
@@ -112,6 +114,12 @@ export interface PrescriptionRow {
 
 export interface Drug {
     DrugName: string;
+}
+export interface DrugMetadata {
+    MedID?: string;
+    MedName: string;
+    StorageConditions?: string;
+    ExpireTime?: string;
 }
 export interface EmployeeOption {
     EmployeeID: string;
@@ -375,6 +383,7 @@ export class MershamComponent implements OnInit {
     PresRowIdVal: string;
     filterdDataArray: DropOption[];
     MedListConst: DropOption[];
+    drugMetadataList: DrugMetadata[] = [];
     loadModalAfterClose: Boolean;
     printForm: {
         MedicationSensitivityVal: string;
@@ -849,7 +858,7 @@ export class MershamComponent implements OnInit {
             checkerEmployeeId: "",
         });
         this.modalService.open(content, {
-            windowClass: "custom-class",
+            windowClass: "row-label-print-modal",
             backdrop: "static",
         });
     }
@@ -865,7 +874,7 @@ export class MershamComponent implements OnInit {
         const printWindow = window.open(
             "",
             "_blank",
-            "noopener,noreferrer,width=480,height=720"
+            "width=480,height=720"
         );
         if (!printWindow) {
             this.openSnackBar("לא ניתן לפתוח חלון הדפסה", "error");
@@ -951,6 +960,125 @@ export class MershamComponent implements OnInit {
         }
         return this.formatDate(parsedDate);
     }
+    private getCurrentPreparationDateValue(): Date {
+        if (!this.PrespictionForm || !this.PrespictionForm.get("takedateIN")) {
+            return new Date();
+        }
+        const takeDate = this.PrespictionForm.get("takedateIN").value;
+        if (takeDate instanceof Date && !isNaN(takeDate.getTime())) {
+            return new Date(
+                takeDate.getFullYear(),
+                takeDate.getMonth(),
+                takeDate.getDate()
+            );
+        }
+        const stringValue = String(takeDate || "").trim();
+        const dateParts = stringValue.match(/^(\d{2})[/-](\d{2})[/-](\d{4})$/);
+        if (dateParts) {
+            return new Date(
+                parseInt(dateParts[3], 10),
+                parseInt(dateParts[2], 10) - 1,
+                parseInt(dateParts[1], 10)
+            );
+        }
+        const parsedDate = new Date(stringValue);
+        if (!isNaN(parsedDate.getTime())) {
+            return new Date(
+                parsedDate.getFullYear(),
+                parsedDate.getMonth(),
+                parsedDate.getDate()
+            );
+        }
+        return new Date();
+    }
+    private getPreparationDateTime(preparationTime: string): Date {
+        const date = this.getCurrentPreparationDateValue();
+        const timeParts = String(preparationTime || "").split(":");
+        const hours = parseInt(timeParts[0], 10);
+        const minutes = parseInt(timeParts[1], 10);
+        date.setHours(isNaN(hours) ? 0 : hours, isNaN(minutes) ? 0 : minutes, 0, 0);
+        return date;
+    }
+    private formatLabelDateTime(date: Date): string {
+        if (!date || isNaN(date.getTime())) {
+            return "";
+        }
+        const hours =
+            date.getHours() < 10
+                ? "0" + date.getHours().toString()
+                : date.getHours().toString();
+        const minutes =
+            date.getMinutes() < 10
+                ? "0" + date.getMinutes().toString()
+                : date.getMinutes().toString();
+        return this.formatDate(date) + " " + hours + ":" + minutes;
+    }
+    private normalizeDrugName(value): string {
+        return String(value || "")
+            .split("___")[0]
+            .trim()
+            .toLowerCase();
+    }
+    private findDrugMetadataByName(drugName: string): DrugMetadata {
+        const normalizedDrugName = this.normalizeDrugName(drugName);
+        if (!normalizedDrugName || !this.drugMetadataList) {
+            return null;
+        }
+        return this.drugMetadataList.find((item) => {
+            return this.normalizeDrugName(item.MedName) === normalizedDrugName;
+        });
+    }
+    private getDrugMetadata(row: PrescriptionRow): DropOption | DrugMetadata {
+        if (!row || !this.MedList) {
+            return null;
+        }
+        const drugValue = String(row.MedListVal || "").split("___")[0];
+        const drug = this.MedList.find((item) => {
+            return (
+                String(item.value || "") === drugValue ||
+                String(item.viewValue || "") === drugValue ||
+                String(item.name || "") === drugValue
+            );
+        });
+        const metadata =
+            this.findDrugMetadataByName(drugValue) ||
+            (drug
+                ? this.findDrugMetadataByName(
+                      drug.value || drug.viewValue || drug.name
+                  )
+                : null);
+        if (drug && metadata) {
+            drug.StorageConditions = metadata.StorageConditions;
+            drug.ExpireTime = metadata.ExpireTime;
+        }
+        return metadata || drug;
+    }
+    getPreparationDateTimeDisplay(): string {
+        if (!this.rowLabelForm) {
+            return "";
+        }
+        const formValue = this.rowLabelForm.getRawValue();
+        return this.formatLabelDateTime(
+            this.getPreparationDateTime(formValue.preparationTime)
+        );
+    }
+    getExpirationDateTimeDisplay(row: PrescriptionRow): string {
+        const drug = this.getDrugMetadata(row);
+        const expireTime = drug ? parseFloat(String(drug.ExpireTime || "")) : NaN;
+        if (isNaN(expireTime)) {
+            return "";
+        }
+        const formValue = this.rowLabelForm ? this.rowLabelForm.getRawValue() : {};
+        const expirationDate = this.getPreparationDateTime(
+            formValue.preparationTime
+        );
+        expirationDate.setMinutes(expirationDate.getMinutes() + expireTime * 60);
+        return this.formatLabelDateTime(expirationDate);
+    }
+    getStorageConditionsDisplay(row: PrescriptionRow): string {
+        const drug = this.getDrugMetadata(row);
+        return drug ? String(drug.StorageConditions || "").trim() : "";
+    }
     private getDoseLabel(row: PrescriptionRow): string {
         return [row.finalMenonVal, row.Dosage_UnitVal || row.Dosage_Unit_2_Val]
             .filter((value) => value !== null && value !== undefined && value !== "")
@@ -978,6 +1106,27 @@ export class MershamComponent implements OnInit {
     private getPatientIdentifier(): string {
         return String(this.ID || this.ID_In || this.patiant_number_or_id || "").trim();
     }
+    getPatientIdentifierDisplay(): string {
+        return this.getPatientIdentifier();
+    }
+    getDoseLabelDisplay(row: PrescriptionRow): string {
+        if (!row) {
+            return "";
+        }
+        return this.getDoseLabel(row);
+    }
+    getFinalVolumeLabelDisplay(row: PrescriptionRow): string {
+        if (!row) {
+            return "";
+        }
+        return this.getFinalVolumeLabel(row);
+    }
+    getAdministrationRateLabelDisplay(row: PrescriptionRow): string {
+        if (!row) {
+            return "";
+        }
+        return this.getAdministrationRateLabel(row);
+    }
     private getEmployeeFullName(employeeId: string): string {
         const employee = this.employees.find(
             (item) => String(item.EmployeeID) === String(employeeId)
@@ -995,14 +1144,173 @@ export class MershamComponent implements OnInit {
             .replace(/"/g, "&quot;")
             .replace(/'/g, "&#39;");
     }
+    private buildCode39BarcodeSvg(value: string): string {
+        const barcodeValue = String(value || "")
+            .trim()
+            .toUpperCase()
+            .replace(/[^0-9A-Z .$/+%-]/g, "");
+        if (!barcodeValue) {
+            return "";
+        }
+        const patterns = {
+            "0": "nnnwwnwnn",
+            "1": "wnnwnnnnw",
+            "2": "nnwwnnnnw",
+            "3": "wnwwnnnnn",
+            "4": "nnnwwnnnw",
+            "5": "wnnwwnnnn",
+            "6": "nnwwwnnnn",
+            "7": "nnnwnnwnw",
+            "8": "wnnwnnwnn",
+            "9": "nnwwnnwnn",
+            A: "wnnnnwnnw",
+            B: "nnwnnwnnw",
+            C: "wnwnnwnnn",
+            D: "nnnnwwnnw",
+            E: "wnnnwwnnn",
+            F: "nnwnwwnnn",
+            G: "nnnnnwwnw",
+            H: "wnnnnwwnn",
+            I: "nnwnnwwnn",
+            J: "nnnnwwwnn",
+            K: "wnnnnnnww",
+            L: "nnwnnnnww",
+            M: "wnwnnnnwn",
+            N: "nnnnwnnww",
+            O: "wnnnwnnwn",
+            P: "nnwnwnnwn",
+            Q: "nnnnnnwww",
+            R: "wnnnnnwwn",
+            S: "nnwnnnwwn",
+            T: "nnnnwnwwn",
+            U: "wwnnnnnnw",
+            V: "nwwnnnnnw",
+            W: "wwwnnnnnn",
+            X: "nwnnwnnnw",
+            Y: "wwnnwnnnn",
+            Z: "nwwnwnnnn",
+            "-": "nwnnnnwnw",
+            ".": "wwnnnnwnn",
+            " ": "nwwnnnwnn",
+            "$": "nwnwnwnnn",
+            "/": "nwnwnnnwn",
+            "+": "nwnnnwnwn",
+            "%": "nnnwnwnwn",
+            "*": "nwnnwnwnn",
+        };
+        const narrow = 2;
+        const wide = 5;
+        const height = 42;
+        const quietZone = 10;
+        let x = quietZone;
+        let bars = "";
+        const encodedValue = "*" + barcodeValue + "*";
+        for (let charIndex = 0; charIndex < encodedValue.length; charIndex++) {
+            const pattern = patterns[encodedValue[charIndex]];
+            if (!pattern) {
+                continue;
+            }
+            for (let index = 0; index < pattern.length; index++) {
+                const width = pattern[index] === "w" ? wide : narrow;
+                if (index % 2 === 0) {
+                    bars +=
+                        '<rect x="' +
+                        x +
+                        '" y="0" width="' +
+                        width +
+                        '" height="' +
+                        height +
+                        '" />';
+                }
+                x += width;
+            }
+            x += narrow;
+        }
+        const svgWidth = x + quietZone;
+        return (
+            '<svg class="barcode" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ' +
+            svgWidth +
+            " " +
+            height +
+            '" preserveAspectRatio="none" aria-label="' +
+            this.escapeHtml(barcodeValue) +
+            '"><rect width="100%" height="100%" fill="#fff"/><g fill="#000">' +
+            bars +
+            "</g></svg>"
+        );
+    }
+    private buildLabelSectionHtml(
+        items: Array<{ label: string; value?: string; valueHtml?: string }>,
+        columnCount: number
+    ): string {
+        const cellsHtml = items
+            .map((item) => {
+                const valueHtml =
+                    item.valueHtml !== undefined
+                        ? item.valueHtml
+                        : this.escapeHtml(item.value || "");
+                return (
+                    '<div class="label-cell">' +
+                    '<div class="label-title">' +
+                    this.escapeHtml(item.label) +
+                    "</div>" +
+                    '<div class="label-value">' +
+                    valueHtml +
+                    "</div>" +
+                    "</div>"
+                );
+            })
+            .join("");
+        return (
+            '<div class="label-section label-section--' +
+            columnCount +
+            '">' +
+            cellsHtml +
+            "</div>"
+        );
+    }
     private buildRowLabelHtml(): string {
         const row = this.selectedRowForPrint;
         const formValue = this.rowLabelForm.getRawValue();
-        const labelRows = [
+        const batchNumber = String(row.rowIdPreVal || "").trim();
+        const barcodeHtml = this.buildCode39BarcodeSvg(batchNumber);
+        const firstSection = [
             {
                 label: "שם מוסד",
                 value: "בית מרקחת מרכז רפואי צפון",
             },
+            {
+                label: "מספר אצווה",
+                value: this.getLabelFallbackValue(batchNumber),
+            },
+            {
+                label: "ברקוד מספר אצווה",
+                valueHtml: barcodeHtml || this.escapeHtml("לא הוגדר"),
+            },
+        ];
+        const patientSection = [
+            {
+                label: "שם מטופל",
+                value: this.getLabelFallbackValue(this.getPatientFullName()),
+            },
+            {
+                label: "ת.ז",
+                value: this.getLabelFallbackValue(this.getPatientIdentifier()),
+            },
+            {
+                label: "שם מכין ההכנה",
+                value: this.getLabelFallbackValue(
+                    this.getEmployeeFullName(formValue.preparerEmployeeId)
+                ),
+            },
+            {
+                label: "שם בודק ההכנה",
+                value: this.getLabelFallbackValue(
+                    this.getEmployeeFullName(formValue.checkerEmployeeId)
+                ),
+            },
+        ];
+        const detailsSection = [
             {
                 label: "שם תרופה גנרי",
                 value: this.getLabelFallbackValue(row.MedListVal),
@@ -1030,83 +1338,52 @@ export class MershamComponent implements OnInit {
                 ),
             },
             {
-                label: "תאריך הכנה",
+                label: "שעת ותאריך הכנה",
                 value: this.getLabelFallbackValue(
-                    this.getCurrentPreparationDate()
+                    this.getPreparationDateTimeDisplay()
                 ),
             },
             {
-                label: "שעת הכנה",
-                value: this.getLabelFallbackValue(formValue.preparationTime),
-            },
-            {
-                label: "תאריך תפוגה",
-                value: "לא הוגדר במסך התרופות",
-            },
-            {
-                label: "מספר אצווה",
+                label: "תאריך ושעת תפוגה",
                 value: this.getLabelFallbackValue(
-                    String(row.rowIdPreVal || "")
-                ),
-            },
-            {
-                label: "שם מכין ההכנה",
-                value: this.getLabelFallbackValue(
-                    this.getEmployeeFullName(formValue.preparerEmployeeId)
-                ),
-            },
-            {
-                label: "שם בודק ההכנה",
-                value: this.getLabelFallbackValue(
-                    this.getEmployeeFullName(formValue.checkerEmployeeId)
+                    this.getExpirationDateTimeDisplay(row)
                 ),
             },
             {
                 label: "תנאי אחסון",
-                value: "לא הוגדר במסך התרופות",
-            },
-            {
-                label: "שם מטופל",
-                value: this.getLabelFallbackValue(this.getPatientFullName()),
-            },
-            {
-                label: 'ת.ז מטופל',
-                value: this.getLabelFallbackValue(this.getPatientIdentifier()),
+                value: this.getLabelFallbackValue(
+                    this.getStorageConditionsDisplay(row)
+                ),
             },
         ];
-        const labelRowsHtml = labelRows
-            .map((item) => {
-                return (
-                    '<div class="label-row">' +
-                    '<div class="label-title">' +
-                    this.escapeHtml(item.label) +
-                    "</div>" +
-                    '<div class="label-value">' +
-                    this.escapeHtml(item.value) +
-                    "</div>" +
-                    "</div>"
-                );
-            })
-            .join("");
+        const labelSectionsHtml =
+            this.buildLabelSectionHtml(firstSection, 3) +
+            this.buildLabelSectionHtml(patientSection, 4) +
+            this.buildLabelSectionHtml(detailsSection, 3);
         return (
             '<!doctype html><html dir="rtl" lang="he"><head><meta charset="utf-8" />' +
             "<title>מדבקת הכנה</title>" +
             "<style>" +
-            "body{font-family:Arial,sans-serif;margin:0;padding:16px;direction:rtl;color:#000;}" +
-            ".label-card{border:1px solid #000;padding:12px;width:100%;box-sizing:border-box;}" +
-            ".label-header{text-align:center;font-weight:700;font-size:20px;margin-bottom:12px;}" +
-            ".label-row{display:flex;gap:8px;align-items:flex-start;border-top:1px solid #d3d3d3;padding:6px 0;}" +
-            ".label-row:first-of-type{border-top:none;padding-top:0;}" +
-            ".label-title{width:38%;font-weight:700;}" +
-            ".label-value{width:62%;word-break:break-word;}" +
-            "@page{size:auto;margin:10mm;}" +
+            "body{font-family:Arial,sans-serif;margin:0;padding:0;direction:rtl;color:#000;}" +
+            ".label-card{border:1px solid #000;padding:0;width:105mm;height:95mm;box-sizing:border-box;overflow:hidden;}" +
+            ".label-section{display:grid;gap:0;border:1px solid #000;border-bottom:none;}" +
+            ".label-section:first-child{height:15mm;max-height:15mm;overflow:hidden;}" +
+            ".label-section:last-child{border-bottom:1px solid #000;}" +
+            ".label-section--3{grid-template-columns:repeat(3,1fr);}" +
+            ".label-section--4{grid-template-columns:repeat(4,1fr);}" +
+            ".label-cell{border-left:1px solid #000;padding:2px 3px;box-sizing:border-box;text-align:center;display:flex;flex-direction:column;justify-content:flex-start;gap:2px;overflow:hidden;}" +
+            ".label-cell:last-child{border-left:none;}" +
+            ".label-title{font-weight:700;font-size:9px;line-height:1.1;}" +
+            ".label-value{font-size:9px;line-height:1.1;word-break:break-word;}" +
+            ".barcode{display:block;width:100%;height:28px;margin:0 auto;}" +
+            "@page{size:105mm 95mm;margin:0;}" +
             "</style></head><body>" +
             '<div class="label-card">' +
-            '<div class="label-header">מדבקת הכנה</div>' +
-            labelRowsHtml +
+            labelSectionsHtml +
             "</div></body></html>"
         );
     }
+
     saveAndClose() {
         this.PrespictionForm.value.statusRowVal = true;
         this.loadModalAfterClose = true;
@@ -1854,14 +2131,54 @@ export class MershamComponent implements OnInit {
                 this.Solution_Volume = JSON.parse(json["Solution_Volume"]);
                 this.Way_Of_Providing = JSON.parse(json["Way_Of_Providing"]);
                 this.MedList = this.MedListConst = JSON.parse(json["MedList"]);
+                this.mergeDrugMetadataIntoMedList();
+                this.getDrugMetadataFromServer();
                 this.Days_Protocol = JSON.parse(json["Days_Protocol"]);
                 this.Notes = JSON.parse(json["Notes"]);
                 ////////////////////////debugger
             });
     }
+    private getDrugMetadataFromServer() {
+        this.http
+            .post(environment.url + "getDrugsTbl", {
+                _pageIndex: 0,
+                _pageSize: 10000,
+                _FreeText: "",
+                _GroupID: "-1",
+            })
+            .subscribe((Response) => {
+                var json = JSON.parse(Response["d"]);
+                json = JSON.parse(json);
+                const drugData = JSON.parse(json["aaData"]);
+                this.drugMetadataList = drugData.map((drug) => {
+                    return {
+                        MedID: drug.MedID,
+                        MedName: drug.MedName,
+                        StorageConditions: drug.StorageConditions,
+                        ExpireTime: drug.ExpireTime,
+                    };
+                });
+                this.mergeDrugMetadataIntoMedList();
+            });
+    }
+    private mergeDrugMetadataIntoMedList() {
+        if (!this.MedList || !this.drugMetadataList) {
+            return;
+        }
+        this.MedList.forEach((drug) => {
+            const metadata =
+                this.findDrugMetadataByName(drug.value) ||
+                this.findDrugMetadataByName(drug.viewValue) ||
+                this.findDrugMetadataByName(drug.name);
+            if (metadata) {
+                drug.StorageConditions = metadata.StorageConditions;
+                drug.ExpireTime = metadata.ExpireTime;
+            }
+        });
+    }
     public getEmployeesForLabelPrint() {
         this.http
-            .post(environment.url + "GetEmployees", {
+            .post(environment.url + "GetEmployeesMed", {
                 pageIndex: 0,
                 pageSize: 1000,
                 serachTxt: "",

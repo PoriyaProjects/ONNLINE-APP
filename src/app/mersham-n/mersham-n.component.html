@@ -3034,12 +3034,48 @@
                             {{ selectedRowForPrint?.MedListVal || "-" }}
                         </div>
                         <div>
-                            <strong>מטופל:</strong>
+                            <strong>מס' אצווה:</strong>
+                            {{ selectedRowForPrint?.rowIdPreVal || "-" }}
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="row-label-summary">
+                        <div>
+                            <strong>שם מטופל:</strong>
                             {{ getPatientFullName() || "-" }}
                         </div>
                         <div>
-                            <strong>מס' אצווה:</strong>
-                            {{ selectedRowForPrint?.rowIdPreVal || "-" }}
+                            <strong>ת.ז מטופל:</strong>
+                            {{ getPatientIdentifierDisplay() || "-" }}
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="row-label-summary">
+                        <div>
+                            <strong>דרך מתן:</strong>
+                            {{ selectedRowForPrint?.Way_Of_ProvidingVal || "-" }}
+                        </div>
+                        <div>
+                            <strong>מינון:</strong>
+                            {{ getDoseLabelDisplay(selectedRowForPrint) || "-" }}
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="row-label-summary">
+                        <div>
+                            <strong>נפח סופי:</strong>
+                            {{ getFinalVolumeLabelDisplay(selectedRowForPrint) || "-" }}
+                        </div>
+                        <div>
+                            <strong>תמיסת מיהול:</strong>
+                            {{ selectedRowForPrint?.SolutionVal || "-" }}
+                        </div>
+                        <div>
+                            <strong>קצב מתן:</strong>
+                            {{ getAdministrationRateLabelDisplay(selectedRowForPrint) || "-" }}
                         </div>
                     </div>
                 </div>
