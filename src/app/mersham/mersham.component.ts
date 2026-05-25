@@ -1397,7 +1397,7 @@ export class MershamComponent implements OnInit {
             "body{font-family:Arial,sans-serif;margin:0;padding:0;direction:rtl;color:#000;width:81mm;height:69.5mm;}" +
             ".label-card{border:1px solid #000;padding:0;width:81mm;height:69.5mm;box-sizing:border-box;overflow:hidden;margin:0 auto;display:flex;flex-direction:column;}" +
             ".label-section{display:grid;gap:0;border-left:1px solid #000;border-right:1px solid #000;border-top:1px solid #000;border-bottom:none;flex:1 1 0;min-height:0;}" +
-            ".label-section:first-child{height:20mm;max-height:20mm;flex:0 0 20mm;overflow:hidden;}" +
+            ".label-section:first-child{height:2cm;min-height:2cm;max-height:2cm;flex:0 0 2cm;overflow:hidden;}" +
             ".label-section:first-child .label-cell{justify-content:center;align-items:center;text-align:center;}" +
             ".label-section:last-child{border-bottom:1px solid #000;}" +
             ".label-section--3{grid-template-columns:repeat(3,1fr);}" +
