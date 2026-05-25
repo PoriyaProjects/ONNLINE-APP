@@ -1364,19 +1364,19 @@ export class MershamComponent implements OnInit {
             '<!doctype html><html dir="rtl" lang="he"><head><meta charset="utf-8" />' +
             "<title>מדבקת הכנה</title>" +
             "<style>" +
-            "body{font-family:Arial,sans-serif;margin:0;padding:0;direction:rtl;color:#000;}" +
-            ".label-card{border:1px solid #000;padding:0;width:105mm;height:95mm;box-sizing:border-box;overflow:hidden;}" +
-            ".label-section{display:grid;gap:0;border:1px solid #000;border-bottom:none;}" +
-            ".label-section:first-child{height:15mm;max-height:15mm;overflow:hidden;}" +
+            "body{font-family:Arial,sans-serif;margin:0;padding:0;direction:rtl;color:#000;width:81mm;height:69mm;}" +
+            ".label-card{border:1px solid #000;padding:0;width:81mm;height:69mm;box-sizing:border-box;overflow:hidden;margin:0 auto;display:flex;flex-direction:column;}" +
+            ".label-section{display:grid;gap:0;border-left:1px solid #000;border-right:1px solid #000;border-top:1px solid #000;border-bottom:none;flex:1 1 0;min-height:0;}" +
+            ".label-section:first-child{height:15mm;max-height:15mm;flex:0 0 15mm;overflow:hidden;}" +
             ".label-section:last-child{border-bottom:1px solid #000;}" +
             ".label-section--3{grid-template-columns:repeat(3,1fr);}" +
             ".label-section--4{grid-template-columns:repeat(4,1fr);}" +
-            ".label-cell{border-left:1px solid #000;padding:2px 3px;box-sizing:border-box;text-align:center;display:flex;flex-direction:column;justify-content:flex-start;gap:2px;overflow:hidden;}" +
+            ".label-cell{border-left:1px solid #000;padding:2px;box-sizing:border-box;text-align:center;display:flex;flex-direction:column;justify-content:flex-start;gap:1px;overflow:hidden;min-height:0;}" +
             ".label-cell:last-child{border-left:none;}" +
-            ".label-title{font-weight:700;font-size:9px;line-height:1.1;}" +
-            ".label-value{font-size:9px;line-height:1.1;word-break:break-word;}" +
-            ".barcode{display:block;width:100%;height:28px;margin:0 auto;}" +
-            "@page{size:105mm 95mm;margin:0;}" +
+            ".label-title{font-weight:700;font-size:8px;line-height:1.05;}" +
+            ".label-value{font-size:8px;line-height:1.05;word-break:break-word;overflow-wrap:anywhere;}" +
+            ".barcode{display:block;width:100%;height:22px;margin:0 auto;}" +
+            "@page{size:85mm 75mm;margin:3mm 2mm;}" +
             "</style></head><body>" +
             '<div class="label-card">' +
             labelSectionsHtml +

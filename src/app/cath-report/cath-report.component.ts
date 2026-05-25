@@ -142,12 +142,13 @@ export class CathReportComponent implements OnInit {
       selectedPeriod: [null], // Initialize with null or a default value
       fromDate: Date,
       toDate: Date,
-      quarterDate: Date
+      quarterDate: Date,
+      cathType: ['צנתר שתן']  // 👈 ADD THIS
     });
     console.log("init Cath");
   }
 
-  fetchCathReport(date1: string, date2: string) {
+  fetchCathReport(date1: string, date2: string, cathType: string) {
     let selectedDepart = this.form.get('MedicalDepartment').value;
     console.log("selectedDepart" , selectedDepart);
 
@@ -158,7 +159,8 @@ export class CathReportComponent implements OnInit {
     const url = `${environment.url}FetchCathReport`;
     let data = {
       DateIn: date1,
-      DateOut: date2
+      DateOut: date2,
+      CathType: cathType
     }
     console.log(data.DateIn, data.DateOut);
     this.http.post<CathMonitor[]>(url, data).subscribe({
@@ -191,6 +193,60 @@ export class CathReportComponent implements OnInit {
     });
   }
 
+
+  formatDate(value: unknown): string {
+    if (value == null || value === '') {
+      return '';
+    }
+    if (value instanceof Date) {
+      return this.datePipe.transform(value, 'dd/MM/yyyy') ?? '';
+    }
+
+    const str = String(value).trim();
+
+    const dotNetMatch = str.match(/\/Date\((-?\d+)\)\//);
+    if (dotNetMatch) {
+      const parsed = new Date(parseInt(dotNetMatch[1], 10));
+      if (!isNaN(parsed.getTime())) {
+        return this.datePipe.transform(parsed, 'dd/MM/yyyy') ?? '';
+      }
+    }
+
+    const dateOnly = str.split(/[\sT]/)[0];
+    const dmy = dateOnly.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})$/);
+    if (dmy) {
+      return `${dmy[1].padStart(2, '0')}/${dmy[2].padStart(2, '0')}/${dmy[3]}`;
+    }
+
+    const iso = dateOnly.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (iso) {
+      return `${iso[3]}/${iso[2]}/${iso[1]}`;
+    }
+
+    const parsed = new Date(str);
+    if (!isNaN(parsed.getTime())) {
+      return this.datePipe.transform(parsed, 'dd/MM/yyyy') ?? '';
+    }
+
+    return dateOnly;
+  }
+
+  formatTime(value: unknown): string {
+    if (value == null || value === '') {
+      return '';
+    }
+    if (value instanceof Date) {
+      return this.datePipe.transform(value, 'HH:mm:ss') ?? '';
+    }
+
+    const str = String(value).trim();
+    const match = str.match(/(\d{1,2}):(\d{2}):(\d{2})/);
+    if (match) {
+      return `${match[1].padStart(2, '0')}:${match[2]}:${match[3]}`;
+    }
+
+    return str.split('.')[0].substring(0, 8);
+  }
 
 
   onSearch() {
@@ -233,13 +289,13 @@ export class CathReportComponent implements OnInit {
       toDate = this.datePipe.transform(dateNow, 'yyyy-MM-dd');
     }
 
-
+    let cathType = this.form.get('cathType').value;  // 👈 ADD THIS
 
       if(fromDate){
         const formattedFromDate = this.datePipe.transform(fromDate, 'yyyy-MM-dd');
         const formattedToDate = this.datePipe.transform(toDate, 'yyyy-MM-dd');
         console.log(formattedFromDate, formattedToDate); // For debugging
-        this.fetchCathReport(formattedFromDate, formattedToDate);
+        this.fetchCathReport(formattedFromDate, formattedToDate, cathType);  // 👈 pass it
 
       }else{
         console.log("1ssad")
