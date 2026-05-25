@@ -1643,8 +1643,8 @@ export class MershamNComponent implements OnInit {
             ".label-column--stack .label-cell{flex:1 1 0;border-left:none;min-height:0;}" +
             ".label-column--stack .label-cell+.label-cell{border-top:1px solid #000;}" +
             ".label-column--drug .label-cell{flex:1 1 0;border-left:none;justify-content:center;}" +
-            ".label-cell--drug .label-title{font-size:9px;}" +
-            ".label-cell--drug .label-value{font-size:15px;font-weight:700;line-height:1.1;}" +
+            ".label-cell--drug .label-title{font-size:11px;}" +
+            ".label-cell--drug .label-value{font-size:11px;font-weight:700;line-height:1.1;}" +
             ".label-cell{border-left:1px solid #000;padding:2px 3px;box-sizing:border-box;text-align:center;display:flex;flex-direction:column;justify-content:flex-start;align-items:stretch;gap:2px;overflow:hidden;}" +
             ".label-cell:last-child{border-left:none;}" +
             ".label-title{font-weight:700;font-size:9px;line-height:1.1;}" +
