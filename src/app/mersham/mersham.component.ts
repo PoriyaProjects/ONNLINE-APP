@@ -1397,7 +1397,8 @@ export class MershamComponent implements OnInit {
             "body{font-family:Arial,sans-serif;margin:0;padding:0;direction:rtl;color:#000;width:81mm;height:69.5mm;}" +
             ".label-card{border:1px solid #000;padding:0;width:81mm;height:69.5mm;box-sizing:border-box;overflow:hidden;margin:0 auto;display:flex;flex-direction:column;}" +
             ".label-section{display:grid;gap:0;border-left:1px solid #000;border-right:1px solid #000;border-top:1px solid #000;border-bottom:none;flex:1 1 0;min-height:0;}" +
-            ".label-section:first-child{height:30mm;max-height:30mm;flex:0 0 30mm;overflow:hidden;}" +
+            ".label-section:first-child{height:20mm;max-height:20mm;flex:0 0 20mm;overflow:hidden;}" +
+            ".label-section:first-child .label-cell{justify-content:center;align-items:center;text-align:center;}" +
             ".label-section:last-child{border-bottom:1px solid #000;}" +
             ".label-section--3{grid-template-columns:repeat(3,1fr);}" +
             ".label-section--4{grid-template-columns:repeat(4,1fr);}" +
@@ -1409,7 +1410,7 @@ export class MershamComponent implements OnInit {
             ".label-column--drug .label-cell{flex:1 1 0;border-left:none;justify-content:center;}" +
             ".label-cell--drug .label-title{font-size:9px;}" +
             ".label-cell--drug .label-value{font-size:15px;font-weight:700;line-height:1.1;}" +
-            ".label-cell{border-left:1px solid #000;padding:2px;box-sizing:border-box;text-align:center;display:flex;flex-direction:column;justify-content:flex-start;gap:1px;overflow:hidden;min-height:0;}" +
+            ".label-cell{border-left:1px solid #000;padding:2px;box-sizing:border-box;text-align:center;display:flex;flex-direction:column;justify-content:flex-start;align-items:stretch;gap:1px;overflow:hidden;min-height:0;}" +
             ".label-cell:last-child{border-left:none;}" +
             ".label-title{font-weight:700;font-size:8px;line-height:1.05;}" +
             ".label-value{font-size:8px;line-height:1.05;word-break:break-word;overflow-wrap:anywhere;}" +
