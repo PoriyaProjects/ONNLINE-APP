@@ -63,8 +63,8 @@ export class CommercialSupportGatheringComponent implements OnInit {
     // Map GatheringFiles to their respective form controls based on Type
     let gatheringPlanFile = null;
     let gatheringOutcomeFile = null;
-    let gatheringSupportFile = null;
-    let gatheringInquiriesFile = null;
+    const gatheringSupportFiles: any[] = [];
+    const gatheringInquiriesFiles: any[] = [];
 
     if (data?.GatheringFiles && Array.isArray(data.GatheringFiles)) {
       data.GatheringFiles.forEach(file => {
@@ -76,10 +76,10 @@ export class CommercialSupportGatheringComponent implements OnInit {
             gatheringOutcomeFile = file;
             break;
           case 'GatheringSupport':
-            gatheringSupportFile = file;
+            gatheringSupportFiles.push(file);
             break;
           case 'GatheringInquiries':
-            gatheringInquiriesFile = file;
+            gatheringInquiriesFiles.push(file);
             break;
         }
       });
@@ -98,8 +98,8 @@ export class CommercialSupportGatheringComponent implements OnInit {
       GatheringLocation: new FormControl(data?.GatheringLocation, null),
       GatheringPlan: new FormControl(gatheringPlanFile, Validators.required),
       GatheringOutcome: new FormControl(gatheringOutcomeFile, Validators.required),
-      GatheringSupport: new FormControl(gatheringSupportFile, null),
-      GatheringInquiries: new FormControl(gatheringInquiriesFile, Validators.required),
+      GatheringSupport: new FormControl(gatheringSupportFiles, null),
+      GatheringInquiries: new FormControl(gatheringInquiriesFiles, Validators.required),
       SupportOptions: supportOptionsArray,
       Approved: new FormControl(data?.Approved, null),
       DecisionDate: new FormControl(data?.DecisionDate, null),
@@ -124,6 +124,10 @@ export class CommercialSupportGatheringComponent implements OnInit {
 
   getFileUrl(file: any): string {
     if (!file) return '';
+
+    if (file instanceof File) {
+      return URL.createObjectURL(file);
+    }
 
     // If file is a base64 string, return it directly
     if (typeof file === 'string' && file.startsWith('data:')) {
@@ -166,6 +170,21 @@ export class CommercialSupportGatheringComponent implements OnInit {
     }
 
     return '';
+  }
+
+  getFilesArray(field: string): any[] {
+    if (!this.GatheringRequestDto) {
+      return [];
+    }
+    const value = this.GatheringRequestDto.get(field)?.value;
+    if (!value) {
+      return [];
+    }
+    return Array.isArray(value) ? value : [value];
+  }
+
+  private isExistingFileRecord(file: any): boolean {
+    return !(file instanceof File) && !!file?.ID;
   }
 
   addSupportOption() {
@@ -295,7 +314,17 @@ export class CommercialSupportGatheringComponent implements OnInit {
 
     // ✅ append everything except the dates
     Object.keys(raw).forEach(key => {
-      if (key === 'GatheringDate' || key === 'GatheringEndDate' || key === 'DecisionDate' || key === 'SupportOptions' || key === 'Draft') {
+      if (
+        key === 'GatheringDate' ||
+        key === 'GatheringEndDate' ||
+        key === 'DecisionDate' ||
+        key === 'SupportOptions' ||
+        key === 'Draft' ||
+        key === 'GatheringPlan' ||
+        key === 'GatheringOutcome' ||
+        key === 'GatheringSupport' ||
+        key === 'GatheringInquiries'
+      ) {
         return;
       }
       const value = raw[key];
@@ -319,8 +348,34 @@ export class CommercialSupportGatheringComponent implements OnInit {
     );
     formData.append(
       'GatheringSupport',
-      JSON.stringify(this.GatheringRequestDto.value.GatheringSupport)
+      JSON.stringify(this.getFilesArray('GatheringSupport').filter(file => this.isExistingFileRecord(file)))
     );
+    formData.append(
+      'GatheringInquiries',
+      JSON.stringify(this.getFilesArray('GatheringInquiries').filter(file => this.isExistingFileRecord(file)))
+    );
+
+    const gatheringPlan = this.GatheringRequestDto.value.GatheringPlan;
+    if (gatheringPlan instanceof File) {
+      formData.append('GatheringPlanFile', gatheringPlan, gatheringPlan.name);
+    }
+
+    const gatheringOutcome = this.GatheringRequestDto.value.GatheringOutcome;
+    if (gatheringOutcome instanceof File) {
+      formData.append('GatheringOutcomeFile', gatheringOutcome, gatheringOutcome.name);
+    }
+
+    this.getFilesArray('GatheringSupport')
+      .filter(file => file instanceof File)
+      .forEach((file: File) => {
+        formData.append('GatheringSupportFiles', file, file.name);
+      });
+
+    this.getFilesArray('GatheringInquiries')
+      .filter(file => file instanceof File)
+      .forEach((file: File) => {
+        formData.append('GatheringInquiriesFiles', file, file.name);
+      });
 
     formData.append('Draft', type.toString());
 
@@ -344,33 +399,41 @@ export class CommercialSupportGatheringComponent implements OnInit {
       return;
     }
 
-    const originalFile = input.files[0];
-
-    // Validation
+    const selectedFiles = Array.from(input.files);
     const maxSizeMB = 5;
-    if (originalFile.size > maxSizeMB * 1024 * 1024) {
-      this.openSnackBar(`הקובץ גדול מ־${maxSizeMB}MB`);
+    const oversizedFile = selectedFiles.find(file => file.size > maxSizeMB * 1024 * 1024);
+    if (oversizedFile) {
+      this.openSnackBar(`הקובץ ${oversizedFile.name} גדול מ־${maxSizeMB}MB`);
       input.value = '';
       return;
     }
 
-    // Preserve extension
-    const extension = originalFile.name.split('.').pop();
-    const newFileName = `${field}.${extension}`;
-
-    // 🔴 THIS is the only valid way to "rename" a file
-    const renamedFile = new File(
-      [originalFile],
-      newFileName,
-      { type: originalFile.type }
-    );
-
-    // Store the File object in the form
-    this.GatheringRequestDto.get(field)?.setValue(renamedFile);
+    const isMultiFileField = field === 'GatheringSupport' || field === 'GatheringInquiries';
+    if (isMultiFileField) {
+      const existingFiles = this.getFilesArray(field);
+      this.GatheringRequestDto.get(field)?.setValue([...existingFiles, ...selectedFiles]);
+    } else {
+      this.GatheringRequestDto.get(field)?.setValue(selectedFiles[0]);
+    }
+    this.GatheringRequestDto.get(field)?.markAsDirty();
+    this.GatheringRequestDto.get(field)?.updateValueAndValidity();
+    input.value = '';
   }
 
-  removeFile(field: string, fileInput?: HTMLInputElement) {
-    this.GatheringRequestDto.get(field)?.setValue(null);
+  removeFile(field: string, fileInput?: HTMLInputElement, fileIndex?: number) {
+    const isMultiFileField = field === 'GatheringSupport' || field === 'GatheringInquiries';
+    if (isMultiFileField) {
+      const files = this.getFilesArray(field);
+      if (fileIndex === undefined) {
+        this.GatheringRequestDto.get(field)?.setValue([]);
+      } else {
+        this.GatheringRequestDto.get(field)?.setValue(files.filter((_, idx) => idx !== fileIndex));
+      }
+    } else {
+      this.GatheringRequestDto.get(field)?.setValue(null);
+    }
+    this.GatheringRequestDto.get(field)?.markAsDirty();
+    this.GatheringRequestDto.get(field)?.updateValueAndValidity();
     if (fileInput) {
       fileInput.value = '';
     }
@@ -407,8 +470,9 @@ export class CommercialSupportGatheringComponent implements OnInit {
     }
   }
 
-  viewGatheringFile(fileControlName: string) {
-    const file = this.GatheringRequestDto.get(fileControlName)?.value;
+  viewGatheringFile(fileControlName: string, fileIndex: number = 0) {
+    const controlValue = this.GatheringRequestDto.get(fileControlName)?.value;
+    const file = Array.isArray(controlValue) ? controlValue[fileIndex] : controlValue;
     if (!file) {
       this.openSnackBar('לא נמצא קובץ');
       return;

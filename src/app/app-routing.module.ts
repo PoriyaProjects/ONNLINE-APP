@@ -103,6 +103,7 @@ import { WagonComponent } from "./wagon/wagon.component";
 import { SwitchesComponent } from "./switches/switches.component";
 import { HrDashboardComponent } from "./hr-dashboard/hr-dashboard.component";
 import { PatientStikersComponent } from "./patient-stikers/patient-stikers.component";
+import { ProfileDeptAssociationComponent } from "./profile-dept-association/profile-dept-association.component";
 import { NortonEstimateComponent } from './norton-estimate/norton-estimate.component';
 import { CAMEstimateComponent } from './cam-estimate/cam-estimate.component';
 import { DialysisReportComponent } from './dialysis-report/dialysis-report.component';
@@ -145,6 +146,7 @@ import { CommercialSupportFormDialogComponent } from "./form-dashboard/commercia
 import { CommercialSupportResearchDialogComponent } from "./form-dashboard/commercial-support-form-dashboard/commercial-support-research-dialog/commercial-support-research-dialog.component";
 import { CommercialSupportPresentationDialogComponent } from "./form-dashboard/commercial-support-form-dashboard/commercial-support-presentation-dialog/commercial-support-presentation-dialog.component";
 import { CommercialSupportGatheringComponent } from "./form-dashboard/commercial-support-form-dashboard/commercial-support-gathering/commercial-support-gathering.component";
+import { CommercialSupportProcurementDialogComponent } from "./form-dashboard/commercial-support-form-dashboard/commercial-support-procurement-dialog/commercial-support-procurement-dialog.component";
 import { ServiceUnitEmailListComponent } from './emailsdashboard/service-unit-email-list/service-unit-email-list.component';
 import { ServiceUnitEmailListDialogComponent } from './emailsdashboard/service-unit-email-list/service-unit-email-list-dialog/service-unit-email-list-dialog.component';
 import { HospitalIncomeDashbComponent } from './hospital-income-dashb/hospital-income-dashb.component';
@@ -163,6 +165,7 @@ import { AiLettersDashboardComponent } from "./ai-letters-dashboard/ai-letters-d
 import { MriScheduleComponent } from "./mri-schedule/mri-schedule.component";
 import { InfectionControlComponent } from "./infection-control/infection-control.component";
 import { EmergencyRoomReportComponent } from "./emergency-room-report/emergency-room-report.component";
+import { ImagingPerformanceDashboardComponent } from "./imaging-performance-dashboard/imaging-performance-dashboard.component";
 import { HitoFormsDashboardComponent } from "./hito-forms-dashboard/hito-forms-dashboard.component";
 import { MedicalInternsDashboardComponent } from "./employees-manage-dash/medical-interns-dashboard/medical-interns-dashboard.component";
 import { MedicalInternAddUpdateComponent } from "./employees-manage-dash/medical-interns-dashboard/medical-intern-add-update/medical-intern-add-update.component";
@@ -180,6 +183,7 @@ const routes: Routes = [
     { path: "surgeriesDashboard", component: SurgeriesDashboradComponent },
     { path: "dimotactivity", component: DimotActivityDashboardComponent },
     { path: "patientstikers", component: PatientStikersComponent },
+    { path: "profile-dept-association", component: ProfileDeptAssociationComponent },
     { path: "clinicsrequests", component: ClinicsRequestsComponent },
     { path: 'switches', component: SwitchesComponent },
     { path: "dashboard", component: DashboardComponent },
@@ -344,6 +348,7 @@ const routes: Routes = [
     { path: "commercial-support-research-dialog", component: CommercialSupportResearchDialogComponent },
     { path: "commercial-support-presentation-dialog", component: CommercialSupportPresentationDialogComponent },
     { path: "commercial-support-gathering-dialog", component: CommercialSupportGatheringComponent },
+    { path: "commercial-support-procurement-dialog", component: CommercialSupportProcurementDialogComponent },
     { path: "LabTests", component: LabTestsComponent },
     { path: "cpr-newbord-dashborad", component: CprNewbordDashboradComponent },
     { path: "cpr-newborn-form", component: CprNewbornFormComponent },
@@ -368,6 +373,7 @@ const routes: Routes = [
     { path: "mri-schedule", component: MriScheduleComponent },
     { path: "InfectionControl", component: InfectionControlComponent },
     { path: "EmergencyRoomReport", component: EmergencyRoomReportComponent },
+    { path: "ImagingPerformanceDashboard", component: ImagingPerformanceDashboardComponent },
     { path: "hito-forms-dashboard", component: HitoFormsDashboardComponent },
     { path: "medical-interns-dashboard", component: MedicalInternsDashboardComponent },
     { path: "medical-intern-add-update", component: MedicalInternAddUpdateComponent },

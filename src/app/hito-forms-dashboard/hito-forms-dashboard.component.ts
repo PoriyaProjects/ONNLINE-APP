@@ -37,12 +37,13 @@ export class HitoFormsDashboardComponent implements OnInit {
   allForms: string[] = [];
 
   /* ── Questions mode ── */
-  selectedQuestionForm: string | null = null;
+  selectedQuestionForm = '';
   questionsLoading = false;
   questionsError: string | null = null;
   allQuestions: HitoFormQuestionItem[] = [];
   selectedQuestionIds: number[] = [];
   questionSearch = '';
+  questionFiltersDirty = false;
 
   get filteredQuestions(): HitoFormQuestionItem[] {
     const s = (this.questionSearch || '').trim().toLowerCase();
@@ -112,6 +113,11 @@ export class HitoFormsDashboardComponent implements OnInit {
     if (m <= 6) return 'Q2';
     if (m <= 9) return 'Q3';
     return 'Q4';
+  }
+
+  /** Default form for questions mode to avoid heavy all-forms queries. */
+  private getDefaultQuestionForm(): string {
+    return (this.selectedForms[0] || this.allForms[0] || '').trim();
   }
 
   constructor(private svc: HitoFormsDashboardService) {}
@@ -224,6 +230,9 @@ export class HitoFormsDashboardComponent implements OnInit {
         this.allQuarters = quarters || [];
         this.allDepartments = departments || [];
         this.allForms = names || [];
+        if (!this.selectedQuestionForm) {
+          this.selectedQuestionForm = this.getDefaultQuestionForm();
+        }
         if (this.selectedYears.length === 0 && this.allYears.length > 0) {
           const cy = this.getCurrentYear();
           this.selectedYears = this.allYears.includes(cy) ? [cy] : [this.allYears[this.allYears.length - 1]];
@@ -246,6 +255,10 @@ export class HitoFormsDashboardComponent implements OnInit {
 
   /* ── Toggle with auto-apply ── */
   private scheduleApply(): void {
+    if (this.viewMode === 'questions') {
+      this.questionFiltersDirty = true;
+      return;
+    }
     if (this.applyTimeout) clearTimeout(this.applyTimeout);
     this.applyTimeout = setTimeout(() => { this.applyTimeout = null; this.applyFilters(); }, 400);
   }
@@ -346,28 +359,32 @@ export class HitoFormsDashboardComponent implements OnInit {
     this.detailSearch = '';
     if (mode === 'questions') {
       if (!this.selectedQuestionForm) {
-        // Best-effort default: first selected form; otherwise first known form
-        this.selectedQuestionForm = (this.selectedForms[0] || this.allForms[0] || null);
+        this.selectedQuestionForm = this.getDefaultQuestionForm();
       }
-      if (this.selectedQuestionForm) this.loadQuestionsForForm(this.selectedQuestionForm);
-      this.applyQuestionMode();
+      this.loadQuestionsForForm(this.selectedQuestionForm);
+      this.questionFiltersDirty = true;
+      this.chartRows = [];
+      this.error = null;
+      this.loading = false;
     } else {
       this.applyFilters();
     }
   }
 
   onQuestionFormChange(formName: string): void {
-    this.selectedQuestionForm = formName || null;
+    this.selectedQuestionForm = (formName || '').trim();
     this.selectedQuestionIds = [];
-    this.loadQuestionsForForm(formName);
-    this.applyQuestionMode();
+    this.loadQuestionsForForm(this.selectedQuestionForm);
+    this.questionFiltersDirty = true;
+    this.chartRows = [];
+    this.error = null;
+    this.loading = false;
   }
 
   private loadQuestionsForForm(formName: string): void {
-    if (!formName) return;
     this.questionsLoading = true;
     this.questionsError = null;
-    this.svc.getQuestionsByForm({ formName_Name: formName }).subscribe({
+    this.svc.getQuestionsByForm({ formName_Name: (formName || '').trim() }).subscribe({
       next: (qs) => {
         this.allQuestions = qs || [];
         this.questionsLoading = false;
@@ -389,43 +406,47 @@ export class HitoFormsDashboardComponent implements OnInit {
     return this.selectedQuestionIds.includes(id);
   }
 
+  loadQuestionChart(): void {
+    this.questionFiltersDirty = false;
+    this.applyQuestionMode();
+  }
+
   private applyQuestionMode(): void {
     const years = this.getEffectiveYears();
-    const quarters = this.getEffectiveQuarters();
     const formName = (this.selectedQuestionForm || '').trim();
+    const itemIdsCsv = this.selectedQuestionIds.length > 0 ? this.selectedQuestionIds.join(',') : '';
 
-    // Placeholder if backend not ready or no form selected
-    if (!formName) {
+    // Guard against very heavy all-forms query without narrowing by questions.
+    if (!formName && !itemIdsCsv) {
       this.chartRows = [];
-      this.chartColumns = ['שאלה', 'אחוז', { role: 'annotation', type: 'string' }];
+      this.chartColumns = ['שאלה', 'ציון', { role: 'annotation', type: 'string' }];
       this.chartSeriesLabels = [];
       this.chartIsStacked = false;
       this.loading = false;
+      this.error = 'בחר לפחות שאלה אחת כשלא נבחר טופס, ואז לחץ "טען גרף"';
       return;
     }
 
     this.loading = true;
     this.error = null;
-    const itemIdsCsv = this.selectedQuestionIds.length > 0 ? this.selectedQuestionIds.join(',') : '';
-    const departmentFilter = this.selectedDepartments.join(',');
 
     this.svc.getQuestionScores({
       year: years.join(','),
-      quarter: quarters.join(','),
       formName_Name: formName,
-      itemIdsCsv,
-      departmentFilter
+      itemIdsCsv
     }).subscribe({
       next: (rows: HitoQuestionScoreRow[]) => {
         const data = rows || [];
         this.chartIsStacked = false;
         this.chartSeriesLabels = [];
         this.chartType = 'ColumnChart';
-        this.chartColumns = ['שאלה', 'אחוז', { role: 'annotation', type: 'string' }];
+        this.chartColumns = ['שאלה', 'ציון', { role: 'annotation', type: 'string' }];
         this.chartRows = data.map(r => {
-          const v = Number(r.percentPositive) || 0;
+          const rawGrade = (r as any)?.grade ?? (r as any)?.Grade ?? r.percentPositive;
+          const v = Number(rawGrade) || 0;
           const ann = v > 0 ? `${v.toFixed(0)} %` : '';
-          return [r.itemText || String(r.itemId), v, ann];
+          const label = ((r as any)?.question ?? (r as any)?.Question ?? r.itemText) || String(r.itemId);
+          return [label, v, ann];
         });
 
         // For detail modal departments list, keep chartData compatible

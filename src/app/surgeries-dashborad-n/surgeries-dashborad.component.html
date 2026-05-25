@@ -1,6 +1,6 @@
 <div class="surgeries-dashborad-root">
 
-  <div *ngIf="showFloatingBetaBanner && !isLoading" class="beta-banner beta-banner--floating" role="status"
+  <!-- <div *ngIf="showFloatingBetaBanner && !isLoading" class="beta-banner beta-banner--floating" role="status"
     aria-live="polite">
     <mat-icon class="beta-banner__icon" aria-hidden="true">science</mat-icon>
     <div class="beta-banner__body">
@@ -20,7 +20,7 @@
       matTooltip="סגור הודעה" matTooltipPosition="below" aria-label="סגור הודעת גרסת בטא">
       <mat-icon>close</mat-icon>
     </button>
-  </div>
+  </div> -->
 
   <div class="dash" [class.dark]="isDark" dir="rtl">
 
@@ -334,6 +334,23 @@
           </div>
         </div>
 
+        <div class="top-quick-metrics-wrap" *ngIf="showTopQuickMainSlotSwitcher">
+          <div class="top-quick-metrics-box">
+            <mat-button-toggle-group name="quickMetricsMainSlot" aria-label="בחירת אזור תוכן ראשי"
+              class="mat-button-toggle-group custom-toggle-group" [value]="topQuickMainSlotToggleValue"
+              (change)="onTopQuickMainSlotChange($event.value)">
+              <mat-button-toggle value="wait" class="top-quick-slot top-quick-slot--wait"
+                matTooltip="זמני המתנה — אזור ייעודי" matTooltipPosition="below">זמני המתנה</mat-button-toggle>
+              <mat-button-toggle value="performed" class="top-quick-slot top-quick-slot--performed"
+                matTooltip="דשבורד ניתוחים שבוצעו" matTooltipPosition="below">ניתוחים שבוצעו</mat-button-toggle>
+              <mat-button-toggle value="revenue" class="top-quick-slot top-quick-slot--revenue"
+                matTooltip="הכנסות — אזור ייעודי" matTooltipPosition="below">הכנסות</mat-button-toggle>
+              <mat-button-toggle value="cancellations" class="top-quick-slot top-quick-slot--cancellations"
+                matTooltip="ביטולים — אזור ייעודי" matTooltipPosition="below">ביטולים</mat-button-toggle>
+            </mat-button-toggle-group>
+          </div>
+        </div>
+
         <!-- Diagnosis Selector – עיצוב ייחודי -->
         <!-- <div class="wing-and-theme-row" dir="rtl">
         <div class="custom-dropdown" [class.active]="isDropdownOpen">
@@ -408,63 +425,66 @@
 
     <!-- ================= MAIN CONTENT: GRAPH + TABLE ================= -->
     <div class="main-content" [class.main-content--compare-dept-layout]="mainMetricMode === 'compare-departments'"
-      [class.with-top-sidebar]="showTopDepartmentsSidebar" *ngIf="isDataLoaded">
+      [class.with-top-sidebar]="showTopDepartmentsSidebar && topQuickMainSlot === 'performed'"
+      [class.main-content--quick-subview]="showTopQuickMainSlotSwitcher && topQuickMainSlot !== 'performed'"
+      *ngIf="isDataLoaded || (showTopQuickMainSlotSwitcher && topQuickMainSlot !== 'performed')">
 
-      <div class="main-content-chart-table">
-        <!-- ===== GRAPH SECTION (2/3) ===== -->
-        <div class="graph-section">
-          <div class="panel panel-graph">
-            <div class="panel-title">
-              <span class="title-row">
-                <!-- <span>מדדי ניתוחים (כמות וזמן)</span> -->
+      <ng-container *ngIf="topQuickMainSlot === 'performed'">
+        <div class="main-content-chart-table">
+          <!-- ===== GRAPH SECTION (2/3) ===== -->
+          <div class="graph-section">
+            <div class="panel panel-graph">
+              <div class="panel-title">
+                <span class="title-row">
+                  <!-- <span>מדדי ניתוחים (כמות וזמן)</span> -->
 
-                <div class="metrics-container">
-                  <mat-button-toggle-group name="chartView" aria-label="Chart View" class="custom-toggle-group"
-                    [value]="mainMetricToggleGroupValue()" (change)="onMainMetricToggle($event.value)">
+                  <div class="metrics-container">
+                    <mat-button-toggle-group name="chartView" aria-label="Chart View" class="custom-toggle-group"
+                      [value]="mainMetricToggleGroupValue()" (change)="onMainMetricToggle($event.value)">
 
-                    <div class="toggle-icon-prefix">
-                      <mat-icon>{{ chartType === 'ColumnChart' ? 'bar_chart' : 'show_chart' }}</mat-icon>
-                    </div>
+                      <div class="toggle-icon-prefix">
+                        <mat-icon>{{ chartType === 'ColumnChart' ? 'bar_chart' : 'show_chart' }}</mat-icon>
+                      </div>
 
-                    <mat-button-toggle value="count" matTooltip="מדדי נפח פעילות: כמות ניתוחים/חדר/מחלקה על פני שנים"
-                      matTooltipPosition="below">
-                      <mat-icon aria-hidden="true">analytics</mat-icon>
-                      <span>מדדי ניתוחים</span>
-                    </mat-button-toggle>
+                      <mat-button-toggle value="count" matTooltip="מדדי נפח פעילות: כמות ניתוחים/חדר/מחלקה על פני שנים"
+                        matTooltipPosition="below">
+                        <mat-icon aria-hidden="true">analytics</mat-icon>
+                        <span>מדדי ניתוחים</span>
+                      </mat-button-toggle>
 
-                    <mat-button-toggle value="duration" (change)="openTimesModal()"
-                      matTooltip="מדדי זמני חדר: משכי ניתוח, כניסה ראשונה, סיום אחרון, SETUP ועוד"
-                      matTooltipPosition="below">
-                      <mat-icon aria-hidden="true">schedule</mat-icon>
-                      <span>זמני חדר</span>
-                    </mat-button-toggle>
+                      <mat-button-toggle value="duration" (change)="openTimesModal()"
+                        matTooltip="מדדי זמני חדר: משכי ניתוח, כניסה ראשונה, סיום אחרון, SETUP ועוד"
+                        matTooltipPosition="below">
+                        <mat-icon aria-hidden="true">schedule</mat-icon>
+                        <span>זמני חדר</span>
+                      </mat-button-toggle>
 
-                    <mat-button-toggle value="utilization"
-                      matTooltip="ניצולת חדרי ניתוח: כמה חדרים פתוחים/סוגרים, ימים מלאים וניצול ליום"
-                      matTooltipPosition="below">
-                      <mat-icon aria-hidden="true">percent</mat-icon>
-                      <span>ניצולת חדר</span>
-                    </mat-button-toggle>
+                      <mat-button-toggle value="utilization"
+                        matTooltip="ניצולת חדרי ניתוח: כמה חדרים פתוחים/סוגרים, ימים מלאים וניצול ליום"
+                        matTooltipPosition="below">
+                        <mat-icon aria-hidden="true">percent</mat-icon>
+                        <span>ניצולת חדר</span>
+                      </mat-button-toggle>
 
-                    <mat-button-toggle value="revenue" matTooltip="מדדי ותצוגות הכנסות (בשלב זה אזור ריק – יתמלא בהמשך)"
-                      matTooltipPosition="below">
-                      <mat-icon aria-hidden="true">payments</mat-icon>
-                      <span>הכנסות</span>
-                    </mat-button-toggle>
+                      <mat-button-toggle value="revenue"
+                        matTooltip="מדדי ותצוגות הכנסות (בשלב זה אזור ריק – יתמלא בהמשך)" matTooltipPosition="below">
+                        <mat-icon aria-hidden="true">payments</mat-icon>
+                        <span>הכנסות</span>
+                      </mat-button-toggle>
 
-                    <mat-button-toggle value="compare-departments"
-                      matTooltip="השוואת ביצועי מחלקה – כמות ניתוחים מול כמות חדרים וזמני חדר"
-                      matTooltipPosition="below">
-                      <mat-icon aria-hidden="true">compare_arrows</mat-icon>
-                      <span>השוואה ביצועי מחלקות</span>
-                    </mat-button-toggle>
+                      <mat-button-toggle value="compare-departments"
+                        matTooltip="השוואת ביצועי מחלקה – כמות ניתוחים מול כמות חדרים וזמני חדר"
+                        matTooltipPosition="below">
+                        <mat-icon aria-hidden="true">compare_arrows</mat-icon>
+                        <span>השוואה ביצועי מחלקות</span>
+                      </mat-button-toggle>
 
-                  </mat-button-toggle-group>
-                </div>
+                    </mat-button-toggle-group>
+                  </div>
 
 
-                <div class="chart-controls">
-                  <!-- <button mat-stroked-button 
+                  <div class="chart-controls">
+                    <!-- <button mat-stroked-button 
                       [class.active]="chartType === 'ColumnChart'"
                       (click)="setChartType('ColumnChart')"
                       class="chart-type-btn"
@@ -480,688 +500,725 @@
                       matTooltipPosition="below">
                 <mat-icon>show_chart</mat-icon>
               </button> -->
-                  <!-- <span class="title-total total-badge" [matTooltip]="'לחץ על עמודה/נקודה בגרף כדי לראות פרטי המחלקה'" matTooltipPosition="below">
+                    <!-- <span class="title-total total-badge" [matTooltip]="'לחץ על עמודה/נקודה בגרף כדי לראות פרטי המחלקה'" matTooltipPosition="below">
                 לחץ לפרטים
               </span> -->
-                </div>
-              </span>
-            </div>
-
-
-            <div class="graph-body" [attr.data-main-mode]="mainMetricMode">
-              <mat-menu #mainChartHelpMenu="matMenu" panelClass="room-util-chart-help-menu" xPosition="before">
-                <div class="room-util-chart-help-menu__content" (click)="$event.stopPropagation()">
-                  {{ getMainChartHelpPopupText() }}
-                </div>
-              </mat-menu>
-
-              <ng-container *ngIf="mainMetricMode === 'revenue'">
-                <div class="chart-mode-heading" *ngIf="shouldShowChartModeHeading()">
-                  <div class="chart-mode-heading__title-row">
-                    <span class="chart-mode-heading__title">{{ getChartViewTitle() }}</span>
-                    <button type="button" class="chart-mode-heading__help-btn" mat-icon-button
-                      [matMenuTriggerFor]="mainChartHelpMenu" matTooltip="מה הגרף מציג ואיך מחושב?"
-                      matTooltipPosition="below" aria-label="הסבר על הגרף">
-                      <mat-icon aria-hidden="true">help_outline</mat-icon>
-                    </button>
                   </div>
-                  <span class="chart-mode-heading__filters">{{ getChartViewFilterParametersLine() }}</span>
-                </div>
-                <div class="revenue-empty">
-                  <mat-icon class="revenue-empty-icon" aria-hidden="true">payments</mat-icon>
-                  <p class="revenue-empty-title">אין נתוני הכנסות להצגה כרגע</p>
-                  <p class="revenue-empty-hint">התצוגה תתמלא בגרפים ובמדדים בשלב הבא.</p>
-                </div>
-              </ng-container>
+                </span>
+              </div>
 
-              <ng-container *ngIf="mainMetricMode === 'compare-departments'">
-                <div class="chart-mode-heading" *ngIf="shouldShowChartModeHeading() && !showCompareDepartmentsModal">
-                  <div class="chart-mode-heading__title-row">
-                    <span class="chart-mode-heading__title">{{ getChartViewTitle() }}</span>
-                    <button type="button" class="chart-mode-heading__help-btn" mat-icon-button
-                      [matMenuTriggerFor]="mainChartHelpMenu" matTooltip="מה הגרף מציג ואיך מחושב?"
-                      matTooltipPosition="below" aria-label="הסבר על הגרף">
-                      <mat-icon aria-hidden="true">help_outline</mat-icon>
-                    </button>
-                  </div>
-                  <span class="chart-mode-heading__filters">{{ getChartViewFilterParametersLine() }}</span>
-                </div>
-                <div class="chart-with-expand compare-dept-inline-wrap" *ngIf="!showCompareDepartmentsModal">
-                  <button type="button" class="chart-expand-btn" (click)="openCompareDepartmentsFullscreen()"
-                    *ngIf="compareDepartmentSelected && !compareDepartmentsModalChartLoading() && compareDepartmentsLineChartData && compareDepartmentsLineChartData.length > 0"
-                    matTooltip="הרחב מסך" matTooltipPosition="below">
-                    <mat-icon>fullscreen</mat-icon>
-                  </button>
-                  <div class="kpi-body compare-dept-panel-body compare-dept-panel-body--inline">
-                    <ng-container *ngTemplateOutlet="compareDepartmentsPanelBody"></ng-container>
-                  </div>
-                </div>
-              </ng-container>
 
-              <ng-container *ngIf="mainMetricMode !== 'revenue' && mainMetricMode !== 'compare-departments'">
-                <div
-                  *ngIf="isChartLoading || isMainDataLoading || (isRoomUtilizationMode() && roomUtilizationSubChart === 'surgeriesPerDay' && isSurgeriesPerDayLoading)"
-                  class="chart-loading-overlay">
-                  <div class="spinner-with-percent">
-                    <mat-spinner diameter="50"></mat-spinner>
-                    <div class="spinner-percent">{{ getMainChartLoadingPercent() }}%</div>
+              <div class="graph-body" [attr.data-main-mode]="mainMetricMode">
+                <mat-menu #mainChartHelpMenu="matMenu" panelClass="room-util-chart-help-menu" xPosition="before">
+                  <div class="room-util-chart-help-menu__content" (click)="$event.stopPropagation()">
+                    {{ getMainChartHelpPopupText() }}
                   </div>
-                  <div class="chart-loading-text">טוען גרף...</div>
-                </div>
-                <div class="chart-mode-heading" *ngIf="shouldShowChartModeHeading()">
-                  <div class="chart-mode-heading__title-row">
-                    <div class="chart-mode-heading__title-cluster">
+                </mat-menu>
+
+                <ng-container *ngIf="mainMetricMode === 'revenue'">
+                  <div class="chart-mode-heading" *ngIf="shouldShowChartModeHeading()">
+                    <div class="chart-mode-heading__title-row">
                       <span class="chart-mode-heading__title">{{ getChartViewTitle() }}</span>
-                      <span class="chart-mode-heading__period-inline" *ngIf="showChartYtdPeriodLine()">
-                        <span class="chart-mode-heading__period-lead">ניתוחים לפי חודשים מינואר ועד סוף</span>
-                        <strong class="chart-mode-heading__period-mmyy" dir="ltr">{{ getHelpPeriodCutoffMmYy()
-                          }}</strong>
-                        <span class="chart-mode-heading__period-tail">({{ getHelpPeriodCutoffMonthLabel() }}) בכל שנה —
-                          תקופה מקבילה.</span>
-                      </span>
+                      <button type="button" class="chart-mode-heading__help-btn" mat-icon-button
+                        [matMenuTriggerFor]="mainChartHelpMenu" matTooltip="מה הגרף מציג ואיך מחושב?"
+                        matTooltipPosition="below" aria-label="הסבר על הגרף">
+                        <mat-icon aria-hidden="true">help_outline</mat-icon>
+                      </button>
                     </div>
-                    <button type="button" class="chart-mode-heading__help-btn" mat-icon-button
-                      [matMenuTriggerFor]="mainChartHelpMenu" matTooltip="מה הגרף מציג ואיך מחושב?"
-                      matTooltipPosition="below" aria-label="הסבר על הגרף">
-                      <mat-icon aria-hidden="true">help_outline</mat-icon>
-                    </button>
+                    <span class="chart-mode-heading__filters">{{ getChartViewFilterParametersLine() }}</span>
                   </div>
-                  <div class="chart-mode-heading__active-filter" *ngIf="hasActiveSurgeryFilters()">
-                    <span class="chart-mode-heading__filter-badge">[ סינון פעיל ]</span>
+                  <div class="revenue-empty">
+                    <mat-icon class="revenue-empty-icon" aria-hidden="true">payments</mat-icon>
+                    <p class="revenue-empty-title">אין נתוני הכנסות להצגה כרגע</p>
+                    <p class="revenue-empty-hint">התצוגה תתמלא בגרפים ובמדדים בשלב הבא.</p>
                   </div>
-                </div>
-                <div class="year-summary-row"
-                  *ngIf="yearsForChart?.length && !isRoomUtilizationMode() && mainMetricMode !== 'room-times'">
-                  <div class="year-summary-card" *ngFor="let y of yearsForChartNewestFirst.slice().reverse()">
-                    <div class="year-label">{{ y }}</div>
-                    <div class="year-count">{{ formatNumber(yearlySurgeryTotals[y] || 0) }}</div>
-                    <div class="year-subtitle">מספר ניתוחים בשנה</div>
-                  </div>
-                </div>
-                <div class="chart-with-expand" *ngIf="mainMetricMode !== 'room-times'">
-                  <google-chart
-                    *ngIf="isRoomUtilizationMode() && roomUtilizationSubChart === 'surgeriesPerDay' && !isSurgeriesPerDayLoading && surgeriesPerDayChartData && surgeriesPerDayChartData.length > 0"
-                    [type]="'ColumnChart'" [columns]="surgeriesPerDayChartColumns" [data]="surgeriesPerDayChartData"
-                    [options]="surgeriesPerDayChartOptions" [width]="'100%'" [height]="'100%'">
-                  </google-chart>
+                </ng-container>
 
-                  <!-- Expand: regular main chart -->
-                  <button type="button" class="chart-expand-btn" (click)="openMainChartFullModal()" *ngIf="chartViewMode !== 'yoy-combined' && !isMainDataLoading && (
+                <ng-container *ngIf="mainMetricMode === 'cancellations'">
+                  <div class="chart-mode-heading" *ngIf="shouldShowChartModeHeading()">
+                    <div class="chart-mode-heading__title-row">
+                      <span class="chart-mode-heading__title">{{ getChartViewTitle() }}</span>
+                      <button type="button" class="chart-mode-heading__help-btn" mat-icon-button
+                        [matMenuTriggerFor]="mainChartHelpMenu" matTooltip="מה הגרף מציג ואיך מחושב?"
+                        matTooltipPosition="below" aria-label="הסבר על הגרף">
+                        <mat-icon aria-hidden="true">help_outline</mat-icon>
+                      </button>
+                    </div>
+                    <span class="chart-mode-heading__filters">{{ getChartViewFilterParametersLine() }}</span>
+                  </div>
+                  <div class="revenue-empty">
+                    <mat-icon class="revenue-empty-icon" aria-hidden="true">event_busy</mat-icon>
+                    <p class="revenue-empty-title">אין נתוני ביטולים להצגה כרגע</p>
+                    <p class="revenue-empty-hint">התצוגה תחובר למקור נתוני ביטולי ניתוחים בשלב הבא.</p>
+                  </div>
+                </ng-container>
+
+                <ng-container *ngIf="mainMetricMode === 'compare-departments'">
+                  <div class="chart-mode-heading" *ngIf="shouldShowChartModeHeading() && !showCompareDepartmentsModal">
+                    <div class="chart-mode-heading__title-row">
+                      <span class="chart-mode-heading__title">{{ getChartViewTitle() }}</span>
+                      <button type="button" class="chart-mode-heading__help-btn" mat-icon-button
+                        [matMenuTriggerFor]="mainChartHelpMenu" matTooltip="מה הגרף מציג ואיך מחושב?"
+                        matTooltipPosition="below" aria-label="הסבר על הגרף">
+                        <mat-icon aria-hidden="true">help_outline</mat-icon>
+                      </button>
+                    </div>
+                    <span class="chart-mode-heading__filters">{{ getChartViewFilterParametersLine() }}</span>
+                  </div>
+                  <div class="chart-with-expand compare-dept-inline-wrap" *ngIf="!showCompareDepartmentsModal">
+                    <button type="button" class="chart-expand-btn" (click)="openCompareDepartmentsFullscreen()"
+                      *ngIf="compareDepartmentSelected && !compareDepartmentsModalChartLoading() && compareDepartmentsLineChartData && compareDepartmentsLineChartData.length > 0"
+                      matTooltip="הרחב מסך" matTooltipPosition="below">
+                      <mat-icon>fullscreen</mat-icon>
+                    </button>
+                    <div class="kpi-body compare-dept-panel-body compare-dept-panel-body--inline">
+                      <ng-container *ngTemplateOutlet="compareDepartmentsPanelBody"></ng-container>
+                    </div>
+                  </div>
+                </ng-container>
+
+                <ng-container
+                  *ngIf="mainMetricMode !== 'revenue' && mainMetricMode !== 'compare-departments' && mainMetricMode !== 'cancellations'">
+                  <div class="chart-mode-heading" *ngIf="shouldShowChartModeHeading()">
+                    <div class="chart-mode-heading__title-row">
+                      <div class="chart-mode-heading__title-cluster">
+                        <span class="chart-mode-heading__title">{{ getChartViewTitle() }}</span>
+                        <span class="chart-mode-heading__period-inline" *ngIf="showChartYtdPeriodLine()">
+                          <span class="chart-mode-heading__period-lead">ניתוחים לפי חודשים מינואר ועד סוף</span>
+                          <strong class="chart-mode-heading__period-mmyy" dir="ltr">{{
+                            monthlyCountsLatestPeriod ? getMonthlyCountsPeriodMmYy() : getHelpPeriodCutoffMmYy()
+                            }}</strong>
+                          <span class="chart-mode-heading__period-tail">({{
+                            monthlyCountsLatestPeriod ? getMonthlyCountsPeriodMonthLabel() :
+                            getHelpPeriodCutoffMonthLabel()
+                            }}) בכל שנה —
+                            תקופה מקבילה.</span>
+                        </span>
+                      </div>
+                      <button type="button" class="chart-mode-heading__help-btn" mat-icon-button
+                        [matMenuTriggerFor]="mainChartHelpMenu" matTooltip="מה הגרף מציג ואיך מחושב?"
+                        matTooltipPosition="below" aria-label="הסבר על הגרף">
+                        <mat-icon aria-hidden="true">help_outline</mat-icon>
+                      </button>
+                    </div>
+                    <div class="chart-mode-heading__active-filter" *ngIf="hasActiveSurgeryFilters()">
+                      <span class="chart-mode-heading__filter-badge">[ סינון פעיל ]</span>
+                    </div>
+                  </div>
+                  <div class="year-summary-row"
+                    *ngIf="yearsForChart?.length && !isRoomUtilizationMode() && mainMetricMode !== 'room-times'">
+                    <div class="year-summary-card" *ngFor="let y of yearsForChartNewestFirst.slice().reverse()">
+                      <div class="year-label">{{ y }}</div>
+                      <div class="year-count">{{ formatNumber(yearlySurgeryTotals[y] || 0) }}</div>
+                      <div class="year-subtitle">מספר ניתוחים בשנה</div>
+                    </div>
+                  </div>
+                  <div class="chart-with-expand" *ngIf="mainMetricMode !== 'room-times'">
+                    <div *ngIf="isMainPanelChartAreaLoading" class="chart-loading-overlay chart-loading-overlay--in-chart"
+                      aria-live="polite" aria-busy="true">
+                      <div class="spinner-with-percent">
+                        <mat-spinner diameter="50"></mat-spinner>
+                        <div class="spinner-percent">{{ getMainChartLoadingPercent() }}%</div>
+                      </div>
+                      <div class="chart-loading-text">טוען גרף...</div>
+                    </div>
+
+                    <google-chart
+                      *ngIf="isRoomUtilizationMode() && roomUtilizationSubChart === 'surgeriesPerDay' && !isSurgeriesPerDayLoading && surgeriesPerDayChartData && surgeriesPerDayChartData.length > 0"
+                      [type]="'ColumnChart'" [columns]="surgeriesPerDayChartColumns" [data]="surgeriesPerDayChartData"
+                      [options]="surgeriesPerDayChartOptions" [width]="'100%'" [height]="'100%'">
+                    </google-chart>
+
+                    <!-- Expand: regular main chart -->
+                    <button type="button" class="chart-expand-btn" (click)="openMainChartFullModal()" *ngIf="chartViewMode !== 'yoy-combined' && !isMainDataLoading && (
                 (isRoomUtilizationMode() && roomUtilizationSubChart === 'surgeriesPerDay' && !isSurgeriesPerDayLoading && surgeriesPerDayChartData && surgeriesPerDayChartData.length > 0)
                 || (!(isRoomUtilizationMode() && roomUtilizationSubChart === 'surgeriesPerDay') && !isChartLoading && chartData && chartData.length > 0)
               )" matTooltip="הרחב מסך" matTooltipPosition="below">
-                    <mat-icon>fullscreen</mat-icon>
-                  </button>
+                      <mat-icon>fullscreen</mat-icon>
+                    </button>
 
-                  <!-- Expand: YoY combined modal -->
-                  <button type="button" class="chart-expand-btn" (click)="openYoyCombinedFullModal()"
-                    *ngIf="chartViewMode === 'yoy-combined' && !isChartLoading && !isMainDataLoading && departmentYoyData?.length"
-                    matTooltip="הרחב מסך" matTooltipPosition="below">
-                    <mat-icon>fullscreen</mat-icon>
-                  </button>
+                    <!-- Expand: YoY combined modal -->
+                    <button type="button" class="chart-expand-btn" (click)="openYoyCombinedFullModal()"
+                      *ngIf="chartViewMode === 'yoy-combined' && !isChartLoading && !isMainDataLoading && getFilteredDepartmentYoyData()?.length"
+                      matTooltip="הרחב מסך" matTooltipPosition="below">
+                      <mat-icon>fullscreen</mat-icon>
+                    </button>
 
-                  <!-- YoY combined inline chart (Chart.js) -->
-                  <div class="yoy-combined-inline"
-                    *ngIf="chartViewMode === 'yoy-combined' && !isChartLoading && !isMainDataLoading">
-                    <canvas #yoyCombinedChartInline *ngIf="departmentYoyData?.length"></canvas>
-                    <div *ngIf="!departmentYoyData?.length" class="chart-no-data">
-                      אין נתונים להצגה בגרף
+                    <!-- YoY combined inline chart (Chart.js) -->
+                    <div class="yoy-combined-inline"
+                      *ngIf="chartViewMode === 'yoy-combined' && !isChartLoading && !isMainDataLoading">
+                      <canvas #yoyCombinedChartInline *ngIf="getFilteredDepartmentYoyData()?.length"></canvas>
+                      <div *ngIf="!getFilteredDepartmentYoyData()?.length" class="chart-no-data">
+                        אין נתונים להצגה בגרף
+                      </div>
+                    </div>
+
+                    <!-- All other modes (Google chart) -->
+                    <google-chart [type]="chartType" [data]="chartData" [columns]="chartColumns"
+                      [options]="chartOptions" [width]="'100%'" [dynamicResize]="true" (select)="onChartClick($event)"
+                      *ngIf="showMainGoogleChart && chartViewMode !== 'yoy-combined' && !isChartLoading && !isMainDataLoading && chartData && chartData.length > 0 && !(isRoomUtilizationMode() && roomUtilizationSubChart === 'surgeriesPerDay')">
+                    </google-chart>
+                  </div>
+
+                  <!-- תצוגת זמני חדר (Room Times) בתוך הפאנל הראשי -->
+                  <div class="chart-with-expand" *ngIf="mainMetricMode === 'room-times'">
+                    <!-- כפתור תצוגה מוגדלת לכל גרפי זמני החדר -->
+                    <button type="button" class="chart-expand-btn" (click)="showTimesModal = true"
+                      *ngIf="!isAvgDurationLoading && avgDurationChartData && avgDurationChartData.length > 0"
+                      matTooltip="הצג את כל מדדי זמני החדר במסך מלא" matTooltipPosition="below">
+                      <mat-icon>fullscreen</mat-icon>
+                    </button>
+
+                    <!-- הגרף העיקרי לפי roomTimesView -->
+                    <google-chart
+                      *ngIf="!isAvgDurationLoading && roomTimesView === 'avgDuration' && avgDurationChartData && avgDurationChartData.length > 0"
+                      [type]="'ColumnChart'" [columns]="avgDurationChartColumns" [data]="avgDurationChartData"
+                      [options]="avgDurationChartOptions" [width]="'100%'" [height]="'100%'">
+                    </google-chart>
+
+                    <google-chart
+                      *ngIf="roomTimesView === 'perDay' && surgeriesPerDayChartData && surgeriesPerDayChartData.length > 0"
+                      [type]="'ColumnChart'" [columns]="surgeriesPerDayChartColumns" [data]="surgeriesPerDayChartData"
+                      [options]="surgeriesPerDayChartOptions" [width]="'100%'" [height]="'100%'">
+                    </google-chart>
+
+                    <google-chart
+                      *ngIf="roomTimesView === 'firstStart' && firstStartTimeChartData && firstStartTimeChartData.length > 0"
+                      [type]="'ColumnChart'" [columns]="firstStartTimeChartColumns" [data]="firstStartTimeChartData"
+                      [options]="firstStartTimeChartOptions" [width]="'100%'" [height]="'100%'">
+                    </google-chart>
+
+                    <google-chart
+                      *ngIf="roomTimesView === 'lastEnd' && lastEndTimeChartData && lastEndTimeChartData.length > 0"
+                      [type]="'ColumnChart'" [columns]="lastEndTimeChartColumns" [data]="lastEndTimeChartData"
+                      [options]="lastEndTimeChartOptions" [width]="'100%'" [height]="'100%'">
+                    </google-chart>
+
+                    <google-chart
+                      *ngIf="roomTimesView === 'avgSetup' && avgSetupChartData && avgSetupChartData.length > 0"
+                      [type]="'ColumnChart'" [columns]="avgSetupChartColumns" [data]="avgSetupChartData"
+                      [options]="avgSetupChartOptions" [width]="'100%'" [height]="'100%'">
+                    </google-chart>
+
+                    <google-chart
+                      *ngIf="roomTimesView === 'lossPerDay' && lossByWingChartData && lossByWingChartData.length > 0"
+                      [type]="'ColumnChart'" [columns]="lossByWingChartColumns" [data]="lossByWingChartData"
+                      [options]="lossByWingChartOptions" [width]="'100%'" [height]="'100%'">
+                    </google-chart>
+
+                    <div class="kpi-filter-row approved-util-site-filter-row" dir="rtl"
+                      *ngIf="roomTimesView === 'approvedPerDay'">
+                      <mat-form-field appearance="outline" subscriptSizing="dynamic"
+                        class="approved-util-site-field">
+                        <mat-label>חדר ניתוח</mat-label>
+                        <mat-select [value]="approvedUtilizationSiteFilter"
+                          (selectionChange)="onApprovedUtilizationSiteFilterChange($event.value)">
+                          <mat-option *ngFor="let opt of approvedUtilizationSiteSelectOptions" [value]="opt.value">
+                            {{ opt.label }}
+                          </mat-option>
+                        </mat-select>
+                      </mat-form-field>
+                    </div>
+
+                    <google-chart
+                      *ngIf="roomTimesView === 'approvedPerDay' && approvedUtilizationChartData && approvedUtilizationChartData.length > 0"
+                      [type]="'ColumnChart'" [columns]="approvedUtilizationChartColumns"
+                      [data]="approvedUtilizationChartData" [options]="approvedUtilizationChartOptions" [width]="'100%'"
+                      [height]="'100%'">
+                    </google-chart>
+
+                    <div
+                      *ngIf="isAvgDurationLoading || isFirstStartTimeLoading || isLastEndTimeLoading || isAvgSetupLoading || isSurgeriesPerDayLoading || isLossByWingLoading || isApprovedUtilizationLoading"
+                      class="chart-loading-overlay">
+                      <div class="spinner-with-percent">
+                        <mat-spinner diameter="40"></mat-spinner>
+                        <div class="spinner-percent">{{ getRoomTimesLoadingPercent() }}%</div>
+                      </div>
+                      <div class="chart-loading-text">טוען נתוני זמני חדר...</div>
                     </div>
                   </div>
 
-                  <!-- All other modes (Google chart) -->
-                  <google-chart [type]="chartType" [data]="chartData" [columns]="chartColumns" [options]="chartOptions"
-                    [width]="'100%'" [dynamicResize]="true" (select)="onChartClick($event)"
-                    *ngIf="chartViewMode !== 'yoy-combined' && !isChartLoading && !isMainDataLoading && chartData && chartData.length > 0 && !(isRoomUtilizationMode() && roomUtilizationSubChart === 'surgeriesPerDay')">
-                  </google-chart>
-                </div>
+                  <!-- מצב תצוגה לוגרף הראשי: סה"כ / קרן‑מדינה / אתר / משמרת / מחלקה -->
+                  <div class="chart-mode-row"
+                    *ngIf="!isChartLoading && !isMainDataLoading && chartData && chartData.length > 0 && !isRoomUtilizationMode() && mainMetricMode !== 'room-times'">
+                    <mat-button-toggle-group name="chartViewMode" aria-label="Chart view mode"
+                      class="mat-button-toggle-group custom-toggle-group" [value]="chartViewMode"
+                      (change)="setChartViewMode($event.value)">
+                      <mat-button-toggle value="year-total" [matTooltip]="getChartViewTooltip('year-total')"
+                        matTooltipPosition="above">
+                        <mat-icon aria-hidden="true">date_range</mat-icon>
+                        <span>סה"כ לשנה</span>
+                      </mat-button-toggle>
+                      <mat-button-toggle value="month" [matTooltip]="getChartViewTooltip('month')"
+                        matTooltipPosition="above">
+                        <mat-icon aria-hidden="true">calendar_month</mat-icon>
+                        <span>ניתוחים לפי חודשים</span>
+                      </mat-button-toggle>
+                      <mat-button-toggle value="department" [matTooltip]="getChartViewTooltip('department')"
+                        matTooltipPosition="above">
+                        <mat-icon aria-hidden="true">domain</mat-icon>
+                        <span>סה"כ לפי מחלקה</span>
+                      </mat-button-toggle>
+                      <mat-button-toggle value="fund" [matTooltip]="getChartViewTooltip('fund')"
+                        matTooltipPosition="above">
+                        <mat-icon aria-hidden="true">savings</mat-icon>
+                        <span>קרן/מדינה</span>
+                      </mat-button-toggle>
+                      <mat-button-toggle value="site" [matTooltip]="getChartViewTooltip('site')"
+                        matTooltipPosition="above">
+                        <mat-icon aria-hidden="true">place</mat-icon>
+                        <span>אתר</span>
+                      </mat-button-toggle>
+                      <mat-button-toggle value="shift" [disabled]="isShiftGroupedView && chartViewMode !== 'shift'"
+                        [matTooltip]="getChartViewTooltip('shift')" matTooltipPosition="above">
+                        <mat-icon aria-hidden="true">watch_later</mat-icon>
+                        <span>משמרת</span>
+                      </mat-button-toggle>
+                      <mat-button-toggle value="yoy-combined" [matTooltip]="getChartViewTooltip('yoy-combined')"
+                        matTooltipPosition="above">
+                        <mat-icon aria-hidden="true">layers</mat-icon>
+                        <span>מדד משולב</span>
+                      </mat-button-toggle>
+                    </mat-button-toggle-group>
+                  </div>
 
-                <!-- תצוגת זמני חדר (Room Times) בתוך הפאנל הראשי -->
-                <div class="chart-with-expand" *ngIf="mainMetricMode === 'room-times'">
-                  <!-- כפתור תצוגה מוגדלת לכל גרפי זמני החדר -->
-                  <button type="button" class="chart-expand-btn" (click)="showTimesModal = true"
-                    *ngIf="!isAvgDurationLoading && avgDurationChartData && avgDurationChartData.length > 0"
-                    matTooltip="הצג את כל מדדי זמני החדר במסך מלא" matTooltipPosition="below">
-                    <mat-icon>fullscreen</mat-icon>
-                  </button>
+                  <!-- כפתורי מדדי זמני חדר – מתחת לגרף הראשי, במצב room-times -->
+                  <div class="chart-mode-row" *ngIf="mainMetricMode === 'room-times'">
+                    <mat-button-toggle-group name="roomTimesView" aria-label="Room times view"
+                      class="mat-button-toggle-group custom-toggle-group" [value]="roomTimesView"
+                      (change)="setRoomTimesView($event.value)">
+                      <mat-button-toggle value="avgDuration">
+                        <mat-icon>speed</mat-icon>
+                        <span>משך ניתוח ממוצע</span>
+                      </mat-button-toggle>
+                      <mat-button-toggle value="firstStart">
+                        <mat-icon>play_circle</mat-icon>
+                        <span>כניסה ניתוח ראשון</span>
+                      </mat-button-toggle>
+                      <mat-button-toggle value="lastEnd">
+                        <mat-icon>stop_circle</mat-icon>
+                        <span>סיום ניתוח אחרון</span>
+                      </mat-button-toggle>
+                      <mat-button-toggle value="avgSetup">
+                        <mat-icon>hourglass_bottom</mat-icon>
+                        <span>SETUP ממוצע</span>
+                      </mat-button-toggle>
+                      <mat-button-toggle value="lossPerDay">
+                        <mat-icon>timer_off</mat-icon>
+                        <span>זמן אבוד ליום</span>
+                      </mat-button-toggle>
+                      <mat-button-toggle value="approvedPerDay">
+                        <mat-icon>schedule</mat-icon>
+                        <span>זמן מנוצל ליום</span>
+                      </mat-button-toggle>
+                    </mat-button-toggle-group>
+                  </div>
 
-                  <!-- הגרף העיקרי לפי roomTimesView -->
-                  <google-chart
-                    *ngIf="!isAvgDurationLoading && roomTimesView === 'avgDuration' && avgDurationChartData && avgDurationChartData.length > 0"
-                    [type]="'ColumnChart'" [columns]="avgDurationChartColumns" [data]="avgDurationChartData"
-                    [options]="avgDurationChartOptions" [width]="'100%'" [height]="'100%'">
-                  </google-chart>
+                  <!-- כפתורי מדדי חדרים לפי מחלקה – מוצגים רק במצב ניצולת חדר ניתוח -->
+                  <!-- כפתורי מדדי חדרים – מוצגים רק במצב ניצולת חדר ניתוח -->
+                  <div class="chart-mode-row"
+                    *ngIf="isRoomUtilizationMode() && !isMainDataLoading && ((!isChartLoading && chartData && chartData.length > 0) || roomUtilizationSubChart === 'surgeriesPerDay')">
+                    <span class="chart-mode-label">
+                      חדרים לפי מחלקה:
+                    </span>
 
-                  <google-chart
-                    *ngIf="roomTimesView === 'perDay' && surgeriesPerDayChartData && surgeriesPerDayChartData.length > 0"
-                    [type]="'ColumnChart'" [columns]="surgeriesPerDayChartColumns" [data]="surgeriesPerDayChartData"
-                    [options]="surgeriesPerDayChartOptions" [width]="'100%'" [height]="'100%'">
-                  </google-chart>
+                    <mat-button-toggle-group name="roomStatsMode" aria-label="Room stats mode"
+                      class="mat-button-toggle-group custom-toggle-group" [value]="getRoomStatsToggleValue()"
+                      (change)="onRoomStatsModeChange($event.value)">
+                      <mat-button-toggle value="yearTotal">
+                        סה"כ חדרים לשנה
+                      </mat-button-toggle>
+                      <mat-button-toggle value="total">
+                        סה"כ חדרים לפי מחלקה
+                      </mat-button-toggle>
+                      <mat-button-toggle value="open">
+                        חדרים פותחים
+                      </mat-button-toggle>
+                      <mat-button-toggle value="close">
+                        חדרים סוגרים
+                      </mat-button-toggle>
+                      <mat-button-toggle value="fullDays">
+                        ימים מלאים (ללא פיצול)
+                      </mat-button-toggle>
+                      <mat-button-toggle value="surgeriesPerDay"
+                        matTooltip="ממוצע ניתוחים ליום בחדר לפי מחלקה מאוגדת (Wing) – אותו גרף כמו בזמני חדר"
+                        matTooltipPosition="above">
+                        <mat-icon>calendar_view_day</mat-icon>
+                        <span>ניתוחים ליום</span>
+                      </mat-button-toggle>
+                    </mat-button-toggle-group>
+                  </div>
 
-                  <google-chart
-                    *ngIf="roomTimesView === 'firstStart' && firstStartTimeChartData && firstStartTimeChartData.length > 0"
-                    [type]="'ColumnChart'" [columns]="firstStartTimeChartColumns" [data]="firstStartTimeChartData"
-                    [options]="firstStartTimeChartOptions" [width]="'100%'" [height]="'100%'">
-                  </google-chart>
-
-                  <google-chart
-                    *ngIf="roomTimesView === 'lastEnd' && lastEndTimeChartData && lastEndTimeChartData.length > 0"
-                    [type]="'ColumnChart'" [columns]="lastEndTimeChartColumns" [data]="lastEndTimeChartData"
-                    [options]="lastEndTimeChartOptions" [width]="'100%'" [height]="'100%'">
-                  </google-chart>
-
-                  <google-chart
-                    *ngIf="roomTimesView === 'avgSetup' && avgSetupChartData && avgSetupChartData.length > 0"
-                    [type]="'ColumnChart'" [columns]="avgSetupChartColumns" [data]="avgSetupChartData"
-                    [options]="avgSetupChartOptions" [width]="'100%'" [height]="'100%'">
-                  </google-chart>
-
-                  <google-chart
-                    *ngIf="roomTimesView === 'lossPerDay' && lossByWingChartData && lossByWingChartData.length > 0"
-                    [type]="'ColumnChart'" [columns]="lossByWingChartColumns" [data]="lossByWingChartData"
-                    [options]="lossByWingChartOptions" [width]="'100%'" [height]="'100%'">
-                  </google-chart>
-
-                  <google-chart
-                    *ngIf="roomTimesView === 'approvedPerDay' && approvedUtilizationChartData && approvedUtilizationChartData.length > 0"
-                    [type]="'ColumnChart'" [columns]="approvedUtilizationChartColumns"
-                    [data]="approvedUtilizationChartData" [options]="approvedUtilizationChartOptions" [width]="'100%'"
-                    [height]="'100%'">
-                  </google-chart>
+                  <!-- טקסט הסבר קצר מה מייצגת כל עמודה/צבע בגרף -->
+                  <div class="chart-mode-description"
+                    *ngIf="!isChartLoading && !isMainDataLoading && chartData && chartData.length > 0 && !isRoomUtilizationMode()">
+                    <ng-container [ngSwitch]="chartViewMode">
+                      <span *ngSwitchCase="'year-total'">
+                        כל עמודה מייצגת את מספר הניתוחים הכולל באותה שנה.
+                      </span>
+                      <span *ngSwitchCase="'month'">
+                        ציר X מייצג חודשים, וכל צבע/עמודה מקבילים לשנה אחרת (5 שנים אחרונות).
+                        בחודשים שטרם הגיעו בשנה הנוכחית מוצג ממוצע היסטורי של אותן תקופות.
+                      </span>
+                      <span *ngSwitchCase="'department'">
+                        כל עמודה מייצגת מחלקה מנתחת, והצבעים בתוך העמודה מייצגים שנים שונות.
+                      </span>
+                      <span *ngSwitchCase="'site'">
+                        כל עמודה מייצגת שנה, והערימה הצבעונית בתוך העמודה מייצגת אתרים שונים.
+                      </span>
+                      <span *ngSwitchCase="'shift'">
+                        כל עמודה מייצגת שנה, והערימה הצבעונית בתוך העמודה מייצגת משמרות (בוקר / ערב / לילה).
+                      </span>
+                      <span *ngSwitchCase="'fund'">
+                        כל עמודה מייצגת שנה, והערימה הצבעונית בתוך העמודה מייצגת סוגי מימון (קרן / מדינה וכו').
+                      </span>
+                      <span *ngSwitchCase="'yoy-combined'">
+                        אחוז שינוי ביחס לאותה תקופה בשנה שעברה (למשל ינואר–פברואר השנה מול ינואר–פברואר אשתקד): ניתוחים
+                        לחדר,
+                        זמן ניתוח ממוצע, הכנסה ממוצעת.
+                      </span>
+                    </ng-container>
+                  </div>
 
                   <div
-                    *ngIf="isAvgDurationLoading || isFirstStartTimeLoading || isLastEndTimeLoading || isAvgSetupLoading || isSurgeriesPerDayLoading || isLossByWingLoading || isApprovedUtilizationLoading"
-                    class="chart-loading-overlay">
-                    <div class="spinner-with-percent">
-                      <mat-spinner diameter="40"></mat-spinner>
-                      <div class="spinner-percent">{{ getRoomTimesLoadingPercent() }}%</div>
-                    </div>
-                    <div class="chart-loading-text">טוען נתוני זמני חדר...</div>
+                    *ngIf="!isChartLoading && !isMainDataLoading && !(isRoomUtilizationMode() && roomUtilizationSubChart === 'surgeriesPerDay') && (!chartData || chartData.length === 0)"
+                    class="chart-no-data">
+                    אין נתונים להצגה בגרף
                   </div>
-                </div>
-
-                <!-- מצב תצוגה לוגרף הראשי: סה"כ / קרן‑מדינה / אתר / משמרת / מחלקה -->
-                <div class="chart-mode-row"
-                  *ngIf="!isChartLoading && !isMainDataLoading && chartData && chartData.length > 0 && !isRoomUtilizationMode() && mainMetricMode !== 'room-times'">
-                  <mat-button-toggle-group name="chartViewMode" aria-label="Chart view mode"
-                    class="mat-button-toggle-group custom-toggle-group" [value]="chartViewMode"
-                    (change)="setChartViewMode($event.value)">
-                    <mat-button-toggle value="year-total" [matTooltip]="getChartViewTooltip('year-total')"
-                      matTooltipPosition="top">
-                      <mat-icon aria-hidden="true">date_range</mat-icon>
-                      <span>סה"כ לשנה</span>
-                    </mat-button-toggle>
-                    <mat-button-toggle value="month" [matTooltip]="getChartViewTooltip('month')"
-                      matTooltipPosition="top">
-                      <mat-icon aria-hidden="true">calendar_month</mat-icon>
-                      <span>ניתוחים לפי חודשים</span>
-                    </mat-button-toggle>
-                    <mat-button-toggle value="department" [matTooltip]="getChartViewTooltip('department')"
-                      matTooltipPosition="top">
-                      <mat-icon aria-hidden="true">domain</mat-icon>
-                      <span>סה"כ לפי מחלקה</span>
-                    </mat-button-toggle>
-                    <mat-button-toggle value="fund" [matTooltip]="getChartViewTooltip('fund')" matTooltipPosition="top">
-                      <mat-icon aria-hidden="true">savings</mat-icon>
-                      <span>קרן/מדינה</span>
-                    </mat-button-toggle>
-                    <mat-button-toggle value="site" [matTooltip]="getChartViewTooltip('site')" matTooltipPosition="top">
-                      <mat-icon aria-hidden="true">place</mat-icon>
-                      <span>אתר</span>
-                    </mat-button-toggle>
-                    <mat-button-toggle value="shift" [disabled]="isShiftGroupedView && chartViewMode !== 'shift'"
-                      [matTooltip]="getChartViewTooltip('shift')" matTooltipPosition="top">
-                      <mat-icon aria-hidden="true">watch_later</mat-icon>
-                      <span>משמרת</span>
-                    </mat-button-toggle>
-                    <mat-button-toggle value="yoy-combined" [matTooltip]="getChartViewTooltip('yoy-combined')"
-                      matTooltipPosition="top" (click)="onYoyCombinedClick()">
-                      <mat-icon aria-hidden="true">layers</mat-icon>
-                      <span>מדד משולב</span>
-                    </mat-button-toggle>
-                  </mat-button-toggle-group>
-                </div>
-
-                <!-- כפתורי מדדי זמני חדר – מתחת לגרף הראשי, במצב room-times -->
-                <div class="chart-mode-row" *ngIf="mainMetricMode === 'room-times'">
-                  <mat-button-toggle-group name="roomTimesView" aria-label="Room times view"
-                    class="mat-button-toggle-group custom-toggle-group" [value]="roomTimesView"
-                    (change)="setRoomTimesView($event.value)">
-                    <mat-button-toggle value="avgDuration">
-                      <mat-icon>speed</mat-icon>
-                      <span>משך ניתוח ממוצע</span>
-                    </mat-button-toggle>
-                    <mat-button-toggle value="firstStart">
-                      <mat-icon>play_circle</mat-icon>
-                      <span>כניסה ניתוח ראשון</span>
-                    </mat-button-toggle>
-                    <mat-button-toggle value="lastEnd">
-                      <mat-icon>stop_circle</mat-icon>
-                      <span>סיום ניתוח אחרון</span>
-                    </mat-button-toggle>
-                    <mat-button-toggle value="avgSetup">
-                      <mat-icon>hourglass_bottom</mat-icon>
-                      <span>SETUP ממוצע</span>
-                    </mat-button-toggle>
-                    <mat-button-toggle value="lossPerDay">
-                      <mat-icon>timer_off</mat-icon>
-                      <span>זמן אבוד ליום</span>
-                    </mat-button-toggle>
-                    <mat-button-toggle value="approvedPerDay">
-                      <mat-icon>schedule</mat-icon>
-                      <span>זמן מנוצל ליום</span>
-                    </mat-button-toggle>
-                  </mat-button-toggle-group>
-                </div>
-
-                <!-- כפתורי מדדי חדרים לפי מחלקה – מוצגים רק במצב ניצולת חדר ניתוח -->
-                <!-- כפתורי מדדי חדרים – מוצגים רק במצב ניצולת חדר ניתוח -->
-                <div class="chart-mode-row"
-                  *ngIf="isRoomUtilizationMode() && !isMainDataLoading && ((!isChartLoading && chartData && chartData.length > 0) || roomUtilizationSubChart === 'surgeriesPerDay')">
-                  <span class="chart-mode-label">
-                    חדרים לפי מחלקה:
-                  </span>
-
-                  <mat-button-toggle-group name="roomStatsMode" aria-label="Room stats mode"
-                    class="mat-button-toggle-group custom-toggle-group" [value]="getRoomStatsToggleValue()"
-                    (change)="onRoomStatsModeChange($event.value)">
-                    <mat-button-toggle value="yearTotal">
-                      סה"כ חדרים לשנה
-                    </mat-button-toggle>
-                    <mat-button-toggle value="total">
-                      סה"כ חדרים לפי מחלקה
-                    </mat-button-toggle>
-                    <mat-button-toggle value="open">
-                      חדרים פותחים
-                    </mat-button-toggle>
-                    <mat-button-toggle value="close">
-                      חדרים סוגרים
-                    </mat-button-toggle>
-                    <mat-button-toggle value="fullDays">
-                      ימים מלאים (ללא פיצול)
-                    </mat-button-toggle>
-                    <mat-button-toggle value="surgeriesPerDay"
-                      matTooltip="ממוצע ניתוחים ליום בחדר לפי מחלקה מאוגדת (Wing) – אותו גרף כמו בזמני חדר"
-                      matTooltipPosition="top">
-                      <mat-icon>calendar_view_day</mat-icon>
-                      <span>ניתוחים ליום</span>
-                    </mat-button-toggle>
-                  </mat-button-toggle-group>
-                </div>
-
-                <!-- טקסט הסבר קצר מה מייצגת כל עמודה/צבע בגרף -->
-                <div class="chart-mode-description"
-                  *ngIf="!isChartLoading && !isMainDataLoading && chartData && chartData.length > 0 && !isRoomUtilizationMode()">
-                  <ng-container [ngSwitch]="chartViewMode">
-                    <span *ngSwitchCase="'year-total'">
-                      כל עמודה מייצגת את מספר הניתוחים הכולל באותה שנה.
-                    </span>
-                    <span *ngSwitchCase="'month'">
-                      ציר X מייצג חודשים, וכל צבע/עמודה מקבילים לשנה אחרת (5 שנים אחרונות).
-                      בחודשים שטרם הגיעו בשנה הנוכחית מוצג ממוצע היסטורי של אותן תקופות.
-                    </span>
-                    <span *ngSwitchCase="'department'">
-                      כל עמודה מייצגת מחלקה מנתחת, והצבעים בתוך העמודה מייצגים שנים שונות.
-                    </span>
-                    <span *ngSwitchCase="'site'">
-                      כל עמודה מייצגת שנה, והערימה הצבעונית בתוך העמודה מייצגת אתרים שונים.
-                    </span>
-                    <span *ngSwitchCase="'shift'">
-                      כל עמודה מייצגת שנה, והערימה הצבעונית בתוך העמודה מייצגת משמרות (בוקר / ערב / לילה).
-                    </span>
-                    <span *ngSwitchCase="'fund'">
-                      כל עמודה מייצגת שנה, והערימה הצבעונית בתוך העמודה מייצגת סוגי מימון (קרן / מדינה וכו').
-                    </span>
-                    <span *ngSwitchCase="'yoy-combined'">
-                      אחוז שינוי ביחס לאותה תקופה בשנה שעברה (למשל ינואר–פברואר השנה מול ינואר–פברואר אשתקד): ניתוחים
-                      לחדר,
-                      זמן ניתוח ממוצע, הכנסה ממוצעת.
-                    </span>
-                  </ng-container>
-                </div>
-
-                <div
-                  *ngIf="!isChartLoading && !isMainDataLoading && !(isRoomUtilizationMode() && roomUtilizationSubChart === 'surgeriesPerDay') && (!chartData || chartData.length === 0)"
-                  class="chart-no-data">
-                  אין נתונים להצגה בגרף
-                </div>
-                <div
-                  *ngIf="isRoomUtilizationMode() && roomUtilizationSubChart === 'surgeriesPerDay' && !isSurgeriesPerDayLoading && (!surgeriesPerDayChartData || surgeriesPerDayChartData.length === 0)"
-                  class="chart-no-data">
-                  אין נתונים להצגה בגרף
-                </div>
-                <div class="year-legend"
-                  *ngIf="yearColorMap?.length && !(isRoomUtilizationMode() && roomUtilizationSubChart === 'surgeriesPerDay')">
-                  <div class="year-legend-title">מקרא שנים</div>
-                  <div class="year-legend-items">
-                    <div class="year-legend-item" *ngFor="let yc of yearColorMap">
-                      <span class="year-legend-color" [ngStyle]="{ 'background-color': yc.color }"></span>
-                      <span class="year-legend-text">{{ yc.year }}</span>
+                  <div
+                    *ngIf="isRoomUtilizationMode() && roomUtilizationSubChart === 'surgeriesPerDay' && !isSurgeriesPerDayLoading && (!surgeriesPerDayChartData || surgeriesPerDayChartData.length === 0)"
+                    class="chart-no-data">
+                    אין נתונים להצגה בגרף
+                  </div>
+                  <div class="year-legend"
+                    *ngIf="yearColorMap?.length && !(isRoomUtilizationMode() && roomUtilizationSubChart === 'surgeriesPerDay')">
+                    <div class="year-legend-title">מקרא שנים</div>
+                    <div class="year-legend-items">
+                      <div class="year-legend-item" *ngFor="let yc of yearColorMap">
+                        <span class="year-legend-color" [ngStyle]="{ 'background-color': yc.color }"></span>
+                        <span class="year-legend-text">{{ yc.year }}</span>
+                      </div>
                     </div>
                   </div>
-                </div>
-                <!-- מקרא קטגוריות (משמרות / אתרים / סוגי מימון) הוסר לפי בקשת משתמש -->
-              </ng-container>
+                  <!-- מקרא קטגוריות (משמרות / אתרים / סוגי מימון) הוסר לפי בקשת משתמש -->
+                </ng-container>
+              </div>
             </div>
           </div>
-        </div>
 
-        <!-- ===== TABLE SECTION (1/3) ===== -->
-        <div class="table-section">
-          <div class="panel panel-table">
-            <div class="panel-title">
-              <mat-icon>table_chart</mat-icon>
-              <span>טבלת ניתוחים ומחלקות</span>
-            </div>
+          <!-- ===== TABLE SECTION (1/3) ===== -->
+          <div class="table-section">
+            <div class="panel panel-table">
+              <div class="panel-title">
+                <mat-icon>table_chart</mat-icon>
+                <span>טבלת ניתוחים ומחלקות</span>
+              </div>
 
-            <div class="compare-dept-legend-in-table"
-              *ngIf="mainMetricMode === 'compare-departments' && !showCompareDepartmentsModal && showCompareDepartmentsChartRow()">
-              <ng-container *ngTemplateOutlet="compareDepartmentsLegendAside"></ng-container>
-            </div>
+              <div class="compare-dept-legend-in-table"
+                *ngIf="mainMetricMode === 'compare-departments' && !showCompareDepartmentsModal && showCompareDepartmentsChartRow()">
+                <ng-container *ngTemplateOutlet="compareDepartmentsLegendAside"></ng-container>
+              </div>
 
-            <div class="table-body" #tableBodyEl
-              [class.table-body--hidden-in-compare]="mainMetricMode === 'compare-departments'">
-              <ng-container *ngIf="mainMetricMode !== 'compare-departments'">
-                <!-- טבלה מצטברת: אותם נתונים של הגרף, מוצגים כטבלה (לכל המצבים חוץ ממדד משולב) -->
-                <div class="table-wrap"
-                  *ngIf="chartViewMode !== 'yoy-combined' && chartTableRows?.length && yearsForChart?.length">
-                  <table class="table aggregated-chart-table" dir="rtl">
-                    <thead>
-                      <tr>
-                        <th>ישות</th>
-                        <th *ngFor="let y of yearsForChart; let i = index">
-                          {{ y }}
-                          <br *ngIf="i > 0" />
-                          <small *ngIf="i > 0">שינוי מול {{ yearsForChart[i - 1] }}</small>
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr *ngFor="let r of chartTableRows">
-                        <td>{{ r.label }}</td>
-                        <td *ngFor="let y of yearsForChart" [ngClass]="getYearDiffClass(r, y)">
-                          <ng-container *ngIf="getYearDiff(r, y) as d; else baseValue">
-                            {{ formatAggregatedSideTableValue(d.diff) }}
-                            <br />
-                            <span class="percentage-badge">{{ d.pct }}</span>
-                          </ng-container>
-                          <ng-template #baseValue>
-                            {{ formatAggregatedSideTableValue(r.perYear[y] || 0) }}
-                          </ng-template>
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-                <!-- טבלת מדד משולב: אחוזי שינוי לפי מחלקה -->
-                <div class="table-wrap"
-                  *ngIf="chartViewMode === 'yoy-combined' && getFilteredDepartmentYoyData()?.length">
-                  <table class="table aggregated-chart-table" dir="rtl">
-                    <thead>
-                      <tr>
-                        <th>מחלקה</th>
-                        <th>ניתוחים לחדר<br /><small>% שינוי</small></th>
-                        <th>זמן ניתוח ממוצע<br /><small>% שינוי</small></th>
-                        <th>הכנסה ממוצעת<br /><small>% שינוי</small></th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr *ngFor="let d of getFilteredDepartmentYoyData()">
-                        <td>{{ d.Department }}</td>
-                        <td [ngClass]="getPctClass(d.SurgeriesPerRoom_Pct)">{{ formatPctCell(d.SurgeriesPerRoom_Pct) }}
-                        </td>
-                        <td [ngClass]="getPctClass(d.AvgSurgeryTime_Pct)">{{ formatPctCell(d.AvgSurgeryTime_Pct) }}</td>
-                        <td [ngClass]="getPctClass(d.AvgRevenue_Pct)">{{ formatPctCell(d.AvgRevenue_Pct) }}</td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
+              <div class="table-body" #tableBodyEl
+                [class.table-body--hidden-in-compare]="mainMetricMode === 'compare-departments'">
+                <ng-container *ngIf="mainMetricMode !== 'compare-departments'">
+                  <!-- טבלה מצטברת: אותם נתונים של הגרף, מוצגים כטבלה (לכל המצבים חוץ ממדד משולב) -->
+                  <div class="table-wrap"
+                    *ngIf="chartViewMode !== 'yoy-combined' && chartTableRows?.length && yearsForChart?.length">
+                    <table class="table aggregated-chart-table" dir="rtl">
+                      <thead>
+                        <tr>
+                          <th>ישות</th>
+                          <th *ngFor="let y of yearsForChart; let i = index">
+                            {{ y }}
+                            <br *ngIf="i > 0" />
+                            <small *ngIf="i > 0">שינוי מול {{ yearsForChart[i - 1] }}</small>
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr *ngFor="let r of chartTableRows">
+                          <td>{{ r.label }}</td>
+                          <td *ngFor="let y of yearsForChart" [ngClass]="getYearDiffClass(r, y)">
+                            <ng-container *ngIf="getYearDiff(r, y) as d; else baseValue">
+                              {{ formatAggregatedSideTableValue(d.diff) }}
+                              <br />
+                              <span class="percentage-badge">{{ d.pct }}</span>
+                            </ng-container>
+                            <ng-template #baseValue>
+                              {{ formatAggregatedSideTableValue(r.perYear[y] || 0) }}
+                            </ng-template>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                  <!-- טבלת מדד משולב: אחוזי שינוי לפי מחלקה -->
+                  <div class="table-wrap"
+                    *ngIf="chartViewMode === 'yoy-combined' && getFilteredDepartmentYoyData()?.length">
+                    <table class="table aggregated-chart-table" dir="rtl">
+                      <thead>
+                        <tr>
+                          <th>מחלקה</th>
+                          <th>ניתוחים לחדר<br /><small>% שינוי</small></th>
+                          <th>זמן ניתוח ממוצע<br /><small>% שינוי</small></th>
+                          <th>הכנסה ממוצעת<br /><small>% שינוי</small></th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr *ngFor="let d of getFilteredDepartmentYoyData()">
+                          <td>{{ d.Department }}</td>
+                          <td [ngClass]="getPctClass(d.SurgeriesPerRoom_Pct)">{{ formatPctCell(d.SurgeriesPerRoom_Pct)
+                            }}
+                          </td>
+                          <td [ngClass]="getPctClass(d.AvgSurgeryTime_Pct)">{{ formatPctCell(d.AvgSurgeryTime_Pct) }}
+                          </td>
+                          <td [ngClass]="getPctClass(d.AvgRevenue_Pct)">{{ formatPctCell(d.AvgRevenue_Pct) }}</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
 
-                <div class="empty" *ngIf="(chartViewMode === 'yoy-combined' && !getFilteredDepartmentYoyData()?.length) ||
+                  <div class="empty" *ngIf="(chartViewMode === 'yoy-combined' && !getFilteredDepartmentYoyData()?.length) ||
                    (chartViewMode !== 'yoy-combined' && dataSource.data.length === 0 && !chartTableRows?.length)">
-                  אין נתונים להצגה
-                </div>
-
-                <!-- אזור תובנות מתחת לטבלה – מוצג כשיש תובנות לחישוב -->
-                <div class="table-extra" *ngIf="tableExtraInsights?.length || showTableExtraKpiStrip()">
-                  <div class="table-extra-title">תובנות מהירות — {{ getTableExtraContextTitle() }}</div>
-
-                  <!-- KPIs summary (מתעדכן לפי הגרף והטבלה המוצגים) -->
-                  <div class="table-extra-kpis" dir="rtl" *ngIf="showTableExtraKpiStrip()">
-                    <div class="table-extra-kpi">
-                      <div class="table-extra-kpi-label">{{ getTableExtraKpiPrimaryLabel() }}</div>
-                      <div class="table-extra-kpi-value">
-                        {{ getTableExtraKpiPrimaryDisplay() }}
-                      </div>
-                      <div class="table-extra-kpi-sub">
-                        {{ getTableExtraKpiPrimarySub() }}
-                      </div>
-                    </div>
-
-                    <div class="table-extra-kpi" *ngIf="kpiPriorYear !== null && kpiLastDiffPct !== null">
-                      <div class="table-extra-kpi-label">{{ getTableExtraKpiChangeLabel() }}</div>
-                      <div class="table-extra-kpi-value"
-                        [ngClass]="{ 'kpi-positive': kpiLastDiffPct >= 0, 'kpi-negative': kpiLastDiffPct < 0 }">
-                        {{ kpiLastDiffPct | number:'1.0-0' }}%
-                      </div>
-                      <div class="table-extra-kpi-sub" *ngIf="kpiLastDiff !== null">
-                        {{ formatAggregatedSideTableValue(kpiLastDiff) }} {{ getTableExtraKpiChangeUnitPhrase() }} {{
-                        kpiPriorYear }}
-                      </div>
-                    </div>
-
-                    <div class="table-extra-kpi" *ngIf="kpiTopEntityLabel">
-                      <div class="table-extra-kpi-label">{{ getTableExtraTopEntityLabel() }}</div>
-                      <div class="table-extra-kpi-value">
-                        {{ kpiTopEntityLabel }}
-                      </div>
-                      <div class="table-extra-kpi-sub" *ngIf="kpiTopEntityTotal !== null">
-                        {{ formatAggregatedSideTableValue(kpiTopEntityTotal) }} {{ getTableExtraTopEntityUnit() }}
-                      </div>
-                    </div>
+                    אין נתונים להצגה
                   </div>
 
-                  <!-- Textual insights list -->
-                  <div class="table-extra-body" *ngIf="tableExtraInsights?.length">
-                    <ul class="table-extra-list">
-                      <li *ngFor="let insight of tableExtraInsights">
-                        {{ insight }}
-                      </li>
-                    </ul>
+                  <!-- אזור תובנות מתחת לטבלה – מוצג כשיש תובנות לחישוב -->
+                  <div class="table-extra" *ngIf="tableExtraInsights?.length || showTableExtraKpiStrip()">
+                    <div class="table-extra-title">תובנות מהירות — {{ getTableExtraContextTitle() }}</div>
+
+                    <!-- KPIs summary (מתעדכן לפי הגרף והטבלה המוצגים) -->
+                    <div class="table-extra-kpis" dir="rtl" *ngIf="showTableExtraKpiStrip()">
+                      <div class="table-extra-kpi">
+                        <div class="table-extra-kpi-label">{{ getTableExtraKpiPrimaryLabel() }}</div>
+                        <div class="table-extra-kpi-value">
+                          {{ getTableExtraKpiPrimaryDisplay() }}
+                        </div>
+                        <div class="table-extra-kpi-sub">
+                          {{ getTableExtraKpiPrimarySub() }}
+                        </div>
+                      </div>
+
+                      <div class="table-extra-kpi" *ngIf="kpiPriorYear !== null && kpiLastDiffPct !== null">
+                        <div class="table-extra-kpi-label">{{ getTableExtraKpiChangeLabel() }}</div>
+                        <div class="table-extra-kpi-value"
+                          [ngClass]="{ 'kpi-positive': kpiLastDiffPct >= 0, 'kpi-negative': kpiLastDiffPct < 0 }">
+                          {{ kpiLastDiffPct | number:'1.0-0' }}%
+                        </div>
+                        <div class="table-extra-kpi-sub" *ngIf="kpiLastDiff !== null">
+                          {{ formatAggregatedSideTableValue(kpiLastDiff) }} {{ getTableExtraKpiChangeUnitPhrase() }} {{
+                          kpiPriorYear }}
+                        </div>
+                      </div>
+
+                      <div class="table-extra-kpi" *ngIf="kpiTopEntityLabel">
+                        <div class="table-extra-kpi-label">{{ getTableExtraTopEntityLabel() }}</div>
+                        <div class="table-extra-kpi-value">
+                          {{ kpiTopEntityLabel }}
+                        </div>
+                        <div class="table-extra-kpi-sub" *ngIf="kpiTopEntityTotal !== null">
+                          {{ formatAggregatedSideTableValue(kpiTopEntityTotal) }} {{ getTableExtraTopEntityUnit() }}
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Textual insights list -->
+                    <div class="table-extra-body" *ngIf="tableExtraInsights?.length">
+                      <ul class="table-extra-list">
+                        <li *ngFor="let insight of tableExtraInsights">
+                          {{ insight }}
+                        </li>
+                      </ul>
+                    </div>
                   </div>
-                </div>
-              </ng-container>
+                </ng-container>
+              </div>
             </div>
           </div>
+
         </div>
 
-      </div>
-
-      <aside #filterSidebarRoot *ngIf="showTopDepartmentsSidebar"
-        class="top-departments-sidebar top-departments-sidebar--filters" dir="rtl"
-        aria-label="סינון מתקדם לדשבורד הניתוחים">
-        <div class="top-departments-section-compact top-departments-section-compact--filters">
-          <div class="top-departments-header-compact top-departments-header-compact--filters-heading">
-            <div class="title-with-icon filter-sidebar-heading filter-sidebar-heading--inline">
-              <div class="filter-sidebar-heading__accent" aria-hidden="true"></div>
-              <div class="filter-sidebar-heading__icon-wrap">
-                <mat-icon aria-hidden="true">tune</mat-icon>
-              </div>
-              <div class="filter-sidebar-heading__text">
-                <span class="filter-sidebar-heading__title">סינון מתקדם</span>
-                <span class="filter-sidebar-heading__hint">{{
-                  sidebarFiltersNonApplicableForRoomCharts()
-                  ? 'במצב זה הפילטרים כבויים — החישוב לפי בוקר, אמצע שבוע וחדר ניתוח כללי בלבד.'
-                  : isSurgeryVolumeMonthlyChartView()
-                  ? 'בתצוגת «ניתוחים לפי חודשים» הפילטרים כבויים — הגרף מציג היקף מלא ללא סינון מהסיידבר.'
-                  : mainMetricMode === 'compare-departments'
-                  ? 'במצב «השוואת מחלקות» הפילטרים כבויים — גרף ההשוואה נשלט מבחירת מחלקה ומדדים בפאנל הגרף בלבד.'
-                  : 'מסננים משותפים לגרף ולטבלה'
-                  }}</span>
-              </div>
-              <button type="button" mat-icon-button class="filter-sidebar-inline-close icon-btn ghost"
-                (click)="toggleTopDepartmentsSidebar()" matTooltip="סגור" matTooltipPosition="below"
-                aria-label="סגור פאנל סינון">
-                <mat-icon>close</mat-icon>
-              </button>
-            </div>
-
-            <!-- שורת פילטרים ראשית – מוצגים אנכית אחד מתחת לשני -->
-            <div class="wing-and-theme-row filters-row filters-column" dir="rtl">
-              <!-- כפתור איפוס סינון -->
-              <button mat-stroked-button class="reset-filters-btn reset-filters-btn--in-sidebar"
-                (click)="resetSurgeryFilters()" [disabled]="sidebarAdvancedFiltersDisabledForCurrentChart()"
-                [matTooltip]="sidebarAdvancedFiltersDisabledForCurrentChart() ? 'אין פילטרי סיידבר פעילים במצב זה' : 'איפוס כל הפילטרים'"
-                matTooltipPosition="below">
-                <mat-icon>restart_alt</mat-icon>
-                <span>איפוס סינון</span>
-              </button>
-
-              <!-- פילטר מחלקה לגרף והטבלה — מוצג רק כשהמצב הנוכחי תומך בו -->
-              <div class="custom-dropdown filter-dropdown chart-dept-dropdown"
-                [class.disabled-filter]="isFilterDisabled('chartDepartment')"
-                [class.active]="isChartDeptDropdownOpen"
-                [class.has-value]="chartDepartmentFilter"
-                *ngIf="!sidebarFiltersNonApplicableForRoomCharts() && getChartDepartmentOptions()?.length > 0">
-                <div class="dropdown-trigger"
-                  (click)="!isFilterDisabled('chartDepartment') && (isChartDeptDropdownOpen = !isChartDeptDropdownOpen)">
-                  <mat-icon class="dropdown-icon">local_hospital</mat-icon>
-                  <span class="selected-text">מחלקה: {{ chartDepartmentFilter || 'הכל' }}</span>
-                  <mat-icon class="arrow-icon">{{ isChartDeptDropdownOpen ? 'expand_less' : 'expand_more' }}</mat-icon>
+        <aside #filterSidebarRoot *ngIf="showTopDepartmentsSidebar"
+          class="top-departments-sidebar top-departments-sidebar--filters" dir="rtl"
+          aria-label="סינון מתקדם לדשבורד הניתוחים">
+          <div class="top-departments-section-compact top-departments-section-compact--filters">
+            <div class="top-departments-header-compact top-departments-header-compact--filters-heading">
+              <div class="title-with-icon filter-sidebar-heading filter-sidebar-heading--inline">
+                <div class="filter-sidebar-heading__accent" aria-hidden="true"></div>
+                <div class="filter-sidebar-heading__icon-wrap">
+                  <mat-icon aria-hidden="true">tune</mat-icon>
                 </div>
-                <div class="dropdown-panel" *ngIf="isChartDeptDropdownOpen">
-                  <div class="options-list">
-                    <div class="option-item" (click)="setChartDepartmentFilter(null)">
-                      מחלקה: הכל
-                    </div>
-                    <div class="option-item" *ngFor="let opt of getChartDepartmentOptions()"
-                      (click)="setChartDepartmentFilter(opt)" [class.selected]="chartDepartmentFilter === opt">
-                      {{ opt }}
+                <div class="filter-sidebar-heading__text">
+                  <span class="filter-sidebar-heading__title">סינון מתקדם</span>
+                  <span class="filter-sidebar-heading__hint">{{
+                    sidebarFiltersNonApplicableForRoomCharts()
+                    ? 'במצב זה הפילטרים כבויים — החישוב לפי בוקר, אמצע שבוע וחדר ניתוח כללי בלבד.'
+                    : mainMetricMode === 'compare-departments'
+                    ? 'במצב «השוואת מחלקות» הפילטרים כבויים — גרף ההשוואה נשלט מבחירת מחלקה ומדדים בפאנל הגרף בלבד.'
+                    : 'מסננים משותפים לגרף ולטבלה (כולל תצוגת ניתוחים לפי חודשים)'
+                    }}</span>
+                </div>
+                <button type="button" mat-icon-button class="filter-sidebar-inline-close icon-btn ghost"
+                  (click)="toggleTopDepartmentsSidebar()" matTooltip="סגור" matTooltipPosition="below"
+                  aria-label="סגור פאנל סינון">
+                  <mat-icon>close</mat-icon>
+                </button>
+              </div>
+
+              <!-- שורת פילטרים ראשית – מוצגים אנכית אחד מתחת לשני -->
+              <div class="wing-and-theme-row filters-row filters-column" dir="rtl">
+                <!-- כפתור איפוס סינון -->
+                <button mat-stroked-button class="reset-filters-btn reset-filters-btn--in-sidebar"
+                  (click)="resetSurgeryFilters()" [disabled]="sidebarAdvancedFiltersDisabledForCurrentChart()"
+                  [matTooltip]="sidebarAdvancedFiltersDisabledForCurrentChart() ? 'אין פילטרי סיידבר פעילים במצב זה' : 'איפוס כל הפילטרים'"
+                  matTooltipPosition="below">
+                  <mat-icon>restart_alt</mat-icon>
+                  <span>איפוס סינון</span>
+                </button>
+
+                <!-- פילטר מחלקה לגרף והטבלה — מוצג רק כשהמצב הנוכחי תומך בו -->
+                <div class="custom-dropdown filter-dropdown chart-dept-dropdown"
+                  [class.disabled-filter]="isFilterDisabled('chartDepartment')" [class.active]="isChartDeptDropdownOpen"
+                  [class.has-value]="chartDepartmentFilter"
+                  *ngIf="!sidebarFiltersNonApplicableForRoomCharts() && getChartDepartmentOptions()?.length > 0">
+                  <div class="dropdown-trigger"
+                    (click)="!isFilterDisabled('chartDepartment') && toggleSidebarFilterDropdown('chartDepartment')">
+                    <mat-icon class="dropdown-icon">local_hospital</mat-icon>
+                    <span class="selected-text">מחלקה: {{ chartDepartmentFilter || 'הכל' }}</span>
+                    <mat-icon class="arrow-icon">{{ isChartDeptDropdownOpen ? 'expand_less' : 'expand_more'
+                      }}</mat-icon>
+                  </div>
+                  <div class="dropdown-panel" *ngIf="isChartDeptDropdownOpen">
+                    <div class="options-list">
+                      <div class="option-item" (click)="setChartDepartmentFilter(null)"
+                        [class.selected]="!chartDepartmentFilter">
+                        מחלקה: הכל
+                      </div>
+                      <div class="option-item" *ngFor="let opt of getChartDepartmentOptions()"
+                        (click)="setChartDepartmentFilter(opt)" [class.selected]="chartDepartmentFilter === opt">
+                        {{ opt }}
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
 
-              <!-- פילטר סוג ניתוח -->
-              <div class="custom-dropdown filter-dropdown" [class.disabled-filter]="isFilterDisabled('surgeryType')"
-                [class.active]="isSurgeryTypeOpen"
-                [class.has-value]="selectedSurgeryTypes?.length" *ngIf="!sidebarFiltersNonApplicableForRoomCharts()">
-                <div class="dropdown-trigger"
-                  (click)="!isFilterDisabled('surgeryType') && (isSurgeryTypeOpen = !isSurgeryTypeOpen)">
-                  <mat-icon class="dropdown-icon">category</mat-icon>
-                  <span class="selected-text" matTooltip="{{ getSurgeryTypeDisplay() }}" matTooltipPosition="below">
-                    {{ getSurgeryTypeDisplay() }}
-                  </span>
-                  <mat-icon class="arrow-icon">{{ isSurgeryTypeOpen ? 'expand_less' : 'expand_more' }}</mat-icon>
-                </div>
-                <div class="dropdown-panel" *ngIf="isSurgeryTypeOpen">
-                  <div class="options-list">
-                    <div class="option-item" *ngFor="let opt of surgeryTypeOptions" (click)="setSurgeryTypeFilter(opt)"
-                      [class.selected]="selectedSurgeryTypes?.includes(opt)">
-                      {{ opt }}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- פילטר 3: משמרת -->
-              <div class="custom-dropdown filter-dropdown" [class.disabled-filter]="isFilterDisabled('shift')"
-                [class.active]="isShiftOpen"
-                [class.has-value]="selectedShifts?.length"
-                *ngIf="!sidebarFiltersNonApplicableForRoomCharts() && !isShiftGroupedView">
-                <div class="dropdown-trigger"
-                  (click)="!isFilterDisabled('shift') && (isShiftOpen = !isShiftOpen)">
-                  <mat-icon class="dropdown-icon">schedule</mat-icon>
-                  <span class="selected-text" matTooltip="{{ getShiftDisplay() }}" matTooltipPosition="below">
-                    {{ getShiftDisplay() }}
-                  </span>
-                  <mat-icon class="arrow-icon">{{ isShiftOpen ? 'expand_less' : 'expand_more' }}</mat-icon>
-                </div>
-                <div class="dropdown-panel" *ngIf="isShiftOpen">
-                  <div class="options-list">
-                    <div class="option-item" *ngFor="let opt of shiftOptions" (click)="setShiftFilter(opt)"
-                      [class.selected]="selectedShifts?.includes(opt)">
-                      {{ opt }}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div class="custom-dropdown filter-dropdown" [class.disabled-filter]="isFilterDisabled('weekPart')"
-                [class.active]="isWeekdayOpen"
-                [class.has-value]="selectedWeekdays?.length" *ngIf="!sidebarFiltersNonApplicableForRoomCharts()">
-                <div class="dropdown-trigger"
-                  (click)="!isFilterDisabled('weekPart') && (isWeekdayOpen = !isWeekdayOpen)">
-                  <mat-icon class="dropdown-icon">event</mat-icon>
-                  <span class="selected-text" matTooltip="{{ getWeekdayDisplay() }}" matTooltipPosition="below">
-                    {{ getWeekdayDisplay() }}
-                  </span>
-                  <mat-icon class="arrow-icon">{{ isWeekdayOpen ? 'expand_less' : 'expand_more' }}</mat-icon>
-                </div>
-                <div class="dropdown-panel" *ngIf="isWeekdayOpen">
-                  <div class="options-list">
-                    <div class="option-item" *ngFor="let opt of weekdayOptions" (click)="setWeekdayFilter(opt)"
-                      [class.selected]="selectedWeekdays?.includes(opt)">
-                      {{ opt }}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- פילטר עבודת בוקר (כן/לא) -->
-              <div class="custom-dropdown filter-dropdown" [class.disabled-filter]="isFilterDisabled('morningWork')"
-                [class.active]="isMorningWorkOpen"
-                [class.has-value]="morningWorkFilter !== 'all'" *ngIf="!sidebarFiltersNonApplicableForRoomCharts()">
-                <div class="dropdown-trigger"
-                  (click)="!isFilterDisabled('morningWork') && (isMorningWorkOpen = !isMorningWorkOpen)">
-                  <mat-icon class="dropdown-icon">wb_sunny</mat-icon>
-                  <span class="selected-text" matTooltip="{{ getMorningWorkDisplay() }}" matTooltipPosition="below">
-                    {{ getMorningWorkDisplay() }}
-                  </span>
-                  <mat-icon class="arrow-icon">{{ isMorningWorkOpen ? 'expand_less' : 'expand_more' }}</mat-icon>
-                </div>
-                <div class="dropdown-panel" *ngIf="isMorningWorkOpen">
-                  <div class="options-list">
-                    <div class="option-item" (click)="setMorningWorkFilter('all')"
-                      [class.selected]="morningWorkFilter === 'all'">
-                      הכל
-                    </div>
-                    <div class="option-item" (click)="setMorningWorkFilter('yes')"
-                      [class.selected]="morningWorkFilter === 'yes'">
-                      כן
-                    </div>
-                    <div class="option-item" (click)="setMorningWorkFilter('no')"
-                      [class.selected]="morningWorkFilter === 'no'">
-                      לא
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div class="filters-disabled-hint" *ngIf="sidebarFiltersNonApplicableForRoomCharts()" role="note">
-                פילטרי הסיידבר אינם רלוונטיים לגרפי «זמני חדר» ו«ניצולת חדר»: כל המדדים מחושבים בשרת עבור משמרת בוקר,
-                ימי אמצע שבוע וחדר ניתוח כללי בלבד, ולא ניתן לצמצם או לשנות את ההיקף דרך הסיידבר.
-              </div>
-              <div class="filters-disabled-hint" *ngIf="isSurgeryVolumeMonthlyChartView()" role="note">
-                בתצוגת «ניתוחים לפי חודשים» פילטרי הסיידבר אינם משפיעים על הגרף; מוצגים נתוני היקף מלא בלבד.
-              </div>
-              <div class="filters-disabled-hint" *ngIf="mainMetricMode === 'compare-departments'" role="note">
-                במצב «השוואת מחלקות» גרף ההשוואה נבנה מאגרגציה מלאה לפי מחלקה (ללא סינון מהסיידבר). סוגי ניתוח למדדים
-                נבחרים בפאנל הגרף, לא כאן.
-              </div>
-
-              <div class="wing-and-theme-row filters-row filters-column" dir="rtl" *ngIf="showMoreFilters">
-
-                <div class="custom-dropdown filter-dropdown" [class.active]="isDropdownOpen"
-                  [class.has-value]="selectedDiagnosis && selectedDiagnosis !== 'כל האתרים'">
-                  <div class="dropdown-trigger" (click)="toggleDropdown()">
-                    <mat-icon class="dropdown-icon">apartment</mat-icon>
-                    <span class="selected-text">
-                      מחלקה/ אתר (לביצוע)
+                <!-- פילטר סוג ניתוח -->
+                <div class="custom-dropdown filter-dropdown" [class.disabled-filter]="isFilterDisabled('surgeryType')"
+                  [class.active]="isSurgeryTypeOpen" [class.has-value]="selectedSurgeryTypes?.length"
+                  *ngIf="!sidebarFiltersNonApplicableForRoomCharts()">
+                  <div class="dropdown-trigger"
+                    (click)="!isFilterDisabled('surgeryType') && toggleSidebarFilterDropdown('surgeryType')">
+                    <mat-icon class="dropdown-icon">category</mat-icon>
+                    <span class="selected-text" matTooltip="{{ getSurgeryTypeDisplay() }}" matTooltipPosition="below">
+                      {{ getSurgeryTypeDisplay() }}
                     </span>
-                    <mat-icon class="arrow-icon">{{ isDropdownOpen ? 'expand_less' : 'expand_more' }}</mat-icon>
+                    <mat-icon class="arrow-icon">{{ isSurgeryTypeOpen ? 'expand_less' : 'expand_more' }}</mat-icon>
                   </div>
-                  <!-- <div class="dropdown-panel" *ngIf="isDropdownOpen">
+                  <div class="dropdown-panel" *ngIf="isSurgeryTypeOpen">
+                    <div class="options-list">
+                      <div class="option-item" *ngFor="let opt of surgeryTypeOptions"
+                        (click)="setSurgeryTypeFilter(opt)" [class.selected]="selectedSurgeryTypes?.includes(opt)">
+                        {{ opt }}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- פילטר 3: משמרת -->
+                <div class="custom-dropdown filter-dropdown" [class.disabled-filter]="isFilterDisabled('shift')"
+                  [class.active]="isShiftOpen" [class.has-value]="selectedShifts?.length"
+                  *ngIf="!sidebarFiltersNonApplicableForRoomCharts() && !isShiftGroupedView">
+                  <div class="dropdown-trigger"
+                    (click)="!isFilterDisabled('shift') && toggleSidebarFilterDropdown('shift')">
+                    <mat-icon class="dropdown-icon">schedule</mat-icon>
+                    <span class="selected-text" matTooltip="{{ getShiftDisplay() }}" matTooltipPosition="below">
+                      {{ getShiftDisplay() }}
+                    </span>
+                    <mat-icon class="arrow-icon">{{ isShiftOpen ? 'expand_less' : 'expand_more' }}</mat-icon>
+                  </div>
+                  <div class="dropdown-panel" *ngIf="isShiftOpen">
+                    <div class="options-list">
+                      <div class="option-item" *ngFor="let opt of shiftOptions" (click)="setShiftFilter(opt)"
+                        [class.selected]="selectedShifts?.includes(opt)">
+                        {{ opt }}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="custom-dropdown filter-dropdown" [class.disabled-filter]="isFilterDisabled('weekPart')"
+                  [class.active]="isWeekdayOpen" [class.has-value]="selectedWeekdays?.length"
+                  *ngIf="!sidebarFiltersNonApplicableForRoomCharts()">
+                  <div class="dropdown-trigger"
+                    (click)="!isFilterDisabled('weekPart') && toggleSidebarFilterDropdown('weekPart')">
+                    <mat-icon class="dropdown-icon">event</mat-icon>
+                    <span class="selected-text" matTooltip="{{ getWeekdayDisplay() }}" matTooltipPosition="below">
+                      {{ getWeekdayDisplay() }}
+                    </span>
+                    <mat-icon class="arrow-icon">{{ isWeekdayOpen ? 'expand_less' : 'expand_more' }}</mat-icon>
+                  </div>
+                  <div class="dropdown-panel" *ngIf="isWeekdayOpen">
+                    <div class="options-list">
+                      <div class="option-item" *ngFor="let opt of weekdayOptions" (click)="setWeekdayFilter(opt)"
+                        [class.selected]="selectedWeekdays?.includes(opt)">
+                        {{ opt }}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- פילטר עבודת בוקר (כן/לא) -->
+                <div class="custom-dropdown filter-dropdown" [class.disabled-filter]="isFilterDisabled('morningWork')"
+                  [class.active]="isMorningWorkOpen" [class.has-value]="morningWorkFilter !== 'all'"
+                  *ngIf="!sidebarFiltersNonApplicableForRoomCharts()">
+                  <div class="dropdown-trigger"
+                    (click)="!isFilterDisabled('morningWork') && toggleSidebarFilterDropdown('morningWork')">
+                    <mat-icon class="dropdown-icon">wb_sunny</mat-icon>
+                    <span class="selected-text" matTooltip="{{ getMorningWorkDisplay() }}" matTooltipPosition="below">
+                      {{ getMorningWorkDisplay() }}
+                    </span>
+                    <mat-icon class="arrow-icon">{{ isMorningWorkOpen ? 'expand_less' : 'expand_more' }}</mat-icon>
+                  </div>
+                  <div class="dropdown-panel" *ngIf="isMorningWorkOpen">
+                    <div class="options-list">
+                      <div class="option-item" (click)="setMorningWorkFilter('all')"
+                        [class.selected]="morningWorkFilter === 'all'">
+                        הכל
+                      </div>
+                      <div class="option-item" (click)="setMorningWorkFilter('yes')"
+                        [class.selected]="morningWorkFilter === 'yes'">
+                        כן
+                      </div>
+                      <div class="option-item" (click)="setMorningWorkFilter('no')"
+                        [class.selected]="morningWorkFilter === 'no'">
+                        לא
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="filters-disabled-hint" *ngIf="sidebarFiltersNonApplicableForRoomCharts()" role="note">
+                  פילטרי הסיידבר אינם רלוונטיים לגרפי «זמני חדר» ו«ניצולת חדר»: כל המדדים מחושבים בשרת עבור משמרת בוקר,
+                  ימי אמצע שבוע וחדר ניתוח כללי בלבד, ולא ניתן לצמצם או לשנות את ההיקף דרך הסיידבר.
+                </div>
+                <div class="filters-disabled-hint" *ngIf="mainMetricMode === 'compare-departments'" role="note">
+                  במצב «השוואת מחלקות» גרף ההשוואה נבנה מאגרגציה מלאה לפי מחלקה (ללא סינון מהסיידבר). סוגי ניתוח למדדים
+                  נבחרים בפאנל הגרף, לא כאן.
+                </div>
+
+                <div class="wing-and-theme-row filters-row filters-column" dir="rtl" *ngIf="showMoreFilters">
+
+                  <div class="custom-dropdown filter-dropdown" [class.active]="isDropdownOpen"
+                    [class.has-value]="selectedDiagnosis && selectedDiagnosis !== 'כל האתרים'">
+                    <div class="dropdown-trigger" (click)="toggleDropdown()">
+                      <mat-icon class="dropdown-icon">apartment</mat-icon>
+                      <span class="selected-text">
+                        מחלקה/ אתר (לביצוע)
+                      </span>
+                      <mat-icon class="arrow-icon">{{ isDropdownOpen ? 'expand_less' : 'expand_more' }}</mat-icon>
+                    </div>
+                    <!-- <div class="dropdown-panel" *ngIf="isDropdownOpen">
                 <div class="loading-state" *ngIf="isDiagnosesLoading">
                   <div class="spinner-with-percent">
                     <mat-spinner diameter="32"></mat-spinner>
@@ -1175,19 +1232,20 @@
                   </div>
                 </div>
               </div> -->
-                </div>
-                <!-- פילטר 4: חדר ניתוח -->
-                <div class="custom-dropdown filter-dropdown" [class.active]="isRoomOpen"
-                  [class.has-value]="selectedRooms?.length" [class.disabled-filter]="isFilterDisabled('room')">
-                  <div class="dropdown-trigger" (click)="!isFilterDisabled('room') && (isRoomOpen = !isRoomOpen)">
-                    <mat-icon class="dropdown-icon">meeting_room</mat-icon>
-                    <span class="selected-text">חדר ניתוח (לביצוע)</span>
-                    <!-- <span class="selected-text" matTooltip="{{ getRoomDisplay() }}">
+                  </div>
+                  <!-- פילטר 4: חדר ניתוח -->
+                  <div class="custom-dropdown filter-dropdown" [class.active]="isRoomOpen"
+                    [class.has-value]="selectedRooms?.length" [class.disabled-filter]="isFilterDisabled('room')">
+                    <div class="dropdown-trigger"
+                      (click)="!isFilterDisabled('room') && toggleSidebarFilterDropdown('room')">
+                      <mat-icon class="dropdown-icon">meeting_room</mat-icon>
+                      <span class="selected-text">חדר ניתוח (לביצוע)</span>
+                      <!-- <span class="selected-text" matTooltip="{{ getRoomDisplay() }}">
                   {{ getRoomDisplay() }}
                 </span> -->
-                    <mat-icon class="arrow-icon">{{ isRoomOpen ? 'expand_less' : 'expand_more' }}</mat-icon>
-                  </div>
-                  <!-- <div class="dropdown-panel" *ngIf="isRoomOpen">
+                      <mat-icon class="arrow-icon">{{ isRoomOpen ? 'expand_less' : 'expand_more' }}</mat-icon>
+                    </div>
+                    <!-- <div class="dropdown-panel" *ngIf="isRoomOpen">
                 <div class="options-list">
                   <div class="option-item" *ngFor="let opt of roomOptions" (click)="setRoomFilter(opt)"
                     [class.selected]="selectedRooms?.includes(opt)">
@@ -1195,112 +1253,127 @@
                   </div>
                 </div>
               </div> -->
-                </div>
-
-                <!-- פילטר 5: מחלקה -->
-                <div class="custom-dropdown filter-dropdown" [class.active]="isDeptOpen"
-                  [class.has-value]="selectedDepartments?.length">
-                  <div class="dropdown-trigger" (click)="isDeptOpen = !isDeptOpen">
-                    <mat-icon class="dropdown-icon">local_hospital</mat-icon>
-                    <span class="selected-text">תקינות (לביצוע)</span>
-                    <!-- <mat-icon class="arrow-icon">{{ isDeptOpen ? 'expand_less' : 'expand_more' }}</mat-icon> -->
                   </div>
 
-                </div>
-                <!-- שורת פילטרים נוספת (5 נוספים) – גם כאן אנכית -->
-                <!-- <div class="wing-and-theme-row filters-row filters-column" dir="rtl" *ngIf="showMoreFilters"> -->
-                <!-- דוגמה לפילטרים נוספים – ניתן להרחיב לפי הצורך -->
+                  <!-- פילטר 5: מחלקה -->
+                  <div class="custom-dropdown filter-dropdown" [class.active]="isDeptOpen"
+                    [class.has-value]="selectedDepartments?.length">
+                    <div class="dropdown-trigger" (click)="toggleSidebarFilterDropdown('department')">
+                      <mat-icon class="dropdown-icon">local_hospital</mat-icon>
+                      <span class="selected-text">תקינות (לביצוע)</span>
+                      <!-- <mat-icon class="arrow-icon">{{ isDeptOpen ? 'expand_less' : 'expand_more' }}</mat-icon> -->
+                    </div>
+
+                  </div>
+                  <!-- שורת פילטרים נוספת (5 נוספים) – גם כאן אנכית -->
+                  <!-- <div class="wing-and-theme-row filters-row filters-column" dir="rtl" *ngIf="showMoreFilters"> -->
+                  <!-- דוגמה לפילטרים נוספים – ניתן להרחיב לפי הצורך -->
 
 
-                <!-- שאר הפילטרים הנוספים – placeholders לעתיד -->
-                <div class="custom-dropdown filter-dropdown disabled-filter">
-                  <div class="dropdown-trigger">
-                    <mat-icon class="dropdown-icon">check_circle</mat-icon>
-                    <span class="selected-text">תקינות (לביצוע)</span>
+                  <!-- שאר הפילטרים הנוספים – placeholders לעתיד -->
+                  <div class="custom-dropdown filter-dropdown disabled-filter">
+                    <div class="dropdown-trigger">
+                      <mat-icon class="dropdown-icon">check_circle</mat-icon>
+                      <span class="selected-text">תקינות (לביצוע)</span>
+                    </div>
+                  </div>
+                  <div class="custom-dropdown filter-dropdown disabled-filter">
+                    <div class="dropdown-trigger">
+                      <mat-icon class="dropdown-icon">holiday_village</mat-icon>
+                      <span class="selected-text">חג / יום רגיל (לביצוע)</span>
+                    </div>
+                  </div>
+                  <div class="custom-dropdown filter-dropdown disabled-filter">
+                    <div class="dropdown-trigger">
+                      <mat-icon class="dropdown-icon">trending_up</mat-icon>
+                      <span class="selected-text">גלישה (לביצוע)</span>
+                    </div>
+                  </div>
+                  <div class="custom-dropdown filter-dropdown disabled-filter">
+                    <div class="dropdown-trigger">
+                      <mat-icon class="dropdown-icon">account_balance</mat-icon>
+                      <span class="selected-text">גורם משלם (לביצוע)</span>
+                    </div>
                   </div>
                 </div>
-                <div class="custom-dropdown filter-dropdown disabled-filter">
-                  <div class="dropdown-trigger">
-                    <mat-icon class="dropdown-icon">holiday_village</mat-icon>
-                    <span class="selected-text">חג / יום רגיל (לביצוע)</span>
-                  </div>
-                </div>
-                <div class="custom-dropdown filter-dropdown disabled-filter">
-                  <div class="dropdown-trigger">
-                    <mat-icon class="dropdown-icon">trending_up</mat-icon>
-                    <span class="selected-text">גלישה (לביצוע)</span>
-                  </div>
-                </div>
-                <div class="custom-dropdown filter-dropdown disabled-filter">
-                  <div class="dropdown-trigger">
-                    <mat-icon class="dropdown-icon">account_balance</mat-icon>
-                    <span class="selected-text">גורם משלם (לביצוע)</span>
-                  </div>
-                </div>
-              </div>
 
-              <!-- פילטר אתר (Site) – משפיע על כל הגרפים (מדדי ניתוחים, זמני חדר, ניצולת חדר) -->
-              <div class="custom-dropdown filter-dropdown" [class.disabled-filter]="isFilterDisabled('site')"
-                [class.active]="isSiteOpen"
-                [class.has-value]="selectedSites?.length" *ngIf="!sidebarFiltersNonApplicableForRoomCharts()">
-                <div class="dropdown-trigger"
-                  matTooltip="{{ selectedSites?.length ? selectedSites.join(', ') : 'כל האתרים' }}"
-                  matTooltipPosition="below"
-                  (click)="!isFilterDisabled('site') && (isSiteOpen = !isSiteOpen)">
-                  <mat-icon class="dropdown-icon">meeting_room</mat-icon>
-                  <span class="selected-text">
-                    אתר: {{ selectedSites?.length ? selectedSites.join(', ') : 'הכל' }}
-                  </span>
-                  <mat-icon class="arrow-icon">{{ isSiteOpen ? 'expand_less' : 'expand_more' }}</mat-icon>
-                </div>
-                <div class="dropdown-panel" *ngIf="isSiteOpen">
-                  <div class="options-list">
-                    <div class="option-item" (click)="clearSiteFilter()"
-                      [class.selected]="!selectedSites || selectedSites.length === 0">
-                      כל האתרים
-                    </div>
-                    <div class="option-item" (click)="setSiteFilter('חנ-כללי')"
-                      [class.selected]="selectedSites?.includes('חנ-כללי')">
-                      חדר ניתוח כללי
-                    </div>
-                    <div class="option-item" (click)="setSiteFilter('חנ-אמבול')"
-                      [class.selected]="selectedSites?.includes('חנ-אמבול')">
-                      אמבולטורי
-                    </div>
-                    <div class="option-item" (click)="setSiteFilter('חנ-פהלסת')"
-                      [class.selected]="selectedSites?.includes('חנ-פהלסת')">
-                      פה ולסת
-                    </div>
-                    <div class="option-item" (click)="setSiteFilter('חנ-יולד')"
-                      [class.selected]="selectedSites?.includes('חנ-יולד')">
-                      יולדות
-                    </div>
-                    <div class="option-item" (click)="setSiteFilter('חנ-מחלקה')"
-                      [class.selected]="selectedSites?.includes('חנ-מחלקה')">
-                      חדר מחלקה
+                <!-- פילטר אתר (Site) – משפיע על כל הגרפים (מדדי ניתוחים, זמני חדר, ניצולת חדר) -->
+                <div class="custom-dropdown filter-dropdown" [class.disabled-filter]="isFilterDisabled('site')"
+                  [class.active]="isSiteOpen" [class.has-value]="selectedSites?.length"
+                  *ngIf="!sidebarFiltersNonApplicableForRoomCharts()">
+                  <div class="dropdown-trigger"
+                    matTooltip="{{ selectedSites?.length ? selectedSites.join(', ') : 'כל האתרים' }}"
+                    matTooltipPosition="below"
+                    (click)="!isFilterDisabled('site') && toggleSidebarFilterDropdown('site')">
+                    <mat-icon class="dropdown-icon">meeting_room</mat-icon>
+                    <span class="selected-text">
+                      אתר: {{ selectedSites?.length ? selectedSites.join(', ') : 'הכל' }}
+                    </span>
+                    <mat-icon class="arrow-icon">{{ isSiteOpen ? 'expand_less' : 'expand_more' }}</mat-icon>
+                  </div>
+                  <div class="dropdown-panel" *ngIf="isSiteOpen">
+                    <div class="options-list">
+                      <div class="option-item" (click)="clearSiteFilter()"
+                        [class.selected]="!selectedSites || selectedSites.length === 0">
+                        כל האתרים
+                      </div>
+                      <div class="option-item" (click)="setSiteFilter('חנ-כללי')"
+                        [class.selected]="selectedSites?.includes('חנ-כללי')">
+                        חדר ניתוח כללי
+                      </div>
+                      <div class="option-item" (click)="setSiteFilter('חנ-אמבול')"
+                        [class.selected]="selectedSites?.includes('חנ-אמבול')">
+                        אמבולטורי
+                      </div>
+                      <div class="option-item" (click)="setSiteFilter('חנ-פהלסת')"
+                        [class.selected]="selectedSites?.includes('חנ-פהלסת')">
+                        פה ולסת
+                      </div>
+                      <div class="option-item" (click)="setSiteFilter('חנ-יולד')"
+                        [class.selected]="selectedSites?.includes('חנ-יולד')">
+                        יולדות
+                      </div>
+                      <div class="option-item" (click)="setSiteFilter('חנ-מחלקה')"
+                        [class.selected]="selectedSites?.includes('חנ-מחלקה')">
+                        חדר מחלקה
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-              <!-- כפתור עוד אפשרויות סינון / מצב פתוח מציג תקציר פילטרים -->
-              <!-- <button mat-stroked-button class="more-filters-btn more-filters-btn--in-sidebar" (click)="toggleMoreFilters()">
+                <!-- כפתור עוד אפשרויות סינון / מצב פתוח מציג תקציר פילטרים -->
+                <!-- <button mat-stroked-button class="more-filters-btn more-filters-btn--in-sidebar" (click)="toggleMoreFilters()">
               <ng-container *ngIf="!showMoreFilters">
                 עוד אפשרויות סינון
               </ng-container> -->
-              <!-- <ng-container *ngIf="showMoreFilters">
+                <!-- <ng-container *ngIf="showMoreFilters">
                 {{ getActiveFiltersSummary() }}
               </ng-container> -->
-              <!-- </button> -->
+                <!-- </button> -->
+              </div>
+
             </div>
 
+            <div class="top-departments-footer-compact top-departments-footer-compact--filters" role="status">
+              <mat-icon class="top-departments-footer-compact__icon" aria-hidden="true">info_outline</mat-icon>
+              <span class="top-departments-footer-compact__value">{{ getActiveFiltersSummary() }}</span>
+            </div>
           </div>
+        </aside>
 
-          <div class="top-departments-footer-compact top-departments-footer-compact--filters" role="status">
-            <mat-icon class="top-departments-footer-compact__icon" aria-hidden="true">info_outline</mat-icon>
-            <span class="top-departments-footer-compact__value">{{ getActiveFiltersSummary() }}</span>
-          </div>
-        </div>
-      </aside>
+      </ng-container>
+
+      <div class="main-content-subview main-content-subview--full"
+        *ngIf="showTopQuickMainSlotSwitcher && topQuickMainSlot === 'wait'">
+        <app-surgeries-wait-times></app-surgeries-wait-times>
+      </div>
+      <div class="main-content-subview main-content-subview--full"
+        *ngIf="showTopQuickMainSlotSwitcher && topQuickMainSlot === 'revenue'">
+        <app-surgeries-revenue></app-surgeries-revenue>
+      </div>
+      <div class="main-content-subview main-content-subview--full"
+        *ngIf="showTopQuickMainSlotSwitcher && topQuickMainSlot === 'cancellations'">
+        <app-surgeries-cancellations></app-surgeries-cancellations>
+      </div>
 
     </div>
 
@@ -1331,9 +1404,9 @@
             נוחה.
           </p>
           <div class="graph-body" style="flex: 1 1 auto; max-height: none; min-height: 0;">
-            <canvas #yoyCombinedChart *ngIf="!isChartLoading && !isMainDataLoading && departmentYoyData?.length"
+            <canvas #yoyCombinedChart *ngIf="!isChartLoading && !isMainDataLoading && getFilteredDepartmentYoyData()?.length"
               style="width: 100%; height: 100%;"></canvas>
-            <div *ngIf="!isChartLoading && !isMainDataLoading && (!departmentYoyData || !departmentYoyData.length)"
+            <div *ngIf="!isChartLoading && !isMainDataLoading && !getFilteredDepartmentYoyData()?.length"
               class="chart-no-data">
               אין נתונים להצגה בגרף
             </div>
@@ -1347,7 +1420,7 @@
       <div class="guide-avatar-modal" dir="rtl" (click)="$event.stopPropagation()">
         <div class="guide-avatar-header">
           <div class="character-info" dir="rtl">
-            <div class="character-name" dir="rtl">🔍 מדריך דשבורד הניתוחים</div>
+            <div class="character-name" dir="rtl">מדריך</div>
             <div class="character-subtitle" dir="rtl">לחץ על סעיף כדי להרחיב</div>
           </div>
           <button class="avatar-close-btn" (click)="dismissGuideAvatar()" aria-label="Close guide" mat-icon-button>
@@ -1485,16 +1558,17 @@
               <div class="structure-item" dir="rtl">
                 <div class="structure-number">3</div>
                 <div class="structure-content" dir="rtl">
-                  <h4>טבלאות והעמקה</h4>
-                  <p>בטבלה התחתונה ניתן לראות רשימת ניתוחים מפורטת או מחלקות. לחיצה על ניתוח פותחת פרטי מקרה, ולחיצה על
-                    מחלקה פותחת פירוט פעילויות ופרוצדורות ניתוחיות לפי שנה.</p>
+                  <h4>טבלה מסכמת ותובנות</h4>
+                  <p>בטבלה התחתונה מוצגים אותם נתונים של הגרף לפי ישות ושנה, כולל שינוי מול השנה הקודמת. מתחת לטבלה
+                    מופיעות תובנות מהירות ומדדי סיכום בהתאם לתצוגה שנבחרה.</p>
                 </div>
               </div>
               <div class="structure-item" dir="rtl">
                 <div class="structure-number">4</div>
                 <div class="structure-content" dir="rtl">
-                  <h4>מיון נתונים</h4>
-                  <p>ניתן למיין את כל הטבלאות לפי כל עמודה באמצעות החיצים בכותרת הטבלה.</p>
+                  <h4>סינון, תצוגות וייצוא</h4>
+                  <p>אפשר לעבור בין תצוגות גרף שונות, לפתוח גרפים במסך מלא, להפעיל סינון מתקדם מהסרגל הצדדי ולייצא את
+                    הנתונים לאקסל.</p>
                 </div>
               </div>
             </div>
@@ -2310,8 +2384,21 @@
             <!-- APPROVED UTILIZATION PER DAY VIEW -->
             <ng-container *ngIf="roomTimesView === 'approvedPerDay'">
               <p class="kpi-intro">
-                זמן מנוצל ליום (בדקות) לפי מחלקה מאוגדת (Wing). ציר X: מחלקות. עמודה לכל שנה.
+                זמן מנוצל ליום (בדקות) לפי מחלקה מאוגדת (Wing). בחר חדר ניתוח מהרשימה (ברירת מחדל: חדר ניתוח כללי).
+                ב־«כל חדרי הניתוח» מוצג גם האתר לצד המחלקה כשיש כמה אתרים.
               </p>
+              <div class="kpi-filter-row approved-util-site-filter-row" dir="rtl">
+                <mat-form-field appearance="outline" subscriptSizing="dynamic"
+                  class="approved-util-site-field">
+                  <mat-label>חדר ניתוח</mat-label>
+                  <mat-select [value]="approvedUtilizationSiteFilter"
+                    (selectionChange)="onApprovedUtilizationSiteFilterChange($event.value)">
+                    <mat-option *ngFor="let opt of approvedUtilizationSiteSelectOptions" [value]="opt.value">
+                      {{ opt.label }}
+                    </mat-option>
+                  </mat-select>
+                </mat-form-field>
+              </div>
               <div class="room-times-modal-chart-slot">
                 <div *ngIf="isApprovedUtilizationLoading" class="kpi-skeleton-wrapper">
                   <div class="kpi-skeleton-spinner-overlay">

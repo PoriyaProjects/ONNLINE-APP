@@ -18,6 +18,8 @@
     padding: 0 !important;
 } */
 @import url('https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap');
+@import './app/nps-permissions/nps-layout-global.css';
+@import './app/nps-employees-permissions/nps-layout-global.css';
 .pos-rel {
     position: relative !important;
 }
@@ -710,7 +712,7 @@ th.mat-header-cell {
 }
 
 [dir="rtl"] th.mat-header-cell {
-    text-align: right;
+    text-align: center;
     padding: 15px 20px;
     border: 1px solid #d3d3d3;
 }
@@ -1342,6 +1344,17 @@ tr.mat-footer-row {
     width: 320px;
     max-width: 320px;
     direction: rtl;
+}
+
+.row-label-print-modal .modal-dialog {
+    min-width: 600px;
+    direction: rtl;
+}
+
+@media (max-width: 600px) {
+    .row-label-print-modal .modal-dialog {
+        min-width: 100%;
+    }
 }
 
 .br-b-2 {

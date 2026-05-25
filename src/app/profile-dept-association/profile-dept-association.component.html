@@ -1,0 +1,232 @@
+<div class="page" dir="rtl">
+  <div class="toolbar">
+    <button
+      mat-raised-button
+      type="button"
+      [color]="mode === 'departments' ? 'primary' : null"
+      (click)="setMode('departments')"
+    >
+      מחלקות
+    </button>
+    <button
+      mat-raised-button
+      type="button"
+      [color]="mode === 'profiles' ? 'primary' : null"
+      (click)="setMode('profiles')"
+    >
+      פרופילים
+    </button>
+    <button
+      mat-stroked-button
+      type="button"
+      color="accent"
+      (click)="openOverviewMappings()"
+    >
+      הצג שיוכים קיימים
+    </button>
+  </div>
+
+  <p class="error-text" *ngIf="mainError">{{ mainError }}</p>
+
+  <div class="loading-row" *ngIf="mainLoading">
+    <mat-spinner diameter="36"></mat-spinner>
+    <span>טוען…</span>
+  </div>
+
+  <mat-card class="panel" *ngIf="!mainLoading && mode === 'departments'">
+    <mat-card-content>
+      <mat-form-field appearance="outline" class="search-field">
+        <mat-label>חיפוש מחלקות</mat-label>
+        <input matInput [(ngModel)]="departmentSearch" autocomplete="off" />
+      </mat-form-field>
+
+      <table mat-table [dataSource]="filteredDepartmentRows" class="mat-elevation-z0">
+        <ng-container matColumnDef="code">
+          <th mat-header-cell *matHeaderCellDef>קוד מחלקה</th>
+          <td mat-cell *matCellDef="let row">{{ row.DepartnentCode }}</td>
+        </ng-container>
+        <ng-container matColumnDef="desc">
+          <th mat-header-cell *matHeaderCellDef>תיאור מחלקה</th>
+          <td mat-cell *matCellDef="let row">{{ row.DepartnentDescripton }}</td>
+        </ng-container>
+        <tr mat-header-row *matHeaderRowDef="['code', 'desc']"></tr>
+        <tr
+          mat-row
+          *matRowDef="let row; columns: ['code', 'desc']"
+          class="click-row"
+          (click)="onDepartmentRowClick(row)"
+        ></tr>
+      </table>
+    </mat-card-content>
+  </mat-card>
+
+  <mat-card class="panel" *ngIf="!mainLoading && mode === 'profiles'">
+    <mat-card-content>
+      <mat-form-field appearance="outline" class="search-field">
+        <mat-label>חיפוש פרופילים</mat-label>
+        <input matInput [(ngModel)]="profileSearch" autocomplete="off" />
+      </mat-form-field>
+
+      <table mat-table [dataSource]="filteredFunctionRows" class="mat-elevation-z0">
+        <ng-container matColumnDef="functionId">
+          <th mat-header-cell *matHeaderCellDef>מזהה פונקציה</th>
+          <td mat-cell *matCellDef="let fn">{{ fn.FunctionID }}</td>
+        </ng-container>
+        <ng-container matColumnDef="functionDesc">
+          <th mat-header-cell *matHeaderCellDef>תיאור פונקציה</th>
+          <td mat-cell *matCellDef="let fn">{{ fn.FunctionDescription }}</td>
+        </ng-container>
+        <tr mat-header-row *matHeaderRowDef="['functionId', 'functionDesc']"></tr>
+        <tr
+          mat-row
+          *matRowDef="let fn; columns: ['functionId', 'functionDesc']"
+          class="click-row"
+          (click)="onProfileRowClick(fn)"
+        ></tr>
+      </table>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- חלון בחירה -->
+  <div class="overlay" *ngIf="pickerOpen" (click)="closePicker()">
+    <div class="overlay-panel" (click)="$event.stopPropagation()">
+      <h2 class="overlay-title">{{ pickerTitle }}</h2>
+
+      <mat-form-field appearance="outline" class="search-field">
+        <mat-label>חיפוש</mat-label>
+        <input matInput [(ngModel)]="pickerSearch" autocomplete="off" />
+      </mat-form-field>
+
+      <div class="overlay-loading" *ngIf="pickerLoading">
+        <mat-spinner diameter="32"></mat-spinner>
+      </div>
+
+      <div class="table-wrap" *ngIf="!pickerLoading && pickerKind === 'unitNames'">
+        <table mat-table [dataSource]="filteredPickerRows" class="mat-elevation-z0">
+          <ng-container matColumnDef="pick">
+            <th mat-header-cell *matHeaderCellDef></th>
+            <td mat-cell *matCellDef="let row">
+              <mat-checkbox
+                [checked]="isRowChecked(row)"
+                (change)="toggleRow(row, $event.checked)"
+              ></mat-checkbox>
+            </td>
+          </ng-container>
+          <ng-container matColumnDef="nameCol">
+            <th mat-header-cell *matHeaderCellDef>שם</th>
+            <td mat-cell *matCellDef="let row">{{ row.Name }}</td>
+          </ng-container>
+          <ng-container matColumnDef="unitCol">
+            <th mat-header-cell *matHeaderCellDef>יחידה</th>
+            <td mat-cell *matCellDef="let row">{{ row.DepartmentCode || row.Unit }}</td>
+          </ng-container>
+          <tr mat-header-row *matHeaderRowDef="['pick', 'nameCol', 'unitCol']"></tr>
+          <tr mat-row *matRowDef="let row; columns: ['pick', 'nameCol', 'unitCol']"></tr>
+        </table>
+      </div>
+
+      <div class="table-wrap" *ngIf="!pickerLoading && pickerKind === 'profileNames'">
+        <table mat-table [dataSource]="filteredPickerRows" class="mat-elevation-z0">
+          <ng-container matColumnDef="pick">
+            <th mat-header-cell *matHeaderCellDef></th>
+            <td mat-cell *matCellDef="let row">
+              <mat-checkbox
+                [checked]="isRowChecked(row)"
+                (change)="toggleRow(row, $event.checked)"
+              ></mat-checkbox>
+            </td>
+          </ng-container>
+          <ng-container matColumnDef="profCol">
+            <th mat-header-cell *matHeaderCellDef>שם פרופיל</th>
+            <td mat-cell *matCellDef="let row">{{ row.Profile_Name }}</td>
+          </ng-container>
+          <ng-container matColumnDef="profileCodeCol">
+            <th mat-header-cell *matHeaderCellDef>קוד פרופיל</th>
+            <td mat-cell *matCellDef="let row">{{ row.Profile_Code }}</td>
+          </ng-container>
+          <tr mat-header-row *matHeaderRowDef="['pick', 'profileCodeCol', 'profCol']"></tr>
+          <tr mat-row *matRowDef="let row; columns: ['pick', 'profileCodeCol', 'profCol']"></tr>
+        </table>
+      </div>
+
+      <div class="overlay-actions">
+        <button mat-button type="button" (click)="closePicker()" [disabled]="savingPicker">סגור</button>
+        <button mat-raised-button color="primary" type="button" (click)="confirmPicker()" [disabled]="savingPicker">
+          אישור
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- סיכום שיוכים קיימים -->
+  <div class="overlay overview-overlay" *ngIf="overviewOpen" (click)="closeOverviewMappings()">
+    <div class="overlay-panel overview-panel" (click)="$event.stopPropagation()">
+      <h2 class="overlay-title">שיוכים נוכחיים (מחלקות ופרופילים)</h2>
+
+      <mat-form-field appearance="outline" class="search-field">
+        <mat-label>חיפוש בשני הטבלאות</mat-label>
+        <input matInput [(ngModel)]="overviewSearch" autocomplete="off" />
+      </mat-form-field>
+
+      <p class="error-text" *ngIf="overviewError">{{ overviewError }}</p>
+
+      <div class="overview-loading" *ngIf="overviewLoading">
+        <mat-spinner diameter="32"></mat-spinner>
+      </div>
+
+      <ng-container *ngIf="!overviewLoading">
+        <h3 class="overview-subtitle">שיוכי מחלקות ({{ filteredOverviewDepartmentRows.length }})</h3>
+        <div class="table-wrap overview-table-wrap">
+          <table mat-table [dataSource]="filteredOverviewDepartmentRows" class="mat-elevation-z0">
+            <ng-container matColumnDef="ovDeptCode">
+              <th mat-header-cell *matHeaderCellDef>קוד מחלקה</th>
+              <td mat-cell *matCellDef="let row">{{ row.DepartnentCode }}</td>
+            </ng-container>
+            <ng-container matColumnDef="ovDeptDesc">
+              <th mat-header-cell *matHeaderCellDef>תיאור מחלקה</th>
+              <td mat-cell *matCellDef="let row">{{ row.DepartnentDescripton }}</td>
+            </ng-container>
+            <ng-container matColumnDef="ovUnit">
+              <th mat-header-cell *matHeaderCellDef>יחידה</th>
+              <td mat-cell *matCellDef="let row">{{ row.Unit }}</td>
+            </ng-container>
+            <ng-container matColumnDef="ovUnitName">
+              <th mat-header-cell *matHeaderCellDef>שם יחידה</th>
+              <td mat-cell *matCellDef="let row">{{ row.UnitName }}</td>
+            </ng-container>
+            <tr mat-header-row *matHeaderRowDef="['ovDeptCode', 'ovDeptDesc', 'ovUnit', 'ovUnitName']"></tr>
+            <tr mat-row *matRowDef="let row; columns: ['ovDeptCode', 'ovDeptDesc', 'ovUnit', 'ovUnitName']"></tr>
+          </table>
+        </div>
+
+        <h3 class="overview-subtitle">שיוכי פרופילים ({{ filteredOverviewProfileRows.length }})</h3>
+        <div class="table-wrap overview-table-wrap">
+          <table mat-table [dataSource]="filteredOverviewProfileRows" class="mat-elevation-z0">
+            <ng-container matColumnDef="ovFnId">
+              <th mat-header-cell *matHeaderCellDef>מזהה פונקציה</th>
+              <td mat-cell *matCellDef="let row">{{ row.FunctionID }}</td>
+            </ng-container>
+            <ng-container matColumnDef="ovFnDesc">
+              <th mat-header-cell *matHeaderCellDef>תיאור פונקציה</th>
+              <td mat-cell *matCellDef="let row">{{ row.FunctionDescription }}</td>
+            </ng-container>
+            <ng-container matColumnDef="ovProfCode">
+              <th mat-header-cell *matHeaderCellDef>קוד פרופיל</th>
+              <td mat-cell *matCellDef="let row">{{ row.Profile_Code }}</td>
+            </ng-container>
+            <ng-container matColumnDef="ovProfName">
+              <th mat-header-cell *matHeaderCellDef>שם פרופיל</th>
+              <td mat-cell *matCellDef="let row">{{ row.Profile_Name }}</td>
+            </ng-container>
+            <tr mat-header-row *matHeaderRowDef="['ovFnId', 'ovFnDesc', 'ovProfCode', 'ovProfName']"></tr>
+            <tr mat-row *matRowDef="let row; columns: ['ovFnId', 'ovFnDesc', 'ovProfCode', 'ovProfName']"></tr>
+          </table>
+        </div>
+      </ng-container>
+
+      <div class="overlay-actions">
+        <button mat-button type="button" (click)="closeOverviewMappings()">סגור</button>
+      </div>
+    </div>
+  </div>
+</div>

@@ -163,18 +163,14 @@ export class HitoFormsDashboardService {
    */
   getQuestionScores(params: {
     year?: string;
-    quarter?: string;
     formName_Name: string;
     itemIdsCsv?: string; // optional comma list
-    departmentFilter?: string;
   }): Observable<HitoQuestionScoreRow[]> {
     const url = BASE + 'GetHitoQuestionScores';
     const body = {
       year: params.year || '',
-      quarter: params.quarter || '',
       formName_Name: (params.formName_Name || '').trim(),
-      itemIdsCsv: (params.itemIdsCsv || '').trim(),
-      departmentFilter: (params.departmentFilter || '').trim()
+      itemIdsCsv: (params.itemIdsCsv || '').trim()
     };
     return this.http.post<unknown>(url, body, { headers: JSON_HEADERS }).pipe(
       map(res => {

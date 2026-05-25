@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild } from '@angular/core';
+import { AfterViewInit, Component, OnInit, ViewChild } from '@angular/core';
 import { FormBuilder, FormControl, FormGroup } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { MatDialog } from '@angular/material/dialog';
@@ -22,7 +22,7 @@ import { saveAs } from 'file-saver';
   templateUrl: './medical-interns-dashboard.component.html',
   styleUrls: ['./medical-interns-dashboard.component.css']
 })
-export class MedicalInternsDashboardComponent implements OnInit {
+export class MedicalInternsDashboardComponent implements OnInit, AfterViewInit {
 
   /** Toggle between interns table, departments table, server data table, and feedback table */
   viewMode: 'interns' | 'departments' | 'serverData' | 'feedback' = 'interns';
@@ -39,10 +39,27 @@ export class MedicalInternsDashboardComponent implements OnInit {
     'Image', 'EmployeeID', 'FirstName', 'LastName', 'CellNumber', 'Email', 'DepartnentDescripton', 'Actions'
   ];
   dataSource = new MatTableDataSource(this.TABLE_DATA);
-  @ViewChild('internsPaginator') paginator: MatPaginator;
-  @ViewChild(MatSort) sort: MatSort;
+  private _paginator: MatPaginator;
+  private _sort: MatSort;
+  @ViewChild('internsPaginator')
+  set paginator(value: MatPaginator) {
+    this._paginator = value;
+    this.bindInternsTableControls();
+  }
+  get paginator(): MatPaginator {
+    return this._paginator;
+  }
+  @ViewChild(MatSort)
+  set sort(value: MatSort) {
+    this._sort = value;
+    this.bindInternsTableControls();
+  }
+  get sort(): MatSort {
+    return this._sort;
+  }
   searchInternsGroup: FormGroup;
   DepartmentsList: any[] = [];
+  DepartmentsListSecond: any[] = [];
   loaded = false;
   url = environment.url;
   emptyIntern: any;
@@ -137,6 +154,7 @@ export class MedicalInternsDashboardComponent implements OnInit {
       LastName: new FormControl('', null),
       PhoneNumber: new FormControl('', null),
       Department: new FormControl('', null),
+      DepartmentSecond: new FormControl('', null),
       On: new FormControl('', null),
       MonthYear: new FormControl('', null),
     });
@@ -144,6 +162,20 @@ export class MedicalInternsDashboardComponent implements OnInit {
     this.getMedicalInterns();
     this.getDepartmentList();
     this.loadAllDepartments();
+  }
+
+  ngAfterViewInit(): void {
+    this.bindInternsTableControls();
+  }
+
+  private bindInternsTableControls(): void {
+    if (!this.dataSource) return;
+    if (this._paginator) {
+      this.dataSource.paginator = this._paginator;
+    }
+    if (this._sort) {
+      this.dataSource.sort = this._sort;
+    }
   }
 
   get filteredDepartments(): any[] {
@@ -303,6 +335,13 @@ export class MedicalInternsDashboardComponent implements OnInit {
     const monthYear = this.searchInternsGroup?.get('MonthYear')?.value || null;
     this.http.post(this.url + 'GetMedicalInternDepartments', { _InternPeriod: monthYear || null }).subscribe((response) => {
       this.DepartmentsList = response['d'] || [];
+    });
+  }
+  
+  getDepartmentListSecond() {
+    const monthYear = this.searchInternsGroup?.get('MonthYear')?.value || null;
+    this.http.post(this.url + 'GetMedicalInternDepartmentsSecond', { _InternPeriod: monthYear || null }).subscribe((response) => {
+      this.DepartmentsListSecond = response['d'] || [];
     });
   }
 
@@ -530,11 +569,13 @@ export class MedicalInternsDashboardComponent implements OnInit {
   getMedicalInterns() {
     this.loaded = false;
     this.getDepartmentList();
+    this.getDepartmentListSecond();
     const EmployeeID = this.searchInternsGroup?.controls['EmployeeID']?.value || '';
     const firstName = this.searchInternsGroup?.controls['FirstName']?.value || '';
     const lastName = this.searchInternsGroup?.controls['LastName']?.value || '';
     const phoneNumber = this.searchInternsGroup?.controls['PhoneNumber']?.value || '';
     const department = this.searchInternsGroup?.controls['Department']?.value || '';
+    const departmentSecond = this.searchInternsGroup?.controls['DepartmentSecond']?.value || '';
     const onValue = this.searchInternsGroup?.controls['On']?.value || '';
     const monthYear = this.searchInternsGroup?.controls['MonthYear']?.value || '';
     this.http
@@ -544,6 +585,7 @@ export class MedicalInternsDashboardComponent implements OnInit {
         _lastName: lastName,
         _phoneNumber: phoneNumber,
         _department: department,
+        _departmentSecond: departmentSecond,
         _on: onValue,
         _monthYear: monthYear,
       })
@@ -554,16 +596,14 @@ export class MedicalInternsDashboardComponent implements OnInit {
 
           this.TABLE_DATA = data;
           this.dataSource = new MatTableDataSource<any>(data);
-          this.dataSource.paginator = this.paginator;
-          this.dataSource.sort = this.sort;
+          this.bindInternsTableControls();
 
           this.calculateStats(data);
         },
         () => {
           this.loaded = true;
           this.dataSource = new MatTableDataSource<any>([]);
-          this.dataSource.paginator = this.paginator;
-          this.dataSource.sort = this.sort;
+          this.bindInternsTableControls();
         }
       );
   }
@@ -591,6 +631,7 @@ export class MedicalInternsDashboardComponent implements OnInit {
       LastName: '',
       PhoneNumber: '',
       Department: '',
+      DepartmentSecond: '',
       On: '',
       MonthYear: ''
     });
@@ -605,6 +646,7 @@ export class MedicalInternsDashboardComponent implements OnInit {
       LastName: '',
       PhoneNumber: '',
       Department: '',
+      DepartmentSecond: '',
       On: '',
       MonthYear: ''
     });

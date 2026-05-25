@@ -74,6 +74,7 @@ import { CommercialSupportFormDashboardComponent } from '../form-dashboard/comme
 import { CommercialSupportFormDialogComponent } from '../form-dashboard/commercial-support-form-dashboard/commercial-support-form-dialog/commercial-support-form-dialog.component';
 import { CommercialSupportGatheringComponent } from '../form-dashboard/commercial-support-form-dashboard/commercial-support-gathering/commercial-support-gathering.component';
 import { CommercialSupportResearchDialogComponent } from '../form-dashboard/commercial-support-form-dashboard/commercial-support-research-dialog/commercial-support-research-dialog.component';
+import { CommercialSupportProcurementDialogComponent } from '../form-dashboard/commercial-support-form-dashboard/commercial-support-procurement-dialog/commercial-support-procurement-dialog.component';
 import { AdditionalCprTablesComponent } from '../form-dashboard/cpr-form/additional-cpr-tables/additional-cpr-tables.component';
 import { CprFormComponent } from "../form-dashboard/cpr-form/cpr-form.component";
 import { CprNewbordDashboradComponent } from '../form-dashboard/cpr-newbord-dashborad/cpr-newbord-dashborad.component';
@@ -109,6 +110,7 @@ import { InfectionControlComponent } from "../infection-control/infection-contro
 import { InfectionDrugsComponent } from '../infection-drugs/infection-drugs.component';
 import { InfectionReportComponent } from "../infection-report/infection-report.component";
 import { EmergencyRoomReportComponent } from "../emergency-room-report/emergency-room-report.component";
+import { ImagingPerformanceDashboardComponent } from "../imaging-performance-dashboard/imaging-performance-dashboard.component";
 import { HitoFormsDashboardComponent } from "../hito-forms-dashboard/hito-forms-dashboard.component";
 import { InjuryReportComponent } from '../injury-report/injury-report.component';
 import { IpPointsComponent } from '../ip-points/ip-points.component';
@@ -141,6 +143,7 @@ import { OnlineAppointmentsComponent } from "../online-appointments/online-appoi
 import { OrdersToAppointmentsComponent } from '../orders-to-appointments/orders-to-appointments.component';
 import { PatientStikersComponent } from '../patient-stikers/patient-stikers.component';
 import { PatientsSystemConflictsComponent } from '../patients-system-conflicts/patients-system-conflicts.component';
+import { ProfileDeptAssociationComponent } from '../profile-dept-association/profile-dept-association.component';
 import { PoriadepartsComponent } from '../poriadeparts/poriadeparts.component';
 import { QualityMeasuresDashboardComponent } from '../quality-measures-dashboard/quality-measures-dashboard.component';
 import { ReHospComponent } from '../re-hosp/re-hosp.component';
@@ -167,6 +170,7 @@ import { SurgeryControlMainComponent } from '../surgery-control-main/surgery-con
 import { SurgeriesUnclosedReportsComponent } from '../surgery-reports/surgeries-unclosed-reports/surgeries-unclosed-reports.component';
 import { SurgeryReportsComponent } from '../surgery-reports/surgery-reports.component';
 import { SurgeryComponent } from '../surgery/surgery.component';
+import { TodayDashboardComponent } from '../TodayDashboardComponent/today-dashboard.component';
 import { SwitchesComponent } from '../switches/switches.component';
 import { UpdateformComponent } from '../updateform/updateform.component';
 import { UpdatesingleformComponent } from '../updatesingleform/updatesingleform.component';
@@ -186,7 +190,9 @@ const routes: Routes = [
   { path: "", component: LoginComponent },
   { path: 'clinicsrequests', component: ClinicsRequestsComponent },
   { path: "patientstikers", component: PatientStikersComponent },
+  { path: 'profile-dept-association', component: ProfileDeptAssociationComponent },
   { path: 'dashboard', component: DashboardComponent },
+  { path: 'today-dashboard', component: TodayDashboardComponent },
   { path: 'covid19report', component: Covid19reportComponent },
   { path: 'login', component: LoginComponent },
   { path: 'chads', component: ChadsComponent },
@@ -241,6 +247,7 @@ const routes: Routes = [
   { path: "manageclinicprice", component: ManageClinicPriceComponent },
   { path: "nursesmanagedashboard", component: NursesManageDashboardComponent },
   { path: "nurse-permissions-manage", redirectTo: "nps-permissions", pathMatch: "full" },
+  { path: "nurse-employees-permissions-manage", redirectTo: "nps-employees-permissions", pathMatch: "full" },
   { path: "nursesdepartmentmanage", component: NursesDepartmentManageComponent },
   { path: "checkpatientinsmartcloset", component: CheckpatientinsmartclosetComponent },
   { path: "drugsnic", component: DrugsnicComponent },
@@ -271,6 +278,7 @@ const routes: Routes = [
   { path: "InfectionDrugs", component: InfectionDrugsComponent },
   { path: "InfectionReport", component: InfectionReportComponent },
   { path: "EmergencyRoomReport", component: EmergencyRoomReportComponent },
+  { path: "ImagingPerformanceDashboard", component: ImagingPerformanceDashboardComponent },
   { path: "hito-forms-dashboard", component: HitoFormsDashboardComponent },
   { path: "newborn", component: NewBornComponent },
   { path: "MaternityParticipants", component: MaternityParticipantsComponent },
@@ -363,6 +371,7 @@ const routes: Routes = [
   { path: "commercial-support-form-dashboard", component: CommercialSupportFormDashboardComponent },
   { path: "commercial-support-form-dialog", component: CommercialSupportFormDialogComponent },
   { path: "commercial-support-research-dialog", component: CommercialSupportResearchDialogComponent },
+  { path: "commercial-support-procurement-dialog", component: CommercialSupportProcurementDialogComponent },
   { path: "commercial-support-presentation-dialog", component: CommercialSupportFormDialogComponent },
   { path: "commercial-support-gathering-dialog", component: CommercialSupportGatheringComponent },
   { path: "LabTests", component: LabTestsComponent },
@@ -410,6 +419,11 @@ const routes: Routes = [
     path: "nps-permissions",
     loadChildren: () =>
       import("../nps-permissions/nps-permissions.module").then((m) => m.NpsPermissionsModule),
+  },
+  {
+    path: "nps-employees-permissions",
+    loadChildren: () =>
+      import("../nps-employees-permissions/nps-employees-permissions.module").then((m) => m.NpsEmployeesPermissionsModule),
   },
 ];
 

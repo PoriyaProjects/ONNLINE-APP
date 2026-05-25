@@ -1864,6 +1864,39 @@
                                         </div>
                                     </td>
                                 </ng-container>
+                                <ng-container matColumnDef="PRINT">
+                                    <th
+                                        mat-header-cell
+                                        *matHeaderCellDef
+                                        width="50"
+                                    >
+                                        הדפס
+                                    </th>
+                                    <td
+                                        mat-cell
+                                        *matCellDef="
+                                            let element;
+                                            let rowIdx = index
+                                        "
+                                    >
+                                        <div class="example-button-container">
+                                            <button
+                                                (click)="
+                                                    openRowLabelPrint(
+                                                        rowLabelPrintModal,
+                                                        rowIdx
+                                                    )
+                                                "
+                                                class="row-data"
+                                                mat-mini-fab
+                                                color="yello"
+                                                type="button"
+                                            >
+                                                <mat-icon>print</mat-icon>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </ng-container>
                                 <ng-container matColumnDef="DELETE">
                                     <th
                                         mat-header-cell
@@ -2909,6 +2942,155 @@
                 class="btn btn-outline-dark"
             >
                 הוסף
+            </button>
+        </div>
+    </form>
+</ng-template>
+<ng-template #rowLabelPrintModal let-modal>
+    <form
+        dir="rtl"
+        id="rowLabelPrintForm"
+        class="form col"
+        [formGroup]="rowLabelForm"
+        (ngSubmit)="printSelectedRowLabel(modal)"
+    >
+        <div class="modal-header text-right">
+            <h4 class="modal-title">הדפסת מדבקה</h4>
+            <button
+                type="button"
+                class="close"
+                aria-label="Close"
+                (click)="modal.dismiss('Cross click')"
+            >
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div class="row row-label-form-grid">
+                <div class="col-md-6">
+                    <mat-form-field appearance="fill" class="w-100">
+                        <mat-label>שעת הכנה</mat-label>
+                        <input
+                            matInput
+                            type="time"
+                            formControlName="preparationTime"
+                        />
+                        <mat-error
+                            *ngIf="
+                                rowLabelSubmitted &&
+                                rowLabelForm.get('preparationTime').invalid
+                            "
+                        >
+                            יש להזין שעת הכנה
+                        </mat-error>
+                    </mat-form-field>
+                </div>
+                <div class="col-md-6">
+                    <mat-form-field appearance="fill" class="w-100">
+                        <mat-label>שם מכין ההכנה</mat-label>
+                        <mat-select formControlName="preparerEmployeeId">
+                            <mat-option
+                                *ngFor="let employee of employees"
+                                [value]="employee.EmployeeID"
+                            >
+                                {{ employee.FullName }}
+                            </mat-option>
+                        </mat-select>
+                        <mat-error
+                            *ngIf="
+                                rowLabelSubmitted &&
+                                rowLabelForm.get('preparerEmployeeId').invalid
+                            "
+                        >
+                            יש לבחור עובד
+                        </mat-error>
+                    </mat-form-field>
+                </div>
+                <div class="col-md-6">
+                    <mat-form-field appearance="fill" class="w-100">
+                        <mat-label>שם בודק ההכנה</mat-label>
+                        <mat-select formControlName="checkerEmployeeId">
+                            <mat-option
+                                *ngFor="let employee of employees"
+                                [value]="employee.EmployeeID"
+                            >
+                                {{ employee.FullName }}
+                            </mat-option>
+                        </mat-select>
+                        <mat-error
+                            *ngIf="
+                                rowLabelSubmitted &&
+                                rowLabelForm.get('checkerEmployeeId').invalid
+                            "
+                        >
+                            יש לבחור עובד
+                        </mat-error>
+                    </mat-form-field>
+                </div>
+                <div class="col-md-6">
+                    <div class="row-label-summary">
+                        <div>
+                            <strong>תרופה:</strong>
+                            {{ selectedRowForPrint?.MedListVal || "-" }}
+                        </div>
+                        <div>
+                            <strong>מס' אצווה:</strong>
+                            {{ selectedRowForPrint?.rowIdPreVal || "-" }}
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="row-label-summary">
+                        <div>
+                            <strong>שם מטופל:</strong>
+                            {{ getPatientFullName() || "-" }}
+                        </div>
+                        <div>
+                            <strong>ת.ז מטופל:</strong>
+                            {{ getPatientIdentifierDisplay() || "-" }}
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="row-label-summary">
+                        <div>
+                            <strong>דרך מתן:</strong>
+                            {{ selectedRowForPrint?.Way_Of_ProvidingVal || "-" }}
+                        </div>
+                        <div>
+                            <strong>מינון:</strong>
+                            {{ getDoseLabelDisplay(selectedRowForPrint) || "-" }}
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="row-label-summary">
+                        <div>
+                            <strong>נפח סופי:</strong>
+                            {{ getFinalVolumeLabelDisplay(selectedRowForPrint) || "-" }}
+                        </div>
+                        <div>
+                            <strong>תמיסת מיהול:</strong>
+                            {{ selectedRowForPrint?.SolutionVal || "-" }}
+                        </div>
+                        <div>
+                            <strong>קצב מתן:</strong>
+                            {{ getAdministrationRateLabelDisplay(selectedRowForPrint) || "-" }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer text-left">
+            <button
+                type="button"
+                class="btn btn-outline-secondary"
+                (click)="modal.dismiss('cancel')"
+            >
+                ביטול
+            </button>
+            <button type="submit" class="btn btn-outline-dark">
+                הדפס
             </button>
         </div>
     </form>

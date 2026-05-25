@@ -1,0 +1,624 @@
+/* ══════════════════════════════════════════════════════════════
+   Imaging Performance Dashboard — Clean, modern, RTL
+   ══════════════════════════════════════════════════════════════ */
+
+   @import url('https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700;800&display=swap');
+
+   :host { display: block; }
+   
+   /* ─── Tokens ─── */
+   .ipd {
+     --border: #E2E8F0;
+     --border-strong: #CBD5E0;
+     --bg: #F7FAFC;
+     --surface: #FFFFFF;
+     --text: #1A202C;
+     --text-sec: #4A5568;
+     --muted: #718096;
+     --accent: #2B6CB0;
+     --radius: 10px;
+     --radius-sm: 6px;
+     --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+     --shadow-md: 0 4px 16px rgba(0,0,0,0.08);
+     --transition: 0.18s ease;
+   
+     font-family: 'Rubik', 'Noto Sans Hebrew', sans-serif;
+     color: var(--text);
+     background: var(--bg);
+     direction: rtl;
+     min-height: 100vh;
+     -webkit-font-smoothing: antialiased;
+   }
+   
+   /* ═══ HEADER ═══ */
+   .ipd-header {
+     display: flex;
+     align-items: center;
+     justify-content: space-between;
+     padding: 1.1rem 1.5rem 0.85rem;
+     background: var(--surface);
+     border-bottom: 1px solid var(--border);
+   }
+   
+   .ipd-header-left {
+     display: flex;
+     align-items: center;
+     gap: 0.75rem;
+   }
+   
+   .ipd-header-icon { font-size: 2rem; line-height: 1; }
+   
+   .ipd-title {
+     margin: 0;
+     font-size: 1.35rem;
+     font-weight: 700;
+     color: var(--accent);
+     letter-spacing: -0.01em;
+   }
+   
+   .ipd-subtitle {
+     margin: 0.15rem 0 0;
+     font-size: 0.82rem;
+     color: var(--muted);
+   }
+   
+   /* ═══ FILTER BAR ═══ */
+   .ipd-filters {
+     display: flex;
+     align-items: flex-end;
+     gap: 1.25rem;
+     flex-wrap: wrap;
+     padding: 0.85rem 1.5rem;
+     background: var(--surface);
+     border-bottom: 1px solid var(--border);
+   }
+   
+   .ipd-filter-group {
+     display: flex;
+     flex-direction: column;
+     gap: 0.3rem;
+   }
+   
+   .ipd-filter-lbl {
+     font-size: 0.78rem;
+     font-weight: 600;
+     color: var(--text-sec);
+   }
+   
+   /* Segmented control (source type) */
+   .ipd-seg {
+     display: flex;
+     border: 1px solid var(--border-strong);
+     border-radius: var(--radius-sm);
+     overflow: hidden;
+   }
+   
+   .ipd-seg-btn {
+     padding: 0.45rem 1rem;
+     border: none;
+     background: var(--surface);
+     font: inherit;
+     font-size: 0.85rem;
+     font-weight: 500;
+     color: var(--text-sec);
+     cursor: pointer;
+     transition: all var(--transition);
+     white-space: nowrap;
+   }
+   
+   .ipd-seg-btn + .ipd-seg-btn {
+     border-right: 1px solid var(--border-strong);
+   }
+   
+   .ipd-seg-btn--active {
+     background: var(--accent);
+     color: #fff;
+   }
+   
+   .ipd-seg-btn:not(.ipd-seg-btn--active):hover {
+     background: #EBF4FF;
+     color: var(--accent);
+   }
+   
+   /* Date input */
+   .ipd-date-input {
+     padding: 0.47rem 0.7rem;
+     border: 1px solid var(--border-strong);
+     border-radius: var(--radius-sm);
+     font: inherit;
+     font-size: 0.88rem;
+     color: var(--text);
+     background: var(--surface);
+     transition: border-color var(--transition), box-shadow var(--transition);
+   }
+   
+   .ipd-date-input:focus {
+     outline: none;
+     border-color: var(--accent);
+     box-shadow: 0 0 0 3px rgba(43, 108, 176, 0.12);
+   }
+   
+   .ipd-apply-btn {
+     font-weight: 600 !important;
+     font-size: 0.9rem !important;
+     padding: 0.5rem 1.75rem !important;
+     border-radius: var(--radius-sm) !important;
+     align-self: flex-end;
+   }
+   
+   /* ═══ BANNERS ═══ */
+   .ipd-msg-banner,
+   .ipd-error-banner {
+     display: flex;
+     align-items: center;
+     gap: 0.5rem;
+     padding: 0.65rem 1.5rem;
+     font-size: 0.85rem;
+   }
+   
+   .ipd-msg-banner {
+     background: #EBF8FF;
+     color: #2C5282;
+     border-bottom: 1px solid #BEE3F8;
+   }
+   
+   .ipd-error-banner {
+     background: #FFF5F5;
+     color: #C53030;
+     border-bottom: 1px solid #FED7D7;
+   }
+   
+   /* ═══ SKELETON ═══ */
+   .ipd-skeleton-wrap {
+     padding: 1.25rem 1.5rem;
+     display: flex;
+     flex-direction: column;
+     gap: 1rem;
+   }
+   
+   .ipd-skeleton {
+     border-radius: var(--radius);
+     background: linear-gradient(90deg, #EDF2F7 25%, #E2E8F0 50%, #EDF2F7 75%);
+     background-size: 200% 100%;
+     animation: shimmer 1.4s infinite;
+   }
+   
+   .ipd-skeleton--card { height: 90px; }
+   .ipd-skeleton--wide { height: 160px; }
+   
+   @keyframes shimmer {
+     from { background-position: 200% 0; }
+     to   { background-position: -200% 0; }
+   }
+   
+   /* ═══ KPI ROW ═══ */
+   .ipd-kpi-row {
+     display: grid;
+     grid-template-columns: repeat(3, 1fr);
+     gap: 1rem;
+     padding: 1.25rem 1.5rem 0;
+   }
+   
+   .ipd-kpi-card {
+     display: flex;
+     align-items: center;
+     gap: 1rem;
+     padding: 1.1rem 1.25rem;
+     border-radius: var(--radius);
+     box-shadow: var(--shadow-md);
+     color: #fff;
+     transition: transform var(--transition), box-shadow var(--transition);
+   }
+   
+   .ipd-kpi-card:hover {
+     transform: translateY(-2px);
+     box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+   }
+   
+   .ipd-kpi-card--blue   { background: linear-gradient(135deg, #2B6CB0, #3182CE); }
+   .ipd-kpi-card--teal   { background: linear-gradient(135deg, #2C7A7B, #38B2AC); }
+   .ipd-kpi-card--amber  { background: linear-gradient(135deg, #B7791F, #D69E2E); }
+   .ipd-kpi-card--purple { background: linear-gradient(135deg, #553C9A, #805AD5); }
+   
+   .ipd-kpi-icon { font-size: 2rem; line-height: 1; opacity: 0.9; flex-shrink: 0; }
+   
+   .ipd-kpi-body {
+     display: flex;
+     flex-direction: column;
+     gap: 0.2rem;
+     min-width: 0;
+   }
+   
+   .ipd-kpi-val {
+     font-size: 1.8rem;
+     font-weight: 800;
+     line-height: 1.1;
+     letter-spacing: -0.02em;
+   }
+   
+   .ipd-kpi-lbl {
+     font-size: 0.78rem;
+     font-weight: 500;
+     opacity: 0.85;
+     white-space: nowrap;
+   }
+   
+   .ipd-kpi-card--clickable {
+     cursor: pointer;
+     outline: none;
+   }
+   
+   .ipd-kpi-card--clickable:focus-visible {
+     box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.55), 0 8px 24px rgba(0,0,0,0.15);
+   }
+   
+   .ipd-kpi-hint {
+     font-size: 0.68rem;
+     font-weight: 500;
+     opacity: 0.78;
+     margin-top: 0.15rem;
+     white-space: normal;
+     line-height: 1.25;
+   }
+   
+   /* ═══ MAIN: chart + table side-by-side ═══ */
+   .ipd-main {
+     display: grid;
+     grid-template-columns: 1fr 1.1fr;
+     gap: 1rem;
+     padding: 1rem 1.5rem 1.5rem;
+     align-items: start;
+   }
+   
+   /* ═══ PANEL ═══ */
+   .ipd-panel {
+     background: var(--surface);
+     border: 1px solid var(--border);
+     border-radius: var(--radius);
+     box-shadow: var(--shadow);
+     overflow: hidden;
+   }
+   
+   .ipd-panel.ipd-panel--chart {
+     overflow: visible;
+   }
+   
+   .ipd-panel-header {
+     display: flex;
+     align-items: center;
+     justify-content: space-between;
+     padding: 0.85rem 1.1rem;
+     border-bottom: 1px solid var(--border);
+     background: #FAFBFC;
+   }
+   
+   .ipd-panel-header h2 {
+     margin: 0;
+     font-size: 0.98rem;
+     font-weight: 600;
+     color: var(--text);
+   }
+   
+   .ipd-badge {
+     background: #EBF4FF;
+     color: var(--accent);
+     padding: 0.2rem 0.6rem;
+     border-radius: 999px;
+     font-size: 0.72rem;
+     font-weight: 600;
+   }
+   
+   /* ─── Chart panel ─── */
+   .ipd-chart-scroll {
+     overflow-x: auto;
+     overflow-y: visible;
+     max-width: 100%;
+     width: 100%;
+     box-sizing: border-box;
+     -webkit-overflow-scrolling: touch;
+   }
+   
+   .ipd-chart-scroll::-webkit-scrollbar { height: 8px; }
+   .ipd-chart-scroll::-webkit-scrollbar-track { background: #EDF2F7; border-radius: 4px; }
+   .ipd-chart-scroll::-webkit-scrollbar-thumb {
+     background: linear-gradient(135deg, #90CDF4, #63B3ED);
+     border-radius: 4px;
+     border: 2px solid #EDF2F7;
+   }
+   
+   .ipd-chart-track {
+     display: block;
+     min-width: min-content;
+     padding: 0.6rem 0.75rem 1rem;
+     box-sizing: border-box;
+   }
+   
+   .ipd-chart-track google-chart { display: block; }
+   
+   /* ─── Table panel ─── */
+   .ipd-table-wrap {
+     overflow-x: auto;
+     max-height: 400px;
+     overflow-y: auto;
+   }
+   
+   .ipd-table-wrap::-webkit-scrollbar { width: 5px; height: 5px; }
+   .ipd-table-wrap::-webkit-scrollbar-thumb { background: #CBD5E0; border-radius: 3px; }
+   
+   .ipd-table {
+     width: 100%;
+     border-collapse: collapse;
+     font-size: 0.85rem;
+   }
+   
+   .ipd-th {
+     position: sticky;
+     top: 0;
+     background: #F7FAFC;
+     padding: 0.6rem 0.85rem;
+     font-size: 0.8rem;
+     font-weight: 600;
+     color: var(--text-sec);
+     border-bottom: 2px solid var(--border);
+     text-align: right;
+     white-space: nowrap;
+     z-index: 1;
+   }
+   
+   .ipd-th--rank { width: 44px; text-align: center; }
+   
+   .ipd-th--sortable {
+     cursor: pointer;
+     user-select: none;
+     transition: color var(--transition);
+   }
+   
+   .ipd-th--sortable:hover { color: var(--accent); }
+   
+   .sort-icon { font-size: 0.75rem; opacity: 0.6; margin-right: 0.2rem; }
+   
+   .ipd-tr {
+     transition: background var(--transition);
+   }
+   
+   .ipd-tr:hover { background: #EBF4FF; }
+   
+   .ipd-tr:not(:last-child) { border-bottom: 1px solid var(--border); }
+   
+   .ipd-td {
+     padding: 0.6rem 0.85rem;
+     color: var(--text);
+     text-align: right;
+   }
+   
+   .ipd-td--rank { text-align: center; }
+   .ipd-td--num  { font-variant-numeric: tabular-nums; }
+   .ipd-td--name { font-weight: 500; }
+   
+   /* Rank badges */
+   .rank-badge {
+     width: 26px;
+     height: 26px;
+     border-radius: 50%;
+     display: inline-flex;
+     align-items: center;
+     justify-content: center;
+     font-size: 0.75rem;
+     font-weight: 700;
+     background: var(--bg);
+     color: var(--muted);
+     border: 1px solid var(--border);
+   }
+   
+   .rank-badge--gold   { background: #F6E05E; color: #744210; border-color: #ECC94B; }
+   .rank-badge--silver { background: #CBD5E0; color: #2D3748; border-color: #A0AEC0; }
+   .rank-badge--bronze { background: #FBD38D; color: #744210; border-color: #F6AD55; }
+   
+   /* Volume bar */
+   .volume-bar-wrap {
+     display: flex;
+     align-items: center;
+     gap: 0.5rem;
+   }
+   
+   .volume-num { min-width: 28px; font-weight: 600; color: var(--text); }
+   
+   .volume-bar {
+     flex: 1;
+     height: 6px;
+     background: #E2E8F0;
+     border-radius: 3px;
+     overflow: hidden;
+     min-width: 40px;
+   }
+   
+   .volume-bar-fill {
+     height: 100%;
+     background: linear-gradient(90deg, #3182CE, #63B3ED);
+     border-radius: 3px;
+     transition: width 0.6s ease;
+   }
+   
+   /* Status chips */
+   .chip {
+     display: inline-block;
+     padding: 0.2rem 0.6rem;
+     border-radius: 999px;
+     font-size: 0.72rem;
+     font-weight: 600;
+   }
+   
+   .chip--green  { background: #C6F6D5; color: #22543D; }
+   .chip--yellow { background: #FEFCBF; color: #744210; }
+   .chip--orange { background: #FEEBC8; color: #7B341E; }
+   .chip--red    { background: #FED7D7; color: #822727; }
+   
+   /* Empty state */
+   .ipd-empty {
+     display: flex;
+     flex-direction: column;
+     align-items: center;
+     justify-content: center;
+     gap: 0.5rem;
+     padding: 2.5rem;
+     color: var(--muted);
+     font-size: 0.9rem;
+   }
+   
+   .ipd-empty span { font-size: 2rem; opacity: 0.4; }
+   .ipd-empty p    { margin: 0; }
+   
+   /* ═══ Drill-down modal ═══ */
+   .ipd-backdrop {
+     position: fixed;
+     inset: 0;
+     z-index: 1000;
+     background: rgba(26, 32, 44, 0.52);
+     display: flex;
+     align-items: flex-start;
+     justify-content: center;
+     padding: 1.5rem;
+     box-sizing: border-box;
+     overflow-y: auto;
+   }
+   
+   .ipd-modal {
+     background: var(--surface);
+     border-radius: var(--radius);
+     box-shadow: 0 20px 50px rgba(0, 0, 0, 0.22);
+     max-width: min(1100px, 100%);
+     width: 100%;
+     margin: 2vh auto;
+     max-height: 92vh;
+     display: flex;
+     flex-direction: column;
+     border: 1px solid var(--border);
+     direction: rtl;
+     text-align: right;
+   }
+   
+   .ipd-modal--detail .ipd-modal-body {
+     direction: rtl;
+     text-align: right;
+     flex: 1;
+     min-height: 0;
+     display: flex;
+     flex-direction: column;
+   }
+   
+   .ipd-modal--detail .ipd-modal-title {
+     text-align: right;
+   }
+   
+   .ipd-modal-header {
+     display: flex;
+     align-items: center;
+     justify-content: space-between;
+     gap: 1rem;
+     padding: 0.9rem 1.15rem;
+     border-bottom: 1px solid var(--border);
+     background: #FAFBFC;
+     flex-shrink: 0;
+   }
+   
+   .ipd-modal-title {
+     margin: 0;
+     font-size: 1.05rem;
+     font-weight: 700;
+     color: var(--text);
+   }
+   
+   .ipd-modal-close {
+     border: none;
+     background: #EDF2F7;
+     width: 2.25rem;
+     height: 2.25rem;
+     border-radius: var(--radius-sm);
+     font-size: 1.35rem;
+     line-height: 1;
+     cursor: pointer;
+     color: var(--text-sec);
+     flex-shrink: 0;
+   }
+   
+   .ipd-modal-close:hover { background: #E2E8F0; }
+   
+   .ipd-modal-empty {
+     margin: 0;
+     padding: 1.25rem 1.25rem 1.5rem;
+     color: var(--text-sec);
+     font-size: 0.88rem;
+     line-height: 1.55;
+     text-align: right;
+     direction: rtl;
+   }
+   
+   .ipd-modal-empty code {
+     font-size: 0.8em;
+     background: #EDF2F7;
+     padding: 0.08em 0.35em;
+     border-radius: 4px;
+   }
+   
+   .ipd-modal-table-outer {
+     flex: 1;
+     min-height: 0;
+     padding: 0 0 1rem;
+   }
+   
+   .ipd-modal-table-wrap {
+     overflow: auto;
+     max-height: min(68vh, 560px);
+     margin: 0 1rem;
+     border: 1px solid var(--border);
+     border-radius: var(--radius-sm);
+   }
+   
+   .ipd-modal-table {
+     width: 100%;
+     border-collapse: collapse;
+     font-size: 0.82rem;
+   }
+   
+   .ipd-modal-table thead th {
+     position: sticky;
+     top: 0;
+     background: #EBF4FF;
+     color: var(--accent);
+     font-weight: 600;
+     text-align: right;
+     padding: 0.55rem 0.65rem;
+     border-bottom: 2px solid var(--border);
+     white-space: nowrap;
+     z-index: 1;
+   }
+   
+   .ipd-modal-table tbody td {
+     padding: 0.45rem 0.65rem;
+     border-bottom: 1px solid var(--border);
+     text-align: right;
+     vertical-align: top;
+     max-width: 200px;
+     word-break: break-word;
+   }
+   
+   .ipd-modal-table tbody tr:nth-child(even) { background: #F7FAFC; }
+   
+   /* ═══ RESPONSIVE ═══ */
+   @media (max-width: 1100px) {
+     .ipd-kpi-row { grid-template-columns: repeat(2, 1fr); }
+     .ipd-main    { grid-template-columns: 1fr; }
+   }
+   
+   @media (max-width: 700px) {
+     .ipd-kpi-row { grid-template-columns: 1fr 1fr; }
+     .ipd-filters { flex-direction: column; align-items: stretch; gap: 0.75rem; }
+     .ipd-seg     { width: 100%; }
+     .ipd-seg-btn { flex: 1; }
+     .ipd-kpi-val { font-size: 1.4rem; }
+   }
+   
+   @media (max-width: 480px) {
+     .ipd-kpi-row { grid-template-columns: 1fr; }
+     .ipd-kpi-card { padding: 0.85rem 1rem; }
+   }

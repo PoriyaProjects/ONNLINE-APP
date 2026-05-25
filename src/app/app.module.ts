@@ -195,6 +195,7 @@ import { PatientStikersComponent } from './patient-stikers/patient-stikers.compo
 import { PatientsSystemConflictsComponent } from './patients-system-conflicts/patients-system-conflicts.component';
 import { AddPollComponent } from './polls/add-poll/add-poll.component';
 import { PollsComponent } from './polls/polls.component';
+import { ProfileDeptAssociationComponent } from './profile-dept-association/profile-dept-association.component';
 import { PoriadepartsComponent } from './poriadeparts/poriadeparts.component';
 import { QualityMeasuresDashboardComponent } from './quality-measures-dashboard/quality-measures-dashboard.component';
 import { ReHospComponent } from './re-hosp/re-hosp.component';
@@ -229,6 +230,7 @@ import { SurgeryControlMainComponent } from './surgery-control-main/surgery-cont
 import { SurgeriesUnclosedReportsComponent } from './surgery-reports/surgeries-unclosed-reports/surgeries-unclosed-reports.component';
 import { SurgeryReportsComponent } from './surgery-reports/surgery-reports.component';
 import { SurgeryComponent } from './surgery/surgery.component';
+import { TodayDashboardComponent } from './TodayDashboardComponent/today-dashboard.component';
 import { AddOrEditSwitchesComponent } from './switches/add-or-edit-switches/add-or-edit-switches.component';
 import { SwitchesComponent } from './switches/switches.component';
 import { UpdateformComponent } from './updateform/updateform.component';
@@ -285,11 +287,17 @@ import { InfectionControlModule } from './infection-control/infection-control.mo
 import { MriScheduleComponent } from './mri-schedule';
 import { DepartmentalTextureReportComponent } from './nutrition-system/departmental-texture-report/departmental-texture-report.component';
 import { EmergencyRoomReportComponent } from './emergency-room-report/emergency-room-report.component';
+import { ImagingPerformanceDashboardComponent } from './imaging-performance-dashboard/imaging-performance-dashboard.component';
 import { HitoFormsDashboardComponent } from './hito-forms-dashboard/hito-forms-dashboard.component';
 import { FilterDepartsPipe } from './pipe/filter-departs.pipe';
 import { SharedModule } from './shared/shared.module';
 import { SurgeriesDashboradComponent } from './surgeries-dashborad-n/surgeries-dashborad.component';
+import { SurgeriesCancellationsComponent } from './surgeries-dashborad-n-components/cancellations/surgeries-cancellations.component';
+import { SurgeriesRevenueComponent } from './surgeries-dashborad-n-components/revenue/surgeries-revenue.component';
+import { SurgeriesSubpanelMockLayoutComponent } from './surgeries-dashborad-n-components/surgeries-subpanel-mock-layout.component';
+import { SurgeriesWaitTimesComponent } from './surgeries-dashborad-n-components/wait-times/surgeries-wait-times.component';
 import { WhatsappCategoriesPermissionsComponent } from './whatsapp-messages-dashboard/whatsapp-categories-permissions/whatsapp-categories-permissions.component';
+import { CommercialSupportProcurementDialogComponent } from './form-dashboard/commercial-support-form-dashboard/commercial-support-procurement-dialog/commercial-support-procurement-dialog.component';
 
 
 
@@ -354,6 +362,7 @@ const maskConfig: Partial<IConfig> = {
     FormDashboardComponent,
     UpdateformComponent,
     UpdatesingleformComponent,
+    TodayDashboardComponent,
     FormsansweredComponent,
     EventsscheduleComponent,
     BugReportComponent,
@@ -460,6 +469,7 @@ const maskConfig: Partial<IConfig> = {
     CreatePatientComponent,
     WhatsappDepartmentsDashboardComponent,
     PollsComponent,
+    ProfileDeptAssociationComponent,
     AddPollComponent,
     CathReportComponent,
     DepartmentIncomeDashboardComponent,
@@ -519,6 +529,10 @@ const maskConfig: Partial<IConfig> = {
     FolderDialogComponent,
     DimotActivityDashboardComponent,
     SurgeriesDashboradComponent,
+    SurgeriesWaitTimesComponent,
+    SurgeriesCancellationsComponent,
+    SurgeriesRevenueComponent,
+    SurgeriesSubpanelMockLayoutComponent,
     DialogDoingComponent,
     HearingSurveyComponent,
     HearingCaseNumbersDialogComponent,
@@ -527,6 +541,7 @@ const maskConfig: Partial<IConfig> = {
     AiLettersDashboardComponent,
     MriScheduleComponent,
     EmergencyRoomReportComponent,
+    ImagingPerformanceDashboardComponent,
     HitoFormsDashboardComponent,
     MedicalInternsDashboardComponent,
     MedicalInternAddUpdateComponent,
@@ -534,6 +549,7 @@ const maskConfig: Partial<IConfig> = {
     InternDepartmentAssignmentDialogComponent,
     LecturesManageDialogComponent,
     MedicalInternsSmsComponent,
+    CommercialSupportProcurementDialogComponent,
     //HospitalIncomeDashbComponent,
   ],
   imports: [

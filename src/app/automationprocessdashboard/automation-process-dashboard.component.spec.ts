@@ -5,6 +5,8 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import { FormsModule } from '@angular/forms';
+import { GoogleChartsModule } from 'angular-google-charts';
 import { AutomationProcessDashboardComponent } from './automation-process-dashboard.component';
 
 describe('AutomationProcessDashboardComponent', () => {
@@ -16,6 +18,8 @@ describe('AutomationProcessDashboardComponent', () => {
       declarations: [AutomationProcessDashboardComponent],
       imports: [
         HttpClientTestingModule,
+        FormsModule,
+        GoogleChartsModule,
         MatSnackBarModule,
         MatButtonModule,
         MatIconModule,
@@ -35,8 +39,8 @@ describe('AutomationProcessDashboardComponent', () => {
   it('should have 4 departments including NLP', () => {
     expect(component.departments.length).toBe(4);
     expect(component.departments[0].name).toBe('CT');
-    expect(component.departments[1].name).toBe('GASTRO');
-    expect(component.departments[2].name).toBe('MRI');
+    expect(component.departments[1].name).toBe('MRI');
+    expect(component.departments[2].name).toBe('GASTRO');
     expect(component.departments[3].name).toBe('NLP');
   });
 

@@ -1,19 +1,246 @@
-<h1>הבקשות שלי</h1>
-<table mat-table [dataSource]="rows" class="mat-elevation-z2 full nps-table">
-  <ng-container matColumnDef="RequestID">
-    <th mat-header-cell *matHeaderCellDef>#</th>
-    <td mat-cell *matCellDef="let r">{{ r.RequestID }}</td>
-  </ng-container>
-  <ng-container matColumnDef="Status">
-    <th mat-header-cell *matHeaderCellDef>סטטוס</th>
-    <td mat-cell *matCellDef="let r"><app-nps-request-status-badge [status]="r.Status"></app-nps-request-status-badge></td>
-  </ng-container>
-  <ng-container matColumnDef="Actions">
-    <th mat-header-cell *matHeaderCellDef>פעולות</th>
-    <td mat-cell *matCellDef="let r">
-      <button mat-icon-button color="primary" (click)="go(r.RequestID)"><mat-icon>visibility</mat-icon></button>
-    </td>
-  </ng-container>
-  <tr mat-header-row *matHeaderRowDef="cols"></tr>
-  <tr mat-row *matRowDef="let row; columns: cols"></tr>
-</table>
+<div class="nps-page">
+  <header class="nps-page-header">
+    <div class="nps-page-header-main">
+      <h1 class="nps-page-title">אישורי הרשאות פר-הרשאה</h1>
+      <p class="nps-page-subtitle">סיכום עובדים, אישורי מנהלים ועובד, ויצירת בקשה חדשה לפי כלל</p>
+    </div>
+  </header>
+
+  <p *ngIf="busy" class="nps-state-msg">טוען נתונים...</p>
+  <p *ngIf="!busy && loadError" class="nps-state-msg nps-state-msg--error">לא ניתן לטעון טבלה. בדקו הרשאות או זמינות שירות.</p>
+
+  <section class="nps-section">
+    <div class="nps-section-title">
+      <div class="nps-section-title-main">
+        <mat-icon>filter_list</mat-icon>
+        סינון ופעולות
+      </div>
+    </div>
+    <div class="nps-card">
+      <div class="nps-card-toolbar">
+        <mat-checkbox [(ngModel)]="mineOnly" (change)="reload()">רק פריטים שמחכים לאישור שלי</mat-checkbox>
+        <mat-form-field appearance="outline" class="filter-field">
+          <mat-label>סטטוס</mat-label>
+          <mat-select [(ngModel)]="statusFilter" (selectionChange)="reload()">
+            <mat-option value="">הכל</mat-option>
+            <mat-option value="Pending">Pending</mat-option>
+            <mat-option value="Approved">Approved</mat-option>
+            <mat-option value="Rejected">Rejected</mat-option>
+          </mat-select>
+        </mat-form-field>
+      </div>
+    </div>
+  </section>
+
+  <section class="nps-section">
+    <div class="nps-section-title">
+      <div class="nps-section-title-main">
+        <mat-icon>groups</mat-icon>
+        סיכום עובדים — מנהל ישיר / עקיף
+      </div>
+      <button mat-stroked-button type="button" class="nps-btn-rounded" (click)="clearSelectedEmployee()" [disabled]="selectedEmployeeId == null">
+        הצג הכל
+      </button>
+    </div>
+    <div class="nps-table-wrap">
+      <div class="nps-table-scroll">
+        <table mat-table [dataSource]="summaryRows" class="full summary-table">
+          <ng-container matColumnDef="EmployeeID">
+            <th mat-header-cell *matHeaderCellDef>ת.ז</th>
+            <td mat-cell *matCellDef="let r">{{ r.EmployeeID }}</td>
+          </ng-container>
+          <ng-container matColumnDef="FullName">
+            <th mat-header-cell *matHeaderCellDef>שם עובד</th>
+            <td mat-cell *matCellDef="let r">{{ r.FullName }}</td>
+          </ng-container>
+          <ng-container matColumnDef="NotApprovedCount">
+            <th mat-header-cell *matHeaderCellDef>כמות הרשאות לא מאושרות</th>
+            <td mat-cell *matCellDef="let r">{{ r.NotApprovedCount }}</td>
+          </ng-container>
+          <ng-container matColumnDef="LastUpdateDate">
+            <th mat-header-cell *matHeaderCellDef>תאריך עדכון אחרון</th>
+            <td mat-cell *matCellDef="let r">
+              {{ toDate(r.LastUpdateDate) ? (toDate(r.LastUpdateDate) | date:'dd-MM-yyyy HH:mm') : '—' }}
+            </td>
+          </ng-container>
+          <ng-container matColumnDef="Done">
+            <th mat-header-cell *matHeaderCellDef>בוצע</th>
+            <td mat-cell *matCellDef="let r">{{ r.Done ? 'כן' : 'לא' }}</td>
+          </ng-container>
+          <tr mat-header-row *matHeaderRowDef="managerCols"></tr>
+          <tr
+            mat-row
+            *matRowDef="let row; columns: managerCols"
+            class="summary-row"
+            [class.active]="selectedEmployeeId === row.EmployeeID"
+            (click)="selectSummaryRow(row)"
+          ></tr>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section class="nps-section" *ngIf="selectedEmployeeId">
+    <div class="nps-section-title">
+      <div class="nps-section-title-main">
+        <mat-icon>rule_folder</mat-icon>
+        פירוט הרשאות
+      </div>
+    </div>
+    <p *ngIf="detailBusy" class="nps-state-msg">טוען פירוט עובד...</p>
+    <p *ngIf="!detailBusy && detailLoadError" class="nps-state-msg nps-state-msg--error">לא ניתן לטעון את פירוט ההרשאות לעובד זה.</p>
+    <p
+      *ngIf="selectedEmployeeId && !detailBusy && !detailLoadError && detailRows.length === 0"
+      class="nps-state-msg"
+    >
+      אין שורות פירוט לעובד זה עבור הסינון הנוכחי.
+    </p>
+    <div class="nps-table-wrap" *ngIf="!detailBusy && !detailLoadError && detailRows.length > 0">
+      <span class="spacer"></span>
+      <button mat-stroked-button type="button" class="nps-btn-rounded" (click)="reload()" [disabled]="busy">
+        <mat-icon>refresh</mat-icon>
+        רענון
+      </button>
+      <button mat-raised-button color="primary" type="button" class="nps-btn-rounded" (click)="saveAllSelections()" [disabled]="busy || !hasPendingSelections()">
+        שמור אישורים
+      </button>
+      <div class="nps-table-scroll">
+        <table mat-table [dataSource]="detailRows" class="full nps-table">
+          <ng-container matColumnDef="EmployeeID">
+            <th mat-header-cell *matHeaderCellDef>ת.ז</th>
+            <td mat-cell *matCellDef="let r">{{ r.EmployeeID }}</td>
+          </ng-container>
+          <ng-container matColumnDef="FullName">
+            <th mat-header-cell *matHeaderCellDef>שם מלא</th>
+            <td mat-cell *matCellDef="let r">{{ r.FullName }}</td>
+          </ng-container>
+          <ng-container matColumnDef="PermissionName">
+            <th mat-header-cell *matHeaderCellDef>שם הרשאה</th>
+            <td mat-cell *matCellDef="let r">{{ r.PermissionName }}</td>
+          </ng-container>
+          <ng-container matColumnDef="Manager1Approved">
+            <th mat-header-cell *matHeaderCellDef>
+              <div class="step-cell">
+                <span>מנהל ישיר</span>
+                <!-- <mat-checkbox
+                  [checked]="isColumnAllSelected(1)"
+                  [indeterminate]="isColumnPartiallySelected(1)"
+                  [disabled]="!hasSelectableRows(1)"
+                  (change)="toggleSelectAll(1, $event.checked)"
+                ></mat-checkbox> -->
+              </div>
+            </th>
+            <td mat-cell *matCellDef="let r">
+              <div class="step-cell">
+                <mat-checkbox
+                  [checked]="isStepChecked(r, 1)"
+                  [disabled]="!canApprove(r, 1)"
+                  (change)="onStepCheckboxChange(r, 1, $event.checked)"
+                ></mat-checkbox>
+              </div>
+            </td>
+          </ng-container>
+          <ng-container matColumnDef="Manager2Approved">
+            <th mat-header-cell *matHeaderCellDef>
+              <div class="step-cell">
+                <span>מנהל עקיף</span>
+                <mat-checkbox
+                  [checked]="isColumnAllSelected(2)"
+                  [indeterminate]="isColumnPartiallySelected(2)"
+                  [disabled]="!hasSelectableRows(2)"
+                  (change)="toggleSelectAll(2, $event.checked)"
+                ></mat-checkbox>
+              </div>
+            </th>
+            <td mat-cell *matCellDef="let r">
+              <div class="step-cell">
+                <mat-checkbox
+                  [checked]="isStepChecked(r, 2)"
+                  [disabled]="!canApprove(r, 2)"
+                  (change)="onStepCheckboxChange(r, 2, $event.checked)"
+                ></mat-checkbox>
+              </div>
+            </td>
+          </ng-container>
+          <ng-container matColumnDef="EmployeeApproved">
+            <th mat-header-cell *matHeaderCellDef>
+              <div class="step-cell">
+                <span>עובד</span>
+                <mat-checkbox
+                  [checked]="isColumnAllSelected(3)"
+                  [indeterminate]="isColumnPartiallySelected(3)"
+                  [disabled]="!hasSelectableRows(3)"
+                  (change)="toggleSelectAll(3, $event.checked)"
+                ></mat-checkbox>
+              </div>
+            </th>
+            <td mat-cell *matCellDef="let r">
+              <div class="step-cell">
+                <mat-checkbox
+                  [checked]="isStepChecked(r, 3)"
+                  [disabled]="!canApprove(r, 3)"
+                  (change)="onStepCheckboxChange(r, 3, $event.checked)"
+                ></mat-checkbox>
+              </div>
+            </td>
+          </ng-container>
+          <ng-container matColumnDef="LastUpdateDate">
+            <th mat-header-cell *matHeaderCellDef>תאריך עדכון אחרון</th>
+            <td mat-cell *matCellDef="let r">
+              {{
+                toDate(r.LastUpdateDate)
+                  ? (toDate(r.LastUpdateDate) | date:'dd-MM-yyyy HH:mm')
+                  : '—'
+              }}
+            </td>
+          </ng-container>
+          <ng-container matColumnDef="PermissionIsActive">
+            <th mat-header-cell *matHeaderCellDef>פעיל</th>
+            <td mat-cell *matCellDef="let r">{{ r.PermissionIsActive ? 'פעיל' : 'לא פעיל' }}</td>
+          </ng-container>
+          <tr mat-header-row *matHeaderRowDef="cols"></tr>
+          <tr mat-row *matRowDef="let row; columns: cols"></tr>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <p *ngIf="!busy && !loadError && summaryRows.length === 0" class="nps-state-msg">אין נתונים להצגה עבור הסינון הנוכחי.</p>
+
+  <section class="nps-section">
+    <div class="nps-section-title">
+      <div class="nps-section-title-main">
+        <mat-icon>add_circle_outline</mat-icon>
+        יצירת בקשה חדשה לפי כלל
+      </div>
+    </div>
+    <div class="nps-card create-card-inner">
+      <mat-form-field appearance="outline" class="wide">
+        <mat-label>עובד</mat-label>
+        <input matInput [(ngModel)]="formEmployeeInput" (ngModelChange)="onEmployeeInput()" [matAutocomplete]="empAuto"
+          placeholder="שם/מזהה" />
+        <mat-autocomplete #empAuto="matAutocomplete" (optionSelected)="selectEmployee($event.option.value)">
+          <mat-option *ngFor="let e of employeeSearchRows" [value]="e">
+            {{ e.FirstName }} {{ e.LastName }} ({{ e.EmployeeID }})
+          </mat-option>
+        </mat-autocomplete>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="wide">
+        <mat-label>כלל</mat-label>
+        <mat-select [(ngModel)]="formRuleId">
+          <mat-option *ngFor="let r of uniqueRuleRows()" [value]="r.RuleID">{{ ruleLabel(r) }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="wide">
+        <mat-label>הערה (אופציונלי)</mat-label>
+        <input matInput [(ngModel)]="formNotes" />
+      </mat-form-field>
+
+      <div>
+        <button mat-raised-button color="primary" type="button" class="nps-btn-rounded" (click)="createFromRule()">צור בקשה</button>
+      </div>
+    </div>
+  </section>
+</div>

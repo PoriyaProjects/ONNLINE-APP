@@ -8,6 +8,7 @@ import { CommercialSupportGatheringComponent } from './commercial-support-gather
 import { CommercialSupportPresentationDialogComponent } from './commercial-support-presentation-dialog/commercial-support-presentation-dialog.component';
 import { CommercialSupportResearchDialogComponent } from './commercial-support-research-dialog/commercial-support-research-dialog.component';
 import { SupportRequestService } from './commercial-support.service';
+import { CommercialSupportProcurementDialogComponent } from './commercial-support-procurement-dialog/commercial-support-procurement-dialog.component';
 
 
 
@@ -59,10 +60,25 @@ export class CommercialSupportFormDashboardComponent {
     this.loadRequests();
   }
 
+  get draftRequestsCount(): number {
+    if (!this.supportRequests?.data) {
+      return 0;
+    }
+  
+    return this.supportRequests.data.filter((x: any) =>
+      x.Draft === true || x.Draft === 'True' || x.Draft === 'true'
+    ).length;
+  }
+
   loadRequests(): void {
     this.supportRequestService.getAllSupportRequests(this.UserName).subscribe(requests => {
       this.supportRequests = new MatTableDataSource<any>(requests['d']);
     });
+  }
+
+  getEmployeeImage(employee_id: string): string {
+    const img = `http://srv-apps-prod/Images/${employee_id}.jpg`;
+    return img;
   }
 
   applyFilter(event: Event): void {
@@ -144,6 +160,12 @@ export class CommercialSupportFormDashboardComponent {
           width: '50%'
         });
         break;
+      case 'E':
+        dialogTemp = this.dialog.open(CommercialSupportProcurementDialogComponent, {
+          disableClose: true,
+          width: '50%'
+        });
+        break;
     }
     dialogTemp.afterClosed().subscribe(() => {
       this.loadRequests();
@@ -177,6 +199,13 @@ export class CommercialSupportFormDashboardComponent {
         break;
       case 'D':
         dialogTemp = this.dialog.open(CommercialSupportGatheringComponent, {
+          disableClose: true,
+          width: '50%',
+          data: element
+        });
+        break;
+      case 'E':
+        dialogTemp = this.dialog.open(CommercialSupportProcurementDialogComponent, {
           disableClose: true,
           width: '50%',
           data: element

@@ -1,0 +1,104 @@
+<h1>שיוכי עובדים לפרופיל ולכלל</h1>
+<p class="page-intro">
+  רשימת שורות מ־<code>EP_NursePermissionEmployeeProfileAssignments</code>. החלת שיוך חדשה סוגרת את השיוך הפעיל הקודם לעובד ומוסיפה שורה חדשה (כמו אישור בקשה), לפי פרופיל ואופציונלית לפי כלל מ־
+  <code>EP_NursePermissionProfileRules</code>.
+</p>
+
+<mat-card class="toolbar-card">
+  <mat-card-content class="toolbar-row">
+    <mat-checkbox [(ngModel)]="activeOnly" (change)="reloadList()">רק שיוכים פעילים (IsCurrent)</mat-checkbox>
+    <button mat-stroked-button type="button" (click)="reloadList()" [disabled]="busy">
+      <mat-icon>refresh</mat-icon>
+      רענן
+    </button>
+  </mat-card-content>
+</mat-card>
+
+<div *ngIf="busy && assignments.length === 0" class="loading-hint">טוען…</div>
+
+<table *ngIf="assignments.length > 0" mat-table [dataSource]="assignments" class="mat-elevation-z2 full-table">
+  <ng-container matColumnDef="assignmentId">
+    <th mat-header-cell *matHeaderCellDef>מזהה</th>
+    <td mat-cell *matCellDef="let r">{{ r.assignmentId }}</td>
+  </ng-container>
+  <ng-container matColumnDef="employeeId">
+    <th mat-header-cell *matHeaderCellDef>עובד</th>
+    <td mat-cell *matCellDef="let r">{{ r.employeeId }}</td>
+  </ng-container>
+  <ng-container matColumnDef="profile">
+    <th mat-header-cell *matHeaderCellDef>פרופיל</th>
+    <td mat-cell *matCellDef="let r">{{ r.ProfileName || r.ProfileID }}</td>
+  </ng-container>
+  <ng-container matColumnDef="ruleId">
+    <th mat-header-cell *matHeaderCellDef>כלל</th>
+    <td mat-cell *matCellDef="let r">{{ r.ruleId != null ? r.ruleId : '—' }}</td>
+  </ng-container>
+  <ng-container matColumnDef="requestId">
+    <th mat-header-cell *matHeaderCellDef>בקשה</th>
+    <td mat-cell *matCellDef="let r">{{ r.sourceRequestID != null ? r.sourceRequestID : '—' }}</td>
+  </ng-container>
+  <ng-container matColumnDef="current">
+    <th mat-header-cell *matHeaderCellDef>נוכחי</th>
+    <td mat-cell *matCellDef="let r">{{ r.isActive ? 'כן' : 'לא' }}</td>
+  </ng-container>
+  <ng-container matColumnDef="status">
+    <th mat-header-cell *matHeaderCellDef>סטטוס</th>
+    <td mat-cell *matCellDef="let r">{{ r.assignmentStatus || '—' }}</td>
+  </ng-container>
+  <ng-container matColumnDef="from">
+    <th mat-header-cell *matHeaderCellDef>מתאריך</th>
+    <td mat-cell *matCellDef="let r">{{ r.effectiveFromUtc | date: 'short' }}</td>
+  </ng-container>
+  <ng-container matColumnDef="to">
+    <th mat-header-cell *matHeaderCellDef>עד תאריך</th>
+    <td mat-cell *matCellDef="let r">{{ r.effectiveToUtc ? (r.effectiveToUtc | date: 'short') : '—' }}</td>
+  </ng-container>
+  <tr mat-header-row *matHeaderRowDef="cols"></tr>
+  <tr mat-row *matRowDef="let row; columns: cols"></tr>
+</table>
+
+<p *ngIf="!busy && assignments.length === 0" class="empty-hint">אין רשומות להצגה או אין הרשאה לצפות ברשימה הגלובלית.</p>
+
+<mat-card class="form-card">
+  <mat-card-title>החלת שיוך (מנהל)</mat-card-title>
+  <mat-card-content>
+    <p class="form-hint">הפעולה מחליפה את השיוך <strong>הפעיל</strong> של העובד. אם נבחר כלל — חייב להתאים לפרופיל שנבחר.</p>
+
+    <mat-form-field appearance="outline" class="wide">
+      <mat-label>חיפוש עובד</mat-label>
+      <input
+        matInput
+        [(ngModel)]="formEmployeeInput"
+        (ngModelChange)="onEmployeeInput()"
+        [matAutocomplete]="empAuto"
+        placeholder="שם או מזהה…"
+      />
+      <mat-autocomplete #empAuto="matAutocomplete" (optionSelected)="selectEmployee($event.option.value)">
+        <mat-option *ngFor="let e of employeeSearchRows" [value]="e">
+          {{ e.FirstName }} {{ e.LastName }} ({{ e.EmployeeID }})
+        </mat-option>
+      </mat-autocomplete>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>פרופיל</mat-label>
+      <mat-select [(ngModel)]="formProfileId" (ngModelChange)="onProfileChange()" placeholder="בחרו">
+        <mat-option *ngFor="let p of profiles" [value]="p.ProfileID">{{ p.ProfileName }}</mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="wide">
+      <mat-label>כלל (אופציונלי)</mat-label>
+      <mat-select [(ngModel)]="formRuleId" [disabled]="formProfileId == null">
+        <mat-option [value]="null">ללא קישור לכלל (RuleID ריק)</mat-option>
+        <mat-option *ngFor="let r of rulesForSelectedProfile()" [value]="r.RuleID">{{ ruleOptionLabel(r) }}</mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <div>
+      <button mat-raised-button color="primary" type="button" (click)="submitApply()" [disabled]="busy">
+        החל שיוך
+      </button>
+    </div>
+  </mat-card-content>
+</mat-card>

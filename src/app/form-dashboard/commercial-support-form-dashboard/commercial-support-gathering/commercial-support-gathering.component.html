@@ -96,23 +96,6 @@
                                         *ngIf="GatheringRequestDto.get('GatheringPlan').value != undefined && GatheringRequestDto.get('GatheringPlan').value != ''">
                                         <mat-icon>delete</mat-icon>
                                     </button>
-                                    <!-- Display file/image -->
-                                    <!-- <div *ngIf="GatheringRequestDto.get('GatheringPlan').value != undefined && GatheringRequestDto.get('GatheringPlan').value != ''"
-                                        style="margin-top: 12px;">
-                                        <div *ngIf="isImageFile(GatheringRequestDto.get('GatheringPlan').value)"
-                                            style="margin-top: 8px;">
-                                            <img [src]="getFileUrl(GatheringRequestDto.get('GatheringPlan').value)"
-                                                [alt]="getFileName(GatheringRequestDto.get('GatheringPlan').value)"
-                                                style="max-width: 300px; max-height: 300px; border: 1px solid #ddd; border-radius: 4px; cursor: pointer;"
-                                                (click)="file_in_new_window_base64()" (error)="onImageError($event)">
-                                        </div>
-                                        <div *ngIf="!isImageFile(GatheringRequestDto.get('GatheringPlan').value)"
-                                            style="margin-top: 8px; padding: 8px; background-color: #f5f5f5; border-radius: 4px; display: inline-block;">
-                                            <span class="material-icons"
-                                                style="vertical-align: middle;">description</span>
-                                            {{ getFileName(GatheringRequestDto.get('GatheringPlan').value) }}
-                                        </div>
-                                    </div> -->
                                 </div><br>
 
                                 <!-- Support Options Multiple Select -->
@@ -138,10 +121,6 @@
                                                 <strong style="flex: 1;">
                                                     {{ getOptionLabel(option.get('SupportOptionCode').value) }}
                                                 </strong>
-                                                <!-- <button mat-icon-button color="warn" type="button"
-                                                    (click)="removeSupportOption(i)" style="margin-right: 8px;">
-                                                    <mat-icon>close</mat-icon>
-                                                </button> -->
                                             </div>
                                             <mat-form-field appearance="outline"
                                                 style="width: 100%; margin-bottom: 12px;">
@@ -175,57 +154,34 @@
                                         *ngIf="GatheringRequestDto.get('GatheringOutcome').value != undefined && GatheringRequestDto.get('GatheringOutcome').value != ''">
                                         <mat-icon>delete</mat-icon>
                                     </button>
-                                    <!-- Display file/image -->
-                                    <!-- <div *ngIf="GatheringRequestDto.get('GatheringOutcome').value != undefined && GatheringRequestDto.get('GatheringOutcome').value != ''"
-                                        style="margin-top: 12px;">
-                                        <div *ngIf="isImageFile(GatheringRequestDto.get('GatheringOutcome').value)"
-                                            style="margin-top: 8px;">
-                                            <img [src]="getFileUrl(GatheringRequestDto.get('GatheringOutcome').value)"
-                                                [alt]="getFileName(GatheringRequestDto.get('GatheringOutcome').value)"
-                                                style="max-width: 300px; max-height: 300px; border: 1px solid #ddd; border-radius: 4px; cursor: pointer;"
-                                                (click)="file_in_new_window_base64_2()" (error)="onImageError($event)">
-                                        </div>
-                                        <div *ngIf="!isImageFile(GatheringRequestDto.get('GatheringOutcome').value)"
-                                            style="margin-top: 8px; padding: 8px; background-color: #f5f5f5; border-radius: 4px; display: inline-block;">
-                                            <span class="material-icons"
-                                                style="vertical-align: middle;">description</span>
-                                            {{ getFileName(GatheringRequestDto.get('GatheringOutcome').value) }}
-                                        </div>
-                                    </div> -->
                                 </div><br>
                                 <!-- File Input 3 -->
                                 <div style="text-align: right;">
                                     <label>מכתבי תמיכה מחברות מסחריות</label><br>
-                                    <input #gatheringSupportInput type="file" (change)="onFileChange($event, 'GatheringSupport')"
+                                    <input #gatheringSupportInput type="file" multiple
+                                        (change)="onFileChange($event, 'GatheringSupport')"
                                         accept=".doc,.docx,.xls,.xlsx,.pdf,image/*" required>
-                                    <button mat-raised-button class="fileOpenBtn" color="primary"
-                                        (click)="file_in_new_window_base64_3()"
-                                        *ngIf="GatheringRequestDto.get('GatheringSupport').value != undefined && GatheringRequestDto.get('GatheringSupport').value != ''">
-                                        צפייה במסמך
-                                        <span class="material-icons"> zoom_in </span>
-                                    </button>
-                                    <button mat-icon-button color="warn" type="button" matTooltip="הסרת קובץ"
-                                        (click)="removeFile('GatheringSupport', gatheringSupportInput)"
-                                        *ngIf="GatheringRequestDto.get('GatheringSupport').value != undefined && GatheringRequestDto.get('GatheringSupport').value != ''">
-                                        <mat-icon>delete</mat-icon>
-                                    </button>
-                                    <!-- Display file/image -->
-                                    <!-- <div *ngIf="GatheringRequestDto.get('GatheringSupport').value != undefined && GatheringRequestDto.get('GatheringSupport').value != ''" 
-                                         style="margin-top: 12px;">
-                                        <div *ngIf="isImageFile(GatheringRequestDto.get('GatheringSupport').value)" 
-                                             style="margin-top: 8px;">
-                                            <img [src]="getFileUrl(GatheringRequestDto.get('GatheringSupport').value)" 
-                                                 [alt]="getFileName(GatheringRequestDto.get('GatheringSupport').value)"
-                                                 style="max-width: 300px; max-height: 300px; border: 1px solid #ddd; border-radius: 4px; cursor: pointer;"
-                                                 (click)="file_in_new_window_base64_3()"
-                                                 (error)="onImageError($event)">
+                                    <div *ngIf="getFilesArray('GatheringSupport').length > 0" style="margin-top: 8px;">
+                                        <div *ngFor="let supportFile of getFilesArray('GatheringSupport'); let i = index"
+                                            style="display: flex; align-items: center; margin-bottom: 6px; gap: 8px;">
+                                            <span style="flex: 1;">
+                                                {{ getFileName(supportFile) }}
+                                            </span>
+                                            <button mat-raised-button class="fileOpenBtn" color="primary" type="button"
+                                                (click)="viewGatheringFile('GatheringSupport', i)">
+                                                צפייה במסמך
+                                                <span class="material-icons"> zoom_in </span>
+                                            </button>
+                                            <button mat-icon-button color="warn" type="button" matTooltip="הסרת קובץ"
+                                                (click)="removeFile('GatheringSupport', undefined, i)">
+                                                <mat-icon>delete</mat-icon>
+                                            </button>
                                         </div>
-                                        <div *ngIf="!isImageFile(GatheringRequestDto.get('GatheringSupport').value)" 
-                                             style="margin-top: 8px; padding: 8px; background-color: #f5f5f5; border-radius: 4px; display: inline-block;">
-                                            <span class="material-icons" style="vertical-align: middle;">description</span>
-                                            {{ getFileName(GatheringRequestDto.get('GatheringSupport').value) }}
-                                        </div>
-                                    </div> -->
+                                        <button mat-stroked-button color="warn" type="button"
+                                            (click)="removeFile('GatheringSupport', gatheringSupportInput)">
+                                            הסר הכל
+                                        </button>
+                                    </div>
                                 </div><br>
                                 <hr><br>
                                 <p>* יש לפנות לקבלת תמיכה משלוש חברות מסחריות. במידה וחברה כלשהי בוחרת שלא לתמוך, יש
@@ -234,36 +190,30 @@
                                 <!-- File Input 4 -->
                                 <div style="text-align: right;">
                                     <label>תיעוד פניות לחברות*</label><br>
-                                    <input #gatheringInquiriesInput type="file" (change)="onFileChange($event, 'GatheringInquiries')"
+                                    <input #gatheringInquiriesInput type="file" multiple
+                                        (change)="onFileChange($event, 'GatheringInquiries')"
                                         accept=".doc,.docx,.xls,.xlsx,.pdf,image/*" required>
-                                    <button mat-raised-button class="fileOpenBtn" color="primary"
-                                        (click)="file_in_new_window_base64_4()"
-                                        *ngIf="GatheringRequestDto.get('GatheringInquiries').value != undefined && GatheringRequestDto.get('GatheringInquiries').value != ''">
-                                        צפייה במסמך
-                                        <span class="material-icons"> zoom_in </span>
-                                    </button>
-                                    <button mat-icon-button color="warn" type="button" matTooltip="הסרת קובץ"
-                                        (click)="removeFile('GatheringInquiries', gatheringInquiriesInput)"
-                                        *ngIf="GatheringRequestDto.get('GatheringInquiries').value != undefined && GatheringRequestDto.get('GatheringInquiries').value != ''">
-                                        <mat-icon>delete</mat-icon>
-                                    </button>
-                                    <!-- Display file/image -->
-                                    <!-- <div *ngIf="GatheringRequestDto.get('GatheringInquiries').value != undefined && GatheringRequestDto.get('GatheringInquiries').value != ''" 
-                                         style="margin-top: 12px;">
-                                        <div *ngIf="isImageFile(GatheringRequestDto.get('GatheringInquiries').value)" 
-                                             style="margin-top: 8px;">
-                                            <img [src]="getFileUrl(GatheringRequestDto.get('GatheringInquiries').value)" 
-                                                 [alt]="getFileName(GatheringRequestDto.get('GatheringInquiries').value)"
-                                                 style="max-width: 300px; max-height: 300px; border: 1px solid #ddd; border-radius: 4px; cursor: pointer;"
-                                                 (click)="file_in_new_window_base64_4()"
-                                                 (error)="onImageError($event)">
+                                    <div *ngIf="getFilesArray('GatheringInquiries').length > 0" style="margin-top: 8px;">
+                                        <div *ngFor="let inquiryFile of getFilesArray('GatheringInquiries'); let i = index"
+                                            style="display: flex; align-items: center; margin-bottom: 6px; gap: 8px;">
+                                            <span style="flex: 1;">
+                                                {{ getFileName(inquiryFile) }}
+                                            </span>
+                                            <button mat-raised-button class="fileOpenBtn" color="primary" type="button"
+                                                (click)="viewGatheringFile('GatheringInquiries', i)">
+                                                צפייה במסמך
+                                                <span class="material-icons"> zoom_in </span>
+                                            </button>
+                                            <button mat-icon-button color="warn" type="button" matTooltip="הסרת קובץ"
+                                                (click)="removeFile('GatheringInquiries', undefined, i)">
+                                                <mat-icon>delete</mat-icon>
+                                            </button>
                                         </div>
-                                        <div *ngIf="!isImageFile(GatheringRequestDto.get('GatheringInquiries').value)" 
-                                             style="margin-top: 8px; padding: 8px; background-color: #f5f5f5; border-radius: 4px; display: inline-block;">
-                                            <span class="material-icons" style="vertical-align: middle;">description</span>
-                                            {{ getFileName(GatheringRequestDto.get('GatheringInquiries').value) }}
-                                        </div>
-                                    </div> -->
+                                        <button mat-stroked-button color="warn" type="button"
+                                            (click)="removeFile('GatheringInquiries', gatheringInquiriesInput)">
+                                            הסר הכל
+                                        </button>
+                                    </div>
                                 </div><br>
                                 <hr><br>
 

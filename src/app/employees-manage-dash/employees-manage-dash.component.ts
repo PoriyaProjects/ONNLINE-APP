@@ -9,6 +9,8 @@ import { MatSort } from '@angular/material/sort';
 import * as XLSX from 'xlsx';
 import { environment } from 'src/environments/environment';
 import { EmployeesUpdateManagersComponent } from './employees-update-managers/employees-update-managers.component';
+import { Observable } from 'rxjs';
+import { map, startWith } from 'rxjs/operators';
 
 @Component({
   selector: 'app-employees-manage-dash',
@@ -25,15 +27,23 @@ export class EmployeesManageDashComponent implements OnInit, OnDestroy {
   dataSource = new MatTableDataSource(this.TABLE_DATA);
   dataSourceExcel = new MatTableDataSource(this.TABLE_DATAExcel);
   trainingdataSourceExcel = new MatTableDataSource();
+  educationdataSourceExcel = new MatTableDataSource();
   @ViewChild(MatPaginator) paginator: MatPaginator;
   @ViewChild(MatSort) sort: MatSort;
   UserName = localStorage.getItem("loginUserName").toLowerCase();
   managerType: string = "";
   all_employees = [];
   DepartmentsList = [];
+  SubDepartmentsList = [];
   FunctionsList = [];
   SektorsList = [];
   WorkPlacesList = [];
+  departmentAutocomplete = new FormControl('');
+  roleAutocomplete = new FormControl('');
+  filteredDepartments: Observable<any[]> = new Observable<any[]>();
+  filteredRoles: Observable<any[]> = new Observable<any[]>();
+  filteredSubDepartments: Observable<any[]> = new Observable<any[]>();
+  subDepartmentAutocomplete = new FormControl('');
   loaded: boolean = false;
   url = environment.url;
   employee: any;
@@ -58,6 +68,7 @@ export class EmployeesManageDashComponent implements OnInit, OnDestroy {
         MedGrad: new FormControl('0', null),
         PhoneNumber: new FormControl('', null),
         Department: new FormControl('', null),
+        SubDepartment: new FormControl('', null),
         Role: new FormControl('', null),
         Sektor: new FormControl('', null),
         WorkPlace: new FormControl('', null),
@@ -66,8 +77,80 @@ export class EmployeesManageDashComponent implements OnInit, OnDestroy {
         ApprovedToBlossom: new FormControl('2', null),
         InGym: new FormControl('', null),
       });
+      this.initSearchAutocompletes();
 
     }
+  }
+
+  private initSearchAutocompletes(): void {
+    this.filteredDepartments = this.departmentAutocomplete.valueChanges.pipe(
+      startWith(''),
+      map((value) => this.filterDepartments(value))
+    );
+    this.filteredRoles = this.roleAutocomplete.valueChanges.pipe(
+      startWith(''),
+      map((value) => this.filterRoles(value))
+    );
+    this.departmentAutocomplete.valueChanges.subscribe((value) => {
+      if (typeof value === 'string') {
+        this.searchEmployeesGroup.controls['Department'].setValue('');
+      }
+    });
+    this.roleAutocomplete.valueChanges.subscribe((value) => {
+      if (typeof value === 'string') {
+        this.searchEmployeesGroup.controls['Role'].setValue('');
+      }
+    });
+    this.filteredSubDepartments = this.subDepartmentAutocomplete.valueChanges.pipe(
+      startWith(''),
+      map((value) => this.filterSubDepartments(value))
+    );
+  }
+
+  private filterDepartments(value: any): any[] {
+    const text = (typeof value === 'string' ? value : value?.DepartnentDescripton || '').toLowerCase();
+    return this.DepartmentsList.filter((dept) =>
+      (dept.DepartnentDescripton || '').toLowerCase().includes(text)
+    );
+  }
+
+  private filterRoles(value: any): any[] {
+    const text = (typeof value === 'string' ? value : value?.FunctionDescription || '').toLowerCase();
+    return this.FunctionsList.filter((func) =>
+      (func.FunctionDescription || '').toLowerCase().includes(text)
+    );
+  }
+
+  private filterSubDepartments(value: any): any[] {
+    const text = (typeof value === 'string' ? value : value?.SubDepartmentDescription || '').toLowerCase();
+    return this.SubDepartmentsList.filter((dept) =>
+      (dept.DepartnentDescripton || '').toLowerCase().includes(text) &&
+      (dept.SubDepartmentDescription || '').toLowerCase().includes(text)
+    );
+  }
+
+  displayDepartment(dept: any): string {
+    return dept?.DepartnentDescripton || '';
+  }
+
+  displayRole(func: any): string {
+    return func?.FunctionDescription || '';
+  }
+
+  displaySubDepartment(subDept: any): string {
+    return subDept?.SubDepartmentDescription || '';
+  }
+
+  onDepartmentSelected(dept: any): void {
+    this.searchEmployeesGroup.controls['Department'].setValue(dept?.DepartnentCode || '');
+  }
+
+  onRoleSelected(func: any): void {
+    this.searchEmployeesGroup.controls['Role'].setValue(func?.FunctionID || '');
+  }
+
+  onSubDepartmentSelected(subDept: any): void {
+    this.searchEmployeesGroup.controls['SubDepartment'].setValue(subDept?.SubDepartmentCode || '');
   }
 
   ngOnDestroy(): void {
@@ -191,8 +274,43 @@ export class EmployeesManageDashComponent implements OnInit, OnDestroy {
   }
 
   applyFilter(event: Event) {
-    const filterValue = (event.target as HTMLInputElement).value;
+    const filterValue = (event.target as HTMLInputElement).value ?? '';
     this.dataSource.filter = filterValue.trim().toLowerCase();
+  }
+
+  private setupTableFilter(): void {
+    this.dataSource.filterPredicate = (data: any, filter: string): boolean => {
+      const normalizedFilter = (filter || '').trim().toLowerCase();
+      if (!normalizedFilter) {
+        return true;
+      }
+
+      const firstName = (data?.FirstName || '').toString().trim().toLowerCase();
+      const lastName = (data?.LastName || '').toString().trim().toLowerCase();
+      const fullName = `${firstName} ${lastName}`.trim();
+      const reverseFullName = `${lastName} ${firstName}`.trim();
+
+      const searchableText = `${this.flattenObjectValues(data)} ${fullName} ${reverseFullName}`.toLowerCase();
+      const terms = normalizedFilter.split(/\s+/).filter(Boolean);
+
+      return terms.every(term => searchableText.includes(term));
+    };
+  }
+
+  private flattenObjectValues(value: any): string {
+    if (value === null || value === undefined) {
+      return '';
+    }
+
+    if (Array.isArray(value)) {
+      return value.map(item => this.flattenObjectValues(item)).join(' ');
+    }
+
+    if (typeof value === 'object') {
+      return Object.values(value).map(item => this.flattenObjectValues(item)).join(' ');
+    }
+
+    return String(value);
   }
 
   getEmployeeDepartmentList() {
@@ -201,6 +319,12 @@ export class EmployeesManageDashComponent implements OnInit, OnDestroy {
       })
       .subscribe((Response) => {
         this.DepartmentsList = Response["d"];
+        this.SubDepartmentsList = this.DepartmentsList.filter((dept) => dept.SubDepartmentDescription != null);
+        const selectedCode = this.searchEmployeesGroup?.controls['Department']?.value;
+        const selectedDept = this.DepartmentsList.find((d) => d.DepartnentCode == selectedCode);
+        if (selectedDept) {
+          this.departmentAutocomplete.setValue(selectedDept, { emitEvent: false });
+        }
       });
   }
 
@@ -211,6 +335,11 @@ export class EmployeesManageDashComponent implements OnInit, OnDestroy {
       })
       .subscribe((Response) => {
         this.FunctionsList = Response["d"];
+        const selectedId = this.searchEmployeesGroup?.controls['Role']?.value;
+        const selectedRole = this.FunctionsList.find((f) => f.FunctionID == selectedId);
+        if (selectedRole) {
+          this.roleAutocomplete.setValue(selectedRole, { emitEvent: false });
+        }
       });
   }
 
@@ -272,12 +401,40 @@ export class EmployeesManageDashComponent implements OnInit, OnDestroy {
       .subscribe((Response) => {
         this.loaded = true;
         this.dataSource = new MatTableDataSource<any>(Response["d"]);
+        this.setupTableFilter();
         this.dataSource.paginator = this.paginator;
         this.dataSource.sort = this.sort;
       });
-    if (toExcel == 'tra') {
+      if (toExcel == 'tra') {
+        this.http
+          .post(this.url + "EmployeesTrainingsExcelExport", {
+            _empId: empId,
+            _empFirstName: empFirstName,
+            _empLastName: empLastName,
+            _on: on,
+            _medGrad: medGrad,
+            _phoneNumber: phoneNumber,
+            _department: department,
+            _role: role,
+            _managerType: managerType,
+            _sektor: sektor,
+            _workPlace: workPlace,
+            _statusRow: StatusRow,
+            _approvedToBlossom: ApprovedToBlossom,
+            _userName: this.UserName,
+            _InGym: InGym
+          })
+          .subscribe((Response) => {
+            this.trainingdataSourceExcel = new MatTableDataSource<any>(Response["d"]);
+            let that = this;
+            setTimeout(() => {
+              that.trainingexportexcel();
+            }, 1500);
+          });
+      }
+    if (toExcel == 'edu') {
       this.http
-        .post(this.url + "EmployeesTrainingsExcelExport", {
+        .post(this.url + "EmployeesEducationsExcelExport", {
           _empId: empId,
           _empFirstName: empFirstName,
           _empLastName: empLastName,
@@ -295,10 +452,10 @@ export class EmployeesManageDashComponent implements OnInit, OnDestroy {
           _InGym: InGym
         })
         .subscribe((Response) => {
-          this.trainingdataSourceExcel = new MatTableDataSource<any>(Response["d"]);
+          this.educationdataSourceExcel = new MatTableDataSource<any>(Response["d"]);
           let that = this;
           setTimeout(() => {
-            that.trainingexportexcel();
+            that.educationexportexcel();
           }, 1500);
         });
     } else if (toExcel) {
@@ -342,7 +499,6 @@ export class EmployeesManageDashComponent implements OnInit, OnDestroy {
 
     /* save to file */
     XLSX.writeFile(wb, this.fileName);
-
   }
 
   trainingfileName = 'רשימת הכשרות.xlsx';
@@ -356,9 +512,23 @@ export class EmployeesManageDashComponent implements OnInit, OnDestroy {
     XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
 
     /* save to file */
-    XLSX.writeFile(wb, this.fileName);
-
+    XLSX.writeFile(wb, this.trainingfileName);
   }
+  
+  educationfileName = 'רשימת השכלות.xlsx';
+  educationexportexcel(): void {
+    /* table id is passed over here */
+    let element = document.getElementById('education-excel-table');
+    const ws: XLSX.WorkSheet = XLSX.utils.table_to_sheet(element);
+
+    /* generate workbook and add the worksheet */
+    const wb: XLSX.WorkBook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
+
+    /* save to file */
+    XLSX.writeFile(wb, this.educationfileName);
+  }
+
   addUpdateEmployee(employee) {
     let dialogRef = this.dialog.open(EmployeesAddUpdateComponent, { disableClose: true });
     dialogRef.componentInstance.employee = employee;
