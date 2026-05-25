@@ -16,6 +16,7 @@ import { MatSort, Sort } from "@angular/material/sort";
 import { MatTableDataSource } from "@angular/material/table";
 import { DomSanitizer, SafeStyle } from "@angular/platform-browser";
 import { environment } from "src/environments/environment";
+import { DepartmentIncomeLocalCacheService } from "./department-income-local-cache.service";
 import {
     getIncomeChartTooltipContext,
     INCOME_DASHBOARD_YEAR_CHART_COLORS,
@@ -91,7 +92,13 @@ export interface BossPayerInsightRow {
     isOutlier: boolean;
 }
 
-export type BossViewMode = "table" | "pie";
+export type BossViewMode = "table" | "pie" | "monthly";
+export type BossFilterLoadingKey =
+    | "wing"
+    | "organization"
+    | "unifiedCategory"
+    | "month"
+    | null;
 
 export interface DepartmentIncomeYearlyRow {
     UnifiedDiagnosis?: string;
@@ -344,6 +351,24 @@ export class DepartmentIncomeDashboardComponent
     // Boss Dashboard
     showBossDashboard = false;
     bossViewMode: BossViewMode = "table";
+    bossInitialLoading = false;
+    bossFilterLoadingKey: BossFilterLoadingKey = null;
+    bossMonthlyChartData: any[][] = [];
+    bossMonthlyChartColumns: any[] = [];
+    bossMonthlyChartOptions: any = {
+        title: "",
+        legend: { position: "top", alignment: "end" },
+        chartArea: { width: "92%", height: "72%" },
+        bars: "vertical",
+        bar: { groupWidth: "72%" },
+        hAxis: { slantedText: true, slantedTextAngle: 35 },
+        vAxis: { title: "הכנסות (מיליוני ₪)", minValue: 0 },
+        fontName: "Heebo, Arial, sans-serif",
+    };
+    isBossWingFilterOpen = false;
+    isBossOrganizationFilterOpen = false;
+    isBossUnifiedCategoryFilterOpen = false;
+    isBossMonthFilterOpen = false;
     bossExecutiveSummary = "";
     bossPayerInsights: BossPayerInsightRow[] = [];
     bossPayerOutliers: BossPayerInsightRow[] = [];
@@ -400,6 +425,8 @@ export class DepartmentIncomeDashboardComponent
     isDataLoaded = false;
 
     selectedDepartment: DepartmentComparisonDto | null = null;
+    /** «סה"כ» = כל האגפים — תצוגת דוח למנהל */
+    readonly diagnosisAllValue = 'סה"כ';
     selectedDiagnosis: string = "אגף כירורגי";
     isDepartmentGraphOpen = false;
     departmentGraphTitle = "";
@@ -414,8 +441,10 @@ export class DepartmentIncomeDashboardComponent
         null;
     private simulatedLoadingProgress: Record<string, number> = {};
     private simulatedLoadingFinishing: Record<string, boolean> = {};
-    private simulatedLoadingCallbacks: Record<string, (() => void) | undefined> =
-        {};
+    private simulatedLoadingCallbacks: Record<
+        string,
+        (() => void) | undefined
+    > = {};
     private simulatedLoadingIntervals: Record<
         string,
         ReturnType<typeof setInterval> | null
@@ -663,14 +692,20 @@ export class DepartmentIncomeDashboardComponent
     isIncomeClassificationOpen: boolean = false;
     isOrganizationOpen: boolean = false;
     isUnifiedCategoryOpen: boolean = false;
+    isIncomeMonthOpen: boolean = false;
     selectedIncomeSource: string = this.incomeFilterAllValue;
     selectedIncomeClassification: string = this.incomeFilterAllValue;
     selectedOrganization: string = this.incomeFilterAllValue;
     selectedUnifiedCategory: string = this.incomeFilterAllValue;
+    selectedIncomeMonth: string = this.incomeFilterAllValue;
     incomeSourceOptions: string[] = [this.incomeFilterAllValue, "מדינה", "קרן"];
     incomeClassificationOptions: string[] = [this.incomeFilterAllValue];
     organizationOptions: string[] = [this.incomeFilterAllValue];
     unifiedCategoryOptions: string[] = [this.incomeFilterAllValue];
+    incomeMonthOptions: string[] = [
+        this.incomeFilterAllValue,
+        ...DepartmentIncomeDashboardComponent.INCOME_REPORT_HEBREW_MONTHS,
+    ];
 
     // Theme
     isDark: boolean = false;
@@ -720,6 +755,7 @@ export class DepartmentIncomeDashboardComponent
         public dialog: MatDialog,
         private cdr: ChangeDetectorRef,
         private sanitizer: DomSanitizer,
+        private localDataCache: DepartmentIncomeLocalCacheService,
     ) {}
 
     ngOnInit(): void {
@@ -829,7 +865,7 @@ export class DepartmentIncomeDashboardComponent
 
     private getMainTableSortValue(
         row: DepartmentComparisonDto,
-        columnId: string
+        columnId: string,
     ): string | number {
         if (columnId === "DepartmentName") {
             return String(row?.DepartmentName ?? "").toLocaleLowerCase("he");
@@ -846,7 +882,7 @@ export class DepartmentIncomeDashboardComponent
 
     private getPayerTableSortValue(
         row: PayerIncomeTableRow,
-        columnId: string
+        columnId: string,
     ): string | number {
         if (columnId === "UnifiedPayer") {
             return String(row?.UnifiedPayer ?? "").toLocaleLowerCase("he");
@@ -867,7 +903,7 @@ export class DepartmentIncomeDashboardComponent
         }
         this.dataSource.sort = this.mainSort;
         const currentYearCol = this.fiveYearColumnDefs.find(
-            (c) => c.field === "CurrentYear"
+            (c) => c.field === "CurrentYear",
         );
         const defaultCol = currentYearCol?.id ?? "Difference";
         if (!this.mainSort.active) {
@@ -886,7 +922,7 @@ export class DepartmentIncomeDashboardComponent
         }
         this.payerDataSource.sort = this.payerSort;
         const currentYearCol = this.fiveYearColumnDefs.find(
-            (c) => c.field === "CurrentYear"
+            (c) => c.field === "CurrentYear",
         );
         const defaultCol = currentYearCol?.id ?? "Difference";
         if (!this.payerSort.active) {
@@ -916,7 +952,9 @@ export class DepartmentIncomeDashboardComponent
     }
 
     applyPayerTableSearch(): void {
-        this.payerDataSource.filter = this.payerTableSearch.trim().toLowerCase();
+        this.payerDataSource.filter = this.payerTableSearch
+            .trim()
+            .toLowerCase();
     }
 
     clearDepartmentTableSearch(): void {
@@ -959,7 +997,7 @@ export class DepartmentIncomeDashboardComponent
     loadDepartmentIncomeData(forceRefresh = false): void {
         const scopeKey = this.getIncomeScopeKey();
         if (!forceRefresh) {
-            const cachedRaw = this.incomeRawUnfilteredByScope.get(scopeKey);
+            const cachedRaw = this.readIncomeScopeFromCache(scopeKey);
             if (cachedRaw?.length) {
                 this.applyIncomeFiltersAndRefreshViews(cachedRaw, true);
                 return;
@@ -986,10 +1024,7 @@ export class DepartmentIncomeDashboardComponent
                             : [];
                         const normalized =
                             this.normalizeDiagnosisComparisonRows(rawList);
-                        this.incomeRawUnfilteredByScope.set(
-                            scopeKey,
-                            normalized,
-                        );
+                        this.writeIncomeScopeToCache(scopeKey, normalized);
                         this.applyIncomeFiltersAndRefreshViews(
                             normalized,
                             true,
@@ -1115,7 +1150,30 @@ export class DepartmentIncomeDashboardComponent
 
     /** מפתח מטמון לפי אגף בלבד — מסנני UI מיושמים מקומית */
     private getIncomeScopeKey(): string {
+        if (this.isAllWingsSelected()) {
+            return "__comparison__";
+        }
         return String(this.selectedDiagnosis ?? "").trim() || "__comparison__";
+    }
+
+    isAllWingsSelected(): boolean {
+        const d = String(this.selectedDiagnosis ?? "").trim();
+        return !d || d === this.diagnosisAllValue;
+    }
+
+    isSpecificWingSelected(): boolean {
+        return !this.isAllWingsSelected();
+    }
+
+    getWingDisplayLabel(): string {
+        if (this.isAllWingsSelected()) {
+            return this.diagnosisAllValue;
+        }
+        return this.selectedDiagnosis || "בחר אגף";
+    }
+
+    getBossWingFilterOptions(): string[] {
+        return this.getBossWingFilterOptionsFromRaw(this.diagnosesList ?? []);
     }
 
     private buildIncomeDataCacheKey(): string {
@@ -1142,6 +1200,156 @@ export class DepartmentIncomeDashboardComponent
         this.yearlyTotalCacheKey = null;
         this.incomeFiveYearEndYear = null;
         this.invalidateBreakdownDetailCache();
+        this.localDataCache.clearAll();
+    }
+
+    private incomeScopeStorageKey(scopeKey: string): string {
+        return `incomeScope:${encodeURIComponent(scopeKey)}`;
+    }
+
+    private payerYearlyStorageKey(scopeKey: string): string {
+        return `payerYearly:${encodeURIComponent(scopeKey)}`;
+    }
+
+    private buildYearlyTotalsStorageKey(
+        filters = this.buildIncomeFilterRequest(),
+    ): string {
+        return `yearlyTotals:${encodeURIComponent(JSON.stringify(filters))}`;
+    }
+
+    private readIncomeScopeFromCache(
+        scopeKey: string,
+    ): DepartmentComparisonDto[] | null {
+        const inMemory = this.incomeRawUnfilteredByScope.get(scopeKey);
+        if (inMemory?.length) {
+            return inMemory;
+        }
+        const local = this.localDataCache.get<DepartmentComparisonDto[]>(
+            this.incomeScopeStorageKey(scopeKey),
+        );
+        if (local?.length) {
+            this.incomeRawUnfilteredByScope.set(scopeKey, local);
+            return local;
+        }
+        return null;
+    }
+
+    private writeIncomeScopeToCache(
+        scopeKey: string,
+        rows: DepartmentComparisonDto[],
+    ): void {
+        this.incomeRawUnfilteredByScope.set(scopeKey, rows);
+        this.localDataCache.set(this.incomeScopeStorageKey(scopeKey), rows);
+    }
+
+    private readPayerYearlyFromCache(
+        scopeKey: string,
+    ): DepartmentIncomeYearlyRow[] | null {
+        const inMemory = this.payerYearlyByScopeCache.get(scopeKey);
+        if (inMemory?.length) {
+            return inMemory;
+        }
+        const local = this.localDataCache.get<DepartmentIncomeYearlyRow[]>(
+            this.payerYearlyStorageKey(scopeKey),
+        );
+        if (local?.length) {
+            this.payerYearlyByScopeCache.set(scopeKey, local);
+            return local;
+        }
+        return null;
+    }
+
+    private writePayerYearlyToCache(
+        scopeKey: string,
+        rows: DepartmentIncomeYearlyRow[],
+    ): void {
+        this.payerYearlyByScopeCache.set(scopeKey, rows);
+        this.localDataCache.set(this.payerYearlyStorageKey(scopeKey), rows);
+    }
+
+    private readYearlyTotalsFromCache(
+        storageKey: string,
+    ): {
+        rows: YearlyIncomeDto[];
+        envelope: Record<string, unknown> | null;
+    } | null {
+        return this.localDataCache.get<{
+            rows: YearlyIncomeDto[];
+            envelope: Record<string, unknown> | null;
+        }>(storageKey);
+    }
+
+    private writeYearlyTotalsToCache(
+        storageKey: string,
+        rows: YearlyIncomeDto[],
+        envelope: Record<string, unknown> | null,
+    ): void {
+        this.localDataCache.set(storageKey, { rows, envelope });
+    }
+
+    private readDepartmentDetailedFromCache(cacheKey: string): {
+        rows: DepartmentDetailedDataDto[];
+        meta: Record<string, any> | null;
+    } | null {
+        const inMemory = this.departmentDetailedDataCache.get(cacheKey);
+        if (inMemory) {
+            return inMemory;
+        }
+        const local = this.localDataCache.get<{
+            rows: DepartmentDetailedDataDto[];
+            meta: Record<string, any> | null;
+        }>(`deptDetailed:${encodeURIComponent(cacheKey)}`);
+        if (local) {
+            this.departmentDetailedDataCache.set(cacheKey, local);
+            return local;
+        }
+        return null;
+    }
+
+    private writeDepartmentDetailedToCache(
+        cacheKey: string,
+        payload: {
+            rows: DepartmentDetailedDataDto[];
+            meta: Record<string, any> | null;
+        },
+    ): void {
+        this.departmentDetailedDataCache.set(cacheKey, payload);
+        this.localDataCache.set(
+            `deptDetailed:${encodeURIComponent(cacheKey)}`,
+            payload,
+        );
+    }
+
+    private applyStoredIncomeFilterOptions(payload: {
+        medicalUnitIncome: string[];
+        incomeCategory: string[];
+        organization: string[];
+        unifiedCategory: string[];
+    }): void {
+        if (payload.medicalUnitIncome.length) {
+            this.incomeSourceOptions = [
+                this.incomeFilterAllValue,
+                ...payload.medicalUnitIncome,
+            ];
+        }
+        if (payload.incomeCategory.length) {
+            this.incomeClassificationOptions = [
+                this.incomeFilterAllValue,
+                ...payload.incomeCategory,
+            ];
+        }
+        if (payload.organization.length) {
+            this.organizationOptions = [
+                this.incomeFilterAllValue,
+                ...payload.organization,
+            ];
+        }
+        if (payload.unifiedCategory.length) {
+            this.unifiedCategoryOptions = [
+                this.incomeFilterAllValue,
+                ...payload.unifiedCategory,
+            ];
+        }
     }
 
     /**
@@ -1168,7 +1376,7 @@ export class DepartmentIncomeDashboardComponent
             unifiedCategory: "",
         };
         const diagnosis = String(this.selectedDiagnosis ?? "").trim();
-        if (diagnosis) {
+        if (diagnosis && !this.isAllWingsSelected()) {
             params.diagnosis = diagnosis;
         }
         const filters = this.buildIncomeFilterRequest();
@@ -1189,9 +1397,9 @@ export class DepartmentIncomeDashboardComponent
 
     private ensurePayerYearlyRawLoaded(onReady?: () => void): void {
         const scopeKey = this.getIncomeScopeKey();
-        const unfiltered = this.payerYearlyByScopeCache.get(scopeKey);
-        if (unfiltered?.length) {
-            this.payerYearlyRawRows = unfiltered;
+        const cachedRows = this.readPayerYearlyFromCache(scopeKey);
+        if (cachedRows?.length) {
+            this.payerYearlyRawRows = cachedRows;
             onReady?.();
             return;
         }
@@ -1210,7 +1418,7 @@ export class DepartmentIncomeDashboardComponent
             unifiedCategory: "",
         };
         const diagnosis = String(this.selectedDiagnosis ?? "").trim();
-        if (diagnosis) {
+        if (diagnosis && !this.isAllWingsSelected()) {
             queryParams.diagnosis = diagnosis;
         }
 
@@ -1222,7 +1430,7 @@ export class DepartmentIncomeDashboardComponent
                 next: (response: any) => {
                     const rows =
                         this.parseDepartmentIncomeYearlyPayload(response);
-                    this.payerYearlyByScopeCache.set(scopeKey, rows);
+                    this.writePayerYearlyToCache(scopeKey, rows);
                     this.payerYearlyRawRows = rows;
                     this.refreshPayerYearlyFilterOptions();
                     this.clearPayerYearlyChartLoadingState();
@@ -1492,8 +1700,15 @@ export class DepartmentIncomeDashboardComponent
 
     private applyIncomeFiltersToPayerYearlyRows(
         rows: DepartmentIncomeYearlyRow[],
+        options: { includeMonth?: boolean } = {},
     ): DepartmentIncomeYearlyRow[] {
-        if (!Array.isArray(rows) || !this.hasActivePayerIncomeFilters()) {
+        const includeMonth = options.includeMonth !== false;
+        const hasFilters =
+            this.selectedUnifiedCategory !== this.incomeFilterAllValue ||
+            this.selectedOrganization !== this.incomeFilterAllValue ||
+            (includeMonth &&
+                this.selectedIncomeMonth !== this.incomeFilterAllValue);
+        if (!Array.isArray(rows) || !hasFilters) {
             return rows || [];
         }
         return rows.filter(
@@ -1506,15 +1721,48 @@ export class DepartmentIncomeDashboardComponent
                 this.matchesIncomeFilter(row, this.selectedOrganization, [
                     "Organization",
                     "organization",
-                ]),
+                ]) &&
+                (!includeMonth ||
+                    this.matchesIncomeFilter(row, this.selectedIncomeMonth, [
+                        "Month",
+                        "month",
+                    ])),
         );
+    }
+
+    /** שורות לגרף החודשי בדוח למנהל — אגף + קרן + סוג פעילות (+ חודש אם נבחר) */
+    private getBossMonthlyChartSourceRows(): DepartmentIncomeYearlyRow[] {
+        let rows = this.payerYearlyRawRows;
+        if (!this.isAllWingsSelected()) {
+            const wing = String(this.selectedDiagnosis ?? "").trim();
+            rows = rows.filter(
+                (row) => String(row?.UnifiedDiagnosis ?? "").trim() === wing,
+            );
+        }
+        rows = rows.filter(
+            (row) =>
+                !this.isExcludedPayerLabel(row?.PatientSummary) &&
+                !this.isExcludedPayerLabel(row?.UnifiedPayer),
+        );
+        rows = this.applyIncomeFiltersToPayerYearlyRows(rows, {
+            includeMonth: false,
+        });
+        if (this.selectedIncomeMonth !== this.incomeFilterAllValue) {
+            rows = rows.filter((row) =>
+                this.matchesIncomeFilter(row, this.selectedIncomeMonth, [
+                    "Month",
+                    "month",
+                ]),
+            );
+        }
+        return rows;
     }
 
     /** שורות GetDepartmentIncomeYearly לגרף/טבלת מחלקות (לפי אגף + פילטרים) */
     private getPayerYearlyRowsForDepartmentChart(): DepartmentIncomeYearlyRow[] {
-        const wing = String(this.selectedDiagnosis ?? "").trim();
         let rows = this.payerYearlyRawRows;
-        if (wing) {
+        if (!this.isAllWingsSelected()) {
+            const wing = String(this.selectedDiagnosis ?? "").trim();
             rows = rows.filter(
                 (row) => String(row?.UnifiedDiagnosis ?? "").trim() === wing,
             );
@@ -1599,13 +1847,16 @@ export class DepartmentIncomeDashboardComponent
     private hasActivePayerIncomeFilters(): boolean {
         return (
             this.selectedUnifiedCategory !== this.incomeFilterAllValue ||
-            this.selectedOrganization !== this.incomeFilterAllValue
+            this.selectedOrganization !== this.incomeFilterAllValue ||
+            this.selectedIncomeMonth !== this.incomeFilterAllValue
         );
     }
 
     /** אפשרויות מסנן מנתוני GetDepartmentIncomeYearly (UnifiedCategory / Organization) */
     private refreshPayerYearlyFilterOptions(): void {
-        const wing = String(this.selectedDiagnosis ?? "").trim();
+        const wing = this.isAllWingsSelected()
+            ? ""
+            : String(this.selectedDiagnosis ?? "").trim();
         const unified = new Set<string>();
         const orgs = new Set<string>();
         for (const row of this.payerYearlyRawRows) {
@@ -1663,6 +1914,10 @@ export class DepartmentIncomeDashboardComponent
                 this.matchesIncomeFilter(row, this.selectedOrganization, [
                     "Organization",
                     "organization",
+                ]) &&
+                this.matchesIncomeFilter(row, this.selectedIncomeMonth, [
+                    "Month",
+                    "month",
                 ]) &&
                 this.matchesUnifiedCategoryIncomeFilter(
                     row,
@@ -1953,7 +2208,9 @@ export class DepartmentIncomeDashboardComponent
         this.applyFiveYearChartColors();
 
         this.chartData = months
-            .filter((month) => this.isChartVisibleFiveYearRow(byMonth.get(month)))
+            .filter((month) =>
+                this.isChartVisibleFiveYearRow(byMonth.get(month)),
+            )
             .map((month) =>
                 this.buildFiveYearChartDataRow(month, byMonth.get(month)),
             );
@@ -2020,9 +2277,13 @@ export class DepartmentIncomeDashboardComponent
     }
 
     loadDepartmentIncomeByDiagnosis(forceRefresh = false): void {
+        if (this.isAllWingsSelected()) {
+            this.loadDepartmentIncomeData(forceRefresh);
+            return;
+        }
         const scopeKey = this.getIncomeScopeKey();
         if (!forceRefresh) {
-            const cachedRaw = this.incomeRawUnfilteredByScope.get(scopeKey);
+            const cachedRaw = this.readIncomeScopeFromCache(scopeKey);
             if (cachedRaw?.length) {
                 this.applyIncomeFiltersAndRefreshViews(cachedRaw, true);
                 return;
@@ -2059,10 +2320,7 @@ export class DepartmentIncomeDashboardComponent
                         const rawList = Array.isArray(data) ? data : [];
                         const normalized =
                             this.normalizeDiagnosisComparisonRows(rawList);
-                        this.incomeRawUnfilteredByScope.set(
-                            scopeKey,
-                            normalized,
-                        );
+                        this.writeIncomeScopeToCache(scopeKey, normalized);
                         this.applyIncomeFiltersAndRefreshViews(
                             normalized,
                             true,
@@ -2101,12 +2359,28 @@ export class DepartmentIncomeDashboardComponent
         if (this.diagnosesList.length > 0) {
             return;
         }
+
+        const cached = this.localDataCache.get<string[]>("diagnosesList");
+        if (cached?.length) {
+            this.diagnosesList = this.getBossWingFilterOptionsFromRaw(cached);
+            if (!this.selectedDiagnosis && this.diagnosesList.length > 0) {
+                this.selectedDiagnosis = this.diagnosesList[0];
+            }
+            this.applyEmployeeDepartmentFilter();
+            return;
+        }
+
         this.isDiagnosesLoading = true;
         this.startSimulatedLoadingProgress("diagnoses");
         this.http.post(environment.url + "GetUniqueDiagnoses", {}).subscribe(
             (response: any) => {
                 if (response && response.d) {
-                    this.diagnosesList = response.d;
+                    const rawList = (response.d as string[]).filter(
+                        (d) => d && d !== this.diagnosisAllValue,
+                    );
+                    this.localDataCache.set("diagnosesList", rawList);
+                    this.diagnosesList =
+                        this.getBossWingFilterOptionsFromRaw(rawList);
                     // Set default diagnosis if not set
                     if (
                         !this.selectedDiagnosis &&
@@ -2127,6 +2401,13 @@ export class DepartmentIncomeDashboardComponent
                 this.cdr.detectChanges();
             },
         );
+    }
+
+    private getBossWingFilterOptionsFromRaw(list: string[]): string[] {
+        const cleaned = (list ?? []).filter(
+            (d) => d && d !== this.diagnosisAllValue,
+        );
+        return [this.diagnosisAllValue, ...cleaned];
     }
 
     /**
@@ -2226,10 +2507,7 @@ export class DepartmentIncomeDashboardComponent
         const sorted = [...this.yearlyTotalData].sort(
             (a, b) => parseInt(a.Year, 10) - parseInt(b.Year, 10),
         );
-        const latest = parseInt(
-            sorted[sorted.length - 1]?.Year ?? "",
-            10,
-        );
+        const latest = parseInt(sorted[sorted.length - 1]?.Year ?? "", 10);
         if (!Number.isNaN(latest)) {
             this.setFiveYearEndYear(latest);
         }
@@ -2249,11 +2527,7 @@ export class DepartmentIncomeDashboardComponent
         }));
         const yearIds = this.fiveYearColumnDefs.map((c) => c.id);
         this.displayedColumns = ["DepartmentName", ...yearIds, "Difference"];
-        this.payerDisplayedColumns = [
-            "UnifiedPayer",
-            ...yearIds,
-            "Difference",
-        ];
+        this.payerDisplayedColumns = ["UnifiedPayer", ...yearIds, "Difference"];
     }
 
     getRowFiveYearValue(row: any, field: string): number {
@@ -2291,13 +2565,15 @@ export class DepartmentIncomeDashboardComponent
 
     /** אחוז שינוי מהשנה הקודמת — null לעמודת השנה הראשונה (אין בסיס להשוואה) */
     getFiveYearYoYPercentLabel(row: any, field: string): string | null {
-        const idx = (this.fiveYearFieldKeys as readonly string[]).indexOf(field);
+        const idx = (this.fiveYearFieldKeys as readonly string[]).indexOf(
+            field,
+        );
         if (idx <= 0) {
             return null;
         }
         const prior = this.getRowFiveYearValue(
             row,
-            this.fiveYearFieldKeys[idx - 1]
+            this.fiveYearFieldKeys[idx - 1],
         );
         const current = this.getRowFiveYearValue(row, field);
         if (prior === 0) {
@@ -2308,13 +2584,15 @@ export class DepartmentIncomeDashboardComponent
     }
 
     getFiveYearYoYIsPositive(row: any, field: string): boolean | null {
-        const idx = (this.fiveYearFieldKeys as readonly string[]).indexOf(field);
+        const idx = (this.fiveYearFieldKeys as readonly string[]).indexOf(
+            field,
+        );
         if (idx <= 0) {
             return null;
         }
         const prior = this.getRowFiveYearValue(
             row,
-            this.fiveYearFieldKeys[idx - 1]
+            this.fiveYearFieldKeys[idx - 1],
         );
         const current = this.getRowFiveYearValue(row, field);
         if (prior === 0 && current === 0) {
@@ -2533,7 +2811,10 @@ export class DepartmentIncomeDashboardComponent
         );
         this.departmentIncomeData = merged;
         this.dataSource.data = merged;
-        if (this.graphPrimaryView !== "payer" && !this.isBreakdownChartViewActive) {
+        if (
+            this.graphPrimaryView !== "payer" &&
+            !this.isBreakdownChartViewActive
+        ) {
             this.updateChartColumns();
             this.updateChartData(false);
         }
@@ -2761,6 +3042,31 @@ export class DepartmentIncomeDashboardComponent
             return;
         }
 
+        const unfilteredYearlyKey = this.buildYearlyTotalsStorageKey({
+            medicalUnitIncome: null,
+            incomeCategory: null,
+            organization: null,
+            unifiedCategory: null,
+        });
+        const cachedYearly = this.readYearlyTotalsFromCache(unfilteredYearlyKey);
+        if (cachedYearly?.rows?.length) {
+            this.yearlyTotalsRaw = cachedYearly.rows;
+            this.yearlyTotalsFetched = true;
+            this.yearlyTotalData = cachedYearly.rows;
+            this.yearlyTotalCacheKey = "loaded";
+            this.refreshFiveYearLabelsFromYearlyTotals();
+            if (
+                cachedYearly.envelope &&
+                this.tryApplyBannerFromYearlyIncomeEnvelope(
+                    cachedYearly.envelope,
+                )
+            ) {
+                this.incomeReportAsOfFetchDone = true;
+            }
+            finish();
+            return;
+        }
+
         if (this.yearlyTotalsLoading) {
             return;
         }
@@ -2780,6 +3086,11 @@ export class DepartmentIncomeDashboardComponent
                         this.yearlyTotalsFetched = true;
                         this.yearlyTotalData = rows;
                         this.yearlyTotalCacheKey = "loaded";
+                        this.writeYearlyTotalsToCache(
+                            unfilteredYearlyKey,
+                            rows,
+                            envelope,
+                        );
                         this.refreshFiveYearLabelsFromYearlyTotals();
                         if (
                             this.tryApplyBannerFromYearlyIncomeEnvelope(
@@ -2820,10 +3131,7 @@ export class DepartmentIncomeDashboardComponent
             }
             return;
         }
-        if (
-            this.departmentIncomeData &&
-            this.departmentIncomeData.length > 0
-        ) {
+        if (this.departmentIncomeData && this.departmentIncomeData.length > 0) {
             if (this.isBreakdownChartViewActive) {
                 this.ensureBreakdownDetailCacheLoaded();
             } else {
@@ -2842,24 +3150,51 @@ export class DepartmentIncomeDashboardComponent
      * Load boss dashboard with yearly totals from backend
      */
     loadBossDashboard(): void {
-        this.isLoading = true;
-        this.startBossLoadingAnimation();
         this.showBossDashboard = true;
         this.bossViewMode = "table";
-        this.bossTablePage = 0;
-        this.bossExecutiveSummary = "";
-        this.bossPayerInsights = [];
-        this.bossPayerOutliers = [];
-        this.bossPayerPieData = [];
-        this.bossSelectedWingDeclineDiff = 0;
-        this.bossWorstDeclineWingName = "";
+        this.closeBossFilterDropdowns();
+        this.refreshBossDashboard(true);
+    }
 
-        if (
-            this.canReuseYearlyTotalsCache() &&
-            this.yearlyTotalsRaw.length
-        ) {
+    private refreshBossDashboard(
+        isInitial = false,
+        filterKey: Exclude<BossFilterLoadingKey, null> | null = null,
+    ): void {
+        const hasExisting = !!(this.yearlyTotalData?.length);
+        if (isInitial || !hasExisting) {
+            this.bossInitialLoading = true;
+            this.startBossLoadingAnimation();
+        } else if (filterKey) {
+            this.bossFilterLoadingKey = filterKey;
+        }
+        this.bossTablePage = 0;
+        if (isInitial) {
+            this.bossExecutiveSummary = "";
+            this.bossPayerInsights = [];
+            this.bossPayerOutliers = [];
+            this.bossPayerPieData = [];
+            this.bossSelectedWingDeclineDiff = 0;
+            this.bossWorstDeclineWingName = "";
+        }
+
+        if (this.canReuseYearlyTotalsCache() && this.yearlyTotalsRaw.length) {
             this.yearlyTotalData = this.yearlyTotalsRaw;
-            this.proceedBossDashboardAfterYearlyData(null);
+            this.proceedBossDashboardAfterYearlyData(null, isInitial);
+            return;
+        }
+
+        const yearlyStorageKey = this.buildYearlyTotalsStorageKey();
+        const cachedYearly = this.readYearlyTotalsFromCache(yearlyStorageKey);
+        if (cachedYearly?.rows?.length) {
+            this.yearlyTotalData = cachedYearly.rows;
+            if (this.canReuseYearlyTotalsCache()) {
+                this.yearlyTotalsRaw = cachedYearly.rows;
+                this.yearlyTotalsFetched = true;
+            }
+            this.proceedBossDashboardAfterYearlyData(
+                cachedYearly.envelope,
+                isInitial,
+            );
             return;
         }
 
@@ -2875,20 +3210,34 @@ export class DepartmentIncomeDashboardComponent
 
                         if (rows.length) {
                             this.yearlyTotalData = rows;
-                            this.proceedBossDashboardAfterYearlyData(envelope);
+                            this.writeYearlyTotalsToCache(
+                                yearlyStorageKey,
+                                rows,
+                                envelope,
+                            );
+                            if (this.canReuseYearlyTotalsCache()) {
+                                this.yearlyTotalsRaw = rows;
+                                this.yearlyTotalsFetched = true;
+                            }
+                            this.proceedBossDashboardAfterYearlyData(
+                                envelope,
+                                isInitial,
+                            );
                             return;
                         }
 
                         console.error("Data is not an array:", rows);
                     }
                     this.stopBossLoadingAnimation();
-                    this.isLoading = false;
+                    this.bossInitialLoading = false;
+                    this.bossFilterLoadingKey = null;
                     this.cdr.detectChanges();
                 },
                 (error) => {
                     console.error("Error loading boss dashboard:", error);
                     this.stopBossLoadingAnimation();
-                    this.isLoading = false;
+                    this.bossInitialLoading = false;
+                    this.bossFilterLoadingKey = null;
                     this.snackBar.open("❌ שגיאה בטעינת הנתונים", "סגור", {
                         duration: 3000,
                     });
@@ -2911,15 +3260,13 @@ export class DepartmentIncomeDashboardComponent
 
     private proceedBossDashboardAfterYearlyData(
         envelope: Record<string, unknown> | null,
+        showSuccessNotice = true,
     ): void {
         if (envelope) {
             this.tryApplyBannerFromYearlyIncomeEnvelope(envelope);
         }
 
-        if (
-            this.departmentIncomeData &&
-            this.departmentIncomeData.length > 0
-        ) {
+        if (this.departmentIncomeData && this.departmentIncomeData.length > 0) {
             setTimeout(() => {
                 this.updateChartColumns();
                 this.updateChartTheme();
@@ -2931,11 +3278,17 @@ export class DepartmentIncomeDashboardComponent
         this.loadPayerYearlyForBoss().then(() => {
             this.refreshBossPayerInsights();
             this.finishBossLoadingAnimation(() => {
-                this.isLoading = false;
+                this.bossInitialLoading = false;
+                this.bossFilterLoadingKey = null;
                 this.cdr.detectChanges();
-                this.snackBar.open("✓ דוח למנהל נטען בהצלחה", "סגור", {
-                    duration: 2000,
-                });
+                if (this.bossViewMode === "monthly") {
+                    this.updateBossMonthlyChartData();
+                }
+                if (showSuccessNotice) {
+                    this.snackBar.open("✓ דוח למנהל נטען בהצלחה", "סגור", {
+                        duration: 2000,
+                    });
+                }
             });
         });
     }
@@ -2958,11 +3311,9 @@ export class DepartmentIncomeDashboardComponent
 
     private refreshBossPayerInsights(): void {
         const rows = this.getPayerYearlyRowsForDepartmentChart();
-        const aggregated =
-            this.aggregatePayerYearlyByUnifiedPayer(rows);
+        const aggregated = this.aggregatePayerYearlyByUnifiedPayer(rows);
         const tableRows = this.buildPayerTableRows(aggregated).filter(
-            (row) =>
-                !this.isBossExcludedPayer(String(row.UnifiedPayer ?? "")),
+            (row) => !this.isBossExcludedPayer(String(row.UnifiedPayer ?? "")),
         );
         const overallPct = this.parsePercentLabel(
             this.calculateYearlyPercentageChange(),
@@ -3052,7 +3403,9 @@ export class DepartmentIncomeDashboardComponent
             wingStats.length && wingStats[0].diff < 0 ? wingStats[0].wing : "";
 
         const selectedWing = String(this.selectedDiagnosis ?? "").trim();
-        const selectedStat = wingStats.find((item) => item.wing === selectedWing);
+        const selectedStat = wingStats.find(
+            (item) => item.wing === selectedWing,
+        );
         this.bossSelectedWingDeclineDiff =
             selectedStat?.diff ?? this.getTotalDifference();
     }
@@ -3190,7 +3543,9 @@ export class DepartmentIncomeDashboardComponent
         return (Math.abs(row.diff) / totalDecline) * 100;
     }
 
-    formatBossDeclineContributionAmount(row: BossPayerInsightRow): string | null {
+    formatBossDeclineContributionAmount(
+        row: BossPayerInsightRow,
+    ): string | null {
         const pct = this.getBossDeclineContributionPercent(row);
         if (pct === null) {
             return null;
@@ -3214,6 +3569,13 @@ export class DepartmentIncomeDashboardComponent
         return this.getTotalDifference() >= 0 ? "עליה" : "ירידה";
     }
 
+    getBossOutliersSummaryText(): string {
+        if (!this.bossPayerOutliers.length) {
+            return "";
+        }
+        return `${this.bossPayerOutliers.length} חריגים: ${this.bossPayerOutliers.map((row) => `«${row.payer}»`).join(", ")}`;
+    }
+
     setBossViewMode(mode: BossViewMode): void {
         if (mode === "pie" && !this.bossPayerPieData.length) {
             return;
@@ -3225,7 +3587,167 @@ export class DepartmentIncomeDashboardComponent
         if (mode === "pie") {
             this.updateBossPayerPieTheme();
         }
+        if (mode === "monthly") {
+            this.ensureBossMonthlyChartReady();
+            return;
+        }
         this.cdr.detectChanges();
+    }
+
+    openBossMonthlyChart(): void {
+        this.closeBossFilterDropdowns();
+        this.bossViewMode = "monthly";
+        this.ensureBossMonthlyChartReady();
+    }
+
+    private ensureBossMonthlyChartReady(): void {
+        if (this.payerYearlyRawRows.length) {
+            this.updateBossMonthlyChartData();
+            this.cdr.detectChanges();
+            return;
+        }
+        this.bossFilterLoadingKey = "month";
+        this.ensurePayerYearlyRawLoaded(() => {
+            this.refreshBossPayerInsights();
+            this.updateBossMonthlyChartData();
+            this.bossFilterLoadingKey = null;
+            this.cdr.detectChanges();
+        });
+    }
+
+    getBossMonthlyChartTitle(): string {
+        const latest = this.getLatestYear();
+        const older = this.getOlderYear();
+        if (this.selectedIncomeMonth !== this.incomeFilterAllValue) {
+            return `הכנסות — ${this.selectedIncomeMonth} · ${latest} מול ${older}`;
+        }
+        return `הכנסות לפי חודש — YTD ${latest} מול ${older}`;
+    }
+
+    getBossMonthlyChartSubtitle(): string {
+        const parts = [
+            `אגף: ${this.getWingDisplayLabel()}`,
+            `קרן / מדינה: ${this.getOrganizationDisplay()}`,
+            `סוג פעילות: ${this.getUnifiedCategoryDisplay()}`,
+        ];
+        if (this.selectedIncomeMonth !== this.incomeFilterAllValue) {
+            parts.push(`חודש: ${this.getIncomeMonthDisplay()}`);
+        }
+        return parts.join(" · ");
+    }
+
+    private refreshBossViewsFromFilters(
+        filterKey: Exclude<BossFilterLoadingKey, null>,
+    ): void {
+        this.bossFilterLoadingKey = filterKey;
+        this.bossTablePage = 0;
+        this.refreshBossPayerInsights();
+        if (this.bossViewMode === "monthly") {
+            this.updateBossMonthlyChartData();
+        }
+        this.cdr.detectChanges();
+    }
+
+    isBossFilterLoading(key: Exclude<BossFilterLoadingKey, null>): boolean {
+        return this.bossFilterLoadingKey === key;
+    }
+
+    hasActiveBossFilters(): boolean {
+        return (
+            this.isSpecificWingSelected() ||
+            this.selectedOrganization !== this.incomeFilterAllValue ||
+            this.selectedUnifiedCategory !== this.incomeFilterAllValue ||
+            this.selectedIncomeMonth !== this.incomeFilterAllValue
+        );
+    }
+
+    getBossToolbarContextText(): string {
+        const viewLabel =
+            this.bossViewMode === "table"
+                ? "טבלת גורמי משלם"
+                : this.bossViewMode === "pie"
+                  ? "גרף פאי — נתח לפי גורם משלם"
+                  : "גרף חודשי — מגמת הכנסות";
+        return `מציג: ${viewLabel} · אגף: ${this.getWingDisplayLabel()} · קרן / מדינה: ${this.getOrganizationDisplay()} · סוג פעילות: ${this.getUnifiedCategoryDisplay()} · חודש: ${this.getIncomeMonthDisplay()}`;
+    }
+
+    getBossFilterPanelHint(
+        kind: "wing" | "organization" | "unifiedCategory" | "month",
+    ): string {
+        switch (kind) {
+            case "wing":
+                return "מגביל את סיכומי YTD לפי אגף ביה״ח (או כל הביה״ח ב«סה״כ»)";
+            case "organization":
+                return "מסנן לפי קרן / מדינה — משפיע על סיכומי YTD, הטבלה והגרפים";
+            case "unifiedCategory":
+                return "מסנן לפי סוג פעילות — משפיע על סיכומי YTD, הטבלה והגרפים";
+            case "month":
+                return "מצמצם את הטבלה/גרפים לחודש ספציפי (או כל השנה ב«הכל»)";
+            default:
+                return "";
+        }
+    }
+
+    resetBossFilters(): void {
+        if (!this.hasActiveBossFilters() || this.bossFilterLoadingKey) {
+            return;
+        }
+        this.selectedDiagnosis = this.diagnosisAllValue;
+        this.selectedOrganization = this.incomeFilterAllValue;
+        this.selectedUnifiedCategory = this.incomeFilterAllValue;
+        this.selectedIncomeMonth = this.incomeFilterAllValue;
+        this.closeBossFilterDropdowns();
+        this.payerYearlyByScopeCache.clear();
+        this.payerYearlyRawRows = [];
+        this.yearlyTotalsFetched = false;
+        this.loadDepartmentIncomeData(true);
+        this.refreshBossDashboard(false, "wing");
+    }
+
+    private updateBossMonthlyChartData(): void {
+        this.refreshFiveYearColumnDefs();
+        const rows = this.getBossMonthlyChartSourceRows();
+        const byMonth = this.aggregateMonthlyIncomeByMonth(rows);
+        const months = this.sortHebrewMonths([...byMonth.keys()]);
+        this.bossMonthlyChartColumns = this.buildFiveYearChartColumns("חודש");
+        this.bossMonthlyChartData = months
+            .filter((month) =>
+                this.isChartVisibleFiveYearRow(byMonth.get(month)),
+            )
+            .map((month) =>
+                this.buildFiveYearChartDataRow(month, byMonth.get(month)),
+            );
+        this.applyBossMonthlyChartTheme();
+        this.cdr.detectChanges();
+    }
+
+    private applyBossMonthlyChartTheme(): void {
+        const text = this.isDark ? "#e2e8f0" : "#0f172a";
+        const muted = this.isDark ? "#94a3b8" : "#64748b";
+        const grid = this.isDark ? "#334155" : "#e2e8f0";
+        this.bossMonthlyChartOptions = {
+            ...this.bossMonthlyChartOptions,
+            title: this.getBossMonthlyChartSubtitle(),
+            backgroundColor: "transparent",
+            colors: INCOME_DASHBOARD_YEAR_CHART_COLORS.slice(
+                0,
+                this.getFiveYearLabels().length,
+            ),
+            legend: {
+                ...this.bossMonthlyChartOptions.legend,
+                textStyle: { color: text, fontSize: 12, bold: true },
+            },
+            hAxis: {
+                ...this.bossMonthlyChartOptions.hAxis,
+                textStyle: { color: text, fontSize: 11 },
+            },
+            vAxis: {
+                ...this.bossMonthlyChartOptions.vAxis,
+                gridlines: { color: grid },
+                textStyle: { color: muted, fontSize: 11 },
+                titleTextStyle: { color: text, fontSize: 12, bold: true },
+            },
+        };
     }
 
     getBossPayerTablePageRows(): BossPayerInsightRow[] {
@@ -3295,7 +3817,11 @@ export class DepartmentIncomeDashboardComponent
                         bold: true,
                     },
                 },
-                pieSliceTextStyle: { fontSize: 24, bold: true, color: "#f8fafc" },
+                pieSliceTextStyle: {
+                    fontSize: 24,
+                    bold: true,
+                    color: "#f8fafc",
+                },
                 titleTextStyle: { color: "#e2e8f0" },
                 colors: pieColors,
             };
@@ -3312,7 +3838,11 @@ export class DepartmentIncomeDashboardComponent
                         bold: true,
                     },
                 },
-                pieSliceTextStyle: { fontSize: 24, bold: true, color: "#1e293b" },
+                pieSliceTextStyle: {
+                    fontSize: 24,
+                    bold: true,
+                    color: "#1e293b",
+                },
                 titleTextStyle: { color: "#1e293b" },
                 colors: pieColors,
             };
@@ -3327,8 +3857,89 @@ export class DepartmentIncomeDashboardComponent
         this.showBossDashboard = false;
         this.bossViewMode = "table";
         this.bossTablePage = 0;
+        this.bossInitialLoading = false;
+        this.bossFilterLoadingKey = null;
+        this.closeBossFilterDropdowns();
         this.stopBossLoadingAnimation();
         this.cdr.detectChanges();
+    }
+
+    toggleBossFilterDropdown(
+        type: "wing" | "organization" | "unifiedCategory" | "month",
+    ): void {
+        const nextWing = type === "wing" ? !this.isBossWingFilterOpen : false;
+        const nextOrganization =
+            type === "organization" ? !this.isBossOrganizationFilterOpen : false;
+        const nextUnifiedCategory =
+            type === "unifiedCategory"
+                ? !this.isBossUnifiedCategoryFilterOpen
+                : false;
+        const nextMonth = type === "month" ? !this.isBossMonthFilterOpen : false;
+        this.isBossWingFilterOpen = nextWing;
+        this.isBossOrganizationFilterOpen = nextOrganization;
+        this.isBossUnifiedCategoryFilterOpen = nextUnifiedCategory;
+        this.isBossMonthFilterOpen = nextMonth;
+    }
+
+    closeBossFilterDropdowns(): void {
+        this.isBossWingFilterOpen = false;
+        this.isBossOrganizationFilterOpen = false;
+        this.isBossUnifiedCategoryFilterOpen = false;
+        this.isBossMonthFilterOpen = false;
+    }
+
+    setBossWingFilter(option: string): void {
+        if (this.selectedDiagnosis === option) {
+            this.closeBossFilterDropdowns();
+            return;
+        }
+        this.selectedDiagnosis = option;
+        this.closeBossFilterDropdowns();
+        this.payerYearlyByScopeCache.clear();
+        this.payerYearlyRawRows = [];
+        if (this.isAllWingsSelected()) {
+            this.loadDepartmentIncomeData(true);
+        } else {
+            this.loadDepartmentIncomeByDiagnosis(true);
+        }
+        this.refreshBossDashboard(false, "wing");
+    }
+
+    setBossOrganizationFilter(option: string): void {
+        this.selectedOrganization = option || this.incomeFilterAllValue;
+        this.closeBossFilterDropdowns();
+        this.refreshBossViewsFromFilters("organization");
+        this.yearlyTotalsFetched = false;
+        this.refreshBossDashboard(false, "organization");
+    }
+
+    setBossUnifiedCategoryFilter(option: string): void {
+        this.selectedUnifiedCategory = option || this.incomeFilterAllValue;
+        this.closeBossFilterDropdowns();
+        this.refreshBossViewsFromFilters("unifiedCategory");
+        this.yearlyTotalsFetched = false;
+        this.refreshBossDashboard(false, "unifiedCategory");
+    }
+
+    setBossMonthFilter(option: string): void {
+        this.selectedIncomeMonth = option || this.incomeFilterAllValue;
+        this.closeBossFilterDropdowns();
+        this.bossFilterLoadingKey = "month";
+        this.bossTablePage = 0;
+        this.refreshBossPayerInsights();
+        if (
+            this.selectedIncomeMonth !== this.incomeFilterAllValue ||
+            this.bossViewMode === "monthly"
+        ) {
+            this.bossViewMode = "monthly";
+            this.updateBossMonthlyChartData();
+        }
+        this.bossFilterLoadingKey = null;
+        this.cdr.detectChanges();
+    }
+
+    getIncomeMonthDisplay(): string {
+        return this.selectedIncomeMonth || this.incomeFilterAllValue;
     }
 
     /**
@@ -3368,7 +3979,7 @@ export class DepartmentIncomeDashboardComponent
         }
         this.selectedDepartment = updatedDepartment;
         const cacheKey = this.buildDepartmentDetailedCacheKey(departmentName);
-        const cached = this.departmentDetailedDataCache.get(cacheKey);
+        const cached = this.readDepartmentDetailedFromCache(cacheKey);
         if (cached) {
             this.applyDepartmentDetailedPayload(
                 cached.rows,
@@ -3388,7 +3999,7 @@ export class DepartmentIncomeDashboardComponent
         resetView: boolean = true,
     ): void {
         const cacheKey = this.buildDepartmentDetailedCacheKey(departmentName);
-        const cached = this.departmentDetailedDataCache.get(cacheKey);
+        const cached = this.readDepartmentDetailedFromCache(cacheKey);
         if (cached) {
             this.applyDepartmentDetailedPayload(
                 cached.rows,
@@ -3414,7 +4025,7 @@ export class DepartmentIncomeDashboardComponent
                         const rows =
                             parsed?.rows ??
                             (Array.isArray(response.d) ? response.d : []);
-                        this.departmentDetailedDataCache.set(cacheKey, {
+                        this.writeDepartmentDetailedToCache(cacheKey, {
                             rows,
                             meta: parsed?.meta ?? null,
                         });
@@ -3426,7 +4037,7 @@ export class DepartmentIncomeDashboardComponent
                             );
                         });
                     } else {
-                        this.departmentDetailedDataCache.set(cacheKey, {
+                        this.writeDepartmentDetailedToCache(cacheKey, {
                             rows: [],
                             meta: null,
                         });
@@ -3833,7 +4444,7 @@ export class DepartmentIncomeDashboardComponent
         }
 
         const cacheKey = this.buildDepartmentDetailedCacheKey(sampleDept);
-        const cached = this.departmentDetailedDataCache.get(cacheKey);
+        const cached = this.readDepartmentDetailedFromCache(cacheKey);
         if (cached) {
             if (cached.rows.length) {
                 this.applyIncomeReportAsOfFromDetailed(
@@ -3855,7 +4466,7 @@ export class DepartmentIncomeDashboardComponent
                 next: (response: any) => {
                     const parsed = this.parseDetailedIncomePayload(response?.d);
                     const rows = parsed?.rows ?? [];
-                    this.departmentDetailedDataCache.set(cacheKey, {
+                    this.writeDepartmentDetailedToCache(cacheKey, {
                         rows,
                         meta: parsed?.meta ?? null,
                     });
@@ -4839,7 +5450,7 @@ export class DepartmentIncomeDashboardComponent
         return rowValue === selectedValue;
     }
 
-    /** התאמת «סיווג הכנסה מאוחד» — כולל מיפוי ל«אחר» כמו בגרף הפילוח */
+    /** התאמת «סוג פעילות» — כולל מיפוי ל«אחר» כמו בגרף הפילוח */
     private matchesUnifiedCategoryIncomeFilter(
         row: any,
         selectedValue: string,
@@ -5039,7 +5650,8 @@ export class DepartmentIncomeDashboardComponent
         return (
             this.selectedIncomeClassification !== this.incomeFilterAllValue ||
             this.selectedOrganization !== this.incomeFilterAllValue ||
-            this.selectedUnifiedCategory !== this.incomeFilterAllValue
+            this.selectedUnifiedCategory !== this.incomeFilterAllValue ||
+            this.selectedIncomeMonth !== this.incomeFilterAllValue
         );
     }
 
@@ -5068,9 +5680,7 @@ export class DepartmentIncomeDashboardComponent
         if (this.graphPrimaryView === "payer") {
             const parts: string[] = [];
             if (this.selectedUnifiedCategory !== this.incomeFilterAllValue) {
-                parts.push(
-                    `סיווג הכנסה מאוחד: ${this.getUnifiedCategoryDisplay()}`,
-                );
+                parts.push(`סוג פעילות: ${this.getUnifiedCategoryDisplay()}`);
             }
             if (this.selectedOrganization !== this.incomeFilterAllValue) {
                 parts.push(`קרן / מדינה: ${this.getOrganizationDisplay()}`);
@@ -5091,6 +5701,7 @@ export class DepartmentIncomeDashboardComponent
         this.isIncomeClassificationOpen = false;
         this.isOrganizationOpen = false;
         this.isUnifiedCategoryOpen = false;
+        this.isIncomeMonthOpen = false;
         this.isMonthlyDepartmentOpen = false;
     }
 
@@ -5290,6 +5901,19 @@ export class DepartmentIncomeDashboardComponent
         if (this.incomeClassificationOptions.length > 1) {
             return;
         }
+
+        const cached = this.localDataCache.get<{
+            medicalUnitIncome: string[];
+            incomeCategory: string[];
+            organization: string[];
+            unifiedCategory: string[];
+        }>("filterOptions");
+        if (cached) {
+            this.applyStoredIncomeFilterOptions(cached);
+            this.cdr.detectChanges();
+            return;
+        }
+
         this.http
             .post(environment.url + "GetDepartmentIncomeFilterOptions", {})
             .subscribe({
@@ -5297,30 +5921,8 @@ export class DepartmentIncomeDashboardComponent
                     const payload = this.parseIncomeFilterOptionsPayload(
                         response?.d ?? response,
                     );
-                    if (payload.medicalUnitIncome.length) {
-                        this.incomeSourceOptions = [
-                            this.incomeFilterAllValue,
-                            ...payload.medicalUnitIncome,
-                        ];
-                    }
-                    if (payload.incomeCategory.length) {
-                        this.incomeClassificationOptions = [
-                            this.incomeFilterAllValue,
-                            ...payload.incomeCategory,
-                        ];
-                    }
-                    if (payload.organization.length) {
-                        this.organizationOptions = [
-                            this.incomeFilterAllValue,
-                            ...payload.organization,
-                        ];
-                    }
-                    if (payload.unifiedCategory.length) {
-                        this.unifiedCategoryOptions = [
-                            this.incomeFilterAllValue,
-                            ...payload.unifiedCategory,
-                        ];
-                    }
+                    this.localDataCache.set("filterOptions", payload);
+                    this.applyStoredIncomeFilterOptions(payload);
                     this.cdr.detectChanges();
                 },
                 error: () => {
@@ -5712,7 +6314,9 @@ export class DepartmentIncomeDashboardComponent
     ): void {
         let maxYear = 0;
         for (const row of rows) {
-            const years = this.getSortedYearlyIncomeYears(row.YearlyIncome ?? {});
+            const years = this.getSortedYearlyIncomeYears(
+                row.YearlyIncome ?? {},
+            );
             if (years.length) {
                 maxYear = Math.max(maxYear, years[years.length - 1]);
             }
@@ -5758,7 +6362,9 @@ export class DepartmentIncomeDashboardComponent
                 prev.Year2 += this.getRowFiveYearValue(r, "Year2");
                 prev.Year1 += this.getRowFiveYearValue(r, "Year1");
                 prev.CurrentYear += this.getRowFiveYearValue(r, "CurrentYear");
-                for (const [year, val] of Object.entries(r.YearlyIncome ?? {})) {
+                for (const [year, val] of Object.entries(
+                    r.YearlyIncome ?? {},
+                )) {
                     prev.YearlyIncome[year] =
                         (prev.YearlyIncome[year] || 0) + this.toNumber(val);
                 }
@@ -5888,7 +6494,7 @@ export class DepartmentIncomeDashboardComponent
                 slice,
                 segments,
                 this.buildBreakdownChartTitle(
-                    "סיווג הכנסה מאוחד",
+                    "סוג פעילות",
                     latestYear,
                     this.selectedUnifiedCategory,
                 ),
@@ -5977,7 +6583,7 @@ export class DepartmentIncomeDashboardComponent
         m.set(segment, (m.get(segment) || 0) + value);
     }
 
-    /** כמו רשימת «סיווג הכנסה מאוחד» במסנן (ללא «הכל»); מצמצם לערך נבחר כשיש פילטר פעיל */
+    /** כמו רשימת «סוג פעילות» במסנן (ללא «הכל»); מצמצם לערך נבחר כשיש פילטר פעיל */
     private getUnifiedCategoryBreakdownSegments(): string[] {
         const all = this.unifiedCategoryOptions.filter(
             (o) => o && String(o).trim() && o !== this.incomeFilterAllValue,
@@ -6383,7 +6989,10 @@ export class DepartmentIncomeDashboardComponent
             slantedTextAngle = 55;
             annotationsVisible = false;
             legendPosition = "bottom";
-            chartHeight = Math.max(220, Math.min(260, Math.round(viewportH * 0.3)));
+            chartHeight = Math.max(
+                220,
+                Math.min(260, Math.round(viewportH * 0.3)),
+            );
         } else if (width < 640 || compactViewport) {
             axisFontSize = 10;
             hAxisFontSize = 13;
@@ -6396,7 +7005,10 @@ export class DepartmentIncomeDashboardComponent
             slantedTextAngle = 45;
             annotationsVisible = false;
             legendPosition = "bottom";
-            chartHeight = Math.max(260, Math.min(320, Math.round(viewportH * 0.34)));
+            chartHeight = Math.max(
+                260,
+                Math.min(320, Math.round(viewportH * 0.34)),
+            );
         } else if (width < 900) {
             axisFontSize = 11;
             hAxisFontSize = 14;
@@ -6407,11 +7019,17 @@ export class DepartmentIncomeDashboardComponent
             chartAreaHeight = "66%";
             slantedTextAngle = 38;
             legendPosition = compactViewport ? "bottom" : "top";
-            chartHeight = Math.max(300, Math.min(380, Math.round(viewportH * 0.38)));
+            chartHeight = Math.max(
+                300,
+                Math.min(380, Math.round(viewportH * 0.38)),
+            );
         } else {
             hAxisFontSize = 15;
             legendFontSize = 14;
-            chartHeight = Math.max(340, Math.min(560, Math.round(viewportH * 0.42)));
+            chartHeight = Math.max(
+                340,
+                Math.min(560, Math.round(viewportH * 0.42)),
+            );
         }
 
         this.graphChartPixelWidth = Math.max(Math.round(width), 240);
