@@ -21,6 +21,7 @@ import { Subscription } from "rxjs";
 import { filter } from "rxjs/operators";
 import { environment } from "src/environments/environment";
 import { MenuPerm } from "../menu-perm";
+import { SurgeriesRevenueComponent } from "../surgeries-dashborad-n-components/revenue/surgeries-revenue.component";
 
 /** שורת נתוני ניתוח כפי שחוזרת מהשרת (שדות באנגלית) */
 export interface SurgeryRow {
@@ -386,6 +387,7 @@ export class SurgeriesDashboradComponent
     @ViewChild("compareSurgeryTypesDropdownWrap")
     compareSurgeryTypesDropdownWrap?: ElementRef<HTMLElement>;
     @ViewChild("filterSidebarRoot") filterSidebarRoot?: ElementRef<HTMLElement>;
+    @ViewChild("revenuePanel") revenuePanel?: SurgeriesRevenueComponent;
 
     showTableExtra = false;
 
@@ -9052,8 +9054,50 @@ export class SurgeriesDashboradComponent
      * Toggle Top Departments sidebar and force chart to resize with new layout
      */
     toggleTopDepartmentsSidebar(): void {
+        if (
+            this.showTopQuickMainSlotSwitcher &&
+            this.topQuickMainSlot === "revenue" &&
+            this.revenuePanel
+        ) {
+            if (!this.revenuePanel.isFilterSidebarOpen()) {
+                this.revenuePanel.openFilterSidebar();
+            } else {
+                this.revenuePanel.closeFilterSidebar();
+            }
+            this.notifyMainLayoutResizeAfterSidebarChange();
+            return;
+        }
         this.showTopDepartmentsSidebar = !this.showTopDepartmentsSidebar;
         this.notifyMainLayoutResizeAfterSidebarChange();
+    }
+
+    showTopbarFilterActive(): boolean {
+        if (
+            this.showTopQuickMainSlotSwitcher &&
+            this.topQuickMainSlot === "revenue" &&
+            this.revenuePanel
+        ) {
+            return this.revenuePanel.hasActiveFilters();
+        }
+        return this.hasActiveSurgeryFilters();
+    }
+
+    getTopbarFilterTooltip(): string {
+        if (
+            this.showTopQuickMainSlotSwitcher &&
+            this.topQuickMainSlot === "revenue"
+        ) {
+            return this.revenuePanel?.hasActiveFilters()
+                ? "פילטרים פעילים – לחץ לעריכת סינון"
+                : "סינון מתקדם להכנסות";
+        }
+        return this.hasActiveSurgeryFilters()
+            ? "פילטרים פעילים – לחץ לעריכת סינון"
+            : "סינון מתקדם לדשבורד הניתוחים";
+    }
+
+    getTopbarFilterIcon(): string {
+        return this.showTopbarFilterActive() ? "filter_alt" : "tune";
     }
 
     private notifyMainLayoutResizeAfterSidebarChange(): void {

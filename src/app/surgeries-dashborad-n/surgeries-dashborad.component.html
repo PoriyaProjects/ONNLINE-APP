@@ -399,10 +399,10 @@
           <mat-icon>help</mat-icon>
         </button>
 
-        <button mat-icon-button class="icon-btn ghost" [class.filter-active]="hasActiveSurgeryFilters()"
-          matTooltip="{{ hasActiveSurgeryFilters() ? 'פילטרים פעילים – לחץ לעריכת סינון' : 'סינון מתקדם לדשבורד הניתוחים' }}"
+        <button mat-icon-button class="icon-btn ghost" [class.filter-active]="showTopbarFilterActive()"
+          matTooltip="{{ getTopbarFilterTooltip() }}"
           matTooltipPosition="below" (click)="toggleTopDepartmentsSidebar()">
-          <mat-icon>{{ hasActiveSurgeryFilters() ? 'filter_alt' : 'tune' }}</mat-icon>
+          <mat-icon>{{ getTopbarFilterIcon() }}</mat-icon>
         </button>
 
 
@@ -1368,7 +1368,7 @@
       </div>
       <div class="main-content-subview main-content-subview--full"
         *ngIf="showTopQuickMainSlotSwitcher && topQuickMainSlot === 'revenue'">
-        <app-surgeries-revenue></app-surgeries-revenue>
+        <app-surgeries-revenue #revenuePanel></app-surgeries-revenue>
       </div>
       <div class="main-content-subview main-content-subview--full"
         *ngIf="showTopQuickMainSlotSwitcher && topQuickMainSlot === 'cancellations'">
