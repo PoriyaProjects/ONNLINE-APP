@@ -1632,7 +1632,8 @@ export class MershamNComponent implements OnInit {
             "body{font-family:Arial,sans-serif;margin:0;padding:0;direction:rtl;color:#000;}" +
             ".label-card{border:1px solid #000;padding:0;width:81mm;height:69.5mm;box-sizing:border-box;overflow:hidden;display:flex;flex-direction:column;}" +
             ".label-section{display:grid;gap:0;border:1px solid #000;border-bottom:none;flex:1 1 0;min-height:0;}" +
-            ".label-section:first-child{height:30mm;max-height:30mm;flex:0 0 30mm;overflow:hidden;}" +
+            ".label-section:first-child{height:20mm;max-height:20mm;flex:0 0 20mm;overflow:hidden;}" +
+            ".label-section:first-child .label-cell{justify-content:center;align-items:center;text-align:center;}" +
             ".label-section:last-child{border-bottom:1px solid #000;}" +
             ".label-section--3{grid-template-columns:repeat(3,1fr);}" +
             ".label-section--4{grid-template-columns:repeat(4,1fr);}" +
@@ -1642,9 +1643,9 @@ export class MershamNComponent implements OnInit {
             ".label-column--stack .label-cell{flex:1 1 0;border-left:none;min-height:0;}" +
             ".label-column--stack .label-cell+.label-cell{border-top:1px solid #000;}" +
             ".label-column--drug .label-cell{flex:1 1 0;border-left:none;justify-content:center;}" +
-            ".label-cell--drug .label-title{font-size:9px;}" +
-            ".label-cell--drug .label-value{font-size:15px;font-weight:700;line-height:1.1;}" +
-            ".label-cell{border-left:1px solid #000;padding:2px 3px;box-sizing:border-box;text-align:center;display:flex;flex-direction:column;justify-content:flex-start;gap:2px;overflow:hidden;}" +
+            ".label-cell--drug .label-title{font-size:11px;}" +
+            ".label-cell--drug .label-value{font-size:11px;font-weight:700;line-height:1.1;}" +
+            ".label-cell{border-left:1px solid #000;padding:2px 3px;box-sizing:border-box;text-align:center;display:flex;flex-direction:column;justify-content:flex-start;align-items:stretch;gap:2px;overflow:hidden;}" +
             ".label-cell:last-child{border-left:none;}" +
             ".label-title{font-weight:700;font-size:9px;line-height:1.1;}" +
             ".label-value{font-size:9px;line-height:1.1;word-break:break-word;}" +
