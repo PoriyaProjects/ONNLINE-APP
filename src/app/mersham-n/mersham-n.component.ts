@@ -1600,9 +1600,9 @@ export class MershamNComponent implements OnInit {
             "<title>מדבקת הכנה</title>" +
             "<style>" +
             "body{font-family:Arial,sans-serif;margin:0;padding:0;direction:rtl;color:#000;}" +
-            ".label-card{border:1px solid #000;padding:0;width:81mm;height:69mm;box-sizing:border-box;overflow:hidden;}" +
-            ".label-section{display:grid;gap:0;border:1px solid #000;border-bottom:none;}" +
-            ".label-section:first-child{height:15mm;max-height:15mm;overflow:hidden;}" +
+            ".label-card{border:1px solid #000;padding:0;width:81mm;height:69.5mm;box-sizing:border-box;overflow:hidden;display:flex;flex-direction:column;}" +
+            ".label-section{display:grid;gap:0;border:1px solid #000;border-bottom:none;flex:1 1 0;min-height:0;}" +
+            ".label-section:first-child{height:30mm;max-height:30mm;flex:0 0 30mm;overflow:hidden;}" +
             ".label-section:last-child{border-bottom:1px solid #000;}" +
             ".label-section--3{grid-template-columns:repeat(3,1fr);}" +
             ".label-section--4{grid-template-columns:repeat(4,1fr);}" +
@@ -1611,7 +1611,7 @@ export class MershamNComponent implements OnInit {
             ".label-title{font-weight:700;font-size:9px;line-height:1.1;}" +
             ".label-value{font-size:9px;line-height:1.1;word-break:break-word;}" +
             ".barcode{display:block;width:100%;height:28px;margin:0 auto;}" +
-            "@page{size:85mm 75mm;margin:3mm 2mm;}" +
+            "@page{size:85mm 75mm;margin:3.5mm 2mm 2mm;}" +
             "</style></head><body>" +
             '<div class="label-card">' +
             labelSectionsHtml +
