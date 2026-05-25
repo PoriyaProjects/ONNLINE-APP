@@ -1364,18 +1364,19 @@ export class MershamComponent implements OnInit {
             '<!doctype html><html dir="rtl" lang="he"><head><meta charset="utf-8" />' +
             "<title>מדבקת הכנה</title>" +
             "<style>" +
-            "body{font-family:Arial,sans-serif;margin:0;padding:16px;direction:rtl;color:#000;}" +
-            ".label-card{border:1px solid #000;padding:12px;width:100%;box-sizing:border-box;}" +
+            "body{font-family:Arial,sans-serif;margin:0;padding:0;direction:rtl;color:#000;}" +
+            ".label-card{border:1px solid #000;padding:0;width:105mm;height:95mm;box-sizing:border-box;overflow:hidden;}" +
             ".label-section{display:grid;gap:0;border:1px solid #000;border-bottom:none;}" +
+            ".label-section:first-child{height:15mm;max-height:15mm;overflow:hidden;}" +
             ".label-section:last-child{border-bottom:1px solid #000;}" +
             ".label-section--3{grid-template-columns:repeat(3,1fr);}" +
             ".label-section--4{grid-template-columns:repeat(4,1fr);}" +
-            ".label-cell{min-height:64px;border-left:1px solid #000;padding:6px;box-sizing:border-box;text-align:center;display:flex;flex-direction:column;justify-content:flex-start;gap:6px;}" +
+            ".label-cell{border-left:1px solid #000;padding:2px 3px;box-sizing:border-box;text-align:center;display:flex;flex-direction:column;justify-content:flex-start;gap:2px;overflow:hidden;}" +
             ".label-cell:last-child{border-left:none;}" +
-            ".label-title{font-weight:700;font-size:13px;line-height:1.2;}" +
-            ".label-value{font-size:13px;line-height:1.25;word-break:break-word;}" +
-            ".barcode{display:block;width:100%;height:42px;margin:0 auto;}" +
-            "@page{size:auto;margin:10mm;}" +
+            ".label-title{font-weight:700;font-size:9px;line-height:1.1;}" +
+            ".label-value{font-size:9px;line-height:1.1;word-break:break-word;}" +
+            ".barcode{display:block;width:100%;height:28px;margin:0 auto;}" +
+            "@page{size:105mm 95mm;margin:0;}" +
             "</style></head><body>" +
             '<div class="label-card">' +
             labelSectionsHtml +
