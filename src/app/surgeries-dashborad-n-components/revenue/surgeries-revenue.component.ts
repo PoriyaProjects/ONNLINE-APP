@@ -12,6 +12,7 @@ import { SurgeriesRevenueApiService } from "./surgeries-revenue-api.service";
 import {
     RevenueAggRow,
     RevenueChartViewMode,
+    RevenueCompositeStackRow,
     RevenueFilterOptionsDto,
     RevenueGroupBy,
     RevenueMainMetric,
@@ -64,6 +65,9 @@ export class SurgeriesRevenueComponent implements OnInit, OnDestroy {
     isWeekdayOpen = false;
 
     private aggRows: RevenueAggRow[] = [];
+    private billingStackRows: RevenueAggRow[] = [];
+    private payerStackRows: RevenueAggRow[] = [];
+    private compositeStackRows: RevenueCompositeStackRow[] = [];
     private monthlyRows: RevenueMonthlyRow[] = [];
     private subs = new Subscription();
     private readonly baseYear = new Date().getFullYear();
@@ -103,6 +107,15 @@ export class SurgeriesRevenueComponent implements OnInit, OnDestroy {
     };
 
     showChartFullModal = false;
+    supplementPanelOpen = false;
+
+    stackedChartType = "ColumnChart";
+    stackedChartData: any[] = [];
+    stackedChartColumns: any[] = [];
+    stackedChartOptions: any = {};
+    stackedChartTitle = "";
+    stackedChartHint = "";
+    showStackedChart = false;
 
     yearsForChart: number[] = [];
     yearlyRevenueTotals: { [year: number]: number } = {};
@@ -120,6 +133,25 @@ export class SurgeriesRevenueComponent implements OnInit, OnDestroy {
     private readonly monthLabelsFull = [
         "ינואר", "פברואר", "מרץ", "אפריל", "מאי", "יוני",
         "יולי", "אוגוסט", "ספטמבר", "אוקטובר", "נובמבר", "דצמבר",
+    ];
+
+    private readonly stackChartColors = [
+        "#2563eb",
+        "#10b981",
+        "#f59e0b",
+        "#8b5cf6",
+        "#ec4899",
+        "#06b6d4",
+        "#84cc16",
+        "#f97316",
+        "#6366f1",
+        "#14b8a6",
+        "#a855f7",
+        "#eab308",
+        "#0ea5e9",
+        "#22c55e",
+        "#ef4444",
+        "#64748b",
     ];
 
     constructor(
@@ -250,7 +282,11 @@ export class SurgeriesRevenueComponent implements OnInit, OnDestroy {
     }
 
     loadAll(forceRefresh = false): void {
-        this.isLoading = true;
+        const hasFilterOptions =
+            !forceRefresh && this.api.hasFilterOptionsCache();
+        if (!hasFilterOptions) {
+            this.isLoading = true;
+        }
         this.loadError = "";
         this.cdr.markForCheck();
 
@@ -275,17 +311,34 @@ export class SurgeriesRevenueComponent implements OnInit, OnDestroy {
     }
 
     refreshData(forceRefresh = false): void {
-        this.isChartLoading = true;
-        this.cdr.markForCheck();
-
         const params = this.buildFilterParams();
+        const allCached =
+            !forceRefresh && this.api.isRevenueBundleCached(params);
+        if (!allCached) {
+            this.isChartLoading = true;
+        }
+        this.cdr.markForCheck();
         const dataSub = forkJoin({
             agg: this.api.getRevenueByDeptFiveYears(params, forceRefresh),
             monthly: this.api.getRevenueByMonth(params, forceRefresh),
+            billingStack: this.api.getRevenueByGroupFiveYears(
+                params,
+                "billingDept",
+                forceRefresh,
+            ),
+            payerStack: this.api.getRevenueByGroupFiveYears(
+                params,
+                "payer",
+                forceRefresh,
+            ),
+            composite: this.api.getRevenueCompositeStack(params, forceRefresh),
         }).subscribe({
-            next: ({ agg, monthly }) => {
+            next: ({ agg, monthly, billingStack, payerStack, composite }) => {
                 this.aggRows = agg;
                 this.monthlyRows = monthly;
+                this.billingStackRows = billingStack;
+                this.payerStackRows = payerStack;
+                this.compositeStackRows = composite;
                 this.isLoading = false;
                 this.isChartLoading = false;
                 if (!agg.length && !monthly.length) {
@@ -301,6 +354,9 @@ export class SurgeriesRevenueComponent implements OnInit, OnDestroy {
             error: () => {
                 this.aggRows = [];
                 this.monthlyRows = [];
+                this.billingStackRows = [];
+                this.payerStackRows = [];
+                this.compositeStackRows = [];
                 this.isLoading = false;
                 this.isChartLoading = false;
                 this.loadError = "שגיאה בטעינת נתוני הכנסות מהשרת.";
@@ -314,12 +370,58 @@ export class SurgeriesRevenueComponent implements OnInit, OnDestroy {
 
     onMainMetricChange(value: RevenueMainMetric): void {
         this.mainMetric = value;
+        this.supplementPanelOpen = false;
         this.refreshData();
     }
 
     onChartViewModeChange(value: RevenueChartViewMode): void {
         this.chartViewMode = value;
+        if (value !== "year-total") {
+            this.supplementPanelOpen = false;
+        }
         this.rebuildView();
+        this.cdr.markForCheck();
+    }
+
+    showSupplementToggleButton(): boolean {
+        return true;
+    }
+
+    isSupplementToggleActive(): boolean {
+        return this.supplementPanelOpen;
+    }
+
+    getSupplementToggleLabel(): string {
+        switch (this.mainMetric) {
+            case "byPayer":
+                return "גרף ערימה: תרומת קופות";
+            case "bySurgeryType":
+                return "גרף ערימה: קטגורית חיוב";
+            default:
+                return "גרף ערימה: קרן · גורם משלם · קטגורית חיוב";
+        }
+    }
+
+    getSupplementToggleIcon(): string {
+        return "stacked_bar_chart";
+    }
+
+    getSupplementToggleHint(): string {
+        if (this.mainMetric === "byDept") {
+            return "פירוט קרן/ביה״ח, גורם משלם וקטגורית חיוב";
+        }
+        if (this.mainMetric === "byPayer") {
+            return "כמה כל קופה/גורם משלם תרם לפי שנה";
+        }
+        return "פילוח לפי קטגורית חיוב — גדול למטה, קטן למעלה";
+    }
+
+    toggleSupplementPanel(): void {
+        if (this.chartViewMode === "year-total") {
+            return;
+        }
+        this.supplementPanelOpen = !this.supplementPanelOpen;
+        this.rebuildSupplementChart();
         this.cdr.markForCheck();
     }
 
@@ -331,8 +433,7 @@ export class SurgeriesRevenueComponent implements OnInit, OnDestroy {
         this.selectedPayers = [];
         this.selectedWeekdays = [];
         this.closeSidebarFilterDropdowns();
-        this.api.clearCache();
-        this.refreshData(true);
+        this.refreshData();
     }
 
     toggleSidebarFilterDropdown(
@@ -428,8 +529,7 @@ export class SurgeriesRevenueComponent implements OnInit, OnDestroy {
 
     private applyFilterChange(): void {
         this.closeSidebarFilterDropdowns();
-        this.api.clearCache();
-        this.refreshData(true);
+        this.refreshData();
     }
 
     /** Server filters accept a single value per dimension (=), not comma lists. */
@@ -448,7 +548,15 @@ export class SurgeriesRevenueComponent implements OnInit, OnDestroy {
             return "הכנסות לפי חודשים";
         }
         if (this.chartViewMode === "year-total") {
-            return "סיכום הכנסות שנתי";
+            if (this.mainMetric === "byPayer") {
+                return "סיכום שנתי — תרומת גורמי משלם";
+            }
+            switch (this.mainMetric) {
+                case "bySurgeryType":
+                    return "סיכום שנתי — לפי סוג ניתוח";
+                default:
+                    return "סיכום שנתי — הכל ביחד לפי חודשים";
+            }
         }
         switch (this.mainMetric) {
             case "byPayer":
@@ -465,7 +573,15 @@ export class SurgeriesRevenueComponent implements OnInit, OnDestroy {
             return "calendar_month";
         }
         if (this.chartViewMode === "year-total") {
-            return "summarize";
+            if (this.mainMetric === "byPayer") {
+                return "stacked_bar_chart";
+            }
+            switch (this.mainMetric) {
+                case "bySurgeryType":
+                    return "category";
+                default:
+                    return "calendar_month";
+            }
         }
         switch (this.mainMetric) {
             case "byPayer":
@@ -1033,6 +1149,7 @@ export class SurgeriesRevenueComponent implements OnInit, OnDestroy {
         this.chartViewEpoch++;
         this.rebuildYearSummaries();
         this.rebuildChart();
+        this.rebuildSupplementChart();
         this.rebuildTable();
         this.rebuildKpis();
     }
@@ -1060,26 +1177,454 @@ export class SurgeriesRevenueComponent implements OnInit, OnDestroy {
         this.buildGroupedYearChart();
     }
 
-    private buildYearTotalChart(): void {
-        const years = this.yearsForChart;
-        this.chartColumns = [
-            "שנה",
-            { type: "number", label: 'סה"כ הכנסות' },
-            { type: "string", role: "annotation" },
-        ];
-        this.chartData = years.map((y) => {
-            const val = Math.round(this.yearlyRevenueTotals[y] || 0);
-            return [y.toString(), this.toChartMillions(val), this.chartMoneyAnnotation(val)];
+    isSupplementPanelVisible(): boolean {
+        if (this.chartViewMode === "year-total") {
+            return false;
+        }
+        return this.supplementPanelOpen;
+    }
+
+    private rebuildSupplementChart(): void {
+        this.showStackedChart = false;
+        this.stackedChartData = [];
+        this.stackedChartColumns = [];
+        this.stackedChartTitle = "";
+        this.stackedChartHint = "";
+
+        if (!this.isSupplementPanelVisible()) {
+            return;
+        }
+
+        if (this.mainMetric === "byDept") {
+            if (this.compositeStackRows.length) {
+                this.buildCompositeStackedChart();
+            } else {
+                this.buildStackedYearChartFromAgg(
+                    this.billingStackRows,
+                    "גרף ערימה: קטגורית חיוב (תצוגה זמנית)",
+                    "GetRevenueStackedComposite_surgeries_revenue_dashborad יוסיף קרן/ביה״ח × גורם משלם × קטגורית חיוב",
+                );
+            }
+            return;
+        }
+
+        if (this.mainMetric === "byPayer") {
+            this.buildStackedYearChartFromAgg(
+                this.payerStackRows,
+                "גרף ערימה: תרומת גורמי משלם לפי שנה",
+                "כמה כל קופה/גורם משלם תרם — מומלץ לעבור ל«סיכום שנתי»",
+            );
+            return;
+        }
+
+        this.buildStackedYearChartFromAgg(
+            this.billingStackRows,
+            "גרף ערימה: קטגורית חיוב לפי שנה",
+            "פילוח לפי קטגורית חיוב — מומלץ לעבור ל«סיכום שנתי»",
+        );
+    }
+
+    private buildStackedYearChartFromAgg(
+        rows: RevenueAggRow[],
+        title: string,
+        hint: string,
+    ): void {
+        const built = this.buildStackedChartFromAggRows(rows, 14, false);
+        if (!built) {
+            this.stackedChartTitle = title;
+            this.stackedChartHint = hint;
+            return;
+        }
+        this.stackedChartColumns = built.columns;
+        this.stackedChartData = built.data;
+        this.stackedChartOptions = built.options;
+        this.stackedChartTitle = title;
+        this.stackedChartHint = hint;
+        this.showStackedChart = built.data.length > 0;
+    }
+
+    private buildCompositeStackedChart(): void {
+        const built = this.buildStackedChartFromCompositeRows(
+            this.compositeStackRows,
+            16,
+            false,
+        );
+        if (!built) {
+            return;
+        }
+        this.stackedChartColumns = built.columns;
+        this.stackedChartData = built.data;
+        this.stackedChartOptions = built.options;
+        this.stackedChartTitle =
+            "גרף ערימה: קרן/ביה״ח · גורם משלם · קטגורית חיוב";
+        this.stackedChartHint =
+            "פילוח משולב לפי שנה — גדול למטה, קטן למעלה";
+        this.showStackedChart = built.data.length > 0;
+    }
+
+    private compositeStackLabel(r: RevenueCompositeStackRow): string {
+        const fund = r.FundKey || "ביה״ח";
+        const payer = r.PayerKey || "—";
+        const cat = r.BillingCategoryKey || "—";
+        return `${fund} · ${payer} · ${cat}`;
+    }
+
+    private buildStackedChartFromAggRows(
+        rows: RevenueAggRow[],
+        maxStacks: number,
+        forMainChart = true,
+    ): { columns: any[]; data: any[]; options: any } | null {
+        if (!rows?.length) {
+            return null;
+        }
+        const years = [...new Set(rows.map((r) => r.Year))]
+            .filter((y) => y > 0)
+            .sort((a, b) => a - b);
+        const stacks = this.pickStackKeysFromAgg(rows, maxStacks);
+        if (!years.length || !stacks.length) {
+            return null;
+        }
+        return this.buildStackedYearChartCore(
+            years,
+            stacks,
+            (year, stackKey) =>
+                rows
+                    .filter(
+                        (r) =>
+                            r.Year === year &&
+                            (r.GroupKey || "—") === stackKey,
+                    )
+                    .reduce((sum, r) => sum + (r.TotalAmount || 0), 0),
+            forMainChart,
+        );
+    }
+
+    private buildStackedChartFromCompositeRows(
+        rows: RevenueCompositeStackRow[],
+        maxStacks: number,
+        forMainChart = true,
+    ): { columns: any[]; data: any[]; options: any } | null {
+        const filtered = rows.filter((r) => r.TotalAmount > 0);
+        if (!filtered.length) {
+            return null;
+        }
+        const years = [...new Set(filtered.map((r) => r.Year))]
+            .filter((y) => y > 0)
+            .sort((a, b) => a - b);
+        const stackTotals = new Map<string, number>();
+        filtered.forEach((r) => {
+            const label = this.compositeStackLabel(r);
+            stackTotals.set(
+                label,
+                (stackTotals.get(label) || 0) + r.TotalAmount,
+            );
         });
-        this.chartOptions = {
-            ...this.chartOptions,
-            isStacked: false,
-            vAxis: this.chartMoneyAxisOptions(),
+        const stacks = [...stackTotals.entries()]
+            .sort((a, b) => b[1] - a[1])
+            .map(([k]) => k)
+            .slice(0, maxStacks);
+        if (!years.length || !stacks.length) {
+            return null;
+        }
+        return this.buildStackedYearChartCore(
+            years,
+            stacks,
+            (year, stackKey) =>
+                filtered
+                    .filter(
+                        (r) =>
+                            r.Year === year &&
+                            this.compositeStackLabel(r) === stackKey,
+                    )
+                    .reduce((sum, r) => sum + r.TotalAmount, 0),
+            forMainChart,
+        );
+    }
+
+    private pickStackKeysFromAgg(
+        rows: RevenueAggRow[],
+        maxStacks: number,
+    ): string[] {
+        const stackTotals = new Map<string, number>();
+        rows.forEach((r) => {
+            const key = r.GroupKey || "—";
+            stackTotals.set(
+                key,
+                (stackTotals.get(key) || 0) + (r.TotalAmount || 0),
+            );
+        });
+        return [...stackTotals.entries()]
+            .sort((a, b) => b[1] - a[1])
+            .map(([k]) => k)
+            .slice(0, maxStacks);
+    }
+
+    private buildStackedYearChartCore(
+        years: number[],
+        stacks: string[],
+        getSegmentRaw: (year: number, stackKey: string) => number,
+        forMainChart = true,
+    ): { columns: any[]; data: any[]; options: any } {
+        const cols: any[] = ["שנה"];
+        stacks.forEach((label) => {
+            cols.push({ type: "number", label });
+            cols.push({ type: "string", role: "annotation" });
+        });
+
+        const data = years.map((y) => {
+            const row: any[] = [String(y)];
+            const rawValues = stacks.map((s) => getSegmentRaw(y, s));
+            const yearTotal = rawValues.reduce((sum, v) => sum + v, 0);
+            stacks.forEach((_s, i) => {
+                const raw = rawValues[i];
+                row.push(this.toChartMillions(Math.round(raw)));
+                row.push(this.stackSegmentAnnotation(raw, yearTotal));
+            });
+            return row;
+        });
+
+        return {
+            columns: cols,
+            data,
+            options: this.createStackedChartOptions(stacks.length, forMainChart),
         };
-        this.applyRevenueChartTooltips({
-            subtitle: "סה״כ הכנסות בשנה זו",
-            totalCaption: 'סה"כ הכנסות',
+    }
+
+    private createStackedChartOptions(
+        stackCount: number,
+        forMainChart: boolean,
+    ): any {
+        return {
+            ...(forMainChart ? this.chartOptions : {}),
+            isStacked: true,
+            colors: this.stackChartColors.slice(
+                0,
+                Math.max(stackCount, 1),
+            ),
+            legend: {
+                position: "top",
+                alignment: "end",
+                maxLines: forMainChart ? 6 : 5,
+                textStyle: { fontSize: 11, bold: true },
+            },
+            chartArea: forMainChart
+                ? { left: 72, top: 72, width: "82%", height: "62%" }
+                : { left: 70, top: 56, width: "82%", height: "58%" },
+            annotations: {
+                alwaysOutside: false,
+                highContrast: true,
+                textStyle: {
+                    fontSize: 10,
+                    bold: true,
+                    color: "#ffffff",
+                    auraColor: "none",
+                },
+                stem: { length: 0 },
+            },
+            hAxis: {
+                title: "",
+                textStyle: { fontSize: forMainChart ? 13 : 12, bold: true },
+            },
+            vAxis: this.chartMoneyAxisOptions(),
+            bar: { groupWidth: forMainChart ? "72%" : "68%" },
+            focusTarget: "category",
+            tooltip: {
+                isHtml: true,
+                trigger: "focus",
+                showColorCode: true,
+            },
+        };
+    }
+
+    private stackSegmentAnnotation(
+        rawValue: number,
+        yearTotal: number,
+    ): string {
+        if (!rawValue || rawValue <= 0 || !yearTotal) {
+            return "";
+        }
+        const pct = (rawValue / yearTotal) * 100;
+        if (pct < 3.5) {
+            return "";
+        }
+        return `${this.formatStackLabelMoney(rawValue)}\n${Math.round(pct)}%`;
+    }
+
+    private formatStackLabelMoney(value: number): string {
+        const n = Math.abs(Number(value) || 0);
+        if (n >= 1_000_000) {
+            return `₪${(n / 1_000_000).toFixed(1)}M`;
+        }
+        if (n >= 1_000) {
+            return `₪${Math.round(n / 1_000)}K`;
+        }
+        return this.formatTableMoney(n);
+    }
+
+    private stackedChartBaseOptions(): any {
+        return this.createStackedChartOptions(14, false);
+    }
+
+    isYearTotalStackedView(): boolean {
+        return (
+            this.chartViewMode === "year-total" &&
+            this.mainMetric === "byPayer"
+        );
+    }
+
+    private buildYearTotalChart(): void {
+        if (this.mainMetric === "byPayer") {
+            const built = this.buildStackedChartFromAggRows(
+                this.payerStackRows,
+                14,
+                true,
+            );
+            if (!built?.data.length) {
+                this.chartColumns = [
+                    "שנה",
+                    { type: "number", label: 'סה"כ הכנסות' },
+                ];
+                this.chartData = [];
+                this.chartOptions = {
+                    ...this.chartOptions,
+                    isStacked: false,
+                };
+                return;
+            }
+            this.chartColumns = built.columns;
+            this.chartData = built.data;
+            this.chartOptions = built.options;
+            this.applyStackedYearTotalTooltips();
+            return;
+        }
+
+        if (this.mainMetric === "byDept") {
+            this.buildMonthlyChart();
+            return;
+        }
+
+        if (this.mainMetric === "bySurgeryType") {
+            this.buildGroupedYearChart();
+        }
+    }
+
+    private applyStackedYearTotalTooltips(): void {
+        if (!this.chartColumns?.length || !this.chartData?.length) {
+            return;
+        }
+        if (this.getChartCategoryHeader(this.chartColumns) !== "שנה") {
+            return;
+        }
+        if (!this.chartOptions?.isStacked) {
+            return;
+        }
+
+        const columns = [...this.chartColumns];
+        const rows = this.chartData.map((r) =>
+            Array.isArray(r) ? [...r] : r,
+        );
+        const numericSeries = this.collectNumericSeries(columns);
+        if (!numericSeries.length) {
+            return;
+        }
+
+        const tooltipCol = {
+            type: "string",
+            role: "tooltip",
+            p: { html: true },
+        };
+        const insertions: { insertPos: number; seriesIdx: number }[] = [];
+
+        numericSeries.forEach((s, idx) => {
+            let insertPos = s.colIndex + 1;
+            if (
+                insertPos < columns.length &&
+                typeof columns[insertPos] === "object" &&
+                (columns[insertPos] as any).role === "annotation"
+            ) {
+                insertPos++;
+            }
+            insertions.push({ insertPos, seriesIdx: idx });
         });
+
+        insertions
+            .sort((a, b) => b.insertPos - a.insertPos)
+            .forEach(({ insertPos }) => columns.splice(insertPos, 0, tooltipCol));
+
+        const labelByIdx = new Map<number, string>();
+        numericSeries.forEach((s, idx) => {
+            labelByIdx.set(idx, s.label);
+        });
+
+        const dataOut = rows.map((row: any[]) => {
+            const nextRow = [...row];
+            const year = String(nextRow[0] ?? "");
+            let yearTotalRaw = 0;
+            const segments: { label: string; raw: number }[] = [];
+            numericSeries.forEach((s, idx) => {
+                const chartVal = Number(nextRow[s.colIndex]) || 0;
+                const raw = Math.round(chartVal * 1_000_000);
+                yearTotalRaw += raw;
+                segments.push({
+                    label: labelByIdx.get(idx) ?? "",
+                    raw,
+                });
+            });
+
+            insertions
+                .sort((a, b) => b.insertPos - a.insertPos)
+                .forEach(({ insertPos, seriesIdx }) => {
+                    const seg = segments[seriesIdx];
+                    const pct =
+                        yearTotalRaw > 0
+                            ? (seg.raw / yearTotalRaw) * 100
+                            : 0;
+                    nextRow.splice(
+                        insertPos,
+                        0,
+                        this.buildStackSegmentTooltipHtml(
+                            year,
+                            seg.label,
+                            seg.raw,
+                            pct,
+                            yearTotalRaw,
+                        ),
+                    );
+                });
+            return nextRow;
+        });
+
+        this.chartColumns = columns;
+        this.chartData = dataOut;
+    }
+
+    private buildStackSegmentTooltipHtml(
+        year: string,
+        segmentLabel: string,
+        rawAmount: number,
+        pctOfYear: number,
+        yearTotal: number,
+    ): string {
+        const lineColor = this.isDarkTheme() ? "#e5e7eb" : "#0f172a";
+        const muted = this.isDarkTheme() ? "#94a3b8" : "#64748b";
+        const border = this.isDarkTheme()
+            ? "rgba(148,163,184,0.35)"
+            : "rgba(15,23,42,0.12)";
+        const pctBadgeBg = this.isDarkTheme()
+            ? "rgba(59,130,246,0.22)"
+            : "rgba(37,99,235,0.12)";
+        return `<div style="direction:rtl;text-align:right;padding:10px 12px;min-width:210px;max-width:340px;color:${lineColor}">
+            <div style="font-size:15px;font-weight:800;margin-bottom:2px">שנה ${this.escapeHtmlForChartTooltip(year)}</div>
+            <div style="font-size:12px;color:${muted};padding-bottom:6px;margin-bottom:6px;border-bottom:1px solid ${border}">${this.escapeHtmlForChartTooltip(segmentLabel)}</div>
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;font-size:14px;margin-top:4px">
+                <span>סכום</span><b>${this.formatTableMoney(rawAmount)}</b>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;font-size:14px;margin-top:6px">
+                <span>מסך השנה</span>
+                <span style="background:${pctBadgeBg};padding:2px 8px;border-radius:999px;font-weight:800">${Math.round(pctOfYear)}%</span>
+            </div>
+            <div style="font-size:11px;color:${muted};margin-top:8px">סה״כ שנה: ${this.formatTableMoney(yearTotal)}</div>
+        </div>`;
     }
 
     private buildGroupedYearChart(): void {

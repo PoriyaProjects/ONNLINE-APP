@@ -219,16 +219,8 @@
     text-align: right;
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 4px;
     overflow: hidden;
-}
-
-:host ::ng-deep :is(app-surgeries-subpanel-mock-layout, app-surgeries-revenue) .panel-title .metrics-container {
-    width: 100%;
-    max-width: 100%;
-    overflow-x: auto;
-    overflow-y: hidden;
-    -webkit-overflow-scrolling: touch;
 }
 
 :host ::ng-deep :is(app-surgeries-subpanel-mock-layout, app-surgeries-revenue) .metrics-container {
@@ -236,12 +228,19 @@
     flex-direction: column;
     justify-content: flex-start;
     align-items: flex-start;
-    gap: 12px;
+    gap: 4px;
     width: 100%;
     min-width: 0;
     direction: rtl;
-    padding: 8px;
+    padding: 2px 4px;
     box-sizing: border-box;
+}
+
+:host ::ng-deep :is(app-surgeries-subpanel-mock-layout, app-surgeries-revenue) .panel-title .metrics-container {
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
 }
 
 :host ::ng-deep app-surgeries-subpanel-mock-layout .chart-mode-heading {
@@ -1696,6 +1695,45 @@
 :host ::ng-deep app-surgeries-revenue .graph-body {
     min-height: 0;
     gap: 4px;
+}
+
+:host ::ng-deep app-surgeries-revenue .chart-view-canvas {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: hidden;
+}
+
+:host ::ng-deep app-surgeries-revenue .chart-view-block--chart {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: hidden;
+}
+
+:host ::ng-deep app-surgeries-revenue .chart-view-block--controls {
+    flex: 0 0 auto;
+    flex-shrink: 0;
+    margin-top: auto;
+    position: relative;
+    z-index: 2;
+}
+
+:host ::ng-deep app-surgeries-revenue .chart-mode-row {
+    flex: 0 0 auto;
+    flex-shrink: 0;
+    margin-top: auto;
+}
+
+:host ::ng-deep app-surgeries-revenue .metrics-container {
+    padding: 2px 4px;
+    gap: 4px;
+}
+
+:host ::ng-deep app-surgeries-revenue .metrics-container .custom-toggle-group {
+    height: 38px;
+    padding: 2px 4px;
+    border-radius: 14px !important;
 }
 
 :host ::ng-deep app-surgeries-revenue .chart-with-expand {

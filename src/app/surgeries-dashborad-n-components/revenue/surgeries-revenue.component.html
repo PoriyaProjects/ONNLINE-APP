@@ -197,11 +197,7 @@
             <div class="chart-mode-heading__accent" aria-hidden="true"></div>
             <div class="chart-mode-heading__body">
               <div class="chart-mode-heading__title-row">
-                <div class="chart-mode-heading__leading-icon-wrap" aria-hidden="true">
-                  <mat-icon class="chart-mode-heading__leading-icon">{{ getChartHeadingIcon() }}</mat-icon>
-                </div>
                 <div class="chart-mode-heading__text-stack">
-                  <span class="chart-mode-heading__title">{{ getChartHeading() }}</span>
                   <span class="chart-mode-heading__filters"
                     [class.chart-mode-heading__filters--empty]="!hasActiveFilters()"
                     [matTooltip]="getActiveFiltersSummary()" matTooltipPosition="below">
@@ -228,7 +224,8 @@
             </div>
           </div>
 
-          <div class="chart-with-expand chart-view-block chart-view-block--chart">
+          <div class="chart-with-expand chart-view-block chart-view-block--chart"
+            [class.chart-with-expand--year-stacked]="isYearTotalStackedView()">
             <div *ngIf="isLoading || isChartLoading" class="chart-loading-overlay chart-loading-overlay--in-chart"
               aria-live="polite" aria-busy="true">
               <mat-spinner diameter="48"></mat-spinner>
@@ -251,6 +248,33 @@
             </div>
           </div>
 
+          <div class="revenue-stacked-panel chart-view-block"
+            *ngIf="isSupplementPanelVisible() && (showStackedChart || stackedChartHint)"
+            dir="rtl">
+            <div class="revenue-stacked-panel__header">
+              <mat-icon aria-hidden="true">stacked_bar_chart</mat-icon>
+              <div class="revenue-stacked-panel__titles">
+                <span class="revenue-stacked-panel__title">{{ stackedChartTitle }}</span>
+                <span class="revenue-stacked-panel__hint">{{ stackedChartHint }}</span>
+              </div>
+            </div>
+            <div class="revenue-stacked-panel__chart" *ngIf="showStackedChart">
+              <google-chart
+                [type]="stackedChartType"
+                [columns]="stackedChartColumns"
+                [data]="stackedChartData"
+                [options]="stackedChartOptions"
+                [width]="'100%'"
+                [height]="'100%'"
+                [dynamicResize]="true">
+              </google-chart>
+            </div>
+            <div class="revenue-stacked-panel__empty chart-no-data"
+              *ngIf="!showStackedChart && !isLoading && !isChartLoading">
+              אין נתוני ערימה להצגה — ודא שה-API פעיל או עבור ל«סיכום שנתי»
+            </div>
+          </div>
+
           <div class="chart-mode-row chart-view-block chart-view-block--controls">
             <mat-button-toggle-group class="mat-button-toggle-group custom-toggle-group"
               name="revenuePeriodView" aria-label="תצוגת תקופה"
@@ -259,8 +283,8 @@
                 <mat-icon aria-hidden="true">stacked_bar_chart</mat-icon>
                 <span>לפי שנה</span>
               </mat-button-toggle>
-              <mat-button-toggle value="year-total" matTooltip="סה״כ הכנסות לכל שנה" matTooltipPosition="below">
-                <mat-icon aria-hidden="true">summarize</mat-icon>
+              <mat-button-toggle value="year-total" matTooltip="גרף ערימה — סכום ואחוז מכל חלק" matTooltipPosition="below">
+                <mat-icon aria-hidden="true">stacked_bar_chart</mat-icon>
                 <span>סיכום שנתי</span>
               </mat-button-toggle>
               <mat-button-toggle value="month" matTooltip="הכנסות לפי חודש" matTooltipPosition="below">
@@ -365,7 +389,8 @@
           <div class="year-subtitle">{{ getYearRevenueSubtitle(y) }}</div>
         </div>
       </div>
-      <div class="chart-with-expand chart-with-expand--modal">
+      <div class="chart-with-expand chart-with-expand--modal"
+        [class.chart-with-expand--year-stacked]="isYearTotalStackedView()">
         <google-chart *ngIf="chartData.length"
           [type]="chartType" [columns]="chartColumns" [data]="chartData"
           [options]="chartFullModalOptions" [width]="'100%'" [height]="'100%'" [dynamicResize]="true">

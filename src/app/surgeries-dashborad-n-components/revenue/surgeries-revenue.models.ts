@@ -54,3 +54,12 @@ export interface RevenueTableRow {
 
 export type RevenueMainMetric = "byDept" | "byPayer" | "bySurgeryType";
 export type RevenueChartViewMode = "year-total" | "year-grouped" | "month";
+
+/** שורת ערימה — GetRevenueStackedComposite_surgeries_revenue_dashborad (בקרוב) */
+export interface RevenueCompositeStackRow {
+    Year: number;
+    FundKey: string;
+    PayerKey: string;
+    BillingCategoryKey: string;
+    TotalAmount: number;
+}

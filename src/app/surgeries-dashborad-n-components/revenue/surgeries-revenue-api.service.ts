@@ -1,11 +1,13 @@
 import { HttpClient, HttpParams } from "@angular/common/http";
 import { Injectable } from "@angular/core";
 import { Observable, of } from "rxjs";
-import { catchError, map } from "rxjs/operators";
+import { catchError, map, tap } from "rxjs/operators";
 import { environment } from "src/environments/environment";
 import {
     RevenueAggRow,
+    RevenueCompositeStackRow,
     RevenueFilterOptionsDto,
+    RevenueGroupBy,
     RevenueMonthlyRow,
     SurgeriesRevenueFilterParams,
 } from "./surgeries-revenue.models";
@@ -15,13 +17,69 @@ export class SurgeriesRevenueApiService {
     private filterOptionsCache: RevenueFilterOptionsDto | null = null;
     private aggCache = new Map<string, RevenueAggRow[]>();
     private monthlyCache = new Map<string, RevenueMonthlyRow[]>();
+    private compositeCache = new Map<string, RevenueCompositeStackRow[]>();
 
     constructor(private http: HttpClient) {}
 
+    /** Clears all locally cached API responses (explicit refresh only). */
     clearCache(): void {
         this.filterOptionsCache = null;
         this.aggCache.clear();
         this.monthlyCache.clear();
+        this.compositeCache.clear();
+    }
+
+    hasFilterOptionsCache(): boolean {
+        return this.filterOptionsCache != null;
+    }
+
+    isRevenueBundleCached(params: SurgeriesRevenueFilterParams): boolean {
+        return (
+            this.aggCache.has(this.cacheKey("agg", params)) &&
+            this.monthlyCache.has(this.cacheKey("month", params)) &&
+            this.aggCache.has(
+                this.cacheKey("agg", { ...params, groupBy: "billingDept" }),
+            ) &&
+            this.aggCache.has(
+                this.cacheKey("agg", { ...params, groupBy: "payer" }),
+            ) &&
+            this.compositeCache.has(this.cacheKey("composite", params))
+        );
+    }
+
+    getRevenueByGroupFiveYears(
+        params: SurgeriesRevenueFilterParams,
+        groupBy: RevenueGroupBy,
+        forceRefresh = false,
+    ): Observable<RevenueAggRow[]> {
+        return this.getRevenueByDeptFiveYears(
+            { ...params, groupBy },
+            forceRefresh,
+        );
+    }
+
+    /** קרן/ביה"ח × גורם משלם × קטגורית חיוב — endpoint יופעל בשרת */
+    getRevenueCompositeStack(
+        params: SurgeriesRevenueFilterParams,
+        forceRefresh = false,
+    ): Observable<RevenueCompositeStackRow[]> {
+        const key = this.cacheKey("composite", params);
+        return this.getCachedOrFetch(
+            this.compositeCache,
+            key,
+            forceRefresh,
+            () =>
+                this.http
+                    .get<unknown>(
+                        environment.url +
+                            "GetRevenueStackedComposite_surgeries_revenue_dashborad",
+                        { params: this.toHttpParams(params) },
+                    )
+                    .pipe(
+                        map((r) => this.normalizeCompositeRows(r)),
+                        catchError(() => of([])),
+                    ),
+        );
     }
 
     getFilterOptions(forceRefresh = false): Observable<RevenueFilterOptionsDto> {
@@ -35,9 +93,8 @@ export class SurgeriesRevenueApiService {
             )
             .pipe(
                 map((r) => this.normalizeFilterOptions(r)),
-                map((opts) => {
+                tap((opts) => {
                     this.filterOptionsCache = opts;
-                    return opts;
                 }),
                 catchError(() => of(this.emptyFilterOptions())),
             );
@@ -48,23 +105,18 @@ export class SurgeriesRevenueApiService {
         forceRefresh = false,
     ): Observable<RevenueAggRow[]> {
         const key = this.cacheKey("agg", params);
-        if (!forceRefresh && this.aggCache.has(key)) {
-            return of(this.aggCache.get(key)!);
-        }
-        return this.http
-            .get<unknown>(
-                environment.url +
-                    "GetRevenueByDeptFiveYears_surgeries_revenue_dashborad",
-                { params: this.toHttpParams(params) },
-            )
-            .pipe(
-                map((r) => this.normalizeAggRows(r)),
-                map((rows) => {
-                    this.aggCache.set(key, rows);
-                    return rows;
-                }),
-                catchError(() => of([])),
-            );
+        return this.getCachedOrFetch(this.aggCache, key, forceRefresh, () =>
+            this.http
+                .get<unknown>(
+                    environment.url +
+                        "GetRevenueByDeptFiveYears_surgeries_revenue_dashborad",
+                    { params: this.toHttpParams(params) },
+                )
+                .pipe(
+                    map((r) => this.normalizeAggRows(r)),
+                    catchError(() => of([])),
+                ),
+        );
     }
 
     getRevenueByMonth(
@@ -72,25 +124,32 @@ export class SurgeriesRevenueApiService {
         forceRefresh = false,
     ): Observable<RevenueMonthlyRow[]> {
         const key = this.cacheKey("month", params);
-        if (!forceRefresh && this.monthlyCache.has(key)) {
-            return of(this.monthlyCache.get(key)!);
-        }
         const monthlyParams = { ...params };
         delete monthlyParams.groupBy;
-        return this.http
-            .get<unknown>(
-                environment.url +
-                    "GetRevenueByMonth_surgeries_revenue_dashborad",
-                { params: this.toHttpParams(monthlyParams) },
-            )
-            .pipe(
-                map((r) => this.normalizeMonthlyRows(r)),
-                map((rows) => {
-                    this.monthlyCache.set(key, rows);
-                    return rows;
-                }),
-                catchError(() => of([])),
-            );
+        return this.getCachedOrFetch(this.monthlyCache, key, forceRefresh, () =>
+            this.http
+                .get<unknown>(
+                    environment.url +
+                        "GetRevenueByMonth_surgeries_revenue_dashborad",
+                    { params: this.toHttpParams(monthlyParams) },
+                )
+                .pipe(
+                    map((r) => this.normalizeMonthlyRows(r)),
+                    catchError(() => of([])),
+                ),
+        );
+    }
+
+    private getCachedOrFetch<T>(
+        cache: Map<string, T>,
+        key: string,
+        forceRefresh: boolean,
+        fetch: () => Observable<T>,
+    ): Observable<T> {
+        if (!forceRefresh && cache.has(key)) {
+            return of(cache.get(key)!);
+        }
+        return fetch().pipe(tap((data) => cache.set(key, data)));
     }
 
     private cacheKey(prefix: string, params: SurgeriesRevenueFilterParams): string {
@@ -168,6 +227,28 @@ export class SurgeriesRevenueApiService {
             SurgeryCount: this.num(r.SurgeryCount ?? r.surgeryCount),
             InvoiceCount: this.num(r.InvoiceCount ?? r.invoiceCount),
             AvgAmount: this.num(r.AvgAmount ?? r.avgAmount),
+        }));
+    }
+
+    private normalizeCompositeRows(raw: unknown): RevenueCompositeStackRow[] {
+        return this.unwrapArray(raw).map((r: any) => ({
+            Year: this.num(r.Year ?? r.year),
+            FundKey: this.str(
+                r.FundKey ??
+                    r.fundKey ??
+                    r.HospitalFund ??
+                    r.hospitalFund ??
+                    r.קרן,
+            ),
+            PayerKey: this.str(r.PayerKey ?? r.payerKey ?? r.Payer ?? r.payer),
+            BillingCategoryKey: this.str(
+                r.BillingCategoryKey ??
+                    r.billingCategoryKey ??
+                    r.BillingCategory ??
+                    r.billingCategory ??
+                    r.קטגורית_חיוב,
+            ),
+            TotalAmount: this.num(r.TotalAmount ?? r.totalAmount),
         }));
     }
 

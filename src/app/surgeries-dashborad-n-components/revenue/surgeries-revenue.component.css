@@ -100,7 +100,7 @@
     min-width: 0;
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 4px;
     justify-content: flex-start;
     text-align: right;
 }
@@ -110,10 +110,169 @@
     flex-direction: column;
     justify-content: flex-start;
     direction: rtl;
-    padding: 8px;
+    padding: 2px 4px;
     width: 100%;
     min-width: 0;
-    gap: 12px;
+    gap: 4px;
+}
+
+:host .metrics-container .custom-toggle-group {
+    height: 38px;
+    padding: 2px 4px;
+    border-radius: 14px !important;
+}
+
+:host .metrics-container .toggle-icon-prefix {
+    padding: 0 8px;
+}
+
+:host ::ng-deep .metrics-container .custom-toggle-group mat-button-toggle {
+    min-height: 28px;
+}
+
+:host ::ng-deep .metrics-container .custom-toggle-group .mat-button-toggle-label-content {
+    line-height: 28px !important;
+    padding: 0 8px !important;
+    font-size: clamp(11px, 0.82vw, 13px);
+}
+
+:host ::ng-deep .metrics-container .custom-toggle-group .mat-button-toggle-label-content mat-icon {
+    font-size: 15px;
+    width: 15px;
+    height: 15px;
+    line-height: 15px;
+    margin-inline-end: 4px;
+}
+
+:host .revenue-supplement-toggle-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    min-width: 0;
+}
+
+:host .revenue-supplement-toggle-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 36px;
+    border-radius: 10px !important;
+    border-color: rgba(59, 130, 246, 0.35) !important;
+    color: #1d4ed8 !important;
+    font-weight: 700 !important;
+    font-size: clamp(11px, 0.82vw, 13px) !important;
+    padding: 0 12px !important;
+    background: rgba(59, 130, 246, 0.06) !important;
+    transition:
+        background 0.25s ease,
+        border-color 0.25s ease,
+        box-shadow 0.25s ease,
+        transform 0.2s ease;
+}
+
+:host .revenue-supplement-toggle-btn mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+}
+
+:host .revenue-supplement-toggle-btn--active,
+:host .revenue-supplement-toggle-btn:hover:not([disabled]) {
+    background: rgba(59, 130, 246, 0.12) !important;
+    border-color: rgba(37, 99, 235, 0.55) !important;
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.15);
+}
+
+:host .revenue-supplement-toggle-btn[disabled] {
+    opacity: 0.72;
+    cursor: default;
+}
+
+:host-context(.dash.dark) .revenue-supplement-toggle-btn {
+    color: #93c5fd !important;
+    border-color: rgba(147, 197, 253, 0.35) !important;
+    background: rgba(59, 130, 246, 0.12) !important;
+}
+
+:host .revenue-supplement-toggle-hint {
+    font-size: 11px;
+    color: var(--muted, #64748b);
+    font-weight: 600;
+}
+
+:host .revenue-stacked-panel {
+    flex: 0 0 auto;
+    min-height: 0;
+    border-radius: 12px;
+    border: 1px solid rgba(59, 130, 246, 0.22);
+    background:
+        radial-gradient(circle at 100% 0%, rgba(56, 189, 248, 0.08), transparent 55%),
+        var(--panel, #fff);
+    box-shadow: 0 4px 16px rgba(15, 23, 42, 0.08);
+    padding: 8px 10px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+}
+
+:host-context(.dash.dark) .revenue-stacked-panel {
+    border-color: rgba(147, 197, 253, 0.2);
+    background: rgba(15, 23, 42, 0.72);
+}
+
+:host .revenue-stacked-panel__header {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    direction: rtl;
+    text-align: right;
+}
+
+:host .revenue-stacked-panel__header mat-icon {
+    color: #3b82f6;
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+:host .revenue-stacked-panel__titles {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+:host .revenue-stacked-panel__title {
+    font-size: clamp(12px, 0.9vw, 14px);
+    font-weight: 800;
+    color: var(--text, #0f172a);
+}
+
+:host .revenue-stacked-panel__hint {
+    font-size: clamp(10px, 0.76vw, 12px);
+    color: var(--muted, #64748b);
+    line-height: 1.35;
+}
+
+:host .revenue-stacked-panel__chart {
+    min-height: clamp(180px, 24vh, 280px);
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+}
+
+:host .revenue-stacked-panel__empty {
+    min-height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 8px;
 }
 
 :host .metrics-container .custom-toggle-group,
@@ -227,8 +386,30 @@
     color: #f1f5f9;
 }
 
+:host .chart-view-canvas {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: hidden;
+}
+
+:host .chart-view-block--chart {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: hidden;
+}
+
+:host .chart-view-block--controls {
+    flex: 0 0 auto;
+    flex-shrink: 0;
+    margin-top: auto;
+    position: relative;
+    z-index: 2;
+}
+
 :host .chart-mode-row {
-    margin-top: 8px;
+    margin-top: 4px;
     display: flex;
     flex-wrap: nowrap;
     flex-direction: row;
@@ -249,16 +430,17 @@
 :host .chart-mode-heading {
     margin-bottom: 4px;
     flex: 0 0 auto;
+    flex-shrink: 0;
 }
 
 :host .chart-mode-heading.chart-mode-heading--revenue {
     position: relative;
     width: fit-content;
-    max-width: min(100%, clamp(260px, 38vw, 420px));
+    max-width: min(100%, clamp(180px, 28vw, 280px));
     align-self: flex-start;
-    margin-bottom: 6px;
+    margin-bottom: 4px;
     padding: 0;
-    border-radius: 12px;
+    border-radius: 8px;
     overflow: hidden;
     direction: rtl;
     text-align: right;
@@ -291,28 +473,28 @@
 :host .chart-mode-heading__accent {
     position: absolute;
     inset-inline-start: 0;
-    top: 14%;
-    height: 72%;
-    width: 3px;
+    top: 18%;
+    height: 64%;
+    width: 2px;
     background: linear-gradient(180deg, #38bdf8, #3b82f6);
     border-start-start-radius: 3px;
     border-end-start-radius: 3px;
 }
 
 :host .chart-mode-heading__body {
-    padding: 7px 10px 7px 8px;
+    padding: 3px 6px 3px 5px;
     display: flex;
     flex-direction: column;
-    gap: 5px;
+    gap: 2px;
     min-width: 0;
 }
 
 :host .chart-mode-heading__title-row {
     display: flex;
     flex-direction: row;
-    align-items: flex-start;
+    align-items: center;
     justify-content: flex-start;
-    gap: 7px;
+    gap: 4px;
     flex-wrap: nowrap;
     width: 100%;
     min-width: 0;
@@ -362,18 +544,18 @@
 
 :host .chart-mode-heading__help-btn {
     flex: 0 0 auto;
-    width: 28px;
-    height: 28px;
+    width: 20px;
+    height: 20px;
     margin: 0;
     padding: 0;
     color: var(--muted, #64748b);
-    line-height: 28px;
+    line-height: 20px;
 }
 
 :host .chart-mode-heading__help-btn mat-icon {
-    font-size: 18px;
-    width: 18px;
-    height: 18px;
+    font-size: 14px;
+    width: 14px;
+    height: 14px;
 }
 
 :host .chart-mode-heading__help-btn:hover,
@@ -383,9 +565,9 @@
 
 :host .chart-mode-heading__filters {
     display: block;
-    font-size: clamp(10px, 0.76vw, 12px);
+    font-size: clamp(9px, 0.65vw, 10px);
     font-weight: 500;
-    line-height: 1.35;
+    line-height: 1.25;
     color: var(--muted, #64748b);
     max-width: 100%;
     overflow: hidden;
@@ -406,10 +588,10 @@
 :host .chart-mode-heading__filter-badge {
     display: inline-flex;
     align-items: center;
-    font-size: clamp(10px, 0.72vw, 11px);
+    font-size: clamp(8px, 0.62vw, 9px);
     font-weight: 700;
     letter-spacing: 0.03em;
-    padding: 0.22em 0.65em;
+    padding: 0.15em 0.5em;
     border-radius: 999px;
     background: linear-gradient(135deg, rgba(37, 99, 235, 0.12), rgba(124, 58, 237, 0.08));
     color: #1d4ed8;
@@ -425,7 +607,7 @@
 
 @media (max-width: 900px) {
     :host .chart-mode-heading.chart-mode-heading--revenue {
-        max-width: min(100%, 360px);
+        max-width: min(100%, 240px);
     }
 }
 
@@ -551,11 +733,12 @@
     display: flex;
     flex-wrap: nowrap;
     gap: 6px;
-    margin-bottom: 6px;
+    margin-bottom: 4px;
     direction: ltr;
     justify-content: flex-start;
     min-width: 0;
     flex: 0 0 auto;
+    flex-shrink: 0;
 }
 
 :host .year-summary-card {
@@ -611,11 +794,31 @@
 }
 
 :host .graph-body .chart-with-expand {
-    min-height: clamp(240px, 32vh, 420px);
+    min-height: 0;
 }
 
 :host .graph-body .chart-with-expand google-chart {
-    min-height: clamp(240px, 32vh, 420px);
+    min-height: 0;
+    flex: 1 1 auto;
+    height: 100%;
+    max-height: 100%;
+    overflow: hidden;
+}
+
+:host .graph-body .chart-with-expand--year-stacked {
+    min-height: 0;
+}
+
+:host .graph-body .chart-with-expand--year-stacked google-chart {
+    min-height: 0;
+}
+
+:host .graph-body .chart-with-expand google-chart ::ng-deep > div,
+:host .graph-body .chart-with-expand google-chart ::ng-deep svg {
+    width: 100% !important;
+    height: 100% !important;
+    max-width: 100% !important;
+    max-height: 100% !important;
 }
 
 :host .chart-expand-btn {
