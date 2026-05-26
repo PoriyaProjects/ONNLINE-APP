@@ -2118,14 +2118,14 @@
     min-width: 108px;
 }
 
-.panel-table .table-wrap table.table [class*="incomeYear_"],
-.panel-table .table-wrap table.table [class*="mat-column-incomeYear"],
-.panel-table .table-wrap table.table [class*="cdk-column-incomeYear"] {
+.panel-table .table-wrap:not(.table-wrap--responsive) table.table [class*="incomeYear_"],
+.panel-table .table-wrap:not(.table-wrap--responsive) table.table [class*="mat-column-incomeYear"],
+.panel-table .table-wrap:not(.table-wrap--responsive) table.table [class*="cdk-column-incomeYear"] {
     min-width: 92px;
 }
 
-.panel-table .table-wrap table.table [class*="Difference"],
-.panel-table .table-wrap table.table [class*="mat-column-Difference"] {
+.panel-table .table-wrap:not(.table-wrap--responsive) table.table [class*="Difference"],
+.panel-table .table-wrap:not(.table-wrap--responsive) table.table [class*="mat-column-Difference"] {
     min-width: 100px;
 }
 
@@ -3308,51 +3308,127 @@
 
 .table-wrap--responsive {
     scrollbar-gutter: stable;
+    flex: 1 1 auto;
+    min-width: 0;
+    min-height: 120px;
+    max-width: 100%;
+    overflow-x: auto;
 }
 
-.table-wrap--responsive table.table {
-    width: max-content;
-    min-width: 100%;
-    table-layout: auto;
+.panel-table .table-body > .table-wrap--responsive {
+    flex: 1 1 auto;
+    min-height: 0;
 }
 
-.table-wrap--responsive .mat-column-DepartmentName,
-.table-wrap--responsive .mat-column-UnifiedPayer,
-.table-wrap--responsive .cdk-column-DepartmentName,
-.table-wrap--responsive .cdk-column-UnifiedPayer {
-    position: sticky;
-    inset-inline-start: 0;
-    z-index: 2;
-    background: var(--panel);
-    box-shadow: -4px 0 10px rgba(15, 23, 42, 0.06);
+/* רוחב טבלה גדול — גלילה + עמודת מחלקה דביקה */
+@container dept-table-section (min-width: 721px) {
+    .table-wrap--responsive {
+        background:
+            linear-gradient(
+                    to left,
+                    var(--panel) 0%,
+                    rgba(255, 255, 255, 0) 100%
+                )
+                right center / 28px 100% no-repeat,
+            var(--panel);
+    }
+
+    .dash.dark .table-wrap--responsive {
+        background:
+            linear-gradient(
+                    to left,
+                    var(--panel) 0%,
+                    rgba(15, 23, 42, 0) 100%
+                )
+                right center / 28px 100% no-repeat,
+            var(--panel);
+    }
+
+    .table-wrap--responsive table.table {
+        width: max-content;
+        min-width: 100%;
+        table-layout: auto;
+    }
+
+    .table-wrap--responsive .mat-column-DepartmentName,
+    .table-wrap--responsive .mat-column-UnifiedPayer,
+    .table-wrap--responsive .cdk-column-DepartmentName,
+    .table-wrap--responsive .cdk-column-UnifiedPayer {
+        position: sticky;
+        inset-inline-start: 0;
+        z-index: 2;
+        background: var(--panel);
+        box-shadow: -4px 0 10px rgba(15, 23, 42, 0.06);
+    }
+
+    .table-wrap--responsive thead .mat-column-DepartmentName,
+    .table-wrap--responsive thead .mat-column-UnifiedPayer,
+    .table-wrap--responsive thead .cdk-column-DepartmentName,
+    .table-wrap--responsive thead .cdk-column-UnifiedPayer {
+        z-index: 4;
+    }
+
+    .table-wrap--responsive .mat-column-DepartmentName,
+    .table-wrap--responsive .cdk-column-DepartmentName {
+        min-width: clamp(96px, 24vw, 148px);
+        max-width: 168px;
+    }
+
+    .table-wrap--responsive [class*="incomeYear_"],
+    .table-wrap--responsive [class*="mat-column-incomeYear"],
+    .table-wrap--responsive [class*="cdk-column-incomeYear"] {
+        min-width: clamp(78px, 16vw, 108px) !important;
+        white-space: nowrap;
+    }
+
+    .table-wrap--responsive [class*="Difference"],
+    .table-wrap--responsive [class*="mat-column-Difference"] {
+        min-width: clamp(88px, 18vw, 118px) !important;
+    }
 }
 
-.table-wrap--responsive thead .mat-column-DepartmentName,
-.table-wrap--responsive thead .mat-column-UnifiedPayer,
-.table-wrap--responsive thead .cdk-column-DepartmentName,
-.table-wrap--responsive thead .cdk-column-UnifiedPayer {
-    z-index: 4;
-}
+/* פאנל צר — התאים נכנסים לרוחב התיבה */
+@container dept-table-section (max-width: 720px) {
+    .table-wrap--responsive {
+        overflow-x: hidden;
+        background: var(--panel);
+    }
 
-.table-wrap--responsive .mat-column-DepartmentName,
-.table-wrap--responsive .cdk-column-DepartmentName {
-    min-width: clamp(96px, 24vw, 148px);
-    max-width: 168px;
-}
+    .dash.dark .table-wrap--responsive {
+        background: var(--panel);
+    }
 
-.table-wrap--responsive [class*="incomeYear_"],
-.table-wrap--responsive [class*="mat-column-incomeYear"],
-.table-wrap--responsive [class*="cdk-column-incomeYear"] {
-    min-width: clamp(78px, 16vw, 108px);
-    white-space: nowrap;
-}
+    .table-wrap--responsive table.table {
+        width: 100%;
+        max-width: 100%;
+        table-layout: fixed;
+    }
 
-.table-wrap--responsive [class*="Difference"],
-.table-wrap--responsive [class*="mat-column-Difference"] {
-    min-width: clamp(88px, 18vw, 118px);
-}
+    .table-wrap--responsive .mat-column-DepartmentName,
+    .table-wrap--responsive .mat-column-UnifiedPayer,
+    .table-wrap--responsive .cdk-column-DepartmentName,
+    .table-wrap--responsive .cdk-column-UnifiedPayer {
+        position: static;
+        box-shadow: none;
+        width: 22%;
+        min-width: 0 !important;
+        max-width: none;
+    }
 
-@container dept-table-section (max-width: 520px) {
+    .table-wrap--responsive [class*="incomeYear_"],
+    .table-wrap--responsive [class*="mat-column-incomeYear"],
+    .table-wrap--responsive [class*="cdk-column-incomeYear"] {
+        min-width: 0 !important;
+        width: 11.6%;
+        white-space: normal;
+    }
+
+    .table-wrap--responsive [class*="Difference"],
+    .table-wrap--responsive [class*="mat-column-Difference"] {
+        min-width: 0 !important;
+        width: 20%;
+    }
+
     .panel-table .panel-title--with-search {
         flex-wrap: wrap;
         row-gap: 6px;
@@ -3364,34 +3440,76 @@
         min-width: 0;
     }
 
-    .panel-table .panel-title__lead > span {
-        font-size: clamp(13px, 3.6vw, 15px);
-    }
-
     .panel-table .table-wrap table.table {
-        font-size: clamp(11px, 2.8vw, 13px);
+        font-size: clamp(10px, 2.1cqi, 12px);
     }
 
     .panel-table .table-wrap table.table th,
     .panel-table .table-wrap table.table td {
-        padding: 8px 6px;
-        min-height: 42px;
+        padding: 5px 3px;
+        min-height: 34px;
+    }
+
+    .panel-table .table-wrap ::ng-deep .mat-sort-header-button {
+        font-size: clamp(9px, 1.9cqi, 11px) !important;
+        padding: 0 !important;
+        line-height: 1.15 !important;
+    }
+
+    .panel-table .five-year-income-cell,
+    .panel-table .five-year-diff-cell {
+        gap: 1px;
     }
 
     .panel-table .five-year-income-amount,
     .panel-table .five-year-diff-amount {
-        font-size: clamp(10px, 2.6vw, 12px);
+        font-size: clamp(9px, 2cqi, 11px);
         white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 100%;
     }
 
     .panel-table .five-year-yoy-pct,
     .panel-table .five-year-diff-pct,
     .panel-table .percentage-badge {
-        font-size: clamp(9px, 2.2vw, 11px);
+        font-size: clamp(8px, 1.75cqi, 10px);
+        line-height: 1.1;
     }
 
     .panel-table .clickable-cell__hint {
         display: none;
+    }
+
+    .panel-table .clickable-cell__text {
+        display: block;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        -webkit-line-clamp: unset;
+        -webkit-box-orient: unset;
+    }
+}
+
+@container dept-table-section (max-width: 520px) {
+    .panel-table .panel-title__lead > span {
+        font-size: clamp(13px, 3.6vw, 15px);
+    }
+
+    .table-wrap--responsive .mat-column-DepartmentName,
+    .table-wrap--responsive .cdk-column-DepartmentName {
+        width: 26%;
+    }
+
+    .table-wrap--responsive [class*="incomeYear_"],
+    .table-wrap--responsive [class*="mat-column-incomeYear"],
+    .table-wrap--responsive [class*="cdk-column-incomeYear"] {
+        width: 10%;
+    }
+
+    .table-wrap--responsive [class*="Difference"],
+    .table-wrap--responsive [class*="mat-column-Difference"] {
+        width: 14%;
     }
 }
 
@@ -6620,19 +6738,113 @@ table.table {
 }
 
 .boss-panel--pie {
-    align-items: center;
+    align-items: stretch;
     justify-content: center;
     padding: 4px;
+    min-height: 0;
+}
+
+.boss-pie-layout {
+    position: relative;
+    display: grid;
+    grid-template-columns: minmax(0, 1.1fr) minmax(220px, 0.9fr);
+    gap: 12px;
+    align-items: center;
+    width: 100%;
+    min-height: 0;
+    flex: 1 1 auto;
+}
+
+.boss-pie-connectors {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 2;
+    overflow: visible;
+}
+
+.boss-pie-chart-wrap {
+    position: relative;
+    z-index: 1;
+    min-width: 0;
+    min-height: 280px;
+    height: 100%;
 
     google-chart {
         width: 100%;
         height: 100%;
-        min-height: 0;
+        min-height: 280px;
+    }
+}
 
-        text {
-            font-size: clamp(20px, 2vw, 32px) !important;
-            font-weight: 700 !important;
-        }
+.boss-pie-legend {
+    position: relative;
+    z-index: 3;
+    list-style: none;
+    margin: 0;
+    padding: 4px 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 0;
+}
+
+.boss-pie-legend__item {
+    display: grid;
+    grid-template-columns: 14px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 10px;
+}
+
+.boss-pie-legend__swatch {
+    width: 14px;
+    height: 14px;
+    border-radius: 3px;
+    flex-shrink: 0;
+}
+
+.boss-pie-legend__label {
+    font-size: clamp(14px, 1.5vw, 22px);
+    font-weight: 800;
+    color: #334155;
+    text-align: right;
+    line-height: 1.2;
+    word-break: break-word;
+}
+
+.boss-pie-legend__value {
+    font-size: clamp(14px, 1.5vw, 22px);
+    font-weight: 800;
+    color: #9e9e9e;
+    white-space: nowrap;
+    line-height: 1.2;
+}
+
+.dash.dark .boss-pie-legend__label {
+    color: #e2e8f0;
+}
+
+.dash.dark .boss-pie-legend__value {
+    color: #94a3b8;
+}
+
+@media (max-width: 900px) {
+    .boss-pie-layout {
+        grid-template-columns: 1fr;
+        grid-template-rows: minmax(260px, auto) auto;
+    }
+
+    .boss-pie-connectors {
+        display: none;
+    }
+}
+
+.boss-panel--pie google-chart {
+    text {
+        font-size: clamp(16px, 1.6vw, 22px) !important;
+        font-weight: 700 !important;
     }
 }
 

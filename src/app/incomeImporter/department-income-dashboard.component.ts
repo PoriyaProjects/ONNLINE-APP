@@ -257,6 +257,8 @@ export class DepartmentIncomeDashboardComponent
     @ViewChild("mainSort") mainSort?: MatSort;
     @ViewChild("payerSort") payerSort?: MatSort;
     @ViewChild("graphBody") graphBodyRef?: ElementRef<HTMLElement>;
+    @ViewChild("bossPieLayout") bossPieLayoutRef?: ElementRef<HTMLElement>;
+    @ViewChild("bossPieConnectors") bossPieConnectorsRef?: ElementRef<SVGSVGElement>;
 
     private graphBodyLastWidth = 0;
     private graphLayoutResizeTimer: ReturnType<typeof setTimeout> | null = null;
@@ -427,22 +429,25 @@ export class DepartmentIncomeDashboardComponent
         "הכנסות (M ₪)",
         { type: "string", role: "annotation" },
     ];
+    bossPayerPieSliceMeta: Array<{
+        label: string;
+        value: number;
+        sharePct: number;
+        displayText: string;
+    }> = [];
+    bossPayerPieColors: string[] = [];
     bossPayerPieOptions: any = {
         pieHole: 0.42,
-        legend: {
-            position: "labeled",
-            alignment: "center",
-            textStyle: { fontSize: 28, bold: true },
-        },
-        pieSliceText: "percentage",
+        legend: { position: "none" },
+        pieSliceText: "none",
         pieSliceTextStyle: { fontSize: 24, bold: true },
         annotations: {
             textStyle: { fontSize: 20, bold: true },
             stem: { color: "transparent", length: 0 },
         },
-        chartArea: { width: "92%", height: "82%" },
+        chartArea: { width: "96%", height: "88%" },
         tooltip: { text: "both", textStyle: { fontSize: 20, bold: true } },
-        sliceVisibilityThreshold: 0.015,
+        sliceVisibilityThreshold: 0,
         fontName: "Heebo, Arial, sans-serif",
     };
     bossPayerTotalCurrent = 0;
@@ -461,6 +466,11 @@ export class DepartmentIncomeDashboardComponent
     readonly bossTablePageSize = 8;
     private readonly bossExcludedPayerLabels = ["לא קיים"];
     private readonly bossPayerPieMinSharePercent = 1;
+    private bossPieConnectorDrawTimers: ReturnType<typeof setTimeout>[] = [];
+    private bossPieConnectorObserver: {
+        disconnect(): void;
+        observe(target: Element): void;
+    } | null = null;
     private readonly bossWingAccentPalette = [
         { bg: "#eff6ff", border: "#93c5fd", text: "#1d4ed8" },
         { bg: "#f0fdf4", border: "#86efac", text: "#15803d" },
@@ -922,6 +932,7 @@ export class DepartmentIncomeDashboardComponent
             clearTimeout(this.tableDeptClickHintTimer);
             this.tableDeptClickHintTimer = null;
         }
+        this.teardownBossPieConnectorObserver();
     }
 
     @HostListener("window:resize")
@@ -932,6 +943,9 @@ export class DepartmentIncomeDashboardComponent
                 this.graphBodyRef?.nativeElement?.clientWidth ||
                 720,
         );
+        if (this.showBossDashboard && this.bossViewMode === "pie") {
+            this.scheduleBossPieConnectorDraw();
+        }
     }
 
     private initMainTableDataSource(): void {
@@ -3933,16 +3947,256 @@ export class DepartmentIncomeDashboardComponent
             });
         }
 
+        this.bossPayerPieSliceMeta = mainSlices.map((slice) => ({
+            label: slice.label,
+            value: slice.value,
+            sharePct: slice.sharePct,
+            displayText: this.formatBossPieDisplayLabel(
+                slice.sharePct,
+                slice.value,
+            ),
+        }));
         this.bossPayerPieData = mainSlices.map((slice) => [
             slice.label,
             parseFloat((slice.value / 1_000_000).toFixed(1)),
-            this.formatBossMillions(slice.value),
+            this.formatBossPieDisplayLabel(slice.sharePct, slice.value),
         ]);
         this.bossPayerPieColumns = [
             "גורם משלם",
             "הכנסות (M ₪)",
             { type: "string", role: "annotation" },
         ];
+        this.scheduleBossPieConnectorDraw();
+    }
+
+    formatBossPieDisplayLabel(sharePct: number, value: number): string {
+        return `${this.formatBossMillions(value)} · ${sharePct.toFixed(1)}%`;
+    }
+
+    getBossPayerPieColor(index: number): string {
+        return this.bossPayerPieColors[index] ?? "#64748b";
+    }
+
+    onBossPayerPieChartReady(): void {
+        this.scheduleBossPieConnectorDraw();
+    }
+
+    private scheduleBossPieConnectorDraw(): void {
+        this.clearBossPieConnectorDrawTimers();
+        [0, 80, 220, 450].forEach((delay) => {
+            const timer = setTimeout(
+                () => this.drawBossPieConnectorLines(),
+                delay,
+            );
+            this.bossPieConnectorDrawTimers.push(timer);
+        });
+    }
+
+    private clearBossPieConnectorDrawTimers(): void {
+        this.bossPieConnectorDrawTimers.forEach((timer) =>
+            clearTimeout(timer),
+        );
+        this.bossPieConnectorDrawTimers = [];
+    }
+
+    private ensureBossPieConnectorObserver(): void {
+        if (this.bossPieConnectorObserver || !this.bossPieLayoutRef) {
+            return;
+        }
+        const ResizeObserverCtor = (window as any).ResizeObserver as
+            | (new (
+                  callback: (
+                      entries: Array<{ contentRect: { width: number } }>,
+                  ) => void,
+              ) => {
+                  disconnect(): void;
+                  observe(target: Element): void;
+              })
+            | undefined;
+        if (!ResizeObserverCtor) {
+            return;
+        }
+        this.bossPieConnectorObserver = new ResizeObserverCtor(() => {
+            this.scheduleBossPieConnectorDraw();
+        });
+        this.bossPieConnectorObserver.observe(this.bossPieLayoutRef.nativeElement);
+    }
+
+    private drawBossPieConnectorLines(): void {
+        const layout = this.bossPieLayoutRef?.nativeElement;
+        const connectorSvg = this.bossPieConnectorsRef?.nativeElement;
+        if (
+            !layout ||
+            !connectorSvg ||
+            this.bossViewMode !== "pie" ||
+            !this.bossPayerPieSliceMeta.length
+        ) {
+            return;
+        }
+
+        this.ensureBossPieConnectorObserver();
+
+        const chartSvg = layout.querySelector(
+            ".boss-pie-chart-wrap svg",
+        ) as SVGSVGElement | null;
+        const legendItems = layout.querySelectorAll<HTMLElement>(
+            ".boss-pie-legend__item",
+        );
+        if (!chartSvg || !legendItems.length) {
+            connectorSvg.innerHTML = "";
+            return;
+        }
+
+        const layoutRect = layout.getBoundingClientRect();
+        const width = Math.max(layoutRect.width, 1);
+        const height = Math.max(layoutRect.height, 1);
+        connectorSvg.setAttribute("width", `${width}`);
+        connectorSvg.setAttribute("height", `${height}`);
+        connectorSvg.setAttribute("viewBox", `0 0 ${width} ${height}`);
+
+        const slicePaths = this.getBossPieSlicePaths(chartSvg);
+        const fragments: string[] = [];
+
+        legendItems.forEach((item, index) => {
+            const path = slicePaths[index];
+            if (!path) {
+                return;
+            }
+
+            const itemRect = item.getBoundingClientRect();
+            const valueEl = item.querySelector(".boss-pie-legend__value");
+            const valueRect = valueEl?.getBoundingClientRect();
+            const startX =
+                (valueRect?.right ?? itemRect.right) - layoutRect.left;
+            const startY =
+                (valueRect
+                    ? valueRect.top + valueRect.height / 2
+                    : itemRect.top + itemRect.height / 2) - layoutRect.top;
+
+            const endPoint = this.getBossPieSliceAnchorPoint(
+                path,
+                chartSvg,
+                layoutRect,
+                startX,
+                startY,
+            );
+            const midX = startX + Math.max(16, (endPoint.x - startX) * 0.42);
+            const color = this.getBossPayerPieColor(index);
+
+            fragments.push(
+                `<path d="M ${startX.toFixed(1)} ${startY.toFixed(1)} L ${midX.toFixed(1)} ${startY.toFixed(1)} L ${endPoint.x.toFixed(1)} ${endPoint.y.toFixed(1)}" stroke="${color}" stroke-width="1.2" stroke-opacity="0.72" fill="none" />`,
+            );
+        });
+
+        connectorSvg.innerHTML = fragments.join("");
+    }
+
+    private getBossPieSlicePaths(chartSvg: SVGSVGElement): SVGPathElement[] {
+        const expectedColors = this.bossPayerPieSliceMeta.map((_, index) =>
+            this.getBossPayerPieColor(index).toLowerCase(),
+        );
+        const paths = Array.from(chartSvg.querySelectorAll("path")).filter(
+            (path) => {
+                const fill = (path.getAttribute("fill") ?? "").toLowerCase();
+                if (
+                    !fill ||
+                    fill === "#ffffff" ||
+                    fill === "white" ||
+                    fill === "none"
+                ) {
+                    return false;
+                }
+                const box = path.getBBox();
+                return box.width > 12 && box.height > 12;
+            },
+        );
+
+        const byColor = new Map<string, SVGPathElement>();
+        for (const path of paths) {
+            const fill = (path.getAttribute("fill") ?? "").toLowerCase();
+            if (!byColor.has(fill)) {
+                byColor.set(fill, path);
+            }
+        }
+
+        const ordered: SVGPathElement[] = [];
+        for (const color of expectedColors) {
+            const match = byColor.get(color);
+            if (match) {
+                ordered.push(match);
+                byColor.delete(color);
+            }
+        }
+
+        if (ordered.length === this.bossPayerPieSliceMeta.length) {
+            return ordered;
+        }
+
+        return paths.slice(0, this.bossPayerPieSliceMeta.length);
+    }
+
+    private getBossPieSliceAnchorPoint(
+        path: SVGPathElement,
+        chartSvg: SVGSVGElement,
+        layoutRect: DOMRect,
+        targetX: number,
+        targetY: number,
+    ): { x: number; y: number } {
+        const ctm = chartSvg.getScreenCTM();
+        const len = path.getTotalLength();
+        const bbox = path.getBBox();
+        const centerX = bbox.x + bbox.width / 2;
+        const centerY = bbox.y + bbox.height / 2;
+
+        let bestPoint = path.getPointAtLength(len * 0.5);
+        let bestScore = Number.NEGATIVE_INFINITY;
+        for (let step = 0; step <= 24; step += 1) {
+            const point = path.getPointAtLength((len * step) / 24);
+            const distFromCenter = Math.hypot(
+                point.x - centerX,
+                point.y - centerY,
+            );
+            const layoutPoint = this.bossPieSvgPointToLayout(
+                point,
+                ctm,
+                layoutRect,
+            );
+            const distToLegend = Math.hypot(
+                layoutPoint.x - targetX,
+                layoutPoint.y - targetY,
+            );
+            const score = distFromCenter * 1.35 - distToLegend * 0.25;
+            if (score > bestScore) {
+                bestScore = score;
+                bestPoint = point;
+            }
+        }
+
+        return this.bossPieSvgPointToLayout(bestPoint, ctm, layoutRect);
+    }
+
+    private bossPieSvgPointToLayout(
+        point: DOMPoint,
+        ctm: DOMMatrix | null,
+        layoutRect: DOMRect,
+    ): { x: number; y: number } {
+        if (!ctm) {
+            return { x: 0, y: 0 };
+        }
+        const screenPoint = new DOMPoint(point.x, point.y).matrixTransform(ctm);
+        return {
+            x: screenPoint.x - layoutRect.left,
+            y: screenPoint.y - layoutRect.top,
+        };
+    }
+
+    private teardownBossPieConnectorObserver(): void {
+        this.bossPieConnectorObserver?.disconnect();
+        this.bossPieConnectorObserver = null;
+        this.clearBossPieConnectorDrawTimers();
+        if (this.bossPieConnectorsRef?.nativeElement) {
+            this.bossPieConnectorsRef.nativeElement.innerHTML = "";
+        }
     }
 
     private parsePercentLabel(label: string): number {
@@ -4075,6 +4329,7 @@ export class DepartmentIncomeDashboardComponent
         }
         if (mode === "pie") {
             this.updateBossPayerPieTheme();
+            this.scheduleBossPieConnectorDraw();
         }
         if (mode === "monthly") {
             this.ensureBossMonthlyChartReady();
@@ -4410,68 +4665,31 @@ export class DepartmentIncomeDashboardComponent
             "#ec4899",
             "#64748b",
         ];
-        if (this.isDark) {
-            this.bossPayerPieOptions = {
-                ...this.bossPayerPieOptions,
-                backgroundColor: "transparent",
-                legend: {
-                    ...this.bossPayerPieOptions.legend,
-                    textStyle: {
-                        ...(this.bossPayerPieOptions.legend?.textStyle || {}),
-                        color: "#e2e8f0",
-                        fontSize: 28,
-                        bold: true,
-                    },
-                },
-                pieSliceText: "percentage",
-                annotations: {
-                    ...this.bossPayerPieOptions.annotations,
-                    textStyle: {
-                        fontSize: 20,
-                        bold: true,
-                        color: "#f8fafc",
-                    },
-                },
-                pieSliceTextStyle: {
-                    fontSize: 24,
+        this.bossPayerPieColors = pieColors;
+        const text = this.isDark ? "#e2e8f0" : "#334155";
+        const annotationText = this.isDark ? "#f8fafc" : "#1e293b";
+        this.bossPayerPieOptions = {
+            ...this.bossPayerPieOptions,
+            backgroundColor: "transparent",
+            legend: { position: "none" },
+            pieSliceText: "none",
+            annotations: {
+                ...this.bossPayerPieOptions.annotations,
+                textStyle: {
+                    fontSize: 20,
                     bold: true,
-                    color: "#f8fafc",
+                    color: annotationText,
                 },
-                titleTextStyle: { color: "#e2e8f0" },
-                colors: pieColors,
-            };
-        } else {
-            this.bossPayerPieOptions = {
-                ...this.bossPayerPieOptions,
-                backgroundColor: "transparent",
-                legend: {
-                    ...this.bossPayerPieOptions.legend,
-                    textStyle: {
-                        ...(this.bossPayerPieOptions.legend?.textStyle || {}),
-                        color: "#334155",
-                        fontSize: 28,
-                        bold: true,
-                    },
-                },
-                pieSliceText: "percentage",
-                annotations: {
-                    ...this.bossPayerPieOptions.annotations,
-                    textStyle: {
-                        fontSize: 20,
-                        bold: true,
-                        color: "#1e293b",
-                    },
-                },
-                pieSliceTextStyle: {
-                    fontSize: 24,
-                    bold: true,
-                    color: "#1e293b",
-                },
-                titleTextStyle: { color: "#1e293b" },
-                colors: pieColors,
-            };
-        }
-        this.bossPayerPieOptions = { ...this.bossPayerPieOptions };
+            },
+            pieSliceTextStyle: {
+                fontSize: 24,
+                bold: true,
+                color: annotationText,
+            },
+            titleTextStyle: { color: text },
+            colors: pieColors,
+        };
+        this.scheduleBossPieConnectorDraw();
     }
 
     /**
@@ -4485,6 +4703,7 @@ export class DepartmentIncomeDashboardComponent
         this.bossFilterLoadingKey = null;
         this.bossFiltersBaseline = null;
         this.stopBossLoadingAnimation();
+        this.teardownBossPieConnectorObserver();
 
         if (restoreResult.restored) {
             this.refreshAfterBossFilterRestore(restoreResult, "main");

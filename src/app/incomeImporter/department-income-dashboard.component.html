@@ -394,7 +394,8 @@
                 <mat-icon>close</mat-icon>
               </button>
             </div>
-            <div class="table-wrap table-wrap--responsive" [class.table-wrap--dept-column-hint]="showTableDepartmentClickHint">
+            <div class="table-wrap table-wrap--responsive" [class.table-wrap--dept-column-hint]="showTableDepartmentClickHint"
+              tabindex="0" role="region" aria-label="טבלת הכנסות מחלקות — גלילה אופקית לעמודות נוספות">
               <div *ngIf="showTableDepartmentClickHint" class="table-dept-column-hint-veil" aria-hidden="true"></div>
               <table mat-table [dataSource]="dataSource" matSort #mainSort="matSort"
                 class="table table--with-dept-hint-veil" dir="rtl">
@@ -448,7 +449,8 @@
           </ng-container>
 
           <ng-container *ngIf="graphPrimaryView === 'payer'">
-            <div class="table-wrap table-wrap--responsive">
+            <div class="table-wrap table-wrap--responsive" tabindex="0" role="region"
+              aria-label="טבלת גורמי משלם — גלילה אופקית לעמודות נוספות">
               <table mat-table [dataSource]="payerDataSource" matSort #payerSort="matSort" class="table" dir="rtl">
 
                 <ng-container matColumnDef="UnifiedPayer">
@@ -1572,9 +1574,21 @@
         </section>
 
         <section class="boss-panel boss-panel--pie" *ngIf="bossViewMode === 'pie' && bossPayerPieData.length">
-          <google-chart type="PieChart" [data]="bossPayerPieData" [columns]="bossPayerPieColumns"
-            [options]="bossPayerPieOptions" dir="rtl">
-          </google-chart>
+          <div class="boss-pie-layout" #bossPieLayout dir="rtl">
+            <div class="boss-pie-chart-wrap">
+              <google-chart type="PieChart" [data]="bossPayerPieData" [columns]="bossPayerPieColumns"
+                [options]="bossPayerPieOptions" dir="rtl" (ready)="onBossPayerPieChartReady()">
+              </google-chart>
+            </div>
+            <ul class="boss-pie-legend" *ngIf="bossPayerPieSliceMeta.length">
+              <li class="boss-pie-legend__item" *ngFor="let slice of bossPayerPieSliceMeta; let i = index">
+                <span class="boss-pie-legend__swatch" [style.background-color]="getBossPayerPieColor(i)"></span>
+                <span class="boss-pie-legend__label">{{ slice.label }}</span>
+                <span class="boss-pie-legend__value">{{ slice.displayText }}</span>
+              </li>
+            </ul>
+            <svg #bossPieConnectors class="boss-pie-connectors" aria-hidden="true"></svg>
+          </div>
         </section>
 
         <section class="boss-panel boss-panel--monthly" *ngIf="bossViewMode === 'monthly'">
