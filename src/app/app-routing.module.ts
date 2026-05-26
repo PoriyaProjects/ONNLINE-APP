@@ -174,10 +174,12 @@ import { InternDepartmentAssignmentDialogComponent } from "./employees-manage-da
 import { MedicalInternsSmsComponent } from "./employees-manage-dash/medical-interns-dashboard/medical-interns-sms/medical-interns-sms.component";
 import { LecturesManageDialogComponent } from "./employees-manage-dash/medical-interns-dashboard/lectures-manage-dialog/lectures-manage-dialog.component";
 import { SurgeriesDashboradComponent } from "./surgeries-dashborad-n/surgeries-dashborad.component";
+import { PermissionsReportComponent } from "./employees-manage-dash/permissions-report/permissions-report.component";
 
 
 
 const routes: Routes = [
+    { path: "permissions-report", component: PermissionsReportComponent },
     { path: "AutomationProcessDashboard", component: AutomationProcessDashboardComponent },
     { path: "IncomeDashboard", component: DepartmentIncomeDashboardComponent },
     { path: "surgeriesDashboard", component: SurgeriesDashboradComponent },

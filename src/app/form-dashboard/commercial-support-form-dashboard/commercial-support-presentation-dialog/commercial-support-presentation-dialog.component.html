@@ -58,8 +58,8 @@
 
                             <!-- חתימה -->
                             <div *ngIf="PresentationRequestDto.get('Requester')?.value != null"
-                                style="display: inline-block; flex-direction: column; width: 25%; max-width: 25%; margin-bottom: 24px;">
-                                <mat-label style="margin-bottom: 8px;">חתימת מנהל המחלקה</mat-label>
+                                style="display: inline-block; flex-direction: column; width: 28%; max-width: 50%; margin-bottom: 24px;">
+                                <mat-label style="margin-bottom: 8px;">חתימת מנהל המחלקה - {{PresentationRequestDto.get('Manager1')?.value}}</mat-label>
                                 <button mat-raised-button class="signBtn" color="warn" (click)="signForm()">
                                     <span
                                         *ngIf="PresentationRequestDto.get('ManagerSign').value == undefined">לחתום</span>
