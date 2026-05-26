@@ -1140,24 +1140,26 @@
             <span class="card-icon" aria-hidden="true">📈</span>
             <div class="boss-card--inline__body">
               <span class="card-year">{{ getLatestYear() }}</span>
-              <span class="card-amount">{{ formatBossMillions(getLatestYearTotal()) }}</span>
+              <span class="card-amount">{{ formatBossMillions(getBossHeroLatestYearTotal()) }}</span>
+              <span class="boss-hero-card-caption">{{ getBossHeroLatestYearCaption() }}</span>
             </div>
           </div>
 
           <div class="arrow-container arrow-container--inline">
-            <div class="arrow-icon" [class.positive]="getTotalDifference() >= 0"
-              [class.negative]="getTotalDifference() < 0">
-              <mat-icon *ngIf="getTotalDifference() >= 0">trending_up</mat-icon>
-              <mat-icon *ngIf="getTotalDifference() < 0">trending_down</mat-icon>
+            <div class="arrow-icon" [class.positive]="getBossHeroTotalDifference() >= 0"
+              [class.negative]="getBossHeroTotalDifference() < 0">
+              <mat-icon *ngIf="getBossHeroTotalDifference() >= 0">trending_up</mat-icon>
+              <mat-icon *ngIf="getBossHeroTotalDifference() < 0">trending_down</mat-icon>
             </div>
             <div class="arrow-text">
-              <div class="difference-amount" [class.positive]="getTotalDifference() >= 0"
-                [class.negative]="getTotalDifference() < 0">
-                {{ formatBossMillions(getTotalDifference()) }}
+              <span class="boss-hero-card-caption boss-hero-card-caption--diff">{{ getBossHeroDiffCaption() }}</span>
+              <div class="difference-amount" [class.positive]="getBossHeroTotalDifference() >= 0"
+                [class.negative]="getBossHeroTotalDifference() < 0">
+                {{ formatBossMillions(getBossHeroTotalDifference()) }}
               </div>
-              <div class="difference-percent" [class.positive]="getTotalDifference() >= 0"
-                [class.negative]="getTotalDifference() < 0">
-                {{ calculateYearlyPercentageChange() }}
+              <div class="difference-percent" [class.positive]="getBossHeroTotalDifference() >= 0"
+                [class.negative]="getBossHeroTotalDifference() < 0">
+                {{ calculateBossHeroPercentageChange() }}
               </div>
             </div>
           </div>
@@ -1166,58 +1168,72 @@
             <span class="card-icon" aria-hidden="true">💰</span>
             <div class="boss-card--inline__body">
               <span class="card-year">{{ getOlderYear() }}</span>
-              <span class="card-amount">{{ formatBossMillions(getOlderYearTotal()) }}</span>
+              <span class="card-amount">{{ formatBossMillions(getBossHeroOlderYearTotal()) }}</span>
+              <span class="boss-hero-card-caption">{{ getBossHeroOlderYearCaption() }}</span>
             </div>
           </div>
         </div>
 
         <div class="boss-executive-summary boss-executive-summary--inline" role="status">
           <div class="boss-summary-badge"
-            [class.boss-summary-badge--positive]="getTotalDifference() >= 0"
-            [class.boss-summary-badge--negative]="getTotalDifference() < 0">
-            <mat-icon aria-hidden="true">{{ getTotalDifference() >= 0 ? 'trending_up' : 'trending_down' }}</mat-icon>
-            <span>{{ calculateYearlyPercentageChange() }}</span>
+            [class.boss-summary-badge--positive]="getBossHeroTotalDifference() >= 0"
+            [class.boss-summary-badge--negative]="getBossHeroTotalDifference() < 0">
+            <mat-icon aria-hidden="true">{{ getBossHeroTotalDifference() >= 0 ? 'trending_up' : 'trending_down' }}</mat-icon>
+            <span>{{ calculateBossHeroPercentageChange() }}</span>
           </div>
           <div class="boss-summary-content">
             <span class="boss-summary-wing">{{ getBossSummaryWingLabel() }}</span>
             <span class="boss-summary-line">
               {{ getBossSummaryTrendWord() }} YTD {{ getLatestYear() }} מול {{ getOlderYear() }}
             </span>
+            <span class="boss-hero-filter-scope">{{ getBossHeroFilterScopeText() }}</span>
           </div>
           <div class="boss-wing-leaders-toggle" dir="rtl">
-            <button type="button" class="boss-wing-leaders-btn boss-wing-leaders-btn--up"
-              [class.active]="bossWingLeaderPanel === 'risers'"
-              (click)="toggleBossWingLeaderPanel('risers')">
-              <mat-icon aria-hidden="true">trending_up</mat-icon>
-              <span>מובילות בעלייה</span>
-            </button>
-            <button type="button" class="boss-wing-leaders-btn boss-wing-leaders-btn--down"
-              [class.active]="bossWingLeaderPanel === 'decliners'"
-              (click)="toggleBossWingLeaderPanel('decliners')">
-              <mat-icon aria-hidden="true">trending_down</mat-icon>
-              <span>מובילות בירידה</span>
+            <button type="button" class="boss-wing-leaders-btn boss-wing-leaders-btn--all"
+              [class.active]="bossWingLeadersOpen"
+              (click)="toggleBossWingLeadersPanel()">
+              <mat-icon aria-hidden="true">leaderboard</mat-icon>
+              <span>מובילות אגפים</span>
             </button>
           </div>
         </div>
       </div>
 
-      <div class="boss-wing-leaders-panel" dir="rtl" *ngIf="bossWingLeaderPanel !== 'none'">
-        <div class="boss-wing-leaders-panel__head">
-          <h4>{{ getBossWingLeaderPanelTitle() }} — YTD {{ getLatestYear() }} מול {{ getOlderYear() }}</h4>
+      <div class="boss-wing-leaders-panel boss-wing-leaders-panel--dual" dir="rtl" *ngIf="bossWingLeadersOpen">
+        <div class="boss-wing-leaders-panel__column boss-wing-leaders-panel__column--up">
+          <div class="boss-wing-leaders-panel__head">
+            <h4>מובילות בעלייה — YTD {{ getLatestYear() }} מול {{ getOlderYear() }}</h4>
+          </div>
+          <ul class="boss-wing-leaders-list" *ngIf="bossWingTopRisers.length; else bossWingRisersEmpty">
+            <li class="boss-wing-leaders-item boss-wing-leaders-item--up"
+              *ngFor="let wing of bossWingTopRisers; let i = index">
+              <span class="boss-wing-leaders-item__rank">{{ i + 1 }}</span>
+              <span class="boss-wing-leaders-item__name">{{ wing.label }}</span>
+              <span class="boss-wing-leaders-item__yoy">{{ formatBossSegmentYoYLabel(wing) }}</span>
+              <span class="boss-wing-leaders-item__diff">{{ formatBossMillions(wing.diff) }}</span>
+            </li>
+          </ul>
+          <ng-template #bossWingRisersEmpty>
+            <p class="boss-wing-leaders-empty">אין אגפים בעלייה בתקופה זו.</p>
+          </ng-template>
         </div>
-        <ul class="boss-wing-leaders-list" *ngIf="getBossWingLeaderList().length; else bossWingLeadersEmpty">
-          <li class="boss-wing-leaders-item" *ngFor="let wing of getBossWingLeaderList(); let i = index"
-            [class.boss-wing-leaders-item--up]="bossWingLeaderPanel === 'risers'"
-            [class.boss-wing-leaders-item--down]="bossWingLeaderPanel === 'decliners'">
-            <span class="boss-wing-leaders-item__rank">{{ i + 1 }}</span>
-            <span class="boss-wing-leaders-item__name">{{ wing.label }}</span>
-            <span class="boss-wing-leaders-item__yoy">{{ formatBossSegmentYoYLabel(wing) }}</span>
-            <span class="boss-wing-leaders-item__diff">{{ formatBossMillions(wing.diff) }}</span>
-          </li>
-        </ul>
-        <ng-template #bossWingLeadersEmpty>
-          <p class="boss-wing-leaders-empty">אין אגפים ב{{ bossWingLeaderPanel === 'risers' ? 'עלייה' : 'ירידה' }} בתקופה זו.</p>
-        </ng-template>
+        <div class="boss-wing-leaders-panel__column boss-wing-leaders-panel__column--down">
+          <div class="boss-wing-leaders-panel__head">
+            <h4>מובילות בירידה — YTD {{ getLatestYear() }} מול {{ getOlderYear() }}</h4>
+          </div>
+          <ul class="boss-wing-leaders-list" *ngIf="bossWingTopDecliners.length; else bossWingDeclinersEmpty">
+            <li class="boss-wing-leaders-item boss-wing-leaders-item--down"
+              *ngFor="let wing of bossWingTopDecliners; let i = index">
+              <span class="boss-wing-leaders-item__rank">{{ i + 1 }}</span>
+              <span class="boss-wing-leaders-item__name">{{ wing.label }}</span>
+              <span class="boss-wing-leaders-item__yoy">{{ formatBossSegmentYoYLabel(wing) }}</span>
+              <span class="boss-wing-leaders-item__diff">{{ formatBossMillions(wing.diff) }}</span>
+            </li>
+          </ul>
+          <ng-template #bossWingDeclinersEmpty>
+            <p class="boss-wing-leaders-empty">אין אגפים בירידה בתקופה זו.</p>
+          </ng-template>
+        </div>
       </div>
     </div>
 
@@ -1427,20 +1443,15 @@
           <div class="boss-panel__head boss-panel__head--wings">
             <div class="boss-panel__head-main">
               <h3>{{ getBossWingsTableTitle() }}</h3>
-              <p class="boss-panel__subtitle" *ngIf="!bossWingsTableDrillWing">לחיצה על שורת אגף תציג את המחלקות שלו</p>
+              <p class="boss-panel__subtitle">לחיצה על שורת אגף תפתח את המחלקות מתחתיו</p>
             </div>
-            <button type="button" mat-stroked-button class="boss-wings-back-btn" *ngIf="bossWingsTableDrillWing"
-              (click)="clearBossWingsDrill()">
-              <mat-icon>arrow_forward</mat-icon>
-              חזרה לאגפים
-            </button>
           </div>
 
           <div class="boss-table-wrap">
             <table class="boss-payer-table boss-wings-table">
               <thead>
                 <tr>
-                  <th scope="col">{{ bossWingsTableDrillWing ? 'מחלקה' : 'אגף' }}</th>
+                  <th scope="col">אגף / מחלקה</th>
                   <th scope="col">{{ getLatestYear() }}</th>
                   <th scope="col">{{ getOlderYear() }}</th>
                   <th scope="col">הפרש</th>
@@ -1449,26 +1460,56 @@
                 </tr>
               </thead>
               <tbody>
-                <tr *ngFor="let row of getBossWingsTablePageRows()"
-                  [class.boss-payer-table__row--clickable]="isBossWingsTableRowClickable()"
-                  (click)="onBossWingsTableRowClick(row)">
-                  <td class="boss-payer-table__name">
-                    <span class="boss-payer-table__name-text">{{ row.label }}</span>
-                    <mat-icon class="boss-wings-table__drill-icon" aria-hidden="true"
-                      *ngIf="isBossWingsTableRowClickable()">chevron_left</mat-icon>
-                  </td>
-                  <td class="boss-payer-table__amount">{{ formatBossMillions(row.currentTotal) }}</td>
-                  <td class="boss-payer-table__amount">{{ formatBossMillions(row.priorTotal) }}</td>
-                  <td class="boss-payer-table__diff" [class.positive]="row.diff > 0" [class.negative]="row.diff < 0">
-                    {{ formatBossMillions(row.diff) }}
-                  </td>
-                  <td class="boss-payer-table__yoy"
-                    [class.positive]="row.percent !== null && row.percent > 0.05"
-                    [class.negative]="row.percent !== null && row.percent < -0.05">
-                    {{ formatBossSegmentYoYLabel(row) }}
-                  </td>
-                  <td class="boss-payer-table__share">{{ formatBossSegmentShare(row) }}</td>
-                </tr>
+                <ng-container *ngFor="let wing of getBossWingsTablePageRows()">
+                  <tr class="boss-wing-row"
+                    [class.boss-payer-table__row--clickable]="isBossWingsTableRowClickable()"
+                    [class.boss-wing-row--expanded]="isBossWingExpanded(wing.label)"
+                    [style.--wing-accent-bg]="getBossWingAccent(wing.label).bg"
+                    [style.--wing-accent-border]="getBossWingAccent(wing.label).border"
+                    [style.--wing-accent-text]="getBossWingAccent(wing.label).text"
+                    (click)="onBossWingsTableRowClick(wing.label)">
+                    <td class="boss-payer-table__name">
+                      <span class="boss-payer-table__name-text">{{ wing.label }}</span>
+                      <mat-icon class="boss-wings-table__expand-icon" aria-hidden="true"
+                        [class.boss-wings-table__expand-icon--open]="isBossWingExpanded(wing.label)"
+                        *ngIf="isBossWingsTableRowClickable()">chevron_left</mat-icon>
+                    </td>
+                    <td class="boss-payer-table__amount">{{ formatBossMillions(wing.currentTotal) }}</td>
+                    <td class="boss-payer-table__amount">{{ formatBossMillions(wing.priorTotal) }}</td>
+                    <td class="boss-payer-table__diff" [class.positive]="wing.diff > 0" [class.negative]="wing.diff < 0">
+                      {{ formatBossMillions(wing.diff) }}
+                    </td>
+                    <td class="boss-payer-table__yoy"
+                      [class.positive]="wing.percent !== null && wing.percent > 0.05"
+                      [class.negative]="wing.percent !== null && wing.percent < -0.05">
+                      {{ formatBossSegmentYoYLabel(wing) }}
+                    </td>
+                    <td class="boss-payer-table__share">{{ formatBossSegmentShare(wing) }}</td>
+                  </tr>
+                  <ng-container *ngIf="isBossWingExpanded(wing.label)">
+                    <tr class="boss-wing-dept-row" @bossWingDeptExpand
+                      *ngFor="let dept of getBossWingDepartmentRows(wing.label)"
+                      [style.--wing-accent-bg]="getBossWingAccent(wing.label).bg"
+                      [style.--wing-accent-border]="getBossWingAccent(wing.label).border"
+                      [style.--wing-accent-text]="getBossWingAccent(wing.label).text">
+                    <td class="boss-payer-table__name boss-wing-dept-row__name">
+                      <span class="boss-wing-dept-row__indent" aria-hidden="true"></span>
+                      <span class="boss-payer-table__name-text">{{ dept.label }}</span>
+                    </td>
+                    <td class="boss-payer-table__amount">{{ formatBossMillions(dept.currentTotal) }}</td>
+                    <td class="boss-payer-table__amount">{{ formatBossMillions(dept.priorTotal) }}</td>
+                    <td class="boss-payer-table__diff" [class.positive]="dept.diff > 0" [class.negative]="dept.diff < 0">
+                      {{ formatBossMillions(dept.diff) }}
+                    </td>
+                    <td class="boss-payer-table__yoy"
+                      [class.positive]="dept.percent !== null && dept.percent > 0.05"
+                      [class.negative]="dept.percent !== null && dept.percent < -0.05">
+                      {{ formatBossSegmentYoYLabel(dept) }}
+                    </td>
+                    <td class="boss-payer-table__share">{{ formatBossDepartmentShare(dept, wing.label) }}</td>
+                    </tr>
+                  </ng-container>
+                </ng-container>
               </tbody>
             </table>
           </div>

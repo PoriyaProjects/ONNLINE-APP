@@ -93,7 +93,6 @@ export interface BossPayerInsightRow {
 }
 
 export type BossViewMode = "table" | "pie" | "monthly" | "wings";
-export type BossWingLeaderPanel = "none" | "risers" | "decliners";
 
 export interface BossSegmentInsightRow {
     label: string;
@@ -222,6 +221,30 @@ interface EmployeeInfo {
                     style({
                         opacity: 0,
                         transform: "translateY(-28px)",
+                    }),
+                ),
+            ]),
+        ]),
+        trigger("bossWingDeptExpand", [
+            transition(":enter", [
+                style({
+                    opacity: 0,
+                    transform: "translateY(-8px)",
+                }),
+                animate(
+                    "260ms cubic-bezier(0.22, 1, 0.36, 1)",
+                    style({
+                        opacity: 1,
+                        transform: "translateY(0)",
+                    }),
+                ),
+            ]),
+            transition(":leave", [
+                animate(
+                    "200ms cubic-bezier(0.4, 0, 1, 1)",
+                    style({
+                        opacity: 0,
+                        transform: "translateY(-6px)",
                     }),
                 ),
             ]),
@@ -399,7 +422,11 @@ export class DepartmentIncomeDashboardComponent
     bossPayerInsights: BossPayerInsightRow[] = [];
     bossPayerOutliers: BossPayerInsightRow[] = [];
     bossPayerPieData: any[][] = [];
-    bossPayerPieColumns: any[] = ["גורם משלם", "הכנסות YTD"];
+    bossPayerPieColumns: any[] = [
+        "גורם משלם",
+        "הכנסות (M ₪)",
+        { type: "string", role: "annotation" },
+    ];
     bossPayerPieOptions: any = {
         pieHole: 0.42,
         legend: {
@@ -407,26 +434,47 @@ export class DepartmentIncomeDashboardComponent
             alignment: "center",
             textStyle: { fontSize: 28, bold: true },
         },
+        pieSliceText: "percentage",
         pieSliceTextStyle: { fontSize: 24, bold: true },
+        annotations: {
+            textStyle: { fontSize: 20, bold: true },
+            stem: { color: "transparent", length: 0 },
+        },
         chartArea: { width: "92%", height: "82%" },
         tooltip: { text: "both", textStyle: { fontSize: 20, bold: true } },
         sliceVisibilityThreshold: 0.015,
         fontName: "Heebo, Arial, sans-serif",
     };
     bossPayerTotalCurrent = 0;
+    bossHeroCurrentTotal = 0;
+    bossHeroPriorTotal = 0;
     bossSelectedWingDeclineDiff = 0;
     bossWorstDeclineWingName = "";
-    bossWingLeaderPanel: BossWingLeaderPanel = "none";
+    bossWingLeadersOpen = false;
     bossWingInsights: BossSegmentInsightRow[] = [];
     bossWingTopRisers: BossSegmentInsightRow[] = [];
     bossWingTopDecliners: BossSegmentInsightRow[] = [];
     bossWingsTableRows: BossSegmentInsightRow[] = [];
-    bossWingsTableDrillWing: string | null = null;
+    bossExpandedWingLabels = new Set<string>();
     bossLoadingDisplayProgress = 0;
     bossTablePage = 0;
     readonly bossTablePageSize = 8;
     private readonly bossExcludedPayerLabels = ["לא קיים"];
-    private readonly bossPayerPieTopSlices = 8;
+    private readonly bossPayerPieMinSharePercent = 1;
+    private readonly bossWingAccentPalette = [
+        { bg: "#eff6ff", border: "#93c5fd", text: "#1d4ed8" },
+        { bg: "#f0fdf4", border: "#86efac", text: "#15803d" },
+        { bg: "#fef3c7", border: "#fcd34d", text: "#b45309" },
+        { bg: "#fce7f3", border: "#f9a8d4", text: "#be185d" },
+        { bg: "#f5f3ff", border: "#c4b5fd", text: "#6d28d9" },
+        { bg: "#ecfeff", border: "#67e8f9", text: "#0e7490" },
+        { bg: "#fff7ed", border: "#fdba74", text: "#c2410c" },
+        { bg: "#f1f5f9", border: "#cbd5e1", text: "#475569" },
+    ];
+    private bossWingDepartmentsByWing = new Map<
+        string,
+        BossSegmentInsightRow[]
+    >();
     private readonly bossPayerOutlierMinPrior = 500_000;
     private readonly bossPayerOutlierPercentThreshold = -8;
     private bossLoadingProgressInterval: ReturnType<typeof setInterval> | null =
@@ -3322,12 +3370,15 @@ export class DepartmentIncomeDashboardComponent
             this.bossPayerPieData = [];
             this.bossSelectedWingDeclineDiff = 0;
             this.bossWorstDeclineWingName = "";
-            this.bossWingLeaderPanel = "none";
+            this.bossWingLeadersOpen = false;
             this.bossWingInsights = [];
             this.bossWingTopRisers = [];
             this.bossWingTopDecliners = [];
             this.bossWingsTableRows = [];
-            this.bossWingsTableDrillWing = null;
+            this.bossExpandedWingLabels.clear();
+            this.bossWingDepartmentsByWing.clear();
+            this.bossHeroCurrentTotal = 0;
+            this.bossHeroPriorTotal = 0;
         }
 
         if (this.canReuseYearlyTotalsCache() && this.yearlyTotalsRaw.length) {
@@ -3499,12 +3550,22 @@ export class DepartmentIncomeDashboardComponent
         const tableRows = this.buildPayerTableRows(aggregated).filter(
             (row) => !this.isBossExcludedPayer(String(row.UnifiedPayer ?? "")),
         );
+
+        let heroCurrent = 0;
+        let heroPrior = 0;
+        for (const row of rows) {
+            heroCurrent += this.getRowFiveYearValue(row, "CurrentYear");
+            heroPrior += this.getRowFiveYearValue(row, "Year1");
+        }
+        this.bossHeroCurrentTotal = heroCurrent;
+        this.bossHeroPriorTotal = heroPrior;
+
         const overallPct = this.parsePercentLabel(
-            this.calculateYearlyPercentageChange(),
+            this.calculateBossHeroPercentageChange(),
         );
 
         let totalCurrent = 0;
-        const hospitalCurrent = this.getLatestYearTotal();
+        const hospitalCurrent = heroCurrent;
         const insights: BossPayerInsightRow[] = tableRows.map((row) => {
             const currentTotal = this.getRowFiveYearValue(row, "CurrentYear");
             const priorTotal = this.getRowFiveYearValue(row, "Year1");
@@ -3649,60 +3710,77 @@ export class DepartmentIncomeDashboardComponent
     }
 
     private refreshBossWingsTableRows(): void {
+        this.bossWingsTableRows = [...this.bossWingInsights];
+        this.rebuildBossWingDepartmentsCache();
+    }
+
+    private rebuildBossWingDepartmentsCache(): void {
+        this.bossWingDepartmentsByWing.clear();
         const rows = this.applyIncomeFiltersToPayerYearlyRows(
             this.getBossAllWingsYearlyRows(),
         );
-        if (!this.bossWingsTableDrillWing) {
-            this.bossWingsTableRows = [...this.bossWingInsights];
-            return;
-        }
-        const wingRows = rows.filter(
-            (row) =>
-                String(row?.UnifiedDiagnosis ?? "").trim() ===
-                this.bossWingsTableDrillWing,
+        const wings = new Set(
+            this.bossWingInsights.map((wing) => wing.label).filter(Boolean),
         );
-        this.bossWingsTableRows = this.buildBossSegmentRowsFromYearly(
-            wingRows,
-            (row) => String(row?.PatientSummary ?? "").trim(),
-        );
+        for (const wing of wings) {
+            const wingRows = rows.filter(
+                (row) =>
+                    String(row?.UnifiedDiagnosis ?? "").trim() === wing,
+            );
+            this.bossWingDepartmentsByWing.set(
+                wing,
+                this.buildBossSegmentRowsFromYearly(
+                    wingRows,
+                    (row) => String(row?.PatientSummary ?? "").trim(),
+                ),
+            );
+        }
     }
 
-    toggleBossWingLeaderPanel(panel: "risers" | "decliners"): void {
-        this.bossWingLeaderPanel =
-            this.bossWingLeaderPanel === panel ? "none" : panel;
+    toggleBossWingLeadersPanel(): void {
+        this.bossWingLeadersOpen = !this.bossWingLeadersOpen;
         this.cdr.detectChanges();
     }
 
-    getBossWingLeaderList(): BossSegmentInsightRow[] {
-        return this.bossWingLeaderPanel === "risers"
-            ? this.bossWingTopRisers
-            : this.bossWingTopDecliners;
-    }
-
-    getBossWingLeaderPanelTitle(): string {
-        return this.bossWingLeaderPanel === "risers"
-            ? "מובילות בעלייה"
-            : "מובילות בירידה";
-    }
-
-    onBossWingsTableRowClick(row: BossSegmentInsightRow): void {
-        if (this.bossViewMode !== "wings" || this.bossWingsTableDrillWing) {
+    toggleBossWingExpand(wingLabel: string): void {
+        if (!wingLabel) {
             return;
         }
-        this.bossWingsTableDrillWing = row.label;
-        this.bossTablePage = 0;
-        this.refreshBossWingsTableRows();
+        if (this.bossExpandedWingLabels.has(wingLabel)) {
+            this.bossExpandedWingLabels.delete(wingLabel);
+        } else {
+            this.bossExpandedWingLabels.add(wingLabel);
+        }
         this.cdr.detectChanges();
     }
 
-    clearBossWingsDrill(): void {
-        if (!this.bossWingsTableDrillWing) {
+    isBossWingExpanded(wingLabel: string): boolean {
+        return this.bossExpandedWingLabels.has(wingLabel);
+    }
+
+    getBossWingDepartmentRows(wingLabel: string): BossSegmentInsightRow[] {
+        return this.bossWingDepartmentsByWing.get(wingLabel) ?? [];
+    }
+
+    getBossWingAccent(wingLabel: string): {
+        bg: string;
+        border: string;
+        text: string;
+    } {
+        let hash = 0;
+        for (let i = 0; i < wingLabel.length; i++) {
+            hash = wingLabel.charCodeAt(i) + ((hash << 5) - hash);
+        }
+        return this.bossWingAccentPalette[
+            Math.abs(hash) % this.bossWingAccentPalette.length
+        ];
+    }
+
+    onBossWingsTableRowClick(wingLabel: string): void {
+        if (this.bossViewMode !== "wings") {
             return;
         }
-        this.bossWingsTableDrillWing = null;
-        this.bossTablePage = 0;
-        this.refreshBossWingsTableRows();
-        this.cdr.detectChanges();
+        this.toggleBossWingExpand(wingLabel);
     }
 
     formatBossSegmentYoYLabel(row: BossSegmentInsightRow): string {
@@ -3719,28 +3797,26 @@ export class DepartmentIncomeDashboardComponent
     }
 
     formatBossSegmentShare(row: BossSegmentInsightRow): string {
-        const scope = this.bossWingsTableDrillWing ? "מחלקות" : "אגפים";
-        return `${row.sharePercent.toFixed(1)}% מסך ${scope} · YTD ${this.getLatestYear()}`;
+        return `${row.sharePercent.toFixed(1)}% מסך אגפים · YTD ${this.getLatestYear()}`;
+    }
+
+    formatBossDepartmentShare(
+        row: BossSegmentInsightRow,
+        wingLabel: string,
+    ): string {
+        return `${row.sharePercent.toFixed(1)}% מסך מחלקות ב«${wingLabel}» · YTD ${this.getLatestYear()}`;
     }
 
     getBossSegmentShareColumnHint(): string {
-        if (this.bossWingsTableDrillWing) {
-            return `נתח המחלקה מסך סה״כ ההכנסות של כל המחלקות באגף «${this.bossWingsTableDrillWing}» — YTD ${this.getLatestYear()}`;
-        }
         return `נתח האגף מסך סה״כ ההכנסות של כל האגפים בטבלה — YTD ${this.getLatestYear()}`;
     }
 
     getBossWingsTableTitle(): string {
-        if (this.bossWingsTableDrillWing) {
-            return `מחלקות — ${this.bossWingsTableDrillWing} · YTD ${this.getLatestYear()} מול ${this.getOlderYear()}`;
-        }
         return `אגפים — YTD ${this.getLatestYear()} מול ${this.getOlderYear()}`;
     }
 
     isBossWingsTableRowClickable(): boolean {
-        return (
-            this.bossViewMode === "wings" && !this.bossWingsTableDrillWing
-        );
+        return this.bossViewMode === "wings";
     }
 
     private refreshBossWingDeclineStats(): void {
@@ -3771,7 +3847,7 @@ export class DepartmentIncomeDashboardComponent
             (item) => item.wing === selectedWing,
         );
         this.bossSelectedWingDeclineDiff =
-            selectedStat?.diff ?? this.getTotalDifference();
+            selectedStat?.diff ?? this.getBossHeroTotalDifference();
     }
 
     private isBossPayerOutlier(
@@ -3802,8 +3878,8 @@ export class DepartmentIncomeDashboardComponent
         const latest = this.getLatestYear();
         const older = this.getOlderYear();
         const wing = this.selectedDiagnosis || "כל האגף";
-        const diff = this.getTotalDifference();
-        const pctLabel = this.calculateYearlyPercentageChange();
+        const diff = this.getBossHeroTotalDifference();
+        const pctLabel = this.calculateBossHeroPercentageChange();
         const trendWord = diff >= 0 ? "עליה" : "ירידה";
 
         let summary = `${wing}: ${trendWord} כללית של ${pctLabel} בהשוואת YTD ${latest} מול ${older}.`;
@@ -3829,18 +3905,44 @@ export class DepartmentIncomeDashboardComponent
             return;
         }
 
-        const top = insights.slice(0, this.bossPayerPieTopSlices);
-        const topSum = top.reduce((sum, row) => sum + row.currentTotal, 0);
-        const other = totalCurrent - topSum;
-        const pieRows: any[][] = top.map((row) => [
-            row.payer,
-            parseFloat((row.currentTotal / 1_000_000).toFixed(1)),
-        ]);
-        if (other > 0) {
-            pieRows.push(["אחר", parseFloat((other / 1_000_000).toFixed(1))]);
+        let otherSum = 0;
+        const mainSlices: Array<{
+            label: string;
+            value: number;
+            sharePct: number;
+        }> = [];
+
+        for (const row of insights) {
+            const sharePct = (row.currentTotal / totalCurrent) * 100;
+            if (sharePct < this.bossPayerPieMinSharePercent) {
+                otherSum += row.currentTotal;
+                continue;
+            }
+            mainSlices.push({
+                label: row.payer,
+                value: row.currentTotal,
+                sharePct,
+            });
         }
-        this.bossPayerPieData = pieRows;
-        this.bossPayerPieColumns = ["גורם משלם", "הכנסות (M ₪)"];
+
+        if (otherSum > 0) {
+            mainSlices.push({
+                label: "אחר",
+                value: otherSum,
+                sharePct: (otherSum / totalCurrent) * 100,
+            });
+        }
+
+        this.bossPayerPieData = mainSlices.map((slice) => [
+            slice.label,
+            parseFloat((slice.value / 1_000_000).toFixed(1)),
+            this.formatBossMillions(slice.value),
+        ]);
+        this.bossPayerPieColumns = [
+            "גורם משלם",
+            "הכנסות (M ₪)",
+            { type: "string", role: "annotation" },
+        ];
     }
 
     private parsePercentLabel(label: string): number {
@@ -3945,7 +4047,7 @@ export class DepartmentIncomeDashboardComponent
     }
 
     getBossSummaryTrendWord(): string {
-        return this.getTotalDifference() >= 0 ? "עליה" : "ירידה";
+        return this.getBossHeroTotalDifference() >= 0 ? "עליה" : "ירידה";
     }
 
     getBossOutliersSummaryText(): string {
@@ -3964,7 +4066,7 @@ export class DepartmentIncomeDashboardComponent
             this.bossTablePage = 0;
         }
         if (mode === "wings") {
-            this.bossWingsTableDrillWing = null;
+            this.bossExpandedWingLabels.clear();
             if (!this.bossWingInsights.length) {
                 this.refreshBossWingInsights();
             } else {
@@ -4035,7 +4137,7 @@ export class DepartmentIncomeDashboardComponent
 
     private refreshBossViewsFromFilters(): void {
         this.bossTablePage = 0;
-        this.bossWingsTableDrillWing = null;
+        this.bossExpandedWingLabels.clear();
         this.refreshBossPayerInsights();
         if (this.bossViewMode === "monthly") {
             this.updateBossMonthlyChartData();
@@ -4066,9 +4168,7 @@ export class DepartmentIncomeDashboardComponent
             this.bossViewMode === "table"
                 ? "טבלת גורמי משלם"
                 : this.bossViewMode === "wings"
-                  ? this.bossWingsTableDrillWing
-                      ? `אגפים — מחלקות «${this.bossWingsTableDrillWing}»`
-                      : "טבלת אגפים — לחיצה על אגף מציגה מחלקות"
+                  ? "טבלת אגפים — לחיצה על אגף מציגה מחלקות מתחתיו"
                   : this.bossViewMode === "pie"
                     ? "גרף פאי — נתח לפי גורם משלם"
                     : "גרף חודשי — מגמת הכנסות";
@@ -4323,6 +4423,15 @@ export class DepartmentIncomeDashboardComponent
                         bold: true,
                     },
                 },
+                pieSliceText: "percentage",
+                annotations: {
+                    ...this.bossPayerPieOptions.annotations,
+                    textStyle: {
+                        fontSize: 20,
+                        bold: true,
+                        color: "#f8fafc",
+                    },
+                },
                 pieSliceTextStyle: {
                     fontSize: 24,
                     bold: true,
@@ -4342,6 +4451,15 @@ export class DepartmentIncomeDashboardComponent
                         color: "#334155",
                         fontSize: 28,
                         bold: true,
+                    },
+                },
+                pieSliceText: "percentage",
+                annotations: {
+                    ...this.bossPayerPieOptions.annotations,
+                    textStyle: {
+                        fontSize: 20,
+                        bold: true,
+                        color: "#1e293b",
                     },
                 },
                 pieSliceTextStyle: {
@@ -5649,6 +5767,52 @@ export class DepartmentIncomeDashboardComponent
 
     getTotalDifference(): number {
         return this.getLatestYearTotal() - this.getOlderYearTotal();
+    }
+
+    getBossHeroLatestYearTotal(): number {
+        if (this.payerYearlyRawRows?.length) {
+            return this.bossHeroCurrentTotal;
+        }
+        return this.getLatestYearTotal();
+    }
+
+    getBossHeroOlderYearTotal(): number {
+        if (this.payerYearlyRawRows?.length) {
+            return this.bossHeroPriorTotal;
+        }
+        return this.getOlderYearTotal();
+    }
+
+    getBossHeroTotalDifference(): number {
+        return (
+            this.getBossHeroLatestYearTotal() - this.getBossHeroOlderYearTotal()
+        );
+    }
+
+    calculateBossHeroPercentageChange(): string {
+        const olderYear = this.getBossHeroOlderYearTotal();
+        const latestYear = this.getBossHeroLatestYearTotal();
+        if (olderYear === 0) {
+            return latestYear === 0 ? "0%" : "∞%";
+        }
+        const percentage = ((latestYear - olderYear) / olderYear) * 100;
+        return percentage.toFixed(2) + "%";
+    }
+
+    getBossHeroFilterScopeText(): string {
+        return `סה״כ YTD לפי סינון: ${this.getWingDisplayLabel()} · ${this.getOrganizationDisplay()} · ${this.getUnifiedCategoryDisplay()} · ${this.getIncomeMonthDisplay()}`;
+    }
+
+    getBossHeroLatestYearCaption(): string {
+        return `סה״כ YTD ${this.getLatestYear()} לפי הסינון`;
+    }
+
+    getBossHeroOlderYearCaption(): string {
+        return `סה״כ YTD ${this.getOlderYear()} — שנה קודמת`;
+    }
+
+    getBossHeroDiffCaption(): string {
+        return `הפרש YTD · ${this.getLatestYear()} פחות ${this.getOlderYear()}`;
     }
 
     /**

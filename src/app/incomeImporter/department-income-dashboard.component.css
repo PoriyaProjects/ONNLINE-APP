@@ -5532,6 +5532,36 @@ table.table {
     gap: 0;
 }
 
+.boss-hero-card-caption {
+    display: block;
+    font-size: 10px;
+    line-height: 1.2;
+    font-weight: 600;
+    color: #64748b;
+    margin-top: 2px;
+}
+
+.boss-hero-card-caption--diff {
+    margin-bottom: 2px;
+}
+
+.boss-hero-filter-scope {
+    display: block;
+    font-size: 11px;
+    line-height: 1.25;
+    color: #475569;
+    margin-top: 4px;
+    font-weight: 600;
+}
+
+.dash.dark .boss-hero-card-caption {
+    color: #94a3b8;
+}
+
+.dash.dark .boss-hero-filter-scope {
+    color: #cbd5e1;
+}
+
 .arrow-container--inline {
     gap: 8px;
     padding: 6px 10px;
@@ -5698,6 +5728,64 @@ table.table {
     border-color: #b91c1c;
 }
 
+.boss-wing-leaders-btn--all {
+    border-color: rgba(37, 99, 235, 0.35);
+    color: #1d4ed8;
+    background: rgba(37, 99, 235, 0.06);
+}
+
+.boss-wing-leaders-btn.active.boss-wing-leaders-btn--all {
+    background: linear-gradient(135deg, rgba(37, 99, 235, 0.18), rgba(14, 165, 233, 0.12));
+    border-color: rgba(37, 99, 235, 0.55);
+    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.15);
+}
+
+.boss-wing-leaders-panel--dual {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    padding: 0;
+    border: none;
+    background: transparent;
+}
+
+.boss-wing-leaders-panel__column {
+    min-width: 0;
+    border-radius: 12px;
+    border: 1px solid rgba(148, 163, 184, 0.25);
+    background: rgba(255, 255, 255, 0.55);
+    padding: 10px 12px 12px;
+}
+
+.boss-wing-leaders-panel__column--up {
+    border-color: rgba(34, 197, 94, 0.28);
+    background: linear-gradient(180deg, rgba(34, 197, 94, 0.08), rgba(255, 255, 255, 0.55));
+}
+
+.boss-wing-leaders-panel__column--down {
+    border-color: rgba(239, 68, 68, 0.28);
+    background: linear-gradient(180deg, rgba(239, 68, 68, 0.08), rgba(255, 255, 255, 0.55));
+}
+
+.dash.dark .boss-wing-leaders-panel__column {
+    background: rgba(15, 23, 42, 0.55);
+    border-color: rgba(148, 163, 184, 0.2);
+}
+
+.dash.dark .boss-wing-leaders-panel__column--up {
+    background: linear-gradient(180deg, rgba(34, 197, 94, 0.12), rgba(15, 23, 42, 0.55));
+}
+
+.dash.dark .boss-wing-leaders-panel__column--down {
+    background: linear-gradient(180deg, rgba(239, 68, 68, 0.12), rgba(15, 23, 42, 0.55));
+}
+
+@media (max-width: 900px) {
+    .boss-wing-leaders-panel--dual {
+        grid-template-columns: 1fr;
+    }
+}
+
 .boss-wing-leaders-panel {
     margin-top: 8px;
     padding: 10px 12px;
@@ -5817,6 +5905,61 @@ table.table {
 
 .boss-payer-table__row--clickable:hover {
     background: rgba(37, 99, 235, 0.06);
+}
+
+.boss-wings-table__expand-icon {
+    font-size: 18px !important;
+    width: 18px !important;
+    height: 18px !important;
+    color: var(--wing-accent-text, #2563eb);
+    opacity: 0.9;
+    transform: rotate(0deg);
+    transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.boss-wings-table__expand-icon--open {
+    transform: rotate(90deg);
+}
+
+.boss-wing-row {
+    transition: background 0.22s ease;
+}
+
+.boss-wing-row--expanded {
+    background: var(--wing-accent-bg, rgba(37, 99, 235, 0.06));
+}
+
+.boss-wing-row--expanded .boss-payer-table__name {
+    border-inline-start: 3px solid var(--wing-accent-border, #93c5fd);
+}
+
+.boss-wing-dept-row {
+    background: var(--wing-accent-bg, rgba(37, 99, 235, 0.04));
+    overflow: hidden;
+}
+
+.boss-wing-dept-row__name {
+    border-inline-start: 3px solid var(--wing-accent-border, #93c5fd);
+}
+
+.boss-wing-dept-row__indent {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    margin-inline-end: 6px;
+    border-inline-start: 2px solid var(--wing-accent-border, #93c5fd);
+    border-bottom: 2px solid var(--wing-accent-border, #93c5fd);
+    vertical-align: middle;
+    opacity: 0.75;
+}
+
+.boss-wing-dept-row .boss-payer-table__name-text {
+    color: var(--wing-accent-text, #1e293b);
+    font-weight: 600;
+}
+
+.dash.dark .boss-wing-dept-row .boss-payer-table__name-text {
+    color: var(--wing-accent-text, #e2e8f0);
 }
 
 .boss-wings-table__drill-icon {
