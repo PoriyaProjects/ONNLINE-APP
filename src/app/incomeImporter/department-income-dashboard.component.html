@@ -25,19 +25,21 @@
 
       <!-- Diagnosis Selector – עיצוב ייחודי -->
       <div class="wing-and-theme-row" dir="rtl">
-        <div class="custom-dropdown" [class.active]="isDropdownOpen">
+        <div class="custom-dropdown wing-selector-dropdown" [class.active]="isDropdownOpen"
+          [class.wing-selector-dropdown--specific]="isSpecificWingSelected()">
 
-          <div class="dropdown-trigger" (click)="toggleDropdown()">
-            <mat-icon class="dropdown-icon">apartment</mat-icon>
-            <span class="selected-text">
-              {{ selectedDiagnosis || 'בחר אגף' }}
+          <div class="dropdown-trigger wing-selector-dropdown__trigger" (click)="toggleDropdown()">
+            <mat-icon class="dropdown-icon wing-selector-dropdown__icon">apartment</mat-icon>
+            <span class="selected-text wing-selector-dropdown__text">
+              <span class="wing-selector-dropdown__label">אגף</span>
+              <span class="wing-selector-dropdown__value">{{ getWingDisplayLabel() }}</span>
             </span>
             <mat-icon class="arrow-icon">{{ isDropdownOpen ? 'expand_less' : 'expand_more' }}</mat-icon>
           </div>
 
-          <div class="dropdown-panel" *ngIf="isDropdownOpen">
-            <div class="loading-state dropdown-loading-state" *ngIf="isDiagnosesLoading" role="status"
-              aria-live="polite">
+          <div class="dropdown-panel wing-selector-dropdown__panel" dir="rtl" *ngIf="isDropdownOpen">
+            <div class="loading-state dropdown-loading-state wing-selector-dropdown__loading" *ngIf="isDiagnosesLoading"
+              role="status" aria-live="polite">
               <div class="loading-ring compact-loading-ring"
                 [style.background]="getLoadingRingBackground(getDiagnosesLoadingProgress())">
                 <div class="loading-ring-inner compact-loading-ring-inner">
@@ -47,10 +49,17 @@
               <span>טוען אגפים...</span>
             </div>
 
-            <div class="options-list" *ngIf="!isDiagnosesLoading">
-              <div class="option-item" *ngFor="let diagnosis of diagnosesList" (click)="selectOption(diagnosis)"
-                [class.selected]="diagnosis === selectedDiagnosis">
-                {{ diagnosis }}
+            <div class="options-list wing-selector-dropdown__options" dir="rtl" *ngIf="!isDiagnosesLoading">
+              <div class="option-item wing-selector-dropdown__option" *ngFor="let diagnosis of diagnosesList"
+                (click)="selectOption(diagnosis)"
+                [class.selected]="diagnosis === selectedDiagnosis"
+                [class.wing-selector-dropdown__option--all]="diagnosis === diagnosisAllValue">
+                <mat-icon class="wing-selector-dropdown__option-icon" aria-hidden="true">
+                  {{ diagnosis === diagnosisAllValue ? 'dashboard' : 'apartment' }}
+                </mat-icon>
+                <span class="wing-selector-dropdown__option-label">{{ diagnosis }}</span>
+                <mat-icon class="wing-selector-dropdown__option-check" aria-hidden="true"
+                  *ngIf="diagnosis === selectedDiagnosis">check_circle</mat-icon>
               </div>
             </div>
           </div>
@@ -193,7 +202,7 @@
 
         <div class="graph-body" #graphBody [class.graph-body--breakdown]="isBreakdownChartViewActive">
           <div
-            *ngIf="isChartLoading || isMainDataLoading || (graphPrimaryView === 'payer' && isPayerYearlyLoading) || (isDepartmentMonthlyChartActive && isPayerYearlyLoading) || (isBreakdownChartViewActive && isBreakdownChartsLoading)"
+            *ngIf="isChartLoading || isMainDataLoading || (graphPrimaryView === 'payer' && isPayerYearlyLoading) || (isDepartmentMonthlyChartActive && isPayerYearlyLoading) || (isWingComparisonChartActive && isPayerYearlyLoading) || (isBreakdownChartViewActive && isBreakdownChartsLoading)"
             class="data-loading-overlay" role="status" aria-live="polite">
             <div class="loading-ring local-loading-ring"
               [style.background]="getLoadingRingBackground(getChartLoadingProgress())">
@@ -219,7 +228,7 @@
           </div>
           <google-chart [type]="chartType" [data]="chartData" [columns]="chartColumns" [options]="chartOptions"
             [width]="graphChartPixelWidth" [height]="graphChartPixelHeight" (select)="onChartClick($event)"
-            *ngIf="!isChartLoading && !isMainDataLoading && !(graphPrimaryView === 'payer' && isPayerYearlyLoading) && !(isDepartmentMonthlyChartActive && isPayerYearlyLoading) && !isBreakdownChartViewActive && chartData && chartData.length > 0">
+            *ngIf="!isChartLoading && !isMainDataLoading && !(graphPrimaryView === 'payer' && isPayerYearlyLoading) && !(isDepartmentMonthlyChartActive && isPayerYearlyLoading) && !(isWingComparisonChartActive && isPayerYearlyLoading) && !isBreakdownChartViewActive && chartData && chartData.length > 0">
           </google-chart>
           <div class="dimensional-chart-wrap"
             *ngIf="isBreakdownChartViewActive && !isBreakdownChartsLoading && hasRenderableDimensionalChart()">
@@ -229,9 +238,9 @@
             </google-chart>
           </div>
           <div
-            *ngIf="!isChartLoading && !isMainDataLoading && !(graphPrimaryView === 'payer' && isPayerYearlyLoading) && !(isDepartmentMonthlyChartActive && isPayerYearlyLoading) && !isBreakdownChartViewActive && (!chartData || chartData.length === 0)"
+            *ngIf="!isChartLoading && !isMainDataLoading && !(graphPrimaryView === 'payer' && isPayerYearlyLoading) && !(isDepartmentMonthlyChartActive && isPayerYearlyLoading) && !(isWingComparisonChartActive && isPayerYearlyLoading) && !isBreakdownChartViewActive && (!chartData || chartData.length === 0)"
             class="chart-no-data">
-            {{ graphPrimaryView === 'payer' ? 'אין נתוני גורם משלם להצגה' : (isDepartmentMonthlyChartActive ? 'אין נתונים חודשיים להצגה — בחר מחלקה' : 'אין נתונים להצגה בגרף') }}
+            {{ graphPrimaryView === 'payer' ? 'אין נתוני גורם משלם להצגה' : (isDepartmentMonthlyChartActive ? 'אין נתונים חודשיים להצגה — בחר מחלקה' : (isWingComparisonChartActive ? 'אין נתוני אגפים להצגה' : 'אין נתונים להצגה בגרף')) }}
           </div>
           <div *ngIf="isBreakdownChartViewActive && !isBreakdownChartsLoading && !hasRenderableDimensionalChart()"
             class="chart-no-data">
@@ -244,16 +253,17 @@
           <mat-button-toggle-group class="graph-dimension-toggle-group" appearance="standard"
             [value]="graphToolbarDimensionMode" (change)="onGraphToolbarToggleChange($event.value)"
             aria-label="מצבי תצוגת גרף" role="toolbar">
+            
+            <mat-button-toggle value="total" matTooltip="השוואת סה״כ הכנסות בין שנים. לחיצה על עמודה פותחת פירוט מחלקה."
+              matTooltipPosition="above">
+              <mat-icon>leaderboard</mat-icon>
+              <span class="graph-dimension-toggle-label">סה״כ הכנסות לאגף לפי מחלקה</span>
+            </mat-button-toggle>
             <mat-button-toggle value="departmentMonthly"
               matTooltip="הכנסות חודשיות למחלקה נבחרת — 5 שנים לפי שדה Month מ-GetDepartmentIncomeYearly"
               matTooltipPosition="above">
               <mat-icon>calendar_month</mat-icon>
               <span class="graph-dimension-toggle-label">סה״כ הכנסה למחלקה לפי חודש</span>
-            </mat-button-toggle>
-            <mat-button-toggle value="total" matTooltip="השוואת סה״כ הכנסות בין שנים. לחיצה על עמודה פותחת פירוט מחלקה."
-              matTooltipPosition="above">
-              <mat-icon>leaderboard</mat-icon>
-              <span class="graph-dimension-toggle-label">סה״כ הכנסות למחלקה</span>
             </mat-button-toggle>
             <mat-button-toggle value="unifiedCategory"
               matTooltip="עמודות לפי «סוג פעילות» במסנן. מעבר חלק — אותו מטמון נתונים."
@@ -273,7 +283,8 @@
 
     <!-- ===== TABLE SECTION (1/3) ===== -->
     <div class="table-section">
-      <div class="panel panel-table" [class.panel-table--payer]="graphPrimaryView === 'payer'">
+      <div class="panel panel-table" [class.panel-table--payer]="graphPrimaryView === 'payer'"
+        [class.panel-graph--filtered]="graphPrimaryView === 'income' && hasActiveIncomeFilters()">
         <div class="panel-title panel-title--with-search" dir="rtl">
           <div class="panel-title__lead">
             <mat-icon>table_chart</mat-icon>
@@ -303,6 +314,12 @@
               <mat-icon>close</mat-icon>
             </button>
           </label>
+        </div>
+
+        <div *ngIf="graphPrimaryView === 'income' && hasActiveIncomeFilters()"
+          class="active-income-filter-banner active-income-filter-banner--panel" role="status">
+          <mat-icon aria-hidden="true">info</mat-icon>
+          <span>{{ activeIncomeFilterNotice }} — {{ getIncomeFiltersSummary() }}</span>
         </div>
 
         <div class="payer-type-toolbar" *ngIf="graphPrimaryView === 'payer'" dir="rtl">
@@ -377,7 +394,7 @@
                 <mat-icon>close</mat-icon>
               </button>
             </div>
-            <div class="table-wrap" [class.table-wrap--dept-column-hint]="showTableDepartmentClickHint">
+            <div class="table-wrap table-wrap--responsive" [class.table-wrap--dept-column-hint]="showTableDepartmentClickHint">
               <div *ngIf="showTableDepartmentClickHint" class="table-dept-column-hint-veil" aria-hidden="true"></div>
               <table mat-table [dataSource]="dataSource" matSort #mainSort="matSort"
                 class="table table--with-dept-hint-veil" dir="rtl">
@@ -400,7 +417,7 @@
                   <th mat-header-cell *matHeaderCellDef [mat-sort-header]="yCol.id">{{ yCol.label }}</th>
                   <td mat-cell *matCellDef="let r" [class.income-2025-cell]="yCol.field === 'CurrentYear'">
                     <div class="five-year-income-cell">
-                      <div class="five-year-income-amount">{{ formatNumber(getRowFiveYearValue(r, yCol.field)) }} ₪</div>
+                      <div class="five-year-income-amount">{{ formatBossMillions(getRowFiveYearValue(r, yCol.field)) }}</div>
                       <span *ngIf="getFiveYearYoYPercentLabel(r, yCol.field) as yoyPct"
                             class="five-year-yoy-pct"
                             [class.positive-change]="getFiveYearYoYIsPositive(r, yCol.field) === true"
@@ -414,7 +431,7 @@
                   <td mat-cell *matCellDef="let r" [class.positive-change]="getLatestPriorYearDiff(r) >= 0"
                     [class.negative-change]="getLatestPriorYearDiff(r) < 0">
                     <div class="five-year-diff-cell">
-                      <div class="five-year-diff-amount">{{ formatNumber(getLatestPriorYearDiff(r)) }} ₪</div>
+                      <div class="five-year-diff-amount">{{ formatBossMillions(getLatestPriorYearDiff(r)) }}</div>
                       <span class="five-year-diff-pct percentage-badge">{{ getLatestPriorYearPercentLabel(r) }}</span>
                     </div>
                   </td>
@@ -431,7 +448,7 @@
           </ng-container>
 
           <ng-container *ngIf="graphPrimaryView === 'payer'">
-            <div class="table-wrap">
+            <div class="table-wrap table-wrap--responsive">
               <table mat-table [dataSource]="payerDataSource" matSort #payerSort="matSort" class="table" dir="rtl">
 
                 <ng-container matColumnDef="UnifiedPayer">
@@ -445,7 +462,7 @@
                   <th mat-header-cell *matHeaderCellDef [mat-sort-header]="yCol.id">{{ yCol.label }}</th>
                   <td mat-cell *matCellDef="let r" [class.income-2025-cell]="yCol.field === 'CurrentYear'">
                     <div class="five-year-income-cell">
-                      <div class="five-year-income-amount">{{ formatNumber(getRowFiveYearValue(r, yCol.field)) }} ₪</div>
+                      <div class="five-year-income-amount">{{ formatBossMillions(getRowFiveYearValue(r, yCol.field)) }}</div>
                       <span *ngIf="getFiveYearYoYPercentLabel(r, yCol.field) as yoyPct"
                             class="five-year-yoy-pct"
                             [class.positive-change]="getFiveYearYoYIsPositive(r, yCol.field) === true"
@@ -459,7 +476,7 @@
                   <td mat-cell *matCellDef="let r" [class.positive-change]="getPayerYtyDiff(r) >= 0"
                     [class.negative-change]="getPayerYtyDiff(r) < 0">
                     <div class="five-year-diff-cell">
-                      <div class="five-year-diff-amount">{{ formatNumber(getPayerYtyDiff(r)) }} ₪</div>
+                      <div class="five-year-diff-amount">{{ formatBossMillions(getPayerYtyDiff(r)) }}</div>
                       <span class="five-year-diff-pct percentage-badge">{{ getPayerYtyPercentLabel(r) }}</span>
                     </div>
                   </td>
@@ -1123,7 +1140,7 @@
             <span class="card-icon" aria-hidden="true">📈</span>
             <div class="boss-card--inline__body">
               <span class="card-year">{{ getLatestYear() }}</span>
-              <span class="card-amount">{{ formatNumber(getLatestYearTotal()) }} ₪</span>
+              <span class="card-amount">{{ formatBossMillions(getLatestYearTotal()) }}</span>
             </div>
           </div>
 
@@ -1136,7 +1153,7 @@
             <div class="arrow-text">
               <div class="difference-amount" [class.positive]="getTotalDifference() >= 0"
                 [class.negative]="getTotalDifference() < 0">
-                {{ formatNumber(getTotalDifference()) }} ₪
+                {{ formatBossMillions(getTotalDifference()) }}
               </div>
               <div class="difference-percent" [class.positive]="getTotalDifference() >= 0"
                 [class.negative]="getTotalDifference() < 0">
@@ -1149,7 +1166,7 @@
             <span class="card-icon" aria-hidden="true">💰</span>
             <div class="boss-card--inline__body">
               <span class="card-year">{{ getOlderYear() }}</span>
-              <span class="card-amount">{{ formatNumber(getOlderYearTotal()) }} ₪</span>
+              <span class="card-amount">{{ formatBossMillions(getOlderYearTotal()) }}</span>
             </div>
           </div>
         </div>
@@ -1167,7 +1184,40 @@
               {{ getBossSummaryTrendWord() }} YTD {{ getLatestYear() }} מול {{ getOlderYear() }}
             </span>
           </div>
+          <div class="boss-wing-leaders-toggle" dir="rtl">
+            <button type="button" class="boss-wing-leaders-btn boss-wing-leaders-btn--up"
+              [class.active]="bossWingLeaderPanel === 'risers'"
+              (click)="toggleBossWingLeaderPanel('risers')">
+              <mat-icon aria-hidden="true">trending_up</mat-icon>
+              <span>מובילות בעלייה</span>
+            </button>
+            <button type="button" class="boss-wing-leaders-btn boss-wing-leaders-btn--down"
+              [class.active]="bossWingLeaderPanel === 'decliners'"
+              (click)="toggleBossWingLeaderPanel('decliners')">
+              <mat-icon aria-hidden="true">trending_down</mat-icon>
+              <span>מובילות בירידה</span>
+            </button>
+          </div>
         </div>
+      </div>
+
+      <div class="boss-wing-leaders-panel" dir="rtl" *ngIf="bossWingLeaderPanel !== 'none'">
+        <div class="boss-wing-leaders-panel__head">
+          <h4>{{ getBossWingLeaderPanelTitle() }} — YTD {{ getLatestYear() }} מול {{ getOlderYear() }}</h4>
+        </div>
+        <ul class="boss-wing-leaders-list" *ngIf="getBossWingLeaderList().length; else bossWingLeadersEmpty">
+          <li class="boss-wing-leaders-item" *ngFor="let wing of getBossWingLeaderList(); let i = index"
+            [class.boss-wing-leaders-item--up]="bossWingLeaderPanel === 'risers'"
+            [class.boss-wing-leaders-item--down]="bossWingLeaderPanel === 'decliners'">
+            <span class="boss-wing-leaders-item__rank">{{ i + 1 }}</span>
+            <span class="boss-wing-leaders-item__name">{{ wing.label }}</span>
+            <span class="boss-wing-leaders-item__yoy">{{ formatBossSegmentYoYLabel(wing) }}</span>
+            <span class="boss-wing-leaders-item__diff">{{ formatBossMillions(wing.diff) }}</span>
+          </li>
+        </ul>
+        <ng-template #bossWingLeadersEmpty>
+          <p class="boss-wing-leaders-empty">אין אגפים ב{{ bossWingLeaderPanel === 'risers' ? 'עלייה' : 'ירידה' }} בתקופה זו.</p>
+        </ng-template>
       </div>
     </div>
 
@@ -1206,6 +1256,16 @@
                 <span class="boss-view-btn__text">
                   <span class="boss-view-btn__label">פאי</span>
                   <span class="boss-view-btn__hint">נתח לפי גורם משלם</span>
+                </span>
+              </button>
+              <button type="button" class="boss-view-btn" role="tab"
+                [class.active]="bossViewMode === 'wings'"
+                (click)="setBossViewMode('wings')"
+                title="טבלת אגפים — לחיצה על אגף מציגה את מחלקותיו">
+                <mat-icon>apartment</mat-icon>
+                <span class="boss-view-btn__text">
+                  <span class="boss-view-btn__label">אגפים</span>
+                  <span class="boss-view-btn__hint">YTD לפי אגף / מחלקה</span>
                 </span>
               </button>
               </div>
@@ -1344,7 +1404,7 @@
           <p class="boss-toolbar-context" aria-live="polite">{{ getBossToolbarContextText() }}</p>
         </div>
         <div class="boss-view-toolbar__actions">
-          <div class="boss-table-pager" *ngIf="bossViewMode === 'table' && getBossTablePageCount() > 1">
+          <div class="boss-table-pager" *ngIf="(bossViewMode === 'table' || bossViewMode === 'wings') && getBossTablePageCount() > 1">
             <button type="button" mat-icon-button (click)="bossTablePrevPage()" [disabled]="bossTablePage === 0"
               aria-label="עמוד קודם">
               <mat-icon>chevron_right</mat-icon>
@@ -1363,6 +1423,57 @@
       </div>
 
       <div class="boss-view-panel">
+        <section class="boss-panel boss-panel--wings" *ngIf="bossViewMode === 'wings' && bossWingsTableRows.length">
+          <div class="boss-panel__head boss-panel__head--wings">
+            <div class="boss-panel__head-main">
+              <h3>{{ getBossWingsTableTitle() }}</h3>
+              <p class="boss-panel__subtitle" *ngIf="!bossWingsTableDrillWing">לחיצה על שורת אגף תציג את המחלקות שלו</p>
+            </div>
+            <button type="button" mat-stroked-button class="boss-wings-back-btn" *ngIf="bossWingsTableDrillWing"
+              (click)="clearBossWingsDrill()">
+              <mat-icon>arrow_forward</mat-icon>
+              חזרה לאגפים
+            </button>
+          </div>
+
+          <div class="boss-table-wrap">
+            <table class="boss-payer-table boss-wings-table">
+              <thead>
+                <tr>
+                  <th scope="col">{{ bossWingsTableDrillWing ? 'מחלקה' : 'אגף' }}</th>
+                  <th scope="col">{{ getLatestYear() }}</th>
+                  <th scope="col">{{ getOlderYear() }}</th>
+                  <th scope="col">הפרש</th>
+                  <th scope="col" [matTooltip]="getBossYoYColumnHint()" matTooltipPosition="above">שינוי YTD</th>
+                  <th scope="col" [matTooltip]="getBossSegmentShareColumnHint()" matTooltipPosition="above">נתח מסך</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let row of getBossWingsTablePageRows()"
+                  [class.boss-payer-table__row--clickable]="isBossWingsTableRowClickable()"
+                  (click)="onBossWingsTableRowClick(row)">
+                  <td class="boss-payer-table__name">
+                    <span class="boss-payer-table__name-text">{{ row.label }}</span>
+                    <mat-icon class="boss-wings-table__drill-icon" aria-hidden="true"
+                      *ngIf="isBossWingsTableRowClickable()">chevron_left</mat-icon>
+                  </td>
+                  <td class="boss-payer-table__amount">{{ formatBossMillions(row.currentTotal) }}</td>
+                  <td class="boss-payer-table__amount">{{ formatBossMillions(row.priorTotal) }}</td>
+                  <td class="boss-payer-table__diff" [class.positive]="row.diff > 0" [class.negative]="row.diff < 0">
+                    {{ formatBossMillions(row.diff) }}
+                  </td>
+                  <td class="boss-payer-table__yoy"
+                    [class.positive]="row.percent !== null && row.percent > 0.05"
+                    [class.negative]="row.percent !== null && row.percent < -0.05">
+                    {{ formatBossSegmentYoYLabel(row) }}
+                  </td>
+                  <td class="boss-payer-table__share">{{ formatBossSegmentShare(row) }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
         <section class="boss-panel boss-panel--table" *ngIf="bossViewMode === 'table' && bossPayerInsights.length">
           <div class="boss-panel__head">
             <h3>גורמי משלם — YTD {{ getLatestYear() }} מול {{ getOlderYear() }}</h3>
@@ -1376,8 +1487,8 @@
                 <th scope="col">{{ getLatestYear() }}</th>
                 <th scope="col">{{ getOlderYear() }}</th>
                 <th scope="col">הפרש</th>
-                <th scope="col">שינוי</th>
-                <th scope="col">נתח</th>
+                <th scope="col" [matTooltip]="getBossYoYColumnHint()" matTooltipPosition="above">שינוי YTD</th>
+                <th scope="col" [matTooltip]="getBossPayerShareColumnHint()" matTooltipPosition="above">נתח מגורמים</th>
               </tr>
             </thead>
             <tbody>
@@ -1387,10 +1498,10 @@
                   <span class="boss-payer-table__name-text">{{ row.payer }}</span>
                   <span class="boss-payer-table__outlier-badge" *ngIf="row.isOutlier">חריג</span>
                 </td>
-                <td class="boss-payer-table__amount">{{ formatNumber(row.currentTotal) }} ₪</td>
-                <td class="boss-payer-table__amount">{{ formatNumber(row.priorTotal) }} ₪</td>
+                <td class="boss-payer-table__amount">{{ formatBossMillions(row.currentTotal) }}</td>
+                <td class="boss-payer-table__amount">{{ formatBossMillions(row.priorTotal) }}</td>
                 <td class="boss-payer-table__diff" [class.positive]="row.diff > 0" [class.negative]="row.diff < 0">
-                  {{ formatNumber(row.diff) }} ₪
+                  {{ formatBossMillions(row.diff) }}
                 </td>
                 <td class="boss-payer-table__yoy"
                   [class.positive]="row.percent !== null && row.percent > 0.05"
@@ -1409,7 +1520,7 @@
               <article class="boss-conclusion-card" *ngFor="let row of bossPayerOutliers">
                 <h5 class="boss-conclusion-card__title">{{ row.payer }}</h5>
                 <p class="boss-conclusion-card__line">
-                  {{ formatBossPayerYoYLabel(row) }} · {{ formatNumber(row.diff) }} ₪
+                  {{ formatBossPayerYoYLabel(row, false) }} · {{ formatBossMillions(row.diff) }}
                 </p>
                 <p class="boss-conclusion-card__line boss-conclusion-card__line--muted">
                   {{ formatBossHospitalShare(row) }}
@@ -1442,6 +1553,11 @@
             </div>
           </ng-template>
         </section>
+
+        <div class="boss-payer-empty" *ngIf="bossViewMode === 'wings' && !bossWingsTableRows.length">
+          <mat-icon aria-hidden="true">info_outline</mat-icon>
+          <span>אין נתוני אגפים זמינים — נסה «סה"כ» בדשבורד הראשי לטעינת כל האגפים.</span>
+        </div>
 
         <div class="boss-payer-empty" *ngIf="bossViewMode === 'table' && !bossPayerInsights.length">
           <mat-icon aria-hidden="true">info_outline</mat-icon>
