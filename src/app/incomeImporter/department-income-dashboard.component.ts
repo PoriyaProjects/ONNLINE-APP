@@ -107,6 +107,14 @@ interface BossFilterBaseline {
     incomeMonth: string;
 }
 
+interface BossFilterRestoreResult {
+    restored: boolean;
+    wingWillChange: boolean;
+    yearlyApiWillChange: boolean;
+    monthWillChange: boolean;
+    restoreAllWings: boolean;
+}
+
 export interface DepartmentIncomeYearlyRow {
     UnifiedDiagnosis?: string;
     PatientSummary?: string;
@@ -3753,11 +3761,45 @@ export class DepartmentIncomeDashboardComponent
             return;
         }
 
+        const restoreResult = this.restoreBossFiltersFromBaseline();
+        if (!restoreResult.restored) {
+            return;
+        }
+
+        this.refreshAfterBossFilterRestore(restoreResult, "boss");
+        this.cdr.detectChanges();
+    }
+
+    private restoreBossFiltersFromBaseline(): BossFilterRestoreResult {
+        const unchanged: BossFilterRestoreResult = {
+            restored: false,
+            wingWillChange: false,
+            yearlyApiWillChange: false,
+            monthWillChange: false,
+            restoreAllWings: false,
+        };
+
+        if (!this.bossFiltersBaseline) {
+            return unchanged;
+        }
+
         const baseline = this.bossFiltersBaseline;
         const wingWillChange = this.selectedDiagnosis !== baseline.diagnosis;
         const yearlyApiWillChange =
             this.selectedOrganization !== baseline.organization ||
             this.selectedUnifiedCategory !== baseline.unifiedCategory;
+        const monthWillChange = this.selectedIncomeMonth !== baseline.incomeMonth;
+        const viewChanged = this.bossViewMode !== "table";
+
+        if (
+            !wingWillChange &&
+            !yearlyApiWillChange &&
+            !monthWillChange &&
+            !viewChanged
+        ) {
+            return unchanged;
+        }
+
         const restoreAllWings =
             !String(baseline.diagnosis ?? "").trim() ||
             baseline.diagnosis === this.diagnosisAllValue;
@@ -3770,6 +3812,22 @@ export class DepartmentIncomeDashboardComponent
         this.bossTablePage = 0;
         this.closeBossFilterDropdowns();
 
+        return {
+            restored: true,
+            wingWillChange,
+            yearlyApiWillChange,
+            monthWillChange,
+            restoreAllWings,
+        };
+    }
+
+    private refreshAfterBossFilterRestore(
+        result: BossFilterRestoreResult,
+        target: "boss" | "main",
+    ): void {
+        const { wingWillChange, yearlyApiWillChange, monthWillChange, restoreAllWings } =
+            result;
+
         if (wingWillChange) {
             this.payerYearlyByScopeCache.clear();
             this.payerYearlyRawRows = [];
@@ -3780,14 +3838,19 @@ export class DepartmentIncomeDashboardComponent
             }
         }
 
-        if (yearlyApiWillChange || wingWillChange) {
-            this.yearlyTotalsFetched = false;
-            this.refreshBossDashboard(false, "wing");
-        } else {
-            this.refreshBossViewsFromFilters();
+        if (target === "boss") {
+            if (yearlyApiWillChange || wingWillChange) {
+                this.yearlyTotalsFetched = false;
+                this.refreshBossDashboard(false, "wing");
+            } else {
+                this.refreshBossViewsFromFilters();
+            }
+            return;
         }
 
-        this.cdr.detectChanges();
+        if (!wingWillChange && (yearlyApiWillChange || monthWillChange)) {
+            this.reloadDepartmentIncomeWithFilters();
+        }
     }
 
     private updateBossMonthlyChartData(): void {
@@ -3937,17 +4000,21 @@ export class DepartmentIncomeDashboardComponent
     }
 
     /**
-     * Close boss dashboard
+     * Close boss dashboard and restore filters captured at open time.
      */
     closeBossDashboard(): void {
+        const restoreResult = this.restoreBossFiltersFromBaseline();
+
         this.showBossDashboard = false;
-        this.bossViewMode = "table";
-        this.bossTablePage = 0;
         this.bossInitialLoading = false;
         this.bossFilterLoadingKey = null;
         this.bossFiltersBaseline = null;
-        this.closeBossFilterDropdowns();
         this.stopBossLoadingAnimation();
+
+        if (restoreResult.restored) {
+            this.refreshAfterBossFilterRestore(restoreResult, "main");
+        }
+
         this.cdr.detectChanges();
     }
 

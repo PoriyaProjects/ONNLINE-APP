@@ -161,6 +161,7 @@ export class SurgeriesRevenueComponent implements OnInit, OnDestroy {
     }
 
     get chartFullModalOptions(): any {
+        const stacked = this.isYearTotalStackedView();
         return {
             ...this.chartOptions,
             legend: {
@@ -168,12 +169,9 @@ export class SurgeriesRevenueComponent implements OnInit, OnDestroy {
                 position: "top",
                 alignment: "end",
             },
-            chartArea: {
-                left: 80,
-                top: 64,
-                width: "88%",
-                height: "72%",
-            },
+            chartArea: stacked
+                ? { left: 80, top: 96, width: "88%", height: "68%" }
+                : { left: 80, top: 64, width: "88%", height: "72%" },
         };
     }
 
@@ -252,14 +250,18 @@ export class SurgeriesRevenueComponent implements OnInit, OnDestroy {
 
     getYearRevenueSubtitle(year: number): string {
         const yty = this.yearlyRevenueYty[year];
-        if (yty && (yty.diff !== 0 || yty.pct != null)) {
-            return `${this.formatYtyLabel(yty.diff, yty.pct)} מול ${year - 1}`;
+        if (yty?.pct != null && Number.isFinite(yty.pct)) {
+            return `${this.formatPct(yty.pct)} מול ${year - 1}`;
         }
-        const amount = this.yearlyRevenueTotals[year] || 0;
-        if (amount === 0) {
-            return "ללא נתונים";
+        const firstYear = this.yearsForChart[0];
+        if (firstYear != null && year === firstYear) {
+            return "נקודת בסיס";
         }
-        return "סה״כ הכנסות בשנה";
+        return "—";
+    }
+
+    getYearRevenueCardAmount(year: number): string {
+        return this.formatMoney(this.yearlyRevenueTotals[year] || 0);
     }
 
     formatYtyLabel(diff: number, pct: number | null): string {
@@ -383,7 +385,7 @@ export class SurgeriesRevenueComponent implements OnInit, OnDestroy {
 
     onChartViewModeChange(value: RevenueChartViewMode): void {
         this.chartViewMode = value;
-        if (value !== "year-total") {
+        if (value !== "year-total" && value !== "billing-category") {
             this.supplementPanelOpen = false;
         }
         this.rebuildView();
@@ -424,7 +426,10 @@ export class SurgeriesRevenueComponent implements OnInit, OnDestroy {
     }
 
     toggleSupplementPanel(): void {
-        if (this.chartViewMode === "year-total") {
+        if (
+            this.chartViewMode === "year-total" ||
+            this.chartViewMode === "billing-category"
+        ) {
             return;
         }
         this.supplementPanelOpen = !this.supplementPanelOpen;
@@ -554,6 +559,9 @@ export class SurgeriesRevenueComponent implements OnInit, OnDestroy {
         if (this.chartViewMode === "month") {
             return "הכנסות לפי חודשים";
         }
+        if (this.chartViewMode === "billing-category") {
+            return "קטגורית הכנסה — לפי קטגורית חיוב";
+        }
         if (this.chartViewMode === "year-total") {
             if (this.mainMetric === "byPayer") {
                 return "סיכום שנתי — תרומת גורמי משלם";
@@ -579,6 +587,9 @@ export class SurgeriesRevenueComponent implements OnInit, OnDestroy {
         if (this.chartViewMode === "month") {
             return "calendar_month";
         }
+        if (this.chartViewMode === "billing-category") {
+            return "category";
+        }
         if (this.chartViewMode === "year-total") {
             if (this.mainMetric === "byPayer") {
                 return "stacked_bar_chart";
@@ -603,6 +614,9 @@ export class SurgeriesRevenueComponent implements OnInit, OnDestroy {
     getPeriodCaption(): string {
         if (this.chartViewMode === "month") {
             return "השוואת תקופות מקבילות — חמש השנים האחרונות לפי חודש.";
+        }
+        if (this.chartViewMode === "billing-category") {
+            return "גרף ערימה לפי שנה — כל קטגורית חיוב (BillingCategoryKey) עם חלוקה פנימית לפי סכום.";
         }
         return "השוואת תקופות והפרשים בין שנים — נתונים מ־SurgerydashboardForRoey.";
     }
@@ -834,13 +848,14 @@ export class SurgeriesRevenueComponent implements OnInit, OnDestroy {
                 (typeof c === "object" && c?.type === "number") ||
                 c === "number";
             const isRole = typeof c === "object" && !!c?.role;
-            if (isNumberCol && !isRole) {
+            const label =
+                typeof c === "object" && c?.label
+                    ? String(c.label)
+                    : `Series ${i}`;
+            if (isNumberCol && !isRole && label !== "__stackTotal__") {
                 numericSeries.push({
                     colIndex: i,
-                    label:
-                        typeof c === "object" && c?.label
-                            ? String(c.label)
-                            : `Series ${i}`,
+                    label,
                 });
             }
         }
@@ -1186,16 +1201,51 @@ export class SurgeriesRevenueComponent implements OnInit, OnDestroy {
         this.yearsForChart = years;
         this.yearlyRevenueTotals = {};
         this.yearlyRevenueYty = {};
+
         years.forEach((y) => {
-            this.yearlyRevenueTotals[y] = this.aggRows
-                .filter((r) => r.Year === y)
-                .reduce((s, r) => s + r.TotalAmount, 0);
-            const prev = this.yearlyRevenueTotals[y - 1] ?? 0;
-            const current = this.yearlyRevenueTotals[y] || 0;
-            const diff = current - prev;
-            const pct = prev !== 0 ? (diff / prev) * 100 : null;
+            const yearRows = this.aggRows.filter((row) => row.Year === y);
+            this.yearlyRevenueTotals[y] = yearRows.reduce(
+                (sum, row) => sum + (row.TotalAmount || 0),
+                0,
+            );
+        });
+
+        years.forEach((y) => {
+            const total = this.yearlyRevenueTotals[y] ?? 0;
+            const prevTotal = this.resolvePreviousYearTotal(y);
+            if (prevTotal == null) {
+                this.yearlyRevenueYty[y] = { diff: 0, pct: null };
+                return;
+            }
+            const diff = total - prevTotal;
+            const pct =
+                prevTotal !== 0
+                    ? (diff / prevTotal) * 100
+                    : total !== 0
+                      ? null
+                      : 0;
             this.yearlyRevenueYty[y] = { diff, pct };
         });
+    }
+
+    /** Previous calendar year total — from chart years or API PrevPeriodAmount. */
+    private resolvePreviousYearTotal(year: number): number | null {
+        const prevYear = year - 1;
+        const fromChart = this.yearlyRevenueTotals[prevYear];
+        if (fromChart != null) {
+            return fromChart;
+        }
+        const yearRows = this.aggRows.filter((row) => row.Year === year);
+        if (!yearRows.length) {
+            return null;
+        }
+        const fromApi = yearRows.reduce(
+            (sum, row) => sum + (row.PrevPeriodAmount || 0),
+            0,
+        );
+        return fromApi > 0 || yearRows.some((row) => row.PrevPeriodAmount != null)
+            ? fromApi
+            : null;
     }
 
     private readonly monthLabelsShort = [
@@ -1320,11 +1370,18 @@ export class SurgeriesRevenueComponent implements OnInit, OnDestroy {
             this.buildYearTotalChart();
             return;
         }
+        if (this.chartViewMode === "billing-category") {
+            this.buildBillingCategoryChart();
+            return;
+        }
         this.buildGroupedYearChart();
     }
 
     isSupplementPanelVisible(): boolean {
-        if (this.chartViewMode === "year-total") {
+        if (
+            this.chartViewMode === "year-total" ||
+            this.chartViewMode === "billing-category"
+        ) {
             return false;
         }
         return this.supplementPanelOpen;
@@ -1516,6 +1573,17 @@ export class SurgeriesRevenueComponent implements OnInit, OnDestroy {
             cols.push({ type: "number", label });
             cols.push({ type: "string", role: "annotation" });
         });
+        cols.push({ type: "number", label: "__stackTotal__" });
+        cols.push({
+            type: "string",
+            role: "annotation",
+            p: {
+                alwaysOutside: true,
+                annotationTextStyle: this.stackTotalAnnotationTextStyle(
+                    forMainChart,
+                ),
+            },
+        });
 
         const data = years.map((y) => {
             const row: any[] = [String(y)];
@@ -1526,6 +1594,10 @@ export class SurgeriesRevenueComponent implements OnInit, OnDestroy {
                 row.push(this.toChartMillions(Math.round(raw)));
                 row.push(this.stackSegmentAnnotation(raw, yearTotal));
             });
+            row.push(0);
+            row.push(
+                yearTotal > 0 ? this.formatStackTotalLabel(yearTotal) : "",
+            );
             return row;
         });
 
@@ -1544,10 +1616,17 @@ export class SurgeriesRevenueComponent implements OnInit, OnDestroy {
         return {
             ...base,
             isStacked: true,
-            colors: this.stackChartColors.slice(
-                0,
-                Math.max(stackCount, 1),
-            ),
+            colors: [
+                ...this.stackChartColors.slice(0, Math.max(stackCount, 1)),
+                "transparent",
+            ],
+            series: {
+                [stackCount]: {
+                    color: "transparent",
+                    visibleInLegend: false,
+                    enableInteractivity: false,
+                },
+            },
             legend: {
                 position: "top",
                 alignment: "end",
@@ -1555,8 +1634,8 @@ export class SurgeriesRevenueComponent implements OnInit, OnDestroy {
                 textStyle: { fontSize: 11, bold: true },
             },
             chartArea: forMainChart
-                ? { left: 72, top: 72, width: "82%", height: "62%" }
-                : { left: 70, top: 56, width: "82%", height: "58%" },
+                ? { left: 72, top: 88, width: "82%", height: "58%" }
+                : { left: 70, top: 68, width: "82%", height: "54%" },
             annotations: {
                 alwaysOutside: false,
                 highContrast: true,
@@ -1608,11 +1687,35 @@ export class SurgeriesRevenueComponent implements OnInit, OnDestroy {
         return this.formatTableMoney(n);
     }
 
+    private formatStackTotalLabel(value: number): string {
+        return this.formatTableMoney(Math.round(Number(value) || 0));
+    }
+
+    private stackTotalAnnotationTextStyle(forMainChart: boolean): {
+        fontSize: number;
+        bold: boolean;
+        color: string;
+        fontName: string;
+        auraColor: string;
+    } {
+        const dark = this.isDarkTheme();
+        return {
+            fontSize: forMainChart ? 15 : 13,
+            bold: true,
+            color: dark ? "#f8fafc" : "#0f172a",
+            fontName: "Segoe UI, Arial, sans-serif",
+            auraColor: dark ? "#0f172a" : "#ffffff",
+        };
+    }
+
     private stackedChartBaseOptions(): any {
         return this.createStackedChartOptions(14, false);
     }
 
     isYearTotalStackedView(): boolean {
+        if (this.chartViewMode === "billing-category") {
+            return true;
+        }
         return (
             this.chartViewMode === "year-total" &&
             (this.mainMetric === "byPayer" ||
@@ -1621,8 +1724,76 @@ export class SurgeriesRevenueComponent implements OnInit, OnDestroy {
         );
     }
 
-    private applyYearTotalStackedChart(rows: RevenueAggRow[]): void {
-        const built = this.buildStackedChartFromAggRows(rows, 14, true);
+    private aggregateCompositeByBillingCategory(): RevenueAggRow[] {
+        if (!this.compositeStackRows.length) {
+            return this.billingStackRows;
+        }
+
+        const amounts = new Map<string, Map<number, number>>();
+        this.compositeStackRows.forEach((row) => {
+            const category = row.BillingCategoryKey || "—";
+            if (!amounts.has(category)) {
+                amounts.set(category, new Map());
+            }
+            const yearMap = amounts.get(category)!;
+            yearMap.set(
+                row.Year,
+                (yearMap.get(row.Year) || 0) + (row.TotalAmount || 0),
+            );
+        });
+
+        const rows: RevenueAggRow[] = [];
+        amounts.forEach((yearMap, category) => {
+            yearMap.forEach((total, year) => {
+                rows.push({
+                    Year: year,
+                    GroupKey: category,
+                    TotalAmount: total,
+                    SurgeryCount: 0,
+                    InvoiceCount: 0,
+                    AvgAmount: 0,
+                    PrevPeriodAmount: 0,
+                    YTYDiff: 0,
+                    YTYPercent: null,
+                });
+            });
+        });
+
+        const prevByCategoryYear = new Map<string, number>();
+        rows.forEach((row) => {
+            prevByCategoryYear.set(
+                `${row.GroupKey}|${row.Year}`,
+                row.TotalAmount,
+            );
+        });
+
+        return rows.map((row) => {
+            const prevAmount =
+                prevByCategoryYear.get(`${row.GroupKey}|${row.Year - 1}`) ?? 0;
+            const diff = row.TotalAmount - prevAmount;
+            const pct = prevAmount !== 0 ? (diff / prevAmount) * 100 : null;
+            return {
+                ...row,
+                PrevPeriodAmount: prevAmount,
+                YTYDiff: diff,
+                YTYPercent: pct,
+            };
+        });
+    }
+
+    private buildBillingCategoryChart(): void {
+        const rows = this.aggregateCompositeByBillingCategory();
+        const categoryCount = new Set(
+            rows.map((row) => row.GroupKey).filter(Boolean),
+        ).size;
+        this.applyYearTotalStackedChart(rows, Math.max(categoryCount, 1));
+    }
+
+    private applyYearTotalStackedChart(
+        rows: RevenueAggRow[],
+        maxStacks = 14,
+    ): void {
+        const built = this.buildStackedChartFromAggRows(rows, maxStacks, true);
         if (!built?.data.length) {
             this.chartColumns = [
                 "שנה",
@@ -1880,37 +2051,46 @@ export class SurgeriesRevenueComponent implements OnInit, OnDestroy {
             this.rebuildMonthlyTable();
             return;
         }
+        if (this.chartViewMode === "billing-category") {
+            this.rebuildEntityYearTableFromRows(
+                this.aggregateCompositeByBillingCategory(),
+            );
+            return;
+        }
         this.rebuildEntityYearTable();
     }
 
-    private rebuildEntityYearTable(): void {
-        const years = this.yearsForChart;
-        this.tableYears = years;
+    private rebuildEntityYearTableFromRows(sourceRows: RevenueAggRow[]): void {
+        const years = [
+            ...new Set(sourceRows.map((r) => r.Year).filter((y) => y > 0)),
+        ].sort((a, b) => a - b);
+        this.tableYears = years.length ? years : this.yearsForChart;
         const groups = [
-            ...new Set(
-                this.aggRows.map((r) => r.GroupKey).filter(Boolean),
-            ),
+            ...new Set(sourceRows.map((r) => r.GroupKey).filter(Boolean)),
         ];
 
         const rows: RevenueTableRow[] = groups.map((g) => {
             const perYear: { [year: number]: number } = {};
             let total = 0;
-            years.forEach((y) => {
+            this.tableYears.forEach((y) => {
                 const v =
-                    this.aggRows
+                    sourceRows
                         .filter((r) => r.GroupKey === g && r.Year === y)
                         .reduce((s, r) => s + r.TotalAmount, 0) || 0;
                 perYear[y] = v;
                 total += v;
             });
-            const { diff, pct } = this.computeDiffAndPct(perYear, years);
+            const { diff, pct } = this.computeDiffAndPct(
+                perYear,
+                this.tableYears,
+            );
             return { label: g, perYear, total, diff, pct };
         });
 
         rows.sort((a, b) => b.total - a.total);
         this.tableRows = rows.slice(0, 15);
 
-        if (years.length) {
+        if (this.tableYears.length) {
             const totalRow: RevenueTableRow = {
                 label: 'סה"כ',
                 perYear: {},
@@ -1918,15 +2098,24 @@ export class SurgeriesRevenueComponent implements OnInit, OnDestroy {
                 diff: null,
                 pct: null,
             };
-            years.forEach((y) => {
-                totalRow.perYear[y] = this.yearlyRevenueTotals[y] || 0;
+            this.tableYears.forEach((y) => {
+                totalRow.perYear[y] = sourceRows
+                    .filter((r) => r.Year === y)
+                    .reduce((s, r) => s + r.TotalAmount, 0);
                 totalRow.total += totalRow.perYear[y];
             });
-            const { diff, pct } = this.computeDiffAndPct(totalRow.perYear, years);
+            const { diff, pct } = this.computeDiffAndPct(
+                totalRow.perYear,
+                this.tableYears,
+            );
             totalRow.diff = diff;
             totalRow.pct = pct;
             this.tableRows = [totalRow, ...this.tableRows];
         }
+    }
+
+    private rebuildEntityYearTable(): void {
+        this.rebuildEntityYearTableFromRows(this.aggRows);
     }
 
     private rebuildMonthlyTable(): void {

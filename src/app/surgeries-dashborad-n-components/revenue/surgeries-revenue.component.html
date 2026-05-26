@@ -219,7 +219,7 @@
           <div class="year-summary-row chart-view-block" *ngIf="yearsForChart?.length">
             <div class="year-summary-card" *ngFor="let y of yearsForChartSummaryOrder; trackBy: trackByYear">
               <div class="year-label">{{ y }}</div>
-              <div class="year-count">{{ formatMoney(yearlyRevenueTotals[y] || 0) }}</div>
+              <div class="year-count">{{ getYearRevenueCardAmount(y) }}</div>
               <div class="year-subtitle">{{ getYearRevenueSubtitle(y) }}</div>
             </div>
           </div>
@@ -293,6 +293,11 @@
                 <mat-icon aria-hidden="true">calendar_month</mat-icon>
                 <span>לפי חודשים</span>
               </mat-button-toggle>
+              <mat-button-toggle value="billing-category"
+                matTooltip="גרף ערימה — פילוח לפי קטגורית חיוב (BillingCategoryKey)" matTooltipPosition="below">
+                <mat-icon aria-hidden="true">category</mat-icon>
+                <span>קטגורית הכנסה</span>
+              </mat-button-toggle>
             </mat-button-toggle-group>
           </div>
           </div>
@@ -311,7 +316,7 @@
             <table class="table aggregated-chart-table" dir="rtl">
               <thead>
                 <tr>
-                  <th scope="col">{{ chartViewMode === 'month' ? 'חודש' : 'ישות' }}</th>
+                  <th scope="col">{{ chartViewMode === 'month' ? 'חודש' : chartViewMode === 'billing-category' ? 'קטגוריה' : 'ישות' }}</th>
                   <th scope="col" *ngFor="let y of tableYears; let i = index; trackBy: trackByYear">
                     {{ y }}
                     <br *ngIf="i > 0" />
@@ -387,7 +392,7 @@
       <div class="year-summary-row" *ngIf="yearsForChart?.length">
         <div class="year-summary-card" *ngFor="let y of yearsForChartSummaryOrder; trackBy: trackByYear">
           <div class="year-label">{{ y }}</div>
-          <div class="year-count">{{ formatMoney(yearlyRevenueTotals[y] || 0) }}</div>
+          <div class="year-count">{{ getYearRevenueCardAmount(y) }}</div>
           <div class="year-subtitle">{{ getYearRevenueSubtitle(y) }}</div>
         </div>
       </div>

@@ -265,7 +265,9 @@ export class SurgeriesRevenueApiService {
             raw?.YTYDiff ?? raw?.ytyDiff ?? raw?.Diff ?? raw?.diff,
         );
         const fromApiPct = this.numOrNull(
-            raw?.YTYPercent ??
+            raw?.TotalAmountYTY ??
+                raw?.totalAmountYTY ??
+                raw?.YTYPercent ??
                 raw?.ytyPercent ??
                 raw?.Pct ??
                 raw?.pct ??
@@ -302,6 +304,9 @@ export class SurgeriesRevenueApiService {
         });
 
         return rows.map((row) => {
+            if (row.TotalAmountYTY != null) {
+                return row;
+            }
             const prevAmount =
                 prevByGroupYear.get(`${row.GroupKey}|${row.Year - 1}`) ?? 0;
             const yty = this.buildYtyMetrics(row.TotalAmount, prevAmount);
@@ -318,6 +323,9 @@ export class SurgeriesRevenueApiService {
         });
 
         return rows.map((row) => {
+            if (row.TotalAmountYTY != null) {
+                return row;
+            }
             const prevAmount =
                 prevByMonthYear.get(`${row.Month}|${row.Year - 1}`) ?? 0;
             const yty = this.buildYtyMetrics(row.TotalAmount, prevAmount);
@@ -343,6 +351,9 @@ export class SurgeriesRevenueApiService {
         });
 
         return rows.map((row) => {
+            if (row.TotalAmountYTY != null) {
+                return row;
+            }
             const prevKey = this.compositeStackPeriodKey({
                 ...row,
                 Year: row.Year - 1,
@@ -376,6 +387,9 @@ export class SurgeriesRevenueApiService {
                     r.prevYearAmount ??
                     0,
             );
+            const totalAmountYty = this.numOrNull(
+                r.TotalAmountYTY ?? r.totalAmountYTY,
+            );
             const yty = this.readYtyFromRaw(r, totalAmount, prevAmount);
             return {
                 Year: year,
@@ -384,7 +398,9 @@ export class SurgeriesRevenueApiService {
                 SurgeryCount: this.num(r.SurgeryCount ?? r.surgeryCount),
                 InvoiceCount: this.num(r.InvoiceCount ?? r.invoiceCount),
                 AvgAmount: this.num(r.AvgAmount ?? r.avgAmount),
+                TotalAmountYTY: totalAmountYty,
                 ...yty,
+                ...(totalAmountYty != null ? { YTYPercent: totalAmountYty } : {}),
             };
         });
         return this.enrichAggRowsWithYty(rows);
@@ -399,6 +415,9 @@ export class SurgeriesRevenueApiService {
                     r.PrevYearAmount ??
                     r.prevYearAmount ??
                     0,
+            );
+            const totalAmountYty = this.numOrNull(
+                r.TotalAmountYTY ?? r.totalAmountYTY,
             );
             const yty = this.readYtyFromRaw(r, totalAmount, prevAmount);
             return {
@@ -421,7 +440,9 @@ export class SurgeriesRevenueApiService {
                         r.קטגורית_חיוב,
                 ),
                 TotalAmount: totalAmount,
+                TotalAmountYTY: totalAmountYty,
                 ...yty,
+                ...(totalAmountYty != null ? { YTYPercent: totalAmountYty } : {}),
             };
         });
         return this.enrichCompositeRowsWithYty(rows);
@@ -437,6 +458,9 @@ export class SurgeriesRevenueApiService {
                     r.prevYearAmount ??
                     0,
             );
+            const totalAmountYty = this.numOrNull(
+                r.TotalAmountYTY ?? r.totalAmountYTY,
+            );
             const yty = this.readYtyFromRaw(r, totalAmount, prevAmount);
             return {
                 Year: this.num(r.Year ?? r.year),
@@ -444,7 +468,9 @@ export class SurgeriesRevenueApiService {
                 TotalAmount: totalAmount,
                 SurgeryCount: this.num(r.SurgeryCount ?? r.surgeryCount),
                 AvgAmount: this.num(r.AvgAmount ?? r.avgAmount),
+                TotalAmountYTY: totalAmountYty,
                 ...yty,
+                ...(totalAmountYty != null ? { YTYPercent: totalAmountYty } : {}),
             };
         });
         return this.enrichMonthlyRowsWithYty(rows);

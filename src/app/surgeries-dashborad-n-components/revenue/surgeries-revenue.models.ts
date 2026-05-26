@@ -18,6 +18,8 @@ export interface RevenueYtyMetrics {
     PrevPeriodAmount: number;
     YTYDiff: number;
     YTYPercent: number | null;
+    /** אחוז YTY מהשרת — TotalAmountYTY (מועדף לכרטיסי שנה) */
+    TotalAmountYTY?: number | null;
 }
 
 /** Aggregated revenue row — GetRevenueByDeptFiveYears_surgeries_revenue_dashborad */
@@ -60,7 +62,11 @@ export interface RevenueTableRow {
 }
 
 export type RevenueMainMetric = "byDept" | "byPayer" | "bySurgeryType";
-export type RevenueChartViewMode = "year-total" | "year-grouped" | "month";
+export type RevenueChartViewMode =
+    | "year-total"
+    | "year-grouped"
+    | "month"
+    | "billing-category";
 
 /** שורת ערימה — GetRevenueStackedComposite_surgeries_revenue_dashborad (בקרוב) */
 export interface RevenueCompositeStackRow extends RevenueYtyMetrics {
