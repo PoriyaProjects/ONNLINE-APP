@@ -1,4 +1,4 @@
-import { Component, Inject, OnInit, Optional } from '@angular/core';
+import { Component, Inject } from '@angular/core';
 import { FormArray, FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
 import { trigger, state, style, transition, animate } from '@angular/animations';
 import { MatTableDataSource } from '@angular/material/table';
@@ -237,16 +237,16 @@ export class CommercialSupportFormDialogComponent {
       Id: new FormControl(data?.Id, null),
       RequesterID: new FormControl(data?.RequesterID, Validators.required),
       Requester: new FormControl(data?.Requester, Validators.required),
-      RequesterDetails: new FormControl(data?.RequesterDetails, null),
-      CompanySupport: new FormControl(data?.CompanySupport, null),
-      ConferenceName: new FormControl(data?.ConferenceName, null),
-      EventDate: new FormControl(data?.EventDate, null),
-      EventEndDate: new FormControl(data?.EventEndDate, null),
-      Location: new FormControl(data?.Location, null),
-      JoinPerson: new FormControl(data?.JoinPerson, null),
-      Position: new FormControl(data?.Position, null),
-      ParticipationType: new FormControl(data?.ParticipationType, null),
-      ParticipationTypeNote: new FormControl(data?.ParticipationTypeNote ?? '', null),
+      RequesterDetails: new FormControl(data?.RequesterDetails, Validators.required),
+      CompanySupport: new FormControl(data?.CompanySupport, Validators.required),
+      ConferenceName: new FormControl(data?.ConferenceName, Validators.required),
+      EventDate: new FormControl(data?.EventDate, Validators.required),
+      EventEndDate: new FormControl(data?.EventEndDate, Validators.required),
+      Location: new FormControl(data?.Location, Validators.required),
+      JoinPerson: new FormControl(data?.JoinPerson, Validators.required),
+      Position: new FormControl(data?.Position, Validators.required),
+      ParticipationType: new FormControl(data?.ParticipationType, Validators.required),
+      ParticipationTypeNote: new FormControl(data?.ParticipationTypeNote ?? '', Validators.required),
       Currency: new FormControl(data?.Currency, null),
       SupportAmount: new FormControl(data?.SupportAmount, null),
       SupportAmountOther: new FormControl(data?.SupportAmountOther, null),

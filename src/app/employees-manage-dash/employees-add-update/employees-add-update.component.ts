@@ -61,6 +61,7 @@ export class EmployeesAddUpdateComponent implements OnInit {
   ImageToBase64: string;
   empType: string = "none";
   UserName = localStorage.getItem("loginUserName").toLowerCase();
+  Depart = localStorage.getItem("Depart").toLowerCase();
   EmployeeExists: boolean;
   myDate = new Date();
   _switchHTOK: any = "0";

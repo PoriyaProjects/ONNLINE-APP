@@ -145,8 +145,9 @@
             <th mat-header-cell *matHeaderCellDef mat-sort-header>מגיש הבקשה / עובד משתתף</th>
             <td mat-cell *matCellDef="let element">
               <div class="person-cell">
-                <img [src]="getEmployeeImage(element.RequesterID)" width="60" alt="תמונת עובד"
-                style="cursor: pointer;border-radius: 50%;" height="60" />
+                <div class="avatar">
+                  {{ getInitials(element.Requester) }}
+                </div>
                 <div>
                   <strong>{{ element.Requester || '—' }}</strong>
                   <small *ngIf="element.RequesterDetails">{{ element.RequesterDetails }}</small>
@@ -246,43 +247,73 @@
     </div>
 
     <mat-dialog-content>
-      <div class="request-type-grid">
-
+      <div class="request-type-list">
+    
         <button mat-button class="request-card type-a-card" (click)="selectRequest('A')">
-          <div class="request-letter">A</div>
-          <mat-icon>event</mat-icon>
-          <h2>כנס / השתלמות</h2>
-          <p>בקשה לאישור תמיכת גוף מסחרי ליציאה לכנס או השתלמות</p>
+          <div class="request-icon">
+            <mat-icon>event</mat-icon>
+          </div>
+    
+          <div class="request-text">
+            <h2>כנס / השתלמות</h2>
+            <p>בקשה לאישור תמיכת גוף מסחרי ליציאה לכנס או השתלמות</p>
+          </div>
+    
+          <mat-icon class="arrow-icon">chevron_left</mat-icon>
         </button>
-
+    
         <button mat-button class="request-card type-b-card" (click)="selectRequest('B')">
-          <div class="request-letter">B</div>
-          <mat-icon>science</mat-icon>
-          <h2>מחקר קליני</h2>
-          <p>בקשה לאישור תמיכת גוף מסחרי במחקר קליני</p>
+          <div class="request-icon">
+            <mat-icon>science</mat-icon>
+          </div>
+    
+          <div class="request-text">
+            <h2>מחקר קליני</h2>
+            <p>בקשה לאישור תמיכת גוף מסחרי במחקר קליני</p>
+          </div>
+    
+          <mat-icon class="arrow-icon">chevron_left</mat-icon>
         </button>
-
+    
         <button mat-button class="request-card type-c-card" (click)="selectRequest('C')">
-          <div class="request-letter">C</div>
-          <mat-icon>record_voice_over</mat-icon>
-          <h2>הרצאה לסגל</h2>
-          <p>בקשה לקיום הרצאה לסגל המרכז הרפואי</p>
+          <div class="request-icon">
+            <mat-icon>record_voice_over</mat-icon>
+          </div>
+    
+          <div class="request-text">
+            <h2>הרצאה לסגל</h2>
+            <p>בקשה לקיום הרצאה לסגל המרכז הרפואי</p>
+          </div>
+    
+          <mat-icon class="arrow-icon">chevron_left</mat-icon>
         </button>
-
+    
         <button mat-button class="request-card type-d-card" (click)="selectRequest('D')">
-          <div class="request-letter">D</div>
-          <mat-icon>event_note</mat-icon>
-          <h2>יום עיון / כנס</h2>
-          <p>בקשה לקיום יום עיון או כנס במרכז הרפואי צפון</p>
+          <div class="request-icon">
+            <mat-icon>event_note</mat-icon>
+          </div>
+    
+          <div class="request-text">
+            <h2>יום עיון / כנס</h2>
+            <p>בקשה לקיום יום עיון או כנס במרכז הרפואי צפון</p>
+          </div>
+    
+          <mat-icon class="arrow-icon">chevron_left</mat-icon>
         </button>
-
+    
         <button mat-button class="request-card type-e-card" (click)="selectRequest('E')">
-          <div class="request-letter">E</div>
-          <mat-icon>event_note</mat-icon>
-          <h2>אישור התקשרות עבור פעילות חריגה מרכש שוטף</h2>
-          <p>בקשה לאישור התקשרות עבור פעילות חריגה מרכש שוטף</p>
+          <div class="request-icon">
+            <mat-icon>shopping_bag</mat-icon>
+          </div>
+    
+          <div class="request-text">
+            <h2>פעילות חריגה מרכש שוטף</h2>
+            <p>בקשה לאישור התקשרות עבור פעילות חריגה מרכש שוטף</p>
+          </div>
+    
+          <mat-icon class="arrow-icon">chevron_left</mat-icon>
         </button>
-
+    
       </div>
     </mat-dialog-content>
 
