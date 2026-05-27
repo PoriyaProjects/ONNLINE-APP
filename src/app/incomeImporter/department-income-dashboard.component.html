@@ -1269,7 +1269,7 @@
                 </span>
               </button>
               <button type="button" class="boss-view-btn" role="tab"
-                [class.active]="bossViewMode === 'pie'" [disabled]="!bossPayerPieData.length"
+                [class.active]="bossViewMode === 'pie'" [disabled]="!bossPayerPieSliceMeta.length"
                 (click)="setBossViewMode('pie')"
                 title="גרף פאי: נתח כל גורם משלם מסך ההכנסות YTD">
                 <mat-icon>pie_chart</mat-icon>
@@ -1625,29 +1625,33 @@
           </div>
         </section>
 
-        <section class="boss-panel boss-panel--pie" *ngIf="bossViewMode === 'pie' && bossPayerPieData.length">
+        <section class="boss-panel boss-panel--pie" *ngIf="bossViewMode === 'pie' && bossPayerPieSliceMeta.length">
           <div class="boss-pie-layout" dir="rtl">
-            <div class="boss-pie-chart-wrap">
-              <google-chart type="PieChart" [data]="bossPayerPieData" [columns]="bossPayerPieColumns"
-                [options]="bossPayerPieOptions" dir="rtl">
-              </google-chart>
-            </div>
-            <aside class="boss-pie-legend-panel" *ngIf="bossPayerPieSliceMeta.length" aria-label="מקרא גורמי משלם">
-              <header class="boss-pie-legend-panel__head">
-                <span class="boss-pie-legend-panel__title">גורם משלם</span>
-                <span class="boss-pie-legend-panel__hint">כל שורה = פרוסה בגרף</span>
-              </header>
-              <ul class="boss-pie-legend">
-                <li class="boss-pie-legend__item" *ngFor="let slice of bossPayerPieSliceMeta; let i = index"
-                  [style.border-inline-start-color]="getBossPayerPieColor(i)">
-                  <span class="boss-pie-legend__swatch" [style.background-color]="getBossPayerPieColor(i)"></span>
-                  <div class="boss-pie-legend__body">
-                    <span class="boss-pie-legend__label">{{ slice.label }}</span>
-                    <span class="boss-pie-legend__value">{{ slice.displayText }}</span>
-                  </div>
-                </li>
-              </ul>
-            </aside>
+            <mat-card class="boss-pie-chart-card">
+              <mat-card-content class="boss-pie-chart-wrap">
+                <canvas #bossPayerPieCanvas role="img" aria-label="גרף פאי לפי גורם משלם"></canvas>
+              </mat-card-content>
+            </mat-card>
+            <mat-card class="boss-pie-legend-card" aria-label="מקרא גורמי משלם">
+              <mat-card-header>
+                <mat-card-title>גורם משלם</mat-card-title>
+                <mat-card-subtitle>כל שורה = פרוסה בגרף</mat-card-subtitle>
+              </mat-card-header>
+              <mat-card-content class="boss-pie-legend-card__content">
+                <mat-list class="boss-pie-legend" dense>
+                  <mat-list-item class="boss-pie-legend__item"
+                    *ngFor="let slice of bossPayerPieSliceMeta; let i = index"
+                    [style.border-inline-start-color]="getBossPayerPieColor(i)"
+                    [matTooltip]="'גורם משלם: ' + slice.label + ' — ' + slice.displayText"
+                    matTooltipPosition="above">
+                    <span mat-list-icon class="boss-pie-legend__swatch"
+                      [style.background-color]="getBossPayerPieColor(i)"></span>
+                    <h4 mat-line class="boss-pie-legend__label">{{ slice.label }}</h4>
+                    <p mat-line class="boss-pie-legend__value">{{ slice.displayText }}</p>
+                  </mat-list-item>
+                </mat-list>
+              </mat-card-content>
+            </mat-card>
           </div>
         </section>
 

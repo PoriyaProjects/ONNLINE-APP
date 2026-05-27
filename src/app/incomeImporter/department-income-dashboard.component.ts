@@ -15,6 +15,7 @@ import { MatSnackBar } from "@angular/material/snack-bar";
 import { MatSort, Sort } from "@angular/material/sort";
 import { MatTableDataSource } from "@angular/material/table";
 import { DomSanitizer, SafeStyle } from "@angular/platform-browser";
+import { Chart } from "chart.js";
 import { environment } from "src/environments/environment";
 import { DepartmentIncomeLocalCacheService } from "./department-income-local-cache.service";
 import {
@@ -421,12 +422,6 @@ export class DepartmentIncomeDashboardComponent
     bossExecutiveSummary = "";
     bossPayerInsights: BossPayerInsightRow[] = [];
     bossPayerOutliers: BossPayerInsightRow[] = [];
-    bossPayerPieData: any[][] = [];
-    bossPayerPieColumns: any[] = [
-        "גורם משלם",
-        "הכנסות (M ₪)",
-        { type: "string", role: "annotation" },
-    ];
     bossPayerPieSliceMeta: Array<{
         label: string;
         value: number;
@@ -434,23 +429,9 @@ export class DepartmentIncomeDashboardComponent
         displayText: string;
     }> = [];
     bossPayerPieColors: string[] = [];
-    bossPayerPieOptions: any = {
-        pieHole: 0.42,
-        legend: { position: "none" },
-        pieSliceText: "none",
-        pieSliceTextStyle: { fontSize: 24, bold: true },
-        annotations: {
-            alwaysOutside: true,
-            textStyle: { fontSize: 13, bold: true },
-            stem: { color: "#94a3b8", length: 12 },
-        },
-        chartArea: { width: "72%", height: "88%", left: 48, top: 20 },
-        height: 300,
-        width: "100%",
-        tooltip: { text: "both", textStyle: { fontSize: 20, bold: true } },
-        sliceVisibilityThreshold: 0,
-        fontName: "Heebo, Arial, sans-serif",
-    };
+    @ViewChild("bossPayerPieCanvas")
+    bossPayerPieCanvasRef?: ElementRef<HTMLCanvasElement>;
+    private bossPayerPieChart: Chart | null = null;
     bossPayerTotalCurrent = 0;
     bossHeroCurrentTotal = 0;
     bossHeroPriorTotal = 0;
@@ -931,6 +912,7 @@ export class DepartmentIncomeDashboardComponent
             clearTimeout(this.tableDeptClickHintTimer);
             this.tableDeptClickHintTimer = null;
         }
+        this.destroyBossPayerPieChart();
     }
 
     @HostListener("window:resize")
@@ -941,6 +923,9 @@ export class DepartmentIncomeDashboardComponent
                 this.graphBodyRef?.nativeElement?.clientWidth ||
                 720,
         );
+        if (this.bossPayerPieChart) {
+            this.bossPayerPieChart.resize();
+        }
     }
 
     private initMainTableDataSource(): void {
@@ -3404,7 +3389,8 @@ export class DepartmentIncomeDashboardComponent
             this.bossExecutiveSummary = "";
             this.bossPayerInsights = [];
             this.bossPayerOutliers = [];
-            this.bossPayerPieData = [];
+            this.bossPayerPieSliceMeta = [];
+            this.destroyBossPayerPieChart();
             this.bossSelectedWingDeclineDiff = 0;
             this.bossWorstDeclineWingName = "";
             this.bossWingLeadersOpen = false;
@@ -4029,7 +4015,8 @@ export class DepartmentIncomeDashboardComponent
         totalCurrent: number,
     ): void {
         if (!totalCurrent || !insights.length) {
-            this.bossPayerPieData = [];
+            this.bossPayerPieSliceMeta = [];
+            this.destroyBossPayerPieChart();
             return;
         }
 
@@ -4070,28 +4057,300 @@ export class DepartmentIncomeDashboardComponent
                 slice.value,
             ),
         }));
-        this.bossPayerPieData = mainSlices.map((slice) => [
-            slice.label,
-            parseFloat((slice.value / 1_000_000).toFixed(1)),
-            this.formatBossPieChartAnnotation(slice.label, slice.sharePct),
-        ]);
-        this.bossPayerPieColumns = [
-            "גורם משלם",
-            "הכנסות (M ₪)",
-            { type: "string", role: "annotation" },
-        ];
+        this.updateBossPayerPieTheme();
+        this.scheduleBossPayerPieChartRender();
     }
 
     formatBossPieDisplayLabel(sharePct: number, value: number): string {
         return `${this.formatBossMillions(value)} · ${sharePct.toFixed(1)}%`;
     }
 
-    formatBossPieChartAnnotation(label: string, sharePct: number): string {
-        return `${label}\n${sharePct.toFixed(1)}%`;
-    }
-
     getBossPayerPieColor(index: number): string {
         return this.bossPayerPieColors[index] ?? "#64748b";
+    }
+
+    getBossPayerPieTooltipTitle(index: number): string {
+        return this.bossPayerPieSliceMeta[index]?.label ?? "";
+    }
+
+    getBossPayerPieTooltipBody(index: number): string {
+        const slice = this.bossPayerPieSliceMeta[index];
+        if (!slice) {
+            return "";
+        }
+        return `גורם משלם · ${slice.displayText}`;
+    }
+
+    private scheduleBossPayerPieChartRender(): void {
+        setTimeout(() => this.renderBossPayerPieChart(), 0);
+    }
+
+    private renderBossPayerPieChart(): void {
+        const canvas = this.bossPayerPieCanvasRef?.nativeElement;
+        if (
+            !canvas ||
+            this.bossViewMode !== "pie" ||
+            !this.bossPayerPieSliceMeta.length
+        ) {
+            this.destroyBossPayerPieChart();
+            return;
+        }
+
+        const labels = this.bossPayerPieSliceMeta.map((slice) => slice.label);
+        const values = this.bossPayerPieSliceMeta.map((slice) => slice.value);
+        const colors = this.bossPayerPieSliceMeta.map((_, index) =>
+            this.getBossPayerPieColor(index),
+        );
+        const borderColor = this.isDark ? "#0f172a" : "#ffffff";
+
+        if (this.bossPayerPieChart) {
+            const chart = this.bossPayerPieChart;
+            chart.data.labels = labels;
+            chart.data.datasets[0].data = values;
+            chart.data.datasets[0].backgroundColor = colors;
+            chart.data.datasets[0].borderColor = borderColor;
+            chart.options = this.buildBossPayerPieChartOptions();
+            chart.update();
+            return;
+        }
+
+        const ctx = canvas.getContext("2d");
+        if (!ctx) {
+            return;
+        }
+
+        this.bossPayerPieChart = new Chart(ctx, {
+            type: "doughnut",
+            data: {
+                labels,
+                datasets: [
+                    {
+                        data: values,
+                        backgroundColor: colors,
+                        borderColor,
+                        borderWidth: 2,
+                    },
+                ],
+            },
+            options: this.buildBossPayerPieChartOptions(),
+            plugins: [this.createBossPayerPieSliceLabelsPlugin()],
+        });
+    }
+
+    private createBossPayerPieSliceLabelsPlugin(): {
+        afterDatasetsDraw: (chart: Chart) => void;
+    } {
+        return {
+            afterDatasetsDraw: (chart: Chart) => {
+                this.drawBossPayerPieSliceLabels(chart);
+            },
+        };
+    }
+
+    private drawBossPayerPieSliceLabels(chart: Chart): void {
+        const meta = chart.getDatasetMeta(0);
+        if (!meta?.data?.length) {
+            return;
+        }
+
+        const ctx = chart.ctx;
+        const slices = this.bossPayerPieSliceMeta;
+        const textColor = this.isDark ? "#f8fafc" : "#1e293b";
+        const subTextColor = this.isDark ? "#94a3b8" : "#64748b";
+        const ticketBg = this.isDark
+            ? "rgba(15, 23, 42, 0.94)"
+            : "rgba(255, 255, 255, 0.96)";
+        const lineColor = this.isDark ? "#64748b" : "#94a3b8";
+        const chartArea = chart.chartArea;
+
+        meta.data.forEach((arc: any, index: number) => {
+            const slice = slices[index];
+            if (!slice || !arc || arc.hidden) {
+                return;
+            }
+
+            const model = arc._model;
+            if (!model) {
+                return;
+            }
+
+            const angle = (model.startAngle + model.endAngle) / 2;
+            const cos = Math.cos(angle);
+            const sin = Math.sin(angle);
+            const cx = model.x;
+            const cy = model.y;
+            const innerR = model.innerRadius;
+            const outerR = model.outerRadius;
+            const arcSpan = model.endAngle - model.startAngle;
+            const edgeX = cx + cos * outerR;
+            const edgeY = cy + sin * outerR;
+            const accent = this.getBossPayerPieColor(index);
+
+            if (slice.sharePct >= 9 && arcSpan > 0.22) {
+                const midR = innerR + (outerR - innerR) * 0.55;
+                const midX = cx + cos * midR;
+                const midY = cy + sin * midR;
+                const innerLabel = this.truncateBossPieLabel(slice.label, 10);
+
+                ctx.save();
+                ctx.fillStyle = "#ffffff";
+                ctx.textAlign = "center";
+                ctx.textBaseline = "middle";
+                ctx.font = "bold 13px Heebo, Arial, sans-serif";
+                ctx.shadowColor = "rgba(15, 23, 42, 0.45)";
+                ctx.shadowBlur = 4;
+                ctx.fillText(innerLabel, midX, midY - 7);
+                ctx.font = "bold 12px Heebo, Arial, sans-serif";
+                ctx.fillText(
+                    `${slice.sharePct.toFixed(1)}%`,
+                    midX,
+                    midY + 9,
+                );
+                ctx.restore();
+            }
+
+            const elbowR = outerR + 14;
+            const ticketR = outerR + 30;
+            const elbowX = cx + cos * elbowR;
+            const elbowY = cy + sin * elbowR;
+            const anchorX = cx + cos * ticketR;
+            const anchorY = cy + sin * ticketR;
+            const onRight = cos >= 0;
+
+            const title = this.truncateBossPieLabel(slice.label, 16);
+            const subtitle = `${slice.sharePct.toFixed(1)}% · ${this.formatBossMillions(slice.value)}`;
+
+            ctx.save();
+            ctx.font = "bold 12px Heebo, Arial, sans-serif";
+            const titleW = ctx.measureText(title).width;
+            ctx.font = "600 11px Heebo, Arial, sans-serif";
+            const subW = ctx.measureText(subtitle).width;
+            const padX = 8;
+            const padY = 6;
+            const boxW = Math.ceil(Math.max(titleW, subW) + padX * 2);
+            const boxH = 36;
+
+            let boxX = onRight ? anchorX + 6 : anchorX - boxW - 6;
+            let boxY = anchorY - boxH / 2;
+            boxX = Math.max(
+                chartArea.left + 4,
+                Math.min(boxX, chartArea.right - boxW - 4),
+            );
+            boxY = Math.max(
+                chartArea.top + 4,
+                Math.min(boxY, chartArea.bottom - boxH - 4),
+            );
+
+            const lineEndX = onRight ? boxX : boxX + boxW;
+            const lineEndY = anchorY;
+
+            ctx.strokeStyle = accent;
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.moveTo(edgeX, edgeY);
+            ctx.lineTo(elbowX, elbowY);
+            ctx.lineTo(lineEndX, lineEndY);
+            ctx.stroke();
+
+            this.fillBossPieRoundRect(ctx, boxX, boxY, boxW, boxH, 7);
+            ctx.fillStyle = ticketBg;
+            ctx.fill();
+            ctx.strokeStyle = accent;
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+
+            ctx.fillStyle = textColor;
+            ctx.textAlign = onRight ? "left" : "right";
+            ctx.textBaseline = "middle";
+            ctx.font = "bold 12px Heebo, Arial, sans-serif";
+            const textX = onRight ? boxX + padX : boxX + boxW - padX;
+            ctx.fillText(title, textX, boxY + 13);
+            ctx.fillStyle = subTextColor;
+            ctx.font = "600 11px Heebo, Arial, sans-serif";
+            ctx.fillText(subtitle, textX, boxY + 26);
+            ctx.restore();
+        });
+    }
+
+    private truncateBossPieLabel(label: string, maxLen: number): string {
+        const trimmed = (label ?? "").trim();
+        if (trimmed.length <= maxLen) {
+            return trimmed;
+        }
+        return `${trimmed.slice(0, Math.max(1, maxLen - 1))}…`;
+    }
+
+    private fillBossPieRoundRect(
+        ctx: CanvasRenderingContext2D,
+        x: number,
+        y: number,
+        w: number,
+        h: number,
+        r: number,
+    ): void {
+        const radius = Math.min(r, w / 2, h / 2);
+        ctx.beginPath();
+        ctx.moveTo(x + radius, y);
+        ctx.lineTo(x + w - radius, y);
+        ctx.quadraticCurveTo(x + w, y, x + w, y + radius);
+        ctx.lineTo(x + w, y + h - radius);
+        ctx.quadraticCurveTo(x + w, y + h, x + w - radius, y + h);
+        ctx.lineTo(x + radius, y + h);
+        ctx.quadraticCurveTo(x, y + h, x, y + h - radius);
+        ctx.lineTo(x, y + radius);
+        ctx.quadraticCurveTo(x, y, x + radius, y);
+        ctx.closePath();
+    }
+
+    private buildBossPayerPieChartOptions(): any {
+        const textColor = this.isDark ? "#e2e8f0" : "#334155";
+        const gridColor = this.isDark ? "#334155" : "#e2e8f0";
+        return {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutoutPercentage: 42,
+            layout: {
+                padding: {
+                    left: 88,
+                    right: 88,
+                    top: 28,
+                    bottom: 28,
+                },
+            },
+            legend: { display: false },
+            tooltips: {
+                rtl: true,
+                backgroundColor: this.isDark ? "#1e293b" : "#ffffff",
+                titleFontFamily: "Heebo, Arial, sans-serif",
+                bodyFontFamily: "Heebo, Arial, sans-serif",
+                titleFontColor: textColor,
+                bodyFontColor: textColor,
+                borderColor: gridColor,
+                borderWidth: 1,
+                cornerRadius: 8,
+                xPadding: 12,
+                yPadding: 10,
+                callbacks: {
+                    title: (items) => {
+                        const index = items[0]?.index ?? 0;
+                        return this.getBossPayerPieTooltipTitle(index);
+                    },
+                    label: (item) =>
+                        this.getBossPayerPieTooltipBody(item.index ?? 0),
+                },
+            },
+            animation: {
+                animateRotate: true,
+                duration: 450,
+            },
+        };
+    }
+
+    private destroyBossPayerPieChart(): void {
+        if (this.bossPayerPieChart) {
+            this.bossPayerPieChart.destroy();
+            this.bossPayerPieChart = null;
+        }
     }
 
     private parsePercentLabel(label: string): number {
@@ -4207,7 +4466,7 @@ export class DepartmentIncomeDashboardComponent
     }
 
     setBossViewMode(mode: BossViewMode): void {
-        if (mode === "pie" && !this.bossPayerPieData.length) {
+        if (mode === "pie" && !this.bossPayerPieSliceMeta.length) {
             return;
         }
         this.bossViewMode = mode;
@@ -4224,6 +4483,7 @@ export class DepartmentIncomeDashboardComponent
         }
         if (mode === "pie") {
             this.updateBossPayerPieTheme();
+            this.scheduleBossPayerPieChartRender();
         }
         if (mode === "monthly") {
             this.ensureBossMonthlyChartReady();
@@ -4548,7 +4808,7 @@ export class DepartmentIncomeDashboardComponent
     }
 
     private updateBossPayerPieTheme(): void {
-        const pieColors = [
+        this.bossPayerPieColors = [
             "#2563eb",
             "#0ea5e9",
             "#22c55e",
@@ -4559,37 +4819,9 @@ export class DepartmentIncomeDashboardComponent
             "#ec4899",
             "#64748b",
         ];
-        this.bossPayerPieColors = pieColors;
-        const text = this.isDark ? "#e2e8f0" : "#334155";
-        const annotationText = this.isDark ? "#f8fafc" : "#1e293b";
-        this.bossPayerPieOptions = {
-            ...this.bossPayerPieOptions,
-            backgroundColor: "transparent",
-            legend: { position: "none" },
-            pieSliceText: "none",
-            annotations: {
-                ...this.bossPayerPieOptions.annotations,
-                alwaysOutside: true,
-                textStyle: {
-                    fontSize: 13,
-                    bold: true,
-                    color: annotationText,
-                },
-                stem: {
-                    color: this.isDark ? "#64748b" : "#94a3b8",
-                    length: 12,
-                },
-            },
-            pieSliceTextStyle: {
-                fontSize: 24,
-                bold: true,
-                color: annotationText,
-            },
-            titleTextStyle: { color: text },
-            colors: pieColors,
-            height: 300,
-            chartArea: { width: "72%", height: "88%", left: 48, top: 20 },
-        };
+        if (this.bossPayerPieChart) {
+            this.renderBossPayerPieChart();
+        }
     }
 
     /**
@@ -4599,6 +4831,7 @@ export class DepartmentIncomeDashboardComponent
         const restoreResult = this.restoreBossFiltersFromBaseline();
 
         this.showBossDashboard = false;
+        this.destroyBossPayerPieChart();
         this.bossInitialLoading = false;
         this.bossFilterLoadingKey = null;
         this.bossFiltersBaseline = null;
