@@ -257,8 +257,6 @@ export class DepartmentIncomeDashboardComponent
     @ViewChild("mainSort") mainSort?: MatSort;
     @ViewChild("payerSort") payerSort?: MatSort;
     @ViewChild("graphBody") graphBodyRef?: ElementRef<HTMLElement>;
-    @ViewChild("bossPieLayout") bossPieLayoutRef?: ElementRef<HTMLElement>;
-    @ViewChild("bossPieConnectors") bossPieConnectorsRef?: ElementRef<SVGSVGElement>;
 
     private graphBodyLastWidth = 0;
     private graphLayoutResizeTimer: ReturnType<typeof setTimeout> | null = null;
@@ -442,10 +440,13 @@ export class DepartmentIncomeDashboardComponent
         pieSliceText: "none",
         pieSliceTextStyle: { fontSize: 24, bold: true },
         annotations: {
-            textStyle: { fontSize: 20, bold: true },
-            stem: { color: "transparent", length: 0 },
+            alwaysOutside: true,
+            textStyle: { fontSize: 13, bold: true },
+            stem: { color: "#94a3b8", length: 12 },
         },
-        chartArea: { width: "96%", height: "88%" },
+        chartArea: { width: "72%", height: "88%", left: 48, top: 20 },
+        height: 300,
+        width: "100%",
         tooltip: { text: "both", textStyle: { fontSize: 20, bold: true } },
         sliceVisibilityThreshold: 0,
         fontName: "Heebo, Arial, sans-serif",
@@ -460,17 +461,15 @@ export class DepartmentIncomeDashboardComponent
     bossWingTopRisers: BossSegmentInsightRow[] = [];
     bossWingTopDecliners: BossSegmentInsightRow[] = [];
     bossWingsTableRows: BossSegmentInsightRow[] = [];
+    bossWingsTableSearch = "";
+    bossWingsTableSortField: "amount" | "yoy" | null = null;
+    bossWingsTableSortDir: "desc" | "asc" = "desc";
     bossExpandedWingLabels = new Set<string>();
     bossLoadingDisplayProgress = 0;
     bossTablePage = 0;
     readonly bossTablePageSize = 8;
     private readonly bossExcludedPayerLabels = ["לא קיים"];
     private readonly bossPayerPieMinSharePercent = 1;
-    private bossPieConnectorDrawTimers: ReturnType<typeof setTimeout>[] = [];
-    private bossPieConnectorObserver: {
-        disconnect(): void;
-        observe(target: Element): void;
-    } | null = null;
     private readonly bossWingAccentPalette = [
         { bg: "#eff6ff", border: "#93c5fd", text: "#1d4ed8" },
         { bg: "#f0fdf4", border: "#86efac", text: "#15803d" },
@@ -932,7 +931,6 @@ export class DepartmentIncomeDashboardComponent
             clearTimeout(this.tableDeptClickHintTimer);
             this.tableDeptClickHintTimer = null;
         }
-        this.teardownBossPieConnectorObserver();
     }
 
     @HostListener("window:resize")
@@ -943,9 +941,6 @@ export class DepartmentIncomeDashboardComponent
                 this.graphBodyRef?.nativeElement?.clientWidth ||
                 720,
         );
-        if (this.showBossDashboard && this.bossViewMode === "pie") {
-            this.scheduleBossPieConnectorDraw();
-        }
     }
 
     private initMainTableDataSource(): void {
@@ -1142,6 +1137,23 @@ export class DepartmentIncomeDashboardComponent
                             normalized,
                             true,
                         );
+                        this.ensurePayerYearlyRawLoaded(() => {
+                            this.refreshPayerYearlyFilterOptions();
+                            if (this.hasActiveIncomeFilters()) {
+                                this.assignDepartmentIncomeTableFromFilters(
+                                    normalized,
+                                );
+                                this.calculateTopDepartments();
+                                if (
+                                    this.graphPrimaryView === "income" &&
+                                    !this.isBreakdownChartViewActive &&
+                                    !this.isDepartmentMonthlyChartActive
+                                ) {
+                                    this.updateChartData(false);
+                                }
+                                this.cdr.detectChanges();
+                            }
+                        });
                         this.snackBar.open("✓ נתונים נטענו בהצלחה", "סגור", {
                             duration: 3000,
                         });
@@ -2110,6 +2122,17 @@ export class DepartmentIncomeDashboardComponent
         if (!Array.isArray(rows) || !this.hasActiveIncomeFilters()) {
             return rows || [];
         }
+        if (
+            this.hasActivePayerIncomeFilters() &&
+            !this.comparisonRowsSupportIncomeDimensionFilters(rows)
+        ) {
+            const hasNonDimensionFilters =
+                this.selectedIncomeClassification !==
+                this.incomeFilterAllValue;
+            if (!hasNonDimensionFilters) {
+                return rows || [];
+            }
+        }
         return rows.filter((row: any) => {
             return (
                 this.matchesIncomeFilter(
@@ -2723,7 +2746,7 @@ export class DepartmentIncomeDashboardComponent
         const labels = this.getFiveYearLabels();
         this.fiveYearColumnDefs = labels.map((label, i) => ({
             id: `incomeYear_${label}`,
-            label: `הכנסות ${label}`,
+            label: `${label}`,
             field: this.fiveYearFieldKeys[i],
         }));
         const yearIds = this.fiveYearColumnDefs.map((c) => c.id);
@@ -3724,8 +3747,99 @@ export class DepartmentIncomeDashboardComponent
     }
 
     private refreshBossWingsTableRows(): void {
-        this.bossWingsTableRows = [...this.bossWingInsights];
+        this.applyBossWingsTableSort();
         this.rebuildBossWingDepartmentsCache();
+    }
+
+    setBossWingsTableSort(
+        field: "amount" | "yoy",
+        direction: "desc" | "asc",
+    ): void {
+        this.bossWingsTableSortField = field;
+        this.bossWingsTableSortDir = direction;
+        this.bossTablePage = 0;
+        this.applyBossWingsTableSort();
+        this.cdr.detectChanges();
+    }
+
+    onBossWingsTableSearchChange(): void {
+        this.bossTablePage = 0;
+        this.cdr.detectChanges();
+    }
+
+    clearBossWingsTableSearch(): void {
+        this.bossWingsTableSearch = "";
+        this.onBossWingsTableSearchChange();
+    }
+
+    private matchesBossWingsTableSearch(label: string): boolean {
+        const query = this.bossWingsTableSearch.trim().toLowerCase();
+        if (!query) {
+            return true;
+        }
+        return String(label ?? "")
+            .trim()
+            .toLowerCase()
+            .includes(query);
+    }
+
+    getBossWingsTableFilteredRows(): BossSegmentInsightRow[] {
+        const query = this.bossWingsTableSearch.trim().toLowerCase();
+        if (!query) {
+            return this.bossWingsTableRows;
+        }
+        return this.bossWingsTableRows.filter((wing) => {
+            if (this.matchesBossWingsTableSearch(wing.label)) {
+                return true;
+            }
+            return this.getBossWingDepartmentRows(wing.label).some((dept) =>
+                this.matchesBossWingsTableSearch(dept.label),
+            );
+        });
+    }
+
+    getBossWingDepartmentRowsForDisplay(
+        wingLabel: string,
+    ): BossSegmentInsightRow[] {
+        const departments = this.getBossWingDepartmentRows(wingLabel);
+        const query = this.bossWingsTableSearch.trim().toLowerCase();
+        if (!query || this.matchesBossWingsTableSearch(wingLabel)) {
+            return departments;
+        }
+        return departments.filter((dept) =>
+            this.matchesBossWingsTableSearch(dept.label),
+        );
+    }
+
+    isBossWingExpandedForDisplay(wingLabel: string): boolean {
+        const query = this.bossWingsTableSearch.trim();
+        if (!query) {
+            return this.isBossWingExpanded(wingLabel);
+        }
+        if (this.matchesBossWingsTableSearch(wingLabel)) {
+            return this.isBossWingExpanded(wingLabel);
+        }
+        return this.getBossWingDepartmentRows(wingLabel).some((dept) =>
+            this.matchesBossWingsTableSearch(dept.label),
+        );
+    }
+
+    private applyBossWingsTableSort(): void {
+        if (this.bossWingsTableSortField === null) {
+            this.bossWingsTableRows = [...this.bossWingInsights];
+            return;
+        }
+        const compare =
+            this.bossWingsTableSortField === "amount"
+                ? (a: BossSegmentInsightRow, b: BossSegmentInsightRow) =>
+                      this.bossWingsTableSortDir === "desc"
+                          ? b.currentTotal - a.currentTotal
+                          : a.currentTotal - b.currentTotal
+                : (a: BossSegmentInsightRow, b: BossSegmentInsightRow) =>
+                      this.bossWingsTableSortDir === "desc"
+                          ? b.diff - a.diff
+                          : a.diff - b.diff;
+        this.bossWingsTableRows = [...this.bossWingInsights].sort(compare);
     }
 
     private rebuildBossWingDepartmentsCache(): void {
@@ -3959,244 +4073,25 @@ export class DepartmentIncomeDashboardComponent
         this.bossPayerPieData = mainSlices.map((slice) => [
             slice.label,
             parseFloat((slice.value / 1_000_000).toFixed(1)),
-            this.formatBossPieDisplayLabel(slice.sharePct, slice.value),
+            this.formatBossPieChartAnnotation(slice.label, slice.sharePct),
         ]);
         this.bossPayerPieColumns = [
             "גורם משלם",
             "הכנסות (M ₪)",
             { type: "string", role: "annotation" },
         ];
-        this.scheduleBossPieConnectorDraw();
     }
 
     formatBossPieDisplayLabel(sharePct: number, value: number): string {
         return `${this.formatBossMillions(value)} · ${sharePct.toFixed(1)}%`;
     }
 
+    formatBossPieChartAnnotation(label: string, sharePct: number): string {
+        return `${label}\n${sharePct.toFixed(1)}%`;
+    }
+
     getBossPayerPieColor(index: number): string {
         return this.bossPayerPieColors[index] ?? "#64748b";
-    }
-
-    onBossPayerPieChartReady(): void {
-        this.scheduleBossPieConnectorDraw();
-    }
-
-    private scheduleBossPieConnectorDraw(): void {
-        this.clearBossPieConnectorDrawTimers();
-        [0, 80, 220, 450].forEach((delay) => {
-            const timer = setTimeout(
-                () => this.drawBossPieConnectorLines(),
-                delay,
-            );
-            this.bossPieConnectorDrawTimers.push(timer);
-        });
-    }
-
-    private clearBossPieConnectorDrawTimers(): void {
-        this.bossPieConnectorDrawTimers.forEach((timer) =>
-            clearTimeout(timer),
-        );
-        this.bossPieConnectorDrawTimers = [];
-    }
-
-    private ensureBossPieConnectorObserver(): void {
-        if (this.bossPieConnectorObserver || !this.bossPieLayoutRef) {
-            return;
-        }
-        const ResizeObserverCtor = (window as any).ResizeObserver as
-            | (new (
-                  callback: (
-                      entries: Array<{ contentRect: { width: number } }>,
-                  ) => void,
-              ) => {
-                  disconnect(): void;
-                  observe(target: Element): void;
-              })
-            | undefined;
-        if (!ResizeObserverCtor) {
-            return;
-        }
-        this.bossPieConnectorObserver = new ResizeObserverCtor(() => {
-            this.scheduleBossPieConnectorDraw();
-        });
-        this.bossPieConnectorObserver.observe(this.bossPieLayoutRef.nativeElement);
-    }
-
-    private drawBossPieConnectorLines(): void {
-        const layout = this.bossPieLayoutRef?.nativeElement;
-        const connectorSvg = this.bossPieConnectorsRef?.nativeElement;
-        if (
-            !layout ||
-            !connectorSvg ||
-            this.bossViewMode !== "pie" ||
-            !this.bossPayerPieSliceMeta.length
-        ) {
-            return;
-        }
-
-        this.ensureBossPieConnectorObserver();
-
-        const chartSvg = layout.querySelector(
-            ".boss-pie-chart-wrap svg",
-        ) as SVGSVGElement | null;
-        const legendItems = layout.querySelectorAll<HTMLElement>(
-            ".boss-pie-legend__item",
-        );
-        if (!chartSvg || !legendItems.length) {
-            connectorSvg.innerHTML = "";
-            return;
-        }
-
-        const layoutRect = layout.getBoundingClientRect();
-        const width = Math.max(layoutRect.width, 1);
-        const height = Math.max(layoutRect.height, 1);
-        connectorSvg.setAttribute("width", `${width}`);
-        connectorSvg.setAttribute("height", `${height}`);
-        connectorSvg.setAttribute("viewBox", `0 0 ${width} ${height}`);
-
-        const slicePaths = this.getBossPieSlicePaths(chartSvg);
-        const fragments: string[] = [];
-
-        legendItems.forEach((item, index) => {
-            const path = slicePaths[index];
-            if (!path) {
-                return;
-            }
-
-            const itemRect = item.getBoundingClientRect();
-            const valueEl = item.querySelector(".boss-pie-legend__value");
-            const valueRect = valueEl?.getBoundingClientRect();
-            const startX =
-                (valueRect?.right ?? itemRect.right) - layoutRect.left;
-            const startY =
-                (valueRect
-                    ? valueRect.top + valueRect.height / 2
-                    : itemRect.top + itemRect.height / 2) - layoutRect.top;
-
-            const endPoint = this.getBossPieSliceAnchorPoint(
-                path,
-                chartSvg,
-                layoutRect,
-                startX,
-                startY,
-            );
-            const midX = startX + Math.max(16, (endPoint.x - startX) * 0.42);
-            const color = this.getBossPayerPieColor(index);
-
-            fragments.push(
-                `<path d="M ${startX.toFixed(1)} ${startY.toFixed(1)} L ${midX.toFixed(1)} ${startY.toFixed(1)} L ${endPoint.x.toFixed(1)} ${endPoint.y.toFixed(1)}" stroke="${color}" stroke-width="1.2" stroke-opacity="0.72" fill="none" />`,
-            );
-        });
-
-        connectorSvg.innerHTML = fragments.join("");
-    }
-
-    private getBossPieSlicePaths(chartSvg: SVGSVGElement): SVGPathElement[] {
-        const expectedColors = this.bossPayerPieSliceMeta.map((_, index) =>
-            this.getBossPayerPieColor(index).toLowerCase(),
-        );
-        const paths = Array.from(chartSvg.querySelectorAll("path")).filter(
-            (path) => {
-                const fill = (path.getAttribute("fill") ?? "").toLowerCase();
-                if (
-                    !fill ||
-                    fill === "#ffffff" ||
-                    fill === "white" ||
-                    fill === "none"
-                ) {
-                    return false;
-                }
-                const box = path.getBBox();
-                return box.width > 12 && box.height > 12;
-            },
-        );
-
-        const byColor = new Map<string, SVGPathElement>();
-        for (const path of paths) {
-            const fill = (path.getAttribute("fill") ?? "").toLowerCase();
-            if (!byColor.has(fill)) {
-                byColor.set(fill, path);
-            }
-        }
-
-        const ordered: SVGPathElement[] = [];
-        for (const color of expectedColors) {
-            const match = byColor.get(color);
-            if (match) {
-                ordered.push(match);
-                byColor.delete(color);
-            }
-        }
-
-        if (ordered.length === this.bossPayerPieSliceMeta.length) {
-            return ordered;
-        }
-
-        return paths.slice(0, this.bossPayerPieSliceMeta.length);
-    }
-
-    private getBossPieSliceAnchorPoint(
-        path: SVGPathElement,
-        chartSvg: SVGSVGElement,
-        layoutRect: DOMRect,
-        targetX: number,
-        targetY: number,
-    ): { x: number; y: number } {
-        const ctm = chartSvg.getScreenCTM();
-        const len = path.getTotalLength();
-        const bbox = path.getBBox();
-        const centerX = bbox.x + bbox.width / 2;
-        const centerY = bbox.y + bbox.height / 2;
-
-        let bestPoint = path.getPointAtLength(len * 0.5);
-        let bestScore = Number.NEGATIVE_INFINITY;
-        for (let step = 0; step <= 24; step += 1) {
-            const point = path.getPointAtLength((len * step) / 24);
-            const distFromCenter = Math.hypot(
-                point.x - centerX,
-                point.y - centerY,
-            );
-            const layoutPoint = this.bossPieSvgPointToLayout(
-                point,
-                ctm,
-                layoutRect,
-            );
-            const distToLegend = Math.hypot(
-                layoutPoint.x - targetX,
-                layoutPoint.y - targetY,
-            );
-            const score = distFromCenter * 1.35 - distToLegend * 0.25;
-            if (score > bestScore) {
-                bestScore = score;
-                bestPoint = point;
-            }
-        }
-
-        return this.bossPieSvgPointToLayout(bestPoint, ctm, layoutRect);
-    }
-
-    private bossPieSvgPointToLayout(
-        point: DOMPoint,
-        ctm: DOMMatrix | null,
-        layoutRect: DOMRect,
-    ): { x: number; y: number } {
-        if (!ctm) {
-            return { x: 0, y: 0 };
-        }
-        const screenPoint = new DOMPoint(point.x, point.y).matrixTransform(ctm);
-        return {
-            x: screenPoint.x - layoutRect.left,
-            y: screenPoint.y - layoutRect.top,
-        };
-    }
-
-    private teardownBossPieConnectorObserver(): void {
-        this.bossPieConnectorObserver?.disconnect();
-        this.bossPieConnectorObserver = null;
-        this.clearBossPieConnectorDrawTimers();
-        if (this.bossPieConnectorsRef?.nativeElement) {
-            this.bossPieConnectorsRef.nativeElement.innerHTML = "";
-        }
     }
 
     private parsePercentLabel(label: string): number {
@@ -4329,7 +4224,6 @@ export class DepartmentIncomeDashboardComponent
         }
         if (mode === "pie") {
             this.updateBossPayerPieTheme();
-            this.scheduleBossPieConnectorDraw();
         }
         if (mode === "monthly") {
             this.ensureBossMonthlyChartReady();
@@ -4600,7 +4494,7 @@ export class DepartmentIncomeDashboardComponent
         BossPayerInsightRow | BossSegmentInsightRow
     > {
         return this.bossViewMode === "wings"
-            ? this.bossWingsTableRows
+            ? this.getBossWingsTableFilteredRows()
             : this.bossPayerInsights;
     }
 
@@ -4614,7 +4508,7 @@ export class DepartmentIncomeDashboardComponent
 
     getBossWingsTablePageRows(): BossSegmentInsightRow[] {
         const start = this.bossTablePage * this.bossTablePageSize;
-        return this.bossWingsTableRows.slice(
+        return this.getBossWingsTableFilteredRows().slice(
             start,
             start + this.bossTablePageSize,
         );
@@ -4675,10 +4569,15 @@ export class DepartmentIncomeDashboardComponent
             pieSliceText: "none",
             annotations: {
                 ...this.bossPayerPieOptions.annotations,
+                alwaysOutside: true,
                 textStyle: {
-                    fontSize: 20,
+                    fontSize: 13,
                     bold: true,
                     color: annotationText,
+                },
+                stem: {
+                    color: this.isDark ? "#64748b" : "#94a3b8",
+                    length: 12,
                 },
             },
             pieSliceTextStyle: {
@@ -4688,8 +4587,9 @@ export class DepartmentIncomeDashboardComponent
             },
             titleTextStyle: { color: text },
             colors: pieColors,
+            height: 300,
+            chartArea: { width: "72%", height: "88%", left: 48, top: 20 },
         };
-        this.scheduleBossPieConnectorDraw();
     }
 
     /**
@@ -4703,7 +4603,6 @@ export class DepartmentIncomeDashboardComponent
         this.bossFilterLoadingKey = null;
         this.bossFiltersBaseline = null;
         this.stopBossLoadingAnimation();
-        this.teardownBossPieConnectorObserver();
 
         if (restoreResult.restored) {
             this.refreshAfterBossFilterRestore(restoreResult, "main");
@@ -6525,12 +6424,14 @@ export class DepartmentIncomeDashboardComponent
     setOrganizationFilter(option: string): void {
         this.selectedOrganization = option || this.incomeFilterAllValue;
         this.closeIncomeFilterDropdowns();
+        this.syncGraphToolbarToIncomeFilters();
         this.reloadDepartmentIncomeWithFilters();
     }
 
     setUnifiedCategoryFilter(option: string): void {
         this.selectedUnifiedCategory = option || this.incomeFilterAllValue;
         this.closeIncomeFilterDropdowns();
+        this.syncGraphToolbarToIncomeFilters();
         this.reloadDepartmentIncomeWithFilters();
     }
 
@@ -6543,6 +6444,7 @@ export class DepartmentIncomeDashboardComponent
         this.selectedOrganization = this.incomeFilterAllValue;
         this.selectedUnifiedCategory = this.incomeFilterAllValue;
         this.closeIncomeFilterDropdowns();
+        this.syncGraphToolbarToIncomeFilters();
         this.reloadDepartmentIncomeWithFilters();
     }
 
@@ -6616,8 +6518,19 @@ export class DepartmentIncomeDashboardComponent
     }
 
     private reloadDepartmentIncomeWithFilters(): void {
+        const scopeKey = this.getIncomeScopeKey();
+        const needsYearlyForTable =
+            this.graphPrimaryView !== "payer" &&
+            this.hasActivePayerIncomeFilters();
+        if (
+            needsYearlyForTable &&
+            !this.payerYearlyRawRows.length &&
+            !this.readPayerYearlyFromCache(scopeKey)?.length
+        ) {
+            this.isMainDataLoading = true;
+        }
+
         if (this.graphPrimaryView === "payer") {
-            const scopeKey = this.getIncomeScopeKey();
             const renderPayer = () => {
                 this.refreshPayerYearlyFilterOptions();
                 this.refreshPayerTypeOptions();
@@ -6641,13 +6554,17 @@ export class DepartmentIncomeDashboardComponent
             return;
         }
 
-        const scopeKey = this.getIncomeScopeKey();
         const cachedRaw = this.incomeRawUnfilteredByScope.get(scopeKey);
         const runIncomeRefresh = () => {
             if (this.isDepartmentMonthlyChartActive) {
                 this.refreshPayerYearlyFilterOptions();
                 this.refreshMonthlyDepartmentOptions();
                 this.updateDepartmentMonthlyChartData();
+                if (cachedRaw?.length) {
+                    this.assignDepartmentIncomeTableFromFilters(cachedRaw);
+                    this.calculateTopDepartments();
+                    this.cdr.detectChanges();
+                }
                 return;
             }
             if (cachedRaw?.length) {
@@ -6678,6 +6595,52 @@ export class DepartmentIncomeDashboardComponent
         ) as DepartmentComparisonDto[];
     }
 
+    /** שורות השוואה מכילות Organization / UnifiedCategory (GetDepartmentIncomeByDiagnosis) */
+    private comparisonRowsSupportIncomeDimensionFilters(rows: any[]): boolean {
+        if (!Array.isArray(rows) || !rows.length) {
+            return false;
+        }
+        return rows.some(
+            (row) =>
+                !!this.getFirstNonEmptyString(row, [
+                    "Organization",
+                    "organization",
+                ]) ||
+                !!this.getFirstNonEmptyString(row, [
+                    "UnifiedCategory",
+                    "unifiedCategory",
+                ]),
+        );
+    }
+
+    /** בונה ומצמיד לטבלה שורות מחלקות לפי פילטרי סרגל (yearly או comparison) */
+    private assignDepartmentIncomeTableFromFilters(
+        rawRows: DepartmentComparisonDto[],
+    ): void {
+        if (this.shouldUseYearlyDataForDepartmentChart()) {
+            if (!this.payerYearlyRawRows.length) {
+                this.departmentIncomeData = [];
+            } else {
+                this.departmentIncomeData =
+                    this.buildDepartmentComparisonFromPayerYearly(
+                        this.getPayerYearlyRowsForDepartmentChart(),
+                    );
+            }
+        } else {
+            const filtered = this.applyIncomeFiltersToDetailRows(
+                rawRows,
+            ) as DepartmentComparisonDto[];
+            this.departmentIncomeData =
+                this.aggregateDepartmentRowsForTable(filtered);
+        }
+        this.departmentIncomeData.sort(
+            (a, b) => this.getRowFiveYearTotal(b) - this.getRowFiveYearTotal(a),
+        );
+        this.dataSource.data = [...this.departmentIncomeData];
+        this.applyDepartmentTableSearch();
+        this.queueTableSortSync();
+    }
+
     /**
      * מיישם את 3 הפילטרים מהסרגל על שורות גולמיות ומרענן גרף+טבלה מיד (ללא המתנה ל-API).
      */
@@ -6688,12 +6651,7 @@ export class DepartmentIncomeDashboardComponent
         const filtered = this.applyIncomeFiltersToComparisonRows(rawRows);
         this.diagnosisApiRawRows = filtered;
         this.syncFiveYearEndYearFromDiagnosisRows(filtered);
-        this.departmentIncomeData =
-            this.buildDepartmentIncomeTableRows(filtered);
-        this.departmentIncomeData.sort(
-            (a, b) => this.getRowFiveYearTotal(b) - this.getRowFiveYearTotal(a),
-        );
-        this.dataSource.data = [...this.departmentIncomeData];
+        this.assignDepartmentIncomeTableFromFilters(rawRows);
         this.isDataLoaded = true;
         this.completeMainDataLoading();
 
@@ -6729,23 +6687,12 @@ export class DepartmentIncomeDashboardComponent
         this.cdr.detectChanges();
 
         this.ensurePayerYearlyForFiveYearView(() => {
+            const scopeRows =
+                this.incomeRawUnfilteredByScope.get(this.getIncomeScopeKey()) ??
+                rawRows;
             if (this.shouldUseYearlyDataForDepartmentChart()) {
-                const filtered = this.applyIncomeFiltersToComparisonRows(
-                    this.incomeRawUnfilteredByScope.get(
-                        this.getIncomeScopeKey(),
-                    ) ?? rawRows,
-                );
-                this.departmentIncomeData =
-                    this.buildDepartmentIncomeTableRows(filtered);
-                this.departmentIncomeData.sort(
-                    (a, b) =>
-                        this.getRowFiveYearTotal(b) -
-                        this.getRowFiveYearTotal(a),
-                );
-                this.dataSource.data = [...this.departmentIncomeData];
+                this.assignDepartmentIncomeTableFromFilters(scopeRows);
                 this.calculateTopDepartments();
-                this.applyDepartmentTableSearch();
-                this.queueTableSortSync();
                 if (
                     this.graphPrimaryView === "income" &&
                     !this.isBreakdownChartViewActive &&
@@ -6755,8 +6702,8 @@ export class DepartmentIncomeDashboardComponent
                 }
             } else {
                 this.enrichDepartmentFiveYearsFromYearly();
+                this.dataSource.data = [...this.departmentIncomeData];
             }
-            this.dataSource.data = [...this.departmentIncomeData];
             this.cdr.detectChanges();
         });
     }

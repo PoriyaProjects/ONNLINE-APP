@@ -525,12 +525,12 @@
               איפוס סינון
             </button>
 
-            <div class="custom-dropdown filter-dropdown" [class.active]="isUnifiedCategoryOpen"
+            <div class="custom-dropdown filter-dropdown filter-dropdown--activity" [class.active]="isUnifiedCategoryOpen"
               [class.has-value]="selectedUnifiedCategory !== incomeFilterAllValue">
               <div class="dropdown-trigger" matTooltip="{{ getUnifiedCategoryDisplay() }}" matTooltipPosition="below"
                 (click)="toggleIncomeFilterDropdown('unifiedCategory')">
                 <mat-icon class="dropdown-icon">account_tree</mat-icon>
-                <span class="selected-text">סוג פעילות : {{ getUnifiedCategoryDisplay() }}</span>
+                <span class="selected-text"><span class="filter-dropdown__label">סוג פעילות</span><span class="filter-dropdown__value">{{ getUnifiedCategoryDisplay() }}</span></span>
                 <mat-icon class="arrow-icon">{{ isUnifiedCategoryOpen ? 'expand_less' : 'expand_more' }}</mat-icon>
               </div>
               <div class="dropdown-panel" *ngIf="isUnifiedCategoryOpen">
@@ -544,12 +544,12 @@
             </div>
 
 
-            <div class="custom-dropdown filter-dropdown" [class.active]="isOrganizationOpen"
+            <div class="custom-dropdown filter-dropdown filter-dropdown--organization" [class.active]="isOrganizationOpen"
               [class.has-value]="selectedOrganization !== incomeFilterAllValue">
               <div class="dropdown-trigger" matTooltip="{{ getOrganizationDisplay() }}" matTooltipPosition="below"
                 (click)="toggleIncomeFilterDropdown('organization')">
                 <mat-icon class="dropdown-icon">business</mat-icon>
-                <span class="selected-text">קרן / מדינה: {{ getOrganizationDisplay() }}</span>
+                <span class="selected-text"><span class="filter-dropdown__label">קרן / מדינה</span><span class="filter-dropdown__value">{{ getOrganizationDisplay() }}</span></span>
                 <mat-icon class="arrow-icon">{{ isOrganizationOpen ? 'expand_less' : 'expand_more' }}</mat-icon>
               </div>
               <div class="dropdown-panel" *ngIf="isOrganizationOpen">
@@ -562,7 +562,7 @@
               </div>
             </div>
 
-            <div class="custom-dropdown filter-dropdown"
+            <div class="custom-dropdown filter-dropdown filter-dropdown--classification"
               [class.disabled]="isIncomeClassificationFilterDisabled"
               [class.active]="isIncomeClassificationOpen && !isIncomeClassificationFilterDisabled"
               [class.has-value]="selectedIncomeClassification !== incomeFilterAllValue && !isIncomeClassificationFilterDisabled">
@@ -571,7 +571,7 @@
                 matTooltipPosition="below"
                 (click)="toggleIncomeFilterDropdown('classification')">
                 <mat-icon class="dropdown-icon">category</mat-icon>
-                <span class="selected-text">סיווג הכנסה: {{ getIncomeClassificationDisplay() }}</span>
+                <span class="selected-text"><span class="filter-dropdown__label">סיווג הכנסה</span><span class="filter-dropdown__value">{{ getIncomeClassificationDisplay() }}</span></span>
                 <mat-icon class="arrow-icon" *ngIf="!isIncomeClassificationFilterDisabled">{{ isIncomeClassificationOpen ? 'expand_less' : 'expand_more' }}</mat-icon>
                 <mat-icon class="dropdown-icon dropdown-icon--muted" *ngIf="isIncomeClassificationFilterDisabled" aria-hidden="true">block</mat-icon>
               </div>
@@ -926,12 +926,12 @@
           איפוס סינון
         </button>
 
-        <div class="custom-dropdown filter-dropdown" [class.active]="isUnifiedCategoryOpen"
+        <div class="custom-dropdown filter-dropdown filter-dropdown--activity" [class.active]="isUnifiedCategoryOpen"
           [class.has-value]="selectedUnifiedCategory !== incomeFilterAllValue">
           <div class="dropdown-trigger" matTooltip="{{ getUnifiedCategoryDisplay() }}" matTooltipPosition="below"
             (click)="toggleIncomeFilterDropdown('unifiedCategory')">
             <mat-icon class="dropdown-icon">account_tree</mat-icon>
-            <span class="selected-text">סוג פעילות : {{ getUnifiedCategoryDisplay() }}</span>
+            <span class="selected-text"><span class="filter-dropdown__label">סוג פעילות</span><span class="filter-dropdown__value">{{ getUnifiedCategoryDisplay() }}</span></span>
             <mat-icon class="arrow-icon">{{ isUnifiedCategoryOpen ? 'expand_less' : 'expand_more' }}</mat-icon>
           </div>
           <div class="dropdown-panel" *ngIf="isUnifiedCategoryOpen">
@@ -944,12 +944,12 @@
           </div>
         </div>
 
-        <div class="custom-dropdown filter-dropdown" [class.active]="isOrganizationOpen"
+        <div class="custom-dropdown filter-dropdown filter-dropdown--organization" [class.active]="isOrganizationOpen"
           [class.has-value]="selectedOrganization !== incomeFilterAllValue">
           <div class="dropdown-trigger" matTooltip="{{ getOrganizationDisplay() }}" matTooltipPosition="below"
             (click)="toggleIncomeFilterDropdown('organization')">
             <mat-icon class="dropdown-icon">business</mat-icon>
-            <span class="selected-text">קרן / מדינה: {{ getOrganizationDisplay() }}</span>
+            <span class="selected-text"><span class="filter-dropdown__label">קרן / מדינה</span><span class="filter-dropdown__value">{{ getOrganizationDisplay() }}</span></span>
             <mat-icon class="arrow-icon">{{ isOrganizationOpen ? 'expand_less' : 'expand_more' }}</mat-icon>
           </div>
           <div class="dropdown-panel" *ngIf="isOrganizationOpen">
@@ -962,7 +962,7 @@
           </div>
         </div>
 
-        <!-- <div class="custom-dropdown filter-dropdown"
+        <!-- <div class="custom-dropdown filter-dropdown filter-dropdown--classification"
              [class.active]="isIncomeClassificationOpen"
              [class.has-value]="selectedIncomeClassification !== incomeFilterAllValue">
           <div class="dropdown-trigger"
@@ -1177,19 +1177,6 @@
         </div>
 
         <div class="boss-executive-summary boss-executive-summary--inline" role="status">
-          <div class="boss-summary-badge"
-            [class.boss-summary-badge--positive]="getBossHeroTotalDifference() >= 0"
-            [class.boss-summary-badge--negative]="getBossHeroTotalDifference() < 0">
-            <mat-icon aria-hidden="true">{{ getBossHeroTotalDifference() >= 0 ? 'trending_up' : 'trending_down' }}</mat-icon>
-            <span>{{ calculateBossHeroPercentageChange() }}</span>
-          </div>
-          <div class="boss-summary-content">
-            <span class="boss-summary-wing">{{ getBossSummaryWingLabel() }}</span>
-            <span class="boss-summary-line">
-              {{ getBossSummaryTrendWord() }} YTD {{ getLatestYear() }} מול {{ getOlderYear() }}
-            </span>
-            <span class="boss-hero-filter-scope">{{ getBossHeroFilterScopeText() }}</span>
-          </div>
           <div class="boss-wing-leaders-toggle" dir="rtl">
             <button type="button" class="boss-wing-leaders-btn boss-wing-leaders-btn--all"
               [class.active]="bossWingLeadersOpen"
@@ -1197,6 +1184,21 @@
               <mat-icon aria-hidden="true">leaderboard</mat-icon>
               <span>מובילות אגפים</span>
             </button>
+          </div>
+          <div class="boss-executive-summary__main">
+            <div class="boss-summary-badge"
+              [class.boss-summary-badge--positive]="getBossHeroTotalDifference() >= 0"
+              [class.boss-summary-badge--negative]="getBossHeroTotalDifference() < 0">
+              <mat-icon aria-hidden="true">{{ getBossHeroTotalDifference() >= 0 ? 'trending_up' : 'trending_down' }}</mat-icon>
+              <span>{{ calculateBossHeroPercentageChange() }}</span>
+            </div>
+            <div class="boss-summary-content">
+              <span class="boss-summary-wing">{{ getBossSummaryWingLabel() }}</span>
+              <span class="boss-summary-line">
+                {{ getBossSummaryTrendWord() }} YTD {{ getLatestYear() }} מול {{ getOlderYear() }}
+              </span>
+              <span class="boss-hero-filter-scope">{{ getBossHeroFilterScopeText() }}</span>
+            </div>
           </div>
         </div>
       </div>
@@ -1419,10 +1421,9 @@
                 <span>איפוס</span>
               </button>
           </div>
-          <p class="boss-toolbar-context" aria-live="polite">{{ getBossToolbarContextText() }}</p>
         </div>
         <div class="boss-view-toolbar__actions">
-          <div class="boss-table-pager" *ngIf="(bossViewMode === 'table' || bossViewMode === 'wings') && getBossTablePageCount() > 1">
+          <div class="boss-table-pager" *ngIf="bossViewMode === 'table' && getBossTablePageCount() > 1">
             <button type="button" mat-icon-button (click)="bossTablePrevPage()" [disabled]="bossTablePage === 0"
               aria-label="עמוד קודם">
               <mat-icon>chevron_right</mat-icon>
@@ -1433,10 +1434,6 @@
               <mat-icon>chevron_left</mat-icon>
             </button>
           </div>
-          <button type="button" mat-stroked-button class="boss-go-payer-btn" (click)="openPayerViewFromBoss()">
-            גורם משלם
-            <mat-icon>arrow_back</mat-icon>
-          </button>
         </div>
       </div>
 
@@ -1446,6 +1443,61 @@
             <div class="boss-panel__head-main">
               <h3>{{ getBossWingsTableTitle() }}</h3>
               <p class="boss-panel__subtitle">לחיצה על שורת אגף תפתח את המחלקות מתחתיו</p>
+            </div>
+            <div class="boss-panel__head-controls" dir="rtl">
+              <label class="boss-wings-search">
+                <mat-icon class="boss-wings-search__icon" aria-hidden="true">search</mat-icon>
+                <input type="search" class="boss-wings-search__input"
+                  [(ngModel)]="bossWingsTableSearch"
+                  (ngModelChange)="onBossWingsTableSearchChange()"
+                  placeholder="חיפוש אגף / מחלקה..."
+                  aria-label="חיפוש לפי שם אגף או מחלקה" />
+                <button *ngIf="bossWingsTableSearch" type="button" class="boss-wings-search__clear"
+                  (click)="clearBossWingsTableSearch()" aria-label="נקה חיפוש">
+                  <mat-icon>close</mat-icon>
+                </button>
+              </label>
+              <div class="boss-wings-sort-group" role="group" aria-label="מיון טבלת אגפים">
+                <button type="button" mat-icon-button class="boss-wings-sort-arrow"
+                  [class.boss-wings-sort-arrow--active]="bossWingsTableSortField === 'amount' && bossWingsTableSortDir === 'desc'"
+                  matTooltip="מיון לפי {{ getLatestYear() }} — מגדול לקטן" matTooltipPosition="below"
+                  (click)="setBossWingsTableSort('amount', 'desc')" aria-label="מיון מגדול לקטן">
+                  <mat-icon>arrow_downward</mat-icon>
+                </button>
+                <button type="button" mat-icon-button class="boss-wings-sort-arrow"
+                  [class.boss-wings-sort-arrow--active]="bossWingsTableSortField === 'amount' && bossWingsTableSortDir === 'asc'"
+                  matTooltip="מיון לפי {{ getLatestYear() }} — מקטן לגדול" matTooltipPosition="below"
+                  (click)="setBossWingsTableSort('amount', 'asc')" aria-label="מיון מקטן לגדול">
+                  <mat-icon>arrow_upward</mat-icon>
+                </button>
+                <button type="button" mat-icon-button class="boss-wings-sort-arrow"
+                  [class.boss-wings-sort-arrow--active]="bossWingsTableSortField === 'yoy' && bossWingsTableSortDir === 'desc'"
+                  matTooltip="מיון לפי שינוי YTD — יורדות הכי הרבה" matTooltipPosition="below"
+                  (click)="setBossWingsTableSort('yoy', 'desc')" aria-label="מיון יורדות הכי הרבה">
+                  <mat-icon>trending_down</mat-icon>
+                </button>
+                <button type="button" mat-icon-button class="boss-wings-sort-arrow"
+                  [class.boss-wings-sort-arrow--active]="bossWingsTableSortField === 'yoy' && bossWingsTableSortDir === 'asc'"
+                  matTooltip="מיון לפי שינוי YTD — עולות הכי הרבה" matTooltipPosition="below"
+                  (click)="setBossWingsTableSort('yoy', 'asc')" aria-label="מיון עולות הכי הרבה">
+                  <mat-icon>trending_up</mat-icon>
+                </button>
+              </div>
+              <div class="boss-table-pager" *ngIf="getBossTablePageCount() > 1">
+                <button type="button" mat-icon-button (click)="bossTablePrevPage()" [disabled]="bossTablePage === 0"
+                  aria-label="עמוד קודם">
+                  <mat-icon>chevron_right</mat-icon>
+                </button>
+                <span>{{ getBossTablePageLabel() }}</span>
+                <button type="button" mat-icon-button (click)="bossTableNextPage()"
+                  [disabled]="bossTablePage >= getBossTablePageCount() - 1" aria-label="עמוד הבא">
+                  <mat-icon>chevron_left</mat-icon>
+                </button>
+              </div>
+              <button type="button" mat-stroked-button class="boss-go-payer-btn" (click)="openPayerViewFromBoss()">
+                גורם משלם
+                <mat-icon>arrow_back</mat-icon>
+              </button>
             </div>
           </div>
 
@@ -1465,7 +1517,7 @@
                 <ng-container *ngFor="let wing of getBossWingsTablePageRows()">
                   <tr class="boss-wing-row"
                     [class.boss-payer-table__row--clickable]="isBossWingsTableRowClickable()"
-                    [class.boss-wing-row--expanded]="isBossWingExpanded(wing.label)"
+                    [class.boss-wing-row--expanded]="isBossWingExpandedForDisplay(wing.label)"
                     [style.--wing-accent-bg]="getBossWingAccent(wing.label).bg"
                     [style.--wing-accent-border]="getBossWingAccent(wing.label).border"
                     [style.--wing-accent-text]="getBossWingAccent(wing.label).text"
@@ -1473,7 +1525,7 @@
                     <td class="boss-payer-table__name">
                       <span class="boss-payer-table__name-text">{{ wing.label }}</span>
                       <mat-icon class="boss-wings-table__expand-icon" aria-hidden="true"
-                        [class.boss-wings-table__expand-icon--open]="isBossWingExpanded(wing.label)"
+                        [class.boss-wings-table__expand-icon--open]="isBossWingExpandedForDisplay(wing.label)"
                         *ngIf="isBossWingsTableRowClickable()">chevron_left</mat-icon>
                     </td>
                     <td class="boss-payer-table__amount">{{ formatBossMillions(wing.currentTotal) }}</td>
@@ -1488,9 +1540,9 @@
                     </td>
                     <td class="boss-payer-table__share">{{ formatBossSegmentShare(wing) }}</td>
                   </tr>
-                  <ng-container *ngIf="isBossWingExpanded(wing.label)">
+                  <ng-container *ngIf="isBossWingExpandedForDisplay(wing.label)">
                     <tr class="boss-wing-dept-row" @bossWingDeptExpand
-                      *ngFor="let dept of getBossWingDepartmentRows(wing.label)"
+                      *ngFor="let dept of getBossWingDepartmentRowsForDisplay(wing.label)"
                       [style.--wing-accent-bg]="getBossWingAccent(wing.label).bg"
                       [style.--wing-accent-border]="getBossWingAccent(wing.label).border"
                       [style.--wing-accent-text]="getBossWingAccent(wing.label).text">
@@ -1574,20 +1626,28 @@
         </section>
 
         <section class="boss-panel boss-panel--pie" *ngIf="bossViewMode === 'pie' && bossPayerPieData.length">
-          <div class="boss-pie-layout" #bossPieLayout dir="rtl">
+          <div class="boss-pie-layout" dir="rtl">
             <div class="boss-pie-chart-wrap">
               <google-chart type="PieChart" [data]="bossPayerPieData" [columns]="bossPayerPieColumns"
-                [options]="bossPayerPieOptions" dir="rtl" (ready)="onBossPayerPieChartReady()">
+                [options]="bossPayerPieOptions" dir="rtl">
               </google-chart>
             </div>
-            <ul class="boss-pie-legend" *ngIf="bossPayerPieSliceMeta.length">
-              <li class="boss-pie-legend__item" *ngFor="let slice of bossPayerPieSliceMeta; let i = index">
-                <span class="boss-pie-legend__swatch" [style.background-color]="getBossPayerPieColor(i)"></span>
-                <span class="boss-pie-legend__label">{{ slice.label }}</span>
-                <span class="boss-pie-legend__value">{{ slice.displayText }}</span>
-              </li>
-            </ul>
-            <svg #bossPieConnectors class="boss-pie-connectors" aria-hidden="true"></svg>
+            <aside class="boss-pie-legend-panel" *ngIf="bossPayerPieSliceMeta.length" aria-label="מקרא גורמי משלם">
+              <header class="boss-pie-legend-panel__head">
+                <span class="boss-pie-legend-panel__title">גורם משלם</span>
+                <span class="boss-pie-legend-panel__hint">כל שורה = פרוסה בגרף</span>
+              </header>
+              <ul class="boss-pie-legend">
+                <li class="boss-pie-legend__item" *ngFor="let slice of bossPayerPieSliceMeta; let i = index"
+                  [style.border-inline-start-color]="getBossPayerPieColor(i)">
+                  <span class="boss-pie-legend__swatch" [style.background-color]="getBossPayerPieColor(i)"></span>
+                  <div class="boss-pie-legend__body">
+                    <span class="boss-pie-legend__label">{{ slice.label }}</span>
+                    <span class="boss-pie-legend__value">{{ slice.displayText }}</span>
+                  </div>
+                </li>
+              </ul>
+            </aside>
           </div>
         </section>
 
@@ -1608,6 +1668,11 @@
             </div>
           </ng-template>
         </section>
+
+        <div class="boss-payer-empty" *ngIf="bossViewMode === 'wings' && bossWingsTableRows.length && !getBossWingsTableFilteredRows().length">
+          <mat-icon aria-hidden="true">search_off</mat-icon>
+          <span>לא נמצאו אגפים או מחלקות התואמים ל«{{ bossWingsTableSearch }}».</span>
+        </div>
 
         <div class="boss-payer-empty" *ngIf="bossViewMode === 'wings' && !bossWingsTableRows.length">
           <mat-icon aria-hidden="true">info_outline</mat-icon>
