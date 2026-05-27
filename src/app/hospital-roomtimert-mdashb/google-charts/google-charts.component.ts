@@ -47,6 +47,8 @@ export interface Surgery {
     TimeEntranceToTheOperatingRoom: string | null; // 'HH:mm' or null
     /** Alternate entrance time from some API payloads */
     ArrivalTime?: string | number | null;
+    /** Planned end time from some API payloads (e.g. RTM canceled rows) */
+    EndTime?: string | number | null;
     TimeExitingTheOperatingRoom: string | null; // 'HH:mm' or null
     SurgeryStatus: "Completed" | "InProgress" | "Planned" | string;
     TimeSurgeryToDo: string | number | null;
@@ -288,6 +290,14 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
                 raw?.TimeEntranceToTheOperatingRoom ?? null,
             TimeExitingTheOperatingRoom:
                 raw?.TimeExitingTheOperatingRoom ?? null,
+            ArrivalTime:
+                (raw as Record<string, unknown>)?.ArrivalTime ??
+                (raw as Record<string, unknown>)?.arrivalTime ??
+                null,
+            EndTime:
+                (raw as Record<string, unknown>)?.EndTime ??
+                (raw as Record<string, unknown>)?.endTime ??
+                null,
             SurgeryStatus: status,
             TimeSurgeryToDo: raw?.TimeSurgeryToDo ?? null,
 
@@ -871,6 +881,8 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
                                 row.TimeEntranceToTheOperatingRoom ?? null,
                             TimeExitingTheOperatingRoom:
                                 row.TimeExitingTheOperatingRoom ?? null,
+                            ArrivalTime: rowAny.ArrivalTime ?? null,
+                            EndTime: rowAny.EndTime ?? null,
                             TimeSurgeryToDo: row.TimeSurgeryToDo ?? null,
 
                             IsWaitingForSurgery: row.IsWaitingForSurgery,
@@ -5828,8 +5840,14 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
         const actual = this.getActualRtmExitTime(surgery);
         if (actual) return actual;
         const estimated = surgery?.timeExit;
-        if (!estimated || this.isZeroTime(estimated)) return null;
-        return estimated;
+        if (estimated && !this.isZeroTime(estimated)) return estimated;
+        if (this.isSurgeryCanceled(surgery as Surgery)) {
+            const plannedEnd = this.normalizeClockFromAny(
+                (surgery as Surgery).EndTime,
+            );
+            if (plannedEnd) return plannedEnd;
+        }
+        return null;
     }
 
     /**
@@ -5838,11 +5856,18 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
     private getEntranceTime(
         surgery: Surgery | Partial<Surgery>,
     ): string | null {
-        return (
+        const primary =
             surgery?.timeEntrance ??
             surgery?.TimeEntranceToTheOperatingRoom ??
-            null
-        );
+            null;
+        if (primary && !this.isZeroTime(primary)) return primary;
+        if (this.isSurgeryCanceled(surgery as Surgery)) {
+            const plannedStart = this.normalizeClockFromAny(
+                (surgery as Surgery).ArrivalTime,
+            );
+            if (plannedStart) return plannedStart;
+        }
+        return primary;
     }
 
     /** אין שעת כניסה מוקלטת (ריק / 00:00) — גם אם ה-API מסמן InProgress */
@@ -5861,6 +5886,32 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
         if (!t) return true;
         const s = String(t).trim();
         return s === "00:00" || s === "00:00:00" || s === "00:00:00.0000000";
+    }
+
+    /** Normalize clock values from API (HH:mm, datetime string, HHmm) */
+    private normalizeClockFromAny(v: unknown): string | null {
+        if (v == null) return null;
+        let s = String(v).trim();
+        if (!s) return null;
+        if (s.includes("T")) {
+            const parts = s.split("T");
+            if (parts.length > 1) s = parts[1];
+        }
+        if (s.includes(" ")) {
+            const parts = s.split(" ").filter(Boolean);
+            s = parts[parts.length - 1] || s;
+        }
+        const m = s.match(/(\d{1,2}):(\d{2})/);
+        if (m) {
+            const hh = String(parseInt(m[1], 10)).padStart(2, "0");
+            const hhmm = `${hh}:${m[2]}`;
+            return this.isZeroTime(hhmm) ? null : hhmm;
+        }
+        if (/^\d{4}$/.test(s)) {
+            const hhmm = `${s.slice(0, 2)}:${s.slice(2, 4)}`;
+            return this.isZeroTime(hhmm) ? null : hhmm;
+        }
+        return this.isZeroTime(s) ? null : s;
     }
 
     /** שדה טקסט ראשון לא ריק מתוך אובייקט (ווריאציות שם משדות שרת) */
