@@ -1,0 +1,176 @@
+<div class="permissions-page" dir="rtl">
+  <section class="page-hero">
+    <div class="hero-content">
+      <div class="hero-icon">
+        <span class="material-icons">admin_panel_settings</span>
+      </div>
+
+      <div>
+        <h1>מערכת דוח הרשאות</h1>
+        <p>ניהול הרשאות עובדים לפי מערכות ארגוניות - {{ user_name }}</p>
+      </div>
+    </div>
+
+    <div class="hero-actions">
+      <button type="button" class="btn secondary" (click)="resetChanges()">
+        <span class="material-icons">restart_alt</span>
+        איפוס
+      </button>
+
+      <button type="button" class="btn primary" (click)="savePermissions()" [disabled]="!hasChanges">
+        <span class="material-icons">save</span>
+        שמירה
+      </button>
+    </div>
+  </section>
+
+  <section class="stats-grid">
+    <div class="stat-card blue">
+      <span class="material-icons">groups</span>
+      <div>
+        <small>עובדים</small>
+        <strong>{{ employees.length }}</strong>
+      </div>
+    </div>
+
+    <div class="stat-card green">
+      <span class="material-icons">apps</span>
+      <div>
+        <small>מערכות</small>
+        <strong>{{ systems.length }}</strong>
+      </div>
+    </div>
+
+    <div class="stat-card purple">
+      <span class="material-icons">verified_user</span>
+      <div>
+        <small>הרשאות פעילות</small>
+        <strong>{{ totalGranted }}</strong>
+      </div>
+    </div>
+
+    <div class="stat-card orange">
+      <span class="material-icons">edit_note</span>
+      <div>
+        <small>שינויים</small>
+        <strong>{{ hasChanges ? 'קיימים' : 'אין' }}</strong>
+      </div>
+    </div>
+  </section>
+
+  <section class="toolbar-card">
+    <div class="search-box">
+      <span class="material-icons">search</span>
+      <input type="text" placeholder="חיפוש עובד לפי שם, ת.ז או מחלקה..." [value]="searchTerm"
+        (input)="onSearch($event)" />
+
+      <button type="button" *ngIf="searchTerm" (click)="clearSearch()" class="clear-search">
+        <span class="material-icons">close</span>
+      </button>
+    </div>
+
+    <div class="toolbar-actions">
+      <button type="button" class="btn light" (click)="grantAllVisible()">
+        <span class="material-icons">done_all</span>
+        סימון הכל
+      </button>
+
+      <button type="button" class="btn light danger" (click)="clearAllVisible()">
+        <span class="material-icons">remove_done</span>
+        ניקוי הכל
+      </button>
+    </div>
+  </section>
+
+  <section class="table-card">
+    <div class="table-title">
+      <div>
+        <h2>טבלת הרשאות</h2>
+      </div>
+
+      <div class="visible-count">
+        מוצגים {{ filteredEmployees.length }} מתוך {{ employees.length }}
+      </div>
+    </div>
+
+    <div class="permissions-table-wrapper">
+      <table class="permissions-table">
+        <thead>
+          <tr>
+            <th class="sticky-col employee-col">עובד</th>
+
+            <th *ngFor="let system of systems" class="system-header">
+              <div class="system-header-content">
+                <span class="system-name">{{ system.name }}</span>
+                <small>{{ system.description }}</small>
+
+                <label class="mini-toggle" title="סימון כל העובדים למערכת זו">
+                  <input type="checkbox" [checked]="isSystemFullyGranted(system.id)"
+                    [indeterminate]="isSystemPartiallyGranted(system.id)" (change)="toggleSystem(system.id, $event)" />
+                  <span></span>
+                </label>
+              </div>
+            </th>
+
+            <th class="actions-col">פעולות</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <tr *ngFor="let employee of filteredEmployees; trackBy: trackByEmployeeId">
+            <td class="sticky-col employee-cell">
+              <div class="employee-box">
+                <div class="avatar">
+                  {{ getInitials(employee.fullName) }}
+                </div>
+
+                <div class="employee-info">
+                  <strong>{{ employee.fullName }}</strong>
+                  <span>{{ employee.employeeId }} · {{ employee.department }}</span>
+                </div>
+              </div>
+            </td>
+
+            <td *ngFor="let system of systems" class="permission-cell">
+              <label class="permission-toggle">
+                <input type="checkbox" [checked]="hasPermission(employee.id, system.id)"
+                  (change)="togglePermission(employee.id, system.id, $event)" />
+                <span class="toggle-ui">
+                  <span class="material-icons check-icon">check</span>
+                </span>
+              </label>
+            </td>
+
+            <td class="row-actions">
+              <button type="button" class="small-action grant" (click)="grantEmployeeAll(employee.id)">
+                הכל
+              </button>
+
+              <button type="button" class="small-action clear" (click)="clearEmployeeAll(employee.id)">
+                נקה
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="empty-state" *ngIf="filteredEmployees.length === 0">
+        <span class="material-icons">search_off</span>
+        <h3>לא נמצאו עובדים</h3>
+        <p>נסה לשנות את מילת החיפוש</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="save-panel" *ngIf="hasChanges">
+    <div>
+      <strong>יש שינויים שלא נשמרו</strong>
+      <span>לחץ שמירה כדי לשלוח את הרשאות העובדים לשרת.</span>
+    </div>
+
+    <button type="button" class="btn primary" (click)="savePermissions()">
+      <span class="material-icons">save</span>
+      שמור שינויים
+    </button>
+  </section>
+</div>

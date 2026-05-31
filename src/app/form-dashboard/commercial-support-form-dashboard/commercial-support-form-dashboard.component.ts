@@ -1,6 +1,6 @@
 import { DatePipe } from '@angular/common';
-import { Component, Inject, OnInit, TemplateRef, ViewChild } from '@angular/core';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { Component, Inject, TemplateRef, ViewChild } from '@angular/core';
+import { FormBuilder } from '@angular/forms';
 import { MatDialog, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { MatTableDataSource } from '@angular/material/table';
 import { CommercialSupportFormDialogComponent } from './commercial-support-form-dialog/commercial-support-form-dialog.component';
@@ -96,6 +96,20 @@ export class CommercialSupportFormDashboardComponent {
     };
 
     this.supportRequests.filter = this.searchValue;
+  }
+
+  getInitials(fullName: string): string {
+    if (!fullName) {
+      return '?';
+    }
+
+    const parts = fullName.trim().split(' ').filter(x => x);
+
+    if (parts.length === 1) {
+      return parts[0].charAt(0);
+    }
+
+    return parts[0].charAt(0) + parts[1].charAt(0);
   }
 
   clearFilter(): void {
