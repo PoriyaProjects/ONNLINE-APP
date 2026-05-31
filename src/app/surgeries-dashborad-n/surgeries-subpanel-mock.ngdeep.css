@@ -169,3 +169,92 @@
     height: 100% !important;
     max-width: 100% !important;
 }
+
+/* ── Cancellations subpanel: same single-screen layout as revenue ── */
+:host ::ng-deep app-surgeries-cancellations {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    min-height: 0;
+    min-width: 0;
+    height: 100%;
+    max-height: 100%;
+    overflow: hidden;
+    box-sizing: border-box;
+    color: var(--text);
+    direction: rtl;
+    text-align: start;
+}
+
+:host ::ng-deep app-surgeries-cancellations > .main-content.with-top-sidebar {
+    flex: 1 1 auto;
+    min-height: 0;
+    height: 100%;
+    max-height: 100%;
+    overflow: hidden;
+    align-content: stretch;
+    align-items: stretch;
+}
+
+:host
+    ::ng-deep
+    app-surgeries-cancellations
+    > .main-content.with-top-sidebar.main-content--filter-collapsed {
+    grid-template-columns: minmax(0, 1fr);
+}
+
+:host
+    ::ng-deep
+    app-surgeries-cancellations
+    > .main-content.with-top-sidebar.main-content--filter-collapsed
+    > .main-content-chart-table {
+    grid-column: 1;
+}
+
+:host ::ng-deep app-surgeries-cancellations .main-content-chart-table {
+    height: 100%;
+    max-height: 100%;
+    overflow: hidden;
+    align-items: stretch;
+}
+
+:host ::ng-deep app-surgeries-cancellations .graph-section,
+:host ::ng-deep app-surgeries-cancellations .table-section {
+    height: 100%;
+    max-height: 100%;
+}
+
+:host ::ng-deep app-surgeries-cancellations .panel-graph,
+:host ::ng-deep app-surgeries-cancellations .panel-table {
+    margin-bottom: 0;
+    height: 100%;
+    max-height: 100%;
+}
+
+:host ::ng-deep app-surgeries-cancellations .graph-body {
+    min-height: 0;
+    gap: 4px;
+}
+
+:host ::ng-deep app-surgeries-cancellations .chart-with-expand {
+    min-height: 0;
+    flex: 1 1 auto;
+}
+
+:host ::ng-deep app-surgeries-cancellations .table-body {
+    overflow: hidden;
+    gap: 6px;
+    padding: 0;
+}
+
+:host ::ng-deep app-surgeries-cancellations .graph-body google-chart {
+    min-height: 0;
+    flex: 1 1 auto;
+}
+
+:host ::ng-deep app-surgeries-cancellations .graph-body google-chart ::ng-deep > div,
+:host ::ng-deep app-surgeries-cancellations .graph-body google-chart ::ng-deep svg {
+    width: 100% !important;
+    height: 100% !important;
+    max-width: 100% !important;
+}

@@ -6229,7 +6229,8 @@ export class RoomTimeRTmDashboardComponent implements OnInit, AfterViewInit {
         }
         if (avgDuration != null && !Number.isNaN(+avgDuration)) {
             const val = Math.max(0, Math.round(+avgDuration));
-            if (val >= 5 && val <= 480) return val;
+            // עדיפות ראשונה תמיד ל-AvgDuration מהשרת כשיש בו דאטה — מאפשרים גם ממוצע ארוך (עד 24 שעות)
+            if (val >= 5 && val <= 1440) return val;
         }
         return null;
     }
