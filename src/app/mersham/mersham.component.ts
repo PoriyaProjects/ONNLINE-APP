@@ -1362,7 +1362,7 @@ export class MershamComponent implements OnInit {
         const bottomSectionHtml = this.buildLabelSectionHtml([
             { label: "תאריך ושעת תפוגה", value: this.getLabelFallbackValue(this.getExpirationDateTimeDisplay(row)) },
             { label: "קצב מתן", value: this.getLabelFallbackValue(this.getAdministrationRateLabel(row)) },
-            { label: "חתימת אחות/אח", value: "" },
+            { label: "תנאי אחסון", value: "" },
         ], 3);
         const labelSectionsHtml = topSectionHtml + middleSectionHtml + bottomSectionHtml;
         return (
