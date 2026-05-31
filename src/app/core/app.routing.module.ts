@@ -184,6 +184,7 @@ import { WhatsappCategoriesPermissionsComponent } from '../whatsapp-messages-das
 import { WhatsappLungCancerComponent } from '../whatsapp-messages-dashboard/whatsapp-lung-cancer/whatsapp-lung-cancer.component';
 import { WhatsappMessagesDashboardComponent } from '../whatsapp-messages-dashboard/whatsapp-messages-dashboard.component';
 import { WorkerCasesComponent } from '../worker-cases/worker-cases.component';
+import { PermissionsReportComponent } from '../employees-manage-dash/permissions-report/permissions-report.component';
 
 
 const routes: Routes = [
@@ -247,7 +248,6 @@ const routes: Routes = [
   { path: "manageclinicprice", component: ManageClinicPriceComponent },
   { path: "nursesmanagedashboard", component: NursesManageDashboardComponent },
   { path: "nurse-permissions-manage", redirectTo: "nps-permissions", pathMatch: "full" },
-  { path: "nurse-employees-permissions-manage", redirectTo: "nps-employees-permissions", pathMatch: "full" },
   { path: "nursesdepartmentmanage", component: NursesDepartmentManageComponent },
   { path: "checkpatientinsmartcloset", component: CheckpatientinsmartclosetComponent },
   { path: "drugsnic", component: DrugsnicComponent },
@@ -420,11 +420,7 @@ const routes: Routes = [
     loadChildren: () =>
       import("../nps-permissions/nps-permissions.module").then((m) => m.NpsPermissionsModule),
   },
-  {
-    path: "nps-employees-permissions",
-    loadChildren: () =>
-      import("../nps-employees-permissions/nps-employees-permissions.module").then((m) => m.NpsEmployeesPermissionsModule),
-  },
+  { path: "permissions-report", component: PermissionsReportComponent },
 ];
 
 @NgModule({
