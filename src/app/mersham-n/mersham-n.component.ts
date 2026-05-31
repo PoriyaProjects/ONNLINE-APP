@@ -69,6 +69,14 @@ export interface DropOption {
     name: string;
     viewValue: string;
     groupID: string;
+    StorageConditions?: string;
+    ExpireTime?: string;
+}
+export interface DrugMetadata {
+    MedID?: string;
+    MedName: string;
+    StorageConditions?: string;
+    ExpireTime?: string;
 }
 export interface Prescription {
     PerscriptionID: string;
@@ -414,6 +422,7 @@ export class MershamNComponent implements OnInit {
     PresRowIdVal: string;
     filterdDataArray: DropOption[];
     MedListConst: DropOption[];
+    drugMetadataList: DrugMetadata[] = [];
     loadModalAfterClose: Boolean;
     printForm: {
         MedicationSensitivityVal: string;
@@ -1359,6 +1368,88 @@ export class MershamNComponent implements OnInit {
             return "";
         }
         return this.getAdministrationRateLabel(row);
+    }
+    private normalizeDrugName(value): string {
+        return String(value || "")
+            .split("___")[0]
+            .trim()
+            .toLowerCase();
+    }
+    private findDrugMetadataByName(drugName: string): DrugMetadata {
+        const normalizedDrugName = this.normalizeDrugName(drugName);
+        if (!normalizedDrugName || !this.drugMetadataList) {
+            return null;
+        }
+        return this.drugMetadataList.find((item) => {
+            return this.normalizeDrugName(item.MedName) === normalizedDrugName;
+        });
+    }
+    private getDrugMetadata(row: PrescriptionRow): DropOption | DrugMetadata {
+        if (!row || !this.MedList) {
+            return null;
+        }
+        const drugValue = String(row.MedListVal || "").split("___")[0];
+        const drug = this.MedList.find((item) => {
+            return (
+                String(item.value || "") === drugValue ||
+                String(item.viewValue || "") === drugValue ||
+                String(item.name || "") === drugValue
+            );
+        });
+        const metadata =
+            this.findDrugMetadataByName(drugValue) ||
+            (drug
+                ? this.findDrugMetadataByName(
+                      drug.value || drug.viewValue || drug.name
+                  )
+                : null);
+        if (drug && metadata) {
+            drug.StorageConditions = metadata.StorageConditions;
+            drug.ExpireTime = metadata.ExpireTime;
+        }
+        return metadata || drug;
+    }
+    getStorageConditionsDisplay(row: PrescriptionRow): string {
+        const drug = this.getDrugMetadata(row);
+        return drug ? String(drug.StorageConditions || "").trim() : "";
+    }
+    private getDrugMetadataFromServer() {
+        this.http
+            .post(environment.url + "getDrugsTbl", {
+                _pageIndex: 0,
+                _pageSize: 10000,
+                _FreeText: "",
+                _GroupID: "-1",
+            })
+            .subscribe((Response) => {
+                var json = JSON.parse(Response["d"]);
+                json = JSON.parse(json);
+                const drugData = JSON.parse(json["aaData"]);
+                this.drugMetadataList = drugData.map((drug) => {
+                    return {
+                        MedID: drug.MedID,
+                        MedName: drug.MedName,
+                        StorageConditions: drug.StorageConditions,
+                        ExpireTime: drug.ExpireTime,
+                    };
+                });
+                this.mergeDrugMetadataIntoMedList();
+            });
+    }
+    private mergeDrugMetadataIntoMedList() {
+        if (!this.MedList || !this.drugMetadataList) {
+            return;
+        }
+        this.MedList.forEach((drug) => {
+            const metadata =
+                this.findDrugMetadataByName(drug.value) ||
+                this.findDrugMetadataByName(drug.viewValue) ||
+                this.findDrugMetadataByName(drug.name);
+            if (metadata) {
+                drug.StorageConditions = metadata.StorageConditions;
+                drug.ExpireTime = metadata.ExpireTime;
+            }
+        });
     }
     private getEmployeeFullName(employeeId: string): string {
         const employee = this.employees.find(
@@ -2431,6 +2522,8 @@ export class MershamNComponent implements OnInit {
                 this.Solution_Volume = JSON.parse(json["Solution_Volume"]);
                 this.Way_Of_Providing = JSON.parse(json["Way_Of_Providing"]);
                 this.MedList = this.MedListConst = JSON.parse(json["MedList"]);
+                this.mergeDrugMetadataIntoMedList();
+                this.getDrugMetadataFromServer();
                 this.Days_Protocol = JSON.parse(json["Days_Protocol"]);
                 this.Notes = JSON.parse(json["Notes"]);
                 ////////////////////////////debugger
