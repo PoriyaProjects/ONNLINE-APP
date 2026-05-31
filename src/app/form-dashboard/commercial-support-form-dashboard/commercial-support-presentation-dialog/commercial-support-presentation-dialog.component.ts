@@ -71,6 +71,7 @@ export class CommercialSupportPresentationDialogComponent implements OnInit {
       PresentationTime: new FormControl(data?.PresentationTime, null),
       Location: new FormControl(data?.Location, null),
       ManagerSign: new FormControl(data?.ManagerSign, null),
+      Manager1: new FormControl(data?.Manager1, null),
       CompanyName: new FormControl(data?.CompanyName, Validators.required),
       ReferenceName: new FormControl(data?.ReferenceName, Validators.required),
       Phone: new FormControl(data?.Phone, Validators.required),
@@ -107,6 +108,7 @@ export class CommercialSupportPresentationDialogComponent implements OnInit {
         else if (patient.EmployeeID != null) {
           this.PresentationRequestDto.controls['Requester'].setValue(patient.FirstName + ' ' + patient.LastName);
           this.PresentationRequestDto.controls['RequesterDetails'].setValue(patient.RankDescription + ', ' + patient.DepartnentDescripton);
+          this.PresentationRequestDto.controls['Manager1'].setValue(patient.Manager1);
           this.decision_making = this.UserName == 'okatz' || this.UserName == 'adahabre' ? true : false;
         }
       },

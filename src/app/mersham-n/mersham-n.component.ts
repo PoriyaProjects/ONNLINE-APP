@@ -69,6 +69,14 @@ export interface DropOption {
     name: string;
     viewValue: string;
     groupID: string;
+    StorageConditions?: string;
+    ExpireTime?: string;
+}
+export interface DrugMetadata {
+    MedID?: string;
+    MedName: string;
+    StorageConditions?: string;
+    ExpireTime?: string;
 }
 export interface Prescription {
     PerscriptionID: string;
@@ -414,6 +422,7 @@ export class MershamNComponent implements OnInit {
     PresRowIdVal: string;
     filterdDataArray: DropOption[];
     MedListConst: DropOption[];
+    drugMetadataList: DrugMetadata[] = [];
     loadModalAfterClose: Boolean;
     printForm: {
         MedicationSensitivityVal: string;
@@ -1360,6 +1369,88 @@ export class MershamNComponent implements OnInit {
         }
         return this.getAdministrationRateLabel(row);
     }
+    private normalizeDrugName(value): string {
+        return String(value || "")
+            .split("___")[0]
+            .trim()
+            .toLowerCase();
+    }
+    private findDrugMetadataByName(drugName: string): DrugMetadata {
+        const normalizedDrugName = this.normalizeDrugName(drugName);
+        if (!normalizedDrugName || !this.drugMetadataList) {
+            return null;
+        }
+        return this.drugMetadataList.find((item) => {
+            return this.normalizeDrugName(item.MedName) === normalizedDrugName;
+        });
+    }
+    private getDrugMetadata(row: PrescriptionRow): DropOption | DrugMetadata {
+        if (!row || !this.MedList) {
+            return null;
+        }
+        const drugValue = String(row.MedListVal || "").split("___")[0];
+        const drug = this.MedList.find((item) => {
+            return (
+                String(item.value || "") === drugValue ||
+                String(item.viewValue || "") === drugValue ||
+                String(item.name || "") === drugValue
+            );
+        });
+        const metadata =
+            this.findDrugMetadataByName(drugValue) ||
+            (drug
+                ? this.findDrugMetadataByName(
+                      drug.value || drug.viewValue || drug.name
+                  )
+                : null);
+        if (drug && metadata) {
+            drug.StorageConditions = metadata.StorageConditions;
+            drug.ExpireTime = metadata.ExpireTime;
+        }
+        return metadata || drug;
+    }
+    getStorageConditionsDisplay(row: PrescriptionRow): string {
+        const drug = this.getDrugMetadata(row);
+        return drug ? String(drug.StorageConditions || "").trim() : "";
+    }
+    private getDrugMetadataFromServer() {
+        this.http
+            .post(environment.url + "getDrugsTbl", {
+                _pageIndex: 0,
+                _pageSize: 10000,
+                _FreeText: "",
+                _GroupID: "-1",
+            })
+            .subscribe((Response) => {
+                var json = JSON.parse(Response["d"]);
+                json = JSON.parse(json);
+                const drugData = JSON.parse(json["aaData"]);
+                this.drugMetadataList = drugData.map((drug) => {
+                    return {
+                        MedID: drug.MedID,
+                        MedName: drug.MedName,
+                        StorageConditions: drug.StorageConditions,
+                        ExpireTime: drug.ExpireTime,
+                    };
+                });
+                this.mergeDrugMetadataIntoMedList();
+            });
+    }
+    private mergeDrugMetadataIntoMedList() {
+        if (!this.MedList || !this.drugMetadataList) {
+            return;
+        }
+        this.MedList.forEach((drug) => {
+            const metadata =
+                this.findDrugMetadataByName(drug.value) ||
+                this.findDrugMetadataByName(drug.viewValue) ||
+                this.findDrugMetadataByName(drug.name);
+            if (metadata) {
+                drug.StorageConditions = metadata.StorageConditions;
+                drug.ExpireTime = metadata.ExpireTime;
+            }
+        });
+    }
     private getEmployeeFullName(employeeId: string): string {
         const employee = this.employees.find(
             (item) => String(item.EmployeeID) === String(employeeId)
@@ -1476,24 +1567,7 @@ export class MershamNComponent implements OnInit {
         items: Array<{ label: string; value?: string; valueHtml?: string }>,
         columnCount: number
     ): string {
-        const cellsHtml = items
-            .map((item) => {
-                const valueHtml =
-                    item.valueHtml !== undefined
-                        ? item.valueHtml
-                        : this.escapeHtml(item.value || "");
-                return (
-                    '<div class="label-cell">' +
-                    '<div class="label-title">' +
-                    this.escapeHtml(item.label) +
-                    "</div>" +
-                    '<div class="label-value">' +
-                    valueHtml +
-                    "</div>" +
-                    "</div>"
-                );
-            })
-            .join("");
+        const cellsHtml = items.map((item) => this.buildLabelCellHtml(item)).join("");
         return (
             '<div class="label-section label-section--' +
             columnCount +
@@ -1502,116 +1576,148 @@ export class MershamNComponent implements OnInit {
             "</div>"
         );
     }
+    private buildLabelCellHtml(
+        item: { label: string; value?: string; valueHtml?: string },
+        extraClass: string = ""
+    ): string {
+        const valueHtml =
+            item.valueHtml !== undefined
+                ? item.valueHtml
+                : this.escapeHtml(item.value || "");
+        return (
+            '<div class="label-cell' +
+            (extraClass ? " " + extraClass : "") +
+            '">' +
+            '<div class="label-title">' +
+            this.escapeHtml(item.label) +
+            "</div>" +
+            '<div class="label-value">' +
+            valueHtml +
+            "</div>" +
+            "</div>"
+        );
+    }
+    private buildPatientDrugSectionHtml(
+        patientName: string,
+        patientId: string,
+        drugName: string,
+        preparerName: string,
+        checkerName: string
+    ): string {
+        return (
+            '<div class="label-section label-section--middle">' +
+            '<div class="label-column label-column--stack">' +
+            this.buildLabelCellHtml({
+                label: "שם מטופל",
+                value: patientName,
+            }) +
+            this.buildLabelCellHtml({
+                label: "ת.ז",
+                value: patientId,
+            }) +
+            "</div>" +
+            '<div class="label-column label-column--drug">' +
+            this.buildLabelCellHtml(
+                {
+                    label: "שם תרופה",
+                    value: drugName,
+                },
+                "label-cell--drug"
+            ) +
+            "</div>" +
+            '<div class="label-column label-column--stack">' +
+            this.buildLabelCellHtml({
+                label: "שם מכין",
+                value: preparerName,
+            }) +
+            this.buildLabelCellHtml({
+                label: "שם בודק",
+                value: checkerName,
+            }) +
+            "</div>" +
+            "</div>"
+        );
+    }
     private buildRowLabelHtml(): string {
         const row = this.selectedRowForPrint;
         const formValue = this.rowLabelForm.getRawValue();
         const batchNumber = String(row.rowIdPreVal || "").trim();
         const barcodeHtml = this.buildCode39BarcodeSvg(batchNumber);
-        const firstSection = [
-            {
-                label: "שם מוסד",
-                value: "בית מרקחת מרכז רפואי צפון",
-            },
-            {
-                label: "מספר אצווה",
-                value: this.getLabelFallbackValue(batchNumber),
-            },
-            {
-                label: "ברקוד מספר אצווה",
-                valueHtml: barcodeHtml || this.escapeHtml("לא הוגדר"),
-            },
-        ];
-        const patientSection = [
-            {
-                label: "שם מטופל",
-                value: this.getLabelFallbackValue(this.getPatientFullName()),
-            },
-            {
-                label: "ת.ז",
-                value: this.getLabelFallbackValue(this.getPatientIdentifier()),
-            },
-            {
-                label: "שם מכין ההכנה",
-                value: this.getLabelFallbackValue(
-                    this.getEmployeeFullName(formValue.preparerEmployeeId)
-                ),
-            },
-            {
-                label: "שם בודק ההכנה",
-                value: this.getLabelFallbackValue(
-                    this.getEmployeeFullName(formValue.checkerEmployeeId)
-                ),
-            },
-        ];
-        const detailsSection = [
-            {
-                label: "שם תרופה גנרי",
-                value: this.getLabelFallbackValue(row.MedListVal),
-            },
-            {
-                label: "דרך מתן",
-                value: this.getLabelFallbackValue(row.Way_Of_ProvidingVal),
-            },
-            {
-                label: "מינון",
-                value: this.getLabelFallbackValue(this.getDoseLabel(row)),
-            },
-            {
-                label: "נפח סופי",
-                value: this.getLabelFallbackValue(
-                    this.getFinalVolumeLabel(row)
-                ),
-            },
-            {
-                label: "תמיסת מיהול",
-                value: this.getLabelFallbackValue(row.SolutionVal),
-            },
-            {
-                label: "קצב מתן",
-                value: this.getLabelFallbackValue(
-                    this.getAdministrationRateLabel(row)
-                ),
-            },
-            {
-                label: "תאריך הכנה",
-                value: this.getLabelFallbackValue(
-                    this.getCurrentPreparationDate()
-                ),
-            },
-            {
-                label: "שעת הכנה",
-                value: this.getLabelFallbackValue(formValue.preparationTime),
-            },
-            {
-                label: "תאריך תפוגה",
-                value: "לא הוגדר במסך התרופות",
-            },
-            {
-                label: "תנאי אחסון",
-                value: "לא הוגדר במסך התרופות",
-            },
-        ];
-        const labelSectionsHtml =
-            this.buildLabelSectionHtml(firstSection, 3) +
-            this.buildLabelSectionHtml(patientSection, 4) +
-            this.buildLabelSectionHtml(detailsSection, 3);
+        const preparerName = this.getLabelFallbackValue(
+            this.getEmployeeFullName(formValue.preparerEmployeeId)
+        );
+        const checkerName = this.getLabelFallbackValue(
+            this.getEmployeeFullName(formValue.checkerEmployeeId)
+        );
+        const preparationDateStr = this.getCurrentPreparationDate();
+        const preparationTimeStr = String(formValue.preparationTime || "").trim();
+        const preparationDateTime = [preparationDateStr, preparationTimeStr].filter(s => s).join(" ") || "לא הוגדר";
+        // Top section: 3 equal columns — (שם מוסד + מכין) | (מספר אצווה + שעה ותאריך) | (ברקוד + בדק)
+        const topSectionHtml =
+            '<div class="label-section label-section--3">' +
+            '<div class="label-column label-column--stack">' +
+            this.buildLabelCellHtml({ label: "שם מוסד", value: "בית מרקחת מרכז רפואי צפון" }) +
+            this.buildLabelCellHtml({ label: "מכין", value: preparerName }) +
+            "</div>" +
+            '<div class="label-column label-column--stack">' +
+            this.buildLabelCellHtml({ label: "מספר אצווה", value: this.getLabelFallbackValue(batchNumber) }) +
+            this.buildLabelCellHtml({ label: "שעה ותאריך", value: preparationDateTime }) +
+            "</div>" +
+            '<div class="label-column label-column--stack">' +
+            this.buildLabelCellHtml({ label: "ברקוד", valueHtml: barcodeHtml || this.escapeHtml("לא הוגדר") }) +
+            this.buildLabelCellHtml({ label: "בדק", value: checkerName }) +
+            "</div>" +
+            "</div>";
+        // Middle section: 25/50/25 — (שם מטופל + מינון + תמיסה) | (שם תרופה) | (ת.ז + דרך מתן + נפח סופי)
+        const middleSectionHtml =
+            '<div class="label-section label-section--middle">' +
+            '<div class="label-column label-column--stack">' +
+            this.buildLabelCellHtml({ label: "שם מטופל", value: this.getLabelFallbackValue(this.getPatientFullName()) }) +
+            this.buildLabelCellHtml({ label: "מינון", value: this.getLabelFallbackValue(this.getDoseLabel(row)) }) +
+            this.buildLabelCellHtml({ label: "תמיסה", value: this.getLabelFallbackValue(row.SolutionVal) }) +
+            "</div>" +
+            '<div class="label-column label-column--drug">' +
+            this.buildLabelCellHtml({ label: "שם תרופה", value: this.getLabelFallbackValue(row.MedListVal) }, "label-cell--drug") +
+            "</div>" +
+            '<div class="label-column label-column--stack">' +
+            this.buildLabelCellHtml({ label: "ת.ז", value: this.getLabelFallbackValue(this.getPatientIdentifier()) }) +
+            this.buildLabelCellHtml({ label: "דרך מתן", value: this.getLabelFallbackValue(row.Way_Of_ProvidingVal) }) +
+            this.buildLabelCellHtml({ label: "נפח סופי", value: this.getLabelFallbackValue(this.getFinalVolumeLabel(row)) }) +
+            "</div>" +
+            "</div>";
+        // Bottom section: 3 equal flat cells — תאריך ושעת תפוגה | קצב מתן | חתימת אחות/אח
+        const bottomSectionHtml = this.buildLabelSectionHtml([
+            { label: "תאריך ושעת תפוגה", value: "לא הוגדר במסך התרופות" },
+            { label: "קצב מתן", value: this.getLabelFallbackValue(this.getAdministrationRateLabel(row)) },            
+            { label: "תנאי אחסון", value: this.getLabelFallbackValue(this.getStorageConditionsDisplay(row)) }
+        ], 3);
+        const labelSectionsHtml = topSectionHtml + middleSectionHtml + bottomSectionHtml;
         return (
             '<!doctype html><html dir="rtl" lang="he"><head><meta charset="utf-8" />' +
             "<title>מדבקת הכנה</title>" +
             "<style>" +
             "body{font-family:Arial,sans-serif;margin:0;padding:0;direction:rtl;color:#000;}" +
-            ".label-card{border:1px solid #000;padding:0;width:105mm;height:95mm;box-sizing:border-box;overflow:hidden;}" +
-            ".label-section{display:grid;gap:0;border:1px solid #000;border-bottom:none;}" +
-            ".label-section:first-child{height:15mm;max-height:15mm;overflow:hidden;}" +
+            ".label-card{border:1px solid #000;padding:0;width:81mm;height:69.5mm;box-sizing:border-box;overflow:hidden;display:flex;flex-direction:column;}" +
+            ".label-section{display:grid;gap:0;border:1px solid #000;border-bottom:none;flex:1 1 0;min-height:0;}" +
+            ".label-section:first-child{height:2cm;min-height:2cm;max-height:2cm;flex:0 0 2cm;overflow:hidden;}" +
+            ".label-section:first-child .label-cell{justify-content:center;align-items:center;text-align:center;}" +
             ".label-section:last-child{border-bottom:1px solid #000;}" +
             ".label-section--3{grid-template-columns:repeat(3,1fr);}" +
             ".label-section--4{grid-template-columns:repeat(4,1fr);}" +
-            ".label-cell{border-left:1px solid #000;padding:2px 3px;box-sizing:border-box;text-align:center;display:flex;flex-direction:column;justify-content:flex-start;gap:2px;overflow:hidden;}" +
+            ".label-section--middle{grid-template-columns:25% 50% 25%;}" +
+            ".label-column{display:flex;flex-direction:column;min-width:0;border-left:1px solid #000;}" +
+            ".label-column:last-child{border-left:none;}" +
+            ".label-column--stack .label-cell{flex:1 1 0;border-left:none;min-height:0;}" +
+            ".label-column--stack .label-cell+.label-cell{border-top:1px solid #000;}" +
+            ".label-column--drug .label-cell{flex:1 1 0;border-left:none;justify-content:center;}" +
+            ".label-cell--drug .label-title{font-size:11px;}" +
+            ".label-cell--drug .label-value{font-size:11px;font-weight:700;line-height:1.1;}" +
+            ".label-cell{border-left:1px solid #000;padding:2px 3px;box-sizing:border-box;text-align:center;display:flex;flex-direction:column;justify-content:flex-start;align-items:stretch;gap:2px;overflow:hidden;}" +
             ".label-cell:last-child{border-left:none;}" +
             ".label-title{font-weight:700;font-size:9px;line-height:1.1;}" +
             ".label-value{font-size:9px;line-height:1.1;word-break:break-word;}" +
             ".barcode{display:block;width:100%;height:28px;margin:0 auto;}" +
-            "@page{size:105mm 95mm;margin:0;}" +
+            "@page{size:85mm 75mm;margin:3.5mm 2mm 2mm;}" +
             "</style></head><body>" +
             '<div class="label-card">' +
             labelSectionsHtml +
@@ -2416,6 +2522,8 @@ export class MershamNComponent implements OnInit {
                 this.Solution_Volume = JSON.parse(json["Solution_Volume"]);
                 this.Way_Of_Providing = JSON.parse(json["Way_Of_Providing"]);
                 this.MedList = this.MedListConst = JSON.parse(json["MedList"]);
+                this.mergeDrugMetadataIntoMedList();
+                this.getDrugMetadataFromServer();
                 this.Days_Protocol = JSON.parse(json["Days_Protocol"]);
                 this.Notes = JSON.parse(json["Notes"]);
                 ////////////////////////////debugger
