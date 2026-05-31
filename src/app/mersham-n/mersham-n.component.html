@@ -2345,7 +2345,7 @@
                                     *matHeaderCellDef
                                     class="text-center"
                                 >
-                                    חתימת האחות המבצעת
+                                    תנאי אחסון
                                 </th>
                                 <td
                                     mat-cell
@@ -2353,7 +2353,10 @@
                                         let element;
                                         let rowIdx = index
                                     "
-                                ></td>
+                                    class="text-center"
+                                >
+                                    {{ getStorageConditionsDisplay(element) }}
+                                </td>
                             </ng-container>
 
                             <ng-container matColumnDef="TIME">
