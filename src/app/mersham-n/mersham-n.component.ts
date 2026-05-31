@@ -1552,79 +1552,55 @@ export class MershamNComponent implements OnInit {
         const formValue = this.rowLabelForm.getRawValue();
         const batchNumber = String(row.rowIdPreVal || "").trim();
         const barcodeHtml = this.buildCode39BarcodeSvg(batchNumber);
-        const firstSection = [
-            {
-                label: "שם מוסד",
-                value: "בית מרקחת מרכז רפואי צפון",
-            },
-            {
-                label: "מספר אצווה",
-                value: this.getLabelFallbackValue(batchNumber),
-            },
-            {
-                label: "ברקוד מספר אצווה",
-                valueHtml: barcodeHtml || this.escapeHtml("לא הוגדר"),
-            },
-        ];
-        const patientSectionHtml = this.buildPatientDrugSectionHtml(
-            this.getLabelFallbackValue(this.getPatientFullName()),
-            this.getLabelFallbackValue(this.getPatientIdentifier()),
-            this.getLabelFallbackValue(row.MedListVal),
-            this.getLabelFallbackValue(
-                this.getEmployeeFullName(formValue.preparerEmployeeId)
-            ),
-            this.getLabelFallbackValue(
-                this.getEmployeeFullName(formValue.checkerEmployeeId)
-            )
+        const preparerName = this.getLabelFallbackValue(
+            this.getEmployeeFullName(formValue.preparerEmployeeId)
         );
-        const detailsSection = [
-            {
-                label: "דרך מתן",
-                value: this.getLabelFallbackValue(row.Way_Of_ProvidingVal),
-            },
-            {
-                label: "מינון",
-                value: this.getLabelFallbackValue(this.getDoseLabel(row)),
-            },
-            {
-                label: "נפח סופי",
-                value: this.getLabelFallbackValue(
-                    this.getFinalVolumeLabel(row)
-                ),
-            },
-            {
-                label: "תמיסת מיהול",
-                value: this.getLabelFallbackValue(row.SolutionVal),
-            },
-            {
-                label: "קצב מתן",
-                value: this.getLabelFallbackValue(
-                    this.getAdministrationRateLabel(row)
-                ),
-            },
-            {
-                label: "תאריך הכנה",
-                value: this.getLabelFallbackValue(
-                    this.getCurrentPreparationDate()
-                ),
-            },
-            {
-                label: "שעת הכנה",
-                value: this.getLabelFallbackValue(formValue.preparationTime),
-            },
-            {
-                label: "תאריך תפוגה",
-                value: "לא הוגדר במסך התרופות",
-            },
-            {
-                label: "תנאי אחסון",
-                value: "לא הוגדר במסך התרופות",
-            },
-        ];
-        const labelSectionsHtml =
-            this.buildLabelSectionHtml(firstSection, 3) +
-            patientSectionHtml +
-            this.buildLabelSectionHtml(detailsSection, 3);
+        const checkerName = this.getLabelFallbackValue(
+            this.getEmployeeFullName(formValue.checkerEmployeeId)
+        );
+        const preparationDateStr = this.getCurrentPreparationDate();
+        const preparationTimeStr = String(formValue.preparationTime || "").trim();
+        const preparationDateTime = [preparationDateStr, preparationTimeStr].filter(s => s).join(" ") || "לא הוגדר";
+        // Top section: 3 equal columns — (שם מוסד + מכין) | (מספר אצווה + שעה ותאריך) | (ברקוד + בדק)
+        const topSectionHtml =
+            '<div class="label-section label-section--3">' +
+            '<div class="label-column label-column--stack">' +
+            this.buildLabelCellHtml({ label: "שם מוסד", value: "בית מרקחת מרכז רפואי צפון" }) +
+            this.buildLabelCellHtml({ label: "מכין", value: preparerName }) +
+            "</div>" +
+            '<div class="label-column label-column--stack">' +
+            this.buildLabelCellHtml({ label: "מספר אצווה", value: this.getLabelFallbackValue(batchNumber) }) +
+            this.buildLabelCellHtml({ label: "שעה ותאריך", value: preparationDateTime }) +
+            "</div>" +
+            '<div class="label-column label-column--stack">' +
+            this.buildLabelCellHtml({ label: "ברקוד", valueHtml: barcodeHtml || this.escapeHtml("לא הוגדר") }) +
+            this.buildLabelCellHtml({ label: "בדק", value: checkerName }) +
+            "</div>" +
+            "</div>";
+        // Middle section: 25/50/25 — (שם מטופל + מינון + תמיסה) | (שם תרופה) | (ת.ז + דרך מתן + נפח סופי)
+        const middleSectionHtml =
+            '<div class="label-section label-section--middle">' +
+            '<div class="label-column label-column--stack">' +
+            this.buildLabelCellHtml({ label: "שם מטופל", value: this.getLabelFallbackValue(this.getPatientFullName()) }) +
+            this.buildLabelCellHtml({ label: "מינון", value: this.getLabelFallbackValue(this.getDoseLabel(row)) }) +
+            this.buildLabelCellHtml({ label: "תמיסה", value: this.getLabelFallbackValue(row.SolutionVal) }) +
+            "</div>" +
+            '<div class="label-column label-column--drug">' +
+            this.buildLabelCellHtml({ label: "שם תרופה", value: this.getLabelFallbackValue(row.MedListVal) }, "label-cell--drug") +
+            "</div>" +
+            '<div class="label-column label-column--stack">' +
+            this.buildLabelCellHtml({ label: "ת.ז", value: this.getLabelFallbackValue(this.getPatientIdentifier()) }) +
+            this.buildLabelCellHtml({ label: "דרך מתן", value: this.getLabelFallbackValue(row.Way_Of_ProvidingVal) }) +
+            this.buildLabelCellHtml({ label: "נפח סופי", value: this.getLabelFallbackValue(this.getFinalVolumeLabel(row)) }) +
+            "</div>" +
+            "</div>";
+        // Bottom section: 3 equal flat cells — תאריך ושעת תפוגה | קצב מתן | חתימת אחות/אח
+        const bottomSectionHtml = this.buildLabelSectionHtml([
+            { label: "תאריך ושעת תפוגה", value: "לא הוגדר במסך התרופות" },
+            { label: "קצב מתן", value: this.getLabelFallbackValue(this.getAdministrationRateLabel(row)) },
+            { label: "חתימת אחות/אח", value: "" },
+        ], 3);
+        const labelSectionsHtml = topSectionHtml + middleSectionHtml + bottomSectionHtml;
         return (
             '<!doctype html><html dir="rtl" lang="he"><head><meta charset="utf-8" />' +
             "<title>מדבקת הכנה</title>" +
