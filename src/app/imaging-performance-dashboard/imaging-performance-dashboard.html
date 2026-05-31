@@ -1,6 +1,5 @@
 <div class="ipd" dir="rtl" lang="he">
 
-  <!-- ══ HEADER ══ -->
   <header class="ipd-header">
     <div class="ipd-header-left">
       <span class="ipd-header-icon">🏥</span>
@@ -11,10 +10,7 @@
     </div>
   </header>
 
-  <!-- ══ FILTER BAR ══ -->
   <div class="ipd-filters">
-
-    <!-- Source type -->
     <div class="ipd-filter-group">
       <label class="ipd-filter-lbl">סוג מקור</label>
       <div class="ipd-seg">
@@ -22,22 +18,28 @@
           *ngFor="let opt of sourceOptions"
           class="ipd-seg-btn"
           [class.ipd-seg-btn--active]="sourceType === opt.value"
-          (click)="sourceType = opt.value">
+          (click)="onSourceTypeChange(opt.value)">
           {{ opt.label }}
         </button>
       </div>
     </div>
 
-    <!-- Date from -->
-    <div class="ipd-filter-group">
+    <div class="ipd-filter-group ipd-filter-group--date">
       <label class="ipd-filter-lbl">מתאריך</label>
-      <input type="date" class="ipd-date-input" [(ngModel)]="fromDate" />
+      <mat-form-field class="ipd-date-field" appearance="outline">
+        <input matInput [matDatepicker]="fromPicker" [(ngModel)]="fromDateModel" (dateChange)="syncFromDateModel()" />
+        <mat-datepicker-toggle matIconSuffix [for]="fromPicker"></mat-datepicker-toggle>
+        <mat-datepicker #fromPicker></mat-datepicker>
+      </mat-form-field>
     </div>
 
-    <!-- Date to -->
-    <div class="ipd-filter-group">
+    <div class="ipd-filter-group ipd-filter-group--date">
       <label class="ipd-filter-lbl">עד תאריך</label>
-      <input type="date" class="ipd-date-input" [(ngModel)]="toDate" />
+      <mat-form-field class="ipd-date-field" appearance="outline">
+        <input matInput [matDatepicker]="toPicker" [(ngModel)]="toDateModel" (dateChange)="syncToDateModel()" />
+        <mat-datepicker-toggle matIconSuffix [for]="toPicker"></mat-datepicker-toggle>
+        <mat-datepicker #toPicker></mat-datepicker>
+      </mat-form-field>
     </div>
 
     <button mat-raised-button color="primary" class="ipd-apply-btn"
@@ -46,29 +48,44 @@
     </button>
   </div>
 
-  <!-- Stub message (OutpatientClinics not yet implemented) -->
-  <div *ngIf="result?.Message" class="ipd-msg-banner">
+  <div *ngIf="result?.Message && !isOutpatientSource" class="ipd-msg-banner">
     <span>ℹ️</span> {{ result!.Message }}
   </div>
 
-  <!-- Error -->
   <div *ngIf="error && !loading" class="ipd-error-banner">
     ⚠️ {{ error }}
   </div>
 
-  <!-- ══ SKELETON while loading ══ -->
-  <div *ngIf="loading && !result" class="ipd-skeleton-wrap">
+  <!-- ══ Outpatient: CT / MRI department picker ══ -->
+  <section *ngIf="showOutpatientDeptPicker" class="ipd-dept-section">
+    <div class="ipd-dept-intro">
+      <h2>מרפאות חוץ — בחר מחלקה</h2>
+      <p>בחר CT או MRI לצפייה בזמני תהליך: יצירה ← פקידות ← דימותן ← קביעת תור ← דיווח רופא</p>
+    </div>
+    <div class="ipd-dept-grid">
+      <button
+        type="button"
+        *ngFor="let dept of outpatientDepartments"
+        class="ipd-dept-card"
+        (click)="selectOutpatientDepartment(dept)">
+        <span class="ipd-dept-icon">{{ dept.icon }}</span>
+        <span class="ipd-dept-name">{{ dept.name }}</span>
+      </button>
+    </div>
+    <p class="ipd-dept-hint">לאחר בחירת מחלקה ייטענו הנתונים לפי טווח התאריכים שבחרת למעלה</p>
+  </section>
+
+  <div *ngIf="loading" class="ipd-skeleton-wrap">
     <div class="ipd-skeleton ipd-skeleton--card"></div>
     <div class="ipd-skeleton ipd-skeleton--card"></div>
     <div class="ipd-skeleton ipd-skeleton--card"></div>
     <div class="ipd-skeleton ipd-skeleton--wide"></div>
   </div>
 
-  <ng-container *ngIf="result && !loading">
+  <!-- ══ Emergency dashboard ══ -->
+  <ng-container *ngIf="showEmergencyDashboard">
 
-    <!-- ══ KPI CARDS ══ -->
     <div class="ipd-kpi-row">
-
       <div
         class="ipd-kpi-card ipd-kpi-card--blue ipd-kpi-card--clickable"
         role="button"
@@ -87,7 +104,7 @@
       <div class="ipd-kpi-card ipd-kpi-card--amber">
         <div class="ipd-kpi-icon">⏱️</div>
         <div class="ipd-kpi-body">
-          <span class="ipd-kpi-val">{{ fmtMins(result.AvgMinutesToDecision) }}</span>
+          <span class="ipd-kpi-val">{{ fmtMins(result!.AvgMinutesToDecision) }}</span>
           <span class="ipd-kpi-lbl">ממוצע זמן לקריאה</span>
         </div>
       </div>
@@ -99,24 +116,18 @@
           <span class="ipd-kpi-lbl">רופאים פעילים</span>
         </div>
       </div>
-
     </div>
 
-    <!-- ══ MAIN CONTENT: Chart + Table ══ -->
     <div class="ipd-main">
-
-      <!-- ── Line chart: daily trend ── -->
       <div class="ipd-panel ipd-panel--chart" #chartPanel>
         <div class="ipd-panel-header">
           <h2>מגמת זמן קריאה יומית</h2>
           <span class="ipd-badge">{{ trend.length }} ימים</span>
         </div>
-
         <div *ngIf="trend.length === 0" class="ipd-empty">
           <span>📈</span>
           <p>אין נתוני מגמה לתצוגה</p>
         </div>
-
         <div *ngIf="trend.length > 0" class="ipd-chart-scroll">
           <div class="ipd-chart-track">
             <google-chart
@@ -131,18 +142,15 @@
         </div>
       </div>
 
-      <!-- ── Doctor ranking table ── -->
       <div class="ipd-panel ipd-panel--table">
         <div class="ipd-panel-header">
           <h2>דירוג רופאים</h2>
           <span class="ipd-badge">{{ doctors.length }} רופאים</span>
         </div>
-
         <div *ngIf="doctors.length === 0" class="ipd-empty">
           <span>👨‍⚕️</span>
           <p>אין נתוני רופאים לתצוגה</p>
         </div>
-
         <div *ngIf="doctors.length > 0" class="ipd-table-wrap">
           <table class="ipd-table">
             <thead>
@@ -194,25 +202,190 @@
           </table>
         </div>
       </div>
-
     </div>
-
   </ng-container>
 
-  <!-- Drill-down: full case list (מילוי מ־Details בשרת) -->
-  <div
-    *ngIf="casesDialogOpen"
-    class="ipd-backdrop"
-    (click)="closeCasesDialog()">
+  <!-- ══ Outpatient dashboard (CT / MRI) ══ -->
+  <ng-container *ngIf="showOutpatientDashboard && outpatientResult">
+
+    <div class="ipd-outpatient-toolbar">
+      <button type="button" class="ipd-back-btn" (click)="closeOutpatientDepartment()">
+        ← חזרה למחלקות
+      </button>
+      <h2 class="ipd-outpatient-title">
+        {{ selectedOutpatientDept?.icon }} {{ selectedOutpatientDept?.name }} — מרפאות חוץ
+      </h2>
+    </div>
+
+    <div *ngIf="outpatientResult.Message" class="ipd-msg-banner">
+      <span>ℹ️</span> {{ outpatientResult.Message }}
+    </div>
+
+    <!-- Pipeline timeline -->
+    <div class="ipd-pipeline">
+      <div class="ipd-pipeline-title">מסלול זמני תהליך (ממוצע)</div>
+      <div class="ipd-pipeline-track">
+        <div *ngFor="let stage of outpatientPipelineStages; let last = last" class="ipd-pipeline-step-wrap">
+          <div class="ipd-pipeline-step">
+            <span class="ipd-pipeline-step-icon">{{ stage.icon }}</span>
+            <span class="ipd-pipeline-step-lbl">{{ stage.label }}</span>
+            <span class="ipd-pipeline-step-val">{{ fmtHoursFromMinutes(stage.avg) }}</span>
+          </div>
+          <span *ngIf="!last" class="ipd-pipeline-arrow" aria-hidden="true">←</span>
+        </div>
+        <span class="ipd-pipeline-arrow ipd-pipeline-arrow--before-total" aria-hidden="true">←</span>
+        <div class="ipd-pipeline-step ipd-pipeline-step--total">
+          <span class="ipd-pipeline-step-icon">⏱️</span>
+          <span class="ipd-pipeline-step-lbl">יצירה ← קביעת תור (סה״כ)</span>
+          <span class="ipd-pipeline-step-val">{{ fmtAvgDays(outpatientAvgDaysCreateToTor) }}</span>
+          <span class="ipd-pipeline-step-sub">{{ fmtAvgHours(outpatientAvgHoursCreateToTor) }} בממוצע</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="ipd-kpi-row ipd-kpi-row--outpatient">
+      <div
+        class="ipd-kpi-card ipd-kpi-card--blue ipd-kpi-card--clickable"
+        role="button"
+        tabindex="0"
+        (click)="openOutpatientCasesDialog()"
+        (keydown.enter)="openOutpatientCasesDialog()"
+        (keydown.space)="$event.preventDefault(); openOutpatientCasesDialog()">
+        <div class="ipd-kpi-icon">📋</div>
+        <div class="ipd-kpi-body">
+          <span class="ipd-kpi-val">{{ outpatientResult.TotalCases | number }}</span>
+          <span class="ipd-kpi-lbl">סה״כ מקרים</span>
+          <span class="ipd-kpi-hint">לחיצה לרשימה מלאה</span>
+        </div>
+      </div>
+
+      <div class="ipd-kpi-card ipd-kpi-card--teal">
+        <div class="ipd-kpi-icon">📋</div>
+        <div class="ipd-kpi-body">
+          <span class="ipd-kpi-val">{{ fmtHoursFromMinutes(outpatientResult.AvgMinutesCreateToBkidot) }}</span>
+          <span class="ipd-kpi-lbl">יצירה ← פקידות</span>
+        </div>
+      </div>
+
+      <div class="ipd-kpi-card ipd-kpi-card--amber">
+        <div class="ipd-kpi-icon">🔍</div>
+        <div class="ipd-kpi-body">
+          <span class="ipd-kpi-val">{{ fmtHoursFromMinutes(outpatientResult.AvgMinutesBkidotToDimotan) }}</span>
+          <span class="ipd-kpi-lbl">פקידות ← דימותן</span>
+        </div>
+      </div>
+
+      <div class="ipd-kpi-card ipd-kpi-card--purple">
+        <div class="ipd-kpi-icon">📅</div>
+        <div class="ipd-kpi-body">
+          <span class="ipd-kpi-val">{{ fmtHoursFromMinutes(outpatientResult.AvgMinutesDimotanToTor) }}</span>
+          <span class="ipd-kpi-lbl">דימותן ← קביעת תור</span>
+        </div>
+      </div>
+
+      <div class="ipd-kpi-card ipd-kpi-card--blue">
+        <div class="ipd-kpi-icon">👨‍⚕️</div>
+        <div class="ipd-kpi-body">
+          <span class="ipd-kpi-val">{{ fmtHoursFromMinutes(outpatientResult.AvgMinutesToDecision) }}</span>
+          <span class="ipd-kpi-lbl">הדמיה ← דיווח רופא</span>
+        </div>
+      </div>
+
+      <div class="ipd-kpi-card ipd-kpi-card--purple ipd-kpi-card--total">
+        <div class="ipd-kpi-icon">⏱️</div>
+        <div class="ipd-kpi-body">
+          <span class="ipd-kpi-val">{{ fmtAvgDays(outpatientAvgDaysCreateToTor) }}</span>
+          <span class="ipd-kpi-lbl">יצירה ← קביעת תור (ממוצע)</span>
+          <span class="ipd-kpi-hint">{{ fmtAvgHours(outpatientAvgHoursCreateToTor) }} בממוצע</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="ipd-main">
+      <div class="ipd-panel ipd-panel--chart" #outpatientChartPanel>
+        <div class="ipd-panel-header">
+          <h2>מגמה יומית — הדמיה ← דיווח</h2>
+          <span class="ipd-badge">{{ outpatientTrend.length }} ימים</span>
+        </div>
+        <div *ngIf="outpatientTrend.length === 0" class="ipd-empty">
+          <span>📈</span>
+          <p>אין נתוני מגמה לתצוגה</p>
+        </div>
+        <div *ngIf="outpatientTrend.length > 0" class="ipd-chart-scroll">
+          <div class="ipd-chart-track">
+            <google-chart
+              [type]="chartType"
+              [columns]="chartColumns"
+              [data]="chartRows"
+              [options]="chartOptions"
+              [width]="chartWidth"
+              [height]="chartHeight">
+            </google-chart>
+          </div>
+        </div>
+      </div>
+
+      <div class="ipd-panel ipd-panel--table">
+        <div class="ipd-panel-header">
+          <h2>דירוג רופאים מדווחים</h2>
+          <span class="ipd-badge">{{ outpatientDoctors.length }} רופאים</span>
+        </div>
+        <div *ngIf="outpatientDoctors.length === 0" class="ipd-empty">
+          <span>👨‍⚕️</span>
+          <p>אין נתוני רופאים — השרת יכול לחשב מ־DocName</p>
+        </div>
+        <div *ngIf="outpatientDoctors.length > 0" class="ipd-table-wrap">
+          <table class="ipd-table">
+            <thead>
+              <tr>
+                <th class="ipd-th ipd-th--rank">#</th>
+                <th class="ipd-th ipd-th--sortable" (click)="setOutpatientSort('DocName')">
+                  שם רופא <span class="sort-icon">{{ outpatientSortIcon('DocName') }}</span>
+                </th>
+                <th class="ipd-th ipd-th--sortable" (click)="setOutpatientSort('CaseCount')">
+                  נפח <span class="sort-icon">{{ outpatientSortIcon('CaseCount') }}</span>
+                </th>
+                <th class="ipd-th ipd-th--sortable" (click)="setOutpatientSort('AvgMinutesToDecision')">
+                  ממוצע הדמיה→דיווח <span class="sort-icon">{{ outpatientSortIcon('AvgMinutesToDecision') }}</span>
+                </th>
+                <th class="ipd-th">סטטוס</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let doc of sortedOutpatientDoctors; let i = index" class="ipd-tr">
+                <td class="ipd-td ipd-td--rank">
+                  <span class="rank-badge"
+                    [class.rank-badge--gold]="i===0"
+                    [class.rank-badge--silver]="i===1"
+                    [class.rank-badge--bronze]="i===2">
+                    {{ i + 1 }}
+                  </span>
+                </td>
+                <td class="ipd-td ipd-td--name">{{ doc.DocName }}</td>
+                <td class="ipd-td ipd-td--num">{{ doc.CaseCount }}</td>
+                <td class="ipd-td ipd-td--num">{{ fmtMins(doc.AvgMinutesToDecision) }}</td>
+                <td class="ipd-td">
+                  <span [class]="timeClass(doc.AvgMinutesToDecision)">
+                    {{ doc.AvgMinutesToDecision <= 1440 ? 'בטווח' : 'ארוך' }}
+                  </span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </ng-container>
+
+  <!-- Emergency cases modal -->
+  <div *ngIf="casesDialogOpen" class="ipd-backdrop" (click)="closeCasesDialog()">
     <div class="ipd-modal ipd-modal--detail" (click)="$event.stopPropagation()" dir="rtl" lang="he">
       <div class="ipd-modal-header">
         <h2 class="ipd-modal-title">רשימת מקרים עם הדמיה</h2>
         <button type="button" class="ipd-modal-close" (click)="closeCasesDialog()" aria-label="סגור">×</button>
       </div>
       <div class="ipd-modal-body">
-        <p *ngIf="!hasModalDetailTable" class="ipd-modal-empty">
-          אין רשימת מקרים להצגה.
-        </p>
+        <p *ngIf="!hasModalDetailTable" class="ipd-modal-empty">אין רשימת מקרים להצגה.</p>
         <div *ngIf="useRawDetailTable" class="ipd-modal-table-outer">
           <div class="ipd-modal-table-wrap">
             <table class="ipd-modal-table">
@@ -240,6 +413,37 @@
               <tbody>
                 <tr *ngFor="let row of caseDetails">
                   <td *ngFor="let col of visibleCaseColumns">{{ caseCell(row, col.field) }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Outpatient cases modal -->
+  <div *ngIf="outpatientCasesDialogOpen" class="ipd-backdrop" (click)="closeOutpatientCasesDialog()">
+    <div class="ipd-modal ipd-modal--detail ipd-modal--wide" (click)="$event.stopPropagation()" dir="rtl" lang="he">
+      <div class="ipd-modal-header">
+        <h2 class="ipd-modal-title">
+          מקרים — {{ selectedOutpatientDept?.name }} ({{ outpatientCases.length }})
+        </h2>
+        <button type="button" class="ipd-modal-close" (click)="closeOutpatientCasesDialog()" aria-label="סגור">×</button>
+      </div>
+      <div class="ipd-modal-body">
+        <p *ngIf="!outpatientCases.length" class="ipd-modal-empty">אין מקרים בטווח התאריכים.</p>
+        <div *ngIf="outpatientCases.length" class="ipd-modal-table-outer">
+          <div class="ipd-modal-table-wrap">
+            <table class="ipd-modal-table">
+              <thead>
+                <tr>
+                  <th *ngFor="let col of outpatientCaseColumns">{{ col.label }}</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let row of outpatientCases">
+                  <td *ngFor="let col of outpatientCaseColumns">{{ outpatientCaseCell(row, col.field) }}</td>
                 </tr>
               </tbody>
             </table>

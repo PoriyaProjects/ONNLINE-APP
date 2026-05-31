@@ -39,6 +39,17 @@ export interface HitoQuestionScoreRow {
   percentPositive: number; // 0..100
 }
 
+export interface HitoAnswerScoreRow {
+  department: string;
+  Record_ID: number;
+  DDate: string;
+  DYear: number;
+  DMonth: number;
+  itemText: string;
+  formName_Name: string;
+  IntScore: number;
+}
+
 function unwrapD<T>(res: T | { d: T }): T {
   if (res != null && typeof res === 'object' && 'd' in res) {
     const d = (res as { d: T }).d;
@@ -176,6 +187,28 @@ export class HitoFormsDashboardService {
       map(res => {
         const arr = unwrapD(res);
         return Array.isArray(arr) ? (arr as HitoQuestionScoreRow[]) : [];
+      }),
+      catchError(() => of([]))
+    );
+  }
+
+  /** Questions-mode: distinct question texts for answer-score flow. */
+  getHitoAnswerScoreQuestions(): Observable<string[]> {
+    const url = BASE + 'GetHitoAnswerScoreQuestions';
+    return this.http.post<unknown>(url, {}, { headers: JSON_HEADERS }).pipe(
+      map(res => toStrings(ensureArray<string>(unwrapD(res)))),
+      catchError(() => of([]))
+    );
+  }
+
+  /** Questions-mode: raw rows by selected question text. */
+  getHitoAnswerScoreRowsByQuestion(params: { itemText: string }): Observable<HitoAnswerScoreRow[]> {
+    const url = BASE + 'GetHitoAnswerScoreRowsByQuestion';
+    const body = { itemText: (params.itemText || '').trim() };
+    return this.http.post<unknown>(url, body, { headers: JSON_HEADERS }).pipe(
+      map(res => {
+        const arr = unwrapD(res);
+        return Array.isArray(arr) ? (arr as HitoAnswerScoreRow[]) : [];
       }),
       catchError(() => of([]))
     );

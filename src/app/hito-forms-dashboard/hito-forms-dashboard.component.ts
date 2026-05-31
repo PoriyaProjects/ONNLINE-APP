@@ -1,11 +1,10 @@
 import { Component, OnInit, HostListener } from '@angular/core';
 import { forkJoin } from 'rxjs';
 import {
+  HitoAnswerScoreRow,
   HitoFormsChartItem,
   HitoFormsDashboardStats,
-  HitoFormQuestionItem,
   HitoFormsDashboardService,
-  HitoQuestionScoreRow
 } from './hito-forms-dashboard.service';
 
 interface DetailModal {
@@ -37,18 +36,21 @@ export class HitoFormsDashboardComponent implements OnInit {
   allForms: string[] = [];
 
   /* ── Questions mode ── */
-  selectedQuestionForm = '';
   questionsLoading = false;
   questionsError: string | null = null;
-  allQuestions: HitoFormQuestionItem[] = [];
-  selectedQuestionIds: number[] = [];
+  allQuestionTexts: string[] = [];
+  selectedQuestionText = '';
   questionSearch = '';
-  questionFiltersDirty = false;
+  questionRows: HitoAnswerScoreRow[] = [];
+  questionForms: string[] = [];
+  selectedQuestionForms: string[] = [];
+  questionDepartments: string[] = [];
+  selectedQuestionDepartments: string[] = [];
 
-  get filteredQuestions(): HitoFormQuestionItem[] {
+  get filteredQuestionTexts(): string[] {
     const s = (this.questionSearch || '').trim().toLowerCase();
-    if (!s) return this.allQuestions;
-    return this.allQuestions.filter(q => (q.itemText || '').toLowerCase().includes(s));
+    if (!s) return this.allQuestionTexts;
+    return this.allQuestionTexts.filter(q => (q || '').toLowerCase().includes(s));
   }
 
   get filteredForms(): string[] {
@@ -113,11 +115,6 @@ export class HitoFormsDashboardComponent implements OnInit {
     if (m <= 6) return 'Q2';
     if (m <= 9) return 'Q3';
     return 'Q4';
-  }
-
-  /** Default form for questions mode to avoid heavy all-forms queries. */
-  private getDefaultQuestionForm(): string {
-    return (this.selectedForms[0] || this.allForms[0] || '').trim();
   }
 
   constructor(private svc: HitoFormsDashboardService) {}
@@ -230,9 +227,6 @@ export class HitoFormsDashboardComponent implements OnInit {
         this.allQuarters = quarters || [];
         this.allDepartments = departments || [];
         this.allForms = names || [];
-        if (!this.selectedQuestionForm) {
-          this.selectedQuestionForm = this.getDefaultQuestionForm();
-        }
         if (this.selectedYears.length === 0 && this.allYears.length > 0) {
           const cy = this.getCurrentYear();
           this.selectedYears = this.allYears.includes(cy) ? [cy] : [this.allYears[this.allYears.length - 1]];
@@ -256,7 +250,7 @@ export class HitoFormsDashboardComponent implements OnInit {
   /* ── Toggle with auto-apply ── */
   private scheduleApply(): void {
     if (this.viewMode === 'questions') {
-      this.questionFiltersDirty = true;
+      this.buildQuestionChartFromRows();
       return;
     }
     if (this.applyTimeout) clearTimeout(this.applyTimeout);
@@ -297,7 +291,7 @@ export class HitoFormsDashboardComponent implements OnInit {
   /* ── Apply ── */
   applyFilters(): void {
     if (this.viewMode === 'questions') {
-      this.applyQuestionMode();
+      this.buildQuestionChartFromRows();
       return;
     }
     this.loading = true;
@@ -358,11 +352,14 @@ export class HitoFormsDashboardComponent implements OnInit {
     this.detailModal = null;
     this.detailSearch = '';
     if (mode === 'questions') {
-      if (!this.selectedQuestionForm) {
-        this.selectedQuestionForm = this.getDefaultQuestionForm();
-      }
-      this.loadQuestionsForForm(this.selectedQuestionForm);
-      this.questionFiltersDirty = true;
+      this.loadAnswerScoreQuestions();
+      this.selectedQuestionText = '';
+      this.questionSearch = '';
+      this.questionRows = [];
+      this.questionForms = [];
+      this.selectedQuestionForms = [];
+      this.questionDepartments = [];
+      this.selectedQuestionDepartments = [];
       this.chartRows = [];
       this.error = null;
       this.loading = false;
@@ -371,95 +368,109 @@ export class HitoFormsDashboardComponent implements OnInit {
     }
   }
 
-  onQuestionFormChange(formName: string): void {
-    this.selectedQuestionForm = (formName || '').trim();
-    this.selectedQuestionIds = [];
-    this.loadQuestionsForForm(this.selectedQuestionForm);
-    this.questionFiltersDirty = true;
-    this.chartRows = [];
-    this.error = null;
-    this.loading = false;
-  }
-
-  private loadQuestionsForForm(formName: string): void {
+  private loadAnswerScoreQuestions(): void {
     this.questionsLoading = true;
     this.questionsError = null;
-    this.svc.getQuestionsByForm({ formName_Name: (formName || '').trim() }).subscribe({
-      next: (qs) => {
-        this.allQuestions = qs || [];
+    this.svc.getHitoAnswerScoreQuestions().subscribe({
+      next: (questions) => {
+        this.allQuestionTexts = questions || [];
         this.questionsLoading = false;
       },
       error: () => {
         this.questionsLoading = false;
-        this.questionsError = 'שגיאה בטעינת שאלות (נדרש שינוי בבקאנד)';
+        this.questionsError = 'שגיאה בטעינת שאלות';
       }
     });
   }
 
-  toggleQuestion(id: number): void {
-    const i = this.selectedQuestionIds.indexOf(id);
-    i === -1 ? this.selectedQuestionIds.push(id) : this.selectedQuestionIds.splice(i, 1);
-    this.scheduleApply();
+  selectQuestionText(val: string): void {
+    this.selectedQuestionText = (val || '').trim();
+    this.selectedQuestionForms = [];
+    this.questionDepartments = [];
+    this.selectedQuestionDepartments = [];
+    this.questionRows = [];
+    this.questionForms = [];
+    this.fetchRowsForSelectedQuestion();
   }
 
-  isQuestionSelected(id: number): boolean {
-    return this.selectedQuestionIds.includes(id);
+  isQuestionTextSelected(val: string): boolean {
+    return (this.selectedQuestionText || '') === (val || '');
   }
 
-  loadQuestionChart(): void {
-    this.questionFiltersDirty = false;
-    this.applyQuestionMode();
-  }
-
-  private applyQuestionMode(): void {
-    const years = this.getEffectiveYears();
-    const formName = (this.selectedQuestionForm || '').trim();
-    const itemIdsCsv = this.selectedQuestionIds.length > 0 ? this.selectedQuestionIds.join(',') : '';
-
-    // Guard against very heavy all-forms query without narrowing by questions.
-    if (!formName && !itemIdsCsv) {
+  private fetchRowsForSelectedQuestion(): void {
+    const itemText = (this.selectedQuestionText || '').trim();
+    if (!itemText) {
       this.chartRows = [];
-      this.chartColumns = ['שאלה', 'ציון', { role: 'annotation', type: 'string' }];
-      this.chartSeriesLabels = [];
-      this.chartIsStacked = false;
+      this.error = null;
       this.loading = false;
-      this.error = 'בחר לפחות שאלה אחת כשלא נבחר טופס, ואז לחץ "טען גרף"';
       return;
     }
-
     this.loading = true;
     this.error = null;
-
-    this.svc.getQuestionScores({
-      year: years.join(','),
-      formName_Name: formName,
-      itemIdsCsv
-    }).subscribe({
-      next: (rows: HitoQuestionScoreRow[]) => {
+    this.svc.getHitoAnswerScoreRowsByQuestion({ itemText }).subscribe({
+      next: (rows) => {
         const data = rows || [];
-        this.chartIsStacked = false;
-        this.chartSeriesLabels = [];
-        this.chartType = 'ColumnChart';
-        this.chartColumns = ['שאלה', 'ציון', { role: 'annotation', type: 'string' }];
-        this.chartRows = data.map(r => {
-          const rawGrade = (r as any)?.grade ?? (r as any)?.Grade ?? r.percentPositive;
-          const v = Number(rawGrade) || 0;
-          const ann = v > 0 ? `${v.toFixed(0)} %` : '';
-          const label = ((r as any)?.question ?? (r as any)?.Question ?? r.itemText) || String(r.itemId);
-          return [label, v, ann];
-        });
-
-        // For detail modal departments list, keep chartData compatible
-        this.chartData = (this.chartRows || []).map((row: any[]) => ({ Label: String(row[0] || ''), Value: Number(row[1]) || 0 })) as HitoFormsChartItem[];
-        this.lastUpdateDate = this.now();
-        this.recalc();
+        this.questionRows = data;
+        this.questionForms = Array.from(
+          new Set(data.map(r => (r.formName_Name || '').trim()).filter(v => v !== ''))
+        ).sort((a, b) => a.localeCompare(b, 'he'));
+        this.questionDepartments = Array.from(
+          new Set(data.map(r => (r.department || '').trim()).filter(v => v !== ''))
+        ).sort((a, b) => a.localeCompare(b, 'he'));
+        this.selectedQuestionForms = [...this.questionForms];
+        this.selectedQuestionDepartments = [...this.questionDepartments];
+        this.buildQuestionChartFromRows();
         this.loading = false;
       },
       error: () => {
         this.loading = false;
-        this.error = 'שגיאה בטעינת נתונים (נדרש שינוי בבקאנד)';
+        this.error = 'שגיאה בטעינת נתונים';
       }
     });
+  }
+
+  private buildQuestionChartFromRows(): void {
+    const years = this.getEffectiveYears();
+    const yearSet = new Set(years);
+    const selectedFormsSet = new Set(this.selectedQuestionForms);
+    const selectedDeptsSet = new Set(this.selectedQuestionDepartments);
+    const filtered = (this.questionRows || []).filter(r => {
+      const rowForm = (r.formName_Name || '').trim();
+      const rowDept = (r.department || '').trim();
+      const rowYear = String(Number(r.DYear || 0));
+      const yearOk = yearSet.size === 0 ? true : yearSet.has(rowYear);
+      const formOk = this.selectedQuestionForms.length === 0 ? true : selectedFormsSet.has(rowForm);
+      const deptOk = this.selectedQuestionDepartments.length === 0 ? true : selectedDeptsSet.has(rowDept);
+      return yearOk && formOk && deptOk;
+    });
+
+    const deptToAgg = new Map<string, { sum: number; count: number }>();
+    filtered.forEach(r => {
+      const dept = (r.department || '').trim() || 'ללא מחלקה';
+      if (!deptToAgg.has(dept)) deptToAgg.set(dept, { sum: 0, count: 0 });
+      const score = Number(r.IntScore);
+      if (!Number.isNaN(score)) {
+        const agg = deptToAgg.get(dept)!;
+        agg.sum += score;
+        agg.count += 1;
+      }
+    });
+
+    const depts = Array.from(deptToAgg.keys()).sort((a, b) => a.localeCompare(b, 'he'));
+    this.chartIsStacked = false;
+    this.chartSeriesLabels = [];
+    this.chartType = 'ColumnChart';
+    this.chartColumns = ['מחלקה', 'ציון', { role: 'annotation', type: 'string' }];
+    this.chartRows = depts.map(d => {
+      const agg = deptToAgg.get(d)!;
+      let avg = agg.count > 0 ? (agg.sum / agg.count) : 0;
+      if (avg <= 1) avg *= 100;
+      const ann = avg > 0 ? `${avg.toFixed(0)} %` : '';
+      return [d, avg, ann];
+    });
+    this.chartData = this.chartRows.map((row: any[]) => ({ Label: String(row[0] || ''), Value: Number(row[1]) || 0 })) as HitoFormsChartItem[];
+    this.lastUpdateDate = this.now();
+    this.recalc();
   }
 
   /** Both multiple years and multiple quarters: grouped columns for each year+quarter combo (e.g. 2023 Q1, 2023 Q2, 2024 Q1, 2024 Q2). */

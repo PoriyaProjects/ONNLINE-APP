@@ -62,27 +62,32 @@
      color: var(--muted);
    }
    
-   /* ═══ FILTER BAR ═══ */
+   /* ═══ FILTER BAR — single row ═══ */
    .ipd-filters {
      display: flex;
-     align-items: flex-end;
-     gap: 1.25rem;
-     flex-wrap: wrap;
-     padding: 0.85rem 1.5rem;
+     align-items: center;
+     flex-wrap: nowrap;
+     gap: 0.65rem 1.1rem;
+     padding: 0.55rem 1.5rem;
      background: var(--surface);
      border-bottom: 1px solid var(--border);
+     overflow-x: auto;
    }
    
    .ipd-filter-group {
      display: flex;
-     flex-direction: column;
-     gap: 0.3rem;
+     flex-direction: row;
+     align-items: center;
+     gap: 0.45rem;
+     flex-shrink: 0;
    }
    
    .ipd-filter-lbl {
      font-size: 0.78rem;
      font-weight: 600;
      color: var(--text-sec);
+     white-space: nowrap;
+     margin: 0;
    }
    
    /* Segmented control (source type) */
@@ -120,30 +125,50 @@
      color: var(--accent);
    }
    
-   /* Date input */
-   .ipd-date-input {
-     padding: 0.47rem 0.7rem;
-     border: 1px solid var(--border-strong);
-     border-radius: var(--radius-sm);
-     font: inherit;
-     font-size: 0.88rem;
-     color: var(--text);
-     background: var(--surface);
-     transition: border-color var(--transition), box-shadow var(--transition);
+   /* Material datepicker (dd/mm/yyyy via app en-GB locale) */
+   .ipd-filter-group--date {
+     min-width: auto;
    }
-   
-   .ipd-date-input:focus {
-     outline: none;
-     border-color: var(--accent);
-     box-shadow: 0 0 0 3px rgba(43, 108, 176, 0.12);
+
+   .ipd-date-field {
+     width: 9.75rem;
+     font-size: 0.88rem;
+     margin: 0;
+   }
+
+   .ipd-date-field ::ng-deep .mat-mdc-form-field-subscript-wrapper,
+   .ipd-date-field ::ng-deep .mat-form-field-subscript-wrapper {
+     display: none;
+   }
+
+   .ipd-date-field ::ng-deep .mat-mdc-text-field-wrapper,
+   .ipd-date-field ::ng-deep .mat-form-field-wrapper {
+     padding: 0;
+     background: var(--surface);
+   }
+
+   .ipd-date-field ::ng-deep .mat-mdc-form-field-infix,
+   .ipd-date-field ::ng-deep .mat-form-field-infix {
+     min-height: 36px;
+     padding-top: 0.35rem;
+     padding-bottom: 0.35rem;
+     width: auto;
+   }
+
+   .ipd-date-field ::ng-deep .mat-mdc-form-field-flex,
+   .ipd-date-field ::ng-deep .mat-form-field-flex {
+     align-items: center;
    }
    
    .ipd-apply-btn {
      font-weight: 600 !important;
      font-size: 0.9rem !important;
-     padding: 0.5rem 1.75rem !important;
+     padding: 0.45rem 1.35rem !important;
      border-radius: var(--radius-sm) !important;
-     align-self: flex-end;
+     flex-shrink: 0;
+     white-space: nowrap;
+     height: 36px;
+     line-height: 36px;
    }
    
    /* ═══ BANNERS ═══ */
@@ -201,13 +226,16 @@
    
    .ipd-kpi-card {
      display: flex;
+     flex-direction: row;
      align-items: center;
-     gap: 1rem;
+     justify-content: flex-start;
+     gap: 0.85rem;
      padding: 1.1rem 1.25rem;
      border-radius: var(--radius);
      box-shadow: var(--shadow-md);
      color: #fff;
      transition: transform var(--transition), box-shadow var(--transition);
+     text-align: right;
    }
    
    .ipd-kpi-card:hover {
@@ -225,8 +253,11 @@
    .ipd-kpi-body {
      display: flex;
      flex-direction: column;
+     align-items: flex-end;
      gap: 0.2rem;
      min-width: 0;
+     flex: 1;
+     text-align: right;
    }
    
    .ipd-kpi-val {
@@ -234,13 +265,18 @@
      font-weight: 800;
      line-height: 1.1;
      letter-spacing: -0.02em;
+     width: 100%;
+     text-align: right;
    }
    
    .ipd-kpi-lbl {
      font-size: 0.78rem;
      font-weight: 500;
      opacity: 0.85;
-     white-space: nowrap;
+     white-space: normal;
+     width: 100%;
+     text-align: right;
+     line-height: 1.3;
    }
    
    .ipd-kpi-card--clickable {
@@ -259,15 +295,27 @@
      margin-top: 0.15rem;
      white-space: normal;
      line-height: 1.25;
+     width: 100%;
+     text-align: right;
+   }
+
+   .ipd-kpi-card--total {
+     border: 2px solid rgba(255, 255, 255, 0.45);
+     background: linear-gradient(135deg, #44337A, #6B46C1);
    }
    
-   /* ═══ MAIN: chart + table side-by-side ═══ */
+   /* ═══ MAIN: chart + table 50/50 ═══ */
    .ipd-main {
      display: grid;
-     grid-template-columns: 1fr 1.1fr;
+     grid-template-columns: 1fr 1fr;
      gap: 1rem;
      padding: 1rem 1.5rem 1.5rem;
      align-items: start;
+   }
+
+   .ipd-main .ipd-panel--chart,
+   .ipd-main .ipd-panel--table {
+     min-width: 0;
    }
    
    /* ═══ PANEL ═══ */
@@ -328,12 +376,15 @@
    
    .ipd-chart-track {
      display: block;
-     min-width: min-content;
+     max-width: 100%;
      padding: 0.6rem 0.75rem 1rem;
      box-sizing: border-box;
    }
    
-   .ipd-chart-track google-chart { display: block; }
+   .ipd-chart-track google-chart {
+     display: block;
+     max-width: 100%;
+   }
    
    /* ─── Table panel ─── */
    .ipd-table-wrap {
@@ -390,7 +441,7 @@
      color: var(--text);
      text-align: right;
    }
-   
+
    .ipd-td--rank { text-align: center; }
    .ipd-td--num  { font-variant-numeric: tabular-nums; }
    .ipd-td--name { font-weight: 500; }
@@ -621,4 +672,230 @@
    @media (max-width: 480px) {
      .ipd-kpi-row { grid-template-columns: 1fr; }
      .ipd-kpi-card { padding: 0.85rem 1rem; }
+   }
+
+   /* ═══ Outpatient department picker (CT / MRI) ═══ */
+   .ipd-dept-section {
+     max-width: 900px;
+     margin: 0 auto;
+     padding: 2rem 1.5rem 2.5rem;
+   }
+
+   .ipd-dept-intro {
+     text-align: center;
+     margin-bottom: 2rem;
+   }
+
+   .ipd-dept-intro h2 {
+     margin: 0 0 0.5rem;
+     font-size: 1.35rem;
+     font-weight: 700;
+     color: var(--accent);
+   }
+
+   .ipd-dept-intro p {
+     margin: 0;
+     font-size: 0.9rem;
+     color: var(--muted);
+   }
+
+   .ipd-dept-grid {
+     display: grid;
+     grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+     gap: 2rem;
+     justify-items: center;
+   }
+
+   .ipd-dept-card {
+     display: flex;
+     flex-direction: column;
+     align-items: center;
+     justify-content: center;
+     width: 100%;
+     max-width: 300px;
+     padding: 3rem 2rem;
+     border: none;
+     border-radius: 16px;
+     background: var(--surface);
+     box-shadow: var(--shadow-md);
+     cursor: pointer;
+     transition: transform var(--transition), box-shadow var(--transition);
+     border-top: 5px solid var(--accent);
+     font: inherit;
+   }
+
+   .ipd-dept-card:hover {
+     transform: translateY(-8px) scale(1.03);
+     box-shadow: 0 16px 40px rgba(43, 108, 176, 0.2);
+   }
+
+   .ipd-dept-icon {
+     font-size: 4rem;
+     line-height: 1;
+     margin-bottom: 1rem;
+   }
+
+   .ipd-dept-name {
+     font-size: 2rem;
+     font-weight: 800;
+     color: var(--text);
+   }
+
+   .ipd-dept-hint {
+     text-align: center;
+     margin-top: 1.5rem;
+     font-size: 0.82rem;
+     color: var(--muted);
+   }
+
+   /* Outpatient detail toolbar */
+   .ipd-outpatient-toolbar {
+     display: flex;
+     align-items: center;
+     gap: 1rem;
+     flex-wrap: wrap;
+     padding: 0.75rem 1.5rem 0;
+   }
+
+   .ipd-back-btn {
+     border: 1px solid var(--border-strong);
+     background: var(--surface);
+     padding: 0.45rem 1rem;
+     border-radius: var(--radius-sm);
+     font: inherit;
+     font-size: 0.85rem;
+     font-weight: 600;
+     color: var(--accent);
+     cursor: pointer;
+     transition: background var(--transition);
+   }
+
+   .ipd-back-btn:hover {
+     background: #EBF4FF;
+   }
+
+   .ipd-outpatient-title {
+     margin: 0;
+     font-size: 1.15rem;
+     font-weight: 700;
+     color: var(--text);
+   }
+
+   /* Pipeline timeline */
+   .ipd-pipeline {
+     margin: 1rem 1.5rem 0;
+     padding: 1.1rem 1.25rem;
+     background: var(--surface);
+     border: 1px solid var(--border);
+     border-radius: var(--radius);
+     box-shadow: var(--shadow);
+   }
+
+   .ipd-pipeline-title {
+     font-size: 0.88rem;
+     font-weight: 600;
+     color: var(--text-sec);
+     margin-bottom: 1rem;
+     text-align: right;
+   }
+
+   .ipd-pipeline-track {
+     display: flex;
+     flex-wrap: wrap;
+     align-items: center;
+     justify-content: flex-start;
+     gap: 0.35rem 0.5rem;
+     direction: rtl;
+   }
+
+   .ipd-pipeline-step-wrap {
+     display: flex;
+     align-items: center;
+     gap: 0.5rem;
+   }
+
+   .ipd-pipeline-step {
+     display: flex;
+     flex-direction: column;
+     align-items: center;
+     min-width: 100px;
+     padding: 0.65rem 0.75rem;
+     background: linear-gradient(180deg, #EBF8FF 0%, #fff 100%);
+     border: 1px solid #BEE3F8;
+     border-radius: var(--radius-sm);
+     text-align: center;
+   }
+
+   .ipd-pipeline-step-icon {
+     font-size: 1.35rem;
+     margin-bottom: 0.25rem;
+   }
+
+   .ipd-pipeline-step-lbl {
+     font-size: 0.72rem;
+     font-weight: 600;
+     color: var(--text-sec);
+     line-height: 1.25;
+     max-width: 120px;
+   }
+
+   .ipd-pipeline-step-val {
+     font-size: 0.95rem;
+     font-weight: 800;
+     color: var(--accent);
+     margin-top: 0.35rem;
+   }
+
+   .ipd-pipeline-arrow {
+     font-size: 1.1rem;
+     color: var(--muted);
+     font-weight: 700;
+   }
+
+   .ipd-pipeline-step--total {
+     background: linear-gradient(180deg, #E9D8FD 0%, #fff 100%);
+     border: 2px solid #805AD5;
+     min-width: 110px;
+   }
+
+   .ipd-pipeline-step--total .ipd-pipeline-step-val {
+     color: #553C9A;
+   }
+
+   .ipd-pipeline-step-sub {
+     font-size: 0.68rem;
+     font-weight: 600;
+     color: var(--muted);
+     margin-top: 0.2rem;
+   }
+
+   .ipd-pipeline-arrow--before-total {
+     margin-inline: 0.15rem;
+   }
+
+   .ipd-kpi-row--outpatient {
+     grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+   }
+
+   .ipd-modal--wide {
+     max-width: min(1400px, 98vw);
+   }
+
+   @media (max-width: 900px) {
+     .ipd-filters {
+       flex-wrap: wrap;
+     }
+   }
+
+   @media (max-width: 700px) {
+     .ipd-pipeline-step {
+       min-width: 80px;
+       padding: 0.5rem;
+     }
+     .ipd-pipeline-arrow {
+       display: none;
+     }
+     .ipd-pipeline-track {
+       flex-direction: column;
+     }
    }
