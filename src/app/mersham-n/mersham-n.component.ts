@@ -1688,8 +1688,8 @@ export class MershamNComponent implements OnInit {
         // Bottom section: 3 equal flat cells — תאריך ושעת תפוגה | קצב מתן | חתימת אחות/אח
         const bottomSectionHtml = this.buildLabelSectionHtml([
             { label: "תאריך ושעת תפוגה", value: "לא הוגדר במסך התרופות" },
-            { label: "קצב מתן", value: this.getLabelFallbackValue(this.getAdministrationRateLabel(row)) },
-            { label: "חתימת אחות/אח", value: "" },
+            { label: "קצב מתן", value: this.getLabelFallbackValue(this.getAdministrationRateLabel(row)) },            
+            { label: "תנאי אחסון", value: this.getLabelFallbackValue(this.getStorageConditionsDisplay(row)) }
         ], 3);
         const labelSectionsHtml = topSectionHtml + middleSectionHtml + bottomSectionHtml;
         return (
