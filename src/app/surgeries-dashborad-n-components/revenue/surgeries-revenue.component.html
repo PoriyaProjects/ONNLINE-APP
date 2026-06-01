@@ -226,26 +226,26 @@
 
           <div class="chart-with-expand chart-view-block chart-view-block--chart"
             [class.chart-with-expand--year-stacked]="isYearTotalStackedView()">
-            <div *ngIf="isLoading || isChartLoading" class="chart-loading-overlay chart-loading-overlay--in-chart"
+            <div *ngIf="isViewLoading()" class="chart-loading-overlay chart-loading-overlay--in-chart"
               aria-live="polite" aria-busy="true">
               <mat-spinner diameter="48"></mat-spinner>
               <div class="chart-loading-text">טוען נתוני הכנסות...</div>
             </div>
 
             <button type="button" class="chart-expand-btn" (click)="openChartFullModal()"
-              *ngIf="!isLoading && !isChartLoading && chartData.length"
+              *ngIf="!isViewLoading() && chartData.length"
               matTooltip="הרחב מסך" matTooltipPosition="below" aria-label="הרחב את גרף ההכנסות">
               <mat-icon>fullscreen</mat-icon>
             </button>
 
             <ng-container *ngFor="let epoch of [chartViewEpoch]; trackBy: trackByChartEpoch">
-              <google-chart *ngIf="!isLoading && !isChartLoading && chartData.length"
+              <google-chart *ngIf="!isViewLoading() && chartData.length"
                 [type]="chartType" [columns]="chartColumns" [data]="chartData"
                 [options]="chartOptions" [width]="'100%'" [height]="'100%'" [dynamicResize]="true">
               </google-chart>
             </ng-container>
 
-            <div *ngIf="!isLoading && !isChartLoading && !chartData.length" class="chart-no-data">
+            <div *ngIf="!isViewLoading() && !chartData.length" class="chart-no-data">
               {{ loadError || 'אין נתונים להצגה בגרף' }}
             </div>
           </div>
@@ -272,7 +272,7 @@
               </google-chart>
             </div>
             <div class="revenue-stacked-panel__empty chart-no-data"
-              *ngIf="!showStackedChart && !isLoading && !isChartLoading">
+              *ngIf="!showStackedChart && !isSupplementLoading()">
               אין נתוני ערימה להצגה — ודא שה-API פעיל או עבור ל«סיכום שנתי»
             </div>
           </div>
@@ -339,7 +339,7 @@
                     </ng-template>
                   </td>
                 </tr>
-                <tr *ngIf="!tableRows.length && !isLoading">
+                <tr *ngIf="!tableRows.length && !isViewLoading()">
                   <td [attr.colspan]="tableYears.length + 1">אין נתונים</td>
                 </tr>
               </tbody>

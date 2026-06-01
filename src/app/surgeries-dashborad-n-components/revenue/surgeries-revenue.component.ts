@@ -7,7 +7,8 @@ import {
     OnInit,
 } from "@angular/core";
 import { MatSnackBar } from "@angular/material/snack-bar";
-import { Subscription, forkJoin } from "rxjs";
+import { Observable, Subscription, concat } from "rxjs";
+import { tap } from "rxjs/operators";
 import { SurgeriesRevenueApiService } from "./surgeries-revenue-api.service";
 import {
     RevenueAggRow,
@@ -36,6 +37,12 @@ export class SurgeriesRevenueComponent implements OnInit, OnDestroy {
     isLoading = true;
     isChartLoading = false;
     loadError = "";
+
+    /** Datasets that finished loading — drives progressive (per-view) rendering. */
+    private loadedKeys = new Set<string>();
+    /** True while the sequential load chain is still running. */
+    private loadInProgress = false;
+    private dataSub?: Subscription;
 
     filterOptions: RevenueFilterOptionsDto = {
         wings: [],
@@ -312,51 +319,79 @@ export class SurgeriesRevenueComponent implements OnInit, OnDestroy {
         this.subs.add(filterSub);
     }
 
+    // ── טעינת נתונים (סדרתית + פרוגרסיבית) ──
+    // טוענים endpoint אחד אחרי השני לפי סדר העדיפות, ומציגים כל חתך ברגע שהגיע —
+    // כך שהמשתמש רואה את הגרף הראשי מיד, בלי להמתין לכל הקריאות.
     refreshData(forceRefresh = false): void {
-        const params = this.buildFilterParams();
-        const allCached =
-            !forceRefresh && this.api.isRevenueBundleCached(params);
-        if (!allCached) {
-            this.isChartLoading = true;
-        }
+        this.dataSub?.unsubscribe();
+        this.loadedKeys.clear();
+        this.loadInProgress = true;
+        this.isLoading = true;
         this.cdr.markForCheck();
-        const dataSub = forkJoin({
-            agg: this.api.getRevenueByDeptFiveYears(params, forceRefresh),
-            monthly: this.api.getRevenueByMonth(params, forceRefresh),
-            billingStack: this.api.getRevenueByGroupFiveYears(
-                params,
-                "billingDept",
-                forceRefresh,
-            ),
-            payerStack: this.api.getRevenueByGroupFiveYears(
-                params,
-                "payer",
-                forceRefresh,
-            ),
-            siteStack: this.api.getRevenueByGroupFiveYears(
-                params,
-                "site",
-                forceRefresh,
-            ),
-            composite: this.api.getRevenueCompositeStack(params, forceRefresh),
-        }).subscribe({
-            next: ({ agg, monthly, billingStack, payerStack, siteStack, composite }) => {
-                this.aggRows = agg;
-                this.monthlyRows = monthly;
-                this.billingStackRows = billingStack;
-                this.payerStackRows = payerStack;
-                this.siteStackRows = siteStack;
-                this.compositeStackRows = composite;
-                this.isLoading = false;
+
+        const params = this.buildFilterParams();
+
+        const tasks: {
+            key: string;
+            run: () => Observable<any>;
+        }[] = [
+            {
+                key: "agg",
+                run: () =>
+                    this.api
+                        .getRevenueByDeptFiveYears(params, forceRefresh)
+                        .pipe(tap((d) => (this.aggRows = d))),
+            },
+            {
+                key: "monthly",
+                run: () =>
+                    this.api
+                        .getRevenueByMonth(params, forceRefresh)
+                        .pipe(tap((d) => (this.monthlyRows = d))),
+            },
+            {
+                key: "payerStack",
+                run: () =>
+                    this.api
+                        .getRevenueByGroupFiveYears(params, "payer", forceRefresh)
+                        .pipe(tap((d) => (this.payerStackRows = d))),
+            },
+            {
+                key: "siteStack",
+                run: () =>
+                    this.api
+                        .getRevenueByGroupFiveYears(params, "site", forceRefresh)
+                        .pipe(tap((d) => (this.siteStackRows = d))),
+            },
+            {
+                key: "billingStack",
+                run: () =>
+                    this.api
+                        .getRevenueByGroupFiveYears(
+                            params,
+                            "billingDept",
+                            forceRefresh,
+                        )
+                        .pipe(tap((d) => (this.billingStackRows = d))),
+            },
+            {
+                key: "composite",
+                run: () =>
+                    this.api
+                        .getRevenueCompositeStack(params, forceRefresh)
+                        .pipe(tap((d) => (this.compositeStackRows = d))),
+            },
+        ];
+
+        const streams = tasks.map((t) =>
+            t.run().pipe(tap(() => this.onTaskLoaded(t.key))),
+        );
+
+        this.dataSub = concat(...streams).subscribe({
+            complete: () => {
+                this.loadInProgress = false;
                 this.isChartLoading = false;
-                if (!agg.length && !monthly.length) {
-                    this.loadError =
-                        "לא התקבלו נתונים מהשרת. ודא ש-GetRevenueByDeptFiveYears_surgeries_revenue_dashborad פעיל.";
-                } else {
-                    this.loadError = "";
-                    this.hydrateFilterOptionsFromAgg();
-                }
-                this.rebuildView();
+                this.updateLoadError();
                 this.cdr.markForCheck();
             },
             error: () => {
@@ -366,6 +401,7 @@ export class SurgeriesRevenueComponent implements OnInit, OnDestroy {
                 this.payerStackRows = [];
                 this.siteStackRows = [];
                 this.compositeStackRows = [];
+                this.loadInProgress = false;
                 this.isLoading = false;
                 this.isChartLoading = false;
                 this.loadError = "שגיאה בטעינת נתוני הכנסות מהשרת.";
@@ -374,7 +410,64 @@ export class SurgeriesRevenueComponent implements OnInit, OnDestroy {
                 this.cdr.markForCheck();
             },
         });
-        this.subs.add(dataSub);
+        this.subs.add(this.dataSub);
+    }
+
+    /** נקרא בכל פעם שחתך נתונים מסוים סיים להיטען. */
+    private onTaskLoaded(key: string): void {
+        this.loadedKeys.add(key);
+        this.isLoading = false;
+        this.isChartLoading = false;
+        if (this.aggRows.length) {
+            this.hydrateFilterOptionsFromAgg();
+        }
+        // מרעננים את הגרף רק אם הנתון שהגיע נחוץ לתצוגה הנוכחית (מונע ריצוד),
+        // אחרת מספיק לעדכן את כרטיסי ה-KPI ואת גרף הערימה המשלים.
+        if (key === this.requiredKey() || this.isSupplementPanelVisible()) {
+            this.rebuildView();
+        } else {
+            this.rebuildKpis();
+        }
+        this.cdr.markForCheck();
+    }
+
+    private updateLoadError(): void {
+        if (!this.aggRows.length && !this.monthlyRows.length) {
+            this.loadError =
+                "לא התקבלו נתונים מהשרת. ודא ש-GetRevenueByDeptFiveYears_surgeries_revenue_dashborad פעיל.";
+        } else {
+            this.loadError = "";
+        }
+    }
+
+    /** מפתח הנתון הנדרש לתצוגה/מדד הנוכחיים — לבדיקת מצב טעינה פר-תצוגה. */
+    private requiredKey(): string {
+        if (this.chartViewMode === "month") {
+            return "monthly";
+        }
+        if (this.chartViewMode === "billing-category") {
+            return "composite";
+        }
+        if (this.chartViewMode === "year-total") {
+            if (this.mainMetric === "byPayer") {
+                return "payerStack";
+            }
+            if (this.mainMetric === "byDept") {
+                return "siteStack";
+            }
+            return "agg";
+        }
+        return "agg";
+    }
+
+    /** האם התצוגה הנוכחית עדיין ממתינה לנתונים שלה. */
+    isViewLoading(): boolean {
+        return this.loadInProgress && !this.loadedKeys.has(this.requiredKey());
+    }
+
+    /** האם גרף הערימה המשלים עדיין ממתין לנתונים (מונע הצגת "אין נתונים" מוקדם מדי). */
+    isSupplementLoading(): boolean {
+        return this.loadInProgress;
     }
 
     onMainMetricChange(value: RevenueMainMetric): void {

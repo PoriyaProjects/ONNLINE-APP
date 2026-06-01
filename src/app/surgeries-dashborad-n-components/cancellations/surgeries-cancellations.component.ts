@@ -7,7 +7,8 @@ import {
     OnInit,
 } from "@angular/core";
 import { MatSnackBar } from "@angular/material/snack-bar";
-import { Subscription, forkJoin } from "rxjs";
+import { Observable, Subscription, concat } from "rxjs";
+import { tap } from "rxjs/operators";
 import { SurgeriesCancellationsApiService } from "./surgeries-cancellations-api.service";
 import {
     CancellationFilterParams,
@@ -35,6 +36,12 @@ export class SurgeriesCancellationsComponent implements OnInit, OnDestroy {
     isLoading = true;
     isChartLoading = false;
     loadError = "";
+
+    /** Datasets that finished loading — drives progressive (per-view) rendering. */
+    private loadedKeys = new Set<string>();
+    /** True while the sequential load chain is still running. */
+    private loadInProgress = false;
+    private loadSub?: Subscription;
 
     selectedDepartment = "";
     departmentOptions: string[] = [];
@@ -105,46 +112,74 @@ export class SurgeriesCancellationsComponent implements OnInit, OnDestroy {
         this.isDeptOpen = false;
     }
 
-    // ── טעינת נתונים ──
+    // ── טעינת נתונים (סדרתית + פרוגרסיבית) ──
+    // טוענים endpoint אחד אחרי השני לפי סדר התצוגות, ומציגים כל חתך ברגע שהגיע —
+    // כך שהמשתמש רואה את התצוגה הראשונה (שנתי) מיד, בלי להמתין לכל הקריאות.
     loadAll(forceRefresh = false): void {
-        const params = this.buildParams();
-        const cached = !forceRefresh && this.api.isBundleCached(params);
-        if (!cached) {
-            this.isChartLoading = true;
-        }
+        this.loadSub?.unsubscribe();
+        this.loadedKeys.clear();
+        this.isLoading = true;
+        this.loadInProgress = true;
         this.cdr.markForCheck();
 
-        const sub = forkJoin({
-            yearly: this.api.getCancellationsYearly(params, forceRefresh),
-            monthly: this.api.getCancellationsMonthly(params, forceRefresh),
-            reasons: this.api.getTopCancellationReasons(params, forceRefresh),
-            reasonsByDept: this.api.getCancellationReasonsByDepartment(
-                params,
-                forceRefresh,
-            ),
-            room: this.api.getRoomOutcome(params, forceRefresh),
-        }).subscribe({
-            next: ({ yearly, monthly, reasons, reasonsByDept, room }) => {
-                this.yearlyRows = yearly;
-                this.monthlyRows = monthly;
-                this.reasonRows = reasons;
-                this.reasonDeptRows = reasonsByDept;
-                this.roomRows = room;
-                this.isLoading = false;
+        const params = this.buildParams();
+
+        const tasks: {
+            key: string;
+            views: CancellationView[];
+            run: () => Observable<any>;
+        }[] = [
+            {
+                key: "yearly",
+                views: ["yearly"],
+                run: () =>
+                    this.api
+                        .getCancellationsYearly(params, forceRefresh)
+                        .pipe(tap((d) => (this.yearlyRows = d))),
+            },
+            {
+                key: "monthly",
+                views: ["monthly", "yearly"],
+                run: () =>
+                    this.api
+                        .getCancellationsMonthly(params, forceRefresh)
+                        .pipe(tap((d) => (this.monthlyRows = d))),
+            },
+            {
+                key: "reasons",
+                views: ["reasons"],
+                run: () =>
+                    this.api
+                        .getTopCancellationReasons(params, forceRefresh)
+                        .pipe(tap((d) => (this.reasonRows = d))),
+            },
+            {
+                key: "reasonsByDept",
+                views: ["reasons-by-dept"],
+                run: () =>
+                    this.api
+                        .getCancellationReasonsByDepartment(params, forceRefresh)
+                        .pipe(tap((d) => (this.reasonDeptRows = d))),
+            },
+            {
+                key: "room",
+                views: ["room"],
+                run: () =>
+                    this.api
+                        .getRoomOutcome(params, forceRefresh)
+                        .pipe(tap((d) => (this.roomRows = d))),
+            },
+        ];
+
+        const streams = tasks.map((t) =>
+            t.run().pipe(tap(() => this.onTaskLoaded(t.key, t.views))),
+        );
+
+        this.loadSub = concat(...streams).subscribe({
+            complete: () => {
+                this.loadInProgress = false;
                 this.isChartLoading = false;
-                this.hydrateDepartmentOptions();
-                if (
-                    !yearly.length &&
-                    !monthly.length &&
-                    !reasons.length &&
-                    !room.length
-                ) {
-                    this.loadError =
-                        "לא התקבלו נתוני ביטולים מהשרת. ודא ש-GetCancellationsYearly פעיל.";
-                } else {
-                    this.loadError = "";
-                }
-                this.rebuildView();
+                this.updateLoadError();
                 this.cdr.markForCheck();
             },
             error: () => {
@@ -153,6 +188,7 @@ export class SurgeriesCancellationsComponent implements OnInit, OnDestroy {
                 this.reasonRows = [];
                 this.reasonDeptRows = [];
                 this.roomRows = [];
+                this.loadInProgress = false;
                 this.isLoading = false;
                 this.isChartLoading = false;
                 this.loadError = "שגיאה בטעינת נתוני ביטולים מהשרת.";
@@ -161,7 +197,61 @@ export class SurgeriesCancellationsComponent implements OnInit, OnDestroy {
                 this.cdr.markForCheck();
             },
         });
-        this.subs.add(sub);
+        this.subs.add(this.loadSub);
+    }
+
+    /** נקרא בכל פעם שחתך נתונים מסוים סיים להיטען. */
+    private onTaskLoaded(key: string, views: CancellationView[]): void {
+        this.loadedKeys.add(key);
+        this.isLoading = false;
+        this.isChartLoading = false;
+        this.hydrateDepartmentOptions();
+        // מרעננים את הגרף רק אם הנתון שהגיע שייך לתצוגה הנוכחית (מונע ריצוד),
+        // אחרת מספיק לעדכן את כרטיסי ה-KPI.
+        if (views.includes(this.view)) {
+            this.rebuildView();
+        } else {
+            this.rebuildKpis();
+        }
+        this.cdr.markForCheck();
+    }
+
+    private updateLoadError(): void {
+        if (
+            !this.yearlyRows.length &&
+            !this.monthlyRows.length &&
+            !this.reasonRows.length &&
+            !this.roomRows.length
+        ) {
+            this.loadError =
+                "לא התקבלו נתוני ביטולים מהשרת. ודא ש-GetCancellationsYearly פעיל.";
+        } else {
+            this.loadError = "";
+        }
+    }
+
+    /** מפתח הנתון הנדרש לתצוגה הנוכחית — לבדיקת מצב טעינה פר-תצוגה. */
+    private requiredKey(view: CancellationView): string {
+        switch (view) {
+            case "monthly":
+                return "monthly";
+            case "reasons":
+                return "reasons";
+            case "reasons-by-dept":
+                return "reasonsByDept";
+            case "room":
+                return "room";
+            default:
+                return "yearly";
+        }
+    }
+
+    /** האם התצוגה הנוכחית עדיין ממתינה לנתונים שלה. */
+    isViewLoading(): boolean {
+        return (
+            this.loadInProgress &&
+            !this.loadedKeys.has(this.requiredKey(this.view))
+        );
     }
 
     private buildParams(): CancellationFilterParams {

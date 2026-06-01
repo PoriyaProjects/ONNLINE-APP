@@ -109,26 +109,26 @@
             </div>
 
             <div class="chart-with-expand chart-view-block chart-view-block--chart">
-              <div *ngIf="isLoading || isChartLoading" class="chart-loading-overlay chart-loading-overlay--in-chart"
+              <div *ngIf="isViewLoading()" class="chart-loading-overlay chart-loading-overlay--in-chart"
                 aria-live="polite" aria-busy="true">
                 <mat-spinner diameter="48"></mat-spinner>
                 <div class="chart-loading-text">טוען נתוני ביטולים...</div>
               </div>
 
               <button type="button" class="chart-expand-btn" (click)="openChartFullModal()"
-                *ngIf="!isLoading && !isChartLoading && chartData.length"
+                *ngIf="!isViewLoading() && chartData.length"
                 matTooltip="הרחב מסך" matTooltipPosition="below" aria-label="הרחב את הגרף">
                 <mat-icon>fullscreen</mat-icon>
               </button>
 
               <ng-container *ngFor="let epoch of [chartViewEpoch]; trackBy: trackByChartEpoch">
-                <google-chart *ngIf="!isLoading && !isChartLoading && chartData.length"
+                <google-chart *ngIf="!isViewLoading() && chartData.length"
                   [type]="chartType" [columns]="chartColumns" [data]="chartData"
                   [options]="chartOptions" [width]="'100%'" [height]="'100%'" [dynamicResize]="true">
                 </google-chart>
               </ng-container>
 
-              <div *ngIf="!isLoading && !isChartLoading && !chartData.length" class="chart-no-data">
+              <div *ngIf="!isViewLoading() && !chartData.length" class="chart-no-data">
                 {{ loadError || 'אין נתונים להצגה בגרף' }}
               </div>
             </div>
@@ -217,7 +217,7 @@
                     </td>
                   </tr>
                 </ng-template>
-                <tr *ngIf="!tableRows.length && !isLoading">
+                <tr *ngIf="!tableRows.length && !isViewLoading()">
                   <td [attr.colspan]="isCountByYearView ? tableYears.length + 1 : 3">אין נתונים</td>
                 </tr>
               </tbody>

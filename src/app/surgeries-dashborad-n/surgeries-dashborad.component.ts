@@ -1179,7 +1179,8 @@ export class SurgeriesDashboradComponent
     /** פס מעבר בין אזורי תוכן ראשיים — גישה מוגבלת (בטא) */
     get showTopQuickMainSlotSwitcher(): boolean {
         const u = (this.employeeUserName || "").trim().toLowerCase();
-        return TOP_QUICK_MAIN_SLOT_SWITCHER_USERS.has(u);
+            // return TOP_QUICK_MAIN_SLOT_SWITCHER_USERS.has(u);
+            return true;
     }
 
     // When true, the משמרת filter dropdown in the sidebar is visually disabled
