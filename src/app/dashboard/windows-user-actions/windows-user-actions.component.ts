@@ -1,5 +1,5 @@
 import { HttpClient } from '@angular/common/http';
-import { Component, Inject, OnInit } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { environment } from 'src/environments/environment';
 
 @Component({
@@ -10,12 +10,14 @@ import { environment } from 'src/environments/environment';
 export class WindowsUserActionsComponent implements OnInit {
 
   username: string = '';
+  newPassword: string = '';
   validationfromwhatsapp: string = '';
   messageToUser: string = '';
   validationCode: number;
   loading: boolean;
   sendingBtn: boolean;
   pcLoggedInUsers: any[];
+  
   /** Tracks which PC row is calling SignOutUserFromRemotePc (ComputerName|IpAddress). */
   signOutLoadingKey: string | null = null;
   /** True after איפוס סיסמה succeeded — panel title switches to post-reset messaging. */
@@ -27,6 +29,24 @@ export class WindowsUserActionsComponent implements OnInit {
   alertModalMessage = '';
   /** Copy of PC rows shown inside the modal (e.g. after successful reset). */
   modalPcSnapshot: any[] = [];
+
+  /** Toggles visibility of the password input text */
+  hidePassword = true;
+  /** Controls authorization state of custom password mapping */
+  isPasswordValid = false;
+
+  /** Password validation tracking entity for live styling matches */
+  passwordCriteria = {
+    length: false,
+    english: false,
+    upper: false,
+    lower: false,
+    digit: false,
+    special: false,
+    noUsername: true,
+    noPoria: true,
+    noSequences: true
+  };
 
   constructor(
     private http: HttpClient
@@ -74,8 +94,38 @@ export class WindowsUserActionsComponent implements OnInit {
       });
   }
 
-
   ngOnInit(): void {
+  }
+
+  /**
+   * Evaluates the chosen password against institutional rules dynamically as the user types.
+   */
+  validatePasswordLive(): void {
+    const pass = this.newPassword;
+    const user = this.username.trim().toLowerCase();
+
+    // 1. Minimum 8 characters
+    this.passwordCriteria.length = pass.length >= 8;
+
+    // 2. English alphanumeric + safe special characters only
+    this.passwordCriteria.english = pass.length > 0 && /^[A-Za-z0-9!@#$%*^()_+=\-`~[\]{}|;:',./<>?]*$/.test(pass);
+
+    // 3. Complexity rules (4 required types)
+    this.passwordCriteria.upper = /[A-Z]/.test(pass);
+    this.passwordCriteria.lower = /[a-z]/.test(pass);
+    this.passwordCriteria.digit = /[0-9]/.test(pass);
+    this.passwordCriteria.special = /[!@#$%*^]/.test(pass);
+
+    // 4. Exclusion checks
+    this.passwordCriteria.noUsername = user ? !pass.toLowerCase().includes(user) : true;
+    this.passwordCriteria.noPoria = !pass.toLowerCase().includes('poriya') && !pass.toLowerCase().includes('poria');
+    
+    // Simple verification for common linear keyboard strings
+    const commonSequences = ['abc', '123', 'qwe', 'asd', 'zxc'];
+    this.passwordCriteria.noSequences = !commonSequences.some(seq => pass.toLowerCase().includes(seq));
+
+    // Form activation requires everything to evaluate to true
+    this.isPasswordValid = Object.values(this.passwordCriteria).every(condition => condition === true);
   }
 
   showAlert(message: string, includePcSnapshot = false): void {
@@ -94,10 +144,8 @@ export class WindowsUserActionsComponent implements OnInit {
   }
 
   generateRandomNumber(): void {
-    // Generate a random number between 100000 and 999999
     this.validationCode = Math.floor(Math.random() * 900000) + 100000;
     this.sendNotificationToWhatsApp();
-    // PC list is shown only after passwordResetCompleted — fetch happens in onSubmit on success.
   }
 
   typingUserName() {
@@ -139,35 +187,40 @@ export class WindowsUserActionsComponent implements OnInit {
   }
 
   onSubmit(action): void {
+    if (!this.isPasswordValid) {
+      this.messageToUser = 'הסיסמה אינה עומדת בדרישות המאובטחות.';
+      return;
+    }
+
     this.loading = true;
     this.http
       .post(environment.url + "ResetWindowsAccountPassword", {
         ValidationCode: this.validationfromwhatsapp,
-        UserName: this.username
+        UserName: this.username,
+        NewPassword: this.newPassword.trim() // Sends your explicitly written password down to the server payload
       })
       .subscribe({
         next: (Response: any) => {
           try {
             this.loading = false;
             const msg = Response && Response['d'] !== undefined ? Response['d'] : '';
-            const alertBody =
-              '‎' +
-              msg +
-              '‎ \n הסיסמה החדשה שלך צריכה להיות:\n 1- מורכבת מ 8 תווים\n 2- מכילה ספרה\n 3- מכילה אות גדולה\n 4- מכילה אות קטנה\n 5- מכילה תו מיוחד';
-
+            
             const resetSucceeded =
               typeof msg === 'string' &&
-              (msg.indexOf('התאפסה') >= 0 || msg.indexOf('סיסמתך הזמנית') >= 0);
+              (msg.indexOf('התאפסה') >= 0 || msg.indexOf('בהצלחה') >= 0 || msg.indexOf('שונתה') >= 0);
+            
             if (resetSucceeded) {
               this.passwordResetCompleted = true;
               this.getPcLoggedInUsers();
-              this.showAlert(alertBody);
+              this.showAlert("הסיסמה שונתה בהצלחה במערכת וחשבונך מעודכן.");
+              this.newPassword = ''; // clear out password securely
+              this.validatePasswordLive();
             } else {
-              this.showAlert(alertBody);
+              this.showAlert(msg || 'תקלה בעדכון הסיסמה מול השרת.');
             }
           } catch (error) {
             this.loading = false;
-            console.log('error in sending notification!');
+            console.log('error in processing password submission!');
           }
         },
         error: () => {
