@@ -2479,20 +2479,9 @@
                                     width="140"
                                     mat-header-cell
                                     *matHeaderCellDef
-                                    class="text-center signature-diagonal-cell"
+                                    class="text-center"
                                 >
-                                    <div class="signature-diagonal signature-diagonal--header">
-                                        <span
-                                            class="signature-diagonal__label signature-diagonal__label--top"
-                                        >
-                                            חתימת אחות מבקרת
-                                        </span>
-                                        <span
-                                            class="signature-diagonal__label signature-diagonal__label--bottom"
-                                        >
-                                            חתימת אחות מבצעת
-                                        </span>
-                                    </div>
+                                    תנאי אחסון
                                 </th>
                                 <td
                                     mat-cell
@@ -2500,9 +2489,9 @@
                                         let element;
                                         let rowIdx = index
                                     "
-                                    class="signature-diagonal-cell"
+                                    class="text-center"
                                 >
-                                    <div class="signature-diagonal"></div>
+                                    {{ getStorageConditionsDisplay(element) }}
                                 </td>
                             </ng-container>
 

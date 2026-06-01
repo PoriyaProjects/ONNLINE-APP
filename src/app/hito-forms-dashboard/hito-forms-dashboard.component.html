@@ -79,24 +79,55 @@
 
         <!-- COL 1 ALT: Questions mode form + questions -->
         <div class="hd-filt" *ngIf="viewMode==='questions'">
-          <div class="hd-filt-head">בחר טופס</div>
-          <div class="hd-search-wrap">
-            <select class="hd-select" [ngModel]="selectedQuestionForm" (ngModelChange)="onQuestionFormChange($event)">
-              <option value=""></option>
-              <option *ngFor="let f of allForms" [ngValue]="f">{{ f }}</option>
-            </select>
-          </div>
-          <div class="hd-filt-head" style="margin-top:0.5rem;">בחר שאלות</div>
+          <div class="hd-filt-head" style="margin-top:0.5rem;">בחר שאלה</div>
           <div class="hd-search-wrap">
             <input type="text" [(ngModel)]="questionSearch" placeholder="🔍 חיפוש שאלה..." class="hd-search" />
           </div>
-          <div class="hd-search-wrap">
-            <button class="hd-load-btn" (click)="loadQuestionChart()" [disabled]="loading || questionsLoading">
-              טען גרף
-            </button>
+          <div class="hd-cbl" *ngIf="!questionsLoading && !questionsError">
+            <label class="hd-cb" *ngFor="let q of filteredQuestionTexts">
+              <input
+                type="radio"
+                name="hitoQuestionText"
+                [checked]="isQuestionTextSelected(q)"
+                (change)="selectQuestionText(q)" />
+              <span>{{ q }}</span>
+            </label>
           </div>
-          <div class="hd-center-msg hd-center-msg--muted" *ngIf="questionFiltersDirty && !loading" style="min-height:0;padding:0.2rem 0 0.5rem;">
-            בחר מסננים/שאלות ואז לחץ על "טען גרף"
+
+          <div class="hd-filt-head" style="margin-top:0.6rem;" *ngIf="selectedQuestionText">בחר טופס</div>
+          <div class="hd-cbl hd-cbl--short" *ngIf="selectedQuestionText">
+            <label class="hd-cb">
+              <input
+                type="checkbox"
+                [checked]="allChecked(selectedQuestionForms, questionForms)"
+                (change)="toggleAll(selectedQuestionForms, questionForms)"/>
+              <span>בחר הכל</span>
+            </label>
+            <label class="hd-cb" *ngFor="let f of questionForms">
+              <input
+                type="checkbox"
+                [checked]="isIn(selectedQuestionForms, f)"
+                (change)="toggle(selectedQuestionForms, f)"/>
+              <span>{{ f }}</span>
+            </label>
+          </div>
+
+          <div class="hd-filt-head" style="margin-top:0.6rem;" *ngIf="selectedQuestionText">מחלקה</div>
+          <div class="hd-cbl hd-cbl--short" *ngIf="selectedQuestionText">
+            <label class="hd-cb">
+              <input
+                type="checkbox"
+                [checked]="allChecked(selectedQuestionDepartments, questionDepartments)"
+                (change)="toggleAll(selectedQuestionDepartments, questionDepartments)"/>
+              <span>בחר הכל</span>
+            </label>
+            <label class="hd-cb" *ngFor="let d of questionDepartments">
+              <input
+                type="checkbox"
+                [checked]="isIn(selectedQuestionDepartments, d)"
+                (change)="toggle(selectedQuestionDepartments, d)"/>
+              <span>{{ d }}</span>
+            </label>
           </div>
           <div class="hd-center-msg" *ngIf="questionsLoading" style="min-height:60px;">
             <mat-spinner diameter="22"></mat-spinner>
@@ -104,11 +135,8 @@
           <div class="hd-center-msg hd-center-msg--err" *ngIf="questionsError" style="min-height:60px;">
             {{ questionsError }}
           </div>
-          <div class="hd-cbl" *ngIf="!questionsLoading && !questionsError">
-            <label class="hd-cb" *ngFor="let q of filteredQuestions">
-              <input type="checkbox" [checked]="isQuestionSelected(q.itemId)" (change)="toggleQuestion(q.itemId)"/>
-              <span>{{ q.itemText }}</span>
-            </label>
+          <div class="hd-center-msg hd-center-msg--muted" *ngIf="!questionsLoading && !questionsError && filteredQuestionTexts.length===0" style="min-height:60px;">
+            לא נמצאו שאלות
           </div>
         </div>
 
